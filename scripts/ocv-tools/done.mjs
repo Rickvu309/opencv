@@ -97,8 +97,6 @@ function stepFor(row) {
     : null
   return nextStep({
     n: row.n,
-    risk: null,
-    approved: true,
     worktree: row.worktree,
     branch: row.branch,
     pr,

@@ -70,7 +70,6 @@ export function readClaim(ctx, n, fresh = false) {
     labels: bag.issue.labels,
     risk: bag.issue.risk,
     type: bag.issue.type,
-    approved: bag.issue.approved,
     holder: bag.claim,
     serverNow: bag.serverNow,
   }

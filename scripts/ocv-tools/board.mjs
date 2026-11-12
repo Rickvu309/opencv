@@ -1,5 +1,5 @@
 import { holderOf } from "./claim-marker.mjs"
-import { approvalValid, riskOf } from "./facts.mjs"
+import { riskOf } from "./facts.mjs"
 import { TYPES } from "./fields.mjs"
 
 const FAILING = new Set([
@@ -12,7 +12,6 @@ const FAILING = new Set([
 ])
 
 const GROUPS = [
-  ["waiting", "Waiting for approval"],
   ["free", "Open and free"],
   ["taken", "Taken"],
   ["idle", "Idle (past 180 min)"],
@@ -36,8 +35,7 @@ export function checkState(rollup) {
   return "passing"
 }
 
-export function groupOf({ risk, approved, claim, prOpen }) {
-  if (risk === "high" && !approved) return "waiting"
+export function groupOf({ claim, prOpen }) {
   if (prOpen) return "inReview"
   if (claim === "live") return "taken"
   if (claim === "idle") return "idle"
@@ -89,20 +87,12 @@ function idleMinutes(holder) {
   return Number.isFinite(holder.idleMinutes) ? holder.idleMinutes : null
 }
 
-function rowFrom(issue, approvers, serverNow, pr, checks) {
+function rowFrom(issue, serverNow, pr, checks) {
   const labels = issue.labels ?? []
   const risk = riskOf(labels, issue.body ?? "")
-  const approved = approvalValid({
-    comments: issue.comments,
-    approvers,
-    lastEditedAt: issue.lastEditedAt,
-    createdAt: issue.createdAt,
-  })
   const holder = holderOf(issue.comments, serverNow)
   const open = Boolean(pr) && String(pr.state).toUpperCase() === "OPEN"
   const group = groupOf({
-    risk,
-    approved,
     claim: holder.state,
     prOpen: open,
   })
@@ -110,7 +100,6 @@ function rowFrom(issue, approvers, serverNow, pr, checks) {
     number: issue.number,
     title: issue.title,
     risk,
-    approved: Boolean(approved),
     holder:
       holder.state === "live" || holder.state === "idle" ? holder.agent : null,
     claim: holder.state,
@@ -170,8 +159,6 @@ export function renderBoard(groups) {
 function boardNext(groups) {
   if (groups.free[0])
     return `scripts/ocv-tools.mjs take ${groups.free[0].number}`
-  if (groups.waiting[0])
-    return `Ask a project admin to say approved, then run: scripts/ocv-tools.mjs approve ${groups.waiting[0].number}`
   if (groups.idle[0])
     return `scripts/ocv-tools.mjs take ${groups.idle[0].number}`
   if (groups.inReview[0]?.pr)
@@ -187,19 +174,10 @@ export function board(ctx, { json = false } = {}) {
   for (const issue of snap.issues) {
     if (String(issue.state).toUpperCase() !== "OPEN") continue
     const pr = prFor(snap.pulls, issue.number)
-    rows.push(
-      rowFrom(
-        issue,
-        snap.approvers,
-        snap.serverNow,
-        pr,
-        checksFor(ctx.ports.gh, pr)
-      )
-    )
+    rows.push(rowFrom(issue, snap.serverNow, pr, checksFor(ctx.ports.gh, pr)))
   }
   rows.sort((a, b) => a.number - b.number)
   const groups = {
-    waiting: [],
     free: [],
     taken: [],
     idle: [],

@@ -23,10 +23,10 @@
   description: A decision for a human, never picked up by implementation agents
 - name: "risk:low"
   color: "c2e0c6"
-  description: Low risk. No owner approval needed (ocv-tools reads it)
+  description: Low risk. ocv-tools reads it
 - name: "risk:normal"
   color: "bfd4f2"
-  description: Normal risk. No owner approval needed (ocv-tools reads it)
+  description: Normal risk. ocv-tools reads it
 - name: "risk:high"
   color: "e11d21"
-  description: High risk. Needs an owner /approve comment after the last issue edit
+  description: High risk. ocv-tools reads it

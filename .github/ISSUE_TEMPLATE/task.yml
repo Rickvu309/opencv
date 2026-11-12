@@ -36,7 +36,7 @@ body:
     id: risk
     attributes:
       label: Risk
-      description: Only high risk needs the owner to comment /approve before work starts.
+      description: How much could go wrong. High, normal, and low stay visible and do not block work.
       options:
         - low
         - normal

@@ -3,34 +3,6 @@ import { RISKS, TYPES } from "./fields.mjs"
 import { parseRisk } from "./lint.mjs"
 import { decide, refusalError } from "./rules/index.mjs"
 
-const loginOf = (author) =>
-  String(
-    typeof author === "string" ? author : (author?.login ?? "")
-  ).toLowerCase()
-
-export function approvalValid({
-  comments,
-  approvers,
-  lastEditedAt,
-  createdAt,
-}) {
-  const since = Date.parse(lastEditedAt || createdAt)
-  if (Number.isNaN(since)) return false
-  const allowed = new Set(
-    [...(approvers ?? [])].map((login) => String(login).toLowerCase())
-  )
-  let newest = null
-  for (const c of comments ?? []) {
-    if (!allowed.has(loginOf(c.author))) continue
-    if (!/^\/approve\b/.test(String(c.body ?? "").trimStart())) continue
-    if (c.lastEditedAt !== null) continue
-    const at = Date.parse(c.createdAt)
-    if (Number.isNaN(at)) continue
-    if (newest === null || at > newest) newest = at
-  }
-  return newest !== null && newest > since
-}
-
 export function riskOf(labels, body = "") {
   const found = RISKS.filter((r) => labels.includes(`risk:${r}`))
   if (found.length > 1) return "high"
@@ -38,7 +10,7 @@ export function riskOf(labels, body = "") {
   return parseRisk(body)
 }
 
-function issueFact(record, owner, approvers) {
+function issueFact(record, owner) {
   const labels = record.labels ?? []
   const comments = Object.freeze(
     (record.comments ?? []).map((c) => Object.freeze({ ...c }))
@@ -55,18 +27,11 @@ function issueFact(record, owner, approvers) {
     assignees: Object.freeze([...(record.assignees ?? [])]),
     comments,
     owner,
-    approvers: Object.freeze([...approvers]),
     risk: riskOf(labels, record.body ?? ""),
     type:
       TYPES.find(
         (t) => labels.includes(t) || String(record.title).startsWith(`${t}:`)
       ) ?? null,
-    approved: approvalValid({
-      comments,
-      approvers,
-      lastEditedAt: record.lastEditedAt,
-      createdAt: record.createdAt,
-    }),
   })
 }
 
@@ -76,7 +41,6 @@ function prefixOf(n) {
 
 export function createFacts(ports, cwdOf = () => undefined) {
   const cache = new Map()
-  let approvers
   const cwd = () => (typeof cwdOf === "function" ? cwdOf() : cwdOf)
 
   function invalidate(n, kinds) {
@@ -116,8 +80,7 @@ export function createFacts(ports, cwdOf = () => undefined) {
       issue: { n, missing: !claimHistoryUnknown && !loaded.record },
     })
     if (!verdict.ok) throw refusalError(verdict.refusals[0])
-    if (!approvers) approvers = Object.freeze(ports.gh.approvers())
-    const issue = issueFact(loaded.record, loaded.owner, approvers)
+    const issue = issueFact(loaded.record, loaded.owner)
     const claim = Object.freeze(holderOf(issue.comments, loaded.serverNow))
     cache.set(key, issue)
     cache.set(`claim:${n}`, claim)

@@ -67,18 +67,6 @@ test("every checked rule has a failing and a passing fact", () => {
     "#90 is held by a1 (last saved 30 min ago; free after 180)"
   )
   check(
-    "NEEDS_APPROVAL",
-    { issue: { n: 90, risk: "high", approved: false } },
-    { issue: { n: 90, risk: "high", approved: true } },
-    "#90 is risk:high and the owner has not posted an unedited /approve after its last edit"
-  )
-  assert.equal(
-    evaluate("NEEDS_APPROVAL", {
-      issue: { n: 90, risk: "high", approved: false },
-    }).fix,
-    "Post a fresh /approve comment as a project admin."
-  )
-  check(
     "ASSIGNED",
     { issue: { n: 90, assignees: ["someone"] }, login: "me", flags: {} },
     { issue: { n: 90, assignees: ["Me"] }, login: "me", flags: {} },
@@ -244,7 +232,7 @@ test("every checked rule has a failing and a passing fact", () => {
         labels: ["risk:high"],
       },
     },
-    "the change touches ci.yml, nightly.yml, composite actions, check.mjs or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)"
+    "the change touches ci.yml, nightly.yml, composite actions, check.mjs or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high"
   )
   check(
     "CI_WORKFLOW_KEPT",
@@ -256,7 +244,7 @@ test("every checked rule has a failing and a passing fact", () => {
     "RISK_HIGH_FOR_CI",
     { diff: { files: ["scripts/check.mjs"], labels: ["risk:low"] } },
     { diff: { files: ["scripts/check.mjs"], labels: ["risk:high"] } },
-    "the change touches ci.yml, nightly.yml, composite actions, check.mjs or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)"
+    "the change touches ci.yml, nightly.yml, composite actions, check.mjs or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high"
   )
   check(
     "SKIP_DECLARED",
@@ -318,12 +306,6 @@ test("every checked rule has a failing and a passing fact", () => {
     { commits: { oversize: "big.mjs (20001 bytes) " } },
     { commits: {} },
     "file(s) over the 20000-byte limit (5000 tokens): big.mjs (20001 bytes)"
-  )
-  check(
-    "NOT_HIGH_RISK",
-    { issue: { n: 90, risk: "normal" } },
-    { issue: { n: 90, risk: "high" } },
-    "#90 is normal risk, so no approval is needed"
   )
   check(
     "MISSING_FILE",
@@ -545,7 +527,6 @@ test("decide keeps table order, stops, and refuses a missing fact", () => {
       state: "OPEN",
       labels: ["ready-for-human"],
       risk: "high",
-      approved: false,
       assignees: ["someone"],
       type: "feat",
     },
@@ -560,7 +541,7 @@ test("decide keeps table order, stops, and refuses a missing fact", () => {
   }
   assert.deepEqual(
     decide("take", facts).refusals.map((row) => row.id),
-    ["READY_FOR_HUMAN", "HELD", "NEEDS_APPROVAL", "ASSIGNED"]
+    ["READY_FOR_HUMAN", "HELD", "ASSIGNED"]
   )
   const closed = decide("take", {
     ...facts,

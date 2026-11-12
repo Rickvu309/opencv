@@ -13,7 +13,6 @@ import { rulesJob } from "./rules/command.mjs"
 import { cleanup, save } from "./work.mjs"
 import { shot } from "./shot.mjs"
 import { board } from "./board.mjs"
-import { approve } from "./approve.mjs"
 import { brief } from "./brief.mjs"
 import { block, done } from "./done.mjs"
 import { replaceBody } from "./jobs/body.mjs"
@@ -254,12 +253,6 @@ function command(ctx, cmd, rest) {
           "usage: ocv-tools hook <commit-msg|pre-commit|pre-push>"
         )
       return hook(ctx, pos[0], pos.slice(1))
-    }
-    case "approve": {
-      const unknown = Object.keys(flags)[0]
-      if (unknown) unknownOption(unknown)
-      if (pos.length !== 1) throw new Error("usage: ocv-tools approve <n>")
-      return approve(ctx, issueNumber(pos[0], "approve <n>"))
     }
     case "board": {
       const unknown = Object.keys(flags).find((key) => key !== "--json")

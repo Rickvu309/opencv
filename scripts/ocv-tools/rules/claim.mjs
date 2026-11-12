@@ -83,27 +83,10 @@ function closed(facts) {
   return `#${issue.n} is closed${facts.report ? `\n${facts.report}` : ""}`
 }
 
-function notHighRisk(facts) {
-  const issue = facts.issue
-  if (!issue || issue.risk === "high") return null
-  return `#${issue.n} is ${issue.risk ?? "unset"} risk, so no approval is needed`
-}
-
-function notHighRiskFix(facts) {
-  const n = facts.issue?.n ?? "<n>"
-  return `No approval is needed. Run: scripts/ocv-tools.mjs take ${n}`
-}
-
 function held(facts) {
   const claim = facts.claim
   if (!claim || claim.state !== "live" || claim.agent === facts.me) return null
   return `#${facts.issue.n} is held by ${claim.agent} (last saved ${claim.idleMinutes} min ago; free after ${CLAIM_IDLE_MINUTES})`
-}
-
-function needsApproval(facts) {
-  const issue = facts.issue
-  if (!issue || issue.risk !== "high" || issue.approved) return null
-  return `#${issue.n} is risk:high and the owner has not posted an unedited /approve after its last edit`
 }
 
 function assigned(facts) {
@@ -126,25 +109,10 @@ function notOwner(facts) {
   }
   if (!("claim" in facts && "issue" in facts))
     throw new Error("NOT_OWNER needs a claim and an issue, or a pull request")
-  if ("account" in facts && facts.issue) {
-    if (facts.issue.approved) return null
-    const me = String(facts.account.login ?? "").trim()
-    const approvers = (facts.account.approvers ?? []).map((login) =>
-      String(login).toLowerCase()
-    )
-    if (approvers.includes(me.toLowerCase())) return null
-    return `signed in as ${me || "nobody"}, without admin rights to approve #${facts.issue.n}`
-  }
   if (!facts.claim || !facts.issue) return null
   if (holds(facts.claim, facts.me)) return null
   const who = facts.claim.agent ? `; ${facts.claim.agent} does` : ""
   return `you (${facts.me ?? "no agent id"}) do not hold #${facts.issue.n}${who}`
-}
-
-function notOwnerFix(facts) {
-  if (facts.account)
-    return "run this as an account with admin rights on the project"
-  return FIXES.NOT_OWNER
 }
 
 function lost(facts) {
@@ -220,21 +188,10 @@ export const issueRows = [
     id: "CLOSED",
     section: "1",
     says: "A closed issue is not a task, unless its pull request is already merged.",
-    at: ["take", "status", "approve", "finish"],
+    at: ["take", "status", "finish"],
     needs: ["issue"],
     stop: true,
     check: closed,
-  }),
-  rule({
-    id: "NOT_HIGH_RISK",
-    kind: "precondition",
-    section: "1",
-    says: "Approve is only for a risk:high issue. Any other risk needs no approval.",
-    at: ["approve"],
-    needs: ["issue"],
-    stop: true,
-    check: notHighRisk,
-    fix: notHighRiskFix,
   }),
 ]
 
@@ -248,14 +205,6 @@ export const claimRows = [
     check: held,
   }),
   rule({
-    id: "NEEDS_APPROVAL",
-    section: "1",
-    says: "A risk:high issue needs a fresh unedited owner /approve after its last edit.",
-    at: ["take"],
-    needs: ["issue"],
-    check: needsApproval,
-  }),
-  rule({
     id: "ASSIGNED",
     section: "1",
     says: "Do not take an issue assigned to someone else unless --take was agreed.",
@@ -267,11 +216,10 @@ export const claimRows = [
     id: "NOT_OWNER",
     kind: "precondition",
     section: "2",
-    says: "Only the holding agent can release an issue, and only a project admin can approve one.",
-    at: ["release", "approve", "merge"],
+    says: "Only the holding agent can release an issue.",
+    at: ["release", "merge"],
     needs: ["me"],
     check: notOwner,
-    fix: notOwnerFix,
   }),
   rule({
     id: "LOST",
