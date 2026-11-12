@@ -14,15 +14,13 @@ export const WORD_LIMITS = Object.freeze({
   maxInflatedPackageBytes: 64 * 1024 * 1024,
 })
 
-export const PAPER_WORD_LIMITS = WORD_LIMITS
-
 export const WORD_DOCUMENT_MEDIA_TYPE =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document" as const
 
-export const wordOwnerSchema = z.string().min(1)
-export const wordDocSchema = z.string().uuid()
-export const wordRevisionSchema = z.string().uuid()
-export const wordHandleSchema = z.string().uuid()
+const wordOwnerSchema = z.string().min(1)
+const wordDocSchema = z.string().uuid()
+const wordRevisionSchema = z.string().uuid()
+const wordHandleSchema = z.string().uuid()
 
 function hasControlCode(value: string): boolean {
   for (let i = 0; i < value.length; i++) {
@@ -44,7 +42,7 @@ const wordTextSchema = z
     "Text exceeds maximum size of 8 KiB."
   )
 
-export const wordSetTextOpSchema = z
+const wordSetTextOpSchema = z
   .object({
     op: z.literal("setText"),
     handle: wordHandleSchema,
@@ -52,7 +50,7 @@ export const wordSetTextOpSchema = z
   })
   .strict()
 
-export const wordInsertOpSchema = z
+const wordInsertOpSchema = z
   .object({
     op: z.literal("insert"),
     after: wordHandleSchema.nullable(),
@@ -60,14 +58,14 @@ export const wordInsertOpSchema = z
   })
   .strict()
 
-export const wordDeleteOpSchema = z
+const wordDeleteOpSchema = z
   .object({
     op: z.literal("delete"),
     handle: wordHandleSchema,
   })
   .strict()
 
-export const wordOpSchema = z.discriminatedUnion("op", [
+const wordOpSchema = z.discriminatedUnion("op", [
   wordSetTextOpSchema,
   wordInsertOpSchema,
   wordDeleteOpSchema,
@@ -90,19 +88,14 @@ export const wordBatchSchema = z
     return total <= WORD_LIMITS.maxBatchTextBytes
   }, "Total text bytes in batch exceed limit of 64 KiB.")
 
-export const wordConfirmedEditOpsSchema = z
-  .array(wordOpSchema)
-  .min(1)
-  .max(WORD_LIMITS.maxOpsPerConfirmedEdit)
-
-export const wordPieceSchema = z
+const wordPieceSchema = z
   .object({
     text: z.string(),
     editable: z.boolean(),
   })
   .strict()
 
-export const wordParagraphSchema = z
+const wordParagraphSchema = z
   .object({
     handle: wordHandleSchema,
     text: z.string(),
@@ -113,9 +106,9 @@ export const wordParagraphSchema = z
   })
   .strict()
 
-export const wordPageLabelSchema = z.enum(["cv", "letter"])
+const wordPageLabelSchema = z.enum(["cv", "letter"])
 
-export const wordPageSchema = z
+const wordPageSchema = z
   .object({
     doc: wordDocSchema,
     revision: wordRevisionSchema,
@@ -125,7 +118,7 @@ export const wordPageSchema = z
   })
   .strict()
 
-export const wordReasonSchema = z.enum([
+const wordReasonSchema = z.enum([
   "stale",
   "held",
   "plain",
@@ -136,7 +129,7 @@ export const wordReasonSchema = z.enum([
   "foreign",
 ])
 
-export const wordRefusalSchema = z
+const wordRefusalSchema = z
   .object({
     refused: z.literal(true),
     reason: wordReasonSchema,
@@ -154,7 +147,7 @@ export const wordUndoSchema = z
   })
   .strict()
 
-export const wordCommitSchema = z
+const wordCommitSchema = z
   .object({
     refused: z.literal(false),
     page: wordPageSchema,
@@ -162,7 +155,7 @@ export const wordCommitSchema = z
   })
   .strict()
 
-export const wordFileSchema = z
+const wordFileSchema = z
   .object({
     bytes: z.instanceof(Uint8Array),
     mediaType: z.literal(WORD_DOCUMENT_MEDIA_TYPE),
@@ -170,7 +163,7 @@ export const wordFileSchema = z
   })
   .strict()
 
-export const wordSourceReadSchema = z
+const wordSourceReadSchema = z
   .object({
     kind: z.literal("read"),
     doc: wordDocSchema,
@@ -178,7 +171,7 @@ export const wordSourceReadSchema = z
   })
   .strict()
 
-export const wordSourceMintSchema = z
+const wordSourceMintSchema = z
   .object({
     kind: z.literal("mint"),
     name: z.string(),
@@ -186,33 +179,18 @@ export const wordSourceMintSchema = z
   })
   .strict()
 
-export const wordSourceImportSchema = z
-  .object({
-    kind: z.literal("import"),
-    name: z.string(),
-    label: wordPageLabelSchema,
-    bytes: z.instanceof(Uint8Array),
-  })
-  .strict()
-
 export const wordSourceSchema = z.discriminatedUnion("kind", [
   wordSourceReadSchema,
   wordSourceMintSchema,
-  wordSourceImportSchema,
 ])
 
 export type WordOwner = z.infer<typeof wordOwnerSchema>
 export type WordDoc = z.infer<typeof wordDocSchema>
 export type WordRevision = z.infer<typeof wordRevisionSchema>
 export type WordHandle = z.infer<typeof wordHandleSchema>
-export type WordSetTextOp = z.infer<typeof wordSetTextOpSchema>
-export type WordInsertOp = z.infer<typeof wordInsertOpSchema>
-export type WordDeleteOp = z.infer<typeof wordDeleteOpSchema>
 export type WordOp = z.infer<typeof wordOpSchema>
 export type WordBatch = z.infer<typeof wordBatchSchema>
-export type WordPiece = z.infer<typeof wordPieceSchema>
 export type WordParagraph = z.infer<typeof wordParagraphSchema>
-export type WordPageLabel = z.infer<typeof wordPageLabelSchema>
 export type WordPage = z.infer<typeof wordPageSchema>
 export type WordReason = z.infer<typeof wordReasonSchema>
 export type WordRefusal = z.infer<typeof wordRefusalSchema>

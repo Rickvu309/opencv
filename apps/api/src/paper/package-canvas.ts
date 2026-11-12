@@ -10,6 +10,7 @@ import {
   paperPackageEditResultSchema,
   paperPackageProjectionSchema,
   type PaperCanvasCommit,
+  type WordBatch,
 } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 
@@ -35,25 +36,11 @@ import {
   stageWordPackage,
   wordPackageBasis,
 } from "./package-store.js"
+import { open, prepareBatch } from "./word/document.js"
 
 const loaded = createRequire(import.meta.url)(
   "../../../../scripts/lib/paper-canvas-bytes.mjs"
 ) as {
-  applyCanvasBytes: (
-    bytes: Uint8Array,
-    edit: { op: string; paragraph: string; at?: number; text?: string },
-    side: {
-      version: 2
-      paragraphs: { key: string; ordinal: number; textIds: string[] }[]
-    }
-  ) => {
-    status: string
-    bytes: Uint8Array
-    sidecar: {
-      version: 2
-      paragraphs: { key: string; ordinal: number; textIds: string[] }[]
-    }
-  }
   mintBlankBytes: () => Uint8Array
 }
 
@@ -105,10 +92,81 @@ async function resultOf(
   })
 }
 
-export async function prepareCanvas(
-  owner: string,
-  input: Exclude<PaperCanvasCommit, { op: "mint" }>
-) {
+type CanvasEdit = Exclude<PaperCanvasCommit, { op: "mint" }>
+
+const unavailableChange =
+  "This page change is not available. No document was changed."
+
+async function batchOf(owner: string, input: CanvasEdit): Promise<WordBatch> {
+  const at = { doc: input.docId, basedOn: input.basedOn }
+  if (input.op === "writeText")
+    return {
+      ...at,
+      ops: [{ op: "setText", handle: input.paragraph, text: input.text }],
+    }
+  if (input.op === "deleteParagraph")
+    return { ...at, ops: [{ op: "delete", handle: input.paragraph }] }
+  const page = await open(owner, {
+    kind: "read",
+    doc: input.docId,
+    at: input.basedOn,
+  })
+  if ("refused" in page) return packageFailure(unavailableChange)
+  const index = page.paragraphs.findIndex(
+    (paragraph) => paragraph.handle === input.paragraph
+  )
+  const target = page.paragraphs[index]
+  if (!target || target.held) return packageFailure(unavailableChange)
+  if (input.op === "split") {
+    const letters = [...target.text]
+    if (input.at > letters.length) return packageFailure(unavailableChange)
+    return {
+      ...at,
+      ops: [
+        {
+          op: "setText",
+          handle: target.handle,
+          text: letters.slice(0, input.at).join(""),
+        },
+        {
+          op: "insert",
+          after: target.handle,
+          text: letters.slice(input.at).join(""),
+        },
+      ],
+    }
+  }
+  const kept = page.paragraphs[index - 1]
+  if (!kept || kept.held) return packageFailure(unavailableChange)
+  return {
+    ...at,
+    ops: [
+      { op: "setText", handle: kept.handle, text: kept.text + target.text },
+      { op: "delete", handle: target.handle },
+    ],
+  }
+}
+
+const storeRefusals = new Set([
+  "IN_TRANSACTION",
+  "PROJECTION",
+  "PROJECTION_BYTES",
+  "STORE",
+])
+
+async function prepareMinted(owner: string, input: CanvasEdit) {
+  const drafted = await prepareBatch(owner, await batchOf(owner, input), input)
+  if (!drafted.refused) return drafted.prepared
+  if (drafted.reason === "stale")
+    return packageFailure(
+      "This Word document has changed. Read it again before editing."
+    )
+  return packageFailure(
+    storeRefusals.has(drafted.code ?? "") ? drafted.message : unavailableChange
+  )
+}
+
+export async function prepareCanvas(owner: string, input: CanvasEdit) {
   if (insideTransaction())
     return packageFailure("Prepare the Word edit before starting a save.")
   const { version, artifact } = await wordPackageBasis(
@@ -126,11 +184,9 @@ export async function prepareCanvas(
       )
     )
     .limit(1)
-  const minted = marked?.canvasProfile === PAPER_CANVAS_PROFILE
-  if (!minted && input.op === "writeText")
-    return packageFailure(
-      "This page change is not available. No document was changed."
-    )
+  if (marked?.canvasProfile === PAPER_CANVAS_PROFILE)
+    return prepareMinted(owner, input)
+  if (input.op === "writeText") return packageFailure(unavailableChange)
   const opened = await PaperPackage.open(
     artifact.bytes,
     {
@@ -153,14 +209,8 @@ export async function prepareCanvas(
       textIds: [...row.textIds],
     })),
   }
-  const applied =
-    minted || input.op === "writeText"
-      ? loaded.applyCanvasBytes(artifact.bytes, input, sidecarIn)
-      : applyEligibleBytes(artifact.bytes, input, sidecarIn)
-  if (applied.status !== "APPLIED")
-    return packageFailure(
-      "This page change is not available. No document was changed."
-    )
+  const applied = applyEligibleBytes(artifact.bytes, input, sidecarIn)
+  if (applied.status !== "APPLIED") return packageFailure(unavailableChange)
   const revision = randomUUID()
   const bytes = Buffer.from(applied.bytes)
   const context = {
