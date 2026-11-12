@@ -15,12 +15,14 @@ export function PaperLetterDraftingPage({
   draftName,
   attribution,
   streamedText,
+  continuing = false,
   onStop,
   onBack,
 }: {
   draftName: string
   attribution: string | null
   streamedText: string
+  continuing?: boolean
   onStop: () => void
   onBack: () => void
 }) {
@@ -76,7 +78,11 @@ export function PaperLetterDraftingPage({
           className="ms-auto flex shrink-0 items-center gap-[7px] px-2 text-[13.5px]"
         >
           <Spinner aria-hidden="true" className="size-[15px] shrink-0" />
-          <span className="sr-only md:not-sr-only">Coach is writing…</span>
+          {continuing ? (
+            <span>Coach is still writing your letter</span>
+          ) : (
+            <span className="sr-only md:not-sr-only">Coach is writing…</span>
+          )}
         </span>
         <span
           aria-hidden="true"

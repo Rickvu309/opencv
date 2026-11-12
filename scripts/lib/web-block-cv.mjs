@@ -29,6 +29,43 @@ function namesBlockCreate(text) {
   return text === BLOCK_CREATE || text.endsWith(`/commands/${BLOCK_CREATE}`)
 }
 
+function templateTail(node) {
+  const value = unwrap(node)
+  if (!value || !ts.isTemplateExpression(value)) return null
+  return value.templateSpans.at(-1).literal.text
+}
+
+function namesBlockCreateValue(node, names) {
+  const text = literalText(node)
+  if (text !== null) return namesBlockCreate(text)
+  const tail = templateTail(node)
+  if (tail !== null) return tail.endsWith(`/commands/${BLOCK_CREATE}`)
+  const value = unwrap(node)
+  if (!value) return false
+  if (ts.isIdentifier(value)) return names.has(value.text)
+  const member = memberKey(value)
+  return member !== null && names.has(member)
+}
+
+function memberKey(node) {
+  if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression))
+    return `${node.expression.text}.${node.name.text}`
+  if (
+    ts.isElementAccessExpression(node) &&
+    ts.isIdentifier(node.expression) &&
+    literalText(node.argumentExpression) !== null
+  )
+    return `${node.expression.text}.${literalText(node.argumentExpression)}`
+  return null
+}
+
+function propertyKey(property) {
+  if (!property.name) return null
+  if (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name))
+    return property.name.text
+  return null
+}
+
 function blockCreateNames(source) {
   const initializers = new Map()
   const collect = (node) => {
@@ -38,6 +75,13 @@ function blockCreateNames(source) {
       node.initializer
     ) {
       initializers.set(node.name.text, node.initializer)
+      const object = unwrap(node.initializer)
+      if (object && ts.isObjectLiteralExpression(object))
+        for (const property of object.properties) {
+          const key = propertyKey(property)
+          if (key !== null && ts.isPropertyAssignment(property))
+            initializers.set(`${node.name.text}.${key}`, property.initializer)
+        }
     }
     ts.forEachChild(node, collect)
   }
@@ -48,12 +92,7 @@ function blockCreateNames(source) {
     grew = false
     for (const [name, initializer] of initializers) {
       if (names.has(name)) continue
-      const text = literalText(initializer)
-      const value = unwrap(initializer)
-      if (
-        (text !== null && namesBlockCreate(text)) ||
-        (value && ts.isIdentifier(value) && names.has(value.text))
-      ) {
+      if (namesBlockCreateValue(initializer, names)) {
         names.add(name)
         grew = true
       }
@@ -71,12 +110,7 @@ export function detectWebBlockCv(text, path = "source.tsx") {
     ts.ScriptKind.TSX
   )
   const aliases = blockCreateNames(source)
-  const startsBlock = (argument) => {
-    const text = literalText(argument)
-    if (text !== null) return namesBlockCreate(text)
-    const value = unwrap(argument)
-    return Boolean(value && ts.isIdentifier(value) && aliases.has(value.text))
-  }
+  const startsBlock = (argument) => namesBlockCreateValue(argument, aliases)
   const hits = []
   const visit = (node) => {
     if (ts.isCallExpression(node) && node.arguments.some(startsBlock)) {

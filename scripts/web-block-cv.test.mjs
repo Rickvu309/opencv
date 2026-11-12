@@ -62,6 +62,29 @@ await runContractCommand(queryClient, CANVAS, input)
 if (path === "/api/commands/paper.create") respond()`).length,
     0
   )
+  assert.equal(
+    detect('await fetch(`${API}/commands/paper.create`, { method: "POST" })')
+      .length,
+    1
+  )
+  assert.equal(
+    detect(`const C = { create: "paper.create", mint: "paper.canvas" }
+await run(C.create, input)`).length,
+    1
+  )
+  assert.equal(
+    detect(`const C = { create: "paper.create" } as const
+const command = C["create"]
+await run(command, input)`).length,
+    1
+  )
+  assert.equal(
+    detect(`const C = { create: "paper.create", mint: "paper.canvas" }
+await run(C.mint, input)
+await fetch(\`\${API}/commands/paper.canvas\`, { method: "POST" })
+const label = labels[\`\${kind}.create\`]`).length,
+    0
+  )
   const historic = execFileSync(
     "git",
     ["show", "1565bbf7:apps/web/src/features/paper/paper-new-dialog.tsx"],

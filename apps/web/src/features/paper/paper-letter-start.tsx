@@ -25,6 +25,7 @@ import { useQueryClient } from "@tanstack/react-query"
 
 import {
   extractLetterAttachment,
+  followPaperTurn,
   PaperLimitError,
   stopPaperChat,
   streamPaperTurn,
@@ -90,6 +91,7 @@ export function PaperLetterStart({
   onCreated,
   onDraftingStart,
   onDraftText,
+  onDraftContinues,
   onDraftingEnd,
   stopRef,
 }: {
@@ -97,6 +99,7 @@ export function PaperLetterStart({
   onCreated: (id: string) => void
   onDraftingStart?: (draftName: string, attribution: string | null) => void
   onDraftText?: (text: string) => void
+  onDraftContinues?: () => void
   onDraftingEnd?: () => void
   stopRef?: MutableRefObject<(() => void) | null>
 }) {
@@ -206,20 +209,32 @@ export function PaperLetterStart({
       try {
         if (controller.signal.aborted)
           throw new DOMException("Stopped", "AbortError")
-        await streamPaperTurn({
+        const showText = (text: string) => {
+          if (activeDraft.current !== operation || controller.signal.aborted)
+            return
+          operation.text = text
+          dispatch({ type: "draft_text_streamed", text })
+          onDraftText?.(text)
+        }
+        const end = await streamPaperTurn({
           queryClient,
           chatId: chat.id,
           text: turnText,
           context: selected ? [{ kind: "job", id: selected.id }] : undefined,
           signal: controller.signal,
-          onText: (delta) => {
-            if (activeDraft.current !== operation || controller.signal.aborted)
-              return
-            operation.text += delta
-            dispatch({ type: "draft_text_streamed", text: operation.text })
-            onDraftText?.(operation.text)
-          },
+          onText: (delta) => showText(operation.text + delta),
         })
+        if (end === "continuing" && activeDraft.current === operation) {
+          onDraftContinues?.()
+          showText(
+            await followPaperTurn({
+              queryClient,
+              chatId: chat.id,
+              signal: controller.signal,
+              onText: showText,
+            })
+          )
+        }
       } catch (err) {
         if (!operation.stopped || !controller.signal.aborted) throw err
       }

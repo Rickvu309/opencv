@@ -1,0 +1,13 @@
+{
+  "id": "paper-turn-end",
+  "file": "scripts/paper-turn-end.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-turn-end.mjs",
+    "export": "detectPaperTurnEnd"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "ca910609",
+    "path": "apps/web/src/features/paper/paper-letter-start.tsx"
+  }
+}

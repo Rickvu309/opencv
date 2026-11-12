@@ -17,6 +17,7 @@ type DraftingState = {
   draftName: string
   attribution: string | null
   text: string
+  continuing: boolean
 }
 
 type DraftingAction =
@@ -26,6 +27,7 @@ type DraftingAction =
       attribution: string | null
     }
   | { type: "drafting_text"; text: string }
+  | { type: "drafting_continues" }
   | { type: "drafting_ended" }
 
 function draftingReducer(
@@ -38,9 +40,12 @@ function draftingReducer(
         draftName: action.draftName,
         attribution: action.attribution,
         text: "",
+        continuing: false,
       }
     case "drafting_text":
       return state !== null ? { ...state, text: action.text } : state
+    case "drafting_continues":
+      return state !== null ? { ...state, continuing: true } : state
     case "drafting_ended":
       return null
   }
@@ -131,6 +136,9 @@ export function PaperLetterStartPage({
               onDraftText={(text) => {
                 dispatch({ type: "drafting_text", text })
               }}
+              onDraftContinues={() => {
+                dispatch({ type: "drafting_continues" })
+              }}
               onDraftingEnd={() => {
                 dispatch({ type: "drafting_ended" })
               }}
@@ -145,6 +153,7 @@ export function PaperLetterStartPage({
           draftName={draftingState.draftName}
           attribution={draftingState.attribution}
           streamedText={draftingState.text}
+          continuing={draftingState.continuing}
           onStop={() => stopRef.current?.()}
           onBack={onBack}
         />

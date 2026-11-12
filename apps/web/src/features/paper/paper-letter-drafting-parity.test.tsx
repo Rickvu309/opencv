@@ -121,7 +121,7 @@ function fail(status: number, code: string, message: string) {
 }
 
 function installFetch(
-  mode: "stream" | "stop" | "partial" | "error" | "notice" | "late" | "long"
+  mode: "stream" | "stop" | "partial" | "error" | "late" | "long"
 ) {
   const minted = {
     generation: "package",
@@ -150,21 +150,13 @@ function installFetch(
           })
         })
       }
-      if (mode === "notice" || mode === "long") {
-        const draft =
-          mode === "long"
-            ? Array.from(
-                { length: 101 },
-                (_, index) => `Paragraph ${index + 1}.`
-              ).join("\n\n")
-            : "Dear hiring team,\n\nI ran the spring campaign."
+      if (mode === "long") {
+        const draft = Array.from(
+          { length: 101 },
+          (_, index) => `Paragraph ${index + 1}.`
+        ).join("\n\n")
         const frames = [
           `event: text-delta\ndata: ${JSON.stringify({ text: draft })}\n\n`,
-          ...(mode === "notice"
-            ? [
-                `event: notice\ndata: ${JSON.stringify({ text: "Coach is still working. Reload this Chat to follow or stop it." })}\n\n`,
-              ]
-            : []),
           `event: message-end\ndata: ${JSON.stringify({ chatId: "chat-1" })}\n\n`,
         ]
         const stream = new ReadableStream({
@@ -432,22 +424,6 @@ async function draftForJob(onCreated: () => void) {
   )
   fireEvent.click(screen.getByRole("button", { name: "Draft letter" }))
 }
-
-it("keeps the still-working notice out of a draft that crosses 30 seconds", async () => {
-  const fetch = installFetch("notice")
-  const onCreated = vi.fn()
-  await draftForJob(onCreated)
-  await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith("letter-1"))
-  expect(mintInputs(fetch)).toEqual([
-    {
-      command: "paper.canvas",
-      input: expect.objectContaining({
-        lines: ["Dear hiring team,", "I ran the spring campaign."],
-      }),
-    },
-  ])
-  expect(screen.queryByText(/still working/)).toBeNull()
-})
 
 it("saves nothing the Coach sends after the person clicks Stop", async () => {
   const fetch = installFetch("late")
