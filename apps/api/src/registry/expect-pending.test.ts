@@ -30,7 +30,6 @@ const FROZEN_PENDING = [
   "paper.create",
   "paper.duplicate",
   "paper.edit",
-  "paper.import",
   "paper.rename",
   "paper.replace",
   "paper.restore",

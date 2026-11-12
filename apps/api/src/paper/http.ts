@@ -21,7 +21,11 @@ import { readJsonBody } from "../http-json.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import { CommandError } from "../registry/errors.js"
 import { registry } from "../registry/registry.js"
-import { extractLetterAttachment, parseImportLink } from "./import-parse.js"
+import {
+  classifyImport,
+  extractLetterAttachment,
+  parseImportLink,
+} from "./import-parse.js"
 import { importedWordPage } from "./import-word.js"
 import { createPaperPackageRoutes } from "./package-http.js"
 import {
@@ -34,6 +38,14 @@ import {
 
 function person(userId: string) {
   return personActor(userId)
+}
+
+function refuseCancelledImport(signal: AbortSignal) {
+  if (signal.aborted)
+    throw new CommandError(
+      ERROR_CODES.VALIDATION_ERROR,
+      "The import was cancelled. No document was made."
+    )
 }
 
 const PHOTO_EXTENSION: Record<string, string> = {
@@ -267,15 +279,19 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
     }
     let bytes: Buffer | undefined = Buffer.from(await file.arrayBuffer())
     try {
-      const word = file.name.toLowerCase().endsWith(".docx")
-        ? { name: file.name, bytes, notice: null }
-        : await importedWordPage({
-            name: file.name,
-            mediaType: file.type || "application/octet-stream",
-            bytes,
-          })
+      const upload = {
+        name: file.name,
+        mediaType: file.type || "application/octet-stream",
+        bytes,
+      }
+      const word =
+        file.name.toLowerCase().endsWith(".docx") ||
+        classifyImport(upload) === "docx"
+          ? { name: file.name, bytes, notice: null }
+          : await importedWordPage(upload)
       bytes = undefined
       void bytes
+      refuseCancelledImport(c.req.raw.signal)
       const input = paperPackageStageInputSchema.safeParse({
         requestId: c.req.header("idempotency-key") ?? createId(),
         name: word.name,
@@ -291,6 +307,7 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
         input.data,
         word.bytes
       )
+      refuseCancelledImport(c.req.raw.signal)
       const imported = await registry.execute({
         name: catalog["paper.import"].name,
         input: { generation: "package", stageId: staged.stageId },

@@ -1,24 +1,27 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { files, paperDocs } from "../db/schema.js"
+import { files, paperDocs, paperPackageHeads } from "../db/schema.js"
 import {
   createMigratedTestDb,
   createTestApp,
   signUp,
   testWebOrigin,
 } from "../test/harness.js"
-import { pagedPdf, textDocx, textPdf } from "./import-fixtures.test.js"
+import {
+  pagedPdf,
+  publishedText,
+  textDocx,
+  textPdf,
+} from "./import-fixtures.test.js"
 import {
   IMPORT_FAILED_MESSAGE,
   IMPORT_GENERIC_MESSAGE,
+  IMPORT_PDF_PAGES_MESSAGE,
   importParsers,
 } from "./import-parse.js"
 import { IMPORT_FILE_CAP, IMPORT_SIZE_MESSAGE } from "./store.js"
 
-const WORD =
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-
-type Stored = { paper: unknown }
+type Published = { generation: string; docId: string }
 
 function formFile(bytes: Buffer, name: string, type: string) {
   const form = new FormData()
@@ -53,34 +56,43 @@ afterEach(() => {
 })
 
 describe("paper import bounds", () => {
-  it("reads only the first 20 pages of a 200-page PDF", async () => {
+  it("refuses a PDF over 20 pages instead of dropping pages, and reads all 20 of a 20-page PDF", async () => {
     const { db, client } = await createMigratedTestDb()
     const app = createTestApp(db)
     const owner = await signUp(app, {
       name: "Page",
       email: "page-import@example.com",
     })
-    const pages = Array.from({ length: 200 }, (_, index) => {
+    const long = await postFile(
+      app,
+      owner.cookie,
+      pagedPdf(Array.from({ length: 21 }, (_, index) => `Page ${index}`)),
+      "many.pdf",
+      "application/pdf"
+    )
+    expect(long.status).toBe(415)
+    expect(await long.json()).toMatchObject({
+      error: { code: "FILE_UNSUPPORTED", message: IMPORT_PDF_PAGES_MESSAGE },
+    })
+    expect(await db.select().from(paperPackageHeads)).toEqual([])
+    expect(await db.select().from(files)).toEqual([])
+    const pages = Array.from({ length: 20 }, (_, index) => {
       if (index === 0) return "FIRST-PAGE"
       if (index === 19) return "CAP-PAGE"
-      if (index === 20) return "PAST-CAP"
-      if (index === 199) return "LAST-PAGE"
       return ""
     })
     const response = await postFile(
       app,
       owner.cookie,
       pagedPdf(pages),
-      "many.pdf",
+      "twenty.pdf",
       "application/pdf"
     )
     expect(response.status).toBe(200)
-    const body = (await response.json()) as { data: Stored }
-    const text = JSON.stringify(body.data.paper)
+    const body = (await response.json()) as { data: Published }
+    const text = await publishedText(db, body.data.docId)
     expect(text).toContain("FIRST-PAGE")
     expect(text).toContain("CAP-PAGE")
-    expect(text).not.toContain("PAST-CAP")
-    expect(text).not.toContain("LAST-PAGE")
     await client.close()
   })
 
@@ -189,104 +201,47 @@ describe("paper import bounds", () => {
     release("Campus newsletter")
     await pending.catch(() => undefined)
     expect(await db.select().from(paperDocs)).toEqual([])
+    expect(await db.select().from(paperPackageHeads)).toEqual([])
     expect(await db.select().from(files)).toEqual([])
     await client.close()
   })
 
-  it("stores at most 200 KB of DOCX text and refuses a zip with too many entries", async () => {
-    const { db, client } = await createMigratedTestDb()
-    const app = createTestApp(db)
-    const owner = await signUp(app, {
-      name: "Doc",
-      email: "doc-import@example.com",
-    })
-    const capped = await postFile(
-      app,
-      owner.cookie,
-      textDocx(`${"A".repeat(200_000)}DOCX-TAIL`),
-      "long",
-      WORD
-    )
-    expect(capped.status).toBe(200)
-    const cappedBody = (await capped.json()) as { data: Stored }
-    const text = JSON.stringify(cappedBody.data.paper)
-    expect(text).toContain("A")
-    expect(text).not.toContain("DOCX-TAIL")
-
-    const bomb = await postFile(
-      app,
-      owner.cookie,
-      textDocx("Hello zip cap", 300),
-      "bomb",
-      WORD
-    )
-    expect(bomb.status).toBe(400)
-    expect(await bomb.json()).toMatchObject({
-      error: { message: IMPORT_FAILED_MESSAGE },
-    })
-    expect(await db.select().from(files)).toHaveLength(1)
-    await client.close()
-  })
-
-  it("sniffs PDF, DOCX, and text bytes instead of the declared type", async () => {
+  it("reads Word, PDF and text by their bytes instead of the declared type or name", async () => {
     const { db, client } = await createMigratedTestDb()
     const app = createTestApp(db)
     const owner = await signUp(app, {
       name: "Sniff",
       email: "sniff-import@example.com",
     })
-
-    const pdf = await postFile(
-      app,
-      owner.cookie,
-      textPdf("Campus newsletter"),
-      "sample.pdf",
-      ""
-    )
-    expect(pdf.status).toBe(200)
-    const pdfBody = (await pdf.json()) as { data: Stored }
-    expect(JSON.stringify(pdfBody.data.paper)).toContain("Campus newsletter")
-
-    const docx = await postFile(
-      app,
-      owner.cookie,
-      textDocx("Weekly newsletter for students"),
-      "notes",
-      ""
-    )
-    expect(docx.status).toBe(200)
-    const docxBody = (await docx.json()) as { data: Stored }
-    expect(JSON.stringify(docxBody.data.paper)).toContain(
-      "Weekly newsletter for students"
-    )
-
-    const renamed = await postFile(
-      app,
-      owner.cookie,
-      Buffer.from("Plain sentence from a text file"),
-      "notes.pdf",
-      "application/pdf"
-    )
-    expect(renamed.status).toBe(200)
-    const renamedBody = (await renamed.json()) as { data: Stored }
-    expect(JSON.stringify(renamedBody.data.paper)).toContain(
-      "Plain sentence from a text file"
-    )
-
-    const text = await postFile(
-      app,
-      owner.cookie,
-      Buffer.from("First paragraph"),
-      "notes.txt",
-      ""
-    )
-    expect(text.status).toBe(200)
-    const textBody = (await text.json()) as { data: Stored }
-    expect(JSON.stringify(textBody.data.paper)).toContain("First paragraph")
+    const cases = [
+      [textPdf("Campus newsletter"), "sample.pdf", "", "Campus newsletter"],
+      [
+        textDocx("Weekly newsletter for students"),
+        "notes",
+        "",
+        "Weekly newsletter for students",
+      ],
+      [
+        Buffer.from("Plain sentence from a text file"),
+        "notes.pdf",
+        "application/pdf",
+        "Plain sentence from a text file",
+      ],
+      [Buffer.from("First paragraph"), "notes.txt", "", "First paragraph"],
+    ] as const
+    for (const [bytes, name, type, words] of cases) {
+      const response = await postFile(app, owner.cookie, bytes, name, type)
+      expect(response.status).toBe(200)
+      const body = (await response.json()) as { data: Published }
+      expect(body.data.generation).toBe("package")
+      expect(await publishedText(db, body.data.docId)).toContain(words)
+    }
+    expect(await db.select().from(paperDocs)).toEqual([])
+    expect(await db.select().from(paperPackageHeads)).toHaveLength(4)
     await client.close()
   })
 
-  it("leaves no document when the request aborts during the insert", async () => {
+  it("makes no Word page when the request is cancelled after the file is read", async () => {
     const { db, client } = await createMigratedTestDb()
     const app = createTestApp(db)
     const owner = await signUp(app, {
@@ -294,7 +249,10 @@ describe("paper import bounds", () => {
       email: "mid-import@example.com",
     })
     const controller = new AbortController()
-    importParsers.onInsert = () => controller.abort()
+    importParsers.pdfText = async () => {
+      controller.abort()
+      return "Campus newsletter"
+    }
     const response = await Promise.resolve(
       app.request("/api/paper/import", {
         method: "POST",
@@ -309,6 +267,7 @@ describe("paper import bounds", () => {
     ).catch(() => undefined)
     if (response) expect(response.status).not.toBe(200)
     expect(await db.select().from(paperDocs)).toEqual([])
+    expect(await db.select().from(paperPackageHeads)).toEqual([])
     expect(await db.select().from(files)).toEqual([])
     await client.close()
   })
@@ -398,10 +357,10 @@ describe("paper import bounds", () => {
       "text/plain"
     )
     expect(text.status).toBe(200)
-    const body = (await text.json()) as { data: Stored }
-    expect(JSON.stringify(body.data.paper)).toContain("Café résumé")
-    expect(await db.select().from(paperDocs)).toHaveLength(1)
-    expect(await db.select().from(files)).toHaveLength(1)
+    const body = (await text.json()) as { data: Published }
+    expect(await publishedText(db, body.data.docId)).toContain("Café résumé")
+    expect(await db.select().from(paperDocs)).toEqual([])
+    expect(await db.select().from(paperPackageHeads)).toHaveLength(1)
     await client.close()
   })
 })
