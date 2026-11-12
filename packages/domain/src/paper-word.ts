@@ -144,6 +144,34 @@ export const wordSourceSchema = z.discriminatedUnion("kind", [
   wordSourceMintSchema,
 ])
 
+const wordMarkSchema = z.enum(["bold", "italic", "underline", "link"])
+
+const wordListLevelSchema = z.number().int().min(0).max(8)
+
+const wordFormSchema = z.union([
+  z
+    .object({ kind: z.literal("title") })
+    .strict()
+    .readonly(),
+  z
+    .object({
+      kind: z.literal("heading"),
+      level: z.number().int().min(1).max(6),
+    })
+    .strict()
+    .readonly(),
+  z
+    .object({ kind: z.literal("bullet"), level: wordListLevelSchema })
+    .strict()
+    .readonly(),
+  z
+    .object({ kind: z.literal("number"), level: wordListLevelSchema })
+    .strict()
+    .readonly(),
+])
+
+const wordAlignSchema = z.enum(["center", "end", "justify"])
+
 const wordParagraphSchema = z
   .object({
     handle: wordHandleSchema,
@@ -151,7 +179,11 @@ const wordParagraphSchema = z
     pieces: z
       .array(
         z
-          .object({ text: z.string(), editable: z.boolean() })
+          .object({
+            text: z.string(),
+            editable: z.boolean(),
+            marks: z.array(wordMarkSchema).min(1).readonly().optional(),
+          })
           .strict()
           .readonly()
       )
@@ -159,6 +191,8 @@ const wordParagraphSchema = z
     held: z.boolean(),
     message: z.string(),
     code: z.string().nullable(),
+    form: wordFormSchema.optional(),
+    align: wordAlignSchema.optional(),
   })
   .strict()
   .readonly()
@@ -185,6 +219,12 @@ export type WordSource = z.infer<typeof wordSourceSchema>
 export type WordOwner = string
 
 export type WordParagraph = z.infer<typeof wordParagraphSchema>
+
+export type WordMark = z.infer<typeof wordMarkSchema>
+
+export type WordForm = z.infer<typeof wordFormSchema>
+
+export type WordAlign = z.infer<typeof wordAlignSchema>
 
 export type WordPage = z.infer<typeof wordPageSchema>
 

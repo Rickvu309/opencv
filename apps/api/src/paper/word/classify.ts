@@ -1,6 +1,13 @@
 import { createRequire } from "node:module"
 
-import type { WordParagraph } from "@workspace/domain"
+import type { WordMark, WordParagraph } from "@workspace/domain"
+
+import {
+  marksOf,
+  packageLook,
+  paragraphLook,
+  type WordPackageLook,
+} from "./look.js"
 
 type WordPiece = WordParagraph["pieces"][number]
 
@@ -25,6 +32,7 @@ const canvas = createRequire(import.meta.url)(
   paragraphsOf: (bytes: Uint8Array) => WordParagraphView[]
   contentOf: (paragraph: WordParagraphView) => string
   isCarrier: (paragraph: WordParagraphView) => boolean
+  member: (bytes: Uint8Array, name: string) => string
 }
 
 export type WordRun = {
@@ -281,21 +289,49 @@ export function classifyParagraph(view: WordParagraphView): WordDisposition {
 }
 
 function piecesOf(line: WordLine): WordPiece[] {
-  const pieces: { text: string; props: string | null }[] = []
+  const pieces: { text: string; props: string | null; marks: WordMark[] }[] = []
   for (const part of line.parts) {
     if (part.kept) {
       if (part.kept.text !== "")
-        pieces.push({ text: part.kept.text, props: null })
+        pieces.push({
+          text: part.kept.text,
+          props: null,
+          marks: marksOf(
+            part.kept.xml,
+            part.kept.xml.startsWith("<w:hyperlink")
+          ),
+        })
       continue
     }
     const last = pieces.at(-1)
     if (last && last.props === part.run.props) last.text += part.run.text
-    else pieces.push({ text: part.run.text, props: part.run.props })
+    else
+      pieces.push({
+        text: part.run.text,
+        props: part.run.props,
+        marks: marksOf(part.run.props),
+      })
   }
   return pieces.map((piece) => ({
     text: piece.text,
     editable: piece.props !== null,
+    ...(piece.marks.length > 0 ? { marks: piece.marks } : {}),
   }))
+}
+
+function partOf(bytes: Uint8Array, name: string): string | null {
+  try {
+    return canvas.member(bytes, name)
+  } catch {
+    return null
+  }
+}
+
+function lookOf(bytes: Uint8Array): WordPackageLook {
+  return packageLook(
+    partOf(bytes, "word/styles.xml"),
+    partOf(bytes, "word/numbering.xml")
+  )
 }
 
 export function projectParagraphs(
@@ -304,6 +340,7 @@ export function projectParagraphs(
 ): WordParagraph[] | null {
   const views = paragraphsOf(bytes)
   if (views.length !== keys.length) return null
+  const look = lookOf(bytes)
   return views.flatMap((view, index): WordParagraph[] => {
     const handle = keys[index] as string
     const disposition = classifyParagraph(view)
@@ -327,6 +364,7 @@ export function projectParagraphs(
         held: false,
         message: "",
         code: null,
+        ...paragraphLook(disposition.line.props, look),
       },
     ]
   })
