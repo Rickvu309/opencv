@@ -71,7 +71,11 @@ describe("a minted writing page in the document list", () => {
       const ownerId = parseUserId(owner)
       const listed = await listPapers(ownerId)
       const page = listed.find((item) => item.id === head.docId)
-      expect(page).toMatchObject({ name: "Page.docx", kind: "letter" })
+      expect(page).toMatchObject({
+        name: "Page.docx",
+        kind: "letter",
+        format: "word",
+      })
       expect(listed.some((item) => item.name === "Imported.docx")).toBe(false)
       expect(
         (await listPapers(parseUserId(stranger))).some(

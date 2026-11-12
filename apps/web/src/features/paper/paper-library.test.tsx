@@ -3,7 +3,11 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { render } from "@/test/render-with-client.tsx"
-import { paperPackageMetadataSchema, type PaperView } from "@workspace/domain"
+import {
+  paperPackageMetadataSchema,
+  parsePaperId,
+  type PaperView,
+} from "@workspace/domain"
 
 import { PaperLibrary } from "./paper-library.tsx"
 import {
@@ -337,6 +341,31 @@ describe("Paper library", () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
     expect(print).toHaveBeenCalledTimes(1)
+  })
+
+  it("offers no Download PDF for a Word page, which has no print body", async () => {
+    const print = vi.spyOn(window, "print").mockImplementation(() => undefined)
+    const wordPage: PaperView = {
+      ...cv("CV.docx"),
+      id: parsePaperId("33333333-3333-4333-8333-333333333333"),
+      format: "word",
+    }
+    renderLibrary([wordPage, cv("Block CV")])
+    fireEvent.click(screen.getByRole("button", { name: "CV.docx menu" }))
+    expect(
+      await screen.findByRole("menuitem", { name: "Open" })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("menuitem", { name: "Download PDF" })
+    ).not.toBeInTheDocument()
+    fireEvent.keyDown(document.activeElement ?? document.body, {
+      key: "Escape",
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Block CV menu" }))
+    expect(
+      await screen.findByRole("menuitem", { name: "Download PDF" })
+    ).toBeInTheDocument()
+    expect(print).not.toHaveBeenCalled()
   })
 
   it("prints once in strict mode and unmounts the library sheet", async () => {

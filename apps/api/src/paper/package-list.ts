@@ -36,6 +36,7 @@ function packagePaper(row: {
     pageChoice: "unset",
     isFavorite: false,
     sourceFileId: null,
+    format: "word",
     createdAt: when,
     updatedAt: when,
   })
