@@ -1,4 +1,5 @@
 import { Component, type ReactNode } from "react"
+import { blankLetter } from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, screen } from "@testing-library/react"
 
@@ -39,6 +40,23 @@ class EditorBoundary extends Component<
 
 const WORD_PAGE = "22222222-2222-4222-8222-222222222222"
 
+const wordPageListed = {
+  id: WORD_PAGE,
+  name: "Cover letter.docx",
+  kind: "letter",
+  templateId: "simple",
+  status: "draft",
+  paper: blankLetter(),
+  contentVersion: 1,
+  checks: [],
+  pageChoice: "unset",
+  isFavorite: false,
+  sourceFileId: null,
+  format: "word",
+  createdAt: "2026-11-13T00:00:00.000Z",
+  updatedAt: "2026-11-13T00:00:00.000Z",
+}
+
 function json(data: unknown) {
   return Promise.resolve(Response.json({ ok: true, data }))
 }
@@ -46,6 +64,9 @@ function json(data: unknown) {
 function stubWordPage() {
   vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
     const url = String(input)
+    if (url.endsWith("/api/paper")) {
+      return json([wordPageListed])
+    }
     if (url.includes(`/api/paper/${WORD_PAGE}`)) {
       return Promise.resolve(
         Response.json(

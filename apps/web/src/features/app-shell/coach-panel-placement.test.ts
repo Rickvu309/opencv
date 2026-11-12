@@ -1,38 +1,83 @@
+import { readFileSync } from "node:fs"
+import path from "node:path"
+import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
 
 import {
+  COACH_PANEL_CLEARANCE,
   COACH_PANEL_DOCK_CLEARANCE,
   COACH_PANEL_HEADER_BOTTOM,
+  COACH_PANEL_HEIGHT,
+  COACH_PANEL_MIN_HEIGHT,
+  COACH_PANEL_ROOM_QUERY,
+  COACH_PANEL_SHORTEST_WINDOW,
   coachPanelBox,
-  coachPanelFloatingStyle,
+  type CoachPanelBox,
 } from "./coach-panel-placement.ts"
 
+const here = path.dirname(fileURLToPath(import.meta.url))
 const WIDTHS = [820, 1024, 1366, 1440, 1920]
-const HEIGHTS = Array.from({ length: 13 }, (_, step) => 480 + step * 50).concat(
-  [512, 657, 900, 1080]
+const HEIGHTS = Array.from({ length: 40 }, (_, step) => 300 + step * 20).concat(
+  [512, 657, 900, 1080, 436, 437]
 )
 const STATES = ["empty", "with a chat", "approval waiting"] as const
 const DOCK_HEIGHT = 40
 
-type Box = { top: number; bottom: number; height: number }
+type Place = (height: number) => CoachPanelBox
 
 const GRID = WIDTHS.flatMap((width) =>
   HEIGHTS.flatMap((height) => STATES.map((state) => ({ width, height, state })))
 )
 
-function overlaps(place: (height: number) => Box) {
+const label = ({ width, height, state }: (typeof GRID)[number]) =>
+  `${width}x${height} ${state}`
+
+function overlaps(place: Place) {
   return GRID.filter(({ height }) => {
     const box = place(height)
     return (
-      box.top < COACH_PANEL_HEADER_BOTTOM || box.bottom > height - DOCK_HEIGHT
+      box.layout === "floating" &&
+      (box.top < COACH_PANEL_HEADER_BOTTOM || box.bottom > height - DOCK_HEIGHT)
     )
-  }).map(({ width, height, state }) => `${width}x${height} ${state}`)
+  }).map(label)
 }
 
-function placementBeforeTheFix(height: number): Box {
+function composerOutOfReach(place: Place) {
+  return GRID.filter(({ height }) => {
+    const box = place(height)
+    if (box.layout === "sheet") return box.top !== 0 || box.height !== height
+    return box.height < COACH_PANEL_MIN_HEIGHT
+  }).map(label)
+}
+
+function placementBeforeTheFix(height: number): CoachPanelBox {
   const panelHeight = Math.min(600, Math.max(320, height - 56))
   const bottom = height - 48
-  return { top: bottom - panelHeight, bottom, height: panelHeight }
+  return {
+    layout: "floating",
+    top: bottom - panelHeight,
+    bottom,
+    height: panelHeight,
+  }
+}
+
+function placementWithoutAFloor(height: number): CoachPanelBox {
+  const bottom = height - 48
+  const panelHeight = Math.max(0, Math.min(600, bottom - 69))
+  return {
+    layout: "floating",
+    top: bottom - panelHeight,
+    bottom,
+    height: panelHeight,
+  }
+}
+
+const shellSource = () => readFileSync(path.join(here, "app-shell.tsx"), "utf8")
+
+function floatingClass() {
+  const source = shellSource()
+  const found = source.match(/floating &&\s*"([^"]+)"/)
+  return found?.[1] ?? ""
 }
 
 describe("the floating Coach panel sits between the page header and the dock", () => {
@@ -41,8 +86,25 @@ describe("the floating Coach panel sits between the page header and the dock", (
     expect(overlaps(coachPanelBox)).toEqual([])
   })
 
+  it("keeps the composer in reach down to a 300px window", () => {
+    expect(composerOutOfReach(coachPanelBox)).toEqual([])
+    expect(coachPanelBox(300).layout).toBe("sheet")
+    expect(coachPanelBox(COACH_PANEL_SHORTEST_WINDOW - 1).layout).toBe("sheet")
+    expect(coachPanelBox(COACH_PANEL_SHORTEST_WINDOW)).toEqual({
+      layout: "floating",
+      top: COACH_PANEL_HEADER_BOTTOM + 8,
+      bottom: COACH_PANEL_SHORTEST_WINDOW - COACH_PANEL_DOCK_CLEARANCE,
+      height: COACH_PANEL_MIN_HEIGHT,
+    })
+  })
+
   it("keeps the designed 600px panel at 1440x900", () => {
-    expect(coachPanelBox(900)).toEqual({ top: 252, bottom: 852, height: 600 })
+    expect(coachPanelBox(900)).toEqual({
+      layout: "floating",
+      top: 252,
+      bottom: 852,
+      height: 600,
+    })
   })
 
   it("fires on the placement that climbed over Download Word", () => {
@@ -55,20 +117,37 @@ describe("the floating Coach panel sits between the page header and the dock", (
     )
   })
 
-  it("gives the browser the same height and bottom for every window height", () => {
-    const formula = coachPanelFloatingStyle.blockSize.match(
-      /^max\(0px, min\((\d+)px, calc\(100dvh - (\d+)px\)\)\)$/
+  it("fires on the placement that shrank to nothing in a short window", () => {
+    expect(composerOutOfReach(placementWithoutAFloor)).toEqual(
+      expect.arrayContaining(["1366x300 empty", "1440x420 approval waiting"])
     )
-    expect(formula).not.toBeNull()
-    const [, most, clearance] = (formula ?? []).map(Number)
-    for (const height of HEIGHTS) {
-      expect(Math.max(0, Math.min(most ?? 0, height - (clearance ?? 0)))).toBe(
+  })
+
+  it("gives the browser the same box the placement rule states", () => {
+    const classes = floatingClass().split(/\s+/)
+    expect(classes).toEqual(
+      expect.arrayContaining([
+        "fixed",
+        "right-5",
+        "bottom-12",
+        `h-[${COACH_PANEL_HEIGHT}px]`,
+        `max-h-[calc(100dvh-${COACH_PANEL_CLEARANCE}px)]`,
+        "w-[400px]",
+      ])
+    )
+    expect(12 * 4).toBe(COACH_PANEL_DOCK_CLEARANCE)
+    for (const height of HEIGHTS.filter(
+      (each) => each >= COACH_PANEL_SHORTEST_WINDOW
+    )) {
+      expect(Math.min(COACH_PANEL_HEIGHT, height - COACH_PANEL_CLEARANCE)).toBe(
         coachPanelBox(height).height
       )
     }
-    expect(coachPanelFloatingStyle.insetBlockEnd).toBe(
-      `${COACH_PANEL_DOCK_CLEARANCE}px`
+    expect(shellSource()).toContain(
+      "useMediaQuery(COACH_PANEL_ROOM_QUERY, true)"
     )
-    expect(coachPanelBox(900).bottom).toBe(900 - COACH_PANEL_DOCK_CLEARANCE)
+    expect(COACH_PANEL_ROOM_QUERY).toBe(
+      `(min-height: ${COACH_PANEL_SHORTEST_WINDOW}px)`
+    )
   })
 })

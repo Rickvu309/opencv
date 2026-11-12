@@ -9,6 +9,7 @@ import { PaperDocPage } from "@/routes/paper-doc.tsx"
 const WORD_PAGE = "22222222-2222-4222-8222-222222222222"
 const OLDER_DOC = "33333333-3333-4333-8333-333333333333"
 const MISSING = "44444444-4444-4444-8444-444444444444"
+const STRANGERS = "55555555-5555-4555-8555-555555555555"
 const WHEN = "2026-11-13T00:00:00.000Z"
 
 const route = vi.hoisted(() => ({ pathname: "/paper" }))
@@ -77,34 +78,34 @@ function ok(data: unknown) {
   return Response.json({ ok: true, data })
 }
 
-function missing() {
+function missing(status = 404) {
   return Response.json(
     { ok: false, error: { code: ERROR_CODES.NOT_FOUND, message: "Missing" } },
-    { status: 404 }
+    { status }
   )
 }
 
-function answer(url: string, body: string): Response | null {
-  if (url.includes(`/api/paper/${WORD_PAGE}`)) return ok(wordView)
-  if (url.includes(`/api/paper/${OLDER_DOC}/pages`))
+function answer(url: string, body: string, listFails: boolean) {
+  const path = url.split("?")[0] ?? ""
+  if (path.endsWith("/api/paper"))
+    return listFails ? missing(500) : ok([wordView, olderView])
+  if (path.endsWith(`/api/paper/${OLDER_DOC}/pages`))
     return ok({ docId: OLDER_DOC, pages: 1, pageChoice: "unset" })
-  if (url.includes(`/api/paper/${OLDER_DOC}`)) return ok(olderView)
-  if (url.includes(`/api/paper/${MISSING}`)) return missing()
-  if (url.includes("/api/reads/paper.read"))
-    return body.includes(WORD_PAGE) ? ok(wordRead) : missing()
-  if (url.includes("/api/chats") || url.includes("/api/jobs")) return ok([])
+  if (path.endsWith(`/api/paper/${OLDER_DOC}`)) return ok(olderView)
+  if (path.includes("/api/paper/")) return missing()
+  if (path.endsWith("/api/reads/paper.read"))
+    return body.includes(WORD_PAGE) ? ok(wordRead) : missing(409)
+  if (path.includes("/api/chats") || path.includes("/api/jobs")) return ok([])
   return null
 }
 
-function stubServer(held: string[] = []) {
+function stubServer({ listFails = false } = {}) {
   const exchanges: Exchange[] = []
   vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input instanceof Request ? input.url : input)
-    const response = held.some((path) => url.endsWith(path))
-      ? null
-      : answer(url, String(init?.body ?? ""))
+    const response = answer(url, String(init?.body ?? ""), listFails)
     if (!response) return new Promise<Response>(() => undefined)
-    exchanges.push({ url, status: response.status })
+    exchanges.push({ url: url.split("?")[0] ?? "", status: response.status })
     return Promise.resolve(response)
   })
   return exchanges
@@ -128,6 +129,11 @@ function open(pathname: string, listed?: unknown[]) {
 const failed = (exchanges: Exchange[]) =>
   exchanges.filter((exchange) => exchange.status >= 400)
 
+const paperRequests = (exchanges: Exchange[]) =>
+  exchanges
+    .map((exchange) => exchange.url.replace(/^.*\/api\//, ""))
+    .filter((path) => path.startsWith("paper") || path.startsWith("reads"))
+
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
@@ -135,56 +141,59 @@ afterEach(() => {
 })
 
 describe("opening a document from its link", () => {
-  it("opens a Word page from a direct link with no failed request", async () => {
+  it("opens a Word page from a direct link with no failed request and no older read", async () => {
     const exchanges = stubServer()
     open(`/paper/${WORD_PAGE}`)
     expect(await screen.findByRole("article", { name: "Page" })).toBeVisible()
     expect(failed(exchanges)).toEqual([])
+    expect(paperRequests(exchanges)).toEqual(["paper", "reads/paper.read"])
   })
 
-  it("opens a Word page from the library without asking which kind it is first", async () => {
-    const exchanges = stubServer([`/api/paper/${WORD_PAGE}`])
+  it("opens a Word page from the library with no failed request and no older read", async () => {
+    const exchanges = stubServer()
     open(`/paper/${WORD_PAGE}`, [wordView, olderView])
     expect(await screen.findByRole("article", { name: "Page" })).toBeVisible()
     expect(failed(exchanges)).toEqual([])
+    expect(paperRequests(exchanges)).not.toContain(`paper/${WORD_PAGE}`)
+    expect(paperRequests(exchanges)).toContain("reads/paper.read")
   })
 
-  it("opens an older document from a direct link on its own editor", async () => {
-    const exchanges = stubServer()
-    open(`/paper/${OLDER_DOC}`)
-    await waitFor(() =>
-      expect(
-        exchanges.some((exchange) =>
-          exchange.url.includes(`/api/paper/${OLDER_DOC}/pages`)
-        )
-      ).toBe(true)
-    )
-    expect(failed(exchanges)).toEqual([])
-    expect(
-      exchanges.some((exchange) => exchange.url.includes("paper.read"))
-    ).toBe(false)
-    expect(screen.queryByText("Document not found.")).toBeNull()
-  })
+  it.each([
+    ["a direct link", undefined],
+    ["the library", [wordView, olderView]],
+  ])(
+    "opens an older document from %s on its own editor",
+    async (_from, listed) => {
+      const exchanges = stubServer()
+      open(`/paper/${OLDER_DOC}`, listed)
+      await waitFor(() =>
+        expect(paperRequests(exchanges)).toContain(`paper/${OLDER_DOC}/pages`)
+      )
+      expect(failed(exchanges)).toEqual([])
+      expect(paperRequests(exchanges)).not.toContain("reads/paper.read")
+      expect(screen.queryByText("Document not found.")).toBeNull()
+    }
+  )
 
-  it("opens an older document from the library on its own editor", async () => {
-    const exchanges = stubServer()
-    open(`/paper/${OLDER_DOC}`, [wordView, olderView])
-    await waitFor(() =>
-      expect(
-        exchanges.some((exchange) =>
-          exchange.url.includes(`/api/paper/${OLDER_DOC}/pages`)
-        )
-      ).toBe(true)
-    )
-    expect(failed(exchanges)).toEqual([])
-    expect(
-      exchanges.some((exchange) => exchange.url.includes("paper.read"))
-    ).toBe(false)
-  })
+  it.each([
+    ["a missing document", MISSING],
+    ["another person's document", STRANGERS],
+  ])(
+    "shows the not-found state for %s with one failed request",
+    async (_case, id) => {
+      const exchanges = stubServer()
+      open(`/paper/${id}`)
+      expect(await screen.findByText("Document not found.")).toBeVisible()
+      expect(failed(exchanges)).toEqual([
+        { url: expect.stringContaining(`/api/paper/${id}`), status: 404 },
+      ])
+      expect(paperRequests(exchanges)).not.toContain("reads/paper.read")
+    }
+  )
 
-  it("shows the not-found state for a link to a missing document", async () => {
-    stubServer()
-    open(`/paper/${MISSING}`)
-    expect(await screen.findByText("Document not found.")).toBeVisible()
+  it("still opens a Word page when the document list cannot load", async () => {
+    stubServer({ listFails: true })
+    open(`/paper/${WORD_PAGE}`)
+    expect(await screen.findByRole("article", { name: "Page" })).toBeVisible()
   })
 })

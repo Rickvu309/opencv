@@ -1,12 +1,7 @@
 import { Suspense, lazy } from "react"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
-import { useQuery, useQueryClient } from "@tanstack/react-query"
-import {
-  ERROR_CODES,
-  paperIdSchema,
-  parsePaperId,
-  type PaperView,
-} from "@workspace/domain"
+import { useQuery } from "@tanstack/react-query"
+import { ERROR_CODES, paperIdSchema, parsePaperId } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
@@ -14,6 +9,7 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 import {
   getPaper,
   getPaperPages,
+  listPaper,
   paperGetKey,
   paperListKey,
   paperPagesKey,
@@ -78,23 +74,31 @@ export function PaperDocPage() {
   const validId = parsedId.success ? parsedId.data : null
   const session = authClient.useSession()
   const owner = session.data?.user.id ?? ""
-  const queryClient = useQueryClient()
-  const listed = queryClient.getQueryState<PaperView[]>(paperListKey())
+  const listQuery = useQuery({
+    queryKey: paperListKey(),
+    queryFn: listPaper,
+  })
+  const listed =
+    validId === null
+      ? undefined
+      : listQuery.data?.find((item) => item.id === validId)
+  const wordPage = listed?.format === "word"
+  const kindKnown =
+    listed !== undefined ||
+    listQuery.isError ||
+    (listQuery.isSuccess && !listQuery.isFetching)
   const docQuery = useQuery({
     queryKey: paperGetKey(validId ?? NO_DOC),
     queryFn: () => getPaper(docId),
-    enabled: validId !== null,
-    initialData: () => listed?.data?.find((item) => item.id === validId),
-    initialDataUpdatedAt: listed?.dataUpdatedAt,
+    enabled: validId !== null && kindKnown && !wordPage,
+    placeholderData: wordPage ? undefined : listed,
   })
-  const wordPage = docQuery.data?.format === "word"
-  const packageMissing =
-    validId !== null &&
-    (wordPage ||
-      (!docQuery.isLoading &&
-        !docQuery.data &&
-        docQuery.error instanceof ApiError &&
-        docQuery.error.code === ERROR_CODES.NOT_FOUND))
+  const docMissing =
+    !docQuery.data &&
+    docQuery.error instanceof ApiError &&
+    docQuery.error.code === ERROR_CODES.NOT_FOUND
+  const askWordPage =
+    validId !== null && (wordPage || (listQuery.isError && docMissing))
   const packageRead = catalogClient.options(owner, "paper.read", {
     view: "page",
     docId: validId ?? NO_DOC,
@@ -103,13 +107,13 @@ export function PaperDocPage() {
     queryKey: packageRead.queryKey,
     meta: packageRead.meta,
     queryFn: ({ signal }) => readWordPage(owner, validId ?? NO_DOC, signal),
-    enabled: packageMissing && owner !== "",
+    enabled: askWordPage && owner !== "",
     retry: false,
   })
   const packagePage = packageQuery.data ?? null
   const seeded = packagePage ? draftFromPage(packagePage) : null
   const packagePending =
-    packageMissing &&
+    askWordPage &&
     (session.isPending || (owner !== "" && packageQuery.isLoading))
   const pagesQuery = useQuery({
     queryKey: paperPagesKey(validId ?? NO_DOC),
@@ -123,14 +127,18 @@ export function PaperDocPage() {
   })
   const back = () => void navigate({ to: SURFACE_PATHS.paper, search })
 
-  if (docQuery.isLoading || packagePending) {
+  if (
+    (validId !== null && !kindKnown) ||
+    docQuery.isLoading ||
+    packagePending
+  ) {
     return (
       <section aria-label="Paper" className="p-4">
         <p>Loading documents</p>
       </section>
     )
   }
-  if (!docQuery.data || wordPage) {
+  if (wordPage || !docQuery.data) {
     if (seeded && validId && packagePage) {
       return (
         <WritingPage
@@ -142,10 +150,7 @@ export function PaperDocPage() {
       )
     }
     const missing =
-      validId === null ||
-      (wordPage && packageQuery.isSuccess) ||
-      (docQuery.error instanceof ApiError &&
-        docQuery.error.code === ERROR_CODES.NOT_FOUND)
+      validId === null || docMissing || (wordPage && packageQuery.isSuccess)
     return (
       <section
         aria-label="Paper"

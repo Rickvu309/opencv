@@ -10,13 +10,23 @@ const TAB_STOP_SELECTOR = [
   "[tabindex]",
 ].join(",")
 
+function isUncheckedRadioInAnsweredGroup(element: HTMLElement) {
+  if (!(element instanceof HTMLInputElement)) return false
+  if (element.type !== "radio" || element.checked || !element.name) return false
+  const scope = element.form ?? element.ownerDocument
+  return Array.from(
+    scope.querySelectorAll<HTMLInputElement>('input[type="radio"]')
+  ).some((other) => other.name === element.name && other.checked)
+}
+
 function isTabStop(element: HTMLElement) {
   if (element.tabIndex < 0) return false
-  if ((element as HTMLButtonElement).disabled) return false
+  if (element.matches(":disabled")) return false
   if (element.closest("[hidden],[inert]")) return false
   if (element instanceof HTMLInputElement && element.type === "hidden")
     return false
-  return element.checkVisibility?.() !== false
+  if (isUncheckedRadioInAnsweredGroup(element)) return false
+  return element.checkVisibility?.({ visibilityProperty: true }) !== false
 }
 
 export function dialogTabStops(root: HTMLElement): HTMLElement[] {
