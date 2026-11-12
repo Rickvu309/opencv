@@ -66,7 +66,7 @@ export async function startCompatibilityTurn(
       while (!stream.aborted && !c.req.raw.signal.aborted) {
         if (Date.now() >= deadline) {
           await writeChatEvent(stream, {
-            type: "text-delta",
+            type: "notice",
             text: "Coach is still working. Reload this Chat to follow or stop it.",
           })
           await writeChatEvent(stream, {

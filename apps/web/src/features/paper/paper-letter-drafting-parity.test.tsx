@@ -120,7 +120,9 @@ function fail(status: number, code: string, message: string) {
   return Response.json({ ok: false, error: { code, message } }, { status })
 }
 
-function installFetch(mode: "stream" | "stop" | "partial" | "error") {
+function installFetch(
+  mode: "stream" | "stop" | "partial" | "error" | "notice" | "late" | "long"
+) {
   const minted = {
     generation: "package",
     docId: "letter-1",
@@ -147,6 +149,59 @@ function installFetch(mode: "stream" | "stop" | "partial" | "error") {
             reject(Object.assign(new Error("aborted"), { name: "AbortError" }))
           })
         })
+      }
+      if (mode === "notice" || mode === "long") {
+        const draft =
+          mode === "long"
+            ? Array.from(
+                { length: 101 },
+                (_, index) => `Paragraph ${index + 1}.`
+              ).join("\n\n")
+            : "Dear hiring team,\n\nI ran the spring campaign."
+        const frames = [
+          `event: text-delta\ndata: ${JSON.stringify({ text: draft })}\n\n`,
+          ...(mode === "notice"
+            ? [
+                `event: notice\ndata: ${JSON.stringify({ text: "Coach is still working. Reload this Chat to follow or stop it." })}\n\n`,
+              ]
+            : []),
+          `event: message-end\ndata: ${JSON.stringify({ chatId: "chat-1" })}\n\n`,
+        ]
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode(frames.join("")))
+            controller.close()
+          },
+        })
+        return Promise.resolve(
+          new Response(stream, {
+            headers: { "Content-Type": "text/event-stream" },
+          })
+        )
+      }
+      if (mode === "late") {
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue(
+              new TextEncoder().encode(
+                'event: text-delta\ndata: {"text":"Dear hiring team,"}\n\n'
+              )
+            )
+            init?.signal?.addEventListener("abort", () => {
+              controller.enqueue(
+                new TextEncoder().encode(
+                  'event: text-delta\ndata: {"text":"\\n\\nWritten after Stop."}\n\n'
+                )
+              )
+              controller.error(new DOMException("Stopped", "AbortError"))
+            })
+          },
+        })
+        return Promise.resolve(
+          new Response(stream, {
+            headers: { "Content-Type": "text/event-stream" },
+          })
+        )
       }
       if (mode === "partial") {
         const stream = new ReadableStream({
@@ -356,4 +411,71 @@ it("opens one Word page with every drafted paragraph and no older letter", async
   })
   const turn = fetch.mock.calls.find(([url]) => String(url).includes("/turns"))
   expect(JSON.parse(String(turn?.[1]?.body))).not.toHaveProperty("focusDocId")
+})
+
+function mintInputs(fetch: ReturnType<typeof installFetch>) {
+  return fetch.mock.calls
+    .filter(([url]) => String(url).includes("/commands/paper."))
+    .map(([url, init]) => ({
+      command: String(url).split("/commands/")[1],
+      input: JSON.parse(String(init?.body)).input,
+    }))
+}
+
+async function draftForJob(onCreated: () => void) {
+  listJobs.mockResolvedValue([job])
+  render(
+    <PaperLetterStartPage onBack={() => undefined} onCreated={onCreated} />
+  )
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Junior Marketing, Lumière" })
+  )
+  fireEvent.click(screen.getByRole("button", { name: "Draft letter" }))
+}
+
+it("keeps the still-working notice out of a draft that crosses 30 seconds", async () => {
+  const fetch = installFetch("notice")
+  const onCreated = vi.fn()
+  await draftForJob(onCreated)
+  await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith("letter-1"))
+  expect(mintInputs(fetch)).toEqual([
+    {
+      command: "paper.canvas",
+      input: expect.objectContaining({
+        lines: ["Dear hiring team,", "I ran the spring campaign."],
+      }),
+    },
+  ])
+  expect(screen.queryByText(/still working/)).toBeNull()
+})
+
+it("saves nothing the Coach sends after the person clicks Stop", async () => {
+  const fetch = installFetch("late")
+  const onCreated = vi.fn()
+  await draftForJob(onCreated)
+  await screen.findByText("Dear hiring team,")
+  fireEvent.click(screen.getByRole("button", { name: "Stop" }))
+  await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith("letter-1"))
+  expect(mintInputs(fetch)).toEqual([
+    {
+      command: "paper.canvas",
+      input: expect.objectContaining({ lines: ["Dear hiring team,"] }),
+    },
+  ])
+  expect(fetch.mock.calls.some(([url]) => String(url).endsWith("/stop"))).toBe(
+    true
+  )
+})
+
+it("refuses a letter too long for one Word page save and makes no page", async () => {
+  const fetch = installFetch("long")
+  const onCreated = vi.fn()
+  await draftForJob(onCreated)
+  expect(
+    await screen.findByText(
+      "This letter is too long to save. Shorten it and try again."
+    )
+  ).toBeInTheDocument()
+  expect(onCreated).not.toHaveBeenCalled()
+  expect(mintInputs(fetch)).toEqual([])
 })

@@ -239,6 +239,8 @@ function consumeCoachStream(
         case "text-delta":
           handlers.onTextDelta?.(event)
           break
+        case "notice":
+          break
         case "tool-call":
           handlers.onToolCall?.(event)
           break

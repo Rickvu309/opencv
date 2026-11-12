@@ -160,7 +160,7 @@ it("renders the legacy tail completion notice without offering Retry", async () 
       if (path.endsWith("/turns")) {
         capped = true
         return new Response(
-          `event: message-start\ndata: ${JSON.stringify({ chatId: CHAT })}\n\nevent: message-end\ndata: ${JSON.stringify({ chatId: CHAT })}\n\n`
+          `event: message-start\ndata: ${JSON.stringify({ chatId: CHAT })}\n\nevent: notice\ndata: ${JSON.stringify({ text: notice })}\n\nevent: message-end\ndata: ${JSON.stringify({ chatId: CHAT })}\n\n`
         )
       }
       const response = await chatApiFetchOrThrow(input, init)
