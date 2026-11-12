@@ -57,6 +57,8 @@ import {
   useWordLibrary,
 } from "./paper-package-library.tsx"
 import { paperEditedLabel } from "./paper-templates.ts"
+import { PaperLibraryFilters } from "./paper-library-filters.tsx"
+import "./design/paper-library.pen.css"
 
 export function PaperLibrary({
   docs,
@@ -340,6 +342,8 @@ export function PaperLibrary({
   return (
     <section
       aria-label="Paper"
+      data-pen-surface="paper"
+      data-slot="paper-library"
       className="flex min-w-0 flex-col gap-6 p-4 sm:p-6"
     >
       <PaperImportInput
@@ -356,7 +360,10 @@ export function PaperLibrary({
           docId={printTarget.id}
         />
       ) : null}
-      <div className="flex items-center justify-between gap-3">
+      <div
+        data-slot="paper-library-header"
+        className="flex items-center justify-between gap-3"
+      >
         <div className="flex items-baseline gap-2">
           <h1 className="text-lg font-medium">Paper</h1>
           {total > 0 ? (
@@ -387,39 +394,14 @@ export function PaperLibrary({
         </div>
       </div>
       {!firstRun && !loading && !error ? (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div role="group" aria-label="Document type" className="flex gap-1">
-            {(
-              [
-                { value: "all", label: "All" },
-                { value: "cv", label: "CVs" },
-                { value: "letter", label: "Cover letters" },
-                { value: "files", label: "Files" },
-              ] as const
-            ).map(({ value, label }) => (
-              <Button
-                key={value}
-                type="button"
-                variant={filter === value ? "secondary" : "ghost"}
-                size="sm"
-                className="h-11 md:h-8"
-                aria-pressed={filter === value}
-                onClick={() =>
-                  dispatch({ type: "filter_changed", filter: value })
-                }
-              >
-                {label}
-              </Button>
-            ))}
-          </div>
-          <Input
-            aria-label="Search Paper"
-            placeholder="Search documents"
-            className="w-full sm:w-56"
-            value={query}
-            onChange={(event) => onQueryChange(event.target.value)}
-          />
-        </div>
+        <PaperLibraryFilters
+          filter={filter}
+          query={query}
+          onFilterChange={(next) =>
+            dispatch({ type: "filter_changed", filter: next })
+          }
+          onQueryChange={onQueryChange}
+        />
       ) : null}
       {loading ? <p>Loading documents</p> : null}
       {error ? (
@@ -459,7 +441,10 @@ export function PaperLibrary({
         </div>
       ) : null}
       {!loading && !error && !firstRun && !noResults ? (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+        <div
+          data-slot="paper-library-cards"
+          className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5"
+        >
           {visible.map(renderCard)}
           {visibleFiles.map((file) => (
             <PaperFileCard

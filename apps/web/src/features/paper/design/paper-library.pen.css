@@ -1,0 +1,28 @@
+@media (min-width: 768px) {
+  [data-pen-surface="paper"][data-slot="paper-library"] {
+    gap: 28px;
+    padding: 28px 32px;
+  }
+  [data-pen-surface="paper"] [data-slot="paper-library-header"] {
+    gap: 8px;
+    height: 52px;
+    margin: -28px -32px 0;
+    padding: 0 16px 0 20px;
+    border-bottom: 1px solid #ededef;
+    background: #ffffff;
+  }
+  [data-pen-surface="paper"] [data-slot="paper-library-header"] h1 {
+    font-size: 13px;
+    line-height: 16px;
+    color: #2f2f31;
+  }
+  [data-pen-surface="paper"]
+    [data-slot="paper-library-filters"]
+    [data-slot="input"] {
+    width: 240px;
+    border-radius: 8px;
+  }
+  [data-pen-surface="paper"] [data-slot="paper-library-cards"] {
+    gap: 28px;
+  }
+}
