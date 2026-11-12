@@ -54,7 +54,7 @@ describe("Coach Command receipts", { timeout: 15_000 }, () => {
     expect(
       screen.queryByRole("button", { name: "Undo" })
     ).not.toBeInTheDocument()
-    expect(screen.getAllByText(/finished$/)).toHaveLength(1)
+    expect(screen.queryByText(/finished$/)).not.toBeInTheDocument()
   })
 
   it("states a failed undo plainly and keeps the original undo", async () => {
@@ -110,14 +110,10 @@ describe("Coach Command receipts", { timeout: 15_000 }, () => {
     renderApp(SURFACE_PATHS.coach)
     await expectCoachIdle()
     await sendMessage("What cards do I have?")
+    expect(await screen.findByText("Looked at your Jobs")).toBeInTheDocument()
     expect(
-      await screen.findByRole("button", {
-        name: stepButton("Listed 2 Apply cards"),
-      })
-    ).toBeInTheDocument()
-    expect(
-      screen.getByText("This read does not change anything.")
-    ).toBeInTheDocument()
+      screen.queryByText("This read does not change anything.")
+    ).not.toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: "Undo" })
     ).not.toBeInTheDocument()

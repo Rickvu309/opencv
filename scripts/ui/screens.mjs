@@ -35,7 +35,7 @@ const ASK_FOR_AN_EDIT = [
     },
   },
   { press: "Enter" },
-  { waitFor: { role: "button", name: "Approve" } },
+  { waitFor: { role: "button", name: "Deny" } },
 ]
 
 const DENY_THE_WAITING_EDIT = [
@@ -165,7 +165,7 @@ export const SCREENS = [
     steps: [
       ...ASK_FOR_AN_EDIT,
       { click: { role: "button", name: "Expand" } },
-      { waitFor: { role: "button", name: "Approve" } },
+      { waitFor: { role: "button", name: "Deny" } },
     ],
     after: DENY_THE_WAITING_EDIT,
   },
@@ -185,6 +185,16 @@ export const SCREENS = [
       ...UNDO_THE_EDIT,
       { click: { role: "button", name: "Expand" } },
       { waitFor: { text: "Undone" } },
+    ],
+  },
+  {
+    id: "coach-denied",
+    route: "/paper",
+    steps: [
+      ...ASK_FOR_AN_EDIT,
+      { click: { role: "button", name: "Expand" } },
+      { waitFor: { role: "button", name: "Deny" } },
+      ...DENY_THE_WAITING_EDIT,
     ],
   },
   {

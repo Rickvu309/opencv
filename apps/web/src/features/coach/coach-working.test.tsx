@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, cleanup, render, screen, within } from "@testing-library/react"
+import { cleanup, render, screen, within } from "@testing-library/react"
 
 import { ChatLog } from "@/components/ai-elements/chat.tsx"
 import { STREAMING_COACH_ID } from "@/features/coach/chat-messages.ts"
@@ -48,26 +48,13 @@ function renderTurns(
 }
 
 describe("Coach Working block", () => {
-  it("updates the visual timer without changing the spoken status", () => {
-    vi.useFakeTimers()
-    render(<CoachWorking />)
-    expect(screen.getByRole("status").textContent).toBe("Working")
-    expect(
-      screen
-        .getByText("Working, 0s")
-        .closest("[aria-hidden]")
-        ?.getAttribute("aria-hidden")
-    ).toBe("true")
-
-    act(() => vi.advanceTimersByTime(9000))
-
-    expect(
-      screen
-        .getByText("Working, 9s")
-        .closest("[aria-hidden]")
-        ?.getAttribute("aria-hidden")
-    ).toBe("true")
-    expect(screen.getByRole("status").textContent).toBe("Working")
+  it("shows a quiet shimmer without a running timer", () => {
+    const { container } = render(<CoachWorking />)
+    expect(screen.getByRole("status")).toHaveTextContent("Working")
+    expect(container.querySelector(".coach-shimmer")).toHaveTextContent(
+      "Working"
+    )
+    expect(screen.queryByText(/Working, \ds/)).not.toBeInTheDocument()
   })
 
   it("keeps Working and its rows visible after a tool-only result", () => {

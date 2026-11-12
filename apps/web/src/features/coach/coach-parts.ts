@@ -46,8 +46,14 @@ export function toCoachParts(message: ChatViewMessage): CoachPart[] {
       status: part.ok ? "done" : "error",
       part,
     }
+    const awaitingDecision = Boolean(
+      part.pendingActionId || part.approval === "pending"
+    )
     const diff =
-      part.ok && !part.undone && part.detail?.type === "paper.replace"
+      part.ok &&
+      !part.undone &&
+      !awaitingDecision &&
+      part.detail?.type === "paper.replace"
         ? part.detail
         : null
     return diff

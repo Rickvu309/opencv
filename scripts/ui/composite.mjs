@@ -8,6 +8,7 @@ import {
   pngSize,
   resolveTarget,
   sectionColumn,
+  sideTarget,
   validateSpec,
 } from "./annotate.mjs"
 import { SIDES } from "./before-after.mjs"
@@ -27,7 +28,7 @@ function sideOf(ctx, { section, side, specDir, capture, manifestDir }) {
   const boxes = new Map(
     (section.callouts ?? []).map((callout) => [
       callout.n,
-      resolveTarget(callout.target, capture?.[side], scale),
+      resolveTarget(sideTarget(callout.target, side), capture?.[side], scale),
     ])
   )
   return {

@@ -125,6 +125,11 @@ export const css = `
   white-space: nowrap;
 }
 
+.ui-tcc__awaiting {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 500;
+}
 .ui-tcc__status {
   display: inline-flex;
   align-items: center;

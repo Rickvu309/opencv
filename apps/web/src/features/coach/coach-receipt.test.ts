@@ -31,7 +31,7 @@ describe("receiptHeadline", () => {
         summary: "Listed 2 Apply cards",
         ok: true,
       })
-    ).toBe("Listed 2 Apply cards")
+    ).toBe("Looked at your Jobs")
   })
 
   it("keeps failure summaries as one plain line", () => {
@@ -67,7 +67,7 @@ describe("receiptHeadline", () => {
         docName: "PM track CV",
         hunks: [],
       })
-    ).toBe("Updated CV PM track CV")
+    ).toBe("Edited PM track CV · 0 changes")
     expect(
       namedReceiptHeadline({
         type: "paper.create",
@@ -75,7 +75,7 @@ describe("receiptHeadline", () => {
         name: "Untitled Letter",
         status: "draft",
       })
-    ).toBe("Created Letter Untitled Letter")
+    ).toBe("Created Untitled Letter")
   })
 })
 

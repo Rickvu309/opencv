@@ -135,11 +135,15 @@ test("a screen's after steps clean up and are only allowed on a screen with step
     ]
   )
   for (const screen of SCREENS.filter((screen) =>
-    JSON.stringify(screen.steps ?? []).includes('"Approve"')
+    ["Approve", "Deny"].some((decision) =>
+      JSON.stringify(screen.steps ?? []).includes(`"name":"${decision}"`)
+    )
   ))
     if (
-      !JSON.stringify(screen.steps).includes(
-        '"click":{"role":"button","name":"Approve"}'
+      !["Approve", "Deny"].some((decision) =>
+        JSON.stringify(screen.steps).includes(
+          `"click":{"role":"button","name":"${decision}"}`
+        )
       )
     )
       assert.ok(screen.after?.length, `${screen.id} leaves an edit waiting`)

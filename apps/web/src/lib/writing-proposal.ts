@@ -1,5 +1,5 @@
 import { useSyncExternalStore } from "react"
-import { wordReviewSchema } from "@workspace/domain"
+import { wordConfirmedOpsSchema, wordReviewSchema } from "@workspace/domain"
 
 export const WORD_BATCH_HIDDEN =
   "Approve is unavailable because this change cannot be shown in full."
@@ -90,11 +90,12 @@ function oneReplacement(input: unknown) {
   return { docId: input.docId, changes: [change], withheld: null }
 }
 
+const wordEditSchema = wordConfirmedOpsSchema.element
+
 function isWordEdit(
   edit: unknown
 ): edit is { op: "setText" | "insert" | "delete"; text?: string } {
-  if (!edit || typeof edit !== "object" || !("op" in edit)) return false
-  return edit.op === "setText" || edit.op === "insert" || edit.op === "delete"
+  return wordEditSchema.safeParse(edit).success
 }
 
 function wordEdits(input: unknown) {
