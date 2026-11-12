@@ -4,6 +4,7 @@
   box-sizing: border-box;
   block-size: 100%;
   min-block-size: 0;
+  container: writing-sheet / inline-size;
   background: var(--background);
   color: var(--foreground);
 }
@@ -25,6 +26,12 @@
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
   background: var(--background);
+}
+
+@container writing-sheet (width >= calc(8.5in + 5.5rem)) {
+  .writing-scroll {
+    scrollbar-gutter: stable both-edges;
+  }
 }
 
 .writing-scroll > * {
