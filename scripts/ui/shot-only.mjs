@@ -5,6 +5,7 @@ export const SHOT_ONLY = {
   "coach-denied-reloaded": NO_KEPT_OUTCOME_FRAME,
   "coach-receipt-reloaded": NO_KEPT_OUTCOME_FRAME,
   "coach-undone-reloaded": NO_KEPT_OUTCOME_FRAME,
+  "coach-stopped-reloaded": NO_KEPT_OUTCOME_FRAME,
   "coach-expired-reloaded": NO_KEPT_OUTCOME_FRAME,
 }
 
