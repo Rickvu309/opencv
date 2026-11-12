@@ -6,7 +6,7 @@ import test from "node:test"
 import { fileURLToPath } from "node:url"
 import { SLOW } from "../../../packages/guards/run-tests.mjs"
 import { tempDir } from "../../lib/temp-dir.mjs"
-import { GIT_ENV } from "./push-checks.mjs"
+import { isolatedEnv } from "../ports/proc.mjs"
 
 const root = path.resolve(
   fileURLToPath(new URL(".", import.meta.url)),
@@ -18,7 +18,7 @@ function tracked(...specs) {
   return execFileSync(
     "git",
     ["ls-files", "--cached", "--others", "--exclude-standard", ...specs],
-    { cwd: root, encoding: "utf8" }
+    { cwd: root, env: isolatedEnv(process.env), encoding: "utf8" }
   )
     .split("\n")
     .filter(Boolean)
@@ -26,6 +26,7 @@ function tracked(...specs) {
 
 function gitQuiet(args) {
   execFileSync("git", ["-c", "core.hooksPath=/dev/null", ...args], {
+    env: isolatedEnv(process.env),
     encoding: "utf8",
   })
 }
@@ -47,7 +48,7 @@ test("the ocv-tools tests pass while an unrelated merge worktree sits in the tem
   const listed = execFileSync(
     "git",
     ["-C", mirror, "worktree", "list", "--porcelain"],
-    { encoding: "utf8" }
+    { env: isolatedEnv(process.env), encoding: "utf8" }
   )
   assert.ok(listed.includes(`worktree ${foreign}`))
   const suite = tracked(
@@ -56,14 +57,10 @@ test("the ocv-tools tests pass while an unrelated merge worktree sits in the tem
   ).filter((file) => file !== SLOW && file !== SELF)
   assert.ok(suite.length > 10, "the ocv-tools test list is empty")
   const env = {
-    ...process.env,
+    ...isolatedEnv(process.env),
     HOME: home,
     TMPDIR: path.join(home, "inner-tmp"),
   }
-  delete env.NODE_TEST_CONTEXT
-  delete env.FORCE_COLOR
-  delete env.CLICOLOR_FORCE
-  for (const name of GIT_ENV) delete env[name]
   const run = spawnSync(
     process.execPath,
     ["--test", "--test-concurrency=2", ...suite],

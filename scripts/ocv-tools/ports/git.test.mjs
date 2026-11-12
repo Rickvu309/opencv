@@ -10,15 +10,10 @@ import {
 import { join, resolve } from "node:path"
 import test from "node:test"
 import { gitAdapter } from "./git.mjs"
-import { realRunner } from "./proc.mjs"
+import { isolatedEnv, realRunner } from "./proc.mjs"
 import { makeTempDir } from "../../lib/temp-dir.mjs"
-import { GIT_ENV } from "../jobs/push-checks.mjs"
 
-const scratchEnv = () => {
-  const env = { ...process.env }
-  for (const name of GIT_ENV) delete env[name]
-  return env
-}
+const scratchEnv = () => isolatedEnv(process.env)
 
 function tempClone() {
   const root = makeTempDir("ocv-tools-git-")

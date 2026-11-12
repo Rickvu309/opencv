@@ -67,6 +67,8 @@ The web is a React SPA in `apps/web`. The API is Hono in `apps/api`. The shared 
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Recording a blocker never completes open work.                        | `done` exits 4 for blocked work, 1 if any unblocked item remains; `scripts/ocv-tools/done.test.mjs` replays the #1083 and #1084 handbacks.              |
 | An empty ownership check does not prove the full request is complete. | `done` states its agent scope and requires checking the full request; the coordinator must match each requested item to evidence before final handback. |
+| A push passes the tests its change reaches.                           | Row `AFFECTED_TESTS` at push and `finish`, and `ocv-tools check`; `scripts/ocv-tools/jobs/affected-tests.test.mjs` replays #1381, #1388, #1406, #1407.  |
+| A test the delivery tool runs cannot write the repository it runs in. | Only git children keep git variables (`ports/proc.mjs`); `scripts/ocv-tools/jobs/ref-safety.test.mjs` compares refs, config and worktrees.              |
 
 ## Pointers
 

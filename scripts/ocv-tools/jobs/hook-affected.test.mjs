@@ -1,9 +1,9 @@
 import assert from "node:assert/strict"
 import test from "node:test"
+import { RULES } from "../rules/index.mjs"
 import { pushOk, world } from "./hook-world.mjs"
 
-const isVitest = (c) =>
-  c.cmd === "env" && c.args.some((arg) => arg.endsWith("/vitest"))
+const isVitest = (c) => c.cmd.endsWith("/vitest")
 const SCAN = "apps/web/src/test/ui-kit-contract.test.ts"
 const SONNER = "packages/ui/src/components/sonner.test.tsx"
 
@@ -60,6 +60,7 @@ test("pre-push refuses when a reached test fails, and a recorded head is not run
     /REFUSED AFFECTED_TESTS: the tests this change reaches failed: tests apps\/web/
   )
   assert.match(refused.text, /Fix: Fix the failing tests/)
+  assert.match(refused.text, /ocv-tools\.mjs block <issue>/)
   const again = world({ changed: [SONNER], tests: [SCAN], receipt: true })
   const r = again.call(["pre-push"], { stdin: pushOk })
   assert.equal(r.code, 0, r.text)
@@ -77,4 +78,33 @@ test("pre-push with SKIP_CHECKS and a named human runs no tests", () => {
   const r = w.call(["pre-push"], { stdin: pushOk })
   assert.equal(r.code, 0, r.text)
   assert.equal(w.s.calls.filter((c) => isVitest(c)).length, 0)
+})
+
+test("AFFECTED_TESTS names the way forward when the tests cannot install, fail, or were never recorded", () => {
+  const fixOf = (affected) =>
+    RULES.find((row) => row.id === "AFFECTED_TESTS").fix({ affected, env: {} })
+  assert.match(
+    fixOf({
+      failed: [
+        "tests apps/web (vitest is not installed here; run pnpm install in this worktree)",
+      ],
+    }),
+    /^Run pnpm install in this worktree, then scripts\/ocv-tools\.mjs check\./
+  )
+  const failing = fixOf({ failed: ["tests apps/api"] })
+  assert.match(
+    failing,
+    /scripts\/ocv-tools\.mjs check: it reruns only this set/
+  )
+  assert.match(failing, /pnpm --filter @workspace\/domain build/)
+  const missing = fixOf({ receipt: false, head: "abc" })
+  for (const fix of [failing, missing])
+    assert.match(fix, /scripts\/ocv-tools\.mjs block <issue>/)
+  assert.equal(
+    RULES.find((row) => row.id === "AFFECTED_TESTS").check({
+      affected: { receipt: false, head: "abc" },
+      env: { SKIP_CHECKS: "1", SKIP_CHECKS_DECLARED_BY: "Ada" },
+    }),
+    null
+  )
 })

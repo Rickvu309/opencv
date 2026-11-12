@@ -52,13 +52,13 @@ export function world(over = {}) {
         return s.pnpmOk ? ok() : { ok: false, out: "", err: "" }
       if (
         cmd === "node" ||
-        cmd === "env" ||
+        cmd.endsWith("/vitest") ||
         cmd.endsWith("/eslint") ||
         cmd.endsWith("/tsc") ||
         args.includes("--check")
       ) {
         const label =
-          cmd === "node" || cmd === "env"
+          cmd === "node" || cmd.endsWith("/vitest")
             ? args[args.length - 1]
             : cmd.split("/").pop()
         const hit = s.failing.some((name) => label.includes(name))

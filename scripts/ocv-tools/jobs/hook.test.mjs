@@ -137,7 +137,7 @@ test("pre-push refuses main and bad branch names, allows bot and delete pushes",
 })
 
 const nodeCalls = (w) =>
-  w.s.calls.filter((c) => c.cmd === "node" || c.cmd === "env")
+  w.s.calls.filter((c) => c.cmd === "node" || c.cmd.endsWith("/vitest"))
 
 test("pre-push runs only the quick checks and never the full suite", () => {
   const w = world({

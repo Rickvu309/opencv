@@ -90,20 +90,6 @@ export const WORKSPACE_USES = Object.freeze(
   )
 )
 
-export const GIT_ENV = Object.freeze([
-  "GIT_DIR",
-  "GIT_WORK_TREE",
-  "GIT_INDEX_FILE",
-  "GIT_PREFIX",
-  "GIT_COMMON_DIR",
-  "GIT_OBJECT_DIRECTORY",
-  "GIT_ALTERNATE_OBJECT_DIRECTORIES",
-  "GIT_NAMESPACE",
-  "GIT_CEILING_DIRECTORIES",
-])
-
-export const COLOR_ENV = Object.freeze(["FORCE_COLOR"])
-
 const batches = (list) => {
   const out = []
   for (let i = 0; i < list.length; i += BATCH)

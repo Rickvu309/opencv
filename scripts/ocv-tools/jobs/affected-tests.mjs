@@ -1,12 +1,5 @@
 import { posix } from "node:path"
 import { run } from "./common.mjs"
-import { COLOR_ENV, GIT_ENV } from "./push-checks.mjs"
-
-export const SCRUBBED_ENV = Object.freeze([
-  ...GIT_ENV,
-  "NODE_TEST_CONTEXT",
-  ...COLOR_ENV,
-])
 
 export const MAX_PER_RUNNER = 40
 export const HUB_IMPORTERS = 12
@@ -345,13 +338,8 @@ export function affectedPlan(selection, top) {
     const tool = runner.cmd === "node" ? "node" : `${top}/${runner.cmd}`
     return {
       label: `tests ${group.runner}`,
-      cmd: "env",
-      args: [
-        ...SCRUBBED_ENV.flatMap((name) => ["-u", name]),
-        tool,
-        ...runner.args,
-        ...files,
-      ],
+      cmd: tool,
+      args: [...runner.args, ...files],
       tool,
       cwd,
       needsInstall: runner.cmd !== "node",

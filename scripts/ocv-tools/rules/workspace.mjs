@@ -99,10 +99,16 @@ function affectedTests(facts) {
   return null
 }
 
+const CANNOT_RUN_HERE =
+  'If a test cannot run on this machine at all, record it with scripts/ocv-tools.mjs block <issue> "<reason>"; SKIP_CHECKS=1 stays for a production emergency a human declared'
+
 function affectedTestsFix(facts) {
-  if (facts.affected?.failed?.length)
-    return "Fix the failing tests the output names, then push again; scripts/ocv-tools.mjs check runs the same set"
-  return "Run scripts/ocv-tools.mjs check in this worktree: it runs the tests this change reaches and records the pass for this commit"
+  const failed = facts.affected?.failed ?? []
+  if (failed.some((label) => label.includes("not installed")))
+    return `Run pnpm install in this worktree, then scripts/ocv-tools.mjs check. ${CANNOT_RUN_HERE}`
+  if (failed.length)
+    return `Fix the failing tests the output names, then run scripts/ocv-tools.mjs check: it reruns only this set and records the pass. If they fail with "Cannot find module '@workspace/...'", run pnpm --filter @workspace/domain build first. ${CANNOT_RUN_HERE}`
+  return `Run scripts/ocv-tools.mjs check in this worktree: it runs the tests this change reaches and records the pass for this commit. ${CANNOT_RUN_HERE}`
 }
 
 function disk(facts) {
