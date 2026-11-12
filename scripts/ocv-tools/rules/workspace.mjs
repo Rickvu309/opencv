@@ -89,6 +89,22 @@ function quickChecks(facts) {
   return `the quick checks failed: ${failed.join(", ")}`
 }
 
+function affectedTests(facts) {
+  if (String(facts.env?.SKIP_CHECKS ?? "") === "1") return null
+  const affected = facts.affected ?? {}
+  if (affected.failed?.length)
+    return `the tests this change reaches failed: ${affected.failed.join(", ")}`
+  if (affected.receipt === false)
+    return `no passing run of the tests this change reaches is recorded for ${String(affected.head ?? "HEAD").slice(0, 12)}`
+  return null
+}
+
+function affectedTestsFix(facts) {
+  if (facts.affected?.failed?.length)
+    return "Fix the failing tests the output names, then push again; scripts/ocv-tools.mjs check runs the same set"
+  return "Run scripts/ocv-tools.mjs check in this worktree: it runs the tests this change reaches and records the pass for this commit"
+}
+
 function disk(facts) {
   if (!facts.disk?.text) return null
   return facts.disk.text
@@ -207,6 +223,15 @@ export const workspaceRows = [
     check: quickChecks,
     fix: () =>
       "Fix what the checks printed and push again; pnpm check runs the larger local suite",
+  }),
+  rule({
+    id: "AFFECTED_TESTS",
+    section: "4",
+    says: "A push passes the tests its change reaches: changed tests, tests that scan a changed folder, and tests that import a changed file. Finish needs that pass recorded for the head commit.",
+    at: ["push", "finish"],
+    needs: ["affected", "env"],
+    check: affectedTests,
+    fix: affectedTestsFix,
   }),
   rule({
     id: "DISK",

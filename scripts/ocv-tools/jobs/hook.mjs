@@ -4,6 +4,7 @@ import { badInput } from "../input.mjs"
 import { decide } from "../rules/index.mjs"
 import { run } from "./common.mjs"
 import { runQuickChecks } from "./push-checks.mjs"
+import { testsForPush } from "./affected-tests.mjs"
 
 const LIMIT_BYTES = 20000
 const SUBMODULE_MODE = "160000"
@@ -216,6 +217,7 @@ function pushedRefs(text) {
     const [, localSha, remoteRef] = line.trim().split(/\s+/)
     if (!remoteRef?.startsWith("refs/heads/")) continue
     refs.push({
+      sha: localSha,
       branch: remoteRef.slice("refs/heads/".length),
       deleting: /^0+$/.test(localSha),
     })
@@ -227,7 +229,11 @@ function prePush(ctx) {
   const refs = pushedRefs(ctx.readStdin())
   const pushing = refs.some((ref) => !ref.deleting)
   const facts = { push: { refs }, env: pushing ? ctx.env : {} }
-  const early = decide("push", { ...facts, quick: { failed: [] } })
+  const early = decide("push", {
+    ...facts,
+    quick: { failed: [] },
+    affected: { failed: [] },
+  })
   if (!early.ok) return report(early)
   if (!pushing) return { lines: [] }
   if (ctx.env.SKIP_CHECKS === "1")
@@ -239,11 +245,23 @@ function prePush(ctx) {
   const top = run(ctx, "git", ["rev-parse", "--show-toplevel"]).out || ctx.cwd
   const started = ctx.now()
   const quick = runQuickChecks(ctx, top)
+  const affected = quick.failed.length
+    ? { failed: [], lines: [] }
+    : testsForPush(
+        ctx,
+        top,
+        refs.filter((ref) => !ref.deleting).map((ref) => ref.sha)
+      )
   const seconds = Math.round((ctx.now() - started) / 1000)
-  const verdict = decide("push", { ...facts, quick })
+  const verdict = decide("push", { ...facts, quick, affected })
   return report(verdict, [
     ...quick.lines,
-    ...(verdict.ok ? [`pre-push: quick checks passed in ${seconds}s.`] : []),
+    ...affected.lines,
+    ...(verdict.ok
+      ? [
+          `pre-push: quick checks passed in ${seconds}s, with the tests the change reaches.`,
+        ]
+      : []),
   ])
 }
 

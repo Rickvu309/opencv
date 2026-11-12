@@ -3,6 +3,7 @@ import { validateAuthoring } from "../authoring.mjs"
 import { diskProblem } from "../disk.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
 import { planPull } from "./pull-facts.mjs"
+import { hasReceipt } from "./affected-tests.mjs"
 import { throwPushFailure } from "../push-failure.mjs"
 import {
   recorded,
@@ -22,6 +23,11 @@ export function bodyOf(ctx, flag) {
   } catch {
     return { file, text: "", unreadable: true }
   }
+}
+
+function affectedReceipt(ctx, t) {
+  const head = git(ctx, "rev-parse", "HEAD")
+  return { head, receipt: hasReceipt(ctx, t.gitDir, head) }
 }
 
 export function finish(ctx, { flags }) {
@@ -124,6 +130,7 @@ export function finish(ctx, { flags }) {
       main,
       port,
       env: ctx.env,
+      affected: affectedReceipt(ctx, t),
     }
     const verdict = decide("finish", facts)
     if (!verdict.ok) throw refusalError(verdict.refusals[0])

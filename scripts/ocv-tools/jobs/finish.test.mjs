@@ -88,8 +88,8 @@ test("finish rejects malformed body and missing flags", () => {
   f.ctx.writeFile(`${f.ctx.cwd}/body.md`, "## Summary\nOnly this")
   assert.match(finish(f).text, /BAD_BODY/)
   assert.equal(f.call("finish", "--body-file").code, 2)
-  assert.equal(f.call("check").code, 2)
-  assert.match(f.call("check").text, /UNKNOWN_COMMAND/)
+  assert.equal(f.call("check", "--bogus").code, 2)
+  assert.match(f.call("check", "--bogus").text, /UNKNOWN_FLAG/)
 })
 
 test("finish reports a failed create and refuses a branch with no new commits", () => {

@@ -13,6 +13,11 @@ export const COMMANDS = [
     when: "Run the pull request rules early, push through the hooks and open the PR (--draft opens a draft). Every problem in the body is named in one message. --dry-run checks only the body, not the title, pushes nothing and opens nothing, so it works with unsaved changes.",
   },
   {
+    name: "check",
+    usage: "check [--list [--base <rev>] [--head <rev>]]",
+    when: "Run the tests this branch's change reaches: changed tests, tests that scan a changed folder (the covers-every-X tests) and tests that import a changed file. A pass is recorded for the head commit; pre-push runs the same set and finish refuses a head with no recorded pass. --list prints the selection and why, and runs nothing.",
+  },
+  {
     name: "body",
     usage: "body <pr> --body-file <file>",
     when: "Replace a pull request body and keep its Closes #<issue> line. The issue comes from the branch name, type/<issue>-words, the same way the policy rule reads it. The same body rules as finish run first, including Caught by and Introduced by on a fix. Use this instead of gh pr edit --body-file.",
