@@ -183,6 +183,25 @@ export const SCREENS = [
     route: "/settings",
     steps: [{ waitFor: { selector: '[data-slot="settings-card"]' } }],
   },
+  ...[
+    ["settings-coach", "/settings/coach", '[data-slot="settings-card"]'],
+    [
+      "settings-integrations",
+      "/settings/integrations",
+      "#agent-connections-title",
+    ],
+    ["settings-usage", "/settings/usage", '[data-slot="settings-card"]'],
+    [
+      "settings-billing",
+      "/settings/billing",
+      'main :is(h2, h3):has-text("Free plan")',
+    ],
+    ["settings-account", "/settings/account", '[data-slot="settings-card"]'],
+  ].map(([id, route, selector]) => ({
+    id,
+    route,
+    steps: [{ waitFor: { selector } }],
+  })),
   {
     id: "settings-panel-open",
     route: "/settings",

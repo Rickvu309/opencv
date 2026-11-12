@@ -33,7 +33,9 @@ import {
   initialEmailState,
 } from "./account-section.reducer.ts"
 import { DeleteAccountDialog } from "./delete-account-dialog.tsx"
+import { personInitials } from "./person-initials.ts"
 import {
+  SettingsRowButton,
   SettingsCard,
   SettingsRow,
   SettingsSection,
@@ -90,26 +92,31 @@ export function AccountSection({
   return (
     <>
       <SettingsTitle title="Account" />
-      <SettingsSection label="Profile">
-        <SettingsCard>
+      <SettingsSection id="profile" label="Profile">
+        <SettingsCard name="profile">
           <SettingsRow
-            label="Change photo"
-            desc={profile.email}
+            id="profile"
+            gap="avatar"
+            label={profile.name || profile.email}
+            desc={profile.name ? profile.email : undefined}
             error={photoError}
+            leading={
+              <Avatar
+                data-slot="settings-avatar"
+                size="lg"
+                className="data-[size=lg]:size-11"
+              >
+                {photoSrc ? <AvatarImage alt="" src={photoSrc} /> : null}
+                <AvatarFallback className="bg-secondary text-sm font-semibold">
+                  {personInitials(profile.name, profile.email)}
+                </AvatarFallback>
+              </Avatar>
+            }
             control={
               <>
-                <Avatar size="lg">
-                  {photoSrc ? <AvatarImage alt="" src={photoSrc} /> : null}
-                  <AvatarFallback>{initials(profile.name)}</AvatarFallback>
-                </Avatar>
-                <Button
-                  className="h-11 md:h-8"
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileRef.current?.click()}
-                >
+                <SettingsRowButton onClick={() => fileRef.current?.click()}>
                   Change photo
-                </Button>
+                </SettingsRowButton>
                 <HiddenFilePicker
                   ref={fileRef}
                   accept="image/*"
@@ -119,12 +126,14 @@ export function AccountSection({
             }
           />
           <SettingsRow
+            id="name"
             label="Name"
             error={nameError ?? (errorKey === "name" ? error : undefined)}
             control={
               <Input
                 aria-label="Name"
-                className="max-md:h-11"
+                data-slot="settings-name-input"
+                className="rounded-[7px] max-md:h-11 md:w-60 md:text-[13px]"
                 value={name}
                 disabled={pending}
                 onChange={(event) =>
@@ -143,33 +152,29 @@ export function AccountSection({
             }
           />
           <SettingsRow
+            id="email"
             label="Email"
             desc="We send sign-in codes here"
             control={
-              <Button
-                className="h-11 md:h-8"
-                type="button"
-                variant="outline"
+              <SettingsRowButton
                 onClick={() =>
                   dispatch({ type: "email_dialog_changed", open: true })
                 }
               >
                 Change email
-              </Button>
+              </SettingsRowButton>
             }
           />
         </SettingsCard>
       </SettingsSection>
-      <SettingsSection label="Data">
-        <SettingsCard>
+      <SettingsSection id="data" label="Data">
+        <SettingsCard name="data">
           <SettingsRow
+            id="export"
             label="Export your data"
             desc="Paper, Apply and Pitch as files"
             control={
-              <Button
-                className="h-11 md:h-8"
-                type="button"
-                variant="outline"
+              <SettingsRowButton
                 onClick={() => {
                   void downloadExport()
                     .then(() => toast("Export started"))
@@ -179,44 +184,40 @@ export function AccountSection({
                 }}
               >
                 Export
-              </Button>
+              </SettingsRowButton>
+            }
+          />
+          <SettingsRow
+            id="sign-out"
+            label="Sign out"
+            desc="Signed in on this device"
+            control={
+              <SettingsRowButton
+                onClick={() => {
+                  void authClient
+                    .signOut()
+                    .then(() => navigate({ href: "/sign-in" }))
+                }}
+              >
+                Sign out
+              </SettingsRowButton>
             }
           />
         </SettingsCard>
       </SettingsSection>
-      <SettingsCard>
+      <SettingsCard name="delete-account">
         <SettingsRow
-          label="Sign out"
-          desc="Signed in on this device"
-          control={
-            <Button
-              className="h-11 md:h-8"
-              type="button"
-              variant="outline"
-              onClick={() => {
-                void authClient
-                  .signOut()
-                  .then(() => navigate({ href: "/sign-in" }))
-              }}
-            >
-              Sign out
-            </Button>
-          }
-        />
-        <SettingsRow
+          id="delete-account"
           label="Delete account"
           desc="Removes your Paper, Apply jobs and Pitch"
           control={
-            <Button
-              className="h-11 md:h-8"
-              type="button"
-              variant="destructive"
+            <SettingsRowButton
               onClick={() =>
                 dispatch({ type: "delete_dialog_changed", open: true })
               }
             >
               Delete account
-            </Button>
+            </SettingsRowButton>
           }
         />
       </SettingsCard>
@@ -369,10 +370,4 @@ function serverMessage(caught: unknown) {
   return caught instanceof Error && caught.message.trim()
     ? caught.message
     : "Try again."
-}
-
-function initials(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean)
-  const letters = parts.slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "")
-  return letters.join("") || "You"
 }

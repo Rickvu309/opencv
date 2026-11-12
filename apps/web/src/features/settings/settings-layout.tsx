@@ -1,4 +1,5 @@
-import type { ReactNode } from "react"
+import type { ComponentProps, ReactNode } from "react"
+import { ChevronRight, type LucideIcon } from "lucide-react"
 import { useNavigate } from "@tanstack/react-router"
 import type { Profile } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
@@ -97,7 +98,8 @@ function SectionSelect({ current }: { current: SettingsSectionId }) {
     >
       <SelectTrigger
         aria-label="Section"
-        className="w-full min-w-0 touch-manipulation data-[size=default]:max-md:h-11"
+        data-slot="settings-section-picker"
+        className="ml-auto w-auto min-w-0 touch-manipulation border-transparent bg-transparent text-[15px] font-medium shadow-none data-[size=default]:max-md:h-11"
       >
         <SelectValue>{label}</SelectValue>
       </SelectTrigger>
@@ -112,6 +114,35 @@ function SectionSelect({ current }: { current: SettingsSectionId }) {
   )
 }
 
+export function SettingsRowButton({
+  className,
+  ...props
+}: ComponentProps<typeof Button>) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      {...props}
+      className={cn(
+        "h-11 rounded-[7px] px-3 text-[13px] md:h-[30px]",
+        className
+      )}
+    />
+  )
+}
+
+const ROW_INSET = {
+  default: "px-4 py-3.5",
+  wide: "px-5 py-3.5",
+  tall: "px-5 py-4",
+} as const
+
+const ROW_GAP = {
+  text: "gap-4",
+  tile: "gap-3",
+  avatar: "gap-3.5",
+} as const
+
 export function SettingsTitle({
   title,
   children,
@@ -121,29 +152,55 @@ export function SettingsTitle({
 }) {
   return (
     <div data-slot="settings-title" className="mb-7 flex flex-col gap-1.5">
-      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+      <h1 className="text-2xl font-semibold tracking-[-0.5px]">{title}</h1>
       {children ? (
-        <p className="text-sm text-muted-foreground">{children}</p>
+        <p
+          data-slot="settings-title-sub"
+          className="text-[13px] text-muted-foreground"
+        >
+          {children}
+        </p>
       ) : null}
     </div>
   )
 }
 
 export function SettingsSection({
+  id,
   label,
   note,
+  spacing = "card",
+  className,
   children,
 }: {
+  id: string
   label: string
   note?: string
+  spacing?: "card" | "grid"
+  className?: string
   children: ReactNode
 }) {
   return (
-    <section data-slot="settings-section" className="mb-7 flex flex-col gap-2">
+    <section
+      data-slot="settings-section"
+      data-section={id}
+      aria-labelledby={`settings-section-${id}`}
+      className={cn(
+        "mb-7 flex flex-col",
+        spacing === "grid" ? "gap-2.5" : "gap-2",
+        className
+      )}
+    >
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-sm font-medium text-muted-foreground">{label}</h2>
+        <h2
+          id={`settings-section-${id}`}
+          data-slot="settings-section-head"
+          className="text-[13px] font-medium text-muted-foreground"
+        >
+          {label}
+        </h2>
         {note ? (
-          <span className="text-sm text-muted-foreground">{note}</span>
+          <span className="text-[13px] text-muted-foreground">{note}</span>
         ) : null}
       </div>
       {children}
@@ -152,15 +209,18 @@ export function SettingsSection({
 }
 
 export function SettingsCard({
+  name,
   children,
   className,
 }: {
+  name?: string
   children: ReactNode
   className?: string
 }) {
   return (
     <div
       data-slot="settings-card"
+      data-card={name}
       className={cn(
         "flex flex-col divide-y divide-border overflow-hidden rounded-lg border border-border bg-card",
         className
@@ -171,27 +231,56 @@ export function SettingsCard({
   )
 }
 
+export function SettingsTile({ icon: Icon }: { icon: LucideIcon }) {
+  return (
+    <span
+      aria-hidden
+      data-slot="settings-tile"
+      className="flex size-8 shrink-0 items-center justify-center rounded-[8px] bg-muted text-muted-foreground"
+    >
+      <Icon className="size-4" />
+    </span>
+  )
+}
+
 export function SettingsRow({
+  id,
   label,
   desc,
+  leading,
   control,
+  inset = "default",
+  gap,
   onClick,
   disabled,
   error,
 }: {
-  label: string
+  id?: string
+  label: ReactNode
   desc?: ReactNode
+  leading?: ReactNode
   control?: ReactNode
+  inset?: keyof typeof ROW_INSET
+  gap?: keyof typeof ROW_GAP
   onClick?: () => void
   disabled?: boolean
   error?: string
 }) {
   const body = (
     <>
+      {leading}
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="font-medium">{label}</span>
+        <span
+          data-slot="settings-row-label"
+          className="text-[13px] leading-4 font-medium break-words"
+        >
+          {label}
+        </span>
         {desc ? (
-          <span className="text-sm break-words text-muted-foreground">
+          <span
+            data-slot="settings-row-desc"
+            className="text-[12.5px] leading-4 break-words text-muted-foreground"
+          >
             {desc}
           </span>
         ) : null}
@@ -199,20 +288,33 @@ export function SettingsRow({
       {control}
     </>
   )
+  const spacing = ROW_GAP[gap ?? (leading ? "tile" : "text")]
   return (
-    <div data-slot="settings-row">
+    <div data-slot="settings-row" data-row={id}>
       {onClick ? (
         <Button
+          data-slot="settings-row-body"
           type="button"
           variant="ghost"
           disabled={disabled}
           onClick={onClick}
-          className="h-auto min-h-11 w-full flex-wrap justify-between gap-3 rounded-none px-4 py-3.5 text-left font-normal whitespace-normal hover:bg-muted md:min-h-0"
+          className={cn(
+            "h-auto min-h-11 w-full flex-wrap justify-between rounded-none text-left font-normal whitespace-normal hover:bg-muted md:min-h-0",
+            spacing,
+            ROW_INSET[inset]
+          )}
         >
           {body}
         </Button>
       ) : (
-        <div className="flex w-full flex-wrap items-center justify-between gap-3 px-4 py-3.5">
+        <div
+          data-slot="settings-row-body"
+          className={cn(
+            "flex w-full flex-wrap items-center justify-between",
+            spacing,
+            ROW_INSET[inset]
+          )}
+        >
           {body}
         </div>
       )}
@@ -225,10 +327,43 @@ export function SettingsRow({
   )
 }
 
-export function StateWord({ on }: { on: boolean }) {
+export function SettingsUsageLink({ desc }: { desc: string }) {
+  const navigate = useNavigate()
+  const href = settingsSectionHref("usage")
   return (
-    <span className="shrink-0 text-sm text-muted-foreground">
+    <a
+      data-slot="settings-usage-link"
+      aria-label={`Usage, ${desc}`}
+      href={href}
+      onClick={(event) => {
+        event.preventDefault()
+        void navigate({ href })
+      }}
+      className="flex min-h-11 items-center gap-3 rounded-lg border border-border bg-card px-5 py-3.5 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
+    >
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="text-[13px] font-medium">Usage</span>
+        <span className="text-[12.5px] text-muted-foreground">{desc}</span>
+      </span>
+      <ChevronRight className="size-3.5 text-muted-foreground" />
+    </a>
+  )
+}
+
+export function StateWord({
+  on,
+  chevron = false,
+}: {
+  on: boolean
+  chevron?: boolean
+}) {
+  return (
+    <span
+      data-slot="settings-state"
+      className="flex shrink-0 items-center gap-1 text-[13px] text-muted-foreground"
+    >
       {on ? "Enabled" : "Disabled"}
+      {chevron ? <ChevronRight className="size-3.5" /> : null}
     </span>
   )
 }

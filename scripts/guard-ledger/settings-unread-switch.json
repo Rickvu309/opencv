@@ -1,0 +1,14 @@
+{
+  "id": "settings-unread-switch",
+  "file": "scripts/settings-unread-switch.test.mjs",
+  "detector": {
+    "module": "scripts/lib/settings-unread-switch.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "506377b7d0f1744f14c1ee89f26126325152b85e",
+    "path": "apps/web/src/features/settings/preferences-section.tsx"
+  },
+  "reason": "Caught by review of #1417. Introduced by 506377b7d0f1744f14c1ee89f26126325152b85e, where Settings offered Email and Browser notification toggles that saved notifyEmail and notifyBrowser while no product code read either, so the switch changed nothing. detect fires on that Preferences file and stays quiet once Settings offers only keys with a reader."
+}

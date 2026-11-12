@@ -11,10 +11,17 @@ import {
   SlidersHorizontal,
   type LucideIcon,
 } from "lucide-react"
+import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@workspace/ui/components/avatar"
 import { NavItem } from "@workspace/ui/components/nav-item"
+import { cn } from "@workspace/ui/lib/utils"
 
 import { fetchProfile, profileKey } from "@/lib/account-api.ts"
 import { startPagePath } from "@/lib/product-paths.ts"
+import { resolveProfileImageSrc } from "@/lib/requests.ts"
 
 import {
   SETTINGS_SECTIONS,
@@ -22,9 +29,10 @@ import {
   settingsViewFromPath,
   type SettingsSectionId,
 } from "./sections.ts"
+import { personInitials } from "./person-initials.ts"
 
 const SETTINGS_NAV_ITEM =
-  "h-11 rounded-sm hover:bg-sidebar-accent aria-[current=page]:bg-sidebar-accent md:h-7"
+  "h-11 rounded-sm text-[13px] font-normal hover:bg-sidebar-accent aria-[current=page]:bg-sidebar-accent aria-[current=page]:font-medium aria-[current=page]:text-foreground md:h-7"
 
 const SECTION_ICONS: Record<SettingsSectionId, LucideIcon> = {
   preferences: SlidersHorizontal,
@@ -41,19 +49,26 @@ export function SettingsNav() {
   })
   const current = settingsViewFromPath(pathname)
   const profile = useQuery({ queryKey: profileKey(), queryFn: fetchProfile })
-  const name = profile.data?.name
+  const person = profile.data?.name || profile.data?.email
+  const photoSrc = resolveProfileImageSrc(profile.data?.image)
   return (
     <aside
       data-slot="settings-nav"
       className="flex w-61 shrink-0 flex-col gap-px bg-sidebar px-2.5 pt-2.5 pb-3 text-sidebar-foreground"
       aria-label="Settings"
     >
-      <RouterNavItem href={startPagePath(profile.data?.startPage)}>
+      <RouterNavItem
+        href={startPagePath(profile.data?.startPage)}
+        className="font-medium"
+      >
         <ArrowLeft aria-hidden />
         Back to app
       </RouterNavItem>
       <span aria-hidden className="h-3.5 shrink-0" />
-      <p className="flex h-6 items-center px-2 text-sm text-muted-foreground">
+      <p
+        data-slot="settings-nav-heading"
+        className="flex h-6 items-center px-2 text-xs font-medium text-muted-foreground"
+      >
         Settings
       </p>
       <nav className="flex flex-col gap-px" aria-label="Settings sections">
@@ -71,8 +86,24 @@ export function SettingsNav() {
           )
         })}
       </nav>
-      {name ? (
-        <p className="mt-auto truncate px-2 pt-4 text-sm font-medium">{name}</p>
+      {person ? (
+        <div
+          data-slot="settings-nav-footer"
+          className="mt-auto flex h-8 shrink-0 items-center gap-2 px-2"
+        >
+          <Avatar size="sm" className="size-5">
+            {photoSrc ? <AvatarImage alt="" src={photoSrc} /> : null}
+            <AvatarFallback className="bg-sidebar-accent text-[10px] font-semibold">
+              {personInitials(
+                profile.data?.name ?? "",
+                profile.data?.email ?? ""
+              )}
+            </AvatarFallback>
+          </Avatar>
+          <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
+            {person}
+          </span>
+        </div>
       ) : null}
     </aside>
   )
@@ -81,17 +112,19 @@ export function SettingsNav() {
 function RouterNavItem({
   href,
   current,
+  className,
   children,
 }: {
   href: string
   current?: boolean
+  className?: string
   children: ReactNode
 }) {
   const navigate = useNavigate()
   return (
     <NavItem
       tone="muted"
-      className={SETTINGS_NAV_ITEM}
+      className={cn(SETTINGS_NAV_ITEM, className)}
       href={href}
       active={current}
       onClick={(event) => {

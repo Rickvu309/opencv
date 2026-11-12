@@ -1,10 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 
 import {
-  SettingsCard,
   SettingsLoadError,
-  SettingsRow,
-  SettingsSection,
   SettingsSkeletons,
   SettingsTitle,
 } from "./settings-layout.tsx"
@@ -35,37 +32,18 @@ export function BillingSection() {
   return (
     <>
       <SettingsTitle title="Billing">{planLine}</SettingsTitle>
-      <SettingsSection label="All plans">
-        <div className="grid gap-3">
-          <article className="flex flex-col gap-2 rounded-lg border border-border bg-card p-4">
-            <h3 className="font-medium">Free plan</h3>
-            <p className="text-sm text-muted-foreground">
-              {data.free.price}. {data.free.line}
-            </p>
-          </article>
-          <article className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
-            <h3 className="font-medium">Upgrade to Pro</h3>
-            <p className="text-sm text-muted-foreground">
-              {data.pro.price}. {data.pro.line}
-            </p>
-            <ul className="flex flex-col gap-1 text-sm">
-              {data.pro.benefits.map((benefit) => (
-                <li key={benefit}>{benefit}</li>
-              ))}
-            </ul>
-          </article>
-        </div>
-      </SettingsSection>
-      <SettingsSection label="Payment">
-        <SettingsCard>
-          <SettingsRow label="Payment method" desc="No card added" />
-        </SettingsCard>
-      </SettingsSection>
-      <SettingsSection label="Invoices">
-        <SettingsCard>
-          <SettingsRow label="None yet" />
-        </SettingsCard>
-      </SettingsSection>
+      {data.plan === "free" ? (
+        <article
+          data-slot="settings-plan-card"
+          data-card="current-plan"
+          className="flex flex-col gap-1 rounded-lg border border-border bg-card p-5"
+        >
+          <h2 className="text-[15px] font-medium">Free plan</h2>
+          <p className="text-[13px] text-muted-foreground">
+            {data.free.price}. {data.free.line}
+          </p>
+        </article>
+      ) : null}
     </>
   )
 }
