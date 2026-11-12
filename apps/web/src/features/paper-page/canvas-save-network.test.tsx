@@ -357,7 +357,9 @@ describe("words typed while the connection is down", () => {
       await act(() => turnsUntil(() => state.requests.length > before))
     }
     await act(() => realTurns())
-    expect(article.textContent?.replaceAll("​", "")).toContain("Hello there")
+    expect(article.textContent?.replaceAll("\u200b", "")).toContain(
+      "Hello there"
+    )
     expect(screen.getByRole("status").textContent).toMatch(/not saved yet/)
     expect(screen.getByRole("status").textContent).not.toMatch(/\bSaved\b/)
     expect(state.committed).toEqual([])

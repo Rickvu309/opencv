@@ -162,7 +162,7 @@ function remaining(page: WordPage, index: number, offset: number) {
 }
 
 function documentText(text: string) {
-  return text.replace(/[\r\n\u2028\u2029]/g, "\u21b5")
+  return text.replace(/[\n\v\f\r\u0085\u2028\u2029]/g, "\u21b5")
 }
 
 function outlineLine(
