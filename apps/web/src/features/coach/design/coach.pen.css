@@ -7,9 +7,9 @@
     line-height: 18px;
   }
 
-  [data-slot="coach-panel-body"][data-presentation="page"]
-    [data-slot="coach-workspace-composer"]
-    [data-slot="coach-composer"]:not([data-capped])
+  [data-pen-surface="coach"][data-slot="coach-composer"]:not(
+      [data-capped]
+    ):where([data-presentation="page"] [data-slot="coach-workspace-composer"] *)
     textarea {
     padding-left: 18px;
   }
