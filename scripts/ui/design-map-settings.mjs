@@ -2,7 +2,6 @@ import { APP_SHELL, MAIN_PANEL, PADDING } from "./design-map-shared.mjs"
 
 const PREFERENCES = "W12.1 Preferences"
 const SETTINGS_COACH = "W12.2 Coach"
-const SETTINGS_INTEGRATIONS = "W12.3 Integrations"
 const SETTINGS_USAGE = "W12.4 Usage & limits"
 const SETTINGS_BILLING = "W12.5 Billing"
 const SETTINGS_ACCOUNT = "W12.6 Account"
@@ -130,15 +129,6 @@ export const SETTINGS_ROWS = [
   },
   {
     screen: "settings",
-    label: "Settings Notifications after Interface",
-    selector:
-      '[data-section="interface"] + [data-section="notifications"] [data-slot="settings-section-head"]',
-    composedScreen: PREFERENCES,
-    frame: "kkac6",
-    props: ["fontSize"],
-  },
-  {
-    screen: "settings",
     label: "Settings row",
     selector: '[data-row="language"] [data-slot="settings-row-body"]',
     composedScreen: PREFERENCES,
@@ -168,22 +158,6 @@ export const SETTINGS_ROWS = [
     composedScreen: PREFERENCES,
     frame: "Pdkol",
     props: ["height", "radius", "paddingLeft", "gap"],
-  },
-  {
-    screen: "settings",
-    label: "Settings notification row with tile",
-    selector: '[data-row="notify-email"] [data-slot="settings-row-body"]',
-    composedScreen: PREFERENCES,
-    frame: "k0KVa",
-    props: [...PADDING, "gap"],
-  },
-  {
-    screen: "settings",
-    label: "Settings notification tile",
-    selector: '[data-row="notify-email"] [data-slot="settings-tile"]',
-    composedScreen: PREFERENCES,
-    frame: "P4iMp",
-    props: ["width", "height", "radius"],
   },
   {
     screen: "settings-account",
@@ -285,55 +259,6 @@ export const SETTINGS_ROWS = [
     props: [...PADDING, "gap"],
   },
   {
-    screen: "settings-integrations",
-    label: "Integrations search",
-    selector: '[data-slot="search-input"]',
-    composedScreen: SETTINGS_INTEGRATIONS,
-    frame: "K3c4q",
-    props: ["height", "radius"],
-  },
-  {
-    screen: "settings-integrations",
-    label: "Integrations tile row",
-    selector: '[data-section="meetings"] [data-slot="integration-grid"]',
-    composedScreen: SETTINGS_INTEGRATIONS,
-    frame: "c2LCkg",
-    props: ["gap"],
-  },
-  {
-    screen: "settings-integrations",
-    label: "Integrations tile",
-    selector: '[data-integration="zoom"]',
-    composedScreen: SETTINGS_INTEGRATIONS,
-    frame: "M5tUUp",
-    props: ["radius", ...PADDING, "gap"],
-  },
-  {
-    screen: "settings-integrations",
-    label: "Integrations tile logo",
-    selector: '[data-integration="zoom"] [data-slot="integration-logo"]',
-    composedScreen: SETTINGS_INTEGRATIONS,
-    frame: "tYlby",
-    props: ["width", "height", "radius"],
-  },
-  {
-    screen: "settings-integrations",
-    label: "Integrations tile name type",
-    selector: '[data-integration="zoom"] [data-slot="integration-name"]',
-    composedScreen: SETTINGS_INTEGRATIONS,
-    frame: "yC42T",
-    props: ["fontSize"],
-  },
-  {
-    screen: "settings-integrations",
-    label: "Integrations Meetings after Enabled",
-    selector:
-      '[data-section="enabled"] + [data-section="meetings"] [data-slot="settings-section-head"]',
-    composedScreen: SETTINGS_INTEGRATIONS,
-    frame: "YZmYJ",
-    props: ["fontSize"],
-  },
-  {
     screen: "settings-usage",
     label: "Usage row",
     selector: '[data-row="session"]',
@@ -380,14 +305,5 @@ export const SETTINGS_ROWS = [
     composedScreen: SETTINGS_BILLING,
     frame: "xz1Ym",
     props: ["radius", ...PADDING, "gap"],
-  },
-  {
-    screen: "settings-billing",
-    label: "Billing Invoices inside Payment card",
-    selector:
-      '[data-card="payment"] [data-row="invoices"] [data-slot="settings-row-body"]',
-    composedScreen: SETTINGS_BILLING,
-    frame: "TAJ9i",
-    props: [...PADDING],
   },
 ]

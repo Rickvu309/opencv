@@ -1,4 +1,3 @@
-import { Mail, Monitor } from "lucide-react"
 import { SegmentedControl } from "@workspace/ui/components/segmented-control"
 import {
   Select,
@@ -12,9 +11,7 @@ import {
   SettingsCard,
   SettingsRow,
   SettingsSection,
-  SettingsTile,
   SettingsTitle,
-  StateWord,
 } from "./settings-layout.tsx"
 import {
   startPageSchema,
@@ -132,30 +129,6 @@ export function PreferencesSection({
                 </SelectContent>
               </Select>
             }
-          />
-        </SettingsCard>
-      </SettingsSection>
-      <SettingsSection id="notifications" label="Notifications">
-        <SettingsCard name="notifications">
-          <SettingsRow
-            id="notify-email"
-            label="Email"
-            desc={profile.email}
-            onClick={() => onSave({ notifyEmail: !profile.notifyEmail })}
-            disabled={pending}
-            error={errorKey === "notifyEmail" ? error : undefined}
-            leading={<SettingsTile icon={Mail} />}
-            control={<StateWord on={profile.notifyEmail} chevron />}
-          />
-          <SettingsRow
-            id="notify-browser"
-            label="Browser"
-            desc="While opencv is open"
-            onClick={() => onSave({ notifyBrowser: !profile.notifyBrowser })}
-            disabled={pending}
-            error={errorKey === "notifyBrowser" ? error : undefined}
-            leading={<SettingsTile icon={Monitor} />}
-            control={<StateWord on={profile.notifyBrowser} chevron />}
           />
         </SettingsCard>
       </SettingsSection>

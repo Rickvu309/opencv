@@ -74,30 +74,21 @@ describe("settings", () => {
     })
   })
 
-  it("filters integrations and restores the full catalog after clearing", async () => {
-    const user = userEvent.setup()
-    renderApp("/settings")
-    await user.click(await screen.findByRole("link", { name: "Integrations" }))
-    const input = await screen.findByRole("searchbox", {
-      name: "Search integrations",
-    })
-    expect(screen.getByText("Gmail")).toBeInTheDocument()
-    expect(screen.getByText("Zoom")).toBeInTheDocument()
-
-    await user.type(input, "zoom")
-    expect(screen.getByText("Zoom")).toBeInTheDocument()
-    expect(screen.queryByText("Gmail")).not.toBeInTheDocument()
-
-    await user.clear(input)
-    await user.type(input, "no matching integration")
+  it("offers no app connection Integrations cannot make", async () => {
+    renderApp("/settings/integrations")
     expect(
-      screen.getByRole("heading", { name: "No integrations match" })
+      await screen.findByRole("heading", { name: "Your agents" })
     ).toBeInTheDocument()
-
-    await user.click(screen.getByRole("button", { name: "Clear search" }))
-    expect(input).toHaveFocus()
-    expect(screen.getByText("Gmail")).toBeInTheDocument()
-    expect(screen.getByText("Zoom")).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /Connect Gmail/ })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("searchbox", { name: "Search integrations" })
+    ).not.toBeInTheDocument()
+    for (const app of ["Gmail", "Google Calendar", "Outlook", "Zoom"]) {
+      expect(screen.queryByText(app)).not.toBeInTheDocument()
+    }
+    expect(document.querySelector('[data-slot="integration-card"]')).toBeNull()
   })
 
   it("shows Back to app and the six sections, with Preferences current", async () => {
@@ -154,17 +145,25 @@ describe("settings", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("toggles email notifications from Enabled to Disabled", async () => {
+  it("offers no notification switch, since nothing sends notifications", async () => {
     renderApp("/settings")
-    const email = await screen.findByRole("button", { name: /^Email/ })
-    expect(email).toHaveTextContent("Enabled")
-    fireEvent.click(email)
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Preferences" })
+    ).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /^Email/ })).toBeNull()
+    expect(screen.queryByRole("button", { name: /^Browser/ })).toBeNull()
+    expect(screen.queryByRole("switch", { name: /Email|Browser/ })).toBeNull()
+    expect(screen.queryByRole("region", { name: "Notifications" })).toBeNull()
+  })
+
+  it("lands a link to the removed Notifications section on Preferences", async () => {
+    const { router } = renderApp("/settings/notifications")
     await waitFor(() => {
-      expect(getLastProfileUpdate()).toEqual({ notifyEmail: false })
+      expect(router.state.location.pathname).toBe("/settings")
     })
-    expect(screen.getByRole("button", { name: /^Email/ })).toHaveTextContent(
-      "Disabled"
-    )
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Preferences" })
+    ).toBeInTheDocument()
   })
 
   it("turns memory off", async () => {
@@ -176,14 +175,14 @@ describe("settings", () => {
     })
   })
 
-  it("turns the weekly plan on from Disabled", async () => {
+  it("offers no Weekly plan, since nothing sends one", async () => {
     renderApp("/settings/coach")
-    const row = await screen.findByRole("button", { name: /Weekly plan/ })
-    expect(row).toHaveTextContent("Disabled")
-    fireEvent.click(row)
-    await waitFor(() => {
-      expect(getLastProfileUpdate()).toEqual({ agentWeekly: true })
-    })
+    expect(
+      await screen.findByRole("button", { name: /Interview prep/ })
+    ).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /Weekly plan/ })).toBeNull()
+    expect(screen.queryByRole("switch", { name: /Weekly plan/ })).toBeNull()
+    expect(screen.queryByText(/Every Monday/)).toBeNull()
   })
 
   it("turns interview prep off", async () => {
@@ -230,8 +229,8 @@ describe("settings", () => {
     expect(
       screen.queryByRole("button", { name: "Add card" })
     ).not.toBeInTheDocument()
-    expect(screen.getByText("No card added")).toBeInTheDocument()
-    expect(screen.getByText("None yet")).toBeInTheDocument()
+    expect(screen.queryByText("No card added")).not.toBeInTheDocument()
+    expect(screen.queryByText("None yet")).not.toBeInTheDocument()
     expect(glowButtons()).toHaveLength(0)
   })
 
@@ -475,25 +474,30 @@ describe("Settings sections follow their design frames", () => {
     ).toBeInTheDocument()
   })
 
-  it("lists the app groups before the person's own agents", async () => {
+  it("keeps Connect an agent and Your agents on Integrations", async () => {
     renderApp("/settings/integrations")
-    const profiles = await screen.findByRole("region", { name: "Profiles" })
-    const agents = await screen.findByRole("heading", { name: "Your agents" })
     expect(
-      profiles.compareDocumentPosition(agents) &
-        Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy()
+      await screen.findByRole("heading", { name: "Your agents" })
+    ).toBeInTheDocument()
     expect(
-      screen.getByRole("searchbox", { name: "Search integrations" })
+      screen.getByRole("heading", { level: 1, name: "Integrations" })
     ).toBeInTheDocument()
   })
 
-  it("puts Invoices inside the Payment card and offers no paid action", async () => {
+  it("shows the Free plan and offers, prices or implies no paid plan", async () => {
     renderApp("/settings/billing")
-    const payment = await screen.findByRole("region", { name: "Payment" })
-    expect(within(payment).getByText("Invoices")).toBeInTheDocument()
-    expect(within(payment).getByText("None yet")).toBeInTheDocument()
-    expect(within(payment).getByText("No card added")).toBeInTheDocument()
+    expect(
+      await screen.findByText("You're on the Free plan.")
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { name: "Free plan" })
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/Upgrade/)).toBeNull()
+    expect(screen.queryByText(/\$9/)).toBeNull()
+    expect(screen.queryByText(/Cancel anytime/)).toBeNull()
+    expect(screen.queryByRole("region", { name: "Payment" })).toBeNull()
+    expect(screen.queryByText("Payment method")).toBeNull()
+    expect(screen.queryByText("Invoices")).toBeNull()
     expect(screen.queryByRole("button", { name: "Add card" })).toBeNull()
     expect(screen.queryByRole("link", { name: "All plans" })).toBeNull()
   })

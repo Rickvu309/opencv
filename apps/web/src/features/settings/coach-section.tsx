@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 import type { Profile, ProfileUpdateInput } from "@workspace/domain"
-import { CalendarCheck, FileText, Mail, MessageCircle, Mic } from "lucide-react"
+import { FileText, Mail, MessageCircle, Mic } from "lucide-react"
 import { Switch } from "@workspace/ui/components/switch"
 
 import {
@@ -42,12 +42,6 @@ const AGENTS = [
     icon: Mail,
     label: "Email updates",
     desc: "Move jobs when a recruiter replies in Gmail",
-  },
-  {
-    key: "agentWeekly",
-    icon: CalendarCheck,
-    label: "Weekly plan",
-    desc: "Every Monday, the jobs to apply for next",
   },
 ] as const
 

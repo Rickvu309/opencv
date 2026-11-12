@@ -188,10 +188,14 @@ export const SCREENS = [
     [
       "settings-integrations",
       "/settings/integrations",
-      '[data-slot="integration-card"]',
+      '[data-slot="settings-agent-connections"] #agent-connections-title',
     ],
     ["settings-usage", "/settings/usage", '[data-slot="settings-card"]'],
-    ["settings-billing", "/settings/billing", '[data-slot="settings-card"]'],
+    [
+      "settings-billing",
+      "/settings/billing",
+      '[data-slot="settings-plan-card"]',
+    ],
     ["settings-account", "/settings/account", '[data-slot="settings-card"]'],
   ].map(([id, route, selector]) => ({
     id,
