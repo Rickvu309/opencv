@@ -14,7 +14,8 @@ import { jsonWithStatus } from "../http-json.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import { saveFile } from "../paper/index.js"
 import { registry } from "../registry/registry.js"
-import { exportAccount } from "./queries.js"
+import { createExportGate, gatedExport } from "./export-gate.js"
+import { exportAccountArchive } from "./queries.js"
 
 function sessionApp(auth?: Auth, db?: AppDatabase) {
   const routes = new Hono<{ Variables: SessionVariables }>()
@@ -92,17 +93,16 @@ export function createAccountRoutes(auth?: Auth, db?: AppDatabase) {
     return c.json(successEnvelope(result.output))
   })
 
-  routes.get("/export", async (c) => {
-    const data = await exportAccount(c.var.userId)
-    const body = JSON.stringify(data)
-    return new Response(body, {
-      status: 200,
-      headers: {
-        "content-type": "application/json; charset=utf-8",
-        "content-disposition": 'attachment; filename="opencv-export.json"',
-      },
-    })
-  })
+  const exportGate = createExportGate()
+  routes.get("/export", (c) =>
+    gatedExport(
+      exportGate,
+      c.var.userId,
+      () => exportAccountArchive(c.var.userId),
+      undefined,
+      c.req.raw.signal
+    )
+  )
 
   return routes
 }

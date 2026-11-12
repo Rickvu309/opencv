@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
+  downloadExport,
   EXPORT_FILENAME,
   filenameFromDisposition,
   PHOTO_REJECTION,
@@ -21,8 +22,31 @@ describe("settings api guards", () => {
 
   it("reads the export filename from content-disposition", () => {
     expect(
-      filenameFromDisposition('attachment; filename="opencv-export.json"')
-    ).toBe("opencv-export.json")
+      filenameFromDisposition('attachment; filename="opencv-export.zip"')
+    ).toBe("opencv-export.zip")
     expect(filenameFromDisposition(null)).toBe(EXPORT_FILENAME)
   })
+
+  it.each([
+    [429, "An export is already being prepared. Try again when it finishes."],
+    [503, "Other exports are being prepared right now. Try again in a minute."],
+  ])(
+    "shows the server's own words when the export is refused with %i",
+    async (status, message) => {
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async () =>
+          Response.json(
+            { ok: false, error: { code: "EXPORT_BUSY", message } },
+            { status, headers: { "retry-after": "30" } }
+          )
+        )
+      )
+      await expect(downloadExport()).rejects.toMatchObject({ status, message })
+    }
+  )
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
 })

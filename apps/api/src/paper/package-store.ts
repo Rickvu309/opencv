@@ -90,7 +90,7 @@ function sameRequest(
   })
 }
 
-async function completeVersion(version: Version) {
+export async function completeVersion(version: Version) {
   const artifact = (
     await getDb()
       .select()

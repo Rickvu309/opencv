@@ -379,8 +379,8 @@ export async function profileApiFetch(
       {
         status: 200,
         headers: {
-          "content-type": "application/json",
-          "content-disposition": 'attachment; filename="opencv-export.json"',
+          "content-type": "application/zip",
+          "content-disposition": 'attachment; filename="opencv-export.zip"',
         },
       }
     )
