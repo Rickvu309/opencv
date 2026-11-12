@@ -225,7 +225,7 @@ function command(ctx, cmd, rest) {
       })
     }
     case "save":
-      return save(ctx, { message: flags["-m"] })
+      return save(ctx, { message: flags["-m"], push: Boolean(flags["--push"]) })
     case "release":
       return release(ctx, {
         n: pos[0] ? issueNumber(pos[0], "release --reason <why> [<n>]") : null,

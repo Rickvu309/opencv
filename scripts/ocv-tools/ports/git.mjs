@@ -206,6 +206,17 @@ export function gitAdapter(run) {
     push(cwd) {
       return git(cwd, ["push", "-u", "origin", "HEAD"])
     },
+    pushSave(cwd, branch) {
+      return git(cwd, [
+        "push",
+        "--force",
+        "origin",
+        `HEAD:refs/saves/${branch}`,
+      ])
+    },
+    deleteSave(cwd, branch) {
+      return git(cwd, ["push", "origin", `:refs/saves/${branch}`])
+    },
     removeWorktree(cwd, path, force) {
       return git(cwd, [
         "worktree",

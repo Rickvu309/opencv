@@ -66,7 +66,7 @@ function lostPushed(ctx, t, holder) {
   }
 }
 
-export function save(ctx, { message }) {
+export function save(ctx, { message, push = false }) {
   const t = taskHere(ctx, "save")
   if (!message) throw new Error("usage: ocv-tools save -m <message>")
   const me = agentIdFor(ctx, t.gitDir)
@@ -84,11 +84,9 @@ export function save(ctx, { message }) {
     throw refusalError(verdict.refusals[0])
   }
 
-  validateAuthoring({
-    n: t.n,
-    issue: read.issue,
-    pull: ctx.ports.gh.prs({ state: "open", head: t.branch })[0],
-  })
+  const openPull = ctx.ports.gh.prs({ state: "open", head: t.branch })[0]
+  validateAuthoring({ n: t.n, issue: read.issue, pull: openPull })
+  const parked = Boolean(openPull) && !push
 
   const dirty = git.status(ctx.cwd).out
   const upstream = git.verify(ctx.cwd, `origin/${t.branch}`)
@@ -124,13 +122,21 @@ export function save(ctx, { message }) {
   if (lostNow(t, { claim: beforePush, me, issue: beforePushRead.issue }))
     return lost(ctx, t, beforePush)
   heartbeat(ctx, t.n, beforePush, me)
-  const pushed = git.push(ctx.cwd)
+  const pushed = parked ? git.pushSave(ctx.cwd, t.branch) : git.push(ctx.cwd)
   if (!pushed.ok) throwPushFailure(ctx, pushed)
   const afterPushRead = readClaim(ctx, t.n, true)
   const afterPush = afterPushRead.holder
   if (lostNow(t, { claim: afterPush, me, issue: afterPushRead.issue }))
     return lostPushed(ctx, t, afterPush)
   heartbeat(ctx, t.n, afterPush, me)
+  if (parked)
+    return {
+      lines: [
+        `Saved #${t.n} at ${git.shortHead(ctx.cwd)} to refs/saves/${t.branch} on origin, and the claim is refreshed.`,
+        `PR #${openPull.number} keeps its last pushed head, so no ci run started for an unfinished step.`,
+      ],
+      next: "Keep working and save again. When the round is ready for review, run scripts/ocv-tools.mjs save --push -m <message>: it moves the PR head and starts ci",
+    }
   return {
     lines: [
       `Saved #${t.n} on ${t.branch} at ${git.shortHead(ctx.cwd)}.`,
@@ -345,6 +351,11 @@ export function cleanup(ctx, { n: given, flags = {}, targets: selected }) {
         if (!remote.ok)
           lines.push(
             `Warning: could not delete remote branch ${wt.branch}: ${remote.err || remote.out}`
+          )
+        const save = ctx.ports.git.deleteSave(main, wt.branch)
+        if (!save.ok && !/does not exist|not found/i.test(save.err ?? ""))
+          lines.push(
+            `Warning: could not delete refs/saves/${wt.branch}: ${save.err || save.out}`
           )
       }
     }

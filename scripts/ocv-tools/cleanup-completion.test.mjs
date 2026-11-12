@@ -144,6 +144,11 @@ test("reconciliation preserves an advanced remote tip after the worktree head me
     ports.effects.some((e) => e.op === "deleteRemoteBranch"),
     false
   )
+  assert.equal(
+    ports.effects.some((e) => e.op === "deleteSave"),
+    false,
+    "a preserved remote branch keeps its parked refs/saves ref too"
+  )
 })
 
 test("T3 cleanup preserves issue-only human protection and unknown issue associations", () => {

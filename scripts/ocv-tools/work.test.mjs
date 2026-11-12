@@ -287,6 +287,10 @@ test("cleanup deletes the remote branch only while it still exists, and says not
   const deleted = runCli(["cleanup", "90"], ctxFor(kept))
   assert.equal(deleted.code, 0, deleted.text)
   assert.ok(kept.effects.some((e) => e.op === "deleteRemoteBranch"))
+  assert.ok(
+    kept.effects.some((e) => e.op === "deleteSave"),
+    "cleanup also deletes the parked refs/saves ref of a deleted branch"
+  )
   assert.doesNotMatch(deleted.text, /Warning/)
 })
 
@@ -411,4 +415,43 @@ test("save refuses bad issue titles and live PR metadata before commit or push",
   }
   const { ctx } = task({ prs: [pull], dirty: { [cwd]: " M b.txt\n" } })
   assert.equal(runCli(["save", "-m", "fix: keep my search"], ctx).code, 0)
+})
+
+const OPEN_PULL = {
+  number: 91,
+  state: "OPEN",
+  headRefName: "feat/90-keep-my-search",
+  title: "feat: keep my search (#90)",
+  body: "Closes #90",
+}
+
+test("save inside an open PR's round parks the commit on refs/saves and leaves the PR head, so no ci run starts", () => {
+  const { ctx, ports } = task({
+    prs: [OPEN_PULL],
+    dirty: { [cwd]: " M b.txt\n" },
+  })
+  const r = runCli(["save", "-m", "fix: keep my search"], ctx)
+  assert.equal(r.code, 0, r.text)
+  assert.deepEqual(
+    ports.effects
+      .filter((e) => ["push", "pushSave"].includes(e.op))
+      .map((e) => [e.op, e.branch]),
+    [["pushSave", "feat/90-keep-my-search"]]
+  )
+  assert.match(r.text, /to refs\/saves\/feat\/90-keep-my-search on origin/)
+  assert.match(r.text, /PR #91 keeps its last pushed head/)
+  assert.match(r.text, /save --push/)
+  assert.ok(ports.effects.some((e) => e.op === "editComment"))
+})
+
+test("save --push moves the PR head, and a branch with no PR yet pushes as before", () => {
+  const ready = task({ prs: [OPEN_PULL], dirty: { [cwd]: " M b.txt\n" } })
+  const r = runCli(["save", "--push", "-m", "fix: keep my search"], ready.ctx)
+  assert.equal(r.code, 0, r.text)
+  assert.ok(ready.ports.effects.some((e) => e.op === "push"))
+  assert.ok(!ready.ports.effects.some((e) => e.op === "pushSave"))
+  const first = task({ dirty: { [cwd]: " M b.txt\n" } })
+  assert.equal(runCli(["save", "-m", "feat: add b"], first.ctx).code, 0)
+  assert.ok(first.ports.effects.some((e) => e.op === "push"))
+  assert.ok(!first.ports.effects.some((e) => e.op === "pushSave"))
 })

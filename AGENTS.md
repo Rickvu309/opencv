@@ -35,7 +35,7 @@ The web is a React SPA in `apps/web`. The API is Hono in `apps/api`. The shared 
 
 1. Run `scripts/ocv-tools.mjs take <issue#> -d "short description"` and work in the printed worktree on its `PORT`. To create an issue, use `take "Issue title"` with `--what`, `--done`, and `--risk low|normal|high`. Describe the person's problem and desired outcome in plain language.
 2. Read the relevant implementation, tests, and enforced checks. Make the requested change in its owning module. Keep unrelated work and existing uncommitted files untouched.
-3. Run the targeted checks under Verification below. Commit with `scripts/ocv-tools.mjs save -m "<message>"`. Add no AI attribution and no Co-Authored-By trailer, and never use `--author`.
+3. Run the targeted checks under Verification below. Commit with `scripts/ocv-tools.mjs save -m "<message>"`. Once the PR is open, `save` keeps each commit on `refs/saves/<branch>` and leaves the PR head and its CI alone; end every fix round with `scripts/ocv-tools.mjs save --push -m "<message>"`, which moves the PR head and starts CI. Add no AI attribution and no Co-Authored-By trailer, and never use `--author`.
 4. Run `scripts/ocv-tools.mjs finish --body-file <file>` to open the PR. Use Summary, Evidence, and Merge Danger. Describe the product or maintainer outcome and include real commands and results.
 5. When merging is in scope, require green `ci` and satisfy every Guardrail above. From the main checkout, run `scripts/ocv-tools.mjs merge <pr#>`. For a pending check or review, use the host's watch and wake mechanism. In T3 Code use `watch_pull_request` and end the turn. Continue all independent authorized work before yielding. A restriction on merging applies only to merging.
 6. After merge, remove the task's worktree, local branch, and throwaway resources, and list what was removed. Before claiming delivery is complete, run `scripts/ocv-tools.mjs done`. Record a real blocker with `scripts/ocv-tools.mjs block <n> "<reason>"`. A registered wait is pending work, not completion.
@@ -67,6 +67,7 @@ The web is a React SPA in `apps/web`. The API is Hono in `apps/api`. The shared 
 | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Recording a blocker never completes open work.                        | `done` exits 4 for blocked work, 1 if any unblocked item remains; `scripts/ocv-tools/done.test.mjs` replays the #1083 and #1084 handbacks.              |
 | An empty ownership check does not prove the full request is complete. | `done` states its agent scope and requires checking the full request; the coordinator must match each requested item to evidence before final handback. |
+| A save during an open PR round does not move the PR head.             | `save` parks on `refs/saves/<branch>`, `save --push` moves the head; `scripts/ocv-tools/work.test.mjs`.                                                 |
 
 ## Pointers
 

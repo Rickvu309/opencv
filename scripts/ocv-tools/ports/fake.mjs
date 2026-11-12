@@ -501,6 +501,15 @@ export function fakePorts(world = {}) {
       state.ahead[cwd] = 0
       return { ok: true, out: "", err: "" }
     },
+    pushSave(cwd, branch) {
+      effect("pushSave", { cwd, branch })
+      if (!state.pushOk) return { ok: false, out: "", err: state.pushErr }
+      return { ok: true, out: "", err: "" }
+    },
+    deleteSave(_cwd, branch) {
+      effect("deleteSave", { branch })
+      return { ok: true, out: "", err: "" }
+    },
     removeWorktree(_cwd, path, force) {
       effect("removeWorktree", { path, force })
       const at = state.worktrees.findIndex((item) => item.path === path)

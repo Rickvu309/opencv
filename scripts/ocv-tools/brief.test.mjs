@@ -32,6 +32,19 @@ test("brief prints AGENTS.md for every role", () => {
   }
 })
 
+test("a build brief tells the agent that save parks while the PR is open and save --push moves the PR head", () => {
+  const { code, text } = run(["brief", "90", "--role", "build"])
+  assert.equal(code, 0)
+  assert.match(
+    text,
+    /Once the PR is open, `save` keeps each commit on `refs\/saves\/<branch>`/
+  )
+  assert.match(
+    text,
+    /end every fix round with `scripts\/ocv-tools\.mjs save --push -m "<message>"`/
+  )
+})
+
 test("brief reads rules through the filesystem port", () => {
   const rules = "# Project rules\n\nUse the assigned worktree.\n"
   const { code, text } = run(["brief", "90", "--role", "build"], {

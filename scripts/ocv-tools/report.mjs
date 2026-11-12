@@ -55,8 +55,8 @@ export const COMMANDS = [
   },
   {
     name: "save",
-    usage: "save -m <message>",
-    when: "From inside the task worktree: commit everything, refresh the claim, push through the pre-push checks and refresh again. Save at least every 180 minutes or someone else can take the issue. Exit 3 LOST if someone did: uncommitted work goes to a patch under ~/tmp/ocv-tools/lost. A push that already reached origin is reported as lost and the old claim comment is left alone.",
+    usage: "save -m <message> [--push]",
+    when: "From inside the task worktree: commit everything, refresh the claim, push through the pre-push checks and refresh again. While the branch has an open PR, save pushes to refs/saves/<branch> instead, so the PR head and its ci stay on the last finished step; --push moves the PR head when the round is ready. Save at least every 180 minutes or someone else can take the issue. Exit 3 LOST if someone did: uncommitted work goes to a patch under ~/tmp/ocv-tools/lost. A push that already reached origin is reported as lost and the old claim comment is left alone.",
   },
   {
     name: "release",
