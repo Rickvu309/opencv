@@ -13,12 +13,13 @@ export class ApiError extends Error {
   readonly code: string
   readonly jobId?: string
   readonly stage?: string
+  readonly retryAfterMs?: number
 
   constructor(
     status: number,
     code: string,
     message: string,
-    detail?: { jobId?: string; stage?: string }
+    detail?: { jobId?: string; stage?: string; retryAfterMs?: number }
   ) {
     super(message)
     this.name = "ApiError"
@@ -26,6 +27,7 @@ export class ApiError extends Error {
     this.code = code
     this.jobId = detail?.jobId
     this.stage = detail?.stage
+    this.retryAfterMs = detail?.retryAfterMs
   }
 }
 

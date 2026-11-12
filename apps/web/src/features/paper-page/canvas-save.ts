@@ -123,6 +123,8 @@ function database() {
 
 export async function closeWritingDb() {
   ownWrites.clear()
+  unanswered.clear()
+  retryAt.clear()
   const current = opened
   opened = null
   if (!current) return
@@ -259,14 +261,21 @@ function receiptRevision(value: unknown) {
 
 const tails = new Map<string, Promise<unknown>>()
 const ownWrites = new Map<string, DraftBasis>()
+const unanswered = new Map<string, string>()
+const retryAt = new Map<string, number>()
 
 function basisAt(
   docId: string,
-  revision: string,
+  page: WordPage,
   claimed: DraftBasis | null
 ): DraftBasis | null {
   const own = ownWrites.get(docId)
-  return own && own.revision === revision ? own : claimed
+  if (own && own.revision === page.revision) return own
+  const sent = unanswered.get(docId)
+  if (sent !== undefined && sent === pageText(page)) {
+    return recordedBasis(page.revision, sent)
+  }
+  return claimed
 }
 
 function serial<T>(docId: string, job: () => Promise<T>): Promise<T> {
@@ -296,59 +305,141 @@ async function settleOnce(
   if (signal.aborted) return missed(words)
   const committed = await commitWords(docId, words)
   if (committed.local.transaction !== "complete") return missed(words)
-  try {
-    const page = await readPage(docId, signal)
-    if (!page || signal.aborted) return missed(words)
-    const seen = pageText(page)
-    const basis = basisAt(docId, page.revision, claim.basis)
-    const changed = basis ? words !== basis.words : claim.typed
-    const serverMoved =
-      basis?.revision != null && page.revision !== basis.revision
-    if (words === seen && (words !== "" || basis !== null)) {
-      return {
-        saved: true,
-        words,
-        revision: page.revision,
-        note: null,
-        basis: recordedBasis(page.revision, words),
-      }
-    }
-    if (!changed) {
-      if (words === "" && seen === "") return missed(words)
-      const replacement = draftFromPage(page)
-      if (!replacement) return missed(words)
-      return {
-        saved: false,
-        words: seen,
-        revision: page.revision,
-        note: null,
-        replace: replacement,
-        basis: recordedBasis(page.revision, seen),
-      }
-    }
-    if (serverMoved) {
-      return { saved: false, words, revision: null, note: null, conflict: true }
-    }
-    const sent = await sendPage(page, blocks, claim.caret ?? null)
-    if (sent.note)
-      return { saved: false, words, revision: null, note: sent.note }
-    if (sent.revision) ownWrites.set(docId, recordedBasis(sent.revision, words))
-    if (!sent.revision || signal.aborted) return missed(words)
-    const next = await readPage(docId, signal)
-    if (!next || next.revision !== sent.revision || pageText(next) !== words) {
-      return missed(words)
-    }
-    const adopted = adoptedBlocks(next, blocks)
+  const page = await readPage(docId, signal)
+  if (!page || signal.aborted) return missed(words)
+  const seen = pageText(page)
+  const basis = basisAt(docId, page, claim.basis)
+  const changed = basis ? words !== basis.words : claim.typed
+  const serverMoved =
+    basis?.revision != null && page.revision !== basis.revision
+  if (words === seen && (words !== "" || basis !== null)) {
     return {
       saved: true,
       words,
-      revision: next.revision,
+      revision: page.revision,
       note: null,
-      basis: recordedBasis(next.revision, words),
-      ...(adopted ? { blocks: adopted } : {}),
+      basis: recordedBasis(page.revision, words),
+    }
+  }
+  if (!changed) {
+    if (words === "" && seen === "") return missed(words)
+    const replacement = draftFromPage(page)
+    if (!replacement) return missed(words)
+    return {
+      saved: false,
+      words: seen,
+      revision: page.revision,
+      note: null,
+      replace: replacement,
+      basis: recordedBasis(page.revision, seen),
+    }
+  }
+  if (serverMoved) {
+    return { saved: false, words, revision: null, note: null, conflict: true }
+  }
+  unanswered.set(docId, words)
+  const sent = await sendPage(page, blocks, claim.caret ?? null)
+  unanswered.delete(docId)
+  if (sent.note) return { saved: false, words, revision: null, note: sent.note }
+  if (sent.revision) ownWrites.set(docId, recordedBasis(sent.revision, words))
+  if (!sent.revision || signal.aborted) return missed(words)
+  const next = await readPage(docId, signal)
+  if (!next || next.revision !== sent.revision || pageText(next) !== words) {
+    return missed(words)
+  }
+  const adopted = adoptedBlocks(next, blocks)
+  return {
+    saved: true,
+    words,
+    revision: next.revision,
+    note: null,
+    basis: recordedBasis(next.revision, words),
+    ...(adopted ? { blocks: adopted } : {}),
+  }
+}
+
+type RetryWait = { until: number } | "online" | null
+
+type Attempt = { outcome: SaveOutcome; wait: RetryWait }
+
+function retryWait(error: unknown): RetryWait {
+  if (error instanceof ApiError) {
+    return error.retryAfterMs === undefined
+      ? null
+      : { until: Date.now() + error.retryAfterMs }
+  }
+  return typeof navigator !== "undefined" && navigator.onLine === false
+    ? "online"
+    : null
+}
+
+async function attempt(
+  docId: string,
+  blocks: readonly PageBlock[],
+  signal: AbortSignal,
+  claim: SettleClaim
+): Promise<Attempt> {
+  try {
+    return {
+      outcome: await settleOnce(docId, blocks, signal, claim),
+      wait: null,
     }
   } catch (error) {
-    return { ...missed(words), note: serverNote(error) }
+    return {
+      outcome: { ...missed(pageWords(blocks)), note: serverNote(error) },
+      wait: retryWait(error),
+    }
+  }
+}
+
+function abortable(
+  signal: AbortSignal,
+  start: (done: () => void) => () => void
+): Promise<void> {
+  return new Promise((resolve) => {
+    if (signal.aborted) return resolve()
+    const finish = () => {
+      stop()
+      signal.removeEventListener("abort", finish)
+      resolve()
+    }
+    const stop = start(finish)
+    signal.addEventListener("abort", finish, { once: true })
+  })
+}
+
+function serverReady(docId: string, signal: AbortSignal): Promise<void> {
+  const left = (retryAt.get(docId) ?? 0) - Date.now()
+  if (left <= 0) {
+    retryAt.delete(docId)
+    return Promise.resolve()
+  }
+  return abortable(signal, (done) => {
+    const timer = setTimeout(done, left)
+    return () => clearTimeout(timer)
+  })
+}
+
+function connectionBack(signal: AbortSignal): Promise<void> {
+  if (navigator.onLine) return Promise.resolve()
+  return abortable(signal, (done) => {
+    window.addEventListener("online", done, { once: true })
+    return () => window.removeEventListener("online", done)
+  })
+}
+
+async function settleWhenReachable(
+  docId: string,
+  blocks: readonly PageBlock[],
+  signal: AbortSignal,
+  claim: SettleClaim
+): Promise<SaveOutcome> {
+  for (;;) {
+    await serverReady(docId, signal)
+    const { outcome, wait } = await attempt(docId, blocks, signal, claim)
+    if (wait === null || signal.aborted) return outcome
+    if (wait === "online") await connectionBack(signal)
+    else retryAt.set(docId, wait.until)
   }
 }
 
@@ -358,5 +449,5 @@ export function settlePage(
   signal: AbortSignal,
   claim: SettleClaim = { basis: null, typed: true }
 ): Promise<SaveOutcome> {
-  return serial(docId, () => settleOnce(docId, blocks, signal, claim))
+  return serial(docId, () => settleWhenReachable(docId, blocks, signal, claim))
 }

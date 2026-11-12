@@ -3,6 +3,7 @@ import { apiBaseUrl } from "@/lib/api-url.ts"
 import { invalidateClientSession } from "@/lib/auth-client.ts"
 import { SIGNED_OUT_EMAIL_KEY, signInHref } from "@/lib/auth-redirect.ts"
 import { documentHref } from "@/lib/web-origins-env.ts"
+import { busyServerWaitMs } from "@/lib/retry-after.ts"
 
 export { apiBaseUrl } from "@/lib/api-url.ts"
 export { ApiError, isErrorEnvelope } from "@/lib/api-error.ts"
@@ -98,6 +99,11 @@ export async function apiRequest(
     const detail = {
       jobId: typeof error?.jobId === "string" ? error.jobId : undefined,
       stage: typeof error?.stage === "string" ? error.stage : undefined,
+      retryAfterMs: busyServerWaitMs(
+        res.status,
+        res.headers.get("Retry-After"),
+        Date.now()
+      ),
     }
     if (res.status === 401 || code === "UNAUTHORIZED") {
       notifyUnauthorized()
