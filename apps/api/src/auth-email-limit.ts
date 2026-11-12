@@ -226,6 +226,11 @@ export function authEmailLimit({
       return next()
     }
     await next()
-    if (c.res.status === 200) await clearAuthSendCounts(db, secret, raw)
+    if (c.res.status !== 200) return
+    try {
+      await clearAuthSendCounts(db, secret, raw)
+    } catch {
+      console.warn("sign-in succeeded but its send counts were not cleared")
+    }
   }
 }

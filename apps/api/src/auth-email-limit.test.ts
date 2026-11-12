@@ -381,6 +381,31 @@ describe("the limit cannot be used to keep a person from signing in", () => {
     })
   })
 
+  it("still signs the person in when clearing the send counts fails", async () => {
+    await withApp(async (app, db) => {
+      const email = "unclearable@verify.local"
+      await send(app, email)
+      const code = lastCode(email)
+      const realDelete = db.delete.bind(db)
+      const warned = vi.spyOn(console, "warn").mockImplementation(() => {})
+      vi.spyOn(db, "delete").mockImplementation(((table: unknown) => {
+        if (table === authLimitCounters) throw new Error("counters unavailable")
+        return realDelete(table as never)
+      }) as typeof db.delete)
+      const signedIn = await postJson(
+        app,
+        SIGN_IN,
+        { email, otp: code },
+        { "x-real-ip": nextAddress() }
+      )
+      expect(signedIn.status).toBe(200)
+      expect(signedIn.headers.get("set-cookie")).toBeTruthy()
+      expect(warned).toHaveBeenCalledWith(
+        "sign-in succeeded but its send counts were not cleared"
+      )
+    })
+  })
+
   it("keeps the send counts after a wrong code", async () => {
     await withApp(async (app) => {
       const email = "kept@verify.local"
