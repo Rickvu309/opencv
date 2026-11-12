@@ -227,7 +227,6 @@ export function PaperLetterStart({
           chatId: chat.id,
           text: turnText,
           context: selected ? [{ kind: "job", id: selected.id }] : undefined,
-          textOnly: true,
           signal: controller.signal,
           onText: (delta) => showText(operation.text + delta),
           onWaiting: () => showWaiting(true),

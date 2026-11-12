@@ -442,27 +442,6 @@ it("regenerates the same source with selection and grounding and never offers to
     ).toBe(prior.assistantMessageId)
   }))
 
-it("starts a text-only turn, such as Letter drafting, that offers the Coach no actions", () =>
-  fixture(async ({ start, work, db, status }) => {
-    const drafted = await start({
-      textOnly: true,
-      text: "Make me a CV and draft a cover letter. Reply with the letter text only.",
-    })
-    const [task] = await db
-      .select()
-      .from(coachTasks)
-      .where(eq(coachTasks.id, drafted.taskId))
-    expect(task?.toolsAllowed).toBe(false)
-    const tools = vi.spyOn(installRegistry(), "tools")
-    try {
-      await work()
-      expect(tools).not.toHaveBeenCalled()
-    } finally {
-      tools.mockRestore()
-    }
-    expect((await status(drafted.taskId)).state).toBe("succeeded")
-  }))
-
 it("exposes the same owned reader through the domain query registry", () =>
   fixture(async ({ start, ownerId, status, work }) => {
     const { personActor } = await import("@workspace/domain")

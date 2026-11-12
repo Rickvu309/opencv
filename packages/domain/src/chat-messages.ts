@@ -60,7 +60,6 @@ export const coachTurnRequestSchema = z
     text: chatMessageTextSchema.optional(),
     mode: coachModeSchema.optional(),
     regenerate: z.literal(true).optional(),
-    textOnly: z.literal(true).optional(),
     focusDocId: paperDocIdSchema.nullish(),
     selection: coachSelectionSchema.optional(),
     context: z.array(coachContextItemSchema).max(8).optional(),

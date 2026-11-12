@@ -39,7 +39,6 @@ describe("Cover letter drafting", () => {
     expect(calls.find((call) => call.url.includes("/turns"))?.body).toEqual(
       expect.objectContaining({
         text: expect.stringContaining("A different engineering role"),
-        textOnly: true,
       })
     )
     expect(

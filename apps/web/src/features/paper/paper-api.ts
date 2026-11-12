@@ -192,7 +192,6 @@ export async function streamPaperTurn(input: {
   text: string
   focusDocId?: string
   context?: { kind: "paper" | "job" | "link" | "file"; id: string }[]
-  textOnly?: true
   signal?: AbortSignal
   onText: (delta: string) => void
   onToolResult?: (tool: ChatToolName) => void
@@ -215,7 +214,6 @@ export async function streamPaperTurn(input: {
         text: input.text,
         ...(input.focusDocId ? { focusDocId: input.focusDocId } : {}),
         ...(input.context ? { context: input.context } : {}),
-        ...(input.textOnly ? { textOnly: true } : {}),
       },
       signal: tail.signal,
       onEvent(event) {
