@@ -76,7 +76,7 @@ export function PaperLibraryCard({
           type="button"
           variant="ghost"
           aria-label={openLabel}
-          className="h-auto w-full min-w-0 flex-col items-start gap-3 rounded-[3px] p-0 font-normal whitespace-normal hover:bg-transparent aria-expanded:bg-transparent dark:hover:bg-transparent"
+          className="h-auto min-h-11 w-full min-w-0 flex-col items-start gap-3 rounded-[3px] p-0 font-normal whitespace-normal hover:bg-transparent aria-expanded:bg-transparent dark:hover:bg-transparent"
           onClick={onOpen}
         >
           {body}
@@ -130,7 +130,7 @@ export function PaperLibraryTile({
       type="button"
       variant="ghost"
       data-slot={slot}
-      className="aspect-[150/212] h-auto w-full min-w-0 flex-col gap-2 rounded-[3px] border border-input p-0 text-[12.5px] font-medium whitespace-normal text-muted-foreground md:h-[212px] md:w-[150px]"
+      className="aspect-[150/212] h-auto min-h-11 w-full min-w-0 flex-col gap-2 rounded-[3px] border border-input p-0 text-[12.5px] font-medium whitespace-normal text-muted-foreground md:h-[212px] md:w-[150px]"
       onClick={onClick}
     >
       <span className="flex size-8 items-center justify-center rounded-full border border-border bg-card">

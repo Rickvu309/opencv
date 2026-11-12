@@ -137,6 +137,22 @@ describe("Paper home sections", () => {
     expect(older?.type === "paper" ? older.word : "missing").toBeNull()
   })
 
+  it("leaves out a record that is neither a CV nor a Letter instead of failing", () => {
+    const odd = { ...paper(BLOCK_CV, "Odd", "cv"), kind: "proof" } as never
+    const oddWord = { ...word(IMPORTED_CV, "Odd word", "cv"), kind: undefined }
+    const entries = libraryEntries({
+      docs: [odd],
+      files: [],
+      words: [oddWord as never],
+    })
+    expect(entries).toEqual([])
+    expect(librarySections(entries, "")).toEqual({
+      cv: [],
+      letter: [],
+      files: [],
+    })
+  })
+
   it("filters every section by the search words", () => {
     const sections = librarySections(
       libraryEntries({ docs, files: [file], words }),

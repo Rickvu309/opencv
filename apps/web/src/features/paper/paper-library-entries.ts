@@ -20,6 +20,8 @@ export const LIBRARY_SECTIONS: readonly {
   { id: "files", title: "Files" },
 ]
 
+const documentKind = (kind: unknown) => kind === "cv" || kind === "letter"
+
 const matches = (name: string, needle: string) =>
   needle === "" || name.toLowerCase().includes(needle)
 
@@ -32,16 +34,18 @@ export function libraryEntries({
   files: PaperFile[]
   words: WordDocument[]
 }): LibraryEntry[] {
-  const wordById = new Map(words.map((word) => [word.docId, word]))
-  const paperIds = new Set(docs.map((doc) => doc.id as string))
+  const papers = docs.filter((doc) => documentKind(doc.kind))
+  const wordPages = words.filter((word) => documentKind(word.kind))
+  const wordById = new Map(wordPages.map((word) => [word.docId, word]))
+  const paperIds = new Set(papers.map((doc) => doc.id as string))
   return [
-    ...docs.map((doc): LibraryEntry => ({
+    ...papers.map((doc): LibraryEntry => ({
       type: "paper",
       key: `paper:${doc.id}`,
       doc,
       word: wordById.get(doc.id) ?? null,
     })),
-    ...words
+    ...wordPages
       .filter((word) => !paperIds.has(word.docId))
       .map((word): LibraryEntry => ({
         type: "word",
