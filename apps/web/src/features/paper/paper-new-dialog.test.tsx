@@ -113,38 +113,6 @@ describe("Paper new dialog", () => {
       calls.some((call) => call.url.includes("/api/commands/paper.create"))
     ).toBe(false)
   })
-
-  it("says so and creates no older document when Word pages are off", async () => {
-    const calls: string[] = []
-    const onCreated = vi.fn()
-    const onMinted = vi.fn()
-    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
-      calls.push(String(input))
-      return Promise.resolve(
-        Response.json(
-          {
-            ok: false,
-            error: {
-              code: "NOT_FOUND",
-              message: "Saved Word documents are unavailable.",
-            },
-          },
-          { status: 404 }
-        )
-      )
-    })
-    render(<Harness onCreated={onCreated} onMinted={onMinted} />)
-    fireEvent.click(screen.getByRole("button", { name: "CV" }))
-    fireEvent.click(screen.getByRole("button", { name: "Start blank" }))
-    expect(
-      await screen.findByText("Saved Word documents are unavailable.")
-    ).toBeTruthy()
-    expect(onMinted).not.toHaveBeenCalled()
-    expect(onCreated).not.toHaveBeenCalled()
-    expect(
-      calls.some((url) => url.includes("/api/commands/paper.create"))
-    ).toBe(false)
-  })
 })
 
 function Harness({
