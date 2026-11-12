@@ -117,6 +117,151 @@ export const NOT_PHOTO_JSON = [
     column: "reversal_expect",
     why: "a version stamp, not a document",
   },
+  {
+    table: "agent_connections",
+    column: "policy",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "agent_connections",
+    column: "resources",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "agent_connections",
+    column: "scopes",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_access_token",
+    column: "confirmation",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_access_token",
+    column: "requested_user_info_claims",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_access_token",
+    column: "resources",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_access_token",
+    column: "scopes",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_client",
+    column: "client_credentials_scopes",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_client",
+    column: "contacts",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_client",
+    column: "grant_types",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_client",
+    column: "metadata",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_client",
+    column: "post_logout_redirect_uris",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_client",
+    column: "redirect_uris",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_client",
+    column: "response_types",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_client",
+    column: "scopes",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_client_resource",
+    column: "metadata",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_consent",
+    column: "requested_user_info_claims",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_consent",
+    column: "resources",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_consent",
+    column: "scopes",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_refresh_token",
+    column: "confirmation",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_refresh_token",
+    column: "requested_user_info_claims",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_refresh_token",
+    column: "resources",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_refresh_token",
+    column: "scopes",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_resource",
+    column: "allowed_scopes",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_resource",
+    column: "custom_claims",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "oauth_resource",
+    column: "metadata",
+    why: "sign-in client settings for a person's agent, not a document",
+  },
+  {
+    table: "paper_package_candidates",
+    column: "seal",
+    why: "Word package file ids the package store keeps, not photo references",
+  },
+  {
+    table: "paper_package_versions",
+    column: "projection",
+    why: "Word page text regions, not photo references",
+  },
+  {
+    table: "paper_package_versions",
+    column: "sidecar",
+    why: "Word paragraph ids, not photo references",
+  },
 ] as const
 
 export async function dropServerReleasedPhoto(userId: UserId, fileId: string) {

@@ -4,6 +4,12 @@ import { fileURLToPath } from "node:url"
 
 import { describe, expect, it } from "vitest"
 
+import * as schema from "../db/schema.js"
+import {
+  jsonbColumnKeys,
+  unclassifiedJsonbColumns,
+} from "../test/jsonb-columns.js"
+import { createSecondSchemaTables } from "../test/second-schema.fixture.js"
 import {
   NOT_PHOTO_JSON,
   PHOTO_BYTE_SOURCES,
@@ -12,7 +18,6 @@ import {
 } from "./photo-references.js"
 
 const here = path.dirname(fileURLToPath(import.meta.url))
-const schemaText = readFileSync(path.join(here, "../db/schema.ts"), "utf8")
 const migrationName = readdirSync(path.join(here, "../../drizzle")).find(
   (name) => name.endsWith("_photo_refs.sql")
 )
@@ -23,30 +28,10 @@ const migrationText = readFileSync(
 )
 const sweepText = readFileSync(path.join(here, "photo-sweep.ts"), "utf8")
 
-function jsonbColumns(text: string) {
-  const found: { table: string; column: string }[] = []
-  let table = ""
-  let pending = false
-  for (const line of text.split("\n")) {
-    if (line.includes("opencvApp.table(")) pending = true
-    if (pending) {
-      const name = /"([^"]+)"/.exec(line)
-      if (name) {
-        table = name[1]!
-        pending = false
-      }
-    }
-    const column = /jsonb\("([^"]+)"\)/.exec(line)
-    if (column) found.push({ table, column: column[1]! })
-  }
-  return found
-}
-
 const key = (table: string, column: string) => `${table}.${column}`
 
 describe("photo reference schema guard", () => {
   it("names every jsonb column as a document source or a reason it cannot hold one", () => {
-    const parsed = jsonbColumns(schemaText)
     const classified = new Map<string, string>()
     for (const column of PHOTO_DOCUMENT_COLUMNS) {
       classified.set(key(column.table, column.column), column.source)
@@ -55,13 +40,27 @@ describe("photo reference schema guard", () => {
       classified.set(key(column.table, column.column), column.why)
       expect(column.why.length).toBeGreaterThan(0)
     }
-    expect(parsed.length).toBeGreaterThan(0)
-    expect(
-      parsed.map((column) => key(column.table, column.column)).sort()
-    ).toEqual([...classified.keys()].sort())
-    for (const column of parsed) {
-      expect(column.table).not.toBe("")
+    const parsed = jsonbColumnKeys(schema)
+    expect(parsed).toContain("jobs.posting")
+    expect(parsed).toContain("paper_package_versions.sidecar")
+    expect(parsed).toEqual([...classified.keys()].sort())
+  })
+
+  it("fails on a jsonb column a second schema file adds that the list omits", () => {
+    const classified = [
+      ...PHOTO_DOCUMENT_COLUMNS.map((column) =>
+        key(column.table, column.column)
+      ),
+      ...NOT_PHOTO_JSON.map((column) => key(column.table, column.column)),
+    ]
+    expect(unclassifiedJsonbColumns(schema, classified)).toEqual([])
+    const withSecondFile = {
+      ...schema,
+      ...createSecondSchemaTables(schema.opencvApp),
     }
+    expect(unclassifiedJsonbColumns(withSecondFile, classified)).toEqual([
+      "resume_drafts.body",
+    ])
   })
 
   it("the reference trigger reads every document column and the byte sources", () => {

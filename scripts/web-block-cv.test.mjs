@@ -32,6 +32,36 @@ test("the web never creates an older block CV or Letter", () => {
     1
   )
   assert.equal(detect(`run("paper.create", input)`).length, 1)
+  assert.equal(
+    detect(
+      `await runContractCommand(queryClient, "paper.create", { kind: "letter", name })`
+    ).length,
+    1
+  )
+  assert.equal(
+    detect(`const CREATE = "paper.create"
+await runContractCommand(queryClient, CREATE, input)`).length,
+    1
+  )
+  assert.equal(
+    detect(`const CREATE = "paper.create" as const
+const command = CREATE
+await run(command, input)`).length,
+    1
+  )
+  assert.equal(detect("run(`paper.create`, input)").length, 1)
+  assert.equal(
+    detect(`await fetch("/api/commands/paper.create", { method: "POST" })`)
+      .length,
+    1
+  )
+  assert.equal(
+    detect(`const labels = { "paper.create": { label: "Create a Paper" } }
+const CANVAS = "paper.canvas"
+await runContractCommand(queryClient, CANVAS, input)
+if (path === "/api/commands/paper.create") respond()`).length,
+    0
+  )
   const historic = execFileSync(
     "git",
     ["show", "1565bbf7:apps/web/src/features/paper/paper-new-dialog.tsx"],
