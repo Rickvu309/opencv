@@ -18,7 +18,6 @@ type ChatDraft = {
 
 export type WorkspaceState = {
   draft: string
-  moreIdeas: boolean
   historyOpen: boolean
   search: string
   picker: Picker
@@ -36,7 +35,6 @@ export type WorkspaceAction =
   | { type: "draft_typed"; value: string }
   | { type: "draft_sent"; sent: SentBubble }
   | { type: "sent_cleared" }
-  | { type: "more_ideas_toggled" }
   | { type: "history_opened" }
   | { type: "history_open_changed"; open: boolean }
   | { type: "search_typed"; value: string }
@@ -63,7 +61,6 @@ export function initialWorkspaceState(
 ): WorkspaceState {
   return {
     draft,
-    moreIdeas: false,
     historyOpen: false,
     search: "",
     picker: null,
@@ -102,8 +99,6 @@ export function workspaceReducer(
       return { ...state, draft: "", sent: action.sent }
     case "sent_cleared":
       return state.sent === null ? state : { ...state, sent: null }
-    case "more_ideas_toggled":
-      return { ...state, moreIdeas: !state.moreIdeas }
     case "history_opened":
       return { ...state, historyOpen: true }
     case "history_open_changed":

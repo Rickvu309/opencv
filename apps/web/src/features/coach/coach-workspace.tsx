@@ -72,7 +72,6 @@ export function CoachWorkspace({
   const [
     {
       draft,
-      moreIdeas,
       historyOpen,
       search,
       picker,
@@ -399,8 +398,6 @@ export function CoachWorkspace({
       >
         {showWelcome ? (
           <CoachHome
-            moreIdeas={moreIdeas}
-            onToggleIdeas={() => dispatch({ type: "more_ideas_toggled" })}
             onChooseStarter={(value) =>
               dispatch({ type: "draft_typed", value })
             }

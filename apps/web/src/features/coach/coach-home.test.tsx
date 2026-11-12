@@ -1,71 +1,71 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, render, screen, within } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 
-import newChat from "./design/new-chat.styles.json"
-import ideas from "./design/ideas.styles.json"
 import { CoachHome } from "./coach-home.tsx"
+import { COACH_STARTERS } from "./coach-starters.ts"
 
-function paneLabels(source: typeof newChat) {
-  return source.sections.flatMap((section) =>
-    section.texts.map((text) => text.content)
+const UNTRUE_STARTERS = [
+  "Find roles",
+  "Companies hiring now",
+  "Improve my LinkedIn",
+]
+
+function renderHome(disabled = false) {
+  const choose = vi.fn()
+  render(
+    <CoachHome onChooseStarter={choose} disabled={disabled}>
+      <div>Composer</div>
+    </CoachHome>
   )
+  return choose
 }
 
 describe("Coach home pane", () => {
-  it.each([
-    { moreIdeas: false, source: newChat },
-    { moreIdeas: true, source: ideas },
-  ])(
-    "shows the pen's suggestion set with moreIdeas=$moreIdeas",
-    ({ moreIdeas, source }) => {
-      const choose = vi.fn()
-      const toggle = vi.fn()
-      render(
-        <CoachHome
-          moreIdeas={moreIdeas}
-          onToggleIdeas={toggle}
-          onChooseStarter={choose}
-          disabled={false}
-        >
-          <div>Composer</div>
-        </CoachHome>
-      )
-      expect(screen.getByRole("heading", { level: 2 }).textContent).toBe(
-        paneLabels(source)[1]
-      )
-      const labels = paneLabels(source).slice(5)
-      expect(
-        screen.getAllByRole("button").map((button) => button.textContent)
-      ).toEqual(["More ideas", ...labels])
-      for (const label of labels) {
-        fireEvent.click(
-          screen.getByRole("button", { name: label, exact: true })
-        )
-        expect(choose).toHaveBeenLastCalledWith(label)
-      }
-      const more = screen.getByRole("button", { name: "More ideas" })
-      expect(more).toHaveAttribute("aria-pressed", String(moreIdeas))
-      fireEvent.click(more)
-      expect(toggle).toHaveBeenCalledOnce()
-    }
-  )
+  it("leads with a quiet heading, then the composer, then three starter cards", () => {
+    renderHome()
+    const heading = screen.getByRole("heading", { level: 2 })
+    expect(heading).toHaveTextContent("How can I help?")
+    expect(heading.className).toContain("text-[20px]")
+    expect(heading.className).toContain("font-medium")
+    const composer = screen.getByText("Composer")
+    const ideas = screen.getByRole("list", { name: "Ideas for Coach" })
+    expect(
+      composer.compareDocumentPosition(ideas) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+    expect(within(ideas).getAllByRole("listitem")).toHaveLength(3)
+  })
 
-  it("keeps ideas browsable while choosing a starter is disabled", () => {
-    const choose = vi.fn()
-    render(
-      <CoachHome
-        moreIdeas={false}
-        onToggleIdeas={vi.fn()}
-        onChooseStarter={choose}
-        disabled
-      >
-        <div>Composer</div>
-      </CoachHome>
-    )
+  it("names each card by its title, describes it, and sends the title", () => {
+    const choose = renderHome()
+    for (const { title, description } of COACH_STARTERS) {
+      const card = screen.getByRole("button", { name: title })
+      expect(card).toHaveAccessibleDescription(description)
+      fireEvent.click(card)
+      expect(choose).toHaveBeenLastCalledWith(title)
+    }
+  })
+
+  it("offers no starter that needs job search or web tools", () => {
+    renderHome()
+    for (const name of [...UNTRUE_STARTERS, "More ideas"])
+      expect(screen.queryByRole("button", { name })).not.toBeInTheDocument()
+  })
+
+  it("keeps every card reachable by keyboard with nothing scrolled out of view", () => {
+    renderHome()
+    const ideas = screen.getByRole("list", { name: "Ideas for Coach" })
+    expect(ideas.className).not.toMatch(/overflow-(x-)?(auto|scroll|hidden)/)
+    for (const card of within(ideas).getAllByRole("button")) {
+      card.focus()
+      expect(card).toHaveFocus()
+    }
+  })
+
+  it("disables choosing a starter while Coach cannot send", () => {
+    const choose = renderHome(true)
     const starter = screen.getByRole("button", { name: "Review my CV" })
     expect(starter).toBeDisabled()
     fireEvent.click(starter)
     expect(choose).not.toHaveBeenCalled()
-    expect(screen.getByRole("button", { name: "More ideas" })).toBeEnabled()
   })
 })

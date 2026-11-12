@@ -110,6 +110,8 @@ describe("Coach Command receipts", { timeout: 15_000 }, () => {
     renderApp(SURFACE_PATHS.coach)
     await expectCoachIdle()
     await sendMessage("What cards do I have?")
+    expect(screen.queryByText("Looked at your Jobs")).not.toBeInTheDocument()
+    fireEvent.click(await screen.findByRole("button", { name: /^Worked for/ }))
     expect(await screen.findByText("Looked at your Jobs")).toBeInTheDocument()
     expect(
       screen.queryByText("This read does not change anything.")

@@ -13,6 +13,15 @@ export const WORD_SIZED_WRITING_PAGE = {
   },
 }
 
+export const COUNCIL_DOCKED_COACH_COMPOSER = {
+  decided: "2026-11-13",
+  reason:
+    "the owner asked for Linear parity judged by the review council, and council round 1 set the docked Coach page composer to about 80 high, one text line over the control row, instead of the 114px pen frame",
+  expect: {
+    height: 82,
+  },
+}
+
 export function ownerDecisionProblems(row, label) {
   const decision = row.ownerDecision
   if (decision === undefined) return []

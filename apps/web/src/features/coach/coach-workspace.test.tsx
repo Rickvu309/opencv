@@ -292,22 +292,13 @@ describe("Coach workspace", () => {
       ).not.toBeInTheDocument()
     )
     const composer = screen.getByPlaceholderText("Ask Coach anything")
-    const moreIdeas = screen.getByRole("button", { name: "More ideas" })
     const starter = screen.getByRole("button", { name: "Review my CV" })
     expect(
-      composer.compareDocumentPosition(moreIdeas) &
+      composer.compareDocumentPosition(starter) &
         Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy()
     expect(
-      moreIdeas.compareDocumentPosition(starter) &
-        Node.DOCUMENT_POSITION_FOLLOWING
-    ).toBeTruthy()
-    fireEvent.click(moreIdeas)
-    expect(
-      screen.getByRole("button", { name: "Follow up on an application" })
-    ).toBeInTheDocument()
-    expect(
-      screen.queryByRole("button", { name: "Review my CV" })
+      screen.queryByRole("button", { name: "More ideas" })
     ).not.toBeInTheDocument()
   })
 
