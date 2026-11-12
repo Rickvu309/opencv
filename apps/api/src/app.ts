@@ -15,6 +15,7 @@ import {
   createUsageRoutes,
 } from "./account/index.js"
 import { bindAuth, createAuth, type AuthDatabase } from "./auth.js"
+import { authEmailLimit } from "./auth-email-limit.js"
 import { isServedAuthPath } from "./auth-routes.js"
 import { createChatRoutes } from "./chat/index.js"
 import {
@@ -53,6 +54,7 @@ export type AppConfig = {
   db?: AuthDatabase
   rateLimitEnabled?: boolean
   sendCodeLimitEnabled?: boolean
+  authCodeSendWarningPerHour?: number
   coach?: CoachRuntime
   coachDurable?: boolean
   coachCompatibilityMs?: number
@@ -78,6 +80,7 @@ export function createApp({
   db,
   rateLimitEnabled,
   sendCodeLimitEnabled,
+  authCodeSendWarningPerHour,
   coach,
   coachDurable = coachWorkerEnabledFromEnv(process.env),
   coachCompatibilityMs,
@@ -129,7 +132,12 @@ export function createApp({
         "Mcp-Name",
         "Mcp-Session-Id",
       ],
-      exposeHeaders: ["WWW-Authenticate", "MCP-Protocol-Version"],
+      exposeHeaders: [
+        "WWW-Authenticate",
+        "MCP-Protocol-Version",
+        "Retry-After",
+        "X-Retry-After",
+      ],
     })
   )
 
@@ -186,6 +194,19 @@ export function createApp({
     if (!isServedAuthPath(c.req.path)) return notFoundEnvelopeResponse(c)
     await next()
   })
+  if (database && sessionSecret)
+    app.use(
+      "/api/auth/*",
+      authEmailLimit({
+        db: database,
+        secret: sessionSecret,
+        caps: authCodeSendWarningPerHour
+          ? { sendWarningPerHour: authCodeSendWarningPerHour }
+          : undefined,
+        limitSends:
+          rateLimitEnabled !== false && sendCodeLimitEnabled !== false,
+      })
+    )
   app.all("/api/auth/*", (c) =>
     auth
       ? handleAuthRequest(auth, c.req.raw)

@@ -1,0 +1,18 @@
+{
+  "id": "auth-email-limit-mount",
+  "file": "scripts/auth-email-limit-mount.test.mjs",
+  "detector": {
+    "module": "scripts/lib/auth-email-limit-mount.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "79139b04b332b06e003e3c9f215ffc4d3e285f52",
+    "path": "apps/api/src/auth.ts",
+    "reads": [
+      "apps/api/src/app.ts",
+      "apps/api/src/auth-routes.ts",
+      "apps/api/src/auth-email-limit.ts"
+    ]
+  }
+}

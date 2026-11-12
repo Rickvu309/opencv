@@ -31,6 +31,7 @@ export function createAuthedApp(
   options?: {
     rateLimitEnabled?: boolean
     sendCodeLimitEnabled?: boolean
+    authCodeSendWarningPerHour?: number
     resendApiKey?: string
     authEmailFrom?: string
     logAuthMail?: boolean
@@ -46,6 +47,7 @@ export function createAuthedApp(
     db,
     rateLimitEnabled: options?.rateLimitEnabled ?? false,
     sendCodeLimitEnabled: options?.sendCodeLimitEnabled,
+    authCodeSendWarningPerHour: options?.authCodeSendWarningPerHour,
     resendApiKey: options?.resendApiKey,
     authEmailFrom: options?.authEmailFrom,
     logAuthMail: options?.logAuthMail,

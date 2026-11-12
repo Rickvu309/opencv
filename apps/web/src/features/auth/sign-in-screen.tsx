@@ -6,6 +6,7 @@ import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
 import { authClient } from "@/lib/auth-client.ts"
+import { captureRetryAfter } from "@/lib/retry-after.ts"
 import { redirectFromSearch } from "@/lib/auth-redirect.ts"
 
 import { AuthFrame } from "./auth-frame.tsx"
@@ -15,6 +16,7 @@ import {
   openEmailHref,
   readLanguage,
   storeLanguage,
+  tooManyCodesText,
 } from "./auth-copy.ts"
 import { EmailCodeScreen } from "./email-code-screen.tsx"
 import googleG from "./google-g.svg?url"
@@ -75,6 +77,7 @@ export function SignInScreen() {
       sending,
       seconds,
       focusNonce,
+      waitMinutes,
     },
     dispatch,
   ] = useReducer(signInReducer, undefined, () =>
@@ -116,13 +119,19 @@ export function SignInScreen() {
 
   async function sendCode(address: string) {
     dispatch({ type: "send_started" })
+    const wait = captureRetryAfter()
     try {
       const result = await authClient.emailOtp.sendVerificationOtp({
         email: address,
         type: "sign-in",
+        fetchOptions: wait.fetchOptions,
       })
       if (result.error) {
-        dispatch({ type: "send_rejected", notice: noticeForSend(result.error) })
+        dispatch({
+          type: "send_rejected",
+          notice: noticeForSend(result.error),
+          waitMinutes: wait.minutes(Date.now()),
+        })
         return false
       }
       dispatch({ type: "send_succeeded", address })
@@ -149,13 +158,19 @@ export function SignInScreen() {
     if (step === "verifying") return
     dispatch({ type: "verify_started" })
     try {
+      const wait = captureRetryAfter()
       const result = await authClient.signIn.emailOtp({
         email: email.trim(),
         otp,
+        fetchOptions: wait.fetchOptions,
       })
       if (result.error) {
         const next = noticeForCode(result.error)
-        dispatch({ type: "verify_rejected", notice: next })
+        dispatch({
+          type: "verify_rejected",
+          notice: next,
+          waitMinutes: wait.minutes(Date.now()),
+        })
         return
       }
       await navigate({ href: redirectTo ?? "/" })
@@ -186,7 +201,12 @@ export function SignInScreen() {
       notice === "locked" ||
       notice === "rate" ||
       notice === "send")
-  const noticeText = notice ? NOTICE[notice] : null
+  const noticeText =
+    notice === "rate"
+      ? tooManyCodesText(waitMinutes)
+      : notice
+        ? NOTICE[notice]
+        : null
 
   return (
     <AuthFrame language={language} onLanguage={chooseLanguage}>

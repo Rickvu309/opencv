@@ -48,9 +48,14 @@ function matchesPattern(path: string, pattern: string) {
   )
 }
 
-export function isServedAuthPath(pathname: string) {
+export function authRoute(pathname: string) {
   const path = normalizedPath(pathname)
-  if (!path.startsWith(AUTH_BASE_PATH + "/")) return false
-  const route = path.slice(AUTH_BASE_PATH.length)
+  if (!path.startsWith(AUTH_BASE_PATH + "/")) return null
+  return path.slice(AUTH_BASE_PATH.length)
+}
+
+export function isServedAuthPath(pathname: string) {
+  const route = authRoute(pathname)
+  if (route === null) return false
   return SERVED_AUTH_PATHS.some((pattern) => matchesPattern(route, pattern))
 }

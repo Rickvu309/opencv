@@ -89,6 +89,25 @@ export const SCREENS = [
     steps: [{ waitFor: { selector: 'input[type="email"]' } }],
   },
   {
+    id: "sign-in-too-many-codes",
+    route: "/sign-in",
+    signedIn: false,
+    steps: [
+      { waitFor: { selector: 'input[type="email"]' } },
+      {
+        respond: {
+          path: "/api/auth/email-otp/send-verification-otp",
+          status: 429,
+          headers: { "Retry-After": "661" },
+          json: { message: "Too many requests. Please try again later." },
+        },
+      },
+      { fill: { selector: 'input[type="email"]', text: "ada@example.com" } },
+      { click: { role: "button", name: "Continue" } },
+      { waitFor: { selector: '[role="alert"]' } },
+    ],
+  },
+  {
     id: "coach-home",
     route: "/coach",
     steps: [{ waitFor: { selector: COMPOSER } }],
@@ -418,6 +437,7 @@ const STEP_KINDS = new Set([
   "type",
   "upload",
   "waitFor",
+  "respond",
 ])
 const ID = /^[a-z][a-z0-9-]*$/
 
