@@ -403,6 +403,7 @@ function WritingSheet({
       data-pen-surface="paper-page"
     >
       <UnsavedBar
+        key={bar.cause ?? "none"}
         model={bar}
         onUseSaved={takeSavedPage}
         onRestore={restoreLine}

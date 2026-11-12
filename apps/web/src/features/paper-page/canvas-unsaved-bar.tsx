@@ -11,10 +11,10 @@ export type UnsavedBarProps = {
   onRestore: (id: string) => void
 }
 
-type DetailAction = { type: "toggle" } | { type: "close" }
+type DetailAction = { type: "toggle" }
 
 function detailReducer(open: boolean, action: DetailAction) {
-  return action.type === "toggle" ? !open : false
+  return action.type === "toggle" ? !open : open
 }
 
 function preview(text: string) {
