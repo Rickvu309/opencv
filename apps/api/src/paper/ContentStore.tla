@@ -275,7 +275,7 @@ P2 == version = logMax /\ ~gap
 
 P3 == ~lost
 
-P4 == ~blocked
+CoachExact == [][(~coached /\ coached' /\ ~blocked') => coachRead' = version]_vars
 
 P5 == ~dirty \/ basis = drev
 
