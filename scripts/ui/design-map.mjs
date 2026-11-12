@@ -1,4 +1,8 @@
 import { RELATIVE } from "./compare.mjs"
+import {
+  WORD_SIZED_WRITING_PAGE,
+  ownerDecisionProblems,
+} from "./owner-decision.mjs"
 
 const PADDING = ["paddingTop", "paddingRight", "paddingBottom", "paddingLeft"]
 
@@ -21,6 +25,29 @@ const COACH_COLUMN = '[data-slot="chat"] [data-slot="message-scroller-content"]'
 
 export const SPECIMEN_WARNING =
   "confirm this frame is the composed screen, not a kit specimen, before changing the app"
+
+function writingPageRows(screen) {
+  return [
+    {
+      screen,
+      label: "Writing page",
+      selector: 'main [contenteditable="true"]',
+      composedScreen: CV_EDITING,
+      frame: "LFKqV",
+      props: ["width", "radius", ...PADDING],
+      ownerDecision: WORD_SIZED_WRITING_PAGE,
+    },
+    {
+      screen,
+      label: "Writing page centered in the main area",
+      selector: 'main [contenteditable="true"]',
+      from: MAIN_PANEL,
+      composedScreen: CV_EDITING,
+      frame: "SoAVC",
+      props: ["centerOffset"],
+    },
+  ]
+}
 
 export const DESIGN_MAP = [
   {
@@ -365,40 +392,9 @@ export const DESIGN_MAP = [
     frame: "w8dUCw",
     props: ["height", "radius", "paddingLeft", "paddingRight"],
   },
-  {
-    screen: "paper-blank",
-    label: "Writing page",
-    selector: 'main [contenteditable="true"]',
-    composedScreen: CV_EDITING,
-    frame: "LFKqV",
-    props: ["width", "radius", ...PADDING],
-  },
-  {
-    screen: "paper-blank",
-    label: "Writing page centered in the main area",
-    selector: 'main [contenteditable="true"]',
-    from: MAIN_PANEL,
-    composedScreen: CV_EDITING,
-    frame: "SoAVC",
-    props: ["centerOffset"],
-  },
-  {
-    screen: "paper-typed",
-    label: "Writing page",
-    selector: 'main [contenteditable="true"]',
-    composedScreen: CV_EDITING,
-    frame: "LFKqV",
-    props: ["width", "radius", ...PADDING],
-  },
-  {
-    screen: "paper-typed",
-    label: "Writing page centered in the main area",
-    selector: 'main [contenteditable="true"]',
-    from: MAIN_PANEL,
-    composedScreen: CV_EDITING,
-    frame: "SoAVC",
-    props: ["centerOffset"],
-  },
+  ...["paper-blank", "paper-typed", "paper-letter-blank"].flatMap(
+    writingPageRows
+  ),
   {
     screen: "settings",
     label: "Settings nav",
@@ -497,6 +493,7 @@ export function validateDesignMap(map, properties, screenIds) {
       problems.push(`${label}: props is required`)
     for (const prop of row.props ?? [])
       if (!known.has(prop)) problems.push(`${label}: unknown property ${prop}`)
+    problems.push(...ownerDecisionProblems(row, label))
     return problems
   })
 }
