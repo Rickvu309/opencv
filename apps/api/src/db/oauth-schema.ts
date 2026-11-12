@@ -1,3 +1,4 @@
+import type { ConnectionResources } from "@workspace/domain"
 import { sql } from "drizzle-orm"
 import {
   boolean,
@@ -209,7 +210,7 @@ export function createOAuthTables(
     name: text("name").notNull(),
     audience: text("audience").notNull(),
     scopes: jsonb("scopes").$type<string[]>().notNull(),
-    resources: jsonb("resources").$type<{ kind: "none" | "jobs" }>().notNull(),
+    resources: jsonb("resources").$type<ConnectionResources>().notNull(),
     policy: jsonb("policy")
       .$type<{ reads: "allow"; writes: "approval" }>()
       .notNull(),

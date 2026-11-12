@@ -47,7 +47,7 @@ const publicResult = z.object({
 })
 const write = defineOperation({
   owner: "job",
-  name: "job.create",
+  name: "job.update",
   version: 1,
   kind: "command",
   description: "Change fixture",
@@ -421,7 +421,7 @@ describe("catalog kernel", () => {
         }),
       }
       const response = await app.request(
-        "/fixture/commands/job.create",
+        "/fixture/commands/job.update",
         request
       )
       expect(response.status).toBe(200)
@@ -433,7 +433,7 @@ describe("catalog kernel", () => {
       expectPublic(body)
       expectPublic(
         await (
-          await app.request("/fixture/commands/job.create", request)
+          await app.request("/fixture/commands/job.update", request)
         ).json()
       )
       expect(execute).toHaveBeenCalledTimes(1)
@@ -518,7 +518,7 @@ describe("catalog kernel", () => {
         {
           text: "Changing.",
           intents: [
-            { id: "fixture", name: "job.create", input: { value: "Coach" } },
+            { id: "fixture", name: "job.update", input: { value: "Coach" } },
           ],
           inputTokens: 1,
           outputTokens: 1,

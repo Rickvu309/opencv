@@ -47,7 +47,7 @@ export function createProjectionFixture(
         .sort()
       const fixtureOperation = defineOperation({
         owner: "job",
-        name: "job.mcpFixture",
+        name: "job.calendar",
         version: 1,
         kind: "read",
         description: "Read the protocol fixture",
@@ -69,8 +69,8 @@ export function createProjectionFixture(
       mounted = connection(undeclaredRegistry)
       expect((await sdk.listTools()).tools).toEqual([])
       await expect(
-        sdk.callTool({ name: "job_mcpFixture", arguments: {} })
-      ).rejects.toThrow("Tool job_mcpFixture not found")
+        sdk.callTool({ name: "job_calendar", arguments: {} })
+      ).rejects.toThrow("Tool job_calendar not found")
       const scopedRegistry = new Registry()
       bindOperation(scopedRegistry, {
         operation: defineOperation({
@@ -81,10 +81,10 @@ export function createProjectionFixture(
       })
       mounted = connection(scopedRegistry)
       expect((await sdk.listTools()).tools.map((tool) => tool.name)).toEqual([
-        "job_mcpFixture",
+        "job_calendar",
       ])
       const fixtureRead = await sdk.callTool({
-        name: "job_mcpFixture",
+        name: "job_calendar",
         arguments: {},
       })
       const fixtureText = z
@@ -104,8 +104,8 @@ export function createProjectionFixture(
       mounted = connection(new Registry())
       expect((await sdk.listTools()).tools).toEqual([])
       await expect(
-        sdk.callTool({ name: "job_mcpFixture", arguments: {} })
-      ).rejects.toThrow("Tool job_mcpFixture not found")
+        sdk.callTool({ name: "job_calendar", arguments: {} })
+      ).rejects.toThrow("Tool job_calendar not found")
 
       mounted = undefined
       expect(

@@ -48,7 +48,7 @@ export async function appendDelegateCall(options: {
   window: Awaited<ReturnType<typeof delegateCallWindow>>
 }) {
   if (!insideTransaction()) throw new Error("Agent audit needs a transaction")
-  await getDb()
+  const [call] = await getDb()
     .insert(agentToolCalls)
     .values({
       userId: options.actor.userId,
@@ -60,6 +60,20 @@ export async function appendDelegateCall(options: {
       proposalId: options.proposalId,
       charged: options.window.allowed,
     })
+    .returning({ id: agentToolCalls.id })
+  if (!call) throw new Error("Agent call reservation unavailable")
+  return call.id
+}
+
+export async function completeDelegateCall(
+  id: string,
+  outcome: typeof agentToolCalls.$inferInsert.outcome,
+  proposalId?: string
+) {
+  await getDb()
+    .update(agentToolCalls)
+    .set({ outcome, proposalId })
+    .where(eq(agentToolCalls.id, id))
 }
 
 export async function readDelegateActivity(

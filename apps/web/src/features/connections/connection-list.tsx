@@ -1,5 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { grantCopy, type ConnectionId } from "@workspace/domain"
+import {
+  grantCopy,
+  type ConnectionId,
+  type ConnectionResources,
+} from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import { connectionsKey, fetchConnections } from "@/lib/connections-api.ts"
 import { runContractCommand } from "@/lib/contract-client.ts"
@@ -7,7 +11,7 @@ import { ConnectAgent } from "./connect-agent.tsx"
 
 function connectionGrantLines(connection: {
   scopes: readonly string[]
-  resources: { kind: "none" | "jobs" }
+  resources: ConnectionResources
 }) {
   const copy = grantCopy(connection)
   return [copy.share, copy.access]

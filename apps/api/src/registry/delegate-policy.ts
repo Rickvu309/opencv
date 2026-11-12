@@ -6,12 +6,29 @@ import {
   type Actor,
   type CoachAccess,
   type DelegateActor,
+  type DelegateDeclaration,
   type DelegateMarker,
+  type DelegateResource,
 } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 import { getDb } from "../db/context.js"
 import { agentConnections } from "../db/schema.js"
 import { CommandError } from "./errors.js"
+
+export const DELEGATE_REACHABLE: ReadonlyMap<
+  string,
+  DelegateDeclaration["access"]
+> = new Map<`${DelegateResource}.${string}`, DelegateDeclaration["access"]>([
+  ["job.list", "read"],
+  ["job.get", "read"],
+  ["job.calendar", "read"],
+  ["job.priorityCounts", "read"],
+  ["job.update", "proposal"],
+  ["job.move", "proposal"],
+  ["job.setPriority", "proposal"],
+  ["paper.read", "read"],
+  ["paper.edit", "proposal"],
+])
 
 export function delegateAllowed(
   entry: {
@@ -22,43 +39,43 @@ export function delegateAllowed(
   actor: Actor
 ) {
   if (actor.type !== "delegate") return true
-  if (process.env.PAPER_AGENT_TOOLS === "true") {
-    if (entry.name === "paper.read")
-      return actor.reads === "allow" && actor.scopes.includes("paper.read")
-    if (entry.name === "paper.edit")
-      return actor.writes === "approval" && actor.scopes.includes("paper.write")
-  }
-  if (
-    actor.resources !== "jobs" ||
-    !entry.name.startsWith("job.") ||
-    entry.coach === "never" ||
-    entry.coach === false
-  )
-    return false
+  const access = DELEGATE_REACHABLE.get(entry.name)
+  if (!access) return false
+  const resource = entry.name.slice(0, entry.name.indexOf("."))
   const marker = entry.delegate
-  const named =
+  const declaration =
     marker === "jobRead"
-      ? ("read" as const)
+      ? { resource: "job", access: "read" }
       : marker === "reversibleJob"
-        ? ("proposal" as const)
-        : null
-  const access =
-    named ??
-    (marker &&
-    typeof marker === "object" &&
-    marker.resource === "job" &&
-    Object.keys(marker).length === 2
-      ? marker.access
-      : null)
-  return access === "read"
-    ? actor.reads === "allow" && actor.scopes.includes("job.read")
-    : entry.delegate === "reversibleJob" &&
-        actor.writes === "approval" &&
-        actor.scopes.includes("job.write")
-      ? true
-      : access === "proposal" &&
-        actor.writes === "approval" &&
-        actor.scopes.includes("job.write")
+        ? { resource: "job", access: "proposal" }
+        : marker &&
+            typeof marker === "object" &&
+            Object.keys(marker).length === 2
+          ? marker
+          : null
+  if (!declaration) return false
+  if (declaration.resource !== resource || declaration.access !== access)
+    return false
+  const granted =
+    actor.resources === "jobs-and-paper"
+      ? ["job", "paper"]
+      : actor.resources === "jobs"
+        ? ["job"]
+        : actor.resources === "paper"
+          ? ["paper"]
+          : []
+  if (!granted.includes(declaration.resource)) return false
+  if (declaration.access === "read")
+    return (
+      actor.reads === "allow" &&
+      actor.scopes.includes(`${declaration.resource}.read`)
+    )
+  return (
+    entry.coach !== "never" &&
+    entry.coach !== false &&
+    actor.writes === "approval" &&
+    actor.scopes.includes(`${declaration.resource}.write`)
+  )
 }
 
 export async function requireLiveDelegate(actor: DelegateActor) {

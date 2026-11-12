@@ -80,7 +80,7 @@ it("labels the app-supplied name as unverified and sends cancellation through th
     screen.getByText("Connection status only · No documents or Jobs shared")
   ).toBeInTheDocument()
   expect(
-    screen.queryByText(/Reversible changes need approval/)
+    screen.queryByText(/Every change waits for your approval/)
   ).not.toBeInTheDocument()
   fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
   await waitFor(() =>
@@ -221,7 +221,7 @@ it.each(["none", "jobs"] as const)(
     ).not.toBeInTheDocument()
     expect(
       screen.queryByText(
-        "All current and future Jobs · Reversible changes need approval"
+        "All current and future Jobs · Every change waits for your approval"
       )
     ).not.toBeInTheDocument()
     expect(document.querySelectorAll("time")).toHaveLength(2)
@@ -270,7 +270,7 @@ it("says a read-only Jobs connection cannot change things", async () => {
   ).not.toBeInTheDocument()
   expect(
     screen.queryByText(
-      "All current and future Jobs · Reversible changes need approval"
+      "All current and future Jobs · Every change waits for your approval"
     )
   ).not.toBeInTheDocument()
 })
@@ -296,7 +296,7 @@ it.each([
     name: "write only",
     id: "11070000-0000-4000-8000-000000000012",
     scopes: ["connection.status", "job.write", "offline_access"],
-    share: "All current and future Jobs · Reversible changes need approval",
+    share: "All current and future Jobs · Every change waits for your approval",
     access: "Writes need approval",
     reads: false,
   },
@@ -304,7 +304,7 @@ it.each([
     name: "read plus write",
     id: "11070000-0000-4000-8000-000000000013",
     scopes: ["connection.status", "job.read", "job.write", "offline_access"],
-    share: "All current and future Jobs · Reversible changes need approval",
+    share: "All current and future Jobs · Every change waits for your approval",
     access: "Reads allowed · Writes need approval",
     reads: true,
   },
@@ -358,7 +358,7 @@ it("keeps approval copy when the connection was granted a write scope", async ()
   show(<ConnectionList />)
   expect(
     await screen.findByText(
-      "All current and future Jobs · Reversible changes need approval"
+      "All current and future Jobs · Every change waits for your approval"
     )
   ).toBeInTheDocument()
   expect(
@@ -400,9 +400,34 @@ it("names only the job read the agent asked for", async () => {
     )
   ).toBeInTheDocument()
   expect(
-    screen.queryByText(/Reversible changes need approval/)
+    screen.queryByText(/Every change waits for your approval/)
   ).not.toBeInTheDocument()
-  expect(screen.getByText(/Document access stays off/)).toBeInTheDocument()
+  expect(screen.queryByText(/CVs and Letters/)).not.toBeInTheDocument()
+})
+
+it("says plainly that documents are shared and every change waits for approval", async () => {
+  const scope =
+    "client_id=agent&scope=connection.status%20job.read%20job.write%20paper.read%20paper.write&sig=verified"
+  window.history.replaceState(
+    {},
+    "",
+    `/oauth/consent?oauth_query=${encodeURIComponent(scope)}`
+  )
+  vi.mocked(consentClient).mockResolvedValue({
+    client_id: "agent",
+    client_name: "Paper agent",
+  })
+  show(<ConnectionConsent />)
+  expect(
+    await screen.findByText(
+      "All current and future Jobs and documents (CVs and Letters) · Every change waits for your approval"
+    )
+  ).toBeInTheDocument()
+  expect(
+    screen.getByText(
+      /Every proposed change waits for you to approve or deny it/
+    )
+  ).toBeInTheDocument()
 })
 
 it("refuses two consent queries instead of showing one and approving the other", async () => {
@@ -424,7 +449,7 @@ it("refuses two consent queries instead of showing one and approving the other",
     screen.queryByText(/This agent cannot change things/)
   ).not.toBeInTheDocument()
   expect(
-    screen.queryByText(/Reversible changes need approval/)
+    screen.queryByText(/Every change waits for your approval/)
   ).not.toBeInTheDocument()
   expect(consentClient).not.toHaveBeenCalled()
   expect(answerConsent).not.toHaveBeenCalled()
@@ -433,7 +458,7 @@ it("refuses two consent queries instead of showing one and approving the other",
   ).toBeDisabled()
 })
 
-it("does not offer document access when that is all the agent asked for", async () => {
+it("offers only documents when that is all the agent asked for", async () => {
   const scope = "client_id=agent&scope=paper.read%20paper.write&sig=verified"
   window.history.replaceState(
     {},
@@ -447,11 +472,8 @@ it("does not offer document access when that is all the agent asked for", async 
   show(<ConnectionConsent />)
   expect(
     await screen.findByText(
-      "Connection status only · No documents or Jobs shared"
+      "All current and future documents (CVs and Letters) · Every change waits for your approval"
     )
   ).toBeInTheDocument()
-  expect(screen.queryByText(/paper/i)).not.toBeInTheDocument()
-  expect(
-    screen.queryByText(/Reversible changes need approval/)
-  ).not.toBeInTheDocument()
+  expect(screen.queryByText(/Jobs/)).not.toBeInTheDocument()
 })

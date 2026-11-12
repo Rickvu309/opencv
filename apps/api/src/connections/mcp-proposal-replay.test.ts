@@ -8,7 +8,7 @@ import {
   jobs,
   pendingActions,
 } from "../db/schema.js"
-import { createProposalClient } from "./test/proposal-client.js"
+import { createProposalClient } from "../test/proposal-client.js"
 
 let fixture: Awaited<ReturnType<typeof createProposalClient>>
 beforeAll(async () => {

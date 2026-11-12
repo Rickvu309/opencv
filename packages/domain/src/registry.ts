@@ -1,3 +1,4 @@
+import { connectionResourcesSchema } from "./connections.js"
 import { connectionIdSchema } from "./ids.js"
 import { z } from "zod"
 import type { ZodType } from "zod"
@@ -56,7 +57,7 @@ export const delegateActorSchema = z
     connectionId: connectionIdSchema,
     name: z.string(),
     scopes: z.array(z.string()),
-    resources: z.enum(["none", "jobs"]),
+    resources: connectionResourcesSchema.shape.kind,
     reads: z.literal("allow"),
     writes: z.literal("approval"),
   })

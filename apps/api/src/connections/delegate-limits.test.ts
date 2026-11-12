@@ -306,7 +306,8 @@ it("rolls a proposal back when its audit append fails", async () => {
     patch: { description: "New private note" },
   })
   expect(result.isError).toBe(true)
-  expect(result.content[0]?.text).toContain("audit unavailable")
+  expect(result.content[0]?.text).not.toContain("audit unavailable")
+  expect(JSON.parse(result.content[0]!.text)).toMatchObject({ code: "failed" })
   expect(await history(caller)).toHaveLength(0)
   expect(
     await database.db

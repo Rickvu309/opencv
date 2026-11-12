@@ -12,20 +12,22 @@ import {
 import { drizzle } from "drizzle-orm/node-postgres"
 import { Pool } from "pg"
 import { z } from "zod"
-import { createApp } from "../../app.js"
+import { createApp } from "../app.js"
 import {
   cookieHeader,
   sendSignInCode,
   signInWithCode,
-} from "../../auth.fixtures.js"
-import * as schema from "../../db/schema.js"
+} from "../auth.fixtures.js"
+import * as schema from "../db/schema.js"
 import {
   createMigratedTestDb,
   testSessionSecret,
   testWebOrigin,
-} from "../../test/harness.js"
+} from "./harness.js"
 
-export async function createProposalClient() {
+export async function createProposalClient(
+  scope = "connection.status job.read job.write offline_access"
+) {
   const external = process.env.MCP_REPLAY_DATABASE_URL
   const pool = external
     ? new Pool({ connectionString: external, max: 4 })
@@ -102,7 +104,6 @@ export async function createProposalClient() {
     await memory?.client.close()
   }
   try {
-    const scope = "connection.status job.read job.write offline_access"
     const audience = new URL("/mcp", origin)
     const resource = await discoverOAuthProtectedResourceMetadata(audience)
     const issuer = resource.authorization_servers?.[0]
@@ -230,5 +231,20 @@ export async function createProposalClient() {
   } catch (error) {
     await close()
     throw error
+  }
+}
+
+const toolReplySchema = z.object({
+  isError: z.boolean().optional(),
+  content: z.array(z.object({ type: z.literal("text"), text: z.string() })),
+})
+
+export function toolReply(value: unknown) {
+  const parsed = toolReplySchema.parse(value)
+  const first = parsed.content[0]
+  if (!first) throw new Error("Missing tool response")
+  return {
+    isError: parsed.isError === true,
+    body: z.record(z.string(), z.unknown()).parse(JSON.parse(first.text)),
   }
 }
