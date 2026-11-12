@@ -122,10 +122,12 @@ describe("Cover letter context", () => {
     expect(calls).toEqual([])
     fireEvent.keyDown(input, { key: "Enter" })
     await vi.waitFor(() =>
-      expect(calls.some((call) => call.url.includes("/turns"))).toBe(true)
+      expect(
+        calls.filter((call) => call.url.includes("/commands/paper.canvas"))
+      ).toHaveLength(1)
     )
     expect(
       calls.filter((call) => call.url.includes("/commands/paper.create"))
-    ).toHaveLength(1)
+    ).toEqual([])
   })
 })

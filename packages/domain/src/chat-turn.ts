@@ -49,6 +49,7 @@ const commandEnvelopeSchema = z.custom<CommandEnvelope>(
 const chatTurnEventSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("message-start"), chatId: z.string() }).strict(),
   z.object({ type: z.literal("text-delta"), text: z.string() }).strict(),
+  z.object({ type: z.literal("notice"), text: z.string() }).strict(),
   z.object({ type: z.literal("step"), label: z.string() }).strict(),
   z
     .object({

@@ -23,6 +23,19 @@ describe("chat turn events", () => {
     )
   })
 
+  it("carries a notice as its own event, apart from reply text", () => {
+    const event: ChatTurnEvent = {
+      type: "notice",
+      text: "Coach is still working. Reload this Chat to follow or stop it.",
+    }
+    const wire = encodeChatTurnEvent(event)
+    assert.equal(wire.event, "notice")
+    assert.deepEqual(
+      parseChatTurnEvent({ event: wire.event, data: JSON.parse(wire.data) }),
+      event
+    )
+  })
+
   it("rejects the model's underscore tool names and unknown events", () => {
     assert.equal(
       parseChatTurnEvent({

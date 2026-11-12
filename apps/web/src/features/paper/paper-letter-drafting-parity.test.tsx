@@ -121,57 +121,21 @@ function fail(status: number, code: string, message: string) {
 }
 
 function installFetch(
-  mode: "stream" | "stop" | "partial" | "error" | "edited" | "saved"
+  mode: "stream" | "stop" | "partial" | "error" | "late" | "long"
 ) {
-  const letter = {
-    id: "letter-1",
-    name: "Cover letter, Lumière",
+  const minted = {
+    generation: "package",
+    docId: "letter-1",
+    revision: "22222222-2222-4222-8222-222222222222",
+    name: "Cover letter, Lumière.docx",
     kind: "letter",
-    templateId: "simple",
-    status: "draft",
-    contentVersion: 1,
-    checks: [],
-    pageChoice: "unset",
-    isFavorite: false,
-    sourceFileId: null,
-    createdAt: "2026-08-25T12:00:00.000Z",
-    updatedAt: "2026-08-25T12:00:00.000Z",
   }
   const fetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input)
-    if (url.includes("/api/commands/paper.create"))
-      return Promise.resolve(ok(letter))
-    if (url.includes("/api/commands/paper.edit")) {
-      return Promise.resolve(ok({ ...letter, contentVersion: 2 }))
-    }
+    if (url.includes("/api/commands/paper.canvas"))
+      return Promise.resolve(ok(minted))
     if (url.includes("/api/commands/chat.create"))
       return Promise.resolve(ok({ id: "chat-1" }))
-    if (url.includes("/api/paper/letter-1")) {
-      const text =
-        mode === "edited"
-          ? "My own opening"
-          : mode === "saved"
-            ? "Dear hiring team,"
-            : null
-      if (text === null) return Promise.resolve(ok(letter))
-      return Promise.resolve(
-        ok({
-          ...letter,
-          paper: {
-            version: 3,
-            kind: "letter",
-            clashes: [],
-            blocks: [
-              {
-                id: "letter-1",
-                type: "paragraph",
-                content: [{ text }],
-              },
-            ],
-          },
-        })
-      )
-    }
     if (url.includes("/stop")) return Promise.resolve(ok({}))
     if (url.includes("/turns")) {
       if (mode === "error") {
@@ -186,7 +150,52 @@ function installFetch(
           })
         })
       }
-      if (mode === "partial" || mode === "edited" || mode === "saved") {
+      if (mode === "long") {
+        const draft = Array.from(
+          { length: 101 },
+          (_, index) => `Paragraph ${index + 1}.`
+        ).join("\n\n")
+        const frames = [
+          `event: text-delta\ndata: ${JSON.stringify({ text: draft })}\n\n`,
+          `event: message-end\ndata: ${JSON.stringify({ chatId: "chat-1" })}\n\n`,
+        ]
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode(frames.join("")))
+            controller.close()
+          },
+        })
+        return Promise.resolve(
+          new Response(stream, {
+            headers: { "Content-Type": "text/event-stream" },
+          })
+        )
+      }
+      if (mode === "late") {
+        const stream = new ReadableStream({
+          start(controller) {
+            controller.enqueue(
+              new TextEncoder().encode(
+                'event: text-delta\ndata: {"text":"Dear hiring team,"}\n\n'
+              )
+            )
+            init?.signal?.addEventListener("abort", () => {
+              controller.enqueue(
+                new TextEncoder().encode(
+                  'event: text-delta\ndata: {"text":"\\n\\nWritten after Stop."}\n\n'
+                )
+              )
+              controller.error(new DOMException("Stopped", "AbortError"))
+            })
+          },
+        })
+        return Promise.resolve(
+          new Response(stream, {
+            headers: { "Content-Type": "text/event-stream" },
+          })
+        )
+      }
+      if (mode === "partial") {
         const stream = new ReadableStream({
           start(controller) {
             controller.enqueue(
@@ -211,8 +220,7 @@ function installFetch(
             new TextEncoder().encode(
               [
                 'event: text-delta\ndata: {"text":"Dear hiring team,"}\n\n',
-                'event: tool-call\ndata: {"toolCallId":"c1","name":"paper.edit","input":{"docId":"letter-1","basedOn":1,"edits":[{"op":"setText","blockId":"letter-1","text":"Dear hiring team,"}]}}\n\n',
-                'event: tool-result\ndata: {"toolCallId":"c1","name":"paper.edit","summary":"Updated","ok":true,"result":{"ok":true,"data":{}}}\n\n',
+                'event: text-delta\ndata: {"text":"\\n\\nI ran the spring campaign."}\n\n',
               ].join("")
             )
           )
@@ -323,17 +331,19 @@ it("saves the visible partial letter when Stop aborts its stream", async () => {
   expect(screen.getByRole("button", { name: "Stop" })).toHaveFocus()
   fireEvent.click(screen.getByRole("button", { name: "Stop" }))
   await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith("letter-1"))
-  const save = fetch.mock.calls.find(([url]) =>
-    String(url).includes("/commands/paper.edit")
+  const saves = fetch.mock.calls.filter(([url]) =>
+    String(url).includes("/commands/paper.")
   )
-  expect(save).toBeDefined()
-  expect(JSON.parse(String(save?.[1]?.body))).toMatchObject({
+  expect(saves.map(([url]) => String(url))).toEqual([
+    expect.stringContaining("/commands/paper.canvas"),
+  ])
+  expect(JSON.parse(String(saves[0]?.[1]?.body))).toMatchObject({
     input: {
-      docId: "letter-1",
-      basedOn: 1,
-      edits: [
-        { op: "setText", blockId: "letter-1", text: "Dear hiring team," },
-      ],
+      op: "mint",
+      label: "letter",
+      name: "Cover letter, Lumière",
+      jobId: job.id,
+      lines: ["Dear hiring team,"],
     },
   })
   expect(fetch.mock.calls.some(([url]) => String(url).endsWith("/stop"))).toBe(
@@ -361,32 +371,87 @@ it("cancels on leaving without saving or reopening the letter", async () => {
     true
   )
   expect(
-    fetch.mock.calls.some(([url]) =>
-      String(url).includes("/commands/paper.edit")
-    )
+    fetch.mock.calls.some(([url]) => String(url).includes("/commands/paper."))
   ).toBe(false)
 })
 
-it("does not save again over a letter the person already changed", async () => {
-  for (const mode of ["edited", "saved"] as const) {
-    const fetch = installFetch(mode)
-    listJobs.mockResolvedValue([job])
-    const onCreated = vi.fn()
-    const view = render(
-      <PaperLetterStartPage onBack={() => undefined} onCreated={onCreated} />
+it("opens one Word page with every drafted paragraph and no older letter", async () => {
+  const fetch = installFetch("stream")
+  listJobs.mockResolvedValue([job])
+  const onCreated = vi.fn()
+  render(
+    <PaperLetterStartPage onBack={() => undefined} onCreated={onCreated} />
+  )
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Junior Marketing, Lumière" })
+  )
+  fireEvent.click(screen.getByRole("button", { name: "Draft letter" }))
+  await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith("letter-1"))
+  const commands = fetch.mock.calls
+    .map(([url, init]) => ({ url: String(url), init }))
+    .filter(({ url }) => url.includes("/commands/paper."))
+  expect(commands.map(({ url }) => url.split("/commands/")[1])).toEqual([
+    "paper.canvas",
+  ])
+  expect(JSON.parse(String(commands[0]?.init?.body))).toMatchObject({
+    input: {
+      op: "mint",
+      label: "letter",
+      jobId: job.id,
+      lines: ["Dear hiring team,", "I ran the spring campaign."],
+    },
+  })
+  const turn = fetch.mock.calls.find(([url]) => String(url).includes("/turns"))
+  expect(JSON.parse(String(turn?.[1]?.body))).not.toHaveProperty("focusDocId")
+})
+
+function mintInputs(fetch: ReturnType<typeof installFetch>) {
+  return fetch.mock.calls
+    .filter(([url]) => String(url).includes("/commands/paper."))
+    .map(([url, init]) => ({
+      command: String(url).split("/commands/")[1],
+      input: JSON.parse(String(init?.body)).input,
+    }))
+}
+
+async function draftForJob(onCreated: () => void) {
+  listJobs.mockResolvedValue([job])
+  render(
+    <PaperLetterStartPage onBack={() => undefined} onCreated={onCreated} />
+  )
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Junior Marketing, Lumière" })
+  )
+  fireEvent.click(screen.getByRole("button", { name: "Draft letter" }))
+}
+
+it("saves nothing the Coach sends after the person clicks Stop", async () => {
+  const fetch = installFetch("late")
+  const onCreated = vi.fn()
+  await draftForJob(onCreated)
+  await screen.findByText("Dear hiring team,")
+  fireEvent.click(screen.getByRole("button", { name: "Stop" }))
+  await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith("letter-1"))
+  expect(mintInputs(fetch)).toEqual([
+    {
+      command: "paper.canvas",
+      input: expect.objectContaining({ lines: ["Dear hiring team,"] }),
+    },
+  ])
+  expect(fetch.mock.calls.some(([url]) => String(url).endsWith("/stop"))).toBe(
+    true
+  )
+})
+
+it("refuses a letter too long for one Word page save and makes no page", async () => {
+  const fetch = installFetch("long")
+  const onCreated = vi.fn()
+  await draftForJob(onCreated)
+  expect(
+    await screen.findByText(
+      "This letter is too long to save. Shorten it and try again."
     )
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Junior Marketing, Lumière" })
-    )
-    fireEvent.click(screen.getByRole("button", { name: "Draft letter" }))
-    await screen.findByText("Dear hiring team,")
-    fireEvent.click(screen.getByRole("button", { name: "Stop" }))
-    await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith("letter-1"))
-    expect(
-      fetch.mock.calls.some(([url]) =>
-        String(url).includes("/commands/paper.edit")
-      )
-    ).toBe(false)
-    view.unmount()
-  }
+  ).toBeInTheDocument()
+  expect(onCreated).not.toHaveBeenCalled()
+  expect(mintInputs(fetch)).toEqual([])
 })

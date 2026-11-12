@@ -69,8 +69,16 @@ export function installFetch(mode: "tool" | "stop" | "limit") {
           truncated: false,
         })
       )
-    if (url.includes("/api/commands/paper.create"))
-      return Promise.resolve(ok(letter))
+    if (url.includes("/api/commands/paper.canvas"))
+      return Promise.resolve(
+        ok({
+          generation: "package",
+          docId: "letter-1",
+          revision: "22222222-2222-4222-8222-222222222222",
+          name: "Cover letter, Northwind.docx",
+          kind: "letter",
+        })
+      )
     if (url.includes("/api/commands/chat.create")) {
       return Promise.resolve(ok({ id: "chat-1" }))
     }
@@ -98,8 +106,7 @@ export function installFetch(mode: "tool" | "stop" | "limit") {
             new TextEncoder().encode(
               [
                 'event: text-delta\ndata: {"text":"Dear team"}\n\n',
-                'event: tool-call\ndata: {"toolCallId":"c1","name":"paper.edit","input":{"docId":"letter-1","basedOn":1,"edits":[{"op":"setText","blockId":"letter-1","text":"Dear team"}]}}\n\n',
-                'event: tool-result\ndata: {"toolCallId":"c1","name":"paper.edit","summary":"Updated","ok":true,"result":{"ok":true,"data":{}}}\n\n',
+                'event: text-delta\ndata: {"text":"\\n\\nI write clearly."}\n\n',
               ].join("")
             )
           )

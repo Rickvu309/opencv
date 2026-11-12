@@ -1,24 +1,104 @@
 import ts from "typescript"
 
-function propertyNamed(object, name) {
-  return object.properties.find(
-    (property) =>
-      (ts.isPropertyAssignment(property) ||
-        ts.isShorthandPropertyAssignment(property)) &&
-      ts.isIdentifier(property.name) &&
-      property.name.text === name
-  )
+const BLOCK_CREATE = "paper.create"
+
+function unwrap(node) {
+  let current = node
+  while (
+    current &&
+    (ts.isParenthesizedExpression(current) ||
+      ts.isAsExpression(current) ||
+      ts.isSatisfiesExpression(current) ||
+      ts.isTypeAssertionExpression(current))
+  ) {
+    current = current.expression
+  }
+  return current
 }
 
-function startsLetter(object) {
-  const kind = propertyNamed(object, "kind")
-  return (
-    !!kind &&
-    ts.isPropertyAssignment(kind) &&
-    ts.isStringLiteral(kind.initializer) &&
-    kind.initializer.text === "letter" &&
-    !propertyNamed(object, "templateId")
+function literalText(node) {
+  const value = unwrap(node)
+  if (!value) return null
+  if (ts.isStringLiteral(value) || ts.isNoSubstitutionTemplateLiteral(value)) {
+    return value.text
+  }
+  return null
+}
+
+function namesBlockCreate(text) {
+  return text === BLOCK_CREATE || text.endsWith(`/commands/${BLOCK_CREATE}`)
+}
+
+function templateTail(node) {
+  const value = unwrap(node)
+  if (!value || !ts.isTemplateExpression(value)) return null
+  return value.templateSpans.at(-1).literal.text
+}
+
+function namesBlockCreateValue(node, names) {
+  const text = literalText(node)
+  if (text !== null) return namesBlockCreate(text)
+  const tail = templateTail(node)
+  if (tail !== null) return tail.endsWith(`/commands/${BLOCK_CREATE}`)
+  const value = unwrap(node)
+  if (!value) return false
+  if (ts.isIdentifier(value)) return names.has(value.text)
+  const member = memberKey(value)
+  return member !== null && names.has(member)
+}
+
+function memberKey(node) {
+  if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression))
+    return `${node.expression.text}.${node.name.text}`
+  if (
+    ts.isElementAccessExpression(node) &&
+    ts.isIdentifier(node.expression) &&
+    literalText(node.argumentExpression) !== null
   )
+    return `${node.expression.text}.${literalText(node.argumentExpression)}`
+  return null
+}
+
+function propertyKey(property) {
+  if (!property.name) return null
+  if (ts.isIdentifier(property.name) || ts.isStringLiteral(property.name))
+    return property.name.text
+  return null
+}
+
+function blockCreateNames(source) {
+  const initializers = new Map()
+  const collect = (node) => {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer
+    ) {
+      initializers.set(node.name.text, node.initializer)
+      const object = unwrap(node.initializer)
+      if (object && ts.isObjectLiteralExpression(object))
+        for (const property of object.properties) {
+          const key = propertyKey(property)
+          if (key !== null && ts.isPropertyAssignment(property))
+            initializers.set(`${node.name.text}.${key}`, property.initializer)
+        }
+    }
+    ts.forEachChild(node, collect)
+  }
+  collect(source)
+  const names = new Set()
+  let grew = true
+  while (grew) {
+    grew = false
+    for (const [name, initializer] of initializers) {
+      if (names.has(name)) continue
+      if (namesBlockCreateValue(initializer, names)) {
+        names.add(name)
+        grew = true
+      }
+    }
+  }
+  return names
 }
 
 export function detectWebBlockCv(text, path = "source.tsx") {
@@ -29,26 +109,17 @@ export function detectWebBlockCv(text, path = "source.tsx") {
     true,
     ts.ScriptKind.TSX
   )
+  const aliases = blockCreateNames(source)
+  const startsBlock = (argument) => namesBlockCreateValue(argument, aliases)
   const hits = []
   const visit = (node) => {
-    if (
-      ts.isCallExpression(node) &&
-      node.arguments.length > 0 &&
-      ts.isStringLiteral(node.arguments[0]) &&
-      node.arguments[0].text === "paper.create"
-    ) {
-      const input = node.arguments[1]
-      if (
-        !input ||
-        !ts.isObjectLiteralExpression(input) ||
-        !startsLetter(input)
-      )
-        hits.push({
-          path,
-          line: source.getLineAndCharacterOfPosition(node.getStart()).line + 1,
-          message:
-            "The web starts a CV on the Word writing page with paper.canvas mint, never an older block CV through paper.create",
-        })
+    if (ts.isCallExpression(node) && node.arguments.some(startsBlock)) {
+      hits.push({
+        path,
+        line: source.getLineAndCharacterOfPosition(node.getStart()).line + 1,
+        message:
+          "The web starts a CV or Letter on the Word writing page with paper.canvas mint, never an older block document through paper.create",
+      })
     }
     ts.forEachChild(node, visit)
   }

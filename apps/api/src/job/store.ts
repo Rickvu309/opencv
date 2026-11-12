@@ -22,7 +22,14 @@ import {
 import { and, asc, count, desc, eq, isNull, sql } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
-import { activity, jobChecklist, jobs, paperDocs } from "../db/schema.js"
+import {
+  activity,
+  jobChecklist,
+  jobs,
+  paperDocs,
+  paperPackageHeads,
+  paperPackageVersions,
+} from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
 import {
@@ -56,8 +63,8 @@ export function toJob(row: typeof jobs.$inferSelect) {
     deadline: row.deadline,
     recruiterName: row.recruiterName,
     recruiterEmail: row.recruiterEmail,
-    cvDocId: paperIdOrNull(row.cvDocId),
-    letterDocId: paperIdOrNull(row.letterDocId),
+    cvDocId: paperIdOrNull(row.cvDocId ?? row.cvPackageId),
+    letterDocId: paperIdOrNull(row.letterDocId ?? row.letterPackageId),
     starred: row.starred,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -133,14 +140,51 @@ export async function checklistFor(jobId: JobId) {
   }))
 }
 
-async function linkedDoc(userId: UserId, docId: string | null) {
-  if (!docId) return null
+async function ownedWordPage(userId: string, docId: string) {
   const rows = await getDb()
-    .select({ id: paperDocs.id, name: paperDocs.name })
+    .select({
+      id: paperPackageHeads.docId,
+      name: paperPackageVersions.name,
+      kind: paperPackageVersions.kind,
+    })
+    .from(paperPackageHeads)
+    .innerJoin(
+      paperPackageVersions,
+      and(
+        eq(paperPackageVersions.docId, paperPackageHeads.docId),
+        eq(paperPackageVersions.revision, paperPackageHeads.revision)
+      )
+    )
+    .where(
+      and(
+        eq(paperPackageHeads.docId, docId),
+        eq(paperPackageHeads.userId, userId)
+      )
+    )
+    .limit(1)
+  return rows[0] ?? null
+}
+
+async function ownedPaperDoc(userId: string, docId: string) {
+  const rows = await getDb()
+    .select({ id: paperDocs.id, name: paperDocs.name, kind: paperDocs.kind })
     .from(paperDocs)
     .where(and(eq(paperDocs.id, docId), eq(paperDocs.userId, userId)))
     .limit(1)
   const doc = rows[0]
+  return doc ? { ...doc, word: false } : null
+}
+
+async function ownedDoc(userId: string, docId: string) {
+  const older = await ownedPaperDoc(userId, docId)
+  if (older) return older
+  const page = await ownedWordPage(userId, docId)
+  return page ? { ...page, word: true } : null
+}
+
+async function linkedDoc(userId: UserId, docId: string | null) {
+  if (!docId) return null
+  const doc = await ownedDoc(userId, docId)
   return doc ? { id: parsePaperId(doc.id), name: doc.name } : null
 }
 
@@ -151,8 +195,8 @@ export async function getJob(userId: UserId, jobId: JobId) {
     note: await latestJobNote(userId, jobId),
     checklist: await checklistFor(jobId),
     linked: {
-      cv: await linkedDoc(userId, row.cvDocId),
-      letter: await linkedDoc(userId, row.letterDocId),
+      cv: await linkedDoc(userId, row.cvDocId ?? row.cvPackageId),
+      letter: await linkedDoc(userId, row.letterDocId ?? row.letterPackageId),
     },
   }
 }
@@ -468,24 +512,23 @@ export async function linkPaper(
   kind: "cv" | "letter"
 ) {
   const job = await ownedJob(actor.userId, jobId)
-  const docs = await getDb()
-    .select()
-    .from(paperDocs)
-    .where(and(eq(paperDocs.id, docId), eq(paperDocs.userId, actor.userId)))
-    .limit(1)
-  const doc = docs[0]
+  const doc = await ownedDoc(actor.userId, docId)
   if (!doc || doc.kind !== kind) {
     throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
   }
   const previousDocId = paperIdOrNull(
-    kind === "cv" ? job.cvDocId : job.letterDocId
+    kind === "cv"
+      ? (job.cvDocId ?? job.cvPackageId)
+      : (job.letterDocId ?? job.letterPackageId)
   )
+  const older = doc.word ? null : docId
+  const word = doc.word ? docId : null
   await getDb()
     .update(jobs)
     .set(
       kind === "cv"
-        ? { cvDocId: docId, updatedAt: new Date() }
-        : { letterDocId: docId, updatedAt: new Date() }
+        ? { cvDocId: older, cvPackageId: word, updatedAt: new Date() }
+        : { letterDocId: older, letterPackageId: word, updatedAt: new Date() }
     )
     .where(eq(jobs.id, jobId))
   return {
@@ -505,8 +548,8 @@ export async function unlinkPaper(
     .update(jobs)
     .set(
       kind === "cv"
-        ? { cvDocId: null, updatedAt: new Date() }
-        : { letterDocId: null, updatedAt: new Date() }
+        ? { cvDocId: null, cvPackageId: null, updatedAt: new Date() }
+        : { letterDocId: null, letterPackageId: null, updatedAt: new Date() }
     )
     .where(eq(jobs.id, jobId))
   return toJob(await ownedJob(actor.userId, jobId))

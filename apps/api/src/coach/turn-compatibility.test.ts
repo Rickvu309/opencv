@@ -249,12 +249,27 @@ it("bounds an old tab tail without cancelling its queued task", () =>
         body: JSON.stringify({ text: "Outlive this connection" }),
       })
       const wire = await response.text()
-      expect(wire).toContain("event: message-start")
-      expect(wire).toContain("event: text-delta")
-      expect(wire).toContain(
-        "Coach is still working. Reload this Chat to follow or stop it."
-      )
-      expect(wire).toContain("event: message-end")
+      const events = wire
+        .split("\n\n")
+        .filter((frame) => frame.includes("event: "))
+        .map((frame) => ({
+          event: /event: (.+)/.exec(frame)?.[1],
+          data: /data: (.+)/.exec(frame)?.[1] ?? "",
+        }))
+      expect(events.map((frame) => frame.event)).toEqual([
+        "message-start",
+        "notice",
+        "message-end",
+      ])
+      expect(JSON.parse(events[1]!.data)).toEqual({
+        text: "Coach is still working. Reload this Chat to follow or stop it.",
+      })
+      expect(
+        events.filter(
+          (frame) =>
+            frame.event === "text-delta" && frame.data.includes("still working")
+        )
+      ).toEqual([])
       expect(wire).not.toContain("event: error")
       const detail = await app.request(`/api/chats/${chatId}`, {
         headers: authHeaders(owner.cookie),

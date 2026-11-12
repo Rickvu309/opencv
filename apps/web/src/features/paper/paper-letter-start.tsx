@@ -6,7 +6,7 @@ import {
   useRef,
   type MutableRefObject,
 } from "react"
-import type { JobView, PaperEdit } from "@workspace/domain"
+import { WORD_LIMITS, type JobView } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -25,8 +25,7 @@ import { useQueryClient } from "@tanstack/react-query"
 
 import {
   extractLetterAttachment,
-  getPaper,
-  paperGetKey,
+  followPaperTurn,
   PaperLimitError,
   stopPaperChat,
   streamPaperTurn,
@@ -39,66 +38,16 @@ import {
 import { openBlankPage } from "./paper-new-dialog.tsx"
 import { letterDraftText } from "./paper-letter-context.ts"
 
-const LETTER_CHUNK = 4000
-const BLOCKS_PER_INSERT = 30
-const INSERTS_PER_SAVE = 39
+const LETTER_LINE = 2000
 
-function letterChunks(markdown: string): string[] {
-  const pieces: string[] = []
-  for (const paragraph of markdown.split(/\n\n+/)) {
-    const text = paragraph.trim()
-    if (!text) continue
-    for (let index = 0; index < text.length; index += LETTER_CHUNK) {
-      pieces.push(text.slice(index, index + LETTER_CHUNK))
-    }
+export function letterLines(text: string): string[] {
+  const lines: string[] = []
+  for (const paragraph of text.split(/\n\s*\n+/)) {
+    const line = paragraph.replace(/\s*\n\s*/g, " ").trim()
+    for (let index = 0; index < line.length; index += LETTER_LINE)
+      lines.push(line.slice(index, index + LETTER_LINE))
   }
-  if (pieces.length === 0) return [markdown.slice(0, LETTER_CHUNK)]
-  return pieces
-}
-
-function paragraphLines(paper: unknown): string[] | null {
-  if (!paper || typeof paper !== "object") return null
-  const blocks = (paper as { blocks?: unknown }).blocks
-  if (!Array.isArray(blocks)) return null
-  return blocks.flatMap((block) => {
-    if (!block || typeof block !== "object") return []
-    const row = block as { type?: string; content?: { text?: string }[] }
-    if (row.type !== "paragraph") return []
-    return [(row.content ?? []).map((part) => part.text ?? "").join("")]
-  })
-}
-
-function sameLines(left: readonly string[], right: readonly string[]) {
-  return (
-    left.length === right.length &&
-    left.every((line, index) => line === right[index])
-  )
-}
-
-export function letterEdits(markdown: string): PaperEdit[] {
-  const pieces = letterChunks(markdown)
-  const [first, ...rest] = pieces
-  const edits: PaperEdit[] = [
-    { op: "setText", blockId: "letter-1", text: first ?? "" },
-  ]
-  const groups: string[][] = []
-  for (let index = 0; index < rest.length; index += BLOCKS_PER_INSERT) {
-    groups.push(rest.slice(index, index + BLOCKS_PER_INSERT))
-  }
-  if (groups.length > INSERTS_PER_SAVE) {
-    throw new Error(
-      "This letter is too long to save. Shorten it and try again."
-    )
-  }
-  for (let index = groups.length - 1; index >= 0; index -= 1) {
-    const group = groups[index] ?? []
-    edits.push({
-      op: "insert",
-      after: "letter-1",
-      blocks: group.map((text) => ({ type: "paragraph", text })),
-    })
-  }
-  return edits
+  return lines
 }
 
 type DraftOperation = {
@@ -142,6 +91,8 @@ export function PaperLetterStart({
   onCreated,
   onDraftingStart,
   onDraftText,
+  onDraftContinues,
+  onDraftWaiting,
   onDraftingEnd,
   stopRef,
 }: {
@@ -149,6 +100,8 @@ export function PaperLetterStart({
   onCreated: (id: string) => void
   onDraftingStart?: (draftName: string, attribution: string | null) => void
   onDraftText?: (text: string) => void
+  onDraftContinues?: () => void
+  onDraftWaiting?: (chatId: string | null) => void
   onDraftingEnd?: () => void
   stopRef?: MutableRefObject<(() => void) | null>
 }) {
@@ -244,83 +197,69 @@ export function PaperLetterStart({
       const turnText = letterDraftText(
         unread || !selected
           ? query.trim()
-          : `Draft a cover letter for ${selected.title} at ${selected.company}.`,
+          : `Draft a cover letter for ${selected.title} at ${selected.company}. Reply with the letter text only; it opens as a Word page when you finish.`,
         attached
       )
-      const created = await run("paper.create", {
-        kind: "letter",
-        ...(selected
-          ? { jobId: selected.id, name: `Cover letter, ${selected.company}` }
-          : { name: "Cover letter" }),
-      })
-      if (activeDraft.current !== operation) return
       const chat = await run("chat.create", {
-        title: selected ? `Cover letter, ${selected.company}` : "Cover letter",
+        title: draftName,
       })
       operation.chatId = chat.id
       if (activeDraft.current !== operation) {
         void stopPaperChat(chat.id)
         return
       }
-      let savedByCoach = false
       try {
         if (controller.signal.aborted)
           throw new DOMException("Stopped", "AbortError")
-        await streamPaperTurn({
+        const showText = (text: string) => {
+          if (activeDraft.current !== operation || controller.signal.aborted)
+            return
+          operation.text = text
+          dispatch({ type: "draft_text_streamed", text })
+          onDraftText?.(text)
+        }
+        const showWaiting = (waiting: boolean) => {
+          if (activeDraft.current === operation)
+            onDraftWaiting?.(waiting ? chat.id : null)
+        }
+        const end = await streamPaperTurn({
           queryClient,
           chatId: chat.id,
           text: turnText,
-          focusDocId: created.id,
           context: selected ? [{ kind: "job", id: selected.id }] : undefined,
           signal: controller.signal,
-          onText: (delta) => {
-            if (activeDraft.current !== operation || controller.signal.aborted)
-              return
-            operation.text += delta
-            dispatch({ type: "draft_text_streamed", text: operation.text })
-            onDraftText?.(operation.text)
-          },
-          onToolResult: (tool) => {
-            if (
-              activeDraft.current === operation &&
-              !controller.signal.aborted &&
-              tool === "paper.edit"
-            ) {
-              savedByCoach = true
-              void queryClient.fetchQuery({
-                queryKey: paperGetKey(created.id),
-                queryFn: () => getPaper(created.id),
-                staleTime: 0,
-              })
-            }
-          },
+          onText: (delta) => showText(operation.text + delta),
+          onWaiting: () => showWaiting(true),
         })
+        if (end === "continuing" && activeDraft.current === operation) {
+          onDraftContinues?.()
+          showText(
+            await followPaperTurn({
+              queryClient,
+              chatId: chat.id,
+              signal: controller.signal,
+              onText: showText,
+              onWaiting: showWaiting,
+            })
+          )
+        }
       } catch (err) {
         if (!operation.stopped || !controller.signal.aborted) throw err
       }
       if (activeDraft.current !== operation) return
-      if (!savedByCoach && operation.text) {
-        const wanted = letterChunks(operation.text)
-        let live: string[] | null = null
-        try {
-          live = paragraphLines((await getPaper(created.id)).paper)
-        } catch {
-          live = null
-        }
-        const alreadySaved = live !== null && sameLines(live, wanted)
-        const personEdited =
-          live !== null &&
-          !(live.length === 1 && live[0] === "") &&
-          !alreadySaved
-        if (!alreadySaved && !personEdited) {
-          await run("paper.edit", {
-            docId: created.id,
-            basedOn: created.contentVersion,
-            edits: letterEdits(operation.text),
-          })
-        }
-      }
-      if (activeDraft.current === operation) onCreated(created.id)
+      const lines = letterLines(operation.text)
+      if (lines.length > WORD_LIMITS.maxOpsPerApply)
+        throw new Error(
+          "This letter is too long to save. Shorten it and try again."
+        )
+      const created = await run("paper.canvas", {
+        op: "mint",
+        label: "letter",
+        name: draftName,
+        ...(selected ? { jobId: selected.id } : {}),
+        ...(lines.length > 0 ? { lines } : {}),
+      })
+      if (activeDraft.current === operation) onCreated(created.docId)
     } catch (err) {
       if (activeDraft.current !== operation || isAbortError(err)) return
       if (err instanceof PaperLimitError) {
