@@ -1,5 +1,6 @@
 [data-pen-surface="coach"][data-slot="page-header"] {
   border-bottom-color: #ededef;
+  padding-right: 12px;
 }
 [data-pen-surface="coach"][data-slot="page-header"]
   [data-slot="coach-history-trigger"] {

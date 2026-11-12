@@ -151,25 +151,26 @@ export function ApplyPage() {
       className="flex h-full min-h-0 flex-col bg-card"
     >
       <ApplyHeader onNewJob={() => dispatch({ type: "dialog_opened" })} />
-      <div
-        aria-label="Jobs by priority"
-        className="flex gap-4 px-6 py-2 text-sm text-muted-foreground"
-      >
-        {counts.data?.map(({ priority, count }) => (
-          <span key={priority} className="capitalize">
-            {priority} <span className="tabular-nums">{count}</span>
-          </span>
-        ))}
-        {ownerId && counts.isError ? (
-          <span>Could not load priority counts.</span>
-        ) : null}
-      </div>
       <ApplyToolbar
         view={view}
         onView={setView}
         filters={filters}
         onFilters={setFilters}
-      />
+      >
+        <div
+          aria-label="Jobs by priority"
+          className="order-last flex basis-full gap-4 pb-2 text-sm text-muted-foreground md:order-none md:basis-auto md:pb-0 md:pl-3"
+        >
+          {counts.data?.map(({ priority, count }) => (
+            <span key={priority} className="capitalize">
+              {priority} <span className="tabular-nums">{count}</span>
+            </span>
+          ))}
+          {ownerId && counts.isError ? (
+            <span>Could not load priority counts.</span>
+          ) : null}
+        </div>
+      </ApplyToolbar>
       <ActiveFilters filters={filters} onFilters={setFilters} />
       <div className="flex min-h-0 flex-1 flex-col overflow-auto">
         {jobs.isLoading ? (

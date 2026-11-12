@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import {
   Calendar,
   Funnel,
@@ -60,17 +61,19 @@ export function ApplyToolbar({
   onView,
   filters,
   onFilters,
+  children,
 }: {
   view: ApplyView
   onView: (view: ApplyView) => void
   filters: ApplyFilters
   onFilters: (filters: ApplyFilters) => void
+  children?: ReactNode
 }) {
   const count = activeFilterCount(filters)
   return (
     <div
       data-slot="apply-toolbar"
-      className="flex h-11 shrink-0 items-center gap-1.5 px-3"
+      className="flex min-h-11 shrink-0 flex-wrap items-center gap-1.5 px-3 md:h-11 md:flex-nowrap"
     >
       {VIEWS.map(({ view: id, label, icon: Icon }) => {
         const active = view === id
@@ -98,6 +101,7 @@ export function ApplyToolbar({
           </Button>
         )
       })}
+      {children}
       <Popover>
         <PopoverTrigger
           render={
