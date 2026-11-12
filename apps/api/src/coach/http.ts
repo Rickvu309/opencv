@@ -135,6 +135,7 @@ async function startTurn(
     storedId: existing.focusId,
     context,
     memoryEnabled: profile.memoryEnabled,
+    textOnly: parsed.data.textOnly,
   })
   const { usageId, history } = await transaction(async () => {
     const usageId = await openCoachUsage({
@@ -207,7 +208,7 @@ async function startTurn(
       history: messages,
       focusDoc: grounding.focusDoc,
       selection,
-      allowTools: !parsed.data.regenerate,
+      allowTools: !parsed.data.regenerate && !parsed.data.textOnly,
       note: [
         grounding.note,
         ...(parsed.data.regenerate

@@ -133,6 +133,7 @@ export function startTask(
       storedId: existing.focusId,
       context,
       memoryEnabled: profile.memoryEnabled,
+      textOnly: input.textOnly,
     })
     const usageId = await openCoachUsage({
       userId: actor.userId,
@@ -195,7 +196,7 @@ export function startTask(
         modelId: model,
         mode,
         planAtStart: profile.plan,
-        toolsAllowed: !input.regenerate,
+        toolsAllowed: !input.regenerate && !input.textOnly,
         contextSnapshot: {
           messages,
           ...grounding,
