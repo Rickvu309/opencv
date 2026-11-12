@@ -5,7 +5,7 @@ import { handleApiError } from "../middleware.js"
 import { CommandError } from "../registry/errors.js"
 import { PaperPackage } from "./package-engine.js"
 import { PaperPackageRefusal } from "./package-errors.js"
-import { fixturePackage, run } from "./package-fixtures.js"
+import { fixturePackage, packageMember, run } from "./package-fixtures.js"
 import { parsePackageXml, descendants, isWord } from "./package-xml.js"
 import { readPackageZip } from "./package-zip.js"
 
@@ -86,12 +86,13 @@ describe("editable spans share one replacement decision", () => {
         previous.filter((_, at) => at !== index)
       )
       expect(next[index]).toBe(`${previous[index]}Q`)
-      const originalFiles = (await readPackageZip(bytes)).files
-      const witnessFiles = (await readPackageZip(prepared.package.export()))
-        .files
-      for (const [name, part] of originalFiles)
-        if (name !== "word/document.xml")
-          expect(witnessFiles.get(name)).toEqual(part)
+      const origArchive = await readPackageZip(bytes)
+      const candArchive = await readPackageZip(prepared.package.export())
+      for (const entry of origArchive.entries)
+        if (entry.name !== "word/document.xml")
+          expect(packageMember(candArchive, entry.name)).toEqual(
+            packageMember(origArchive, entry.name)
+          )
     }
   })
 
@@ -132,10 +133,13 @@ describe("editable spans share one replacement decision", () => {
     expect(saved).toBe(
       source.slice(0, node.openEnd) + next[4] + source.slice(node.closeStart)
     )
-    const originalFiles = (await readPackageZip(bytes)).files
-    for (const [name, item] of originalFiles) {
-      if (name !== "word/document.xml")
-        expect(savedFiles.get(name)).toEqual(item)
+    const origArchive = await readPackageZip(bytes)
+    const savedArchive = await readPackageZip(prepared.package.export())
+    for (const entry of origArchive.entries) {
+      if (entry.name !== "word/document.xml")
+        expect(packageMember(savedArchive, entry.name)).toEqual(
+          packageMember(origArchive, entry.name)
+        )
     }
   })
 })

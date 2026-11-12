@@ -9,6 +9,7 @@ import {
   relationship,
   run,
   story,
+  packageMember,
   type FixtureOptions,
 } from "./package-fixtures.js"
 import { readPackageZip } from "./package-zip.js"
@@ -113,11 +114,13 @@ describe("conservative surface and references", () => {
         candidate.read().regions.find((region) => region.text === "inside")
           ?.kind
       ).toBe("locked")
-      const docFiles = (await readPackageZip(document.export())).files
-      const candFiles = (await readPackageZip(candidate.export())).files
-      for (const [name, part] of docFiles) {
-        if (name !== "word/document.xml")
-          expect(candFiles.get(name)).toEqual(part)
+      const docArchive = await readPackageZip(document.export())
+      const candArchive = await readPackageZip(candidate.export())
+      for (const entry of docArchive.entries) {
+        if (entry.name !== "word/document.xml")
+          expect(packageMember(candArchive, entry.name)).toEqual(
+            packageMember(docArchive, entry.name)
+          )
       }
     }
   )
@@ -231,10 +234,13 @@ describe("conservative surface and references", () => {
           (await mainXml(bytes)).toString().replace("alpha", "changed")
         )
       )
-      const candFiles = (await readPackageZip(candidate.export())).files
-      for (const [name, part] of (await readPackageZip(bytes)).files)
-        if (name !== "word/document.xml")
-          expect(candFiles.get(name)).toEqual(part)
+      const candArchive = await readPackageZip(candidate.export())
+      const origArchive = await readPackageZip(bytes)
+      for (const entry of origArchive.entries)
+        if (entry.name !== "word/document.xml")
+          expect(packageMember(candArchive, entry.name)).toEqual(
+            packageMember(origArchive, entry.name)
+          )
       const corrupt = Buffer.from(bytes)
       const descriptorAt = corrupt.indexOf(
         Buffer.from([0x50, 0x4b, 0x07, 0x08])
@@ -369,9 +375,9 @@ describe("conservative surface and references", () => {
     const candidateFiles = (await readPackageZip(candidate.export())).files
     const originalFiles = (await readPackageZip(bytes)).files
     expect(candidateFiles.get("word/document.xml")?.toString()).toContain(link)
-    expect(candidateFiles.get("word/_rels/document.xml.rels")).toEqual(
-      originalFiles.get("word/_rels/document.xml.rels")
-    )
+    expect(
+      await packageMember(candidate.export(), "word/_rels/document.xml.rels")
+    ).toEqual(await packageMember(bytes, "word/_rels/document.xml.rels"))
   })
 
   it("retains UTF-8 BOM and line endings outside the changed text envelope", async () => {

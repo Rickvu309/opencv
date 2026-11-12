@@ -6,7 +6,7 @@ import {
   RELATIONSHIP_NS,
 } from "./package-profile.js"
 import { WORD_NS } from "./package-xml.js"
-import { crc32 } from "./package-zip.js"
+import { crc32, readPackageZip } from "./package-zip.js"
 
 export function fixtureZip(
   files: Record<string, string | Buffer>,
@@ -153,4 +153,41 @@ export const rangeFixtures = {
     "hdr",
     `<w:p><w:hyperlink w:anchor="CareerMark">${run("jump")}</w:hyperlink></w:p>`
   ),
+}
+
+export function packageMember(
+  archive: {
+    entries: readonly { name: string; local: Buffer | Uint8Array }[]
+    files: Map<string, Buffer>
+  },
+  name: string
+): { local: Buffer | Uint8Array; bytes: Buffer } | undefined
+export function packageMember(
+  input: Uint8Array,
+  name: string
+): Promise<{ local: Buffer | Uint8Array; bytes: Buffer } | undefined>
+export function packageMember(
+  source:
+    | Uint8Array
+    | {
+        entries: readonly { name: string; local: Buffer | Uint8Array }[]
+        files: Map<string, Buffer>
+      },
+  name: string
+):
+  | { local: Buffer | Uint8Array; bytes: Buffer }
+  | undefined
+  | Promise<{ local: Buffer | Uint8Array; bytes: Buffer } | undefined> {
+  if ("files" in source) {
+    const entry = source.entries.find((item) => item.name === name)
+    const bytes = source.files.get(name)
+    if (!entry || !bytes) return undefined
+    return { local: entry.local, bytes }
+  }
+  return readPackageZip(source).then((archive) => {
+    const entry = archive.entries.find((item) => item.name === name)
+    const bytes = archive.files.get(name)
+    if (!entry || !bytes) return undefined
+    return { local: entry.local, bytes }
+  })
 }

@@ -8,6 +8,7 @@ import {
   run,
   story,
   relationship,
+  packageMember,
 } from "./package-fixtures.js"
 import { readPackageZip } from "./package-zip.js"
 import { paragraphText } from "./package-targets.js"
@@ -22,12 +23,8 @@ const context = {
 
 const tail = paragraph("untouched")
 
-async function files(bytes: Buffer) {
-  return (await readPackageZip(bytes)).files
-}
-
 async function mainXml(bytes: Buffer) {
-  const part = (await files(bytes)).get("word/document.xml")
+  const part = (await readPackageZip(bytes)).files.get("word/document.xml")
   if (!part) throw new Error("Missing main document part")
   return part
 }
@@ -88,16 +85,17 @@ describe("immutable Word package replacement", () => {
       const before = original.read().regions[0].text
       const candidate = (await original.prepare(edit(original, before, after)))
         .package
-      const witness = await files(candidate.export())
-      const expected = await files(
+      const candArchive = await readPackageZip(candidate.export())
+      const origArchive = await readPackageZip(bytes)
+      const expected = await mainXml(
         fixturePackage(paragraph(expectedXml) + tail)
       )
-      expect(witness.get("word/document.xml")).toEqual(
-        expected.get("word/document.xml")
-      )
-      for (const [name, part] of await files(bytes)) {
-        if (name !== "word/document.xml")
-          expect(witness.get(name)).toEqual(part)
+      expect(candArchive.files.get("word/document.xml")).toEqual(expected)
+      for (const entry of origArchive.entries) {
+        if (entry.name !== "word/document.xml")
+          expect(packageMember(candArchive, entry.name)).toEqual(
+            packageMember(origArchive, entry.name)
+          )
       }
       expect(original.export()).toEqual(bytes)
       expect(candidate.sidecar().paragraphs).toEqual(
@@ -143,12 +141,12 @@ describe("immutable Word package replacement", () => {
     const candidate = (
       await document.prepare(edit(document, "alpha", "changed"))
     ).package
-    const original = await files(bytes)
-    const changed = await files(candidate.export())
-    expect(changed.get("archive/opaque.xml")).toEqual(
-      original.get("archive/opaque.xml")
+    const original = await readPackageZip(bytes)
+    const changed = await readPackageZip(candidate.export())
+    expect(packageMember(changed, "archive/opaque.xml")).toEqual(
+      packageMember(original, "archive/opaque.xml")
     )
-    expect(changed.size).toBe(original.size)
+    expect(changed.files.size).toBe(original.files.size)
     expect((await mainXml(candidate.export())).toString()).toContain(
       "<w:t>changed</w:t>"
     )
@@ -228,7 +226,7 @@ describe("immutable Word package replacement", () => {
       const expected = Buffer.from(
         (await mainXml(bytes)).toString().replace("Welcome ", "Request ")
       )
-      const candDoc = (await files(candidate.export())).get("word/document.xml")
+      const candDoc = await mainXml(candidate.export())
       expect(candDoc).toEqual(expected)
       expect(candDoc?.toString()).toContain(following)
       expect(document.export()).toEqual(bytes)
@@ -253,14 +251,12 @@ describe("immutable Word package replacement", () => {
       "second",
       "untouched",
     ])
-    const candDoc = (await files(candidate.export())).get("word/document.xml")
-    const expectedDoc = (
-      await files(
-        fixturePackage(
-          `<w:p>${run("first", "<w:b/>")}${run("second", "<w:i/>")}</w:p>${tail}`
-        )
+    const candDoc = await mainXml(candidate.export())
+    const expectedDoc = await mainXml(
+      fixturePackage(
+        `<w:p>${run("first", "<w:b/>")}${run("second", "<w:i/>")}</w:p>${tail}`
       )
-    ).get("word/document.xml")
+    )
     expect(candDoc).toEqual(expectedDoc)
     expect(candidate.sidecar().paragraphs).toEqual(
       document.sidecar().paragraphs
@@ -290,7 +286,7 @@ describe("immutable Word package replacement", () => {
     const candidate = (
       await document.prepare(edit(document, "👩🏽‍💻 A &B é", "👩🏽‍💻 C &B é"))
     ).package
-    expect((await files(candidate.export())).get("word/document.xml")).toEqual(
+    expect(await mainXml(candidate.export())).toEqual(
       Buffer.from(
         (await mainXml(bytes)).toString().replace(" A&#160;", " C&#160;")
       )
@@ -307,7 +303,7 @@ describe("immutable Word package replacement", () => {
     const candidate = (await document.prepare(edit(document, before, after)))
       .package
     expect(candidate.read().regions[0].text).toBe(after)
-    expect((await files(candidate.export())).get("word/document.xml")).toEqual(
+    expect(await mainXml(candidate.export())).toEqual(
       Buffer.from(
         (await mainXml(bytes)).toString().replace("Start-Ups", "Startups")
       )

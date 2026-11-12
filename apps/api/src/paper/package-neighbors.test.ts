@@ -5,6 +5,7 @@ import {
   paragraph,
   relationship,
   run,
+  packageMember,
 } from "./package-fixtures.js"
 import { readPackageZip } from "./package-zip.js"
 
@@ -91,12 +92,8 @@ describe("spans beside a preserved neighbor or a proofing mark", () => {
     )
     expect(await mainXml(candidate.export())).toContain(run("changed"))
     expect(
-      (await readPackageZip(candidate.export())).files.get(
-        "word/_rels/document.xml.rels"
-      )
-    ).toEqual(
-      (await readPackageZip(bytes)).files.get("word/_rels/document.xml.rels")
-    )
+      await packageMember(candidate.export(), "word/_rels/document.xml.rels")
+    ).toEqual(await packageMember(bytes, "word/_rels/document.xml.rels"))
   })
 
   it("allows a history value of 1 on that link", async () => {
