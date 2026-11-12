@@ -14,10 +14,10 @@ import {
 } from "@/features/paper/paper-api.ts"
 import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
 import {
-  draftFromRegions,
+  draftFromPage,
   opensWritingCanvas,
 } from "@/features/paper-page/canvas-edit.ts"
-import { readWholePackage } from "@/features/paper-page/package-read.ts"
+import { readWordPage } from "@/features/paper-page/package-read.ts"
 import { WritingPage } from "@/features/paper/writing-page.tsx"
 import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
 import { useShellProfile } from "@/features/app-shell/use-shell-profile.ts"
@@ -87,20 +87,18 @@ export function PaperDocPage() {
     docQuery.error instanceof ApiError &&
     docQuery.error.code === ERROR_CODES.NOT_FOUND
   const packageRead = catalogClient.options(owner, "paper.read", {
+    view: "page",
     docId: validId ?? NO_DOC,
   })
   const packageQuery = useQuery({
     queryKey: packageRead.queryKey,
     meta: packageRead.meta,
-    queryFn: ({ signal }) => readWholePackage(owner, validId ?? NO_DOC, signal),
+    queryFn: ({ signal }) => readWordPage(owner, validId ?? NO_DOC, signal),
     enabled: packageMissing && owner !== "",
     retry: false,
   })
-  const packagePage =
-    packageQuery.data && "regions" in packageQuery.data
-      ? packageQuery.data
-      : null
-  const seeded = packagePage ? draftFromRegions(packagePage.regions) : null
+  const packagePage = packageQuery.data ?? null
+  const seeded = packagePage ? draftFromPage(packagePage) : null
   const packagePending =
     packageMissing &&
     (session.isPending || (owner !== "" && packageQuery.isLoading))

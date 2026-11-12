@@ -27,6 +27,12 @@ import { Registry } from "../registry/registry.js"
 import { openBackend, type Backend } from "../test/registry-formal-support.js"
 import { commitWordCandidate } from "./package-candidates.js"
 import { prepareCanvas } from "./package-canvas.js"
+import { WORD_UNDO_MOVED } from "./word/document.js"
+import {
+  mergeInput,
+  splitInput,
+  writeInput,
+} from "../test/word-canvas-inputs.js"
 import { registerPaper } from "./commands.js"
 import { implementation as readWord } from "./operations/read/server.js"
 import {
@@ -214,25 +220,25 @@ describe("a blank page saves through the existing check", () => {
       const splitKey = randomUUID()
       const split = await canvas(
         id,
-        {
-          op: "split",
-          docId: minted.docId,
-          basedOn: minted.revision,
-          paragraph: side.paragraphs[0]!.key,
-          at: 0,
-        },
+        await splitInput(
+          id,
+          minted.docId,
+          minted.revision,
+          side.paragraphs[0]!.key,
+          0
+        ),
         splitKey
       )
       const savedRows = await counts(id)
       const replay = await canvas(
         id,
-        {
-          op: "split",
-          docId: minted.docId,
-          basedOn: minted.revision,
-          paragraph: side.paragraphs[0]!.key,
-          at: 0,
-        },
+        await splitInput(
+          id,
+          minted.docId,
+          minted.revision,
+          side.paragraphs[0]!.key,
+          0
+        ),
         splitKey
       )
       expect(replay.revision).toBe(split.revision)
@@ -254,7 +260,7 @@ describe("a blank page saves through the existing check", () => {
       expect(loaded.sectCount(splitBytes)).toBe(1)
       const splitSide = await sidecarOf(id, split.revision)
       expect(splitSide.paragraphs[2]!.key).toBe(carrierKey)
-      expect(splitSide.paragraphs[0]!.key).not.toBe(side.paragraphs[0]!.key)
+      expect(splitSide.paragraphs[0]!.key).toBe(side.paragraphs[0]!.key)
       expect(splitSide.paragraphs[1]!.textIds).toEqual([])
       expect(splitSide.paragraphs[0]!.textIds).toHaveLength(beforeIds)
       const [saved] = await getDb()
@@ -264,12 +270,12 @@ describe("a blank page saves through the existing check", () => {
       expect((saved?.seal as { profile: string }).profile).toBe(
         PAPER_CANVAS_PROFILE
       )
-      const removed = await canvas(id, {
-        op: "deleteParagraph",
-        docId: split.docId,
-        basedOn: split.revision,
-        paragraph: splitSide.paragraphs[1]!.key,
-      })
+      const removed = await canvas(
+        id,
+        writeInput(split.docId, split.revision, [
+          { op: "delete", handle: splitSide.paragraphs[1]!.key },
+        ])
+      )
       const removedBytes = await exported(id, removed.docId, removed.revision)
       const removedBody = paragraphs(removedBytes)
       expect(removedBody).toHaveLength(2)
@@ -283,35 +289,43 @@ describe("a blank page saves through the existing check", () => {
       expect(removedSide.paragraphs[1]!.key).toBe(carrierKey)
       const only = await canvas(id, { op: "mint" })
       const onlySide = await sidecarOf(id, only.revision)
-      const bare = await canvas(id, {
-        op: "deleteParagraph",
-        docId: only.docId,
-        basedOn: only.revision,
-        paragraph: onlySide.paragraphs[0]!.key,
-      })
-      const bareBody = paragraphs(await exported(id, bare.docId, bare.revision))
-      expect(bareBody).toHaveLength(1)
-      expect(loaded.isCarrier(bareBody[0])).toBe(true)
+      await expect(
+        canvas(
+          id,
+          writeInput(only.docId, only.revision, [
+            { op: "delete", handle: onlySide.paragraphs[0]!.key },
+          ])
+        )
+      ).rejects.toThrow(
+        "Paper will not remove the last line of the page. Clear its words instead. No document was changed."
+      )
+      expect((await headOf(only.docId)).revision).toBe(only.revision)
       const typed = await publishBytes(
         id,
         loaded.fillPaintedText(loaded.mintBlankBytes(), marks.FIRST)
       )
       await markMinted(typed.docId)
       const typedSide = await sidecarOf(id, typed.revision)
-      const typedSplit = await canvas(id, {
-        op: "split",
-        docId: typed.docId,
-        basedOn: typed.revision,
-        paragraph: typedSide.paragraphs[0]!.key,
-        at: 1,
-      })
+      const typedSplit = await canvas(
+        id,
+        await splitInput(
+          id,
+          typed.docId,
+          typed.revision,
+          typedSide.paragraphs[0]!.key,
+          1
+        )
+      )
       const typedSplitSide = await sidecarOf(id, typedSplit.revision)
-      const merged = await canvas(id, {
-        op: "mergePrevious",
-        docId: typed.docId,
-        basedOn: typedSplit.revision,
-        paragraph: typedSplitSide.paragraphs[1]!.key,
-      })
+      const merged = await canvas(
+        id,
+        await mergeInput(
+          id,
+          typed.docId,
+          typedSplit.revision,
+          typedSplitSide.paragraphs[1]!.key
+        )
+      )
       const mergedBody = paragraphs(
         await exported(id, merged.docId, merged.revision)
       )
@@ -348,15 +362,18 @@ describe("a blank page saves through the existing check", () => {
         const doc = await publishBytes(id, bytes)
         const side = await sidecarOf(id, doc.revision)
         await expect(
-          canvas(id, {
-            op: "split",
-            docId: doc.docId,
-            basedOn: doc.revision,
-            paragraph: side.paragraphs[0]!.key,
-            at: 1,
-          })
+          canvas(
+            id,
+            await splitInput(
+              id,
+              doc.docId,
+              doc.revision,
+              side.paragraphs[0]!.key,
+              1
+            )
+          )
         ).rejects.toThrow(
-          "This page change is not available. No document was changed."
+          /This paragraph (is numbered|has a change mark)\. Paper/
         )
         expect((await headOf(doc.docId)).revision).toBe(doc.revision)
         expect(await exported(id, doc.docId, doc.revision)).toEqual(
@@ -370,24 +387,27 @@ describe("a blank page saves through the existing check", () => {
       const id = await seed()
       const minted = await canvas(id, { op: "mint" })
       const side = await sidecarOf(id, minted.revision)
-      const split = await canvas(id, {
-        op: "split",
-        docId: minted.docId,
-        basedOn: minted.revision,
-        paragraph: side.paragraphs[0]!.key,
-        at: 0,
-      })
+      const split = await canvas(
+        id,
+        await splitInput(
+          id,
+          minted.docId,
+          minted.revision,
+          side.paragraphs[0]!.key,
+          0
+        )
+      )
       const splitSide = await sidecarOf(id, split.revision)
-      const removed = await canvas(id, {
-        op: "deleteParagraph",
-        docId: split.docId,
-        basedOn: split.revision,
-        paragraph: splitSide.paragraphs[1]!.key,
-      })
+      const removed = await canvas(
+        id,
+        writeInput(split.docId, split.revision, [
+          { op: "delete", handle: splitSide.paragraphs[1]!.key },
+        ])
+      )
       const before = await counts(id)
       const bytes = await exported(id, removed.docId, removed.revision)
       await expect(registry().undo(id, split.activityId!)).rejects.toThrow(
-        "This Word document changed after the edit, so Undo was skipped."
+        WORD_UNDO_MOVED
       )
       expect((await headOf(removed.docId)).revision).toBe(removed.revision)
       expect(await counts(id)).toEqual(before)
@@ -404,13 +424,13 @@ describe("a blank page saves through the existing check", () => {
       const id = await seed()
       const minted = await canvas(id, { op: "mint" })
       const side = await sidecarOf(id, minted.revision)
-      const input = {
-        op: "split" as const,
-        docId: minted.docId,
-        basedOn: minted.revision,
-        paragraph: side.paragraphs[0]!.key,
-        at: 0,
-      }
+      const input = await splitInput(
+        id,
+        minted.docId,
+        minted.revision,
+        side.paragraphs[0]!.key,
+        0
+      )
       const prepared = await prepareCanvas(id, input)
       const split = await canvas(id, input)
       const before = await counts(id)
@@ -435,13 +455,13 @@ describe("a blank page saves through the existing check", () => {
       const id = await seed()
       const minted = await canvas(id, { op: "mint" })
       const side = await sidecarOf(id, minted.revision)
-      const input = {
-        op: "split",
-        docId: minted.docId,
-        basedOn: minted.revision,
-        paragraph: side.paragraphs[0]!.key,
-        at: 0,
-      }
+      const input = await splitInput(
+        id,
+        minted.docId,
+        minted.revision,
+        side.paragraphs[0]!.key,
+        0
+      )
       const split = await canvas(id, input)
       const bytes = await exported(id, split.docId, split.revision)
       await expect(canvas(id, input)).rejects.toThrow(
@@ -500,13 +520,16 @@ describe("a blank page saves through the existing check", () => {
         .from(pendingActions)
         .where(eq(pendingActions.userId, id))
       const side = await sidecarOf(id, doc.revision)
-      const split = await canvas(id, {
-        op: "split",
-        docId: doc.docId,
-        basedOn: doc.revision,
-        paragraph: side.paragraphs[0]!.key,
-        at: 1,
-      })
+      const split = await canvas(
+        id,
+        await splitInput(
+          id,
+          doc.docId,
+          doc.revision,
+          side.paragraphs[0]!.key,
+          1
+        )
+      )
       const before = await counts(id)
       const bytes = await exported(id, split.docId, split.revision)
       await expect(registry().approve(id, pending!.id)).rejects.toThrow(

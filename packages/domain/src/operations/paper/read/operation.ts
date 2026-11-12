@@ -6,6 +6,7 @@ import {
   paperPackageReadInputSchema,
   paperPackageReadSchema,
 } from "../../../paper-package.js"
+import { wordPageSchema } from "../../../paper-word.js"
 
 export const operation = defineOperation({
   owner: "paper",
@@ -13,13 +14,20 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description:
-    "List saved Word documents or read a page pinned to its document and revision.",
+    "List saved Word documents, read a page pinned to its document and revision, or read the page as Word lines.",
   input: z
     .union([
       z
         .object({
           view: z.literal("library"),
           after: z.string().uuid().optional(),
+        })
+        .strict(),
+      z
+        .object({
+          view: z.literal("page"),
+          docId: z.string().uuid(),
+          at: z.string().uuid().optional(),
         })
         .strict(),
       paperPackageReadInputSchema,
@@ -33,6 +41,7 @@ export const operation = defineOperation({
       })
       .strict(),
     paperPackageReadSchema,
+    wordPageSchema,
   ]),
   coach: "never",
   dependsOn: (): readonly ResourceRef[] => [

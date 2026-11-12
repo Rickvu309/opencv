@@ -31,45 +31,35 @@ vi.mock("@/lib/auth-client.ts", () => ({
   },
 }))
 
-function page(regions: unknown[], nextCursor: string | null = null) {
+function lineOf(handle: string, text: string) {
   return {
-    generation: "package",
-    docId: DOC,
-    revision: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-    name: "Page.docx",
-    kind: "letter",
-    packageHash: "ab".repeat(32),
-    byteSize: 128,
-    projector: "paper-package-spans-1",
-    regions,
-    nextCursor,
+    handle,
+    text,
+    pieces: text === "" ? [] : [{ text, editable: true }],
+    held: false,
+    message: "",
+    code: null,
   }
 }
 
-function region(
-  paragraph: string,
-  code: string,
-  kind: "locked" | "editable" = "locked"
-) {
-  if (kind === "editable") {
-    return {
-      kind,
-      paragraph,
-      targetId: `t_${"ab".repeat(32)}`,
-      text: "Hi",
-      location: { paragraph: 1, kind: "paragraph" },
-      formatting: { kind: "inherited", scope: "preserved-uncomputed" },
-      context: { paragraphText: "Hi" },
-    }
-  }
+function heldOf(handle: string, text: string, message: string) {
   return {
-    kind,
-    paragraph,
-    text: "",
-    location: { paragraph: paragraph === CARRIER ? 2 : 1, kind: "paragraph" },
-    reason: { code, message: code },
-    complete: true,
-    continuation: false,
+    handle,
+    text,
+    pieces: [{ text, editable: false }],
+    held: true,
+    message,
+    code: "NOT_BODY",
+  }
+}
+
+function page(paragraphs: unknown[]) {
+  return {
+    doc: DOC,
+    revision: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    name: "Page.docx",
+    label: "letter",
+    paragraphs,
   }
 }
 
@@ -86,10 +76,7 @@ describe("minted package page", () => {
         return Promise.resolve(
           Response.json({
             ok: true,
-            data: page([
-              region(WRITING, "EMPTY_TARGET"),
-              region(CARRIER, "UNSUPPORTED_TARGET_PROPERTY"),
-            ]),
+            data: page([lineOf(WRITING, "")]),
           })
         )
       }
@@ -119,16 +106,7 @@ describe("minted package page", () => {
         return Promise.resolve(
           Response.json({
             ok: true,
-            data: page([
-              {
-                kind: "locked",
-                text: "Imported",
-                location: { paragraph: 1, kind: "paragraph" },
-                reason: { code: "EMPTY_TARGET", message: "Empty" },
-                complete: true,
-                continuation: false,
-              },
-            ]),
+            data: page([]),
           })
         )
       }
@@ -150,65 +128,25 @@ describe("minted package page", () => {
     const later = "c33c33c3-c33c-4c33-8c33-c33c33c33c33"
     const locked = "d44d44d4-d44d-4d44-8d44-d44d44d44d44"
     const message = "This part stays locked."
-    const editable = (paragraph: string, text: string, target: string) => ({
-      kind: "editable" as const,
-      paragraph,
-      targetId: target,
-      text,
-      location: { paragraph: 1, kind: "paragraph" as const },
-      formatting: {
-        kind: "inherited" as const,
-        scope: "preserved-uncomputed" as const,
-      },
-      context: { paragraphText: text },
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      const url = String(input)
+      if (url.includes("/api/reads/paper.read"))
+        return Response.json({
+          ok: true,
+          data: page([
+            lineOf(WRITING, "First paragraph"),
+            heldOf(locked, "Locked line", message),
+            lineOf(later, "Later paragraph"),
+          ]),
+        })
+      return Response.json(
+        {
+          ok: false,
+          error: { code: ERROR_CODES.NOT_FOUND, message: "Missing" },
+        },
+        { status: 404 }
+      )
     })
-    vi.stubGlobal(
-      "fetch",
-      async (input: RequestInfo | URL, init?: RequestInit) => {
-        const url = String(input)
-        if (url.includes("/api/reads/paper.read")) {
-          const body = JSON.parse(String(init?.body ?? "{}")) as {
-            cursor?: string
-          }
-          const data =
-            body.cursor === "rest"
-              ? page(
-                  [editable(later, "Later paragraph", `t_${"cd".repeat(32)}`)],
-                  null
-                )
-              : page(
-                  [
-                    editable(
-                      WRITING,
-                      "First paragraph",
-                      `t_${"ab".repeat(32)}`
-                    ),
-                    {
-                      kind: "locked",
-                      paragraph: locked,
-                      text: "Locked line",
-                      location: { paragraph: 2, kind: "paragraph" },
-                      reason: {
-                        code: "UNSUPPORTED_TARGET_PROPERTY",
-                        message,
-                      },
-                      complete: true,
-                      continuation: false,
-                    },
-                  ],
-                  "rest"
-                )
-          return Response.json({ ok: true, data })
-        }
-        return Response.json(
-          {
-            ok: false,
-            error: { code: ERROR_CODES.NOT_FOUND, message: "Missing" },
-          },
-          { status: 404 }
-        )
-      }
-    )
     render(<PaperDocPage />)
     expect(await screen.findByText("Later paragraph")).toBeVisible()
     const article = screen.getByRole("article", { name: "Page" })

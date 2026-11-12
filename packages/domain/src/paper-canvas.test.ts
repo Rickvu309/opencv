@@ -47,7 +47,7 @@ describe("blank page commits", () => {
     )
   })
 
-  it("accepts a mint, a first write, a split, a merge, and an empty delete", () => {
+  it("accepts a mint and one Word batch, and nothing older", () => {
     assert.equal(PAPER_CANVAS_PROFILE, "paper-canvas-1")
     assert.equal(
       z.toJSONSchema(paperCanvasCommitSchema, { io: "input", reused: "ref" })
@@ -57,94 +57,43 @@ describe("blank page commits", () => {
     assert.deepEqual(paperCanvasCommitSchema.parse({ op: "mint" }), {
       op: "mint",
     })
-    assert.deepEqual(
-      paperCanvasCommitSchema.parse({
-        op: "writeText",
-        docId,
-        basedOn,
-        paragraph,
-        text: "Hi",
-      }),
-      { op: "writeText", docId, basedOn, paragraph, text: "Hi" }
-    )
-    assert.equal(
-      paperCanvasCommitSchema.safeParse({
-        op: "writeText",
-        docId,
-        basedOn,
-        paragraph,
-        text: "",
-      }).success,
-      false
-    )
-    assert.equal(
-      paperCanvasCommitSchema.safeParse({
-        op: "writeText",
-        docId,
-        basedOn,
-        paragraph,
-        text: "a\nb",
-      }).success,
-      false
-    )
-    assert.equal(
-      paperPackageEditSchema.safeParse({
-        docId,
-        basedOn,
-        edits: [
-          {
-            op: "writeText",
-            targetId: `t_${"ab".repeat(32)}`,
-            before: "Hi",
-            after: "Hi",
-          },
-        ],
-      }).success,
-      false
-    )
-    assert.deepEqual(
-      paperCanvasCommitSchema.parse({
-        op: "split",
-        docId,
-        basedOn,
-        paragraph,
-        at: 0,
-      }),
-      { op: "split", docId, basedOn, paragraph, at: 0 }
-    )
-    for (const op of ["mergePrevious", "deleteParagraph"] as const) {
-      assert.equal(
-        paperCanvasCommitSchema.parse({ op, docId, basedOn, paragraph }).op,
-        op
-      )
+    const batch = {
+      doc: docId,
+      basedOn,
+      ops: [
+        { op: "setText", handle: paragraph, text: "Hello", caret: 5 },
+        { op: "insert", after: paragraph, text: "world" },
+        { op: "delete", handle: paragraph },
+      ],
     }
-    assert.equal(
-      paperCanvasCommitSchema.safeParse({
-        op: "replaceText",
-        docId,
-        basedOn,
-        paragraph,
-      }).success,
-      false
-    )
-    assert.equal(
-      paperCanvasCommitSchema.safeParse({
-        op: "insertAfter",
-        docId,
-        basedOn,
-        paragraph,
-      }).success,
-      false
-    )
-    assert.equal(
-      paperCanvasCommitSchema.safeParse({
-        op: "split",
-        docId,
-        basedOn,
-        paragraph,
-        at: -1,
-      }).success,
-      false
-    )
+    assert.deepEqual(paperCanvasCommitSchema.parse({ op: "write", batch }), {
+      op: "write",
+      batch,
+    })
+    for (const ops of [
+      [{ op: "setText", handle: paragraph, text: "a\nb" }],
+      [{ op: "setText", handle: paragraph, text: "a", caret: -1 }],
+      [{ op: "split", handle: paragraph, at: 1 }],
+      [],
+    ])
+      assert.equal(
+        paperCanvasCommitSchema.safeParse({
+          op: "write",
+          batch: { doc: docId, basedOn, ops },
+        }).success,
+        false
+      )
+    for (const op of ["writeText", "split", "mergePrevious", "deleteParagraph"])
+      assert.equal(
+        paperCanvasCommitSchema.safeParse({
+          op,
+          docId,
+          basedOn,
+          paragraph,
+          text: "Hi",
+          at: 0,
+        }).success,
+        false
+      )
   })
 })

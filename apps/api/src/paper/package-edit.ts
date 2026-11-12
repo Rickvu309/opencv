@@ -22,9 +22,7 @@ import type { Registry } from "../registry/registry.js"
 import {
   commitWordCandidate,
   persistWordPackage,
-  restoreWordCandidate,
   revalidateWordCandidate,
-  wordCandidateSchema,
   prepareStoredWordPackage,
 } from "./package-candidates.js"
 import { packageFailure } from "./package-pages.js"
@@ -340,33 +338,6 @@ export function registerWordPackageEdit(
   entry: (typeof paperContract)["paper.edit"],
   execute: (input: EditInput, actor: Actor) => Promise<EditOutput>
 ) {
-  registry.addUndoCommand(
-    {
-      name: "paper.restoreWord",
-      description: "Put back the words from before one saved Word edit.",
-      input: z
-        .object({
-          docId: z.string().uuid(),
-          candidate: wordCandidateSchema,
-          expectedRevision: z.string().uuid(),
-        })
-        .strict(),
-      coach: "never",
-      destructive: false,
-      idempotency: "keyed",
-      reversal: () => null,
-      step: () => "Undo a Word edit",
-      activity: () => null,
-    },
-    async (input, actor) => {
-      const restored = await restoreWordCandidate(
-        actor.userId,
-        input.candidate,
-        input.expectedRevision
-      )
-      return { docId: restored.docId, revision: restored.revision }
-    }
-  )
   registry.addUndoCommand(
     {
       name: "paper.undoWord",

@@ -46,6 +46,7 @@ const wordSetTextOpSchema = z
     op: z.literal("setText"),
     handle: wordHandleSchema,
     text: wordTextSchema,
+    caret: z.number().int().nonnegative().optional(),
   })
   .strict()
 
@@ -143,6 +144,36 @@ export const wordSourceSchema = z.discriminatedUnion("kind", [
   wordSourceMintSchema,
 ])
 
+const wordParagraphSchema = z
+  .object({
+    handle: wordHandleSchema,
+    text: z.string(),
+    pieces: z
+      .array(
+        z
+          .object({ text: z.string(), editable: z.boolean() })
+          .strict()
+          .readonly()
+      )
+      .readonly(),
+    held: z.boolean(),
+    message: z.string(),
+    code: z.string().nullable(),
+  })
+  .strict()
+  .readonly()
+
+export const wordPageSchema = z
+  .object({
+    doc: wordDocSchema,
+    revision: wordRevisionSchema,
+    name: z.string(),
+    label: wordPageLabelSchema,
+    paragraphs: z.array(wordParagraphSchema).readonly(),
+  })
+  .strict()
+  .readonly()
+
 export type WordDoc = z.infer<typeof wordDocSchema>
 export type WordRevision = z.infer<typeof wordRevisionSchema>
 export type WordHandle = z.infer<typeof wordHandleSchema>
@@ -153,24 +184,9 @@ export type WordSource = z.infer<typeof wordSourceSchema>
 
 export type WordOwner = string
 
-type WordPiece = { readonly text: string; readonly editable: boolean }
+export type WordParagraph = z.infer<typeof wordParagraphSchema>
 
-export type WordParagraph = {
-  readonly handle: WordHandle
-  readonly text: string
-  readonly pieces: readonly WordPiece[]
-  readonly held: boolean
-  readonly message: string
-  readonly code: string | null
-}
-
-export type WordPage = {
-  readonly doc: WordDoc
-  readonly revision: WordRevision
-  readonly name: string
-  readonly label: "cv" | "letter"
-  readonly paragraphs: readonly WordParagraph[]
-}
+export type WordPage = z.infer<typeof wordPageSchema>
 
 export type WordReason =
   | "stale"

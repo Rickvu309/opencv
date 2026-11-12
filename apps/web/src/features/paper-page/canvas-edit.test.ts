@@ -12,7 +12,6 @@ import {
   clearedOnReload,
   commitComposition,
   deleteBackward,
-  draftFromRegions,
   deleteForward,
   insertText,
   keptOnThisComputer,
@@ -270,84 +269,6 @@ describe("writing draft", () => {
         },
       })
     ).toBe(false)
-  })
-
-  it("seeds the empty paragraph id and skips the section carrier", () => {
-    const writing = "a11a11a1-a11a-4a11-8a11-a11a11a11a11"
-    const carrier = "b22b22b2-b22b-4b22-8b22-b22b22b22b22"
-    expect(
-      draftFromRegions([
-        {
-          kind: "locked",
-          text: "",
-          paragraph: writing,
-          reason: { code: "EMPTY_TARGET" },
-        },
-        {
-          kind: "locked",
-          text: "",
-          paragraph: carrier,
-          reason: { code: "UNSUPPORTED_TARGET_PROPERTY" },
-        },
-      ])
-    ).toEqual({
-      blocks: [{ id: writing, text: "" }],
-      caret: { blockId: writing, offset: 0 },
-      nextId: 2,
-    })
-    expect(draftFromRegions([])).toBeNull()
-    const table = "c33c33c3-c33c-4c33-8c33-c33c33c33c33"
-    const placed = draftFromRegions([
-      {
-        kind: "editable",
-        text: "Hello",
-        paragraph: writing,
-        location: { kind: "paragraph" },
-      },
-      {
-        kind: "editable",
-        text: "Cell",
-        paragraph: table,
-        location: { kind: "table-cell" },
-      },
-      {
-        kind: "locked",
-        text: "",
-        paragraph: "d44d44d4-d44d-4d44-8d44-d44d44d44d44",
-        reason: { code: "UNSUPPORTED_RUN_STRUCTURE" },
-        location: { kind: "paragraph" },
-      },
-    ])
-    expect(placed?.blocks).toEqual([
-      { id: writing, text: "Hello" },
-      { id: table, text: "Cell", held: true },
-      {
-        id: "d44d44d4-d44d-4d44-8d44-d44d44d44d44",
-        text: "",
-        held: true,
-      },
-    ])
-    expect(placed?.caret).toEqual({ blockId: writing, offset: 0 })
-    const held = pointSpan({ blockId: table, offset: 0 })
-    expect(splitParagraph(placed!, held).blocks).toEqual(placed?.blocks)
-    expect(insertText(placed!, held, "X").blocks[1]).toEqual(placed?.blocks[1])
-    expect(
-      deleteBackward(placed!, pointSpan({ blockId: writing, offset: 0 })).blocks
-    ).toEqual(placed?.blocks)
-    expect(
-      draftFromRegions([
-        {
-          kind: "editable",
-          text: "Hi",
-          paragraph: writing,
-        },
-        {
-          kind: "editable",
-          text: " there",
-          paragraph: writing,
-        },
-      ])?.blocks
-    ).toEqual([{ id: writing, text: "Hi there" }])
   })
 
   it("says the writing is not saved yet", () => {

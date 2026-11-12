@@ -10,7 +10,6 @@ const NEXT = "dddddddd-dddd-4ddd-8ddd-dddddddddddd"
 const PARAGRAPH = "33333333-3333-4333-8333-333333333333"
 const ADDRESS = "66666666-6666-4666-8666-666666666666"
 const HASH = "ab".repeat(32)
-const TARGET = `t_${"cd".repeat(32)}`
 const REASON =
   "Paper cannot safely preserve a property attached to this text yet."
 
@@ -18,45 +17,38 @@ function ok(data: unknown) {
   return Response.json({ ok: true, data })
 }
 
-function locked() {
+function lineOf(handle: string, text: string) {
   return {
-    kind: "locked" as const,
-    paragraph: ADDRESS,
-    text: "1 Main Street",
-    location: { paragraph: 1, kind: "paragraph" as const },
-    reason: { code: "UNSUPPORTED_TARGET_PROPERTY", message: REASON },
-    complete: true,
-    continuation: false,
+    handle,
+    text,
+    pieces: text === "" ? [] : [{ text, editable: true }],
+    held: false,
+    message: "",
+    code: null,
   }
 }
 
-function line(text: string) {
+function heldOf(handle: string, text: string, message: string) {
   return {
-    kind: "editable" as const,
-    paragraph: PARAGRAPH,
-    targetId: TARGET,
+    handle,
     text,
-    location: { paragraph: 2, kind: "paragraph" as const },
-    formatting: {
-      kind: "inherited" as const,
-      scope: "preserved-uncomputed" as const,
-    },
-    context: { paragraphText: text },
+    pieces: [{ text, editable: false }],
+    held: true,
+    message,
+    code: "NOT_BODY",
   }
 }
 
 function read(text: string, revision: string) {
   return {
-    generation: "package" as const,
-    docId: DOC,
+    doc: DOC,
     revision,
     name: "Page.docx",
-    kind: "letter" as const,
-    packageHash: HASH,
-    byteSize: 128,
-    projector: "paper-package-spans-1",
-    regions: [locked(), line(text)],
-    nextCursor: null,
+    label: "letter" as const,
+    paragraphs: [
+      heldOf(ADDRESS, "1 Main Street", REASON),
+      lineOf(PARAGRAPH, text),
+    ],
   }
 }
 
@@ -128,9 +120,9 @@ describe("imported letter save", () => {
           !!item &&
           typeof item === "object" &&
           "input" in item &&
-          Array.isArray((item as { input?: { edits?: unknown } }).input?.edits)
+          (item as { input?: { op?: string } }).input?.op === "write"
       )
-      if (url.includes("/api/commands/paper.edit")) {
+      if (url.includes("/api/commands/paper.canvas")) {
         return Promise.resolve(ok(receipt(NEXT)))
       }
       if (url.includes("/api/reads/paper.read")) {
@@ -153,17 +145,15 @@ describe("imported letter save", () => {
     )
     expect(saved.saved).toBe(true)
     expect(saved.words).toBe("1 Main Street\nThank you QA.")
-    const edit = bodies.find(
+    const write = bodies.find(
       (item) =>
         !!item &&
         typeof item === "object" &&
         "input" in item &&
-        Array.isArray((item as { input?: { edits?: unknown } }).input?.edits)
-    ) as { input: { edits: { before: string; after: string }[] } }
-    expect(edit.input.edits[0]).toMatchObject({
-      op: "replaceText",
-      before: "Thank you",
-      after: "Thank you QA.",
-    })
+        (item as { input?: { op?: string } }).input?.op === "write"
+    ) as { input: { batch: { ops: unknown[] } } }
+    expect(write.input.batch.ops).toEqual([
+      { op: "setText", handle: PARAGRAPH, text: "Thank you QA." },
+    ])
   })
 })

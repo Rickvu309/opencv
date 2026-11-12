@@ -37,6 +37,84 @@ export function changedSpan(before: string, after: string): WordSpan {
   }
 }
 
+export function caretSpan(
+  before: string,
+  after: string,
+  caret: number
+): WordSpan | null {
+  if (caret > after.length) return null
+  const left = letters(before)
+  const right = letters(after)
+  const typedUpTo = letters(after.slice(0, caret)).length
+  const tailRoom = Math.min(right.length - typedUpTo, left.length)
+  let suffix = 0
+  while (
+    suffix < tailRoom &&
+    left[left.length - 1 - suffix] === right[right.length - 1 - suffix]
+  )
+    suffix += 1
+  const headRoom = Math.min(
+    typedUpTo,
+    left.length - suffix,
+    right.length - suffix
+  )
+  let prefix = 0
+  while (prefix < headRoom && left[prefix] === right[prefix]) prefix += 1
+  return {
+    start: left.slice(0, prefix).join("").length,
+    end: left.slice(0, left.length - suffix).join("").length,
+    text: right.slice(prefix, right.length - suffix).join(""),
+    lean: "before",
+  }
+}
+
+export function splitPoint(
+  before: string,
+  left: string,
+  right: string
+): number | null {
+  const text = letters(before)
+  const head = letters(left)
+  const tail = letters(right)
+  if (text.length === 0) return head.length + tail.length === 0 ? 0 : null
+  let prefix = 0
+  while (
+    prefix < Math.min(text.length, head.length) &&
+    text[prefix] === head[prefix]
+  )
+    prefix += 1
+  let suffix = 0
+  while (
+    suffix < Math.min(text.length, tail.length) &&
+    text[text.length - 1 - suffix] === tail[tail.length - 1 - suffix]
+  )
+    suffix += 1
+  return prefix + suffix >= text.length ? prefix : null
+}
+
+export function joinsAt(
+  kept: string,
+  joined: string,
+  text: string,
+  caret: number | null
+) {
+  const whole = kept + joined
+  if (text === whole) return true
+  const change =
+    caret === null ? changedSpan(whole, text) : caretSpan(whole, text, caret)
+  return !!change && change.start <= kept.length && change.end >= kept.length
+}
+
+export function typedSpan(
+  before: string,
+  after: string,
+  caret: number | null
+): WordSpan | null {
+  return caret === null
+    ? changedSpan(before, after)
+    : caretSpan(before, after, caret)
+}
+
 function rawWith(raw: string, before: string, after: string) {
   const change = changedSpan(before, after)
   const bounds = new Map([[0, 0]])
