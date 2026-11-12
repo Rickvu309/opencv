@@ -85,6 +85,13 @@ describe("a minted writing page in the document list", () => {
       const docId = parsePaperId(head.docId)
       await expect(
         registry.read("paper.get", { docId }, personActor(owner))
+      ).resolves.toMatchObject({
+        id: head.docId,
+        name: "Page.docx",
+        format: "word",
+      })
+      await expect(
+        registry.read("paper.get", { docId }, personActor(stranger))
       ).rejects.toMatchObject({ code: "NOT_FOUND" })
       await expect(
         registry.read(
@@ -105,7 +112,7 @@ describe("a minted writing page in the document list", () => {
       expect(importedOutline.outline).toMatch(/\[line [a-f0-9-]{36}\]/)
       await expect(
         registry.read("paper.get", { docId: importedId }, personActor(owner))
-      ).rejects.toMatchObject({ code: "NOT_FOUND" })
+      ).resolves.toMatchObject({ id: imported.docId, format: "word" })
       await expect(
         registry.read(
           "paper.get",
@@ -116,5 +123,42 @@ describe("a minted writing page in the document list", () => {
       await expect(
         readOutline(parseUserId(stranger), docId, undefined)
       ).rejects.toMatchObject({ code: "NOT_FOUND" })
+    }))
+})
+
+describe("the document list and the document read agree", () => {
+  it("reads every listed document for its owner, with the same kind and format", () =>
+    run(async () => {
+      const reader = randomUUID()
+      await backend.db.insert(user).values({
+        id: reader,
+        name: reader,
+        email: `${reader}@test.invalid`,
+      })
+      for (const [name, kind] of [
+        ["Cv.docx", "cv"],
+        ["Letter.docx", "letter"],
+      ] as const) {
+        const staged = await stageWordPackage(
+          reader,
+          { requestId: randomUUID(), name, kind },
+          bytes
+        )
+        await publishWordPackage(reader, staged.stageId, PAPER_CANVAS_PROFILE)
+      }
+      const listed = await registry.read("paper.list", {}, personActor(reader))
+      expect(listed.length).toBe(2)
+      for (const item of listed) {
+        const read = await registry.read(
+          "paper.get",
+          { docId: item.id },
+          personActor(reader)
+        )
+        expect({ id: read.id, kind: read.kind, format: read.format }).toEqual({
+          id: item.id,
+          kind: item.kind,
+          format: item.format,
+        })
+      }
     }))
 })

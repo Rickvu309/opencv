@@ -1,7 +1,12 @@
 import { Suspense, lazy } from "react"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
-import { useQuery } from "@tanstack/react-query"
-import { ERROR_CODES, paperIdSchema, parsePaperId } from "@workspace/domain"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import {
+  ERROR_CODES,
+  paperIdSchema,
+  parsePaperId,
+  type PaperView,
+} from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
@@ -10,6 +15,7 @@ import {
   getPaper,
   getPaperPages,
   paperGetKey,
+  paperListKey,
   paperPagesKey,
 } from "@/features/paper/paper-api.ts"
 import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
@@ -72,17 +78,23 @@ export function PaperDocPage() {
   const validId = parsedId.success ? parsedId.data : null
   const session = authClient.useSession()
   const owner = session.data?.user.id ?? ""
+  const queryClient = useQueryClient()
+  const listed = queryClient.getQueryState<PaperView[]>(paperListKey())
   const docQuery = useQuery({
     queryKey: paperGetKey(validId ?? NO_DOC),
     queryFn: () => getPaper(docId),
     enabled: validId !== null,
+    initialData: () => listed?.data?.find((item) => item.id === validId),
+    initialDataUpdatedAt: listed?.dataUpdatedAt,
   })
+  const wordPage = docQuery.data?.format === "word"
   const packageMissing =
     validId !== null &&
-    !docQuery.isLoading &&
-    !docQuery.data &&
-    docQuery.error instanceof ApiError &&
-    docQuery.error.code === ERROR_CODES.NOT_FOUND
+    (wordPage ||
+      (!docQuery.isLoading &&
+        !docQuery.data &&
+        docQuery.error instanceof ApiError &&
+        docQuery.error.code === ERROR_CODES.NOT_FOUND))
   const packageRead = catalogClient.options(owner, "paper.read", {
     view: "page",
     docId: validId ?? NO_DOC,
@@ -102,12 +114,12 @@ export function PaperDocPage() {
   const pagesQuery = useQuery({
     queryKey: paperPagesKey(validId ?? NO_DOC),
     queryFn: () => getPaperPages(docId),
-    enabled: docQuery.data?.kind === "cv",
+    enabled: !wordPage && docQuery.data?.kind === "cv",
   })
   const jobsQuery = useQuery({
     queryKey: jobListKey(),
     queryFn: listJobs,
-    enabled: docQuery.data?.kind === "letter",
+    enabled: !wordPage && docQuery.data?.kind === "letter",
   })
   const back = () => void navigate({ to: SURFACE_PATHS.paper, search })
 
@@ -118,7 +130,7 @@ export function PaperDocPage() {
       </section>
     )
   }
-  if (!docQuery.data) {
+  if (!docQuery.data || wordPage) {
     if (seeded && validId && packagePage) {
       return (
         <WritingPage
@@ -131,6 +143,7 @@ export function PaperDocPage() {
     }
     const missing =
       validId === null ||
+      (wordPage && packageQuery.isSuccess) ||
       (docQuery.error instanceof ApiError &&
         docQuery.error.code === ERROR_CODES.NOT_FOUND)
     return (

@@ -324,10 +324,12 @@ export function registerPaper(registry: Registry) {
       try {
         return await paperGet.read(input, actor)
       } catch (error) {
-        if (actor.type !== "coach" || !missingDocument(error)) throw error
+        if (!missingDocument(error)) throw error
         const page = await ownedPackagePaper(actor.userId, input.docId)
         if (!page) throw error
-        return coachWordPageWithText(actor.userId, page)
+        return actor.type === "coach"
+          ? coachWordPageWithText(actor.userId, page)
+          : page
       }
     },
   })
