@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url"
 
-import { viewportFor } from "./screens.mjs"
+import { contextOptions, signInFresh } from "./fresh-account.mjs"
 
 const FIXTURES = new URL("./fixtures/", import.meta.url)
 
@@ -71,12 +71,8 @@ export async function settle(page) {
 }
 
 export async function openScreen(browser, state, screen, { width, scale = 1 }) {
-  const context = await browser.newContext({
-    viewport: viewportFor(width),
-    deviceScaleFactor: scale,
-    reducedMotion: "reduce",
-    storageState: screen.signedIn === false ? undefined : state.storage,
-  })
+  const context = await browser.newContext(contextOptions({ width, scale }))
+  if (screen.signedIn !== false) await signInFresh(context, state, screen.id)
   const page = await context.newPage()
   await page.goto(`${state.webOrigin}${screen.route}`, {
     waitUntil: "domcontentloaded",

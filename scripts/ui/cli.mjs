@@ -17,6 +17,7 @@ import {
   totalLine,
 } from "./check-all.mjs"
 import { DESIGN_MAP, rowsForScreen } from "./design-map.mjs"
+import { unmappedMessage } from "./shot-only.mjs"
 import { CHANGES_PER_SCREEN, draftSpec, rankChanges } from "./changes.mjs"
 import { compositeFiles, SPLIT_ABOVE } from "./annotate-split.mjs"
 import { readSpec, renderComposite } from "./composite.mjs"
@@ -291,10 +292,7 @@ export const COMMANDS = {
       const unmapped = plans
         .filter((plan) => plan.rows.length === 0)
         .map((plan) => plan.screen.id)
-      if (unmapped.length)
-        throw new UsageError(
-          `no design rows for ${unmapped.join(", ")}; add rows to scripts/ui/design-map.mjs`
-        )
+      if (unmapped.length) throw new UsageError(unmappedMessage(unmapped))
       const index = loadPen(ctx, flags.pen)
       const known = flags.known ? readManifest(ctx, flags.known).manifest : null
       const baseNotice = known
