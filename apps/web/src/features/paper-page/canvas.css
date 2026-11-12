@@ -144,3 +144,19 @@
   line-height: 1.4;
   overflow-wrap: break-word;
 }
+
+.writing-notice {
+  animation: writing-notice-in var(--duration-micro) var(--ease-micro);
+}
+
+@keyframes writing-notice-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .writing-notice {
+    animation: none;
+  }
+}

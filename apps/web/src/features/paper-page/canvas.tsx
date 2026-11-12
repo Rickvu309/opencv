@@ -10,27 +10,16 @@ import {
 import { cn } from "@workspace/ui/lib/utils"
 
 import {
-  adoptIds,
-  blankDraft,
   clearedOnReload,
-  commitComposition,
-  deleteBackward,
-  deleteForward,
-  insertText,
   keptOnThisComputer,
-  loadDraft,
-  loadDraftBasis,
   pointSpan,
-  replaceVisible,
-  splitParagraph,
   storeDraft,
-  type DraftBasis,
   type TextPoint,
   type TextSpan,
-  type WritingBlock,
   type WritingDraft,
 } from "./canvas-edit.ts"
-import { collectLooks, withoutLooks, type LookBook } from "./canvas-look.ts"
+import { inputRule, pageKey, type PageEdit } from "./canvas-input.ts"
+import { openSheet, reduce, type CanvasAction } from "./canvas-state.ts"
 import {
   placeCaret,
   syncParagraphs,
@@ -38,7 +27,6 @@ import {
   visibleText,
   type DrawnLooks,
 } from "./canvas-draw.ts"
-import { pastePlain } from "./canvas-paste.ts"
 import { pageWords, savedNote, settlePage } from "./canvas-save.ts"
 import { holdWritingCoachFocus } from "@/lib/writing-coach-focus.ts"
 import {
@@ -49,138 +37,6 @@ import {
 } from "@/lib/writing-refresh.ts"
 import "./canvas.css"
 import "./design/writing-page.pen.css"
-
-type CanvasState = {
-  past: WritingDraft[]
-  present: WritingDraft
-  looks: LookBook
-  note: string
-  basis: DraftBasis | null
-  typed: boolean
-}
-
-type CanvasAction =
-  | {
-      type: "insert"
-      span: TextSpan
-      text: string
-      live?: { id: string; text: string }[]
-      nextId?: number
-    }
-  | { type: "split"; span: TextSpan }
-  | { type: "backward"; span: TextSpan }
-  | { type: "forward"; span: TextSpan }
-  | { type: "paste"; span: TextSpan; text: string }
-  | {
-      type: "composed"
-      texts: { id: string; text: string }[]
-      caret: TextPoint
-      split: boolean
-      nextId: number
-    }
-  | { type: "undo" }
-  | { type: "note"; note: string }
-  | { type: "adopt"; blocks: WritingBlock[] }
-  | { type: "basis"; basis: DraftBasis; typed: boolean }
-  | { type: "replace"; draft: WritingDraft; basis: DraftBasis }
-
-function sameBasis(left: DraftBasis | null, right: DraftBasis | null) {
-  if (left === right) return true
-  if (!left || !right) return false
-  return left.revision === right.revision && left.words === right.words
-}
-
-function remember(state: CanvasState, present: WritingDraft): CanvasState {
-  if (JSON.stringify(state.present) === JSON.stringify(present)) return state
-  return {
-    ...state,
-    past: state.past.concat(state.present).slice(-50),
-    present,
-    note: state.note === "Saved" ? keptOnThisComputer() : state.note,
-    typed: true,
-  }
-}
-
-function reduce(state: CanvasState, action: CanvasAction): CanvasState {
-  if (action.type === "note") {
-    return state.note === action.note ? state : { ...state, note: action.note }
-  }
-  if (action.type === "basis") {
-    if (sameBasis(state.basis, action.basis) && state.typed === action.typed) {
-      return state
-    }
-    return { ...state, basis: action.basis, typed: action.typed }
-  }
-  if (action.type === "replace") {
-    const draft = plainDraft(action.draft)
-    const looks = collectLooks(state.looks, action.draft.blocks)
-    const same =
-      JSON.stringify(state.present) === JSON.stringify(draft) &&
-      sameBasis(state.basis, action.basis) &&
-      !state.typed
-    if (same) return looks === state.looks ? state : { ...state, looks }
-    return {
-      ...state,
-      past: [],
-      present: draft,
-      looks,
-      basis: action.basis,
-      typed: false,
-    }
-  }
-  if (action.type === "adopt") {
-    const present = adoptIds(state.present, withoutLooks(action.blocks))
-    const looks = collectLooks(state.looks, action.blocks)
-    return present === state.present && looks === state.looks
-      ? state
-      : { ...state, present, looks }
-  }
-  if (action.type === "undo") {
-    const present = state.past[state.past.length - 1]
-    if (!present) return state
-    const typed = state.basis
-      ? pageWords(present.blocks) !== state.basis.words
-      : state.typed
-    return { ...state, past: state.past.slice(0, -1), present, typed }
-  }
-  if (action.type === "composed") {
-    const visible = replaceVisible(
-      { ...state.present, nextId: action.nextId },
-      action.texts,
-      action.caret
-    )
-    const present = action.split
-      ? commitComposition({ ...visible, caret: action.caret }, "", true)
-      : visible
-    return remember(state, present)
-  }
-  const span = action.span
-  const base =
-    action.type === "insert" && action.live
-      ? replaceVisible(
-          { ...state.present, nextId: action.nextId ?? state.present.nextId },
-          action.live,
-          span.anchor
-        )
-      : state.present
-  const present =
-    action.type === "insert"
-      ? insertText(base, span, action.text)
-      : action.type === "split"
-        ? splitParagraph(state.present, span)
-        : action.type === "backward"
-          ? deleteBackward(state.present, span)
-          : action.type === "forward"
-            ? deleteForward(state.present, span)
-            : pastePlain(state.present, span, action.text)
-  return remember(state, present)
-}
-
-function plainDraft(draft: WritingDraft): WritingDraft {
-  return draft.blocks.some((block) => block.look)
-    ? { ...draft, blocks: withoutLooks(draft.blocks) }
-    : draft
-}
 
 function blockElement(node: Node | null) {
   const element =
@@ -199,11 +55,57 @@ function pointFrom(
   if (!block || !root.contains(block) || !block.dataset.block) return null
   const text = (block.textContent ?? "").replaceAll("\u200b", "")
   const raw =
-    node?.nodeType === Node.TEXT_NODE ? textOffsetIn(block, node, offset) : 0
+    node?.nodeType === Node.TEXT_NODE
+      ? textOffsetIn(block, node, offset)
+      : node && offset > 0
+        ? textBefore(block, node, offset)
+        : 0
   return {
     blockId: block.dataset.block,
     offset: Math.max(0, Math.min(raw, text.length)),
   }
+}
+
+function textBefore(block: HTMLElement, node: Node, offset: number) {
+  const range = block.ownerDocument.createRange()
+  range.setStart(block, 0)
+  range.setEnd(node, offset)
+  return range.toString().replaceAll("\u200b", "").length
+}
+
+function targetSpan(root: HTMLElement, input: InputEvent): TextSpan | null {
+  const range =
+    typeof input.getTargetRanges === "function"
+      ? input.getTargetRanges()[0]
+      : undefined
+  if (!range) return null
+  const anchor = pointFrom(root, range.startContainer, range.startOffset)
+  const focus = pointFrom(root, range.endContainer, range.endOffset)
+  return anchor && focus ? { anchor, focus } : null
+}
+
+function editAction(
+  edit: PageEdit,
+  span: TextSpan,
+  target: TextSpan | null,
+  input: InputEvent
+): CanvasAction | null {
+  if (edit.kind === "undo" || edit.kind === "redo") return { type: edit.kind }
+  if (edit.kind === "split") return { type: "split", span }
+  if (edit.kind === "replace") {
+    const text = input.data ?? input.dataTransfer?.getData("text/plain") ?? ""
+    return { type: "insert", span: target ?? span, text }
+  }
+  if (edit.kind === "delete") {
+    const wide = edit.reach === "word" || edit.reach === "line"
+    return {
+      type: "delete",
+      span: wide && target ? target : span,
+      direction: edit.direction,
+      reach: edit.reach,
+    }
+  }
+  return null
 }
 
 function spanFrom(root: HTMLElement, fallback: TextPoint): TextSpan {
@@ -268,29 +170,6 @@ function revealCaret(page: HTMLElement, scroll: HTMLElement) {
   const frame = scroll.getBoundingClientRect()
   if (caretBox.top >= frame.top && caretBox.bottom <= frame.bottom) return
   target.scrollIntoView({ block: "nearest" })
-}
-
-function openSheet(
-  docId: string,
-  seed: WritingDraft | null,
-  seedRevision: string | null
-): CanvasState {
-  const stored = loadDraft(docId, localStorage)
-  const present = plainDraft(stored ?? seed ?? blankDraft())
-  const basis =
-    loadDraftBasis(docId, localStorage) ??
-    (seedRevision
-      ? { revision: seedRevision, words: pageWords(present.blocks) }
-      : null)
-  storeDraft(docId, present, localStorage, basis)
-  return {
-    past: [],
-    present,
-    looks: collectLooks(new Map(), seed?.blocks ?? []),
-    note: pageWords(present.blocks) === "" ? keptOnThisComputer() : "",
-    basis,
-    typed: false,
-  }
 }
 
 function WritingSheet({
@@ -420,6 +299,18 @@ function WritingSheet({
       if (composing.current) return
       const input = event as InputEvent
       if (typeof input.inputType !== "string") return
+      const rule = inputRule(input.inputType)
+      if (rule.kind === "native") return
+      event.preventDefault()
+      if (rule.kind === "blocked") {
+        if (rule.notice) dispatch({ type: "notice", notice: rule.notice })
+        return
+      }
+      const edit = rule.edit
+      if (edit.kind === "undo" || edit.kind === "redo") {
+        dispatch({ type: edit.kind })
+        return
+      }
       const span = spanFrom(page, state.present.caret)
       if (
         state.present.blocks.some(
@@ -429,22 +320,15 @@ function WritingSheet({
               block.id === span.focus.blockId)
         )
       ) {
-        event.preventDefault()
         return
       }
-      if (
-        input.inputType === "insertCompositionText" ||
-        input.inputType === "insertParagraph"
-      ) {
+      if (edit.kind === "paste") {
+        applyPaste(
+          input.data ?? input.dataTransfer?.getData("text/plain") ?? ""
+        )
         return
       }
-      if (input.inputType === "insertFromPaste") {
-        event.preventDefault()
-        applyPaste(input.data ?? "")
-        return
-      }
-      if (input.inputType === "insertText") {
-        event.preventDefault()
+      if (edit.kind === "type") {
         const live = readBlocks(page, state.present.nextId)
         dispatch({
           type: "insert",
@@ -455,15 +339,8 @@ function WritingSheet({
         })
         return
       }
-      if (input.inputType === "deleteContentBackward") {
-        event.preventDefault()
-        dispatch({ type: "backward", span })
-        return
-      }
-      if (input.inputType === "deleteContentForward") {
-        event.preventDefault()
-        dispatch({ type: "forward", span })
-      }
+      const action = editAction(edit, span, targetSpan(page, input), input)
+      if (action) dispatch(action)
     }
     page.addEventListener("beforeinput", onBefore)
     return () => page.removeEventListener("beforeinput", onBefore)
@@ -484,41 +361,39 @@ function WritingSheet({
           spellCheck
           aria-label="Page"
           onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault()
-              if (
-                state.present.blocks.some(
-                  (block) =>
-                    block.held && block.id === state.present.caret.blockId
-                )
-              ) {
-                return
-              }
-              const native = event.nativeEvent
-              if (native.isComposing || native.keyCode === 229) {
-                splitAfter.current = true
-                return
-              }
-              const page = pageRef.current
-              if (!page) return
-              dispatch({
-                type: "split",
-                span: spanFrom(page, state.present.caret),
-              })
+            const key = pageKey(event)
+            if (!key) return
+            event.preventDefault()
+            if (key === "undo" || key === "redo") {
+              dispatch({ type: key })
               return
             }
             if (
-              (event.metaKey || event.ctrlKey) &&
-              event.key.toLowerCase() === "z" &&
-              !event.shiftKey
+              state.present.blocks.some(
+                (block) =>
+                  block.held && block.id === state.present.caret.blockId
+              )
             ) {
-              event.preventDefault()
-              dispatch({ type: "undo" })
+              return
             }
+            const native = event.nativeEvent
+            if (native.isComposing || native.keyCode === 229) {
+              splitAfter.current = true
+              return
+            }
+            const page = pageRef.current
+            if (!page) return
+            dispatch({
+              type: "split",
+              span: spanFrom(page, state.present.caret),
+            })
           }}
           onCompositionStart={() => {
             composing.current = true
-            const caret = state.present.caret
+            const page = pageRef.current
+            const caret = page
+              ? spanFrom(page, state.present.caret).focus
+              : state.present.caret
             const block = state.present.blocks.find(
               (item) => item.id === caret.blockId
             )
@@ -593,7 +468,15 @@ function WritingSheet({
         </article>
       </div>
       <p className="writing-note" role="status">
-        {conflicted ? WRITING_CONFLICT_NOTE : state.note}
+        {conflicted ? (
+          WRITING_CONFLICT_NOTE
+        ) : state.notice ? (
+          <span key={state.notice} className="writing-notice">
+            {state.notice}
+          </span>
+        ) : (
+          state.note
+        )}
       </p>
     </section>
   )
