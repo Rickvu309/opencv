@@ -98,6 +98,14 @@ export const paperPackageMetadataSchema = z
   })
   .strict()
 
+export const paperImportResponseSchema = z
+  .object({
+    ok: z.literal(true),
+    data: paperPackageMetadataSchema,
+    notice: z.string().min(1).optional(),
+  })
+  .strict()
+
 export const paperPackageStageInputSchema = z
   .object({
     requestId: identity,

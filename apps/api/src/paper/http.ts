@@ -2,6 +2,7 @@ import {
   ERROR_CODES,
   errorEnvelope,
   httpStatusForError,
+  paperImportResponseSchema,
   paperPackageStageInputSchema,
   catalog,
   parseFileId,
@@ -314,8 +315,10 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
         actor: person(c.var.userId),
       })
       return c.json(
-        successEnvelope({
-          ...catalog["paper.import"].publicResult.parse(imported.output),
+        paperImportResponseSchema.parse({
+          ...successEnvelope(
+            catalog["paper.import"].publicResult.parse(imported.output)
+          ),
           ...(word.notice ? { notice: word.notice } : {}),
         })
       )

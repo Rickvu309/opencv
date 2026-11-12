@@ -40,7 +40,11 @@ import { PaperLibraryStarters } from "./paper-parts.tsx"
 import { PaperPrintSheet } from "./paper-print-sheet.tsx"
 import { printPaper } from "./paper-print.ts"
 import { initialLibrary, libraryReducer } from "./paper-library.reducer.ts"
-import { IMPORT_ACCEPT, messageOf } from "./paper-library-support.ts"
+import {
+  IMPORT_ACCEPT,
+  discardCancelledImport,
+  messageOf,
+} from "./paper-library-support.ts"
 import {
   PaperPackageLibrary,
   useWordLibrary,
@@ -155,9 +159,12 @@ export function PaperLibrary({
     dispatch({ type: "import_started", name: file.name })
     try {
       const created = await importPaperFile(file)
-      if (request.signal.aborted) return
+      if (request.signal.aborted) {
+        await discardCancelledImport(run, created.docId)
+        return
+      }
       dispatch({ type: "import_ended" })
-      if (created.notice) toast(created.notice)
+      if (created.notice) toast(created.notice, { position: "top-center" })
       onOpen(created.docId)
     } catch (err) {
       if (request.signal.aborted) return

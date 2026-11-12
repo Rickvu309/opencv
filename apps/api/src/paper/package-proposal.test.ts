@@ -250,15 +250,16 @@ describe("Coach is told the saved page and sends setText with a line handle from
       ).rejects.toMatchObject({ code: "NOT_FOUND" })
       const listed = await registry.read("paper.list", {}, personActor(owner))
       expect(
-        Array.isArray(listed) &&
-          listed.some(
-            (item) =>
-              item &&
-              typeof item === "object" &&
-              "id" in item &&
-              item.id === imported.docId
-          )
-      ).toBe(false)
+        Array.isArray(listed)
+          ? listed.filter(
+              (item) =>
+                item &&
+                typeof item === "object" &&
+                "id" in item &&
+                item.id === imported.docId
+            )
+          : []
+      ).toHaveLength(1)
       await expect(
         resolveTurnGrounding({
           registry,

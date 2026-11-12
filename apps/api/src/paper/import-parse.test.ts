@@ -2,6 +2,7 @@ import {
   IMPORT_GOOGLE_MESSAGE,
   IMPORT_LINKEDIN_MESSAGE,
   IMPORT_PAGES_MESSAGE,
+  paperImportResponseSchema,
 } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
@@ -29,7 +30,7 @@ import { IMPORT_SIZE_MESSAGE } from "./store.js"
 const WORD =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
-type Published = { generation: string; docId: string; notice?: string }
+type Published = { generation: string; docId: string }
 
 const UNICODE_LINE_BREAK = /\r\n|[\n\v\f\r\u0085\u2028\u2029]/
 
@@ -70,13 +71,13 @@ describe("paper import", () => {
       "application/pdf"
     )
     expect(pdf.status).toBe(200)
-    const pdfBody = (await pdf.json()) as { data: Published }
+    const pdfBody = paperImportResponseSchema.parse(await pdf.json())
     expect(pdfBody.data).toMatchObject({
       generation: "package",
       name: "sample",
       kind: "cv",
-      notice: PDF_IMPORT_NOTICE,
     })
+    expect(pdfBody.notice).toBe(PDF_IMPORT_NOTICE)
     expect(await publishedText(db, pdfBody.data.docId)).toContain(
       "Campus newsletter"
     )
@@ -89,8 +90,8 @@ describe("paper import", () => {
       WORD
     )
     expect(docx.status).toBe(200)
-    const docxBody = (await docx.json()) as { data: Published }
-    expect(docxBody.data.notice).toBeUndefined()
+    const docxBody = paperImportResponseSchema.parse(await docx.json())
+    expect(docxBody.notice).toBeUndefined()
     expect(await publishedText(db, docxBody.data.docId)).toContain(
       "Weekly newsletter for students"
     )
@@ -103,8 +104,8 @@ describe("paper import", () => {
       "text/plain"
     )
     expect(text.status).toBe(200)
-    const textBody = (await text.json()) as { data: Published }
-    expect(textBody.data.notice).toBeUndefined()
+    const textBody = paperImportResponseSchema.parse(await text.json())
+    expect(textBody.notice).toBeUndefined()
     expect(await publishedText(db, textBody.data.docId)).toContain(
       "Led the campus app."
     )

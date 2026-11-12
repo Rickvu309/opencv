@@ -96,7 +96,7 @@ describe("Paper library", () => {
     expect(screen.getByText("Start a document")).toBeInTheDocument()
   })
 
-  it("does not open a Word page that finishes importing after Cancel, and shows no notice", async () => {
+  it("deletes a Word page that finishes importing after Cancel, and neither opens it nor shows the note", async () => {
     const created = {
       generation: "package" as const,
       docId: "22222222-2222-4222-8222-222222222222",
@@ -115,6 +115,13 @@ describe("Paper library", () => {
           finish = resolve
         })
     )
+    const calls: { url: string; body: string }[] = []
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      calls.push({ url: String(input), body: String(init?.body ?? "") })
+      return Promise.resolve(
+        Response.json({ ok: true, data: { docId: created.docId } })
+      )
+    })
     const onOpen = vi.fn()
     render(
       <PaperLibrary
@@ -143,6 +150,16 @@ describe("Paper library", () => {
     await act(async () => {
       finish(created)
     })
+    await vi.waitFor(() => {
+      expect(
+        calls.filter((call) =>
+          call.url.split("?")[0]?.endsWith("/api/commands/paper.delete")
+        )
+      ).toHaveLength(1)
+    })
+    expect(
+      calls.find((call) => call.url.includes("paper.delete"))?.body
+    ).toContain(created.docId)
     expect(screen.queryByText(created.notice)).toBeNull()
     expect(onOpen).not.toHaveBeenCalled()
     expect(screen.getByText("Start a document")).toBeInTheDocument()

@@ -214,13 +214,16 @@ it("moves Word uploads into the immutable library without a legacy document or f
         .object({ data: paperPackageMetadataSchema })
         .parse(await (await upload()).json()).data
     ).toEqual(receipt)
-    for (const path of ["/api/paper", "/api/paper/files"]) {
-      const legacy = await app.request(path, { headers })
-      expect(legacy.status, await legacy.clone().text()).toBe(200)
-      expect(
-        z.object({ data: z.array(z.unknown()) }).parse(await legacy.json()).data
-      ).toEqual([])
+    const listedPages = async (path: string) => {
+      const listed = await app.request(path, { headers })
+      expect(listed.status, await listed.clone().text()).toBe(200)
+      return z.object({ data: z.array(z.unknown()) }).parse(await listed.json())
+        .data
     }
+    expect(await listedPages("/api/paper")).toEqual([
+      expect.objectContaining({ id: receipt.docId, format: "word" }),
+    ])
+    expect(await listedPages("/api/paper/files")).toEqual([])
     const download = await app.request(
       `/api/paper/packages/${receipt.docId}/export?at=${receipt.revision}`,
       { headers }

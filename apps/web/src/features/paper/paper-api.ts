@@ -1,9 +1,8 @@
 import {
-  paperPackageMetadataSchema,
+  paperImportResponseSchema,
   letterAttachmentContextSchema,
 } from "@workspace/domain"
 import type { QueryClient } from "@tanstack/react-query"
-import { z } from "zod"
 import type {
   ChatDetail,
   ChatToolName,
@@ -151,18 +150,9 @@ export async function importPaperFile(file: File, signal?: AbortSignal) {
       payload?.error?.message ?? "Could not import that file. Try it again."
     )
   }
-  const payload: unknown = await res.json()
-  const data =
-    payload && typeof payload === "object" && "data" in payload
-      ? payload.data
-      : null
-  return {
-    ...paperPackageMetadataSchema.parse(data),
-    notice: importNoticeSchema.parse(data).notice ?? null,
-  }
+  const reply = paperImportResponseSchema.parse(await res.json())
+  return { ...reply.data, notice: reply.notice ?? null }
 }
-
-const importNoticeSchema = z.object({ notice: z.string().optional() })
 
 export async function importPaperLink(
   link: string,
