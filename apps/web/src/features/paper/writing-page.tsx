@@ -107,6 +107,7 @@ function HeldDownload({
         variant="ghost"
         disabled
         aria-describedby={reason ? described : undefined}
+        className="h-11 md:h-8"
       >
         Download Word
       </Button>
@@ -140,7 +141,10 @@ function SavedDownload({
     <a
       href={`${apiBaseUrl}${download.data.downloadPath}`}
       download={download.data.name}
-      className={buttonVariants({ variant: "ghost" })}
+      className={buttonVariants({
+        variant: "ghost",
+        className: "h-11 md:h-8",
+      })}
     >
       Download Word
     </a>
