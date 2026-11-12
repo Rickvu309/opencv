@@ -13,7 +13,7 @@ import { mergeBaseWithMain, readManifest } from "./manifest-file.mjs"
 import {
   screensToCheck,
   summarize,
-  summaryLine,
+  allScreenLines,
   totalLine,
 } from "./check-all.mjs"
 import { DESIGN_MAP, rowsForScreen } from "./design-map.mjs"
@@ -303,12 +303,14 @@ export const COMMANDS = {
       const notices = baseNotice ? [baseNotice] : []
       const state = await requireStack(ctx)
       const detail = [...notices]
-      const results = []
+      const outcomes = []
       await withBrowser(ctx, async (browser) => {
         for (const { screen, rows } of plans) {
           if (screen.unreachable) {
             detail.push(unreachableLine(screen))
-            results.push({ screen: screen.id, error: "unreachable" })
+            outcomes.push({
+              result: { screen: screen.id, error: "unreachable" },
+            })
             continue
           }
           try {
@@ -322,14 +324,15 @@ export const COMMANDS = {
               onMain: known ? baseCheckFor(known, screen.id) : undefined,
             })
             detail.push(...outcome.lines)
-            results.push(outcome.result)
+            outcomes.push(outcome)
           } catch (error) {
             const message = error.message.split("\n")[0]
             detail.push(json({ screen: screen.id, error: message }))
-            results.push({ screen: screen.id, error: message })
+            outcomes.push({ result: { screen: screen.id, error: message } })
           }
         }
       })
+      const results = outcomes.map((outcome) => outcome.result)
       const total = summarize(
         results,
         Math.round((ctx.clock.now() - started) / 1000)
@@ -345,7 +348,7 @@ export const COMMANDS = {
       if (!flags.all) return { code, lines: detail }
       return {
         code,
-        lines: [...notices, ...results.map(summaryLine), totalLine(total)],
+        lines: [...notices, ...allScreenLines(outcomes), totalLine(total)],
       }
     },
   },

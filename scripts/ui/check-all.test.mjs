@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import {
+  allScreenLines,
   measureTargets,
   rowsWithTargets,
   screenResult,
@@ -115,4 +116,33 @@ test("the summary prints one line per screen and a total that fails on any failu
   )
   assert.equal(results[0].failures[0].element, "Card")
   assert.equal(summarize([results[1]], 1).ok, true)
+})
+
+test("check --all prints the owner-decision lines and the changed-since-main count of each screen", () => {
+  const owner =
+    "Paper writing page width: expects 816 by owner decision of 2026-11-12, not the pen frame abc (560); the owner sized it"
+  const lines = allScreenLines([
+    {
+      result: {
+        screen: "paper-editor",
+        compared: 4,
+        failed: 2,
+        newFailed: 1,
+        knownFailed: 1,
+        changedFailed: 1,
+      },
+      ownerLines: [owner],
+    },
+    {
+      result: { screen: "coach-home", compared: 3, failed: 0 },
+      ownerLines: [],
+    },
+    { result: { screen: "settings", error: "unreachable" } },
+  ])
+  assert.deepEqual(lines, [
+    "paper-editor: FAIL, 4 compared, 2 failed, 1 already failing on main, 1 changed since main",
+    `  ${owner}`,
+    "coach-home: pass, 3 compared, 0 failed",
+    "settings: error unreachable",
+  ])
 })
