@@ -7,7 +7,11 @@ export {
   toChat,
 } from "./store.js"
 export { createChatRoutes } from "./http.js"
-export { readStoredParts } from "./stored-parts.js"
+export {
+  readChatViewParts,
+  readExportedParts,
+  UNREADABLE_STEP_LINE,
+} from "./stored-parts.js"
 
 export {
   createAgentProposalChat,

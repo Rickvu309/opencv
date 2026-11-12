@@ -41,7 +41,7 @@ const ASK_FOR_AN_EDIT = [
 
 const DENY_THE_WAITING_EDIT = [
   { click: { role: "button", name: "Deny" } },
-  { waitFor: { text: "Action was not approved" } },
+  { waitFor: { text: "Denied · nothing changed" } },
 ]
 
 const APPROVE_THE_EDIT = [
@@ -202,8 +202,20 @@ export const SCREENS = [
   {
     id: "paper-proposal-card",
     route: "/paper",
-    unreachable:
-      "The on-page Coach proposal card renders only on a Word writing page (apps/web/src/features/paper/writing-page.tsx). There the fake Coach's paper.edit is refused before approval with 'This edit does not match the saved document.' (apps/api/src/coach/worker.ts:218, outline insert from apps/api/src/coach/fake.ts with a Word revision). On a template CV the edit waits in the Coach card, but no proposal card is drawn; tested on 2026-11-12, waitFor section[aria-label=\"Coach proposal\"] timed out after Approve appeared",
+    steps: [
+      ...OPEN_BLANK_CV,
+      ...OPEN_PANEL,
+      {
+        fill: {
+          selector: `${PANEL} ${COMPOSER}`,
+          text: "Please improve the summary",
+        },
+      },
+      { press: "Enter" },
+      { waitFor: { role: "button", name: "Approve", exact: true } },
+      { waitFor: { selector: 'section[aria-label="Coach proposal"]' } },
+    ],
+    after: DENY_THE_WAITING_EDIT,
   },
   {
     id: "paper-imported",

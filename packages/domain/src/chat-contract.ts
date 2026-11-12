@@ -28,7 +28,7 @@ const chatAttachmentPartSchema = chatAttachmentSchema.extend({
   type: z.literal("attachment"),
 })
 
-const chatMessagePartSchema = z.discriminatedUnion("type", [
+export const chatMessagePartSchema = z.discriminatedUnion("type", [
   chatTextPartSchema,
   chatToolPartSchema,
   chatAttachmentPartSchema,

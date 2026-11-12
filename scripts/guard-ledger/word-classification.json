@@ -1,0 +1,14 @@
+{
+  "id": "word-classification",
+  "file": "scripts/word-classification.test.mjs",
+  "detector": {
+    "module": "scripts/lib/word-classification.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "29c4ce336ca6d1bbebef759244fbdf7c15096d19",
+    "path": "apps/web/src/lib/writing-proposal.ts"
+  },
+  "reason": "Introduced in 29c4ce33 (#1330): isWordEdit judged a Word edit by its op name alone, so a template CV edit was read as a Word batch and Approve was hidden."
+}

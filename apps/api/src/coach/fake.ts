@@ -1,5 +1,7 @@
 import {
   DEFAULT_COACH_MODELS,
+  paperContract,
+  type CoachFocusDoc,
   type ApplyScanExtractInput,
   type ChatToolName,
   type CoachRuntime,
@@ -132,24 +134,53 @@ async function* overlayTurnModel(
   }
 }
 
+const FAKE_COACH_WORDS = "Reviewed by the Coach."
+
+function fakeWordEdits(outline: string) {
+  const line = /^\[line ([a-f0-9-]+)\] (.*)$/m.exec(outline)
+  if (!line) return [{ op: "insert", after: null, text: FAKE_COACH_WORDS }]
+  const before = line[2] === "(empty line)" ? "" : line[2]
+  return [
+    {
+      op: "setText",
+      handle: line[1],
+      text: before ? `${before} ${FAKE_COACH_WORDS}` : FAKE_COACH_WORDS,
+    },
+  ]
+}
+
+function fakeTemplateEdits(outline: string) {
+  const first = /^\[([A-Za-z0-9_-]+)\]/m.exec(outline)
+  return [
+    {
+      op: "insert",
+      after: first?.[1] ?? "@start",
+      blocks: [{ type: "paragraph", text: FAKE_COACH_WORDS }],
+    },
+  ]
+}
+
+export function fakePaperEdit(
+  focus: Pick<CoachFocusDoc, "id" | "revision" | "outline">
+) {
+  const body = focus.outline.split("\n").slice(1).join("\n")
+  return paperContract["paper.edit"].input.parse({
+    docId: focus.id,
+    basedOn: focus.revision,
+    edits:
+      typeof focus.revision === "string"
+        ? fakeWordEdits(body)
+        : fakeTemplateEdits(body),
+  })
+}
+
 function paperEditScript(
   input: CoachTurnInput
 ): AsyncIterable<CoachStreamPart> {
   const focus = input.focusDoc
   const execute = input.execute
   if (!focus || !execute) return replay(DEMO_COACH_SCRIPT)
-  const rest = focus.outline.split("\n").slice(1).join("\n")
-  const first = /^\[([A-Za-z0-9_-]+)\]/m.exec(rest)
-  const edit = {
-    op: "insert",
-    after: first?.[1] ?? "@start",
-    blocks: [{ type: "paragraph", text: "Reviewed by the Coach." }],
-  }
-  const call = {
-    docId: focus.id,
-    basedOn: focus.revision,
-    edits: [edit],
-  }
+  const call = fakePaperEdit(focus)
   return (async function* () {
     yield { type: "text-delta", text: "I made one edit. " } as const
     yield {

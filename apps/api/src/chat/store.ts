@@ -20,7 +20,11 @@ import { activity, chatMessages, chats, coachTasks } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
 import { registry } from "../registry/registry.js"
-import { readStoredParts } from "./stored-parts.js"
+import {
+  chatViewPart,
+  readChatViewParts,
+  readStoredParts,
+} from "./stored-parts.js"
 
 function iso(value: Date) {
   return value.toISOString()
@@ -43,7 +47,7 @@ function toMessage(row: typeof chatMessages.$inferSelect) {
     chatId: row.chatId,
     role: row.role,
     text: row.text,
-    parts: readStoredParts(row.parts),
+    parts: readChatViewParts(row.parts),
     status: row.status,
     workedMs: row.workedMs,
     createdAt: iso(row.createdAt),
@@ -111,17 +115,21 @@ export async function getChat(userId: UserId, chatId: ChatId) {
         const result = withBlocked(withUndone(message, undone), blocked)
         return {
           ...result,
-          parts: result.parts.map((part) =>
-            part.type === "tool" && part.pendingActionId
-              ? {
-                  ...part,
-                  ...confirmations.get(part.pendingActionId)?.receipt,
-                  approval:
-                    confirmations.get(part.pendingActionId)?.status ??
-                    ("expired" as const),
-                }
-              : part
-          ),
+          parts: result.parts.map((part) => {
+            if (part.type !== "tool" || !part.pendingActionId) return part
+            const confirmation = confirmations.get(part.pendingActionId)
+            const approval = confirmation?.status ?? ("expired" as const)
+            return {
+              ...part,
+              ...confirmation?.receipt,
+              approval,
+              outcome: confirmation?.receipt?.undone
+                ? ("undone" as const)
+                : approval === "pending"
+                  ? ("waiting" as const)
+                  : approval,
+            }
+          }),
         }
       }),
       ...(activeTask
@@ -172,9 +180,14 @@ function projectCurrentMessages(rows: (typeof chatMessages.$inferSelect)[]) {
       return {
         ...toMessage(current),
         parts: revisions.flatMap((revision) =>
-          readStoredParts(revision.parts).filter(
-            (part) => revision.id === current.id || part.type === "tool"
-          )
+          readStoredParts(revision.parts)
+            .filter(
+              (stored) =>
+                revision.id === current.id ||
+                !stored.readable ||
+                stored.part.type === "tool"
+            )
+            .map(chatViewPart)
         ),
       }
     })
@@ -265,7 +278,7 @@ function withUndone(
     parts: message.parts.map((part) => {
       const id = toolActivityId(part)
       return id && undone.has(id)
-        ? ({ ...part, undone: true } as ChatMessagePart)
+        ? ({ ...part, undone: true, outcome: "undone" } as ChatMessagePart)
         : part
     }),
   }

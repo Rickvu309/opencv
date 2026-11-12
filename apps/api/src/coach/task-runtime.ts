@@ -7,7 +7,7 @@ import { getDb } from "../db/context.js"
 import { coachUsage } from "../db/schema.js"
 import type { Registry } from "../registry/registry.js"
 import { streamAnthropicSteps } from "./anthropic-runtime.js"
-import { createScriptedWorkerRuntime } from "./fake.js"
+import { createScriptedWorkerRuntime, fakePaperEdit } from "./fake.js"
 import { modelMessageSchema, type WorkerRuntime } from "./model-step.js"
 import { COACH_STABLE_PROMPT } from "./prompt.js"
 import { routeCoachModel } from "./router.js"
@@ -70,22 +70,7 @@ function demoTaskRuntime(task: Task): WorkerRuntime {
           {
             id: "call_edit",
             name: "paper.edit" as const,
-            input: {
-              docId: focus.id,
-              basedOn: focus.revision,
-              edits: [
-                {
-                  op: "insert",
-                  after:
-                    /^\[([A-Za-z0-9_-]+)\]/m.exec(
-                      focus.outline.split("\n").slice(1).join("\n")
-                    )?.[1] ?? "@start",
-                  blocks: [
-                    { type: "paragraph", text: "Reviewed by the Coach." },
-                  ],
-                },
-              ],
-            },
+            input: fakePaperEdit(focus),
           },
         ]
       : jobId
