@@ -105,7 +105,7 @@ const REVIEWER_TABLE = [
   ],
   [
     "CREATE TABLE scratch.jobs (a int); ALTER TABLE opencv_app.jobs ADD COLUMN b int",
-    /an ALTER TABLE on opencv_app\.jobs/,
+    /the table scratch\.jobs is not schema-qualified to opencv_app/,
   ],
   [
     "CREATE TABLE opencv_app.part PARTITION OF opencv_app.jobs FOR VALUES IN (1)",
@@ -167,6 +167,8 @@ test("only-adds statements on new objects stay quiet, including drizzle's breakp
       onlyAdds: true,
       statements: 9,
       first: null,
+      kinds:
+        "1 CREATE SCHEMA, 1 CREATE TYPE, 1 CREATE TABLE, 1 ALTER TABLE of a new table, 1 CREATE INDEX, 1 CREATE SEQUENCE, 3 COMMENT ON",
     })
   }
 })
@@ -234,36 +236,45 @@ const ROUND_THREE = [
     'CREATE TABLE opencv_app."JoBs" (id int); CREATE INDEX i ON opencv_app."JOBS" (id)',
     /an index on opencv_app\."JOBS"/,
   ],
-  ['CREATE TABLE "x"."y" (id int); ALTER TABLE x.y ADD COLUMN a int', ONLY],
   [
-    'CREATE TABLE "jobs_new" (id int); ALTER TABLE JOBS_NEW ADD COLUMN a int',
+    'CREATE TABLE "opencv_app"."y" (id int); ALTER TABLE opencv_app.y ADD COLUMN a int',
     ONLY,
   ],
-  ['CREATE TABLE "Jobs" (id int); ALTER TABLE "Jobs" ADD COLUMN a int', ONLY],
   [
-    'CREATE TABLE "Jobs" (id int); ALTER TABLE Jobs ADD COLUMN a int',
-    /an ALTER TABLE on jobs/,
+    'CREATE TABLE opencv_app."jobs_new" (id int); ALTER TABLE OPENCV_APP.JOBS_NEW ADD COLUMN a int',
+    ONLY,
   ],
   [
-    'CREATE TABLE "opencv_app.jobs" (id int); ALTER TABLE opencv_app.jobs ADD COLUMN a int',
+    'CREATE TABLE opencv_app."Jobs" (id int); ALTER TABLE opencv_app."Jobs" ADD COLUMN a int',
+    ONLY,
+  ],
+  [
+    'CREATE TABLE opencv_app."Jobs" (id int); ALTER TABLE opencv_app.Jobs ADD COLUMN a int',
+    /an ALTER TABLE on opencv_app\.jobs/,
+  ],
+  [
+    'CREATE TABLE opencv_app."opencv_app.jobs" (id int); ALTER TABLE opencv_app.jobs ADD COLUMN a int',
     /an ALTER TABLE on opencv_app\.jobs/,
   ],
   [
     'CREATE TABLE opencv_app.jobs2 (id int); ALTER TABLE "opencv_app.jobs2" ADD COLUMN a int',
     /an ALTER TABLE on "opencv_app\.jobs2"/,
   ],
-  ['CREATE TABLE "a""b" (id int); ALTER TABLE "a""b" ADD COLUMN c int', ONLY],
   [
-    'CREATE TABLE "jobs""" (id int); ALTER TABLE "jobs" ADD COLUMN c int',
-    /an ALTER TABLE on jobs/,
+    'CREATE TABLE opencv_app."a""b" (id int); ALTER TABLE opencv_app."a""b" ADD COLUMN c int',
+    ONLY,
+  ],
+  [
+    'CREATE TABLE opencv_app."jobs""" (id int); ALTER TABLE opencv_app."jobs" ADD COLUMN c int',
+    /an ALTER TABLE on opencv_app\.jobs/,
   ],
   ['CREATE TABLE U&"jobs" (id int)', /Unicode-escaped name/],
   [
-    'CREATE TABLE x (id int); ALTER TABLE U&"\\0078" ADD COLUMN a int',
+    'CREATE TABLE opencv_app.x (id int); ALTER TABLE U&"\\0078" ADD COLUMN a int',
     /Unicode-escaped name/,
   ],
   [
-    "CREATE TABLE x (id int); COMMENT ON TABLE x IS U&'d\\0061ta'",
+    "CREATE TABLE opencv_app.x (id int); COMMENT ON TABLE opencv_app.x IS U&'d\\0061ta'",
     /Unicode-escaped name or string/,
   ],
   ["CREATE TABLE café (id int)", /the character "é" outside quotes/],
@@ -273,7 +284,7 @@ const ROUND_THREE = [
   ],
   [
     "CREATE TABLE jobs (id int); ALTER TABLE opencv_app.jobs ADD COLUMN a int",
-    /an ALTER TABLE on opencv_app\.jobs/,
+    /the table jobs is not schema-qualified to opencv_app/,
   ],
   [
     "CREATE TABLE opencv_app.jobs3 (id int); ALTER TABLE jobs3 ADD COLUMN a int",
@@ -293,7 +304,7 @@ const ROUND_THREE = [
     /a COMMENT ON TABLE opencv_app\.jobs/,
   ],
   [
-    "CREATE TABLE t (id int); CREATE INDEX IF NOT EXISTS jobs_pkey ON t (id); COMMENT ON INDEX jobs_pkey IS 'x'",
+    "CREATE TABLE opencv_app.t (id int); CREATE INDEX IF NOT EXISTS jobs_pkey ON opencv_app.t (id); COMMENT ON INDEX jobs_pkey IS 'x'",
     /a COMMENT ON INDEX jobs_pkey/,
   ],
   [
@@ -335,31 +346,34 @@ const ROUND_THREE = [
     /a GRANT changes who can reach/,
   ],
   [
-    "CREATE TABLE t (id int); REVOKE ALL ON t FROM PUBLIC",
+    "CREATE TABLE opencv_app.t (id int); REVOKE ALL ON opencv_app.t FROM PUBLIC",
     /a REVOKE changes who can reach/,
   ],
   [
-    "CREATE TABLE a (id int); SELECT 'x; DROP TABLE jobs;",
+    "CREATE TABLE opencv_app.a (id int); SELECT 'x; DROP TABLE jobs;",
     /the scanner cannot parse it: a string never closes/,
   ],
   [
-    "CREATE TABLE a (id int); DO $q$ BEGIN DROP TABLE jobs; END",
+    "CREATE TABLE opencv_app.a (id int); DO $q$ BEGIN DROP TABLE jobs; END",
     /the scanner cannot parse it: a \$q\$ body never closes/,
   ],
   [
-    'CREATE TABLE a (id int); ALTER TABLE "jobs ADD COLUMN x int',
+    'CREATE TABLE opencv_app.a (id int); ALTER TABLE "jobs ADD COLUMN x int',
     /the scanner cannot parse it: a quoted name never closes/,
   ],
   [
-    "CREATE TABLE t (id int); CREATE SEQUENCE s OWNED BY opencv_app.jobs.id",
+    "CREATE TABLE opencv_app.t (id int); CREATE SEQUENCE opencv_app.s OWNED BY opencv_app.jobs.id",
     /a sequence OWNED BY opencv_app\.jobs\.id/,
   ],
   [
-    'CREATE TABLE t (id int); CREATE SEQUENCE s OWNED BY "T".id',
+    'CREATE TABLE opencv_app.t (id int); CREATE SEQUENCE s OWNED BY "T".id',
     /a sequence OWNED BY "T"\.id/,
   ],
-  ["CREATE TABLE t (id int); CREATE SEQUENCE s OWNED BY NONE", ONLY],
-  ['CREATE TABLE "DROP" (id int)', ONLY],
+  [
+    "CREATE TABLE opencv_app.t (id int); CREATE SEQUENCE opencv_app.s OWNED BY NONE",
+    ONLY,
+  ],
+  ['CREATE TABLE opencv_app."DROP" (id int)', ONLY],
 ]
 
 test("round three: quoted names keep their case, a dotted quoted name is one name, and anything the scanner does not fully read changes existing things", () => {

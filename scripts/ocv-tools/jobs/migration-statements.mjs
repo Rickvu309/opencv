@@ -1,6 +1,9 @@
 const WORD_START = /[A-Za-z_]/
 const WORD_PART = /[A-Za-z0-9_$]/
-const DOLLAR_TAG = /^\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$/
+const DOLLAR_TAG = /\$(?:[A-Za-z_][A-Za-z0-9_]*)?\$/y
+const SQL_SPACE = /[ \t\n\r\f\v]/
+const SQL_PUNCT = new Set("(),;.=:[]+-*/<>%^|&!~@#")
+export const APP_SCHEMA = "opencv_app"
 
 export class SqlParseError extends Error {}
 
@@ -39,13 +42,19 @@ function endOfDollar(sql, at, tag) {
   return end + tag.length
 }
 
+function dollarTagAt(text, at) {
+  DOLLAR_TAG.lastIndex = at
+  const match = DOLLAR_TAG.exec(text)
+  return match ? match[0] : null
+}
+
 export function tokenize(sql) {
   const text = String(sql ?? "")
   const tokens = []
   let i = 0
   while (i < text.length) {
     const c = text[i]
-    if (/\s/.test(c)) i += 1
+    if (SQL_SPACE.test(c)) i += 1
     else if (text.startsWith("--", i)) {
       const end = text.indexOf("\n", i)
       i = end < 0 ? text.length : end + 1
@@ -79,10 +88,15 @@ export function tokenize(sql) {
         end,
       })
       i = end
-    } else if (c === "$" && DOLLAR_TAG.test(text.slice(i, i + 64))) {
-      const tag = text.slice(i).match(DOLLAR_TAG)[0]
+    } else if (c === "$" && dollarTagAt(text, i)) {
+      const tag = dollarTagAt(text, i)
       const end = endOfDollar(text, i, tag)
       tokens.push({ t: "str", start: i, end })
+      i = end
+    } else if (/[0-9]/.test(c)) {
+      let end = i + 1
+      while (end < text.length && /[0-9A-Za-z_.]/.test(text[end])) end += 1
+      tokens.push({ t: "num", v: text.slice(i, end), start: i, end })
       i = end
     } else if (WORD_START.test(c)) {
       let end = i + 1
@@ -90,10 +104,10 @@ export function tokenize(sql) {
       const raw = text.slice(i, end)
       tokens.push({ t: "word", v: raw.toUpperCase(), raw, start: i, end })
       i = end
-    } else if (c.charCodeAt(0) > 127) {
+    } else if (!SQL_PUNCT.has(c)) {
       tokens.push({
         t: "unread",
-        v: `the character ${JSON.stringify(c)} outside quotes`,
+        v: `the character ${JSON.stringify(c)} outside quotes (U+${c.codePointAt(0).toString(16).toUpperCase().padStart(4, "0")})`,
         start: i,
         end: i + 1,
       })
@@ -137,6 +151,9 @@ const show = (parts) =>
         .join(".")
     : "a name the scanner cannot read"
 const parentOf = (parts) => (parts ? parts.slice(0, -1) : null)
+const inApp = (parts) => parts?.length === 2 && parts[0] === APP_SCHEMA
+const notInApp = (what, parts) =>
+  `${what} ${show(parts)} is not schema-qualified to ${APP_SCHEMA}, so Postgres may resolve it to an object that already exists (pg_catalog is searched first)`
 
 function nameAt(ts, i) {
   if (!isName(ts[i])) return [null, i]
@@ -191,6 +208,7 @@ function createTable(ts, made) {
     return "CREATE TABLE without a column list (AS, PARTITION OF or OF) is not on the only-adds list"
   if (closeOf(ts, j) !== ts.length - 1)
     return "CREATE TABLE with options after its columns (INHERITS, PARTITION BY, WITH) is not on the only-adds list"
+  if (!inApp(name)) return notInApp("the table", name)
   if (ifNot < 0) made.tables.add(keyOf(name))
   return true
 }
@@ -212,11 +230,8 @@ function createIndex(ts, made) {
   i = optional(ts, i, "ONLY")
   const [table] = nameAt(ts, i)
   if (table && made.tables.has(keyOf(table))) {
-    if (index && !ifNot) {
-      made.indexes.add(keyOf(index))
-      if (index.length === 1 && table.length > 1)
-        made.indexes.add(keyOf([...parentOf(table), ...index]))
-    }
+    if (index && !ifNot && index.length === 1)
+      made.indexes.add(keyOf([...parentOf(table), ...index]))
     return true
   }
   return concurrently
@@ -246,16 +261,21 @@ function alterTable(ts, made) {
 
 function createSmall(ts, made) {
   if (words(ts, 0, "CREATE", "TYPE") >= 0) {
-    const [name] = nameAt(ts, 2)
-    if (name) made.types.add(keyOf(name))
+    const [name, j] = nameAt(ts, 2)
+    if (!enumBody(ts, j))
+      return "a CREATE TYPE other than AS ENUM ('label', ...) is not on the only-adds list"
+    if (!inApp(name)) return notInApp("the type", name)
+    made.types.add(keyOf(name))
     return true
   }
   const schema = words(ts, 0, "CREATE", "SCHEMA", "IF", "NOT", "EXISTS")
   if (schema >= 0) {
     const [name, j] = nameAt(ts, schema)
-    return name && j === ts.length
+    if (!name || j !== ts.length)
+      return "CREATE SCHEMA with AUTHORIZATION or elements is not on the only-adds list"
+    return name.length === 1 && name[0] === APP_SCHEMA
       ? true
-      : "CREATE SCHEMA with AUTHORIZATION or elements is not on the only-adds list"
+      : `CREATE SCHEMA ${show(name)} is not the app schema ${APP_SCHEMA}`
   }
   let i = words(ts, 0, "CREATE", "SEQUENCE")
   if (i < 0) return null
@@ -275,8 +295,16 @@ function createSmall(ts, made) {
     if (!none && !made.tables.has(keyOf(parentOf(column))))
       return `a sequence OWNED BY ${show(column)}, a column of a table this migration did not create`
   }
-  if (name && !ifNot) made.sequences.add(keyOf(name))
+  if (!inApp(name)) return notInApp("the sequence", name)
+  if (!ifNot) made.sequences.add(keyOf(name))
   return true
+}
+
+function enumBody(ts, j) {
+  if (words(ts, j, "AS", "ENUM") < 0 || ts[j + 2]?.v !== "(") return false
+  if (closeOf(ts, j + 2) !== ts.length - 1) return false
+  const items = topLevelParts(ts.slice(j + 3, -1), 0)
+  return items.every((item) => item.length === 1 && item[0].t === "str")
 }
 
 const COMMENT_KINDS = {
@@ -291,11 +319,18 @@ function commentOn(ts, made) {
   const i = words(ts, 0, "COMMENT", "ON")
   if (i < 0) return null
   const kind = ts[i]?.v
-  const [name] = nameAt(ts, i + 1)
+  const [name, j] = nameAt(ts, i + 1)
   const own = COMMENT_KINDS[kind]
-  return own && name && own(made, name)
+  const text = ts[j + 1]
+  const whole =
+    words(ts, j, "IS") >= 0 &&
+    j + 2 === ts.length &&
+    (text?.t === "str" || (text?.t === "word" && text.v === "NULL"))
+  if (!(own && name && own(made, name)))
+    return `a COMMENT ON ${kind} ${show(name)}, which this migration did not create`
+  return whole
     ? true
-    : `a COMMENT ON ${kind} ${show(name)}, which this migration did not create`
+    : "a COMMENT ON that is not exactly IS followed by one string is not on the only-adds list"
 }
 
 const REFUSED = [
@@ -373,6 +408,7 @@ export function classifyMigration(sql) {
     types: new Set(),
     sequences: new Set(),
   }
+  const kinds = []
   for (const [k, statement] of statements.entries()) {
     const unread = statement.tokens.find((token) => token.t === "unread")
     let verdict = unread
@@ -382,7 +418,10 @@ export function classifyMigration(sql) {
       verdict = classify(statement.tokens, made)
       if (verdict !== null) break
     }
-    if (verdict === true) continue
+    if (verdict === true) {
+      kinds.push(kindOf(statement.tokens))
+      continue
+    }
     return {
       onlyAdds: false,
       statements: statements.length,
@@ -393,5 +432,22 @@ export function classifyMigration(sql) {
       },
     }
   }
-  return { onlyAdds: true, statements: statements.length, first: null }
+  return {
+    onlyAdds: true,
+    statements: statements.length,
+    first: null,
+    kinds: kindCounts(kinds),
+  }
+}
+
+function kindOf(ts) {
+  if (words(ts, 0, "CREATE", "UNIQUE", "INDEX") >= 0) return "CREATE INDEX"
+  if (words(ts, 0, "ALTER", "TABLE") >= 0) return "ALTER TABLE of a new table"
+  return `${ts[0].v} ${ts[1]?.v ?? ""}`.trim()
+}
+
+function kindCounts(kinds) {
+  const counts = new Map()
+  for (const kind of kinds) counts.set(kind, (counts.get(kind) ?? 0) + 1)
+  return [...counts].map(([kind, n]) => `${n} ${kind}`).join(", ")
 }

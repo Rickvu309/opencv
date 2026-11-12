@@ -317,7 +317,7 @@ test("every checked rule has a failing and a passing fact", () => {
         files: [{ tag: "0022_drop_notify", changes: ["DROP"] }],
       },
     },
-    "the merge runs 0022_drop_notify (DROP) on production data, and it changes what exists"
+    "the merge runs 0022_drop_notify (DROP) on production data, and it changes existing things"
   )
   check(
     "FILE_SIZE",

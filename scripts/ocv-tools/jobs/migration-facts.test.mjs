@@ -48,12 +48,17 @@ test("the clean fixtures stay quiet, and the deploy notice counts the statements
       file: "apps/api/drizzle/0023_a.sql",
       tag: "0023_a",
       statements: 2,
+      kinds: "1 CREATE TABLE, 1 CREATE INDEX",
       changes: [],
     },
   ]
   assert.deepEqual(deployLines({ allowed: [], files }).slice(1), [
-    "Migration apps/api/drizzle/0023_a.sql only adds: each of its 2 statement(s) is on the only-adds list.",
+    "Migration apps/api/drizzle/0023_a.sql: the static reading found only additive statements (1 CREATE TABLE, 1 CREATE INDEX). This is a reading of the SQL, not a proof.",
   ])
+  assert.doesNotMatch(
+    deployLines({ allowed: [], files }).join("\n"),
+    /only adds/
+  )
   assert.match(
     migrationChanges("--> statement-breakpoint\n")[0],
     /it has no statements/
@@ -101,7 +106,7 @@ test("merge with --allow-migration names the deploy and the migration, queues, a
   assert.match(r.text, /This merge deploys to production/)
   assert.match(
     r.text,
-    /Migration apps\/api\/drizzle\/0024_word_rename_retained\.sql changes what exists, first at statement 1, CREATE OR REPLACE FUNCTION .*: CREATE OR REPLACE replaces what may exist; allowed by --allow-migration\./
+    /Migration apps\/api\/drizzle\/0024_word_rename_retained\.sql CHANGES EXISTING THINGS: statement 1, CREATE OR REPLACE FUNCTION .*: CREATE OR REPLACE replaces what may exist; allowed by --allow-migration\./
   )
   assert.match(
     r.text,
@@ -124,6 +129,26 @@ test("merge of a PR with no migration says it deploys and carries none", () => {
   assert.match(r.text, /It carries no database migration\./)
 })
 
+const JOURNAL_PATH = "apps/api/drizzle/meta/_journal.json"
+const journalOf = (entries) =>
+  JSON.stringify({ version: "7", dialect: "postgresql", entries })
+const entry = (idx, tag, when) => ({
+  idx,
+  version: "7",
+  when,
+  tag,
+  breakpoints: true,
+})
+const BASE_JOURNAL = journalOf([
+  entry(0, "0000_opencv_app", 1000),
+  entry(1, "0001_account_issuer_optional", 2000),
+  entry(2, "0002_chat_reply_supersession", 3000),
+])
+const HEAD_JOURNAL = journalOf([
+  ...JSON.parse(BASE_JOURNAL).entries,
+  entry(3, "0027_new", 4000),
+])
+
 test("a drizzle file the scanner does not read, a journal changed alone, an unread change list and a file that is not UTF-8 each change existing things", () => {
   const shown = new Map([
     [
@@ -131,14 +156,24 @@ test("a drizzle file the scanner does not read, a journal changed alone, an unre
       "UPDATE opencv_app.jobs SET a = 1",
     ],
     ["apps/api/drizzle/0026_bytes.sql", "CREATE TABLE t (id int); �"],
-    ["apps/api/drizzle/0027_new.sql", "CREATE TABLE t (id int)"],
+    ["apps/api/drizzle/0027_new.sql", 'CREATE TABLE "opencv_app"."t" (id int)'],
   ])
   const ctx = {
     cwd: "/repo",
     ports: {
       proc: {
         run: (cmd, args) => {
-          const file = args[1].slice(args[1].indexOf(":") + 1)
+          if (args[0] === "merge-base")
+            return { ok: true, out: "base1", err: "" }
+          if (args[0] === "cat-file")
+            return { ok: false, out: "", err: "missing" }
+          const [rev, file] = args[1].split(":")
+          if (file === JOURNAL_PATH)
+            return {
+              ok: true,
+              out: rev === "base1" ? BASE_JOURNAL : HEAD_JOURNAL,
+              err: "",
+            }
           return shown.has(file)
             ? { ok: true, out: shown.get(file), err: "" }
             : { ok: false, out: "", err: "missing" }
@@ -174,7 +209,7 @@ test("a drizzle file the scanner does not read, a journal changed alone, an unre
   )
   assert.deepEqual(verdicts(["apps/api/drizzle/meta/_journal.json"]), {
     "apps/api/drizzle/meta/_journal.json":
-      "the migration journal changed without a migration file, so it may run a file this pull request did not change",
+      "journal entry 3 names 0027_new, which is not a migration file this pull request adds, so drizzle would run a file this pull request did not add",
   })
   assert.deepEqual(verdicts(undefined), {
     "the changed files":

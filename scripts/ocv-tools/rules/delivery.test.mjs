@@ -129,7 +129,7 @@ const CASES = {
         ],
       },
     },
-    "the merge runs 0024_word_rename_retained (CREATE OR REPLACE, a trigger) on production data, and it changes what exists",
+    "the merge runs 0024_word_rename_retained (CREATE OR REPLACE, a trigger) on production data, and it changes existing things",
   ],
   CI_FAILED: [
     queue({
