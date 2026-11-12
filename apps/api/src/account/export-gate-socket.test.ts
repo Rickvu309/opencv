@@ -3,7 +3,7 @@ import type { AddressInfo } from "node:net"
 
 import { serve } from "@hono/node-server"
 import { Hono } from "hono"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
   createExportGate,
@@ -17,9 +17,22 @@ function elapsed(ms: number) {
   return new Promise((done) => setTimeout(done, ms))
 }
 
+const CHUNKS = 32
+const CHUNK_BYTES = 1024 * 1024
+const ARCHIVE_BYTES = CHUNKS * CHUNK_BYTES
+
 function archive(): ExportArchive {
-  const chunks = [Buffer.alloc(64 * 1024, 1), Buffer.alloc(64 * 1024, 2)]
-  return { chunks, byteLength: 128 * 1024 }
+  const chunks = Array.from({ length: CHUNKS }, (_, index) =>
+    Buffer.alloc(CHUNK_BYTES, index)
+  )
+  return { chunks, byteLength: ARCHIVE_BYTES }
+}
+
+function slots(gate: { running: () => number }, expected: number) {
+  return vi.waitFor(() => expect(gate.running()).toBe(expected), {
+    timeout: 5000,
+    interval: 20,
+  })
 }
 
 const servers: Array<ReturnType<typeof serve>> = []
@@ -67,36 +80,33 @@ describe("export gate over a real connection", () => {
   it("frees the slot when the connection closes while the export is being built", async () => {
     const { gate, port } = await listening()
     const socket = request(port, "ada")
-    await elapsed(BUILD_MS / 4)
-    expect(gate.running()).toBe(1)
+    await slots(gate, 1)
     socket.destroy()
-    await elapsed(BUILD_MS * 2)
-    expect(gate.running()).toBe(0)
+    await slots(gate, 0)
   })
 
   it("frees the slot when the connection closes before the built export is read", async () => {
     const { gate, port } = await listening()
     const socket = request(port, "ada")
     socket.pause()
+    await slots(gate, 1)
     await elapsed(BUILD_MS * 2)
+    expect(gate.running()).toBe(1)
     socket.destroy()
-    await elapsed(BUILD_MS)
-    expect(gate.running()).toBe(0)
+    await slots(gate, 0)
   })
 
   it("lets two accounts that left during the build make room for everyone else", async () => {
     const { gate, port } = await listening()
     const first = request(port, "ada")
     const second = request(port, "bao")
-    await elapsed(BUILD_MS / 4)
-    expect(gate.running()).toBe(2)
+    await slots(gate, 2)
     first.destroy()
     second.destroy()
-    await elapsed(BUILD_MS * 2)
-    expect(gate.running()).toBe(0)
+    await slots(gate, 0)
     const honest = await fetch(`http://127.0.0.1:${port}/export/chi`)
     expect(honest.status).toBe(200)
-    expect((await honest.arrayBuffer()).byteLength).toBe(128 * 1024)
+    expect((await honest.arrayBuffer()).byteLength).toBe(ARCHIVE_BYTES)
     expect(gate.running()).toBe(0)
   })
 })
