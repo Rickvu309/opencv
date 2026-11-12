@@ -89,6 +89,10 @@ type Props = {
   primaryAction?: boolean
 }
 
+function repeatedClickOfSend(event: { detail: number }) {
+  return event.detail > 1
+}
+
 export function CoachDock({
   draft,
   setDraft,
@@ -310,7 +314,9 @@ export function CoachDock({
           type="button"
           variant="secondary"
           size="icon"
-          onClick={onStop}
+          onClick={(event) => {
+            if (!repeatedClickOfSend(event)) onStop?.()
+          }}
           aria-label="Stop"
           className="size-11 rounded-full md:size-8"
         >

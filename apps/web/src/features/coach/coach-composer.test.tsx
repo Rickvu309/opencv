@@ -51,6 +51,34 @@ describe("Coach composer", () => {
     ).not.toBeInTheDocument()
   })
 
+  it("keeps the reply going when a double click on Send lands on Stop", async () => {
+    const stream = scriptCoachStream({ gated: true, texts: ["Got it."] })
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
+
+    fireEvent.change(composer(), { target: { value: "Review my CV" } })
+    const send = screen.getByRole("button", { name: "Send" })
+    fireEvent.click(send, { detail: 1 })
+    const stop = await screen.findByRole("button", { name: "Stop" })
+    await waitFor(() => expect(getLastCoachRequest()).not.toBeNull())
+    stream.release()
+    await waitFor(() => expect(stream.emitted()).toBeGreaterThan(0))
+    fireEvent.click(stop, { detail: 2 })
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(screen.getByRole("button", { name: "Stop" })).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "Stop" }), {
+      detail: 1,
+    })
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("button", { name: "Stop" })
+      ).not.toBeInTheDocument()
+    )
+    stream.releaseAll()
+  })
+
   it("sends on Enter and keeps Shift+Enter as a newline", async () => {
     scriptCoachStream({ texts: ["Got it."] })
     renderApp(SURFACE_PATHS.coach)
