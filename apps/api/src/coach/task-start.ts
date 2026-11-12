@@ -195,7 +195,7 @@ export function startTask(
         modelId: model,
         mode,
         planAtStart: profile.plan,
-        toolsAllowed: !input.regenerate,
+        toolsAllowed: !input.regenerate && !input.textOnly,
         contextSnapshot: {
           messages,
           ...grounding,
