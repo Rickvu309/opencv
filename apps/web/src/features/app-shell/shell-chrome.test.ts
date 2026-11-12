@@ -22,12 +22,19 @@ describe("shell chrome", () => {
   })
 })
 
+function mainColumn(source: string) {
+  const at = source.indexOf('id="app-main"')
+  if (at < 0) return ""
+  return source.slice(at, at + 400)
+}
+
 function coachCardMistakes(source: string, styles: string) {
   const frame = source.slice(
     source.indexOf("const panelFrame"),
     source.indexOf("const collapsedRail")
   )
   const dock = source.slice(source.indexOf("function ShellDock"))
+  const column = mainColumn(source)
   const mistakes: string[] = []
   if (!frame.includes("w-[400px]") || !frame.includes("600px"))
     mistakes.push("desktop Coach is not the 400 by 600 card")
@@ -39,6 +46,10 @@ function coachCardMistakes(source: string, styles: string) {
     mistakes.push("recent chats are missing from the dock")
   if (/coachPage\s*\?\s*null/.test(source))
     mistakes.push("the dock is removed on Coach")
+  if (!column.includes("flex-1"))
+    mistakes.push("main content does not fill the shell")
+  if (/panelOpen|panel\.open|clamp\(\s*360px|w-\[400px\]/.test(column))
+    mistakes.push("main content width follows the Coach card")
   return mistakes
 }
 
@@ -46,7 +57,7 @@ describe("coach card geometry", () => {
   it("rejects a split pane and a dock without chat chips", () => {
     expect(
       coachCardMistakes(
-        'const panelFrame = <div className="w-[clamp(360px,28vw,400px)]" />; const collapsedRail = false; function ShellDock() { return null } coachPage ? null : null',
+        'const panelFrame = <div className="w-[clamp(360px,28vw,400px)]" />; const collapsedRail = false; function ShellDock() { return null } coachPage ? null : null id="app-main" className="h-full min-w-0 w-[400px]"',
         "grid-template-columns: clamp(360px, 28vw, 400px);"
       )
     ).toEqual([
@@ -55,13 +66,15 @@ describe("coach card geometry", () => {
       "desktop Coach uses a split column",
       "recent chats are missing from the dock",
       "the dock is removed on Coach",
+      "main content does not fill the shell",
+      "main content width follows the Coach card",
     ])
   })
 
   it("accepts the floating 400 by 600 card and the chat chips", () => {
     expect(
       coachCardMistakes(
-        'const panelFrame = <div className="fixed right-5 bottom-12 h-[min(600px,max(320px,calc(100dvh-56px)))] w-[400px]" />; const collapsedRail = false; function ShellDock() { return <div data-slot="dock-recent" /> }',
+        'const panelFrame = <div className="fixed right-5 bottom-12 h-[min(600px,max(320px,calc(100dvh-56px)))] w-[400px]" />; const collapsedRail = false; function ShellDock() { return <div data-slot="dock-recent" /> } id="app-main" className="h-full min-w-0 flex-1"',
         ""
       )
     ).toEqual([])

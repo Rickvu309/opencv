@@ -276,3 +276,30 @@ describe("Coach sheet keyboard access", () => {
     expect(screen.queryByRole("dialog", { name: "Coach" })).toBeNull()
   })
 })
+
+function mainColumnLayout() {
+  const classes: string[] = []
+  let node: HTMLElement | null = document.getElementById("app-main")
+  while (node && node.dataset.slot !== "app-shell") {
+    classes.push(`${node.tagName}.${node.className}|${node.style.cssText}`)
+    node = node.parentElement
+  }
+  return classes
+}
+
+describe("the main content beside the Coach card at desktop width", () => {
+  it("keeps the same width and position whether the card is open or closed", async () => {
+    renderApp(SURFACE_PATHS.apply)
+    await expectApplyLive()
+    const main = document.getElementById("app-main")
+    expect(main?.className.split(" ")).toContain("flex-1")
+    expect(main?.parentElement?.className.split(" ")).toContain("flex")
+    const closed = mainColumnLayout()
+
+    await openCoach()
+    const card = document.getElementById("coach-panel")
+    expect(card?.className.split(" ")).toContain("fixed")
+    expect(card?.contains(main ?? null)).toBe(false)
+    expect(mainColumnLayout()).toEqual(closed)
+  })
+})
