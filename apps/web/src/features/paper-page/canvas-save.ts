@@ -546,6 +546,7 @@ async function settleOnce(
         note: null,
         ...headOf(page),
         refusedLines: carried,
+        pageRefusal: null,
       },
       renames
     )

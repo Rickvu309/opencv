@@ -1,4 +1,4 @@
-import { useId, useState } from "react"
+import { useId, useReducer } from "react"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { CopyButton } from "@workspace/ui/components/copy-button"
 
@@ -11,7 +11,11 @@ export type UnsavedBarProps = {
   onRestore: (id: string) => void
 }
 
-const CONTROL = "h-11 md:h-7"
+type DetailAction = { type: "toggle" } | { type: "close" }
+
+function detailReducer(open: boolean, action: DetailAction) {
+  return action.type === "toggle" ? !open : false
+}
 
 function preview(text: string) {
   const plain = text.trim()
@@ -61,7 +65,7 @@ function LineActions({
       {line.removed ? null : (
         <CopyButton
           size="sm"
-          className={CONTROL}
+          className="h-11 md:h-7"
           variant="outline"
           aria-label={`Copy my text from ${preview(line.text)}`}
           value={line.text}
@@ -71,7 +75,7 @@ function LineActions({
       )}
       <Button
         size="sm"
-        className={CONTROL}
+        className="h-11 md:h-7"
         variant="ghost"
         aria-label={`Restore this line: ${preview(line.text)}`}
         onClick={() => onRestore(line.id)}
@@ -88,7 +92,7 @@ function Actions({ model, onUseSaved, onRestore }: UnsavedBarProps) {
       <>
         <CopyButton
           size="sm"
-          className={CONTROL}
+          className="h-11 md:h-7"
           variant="outline"
           aria-label="Copy my unsaved text"
           value={() => model.unsavedText}
@@ -97,7 +101,7 @@ function Actions({ model, onUseSaved, onRestore }: UnsavedBarProps) {
         </CopyButton>
         <Button
           size="sm"
-          className={CONTROL}
+          className="h-11 md:h-7"
           variant="ghost"
           aria-label={`Use the saved page, discards ${lineCount(model.discards)}`}
           onClick={onUseSaved}
@@ -114,7 +118,7 @@ function Actions({ model, onUseSaved, onRestore }: UnsavedBarProps) {
       <>
         <CopyButton
           size="sm"
-          className={CONTROL}
+          className="h-11 md:h-7"
           variant="outline"
           aria-label="Copy all my unsaved text"
           value={() => model.unsavedText}
@@ -126,7 +130,7 @@ function Actions({ model, onUseSaved, onRestore }: UnsavedBarProps) {
             className={buttonVariants({
               size: "sm",
               variant: "ghost",
-              className: CONTROL,
+              className: "h-11 md:h-7",
             })}
             href="/sign-in"
             target="_blank"
@@ -149,7 +153,7 @@ function summary(model: UnsavedBarModel) {
 
 export function UnsavedBar(props: UnsavedBarProps) {
   const { model, onRestore } = props
-  const [open, setOpen] = useState(false)
+  const [open, detail] = useReducer(detailReducer, false)
   const detailId = useId()
   const listed =
     model.lines.length > 0 &&
@@ -176,11 +180,11 @@ export function UnsavedBar(props: UnsavedBarProps) {
             {listed ? (
               <Button
                 size="sm"
-                className={`writing-unsaved-toggle ${CONTROL}`}
+                className="writing-unsaved-toggle h-11 md:h-7"
                 variant="ghost"
                 aria-expanded={open}
                 aria-controls={detailId}
-                onClick={() => setOpen((shown) => !shown)}
+                onClick={() => detail({ type: "toggle" })}
               >
                 {open ? "Hide lines" : `Show ${lineCount(model.lines.length)}`}
               </Button>

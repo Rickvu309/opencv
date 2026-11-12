@@ -468,13 +468,15 @@ function WritingSheet({
           }}
           onCompositionEnd={(event) => {
             composing.current = false
-            flushHeldBack()
             const page = pageRef.current
             const base = compositionBase.current
             const from = compositionSpan.current
             compositionBase.current = null
             compositionSpan.current = null
-            if (!page) return
+            if (!page) {
+              flushHeldBack()
+              return
+            }
             const read = readBlocks(page, nextId.current)
             nextId.current = read.nextId
             const selected =
@@ -511,6 +513,7 @@ function WritingSheet({
               split,
               nextId: read.nextId,
             })
+            flushHeldBack()
           }}
           onPaste={(event) => {
             event.preventDefault()
