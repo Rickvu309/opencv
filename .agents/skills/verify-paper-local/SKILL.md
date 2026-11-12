@@ -47,4 +47,4 @@ The model checks two cumulative edits, one document and tab, one transaction in 
 
 ## When code changes
 
-Run `/maintain-formal-verification-skill` after changes to the covered code. Confirm the code, replay, model, and browser evidence agree before recording a new verification point. Do not add this model to `verify-paper-save`. Keep `ContentStore.tla` unchanged.
+Run `/maintain-formal-verification-skill` after changes to the covered code. Confirm the code, replay, model, and browser evidence agree before recording a new verification point. Keep `ContentStore.tla` unchanged.
