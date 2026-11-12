@@ -1,6 +1,7 @@
-import { act, cleanup, screen, waitFor } from "@testing-library/react"
+import { act, cleanup, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
+import { findAppMain } from "@/test/app-regions.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import { mockJob } from "@/test/apply-job-fixtures.ts"
 import { getMockJobPosts, setMockJobs } from "@/test/apply-jobs-mock.ts"
@@ -38,7 +39,8 @@ describe("apply board keyboard drop, driving the board drag handlers directly si
   it("moves the card to the last column it hovered when the drop reports none, where the announcement said it would land", async () => {
     setMockJobs([junior])
     renderApp("/apply")
-    await screen.findByRole("button", {
+    const page = await findAppMain()
+    await page.findByRole("button", {
       name: "Junior Marketing, Lumière Cosmetics",
     })
     const handlers = () => standInKanbanProps.current as Handlers
@@ -67,7 +69,8 @@ describe("apply board keyboard drop, driving the board drag handlers directly si
   it("keeps the card in place when the drag never hovered a column", async () => {
     setMockJobs([junior])
     renderApp("/apply")
-    await screen.findByRole("button", {
+    const page = await findAppMain()
+    await page.findByRole("button", {
       name: "Junior Marketing, Lumière Cosmetics",
     })
     const handlers = () => standInKanbanProps.current as Handlers

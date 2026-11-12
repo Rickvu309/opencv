@@ -17,7 +17,7 @@ vi.mock("@/routes/apply.tsx", async () => {
 
 describe("lazy routes", () => {
   it("does not load route modules until the route is visited", async () => {
-    const { renderApp } = await import("@/test/render-app.tsx")
+    const { renderApp } = await import("@/test/render-app-lazy-routes.tsx")
     expect(loaded.paper).toBe(0)
     expect(loaded.apply).toBe(0)
 
