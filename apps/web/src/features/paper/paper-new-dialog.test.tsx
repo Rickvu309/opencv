@@ -50,6 +50,7 @@ describe("Paper new dialog", () => {
           step={step}
           onStepChange={setStep}
           onCreated={() => undefined}
+          onMinted={() => undefined}
           onChooseLetter={() => undefined}
           onImport={() => undefined}
         />
@@ -75,21 +76,23 @@ describe("Paper new dialog", () => {
     })
   })
 
-  it("mints a blank page and opens that document", async () => {
+  it("mints a blank CV page and opens that document", async () => {
     const minted = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
-    const calls: string[] = []
+    const calls: { url: string; body: unknown }[] = []
     const onMinted = vi.fn()
     const onCreated = vi.fn()
-    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
-      const url = String(input)
-      calls.push(url)
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      calls.push({
+        url: String(input),
+        body: init?.body ? JSON.parse(String(init.body)) : null,
+      })
       return Promise.resolve(
         ok({
           generation: "package",
           docId: minted,
           revision: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-          name: "Page.docx",
-          kind: "letter",
+          name: "CV.docx",
+          kind: "cv",
           packageHash: "ab".repeat(32),
           byteSize: 128,
           incarnation: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
@@ -97,92 +100,40 @@ describe("Paper new dialog", () => {
         })
       )
     })
-    function Harness() {
-      const [step, setStep] = useReducer(
-        (_: "kind" | "gallery", next: "kind" | "gallery") => next,
-        "kind"
-      )
-      return (
-        <PaperNewDialog
-          step={step}
-          onStepChange={setStep}
-          onCreated={onCreated}
-          onMinted={onMinted}
-          onChooseLetter={() => undefined}
-          onImport={() => undefined}
-        />
-      )
-    }
-    render(<Harness />)
+    render(<Harness onCreated={onCreated} onMinted={onMinted} />)
     fireEvent.click(screen.getByRole("button", { name: "CV" }))
     fireEvent.click(screen.getByRole("button", { name: "Start blank" }))
     await vi.waitFor(() => expect(onMinted).toHaveBeenCalledWith(minted))
     expect(onCreated).not.toHaveBeenCalled()
     expect(
-      calls.some((url) => url.includes("/api/commands/paper.canvas"))
-    ).toBe(true)
+      calls.find((call) => call.url.includes("/api/commands/paper.canvas"))
+        ?.body
+    ).toMatchObject({ input: { op: "mint", label: "cv" } })
     expect(
-      calls.some((url) => url.includes("/api/commands/paper.create"))
+      calls.some((call) => call.url.includes("/api/commands/paper.create"))
     ).toBe(false)
   })
-
-  it("keeps today's blank CV when saved documents are unavailable", async () => {
-    const calls: string[] = []
-    const onCreated = vi.fn()
-    const onMinted = vi.fn()
-    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
-      const url = String(input)
-      calls.push(url)
-      if (url.includes("/api/commands/paper.canvas")) {
-        return Promise.resolve(
-          Response.json(
-            {
-              ok: false,
-              error: {
-                code: "NOT_FOUND",
-                message: "Saved Word documents are unavailable.",
-              },
-            },
-            { status: 404 }
-          )
-        )
-      }
-      return Promise.resolve(
-        ok({
-          id: "cv-1",
-          name: "CV",
-          kind: "cv",
-          templateId: null,
-          document: {},
-          contentVersion: 1,
-          createdAt: "2026-08-25T12:00:00.000Z",
-          updatedAt: "2026-08-25T12:00:00.000Z",
-        })
-      )
-    })
-    function Harness() {
-      const [step, setStep] = useReducer(
-        (_: "kind" | "gallery", next: "kind" | "gallery") => next,
-        "kind"
-      )
-      return (
-        <PaperNewDialog
-          step={step}
-          onStepChange={setStep}
-          onCreated={onCreated}
-          onMinted={onMinted}
-          onChooseLetter={() => undefined}
-          onImport={() => undefined}
-        />
-      )
-    }
-    render(<Harness />)
-    fireEvent.click(screen.getByRole("button", { name: "CV" }))
-    fireEvent.click(screen.getByRole("button", { name: "Start blank" }))
-    await vi.waitFor(() => expect(onCreated).toHaveBeenCalled())
-    expect(onMinted).not.toHaveBeenCalled()
-    expect(
-      calls.some((url) => url.includes("/api/commands/paper.create"))
-    ).toBe(true)
-  })
 })
+
+function Harness({
+  onCreated,
+  onMinted,
+}: {
+  onCreated: () => void
+  onMinted: (docId: string) => void
+}) {
+  const [step, setStep] = useReducer(
+    (_: "kind" | "gallery", next: "kind" | "gallery") => next,
+    "kind"
+  )
+  return (
+    <PaperNewDialog
+      step={step}
+      onStepChange={setStep}
+      onCreated={onCreated}
+      onMinted={onMinted}
+      onChooseLetter={() => undefined}
+      onImport={() => undefined}
+    />
+  )
+}

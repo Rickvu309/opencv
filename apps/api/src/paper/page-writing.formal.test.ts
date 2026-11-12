@@ -129,7 +129,7 @@ describe("the page saves what the person wrote as one Word batch", () => {
       const owner = await seed()
       const minted = await registry().execute({
         name: "paper.canvas",
-        input: { op: "mint" },
+        input: { op: "mint", label: "letter" },
         actor: personActor(owner),
         idempotencyKey: randomUUID(),
       })
@@ -260,5 +260,40 @@ describe("the page saves what the person wrote as one Word batch", () => {
         "This Word document has changed. Read it again before editing."
       )
       expect(await headOf(shown.doc)).toBe(moved)
+    }))
+})
+
+describe("a blank page keeps the kind the person started", () => {
+  it("labels a blank CV cv and a blank Letter letter, and names each file", () =>
+    run(async () => {
+      const owner = await seed()
+      const mint = (input: unknown) =>
+        registry().execute({
+          name: "paper.canvas",
+          input,
+          actor: personActor(owner),
+          idempotencyKey: randomUUID(),
+        })
+      const cv = (await mint({ op: "mint", label: "cv" })).output as {
+        docId: string
+        revision: string
+      }
+      const letter = (await mint({ op: "mint", label: "letter" })).output as {
+        docId: string
+        revision: string
+      }
+      expect(await page(owner, cv.docId)).toMatchObject({
+        label: "cv",
+        name: "CV.docx",
+      })
+      expect(await page(owner, letter.docId)).toMatchObject({
+        label: "letter",
+        name: "Cover letter.docx",
+      })
+      const file = await exportWord(owner, letter.docId, letter.revision)
+      expect("bytes" in file && file.bytes.byteLength > 0).toBe(true)
+      await expect(mint({ op: "mint" })).rejects.toMatchObject({
+        code: "VALIDATION_ERROR",
+      })
     }))
 })

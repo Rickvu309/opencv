@@ -113,7 +113,9 @@ export const wordBatchSchema = z
     return total <= WORD_LIMITS.maxBatchTextBytes
   }, "Total text bytes in batch exceed limit of 64 KiB.")
 
-const wordPageLabelSchema = z.enum(["cv", "letter"])
+export const wordPageLabelSchema = z.enum(["cv", "letter"])
+
+export type WordPageLabel = z.infer<typeof wordPageLabelSchema>
 
 export const wordUndoSchema = z
   .object({

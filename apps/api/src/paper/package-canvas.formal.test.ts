@@ -188,8 +188,8 @@ describe("a blank page saves through the existing check", () => {
   it("mints one empty line and a section mark, then splits, merges, and deletes", () =>
     run(async () => {
       const id = await seed()
-      const minted = await canvas(id, { op: "mint" })
-      const again = await canvas(id, { op: "mint" })
+      const minted = await canvas(id, { op: "mint", label: "letter" })
+      const again = await canvas(id, { op: "mint", label: "letter" })
       expect(again.docId).not.toBe(minted.docId)
       const bytes = await exported(id, minted.docId, minted.revision)
       const body = paragraphs(bytes)
@@ -279,7 +279,7 @@ describe("a blank page saves through the existing check", () => {
       const removedSide = await sidecarOf(id, removed.revision)
       expect(removedSide.paragraphs[0]!.key).toBe(splitSide.paragraphs[0]!.key)
       expect(removedSide.paragraphs[1]!.key).toBe(carrierKey)
-      const only = await canvas(id, { op: "mint" })
+      const only = await canvas(id, { op: "mint", label: "letter" })
       const onlySide = await sidecarOf(id, only.revision)
       await expect(
         canvas(
@@ -377,7 +377,7 @@ describe("a blank page saves through the existing check", () => {
   it("keeps the later page when an earlier save is undone", () =>
     run(async () => {
       const id = await seed()
-      const minted = await canvas(id, { op: "mint" })
+      const minted = await canvas(id, { op: "mint", label: "letter" })
       const side = await sidecarOf(id, minted.revision)
       const split = await canvas(
         id,
@@ -414,7 +414,7 @@ describe("a blank page saves through the existing check", () => {
   it("refuses a structural save that was prepared before the page moved", () =>
     run(async () => {
       const id = await seed()
-      const minted = await canvas(id, { op: "mint" })
+      const minted = await canvas(id, { op: "mint", label: "letter" })
       const side = await sidecarOf(id, minted.revision)
       const input = await splitInput(
         id,
@@ -445,7 +445,7 @@ describe("a blank page saves through the existing check", () => {
   it("drops a second save that still names the old page", () =>
     run(async () => {
       const id = await seed()
-      const minted = await canvas(id, { op: "mint" })
+      const minted = await canvas(id, { op: "mint", label: "letter" })
       const side = await sidecarOf(id, minted.revision)
       const input = await splitInput(
         id,
@@ -561,7 +561,7 @@ describe("a blank page saves through the existing check", () => {
       await expect(
         registry().execute({
           name: "paper.canvas",
-          input: { op: "mint" },
+          input: { op: "mint", label: "letter" },
           actor: coachActor(id, chatId, turnId),
           idempotencyKey: randomUUID(),
         })

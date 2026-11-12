@@ -493,7 +493,10 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       name: "paper.canvas",
       arrange: async () => {},
       act: async () => {
-        const minted = await run("paper.canvas", { op: "mint" })
+        const minted = await run("paper.canvas", {
+          op: "mint",
+          label: "letter",
+        })
         const docId = text(minted.output, "docId")
         const revision = text(minted.output, "revision")
         if (!docId || !revision) throw new Error("missing minted page")

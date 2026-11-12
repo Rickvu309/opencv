@@ -1,12 +1,13 @@
 import { z } from "zod"
 
-import { wordBatchSchema } from "./paper-word.js"
+import { wordBatchSchema, wordPageLabelSchema } from "./paper-word.js"
 
 export const PAPER_CANVAS_PROFILE = "paper-canvas-1"
 
 const mint = z
   .object({
     op: z.literal("mint"),
+    label: wordPageLabelSchema,
   })
   .strict()
 

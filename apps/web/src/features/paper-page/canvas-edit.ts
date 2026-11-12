@@ -1,4 +1,4 @@
-import { blankCv, type PaperView, type WordPage } from "@workspace/domain"
+import type { WordPage } from "@workspace/domain"
 
 import { lookOf, type BlockLook } from "./canvas-look.ts"
 
@@ -169,31 +169,6 @@ export function pointSpan(point: TextPoint): TextSpan {
   return { anchor: point, focus: point }
 }
 
-export function opensWritingCanvas(doc: PaperView): boolean {
-  if (doc.kind !== "cv" || doc.sourceFileId !== null) return false
-  const paper = doc.paper
-  if (paper?.kind !== "cv") return false
-  const header = paper.header
-  if (
-    header.name ||
-    header.email ||
-    header.phone ||
-    header.city ||
-    header.linkedin ||
-    header.photo
-  ) {
-    return false
-  }
-  const starters = blankCv().blocks
-  return paper.blocks.every((block) => {
-    if (block.type !== "section") return false
-    const starter = starters.find(
-      (item) => item.type === "section" && item.kind === block.kind
-    )
-    return starter?.type === "section" && starter.title === block.title
-  })
-}
-
 export function insertText(
   draft: WritingDraft,
   span: TextSpan,
@@ -352,6 +327,19 @@ export function loadDraftBasis(
   }
 }
 
+const storedDraftListeners = new Set<() => void>()
+
+export function subscribeStoredDraft(listener: () => void) {
+  storedDraftListeners.add(listener)
+  return () => {
+    storedDraftListeners.delete(listener)
+  }
+}
+
+function storedDraftChanged() {
+  for (const listener of storedDraftListeners) listener()
+}
+
 export function storeDraft(
   docId: string,
   draft: WritingDraft,
@@ -366,6 +354,8 @@ export function storeDraft(
     return true
   } catch {
     return false
+  } finally {
+    storedDraftChanged()
   }
 }
 
@@ -381,6 +371,8 @@ export function forgetDraft(
     storage.removeItem(storageKey(docId))
   } catch {
     return
+  } finally {
+    storedDraftChanged()
   }
 }
 

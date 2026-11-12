@@ -139,7 +139,11 @@ describe("canvas admits only a page the server minted", () => {
       const id = await seed()
       const doc = await imported(id)
       await expect(
-        canvas(id, { op: "mint", canvasProfile: PAPER_CANVAS_PROFILE })
+        canvas(id, {
+          op: "mint",
+          label: "letter",
+          canvasProfile: PAPER_CANVAS_PROFILE,
+        })
       ).rejects.toThrow("Unrecognized key")
       await expect(
         stageWordPackage(
@@ -165,7 +169,7 @@ describe("canvas admits only a page the server minted", () => {
   it("refuses minted bytes that no longer match the stored hash", () =>
     run(async () => {
       const id = await seed()
-      const minted = await canvas(id, { op: "mint" })
+      const minted = await canvas(id, { op: "mint", label: "letter" })
       const output = minted.output as { docId: string; revision: string }
       expect((await headOf(output.docId)).canvasProfile).toBe(
         PAPER_CANVAS_PROFILE

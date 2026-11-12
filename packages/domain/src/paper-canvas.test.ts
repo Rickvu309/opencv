@@ -54,9 +54,21 @@ describe("blank page commits", () => {
         .type,
       "object"
     )
-    assert.deepEqual(paperCanvasCommitSchema.parse({ op: "mint" }), {
-      op: "mint",
-    })
+    assert.deepEqual(
+      paperCanvasCommitSchema.parse({ op: "mint", label: "letter" }),
+      { op: "mint", label: "letter" }
+    )
+    assert.deepEqual(
+      paperCanvasCommitSchema.parse({ op: "mint", label: "cv" }),
+      {
+        op: "mint",
+        label: "cv",
+      }
+    )
+    assert.equal(
+      paperCanvasCommitSchema.safeParse({ op: "mint" }).success,
+      false
+    )
     const batch = {
       doc: docId,
       basedOn,
