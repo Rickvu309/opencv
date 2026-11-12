@@ -318,6 +318,26 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
+      name: "paper.restoreDeleted",
+      arrange: async () => {
+        const minted = await run("paper.canvas", { op: "mint", label: "cv" })
+        const docId = text(minted.output, "docId")
+        if (!docId) throw new Error("missing minted page")
+        ctx.docId = docId
+        await run("paper.delete", { docId })
+      },
+      act: () => run("paper.restoreDeleted", { docId: ctx.docId }),
+      assert: async (result) => {
+        expect(idOf(result.output)).toBe(ctx.docId)
+        const listed = (await registry.read(
+          "paper.list",
+          {},
+          personActor(userId)
+        )) as { id: string }[]
+        expect(listed.some((paper) => paper.id === ctx.docId)).toBe(true)
+      },
+    },
+    {
       name: "paper.setTemplate",
       arrange: async () => {
         const paper = await run("paper.create", {

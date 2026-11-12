@@ -81,6 +81,20 @@ export const paperViewSchema = z
 
 export type PaperView = z.output<typeof paperViewSchema>
 
+export const PAPER_COACH_WORD_PAGE_NOTE =
+  "This is a Word page. It has no document body in this result. Read its text with paper_outline before describing, reviewing or changing it."
+
+export const paperCoachWordPageSchema = paperViewSchema
+  .omit({ paper: true })
+  .extend({
+    format: z.literal("word"),
+    content: z.string().nullable(),
+    note: z.literal(PAPER_COACH_WORD_PAGE_NOTE),
+  })
+  .strict()
+
+export type PaperCoachWordPage = z.output<typeof paperCoachWordPageSchema>
+
 const paperFileSchema = z
   .object({
     id: fileIdSchema,
@@ -147,6 +161,10 @@ export const paperQueries = queryContract({
   "paper.get": queryEntry({
     input: z.object({ docId: paperIdSchema }).strict(),
     output: paperViewSchema,
+  }),
+  "paper.isDeleted": queryEntry({
+    input: z.object({ docId: paperIdSchema }).strict(),
+    output: z.object({ docId: paperIdSchema, deleted: z.boolean() }).strict(),
   }),
   "paper.pageCount": queryEntry({
     input: z.object({ docId: paperIdSchema }).strict(),
@@ -380,11 +398,33 @@ export const paperContract = commandContract({
   "paper.delete": commandEntry({
     description: "Delete a document.",
     input: paperDeleteInputSchema,
-    output: z.object({ id: paperIdSchema }).strict(),
+    output: z
+      .object({
+        id: paperIdSchema,
+        format: z.literal("word").optional(),
+        name: z.string().optional(),
+      })
+      .strict(),
     coach: "confirm",
     destructive: true,
     step: () => "Delete this document",
-    invalidates: docRemoved,
+    invalidates: (input) => [
+      ...docRemoved(input),
+      { query: "paper.isDeleted", input: { docId: input.docId } },
+    ],
+  }),
+  "paper.restoreDeleted": commandEntry({
+    description:
+      "Bring back a deleted Word page with its content and Job link.",
+    input: paperDeleteInputSchema,
+    output: paperViewSchema,
+    coach: "never",
+    destructive: false,
+    step: () => "Bring back the deleted page",
+    invalidates: (input) => [
+      ...docRemoved(input),
+      { query: "paper.isDeleted", input: { docId: input.docId } },
+    ],
   }),
   "paper.setTemplate": commandEntry({
     description: "Change the document template.",

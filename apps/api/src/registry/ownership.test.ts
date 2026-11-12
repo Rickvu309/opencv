@@ -34,6 +34,7 @@ const writersOfTable: Record<string, string[]> = {
   paperPackageVersions: ["paper"],
   paperPackageHeads: ["paper"],
   paperPackageCandidates: ["paper"],
+  paperPackageTrash: ["paper"],
   jobs: ["job"],
   jobChecklist: ["job"],
   connections: ["inbox"],

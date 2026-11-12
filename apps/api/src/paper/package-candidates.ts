@@ -7,7 +7,7 @@ import {
   paperCanvasCommitSchema,
   paperPackageProjectionSchema,
 } from "@workspace/domain"
-import { and, count, eq, inArray, sql } from "drizzle-orm"
+import { and, count, eq, inArray, not, sql } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import { z } from "zod"
 
@@ -19,7 +19,10 @@ import {
   paperPackageVersions,
   user,
 } from "../db/schema.js"
-import { pruneUnreachableCandidates } from "./package-candidate-prune.js"
+import {
+  candidatePageInTrash,
+  pruneUnreachableCandidates,
+} from "./package-candidate-prune.js"
 import { PaperPackage } from "./package-engine.js"
 import { PACKAGE_PROFILE } from "./package-profile.js"
 import {
@@ -126,7 +129,9 @@ async function requireCandidateCapacity(
       restore,
       eq(restore.revision, paperPackageCandidates.restoreRevision)
     )
-    .where(eq(paperPackageCandidates.userId, owner))
+    .where(
+      and(eq(paperPackageCandidates.userId, owner), not(candidatePageInTrash()))
+    )
   if (
     !usage ||
     usage.count >= retentionLimits.count ||

@@ -103,6 +103,11 @@ describe("what a delegate can reach", () => {
         "activity.undo",
         "paper.canvas",
         "paper.start",
+        "paper.rename",
+        "paper.duplicate",
+        "paper.delete",
+        "paper.restoreDeleted",
+        "paper.isDeleted",
       ])
     )
     for (const entry of closed)

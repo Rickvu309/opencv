@@ -119,6 +119,7 @@ export function PaperLibrary({
   const needle = query.trim().toLowerCase()
   const wordLibrary = useWordLibrary()
   const entries = libraryEntries({ docs, files, words: wordLibrary.items })
+  const deletingWordPage = mode?.type === "delete" && mode.doc.format === "word"
   const sections = librarySections(entries, needle)
   const searching = needle !== ""
   const noResults = LIBRARY_SECTIONS.every(
@@ -272,9 +273,11 @@ export function PaperLibrary({
     if (!mode || mode.type !== "delete") return
     const name = mode.doc.name
     try {
-      await run("paper.delete", { docId: mode.doc.id })
-      toast(`Deleted ${name}`)
+      const deleted = await run("paper.delete", { docId: mode.doc.id })
       closeDialog()
+      if (deleted.format === "word")
+        await rememberUndo(deleted.id, `Deleted ${name}`)
+      else toast(`Deleted ${name}`)
     } catch (err) {
       toast(messageOf(err, "Could not delete. Try again."))
     }
@@ -547,7 +550,11 @@ export function PaperLibrary({
                   ? "Delete this cover letter?"
                   : "Delete this CV?"}
             </DialogTitle>
-            <DialogDescription>This can&apos;t be undone.</DialogDescription>
+            <DialogDescription>
+              {deletingWordPage
+                ? "You can undo this from the message that follows."
+                : "This can't be undone."}
+            </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2">
             <Button

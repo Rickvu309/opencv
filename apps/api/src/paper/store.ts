@@ -31,6 +31,14 @@ import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
 import { listMintedPackagePapers } from "./package-list.js"
 import {
+  deleteWordPage,
+  publishWordPageCopy,
+  renameWordPage,
+  restoreWordPage,
+  stageWordPageCopy,
+  type WordPageCopy,
+} from "./package-card-actions.js"
+import {
   IMPORT_FAILED_MESSAGE,
   IMPORT_GENERIC_MESSAGE,
   checksForPaper,
@@ -66,15 +74,21 @@ function iso(value: Date) {
 
 export { toPaper, tryReadStoredPaper }
 
-export async function ownedPaper(userId: UserId, docId: PaperId) {
+function documentNotFound(): never {
+  throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
+}
+
+async function ownedPaperOrNull(userId: UserId, docId: PaperId) {
   const rows = await getDb()
     .select()
     .from(paperDocs)
     .where(and(eq(paperDocs.id, docId), eq(paperDocs.userId, userId)))
     .limit(1)
-  const row = rows[0]
-  if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
-  return row
+  return rows[0] ?? null
+}
+
+export async function ownedPaper(userId: UserId, docId: PaperId) {
+  return (await ownedPaperOrNull(userId, docId)) ?? documentNotFound()
 }
 
 function v3Of(kind: PaperStoredKind, value: unknown): PaperDocument | null {
@@ -172,7 +186,11 @@ export async function createPaper(
 }
 
 export async function renamePaper(actor: Actor, docId: PaperId, name: string) {
-  const current = await ownedPaper(actor.userId, docId)
+  const current = await ownedPaperOrNull(actor.userId, docId)
+  if (!current)
+    return (
+      (await renameWordPage(actor.userId, docId, name)) ?? documentNotFound()
+    )
   const updatedAt = new Date()
   await getDb()
     .update(paperDocs)
@@ -199,7 +217,28 @@ export async function setPaperFavorite(
   return { docId, isFavorite }
 }
 
-export async function duplicatePaper(actor: Actor, docId: PaperId) {
+export type DuplicatePlan =
+  { kind: "block" } | { kind: "word"; copy: WordPageCopy } | { kind: "missing" }
+
+export async function planDuplicate(
+  actor: Actor,
+  docId: PaperId
+): Promise<DuplicatePlan> {
+  if (await ownedPaperOrNull(actor.userId, docId)) return { kind: "block" }
+  const copy = await stageWordPageCopy(actor.userId, docId)
+  return copy ? { kind: "word", copy } : { kind: "missing" }
+}
+
+export async function duplicatePaper(
+  actor: Actor,
+  docId: PaperId,
+  plan: DuplicatePlan
+) {
+  if (plan.kind === "missing") return documentNotFound()
+  if (plan.kind === "word")
+    return (
+      (await publishWordPageCopy(actor.userId, plan.copy)) ?? documentNotFound()
+    )
   const current = await ownedPaper(actor.userId, docId)
   return createPaper(actor, {
     kind: current.kind,
@@ -210,9 +249,14 @@ export async function duplicatePaper(actor: Actor, docId: PaperId) {
 }
 
 export async function deletePaper(actor: Actor, docId: PaperId) {
-  await ownedPaper(actor.userId, docId)
+  if (!(await ownedPaperOrNull(actor.userId, docId)))
+    return (await deleteWordPage(actor.userId, docId)) ?? documentNotFound()
   await getDb().delete(paperDocs).where(eq(paperDocs.id, docId))
   return { id: docId }
+}
+
+export async function restoreDeletedPaper(actor: Actor, docId: PaperId) {
+  return (await restoreWordPage(actor.userId, docId)) ?? documentNotFound()
 }
 
 export async function setPaperTemplate(
