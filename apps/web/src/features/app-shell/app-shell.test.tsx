@@ -449,7 +449,8 @@ describe("app shell layout", () => {
     await waitFor(() => {
       expect(screen.queryByRole("button", { name: "Close" })).toBeNull()
     })
-    expect(screen.getByRole("button", { name: "Coach" })).toHaveFocus()
+    expect(document.activeElement).toHaveAccessibleName("New chat")
+    expect(document.activeElement).not.toHaveAttribute("data-chat-id")
   })
 
   it("opens a dock chip without creating a chat", async () => {
@@ -530,8 +531,36 @@ describe("app shell layout", () => {
     ).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Minimize" }))
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Coach" })).toHaveFocus()
+      expect(
+        screen.getByRole("button", { name: "CV vs internship first" })
+      ).toHaveFocus()
     })
+  })
+
+  it("keeps the dock and a recent chat on the Coach page", async () => {
+    setMockChats([
+      {
+        id: "chat-1",
+        title: "Checkout notes",
+        focusKind: null,
+        focusId: null,
+        createdAt: "2026-02-01T00:00:00.000Z",
+        updatedAt: "2026-02-02T00:00:00.000Z",
+      },
+    ])
+    stubDesktopViewport(true)
+    renderApp(SURFACE_PATHS.coach)
+    await screen.findByRole("navigation", { name: "Main" })
+    const dock = document.querySelector<HTMLElement>('[data-slot="app-dock"]')
+    expect(dock).not.toBeNull()
+    expect(
+      within(dock as HTMLElement).getByRole("button", { name: "Coach" })
+    ).toBeInTheDocument()
+    expect(
+      within(dock as HTMLElement).getByRole("button", {
+        name: "Checkout notes",
+      })
+    ).toBeInTheDocument()
   })
 
   it("hides the sidebar at 390 until Menu, and a link closes the drawer", async () => {

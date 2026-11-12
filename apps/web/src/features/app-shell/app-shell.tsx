@@ -7,6 +7,7 @@ import { Outlet, useNavigate } from "@tanstack/react-router"
 import { useQueryClient } from "@tanstack/react-query"
 import { History, Menu, MessageCircle } from "lucide-react"
 
+import { FocusSafeRegion } from "@/components/focus-safe-region.tsx"
 import { AppSidebar } from "@/features/app-shell/app-sidebar.tsx"
 import { SidebarFrame } from "@/features/app-shell/sidebar-frame.tsx"
 import { useSidebarLayout } from "@/features/app-shell/use-sidebar-layout.ts"
@@ -102,12 +103,14 @@ export function AppShell({ onSearch }: AppShellProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
+  const sheet = !isDesktop
   const chats = useShellChats()
   const layout = useSidebarLayout(isDesktop)
   const [{ panel, drawerOpen }, dispatch] = useReducer(
     shellReducer,
     SHELL_START
   )
+  const panelOpen = panel.open
   const openPanelRef = useRef<
     (next: { title: string; chatId: string | null }) => void
   >(() => {})
@@ -120,10 +123,41 @@ export function AppShell({ onSearch }: AppShellProps) {
   }, [])
   const menuRef = useRef<HTMLButtonElement>(null)
   const dockRef = useRef<HTMLDivElement>(null)
+  const openerRef = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    if (!panelOpen) return
+    const frame = document.getElementById(COACH_PANEL_ID)
+    frame?.focus({ preventScroll: true })
+    const animation = requestAnimationFrame(() => {
+      if (!frame?.contains(document.activeElement))
+        frame?.focus({ preventScroll: true })
+    })
+    return () => cancelAnimationFrame(animation)
+  }, [panelOpen])
+
+  useEffect(() => {
+    const viewport = window.visualViewport
+    const frame = document.getElementById(COACH_PANEL_ID)
+    if (!sheet || !panelOpen || !viewport || !frame) return
+    function resize() {
+      frame?.style.setProperty("height", `${viewport?.height}px`)
+      frame?.style.setProperty("top", `${viewport?.offsetTop}px`)
+    }
+    resize()
+    viewport.addEventListener("resize", resize)
+    viewport.addEventListener("scroll", resize)
+    return () => {
+      viewport.removeEventListener("resize", resize)
+      viewport.removeEventListener("scroll", resize)
+      frame.style.removeProperty("height")
+      frame.style.removeProperty("top")
+    }
+  }, [sheet, panelOpen])
 
   useShortcut({
     key: "Escape",
-    enabled: panel.open,
+    enabled: panelOpen,
     inFields: true,
     onPress: closePanel,
   })
@@ -134,10 +168,23 @@ export function AppShell({ onSearch }: AppShellProps) {
 
   function closePanel() {
     dispatch({ type: "panel_closed" })
-    focusCoachButton()
+    if (openerRef.current?.isConnected)
+      openerRef.current.focus({ preventScroll: true })
+    else focusCoachButton()
+  }
+
+  function rememberOpener() {
+    if (
+      !panelOpen &&
+      document.activeElement instanceof HTMLElement &&
+      document.activeElement !== document.body
+    ) {
+      openerRef.current = document.activeElement
+    }
   }
 
   function openPanel(next: { title: string; chatId: string | null }) {
+    rememberOpener()
     dispatch({ type: "panel_opened", title: next.title, chatId: next.chatId })
   }
 
@@ -150,6 +197,7 @@ export function AppShell({ onSearch }: AppShellProps) {
       closePanel()
       return
     }
+    rememberOpener()
     if (panel.mounted) {
       dispatch({ type: "panel_restored" })
       return
@@ -158,13 +206,13 @@ export function AppShell({ onSearch }: AppShellProps) {
   }
 
   async function onNewChat() {
+    rememberOpener()
     const chat = await ignoreRejection(
       runContractCommand(queryClient, "chat.create", {}),
       "failedCreateLeavesPanelClosed"
     )
     if (!chat) return
-    dispatch({
-      type: "panel_opened",
+    openPanel({
       title: chatDisplayTitle(chat.title),
       chatId: chat.id,
     })
@@ -175,17 +223,49 @@ export function AppShell({ onSearch }: AppShellProps) {
     menuRef.current?.focus()
   }
 
+  const floating = isDesktop && panel.mode === "side"
   const panelFrame = (
-    <div
+    <FocusSafeRegion
       id={COACH_PANEL_ID}
-      hidden={!panel.open}
+      data-slot="shell-coach"
+      role={sheet && panelOpen ? "dialog" : undefined}
+      aria-modal={sheet && panelOpen ? true : undefined}
+      aria-label={sheet ? "Coach" : undefined}
+      hidden={!panelOpen}
+      concealed={!panelOpen}
+      focusFallback={() =>
+        openerRef.current ??
+        dockRef.current?.querySelector<HTMLElement>("[data-dock-coach]") ??
+        null
+      }
+      tabIndex={-1}
       className={cn(
-        "z-10 min-h-0 bg-background",
-        panel.open && "flex flex-col",
-        panel.mode === "full" && "absolute inset-0",
-        panel.mode === "side" &&
-          "inset-e-2 inset-be-2 absolute h-[min(600px,calc(100%_-_16px))] w-[400px] max-w-[calc(100%_-_16px)]"
+        "z-10 min-h-0 bg-transparent outline-none",
+        panelOpen && "flex flex-col",
+        sheet && "fixed inset-x-0 top-0 z-40 h-dvh w-full",
+        floating &&
+          "fixed right-5 bottom-12 z-30 h-[min(600px,max(320px,calc(100dvh-56px)))] w-[400px]",
+        isDesktop && panel.mode === "full" && "absolute inset-0 z-20"
       )}
+      onKeyDown={(event) => {
+        if (event.key !== "Tab" || (!sheet && panel.mode !== "full")) return
+        const controls = event.currentTarget.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), [tabindex="0"]'
+        )
+        const first = controls[0]
+        const last = controls[controls.length - 1]
+        if (
+          event.shiftKey &&
+          (document.activeElement === first ||
+            document.activeElement === event.currentTarget)
+        ) {
+          event.preventDefault()
+          last?.focus()
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault()
+          first?.focus()
+        }
+      }}
     >
       {panel.mounted ? (
         <CoachPanel
@@ -205,7 +285,7 @@ export function AppShell({ onSearch }: AppShellProps) {
           )}
         </CoachPanel>
       ) : null}
-    </div>
+    </FocusSafeRegion>
   )
 
   const collapsedRail = isDesktop && layout.collapsed
@@ -237,6 +317,11 @@ export function AppShell({ onSearch }: AppShellProps) {
   return (
     <div
       data-slot="app-shell"
+      onClickCapture={(event) => {
+        if (panelOpen || !(event.target instanceof Element)) return
+        const opener = event.target.closest<HTMLElement>("button, a")
+        if (opener) openerRef.current = opener
+      }}
       className="flex h-svh min-w-0 flex-col overflow-hidden bg-background text-foreground"
     >
       <a
@@ -274,14 +359,20 @@ export function AppShell({ onSearch }: AppShellProps) {
         >
           <div className="relative flex min-h-0 min-w-0 flex-1 bg-background md:rounded-[8px] md:border-[0.5px] md:border-border">
             <SidebarExpandContext value={sidebarExpand}>
-              <main
-                id="app-main"
-                tabIndex={-1}
-                hidden={panel.open && panel.mode === "full"}
-                className="min-h-0 min-w-0 flex-1 overflow-hidden rounded-[inherit] outline-none"
+              <FocusSafeRegion
+                concealed={panelOpen && (sheet || panel.mode === "full")}
+                focusFallback={() => document.getElementById(COACH_PANEL_ID)}
+                hidden={panelOpen && panel.mode === "full"}
+                className="flex min-h-0 min-w-0 flex-1 overflow-hidden rounded-[inherit]"
               >
-                <Outlet />
-              </main>
+                <main
+                  id="app-main"
+                  tabIndex={-1}
+                  className="h-full min-h-0 min-w-0 flex-1 overflow-hidden rounded-[inherit] outline-none"
+                >
+                  <Outlet />
+                </main>
+              </FocusSafeRegion>
             </SidebarExpandContext>
             {panelFrame}
           </div>
@@ -292,7 +383,7 @@ export function AppShell({ onSearch }: AppShellProps) {
               title: chatDisplayTitle(chat.title),
             }))}
             onOpenChat={(chat) => openPanel(chat)}
-            coachOpen={panel.open}
+            coachOpen={panelOpen}
             onCoach={toggleCoach}
             onHistory={() => {
               closePanel()

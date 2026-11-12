@@ -36,7 +36,19 @@
 }
 
 [data-pen-surface="coach"][data-slot="coach-panel"]
-  [data-slot="coach-composer"] {
+  [data-slot="coach-panel-body"]
+  > div:has([data-slot="chat"]) {
+  padding: 0;
+}
+
+[data-pen-surface="coach"][data-slot="coach-panel"]
+  [data-slot="message-scroller-content"] {
+  padding: 8px 18px;
+  gap: 14px;
+}
+
+[data-pen-surface="coach"][data-slot="coach-panel"]
+  [data-slot="coach-composer"][data-pen-surface="coach"] {
   background: #ffffff;
   border-color: #e4e4e7;
   border-radius: 14px;
