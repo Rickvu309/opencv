@@ -1,6 +1,7 @@
 import type { WordPage } from "@workspace/domain"
 
 import { lookOf, type BlockLook } from "./canvas-look.ts"
+import type { LineRefusal } from "./canvas-save-lines.ts"
 
 export type WritingBlock = {
   id: string
@@ -296,6 +297,28 @@ export function loadSavedDraft(
   }
 }
 
+export function loadUnsavedLines(
+  docId: string,
+  storage: Pick<Storage, "getItem">
+): LineRefusal[] {
+  try {
+    const raw = storage.getItem(storageKey(docId))
+    if (!raw) return []
+    const value = JSON.parse(raw) as { unsaved?: unknown }
+    if (!value || typeof value !== "object" || !Array.isArray(value.unsaved))
+      return []
+    return value.unsaved.filter(
+      (line): line is LineRefusal =>
+        !!line &&
+        typeof line.id === "string" &&
+        typeof line.text === "string" &&
+        typeof line.note === "string"
+    )
+  } catch {
+    return []
+  }
+}
+
 export function loadDraftBasis(
   docId: string,
   storage: Pick<Storage, "getItem">
@@ -334,14 +357,14 @@ export function storeDraft(
   draft: WritingDraft,
   storage: Pick<Storage, "setItem">,
   basis?: DraftBasis | null,
-  saved?: WritingDraft | null
+  kept: { saved?: WritingDraft | null; unsaved?: readonly LineRefusal[] } = {}
 ): boolean {
   try {
+    const saved = kept.saved ? { saved: kept.saved } : {}
+    const unsaved = kept.unsaved?.length ? { unsaved: kept.unsaved } : {}
     storage.setItem(
       storageKey(docId),
-      JSON.stringify(
-        basis ? { draft, basis, ...(saved ? { saved } : {}) } : draft
-      )
+      JSON.stringify(basis ? { draft, basis, ...saved, ...unsaved } : draft)
     )
     return true
   } catch {

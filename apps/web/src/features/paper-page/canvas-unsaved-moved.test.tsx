@@ -140,6 +140,11 @@ describe.each(MOVED_ROWS)(
       expect(server.textOf(L.name)).toBe("Linh Nguyen, MBA")
       expect(server.textOf(L.job)).toBe(`${START[L.job]}${SENTENCE}`)
       expect(status()).not.toMatch(/\bSaved\b/)
+      await reload()
+      expect(shown(L.name)).toBe("Linh Nguyen Thi")
+      expect(line(L.name)).toHaveAttribute("data-unsaved")
+      expect(server.textOf(L.name)).toBe("Linh Nguyen, MBA")
+      expect(status()).not.toMatch(/\bSaved\b/)
     })
 
     it("still marks a line changed in both places when the person reloads before choosing", async () => {

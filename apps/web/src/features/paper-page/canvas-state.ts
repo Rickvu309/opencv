@@ -11,6 +11,7 @@ import {
   loadDraft,
   loadDraftBasis,
   loadSavedDraft,
+  loadUnsavedLines,
   replaceVisible,
   splitParagraph,
   storeDraft,
@@ -31,7 +32,7 @@ import { pastePlain, plainCharacters } from "./canvas-paste.ts"
 import { reachSpan, type Reach } from "./canvas-reach.ts"
 import { keepMine } from "./canvas-merge.ts"
 import { pageWords } from "./canvas-save.ts"
-import type { LineRefusal } from "./canvas-save-lines.ts"
+import { stillRefused, type LineRefusal } from "./canvas-save-lines.ts"
 
 const HISTORY_DEPTH = 50
 
@@ -455,7 +456,11 @@ export function openSheet(
       ? present
       : (savedAtBasis(loadSavedDraft(docId, localStorage)) ??
         savedAtBasis(seed))
-  storeDraft(docId, present, localStorage, basis, saved)
+  const unsaved = stillRefused(
+    loadUnsavedLines(docId, localStorage),
+    present.blocks
+  )
+  storeDraft(docId, present, localStorage, basis, { saved, unsaved })
   return {
     past: [],
     present,
@@ -467,7 +472,7 @@ export function openSheet(
     typed: false,
     saved,
     redraw: 0,
-    unsaved: [],
+    unsaved,
     pageRefusal: null,
   }
 }

@@ -224,13 +224,10 @@ function WritingSheet({
   useEffect(() => holdWritingCoachFocus(docId), [docId])
 
   useEffect(() => {
-    const kept = storeDraft(
-      docId,
-      state.present,
-      localStorage,
-      state.basis,
-      state.saved
-    )
+    const kept = storeDraft(docId, state.present, localStorage, state.basis, {
+      saved: state.saved,
+      unsaved: state.unsaved,
+    })
     nextId.current = state.present.nextId
     const words = pageWords(state.present.blocks)
     if (!kept) {
