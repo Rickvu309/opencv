@@ -332,6 +332,10 @@ export class PaperPackage {
     return structuredClone(this.#sidecar)
   }
 
+  readOnly() {
+    return typeof this.#policy === "string" ? this.#policy : null
+  }
+
   export() {
     return Buffer.from(this.#archive.bytes)
   }

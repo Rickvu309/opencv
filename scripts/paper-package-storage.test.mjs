@@ -186,6 +186,7 @@ test("immutable Word storage rejects unfinished heads, projection shadows and fl
   for (const mutation of [
     planner.replace("insideTransaction()", "false"),
     planner.replace("await wordPackageBasis(", "await latestBasis("),
+    planner.replace("await draftBatch(", "await looseDraft("),
     source.replace(
       "IN (${published})",
       "IN (SELECT revision FROM paper_package_versions)"
@@ -194,6 +195,28 @@ test("immutable Word storage rejects unfinished heads, projection shadows and fl
     `${source}\ndb.delete(paperPackageVersions)`,
   ])
     assert.ok(detect(mutation).length > 0)
+  const document = readFileSync(
+    new URL("../apps/api/src/paper/word/document.ts", import.meta.url),
+    "utf8"
+  )
+  assert.deepEqual(detect(document), [])
+  for (const mutation of [
+    document.replace(
+      "packageDigest(opened.read()) !== version.projectionHash",
+      "false"
+    ),
+    document.replace(
+      "const { version, artifact } = await wordPackageBasis(",
+      "const { version, artifact } = await latestBasis("
+    ),
+    document.replace(
+      "  if (drafted.refused) return drafted\n  const revision = randomUUID()",
+      "  if (drafted.refused) return drafted\n  getDb().insert(paperPackageVersions)\n  const revision = randomUUID()"
+    ),
+  ]) {
+    assert.notEqual(mutation, document)
+    assert.ok(detect(mutation).length > 0)
+  }
 })
 
 test("Word preparation detects writes inside the complete planner", () => {
@@ -202,8 +225,8 @@ test("Word preparation detects writes inside the complete planner", () => {
     "utf8"
   )
   const mutation = planner.replace(
-    "const revision = randomUUID()",
-    "getDb().insert(paperPackageVersions); const revision = randomUUID()"
+    "const drafted = await draftBatch(",
+    "getDb().insert(paperPackageVersions)\n  const drafted = await draftBatch("
   )
   assert.notEqual(mutation, planner)
   assert.deepEqual(detect(planner), [])
@@ -219,8 +242,8 @@ test("Word preparation detects transactions inside the complete planner", () => 
     "utf8"
   )
   const mutation = planner.replace(
-    "const revision = randomUUID()",
-    "transaction(async () => {}); const revision = randomUUID()"
+    "const drafted = await draftBatch(",
+    "transaction(async () => {})\n  const drafted = await draftBatch("
   )
   assert.notEqual(mutation, planner)
   assert.deepEqual(detect(planner), [])
