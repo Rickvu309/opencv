@@ -13,7 +13,12 @@ import {
   coachToolLabel,
   humanToolText,
 } from "./coach-tool-labels.ts"
-import { isCompactCoachTool, toolCardProps } from "./coach-tool-card.ts"
+import {
+  isCompactCoachTool,
+  refusedApproval,
+  refusedApprovalLine,
+  toolCardProps,
+} from "./coach-tool-card.ts"
 import { receiptHeadline } from "./coach-receipt.ts"
 import { useQueryClient } from "@tanstack/react-query"
 import { parseChatId, parsePendingActionId } from "@workspace/domain"
@@ -126,6 +131,14 @@ export function CoachToolExtras({
     return <p className="text-xs text-muted-foreground">Undone</p>
   }
 
+  const refused = refusedApproval(tool)
+  if (refused)
+    return (
+      <p role="status" className="text-[13px] text-muted-foreground">
+        {refusedApprovalLine(refused)}
+      </p>
+    )
+
   return (
     <div className="min-w-0 space-y-2 text-xs text-muted-foreground">
       {part.pendingActionId ? (
@@ -166,7 +179,7 @@ export function CoachToolExtras({
             {edit.docId ? (
               <a
                 href={`/paper/${edit.docId}`}
-                className={`inline-flex h-[26px] shrink-0 items-center rounded-[7px] glow px-2.5 text-xs font-medium no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:opacity-80 ${RECEIPT_HIT}`}
+                className={`inline-flex h-11 shrink-0 items-center rounded-[7px] glow px-2.5 text-xs font-medium no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:opacity-80 md:h-[26px] ${RECEIPT_HIT}`}
               >
                 Open
               </a>
@@ -177,7 +190,7 @@ export function CoachToolExtras({
           <Button
             className={
               edit
-                ? `h-[26px] rounded-[7px] px-2.5 text-xs ${RECEIPT_HIT}`
+                ? `h-11 rounded-[7px] px-2.5 text-xs md:h-[26px] ${RECEIPT_HIT}`
                 : `h-11 md:h-6 ${RECEIPT_HIT}`
             }
             type="button"
@@ -308,19 +321,20 @@ function CoachApproval({
       </ConfirmationRequest>
       <ConfirmationAccepted>Approved</ConfirmationAccepted>
       <ConfirmationRejected>
-        {effectiveStatus === "expired"
-          ? "Expired · ask Coach again"
-          : "Denied · nothing changed"}
+        {refusedApprovalLine(
+          effectiveStatus === "expired" ? "expired" : "denied"
+        )}
       </ConfirmationRejected>
       <ConfirmationActions className="justify-start self-start">
         <ConfirmationAction
+          variant="primary"
           disabled={working}
           onClick={() => void decide(true)}
         >
           Approve
         </ConfirmationAction>
         <ConfirmationAction
-          variant="ghost"
+          variant="default"
           disabled={working}
           onClick={() => void decide(false)}
         >

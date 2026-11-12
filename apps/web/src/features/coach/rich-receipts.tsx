@@ -49,7 +49,7 @@ export function DiffBlock({ detail }: { detail: UpdateContentDetail }) {
                     {line.text}
                   </ins>
                 ) : line.kind === "del" ? (
-                  <del className="bg-destructive/10 text-destructive line-through">
+                  <del className="bg-destructive/10 text-[color:color-mix(in_oklab,var(--destructive)_80%,var(--foreground))] line-through">
                     {line.text}
                   </del>
                 ) : (

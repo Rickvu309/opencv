@@ -144,7 +144,7 @@ export const ConfirmationAction = ({
 }: ConfirmationActionProps) => (
   <Button
     className={cn(
-      "relative h-11 px-3 text-sm after:absolute after:inset-[min(0px,calc((100%-44px)/2))] after:content-[''] md:h-8",
+      "relative h-11 rounded-md px-3 text-[13px] after:absolute after:inset-[min(0px,calc((100%-44px)/2))] after:content-[''] md:h-8",
       className
     )}
     type="button"

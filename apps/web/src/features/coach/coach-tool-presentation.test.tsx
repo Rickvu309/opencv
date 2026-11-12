@@ -118,10 +118,11 @@ describe("Coach approval presentation", () => {
     const [approve, deny] = screen.getAllByRole("button")
     expect(approve).toHaveTextContent("Approve")
     expect(deny).toHaveTextContent("Deny")
-    expect(approve).toHaveAttribute("data-variant", "default")
-    expect(approve).toHaveClass("h-11", "md:h-8")
-    expect(deny).toHaveAttribute("data-variant", "ghost")
+    expect(approve).toHaveAttribute("data-variant", "primary")
+    expect(approve).toHaveClass("h-11", "md:h-8", "bg-primary", "font-semibold")
+    expect(deny).toHaveAttribute("data-variant", "default")
     expect(deny).toHaveClass("h-11", "md:h-8")
+    expect(deny.className).toContain("ring-border")
     expect(insertion.compareDocumentPosition(approve)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     )
@@ -196,6 +197,31 @@ describe("Coach approval presentation", () => {
       )
     }
   )
+
+  it.each([
+    ["denied", "Denied · nothing changed"],
+    ["expired", "Expired · ask Coach again"],
+  ] as const)(
+    "keeps one quiet line when the task snapshot marks a proposal %s without its pending id",
+    (approval, line) => {
+      const { container } = render(
+        <CoachToolLine
+          tool={toolOf({
+            ...pending,
+            pendingActionId: undefined,
+            ok: false,
+            summary: "Edit the document",
+            approval,
+          })}
+          canUndo
+        />
+      )
+      expect(container.textContent).toBe(line)
+      expect(screen.queryByText("Failed")).not.toBeInTheDocument()
+      expect(screen.queryByText("Nothing changed.")).not.toBeInTheDocument()
+      expect(screen.queryByRole("button")).not.toBeInTheDocument()
+    }
+  )
 })
 
 describe("Coach trace and receipts", () => {
@@ -246,10 +272,13 @@ describe("Coach trace and receipts", () => {
     expect(
       container.querySelector("ins")?.parentElement?.parentElement
     ).toHaveClass("font-sans")
-    expect(container.querySelector("ins")).toHaveClass("bg-chart-2/10")
+    expect(container.querySelector("ins")).toHaveClass(
+      "bg-chart-2/10",
+      "text-[color:color-mix(in_oklab,var(--chart-2)_65%,var(--foreground))]"
+    )
     expect(container.querySelector("del")).toHaveClass(
-      "text-destructive",
-      "line-through"
+      "line-through",
+      "text-[color:color-mix(in_oklab,var(--destructive)_80%,var(--foreground))]"
     )
     expect(container.querySelector("pre, code")).toBeNull()
     expect(container.querySelectorAll("ins")).toHaveLength(1)

@@ -2,9 +2,24 @@ import { coachReadLabel, humanToolText } from "./coach-tool-labels.ts"
 
 import type { CoachToolPart } from "./coach-parts.ts"
 
+export function refusedApproval(tool: CoachToolPart) {
+  const { approval } = tool.part
+  return !tool.part.pendingActionId &&
+    (approval === "denied" || approval === "expired")
+    ? approval
+    : null
+}
+
+export function refusedApprovalLine(status: "denied" | "expired") {
+  return status === "expired"
+    ? "Expired · ask Coach again"
+    : "Denied · nothing changed"
+}
+
 export function isCompactCoachTool(tool: CoachToolPart) {
   return Boolean(
     tool.part.pendingActionId ||
+    refusedApproval(tool) ||
     tool.part.undone ||
     (tool.part.ok &&
       (coachReadLabel(tool.name) || tool.part.detail?.type === "paper.replace"))
