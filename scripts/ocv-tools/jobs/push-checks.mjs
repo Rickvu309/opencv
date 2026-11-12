@@ -90,20 +90,6 @@ export const WORKSPACE_USES = Object.freeze(
   )
 )
 
-export const GIT_ENV = Object.freeze([
-  "GIT_DIR",
-  "GIT_WORK_TREE",
-  "GIT_INDEX_FILE",
-  "GIT_PREFIX",
-  "GIT_COMMON_DIR",
-  "GIT_OBJECT_DIRECTORY",
-  "GIT_ALTERNATE_OBJECT_DIRECTORIES",
-  "GIT_NAMESPACE",
-  "GIT_CEILING_DIRECTORIES",
-])
-
-export const COLOR_ENV = Object.freeze(["FORCE_COLOR"])
-
 const batches = (list) => {
   const out = []
   for (let i = 0; i < list.length; i += BATCH)
@@ -187,6 +173,10 @@ export function changedFiles(ctx, top, kinds = "ACMR") {
     ],
     { cwd: top, raw: true }
   )
+  if (!diff.ok)
+    throw new Error(
+      `git diff of the changed files failed (${diff.err || "no output"}), so the push checks cannot tell what changed; run git diff --name-only origin/main...HEAD and push again`
+    )
   return diff.out.split("\0").filter(Boolean)
 }
 

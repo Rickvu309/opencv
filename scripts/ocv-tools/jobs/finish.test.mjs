@@ -88,8 +88,8 @@ test("finish rejects malformed body and missing flags", () => {
   f.ctx.writeFile(`${f.ctx.cwd}/body.md`, "## Summary\nOnly this")
   assert.match(finish(f).text, /BAD_BODY/)
   assert.equal(f.call("finish", "--body-file").code, 2)
-  assert.equal(f.call("check").code, 2)
-  assert.match(f.call("check").text, /UNKNOWN_COMMAND/)
+  assert.equal(f.call("check", "--bogus").code, 2)
+  assert.match(f.call("check", "--bogus").text, /UNKNOWN_FLAG/)
 })
 
 test("finish reports a failed create and refuses a branch with no new commits", () => {
@@ -120,4 +120,31 @@ test("finish validates existing PR titles and closing links before reuse", () =>
     assert.equal(f.effects("git", "push").length, 0)
     assert.equal(f.effects("gh", "pr create").length, 0)
   }
+})
+
+test("finish prints the partial pass the receipt holds, one plain line per package", () => {
+  const f = fixture()
+  const read = f.ctx.ports.fs.read
+  f.ctx.ports.fs.read = (path) =>
+    /\/ocv-tools-affected-tests-v3-/.test(path)
+      ? JSON.stringify({
+          version: "v3",
+          partial: [
+            {
+              runner: "apps/web",
+              pkg: "web",
+              ran: 27,
+              reached: 143,
+              leftOut: ["apps/web/src/a.test.tsx"],
+            },
+          ],
+        })
+      : read(path)
+  const r = finish(f)
+  assert.equal(r.code, 0, r.text)
+  assert.match(
+    r.text,
+    /Local pre-check ran 27 of 143 tests this change reaches in apps\/web; CI runs the rest \(first left out: apps\/web\/src\/a\.test\.tsx\)\./
+  )
+  assert.match(r.text, /CI is the gate/)
 })

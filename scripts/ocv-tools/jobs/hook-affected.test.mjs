@@ -1,0 +1,152 @@
+import assert from "node:assert/strict"
+import test from "node:test"
+import { RULES } from "../rules/index.mjs"
+import { pushOk, world } from "./hook-world.mjs"
+
+const isVitest = (c) => c.cmd.endsWith("/vitest")
+const SCAN = "apps/web/src/test/ui-kit-contract.test.ts"
+const SONNER = "packages/ui/src/components/sonner.test.tsx"
+
+test("pre-push runs the tests the change reaches, says why, and records the pass for the head", () => {
+  const w = world({
+    changed: [SONNER, "apps/web/src/lib/x.ts"],
+    tests: [
+      SCAN,
+      SONNER,
+      "apps/web/src/lib/x.test.ts",
+      "apps/web/src/y.test.ts",
+    ],
+    testText: { "apps/web/src/lib/x.test.ts": 'import { x } from "./x"\n' },
+  })
+  const r = w.call(["pre-push"], { stdin: pushOk })
+  assert.equal(r.code, 0, r.text)
+  assert.match(r.text, /affected tests: 3 test file\(s\) selected/)
+  assert.match(
+    r.text,
+    /ui-kit-contract\.test\.ts {2}\(scans the tree that holds/
+  )
+  assert.match(r.text, /x\.test\.ts {2}\(imports apps\/web\/src\/lib\/x\.ts\)/)
+  const runs = w.s.calls.filter((c) => isVitest(c))
+  assert.deepEqual(
+    runs.map((c) => [
+      c.options.cwd,
+      c.args.filter((a) => /test\.tsx?$/.test(a)),
+    ]),
+    [
+      [
+        "/repo/apps/web",
+        ["src/test/ui-kit-contract.test.ts", "src/lib/x.test.ts"],
+      ],
+      ["/repo/packages/ui", ["src/components/sonner.test.tsx"]],
+    ]
+  )
+  assert.ok(!runs.some((c) => c.args.includes("src/y.test.ts")))
+  assert.ok(
+    w.s.calls.every((c) => !isVitest(c) || c.args.length > 4),
+    "a runner with no files would run the whole package suite"
+  )
+})
+
+test("pre-push refuses when a reached test fails, and a recorded head is not run again", () => {
+  const failing = world({
+    changed: [SONNER],
+    tests: [SCAN],
+    failing: ["ui-kit-contract"],
+  })
+  const refused = failing.call(["pre-push"], { stdin: pushOk })
+  assert.equal(refused.code, 2, refused.text)
+  assert.match(
+    refused.text,
+    /REFUSED AFFECTED_TESTS: the tests this change reaches failed: tests apps\/web/
+  )
+  assert.match(refused.text, /Fix: Fix the failing tests/)
+  assert.match(refused.text, /ocv-tools\.mjs block <issue>/)
+  const again = world({ changed: [SONNER], tests: [SCAN], receipt: true })
+  const r = again.call(["pre-push"], { stdin: pushOk })
+  assert.equal(r.code, 0, r.text)
+  assert.match(r.text, /already passed at abc, not run again/)
+  assert.equal(again.s.calls.filter((c) => isVitest(c)).length, 0)
+})
+
+test("pre-push with SKIP_CHECKS and a named human runs no tests", () => {
+  const w = world({
+    changed: [SONNER],
+    tests: [SCAN],
+    failing: ["ui-kit-contract"],
+    env: { SKIP_CHECKS: "1", SKIP_CHECKS_DECLARED_BY: "Ada" },
+  })
+  const r = w.call(["pre-push"], { stdin: pushOk })
+  assert.equal(r.code, 0, r.text)
+  assert.equal(w.s.calls.filter((c) => isVitest(c)).length, 0)
+})
+
+test("AFFECTED_TESTS names the way forward when the tests cannot install, fail, or were never recorded", () => {
+  const fixOf = (affected) =>
+    RULES.find((row) => row.id === "AFFECTED_TESTS").fix({ affected, env: {} })
+  assert.match(
+    fixOf({
+      failed: [
+        "tests apps/web (vitest is not installed here; run pnpm install in this worktree)",
+      ],
+    }),
+    /^Run pnpm install in this worktree, then scripts\/ocv-tools\.mjs check\./
+  )
+  const failing = fixOf({ failed: ["tests apps/api"] })
+  assert.match(
+    failing,
+    /scripts\/ocv-tools\.mjs check: it reruns only this set/
+  )
+  assert.match(failing, /pnpm --filter @workspace\/domain build/)
+  const missing = fixOf({ receipt: false, head: "abc" })
+  for (const fix of [failing, missing])
+    assert.match(fix, /scripts\/ocv-tools\.mjs block <issue>/)
+  assert.equal(
+    RULES.find((row) => row.id === "AFFECTED_TESTS").check({
+      affected: { receipt: false, head: "abc" },
+      env: { SKIP_CHECKS: "1", SKIP_CHECKS_DECLARED_BY: "Ada" },
+    }),
+    null
+  )
+})
+
+test("check says what its pass is: a local pre-check of the tests the change reaches, with CI as the gate, never that all tests pass", () => {
+  const w = world({
+    changed: ["apps/web/src/lib/x.ts"],
+    tests: ["apps/web/src/lib/x.test.ts"],
+    testText: { "apps/web/src/lib/x.test.ts": 'import { x } from "./x"\n' },
+  })
+  const r = w.cli(["check"])
+  assert.equal(r.code, 0, r.text)
+  assert.match(
+    r.text,
+    /Local pre-check passed for the tests this change reaches; CI is the gate\. The pass is recorded for /
+  )
+  assert.doesNotMatch(r.text, /all tests pass/i)
+  assert.match(
+    RULES.find((rule) => rule.id === "AFFECTED_TESTS").says,
+    /never a claim that all tests pass; CI is the gate/
+  )
+})
+
+test("over the cap, check records a partial pass, prints how many ran and keeps the counts in the receipt", () => {
+  const importers = Array.from(
+    { length: 43 },
+    (_, i) => `apps/web/src/lib/t${String(i).padStart(2, "0")}.test.ts`
+  )
+  const w = world({
+    changed: ["apps/web/src/lib/x.ts"],
+    tests: importers,
+    testText: Object.fromEntries(
+      importers.map((file) => [file, 'import { x } from "./x"\n'])
+    ),
+  })
+  const r = w.cli(["check"])
+  assert.equal(r.code, 0, r.text)
+  assert.match(
+    r.text,
+    /Local pre-check ran 25 of 43 tests this change reaches in apps\/web; CI runs the rest \(first left out: apps\/web\/src\/lib\/t25\.test\.ts/
+  )
+  assert.ok(!w.s.calls.some((c) => c.args.join(" ").includes("--filter")))
+  const [receipt] = w.receipts()
+  assert.ok(receipt, "no receipt was recorded")
+})

@@ -5,14 +5,17 @@ import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import test from "node:test"
 import { gitAdapter } from "./git.mjs"
-import { realRunner } from "./proc.mjs"
+import { isolatedEnv, realRunner } from "./proc.mjs"
 import { withTempDir } from "../../lib/temp-dir.mjs"
+
+const scratchEnv = () => isolatedEnv(process.env)
 
 test("cleanup retains advanced remote tips and a concurrent push defeats its deletion lease", () => {
   withTempDir("cleanup-remote-", (root) => {
     const sh = (cwd, args, input) =>
       execFileSync("git", args, {
         cwd,
+        env: scratchEnv(),
         input,
         encoding: "utf8",
         timeout: 5000,

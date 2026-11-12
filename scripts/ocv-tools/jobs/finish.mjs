@@ -3,6 +3,12 @@ import { validateAuthoring } from "../authoring.mjs"
 import { diskProblem } from "../disk.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
 import { planPull } from "./pull-facts.mjs"
+import {
+  LOCAL_PRE_CHECK,
+  hasReceipt,
+  partialLine,
+  receiptPath,
+} from "./affected-tests.mjs"
 import { throwPushFailure } from "../push-failure.mjs"
 import {
   recorded,
@@ -22,6 +28,23 @@ export function bodyOf(ctx, flag) {
   } catch {
     return { file, text: "", unreadable: true }
   }
+}
+
+function partialOfReceipt(ctx, t) {
+  const head = git(ctx, "rev-parse", "HEAD")
+  const tree = git(ctx, "rev-parse", "HEAD^{tree}")
+  try {
+    const receipt = JSON.parse(ctx.readFile(receiptPath(t.gitDir, head, tree)))
+    return Array.isArray(receipt.partial) ? receipt.partial : []
+  } catch {
+    return []
+  }
+}
+
+function affectedReceipt(ctx, t) {
+  const head = git(ctx, "rev-parse", "HEAD")
+  const tree = git(ctx, "rev-parse", "HEAD^{tree}")
+  return { head, receipt: hasReceipt(ctx, t.gitDir, head, tree) }
 }
 
 export function finish(ctx, { flags }) {
@@ -133,6 +156,7 @@ export function finish(ctx, { flags }) {
       main,
       port,
       env: ctx.env,
+      affected: affectedReceipt(ctx, t),
     }
     const verdict = decide("finish", facts)
     if (!verdict.ok) throw refusalError(verdict.refusals[0])
@@ -158,7 +182,11 @@ export function finish(ctx, { flags }) {
       ...(flags["--draft"] ? ["--draft"] : [])
     )
     return {
-      lines: [`Opened ${url}`],
+      lines: [
+        LOCAL_PRE_CHECK,
+        ...partialOfReceipt(ctx, t).map(partialLine),
+        `Opened ${url}`,
+      ],
       next: `scripts/ocv-tools.mjs merge ${url.split("/").at(-1)}`,
     }
   })

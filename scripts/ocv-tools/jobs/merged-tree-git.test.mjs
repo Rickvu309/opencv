@@ -7,12 +7,14 @@ import { tempDir } from "../../lib/temp-dir.mjs"
 import { realPorts } from "../ports/index.mjs"
 import { decide } from "../rules/index.mjs"
 import { mergeResultFacts } from "./merged-tree.mjs"
-import { GIT_ENV } from "./push-checks.mjs"
+import { isolatedEnv } from "../ports/proc.mjs"
 
 function runGit(cwd, ...args) {
-  const env = { ...process.env }
-  for (const name of GIT_ENV) delete env[name]
-  return execFileSync("git", args, { cwd, env, encoding: "utf8" }).trim()
+  return execFileSync("git", args, {
+    cwd,
+    env: isolatedEnv(process.env),
+    encoding: "utf8",
+  }).trim()
 }
 
 function repoWithTheMistake(t, headFiles) {
@@ -63,8 +65,13 @@ function realCtx(clone, home, guard) {
   const ports = realPorts()
   const base = ports.proc.run
   ports.proc.run = (cmd, args, options = {}) => {
+    const kept = isolatedEnv(process.env)
     const env = {
-      ...Object.fromEntries(GIT_ENV.map((name) => [name, undefined])),
+      ...Object.fromEntries(
+        Object.keys(process.env)
+          .filter((name) => !(name in kept))
+          .map((name) => [name, undefined])
+      ),
       HOME: home,
     }
     return base(cmd, args, { ...options, env: { ...options.env, ...env } })

@@ -2,8 +2,35 @@ import { spawnSync } from "node:child_process"
 
 const RUN_TIMEOUT_MS = 30 * 60 * 1000
 
+export const KEPT_GIT_ENV = Object.freeze([
+  "GIT_ASKPASS",
+  "GIT_EDITOR",
+  "GIT_PAGER",
+  "GIT_SSH",
+  "GIT_SSH_COMMAND",
+  "GIT_TERMINAL_PROMPT",
+])
+
+export const DROPPED_CHILD_ENV = Object.freeze([
+  "NODE_TEST_CONTEXT",
+  "FORCE_COLOR",
+  "CLICOLOR_FORCE",
+])
+
+export function isolatedEnv(base = process.env) {
+  const env = {}
+  for (const [name, value] of Object.entries(base)) {
+    if (value === undefined) continue
+    if (name.startsWith("GIT_") && !KEPT_GIT_ENV.includes(name)) continue
+    if (DROPPED_CHILD_ENV.includes(name)) continue
+    env[name] = value
+  }
+  return env
+}
+
 export function childEnv(cmd, options = {}, base = process.env) {
-  const env = { ...base, ...(options.env ?? {}) }
+  const own = cmd === "git" ? { ...base } : isolatedEnv(base)
+  const env = { ...own, ...(options.env ?? {}) }
   env.GH_PROMPT_DISABLED = "1"
   env.GIT_TERMINAL_PROMPT = "0"
   if (cmd === "git" && !env.GIT_EDITOR) env.GIT_EDITOR = "true"
@@ -13,19 +40,34 @@ export function childEnv(cmd, options = {}, base = process.env) {
 export function realRunner() {
   return function run(cmd, args, options = {}) {
     const r = spawnSync(cmd, args, {
-      encoding: "utf8",
+      ...(options.bytes ? {} : { encoding: "utf8" }),
       cwd: options.cwd,
       env: childEnv(cmd, options),
-      input: options.input,
+      input:
+        options.bytes && typeof options.input === "string"
+          ? Buffer.from(options.input, "utf8")
+          : options.input,
       stdio: options.inherit ? ["ignore", "inherit", "inherit"] : undefined,
-      maxBuffer: 32 * 1024 * 1024,
+      maxBuffer: options.maxBuffer ?? 32 * 1024 * 1024,
       timeout: options.timeout ?? RUN_TIMEOUT_MS,
     })
+    const failure = r.error
+      ? `${r.error.code === "ENOBUFS" ? "output passed the buffer limit, so it was cut short: " : ""}${r.error.message}`
+      : r.signal
+        ? `killed by ${r.signal}`
+        : ""
+    const stderr = String(r.stderr ?? "").trim()
+    if (options.bytes)
+      return {
+        ok: r.status === 0 && !r.error && !r.signal,
+        out: Buffer.isBuffer(r.stdout) ? r.stdout : Buffer.alloc(0),
+        err: [failure, stderr].filter(Boolean).join("; "),
+      }
     const stdout = r.stdout ?? ""
     return {
-      ok: r.status === 0,
+      ok: r.status === 0 && !r.error && !r.signal,
       out: options.raw ? stdout : stdout.trim(),
-      err: (r.stderr ?? r.error?.message ?? "").trim(),
+      err: [failure, stderr].filter(Boolean).join("; "),
     }
   }
 }
