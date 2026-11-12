@@ -125,6 +125,7 @@ function database() {
 }
 
 export async function closeWritingDb() {
+  ownWrites.clear()
   const current = opened
   opened = null
   if (!current) return
@@ -231,8 +232,7 @@ function adoptedBlocks(page: WordPage, blocks: readonly PageBlock[]) {
 async function sendPage(
   page: WordPage,
   blocks: readonly PageBlock[],
-  caret: TextPoint | null,
-  signal: AbortSignal
+  caret: TextPoint | null
 ): Promise<{ revision: string | null; note: string | null }> {
   const diff = diffParagraphs(page, blocks, caret)
   if ("refused" in diff) return { revision: null, note: diff.refused }
@@ -247,7 +247,6 @@ async function sendPage(
     revision: receiptRevision(
       await runContractCommand(commandClient(), "paper.canvas", input.data, {
         refresh: false,
-        signal,
       })
     ),
     note: null,
@@ -262,6 +261,16 @@ function receiptRevision(value: unknown) {
 }
 
 const tails = new Map<string, Promise<unknown>>()
+const ownWrites = new Map<string, DraftBasis>()
+
+function basisAt(
+  docId: string,
+  revision: string,
+  claimed: DraftBasis | null
+): DraftBasis | null {
+  const own = ownWrites.get(docId)
+  return own && own.revision === revision ? own : claimed
+}
 
 function serial<T>(docId: string, job: () => Promise<T>): Promise<T> {
   const previous = tails.get(docId) ?? Promise.resolve()
@@ -294,10 +303,11 @@ async function settleOnce(
     const page = await readPage(docId, signal)
     if (!page || signal.aborted) return missed(words)
     const seen = pageText(page)
-    const changed = claim.basis ? words !== claim.basis.words : claim.typed
+    const basis = basisAt(docId, page.revision, claim.basis)
+    const changed = basis ? words !== basis.words : claim.typed
     const serverMoved =
-      claim.basis?.revision != null && page.revision !== claim.basis.revision
-    if (words === seen && (words !== "" || claim.basis !== null)) {
+      basis?.revision != null && page.revision !== basis.revision
+    if (words === seen && (words !== "" || basis !== null)) {
       return {
         saved: true,
         words,
@@ -322,9 +332,10 @@ async function settleOnce(
     if (serverMoved) {
       return { saved: false, words, revision: null, note: null, conflict: true }
     }
-    const sent = await sendPage(page, blocks, claim.caret ?? null, signal)
+    const sent = await sendPage(page, blocks, claim.caret ?? null)
     if (sent.note)
       return { saved: false, words, revision: null, note: sent.note }
+    if (sent.revision) ownWrites.set(docId, recordedBasis(sent.revision, words))
     if (!sent.revision || signal.aborted) return missed(words)
     const next = await readPage(docId, signal)
     if (!next || next.revision !== sent.revision || pageText(next) !== words) {

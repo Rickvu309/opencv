@@ -450,6 +450,63 @@ describe("settlePage", () => {
       ],
     })
   })
+  it("builds on its own write when the person typed again before it settled", async () => {
+    const later = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee"
+    const server = { revision: REVISION, text: "Hello" }
+    const replies = [
+      { revision: NEXT, text: "Hello there" },
+      { revision: later, text: "Hello there friend" },
+    ]
+    const outrun = new AbortController()
+    const batches: unknown[] = []
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.includes("/api/commands/paper.canvas")) {
+        batches.push(sentBatch([JSON.parse(String(init?.body))]))
+        const reply = replies.shift()
+        if (!reply)
+          return Promise.resolve(new Response("gone", { status: 500 }))
+        Object.assign(server, reply)
+        outrun.abort()
+        if (init?.signal?.aborted)
+          return Promise.reject(new DOMException("aborted", "AbortError"))
+        return Promise.resolve(
+          ok({ ...packageResult(), revision: reply.revision })
+        )
+      }
+      if (url.includes("/api/reads/paper.read")) {
+        return Promise.resolve(ok(readResult(server.text, server.revision)))
+      }
+      return Promise.resolve(new Response("missing", { status: 404 }))
+    })
+    const claim = {
+      basis: { revision: REVISION, words: "Hello" },
+      typed: true,
+    }
+    const first = settlePage(
+      DOC,
+      [{ id: PARAGRAPH, text: "Hello there" }],
+      outrun.signal,
+      claim
+    )
+    const second = settlePage(
+      DOC,
+      [{ id: PARAGRAPH, text: "Hello there friend" }],
+      new AbortController().signal,
+      claim
+    )
+    await first
+    expect(await second).toMatchObject({
+      saved: true,
+      words: "Hello there friend",
+      revision: later,
+    })
+    expect(batches[1]).toEqual({
+      doc: DOC,
+      basedOn: NEXT,
+      ops: [{ op: "setText", handle: PARAGRAPH, text: "Hello there friend" }],
+    })
+  })
 })
 
 describe("WritingCanvas save", () => {

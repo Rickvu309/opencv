@@ -18,11 +18,30 @@ describe("pastePlain", () => {
     ).toEqual(["A", "B"])
   })
 
-  it("refuses a paste with more than one break", () => {
+  it("pastes three paragraphs into the middle of a line", () => {
+    const hello = insertText(
+      blankDraft(),
+      pointSpan(blankDraft().caret),
+      "HelloWorld"
+    )
+    expect(
+      words(
+        pastePlain(
+          hello,
+          pointSpan({ blockId: "p1", offset: 5 }),
+          "Alpha one.\nBeta two.\nGamma three."
+        )
+      )
+    ).toEqual(["HelloAlpha one.", "Beta two.", "Gamma three.World"])
+  })
+
+  it("keeps a blank line inside a paste", () => {
     const draft = blankDraft()
-    expect(pastePlain(draft, pointSpan(draft.caret), "a\nb\nc")).toBe(draft)
-    const hello = insertText(draft, pointSpan(draft.caret), "Hello")
-    expect(pastePlain(hello, pointSpan(hello.caret), "a\n\nb")).toBe(hello)
+    expect(words(pastePlain(draft, pointSpan(draft.caret), "a\n\nb"))).toEqual([
+      "a",
+      "",
+      "b",
+    ])
   })
 
   it("pastes into the middle of a paragraph", () => {

@@ -16,8 +16,6 @@ export function pastePlain(
   value: string
 ): WritingDraft {
   const lines = plainCharacters(value).split("\n")
-  const breaks = lines.length - 1
-  if (breaks > 1) return draft
   let next = insertText(draft, span, "")
   lines.forEach((line, index) => {
     if (index > 0) next = splitParagraph(next, pointSpan(next.caret))

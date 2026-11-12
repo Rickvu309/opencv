@@ -120,12 +120,12 @@ describe("WritingCanvas", () => {
     expect(words()).toEqual(["Heorld"])
   })
 
-  it("splits on one pasted break and refuses two", async () => {
+  it("puts every pasted paragraph on its own line", async () => {
     render(<WritingCanvas docId={DOC} />)
     await paste("A\nB")
     expect(words()).toEqual(["A", "B"])
     await paste("a\nb\nc")
-    expect(words()).toEqual(["A", "B"])
+    expect(words()).toEqual(["A", "Ba", "b", "c"])
   })
 
   it("commits a composed word and then splits on Enter", () => {
