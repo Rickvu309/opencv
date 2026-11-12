@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto"
+import { createHash, randomUUID } from "node:crypto"
 import { createRequire } from "node:module"
 
 import type {
@@ -226,6 +226,34 @@ function lineEntry(entry: Entry, line: WordLine): Entry {
   }
 }
 
+const textVersion = /(\sw14:textId=)(["'])([0-9A-Fa-f]{8})\2/
+
+function versionName(value: number) {
+  return value.toString(16).toUpperCase().padStart(8, "0")
+}
+
+function revisedEntry(entry: Entry, line: WordLine): Entry | WordRefusal {
+  if (!textVersion.test(line.open)) return lineEntry(entry, line)
+  if (entry.textIds.length >= 4096) return unsafe()
+  const used = new Set(entry.textIds.map((id) => id.toUpperCase()))
+  let value =
+    createHash("sha256")
+      .update(JSON.stringify([entry.key, entry.textIds, line.text]))
+      .digest()
+      .readUInt32BE(0) & 0x7fffffff
+  while (!value || used.has(versionName(value)))
+    value = (value + 1) & 0x7fffffff
+  const textId = versionName(value)
+  return lineEntry(
+    { ...entry, textIds: [...entry.textIds, textId] },
+    lineWith(
+      line.open.replace(textVersion, `$1$2${textId}$2`),
+      line.props,
+      line.runs
+    )
+  )
+}
+
 function heldRefusal(entry: Entry, handle: WordHandle): WordRefusal | null {
   const disposition = entry.disposition
   if (disposition.kind === "line") return null
@@ -323,7 +351,10 @@ function run(page: Page, step: Step): Page | WordRefusal {
         step.handle,
         "MIXED_FORMAT"
       )
-    return { entries: [...before, lineEntry(entry, written), ...after], tail }
+    if (written === line) return page
+    const revised = revisedEntry(entry, written)
+    if ("refused" in revised) return revised
+    return { entries: [...before, revised, ...after], tail }
   }
   if (step.kind === "delete") {
     if (line.text !== "")

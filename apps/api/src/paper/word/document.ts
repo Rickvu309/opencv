@@ -187,11 +187,7 @@ async function readPage(
   }
 }
 
-async function draftCandidate<Review>(
-  owner: WordOwner,
-  batch: WordBatch,
-  review: Review
-) {
+async function draftCandidate(owner: WordOwner, batch: WordBatch) {
   const { version, artifact } = await wordPackageBasis(
     owner,
     batch.doc,
@@ -261,36 +257,6 @@ async function draftCandidate<Review>(
   const label = labelOf.safeParse(version.kind)
   if (!paragraphs || !label.success)
     return refuse("closed", "This page cannot be read safely.", null, "SIDECAR")
-  const prepared = await persistWordPackage(
-    owner,
-    {
-      basis: {
-        docId: version.docId,
-        incarnation: version.incarnation,
-        revision: version.revision,
-        packageHash: version.packageHash,
-        sidecarHash: version.sidecarHash,
-        projectionHash: version.projectionHash,
-        projector: version.projector,
-      },
-      inputHash: packageDigest(review),
-      review,
-      reviewHash: packageDigest(review),
-      candidate: {
-        ...context,
-        bytes,
-        byteSize: bytes.length,
-        packageHash: archiveDigest(bytes),
-        sidecar,
-        sidecarHash: packageDigest(sidecar),
-        projection,
-        projectionHash: packageDigest(projection),
-        projector: PAPER_PACKAGE_PROJECTOR,
-      },
-    },
-    PAPER_CANVAS_PROFILE,
-    true
-  )
   const page: WordPage = {
     doc: batch.doc,
     revision,
@@ -300,17 +266,35 @@ async function draftCandidate<Review>(
   }
   return {
     refused: false as const,
-    prepared,
+    basis: {
+      docId: version.docId,
+      incarnation: version.incarnation,
+      revision: version.revision,
+      packageHash: version.packageHash,
+      sidecarHash: version.sidecarHash,
+      projectionHash: version.projectionHash,
+      projector: version.projector,
+    },
+    candidate: {
+      ...context,
+      bytes,
+      byteSize: bytes.length,
+      packageHash: archiveDigest(bytes),
+      sidecar,
+      sidecarHash: packageDigest(sidecar),
+      projection,
+      projectionHash: packageDigest(projection),
+      projector: PAPER_PACKAGE_PROJECTOR,
+    },
     page,
-    incarnation: version.incarnation,
   }
 }
 
-export async function prepareBatch<Review>(
+async function guarded<Result>(
   owner: WordOwner,
   raw: WordBatch,
-  review: Review
-) {
+  step: (batch: WordBatch) => Promise<Result | WordRefusal>
+): Promise<Result | WordRefusal> {
   if (insideTransaction())
     return refuse(
       "closed",
@@ -324,13 +308,46 @@ export async function prepareBatch<Review>(
   if (!head) return notAvailable()
   if (head.revision !== batch.basedOn) return changed(batch)
   try {
-    return await draftCandidate(owner, batch, review)
+    return await step(batch)
   } catch (error) {
     if (!(error instanceof CommandError)) throw error
     const now = await headOf(owner, batch.doc)
     if (now?.revision !== batch.basedOn) return changed(batch)
     return refuse("closed", error.message, firstHandle(batch), "STORE")
   }
+}
+
+export function draftBatch(owner: WordOwner, raw: WordBatch) {
+  return guarded(owner, raw, (batch) => draftCandidate(owner, batch))
+}
+
+export function prepareBatch<Review>(
+  owner: WordOwner,
+  raw: WordBatch,
+  review: Review
+) {
+  return guarded(owner, raw, async (batch) => {
+    const drafted = await draftCandidate(owner, batch)
+    if (drafted.refused) return drafted
+    const prepared = await persistWordPackage(
+      owner,
+      {
+        basis: drafted.basis,
+        inputHash: packageDigest(review),
+        review,
+        reviewHash: packageDigest(review),
+        candidate: drafted.candidate,
+      },
+      PAPER_CANVAS_PROFILE,
+      true
+    )
+    return {
+      refused: false as const,
+      prepared,
+      page: drafted.page,
+      incarnation: drafted.basis.incarnation,
+    }
+  })
 }
 
 export async function open(

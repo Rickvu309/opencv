@@ -161,13 +161,28 @@ export function detect(text, file = "source.ts") {
         calls.push({ name: child.expression.getText(source), node: child })
     })
     const has = (value) => calls.some((call) => call.name === value)
+    const writes = calls.some((call) =>
+      /\.(insert|update|delete)$/.test(call.name)
+    )
     if (
       name === "prepareWordPackage" &&
       (!has("insideTransaction") ||
         !has("wordPackageBasis") ||
-        !has("PaperPackage.open") ||
+        !has("draftBatch") ||
         has("transaction") ||
-        calls.some((call) => /\.(insert|update|delete)$/.test(call.name)))
+        writes)
+    )
+      add(node, "writing-or-unpinned-package-planner")
+    if (
+      name === "draftCandidate" &&
+      (!has("wordPackageBasis") ||
+        !node.body
+          .getText(source)
+          .includes(
+            "packageDigest(opened.read()) !== version.projectionHash"
+          ) ||
+        has("transaction") ||
+        writes)
     )
       add(node, "writing-or-unpinned-package-planner")
     if (
