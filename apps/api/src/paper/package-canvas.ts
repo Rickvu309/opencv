@@ -22,6 +22,7 @@ import {
   wordPackageBasis,
 } from "./package-store.js"
 import { prepareBatch, WORD_UNDO_MOVED } from "./word/document.js"
+import { templatePageBytes, templatePageName } from "./word/template.js"
 
 const loaded = createRequire(import.meta.url)(
   "../../../../scripts/lib/paper-canvas-bytes.mjs"
@@ -128,10 +129,14 @@ export function registerCanvasCommit(
             actor.userId,
             {
               requestId: randomUUID(),
-              name: BLANK_PAGE_NAMES[input.label],
+              name: input.templateId
+                ? templatePageName(input.templateId)
+                : BLANK_PAGE_NAMES[input.label],
               kind: input.label,
             },
-            loaded.mintBlankBytes()
+            input.templateId
+              ? templatePageBytes(input.templateId)
+              : loaded.mintBlankBytes()
           )
           return { op: "mint" as const, stageId: stage.stageId }
         }

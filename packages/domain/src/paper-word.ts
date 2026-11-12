@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { paperTemplateIdSchema } from "./paper.js"
+
 declare const TextEncoder: {
   new (): { encode(value: string): Uint8Array }
 }
@@ -138,8 +140,13 @@ const wordSourceMintSchema = z
     kind: z.literal("mint"),
     name: z.string(),
     label: wordPageLabelSchema,
+    templateId: paperTemplateIdSchema.optional(),
   })
   .strict()
+  .refine(
+    (source) => source.templateId === undefined || source.label === "cv",
+    "A template starts a CV page, not a letter."
+  )
 
 export const wordSourceSchema = z.discriminatedUnion("kind", [
   wordSourceReadSchema,

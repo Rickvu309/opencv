@@ -1,0 +1,13 @@
+{
+  "id": "web-block-cv",
+  "file": "scripts/web-block-cv.test.mjs",
+  "detector": {
+    "module": "scripts/lib/web-block-cv.mjs",
+    "export": "detectWebBlockCv"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "1565bbf7",
+    "path": "apps/web/src/features/paper/paper-new-dialog.tsx"
+  }
+}

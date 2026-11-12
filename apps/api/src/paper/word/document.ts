@@ -41,6 +41,7 @@ import {
 } from "../package-store.js"
 import { projectParagraphs } from "./classify.js"
 import { blankPageBytes, mutateWord, refuse, type WordSpans } from "./mutate.js"
+import { templatePageBytes } from "./template.js"
 
 const storedKeys = z
   .object({
@@ -382,7 +383,9 @@ export async function open(
       name: parsed.data.name,
       kind: parsed.data.label,
     },
-    blankPageBytes()
+    parsed.data.templateId
+      ? templatePageBytes(parsed.data.templateId)
+      : blankPageBytes()
   )
   const published = await publishWordPackage(
     owner,
