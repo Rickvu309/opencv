@@ -34,11 +34,7 @@ export function SettingsPage() {
   const save = useSettingsSave()
 
   return (
-    <SettingsLayout
-      view={view}
-      startPage={profile.data?.startPage}
-      name={profile.data?.name}
-    >
+    <SettingsLayout view={view} startPage={profile.data?.startPage}>
       {profile.isPending ? (
         <SettingsSkeletons />
       ) : profile.isError || !profile.data ? (

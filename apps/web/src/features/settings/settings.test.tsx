@@ -403,6 +403,19 @@ describe("settings", () => {
     expect(header).toContainElement(
       screen.getByRole("combobox", { name: /Section/ })
     )
+    for (const name of ["Time zone", "Start page"]) {
+      expect(screen.getByRole("combobox", { name })).toHaveClass(
+        "data-[size=default]:max-md:h-11",
+        "touch-manipulation"
+      )
+    }
+  })
+
+  it("gives the Account name box a 44px phone height", async () => {
+    renderApp("/settings/account")
+    expect(await screen.findByRole("textbox", { name: "Name" })).toHaveClass(
+      "max-md:h-11"
+    )
   })
 
   it("has no header bar on desktop", async () => {

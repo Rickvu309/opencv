@@ -1,6 +1,5 @@
 import type { ReactNode } from "react"
 import { useNavigate } from "@tanstack/react-router"
-import { ArrowLeft } from "lucide-react"
 import type { Profile } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -10,7 +9,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
-import { NavItem } from "@workspace/ui/components/nav-item"
 import {
   PageHeader,
   PageHeaderBack,
@@ -30,85 +28,41 @@ import {
 } from "./sections.ts"
 import { LOAD_ERROR } from "./settings-api.ts"
 
-const SETTINGS_NAV_ITEM = "h-7 rounded-sm"
-
 export function SettingsLayout({
   view,
   startPage,
-  name,
   children,
 }: {
   view: SettingsView
   startPage?: Profile["startPage"]
-  name?: string
   children: ReactNode
 }) {
   const desktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
-  const current: SettingsSectionId = view
   return (
     <div
       data-slot="settings-layout"
-      className="flex h-dvh min-h-0 flex-col overflow-x-hidden bg-background text-foreground md:flex-row"
+      className="flex h-full min-h-0 flex-col overflow-x-hidden bg-background text-foreground"
     >
-      {desktop ? (
-        <aside
-          className="flex w-61 shrink-0 flex-col gap-px px-2.5 pt-2.5 pb-3"
-          aria-label="Settings"
-        >
-          <BackLink href={startPagePath(startPage)} />
-          <span aria-hidden className="h-3.5 shrink-0" />
-          <p className="flex h-6 items-center px-2 text-sm text-muted-foreground">
-            Settings
-          </p>
-          <nav className="flex flex-col gap-px" aria-label="Settings sections">
-            {SETTINGS_SECTIONS.map((item) => (
-              <SectionLink
-                key={item.id}
-                href={settingsSectionHref(item.id)}
-                current={item.id === current}
-              >
-                {item.label}
-              </SectionLink>
-            ))}
-          </nav>
-          {name ? (
-            <p className="mt-auto truncate px-2 pt-4 text-sm font-medium">
-              {name}
-            </p>
-          ) : null}
-        </aside>
-      ) : (
+      {desktop ? null : (
         <PageHeader>
           <PageHeaderLeading>
             <PhoneBack href={startPagePath(startPage)} />
           </PageHeaderLeading>
-          <SectionSelect current={current} />
+          <SectionSelect current={view} />
         </PageHeader>
       )}
-      <div className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-8 md:px-10 md:py-14">
-        <main className="mx-auto flex w-full max-w-[640px] flex-col">
+      <div
+        data-slot="settings-body"
+        className="min-h-0 min-w-0 flex-1 overflow-y-auto px-4 py-8 md:px-10 md:pt-14 md:pb-10"
+      >
+        <div
+          data-slot="settings-column"
+          className="mx-auto flex w-full max-w-[640px] flex-col"
+        >
           {children}
-        </main>
+        </div>
       </div>
     </div>
-  )
-}
-
-function BackLink({ href }: { href: string }) {
-  const navigate = useNavigate()
-  return (
-    <NavItem
-      tone="muted"
-      className={SETTINGS_NAV_ITEM}
-      href={href}
-      onClick={(event) => {
-        event.preventDefault()
-        void navigate({ href })
-      }}
-    >
-      <ArrowLeft aria-hidden />
-      Back to app
-    </NavItem>
   )
 }
 
@@ -124,32 +78,6 @@ function PhoneBack({ href }: { href: string }) {
     >
       Back to app
     </PageHeaderBack>
-  )
-}
-
-function SectionLink({
-  href,
-  current,
-  children,
-}: {
-  href: string
-  current: boolean
-  children: string
-}) {
-  const navigate = useNavigate()
-  return (
-    <NavItem
-      tone="muted"
-      className={SETTINGS_NAV_ITEM}
-      href={href}
-      active={current}
-      onClick={(event) => {
-        event.preventDefault()
-        void navigate({ href })
-      }}
-    >
-      {children}
-    </NavItem>
   )
 }
 
