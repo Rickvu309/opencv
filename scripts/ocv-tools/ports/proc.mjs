@@ -1,6 +1,6 @@
 import { spawn, spawnSync } from "node:child_process"
 import { existsSync, mkdirSync, readFileSync, rmSync } from "node:fs"
-import { homedir } from "node:os"
+import { tmpdir, userInfo } from "node:os"
 import { join } from "node:path"
 
 const RUN_TIMEOUT_MS = 30 * 60 * 1000
@@ -102,9 +102,36 @@ const HOLD = [
   '|| echo gave-up > "$3"',
 ].join(" ")
 
-export function lockDir(env = process.env) {
-  const state = env.XDG_STATE_HOME || join(homedir(), ".local", "state")
-  return join(state, "ocv-tools")
+export class LockUnavailable extends Error {}
+
+const accountHome = () => {
+  try {
+    return userInfo().homedir
+  } catch {
+    return ""
+  }
+}
+
+export function lockDir({ home = accountHome(), env = process.env } = {}) {
+  const under = (dir, root) => dir === root || dir.startsWith(`${root}/`)
+  if (!home || !home.startsWith("/"))
+    throw new LockUnavailable(
+      `the machine lock needs this account's home folder from the password database and found ${JSON.stringify(home)}; no local pre-check runs without it, so run scripts/ocv-tools.mjs check from a normal login shell`
+    )
+  const temporary = ["/tmp", tmpdir()].some((root) => under(home, root))
+  if (temporary && env.CI !== "true")
+    throw new LockUnavailable(
+      `the machine lock would sit under ${home}, a temporary folder that is a small memory-backed disk on a developer machine; outside CI (CI=true) the tool refuses it, so give this account a home folder outside /tmp`
+    )
+  return join(home, ".local", "state", "ocv-tools")
+}
+
+export function flockAvailable() {
+  const probe = spawnSync("flock", ["--version"], {
+    stdio: "ignore",
+    timeout: 10000,
+  })
+  return !probe.error && probe.status === 0
 }
 
 const pause = (ms) =>
@@ -116,11 +143,24 @@ const readFlag = (flag) =>
 export function machineLock(
   fn,
   {
-    dir = lockDir(),
+    dir,
     limit = LOCK_WAIT_SECONDS,
     say = (line) => process.stderr.write(`${line}\n`),
   } = {}
 ) {
+  if (!flockAvailable())
+    return {
+      ok: false,
+      waited: 0,
+      reason:
+        "the flock command was not found on PATH, so the one-at-a-time machine lock cannot be taken and the tests did not run; install util-linux (Debian or Ubuntu: apt install util-linux; macOS: brew install util-linux, then put its bin folder on PATH) and run scripts/ocv-tools.mjs check again",
+    }
+  try {
+    dir = dir ?? lockDir()
+  } catch (error) {
+    if (!(error instanceof LockUnavailable)) throw error
+    return { ok: false, waited: 0, reason: error.message }
+  }
   mkdirSync(dir, { recursive: true })
   const lock = join(dir, "affected-tests.lock")
   const flag = join(dir, `held-${process.pid}-${Date.now()}`)

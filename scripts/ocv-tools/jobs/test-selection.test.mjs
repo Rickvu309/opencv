@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
-import { affectedPlan, selectAndAccount } from "./affected-tests.mjs"
+import { affectedPlan, passLines, selectAndAccount } from "./affected-tests.mjs"
 import { realWorkspace, workspaceInput } from "./hook-world.mjs"
 import { importGraph } from "./import-graph.mjs"
 import { proofCommand } from "./test-accounting.mjs"
@@ -197,4 +197,42 @@ test("a package whose suite runs its files from the repository root (the guards 
   const [step] = affectedPlan(selection, "/repo")
   assert.equal(step.cwd, "/repo")
   assert.ok(step.args.includes(file), step.args.join(" "))
+})
+
+test("on the real tree a drizzle config, a public asset and a file outside every package are broad, name what CI runs, and never read as a full pass", () => {
+  const { paths, texts } = realRepository()
+  const workspaceFiles = {
+    workspaceYaml: readFileSync(join(root, "pnpm-workspace.yaml"), "utf8"),
+    packageJsons: new Map(
+      paths
+        .filter((path) => /(?:^|\/)package\.json$/.test(path))
+        .map((path) => [path, readFileSync(join(root, path), "utf8")])
+    ),
+  }
+  for (const [changed, ci] of [
+    ["apps/api/drizzle.config.ts", "pnpm --filter api test"],
+    ["apps/web/public/apple-touch-icon.png", "pnpm --filter web test"],
+    ["tools/x.ts", "pnpm --filter @workspace/guards test"],
+  ]) {
+    const selection = selectAndAccount({
+      changed: [changed],
+      tests: [...paths, changed],
+      textOf: (file) => texts.get(file) ?? "",
+      workspace: workspaceFiles,
+    })
+    const entry = selection.accounting.entries[0]
+    assert.equal(entry.rule, "broad", `${changed}: ${entry.says}`)
+    assert.ok(selection.accounting.deferred.includes(ci), changed)
+    assert.deepEqual(selection.accounting.proofs, [])
+    const [headline, ...rest] = passLines({
+      partial: selection.partial,
+      deferred: selection.accounting.deferred,
+      ran: selection.accounting.ran,
+    })
+    assert.match(headline, /passed for the part of this change it ran/)
+    assert.ok(
+      rest.some((line) => line.includes(ci)),
+      changed
+    )
+  }
 })

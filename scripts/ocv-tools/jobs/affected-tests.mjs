@@ -74,6 +74,7 @@ export function selectAndAccount({
       unrun: selection.unrun,
       closures: selection.closures,
       imports: selection.imports,
+      direct: selection.direct,
       all,
     }),
   }

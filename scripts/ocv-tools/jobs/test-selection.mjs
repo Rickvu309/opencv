@@ -217,8 +217,11 @@ export function selectTests({
       if (runnableSet.has(test)) add(reachedBy, test, file)
   const named = changedCommandNames(changedLines, textOf)
   const picked = []
+  const directReach = new Map()
   for (const test of runnable) {
-    const scanned = scanHits(scans.get(test), changed)
+    const scan = scans.get(test)
+    const scanned = scanHits(scan, changed)
+    const counted = scan?.dirs.includes("") ? [] : scanned
     const text = named.size ? textOf(test) : ""
     const naming = [...named].find(([, names]) =>
       [...names].some((name) => mentions(text, name))
@@ -231,13 +234,20 @@ export function selectTests({
     const covers = [
       ...new Set([
         ...self,
-        ...scanned,
+        ...counted,
         ...imported,
         ...(naming ? [naming[0]] : []),
         ...(beside ? [beside] : []),
       ]),
     ]
-    if (!covers.length) continue
+    for (const file of [
+      ...self,
+      ...imported,
+      ...(naming ? [naming[0]] : []),
+      ...(beside ? [beside] : []),
+    ])
+      add(directReach, file, test)
+    if (!covers.length && !scanned.length) continue
     const direct = imported.find(
       (file) =>
         (graph.importersOf.get(file) ?? []).includes(test) ||
@@ -325,6 +335,7 @@ export function selectTests({
     unrun,
     partial,
     closures: directReaders,
+    direct: directReach,
     imports,
   }
 }

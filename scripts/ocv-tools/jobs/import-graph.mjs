@@ -2,6 +2,7 @@ import { posix } from "node:path"
 import { configRule } from "./test-accounting.mjs"
 
 export const CODE_EXT = /\.(?:[cm]?[jt]sx?)$/
+const FIXTURE_DATA = "scripts/ocv-tools/"
 const TEST_FILE = /\.(?:test|spec)\.[cm]?[jt]sx?$/
 
 const SPECIFIER =
@@ -79,7 +80,7 @@ export function importGraph(paths, textOf) {
       for (const target of byStem.get(stem) ?? [])
         if (target !== file) imports.add(target)
     for (const target of imports) add(importersOf, target, file)
-    if (!TEST_FILE.test(file)) continue
+    if (!TEST_FILE.test(file) || file.startsWith(FIXTURE_DATA)) continue
     for (const target of reads)
       if (target !== file && known.has(target) && !imports.has(target))
         add(readersOf, target, file)

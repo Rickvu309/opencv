@@ -150,9 +150,9 @@ function weakOrUnknown(file, { packages, runners, ranByRunner }) {
   if (file.startsWith(pkg.runner.source) && ran > 0)
     return {
       file,
-      rule: "package",
-      says: `no test imports or scans it, directly or through other files; ${ran} ${pkg.name} test file(s) run here and the quick checks typecheck it`,
-      proofs: [],
+      rule: "unknown",
+      says: `no test imports it, directly or through other files, and only folder scanners read it; ${ran} ${pkg.name} test file(s) ran here, so its own suite is what proves it`,
+      proofs: [packageProof(pkg)],
     }
   return unknown(
     file,
@@ -173,6 +173,7 @@ export function accountFor({
   unrun = new Map(),
   closures = new Map(),
   imports = new Map(),
+  direct = new Map(),
   all = false,
 }) {
   const skipped = new Set(notRun)
@@ -231,7 +232,8 @@ export function accountFor({
         proofs: readerProofs,
       }
     const tests = reach.get(file) ?? []
-    if (tests.length)
+    const scannedOnly = !isTestFile(file) && !(direct.get(file) ?? []).length
+    if (tests.length && !scannedOnly)
       return {
         file,
         rule: "tests",

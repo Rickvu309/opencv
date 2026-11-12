@@ -146,8 +146,8 @@ test("a source file whose package ran no test is unknown and names the package s
     ["packages/paper-crdt/src/other.test.ts"],
     { texts: { "packages/paper-crdt/src/other.test.ts": 'import "./other"\n' } }
   )
-  assert.equal(ruleOf(covered)["packages/paper-crdt/src/leaf.ts"], "package")
-  assert.deepEqual(proofIds(covered), [])
+  assert.equal(ruleOf(covered)["packages/paper-crdt/src/leaf.ts"], "unknown")
+  assert.deepEqual(proofIds(covered), ["test @workspace/paper-crdt"])
 })
 
 test("the four real misses are still selected and each changed file is accounted for by its tests", () => {
@@ -169,8 +169,16 @@ test("the four real misses are still selected and each changed file is accounted
   for (const [changed, missed] of cases) {
     const selection = account([changed], [missed])
     assert.ok(ran(selection).includes(missed), missed)
-    assert.equal(ruleOf(selection)[changed], "tests", changed)
-    assert.deepEqual(proofIds(selection), [], changed)
+    if (/\.test\.[cm]?[jt]sx?$/.test(changed)) {
+      assert.equal(ruleOf(selection)[changed], "tests", changed)
+      assert.deepEqual(proofIds(selection), [], changed)
+    } else {
+      assert.equal(ruleOf(selection)[changed], "unknown", changed)
+      assert.ok(
+        proofIds(selection).some((id) => id.startsWith("test ")),
+        changed
+      )
+    }
   }
 })
 
