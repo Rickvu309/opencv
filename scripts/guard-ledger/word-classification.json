@@ -8,11 +8,7 @@
   "historic": {
     "mode": "detect",
     "sha": "29c4ce336ca6d1bbebef759244fbdf7c15096d19",
-    "path": "apps/web/src/lib/writing-proposal.ts",
-    "fixed": {
-      "rev": "HEAD",
-      "path": "apps/web/src/lib/writing-proposal.ts"
-    }
+    "path": "apps/web/src/lib/writing-proposal.ts"
   },
-  "reason": "The op-name-only predicate introduced in 29c4ce33 mistook template edits for Word batches and hid Approve. The mistake fixture is that predicate verbatim."
+  "reason": "Introduced in 29c4ce33 (#1330): isWordEdit judged a Word edit by its op name alone, so a template CV edit was read as a Word batch and Approve was hidden."
 }
