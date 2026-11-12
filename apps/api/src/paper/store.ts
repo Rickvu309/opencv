@@ -218,7 +218,7 @@ export async function setPaperFavorite(
 }
 
 export type DuplicatePlan =
-  { kind: "block" } | { kind: "word"; copy: WordPageCopy }
+  { kind: "block" } | { kind: "word"; copy: WordPageCopy } | { kind: "missing" }
 
 export async function planDuplicate(
   actor: Actor,
@@ -226,7 +226,7 @@ export async function planDuplicate(
 ): Promise<DuplicatePlan> {
   if (await ownedPaperOrNull(actor.userId, docId)) return { kind: "block" }
   const copy = await stageWordPageCopy(actor.userId, docId)
-  return copy ? { kind: "word", copy } : documentNotFound()
+  return copy ? { kind: "word", copy } : { kind: "missing" }
 }
 
 export async function duplicatePaper(
@@ -234,6 +234,7 @@ export async function duplicatePaper(
   docId: PaperId,
   plan: DuplicatePlan
 ) {
+  if (plan.kind === "missing") return documentNotFound()
   if (plan.kind === "word")
     return (
       (await publishWordPageCopy(actor.userId, plan.copy)) ?? documentNotFound()

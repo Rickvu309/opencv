@@ -130,6 +130,7 @@ const readsAnUndoOrApprovalCanChange = (): QueryRef[] => [
   { query: "paper.pageCount" },
   { query: "paper.outline" },
   { query: "paper.keywordGap" },
+  { query: "paper.isDeleted" },
   { query: "inbox.list" },
   { query: "inbox.get" },
   { query: "inbox.snoozed" },

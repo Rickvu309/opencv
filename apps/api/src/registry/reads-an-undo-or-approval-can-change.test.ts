@@ -237,7 +237,10 @@ function classified() {
       writes.set(selected.name, writesActivity(selected.activity, sf))
     }
   }
-  for (const file of filesNamed(apiSrc, "package-canvas.ts")) {
+  for (const file of [
+    ...filesNamed(apiSrc, "package-canvas.ts"),
+    ...filesNamed(apiSrc, "card-action-commands.ts"),
+  ]) {
     const sf = parse(file)
     for (const selected of addedCommands(sf)) {
       if (writes.has(selected.name))

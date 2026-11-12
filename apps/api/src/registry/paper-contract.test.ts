@@ -194,7 +194,13 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
       await run("paper.unshare", { docId: cv })
       await run("paper.delete", { docId: copy })
       await run("paper.deleteFile", { fileId: upload.id })
-      await run("paper.canvas", { op: "mint", label: "letter" })
+      const minted = (await run("paper.canvas", {
+        op: "mint",
+        label: "letter",
+      })) as { docId: string }
+      await run("paper.delete", { docId: minted.docId })
+      await read("paper.isDeleted", { docId: minted.docId })
+      await run("paper.restoreDeleted", { docId: minted.docId })
       await run("paper.start", { kind: "cv" })
 
       expect([...seen].sort()).toEqual(

@@ -42,7 +42,9 @@ function duplicatePlan(value: unknown): DuplicatePlan {
     value &&
     typeof value === "object" &&
     "kind" in value &&
-    (value.kind === "block" || value.kind === "word")
+    (value.kind === "block" ||
+      value.kind === "word" ||
+      value.kind === "missing")
   )
     return value as DuplicatePlan
   throw new CommandError(
