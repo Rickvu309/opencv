@@ -122,7 +122,15 @@ describe("the page keeps the look of an imported line", () => {
       diffParagraphs(plainPage(formatted), blocks, caret)
     )
     expect(withLook).toEqual({
-      ops: [{ op: "setText", handle: LEAD, text: "Led ddata work", caret: 5 }],
+      ops: [
+        {
+          op: "setText",
+          handle: LEAD,
+          text: "Led ddata work",
+          caret: 5,
+          lean: "before",
+        },
+      ],
     })
   })
 
@@ -187,7 +195,7 @@ describe("the page keeps the look of an imported line", () => {
     expect(collectLooks(after, [{ id: LEAD, text: "x" }])).toBe(after)
   })
 
-  it("holds a line with a soft line break so an edit cannot move words across it", () => {
+  it("splits a line with a soft line break so either side can change", () => {
     const BREAK = "dddddddd-dddd-4ddd-8ddd-dddddddddddd"
     const page: WordPage = {
       ...formattedPage(),
@@ -208,27 +216,38 @@ describe("the page keeps the look of an imported line", () => {
       ],
     }
     const blocks = pageBlocks(page)
-    expect(blocks.at(-1)).toEqual({
-      id: BREAK,
-      text: "Marketing Intern\nJun 2025 to now",
-      held: true,
-      reason:
-        "This line has a line break inside it. Paper shows it as it is but will not change it yet.",
-      look: { spans: [{ from: 0, to: 16, marks: ["bold"] }] },
-    })
+    expect(blocks.slice(-3)).toEqual([
+      {
+        id: `${BREAK}#0`,
+        text: "Marketing Intern",
+        look: { spans: [{ from: 0, to: 16, marks: ["bold"] }] },
+      },
+      { id: `${BREAK}#1`, text: "\n", held: true },
+      { id: `${BREAK}#2`, text: "Jun 2025 to now" },
+    ])
     const plain = withoutLooks(blocks)
     expect(diffParagraphs(page, plain, null)).toEqual({ ops: [] })
-    const movedWords = plain.map((block) =>
-      block.id === BREAK
-        ? { ...block, text: "Marketing Intern\nSince Jun 2025 to now" }
+    const typed = plain.map((block) =>
+      block.id === `${BREAK}#2`
+        ? { ...block, text: "Since Jun 2025 to now" }
         : block
     )
-    expect(diffParagraphs(page, movedWords, null)).toHaveProperty("refused")
-    const elsewhere = plain.map((block) =>
-      block.id === LEAD ? { ...block, text: "Led data work!" } : block
-    )
-    expect(diffParagraphs(page, elsewhere, null)).toEqual({
-      ops: [{ op: "setText", handle: LEAD, text: "Led data work!" }],
+    expect(
+      diffParagraphs(page, typed, { blockId: `${BREAK}#2`, offset: 6 })
+    ).toEqual({
+      ops: [
+        {
+          op: "setText",
+          handle: BREAK,
+          text: "Marketing InternSince Jun 2025 to now",
+          caret: 22,
+          lean: "after",
+        },
+      ],
     })
+    const movedBreak = plain.map((block) =>
+      block.id === `${BREAK}#1` ? { ...block, text: "\n\n" } : block
+    )
+    expect(diffParagraphs(page, movedBreak, null)).toHaveProperty("refused")
   })
 })

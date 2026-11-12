@@ -74,6 +74,13 @@ describe("blank page commits", () => {
       basedOn,
       ops: [
         { op: "setText", handle: paragraph, text: "Hello", caret: 5 },
+        {
+          op: "setText",
+          handle: paragraph,
+          text: "Hello",
+          caret: 0,
+          lean: "after",
+        },
         { op: "insert", after: paragraph, text: "world" },
         { op: "delete", handle: paragraph },
       ],
@@ -85,6 +92,7 @@ describe("blank page commits", () => {
     for (const ops of [
       [{ op: "setText", handle: paragraph, text: "a\nb" }],
       [{ op: "setText", handle: paragraph, text: "a", caret: -1 }],
+      [{ op: "setText", handle: paragraph, text: "a", caret: 0, lean: "in" }],
       [{ op: "split", handle: paragraph, at: 1 }],
       [],
     ])

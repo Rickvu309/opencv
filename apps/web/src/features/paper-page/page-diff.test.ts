@@ -65,7 +65,13 @@ describe("diffParagraphs", () => {
     ).toEqual({
       ops: [
         { op: "setText", handle: A, text: "First line" },
-        { op: "setText", handle: B, text: "Second line", caret: 11 },
+        {
+          op: "setText",
+          handle: B,
+          text: "Second line",
+          caret: 11,
+          lean: "before",
+        },
       ],
     })
   })
@@ -111,7 +117,13 @@ describe("diffParagraphs", () => {
       })
     ).toEqual({
       ops: [
-        { op: "setText", handle: A, text: "Join me to this", caret: 8 },
+        {
+          op: "setText",
+          handle: A,
+          text: "Join me to this",
+          caret: 8,
+          lean: "before",
+        },
         { op: "delete", handle: B },
       ],
     })
@@ -158,7 +170,15 @@ describe("diffParagraphs", () => {
     expect(
       diffParagraphs(page, texts([A, "Led ddata"]), { blockId: A, offset: 5 })
     ).toEqual({
-      ops: [{ op: "setText", handle: A, text: "Led ddata", caret: 5 }],
+      ops: [
+        {
+          op: "setText",
+          handle: A,
+          text: "Led ddata",
+          caret: 5,
+          lean: "before",
+        },
+      ],
     })
   })
 
@@ -193,7 +213,15 @@ describe("diffParagraphs", () => {
     expect(
       diffParagraphs(page, typed, { blockId: `${A}#1`, offset: 12 })
     ).toEqual({
-      ops: [{ op: "setText", handle: A, text: "Your Name QA555", caret: 12 }],
+      ops: [
+        {
+          op: "setText",
+          handle: A,
+          text: "Your Name QA555",
+          caret: 12,
+          lean: "before",
+        },
+      ],
     })
     const email = blocks.map((block) =>
       block.id === B ? { ...block, text: "Email: name@gmail.com QA" } : block
@@ -256,5 +284,122 @@ describe("pageBlocks", () => {
     expect(
       deleteBackward(draft!, pointSpan({ blockId: A, offset: 0 })).blocks
     ).toEqual(draft?.blocks)
+  })
+})
+
+describe("the side of a run boundary the caret sits on", () => {
+  const linked = pageOf({
+    handle: A,
+    text: "Portfolio at  today",
+    pieces: [
+      { text: "Portfolio at ", editable: true },
+      { text: "example site", editable: false, marks: ["link"] },
+      { text: " today", editable: true },
+    ],
+    held: false,
+    message: "",
+    code: null,
+  })
+
+  const broken = pageOf({
+    handle: A,
+    text: "Marketing InternJun 2025",
+    pieces: [
+      { text: "Marketing Intern", editable: true },
+      { text: "\n", editable: false },
+      { text: "Jun 2025", editable: true },
+    ],
+    held: false,
+    message: "",
+    code: null,
+  })
+
+  function typedInto(page: WordPage, id: string, text: string) {
+    return pageBlocks(page).map((block) =>
+      block.id === id ? { ...block, text } : block
+    )
+  }
+
+  it("leans after when the words open the text that follows a link", () => {
+    expect(
+      diffParagraphs(linked, typedInto(linked, `${A}#2`, "new today"), {
+        blockId: `${A}#2`,
+        offset: 3,
+      })
+    ).toEqual({
+      ops: [
+        {
+          op: "setText",
+          handle: A,
+          text: "Portfolio at new today",
+          caret: 16,
+          lean: "after",
+        },
+      ],
+    })
+  })
+
+  it("leans before when the words close the text in front of a link", () => {
+    expect(
+      diffParagraphs(linked, typedInto(linked, `${A}#0`, "Portfolio at my"), {
+        blockId: `${A}#0`,
+        offset: 15,
+      })
+    ).toEqual({
+      ops: [
+        {
+          op: "setText",
+          handle: A,
+          text: "Portfolio at my today",
+          caret: 15,
+          lean: "before",
+        },
+      ],
+    })
+  })
+
+  it("lets a person type on the far side of a soft line break", () => {
+    expect(pageBlocks(broken)).toEqual([
+      { id: `${A}#0`, text: "Marketing Intern" },
+      { id: `${A}#1`, text: "\n", held: true },
+      { id: `${A}#2`, text: "Jun 2025" },
+    ])
+    expect(
+      diffParagraphs(broken, typedInto(broken, `${A}#2`, "Since Jun 2025"), {
+        blockId: `${A}#2`,
+        offset: 6,
+      })
+    ).toEqual({
+      ops: [
+        {
+          op: "setText",
+          handle: A,
+          text: "Marketing InternSince Jun 2025",
+          caret: 22,
+          lean: "after",
+        },
+      ],
+    })
+  })
+
+  it("names no side when the caret sits in a line that did not change", () => {
+    const blocks = typedInto(linked, `${A}#0`, "Portfolio at my")
+    expect(
+      diffParagraphs(linked, blocks, { blockId: `${A}#2`, offset: 0 })
+    ).toEqual({
+      ops: [
+        {
+          op: "setText",
+          handle: A,
+          text: "Portfolio at my today",
+          caret: 15,
+        },
+      ],
+    })
+  })
+
+  it("holds no line the page says can change", () => {
+    for (const page of [linked, broken])
+      expect(pageBlocks(page).filter((block) => !block.held)).toHaveLength(2)
   })
 })
