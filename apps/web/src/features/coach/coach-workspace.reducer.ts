@@ -3,6 +3,13 @@ import type { CoachContextItem } from "@workspace/domain"
 export type Attachment = CoachContextItem & { label: string }
 export type Picker = "paper" | "job" | "link" | null
 
+export type SentBubble = {
+  text: string
+  seen: number
+  chatId: string | null
+  attachments: Attachment[]
+}
+
 type ChatDraft = {
   draft: string
   attachments: Attachment[]
@@ -21,11 +28,12 @@ export type WorkspaceState = {
   draftNavigationRevision: number
   drafts: ReadonlyMap<string | null, ChatDraft>
   addMenuOpened: boolean
+  sent: SentBubble | null
 }
 
 export type WorkspaceAction =
   | { type: "draft_typed"; value: string }
-  | { type: "draft_sent" }
+  | { type: "draft_sent"; sent: SentBubble }
   | { type: "more_ideas_toggled" }
   | { type: "history_opened" }
   | { type: "history_open_changed"; open: boolean }
@@ -64,6 +72,7 @@ export function initialWorkspaceState(
     draftNavigationRevision: navigationRevision,
     drafts: new Map(),
     addMenuOpened: false,
+    sent: null,
   }
 }
 
@@ -88,7 +97,7 @@ export function workspaceReducer(
     case "draft_typed":
       return { ...state, draft: action.value }
     case "draft_sent":
-      return { ...state, draft: "" }
+      return { ...state, draft: "", sent: action.sent }
     case "more_ideas_toggled":
       return { ...state, moreIdeas: !state.moreIdeas }
     case "history_opened":

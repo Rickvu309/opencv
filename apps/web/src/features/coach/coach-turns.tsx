@@ -1,6 +1,7 @@
 import type { ReactNode } from "react"
 
 import { Button } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
 
 import { ChatItem } from "@/components/ai-elements/chat.tsx"
 import {
@@ -8,7 +9,6 @@ import {
   MessageFooter,
   PersonMessage,
 } from "@/components/ai-elements/message.tsx"
-import { ErrorBanner } from "@/components/error-banner.tsx"
 import {
   STREAMING_COACH_ID,
   latestCoachMessageId,
@@ -23,6 +23,8 @@ import { CoachWorking } from "./coach-working.tsx"
 
 export type CoachTurnsProps = {
   messages: readonly ChatViewMessage[]
+  pendingUser?: ChatViewMessage | null
+  seenUserCount?: number
   waiting?: boolean
   progress?: CoachTurnProgress
   error?: string | null
@@ -32,7 +34,32 @@ export type CoachTurnsProps = {
   messageCite?: (message: ChatViewMessage) => ReactNode
 }
 
-function RetryRow({
+function messagesWithPending(
+  messages: readonly ChatViewMessage[],
+  pending: ChatViewMessage | null | undefined,
+  seenUserCount: number
+): readonly ChatViewMessage[] {
+  const text = pending?.text.trim() ?? ""
+  if (!pending || !text) return messages
+  const count = messages.filter(
+    (message) => message.role === "user" && message.text === text
+  ).length
+  if (count > seenUserCount) return messages
+  if (messages.some((message) => message.id === pending.id)) return messages
+  return [...messages, { ...pending, text }]
+}
+
+function replyActionsVisible(message: ChatViewMessage, streaming: boolean) {
+  return (
+    !streaming &&
+    !message.failed &&
+    message.status !== "error" &&
+    message.status !== "aborted" &&
+    message.text.trim().length > 0
+  )
+}
+
+function TurnAlert({
   message,
   onRetry,
   align,
@@ -43,14 +70,17 @@ function RetryRow({
 }) {
   return (
     <div
-      className={
-        align === "end" ? "mt-2 flex flex-col items-end gap-2" : "space-y-2"
-      }
+      role="alert"
+      data-slot="alert"
+      className={cn(
+        "flex min-w-0 flex-wrap items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive",
+        align === "end" && "self-end"
+      )}
     >
-      <ErrorBanner variant="inline">{message}</ErrorBanner>
+      <p className="min-w-0 flex-1 [overflow-wrap:anywhere]">{message}</p>
       {onRetry ? (
         <Button
-          className="h-11 md:h-7"
+          className="h-11 shrink-0 md:h-8"
           type="button"
           variant="outline"
           size="sm"
@@ -65,6 +95,8 @@ function RetryRow({
 
 export function CoachTurns({
   messages,
+  pendingUser = null,
+  seenUserCount = 0,
   waiting = false,
   progress,
   error = null,
@@ -73,8 +105,9 @@ export function CoachTurns({
   onUndo,
   messageCite,
 }: CoachTurnsProps) {
-  const latestCoachId = latestCoachMessageId(messages)
-  const turns = messages.map((message) => ({
+  const shown = messagesWithPending(messages, pendingUser, seenUserCount)
+  const latestCoachId = latestCoachMessageId(shown)
+  const turns = shown.map((message) => ({
     message,
     parts: message.role === "coach" ? toCoachParts(message) : [],
   }))
@@ -120,7 +153,7 @@ export function CoachTurns({
                 ) : null}
               </PersonMessage>
               {message.failed && message.error ? (
-                <RetryRow
+                <TurnAlert
                   message={message.error}
                   onRetry={onRetry}
                   align="end"
@@ -135,7 +168,7 @@ export function CoachTurns({
           <ChatItem key={message.id} messageId={message.id}>
             <CoachMessage>
               {message.workedMs ? (
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[13px] text-muted-foreground">
                   Worked for {Math.max(1, Math.round(message.workedMs / 1000))}s
                 </p>
               ) : null}
@@ -147,7 +180,7 @@ export function CoachTurns({
                 }}
               />
               {streaming ? null : messageCite?.(message)}
-              {streaming ? null : (
+              {replyActionsVisible(message, streaming) ? (
                 <MessageFooter>
                   <CoachMessageActions
                     message={message}
@@ -159,14 +192,14 @@ export function CoachTurns({
                     onRegenerate={onRegenerate}
                   />
                 </MessageFooter>
-              )}
+              ) : null}
             </CoachMessage>
           </ChatItem>
         )
       })}
       {error ? (
         <ChatItem messageId="coach-error">
-          <RetryRow message={error} onRetry={onRetry} />
+          <TurnAlert message={error} onRetry={onRetry} />
         </ChatItem>
       ) : null}
       {showHeader || showRows ? (

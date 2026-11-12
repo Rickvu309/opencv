@@ -27,6 +27,7 @@ import {
 import { coachPaperOptions, coachJobOptions } from "@/lib/coach-context.ts"
 import { subscribeCoachDraft, takeCoachDraft } from "@/lib/coach-draft.ts"
 import { queryKey } from "@/lib/contract-client.ts"
+import { coachThreadColumn } from "@/components/ai-elements/chat.tsx"
 import { CoachDock, type DockRecentList } from "./coach-dock.tsx"
 import { CoachHome } from "./coach-home.tsx"
 import { CoachCapNotice } from "./coach-cap-notice.tsx"
@@ -39,7 +40,24 @@ import {
   initialWorkspaceState,
   workspaceReducer,
 } from "./coach-workspace.reducer.ts"
-import type { Attachment } from "./coach-workspace.reducer.ts"
+import { type Attachment, type SentBubble } from "./coach-workspace.reducer.ts"
+
+function visibleSent(
+  sent: SentBubble | null,
+  activeChatId: string | null,
+  active: boolean,
+  messages: readonly { role: string; text: string }[]
+) {
+  if (!sent) return null
+  const switched =
+    sent.chatId !== activeChatId && !(sent.chatId === null && active)
+  if (switched) return null
+  const count = messages.filter(
+    (message) => message.role === "user" && message.text === sent.text
+  ).length
+  if (count > sent.seen) return null
+  return sent
+}
 
 export function CoachWorkspace({
   chatId = null,
@@ -78,6 +96,7 @@ export function CoachWorkspace({
       draftChatId,
       draftNavigationRevision,
       addMenuOpened,
+      sent,
     },
     dispatch,
   ] = useReducer(workspaceReducer, undefined, () =>
@@ -100,6 +119,7 @@ export function CoachWorkspace({
     enabled: picker === "job",
   })
   const active = phase !== "idle"
+  const sentBubble = visibleSent(sent, activeChatId, active, messages)
   const day = usage.data?.day
   const capped = day?.capped === true && day.remaining === 0
   const enabled = profile.data?.agentChat !== false
@@ -141,21 +161,35 @@ export function CoachWorkspace({
 
   function send(text = draft) {
     if (!enabled || capped || active) return
+    const trimmed = text.trim()
+    const sentAttachments = attachments.map(({ kind, id, label }) => ({
+      kind,
+      id,
+      label,
+    }))
+    const seen = messages.filter(
+      (message) => message.role === "user" && message.text === trimmed
+    ).length
     if (
       store.send(
         text,
         {
-          context: attachments.map(({ kind, id }) => ({ kind, id })),
-          attachments: attachments.map(({ kind, id, label }) => ({
-            kind,
-            id,
-            label,
-          })),
+          context: sentAttachments.map(({ kind, id }) => ({ kind, id })),
+          attachments: sentAttachments,
         },
         composerId
       )
-    )
-      dispatch({ type: "draft_sent" })
+    ) {
+      dispatch({
+        type: "draft_sent",
+        sent: {
+          text: trimmed,
+          seen,
+          chatId: activeChatId,
+          attachments: sentAttachments,
+        },
+      })
+    }
   }
 
   function attach(item: Attachment) {
@@ -243,8 +277,9 @@ export function CoachWorkspace({
       data-slot="coach-workspace-composer"
       className={cn(
         "space-y-2",
-        !showWelcome && "mx-auto w-full max-w-2xl shrink-0",
-        !showWelcome && (compact ? "px-2 pb-2" : "px-3 pt-2 pb-3")
+        !showWelcome && "shrink-0",
+        !showWelcome && !compact && coachThreadColumn,
+        !showWelcome && compact && "w-full min-w-0 px-2 pb-2"
       )}
     >
       {attachments.length ? (
@@ -373,6 +408,19 @@ export function CoachWorkspace({
         ) : (
           <ChatView
             messages={messages}
+            pendingUser={
+              sentBubble
+                ? {
+                    id: "pending-user",
+                    role: "user",
+                    text: sentBubble.text,
+                    ...(sentBubble.attachments.length
+                      ? { attachments: sentBubble.attachments }
+                      : {}),
+                  }
+                : null
+            }
+            seenUserCount={sentBubble?.seen ?? 0}
             waiting={phase === "waiting"}
             progress={progress}
             error={store.configuration === "error" ? null : error}

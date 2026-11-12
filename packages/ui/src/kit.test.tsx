@@ -14,7 +14,6 @@ vi.mock("sonner", () => ({
 
 import { Brand } from "./components/brand"
 import { Button } from "./components/button"
-import { MessageActions } from "./components/message-actions"
 import { CodeBlockLine } from "./components/code-block"
 import { Skeleton as ShimmerSkeleton } from "./components/shimmer-loader"
 import { CopyButton } from "./components/copy-button"
@@ -135,18 +134,6 @@ describe("kit parts", () => {
   it("pins every shimmer skeleton to the viewport so they share one sweep", () => {
     render(<ShimmerSkeleton />)
     expect(document.head.textContent).toContain("background-attachment: fixed")
-  })
-
-  it("fades the message action bar until a data-ui-message wrapper is hovered or focused", () => {
-    render(
-      <div data-ui-message>
-        <MessageActions text="Hello" />
-      </div>
-    )
-    expect(document.querySelector("[data-quiet]")).not.toBeNull()
-    expect(document.head.textContent).toContain(
-      ":where([data-ui-message]:hover, [data-ui-message]:focus-within) .ui-mac[data-quiet] .ui-mac__bar"
-    )
   })
 
   it("renders a page header and a toolbar of links", () => {

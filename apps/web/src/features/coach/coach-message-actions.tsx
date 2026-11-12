@@ -1,5 +1,4 @@
-import { MessageActions } from "@workspace/ui/components/message-actions"
-
+import { MessageActions } from "@/components/ai-elements/actions.tsx"
 import type { ChatViewMessage } from "@/features/coach/chat-messages.ts"
 
 type Props = {
@@ -16,9 +15,8 @@ export function CoachMessageActions({
   return (
     <MessageActions
       text={message.text}
-      actions={onRegenerate ? ["copy", "regenerate"] : ["copy"]}
       label="Reply actions"
-      regenerateDisabled={!canRegenerate}
+      canRegenerate={canRegenerate}
       onRegenerate={onRegenerate}
     />
   )

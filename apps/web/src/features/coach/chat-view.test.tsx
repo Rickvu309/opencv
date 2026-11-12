@@ -222,5 +222,81 @@ describe("ChatView reply actions", () => {
     expect(
       screen.queryByRole("button", { name: /read aloud|speak|voice/i })
     ).not.toBeInTheDocument()
+    const copy = screen.getByRole("button", { name: "Copy" })
+    copy.focus()
+    expect(copy).toHaveFocus()
+    expect(copy.className).toMatch(/focus-visible:ring/)
+    expect(copy.className).toMatch(/min-h-9/)
+    expect(copy.className).toMatch(/min-w-9/)
+    expect(copy.className).toMatch(/pointer:coarse/)
+    expect(copy.className).toMatch(/min-h-11/)
+    expect(copy.className).toMatch(/motion-reduce:transition-none/)
+  })
+
+  it("hides Copy and Regenerate on an empty or failed reply and offers Retry on the alert", () => {
+    const onRetry = vi.fn()
+    render(
+      createElement(ChatView, {
+        messages: [
+          {
+            id: "coach-empty",
+            role: "coach",
+            text: "",
+            workedMs: 2000,
+            status: "error",
+          },
+        ],
+        error: "The Coach stopped. Try again.",
+        onRetry,
+        onRegenerate: () => {},
+      })
+    )
+
+    expect(
+      screen.queryByRole("button", { name: "Copy" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Regenerate" })
+    ).not.toBeInTheDocument()
+    const alert = screen.getByRole("alert")
+    expect(alert).toHaveAttribute("data-slot", "alert")
+    expect(alert).toHaveTextContent("The Coach stopped. Try again.")
+    fireEvent.click(within(alert).getByRole("button", { name: "Retry" }))
+    expect(onRetry).toHaveBeenCalledOnce()
+  })
+})
+
+describe("ChatView pending message", () => {
+  it("shows the sent message in the first render while Coach is still working", () => {
+    render(
+      createElement(ChatView, {
+        messages: [],
+        waiting: true,
+        pendingUser: {
+          id: "pending-user",
+          role: "user",
+          text: "Tighten my summary",
+        },
+        seenUserCount: 0,
+      })
+    )
+
+    expect(screen.getByText("Tighten my summary")).toBeInTheDocument()
+    expect(screen.getByRole("status")).toHaveTextContent(/^Working$/)
+    const log = screen.getByRole("log", { name: "Chat" })
+    expect(log.className).toContain("max-w-[720px]")
+    expect(log.className).toContain("gap-3.5")
+  })
+
+  it("does not paint the pending message twice once the store has it", () => {
+    render(
+      createElement(ChatView, {
+        messages: [{ id: "user-1", role: "user", text: "Hello" }],
+        pendingUser: { id: "pending-user", role: "user", text: "Hello" },
+        seenUserCount: 0,
+      })
+    )
+
+    expect(screen.getAllByText("Hello")).toHaveLength(1)
   })
 })
