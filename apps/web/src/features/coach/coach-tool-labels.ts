@@ -109,6 +109,10 @@ const TOOL_COPY = {
     label: "Read your Paper outline",
     read: "Read your Paper outline",
   },
+  "paper.isDeleted": {
+    label: "Check a deleted Paper",
+    read: "Checked a deleted Paper",
+  },
   "paper.pageCount": {
     label: "Check your Paper's page count",
     read: "Checked your Paper's page count",
@@ -118,6 +122,7 @@ const TOOL_COPY = {
     read: "Read your Paper",
   },
   "paper.rename": { label: "Rename your Paper" },
+  "paper.restoreDeleted": { label: "Bring back your Paper" },
   "paper.revertEdit": { label: "Restore your Paper" },
   "paper.setFavorite": { label: "Update your Paper's favorite" },
   "paper.setStatus": { label: "Update your Paper's status" },

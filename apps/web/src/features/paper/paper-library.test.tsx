@@ -463,4 +463,53 @@ describe("Paper library", () => {
       }
     }
   )
+
+  it.each([
+    ["a Word page", { format: "word", name: "Word CV.docx" }, true],
+    ["an older document", {}, false],
+  ] as const)(
+    "deletes %s from the card menu and offers Undo only when it can be undone",
+    async (_kind, extra, undoable) => {
+      const doc = cv("Word CV.docx")
+      const activityId = "55555555-5555-4555-8555-555555555555"
+      const fetchMock = vi.fn<typeof fetch>().mockImplementation((url) => {
+        const path = String(url).split("?")[0] ?? ""
+        if (path.endsWith("/api/commands/paper.delete"))
+          return Promise.resolve(
+            Response.json({ ok: true, data: { id: doc.id, ...extra } })
+          )
+        if (path.endsWith("/api/activity"))
+          return Promise.resolve(
+            Response.json({ ok: true, data: [{ id: activityId }] })
+          )
+        return Promise.resolve(Response.json({ ok: true, data: [] }))
+      })
+      vi.stubGlobal("fetch", fetchMock)
+      const user = userEvent.setup()
+      renderLibrary([doc])
+      await user.click(screen.getByRole("button", { name: `${doc.name} menu` }))
+      await user.click(await screen.findByRole("menuitem", { name: "Delete" }))
+      await user.click(await screen.findByRole("button", { name: "Delete" }))
+      await vi.waitFor(() => {
+        expect(
+          fetchMock.mock.calls.some(([url]) =>
+            String(url).endsWith("/api/commands/paper.delete")
+          )
+        ).toBe(true)
+      })
+      const askedForUndo = () =>
+        fetchMock.mock.calls.some(([url]) =>
+          String(url).includes("/api/activity?subjectId=")
+        )
+      if (undoable) await vi.waitFor(() => expect(askedForUndo()).toBe(true))
+      else {
+        await vi.waitFor(() =>
+          expect(
+            screen.queryByRole("button", { name: "Delete" })
+          ).not.toBeInTheDocument()
+        )
+        expect(askedForUndo()).toBe(false)
+      }
+    }
+  )
 })
