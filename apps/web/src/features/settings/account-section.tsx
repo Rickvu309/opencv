@@ -172,7 +172,7 @@ export function AccountSection({
           <SettingsRow
             id="export"
             label="Export your data"
-            desc="Paper, Apply and Pitch as files"
+            desc="CVs, Letters, Jobs and Chats as files"
             control={
               <SettingsRowButton
                 onClick={() => {

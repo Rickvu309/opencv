@@ -18,7 +18,12 @@ import { tableQuery } from "../registry/bind.js"
 import { isUndoRow } from "../registry/expectation.js"
 import type { Registry } from "../registry/registry.js"
 import { readUsage } from "./usage.js"
-import { toPaper, tryReadStoredPaper } from "../paper/index.js"
+import {
+  collectWordPageExport,
+  toPaper,
+  tryReadStoredPaper,
+} from "../paper/index.js"
+import { zipArchive } from "./export-archive.js"
 import { getProfileRow, toProfile } from "./store.js"
 
 const INTEGRATION_GROUPS = [
@@ -239,7 +244,25 @@ export async function readBilling(userId: string) {
   }
 }
 
+export const ACCOUNT_EXPORT_INDEX = "opencv-export.json"
+
 export async function exportAccount(userId: string) {
+  return (await collectAccountExport(userId)).index
+}
+
+export async function exportAccountArchive(userId: string) {
+  const { index, wordFiles } = await collectAccountExport(userId)
+  return zipArchive([
+    {
+      path: ACCOUNT_EXPORT_INDEX,
+      bytes: Buffer.from(JSON.stringify(index, null, 2)),
+      compress: true,
+    },
+    ...wordFiles.map((file) => ({ ...file, compress: false })),
+  ])
+}
+
+async function collectAccountExport(userId: string) {
   const db = getDb()
   const id = parseUserId(userId)
   const profile = toProfile(await getProfileRow(id))
@@ -290,46 +313,53 @@ export async function exportAccount(userId: string) {
     })
     .from(connections)
     .where(eq(connections.userId, userId))
+  const word = await collectWordPageExport(userId)
   return {
-    profile,
-    documents: documents.map(publicDoc),
-    files: fileRows.map((file) => ({
-      ...file,
-      createdAt: file.createdAt.toISOString(),
-    })),
-    jobs: jobRows.map(publicJob),
-    checklist,
-    activity: feed.map((row) => ({
-      id: row.id,
-      actor: row.actor,
-      command: row.command,
-      subjectKind: row.subjectKind,
-      subjectId: row.subjectId,
-      summary: row.summary,
-      detail: row.detail,
-      undoneAt: row.undoneAt?.toISOString() ?? null,
-      createdAt: row.createdAt.toISOString(),
-    })),
-    chats: chatRows.map((chat) => ({
-      id: chat.id,
-      title: chat.title,
-      focusKind: chat.focusKind,
-      focusId: chat.focusId,
-      createdAt: chat.createdAt.toISOString(),
-      updatedAt: chat.updatedAt.toISOString(),
-    })),
-    messages: messages
-      .filter((message) => chatRows.some((chat) => chat.id === message.chatId))
-      .map((message) => ({
-        id: message.id,
-        chatId: message.chatId,
-        role: message.role,
-        text: message.text,
-        parts: readExportedParts(message.parts),
-        status: message.status,
-        createdAt: message.createdAt.toISOString(),
+    index: {
+      profile,
+      wordPages: word.pages,
+      documents: documents.map(publicDoc),
+      files: fileRows.map((file) => ({
+        ...file,
+        createdAt: file.createdAt.toISOString(),
       })),
-    connections: connectionRows,
+      jobs: jobRows.map(publicJob),
+      checklist,
+      activity: feed.map((row) => ({
+        id: row.id,
+        actor: row.actor,
+        command: row.command,
+        subjectKind: row.subjectKind,
+        subjectId: row.subjectId,
+        summary: row.summary,
+        detail: row.detail,
+        undoneAt: row.undoneAt?.toISOString() ?? null,
+        createdAt: row.createdAt.toISOString(),
+      })),
+      chats: chatRows.map((chat) => ({
+        id: chat.id,
+        title: chat.title,
+        focusKind: chat.focusKind,
+        focusId: chat.focusId,
+        createdAt: chat.createdAt.toISOString(),
+        updatedAt: chat.updatedAt.toISOString(),
+      })),
+      messages: messages
+        .filter((message) =>
+          chatRows.some((chat) => chat.id === message.chatId)
+        )
+        .map((message) => ({
+          id: message.id,
+          chatId: message.chatId,
+          role: message.role,
+          text: message.text,
+          parts: readExportedParts(message.parts),
+          status: message.status,
+          createdAt: message.createdAt.toISOString(),
+        })),
+      connections: connectionRows,
+    },
+    wordFiles: word.files,
   }
 }
 

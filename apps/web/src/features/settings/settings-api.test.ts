@@ -21,8 +21,8 @@ describe("settings api guards", () => {
 
   it("reads the export filename from content-disposition", () => {
     expect(
-      filenameFromDisposition('attachment; filename="opencv-export.json"')
-    ).toBe("opencv-export.json")
+      filenameFromDisposition('attachment; filename="opencv-export.zip"')
+    ).toBe("opencv-export.zip")
     expect(filenameFromDisposition(null)).toBe(EXPORT_FILENAME)
   })
 })

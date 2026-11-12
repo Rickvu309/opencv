@@ -14,7 +14,7 @@ import { jsonWithStatus } from "../http-json.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import { saveFile } from "../paper/index.js"
 import { registry } from "../registry/registry.js"
-import { exportAccount } from "./queries.js"
+import { exportAccountArchive } from "./queries.js"
 
 function sessionApp(auth?: Auth, db?: AppDatabase) {
   const routes = new Hono<{ Variables: SessionVariables }>()
@@ -93,13 +93,21 @@ export function createAccountRoutes(auth?: Auth, db?: AppDatabase) {
   })
 
   routes.get("/export", async (c) => {
-    const data = await exportAccount(c.var.userId)
-    const body = JSON.stringify(data)
+    const archive = await exportAccountArchive(c.var.userId)
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        const chunk = archive.chunks.shift()
+        if (chunk) controller.enqueue(new Uint8Array(chunk))
+        else controller.close()
+      },
+    })
     return new Response(body, {
       status: 200,
       headers: {
-        "content-type": "application/json; charset=utf-8",
-        "content-disposition": 'attachment; filename="opencv-export.json"',
+        "content-type": "application/zip",
+        "content-length": String(archive.byteLength),
+        "content-disposition": 'attachment; filename="opencv-export.zip"',
+        "cache-control": "private, no-store",
       },
     })
   })
