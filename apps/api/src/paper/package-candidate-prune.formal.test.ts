@@ -321,9 +321,7 @@ describe("unreachable Word candidate removal", () => {
     () =>
       run(async () => {
         const tools = process.env.PAPER_AGENT_TOOLS
-        const enabled = process.env.PAPER_PACKAGE_ENABLED
         process.env.PAPER_AGENT_TOOLS = "true"
-        process.env.PAPER_PACKAGE_ENABLED = "true"
         const owner = await account()
         const doc = await document(owner)
         const clientId = randomUUID()
@@ -449,8 +447,6 @@ describe("unreachable Word candidate removal", () => {
           spy.mockRestore()
           if (tools === undefined) delete process.env.PAPER_AGENT_TOOLS
           else process.env.PAPER_AGENT_TOOLS = tools
-          if (enabled === undefined) delete process.env.PAPER_PACKAGE_ENABLED
-          else process.env.PAPER_PACKAGE_ENABLED = enabled
           await proposing
           await saving
         }

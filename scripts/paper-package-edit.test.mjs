@@ -98,21 +98,4 @@ test("word binding keeps the registry basis and the restore compare", () => {
       "package-edit.ts"
     ).some((item) => item.kind === "package-basis-lock")
   )
-  for (const marker of [
-    "revalidate: async (_input, snapshot, actor)",
-    "revalidate: async (input, prepared, actor)",
-    "commit: async (input, prepared, actor, locked)",
-  ]) {
-    const at = edit.indexOf(marker)
-    const call = edit.indexOf("requirePackageEnabled()", at)
-    assert.notEqual(at, -1)
-    assert.notEqual(call, -1)
-    const dropped =
-      edit.slice(0, call) + edit.slice(call + "requirePackageEnabled()".length)
-    assert.ok(
-      detect(dropped, "package-edit.ts").some(
-        (item) => item.kind === "package-basis-lock"
-      )
-    )
-  }
 })

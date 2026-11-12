@@ -6,7 +6,7 @@ import {
   paperPackageReadSchema,
   paperPackageStageSchema,
 } from "@workspace/domain"
-import { afterAll, expect, it, vi } from "vitest"
+import { expect, it, vi } from "vitest"
 import { eq } from "drizzle-orm"
 import { z } from "zod"
 
@@ -21,24 +21,13 @@ import { files, paperDocs, user } from "../db/schema.js"
 import { registry } from "../registry/registry.js"
 import { textPdf } from "./import-fixtures.test.js"
 import { fixturePackage, paragraph } from "./package-fixtures.js"
-import { createPaperPackageRoutes } from "./package-http.js"
 import {
   WORD_PACKAGE_MEDIA_TYPE,
   stageWordPackage,
   publishWordPackage,
 } from "./package-store.js"
 
-afterAll(() => vi.unstubAllEnvs())
-
-it("keeps the generation disabled by default before session or upload handling", async () => {
-  vi.stubEnv("PAPER_PACKAGE_ENABLED", "")
-  const app = createPaperPackageRoutes()
-  expect((await app.request("/stage", { method: "POST" })).status).toBe(404)
-  expect((await app.request("/")).status).toBe(404)
-})
-
 it("authenticates staging, reads pinned snapshots, and exports exact DOCX bytes over HTTP", async () => {
-  vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
   const { db, client } = await createMigratedTestDb()
   try {
     const app = createTestApp(db)
@@ -172,7 +161,6 @@ it("authenticates staging, reads pinned snapshots, and exports exact DOCX bytes 
 })
 
 it("moves Word uploads into the immutable library without a legacy document or flattened file", async () => {
-  vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
   const { db, client } = await createMigratedTestDb()
   try {
     const app = createTestApp(db)
@@ -268,7 +256,6 @@ it("moves Word uploads into the immutable library without a legacy document or f
 })
 
 it("keeps the committed import and its original upload when the response read fails", async () => {
-  vi.stubEnv("PAPER_PACKAGE_ENABLED", "")
   const { db, client } = await createMigratedTestDb()
   try {
     const app = createTestApp(db)
@@ -325,7 +312,6 @@ it("keeps the committed import and its original upload when the response read fa
 })
 
 it("traverses 51 published Word documents without losing or repeating a head", async () => {
-  vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
   const { db, client } = await createMigratedTestDb()
   try {
     const app = createTestApp(db)

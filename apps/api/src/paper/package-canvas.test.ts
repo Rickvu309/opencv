@@ -71,23 +71,6 @@ describe("paper.canvas", () => {
     ).rejects.toThrow("This connection cannot use this command")
   })
 
-  it("stays unavailable while saved Word documents are off", async () => {
-    const previous = process.env.PAPER_PACKAGE_ENABLED
-    delete process.env.PAPER_PACKAGE_ENABLED
-    try {
-      await expect(
-        registry().execute({
-          name: "paper.canvas",
-          input: { op: "mint" },
-          actor: personActor("canvas-person"),
-        })
-      ).rejects.toThrow("Saved Word documents are unavailable.")
-    } finally {
-      if (previous === undefined) delete process.env.PAPER_PACKAGE_ENABLED
-      else process.env.PAPER_PACKAGE_ENABLED = previous
-    }
-  })
-
   it("opens a split blank page when the new line has no Word id", async () => {
     const docId = randomUUID()
     const incarnation = randomUUID()

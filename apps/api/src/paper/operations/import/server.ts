@@ -1,13 +1,11 @@
 import { z } from "zod"
 import { operation } from "@workspace/domain/operations/paper/import"
 import {
-  ERROR_CODES,
   parseFileId,
   paperViewSchema,
   paperPackageMetadataSchema,
 } from "@workspace/domain"
 import type { OperationBinding } from "../../../registry/bind.js"
-import { CommandError } from "../../../registry/errors.js"
 import { publishWordPackage } from "../../package-store.js"
 import { importPaper } from "../../store.js"
 
@@ -16,11 +14,6 @@ export const implementation = {
   privateResult: z.union([paperViewSchema, paperPackageMetadataSchema]),
   execute: (input, actor) => {
     if ("fileId" in input) return importPaper(actor, parseFileId(input.fileId))
-    if (process.env.PAPER_PACKAGE_ENABLED !== "true")
-      throw new CommandError(
-        ERROR_CODES.NOT_FOUND,
-        "Word package import is unavailable."
-      )
     return publishWordPackage(actor.userId, input.stageId)
   },
   reversal: (_input, output) =>

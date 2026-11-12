@@ -277,10 +277,7 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
     let bytes: Buffer | undefined = Buffer.from(await file.arrayBuffer())
     let savedId: string | undefined
     try {
-      if (
-        process.env.PAPER_PACKAGE_ENABLED === "true" &&
-        file.name.toLowerCase().endsWith(".docx")
-      ) {
+      if (file.name.toLowerCase().endsWith(".docx")) {
         const input = paperPackageStageInputSchema.safeParse({
           requestId: c.req.header("idempotency-key") ?? createId(),
           name: file.name,

@@ -22,9 +22,7 @@ import { diffParagraphs } from "./page-diff.ts"
 
 const DATABASE = "opencv-writing"
 const TABLE = "pages"
-const UNAVAILABLE = "Saved Word documents are unavailable."
 const SERVER_NOTES = new Set([
-  UNAVAILABLE,
   "This Word document has changed. Read it again before editing.",
 ])
 
@@ -62,7 +60,6 @@ export function pageWords(blocks: readonly { text: string }[]): string {
 
 export function savedNote(words: string, outcome: SaveOutcome): string | null {
   if (words === "" && !outcome.saved) return null
-  if (outcome.note === UNAVAILABLE) return "Word documents are unavailable."
   if (outcome.note && SERVER_NOTES.has(outcome.note)) return outcome.note
   if (!outcome.saved && outcome.note) return outcome.note
   if (!outcome.saved || outcome.words !== words || outcome.revision === null) {

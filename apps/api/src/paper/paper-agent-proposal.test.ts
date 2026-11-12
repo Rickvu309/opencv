@@ -176,7 +176,6 @@ it("reads one page and keeps an edit as a proposal", async () => {
           .where(eq(pendingActions.userId, userId))
       ).toEqual([])
 
-      vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
       const bytes = fixturePackage(paragraph("Original words"))
       const staged = await stageWordPackage(
         userId,

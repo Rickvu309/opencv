@@ -194,12 +194,7 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
       await run("paper.unshare", { docId: cv })
       await run("paper.delete", { docId: copy })
       await run("paper.deleteFile", { fileId: upload.id })
-      process.env.PAPER_PACKAGE_ENABLED = "true"
-      try {
-        await run("paper.canvas", { op: "mint" })
-      } finally {
-        delete process.env.PAPER_PACKAGE_ENABLED
-      }
+      await run("paper.canvas", { op: "mint" })
 
       expect([...seen].sort()).toEqual(
         [...Object.keys(paperContract), ...Object.keys(paperQueries)].sort()

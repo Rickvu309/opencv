@@ -169,7 +169,6 @@ const LATER: Record<string, Later> = {
   },
   "paper.canvas": {
     act: async (a, run, userId) => {
-      process.env.PAPER_PACKAGE_ENABLED = "true"
       const docId = text(a.output, "docId")
       const basedOn = text(a.output, "revision")
       if (!docId || !basedOn) throw new Error("missing page")

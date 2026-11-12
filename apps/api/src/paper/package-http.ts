@@ -71,7 +71,6 @@ export function createPaperPackageRoutes(auth?: Auth, db?: AppDatabase) {
     return handleApiError(error, c)
   })
   routes.use("*", async (c, next) => {
-    if (process.env.PAPER_PACKAGE_ENABLED !== "true") return c.notFound()
     c.header("cache-control", "private, no-store")
     return requireSession(auth, db)(c, next)
   })
