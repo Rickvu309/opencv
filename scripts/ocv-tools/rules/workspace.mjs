@@ -89,6 +89,36 @@ function quickChecks(facts) {
   return `the quick checks failed: ${failed.join(", ")}`
 }
 
+function affectedTests(facts) {
+  if (String(facts.env?.SKIP_CHECKS ?? "") === "1") return null
+  const affected = facts.affected ?? {}
+  if (affected.unreadable?.length)
+    return `the tool could not read what this change is, so no pass is recorded: ${affected.unreadable.slice(0, 3).join("; ")}`
+  if (affected.failed?.length)
+    return `the tests this change reaches failed: ${affected.failed.join(", ")}`
+  if (affected.unproved?.length)
+    return `${affected.unproved.length} changed file(s) need more than the tests a push runs, so no pass is recorded: ${affected.unproved.slice(0, 8).join(", ")}${affected.unproved.length > 8 ? ", ..." : ""}`
+  if (affected.receipt === false)
+    return `no passing run of the tests this change reaches is recorded for ${String(affected.head ?? "HEAD").slice(0, 12)}`
+  return null
+}
+
+const CANNOT_RUN_HERE =
+  'If a test cannot run on this machine at all, record it with scripts/ocv-tools.mjs block <issue> "<reason>"; SKIP_CHECKS=1 stays for a production emergency a human declared'
+
+function affectedTestsFix(facts) {
+  const failed = facts.affected?.failed ?? []
+  if (facts.affected?.unreadable?.length)
+    return `Do what the refusal names for that file or read, then run scripts/ocv-tools.mjs check in this worktree; unknown never counts as passed. ${CANNOT_RUN_HERE}`
+  if (failed.some((label) => label.includes("not installed")))
+    return `Run pnpm install in this worktree, then scripts/ocv-tools.mjs check. ${CANNOT_RUN_HERE}`
+  if (facts.affected?.unproved?.length)
+    return `Run scripts/ocv-tools.mjs check in this worktree: it runs the tests this change reaches plus ${(facts.affected.proofs ?? []).join(" and ")}, then records the pass; push again after it. ${CANNOT_RUN_HERE}`
+  if (failed.length)
+    return `Fix the failing tests the output names, then run scripts/ocv-tools.mjs check: it reruns only this set and records the pass. If they fail with "Cannot find module '@workspace/...'", run pnpm --filter @workspace/domain build first. ${CANNOT_RUN_HERE}`
+  return `Run scripts/ocv-tools.mjs check in this worktree: it runs the tests this change reaches and records the pass for this commit. ${CANNOT_RUN_HERE}`
+}
+
 function disk(facts) {
   if (!facts.disk?.text) return null
   return facts.disk.text
@@ -207,6 +237,15 @@ export const workspaceRows = [
     check: quickChecks,
     fix: () =>
       "Fix what the checks printed and push again; pnpm check runs the larger local suite",
+  }),
+  rule({
+    id: "AFFECTED_TESTS",
+    section: "4",
+    says: "A push records a local pre-check pass, never a claim that all tests pass; CI is the gate. The pass needs the tests the change reaches: changed tests, tests that scan a changed folder, and every test that imports a changed file directly or through other files. Past 40 such tests in a package, it runs the changed tests, the folder scanners and the 25 nearest (tests that name a changed command or import or sit beside a changed file), records a partial pass that names how many ran, and leaves the rest to CI. A config, setup, package or other broad change records a broad pass that names the suite CI runs. No path runs a whole suite unless check --all asks. One local run at a time holds a machine-wide lock while its tests run. Every changed file is accounted for by those tests, by the package suite CI runs when only folder scanners read it, by a short no-tests list, or by a larger run that check performs. Anything the tool cannot read, parse or classify, a skip-worktree or assume-unchanged entry, and a .only in a changed test refuse the pass. Finish needs that pass recorded for the head commit and tree.",
+    at: ["push", "finish"],
+    needs: ["affected", "env"],
+    check: affectedTests,
+    fix: affectedTestsFix,
   }),
   rule({
     id: "DISK",

@@ -18,6 +18,8 @@ import { block, done } from "./done.mjs"
 import { replaceBody } from "./jobs/body.mjs"
 import { finish } from "./jobs/finish.mjs"
 import { hook } from "./jobs/hook.mjs"
+import { checkJob, passLines } from "./jobs/affected-tests.mjs"
+import { decide, refusalError } from "./rules/index.mjs"
 import { merge } from "./jobs/merge.mjs"
 import { policyReport } from "./jobs/policy.mjs"
 import { pullFacts } from "./jobs/pull-facts.mjs"
@@ -56,6 +58,8 @@ const VALUED = new Set([
   "--name",
   "--role",
   "--allow-migration",
+  "--base",
+  "--head",
   ...TEMPLATE_FIELDS.map((f) => f.flag),
 ])
 
@@ -163,6 +167,28 @@ function asksForHelp(words) {
   return false
 }
 
+function checkRun(ctx, flags) {
+  const result = checkJob(ctx, flags)
+  if (flags["--list"]) return result
+  const verdict = decide("push", {
+    push: { refs: [] },
+    env: {},
+    quick: { failed: [] },
+    affected: { failed: result.failed, unreadable: result.unreadable },
+  })
+  if (!verdict.ok) throw refusalError(verdict.refusals[0])
+  return {
+    lines: [
+      ...result.lines,
+      ...passLines(result),
+      result.recorded
+        ? `The pass is recorded for ${result.head.slice(0, 12)}.`
+        : "Save your edits and run check again to record the pass.",
+    ],
+    next: "scripts/ocv-tools.mjs finish --body-file <file>",
+  }
+}
+
 function command(ctx, cmd, rest) {
   const asked = COMMANDS.find((c) => c.name === cmd)
   if (asked && asksForHelp(rest))
@@ -231,6 +257,17 @@ function command(ctx, cmd, rest) {
     }
     case "save":
       return save(ctx, { message: flags["-m"] })
+    case "check": {
+      const unknown = Object.keys(flags).find(
+        (flag) => !["--list", "--base", "--head", "--all"].includes(flag)
+      )
+      if (unknown) unknownOption(unknown)
+      if (pos.length)
+        throw new Error(
+          "usage: ocv-tools check [--all] [--list [--base <rev>] [--head <rev>]]"
+        )
+      return checkRun(ctx, flags)
+    }
     case "release":
       return release(ctx, {
         n: pos[0] ? issueNumber(pos[0], "release --reason <why> [<n>]") : null,

@@ -6,6 +6,7 @@ import { decide } from "../rules/index.mjs"
 import { fixture as scriptedFixture } from "./fixture.mjs"
 import { failedGuards, parseMergeTree } from "./merged-tree.mjs"
 import { stepless } from "./infra-rerun.mjs"
+import { childEnv } from "../ports/proc.mjs"
 
 const SWEEP_HOME = "/ocv-merged-tree-home"
 
@@ -107,12 +108,23 @@ test("a merged tree that fails the guards is refused and its worktree is removed
   assert.ok(verbs.includes("add"))
 })
 
-test("the guard run drops a forced color from the shell", () => {
+test("the guard run gets no forced color and no git variable of the shell", () => {
   const f = fixture({ behind: 1 })
   f.call("merge", "91")
-  const args = f.effects("timeout")[0].args
-  assert.ok(args.includes("FORCE_COLOR"))
-  assert.equal(args[args.indexOf("FORCE_COLOR") - 1], "-u")
+  const guards = f.effects("timeout").find((e) => e.args[1] === "node")
+  const env = childEnv(
+    guards.cmd,
+    {},
+    {
+      PATH: "/bin",
+      FORCE_COLOR: "1",
+      GIT_DIR: "/repo/.git",
+      GIT_INDEX_FILE: "/repo/.git/index",
+    }
+  )
+  assert.equal(env.FORCE_COLOR, undefined)
+  assert.equal(env.GIT_DIR, undefined)
+  assert.equal(env.GIT_INDEX_FILE, undefined)
 })
 
 test("a merged tree that passes the guards enqueues and says so", () => {
@@ -208,7 +220,7 @@ test("a lockfile that differs installs the locked packages inside the merged tre
   assert.deepEqual(steps.slice(added), [
     ["git", "add"],
     ["timeout", "pnpm"],
-    ["timeout", "env"],
+    ["timeout", "node"],
     ["git", "remove"],
     ["git", "prune"],
   ])
@@ -227,7 +239,7 @@ test("a merged tree whose locked packages fail to install is refused before enqu
   assert.doesNotMatch(r.text, /skipped/)
   assert.equal(f.effects("gh", "pr merge").length, 0)
   assert.equal(
-    f.seen.filter((e) => e.cmd === "timeout" && e.args[1] === "env").length,
+    f.seen.filter((e) => e.cmd === "timeout" && e.args[1] === "node").length,
     0
   )
   const verbs = f.effects("git", "worktree").map((e) => e.args[1])

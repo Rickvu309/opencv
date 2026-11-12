@@ -320,6 +320,12 @@ test("every checked rule has a failing and a passing fact", () => {
     "the merge runs 0022_drop_notify (DROP) on production data, and it changes existing things"
   )
   check(
+    "AFFECTED_TESTS",
+    { affected: { failed: ["tests apps/api"] }, env: {} },
+    { affected: { failed: [] }, env: {} },
+    "the tests this change reaches failed: tests apps/api"
+  )
+  check(
     "FILE_SIZE",
     { commits: { oversize: "big.mjs (20001 bytes) " } },
     { commits: {} },
