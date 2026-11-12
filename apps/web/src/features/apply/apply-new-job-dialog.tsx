@@ -236,7 +236,7 @@ export function NewJobDialog({
         data-slot="new-job-dialog"
         showCloseButton={false}
         initialFocus={linkRef}
-        className="gap-0 bg-card p-0 shadow-lg ring-foreground/6 max-md:top-0 max-md:left-0 max-md:h-dvh max-md:max-h-none max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:overflow-y-auto max-md:rounded-none sm:max-w-[620px] md:left-[calc(50%+122px)]"
+        className="gap-0 bg-card p-0 shadow-lg ring-foreground/6 max-md:top-0 max-md:left-0 max-md:h-dvh max-md:max-h-none max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:overflow-y-auto max-md:rounded-none sm:max-w-[620px] lg:left-[calc(50%+122px)]"
         aria-describedby={undefined}
       >
         <DialogDescription className="sr-only">
