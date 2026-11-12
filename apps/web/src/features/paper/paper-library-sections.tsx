@@ -65,6 +65,10 @@ export type LibraryEntryHandlers = {
   onDeleteFile?: (file: PaperFile) => void
 }
 
+export function hasPrintBody(doc: PaperView) {
+  return doc.format !== "word"
+}
+
 function paperActions(
   doc: PaperView,
   word: WordDocument | null,
@@ -79,7 +83,7 @@ function paperActions(
     ...each("Rename", on.onRename),
     ...each("Duplicate", on.onDuplicate),
     ...each("Link to application", on.onLink),
-    ...each("Download PDF", on.onDownload),
+    ...(hasPrintBody(doc) ? each("Download PDF", on.onDownload) : []),
     ...(word
       ? [{ label: "Preview text", onSelect: () => on.onPreview(word) }]
       : []),
