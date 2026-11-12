@@ -221,6 +221,21 @@ export const SCREENS = [
     ],
   },
   {
+    id: "paper-imported-formatted",
+    route: "/paper",
+    steps: [
+      { goto: "/paper" },
+      {
+        upload: {
+          selector: 'input[type="file"]',
+          file: "cv-formatted.docx",
+        },
+      },
+      { waitFor: { text: "Exchange term, Lyon" } },
+      { waitFor: { selector: PAGE } },
+    ],
+  },
+  {
     id: "apply-board",
     route: "/apply",
     steps: ADD_A_JOB,

@@ -1,6 +1,11 @@
 import type { WordHandle, WordOp, WordPage } from "@workspace/domain"
 
-import { pageBlocks, type TextPoint, type WritingBlock } from "./canvas-edit.ts"
+import {
+  heldOnPage,
+  pageBlocks,
+  type TextPoint,
+  type WritingBlock,
+} from "./canvas-edit.ts"
 
 export type PageDiff = { ops: WordOp[] } | { refused: string }
 
@@ -72,7 +77,7 @@ export function diffParagraphs(
   const surviving = new Set(
     slots.flatMap((slot) => (slot.kind === "kept" ? [slot.handle] : []))
   )
-  const lines = page.paragraphs.filter((paragraph) => !paragraph.held)
+  const lines = page.paragraphs.filter((paragraph) => !heldOnPage(paragraph))
   const gone = lines.filter((paragraph) => !surviving.has(paragraph.handle))
   const reused = gone[0]
   if (reused && lines.every((paragraph) => !surviving.has(paragraph.handle))) {
@@ -91,7 +96,7 @@ export function diffParagraphs(
       previous = paragraph.handle
       continue
     }
-    if (paragraph.held) continue
+    if (heldOnPage(paragraph)) continue
     removedAfter.set(previous, [
       ...(removedAfter.get(previous) ?? []),
       paragraph.handle,
@@ -112,7 +117,7 @@ export function diffParagraphs(
       (item) => item.handle === slot.handle
     )
     const text = written.get(slot.handle) ?? ""
-    if (paragraph && !paragraph.held && text !== paragraph.text) {
+    if (paragraph && !heldOnPage(paragraph) && text !== paragraph.text) {
       const at = carets.get(slot.handle)
       ops.push({
         op: "setText",
