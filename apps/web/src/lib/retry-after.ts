@@ -5,22 +5,28 @@ export const BUSY_WAIT_DEFAULT_MS = 5_000
 export const BUSY_WAIT_MIN_MS = 1_000
 export const BUSY_WAIT_MAX_MS = 60_000
 
-export function retryAfterMs(value: string | null, now: number): number | null {
+function retryAfterSignedMs(value: string | null, now: number) {
   if (value === null) return null
   const trimmed = value.trim()
   if (SECONDS.test(trimmed)) return Number(trimmed) * 1000
   if (!/[A-Za-z]/.test(trimmed)) return null
   const at = Date.parse(trimmed)
   if (Number.isNaN(at)) return null
-  return Math.max(0, at - now)
+  return at - now
+}
+
+export function retryAfterMs(value: string | null, now: number): number | null {
+  const ms = retryAfterSignedMs(value, now)
+  return ms === null ? null : Math.max(0, ms)
 }
 
 export function retryAfterMinutes(
   value: string | null,
   now: number
 ): number | null {
-  const ms = retryAfterMs(value, now)
-  if (ms === null) return null
+  const ms = retryAfterSignedMs(value, now)
+  if (ms === null || ms < 0 || !Number.isFinite(ms)) return null
+  if (ms === 0 && value !== null && !SECONDS.test(value.trim())) return null
   return Math.max(1, Math.ceil(ms / 60_000))
 }
 

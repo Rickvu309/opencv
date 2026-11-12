@@ -46,6 +46,20 @@ describe("retryAfterMinutes", () => {
     expect(retryAfterMinutes("3600", NOW)).toBe(60)
     expect(retryAfterMinutes(null, NOW)).toBeNull()
   })
+
+  it("reads an HTTP date in the future and ignores one that has passed", () => {
+    expect(retryAfterMinutes("Thu, 12 Nov 2026 10:00:30 GMT", NOW)).toBe(1)
+    expect(retryAfterMinutes("Thu, 12 Nov 2026 11:30:00 GMT", NOW)).toBe(90)
+    expect(retryAfterMinutes("Thu, 12 Nov 2026 10:00:00 GMT", NOW)).toBeNull()
+    expect(retryAfterMinutes("Thu, 12 Nov 2026 09:59:00 GMT", NOW)).toBeNull()
+  })
+
+  it("ignores negative, non-numeric and endless values", () => {
+    expect(retryAfterMinutes("-5", NOW)).toBeNull()
+    expect(retryAfterMinutes("abc", NOW)).toBeNull()
+    expect(retryAfterMinutes("1.5", NOW)).toBeNull()
+    expect(retryAfterMinutes("9".repeat(400), NOW)).toBeNull()
+  })
 })
 
 describe("captureRetryAfter", () => {

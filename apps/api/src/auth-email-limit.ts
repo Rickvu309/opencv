@@ -1,6 +1,6 @@
 import { createHmac } from "node:crypto"
 
-import { inArray, lt, sql } from "drizzle-orm"
+import { and, eq, inArray, lt, sql } from "drizzle-orm"
 import type { MiddlewareHandler } from "hono"
 
 import { authRoute } from "./auth-routes.js"
@@ -95,7 +95,34 @@ export async function countInWindow(
   return {
     count: row?.count ?? Number.POSITIVE_INFINITY,
     windowStart,
-    retryAfter: Math.max(1, Math.ceil((start + windowMs - now) / 1000)),
+    retryAfter: secondsLeftInWindow(windowMs, now),
+  }
+}
+
+function secondsLeftInWindow(windowMs: number, now: number) {
+  const start = Math.floor(now / windowMs) * windowMs
+  return Math.max(1, Math.ceil((start + windowMs - now) / 1000))
+}
+
+export async function readCountInWindow(
+  db: AppDatabase,
+  key: string,
+  windowMs: number,
+  now: number
+) {
+  const windowStart = new Date(Math.floor(now / windowMs) * windowMs)
+  const [row] = await db
+    .select({ count: authLimitCounters.count })
+    .from(authLimitCounters)
+    .where(
+      and(
+        eq(authLimitCounters.key, key),
+        eq(authLimitCounters.windowStart, windowStart)
+      )
+    )
+  return {
+    count: row?.count ?? 0,
+    retryAfter: secondsLeftInWindow(windowMs, now),
   }
 }
 
@@ -165,14 +192,17 @@ export function authEmailLimit({
       QUARTER_HOUR_MS,
       now
     )
-    if (quarter.count > cap.sendsPerEmailPerQuarterHour)
-      return authLimitedResponse(quarter.retryAfter)
-    const hour = await countInWindow(
-      db,
-      authLimitKey(secret, "send-hour", email),
-      HOUR_MS,
-      now
-    )
+    const hourKey = authLimitKey(secret, "send-hour", email)
+    if (quarter.count > cap.sendsPerEmailPerQuarterHour) {
+      const hourSoFar = await readCountInWindow(db, hourKey, HOUR_MS, now)
+      const hourAlsoRefuses = hourSoFar.count >= cap.sendsPerEmailPerHour
+      return authLimitedResponse(
+        hourAlsoRefuses
+          ? Math.max(quarter.retryAfter, hourSoFar.retryAfter)
+          : quarter.retryAfter
+      )
+    }
+    const hour = await countInWindow(db, hourKey, HOUR_MS, now)
     if (hour.count > cap.sendsPerEmailPerHour)
       return authLimitedResponse(hour.retryAfter)
     const all = await countInWindow(db, "send-hour:all", HOUR_MS, now)

@@ -170,6 +170,35 @@ describe("sign-in code sends are limited per email address", () => {
     })
   })
 
+  it("tells the wait until the hour ends when both the quarter and the hour caps refuse", async () => {
+    await withApp(async (app) => {
+      for (let i = 0; i < 5; i += 1) await send(app, "both@verify.local")
+      vi.setSystemTime(START + 15 * 60_000)
+      for (let i = 0; i < 5; i += 1) await send(app, "both@verify.local")
+      vi.setSystemTime(START + 16 * 60_000)
+      const refused = await send(app, "both@verify.local")
+      expect(refused.status).toBe(429)
+      expect(refused.headers.get("retry-after")).toBe("2640")
+      expect(refused.headers.get("x-retry-after")).toBe("2640")
+      vi.setSystemTime(START + 30 * 60_000)
+      expect((await send(app, "both@verify.local")).status).toBe(429)
+      vi.setSystemTime(START + 60 * 60_000)
+      expect((await send(app, "both@verify.local")).status).toBe(200)
+    })
+  })
+
+  it("tells the wait until the quarter ends when only the quarter cap refuses", async () => {
+    await withApp(async (app) => {
+      for (let i = 0; i < 5; i += 1) await send(app, "quarter@verify.local")
+      vi.setSystemTime(START + 60_000)
+      const refused = await send(app, "quarter@verify.local")
+      expect(refused.status).toBe(429)
+      expect(refused.headers.get("retry-after")).toBe("840")
+      vi.setSystemTime(START + 15 * 60_000)
+      expect((await send(app, "quarter@verify.local")).status).toBe(200)
+    })
+  })
+
   it("never refuses a send for the overall count and warns without addresses past the warning level", async () => {
     const warnings: string[] = []
     vi.spyOn(console, "warn").mockImplementation((...args: unknown[]) => {

@@ -241,6 +241,12 @@ describe("email code", () => {
     ["661", "Too many codes. Try again in about 12 minutes."],
     ["3600", "Too many codes. Try again in about 1 hour."],
     [null, "Too many codes. Try again later."],
+    ["-5", "Too many codes. Try again later."],
+    ["abc", "Too many codes. Try again later."],
+    ["Thu, 01 Jan 2026 00:00:00 GMT", "Too many codes. Try again later."],
+    ["9".repeat(400), "Too many codes. Try again later."],
+    ["99999999999999999999", "Too many codes. Try again tomorrow."],
+    ["Fri, 31 Dec 9999 23:59:59 GMT", "Too many codes. Try again tomorrow."],
   ])(
     "says how long to wait when sending is refused with Retry-After %s",
     async (retryAfter, line) => {

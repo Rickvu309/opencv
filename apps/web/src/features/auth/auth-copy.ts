@@ -21,6 +21,7 @@ export const AUTH_COPY = {
   codeBad: "That code is incorrect or expired.",
   tooManyTries: "Too many tries. Send a new code.",
   tooManyCodes: "Too many codes. Try again later.",
+  tooManyCodesTomorrow: "Too many codes. Try again tomorrow.",
   sendFailed: "We could not send the code. Try again.",
   emailInvalid: "Use a full email, like name@example.com.",
   googleUnavailable: "Google sign-in is not available. Use your email.",
@@ -83,11 +84,17 @@ export function storeLanguage(value: "en" | "vi") {
   sessionStorage.setItem(LANGUAGE_STORAGE_KEY, value)
 }
 
+export const LONGEST_SHOWN_WAIT_MINUTES = 24 * 60
+
 export function tooManyCodesText(minutes: number | null) {
-  if (minutes === null) return AUTH_COPY.tooManyCodes
-  if (minutes >= 60) {
-    const hours = Math.ceil(minutes / 60)
+  if (minutes === null || !Number.isFinite(minutes) || minutes < 1)
+    return AUTH_COPY.tooManyCodes
+  if (minutes > LONGEST_SHOWN_WAIT_MINUTES)
+    return AUTH_COPY.tooManyCodesTomorrow
+  const whole = Math.ceil(minutes)
+  if (whole >= 60) {
+    const hours = Math.ceil(whole / 60)
     return `Too many codes. Try again in about ${hours} ${hours === 1 ? "hour" : "hours"}.`
   }
-  return `Too many codes. Try again in about ${minutes} ${minutes === 1 ? "minute" : "minutes"}.`
+  return `Too many codes. Try again in about ${whole} ${whole === 1 ? "minute" : "minutes"}.`
 }
