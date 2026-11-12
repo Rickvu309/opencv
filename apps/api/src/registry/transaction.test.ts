@@ -141,7 +141,12 @@ describe("every command runs in a transaction unless it declares none", () => {
 
         const tools = await registry.tools(person)
         const schemas = new Map(tools.map((tool) => [tool.name, tool.input]))
-        const others = names.filter((name) => name !== outside)
+        const others = names
+          .filter((name) => name !== outside)
+          .sort(
+            (a, b) =>
+              Number(a === "account.delete") - Number(b === "account.delete")
+          )
         expect(others.length).toBeGreaterThan(0)
         for (const name of others) {
           const schema = schemas.get(name) as Schema | undefined
