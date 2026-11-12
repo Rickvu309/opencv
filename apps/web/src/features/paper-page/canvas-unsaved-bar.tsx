@@ -52,10 +52,20 @@ export function UnsavedBar(props: UnsavedBarProps) {
                 drops your changes on {lines(moved.dropped)}.
               </p>
               <div className="writing-unsaved-actions">
-                <Button size="sm" variant="outline" onClick={moved.onKeep}>
+                <Button
+                  size="sm"
+                  className="h-11 md:h-7"
+                  variant="outline"
+                  onClick={moved.onKeep}
+                >
                   Keep my words
                 </Button>
-                <Button size="sm" variant="ghost" onClick={moved.onUseSaved}>
+                <Button
+                  size="sm"
+                  className="h-11 md:h-7"
+                  variant="ghost"
+                  onClick={moved.onUseSaved}
+                >
                   Use the saved page
                 </Button>
               </div>
@@ -73,6 +83,7 @@ export function UnsavedBar(props: UnsavedBarProps) {
               <div className="writing-unsaved-actions">
                 <CopyButton
                   size="sm"
+                  className="h-11 md:h-7"
                   variant="outline"
                   aria-label="Copy all my unsaved text"
                   value={page.unsavedText}
@@ -81,7 +92,11 @@ export function UnsavedBar(props: UnsavedBarProps) {
                 </CopyButton>
                 {page.signIn ? (
                   <a
-                    className={buttonVariants({ size: "sm", variant: "ghost" })}
+                    className={buttonVariants({
+                      size: "sm",
+                      variant: "ghost",
+                      className: "h-11 md:h-7",
+                    })}
                     href="/sign-in"
                     target="_blank"
                     rel="noopener"
@@ -104,6 +119,7 @@ export function UnsavedBar(props: UnsavedBarProps) {
                   <div className="writing-unsaved-actions">
                     <CopyButton
                       size="sm"
+                      className="h-11 md:h-7"
                       variant="outline"
                       aria-label={`Copy my text from ${preview(line.text)}`}
                       value={line.text}
@@ -112,6 +128,7 @@ export function UnsavedBar(props: UnsavedBarProps) {
                     </CopyButton>
                     <Button
                       size="sm"
+                      className="h-11 md:h-7"
                       variant="ghost"
                       aria-label={`Restore this line: ${preview(line.text)}`}
                       onClick={() => onRestore(line.id)}
