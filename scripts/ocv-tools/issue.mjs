@@ -175,9 +175,6 @@ export function file(ctx, { flags, verb = "file" }) {
       ...warnings,
     ],
     warnings,
-    next:
-      parseRisk(body) === "high"
-        ? "Ask a project admin to comment /approve on the issue before anyone takes it."
-        : `scripts/ocv-tools.mjs take ${created.n}`,
+    next: `scripts/ocv-tools.mjs take ${created.n}`,
   }
 }

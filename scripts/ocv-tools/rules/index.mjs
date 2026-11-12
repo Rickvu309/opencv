@@ -28,7 +28,6 @@ export const MOMENTS = Object.freeze({
   release: "Giving back a claim on an issue.",
   cleanup: "Removing a task worktree and its branch after the merge.",
   status: "Reporting a task's state.",
-  approve: "Recording the owner's approval for a high-risk issue.",
   shot: "Attaching pictures as evidence, once the files are read.",
   "shot-target":
     "Attaching pictures, once the issue or pull request they go to is read.",
@@ -60,7 +59,6 @@ export const RUNNERS = Object.freeze({
   release: ["scripts/ocv-tools/claim.mjs"],
   cleanup: ["scripts/ocv-tools/work.mjs"],
   status: ["scripts/ocv-tools/report.mjs"],
-  approve: ["scripts/ocv-tools/approve.mjs"],
   shot: ["scripts/ocv-tools/shot.mjs"],
   "shot-target": ["scripts/ocv-tools/shot.mjs"],
   authoring: ["scripts/ocv-tools/authoring.mjs"],

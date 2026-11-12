@@ -27,7 +27,7 @@ The web is a React SPA in `apps/web`. The API is Hono in `apps/api`. The shared 
 - Reach `main` only through a merged PR: never push, commit or merge into it locally.
 - Never use `--no-verify`. `SKIP_CHECKS=1` is for a production emergency a human declared; say so in the PR.
 - Never approve your own PR, under any identity.
-- A change to `ci.yml`, `nightly.yml`, `.github/actions/**`, `scripts/check.mjs` or the main ruleset is `risk:high` and needs the owner's `/approve`.
+- A change to `ci.yml`, `nightly.yml`, `.github/actions/**`, `scripts/check.mjs` or the main ruleset is `risk:high`.
 - Leave issues labeled `ready-for-human` to humans.
 - Keep `.env` and secrets out of git.
 
@@ -69,7 +69,7 @@ The web is a React SPA in `apps/web`. The API is Hono in `apps/api`. The shared 
 ## Pointers
 
 - Enforced checks: `node scripts/list-checks.mjs`. Workflow rules: `node scripts/ocv-tools.mjs rules --list`; their source is `scripts/ocv-tools/rules/index.mjs`. The retired `rules --check` and `rules --write` flags no longer generate guides.
-- Git hooks: `.githooks/`. Delivery commands and help: `node scripts/ocv-tools.mjs help`. Reach main through the PR workflow above; do not bypass hooks or approval requirements.
+- Git hooks: `.githooks/`. Delivery commands and help: `node scripts/ocv-tools.mjs help`. Reach main through the PR workflow above; do not bypass hooks.
 - Production sign-in recovery: `scripts/verify-auth-production.mjs` and its test in `scripts/verify-auth-production.test.mjs`.
 - Issue tracker: GitHub issues of `Rickvu309/opencv`. `ready-for-human` is the triage label; leave those issues to humans. Other roles come from the issue and its PRs.
 - Product contracts: `packages/domain/src`. API bindings: `apps/api/src`. Web features: `apps/web/src/features`.

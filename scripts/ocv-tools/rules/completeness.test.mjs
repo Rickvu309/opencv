@@ -99,13 +99,12 @@ test("every raised refusal code has a row, and every row is raised", () => {
   checkCoverage(inputs(), RULES)
   for (const id of ["MISSING_FILE", "BAD_PICTURE", "TOO_BIG", "TOO_MANY"])
     assert.ok(RULES.find((row) => row.id === id).at.includes("shot"), id)
-  const approval = RULES.find((row) => row.id === "NOT_HIGH_RISK")
-  assert.ok(approval.at.includes("approve"))
   const owner = RULES.find((row) => row.id === "NOT_OWNER")
   assert.ok(owner.at.includes("release"))
-  assert.ok(owner.at.includes("approve"))
+  assert.ok(owner.at.includes("merge"))
+  assert.equal(owner.at.includes("approve"), false)
   assert.match(owner.says, /release/)
-  assert.match(owner.says, /approve/)
+  assert.equal(owner.says.includes("approve"), false)
   const history = RULES.find((row) => row.id === "UNKNOWN")
   assert.ok(history.at.includes("history"))
   assert.ok(history.at.includes("issue-load"))
@@ -231,7 +230,7 @@ test("coverage follows decide jobs and refuses unknown dynamic calls", () => {
   )
 })
 
-test("shot, approve and board refusals keep their messages and fixes", () => {
+test("shot and board refusals keep their messages and fixes", () => {
   const hit = (id, facts) => evaluate(id, facts)
   assert.equal(
     hit("MISSING_FILE", {
@@ -252,37 +251,6 @@ test("shot, approve and board refusals keep their messages and fixes", () => {
   assert.equal(
     hit("TOO_BIG", {
       pictures: [{ path: "big.png", bytes: 10 * 1024 * 1024 }],
-    }),
-    null
-  )
-  assert.equal(
-    hit("NOT_HIGH_RISK", { issue: { n: 90, risk: null } }).message,
-    "#90 is unset risk, so no approval is needed"
-  )
-  assert.equal(
-    hit("NOT_HIGH_RISK", { issue: { n: 90, risk: "low" } }).fix,
-    "No approval is needed. Run: scripts/ocv-tools.mjs take 90"
-  )
-  const signed = hit("NOT_OWNER", {
-    issue: { n: 90 },
-    claim: { state: "none" },
-    me: null,
-    account: { login: "collaborator", approvers: ["owner"] },
-  })
-  assert.equal(
-    signed.message,
-    "signed in as collaborator, without admin rights to approve #90"
-  )
-  assert.equal(
-    signed.fix,
-    "run this as an account with admin rights on the project"
-  )
-  assert.equal(
-    hit("NOT_OWNER", {
-      issue: { n: 90 },
-      claim: { state: "none" },
-      me: null,
-      account: { login: "Owner", approvers: ["owner"] },
     }),
     null
   )

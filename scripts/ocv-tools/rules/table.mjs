@@ -263,7 +263,7 @@ export const judgmentRows = [
   judgment({
     id: "OWN_IDENTITY",
     section: "5",
-    says: "Never approve with another identity.",
+    says: "Never use another identity on a pull request review.",
     why: "One account. GitHub cannot tell two agents apart.",
   }),
   judgment({

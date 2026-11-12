@@ -17,10 +17,6 @@ function scriptedCtx(rules) {
         out: "Date: Thu, 29 Oct 2026 12:00:00 GMT\r\n\r\n{}",
         err: "",
       }
-    if (line.includes("collaborators?permission=admin"))
-      return { ok: true, out: "owner\n", err: "" }
-    if (line.includes("api repos/owner/opencv --jq .owner.type"))
-      return { ok: true, out: "User\n", err: "" }
     for (const [match, result] of rules)
       if (line.includes(match))
         return typeof result === "function"
@@ -44,15 +40,6 @@ const claim = (agent, minutes, id = 1) => ({
   body: claimMarker({ agent, at: "client", branch: "feat/1-x" }),
 })
 
-const approved = {
-  databaseId: 9,
-  lastEditedAt: null,
-  author: { login: "owner" },
-  createdAt: "2026-10-29T11:00:00Z",
-  updatedAt: "2026-10-29T11:00:00Z",
-  body: "/approve",
-}
-
 const DETAILS = {
   10: { title: "feat: Needs the owner", risk: "high" },
   11: { title: "feat: Free work", risk: "normal" },
@@ -67,11 +54,7 @@ const DETAILS = {
     risk: "high",
     comments: { nodes: [claim("cy", 5)] },
   },
-  16: {
-    title: "feat: Approved review",
-    risk: "high",
-    comments: { nodes: [approved] },
-  },
+  16: { title: "feat: High review", risk: "high" },
 }
 
 function comments(nodes, hasNextPage = false, endCursor = null) {
@@ -220,7 +203,7 @@ function split(text) {
   return { body: text.slice(0, at), next: text.slice(at + 7) }
 }
 
-test("checkState, prFor, and groupOf: risk:high without a valid approval waits even when held or in review", () => {
+test("checkState, prFor, and groupOf follow the pull request, then the claim", () => {
   assert.equal(checkState(null), "none")
   assert.equal(checkState([]), "none")
   assert.equal(
@@ -233,26 +216,11 @@ test("checkState, prFor, and groupOf: risk:high without a valid approval waits e
   )
   assert.equal(checkState([{ status: "IN_PROGRESS" }]), "pending")
   assert.equal(checkState([{ state: "SUCCESS" }]), "passing")
-  assert.equal(
-    groupOf({ risk: "high", approved: false, claim: "live", prOpen: true }),
-    "waiting"
-  )
-  assert.equal(
-    groupOf({ risk: "high", approved: true, claim: "none", prOpen: true }),
-    "inReview"
-  )
-  assert.equal(
-    groupOf({ risk: "normal", approved: true, claim: "live", prOpen: false }),
-    "taken"
-  )
-  assert.equal(
-    groupOf({ risk: "normal", approved: true, claim: "idle", prOpen: false }),
-    "idle"
-  )
-  assert.equal(
-    groupOf({ risk: "low", approved: false, claim: "released", prOpen: false }),
-    "free"
-  )
+  assert.equal(groupOf({ claim: "live", prOpen: true }), "inReview")
+  assert.equal(groupOf({ claim: "none", prOpen: true }), "inReview")
+  assert.equal(groupOf({ claim: "live", prOpen: false }), "taken")
+  assert.equal(groupOf({ claim: "idle", prOpen: false }), "idle")
+  assert.equal(groupOf({ claim: "released", prOpen: false }), "free")
   assert.equal(
     prFor([{ number: 1, state: "OPEN", headRefName: "feat/900-x" }], 90),
     null
@@ -268,22 +236,24 @@ test("board groups open issues and reads a claim past the first comment page", (
   const { code, text } = runCli(["board"], ctx)
   assert.equal(code, 0, text)
   const { body, next } = split(text)
-  assert.match(body, /Waiting for approval \(2\)/)
-  assert.match(body, /Open and free \(1\)/)
-  assert.match(body, /Taken \(1\)/)
+  assert.doesNotMatch(body, /Waiting for approval/)
+  assert.match(body, /Open and free \(2\)/)
+  assert.match(body, /Taken \(2\)/)
   assert.match(body, /Idle \(past 180 min\) \(1\)/)
   assert.match(body, /In review \(2\)/)
-  const waiting = body.split("Open and free")[0]
-  assert.match(waiting, /\b10\b/)
-  assert.match(waiting, /\b15\b/)
-  assert.match(waiting, /\bcy\b/)
-  assert.doesNotMatch(waiting, /\b16\b/)
+  const free = body.split("Open and free")[1].split("Taken")[0]
+  assert.match(free, /\b10\b/)
+  assert.match(free, /\b11\b/)
+  const taken = body.split("Taken")[1].split("Idle (past")[0]
+  assert.match(taken, /\b15\b/)
+  assert.match(taken, /\bcy\b/)
+  assert.match(taken, /\bada\b/)
   assert.match(body, /\bada\b/)
   assert.match(body, /\b180\b/)
   assert.match(body, /#140 open\s+failing/)
   assert.match(body, /#160 open\s+passing/)
   assert.doesNotMatch(body, /#900/)
-  assert.match(next, /ocv-tools\.mjs take 11/)
+  assert.match(next, /ocv-tools\.mjs take 10/)
   const issue12 = ctx.calls.filter((c) => c.includes("-F n=12"))
   assert.equal(issue12.length, 1, issue12.join("\n"))
   assert.match(issue12[0], /cursor=c1/)
@@ -300,12 +270,12 @@ test("board --json prints the same groups", () => {
   assert.equal(code, 0, text)
   const { body, next } = split(text)
   const groups = JSON.parse(body)
+  assert.equal(groups.waiting, undefined)
   assert.deepEqual(
-    groups.waiting.map((row) => row.number),
-    [10, 15]
+    groups.free.map((row) => row.number),
+    [10, 11]
   )
-  assert.equal(groups.waiting.find((row) => row.number === 15).claim, "live")
-  assert.equal(groups.free[0].number, 11)
+  assert.equal(groups.taken.find((row) => row.number === 15).claim, "live")
   assert.equal(groups.free[0].claim, "none")
   assert.equal(groups.taken[0].holder, "ada")
   assert.equal(groups.taken[0].idleMinutes, 10)
@@ -316,22 +286,7 @@ test("board --json prints the same groups", () => {
     "failing"
   )
   assert.equal(groups.inReview.find((row) => row.number === 16).pr.number, 160)
-  assert.match(next, /take 11/)
-})
-
-test("board treats an edited admin approval as waiting for approval", () => {
-  const ctx = ctxOf((line) => {
-    const result = JSON.parse(graphql(line))
-    const nodes = result.data?.repository?.issues?.nodes
-    const approvedIssue = nodes?.find((item) => item.number === 16)
-    if (approvedIssue)
-      approvedIssue.comments.nodes[0].lastEditedAt = "2026-10-29T11:30:00Z"
-    return JSON.stringify(result)
-  })
-  const { code, text } = runCli(["board", "--json"], ctx)
-  assert.equal(code, 0, text)
-  const groups = JSON.parse(split(text).body)
-  assert.ok(groups.waiting.some((item) => item.number === 16))
+  assert.match(next, /take 10/)
 })
 
 test("board reads 50 issues with a constant handful of gh calls", () => {
@@ -543,12 +498,14 @@ test("an empty board still ends with Next", () => {
   })
   const { code, text } = runCli(["board"], ctx)
   assert.equal(code, 0, text)
-  assert.match(text, /Waiting for approval \(0\)\nNone\./)
+  assert.doesNotMatch(text, /Waiting for approval/)
+  assert.match(text, /Open and free \(0\)\nNone\./)
   assert.match(text, /\nNext: scripts\/ocv-tools\.mjs help/)
 })
 
 test("help lists board", () => {
   const { text } = runCli(["help"], scriptedCtx([]))
   assert.match(text, /board \[--json\]/)
-  assert.match(text, /waiting for approval/)
+  assert.match(text, /open and free/)
+  assert.doesNotMatch(text, /waiting for approval/)
 })

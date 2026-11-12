@@ -62,7 +62,7 @@ function riskHigh(facts) {
   )
     return null
   if (asLines(facts.diff?.labels).includes("risk:high")) return null
-  return "the change touches ci.yml, nightly.yml, composite actions, check.mjs or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high (owner approval, slice 5 of epic #582)"
+  return "the change touches ci.yml, nightly.yml, composite actions, check.mjs or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high"
 }
 
 function changeTooBig(facts) {
