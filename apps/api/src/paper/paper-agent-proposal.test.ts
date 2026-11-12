@@ -4,6 +4,7 @@ import {
   delegateActorSchema,
   paperPackageReadSchema,
   paperWordReadSchema,
+  personActor,
 } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { afterEach, expect, it, vi } from "vitest"
@@ -23,6 +24,7 @@ import {
 } from "../db/schema.js"
 import { installRegistry } from "../registry/install.js"
 import { paperEditBasisMessage } from "../registry/paper-agent.js"
+import { PENDING_TTL_MS } from "../registry/proposals.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { fixturePackage, paragraph } from "./package-fixtures.js"
 import { publishWordPackage, stageWordPackage } from "./package-store.js"
@@ -434,5 +436,139 @@ it("opens Paper to a consented agent over MCP and writes only what the person ap
   } finally {
     await door.close()
     await jobsOnly.close()
+  }
+}, 60000)
+
+it("refuses to apply an agent's Word proposal that is superseded, approved, declined, expired or no longer granted", async () => {
+  const { db, client } = await createMigratedTestDb()
+  const registry = installRegistry()
+  const userId = "user-paper-agent"
+  const connectionId = "11111111-1111-4111-8111-111111111111"
+  try {
+    await db.insert(user).values({
+      id: userId,
+      name: "Ada",
+      email: "paper-agent@example.com",
+    })
+    await db.insert(oauthClient).values({
+      id: "paper-agent-client",
+      clientId: "paper-agent-client",
+      redirectUris: ["http://localhost/callback"],
+    })
+    await db.insert(agentConnections).values({
+      id: connectionId,
+      userId,
+      clientId: "paper-agent-client",
+      authorizationCodeId: "paper-agent-code",
+      name: "Paper agent",
+      audience: "http://localhost/mcp",
+      scopes: paperScopes,
+      resources: { kind: "paper" },
+      policy: { reads: "allow", writes: "approval" },
+      expiresAt: new Date(Date.now() + 60_000),
+    })
+    const paper = agent(paperScopes, "paper")
+    await withDatabase(db, async () => {
+      const staged = await stageWordPackage(
+        userId,
+        { requestId: randomUUID(), name: "Letter.docx", kind: "letter" },
+        fixturePackage(paragraph("Original words"))
+      )
+      const { docId } = await publishWordPackage(userId, staged.stageId)
+      const head = async () => {
+        const page = paperPackageReadSchema.parse(
+          await registry.read("paper.read", { docId }, personActor(userId))
+        )
+        return {
+          revision: page.revision,
+          text: page.regions.find((item) => item.kind === "editable")?.text,
+        }
+      }
+      const lines = paperWordReadSchema.parse(
+        await registry.read("paper.read", { view: "lines", docId }, paper)
+      )
+      const region = lines.paragraphs.find((item) => !item.held)
+      if (!region || region.held) throw new Error("missing editable region")
+      const propose = async (basedOn: string, text: string) => {
+        const proposed = await registry.execute({
+          name: "paper.edit",
+          input: {
+            docId,
+            basedOn,
+            edits: [{ op: "setText", handle: region.handle, text }],
+          },
+          actor: paper,
+          idempotencyKey: randomUUID(),
+        })
+        expect(proposed.pending, text).toBe(true)
+        return z.string().parse(proposed.pendingActionId)
+      }
+      const statusOf = async (id: string) =>
+        (
+          await db
+            .select({ status: pendingActions.status })
+            .from(pendingActions)
+            .where(eq(pendingActions.id, id))
+        )[0]?.status
+
+      const first = await propose(lines.revision, "First words")
+      const superseded = await propose(lines.revision, "Superseded words")
+      const applied = await registry.approve(userId, first)
+      expect(applied).toBeTruthy()
+      const committed = await head()
+      expect(committed.text).toBe("First words")
+      expect(committed.revision).not.toBe(lines.revision)
+
+      await expect(registry.approve(userId, superseded)).rejects.toThrow(
+        "Basis conflict"
+      )
+      expect(await head()).toEqual(committed)
+
+      const again = await registry.approve(userId, first)
+      expect(again?.id).toBe(applied?.id)
+      expect(await head()).toEqual(committed)
+      expect(await statusOf(first)).toBe("approved")
+
+      const declined = await propose(committed.revision, "Declined words")
+      await registry.deny(userId, declined)
+      await expect(registry.approve(userId, declined)).rejects.toThrow(
+        "This action was already declined."
+      )
+      expect(await head()).toEqual(committed)
+
+      const expired = await propose(committed.revision, "Expired words")
+      await db
+        .update(pendingActions)
+        .set({ createdAt: new Date(Date.now() - PENDING_TTL_MS - 60_000) })
+        .where(eq(pendingActions.id, expired))
+      await expect(registry.approve(userId, expired)).rejects.toThrow(
+        "This confirmation expired. Ask the Coach again."
+      )
+      expect(await statusOf(expired)).toBe("expired")
+      expect(await head()).toEqual(committed)
+
+      const withoutWrite = await propose(committed.revision, "Unscoped words")
+      const revoked = await propose(committed.revision, "Revoked words")
+      await db
+        .update(agentConnections)
+        .set({ scopes: ["paper.read"] })
+        .where(eq(agentConnections.id, connectionId))
+      await expect(registry.approve(userId, withoutWrite)).rejects.toThrow(
+        "no longer active"
+      )
+      expect(await head()).toEqual(committed)
+      await db
+        .update(agentConnections)
+        .set({ scopes: paperScopes, revokedAt: new Date() })
+        .where(eq(agentConnections.id, connectionId))
+      await expect(registry.approve(userId, revoked)).rejects.toThrow(
+        "no longer active"
+      )
+      expect(await head()).toEqual(committed)
+      expect(await statusOf(withoutWrite)).toBe("pending")
+      expect(await statusOf(revoked)).toBe("pending")
+    })
+  } finally {
+    await client.close()
   }
 }, 60000)

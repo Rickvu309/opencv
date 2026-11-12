@@ -13,12 +13,14 @@ import { registeredAgentScopes } from "../connections/index.js"
 import { withDatabase } from "../db/context.js"
 import {
   agentConnections,
+  agentToolCalls,
   chatMessages,
   chats,
   pendingActions,
   user,
 } from "../db/schema.js"
 import { installRegistry } from "../registry/install.js"
+import { registry as installedRegistry } from "../registry/registry.js"
 import {
   createProposalClient,
   toolReply as reply,
@@ -256,5 +258,86 @@ it("refuses another person's document, cursor and revision alike, and stops a pr
     vi.restoreAllMocks()
     await door.close()
     await readOnly.close()
+  }
+}, 60000)
+
+it("answers reconnect and stores nothing when a Paper grant is revoked after the door admits paper.read or paper.edit", async () => {
+  for (const tool of ["paper_read", "paper_edit"] as const) {
+    const door = await createProposalClient(doorScope)
+    try {
+      const owner = door.owner.user.id
+      const mine = await withDatabase(door.db, async () => {
+        const staged = await stageWordPackage(
+          owner,
+          { requestId: randomUUID(), name: "CV.docx", kind: "cv" },
+          fixturePackage(paragraph("Kept words"))
+        )
+        return publishWordPackage(owner, staged.stageId)
+      })
+      const [grant] = await door.db
+        .select()
+        .from(agentConnections)
+        .where(eq(agentConnections.userId, owner))
+      expect(grant?.scopes).toEqual(
+        expect.arrayContaining(["paper.read", "paper.write"])
+      )
+      expect(["paper", "jobs-and-paper"]).toContain(grant?.resources.kind)
+      const call = async (name: string, args: Record<string, unknown>) =>
+        reply(await door.sdk.callTool({ name, arguments: args }))
+      const page = paperPackageReadSchema.parse(
+        (await call("paper_read", { docId: mine.docId })).body.data
+      )
+      const line = page.regions[0]?.paragraph
+      if (!line) throw new Error("Missing a line handle")
+      const args =
+        tool === "paper_read"
+          ? { docId: mine.docId }
+          : {
+              docId: mine.docId,
+              basedOn: page.revision,
+              edits: [{ op: "setText", handle: line, text: "Revoked words" }],
+            }
+      const stored = async () => ({
+        calls: await door.db
+          .select()
+          .from(agentToolCalls)
+          .where(eq(agentToolCalls.userId, owner)),
+        proposals: await door.db
+          .select()
+          .from(pendingActions)
+          .where(eq(pendingActions.userId, owner)),
+      })
+      const listTools = installedRegistry.tools.bind(installedRegistry)
+      const revokeMidCall = vi
+        .spyOn(installedRegistry, "tools")
+        .mockImplementationOnce(async (actor) => {
+          const entries = await listTools(actor)
+          await door.db
+            .update(agentConnections)
+            .set({ revokedAt: new Date() })
+            .where(eq(agentConnections.userId, owner))
+          return entries
+        })
+      const before = await stored()
+      const revoked = await call(tool, args)
+      expect(revokeMidCall, tool).toHaveBeenCalledTimes(1)
+      expect(revoked.isError, tool).toBe(true)
+      expect(revoked.body, tool).toMatchObject({ code: "reconnect" })
+      expect(JSON.stringify(revoked.body), tool).not.toContain("Kept words")
+      expect(await stored(), tool).toEqual(before)
+      const after = paperPackageReadSchema.parse(
+        await withDatabase(door.db, () =>
+          installRegistry().read(
+            "paper.read",
+            { docId: mine.docId },
+            personActor(owner)
+          )
+        )
+      )
+      expect(after.revision, tool).toBe(page.revision)
+    } finally {
+      vi.restoreAllMocks()
+      await door.close()
+    }
   }
 }, 60000)
