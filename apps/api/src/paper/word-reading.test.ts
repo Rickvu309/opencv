@@ -13,9 +13,12 @@ import { z } from "zod"
 
 import { withDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
-import { resolveTurnGrounding } from "../coach/context.js"
-import { createScriptedCoachRuntime } from "../coach/fake.js"
-import { coachInstructions, coachTurnContext } from "../coach/instructions.js"
+import {
+  coachInstructions,
+  coachTurnContext,
+  createScriptedCoachRuntime,
+  resolveTurnGrounding,
+} from "../coach/index.js"
 import { registry } from "../registry/registry.js"
 import { installRegistry } from "../registry/install.js"
 import {
