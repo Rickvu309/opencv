@@ -1,9 +1,8 @@
 import { fsAdapter } from "./fs.mjs"
 import { ghAdapter } from "./gh.mjs"
 import { gitAdapter } from "./git.mjs"
-import { procAdapter, realRunner } from "./proc.mjs"
+import { machineLock, procAdapter, realRunner } from "./proc.mjs"
 import { activityAdapter } from "./activity.mjs"
-import { withMachineLock } from "../jobs/machine-lock.mjs"
 
 export function realPorts() {
   const run = realRunner()
@@ -24,6 +23,6 @@ export function realPorts() {
         ),
     },
     env: process.env,
-    lock: (fn) => withMachineLock(fn),
+    lock: (fn) => machineLock(fn),
   }
 }
