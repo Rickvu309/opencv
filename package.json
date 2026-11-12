@@ -16,6 +16,7 @@
     "test:formal": "node scripts/tlc.mjs --all"
   },
   "devDependencies": {
+    "playwright-core": "1.65.0",
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "railway": "^3.16.0",
