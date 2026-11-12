@@ -191,6 +191,82 @@ export function coverageProblems(mapPath, map, files) {
   return problems
 }
 
+export function declaredNames(sourceText, fileName) {
+  const source = ts.createSourceFile(
+    fileName,
+    sourceText,
+    ts.ScriptTarget.Latest,
+    true
+  )
+  const names = new Set()
+  const visit = (node) => {
+    if (
+      (ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node)) &&
+      node.name
+    )
+      names.add(node.name.text)
+    if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name))
+      names.add(node.name.text)
+    if (ts.isClassDeclaration(node) && node.name)
+      for (const member of node.members)
+        if (
+          ts.isMethodDeclaration(member) &&
+          member.name &&
+          (ts.isIdentifier(member.name) || ts.isPrivateIdentifier(member.name))
+        )
+          names.add(`${node.name.text}.${member.name.text}`)
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  return names
+}
+
+export function boundaryProblems(mapPath, map, files, read) {
+  if (map.boundaries === undefined) return []
+  if (!map.boundaries || typeof map.boundaries !== "object")
+    return [`${mapPath}: "boundaries" maps an action to "file:name" entries`]
+  const problems = []
+  const dir = posix.dirname(mapPath)
+  const covers = Array.isArray(map.covers) ? map.covers : []
+  for (const [action, entries] of Object.entries(map.boundaries)) {
+    if (!map.actions || !(action in map.actions))
+      problems.push(
+        `${mapPath}: boundary ${action} is not an action in "actions"`
+      )
+    if (!Array.isArray(entries) || entries.length === 0) {
+      problems.push(`${mapPath}: boundary ${action} needs "file:name" entries`)
+      continue
+    }
+    for (const entry of entries) {
+      const at = typeof entry === "string" ? entry.lastIndexOf(":") : -1
+      if (at <= 0 || at === entry.length - 1) {
+        problems.push(
+          `${mapPath}: boundary ${action} entry ${String(entry)} is not "file:name"`
+        )
+        continue
+      }
+      const path = posix.normalize(posix.join(dir, entry.slice(0, at)))
+      const name = entry.slice(at + 1)
+      if (!files.includes(path)) {
+        problems.push(
+          `${mapPath}: boundary ${action} names ${path}, which is not in the repo`
+        )
+        continue
+      }
+      if (!covers.includes(path))
+        problems.push(
+          `${mapPath}: boundary ${action} names ${path}, which "covers" must list so --stale watches it`
+        )
+      const text = read(path)
+      if (!text || !declaredNames(text, path).has(name))
+        problems.push(
+          `${mapPath}: boundary ${action} names ${name}, which ${path} does not define`
+        )
+    }
+  }
+  return problems
+}
+
 function mapProblems(mapPath, mapText, tlaText, files, read, installed) {
   let map
   try {
@@ -209,7 +285,11 @@ function mapProblems(mapPath, mapText, tlaText, files, read, installed) {
     exports,
     problems: found,
   } = moduleExports(map, mapPath, files, read, installed)
-  const problems = [...found, ...coverageProblems(mapPath, map, files)]
+  const problems = [
+    ...found,
+    ...coverageProblems(mapPath, map, files),
+    ...boundaryProblems(mapPath, map, files, read),
+  ]
   for (const [key, code] of Object.entries(map.mutants ?? {}))
     if (!MUTANT_EXITS.has(code))
       problems.push(

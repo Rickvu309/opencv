@@ -341,6 +341,62 @@ test("a covered file that is not in the repo or a short sync commit is a problem
   assert.match(problems[1], /needs "sync"/)
 })
 
+const withBoundaries = (boundaries, covers) => ({
+  ...complete(),
+  "b/store.ts":
+    "export function save() {}\nconst limit = 2\nexport class Registry {\n  approve() {}\n}\n",
+  "b/route.ts":
+    'import { personActor } from "x"\nexport function routes() {}\n',
+  "a/Spec.tla.json": JSON.stringify({
+    ...RECORD,
+    covers: covers ?? ["a/Spec.tla", "b/store.ts", "b/route.ts"],
+    module: "spec.mjs",
+    actions: { Step: "step" },
+    boundaries,
+  }),
+})
+
+test("boundary entries that name a defined function, constant or method of a covered file pass", () => {
+  assert.deepEqual(
+    problemsOf(
+      withBoundaries({
+        Step: [
+          "../b/store.ts:save",
+          "../b/store.ts:limit",
+          "../b/store.ts:Registry.approve",
+          "../b/route.ts:routes",
+        ],
+      })
+    ),
+    []
+  )
+})
+
+test("a boundary that names an import, a missing file or an unknown action is a problem", () => {
+  const problems = problemsOf(
+    withBoundaries({
+      Step: ["../b/route.ts:personActor", "../b/gone.ts:save", "nocolon"],
+      Other: ["../b/store.ts:save"],
+    })
+  )
+  assert.equal(problems.length, 4)
+  assert.match(
+    problems[0],
+    /names personActor, which b\/route\.ts does not define/
+  )
+  assert.match(problems[1], /names b\/gone\.ts, which is not in the repo/)
+  assert.match(problems[2], /entry nocolon is not "file:name"/)
+  assert.match(problems[3], /boundary Other is not an action in "actions"/)
+})
+
+test("a boundary file that covers does not list is a problem so --stale watches it", () => {
+  const problems = problemsOf(
+    withBoundaries({ Step: ["../b/store.ts:save"] }, ["a/Spec.tla"])
+  )
+  assert.equal(problems.length, 1)
+  assert.match(problems[0], /names b\/store\.ts, which "covers" must list/)
+})
+
 test("the staleness report lists commits that touched covered files since the sync commit", () => {
   const maps = [
     {
