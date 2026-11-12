@@ -34,10 +34,10 @@ type App = ReturnType<typeof createTestApp>
 type Maker = (app: App, owner: Account) => Promise<Made>
 
 const dataOf = z.object({ data: z.unknown() })
-const idOf = z.union([
-  z.object({ docId: z.string().uuid() }).passthrough(),
-  z.object({ id: z.string().uuid() }).passthrough(),
-])
+const idOf = z.object({
+  docId: z.string().uuid().optional(),
+  id: z.string().uuid().optional(),
+})
 const listOf = z.array(
   z
     .object({ id: z.string(), kind: z.string(), format: z.string().optional() })
@@ -59,9 +59,11 @@ async function command(
   return dataOf.parse(await response.json()).data
 }
 
-function docIdOf(data: unknown) {
+function docIdOf(data: unknown): string {
   const parsed = idOf.parse(data)
-  return "docId" in parsed ? parsed.docId : parsed.id
+  const docId = parsed.docId ?? parsed.id
+  if (!docId) throw new Error(`no document id in ${JSON.stringify(data)}`)
+  return docId
 }
 
 async function importFile(
