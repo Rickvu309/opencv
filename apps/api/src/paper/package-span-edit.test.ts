@@ -7,7 +7,7 @@ import { PaperPackage } from "./package-engine.js"
 import { PaperPackageRefusal } from "./package-errors.js"
 import { fixturePackage, run } from "./package-fixtures.js"
 import { parsePackageXml, descendants, isWord } from "./package-xml.js"
-import { witnessArchive } from "./package-witness.js"
+import { readPackageZip } from "./package-zip.js"
 
 const context = {
   docId: "cv",
@@ -19,8 +19,10 @@ function line(parts: readonly string[]) {
   return `<w:p>${parts.map((text) => run(text)).join("")}</w:p>`
 }
 
-function inners(bytes: Buffer) {
-  const xml = witnessArchive(bytes).get("word/document.xml")?.bytes.toString()
+async function inners(bytes: Buffer) {
+  const xml = (await readPackageZip(bytes)).files
+    .get("word/document.xml")
+    ?.toString()
   if (!xml) throw new Error("Missing main document part")
   const part = parsePackageXml(Buffer.from(xml))
   return descendants(part.root)
@@ -78,17 +80,18 @@ describe("editable spans share one replacement decision", () => {
           },
         ],
       })
-      const next = inners(prepared.package.export())
-      const previous = inners(bytes)
+      const next = await inners(prepared.package.export())
+      const previous = await inners(bytes)
       expect(next.filter((_, at) => at !== index)).toEqual(
         previous.filter((_, at) => at !== index)
       )
       expect(next[index]).toBe(`${previous[index]}Q`)
-      const original = witnessArchive(bytes)
-      const witness = witnessArchive(prepared.package.export())
-      for (const [name, part] of original)
+      const originalFiles = (await readPackageZip(bytes)).files
+      const witnessFiles = (await readPackageZip(prepared.package.export()))
+        .files
+      for (const [name, part] of originalFiles)
         if (name !== "word/document.xml")
-          expect(witness.get(name)).toEqual(part)
+          expect(witnessFiles.get(name)).toEqual(part)
     }
   })
 
@@ -113,26 +116,26 @@ describe("editable spans share one replacement decision", () => {
         },
       ],
     })
-    const previous = inners(bytes)
-    const next = inners(prepared.package.export())
+    const previous = await inners(bytes)
+    const next = await inners(prepared.package.export())
     expect(next.slice(0, 4)).toEqual(previous.slice(0, 4))
     expect(next[4]).toBe(`${previous[4]} QA1284.`)
     expect(next[5]).toBe(previous[5])
-    const savedArchive = witnessArchive(prepared.package.export())
-    const source = witnessArchive(bytes)
+    const savedFiles = (await readPackageZip(prepared.package.export())).files
+    const source = (await readPackageZip(bytes)).files
       .get("word/document.xml")
-      ?.bytes.toString()
-    const saved = savedArchive.get("word/document.xml")?.bytes.toString()
+      ?.toString()
+    const saved = savedFiles.get("word/document.xml")?.toString()
     const part = parsePackageXml(Buffer.from(source ?? ""))
     const node = descendants(part.root).filter((item) => isWord(item, "t"))[4]
     if (!source || !saved || !node) throw new Error("Missing text span")
     expect(saved).toBe(
       source.slice(0, node.openEnd) + next[4] + source.slice(node.closeStart)
     )
-    const original = witnessArchive(bytes)
-    for (const [name, item] of original) {
+    const originalFiles = (await readPackageZip(bytes)).files
+    for (const [name, item] of originalFiles) {
       if (name !== "word/document.xml")
-        expect(savedArchive.get(name)).toEqual(item)
+        expect(savedFiles.get(name)).toEqual(item)
     }
   })
 })

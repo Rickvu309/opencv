@@ -22,7 +22,6 @@
     "@workspace/paper-crdt": "workspace:*",
     "@workspace/ui": "workspace:*",
     "better-auth": "^1.7.7",
-    "docx-preview": "0.4.1",
     "lucide-react": "^1.60.0",
     "prosemirror-model": "1.25.12",
     "prosemirror-state": "1.4.4",

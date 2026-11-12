@@ -6,7 +6,7 @@ import {
   relationship,
   run,
 } from "./package-fixtures.js"
-import { witnessArchive } from "./package-witness.js"
+import { readPackageZip } from "./package-zip.js"
 
 const context = {
   docId: "cv",
@@ -68,8 +68,11 @@ function edit(document: PaperPackage, before: string, after: string) {
   }
 }
 
-function mainXml(bytes: Buffer) {
-  return witnessArchive(bytes).get("word/document.xml")?.bytes.toString() ?? ""
+async function mainXml(bytes: Buffer) {
+  return (
+    (await readPackageZip(bytes)).files.get("word/document.xml")?.toString() ??
+    ""
+  )
 }
 
 describe("spans beside a preserved neighbor or a proofing mark", () => {
@@ -83,13 +86,17 @@ describe("spans beside a preserved neighbor or a proofing mark", () => {
     const candidate = (
       await document.prepare(edit(document, "plain", "changed"))
     ).package
-    expect(mainXml(candidate.export())).toContain(
+    expect(await mainXml(candidate.export())).toContain(
       `<w:hyperlink r:id="link">${run("linked")}</w:hyperlink>`
     )
-    expect(mainXml(candidate.export())).toContain(run("changed"))
+    expect(await mainXml(candidate.export())).toContain(run("changed"))
     expect(
-      witnessArchive(candidate.export()).get("word/_rels/document.xml.rels")
-    ).toEqual(witnessArchive(bytes).get("word/_rels/document.xml.rels"))
+      (await readPackageZip(candidate.export())).files.get(
+        "word/_rels/document.xml.rels"
+      )
+    ).toEqual(
+      (await readPackageZip(bytes)).files.get("word/_rels/document.xml.rels")
+    )
   })
 
   it("allows a history value of 1 on that link", async () => {
@@ -201,7 +208,7 @@ describe("spans beside a preserved neighbor or a proofing mark", () => {
     const candidate = (
       await document.prepare(edit(document, "second", "changed"))
     ).package
-    const xml = mainXml(candidate.export())
+    const xml = await mainXml(candidate.export())
     expect(xml).toContain(brake)
     expect(xml).toContain(run("first"))
     expect(xml).toContain(run("changed"))
@@ -233,7 +240,7 @@ describe("spans beside a preserved neighbor or a proofing mark", () => {
     expect(
       regions(document).find((region) => region.text === "plain")?.kind
     ).toBe("editable")
-    const xml = mainXml(
+    const xml = await mainXml(
       (
         await document.prepare(edit(document, "plain", "changed"))
       ).package.export()
@@ -331,7 +338,7 @@ describe("spans beside a preserved neighbor or a proofing mark", () => {
     expect(
       regions(document).filter((region) => region.kind === "editable")
     ).toHaveLength(3)
-    const xml = mainXml(
+    const xml = await mainXml(
       (
         await document.prepare(edit(document, "left", "changed"))
       ).package.export()

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest"
 import { applyEligibleBytes } from "./package-canvas-eligible.js"
 import { fixturePackage, paragraph } from "./package-fixtures.js"
 import { paragraphText } from "./package-targets.js"
-import { witnessArchive } from "./package-witness.js"
+import { readPackageZip } from "./package-zip.js"
 import { descendants, isWord, parsePackageXml } from "./package-xml.js"
 
 function side(count: number) {
@@ -18,8 +18,8 @@ function side(count: number) {
   }
 }
 
-function texts(bytes: Uint8Array) {
-  const xml = witnessArchive(Buffer.from(bytes)).get("word/document.xml")?.bytes
+async function texts(bytes: Uint8Array) {
+  const xml = (await readPackageZip(bytes)).files.get("word/document.xml")
   if (!xml) throw new Error("missing document")
   const parsed = parsePackageXml(xml)
   return descendants(parsed.root)
@@ -27,15 +27,15 @@ function texts(bytes: Uint8Array) {
     .map((node) => paragraphText(node, parsed.source))
 }
 
-function others(left: Uint8Array, right: Uint8Array) {
-  const a = witnessArchive(Buffer.from(left))
-  const b = witnessArchive(Buffer.from(right))
+async function others(left: Uint8Array, right: Uint8Array) {
+  const a = (await readPackageZip(left)).files
+  const b = (await readPackageZip(right)).files
   const names = [...new Set([...a.keys(), ...b.keys()])]
     .filter((name) => name !== "word/document.xml")
     .sort()
   return names.every((name) => {
-    const leftBytes = a.get(name)?.bytes
-    const rightBytes = b.get(name)?.bytes
+    const leftBytes = a.get(name)
+    const rightBytes = b.get(name)
     return (
       leftBytes !== undefined &&
       rightBytes !== undefined &&
@@ -45,7 +45,7 @@ function others(left: Uint8Array, right: Uint8Array) {
 }
 
 describe("eligible imported paragraphs", () => {
-  it("splits one ordinary paragraph and leaves the rest of the file", () => {
+  it("splits one ordinary paragraph and leaves the rest of the file", async () => {
     const bytes = fixturePackage(paragraph("Hello"))
     const basis = side(1)
     const applied = applyEligibleBytes(
@@ -54,13 +54,13 @@ describe("eligible imported paragraphs", () => {
       basis
     )
     expect(applied.status).toBe("APPLIED")
-    expect(texts(applied.bytes)).toEqual(["He", "llo"])
-    expect(others(bytes, applied.bytes)).toBe(true)
+    expect(await texts(applied.bytes)).toEqual(["He", "llo"])
+    expect(await others(bytes, applied.bytes)).toBe(true)
     expect(applied.sidecar.paragraphs).toHaveLength(2)
     expect(applied.sidecar.paragraphs[0].key).not.toBe(basis.paragraphs[0].key)
   })
 
-  it("joins two ordinary paragraphs and refuses a paragraph in a table", () => {
+  it("joins two ordinary paragraphs and refuses a paragraph in a table", async () => {
     const bytes = fixturePackage(`${paragraph("He")}${paragraph("llo")}`)
     const basis = side(2)
     const applied = applyEligibleBytes(
@@ -69,7 +69,7 @@ describe("eligible imported paragraphs", () => {
       basis
     )
     expect(applied.status).toBe("APPLIED")
-    expect(texts(applied.bytes)).toEqual(["Hello"])
+    expect(await texts(applied.bytes)).toEqual(["Hello"])
     const table = fixturePackage(
       "<w:tbl><w:tr><w:tc><w:p><w:r><w:t>Cell</w:t></w:r></w:p></w:tc></w:tr></w:tbl>"
     )
@@ -83,7 +83,7 @@ describe("eligible imported paragraphs", () => {
     expect(Buffer.from(refused.bytes).equals(table)).toBe(true)
   })
 
-  it("removes an empty ordinary paragraph and refuses a section mark", () => {
+  it("removes an empty ordinary paragraph and refuses a section mark", async () => {
     const bytes = fixturePackage(`${paragraph("")}${paragraph("Stay")}`)
     const basis = side(2)
     const applied = applyEligibleBytes(
@@ -92,7 +92,7 @@ describe("eligible imported paragraphs", () => {
       basis
     )
     expect(applied.status).toBe("APPLIED")
-    expect(texts(applied.bytes)).toEqual(["Stay"])
+    expect(await texts(applied.bytes)).toEqual(["Stay"])
     const marked = fixturePackage(
       "<w:p><w:pPr><w:sectPr/></w:pPr><w:r><w:t>No</w:t></w:r></w:p>"
     )
@@ -106,7 +106,7 @@ describe("eligible imported paragraphs", () => {
     expect(Buffer.from(refused.bytes).equals(marked)).toBe(true)
   })
 
-  it("splits two styles and refuses a paragraph mark", () => {
+  it("splits two styles and refuses a paragraph mark", async () => {
     const bytes = fixturePackage(
       `${paragraph(
         "Hello",
@@ -120,7 +120,7 @@ describe("eligible imported paragraphs", () => {
       basis
     )
     expect(applied.status).toBe("APPLIED")
-    expect(texts(applied.bytes)).toEqual(["H", "ello", "Next"])
+    expect(await texts(applied.bytes)).toEqual(["H", "ello", "Next"])
     const marked = [
       fixturePackage(
         paragraph(
