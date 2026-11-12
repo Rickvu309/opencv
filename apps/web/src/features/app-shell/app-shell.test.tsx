@@ -449,10 +449,10 @@ describe("app shell layout", () => {
     await waitFor(() => {
       expect(screen.queryByRole("button", { name: "Close" })).toBeNull()
     })
-    expect(screen.getByRole("button", { name: "Coach" })).toHaveFocus()
+    expect(screen.getByRole("button", { name: "New chat" })).toHaveFocus()
   })
 
-  it("opens a dock chip without creating a chat", async () => {
+  it("opens a saved chat through history without creating a chat", async () => {
     setMockChats([
       {
         id: "chat-1",
@@ -464,8 +464,10 @@ describe("app shell layout", () => {
       },
     ])
     renderApp(SURFACE_PATHS.apply)
+    fireEvent.click(await screen.findByRole("button", { name: "Coach" }))
+    fireEvent.click(await screen.findByRole("button", { name: /^History,/ }))
     fireEvent.click(
-      await screen.findByRole("button", { name: "Checkout notes" })
+      await screen.findByRole("button", { name: /Checkout notes/ })
     )
     expect(
       await screen.findByRole("button", { name: "Close" })
@@ -505,7 +507,7 @@ describe("app shell layout", () => {
     )
   })
 
-  it("opens a dock chip on that chat's messages", async () => {
+  it("opens history on that chat's messages", async () => {
     setMockChats([
       {
         id: "11111111-1111-4111-8111-111111111111",
@@ -517,12 +519,12 @@ describe("app shell layout", () => {
       },
     ])
     renderApp(SURFACE_PATHS.apply)
+    fireEvent.click(await screen.findByRole("button", { name: "Coach" }))
+    fireEvent.click(await screen.findByRole("button", { name: /^History,/ }))
     fireEvent.click(
-      await screen.findByRole("button", { name: "CV vs internship first" })
+      await screen.findByRole("button", { name: /CV vs internship first/ })
     )
-    const panel = await screen.findByRole("region", {
-      name: "CV vs internship first",
-    })
+    const panel = document.getElementById("coach-panel")!
     expect(
       await within(panel).findByText(
         "I don't know if I should chase internships or finish my CV first."

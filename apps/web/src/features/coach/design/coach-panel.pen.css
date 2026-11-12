@@ -1,44 +1,35 @@
 [data-pen-surface="coach"][data-slot="coach-panel"] {
-  background: #ffffff;
-}
-
-[data-pen-surface="coach"][data-slot="coach-panel"][data-panel-mode="side"] {
-  overflow: clip;
-  border: 1px solid #e2e2e2;
-  border-radius: 12px;
-  box-shadow:
-    0 2px 4px #0000000a,
-    0 16px 48px #00000014;
+  background: var(--background);
 }
 
 [data-pen-surface="coach"][data-slot="coach-panel"]
   [data-slot="coach-panel-header"] {
-  border-color: #ededef;
+  border-color: var(--border);
 }
 
 [data-pen-surface="coach"][data-slot="coach-panel"]
   [data-slot="coach-panel-header"]
   button {
-  color: #59595b;
+  color: var(--muted-foreground);
 }
 
 [data-pen-surface="coach"][data-slot="coach-panel"]
   [data-slot="coach-panel-header"]
   [data-slot="coach-history-trigger"] {
-  color: #1a1a1a;
+  color: var(--foreground);
   padding-inline: 0;
 }
 
 [data-pen-surface="coach"][data-slot="coach-panel"]
   [data-slot="coach-history-trigger"]
   > svg {
-  color: #8a8a8e;
+  color: var(--muted-foreground);
 }
 
 [data-pen-surface="coach"][data-slot="coach-panel"]
   [data-slot="coach-composer"] {
-  background: #ffffff;
-  border-color: #e4e4e7;
+  background: var(--background);
+  border-color: var(--border);
   border-radius: 14px;
   padding: 12px 12px 10px;
   gap: 10px;
@@ -56,7 +47,7 @@
 [data-pen-surface="coach"][data-slot="coach-panel"]
   [data-slot="coach-composer"]
   textarea::placeholder {
-  color: #a0a0a2;
+  color: var(--muted-foreground);
 }
 
 [data-pen-surface="coach"][data-slot="coach-panel"]
@@ -69,5 +60,36 @@
     [data-slot="coach-composer"]
     textarea {
     font-size: 13.5px;
+  }
+}
+
+@media (max-width: 1279px) {
+  [data-pen-surface="coach"][data-slot="coach-panel"] {
+    padding-block-start: env(safe-area-inset-top, 0px);
+    padding-inline: env(safe-area-inset-left, 0px)
+      env(safe-area-inset-right, 0px);
+  }
+
+  [data-pen-surface="coach"][data-slot="coach-panel"]
+    [data-slot="coach-workspace-composer"] {
+    padding-block-end: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  [data-pen-surface="coach"][data-slot="coach-panel"]
+    [data-slot="coach-composer"]
+    textarea {
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  [data-pen-surface="coach"][data-slot="coach-panel"] button {
+    min-inline-size: 44px;
+    min-block-size: 44px;
+    touch-action: manipulation;
+  }
+
+  [data-pen-surface="coach"][data-slot="coach-panel"]
+    [data-slot="coach-panel-header"] {
+    min-block-size: 56px;
   }
 }

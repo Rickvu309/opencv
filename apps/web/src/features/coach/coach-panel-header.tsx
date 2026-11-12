@@ -17,7 +17,7 @@ export function CoachPanelHeader({
   return (
     <div
       data-slot="coach-panel-header"
-      className="flex h-12 shrink-0 items-center gap-[6px] border-b border-border/50 ps-4 pe-2"
+      className="flex h-12 min-w-0 shrink-0 items-center gap-[6px] border-b border-border/50 ps-4 pe-2"
     >
       <h1 className="sr-only">Coach</h1>
       {history}

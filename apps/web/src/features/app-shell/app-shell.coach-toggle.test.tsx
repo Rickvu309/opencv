@@ -48,6 +48,7 @@ describe("the Coach button in the dock", () => {
     await openCoach()
     expect(coachButton()).toHaveAttribute("aria-expanded", "true")
     expect(document.getElementById("coach-panel")).toBeVisible()
+    expect(document.getElementById("coach-panel")).toHaveFocus()
 
     fireEvent.click(coachButton())
     await waitFor(() => {
@@ -183,7 +184,7 @@ describe("the Coach button in the dock", () => {
     ).toBeInTheDocument()
   })
 
-  it("opens a recent chat from its chip, and a chip never closes a different chat", async () => {
+  it("opens a recent chat through the panel history without closing it", async () => {
     setMockChats([
       {
         id: "11111111-1111-4111-8111-111111111111",
@@ -199,11 +200,14 @@ describe("the Coach button in the dock", () => {
     await openCoach()
     expect(coachButton()).toHaveAttribute("aria-expanded", "true")
 
+    fireEvent.click(await screen.findByRole("button", { name: /^History,/ }))
     fireEvent.click(
-      await screen.findByRole("button", { name: "CV vs internship first" })
+      await screen.findByRole("button", { name: /CV vs internship first/ })
     )
     expect(
-      await screen.findByRole("region", { name: "CV vs internship first" })
+      await screen.findByRole("button", {
+        name: "History, CV vs internship first",
+      })
     ).toBeInTheDocument()
     expect(coachButton()).toHaveAttribute("aria-expanded", "true")
 
@@ -212,5 +216,66 @@ describe("the Coach button in the dock", () => {
       expect(coachButton()).toHaveAttribute("aria-expanded", "false")
     })
     expect(coachButton()).toHaveFocus()
+  })
+})
+
+describe("Coach sheet keyboard access", () => {
+  it("contains focus on phone and returns it to the launcher", async () => {
+    stubDesktopViewport(false)
+    renderApp(SURFACE_PATHS.apply)
+    await expectApplyLive()
+    await openCoach()
+    const sheet = screen.getByRole("dialog", { name: "Coach" })
+    expect(sheet).toHaveFocus()
+    expect(sheet).toHaveAttribute("aria-modal", "true")
+    expect(document.getElementById("app-main")?.parentElement).toHaveAttribute(
+      "inert"
+    )
+    fireEvent.keyDown(sheet, { key: "Tab", shiftKey: true })
+    const last = sheet.querySelectorAll("button")
+    expect(last[last.length - 1]).toHaveFocus()
+    fireEvent.keyDown(document.activeElement!, { key: "Tab" })
+    expect(
+      within(sheet).getByRole("button", { name: /^History,/ })
+    ).toHaveFocus()
+    fireEvent.keyDown(sheet, { key: "Escape" })
+    await waitFor(() => expect(coachButton()).toHaveFocus())
+    expect(screen.queryByRole("dialog", { name: "Coach" })).toBeNull()
+  })
+
+  it("fits the sheet to the visible viewport when the keyboard opens", async () => {
+    stubDesktopViewport(false)
+    const viewport = Object.assign(new EventTarget(), {
+      height: 844,
+      offsetTop: 0,
+    })
+    vi.stubGlobal("visualViewport", viewport)
+    renderApp(SURFACE_PATHS.apply)
+    await expectApplyLive()
+    await openCoach()
+    const sheet = screen.getByRole("dialog", { name: "Coach" })
+    expect(sheet.style.height).toBe("844px")
+    act(() => {
+      viewport.height = 480
+      viewport.offsetTop = 24
+      viewport.dispatchEvent(new Event("resize"))
+    })
+    expect(sheet.style.height).toBe("480px")
+    expect(sheet.style.top).toBe("24px")
+    fireEvent.keyDown(sheet, { key: "Escape" })
+    expect(sheet.style.height).toBe("")
+    expect(sheet.style.top).toBe("")
+    vi.unstubAllGlobals()
+  })
+
+  it("leaves the desktop page interactive while Coach is open", async () => {
+    renderApp(SURFACE_PATHS.apply)
+    await expectApplyLive()
+    await openCoach()
+    expect(
+      document.getElementById("app-main")?.parentElement
+    ).not.toHaveAttribute("inert")
+    expect(document.getElementById("app-main")).not.toHaveAttribute("hidden")
+    expect(screen.queryByRole("dialog", { name: "Coach" })).toBeNull()
   })
 })

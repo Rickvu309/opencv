@@ -34,7 +34,7 @@ export function CoachPanel({
       data-pen-surface="coach"
       data-panel-mode={mode}
       aria-label={title}
-      className="flex h-full min-h-0 flex-col bg-background duration-(--duration-panel) ease-(--ease-panel)"
+      className="flex h-full min-h-0 flex-col bg-background"
     >
       {children(
         <>
