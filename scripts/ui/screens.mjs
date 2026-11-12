@@ -318,6 +318,21 @@ export const SCREENS = [
     ],
   },
   {
+    id: "paper-letter-drafted",
+    route: "/apply",
+    steps: [
+      ...ADD_A_JOB,
+      { goto: "/paper" },
+      { click: { role: "button", name: "New" } },
+      { click: { role: "button", name: "Cover letter" } },
+      { click: { role: "button", name: "Product designer, Lumiere" } },
+      { click: { role: "button", name: "Draft letter" } },
+      { waitFor: { text: "Coach is writing" } },
+      { click: { role: "button", name: "Stop" } },
+      { waitFor: { selector: PAGE } },
+    ],
+  },
+  {
     id: "paper-download-held",
     route: "/paper",
     unreachable:
