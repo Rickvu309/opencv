@@ -1,10 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
-import {
-  AUTH_EMAIL_CAPS,
-  authLimitKey,
-  countInWindow,
-} from "./auth-email-limit.js"
+import { authLimitKey, countInWindow } from "./auth-email-limit.js"
 import { codeLine, createAuthedApp, postJson } from "./auth.fixtures.js"
 import type { AppDatabase } from "./db/context.js"
 import { authLimitCounters } from "./db/schema.js"
@@ -51,14 +47,14 @@ async function withApp(
     app: ReturnType<typeof createAuthedApp>,
     db: Awaited<ReturnType<typeof createMigratedTestDb>>["db"]
   ) => Promise<void>,
-  options?: { authCodeSendsPerHour?: number; rateLimitEnabled?: boolean }
+  options?: { authCodeSendWarningPerHour?: number; rateLimitEnabled?: boolean }
 ) {
   const { client, db } = await createMigratedTestDb()
   try {
     const app = createAuthedApp(db, testAuthUrl, {
       rateLimitEnabled: options?.rateLimitEnabled ?? true,
       logAuthMail: true,
-      authCodeSendsPerHour: options?.authCodeSendsPerHour,
+      authCodeSendWarningPerHour: options?.authCodeSendWarningPerHour,
     })
     await run(app, db)
   } finally {
@@ -103,7 +99,7 @@ describe("sign-in code sends are limited per email address", () => {
     })
   })
 
-  it("answers like the library limit, with Retry-After and the web origin allowed", async () => {
+  it("answers like the library limit, with Retry-After readable by the web origin", async () => {
     await withApp(async (app) => {
       for (let i = 0; i < 5; i += 1) await send(app, "shape@verify.local")
       const refused = await send(app, "shape@verify.local")
@@ -114,6 +110,9 @@ describe("sign-in code sends are limited per email address", () => {
       expect(refused.headers.get("retry-after")).toBe("900")
       expect(refused.headers.get("x-retry-after")).toBe("900")
       expect(refused.headers.get("access-control-allow-origin")).toBeTruthy()
+      expect(
+        refused.headers.get("access-control-expose-headers")?.split(",")
+      ).toContain("Retry-After")
     })
   })
 
@@ -149,30 +148,45 @@ describe("sign-in code sends are limited per email address", () => {
     })
   })
 
-  it("caps one email at twenty sends a day across windows", async () => {
+  it("caps one email at ten sends an hour and tells the rest of the hour", async () => {
     await withApp(async (app) => {
-      const seen: number[] = []
-      for (let quarter = 0; quarter < 5; quarter += 1) {
+      const seen: { status: number; retry: string | null }[] = []
+      for (let quarter = 0; quarter < 3; quarter += 1) {
         vi.setSystemTime(START + quarter * 15 * 60_000)
-        for (let i = 0; i < 5; i += 1)
-          seen.push((await send(app, "daily@verify.local")).status)
+        for (let i = 0; i < 5; i += 1) {
+          const res = await send(app, "hourly@verify.local")
+          seen.push({
+            status: res.status,
+            retry: res.headers.get("retry-after"),
+          })
+        }
       }
-      expect(seen.filter((status) => status === 200)).toHaveLength(20)
-      expect(seen.slice(20)).toEqual([429, 429, 429, 429, 429])
+      expect(seen.slice(0, 10).every((row) => row.status === 200)).toBe(true)
+      expect(seen.slice(10)).toEqual(
+        Array.from({ length: 5 }, () => ({ status: 429, retry: "1800" }))
+      )
+      vi.setSystemTime(START + 60 * 60_000)
+      expect((await send(app, "hourly@verify.local")).status).toBe(200)
     })
   })
 
-  it("caps all sends in an hour across emails", async () => {
+  it("never refuses a send for the overall count and warns without addresses past the warning level", async () => {
+    const warnings: string[] = []
+    vi.spyOn(console, "warn").mockImplementation((...args: unknown[]) => {
+      warnings.push(args.map(String).join(" "))
+    })
     await withApp(
       async (app) => {
         const seen: number[] = []
-        for (let i = 0; i < 4; i += 1)
+        for (let i = 0; i < 7; i += 1)
           seen.push((await send(app, `overall-${i}@verify.local`)).status)
-        expect(seen).toEqual([200, 200, 200, 429])
-        vi.setSystemTime(START + 60 * 60_000)
-        expect((await send(app, "overall-9@verify.local")).status).toBe(200)
+        expect(seen).toEqual([200, 200, 200, 200, 200, 200, 200])
+        expect(warnings).toEqual([
+          "[auth] 4 sign-in codes sent in the hour starting 2026-11-12T09:00:00.000Z, above the warning level of 3",
+          "[auth] 7 sign-in codes sent in the hour starting 2026-11-12T09:00:00.000Z, above the warning level of 3",
+        ])
       },
-      { authCodeSendsPerHour: 3 }
+      { authCodeSendWarningPerHour: 3 }
     )
   })
 
@@ -256,38 +270,41 @@ describe("sign-in code sends are limited per email address", () => {
       const rows = await db.select().from(authLimitCounters)
       expect(rows.length).toBeGreaterThan(0)
       expect(JSON.stringify(rows)).not.toContain("stored@verify.local")
-      vi.setSystemTime(START + 2 * 24 * 60 * 60_000)
+      vi.setSystemTime(START + 2 * 60 * 60_000)
       await send(app, "later@verify.local")
       const left = await db.select().from(authLimitCounters)
       expect(
-        left.every((row) => row.expiresAt.getTime() > START + 24 * 60 * 60_000)
+        left.every((row) => row.expiresAt.getTime() > START + 2 * 60 * 60_000)
       ).toBe(true)
     })
   })
 })
 
-describe("failed code checks are capped per email address", () => {
-  it("blocks checks for the day after ten failures, even with the right code", async () => {
+describe("the limit cannot be used to keep a person from signing in", () => {
+  it("lets a person get a code after thirty sends to made-up addresses", async () => {
     await withApp(async (app) => {
-      const email = "guessed@verify.local"
-      const failed: number[] = []
-      for (let code = 0; code < 4; code += 1) {
-        await send(app, email)
-        const sent = lastCode(email)
-        for (let guess = 0; guess < 3 && failed.length < 10; guess += 1) {
-          const res = await postJson(
-            app,
-            SIGN_IN,
-            { email, otp: wrong(sent, guess) },
-            { "x-real-ip": nextAddress() }
-          )
-          failed.push(res.status)
-        }
+      const junk: number[] = []
+      for (let i = 0; i < 30; i += 1)
+        junk.push((await send(app, `made-up-${i}@verify.local`)).status)
+      expect(junk.every((status) => status === 200)).toBe(true)
+      expect((await send(app, "victim-a@verify.local")).status).toBe(200)
+    })
+  })
+
+  it("lets a person sign in with a valid code after ten wrong checks by someone else", async () => {
+    await withApp(async (app) => {
+      const email = "victim-b@verify.local"
+      const guesses: number[] = []
+      for (let i = 0; i < 10; i += 1) {
+        const res = await postJson(
+          app,
+          SIGN_IN,
+          { email, otp: "000000" },
+          { "x-real-ip": nextAddress() }
+        )
+        guesses.push(res.status)
       }
-      expect(failed).toHaveLength(10)
-      expect(failed.every((status) => status === 400 || status === 403)).toBe(
-        true
-      )
+      expect(guesses.every((status) => status === 400)).toBe(true)
       await send(app, email)
       const right = await postJson(
         app,
@@ -295,38 +312,58 @@ describe("failed code checks are capped per email address", () => {
         { email, otp: lastCode(email) },
         { "x-real-ip": nextAddress() }
       )
-      expect(right.status).toBe(429)
-      expect(Number(right.headers.get("retry-after"))).toBeGreaterThan(0)
-      vi.setSystemTime(START + 24 * 60 * 60_000)
-      await send(app, email)
-      const nextDay = await postJson(
+      expect(right.status).toBe(200)
+    })
+  })
+
+  it("gives a person a code at noon after twenty requests from 00:01 UTC", async () => {
+    await withApp(async (app) => {
+      const email = "victim-c@verify.local"
+      const midnight = Date.UTC(2026, 10, 13, 0, 1, 0)
+      const attack: number[] = []
+      for (let quarter = 0; quarter < 4; quarter += 1) {
+        vi.setSystemTime(midnight + quarter * 15 * 60_000)
+        for (let i = 0; i < 5; i += 1)
+          attack.push((await send(app, email)).status)
+      }
+      expect(attack).toHaveLength(20)
+      vi.setSystemTime(Date.UTC(2026, 10, 13, 1, 0, 0))
+      expect((await send(app, email)).status).toBe(200)
+      vi.setSystemTime(Date.UTC(2026, 10, 13, 12, 0, 0))
+      expect((await send(app, email)).status).toBe(200)
+    })
+  })
+
+  it("clears the send counts for an email after a sign-in with its code", async () => {
+    await withApp(async (app) => {
+      const email = "cleared@verify.local"
+      for (let i = 0; i < 5; i += 1) {
+        vi.setSystemTime(START + i * 1000)
+        await send(app, email)
+      }
+      const signedIn = await postJson(
         app,
         SIGN_IN,
         { email, otp: lastCode(email) },
         { "x-real-ip": nextAddress() }
       )
-      expect(nextDay.status).toBe(200)
+      expect(signedIn.status).toBe(200)
+      expect((await send(app, email)).status).toBe(200)
     })
   })
 
-  it("does not count a successful check against the cap", async () => {
+  it("keeps the send counts after a wrong code", async () => {
     await withApp(async (app) => {
-      const email = "careful@verify.local"
-      for (
-        let round = 0;
-        round < AUTH_EMAIL_CAPS.failedChecksPerEmailPerDay + 2;
-        round += 1
-      ) {
-        vi.setSystemTime(START + round * 15 * 60_000)
-        await send(app, email)
-        const res = await postJson(
-          app,
-          SIGN_IN,
-          { email, otp: lastCode(email) },
-          { "x-real-ip": nextAddress() }
-        )
-        expect(res.status).toBe(200)
-      }
+      const email = "kept@verify.local"
+      for (let i = 0; i < 5; i += 1) await send(app, email)
+      const failed = await postJson(
+        app,
+        SIGN_IN,
+        { email, otp: wrong(lastCode(email), 0) },
+        { "x-real-ip": nextAddress() }
+      )
+      expect(failed.status).toBe(400)
+      expect((await send(app, email)).status).toBe(429)
     })
   })
 })

@@ -8,6 +8,7 @@ export type SignInState = {
   step: Step
   code: string
   notice: Notice
+  waitMinutes: number | null
   googleNotice: boolean
   google: boolean
   sending: boolean
@@ -22,10 +23,10 @@ export type SignInAction =
   | { type: "email_invalid" }
   | { type: "send_started" }
   | { type: "send_succeeded"; address: string }
-  | { type: "send_rejected"; notice: Notice }
+  | { type: "send_rejected"; notice: Notice; waitMinutes?: number | null }
   | { type: "send_settled" }
   | { type: "verify_started" }
-  | { type: "verify_rejected"; notice: Notice }
+  | { type: "verify_rejected"; notice: Notice; waitMinutes?: number | null }
   | { type: "verify_failed" }
   | { type: "email_change_requested" }
   | { type: "resend_ticked" }
@@ -43,6 +44,7 @@ export function initSignInState(
     step: search.email ? "code" : "email",
     code: "",
     notice: null,
+    waitMinutes: null,
     googleNotice: Boolean(search.error),
     google: false,
     sending: false,
@@ -76,7 +78,11 @@ export function signInReducer(
         focusNonce: state.focusNonce + 1,
       }
     case "send_rejected":
-      return { ...state, notice: action.notice }
+      return {
+        ...state,
+        notice: action.notice,
+        waitMinutes: action.waitMinutes ?? null,
+      }
     case "send_settled":
       return { ...state, sending: false }
     case "verify_started":
@@ -85,6 +91,7 @@ export function signInReducer(
       return {
         ...state,
         notice: action.notice,
+        waitMinutes: action.waitMinutes ?? null,
         code: "",
         step: "code",
         seconds:

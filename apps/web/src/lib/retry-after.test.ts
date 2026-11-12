@@ -6,6 +6,8 @@ import {
   BUSY_WAIT_MAX_MS,
   BUSY_WAIT_MIN_MS,
   busyServerWaitMs,
+  captureRetryAfter,
+  retryAfterMinutes,
   retryAfterMs,
 } from "./retry-after.ts"
 
@@ -32,6 +34,31 @@ describe("retryAfterMs", () => {
     expect(retryAfterMs("-3", NOW)).toBeNull()
     expect(retryAfterMs("1.5", NOW)).toBeNull()
     expect(retryAfterMs("soon", NOW)).toBeNull()
+  })
+})
+
+describe("retryAfterMinutes", () => {
+  it("rounds the wait up to whole minutes, never below one", () => {
+    expect(retryAfterMinutes("0", NOW)).toBe(1)
+    expect(retryAfterMinutes("59", NOW)).toBe(1)
+    expect(retryAfterMinutes("661", NOW)).toBe(12)
+    expect(retryAfterMinutes("720", NOW)).toBe(12)
+    expect(retryAfterMinutes("3600", NOW)).toBe(60)
+    expect(retryAfterMinutes(null, NOW)).toBeNull()
+  })
+})
+
+describe("captureRetryAfter", () => {
+  it("keeps the wait from the refused response", () => {
+    const wait = captureRetryAfter()
+    expect(wait.minutes(NOW)).toBeNull()
+    wait.fetchOptions.onError({
+      response: new Response(null, {
+        status: 429,
+        headers: { "Retry-After": "900" },
+      }),
+    })
+    expect(wait.minutes(NOW)).toBe(15)
   })
 })
 

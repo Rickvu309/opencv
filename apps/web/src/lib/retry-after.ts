@@ -15,6 +15,27 @@ export function retryAfterMs(value: string | null, now: number): number | null {
   return Math.max(0, at - now)
 }
 
+export function retryAfterMinutes(
+  value: string | null,
+  now: number
+): number | null {
+  const ms = retryAfterMs(value, now)
+  if (ms === null) return null
+  return Math.max(1, Math.ceil(ms / 60_000))
+}
+
+export function captureRetryAfter() {
+  let header: string | null = null
+  return {
+    fetchOptions: {
+      onError(context: { response: Response }) {
+        header = context.response.headers.get("Retry-After")
+      },
+    },
+    minutes: (now: number) => retryAfterMinutes(header, now),
+  }
+}
+
 export function busyServerWaitMs(
   status: number,
   retryAfter: string | null,

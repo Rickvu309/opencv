@@ -22,7 +22,7 @@ import {
   commitShaFromEnv,
   gmailEnabledFromEnv,
   sendCodeLimitEnabledFromEnv,
-  authCodeSendsPerHourFromEnv,
+  authCodeSendWarningPerHourFromEnv,
   logAuthMailFromEnv,
   googleClientIdFromEnv,
   googleClientSecretFromEnv,
@@ -119,7 +119,7 @@ const app = createApp({
   authEmailFrom: authEmailFromFromEnv(process.env),
   logAuthMail: logAuthMailFromEnv(process.env),
   sendCodeLimitEnabled,
-  authCodeSendsPerHour: authCodeSendsPerHourFromEnv(process.env),
+  authCodeSendWarningPerHour: authCodeSendWarningPerHourFromEnv(process.env),
   commitSha: commitShaFromEnv(process.env),
   interpretPostings:
     coachRuntimeMode !== "fake" && Boolean(coachEnv.ANTHROPIC_API_KEY),

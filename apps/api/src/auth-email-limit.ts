@@ -1,6 +1,6 @@
 import { createHmac } from "node:crypto"
 
-import { and, eq, lt, sql } from "drizzle-orm"
+import { inArray, lt, sql } from "drizzle-orm"
 import type { MiddlewareHandler } from "hono"
 
 import { authRoute } from "./auth-routes.js"
@@ -10,23 +10,22 @@ import { authLimitCounters } from "./db/schema.js"
 const MINUTE_MS = 60_000
 const QUARTER_HOUR_MS = 15 * MINUTE_MS
 const HOUR_MS = 60 * MINUTE_MS
-const DAY_MS = 24 * HOUR_MS
 
-export const DEFAULT_AUTH_CODE_SENDS_PER_HOUR = 30
+export const DEFAULT_AUTH_CODE_SEND_WARNING_PER_HOUR = 200
 
 export type AuthEmailCaps = {
   sendsPerEmailPerQuarterHour: number
-  sendsPerEmailPerDay: number
-  sendsPerHour: number
-  failedChecksPerEmailPerDay: number
+  sendsPerEmailPerHour: number
+  sendWarningPerHour: number
 }
 
 export const AUTH_EMAIL_CAPS: AuthEmailCaps = {
   sendsPerEmailPerQuarterHour: 5,
-  sendsPerEmailPerDay: 20,
-  sendsPerHour: DEFAULT_AUTH_CODE_SENDS_PER_HOUR,
-  failedChecksPerEmailPerDay: 10,
+  sendsPerEmailPerHour: 10,
+  sendWarningPerHour: DEFAULT_AUTH_CODE_SEND_WARNING_PER_HOUR,
 }
+
+const SEND_SCOPES = ["send-15m", "send-hour"] as const
 
 export const CODE_SENDING_AUTH_PATHS: ReadonlyMap<string, string> = new Map([
   ["/email-otp/send-verification-otp", "email"],
@@ -42,8 +41,6 @@ export const CODE_CHECKING_AUTH_PATHS: ReadonlyMap<string, string> = new Map([
   ["/email-otp/reset-password", "email"],
   ["/email-otp/check-verification-otp", "email"],
 ])
-
-const FAILED_CHECK_STATUSES = new Set([400, 403])
 
 export function normalizedAuthEmail(value: string) {
   return value.trim().toLowerCase()
@@ -102,16 +99,23 @@ export async function countInWindow(
   }
 }
 
-async function giveBack(db: AppDatabase, key: string, windowStart: Date) {
-  await db
-    .update(authLimitCounters)
-    .set({ count: sql`${authLimitCounters.count} - 1` })
-    .where(
-      and(
-        eq(authLimitCounters.key, key),
-        eq(authLimitCounters.windowStart, windowStart)
-      )
+export async function clearAuthSendCounts(
+  db: AppDatabase,
+  secret: string,
+  email: string
+) {
+  await db.delete(authLimitCounters).where(
+    inArray(
+      authLimitCounters.key,
+      SEND_SCOPES.map((scope) => authLimitKey(secret, scope, email))
     )
+  )
+}
+
+export function sendWarningLine(count: number, threshold: number, now: number) {
+  if (count <= threshold || (count - 1) % threshold !== 0) return null
+  const hour = new Date(Math.floor(now / HOUR_MS) * HOUR_MS).toISOString()
+  return `[auth] ${count} sign-in codes sent in the hour starting ${hour}, above the warning level of ${threshold}`
 }
 
 export async function removeExpiredAuthLimits(db: AppDatabase, now: number) {
@@ -144,7 +148,6 @@ type AuthEmailLimitOptions = {
   secret: string
   caps?: Partial<AuthEmailCaps>
   limitSends: boolean
-  limitChecks: boolean
 }
 
 export function authEmailLimit({
@@ -152,7 +155,6 @@ export function authEmailLimit({
   secret,
   caps,
   limitSends,
-  limitChecks,
 }: AuthEmailLimitOptions): MiddlewareHandler {
   const cap = { ...AUTH_EMAIL_CAPS, ...caps }
 
@@ -165,41 +167,35 @@ export function authEmailLimit({
     )
     if (quarter.count > cap.sendsPerEmailPerQuarterHour)
       return authLimitedResponse(quarter.retryAfter)
-    const day = await countInWindow(
+    const hour = await countInWindow(
       db,
-      authLimitKey(secret, "send-day", email),
-      DAY_MS,
+      authLimitKey(secret, "send-hour", email),
+      HOUR_MS,
       now
     )
-    if (day.count > cap.sendsPerEmailPerDay)
-      return authLimitedResponse(day.retryAfter)
+    if (hour.count > cap.sendsPerEmailPerHour)
+      return authLimitedResponse(hour.retryAfter)
     const all = await countInWindow(db, "send-hour:all", HOUR_MS, now)
     if (all.count === 1) await removeExpiredAuthLimits(db, now)
-    if (all.count > cap.sendsPerHour) return authLimitedResponse(all.retryAfter)
+    const warning = sendWarningLine(all.count, cap.sendWarningPerHour, now)
+    if (warning) console.warn(warning)
     return null
   }
 
   return async (c, next) => {
-    const route = authRoute(c.req.path)
-    const sendField = route ? CODE_SENDING_AUTH_PATHS.get(route) : undefined
-    const checkField = route ? CODE_CHECKING_AUTH_PATHS.get(route) : undefined
-    const field = limitSends ? sendField : undefined
-    const checked = limitChecks ? checkField : undefined
-    if (!field && !checked) return next()
-    const raw = await bodyField(c.req.raw, (field ?? checked) as string)
+    const route = limitSends ? authRoute(c.req.path) : null
+    if (route === null) return next()
+    const sendField = CODE_SENDING_AUTH_PATHS.get(route)
+    const field = sendField ?? CODE_CHECKING_AUTH_PATHS.get(route)
+    if (!field) return next()
+    const raw = await bodyField(c.req.raw, field)
     if (raw === null) return next()
-    const now = Date.now()
-    if (field) {
-      const refused = await refuseSend(raw, now)
+    if (sendField) {
+      const refused = await refuseSend(raw, Date.now())
       if (refused) return refused
       return next()
     }
-    const key = authLimitKey(secret, "failed-check-day", raw)
-    const reserved = await countInWindow(db, key, DAY_MS, now)
-    if (reserved.count > cap.failedChecksPerEmailPerDay)
-      return authLimitedResponse(reserved.retryAfter)
     await next()
-    if (!FAILED_CHECK_STATUSES.has(c.res.status))
-      await giveBack(db, key, reserved.windowStart)
+    if (c.res.status === 200) await clearAuthSendCounts(db, secret, raw)
   }
 }

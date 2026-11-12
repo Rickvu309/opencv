@@ -138,6 +138,7 @@ describe("email code", () => {
     expect(authClient.emailOtp.sendVerificationOtp).toHaveBeenCalledWith({
       email: "ada@verify.local",
       type: "sign-in",
+      fetchOptions: { onError: expect.any(Function) },
     })
     expect(
       screen.getByRole("button", { name: AUTH_COPY.change })
@@ -191,6 +192,7 @@ describe("email code", () => {
     expect(authClient.signIn.emailOtp).toHaveBeenCalledWith({
       email: "minh@example.com",
       otp: "048291",
+      fetchOptions: { onError: expect.any(Function) },
     })
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(SURFACE_PATHS.paper)
@@ -233,6 +235,62 @@ describe("email code", () => {
     expect(
       screen.getByRole("heading", { name: AUTH_COPY.logIn })
     ).toBeInTheDocument()
+  })
+
+  it.each([
+    ["661", "Too many codes. Try again in about 12 minutes."],
+    ["3600", "Too many codes. Try again in about 1 hour."],
+    [null, "Too many codes. Try again later."],
+  ])(
+    "says how long to wait when sending is refused with Retry-After %s",
+    async (retryAfter, line) => {
+      vi.mocked(authClient.emailOtp.sendVerificationOtp).mockImplementationOnce(
+        (async (input: {
+          fetchOptions?: { onError?: (context: { response: Response }) => void }
+        }) => {
+          input.fetchOptions?.onError?.({
+            response: new Response(null, {
+              status: 429,
+              headers: retryAfter ? { "Retry-After": retryAfter } : {},
+            }),
+          })
+          return { data: null, error: { status: 429, message: "Too many" } }
+        }) as never
+      )
+      renderApp("/sign-in")
+      expect(
+        await screen.findByRole("heading", { name: AUTH_COPY.logIn })
+      ).toBeInTheDocument()
+      fireEvent.change(emailBox(), { target: { value: "ada@verify.local" } })
+      fireEvent.click(screen.getByRole("button", { name: AUTH_COPY.continue }))
+      expect(await screen.findByRole("alert")).toHaveTextContent(line)
+      expect(screen.getByRole("alert")).not.toHaveTextContent("minute and")
+    }
+  )
+
+  it("says how long to wait when a code check is refused for too many requests", async () => {
+    renderApp("/sign-in")
+    expect(
+      await screen.findByRole("heading", { name: AUTH_COPY.logIn })
+    ).toBeInTheDocument()
+    await sendCode()
+    vi.mocked(authClient.signIn.emailOtp).mockImplementationOnce(
+      (async (input: {
+        fetchOptions?: { onError?: (context: { response: Response }) => void }
+      }) => {
+        input.fetchOptions?.onError?.({
+          response: new Response(null, {
+            status: 429,
+            headers: { "Retry-After": "120" },
+          }),
+        })
+        return { data: null, error: { status: 429, message: "Too many" } }
+      }) as never
+    )
+    pasteCode("048291")
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Too many codes. Try again in about 2 minutes."
+    )
   })
 
   it("tabs Email, Continue, then the language control, and on the code step the digits, Send a new code, Change, then the language control", async () => {

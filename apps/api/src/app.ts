@@ -54,7 +54,7 @@ export type AppConfig = {
   db?: AuthDatabase
   rateLimitEnabled?: boolean
   sendCodeLimitEnabled?: boolean
-  authCodeSendsPerHour?: number
+  authCodeSendWarningPerHour?: number
   coach?: CoachRuntime
   coachDurable?: boolean
   coachCompatibilityMs?: number
@@ -80,7 +80,7 @@ export function createApp({
   db,
   rateLimitEnabled,
   sendCodeLimitEnabled,
-  authCodeSendsPerHour,
+  authCodeSendWarningPerHour,
   coach,
   coachDurable = coachWorkerEnabledFromEnv(process.env),
   coachCompatibilityMs,
@@ -132,7 +132,11 @@ export function createApp({
         "Mcp-Name",
         "Mcp-Session-Id",
       ],
-      exposeHeaders: ["WWW-Authenticate", "MCP-Protocol-Version"],
+      exposeHeaders: [
+        "WWW-Authenticate",
+        "MCP-Protocol-Version",
+        "Retry-After",
+      ],
     })
   )
 
@@ -195,12 +199,11 @@ export function createApp({
       authEmailLimit({
         db: database,
         secret: sessionSecret,
-        caps: authCodeSendsPerHour
-          ? { sendsPerHour: authCodeSendsPerHour }
+        caps: authCodeSendWarningPerHour
+          ? { sendWarningPerHour: authCodeSendWarningPerHour }
           : undefined,
         limitSends:
           rateLimitEnabled !== false && sendCodeLimitEnabled !== false,
-        limitChecks: rateLimitEnabled !== false,
       })
     )
   app.all("/api/auth/*", (c) =>

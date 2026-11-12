@@ -125,10 +125,10 @@ export function sendCodeLimitEnabledFromEnv(env: NodeJS.ProcessEnv): boolean {
   return !localVerifyStack
 }
 
-export function authCodeSendsPerHourFromEnv(
+export function authCodeSendWarningPerHourFromEnv(
   env: NodeJS.ProcessEnv
 ): number | undefined {
-  const value = env.AUTH_CODE_SENDS_PER_HOUR?.trim()
+  const value = env.AUTH_CODE_SEND_WARNING_PER_HOUR?.trim()
   if (!value || !/^[1-9][0-9]*$/.test(value)) return undefined
   return Number(value)
 }
