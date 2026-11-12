@@ -195,8 +195,17 @@ export async function streamPaperTurn(input: {
   signal?: AbortSignal
   onText: (delta: string) => void
   onToolResult?: (tool: ChatToolName) => void
+  onWaiting?: () => void
 }): Promise<PaperTurnEnd> {
   let end: PaperTurnEnd = "finished"
+  const tail = new AbortController()
+  const forward = () => tail.abort(input.signal?.reason)
+  input.signal?.addEventListener("abort", forward, { once: true })
+  if (input.signal?.aborted) forward()
+  const followFromHere = () => {
+    end = "continuing"
+    tail.abort()
+  }
   try {
     await streamChatTurn({
       queryClient: input.queryClient,
@@ -206,10 +215,19 @@ export async function streamPaperTurn(input: {
         ...(input.focusDocId ? { focusDocId: input.focusDocId } : {}),
         ...(input.context ? { context: input.context } : {}),
       },
-      signal: input.signal,
+      signal: tail.signal,
       onEvent(event) {
+        if (tail.signal.aborted) return
         if (event.type === "text-delta") input.onText(event.text)
         if (event.type === "tool-result") input.onToolResult?.(event.name)
+        if (
+          event.type === "tool-result" &&
+          event.pendingActionId &&
+          input.onWaiting
+        ) {
+          input.onWaiting()
+          followFromHere()
+        }
         if (event.type === "notice") end = "continuing"
         if (event.type === "error") {
           throw new ApiError(502, "REQUEST_FAILED", event.message)
@@ -218,6 +236,7 @@ export async function streamPaperTurn(input: {
     })
     return end
   } catch (error) {
+    if (end === "continuing" && !input.signal?.aborted) return end
     if (error instanceof ApiError && error.status === 429) {
       const usage = await apiFetch<SuccessBody<{ resetsAt?: string }>>(
         endpoints.coachUsage
@@ -228,6 +247,8 @@ export async function streamPaperTurn(input: {
       )
     }
     throw error
+  } finally {
+    input.signal?.removeEventListener("abort", forward)
   }
 }
 
@@ -255,6 +276,7 @@ export async function followPaperTurn(input: {
   chatId: string
   signal: AbortSignal
   onText: (text: string) => void
+  onWaiting: (waiting: boolean) => void
 }): Promise<string> {
   const chat = unwrapData(
     await apiFetch<SuccessBody<ChatDetail>>(endpoints.chat(input.chatId), {
@@ -281,6 +303,7 @@ export async function followPaperTurn(input: {
       onState(state) {
         if (state.reconnecting && !navigator.onLine) return goOffline()
         seen.state = state
+        input.onWaiting(state.snapshot.state === "waitingApproval")
         input.onText(state.draft)
       },
     })

@@ -3,6 +3,8 @@ import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { afterEach, expect, it, vi } from "vitest"
 import { render } from "@/test/render-with-client.tsx"
 
+import { ChatStoreContext } from "@/features/coach/chat-store-context.ts"
+
 import { PaperLetterStartPage } from "./paper-letter-start-page.tsx"
 
 const CHAT = "11111111-1111-4111-8111-111111111111"
@@ -58,7 +60,7 @@ function taskEvent(seq: number, kind: "draft" | "state", payload: unknown) {
 }
 
 function snapshot(
-  state: "running" | "succeeded" | "failed",
+  state: "running" | "waitingApproval" | "succeeded" | "failed",
   events: ReturnType<typeof taskEvent>[],
   reply: string | null
 ) {
@@ -105,6 +107,7 @@ function snapshot(
 function installSlowCoach(ending: {
   state: "succeeded" | "failed"
   rest: string
+  waiting?: boolean
 }) {
   const opened = taskEvent(0, "draft", { text: OPENING })
   const written = taskEvent(1, "draft", { text: MIDDLE })
@@ -130,11 +133,29 @@ function installSlowCoach(ending: {
         start(controller) {
           controller.enqueue(frame("message-start", { chatId: CHAT }))
           controller.enqueue(frame("text-delta", { text: OPENING }))
-          controller.enqueue(
-            frame("notice", {
-              text: "Coach is still working. Reload this Chat to follow or stop it.",
-            })
-          )
+          if (ending.waiting) {
+            controller.enqueue(
+              frame("tool-result", {
+                toolCallId: "call_priority",
+                name: "job.setPriority",
+                summary: "Set a job's priority.",
+                ok: true,
+                result: { ok: true, data: null },
+                pendingActionId: "66666666-6666-4666-8666-666666666666",
+              })
+            )
+            controller.enqueue(
+              frame("error", {
+                message:
+                  "Coach reconnected. Reload this Chat to see its saved reply.",
+              })
+            )
+          } else
+            controller.enqueue(
+              frame("notice", {
+                text: "Coach is still working. Reload this Chat to follow or stop it.",
+              })
+            )
           controller.enqueue(frame("message-end", { chatId: CHAT }))
           controller.close()
         },
@@ -166,7 +187,11 @@ function installSlowCoach(ending: {
       snapshots += 1
       return ok(
         snapshots === 1
-          ? snapshot("running", [opened], null)
+          ? snapshot(
+              ending.waiting ? "waitingApproval" : "running",
+              [opened],
+              null
+            )
           : snapshot(
               ending.state,
               [opened, written, rest, ended],
@@ -196,6 +221,7 @@ function installSlowCoach(ending: {
     fetch,
     following: () => following,
     writeMiddle: () => send(written),
+    approve: () => send(taskEvent(1, "state", { state: "running" })),
     finish: async () => {
       await send(rest)
       await send(ended)
@@ -339,4 +365,41 @@ it("refuses a finished letter too long for one Word page save", async () => {
   ).toBeInTheDocument()
   expect(onCreated).not.toHaveBeenCalled()
   expect(mintInputs(coach.fetch)).toEqual([])
+})
+
+it("says the Coach waits for approval and opens its Chat, then opens the finished letter", async () => {
+  const coach = installSlowCoach({
+    state: "succeeded",
+    rest: CLOSING,
+    waiting: true,
+  })
+  const openChat = vi.fn()
+  const onCreated = vi.fn()
+  listJobs.mockResolvedValue([job])
+  render(
+    <ChatStoreContext.Provider value={{ openChat } as never}>
+      <PaperLetterStartPage onBack={() => undefined} onCreated={onCreated} />
+    </ChatStoreContext.Provider>
+  )
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Junior Marketing, Lumière" })
+  )
+  fireEvent.click(screen.getByRole("button", { name: "Draft letter" }))
+  expect(
+    await screen.findByText("Coach is waiting for your approval in the Chat")
+  ).toBeInTheDocument()
+  fireEvent.click(screen.getByRole("button", { name: "Open Chat" }))
+  expect(openChat).toHaveBeenCalledWith(CHAT)
+  expect(mintInputs(coach.fetch)).toEqual([])
+  await coach.approve()
+  expect(await screen.findByText(STILL_WRITING)).toBeInTheDocument()
+  expect(screen.queryByRole("button", { name: "Open Chat" })).toBeNull()
+  await coach.finish()
+  await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith("letter-1"))
+  expect(mintInputs(coach.fetch)[0]?.input.lines).toEqual([
+    "Dear hiring team,",
+    "I ran the spring campaign.",
+    "I would love to talk.",
+    "Ana",
+  ])
 })

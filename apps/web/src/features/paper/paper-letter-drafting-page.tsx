@@ -16,6 +16,7 @@ export function PaperLetterDraftingPage({
   attribution,
   streamedText,
   continuing = false,
+  onOpenChat = null,
   onStop,
   onBack,
 }: {
@@ -23,6 +24,7 @@ export function PaperLetterDraftingPage({
   attribution: string | null
   streamedText: string
   continuing?: boolean
+  onOpenChat?: (() => void) | null
   onStop: () => void
   onBack: () => void
 }) {
@@ -78,7 +80,9 @@ export function PaperLetterDraftingPage({
           className="ms-auto flex shrink-0 items-center gap-[7px] px-2 text-[13.5px]"
         >
           <Spinner aria-hidden="true" className="size-[15px] shrink-0" />
-          {continuing ? (
+          {onOpenChat ? (
+            <span>Coach is waiting for your approval in the Chat</span>
+          ) : continuing ? (
             <span>Coach is still writing your letter</span>
           ) : (
             <span className="sr-only md:not-sr-only">Coach is writing…</span>
@@ -151,6 +155,17 @@ export function PaperLetterDraftingPage({
           >
             {attribution}
           </span>
+        ) : null}
+        {onOpenChat ? (
+          <Button
+            type="button"
+            variant="ghost"
+            data-slot="letter-drafting-open-chat"
+            className="h-11 shrink-0 rounded-full px-[9px] text-[12px] leading-[14.5px] font-medium md:h-[26px]"
+            onClick={onOpenChat}
+          >
+            Open Chat
+          </Button>
         ) : null}
         <Button
           type="button"

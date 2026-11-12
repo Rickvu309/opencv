@@ -92,6 +92,7 @@ export function PaperLetterStart({
   onDraftingStart,
   onDraftText,
   onDraftContinues,
+  onDraftWaiting,
   onDraftingEnd,
   stopRef,
 }: {
@@ -100,6 +101,7 @@ export function PaperLetterStart({
   onDraftingStart?: (draftName: string, attribution: string | null) => void
   onDraftText?: (text: string) => void
   onDraftContinues?: () => void
+  onDraftWaiting?: (chatId: string | null) => void
   onDraftingEnd?: () => void
   stopRef?: MutableRefObject<(() => void) | null>
 }) {
@@ -216,6 +218,10 @@ export function PaperLetterStart({
           dispatch({ type: "draft_text_streamed", text })
           onDraftText?.(text)
         }
+        const showWaiting = (waiting: boolean) => {
+          if (activeDraft.current === operation)
+            onDraftWaiting?.(waiting ? chat.id : null)
+        }
         const end = await streamPaperTurn({
           queryClient,
           chatId: chat.id,
@@ -223,6 +229,7 @@ export function PaperLetterStart({
           context: selected ? [{ kind: "job", id: selected.id }] : undefined,
           signal: controller.signal,
           onText: (delta) => showText(operation.text + delta),
+          onWaiting: () => showWaiting(true),
         })
         if (end === "continuing" && activeDraft.current === operation) {
           onDraftContinues?.()
@@ -232,6 +239,7 @@ export function PaperLetterStart({
               chatId: chat.id,
               signal: controller.signal,
               onText: showText,
+              onWaiting: showWaiting,
             })
           )
         }

@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef } from "react"
+import { useContext, useEffect, useReducer, useRef } from "react"
 import { Mail } from "lucide-react"
 import {
   Breadcrumb,
@@ -10,6 +10,7 @@ import {
 import { Button } from "@workspace/ui/components/button"
 import { PaperLetterStart } from "./paper-letter-start.tsx"
 import { PaperLetterDraftingPage } from "./paper-letter-drafting-page.tsx"
+import { ChatStoreContext } from "@/features/coach/chat-store-context.ts"
 import "./design/letter-start.pen.css"
 import "./design/letter-unreadable.pen.css"
 
@@ -18,6 +19,7 @@ type DraftingState = {
   attribution: string | null
   text: string
   continuing: boolean
+  waitingChatId: string | null
 }
 
 type DraftingAction =
@@ -28,6 +30,7 @@ type DraftingAction =
     }
   | { type: "drafting_text"; text: string }
   | { type: "drafting_continues" }
+  | { type: "drafting_waits"; chatId: string | null }
   | { type: "drafting_ended" }
 
 function draftingReducer(
@@ -41,11 +44,14 @@ function draftingReducer(
         attribution: action.attribution,
         text: "",
         continuing: false,
+        waitingChatId: null,
       }
     case "drafting_text":
       return state !== null ? { ...state, text: action.text } : state
     case "drafting_continues":
       return state !== null ? { ...state, continuing: true } : state
+    case "drafting_waits":
+      return state !== null ? { ...state, waitingChatId: action.chatId } : state
     case "drafting_ended":
       return null
   }
@@ -61,6 +67,16 @@ export function PaperLetterStartPage({
   const pageRef = useRef<HTMLElement>(null)
   const stopRef = useRef<(() => void) | null>(null)
   const [draftingState, dispatch] = useReducer(draftingReducer, null)
+  const chats = useContext(ChatStoreContext)
+  const openWaitingChat = (chatId: string | null) =>
+    chatId === null || chats === null
+      ? null
+      : () => {
+          chats.openChat(chatId)
+          document
+            .querySelector<HTMLButtonElement>("[data-dock-coach]")
+            ?.click()
+        }
 
   const isDrafting = draftingState !== null
 
@@ -139,6 +155,9 @@ export function PaperLetterStartPage({
               onDraftContinues={() => {
                 dispatch({ type: "drafting_continues" })
               }}
+              onDraftWaiting={(chatId) => {
+                dispatch({ type: "drafting_waits", chatId })
+              }}
               onDraftingEnd={() => {
                 dispatch({ type: "drafting_ended" })
               }}
@@ -154,6 +173,7 @@ export function PaperLetterStartPage({
           attribution={draftingState.attribution}
           streamedText={draftingState.text}
           continuing={draftingState.continuing}
+          onOpenChat={openWaitingChat(draftingState.waitingChatId)}
           onStop={() => stopRef.current?.()}
           onBack={onBack}
         />
