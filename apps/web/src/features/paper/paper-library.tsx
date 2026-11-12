@@ -504,11 +504,6 @@ export function PaperLibrary({
               onStepChange={(step) =>
                 dispatch({ type: "new_dialog_opened", step })
               }
-              onCreated={(doc) => {
-                closeDialog()
-                void rememberUndo(doc.id, `Created ${doc.name}`)
-                onOpen(doc.id)
-              }}
               onMinted={(id) => {
                 closeDialog()
                 onOpen(id)

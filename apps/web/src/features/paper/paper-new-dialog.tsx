@@ -2,11 +2,7 @@ import { useReducer } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 
-import {
-  type PaperTemplateId,
-  type PaperView,
-  type WordPageLabel,
-} from "@workspace/domain"
+import { type PaperTemplateId, type WordPageLabel } from "@workspace/domain"
 
 import { useRunCommand } from "@/lib/contract-client.ts"
 
@@ -17,6 +13,18 @@ export async function openBlankPage(
   label: WordPageLabel
 ) {
   const created = await run("paper.canvas", { op: "mint", label })
+  return created.docId
+}
+
+export async function openTemplatePage(
+  run: ReturnType<typeof useRunCommand>,
+  templateId: PaperTemplateId
+) {
+  const created = await run("paper.canvas", {
+    op: "mint",
+    label: "cv",
+    templateId,
+  })
   return created.docId
 }
 
@@ -41,14 +49,12 @@ function createReducer(state: CreateState, action: CreateAction): CreateState {
 export function PaperNewDialog({
   step,
   onStepChange,
-  onCreated,
   onMinted,
   onChooseLetter,
   onImport,
 }: {
   step: "kind" | "gallery"
   onStepChange: (step: "kind" | "gallery") => void
-  onCreated: (doc: PaperView) => void
   onMinted: (docId: string) => void
   onChooseLetter: () => void
   onImport: () => void
@@ -59,14 +65,10 @@ export function PaperNewDialog({
     error: null,
   })
 
-  async function applyTemplate(templateId?: PaperTemplateId) {
+  async function applyTemplate(templateId: PaperTemplateId) {
     dispatch({ type: "create_started" })
     try {
-      const created = await run("paper.create", {
-        kind: "cv",
-        templateId,
-      })
-      onCreated(created)
+      onMinted(await openTemplatePage(run, templateId))
     } catch (cause) {
       dispatch({
         type: "create_failed",

@@ -47,6 +47,33 @@ describe("blank page commits", () => {
     )
   })
 
+  it("starts a CV page from a template and refuses a template on a letter", () => {
+    assert.deepEqual(
+      paperCanvasCommitSchema.parse({
+        op: "mint",
+        label: "cv",
+        templateId: "modern",
+      }),
+      { op: "mint", label: "cv", templateId: "modern" }
+    )
+    assert.equal(
+      paperCanvasCommitSchema.safeParse({
+        op: "mint",
+        label: "letter",
+        templateId: "modern",
+      }).success,
+      false
+    )
+    assert.equal(
+      paperCanvasCommitSchema.safeParse({
+        op: "mint",
+        label: "cv",
+        templateId: "not-a-template",
+      }).success,
+      false
+    )
+  })
+
   it("accepts a mint and one Word batch, and nothing older", () => {
     assert.equal(PAPER_CANVAS_PROFILE, "paper-canvas-1")
     assert.equal(
