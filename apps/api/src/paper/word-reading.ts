@@ -19,7 +19,11 @@ async function reading(
   owner: string,
   input: { docId: string; at?: string; cursor?: string }
 ) {
-  const basis = await wordReadingBasis(owner, input)
+  const basis = await wordReadingBasis(owner, {
+    docId: input.docId,
+    ...(input.at === undefined ? {} : { at: input.at }),
+    ...(input.cursor === undefined ? {} : { cursor: input.cursor }),
+  })
   const page = await open(owner, {
     kind: "read",
     doc: input.docId,
