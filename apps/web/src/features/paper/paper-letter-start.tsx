@@ -36,6 +36,7 @@ import {
   letterStartReducer,
 } from "./paper-letter-start.reducer.ts"
 
+import { openBlankPage } from "./paper-new-dialog.tsx"
 import { letterDraftText } from "./paper-letter-context.ts"
 
 const LETTER_CHUNK = 4000
@@ -355,11 +356,7 @@ export function PaperLetterStart({
 
   async function startBlank() {
     try {
-      const created = await run("paper.create", {
-        kind: "letter",
-        name: "Cover letter",
-      })
-      onCreated(created.id)
+      onCreated(await openBlankPage(run, "letter"))
     } catch (err) {
       dispatch({
         type: "blank_failed",

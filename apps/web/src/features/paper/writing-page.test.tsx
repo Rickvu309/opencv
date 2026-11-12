@@ -26,7 +26,7 @@ import {
   WORD_BATCH_HIDDEN,
   writingProposal,
 } from "@/lib/writing-proposal.ts"
-import { WritingPage } from "./writing-page.tsx"
+import { DOWNLOAD_WAITS_FOR_SAVE, WritingPage } from "./writing-page.tsx"
 
 const DOC = "11111111-1111-4111-8111-111111111111"
 const PARAGRAPH = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
@@ -392,4 +392,93 @@ it("says Saved for an imported letter and does not call that a conflict", async 
     WRITING_CONFLICT_NOTE
   )
   expect(words()).toEqual(["1 Main Street", "Thank you"])
+})
+
+function exportOf(revision: string) {
+  return {
+    generation: "package",
+    docId: DOC,
+    revision,
+    name: "Cover letter.docx",
+    kind: "letter",
+    packageHash: "ab".repeat(32),
+    byteSize: 128,
+    downloadPath: `/api/paper/packages/${DOC}/export?at=${revision}`,
+  }
+}
+
+it("downloads the saved revision as a Word file named after the page", async () => {
+  const exports: string[] = []
+  vi.stubGlobal("fetch", async (url: RequestInfo | URL, init?: RequestInit) => {
+    const path = String(url)
+    if (path.includes("/api/reads/paper.export")) {
+      const asked = `${path} ${String(init?.body ?? "")}`
+      exports.push(asked)
+      return Response.json({
+        ok: true,
+        data: exportOf(asked.includes(NEXT) ? NEXT : REVISION),
+      })
+    }
+    if (path.includes("/api/reads/paper.read")) {
+      return Response.json({ ok: true, data: readPage("Saved line") })
+    }
+    return new Promise<Response>(() => undefined)
+  })
+  render(
+    <WritingPage
+      docId={DOC}
+      seed={draft("Saved line")}
+      seedRevision={REVISION}
+    />
+  )
+  const link = await screen.findByRole("link", { name: "Download Word" })
+  expect(link.getAttribute("href")).toContain(
+    `/api/paper/packages/${DOC}/export?at=${REVISION}`
+  )
+  expect(link.getAttribute("download")).toBe("Cover letter.docx")
+  expect(screen.queryByText(DOWNLOAD_WAITS_FOR_SAVE)).toBeNull()
+  expect(exports.some((path) => path.includes(REVISION))).toBe(true)
+})
+
+it("holds Download Word while words are not saved yet", async () => {
+  const exports: string[] = []
+  vi.stubGlobal("fetch", async (url: RequestInfo | URL, init?: RequestInit) => {
+    const path = String(url)
+    if (path.includes("/api/reads/paper.export")) {
+      const asked = `${path} ${String(init?.body ?? "")}`
+      exports.push(asked)
+      return Response.json({
+        ok: true,
+        data: exportOf(asked.includes(NEXT) ? NEXT : REVISION),
+      })
+    }
+    if (path.includes("/api/reads/paper.read")) {
+      return Response.json({ ok: true, data: readPage("Saved line") })
+    }
+    return new Promise<Response>(() => undefined)
+  })
+  storeDraft(DOC, draft("Saved line and more"), localStorage, {
+    revision: REVISION,
+    words: "Saved line",
+  })
+  render(
+    <WritingPage
+      docId={DOC}
+      seed={draft("Saved line")}
+      seedRevision={REVISION}
+    />
+  )
+  const button = await screen.findByRole("button", { name: "Download Word" })
+  expect(button).toBeDisabled()
+  expect(button).toHaveAccessibleDescription(DOWNLOAD_WAITS_FOR_SAVE)
+  expect(screen.queryByRole("link", { name: "Download Word" })).toBeNull()
+  expect(exports).toEqual([])
+  act(() => {
+    storeDraft(DOC, draft("Saved line and more"), localStorage, {
+      revision: NEXT,
+      words: "Saved line and more",
+    })
+  })
+  const link = await screen.findByRole("link", { name: "Download Word" })
+  expect(link.getAttribute("href")).toContain(`export?at=${NEXT}`)
 })

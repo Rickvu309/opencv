@@ -6,6 +6,7 @@ import {
   paperContract,
   paperPackageEditResultSchema,
   type PaperCanvasCommit,
+  type WordPageLabel,
 } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 
@@ -26,6 +27,11 @@ const loaded = createRequire(import.meta.url)(
   "../../../../scripts/lib/paper-canvas-bytes.mjs"
 ) as {
   mintBlankBytes: () => Uint8Array
+}
+
+const BLANK_PAGE_NAMES: Record<WordPageLabel, string> = {
+  cv: "CV.docx",
+  letter: "Cover letter.docx",
 }
 
 type CanvasResult = ReturnType<typeof paperPackageEditResultSchema.parse>
@@ -68,7 +74,7 @@ async function resultOf(
   })
 }
 
-type CanvasWrite = Exclude<PaperCanvasCommit, { op: "mint" }>
+type CanvasWrite = Extract<PaperCanvasCommit, { op: "write" }>
 
 export async function prepareCanvas(owner: string, input: CanvasWrite) {
   if (insideTransaction())
@@ -120,7 +126,11 @@ export function registerCanvasCommit(
         if (input.op === "mint") {
           const stage = await stageWordPackage(
             actor.userId,
-            { requestId: randomUUID(), name: "Page.docx", kind: "letter" },
+            {
+              requestId: randomUUID(),
+              name: BLANK_PAGE_NAMES[input.label],
+              kind: input.label,
+            },
             loaded.mintBlankBytes()
           )
           return { op: "mint" as const, stageId: stage.stageId }

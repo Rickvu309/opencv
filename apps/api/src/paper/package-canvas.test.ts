@@ -65,7 +65,7 @@ describe("paper.canvas", () => {
     await expect(
       registry().execute({
         name: "paper.canvas",
-        input: { op: "mint" },
+        input: { op: "mint", label: "letter" },
         actor: delegate(),
       })
     ).rejects.toThrow("This connection cannot use this command")

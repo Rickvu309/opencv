@@ -79,7 +79,7 @@ describe("the first words on a minted page", () => {
   it("reads the empty paragraph id and saves text with the same receipt", () =>
     run(async () => {
       const id = await seed()
-      const minted = await canvas(id, { op: "mint" })
+      const minted = await canvas(id, { op: "mint", label: "letter" })
       const output = minted.output as {
         docId: string
         revision: string
@@ -208,7 +208,7 @@ describe("the first words on a minted page", () => {
         provider: "fake",
         model: "fake",
       })
-      const minted = await canvas(id, { op: "mint" })
+      const minted = await canvas(id, { op: "mint", label: "letter" })
       const output = minted.output as { docId: string; revision: string }
       const page = await readWordPackage(id, { docId: output.docId })
       const empty = writingRegion(page)

@@ -198,9 +198,9 @@ export function PaperLibrary({
     if (creatingBlank) return
     dispatch({ type: "blank_started" })
     try {
-      const opened = await openBlankPage(run)
+      const id = await openBlankPage(run, "cv")
       dispatch({ type: "import_ended" })
-      onOpen(opened.minted ? opened.id : opened.doc.id)
+      onOpen(id)
     } catch (err) {
       dispatch({
         type: "import_failed",

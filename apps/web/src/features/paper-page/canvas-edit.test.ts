@@ -1,10 +1,3 @@
-import {
-  blankCv,
-  blankLetter,
-  parsePaperId,
-  type CvPaper,
-  type PaperView,
-} from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
 import {
@@ -16,7 +9,6 @@ import {
   insertText,
   keptOnThisComputer,
   loadDraft,
-  opensWritingCanvas,
   pointSpan,
   replaceVisible,
   splitParagraph,
@@ -25,24 +17,6 @@ import {
 } from "./canvas-edit.ts"
 
 const DOC = "11111111-1111-7111-8111-111111111111"
-
-function cv(paper: CvPaper = blankCv()): PaperView {
-  return {
-    id: parsePaperId(DOC),
-    name: "Draft",
-    kind: "cv",
-    templateId: "simple",
-    status: "draft",
-    paper,
-    contentVersion: 1,
-    checks: [],
-    pageChoice: "unset",
-    isFavorite: false,
-    sourceFileId: null,
-    createdAt: "2020-01-01T00:00:00.000Z",
-    updatedAt: "2020-01-01T00:00:00.000Z",
-  }
-}
 
 function words(draft: WritingDraft) {
   return draft.blocks.map((block) => block.text)
@@ -53,91 +27,6 @@ function helloWorld() {
   const split = splitParagraph(hello, pointSpan(hello.caret))
   return insertText(split, pointSpan(split.caret), "World")
 }
-
-describe("opensWritingCanvas", () => {
-  it("opens a new CV that is still only empty section markers", () => {
-    expect(opensWritingCanvas(cv())).toBe(true)
-  })
-
-  it("leaves a letter on the letter editor", () => {
-    expect(
-      opensWritingCanvas({
-        ...cv(),
-        kind: "letter",
-        templateId: null,
-        paper: blankLetter(),
-      })
-    ).toBe(false)
-  })
-
-  it("leaves a CV that already has a name, a photo, a paragraph, or a file", () => {
-    const named = blankCv()
-    expect(
-      opensWritingCanvas(
-        cv({ ...named, header: { ...named.header, name: "Ada" } })
-      )
-    ).toBe(false)
-    const photo = blankCv()
-    expect(
-      opensWritingCanvas(
-        cv({
-          ...photo,
-          header: {
-            ...photo.header,
-            photo: {} as NonNullable<CvPaper["header"]["photo"]>,
-          },
-        })
-      )
-    ).toBe(false)
-    const started = blankCv()
-    expect(
-      opensWritingCanvas(
-        cv({
-          ...started,
-          blocks: [
-            ...started.blocks,
-            {
-              id: "body-1",
-              type: "paragraph",
-              content: [{ text: "Hello" }],
-            } as CvPaper["blocks"][number],
-          ],
-        })
-      )
-    ).toBe(false)
-    expect(
-      opensWritingCanvas({
-        ...cv(),
-        sourceFileId: parsePaperId(
-          "22222222-2222-4222-8222-222222222222"
-        ) as unknown as PaperView["sourceFileId"],
-      })
-    ).toBe(false)
-  })
-
-  it("leaves a document that has no paper on its own editor", () => {
-    expect(
-      opensWritingCanvas({
-        ...cv(),
-        paper: undefined as unknown as PaperView["paper"],
-      })
-    ).toBe(false)
-  })
-
-  it("keeps the CV editor when a section title is not the starter title", () => {
-    const paper = blankCv()
-    const first = paper.blocks[0]
-    if (!first || first.type !== "section") throw new Error("missing section")
-    expect(
-      opensWritingCanvas(
-        cv({
-          ...paper,
-          blocks: [{ ...first, title: "Roles" }, ...paper.blocks.slice(1)],
-        })
-      )
-    ).toBe(false)
-  })
-})
 
 describe("writing draft", () => {
   it("types, splits, and joins paragraphs", () => {

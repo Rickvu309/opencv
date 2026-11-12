@@ -59,7 +59,7 @@ describe("a blank page keeps its receipt with the save", () => {
         await expect(
           registry.execute({
             name: "paper.canvas",
-            input: { op: "mint" },
+            input: { op: "mint", label: "letter" },
             actor: personActor(id),
             idempotencyKey: randomUUID(),
           })
