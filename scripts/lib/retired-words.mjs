@@ -16,6 +16,12 @@ export const RETIRED = [
         why: "the native Coach transport fixture verifies usage for Inbox mail threads",
       },
       {
+        path: /^apps\/api\/src\/paper\/(?:import-text-(?:pool|worker)|import-read-fairness\.test)\.ts$/,
+        match: /^worker_threads$/,
+        line: /^import \{ (?:Worker|parentPort, workerData) \} from "node:worker_threads"$/,
+        why: "Node's worker_threads module runs the PDF and Word readers away from the API request loop",
+      },
+      {
         path: /^apps\/api\/src\/coach\/anthropic-runtime\.ts$/,
         match: /^thread$/,
         line: /^\s*thread: false,$/,

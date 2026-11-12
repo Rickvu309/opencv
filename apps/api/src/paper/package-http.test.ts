@@ -6,7 +6,7 @@ import {
   paperWordReadSchema,
   paperPackageStageSchema,
 } from "@workspace/domain"
-import { expect, it, vi } from "vitest"
+import { expect, it } from "vitest"
 import { eq } from "drizzle-orm"
 import { z } from "zod"
 
@@ -17,8 +17,7 @@ import {
   signUp,
 } from "../test/harness.js"
 import { withDatabase } from "../db/context.js"
-import { files, paperDocs, user } from "../db/schema.js"
-import { registry } from "../registry/registry.js"
+import { files, paperDocs, paperPackageHeads, user } from "../db/schema.js"
 import { textPdf } from "./import-fixtures.test.js"
 import { fixturePackage, paragraph } from "./package-fixtures.js"
 import {
@@ -255,7 +254,7 @@ it("moves Word uploads into the immutable library without a legacy document or f
   }
 })
 
-it("keeps the committed import and its original upload when the response read fails", async () => {
+it("publishes a PDF import as a Word page and writes no older document", async () => {
   const { db, client } = await createMigratedTestDb()
   try {
     const app = createTestApp(db)
@@ -274,38 +273,22 @@ it("keeps the committed import and its original upload when the response read fa
         { type: "application/pdf" }
       )
     )
-    const read = vi
-      .spyOn(registry, "read")
-      .mockRejectedValueOnce(new Error("Read failed after commit"))
-    try {
-      const response = await app.request("/api/paper/import", {
-        method: "POST",
-        headers,
-        body: form,
-      })
-      expect(response.status).toBe(500)
-      expect(read).toHaveBeenCalledWith(
-        "paper.get",
-        expect.any(Object),
-        expect.any(Object)
-      )
-      const [document] = await db.select().from(paperDocs)
-      expect(document).toBeDefined()
-      expect(document?.sourceFileId).not.toBeNull()
-      const saved = await db
-        .select()
-        .from(files)
-        .where(
-          eq(
-            files.id,
-            document?.sourceFileId ?? "00000000-0000-4000-8000-000000000000"
-          )
-        )
-      expect(saved).toHaveLength(1)
-      expect(saved[0]?.name).toBe("Original.pdf")
-    } finally {
-      read.mockRestore()
-    }
+    const response = await app.request("/api/paper/import", {
+      method: "POST",
+      headers,
+      body: form,
+    })
+    expect(response.status).toBe(200)
+    const body = z
+      .object({ data: catalog["paper.import"].publicResult })
+      .parse(await response.json())
+    expect(body.data).toMatchObject({ name: "Original", kind: "cv" })
+    const heads = await db.select().from(paperPackageHeads)
+    expect(heads.map((head) => head.docId)).toEqual([body.data.docId])
+    expect(await db.select().from(paperDocs)).toEqual([])
+    expect((await db.select().from(files)).map((file) => file.purpose)).toEqual(
+      ["package"]
+    )
   } finally {
     await client.close()
   }

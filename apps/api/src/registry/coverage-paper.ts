@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto"
+
 import { parseUserId, personActor, type PaperDocument } from "@workspace/domain"
 import {
   absorbUpdate,
@@ -11,7 +13,7 @@ import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 
 import { paperDocs } from "../db/schema.js"
-import { saveFile } from "../paper/index.js"
+import { importedWordPage, saveFile, stageWordPackage } from "../paper/index.js"
 import {
   bytesOf,
   clientFrom,
@@ -37,6 +39,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     .commands.find((command) => command.name === "paper.import")
   if (!paperImport) throw new Error("Missing Paper import command")
   let syncPush = ""
+  let importStage = ""
   let mintedDocId = ""
   let mintedParagraph = ""
   const coachSentence = "First paragraph. Coach adds a sentence."
@@ -395,26 +398,38 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     {
       name: paperImport.name,
       arrange: async () => {
-        const file = await saveFile({
-          userId: parseUserId(userId),
-          name: "cv.txt",
-          mediaType: "text/plain",
-          bytes: Buffer.from("hello"),
-          purpose: "import",
-        })
-        ctx.fileId = file.id
+        const page = await importedWordPage(
+          {
+            name: "cv.txt",
+            mediaType: "text/plain",
+            bytes: Buffer.from("hello from an imported file"),
+          },
+          { owner: userId }
+        )
+        importStage = (
+          await stageWordPackage(
+            userId,
+            { requestId: randomUUID(), name: page.name, kind: "cv" },
+            page.bytes
+          )
+        ).stageId
       },
-      act: () => run(paperImport.name, { fileId: ctx.fileId }),
+      act: () =>
+        run(paperImport.name, { generation: "package", stageId: importStage }),
       assert: async (result) => {
-        const doc = await paperOf(idOf(result.output))
-        expect(text(doc, "kind")).toBe("cv")
-        expect(text(doc, "name")).toBe("cv")
-        expect(text(doc, "sourceFileId")).toBe(ctx.fileId)
-      },
-      undoAssert: async (result) => {
-        const docId = idOf(result.output)
-        await undo(result)
-        await gone(paperOf(docId))
+        expect(text(result.output, "generation")).toBe("package")
+        expect(text(result.output, "name")).toBe("cv")
+        expect(result.reversal).toBeNull()
+        const docId = text(result.output, "docId")
+        if (!docId) throw new Error("missing imported page")
+        const outline = await registry.read(
+          "paper.outline",
+          { docId },
+          personActor(userId)
+        )
+        expect(text(outline, "outline")).toContain(
+          "hello from an imported file"
+        )
       },
     },
     {

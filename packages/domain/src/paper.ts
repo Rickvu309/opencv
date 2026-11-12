@@ -121,12 +121,6 @@ export const paperDismissCheckInputSchema = z
 
 export const paperKeepTwoPagesInputSchema = paperShareInputSchema
 
-export const paperImportInputSchema = z
-  .object({
-    fileId: fileIdSchema,
-  })
-  .strict()
-
 export const paperSetStatusCommandInputSchema = paperSetStatusInputSchema
 
 export const paperKeywordGapInputSchema = z
@@ -177,8 +171,6 @@ export const IMPORT_GOOGLE_MESSAGE =
   "Google Docs aren't supported. Download a PDF or Word file."
 export const IMPORT_LINKEDIN_MESSAGE =
   "LinkedIn links aren't supported. Download a PDF or Word file."
-export const IMPORT_PHONE_MESSAGE = "No phone number in your file."
-export const IMPORT_DATES_MESSAGE = "Add when you did this role."
 
 const proofViewModeSchema = z.enum(["chain", "timeline"])
 const proofStepTypeSchema = z.enum(["context", "action", "outcome", "note"])

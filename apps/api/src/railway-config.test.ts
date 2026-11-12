@@ -42,4 +42,18 @@ describe(".railway/railway.ts (api service)", () => {
     expect(apiBlock).toContain('"pnpm-lock.yaml"')
     expect(apiBlock).not.toContain('"apps/web/**"')
   })
+
+  it("builds the api on the Node major CI tests, and refuses a Node without worker heap statistics", () => {
+    const setup = readFileSync(
+      path.join(repoRoot, ".github/actions/setup/action.yml"),
+      "utf8"
+    )
+    const ciMajor = /node-version:\s*(\d+)/u.exec(setup)?.[1]
+    expect(ciMajor).toBe("24")
+    expect(config).toContain(`NIXPACKS_NODE_VERSION: "${ciMajor}"`)
+    const rootPackage = JSON.parse(
+      readFileSync(path.join(repoRoot, "package.json"), "utf8")
+    ) as { engines: { node: string } }
+    expect(rootPackage.engines.node).toBe(">=22.16")
+  })
 })

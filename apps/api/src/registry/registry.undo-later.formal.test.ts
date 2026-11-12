@@ -1,12 +1,5 @@
-import {
-  ERROR_CODES,
-  paperContract,
-  parseUserId,
-  personActor,
-} from "@workspace/domain"
+import { ERROR_CODES, parseUserId, personActor } from "@workspace/domain"
 import { eq } from "drizzle-orm"
-import { materialize } from "@workspace/paper-crdt"
-import { clientFrom, typed, withText } from "../test/paper-content.js"
 import { describe, expect, it } from "vitest"
 
 import { getDb, withDatabase } from "../db/context.js"
@@ -154,13 +147,6 @@ const LATER: Record<string, Later> = {
       (await paperName(userId, a).catch(() => "gone")) === "Renamed",
   },
   "paper.duplicate": {
-    act: async (a, run) => {
-      await run("paper.rename", { docId: idOf(a.output), name: "Renamed" })
-    },
-    survives: async (a, userId) =>
-      (await paperName(userId, a).catch(() => "gone")) === "Renamed",
-  },
-  "paper.import": {
     act: async (a, run) => {
       await run("paper.rename", { docId: idOf(a.output), name: "Renamed" })
     },
@@ -361,7 +347,7 @@ async function undoAfterLater(
 }
 
 describe("P4: undoing an action after a later change never erases the later change", () => {
-  it("refuses import Undo after later typing and keeps the typed words", async () => {
+  it("offers no Undo for an import, so later typing on the imported Word page cannot be erased by it", async () => {
     await withDatabase(backend.db, async () => {
       const userId = "formal-import-later-typing"
       await backend.db.insert(user).values({
@@ -376,37 +362,15 @@ describe("P4: undoing an action after a later change never erases the later chan
       if (!row) throw new Error("Missing import coverage")
       await row.arrange()
       const imported = await row.act()
-      const docId = idOf(imported.output)
-      const pulled = await registry.execute({
-        name: "paper.sync",
-        input: { docId, epoch: 0, update: "", stateVector: "" },
-        actor: person,
-      })
-      const sync = paperContract["paper.sync"].output.parse(pulled.output)
-      const client = clientFrom(sync.update)
-      const current = materialize(client)
-      if (!current.ok) throw new Error(current.reason)
-      const block = current.document.blocks.find((block) => "content" in block)
-      if (!block) throw new Error("Missing imported text block")
-      const words = "These are the person's later words."
-      await registry.execute({
-        name: "paper.sync",
-        input: {
-          docId,
-          epoch: sync.epoch,
-          basedOn: sync.revision,
-          update: typed(client, (paper) => withText(paper, block.id, words)),
-          stateVector: "",
-        },
-        actor: person,
-      })
-      if (!imported.activityId) throw new Error("Missing import activity")
-      await expect(
-        registry.undo(userId, imported.activityId)
-      ).rejects.toMatchObject({ code: ERROR_CODES.CONFLICT })
-      const stored = await registry.read("paper.get", { docId }, person)
-      expect(JSON.stringify(stored)).toContain(words)
-      expect(text(stored, "name")).toBe(text(imported.output, "name"))
+      expect(imported.reversal).toBeNull()
+      const docId = text(imported.output, "docId")
+      if (!docId) throw new Error("Missing imported page")
+      if (imported.activityId)
+        await expect(
+          registry.undo(userId, imported.activityId)
+        ).rejects.toBeDefined()
+      const outline = await registry.read("paper.outline", { docId }, person)
+      expect(text(outline, "outline")).toContain("hello from an imported file")
     })
   })
 
@@ -439,10 +403,6 @@ describe("P4: undoing an action after a later change never erases the later chan
             userId,
             run
           )
-          if (row.name === "paper.import") {
-            expect(verdicts[row.name]).toBe("refused")
-            expect(await LATER[row.name]!.survives(result, userId)).toBe(true)
-          }
         } else if (row.undoAssert) {
           await row.undoAssert(result)
         }

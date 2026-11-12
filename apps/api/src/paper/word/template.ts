@@ -170,7 +170,7 @@ export function writtenPageBytes(lines: readonly string[]): Uint8Array {
   return pageBytesOf(lines.map((text) => ({ style: "Normal", text })))
 }
 
-function pageBytesOf(lines: readonly TemplateLine[]): Uint8Array {
+export function pageBytesOf(lines: readonly TemplateLine[]): Uint8Array {
   const { WORD, REL, PKG, TYPES, W14 } = canvas
   const body =
     lines.map(lineXml).join("") +

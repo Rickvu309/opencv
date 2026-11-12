@@ -1,52 +1,113 @@
 import {
-  IMPORT_DATES_MESSAGE,
   IMPORT_GOOGLE_MESSAGE,
   IMPORT_LINKEDIN_MESSAGE,
   IMPORT_PAGES_MESSAGE,
-  IMPORT_PHONE_MESSAGE,
   LETTER_ATTACHMENT_TEXT_MAX,
-  paperDocumentSchema,
-  paperPlainText,
-  paragraphPaper,
   type LetterAttachmentContext,
-  type PaperDocument,
 } from "@workspace/domain"
+
+import { IMPORT_TEXT_LIMITS } from "./import-limits.js"
+import { ImportReadCancelled, ImportReadLimited } from "./import-read-queue.js"
+import {
+  ImportReadOff,
+  type ImportReadReason,
+  ImportReadRefusal,
+  readImportText,
+} from "./import-text-pool.js"
 
 export const IMPORT_GENERIC_MESSAGE = "Upload a PDF, Word, or text file."
 export const IMPORT_FAILED_MESSAGE = "Could not import that file. Try it again."
+export const IMPORT_EMPTY_MESSAGE =
+  "This file is empty. Choose the file with your CV in it."
+export const IMPORT_JSON_MESSAGE =
+  "A JSON file cannot be imported as a CV. Import a PDF, Word or text file."
+export const IMPORT_SCANNED_MESSAGE =
+  "This PDF has no text we can read. It may be a scan or a photo. Export it again from the app you wrote it in, or import a Word or text file."
+export const IMPORT_LOCKED_MESSAGE =
+  "This PDF is protected with a password. Save a copy without the password, then import it again."
+export const IMPORT_PDF_PAGES_MESSAGE =
+  "This PDF has more than 20 pages. Import a shorter CV."
+export const IMPORT_PDF_HEAVY_MESSAGE =
+  "This PDF is too large or complex to read as a CV. Export it again from the app you wrote it in, or import a Word or text file."
+export const IMPORT_PDF_UNREADABLE_MESSAGE =
+  "We could not read this PDF. Export it again from the app you wrote it in, or import a Word or text file."
+export const IMPORT_TEXT_LONG_MESSAGE =
+  "This file has more than 200,000 characters of text. Import a shorter CV."
+export const IMPORT_BUSY_MESSAGE =
+  "Many files are being read right now. Try again in a minute."
+export const IMPORT_ACCOUNT_BUSY_MESSAGE =
+  "Your last file is still being read. Import this one when it finishes."
+export const IMPORT_CANCELLED_MESSAGE =
+  "The import was cancelled. No document was made."
+export const IMPORT_READER_OFF_MESSAGE =
+  "Reading PDF files is switched off on this server for now. Import a Word or text file instead."
+export const LETTER_READER_OFF_MESSAGE =
+  "Reading PDF and Word files is switched off on this server for now. Paste the job text or choose a text file."
+
+export function importBudgetMessage(retryAfterSeconds: number) {
+  const minutes = Math.max(1, Math.ceil(retryAfterSeconds / 60))
+  return `Your recent files took a long time to read, so reading files is paused for your account. Try again in ${minutes} ${minutes === 1 ? "minute" : "minutes"}.`
+}
+
+export type ImportReader = { owner: string; signal?: AbortSignal }
+
+export type ImportReadStop = {
+  status: 400 | 429 | 503
+  code: string
+  message: string
+  retryAfterSeconds: number | null
+}
+
+export function importReadStop(
+  error: unknown,
+  place: "import" | "letter"
+): ImportReadStop | null {
+  if (error instanceof ImportReadCancelled)
+    return {
+      status: 400,
+      code: "VALIDATION_ERROR",
+      message: IMPORT_CANCELLED_MESSAGE,
+      retryAfterSeconds: null,
+    }
+  if (error instanceof ImportReadOff)
+    return {
+      status: 503,
+      code: "IMPORT_READER_OFF",
+      message:
+        place === "import"
+          ? IMPORT_READER_OFF_MESSAGE
+          : LETTER_READER_OFF_MESSAGE,
+      retryAfterSeconds: null,
+    }
+  if (!(error instanceof ImportReadLimited)) return null
+  if (error.limit === "service-busy")
+    return {
+      status: 503,
+      code: "IMPORT_READ_BUSY",
+      message: IMPORT_BUSY_MESSAGE,
+      retryAfterSeconds: error.retryAfterSeconds,
+    }
+  return {
+    status: 429,
+    code: "IMPORT_READ_LIMITED",
+    message:
+      error.limit === "account-busy"
+        ? IMPORT_ACCOUNT_BUSY_MESSAGE
+        : importBudgetMessage(error.retryAfterSeconds),
+    retryAfterSeconds: error.retryAfterSeconds,
+  }
+}
 
 const WORD =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
-type ImportCheck = {
-  id: string
-  kind: "phone" | "dates"
-  blockId: string
-  message: string
-  resolved: boolean
-}
-
 export type ImportParseResult =
-  | { ok: true; document: unknown; checks: ImportCheck[] }
+  | { ok: true; kind: "pdf" | "text"; text: string }
   | {
       ok: false
       code: "FILE_UNSUPPORTED" | "LINK_UNREADABLE"
       message: string
     }
-
-const YEAR_RANGE = /\b(?:19|20)\d{2}\s*(?:-|–|—|to)\s*(?:19|20)\d{2}\b/gi
-
-const PHONE_RUN = /(?:\+?\d[\s().+-]*){6}\d/g
-
-function hasPhoneRun(text: string): boolean {
-  const stripped = text.replace(new RegExp(YEAR_RANGE.source, "gi"), " ")
-  const runs = stripped.matchAll(new RegExp(PHONE_RUN.source, "g"))
-  for (const match of runs) {
-    const digits = match[0].replace(/\D/g, "")
-    if (digits.length >= 7) return true
-  }
-  return false
-}
 
 function hostIs(host: string, domain: string) {
   return host === domain || host.endsWith(`.${domain}`)
@@ -66,50 +127,6 @@ export function unreadableImportLink(value: string): string | null {
   return null
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value)
-}
-
-function looksLikeStoredCv(value: unknown) {
-  if (!isRecord(value)) return false
-  if (value.version === 3 && value.kind === "cv") return true
-  if (
-    value.version === 2 &&
-    isRecord(value.header) &&
-    Array.isArray(value.sections)
-  ) {
-    return true
-  }
-  return typeof value.name === "string" && isRecord(value.contact)
-}
-
-export function checksForPaper(document: PaperDocument): ImportCheck[] {
-  const parsed = paperDocumentSchema.safeParse(document)
-  if (!parsed.success || parsed.data.kind !== "cv") return []
-  const paper = parsed.data
-  const checks: ImportCheck[] = []
-  if (!paper.header.phone.trim() && !hasPhoneRun(paperPlainText(paper))) {
-    checks.push({
-      id: "phone",
-      kind: "phone",
-      blockId: "header.phone",
-      message: IMPORT_PHONE_MESSAGE,
-      resolved: false,
-    })
-  }
-  const entry = paper.blocks.find((block) => block.type === "experience")
-  if (entry && entry.type === "experience" && !entry.period.includes("20")) {
-    checks.push({
-      id: "dates",
-      kind: "dates",
-      blockId: entry.id,
-      message: IMPORT_DATES_MESSAGE,
-      resolved: false,
-    })
-  }
-  return checks
-}
-
 function isPages(name: string, mediaType: string) {
   return (
     name.toLowerCase().endsWith(".pages") ||
@@ -124,78 +141,45 @@ function refused(
   return { ok: false, code, message }
 }
 
-function textBlocks(raw: string): ImportParseResult {
-  const document = paragraphPaper(raw)
-  return { ok: true, document, checks: checksForPaper(document) }
+class ImportRefusal extends Error {}
+
+const READ_REFUSALS: Partial<Record<ImportReadReason, string>> = {
+  pages: IMPORT_PDF_PAGES_MESSAGE,
+  locked: IMPORT_LOCKED_MESSAGE,
+  heavy: IMPORT_PDF_HEAVY_MESSAGE,
+  slow: IMPORT_PDF_HEAVY_MESSAGE,
+  text: IMPORT_TEXT_LONG_MESSAGE,
+  failed: IMPORT_PDF_UNREADABLE_MESSAGE,
 }
 
-function jsonDocument(raw: string): ImportParseResult {
+async function defaultPdfText(
+  bytes: Buffer,
+  whole: boolean,
+  reader: ImportReader
+) {
   try {
-    const parsed = JSON.parse(raw) as unknown
-    if (looksLikeStoredCv(parsed)) {
-      return { ok: true, document: parsed, checks: [] }
-    }
-  } catch {
-    return textBlocks(raw)
-  }
-  return textBlocks(raw)
-}
-
-const PDF_PAGE_CAP = 20
-
-type PdfTextItem = { str?: string }
-type PdfPage = { getTextContent: () => Promise<{ items: PdfTextItem[] }> }
-type PdfDocument = {
-  numPages: number
-  getPage: (page: number) => Promise<PdfPage>
-  destroy?: () => Promise<void> | void
-}
-
-async function openPdfDocument(bytes: Buffer): Promise<PdfDocument> {
-  const unpdf = await import("unpdf")
-  return (await unpdf.getDocumentProxy(new Uint8Array(bytes))) as PdfDocument
-}
-
-async function readPdfPages(pdf: PdfDocument) {
-  const count = Math.min(pdf.numPages, PDF_PAGE_CAP)
-  const pages: string[] = []
-  for (let page = 1; page <= count; page += 1) {
-    const content = await (await pdf.getPage(page)).getTextContent()
-    pages.push(content.items.map((item) => item.str ?? "").join(""))
-  }
-  return pages.join("\n")
-}
-
-async function defaultPdfText(bytes: Buffer) {
-  const pdf = await importParsers.openPdf(bytes)
-  bytes = Buffer.alloc(0)
-  void bytes
-  const pending = readPdfPages(pdf)
-  void pending.catch(() => undefined)
-  try {
-    return await withDeadline(pending)
-  } finally {
-    await pdf.destroy?.()
+    return await readImportText({
+      kind: "pdf",
+      bytes,
+      whole,
+      deadlineMs: importParsers.timeoutMs,
+      owner: reader.owner,
+      ...(reader.signal ? { signal: reader.signal } : {}),
+    })
+  } catch (error) {
+    const message =
+      error instanceof ImportReadRefusal ? READ_REFUSALS[error.reason] : null
+    if (whole && message) throw new ImportRefusal(message)
+    throw error
   }
 }
 
-type MammothApi = {
-  extractRawText: (input: { buffer: Buffer }) => Promise<{ value: string }>
-}
-
-const DOCX_TEXT_CAP = 200_000
 const ZIP_ENTRY_CAP = 128
 const ZIP_DECLARED_CAP = 32_000_000
 const ZIP_DATA_DESCRIPTOR_FLAG = 0x08
 
 function entryHidesSizeUntilDataDescriptor(flags: number, compressed: number) {
   return (flags & ZIP_DATA_DESCRIPTOR_FLAG) !== 0 && compressed === 0
-}
-
-function mammothFromExportEquals(
-  loaded: MammothApi & { default?: MammothApi }
-) {
-  return loaded.default ?? loaded
 }
 
 function zipAllowsMammoth(bytes: Buffer) {
@@ -226,28 +210,17 @@ function zipAllowsMammoth(bytes: Buffer) {
   return false
 }
 
-async function defaultDocxText(bytes: Buffer) {
+async function defaultDocxText(bytes: Buffer, reader: ImportReader) {
   if (!zipAllowsMammoth(bytes)) {
     throw new Error("import-zip-entries")
   }
-  const loaded = (await import("mammoth")) as MammothApi & {
-    default?: MammothApi
-  }
-  const mammoth = mammothFromExportEquals(loaded)
-  const extracted = await mammoth.extractRawText({ buffer: bytes })
-  return extracted.value.slice(0, DOCX_TEXT_CAP)
-}
-
-function withDeadline<T>(work: Promise<T>) {
-  let timer: ReturnType<typeof setTimeout> | undefined
-  const timeout = new Promise<never>((_resolve, reject) => {
-    timer = setTimeout(
-      () => reject(new Error("import-parse-timeout")),
-      importParsers.timeoutMs
-    )
-  })
-  return Promise.race([work, timeout]).finally(() => {
-    if (timer) clearTimeout(timer)
+  return readImportText({
+    kind: "docx",
+    bytes,
+    whole: false,
+    deadlineMs: importParsers.timeoutMs,
+    owner: reader.owner,
+    ...(reader.signal ? { signal: reader.signal } : {}),
   })
 }
 
@@ -341,7 +314,6 @@ export function mediaTypeForImport(kind: ImportKind) {
 
 export const importParsers = {
   timeoutMs: 10_000,
-  openPdf: openPdfDocument,
   pdfText: defaultPdfText,
   docxText: defaultDocxText,
   onInsert: null as (() => void) | null,
@@ -355,15 +327,16 @@ export function parseImportLink(value: string): ImportParseResult | null {
 
 type ImportFileInput = { name: string; mediaType: string; bytes: Buffer }
 
-async function extractedText(input: ImportFileInput) {
+async function extractedText(input: ImportFileInput, reader: ImportReader) {
   const kind = classifyImport(input)
-  if (kind === "pdf") return importParsers.pdfText(input.bytes)
-  if (kind === "docx") return withDeadline(importParsers.docxText(input.bytes))
+  if (kind === "pdf") return importParsers.pdfText(input.bytes, false, reader)
+  if (kind === "docx") return importParsers.docxText(input.bytes, reader)
   return input.bytes.toString("utf8")
 }
 
 export async function extractLetterAttachment(
-  input: ImportFileInput
+  input: ImportFileInput,
+  reader: ImportReader
 ): Promise<
   | { ok: true; context: LetterAttachmentContext }
   | { ok: false; code: "FILE_UNSUPPORTED"; message: string }
@@ -376,7 +349,7 @@ export async function extractLetterAttachment(
       message: IMPORT_GENERIC_MESSAGE,
     }
   }
-  const raw = (await extractedText(input)).trim()
+  const raw = (await extractedText(input, reader)).trim()
   if (!raw) {
     return {
       ok: false,
@@ -395,17 +368,42 @@ export async function extractLetterAttachment(
   }
 }
 
+async function importText(
+  input: ImportFileInput,
+  kind: "pdf" | "text",
+  reader: ImportReader
+) {
+  if (kind === "text") {
+    if (input.bytes.length > IMPORT_TEXT_LIMITS.textFileBytes)
+      return new ImportRefusal(IMPORT_TEXT_LONG_MESSAGE)
+    return input.bytes.toString("utf8")
+  }
+  try {
+    return await importParsers.pdfText(input.bytes, true, reader)
+  } catch (error) {
+    if (error instanceof ImportRefusal) return error
+    throw error
+  }
+}
+
 export async function parseImportFile(
-  input: ImportFileInput
+  input: ImportFileInput,
+  reader: ImportReader
 ): Promise<ImportParseResult> {
+  if (input.bytes.length === 0)
+    return refused("FILE_UNSUPPORTED", IMPORT_EMPTY_MESSAGE)
   const kind = classifyImport(input)
-  if (kind === "pages") {
-    return refused("FILE_UNSUPPORTED", IMPORT_PAGES_MESSAGE)
-  }
-  if (kind === "unknown") {
+  if (kind === "pages") return refused("FILE_UNSUPPORTED", IMPORT_PAGES_MESSAGE)
+  if (kind === "json") return refused("FILE_UNSUPPORTED", IMPORT_JSON_MESSAGE)
+  if (kind !== "pdf" && kind !== "text")
     return refused("FILE_UNSUPPORTED", IMPORT_GENERIC_MESSAGE)
-  }
-  const raw = await extractedText(input)
-  if (kind === "json") return jsonDocument(raw)
-  return textBlocks(raw)
+  const text = await importText(input, kind, reader)
+  if (text instanceof ImportRefusal)
+    return refused("FILE_UNSUPPORTED", text.message)
+  if (text.replace(/^\uFEFF/u, "").trim() === "")
+    return refused(
+      "FILE_UNSUPPORTED",
+      kind === "pdf" ? IMPORT_SCANNED_MESSAGE : IMPORT_EMPTY_MESSAGE
+    )
+  return { ok: true, kind, text: text.replace(/^\uFEFF/u, "") }
 }

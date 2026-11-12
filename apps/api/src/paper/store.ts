@@ -1,4 +1,3 @@
-import { AsyncLocalStorage } from "node:async_hooks"
 import { randomBytes } from "node:crypto"
 
 import {
@@ -13,9 +12,7 @@ import {
   parseFileId,
   parsePaperId,
   parseUserId,
-  upgradeStoredPaper,
   type PaperDocument,
-  type PaperView,
   type Actor,
   type FileId,
   type PaperId,
@@ -39,13 +36,10 @@ import {
   type WordPageCopy,
 } from "./package-card-actions.js"
 import {
-  IMPORT_FAILED_MESSAGE,
   IMPORT_GENERIC_MESSAGE,
-  checksForPaper,
   classifyImport,
   importParsers,
   mediaTypeForImport,
-  parseImportFile,
 } from "./import-parse.js"
 
 import { seedColumns, withContent } from "./content-store.js"
@@ -54,15 +48,6 @@ import {
   referencedPhotoFileIds,
 } from "./photo-references.js"
 import { toPaper, tryReadStoredPaper } from "./read-paper.js"
-
-const importAbort = new AsyncLocalStorage<AbortSignal>()
-
-export function withImportSignal<T>(
-  signal: AbortSignal,
-  run: () => Promise<T>
-) {
-  return importAbort.run(signal, run)
-}
 
 export const IMPORT_FILE_CAP = 8_000_000
 export const IMPORT_SIZE_MESSAGE = "File must be 8 MB or smaller."
@@ -105,16 +90,6 @@ function sharedPhotoRef(document: unknown): string | null {
   const parsed = paperDocumentSchema.safeParse(document)
   if (!parsed.success || parsed.data.kind !== "cv") return null
   return parsed.data.header.photo ?? null
-}
-
-function importedCv(document: unknown): PaperDocument {
-  const direct = v3Of("cv", document)
-  if (direct) return direct
-  const upgraded = upgradeStoredPaper("cv", document)
-  if (!upgraded.ok || upgraded.document.kind !== "cv") {
-    throw new CommandError(ERROR_CODES.VALIDATION_ERROR, IMPORT_FAILED_MESSAGE)
-  }
-  return upgraded.document
 }
 
 export async function listPapers(
@@ -582,82 +557,4 @@ export async function deleteFile(actor: Actor, fileId: FileId) {
     .delete(files)
     .where(and(eq(files.id, fileId), eq(files.userId, actor.userId)))
   return { fileId }
-}
-
-async function removeImportFile(userId: UserId, fileId: string) {
-  await getDb()
-    .delete(files)
-    .where(and(eq(files.id, fileId), eq(files.userId, userId)))
-}
-
-export async function importPaper(actor: Actor, fileId: FileId) {
-  const rows = await getDb()
-    .select()
-    .from(files)
-    .where(and(eq(files.id, fileId), eq(files.userId, actor.userId)))
-    .limit(1)
-  const file = rows[0]
-  if (!file || file.purpose !== "import") {
-    throw new CommandError(ERROR_CODES.NOT_FOUND, "Import file not found")
-  }
-  let parsed: Awaited<ReturnType<typeof parseImportFile>>
-  try {
-    parsed = await parseImportFile({
-      name: file.name,
-      mediaType: file.mediaType,
-      bytes: file.bytes,
-    })
-  } catch {
-    await removeImportFile(actor.userId, file.id)
-    throw new CommandError(ERROR_CODES.VALIDATION_ERROR, IMPORT_FAILED_MESSAGE)
-  }
-  if (!parsed.ok) {
-    await removeImportFile(actor.userId, file.id)
-    throw new CommandError(
-      parsed.code === "LINK_UNREADABLE"
-        ? ERROR_CODES.LINK_UNREADABLE
-        : ERROR_CODES.FILE_UNSUPPORTED,
-      parsed.message
-    )
-  }
-  const giveUp = async (docId?: string) => {
-    if (docId) {
-      await getDb().delete(paperDocs).where(eq(paperDocs.id, docId))
-    }
-    await removeImportFile(actor.userId, file.id)
-    throw new CommandError(ERROR_CODES.VALIDATION_ERROR, IMPORT_FAILED_MESSAGE)
-  }
-  if (importAbort.getStore()?.aborted) await giveUp()
-  let created: PaperView
-  let checks: ReturnType<typeof checksForPaper>
-  try {
-    const paper = importedCv(parsed.document)
-    checks = checksForPaper(paper)
-    created = await createPaper(actor, {
-      kind: "cv",
-      name: file.name.replace(/\.[^.]+$/, "") || DEFAULT_PAPER_DOC_NAME.cv,
-      paper,
-    })
-  } catch (error) {
-    await removeImportFile(actor.userId, file.id)
-    throw error
-  }
-  if (importAbort.getStore()?.aborted) await giveUp(created.id)
-  await getDb()
-    .update(paperDocs)
-    .set({
-      sourceFileId: file.id,
-      checks: [
-        {
-          id: "source-file",
-          kind: "source",
-          message: file.name,
-          blockId: "",
-          resolved: true,
-        },
-        ...checks,
-      ],
-    })
-    .where(eq(paperDocs.id, created.id))
-  return toPaper(await ownedPaper(actor.userId, parsePaperId(created.id)))
 }

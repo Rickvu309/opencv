@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto"
+
 import {
   catalog,
   commands,
@@ -12,7 +14,7 @@ import { z } from "zod"
 
 import { withDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
-import { saveFile } from "../paper/index.js"
+import { importedWordPage, saveFile, stageWordPackage } from "../paper/index.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { idOf } from "./coverage-helpers.js"
 import { installRegistry } from "./install.js"
@@ -41,7 +43,7 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
     expect(schema).toMatchObject({ type: "object" })
     for (const combinator of ["anyOf", "oneOf", "allOf"])
       expect(schema).not.toHaveProperty(combinator)
-    expect(input.parse({ fileId })).toEqual({ fileId })
+    expect(input.safeParse({ fileId }).success).toBe(false)
     expect(input.parse({ generation: "package", stageId })).toEqual({
       generation: "package",
       stageId,
@@ -144,18 +146,31 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
         purpose: "avatar",
       })
       await run("paper.attachPhoto", { docId: cv, fileId: photo.id })
+      const page = await importedWordPage(
+        {
+          name: "cv.txt",
+          mediaType: "text/plain",
+          bytes: Buffer.from("Imported words"),
+        },
+        { owner: randomUUID() }
+      )
+      const stage = await stageWordPackage(
+        userId,
+        { requestId: randomUUID(), name: page.name, kind: "cv" },
+        page.bytes
+      )
       const importedResult = await registry.execute({
         name: "paper.import",
-        input: { fileId: upload.id },
+        input: { generation: "package", stageId: stage.stageId },
         actor: person,
       })
-      const imported = idOf(
+      expect(
         catalog["paper.import"].publicResult.parse(importedResult.output)
-      )
-      await run("paper.dismissCheck", { docId: imported, checkId: "import" })
+      ).toMatchObject({ generation: "package", name: "cv", kind: "cv" })
+      await run("paper.dismissCheck", { docId: cv, checkId: "import" })
 
       const list = await read("paper.list", {})
-      expect(list).toHaveLength(4)
+      expect(list).toHaveLength(3)
       await read("paper.list", { kind: "letter", query: "untitled" })
       const got = (await read("paper.get", { docId: cv })) as {
         name: string
