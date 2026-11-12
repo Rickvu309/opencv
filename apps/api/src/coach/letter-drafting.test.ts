@@ -4,7 +4,6 @@ import {
   chatIdSchema,
   coachTaskSnapshotSchema,
   personActor,
-  type ChatToolName,
   type CoachStartInput,
 } from "@workspace/domain"
 import { eq } from "drizzle-orm"
@@ -229,7 +228,7 @@ it("refuses a paper.start call that text inside a Job posting steers the model i
           intents: [
             {
               id: "call_start",
-              name: "paper.start" as string as ChatToolName,
+              name: "paper.start",
               input: { kind: "cv" },
             },
           ],
@@ -314,7 +313,7 @@ it("grounds a Letter-drafting turn on the legacy request-bound path too, with no
     expect(lines).toContain(DRAFTING_INSTRUCTION)
   }))
 
-it("keeps an ordinary Chat turn on the full tool list, and without the drafting material", () =>
+it("keeps an ordinary Chat turn on the full tool list with paper.start, and without the drafting material", () =>
   fixture(async ({ start, work, db, ownerId }) => {
     const { jobId } = await draftingMaterial(ownerId, { cv: "linked" })
     const chatted = await start({
@@ -337,7 +336,7 @@ it("keeps an ordinary Chat turn on the full tool list, and without the drafting 
       expect(tools).toHaveBeenCalled()
       const offered = (await tools.mock.results[0]?.value) as { name: string }[]
       expect(offered.map((entry) => entry.name)).toEqual(
-        expect.arrayContaining(["paper.edit", "job.update"])
+        expect.arrayContaining(["paper.start", "paper.edit", "job.update"])
       )
     } finally {
       tools.mockRestore()
