@@ -51,7 +51,7 @@ function formattedPage(): WordPage {
       },
       {
         handle: LINK,
-        text: "Portfolio at example site",
+        text: "Portfolio at ",
         pieces: [
           { text: "Portfolio at ", editable: true },
           { text: "example site", editable: false, marks: ["link"] },
@@ -185,5 +185,50 @@ describe("the page keeps the look of an imported line", () => {
     const after = collectLooks(book, [{ id: LEAD, text: "Led data work" }])
     expect(after.has(LEAD)).toBe(false)
     expect(collectLooks(after, [{ id: LEAD, text: "x" }])).toBe(after)
+  })
+
+  it("holds a line with a soft line break so an edit cannot move words across it", () => {
+    const BREAK = "dddddddd-dddd-4ddd-8ddd-dddddddddddd"
+    const page: WordPage = {
+      ...formattedPage(),
+      paragraphs: [
+        ...formattedPage().paragraphs.slice(0, 2),
+        {
+          handle: BREAK,
+          text: "Marketing InternJun 2025 to now",
+          pieces: [
+            { text: "Marketing Intern", editable: true, marks: ["bold"] },
+            { text: "\n", editable: false },
+            { text: "Jun 2025 to now", editable: true },
+          ],
+          held: false,
+          message: "",
+          code: null,
+        },
+      ],
+    }
+    const blocks = pageBlocks(page)
+    expect(blocks.at(-1)).toEqual({
+      id: BREAK,
+      text: "Marketing Intern\nJun 2025 to now",
+      held: true,
+      reason:
+        "This line has a line break inside it. Paper shows it as it is but will not change it yet.",
+      look: { spans: [{ from: 0, to: 16, marks: ["bold"] }] },
+    })
+    const plain = withoutLooks(blocks)
+    expect(diffParagraphs(page, plain, null)).toEqual({ ops: [] })
+    const movedWords = plain.map((block) =>
+      block.id === BREAK
+        ? { ...block, text: "Marketing Intern\nSince Jun 2025 to now" }
+        : block
+    )
+    expect(diffParagraphs(page, movedWords, null)).toHaveProperty("refused")
+    const elsewhere = plain.map((block) =>
+      block.id === LEAD ? { ...block, text: "Led data work!" } : block
+    )
+    expect(diffParagraphs(page, elsewhere, null)).toEqual({
+      ops: [{ op: "setText", handle: LEAD, text: "Led data work!" }],
+    })
   })
 })

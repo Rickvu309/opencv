@@ -160,4 +160,17 @@ describe("the Word page read carries what the page needs to draw a line", () => 
     expect(line?.form).toBeUndefined()
     expect(line?.pieces).toEqual([{ text: line?.text, editable: false }])
   })
+
+  it("reads a soft line break as a kept piece the page can see, outside the line's text", () => {
+    const [line] = read(
+      `<w:p>${run("Marketing Intern", "<w:b/>")}<w:r><w:br/></w:r>${run("Jun 2025 to now")}</w:p>`
+    )
+    expect(line?.held).toBe(false)
+    expect(line?.text).toBe("Marketing InternJun 2025 to now")
+    expect(line?.pieces).toEqual([
+      { text: "Marketing Intern", editable: true, marks: ["bold"] },
+      { text: "\n", editable: false },
+      { text: "Jun 2025 to now", editable: true },
+    ])
+  })
 })

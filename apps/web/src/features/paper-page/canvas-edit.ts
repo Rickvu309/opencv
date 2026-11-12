@@ -44,6 +44,21 @@ export function blankDraft(): WritingDraft {
   }
 }
 
+const LINE_BREAK_HELD =
+  "This line has a line break inside it. Paper shows it as it is but will not change it yet."
+
+type PageParagraph = WordPage["paragraphs"][number]
+
+function hasLineBreak(paragraph: PageParagraph) {
+  return paragraph.pieces.some(
+    (piece) => !piece.editable && piece.text.includes("\n")
+  )
+}
+
+export function heldOnPage(paragraph: PageParagraph): boolean {
+  return paragraph.held || hasLineBreak(paragraph)
+}
+
 export function pageBlocks(page: WordPage): WritingBlock[] {
   return page.paragraphs.flatMap((paragraph): WritingBlock[] => {
     if (paragraph.held)
@@ -55,6 +70,18 @@ export function pageBlocks(page: WordPage): WritingBlock[] {
           ...(paragraph.message ? { reason: paragraph.message } : {}),
         },
       ]
+    if (hasLineBreak(paragraph)) {
+      const look = lookOf(paragraph.pieces, paragraph.form, paragraph.align)
+      return [
+        {
+          id: paragraph.handle,
+          text: paragraph.pieces.map((piece) => piece.text).join(""),
+          held: true,
+          reason: LINE_BREAK_HELD,
+          ...(look ? { look } : {}),
+        },
+      ]
+    }
     const segments: {
       text: string
       editable: boolean

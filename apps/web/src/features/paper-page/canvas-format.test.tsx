@@ -72,7 +72,7 @@ function cv(): WordPage {
       line(handles.styled, [{ text: "Both", marks: ["bold", "italic"] }]),
       {
         handle: handles.link,
-        text: "Portfolio at example site",
+        text: "Portfolio at ",
         pieces: [
           { text: "Portfolio at ", editable: true },
           { text: "example site", editable: false, marks: ["link"] },
@@ -222,5 +222,42 @@ describe("an imported CV on the writing page", () => {
     expect(
       only?.getAttributeNames().filter((name) => name !== "contenteditable")
     ).toEqual(["data-block"])
+  })
+
+  it("shows a soft line break inside one held paragraph with its message", () => {
+    const handle = "a0000000-0000-4000-8000-000000000010"
+    const page = cv()
+    render(
+      <WritingCanvas
+        docId={DOC}
+        seed={draftFromPage({
+          ...page,
+          paragraphs: [
+            {
+              handle,
+              text: "Marketing InternJun 2025 to now",
+              pieces: [
+                { text: "Marketing Intern", editable: true, marks: ["bold"] },
+                { text: "\n", editable: false },
+                { text: "Jun 2025 to now", editable: true },
+              ],
+              held: false,
+              message: "",
+              code: null,
+            },
+          ],
+        })}
+      />
+    )
+    const line = block(handle)
+    expect(page.paragraphs.length).toBeGreaterThan(1)
+    expect(line.contentEditable).toBe("false")
+    expect(line.textContent).toBe("Marketing Intern\nJun 2025 to now")
+    expect(line.querySelector("strong")?.textContent).toBe("Marketing Intern")
+    expect(
+      screen.getByText(
+        "This line has a line break inside it. Paper shows it as it is but will not change it yet."
+      )
+    ).toBeVisible()
   })
 })
