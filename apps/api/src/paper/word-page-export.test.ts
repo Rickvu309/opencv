@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { deleteAccount } from "../account/index.js"
-import { hashAgentToken } from "../connections/oauth.js"
+import { hashAgentToken } from "../connections/index.js"
 import { withDatabase } from "../db/context.js"
 import {
   agentConnections,
@@ -391,6 +391,30 @@ describe("account export of Word pages", () => {
       ).toBe(true)
       expect(path.split("/")).not.toContain("..")
     }
+  })
+
+  it("keeps whole characters and drops direction controls in file names", async () => {
+    const di = await person("Di", "di-export-word@example.com")
+    await importedPage(di.id, "CV \u202egnp.exe", "Di line")
+    await importedPage(di.id, `${"a".repeat(79)}\u{1f600}tail`, "Di line")
+    const { index, members } = await exportOf(di.cookie)
+    const paths = index.wordPages.map((page) => page.file!)
+    expect(paths).toHaveLength(2)
+    for (const path of paths) {
+      expect(members.has(path)).toBe(true)
+      expect(path).not.toMatch(
+        /[\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]/u
+      )
+      expect(path).not.toContain("\ufffd")
+      expect(Buffer.from(path, "utf8").toString("utf8")).toBe(path)
+    }
+    expect(paths).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(
+          /^word-pages\/a{79}\u{1f600} \([0-9a-f-]{8}\)\.docx$/u
+        ),
+      ])
+    )
   })
 
   it("leaves no Word page or stored bytes behind when the account is deleted", async () => {

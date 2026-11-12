@@ -142,19 +142,27 @@ async function pageBytes(owner: string, page: ListedPage) {
 }
 
 const UNSAFE_FILE_CHARACTERS = new Set('/\\:*?"<>|')
+const BIDI_CONTROLS = /^[\u061c\u200e\u200f\u202a-\u202e\u2066-\u2069]$/u
+const FILE_STEM_CODE_POINTS = 80
 
 function safeCharacter(character: string) {
   const code = character.charCodeAt(0)
-  return code < 32 || code === 127 || UNSAFE_FILE_CHARACTERS.has(character)
+  return code < 32 ||
+    code === 127 ||
+    UNSAFE_FILE_CHARACTERS.has(character) ||
+    BIDI_CONTROLS.test(character)
     ? "-"
     : character
 }
 
 function fileStem(name: string) {
-  const stem = Array.from(name, safeCharacter)
+  const cleaned = Array.from(name, safeCharacter)
     .join("")
-    .replace(/^[\s.-]+|[\s.]+$/g, "")
-    .slice(0, 80)
+    .replace(/^[\s.-]+/, "")
+  const stem = Array.from(cleaned)
+    .slice(0, FILE_STEM_CODE_POINTS)
+    .join("")
+    .replace(/[\s.]+$/, "")
   return stem || "Untitled"
 }
 

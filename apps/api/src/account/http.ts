@@ -14,6 +14,7 @@ import { jsonWithStatus } from "../http-json.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import { saveFile } from "../paper/index.js"
 import { registry } from "../registry/registry.js"
+import { createExportGate, gatedExport } from "./export-gate.js"
 import { exportAccountArchive } from "./queries.js"
 
 function sessionApp(auth?: Auth, db?: AppDatabase) {
@@ -92,25 +93,12 @@ export function createAccountRoutes(auth?: Auth, db?: AppDatabase) {
     return c.json(successEnvelope(result.output))
   })
 
-  routes.get("/export", async (c) => {
-    const archive = await exportAccountArchive(c.var.userId)
-    const body = new ReadableStream<Uint8Array>({
-      pull(controller) {
-        const chunk = archive.chunks.shift()
-        if (chunk) controller.enqueue(new Uint8Array(chunk))
-        else controller.close()
-      },
-    })
-    return new Response(body, {
-      status: 200,
-      headers: {
-        "content-type": "application/zip",
-        "content-length": String(archive.byteLength),
-        "content-disposition": 'attachment; filename="opencv-export.zip"',
-        "cache-control": "private, no-store",
-      },
-    })
-  })
+  const exportGate = createExportGate()
+  routes.get("/export", (c) =>
+    gatedExport(exportGate, c.var.userId, () =>
+      exportAccountArchive(c.var.userId)
+    )
+  )
 
   return routes
 }
