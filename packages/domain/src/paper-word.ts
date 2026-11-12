@@ -1,0 +1,178 @@
+import { z } from "zod"
+
+declare const TextEncoder: {
+  new (): { encode(value: string): Uint8Array }
+}
+
+export const WORD_LIMITS = Object.freeze({
+  maxOpsPerApply: 100,
+  maxOpsPerConfirmedEdit: 20,
+  maxTextBytes: 8 * 1024,
+  maxBatchTextBytes: 64 * 1024,
+  maxEncodedBatchBytes: 96 * 1024,
+  maxImportUploadBytes: 8 * 1024 * 1024,
+  maxInflatedPackageBytes: 64 * 1024 * 1024,
+})
+
+export const WORD_DOCUMENT_MEDIA_TYPE =
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document" as const
+
+const wordDocSchema = z.string().uuid()
+const wordRevisionSchema = z.string().uuid()
+const wordHandleSchema = z.string().uuid()
+
+function hasControlCode(value: string): boolean {
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i)
+    if (code < 32 || code === 127) return true
+  }
+  return false
+}
+
+const wordTextSchema = z
+  .string()
+  .refine(
+    (value) => !hasControlCode(value),
+    "Text must not contain control characters or newlines."
+  )
+  .refine(
+    (value) =>
+      new TextEncoder().encode(value).byteLength <= WORD_LIMITS.maxTextBytes,
+    "Text exceeds maximum size of 8 KiB."
+  )
+
+const wordSetTextOpSchema = z
+  .object({
+    op: z.literal("setText"),
+    handle: wordHandleSchema,
+    text: wordTextSchema,
+  })
+  .strict()
+
+const wordInsertOpSchema = z
+  .object({
+    op: z.literal("insert"),
+    after: wordHandleSchema.nullable(),
+    text: wordTextSchema,
+  })
+  .strict()
+
+const wordDeleteOpSchema = z
+  .object({
+    op: z.literal("delete"),
+    handle: wordHandleSchema,
+  })
+  .strict()
+
+const wordOpSchema = z.discriminatedUnion("op", [
+  wordSetTextOpSchema,
+  wordInsertOpSchema,
+  wordDeleteOpSchema,
+])
+
+export const wordBatchSchema = z
+  .object({
+    doc: wordDocSchema,
+    basedOn: wordRevisionSchema,
+    ops: z.array(wordOpSchema).min(1).max(WORD_LIMITS.maxOpsPerApply),
+  })
+  .strict()
+  .refine((batch) => {
+    let total = 0
+    for (const op of batch.ops) {
+      if ("text" in op) {
+        total += new TextEncoder().encode(op.text).byteLength
+      }
+    }
+    return total <= WORD_LIMITS.maxBatchTextBytes
+  }, "Total text bytes in batch exceed limit of 64 KiB.")
+
+const wordPageLabelSchema = z.enum(["cv", "letter"])
+
+export const wordUndoSchema = z
+  .object({
+    doc: wordDocSchema,
+    revision: wordRevisionSchema,
+    restore: wordRevisionSchema,
+  })
+  .strict()
+
+const wordSourceReadSchema = z
+  .object({
+    kind: z.literal("read"),
+    doc: wordDocSchema,
+    at: wordRevisionSchema.optional(),
+  })
+  .strict()
+
+const wordSourceMintSchema = z
+  .object({
+    kind: z.literal("mint"),
+    name: z.string(),
+    label: wordPageLabelSchema,
+  })
+  .strict()
+
+export const wordSourceSchema = z.discriminatedUnion("kind", [
+  wordSourceReadSchema,
+  wordSourceMintSchema,
+])
+
+export type WordDoc = z.infer<typeof wordDocSchema>
+export type WordRevision = z.infer<typeof wordRevisionSchema>
+export type WordHandle = z.infer<typeof wordHandleSchema>
+export type WordOp = z.infer<typeof wordOpSchema>
+export type WordBatch = z.infer<typeof wordBatchSchema>
+export type WordUndo = z.infer<typeof wordUndoSchema>
+export type WordSource = z.infer<typeof wordSourceSchema>
+
+export type WordOwner = string
+
+type WordPiece = { readonly text: string; readonly editable: boolean }
+
+export type WordParagraph = {
+  readonly handle: WordHandle
+  readonly text: string
+  readonly pieces: readonly WordPiece[]
+  readonly held: boolean
+  readonly message: string
+  readonly code: string | null
+}
+
+export type WordPage = {
+  readonly doc: WordDoc
+  readonly revision: WordRevision
+  readonly name: string
+  readonly label: "cv" | "letter"
+  readonly paragraphs: readonly WordParagraph[]
+}
+
+export type WordReason =
+  | "stale"
+  | "held"
+  | "plain"
+  | "limit"
+  | "order"
+  | "closed"
+  | "missing"
+  | "foreign"
+
+export type WordRefusal = {
+  readonly refused: true
+  readonly reason: WordReason
+  readonly message: string
+  readonly code: string | null
+  readonly handle: WordHandle | null
+}
+
+export type WordCommit = {
+  readonly refused: false
+  readonly page: WordPage
+  readonly undo: WordUndo | null
+}
+
+export type WordFile = {
+  readonly bytes: Uint8Array
+  readonly mediaType: typeof WORD_DOCUMENT_MEDIA_TYPE
+  readonly revision: WordRevision
+}
