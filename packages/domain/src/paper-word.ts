@@ -43,14 +43,23 @@ const wordTextSchema = z
     "Text exceeds maximum size of 8 KiB."
   )
 
+const wordLeanSchema = z.enum(["before", "after"])
+
 const wordSetTextOpSchema = z
   .object({
     op: z.literal("setText"),
     handle: wordHandleSchema,
     text: wordTextSchema,
     caret: z.number().int().nonnegative().optional(),
+    lean: wordLeanSchema.optional(),
+    keptBefore: z.number().int().nonnegative().optional(),
   })
   .strict()
+  .refine((op) => (op.lean === undefined) === (op.keptBefore === undefined), {
+    message:
+      "Send lean and keptBefore together, or leave both out. One alone cannot say which side of the caret the words belong to.",
+    path: ["keptBefore"],
+  })
 
 const wordInsertOpSchema = z
   .object({
@@ -221,6 +230,7 @@ export type WordDoc = z.infer<typeof wordDocSchema>
 export type WordRevision = z.infer<typeof wordRevisionSchema>
 export type WordHandle = z.infer<typeof wordHandleSchema>
 export type WordOp = z.infer<typeof wordOpSchema>
+export type WordLean = z.infer<typeof wordLeanSchema>
 export type WordBatch = z.infer<typeof wordBatchSchema>
 export type WordUndo = z.infer<typeof wordUndoSchema>
 export type WordSource = z.infer<typeof wordSourceSchema>

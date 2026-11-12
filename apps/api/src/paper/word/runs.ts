@@ -11,6 +11,7 @@ export type WordSpan = {
   end: number
   text: string
   lean: "before" | "after"
+  keptBefore?: number
 }
 
 export function letters(text: string) {
@@ -108,11 +109,20 @@ export function joinsAt(
 export function typedSpan(
   before: string,
   after: string,
-  caret: number | null
+  caret: number | null,
+  lean: WordSpan["lean"] | null,
+  keptBefore: number | null
 ): WordSpan | null {
-  return caret === null
-    ? changedSpan(before, after)
-    : caretSpan(before, after, caret)
+  const span =
+    caret === null
+      ? changedSpan(before, after)
+      : caretSpan(before, after, caret)
+  if (!span) return null
+  return {
+    ...span,
+    ...(lean ? { lean } : {}),
+    ...(keptBefore === null ? {} : { keptBefore }),
+  }
 }
 
 function rawWith(raw: string, before: string, after: string) {
