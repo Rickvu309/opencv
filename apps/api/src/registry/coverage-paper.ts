@@ -13,9 +13,7 @@ import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 
 import { paperDocs } from "../db/schema.js"
-import { saveFile } from "../paper/index.js"
-import { importedWordPage } from "../paper/import-word.js"
-import { stageWordPackage } from "../paper/package-store.js"
+import { importedWordPage, saveFile, stageWordPackage } from "../paper/index.js"
 import {
   bytesOf,
   clientFrom,
