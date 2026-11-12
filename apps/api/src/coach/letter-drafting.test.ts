@@ -10,7 +10,7 @@ import { eq } from "drizzle-orm"
 import { afterEach, expect, it, vi } from "vitest"
 import { z } from "zod"
 import { withDatabase } from "../db/context.js"
-import { coachTasks, user } from "../db/schema.js"
+import { coachTasks, jobs, paperDocs, user } from "../db/schema.js"
 import { installRegistry } from "../registry/install.js"
 import {
   authHeaders,
@@ -18,7 +18,11 @@ import {
   createTestApp,
   signUp,
 } from "../test/harness.js"
-import { DRAFTING_INSTRUCTION } from "./context.js"
+import {
+  CONTEXT_LINE_MAX_CHARS,
+  DRAFTING_INSTRUCTION,
+  TRUNCATED_MARKER,
+} from "./context.js"
 import {
   createScriptedCoachRuntime,
   createScriptedWorkerRuntime,
@@ -341,4 +345,223 @@ it("keeps an ordinary Chat turn on the full tool list with paper.start, and with
     } finally {
       tools.mockRestore()
     }
+  }))
+
+async function threeCvs(
+  ownerId: string,
+  db: Awaited<ReturnType<typeof setup>>["db"]
+) {
+  const registry = installRegistry()
+  const actor = personActor(ownerId)
+  const run = async (name: string, input: unknown) =>
+    (await registry.execute({ name, input, actor })).output as { id: string }
+  const job = await run("job.create", {
+    title: "Data Analyst",
+    company: "Northwind",
+  })
+  const oldest = await run("paper.create", { kind: "cv", name: "Oldest CV" })
+  const middle = await run("paper.create", { kind: "cv", name: "Middle CV" })
+  const latest = await run("paper.create", { kind: "cv", name: "Latest CV" })
+  const age = async () => {
+    for (const [doc, day] of [
+      [oldest, "2026-01-01"],
+      [middle, "2026-02-01"],
+      [latest, "2026-03-01"],
+    ] as const)
+      await db
+        .update(paperDocs)
+        .set({ updatedAt: new Date(`${day}T00:00:00.000Z`) })
+        .where(eq(paperDocs.id, doc.id))
+  }
+  await age()
+  return { jobId: job.id, oldest, middle, latest, run, age }
+}
+
+async function draftingLines(
+  ctx: Awaited<ReturnType<typeof setup>>,
+  jobId: string
+) {
+  const drafted = await ctx.start({
+    textOnly: true,
+    text: "Draft a cover letter. Reply with the letter text only.",
+    context: [{ kind: "job", id: jobId }],
+  })
+  const [task] = await ctx.db
+    .select()
+    .from(coachTasks)
+    .where(eq(coachTasks.id, drafted.taskId))
+  return noteLines(task?.contextSnapshot)
+}
+
+function chosenCv(lines: string[]) {
+  const line = lines.find((entry) =>
+    entry.startsWith("CV context (untrusted data): ")
+  )
+  return line
+    ? (JSON.parse(line.slice("CV context (untrusted data): ".length)) as {
+        id: string
+        name: string
+      })
+    : null
+}
+
+it("sends no email address at all in a Letter-drafting context and asks for an [Your email] placeholder instead", () =>
+  fixture(async (ctx) => {
+    const { jobId } = await draftingMaterial(ctx.ownerId, { cv: "linked" })
+    const lines = await draftingLines(ctx, jobId)
+    expect(lines.join("\n")).not.toContain(ctx.owner.user.email)
+    expect(lines.filter((line) => line.includes("@"))).toEqual([])
+    expect(
+      lines.find((line) => line.startsWith("Profile (untrusted data): "))
+    ).toBe('Profile (untrusted data): {"name":"Ada"}')
+    expect(DRAFTING_INSTRUCTION).toContain("[Your email]")
+    expect(DRAFTING_INSTRUCTION).toContain("[Your phone]")
+  }))
+
+it("drafts from the CV linked to the Job even when another CV is the favourite and a third is the latest", () =>
+  fixture(async (ctx) => {
+    const cvs = await threeCvs(ctx.ownerId, ctx.db)
+    await cvs.run("job.linkPaper", {
+      jobId: cvs.jobId,
+      docId: cvs.oldest.id,
+      kind: "cv",
+    })
+    await cvs.run("paper.setFavorite", {
+      docId: cvs.middle.id,
+      isFavorite: true,
+    })
+    await cvs.age()
+    expect(chosenCv(await draftingLines(ctx, cvs.jobId))).toMatchObject({
+      id: cvs.oldest.id,
+      name: "Oldest CV",
+    })
+  }))
+
+it("drafts from the favourite CV when none is linked, even when another CV is the latest", () =>
+  fixture(async (ctx) => {
+    const cvs = await threeCvs(ctx.ownerId, ctx.db)
+    await cvs.run("paper.setFavorite", {
+      docId: cvs.oldest.id,
+      isFavorite: true,
+    })
+    await cvs.age()
+    expect(chosenCv(await draftingLines(ctx, cvs.jobId))?.id).toBe(
+      cvs.oldest.id
+    )
+  }))
+
+it("drafts from the latest CV when none is linked or favourite", () =>
+  fixture(async (ctx) => {
+    const cvs = await threeCvs(ctx.ownerId, ctx.db)
+    expect(chosenCv(await draftingLines(ctx, cvs.jobId))?.id).toBe(
+      cvs.latest.id
+    )
+  }))
+
+it("never drafts from a deleted linked CV and falls back to the favourite", () =>
+  fixture(async (ctx) => {
+    const cvs = await threeCvs(ctx.ownerId, ctx.db)
+    await cvs.run("job.linkPaper", {
+      jobId: cvs.jobId,
+      docId: cvs.oldest.id,
+      kind: "cv",
+    })
+    await cvs.run("paper.setFavorite", {
+      docId: cvs.middle.id,
+      isFavorite: true,
+    })
+    await cvs.run("paper.delete", { docId: cvs.oldest.id })
+    await cvs.age()
+    const lines = await draftingLines(ctx, cvs.jobId)
+    expect(chosenCv(lines)?.id).toBe(cvs.middle.id)
+    expect(lines.join("\n")).not.toContain(cvs.oldest.id)
+    expect(lines.join("\n")).not.toContain("Oldest CV")
+  }))
+
+it("never drafts from another person's CV even when the Job row points at it", () =>
+  fixture(async (ctx) => {
+    const cvs = await threeCvs(ctx.ownerId, ctx.db)
+    const stranger = await signUp(ctx.app, {
+      name: "Grace",
+      email: `${randomUUID()}@example.com`,
+    })
+    const [other] = await ctx.db
+      .select()
+      .from(user)
+      .where(eq(user.email, stranger.user.email))
+    if (!other) throw new Error("Stranger missing")
+    const theirs = (
+      await installRegistry().execute({
+        name: "paper.create",
+        input: { kind: "cv", name: "Grace private CV" },
+        actor: personActor(other.id),
+      })
+    ).output as { id: string }
+    await ctx.db
+      .update(jobs)
+      .set({ cvDocId: theirs.id })
+      .where(eq(jobs.id, cvs.jobId))
+    const lines = await draftingLines(ctx, cvs.jobId)
+    expect(chosenCv(lines)?.id).toBe(cvs.latest.id)
+    expect(
+      lines.filter(
+        (line) =>
+          line.includes(theirs.id) &&
+          !line.startsWith("Job context (untrusted data): ")
+      )
+    ).toEqual([])
+    expect(lines.join("\n")).not.toContain("Grace private CV")
+  }))
+
+it("says the person has no CV and still forbids invented experience when no CV exists", () =>
+  fixture(async (ctx) => {
+    const { jobId } = await draftingMaterial(ctx.ownerId, { cv: "none" })
+    const lines = await draftingLines(ctx, jobId)
+    expect(chosenCv(lines)).toBeNull()
+    expect(lines).toContain("CV context: the person has no CV yet.")
+    expect(lines.at(-1)).toBe(DRAFTING_INSTRUCTION)
+    expect(DRAFTING_INSTRUCTION).toContain("Never invent experience")
+    expect(DRAFTING_INSTRUCTION).toContain("bracketed placeholder")
+  }))
+
+it("keeps the person's Job notes whole and marks the posting cut when the posting is ten times the budget", () =>
+  fixture(async (ctx) => {
+    const registry = installRegistry()
+    const actor = personActor(ctx.ownerId)
+    const job = (
+      await registry.execute({
+        name: "job.create",
+        input: { title: "Data Analyst", company: "Northwind" },
+        actor,
+      })
+    ).output as { id: string }
+    const notes = `Recruiter said the team ships dashboards weekly. ${"n".repeat(3000)} END-OF-NOTES`
+    await registry.execute({
+      name: "job.addNote",
+      input: { jobId: job.id, body: notes },
+      actor,
+    })
+    await ctx.db
+      .update(jobs)
+      .set({
+        description: "d".repeat(CONTEXT_LINE_MAX_CHARS * 10),
+        posting: {
+          about: "a".repeat(CONTEXT_LINE_MAX_CHARS),
+          duties: "u".repeat(CONTEXT_LINE_MAX_CHARS),
+          requirements: "r".repeat(CONTEXT_LINE_MAX_CHARS),
+          details: "t".repeat(CONTEXT_LINE_MAX_CHARS),
+        },
+      })
+      .where(eq(jobs.id, job.id))
+    const line = (await draftingLines(ctx, job.id)).find((entry) =>
+      entry.startsWith("Job context (untrusted data): ")
+    )
+    const payload = JSON.parse(
+      line?.slice("Job context (untrusted data): ".length) ?? "{}"
+    ) as { note: string; description: string }
+    expect(payload.note).toBe(notes)
+    expect(payload.description.endsWith(TRUNCATED_MARKER)).toBe(true)
+    expect(line?.length).toBeLessThanOrEqual(
+      "Job context (untrusted data): ".length + CONTEXT_LINE_MAX_CHARS
+    )
   }))
