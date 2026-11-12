@@ -94,6 +94,7 @@ function nodeScriptRunner(dir) {
   return {
     cmd: "node",
     args: ["--test", "--test-reporter=dot", "--test-concurrency=2"],
+    dir: "",
     root: `${dir}/`,
     flat: true,
     source: `${dir}/`,

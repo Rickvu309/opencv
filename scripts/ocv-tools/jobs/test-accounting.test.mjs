@@ -98,7 +98,7 @@ test("a change to a guards test runs it in the guards package, and only guards f
   )
   assert.deepEqual(
     runs.map((c) => [c.options.cwd, c.args.at(-1)]),
-    [["/repo/packages/guards", "test-completeness.test.mjs"]]
+    [["/repo", "packages/guards/test-completeness.test.mjs"]]
   )
   assert.equal(w.receipts().length, 1)
 })

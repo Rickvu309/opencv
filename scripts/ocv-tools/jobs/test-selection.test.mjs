@@ -5,7 +5,7 @@ import { join } from "node:path"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
 import { affectedPlan, selectAndAccount } from "./affected-tests.mjs"
-import { workspaceInput } from "./hook-world.mjs"
+import { realWorkspace, workspaceInput } from "./hook-world.mjs"
 import { importGraph } from "./import-graph.mjs"
 import { proofCommand } from "./test-accounting.mjs"
 import {
@@ -184,4 +184,17 @@ test("a change under what a listing scanner reads selects it: touch targets, use
       `${changed} does not select ${scanner}`
     )
   }
+})
+
+test("a package whose suite runs its files from the repository root (the guards suite) has its selected files run from the root too", () => {
+  const file = "packages/guards/test-completeness.test.mjs"
+  const selection = selectAndAccount({
+    changed: [file],
+    tests: [file],
+    textOf: () => "",
+    workspace: workspaceInput(realWorkspace()),
+  })
+  const [step] = affectedPlan(selection, "/repo")
+  assert.equal(step.cwd, "/repo")
+  assert.ok(step.args.includes(file), step.args.join(" "))
 })
