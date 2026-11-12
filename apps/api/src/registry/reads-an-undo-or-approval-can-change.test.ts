@@ -245,6 +245,14 @@ function classified() {
       writes.set(selected.name, writesActivity(selected.activity, sf))
     }
   }
+  for (const file of filesNamed(apiSrc, "package-start.ts")) {
+    const sf = parse(file)
+    for (const selected of selectedCommands(sf, "addReviewedCommand")) {
+      if (writes.has(selected.name))
+        throw new Error(`${selected.name} is bound twice`)
+      writes.set(selected.name, writesActivity(selected.activity, sf))
+    }
+  }
 
   const entries = new Map<
     string,

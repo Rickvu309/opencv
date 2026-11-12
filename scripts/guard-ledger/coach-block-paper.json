@@ -1,0 +1,13 @@
+{
+  "id": "coach-block-paper",
+  "file": "scripts/coach-block-paper.test.mjs",
+  "detector": {
+    "module": "scripts/lib/coach-block-paper.mjs",
+    "export": "detectCoachBlockPaper"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "2a4ea761",
+    "path": "packages/domain/src/paper-contract.ts"
+  }
+}
