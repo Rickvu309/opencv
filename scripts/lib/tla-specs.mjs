@@ -166,6 +166,31 @@ function moduleExports(map, mapPath, files, read, installed) {
   }
 }
 
+const SYNC_COMMIT = /^[0-9a-f]{40}$/
+
+export function coverageProblems(mapPath, map, files) {
+  const problems = []
+  if (
+    !Array.isArray(map.covers) ||
+    map.covers.length === 0 ||
+    map.covers.some((path) => typeof path !== "string")
+  )
+    problems.push(
+      `${mapPath}: needs "covers", the repo paths of the code this model describes`
+    )
+  else
+    for (const path of map.covers)
+      if (!files.includes(path))
+        problems.push(`${mapPath}: covers ${path}, which is not in the repo`)
+  if (typeof map.sync !== "string" || !SYNC_COMMIT.test(map.sync))
+    problems.push(
+      `${mapPath}: needs "sync", the full commit where the model last matched the code`
+    )
+  if (map.retiring !== undefined && typeof map.retiring !== "string")
+    problems.push(`${mapPath}: "retiring" names what replaced the covered code`)
+  return problems
+}
+
 function mapProblems(mapPath, mapText, tlaText, files, read, installed) {
   let map
   try {
@@ -184,7 +209,7 @@ function mapProblems(mapPath, mapText, tlaText, files, read, installed) {
     exports,
     problems: found,
   } = moduleExports(map, mapPath, files, read, installed)
-  const problems = [...found]
+  const problems = [...found, ...coverageProblems(mapPath, map, files)]
   for (const [key, code] of Object.entries(map.mutants ?? {}))
     if (!MUTANT_EXITS.has(code))
       problems.push(
@@ -243,4 +268,29 @@ export function specProblems(files, read, installed = () => null) {
         problems.push(`${mutant}: no ${mutant.replace(MUTANT_SUFFIX, ".cfg")}`)
   }
   return problems
+}
+
+export function staleReport(maps, commitsSince) {
+  return maps.map(({ tla, map }) => ({
+    tla,
+    sync: map.sync,
+    covers: map.covers,
+    retiring: map.retiring ?? null,
+    commits: commitsSince(map.sync, map.covers),
+  }))
+}
+
+export function staleLines(report) {
+  const lines = []
+  for (const entry of report) {
+    const since = entry.sync.slice(0, 8)
+    lines.push(
+      entry.commits.length === 0
+        ? `FRESH ${entry.tla} since ${since}`
+        : `STALE ${entry.tla} since ${since}: ${entry.commits.length} commit(s) touch ${entry.covers.join(", ")}`
+    )
+    for (const commit of entry.commits) lines.push(`  ${commit}`)
+    if (entry.retiring) lines.push(`  retiring: ${entry.retiring}`)
+  }
+  return lines
 }

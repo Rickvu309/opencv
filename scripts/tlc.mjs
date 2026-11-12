@@ -10,6 +10,8 @@ import {
   mutantOf,
   ownConfigs,
   specName,
+  staleLines,
+  staleReport,
 } from "./lib/tla-specs.mjs"
 
 const root = resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
@@ -160,6 +162,7 @@ function parse(argv) {
     const arg = argv[i]
     if (arg === "--all") options.all = true
     else if (arg === "--mutant") options.mutant = true
+    else if (arg === "--stale") options.stale = true
     else if (arg === "--config") options.config = argv[++i]
     else if (arg === "--out") options.out = argv[++i]
     else if (arg === "--out-dir") options.outDir = argv[++i]
@@ -202,13 +205,43 @@ function runAll(options) {
   return failed === 0 ? 0 : 1
 }
 
+export function specMaps(
+  files = listSpecFiles(),
+  read = (path) => readFileSync(join(root, path), "utf8")
+) {
+  return files
+    .filter((file) => file.endsWith(".tla"))
+    .sort()
+    .map((tla) => ({
+      tla,
+      map: JSON.parse(read(tla.replace(/\.tla$/, ".tla.json"))),
+    }))
+}
+
+function commitsSince(sync, covers) {
+  return execFileSync(
+    "git",
+    ["log", "--format=%h %s", `${sync}..HEAD`, "--", ...covers],
+    { cwd: root, encoding: "utf8" }
+  )
+    .split("\n")
+    .filter(Boolean)
+}
+
+function runStale() {
+  const report = staleReport(specMaps(), commitsSince)
+  process.stdout.write(`${staleLines(report).join("\n")}\n`)
+  return report.some((entry) => entry.commits.length > 0) ? 1 : 0
+}
+
 export function main(argv) {
   const options = parse(argv)
   if (options.all) return runAll(options)
+  if (options.stale) return runStale()
   const [spec] = options.positional
   if (!spec) {
     process.stderr.write(
-      "usage: node scripts/tlc.mjs <Spec.tla> [--mutant | --config <file.cfg>] [--out tlc.out] [--dump states.dump]\n       node scripts/tlc.mjs --all [--out-dir <dir>]\n"
+      "usage: node scripts/tlc.mjs <Spec.tla> [--mutant | --config <file.cfg>] [--out tlc.out] [--dump states.dump]\n       node scripts/tlc.mjs --all [--out-dir <dir>]\n       node scripts/tlc.mjs --stale\n"
     )
     return 64
   }

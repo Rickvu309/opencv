@@ -22,6 +22,8 @@ import {
   nextActions,
   packageResolver,
   specProblems,
+  staleLines,
+  staleReport,
 } from "./lib/tla-specs.mjs"
 
 const root = fileURLToPath(new URL("..", import.meta.url))
@@ -41,6 +43,7 @@ const tracked = () =>
       "*.cfg",
       "*.mjs",
       "*.ts",
+      "*.tsx",
     ],
     { cwd: root, encoding: "utf8" }
   )
@@ -48,7 +51,12 @@ const tracked = () =>
     .filter(Boolean)
 
 const TLA = "---- MODULE Spec ----\nStep == x' = x + 1\n====\n"
-const MAP = JSON.stringify({ module: "spec.mjs", actions: { Step: "step" } })
+const RECORD = { covers: ["a/Spec.tla"], sync: "a".repeat(40) }
+const MAP = JSON.stringify({
+  ...RECORD,
+  module: "spec.mjs",
+  actions: { Step: "step" },
+})
 const MODULE = "export function step() {}\n"
 
 const complete = () => ({
@@ -75,6 +83,7 @@ test("a null action explicitly represents a model-only transition", () => {
   const files = {
     ...complete(),
     "a/Spec.tla.json": JSON.stringify({
+      ...RECORD,
       module: "spec.mjs",
       actions: { Step: null },
     }),
@@ -86,6 +95,7 @@ test("a model-only action must still exist in the spec", () => {
   const files = {
     ...complete(),
     "a/Spec.tla.json": JSON.stringify({
+      ...RECORD,
       module: "spec.mjs",
       actions: { Step: "step", Missing: null },
     }),
@@ -134,6 +144,7 @@ test("a map entry naming a function the module does not export is a problem", ()
   const files = {
     ...complete(),
     "a/Spec.tla.json": JSON.stringify({
+      ...RECORD,
       module: "spec.mjs",
       actions: { Step: "missing" },
     }),
@@ -148,6 +159,7 @@ test("a map entry for an action the spec does not define is a problem", () => {
   const files = {
     ...complete(),
     "a/Spec.tla.json": JSON.stringify({
+      ...RECORD,
       module: "spec.mjs",
       actions: { Gone: "step" },
     }),
@@ -158,7 +170,11 @@ test("a map entry for an action the spec does not define is a problem", () => {
 test("a map with no actions is a problem", () => {
   const files = {
     ...complete(),
-    "a/Spec.tla.json": JSON.stringify({ module: "spec.mjs", actions: {} }),
+    "a/Spec.tla.json": JSON.stringify({
+      ...RECORD,
+      module: "spec.mjs",
+      actions: {},
+    }),
   }
   assert.match(problemsOf(files)[0], /"actions" is empty/)
 })
@@ -210,6 +226,7 @@ test("a map whose module is missing or whose shape is wrong is a problem", () =>
 
 const PACKAGE_MAP = (extra = {}) =>
   JSON.stringify({
+    ...RECORD,
     module: "lib-x/dist/steps.mjs",
     version: "1.2.3",
     actions: { Step: "step" },
@@ -298,6 +315,84 @@ test("exports are read from declarations, lists and typescript", () => {
   assert.deepEqual([...names].sort(), ["D", "a", "b", "c", "e", "f", "h"])
 })
 
+test("a map without covered files or a sync commit is a problem", () => {
+  const problems = problemsOf({
+    ...complete(),
+    "a/Spec.tla.json": JSON.stringify({
+      module: "spec.mjs",
+      actions: { Step: "step" },
+    }),
+  })
+  assert.match(problems[0], /needs "covers"/)
+  assert.match(problems[1], /needs "sync"/)
+})
+
+test("a covered file that is not in the repo or a short sync commit is a problem", () => {
+  const problems = problemsOf({
+    ...complete(),
+    "a/Spec.tla.json": JSON.stringify({
+      covers: ["a/gone.ts"],
+      sync: "abc1234",
+      module: "spec.mjs",
+      actions: { Step: "step" },
+    }),
+  })
+  assert.match(problems[0], /covers a\/gone\.ts, which is not in the repo/)
+  assert.match(problems[1], /needs "sync"/)
+})
+
+test("the staleness report lists commits that touched covered files since the sync commit", () => {
+  const maps = [
+    {
+      tla: "a/Fresh.tla",
+      map: { covers: ["a/one.ts"], sync: "1".repeat(40) },
+    },
+    {
+      tla: "a/Moved.tla",
+      map: {
+        covers: ["a/two.ts", "a/three.ts"],
+        sync: "2".repeat(40),
+        retiring: "Replaced by a/four.ts",
+      },
+    },
+  ]
+  const asked = []
+  const report = staleReport(maps, (sync, covers) => {
+    asked.push([sync, covers])
+    return sync.startsWith("2") ? ["abc1234 change two"] : []
+  })
+  assert.deepEqual(asked, [
+    ["1".repeat(40), ["a/one.ts"]],
+    ["2".repeat(40), ["a/two.ts", "a/three.ts"]],
+  ])
+  assert.deepEqual(staleLines(report), [
+    "FRESH a/Fresh.tla since 11111111",
+    "STALE a/Moved.tla since 22222222: 1 commit(s) touch a/two.ts, a/three.ts",
+    "  abc1234 change two",
+    "  retiring: Replaced by a/four.ts",
+  ])
+})
+
+test("the stale mode reads every spec in the repo and names each one", () => {
+  const result = spawnSync(process.execPath, ["scripts/tlc.mjs", "--stale"], {
+    cwd: root,
+    encoding: "utf8",
+    timeout: CLI_TIMEOUT_MS,
+  })
+  assert.ok([0, 1].includes(result.status), result.stderr)
+  const named = result.stdout
+    .split("\n")
+    .filter((line) => /^(FRESH|STALE) /.test(line))
+    .map((line) => line.split(" ")[1])
+  assert.deepEqual(
+    named,
+    tracked()
+      .filter((file) => file.endsWith(".tla"))
+      .sort()
+  )
+  assert.equal(result.status, result.stdout.includes("STALE ") ? 1 : 0)
+})
+
 const repoProblems = () =>
   specProblems(
     tracked(),
@@ -330,6 +425,7 @@ const withMutants = (mutants) => ({
   "a/Spec.release.cfg": "",
   "a/Spec.release.mutant.cfg": "",
   "a/Spec.tla.json": JSON.stringify({
+    ...RECORD,
     module: "spec.mjs",
     actions: { Step: "step" },
     mutants,

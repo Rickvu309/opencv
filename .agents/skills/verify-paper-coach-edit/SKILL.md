@@ -15,6 +15,8 @@ These are the five rules of `CoachPaper.tla`. Do not weaken a rule to clear a fi
 
 ## Where the code lives
 
+The Paper reading below covers code scheduled for deletion. `paper.edit` takes this Yjs branch only when `basedOn` is a number (`select` in `apps/api/src/paper/package-edit.ts`). Word pages send a revision string and take the reviewed branch; `verify-paper-word` covers that. The MCP Job reading at the end is live.
+
 - `apps/api/src/paper/content-coach.ts` exports `editAsCoach`, `stalePaperBasis`, and `revertCoachEdit`. `stalePaperBasis` returns `refuse` when `basedOn` is not the current revision, and `apply` when it matches. `editAsCoach` calls it only for a coach actor, and throws before any write. Switching that return from `refuse` to `apply` is the one-line change to a clean merge. The replay and the guard `paper-coach-basis` both require `refuse`.
 - `apps/api/src/paper/content-store.ts` exports `coachBasisOk`, `withContent`, and `syncContent`. `coachBasisOk` still allows an older basis for a person edit. Do not use it as the coach approval rule. `syncContent` is the person write that raises the revision.
 - `apps/api/src/registry/proposals.ts` exports `createProposal` and `lockProposal`. `createProposal` inserts a pending row and does not write the document. The basis read and the write stay one lock inside the approval transaction.
@@ -65,7 +67,7 @@ One document. One immutable proposal. One person typing event. Revisions 0 throu
 
 After a change to the files named above, run `/maintain-formal-verification-skill`. Update this skill only after the model still matches the code and the replay still refuses a stale basis. Never weaken a rule to clear a finding.
 
-Use this skill’s Git history to locate the last verification change. Keep branch-only commits out of verification anchors.
+The sync commit and the covered files live in `"sync"` and `"covers"` of `apps/api/src/paper/CoachPaper.tla.json`. Run `node scripts/tlc.mjs --stale` to list every commit that touched covered files since then. Move `"sync"` forward only after you confirm the model still describes the code at the new commit, and use a commit on `main`.
 
 ## MCP connection proposing a Job change
 

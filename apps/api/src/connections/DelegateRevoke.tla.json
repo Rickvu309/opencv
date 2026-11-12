@@ -5,5 +5,11 @@
     "Revoke": null,
     "ToolBody": "requireLiveDelegate",
     "Rest": null
-  }
+  },
+  "covers": [
+    "apps/api/src/connections/http.ts",
+    "apps/api/src/registry/delegate-policy.ts",
+    "apps/api/src/registry/proposals.ts"
+  ],
+  "sync": "f8167a13418e8167eedde62be48f1d01cbee16d5"
 }
