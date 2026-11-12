@@ -237,18 +237,26 @@ const expiredResultSchema = z.object({ expired: z.literal(true) })
 function settledIntentOutcome(
   intent: { state: string; publicResult: unknown },
   taskState: "succeeded" | "failed" | "cancelled"
-): "approved" | "denied" | "expired" | null {
+): "approved" | "denied" | "expired" | "stopped" | null {
   if (intent.state === "read") return "approved"
   if (intent.state === "proposed")
-    return taskState === "succeeded" ? null : "expired"
+    return taskState === "succeeded"
+      ? null
+      : taskState === "cancelled"
+        ? "stopped"
+        : "expired"
   if (intent.state !== "denied") return null
   return expiredResultSchema.safeParse(intent.publicResult).success
     ? "expired"
     : "denied"
 }
 
-function refusalSummary(outcome: "denied" | "expired") {
-  return outcome === "expired"
-    ? "Not approved · ask Coach again"
-    : "Denied · nothing changed"
+const REFUSAL_SUMMARY = {
+  denied: "Denied · nothing changed",
+  expired: "Expired · ask Coach again",
+  stopped: "Stopped · ask Coach again",
+} as const
+
+function refusalSummary(outcome: keyof typeof REFUSAL_SUMMARY) {
+  return REFUSAL_SUMMARY[outcome]
 }

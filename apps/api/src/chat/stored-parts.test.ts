@@ -53,3 +53,40 @@ it("keeps a part it cannot read as one plain line in the chat and as its raw val
     7,
   ])
 })
+
+it.each([
+  { outcome: "approved", ok: true, approval: undefined },
+  { outcome: "denied", ok: false, approval: "denied" },
+  { outcome: "expired", ok: false, approval: "expired" },
+  { outcome: "undone", ok: true, approval: undefined },
+  { outcome: "stopped", ok: false, approval: "stopped" },
+] as const)(
+  "a saved $outcome step reads back as $outcome in the chat and the export",
+  ({ outcome, ok, approval }) => {
+    const saved = JSON.parse(
+      JSON.stringify([{ ...old, summary: "Saved step", ok, outcome }])
+    )
+    const expected = {
+      type: "tool",
+      outcome,
+      ...(approval ? { approval } : {}),
+      ...(outcome === "undone" ? { undone: true } : {}),
+    }
+    expect(readChatViewParts(saved)).toMatchObject([expected])
+    expect(readExportedParts(saved)).toMatchObject([expected])
+  }
+)
+
+it("keeps an old saved expired step reading as expired", () => {
+  expect(
+    readChatViewParts([
+      { ...old, summary: "Expired · ask Coach again", approval: "expired" },
+    ])
+  ).toMatchObject([{ outcome: "expired", approval: "expired" }])
+})
+
+it("never reads an unknown saved outcome as a step that can be approved", () => {
+  expect(
+    readChatViewParts([{ ...old, outcome: "paused", approval: "pending" }])
+  ).toEqual([{ type: "text", text: UNREADABLE_STEP_LINE }])
+})

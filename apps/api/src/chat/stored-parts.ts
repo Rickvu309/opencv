@@ -52,7 +52,7 @@ function withStoredOutcome(part: ChatToolPart): ChatToolPart {
   return {
     ...part,
     outcome,
-    ...(outcome === "denied" || outcome === "expired"
+    ...(outcome === "denied" || outcome === "expired" || outcome === "stopped"
       ? { approval: outcome }
       : {}),
     ...(outcome === "undone" ? { undone: true } : {}),

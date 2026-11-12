@@ -327,13 +327,13 @@ export const SCREENS = [
     ],
   },
   {
-    id: "coach-expired-reloaded",
+    id: "coach-stopped-reloaded",
     route: "/paper",
     steps: [
       ...ASK_FOR_AN_EDIT,
       ...STOP_THE_WAITING_EDIT,
       ...REOPEN_LATEST_CHAT,
-      { waitFor: { text: "Not approved · ask Coach again" } },
+      { waitFor: { text: "Stopped · ask Coach again" } },
     ],
   },
   {
