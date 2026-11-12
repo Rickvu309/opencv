@@ -315,3 +315,37 @@ test("a per-side target points at a moved element in each image and skips a side
     "section 1 callout 1 uses a selector, so the section needs a screen and width from the manifest",
   ])
 })
+
+test("five crowded callouts on both sides never put one circle on another", () => {
+  const side = (rows) => ({
+    bounds: { width: 1440, height: 900 },
+    marks: rows.map(([n, x, y, width, height]) => ({
+      n,
+      box: { x, y, width, height },
+    })),
+  })
+  const placed = placeCallouts([
+    side([
+      [1, 1188, 144, 44, 25],
+      [2, 1198, 129, 22, 9],
+      [3, 1191, 137, 115, 42],
+      [4, 1140, 139, 64, 17],
+      [5, 1184, 105, 93, 16],
+    ]),
+    side([
+      [1, 1188, 119, 44, 25],
+      [2, 1186, 78, 22, 9],
+      [3, 1177, 165, 115, 42],
+      [4, 1116, 154, 64, 17],
+      [5, 1186, 53, 93, 16],
+    ]),
+  ])
+  for (const marks of placed)
+    for (const [at, a] of marks.entries())
+      for (const b of marks.slice(at + 1))
+        assert.ok(
+          Math.hypot(a.center.x - b.center.x, a.center.y - b.center.y) >=
+            MARK.radius * 2,
+          `callouts ${a.n} and ${b.n} overlap`
+        )
+})

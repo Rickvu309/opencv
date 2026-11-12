@@ -1,5 +1,6 @@
 import { basename, join } from "node:path"
 import { openScreen } from "./capture.mjs"
+import { checkBaseScreen } from "./known-drift.mjs"
 import { viewportFor } from "./screens.mjs"
 import { down, liveState, stateDir, up } from "./stack.mjs"
 
@@ -60,7 +61,7 @@ export function pruneBases(ctx) {
 }
 
 export function emptyManifest({ base, baseSha, head, widths }) {
-  return { base, baseSha, head, widths, captures: [] }
+  return { base, baseSha, head, widths, captures: [], baseChecks: {} }
 }
 
 export function captureFor(manifest, screen, width) {
@@ -202,11 +203,15 @@ export function baseContext(ctx, dir) {
 
 async function captureSide(
   ctx,
-  { state, screens, widths, side, out, manifest, selectors }
+  { state, screens, widths, side, out, manifest, selectors, checkBase }
 ) {
   const browser = await ctx.browser.launch()
   try {
-    for (const screen of screens)
+    for (const screen of screens) {
+      if (checkBase && !screen.unreachable) {
+        const result = await checkBaseScreen(checkBase, browser, state, screen)
+        if (result) manifest.baseChecks[screen.id] = result
+      }
       for (const width of widths) {
         if (screen.unreachable) {
           recordSide(manifest, screen, width, side, {
@@ -229,6 +234,7 @@ async function captureSide(
           })
         }
       }
+    }
   } finally {
     await browser.close()
   }
@@ -236,7 +242,7 @@ async function captureSide(
 
 export async function runCompare(
   ctx,
-  { screens, widths, base, out, selectors }
+  { screens, widths, base, out, selectors, checkBase }
 ) {
   ctx.fs.mkdir(out)
   const head = ctx.git(["rev-parse", "HEAD"], ctx.repo)
@@ -261,6 +267,7 @@ export async function runCompare(
       out,
       manifest,
       selectors,
+      checkBase,
     })
     await down(baseCtx)
     started.pop()

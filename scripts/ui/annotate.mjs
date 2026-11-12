@@ -26,6 +26,16 @@ const DIRECTIONS = Object.freeze([
   ["down", 0, 1],
 ])
 export const PLACEMENT_ORDER = DIRECTIONS.map(([name]) => name)
+const REACHES = Object.freeze([1, 1.75, 2.5])
+const OPTIONS = REACHES.flatMap((stretch, ring) =>
+  DIRECTIONS.map(([name, dx, dy]) => ({ name, dx, dy, stretch, ring }))
+)
+const PENALTY = Object.freeze({
+  crowded: 1000,
+  outside: 100,
+  covered: 10,
+  ring: 1,
+})
 
 const isText = (value) => typeof value === "string" && value.trim().length > 0
 const isNumber = (value) => typeof value === "number" && Number.isFinite(value)
@@ -174,12 +184,13 @@ export function anchorFor(box, dx, dy) {
   }
 }
 
-function candidate(box, [name, dx, dy]) {
+function candidate(box, { name, dx, dy, stretch }) {
   const anchor = anchorFor(box, dx, dy)
   const length = Math.hypot(dx, dy)
+  const reach = MARK.reach * stretch
   const center = {
-    x: anchor.x + (dx / length) * MARK.reach,
-    y: anchor.y + (dy / length) * MARK.reach,
+    x: anchor.x + (dx / length) * reach,
+    y: anchor.y + (dy / length) * reach,
   }
   return { direction: name, anchor, center }
 }
@@ -202,7 +213,7 @@ function scoreDirections(mark, marks, placed, bounds) {
   const obstacles = marks
     .filter((other) => other === mark || !contains(other.box, mark.box))
     .map((other) => other.box)
-  return DIRECTIONS.map((direction) => {
+  return OPTIONS.map((direction) => {
     const option = candidate(mark.box, direction)
     const ring = circleBox(option.center, MARK.radius + MARK.clearance)
     const outside =
@@ -217,9 +228,14 @@ function scoreDirections(mark, marks, placed, bounds) {
         circleBox(done.center, MARK.radius)
       )
     ).length
+    const blocked =
+      (outside ? PENALTY.outside : 0) +
+      covered * PENALTY.covered +
+      crowded * PENALTY.crowded
     return {
       ...option,
-      penalty: (outside ? 100 : 0) + covered * 10 + crowded * 10,
+      blocked,
+      penalty: blocked + direction.ring * PENALTY.ring,
     }
   })
 }
@@ -239,7 +255,7 @@ export function placeCallouts(sides) {
           }
         : null
     })
-    const totals = DIRECTIONS.map((_, index) =>
+    const totals = OPTIONS.map((_, index) =>
       scored.reduce(
         (sum, side) => sum + (side ? side.options[index].penalty : 0),
         0
@@ -253,7 +269,7 @@ export function placeCallouts(sides) {
         n,
         direction: option.direction,
         center: option.center,
-        clear: option.penalty === 0,
+        clear: option.blocked === 0,
         ...arrowFor(option.center, option.anchor, side.mark.box),
       })
     })
