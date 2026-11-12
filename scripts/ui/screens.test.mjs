@@ -29,7 +29,7 @@ test("a screen with neither steps nor a reason, a duplicate, a bad route or an u
   ])
   assert.deepEqual(problems, [
     "a: needs steps or an unreachable reason, not both",
-    'b: step {"hover":"x"} must be one of goto, click, fill, press, type, upload, waitFor',
+    'b: step {"hover":"x"} must be one of goto, click, fill, press, type, upload, waitFor, respond',
     "b: duplicate id",
     "b: route must start with /",
     "C: id must be kebab-case",
@@ -135,7 +135,7 @@ test("a screen's after steps clean up and are only allowed on a screen with step
     ]),
     [
       "b: after must be a step list on a screen with steps",
-      'c: step {"hover":"x"} must be one of goto, click, fill, press, type, upload, waitFor',
+      'c: step {"hover":"x"} must be one of goto, click, fill, press, type, upload, waitFor, respond',
     ]
   )
   for (const screen of SCREENS.filter((screen) =>
@@ -152,4 +152,37 @@ test("a screen's after steps clean up and are only allowed on a screen with step
       !JSON.stringify(screen.steps).includes('button[aria-label=\\"Stop\\"]')
     )
       assert.ok(screen.after?.length, `${screen.id} leaves an edit waiting`)
+})
+
+test("a respond step answers the named request in the tool's browser, preflight included", async () => {
+  const { cannedAnswer } = await import("./capture.mjs")
+  const request = (method, extra = {}) => ({
+    method: () => method,
+    headers: () => ({ origin: "http://localhost:5173", ...extra }),
+  })
+  const answer = {
+    status: 429,
+    headers: { "Retry-After": "661" },
+    json: { message: "Too many" },
+  }
+  assert.deepEqual(cannedAnswer(request("POST"), answer), {
+    status: 429,
+    contentType: "application/json",
+    headers: {
+      "Access-Control-Allow-Origin": "http://localhost:5173",
+      "Access-Control-Allow-Credentials": "true",
+      "Access-Control-Expose-Headers": "Retry-After",
+      "Retry-After": "661",
+    },
+    body: '{"message":"Too many"}',
+  })
+  const preflight = cannedAnswer(
+    request("OPTIONS", { "access-control-request-headers": "content-type" }),
+    answer
+  )
+  assert.equal(preflight.status, 204)
+  assert.equal(
+    preflight.headers["Access-Control-Allow-Headers"],
+    "content-type"
+  )
 })

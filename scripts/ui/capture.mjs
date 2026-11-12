@@ -24,6 +24,40 @@ const locate = (page, target) => {
   )
 }
 
+export function cannedAnswer(request, { status, headers = {}, json }) {
+  const origin = request.headers().origin
+  const crossOrigin = origin
+    ? {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Expose-Headers": Object.keys(headers).join(", "),
+      }
+    : {}
+  if (request.method() === "OPTIONS")
+    return {
+      status: 204,
+      headers: {
+        ...crossOrigin,
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+        "Access-Control-Allow-Headers":
+          request.headers()["access-control-request-headers"] ?? "content-type",
+      },
+    }
+  return {
+    status,
+    contentType: "application/json",
+    headers: { ...crossOrigin, ...headers },
+    body: JSON.stringify(json ?? {}),
+  }
+}
+
+function answerInThisBrowser(page, answer) {
+  return page.route(
+    (url) => url.pathname === answer.path,
+    (route) => route.fulfill(cannedAnswer(route.request(), answer))
+  )
+}
+
 export async function runStep(page, origin, step) {
   if (step.goto)
     return page.goto(`${origin}${step.goto}`, { waitUntil: "domcontentloaded" })
@@ -38,6 +72,7 @@ export async function runStep(page, origin, step) {
       fileURLToPath(new URL(step.upload.file, FIXTURES)),
       { timeout: STEP_TIMEOUT_MS }
     )
+  if (step.respond) return answerInThisBrowser(page, step.respond)
   if (step.press) return page.keyboard.press(step.press)
   if (step.type) return page.keyboard.type(step.type)
   if (step.waitFor)
