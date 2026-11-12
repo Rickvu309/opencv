@@ -4,12 +4,10 @@
 
 [data-pen-surface="auth"] [data-slot="email-code-sent"],
 [data-pen-surface="auth"] [data-slot="email-code-change"],
-[data-pen-surface="auth"] [data-slot="email-code-resend"] {
-  color: #6b6b6f;
-}
-
+[data-pen-surface="auth"] [data-slot="email-code-resend"],
+[data-pen-surface="auth"] [data-slot="email-code-back"],
 [data-pen-surface="auth"] [data-slot="email-code-countdown"] {
-  color: #a0a0a2;
+  color: #6b6b6f;
 }
 
 [data-pen-surface="auth"] [data-slot="email-code-send"],

@@ -21,6 +21,7 @@ const props = {
   onComplete: vi.fn(),
   onResend: vi.fn(),
   onChangeEmail: vi.fn(),
+  onBack: vi.fn(),
 } satisfies Parameters<typeof EmailCodeScreen>[0]
 
 function formTexts(snapshot: typeof entry) {

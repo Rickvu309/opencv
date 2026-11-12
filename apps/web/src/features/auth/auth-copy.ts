@@ -14,6 +14,7 @@ export const AUTH_COPY = {
   checkEmail: "Check your email",
   sentTo: "We sent a 6-digit code to",
   change: "Change",
+  backToLogin: "Back to login",
   openEmail: "Open email",
   didntGet: "Didn't get it?",
   sendNew: "Send a new code",

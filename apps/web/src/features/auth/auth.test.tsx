@@ -133,7 +133,9 @@ describe("email code", () => {
     expect(
       await screen.findByRole("heading", { name: AUTH_COPY.logIn })
     ).toBeInTheDocument()
-    expect(document.querySelectorAll('[data-variant="glow"]')).toHaveLength(1)
+    expect(document.querySelectorAll('[data-variant="primary"]')).toHaveLength(
+      1
+    )
     await sendCode()
     expect(authClient.emailOtp.sendVerificationOtp).toHaveBeenCalledWith({
       email: "ada@verify.local",
@@ -143,7 +145,9 @@ describe("email code", () => {
     expect(
       screen.getByRole("button", { name: AUTH_COPY.change })
     ).toBeInTheDocument()
-    expect(document.querySelectorAll('[data-variant="glow"]')).toHaveLength(0)
+    expect(document.querySelectorAll('[data-variant="primary"]')).toHaveLength(
+      0
+    )
   })
 
   it("hides Google until config says it is on", async () => {
@@ -299,7 +303,7 @@ describe("email code", () => {
     )
   })
 
-  it("tabs Email, Continue, then the language control, and on the code step the digits, Send a new code, Change, then the language control", async () => {
+  it("tabs Email, Continue, then the language control, and on the code step the digits, Send a new code, Back to login, Change, then the language control", async () => {
     const user = userEvent.setup()
     renderApp("/sign-in")
     expect(
@@ -343,6 +347,10 @@ describe("email code", () => {
     await user.tab()
     expect(
       screen.getByRole("button", { name: AUTH_COPY.sendNew })
+    ).toHaveFocus()
+    await user.tab()
+    expect(
+      screen.getByRole("button", { name: AUTH_COPY.backToLogin })
     ).toHaveFocus()
     await user.tab()
     expect(screen.getByRole("radio", { name: AUTH_COPY.en })).toHaveFocus()

@@ -503,22 +503,24 @@ export const DESIGN_MAP = [
     writingPageRows
   ),
   ...SETTINGS_ROWS,
-  {
-    screen: "sign-in",
-    label: "Sign-in email box",
-    selector: 'input[type="email"]',
-    composedScreen: SIGN_IN,
-    frame: "KmGC0",
-    props: ["height", "radius", "paddingLeft"],
-  },
-  {
-    screen: "sign-in",
-    label: "Sign-in continue button",
-    selector: 'form button[type="submit"]',
-    composedScreen: SIGN_IN,
-    frame: "BXX35",
-    props: ["height", "radius"],
-  },
+  ...["sign-in", "sign-in-too-many-codes"].flatMap((screen) => [
+    {
+      screen,
+      label: "Sign-in email box",
+      selector: 'input[type="email"]',
+      composedScreen: SIGN_IN,
+      frame: "KmGC0",
+      props: ["height", "radius", "paddingLeft"],
+    },
+    {
+      screen,
+      label: "Sign-in continue button",
+      selector: 'form button[type="submit"]',
+      composedScreen: SIGN_IN,
+      frame: "BXX35",
+      props: ["height", "radius"],
+    },
+  ]),
   {
     screen: "sign-in",
     label: "Sign-in heading type",
