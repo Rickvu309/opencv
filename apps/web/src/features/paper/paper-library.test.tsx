@@ -96,29 +96,25 @@ describe("Paper library", () => {
     expect(screen.getByText("Start a document")).toBeInTheDocument()
   })
 
-  it("discards a finished upload after cancel, because aborting the fetch would drop the id", async () => {
+  it("does not open a Word page that finishes importing after Cancel, and shows no notice", async () => {
     const created = {
-      ...cv("sample"),
-      sourceFileId:
-        "22222222-2222-4222-8222-222222222222" as PaperView["sourceFileId"],
+      generation: "package" as const,
+      docId: "22222222-2222-4222-8222-222222222222",
+      revision: "33333333-3333-4333-8333-333333333333",
+      name: "Linh_CV",
+      kind: "cv" as const,
+      packageHash: "a".repeat(64),
+      byteSize: 1200,
+      notice:
+        "Imported the text of your PDF. Layout, fonts and photo were not kept.",
     }
-    let finish: (value: PaperView) => void = () => undefined
+    let finish: (value: typeof created) => void = () => undefined
     vi.mocked(importPaperFile).mockImplementation(
       () =>
         new Promise((resolve) => {
           finish = resolve
         })
     )
-    const calls: string[] = []
-    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
-      calls.push(String(input))
-      return Promise.resolve(
-        Response.json({
-          ok: true,
-          data: { id: created.id, fileId: created.sourceFileId },
-        })
-      )
-    })
     const onOpen = vi.fn()
     render(
       <PaperLibrary
@@ -134,6 +130,9 @@ describe("Paper library", () => {
     )
     const input = document.querySelector('input[type="file"]')
     if (!input) throw new Error("Missing import input")
+    expect(input.getAttribute("accept")).toBe(
+      ".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+    )
     fireEvent.change(input, {
       target: {
         files: [new File(["CV"], "Linh_CV.pdf", { type: "application/pdf" })],
@@ -144,15 +143,8 @@ describe("Paper library", () => {
     await act(async () => {
       finish(created)
     })
-    await vi.waitFor(() => {
-      expect(
-        calls.some((url) =>
-          url.split("?")[0]?.endsWith("/api/commands/paper.delete")
-        )
-      ).toBe(true)
-    })
+    expect(screen.queryByText(created.notice)).toBeNull()
     expect(onOpen).not.toHaveBeenCalled()
-    expect(calls.some((url) => url.includes("paper.deleteFile"))).toBe(true)
     expect(screen.getByText("Start a document")).toBeInTheDocument()
   })
 

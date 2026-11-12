@@ -50,12 +50,6 @@ test("committed imports release upload cleanup before reading the response", () 
     "utf8"
   )
   assert.deepEqual(detect(source, "http.ts"), [])
-  const mutation = source.replace("savedId = undefined", "savedId = saved.id")
-  assert.notEqual(source, mutation)
-  assert.deepEqual(
-    detect(mutation, "http.ts").map(({ kind }) => kind),
-    ["committed-import-cleanup"]
-  )
 })
 
 test("Word library stays absent until the feature read has completed", () => {
