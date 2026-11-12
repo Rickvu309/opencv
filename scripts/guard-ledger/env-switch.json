@@ -1,0 +1,18 @@
+{
+  "id": "env-switch",
+  "file": "scripts/env-switch.test.mjs",
+  "detector": {
+    "module": "scripts/lib/env-switch.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "30003d8e14f511c1ac4a061a25b06f304a6c7af2",
+    "path": "apps/api/src/paper/package-http.ts",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/api/src/paper/package-http.ts"
+    }
+  },
+  "reason": "Found by the 2026-11-12 design review and removed in #1353. Introduced by 30003d8e14f511c1ac4a061a25b06f304a6c7af2, where the Word upload routes answered 404 unless PAPER_PACKAGE_ENABLED was true, a server switch declared nowhere, so Word import, writing and download could be off in production with no one able to see it. detect fires on a process.env or import.meta.env read in api or web product code whose name is not real configuration, and stays quiet once the routes read no switch."
+}
