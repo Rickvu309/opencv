@@ -1,5 +1,14 @@
 import { FIXES } from "../result.mjs"
 
+function catalogStale(facts) {
+  const catalog = facts.catalog ?? {}
+  if (catalog.error)
+    return `the generated contract catalog could not be checked: ${catalog.error}`
+  if (catalog.stale?.length)
+    return `the generated contract catalog is stale: ${catalog.stale.join(", ")}`
+  return null
+}
+
 function rule(spec) {
   return {
     kind: "rule",
@@ -80,5 +89,15 @@ export const commitRows = [
     needs: ["commits"],
     check: fileSize,
     fix: () => SPLIT_GUIDE,
+  }),
+  rule({
+    id: "CATALOG_STALE",
+    section: "4",
+    says: "A commit that changes the domain contract or the generated catalog stages a catalog that node scripts/catalog.mjs generate would not change. The push does not repeat it; CI checks the pushed tree.",
+    at: ["commit"],
+    needs: ["catalog"],
+    check: catalogStale,
+    fix: () =>
+      "Run node scripts/catalog.mjs generate, then git add packages/domain/src/generated apps/api/src/registry/generated and commit again. If the catalog cannot be read, fix the contract error it names; a missing package means pnpm install in this worktree, and a missing dist means pnpm --filter @workspace/domain build first.",
   }),
 ]
