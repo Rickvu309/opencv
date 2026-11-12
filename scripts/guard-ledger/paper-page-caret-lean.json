@@ -10,5 +10,5 @@
     "sha": "c0b0d46756e02150c750e6dcadce4c0852bc538f",
     "path": "apps/web/src/features/paper-page/page-diff.ts"
   },
-  "reason": "Introduced in c0b0d467 (#1340): the page sent a caret offset without the side it sat on, so words typed at the start of text after a link were saved before the link."
+  "reason": "Introduced in c0b0d467 (#1340): the page sent a caret offset without the side it sat on, so words typed at the start of text after a link were saved before the link. At 5ba2081e (#1370) the page sent a lean without naming the caret's block, so words typed into an empty block before a link were saved after it."
 }
