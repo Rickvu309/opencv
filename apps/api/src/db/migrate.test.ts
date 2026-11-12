@@ -29,7 +29,6 @@ const productTables = [
   "inbox_threads",
   "job_checklist",
   "jobs",
-  "notify_requests",
   "oauth_access_token",
   "oauth_client",
   "oauth_client_assertion",

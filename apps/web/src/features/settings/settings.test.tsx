@@ -227,8 +227,9 @@ describe("settings", () => {
     expect(
       screen.queryByRole("button", { name: "Add card" })
     ).not.toBeInTheDocument()
-    expect(screen.getByText("No card added")).toBeInTheDocument()
-    expect(screen.getByText("None yet")).toBeInTheDocument()
+    expect(screen.getByText("$9 a month. Not on sale yet.")).toBeInTheDocument()
+    expect(screen.queryByText("Payment method")).not.toBeInTheDocument()
+    expect(screen.queryByText(/invoice/i)).not.toBeInTheDocument()
     expect(glowButtons()).toHaveLength(0)
   })
 
@@ -242,13 +243,6 @@ describe("settings", () => {
       screen.queryByRole("button", { name: "Upgrade now" })
     ).not.toBeInTheDocument()
     expect(glowButtons()).toHaveLength(0)
-  })
-
-  it("redirects billing upgrade route to start page", async () => {
-    const { router } = renderApp("/settings/billing/upgrade")
-    await waitFor(() => {
-      expect(router.state.location.pathname).toBe("/apply")
-    })
   })
 
   it("downloads the export and does not open a card form", async () => {

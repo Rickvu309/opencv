@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it } from "vitest"
 import { cleanup, render, screen } from "@testing-library/react"
 
 import {
-  LANDING_COMING_NEXT,
   LANDING_FIGURE_LABELS,
   LANDING_PRODUCTS,
   type LandingFigureId,
@@ -25,9 +24,7 @@ describe("landing figure", () => {
   })
 
   it("gives every figure the landing copy asks for a label", () => {
-    const used = [...LANDING_PRODUCTS, ...LANDING_COMING_NEXT].map(
-      (entry) => entry.figure
-    )
+    const used = LANDING_PRODUCTS.map((entry) => entry.figure)
     for (const id of used) expect(LANDING_FIGURE_LABELS[id]).toBeTruthy()
   })
 })

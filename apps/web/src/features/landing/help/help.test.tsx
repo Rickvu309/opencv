@@ -92,11 +92,9 @@ describe("help page", () => {
     ).toBeInTheDocument()
     expect(screen.queryByText(/Inbox/, hidden)).not.toBeInTheDocument()
     expect(
-      screen.getByText(/The Jobs page is coming soon/, hidden)
+      screen.getByText("No. You bring jobs in.", hidden)
     ).toBeInTheDocument()
-    expect(
-      screen.getByText(/Proof is coming soon\./, hidden)
-    ).toBeInTheDocument()
+    expect(screen.queryByText(/coming soon/i, hidden)).not.toBeInTheDocument()
     expect(
       screen.getByText("Free is $0 a month. Pro is $9 a month.", hidden)
     ).toBeInTheDocument()

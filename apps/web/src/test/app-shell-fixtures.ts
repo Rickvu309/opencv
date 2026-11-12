@@ -31,13 +31,6 @@ async function expectHeading(name: string) {
   ).toBeInTheDocument()
 }
 
-export async function expectPitch() {
-  await expectHeading("Pitch")
-  expect(
-    screen.getByRole("heading", { level: 2, name: "One link that sells you" })
-  ).toBeInTheDocument()
-}
-
 export async function expectApplyLive() {
   await expectHeading("Apply")
   expect(screen.getByRole("button", { name: "Board" })).toBeInTheDocument()

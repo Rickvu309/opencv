@@ -56,20 +56,13 @@ describe("settings reads", () => {
       ok: true
       data: {
         plan: string
-        pro: { benefits: string[] }
-        invoices: unknown[]
-        payment: null
+        pro: { line: string; benefits: string[] }
       }
     }
     expect(body.data.plan).toBe("free")
-    expect(body.data.pro.benefits).toEqual([
-      "Unlimited Coach chats",
-      "Stronger Coach model",
-      "Priority support",
-      "Early access to Proof",
-    ])
-    expect(body.data.invoices).toEqual([])
-    expect(body.data.payment).toBeNull()
+    expect(body.data.pro.line).toBe("Not on sale yet.")
+    expect(body.data.pro.benefits).toEqual(["Stronger Coach model"])
+    expect(Object.keys(body.data).sort()).toEqual(["free", "plan", "pro"])
     await client.close()
   })
 

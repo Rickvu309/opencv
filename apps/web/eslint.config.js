@@ -80,7 +80,6 @@ export default defineConfig([
     files: [
       "src/features/paper/**/*.{ts,tsx}",
       "src/features/apply/**/*.{ts,tsx}",
-      "src/features/pitch/**/*.{ts,tsx}",
     ],
     ignores: ["**/*.test.{ts,tsx}"],
     rules: {

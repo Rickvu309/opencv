@@ -32,7 +32,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-async function renderShell(route: string = SURFACE_PATHS.pitch) {
+async function renderShell(route: string = SURFACE_PATHS.apply) {
   stubDesktopViewport(true)
   const view = renderApp(route)
   await screen.findByRole("complementary", { name: "Sidebar" })

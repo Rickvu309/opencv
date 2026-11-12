@@ -37,7 +37,7 @@ afterEach(() => {
   localStorage.clear()
 })
 
-async function renderSidebar(route: string = SURFACE_PATHS.pitch) {
+async function renderSidebar(route: string = SURFACE_PATHS.apply) {
   stubDesktopViewport(true)
   setMockInbox({
     connected: false,

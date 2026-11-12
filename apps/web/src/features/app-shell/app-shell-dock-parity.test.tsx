@@ -17,7 +17,7 @@ afterEach(() => {
 describe("app shell dock pen parity (FUipv / IYQY3)", () => {
   it("renders Coach and History buttons in the dock", async () => {
     stubDesktopViewport(true)
-    renderApp(SURFACE_PATHS.pitch)
+    renderApp(SURFACE_PATHS.apply)
 
     await screen.findByRole("navigation", { name: "Main" })
 
@@ -37,7 +37,7 @@ describe("app shell dock pen parity (FUipv / IYQY3)", () => {
 
   it("the dock has the pen-surface attribute for scoped CSS", async () => {
     stubDesktopViewport(true)
-    renderApp(SURFACE_PATHS.pitch)
+    renderApp(SURFACE_PATHS.apply)
 
     await screen.findByRole("navigation", { name: "Main" })
 

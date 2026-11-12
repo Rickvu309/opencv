@@ -13,7 +13,6 @@ const FEATURE_IMPORTS: Record<string, string[]> = {
   auth: [],
   coach: [],
   connections: [],
-  "coming-soon": [],
   "command-palette": [],
   inbox: ["apply"],
   landing: [],

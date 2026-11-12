@@ -371,19 +371,6 @@ const connectRoute = createRoute({
   ),
 })
 
-const userRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/u/$slug",
-  beforeLoad: loadUnknownSession,
-  component: UnknownShell,
-})
-
-const userMissRoute = createRoute({
-  getParentRoute: () => userRoute,
-  path: "/",
-  component: NotFoundPage,
-})
-
 const rootSplatRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "$",
@@ -410,7 +397,6 @@ const routeTree = rootRoute.addChildren([
   consentRoute,
   connectRoute,
   shareRoute,
-  userRoute.addChildren([userMissRoute]),
   legacyAppRoute,
   legacyAppSplatRoute,
   productLayoutRoute.addChildren([

@@ -108,7 +108,7 @@ describe("surface list contract", () => {
 
   it("navigates to each hidden path and lands on the start page", async () => {
     const hidden = SURFACES.filter((s) => !s.shown)
-    expect(hidden.length).toBeGreaterThanOrEqual(4)
+    expect(hidden.map((s) => s.id)).toEqual(["inbox"])
 
     for (const surface of hidden) {
       const router = createAppRouter({
@@ -120,7 +120,7 @@ describe("surface list contract", () => {
   })
 
   it("marks hidden surfaces as not shown and not reachable", () => {
-    const hiddenIds: SurfaceId[] = ["pitch", "jobs", "proofs", "inbox"]
+    const hiddenIds: SurfaceId[] = ["inbox"]
     for (const id of hiddenIds) {
       expect(isSurfaceShown(id)).toBe(false)
     }
@@ -128,9 +128,6 @@ describe("surface list contract", () => {
     const shown = shownSurfaces().map((s) => s.id)
     expect(shown).toEqual(["coach", "paper", "apply", "settings", "help"])
 
-    expect(isPathShown("/pitch")).toBe(false)
-    expect(isPathShown("/jobs")).toBe(false)
-    expect(isPathShown("/proofs")).toBe(false)
     expect(isPathShown("/inbox")).toBe(false)
 
     expect(isPathShown("/paper")).toBe(true)

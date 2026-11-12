@@ -183,27 +183,6 @@
   },
   {
     "rule": "touch-targets",
-    "file": "apps/web/src/features/coming-soon/coming-soon-page.tsx",
-    "count": 1,
-    "issue": "#1037",
-    "expires": "2026-12-01"
-  },
-  {
-    "rule": "touch-targets",
-    "file": "apps/web/src/features/coming-soon/pitch-page.tsx",
-    "count": 1,
-    "issue": "#1037",
-    "expires": "2026-12-01"
-  },
-  {
-    "rule": "touch-targets",
-    "file": "apps/web/src/features/coming-soon/proof-page.tsx",
-    "count": 1,
-    "issue": "#1037",
-    "expires": "2026-12-01"
-  },
-  {
-    "rule": "touch-targets",
     "file": "apps/web/src/features/command-palette/command-palette.tsx",
     "count": 3,
     "issue": "#1037",

@@ -19,7 +19,7 @@ it("waits for an unmounted router's loader before restoring globals", async () =
       return getSession()
     })
   try {
-    const { queryClient, router } = renderApp("/jobs")
+    const { queryClient, router } = renderApp("/apply")
     await waitFor(() => expect(session).toHaveBeenCalled())
     cleanup()
     let finished = false
@@ -39,7 +39,7 @@ it("waits for an unmounted router's loader before restoring globals", async () =
 })
 
 it("cancels pending queries and removes their cache during cleanup", async () => {
-  const { queryClient } = renderApp("/jobs")
+  const { queryClient } = renderApp("/apply")
   let signal: AbortSignal | undefined
   const query = queryClient.fetchQuery({
     queryKey: ["cleanup-regression"],
@@ -58,7 +58,7 @@ it("cancels pending queries and removes their cache during cleanup", async () =>
 })
 
 it("settles a transition offered just before unmount", async () => {
-  const { router } = renderApp("/jobs")
+  const { router } = renderApp("/apply")
   let offered = () => {}
   const transition = new Promise<void>((resolve) => {
     offered = resolve
@@ -100,7 +100,7 @@ it("fails loudly on a stuck loader but still disposes history and queries", asyn
       await gate
       return getSession()
     })
-  const { router, queryClient } = renderApp("/jobs")
+  const { router, queryClient } = renderApp("/apply")
   const destroy = vi.spyOn(router.history, "destroy")
   const clearCache = vi.spyOn(router, "clearCache")
   queryClient.setQueryData(["stuck-loader"], true)

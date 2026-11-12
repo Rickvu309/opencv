@@ -430,24 +430,6 @@ export const idempotency = opencvApp.table(
   (table) => [primaryKey({ columns: [table.userId, table.key] })]
 )
 
-export const notifyRequests = opencvApp.table(
-  "notify_requests",
-  {
-    id: uuid("id").primaryKey(),
-    userId: text("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
-    topic: text("topic").$type<"jobs" | "proof" | "pitch">().notNull(),
-    createdAt: timestamptz("created_at").notNull().defaultNow(),
-  },
-  (table) => [
-    uniqueIndex("notify_requests_user_topic_uidx").on(
-      table.userId,
-      table.topic
-    ),
-  ]
-)
-
 export const coachTasks = opencvApp.table(
   "coach_tasks",
   {

@@ -5,8 +5,6 @@ import { ApplyBoardAnimated } from "./oc/apply-board.tsx"
 import { ApplyJobAnimated } from "./oc/apply-job.tsx"
 import { CoachChatAnimated } from "./oc/coach-chat.tsx"
 import { PaperEditorAnimated } from "./oc/paper-editor.tsx"
-import { PitchPageAnimated } from "./oc/pitch-page.tsx"
-import { ProofPageAnimated } from "./oc/proof-page.tsx"
 import { useOnScreen } from "./use-on-screen.ts"
 import "./landing-figure.css"
 
@@ -17,8 +15,6 @@ const FIGURES = {
   paper: PaperEditorAnimated,
   apply: ApplyJobAnimated,
   coach: CoachChatAnimated,
-  proof: ProofPageAnimated,
-  pitch: PitchPageAnimated,
 } satisfies Record<LandingFigureId, ComponentType>
 
 export function LandingFigure({ id }: { id: LandingFigureId }) {

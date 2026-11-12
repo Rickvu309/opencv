@@ -342,16 +342,9 @@ export async function profileApiFetch(
       },
       pro: {
         price: "$9 a month",
-        line: "Cancel anytime.",
-        benefits: [
-          "Unlimited Coach chats",
-          "Stronger Coach model",
-          "Priority support",
-          "Early access to Proof",
-        ],
+        line: "Not on sale yet.",
+        benefits: ["Stronger Coach model"],
       },
-      payment: null,
-      invoices: [],
     })
   }
 

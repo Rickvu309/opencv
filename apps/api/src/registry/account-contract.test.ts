@@ -74,9 +74,6 @@ describe("an account binding that drifts from the account contract is rejected",
         image: file.id,
       })
       await run("account.requestEmailChange", { email: "next@example.com" })
-      expect(await run("notify.request", { topic: "jobs" })).toMatchObject({
-        topic: "jobs",
-      })
 
       const feed = (await read("activity.list", {})) as unknown[]
       expect(Array.isArray(feed)).toBe(true)
@@ -106,13 +103,13 @@ describe("an account binding that drifts from the account contract is rejected",
     }
   })
 
-  it("lets the Coach run only notify.request without asking", () => {
+  it("keeps every account command behind the person", () => {
     const registered = installRegistry().list().commands
     const coachOnly = registered
       .filter((command) => command.name in accountContract)
       .filter((command) => command.coach !== "never")
       .map((command) => command.name)
-    expect(coachOnly).toEqual(["notify.request"])
+    expect(coachOnly).toEqual([])
   })
 
   it("deletes the account even when the caller sends an idempotency key", async () => {

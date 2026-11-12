@@ -21,8 +21,6 @@ const PUBLIC_PATHS = [
   "/stories/",
   "/share",
   "/share/*",
-  "/u",
-  "/u/*",
 ]
 
 export type WebOrigins =

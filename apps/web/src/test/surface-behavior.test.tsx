@@ -4,24 +4,15 @@ import { cleanup, fireEvent, screen, within } from "@testing-library/react"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { expectCoachIdle } from "@/test/coach-chat-helpers.ts"
 import { setMockJobs } from "@/test/apply-jobs-mock.ts"
-import { setMockProfile } from "@/test/profile-api-mock.ts"
-import { apiBaseUrl } from "@/lib/api-url.ts"
 import { getMockApplyCards } from "@/test/apply-api-mock.ts"
 import { sampleApplyCards } from "@/test/apply-fixtures.ts"
-import {
-  setMockSession,
-  TEST_SESSION,
-  TEST_SESSION_USER,
-} from "@/test/auth-client-mock.ts"
 import { getMockPaperDocs } from "@/test/paper-api-mock.ts"
 import { samplePaperDocs } from "@/test/paper-fixtures.ts"
-import { renderApp, renderPage } from "@/test/render-app.tsx"
-import { PitchPage } from "@/features/coming-soon/pitch-page.tsx"
+import { renderApp } from "@/test/render-app.tsx"
 import { FIXTURE_CHATS } from "@/test/chat-fixtures.ts"
 import { getMockChats } from "@/test/chat-api-mock.ts"
 
 const FIT_LABEL = /\bfit\b|\/ 100/i
-const PERSONA_NAMES = /Alex Tran|alex-tran|Eric Nguyen|eric-nguyen/i
 
 afterEach(() => {
   cleanup()
@@ -70,27 +61,6 @@ describe("empty api data shows empty states, never sample content", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("Pitch is hidden and redirects to start page", async () => {
-    const { router } = renderApp(SURFACE_PATHS.pitch)
-    await screen.findByRole("heading", { level: 1, name: "Apply" })
-    expect(router.state.location.pathname).toBe("/apply")
-  })
-
-  it("Pitch shows the placeholder and no demo content", async () => {
-    renderPage(PitchPage)
-
-    expect(
-      await screen.findByRole("heading", {
-        level: 2,
-        name: "One link that sells you",
-      })
-    ).toBeInTheDocument()
-    expect(screen.queryByText("Demo content")).not.toBeInTheDocument()
-    expect(
-      screen.queryByRole("heading", { name: "Moments" })
-    ).not.toBeInTheDocument()
-  })
-
   it("Coach opens empty, with no sample content", async () => {
     getMockChats().splice(0)
     getMockPaperDocs().splice(0)
@@ -119,54 +89,5 @@ describe("Apply shows no Fit label", () => {
     expect(within(screen.getByRole("main")).queryAllByText(FIT_LABEL)).toEqual(
       []
     )
-  })
-})
-
-describe("Pitch makes no third-party requests", () => {
-  it("sends every request to the api origin", async () => {
-    const requested: string[] = []
-    renderPage(PitchPage, (input) => {
-      const raw =
-        typeof input === "string"
-          ? input
-          : input instanceof URL
-            ? input.href
-            : input.url
-      requested.push(new URL(raw, apiBaseUrl).href)
-    })
-
-    expect(
-      await screen.findByRole("heading", {
-        level: 2,
-        name: "One link that sells you",
-      })
-    ).toBeInTheDocument()
-
-    for (const href of requested) {
-      expect(new URL(href).origin, href).toBe(new URL(apiBaseUrl).origin)
-    }
-  })
-})
-
-describe("Pitch does not seed a persona", () => {
-  it("shows the signed-in User and no leftover sample name", async () => {
-    setMockSession({
-      user: {
-        ...TEST_SESSION_USER,
-        name: "Scout Tester",
-        email: "scout@example.com",
-      },
-      session: TEST_SESSION,
-    })
-    setMockProfile({ name: "Scout Tester", email: "scout@example.com" })
-    renderPage(PitchPage)
-
-    expect(
-      await screen.findByRole("heading", {
-        level: 2,
-        name: "One link that sells you",
-      })
-    ).toBeInTheDocument()
-    expect(document.body.textContent).not.toMatch(PERSONA_NAMES)
   })
 })

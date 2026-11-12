@@ -1,9 +1,7 @@
 import { useQuery } from "@tanstack/react-query"
 
 import {
-  SettingsCard,
   SettingsLoadError,
-  SettingsRow,
   SettingsSection,
   SettingsSkeletons,
   SettingsTitle,
@@ -44,7 +42,7 @@ export function BillingSection() {
             </p>
           </article>
           <article className="flex flex-col gap-3 rounded-lg border border-border bg-card p-4">
-            <h3 className="font-medium">Upgrade to Pro</h3>
+            <h3 className="font-medium">Pro plan</h3>
             <p className="text-sm text-muted-foreground">
               {data.pro.price}. {data.pro.line}
             </p>
@@ -55,16 +53,6 @@ export function BillingSection() {
             </ul>
           </article>
         </div>
-      </SettingsSection>
-      <SettingsSection label="Payment">
-        <SettingsCard>
-          <SettingsRow label="Payment method" desc="No card added" />
-        </SettingsCard>
-      </SettingsSection>
-      <SettingsSection label="Invoices">
-        <SettingsCard>
-          <SettingsRow label="None yet" />
-        </SettingsCard>
       </SettingsSection>
     </>
   )

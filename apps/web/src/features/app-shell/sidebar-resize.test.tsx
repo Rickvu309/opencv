@@ -154,7 +154,7 @@ describe("collapse and peek", () => {
   it("restores the collapsed state on load", async () => {
     localStorage.setItem("opencv.sidebar.collapsed", "1")
     stubDesktopViewport(true)
-    renderApp(SURFACE_PATHS.pitch)
+    renderApp(SURFACE_PATHS.apply)
     await vi.waitFor(() => {
       expect(frame()).toHaveAttribute("data-state", "collapsed")
     })

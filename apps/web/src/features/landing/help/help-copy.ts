@@ -91,11 +91,6 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
         question: "Can I draft a cover letter from a job?",
         answer: "Yes. Draft it from a Job. Add a suggestion, or skip it.",
       },
-      {
-        id: "paper-proof",
-        question: "Is Proof ready?",
-        answer: "Not yet. Proof is coming soon.",
-      },
     ],
   },
   {
@@ -129,7 +124,7 @@ export const HELP_TOPICS: readonly HelpTopic[] = [
       {
         id: "apply-search",
         question: "Does opencv search for jobs?",
-        answer: "No. You bring jobs in. The Jobs page is coming soon.",
+        answer: "No. You bring jobs in.",
       },
     ],
   },

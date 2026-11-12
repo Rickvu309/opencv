@@ -2,7 +2,7 @@ import { parseUserId } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 
-import { notifyRequests, user } from "../db/schema.js"
+import { user } from "../db/schema.js"
 import { saveFile } from "../paper/index.js"
 import {
   flag,
@@ -60,18 +60,6 @@ export function accountCases(tools: CoverageTools): CoverageCase[] {
         expect(text(await profileOf(), "email")).toBe(
           "ada-coverage@example.com"
         )
-      },
-    },
-    {
-      name: "notify.request",
-      arrange: async () => {},
-      act: () => run("notify.request", { topic: "jobs" }),
-      assert: async () => {
-        const rows = await db
-          .select()
-          .from(notifyRequests)
-          .where(eq(notifyRequests.userId, userId))
-        expect(rows.map((row) => row.topic)).toEqual(["jobs"])
       },
     },
     {

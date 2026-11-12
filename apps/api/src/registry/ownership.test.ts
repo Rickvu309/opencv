@@ -23,7 +23,6 @@ const writersOfTable: Record<string, string[]> = {
   session: ["account", "auth.ts"],
   account: ["account", "auth.ts"],
   verification: ["account", "auth.ts", "auth-consent.ts"],
-  notifyRequests: ["account"],
   chats: ["chat"],
   chatMessages: ["chat"],
   files: ["paper"],

@@ -108,7 +108,7 @@ try {
     [appHost, "/about", `${publicOrigin}/about`],
     [appHost, "/help", `${publicOrigin}/help`],
     [appHost, "/share/token?x=a%2Fb", `${publicOrigin}/share/token?x=a%2Fb`],
-    [appHost, "/u/future", `${publicOrigin}/u/future`],
+    [appHost, "/u/future", null],
     [appHost, "/unknown", null],
     ["preview.example", "/app", null],
   ]

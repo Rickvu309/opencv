@@ -1,0 +1,1 @@
+DROP TABLE "opencv_app"."notify_requests" CASCADE;

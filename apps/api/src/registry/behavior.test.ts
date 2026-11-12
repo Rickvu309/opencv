@@ -51,7 +51,6 @@ const coachToolNames = [
   "job.unlinkPaper",
   "job.update",
   "link.get",
-  "notify.request",
   "paper.attachPhoto",
   "paper.create",
   "paper.delete",

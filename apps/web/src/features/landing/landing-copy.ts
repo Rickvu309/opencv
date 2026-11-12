@@ -48,8 +48,7 @@ export const LANDING_NAV_LINKS: readonly LandingNavLink[] = [
   { label: "Help", href: "/help" },
 ]
 
-export type LandingFigureId =
-  "apply-board" | "paper" | "apply" | "coach" | "proof" | "pitch"
+export type LandingFigureId = "apply-board" | "paper" | "apply" | "coach"
 
 export const LANDING_FIGURE_LABELS: Record<LandingFigureId, string> = {
   "apply-board":
@@ -60,10 +59,6 @@ export const LANDING_FIGURE_LABELS: Record<LandingFigureId, string> = {
     "An Apply job page for an Associate PM intern, with the role details, an interview date, a linked CV and an interview prep checklist.",
   coach:
     "A Coach chat asking for a CV for a cosmetics brand, with steps ticking off as Coach reads the CV and the posting and drafts bullet rewrites.",
-  proof:
-    "The Proof page, with a CV line about growing followers by 38 percent backed by a rising chart and a manager confirmation.",
-  pitch:
-    "The Pitch page, with a public profile for Linh Nguyen showing a Download CV button, proof charts and a view count.",
 }
 
 export type LandingBenefit = {
@@ -150,21 +145,6 @@ export const LANDING_INTEGRATIONS: readonly {
   name: string
   src: string
 }[] = []
-
-export const LANDING_COMING_NEXT_HEADER: LandingSectionHeader = {
-  title: "Coming next",
-  body: "Two new ways to show your work. Join the waitlist and get them first.",
-  link: { label: "Join the waitlist", to: "/sign-in" },
-}
-
-export type LandingComingNext = {
-  id: "proof" | "pitch"
-  title: string
-  body: string
-  figure: LandingFigureId
-}
-
-export const LANDING_COMING_NEXT: readonly LandingComingNext[] = []
 
 export const LANDING_STORIES = {
   lead: {

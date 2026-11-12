@@ -85,13 +85,8 @@ const BILLING_FREE = {
 
 const BILLING_PRO = {
   price: "$9 a month",
-  line: "Cancel anytime.",
-  benefits: [
-    "Unlimited Coach chats",
-    "Stronger Coach model",
-    "Priority support",
-    "Early access to Proof",
-  ],
+  line: "Not on sale yet.",
+  benefits: ["Stronger Coach model"],
 } as const
 
 export function registerAccountQueries(registry: Registry) {
@@ -234,8 +229,6 @@ export async function readBilling(userId: string) {
     plan: profile.plan,
     free: BILLING_FREE,
     pro: BILLING_PRO,
-    payment: null,
-    invoices: [] as [],
   }
 }
 

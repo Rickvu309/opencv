@@ -71,24 +71,31 @@ describe("pricing snapshot", () => {
       "Paper",
       "Apply",
       "Support",
-      "Coming soon",
     ])
     expect(block("Apply").rows.map((row) => row.feature)).toContain(
       "Integrations"
     )
-    const priority = block("Support").rows.find(
-      (row) => row.feature === "Priority support"
-    )
-    expect(priority?.free).toEqual({ kind: "dash" })
-    expect(priority?.pro).toEqual({ kind: "check" })
-    expect(block("Coming soon").rows.map((row) => row.feature)).toEqual([
-      "Proof",
-      "Pitch",
+    expect(block("Support").rows.map((row) => row.feature)).toEqual([
+      "Help centre",
     ])
-    expect(block("Coming soon").rows[0]?.pro).toEqual({
+    expect(block("Coach").rows[0]?.pro).toEqual({
       kind: "text",
-      value: "Early access",
+      value: "Limited",
     })
+  })
+
+  it("keeps only what is true without a purchase", () => {
+    const { pro } = pricingModel.plans
+    expect(pro.cta).toBeUndefined()
+    expect(pro.note).toBe("Not on sale yet")
+    expect(pro.features).toEqual(["Stronger Coach model"])
+    expect(pricingModel.header.subhead).toBe(
+      "Start free. Coach has a daily limit."
+    )
+    expect(pricingModel.faq.items.map((item) => item.q)).toEqual([
+      "What happens when I hit the Free limit?",
+      "Is my data used to train models?",
+    ])
   })
 
   it("does not keep a second compare table in landing copy", () => {
@@ -196,8 +203,8 @@ describe("pricing page", () => {
       within(table).queryByRole("columnheader", { name: "Integrations" })
     ).toBeNull()
     expect(
-      within(table).getByRole("columnheader", { name: "Coming soon" })
-    ).toBeInTheDocument()
+      within(table).queryByRole("columnheader", { name: "Coming soon" })
+    ).toBeNull()
 
     for (const group of pricingModel.compare.blocks) {
       for (const row of group.rows) {
@@ -205,7 +212,9 @@ describe("pricing page", () => {
         const want = { check: 0, dash: 0 }
         for (const cell of [row.free, row.pro]) {
           if (cell.kind === "text") {
-            expect(within(rendered).getByText(cell.value)).toBeInTheDocument()
+            expect(
+              within(rendered).getAllByText(cell.value).length
+            ).toBeGreaterThan(0)
           } else {
             want[cell.kind] += 1
           }
@@ -220,26 +229,14 @@ describe("pricing page", () => {
       }
     }
 
-    const priority = rowOf("Priority support")
-    expect(priority).not.toHaveTextContent("Coming soon")
     expect(
-      within(priority).getAllByRole("img", { name: "Included" })
-    ).toHaveLength(1)
-    expect(
-      within(priority).getAllByRole("img", { name: "Not included" })
-    ).toHaveLength(1)
-
-    const rows = within(table).getAllByRole("row")
-    const labels = rows.map((row) =>
-      row.textContent?.replace(/\s+/g, " ").trim()
-    )
-    const comingAt = labels.indexOf("Coming soon")
-    expect(labels[comingAt + 1]).toMatch(/^Proof/)
-    expect(labels[comingAt + 2]).toMatch(/^Pitch/)
+      within(table).queryByRole("rowheader", { name: "Priority support" })
+    ).toBeNull()
+    expect(document.body).not.toHaveTextContent(/Proof|Pitch|Cancel anytime/)
+    expect(screen.getByText("Not on sale yet")).toBeInTheDocument()
 
     expect(screen.queryByText("Not included")).not.toBeInTheDocument()
     expect(screen.queryByText("Included")).not.toBeInTheDocument()
-    expect(document.body).toHaveTextContent("\u2013")
 
     const question = screen.getByRole("heading", {
       name: "What happens when I hit the Free limit?",

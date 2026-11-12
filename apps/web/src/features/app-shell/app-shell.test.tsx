@@ -275,18 +275,6 @@ describe("app shell layout", () => {
     await expectApplyLive()
 
     cleanup()
-    const { router: pitchRouter } = renderApp(SURFACE_PATHS.apply)
-    await waitFor(() => {
-      expect(pitchRouter.state.location.pathname).toBe(SURFACE_PATHS.apply)
-    })
-
-    cleanup()
-    const { router: jobsRouter } = renderApp("/jobs")
-    await waitFor(() => {
-      expect(jobsRouter.state.location.pathname).toBe(SURFACE_PATHS.apply)
-    })
-
-    cleanup()
     const { router: inboxRouter } = renderApp("/inbox")
     await waitFor(() => {
       expect(inboxRouter.state.location.pathname).toBe(SURFACE_PATHS.apply)

@@ -156,24 +156,24 @@ describe("every command has a coverage case that runs it as the person and undoe
     const person = personActor(userId)
     await withDatabase(db, async () => {
       const first = await registry.execute({
-        name: "notify.request",
-        input: { topic: "jobs" },
+        name: "chat.create",
+        input: { title: "Plan" },
         actor: person,
-        idempotencyKey: "notify-1",
+        idempotencyKey: "chat-create-1",
       })
       expect(first.activityId).toBeNull()
       const second = await registry.execute({
-        name: "notify.request",
-        input: { topic: "jobs" },
+        name: "chat.create",
+        input: { title: "Plan" },
         actor: person,
-        idempotencyKey: "notify-1",
+        idempotencyKey: "chat-create-1",
       })
       expect(second.output).toEqual(first.output)
       const rows = await db
         .select()
         .from(idempotency)
         .where(eq(idempotency.userId, userId))
-      expect(rows.map((row) => row.key)).toContain("notify-1")
+      expect(rows.map((row) => row.key)).toContain("chat-create-1")
     })
     await client.close()
   })

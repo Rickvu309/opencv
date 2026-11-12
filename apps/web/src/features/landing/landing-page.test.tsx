@@ -258,10 +258,10 @@ describe("pricing page", () => {
       screen.queryByRole("link", { name: "Get Pro" })
     ).not.toBeInTheDocument()
     expect(
-      screen.getAllByRole("img", { name: "Not included" }).length
+      screen.getAllByRole("img", { name: "Included" }).length
     ).toBeGreaterThan(0)
-    expect(screen.queryByText("Not included")).not.toBeInTheDocument()
-    expect(document.body).toHaveTextContent("\u2013")
+    expect(screen.queryByText("Included")).not.toBeInTheDocument()
+    expect(document.body).not.toHaveTextContent(/Cancel anytime|Proof|Pitch/)
   })
 })
 

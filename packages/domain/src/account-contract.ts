@@ -4,8 +4,6 @@ import {
   accountDeleteInputSchema,
   accountRequestEmailChangeInputSchema,
   languageSchema,
-  notifyRequestInputSchema,
-  notifyTopicSchema,
   planSchema,
   profileMarkWelcomedInputSchema,
   profileSetPhotoInputSchema,
@@ -122,8 +120,6 @@ const billingSchema = z
         benefits: z.array(z.string()).readonly(),
       })
       .strict(),
-    payment: z.null(),
-    invoices: z.array(z.never()),
   })
   .strict()
 
@@ -228,21 +224,6 @@ export const accountContract = commandContract({
     coach: "never",
     destructive: true,
     step: () => "Delete account",
-    invalidates: nothingChanged,
-  }),
-  "notify.request": commandEntry({
-    description: "Ask to hear when a topic is ready.",
-    input: notifyRequestInputSchema,
-    output: z
-      .object({
-        id: z.string(),
-        topic: notifyTopicSchema,
-        createdAt: z.string().datetime(),
-      })
-      .strict(),
-    coach: "auto",
-    destructive: false,
-    step: (input) => `Notify me about ${input.topic}`,
     invalidates: nothingChanged,
   }),
 })

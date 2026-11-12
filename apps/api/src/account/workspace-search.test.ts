@@ -12,49 +12,12 @@ async function jsonOf(res: Response) {
     ok: boolean
     data?: Record<string, unknown> & {
       jobs?: { title: string; company: string; stage: string }[]
-      id?: string
-      topic?: string
     }
     error?: { message: string }
   }
 }
 
-describe("notify.request and workspace search", () => {
-  it("stores pitch once and keeps jobs and proof", async () => {
-    const { db, client } = await createMigratedTestDb()
-    const app = createTestApp(db)
-    const { cookie } = await signUp(app, {
-      name: "Ada",
-      email: "ada-381-notify@example.com",
-    })
-    const headers = authHeaders(cookie)
-
-    async function notify(topic: string) {
-      const res = await app.request("/api/commands/notify.request", {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          input: { topic },
-          idempotencyKey: `381-${topic}-${crypto.randomUUID()}`,
-        }),
-      })
-      expect(res.status).toBe(200)
-      return jsonOf(res)
-    }
-
-    const jobs = await notify("jobs")
-    const proof = await notify("proof")
-    const first = await notify("pitch")
-    const second = await notify("pitch")
-
-    expect(jobs.data?.topic).toBe("jobs")
-    expect(proof.data?.topic).toBe("proof")
-    expect(first.data?.topic).toBe("pitch")
-    expect(second.data?.id).toBe(first.data?.id)
-    expect(second.data?.topic).toBe("pitch")
-    await client.close()
-  })
-
+describe("workspace search", () => {
   it("returns the stage word source on each job hit", async () => {
     const { db, client } = await createMigratedTestDb()
     const app = createTestApp(db)

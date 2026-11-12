@@ -4,7 +4,6 @@ import { LANDING_DESCRIPTION, LANDING_TITLE } from "./landing-copy.ts"
 import { LandingFooter } from "./landing-footer.tsx"
 import { LandingHero } from "./landing-hero.tsx"
 import { LandingNav } from "./landing-nav.tsx"
-import { LandingComingNext } from "./landing-coming-next.tsx"
 import { LandingIntegrations } from "./landing-integrations.tsx"
 import { LandingProducts } from "./landing-products.tsx"
 import {
@@ -28,7 +27,6 @@ export function LandingPage() {
         <LandingBenefits />
         <LandingProducts />
         <LandingIntegrations />
-        <LandingComingNext />
         <LandingCustomers />
         <LandingClose />
       </main>

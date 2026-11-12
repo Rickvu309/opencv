@@ -83,15 +83,6 @@ export const accountDeleteInputSchema = z
   })
   .strict()
 
-export const notifyTopicSchema = z.enum(["jobs", "proof", "pitch"])
-export type NotifyTopic = z.infer<typeof notifyTopicSchema>
-
-export const notifyRequestInputSchema = z
-  .object({
-    topic: notifyTopicSchema,
-  })
-  .strict()
-
 export function isKnownTimeZone(value: string) {
   try {
     Intl.DateTimeFormat(undefined, { timeZone: value })

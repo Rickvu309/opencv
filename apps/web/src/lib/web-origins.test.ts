@@ -78,7 +78,7 @@ describe("web destinations", () => {
       "https://app.opencv.me/share/token?x=1#page",
       "https://opencv.me/share/token?x=1#page",
     ],
-    ["https://app.opencv.me/u/future", "https://opencv.me/u/future"],
+    ["https://app.opencv.me/u/future", null],
     ["https://opencv.me/", null],
     ["https://opencv.me/pricing", null],
     ["https://opencv.me/application", null],

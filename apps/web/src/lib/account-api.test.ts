@@ -32,16 +32,4 @@ describe("account reads", () => {
     expect(isStale(queryClient, usageKey())).toBe(true)
     expect(isStale(queryClient, integrationsKey())).toBe(false)
   })
-
-  it("leaves the profile alone after a notify request", async () => {
-    const queryClient = new QueryClient()
-    queryClient.setQueryData(profileKey(), { seeded: true })
-    vi.stubGlobal("fetch", async () =>
-      Response.json({ ok: true, data: { id: "n1" } })
-    )
-
-    await runContractCommand(queryClient, "notify.request", { topic: "jobs" })
-
-    expect(isStale(queryClient, profileKey())).toBe(false)
-  })
 })

@@ -8,7 +8,6 @@ import {
   Inbox,
   type LucideIcon,
   MessageCircle,
-  Presentation,
   Search,
   SquareKanban,
   SquarePen,
@@ -53,10 +52,8 @@ const NAV_ITEM_CLASS =
 const navigationIcons: Record<string, LucideIcon> = {
   inbox: Inbox,
   coach: MessageCircle,
-  jobs: Briefcase,
   paper: FileText,
   apply: SquareKanban,
-  pitch: Presentation,
 }
 
 function NavGroup({

@@ -3,16 +3,14 @@ import {
   ERROR_CODES,
   parseFileId,
   type Actor,
-  type NotifyTopic,
 } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 
 import { getBoundAuth, getRequestHeaders } from "../auth.js"
 import { getDb } from "../db/context.js"
-import { files, notifyRequests } from "../db/schema.js"
-import { createId } from "../id.js"
+import { files } from "../db/schema.js"
 import { bindCommands } from "../registry/bind.js"
-import { CommandError, isUniqueViolation } from "../registry/errors.js"
+import { CommandError } from "../registry/errors.js"
 import type { Registry } from "../registry/registry.js"
 import {
   deleteAccount,
@@ -65,11 +63,6 @@ export function registerAccount(registry: Registry) {
     },
     "account.delete": {
       handler: (input, actor) => deleteOwnedAccount(actor, input.confirm),
-      reversal: () => null,
-      activity: () => null,
-    },
-    "notify.request": {
-      handler: (input, actor) => requestNotify(actor, input.topic),
       reversal: () => null,
       activity: () => null,
     },
@@ -138,50 +131,6 @@ async function deleteOwnedAccount(actor: Actor, confirm: string) {
     )
   }
   return deleteAccount(actor.userId)
-}
-
-async function requestNotify(actor: Actor, topic: NotifyTopic) {
-  const db = getDb()
-  const existing = await db
-    .select()
-    .from(notifyRequests)
-    .where(
-      and(
-        eq(notifyRequests.userId, actor.userId),
-        eq(notifyRequests.topic, topic)
-      )
-    )
-    .limit(1)
-  if (existing[0]) {
-    return {
-      id: existing[0].id,
-      topic: existing[0].topic,
-      createdAt: existing[0].createdAt.toISOString(),
-    }
-  }
-  const id = createId()
-  try {
-    await db.insert(notifyRequests).values({ id, userId: actor.userId, topic })
-  } catch (error) {
-    if (!isUniqueViolation(error)) throw error
-    const again = await db
-      .select()
-      .from(notifyRequests)
-      .where(
-        and(
-          eq(notifyRequests.userId, actor.userId),
-          eq(notifyRequests.topic, topic)
-        )
-      )
-      .limit(1)
-    if (!again[0]) throw error
-    return {
-      id: again[0].id,
-      topic: again[0].topic,
-      createdAt: again[0].createdAt.toISOString(),
-    }
-  }
-  return { id, topic, createdAt: new Date().toISOString() }
 }
 
 export { toProfile }
