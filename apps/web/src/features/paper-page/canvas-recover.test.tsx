@@ -407,6 +407,24 @@ describe("a phone keyboard that composes every letter", () => {
   })
 })
 
+describe("a change the browser makes after the page refused it", () => {
+  it.each(["deleteContentBackward", "insertText", "deleteWordBackward"])(
+    "puts back the saved words when %s still reaches the page",
+    async (inputType) => {
+      open()
+      const before = words()
+      select([H.intro, 3], [H.bullet, 4])
+      await send(beforeInput(inputType, { data: "z" }))
+      browserReplaces("z")
+      await send(new InputEvent("input", { inputType, bubbles: true }))
+      expect(words()).toEqual(before)
+      await typeAtEndOfAfter("X")
+      expect(block(H.after).textContent).toBe(`${AFTER}X`)
+      expect(words()).toEqual(stored())
+    }
+  )
+})
+
 describe("a save the server refuses", () => {
   it("puts back the saved words, says the change was not kept, and takes the next letter", async () => {
     open()

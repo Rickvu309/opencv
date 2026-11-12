@@ -78,6 +78,7 @@ export type CanvasAction =
   | { type: "basis"; basis: DraftBasis; typed: boolean }
   | { type: "replace"; draft: WritingDraft; basis: DraftBasis }
   | { type: "refused"; note: string; words: string }
+  | { type: "redraw" }
 
 function sameBasis(left: DraftBasis | null, right: DraftBasis | null) {
   if (left === right) return true
@@ -314,6 +315,7 @@ export function reduce(state: CanvasState, action: CanvasAction): CanvasState {
     }
     return { ...state, basis: action.basis, typed: action.typed, saved }
   }
+  if (action.type === "redraw") return redrawn(state, state.present.caret)
   if (action.type === "refused") {
     if (pageWords(state.present.blocks) !== action.words) return state
     return restoreSaved(state, action.note)

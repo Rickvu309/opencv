@@ -353,8 +353,19 @@ function WritingSheet({
       const action = editAction(edit, span, targetSpan(page, input), input)
       if (action) dispatch(action)
     }
+    const onInput = (event: Event) => {
+      if (composing.current) return
+      const input = event as InputEvent
+      if (typeof input.inputType !== "string") return
+      if (inputRule(input.inputType).kind === "native") return
+      dispatch({ type: "redraw" })
+    }
     page.addEventListener("beforeinput", onBefore)
-    return () => page.removeEventListener("beforeinput", onBefore)
+    page.addEventListener("input", onInput)
+    return () => {
+      page.removeEventListener("beforeinput", onBefore)
+      page.removeEventListener("input", onInput)
+    }
   }, [applyPaste, state.present, state.redraw])
 
   return (
