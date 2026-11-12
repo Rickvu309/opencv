@@ -249,6 +249,6 @@ function settledIntentOutcome(
 
 function refusalSummary(outcome: "denied" | "expired") {
   return outcome === "expired"
-    ? "Expired · ask Coach again"
+    ? "Not approved · ask Coach again"
     : "Denied · nothing changed"
 }

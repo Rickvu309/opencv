@@ -201,7 +201,7 @@ describe("Coach approval presentation", () => {
 
   it.each([
     ["denied", "Denied · nothing changed"],
-    ["expired", "Expired · ask Coach again"],
+    ["expired", "Not approved · ask Coach again"],
   ] as const)(
     "keeps one quiet line when the task snapshot marks a proposal %s without its pending id",
     (approval, line) => {

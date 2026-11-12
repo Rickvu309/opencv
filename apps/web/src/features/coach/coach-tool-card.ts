@@ -13,7 +13,7 @@ export function refusedApproval(tool: CoachToolPart) {
 
 export function refusedApprovalLine(status: "denied" | "expired") {
   return status === "expired"
-    ? "Expired · ask Coach again"
+    ? "Not approved · ask Coach again"
     : "Denied · nothing changed"
 }
 
