@@ -73,18 +73,22 @@ export function renderPrSection({ manifest, uploaded, checks = [] }) {
         `| ${cell(capture, "before", urlOf("before", capture.screen, capture.width))} | ${cell(capture, "after", urlOf("after", capture.screen, capture.width))} |`
     ),
   ]
+  const againstMain = checks.some((check) => check.newFailed !== undefined)
   if (checks.length)
     lines.push(
       "",
       "`node scripts/ui.mjs check` on this PR:",
       "",
-      "| screen | compared | failed |",
-      "| --- | --- | --- |",
-      ...checks.map((check) =>
-        check.error
-          ? `| ${check.screen} | ${check.error} | |`
-          : `| ${check.screen} | ${check.compared} | ${check.failed} |`
-      )
+      againstMain
+        ? "| screen | compared | failed | new since main |"
+        : "| screen | compared | failed |",
+      againstMain ? "| --- | --- | --- | --- |" : "| --- | --- | --- |",
+      ...checks.map((check) => {
+        if (check.error)
+          return `| ${check.screen} | ${check.error} | |${againstMain ? " |" : ""}`
+        const row = `| ${check.screen} | ${check.compared} | ${check.failed} |`
+        return againstMain ? `${row} ${check.newFailed ?? "-"} |` : row
+      })
     )
   return lines.join("\n")
 }
@@ -110,6 +114,12 @@ export function checkSummary(screen, result) {
       }
     })
     .find((value) => value && value.screen === screen && "compared" in value)
-  if (last) return { screen, compared: last.compared, failed: last.failed }
+  if (last)
+    return {
+      screen,
+      compared: last.compared,
+      failed: last.failed,
+      ...(last.newFailed === undefined ? {} : { newFailed: last.newFailed }),
+    }
   return { screen, error: result.lines.at(-1) ?? "no result" }
 }

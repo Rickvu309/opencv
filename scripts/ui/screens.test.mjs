@@ -148,7 +148,8 @@ test("a screen's after steps clean up and are only allowed on a screen with step
         JSON.stringify(screen.steps).includes(
           `"click":{"role":"button","name":"${decision}"}`
         )
-      )
+      ) &&
+      !JSON.stringify(screen.steps).includes('button[aria-label=\\"Stop\\"]')
     )
       assert.ok(screen.after?.length, `${screen.id} leaves an edit waiting`)
 })

@@ -10,14 +10,6 @@ const OPEN_BLANK_CV = [
   { waitFor: { selector: PAGE } },
 ]
 
-const OPEN_TEMPLATE_CV = [
-  { goto: "/paper" },
-  { click: { role: "button", name: "New" } },
-  { click: { role: "button", name: "CV" } },
-  { click: { role: "button", name: "Use template" } },
-  { waitFor: { selector: PAGE } },
-]
-
 const OPEN_PANEL = [
   { click: { selector: "[data-dock-coach]" } },
   { waitFor: { selector: '[data-slot="coach-panel"]' } },
@@ -27,7 +19,7 @@ const PANEL = '[data-slot="coach-panel"]'
 const PANEL_UNDO = `${PANEL} button[aria-label="Undo"]`
 
 const ASK_FOR_AN_EDIT = [
-  ...OPEN_TEMPLATE_CV,
+  ...OPEN_BLANK_CV,
   ...OPEN_PANEL,
   {
     fill: {
@@ -44,6 +36,10 @@ const DENY_THE_WAITING_EDIT = [
   { waitFor: { text: "Denied · nothing changed" } },
 ]
 
+const STOP_THE_WAITING_EDIT = [
+  { click: { selector: `${PANEL} button[aria-label="Stop"]` } },
+]
+
 const APPROVE_THE_EDIT = [
   ...ASK_FOR_AN_EDIT,
   { click: { role: "button", name: "Approve" } },
@@ -55,6 +51,15 @@ const UNDO_THE_EDIT = [
   { click: { selector: PANEL_UNDO } },
   { waitFor: { text: "Undone" } },
 ]
+
+const REOPEN_LATEST_CHAT = [
+  { goto: "/paper" },
+  { waitFor: { role: "heading", name: "Paper" } },
+  { click: { selector: '[data-slot="dock-recent"] button' } },
+  { waitFor: { selector: PANEL } },
+]
+
+const DOWNLOAD_READY = { role: "link", name: "Download Word" }
 
 const JOB_DIALOG = '[role="dialog"]'
 
@@ -100,7 +105,11 @@ export const SCREENS = [
   {
     id: "paper-home",
     route: "/paper",
-    steps: [{ waitFor: { role: "heading", name: "Paper" } }],
+    steps: [
+      ...OPEN_BLANK_CV,
+      { goto: "/paper" },
+      { waitFor: { selector: 'main input[aria-label="Search Paper"]' } },
+    ],
   },
   {
     id: "paper-blank",
@@ -127,12 +136,12 @@ export const SCREENS = [
   {
     id: "apply-empty",
     route: "/apply",
-    steps: [{ waitFor: { selector: "main" } }],
+    steps: [{ waitFor: { role: "heading", name: "Track your first job" } }],
   },
   {
     id: "settings",
     route: "/settings",
-    steps: [{ waitFor: { selector: "main" } }],
+    steps: [{ waitFor: { selector: '[data-slot="settings-card"]' } }],
   },
   {
     id: "coach-chat-streaming",
@@ -251,6 +260,95 @@ export const SCREENS = [
     id: "apply-board",
     route: "/apply",
     steps: ADD_A_JOB,
+  },
+  {
+    id: "coach-denied-reloaded",
+    route: "/paper",
+    steps: [
+      ...ASK_FOR_AN_EDIT,
+      ...DENY_THE_WAITING_EDIT,
+      ...REOPEN_LATEST_CHAT,
+      { waitFor: { text: "Denied · nothing changed" } },
+    ],
+  },
+  {
+    id: "coach-receipt-reloaded",
+    route: "/paper",
+    steps: [
+      ...APPROVE_THE_EDIT,
+      ...REOPEN_LATEST_CHAT,
+      { waitFor: { selector: PANEL_UNDO } },
+    ],
+  },
+  {
+    id: "coach-undone-reloaded",
+    route: "/paper",
+    steps: [
+      ...UNDO_THE_EDIT,
+      ...REOPEN_LATEST_CHAT,
+      { waitFor: { text: "Undone" } },
+    ],
+  },
+  {
+    id: "coach-expired-reloaded",
+    route: "/paper",
+    steps: [
+      ...ASK_FOR_AN_EDIT,
+      ...STOP_THE_WAITING_EDIT,
+      ...REOPEN_LATEST_CHAT,
+      { waitFor: { text: "Expired · ask Coach again" } },
+    ],
+  },
+  {
+    id: "coach-unreadable-step",
+    route: "/paper",
+    unreachable:
+      "A saved step reads as This step could not be read only when its stored part fails the part schema, and every writer checks the schema first, so it needs a direct edit of chat_messages.parts in the database",
+  },
+  {
+    id: "paper-letter-blank",
+    route: "/paper",
+    steps: [
+      { goto: "/paper" },
+      { click: { role: "button", name: "New" } },
+      { click: { role: "button", name: "Cover letter" } },
+      { click: { selector: '[data-slot="letter-start-blank"]' } },
+      { waitFor: { selector: PAGE } },
+      { waitFor: DOWNLOAD_READY },
+    ],
+  },
+  {
+    id: "paper-download-held",
+    route: "/paper",
+    unreachable:
+      "Download Word is held only between a keystroke and its save; the page saves within a second and shot waits for the network to settle, so every capture shows the ready link",
+  },
+  {
+    id: "paper-download-ready",
+    route: "/paper",
+    steps: [
+      { goto: "/paper" },
+      {
+        upload: {
+          selector: 'input[type="file"]',
+          file: "cv-formatted.docx",
+        },
+      },
+      { waitFor: { selector: PAGE } },
+      { waitFor: DOWNLOAD_READY },
+    ],
+  },
+  {
+    id: "landing",
+    route: "/",
+    signedIn: false,
+    steps: [{ waitFor: { selector: "#landing-hero" } }],
+  },
+  {
+    id: "inbox",
+    route: "/inbox",
+    unreachable:
+      "Inbox is a hidden surface (apps/web/src/lib/product-paths.ts shown: false), so /inbox sends a signed-in person to the start page",
   },
 ]
 

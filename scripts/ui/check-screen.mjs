@@ -15,7 +15,13 @@ import {
   renderTable,
   specimenRow,
 } from "./compare.mjs"
-import { SPECIMEN_WARNING, isSameBox } from "./design-map.mjs"
+import {
+  DESIGN_MAP,
+  SPECIMEN_WARNING,
+  isSameBox,
+  rowsForScreen,
+} from "./design-map.mjs"
+import { knownFailureLines, markKnownFailures } from "./known-drift.mjs"
 import { composedPlacement, frameGeometry } from "./pen.mjs"
 import { SCREENS } from "./screens.mjs"
 
@@ -28,6 +34,7 @@ export async function checkScreen({
   screen,
   rows,
   tolerance,
+  onMain,
 }) {
   const measureOn = async (target, list) => {
     const { page, close } = await openScreen(browser, state, target, {
@@ -76,7 +83,7 @@ export async function checkScreen({
     ]
   })
   const bad = failed(table)
-  const result = screenResult(screen.id, table, bad)
+  const result = markKnownFailures(screenResult(screen.id, table, bad), onMain)
   return {
     result,
     lines: [
@@ -88,7 +95,32 @@ export async function checkScreen({
         placements,
         warning: SPECIMEN_WARNING,
       }),
-      json({ screen: screen.id, compared: table.length, failed: bad.length }),
+      ...knownFailureLines(result),
+      json({
+        screen: screen.id,
+        compared: table.length,
+        failed: bad.length,
+        ...(result.newFailed === undefined
+          ? {}
+          : { newFailed: result.newFailed, knownFailed: result.knownFailed }),
+      }),
     ],
+  }
+}
+
+export function baseChecker(index) {
+  if (!index) return null
+  return async (browser, state, screen) => {
+    const rows = rowsForScreen(DESIGN_MAP, screen.id)
+    if (rows.length === 0) return null
+    const outcome = await checkScreen({
+      browser,
+      state,
+      index,
+      screen,
+      rows,
+      tolerance: 1,
+    })
+    return outcome.result
   }
 }

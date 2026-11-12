@@ -58,7 +58,11 @@ export function summarize(results, seconds) {
 export function summaryLine(result) {
   if (result.error) return `${result.screen}: error ${result.error}`
   const verdict = result.failed === 0 ? "pass" : "FAIL"
-  return `${result.screen}: ${verdict}, ${result.compared} compared, ${result.failed} failed`
+  const known =
+    result.newFailed === undefined
+      ? ""
+      : `, ${result.knownFailed} already failing on main`
+  return `${result.screen}: ${verdict}, ${result.compared} compared, ${result.failed} failed${known}`
 }
 
 export function totalLine(total) {

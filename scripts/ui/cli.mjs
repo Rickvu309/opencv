@@ -7,7 +7,8 @@ import {
   runCompare,
 } from "./before-after.mjs"
 import { measure, openScreen, slotSelectors } from "./capture.mjs"
-import { checkScreen } from "./check-screen.mjs"
+import { baseChecker, checkScreen } from "./check-screen.mjs"
+import { baseCheckFor } from "./known-drift.mjs"
 import {
   screensToCheck,
   summarize,
@@ -95,6 +96,14 @@ function readManifest(ctx, flag) {
       `no compare manifest at ${file}; run node scripts/ui.mjs compare <screen...>`
     )
   return { file, manifest: JSON.parse(ctx.fs.read(file)) }
+}
+
+function penOrNull(ctx, flag) {
+  try {
+    return loadPen(ctx, flag)
+  } catch {
+    return null
+  }
 }
 
 const unreachableLine = (screen) =>
@@ -268,10 +277,14 @@ export const COMMANDS = {
     },
   },
   check: {
-    usage: "check <screen...> | --all [--json] [--tolerance 1] [--pen file]",
+    usage:
+      "check <screen...> | --all [--json] [--tolerance 1] [--pen file] [--known manifest]",
     about:
-      "Compare rendered elements with their composed-screen pen frames, and same-box rows with another screen, through scripts/ui/design-map.mjs. --all checks every reachable mapped screen and prints one line per screen and a total; --json prints one JSON result. Exit 1 on any mismatch.",
-    options: { valued: ["tolerance", "pen"], switches: ["all", "json"] },
+      "Compare rendered elements with their composed-screen pen frames, and same-box rows with another screen, through scripts/ui/design-map.mjs. --all checks every reachable mapped screen and prints one line per screen and a total; --json prints one JSON result. --known reads the base results compare stored in its manifest and marks each failure new since main or already failing on main. Exit 1 on any mismatch.",
+    options: {
+      valued: ["tolerance", "pen", "known"],
+      switches: ["all", "json"],
+    },
     run: async (ctx, { positional, flags }) => {
       const started = ctx.clock.now()
       const mapped = screensToCheck(DESIGN_MAP, SCREENS)
@@ -293,6 +306,7 @@ export const COMMANDS = {
           `no design rows for ${unmapped.join(", ")}; add rows to scripts/ui/design-map.mjs`
         )
       const index = loadPen(ctx, flags.pen)
+      const known = flags.known ? readManifest(ctx, flags.known).manifest : null
       const state = await requireStack(ctx)
       const detail = []
       const results = []
@@ -311,6 +325,7 @@ export const COMMANDS = {
               screen,
               rows,
               tolerance,
+              onMain: known ? baseCheckFor(known, screen.id) : undefined,
             })
             detail.push(...outcome.lines)
             results.push(outcome.result)
@@ -336,10 +351,13 @@ export const COMMANDS = {
   },
   compare: {
     usage:
-      "compare <screen...> [--base main] [--width 1440,390] [--out dir] [--selector css...]",
+      "compare <screen...> [--base main] [--width 1440,390] [--out dir] [--selector css...] [--pen file]",
     about:
-      "Capture each screen from a throwaway checkout of the base and from this worktree, same viewport and steps. Writes <screen>-<width>.before.png, .after.png and manifest.json with every data-slot box and style.",
-    options: { valued: ["base", "out"], repeated: ["width", "selector"] },
+      "Capture each screen from a throwaway checkout of the base and from this worktree, same viewport and steps. Writes <screen>-<width>.before.png, .after.png and manifest.json with every data-slot box and style, and the check result of every mapped screen on the base for check --known.",
+    options: {
+      valued: ["base", "out", "pen"],
+      repeated: ["width", "selector"],
+    },
     run: async (ctx, { positional, flags }) => {
       const screens = requireScreens(positional)
       const widths = positiveIntegers(flags.width ?? ["1440"], "--width")
@@ -350,6 +368,7 @@ export const COMMANDS = {
         base: flags.base ?? "origin/main",
         out,
         selectors: flags.selector ?? [],
+        checkBase: baseChecker(penOrNull(ctx, flags.pen)),
       })
       const problems = manifestProblems(manifest)
       return {
@@ -458,7 +477,19 @@ export const COMMANDS = {
         for (const screen of [
           ...new Set(manifest.captures.map((capture) => capture.screen)),
         ])
-          checks.push(checkSummary(screen, await runUi(["check", screen], ctx)))
+          checks.push(
+            checkSummary(
+              screen,
+              await runUi(
+                [
+                  "check",
+                  screen,
+                  ...(manifest.baseChecks ? ["--known", file] : []),
+                ],
+                ctx
+              )
+            )
+          )
       const target = {
         "--no-comment": true,
         ...(flags.pr ? { "--pr": flags.pr } : {}),

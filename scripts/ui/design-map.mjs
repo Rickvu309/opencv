@@ -16,6 +16,7 @@ const PREFERENCES = "W12.1 Preferences"
 const SIGN_IN = "W1.1 Continue"
 const MAIN_PANEL = '[data-slot="shell-main"] main'
 const PAPER_SECTION = 'main section[aria-label="Paper"]'
+const APPROVAL_CARD = '[aria-label="Review Coach action"]'
 const COACH_COLUMN = '[data-slot="chat"] [data-slot="message-scroller-content"]'
 
 export const SPECIMEN_WARNING =
@@ -351,7 +352,7 @@ export const DESIGN_MAP = [
   {
     screen: "coach-approval",
     label: "Coach approval Approve button",
-    selector: '[data-slot="button"][data-variant="primary"]',
+    selector: `${APPROVAL_CARD} [data-slot="button"][data-variant="primary"]`,
     composedScreen: DELETE_CONFIRM,
     frame: "aHNeR",
     props: ["height", "radius", "paddingLeft", "paddingRight"],
@@ -359,7 +360,7 @@ export const DESIGN_MAP = [
   {
     screen: "coach-approval",
     label: "Coach approval Deny button",
-    selector: '[data-slot="button"][data-variant="default"]',
+    selector: `${APPROVAL_CARD} [data-slot="button"][data-variant="default"]`,
     composedScreen: DELETE_CONFIRM,
     frame: "w8dUCw",
     props: ["height", "radius", "paddingLeft", "paddingRight"],
@@ -374,6 +375,23 @@ export const DESIGN_MAP = [
   },
   {
     screen: "paper-blank",
+    label: "Writing page centered in the main area",
+    selector: 'main [contenteditable="true"]',
+    from: MAIN_PANEL,
+    composedScreen: CV_EDITING,
+    frame: "SoAVC",
+    props: ["centerOffset"],
+  },
+  {
+    screen: "paper-typed",
+    label: "Writing page",
+    selector: 'main [contenteditable="true"]',
+    composedScreen: CV_EDITING,
+    frame: "LFKqV",
+    props: ["width", "radius", ...PADDING],
+  },
+  {
+    screen: "paper-typed",
     label: "Writing page centered in the main area",
     selector: 'main [contenteditable="true"]',
     from: MAIN_PANEL,
