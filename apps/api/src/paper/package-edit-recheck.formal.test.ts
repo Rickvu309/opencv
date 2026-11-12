@@ -26,10 +26,8 @@ import {
   type Backend,
 } from "../test/registry-formal-support.js"
 import { prepareStoredWordPackage } from "./package-candidates.js"
-import * as packageCandidates from "./package-candidates.js"
 import { registerPaper } from "./commands.js"
 import { fixturePackage } from "./package-fixtures.js"
-import * as packageRestore from "./package-restore.js"
 import * as packageStore from "./package-store.js"
 import { implementation as readWord } from "./operations/read/server.js"
 
