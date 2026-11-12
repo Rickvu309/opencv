@@ -38,6 +38,15 @@ function DialogOverlay({
   )
 }
 
+type DialogLayout = "dialog" | "sheet"
+
+const DIALOG_LAYOUT_CLASS: Record<DialogLayout, string> = {
+  dialog:
+    "fixed top-[clamp(16px,14dvh,120px)] left-1/2 z-50 grid max-h-[calc(100dvh-clamp(16px,14dvh,120px)-16px)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 gap-4 overflow-y-auto rounded-[12px] bg-popover p-6 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-(--duration-micro) outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+  sheet:
+    "fixed z-50 bg-popover text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+}
+
 function keepTabInside(event: React.KeyboardEvent<HTMLDivElement>) {
   if (event.key !== "Tab" || event.defaultPrevented) return
   const next = wrappedTabStop(
@@ -55,21 +64,21 @@ function DialogContent({
   children,
   showCloseButton = true,
   overlayClassName,
+  layout = "dialog",
   onKeyDown,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
   overlayClassName?: string
+  layout?: DialogLayout
 }) {
   return (
     <DialogPortal>
       <DialogOverlay className={overlayClassName} />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
-        className={cn(
-          "fixed top-[clamp(16px,14dvh,120px)] left-1/2 z-50 grid max-h-[calc(100dvh-clamp(16px,14dvh,120px)-16px)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 gap-4 overflow-y-auto rounded-[12px] bg-popover p-6 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-(--duration-micro) outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-          className
-        )}
+        data-layout={layout}
+        className={cn(DIALOG_LAYOUT_CLASS[layout], className)}
         onKeyDown={(event) => {
           onKeyDown?.(event)
           keepTabInside(event)
@@ -161,6 +170,7 @@ function DialogDescription({
 }
 
 export {
+  DIALOG_LAYOUT_CLASS,
   Dialog,
   DialogClose,
   DialogContent,
@@ -171,4 +181,5 @@ export {
   DialogPortal,
   DialogTitle,
   DialogTrigger,
+  type DialogLayout,
 }

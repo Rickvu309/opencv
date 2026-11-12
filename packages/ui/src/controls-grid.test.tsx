@@ -1,12 +1,19 @@
 import "@testing-library/jest-dom/vitest"
-import { readFileSync } from "node:fs"
+import { readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { act, cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it } from "vitest"
 
 import { Button } from "./components/button"
-import { Dialog, DialogContent, DialogTitle } from "./components/dialog"
+import {
+  DIALOG_LAYOUT_CLASS,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  type DialogLayout,
+} from "./components/dialog"
+import { panelFit, type Viewport } from "./lib/dialog-fit"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -78,6 +85,27 @@ function mix(base: Oklch, other: Oklch, share: number): Oklch {
 }
 
 const solid = (token: number[]): Oklch => [token[0], token[1], token[2] ?? 0]
+
+const encode = (channel: number) =>
+  channel <= 0.0031308 ? 12.92 * channel : 1.055 * channel ** (1 / 2.4) - 0.055
+const decode = (channel: number) =>
+  channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4
+
+function overLuminance(top: Oklch, alpha: number, under: Oklch) {
+  const upper = linearRgb(top).map(encode)
+  const lower = linearRgb(under).map(encode)
+  const [r, g, b] = upper.map((channel, index) =>
+    decode(channel * alpha + lower[index] * (1 - alpha))
+  )
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+
+function contrastOn(text: Oklch, backgroundLuminance: number) {
+  const [high, low] = [luminance(text), backgroundLuminance].sort(
+    (a, b) => b - a
+  )
+  return (high + 0.05) / (low + 0.05)
+}
 
 describe("primary and destructive buttons: states by sizes in the shipped light theme", () => {
   const VARIANTS = ["primary", "destructive"] as const
@@ -164,6 +192,18 @@ describe("contrast computed from the shipped tokens", () => {
       expect(contrast(text, fill)).toBeGreaterThanOrEqual(4.5)
     })
 
+  const highlight = overLuminance(destructive, 0.1, popover)
+  const highlightedRed = mix(destructive, foreground, 0.15)
+
+  it("red menu row text reaches 4.5:1 on hover and keyboard focus over its red tint", () => {
+    expect(contrastOn(highlightedRed, highlight)).toBeGreaterThanOrEqual(4.5)
+    expect(contrastOn(destructive, highlight)).toBeLessThan(4.5)
+  })
+
+  it("red menu row icon reaches 3:1 on hover and keyboard focus", () => {
+    expect(contrastOn(destructive, highlight)).toBeGreaterThanOrEqual(3)
+  })
+
   const CONTROLS = [
     ["primary fill on the card", primary, card],
     ["destructive fill on the card", destructive, card],
@@ -234,8 +274,12 @@ describe("menu rows", () => {
       )
     const remove = screen.getByRole("menuitem", { name: "Delete" })
     expect(remove).toHaveAttribute("data-variant", "destructive")
-    expect(classesOf(remove)).toContain(
-      "data-[variant=destructive]:text-destructive"
+    expect(classesOf(remove)).toEqual(
+      expect.arrayContaining([
+        "data-[variant=destructive]:text-destructive",
+        "data-[variant=destructive]:focus:text-[color-mix(in_oklch,var(--destructive),var(--foreground)_15%)]",
+        "data-[variant=destructive]:focus:bg-destructive/10",
+      ])
     )
     expect(screen.getByRole("separator")).toBeInTheDocument()
   })
@@ -293,5 +337,162 @@ describe("toast", () => {
     expect(classesOf(close)).toEqual(
       expect.arrayContaining(["order-last", "max-md:size-11"])
     )
+  })
+})
+
+const WINDOWS: Viewport[] = [
+  { width: 390, height: 844 },
+  { width: 390, height: 560 },
+  { width: 600, height: 480 },
+  { width: 820, height: 512 },
+  { width: 1024, height: 700 },
+  { width: 1440, height: 900 },
+]
+
+const APP_SOURCE = path.join(import.meta.dirname, "../../../apps/web/src")
+
+function sourceFiles(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = path.join(dir, entry.name)
+    if (entry.isDirectory()) return sourceFiles(full)
+    return entry.name.endsWith(".tsx") && !entry.name.includes(".test.")
+      ? [full]
+      : []
+  })
+}
+
+function openingTag(source: string, start: number) {
+  let depth = 0
+  let quote = ""
+  for (let index = start; index < source.length; index += 1) {
+    const char = source[index]
+    if (quote) {
+      if (char === quote) quote = ""
+    } else if (char === '"' || char === "`") quote = char
+    else if (char === "{") depth += 1
+    else if (char === "}") depth -= 1
+    else if (char === ">" && depth === 0) return source.slice(start, index + 1)
+  }
+  throw new Error("unclosed DialogContent tag")
+}
+
+type DialogSite = {
+  name: string
+  layout: DialogLayout
+  className: string
+  hasOutsideControl: boolean
+}
+
+function dialogSites(): DialogSite[] {
+  const files = sourceFiles(APP_SOURCE)
+  const texts = new Map(files.map((file) => [file, readFileSync(file, "utf8")]))
+  const constant = (name: string) => {
+    for (const text of texts.values()) {
+      const found = new RegExp(`const ${name} =\\s*"([^"]*)"`).exec(text)
+      if (found) return found[1]
+    }
+    throw new Error(`cannot find ${name}`)
+  }
+  return [...texts].flatMap(([file, text]) =>
+    [...text.matchAll(/<DialogContent\b/g)].map((match) => {
+      const tag = openingTag(text, match.index)
+      const literal = /className="([^"]*)"/.exec(tag)?.[1]
+      const named = /className=\{[^}]*?\b([A-Z][A-Z0-9_]+)\b[^}]*\}/.exec(
+        tag
+      )?.[1]
+      const body = text.slice(
+        match.index + tag.length,
+        text.indexOf("</DialogContent>", match.index)
+      )
+      return {
+        name: `${path.relative(APP_SOURCE, file)}:${text.slice(0, match.index).split("\n").length}`,
+        layout: (/layout="(\w+)"/.exec(tag)?.[1] ?? "dialog") as DialogLayout,
+        className: literal ?? (named ? constant(named) : ""),
+        hasOutsideControl: /(^|[\s"])-(right|left|top|bottom)-\d/.test(body),
+      }
+    })
+  )
+}
+
+function fitProblems(site: Omit<DialogSite, "name">, window: Viewport) {
+  return panelFit(
+    `${DIALOG_LAYOUT_CLASS[site.layout]} ${site.className}`,
+    window,
+    { hasOutsideControl: site.hasOutsideControl }
+  ).problems
+}
+
+describe("every dialog and dialog-based panel fits the window at every size", () => {
+  const sites = dialogSites()
+
+  it("finds the dialog call sites, the phone drawer and the template gallery among them", () => {
+    expect(sites.length).toBeGreaterThanOrEqual(15)
+    expect(
+      sites.some((site) =>
+        site.name.startsWith("features/app-shell/app-shell.tsx")
+      )
+    ).toBe(true)
+    expect(sites.some((site) => site.className.includes("sm:max-w-3xl"))).toBe(
+      true
+    )
+  })
+
+  for (const window of WINDOWS)
+    it(`at ${window.width}x${window.height} each panel stays inside, full-height panels stay full, outside controls stay visible`, () => {
+      const problems = sites.flatMap((site) =>
+        fitProblems(site, window).map((problem) => `${site.name} ${problem}`)
+      )
+      expect(problems).toEqual([])
+    })
+
+  const DRAWER_AT_B19A5BAD = {
+    layout: "dialog" as const,
+    className:
+      "top-0 left-0 h-svh w-[244px] max-w-[80vw] translate-x-0 translate-y-0 rounded-none p-0 duration-(--duration-panel) ease-(--ease-panel)",
+    hasOutsideControl: true,
+  }
+  const GALLERY_AT_B19A5BAD = {
+    layout: "dialog" as const,
+    className: "max-h-[90vh] overflow-y-auto sm:max-w-3xl",
+    hasOutsideControl: false,
+  }
+
+  it("fails the phone drawer as it shipped at b19a5bad: cut to 710 of 844 and its close button clipped", () => {
+    expect(
+      fitProblems(DRAWER_AT_B19A5BAD, { width: 390, height: 844 })
+    ).toEqual([
+      "is a full-height panel cut to 710 of 844px",
+      "clips a control placed outside it (overflow auto)",
+    ])
+  })
+
+  it("fails the New CV gallery as it shipped at b19a5bad: past the bottom at 390x844 and 820x512", () => {
+    expect(
+      fitProblems(GALLERY_AT_B19A5BAD, { width: 390, height: 844 })
+    ).toEqual(["ends at 878, past the 844px window"])
+    expect(
+      fitProblems(GALLERY_AT_B19A5BAD, { width: 820, height: 512 })
+    ).toEqual(["ends at 532, past the 512px window"])
+  })
+
+  it("passes the drawer as a sheet and the gallery under the kit cap", () => {
+    for (const window of WINDOWS) {
+      expect(
+        fitProblems(
+          {
+            ...DRAWER_AT_B19A5BAD,
+            layout: "sheet",
+            className: "top-0 left-0 h-svh w-[244px] max-w-[80vw]",
+          },
+          window
+        )
+      ).toEqual([])
+      expect(
+        fitProblems(
+          { ...GALLERY_AT_B19A5BAD, className: "sm:max-w-3xl" },
+          window
+        )
+      ).toEqual([])
+    }
   })
 })
