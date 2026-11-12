@@ -17,7 +17,7 @@ import { openCoachStore, type CoachStore } from "../test/paper-coach.js"
 import { resolveTurnGrounding } from "./context.js"
 import { createDemoCoachRuntime } from "./fake.js"
 import { idOf } from "../registry/coverage-helpers.js"
-import { open, apply } from "../paper/word/document.js"
+import { openWordPage, applyWordOps } from "../paper/index.js"
 import { seedCoachActor } from "../test/coach-turn.js"
 
 const userId = "user-coach-fake-edit"
@@ -95,7 +95,7 @@ it.each(["blank", "with words"] as const)(
   async (state) => {
     vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
     await h.inDatabase(async () => {
-      const minted = await open(userId, {
+      const minted = await openWordPage(userId, {
         kind: "mint",
         name: "Practice CV",
         label: "cv",
@@ -103,7 +103,7 @@ it.each(["blank", "with words"] as const)(
       if ("refused" in minted) throw new Error("Word page refused")
       let page = minted
       if (state === "with words") {
-        const typed = await apply(userId, {
+        const typed = await applyWordOps(userId, {
           doc: page.doc,
           basedOn: page.revision,
           ops: [
@@ -169,7 +169,7 @@ it.each(["blank", "with words"] as const)(
         },
       ])
       await h.store.registry.approve(userId, result.pendingActionId)
-      const saved = await open(userId, { kind: "read", doc: page.doc })
+      const saved = await openWordPage(userId, { kind: "read", doc: page.doc })
       if ("refused" in saved) throw new Error(saved.message)
       expect(saved.paragraphs[0]?.text).toBe(
         state === "blank"

@@ -21,11 +21,11 @@ import { claim } from "./task-store.js"
 import { runCoachWorker } from "./worker.js"
 import { getChat } from "../chat/index.js"
 import { readStoredParts } from "../chat/index.js"
-import { open, apply } from "../paper/word/document.js"
+import { openWordPage, applyWordOps } from "../paper/index.js"
 import { twoParagraphCv } from "../test/paper-content.js"
 import { resolveTurnGrounding } from "./context.js"
 import { createTaskRuntime } from "./task-runtime.js"
-import { final, fixture, settings } from "../test/coach-worker-fixture.js"
+import { final, fixture, settings } from "./worker-fixture.js"
 
 it.each(["approve", "deny", "expire", "undo"] as const)(
   "pauses without a lease, resolves %s and resumes the checkpoint",
@@ -149,7 +149,7 @@ it.each(["blank", "with words", "template"] as const)(
           })
           docId = z.object({ id: z.string() }).parse(result.output).id
         } else {
-          const page = await open(ownerId, {
+          const page = await openWordPage(ownerId, {
             kind: "mint",
             name: "Practice CV",
             label: "cv",
@@ -157,7 +157,7 @@ it.each(["blank", "with words", "template"] as const)(
           if ("refused" in page) throw new Error(page.message)
           docId = page.doc
           if (state === "with words") {
-            const result = await apply(ownerId, {
+            const result = await applyWordOps(ownerId, {
               doc: page.doc,
               basedOn: page.revision,
               ops: [

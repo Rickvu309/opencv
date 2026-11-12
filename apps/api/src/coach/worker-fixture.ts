@@ -3,11 +3,11 @@ import { z } from "zod"
 import { getDb, withDatabase } from "../db/context.js"
 import { coachTasks } from "../db/schema.js"
 import { installRegistry } from "../registry/install.js"
-import { createScriptedWorkerRuntime } from "../coach/fake.js"
-import { inputHash } from "../coach/task-store.js"
-import type { runCoachWorker } from "../coach/worker.js"
-import { createMigratedTestDb } from "./harness.js"
-import { seedTask } from "./coach-task-support.js"
+import { createScriptedWorkerRuntime } from "./fake.js"
+import { inputHash } from "./task-store.js"
+import type { runCoachWorker } from "./worker.js"
+import { createMigratedTestDb } from "../test/harness.js"
+import { seedTask } from "../test/coach-task-support.js"
 
 const scriptSchema = z.array(
   z.object({

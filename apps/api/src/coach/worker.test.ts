@@ -27,12 +27,7 @@ import { anthropicFixtureResponse } from "./anthropic-fixture.js"
 import type { WorkerRuntime } from "./model-step.js"
 import { openCoachUsage, saveRepliesForUnsavedTurns } from "./usage-store.js"
 import { finishTask } from "./worker-store.js"
-import {
-  final,
-  fixture,
-  settings,
-  storedRuntime,
-} from "../test/coach-worker-fixture.js"
+import { final, fixture, settings, storedRuntime } from "./worker-fixture.js"
 
 it("drains accepted task claims with new durable admissions switched off", () =>
   fixture(async (_, registry) => {
