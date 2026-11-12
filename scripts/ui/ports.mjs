@@ -83,8 +83,19 @@ const request = async (url, init) => {
   }
 }
 
+const git = (args, cwd) =>
+  execFileSync("git", args, { cwd, encoding: "utf8" }).trim()
+
+const upload = async (files, flags) => {
+  const { realCtx } = await import("../ocv-tools/cli.mjs")
+  const { shot } = await import("../ocv-tools/shot.mjs")
+  return shot(realCtx(), { files, flags }).lines
+}
+
 export function realPorts() {
   return {
+    git,
+    upload,
     env: process.env,
     repo: repoRoot(),
     scratchRoot: SCRATCH_ROOT,

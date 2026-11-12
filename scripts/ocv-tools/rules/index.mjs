@@ -5,6 +5,7 @@ import { pullRows } from "./pull.mjs"
 import { workspaceRows } from "./workspace.mjs"
 import { tableRows, judgmentRows, issueKind } from "./table.mjs"
 import { diffRows } from "./diff.mjs"
+import { beforeAfterRows } from "./before-after.mjs"
 import { commitRows } from "./commits.mjs"
 
 export { issueKind, jobRows }
@@ -81,6 +82,7 @@ const rows = [
   ...workspaceRest,
   ...tableRows,
   ...diffRows,
+  ...beforeAfterRows,
   ...commitRows,
   ...judgmentRows,
 ]

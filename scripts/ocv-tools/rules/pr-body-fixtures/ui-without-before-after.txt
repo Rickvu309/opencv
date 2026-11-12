@@ -1,0 +1,12 @@
+## Summary
+
+The Coach panel goes back to its designed size and place.
+
+## Evidence
+
+- `node scripts/ui.mjs check paper-panel-open`: 0 mismatches
+
+## Merge Danger
+
+**Door:** two-way
+**Blast Radius:** the Coach panel only
