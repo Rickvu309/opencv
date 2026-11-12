@@ -143,7 +143,7 @@ function paperStartReview(
           "This new page is not available. No document was made."
         )
     },
-    commit: async (_input, prepared, actor) => {
+    commit: async (input, prepared, actor) => {
       if (prepared.candidate.owner !== actor.userId)
         return packageFailure(
           "This new page is not available. No document was made."
@@ -153,6 +153,16 @@ function paperStartReview(
         prepared.candidate.stageId,
         PAPER_CANVAS_PROFILE
       )
+      if (input.jobId)
+        await registry.execute({
+          name: "job.linkPaper",
+          input: {
+            jobId: input.jobId,
+            docId: published.docId,
+            kind: input.kind,
+          },
+          actor,
+        })
       return resultOf(actor.userId, published.docId, published.revision, null)
     },
   }

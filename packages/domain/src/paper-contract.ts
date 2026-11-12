@@ -256,8 +256,12 @@ export const paperContract = commandContract({
     output: paperPackageEditResultSchema,
     coach: "confirm",
     destructive: false,
-    step: (input) => `Start a ${input.kind === "cv" ? "CV" : "Letter"}`,
-    invalidates: () => listChanged(),
+    step: (input) =>
+      `Start a new ${input.kind === "cv" ? "CV" : "Letter"} in Paper. You approve its words next.`,
+    invalidates: (input) => [
+      ...listChanged(),
+      ...(input.jobId ? jobsLinked() : []),
+    ],
   }),
   "paper.edit": commandEntry({
     delegate: { resource: "paper", access: "proposal" },

@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto"
+
 import {
   coachActor,
   parseChatId,
@@ -10,7 +12,14 @@ import { z } from "zod"
 
 import { getChat } from "../chat/index.js"
 import { getDb } from "../db/context.js"
-import { coachTasks, coachUsage, toolIntents } from "../db/schema.js"
+import {
+  activity,
+  coachTasks,
+  coachUsage,
+  paperPackageHeads,
+  toolIntents,
+  user,
+} from "../db/schema.js"
 import type { Registry } from "../registry/registry.js"
 import { createTaskRuntime } from "./task-runtime.js"
 import { fixture, settings } from "./worker-fixture.js"
@@ -25,6 +34,35 @@ const startedSchema = z.object({
     revision: z.string(),
   }),
 })
+
+const jobLinksSchema = z
+  .object({
+    cvDocId: z.string().nullable(),
+    letterDocId: z.string().nullable(),
+  })
+  .passthrough()
+
+async function jobFor(registry: Registry, ownerId: string, company: string) {
+  const created = await registry.execute({
+    name: "job.create",
+    input: { title: "Product designer", company },
+    actor: personActor(ownerId),
+  })
+  return z.object({ id: z.string() }).parse(created.output).id
+}
+
+async function linksOf(registry: Registry, ownerId: string, jobId: string) {
+  return jobLinksSchema.parse(
+    await registry.read("job.get", { jobId }, personActor(ownerId))
+  )
+}
+
+async function headsOf(ownerId: string) {
+  return getDb()
+    .select({ docId: paperPackageHeads.docId })
+    .from(paperPackageHeads)
+    .where(eq(paperPackageHeads.userId, ownerId))
+}
 
 async function outlineOf(registry: Registry, ownerId: string, docId: string) {
   return z
@@ -117,12 +155,7 @@ it("a CV the Coach starts is a Word page it reads, edits with approval and Undo"
 
 it("a Letter the Coach starts for a Job is a blank Word page named for the Job", () =>
   fixture(async ({ taskId, ownerId }, registry) => {
-    const created = await registry.execute({
-      name: "job.create",
-      input: { title: "Product designer", company: "Lumiere" },
-      actor: personActor(ownerId),
-    })
-    const jobId = z.object({ id: z.string() }).parse(created.output).id
+    const jobId = await jobFor(registry, ownerId, "Lumiere")
     const { started, before } = await createTurn(registry, ownerId, taskId, {
       messages: [
         { role: "user", content: "Start a cover letter for this Job" },
@@ -140,6 +173,112 @@ it("a Letter the Coach starts for a Job is a blank Word page named for the Job",
       .from(toolIntents)
       .orderBy(asc(toolIntents.step))
     expect(start?.input).toEqual({ kind: "letter", jobId })
+    expect(await linksOf(registry, ownerId, jobId)).toMatchObject({
+      letterDocId: started.docId,
+      linked: { letter: { id: started.docId, name: started.name } },
+    })
+  }))
+
+it("a page started for a Job links to it, and the same key twice makes one page and one link", () =>
+  fixture(async ({ ownerId }, registry) => {
+    const actor = personActor(ownerId)
+    const jobId = await jobFor(registry, ownerId, "Northwind")
+    const idempotencyKey = randomUUID()
+    const start = () =>
+      registry.execute({
+        name: "paper.start",
+        input: { kind: "cv", jobId },
+        actor,
+        idempotencyKey,
+      })
+    const first = startedSchema.parse(await start()).output
+    const again = startedSchema.parse(await start()).output
+    expect(again.docId).toBe(first.docId)
+    expect(first.name).toBe("Simple CV, Northwind.docx")
+    expect(await headsOf(ownerId)).toEqual([{ docId: first.docId }])
+    expect(await linksOf(registry, ownerId, jobId)).toMatchObject({
+      cvDocId: first.docId,
+      letterDocId: null,
+      linked: { cv: { id: first.docId } },
+    })
+    const receipts = await getDb()
+      .select({ summary: activity.summary })
+      .from(activity)
+      .where(eq(activity.userId, ownerId))
+    expect(
+      receipts.filter((row) => row.summary.startsWith("You linked"))
+    ).toHaveLength(1)
+  }))
+
+it("refuses another person's Job the same as an unknown Job and makes no page", () =>
+  fixture(async ({ ownerId }, registry) => {
+    const strangerId = randomUUID()
+    await getDb()
+      .insert(user)
+      .values({
+        id: strangerId,
+        name: strangerId,
+        email: `${strangerId}@test.invalid`,
+      })
+    const jobId = await jobFor(registry, ownerId, "Fabrikam")
+    const refusal = (target: string) =>
+      registry
+        .execute({
+          name: "paper.start",
+          input: { kind: "letter", jobId: target },
+          actor: personActor(strangerId),
+          idempotencyKey: randomUUID(),
+        })
+        .then(
+          () => null,
+          (error: { code?: string; message?: string }) => [
+            error.code,
+            error.message,
+          ]
+        )
+    const foreign = await refusal(jobId)
+    expect(foreign).not.toBeNull()
+    expect(foreign).toEqual(await refusal(randomUUID()))
+    expect(await headsOf(strangerId)).toEqual([])
+    expect(await linksOf(registry, ownerId, jobId)).toMatchObject({
+      cvDocId: null,
+      letterDocId: null,
+    })
+  }))
+
+it("makes no page when the Job is gone by the time the person approves it", () =>
+  fixture(async ({ taskId, ownerId }, registry) => {
+    const jobId = await jobFor(registry, ownerId, "Contoso")
+    await getDb()
+      .update(coachTasks)
+      .set({
+        contextSnapshot: {
+          messages: [{ role: "user", content: "Start a cover letter" }],
+          context: [{ kind: "job", id: jobId }],
+        },
+      })
+      .where(eq(coachTasks.id, taskId))
+    const runtime: Parameters<typeof runCoachWorker>[0]["runtime"] = (task) =>
+      createTaskRuntime(task, registry)
+    await runCoachWorker({ ...settings, registry, runtime })
+    const [asked] = await getDb().select().from(toolIntents)
+    expect([asked?.operation, asked?.state]).toEqual([
+      "paper.start",
+      "proposed",
+    ])
+    await registry.execute({
+      name: "job.delete",
+      input: { jobId },
+      actor: personActor(ownerId),
+    })
+    await registry.approve(ownerId, asked!.proposalId!).catch(() => null)
+    await runCoachWorker({ ...settings, registry, runtime }).catch(() => null)
+    expect(await headsOf(ownerId)).toEqual([])
+    const [after] = await getDb()
+      .select()
+      .from(toolIntents)
+      .where(eq(toolIntents.operation, "paper.start"))
+    expect(after?.state).not.toBe("committed")
   }))
 
 it("offers the Coach paper_start and never the older block create or typing", () =>
@@ -159,4 +298,27 @@ it("offers the Coach paper_start and never the older block create or typing", ()
     expect(names).toContain("paper.edit")
     expect(names).not.toContain("paper.create")
     expect(names).not.toContain("paper.canvas")
+  }))
+
+it("never starts a page in a text-only turn, even when the words ask for one", () =>
+  fixture(async ({ taskId, ownerId }, registry) => {
+    await getDb()
+      .update(coachTasks)
+      .set({ toolsAllowed: false })
+      .where(eq(coachTasks.id, taskId))
+    await getDb()
+      .update(coachTasks)
+      .set({
+        contextSnapshot: {
+          messages: [{ role: "user", content: "Make me a CV" }],
+        },
+      })
+      .where(eq(coachTasks.id, taskId))
+    const runtime: Parameters<typeof runCoachWorker>[0]["runtime"] = (task) =>
+      createTaskRuntime(task, registry)
+    await runCoachWorker({ ...settings, registry, runtime })
+    const [finished] = await getDb().select().from(coachTasks)
+    expect(finished?.state).toBe("succeeded")
+    expect(await getDb().select().from(toolIntents)).toEqual([])
+    expect(await headsOf(ownerId)).toEqual([])
   }))
