@@ -317,7 +317,7 @@ export function SignInScreen() {
             type="submit"
             variant="primary"
             data-slot="sign-in-continue"
-            className="h-[46px] w-full rounded-[10px] text-sm font-medium active:bg-[color-mix(in_oklch,var(--primary),var(--primary-foreground)_16%)]"
+            className="h-[46px] w-full rounded-[10px] text-sm font-medium"
             disabled={sending || codeLimitHeld}
           >
             {AUTH_COPY.continue}

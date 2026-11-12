@@ -469,12 +469,7 @@ export function PaperLetterStart({
         </Button>
         {drafting ? (
           onDraftingStart ? null : (
-            <Button
-              className="h-11 md:h-8"
-              type="button"
-              variant="glow"
-              onClick={stop}
-            >
+            <Button className="h-11 md:h-8" type="button" onClick={stop}>
               Stop
             </Button>
           )
@@ -483,7 +478,7 @@ export function PaperLetterStart({
             type="button"
             data-slot="letter-start-draft"
             className="h-11 gap-2 rounded-[8px] px-3.5 text-[13px] font-semibold md:h-[34px]"
-            variant={limit ? "outline" : "glow"}
+            variant={limit ? "outline" : "primary"}
             disabled={Boolean(limit) || attaching || needsContext}
             aria-label={draftName}
             aria-describedby={needsContext ? guidanceId : undefined}

@@ -106,11 +106,12 @@ describe("kit parts", () => {
     expect(screen.getByRole("img", { name: "Interview" })).toBeInTheDocument()
   })
 
-  it("gives only the glow variant the glow utility, the visual contract for variant glow, and keeps the default as the kit secondary", () => {
-    const { rerender } = render(<Button variant="glow">Add job</Button>)
-    const glow = screen.getByRole("button", { name: "Add job" })
-    expect(glow).toHaveAttribute("data-variant", "glow")
-    expect(glow.className).toMatch(/\bglow\b/)
+  it("offers no glow variant: the main action is the solid primary and the default stays the kit secondary", () => {
+    const { rerender } = render(<Button variant="primary">Add job</Button>)
+    const primary = screen.getByRole("button", { name: "Add job" })
+    expect(primary).toHaveAttribute("data-variant", "primary")
+    expect(primary.className).toMatch(/\bbg-primary\b/)
+    expect(primary.className).not.toMatch(/\bglow\b|radial-gradient/)
     rerender(<Button>Add job</Button>)
     const secondary = screen.getByRole("button", { name: "Add job" })
     expect(secondary).toHaveAttribute("data-variant", "default")

@@ -177,7 +177,7 @@ export function CoachToolExtras({
             {edit.docId ? (
               <a
                 href={`/paper/${edit.docId}`}
-                className={`inline-flex h-11 shrink-0 items-center rounded-[7px] glow px-2.5 text-xs font-medium no-underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:opacity-80 md:h-[26px] ${RECEIPT_HIT}`}
+                className={`inline-flex h-11 shrink-0 items-center rounded-[7px] px-2.5 text-xs font-medium text-foreground no-underline transition-colors duration-(--duration-micro) ease-(--ease-micro) hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:bg-accent active:opacity-80 md:h-[26px] ${RECEIPT_HIT}`}
               >
                 Open
               </a>

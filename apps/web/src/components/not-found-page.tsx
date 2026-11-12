@@ -75,7 +75,7 @@ export function NotFoundPage() {
       </p>
       <Button
         type="button"
-        variant="glow"
+        variant="primary"
         className="mt-6"
         onClick={() => void navigate({ href: destination })}
       >
