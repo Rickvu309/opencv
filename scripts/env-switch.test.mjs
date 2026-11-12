@@ -4,7 +4,12 @@ import path from "node:path"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
 
-import { detect, isProductFile } from "./lib/env-switch.mjs"
+import {
+  detect,
+  envReads,
+  isProductFile,
+  staleDeletions,
+} from "./lib/env-switch.mjs"
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 
@@ -84,16 +89,54 @@ function productFiles(dir) {
   return found
 }
 
+function liveProductFiles() {
+  return [...productFiles("apps/api/src"), ...productFiles("apps/web/src")]
+}
+
 test("api and web product code read no unlisted environment switch", () => {
   const problems = []
-  for (const file of [
-    ...productFiles("apps/api/src"),
-    ...productFiles("apps/web/src"),
-  ])
+  for (const file of liveProductFiles())
     for (const problem of detect(
       readFileSync(path.join(root, file), "utf8"),
       file
     ))
       problems.push(`${file}:${problem.line} ${problem.name}`)
   assert.deepEqual(problems, [])
+})
+
+test("a deleted switch left on the being-deleted list fires", () => {
+  assert.deepEqual(
+    kinds(
+      staleDeletions(
+        ["COACH_DURABLE"],
+        new Set(["PAPER_AGENT_TOOLS", "COACH_DURABLE"])
+      )
+    ),
+    ["deleted-switch-still-allowed:PAPER_AGENT_TOOLS"]
+  )
+  assert.deepEqual(
+    staleDeletions(["COACH_DURABLE"], new Set(["COACH_DURABLE"])),
+    []
+  )
+})
+
+test("reading the deleted agent tools switch fires again", () => {
+  assert.deepEqual(
+    kinds(
+      detect(
+        'if (process.env.PAPER_AGENT_TOOLS !== "on") return false',
+        "apps/api/src/registry/delegate-policy.ts"
+      )
+    ),
+    ["unlisted-env-switch:PAPER_AGENT_TOOLS"]
+  )
+})
+
+test("every switch on the being-deleted list is still read by product code", () => {
+  const read = liveProductFiles().flatMap((file) =>
+    envReads(readFileSync(path.join(root, file), "utf8"), file).map(
+      ({ name }) => name
+    )
+  )
+  assert.deepEqual(staleDeletions(read), [])
 })

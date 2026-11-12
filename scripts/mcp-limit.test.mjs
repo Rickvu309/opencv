@@ -5,7 +5,7 @@ import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 import ts from "typescript"
-import { reservedBefore } from "./lib/delegate-tool-binding.mjs"
+import { reachableFrom, reservedBefore } from "./lib/delegate-tool-binding.mjs"
 
 function name(node) {
   if (ts.isIdentifier(node)) return node.text
@@ -72,31 +72,33 @@ export function detect(text) {
         handler &&
         (ts.isArrowFunction(handler) || ts.isFunctionExpression(handler))
       ) {
-        const scan = (child) => {
-          if (
-            ts.isCallExpression(child) &&
-            ts.isPropertyAccessExpression(child.expression) &&
-            ts.isIdentifier(child.expression.expression) &&
-            child.expression.expression.text === "registry" &&
-            ["read", "execute"].includes(child.expression.name.text) &&
-            !auditedTransaction(child) &&
-            !(
-              reservedBefore(handler, child.getStart(source)) &&
-              contains(
-                handler,
-                (node) =>
-                  ts.isCallExpression(node) &&
-                  name(node.expression) === "completeDelegateCall"
-              )
-            )
+        const completes =
+          reachableFrom(
+            source,
+            handler,
+            (node) =>
+              ts.isCallExpression(node) &&
+              name(node.expression) === "completeDelegateCall"
+          ).length > 0
+        for (const { node: child, sites } of reachableFrom(
+          source,
+          handler,
+          (node) =>
+            ts.isCallExpression(node) &&
+            ts.isPropertyAccessExpression(node.expression) &&
+            ts.isIdentifier(node.expression.expression) &&
+            node.expression.expression.text === "registry" &&
+            ["read", "execute"].includes(node.expression.name.text)
+        )) {
+          const chain = [...sites, child]
+          if (chain.some(auditedTransaction)) continue
+          if (reservedBefore(handler, chain[0].getStart(source)) && completes)
+            continue
+          hit(
+            child,
+            "Reserve a charged audit before product access and complete its outcome"
           )
-            hit(
-              child,
-              "Reserve a charged audit before product access and complete its outcome"
-            )
-          ts.forEachChild(child, scan)
         }
-        scan(handler)
       }
     }
     ts.forEachChild(node, visit)
@@ -180,4 +182,48 @@ test("review preparation follows a durable charged reservation with a completed 
     'await transaction(() => completeDelegateCall(reservation.id, "pending"));',
   ])
     assert.ok(detect(RESERVED.replace(missing, "")).length > 0)
+})
+
+const liveDoor = readFileSync(
+  new URL("../apps/api/src/connections/http.ts", import.meta.url),
+  "utf8"
+)
+
+function mutate(text, from, to) {
+  const changed = text.replace(from, to)
+  assert.notEqual(changed, text, from)
+  return changed
+}
+
+test("an unaudited read moved into a helper of the live binding is rejected", () => {
+  const mutant = mutate(
+    mutate(
+      liveDoor,
+      "export function connectionRoutes(",
+      `async function readOutside(registry: Registry, name: string, input: unknown, actor: DelegateActor) {
+  return { data: await registry.read(name, input, actor) }
+}
+
+export function connectionRoutes(`
+    ),
+    "            try {\n              const result = await transaction(",
+    '            if (entry.kind === "query") return untrustedResult(await readOutside(registry, entry.name, input, actor))\n            try {\n              const result = await transaction('
+  )
+  assert.ok(detect(mutant).length > 0)
+})
+
+test("the live outside proposal must complete its charged audit", () => {
+  const uncompleted = mutate(
+    liveDoor,
+    `  await transaction(() =>
+    completeDelegateCall(
+      callId,
+      proposed.pending ? "pending" : "success",
+      proposed.pendingActionId
+    )
+  )
+`,
+    ""
+  )
+  assert.ok(detect(uncompleted).length > 0)
 })
