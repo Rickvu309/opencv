@@ -188,13 +188,13 @@ export const SCREENS = [
     [
       "settings-integrations",
       "/settings/integrations",
-      '[data-slot="settings-agent-connections"] #agent-connections-title',
+      "#agent-connections-title",
     ],
     ["settings-usage", "/settings/usage", '[data-slot="settings-card"]'],
     [
       "settings-billing",
       "/settings/billing",
-      '[data-slot="settings-plan-card"]',
+      'main :is(h2, h3):has-text("Free plan")',
     ],
     ["settings-account", "/settings/account", '[data-slot="settings-card"]'],
   ].map(([id, route, selector]) => ({
