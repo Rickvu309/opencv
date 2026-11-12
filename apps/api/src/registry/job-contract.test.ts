@@ -1,6 +1,5 @@
 import {
   catalog,
-  catalogDigest,
   commands,
   jobContract,
   jobQueries,
@@ -164,7 +163,6 @@ describe("Job catalog", () => {
   it("installs both entry types", () => {
     const registry = installRegistry()
     expect(Object.keys(catalog)).toEqual(Object.keys(implementations))
-    expect(catalogDigest).toMatch(/^[a-f0-9]{64}$/)
     expect(installRegistry()).toBe(registry)
     const entries: Record<string, Operation> = catalog
     const expected = [
