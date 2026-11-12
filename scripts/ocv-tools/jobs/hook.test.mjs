@@ -255,17 +255,20 @@ test("pre-push refuses a bad branch name before it runs any check", () => {
   assert.equal(w.s.calls.filter((c) => c.cmd !== "git").length, 0)
 })
 
-test("pre-push does not run the guard suite when scripts/ocv-tools changed, and sends that change to check", () => {
+test("pre-push does not run the guard or tool suite when scripts/ocv-tools changed, and names the tool suite CI runs", () => {
   const tools = world({
     changed: ["scripts/ocv-tools/jobs/hook.mjs"],
     toolTests: ["scripts/ocv-tools/jobs/hook.test.mjs"],
   })
   const r = tools.call(["pre-push"], { stdin: pushOk })
-  assert.equal(r.code, 2, r.text)
-  assert.match(r.text, /REFUSED AFFECTED_TESTS: 1 changed file\(s\) need more/)
+  assert.equal(r.code, 0, r.text)
+  assert.match(r.text, /it is broad, so CI runs the rest: /)
   assert.match(r.text, /scripts\/ocv-tools\/\*\*\/\*\.test\.mjs/)
   assert.ok(!nodeCalls(tools).some((call) => call.args.includes("--test")))
-  assert.equal(tools.git("ls-files").length, 0)
+  assert.deepEqual(
+    tools.git("ls-files").map((call) => call.args.join(" ")),
+    ["ls-files -v -z"]
+  )
 })
 
 test("pre-push without origin/main skips prettier and eslint, still checks comments, and refuses to call the unread change passed", () => {

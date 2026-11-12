@@ -254,8 +254,30 @@ export function accountFor({
     for (const proof of entry.proofs) proofs.set(proof.id, proof)
   if (!ran && !proofs.size && entries.some((e) => e.rule !== "no-tests"))
     proofs.set(PROOFS.guards.id, PROOFS.guards)
-  return { entries, proofs: [...proofs.values()] }
+  const larger = [...proofs.values()]
+  if (all) return { entries, proofs: larger, deferred: [] }
+  return {
+    entries: entries.map((entry) =>
+      entry.proofs.length
+        ? {
+            file: entry.file,
+            rule: "broad",
+            says: `${entry.says}; the change is broad, so CI runs ${entry.proofs.map(proofCommand).join(" and ")}`,
+            proofs: [],
+            deferred: entry.proofs,
+          }
+        : entry
+    ),
+    proofs: [],
+    deferred: larger.map(proofCommand),
+    ran,
+  }
 }
+
+export const broadLine = (accounting) =>
+  accounting.deferred?.length
+    ? `Local pre-check ran ${accounting.ran ?? 0} test file(s) for this change; it is broad, so CI runs the rest: ${accounting.deferred.join(", ")} (check --all runs them here).`
+    : null
 
 const LABEL = {
   tests: "runs tests",
@@ -263,6 +285,7 @@ const LABEL = {
   package: "package runner",
   config: "needs a larger run",
   partial: "partial, rest in CI",
+  broad: "broad, rest in CI",
   unknown: "UNKNOWN",
 }
 
@@ -275,7 +298,8 @@ export function describeAccounting(accounting) {
   ]
   const ordered = [...accounting.entries].sort(
     (a, b) =>
-      Number(b.proofs.length > 0) - Number(a.proofs.length > 0) ||
+      Number(b.proofs.length + (b.deferred?.length ?? 0) > 0) -
+        Number(a.proofs.length + (a.deferred?.length ?? 0) > 0) ||
       a.file.localeCompare(b.file)
   )
   for (const entry of ordered.slice(0, LISTED_FILES))
@@ -286,5 +310,7 @@ export function describeAccounting(accounting) {
     )
   for (const proof of accounting.proofs)
     lines.push(`affected tests: needs ${proofCommand(proof)}  [${proof.cost}]`)
+  const broad = broadLine(accounting)
+  if (broad) lines.push(broad)
   return lines
 }

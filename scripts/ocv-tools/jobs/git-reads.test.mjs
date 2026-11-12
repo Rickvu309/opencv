@@ -425,6 +425,7 @@ test("NB1: a changed test dropped by the cap is UNKNOWN and needs its package su
     (_, i) => `apps/web/src/t${String(i).padStart(2, "0")}.test.ts`
   )
   const selection = selectAndAccount({
+    all: true,
     changed: tests,
     tests,
     textOf: () => "",

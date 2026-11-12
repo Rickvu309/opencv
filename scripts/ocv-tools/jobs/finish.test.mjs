@@ -146,5 +146,8 @@ test("finish prints the partial pass the receipt holds, one plain line per packa
     r.text,
     /Local pre-check ran 27 of 143 tests this change reaches in apps\/web; CI runs the rest \(first left out: apps\/web\/src\/a\.test\.tsx\)\./
   )
-  assert.match(r.text, /CI is the gate/)
+  assert.match(
+    r.text,
+    /Local pre-check passed for the part of this change it ran; CI runs the rest and is the gate\./
+  )
 })

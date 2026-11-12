@@ -15,7 +15,7 @@ export const COMMANDS = [
   {
     name: "check",
     usage: "check [--all] [--list [--base <rev>] [--head <rev>]]",
-    when: "Run the tests this branch's change reaches: changed tests, tests that scan a changed folder (the covers-every-X tests), tests that name a changed command, and tests that import a changed file directly or through other files. Over 40 in a package it runs only the changed tests, the scanners and the 25 nearest, records a partial pass that says how many ran, and leaves the rest to CI; --all runs the whole suite instead. A pass is recorded for the head commit; pre-push runs the same set and finish refuses a head with no recorded pass. --list prints the selection and why, and runs nothing.",
+    when: "Run the tests this branch's change reaches: changed tests, tests that scan a changed folder (the covers-every-X tests), tests that name a changed command, and tests that import a changed file directly or through other files. Over 40 in a package it runs only the changed tests, the scanners and the 25 nearest, records a partial pass that says how many ran, and leaves the rest to CI; a broad change (config, setup, package file) records a broad pass naming the suite CI runs. Only --all runs a whole suite. Tests run one local check at a time per machine (a lock under ~/.local/state/ocv-tools). A pass is recorded for the head commit; pre-push runs the same set and finish refuses a head with no recorded pass. --list prints the selection and why, and runs nothing.",
   },
   {
     name: "body",

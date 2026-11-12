@@ -209,6 +209,7 @@ export function world(over = {}) {
       throw new Error(`unscripted git ${line}`)
     },
   })
+  if (s.lock) ports.lock = s.lock
   const call = (argv, extra = {}) =>
     runCli(["hook", ...argv], ctxFor(ports, { cwd: "/repo", ...extra }))
   const git = (verb) =>

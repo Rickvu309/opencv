@@ -119,7 +119,7 @@ test("check says what its pass is: a local pre-check of the tests the change rea
   assert.equal(r.code, 0, r.text)
   assert.match(
     r.text,
-    /Local pre-check passed for the tests this change reaches; CI is the gate\. The pass is recorded for /
+    /Local pre-check passed for the tests this change reaches; CI is the gate\.\nThe pass is recorded for /
   )
   assert.doesNotMatch(r.text, /all tests pass/i)
   assert.match(

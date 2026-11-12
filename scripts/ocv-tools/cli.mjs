@@ -18,11 +18,7 @@ import { block, done } from "./done.mjs"
 import { replaceBody } from "./jobs/body.mjs"
 import { finish } from "./jobs/finish.mjs"
 import { hook } from "./jobs/hook.mjs"
-import {
-  LOCAL_PRE_CHECK,
-  checkJob,
-  partialLine,
-} from "./jobs/affected-tests.mjs"
+import { checkJob, passLines } from "./jobs/affected-tests.mjs"
 import { decide, refusalError } from "./rules/index.mjs"
 import { merge } from "./jobs/merge.mjs"
 import { policyReport } from "./jobs/policy.mjs"
@@ -184,10 +180,10 @@ function checkRun(ctx, flags) {
   return {
     lines: [
       ...result.lines,
+      ...passLines(result),
       result.recorded
-        ? `${LOCAL_PRE_CHECK} The pass is recorded for ${result.head.slice(0, 12)}.`
-        : `${LOCAL_PRE_CHECK} Save your edits and run check again to record the pass.`,
-      ...(result.partial ?? []).map(partialLine),
+        ? `The pass is recorded for ${result.head.slice(0, 12)}.`
+        : "Save your edits and run check again to record the pass.",
     ],
     next: "scripts/ocv-tools.mjs finish --body-file <file>",
   }

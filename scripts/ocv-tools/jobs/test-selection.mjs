@@ -1,3 +1,4 @@
+import { dirname, join } from "node:path"
 import { CODE_EXT, add, closureOf, importGraph } from "./import-graph.mjs"
 import { isRunnableTest, runnerOf } from "./test-runners.mjs"
 
@@ -78,7 +79,65 @@ export const TREE_SCANS = Object.freeze({
   "scripts/comment-anchors.test.mjs": [/\.(?:test|spec)\.[cm]?[jt]sx?$/],
 })
 
-export const SCANS_THE_TREE = /readdirSync|globSync|import\.meta\.glob/
+export const LISTS_FILES =
+  /\bls-files\b|\breaddir(?:Sync)?\(|\bopendir(?:Sync)?\(|\bglob(?:Sync)?\(|import\.meta\.glob/
+
+const DIR_LITERAL = /["'`]((?:\.{1,2}\/)*[\w@.*-][\w@.*\-/]*)["'`]/g
+
+const packageRootOf = (file) =>
+  file.match(/^((?:apps|packages)\/[^/]+)\//)?.[1] ?? "."
+
+export function dirsIn(file, text, dirs) {
+  const found = new Set()
+  const bases = new Set([dirname(file), packageRootOf(file), "."])
+  for (const match of String(text).matchAll(DIR_LITERAL))
+    for (const base of bases) {
+      const literal = match[1].includes("*")
+        ? match[1].slice(0, match[1].indexOf("*")).replace(/[^/]*$/, "")
+        : match[1]
+      if (!literal) continue
+      const dir = join(base, literal).replace(/\/+$/, "")
+      if (dir !== "." && !dir.startsWith("..") && dirs.has(dir)) found.add(dir)
+    }
+  return [...found].sort()
+}
+
+export function scannerMap({ paths, runnable, textOf, importersOf }) {
+  const dirs = new Set()
+  for (const path of paths)
+    for (
+      let at = path.lastIndexOf("/");
+      at > 0;
+      at = path.lastIndexOf("/", at - 1)
+    )
+      dirs.add(path.slice(0, at))
+  const helpers = new Map()
+  for (const [target, importers] of importersOf)
+    for (const by of importers)
+      if (!isTestFileName(target)) add(helpers, by, target)
+  const map = new Map()
+  for (const test of runnable) {
+    if (TREE_SCANS[test]) {
+      map.set(test, { patterns: TREE_SCANS[test], dirs: [], how: "table" })
+      continue
+    }
+    const sources = [test, ...(helpers.get(test) ?? [])]
+    const listing = sources.filter((file) => LISTS_FILES.test(textOf(file)))
+    if (!listing.length) continue
+    const anchors = (dir) => `${dirname(test)}/`.startsWith(`${dir}/`)
+    const found = [
+      ...new Set(listing.flatMap((file) => dirsIn(file, textOf(file), dirs))),
+    ].filter((dir) => !anchors(dir))
+    map.set(test, {
+      patterns: [],
+      dirs: found.length ? found : [""],
+      how: listing[0] === test ? "own code" : `its helper ${listing[0]}`,
+    })
+  }
+  return map
+}
+
+const isTestFileName = (file) => /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(file)
 
 const COMMAND_NAME = /["'`]([a-z][A-Za-z0-9]*\.[a-z][A-Za-z0-9.]*)["'`]/
 
@@ -106,18 +165,20 @@ const mentions = (text, name) =>
 const stemOfTest = (test) => test.replace(/\.(?:test|spec)\.[cm]?[jt]sx?$/, "")
 
 function localSet(own) {
-  const always = own.filter((item) => item.rank < 2)
+  const changedTests = own.filter((item) => item.rank === 0)
+  const scanners = own.filter((item) => item.rank === 1)
   const near = own.filter((item) => item.rank >= 2 && item.rank <= NEAR)
-  return [
-    ...always.slice(0, MAX_PER_RUNNER),
-    ...near.slice(0, Math.max(0, LOCAL_CAP - always.length)),
-  ]
+  const always = [...changedTests.slice(0, MAX_PER_RUNNER), ...scanners]
+  return [...always, ...near.slice(0, Math.max(0, LOCAL_CAP - always.length))]
 }
 
-function scanHits(test, changed) {
-  const patterns = TREE_SCANS[test]
-  if (!patterns) return []
-  return changed.filter((file) => patterns.some((p) => p.test(file)))
+function scanHits(scan, changed) {
+  if (!scan) return []
+  return changed.filter(
+    (file) =>
+      scan.patterns.some((p) => p.test(file)) ||
+      scan.dirs.some((dir) => dir === "" || file.startsWith(`${dir}/`))
+  )
 }
 
 export function selectTests({
@@ -132,6 +193,12 @@ export function selectTests({
   const graph = importGraph(paths, textOf)
   const runnable = tests.filter((file) => isRunnableTest(file, runners))
   const runnableSet = new Set(runnable)
+  const scans = scannerMap({
+    paths,
+    runnable,
+    textOf,
+    importersOf: graph.importersOf,
+  })
   const closures = new Map(
     changed.map((file) => [file, closureOf(graph, file)])
   )
@@ -151,7 +218,7 @@ export function selectTests({
   const named = changedCommandNames(changedLines, textOf)
   const picked = []
   for (const test of runnable) {
-    const scanned = scanHits(test, changed)
+    const scanned = scanHits(scans.get(test), changed)
     const text = named.size ? textOf(test) : ""
     const naming = [...named].find(([, names]) =>
       [...names].some((name) => mentions(text, name))

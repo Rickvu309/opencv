@@ -17,6 +17,7 @@ import {
   selectTests,
 } from "./test-selection.mjs"
 import {
+  broadLine,
   accountFor,
   describeAccounting,
   proofCommand,
@@ -25,6 +26,14 @@ import {
 export const RECEIPT_VERSION = "v3"
 export const LOCAL_PRE_CHECK =
   "Local pre-check passed for the tests this change reaches; CI is the gate."
+export const LOCAL_PRE_CHECK_PART =
+  "Local pre-check passed for the part of this change it ran; CI runs the rest and is the gate."
+
+export const passLines = ({ partial = [], deferred = [], ran = 0 } = {}) => [
+  partial.length || deferred.length ? LOCAL_PRE_CHECK_PART : LOCAL_PRE_CHECK,
+  ...partial.map(partialLine),
+  ...(deferred.length ? [broadLine({ deferred, ran })] : []),
+]
 const LISTED = 30
 
 export function selectAndAccount({
@@ -324,17 +333,32 @@ export function runAffected(
   } catch (error) {
     return unreadableResult(error, lines)
   }
-  const failed = []
-  for (const step of affectedPlan(selection, top, { proofs })) {
-    if (step.needsInstall && !ctx.ports.fs.exists(step.tool)) {
-      failed.push(
-        `${step.label} (vitest is not installed here; run pnpm install in this worktree)`
-      )
-      continue
+  const steps = affectedPlan(selection, top, { proofs })
+  const runSteps = () => {
+    const out = []
+    for (const step of steps) {
+      if (step.needsInstall && !ctx.ports.fs.exists(step.tool)) {
+        out.push(
+          `${step.label} (vitest is not installed here; run pnpm install in this worktree)`
+        )
+        continue
+      }
+      const r = run(ctx, step.cmd, step.args, { cwd: step.cwd, inherit: true })
+      if (!r.ok) out.push(r.err ? `${step.label} (${r.err})` : step.label)
     }
-    const r = run(ctx, step.cmd, step.args, { cwd: step.cwd, inherit: true })
-    if (!r.ok) failed.push(r.err ? `${step.label} (${r.err})` : step.label)
+    return out
   }
+  const locked =
+    steps.length && ctx.ports.lock
+      ? ctx.ports.lock(runSteps)
+      : { ok: true, value: runSteps() }
+  if (!locked.ok)
+    return {
+      failed: [locked.reason],
+      recorded: false,
+      lines: [...lines, `affected tests: REFUSED, ${locked.reason}`],
+    }
+  const failed = locked.value
   let gitDir, tree
   try {
     gitDir = gitDirOf(ctx, top)
@@ -368,13 +392,22 @@ export function runAffected(
         tests: selection.groups.flatMap((g) => g.files.map((f) => f.file)),
         proofs: selection.accounting.proofs.map(proofCommand),
         partial: selection.partial,
+        deferred: selection.accounting.deferred,
+        ran: selection.accounting.ran ?? 0,
       })}\n`
     )
   if (!failed.length && dirty)
     lines.push(
       "affected tests: passed, but the worktree has unsaved edits or untracked files, so no receipt was recorded for this commit."
     )
-  return { failed, recorded, lines, partial: selection.partial }
+  return {
+    failed,
+    recorded,
+    lines,
+    partial: selection.partial,
+    deferred: selection.accounting.deferred ?? [],
+    ran: selection.accounting.ran ?? 0,
+  }
 }
 
 function pushedWithoutRun(ctx, top, sha) {

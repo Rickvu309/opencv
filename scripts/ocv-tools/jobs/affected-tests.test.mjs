@@ -8,12 +8,7 @@ import { describeSelection, selectAndAccount } from "./affected-tests.mjs"
 import { UnreadableGitOutput } from "./git-reads.mjs"
 import { workspaceInput } from "./hook-world.mjs"
 import { importedStems } from "./import-graph.mjs"
-import {
-  LOCAL_CAP,
-  MAX_PER_RUNNER,
-  SCANS_THE_TREE,
-  TREE_SCANS,
-} from "./test-selection.mjs"
+import { LOCAL_CAP, MAX_PER_RUNNER } from "./test-selection.mjs"
 import { focusedCalls, runnerFor } from "./test-runners.mjs"
 
 const root = fileURLToPath(new URL("../../../", import.meta.url))
@@ -301,10 +296,20 @@ test("B1: a file a vitest config reads directly (setup, global setup) needs the 
     texts
   )
   const entry = entryOf(selection, "apps/web/src/test/setup.ts")
-  assert.equal(entry.rule, "config")
+  assert.equal(entry.rule, "broad")
   assert.match(entry.says, /apps\/web\/vitest\.config\.ts reads it/)
+  assert.deepEqual(selection.accounting.proofs, [])
+  assert.deepEqual(selection.accounting.deferred, ["pnpm --filter web test"])
+  const asked = selectAndAccount({
+    changed: ["apps/web/src/test/setup.ts"],
+    tests: [...Object.keys(texts), "apps/web/src/test/mock-server.ts"],
+    textOf: (file) => texts[file] ?? "",
+    workspace,
+    all: true,
+  })
+  assert.equal(entryOf(asked, "apps/web/src/test/setup.ts").rule, "config")
   assert.deepEqual(
-    selection.accounting.proofs.map((proof) => proof.args.join(" ")),
+    asked.accounting.proofs.map((proof) => proof.args.join(" ")),
     ["--filter web test"]
   )
 })
@@ -489,25 +494,4 @@ test("a huge selection is capped per runner and the cap is printed", () => {
       )
     )
   )
-})
-
-test("every test that scans the tree is in TREE_SCANS, and every mapped test exists", () => {
-  const listed = execFileSync(
-    "git",
-    ["ls-files", "-z", "apps/*/src", "packages/*/src"],
-    { cwd: root, encoding: "utf8" }
-  )
-    .split("\0")
-    .filter((file) => /\.test\.[cm]?[jt]sx?$/.test(file))
-  const scanning = listed.filter((file) =>
-    SCANS_THE_TREE.test(readFileSync(join(root, file), "utf8"))
-  )
-  const missing = scanning.filter((file) => !(file in TREE_SCANS))
-  assert.deepEqual(
-    missing,
-    [],
-    `add each to TREE_SCANS in scripts/ocv-tools/jobs/affected-tests.mjs with the folders it reads, so a change there runs it`
-  )
-  for (const file of Object.keys(TREE_SCANS))
-    assert.ok(existsSync(join(root, file)), `${file} is mapped but gone`)
 })

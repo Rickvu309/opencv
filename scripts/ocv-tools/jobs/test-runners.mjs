@@ -11,7 +11,7 @@ export const SCRIPTS_RUNNER = Object.freeze({
   root: "scripts/",
   dir: "",
   cmd: "node",
-  args: ["--test", "--test-reporter=dot"],
+  args: ["--test", "--test-reporter=dot", "--test-concurrency=2"],
   source: "scripts/",
   pkg: null,
 })
@@ -82,6 +82,7 @@ function nodeTestRunner(dir, parts) {
     args: [
       ...parts.slice(1).filter((part) => part !== glob),
       "--test-reporter=dot",
+      "--test-concurrency=2",
     ],
     root: base,
     flat: !glob.includes("**"),
@@ -92,7 +93,7 @@ function nodeTestRunner(dir, parts) {
 function nodeScriptRunner(dir) {
   return {
     cmd: "node",
-    args: ["--test", "--test-reporter=dot"],
+    args: ["--test", "--test-reporter=dot", "--test-concurrency=2"],
     root: `${dir}/`,
     flat: true,
     source: `${dir}/`,

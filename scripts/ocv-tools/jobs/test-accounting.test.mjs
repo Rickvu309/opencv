@@ -11,6 +11,7 @@ const account = (changed, tests = [], extra = {}) =>
     tests,
     textOf: (file) => extra.texts?.[file] ?? "",
     workspace: workspaceInput({ ...REAL, ...extra.files }),
+    all: true,
   })
 const ruleOf = (selection) =>
   Object.fromEntries(selection.accounting.entries.map((e) => [e.file, e.rule]))
@@ -173,34 +174,33 @@ test("the four real misses are still selected and each changed file is accounted
   }
 })
 
-test("pre-push refuses to record a pass for a lockfile or hook change and names the command that proves it", () => {
+test("pre-push records a broad pass for a lockfile or hook change, names what CI runs, and runs no whole suite; check --all runs it", () => {
   for (const changed of [
     ["package.json", "pnpm-lock.yaml"],
     [".githooks/pre-push"],
   ]) {
     const w = world({ changed })
     const r = w.call(["pre-push"], { stdin: pushOk })
-    assert.equal(r.code, 2, r.text)
+    assert.equal(r.code, 0, r.text)
+    assert.match(r.text, /broad, rest in CI \(/)
     assert.match(
       r.text,
-      /REFUSED AFFECTED_TESTS: \d changed file\(s\) need more than the tests a push runs/
+      /Local pre-check ran 0 test file\(s\) for this change; it is broad, so CI runs the rest: .*pnpm --filter @workspace\/guards test \(check --all runs them here\)\./
     )
-    assert.match(r.text, /pnpm --filter @workspace\/guards test/)
-    assert.match(r.text, /needs a larger run \(/)
-    assert.deepEqual(w.receipts(), [])
-    const checked = w.cli(["check"])
+    assert.ok(!w.s.calls.some((c) => c.cmd === "pnpm"))
+    assert.equal(w.receipts().length, 1)
+    const asked = world({ changed })
+    const checked = asked.cli(["check", "--all"])
     assert.equal(checked.code, 0, checked.text)
     assert.ok(
-      w.s.calls.some(
+      asked.s.calls.some(
         (c) =>
           c.cmd === "pnpm" &&
           c.args.join(" ") === "--filter @workspace/guards test"
       )
     )
-    assert.equal(w.receipts().length, 1)
   }
 })
-
 test("a docs-only change records a pass and prints the reason it has no tests", () => {
   const w = world({ changed: ["docs/agents/design-parity.md"] })
   const r = w.call(["pre-push"], { stdin: pushOk })
@@ -211,7 +211,9 @@ test("a docs-only change records a pass and prints the reason it has no tests", 
   )
   assert.equal(w.receipts().length, 1)
   const readme = world({ changed: ["README.md"] })
-  assert.equal(readme.call(["pre-push"], { stdin: pushOk }).code, 2)
+  const broad = readme.call(["pre-push"], { stdin: pushOk })
+  assert.equal(broad.code, 0, broad.text)
+  assert.match(broad.text, /README\.md: broad, rest in CI/)
 })
 
 test("the receipt is keyed by rule version, tree and commit, and untracked files block it", () => {

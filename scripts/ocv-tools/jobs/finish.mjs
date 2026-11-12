@@ -3,12 +3,7 @@ import { validateAuthoring } from "../authoring.mjs"
 import { diskProblem } from "../disk.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
 import { planPull } from "./pull-facts.mjs"
-import {
-  LOCAL_PRE_CHECK,
-  hasReceipt,
-  partialLine,
-  receiptPath,
-} from "./affected-tests.mjs"
+import { hasReceipt, passLines, receiptPath } from "./affected-tests.mjs"
 import { throwPushFailure } from "../push-failure.mjs"
 import {
   recorded,
@@ -30,14 +25,18 @@ export function bodyOf(ctx, flag) {
   }
 }
 
-function partialOfReceipt(ctx, t) {
+function receiptOf(ctx, t) {
   const head = git(ctx, "rev-parse", "HEAD")
   const tree = git(ctx, "rev-parse", "HEAD^{tree}")
   try {
     const receipt = JSON.parse(ctx.readFile(receiptPath(t.gitDir, head, tree)))
-    return Array.isArray(receipt.partial) ? receipt.partial : []
+    return {
+      partial: Array.isArray(receipt.partial) ? receipt.partial : [],
+      deferred: Array.isArray(receipt.deferred) ? receipt.deferred : [],
+      ran: Number(receipt.ran) || 0,
+    }
   } catch {
-    return []
+    return {}
   }
 }
 
@@ -182,11 +181,7 @@ export function finish(ctx, { flags }) {
       ...(flags["--draft"] ? ["--draft"] : [])
     )
     return {
-      lines: [
-        LOCAL_PRE_CHECK,
-        ...partialOfReceipt(ctx, t).map(partialLine),
-        `Opened ${url}`,
-      ],
+      lines: [...passLines(receiptOf(ctx, t)), `Opened ${url}`],
       next: `scripts/ocv-tools.mjs merge ${url.split("/").at(-1)}`,
     }
   })
