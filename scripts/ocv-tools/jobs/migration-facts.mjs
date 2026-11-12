@@ -1,43 +1,26 @@
 import { run } from "./common.mjs"
+import { classifyMigration, splitStatements } from "./migration-statements.mjs"
 
 export const LIVE_HEALTH = "curl -s https://api.opencv.me/health/deep"
 const MIGRATION = /^apps\/api\/drizzle\/(\d{4}_[^/]+)\.sql$/
-const TABLE = /"?([\w]+)"?\s*\.\s*"?([\w]+)"?|"?([\w]+)"?/
-const CREATED = /\bCREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?([^\s(]+)/gi
-const ALTERED = /\bALTER\s+TABLE\s+(?:ONLY\s+)?(?:IF\s+EXISTS\s+)?([^\s]+)/gi
-const CHANGES = [
-  [/\bDROP\b/i, "DROP"],
-  [/\bDELETE\s+FROM\b/i, "DELETE"],
-  [/\bUPDATE\s+[^\s;]+\s+SET\b/i, "UPDATE"],
-  [/\bTRUNCATE\b/i, "TRUNCATE"],
-  [/\bCREATE\s+OR\s+REPLACE\b/i, "CREATE OR REPLACE"],
-  [/\bTRIGGER\b/i, "a trigger"],
-  [/\bALTER\s+(?!TABLE\b)\w+/i, "ALTER of a type, function or schema"],
-  [/\bRENAME\b/i, "RENAME"],
-]
+const SHOWN = 90
 
-const tableName = (raw) => {
-  const m = TABLE.exec(raw)
-  return (m?.[2] ?? m?.[3] ?? raw).toLowerCase()
-}
+const shorten = (text) =>
+  text.length > SHOWN ? `${text.slice(0, SHOWN - 3)}...` : text
 
 export function migrationChanges(sql) {
-  const text = String(sql).replace(/--[^\n]*/g, "")
-  const reasons = CHANGES.filter(([pattern]) => pattern.test(text)).map(
-    ([, label]) => label
-  )
-  const created = new Set(
-    [...text.matchAll(CREATED)].map((m) => tableName(m[1]))
-  )
-  const altered = [
-    ...new Set(
-      [...text.matchAll(ALTERED)]
-        .map((m) => tableName(m[1]))
-        .filter((name) => !created.has(name))
-    ),
-  ]
-  for (const name of altered) reasons.push(`ALTER TABLE ${name}`)
-  return reasons
+  const verdict = classifyMigration(sql)
+  if (verdict.onlyAdds) return []
+  const { n, text, why } = verdict.first
+  return [n ? `statement ${n}, ${shorten(text)}: ${why}` : why]
+}
+
+export function migrationStatements(sql) {
+  try {
+    return splitStatements(sql).length
+  } catch {
+    return 0
+  }
 }
 
 export function migrationTag(file) {
@@ -55,7 +38,10 @@ export function migrationFacts(ctx, files, head, allowed = []) {
       return {
         file,
         tag: migrationTag(file),
-        changes: shown.ok ? migrationChanges(shown.out) : ["unreadable"],
+        statements: shown.ok ? migrationStatements(shown.out) : 0,
+        changes: shown.ok
+          ? migrationChanges(shown.out)
+          : ["the file could not be read at this head"],
       }
     }),
   }
@@ -68,8 +54,10 @@ export function deployLines(migrations) {
   for (const item of migrations.files)
     lines.push(
       item.changes.length
-        ? `Migration ${item.file} changes what exists (${item.changes.join(", ")})${migrations.allowed.includes(item.tag) ? ", allowed by --allow-migration" : ""}.`
-        : `Migration ${item.file} only adds tables and indexes.`
+        ? `Migration ${item.file} changes what exists, first at ${item.changes.join(", ")}${migrations.allowed.includes(item.tag) ? "; allowed by --allow-migration" : ""}.`
+        : item.statements
+          ? `Migration ${item.file} only adds: each of its ${item.statements} statement(s) is on the only-adds list.`
+          : `Migration ${item.file} has no statements.`
     )
   if (!migrations.files.length) lines.push("It carries no database migration.")
   return lines

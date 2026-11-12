@@ -357,7 +357,7 @@ export const jobRows = [
   row({
     id: "MIGRATION_CHANGES",
     section: "6",
-    says: "A PR whose database migration does more than add tables and indexes is queued only with --allow-migration naming that migration, because the merge runs it on production data.",
+    says: "A PR whose database migration has a statement outside the only-adds list (a new table, its indexes and ADD clauses, a type, a sequence, a schema, a comment on what it made) is queued only with --allow-migration naming that migration, because the merge runs it on production data.",
     at: ["merge"],
     needs: ["pull", "migrations"],
     check: migrationChanges,
