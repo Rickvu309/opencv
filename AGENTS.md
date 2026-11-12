@@ -69,6 +69,7 @@ The web is a React SPA in `apps/web`. The API is Hono in `apps/api`. The shared 
 | An empty ownership check does not prove the full request is complete. | `done` states its agent scope and requires checking the full request; the coordinator must match each requested item to evidence before final handback. |
 | A push passes the tests its change reaches.                           | Row `AFFECTED_TESTS` at push and `finish`, and `ocv-tools check`; `scripts/ocv-tools/jobs/affected-tests.test.mjs` replays #1381, #1388, #1406, #1407.  |
 | A test the delivery tool runs cannot write the repository it runs in. | Only git children keep git variables (`ports/proc.mjs`); `scripts/ocv-tools/jobs/ref-safety.test.mjs` compares refs, config and worktrees.              |
+| A migration journal runs in order and has a file for each entry.      | `scripts/migration-journal.test.mjs` in the guard suite and the merged tree of `ocv-tools merge`; it replays #1406 with #1407.                          |
 
 ## Pointers
 

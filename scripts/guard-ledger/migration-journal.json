@@ -1,0 +1,10 @@
+{
+  "id": "migration-journal",
+  "file": "scripts/migration-journal.test.mjs",
+  "detector": {
+    "module": "scripts/lib/migration-journal.mjs",
+    "export": "detect"
+  },
+  "historic": null,
+  "reason": "The mistake was caught in review before a merge: PR #1407's journal would land after PR #1406's with the same number 0023, or with an older when if merged in the other order. No commit with the broken journal exists, so the test replays both PRs' real journal entries and snapshot ids."
+}

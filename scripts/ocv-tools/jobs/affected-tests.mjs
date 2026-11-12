@@ -116,6 +116,7 @@ export const TREE_SCANS = Object.freeze({
   "apps/web/src/test/ui-kit-contract.test.ts": [UI_SRC, WEB_SRC],
   "apps/web/src/test/ui-kit-styled.test.ts": [UI_SRC],
   "apps/web/src/test/warm-routes.test.ts": [WEB_SRC],
+  "scripts/migration-journal.test.mjs": [MIGRATIONS],
   "scripts/ocv-tools/brief.test.mjs": [
     /^AGENTS\.md$/,
     /^docs\/agents\/brief-fences\.json$/,
