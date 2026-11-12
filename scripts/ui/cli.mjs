@@ -2,25 +2,20 @@ import { dirname, join, relative, resolve } from "node:path"
 import { UsageError, parseArgs, positiveIntegers } from "./args.mjs"
 import { compareDir, manifestProblems, runCompare } from "./before-after.mjs"
 import { measure, openScreen, slotSelectors } from "./capture.mjs"
+import { checkScreen } from "./check-screen.mjs"
 import {
-  checkNotes,
-  compareBoxes,
-  compareRow,
-  failed,
-  renderTable,
-  specimenRow,
-} from "./compare.mjs"
-import {
-  DESIGN_MAP,
-  SPECIMEN_WARNING,
-  isSameBox,
-  rowsForScreen,
-} from "./design-map.mjs"
+  screensToCheck,
+  summarize,
+  summaryLine,
+  totalLine,
+} from "./check-all.mjs"
+import { DESIGN_MAP, rowsForScreen } from "./design-map.mjs"
 import { CHANGES_PER_SCREEN, draftSpec, rankChanges } from "./changes.mjs"
-import { renderComposite } from "./composite.mjs"
+import { compositeFiles, SPLIT_ABOVE } from "./annotate-split.mjs"
+import { readSpec, renderComposite } from "./composite.mjs"
+import { ZOOM } from "./zoom.mjs"
 import { diffImages } from "./diff.mjs"
 import {
-  composedPlacement,
   findFrames,
   framePath,
   frameGeometry,
@@ -262,12 +257,16 @@ export const COMMANDS = {
     },
   },
   check: {
-    usage: "check <screen...> [--tolerance 1] [--pen file]",
+    usage: "check <screen...> | --all [--json] [--tolerance 1] [--pen file]",
     about:
-      "Compare rendered elements with their composed-screen pen frames, and same-box rows with another screen, through scripts/ui/design-map.mjs. Exit 1 on any mismatch.",
-    options: { valued: ["tolerance", "pen"] },
+      "Compare rendered elements with their composed-screen pen frames, and same-box rows with another screen, through scripts/ui/design-map.mjs. --all checks every reachable mapped screen and prints one line per screen and a total; --json prints one JSON result. Exit 1 on any mismatch.",
+    options: { valued: ["tolerance", "pen"], switches: ["all", "json"] },
     run: async (ctx, { positional, flags }) => {
-      const screens = requireScreens(positional)
+      const started = ctx.clock.now()
+      const mapped = screensToCheck(DESIGN_MAP, SCREENS)
+      const screens = flags.all
+        ? [...mapped.reachable, ...mapped.unreachable]
+        : requireScreens(positional)
       const tolerance = Number(flags.tolerance ?? "1")
       if (!Number.isFinite(tolerance) || tolerance < 0)
         throw new UsageError("--tolerance takes a number of pixels")
@@ -284,89 +283,44 @@ export const COMMANDS = {
         )
       const index = loadPen(ctx, flags.pen)
       const state = await requireStack(ctx)
-      const lines = []
-      let code = EXIT.ok
+      const detail = []
+      const results = []
       await withBrowser(ctx, async (browser) => {
         for (const { screen, rows } of plans) {
           if (screen.unreachable) {
-            lines.push(unreachableLine(screen))
-            code = EXIT.failed
+            detail.push(unreachableLine(screen))
+            results.push({ screen: screen.id, error: "unreachable" })
             continue
           }
-          const measureOn = async (target, list) => {
-            const { page, close } = await openScreen(browser, state, target, {
-              width: 1440,
-            })
-            const measured = await measure(
-              page,
-              list.map((row) => ({ name: row.label, selector: row.selector }))
-            )
-            await close()
-            return measured.map((result) => result.items[0] ?? null)
-          }
-          const rendered = await measureOn(screen, rows)
-          const againstIds = [
-            ...new Set(rows.filter(isSameBox).map((row) => row.against)),
-          ]
-          const baseline = new Map()
-          for (const id of againstIds) {
-            const [target] = requireScreens([id])
-            if (target.unreachable)
-              throw new UsageError(
-                `${id} is unreachable: ${target.unreachable}`
-              )
-            const list = rows.filter((row) => row.against === id)
-            const boxes = await measureOn(target, list)
-            list.forEach((row, at) => baseline.set(row, boxes[at]))
-          }
-          const placements = new Map(
-            rows
-              .filter((row) => !isSameBox(row))
-              .map((row) => [row, composedPlacement(index, row)])
-          )
-          const table = rows.flatMap((row, at) => {
-            if (isSameBox(row))
-              return compareBoxes({
-                label: `${row.label} vs ${row.against}`,
-                before: baseline.get(row),
-                after: rendered[at],
-                props: row.props,
-                tolerance,
-              })
-            const placement = placements.get(row)
-            return [
-              ...(placement.inScreen ? [] : [specimenRow(row)]),
-              ...compareRow({
-                label: row.label,
-                design: frameGeometry(index, row.frame),
-                rendered: rendered[at],
-                props: row.props,
-                tolerance,
-              }),
-            ]
-          })
-          const bad = failed(table)
-          if (bad.length) code = EXIT.failed
-          lines.push(
-            `${screen.id} at 1440x900, tolerance ${tolerance}px`,
-            ...renderTable(table),
-            ...checkNotes({
+          try {
+            const outcome = await checkScreen({
+              browser,
+              state,
+              index,
+              screen,
               rows,
-              failedLabels: new Set(bad.map((row) => row.label)),
-              placements,
-              warning: SPECIMEN_WARNING,
+              tolerance,
             })
-          )
-          lines.push(
-            json({
-              screen: screen.id,
-              compared: table.length,
-              failed: bad.length,
-            })
-          )
+            detail.push(...outcome.lines)
+            results.push(outcome.result)
+          } catch (error) {
+            const message = error.message.split("\n")[0]
+            detail.push(json({ screen: screen.id, error: message }))
+            results.push({ screen: screen.id, error: message })
+          }
         }
       })
-      return { code, lines }
+      const total = summarize(
+        results,
+        Math.round((ctx.clock.now() - started) / 1000)
+      )
+      const code = total.ok ? EXIT.ok : EXIT.failed
+      if (flags.json) return { code, lines: [json({ ...total, results })] }
+      if (!flags.all) return { code, lines: detail }
+      return {
+        code,
+        lines: [...results.map(summaryLine), totalLine(total)],
+      }
     },
   },
   compare: {
@@ -438,44 +392,56 @@ export const COMMANDS = {
     },
   },
   annotate: {
-    usage: "annotate --spec <file.json> --out <png>",
-    about:
-      "Render one dark composite: per section a title, the before and after images, numbered callouts with arrows to the same target in both, and a legend. Selector targets read their boxes from the compare manifest.",
-    options: { valued: ["spec", "out"] },
+    usage: "annotate --spec <file.json> --out <png or dir> [--single]",
+    about: `Render dark composites: per section a title, the before and after images, numbered callouts with arrows to the same target in both, and a legend with ${ZOOM.factor}x before and after crops for small changes. A spec with more than ${SPLIT_ABOVE} sections writes one composite per section named from its title, unless --single.`,
+    options: { valued: ["spec", "out"], switches: ["single"] },
     run: async (ctx, { flags }) => {
       if (!flags.spec || !flags.out)
         throw new UsageError("give --spec <file.json> and --out <png>")
-      const out = resolve(flags.out)
-      ctx.fs.mkdir(dirname(out))
-      const sections = await renderComposite(ctx, resolve(flags.spec), out)
-      const bad = sections.some(
-        (section) =>
-          section.missing.before.length || section.missing.after.length
-      )
-      return {
-        code: bad ? EXIT.failed : EXIT.ok,
-        lines: [...sections.map(json), json({ out })],
+      const specFile = resolve(flags.spec)
+      const { spec } = readSpec(ctx, specFile)
+      const files = compositeFiles(spec.sections, resolve(flags.out), {
+        single: flags.single === true,
+      })
+      const lines = []
+      let bad = false
+      for (const file of files) {
+        ctx.fs.mkdir(dirname(file.out))
+        const sections = await renderComposite(
+          ctx,
+          specFile,
+          file.out,
+          file.sections
+        )
+        bad ||= sections.some(
+          (section) =>
+            section.missing.before.length || section.missing.after.length
+        )
+        lines.push(...sections.map(json), json({ out: file.out }))
       }
+      return { code: bad ? EXIT.failed : EXIT.ok, lines }
     },
   },
   "pr-section": {
     usage:
-      "pr-section --annotated <png> [--manifest file] [--check] [--pr n | --issue n]",
+      "pr-section --annotated <png,...> [--manifest file] [--check] [--pr n | --issue n]",
     about:
-      "Upload the composite and every before and after through scripts/ocv-tools.mjs shot (no comment) and print the ## Before / after markdown: the composite, a | main | this PR | table and, with --check, the check summary per screen.",
+      "Upload the composite and every before and after through scripts/ocv-tools.mjs shot (no comment) and print the ## Before / after markdown: every composite in the order given, a | main | this PR | table and, with --check, the check summary per screen.",
     options: {
-      valued: ["manifest", "annotated", "pr", "issue"],
+      valued: ["manifest", "pr", "issue"],
+      repeated: ["annotated"],
       switches: ["check"],
     },
     run: async (ctx, { flags }) => {
       if (!flags.annotated) throw new UsageError("give --annotated <png>")
       const { file, manifest } = readManifest(ctx, flags.manifest)
-      const pictures = picturesToUpload(manifest, resolve(flags.annotated)).map(
-        (picture) => ({
-          ...picture,
-          file: resolve(dirname(file), picture.file),
-        })
-      )
+      const pictures = picturesToUpload(
+        manifest,
+        flags.annotated.map((file) => resolve(file))
+      ).map((picture) => ({
+        ...picture,
+        file: resolve(dirname(file), picture.file),
+      }))
       const checks = []
       if (flags.check)
         for (const screen of [

@@ -137,14 +137,152 @@ test("a kit specimen is not the composed screen and its full path is shown", () 
 const REAL_PEN = join(homedir(), "tmp", "opencv-ui", "opencv.pen")
 
 test(
-  "every frame row in the design map sits in the composed app shell of the real pen file",
+  "every frame row in the design map sits in its composed screen of the real pen file",
   { skip: !existsSync(REAL_PEN) && `no pen file at ${REAL_PEN}` },
   () => {
     const real = indexPen(JSON.parse(readFileSync(REAL_PEN, "utf8")))
     for (const row of DESIGN_MAP.filter((row) => !isSameBox(row))) {
       const placement = composedPlacement(real, row)
       assert.ok(placement.inScreen, `${row.label}: ${placement.path}`)
-      assert.match(placement.path, /^OC App shell > /, row.label)
+      assert.ok(
+        placement.path.startsWith(`${row.composedScreen}`),
+        `${row.label}: ${placement.path}`
+      )
     }
   }
 )
+
+const screenDoc = {
+  children: [
+    {
+      type: "frame",
+      id: "kit",
+      name: "Kit",
+      children: [
+        {
+          type: "frame",
+          id: "shell",
+          name: "OC App shell",
+          children: [
+            {
+              type: "frame",
+              id: "main",
+              name: "Main panel",
+              layout: "vertical",
+            },
+            { type: "ref", id: "side", ref: "sidebar" },
+          ],
+        },
+        {
+          type: "frame",
+          id: "sidebar",
+          name: "OC Sidebar",
+          layout: "vertical",
+          padding: [10, 10, 12, 10],
+          children: [{ type: "ref", id: "navInbox", ref: "navItem" }],
+        },
+        {
+          type: "frame",
+          id: "navItem",
+          name: "OC Nav item",
+          height: 28,
+          gap: 8,
+          children: [
+            { type: "icon", id: "navIcon", width: 16, height: 16 },
+            { type: "text", id: "navLabel", fontSize: 13 },
+          ],
+        },
+      ],
+    },
+    {
+      type: "ref",
+      id: "w31",
+      name: "W3.1 New chat",
+      ref: "shell",
+      descendants: {
+        main: {
+          padding: [24, 0, 0, 0],
+          children: [
+            {
+              type: "frame",
+              id: "dock",
+              name: "Dock",
+              layout: "vertical",
+              padding: [16, 12, 12, 18],
+              gap: 14,
+              children: [
+                { type: "frame", id: "top", height: 40 },
+                {
+                  type: "frame",
+                  id: "bottom",
+                  gap: 16,
+                  children: [
+                    { type: "icon", id: "i1", width: 16, height: 16 },
+                    { type: "frame", id: "send", width: 32, height: 32 },
+                    {
+                      type: "icon",
+                      id: "off",
+                      width: 99,
+                      height: 99,
+                      enabled: false,
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        side: {
+          type: "frame",
+          id: "settingsNav",
+          name: "Settings nav",
+          width: 244,
+        },
+      },
+    },
+  ],
+}
+const screens = indexPen(screenDoc)
+
+test("frames drawn inside a composed screen's overrides are indexed under that screen", () => {
+  assert.deepEqual(
+    composedPlacement(screens, {
+      frame: "dock",
+      composedScreen: "W3.1 New chat",
+    }),
+    { inScreen: true, path: "W3.1 New chat (instance) > Dock" }
+  )
+  assert.equal(frameGeometry(screens, "settingsNav").width, 244)
+  assert.equal(frameGeometry(screens, "dock").left, 0)
+})
+
+test("an unsized frame hugs its shown children, and a row's pitch is its first child plus the gap", () => {
+  const dock = frameGeometry(screens, "dock")
+  assert.equal(dock.height, 16 + 40 + 14 + 32 + 12)
+  assert.equal(frameGeometry(screens, "bottom").pitch, 32)
+  assert.equal(frameGeometry(screens, "bottom").below, 14)
+  assert.equal(frameGeometry(screens, "top").below, null)
+})
+
+test("a part of a nested master is placed through each instance from the outside in", () => {
+  assert.deepEqual(
+    composedPlacement(screens, {
+      frame: "navLabel",
+      composedScreen: "OC App shell",
+      via: ["side", "navInbox"],
+    }),
+    {
+      inScreen: true,
+      path: "OC App shell > side (instance) > navInbox (instance) > navLabel",
+    }
+  )
+  assert.equal(
+    composedPlacement(screens, {
+      frame: "navLabel",
+      composedScreen: "OC App shell",
+      via: "side",
+    }).inScreen,
+    false
+  )
+  assert.equal(frameGeometry(screens, "navLabel").fontSize, 13)
+})

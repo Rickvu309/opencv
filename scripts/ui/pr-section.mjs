@@ -12,7 +12,9 @@ export function linksFromShot(lines) {
 }
 
 export function picturesToUpload(manifest, annotated) {
-  const pictures = [{ role: "annotated", file: annotated }]
+  const pictures = [annotated]
+    .flat()
+    .map((file) => ({ role: "annotated", file }))
   for (const capture of manifest.captures)
     for (const side of SIDES)
       if (capture[side]?.file)
@@ -40,6 +42,7 @@ const cell = (capture, side, url) => {
 }
 
 export function renderPrSection({ manifest, uploaded, checks = [] }) {
+  const composites = uploaded.filter((picture) => picture.role === "annotated")
   const urlOf = (role, screen, width) =>
     uploaded.find(
       (picture) =>
@@ -57,8 +60,10 @@ export function renderPrSection({ manifest, uploaded, checks = [] }) {
   const lines = [
     SECTION_HEADING,
     "",
-    `![Annotated before and after](${urlOf("annotated")})`,
-    "",
+    ...composites.flatMap((picture) => [
+      `![${compositeAlt(picture.file, composites.length)}](${picture.url})`,
+      "",
+    ]),
     `Full screenshots. Linux renders at ${sizes.join(" and ")}, same steps and fake Coach on both sides; main is ${manifest.baseSha.slice(0, 8)}.`,
     "",
     TABLE_HEAD,
@@ -82,6 +87,16 @@ export function renderPrSection({ manifest, uploaded, checks = [] }) {
       )
     )
   return lines.join("\n")
+}
+
+function compositeAlt(file, count) {
+  if (count === 1) return "Annotated before and after"
+  const name = String(file)
+    .split("/")
+    .at(-1)
+    .replace(/\.png$/i, "")
+    .replaceAll("-", " ")
+  return `Annotated before and after: ${name}`
 }
 
 export function checkSummary(screen, result) {

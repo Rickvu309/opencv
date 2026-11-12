@@ -9,9 +9,31 @@ export const PROPERTIES = [
   "paddingBottom",
   "paddingLeft",
   "gap",
+  "fontSize",
+  "pitch",
+  "left",
+  "below",
+  "centerOffset",
 ]
 
+export const RELATIVE = ["left", "below", "centerOffset"]
+
 const round = (value) => Math.round(value * 100) / 100
+
+export function relate(items, from) {
+  const [first, second] = items
+  if (!first) return null
+  const related = { ...first }
+  if (second) related.pitch = round(second.x - first.x)
+  if (from) {
+    related.left = round(first.x - from.x)
+    related.below = round(first.y - (from.y + from.height))
+    related.centerOffset = round(
+      first.x + first.width / 2 - (from.x + from.width / 2)
+    )
+  }
+  return related
+}
 
 export function compareRow({ label, design, rendered, props, tolerance }) {
   return props.map((property) => {

@@ -1,4 +1,5 @@
 import { SIDES } from "./before-after.mjs"
+import { ZOOM, calloutZooms } from "./zoom.mjs"
 
 export const CALLOUTS_PER_SECTION = 5
 export const CANVAS = Object.freeze({
@@ -260,13 +261,24 @@ export function placeCallouts(sides) {
   return placed
 }
 
-export function legendRows(callouts, columns = 2) {
+export function legendRows(callouts, columns = 2, zooms = new Map()) {
   const sorted = [...callouts].sort((a, b) => a.n - b.n)
   const rows = []
-  for (let at = 0; at < sorted.length; at += columns)
-    rows.push(
-      sorted.slice(at, at + columns).map(({ n, note }) => ({ n, note }))
-    )
+  let row = []
+  const flush = () => {
+    if (row.length) rows.push(row)
+    row = []
+  }
+  for (const { n, note } of sorted) {
+    if (zooms.has(n)) {
+      flush()
+      rows.push([{ n, note, zoom: zooms.get(n) }])
+      continue
+    }
+    row.push({ n, note })
+    if (row.length === columns) flush()
+  }
+  flush()
   return rows
 }
 
@@ -310,8 +322,51 @@ export function layoutSection(section, sides, column) {
     arrangement,
     before: panel("before", beforeMarks),
     after: panel("after", afterMarks),
-    legend: legendRows(section.callouts),
+    legend: legendRows(
+      section.callouts,
+      2,
+      zoomViews(calloutZooms(section.callouts, sides), sides)
+    ),
   }
+}
+
+function zoomViews(zooms, sides) {
+  const views = new Map()
+  for (const [n, { rects, targets }] of zooms)
+    views.set(
+      n,
+      Object.fromEntries(
+        SIDES.map((side) => {
+          const scale = sides[side].scale ?? 1
+          const factor = ZOOM.factor
+          const target = targets[side]
+          const rect = rects[side]
+          return [
+            side,
+            {
+              image: sides[side].image,
+              crop: {
+                width: rect.width * factor,
+                height: rect.height * factor,
+              },
+              shown: {
+                width: (sides[side].size.width / scale) * factor,
+                height: (sides[side].size.height / scale) * factor,
+                left: -rect.x * factor,
+                top: -rect.y * factor,
+              },
+              outline: {
+                left: (target.x - rect.x) * factor,
+                top: (target.y - rect.y) * factor,
+                width: target.width * factor,
+                height: target.height * factor,
+              },
+            },
+          ]
+        })
+      )
+    )
+  return views
 }
 
 const escapeHtml = (text) =>
@@ -355,6 +410,22 @@ function overlaySvg(panel) {
   return `<svg width="${panel.size.width}" height="${panel.size.height}" viewBox="0 0 ${panel.size.width} ${panel.size.height}">${marks}</svg>`
 }
 
+const px = (box) =>
+  Object.entries(box)
+    .map(([key, value]) => `${key}:${round(value)}px`)
+    .join(";")
+
+function zoomHtml(label, view) {
+  return `<figure class="zoom"><div class="crop" style="${px(view.crop)}"><img src="${view.image}" style="${px(view.shown)}" alt=""><i style="${px(view.outline)}"></i></div><figcaption>${escapeHtml(label)}</figcaption></figure>`
+}
+
+function legendItemHtml(item) {
+  const zoom = item.zoom
+    ? `<div class="zooms">${zoomHtml(`Before ${ZOOM.factor}x`, item.zoom.before)}${zoomHtml(`After ${ZOOM.factor}x`, item.zoom.after)}</div>`
+    : ""
+  return `<span class="${item.zoom ? "zoomed" : ""}"><b>${item.n}</b><div>${escapeHtml(item.note)}${zoom}</div></span>`
+}
+
 function panelHtml(label, panel) {
   return `<figure><figcaption>${escapeHtml(label)}</figcaption><div class="shot" style="width:${panel.size.width}px;height:${panel.size.height}px"><img src="${panel.image}" width="${panel.size.width}" height="${panel.size.height}" alt="">${overlaySvg(panel)}</div></figure>`
 }
@@ -364,15 +435,7 @@ export function compositeHtml(layouts, labels) {
     .map(
       (layout) =>
         `<section><h2>${escapeHtml(layout.title)}</h2><div class="pair ${layout.arrangement}">${panelHtml(labels.before, layout.before)}${panelHtml(labels.after, layout.after)}</div><ol class="legend">${layout.legend
-          .map(
-            (row) =>
-              `<li>${row
-                .map(
-                  (item) =>
-                    `<span><b>${item.n}</b>${escapeHtml(item.note)}</span>`
-                )
-                .join("")}</li>`
-          )
+          .map((row) => `<li>${row.map(legendItemHtml).join("")}</li>`)
           .join("")}</ol></section>`
     )
     .join("")
@@ -392,6 +455,12 @@ svg text{fill:#fff;font:800 14px system-ui,-apple-system,"Segoe UI",Roboto,sans-
 .legend{list-style:none;margin-top:14px;display:flex;flex-direction:column;gap:8px}
 .legend li{display:grid;grid-template-columns:1fr 1fr;gap:24px}
 .legend span{display:flex;gap:10px;align-items:flex-start;font-size:14.5px}
+.legend span.zoomed{grid-column:1 / -1}
+.zooms{display:flex;gap:16px;margin-top:8px}
+.zoom figcaption{margin-top:4px}
+.crop{position:relative;overflow:hidden;outline:1px solid var(--line);border-radius:4px;background:#fff}
+.crop img{position:absolute;max-width:none;image-rendering:pixelated}
+.crop i{position:absolute;outline:2px dashed var(--mark);outline-offset:1px}
 .legend b{flex:none;width:22px;height:22px;border-radius:50%;background:var(--mark);color:#fff;font-size:12.5px;font-weight:800;display:grid;place-items:center;border:1.5px solid #fff}
 </style></head><body>${sections}</body></html>`
 }
