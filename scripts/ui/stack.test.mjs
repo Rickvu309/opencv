@@ -83,6 +83,26 @@ test("a second up reuses the running app and starts nothing", async () => {
     apiOrigin: PORTS.apiOrigin,
     webOrigin: PORTS.webOrigin,
     storage: `${dir}/storage.json`,
+    pool: { pid: 9, dir: `${dir}/pool` },
+  }
+  const ctx = fakePorts({
+    files: { [`${dir}/state.json`]: JSON.stringify(state) },
+    alive: [7, 8, 9],
+    healthy: [PORTS.apiOrigin, PORTS.webOrigin],
+  })
+  const result = await up(ctx)
+  assert.equal(result.reused, true)
+  assert.deepEqual(ctx.started, [])
+})
+
+test("a reused app whose account pool filler stopped gets only a new filler", async () => {
+  const dir = stateDir("/scratch/ocv-ui", "/work/opencv.worktrees/1-demo")
+  const state = {
+    dir,
+    pids: [7, 8],
+    apiOrigin: PORTS.apiOrigin,
+    webOrigin: PORTS.webOrigin,
+    pool: { pid: 9, dir: `${dir}/pool` },
   }
   const ctx = fakePorts({
     files: { [`${dir}/state.json`]: JSON.stringify(state) },
@@ -90,8 +110,15 @@ test("a second up reuses the running app and starts nothing", async () => {
     healthy: [PORTS.apiOrigin, PORTS.webOrigin],
   })
   const result = await up(ctx)
-  assert.equal(result.reused, true)
-  assert.deepEqual(ctx.started, [])
+  assert.equal(ctx.started.length, 1)
+  assert.equal(ctx.started[0].command, "node")
+  assert.match(ctx.started[0].args[0], /scripts\/ui\/account-filler\.mjs$/)
+  assert.deepEqual(ctx.started[0].args[1], dir)
+  assert.equal(result.state.pool.pid, ctx.started[0].pid)
+  assert.equal(
+    JSON.parse(ctx.store.get(`${dir}/state.json`)).pool.pid,
+    ctx.started[0].pid
+  )
 })
 
 test("down stops what up started and removes its database and session", async () => {
@@ -102,18 +129,21 @@ test("down stops what up started and removes its database and session", async ()
         dir,
         pids: [7, 8],
         storage: `${dir}/storage.json`,
+        pool: { pid: 9, dir: `${dir}/pool` },
       }),
       [`${dir}/storage.json`]: "{}",
       [`${dir}/pglite/base`]: "x",
+      [`${dir}/pool/ready/00001.json`]: "{}",
+      [`${dir}/pool/used/ui-pool-00002@example.com`]: "paper-home",
       [`${dir}/api.log`]: "kept",
     },
-    alive: [7, 8],
+    alive: [7, 8, 9],
   })
   const result = await down(ctx)
   assert.deepEqual(result.stopped, [7, 8])
   assert.deepEqual(
     ctx.stopped.map((entry) => entry.pid),
-    [7, 8]
+    [7, 8, 9]
   )
   assert.deepEqual([...ctx.store.keys()], [`${dir}/api.log`])
   assert.deepEqual((await down(ctx)).stopped, [])

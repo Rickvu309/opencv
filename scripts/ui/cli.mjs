@@ -119,6 +119,7 @@ export const COMMANDS = {
             web: state.webOrigin,
             api: state.apiOrigin,
             email: state.email,
+            pool: state.pool?.dir,
             dir: state.dir,
           }),
         ],

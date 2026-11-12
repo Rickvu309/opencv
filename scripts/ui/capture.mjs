@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url"
 
+import { SHOWN_EMAIL } from "./account-pool.mjs"
 import { contextOptions, signInFresh } from "./fresh-account.mjs"
 
 const FIXTURES = new URL("./fixtures/", import.meta.url)
@@ -47,7 +48,28 @@ export async function runStep(page, origin, step) {
   throw new Error(`unknown step ${JSON.stringify(step)}`)
 }
 
+function showFixedEmail({ email, shown }) {
+  const swap = (node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      if (node.nodeValue.includes(email))
+        node.nodeValue = node.nodeValue.replaceAll(email, shown)
+      return
+    }
+    const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT)
+    for (let text = walker.nextNode(); text; text = walker.nextNode())
+      if (text.nodeValue.includes(email))
+        text.nodeValue = text.nodeValue.replaceAll(email, shown)
+  }
+  new MutationObserver((records) => {
+    for (const record of records) {
+      if (record.type === "characterData") swap(record.target)
+      for (const added of record.addedNodes) swap(added)
+    }
+  }).observe(document, { subtree: true, childList: true, characterData: true })
+}
+
 export async function settle(page) {
+  await page.mouse.move(0, 0)
   await page.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => {})
   await page.addStyleTag({ content: STILL })
   await page.evaluate(async (limit) => {
@@ -72,7 +94,10 @@ export async function settle(page) {
 
 export async function openScreen(browser, state, screen, { width, scale = 1 }) {
   const context = await browser.newContext(contextOptions({ width, scale }))
-  if (screen.signedIn !== false) await signInFresh(context, state, screen.id)
+  if (screen.signedIn !== false) {
+    const email = await signInFresh(context, state, screen.id)
+    await context.addInitScript(showFixedEmail, { email, shown: SHOWN_EMAIL })
+  }
   const page = await context.newPage()
   await page.goto(`${state.webOrigin}${screen.route}`, {
     waitUntil: "domcontentloaded",
