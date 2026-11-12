@@ -49,7 +49,10 @@ export function SessionCheckRetry() {
             {AUTH_COPY.sessionCheckBody}
           </p>
         </div>
-        <Button className="w-full" onClick={() => void router.invalidate()}>
+        <Button
+          className="h-11 w-full md:h-8"
+          onClick={() => void router.invalidate()}
+        >
           {AUTH_COPY.sessionCheckRetry}
         </Button>
       </div>
