@@ -12,11 +12,18 @@ import test from "node:test"
 import { gitAdapter } from "./git.mjs"
 import { realRunner } from "./proc.mjs"
 import { makeTempDir } from "../../lib/temp-dir.mjs"
+import { GIT_ENV } from "../jobs/push-checks.mjs"
+
+const scratchEnv = () => {
+  const env = { ...process.env }
+  for (const name of GIT_ENV) delete env[name]
+  return env
+}
 
 function tempClone() {
   const root = makeTempDir("ocv-tools-git-")
   const sh = (cwd, ...args) =>
-    execFileSync("git", args, { cwd, encoding: "utf8" })
+    execFileSync("git", args, { cwd, env: scratchEnv(), encoding: "utf8" })
   sh(root, "init", "-q", "--bare", "-b", "main", "origin.git")
   sh(root, "clone", "-q", "origin.git", "opencv")
   const work = join(root, "opencv")

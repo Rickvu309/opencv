@@ -2,6 +2,8 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import { pushOk, world } from "./hook-world.mjs"
 
+const isVitest = (c) =>
+  c.cmd === "env" && c.args.some((arg) => arg.endsWith("/vitest"))
 const SCAN = "apps/web/src/test/ui-kit-contract.test.ts"
 const SONNER = "packages/ui/src/components/sonner.test.tsx"
 
@@ -24,7 +26,7 @@ test("pre-push runs the tests the change reaches, says why, and records the pass
     /ui-kit-contract\.test\.ts {2}\(scans the tree that holds/
   )
   assert.match(r.text, /x\.test\.ts {2}\(imports apps\/web\/src\/lib\/x\.ts\)/)
-  const runs = w.s.calls.filter((c) => c.cmd.endsWith("/vitest"))
+  const runs = w.s.calls.filter((c) => isVitest(c))
   assert.deepEqual(
     runs.map((c) => [
       c.options.cwd,
@@ -40,7 +42,7 @@ test("pre-push runs the tests the change reaches, says why, and records the pass
   )
   assert.ok(!runs.some((c) => c.args.includes("src/y.test.ts")))
   assert.ok(
-    w.s.calls.every((c) => !c.cmd.endsWith("/vitest") || c.args.length > 4),
+    w.s.calls.every((c) => !isVitest(c) || c.args.length > 4),
     "a runner with no files would run the whole package suite"
   )
 })
@@ -62,7 +64,7 @@ test("pre-push refuses when a reached test fails, and a recorded head is not run
   const r = again.call(["pre-push"], { stdin: pushOk })
   assert.equal(r.code, 0, r.text)
   assert.match(r.text, /already passed at abc, not run again/)
-  assert.equal(again.s.calls.filter((c) => c.cmd.endsWith("/vitest")).length, 0)
+  assert.equal(again.s.calls.filter((c) => isVitest(c)).length, 0)
 })
 
 test("pre-push with SKIP_CHECKS and a named human runs no tests", () => {
@@ -74,5 +76,5 @@ test("pre-push with SKIP_CHECKS and a named human runs no tests", () => {
   })
   const r = w.call(["pre-push"], { stdin: pushOk })
   assert.equal(r.code, 0, r.text)
-  assert.equal(w.s.calls.filter((c) => c.cmd.endsWith("/vitest")).length, 0)
+  assert.equal(w.s.calls.filter((c) => isVitest(c)).length, 0)
 })

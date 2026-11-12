@@ -7,12 +7,20 @@ import test from "node:test"
 import { gitAdapter } from "./git.mjs"
 import { realRunner } from "./proc.mjs"
 import { withTempDir } from "../../lib/temp-dir.mjs"
+import { GIT_ENV } from "../jobs/push-checks.mjs"
+
+const scratchEnv = () => {
+  const env = { ...process.env }
+  for (const name of GIT_ENV) delete env[name]
+  return env
+}
 
 test("cleanup retains advanced remote tips and a concurrent push defeats its deletion lease", () => {
   withTempDir("cleanup-remote-", (root) => {
     const sh = (cwd, args, input) =>
       execFileSync("git", args, {
         cwd,
+        env: scratchEnv(),
         input,
         encoding: "utf8",
         timeout: 5000,

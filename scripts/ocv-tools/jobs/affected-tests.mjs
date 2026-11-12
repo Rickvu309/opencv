@@ -1,5 +1,12 @@
 import { posix } from "node:path"
 import { run } from "./common.mjs"
+import { COLOR_ENV, GIT_ENV } from "./push-checks.mjs"
+
+export const SCRUBBED_ENV = Object.freeze([
+  ...GIT_ENV,
+  "NODE_TEST_CONTEXT",
+  ...COLOR_ENV,
+])
 
 export const MAX_PER_RUNNER = 40
 export const HUB_IMPORTERS = 12
@@ -335,10 +342,17 @@ export function affectedPlan(selection, top) {
     const files = group.files.map((item) =>
       dir ? item.file.slice(dir.length + 1) : item.file
     )
+    const tool = runner.cmd === "node" ? "node" : `${top}/${runner.cmd}`
     return {
       label: `tests ${group.runner}`,
-      cmd: runner.cmd === "node" ? "node" : `${top}/${runner.cmd}`,
-      args: [...runner.args, ...files],
+      cmd: "env",
+      args: [
+        ...SCRUBBED_ENV.flatMap((name) => ["-u", name]),
+        tool,
+        ...runner.args,
+        ...files,
+      ],
+      tool,
       cwd,
       needsInstall: runner.cmd !== "node",
     }
@@ -365,7 +379,7 @@ export function runAffected(ctx, top, head) {
   const lines = describeSelection(selection)
   const failed = []
   for (const step of affectedPlan(selection, top)) {
-    if (step.needsInstall && !ctx.ports.fs.exists(step.cmd)) {
+    if (step.needsInstall && !ctx.ports.fs.exists(step.tool)) {
       failed.push(
         `${step.label} (vitest is not installed here; run pnpm install in this worktree)`
       )
