@@ -93,7 +93,7 @@ function UsageReadout({
     >
       <span
         data-slot="settings-usage-text"
-        className="flex min-w-0 flex-col gap-0.5 md:w-45"
+        className="flex w-full min-w-0 flex-col gap-0.5 md:w-45"
       >
         <span
           data-slot="settings-row-label"
