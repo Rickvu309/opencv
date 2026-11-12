@@ -5,7 +5,6 @@ import "./design/cap-notice.pen.css"
 type Props = {
   modeLabel: string
   resetTime: string
-  showUpgrade?: boolean
 }
 
 export function CoachCapNotice({ modeLabel, resetTime }: Props) {

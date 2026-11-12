@@ -42,7 +42,7 @@ export function SettingsLayout({
   children: ReactNode
 }) {
   const desktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
-  const current: SettingsSectionId = view === "upgrade" ? "billing" : view
+  const current: SettingsSectionId = view
   return (
     <div
       data-slot="settings-layout"

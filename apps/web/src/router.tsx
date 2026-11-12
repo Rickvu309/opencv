@@ -15,7 +15,7 @@ import {
 import { fetchProfile } from "@/lib/account-api.ts"
 import {
   SURFACE_PATHS,
-  isSurfaceShown,
+  SURFACES,
   legacyAppPath,
   startPagePath,
 } from "@/lib/product-paths.ts"
@@ -297,17 +297,6 @@ async function redirectHiddenSurface() {
   throw redirect({ href: startPagePath(startPage), replace: true })
 }
 
-const jobsProofsAndPitchShareOneChunk = () => import("@/routes/coming-soon.tsx")
-
-const pitchRoute = createRoute({
-  getParentRoute: () => productLayoutRoute,
-  path: "/pitch",
-  beforeLoad: async () => {
-    if (!isSurfaceShown("pitch")) await redirectHiddenSurface()
-  },
-  component: lazyRouteComponent(jobsProofsAndPitchShareOneChunk, "PitchPage"),
-})
-
 const coachRoute = createRoute({
   getParentRoute: () => productLayoutRoute,
   path: "/coach",
@@ -320,55 +309,15 @@ const coachRoute = createRoute({
   ),
 })
 
-const jobsRoute = createRoute({
-  getParentRoute: () => productLayoutRoute,
-  path: "/jobs",
-  beforeLoad: async () => {
-    if (!isSurfaceShown("jobs")) await redirectHiddenSurface()
-  },
-  component: lazyRouteComponent(jobsProofsAndPitchShareOneChunk, "JobsPage"),
-})
-
-const proofsRoute = createRoute({
-  getParentRoute: () => productLayoutRoute,
-  path: "/proofs",
-  beforeLoad: async () => {
-    if (!isSurfaceShown("proofs")) await redirectHiddenSurface()
-  },
-  component: lazyRouteComponent(jobsProofsAndPitchShareOneChunk, "ProofsPage"),
-})
-
-const proofAliasRoute = createRoute({
-  getParentRoute: () => productLayoutRoute,
-  path: "/proof",
-  beforeLoad: async () => {
-    if (!isSurfaceShown("proofs")) await redirectHiddenSurface()
-    throw redirect({ href: SURFACE_PATHS.proofs, replace: true })
-  },
-  component: () => null,
-})
-
-const inboxRoute = createRoute({
-  getParentRoute: () => productLayoutRoute,
-  path: "/inbox",
-  beforeLoad: async () => {
-    if (!isSurfaceShown("inbox")) await redirectHiddenSurface()
-  },
-  component: lazyRouteComponent(
-    () => import("@/routes/inbox.tsx"),
-    "InboxPage"
-  ),
-})
-
-const settingsUpgradeRoute = createRoute({
-  getParentRoute: () => productLayoutRoute,
-  path: "/settings/billing/upgrade",
-  beforeLoad: redirectHiddenSurface,
-  component: lazyRouteComponent(
-    () => import("@/routes/settings.tsx"),
-    "SettingsPage"
-  ),
-})
+const hiddenRoutes = SURFACES.filter((surface) => !surface.shown).map(
+  (surface) =>
+    createRoute({
+      getParentRoute: () => productLayoutRoute,
+      path: surface.path,
+      beforeLoad: redirectHiddenSurface,
+      component: () => null,
+    })
+)
 
 const settingsRoute = createRoute({
   getParentRoute: () => productLayoutRoute,
@@ -469,14 +418,9 @@ const routeTree = rootRoute.addChildren([
     paperDocRoute,
     applyRoute,
     applyJobRoute,
-    pitchRoute,
     coachRoute,
-    jobsRoute,
-    proofsRoute,
-    proofAliasRoute,
-    inboxRoute,
-    settingsUpgradeRoute,
     settingsRoute,
+    ...hiddenRoutes,
   ]),
   rootSplatRoute.addChildren([rootSplatIndexRoute]),
 ])

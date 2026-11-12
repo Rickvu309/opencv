@@ -2,7 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 
 import { pathOf } from "@/test/mock-http.ts"
-import { renderApp } from "@/test/render-app.tsx"
+import { renderPage } from "@/test/render-app.tsx"
+import { PitchPage } from "./pitch-page.tsx"
 import { notifyCalls } from "@/test/shell-api-mock.ts"
 
 beforeEach(() => {
@@ -16,7 +17,7 @@ afterEach(() => {
 
 describe("Pitch coming soon", () => {
   it("titles the page Pitch and reads the headline as one sentence", async () => {
-    renderApp("/pitch")
+    renderPage(PitchPage)
 
     expect(
       await screen.findByRole("heading", { level: 1, name: "Pitch" })
@@ -28,7 +29,7 @@ describe("Pitch coming soon", () => {
   })
 
   it("keeps the header fixed above the scrolling body", async () => {
-    renderApp("/pitch")
+    renderPage(PitchPage)
 
     const title = await screen.findByRole("heading", {
       level: 1,
@@ -42,7 +43,7 @@ describe("Pitch coming soon", () => {
   })
 
   it("asks to be notified about Pitch", async () => {
-    renderApp("/pitch")
+    renderPage(PitchPage)
     const before = notifyCalls().length
 
     fireEvent.click(
@@ -55,7 +56,7 @@ describe("Pitch coming soon", () => {
   })
 
   it("shows an error next to the button when the request fails", async () => {
-    renderApp("/pitch", (input) => {
+    renderPage(PitchPage, (input) => {
       if (pathOf(input) === "/api/commands/notify.request")
         throw new Error("offline")
     })
@@ -68,7 +69,7 @@ describe("Pitch coming soon", () => {
   })
 
   it("keeps the mock profile out of the accessibility tree", async () => {
-    renderApp("/pitch")
+    renderPage(PitchPage)
     await screen.findByRole("heading", { level: 2 })
 
     expect(

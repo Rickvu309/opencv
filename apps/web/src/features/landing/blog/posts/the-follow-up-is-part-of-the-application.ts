@@ -55,7 +55,7 @@ export const post = {
     },
     {
       kind: "p",
-      text: "If a recruiter replies, the email shows up in Inbox, matched to the job. You can edit a drafted reply. Nothing goes out until you send it.",
+      text: "If a recruiter replies, you can edit a drafted reply. Nothing goes out until you send it.",
     },
     {
       kind: "p",

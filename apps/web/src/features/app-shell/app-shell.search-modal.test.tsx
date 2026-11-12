@@ -24,12 +24,12 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-async function openSearch(path = "/jobs") {
+async function openSearch(path = "/apply") {
   renderApp(path)
   expect(
     await screen.findByRole("heading", {
-      level: 2,
-      name: "Jobs, matched to you",
+      level: 1,
+      name: "Apply",
     })
   ).toBeInTheDocument()
   fireEvent.keyDown(window, { key: "k", ctrlKey: true })
@@ -38,11 +38,11 @@ async function openSearch(path = "/jobs") {
 
 describe("command palette", () => {
   it("opens from Ctrl K and from Meta K", async () => {
-    renderApp("/jobs")
+    renderApp("/apply")
     expect(
       await screen.findByRole("heading", {
-        level: 2,
-        name: "Jobs, matched to you",
+        level: 1,
+        name: "Apply",
       })
     ).toBeInTheDocument()
 
@@ -153,12 +153,9 @@ describe("command palette", () => {
   })
 
   it("navigates when Enter lands on a page row", async () => {
-    const { router } = renderApp("/jobs")
+    const { router } = renderApp("/coach")
     expect(
-      await screen.findByRole("heading", {
-        level: 2,
-        name: "Jobs, matched to you",
-      })
+      await screen.findByRole("button", { name: "Search" })
     ).toBeInTheDocument()
     fireEvent.keyDown(window, { key: "k", ctrlKey: true })
     const dialog = await screen.findByRole("dialog", { name: "Search" })
@@ -217,7 +214,7 @@ describe("command palette", () => {
   })
 
   it("returns focus to Search on Escape", async () => {
-    renderApp("/jobs")
+    renderApp("/apply")
     const search = await screen.findByRole("button", { name: "Search" })
     fireEvent.keyDown(window, { key: "k", ctrlKey: true })
     expect(

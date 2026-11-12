@@ -26,12 +26,12 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-async function openSearch(path = "/jobs") {
+async function openSearch(path = "/apply") {
   renderApp(path)
   expect(
     await screen.findByRole("heading", {
-      level: 2,
-      name: "Jobs, matched to you",
+      level: 1,
+      name: "Apply",
     })
   ).toBeInTheDocument()
   fireEvent.keyDown(window, { key: "k", ctrlKey: true })
@@ -55,10 +55,10 @@ describe("search results integration", () => {
       })
       setMockJobs([first, selected])
       setMockSearch({ jobs: [first, selected], documents: [], chats: [] })
-      const { router } = renderApp("/jobs")
+      const { router } = renderApp("/apply")
       await screen.findByRole("heading", {
-        level: 2,
-        name: "Jobs, matched to you",
+        level: 1,
+        name: "Apply",
       })
       fireEvent.keyDown(window, { key: "k", ctrlKey: true })
       const dialog = await screen.findByRole("dialog", { name: "Search" })
@@ -67,7 +67,7 @@ describe("search results integration", () => {
       const result = await within(dialog).findByRole("button", {
         name: /^Senior Designer/,
       })
-      expect(router.state.location.pathname).toBe("/jobs")
+      expect(router.state.location.pathname).toBe("/apply")
       if (activation === "click") {
         fireEvent.click(result)
       } else {
@@ -96,10 +96,10 @@ describe("search results integration", () => {
       const selected = samplePaperDocs()[0]!
       const first = samplePaperDocs()[1]!
       setMockSearch({ jobs: [], documents: [first, selected], chats: [] })
-      const { router } = renderApp("/jobs")
+      const { router } = renderApp("/apply")
       await screen.findByRole("heading", {
-        level: 2,
-        name: "Jobs, matched to you",
+        level: 1,
+        name: "Apply",
       })
       fireEvent.keyDown(window, { key: "k", ctrlKey: true })
       const dialog = await screen.findByRole("dialog", { name: "Search" })
@@ -108,7 +108,7 @@ describe("search results integration", () => {
       const result = await within(dialog).findByRole("button", {
         name: `${selected.name} CV`,
       })
-      expect(router.state.location.pathname).toBe("/jobs")
+      expect(router.state.location.pathname).toBe("/apply")
       if (activation === "click") {
         fireEvent.click(result)
       } else {
@@ -249,7 +249,7 @@ describe("search results integration", () => {
     expect(chat).toHaveAttribute("aria-current", "true")
     const scroll = vi.spyOn(Element.prototype, "scrollIntoView")
     fireEvent.click(within(dialog).getByRole("button", { name: "Pages" }))
-    const first = within(dialog).getByRole("button", { name: "Inbox" })
+    const first = within(dialog).getByRole("button", { name: "Coach" })
     expect(first).toHaveAttribute("aria-current", "true")
     expect(scroll).toHaveBeenCalledWith({ block: "nearest" })
     expect(scroll.mock.contexts.at(-1)).toBe(first)
@@ -272,10 +272,10 @@ describe("search results integration", () => {
           chats: [],
         })
       }
-      const { router } = renderApp("/jobs")
+      const { router } = renderApp("/apply")
       await screen.findByRole("heading", {
-        level: 2,
-        name: "Jobs, matched to you",
+        level: 1,
+        name: "Apply",
       })
       fireEvent.keyDown(window, { key: "k", ctrlKey: true })
       const dialog = await screen.findByRole("dialog", { name: "Search" })
@@ -302,7 +302,7 @@ describe("search results integration", () => {
           screen.queryByRole("dialog", { name: "Search" })
         ).not.toBeInTheDocument()
       })
-      expect(router.state.location.pathname).toBe("/jobs")
+      expect(router.state.location.pathname).toBe("/apply")
     }
   )
 })

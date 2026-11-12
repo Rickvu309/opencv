@@ -1,7 +1,8 @@
 import { cleanup, screen, waitFor } from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
-import { renderApp } from "@/test/render-app.tsx"
+import { renderApp, renderPage } from "@/test/render-app.tsx"
+import { InboxPage } from "@/routes/inbox.tsx"
 
 describe("inbox route", () => {
   afterEach(() => {
@@ -9,7 +10,7 @@ describe("inbox route", () => {
   })
 
   it("renders the connect screen inside the app shell", async () => {
-    renderApp("/inbox")
+    renderPage(InboxPage)
     expect(
       await screen.findByRole("heading", { level: 1, name: "Inbox" })
     ).toBeInTheDocument()
@@ -18,5 +19,11 @@ describe("inbox route", () => {
         screen.getByRole("button", { name: "Connect Gmail" })
       ).toBeInTheDocument()
     })
+  })
+
+  it("redirects /inbox to the start page", async () => {
+    const { router } = renderApp("/inbox")
+    await screen.findByRole("heading", { level: 1, name: "Apply" })
+    expect(router.state.location.pathname).toBe("/apply")
   })
 })

@@ -1,10 +1,6 @@
 import { useQuery } from "@tanstack/react-query"
 
-import {
-  inboxUnreadCount,
-  starredJobs,
-} from "@/features/app-shell/shell-api.ts"
-import { inboxListKey, fetchInbox } from "@/features/inbox/inbox-api.ts"
+import { starredJobs } from "@/features/app-shell/shell-api.ts"
 import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
 import { chatListKey, listChats } from "@/features/coach/chat-api.ts"
 import { listPaper, paperListKey } from "@/features/paper/paper-api.ts"
@@ -38,12 +34,4 @@ export function useShellFavorites() {
     jobs: jobs.data ?? [],
     docs: favoriteDocs,
   }
-}
-
-export function useInboxUnread() {
-  return useQuery({
-    queryKey: inboxListKey(),
-    queryFn: fetchInbox,
-    select: inboxUnreadCount,
-  })
 }

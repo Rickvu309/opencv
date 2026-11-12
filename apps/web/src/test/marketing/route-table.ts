@@ -50,6 +50,11 @@ export const ROUTE_TABLE: readonly RouteClass[] = [
     kind: "app",
   },
   {
+    id: "/product/upgrade",
+    fullPath: "/upgrade",
+    kind: "app",
+  },
+  {
     id: "/product/settings/{-$section}",
     fullPath: "/settings/{-$section}",
     kind: "app",

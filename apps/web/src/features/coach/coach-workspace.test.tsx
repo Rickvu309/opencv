@@ -310,7 +310,7 @@ describe("Coach workspace", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("disables sending and shows the reset and Upgrade when capped", async () => {
+  it("disables sending and shows the reset when capped", async () => {
     vi.stubGlobal(
       "fetch",
       async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -343,7 +343,7 @@ describe("Coach workspace", () => {
         <CoachWorkspace />
       </ChatStoreProvider>
     )
-    await screen.findByRole("link", { name: "Upgrade" })
+    await screen.findByRole("status")
     expect(
       screen.getByRole("textbox", { name: "Message Coach" })
     ).toBeDisabled()

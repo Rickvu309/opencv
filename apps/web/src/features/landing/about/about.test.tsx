@@ -122,9 +122,7 @@ describe("about page", () => {
       screen.getByRole("heading", { level: 2, name: "What is next" })
     ).toBeInTheDocument()
     expect(
-      screen.getByText(
-        "Two new ways to show your work. Proof turns a CV line into evidence. Pitch is your CV and Proofs on one page."
-      )
+      screen.getByText("Two new ways to show your work.")
     ).toBeInTheDocument()
 
     for (const link of screen.getAllByRole("link", { name: "Get started" })) {

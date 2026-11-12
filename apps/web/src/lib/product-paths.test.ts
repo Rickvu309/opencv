@@ -1,5 +1,8 @@
+import { createMemoryHistory } from "@tanstack/react-router"
 import { describe, expect, it } from "vitest"
 
+import { SHELL_PRIMARY, SHELL_WORK } from "@/features/app-shell/sidebar-nav.ts"
+import { createAppRouter } from "@/router.tsx"
 import {
   SURFACES,
   isPathShown,
@@ -11,7 +14,6 @@ import {
   startPagePath,
   type SurfaceId,
 } from "./product-paths.ts"
-import { SHELL_PRIMARY, SHELL_WORK } from "@/features/app-shell/sidebar-nav.ts"
 
 describe("legacy product paths", () => {
   it("strips only the app segment and keeps query and hash", () => {
@@ -66,21 +68,54 @@ describe("surface list contract", () => {
     expect(navIds.has("pitch")).toBe(false)
   })
 
-  it("classifies every routed product path in SURFACES", () => {
-    const productPaths = [
-      "/paper",
-      "/apply",
-      "/coach",
-      "/settings",
-      "/pitch",
-      "/jobs",
-      "/proofs",
-      "/inbox",
-    ]
+  it("asserts every product route path and nav entry has a SURFACES entry and every shown surface is routed", () => {
+    const router = createAppRouter()
+    const routes = router.routesByPath
+    const surfacePaths = new Set(SURFACES.map((s) => s.path))
 
-    for (const path of productPaths) {
-      const match = SURFACES.find((s) => s.path === path)
-      expect(match).toBeDefined()
+    const productRoutes = Object.entries(routes).filter(([, route]) => {
+      return route.parentRoute?.id === "/product"
+    })
+
+    expect(productRoutes.length).toBeGreaterThan(0)
+
+    for (const [routePath] of productRoutes) {
+      const directMatch = surfacePaths.has(routePath as any)
+      const prefixMatch = SURFACES.some((s) => routePath.startsWith(s.path))
+      expect(
+        directMatch || prefixMatch,
+        `expected ${routePath} to have a matching SURFACES entry`
+      ).toBe(true)
+    }
+
+    const navItems = [...SHELL_PRIMARY, ...SHELL_WORK]
+    for (const item of navItems) {
+      const surface = SURFACES.find((s) => s.id === item.id)
+      expect(surface).toBeDefined()
+      expect(surfacePaths.has(item.to as any)).toBe(true)
+    }
+
+    for (const shown of shownSurfaces()) {
+      const isRouted =
+        shown.path in routes ||
+        Object.keys(routes).some((r) => r.startsWith(shown.path))
+      expect(
+        isRouted,
+        `expected shown surface ${shown.id} (${shown.path}) to be routed`
+      ).toBe(true)
+    }
+  })
+
+  it("navigates to each hidden path and lands on the start page", async () => {
+    const hidden = SURFACES.filter((s) => !s.shown)
+    expect(hidden.length).toBeGreaterThanOrEqual(4)
+
+    for (const surface of hidden) {
+      const router = createAppRouter({
+        history: createMemoryHistory({ initialEntries: [surface.path] }),
+      })
+      await router.load()
+      expect(router.state.location.pathname).toBe("/apply")
     }
   })
 

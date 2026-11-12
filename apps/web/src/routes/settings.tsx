@@ -18,7 +18,6 @@ import {
   isPlanRequired,
   TIME_ZONE_REJECTION,
 } from "@/features/settings/settings-api.ts"
-import { UpgradeScreen } from "@/features/settings/upgrade-screen.tsx"
 import { UsageSection } from "@/features/settings/usage-section.tsx"
 import { fetchProfile, profileKey } from "@/lib/account-api.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
@@ -44,8 +43,6 @@ export function SettingsPage() {
         <SettingsSkeletons />
       ) : profile.isError || !profile.data ? (
         <SettingsLoadError onRetry={() => void profile.refetch()} />
-      ) : view === "upgrade" ? (
-        <UpgradeScreen />
       ) : view === "preferences" ? (
         <PreferencesSection profile={profile.data} {...save} />
       ) : view === "coach" ? (

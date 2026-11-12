@@ -9,15 +9,7 @@ const featuresDir = path.join(srcDir, "features")
 
 const FEATURE_IMPORTS: Record<string, string[]> = {
   apply: [],
-  "app-shell": [
-    "apply",
-    "auth",
-    "coach",
-    "command-palette",
-    "inbox",
-    "paper",
-    "seed",
-  ],
+  "app-shell": ["apply", "auth", "coach", "command-palette", "paper", "seed"],
   auth: [],
   coach: [],
   connections: [],

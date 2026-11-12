@@ -1,12 +1,11 @@
-import { SURFACE_PATHS, legacyAppPath } from "./product-paths.ts"
+import { SURFACES, SURFACE_PATHS, legacyAppPath } from "./product-paths.ts"
 
 const PRODUCT_ROOTS = [
   "/sign-in",
   "/sign-up",
   "/oauth/consent",
   "/oauth/connect",
-  ...Object.values(SURFACE_PATHS),
-  "/proof",
+  ...SURFACES.map((surface) => surface.path),
 ]
 const PRODUCT_PREFIXES = (["paper", "apply", "settings"] as const).map(
   (id) => `${SURFACE_PATHS[id]}/`

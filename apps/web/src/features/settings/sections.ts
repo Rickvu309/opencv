@@ -11,7 +11,7 @@ export const SETTINGS_SECTIONS = [
 
 export type SettingsSectionId = (typeof SETTINGS_SECTIONS)[number]["id"]
 
-export type SettingsView = SettingsSectionId | "upgrade"
+export type SettingsView = SettingsSectionId
 
 const SECTION_IDS = new Set<string>(SETTINGS_SECTIONS.map((item) => item.id))
 
@@ -20,9 +20,6 @@ export function isSettingsSection(value: string): value is SettingsSectionId {
 }
 
 export function settingsViewFromPath(pathname: string): SettingsView {
-  if (pathname.endsWith("/billing/upgrade") || pathname.endsWith("/upgrade")) {
-    return "upgrade"
-  }
   const tail = pathname.split("/").filter(Boolean).pop()
   if (tail && isSettingsSection(tail)) return tail
   return "preferences"

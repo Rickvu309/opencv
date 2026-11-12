@@ -42,10 +42,15 @@ describe("App shell sidebar", () => {
     fireEvent.keyDown(window, { key: "k", ctrlKey: true })
     const dialog = await screen.findByRole("dialog")
 
-    for (const label of ["Inbox", "Coach", "Apply", "Pitch", "Settings"]) {
+    for (const label of ["Coach", "Apply", "Settings", "Help"]) {
       expect(
         within(dialog).getByRole("button", { name: label })
       ).toBeInTheDocument()
+    }
+    for (const label of ["Inbox", "Pitch"]) {
+      expect(
+        within(dialog).queryByRole("button", { name: label })
+      ).not.toBeInTheDocument()
     }
     for (const label of ["Jobs", "Paper"]) {
       expect(

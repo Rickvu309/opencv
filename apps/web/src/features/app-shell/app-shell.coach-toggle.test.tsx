@@ -9,7 +9,10 @@ import {
 } from "@testing-library/react"
 
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
-import { expectPitch, stubDesktopViewport } from "@/test/app-shell-fixtures.ts"
+import {
+  expectApplyLive,
+  stubDesktopViewport,
+} from "@/test/app-shell-fixtures.ts"
 import { liveTurn, step } from "@/test/live-turn.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import { resetShellApiMock, setMockChats } from "@/test/shell-api-mock.ts"
@@ -36,8 +39,8 @@ async function openCoach() {
 
 describe("the Coach button in the dock", () => {
   it("opens on one click and closes on the next, and says which", async () => {
-    renderApp(SURFACE_PATHS.pitch)
-    await expectPitch()
+    renderApp(SURFACE_PATHS.apply)
+    await expectApplyLive()
 
     expect(coachButton()).toHaveAttribute("aria-expanded", "false")
     expect(coachButton()).toHaveAttribute("aria-controls", "coach-panel")
@@ -58,8 +61,8 @@ describe("the Coach button in the dock", () => {
   })
 
   it("puts focus back on the button when the click closes the panel", async () => {
-    renderApp(SURFACE_PATHS.pitch)
-    await expectPitch()
+    renderApp(SURFACE_PATHS.apply)
+    await expectApplyLive()
     await openCoach()
     screen.getByRole("textbox", { name: "Message Coach" }).focus()
 
@@ -70,8 +73,8 @@ describe("the Coach button in the dock", () => {
   })
 
   it("closes on Escape from the panel and puts focus back on the button", async () => {
-    renderApp(SURFACE_PATHS.pitch)
-    await expectPitch()
+    renderApp(SURFACE_PATHS.apply)
+    await expectApplyLive()
     await openCoach()
     screen.getByRole("textbox", { name: "Message Coach" }).focus()
 
@@ -85,8 +88,8 @@ describe("the Coach button in the dock", () => {
   })
 
   it("keeps a typed draft when the button closes and reopens the panel", async () => {
-    renderApp(SURFACE_PATHS.pitch)
-    await expectPitch()
+    renderApp(SURFACE_PATHS.apply)
+    await expectApplyLive()
     const box = await openCoach()
     fireEvent.change(box, { target: { value: "Half a thought" } })
 
@@ -116,8 +119,8 @@ describe("the Coach button in the dock", () => {
     ["the footer button", () => fireEvent.click(coachButton())],
   ])("closing with %s", (_name, close) => {
     it("keeps the draft, and puts focus on the footer Coach button", async () => {
-      renderApp(SURFACE_PATHS.pitch)
-      await expectPitch()
+      renderApp(SURFACE_PATHS.apply)
+      await expectApplyLive()
       const box = await openCoach()
       fireEvent.change(box, { target: { value: "Keep me" } })
 
@@ -138,8 +141,8 @@ describe("the Coach button in the dock", () => {
   })
 
   it("keeps a running turn streaming while closed and shows it on reopen", async () => {
-    renderApp(SURFACE_PATHS.pitch)
-    await expectPitch()
+    renderApp(SURFACE_PATHS.apply)
+    await expectApplyLive()
     const prior = globalThis.fetch
     const turn = liveTurn()
     const live = globalThis.fetch
@@ -191,8 +194,8 @@ describe("the Coach button in the dock", () => {
         updatedAt: "2026-02-02T00:00:00.000Z",
       },
     ])
-    renderApp(SURFACE_PATHS.pitch)
-    await expectPitch()
+    renderApp(SURFACE_PATHS.apply)
+    await expectApplyLive()
     await openCoach()
     expect(coachButton()).toHaveAttribute("aria-expanded", "true")
 

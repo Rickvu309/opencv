@@ -4,7 +4,13 @@ import {
 } from "node:timers"
 import { createElement } from "react"
 import { QueryClientProvider } from "@tanstack/react-query"
-import { RouterProvider, createMemoryHistory } from "@tanstack/react-router"
+import {
+  RouterProvider,
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+} from "@tanstack/react-router"
 import { render } from "@testing-library/react"
 
 import { Toaster } from "@workspace/ui/components/sonner"
@@ -109,6 +115,64 @@ export function renderApp(
     }
   })
 
+  return {
+    router,
+    queryClient,
+    ...render(
+      createElement(
+        QueryClientProvider,
+        { client: queryClient },
+        createElement(Toaster),
+        createElement(RouterProvider, { router })
+      )
+    ),
+  }
+}
+
+export function renderPage(
+  component: () => React.ReactElement,
+  onRequest?: (input: RequestInfo | URL) => void
+) {
+  vi.stubGlobal(
+    "fetch",
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      onRequest?.(input)
+      if (pathOf(input) === "/api/public-config") {
+        return Response.json({
+          google: mockPublicConfig.google,
+          coachDurable: false,
+        })
+      }
+      const chat = await chatApiFetch(input, init)
+      if (chat) return chat
+      const apply = await applyApiFetch(input, init)
+      if (apply) return apply
+      const paper = await paperApiFetch(input, init)
+      if (paper) return paper
+      const profile = await profileApiFetch(input, init)
+      if (profile) return profile
+      const shell = await shellApiFetch(input, init)
+      if (shell) return shell
+      throw new Error(`Unexpected fetch: ${pathOf(input)}`)
+    }
+  )
+  const queryClient = createQueryClient()
+  const rootRoute = createRootRoute()
+  const pageRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/",
+    component,
+  })
+  const router = createRouter({
+    routeTree: rootRoute.addChildren([pageRoute]),
+    history: createMemoryHistory({ initialEntries: ["/"] }),
+  })
+  registerTestCleanup(async () => {
+    await queryClient.cancelQueries()
+    queryClient.clear()
+    router.clearCache()
+    router.history.destroy()
+  })
   return {
     router,
     queryClient,
