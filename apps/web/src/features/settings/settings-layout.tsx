@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import type { ComponentProps, ReactNode } from "react"
 import { ChevronRight, type LucideIcon } from "lucide-react"
 import { useNavigate } from "@tanstack/react-router"
 import type { Profile } from "@workspace/domain"
@@ -114,8 +114,22 @@ function SectionSelect({ current }: { current: SettingsSectionId }) {
   )
 }
 
-export const SETTINGS_ROW_BUTTON =
-  "h-11 rounded-[7px] px-3 text-[13px] md:h-[30px]"
+export function SettingsRowButton({
+  className,
+  ...props
+}: ComponentProps<typeof Button>) {
+  return (
+    <Button
+      type="button"
+      variant="outline"
+      {...props}
+      className={cn(
+        "h-11 rounded-[7px] px-3 text-[13px] md:h-[30px]",
+        className
+      )}
+    />
+  )
+}
 
 const ROW_INSET = {
   default: "px-4 py-3.5",
@@ -319,6 +333,7 @@ export function SettingsUsageLink({ desc }: { desc: string }) {
   return (
     <a
       data-slot="settings-usage-link"
+      aria-label={`Usage, ${desc}`}
       href={href}
       onClick={(event) => {
         event.preventDefault()
@@ -330,7 +345,7 @@ export function SettingsUsageLink({ desc }: { desc: string }) {
         <span className="text-[13px] font-medium">Usage</span>
         <span className="text-[12.5px] text-muted-foreground">{desc}</span>
       </span>
-      <ChevronRight aria-hidden className="size-3.5 text-muted-foreground" />
+      <ChevronRight className="size-3.5 text-muted-foreground" />
     </a>
   )
 }
@@ -348,7 +363,7 @@ export function StateWord({
       className="flex shrink-0 items-center gap-1 text-[13px] text-muted-foreground"
     >
       {on ? "Enabled" : "Disabled"}
-      {chevron ? <ChevronRight aria-hidden className="size-3.5" /> : null}
+      {chevron ? <ChevronRight className="size-3.5" /> : null}
     </span>
   )
 }

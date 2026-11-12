@@ -126,7 +126,10 @@ describe("settings", () => {
     expect(
       screen.getByRole("heading", { name: "Preferences" })
     ).toBeInTheDocument()
-    expect(screen.getByText("Words in menus and buttons")).toBeInTheDocument()
+    expect(
+      screen.getByText("Menus and buttons stay in English for now")
+    ).toBeInTheDocument()
+    expect(screen.queryByText("Words in menus and buttons")).toBeNull()
     expect(screen.getByText("Time zone")).toBeInTheDocument()
   })
 
@@ -432,3 +435,66 @@ function glowButtons() {
     .queryAllByRole("button")
     .filter((button) => button.classList.contains("glow"))
 }
+
+describe("Settings sections follow their design frames", () => {
+  it("groups Export with Sign out under Data and keeps Delete account alone after it", async () => {
+    renderApp("/settings/account")
+    const data = await screen.findByRole("region", { name: "Data" })
+    expect(
+      within(data).getByRole("button", { name: "Export" })
+    ).toBeInTheDocument()
+    expect(
+      within(data).getByRole("button", { name: "Sign out" })
+    ).toBeInTheDocument()
+    expect(
+      within(data).queryByRole("button", { name: "Delete account" })
+    ).toBeNull()
+    const remove = screen.getByRole("button", { name: "Delete account" })
+    expect(
+      data.compareDocumentPosition(remove) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+    const profile = screen.getByRole("region", { name: "Profile" })
+    expect(
+      within(profile).getByRole("button", { name: "Change photo" })
+    ).toBeInTheDocument()
+    expect(
+      within(profile).getByRole("textbox", { name: "Name" })
+    ).toBeInTheDocument()
+  })
+
+  it("links the Coach usage card to Usage & limits", async () => {
+    const user = userEvent.setup()
+    renderApp("/settings/coach")
+    const link = await screen.findByRole("link", {
+      name: /^Usage, (\d+% of this week used|No weekly cap)/,
+    })
+    expect(link).toHaveAttribute("href", "/settings/usage")
+    await user.click(link)
+    expect(
+      await screen.findByRole("heading", { level: 1, name: "Usage & limits" })
+    ).toBeInTheDocument()
+  })
+
+  it("lists the app groups before the person's own agents", async () => {
+    renderApp("/settings/integrations")
+    const profiles = await screen.findByRole("region", { name: "Profiles" })
+    const agents = await screen.findByRole("heading", { name: "Your agents" })
+    expect(
+      profiles.compareDocumentPosition(agents) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+    expect(
+      screen.getByRole("searchbox", { name: "Search integrations" })
+    ).toBeInTheDocument()
+  })
+
+  it("puts Invoices inside the Payment card and offers no paid action", async () => {
+    renderApp("/settings/billing")
+    const payment = await screen.findByRole("region", { name: "Payment" })
+    expect(within(payment).getByText("Invoices")).toBeInTheDocument()
+    expect(within(payment).getByText("None yet")).toBeInTheDocument()
+    expect(within(payment).getByText("No card added")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Add card" })).toBeNull()
+    expect(screen.queryByRole("link", { name: "All plans" })).toBeNull()
+  })
+})

@@ -1,7 +1,6 @@
 import { useReducer } from "react"
 import { useQuery } from "@tanstack/react-query"
 import type { QueryOutput } from "@workspace/domain"
-import { Button } from "@workspace/ui/components/button"
 import { SearchInput } from "@workspace/ui/components/search-input"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -9,7 +8,7 @@ import {
   SettingsLoadError,
   SettingsSection,
   SettingsSkeletons,
-  SETTINGS_ROW_BUTTON,
+  SettingsRowButton,
   SettingsTitle,
 } from "./settings-layout.tsx"
 import { connectGmail, GMAIL_UNAVAILABLE } from "./settings-api.ts"
@@ -181,14 +180,7 @@ function IntegrationCard({
         </span>
       </div>
       {showConnect && onConnect ? (
-        <Button
-          className={SETTINGS_ROW_BUTTON}
-          type="button"
-          variant="outline"
-          onClick={onConnect}
-        >
-          Connect Gmail
-        </Button>
+        <SettingsRowButton onClick={onConnect}>Connect Gmail</SettingsRowButton>
       ) : null}
       {notice ? (
         <p role="alert" className="text-sm text-destructive">

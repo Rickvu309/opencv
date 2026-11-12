@@ -35,7 +35,7 @@ import {
 import { DeleteAccountDialog } from "./delete-account-dialog.tsx"
 import { personInitials } from "./person-initials.ts"
 import {
-  SETTINGS_ROW_BUTTON,
+  SettingsRowButton,
   SettingsCard,
   SettingsRow,
   SettingsSection,
@@ -114,14 +114,9 @@ export function AccountSection({
             }
             control={
               <>
-                <Button
-                  className={SETTINGS_ROW_BUTTON}
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileRef.current?.click()}
-                >
+                <SettingsRowButton onClick={() => fileRef.current?.click()}>
                   Change photo
-                </Button>
+                </SettingsRowButton>
                 <HiddenFilePicker
                   ref={fileRef}
                   accept="image/*"
@@ -161,16 +156,13 @@ export function AccountSection({
             label="Email"
             desc="We send sign-in codes here"
             control={
-              <Button
-                className={SETTINGS_ROW_BUTTON}
-                type="button"
-                variant="outline"
+              <SettingsRowButton
                 onClick={() =>
                   dispatch({ type: "email_dialog_changed", open: true })
                 }
               >
                 Change email
-              </Button>
+              </SettingsRowButton>
             }
           />
         </SettingsCard>
@@ -182,10 +174,7 @@ export function AccountSection({
             label="Export your data"
             desc="Paper, Apply and Pitch as files"
             control={
-              <Button
-                className={SETTINGS_ROW_BUTTON}
-                type="button"
-                variant="outline"
+              <SettingsRowButton
                 onClick={() => {
                   void downloadExport()
                     .then(() => toast("Export started"))
@@ -195,7 +184,7 @@ export function AccountSection({
                 }}
               >
                 Export
-              </Button>
+              </SettingsRowButton>
             }
           />
           <SettingsRow
@@ -203,10 +192,7 @@ export function AccountSection({
             label="Sign out"
             desc="Signed in on this device"
             control={
-              <Button
-                className={SETTINGS_ROW_BUTTON}
-                type="button"
-                variant="outline"
+              <SettingsRowButton
                 onClick={() => {
                   void authClient
                     .signOut()
@@ -214,7 +200,7 @@ export function AccountSection({
                 }}
               >
                 Sign out
-              </Button>
+              </SettingsRowButton>
             }
           />
         </SettingsCard>
@@ -225,16 +211,13 @@ export function AccountSection({
           label="Delete account"
           desc="Removes your Paper, Apply jobs and Pitch"
           control={
-            <Button
-              className={SETTINGS_ROW_BUTTON}
-              type="button"
-              variant="outline"
+            <SettingsRowButton
               onClick={() =>
                 dispatch({ type: "delete_dialog_changed", open: true })
               }
             >
               Delete account
-            </Button>
+            </SettingsRowButton>
           }
         />
       </SettingsCard>
