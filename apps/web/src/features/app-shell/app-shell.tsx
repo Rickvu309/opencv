@@ -30,6 +30,7 @@ import {
   CoachPanel,
   type CoachPanelMode,
 } from "@/features/coach/coach-panel.tsx"
+import { COACH_PANEL_ROOM_QUERY } from "./coach-panel-placement.ts"
 import { CoachWorkspace } from "@/features/coach/coach-workspace.tsx"
 import { registerShellChatOpener } from "@/features/command-palette/shell-chat.ts"
 import { runContractCommand } from "@/lib/contract-client.ts"
@@ -114,7 +115,9 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const isDesktop = useMediaQuery(DESKTOP_MEDIA_QUERY, true)
-  const sheet = !isDesktop
+  const panelRoom = useMediaQuery(COACH_PANEL_ROOM_QUERY, true)
+  const panelDesktop = isDesktop && panelRoom
+  const panelSheet = !panelDesktop
   const chats = useShellChats()
   const layout = useSidebarLayout(isDesktop)
   const [{ panel, drawerOpen }, dispatch] = useReducer(
@@ -150,7 +153,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
   useEffect(() => {
     const viewport = window.visualViewport
     const frame = document.getElementById(COACH_PANEL_ID)
-    if (!sheet || !panelOpen || !viewport || !frame) return
+    if (!panelSheet || !panelOpen || !viewport || !frame) return
     function resize() {
       frame?.style.setProperty("height", `${viewport?.height}px`)
       frame?.style.setProperty("top", `${viewport?.offsetTop}px`)
@@ -164,7 +167,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
       frame.style.removeProperty("height")
       frame.style.removeProperty("top")
     }
-  }, [sheet, panelOpen])
+  }, [panelSheet, panelOpen])
 
   useShortcut({
     key: "Escape",
@@ -234,7 +237,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
     menuRef.current?.focus()
   }
 
-  const floating = isDesktop && panel.mode === "side"
+  const floating = panelDesktop && panel.mode === "side"
 
   useLayoutEffect(() => keepToastsClearOf(dockRef.current), [])
 
@@ -247,9 +250,9 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
     <FocusSafeRegion
       id={COACH_PANEL_ID}
       data-slot="shell-coach"
-      role={sheet && panelOpen ? "dialog" : undefined}
-      aria-modal={sheet && panelOpen ? true : undefined}
-      aria-label={sheet ? "Coach" : undefined}
+      role={panelSheet && panelOpen ? "dialog" : undefined}
+      aria-modal={panelSheet && panelOpen ? true : undefined}
+      aria-label={panelSheet ? "Coach" : undefined}
       hidden={!panelOpen}
       concealed={!panelOpen}
       focusFallback={() =>
@@ -261,13 +264,14 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
       className={cn(
         "z-10 min-h-0 bg-transparent outline-none",
         panelOpen && "flex flex-col",
-        sheet && "fixed inset-x-0 top-0 z-40 h-dvh w-full",
+        panelSheet && "fixed inset-x-0 top-0 z-40 h-dvh w-full",
         floating &&
-          "fixed right-5 bottom-12 z-30 h-[min(600px,max(320px,calc(100dvh-56px)))] w-[400px]",
-        isDesktop && panel.mode === "full" && "absolute inset-0 z-20"
+          "fixed right-5 bottom-12 z-30 h-[600px] max-h-[calc(100dvh-117px)] w-[400px]",
+        panelDesktop && panel.mode === "full" && "absolute inset-0 z-20"
       )}
       onKeyDown={(event) => {
-        if (event.key !== "Tab" || (!sheet && panel.mode !== "full")) return
+        if (event.key !== "Tab" || (!panelSheet && panel.mode !== "full"))
+          return
         const controls = event.currentTarget.querySelectorAll<HTMLElement>(
           'button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), [tabindex="0"]'
         )
@@ -384,7 +388,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
           >
             <SidebarExpandContext value={sidebarExpand}>
               <FocusSafeRegion
-                concealed={panelOpen && (sheet || panel.mode === "full")}
+                concealed={panelOpen && (panelSheet || panel.mode === "full")}
                 focusFallback={() => document.getElementById(COACH_PANEL_ID)}
                 hidden={panelOpen && panel.mode === "full"}
                 className="flex min-h-0 min-w-0 flex-1 overflow-hidden rounded-[inherit]"

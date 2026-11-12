@@ -1,0 +1,6 @@
+{
+  "id": "dialogs-use-kit",
+  "file": "apps/web/src/test/dialogs-use-kit.test.ts",
+  "historic": null,
+  "reason": "every web dialog already rendered through the kit DialogContent when this guard was written, so no past commit has a dialog that skips the kit; the test proves both sides itself: its mistake fixtures (a Base UI dialog or alert dialog import, a native dialog element, a hand-built dialog role, a DialogContent from another module) fire, and a kit dialog fixture stays quiet"
+}

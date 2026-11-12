@@ -1,0 +1,6 @@
+{
+  "id": "dialogs-trap-tab",
+  "file": "apps/web/src/test/dialogs-trap-tab.test.tsx",
+  "historic": null,
+  "reason": "the escape it guards lives in main's own kit dialog (c6ae4e5f), which relied on Base UI focus guards that hand focus back on the next frame; running this test with packages/ui/src/components/dialog.tsx from c6ae4e5f fails all four cycles (Paper delete confirmation and New job dialog, Tab and Shift+Tab), and the kit test packages/ui/src/components/dialog.test.tsx keeps a raw Base UI popup as the mistake fixture that fires"
+}

@@ -4,6 +4,7 @@ import { cn } from "cn"
 
 import { Button } from "@workspace/ui/components/button"
 import { XIcon } from "lucide-react"
+import { wrappedTabStop } from "@workspace/ui/lib/dialog-tab-stops"
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
@@ -37,11 +38,24 @@ function DialogOverlay({
   )
 }
 
+function keepTabInside(event: React.KeyboardEvent<HTMLDivElement>) {
+  if (event.key !== "Tab" || event.defaultPrevented) return
+  const next = wrappedTabStop(
+    event.currentTarget,
+    event.currentTarget.ownerDocument.activeElement,
+    event.shiftKey
+  )
+  if (!next) return
+  event.preventDefault()
+  next.focus()
+}
+
 function DialogContent({
   className,
   children,
   showCloseButton = true,
   overlayClassName,
+  onKeyDown,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
@@ -56,6 +70,10 @@ function DialogContent({
           "fixed top-1/2 left-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-(--duration-micro) outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           className
         )}
+        onKeyDown={(event) => {
+          onKeyDown?.(event)
+          keepTabInside(event)
+        }}
         {...props}
       >
         {children}
