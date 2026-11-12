@@ -31,6 +31,7 @@ import { pastePlain, plainCharacters } from "./canvas-paste.ts"
 import { reachSpan, type Reach } from "./canvas-reach.ts"
 import { pageWords, savedNote } from "./canvas-save.ts"
 import type { MovedPage, SaveOutcome } from "./canvas-save-outcome.ts"
+import { savedPageSwap } from "./canvas-unsaved.ts"
 import {
   sameRefusals,
   stillRefused,
@@ -494,16 +495,16 @@ function settled(
 }
 
 function usedSaved(state: CanvasState): CanvasState {
-  const moved = state.moved
-  if (!moved) return state
-  const present = draftOf(moved.head, state.present.caret)
+  const swap = savedPageSwap(state)
+  if (!swap) return state
+  const present = draftOf(swap.page, state.present.caret)
   return {
     ...state,
     past: [],
     present,
     future: [],
-    looks: collectLooks(state.looks, moved.head),
-    basis: moved.basis,
+    looks: collectLooks(state.looks, swap.page),
+    basis: swap.basis,
     typed: false,
     saved: present,
     notice: "",

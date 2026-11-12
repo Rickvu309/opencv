@@ -81,7 +81,51 @@ const COMPOSED_OVER_NEWER: Step[] = [
   { kind: "composeEnd", text: "fid" },
 ]
 
+const SEED_501: Step[] = [
+  { kind: "type", line: 21, at: 37, text: "¤e" },
+  { kind: "enter", line: 1, at: 33 },
+  { kind: "drain" },
+  { kind: "enter", line: 13, at: 20 },
+  { kind: "paste", line: 30, text: "fjcjh\nk\nah" },
+  { kind: "drain" },
+  { kind: "reload" },
+  { kind: "answer", pick: 4, fault: "none" },
+  { kind: "useSaved" },
+  { kind: "deleteLine", line: 7 },
+  { kind: "drain" },
+  { kind: "enter", line: 45, at: 37 },
+  { kind: "join", line: 5 },
+  { kind: "reload" },
+  { kind: "join", line: 40 },
+  { kind: "elsewhere", line: 57, change: "delete" },
+]
+
+const SEED_664: Step[] = [
+  { kind: "join", line: 34 },
+  { kind: "drain" },
+  { kind: "elsewhere", line: 17, change: "delete" },
+  { kind: "type", line: 57, at: 24, text: "dcci" },
+  { kind: "answer", pick: 0, fault: "none" },
+  { kind: "useSaved" },
+  { kind: "enter", line: 36, at: 62 },
+  { kind: "deleteLine", line: 4 },
+  { kind: "reload" },
+  { kind: "paste", line: 33, text: "jc\nff\na hhf" },
+  { kind: "elsewhere", line: 30, change: "edit" },
+  { kind: "enter", line: 18, at: 37 },
+  { kind: "enter", line: 8, at: 37 },
+  { kind: "deleteLine", line: 18 },
+]
+
 describe("the writing page under a seeded random walk against a fake server", () => {
+  it("replays seed 501: a removed line that still has a temporary id is counted in Use the saved page", async () => {
+    expect(await walk(SEED_501)).toBeNull()
+  })
+
+  it("replays seed 664: a removed line edited elsewhere is counted in Use the saved page", async () => {
+    expect(await walk(SEED_664)).toBeNull()
+  })
+
   it("replays the walk's seed 9: a newer page that arrives during a composition is not overwritten by the composed word", async () => {
     expect(await walk(COMPOSED_OVER_NEWER)).toBeNull()
   })
