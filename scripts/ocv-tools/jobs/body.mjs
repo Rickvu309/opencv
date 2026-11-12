@@ -1,7 +1,8 @@
 import { decide, refusalError } from "../rules/index.mjs"
 import { closesIssue, issueInTitle, issueOfBranch } from "../rules/pull-ref.mjs"
-import { gh, json } from "./common.mjs"
+import { gh } from "./common.mjs"
 import { bodyOf } from "./finish.mjs"
+import { pullFacts } from "./pull-facts.mjs"
 
 function withClosingLine(text, n) {
   if (closesIssue(text, n)) return text
@@ -10,30 +11,33 @@ function withClosingLine(text, n) {
 
 export function replaceBody(ctx, n, { flags }) {
   const written = bodyOf(ctx, flags["--body-file"])
-  const viewed = json(
-    ctx,
-    "pr",
-    "view",
-    String(n),
-    "--json",
-    "title,headRefName"
-  )
-  const title = viewed.title ?? ""
-  const verdict = decide("body", { body: written, pull: { title } })
-  if (!verdict.ok) throw refusalError(verdict.refusals[0])
-  const branch = viewed.headRefName ?? ""
+  const live = pullFacts(ctx, n)
+  const title = live.pull.title ?? ""
+  const branch = live.pull.branch ?? ""
   const issue = issueOfBranch(branch)
+  const text =
+    issue == null ? written.text : withClosingLine(written.text, issue)
+  const facts = {
+    ...live,
+    body: written,
+    pull: { ...live.pull, title, body: text },
+  }
+  const verdict = decide("body", facts)
+  if (!verdict.ok) throw refusalError(verdict.refusals[0])
   if (issue == null)
     throw new Error(`PR #${n} branch "${branch}" is not type/<issue>-words.`)
   if (issueInTitle(title) !== issue)
     throw new Error(
       `PR #${n} branch ${branch} closes #${issue}, but the title does not end with (#${issue}).`
     )
-  const text = withClosingLine(written.text, issue)
+  const still = decide("pr", facts).refusals.map(
+    (refusal) =>
+      `The policy check will still refuse ${refusal.id}: ${refusal.message}`
+  )
   const bodyFile = ctx.writeScratch(`body/${n}-body.md`, text)
   gh(ctx, "pr", "edit", String(n), "--body-file", bodyFile)
   return {
-    lines: [`Updated the body of #${n}.`],
+    lines: [`Updated the body of #${n}.`, ...still],
     next: `scripts/ocv-tools.mjs policy ${n}`,
   }
 }

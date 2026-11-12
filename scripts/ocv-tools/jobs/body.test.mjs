@@ -109,8 +109,8 @@ test("body refuses when the title names a different issue than the branch", () =
   })
   f.ctx.writeFile(`${f.ctx.cwd}/note.md`, BODY)
   const r = f.call("body", "91", "--body-file", "note.md")
-  assert.equal(r.code, 1, r.text)
-  assert.match(r.text, /chore\/1027-keep-closing-line/)
+  assert.equal(r.code, 2, r.text)
+  assert.match(r.text, /REFUSED PR_METADATA/)
   assert.match(r.text, /\(#1027\)/)
   assert.equal(f.effects("gh", "pr edit").length, 0)
 })
@@ -173,4 +173,20 @@ test("help lists body", () => {
   const { text } = fixture().call("help")
   assert.match(text, /body <pr> --body-file <file>/)
   assert.match(text, /instead of gh pr edit --body-file/)
+})
+
+test("body refuses No visible change. while the PR edits a screen file, before it writes to GitHub", () => {
+  const f = fixture({
+    intercept: editOk,
+    changed: ["apps/web/src/features/auth/sign-in-screen.tsx"],
+  })
+  f.ctx.writeFile(
+    `${f.ctx.cwd}/note.md`,
+    `${BODY}\n## Before / after\n\nNo visible change.\nOnly the wait message moved.\n`
+  )
+  const r = f.call("body", "91", "--body-file", "note.md")
+  assert.equal(r.code, 2, r.text)
+  assert.match(r.text, /REFUSED NO_BEFORE_AFTER/)
+  assert.match(r.text, /is a claim the pictures must show/)
+  assert.equal(f.effects("gh", "pr edit").length, 0)
 })

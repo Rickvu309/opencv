@@ -65,7 +65,16 @@ export function finish(ctx, { flags }) {
       .replace(/\.$/, "")
     const title = `${t.type}: ${desc.charAt(0).toLowerCase()}${desc.slice(1)} (#${t.n})`
     if (flags["--dry-run"]) {
-      const checked = decide("body", { body: written, pull: { title } })
+      const files = git(ctx, "diff", "--name-only", "origin/main...HEAD")
+      const checked = decide("body", {
+        body: written,
+        pull: {
+          title,
+          issue: t.n,
+          body: `Closes #${t.n}\n\n${written.text}`,
+        },
+        diff: { files },
+      })
       if (!checked.ok) throw refusalError(checked.refusals[0])
       return {
         lines: [
