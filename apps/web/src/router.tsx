@@ -29,7 +29,12 @@ import { validateApplySearch } from "@/features/apply/apply-search.ts"
 import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
 import { findBlogPost } from "@/features/landing/blog/blog-copy.ts"
 import { SignInPage } from "@/routes/sign-in.tsx"
-import { authClient } from "@/lib/auth-client.ts"
+import {
+  checkSession,
+  SessionCheckUnknown,
+  sessionToKeep,
+} from "@/lib/session-check.ts"
+import { SessionCheckErrorBoundary } from "@/features/auth/session-check-notice.tsx"
 import { signInHref, validateAuthSearch } from "@/lib/auth-redirect.ts"
 import { documentTarget } from "@/lib/web-origins.ts"
 import { webOrigins } from "@/lib/web-origins-env.ts"
@@ -125,23 +130,29 @@ function locationHref(location: {
   return `${location.pathname}${location.searchStr}${location.hash ? `#${location.hash}` : ""}`
 }
 
+async function requireSession(resumeHref: string) {
+  const check = await checkSession()
+  if (check.kind === "signed-out")
+    throw redirect({ href: signInHref(resumeHref) })
+  const session = sessionToKeep(check)
+  if (!session) throw new SessionCheckUnknown()
+  return { session, sessionCheck: check.kind }
+}
+
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/",
   beforeLoad: async ({ location }) => {
     if (isPublicHost()) return
     const onAppHost = isAppHost()
-    let data
-    try {
-      data = (await authClient.getSession()).data
-    } catch (error) {
-      if (isRedirect(error)) throw error
-      if (onAppHost) throw redirect({ href: startPagePath("apply") })
-      throw error
-    }
-    if (!data) {
+    const check = await checkSession()
+    if (check.kind === "signed-out") {
       if (!onAppHost) return
       throw redirect({ href: signInHref(locationHref(location)) })
+    }
+    if (!sessionToKeep(check)) {
+      if (onAppHost) throw redirect({ href: startPagePath("apply") })
+      return
     }
     let startPage: unknown = "apply"
     try {
@@ -163,8 +174,8 @@ const signInRoute = createRoute({
   path: "/sign-in",
   validateSearch: validateAuthSearch,
   beforeLoad: async ({ search }) => {
-    const { data } = await authClient.getSession()
-    if (data) {
+    const check = await checkSession()
+    if (check.kind === "signed-in") {
       throw redirect({ href: search.redirect ?? "/" })
     }
   },
@@ -185,13 +196,7 @@ const signUpRoute = createRoute({
 })
 
 async function loadUnknownSession() {
-  try {
-    const { data } = await authClient.getSession()
-    return { signedIn: Boolean(data) }
-  } catch (error) {
-    if (isRedirect(error)) throw error
-    return { signedIn: false }
-  }
+  return { signedIn: sessionToKeep(await checkSession()) !== null }
 }
 
 function legacyBeforeLoad({
@@ -220,22 +225,12 @@ const legacyAppSplatRoute = createRoute({
 const productLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: "product",
-  beforeLoad: async ({ location }) => {
-    try {
-      const { data } = await authClient.getSession()
-      if (!data) {
-        throw redirect({ href: signInHref(locationHref(location)) })
-      }
-      return { session: data }
-    } catch (error) {
-      if (isRedirect(error)) throw error
-      return { session: null }
-    }
-  },
+  beforeLoad: ({ location }) => requireSession(locationHref(location)),
   component: lazyRouteComponent(
-    () => import("@/features/app-shell/app-shell-layout.tsx"),
-    "AppShellLayout"
+    () => import("@/routes/product-layout.tsx"),
+    "ProductLayout"
   ),
+  errorComponent: SessionCheckErrorBoundary,
 })
 
 const paperRoute = createRoute({
@@ -339,14 +334,11 @@ const consentRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/oauth/consent",
   beforeLoad: async ({ location }) => {
-    const { data } = await authClient.getSession()
-    if (!data)
-      throw redirect({
-        href: signInHref(
-          authorizationResumePath(location.pathname, window.location.search)
-        ),
-      })
+    await requireSession(
+      authorizationResumePath(location.pathname, window.location.search)
+    )
   },
+  errorComponent: SessionCheckErrorBoundary,
   component: lazyRouteComponent(
     () => import("@/features/connections/index.ts"),
     "ConnectionConsent"
@@ -357,14 +349,11 @@ const connectRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/oauth/connect",
   beforeLoad: async ({ location }) => {
-    const { data } = await authClient.getSession()
-    if (!data)
-      throw redirect({
-        href: signInHref(
-          authorizationResumePath(location.pathname, window.location.search)
-        ),
-      })
+    await requireSession(
+      authorizationResumePath(location.pathname, window.location.search)
+    )
   },
+  errorComponent: SessionCheckErrorBoundary,
   component: lazyRouteComponent(
     () => import("@/features/connections/index.ts"),
     "ContinueConnection"

@@ -33,6 +33,11 @@ export const AUTH_COPY = {
   emailMe: "Email me a code",
   logOut: "Log out",
   codeGroup: "Email code",
+  sessionCheckTitle: "We couldn't check your sign-in",
+  sessionCheckBody:
+    "Your session is probably fine. The server didn't answer in time.",
+  sessionCheckNotice: "We couldn't check your sign-in. You can keep working.",
+  sessionCheckRetry: "Try again",
 } as const
 
 export const LANGUAGE_STORAGE_KEY = "opencv.language"

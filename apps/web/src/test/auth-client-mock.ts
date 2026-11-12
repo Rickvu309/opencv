@@ -1,6 +1,7 @@
 import { vi } from "vitest"
 
 import { SAMPLE_AUTHOR } from "@/features/seed/sample-author.ts"
+import { forgetSession } from "@/lib/known-session.ts"
 
 export const TEST_SESSION_USER = {
   id: "user_test",
@@ -35,8 +36,31 @@ function signedInSession(
   }
 }
 
-export const authMockState: { data: MockSession | null } = {
+export type MockSessionFailure = "rate-limited" | "server-error" | "network"
+
+export const authMockState: {
+  data: MockSession | null
+  failure: MockSessionFailure | null
+} = {
   data: signedInSession(),
+  failure: null,
+}
+
+export function failMockSessionCheck(failure: MockSessionFailure | null) {
+  authMockState.failure = failure
+}
+
+const FAILURE_STATUS = { "rate-limited": 429, "server-error": 503 } as const
+
+async function mockGetSession() {
+  const failure = authMockState.failure
+  if (failure === "network") throw new TypeError("Failed to fetch")
+  if (failure)
+    return {
+      data: null,
+      error: { status: FAILURE_STATUS[failure], statusText: failure },
+    }
+  return { data: authMockState.data, error: null }
 }
 
 export const mockPublicConfig = { google: false }
@@ -77,6 +101,8 @@ function installAuthMocks() {
 
 export function resetMockSession() {
   authMockState.data = signedInSession()
+  authMockState.failure = null
+  forgetSession()
   mockPublicConfig.google = false
   authClient.emailOtp.sendVerificationOtp.mockReset()
   authClient.emailOtp.changeEmail.mockReset()
@@ -89,11 +115,12 @@ export function resetMockSession() {
 
 export function invalidateClientSession() {
   authMockState.data = null
+  forgetSession()
   authClient.$store.notify("$sessionSignal")
 }
 
 export const authClient = {
-  getSession: async () => ({ data: authMockState.data, error: null }),
+  getSession: mockGetSession,
   useSession: () => ({
     data: authMockState.data,
     isPending: false,

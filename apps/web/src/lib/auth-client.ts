@@ -6,6 +6,7 @@ import {
   setCoachStopSession,
 } from "@/lib/coach-stop-registry.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
+import { forgetSession } from "@/lib/known-session.ts"
 
 export const SEND_SESSION_COOKIE_TO_API_ORIGIN = {
   credentials: "include",
@@ -17,8 +18,10 @@ export const authClient = createAuthClient({
   fetchOptions: {
     ...SEND_SESSION_COOKIE_TO_API_ORIGIN,
     onRequest(context) {
-      if (new URL(context.url).pathname === "/api/auth/sign-out")
+      if (new URL(context.url).pathname === "/api/auth/sign-out") {
+        forgetSession()
         disposeCoachStops()
+      }
     },
   },
   plugins: [emailOTPClient()],
@@ -29,6 +32,7 @@ authClient.$store.atoms.session.subscribe((session) => {
 })
 
 export function invalidateClientSession() {
+  forgetSession()
   disposeCoachStops()
   authClient.$store.notify("$sessionSignal")
 }
