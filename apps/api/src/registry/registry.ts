@@ -66,7 +66,6 @@ import {
   requirePreparationBoundary,
   requirePublicationBoundary,
   reviewSnapshot,
-  carriedReview,
   reviewReceiptKey,
   isUnchanged,
   readPreparedExecution,
@@ -461,7 +460,6 @@ export class Registry extends RegistryEntries {
               ? ("expired" as const)
               : row.status,
           receipt: this.confirmationReceipt(completed),
-          ...carriedReview(row.frozenReview),
         }
       })
     )

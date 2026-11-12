@@ -146,6 +146,19 @@ describe("CoachToolLine", () => {
     expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled()
   })
 
+  it("shows why Undo was refused when the page moved after the save", async () => {
+    const reason = "This page changed after that save, so Undo was skipped."
+    const onUndo = vi
+      .fn()
+      .mockRejectedValue(new ApiError(409, "CONFLICT", reason))
+    render(<CoachToolLine tool={toolOf(moved)} canUndo onUndo={onUndo} />)
+
+    fireEvent.click(screen.getByRole("button", { name: "Undo" }))
+
+    expect(await screen.findByRole("alert")).toHaveTextContent(reason)
+    expect(screen.queryByText(UNDO_FAILED_COPY)).not.toBeInTheDocument()
+  })
+
   it("tells the open page to reread after a paper edit is approved", async () => {
     vi.stubGlobal("fetch", () =>
       Promise.resolve(Response.json({ ok: true, data: {} }))

@@ -36,7 +36,7 @@ export function wordChangeRows(change: WritingChange) {
     ]
   }
   if (change.op === "delete") {
-    return [{ label: "Before", text: shownWord(change.before) }]
+    return [{ label: "Line", text: shownWord(change.before) }]
   }
   if (change.op !== "insert" || change.place === undefined) return []
   return [
@@ -47,7 +47,7 @@ export function wordChangeRows(change: WritingChange) {
           ? "At the start of the page"
           : `After this line: ${shownWord(change.place)}`,
     },
-    { label: "After", text: shownWord(change.after) },
+    { label: "New line", text: shownWord(change.after) },
   ]
 }
 
@@ -148,28 +148,33 @@ function wordBatchFrom(input: unknown, review: unknown) {
   return { docId: batch.docId, changes, withheld: null }
 }
 
+function isWordReview(review: unknown) {
+  return !!review && typeof review === "object" && "operations" in review
+}
+
 function viewFromReview(review: unknown): WordBatchView {
+  if (!isWordReview(review)) return { state: "none" }
   const parsed = wordReviewSchema.safeParse(review)
-  if (!parsed.success) return { state: "none" }
+  if (!parsed.success) return { state: "withheld", reason: WORD_BATCH_HIDDEN }
   const changes: WritingChange[] = []
   for (const operation of parsed.data.operations) {
-    if (operation.op === "insert" && operation.place === undefined) {
+    if (operation.op !== "insert") {
+      changes.push({
+        op: operation.op,
+        before: operation.before,
+        after: operation.after,
+      })
+      continue
+    }
+    if (operation.place === undefined) {
       return { state: "withheld", reason: WORD_BATCH_HIDDEN }
     }
-    changes.push(
-      operation.op === "insert"
-        ? {
-            op: "insert",
-            before: "",
-            after: operation.after,
-            place: operation.place ?? null,
-          }
-        : {
-            op: operation.op,
-            before: operation.before,
-            after: operation.after,
-          }
-    )
+    changes.push({
+      op: "insert",
+      before: "",
+      after: operation.after,
+      place: operation.place,
+    })
   }
   return { state: "ready", changes }
 }
@@ -208,17 +213,28 @@ export function useWordBatchApproval(pendingActionId: string, review: unknown) {
   return wordBatchView(pendingActionId, review, proposal)
 }
 
-export function publishWritingProposal(
+function publish(
   toolCallId: string,
-  input: unknown,
-  review?: unknown
+  parsed: Omit<WritingProposal, "toolCallId" | "pendingActionId">
 ) {
-  const parsed = oneReplacement(input) ?? wordBatchFrom(input, review)
-  if (!parsed) return
   const pendingActionId =
     current?.toolCallId === toolCallId ? current.pendingActionId : null
   current = { toolCallId, pendingActionId, ...parsed }
   emit()
+}
+
+export function publishWritingProposal(toolCallId: string, input: unknown) {
+  const parsed = oneReplacement(input)
+  if (parsed) publish(toolCallId, parsed)
+}
+
+export function publishWordBatch(
+  toolCallId: string,
+  input: unknown,
+  review: unknown
+) {
+  const parsed = wordBatchFrom(input, review)
+  if (parsed) publish(toolCallId, parsed)
 }
 
 export function attachWritingProposal(

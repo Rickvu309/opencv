@@ -34,7 +34,7 @@ import {
   run as wordRun,
 } from "./package-fixtures.js"
 import { publishWordPackage, stageWordPackage } from "./package-store.js"
-import { apply, open } from "./word/document.js"
+import { apply, open, WORD_UNDO_MOVED } from "./word/document.js"
 
 let backend: Backend
 const owner = randomUUID()
@@ -290,7 +290,7 @@ describe("the Coach and own agents send Word batches through paper.edit", () => 
         .undo(owner, receipt.id)
         .then((value) => JSON.stringify(value))
         .catch((error: unknown) => String(error))
-      expect(undone).toMatch(/changed/)
+      expect(undone).toContain(WORD_UNDO_MOVED)
       expect(await words(page.doc)).toEqual(["Dear Ada Lovelace,"])
       expect((await head(page.doc)).revision).toBe(typed.page.revision)
     }))
@@ -318,7 +318,7 @@ describe("the Coach and own agents send Word batches through paper.edit", () => 
         .undo(owner, receipt.id)
         .then((value) => JSON.stringify(value))
         .catch((error: unknown) => String(error))
-      expect(undone).toMatch(/changed/)
+      expect(undone).toContain(WORD_UNDO_MOVED)
       expect(await words(page.doc)).toEqual([
         "Dear Ada Lovelace,",
         "I led the migration.",
@@ -347,7 +347,7 @@ describe("the Coach and own agents send Word batches through paper.edit", () => 
         .undo(owner, receipt.id)
         .then((value) => JSON.stringify(value))
         .catch((error: unknown) => String(error))
-      expect(undone).toMatch(/changed/)
+      expect(undone).toContain(WORD_UNDO_MOVED)
       expect(await words(page.doc)).toEqual(["Dear Grace,"])
       expect((await head(page.doc)).revision).toBe(typed.page.revision)
     }))

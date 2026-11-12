@@ -111,17 +111,17 @@ export async function getChat(userId: UserId, chatId: ChatId) {
         const result = withBlocked(withUndone(message, undone), blocked)
         return {
           ...result,
-          parts: result.parts.map((part) => {
-            if (part.type !== "tool" || !part.pendingActionId) return part
-            const confirmation = confirmations.get(part.pendingActionId)
-            const review = confirmation?.review ?? part.review
-            return {
-              ...part,
-              ...confirmation?.receipt,
-              ...(review !== undefined ? { review } : {}),
-              approval: confirmation?.status ?? ("expired" as const),
-            }
-          }),
+          parts: result.parts.map((part) =>
+            part.type === "tool" && part.pendingActionId
+              ? {
+                  ...part,
+                  ...confirmations.get(part.pendingActionId)?.receipt,
+                  approval:
+                    confirmations.get(part.pendingActionId)?.status ??
+                    ("expired" as const),
+                }
+              : part
+          ),
         }
       }),
       ...(activeTask

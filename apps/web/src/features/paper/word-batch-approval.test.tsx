@@ -127,7 +127,9 @@ describe("a Word batch is shown before Approve", () => {
     renderBoth(reviewOf("Dear Ada,"))
 
     const card = screen.getByRole("region", { name: "Coach proposal" })
-    const coach = screen.getByText("This change").closest("[data-slot=card]")
+    const coach = screen
+      .getByText("Changes to approve")
+      .closest("[data-slot=card]")
     if (!coach) throw new Error("missing batch preview")
     for (const surface of [card, coach]) {
       expect(within(surface).getByText("Change a line")).toBeVisible()
@@ -136,17 +138,11 @@ describe("a Word batch is shown before Approve", () => {
       expect(
         within(surface).getByText("After this line: Dear Ada,")
       ).toBeVisible()
+      expect(within(surface).getByText("Dear Ada,")).toBeVisible()
+      expect(within(surface).getByText("Dear Grace,")).toBeVisible()
+      expect(within(surface).getByText("I write about the role.")).toBeVisible()
+      expect(within(surface).getByText("Old line")).toBeVisible()
     }
-    expect(within(card).getByText("Dear Ada,")).toBeVisible()
-    expect(within(card).getByText("Dear Grace,")).toBeVisible()
-    expect(within(card).getByText("I write about the role.")).toBeVisible()
-    expect(within(card).getByText("Old line")).toBeVisible()
-    expect(within(coach).getByText("Before Dear Ada,")).toBeVisible()
-    expect(within(coach).getByText("After Dear Grace,")).toBeVisible()
-    expect(
-      within(coach).getByText("After I write about the role.")
-    ).toBeVisible()
-    expect(within(coach).getByText("Before Old line")).toBeVisible()
     const approve = screen.getAllByRole("button", { name: "Approve" })
     expect(approve).toHaveLength(2)
     for (const button of approve) expect(button).toBeEnabled()
@@ -159,5 +155,27 @@ describe("a Word batch is shown before Approve", () => {
     expect(
       screen.queryByRole("button", { name: "Approve" })
     ).not.toBeInTheDocument()
+  })
+
+  it("offers no Approve in the Coach when the review lost a line's words", () => {
+    const review = reviewOf("Dear Ada,")
+    const broken = {
+      ...review,
+      operations: review.operations.map((operation) =>
+        operation.op === "delete" ? { op: "delete" } : operation
+      ),
+    }
+    render(
+      <ChatStoreContext.Provider value={store}>
+        <CoachToolLine tool={toolOf(broken)} canUndo={false} />
+      </ChatStoreContext.Provider>
+    )
+
+    expect(screen.getByText(WORD_BATCH_HIDDEN)).toBeVisible()
+    expect(screen.queryByText("Dear Grace,")).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Approve" })
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Deny" })).toBeEnabled()
   })
 })

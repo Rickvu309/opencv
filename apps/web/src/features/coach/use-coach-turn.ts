@@ -17,6 +17,7 @@ import { undoActivity, runContractCommand } from "@/lib/contract-client.ts"
 import {
   attachWritingProposal,
   clearWritingProposal,
+  publishWordBatch,
   publishWritingProposal,
 } from "@/lib/writing-proposal.ts"
 import { ignoreRejection } from "@/lib/quiet-rejection.ts"
@@ -326,7 +327,7 @@ export function useCoachTurn({
           if (data.name === "paper.edit") {
             if (!data.ok) clearWritingProposal(data.toolCallId)
             else {
-              publishWritingProposal(
+              publishWordBatch(
                 data.toolCallId,
                 calls.get(data.toolCallId),
                 data.review
