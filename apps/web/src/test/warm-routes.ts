@@ -1,6 +1,6 @@
 await Promise.all([
   import("@/features/connections/index.ts"),
-  import("@/features/app-shell/app-shell-layout.tsx"),
+  import("@/routes/product-layout.tsx"),
   import("@/routes/paper.tsx"),
   import("@/routes/paper-doc.tsx"),
   import("@/features/paper/paper-cv-editor.tsx"),
