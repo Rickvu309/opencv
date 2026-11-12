@@ -3,7 +3,7 @@ import type { JobView, PaperFile, PaperView } from "@workspace/domain"
 export type PaperImportState =
   | { type: "idle" }
   | { type: "importing"; name: string }
-  | { type: "error"; message: string }
+  | { type: "error"; message: string; retry: File | null }
 
 export type Mode =
   | { type: "new"; step: "kind" | "gallery" }
@@ -43,7 +43,7 @@ export type LibraryAction =
   | { type: "jobs_failed"; message: string }
   | { type: "import_started"; name: string }
   | { type: "import_ended" }
-  | { type: "import_failed"; message: string }
+  | { type: "import_failed"; message: string; retry?: File }
   | { type: "blank_started" }
   | { type: "blank_ended" }
   | { type: "link_typed"; link: string }
@@ -113,7 +113,11 @@ export function libraryReducer(
       return {
         ...state,
         mode: null,
-        importState: { type: "error", message: action.message },
+        importState: {
+          type: "error",
+          message: action.message,
+          retry: action.retry ?? null,
+        },
       }
     case "blank_started":
       return { ...state, creatingBlank: true }

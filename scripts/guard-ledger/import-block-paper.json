@@ -1,0 +1,13 @@
+{
+  "id": "import-block-paper",
+  "file": "scripts/import-block-paper.test.mjs",
+  "detector": {
+    "module": "scripts/lib/import-block-paper.mjs",
+    "export": "detectImportBlockPaper"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "08e146e7",
+    "path": "apps/api/src/paper/store.ts"
+  }
+}

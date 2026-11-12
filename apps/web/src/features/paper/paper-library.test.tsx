@@ -9,6 +9,8 @@ import {
   type PaperView,
 } from "@workspace/domain"
 
+import { ApiError } from "@/lib/api-error.ts"
+
 import { PaperLibrary } from "./paper-library.tsx"
 import {
   cv,
@@ -80,43 +82,30 @@ describe("Paper library", () => {
     ).toHaveFocus()
   })
 
-  it("does not pass the cancel signal to the upload, so a keep-alive cancel leaves the server request running", async () => {
-    vi.mocked(importPaperFile).mockImplementation(
-      () => new Promise(() => undefined)
-    )
-    renderLibrary([])
-    const file = new File(["CV"], "Linh_CV.pdf", { type: "application/pdf" })
-    const input = document.querySelector('input[type="file"]')
-    if (!input) throw new Error("Missing import input")
-    fireEvent.change(input, { target: { files: [file] } })
-    expect(await screen.findByRole("status")).toHaveTextContent("Linh_CV.pdf")
-    expect(vi.mocked(importPaperFile).mock.calls[0]?.[1]).toBeUndefined()
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
-    expect(vi.mocked(importPaperFile).mock.calls[0]?.[1]).toBeUndefined()
-    expect(screen.getByText("Start a document")).toBeInTheDocument()
-  })
-
-  it("discards a finished upload after cancel, because aborting the fetch would drop the id", async () => {
+  it("deletes a Word page that finishes importing after Cancel, and neither opens it nor shows the note", async () => {
     const created = {
-      ...cv("sample"),
-      sourceFileId:
-        "22222222-2222-4222-8222-222222222222" as PaperView["sourceFileId"],
+      generation: "package" as const,
+      docId: "22222222-2222-4222-8222-222222222222",
+      revision: "33333333-3333-4333-8333-333333333333",
+      name: "Linh_CV",
+      kind: "cv" as const,
+      packageHash: "a".repeat(64),
+      byteSize: 1200,
+      notice:
+        "Imported the text of your PDF. Layout, fonts and photo were not kept.",
     }
-    let finish: (value: PaperView) => void = () => undefined
+    let finish: (value: typeof created) => void = () => undefined
     vi.mocked(importPaperFile).mockImplementation(
       () =>
         new Promise((resolve) => {
           finish = resolve
         })
     )
-    const calls: string[] = []
-    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
-      calls.push(String(input))
+    const calls: { url: string; body: string }[] = []
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      calls.push({ url: String(input), body: String(init?.body ?? "") })
       return Promise.resolve(
-        Response.json({
-          ok: true,
-          data: { id: created.id, fileId: created.sourceFileId },
-        })
+        Response.json({ ok: true, data: { docId: created.docId } })
       )
     })
     const onOpen = vi.fn()
@@ -134,6 +123,9 @@ describe("Paper library", () => {
     )
     const input = document.querySelector('input[type="file"]')
     if (!input) throw new Error("Missing import input")
+    expect(input.getAttribute("accept")).toBe(
+      ".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+    )
     fireEvent.change(input, {
       target: {
         files: [new File(["CV"], "Linh_CV.pdf", { type: "application/pdf" })],
@@ -146,13 +138,16 @@ describe("Paper library", () => {
     })
     await vi.waitFor(() => {
       expect(
-        calls.some((url) =>
-          url.split("?")[0]?.endsWith("/api/commands/paper.delete")
+        calls.filter((call) =>
+          call.url.split("?")[0]?.endsWith("/api/commands/paper.delete")
         )
-      ).toBe(true)
+      ).toHaveLength(1)
     })
+    expect(
+      calls.find((call) => call.url.includes("paper.delete"))?.body
+    ).toContain(created.docId)
+    expect(screen.queryByText(created.notice)).toBeNull()
     expect(onOpen).not.toHaveBeenCalled()
-    expect(calls.some((url) => url.includes("paper.deleteFile"))).toBe(true)
     expect(screen.getByText("Start a document")).toBeInTheDocument()
   })
 
@@ -205,7 +200,11 @@ describe("Paper library", () => {
 
   it("shows a failed import and lets the user retry with another file", async () => {
     vi.mocked(importPaperFile).mockRejectedValueOnce(
-      new Error("Pages files aren't supported. Try a PDF or Word file.")
+      new ApiError(
+        415,
+        "FILE_UNSUPPORTED",
+        "Pages files aren't supported. Try a PDF or Word file."
+      )
     )
     renderLibrary([])
     const input = document.querySelector('input[type="file"]')
@@ -246,7 +245,10 @@ describe("Paper library", () => {
     expect(
       screen.getByRole("heading", { name: "Importing…" })
     ).toBeInTheDocument()
-    expect(vi.mocked(importPaperFile)).toHaveBeenCalledWith(file)
+    expect(vi.mocked(importPaperFile)).toHaveBeenCalledWith(
+      file,
+      expect.any(AbortSignal)
+    )
   })
 
   it("posts a pasted link and shows the server sentence", async () => {

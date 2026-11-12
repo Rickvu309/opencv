@@ -1,11 +1,30 @@
+import { parsePaperId } from "@workspace/domain"
+
 import { ApiError } from "@/lib/api-error.ts"
 import type { useRunCommand } from "@/lib/contract-client.ts"
 import { ignoreRejection } from "@/lib/quiet-rejection.ts"
 
-import type { PaperView } from "@workspace/domain"
-
 export const IMPORT_ACCEPT =
-  ".pdf,.docx,.txt,.json,.pages,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,application/json,application/vnd.apple.pages"
+  ".pdf,.docx,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+
+export const IMPORT_FAILED_SENTENCE =
+  "Could not import that file. Try it again."
+export const IMPORT_OFFLINE_SENTENCE =
+  "Could not reach OpenCV. Check your connection, then try again."
+const READER_OFF_CODE = "IMPORT_READER_OFF"
+
+export function importRefusal(error: unknown) {
+  if (error instanceof ApiError)
+    return {
+      message: error.message,
+      waitAndRetry:
+        error.status === 429 ||
+        (error.status >= 500 && error.code !== READER_OFF_CODE),
+    }
+  if (error instanceof TypeError)
+    return { message: IMPORT_OFFLINE_SENTENCE, waitAndRetry: true }
+  return { message: IMPORT_FAILED_SENTENCE, waitAndRetry: true }
+}
 
 export function messageOf(error: unknown, fallback: string) {
   if (error instanceof ApiError) return error.message
@@ -13,18 +32,12 @@ export function messageOf(error: unknown, fallback: string) {
   return fallback
 }
 
-export async function discardImport(
+export async function discardCancelledImport(
   run: ReturnType<typeof useRunCommand>,
-  created: PaperView
+  docId: string
 ) {
-  if (created.sourceFileId) {
-    await ignoreRejection(
-      run("paper.deleteFile", { fileId: created.sourceFileId }),
-      "failedImportCleanupStaysQuiet"
-    )
-  }
   await ignoreRejection(
-    run("paper.delete", { docId: created.id }),
-    "failedImportCleanupStaysQuiet"
+    run("paper.delete", { docId: parsePaperId(docId) }),
+    "cancelledImportCleanupStaysQuiet"
   )
 }
