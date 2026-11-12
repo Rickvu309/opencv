@@ -165,7 +165,7 @@ export function detect(text, file = "source.ts") {
       /\.(insert|update|delete)$/.test(call.name)
     )
     if (
-      (name === "prepareWordPackage" || name === "prepareWordBatch") &&
+      name === "prepareWordPackage" &&
       (!has("insideTransaction") ||
         !has("wordPackageBasis") ||
         !has("draftBatch") ||
