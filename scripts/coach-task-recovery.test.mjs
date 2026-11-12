@@ -378,6 +378,20 @@ for (const [path, required] of [
   })
 }
 
+test("the still-working notice never travels as reply text", () => {
+  const path = "apps/api/src/coach/turn-compatibility.ts"
+  const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+  assert.deepEqual(detect(clean, path), [])
+  assert.ok(
+    detect(clean.replace('type: "notice"', 'type: "text-delta"'), path).length >
+      0
+  )
+  const main = execFileSync("git", ["show", `2a4ea761:${path}`], {
+    encoding: "utf8",
+  })
+  assert.ok(detect(main, path).length > 0)
+})
+
 test("unknown config cannot hide its Retry in Chat history", () => {
   const path = "apps/web/src/features/coach/coach-workspace.tsx"
   const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")

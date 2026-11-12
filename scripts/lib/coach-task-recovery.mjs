@@ -73,14 +73,14 @@ export function detect(source, path = "") {
       ...(/receipt\s*\?\s*toolResultFromExecute\(/.test(source)
         ? []
         : [{ message: "Old tabs retain durable receipt reversal metadata" }]),
-      ...(/if \(Date.now\(\) >= deadline\) \{[\s\S]*?type: "text-delta"[\s\S]*?Reload this Chat to follow or stop it.[\s\S]*?type: "message-end"/.test(
+      ...(/if \(Date.now\(\) >= deadline\) \{[\s\S]*?type: "notice"[\s\S]*?Reload this Chat to follow or stop it.[\s\S]*?type: "message-end"/.test(
         source
       )
         ? []
         : [
             {
               message:
-                "Compatibility tails complete explicitly for old clients without retry errors",
+                "Compatibility tails end with a notice event, never reply text, and complete without retry errors",
             },
           ]),
     ]
