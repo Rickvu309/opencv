@@ -20,7 +20,7 @@ These are the rules of `apps/api/src/paper/WordEdit.tla`. Do not weaken a rule t
 
 ## Where the code lives
 
-`apps/api/src/paper/WordEdit.tla.json` maps each model action to code. A null action names its functions under `"boundaries"`.
+`apps/api/src/paper/WordEdit.tla.json` maps each model action to code. A null action names its functions under `"boundaries"`. `node --test scripts/tla-specs.test.mjs` fails when a `"boundaries"` entry names something its file does not define, such as an import, or a file that `"covers"` does not list.
 
 | Action          | Code                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |

@@ -15,6 +15,8 @@ These are the five rules of `CoachPaper.tla`. Do not weaken a rule to clear a fi
 
 ## Where the code lives
 
+The Paper reading below covers code scheduled for deletion. `paper.edit` takes this Yjs branch only when `basedOn` is a number (`select` in `apps/api/src/paper/package-edit.ts`). Word pages send a revision string and take the reviewed branch; `verify-paper-word` covers that. The MCP Job reading at the end is live.
+
 - `apps/api/src/paper/content-coach.ts` exports `editAsCoach`, `stalePaperBasis`, and `revertCoachEdit`. `stalePaperBasis` returns `refuse` when `basedOn` is not the current revision, and `apply` when it matches. `editAsCoach` calls it only for a coach actor, and throws before any write. Switching that return from `refuse` to `apply` is the one-line change to a clean merge. The replay and the guard `paper-coach-basis` both require `refuse`.
 - `apps/api/src/paper/content-store.ts` exports `coachBasisOk`, `withContent`, and `syncContent`. `coachBasisOk` still allows an older basis for a person edit. Do not use it as the coach approval rule. `syncContent` is the person write that raises the revision.
 - `apps/api/src/registry/proposals.ts` exports `createProposal` and `lockProposal`. `createProposal` inserts a pending row and does not write the document. The basis read and the write stay one lock inside the approval transaction.
@@ -22,7 +24,7 @@ These are the five rules of `CoachPaper.tla`. Do not weaken a rule to clear a fi
 - `apps/api/src/registry/coach-policy.ts` exports `coachRefusal`. `tools` and `execute` consult it. A refusal omits the command from the coach tools and rejects a coach execute with `COACH_NOT_ALLOWED`.
 - `packages/domain/src/paper-contract.ts` sets the `coach` field of `paper.edit` to `confirm`. The guard `paper-coach-approval` requires that string.
 
-`apps/api/src/paper/ContentStore.tla` models the Yjs log under both basis rules. Its `Coach` action is a coach actor: `editAsCoach` lands only on the revision it read, through `stalePaperBasis`, and the action property `CoachExact` in `ContentStore.coach.cfg` checks that rule. Its `PersonMerge` action is a signed-in person who posts `paper.edit` with a numeric `basedOn` to `apps/api/src/registry/http.ts`: `coachBasisOk` still lets that edit merge onto an older revision. A delegate never takes that path, because `paperEditBasisRefused` in `apps/api/src/registry/registry-entries.ts` refuses a numeric `basedOn`. P1, P2, P3 and P5 run with both actions. `ContentStore.coach.mutant.cfg` gives the coach actor the person rule and must exit 13 on `CoachExact`. Every other ContentStore mutant must exit 12 on its own invariant.
+`apps/api/src/paper/ContentStore.tla` models the Yjs log under both basis rules. Its `Coach` action is a coach actor: `editAsCoach` lands only on the revision it read, through `stalePaperBasis`, and the action property `CoachExact` in `ContentStore.coach.cfg` checks that rule. Its `PersonMerge` action is a signed-in person who posts `paper.edit` with a numeric `basedOn` to `createCommandRoutes` in `apps/api/src/registry/http.ts`, which runs it as `personActor`: `coachBasisOk` still lets that edit merge onto an older revision. A delegate never takes that path, because `admitCommand` in `apps/api/src/registry/registry-entries.ts` calls `paperEditBasisRefused`, defined in `apps/api/src/registry/paper-agent.ts`, which refuses a numeric `basedOn`. P1, P2, P3 and P5 run with both actions. `ContentStore.coach.mutant.cfg` gives the coach actor the person rule and must exit 13 on `CoachExact`. Every other ContentStore mutant must exit 12 on its own invariant. `ContentStore.tla.json` names the code of each edit action under `"boundaries"`. `node --test scripts/tla-specs.test.mjs` fails when a `"boundaries"` entry names something its file does not define, such as an import, or a file that `"covers"` does not list.
 
 `apps/api/src/paper/CoachPaper.tla.json` maps each model action to one export of `content-coach.ts`. Null means the action is implemented outside that file.
 
@@ -65,7 +67,7 @@ One document. One immutable proposal. One person typing event. Revisions 0 throu
 
 After a change to the files named above, run `/maintain-formal-verification-skill`. Update this skill only after the model still matches the code and the replay still refuses a stale basis. Never weaken a rule to clear a finding.
 
-Use this skill’s Git history to locate the last verification change. Keep branch-only commits out of verification anchors.
+The sync commit and the covered files live in `"sync"` and `"covers"` of `apps/api/src/paper/CoachPaper.tla.json`. Run `node scripts/tlc.mjs --stale` to list every commit that touched covered files since then. Move `"sync"` forward only after you confirm the model still describes the code at the new commit, and use a commit on `main`.
 
 ## MCP connection proposing a Job change
 

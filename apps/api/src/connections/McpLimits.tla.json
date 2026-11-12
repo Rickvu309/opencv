@@ -67,5 +67,12 @@
     "Each scenario isolates one safety property; this is not a combined rate, pending and scope interleaving proof.",
     "Pending starts one below its cap; approval, expiry and rejection only reduce live pending count and are omitted.",
     "No proof of audit payload privacy, append failure rollback, revoke interleavings, OAuth, database implementation, unbounded time or call volume, fairness, liveness, throughput, retention or indexes is claimed."
-  ]
+  ],
+  "covers": [
+    "apps/api/src/connections/http.ts",
+    "apps/api/src/connections/call-store.ts",
+    "apps/api/src/registry/proposals.ts",
+    "apps/api/src/registry/delegate-policy.ts"
+  ],
+  "sync": "f84f0e8f783a63488962725b4234190df4e8dad8"
 }

@@ -17,7 +17,7 @@ These are the rules of `PaperSave.tla`. Do not weaken a rule to clear a finding.
 
 `packages/domain/src/paper-save.ts` speaks in hashes. `save` stores one head for a request id. A second call with the same id returns the stored receipt and does not commit again, unless the retry fault is on. A stale parent keeps the previous head and retains the losing bytes. A crash throws before the head moves, unless the crash fault is on. `canShowSaved` is true only when the head, the package, and the stored receipt are that same hash.
 
-The module is not the live save path. It has no Yjs types and no UI. `ContentStore.tla` stays the model of today's Yjs log. This check does not claim that log implements this protocol.
+The module is not the live save path, and nothing imports it. It is scheduled for deletion with the Yjs editors. Word pages save by moving `paperPackageHeads` with a compare-and-set in `apps/api/src/paper/package-candidates.ts` and `apps/api/src/paper/package-restore.ts`; `verify-paper-word` covers that path. It has no Yjs types and no UI. `ContentStore.tla` stays the model of today's Yjs log. This check does not claim that log implements this protocol.
 
 `packages/domain/src/PaperSave.tla.json` maps `Send`, `AcceptDurably`, `Retry`, `ServerFails`, and `DelayedOldSave` to `save`. It maps `DeliverReceipt` to `canShowSaved`. `Type`, `LoseReply`, `GoOffline`, `Reconnect`, and `Reload` are model-only.
 
@@ -54,4 +54,4 @@ Hashes from 0 to 2. At most two commits of one hash in the model, and one commit
 
 After a change to `packages/domain/src/paper-save.ts`, run `/maintain-formal-verification-skill`. Update this skill only after the model still matches the code and the replay keeps one stored head. Never weaken a rule to clear a finding.
 
-Use this skill's Git history to locate the last verification change. Keep branch-only commits out of verification anchors.
+The sync commit and the covered files live in `"sync"` and `"covers"` of `packages/domain/src/PaperSave.tla.json`. Run `node scripts/tlc.mjs --stale` to list every commit that touched covered files since then. Move `"sync"` forward only after you confirm the model still describes the code at the new commit, and use a commit on `main`.

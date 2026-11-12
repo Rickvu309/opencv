@@ -7,5 +7,19 @@
     "RetryApproval": null,
     "PersonUndo": "revertCoachEdit",
     "AgentTriesUndo": null
-  }
+  },
+  "covers": [
+    "apps/api/src/paper/content-coach.ts",
+    "apps/api/src/paper/content-store.ts",
+    "apps/api/src/registry/proposals.ts",
+    "apps/api/src/registry/registry.ts",
+    "apps/api/src/registry/coach-policy.ts",
+    "packages/domain/src/paper-contract.ts",
+    "apps/api/src/registry/delegate-policy.ts",
+    "apps/api/src/job/store.ts",
+    "apps/api/src/paper/commands.ts",
+    "apps/api/src/connections/http.ts"
+  ],
+  "sync": "f84f0e8f783a63488962725b4234190df4e8dad8",
+  "retiring": "The Paper reading covers the Yjs paper.edit branch, chosen when basedOn is a number in apps/api/src/paper/package-edit.ts. Word pages take the reviewed branch in the same file. The MCP Job reading is live."
 }
