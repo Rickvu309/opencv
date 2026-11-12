@@ -20,7 +20,7 @@ import { createScriptedWorkerRuntime } from "./fake.js"
 import { claim } from "./task-store.js"
 import { runCoachWorker } from "./worker.js"
 import { getChat } from "../chat/index.js"
-import { readStoredParts } from "../chat/index.js"
+import { readChatViewParts } from "../chat/index.js"
 import { openWordPage, applyWordOps } from "../paper/index.js"
 import { twoParagraphCv } from "../test/paper-content.js"
 import { resolveTurnGrounding } from "./context.js"
@@ -116,7 +116,7 @@ it.each(["approve", "deny", "expire", "undo"] as const)(
         (message) => message.role === "coach"
       )
       expect(
-        readStoredParts(saved!.parts).filter((part) => part.type === "tool")
+        readChatViewParts(saved!.parts).filter((part) => part.type === "tool")
       ).toMatchObject([{ type: "tool", name: "job.move", outcome }])
       if (resolution === "deny" || resolution === "expire") {
         expect(parts[0]).toMatchObject({ approval: outcome })

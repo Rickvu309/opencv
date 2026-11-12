@@ -13,7 +13,7 @@ import {
   jobs,
   paperDocs,
 } from "../db/schema.js"
-import { readStoredParts } from "../chat/index.js"
+import { readExportedParts } from "../chat/index.js"
 import { tableQuery } from "../registry/bind.js"
 import { isUndoRow } from "../registry/expectation.js"
 import type { Registry } from "../registry/registry.js"
@@ -325,7 +325,7 @@ export async function exportAccount(userId: string) {
         chatId: message.chatId,
         role: message.role,
         text: message.text,
-        parts: readStoredParts(message.parts),
+        parts: readExportedParts(message.parts),
         status: message.status,
         createdAt: message.createdAt.toISOString(),
       })),

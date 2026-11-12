@@ -47,7 +47,7 @@ function storedOutcome(part: ChatToolPart): ChatToolOutcome {
   return part.ok ? "approved" : "failed"
 }
 
-export function withStoredOutcome(part: ChatToolPart): ChatToolPart {
+function withStoredOutcome(part: ChatToolPart): ChatToolPart {
   const outcome = storedOutcome(part)
   return {
     ...part,
@@ -59,14 +59,37 @@ export function withStoredOutcome(part: ChatToolPart): ChatToolPart {
   }
 }
 
-export function readStoredParts(stored: unknown[] | null): ChatMessagePart[] {
-  return (stored ?? []).flatMap((raw) => {
+export const UNREADABLE_STEP_LINE = "This step could not be read"
+
+export type StoredPart =
+  { readable: true; part: ChatMessagePart } | { readable: false; raw: unknown }
+
+export function readStoredParts(stored: unknown[] | null): StoredPart[] {
+  return (stored ?? []).map((raw) => {
     const parsed = chatMessagePartSchema.safeParse(upgradePart(raw))
-    if (!parsed.success) return []
-    return [
-      parsed.data.type === "tool"
-        ? withStoredOutcome(parsed.data)
-        : parsed.data,
-    ]
+    if (!parsed.success) return { readable: false, raw }
+    return {
+      readable: true,
+      part:
+        parsed.data.type === "tool"
+          ? withStoredOutcome(parsed.data)
+          : parsed.data,
+    }
   })
+}
+
+export function chatViewPart(stored: StoredPart): ChatMessagePart {
+  return stored.readable
+    ? stored.part
+    : { type: "text", text: UNREADABLE_STEP_LINE }
+}
+
+export function readChatViewParts(stored: unknown[] | null): ChatMessagePart[] {
+  return readStoredParts(stored).map(chatViewPart)
+}
+
+export function readExportedParts(stored: unknown[] | null): unknown[] {
+  return readStoredParts(stored).map((part) =>
+    part.readable ? part.part : part.raw
+  )
 }

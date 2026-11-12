@@ -20,7 +20,11 @@ import { activity, chatMessages, chats, coachTasks } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
 import { registry } from "../registry/registry.js"
-import { readStoredParts } from "./stored-parts.js"
+import {
+  chatViewPart,
+  readChatViewParts,
+  readStoredParts,
+} from "./stored-parts.js"
 
 function iso(value: Date) {
   return value.toISOString()
@@ -43,7 +47,7 @@ function toMessage(row: typeof chatMessages.$inferSelect) {
     chatId: row.chatId,
     role: row.role,
     text: row.text,
-    parts: readStoredParts(row.parts),
+    parts: readChatViewParts(row.parts),
     status: row.status,
     workedMs: row.workedMs,
     createdAt: iso(row.createdAt),
@@ -176,9 +180,14 @@ function projectCurrentMessages(rows: (typeof chatMessages.$inferSelect)[]) {
       return {
         ...toMessage(current),
         parts: revisions.flatMap((revision) =>
-          readStoredParts(revision.parts).filter(
-            (part) => revision.id === current.id || part.type === "tool"
-          )
+          readStoredParts(revision.parts)
+            .filter(
+              (stored) =>
+                revision.id === current.id ||
+                !stored.readable ||
+                stored.part.type === "tool"
+            )
+            .map(chatViewPart)
         ),
       }
     })
