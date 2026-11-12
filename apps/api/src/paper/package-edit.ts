@@ -32,7 +32,7 @@ import { isWordBatch, prepareWordBatch } from "./package-planner.js"
 import { PACKAGE_PROFILE } from "./package-profile.js"
 import { revalidateUnchangedPackage } from "./package-restore.js"
 import { readWordPackage } from "./package-store.js"
-import { undo } from "./word/document.js"
+import { undo, WORD_UNDO_MOVED } from "./word/document.js"
 
 type EditInput = z.output<(typeof paperContract)["paper.edit"]["input"]>
 type EditOutput = z.output<(typeof paperContract)["paper.edit"]["output"]>
@@ -410,8 +410,7 @@ export function registerWordPackageEdit(
               query: "paper.read",
               input: { docId: output.docId },
               matches: { revision: output.revision },
-              skipped:
-                "This Word document changed after the edit, so Undo was skipped.",
+              skipped: WORD_UNDO_MOVED,
             },
           }
         }

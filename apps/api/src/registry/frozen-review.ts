@@ -638,3 +638,9 @@ export async function publishFrozenReview({
       )
   return effect(locked)
 }
+
+export function carriedReview(frozen: unknown) {
+  if (!frozen || typeof frozen !== "object" || !("review" in frozen)) return {}
+  if (frozen.review === undefined) return {}
+  return { review: frozen.review }
+}

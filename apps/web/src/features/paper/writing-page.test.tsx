@@ -23,6 +23,7 @@ import {
   clearWritingProposal,
   publishWritingProposal,
   syncWritingProposalFromActions,
+  WORD_BATCH_HIDDEN,
   writingProposal,
 } from "@/lib/writing-proposal.ts"
 import { WritingPage } from "./writing-page.tsx"
@@ -231,7 +232,12 @@ it("lists every operation of a waiting Word batch before approval", async () => 
           basedOn: REVISION,
           operations: [
             { op: "setText", before: "Dear Ada,", after: "Dear Grace," },
-            { op: "insert", before: "", after: "I write about the role." },
+            {
+              op: "insert",
+              before: "",
+              after: "I write about the role.",
+              place: "Dear Ada,",
+            },
             { op: "delete", before: "Old line", after: "" },
           ],
         },
@@ -245,11 +251,18 @@ it("lists every operation of a waiting Word batch before approval", async () => 
   expect(proposal).toHaveTextContent("Dear Grace,")
   expect(proposal).toHaveTextContent("Add a line")
   expect(proposal).toHaveTextContent("I write about the role.")
+  expect(proposal).toHaveTextContent("After this line: Dear Ada,")
   expect(proposal).toHaveTextContent("Remove a line")
   expect(proposal).toHaveTextContent("Old line")
+  expect(
+    within(proposal).getByRole("button", { name: "Approve" })
+  ).toBeEnabled()
 })
 
-it("shows nothing to approve for a Word batch without its review", () => {
+it("shows nothing to approve for a Word batch without its review", async () => {
+  vi.stubGlobal("fetch", async () =>
+    Response.json({ ok: true, data: readPage("Dear Ada,") })
+  )
   syncWritingProposalFromActions(
     [
       {
@@ -265,7 +278,12 @@ it("shows nothing to approve for a Word batch without its review", () => {
     ],
     [{ id: PENDING, status: "pending", input: {} }]
   )
-  expect(writingProposal()).toBeNull()
+  render(<WritingPage docId={DOC} seed={draft("Dear Ada,")} />)
+  expect(await screen.findByText(WORD_BATCH_HIDDEN)).toBeVisible()
+  expect(
+    screen.queryByRole("button", { name: "Approve" })
+  ).not.toBeInTheDocument()
+  expect(writingProposal()?.withheld).toBe(WORD_BATCH_HIDDEN)
 })
 
 it("shows the approved words without a reload", async () => {

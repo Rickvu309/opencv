@@ -201,7 +201,12 @@ describe("the Coach and own agents send Word batches through paper.edit", () => 
       ])
       expect(proposed.review).toMatchObject({
         operations: [
-          { op: "insert", before: "", after: "I led the migration." },
+          {
+            op: "insert",
+            before: "",
+            after: "I led the migration.",
+            place: "Dear Ada,",
+          },
         ],
       })
       await approve(proposed.pendingActionId)
@@ -234,8 +239,18 @@ describe("the Coach and own agents send Word batches through paper.edit", () => 
       expect(proposed.review).toMatchObject({
         operations: [
           { op: "setText", before: "Dear Ada,", after: "Dear Grace," },
-          { op: "insert", before: "", after: "I write about the role." },
-          { op: "insert", before: "", after: "12 November 2026" },
+          {
+            op: "insert",
+            before: "",
+            after: "I write about the role.",
+            place: "Dear Ada,",
+          },
+          {
+            op: "insert",
+            before: "",
+            after: "12 November 2026",
+            place: null,
+          },
           { op: "delete", before: "Old line", after: "" },
         ],
       })
@@ -277,6 +292,63 @@ describe("the Coach and own agents send Word batches through paper.edit", () => 
         .catch((error: unknown) => String(error))
       expect(undone).toMatch(/changed/)
       expect(await words(page.doc)).toEqual(["Dear Ada Lovelace,"])
+      expect((await head(page.doc)).revision).toBe(typed.page.revision)
+    }))
+
+  it("refuses Undo of an insert after the person typed on the page and keeps their words", () =>
+    run(async () => {
+      vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
+      const page = await imported(paragraph("Dear Ada,"))
+      const first = page.paragraphs[0]
+      if (!first) throw new Error("missing line")
+      const proposed = await propose(await coach(), page, [
+        { op: "insert", after: first.handle, text: "I led the migration." },
+      ])
+      const receipt = await approve(proposed.pendingActionId)
+      const approved = await head(page.doc)
+      const typed = await apply(owner, {
+        doc: page.doc,
+        basedOn: approved.revision,
+        ops: [
+          { op: "setText", handle: first.handle, text: "Dear Ada Lovelace," },
+        ],
+      })
+      if (typed.refused) throw new Error(typed.message)
+      const undone = await registry
+        .undo(owner, receipt.id)
+        .then((value) => JSON.stringify(value))
+        .catch((error: unknown) => String(error))
+      expect(undone).toMatch(/changed/)
+      expect(await words(page.doc)).toEqual([
+        "Dear Ada Lovelace,",
+        "I led the migration.",
+      ])
+      expect((await head(page.doc)).revision).toBe(typed.page.revision)
+    }))
+
+  it("refuses Undo of a delete after the person typed on the page and keeps their words", () =>
+    run(async () => {
+      vi.stubEnv("PAPER_PACKAGE_ENABLED", "true")
+      const page = await imported(paragraph("Dear Ada,") + paragraph("Thanks"))
+      const [greeting, thanks] = page.paragraphs
+      if (!greeting || !thanks) throw new Error("missing lines")
+      const proposed = await propose(await coach(), page, [
+        { op: "delete", handle: thanks.handle },
+      ])
+      const receipt = await approve(proposed.pendingActionId)
+      const approved = await head(page.doc)
+      const typed = await apply(owner, {
+        doc: page.doc,
+        basedOn: approved.revision,
+        ops: [{ op: "setText", handle: greeting.handle, text: "Dear Grace," }],
+      })
+      if (typed.refused) throw new Error(typed.message)
+      const undone = await registry
+        .undo(owner, receipt.id)
+        .then((value) => JSON.stringify(value))
+        .catch((error: unknown) => String(error))
+      expect(undone).toMatch(/changed/)
+      expect(await words(page.doc)).toEqual(["Dear Grace,"])
       expect((await head(page.doc)).revision).toBe(typed.page.revision)
     }))
 

@@ -129,6 +129,7 @@ export function eventForPart(part: CoachStreamPart): ChatTurnEvent | null {
         ...(part.pendingActionId
           ? { pendingActionId: part.pendingActionId }
           : {}),
+        ...(part.review !== undefined ? { review: part.review } : {}),
       }
     default:
       return null

@@ -229,6 +229,7 @@ export function useCoachTurn({
       dispatch({ type: "start", kind, messages: prefix })
 
       let parts: ChatEntryPart[] = []
+      const calls = new Map<string, unknown>()
       let painted = prefix
       let ended = false
       let streamError: string | undefined
@@ -312,6 +313,7 @@ export function useCoachTurn({
             name: event.name,
           })
           if (event.name === "paper.edit") {
+            calls.set(event.toolCallId, event.input)
             publishWritingProposal(event.toolCallId, event.input)
           }
         },
@@ -321,12 +323,20 @@ export function useCoachTurn({
         },
         onToolResult(data) {
           if (stale()) return
-          paint(appendCoachPart(parts, data))
-          if (data.name !== "paper.edit") return
-          if (!data.ok) clearWritingProposal(data.toolCallId)
-          else if (data.pendingActionId) {
-            attachWritingProposal(data.toolCallId, data.pendingActionId)
+          if (data.name === "paper.edit") {
+            if (!data.ok) clearWritingProposal(data.toolCallId)
+            else {
+              publishWritingProposal(
+                data.toolCallId,
+                calls.get(data.toolCallId),
+                data.review
+              )
+              if (data.pendingActionId) {
+                attachWritingProposal(data.toolCallId, data.pendingActionId)
+              }
+            }
           }
+          paint(appendCoachPart(parts, data))
         },
         onConfirm(data) {
           if (stale()) return

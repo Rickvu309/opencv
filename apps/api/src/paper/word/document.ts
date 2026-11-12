@@ -423,6 +423,9 @@ export async function apply(
   }
 }
 
+export const WORD_UNDO_MOVED =
+  "This page changed after that save, so Undo was skipped."
+
 export async function undo(
   owner: WordOwner,
   handle: WordUndo
@@ -433,11 +436,7 @@ export async function undo(
   const { doc, revision, restore } = parsed.data
   const head = await headOf(owner, doc)
   if (!head) return notAvailable()
-  const skipped = () =>
-    refuse(
-      "stale",
-      "This page changed after that save, so Undo was not applied."
-    )
+  const skipped = () => refuse("stale", WORD_UNDO_MOVED)
   if (head.revision !== revision) return skipped()
   try {
     await transaction(() =>

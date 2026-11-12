@@ -86,6 +86,7 @@ export const wordReviewSchema = z
             op: z.enum(["setText", "insert", "delete"]),
             before: z.string(),
             after: z.string(),
+            place: z.string().nullable().optional(),
           })
           .strict()
       )

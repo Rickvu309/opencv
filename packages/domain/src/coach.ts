@@ -150,6 +150,7 @@ export type CoachToolResultPart = {
   activityId?: string
   pendingActionId?: string
   command?: string
+  review?: unknown
 }
 
 type CoachFinishPart = {
@@ -249,6 +250,7 @@ export function appendCoachPart(
                 approval: "pending" as const,
               }
             : {}),
+          ...(part.review !== undefined ? { review: part.review } : {}),
           toolCallId: part.toolCallId,
         },
       ]

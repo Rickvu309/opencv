@@ -70,6 +70,7 @@ const chatTurnEventSchema = z.discriminatedUnion("type", [
       detail: coachReceiptDetailSchema.optional(),
       activityId: z.string().optional(),
       pendingActionId: z.string().optional(),
+      review: z.unknown().optional(),
     })
     .strict(),
   z

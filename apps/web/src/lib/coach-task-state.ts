@@ -111,6 +111,9 @@ export function taskParts(state: CoachTaskState): ChatEntryPart[] {
           ...(pending && action.proposalId
             ? { pendingActionId: action.proposalId }
             : {}),
+          ...(pending && confirmation?.review !== undefined
+            ? { review: confirmation.review }
+            : {}),
           ...(confirmation ? { approval: confirmation.status } : {}),
         }
       }),

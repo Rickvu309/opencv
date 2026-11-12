@@ -432,7 +432,7 @@ describe("Word saves keep the reviewed document", () => {
           })
         try {
           await expect(commands.undo(id, saved.activityId!)).rejects.toThrow(
-            "This saved Word edit is no longer available. No document was changed."
+            "This page changed after that save, so Undo was skipped."
           )
           expect((await headOf(doc.docId)).revision).toBe(doc.revision)
           expect(await getDb().select().from(paperPackageVersions)).toEqual(

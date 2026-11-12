@@ -195,8 +195,26 @@ function batchPlan(
 ) {
   const lines = new Map(paragraphs.map((line) => [line.handle, line]))
   const operations = ops.map((op) => {
-    if (op.op === "insert")
-      return { op: "insert" as const, before: "", after: op.text }
+    if (op.op === "insert") {
+      if (op.after === null)
+        return {
+          op: "insert" as const,
+          before: "",
+          after: op.text,
+          place: null,
+        }
+      const anchor = lines.get(op.after)
+      if (!anchor)
+        return packageFailure(
+          "That line is not on this page. Read it again. No document was changed."
+        )
+      return {
+        op: "insert" as const,
+        before: "",
+        after: op.text,
+        place: anchor.text,
+      }
+    }
     const line = lines.get(op.handle)
     if (!line)
       return packageFailure(
