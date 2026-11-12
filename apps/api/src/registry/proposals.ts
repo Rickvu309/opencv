@@ -50,7 +50,7 @@ async function insertProposal(options: {
   const id = options.frozenReview?.proposalId ?? createId()
   const chatId = actor.type === "coach" ? actor.chatId : createId()
   if (actor.type === "delegate") {
-    await requireLiveDelegate(actor)
+    const grant = await requireLiveDelegate(actor)
     await lockProposalOwner(actor.userId)
     const [outstanding] = await getDb()
       .select({ count: count() })
@@ -69,7 +69,7 @@ async function insertProposal(options: {
     await createAgentProposalChat({
       chatId,
       userId: actor.userId,
-      name: actor.name,
+      connectedAt: grant.createdAt,
     })
   }
   await getDb()

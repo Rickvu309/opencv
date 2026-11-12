@@ -320,8 +320,6 @@ describe("unreachable Word candidate removal", () => {
     "a delegate proposal locks the account before the saved copy",
     () =>
       run(async () => {
-        const tools = process.env.PAPER_AGENT_TOOLS
-        process.env.PAPER_AGENT_TOOLS = "true"
         const owner = await account()
         const doc = await document(owner)
         const clientId = randomUUID()
@@ -343,7 +341,7 @@ describe("unreachable Word candidate removal", () => {
             name: "Agent",
             audience: "http://localhost/mcp",
             scopes: ["paper.write"],
-            resources: { kind: "jobs" },
+            resources: { kind: "paper" },
             policy: { reads: "allow", writes: "approval" },
             expiresAt: new Date(Date.now() + 60_000),
           })
@@ -353,7 +351,7 @@ describe("unreachable Word candidate removal", () => {
           connectionId,
           name: "Agent",
           scopes: ["paper.write"],
-          resources: "jobs",
+          resources: "paper",
           reads: "allow",
           writes: "approval",
         })
@@ -445,8 +443,6 @@ describe("unreachable Word candidate removal", () => {
         } finally {
           release()
           spy.mockRestore()
-          if (tools === undefined) delete process.env.PAPER_AGENT_TOOLS
-          else process.env.PAPER_AGENT_TOOLS = tools
           await proposing
           await saving
         }

@@ -3,6 +3,7 @@ import { and, eq, gt, isNull } from "drizzle-orm"
 import { APIError } from "better-auth/api"
 import {
   catalog,
+  paperContract,
   declarationsFromEntries,
   registeredScopesFromDeclarations,
   resourcesForScopes,
@@ -17,7 +18,10 @@ import {
 } from "../db/schema.js"
 
 export const registeredAgentScopes = registeredScopesFromDeclarations(
-  declarationsFromEntries(Object.values(catalog))
+  declarationsFromEntries([
+    ...Object.values(catalog),
+    ...Object.values(paperContract),
+  ])
 )
 
 export function hashAgentToken(token: string) {

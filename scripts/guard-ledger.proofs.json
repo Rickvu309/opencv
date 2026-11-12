@@ -1,4 +1,8 @@
 {
+  "delegate-reach": {
+    "passed": true,
+    "fingerprint": "c0bbafa7e475"
+  },
   "job-board-queue": {
     "passed": true,
     "fingerprint": "72bc0a8d05b7"

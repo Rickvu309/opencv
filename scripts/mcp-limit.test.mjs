@@ -5,6 +5,7 @@ import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 import ts from "typescript"
+import { reservedBefore } from "./lib/delegate-tool-binding.mjs"
 
 function name(node) {
   if (ts.isIdentifier(node)) return node.text
@@ -78,11 +79,20 @@ export function detect(text) {
             ts.isIdentifier(child.expression.expression) &&
             child.expression.expression.text === "registry" &&
             ["read", "execute"].includes(child.expression.name.text) &&
-            !auditedTransaction(child)
+            !auditedTransaction(child) &&
+            !(
+              reservedBefore(handler, child.getStart(source)) &&
+              contains(
+                handler,
+                (node) =>
+                  ts.isCallExpression(node) &&
+                  name(node.expression) === "completeDelegateCall"
+              )
+            )
           )
             hit(
               child,
-              "Append the delegate audit in the transaction that owns the product access"
+              "Reserve a charged audit before product access and complete its outcome"
             )
           ts.forEachChild(child, scan)
         }
@@ -146,4 +156,28 @@ test("the live MCP binding and durable store stay quiet", () => {
       detect(readFileSync(new URL(file, import.meta.url), "utf8")),
       []
     )
+})
+
+const RESERVED = `server.registerTool("tool", {}, async (input) => {
+  const reservation = await transaction(async () => {
+    const window = await delegateCallWindow(actor);
+    await requireLiveDelegate(actor);
+    return appendDelegateCall({ actor, window });
+  });
+  if (!reservation.allowed) throw new Error("limited");
+  const result = await registry.execute({ name, input, actor });
+  await transaction(() => completeDelegateCall(reservation.id, "pending"));
+  return result;
+})`
+
+test("review preparation follows a durable charged reservation with a completed outcome", () => {
+  assert.deepEqual(detect(RESERVED), [])
+  for (const missing of [
+    "await delegateCallWindow(actor);",
+    "await requireLiveDelegate(actor);",
+    "return appendDelegateCall({ actor, window });",
+    'if (!reservation.allowed) throw new Error("limited");',
+    'await transaction(() => completeDelegateCall(reservation.id, "pending"));',
+  ])
+    assert.ok(detect(RESERVED.replace(missing, "")).length > 0)
 })

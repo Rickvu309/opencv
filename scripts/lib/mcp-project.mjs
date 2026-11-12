@@ -11,7 +11,17 @@ export function detect(text, file = "http.ts") {
     })
   const calls = []
   let policy
+  let reachable
   function visit(node) {
+    if (
+      ts.isVariableStatement(node) &&
+      node.declarationList.declarations.some(
+        (declaration) =>
+          ts.isIdentifier(declaration.name) &&
+          declaration.name.text === "DELEGATE_REACHABLE"
+      )
+    )
+      reachable = node
     if (ts.isFunctionDeclaration(node) && node.name?.text === "delegateAllowed")
       policy = node
     if (ts.isCallExpression(node)) calls.push(node)
@@ -41,7 +51,10 @@ export function detect(text, file = "http.ts") {
     if (!policy) return [{ line: 1, kind: "missing-delegate-policy" }]
     try {
       const javascript = ts.transpileModule(
-        policy.getText(source).replace("export ", ""),
+        [reachable, policy]
+          .filter(Boolean)
+          .map((node) => node.getText(source).replace(/^export /, ""))
+          .join("\n"),
         {
           compilerOptions: {
             target: ts.ScriptTarget.ES2022,
@@ -55,14 +68,19 @@ export function detect(text, file = "http.ts") {
         "jobRead",
         "reversibleJob",
         "unknown",
+        { resource: "paper", access: "read" },
+        { resource: "paper", access: "proposal" },
       ]) {
         for (const scopes of [
           [],
           ["job.read"],
           ["job.write"],
           ["job.read", "job.write"],
+          ["paper.read"],
+          ["paper.write"],
+          ["job.read", "job.write", "paper.read", "paper.write"],
         ]) {
-          for (const resources of ["none", "jobs"]) {
+          for (const resources of ["none", "jobs", "paper", "jobs-and-paper"]) {
             const actor = {
               type: "delegate",
               scopes,
@@ -70,14 +88,39 @@ export function detect(text, file = "http.ts") {
               reads: "allow",
               writes: "approval",
             }
-            const expected =
-              resources === "jobs" &&
-              (delegate === "jobRead"
-                ? scopes.includes("job.read")
-                : delegate === "reversibleJob" && scopes.includes("job.write"))
+            const resource =
+              typeof delegate === "object" ? delegate.resource : "job"
+            const access =
+              typeof delegate === "object"
+                ? delegate.access
+                : delegate === "jobRead"
+                  ? "read"
+                  : delegate === "reversibleJob"
+                    ? "proposal"
+                    : null
+            const expected = Boolean(
+              access &&
+              (resources === "jobs-and-paper" ||
+                resources === (resource === "job" ? "jobs" : resource)) &&
+              scopes.includes(
+                `${resource}.${access === "read" ? "read" : "write"}`
+              )
+            )
             if (
               allowed(
-                { name: "job.fixture", coach: "auto", delegate },
+                {
+                  name: `${resource}.${
+                    resource === "paper"
+                      ? access === "read"
+                        ? "read"
+                        : "edit"
+                      : access === "read"
+                        ? "list"
+                        : "update"
+                  }`,
+                  coach: "auto",
+                  delegate,
+                },
                 actor
               ) !== expected
             )

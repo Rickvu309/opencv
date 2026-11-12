@@ -77,6 +77,71 @@ function checkedBefore(callback, position) {
   return found
 }
 
+function statementsBefore(handler, position, matches) {
+  let found = null
+  const visit = (node) => {
+    if (found || !node || node.getStart() >= position) return
+    if (matches(node)) {
+      found = node
+      return
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(handler.body)
+  return found
+}
+
+export function reservedBefore(handler, position) {
+  const reserve = statementsBefore(
+    handler,
+    position,
+    (node) =>
+      ts.isVariableDeclaration(node) &&
+      node.name.getText() === "reservation" &&
+      Boolean(node.initializer) &&
+      ts.isAwaitExpression(node.initializer) &&
+      isTransactionCall(node.initializer.expression)
+  )
+  if (!reserve || reserve.getEnd() >= position) return false
+  const denied = statementsBefore(
+    handler,
+    position,
+    (node) =>
+      ts.isIfStatement(node) &&
+      node.getEnd() < position &&
+      node.expression.getText() === "!reservation.allowed" &&
+      ts.isThrowStatement(node.thenStatement)
+  )
+  const text = reserve.getText()
+  return (
+    Boolean(denied) &&
+    ["delegateCallWindow", "requireLiveDelegate", "appendDelegateCall"].every(
+      (name) => text.includes(`${name}(`)
+    )
+  )
+}
+
+function preparedBranch(node, handler) {
+  let child = node
+  let current = node.parent
+  while (current && current !== handler) {
+    const condition = ts.isConditionalExpression(current)
+      ? current.condition
+      : ts.isIfStatement(current)
+        ? current.expression
+        : null
+    if (
+      condition &&
+      child !== condition &&
+      condition.getText().includes("taskNeedsPreparation(")
+    )
+      return true
+    child = current
+    current = current.parent
+  }
+  return false
+}
+
 export function detect(text) {
   const source = ts.createSourceFile(
     "binding.ts",
@@ -97,8 +162,15 @@ export function detect(text) {
           }
           if (isDataCall(current)) {
             const callback = transactionCallback(current)
-            if (!callback || !checkedBefore(callback, current.getStart(source)))
-              hits.push({ line: lineOf(source, current) })
+            const execution =
+              ts.isPropertyAccessExpression(current.expression) &&
+              current.expression.name.text === "execute"
+            const safe = callback
+              ? checkedBefore(callback, current.getStart(source))
+              : execution &&
+                reservedBefore(handler, current.getStart(source)) &&
+                preparedBranch(current, handler)
+            if (!safe) hits.push({ line: lineOf(source, current) })
           }
           ts.forEachChild(current, scan)
         }

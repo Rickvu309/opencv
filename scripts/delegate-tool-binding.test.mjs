@@ -26,12 +26,24 @@ server.registerTool("job_get", {}, async (input) => {
 
 const CLEAN = `
 server.registerTool("job_get", {}, async (input) => {
-  await transaction(async () => {
-    await requireLiveDelegate(actor)
-    return entry.kind === "query"
-      ? { data: await registry.read(entry.name, input, actor) }
-      : registry.execute({ name: entry.name, input, actor })
-  })
+  try {
+    const reservation = await transaction(async () => {
+      await delegateCallWindow(actor);
+      await requireLiveDelegate(actor);
+      return appendDelegateCall({ actor });
+    });
+    if (!reservation.allowed) throw new Error("limited");
+    return entry.kind === "command" && registry.taskNeedsPreparation(entry.name, input)
+      ? await registry.execute({ name: entry.name, input, actor })
+      : await transaction(async () => {
+          await requireLiveDelegate(actor);
+          return entry.kind === "query"
+            ? registry.read(entry.name, input, actor)
+            : registry.execute({ name: entry.name, input, actor });
+        });
+  } catch (error) {
+    return error;
+  }
 })
 `
 
@@ -45,6 +57,34 @@ test("a check outside the tool transaction is rejected", () => {
 
 test("a check inside the tool transaction stays quiet", () => {
   assert.deepEqual(detect(CLEAN), [])
+})
+
+test("only a prepared review runs outside the checked transaction, after a charged live admission", () => {
+  const unprepared = CLEAN.replace(
+    'entry.kind === "command" && registry.taskNeedsPreparation(entry.name, input)',
+    'entry.kind === "command"'
+  )
+  assert.notEqual(unprepared, CLEAN)
+  assert.ok(detect(unprepared).length > 0)
+  const unchecked = CLEAN.replace(
+    "await requireLiveDelegate(actor);\n          return",
+    "return"
+  )
+  assert.notEqual(unchecked, CLEAN)
+  assert.ok(detect(unchecked).length > 0)
+  for (const missing of [
+    "await delegateCallWindow(actor);",
+    "await requireLiveDelegate(actor);\n      return appendDelegateCall",
+    "return appendDelegateCall({ actor });",
+    'if (!reservation.allowed) throw new Error("limited");',
+  ]) {
+    const mistake = CLEAN.replace(
+      missing,
+      missing.includes("\n") ? "return appendDelegateCall" : ""
+    )
+    assert.notEqual(mistake, CLEAN)
+    assert.ok(detect(mistake).length > 0, missing)
+  }
 })
 
 test("the live binding stays quiet", () => {
