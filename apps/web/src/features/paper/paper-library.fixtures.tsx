@@ -2,6 +2,7 @@ import { useReducer } from "react"
 import {
   blankCv,
   paperDocumentSchema,
+  parsePaperId,
   type PaperFile,
   type PaperView,
 } from "@workspace/domain"
@@ -24,7 +25,7 @@ export function letterPaper(lines: string[]): PaperView["paper"] {
 
 export function cv(name: string): PaperView {
   return {
-    id: "11111111-1111-4111-8111-111111111111",
+    id: parsePaperId("11111111-1111-4111-8111-111111111111"),
     name,
     kind: "cv",
     templateId: "simple",
@@ -43,7 +44,7 @@ export function cv(name: string): PaperView {
 export function letter(name: string): PaperView {
   return {
     ...cv(name),
-    id: "22222222-2222-4222-8222-222222222222",
+    id: parsePaperId("22222222-2222-4222-8222-222222222222"),
     kind: "letter",
     templateId: null,
     paper: letterPaper(["A cover letter."]),
