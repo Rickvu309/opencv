@@ -13,4 +13,4 @@ export const catalog = {
 } as const
 
 export const catalogDigest =
-  "65c77b57f5de16373c2d4573c4e9aed1da854e5b23c6b6f9477e169e963326bf"
+  "f1498f1bffaea4374e95c22dd222709f6c2bb930b43902a86014554f3293113b"
