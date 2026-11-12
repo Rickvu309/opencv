@@ -71,7 +71,7 @@ describe("surface list contract", () => {
   it("asserts every product route path and nav entry has a SURFACES entry and every shown surface is routed", () => {
     const router = createAppRouter()
     const routes = router.routesByPath
-    const surfacePaths = new Set(SURFACES.map((s) => s.path))
+    const surfacePaths = new Set<string>(SURFACES.map((s) => s.path))
 
     const productRoutes = Object.entries(routes).filter(([, route]) => {
       return route.parentRoute?.id === "/product"
@@ -80,7 +80,7 @@ describe("surface list contract", () => {
     expect(productRoutes.length).toBeGreaterThan(0)
 
     for (const [routePath] of productRoutes) {
-      const directMatch = surfacePaths.has(routePath as any)
+      const directMatch = surfacePaths.has(routePath)
       const prefixMatch = SURFACES.some((s) => routePath.startsWith(s.path))
       expect(
         directMatch || prefixMatch,
@@ -92,7 +92,7 @@ describe("surface list contract", () => {
     for (const item of navItems) {
       const surface = SURFACES.find((s) => s.id === item.id)
       expect(surface).toBeDefined()
-      expect(surfacePaths.has(item.to as any)).toBe(true)
+      expect(surfacePaths.has(item.to)).toBe(true)
     }
 
     for (const shown of shownSurfaces()) {

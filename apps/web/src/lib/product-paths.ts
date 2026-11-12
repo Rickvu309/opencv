@@ -31,6 +31,7 @@ export const SURFACES = [
     label: "Settings",
     shown: true,
     canBeStartPage: false,
+    nav: null,
   },
   {
     id: "help",
@@ -38,6 +39,7 @@ export const SURFACES = [
     label: "Help",
     shown: true,
     canBeStartPage: false,
+    nav: null,
   },
   {
     id: "pitch",
@@ -61,6 +63,7 @@ export const SURFACES = [
     label: "Proofs",
     shown: false,
     canBeStartPage: false,
+    nav: null,
   },
   {
     id: "proof",
@@ -68,6 +71,7 @@ export const SURFACES = [
     label: "Proof",
     shown: false,
     canBeStartPage: false,
+    nav: null,
   },
   {
     id: "inbox",
@@ -83,6 +87,7 @@ export const SURFACES = [
     label: "Upgrade",
     shown: false,
     canBeStartPage: false,
+    nav: null,
   },
   {
     id: "purchase",
@@ -90,6 +95,7 @@ export const SURFACES = [
     label: "Upgrade",
     shown: false,
     canBeStartPage: false,
+    nav: null,
   },
 ] as const
 
