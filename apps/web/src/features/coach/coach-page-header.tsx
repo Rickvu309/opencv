@@ -21,7 +21,7 @@ export function CoachPageHeader({
   children?: ReactNode
 }) {
   return (
-    <WorkspaceHeader data-pen-surface="coach" className="pr-3">
+    <WorkspaceHeader data-pen-surface="coach">
       <h1 className="sr-only">Coach</h1>
       {history}
       <PageHeaderActions>
