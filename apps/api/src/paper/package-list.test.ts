@@ -41,8 +41,8 @@ afterAll(async () => {
   await backend?.close()
 })
 
-describe("Word pages in the document list", () => {
-  it("lists a written page and an imported page, and reads them, for their owner only", () =>
+describe("a minted writing page in the document list", () => {
+  it("lists and reads the page for its owner only", () =>
     run(async () => {
       const staged = await stageWordPackage(
         owner,
@@ -76,28 +76,7 @@ describe("Word pages in the document list", () => {
         kind: "letter",
         format: "word",
       })
-      expect(listed.filter((item) => item.id === imported.docId)).toEqual([
-        expect.objectContaining({
-          name: "Imported.docx",
-          kind: "letter",
-          format: "word",
-        }),
-      ])
-      const coachListed = await registry.read(
-        "paper.list",
-        {},
-        coachActor(owner, randomUUID(), "turn-list")
-      )
-      expect(
-        coachListed.filter((item) =>
-          [imported.docId, head.docId].includes(item.id)
-        )
-      ).toHaveLength(2)
-      expect(
-        (await listPapers(parseUserId(stranger))).some(
-          (item) => item.id === imported.docId
-        )
-      ).toBe(false)
+      expect(listed.some((item) => item.name === "Imported.docx")).toBe(false)
       expect(
         (await listPapers(parseUserId(stranger))).some(
           (item) => item.id === head.docId

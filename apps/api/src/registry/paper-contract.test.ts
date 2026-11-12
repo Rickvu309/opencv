@@ -169,17 +169,7 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
       await run("paper.dismissCheck", { docId: cv, checkId: "import" })
 
       const list = await read("paper.list", {})
-      expect(list).toHaveLength(4)
-      expect(list).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            id: catalog["paper.import"].publicResult.parse(
-              importedResult.output
-            ).docId,
-            format: "word",
-          }),
-        ])
-      )
+      expect(list).toHaveLength(3)
       await read("paper.list", { kind: "letter", query: "untitled" })
       const got = (await read("paper.get", { docId: cv })) as {
         name: string

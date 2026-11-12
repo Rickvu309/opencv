@@ -1,5 +1,6 @@
 import {
-  paperImportResponseSchema,
+  paperViewSchema,
+  paperPackageMetadataSchema,
   letterAttachmentContextSchema,
 } from "@workspace/domain"
 import type { QueryClient } from "@tanstack/react-query"
@@ -150,8 +151,14 @@ export async function importPaperFile(file: File, signal?: AbortSignal) {
       payload?.error?.message ?? "Could not import that file. Try it again."
     )
   }
-  const reply = paperImportResponseSchema.parse(await res.json())
-  return { ...reply.data, notice: reply.notice ?? null }
+  const payload: unknown = await res.json()
+  return paperViewSchema
+    .or(paperPackageMetadataSchema)
+    .parse(
+      payload && typeof payload === "object" && "data" in payload
+        ? payload.data
+        : null
+    )
 }
 
 export async function importPaperLink(

@@ -26,7 +26,7 @@ import { getDb } from "../db/context.js"
 import { files, paperDocs, paperShares } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
-import { listPackagePapers } from "./package-list.js"
+import { listMintedPackagePapers } from "./package-list.js"
 import {
   deleteWordPage,
   publishWordPageCopy,
@@ -111,7 +111,7 @@ export async function listPapers(
       return paper ? [toPaper(row, paper)] : []
     })
   const seen = new Set(stored.map((item) => item.id))
-  const minted = (await listPackagePapers(userId)).filter(
+  const minted = (await listMintedPackagePapers(userId)).filter(
     (item) =>
       !seen.has(item.id) &&
       (!kind || item.kind === kind) &&

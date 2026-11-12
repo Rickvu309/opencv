@@ -1,5 +1,6 @@
 import {
   ERROR_CODES,
+  PAPER_CANVAS_PROFILE,
   blankCv,
   blankLetter,
   paperViewSchema,
@@ -41,7 +42,11 @@ function packagePaper(row: {
   })
 }
 
-function packageRows(owner: string, docId: string | undefined) {
+function packageRows(
+  owner: string,
+  docId: string | undefined,
+  mintedOnly: boolean
+) {
   return getDb()
     .select({
       docId: paperPackageVersions.docId,
@@ -62,18 +67,21 @@ function packageRows(owner: string, docId: string | undefined) {
     .where(
       and(
         eq(paperPackageHeads.userId, owner),
+        mintedOnly
+          ? eq(paperPackageHeads.canvasProfile, PAPER_CANVAS_PROFILE)
+          : undefined,
         docId ? eq(paperPackageHeads.docId, docId) : undefined
       )
     )
 }
 
-export async function listPackagePapers(owner: string) {
-  return (await packageRows(owner, undefined)).map(packagePaper)
+export async function listMintedPackagePapers(owner: string) {
+  return (await packageRows(owner, undefined, true)).map(packagePaper)
 }
 
 export async function ownedPackagePaper(owner: string, docId: string) {
   if (!docIdSchema.safeParse(docId).success) return null
-  const row = (await packageRows(owner, docId).limit(1))[0]
+  const row = (await packageRows(owner, docId, false).limit(1))[0]
   return row ? packagePaper(row) : null
 }
 

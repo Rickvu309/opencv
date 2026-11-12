@@ -8,7 +8,7 @@ import {
   type PaperView,
 } from "@workspace/domain"
 
-import { listPackagePapers } from "./package-list.js"
+import { listMintedPackagePapers } from "./package-list.js"
 import { readOutline } from "./outline.js"
 
 const pageFields = paperViewSchema.omit({ paper: true }).strip()
@@ -26,7 +26,9 @@ export function coachWordPage(
 }
 
 export async function coachPaperList(owner: string, views: PaperView[]) {
-  const words = new Set((await listPackagePapers(owner)).map((page) => page.id))
+  const words = new Set(
+    (await listMintedPackagePapers(owner)).map((page) => page.id)
+  )
   return views.map((view) =>
     words.has(view.id) ? coachWordPage(view, null) : view
   )
