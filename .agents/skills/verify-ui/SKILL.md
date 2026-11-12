@@ -52,6 +52,26 @@ Add one row to `DESIGN_MAP` in `scripts/ui/design-map.mjs`: the `screen`, a `lab
 
 To check that something does not move, add a same-box row: `kind: "same-box"`, the `screen`, the `against` screen, a `label`, the `selector` and the `props`. `check` opens both screens and compares the element's box with the same tolerance. The Coach card rows compare the main content and the writing page on `paper-panel-open` against `paper-panel-closed`.
 
+## Before and after for a pull request
+
+A pull request that edits screen files (tsx or css under `apps/web/src/features`, `apps/web/src/components` or `packages/ui/src`, tests excluded) carries a `## Before / after` section. `finish` and the policy check refuse it otherwise (rule `NO_BEFORE_AFTER`). Run four commands in order:
+
+```sh
+node scripts/ui.mjs compare paper-panel-open coach-chat-finished --base origin/main
+node scripts/ui.mjs changes --spec ~/tmp/ui-spec.json
+node scripts/ui.mjs annotate --spec ~/tmp/ui-spec.json --out ~/tmp/ui-annotated.png
+node scripts/ui.mjs pr-section --annotated ~/tmp/ui-annotated.png --check
+```
+
+- `compare` extracts the base into a throwaway checkout under `~/tmp/ocv-ui/bases/`, installs it, starts it on its own ports, captures each screen, stops it and deletes it, then captures the same screens from this worktree at the same viewport with the same steps. It writes `<screen>-<width>.before.png`, `.after.png` and `manifest.json` with every `data-slot` box and style. A screen that fails on one side is recorded with its reason. It never touches the main checkout.
+- `changes` lists up to 8 elements per screen whose box, radius, padding, gap, type, color, background, border or opacity differs, largest first, with a draft note of measured values. `--spec` writes a starting spec with the top 5 per screen.
+- `annotate` draws the composite: per section a title, `Before (main)`, `After (this PR)`, numbered pink circles with arrows to the same element in both images, and a legend. Each number takes the first direction in the order up-left, up-right, left, right, down-left, down-right, up, down that keeps its circle inside both images, off its own target, off any other target that does not contain it, and off earlier circles. A target is a `selector` from the manifest or a point `x`, `y` in page pixels.
+- `pr-section` uploads the composite and every capture through `scripts/ocv-tools.mjs shot` without a comment and prints the markdown: the composite, the `| main | this PR |` table and, with `--check`, `compared` and `failed` from `check` per screen. Paste it into the body file before `finish`.
+
+A good callout note says what changed in plain words with both values: "Composer corners 18px to 14px", not "radius tweak". Point at the thing that changed, not near it: if the draft selector is a wrapper the reader cannot see, target the visible element inside it. Keep at most 5 callouts per section, and only claims you measured.
+
+Write the line `No visible change.` under the heading, followed by one sentence of reason, only when `compare` shows identical images or `changes` lists nothing, for example a prop rename or a test-only refactor that still touches a screen file. A small change is still a visible change.
+
 ## What it cannot tell you
 
 - Taste: whether the screen reads well, the hierarchy is clear or the copy is right. Look at the shots.

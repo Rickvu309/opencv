@@ -1,5 +1,6 @@
-import { join, resolve } from "node:path"
+import { dirname, join, relative, resolve } from "node:path"
 import { UsageError, parseArgs, positiveIntegers } from "./args.mjs"
+import { compareDir, manifestProblems, runCompare } from "./before-after.mjs"
 import { measure, openScreen, slotSelectors } from "./capture.mjs"
 import {
   checkNotes,
@@ -15,6 +16,8 @@ import {
   isSameBox,
   rowsForScreen,
 } from "./design-map.mjs"
+import { CHANGES_PER_SCREEN, draftSpec, rankChanges } from "./changes.mjs"
+import { renderComposite } from "./composite.mjs"
 import { diffImages } from "./diff.mjs"
 import {
   composedPlacement,
@@ -24,6 +27,13 @@ import {
   indexPen,
   penPath,
 } from "./pen.mjs"
+import {
+  attachUrls,
+  checkSummary,
+  linksFromShot,
+  picturesToUpload,
+  renderPrSection,
+} from "./pr-section.mjs"
 import { SCREENS, pickScreens, shotName } from "./screens.mjs"
 import { down, liveState, up } from "./stack.mjs"
 
@@ -74,6 +84,17 @@ async function withBrowser(ctx, work) {
   } finally {
     await browser.close()
   }
+}
+
+function readManifest(ctx, flag) {
+  const file = resolve(
+    flag ?? join(compareDir(ctx.scratchRoot, ctx.repo), "manifest.json")
+  )
+  if (!ctx.fs.exists(file))
+    throw new UsageError(
+      `no compare manifest at ${file}; run node scripts/ui.mjs compare <screen...>`
+    )
+  return { file, manifest: JSON.parse(ctx.fs.read(file)) }
 }
 
 const unreachableLine = (screen) =>
@@ -346,6 +367,135 @@ export const COMMANDS = {
         }
       })
       return { code, lines }
+    },
+  },
+  compare: {
+    usage:
+      "compare <screen...> [--base main] [--width 1440,390] [--out dir] [--selector css...]",
+    about:
+      "Capture each screen from a throwaway checkout of the base and from this worktree, same viewport and steps. Writes <screen>-<width>.before.png, .after.png and manifest.json with every data-slot box and style.",
+    options: { valued: ["base", "out"], repeated: ["width", "selector"] },
+    run: async (ctx, { positional, flags }) => {
+      const screens = requireScreens(positional)
+      const widths = positiveIntegers(flags.width ?? ["1440"], "--width")
+      const out = resolve(flags.out ?? compareDir(ctx.scratchRoot, ctx.repo))
+      const { manifest, file } = await runCompare(ctx, {
+        screens,
+        widths,
+        base: flags.base ?? "origin/main",
+        out,
+        selectors: flags.selector ?? [],
+      })
+      const problems = manifestProblems(manifest)
+      return {
+        code: problems.length ? EXIT.failed : EXIT.ok,
+        lines: [
+          ...manifest.captures.map((capture) =>
+            json({
+              screen: capture.screen,
+              width: capture.width,
+              before: capture.before.file ?? capture.before.error,
+              after: capture.after.file ?? capture.after.error,
+            })
+          ),
+          json({ manifest: file, base: manifest.baseSha, problems }),
+        ],
+      }
+    },
+  },
+  changes: {
+    usage: "changes <screen...> [--manifest file] [--spec out.json]",
+    about: `List up to ${CHANGES_PER_SCREEN} elements per screen whose box or style differs between before and after, largest first, with a draft note. --spec writes a starting annotate spec with the top 5.`,
+    options: { valued: ["manifest", "spec"] },
+    run: async (ctx, { positional, flags }) => {
+      const { file, manifest } = readManifest(ctx, flags.manifest)
+      const wanted = new Set(positional)
+      const ranked = manifest.captures
+        .filter((capture) => !wanted.size || wanted.has(capture.screen))
+        .filter(
+          (capture) => capture.before?.elements && capture.after?.elements
+        )
+        .map((capture) => ({
+          capture,
+          result: rankChanges(capture.before.elements, capture.after.elements),
+        }))
+      if (ranked.length === 0)
+        throw new UsageError(
+          "no screen in the manifest has both sides captured; check compare's problems"
+        )
+      const lines = ranked.map(({ capture, result }) =>
+        json({ screen: capture.screen, width: capture.width, ...result })
+      )
+      if (flags.spec) {
+        const specFile = resolve(flags.spec)
+        const spec = draftSpec(ranked, {
+          manifestPath: relative(dirname(specFile), file),
+        })
+        ctx.fs.write(specFile, JSON.stringify(spec, null, 2))
+        lines.push(json({ spec: specFile }))
+      }
+      return { code: EXIT.ok, lines }
+    },
+  },
+  annotate: {
+    usage: "annotate --spec <file.json> --out <png>",
+    about:
+      "Render one dark composite: per section a title, the before and after images, numbered callouts with arrows to the same target in both, and a legend. Selector targets read their boxes from the compare manifest.",
+    options: { valued: ["spec", "out"] },
+    run: async (ctx, { flags }) => {
+      if (!flags.spec || !flags.out)
+        throw new UsageError("give --spec <file.json> and --out <png>")
+      const out = resolve(flags.out)
+      ctx.fs.mkdir(dirname(out))
+      const sections = await renderComposite(ctx, resolve(flags.spec), out)
+      const bad = sections.some(
+        (section) =>
+          section.missing.before.length || section.missing.after.length
+      )
+      return {
+        code: bad ? EXIT.failed : EXIT.ok,
+        lines: [...sections.map(json), json({ out })],
+      }
+    },
+  },
+  "pr-section": {
+    usage:
+      "pr-section --annotated <png> [--manifest file] [--check] [--pr n | --issue n]",
+    about:
+      "Upload the composite and every before and after through scripts/ocv-tools.mjs shot (no comment) and print the ## Before / after markdown: the composite, a | main | this PR | table and, with --check, the check summary per screen.",
+    options: {
+      valued: ["manifest", "annotated", "pr", "issue"],
+      switches: ["check"],
+    },
+    run: async (ctx, { flags }) => {
+      if (!flags.annotated) throw new UsageError("give --annotated <png>")
+      const { file, manifest } = readManifest(ctx, flags.manifest)
+      const pictures = picturesToUpload(manifest, resolve(flags.annotated)).map(
+        (picture) => ({
+          ...picture,
+          file: resolve(dirname(file), picture.file),
+        })
+      )
+      const checks = []
+      if (flags.check)
+        for (const screen of [
+          ...new Set(manifest.captures.map((capture) => capture.screen)),
+        ])
+          checks.push(checkSummary(screen, await runUi(["check", screen], ctx)))
+      const target = {
+        "--no-comment": true,
+        ...(flags.pr ? { "--pr": flags.pr } : {}),
+        ...(flags.issue ? { "--issue": flags.issue } : {}),
+      }
+      const shotLines = await ctx.upload(
+        pictures.map((picture) => picture.file),
+        target
+      )
+      const uploaded = attachUrls(pictures, linksFromShot(shotLines))
+      return {
+        code: EXIT.ok,
+        lines: [renderPrSection({ manifest, uploaded, checks })],
+      }
     },
   },
   diff: {
