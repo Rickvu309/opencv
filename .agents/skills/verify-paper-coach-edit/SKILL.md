@@ -22,6 +22,8 @@ These are the five rules of `CoachPaper.tla`. Do not weaken a rule to clear a fi
 - `apps/api/src/registry/coach-policy.ts` exports `coachRefusal`. `tools` and `execute` consult it. A refusal omits the command from the coach tools and rejects a coach execute with `COACH_NOT_ALLOWED`.
 - `packages/domain/src/paper-contract.ts` sets the `coach` field of `paper.edit` to `confirm`. The guard `paper-coach-approval` requires that string.
 
+`apps/api/src/paper/ContentStore.tla` models the Yjs log under both basis rules. Its `Coach` action is a coach actor: `editAsCoach` lands only on the revision it read, through `stalePaperBasis`, and the action property `CoachExact` in `ContentStore.coach.cfg` checks that rule. Its `PersonMerge` action is a signed-in person who posts `paper.edit` with a numeric `basedOn` to `apps/api/src/registry/http.ts`: `coachBasisOk` still lets that edit merge onto an older revision. A delegate never takes that path, because `paperEditBasisRefused` in `apps/api/src/registry/registry-entries.ts` refuses a numeric `basedOn`. P1, P2, P3 and P5 run with both actions. `ContentStore.coach.mutant.cfg` gives the coach actor the person rule and must exit 13 on `CoachExact`. Every other ContentStore mutant must exit 12 on its own invariant.
+
 `apps/api/src/paper/CoachPaper.tla.json` maps each model action to one export of `content-coach.ts`. Null means the action is implemented outside that file.
 
 - `Propose` is null. The function is `createProposal` in `apps/api/src/registry/proposals.ts`.

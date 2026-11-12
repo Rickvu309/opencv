@@ -6,18 +6,19 @@ CONSTANTS RevisionGuard, SeqFromEntry, VersionCheck, SyncCheck, CoachStrict, Max
 Blocks == {"b1", "b2"}
 Procs == {"a", "b"}
 None == "none"
+Actors == {"coach", "person"}
 
 VARIABLES
   version, logMax, gap, person,
   cacheP, cacheR, cacheD, cacheAhead,
   lock, snap, saved, savedGap, drev, dperson, dirty, writes,
-  lost, blocked, coached, coachAt, coachRead, basis, sentVer
+  lost, blocked, coached, coachAt, coachRead, coachBy, basis, sentVer
 
 vars == <<
   version, logMax, gap, person,
   cacheP, cacheR, cacheD, cacheAhead,
   lock, snap, saved, savedGap, drev, dperson, dirty, writes,
-  lost, blocked, coached, coachAt, coachRead, basis, sentVer
+  lost, blocked, coached, coachAt, coachRead, coachBy, basis, sentVer
 >>
 
 blank == [b \in Blocks |-> FALSE]
@@ -44,6 +45,7 @@ Init ==
   /\ coached = FALSE
   /\ coachAt = None
   /\ coachRead = 0
+  /\ coachBy = None
   /\ basis = 1
   /\ sentVer = 0
 
@@ -72,9 +74,14 @@ publish(seq, page) ==
   /\ drev' = seq
   /\ dperson' = page
 
-coachOk(basedOn, revision) ==
-  IF CoachStrict THEN basedOn = revision
-  ELSE basedOn <= revision /\ basedOn >= 1
+stalePaperBasisApplies(basedOn, revision) == basedOn = revision
+
+coachBasisOk(basedOn, revision) == basedOn <= revision /\ basedOn >= 1
+
+basisOk(who, basedOn, revision) ==
+  IF who = "coach" /\ CoachStrict
+    THEN stalePaperBasisApplies(basedOn, revision)
+    ELSE coachBasisOk(basedOn, revision)
 
 Lock(p) ==
   /\ lock = None
@@ -96,7 +103,7 @@ Lock(p) ==
             /\ cacheAhead' = [cacheAhead EXCEPT ![p] = FALSE]
   /\ UNCHANGED <<
        version, logMax, gap, person, lost, blocked, coached,
-       coachAt, coachRead, basis, sentVer
+       coachAt, coachRead, coachBy, basis, sentVer
      >>
 
 Person(p) ==
@@ -114,7 +121,7 @@ Person(p) ==
                  version, logMax, gap, person,
                  cacheP, cacheR, cacheD, cacheAhead,
                  lock, snap, saved, savedGap, drev, writes,
-                 lost, blocked, coached, coachAt, coachRead, sentVer
+                 lost, blocked, coached, coachAt, coachRead, coachBy, sentVer
                >>
 
 Commit(p) ==
@@ -129,10 +136,10 @@ Commit(p) ==
         /\ remember(p, seq, dperson)
         /\ UNCHANGED <<
              lock, snap, saved, savedGap,
-             lost, blocked, coached, coachAt, coachRead, basis, sentVer
+             lost, blocked, coached, coachAt, coachRead, coachBy, basis, sentVer
            >>
 
-Coach(p) ==
+EditAs(p, who) ==
   /\ lock = p
   /\ ~dirty
   /\ writes = 0
@@ -143,28 +150,35 @@ Coach(p) ==
             /\ free # touched
             /\ ~person[free]
             /\ \E basedOn \in 1..version :
-                 IF coachOk(basedOn, version) /\ version < Max
+                 IF basisOk(who, basedOn, version) /\ version < Max
                  THEN /\ publish(version + 1, person)
                       /\ remember(p, version + 1, person)
                       /\ coached' = TRUE
                       /\ blocked' = FALSE
                       /\ coachAt' = free
                       /\ coachRead' = basedOn
+                      /\ coachBy' = who
                       /\ UNCHANGED <<
                            person, lock, snap, saved, savedGap, dirty, writes,
                            lost, basis, sentVer
                          >>
-                 ELSE /\ CoachStrict
+                 ELSE /\ who = "coach"
+                      /\ CoachStrict
                       /\ basedOn < version
                       /\ blocked' = TRUE
                       /\ coached' = TRUE
                       /\ coachRead' = basedOn
+                      /\ coachBy' = who
                       /\ UNCHANGED <<
                            version, logMax, gap, person,
                            cacheP, cacheR, cacheD, cacheAhead,
                            lock, snap, saved, savedGap, drev, dperson, dirty, writes,
                            lost, coachAt, basis, sentVer
                          >>
+
+Coach(p) == EditAs(p, "coach")
+
+PersonMerge(p) == EditAs(p, "person")
 
 Replace(p) ==
   /\ lock = p
@@ -180,7 +194,7 @@ Replace(p) ==
                  /\ sentVer' = sent
                  /\ UNCHANGED <<
                       person, lock, snap, saved, savedGap, dirty, writes,
-                      lost, blocked, coached, coachAt, coachRead, basis
+                      lost, blocked, coached, coachAt, coachRead, coachBy, basis
                     >>
             ELSE /\ ~VersionCheck
                  /\ publish(version + 1, blank)
@@ -190,7 +204,7 @@ Replace(p) ==
                  /\ sentVer' = sent
                  /\ UNCHANGED <<
                       lock, snap, saved, savedGap, dirty, writes,
-                      blocked, coached, coachAt, coachRead, basis
+                      blocked, coached, coachAt, coachRead, coachBy, basis
                     >>
 
 Rollback(p) ==
@@ -207,7 +221,7 @@ Rollback(p) ==
   /\ UNCHANGED <<
        cacheP, cacheR, cacheD,
        snap, saved, savedGap, drev, dperson,
-       lost, blocked, coached, coachAt, coachRead, basis, sentVer
+       lost, blocked, coached, coachAt, coachRead, coachBy, basis, sentVer
      >>
 
 End(p) ==
@@ -218,7 +232,7 @@ End(p) ==
        version, logMax, gap, person,
        cacheP, cacheR, cacheD, cacheAhead,
        snap, saved, savedGap, drev, dperson, writes,
-       lost, blocked, coached, coachAt, coachRead, basis, sentVer
+       lost, blocked, coached, coachAt, coachRead, coachBy, basis, sentVer
      >>
 
 Evict(p) ==
@@ -229,7 +243,7 @@ Evict(p) ==
        version, logMax, gap, person,
        cacheR, cacheD, cacheAhead,
        lock, snap, saved, savedGap, drev, dperson, dirty, writes,
-       lost, blocked, coached, coachAt, coachRead, basis, sentVer
+       lost, blocked, coached, coachAt, coachRead, coachBy, basis, sentVer
      >>
 
 Next ==
@@ -237,6 +251,7 @@ Next ==
   \/ \E p \in Procs : Person(p)
   \/ \E p \in Procs : Commit(p)
   \/ \E p \in Procs : Coach(p)
+  \/ \E p \in Procs : PersonMerge(p)
   \/ \E p \in Procs : Replace(p)
   \/ \E p \in Procs : Rollback(p)
   \/ \E p \in Procs : End(p)
@@ -266,6 +281,7 @@ TypeOK ==
   /\ coached \in BOOLEAN
   /\ coachAt \in Blocks \cup {None}
   /\ coachRead \in 0..Max
+  /\ coachBy \in Actors \cup {None}
   /\ basis \in 0..Max
   /\ sentVer \in 0..Max
 
@@ -275,7 +291,8 @@ P2 == version = logMax /\ ~gap
 
 P3 == ~lost
 
-CoachExact == [][(~coached /\ coached' /\ ~blocked') => coachRead' = version]_vars
+CoachExact ==
+  [][(~coached /\ coached' /\ ~blocked' /\ coachBy' = "coach") => coachRead' = version]_vars
 
 P5 == ~dirty \/ basis = drev
 
