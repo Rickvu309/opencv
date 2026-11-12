@@ -3,7 +3,11 @@ import { act, cleanup, render } from "@testing-library/react"
 import { afterEach, expect, it } from "vitest"
 
 import { Toaster, toastWithUndo } from "./components/sonner"
-import { TOAST_OFFSET_BOTTOM, TOAST_OFFSET_RIGHT } from "./lib/toast-offset"
+import {
+  TOAST_MAX_WIDTH,
+  TOAST_OFFSET_BOTTOM,
+  TOAST_OFFSET_RIGHT,
+} from "./lib/toast-offset"
 
 afterEach(cleanup)
 
@@ -34,6 +38,14 @@ it("keeps toasts in the bottom right corner, lifted by the offset the app shell 
   )
   expect(toaster!.style.getPropertyValue("--offset-right")).toBe(
     `var(${TOAST_OFFSET_RIGHT}, 24px)`
+  )
+})
+
+it("is Sonner's full width until the app shell gives it a narrower room", async () => {
+  const { container } = render(<Toaster />)
+  const toaster = await shownToaster(container)
+  expect(toaster!.style.getPropertyValue("--width")).toBe(
+    `var(${TOAST_MAX_WIDTH}, 356px)`
   )
 })
 
