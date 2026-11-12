@@ -128,6 +128,7 @@ describe(".railway/railway.ts", () => {
         DATABASE_URL: { type: "preserve" },
         GOOGLE_CLIENT_ID: { type: "preserve" },
         GOOGLE_CLIENT_SECRET: { type: "preserve" },
+        NIXPACKS_NODE_VERSION: { type: "literal", value: "24" },
         RESEND_API_KEY: { type: "preserve" },
         SESSION_SECRET: { type: "preserve" },
         WEB_ORIGINS: { type: "preserve" },
