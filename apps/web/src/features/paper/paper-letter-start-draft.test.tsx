@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen } from "@testing-library/react"
 
+import {
+  setMockSession,
+  TEST_SESSION,
+  TEST_SESSION_USER,
+} from "@/test/auth-client-mock.ts"
 import { render } from "@/test/render-with-client.tsx"
 import {
   fail,
@@ -159,6 +164,45 @@ describe("Cover letter drafting", () => {
           !call.url.includes("/paper.canvas")
       )
     ).toEqual([])
+  })
+
+  it("fills the signed-in person's own email into the letter page in place of the placeholder", async () => {
+    const calls = installFetch("tool")
+    const answer = globalThis.fetch
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const res = await answer(input, init)
+        if (!String(input).includes("/turns")) return res
+        const stream = (await res.text()).replace(
+          "I write clearly.",
+          "Reach me at [Your email]."
+        )
+        return new Response(stream, {
+          status: res.status,
+          headers: res.headers,
+        })
+      }
+    )
+    const other = { ...TEST_SESSION_USER, email: "someone.else@example.com" }
+    setMockSession({ user: other, session: TEST_SESSION })
+    startDrafting()
+    await vi.waitFor(() => {
+      expect(
+        calls.some((call) => call.url.includes("/api/commands/paper.canvas"))
+      ).toBe(true)
+    })
+    const minted = calls.find((call) =>
+      call.url.includes("/api/commands/paper.canvas")
+    )?.body as { input: { lines: string[] } }
+    expect(minted.input.lines).toEqual([
+      "Dear team",
+      "Reach me at someone.else@example.com.",
+    ])
+    expect(JSON.stringify(minted)).not.toContain(TEST_SESSION_USER.email)
+    expect(
+      JSON.stringify(calls.find((call) => call.url.includes("/turns"))?.body)
+    ).not.toContain("@")
   })
 
   it("stops the stream", async () => {

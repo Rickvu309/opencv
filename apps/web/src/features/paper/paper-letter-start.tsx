@@ -19,6 +19,7 @@ import { Input } from "@workspace/ui/components/input"
 
 import { listJobs } from "@/features/apply/apply-api.ts"
 import { ApiError } from "@/lib/api-error.ts"
+import { authClient } from "@/lib/auth-client.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
 import { isAbortError } from "@/lib/sse.ts"
 import { useQueryClient } from "@tanstack/react-query"
@@ -40,9 +41,12 @@ import { letterDraftText } from "./paper-letter-context.ts"
 
 const LETTER_LINE = 2000
 
-export function letterLines(text: string): string[] {
+export const EMAIL_PLACEHOLDER = "[Your email]"
+
+export function letterLines(text: string, email?: string): string[] {
   const lines: string[] = []
-  for (const paragraph of text.split(/\n\s*\n+/)) {
+  const filled = email ? text.split(EMAIL_PLACEHOLDER).join(email) : text
+  for (const paragraph of filled.split(/\n\s*\n+/)) {
     const line = paragraph.replace(/\s*\n\s*/g, " ").trim()
     for (let index = 0; index < line.length; index += LETTER_LINE)
       lines.push(line.slice(index, index + LETTER_LINE))
@@ -106,6 +110,7 @@ export function PaperLetterStart({
   stopRef?: MutableRefObject<(() => void) | null>
 }) {
   const run = useRunCommand()
+  const signedInEmail = authClient.useSession().data?.user.email
   const guidanceId = useId()
   const queryClient = useQueryClient()
   const [
@@ -248,7 +253,7 @@ export function PaperLetterStart({
         if (!operation.stopped || !controller.signal.aborted) throw err
       }
       if (activeDraft.current !== operation) return
-      const lines = letterLines(operation.text)
+      const lines = letterLines(operation.text, signedInEmail)
       if (lines.length > WORD_LIMITS.maxOpsPerApply)
         throw new Error(
           "This letter is too long to save. Shorten it and try again."
