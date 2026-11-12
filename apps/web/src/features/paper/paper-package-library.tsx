@@ -95,10 +95,6 @@ export function useWordLibrary(filter: string, needle: string) {
   }
 }
 
-function wordPagesOpen() {
-  return false
-}
-
 export function PaperPackageLibrary({
   library,
   onOpen,
@@ -106,7 +102,6 @@ export function PaperPackageLibrary({
   library: ReturnType<typeof useWordLibrary>
   onOpen?: (docId: string) => void
 }) {
-  if (wordPagesOpen()) void import("../paper-page/preview.tsx")
   const { selected, onSelect } = library
   const unavailable =
     library.query.error instanceof ApiError &&

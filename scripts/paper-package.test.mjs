@@ -44,7 +44,6 @@ test("Word content excludes property tabs and bounds expansion before retaining 
     "targets",
     "zip",
     "xml",
-    "witness",
     "engine",
     "policy",
     "references",

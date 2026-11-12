@@ -9,9 +9,10 @@ import {
   relationship,
   run,
   story,
+  packageMember,
   type FixtureOptions,
 } from "./package-fixtures.js"
-import { witnessArchive } from "./package-witness.js"
+import { readPackageZip } from "./package-zip.js"
 import { PACKAGE_LIMITS } from "./package-limits.js"
 import * as packageXml from "./package-xml.js"
 
@@ -23,10 +24,10 @@ const context = {
 
 const tail = paragraph("untouched")
 
-function mainXml(bytes: Buffer) {
-  const part = witnessArchive(bytes).get("word/document.xml")
+async function mainXml(bytes: Buffer) {
+  const part = (await readPackageZip(bytes)).files.get("word/document.xml")
   if (!part) throw new Error("Missing main document part")
-  return part.bytes
+  return part
 }
 
 function editable(document: PaperPackage, text: string, occurrence = 0) {
@@ -113,9 +114,13 @@ describe("conservative surface and references", () => {
         candidate.read().regions.find((region) => region.text === "inside")
           ?.kind
       ).toBe("locked")
-      for (const [name, part] of witnessArchive(document.export())) {
-        if (name !== "word/document.xml")
-          expect(witnessArchive(candidate.export()).get(name)).toEqual(part)
+      const docArchive = await readPackageZip(document.export())
+      const candArchive = await readPackageZip(candidate.export())
+      for (const entry of docArchive.entries) {
+        if (entry.name !== "word/document.xml")
+          expect(packageMember(candArchive, entry.name)).toEqual(
+            packageMember(docArchive, entry.name)
+          )
       }
     }
   )
@@ -224,12 +229,18 @@ describe("conservative surface and references", () => {
       const candidate = (
         await document.prepare(edit(document, "alpha", "changed"))
       ).package
-      expect(mainXml(candidate.export())).toEqual(
-        Buffer.from(mainXml(bytes).toString().replace("alpha", "changed"))
+      expect(await mainXml(candidate.export())).toEqual(
+        Buffer.from(
+          (await mainXml(bytes)).toString().replace("alpha", "changed")
+        )
       )
-      for (const [name, part] of witnessArchive(bytes))
-        if (name !== "word/document.xml")
-          expect(witnessArchive(candidate.export()).get(name)).toEqual(part)
+      const candArchive = await readPackageZip(candidate.export())
+      const origArchive = await readPackageZip(bytes)
+      for (const entry of origArchive.entries)
+        if (entry.name !== "word/document.xml")
+          expect(packageMember(candArchive, entry.name)).toEqual(
+            packageMember(origArchive, entry.name)
+          )
       const corrupt = Buffer.from(bytes)
       const descriptorAt = corrupt.indexOf(
         Buffer.from([0x50, 0x4b, 0x07, 0x08])
@@ -259,9 +270,9 @@ describe("conservative surface and references", () => {
         edits: [{ ...request.edits[0], before: "aaa", after: "one" }],
       })
     ).package
-    expect(mainXml(candidate.export())).toEqual(
+    expect(await mainXml(candidate.export())).toEqual(
       Buffer.from(
-        mainXml(document.export())
+        (await mainXml(document.export()))
           .toString()
           .replace("prefix aaa suffix", "prefix one suffix")
       )
@@ -284,11 +295,11 @@ describe("conservative surface and references", () => {
     expect(inverse.sidecar().paragraphs[0].textIds).toHaveLength(3)
     expect(new Set(inverse.sidecar().paragraphs[0].textIds).size).toBe(3)
     expect(
-      mainXml(inverse.export())
+      (await mainXml(inverse.export()))
         .toString()
         .replace(/w14:textId="[0-9A-F]+"/, 'w14:textId="23456789"')
-    ).toBe(mainXml(bytes).toString())
-    expect(mainXml(first.export()).toString()).toContain(
+    ).toBe((await mainXml(bytes)).toString())
+    expect((await mainXml(first.export())).toString()).toContain(
       'w14:paraId="12345678"'
     )
     expect(
@@ -361,14 +372,11 @@ describe("conservative surface and references", () => {
     const candidate = (
       await document.prepare(edit(document, "untouched", "changed"))
     ).package
+    const candidateFiles = (await readPackageZip(candidate.export())).files
+    expect(candidateFiles.get("word/document.xml")?.toString()).toContain(link)
     expect(
-      witnessArchive(candidate.export())
-        .get("word/document.xml")
-        ?.bytes.toString()
-    ).toContain(link)
-    expect(
-      witnessArchive(candidate.export()).get("word/_rels/document.xml.rels")
-    ).toEqual(witnessArchive(bytes).get("word/_rels/document.xml.rels"))
+      await packageMember(candidate.export(), "word/_rels/document.xml.rels")
+    ).toEqual(await packageMember(bytes, "word/_rels/document.xml.rels"))
   })
 
   it("retains UTF-8 BOM and line endings outside the changed text envelope", async () => {
@@ -381,7 +389,7 @@ describe("conservative surface and references", () => {
       await document.prepare(edit(document, "alpha", "changed"))
     ).package
     expect(
-      witnessArchive(candidate.export()).get("word/document.xml")?.bytes
+      (await readPackageZip(candidate.export())).files.get("word/document.xml")
     ).toEqual(
       Buffer.from(
         String(files["word/document.xml"]).replace(
