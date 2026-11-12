@@ -209,16 +209,32 @@ function linesAt(world: World, revision: string | undefined) {
   return revision ? world.history.get(revision) : undefined
 }
 
+function serverHandles(state: CanvasState, saved: Line[]) {
+  const pageSaved = state.saved?.blocks ?? []
+  const pairs =
+    pageSaved.length === saved.length
+      ? pageSaved.map((block, index): [string, string] => [
+          block.id,
+          saved[index]?.handle ?? block.id,
+        ])
+      : []
+  const handles = new Map(pairs)
+  return (id: string) => handles.get(id) ?? id
+}
+
 function oracleDiscards(state: CanvasState, saved: Line[]) {
   const moved = state.moved
   if (!moved) return 0
+  const handleOf = serverHandles(state, saved)
   const before = new Map(saved.map((line) => [line.handle, line.text]))
   const theirs = new Map(moved.head.map((block) => [block.id, block.text]))
-  const own = new Set(state.present.blocks.map((block) => block.id))
-  const lines = state.present.blocks.filter(
-    (block) =>
-      before.get(block.id) !== block.text && theirs.get(block.id) !== block.text
-  ).length
+  const own = new Set(state.present.blocks.map((block) => handleOf(block.id)))
+  const lines = state.present.blocks.filter((block) => {
+    const handle = handleOf(block.id)
+    return (
+      before.get(handle) !== block.text && theirs.get(handle) !== block.text
+    )
+  }).length
   const removed = saved.filter(
     (line) => !own.has(line.handle) && theirs.has(line.handle)
   ).length

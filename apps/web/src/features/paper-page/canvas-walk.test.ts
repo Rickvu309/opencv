@@ -96,7 +96,10 @@ describe("the writing page under a seeded random walk against a fake server", ()
 
   it(`keeps I1 to I4 over ${SEEDS} seeds of ${STEPS} steps`, async () => {
     const found = new Map<string, number[]>()
-    for (let seed = FIRST_SEED; seed < FIRST_SEED + SEEDS; seed += 1) {
+    const seeds = process.env.WALK_SEED_LIST
+      ? process.env.WALK_SEED_LIST.split(",").map(Number)
+      : Array.from({ length: SEEDS }, (_, index) => FIRST_SEED + index)
+    for (const seed of seeds) {
       const steps = walkSteps(seed, STEPS)
       const failure = await walk(steps)
       if (!failure) continue
