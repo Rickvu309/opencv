@@ -2,7 +2,6 @@ import {
   type ElementType,
   type KeyboardEvent,
   type ReactNode,
-  type RefObject,
   createContext,
   useContext,
   useEffect,
@@ -38,18 +37,6 @@ import {
   type CvSkillGroup,
   type CvTypeRole,
 } from "./cv-types.ts"
-
-export function PaperImportInput({
-  inputRef,
-  accept,
-  onFile,
-}: {
-  inputRef: RefObject<HTMLInputElement | null>
-  accept: string
-  onFile: (file: File) => void
-}) {
-  return <HiddenFilePicker ref={inputRef} accept={accept} onFile={onFile} />
-}
 
 export function CvType({
   role,
