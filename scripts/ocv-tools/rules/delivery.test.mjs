@@ -102,6 +102,35 @@ const CASES = {
     queue({ kind: "LEFT_QUEUE" }),
     "CI cannot run on PR #7: GitHub did not start run 5 because the account's payments failed or its Actions spending limit is used up. A rerun or a new merge will not help.",
   ],
+  MIGRATION_CHANGES: [
+    {
+      pull: { n: 7 },
+      migrations: {
+        allowed: ["0023_package_trash"],
+        files: [
+          { tag: "0023_package_trash", changes: [] },
+          {
+            tag: "0024_word_rename_retained",
+            changes: ["CREATE OR REPLACE", "a trigger"],
+          },
+        ],
+      },
+    },
+    {
+      pull: { n: 7 },
+      migrations: {
+        allowed: ["0024_word_rename_retained"],
+        files: [
+          { tag: "0023_package_trash", changes: [] },
+          {
+            tag: "0024_word_rename_retained",
+            changes: ["CREATE OR REPLACE", "a trigger"],
+          },
+        ],
+      },
+    },
+    "the merge runs 0024_word_rename_retained (CREATE OR REPLACE, a trigger) on production data, and it changes what exists",
+  ],
   CI_FAILED: [
     queue({
       kind: "CI_FAILED",
@@ -222,7 +251,13 @@ test("saved PR bodies: 487 and 915 are refused, a compliant fix passes", () => {
 })
 
 test("merge holds the owner, and the draft passes the pr moment", () => {
-  const facts = { pull: { ...pull, isDraft: true }, me: "owner", ci }
+  const migrations = { files: [], allowed: [] }
+  const facts = {
+    pull: { ...pull, isDraft: true },
+    me: "owner",
+    ci,
+    migrations,
+  }
   assert.deepEqual(
     decide("merge", facts).refusals.map((r) => r.id),
     ["DRAFT"]
@@ -235,6 +270,7 @@ test("merge holds the owner, and the draft passes the pr moment", () => {
     pull: { ...pull, state: "MERGED" },
     me: "owner",
     ci: null,
+    migrations,
   }
   assert.equal(decide("merge", mergedHasNoCiToCheck).ok, true)
 })
@@ -246,6 +282,7 @@ test("legacy review labels on the issue or PR do not block a green merge", () =>
       issue: { n: 7, labels },
       me: "Owner",
       ci,
+      migrations: { files: [], allowed: [] },
     }
     assert.equal(decide("merge", facts).ok, true)
     assert.equal(

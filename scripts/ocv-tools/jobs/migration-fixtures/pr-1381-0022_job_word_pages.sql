@@ -1,0 +1,4 @@
+ALTER TABLE "opencv_app"."jobs" ADD COLUMN "cv_package_id" uuid;--> statement-breakpoint
+ALTER TABLE "opencv_app"."jobs" ADD COLUMN "letter_package_id" uuid;--> statement-breakpoint
+ALTER TABLE "opencv_app"."jobs" ADD CONSTRAINT "jobs_cv_package_id_paper_package_heads_doc_id_fk" FOREIGN KEY ("cv_package_id") REFERENCES "opencv_app"."paper_package_heads"("doc_id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "opencv_app"."jobs" ADD CONSTRAINT "jobs_letter_package_id_paper_package_heads_doc_id_fk" FOREIGN KEY ("letter_package_id") REFERENCES "opencv_app"."paper_package_heads"("doc_id") ON DELETE set null ON UPDATE no action;

@@ -302,6 +302,24 @@ test("every checked rule has a failing and a passing fact", () => {
     "the quick checks failed: no-comments, fast guards"
   )
   check(
+    "MIGRATION_CHANGES",
+    {
+      pull: { n: 1326 },
+      migrations: {
+        allowed: [],
+        files: [{ tag: "0022_drop_notify", changes: ["DROP"] }],
+      },
+    },
+    {
+      pull: { n: 1326 },
+      migrations: {
+        allowed: ["0022_drop_notify"],
+        files: [{ tag: "0022_drop_notify", changes: ["DROP"] }],
+      },
+    },
+    "the merge runs 0022_drop_notify (DROP) on production data, and it changes what exists"
+  )
+  check(
     "FILE_SIZE",
     { commits: { oversize: "big.mjs (20001 bytes) " } },
     { commits: {} },

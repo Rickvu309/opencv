@@ -1,5 +1,18 @@
 import { issueOfBranch } from "./pull-ref.mjs"
 
+function unallowedMigrations(facts) {
+  const allowed = facts.migrations?.allowed ?? []
+  return (facts.migrations?.files ?? []).filter(
+    (item) => item.changes.length && !allowed.includes(item.tag)
+  )
+}
+
+function migrationChanges(facts) {
+  const hits = unallowedMigrations(facts)
+  if (!hits.length) return null
+  return `the merge runs ${hits.map((item) => `${item.tag} (${item.changes.join(", ")})`).join("; ")} on production data, and it changes what exists`
+}
+
 const FINISH_TITLE = /^(feat|fix|hotfix|refactor|chore|docs): [^ ].* \(#\d+\)$/
 const SECTIONS = ["Summary", "Evidence", "Merge Danger"]
 const FIX_TITLE = /^(?:fix|hotfix)(?:\([^)]*\))?!?: /
@@ -340,6 +353,20 @@ export const jobRows = [
     check: billingBlocked,
     fix: billingFix,
     exit: "HUMAN",
+  }),
+  row({
+    id: "MIGRATION_CHANGES",
+    section: "6",
+    says: "A PR whose database migration does more than add tables and indexes is queued only with --allow-migration naming that migration, because the merge runs it on production data.",
+    at: ["merge"],
+    needs: ["pull", "migrations"],
+    check: migrationChanges,
+    fix: (facts) =>
+      `Name what it changes in Merge Danger, get the owner's yes, then run: scripts/ocv-tools.mjs merge ${facts.pull?.n ?? "<pr#>"} --allow-migration ${unallowedMigrations(
+        facts
+      )
+        .map((item) => item.tag)
+        .join(",")}`,
   }),
   row({
     id: "CI_REQUIRED",

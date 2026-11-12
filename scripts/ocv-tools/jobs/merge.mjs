@@ -1,4 +1,9 @@
 import { dirname, join } from "node:path"
+import {
+  deployLines,
+  liveCheckLine,
+  migrationFacts,
+} from "./migration-facts.mjs"
 import { PR_FIELDS, pullFacts, pullOf } from "./pull-facts.mjs"
 import { recorded, json, gh, git } from "./common.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
@@ -355,7 +360,7 @@ function waitForMerge(ctx, n, startHead, repo, state) {
   }
 }
 
-export function merge(ctx, n, { wait = false } = {}) {
+export function merge(ctx, n, { wait = false, allowMigrations = [] } = {}) {
   return recorded(ctx, "merge-pr", () => {
     let pull = json(ctx, "pr", "view", String(n), "--json", PR_FIELDS)
     const me = gh(ctx, "api", "user", "--jq", ".login")
@@ -396,6 +401,9 @@ export function merge(ctx, n, { wait = false } = {}) {
     const facts = open
       ? { ...pullFacts(ctx, n), me }
       : { pull: pullOf(pull), me, ci: null }
+    facts.migrations = open
+      ? migrationFacts(ctx, facts.diff?.files, head, allowMigrations)
+      : { files: [], allowed: allowMigrations }
     if (open) {
       const live = decide("pr", facts)
       if (!live.ok) throw refusalError(live.refusals[0])
@@ -417,7 +425,11 @@ export function merge(ctx, n, { wait = false } = {}) {
     }
     const ready = decide("merge", facts)
     if (!ready.ok) throw refusalError(ready.refusals[0])
-    const state = { lines: [], reran: null, requeued: false }
+    const state = {
+      lines: open ? deployLines(facts.migrations) : [],
+      reran: null,
+      requeued: false,
+    }
     const alreadyQueued = open && wait && queueSnapshot(ctx, repo, n, 0).inQueue
     if (alreadyQueued)
       state.lines.push(
@@ -460,6 +472,7 @@ export function merge(ctx, n, { wait = false } = {}) {
     const lines = [
       ...state.lines,
       `Merged PR #${n} as ${pull.mergeCommit?.oid}. Linked issues are closed.`,
+      liveCheckLine(pull.mergeCommit?.oid, facts.migrations),
     ]
     if (wait) {
       try {

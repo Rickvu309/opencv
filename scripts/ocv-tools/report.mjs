@@ -19,8 +19,8 @@ export const COMMANDS = [
   },
   {
     name: "merge",
-    usage: "merge <pr#> [--wait]",
-    when: "Require ci success on the head and enqueue a squash merge. With --wait it stays until the PR merges (or leaves the queue, or 45 minutes pass), then closes linked issues and removes the worktree and branch. If the PR is already queued or already merged, --wait skips the merged-tree check and reports what the queue did. Run it in the background after queuing. Run again later to confirm closure.",
+    usage: "merge <pr#> [--wait] [--allow-migration <tag,...>]",
+    when: "Require ci success on the head and enqueue a squash merge. With --wait it stays until the PR merges (or leaves the queue, or 45 minutes pass), then closes linked issues and removes the worktree and branch. If the PR is already queued or already merged, --wait skips the merged-tree check and reports what the queue did. Run it in the background after queuing. Run again later to confirm closure. Before it queues it says the merge deploys to production and names each migration, and it refuses a migration that does more than add unless --allow-migration names it. After the merge it prints the command that shows the live commit and schema version.",
   },
   {
     name: "policy",

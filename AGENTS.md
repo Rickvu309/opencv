@@ -68,6 +68,7 @@ The web is a React SPA in `apps/web`. The API is Hono in `apps/api`. The shared 
 | Recording a blocker never completes open work.                        | `done` exits 4 for blocked work, 1 if any unblocked item remains; `scripts/ocv-tools/done.test.mjs` replays the #1083 and #1084 handbacks.              |
 | An empty ownership check does not prove the full request is complete. | `done` states its agent scope and requires checking the full request; the coordinator must match each requested item to evidence before final handback. |
 | `No visible change.` is refused while a screen file changes.          | Row `NO_BEFORE_AFTER` at `finish`, `body` and `pr`; `scripts/ocv-tools/rules/before-after.test.mjs` replays #1406 and #1410.                            |
+| A merge says it deploys and names each migration it runs.             | Merge row `MIGRATION_CHANGES` holds a changing migration until `--allow-migration`; `scripts/ocv-tools/jobs/migration-facts.test.mjs`.                  |
 
 ## Pointers
 
