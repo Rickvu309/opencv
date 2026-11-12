@@ -267,7 +267,6 @@ export function CoachDock({
           onValueChange={(next) => {
             if (next !== "free" && next !== "light" && next !== "max") return
             if (next !== "free" && plan !== "pro") {
-              void navigate({ href: "/settings/billing/upgrade" })
               return
             }
             setMode(next)

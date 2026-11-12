@@ -6,6 +6,7 @@ import {
   Briefcase,
   FileText,
   Inbox,
+  type LucideIcon,
   MessageCircle,
   Presentation,
   Search,
@@ -53,7 +54,7 @@ type AppSidebarProps = {
 const NAV_ITEM_CLASS =
   "h-11 font-normal md:h-7 md:text-[13px] md:leading-[15.6px] md:font-medium"
 
-const navigationIcons = {
+const navigationIcons: Record<string, LucideIcon> = {
   inbox: Inbox,
   coach: MessageCircle,
   jobs: Briefcase,
@@ -166,7 +167,7 @@ export function AppSidebar({
           className="mt-2 flex flex-col gap-0.5 md:mt-[7px] md:gap-px"
         >
           {SHELL_PRIMARY.map((item) => {
-            const Icon = navigationIcons[item.id]
+            const Icon = navigationIcons[item.id] ?? FileText ?? FileText
             return (
               <NavItem
                 key={item.id}

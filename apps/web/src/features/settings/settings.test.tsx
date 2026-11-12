@@ -144,13 +144,16 @@ describe("settings", () => {
     })
   })
 
-  it("posts Inbox as the start page", async () => {
+  it("posts Paper as the start page and omits hidden Inbox", async () => {
     renderApp("/settings")
     await screen.findByRole("heading", { name: "Preferences" })
-    await choose("Start page", "Inbox")
+    await choose("Start page", "Paper")
     await waitFor(() => {
-      expect(getLastProfileUpdate()).toEqual({ startPage: "inbox" })
+      expect(getLastProfileUpdate()).toEqual({ startPage: "paper" })
     })
+    expect(
+      screen.queryByRole("option", { name: "Inbox" })
+    ).not.toBeInTheDocument()
   })
 
   it("toggles email notifications from Enabled to Disabled", async () => {
@@ -210,43 +213,47 @@ describe("settings", () => {
     ).toBeInTheDocument()
   })
 
-  it("opens the upgrade placeholder from usage with no card field", async () => {
+  it("shows usage without an upgrade upsell", async () => {
     renderApp("/settings/usage")
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Upgrade to Pro" })
-    )
-    await expectUpgradePlaceholder()
     expect(
-      screen.queryByRole("textbox", { name: /card/i })
+      await screen.findByRole("heading", { level: 1, name: "Usage & limits" })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Upgrade to Pro" })
     ).not.toBeInTheDocument()
   })
 
-  it("shows the free plan and a single Upgrade now glow", async () => {
+  it("shows the free plan without purchase controls", async () => {
     renderApp("/settings/billing")
     expect(await screen.findByText("Free plan")).toBeInTheDocument()
     expect(
-      screen.getByRole("button", { name: "Upgrade now" })
-    ).toBeInTheDocument()
+      screen.queryByRole("button", { name: "Upgrade now" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Add card" })
+    ).not.toBeInTheDocument()
     expect(screen.getByText("No card added")).toBeInTheDocument()
     expect(screen.getByText("None yet")).toBeInTheDocument()
-    const glows = glowButtons()
-    expect(glows).toHaveLength(1)
-    expect(glows[0]).toHaveAccessibleName("Upgrade now")
-    fireEvent.click(screen.getByRole("button", { name: "Add card" }))
-    await expectUpgradePlaceholder()
+    expect(glowButtons()).toHaveLength(0)
   })
 
-  it("keeps Upgrade now as the only glow on Pro", async () => {
+  it("shows the pro plan without purchase controls", async () => {
     setMockPlan("pro")
     renderApp("/settings/billing")
     expect(
       await screen.findByText("You're on the Pro plan.")
     ).toBeInTheDocument()
-    const glows = glowButtons()
-    expect(glows).toHaveLength(1)
-    expect(glows[0]).toHaveAccessibleName("Upgrade now")
-    fireEvent.click(glows[0]!)
-    await expectUpgradePlaceholder()
+    expect(
+      screen.queryByRole("button", { name: "Upgrade now" })
+    ).not.toBeInTheDocument()
+    expect(glowButtons()).toHaveLength(0)
+  })
+
+  it("redirects billing upgrade route to start page", async () => {
+    const { router } = renderApp("/settings/billing/upgrade")
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/apply")
+    })
   })
 
   it("downloads the export and does not open a card form", async () => {
@@ -414,6 +421,6 @@ describe("settings", () => {
 
 function glowButtons() {
   return screen
-    .getAllByRole("button")
+    .queryAllByRole("button")
     .filter((button) => button.classList.contains("glow"))
 }

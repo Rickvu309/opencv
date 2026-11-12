@@ -85,7 +85,7 @@ describe("settings workspace", () => {
     expect(screen.getByText("minh@example.com")).toBeInTheDocument()
   })
 
-  it("keeps Settings Account as the session User after leaving Pitch", async () => {
+  it("keeps Settings Account as the session User after leaving Coach", async () => {
     setMockSession({
       user: {
         ...TEST_SESSION_USER,
@@ -94,13 +94,8 @@ describe("settings workspace", () => {
       },
       session: TEST_SESSION,
     })
-    renderApp(SURFACE_PATHS.pitch)
-    expect(
-      await screen.findByRole("heading", {
-        level: 2,
-        name: "One link that sells you",
-      })
-    ).toBeInTheDocument()
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
 
     await openAccountMenu()
     fireEvent.click(screen.getByRole("menuitem", { name: "Settings" }))

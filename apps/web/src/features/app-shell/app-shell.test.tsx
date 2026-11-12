@@ -103,7 +103,7 @@ describe("app shell layout", () => {
       updatedAt: "2099-01-01T00:00:00.000Z",
     })
     setMockPaperFavorite("11111111-1111-7111-8111-111111111111", true)
-    renderApp(SURFACE_PATHS.pitch)
+    renderApp(SURFACE_PATHS.apply)
     expect(
       await screen.findByRole("link", { name: "PM track CV" })
     ).toBeInTheDocument()
@@ -124,8 +124,8 @@ describe("app shell layout", () => {
         starred: true,
       },
     ])
-    renderApp(SURFACE_PATHS.pitch)
-    await expectPitch()
+    renderApp(SURFACE_PATHS.paper)
+    await expectPaperDrive()
 
     const nav = screen.getByRole("navigation", { name: "Main" })
     expect(linkNames(nav)).toEqual(NAV)
@@ -277,23 +277,22 @@ describe("app shell layout", () => {
     await expectApplyLive()
 
     cleanup()
-    renderApp(SURFACE_PATHS.pitch)
-    await expectPitch()
+    const { router: pitchRouter } = renderApp(SURFACE_PATHS.apply)
+    await waitFor(() => {
+      expect(pitchRouter.state.location.pathname).toBe(SURFACE_PATHS.apply)
+    })
 
     cleanup()
-    renderApp("/jobs")
-    expect(
-      await screen.findByRole("heading", {
-        level: 2,
-        name: "Jobs, matched to you",
-      })
-    ).toBeInTheDocument()
+    const { router: jobsRouter } = renderApp("/jobs")
+    await waitFor(() => {
+      expect(jobsRouter.state.location.pathname).toBe(SURFACE_PATHS.apply)
+    })
 
     cleanup()
-    renderApp("/inbox")
-    expect(
-      await screen.findByRole("heading", { level: 1, name: "Inbox" })
-    ).toBeInTheDocument()
+    const { router: inboxRouter } = renderApp("/inbox")
+    await waitFor(() => {
+      expect(inboxRouter.state.location.pathname).toBe(SURFACE_PATHS.apply)
+    })
 
     cleanup()
     renderApp("/coach")
@@ -359,7 +358,7 @@ describe("app shell layout", () => {
         starred: false,
       },
     ])
-    renderApp(SURFACE_PATHS.pitch)
+    renderApp(SURFACE_PATHS.apply)
     const favorite = await screen.findByRole("link", {
       name: "Associate PM Northwind",
     })
@@ -370,8 +369,8 @@ describe("app shell layout", () => {
     cleanup()
     resetShellApiMock()
     failPaperList()
-    renderApp(SURFACE_PATHS.pitch)
-    await expectPitch()
+    renderApp(SURFACE_PATHS.apply)
+    await expectApplyLive()
     expect(screen.queryByText("Favorites")).not.toBeInTheDocument()
   })
 
@@ -380,8 +379,8 @@ describe("app shell layout", () => {
     async (desktop) => {
       stubDesktopViewport(desktop)
       setMockPaperFavorite("11111111-1111-7111-8111-111111111111", true)
-      const { router } = renderApp(SURFACE_PATHS.pitch)
-      await expectPitch()
+      const { router } = renderApp(SURFACE_PATHS.apply)
+      await expectApplyLive()
       if (!desktop) {
         fireEvent.click(await screen.findByRole("button", { name: "Menu" }))
       }
@@ -403,8 +402,8 @@ describe("app shell layout", () => {
       stubDesktopViewport(desktop)
       const job = mockJob({ starred: true })
       setApplyJobs([job])
-      const { router } = renderApp(SURFACE_PATHS.pitch)
-      await expectPitch()
+      const { router } = renderApp(SURFACE_PATHS.paper)
+      await expectPaperDrive()
       if (!desktop) {
         fireEvent.click(await screen.findByRole("button", { name: "Menu" }))
       }
@@ -422,34 +421,19 @@ describe("app shell layout", () => {
     }
   )
 
-  it("shows an Inbox count for unread threads on the inbox object", async () => {
-    renderApp(SURFACE_PATHS.pitch)
-    await expectPitch()
-    expect(screen.getByRole("link", { name: "Inbox" })).toHaveTextContent(
-      /^Inbox$/
-    )
-
-    cleanup()
-    setMockInbox({
-      connected: false,
-      skipped: true,
-      threads: [
-        { id: "a", unread: true },
-        { id: "b", unread: true },
-        { id: "c", unread: false },
-      ],
-    })
-    renderApp(SURFACE_PATHS.pitch)
-    await waitFor(() => {
-      expect(
-        screen.getByRole("link", { name: "Inbox, 2 unread" })
-      ).toHaveTextContent("2")
-    })
+  it("omits hidden surfaces from the nav", async () => {
+    renderApp(SURFACE_PATHS.apply)
+    await expectApplyLive()
+    const nav = screen.getByRole("navigation", { name: "Main" })
+    expect(within(nav).queryByRole("link", { name: /^Inbox/ })).toBeNull()
+    expect(within(nav).queryByRole("link", { name: /^Pitch/ })).toBeNull()
+    expect(within(nav).queryByRole("link", { name: /^Jobs/ })).toBeNull()
+    expect(within(nav).queryByRole("link", { name: /^Proofs/ })).toBeNull()
   })
 
   it("posts chat.create from New chat and closes the panel with Escape", async () => {
-    renderApp(SURFACE_PATHS.pitch)
-    await expectPitch()
+    renderApp(SURFACE_PATHS.apply)
+    await expectApplyLive()
 
     fireEvent.click(screen.getByRole("button", { name: "New chat" }))
 
@@ -481,7 +465,7 @@ describe("app shell layout", () => {
         updatedAt: "2026-02-02T00:00:00.000Z",
       },
     ])
-    renderApp(SURFACE_PATHS.pitch)
+    renderApp(SURFACE_PATHS.apply)
     fireEvent.click(
       await screen.findByRole("button", { name: "Checkout notes" })
     )
@@ -492,8 +476,8 @@ describe("app shell layout", () => {
   })
 
   it("keeps a typed draft across Expand and Minimize", async () => {
-    renderApp(SURFACE_PATHS.pitch)
-    await expectPitch()
+    renderApp(SURFACE_PATHS.apply)
+    await expectApplyLive()
     fireEvent.click(screen.getByRole("button", { name: "Coach" }))
     const draft = await screen.findByRole("textbox", { name: "Message Coach" })
     fireEvent.change(draft, { target: { value: "Keep this draft" } })
@@ -534,7 +518,7 @@ describe("app shell layout", () => {
         updatedAt: "2026-02-02T00:00:00.000Z",
       },
     ])
-    renderApp(SURFACE_PATHS.pitch)
+    renderApp(SURFACE_PATHS.apply)
     fireEvent.click(
       await screen.findByRole("button", { name: "CV vs internship first" })
     )
@@ -554,8 +538,8 @@ describe("app shell layout", () => {
 
   it("hides the sidebar at 390 until Menu, and a link closes the drawer", async () => {
     stubDesktopViewport(false)
-    renderApp(SURFACE_PATHS.pitch)
-    await expectPitch()
+    renderApp(SURFACE_PATHS.apply)
+    await expectApplyLive()
 
     expect(
       await screen.findByRole("button", { name: "Menu" })
@@ -577,7 +561,7 @@ describe("app shell layout", () => {
 
   it("returns focus to Menu when Escape closes the drawer", async () => {
     stubDesktopViewport(false)
-    renderApp(SURFACE_PATHS.pitch)
+    renderApp(SURFACE_PATHS.apply)
     const menu = await screen.findByRole("button", { name: "Menu" })
     fireEvent.click(menu)
     expect(await screen.findByRole("dialog")).toBeInTheDocument()

@@ -1,6 +1,4 @@
 import { useQuery } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
-import { Button } from "@workspace/ui/components/button"
 
 import {
   SettingsCard,
@@ -17,7 +15,6 @@ export function BillingSection() {
     queryKey: billingKey(),
     queryFn: fetchBilling,
   })
-  const navigate = useNavigate()
 
   if (billing.isPending) {
     return (
@@ -34,10 +31,6 @@ export function BillingSection() {
   const data = billing.data
   const planLine =
     data.plan === "pro" ? "You're on the Pro plan." : "You're on the Free plan."
-
-  function openUpgrade() {
-    void navigate({ href: "/settings/billing/upgrade" })
-  }
 
   return (
     <>
@@ -60,33 +53,12 @@ export function BillingSection() {
                 <li key={benefit}>{benefit}</li>
               ))}
             </ul>
-            <Button
-              className="h-11 md:h-8"
-              type="button"
-              variant="glow"
-              onClick={openUpgrade}
-            >
-              Upgrade now
-            </Button>
           </article>
         </div>
       </SettingsSection>
       <SettingsSection label="Payment">
         <SettingsCard>
-          <SettingsRow
-            label="Payment method"
-            desc="No card added"
-            control={
-              <Button
-                className="h-11 md:h-8"
-                type="button"
-                variant="outline"
-                onClick={openUpgrade}
-              >
-                Add card
-              </Button>
-            }
-          />
+          <SettingsRow label="Payment method" desc="No card added" />
         </SettingsCard>
       </SettingsSection>
       <SettingsSection label="Invoices">

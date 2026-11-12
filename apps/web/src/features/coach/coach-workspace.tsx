@@ -103,7 +103,6 @@ export function CoachWorkspace({
   const day = usage.data?.day
   const capped = day?.capped === true && day.remaining === 0
   const enabled = profile.data?.agentChat !== false
-  const showUpgrade = usage.data?.plan === "free" && usage.data.mode === "free"
   const modeLabel =
     usage.data?.mode === "light"
       ? "Light"
@@ -234,11 +233,7 @@ export function CoachWorkspace({
       primaryAction={primaryAction}
       notice={
         capped ? (
-          <CoachCapNotice
-            modeLabel={modeLabel}
-            resetTime={resetTime}
-            showUpgrade={showUpgrade}
-          />
+          <CoachCapNotice modeLabel={modeLabel} resetTime={resetTime} />
         ) : undefined
       }
     />

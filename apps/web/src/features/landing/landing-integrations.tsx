@@ -5,6 +5,8 @@ import {
 import { LandingSectionHeader } from "./landing-section-header.tsx"
 
 export function LandingIntegrations() {
+  if (LANDING_INTEGRATIONS.length === 0) return null
+
   return (
     <section
       id="integrations"

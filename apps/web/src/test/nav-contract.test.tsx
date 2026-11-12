@@ -133,20 +133,9 @@ describe("each router route is current under exactly one nav item, with its coun
   })
 
   it("puts the count of every nav item in its accessible name", async () => {
-    setMockInbox({
-      connected: false,
-      skipped: true,
-      threads: [
-        { id: "a", unread: true },
-        { id: "b", unread: true },
-      ],
-    })
-    renderApp(SHELL_PRIMARY[1].to)
-    const inbox = await screen.findByRole("link", { name: /^Inbox/ })
-    await waitFor(() => expect(inbox).toHaveTextContent("2"))
-    const links = within(
-      screen.getByRole("navigation", { name: "Main" })
-    ).getAllByRole("link")
+    renderApp(SHELL_PRIMARY[0].to)
+    const nav = await screen.findByRole("navigation", { name: "Main" })
+    const links = within(nav).getAllByRole("link")
     const missing = links.flatMap((link) => {
       const badges = [...link.querySelectorAll('[aria-hidden="true"]')]
         .map((node) => node.textContent?.trim() ?? "")
