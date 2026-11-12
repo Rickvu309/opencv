@@ -6,15 +6,21 @@ import type { CoachToolPart } from "./coach-parts.ts"
 export function refusedApproval(tool: CoachToolPart) {
   const { approval } = tool.part
   return !tool.part.pendingActionId &&
-    (approval === "denied" || approval === "expired")
+    (approval === "denied" || approval === "expired" || approval === "stopped")
     ? approval
     : null
 }
 
-export function refusedApprovalLine(status: "denied" | "expired") {
-  return status === "expired"
-    ? "Expired · ask Coach again"
-    : "Denied · nothing changed"
+const REFUSED_APPROVAL_LINE = {
+  denied: "Denied · nothing changed",
+  expired: "Expired · ask Coach again",
+  stopped: "Stopped · ask Coach again",
+} as const
+
+export function refusedApprovalLine(
+  status: keyof typeof REFUSED_APPROVAL_LINE
+) {
+  return REFUSED_APPROVAL_LINE[status]
 }
 
 export function isCompactCoachTool(tool: CoachToolPart) {

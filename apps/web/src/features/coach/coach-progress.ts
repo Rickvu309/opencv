@@ -72,7 +72,8 @@ export function coachProgressRows(
           ? "approval"
           : !result.ok ||
               result.approval === "denied" ||
-              result.approval === "expired"
+              result.approval === "expired" ||
+              result.approval === "stopped"
             ? "failed"
             : "completed"
     return { id: call.id, label: call.label, status }

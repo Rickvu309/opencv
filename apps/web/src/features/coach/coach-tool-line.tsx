@@ -226,7 +226,7 @@ function CoachApproval({
   review,
 }: {
   id: string
-  status: "pending" | "approved" | "denied" | "expired"
+  status: NonNullable<CoachToolPart["part"]["approval"]>
   command: string
   tool: CoachToolPart
   review?: unknown
@@ -320,7 +320,9 @@ function CoachApproval({
       <ConfirmationAccepted>Approved</ConfirmationAccepted>
       <ConfirmationRejected>
         {refusedApprovalLine(
-          effectiveStatus === "expired" ? "expired" : "denied"
+          effectiveStatus === "expired" || effectiveStatus === "stopped"
+            ? effectiveStatus
+            : "denied"
         )}
       </ConfirmationRejected>
       <ConfirmationActions className="justify-start self-start">

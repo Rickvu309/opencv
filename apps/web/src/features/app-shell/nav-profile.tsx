@@ -22,6 +22,7 @@ import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { useShellProfile } from "@/features/app-shell/use-shell-profile.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { resolveProfileImageSrc } from "@/lib/requests.ts"
+import { keepToastsClearOf } from "@/lib/toast-clearance.ts"
 
 type Props = {
   onNavigate?: () => void
@@ -40,6 +41,7 @@ export function NavProfile({ onNavigate, onMenuOpenChange }: Props) {
 
   return (
     <div
+      ref={keepToastsClearOf}
       data-slot="shell-profile"
       className="mt-auto shrink-0 border-t border-sidebar-border px-2 py-2 md:border-t-0 md:p-0"
     >

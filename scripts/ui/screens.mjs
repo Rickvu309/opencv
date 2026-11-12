@@ -327,14 +327,20 @@ export const SCREENS = [
     ],
   },
   {
-    id: "coach-expired-reloaded",
+    id: "coach-stopped-reloaded",
     route: "/paper",
     steps: [
       ...ASK_FOR_AN_EDIT,
       ...STOP_THE_WAITING_EDIT,
       ...REOPEN_LATEST_CHAT,
-      { waitFor: { text: "Expired · ask Coach again" } },
+      { waitFor: { text: "Stopped · ask Coach again" } },
     ],
+  },
+  {
+    id: "coach-expired-reloaded",
+    route: "/paper",
+    unreachable:
+      "An approval reads as Expired only after it waits 24 hours unanswered, and the scripted runtime has no clock to move past that wait",
   },
   {
     id: "coach-unreadable-step",

@@ -73,7 +73,7 @@ The pen file has no frame for these screens, so they have no rows and `check` ca
 - The New document dialog.
 - Every screen at phone width. The pen file draws only desktop screens (1440 by 900); nothing exists at 390.
 - The Coach approval card itself. Its buttons map to the delete confirm dialog `W5.5 Delete confirm` (`I3clp`), the only composed screen with this button pair.
-- The approval card's kept outcome after a reload. These screens are shot-only, listed in `scripts/ui/shot-only.mjs`, and `check` says "no design frame for this screen" for them: `coach-denied-reloaded`, `coach-receipt-reloaded`, `coach-undone-reloaded`, `coach-expired-reloaded`. Use `shot`.
+- The approval card's kept outcome after a reload. These screens are shot-only, listed in `scripts/ui/shot-only.mjs`, and `check` says "no design frame for this screen" for them: `coach-denied-reloaded`, `coach-receipt-reloaded`, `coach-undone-reloaded`, `coach-stopped-reloaded`, `coach-expired-reloaded`. Use `shot`; `coach-expired-reloaded` is listed as unreachable because an approval expires only after a 24 hour wait.
 
 ## Before and after for a pull request
 

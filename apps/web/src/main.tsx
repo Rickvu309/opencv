@@ -8,6 +8,7 @@ import "@/styles/paper.css"
 import "@/styles/coach.css"
 import { ThemeProvider } from "@/components/theme-provider.tsx"
 import { createQueryClient } from "@/lib/query-client.ts"
+import { placeToastsAsTheyShow } from "@/lib/toast-clearance.ts"
 import { createAppRouter } from "@/router.tsx"
 
 // eslint-disable-next-line react-refresh/only-export-components -- Sonner stays in its own chunk
@@ -25,9 +26,15 @@ createRoot(document.getElementById("root")!).render(
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <RouterProvider router={router} />
-        <Suspense fallback={null}>
-          <Toaster />
-        </Suspense>
+        <div
+          data-slot="toast-host"
+          className="contents"
+          ref={placeToastsAsTheyShow}
+        >
+          <Suspense fallback={null}>
+            <Toaster />
+          </Suspense>
+        </div>
       </QueryClientProvider>
     </ThemeProvider>
   </StrictMode>

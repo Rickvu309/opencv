@@ -1,0 +1,58 @@
+import "@testing-library/jest-dom/vitest"
+import { act, cleanup, render } from "@testing-library/react"
+import { afterEach, expect, it } from "vitest"
+
+import { Toaster, toastWithUndo } from "./components/sonner"
+import {
+  TOAST_MAX_WIDTH,
+  TOAST_OFFSET_BOTTOM,
+  TOAST_OFFSET_RIGHT,
+} from "./lib/toast-offset"
+
+afterEach(cleanup)
+
+async function shownToaster(container: HTMLElement) {
+  act(() => {
+    toastWithUndo("Edited CV.docx", () => undefined)
+  })
+  return new Promise<HTMLElement | null>((resolve) =>
+    setTimeout(
+      () =>
+        resolve(container.ownerDocument.querySelector("[data-sonner-toaster]")),
+      0
+    )
+  )
+}
+
+it("keeps toasts in the bottom right corner, lifted by the offset the app shell reports", async () => {
+  const { container } = render(<Toaster />)
+  const toaster = await shownToaster(container)
+  expect(toaster).not.toBeNull()
+  expect(toaster).toHaveAttribute("data-y-position", "bottom")
+  expect(toaster).toHaveAttribute("data-x-position", "right")
+  expect(toaster!.style.getPropertyValue("--offset-bottom")).toBe(
+    `var(${TOAST_OFFSET_BOTTOM}, 24px)`
+  )
+  expect(toaster!.style.getPropertyValue("--mobile-offset-bottom")).toBe(
+    `var(${TOAST_OFFSET_BOTTOM}, 16px)`
+  )
+  expect(toaster!.style.getPropertyValue("--offset-right")).toBe(
+    `var(${TOAST_OFFSET_RIGHT}, 24px)`
+  )
+})
+
+it("is Sonner's full width until the app shell gives it a narrower room", async () => {
+  const { container } = render(<Toaster />)
+  const toaster = await shownToaster(container)
+  expect(toaster!.style.getPropertyValue("--width")).toBe(
+    `var(${TOAST_MAX_WIDTH}, 356px)`
+  )
+})
+
+it("glides the toaster with the panel motion tokens and holds still for reduced motion", async () => {
+  const { container } = render(<Toaster />)
+  const toaster = await shownToaster(container)
+  expect(toaster!.className).toContain("duration-(--duration-panel)!")
+  expect(toaster!.className).toContain("ease-(--ease-panel)!")
+  expect(toaster!.className).toContain("motion-reduce:transition-none!")
+})
