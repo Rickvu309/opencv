@@ -332,6 +332,35 @@ export const SCREENS = [
     ],
   },
   {
+    id: "paper-imported-pdf",
+    route: "/paper",
+    steps: [
+      { goto: "/paper" },
+      {
+        upload: {
+          selector: 'input[type="file"]',
+          file: "cv-text.pdf",
+        },
+      },
+      { waitFor: { text: "Student Assistant, Example University" } },
+      { waitFor: { selector: PAGE } },
+    ],
+  },
+  {
+    id: "paper-import-scanned",
+    route: "/paper",
+    steps: [
+      { goto: "/paper" },
+      {
+        upload: {
+          selector: 'input[type="file"]',
+          file: "cv-scanned.pdf",
+        },
+      },
+      { waitFor: { role: "heading", name: "Can't read this file" } },
+    ],
+  },
+  {
     id: "apply-board",
     route: "/apply",
     steps: ADD_A_JOB,
