@@ -1,6 +1,6 @@
-import { useEffect, useReducer, type FormEvent } from "react"
+import { useEffect, useReducer, useRef, type FormEvent } from "react"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
-import { Brand } from "@workspace/ui/components/brand"
+import { Mark } from "@workspace/ui/components/brand"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
@@ -21,6 +21,8 @@ import {
 import { EmailCodeScreen } from "./email-code-screen.tsx"
 import googleG from "./google-g.svg?url"
 import {
+  codeLimitLeftMs,
+  codeLimitServerMinutes,
   initSignInState,
   signInReducer,
   type Notice,
@@ -78,6 +80,9 @@ export function SignInScreen() {
       seconds,
       focusNonce,
       waitMinutes,
+      emailFocusNonce,
+      now,
+      holds,
     },
     dispatch,
   ] = useReducer(signInReducer, undefined, () =>
@@ -112,6 +117,32 @@ export function SignInScreen() {
     return () => window.clearInterval(timer)
   }, [step, seconds])
 
+  const emailRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (emailFocusNonce === 0) return
+    emailRef.current?.focus()
+  }, [emailFocusNonce])
+
+  const codeLimitLeft =
+    step === "email" ? codeLimitLeftMs(holds, email, now) : 0
+  const codeLimitHeld = codeLimitLeft > 0
+
+  useEffect(() => {
+    if (!codeLimitHeld) return
+    const tick = () => dispatch({ type: "clock_ticked", now: Date.now() })
+    const timer = window.setInterval(tick, 1000)
+    document.addEventListener("visibilitychange", tick)
+    window.addEventListener("focus", tick)
+    window.addEventListener("pageshow", tick)
+    return () => {
+      window.clearInterval(timer)
+      document.removeEventListener("visibilitychange", tick)
+      window.removeEventListener("focus", tick)
+      window.removeEventListener("pageshow", tick)
+    }
+  }, [codeLimitHeld])
+
   function chooseLanguage(value: "en" | "vi") {
     dispatch({ type: "language_chosen", language: value })
     storeLanguage(value)
@@ -131,6 +162,8 @@ export function SignInScreen() {
           type: "send_rejected",
           notice: noticeForSend(result.error),
           waitMinutes: wait.minutes(Date.now()),
+          address,
+          now: Date.now(),
         })
         return false
       }
@@ -201,9 +234,15 @@ export function SignInScreen() {
       notice === "locked" ||
       notice === "rate" ||
       notice === "send")
+  const fieldRefused =
+    step === "email" && (notice === "rate" || notice === "email")
   const noticeText =
     notice === "rate"
-      ? tooManyCodesText(waitMinutes)
+      ? tooManyCodesText(
+          codeLimitHeld
+            ? codeLimitServerMinutes(holds, email, now)
+            : waitMinutes
+        )
       : notice
         ? NOTICE[notice]
         : null
@@ -211,9 +250,17 @@ export function SignInScreen() {
   return (
     <AuthFrame language={language} onLanguage={chooseLanguage}>
       {step === "email" ? (
-        <form className="flex w-full flex-col gap-6" onSubmit={onContinue}>
-          <h1 className="flex flex-wrap items-center justify-center gap-x-2 text-[26px] font-semibold tracking-[-0.7px]">
-            <span>Log in to</span> <Brand size={26} />
+        <form
+          noValidate
+          className="flex w-full flex-col gap-6"
+          onSubmit={onContinue}
+        >
+          <h1
+            data-slot="sign-in-title"
+            className="flex flex-col items-center gap-4 text-center text-[26px] leading-[31px] font-semibold tracking-[-0.7px]"
+          >
+            <Mark size={32} />
+            <span>Log in to opencv</span>
           </h1>
           {googleNotice ? (
             <p role="alert" className="text-center text-sm text-destructive">
@@ -244,6 +291,7 @@ export function SignInScreen() {
               {AUTH_COPY.email}
             </Label>
             <Input
+              ref={emailRef}
               id="sign-in-email"
               type="email"
               autoComplete="email"
@@ -253,8 +301,10 @@ export function SignInScreen() {
                 dispatch({
                   type: "email_typed",
                   value: event.currentTarget.value,
+                  now: Date.now(),
                 })
               }
+              aria-invalid={fieldRefused || undefined}
               className="h-[46px] rounded-[10px] px-3.5 text-[15px] md:text-[15px]"
             />
           </div>
@@ -265,9 +315,10 @@ export function SignInScreen() {
           ) : null}
           <Button
             type="submit"
-            variant="glow"
-            className="h-[46px] w-full rounded-[10px]"
-            disabled={sending}
+            variant="primary"
+            data-slot="sign-in-continue"
+            className="h-[46px] w-full rounded-[10px] text-sm font-medium active:bg-[color-mix(in_oklch,var(--primary),var(--primary-foreground)_16%)]"
+            disabled={sending || codeLimitHeld}
           >
             {AUTH_COPY.continue}
           </Button>
@@ -287,7 +338,12 @@ export function SignInScreen() {
           onChange={(value) => dispatch({ type: "code_typed", value })}
           onComplete={(otp) => void onComplete(otp)}
           onResend={() => void sendCode(email.trim())}
-          onChangeEmail={() => dispatch({ type: "email_change_requested" })}
+          onChangeEmail={() =>
+            dispatch({ type: "email_change_requested", now: Date.now() })
+          }
+          onBack={() =>
+            dispatch({ type: "email_change_requested", now: Date.now() })
+          }
         />
       )}
     </AuthFrame>

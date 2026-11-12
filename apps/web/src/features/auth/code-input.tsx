@@ -98,7 +98,7 @@ export function CodeInput({
             aria-invalid={invalid || undefined}
             data-filled={digit !== ""}
             value={digit}
-            className="h-[60px] min-w-0 flex-1 rounded-xl px-0 text-center text-[26px] font-semibold md:text-[26px]"
+            className="h-[52px] min-w-0 flex-1 rounded-[10px] px-0 text-center text-[26px] font-semibold md:text-[26px]"
             onFocus={(event) => event.currentTarget.select()}
             onPaste={(event) => {
               event.preventDefault()

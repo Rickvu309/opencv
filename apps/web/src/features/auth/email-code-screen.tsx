@@ -21,6 +21,7 @@ export function EmailCodeScreen({
   onComplete,
   onResend,
   onChangeEmail,
+  onBack,
 }: {
   email: string
   code: string
@@ -36,6 +37,7 @@ export function EmailCodeScreen({
   onComplete: (code: string) => void
   onResend: () => void
   onChangeEmail: () => void
+  onBack: () => void
 }) {
   return (
     <section
@@ -135,6 +137,15 @@ export function EmailCodeScreen({
               </span>
             )}
           </div>
+          <Button
+            type="button"
+            variant="ghost"
+            data-slot="email-code-back"
+            className="h-auto min-h-11 rounded px-1 py-0 text-[13px] leading-[15.5px] font-medium hover:bg-transparent hover:underline md:min-h-0"
+            onClick={onBack}
+          >
+            {AUTH_COPY.backToLogin}
+          </Button>
         </>
       )}
     </section>
