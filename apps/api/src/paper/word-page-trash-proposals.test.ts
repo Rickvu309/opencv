@@ -19,7 +19,9 @@ import {
   chats,
   coachUsage,
   oauthClient,
+  files,
   paperPackageCandidates,
+  paperPackageTrash,
   paperPackageVersions,
   pendingActions,
   user,
@@ -38,6 +40,7 @@ import {
 
 let backend: Backend
 const owner = randomUUID()
+const stranger = randomUUID()
 const person = personActor(owner)
 const run = <T>(fn: () => Promise<T>) => withDatabase(backend.db, fn)
 const lineHandle = /\[line ([0-9a-f-]{36})\] Harbor light/
@@ -45,9 +48,13 @@ const lineHandle = /\[line ([0-9a-f-]{36})\] Harbor light/
 beforeAll(async () => {
   installRegistry()
   backend = await openBackend()
-  await backend.db
-    .insert(user)
-    .values({ id: owner, name: owner, email: `${owner}@test.invalid` })
+  await backend.db.insert(user).values(
+    [owner, stranger].map((id) => ({
+      id,
+      name: id,
+      email: `${id}@test.invalid`,
+    }))
+  )
 })
 
 afterAll(async () => {
@@ -348,3 +355,95 @@ describe("a proposal made before a Word page was deleted and brought back", () =
       ).resolves.toBeDefined()
     }))
 })
+
+describe("bringing back a deleted Word page", () => {
+  it("answers another person's page exactly like an unknown id, and restores only for its owner, twice without harm", () =>
+    run(async () => {
+      const page = await mintWordPage("Trashed.docx")
+      await registry.execute({
+        name: "paper.delete",
+        input: { docId: page.docId },
+        actor: person,
+      })
+      const outsider = personActor(stranger)
+      const unknown = randomUUID()
+      expect(
+        await registry.read("paper.isDeleted", { docId: page.docId }, outsider)
+      ).toEqual({ docId: page.docId, deleted: false })
+      expect(
+        await registry.read("paper.isDeleted", { docId: unknown }, outsider)
+      ).toEqual({ docId: unknown, deleted: false })
+      for (const docId of [page.docId, unknown])
+        await expect(
+          registry.execute({
+            name: "paper.restoreDeleted",
+            input: { docId },
+            actor: outsider,
+          })
+        ).rejects.toMatchObject({
+          code: "NOT_FOUND",
+          message: "Document not found",
+        })
+      expect(
+        await registry.read("paper.isDeleted", { docId: page.docId }, person)
+      ).toEqual({ docId: page.docId, deleted: true })
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const restored = await registry.execute({
+          name: "paper.restoreDeleted",
+          input: { docId: page.docId },
+          actor: person,
+        })
+        expect(restored.output).toMatchObject({
+          id: page.docId,
+          name: "Trashed.docx",
+        })
+      }
+      const back = await readWordPackage(owner, { docId: page.docId })
+      expect(back.revision).toBe(page.revision)
+      expect(
+        await registry.read("paper.isDeleted", { docId: page.docId }, person)
+      ).toEqual({ docId: page.docId, deleted: false })
+    }))
+
+  it("never offers the Coach a way to bring back or probe a deleted page", () =>
+    run(async () => {
+      const names = (await registry.tools(await coachTurn())).map(
+        (tool) => tool.name
+      )
+      expect(names).toContain("paper.delete")
+      expect(names).not.toContain("paper.restoreDeleted")
+      expect(names).not.toContain("paper.isDeleted")
+    }))
+})
+
+it("leaves nothing of a deleted Word page behind when its owner deletes the account", () =>
+  run(async () => {
+    const leaving = randomUUID()
+    await getDb()
+      .insert(user)
+      .values({ id: leaving, name: leaving, email: `${leaving}@test.invalid` })
+    const staged = await stageWordPackage(
+      leaving,
+      { requestId: randomUUID(), name: "Leaving.docx", kind: "cv" },
+      fixturePackage(paragraph("Harbor light"))
+    )
+    const page = await publishWordPackage(leaving, staged.stageId)
+    await registry.execute({
+      name: "paper.delete",
+      input: { docId: page.docId },
+      actor: personActor(leaving),
+    })
+    await registry.execute({
+      name: "account.delete",
+      input: { confirm: "DELETE" },
+      actor: personActor(leaving),
+    })
+    for (const [table, column] of [
+      [paperPackageTrash, paperPackageTrash.userId],
+      [paperPackageVersions, paperPackageVersions.userId],
+      [files, files.userId],
+    ] as const)
+      expect(
+        await getDb().select().from(table).where(eq(column, leaving))
+      ).toEqual([])
+  }))

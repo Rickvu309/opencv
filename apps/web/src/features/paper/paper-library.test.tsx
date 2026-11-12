@@ -470,7 +470,9 @@ describe("Paper library", () => {
   ] as const)(
     "deletes %s from the card menu and offers Undo only when it can be undone",
     async (_kind, extra, undoable) => {
-      const doc = cv("Word CV.docx")
+      const doc = undoable
+        ? { ...cv("Word CV.docx"), format: "word" as const }
+        : cv("Word CV.docx")
       const activityId = "55555555-5555-4555-8555-555555555555"
       const fetchMock = vi.fn<typeof fetch>().mockImplementation((url) => {
         const path = String(url).split("?")[0] ?? ""
@@ -489,6 +491,13 @@ describe("Paper library", () => {
       renderLibrary([doc])
       await user.click(screen.getByRole("button", { name: `${doc.name} menu` }))
       await user.click(await screen.findByRole("menuitem", { name: "Delete" }))
+      expect(
+        await screen.findByText(
+          undoable
+            ? "You can undo this from the message that follows."
+            : "This can't be undone."
+        )
+      ).toBeInTheDocument()
       await user.click(await screen.findByRole("button", { name: "Delete" }))
       await vi.waitFor(() => {
         expect(

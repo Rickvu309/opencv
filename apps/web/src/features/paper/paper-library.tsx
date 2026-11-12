@@ -119,9 +119,7 @@ export function PaperLibrary({
   const needle = query.trim().toLowerCase()
   const wordLibrary = useWordLibrary()
   const entries = libraryEntries({ docs, files, words: wordLibrary.items })
-  const deletingWordPage =
-    mode?.type === "delete" &&
-    wordLibrary.items.some((word) => word.docId === mode.doc.id)
+  const deletingWordPage = mode?.type === "delete" && mode.doc.format === "word"
   const sections = librarySections(entries, needle)
   const searching = needle !== ""
   const noResults = LIBRARY_SECTIONS.every(
