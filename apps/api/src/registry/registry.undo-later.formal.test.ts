@@ -178,12 +178,17 @@ const LATER: Record<string, Later> = {
         { docId },
         personActor(userId)
       )
+      const handle = writtenParagraph(page)
       await run("paper.canvas", {
-        op: "split",
-        docId,
-        basedOn,
-        paragraph: writtenParagraph(page),
-        at: 6,
+        op: "write",
+        batch: {
+          doc: docId,
+          basedOn,
+          ops: [
+            { op: "setText", handle, text: "Harbor" },
+            { op: "insert", after: handle, text: " light" },
+          ],
+        },
       })
     },
     survives: async (a, userId) => {

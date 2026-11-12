@@ -18,6 +18,7 @@ import { openBackend, type Backend } from "../test/registry-formal-support.js"
 import { registerPaper } from "./commands.js"
 import { implementation as readWord } from "./operations/read/server.js"
 import { publishWordPackage, stageWordPackage } from "./package-store.js"
+import { open } from "./word/document.js"
 
 const loaded = createRequire(import.meta.url)(
   "../../../../scripts/lib/paper-canvas-bytes.mjs"
@@ -78,6 +79,23 @@ async function imported(owner: string) {
   return { ...published, paragraph: paragraphs[0]!.key }
 }
 
+async function splitAtStart(owner: string, docId: string, handle: string) {
+  const page = await open(owner, { kind: "read", doc: docId })
+  if ("refused" in page) throw new Error(page.message)
+  const line = page.paragraphs.find((paragraph) => paragraph.handle === handle)
+  return {
+    op: "write",
+    batch: {
+      doc: docId,
+      basedOn: page.revision,
+      ops: [
+        { op: "setText", handle, text: "" },
+        { op: "insert", after: handle, text: line?.text ?? "" },
+      ],
+    },
+  }
+}
+
 async function canvas(owner: string, input: unknown) {
   return registry().execute({
     name: "paper.canvas",
@@ -88,29 +106,30 @@ async function canvas(owner: string, input: unknown) {
 }
 
 describe("canvas admits only a page the server minted", () => {
-  it("splits an ordinary imported paragraph and still refuses the first join", () =>
+  it("splits an ordinary imported paragraph and refuses a caret past the line", () =>
     run(async () => {
       const id = await seed()
       const doc = await imported(id)
       expect((await headOf(doc.docId)).canvasProfile).toBeNull()
       await expect(
         canvas(id, {
-          op: "mergePrevious",
-          docId: doc.docId,
-          basedOn: doc.revision,
-          paragraph: doc.paragraph,
+          op: "write",
+          batch: {
+            doc: doc.docId,
+            basedOn: doc.revision,
+            ops: [
+              { op: "setText", handle: doc.paragraph, text: "Hi", caret: 9 },
+            ],
+          },
         })
       ).rejects.toThrow(
-        "This page change is not available. No document was changed."
+        "The caret is outside this line's words. No document was changed."
       )
       expect((await headOf(doc.docId)).revision).toBe(doc.revision)
-      const split = await canvas(id, {
-        op: "split",
-        docId: doc.docId,
-        basedOn: doc.revision,
-        paragraph: doc.paragraph,
-        at: 0,
-      })
+      const split = await canvas(
+        id,
+        await splitAtStart(id, doc.docId, doc.paragraph)
+      )
       const saved = split.output as { docId: string; revision: string }
       expect(saved.docId).toBe(doc.docId)
       expect(saved.revision).not.toBe(doc.revision)
@@ -140,11 +159,7 @@ describe("canvas admits only a page the server minted", () => {
       ).rejects.toThrow("Unrecognized key")
       await expect(
         canvas(id, {
-          op: "split",
-          docId: doc.docId,
-          basedOn: doc.revision,
-          paragraph: doc.paragraph,
-          at: 0,
+          ...(await splitAtStart(id, doc.docId, doc.paragraph)),
           canvasProfile: PAPER_CANVAS_PROFILE,
         })
       ).rejects.toThrow("Unrecognized key")
@@ -182,11 +197,15 @@ describe("canvas admits only a page the server minted", () => {
         .paragraphs[0]!.key
       await expect(
         canvas(id, {
-          op: "split",
-          docId: output.docId,
-          basedOn: output.revision,
-          paragraph,
-          at: 0,
+          op: "write",
+          batch: {
+            doc: output.docId,
+            basedOn: output.revision,
+            ops: [
+              { op: "setText", handle: paragraph, text: "" },
+              { op: "insert", after: paragraph, text: "" },
+            ],
+          },
         })
       ).rejects.toThrow(
         "This Word version is incomplete. No document was changed."

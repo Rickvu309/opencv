@@ -507,17 +507,20 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         mintedDocId = docId
         mintedParagraph = emptyWritingParagraph(page)
         return run("paper.canvas", {
-          op: "writeText",
-          docId,
-          basedOn: revision,
-          paragraph: mintedParagraph,
-          text: "Harbor light",
+          op: "write",
+          batch: {
+            doc: docId,
+            basedOn: revision,
+            ops: [
+              { op: "setText", handle: mintedParagraph, text: "Harbor light" },
+            ],
+          },
         })
       },
       assert: async (result) => {
         expect(text(result.output, "generation")).toBe("package")
         expect(text(result.output, "docId")).toBe(mintedDocId)
-        expect(result.reversal?.command).toBe("paper.restoreWord")
+        expect(result.reversal?.command).toBe("paper.undoWord")
         const page = await registry.read(
           "paper.read",
           { docId: mintedDocId },

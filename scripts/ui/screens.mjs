@@ -1,5 +1,6 @@
 const COMPOSER = '[data-slot="coach-workspace-composer"] textarea'
 const PAGE = '[contenteditable="true"]'
+const SAVED = 'p.writing-note:text-is("Saved")'
 
 const OPEN_BLANK_CV = [
   { goto: "/paper" },
@@ -115,6 +116,7 @@ export const SCREENS = [
       {
         type: "Ada Nguyen\nProduct designer in Hanoi. Five years of shipping.",
       },
+      { waitFor: { selector: SAVED } },
     ],
   },
   {
@@ -206,8 +208,17 @@ export const SCREENS = [
   {
     id: "paper-imported",
     route: "/paper",
-    unreachable:
-      "The repo has no .docx fixture file; apps/api/src/paper/package-fixtures.ts builds Word packages in code, so a file must be written before the import dialog can take it",
+    steps: [
+      { goto: "/paper" },
+      {
+        upload: {
+          selector: 'input[type="file"]',
+          file: "cv-bold-bullets.docx",
+        },
+      },
+      { waitFor: { text: "Ran weekly design critiques" } },
+      { waitFor: { selector: PAGE } },
+    ],
   },
   {
     id: "apply-board",
@@ -222,6 +233,7 @@ const STEP_KINDS = new Set([
   "fill",
   "press",
   "type",
+  "upload",
   "waitFor",
 ])
 const ID = /^[a-z][a-z0-9-]*$/

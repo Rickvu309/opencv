@@ -9,14 +9,16 @@ import type {
 } from "@workspace/domain"
 
 import {
-  changedSpan,
   editedRun,
+  joinsAt,
   letters,
   lineWith,
   lineXml,
   plainRun,
   rebuiltRun,
   runsOf,
+  splitPoint,
+  typedSpan,
   type WordSpan,
 } from "./runs.js"
 import {
@@ -74,11 +76,24 @@ type Step =
       handle: WordHandle
       text: string
       spans: readonly WordSpan[] | null
+      caret: number | null
     }
   | { kind: "delete"; handle: WordHandle }
   | { kind: "insert"; after: WordHandle | null; text: string }
-  | { kind: "split"; handle: WordHandle; at: number }
-  | { kind: "join"; handle: WordHandle; joined: WordHandle }
+  | {
+      kind: "split"
+      handle: WordHandle
+      at: number
+      left: string
+      right: string
+    }
+  | {
+      kind: "join"
+      handle: WordHandle
+      joined: WordHandle
+      text: string
+      caret: number | null
+    }
 
 const unsafe = () =>
   refuse(
@@ -280,6 +295,39 @@ function shapeRefusal(entry: Entry, handle: WordHandle): WordRefusal | null {
   return shape ? refuse("held", shape.message, handle, shape.code) : null
 }
 
+function rewritten(
+  line: WordLine,
+  changes: readonly WordSpan[],
+  text: string,
+  handle: WordHandle
+): WordLine | WordRefusal {
+  const written = rewrite(line, changes)
+  if (written === "SPANS") return unsafe()
+  if (written === "HELD_GAP")
+    return refuse(
+      "held",
+      "Part of this line is kept exactly as it is in Word, such as a link or a break. Paper will not move words across it. No document was changed.",
+      handle,
+      "HELD_GAP"
+    )
+  if (written === "MIXED_FORMAT")
+    return refuse(
+      "held",
+      "This line mixes formatting, such as bold or a different font. Paper will not rewrite words across that formatting. No document was changed.",
+      handle,
+      "MIXED_FORMAT"
+    )
+  return written.text === text ? written : unsafe()
+}
+
+const caretOutside = (handle: WordHandle) =>
+  refuse(
+    "plain",
+    "The caret is outside this line's words. No document was changed.",
+    handle,
+    "CARET"
+  )
+
 function plan(
   entries: Entry[],
   ops: readonly WordOp[],
@@ -296,15 +344,18 @@ function plan(
       continue
     }
     const splitting =
-      op.op === "setText" && next?.op === "insert"
+      op.op === "setText" && next?.op === "insert" && next.after === op.handle
         ? entries[find(op.handle)]
+        : undefined
+    const cut =
+      op.op === "setText" && next?.op === "insert" && splitting
+        ? splitPoint(textOf(splitting.disposition), op.text, next.text)
         : null
     if (
       op.op === "setText" &&
       next?.op === "insert" &&
       splitting &&
-      next.after === op.handle &&
-      textOf(splitting.disposition) === op.text + next.text
+      cut !== null
     ) {
       const blocked =
         heldRefusal(splitting, op.handle) ?? shapeRefusal(splitting, op.handle)
@@ -312,7 +363,9 @@ function plan(
       steps.push({
         kind: "split",
         handle: op.handle,
-        at: letters(op.text).length,
+        at: cut,
+        left: op.text,
+        right: next.text,
       })
       at += 1
       continue
@@ -325,9 +378,20 @@ function plan(
         joined &&
         find(next.handle) === find(op.handle) + 1 &&
         textOf(joined.disposition) !== "" &&
-        op.text === textOf(kept.disposition) + textOf(joined.disposition)
+        joinsAt(
+          textOf(kept.disposition),
+          textOf(joined.disposition),
+          op.text,
+          op.caret ?? null
+        )
       ) {
-        steps.push({ kind: "join", handle: op.handle, joined: next.handle })
+        steps.push({
+          kind: "join",
+          handle: op.handle,
+          joined: next.handle,
+          text: op.text,
+          caret: op.caret ?? null,
+        })
         at += 1
         continue
       }
@@ -339,6 +403,7 @@ function plan(
             handle: op.handle,
             text: op.text,
             spans: spans.get(op.handle) ?? null,
+            caret: op.caret ?? null,
           }
         : { kind: "delete", handle: op.handle }
     )
@@ -436,26 +501,15 @@ function run(page: Page, step: Step): Page | WordRefusal {
   const after = entries.slice(index + 1)
   if (step.kind === "setText") {
     if (step.text === line.text && !step.spans) return page
-    const written = rewrite(
+    const typed = typedSpan(line.text, step.text, step.caret)
+    if (!typed) return caretOutside(step.handle)
+    const written = rewritten(
       line,
-      step.spans ?? [changedSpan(line.text, step.text)]
+      step.spans ?? [typed],
+      step.text,
+      step.handle
     )
-    if (written === "SPANS") return unsafe()
-    if (written === "HELD_GAP")
-      return refuse(
-        "held",
-        "Part of this line is kept exactly as it is in Word, such as a link or a break. Paper will not move words across it. No document was changed.",
-        step.handle,
-        "HELD_GAP"
-      )
-    if (written === "MIXED_FORMAT")
-      return refuse(
-        "held",
-        "This line mixes formatting, such as bold or a different font. Paper will not rewrite words across that formatting. No document was changed.",
-        step.handle,
-        "MIXED_FORMAT"
-      )
-    if (written.text !== step.text) return unsafe()
+    if ("refused" in written) return written
     if (written.parts.every((part, at) => part === line.parts[at])) return page
     const revised = revisedEntry(entry, written)
     if ("refused" in revised) return revised
@@ -465,7 +519,6 @@ function run(page: Page, step: Step): Page | WordRefusal {
   if (shaped) return shaped
   if (step.kind === "delete") {
     if (
-      line.text !== "" &&
       !entries.some(
         (other, at) => at !== index && other.disposition.kind === "line"
       )
@@ -488,7 +541,44 @@ function run(page: Page, step: Step): Page | WordRefusal {
     }
   }
   if (step.kind === "split") {
-    const [left, right] = splitLine(line, step.at)
+    const [cutLeft, cutRight] = splitLine(line, step.at)
+    const left =
+      step.left === cutLeft.text
+        ? cutLeft
+        : rewritten(
+            cutLeft,
+            [
+              {
+                start: cutLeft.text.length,
+                end: cutLeft.text.length,
+                text: step.left.slice(cutLeft.text.length),
+                lean: "before",
+              },
+            ],
+            step.left,
+            step.handle
+          )
+    if ("refused" in left) return left
+    const right =
+      step.right === cutRight.text
+        ? cutRight
+        : rewritten(
+            cutRight,
+            [
+              {
+                start: 0,
+                end: 0,
+                text: step.right.slice(
+                  0,
+                  step.right.length - cutRight.text.length
+                ),
+                lean: "after",
+              },
+            ],
+            step.right,
+            step.handle
+          )
+    if ("refused" in right) return right
     const added: Entry = {
       handle: null,
       key: randomUUID(),
@@ -501,7 +591,7 @@ function run(page: Page, step: Step): Page | WordRefusal {
     return {
       entries: [
         ...before,
-        lineEntry({ ...entry, key: randomUUID() }, left),
+        lineEntry(entry, left),
         lineEntry(added, right),
         ...after,
       ],
@@ -525,12 +615,15 @@ function run(page: Page, step: Step): Page | WordRefusal {
     ...runsOf(line),
     ...runsOf(joined.disposition.line),
   ])
+  const typed = typedSpan(merged.text, step.text, step.caret)
+  if (!typed) return caretOutside(step.handle)
+  const result =
+    step.text === merged.text
+      ? merged
+      : rewritten(merged, [typed], step.text, step.handle)
+  if ("refused" in result) return result
   return {
-    entries: [
-      ...before,
-      lineEntry({ ...entry, key: randomUUID() }, merged),
-      ...rest,
-    ],
+    entries: [...before, lineEntry(entry, result), ...rest],
     tail,
   }
 }

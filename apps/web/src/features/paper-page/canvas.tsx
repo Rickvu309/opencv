@@ -356,6 +356,7 @@ function WritingSheet({
     void settlePage(docId, state.present.blocks, controller.signal, {
       basis: state.basis,
       typed: state.typed,
+      caret: state.present.caret,
     })
       .then((result) => {
         if (controller.signal.aborted) return

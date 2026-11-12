@@ -7,7 +7,6 @@ import {
   paperContract,
   paperPackageEditResultSchema,
   type PaperCanvasCommit,
-  type WordBatch,
 } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 
@@ -23,7 +22,7 @@ import {
   stageWordPackage,
   wordPackageBasis,
 } from "./package-store.js"
-import { open, prepareBatch } from "./word/document.js"
+import { prepareBatch, WORD_UNDO_MOVED } from "./word/document.js"
 
 const loaded = createRequire(import.meta.url)(
   "../../../../scripts/lib/paper-canvas-bytes.mjs"
@@ -79,89 +78,19 @@ async function resultOf(
   })
 }
 
-type CanvasEdit = Exclude<PaperCanvasCommit, { op: "mint" }>
+type CanvasWrite = Exclude<PaperCanvasCommit, { op: "mint" }>
 
-const unavailableChange =
-  "This page change is not available. No document was changed."
-
-async function batchOf(owner: string, input: CanvasEdit): Promise<WordBatch> {
-  const at = { doc: input.docId, basedOn: input.basedOn }
-  const page = await open(owner, {
-    kind: "read",
-    doc: input.docId,
-    at: input.basedOn,
-  })
-  const index =
-    "refused" in page
-      ? -1
-      : page.paragraphs.findIndex(
-          (paragraph) => paragraph.handle === input.paragraph
-        )
-  if (input.op === "deleteParagraph") {
-    if (!("refused" in page) && (page.paragraphs[index]?.text ?? "") !== "")
-      return packageFailure(unavailableChange)
-    return { ...at, ops: [{ op: "delete", handle: input.paragraph }] }
-  }
-  if ("refused" in page) return packageFailure(unavailableChange)
-  const target = page.paragraphs[index]
-  if (!target || target.held) return packageFailure(unavailableChange)
-  if (input.op === "writeText") {
-    if (target.text !== "") return packageFailure(unavailableChange)
-    return {
-      ...at,
-      ops: [{ op: "setText", handle: target.handle, text: input.text }],
-    }
-  }
-  if (input.op === "split") {
-    const letters = [...target.text]
-    if (input.at > letters.length) return packageFailure(unavailableChange)
-    return {
-      ...at,
-      ops: [
-        {
-          op: "setText",
-          handle: target.handle,
-          text: letters.slice(0, input.at).join(""),
-        },
-        {
-          op: "insert",
-          after: target.handle,
-          text: letters.slice(input.at).join(""),
-        },
-      ],
-    }
-  }
-  const kept = page.paragraphs[index - 1]
-  if (!kept || kept.held) return packageFailure(unavailableChange)
-  return {
-    ...at,
-    ops: [
-      { op: "setText", handle: kept.handle, text: kept.text + target.text },
-      { op: "delete", handle: target.handle },
-    ],
-  }
-}
-
-const storeRefusals = new Set([
-  "IN_TRANSACTION",
-  "PROJECTION",
-  "PROJECTION_BYTES",
-  "STORE",
-])
-
-export async function prepareCanvas(owner: string, input: CanvasEdit) {
+export async function prepareCanvas(owner: string, input: CanvasWrite) {
   if (insideTransaction())
     return packageFailure("Prepare the Word edit before starting a save.")
-  await wordPackageBasis(owner, input.docId, input.basedOn)
-  const drafted = await prepareBatch(owner, await batchOf(owner, input), input)
+  await wordPackageBasis(owner, input.batch.doc, input.batch.basedOn)
+  const drafted = await prepareBatch(owner, input.batch, input)
   if (!drafted.refused) return drafted.prepared
   if (drafted.reason === "stale")
     return packageFailure(
       "This Word document has changed. Read it again before editing."
     )
-  return packageFailure(
-    storeRefusals.has(drafted.code ?? "") ? drafted.message : unavailableChange
-  )
+  return packageFailure(drafted.message)
 }
 
 type CanvasAhead =
@@ -221,21 +150,20 @@ export function registerCanvasCommit(
           prepared: await prepareCanvas(actor.userId, input),
         }
       },
-      reversal: (_input, output: CanvasResult) =>
-        output.restore
+      reversal: (input, output: CanvasResult) =>
+        output.restore && input.op === "write"
           ? {
-              command: "paper.restoreWord",
+              command: "paper.undoWord",
               input: {
-                docId: output.docId,
-                candidate: output.restore,
-                expectedRevision: output.revision,
+                doc: output.docId,
+                revision: output.revision,
+                restore: input.batch.basedOn,
               },
               expect: {
                 query: "paper.read",
                 input: { docId: output.docId },
                 matches: { revision: output.revision },
-                skipped:
-                  "This Word document changed after the edit, so Undo was skipped.",
+                skipped: WORD_UNDO_MOVED,
               },
             }
           : null,

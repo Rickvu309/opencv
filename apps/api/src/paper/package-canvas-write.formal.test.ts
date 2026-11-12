@@ -5,13 +5,13 @@ import { coachActor, personActor } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import { getDb, transaction, withDatabase } from "../db/context.js"
+import { getDb, withDatabase } from "../db/context.js"
 import { chats, coachUsage, paperPackageHeads, user } from "../db/schema.js"
 import { bindCatalog } from "../registry/bind.js"
 import { Registry } from "../registry/registry.js"
 import { openBackend, type Backend } from "../test/registry-formal-support.js"
 import { registerPaper } from "./commands.js"
-import { restoreWordCandidate } from "./package-candidates.js"
+import { undo } from "./word/document.js"
 import { implementation as readWord } from "./operations/read/server.js"
 import {
   publishWordPackage,
@@ -107,11 +107,12 @@ describe("the first words on a minted page", () => {
         throw new Error("Missing carrier")
       expect(carrier.paragraph).not.toBe(empty.paragraph)
       const wrote = await canvas(id, {
-        op: "writeText",
-        docId: output.docId,
-        basedOn: output.revision,
-        paragraph: empty.paragraph,
-        text: "Hi",
+        op: "write",
+        batch: {
+          doc: output.docId,
+          basedOn: output.revision,
+          ops: [{ op: "setText", handle: empty.paragraph, text: "Hi" }],
+        },
       })
       const saved = wrote.output as {
         docId: string
@@ -138,29 +139,32 @@ describe("the first words on a minted page", () => {
       expect(text.paragraph).toBe(empty.paragraph)
       await expect(
         canvas(id, {
-          op: "writeText",
-          docId: output.docId,
-          basedOn: saved.revision,
-          paragraph: empty.paragraph,
-          text: "Yo",
+          op: "write",
+          batch: {
+            doc: output.docId,
+            basedOn: output.revision,
+            ops: [{ op: "setText", handle: empty.paragraph, text: "Yo" }],
+          },
         })
       ).rejects.toThrow(
-        "This page change is not available. No document was changed."
+        "This Word document has changed. Read it again before editing."
       )
       expect((await headOf(output.docId)).revision).toBe(saved.revision)
-      const restored = await transaction(() =>
-        restoreWordCandidate(id, saved.restore, saved.revision)
-      )
-      expect(restored.docId).toBe(saved.docId)
+      expect(wrote.reversal?.command).toBe("paper.undoWord")
+      const restored = await undo(id, {
+        doc: output.docId,
+        revision: saved.revision,
+        restore: output.revision,
+      })
+      if (restored.refused) throw new Error(restored.message)
       const undone = await readWordPackage(id, { docId: output.docId })
       const again = writingRegion(undone)
       expect(again.text).toBe("")
-      expect(again.paragraph).toBeTruthy()
-      expect((await headOf(output.docId)).revision).toBe(restored.revision)
-      expect(restored.revision).not.toBe(saved.revision)
+      expect(again.paragraph).toBe(empty.paragraph)
+      expect((await headOf(output.docId)).revision).toBe(output.revision)
     }))
 
-  it("refuses the first words on an imported package", () =>
+  it("refuses a line that is not on the imported page", () =>
     run(async () => {
       const id = await seed()
       const stage = await stageWordPackage(
@@ -177,14 +181,15 @@ describe("the first words on a minted page", () => {
       const paragraph = "a11a11a1-a11a-4a11-8a11-a11a11a11a11"
       await expect(
         canvas(id, {
-          op: "writeText",
-          docId: published.docId,
-          basedOn: published.revision,
-          paragraph,
-          text: "Hi",
+          op: "write",
+          batch: {
+            doc: published.docId,
+            basedOn: published.revision,
+            ops: [{ op: "setText", handle: paragraph, text: "Hi" }],
+          },
         })
       ).rejects.toThrow(
-        "This page change is not available. No document was changed."
+        "This Word document has changed. Read it again before editing."
       )
       expect((await headOf(published.docId)).revision).toBe(head.revision)
       expect((await headOf(published.docId)).canvasProfile).toBeNull()
@@ -215,11 +220,12 @@ describe("the first words on a minted page", () => {
         registry().execute({
           name: "paper.canvas",
           input: {
-            op: "writeText",
-            docId: output.docId,
-            basedOn: output.revision,
-            paragraph: empty.paragraph,
-            text: "Hi",
+            op: "write",
+            batch: {
+              doc: output.docId,
+              basedOn: output.revision,
+              ops: [{ op: "setText", handle: empty.paragraph, text: "Hi" }],
+            },
           },
           actor: coachActor(id, chatId, turnId),
           idempotencyKey: randomUUID(),
@@ -228,20 +234,18 @@ describe("the first words on a minted page", () => {
       expect((await headOf(output.docId)).revision).toBe(output.revision)
       await expect(
         canvas(id, {
-          op: "writeText",
-          docId: output.docId,
-          basedOn: output.revision,
-          paragraph: empty.paragraph,
-          text: "a\nb",
+          op: "write",
+          batch: {
+            doc: output.docId,
+            basedOn: output.revision,
+            ops: [{ op: "setText", handle: empty.paragraph, text: "a\nb" }],
+          },
         })
-      ).rejects.toThrow("This text is larger than the supported Word region.")
+      ).rejects.toThrow("Text must not contain control characters or newlines.")
       await expect(
         canvas(id, {
-          op: "writeText",
-          docId: output.docId,
-          basedOn: output.revision,
-          paragraph: empty.paragraph,
-          text: "",
+          op: "write",
+          batch: { doc: output.docId, basedOn: output.revision, ops: [] },
         })
       ).rejects.toThrow()
       expect((await headOf(output.docId)).revision).toBe(output.revision)

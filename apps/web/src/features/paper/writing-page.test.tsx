@@ -45,28 +45,24 @@ function draft(text: string) {
 
 const NEXT = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee"
 
-function readPage(text: string, revision = REVISION) {
+function lineOf(handle: string, text: string) {
   return {
-    generation: "package",
-    docId: DOC,
+    handle,
+    text,
+    pieces: text === "" ? [] : [{ text, editable: true }],
+    held: false,
+    message: "",
+    code: null,
+  }
+}
+
+function readPage(text: string, revision = REVISION, before: unknown[] = []) {
+  return {
+    doc: DOC,
     revision,
     name: "Page.docx",
-    kind: "letter",
-    packageHash: "ab".repeat(32),
-    byteSize: 128,
-    projector: "paper-package-spans-1",
-    regions: [
-      {
-        kind: "editable",
-        paragraph: PARAGRAPH,
-        targetId: TARGET,
-        text,
-        location: { paragraph: 1, kind: "paragraph" },
-        formatting: { kind: "inherited", scope: "preserved-uncomputed" },
-        context: { paragraphText: text },
-      },
-    ],
-    nextCursor: null,
+    label: "letter",
+    paragraphs: [...before, lineOf(PARAGRAPH, text)],
   }
 }
 
@@ -362,24 +358,22 @@ it("says Saved for an imported letter and does not call that a conflict", async 
     caret: { blockId: PARAGRAPH, offset: 0 },
     nextId: 3,
   }
-  const regions = [
+  const shown = readPage("Thank you", REVISION, [
     {
-      kind: "locked" as const,
-      paragraph: address,
+      handle: address,
       text: "1 Main Street",
-      location: { paragraph: 1, kind: "paragraph" as const },
-      reason: { code: "UNSUPPORTED_TARGET_PROPERTY", message: reason },
-      complete: true,
-      continuation: false,
+      pieces: [{ text: "1 Main Street", editable: false }],
+      held: true,
+      message: reason,
+      code: "NOT_BODY",
     },
-    ...readPage("Thank you").regions,
-  ]
+  ])
   vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {
     const path = String(url)
     if (path.includes("/api/reads/paper.read")) {
       return Response.json({
         ok: true,
-        data: { ...readPage("Thank you"), regions },
+        data: shown,
       })
     }
     return Response.json({ ok: true, data: {} })

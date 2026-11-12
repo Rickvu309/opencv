@@ -79,8 +79,8 @@ async function readOnlyImport(owner: string) {
   return { head, page, line, empty }
 }
 
-const unavailable =
-  "This page change is not available. No document was changed."
+const readOnly =
+  "Paper can read this Word file but cannot safely change it, because it uses Word features Paper cannot check yet. No document was changed."
 
 describe("a Word file Paper can only read stays unchanged", () => {
   it("projects no Coach target and refuses a Coach replacement", () =>
@@ -116,18 +116,27 @@ describe("a Word file Paper can only read stays unchanged", () => {
       const commands = registry()
       for (const input of [
         {
-          op: "split",
-          docId: head.docId,
-          basedOn: head.revision,
-          paragraph: line.handle,
-          at: 5,
+          op: "write",
+          batch: {
+            doc: head.docId,
+            basedOn: head.revision,
+            ops: [
+              {
+                op: "setText",
+                handle: line.handle,
+                text: line.text.slice(0, 5),
+              },
+              { op: "insert", after: line.handle, text: line.text.slice(5) },
+            ],
+          },
         },
         {
-          op: "writeText",
-          docId: head.docId,
-          basedOn: head.revision,
-          paragraph: empty.handle,
-          text: "Hi",
+          op: "write",
+          batch: {
+            doc: head.docId,
+            basedOn: head.revision,
+            ops: [{ op: "setText", handle: empty.handle, text: "Hi" }],
+          },
         },
       ])
         await expect(
@@ -137,7 +146,7 @@ describe("a Word file Paper can only read stays unchanged", () => {
             actor: personActor(owner),
             idempotencyKey: randomUUID(),
           })
-        ).rejects.toThrow(unavailable)
+        ).rejects.toThrow(readOnly)
       const held = await apply(owner, {
         doc: page.doc,
         basedOn: page.revision,

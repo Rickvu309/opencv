@@ -1,4 +1,4 @@
-import { blankCv, type PaperView } from "@workspace/domain"
+import { blankCv, type PaperView, type WordPage } from "@workspace/domain"
 
 export type WritingBlock = {
   id: string
@@ -41,91 +41,35 @@ export function blankDraft(): WritingDraft {
   }
 }
 
-const CARRIERS = new Set([
-  "OPAQUE_OR_SECTION_BOUNDARY",
-  "UNSUPPORTED_TARGET_PROPERTY",
-])
-
-type ReadRegion = {
-  kind: string
-  text: string
-  paragraph?: string
-  targetId?: string
-  reason?: { code: string; message?: string }
-  location?: { kind: string }
-}
-
-export type PagePiece = {
-  id: string
-  paragraph: string
-  text: string
-  held?: boolean
-  reason?: string
-  targetId: string | null
-}
-
-export function pagePieces(regions: readonly ReadRegion[]): PagePiece[] {
-  const pieces: PagePiece[] = []
-  for (const region of regions) {
-    if (!region.paragraph) continue
-    const table = region.location?.kind === "table-cell"
-    const carrier =
-      CARRIERS.has(region.reason?.code ?? "") && region.text === ""
-    const writing =
-      !table &&
-      (region.kind === "editable" ||
-        (region.kind === "locked" && region.reason?.code === "EMPTY_TARGET"))
-    if (writing) {
-      const previous = pieces[pieces.length - 1]
-      if (
-        previous &&
-        !previous.held &&
-        previous.paragraph === region.paragraph
-      ) {
-        previous.text += region.text
-        continue
-      }
-      pieces.push({
-        id: region.paragraph,
-        paragraph: region.paragraph,
-        text: region.text,
-        targetId: region.targetId ?? null,
-      })
-      continue
+export function pageBlocks(page: WordPage): WritingBlock[] {
+  return page.paragraphs.flatMap((paragraph): WritingBlock[] => {
+    if (paragraph.held)
+      return [
+        {
+          id: paragraph.handle,
+          text: paragraph.text,
+          held: true,
+          ...(paragraph.message ? { reason: paragraph.message } : {}),
+        },
+      ]
+    const segments: { text: string; editable: boolean }[] = []
+    for (const piece of paragraph.pieces) {
+      const previous = segments.at(-1)
+      if (previous?.editable && piece.editable) previous.text += piece.text
+      else segments.push({ text: piece.text, editable: piece.editable })
     }
-    if (carrier || (region.kind !== "locked" && !table)) continue
-    const reason = region.reason?.message
-    pieces.push({
-      id: region.paragraph,
-      paragraph: region.paragraph,
-      text: region.text,
-      held: true,
-      targetId: null,
-      ...(reason ? { reason } : {}),
-    })
-  }
-  const totals = new Map<string, number>()
-  for (const piece of pieces) {
-    totals.set(piece.paragraph, (totals.get(piece.paragraph) ?? 0) + 1)
-  }
-  const seen = new Map<string, number>()
-  return pieces.map((piece) => {
-    if ((totals.get(piece.paragraph) ?? 0) < 2) return piece
-    const index = seen.get(piece.paragraph) ?? 0
-    seen.set(piece.paragraph, index + 1)
-    return { ...piece, id: `${piece.paragraph}#${index}` }
+    if (segments.every((segment) => segment.editable))
+      return [{ id: paragraph.handle, text: paragraph.text }]
+    return segments.map((segment, index) => ({
+      id: `${paragraph.handle}#${index}`,
+      text: segment.text,
+      ...(segment.editable ? {} : { held: true }),
+    }))
   })
 }
 
-export function draftFromRegions(
-  regions: readonly ReadRegion[]
-): WritingDraft | null {
-  const blocks = pagePieces(regions).map((piece) => ({
-    id: piece.id,
-    text: piece.text,
-    ...(piece.held ? { held: true as const } : {}),
-    ...(piece.reason ? { reason: piece.reason } : {}),
-  }))
+export function draftFromPage(page: WordPage): WritingDraft | null {
+  const blocks = pageBlocks(page)
   const first = blocks.find((block) => !block.held) ?? blocks[0]
   if (!first) return null
   return {

@@ -1,4 +1,8 @@
+import { fileURLToPath } from "node:url"
+
 import { viewportFor } from "./screens.mjs"
+
+const FIXTURES = new URL("./fixtures/", import.meta.url)
 
 const STEP_TIMEOUT_MS = 20_000
 const MEASURE_LIMIT = 40
@@ -28,6 +32,11 @@ export async function runStep(page, origin, step) {
     return locate(page, step.fill).fill(step.fill.text, {
       timeout: STEP_TIMEOUT_MS,
     })
+  if (step.upload)
+    return locate(page, step.upload).setInputFiles(
+      fileURLToPath(new URL(step.upload.file, FIXTURES)),
+      { timeout: STEP_TIMEOUT_MS }
+    )
   if (step.press) return page.keyboard.press(step.press)
   if (step.type) return page.keyboard.type(step.type)
   if (step.waitFor)

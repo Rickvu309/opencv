@@ -11,10 +11,8 @@ import {
   closeWritingDb,
   commitWords,
   decideSave,
-  pageWords,
   savedNote,
   settlePage,
-  wordsFromRegions,
 } from "./canvas-save.ts"
 
 const DOC = "11111111-1111-7111-8111-111111111111"
@@ -24,7 +22,6 @@ const NEXT = "dddddddd-dddd-4ddd-8ddd-dddddddddddd"
 const PARAGRAPH = "33333333-3333-4333-8333-333333333333"
 const INCARNATION = "cccccccc-cccc-4ccc-8ccc-cccccccccccc"
 const HASH = "ab".repeat(32)
-const TARGET = `t_${"cd".repeat(32)}`
 
 function packageResult() {
   return {
@@ -40,57 +37,40 @@ function packageResult() {
   }
 }
 
-function readResult(text: string, revision = REVISION) {
+function lineOf(handle: string, text: string) {
   return {
-    generation: "package" as const,
-    docId: PACKAGE,
+    handle,
+    text,
+    pieces: text === "" ? [] : [{ text, editable: true }],
+    held: false,
+    message: "",
+    code: null,
+  }
+}
+
+function readResult(
+  text: string,
+  revision = REVISION,
+  paragraphs: unknown[] = [lineOf(PARAGRAPH, text)]
+) {
+  return {
+    doc: DOC,
     revision,
     name: "Page.docx",
-    kind: "letter" as const,
-    packageHash: HASH,
-    byteSize: 128,
-    projector: "paper-package-spans-1",
-    regions: [
-      text === ""
-        ? {
-            kind: "locked" as const,
-            paragraph: PARAGRAPH,
-            text,
-            location: { paragraph: 1, kind: "paragraph" as const },
-            reason: {
-              code: "EMPTY_TARGET",
-              message: "This text region is empty.",
-            },
-            complete: true,
-            continuation: false,
-          }
-        : {
-            kind: "editable" as const,
-            paragraph: PARAGRAPH,
-            targetId: TARGET,
-            text,
-            location: { paragraph: 1, kind: "paragraph" as const },
-            formatting: {
-              kind: "inherited" as const,
-              scope: "preserved-uncomputed" as const,
-            },
-            context: { paragraphText: text },
-          },
-      {
-        kind: "locked" as const,
-        text: "",
-        location: { paragraph: 2, kind: "paragraph" as const },
-        reason: {
-          code: "UNSUPPORTED_TARGET_PROPERTY",
-          message:
-            "Paper cannot safely preserve a property attached to this text yet.",
-        },
-        complete: true,
-        continuation: false,
-      },
-    ],
-    nextCursor: null,
+    label: "letter" as const,
+    paragraphs,
   }
+}
+
+function sentBatch(bodies: unknown[]) {
+  const found = bodies.find(
+    (item) =>
+      !!item &&
+      typeof item === "object" &&
+      "input" in item &&
+      (item as { input?: { op?: string } }).input?.op === "write"
+  ) as { input: { batch: unknown } } | undefined
+  return found?.input.batch
 }
 
 function ok(data: unknown) {
@@ -170,21 +150,6 @@ describe("decideSave", () => {
   })
 })
 
-describe("wordsFromRegions", () => {
-  it("drops the section carrier and keeps the writing", () => {
-    expect(
-      wordsFromRegions([
-        { text: "Hello", reason: { code: "EMPTY_TARGET" } },
-        { text: "", reason: { code: "OPAQUE_OR_SECTION_BOUNDARY" } },
-        { text: "", reason: { code: "UNSUPPORTED_TARGET_PROPERTY" } },
-      ])
-    ).toBe("Hello")
-    expect(pageWords([{ text: "Hello" }, { text: "World" }])).toBe(
-      "Hello\nWorld"
-    )
-  })
-})
-
 describe("commitWords", () => {
   it("completes a local transaction for the exact words", async () => {
     const first = await commitWords(DOC, "")
@@ -206,14 +171,14 @@ describe("commitWords", () => {
 })
 
 describe("savedNote", () => {
-  it("says Saved only for typed words that match the receipt", () => {
+  it("says Saved only for words, or a cleared page, that match the receipt", () => {
     const matched = {
       saved: true,
       words: "Hello",
       revision: NEXT,
       note: null,
     }
-    expect(savedNote("", { ...matched, words: "" })).toBeNull()
+    expect(savedNote("", { ...matched, words: "" })).toBe("Saved")
     expect(savedNote("Hello", { ...matched, words: "" })).toBeNull()
     expect(savedNote("Hello", { ...matched, saved: false })).toBeNull()
     expect(savedNote("Hello", { ...matched, words: "Hello!" })).toBeNull()
@@ -259,7 +224,7 @@ describe("settlePage", () => {
     })
     const saved = await settlePage(
       DOC,
-      [{ text: "" }],
+      [{ id: "p1", text: "" }],
       new AbortController().signal
     )
     expect(saved).toEqual({
@@ -292,7 +257,7 @@ describe("settlePage", () => {
             item &&
             typeof item === "object" &&
             "input" in item &&
-            (item as { input?: { op?: string } }).input?.op === "writeText"
+            (item as { input?: { op?: string } }).input?.op === "write"
         )
         return Promise.resolve(
           ok(wrote ? readResult("Hello", NEXT) : readResult(""))
@@ -302,7 +267,7 @@ describe("settlePage", () => {
     })
     const saved = await settlePage(
       DOC,
-      [{ text: "Hello" }],
+      [{ id: "p1", text: "Hello" }],
       new AbortController().signal
     )
     expect(saved).toMatchObject({
@@ -312,38 +277,26 @@ describe("settlePage", () => {
       note: null,
       blocks: [{ id: PARAGRAPH, text: "Hello" }],
     })
-    const wrote = bodies.find(
-      (item) =>
-        item &&
-        typeof item === "object" &&
-        "input" in item &&
-        (item as { input?: { op?: string } }).input?.op === "writeText"
-    ) as { input: { paragraph: string; text: string; basedOn: string } }
-    expect(wrote.input).toMatchObject({
-      op: "writeText",
-      docId: DOC,
+    expect(sentBatch(bodies)).toEqual({
+      doc: DOC,
       basedOn: REVISION,
-      paragraph: PARAGRAPH,
-      text: "Hello",
+      ops: [{ op: "setText", handle: PARAGRAPH, text: "Hello" }],
     })
   })
 
   it("keeps the words and shows why a save was refused", async () => {
     const reason =
-      "The text to replace does not exactly match this span. Read it again and use its exact text."
+      "This line mixes formatting, such as bold or a different font. Paper will not rewrite words across that formatting. No document was changed."
     vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
       const url = String(input)
       if (url.includes("/api/reads/paper.read")) {
         return Promise.resolve(ok(readResult("Hello")))
       }
-      if (url.includes("/api/commands/paper.edit")) {
+      if (url.includes("/api/commands/paper.canvas")) {
         return Promise.resolve(
           Response.json(
-            {
-              ok: false,
-              error: { code: "BEFORE_TEXT_MISMATCH", message: reason },
-            },
-            { status: 400 }
+            { ok: false, error: { code: "CONFLICT", message: reason } },
+            { status: 409 }
           )
         )
       }
@@ -368,7 +321,7 @@ describe("settlePage", () => {
     )
     const saved = await settlePage(
       DOC,
-      [{ text: "Hello" }],
+      [{ id: "p1", text: "Hello" }],
       new AbortController().signal
     )
     expect(saved).toEqual({
@@ -392,7 +345,7 @@ describe("settlePage", () => {
     })
     const saved = await settlePage(
       DOC,
-      [{ text: "Hello" }],
+      [{ id: "p1", text: "Hello" }],
       new AbortController().signal
     )
     expect(saved).toEqual({
@@ -420,7 +373,7 @@ describe("settlePage", () => {
     )
     const saved = await settlePage(
       DOC,
-      [{ text: "Hello" }],
+      [{ id: "p1", text: "Hello" }],
       new AbortController().signal
     )
     expect(saved.saved).toBe(false)
@@ -428,79 +381,39 @@ describe("settlePage", () => {
     expect(saved.note).toBe("Saved Word documents are unavailable.")
   })
 
-  it("does not edit a page whose words cross a line", async () => {
-    const calls: string[] = []
-    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
-      const url = String(input)
-      calls.push(url)
-      if (url.includes("/api/reads/paper.read")) {
-        return Promise.resolve(ok(readResult("Hello")))
-      }
-      return Promise.resolve(new Response("missing", { status: 404 }))
-    })
-    const saved = await settlePage(
-      DOC,
-      [{ text: "Hello" }, { text: "There" }],
-      new AbortController().signal
-    )
-    expect(saved).toEqual({
-      saved: false,
-      words: "Hello\nThere",
-      revision: null,
-      note: null,
-    })
-    expect(calls.some((url) => url.includes("paper.edit"))).toBe(false)
-    expect(calls.some((url) => url.includes("paper.canvas"))).toBe(false)
-  })
-
-  it("sends a split for one known paragraph and keeps a table out of the command", async () => {
+  it("saves a line typed after the first as one batch and reads it back", async () => {
+    const next = "44444444-4444-4444-8444-444444444444"
     const table = "55555555-5555-4555-8555-555555555555"
-    const right = "44444444-4444-4444-8444-444444444444"
-    const line = (text: string, paragraph: string, at: number) => ({
-      kind: "editable" as const,
-      paragraph,
-      targetId: TARGET,
-      text,
-      location: { paragraph: at, kind: "paragraph" as const },
-      formatting: {
-        kind: "inherited" as const,
-        scope: "preserved-uncomputed" as const,
-      },
-      context: { paragraphText: text },
-    })
-    const cell = (at: number) => ({
-      kind: "locked" as const,
-      paragraph: table,
+    const cell = {
+      handle: table,
       text: "Cell",
-      location: { paragraph: at, kind: "table-cell" as const },
-      reason: { code: "UNSUPPORTED_PARAGRAPH_STRUCTURE", message: "Stays." },
-      complete: true,
-      continuation: false,
-    })
+      pieces: [{ text: "Cell", editable: false }],
+      held: true,
+      message: "Stays.",
+      code: "NOT_BODY",
+    }
     const bodies: unknown[] = []
     vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
-      const body = typeof init?.body === "string" ? JSON.parse(init.body) : null
-      bodies.push(body)
-      const split = bodies.some(
-        (item) =>
-          !!item &&
-          typeof item === "object" &&
-          "input" in item &&
-          (item as { input?: { op?: string } }).input?.op === "split"
-      )
+      bodies.push(typeof init?.body === "string" ? JSON.parse(init.body) : null)
       if (url.includes("/api/commands/paper.canvas")) {
         return Promise.resolve(ok({ ...packageResult(), revision: NEXT }))
       }
       if (url.includes("/api/reads/paper.read")) {
-        const regions = split
-          ? [line("He", PARAGRAPH, 1), line("llo", right, 2), cell(3)]
-          : [line("Hello", PARAGRAPH, 1), cell(2)]
         return Promise.resolve(
-          ok({
-            ...readResult(split ? "He" : "Hello", split ? NEXT : REVISION),
-            regions,
-          })
+          ok(
+            sentBatch(bodies)
+              ? readResult("He", NEXT, [
+                  lineOf(PARAGRAPH, "He"),
+                  lineOf(next, "llo"),
+                  lineOf(INCARNATION, "There"),
+                  cell,
+                ])
+              : readResult("Hello", REVISION, [
+                  lineOf(PARAGRAPH, "Hello"),
+                  cell,
+                ])
+          )
         )
       }
       return Promise.resolve(new Response("missing", { status: 404 }))
@@ -510,25 +423,89 @@ describe("settlePage", () => {
       [
         { id: PARAGRAPH, text: "He" },
         { id: "p2", text: "llo" },
+        { id: "p3", text: "There" },
         { id: table, text: "Cell", held: true },
       ],
-      new AbortController().signal
+      new AbortController().signal,
+      { basis: null, typed: true, caret: { blockId: "p3", offset: 5 } }
     )
-    expect(saved.saved).toBe(true)
-    expect(saved.words).toBe("He\nllo\nCell")
-    const command = bodies.find(
-      (item) =>
-        !!item &&
-        typeof item === "object" &&
-        "input" in item &&
-        (item as { input?: { op?: string } }).input?.op === "split"
-    ) as { input: { at: number; text?: string } }
-    expect(command.input).toMatchObject({
-      op: "split",
-      paragraph: PARAGRAPH,
-      at: 2,
+    expect(sentBatch(bodies)).toEqual({
+      doc: DOC,
+      basedOn: REVISION,
+      ops: [
+        { op: "setText", handle: PARAGRAPH, text: "He" },
+        { op: "insert", after: PARAGRAPH, text: "llo" },
+        { op: "insert", after: PARAGRAPH, text: "There" },
+      ],
     })
-    expect(command.input.text).toBeUndefined()
+    expect(saved).toMatchObject({
+      saved: true,
+      words: "He\nllo\nThere\nCell",
+      revision: NEXT,
+      blocks: [
+        { id: PARAGRAPH, text: "He" },
+        { id: next, text: "llo" },
+        { id: INCARNATION, text: "There" },
+        { id: table, text: "Cell", held: true, reason: "Stays." },
+      ],
+    })
+  })
+  it("builds on its own write when the person typed again before it settled", async () => {
+    const later = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee"
+    const server = { revision: REVISION, text: "Hello" }
+    const replies = [
+      { revision: NEXT, text: "Hello there" },
+      { revision: later, text: "Hello there friend" },
+    ]
+    const outrun = new AbortController()
+    const batches: unknown[] = []
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input)
+      if (url.includes("/api/commands/paper.canvas")) {
+        batches.push(sentBatch([JSON.parse(String(init?.body))]))
+        const reply = replies.shift()
+        if (!reply)
+          return Promise.resolve(new Response("gone", { status: 500 }))
+        Object.assign(server, reply)
+        outrun.abort()
+        if (init?.signal?.aborted)
+          return Promise.reject(new DOMException("aborted", "AbortError"))
+        return Promise.resolve(
+          ok({ ...packageResult(), revision: reply.revision })
+        )
+      }
+      if (url.includes("/api/reads/paper.read")) {
+        return Promise.resolve(ok(readResult(server.text, server.revision)))
+      }
+      return Promise.resolve(new Response("missing", { status: 404 }))
+    })
+    const claim = {
+      basis: { revision: REVISION, words: "Hello" },
+      typed: true,
+    }
+    const first = settlePage(
+      DOC,
+      [{ id: PARAGRAPH, text: "Hello there" }],
+      outrun.signal,
+      claim
+    )
+    const second = settlePage(
+      DOC,
+      [{ id: PARAGRAPH, text: "Hello there friend" }],
+      new AbortController().signal,
+      claim
+    )
+    await first
+    expect(await second).toMatchObject({
+      saved: true,
+      words: "Hello there friend",
+      revision: later,
+    })
+    expect(batches[1]).toEqual({
+      doc: DOC,
+      basedOn: NEXT,
+      ops: [{ op: "setText", handle: PARAGRAPH, text: "Hello there friend" }],
+    })
   })
 })
 

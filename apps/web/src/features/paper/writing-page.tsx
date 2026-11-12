@@ -2,7 +2,7 @@ import { useCallback, useEffect, useReducer } from "react"
 import { paperIdSchema } from "@workspace/domain"
 
 import {
-  draftFromRegions,
+  draftFromPage,
   forgetDraft,
   loadDraft,
   loadDraftBasis,
@@ -10,7 +10,7 @@ import {
 } from "@/features/paper-page/canvas-edit.ts"
 import { pageWords } from "@/features/paper-page/canvas-save.ts"
 import { WritingCanvas } from "@/features/paper-page/canvas.tsx"
-import { readWholePackage } from "@/features/paper-page/package-read.ts"
+import { readWordPage } from "@/features/paper-page/package-read.ts"
 import { WritingProposalCard } from "@/features/paper/writing-proposal.tsx"
 import { authClient } from "@/lib/auth-client.ts"
 import {
@@ -72,7 +72,7 @@ export function WritingPage({
     if (!id.success || owner === "") {
       throw new Error("Could not read this page.")
     }
-    const data = await readWholePackage(
+    const data = await readWordPage(
       owner,
       id.data,
       new AbortController().signal
@@ -82,7 +82,7 @@ export function WritingPage({
       return
     }
     if (!data) throw new Error("Could not read this page.")
-    const next = draftFromRegions(data.regions)
+    const next = draftFromPage(data)
     if (!next) throw new Error("Could not read this page.")
     forgetDraft(docId, localStorage)
     setWritingConflict(null)

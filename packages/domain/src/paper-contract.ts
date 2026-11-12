@@ -274,7 +274,8 @@ export const paperContract = commandContract({
     invalidates: (input) => [...docChanged(input), ...chatsChanged()],
   }),
   "paper.canvas": commandEntry({
-    description: "Write on the blank page.",
+    description:
+      "Start a blank Word page, or save what the person wrote as one batch of line changes.",
     input: paperCanvasCommitSchema,
     output: paperPackageEditResultSchema,
     idempotency: "keyed",
@@ -285,10 +286,13 @@ export const paperContract = commandContract({
       input.op === "mint"
         ? listChanged()
         : [
-            { query: "paper.get", input: { docId: parsePaperId(input.docId) } },
+            {
+              query: "paper.get",
+              input: { docId: parsePaperId(input.batch.doc) },
+            },
             {
               query: "paper.outline",
-              input: { docId: parsePaperId(input.docId) },
+              input: { docId: parsePaperId(input.batch.doc) },
             },
             ...listChanged(),
           ],

@@ -22,7 +22,6 @@ const DOC = "11111111-1111-7111-8111-111111111111"
 const REVISION = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
 const NEXT = "dddddddd-dddd-4ddd-8ddd-dddddddddddd"
 const PARAGRAPH = "33333333-3333-4333-8333-333333333333"
-const TARGET = `t_${"cd".repeat(32)}`
 const BLUE = "The second line stays blue."
 const GREEN = "The second line stays green."
 
@@ -34,31 +33,24 @@ function draft(text: string): WritingDraft {
   }
 }
 
+function lineOf(handle: string, text: string) {
+  return {
+    handle,
+    text,
+    pieces: text === "" ? [] : [{ text, editable: true }],
+    held: false,
+    message: "",
+    code: null,
+  }
+}
+
 function readResult(text: string, revision = NEXT) {
   return {
-    generation: "package" as const,
-    docId: DOC,
+    doc: DOC,
     revision,
     name: "Page.docx",
-    kind: "letter" as const,
-    packageHash: "ab".repeat(32),
-    byteSize: 128,
-    projector: "paper-package-spans-1",
-    regions: [
-      {
-        kind: "editable" as const,
-        paragraph: PARAGRAPH,
-        targetId: TARGET,
-        text,
-        location: { paragraph: 1, kind: "paragraph" as const },
-        formatting: {
-          kind: "inherited" as const,
-          scope: "preserved-uncomputed" as const,
-        },
-        context: { paragraphText: text },
-      },
-    ],
-    nextCursor: null,
+    label: "letter" as const,
+    paragraphs: [lineOf(PARAGRAPH, text)],
   }
 }
 
