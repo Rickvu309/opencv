@@ -19,6 +19,8 @@ import { CoachMessageActions } from "./coach-message-actions.tsx"
 import { CoachParts } from "./coach-part-renderers.tsx"
 import { toCoachParts } from "./coach-parts.ts"
 import type { CoachTurnProgress } from "./coach-progress.ts"
+import { splitReadTraces } from "./coach-read-trace.ts"
+import { CoachWorkedFor } from "./coach-worked-for.tsx"
 import { CoachWorking } from "./coach-working.tsx"
 
 export type CoachTurnsProps = {
@@ -164,16 +166,18 @@ export function CoachTurns({
         }
         const streaming = message.id === STREAMING_COACH_ID
         if (streaming && parts.length === 0) return null
+        const { traces, answer } =
+          message.workedMs && !streaming
+            ? splitReadTraces(parts)
+            : { traces: [], answer: parts }
         return (
           <ChatItem key={message.id} messageId={message.id}>
             <CoachMessage>
               {message.workedMs ? (
-                <p className="text-[13px] text-muted-foreground">
-                  Worked for {Math.max(1, Math.round(message.workedMs / 1000))}s
-                </p>
+                <CoachWorkedFor workedMs={message.workedMs} traces={traces} />
               ) : null}
               <CoachParts
-                parts={parts}
+                parts={answer}
                 ctx={{
                   canUndo: !waiting && !streaming && Boolean(onUndo),
                   onUndo,

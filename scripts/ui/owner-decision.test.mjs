@@ -5,6 +5,7 @@ import { screenReport } from "./check-screen.mjs"
 import { PROPERTIES } from "./compare.mjs"
 import { DESIGN_MAP, validateDesignMap } from "./design-map.mjs"
 import {
+  COUNCIL_DOCKED_COACH_COMPOSER,
   WORD_SIZED_WRITING_PAGE,
   ownerDecisionProblems,
 } from "./owner-decision.mjs"
@@ -118,11 +119,33 @@ test("every writing page sheet row takes the Word size by owner decision and kee
     "width",
     ...PADDING,
   ])
-  assert.equal(
-    DESIGN_MAP.filter((row) => row.ownerDecision && row.frame !== "LFKqV")
-      .length,
-    0
+  assert.deepEqual(
+    DESIGN_MAP.filter((row) => row.ownerDecision && row.frame !== "LFKqV").map(
+      (row) => [row.screen, row.label, row.ownerDecision]
+    ),
+    [
+      [
+        "coach-chat-finished",
+        "Coach page composer",
+        COUNCIL_DOCKED_COACH_COMPOSER,
+      ],
+    ]
   )
+})
+
+test("the council's docked composer decision changes only the height and keeps the pen width and radius", () => {
+  assert.deepEqual(
+    ownerDecisionProblems(
+      DESIGN_MAP.find(
+        (row) => row.ownerDecision === COUNCIL_DOCKED_COACH_COMPOSER
+      ),
+      "Coach page composer"
+    ),
+    []
+  )
+  assert.deepEqual(Object.keys(COUNCIL_DOCKED_COACH_COMPOSER.expect), [
+    "height",
+  ])
 })
 
 test("check measures a decided row against the decision and says it is a decision, not the pen", () => {

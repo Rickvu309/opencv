@@ -1,5 +1,6 @@
 import { RELATIVE } from "./compare.mjs"
 import {
+  COUNCIL_DOCKED_COACH_COMPOSER,
   WORD_SIZED_WRITING_PAGE,
   ownerDecisionProblems,
 } from "./owner-decision.mjs"
@@ -438,6 +439,7 @@ export const DESIGN_MAP = [
     composedScreen: COACH_WORKING,
     frame: "KDAaX",
     props: ["width", "height", "radius"],
+    ownerDecision: COUNCIL_DOCKED_COACH_COMPOSER,
   },
   {
     screen: "coach-chat-finished",

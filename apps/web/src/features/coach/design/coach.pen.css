@@ -2,16 +2,28 @@
   [data-pen-surface="coach"][data-slot="coach-home"]
     [data-slot="coach-composer"]:not([data-capped]):not([data-compact])
     textarea {
-    min-height: 70px;
-    padding: 16px 16px 14px 18px;
-    line-height: 18px;
+    min-height: 54px;
+    padding: 16px 16px 0 18px;
+    font-size: 14px;
+    line-height: 20px;
   }
 
   [data-pen-surface="coach"][data-slot="coach-composer"]:not(
       [data-capped]
     ):where([data-presentation="page"] [data-slot="coach-workspace-composer"] *)
     textarea {
-    padding-left: 18px;
+    min-height: 36px;
+    padding: 16px 16px 0 18px;
+    font-size: 14px;
+    line-height: 20px;
+  }
+
+  [data-pen-surface="coach"][data-slot="coach-composer"]:not(
+      [data-capped]
+    ):where([data-presentation="page"] [data-slot="coach-workspace-composer"] *)
+    [data-slot="input-group-addon"] {
+    padding-top: 0;
+    padding-bottom: 12px;
   }
 
   [data-pen-surface="coach"][data-slot="coach-home"]

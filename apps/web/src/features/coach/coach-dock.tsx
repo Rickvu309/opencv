@@ -140,7 +140,7 @@ export function CoachDock({
         render={
           <InputGroupButton
             size="icon-sm"
-            className="rounded-full border border-border text-muted-foreground"
+            className="size-11 rounded-full border border-border text-muted-foreground md:size-8"
           />
         }
         disabled={disabled}

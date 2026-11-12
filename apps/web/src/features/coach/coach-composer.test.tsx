@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
 
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { expectCoachIdle } from "@/test/coach-chat-helpers.ts"
@@ -31,24 +37,26 @@ describe("Coach composer", () => {
     expect(getLastCoachRequest()).toBeNull()
   })
 
-  it("shows six starters and keeps the others behind More ideas", async () => {
+  it("shows three starters the Coach can do and none that need job search", async () => {
     renderApp(SURFACE_PATHS.coach)
     await expectCoachIdle()
 
+    const ideas = screen.getByRole("list", { name: "Ideas for Coach" })
     expect(
-      screen.getByRole("button", { name: "Review my CV" })
-    ).toBeInTheDocument()
-    expect(
-      screen.queryByRole("button", { name: "Compare two offers" })
-    ).not.toBeInTheDocument()
+      within(ideas)
+        .getAllByRole("button")
+        .map((button) => button.getAttribute("aria-label"))
+    ).toEqual(["Review my CV", "Write a cover letter", "Prep an interview"])
+    for (const name of [
+      "Find roles",
+      "Companies hiring now",
+      "Improve my LinkedIn",
+      "More ideas",
+    ])
+      expect(screen.queryByRole("button", { name })).not.toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole("button", { name: "More ideas" }))
-
-    fireEvent.click(screen.getByRole("button", { name: "Compare two offers" }))
-    expect(composer()).toHaveValue("Compare two offers")
-    expect(
-      screen.queryByRole("button", { name: "Review my CV" })
-    ).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Prep an interview" }))
+    expect(composer()).toHaveValue("Prep an interview")
   })
 
   it("keeps the reply going when a double click on Send lands on Stop", async () => {
