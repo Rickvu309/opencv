@@ -13,6 +13,7 @@ import {
   resolveTarget,
   sectionArrangement,
   sectionColumn,
+  sideTarget,
   validateSpec,
 } from "./annotate.mjs"
 
@@ -281,4 +282,36 @@ test("a section lays out both images at one size, reports targets missing on a s
   })
   assert.match(html, /&lt;b&gt;Panel&lt;\/b&gt;/)
   assert.match(html, /Before \(main\)[\s\S]*After \(this PR\)/)
+})
+
+test("a per-side target points at a moved element in each image and skips a side it does not name", () => {
+  const moved = {
+    before: { selector: "deny-before" },
+    after: { x: 5, y: 6 },
+  }
+  assert.deepEqual(sideTarget(moved, "before"), { selector: "deny-before" })
+  assert.deepEqual(sideTarget(moved, "after"), { x: 5, y: 6 })
+  assert.equal(sideTarget({ after: { x: 1, y: 2 } }, "before"), null)
+  assert.deepEqual(sideTarget({ x: 1, y: 2 }, "before"), { x: 1, y: 2 })
+  assert.equal(
+    resolveTarget(sideTarget({ after: { x: 1, y: 2 } }, "before")),
+    null
+  )
+  const section = (target) => ({
+    sections: [
+      {
+        title: "t",
+        before: "a.png",
+        after: "b.png",
+        callouts: [{ n: 1, note: "n", target }],
+      },
+    ],
+  })
+  assert.deepEqual(validateSpec(section({ after: { x: 1, y: 2 } })), [])
+  assert.deepEqual(validateSpec(section({ before: null, after: null })), [
+    "section 1 callout 1 a per-side target needs a before or an after",
+  ])
+  assert.deepEqual(validateSpec(section({ after: { selector: "s" } })), [
+    "section 1 callout 1 uses a selector, so the section needs a screen and width from the manifest",
+  ])
 })

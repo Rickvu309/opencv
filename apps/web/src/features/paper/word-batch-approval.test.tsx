@@ -178,4 +178,38 @@ describe("a Word batch is shown before Approve", () => {
     ).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Deny" })).toBeEnabled()
   })
+
+  it("offers Approve for a page edit that inserts blocks, which is not a Word batch", () => {
+    const canvasInput = {
+      docId: DOC,
+      basedOn: REVISION,
+      edits: [
+        {
+          op: "insert",
+          after: "@start",
+          blocks: [{ type: "paragraph", text: "Reviewed by the Coach." }],
+        },
+      ],
+    }
+    syncWritingProposalFromActions(
+      [
+        {
+          toolCallId: "call-batch",
+          operation: "paper.edit",
+          state: "proposed",
+          proposalId: PENDING,
+          input: canvasInput,
+        },
+      ],
+      [{ id: PENDING, status: "pending", input: canvasInput }]
+    )
+    render(
+      <ChatStoreContext.Provider value={store}>
+        <CoachToolLine tool={toolOf(undefined)} canUndo={false} />
+      </ChatStoreContext.Provider>
+    )
+
+    expect(screen.queryByText(WORD_BATCH_HIDDEN)).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Approve" })).toBeEnabled()
+  })
 })

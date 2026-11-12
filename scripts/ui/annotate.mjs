@@ -1,3 +1,5 @@
+import { SIDES } from "./before-after.mjs"
+
 export const CALLOUTS_PER_SECTION = 5
 export const CANVAS = Object.freeze({
   width: 960,
@@ -27,12 +29,36 @@ export const PLACEMENT_ORDER = DIRECTIONS.map(([name]) => name)
 const isText = (value) => typeof value === "string" && value.trim().length > 0
 const isNumber = (value) => typeof value === "number" && Number.isFinite(value)
 
-function targetProblem(target) {
+const isPerSide = (target) =>
+  !!target && typeof target === "object" && SIDES.some((side) => side in target)
+
+export function sideTarget(target, side) {
+  if (!isPerSide(target)) return target
+  return target[side] ?? null
+}
+
+function plainTargetProblem(target) {
   if (!target || typeof target !== "object") return "needs a target"
   if (isText(target.selector)) return null
   if (isNumber(target.x) && isNumber(target.y)) return null
   return "target needs a selector or numeric x and y"
 }
+
+function targetProblem(target) {
+  if (!isPerSide(target)) return plainTargetProblem(target)
+  const given = SIDES.filter((side) => target[side])
+  if (given.length === 0) return "a per-side target needs a before or an after"
+  for (const side of given) {
+    const problem = plainTargetProblem(target[side])
+    if (problem) return `${side} ${problem}`
+  }
+  return null
+}
+
+const usesSelector = (target) =>
+  isPerSide(target)
+    ? SIDES.some((side) => isText(target[side]?.selector))
+    : isText(target.selector)
 
 export function validateSpec(spec) {
   const problems = []
@@ -67,11 +93,11 @@ export function validateSpec(spec) {
       if (!isText(callout.note)) problems.push(`${where} needs a note`)
       const bad = targetProblem(callout.target)
       if (bad) problems.push(`${where} ${bad}`)
-      else if (callout.target.selector && !fromManifest)
+      else if (usesSelector(callout.target) && !fromManifest)
         problems.push(
           `${where} uses a selector, so the section needs a screen and width from the manifest`
         )
-      else if (callout.target.selector && !isText(spec.manifest))
+      else if (usesSelector(callout.target) && !isText(spec.manifest))
         problems.push(`${where} uses a selector, so the spec needs a manifest`)
     })
   })
@@ -87,6 +113,7 @@ export function findCapture(manifest, screen, width) {
 }
 
 export function resolveTarget(target, side, scale = 1) {
+  if (!target) return null
   if (!target.selector)
     return { x: target.x * scale, y: target.y * scale, width: 0, height: 0 }
   const element = side?.elements?.find(
