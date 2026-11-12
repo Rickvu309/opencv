@@ -17,13 +17,11 @@ Clear journal entries only after both IndexedDB complete and a matching server r
 
 ## Coverage and history
 
-This model covers code scheduled for deletion. `openPaperSync` serves only the old CV and Letter editors (`apps/web/src/features/paper/paper-cv-editor.tsx`, `paper-letter.tsx`), which `apps/web/src/routes/paper-doc.tsx` opens only for an old Yjs row. The Word writing page saves through `paper.canvas` in `apps/web/src/features/paper-page/canvas-save.ts`, which this model does not cover.
-
 `apps/web/src/lib/PaperLocal.tla` models `openPaperSync`, its journal, and `indexedDbStore`. Its action map names the implementation entry points. The approved replacement explicitly separates ordinary pagehide from abrupt kill and names `DurabilityPointD`. It replaces the earlier immediate-kill model under the coordinator's approved rule. The earlier model and the 23 lost cases out of 120 remain prior evidence; this change does not turn them into passes.
 
 `paper-local-replay.test.ts` drives the real sync implementation with a fake server and controlled local completion. It checks fast receipt before D, older completion after newer input, transaction abort, and ordinary close recovery. `paper-sync-journal.test.ts` checks per-tab journal coverage and clearing. `scripts/paper-local-durable.test.mjs` checks the current Saved gate and old delayed-write mistakes against a main-history ancestor. These are controlled behavior checks, not physical disk proofs.
 
-The sync commit and the covered files live in `"sync"` and `"covers"` of `apps/web/src/lib/PaperLocal.tla.json`. Run `node scripts/tlc.mjs --stale` to list every commit that touched covered files since then. Move `"sync"` forward only after you confirm the model still describes the code at the new commit, and use a commit on `main`. The historical mistake is main ancestor `a1831b78801edfac3063a7376dc46a72a08fa054`; it is not a claim that the approved model was verified at that commit.
+Use this skill's Git history to find its last verification change. Keep branch-only commits out of verification anchors. The historical mistake is main ancestor `a1831b78801edfac3063a7376dc46a72a08fa054`; it is not a claim that the approved model was verified at that commit.
 
 ## Run
 

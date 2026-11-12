@@ -17,7 +17,7 @@ These are the rules of `PaperLease.tla`. Do not weaken a rule to clear a finding
 
 `packages/domain/src/paper-save.ts` grants one live lease. `grant` throws while that lease is held, unless the exclusive fault is on. `save` refuses a stale lease and a stale parent, keeps the head, and retains the losing bytes. The fence fault lets a stale lease move the head. The parent fault lets a stale parent move the head.
 
-The module is not the live save path, and nothing imports it. It is scheduled for deletion with the Yjs editors. On Word pages one head row per document is moved only by compare-and-set in `apps/api/src/paper/package-candidates.ts` and `apps/api/src/paper/package-restore.ts`; `verify-paper-word` covers that path. It has no Yjs types and no UI. `ContentStore.tla` stays the model of today's Yjs log. This check does not claim that log implements this protocol. Save receipt faults stay in `verify-paper-save`.
+The module is not the live save path. It has no Yjs types and no UI. `ContentStore.tla` stays the model of today's Yjs log. This check does not claim that log implements this protocol. Save receipt faults stay in `verify-paper-save`.
 
 `packages/domain/src/PaperLease.tla.json` maps `Grant` to `grant` and `Save` to `save`. `Expire` is model-only.
 
@@ -54,4 +54,4 @@ Writers are Tab A, Tab B, and Coach. Head and epoch stay at most 2. One document
 
 After a change to `packages/domain/src/paper-save.ts`, run `/maintain-formal-verification-skill`. Update this skill only after the model still matches the code and the replay keeps one live lease. Never weaken a rule to clear a finding.
 
-The sync commit and the covered files live in `"sync"` and `"covers"` of `packages/domain/src/PaperLease.tla.json`. Run `node scripts/tlc.mjs --stale` to list every commit that touched covered files since then. Move `"sync"` forward only after you confirm the model still describes the code at the new commit, and use a commit on `main`.
+Use this skill's Git history to locate the last verification change. Keep branch-only commits out of verification anchors.
