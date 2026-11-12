@@ -2,7 +2,22 @@ import { createRequire } from "node:module"
 
 import type { WordParagraph } from "@workspace/domain"
 
-export type WordParagraphView = { node: unknown; xml: string; slice: string }
+type WordPiece = WordParagraph["pieces"][number]
+
+type WordNode = {
+  qname: string
+  local: string
+  start: number
+  openEnd: number
+  closeStart: number
+  end: number
+  children: WordNode[]
+  parent: WordNode | undefined
+}
+
+export type WordParagraphView = { node: WordNode; xml: string; slice: string }
+
+export type WordParagraphSlot = WordParagraphView & { nested: boolean }
 
 const canvas = createRequire(import.meta.url)(
   "../../../../../scripts/lib/paper-canvas-bytes.mjs"
@@ -10,25 +25,181 @@ const canvas = createRequire(import.meta.url)(
   paragraphsOf: (bytes: Uint8Array) => WordParagraphView[]
   contentOf: (paragraph: WordParagraphView) => string
   isCarrier: (paragraph: WordParagraphView) => boolean
-  hasNum: (paragraph: WordParagraphView) => boolean
-  hasMark: (paragraph: WordParagraphView) => boolean
 }
 
-export const paragraphsOf = canvas.paragraphsOf
-export const contentOf = canvas.contentOf
+export type WordRun = {
+  xml: string
+  open: string
+  props: string
+  text: string
+}
 
-const heldReasons = [
-  {
-    code: "NUMBERING",
-    message: "This paragraph is numbered. Paper will not change it.",
-    test: canvas.hasNum,
-  },
-  {
-    code: "CHANGE_MARK",
-    message: "This paragraph has a change mark. Paper will not change it.",
-    test: canvas.hasMark,
-  },
-]
+export type WordLine = {
+  open: string
+  props: string
+  runs: WordRun[]
+  text: string
+}
+
+export type WordDisposition =
+  | { kind: "carrier" }
+  | { kind: "held"; code: string; message: string; text: string }
+  | { kind: "line"; line: WordLine }
+
+const markNames = new Set([
+  "pPrChange",
+  "rPrChange",
+  "sectPrChange",
+  "ins",
+  "del",
+  "moveFrom",
+  "moveTo",
+])
+
+const heldMessages = {
+  SECTION: "This line ends a page section. Paper will not change it.",
+  NOT_BODY: "This line sits in a table or a box. Paper will not change it.",
+  NUMBERING: "This paragraph is numbered. Paper will not change it.",
+  CHANGE_MARK: "This paragraph has a change mark. Paper will not change it.",
+  HIDDEN_MARKUP:
+    "This paragraph holds hidden Word markup. Paper will not change it.",
+  WORD_FEATURE:
+    "This paragraph has a link, a field, a tab or another Word feature. Paper will not change it.",
+  NO_RUN: "This empty line has no place for words. Paper will not change it.",
+  CONTROL_CHARACTER:
+    "This paragraph has a break or a hidden character. Paper will not change it.",
+} as const
+
+export type WordHeldCode = keyof typeof heldMessages
+
+function every(node: WordNode, out: WordNode[] = []) {
+  for (const child of node.children) {
+    out.push(child)
+    every(child, out)
+  }
+  return out
+}
+
+function named(node: WordNode | undefined, local: string) {
+  return node?.qname === `w:${local}`
+}
+
+export function paragraphsOf(bytes: Uint8Array): WordParagraphSlot[] {
+  return canvas.paragraphsOf(bytes).flatMap((view) => [
+    { ...view, nested: false },
+    ...every(view.node)
+      .filter((node) => node.local === "p")
+      .map((node) => ({
+        node,
+        xml: view.xml,
+        slice: view.xml.slice(node.start, node.end),
+        nested: true,
+      })),
+  ])
+}
+
+export function decodeWordText(raw: string) {
+  return raw.replace(
+    /&(#x[0-9a-fA-F]+|#[0-9]+|lt|gt|quot|apos|amp);/g,
+    (_, entity: string) => {
+      if (entity.startsWith("#x"))
+        return String.fromCodePoint(parseInt(entity.slice(2), 16))
+      if (entity.startsWith("#"))
+        return String.fromCodePoint(parseInt(entity.slice(1), 10))
+      return { lt: "<", gt: ">", quot: '"', apos: "'", amp: "&" }[
+        entity as "lt"
+      ]
+    }
+  )
+}
+
+export function hasControlCharacter(text: string) {
+  return [...text].some((letter) => {
+    const code = letter.codePointAt(0) ?? 0
+    return code < 0x20 || code === 0x7f
+  })
+}
+
+function slice(view: WordParagraphView, node: WordNode) {
+  return view.xml.slice(node.start, node.end)
+}
+
+function runOf(view: WordParagraphView, run: WordNode): WordRun | null {
+  const [first, ...rest] = run.children
+  const props = named(first, "rPr") ? first : undefined
+  const texts = props ? rest : run.children
+  if (texts.length === 0) return null
+  if (!texts.every((node) => named(node, "t") && node.children.length === 0))
+    return null
+  return {
+    xml: slice(view, run),
+    open: view.xml.slice(run.start, run.openEnd),
+    props: props ? slice(view, props) : "",
+    text: texts
+      .map((node) =>
+        decodeWordText(view.xml.slice(node.openEnd, node.closeStart))
+      )
+      .join(""),
+  }
+}
+
+function held(code: WordHeldCode, view: WordParagraphView): WordDisposition {
+  return {
+    kind: "held",
+    code,
+    message: heldMessages[code],
+    text: canvas.contentOf(view).replace(/<!--[\s\S]*?-->|<\?[\s\S]*?\?>/g, ""),
+  }
+}
+
+export function classifyParagraph(view: WordParagraphView): WordDisposition {
+  if (canvas.isCarrier(view))
+    return canvas.contentOf(view) === ""
+      ? { kind: "carrier" }
+      : held("SECTION", view)
+  const node = view.node
+  if (!named(node.parent, "body")) return held("NOT_BODY", view)
+  const inside = every(node)
+  if (inside.some((item) => item.local === "numPr"))
+    return held("NUMBERING", view)
+  if (inside.some((item) => markNames.has(item.local)))
+    return held("CHANGE_MARK", view)
+  if (/<!--|<\?|<!\[CDATA\[/.test(view.slice))
+    return held("HIDDEN_MARKUP", view)
+  const [first, ...rest] = node.children
+  const props = named(first, "pPr") ? first : undefined
+  const runNodes = props ? rest : node.children
+  if (!runNodes.every((item) => named(item, "r")))
+    return held("WORD_FEATURE", view)
+  if (runNodes.length === 0) return held("NO_RUN", view)
+  const runs: WordRun[] = []
+  for (const item of runNodes) {
+    const run = runOf(view, item)
+    if (!run) return held("WORD_FEATURE", view)
+    runs.push(run)
+  }
+  const text = runs.map((run) => run.text).join("")
+  if (hasControlCharacter(text)) return held("CONTROL_CHARACTER", view)
+  return {
+    kind: "line",
+    line: {
+      open: view.xml.slice(node.start, node.openEnd),
+      props: props ? slice(view, props) : "",
+      runs,
+      text,
+    },
+  }
+}
+
+function piecesOf(line: WordLine): WordPiece[] {
+  const pieces: { text: string; props: string }[] = []
+  for (const run of line.runs) {
+    const last = pieces.at(-1)
+    if (last && last.props === run.props) last.text += run.text
+    else pieces.push({ text: run.text, props: run.props })
+  }
+  return pieces.map((piece) => ({ text: piece.text, editable: true }))
+}
 
 export function projectParagraphs(
   bytes: Uint8Array,
@@ -37,26 +208,25 @@ export function projectParagraphs(
   const views = paragraphsOf(bytes)
   if (views.length !== keys.length) return null
   return views.flatMap((view, index): WordParagraph[] => {
-    if (canvas.isCarrier(view)) return []
     const handle = keys[index] as string
-    const text = contentOf(view)
-    const held = heldReasons.find((reason) => reason.test(view))
-    if (held)
+    const disposition = classifyParagraph(view)
+    if (disposition.kind === "carrier") return []
+    if (disposition.kind === "held")
       return [
         {
           handle,
-          text,
-          pieces: [{ text, editable: false }],
+          text: disposition.text,
+          pieces: [{ text: disposition.text, editable: false }],
           held: true,
-          message: held.message,
-          code: held.code,
+          message: disposition.message,
+          code: disposition.code,
         },
       ]
     return [
       {
         handle,
-        text,
-        pieces: [{ text, editable: true }],
+        text: disposition.line.text,
+        pieces: piecesOf(disposition.line),
         held: false,
         message: "",
         code: null,

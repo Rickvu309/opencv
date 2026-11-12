@@ -4,11 +4,8 @@ import { createRequire } from "node:module"
 import {
   ERROR_CODES,
   PAPER_CANVAS_PROFILE,
-  PAPER_PACKAGE_LIMITS,
-  PAPER_PACKAGE_PROJECTOR,
   paperContract,
   paperPackageEditResultSchema,
-  paperPackageProjectionSchema,
   type PaperCanvasCommit,
   type WordBatch,
 } from "@workspace/domain"
@@ -18,18 +15,8 @@ import { getDb, insideTransaction, transaction } from "../db/context.js"
 import { paperPackageHeads } from "../db/schema.js"
 import { CommandError } from "../registry/errors.js"
 import type { Registry } from "../registry/registry.js"
-import {
-  commitWordCandidate,
-  persistWordPackage,
-} from "./package-candidates.js"
-import { PaperPackage } from "./package-engine.js"
-import { PACKAGE_PROFILE } from "./package-profile.js"
-import {
-  archiveDigest,
-  packageDigest,
-  packageFailure,
-} from "./package-pages.js"
-import { applyEligibleBytes } from "./package-canvas-eligible.js"
+import { commitWordCandidate } from "./package-candidates.js"
+import { packageFailure } from "./package-pages.js"
 import {
   publishWordPackage,
   readWordPackage,
@@ -99,11 +86,6 @@ const unavailableChange =
 
 async function batchOf(owner: string, input: CanvasEdit): Promise<WordBatch> {
   const at = { doc: input.docId, basedOn: input.basedOn }
-  if (input.op === "writeText")
-    return {
-      ...at,
-      ops: [{ op: "setText", handle: input.paragraph, text: input.text }],
-    }
   if (input.op === "deleteParagraph")
     return { ...at, ops: [{ op: "delete", handle: input.paragraph }] }
   const page = await open(owner, {
@@ -117,6 +99,13 @@ async function batchOf(owner: string, input: CanvasEdit): Promise<WordBatch> {
   )
   const target = page.paragraphs[index]
   if (!target || target.held) return packageFailure(unavailableChange)
+  if (input.op === "writeText") {
+    if (target.text !== "") return packageFailure(unavailableChange)
+    return {
+      ...at,
+      ops: [{ op: "setText", handle: target.handle, text: input.text }],
+    }
+  }
   if (input.op === "split") {
     const letters = [...target.text]
     if (input.at > letters.length) return packageFailure(unavailableChange)
@@ -154,7 +143,10 @@ const storeRefusals = new Set([
   "STORE",
 ])
 
-async function prepareMinted(owner: string, input: CanvasEdit) {
+export async function prepareCanvas(owner: string, input: CanvasEdit) {
+  if (insideTransaction())
+    return packageFailure("Prepare the Word edit before starting a save.")
+  await wordPackageBasis(owner, input.docId, input.basedOn)
   const drafted = await prepareBatch(owner, await batchOf(owner, input), input)
   if (!drafted.refused) return drafted.prepared
   if (drafted.reason === "stale")
@@ -163,106 +155,6 @@ async function prepareMinted(owner: string, input: CanvasEdit) {
     )
   return packageFailure(
     storeRefusals.has(drafted.code ?? "") ? drafted.message : unavailableChange
-  )
-}
-
-export async function prepareCanvas(owner: string, input: CanvasEdit) {
-  if (insideTransaction())
-    return packageFailure("Prepare the Word edit before starting a save.")
-  const { version, artifact } = await wordPackageBasis(
-    owner,
-    input.docId,
-    input.basedOn
-  )
-  const [marked] = await getDb()
-    .select({ canvasProfile: paperPackageHeads.canvasProfile })
-    .from(paperPackageHeads)
-    .where(
-      and(
-        eq(paperPackageHeads.userId, owner),
-        eq(paperPackageHeads.docId, input.docId)
-      )
-    )
-    .limit(1)
-  if (marked?.canvasProfile === PAPER_CANVAS_PROFILE)
-    return prepareMinted(owner, input)
-  if (input.op === "writeText") return packageFailure(unavailableChange)
-  const opened = await PaperPackage.open(
-    artifact.bytes,
-    {
-      docId: version.docId,
-      incarnation: version.incarnation,
-      revision: version.revision,
-    },
-    version.sidecar
-  )
-  if (packageDigest(opened.read()) !== version.projectionHash)
-    return packageFailure(
-      "This Word projection is no longer available. No document was changed."
-    )
-  const current = opened.sidecar()
-  const sidecarIn = {
-    version: 2 as const,
-    paragraphs: current.paragraphs.map((row) => ({
-      key: row.key,
-      ordinal: row.ordinal,
-      textIds: [...row.textIds],
-    })),
-  }
-  const applied = applyEligibleBytes(artifact.bytes, input, sidecarIn)
-  if (applied.status !== "APPLIED") return packageFailure(unavailableChange)
-  const revision = randomUUID()
-  const bytes = Buffer.from(applied.bytes)
-  const context = {
-    docId: version.docId,
-    incarnation: version.incarnation,
-    revision,
-  }
-  const rebound = await PaperPackage.open(bytes, context, {
-    version: 2,
-    profile: PACKAGE_PROFILE.version,
-    revision,
-    docId: context.docId,
-    incarnation: context.incarnation,
-    packageHash: archiveDigest(bytes),
-    paragraphs: applied.sidecar.paragraphs,
-  })
-  const projection = paperPackageProjectionSchema.parse(rebound.read())
-  if (
-    Buffer.byteLength(JSON.stringify(projection)) >
-    PAPER_PACKAGE_LIMITS.projectionBytes
-  )
-    return packageFailure("This Word edit has too much text to read safely.")
-  const sidecar = rebound.sidecar()
-  return persistWordPackage(
-    owner,
-    {
-      basis: {
-        docId: version.docId,
-        incarnation: version.incarnation,
-        revision: version.revision,
-        packageHash: version.packageHash,
-        sidecarHash: version.sidecarHash,
-        projectionHash: version.projectionHash,
-        projector: version.projector,
-      },
-      inputHash: packageDigest(input),
-      review: input,
-      reviewHash: packageDigest(input),
-      candidate: {
-        ...context,
-        bytes,
-        byteSize: bytes.length,
-        packageHash: archiveDigest(bytes),
-        sidecar,
-        sidecarHash: packageDigest(sidecar),
-        projection,
-        projectionHash: packageDigest(projection),
-        projector: PAPER_PACKAGE_PROJECTOR,
-      },
-    },
-    PAPER_CANVAS_PROFILE,
-    true
   )
 }
 
