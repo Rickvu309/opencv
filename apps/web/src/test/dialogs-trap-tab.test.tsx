@@ -37,7 +37,7 @@ describe("the dialogs people reported keep Tab inside for a full cycle", () => {
       await user.click(screen.getByRole("button", { name: `${doc.name} menu` }))
       await user.click(await screen.findByRole("menuitem", { name: "Delete" }))
       const dialog = await screen.findByRole("dialog", {
-        name: "Delete this CV?",
+        name: `Delete "${doc.name}"?`,
       })
       expect(await tabCycle(dialog, backwards)).toEqual([])
     }

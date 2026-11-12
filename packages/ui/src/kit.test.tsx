@@ -157,10 +157,11 @@ describe("kit parts", () => {
     expect(board).not.toHaveAttribute("role", "button")
   })
 
-  it("sends Undo as the toast action", () => {
+  it("sends Undo as the toast action, led by an icon", () => {
     const onUndo = vi.fn()
     toastWithUndo("Job deleted", onUndo)
     expect(toast).toHaveBeenCalledWith("Job deleted", {
+      icon: expect.anything(),
       action: { label: "Undo", onClick: onUndo },
     })
   })

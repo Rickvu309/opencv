@@ -104,8 +104,37 @@ describe("Paper home sections", () => {
       await screen.findByRole("menuitem", { name: "Delete", exact: true })
     )
     expect(
-      screen.getByRole("dialog", { name: "Delete this file?" })
+      screen.getByRole("dialog", { name: 'Delete "Original CV.pdf"?' })
     ).toBeInTheDocument()
+  })
+
+  it("gives every card menu row an icon and puts Delete last, in red, after a separator", async () => {
+    renderLibrary([cv("Linh CV")])
+    fireEvent.click(screen.getByRole("button", { name: "Linh CV menu" }))
+    const rows = await screen.findAllByRole("menuitem")
+    for (const row of rows) expect(row.querySelector("svg")).not.toBeNull()
+    const remove = rows.at(-1)!
+    expect(remove).toHaveTextContent("Delete")
+    expect(remove).toHaveAttribute("data-variant", "destructive")
+    expect(screen.getAllByRole("separator")).toHaveLength(1)
+    expect(
+      screen.getByRole("menuitem", { name: "Link to application" })
+    ).toHaveAttribute("data-variant", "default")
+  })
+
+  it("names the document in the delete confirm and makes Delete the red final action", async () => {
+    renderLibrary([cv("Linh CV")])
+    fireEvent.click(screen.getByRole("button", { name: "Linh CV menu" }))
+    fireEvent.click(
+      await screen.findByRole("menuitem", { name: "Delete", exact: true })
+    )
+    const dialog = screen.getByRole("dialog", { name: 'Delete "Linh CV"?' })
+    expect(
+      within(dialog).getByRole("button", { name: "Delete" })
+    ).toHaveAttribute("data-variant", "destructive")
+    expect(
+      within(dialog).getByRole("button", { name: "Cancel" })
+    ).toHaveAttribute("data-variant", "ghost")
   })
 
   it("names a CV card from the document and hides it when search misses", async () => {

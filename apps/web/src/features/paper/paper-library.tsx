@@ -386,9 +386,10 @@ export function PaperLibrary({
           <PaperLibrarySearch query={query} onQueryChange={onQueryChange} />
         ) : null}
         <Button
-          className="h-11 gap-1.5 md:h-8 md:px-3 md:text-[13px] md:font-semibold"
+          className="h-11 gap-1.5 md:h-7"
           type="button"
-          variant={dialogOpen ? "outline" : "glow"}
+          size="sm"
+          variant={dialogOpen ? "outline" : "primary"}
           data-primary-action
           ref={newButtonRef}
           onClick={() => dispatch({ type: "new_dialog_opened", step: "kind" })}
@@ -527,7 +528,12 @@ export function PaperLibrary({
               >
                 Cancel
               </Button>
-              <Button className="h-11 md:h-8" type="submit" variant="glow">
+              <Button
+                className="h-11 md:h-7"
+                type="submit"
+                size="sm"
+                variant="primary"
+              >
                 Save
               </Button>
             </div>
@@ -545,10 +551,10 @@ export function PaperLibrary({
           <DialogHeader>
             <DialogTitle>
               {mode?.type === "delete-file"
-                ? "Delete this file?"
-                : mode?.type === "delete" && mode.doc.kind === "letter"
-                  ? "Delete this cover letter?"
-                  : "Delete this CV?"}
+                ? `Delete "${mode.file.name}"?`
+                : mode?.type === "delete"
+                  ? `Delete "${mode.doc.name}"?`
+                  : null}
             </DialogTitle>
             <DialogDescription>
               {deletingWordPage
@@ -558,17 +564,19 @@ export function PaperLibrary({
           </DialogHeader>
           <div className="flex justify-end gap-2">
             <Button
-              className="h-11 md:h-8"
+              className="h-11 md:h-7"
               type="button"
+              size="sm"
               variant="ghost"
               onClick={closeDialog}
             >
               Cancel
             </Button>
             <Button
-              className="h-11 md:h-8"
+              className="h-11 md:h-7"
               type="button"
-              variant="glow"
+              size="sm"
+              variant="destructive"
               onClick={() =>
                 void (mode?.type === "delete-file"
                   ? confirmDeleteFile()
