@@ -28,11 +28,7 @@ import { openBackend, type Backend } from "../test/registry-formal-support.js"
 import { commitWordCandidate } from "./package-candidates.js"
 import { prepareCanvas } from "./package-canvas.js"
 import { WORD_UNDO_MOVED } from "./word/document.js"
-import {
-  mergeInput,
-  splitInput,
-  writeInput,
-} from "../test/word-canvas-inputs.js"
+import { mergeInput, splitInput, writeInput } from "./word-canvas-inputs.js"
 import { registerPaper } from "./commands.js"
 import { implementation as readWord } from "./operations/read/server.js"
 import {

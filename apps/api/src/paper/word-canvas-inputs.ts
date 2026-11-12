@@ -1,6 +1,6 @@
 import type { WordBatch } from "@workspace/domain"
 
-import { open } from "../paper/word/document.js"
+import { open } from "./word/document.js"
 
 export function writeInput(
   doc: string,
