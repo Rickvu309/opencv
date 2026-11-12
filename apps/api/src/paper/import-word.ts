@@ -1,7 +1,12 @@
 import { ERROR_CODES } from "@workspace/domain"
 
 import { CommandError } from "../registry/errors.js"
-import { IMPORT_FAILED_MESSAGE, parseImportFile } from "./import-parse.js"
+import {
+  IMPORT_BUSY_MESSAGE,
+  IMPORT_FAILED_MESSAGE,
+  parseImportFile,
+} from "./import-parse.js"
+import { ImportReadBusy } from "./import-text-pool.js"
 import { importedTextLines } from "./word/from-text.js"
 import { pageBytesOf } from "./word/template.js"
 
@@ -25,7 +30,9 @@ async function parsed(input: {
 }) {
   try {
     return await parseImportFile(input)
-  } catch {
+  } catch (error) {
+    if (error instanceof ImportReadBusy)
+      throw new CommandError(ERROR_CODES.CONFLICT, IMPORT_BUSY_MESSAGE)
     throw new CommandError(ERROR_CODES.VALIDATION_ERROR, IMPORT_FAILED_MESSAGE)
   }
 }

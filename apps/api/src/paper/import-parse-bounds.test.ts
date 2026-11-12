@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it } from "vitest"
 
 import { files, paperDocs, paperPackageHeads } from "../db/schema.js"
 import {
@@ -14,8 +14,8 @@ import {
   textPdf,
 } from "./import-fixtures.test.js"
 import {
-  IMPORT_FAILED_MESSAGE,
   IMPORT_GENERIC_MESSAGE,
+  IMPORT_PDF_HEAVY_MESSAGE,
   IMPORT_PDF_PAGES_MESSAGE,
   importParsers,
 } from "./import-parse.js"
@@ -45,13 +45,11 @@ async function postFile(
 
 const realPdfText = importParsers.pdfText
 const realDocxText = importParsers.docxText
-const realOpenPdf = importParsers.openPdf
 
 afterEach(() => {
   importParsers.timeoutMs = 10_000
   importParsers.pdfText = realPdfText
   importParsers.docxText = realDocxText
-  importParsers.openPdf = realOpenPdf
   importParsers.onInsert = null
 })
 
@@ -96,22 +94,8 @@ describe("paper import bounds", () => {
     await client.close()
   })
 
-  it("destroys the PDF parser when the deadline fires and stores nothing", async () => {
-    importParsers.timeoutMs = 40
-    let releaseHang: (error: Error) => void = () => undefined
-    const destroy = vi.fn(() => {
-      releaseHang(new Error("destroyed"))
-    })
-    importParsers.openPdf = async () => ({
-      numPages: 1,
-      getPage: async () => ({
-        getTextContent: () =>
-          new Promise<never>((_resolve, reject) => {
-            releaseHang = reject
-          }),
-      }),
-      destroy,
-    })
+  it("stops the PDF reader when the deadline fires and stores nothing", async () => {
+    importParsers.timeoutMs = 1
     const { db, client } = await createMigratedTestDb()
     const app = createTestApp(db)
     const owner = await signUp(app, {
@@ -125,12 +109,12 @@ describe("paper import bounds", () => {
       "slow.pdf",
       "application/pdf"
     )
-    expect(response.status).toBe(400)
+    expect(response.status).toBe(415)
     expect(await response.json()).toMatchObject({
-      error: { message: IMPORT_FAILED_MESSAGE },
+      error: { message: IMPORT_PDF_HEAVY_MESSAGE },
     })
-    expect(destroy).toHaveBeenCalledOnce()
     expect(await db.select().from(paperDocs)).toEqual([])
+    expect(await db.select().from(paperPackageHeads)).toEqual([])
     expect(await db.select().from(files)).toEqual([])
     await client.close()
   })

@@ -6,6 +6,13 @@ import {
   type LetterAttachmentContext,
 } from "@workspace/domain"
 
+import { IMPORT_TEXT_LIMITS } from "./import-limits.js"
+import {
+  type ImportReadReason,
+  ImportReadRefusal,
+  readImportText,
+} from "./import-text-pool.js"
+
 export const IMPORT_GENERIC_MESSAGE = "Upload a PDF, Word, or text file."
 export const IMPORT_FAILED_MESSAGE = "Could not import that file. Try it again."
 export const IMPORT_EMPTY_MESSAGE =
@@ -18,6 +25,12 @@ export const IMPORT_LOCKED_MESSAGE =
   "This PDF is protected with a password. Save a copy without the password, then import it again."
 export const IMPORT_PDF_PAGES_MESSAGE =
   "This PDF has more than 20 pages. Import a shorter CV."
+export const IMPORT_PDF_HEAVY_MESSAGE =
+  "This PDF is too large or complex to read as a CV. Export it again from the app you wrote it in, or import a Word or text file."
+export const IMPORT_TEXT_LONG_MESSAGE =
+  "This file has more than 200,000 characters of text. Import a shorter CV."
+export const IMPORT_BUSY_MESSAGE =
+  "Many files are being read right now. Try again in a moment."
 
 const WORD =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -64,71 +77,36 @@ function refused(
 
 class ImportRefusal extends Error {}
 
-function isLockedPdf(error: unknown) {
-  return error instanceof Error && error.name === "PasswordException"
-}
-
-const PDF_PAGE_CAP = 20
-
-type PdfTextItem = { str?: string; hasEOL?: boolean }
-type PdfPage = { getTextContent: () => Promise<{ items: PdfTextItem[] }> }
-type PdfDocument = {
-  numPages: number
-  getPage: (page: number) => Promise<PdfPage>
-  destroy?: () => Promise<void> | void
-}
-
-async function openPdfDocument(bytes: Buffer): Promise<PdfDocument> {
-  const unpdf = await import("unpdf")
-  return (await unpdf.getDocumentProxy(new Uint8Array(bytes))) as PdfDocument
-}
-
-async function readPdfPages(pdf: PdfDocument, whole: boolean) {
-  if (whole && pdf.numPages > PDF_PAGE_CAP)
-    throw new ImportRefusal(IMPORT_PDF_PAGES_MESSAGE)
-  const count = Math.min(pdf.numPages, PDF_PAGE_CAP)
-  const pages: string[] = []
-  for (let page = 1; page <= count; page += 1) {
-    const content = await (await pdf.getPage(page)).getTextContent()
-    pages.push(
-      content.items
-        .map((item) => (item.str ?? "") + (item.hasEOL ? "\n" : ""))
-        .join("")
-    )
-  }
-  return pages.join("\n")
+const READ_REFUSALS: Partial<Record<ImportReadReason, string>> = {
+  pages: IMPORT_PDF_PAGES_MESSAGE,
+  locked: IMPORT_LOCKED_MESSAGE,
+  heavy: IMPORT_PDF_HEAVY_MESSAGE,
+  slow: IMPORT_PDF_HEAVY_MESSAGE,
+  text: IMPORT_TEXT_LONG_MESSAGE,
 }
 
 async function defaultPdfText(bytes: Buffer, whole = false) {
-  const pdf = await importParsers.openPdf(bytes)
-  bytes = Buffer.alloc(0)
-  void bytes
-  const pending = readPdfPages(pdf, whole)
-  void pending.catch(() => undefined)
   try {
-    return await withDeadline(pending)
-  } finally {
-    await pdf.destroy?.()
+    return await readImportText({
+      kind: "pdf",
+      bytes,
+      whole,
+      deadlineMs: importParsers.timeoutMs,
+    })
+  } catch (error) {
+    const message =
+      error instanceof ImportReadRefusal ? READ_REFUSALS[error.reason] : null
+    if (whole && message) throw new ImportRefusal(message)
+    throw error
   }
 }
 
-type MammothApi = {
-  extractRawText: (input: { buffer: Buffer }) => Promise<{ value: string }>
-}
-
-const DOCX_TEXT_CAP = 200_000
 const ZIP_ENTRY_CAP = 128
 const ZIP_DECLARED_CAP = 32_000_000
 const ZIP_DATA_DESCRIPTOR_FLAG = 0x08
 
 function entryHidesSizeUntilDataDescriptor(flags: number, compressed: number) {
   return (flags & ZIP_DATA_DESCRIPTOR_FLAG) !== 0 && compressed === 0
-}
-
-function mammothFromExportEquals(
-  loaded: MammothApi & { default?: MammothApi }
-) {
-  return loaded.default ?? loaded
 }
 
 function zipAllowsMammoth(bytes: Buffer) {
@@ -163,24 +141,11 @@ async function defaultDocxText(bytes: Buffer) {
   if (!zipAllowsMammoth(bytes)) {
     throw new Error("import-zip-entries")
   }
-  const loaded = (await import("mammoth")) as MammothApi & {
-    default?: MammothApi
-  }
-  const mammoth = mammothFromExportEquals(loaded)
-  const extracted = await mammoth.extractRawText({ buffer: bytes })
-  return extracted.value.slice(0, DOCX_TEXT_CAP)
-}
-
-function withDeadline<T>(work: Promise<T>) {
-  let timer: ReturnType<typeof setTimeout> | undefined
-  const timeout = new Promise<never>((_resolve, reject) => {
-    timer = setTimeout(
-      () => reject(new Error("import-parse-timeout")),
-      importParsers.timeoutMs
-    )
-  })
-  return Promise.race([work, timeout]).finally(() => {
-    if (timer) clearTimeout(timer)
+  return readImportText({
+    kind: "docx",
+    bytes,
+    whole: false,
+    deadlineMs: importParsers.timeoutMs,
   })
 }
 
@@ -274,7 +239,6 @@ export function mediaTypeForImport(kind: ImportKind) {
 
 export const importParsers = {
   timeoutMs: 10_000,
-  openPdf: openPdfDocument,
   pdfText: defaultPdfText,
   docxText: defaultDocxText,
   onInsert: null as (() => void) | null,
@@ -291,7 +255,7 @@ type ImportFileInput = { name: string; mediaType: string; bytes: Buffer }
 async function extractedText(input: ImportFileInput) {
   const kind = classifyImport(input)
   if (kind === "pdf") return importParsers.pdfText(input.bytes)
-  if (kind === "docx") return withDeadline(importParsers.docxText(input.bytes))
+  if (kind === "docx") return importParsers.docxText(input.bytes)
   return input.bytes.toString("utf8")
 }
 
@@ -329,12 +293,15 @@ export async function extractLetterAttachment(
 }
 
 async function importText(input: ImportFileInput, kind: "pdf" | "text") {
-  if (kind === "text") return input.bytes.toString("utf8")
+  if (kind === "text") {
+    if (input.bytes.length > IMPORT_TEXT_LIMITS.textFileBytes)
+      return new ImportRefusal(IMPORT_TEXT_LONG_MESSAGE)
+    return input.bytes.toString("utf8")
+  }
   try {
     return await importParsers.pdfText(input.bytes, true)
   } catch (error) {
     if (error instanceof ImportRefusal) return error
-    if (isLockedPdf(error)) return new ImportRefusal(IMPORT_LOCKED_MESSAGE)
     throw error
   }
 }

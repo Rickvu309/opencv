@@ -1,3 +1,4 @@
+import { IMPORT_TEXT_LIMITS } from "../import-limits.js"
 import type { TemplateLine } from "./template.js"
 
 export const IMPORT_LINE_CAP = 2000
@@ -114,6 +115,7 @@ function looksLikeName(line: string) {
 }
 
 function looksLikeContact(line: string) {
+  if (line.length > IMPORT_TEXT_LIMITS.contactLineChars) return false
   return (
     EMAIL.test(line) ||
     PHONE.test(line) ||
@@ -128,25 +130,50 @@ function bulletText(line: string) {
   return null
 }
 
+function utf8Bytes(char: string) {
+  const code = char.codePointAt(0) ?? 0
+  if (code < 0x80) return 1
+  if (code < 0x800) return 2
+  if (code < 0x10000) return 3
+  return 4
+}
+
+function splitWord(word: string): string[] {
+  const pieces: string[] = []
+  let piece = ""
+  let size = 0
+  for (const char of word) {
+    const bytes = utf8Bytes(char)
+    if (size + bytes > IMPORT_LINE_BYTES) {
+      pieces.push(piece)
+      piece = ""
+      size = 0
+    }
+    piece += char
+    size += bytes
+  }
+  if (piece !== "") pieces.push(piece)
+  return pieces
+}
+
 function splitLong(line: TemplateLine): TemplateLine[] {
   const encoder = new TextEncoder()
   if (encoder.encode(line.text).byteLength <= IMPORT_LINE_BYTES) return [line]
   const pieces: TemplateLine[] = []
   let current = ""
+  let size = 0
   for (const word of line.text.split(" ")) {
-    const next = current === "" ? word : `${current} ${word}`
-    if (encoder.encode(next).byteLength <= IMPORT_LINE_BYTES) {
-      current = next
+    const bytes = encoder.encode(word).byteLength
+    if (current !== "" && size + 1 + bytes <= IMPORT_LINE_BYTES) {
+      current += ` ${word}`
+      size += 1 + bytes
       continue
     }
     if (current !== "") pieces.push({ ...line, text: current })
-    current = word
-    while (encoder.encode(current).byteLength > IMPORT_LINE_BYTES) {
-      const cut = Array.from(current)
-      const half = cut.slice(0, Math.floor(cut.length / 2)).join("")
-      pieces.push({ ...line, text: half })
-      current = current.slice(half.length)
-    }
+    const parts = bytes > IMPORT_LINE_BYTES ? splitWord(word) : [word]
+    for (const part of parts.slice(0, -1)) pieces.push({ ...line, text: part })
+    current = parts.at(-1) ?? ""
+    size = encoder.encode(current).byteLength
   }
   if (current !== "") pieces.push({ ...line, text: current })
   return pieces
@@ -186,8 +213,25 @@ function classify(lines: readonly string[]): TemplateLine[] {
   return out
 }
 
+const TOO_MANY_LINES = `This file has more than ${IMPORT_LINE_CAP.toLocaleString("en-US")} lines of text. Import a shorter CV.`
+
+function refusedBeforeWork(raw: string, cleaned: readonly string[] | null) {
+  if (raw.length > IMPORT_TEXT_LIMITS.textChars)
+    return `This file has more than ${IMPORT_TEXT_LIMITS.textChars.toLocaleString("en-US")} characters of text. Import a shorter CV.`
+  if (!cleaned) return null
+  if (cleaned.length > IMPORT_LINE_CAP) return TOO_MANY_LINES
+  if (cleaned.some((line) => line.length > IMPORT_TEXT_LIMITS.lineChars))
+    return `This file has a line longer than ${IMPORT_TEXT_LIMITS.lineChars.toLocaleString("en-US")} characters. Import a CV with shorter lines.`
+  return null
+}
+
 export function importedTextLines(raw: string): ImportedLines {
-  const lines = classify(cleanLines(raw)).flatMap(splitLong)
+  const early = refusedBeforeWork(raw, null)
+  if (early) return { ok: false, message: early }
+  const cleaned = cleanLines(raw)
+  const refusal = refusedBeforeWork(raw, cleaned)
+  if (refusal) return { ok: false, message: refusal }
+  const lines = classify(cleaned).flatMap(splitLong)
   if (lines.length === 0)
     return {
       ok: false,
@@ -197,7 +241,7 @@ export function importedTextLines(raw: string): ImportedLines {
   if (lines.length > IMPORT_LINE_CAP)
     return {
       ok: false,
-      message: `This file has more than ${IMPORT_LINE_CAP.toLocaleString("en-US")} lines of text. Import a shorter CV.`,
+      message: TOO_MANY_LINES,
     }
   return { ok: true, lines }
 }

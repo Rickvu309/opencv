@@ -1,0 +1,13 @@
+{
+  "id": "parser-off-request-thread",
+  "file": "scripts/parser-off-request-thread.test.mjs",
+  "detector": {
+    "module": "scripts/lib/parser-off-request-thread.mjs",
+    "export": "detectRequestThreadParser"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "dbcc5d0b6b8a268f8788de55808c89e319590dbb",
+    "path": "apps/api/src/paper/import-parse.ts"
+  }
+}

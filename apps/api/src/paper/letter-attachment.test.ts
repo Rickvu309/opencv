@@ -8,6 +8,7 @@ import {
   testWebOrigin,
 } from "../test/harness.js"
 import { textDocx, textPdf } from "./import-fixtures.test.js"
+import { IMPORT_READ_LIMITS } from "./import-limits.js"
 import { importParsers } from "./import-parse.js"
 
 const WORD =
@@ -15,7 +16,6 @@ const WORD =
 
 const originalParsers = {
   timeoutMs: importParsers.timeoutMs,
-  openPdf: importParsers.openPdf,
   pdfText: importParsers.pdfText,
   docxText: importParsers.docxText,
   onInsert: importParsers.onInsert,
@@ -43,7 +43,6 @@ function postAttachment(
 
 afterEach(() => {
   importParsers.timeoutMs = originalParsers.timeoutMs
-  importParsers.openPdf = originalParsers.openPdf
   importParsers.pdfText = originalParsers.pdfText
   importParsers.docxText = originalParsers.docxText
   importParsers.onInsert = originalParsers.onInsert
@@ -139,6 +138,45 @@ describe("paper letter attachment extraction endpoint", () => {
 
     expect(await db.select().from(files)).toEqual([])
     expect(await db.select().from(paperDocs)).toEqual([])
+    await client.close()
+  })
+
+  it("keeps at most 200,000 characters of DOCX text and refuses a zip with too many entries", async () => {
+    const text = await importParsers.docxText(
+      textDocx(`${"A".repeat(IMPORT_READ_LIMITS.textChars)}DOCX-TAIL`)
+    )
+    expect(text).toHaveLength(IMPORT_READ_LIMITS.textChars)
+    expect(text).not.toContain("DOCX-TAIL")
+
+    const { db, client } = await createMigratedTestDb()
+    const app = createTestApp(db)
+    const owner = await signUp(app, {
+      name: "Zip",
+      email: "zip-letter-attachment@example.com",
+    })
+    const bomb = await postAttachment(
+      app,
+      owner.cookie,
+      textDocx("Hello zip cap", 300),
+      "bomb.docx",
+      WORD
+    )
+    expect(bomb.status).toBe(400)
+    expect(await bomb.json()).toMatchObject({
+      error: {
+        message:
+          "Could not read that file. Try another file or paste the job text.",
+      },
+    })
+    const fine = await postAttachment(
+      app,
+      owner.cookie,
+      textDocx("Hello zip cap", 100),
+      "fine.docx",
+      WORD
+    )
+    expect(fine.status).toBe(200)
+    expect(await db.select().from(files)).toEqual([])
     await client.close()
   })
 })
