@@ -105,6 +105,7 @@ const coachTaskConfirmationSchema = z
     input: z.unknown(),
     summary: z.string(),
     status: z.enum(["pending", "approved", "denied", "expired"]),
+    review: z.unknown().optional(),
   })
   .strict()
 const coachTaskUsageSchema = z

@@ -86,17 +86,23 @@ const unavailableChange =
 
 async function batchOf(owner: string, input: CanvasEdit): Promise<WordBatch> {
   const at = { doc: input.docId, basedOn: input.basedOn }
-  if (input.op === "deleteParagraph")
-    return { ...at, ops: [{ op: "delete", handle: input.paragraph }] }
   const page = await open(owner, {
     kind: "read",
     doc: input.docId,
     at: input.basedOn,
   })
+  const index =
+    "refused" in page
+      ? -1
+      : page.paragraphs.findIndex(
+          (paragraph) => paragraph.handle === input.paragraph
+        )
+  if (input.op === "deleteParagraph") {
+    if (!("refused" in page) && (page.paragraphs[index]?.text ?? "") !== "")
+      return packageFailure(unavailableChange)
+    return { ...at, ops: [{ op: "delete", handle: input.paragraph }] }
+  }
   if ("refused" in page) return packageFailure(unavailableChange)
-  const index = page.paragraphs.findIndex(
-    (paragraph) => paragraph.handle === input.paragraph
-  )
   const target = page.paragraphs[index]
   if (!target || target.held) return packageFailure(unavailableChange)
   if (input.op === "writeText") {

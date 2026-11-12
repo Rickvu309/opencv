@@ -1,8 +1,15 @@
+import { wordReviewSchema } from "@workspace/domain"
+
+export type WritingChange = {
+  op: "replace" | "setText" | "insert" | "delete"
+  before: string
+  after: string
+}
+
 export type WritingProposal = {
   toolCallId: string
   docId: string
-  before: string
-  after: string
+  changes: WritingChange[]
   pendingActionId: string | null
 }
 
@@ -37,7 +44,22 @@ function oneReplacement(input: unknown) {
   if (!("before" in edit) || typeof edit.before !== "string") return null
   if (!("after" in edit) || typeof edit.after !== "string") return null
   if (edit.before.length === 0) return null
-  return { docId: input.docId, before: edit.before, after: edit.after }
+  const change: WritingChange = {
+    op: "replace",
+    before: edit.before,
+    after: edit.after,
+  }
+  return { docId: input.docId, changes: [change] }
+}
+
+function reviewedBatch(input: unknown, review: unknown) {
+  if (!input || typeof input !== "object") return null
+  if (!("docId" in input) || typeof input.docId !== "string") return null
+  if (!("edits" in input) || !Array.isArray(input.edits)) return null
+  const parsed = wordReviewSchema.safeParse(review)
+  if (!parsed.success || parsed.data.docId !== input.docId) return null
+  if (parsed.data.operations.length !== input.edits.length) return null
+  return { docId: input.docId, changes: parsed.data.operations }
 }
 
 export function publishWritingProposal(toolCallId: string, input: unknown) {
@@ -77,6 +99,7 @@ type TaskConfirmation = {
   id: string
   input: unknown
   status: string
+  review?: unknown
 }
 
 function sameProposal(next: WritingProposal) {
@@ -84,8 +107,7 @@ function sameProposal(next: WritingProposal) {
   return (
     current.toolCallId === next.toolCallId &&
     current.docId === next.docId &&
-    current.before === next.before &&
-    current.after === next.after &&
+    JSON.stringify(current.changes) === JSON.stringify(next.changes) &&
     current.pendingActionId === next.pendingActionId
   )
 }
@@ -102,7 +124,9 @@ export function syncWritingProposalFromActions(
       (item) => item.id === pending.proposalId && item.status === "pending"
     )
     const parsed =
-      oneReplacement(pending.input) ?? oneReplacement(confirmation?.input)
+      oneReplacement(pending.input) ??
+      oneReplacement(confirmation?.input) ??
+      reviewedBatch(pending.input, confirmation?.review)
     if (parsed) {
       const next = {
         toolCallId: pending.toolCallId,

@@ -5,7 +5,7 @@ import { CommandError } from "./errors.js"
 const readDescription =
   "Read authorized Paper text and supported edit targets at one pinned revision. Follow nextCursor until null; keep the same document and revision. Locked content is context only. Reading does not grant permission to edit."
 const editDescription =
-  "Propose exact text replacements in supported regions from paper_read. Each before must be a nonempty exact substring occurring once in that target, including overlapping matches. Returns a pending proposalId and person approval link. The document is unchanged until the person approves. Never report Applied or Saved from this response."
+  "Propose Word operations against the revision you read as basedOn. Read line handles first. Send setText (handle and the whole new text of that line, including first words on an empty line), insert (after a handle, or null for the start, and the new line's text) or delete (handle), several in one edit when needed. Never address a held line. Returns a pending proposalId and person approval link. The document is unchanged until the person approves. Never report Applied or Saved from this response."
 
 export function paperAgentRefusal(name: string) {
   if (name !== "paper.read" && name !== "paper.edit") return null
@@ -22,7 +22,7 @@ export function paperEditBasisRefused(name: string, input: unknown) {
 }
 
 export const paperEditBasisMessage =
-  "This edit does not use a saved Word revision. Read the document again and propose one exact text replacement."
+  "This edit does not use a saved Word revision. Read the document again and propose Word operations against its revision."
 
 export function paperToolDescription(name: string) {
   if (name === "paper.read") return readDescription

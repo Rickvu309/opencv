@@ -68,13 +68,14 @@ async function snapshot(task: Task) {
     .from(toolIntents)
     .where(eq(toolIntents.taskId, task.id))
     .orderBy(toolIntents.step, toolIntents.slot)
-  const confirmations = await getDb()
+  const proposals = await getDb()
     .select({
       id: pendingActions.id,
       command: pendingActions.command,
       input: pendingActions.input,
       summary: pendingActions.summary,
       status: pendingActions.status,
+      frozenReview: pendingActions.frozenReview,
     })
     .from(pendingActions)
     .where(
@@ -84,6 +85,10 @@ async function snapshot(task: Task) {
       )
     )
     .orderBy(pendingActions.createdAt, pendingActions.id)
+  const confirmations = proposals.map(({ frozenReview, ...row }) => {
+    const review = frozenReviewOf(frozenReview)
+    return review == null ? row : { ...row, review }
+  })
   const [usage] = await getDb()
     .select()
     .from(coachUsage)
@@ -130,6 +135,11 @@ async function snapshot(task: Task) {
       cacheReadInputTokens: checkpoint?.usage.cacheReadInputTokens ?? 0,
     },
   })
+}
+
+function frozenReviewOf(value: unknown): unknown {
+  if (!value || typeof value !== "object" || !("review" in value)) return null
+  return value.review
 }
 
 export function taskSnapshot(taskId: string, ownerId: string) {

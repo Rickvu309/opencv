@@ -287,13 +287,13 @@ describe("word document module", () => {
           doc: blank.doc,
           basedOn: blank.revision,
           ops: [
-            { op: "setText", handle, text: "" },
+            { op: "delete", handle },
             { op: "insert", after: handle, text: "invented" },
           ],
         })
       )
       expect(unsplit.reason).toBe("order")
-      expect(unsplit.code).toBe("SPLIT")
+      expect(unsplit.code).toBe("REMOVED_IN_BATCH")
       const after = fileOf(await exportWord(owner, blank.doc, blank.revision))
       expect(Buffer.from(after.bytes)).toEqual(Buffer.from(before.bytes))
       expect(await storedVersions(owner)).toBe(versions)

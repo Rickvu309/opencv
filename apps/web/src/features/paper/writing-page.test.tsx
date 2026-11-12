@@ -7,6 +7,7 @@ import {
   fireEvent,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react"
 
 import { render } from "@/test/render-with-client.tsx"
@@ -194,6 +195,77 @@ it("shows a waiting change as the words before and after", async () => {
   expect(proposal).toHaveTextContent("After")
   expect(proposal).toHaveTextContent(after)
   expect(proposal).not.toHaveTextContent('{"command":"paper.edit"}')
+})
+
+it("lists every operation of a waiting Word batch before approval", async () => {
+  const handle = "33333333-3333-4333-8333-333333333333"
+  const input = {
+    docId: DOC,
+    basedOn: REVISION,
+    edits: [
+      { op: "setText", handle, text: "Dear Grace," },
+      { op: "insert", after: handle, text: "I write about the role." },
+      { op: "delete", handle: "44444444-4444-4444-8444-444444444444" },
+    ],
+  }
+  vi.stubGlobal("fetch", async () =>
+    Response.json({ ok: true, data: readPage("Dear Ada,") })
+  )
+  syncWritingProposalFromActions(
+    [
+      {
+        toolCallId: "call-batch",
+        operation: "paper.edit",
+        state: "proposed",
+        proposalId: PENDING,
+        input,
+      },
+    ],
+    [
+      {
+        id: PENDING,
+        status: "pending",
+        input,
+        review: {
+          docId: DOC,
+          basedOn: REVISION,
+          operations: [
+            { op: "setText", before: "Dear Ada,", after: "Dear Grace," },
+            { op: "insert", before: "", after: "I write about the role." },
+            { op: "delete", before: "Old line", after: "" },
+          ],
+        },
+      },
+    ]
+  )
+  render(<WritingPage docId={DOC} seed={draft("Dear Ada,")} />)
+  const proposal = await screen.findByRole("region", { name: "Coach proposal" })
+  expect(within(proposal).getAllByRole("listitem")).toHaveLength(3)
+  expect(proposal).toHaveTextContent("Change a line")
+  expect(proposal).toHaveTextContent("Dear Grace,")
+  expect(proposal).toHaveTextContent("Add a line")
+  expect(proposal).toHaveTextContent("I write about the role.")
+  expect(proposal).toHaveTextContent("Remove a line")
+  expect(proposal).toHaveTextContent("Old line")
+})
+
+it("shows nothing to approve for a Word batch without its review", () => {
+  syncWritingProposalFromActions(
+    [
+      {
+        toolCallId: "call-unreviewed",
+        operation: "paper.edit",
+        state: "proposed",
+        proposalId: PENDING,
+        input: {
+          docId: DOC,
+          edits: [{ op: "insert", after: null, text: "Unseen words" }],
+        },
+      },
+    ],
+    [{ id: PENDING, status: "pending", input: {} }]
+  )
+  expect(writingProposal()).toBeNull()
 })
 
 it("shows the approved words without a reload", async () => {

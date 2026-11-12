@@ -253,6 +253,33 @@ test("Word preparation detects transactions inside the complete planner", () => 
   )
 })
 
+test("Word batch preparation is held to the same planner rule", () => {
+  const planner = readFileSync(
+    new URL("../apps/api/src/paper/package-planner.ts", import.meta.url),
+    "utf8"
+  )
+  const batch = planner.indexOf("export async function prepareWordBatch")
+  assert.ok(batch > 0)
+  const head = planner.slice(0, batch)
+  const tail = planner.slice(batch)
+  for (const mutation of [
+    head + tail.replace("insideTransaction()", "false"),
+    head + tail.replace("await wordPackageBasis(", "await latestBasis("),
+    head + tail.replace("await draftBatch(", "await looseDraft("),
+    head +
+      tail.replace(
+        "const drafted = await draftBatch(",
+        "transaction(async () => {})\n  const drafted = await draftBatch("
+      ),
+  ]) {
+    assert.notEqual(mutation, planner)
+    assert.deepEqual(
+      detect(mutation).map(({ kind }) => kind),
+      ["writing-or-unpinned-package-planner"]
+    )
+  }
+})
+
 test("Word imports reject private children at retry and publication", () => {
   const source = readFileSync(
     new URL("../apps/api/src/paper/package-store.ts", import.meta.url),

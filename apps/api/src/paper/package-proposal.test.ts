@@ -56,8 +56,8 @@ function toldParts(told: string) {
 function expectTold(told: string, revision: string) {
   const parts = toldParts(told)
   expect(parts.split).toBeGreaterThan(told.indexOf(marker))
-  expect(parts.instructions).toContain("replaceText")
-  expect(parts.instructions).toContain("Do not use setText on that page.")
+  expect(parts.instructions).toContain("[line handle]")
+  expect(parts.instructions).toContain("setText with the handle")
   expect(parts.instructions).not.toContain("Harbor light")
   expect(parts.context).toContain(revision)
   expect(parts.context).toMatch(/\[t_[a-f0-9]{64}\]/)
