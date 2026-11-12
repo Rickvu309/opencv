@@ -8,7 +8,10 @@ import {
   type ReactNode,
 } from "react"
 import { useShortcut } from "@/lib/use-shortcut.ts"
-import { keepToastsClearOf } from "@/lib/toast-clearance.ts"
+import {
+  keepToastsBelowPageHeaderOf,
+  keepToastsClearOf,
+} from "@/lib/toast-clearance.ts"
 import { ignoreRejection } from "@/lib/quiet-rejection.ts"
 import { Outlet, useNavigate } from "@tanstack/react-router"
 import { useQueryClient } from "@tanstack/react-query"
@@ -375,7 +378,10 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
             "peer-data-[collapse-preview=true]/frame:md:pl-2"
           )}
         >
-          <div className="relative flex min-h-0 min-w-0 flex-1 bg-background md:rounded-[8px] md:border-[0.5px] md:border-border">
+          <div
+            ref={keepToastsBelowPageHeaderOf}
+            className="relative flex min-h-0 min-w-0 flex-1 bg-background md:rounded-[8px] md:border-[0.5px] md:border-border"
+          >
             <SidebarExpandContext value={sidebarExpand}>
               <FocusSafeRegion
                 concealed={panelOpen && (sheet || panel.mode === "full")}

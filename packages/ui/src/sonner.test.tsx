@@ -3,7 +3,7 @@ import { act, cleanup, render } from "@testing-library/react"
 import { afterEach, expect, it } from "vitest"
 
 import { Toaster, toastWithUndo } from "./components/sonner"
-import { TOAST_OFFSET_BOTTOM } from "./lib/toast-offset"
+import { TOAST_OFFSET_BOTTOM, TOAST_OFFSET_RIGHT } from "./lib/toast-offset"
 
 afterEach(cleanup)
 
@@ -32,5 +32,15 @@ it("keeps toasts in the bottom right corner, lifted by the offset the app shell 
   expect(toaster!.style.getPropertyValue("--mobile-offset-bottom")).toBe(
     `var(${TOAST_OFFSET_BOTTOM}, 16px)`
   )
-  expect(toaster!.style.getPropertyValue("--offset-right")).toBe("24px")
+  expect(toaster!.style.getPropertyValue("--offset-right")).toBe(
+    `var(${TOAST_OFFSET_RIGHT}, 24px)`
+  )
+})
+
+it("glides the toaster with the panel motion tokens and holds still for reduced motion", async () => {
+  const { container } = render(<Toaster />)
+  const toaster = await shownToaster(container)
+  expect(toaster!.className).toContain("duration-(--duration-panel)!")
+  expect(toaster!.className).toContain("ease-(--ease-panel)!")
+  expect(toaster!.className).toContain("motion-reduce:transition-none!")
 })

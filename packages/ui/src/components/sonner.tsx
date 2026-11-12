@@ -1,16 +1,29 @@
 import type { ComponentProps } from "react"
 import { Toaster as Sonner, toast } from "sonner"
 import { cn } from "cn"
-import { toastOffsetBottom } from "@workspace/ui/lib/toast-offset"
+import {
+  TOAST_CORNER_ON_PHONES_PX,
+  TOAST_CORNER_PX,
+  toastOffsetBottom,
+  toastOffsetRight,
+} from "@workspace/ui/lib/toast-offset"
 
-const clearOfBottomChrome = { bottom: toastOffsetBottom(24) }
-const clearOfBottomChromeOnPhones = { bottom: toastOffsetBottom(16) }
+const clearOfBottomChrome = {
+  bottom: toastOffsetBottom(TOAST_CORNER_PX),
+  right: toastOffsetRight(TOAST_CORNER_PX),
+}
+const clearOfBottomChromeOnPhones = {
+  bottom: toastOffsetBottom(TOAST_CORNER_ON_PHONES_PX),
+}
+
+const glidesWithPanels =
+  "transition-[bottom,right,transform]! duration-(--duration-panel)! ease-(--ease-panel)! motion-reduce:transition-none!"
 
 function Toaster({ className, ...props }: ComponentProps<typeof Sonner>) {
   return (
     <Sonner
       data-slot="toaster"
-      className={cn("toaster group", className)}
+      className={cn("toaster group", glidesWithPanels, className)}
       offset={clearOfBottomChrome}
       mobileOffset={clearOfBottomChromeOnPhones}
       toastOptions={{
