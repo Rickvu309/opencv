@@ -1,3 +1,4 @@
+import { createAuthLimitTable } from "./auth-limit-schema.js"
 import { createAuthTables } from "./auth-schema.js"
 import { bytea, timestamptz, type CheckpointUsage } from "./column-types.js"
 import { createJobTables } from "./job-schema.js"
@@ -25,6 +26,8 @@ export const opencvApp = pgSchema("opencv_app")
 
 export const { user, session, account, verification, connections } =
   createAuthTables(opencvApp)
+
+export const authLimitCounters = createAuthLimitTable(opencvApp)
 
 export const {
   oauthClient,
