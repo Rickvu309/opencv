@@ -56,6 +56,10 @@ async function takeSlot() {
   })
 }
 
+function canMeasure(worker: Worker) {
+  return typeof worker.getHeapStatistics === "function"
+}
+
 function runWorker(
   kind: "pdf" | "docx",
   source: Uint8Array,
@@ -90,7 +94,7 @@ function runWorker(
       deadlineMs
     )
     const watch = setInterval(() => {
-      if (measuring || settled) return
+      if (measuring || settled || !canMeasure(worker)) return
       measuring = true
       worker
         .getHeapStatistics()

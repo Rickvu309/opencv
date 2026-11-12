@@ -71,6 +71,25 @@ export async function inflateBombPdf(inflatedBytes: number) {
   })
 }
 
+export async function hexWrappedBombPdf(inflatedBytes: number) {
+  const hex = Buffer.from(
+    `${(await deflatedRepeat("(a b) Tj ", inflatedBytes)).toString("hex")}>`
+  )
+  return pdfFrom([
+    "<< /Type /Catalog /Pages 2 0 R >>",
+    "<< /Type /Pages /Count 1 /Kids [3 0 R] >>",
+    "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>",
+    Buffer.concat([
+      Buffer.from(
+        `<< /Length ${hex.length} /Filter [/ASCIIHexDecode /FlateDecode] >>\nstream\n`
+      ),
+      hex,
+      Buffer.from("\nendstream"),
+    ]),
+    "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+  ])
+}
+
 export function manyItemsPdf(items: number) {
   const body = `BT /F1 1 Tf ${"(a) Tj 0 -1 Td\n".repeat(items)}ET\n`
   return onePagePdf({ content: deflateSync(Buffer.from(body)) })

@@ -10,6 +10,7 @@ import {
 import { textPdf } from "./import-fixtures.test.js"
 import {
   declaredPagesPdf,
+  hexWrappedBombPdf,
   inflateBombPdf,
   manyEntriesDocx,
   manyItemsPdf,
@@ -141,6 +142,18 @@ describe("hostile uploads stay bounded", () => {
     const result = await importFile(
       "cv.pdf",
       await inflateBombPdf(256 * 2 ** 20)
+    )
+    expect(result.outcome).toEqual({
+      ok: false,
+      message: IMPORT_PDF_HEAVY_MESSAGE,
+    })
+    expectBounded(result)
+  })
+
+  it("stops a PDF whose bomb hides behind a second filter with the worker's memory watch, heap limit or deadline", async () => {
+    const result = await importFile(
+      "cv.pdf",
+      await hexWrappedBombPdf(256 * 2 ** 20)
     )
     expect(result.outcome).toEqual({
       ok: false,
