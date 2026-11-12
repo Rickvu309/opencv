@@ -17,7 +17,6 @@ export const WORD_LIMITS = Object.freeze({
 export const WORD_DOCUMENT_MEDIA_TYPE =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document" as const
 
-const wordOwnerSchema = z.string().min(1)
 const wordDocSchema = z.string().uuid()
 const wordRevisionSchema = z.string().uuid()
 const wordHandleSchema = z.string().uuid()
@@ -88,78 +87,13 @@ export const wordBatchSchema = z
     return total <= WORD_LIMITS.maxBatchTextBytes
   }, "Total text bytes in batch exceed limit of 64 KiB.")
 
-const wordPieceSchema = z
-  .object({
-    text: z.string(),
-    editable: z.boolean(),
-  })
-  .strict()
-
-const wordParagraphSchema = z
-  .object({
-    handle: wordHandleSchema,
-    text: z.string(),
-    pieces: z.array(wordPieceSchema),
-    held: z.boolean(),
-    message: z.string(),
-    code: z.string().nullable(),
-  })
-  .strict()
-
 const wordPageLabelSchema = z.enum(["cv", "letter"])
-
-const wordPageSchema = z
-  .object({
-    doc: wordDocSchema,
-    revision: wordRevisionSchema,
-    name: z.string(),
-    label: wordPageLabelSchema,
-    paragraphs: z.array(wordParagraphSchema),
-  })
-  .strict()
-
-const wordReasonSchema = z.enum([
-  "stale",
-  "held",
-  "plain",
-  "limit",
-  "order",
-  "closed",
-  "missing",
-  "foreign",
-])
-
-const wordRefusalSchema = z
-  .object({
-    refused: z.literal(true),
-    reason: wordReasonSchema,
-    message: z.string(),
-    code: z.string().nullable(),
-    handle: wordHandleSchema.nullable(),
-  })
-  .strict()
 
 export const wordUndoSchema = z
   .object({
     doc: wordDocSchema,
     revision: wordRevisionSchema,
     restore: wordRevisionSchema,
-  })
-  .strict()
-
-const wordCommitSchema = z
-  .object({
-    refused: z.literal(false),
-    page: wordPageSchema,
-    undo: wordUndoSchema.nullable(),
-  })
-  .strict()
-
-const wordFileSchema = z
-  .object({
-    bytes: z.instanceof(Uint8Array),
-    mediaType: z.literal(WORD_DOCUMENT_MEDIA_TYPE),
-    revision: wordRevisionSchema,
   })
   .strict()
 
@@ -184,17 +118,61 @@ export const wordSourceSchema = z.discriminatedUnion("kind", [
   wordSourceMintSchema,
 ])
 
-export type WordOwner = z.infer<typeof wordOwnerSchema>
 export type WordDoc = z.infer<typeof wordDocSchema>
 export type WordRevision = z.infer<typeof wordRevisionSchema>
 export type WordHandle = z.infer<typeof wordHandleSchema>
 export type WordOp = z.infer<typeof wordOpSchema>
 export type WordBatch = z.infer<typeof wordBatchSchema>
-export type WordParagraph = z.infer<typeof wordParagraphSchema>
-export type WordPage = z.infer<typeof wordPageSchema>
-export type WordReason = z.infer<typeof wordReasonSchema>
-export type WordRefusal = z.infer<typeof wordRefusalSchema>
 export type WordUndo = z.infer<typeof wordUndoSchema>
-export type WordCommit = z.infer<typeof wordCommitSchema>
-export type WordFile = z.infer<typeof wordFileSchema>
 export type WordSource = z.infer<typeof wordSourceSchema>
+
+export type WordOwner = string
+
+type WordPiece = { readonly text: string; readonly editable: boolean }
+
+export type WordParagraph = {
+  readonly handle: WordHandle
+  readonly text: string
+  readonly pieces: readonly WordPiece[]
+  readonly held: boolean
+  readonly message: string
+  readonly code: string | null
+}
+
+export type WordPage = {
+  readonly doc: WordDoc
+  readonly revision: WordRevision
+  readonly name: string
+  readonly label: "cv" | "letter"
+  readonly paragraphs: readonly WordParagraph[]
+}
+
+export type WordReason =
+  | "stale"
+  | "held"
+  | "plain"
+  | "limit"
+  | "order"
+  | "closed"
+  | "missing"
+  | "foreign"
+
+export type WordRefusal = {
+  readonly refused: true
+  readonly reason: WordReason
+  readonly message: string
+  readonly code: string | null
+  readonly handle: WordHandle | null
+}
+
+export type WordCommit = {
+  readonly refused: false
+  readonly page: WordPage
+  readonly undo: WordUndo | null
+}
+
+export type WordFile = {
+  readonly bytes: Uint8Array
+  readonly mediaType: typeof WORD_DOCUMENT_MEDIA_TYPE
+  readonly revision: WordRevision
+}
