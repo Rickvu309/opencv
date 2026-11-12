@@ -78,6 +78,9 @@ describe("a kit dialog keeps Tab inside", () => {
     "cycles every stop and never leaves, backwards %s",
     async (backwards) => {
       render(<KitConfirm />)
+      expect(await screen.findByRole("dialog")).toBe(
+        document.querySelector('[data-slot="dialog-content"]')
+      )
       const visits = await tabCycle(backwards)
       expect(visits.join(" | ")).not.toContain("outside")
       expect(new Set(visits)).toEqual(
