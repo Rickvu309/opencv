@@ -7,7 +7,9 @@ import { messageOf } from "@/features/paper/paper-library-support.ts"
 import { runContractCommand, undoActivity } from "@/lib/contract-client.ts"
 import {
   subscribeWritingProposal,
+  wordChangeRows,
   writingProposal,
+  type WritingChange,
 } from "@/lib/writing-proposal.ts"
 
 type ProposalPhase = "idle" | "approving" | "approved" | "undoing" | "undone"
@@ -67,6 +69,16 @@ function proposalReducer(
         error: event.message,
       }
   }
+}
+
+const changeTitles = {
+  setText: "Change a line",
+  insert: "Add a line",
+  delete: "Remove a line",
+} as const
+
+function shownWords(change: WritingChange, text: string) {
+  return change.op !== "replace" && text === "" ? "(empty line)" : text
 }
 
 function activityIdFrom(result: unknown) {
@@ -160,18 +172,40 @@ export function WritingProposalCard({
       <p className="text-sm text-muted-foreground">
         This change waits for you.
       </p>
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] gap-3">
-        <div className="flex flex-col gap-1 rounded-md border p-3">
-          <p className="text-sm text-muted-foreground">Before</p>
-          <p className="break-words whitespace-pre-wrap">{proposal.before}</p>
-        </div>
-        <div className="flex flex-col gap-1 rounded-md border p-3">
-          <p className="text-sm text-muted-foreground">After</p>
-          <p className="break-words whitespace-pre-wrap">{proposal.after}</p>
-        </div>
-      </div>
+      <ol className="flex flex-col gap-3">
+        {proposal.changes.map((change, index) => (
+          <li key={index} className="flex flex-col gap-2">
+            {change.op === "replace" ? null : (
+              <p className="text-sm font-medium">{changeTitles[change.op]}</p>
+            )}
+            {wordChangeRows(change)
+              .filter((row) => row.label === "Where")
+              .map((row) => (
+                <p key={row.label}>{row.text}</p>
+              ))}
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] gap-3">
+              {change.op === "insert" ? null : (
+                <div className="flex flex-col gap-1 rounded-md border p-3">
+                  <p className="text-sm text-muted-foreground">Before</p>
+                  <p className="break-words whitespace-pre-wrap">
+                    {shownWords(change, change.before)}
+                  </p>
+                </div>
+              )}
+              {change.op === "delete" ? null : (
+                <div className="flex flex-col gap-1 rounded-md border p-3">
+                  <p className="text-sm text-muted-foreground">After</p>
+                  <p className="break-words whitespace-pre-wrap">
+                    {shownWords(change, change.after)}
+                  </p>
+                </div>
+              )}
+            </div>
+          </li>
+        ))}
+      </ol>
       <div className="flex flex-wrap gap-2">
-        {phase === "idle" || phase === "approving" ? (
+        {(phase === "idle" || phase === "approving") && !proposal.withheld ? (
           <Button
             type="button"
             className="h-11 md:h-9"
@@ -195,6 +229,7 @@ export function WritingProposalCard({
         {phase === "approved" ? <p>Approved</p> : null}
         {phase === "undone" ? <p>Undone</p> : null}
       </div>
+      {proposal.withheld ? <p>{proposal.withheld}</p> : null}
       {error ? <p role="alert">{error}</p> : null}
     </section>
   )

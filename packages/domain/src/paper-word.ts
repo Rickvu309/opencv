@@ -70,6 +70,31 @@ const wordOpSchema = z.discriminatedUnion("op", [
   wordDeleteOpSchema,
 ])
 
+export const wordConfirmedOpsSchema = z
+  .array(wordOpSchema)
+  .min(1)
+  .max(WORD_LIMITS.maxOpsPerConfirmedEdit)
+
+export const wordReviewSchema = z
+  .object({
+    docId: wordDocSchema,
+    basedOn: wordRevisionSchema,
+    operations: z
+      .array(
+        z
+          .object({
+            op: z.enum(["setText", "insert", "delete"]),
+            before: z.string(),
+            after: z.string(),
+            place: z.string().nullable().optional(),
+          })
+          .strict()
+      )
+      .min(1)
+      .max(WORD_LIMITS.maxOpsPerConfirmedEdit),
+  })
+  .strict()
+
 export const wordBatchSchema = z
   .object({
     doc: wordDocSchema,

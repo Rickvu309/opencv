@@ -1,9 +1,54 @@
+import { useSyncExternalStore } from "react"
+import { wordReviewSchema } from "@workspace/domain"
+
+export const WORD_BATCH_HIDDEN =
+  "Approve is unavailable because this change cannot be shown in full."
+
+export type WritingChange = {
+  op: "replace" | "setText" | "insert" | "delete"
+  before: string
+  after: string
+  place?: string | null
+}
+
 export type WritingProposal = {
   toolCallId: string
   docId: string
-  before: string
-  after: string
+  changes: WritingChange[]
   pendingActionId: string | null
+  withheld: string | null
+}
+
+export type WordBatchView =
+  | { state: "none" }
+  | { state: "withheld"; reason: string }
+  | { state: "ready"; changes: WritingChange[] }
+
+export function shownWord(text: string) {
+  return text === "" ? "(empty line)" : text
+}
+
+export function wordChangeRows(change: WritingChange) {
+  if (change.op === "setText") {
+    return [
+      { label: "Before", text: shownWord(change.before) },
+      { label: "After", text: shownWord(change.after) },
+    ]
+  }
+  if (change.op === "delete") {
+    return [{ label: "Line", text: shownWord(change.before) }]
+  }
+  if (change.op !== "insert" || change.place === undefined) return []
+  return [
+    {
+      label: "Where",
+      text:
+        change.place === null
+          ? "At the start of the page"
+          : `After this line: ${shownWord(change.place)}`,
+    },
+    { label: "New line", text: shownWord(change.after) },
+  ]
 }
 
 type Listener = () => void
@@ -37,14 +82,159 @@ function oneReplacement(input: unknown) {
   if (!("before" in edit) || typeof edit.before !== "string") return null
   if (!("after" in edit) || typeof edit.after !== "string") return null
   if (edit.before.length === 0) return null
-  return { docId: input.docId, before: edit.before, after: edit.after }
+  const change: WritingChange = {
+    op: "replace",
+    before: edit.before,
+    after: edit.after,
+  }
+  return { docId: input.docId, changes: [change], withheld: null }
+}
+
+function isWordEdit(
+  edit: unknown
+): edit is { op: "setText" | "insert" | "delete"; text?: string } {
+  if (!edit || typeof edit !== "object" || !("op" in edit)) return false
+  return edit.op === "setText" || edit.op === "insert" || edit.op === "delete"
+}
+
+function wordEdits(input: unknown) {
+  if (!input || typeof input !== "object") return null
+  if (!("docId" in input) || typeof input.docId !== "string") return null
+  if (!("edits" in input) || !Array.isArray(input.edits)) return null
+  if (input.edits.length === 0 || !input.edits.every(isWordEdit)) return null
+  return { docId: input.docId, edits: input.edits }
+}
+
+function hidden(docId: string) {
+  return { docId, changes: [], withheld: WORD_BATCH_HIDDEN }
+}
+
+function wordBatchFrom(input: unknown, review: unknown) {
+  const batch = wordEdits(input)
+  if (!batch) return null
+  const parsed = wordReviewSchema.safeParse(review)
+  if (!parsed.success || parsed.data.docId !== batch.docId)
+    return hidden(batch.docId)
+  if (parsed.data.operations.length !== batch.edits.length)
+    return hidden(batch.docId)
+  const changes: WritingChange[] = []
+  for (let index = 0; index < batch.edits.length; index += 1) {
+    const edit = batch.edits[index]
+    const operation = parsed.data.operations[index]
+    if (!edit || !operation || operation.op !== edit.op)
+      return hidden(batch.docId)
+    if (edit.op === "delete") {
+      changes.push({ op: "delete", before: operation.before, after: "" })
+      continue
+    }
+    if (!("text" in edit) || operation.after !== edit.text)
+      return hidden(batch.docId)
+    if (edit.op === "setText") {
+      changes.push({
+        op: "setText",
+        before: operation.before,
+        after: operation.after,
+      })
+      continue
+    }
+    if (operation.place === undefined) return hidden(batch.docId)
+    changes.push({
+      op: "insert",
+      before: "",
+      after: operation.after,
+      place: operation.place,
+    })
+  }
+  return { docId: batch.docId, changes, withheld: null }
+}
+
+function isWordReview(review: unknown) {
+  return !!review && typeof review === "object" && "operations" in review
+}
+
+function viewFromReview(review: unknown): WordBatchView {
+  if (!isWordReview(review)) return { state: "none" }
+  const parsed = wordReviewSchema.safeParse(review)
+  if (!parsed.success) return { state: "withheld", reason: WORD_BATCH_HIDDEN }
+  const changes: WritingChange[] = []
+  for (const operation of parsed.data.operations) {
+    if (operation.op !== "insert") {
+      changes.push({
+        op: operation.op,
+        before: operation.before,
+        after: operation.after,
+      })
+      continue
+    }
+    if (operation.place === undefined) {
+      return { state: "withheld", reason: WORD_BATCH_HIDDEN }
+    }
+    changes.push({
+      op: "insert",
+      before: "",
+      after: operation.after,
+      place: operation.place,
+    })
+  }
+  return { state: "ready", changes }
+}
+
+function isWordProposal(proposal: WritingProposal) {
+  return (
+    proposal.withheld !== null ||
+    proposal.changes.some((change) => change.op !== "replace")
+  )
+}
+
+export function wordBatchView(
+  pendingActionId: string,
+  review: unknown,
+  proposal: WritingProposal | null
+): WordBatchView {
+  const carried = viewFromReview(review)
+  if (carried.state !== "none") return carried
+  if (!proposal || proposal.pendingActionId !== pendingActionId) {
+    return { state: "none" }
+  }
+  if (!isWordProposal(proposal)) return { state: "none" }
+  if (proposal.withheld) return { state: "withheld", reason: proposal.withheld }
+  return {
+    state: "ready",
+    changes: proposal.changes.filter((change) => change.op !== "replace"),
+  }
+}
+
+export function useWordBatchApproval(pendingActionId: string, review: unknown) {
+  const proposal = useSyncExternalStore(
+    subscribeWritingProposal,
+    writingProposal,
+    () => null
+  )
+  return wordBatchView(pendingActionId, review, proposal)
+}
+
+function publish(
+  toolCallId: string,
+  parsed: Omit<WritingProposal, "toolCallId" | "pendingActionId">
+) {
+  const pendingActionId =
+    current?.toolCallId === toolCallId ? current.pendingActionId : null
+  current = { toolCallId, pendingActionId, ...parsed }
+  emit()
 }
 
 export function publishWritingProposal(toolCallId: string, input: unknown) {
   const parsed = oneReplacement(input)
-  if (!parsed) return
-  current = { toolCallId, pendingActionId: null, ...parsed }
-  emit()
+  if (parsed) publish(toolCallId, parsed)
+}
+
+export function publishWordBatch(
+  toolCallId: string,
+  input: unknown,
+  review: unknown
+) {
+  const parsed = wordBatchFrom(input, review)
+  if (parsed) publish(toolCallId, parsed)
 }
 
 export function attachWritingProposal(
@@ -77,6 +267,7 @@ type TaskConfirmation = {
   id: string
   input: unknown
   status: string
+  review?: unknown
 }
 
 function sameProposal(next: WritingProposal) {
@@ -84,9 +275,9 @@ function sameProposal(next: WritingProposal) {
   return (
     current.toolCallId === next.toolCallId &&
     current.docId === next.docId &&
-    current.before === next.before &&
-    current.after === next.after &&
-    current.pendingActionId === next.pendingActionId
+    JSON.stringify(current.changes) === JSON.stringify(next.changes) &&
+    current.pendingActionId === next.pendingActionId &&
+    current.withheld === next.withheld
   )
 }
 
@@ -102,7 +293,10 @@ export function syncWritingProposalFromActions(
       (item) => item.id === pending.proposalId && item.status === "pending"
     )
     const parsed =
-      oneReplacement(pending.input) ?? oneReplacement(confirmation?.input)
+      oneReplacement(pending.input) ??
+      oneReplacement(confirmation?.input) ??
+      wordBatchFrom(pending.input, confirmation?.review) ??
+      wordBatchFrom(confirmation?.input, confirmation?.review)
     if (parsed) {
       const next = {
         toolCallId: pending.toolCallId,

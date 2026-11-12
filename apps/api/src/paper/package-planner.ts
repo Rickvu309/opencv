@@ -1,6 +1,8 @@
 import {
   paperPackageEditSchema,
+  paperPackageEditsSchema,
   paperPackageProjectionSchema,
+  wordConfirmedOpsSchema,
   type WordOp,
   type WordParagraph,
   type WordRefusal,
@@ -15,14 +17,20 @@ import { uniqueSpan } from "./package-spans.js"
 import { wordPackageBasis } from "./package-store.js"
 import { xmlCharacters } from "./package-xml.js"
 import { draftBatch, open } from "./word/document.js"
-import { changedSpan, type WordSpan } from "./word/mutate.js"
+import { changedSpan, type WordSpan } from "./word/runs.js"
 
-export const wordPackageEditSchema = paperPackageEditSchema
+const wordBatchEditSchema = paperPackageEditSchema.extend({
+  edits: wordConfirmedOpsSchema,
+})
+
+export const wordPackageEditSchema = paperPackageEditSchema.extend({
+  edits: z.union([paperPackageEditsSchema, wordConfirmedOpsSchema]),
+})
 
 type Projection = z.infer<typeof paperPackageProjectionSchema>
 type Region = Projection["regions"][number]
 type Editable = Extract<Region, { kind: "editable" }>
-type Edit = z.infer<typeof wordPackageEditSchema>["edits"][number]
+type Edit = z.infer<typeof paperPackageEditsSchema>[number]
 type Placed = { edit: Edit; region: Editable; handle: string; span: WordSpan }
 
 const sidecarKeys = z
@@ -155,18 +163,81 @@ export function plannedReplacements(
   return { changed, ops, spans }
 }
 
-export async function prepareWordPackage(owner: string, rawInput: unknown) {
-  if (insideTransaction())
-    return packageFailure("Prepare the Word edit before starting a save.")
-  const input = wordPackageEditSchema.parse(rawInput)
-  if (Buffer.byteLength(JSON.stringify(input)) > PACKAGE_LIMITS.requestBytes)
-    return packageFailure("This Word edit is too large. Send fewer changes.")
-  const { version, projection } = await wordPackageBasis(
-    owner,
-    input.docId,
-    input.basedOn
+function replacementPlan(
+  projection: Projection,
+  paragraphs: readonly WordParagraph[],
+  sidecar: unknown,
+  edits: readonly Edit[]
+) {
+  const keys = sidecarKeys
+    .parse(sidecar)
+    .paragraphs.map((paragraph) => paragraph.key)
+  const planned = plannedReplacements(projection, paragraphs, keys, edits)
+  return {
+    ops: planned.changed.length === 0 ? [] : planned.ops,
+    spans: planned.spans,
+    review: {
+      changes: planned.changed.map(({ edit, region }) => ({
+        targetId: edit.targetId,
+        before: edit.before,
+        after: edit.after,
+        location: region.location,
+        formatting: region.formatting,
+        context: region.context,
+      })),
+    },
+  }
+}
+
+function batchPlan(
+  paragraphs: readonly WordParagraph[],
+  ops: readonly WordOp[]
+) {
+  const lines = new Map(paragraphs.map((line) => [line.handle, line]))
+  const operations = ops.map((op) => {
+    if (op.op === "insert") {
+      if (op.after === null)
+        return {
+          op: "insert" as const,
+          before: "",
+          after: op.text,
+          place: null,
+        }
+      const anchor = lines.get(op.after)
+      if (!anchor)
+        return packageFailure(
+          "That line is not on this page. Read it again. No document was changed."
+        )
+      return {
+        op: "insert" as const,
+        before: "",
+        after: op.text,
+        place: anchor.text,
+      }
+    }
+    const line = lines.get(op.handle)
+    if (!line)
+      return packageFailure(
+        "That line is not on this page. Read it again. No document was changed."
+      )
+    return op.op === "setText"
+      ? { op: "setText" as const, before: line.text, after: op.text }
+      : { op: "delete" as const, before: line.text, after: "" }
+  })
+  const unchanged = operations.every(
+    (item) => item.op === "setText" && item.before === item.after
   )
-  const basis = {
+  return {
+    ops: unchanged ? [] : [...ops],
+    spans: new Map<string, WordSpan[]>(),
+    review: { operations },
+  }
+}
+
+function basisOf(
+  version: Awaited<ReturnType<typeof wordPackageBasis>>["version"]
+) {
+  return {
     docId: version.docId,
     incarnation: version.incarnation,
     revision: version.revision,
@@ -175,41 +246,60 @@ export async function prepareWordPackage(owner: string, rawInput: unknown) {
     projectionHash: version.projectionHash,
     projector: version.projector,
   }
+}
+
+function sized(input: { docId: string; basedOn: string }) {
+  if (Buffer.byteLength(JSON.stringify(input)) > PACKAGE_LIMITS.requestBytes)
+    return packageFailure("This Word edit is too large. Send fewer changes.")
+}
+
+async function pageAt(
+  owner: string,
+  input: { docId: string; basedOn: string }
+) {
   const page = await open(owner, {
     kind: "read",
     doc: input.docId,
     at: input.basedOn,
   })
   if ("refused" in page) return failWith(page)
-  const keys = sidecarKeys
-    .parse(version.sidecar)
-    .paragraphs.map((paragraph) => paragraph.key)
-  const planned = plannedReplacements(
+  return page
+}
+
+function reviewed<Review>(
+  input: { docId: string; basedOn: string },
+  review: Review
+) {
+  const full = { docId: input.docId, basedOn: input.basedOn, ...review }
+  if (Buffer.byteLength(JSON.stringify(full)) > 128 * 1024)
+    return packageFailure("This Word review is too large. Send fewer changes.")
+  return full
+}
+
+export async function prepareWordPackage(owner: string, rawInput: unknown) {
+  if (insideTransaction())
+    return packageFailure("Prepare the Word edit before starting a save.")
+  const input = paperPackageEditSchema.parse(rawInput)
+  sized(input)
+  const { version, projection } = await wordPackageBasis(
+    owner,
+    input.docId,
+    input.basedOn
+  )
+  const basis = basisOf(version)
+  const page = await pageAt(owner, input)
+  const plan = replacementPlan(
     projection,
     page.paragraphs,
-    keys,
+    version.sidecar,
     input.edits
   )
-  if (planned.changed.length === 0) return { kind: "unchanged" as const, basis }
-  const review = {
-    docId: input.docId,
-    basedOn: input.basedOn,
-    changes: planned.changed.map(({ edit, region }) => ({
-      targetId: edit.targetId,
-      before: edit.before,
-      after: edit.after,
-      location: region.location,
-      formatting: region.formatting,
-      context: region.context,
-    })),
-  }
-  if (Buffer.byteLength(JSON.stringify(review)) > 128 * 1024)
-    return packageFailure("This Word review is too large. Send fewer changes.")
-  if (planned.ops.length === 0) return { kind: "unchanged" as const, basis }
+  if (plan.ops.length === 0) return { kind: "unchanged" as const, basis }
+  const review = reviewed(input, plan.review)
   const drafted = await draftBatch(
     owner,
-    { doc: input.docId, basedOn: input.basedOn, ops: planned.ops },
-    planned.spans
+    { doc: input.docId, basedOn: input.basedOn, ops: plan.ops },
+    plan.spans
   )
   if (drafted.refused) return failWith(drafted)
   return {
@@ -220,4 +310,35 @@ export async function prepareWordPackage(owner: string, rawInput: unknown) {
     reviewHash: packageDigest(review),
     candidate: drafted.candidate,
   }
+}
+
+export async function prepareWordBatch(owner: string, rawInput: unknown) {
+  if (insideTransaction())
+    return packageFailure("Prepare the Word edit before starting a save.")
+  const input = wordBatchEditSchema.parse(rawInput)
+  sized(input)
+  const { version } = await wordPackageBasis(owner, input.docId, input.basedOn)
+  const basis = basisOf(version)
+  const page = await pageAt(owner, input)
+  const plan = batchPlan(page.paragraphs, input.edits)
+  if (plan.ops.length === 0) return { kind: "unchanged" as const, basis }
+  const review = reviewed(input, plan.review)
+  const drafted = await draftBatch(owner, {
+    doc: input.docId,
+    basedOn: input.basedOn,
+    ops: plan.ops,
+  })
+  if (drafted.refused) return failWith(drafted)
+  return {
+    kind: "prepared" as const,
+    basis,
+    inputHash: packageDigest(input),
+    review,
+    reviewHash: packageDigest(review),
+    candidate: drafted.candidate,
+  }
+}
+
+export function isWordBatch(rawInput: unknown) {
+  return wordBatchEditSchema.safeParse(rawInput).success
 }

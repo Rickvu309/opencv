@@ -148,6 +148,7 @@ export const chatToolPartSchema = z
     approval: z.enum(["pending", "approved", "denied", "expired"]).optional(),
     undone: z.boolean().optional(),
     detail: coachReceiptDetailSchema.optional(),
+    review: z.unknown().optional(),
   })
   .strict()
 

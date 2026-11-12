@@ -137,6 +137,25 @@ async function requireCandidateCapacity(
     )
 }
 
+const sidecarLines = z
+  .object({ paragraphs: z.array(z.unknown()) })
+  .passthrough()
+
+function restoreKeys<Sidecar extends object>(
+  candidate: Sidecar,
+  basis: unknown
+): Sidecar {
+  const forward = sidecarLines.safeParse(candidate)
+  const before = sidecarLines.safeParse(basis)
+  if (
+    !forward.success ||
+    !before.success ||
+    forward.data.paragraphs.length === before.data.paragraphs.length
+  )
+    return candidate
+  return { ...candidate, ...before.data }
+}
+
 const structuralPlan = Symbol("structural-plan")
 
 type StoredPackagePlan = {
@@ -218,7 +237,7 @@ export async function prepareStoredWordPackage(
       freshRestore
         ? undefined
         : {
-            ...plan.candidate.sidecar,
+            ...restoreKeys(plan.candidate.sidecar, basis.version.sidecar),
             revision: restoreRevision,
             packageHash: plan.basis.packageHash,
           }

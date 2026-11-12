@@ -15,6 +15,8 @@ import {
   receiptShowsUndo,
 } from "@/features/coach/coach-receipt.ts"
 import { ReceiptDetail } from "@/features/coach/rich-receipts.tsx"
+import { WordBatchPreview } from "@/features/coach/word-batch-preview.tsx"
+import { useWordBatchApproval } from "@/lib/writing-proposal.ts"
 
 import type { CoachToolPart } from "./coach-parts.ts"
 
@@ -120,6 +122,7 @@ export function CoachToolExtras({
           id={part.pendingActionId}
           status={part.approval ?? "pending"}
           command={tool.name}
+          review={part.review}
         />
       ) : null}
       {part.ok && part.detail ? <ReceiptDetail detail={part.detail} /> : null}
@@ -159,13 +162,16 @@ function CoachApproval({
   id,
   status,
   command,
+  review,
 }: {
   id: string
   status: "pending" | "approved" | "denied" | "expired"
   command: string
+  review?: unknown
 }) {
   const client = useQueryClient()
   const { activeChatId } = useChatStore()
+  const batch = useWordBatchApproval(id, review)
   const [{ busy: working, error }, dispatch] = useReducer(
     actionReducer,
     IDLE_ACTION
@@ -202,15 +208,18 @@ function CoachApproval({
       {status === "pending" ? (
         <>
           <p>Review this action before it runs.</p>
+          <WordBatchPreview batch={batch} />
           <div className="flex gap-2">
-            <Button
-              className="h-11 md:h-6"
-              size="xs"
-              disabled={working}
-              onClick={() => void decide(true)}
-            >
-              Approve
-            </Button>
+            {batch.state === "withheld" ? null : (
+              <Button
+                className="h-11 md:h-6"
+                size="xs"
+                disabled={working}
+                onClick={() => void decide(true)}
+              >
+                Approve
+              </Button>
+            )}
             <Button
               className="h-11 md:h-6"
               size="xs"

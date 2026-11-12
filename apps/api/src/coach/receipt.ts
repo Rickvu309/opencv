@@ -23,6 +23,7 @@ export function toolResultFromExecute(input: {
     | "output"
     | "activityId"
     | "reversal"
+    | "review"
   >
 }): CoachToolResultPart {
   const summary = input.result.summary || input.summary
@@ -46,6 +47,9 @@ export function toolResultFromExecute(input: {
           pendingActionId: input.result.pendingActionId,
           command: input.result.command ?? input.name,
         }
+      : {}),
+    ...(input.result.review !== undefined
+      ? { review: input.result.review }
       : {}),
   }
 }

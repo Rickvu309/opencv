@@ -22,6 +22,7 @@ import {
   paperPackageEditResultSchema,
   paperPackageEditsSchema,
 } from "./paper-package.js"
+import { wordConfirmedOpsSchema } from "./paper-word.js"
 import {
   paperSyncInputSchema,
   paperSyncOutputSchema,
@@ -245,17 +246,21 @@ export const paperContract = commandContract({
   }),
   "paper.edit": commandEntry({
     description:
-      "Edit a CV or letter by block id. Read paper.outline first and pass its revision as basedOn. Ops: setText (a block's text as inline markdown), setFields (role, company, period, location, school, degree, detail, label, items, level, kind), setHeader (name, email, phone, city, linkedin), insert (new blocks after a block id or after the text @start), insertInto (list items inside an experience, education or list item), move (after a block id or the text @start) and remove. When basedOn is a saved word revision, use replaceText with the target id, the exact before words, and the after words. The edit waits until the person approves. If the person types after the proposal, approval refuses and the document stays as it is. Read paper.outline again after a refusal.",
+      "Edit a CV or letter by block id. Read paper.outline first and pass its revision as basedOn. Ops: setText (a block's text as inline markdown), setFields (role, company, period, location, school, degree, detail, label, items, level, kind), setHeader (name, email, phone, city, linkedin), insert (new blocks after a block id or after the text @start), insertInto (list items inside an experience, education or list item), move (after a block id or the text @start) and remove. When basedOn is a saved word revision, address lines by the handle from paper.outline: setText (handle and the whole new text of that line, including first words on an empty line), insert (after a handle, or null for the start of the page, and the new line's text) and delete (handle). Send several operations in one edit to change several lines. replaceText with a target id and exact before and after words still works on that page. The edit waits until the person approves. If the person types after the proposal, approval refuses and the document stays as it is. Read paper.outline again after a refusal.",
     input: z
       .object({
         docId: paperIdSchema,
         basedOn: z.union([z.number().int().min(0), z.string().uuid()]),
-        edits: z.union([paperEditsSchema, paperPackageEditsSchema]),
+        edits: z.union([
+          paperEditsSchema,
+          paperPackageEditsSchema,
+          wordConfirmedOpsSchema,
+        ]),
       })
       .strict()
       .superRefine((input, ctx) => {
-        const word = input.edits.every((edit) => edit.op === "replaceText")
-        if (word !== (typeof input.basedOn === "string"))
+        const block = paperEditsSchema.safeParse(input.edits).success
+        if (block === (typeof input.basedOn === "string"))
           ctx.addIssue({
             code: "custom",
             message: "This edit does not match the saved document.",

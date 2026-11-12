@@ -481,7 +481,7 @@ describe("one classifier for imported pages", () => {
       )
       expect({ reason: kept.reason, code: kept.code }).toEqual({
         reason: "order",
-        code: "NOT_EMPTY",
+        code: "LAST_PARAGRAPH",
       })
     }))
 

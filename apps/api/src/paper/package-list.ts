@@ -14,6 +14,7 @@ import { getDb } from "../db/context.js"
 import { paperPackageHeads, paperPackageVersions } from "../db/schema.js"
 import { CommandError } from "../registry/errors.js"
 import { readWordPackage } from "./package-store.js"
+import { open } from "./word/document.js"
 
 const docIdSchema = z.string().uuid()
 
@@ -101,6 +102,20 @@ export async function ownedPackageOutline(
     } else {
       lines.push(`[locked] ${region.text}`)
     }
+  }
+  const word = await open(owner, {
+    kind: "read",
+    doc: docId,
+    at: page.revision,
+  })
+  if (!("refused" in word)) {
+    lines.push("Word lines for setText, insert and delete:")
+    for (const line of word.paragraphs)
+      lines.push(
+        line.held
+          ? `[held] ${line.text}`
+          : `[line ${line.handle}] ${line.text === "" ? "(empty line)" : line.text}`
+      )
   }
   let outline = lines.join("\n")
   let truncated = false

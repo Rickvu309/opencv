@@ -9,12 +9,21 @@ import type {
 } from "@workspace/domain"
 
 import {
+  changedSpan,
+  editedRun,
+  letters,
+  lineWith,
+  lineXml,
+  plainRun,
+  rebuiltRun,
+  runsOf,
+  type WordSpan,
+} from "./runs.js"
+import {
   classifyParagraph,
-  decodeWordText,
   paragraphsOf,
   type WordDisposition,
   type WordLine,
-  type WordRun,
 } from "./classify.js"
 
 export type WordSide = {
@@ -52,16 +61,10 @@ type Entry = {
   gap: string
   xml: string
   disposition: WordDisposition
+  nested: boolean
 }
 
 type Page = { entries: Entry[]; tail: string }
-
-export type WordSpan = {
-  start: number
-  end: number
-  text: string
-  lean: "before" | "after"
-}
 
 export type WordSpans = ReadonlyMap<WordHandle, readonly WordSpan[]>
 
@@ -73,6 +76,7 @@ type Step =
       spans: readonly WordSpan[] | null
     }
   | { kind: "delete"; handle: WordHandle }
+  | { kind: "insert"; after: WordHandle | null; text: string }
   | { kind: "split"; handle: WordHandle; at: number }
   | { kind: "join"; handle: WordHandle; joined: WordHandle }
 
@@ -123,109 +127,6 @@ function textOf(disposition: WordDisposition) {
   if (disposition.kind === "line") return disposition.line.text
   if (disposition.kind === "held") return disposition.text
   return ""
-}
-
-function letters(text: string) {
-  return [...text]
-}
-
-export function changedSpan(before: string, after: string): WordSpan {
-  const left = letters(before)
-  const right = letters(after)
-  const shortest = Math.min(left.length, right.length)
-  let prefix = 0
-  while (prefix < shortest && left[prefix] === right[prefix]) prefix += 1
-  let suffix = 0
-  while (
-    suffix < shortest - prefix &&
-    left[left.length - 1 - suffix] === right[right.length - 1 - suffix]
-  )
-    suffix += 1
-  return {
-    start: left.slice(0, prefix).join("").length,
-    end: left.slice(0, left.length - suffix).join("").length,
-    text: right.slice(prefix, right.length - suffix).join(""),
-    lean: "before",
-  }
-}
-
-function rawWith(raw: string, before: string, after: string) {
-  const change = changedSpan(before, after)
-  const bounds = new Map([[0, 0]])
-  let length = 0
-  for (const match of raw.matchAll(/&[^;]+;|\r\n?|[\s\S]/gu)) {
-    length += decodeWordText(match[0]).length
-    bounds.set(length, match.index + match[0].length)
-  }
-  const start = bounds.get(change.start)
-  const end = bounds.get(change.end)
-  if (start === undefined || end === undefined) return null
-  return raw.slice(0, start) + canvas.escapeText(change.text) + raw.slice(end)
-}
-
-function headWith(head: string, text: string) {
-  if (!text.startsWith(" ") && !text.endsWith(" ")) return head
-  const space = /(\s)xml:space=(["'])[^"']*\2/
-  if (space.test(head)) return head.replace(space, '$1xml:space="preserve"')
-  const at = head.length - 1
-  return head.slice(0, at) + ' xml:space="preserve"' + head.slice(at)
-}
-
-function rebuiltRun(run: WordRun, text: string): WordRun {
-  if (text === run.text) return run
-  const space = /^\s|\s$/.test(text) ? ' xml:space="preserve"' : ""
-  return {
-    xml: `${run.open}${run.props}<w:t${space}>${canvas.escapeText(text)}</w:t></w:r>`,
-    open: run.open,
-    props: run.props,
-    text,
-    body: null,
-    origin: run.origin,
-  }
-}
-
-function editedRun(run: WordRun, text: string): WordRun {
-  if (text === run.text) return run
-  const body = run.body
-  const raw = body ? rawWith(body.raw, run.text, text) : null
-  if (!body || raw === null) return rebuiltRun(run, text)
-  const head = headWith(body.head, text)
-  return {
-    ...run,
-    xml: body.lead + head + raw + body.trail,
-    text,
-    body: { ...body, head, raw },
-  }
-}
-
-function runsOf(line: WordLine) {
-  return line.parts.flatMap((part) => (part.run ? [part.run] : []))
-}
-
-function lineWith(open: string, props: string, runs: WordRun[]): WordLine {
-  return {
-    open,
-    props,
-    parts: runs.map((run) => ({ run, kept: null })),
-    text: runs.map((run) => run.text).join(""),
-    shape: null,
-    origin: null,
-  }
-}
-
-function lineXml(line: WordLine) {
-  const origin = line.origin
-  if (!origin)
-    return `${line.open}${line.props}${line.parts.map((part) => (part.run ? part.run.xml : part.kept.xml)).join("")}</w:p>`
-  let xml = origin.xml
-  for (const run of runsOf(line).reverse()) {
-    if (!run.origin) continue
-    xml =
-      xml.slice(0, run.origin.start - origin.start) +
-      run.xml +
-      xml.slice(run.origin.end - origin.start)
-  }
-  return line.open + xml.slice(origin.open.length)
 }
 
 function spansOf(line: WordLine) {
@@ -390,32 +291,24 @@ function plan(
   for (let at = 0; at < ops.length; at += 1) {
     const op = ops[at] as WordOp
     const next = ops[at + 1]
-    if (op.op === "insert")
-      return refuse(
-        "order",
-        "Paper adds a line only by splitting one. No document was changed.",
-        op.after,
-        "SPLIT"
-      )
-    if (op.op === "setText" && next?.op === "insert") {
-      const entry = entries[find(op.handle)]
-      if (!entry || next.after !== op.handle)
-        return refuse(
-          "order",
-          "A split adds the new line right after the line it splits.",
-          next.after,
-          "SPLIT"
-        )
+    if (op.op === "insert") {
+      steps.push({ kind: "insert", after: op.after, text: op.text })
+      continue
+    }
+    const splitting =
+      op.op === "setText" && next?.op === "insert"
+        ? entries[find(op.handle)]
+        : null
+    if (
+      op.op === "setText" &&
+      next?.op === "insert" &&
+      splitting &&
+      next.after === op.handle &&
+      textOf(splitting.disposition) === op.text + next.text
+    ) {
       const blocked =
-        heldRefusal(entry, op.handle) ?? shapeRefusal(entry, op.handle)
+        heldRefusal(splitting, op.handle) ?? shapeRefusal(splitting, op.handle)
       if (blocked) return blocked
-      if (textOf(entry.disposition) !== op.text + next.text)
-        return refuse(
-          "order",
-          "A split keeps every word of the line, in order.",
-          op.handle,
-          "SPLIT"
-        )
       steps.push({
         kind: "split",
         handle: op.handle,
@@ -453,7 +346,84 @@ function plan(
   return steps
 }
 
+function addedEntry(line: WordLine, gap: string): Entry {
+  return lineEntry(
+    {
+      handle: null,
+      key: randomUUID(),
+      textIds: [],
+      gap,
+      xml: "",
+      disposition: { kind: "line", line },
+      nested: false,
+    },
+    line
+  )
+}
+
+function following(entries: Entry[], from: number) {
+  let at = from
+  while (entries[at] && (entries[at]?.nested || entries[at]?.handle === null))
+    at += 1
+  return at
+}
+
+function inserted(
+  page: Page,
+  step: Extract<Step, { kind: "insert" }>
+): Page | WordRefusal {
+  const { entries, tail } = page
+  if (step.after === null) {
+    const at = following(entries, 0)
+    const added = lineWith("<w:p>", "", [plainRun(step.text)])
+    if (at > 0)
+      return {
+        entries: [
+          ...entries.slice(0, at),
+          addedEntry(added, ""),
+          ...entries.slice(at),
+        ],
+        tail,
+      }
+    const first = entries[0]
+    if (!first) return unsafe()
+    const body = /<w:body\b[^>]*>/.exec(first.gap)
+    if (!body) return unsafe()
+    const cut = body.index + body[0].length
+    return {
+      entries: [
+        addedEntry(added, first.gap.slice(0, cut)),
+        { ...first, gap: first.gap.slice(cut) },
+        ...entries.slice(1),
+      ],
+      tail,
+    }
+  }
+  const index = entries.findIndex((entry) => entry.handle === step.after)
+  const entry = entries[index]
+  if (!entry) return unsafe()
+  const blocked =
+    heldRefusal(entry, step.after) ?? shapeRefusal(entry, step.after)
+  if (blocked) return blocked
+  if (entry.disposition.kind !== "line") return unsafe()
+  const line = entry.disposition.line
+  const source = runsOf(line)[0]
+  const added = lineWith("<w:p>", line.props, [
+    source ? rebuiltRun(source, step.text) : plainRun(step.text),
+  ])
+  const at = following(entries, index + 1)
+  return {
+    entries: [
+      ...entries.slice(0, at),
+      addedEntry(added, ""),
+      ...entries.slice(at),
+    ],
+    tail,
+  }
+}
+
 function run(page: Page, step: Step): Page | WordRefusal {
+  if (step.kind === "insert") return inserted(page, step)
   const { entries, tail } = page
   const index = entries.findIndex((entry) => entry.handle === step.handle)
   const entry = entries[index]
@@ -494,12 +464,17 @@ function run(page: Page, step: Step): Page | WordRefusal {
   const shaped = shapeRefusal(entry, step.handle)
   if (shaped) return shaped
   if (step.kind === "delete") {
-    if (line.text !== "")
+    if (
+      line.text !== "" &&
+      !entries.some(
+        (other, at) => at !== index && other.disposition.kind === "line"
+      )
+    )
       return refuse(
         "order",
-        "Paper can only remove an empty line. No document was changed.",
+        "Paper will not remove the last line of the page. Clear its words instead. No document was changed.",
         step.handle,
-        "NOT_EMPTY"
+        "LAST_PARAGRAPH"
       )
     const [following, ...rest] = after
     if (!following) return { entries: before, tail: entry.gap + tail }
@@ -521,6 +496,7 @@ function run(page: Page, step: Step): Page | WordRefusal {
       gap: "",
       xml: "",
       disposition: entry.disposition,
+      nested: false,
     }
     return {
       entries: [
@@ -601,6 +577,7 @@ export function mutateWord(
       gap,
       xml: view.nested ? "" : view.slice,
       disposition: classifyParagraph(view),
+      nested: view.nested,
     }
   })
   const steps = plan(entries, ops, spans)

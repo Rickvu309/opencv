@@ -4,6 +4,7 @@ import {
   ERROR_CODES,
   paperContract,
   paperPackageEditResultSchema,
+  wordUndoSchema,
   type Actor,
 } from "@workspace/domain"
 import { eq } from "drizzle-orm"
@@ -20,14 +21,18 @@ import {
 import type { Registry } from "../registry/registry.js"
 import {
   commitWordCandidate,
+  persistWordPackage,
   restoreWordCandidate,
   revalidateWordCandidate,
   wordCandidateSchema,
   prepareStoredWordPackage,
 } from "./package-candidates.js"
 import { packageFailure } from "./package-pages.js"
+import { isWordBatch, prepareWordBatch } from "./package-planner.js"
+import { PACKAGE_PROFILE } from "./package-profile.js"
 import { revalidateUnchangedPackage } from "./package-restore.js"
 import { readWordPackage } from "./package-store.js"
+import { undo, WORD_UNDO_MOVED } from "./word/document.js"
 
 type EditInput = z.output<(typeof paperContract)["paper.edit"]["input"]>
 type EditOutput = z.output<(typeof paperContract)["paper.edit"]["output"]>
@@ -196,6 +201,12 @@ async function storedCandidate(owner: string, id: string, digest: string) {
   }
 }
 
+async function prepareStoredWordBatch(owner: string, input: EditInput) {
+  const plan = await prepareWordBatch(owner, input)
+  if (plan.kind === "unchanged") return plan
+  return persistWordPackage(owner, plan, PACKAGE_PROFILE.version, false)
+}
+
 const wordPackageReview: ReviewedCommand<
   EditInput,
   EditOutput,
@@ -225,7 +236,9 @@ const wordPackageReview: ReviewedCommand<
     requirePackageEnabled()
     if (typeof input.basedOn !== "string")
       return packageFailure("This Word edit does not name a saved revision.")
-    const plan = await prepareStoredWordPackage(actor.userId, input)
+    const plan = isWordBatch(input)
+      ? await prepareStoredWordBatch(actor.userId, input)
+      : await prepareStoredWordPackage(actor.userId, input)
     if (plan.kind === "unchanged") {
       const snapshot = {
         docId: plan.basis.docId,
@@ -354,6 +367,26 @@ export function registerWordPackageEdit(
       return { docId: restored.docId, revision: restored.revision }
     }
   )
+  registry.addUndoCommand(
+    {
+      name: "paper.undoWord",
+      description: "Put back the Word page from before one approved edit.",
+      input: wordUndoSchema,
+      coach: "never",
+      destructive: false,
+      idempotency: "keyed",
+      reversal: () => null,
+      step: () => "Undo a Word edit",
+      activity: () => null,
+    },
+    async (input, actor) => {
+      requirePackageEnabled()
+      const restored = await undo(actor.userId, input)
+      if (restored.refused)
+        throw new CommandError(ERROR_CODES.CONFLICT, restored.message)
+      return { docId: input.doc, revision: restored.page.revision }
+    }
+  )
   registry.addSelectedCommand(
     {
       name: "paper.edit",
@@ -365,20 +398,19 @@ export function registerWordPackageEdit(
       step: entry.step,
       reversal: (input, output) => {
         if (isPackageOutput(output)) {
-          if (!output.restore) return null
+          if (!output.restore || typeof input.basedOn !== "string") return null
           return {
-            command: "paper.restoreWord",
+            command: "paper.undoWord",
             input: {
-              docId: output.docId,
-              candidate: output.restore,
-              expectedRevision: output.revision,
+              doc: output.docId,
+              revision: output.revision,
+              restore: input.basedOn,
             },
             expect: {
               query: "paper.read",
               input: { docId: output.docId },
               matches: { revision: output.revision },
-              skipped:
-                "This Word document changed after the edit, so Undo was skipped.",
+              skipped: WORD_UNDO_MOVED,
             },
           }
         }
