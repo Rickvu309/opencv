@@ -37,7 +37,12 @@ test("screens lists every screen with its steps or why it cannot be reached", as
   )
   assert.ok(
     screens.some(
-      (screen) => screen.id === "paper-proposal-card" && screen.unreachable
+      (screen) => screen.id === "paper-proposal-card" && screen.steps > 0
+    )
+  )
+  assert.ok(
+    screens.some(
+      (screen) => screen.id === "coach-chat-streaming" && screen.unreachable
     )
   )
 })

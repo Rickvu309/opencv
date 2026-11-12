@@ -37,12 +37,14 @@ it.each(["approve", "deny", "expire", "undo"] as const)(
         actor: personActor(ownerId),
       })
       const jobId = z.object({ id: z.string() }).parse(created.output).id
+      const jobsBefore = await getDb().select().from(jobs)
+      expect(jobsBefore).toMatchObject([{ id: jobId, stage: "saved" }])
       const script = [
         {
           ...final,
           intents: [
             {
-              id: "delete",
+              id: "move",
               name: "job.move" as const,
               input: { jobId, stage: "applied" },
             },
@@ -83,7 +85,11 @@ it.each(["approve", "deny", "expire", "undo"] as const)(
       expect((await getDb().select().from(coachTasks))[0]?.state).toBe(
         "succeeded"
       )
-      expect(await getDb().select().from(jobs)).toHaveLength(1)
+      if (resolution === "approve" || resolution === "undo")
+        expect(await getDb().select().from(jobs)).toMatchObject([
+          { id: jobId, stage: "applied" },
+        ])
+      else expect(await getDb().select().from(jobs)).toEqual(jobsBefore)
       const decisions = await getDb().select().from(taskCheckpoints)
       expect(decisions.filter((row) => row.phase === "decision")).toHaveLength(
         2
@@ -106,14 +112,14 @@ it.each(["approve", "deny", "expire", "undo"] as const)(
             : "approved"
       expect(parts).toHaveLength(1)
       expect(parts[0]).toMatchObject({ name: "job.move", outcome })
+      const saved = (await getDb().select().from(chatMessages)).find(
+        (message) => message.role === "coach"
+      )
+      expect(
+        readStoredParts(saved!.parts).filter((part) => part.type === "tool")
+      ).toMatchObject([{ type: "tool", name: "job.move", outcome }])
       if (resolution === "deny" || resolution === "expire") {
         expect(parts[0]).toMatchObject({ approval: outcome })
-        const saved = (await getDb().select().from(chatMessages)).find(
-          (message) => message.role === "coach"
-        )
-        expect(
-          readStoredParts(saved!.parts).filter((part) => part.type === "tool")
-        ).toMatchObject([{ type: "tool", outcome }])
       } else {
         expect(parts[0]?.activityId).toBeTruthy()
         if (resolution === "undo") {
@@ -123,7 +129,9 @@ it.each(["approve", "deny", "expire", "undo"] as const)(
               .flatMap((message) => message.parts)
               .find((part) => part.type === "tool")
           ).toMatchObject({ outcome: "undone", undone: true })
-          expect(await getDb().select().from(jobs)).toHaveLength(1)
+          expect(await getDb().select().from(jobs)).toMatchObject([
+            { id: jobId, stage: "saved" },
+          ])
         }
       }
       expect(taskId).toBe(waiting?.id)
