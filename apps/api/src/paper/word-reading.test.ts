@@ -189,6 +189,15 @@ describe("one pinned Word document for the Coach and an agent", () => {
       expect(part.omittedChars).toBe(0)
       expect(part.omittedParagraphs).toBe(0)
       expect(parts.at(-1)?.outline).toContain(text.at(-1))
+      const second = parts[1]
+      if (!second) throw new Error("missing second part")
+      expect(
+        await registry.read(
+          "paper.outline",
+          { docId: parsePaperId(head.docId), cursor: parts[0]?.nextCursor },
+          personActor(owner)
+        )
+      ).toEqual(second)
       await expect(
         readWordOutline(
           stranger,
