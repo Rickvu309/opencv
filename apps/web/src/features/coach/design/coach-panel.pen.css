@@ -83,29 +83,3 @@
     font-size: 13.5px;
   }
 }
-
-@media (prefers-reduced-motion: no-preference) and (min-width: 48rem) {
-  [data-pen-surface="coach"][data-slot="coach-panel"][data-panel-mode="side"] {
-    transform-origin: bottom right;
-    transition-property: opacity, transform;
-    transition-duration: var(--duration-panel);
-    transition-timing-function: var(--ease-panel);
-
-    @starting-style {
-      opacity: 0;
-      transform: translateY(8px) scale(0.98);
-    }
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  [data-pen-surface="coach"][data-slot="coach-panel"][data-panel-mode="side"] {
-    transition-property: opacity;
-    transition-duration: var(--duration-micro);
-    transition-timing-function: var(--ease-micro);
-
-    @starting-style {
-      opacity: 0;
-    }
-  }
-}

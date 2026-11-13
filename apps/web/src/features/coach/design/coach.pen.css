@@ -99,9 +99,6 @@
   box-shadow:
     0 1px 2px color-mix(in oklab, var(--foreground) 4%, transparent),
     0 8px 24px color-mix(in oklab, var(--foreground) 5%, transparent);
-  transition-property: border-color, box-shadow;
-  transition-duration: var(--duration-micro);
-  transition-timing-function: var(--ease-micro);
 }
 
 [data-pen-surface="coach"][data-slot="coach-composer"]:not(
@@ -128,17 +125,5 @@
   [data-pen-surface="coach"][data-slot="coach-composer"] textarea {
     font-size: 16px;
     line-height: 1.5;
-  }
-}
-
-@keyframes coach-composer-glide {
-  from {
-    transform: translateY(var(--coach-glide-from, 0px));
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  [data-slot="coach-workspace-composer"][data-glide] {
-    animation: coach-composer-glide var(--duration-panel) var(--ease-panel) both;
   }
 }

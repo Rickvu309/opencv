@@ -1,0 +1,37 @@
+@media (prefers-reduced-motion: no-preference) {
+  [data-pen-surface="coach"][data-slot="coach-panel"] {
+    transition-property: translate;
+    transition-duration: var(--duration-panel);
+    transition-timing-function: var(--ease-panel);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (min-width: 48rem) {
+  @starting-style {
+    [data-pen-surface="coach"][data-slot="coach-panel"][data-panel-mode="side"] {
+      translate: 100% 0;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) and (max-width: 47.99rem) {
+  @starting-style {
+    [data-pen-surface="coach"][data-slot="coach-panel"] {
+      translate: 0 100%;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-pen-surface="coach"][data-slot="coach-panel"] {
+    transition-property: opacity;
+    transition-duration: var(--duration-micro);
+    transition-timing-function: var(--ease-micro);
+  }
+
+  @starting-style {
+    [data-pen-surface="coach"][data-slot="coach-panel"] {
+      opacity: 0;
+    }
+  }
+}

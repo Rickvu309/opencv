@@ -3,8 +3,5 @@
 }
 
 [data-pen-surface="coach"][data-slot="coach-home"] [data-slot="coach-starter"] {
-  transition-property: background-color, color;
-  transition-duration: var(--duration-micro);
-  transition-timing-function: var(--ease-micro);
   -webkit-tap-highlight-color: transparent;
 }
