@@ -13,13 +13,21 @@ describe("the document paints the shell before the app loads", () => {
     const theme = html.match(
       /<meta name="theme-color" content="(#[0-9a-fA-F]{6})" \/>/
     )
-    const style = html.match(
-      /<style>html\{background:(#[0-9a-fA-F]{6})\}<\/style>/
-    )
     expect(theme?.[1]).toBe("#f9f9fa")
-    expect(style?.[1]).toBe(theme?.[1])
     const schemeAt = html.indexOf('<meta name="color-scheme"')
-    const styleAt = html.indexOf("<style>html{background:#f9f9fa}</style>")
+    const styleAt = html.indexOf("<style>")
+    const ruleAt = html.indexOf("html {")
+    const backgroundAt = html.indexOf("background: #f9f9fa")
+    const styleEnd = html.indexOf("</style>")
     expect(styleAt).toBeGreaterThan(schemeAt)
+    expect(ruleAt).toBeGreaterThan(styleAt)
+    expect(backgroundAt).toBeGreaterThan(ruleAt)
+    expect(styleEnd).toBeGreaterThan(backgroundAt)
+    expect(
+      html.slice(
+        backgroundAt + "background: ".length,
+        backgroundAt + "background: #f9f9fa".length
+      )
+    ).toBe(theme?.[1])
   })
 })
