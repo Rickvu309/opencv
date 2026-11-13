@@ -1,10 +1,19 @@
 import { createMemoryHistory } from "@tanstack/react-router"
-import { describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { SHELL_PRIMARY, SHELL_WORK } from "@/features/app-shell/sidebar-nav.ts"
 import { PALETTE_PAGES } from "@/features/command-palette/palette-search.ts"
 import sidebarSnapshot from "@/features/app-shell/design/app-sidebar.snapshot.json"
 import { createAppRouter } from "@/router.tsx"
+import {
+  setMockSession,
+  TEST_SESSION,
+  TEST_SESSION_USER,
+} from "@/test/auth-client-mock.ts"
+import {
+  profileApiFetch,
+  resetProfileApiMock,
+} from "@/test/profile-api-mock.ts"
 import {
   START_PAGES,
   SURFACES,
@@ -66,6 +75,21 @@ describe.each(SURFACES.map((surface) => [surface.id, surface] as const))(
       expect(navItems.some((item) => item.id === surface.id)).toBe(inNav)
     })
 
+    beforeEach(() => {
+      setMockSession({ user: TEST_SESSION_USER, session: TEST_SESSION })
+      resetProfileApiMock()
+      vi.stubGlobal(
+        "fetch",
+        async (input: RequestInfo | URL, init?: RequestInit) =>
+          (await profileApiFetch(input, init)) ??
+          Response.json({ error: "not mocked" }, { status: 404 })
+      )
+    })
+
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
+
     it(`${surface.shown ? "opens" : "redirects to the start page"}`, async () => {
       const router = createAppRouter({
         history: createMemoryHistory({ initialEntries: [surface.path] }),
@@ -78,7 +102,10 @@ describe.each(SURFACES.map((surface) => [surface.id, surface] as const))(
         expect(landed).toBe(START_PATH)
         return
       }
-      expect(isPathShown(landed)).toBe(true)
+      expect(
+        SURFACES.some((item) => item.shown && item.path === landed),
+        landed
+      ).toBe(true)
       if (surface.path !== START_PATH) expect(landed).not.toBe(START_PATH)
     })
 
