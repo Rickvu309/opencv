@@ -16,6 +16,11 @@ export function fetchProfile() {
   ).then(unwrapData)
 }
 
+export const profileQuery = () => ({
+  queryKey: profileKey(),
+  queryFn: fetchProfile,
+})
+
 export function fetchUsage() {
   return apiFetch<SuccessBody<QueryOutput<"coach.usage">>>(
     endpoints.coachUsage
