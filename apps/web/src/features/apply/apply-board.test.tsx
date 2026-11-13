@@ -312,4 +312,48 @@ describe("apply board", () => {
       rect.mockRestore()
     }
   })
+  it("animates exactly the newly created card with motion-appear", async () => {
+    setMockJobs([junior])
+    renderApp("/apply")
+    const initialCard = await screen.findByRole("button", {
+      name: "Junior Marketing, Lumière Cosmetics",
+    })
+    const initialWrapper = initialCard.closest("[data-slot='kanban-card']")
+    expect(initialWrapper).not.toHaveAttribute("data-new", "true")
+
+    const dataNewValues: (string | null)[] = []
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.type === "attributes" && m.attributeName === "data-new") {
+          dataNewValues.push(m.oldValue)
+        }
+      }
+    })
+    observer.observe(document.body, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-new"],
+      attributeOldValue: true,
+    })
+
+    fireEvent.click(screen.getByRole("button", { name: "New job" }))
+    const dialog = await screen.findByRole("dialog", { name: "New job" })
+    fireEvent.change(within(dialog).getByLabelText("Role title"), {
+      target: { value: "Lead Designer" },
+    })
+    fireEvent.change(within(dialog).getByLabelText("Company"), {
+      target: { value: "Acme Studio" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add job" }))
+
+    const newCard = await screen.findByRole("button", {
+      name: "Lead Designer, Acme Studio",
+    })
+    const newWrapper = newCard.closest("[data-slot='kanban-card']")
+    expect(dataNewValues).toContain("true")
+    expect(newWrapper?.className).toContain("data-[new=true]:motion-appear")
+    expect(initialWrapper).not.toHaveAttribute("data-new", "true")
+    expect(newWrapper).not.toHaveAttribute("data-new")
+    observer.disconnect()
+  })
 })

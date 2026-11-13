@@ -1,3 +1,6 @@
+import * as dndCore from "@dnd-kit/core"
+import * as dndSortable from "@dnd-kit/sortable"
+import * as motionModule from "@workspace/ui/lib/motion"
 import "@testing-library/jest-dom/vitest"
 import {
   act,
@@ -127,5 +130,86 @@ describe("kanban keyboard move", () => {
     } finally {
       rect.mockRestore()
     }
+  })
+})
+
+describe("kanban motion tokens", () => {
+  afterEach(() => {
+    cleanup()
+    vi.restoreAllMocks()
+  })
+
+  it("passes motion tokens to useSortable and DragOverlay when motion is normal", () => {
+    vi.spyOn(motionModule, "motionToken").mockImplementation((kind) => {
+      if (kind === "micro") {
+        return { duration: 150, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
+      }
+      return { duration: 280, easing: "cubic-bezier(0.32, 0.72, 0, 1)" }
+    })
+    vi.spyOn(motionModule, "prefersReducedMotion").mockReturnValue(false)
+    const useSortableSpy = vi.spyOn(dndSortable, "useSortable")
+    const dragOverlaySpy = vi.spyOn(dndCore.DragOverlay, "type")
+
+    render(<Board onDataChange={() => {}} />)
+
+    expect(useSortableSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transition: {
+          duration: 150,
+          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+        },
+      })
+    )
+    expect(dragOverlaySpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dropAnimation: expect.objectContaining({
+          duration: 280,
+          easing: "cubic-bezier(0.32, 0.72, 0, 1)",
+        }),
+      }),
+      undefined
+    )
+  })
+
+  it("passes null transitions to useSortable and DragOverlay when motion is reduced", () => {
+    vi.spyOn(motionModule, "motionToken").mockImplementation((kind) => {
+      if (kind === "micro") {
+        return { duration: 150, easing: "cubic-bezier(0.22, 1, 0.36, 1)" }
+      }
+      return { duration: 280, easing: "cubic-bezier(0.32, 0.72, 0, 1)" }
+    })
+    vi.spyOn(motionModule, "prefersReducedMotion").mockReturnValue(true)
+    const useSortableSpy = vi.spyOn(dndSortable, "useSortable")
+    const dragOverlaySpy = vi.spyOn(dndCore.DragOverlay, "type")
+
+    render(<Board onDataChange={() => {}} />)
+
+    expect(useSortableSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        transition: null,
+      })
+    )
+    expect(dragOverlaySpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dropAnimation: null,
+      }),
+      undefined
+    )
+  })
+
+  it("adds lift classes to the overlay card when picked up", async () => {
+    render(<Board onDataChange={() => {}} />)
+    const card = screen.getByRole("button", { name: "Northwind role" })
+    await act(async () => {
+      fireEvent.keyDown(card, { code: "Space", key: " " })
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    const overlay = document.querySelector("[data-slot='kanban-overlay']")
+    expect(overlay).not.toBeNull()
+    const overlayCard = overlay?.firstElementChild
+    expect(overlayCard?.className).toContain("scale-[1.02]")
+    expect(overlayCard?.className).toContain("shadow-md")
+    expect(overlayCard?.className).toContain("starting:scale-100")
   })
 })

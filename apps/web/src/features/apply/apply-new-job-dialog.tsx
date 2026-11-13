@@ -188,6 +188,11 @@ export function NewJobDialog({
     try {
       const created = await run("job.create", parsed.data)
       if (created.stage === "saved") toast("Job added to Saved")
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(
+          new CustomEvent("opencv:job-created", { detail: { id: created.id } })
+        )
+      }
       reset()
       onOpenChange(false)
     } catch (error) {

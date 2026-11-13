@@ -1,4 +1,4 @@
-import { useReducer, useRef } from "react"
+import { useEffect, useReducer, useRef } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import { parseJobId, type JobStage, type JobView } from "@workspace/domain"
@@ -51,6 +51,20 @@ type Card = {
   job: JobView
 }
 
+type JustAddedAction = { type: "created"; id: string } | { type: "cleared" }
+
+function justAddedReducer(
+  _current: string | null,
+  action: JustAddedAction
+): string | null {
+  switch (action.type) {
+    case "created":
+      return action.id
+    case "cleared":
+      return null
+  }
+}
+
 type Drag = { id: string; over: JobStage | null } | null
 
 type DragAction =
@@ -101,6 +115,22 @@ export function ApplyBoard({
   }
   const lastOver = useRef<JobStage | null>(null)
   const [drag, dispatchDrag] = useReducer(dragReducer, null)
+  const [justAdded, dispatchJustAdded] = useReducer(justAddedReducer, null)
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const onCreated = (event: Event) => {
+      const custom = event as CustomEvent<{ id: string }>
+      if (custom.detail?.id) {
+        dispatchJustAdded({ type: "created", id: custom.detail.id })
+      }
+    }
+    window.addEventListener("opencv:job-created", onCreated)
+    return () => {
+      window.removeEventListener("opencv:job-created", onCreated)
+    }
+  }, [])
+
   const stages = showClosed ? ALL_STAGES : BOARD_STAGES
   const columns = stages.map((stage) => ({
     id: stage,
@@ -108,6 +138,12 @@ export function ApplyBoard({
   }))
   const shown = shownJobs(jobs, drops)
   const data = toCards(shown, stages)
+
+  useEffect(() => {
+    if (!justAdded) return
+    if (!shown.some((job) => job.id === justAdded)) return
+    dispatchJustAdded({ type: "cleared" })
+  }, [justAdded, shown])
 
   function openJob(jobId: string) {
     void navigate({
@@ -237,25 +273,30 @@ export function ApplyBoard({
                 id={column.id}
                 className="min-h-0 flex-initial gap-2 p-0"
               >
-                {(item: Card) => (
-                  <KanbanCard
-                    key={item.id}
-                    id={item.id}
-                    name={item.name}
-                    aria-label={item.name}
-                    data-card-id={item.id}
-                    className="gap-0 rounded-[10px] border border-foreground/6 p-3 shadow-none ring-0 not-in-data-[slot=kanban-card]:shadow-[0_2px_4px_rgb(0_0_0/0.06),0_16px_32px_rgb(0_0_0/0.12)] [&.opacity-30]:opacity-35"
-                    onClick={() => openJob(item.id)}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter") {
-                        event.preventDefault()
-                        openJob(item.id)
-                      }
-                    }}
-                  >
-                    <JobCard job={item.job} />
-                  </KanbanCard>
-                )}
+                {(item: Card) => {
+                  const isNew = item.id === justAdded
+                  return (
+                    <KanbanCard
+                      key={item.id}
+                      id={item.id}
+                      name={item.name}
+                      aria-label={item.name}
+                      data-card-id={item.id}
+                      data-new={isNew ? "true" : undefined}
+                      wrapperClassName="data-[new=true]:motion-appear"
+                      className="gap-0 rounded-[10px] border border-foreground/6 p-3 shadow-none ring-0 not-in-data-[slot=kanban-card]:shadow-[0_2px_4px_rgb(0_0_0/0.06),0_16px_32px_rgb(0_0_0/0.12)] [&.opacity-30]:opacity-35"
+                      onClick={() => openJob(item.id)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault()
+                          openJob(item.id)
+                        }
+                      }}
+                    >
+                      <JobCard job={item.job} />
+                    </KanbanCard>
+                  )
+                }}
               </KanbanCards>
               {drag?.over === stage && activeStage !== stage ? (
                 <DropLine />
