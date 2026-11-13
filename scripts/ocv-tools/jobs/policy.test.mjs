@@ -113,3 +113,19 @@ test("policy refuses an expected failure whose issue this pull request closes", 
   assert.ok(line, r.lines.join("\n"))
   assert.match(line, /a\.test\.ts:3 cites #90, which this pull request closes/)
 })
+
+test("a passing pull request that retires protected checks says how many and which", () => {
+  const r = policyReport(91, {
+    ...clean,
+    protected: {
+      weakened: [],
+      retired: [{ subject: "a.test.ts > old case", retiredBy: "a.test.ts" }],
+      retirements: [],
+    },
+  })
+  assert.equal(r.exit, undefined)
+  assert.deepEqual(r.lines, [
+    "PR #91 passes the server-held rules.",
+    "It retires 1 protected check(s): a.test.ts > old case",
+  ])
+})

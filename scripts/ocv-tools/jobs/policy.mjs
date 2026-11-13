@@ -12,8 +12,19 @@ export function policyReport(n, facts, { annotate = false } = {}) {
       ),
       next: `gh pr view ${n}`,
     }
+  const retired = facts.protected?.retired ?? []
   return {
-    lines: [`PR #${n} passes the server-held rules.`],
+    lines: [
+      `PR #${n} passes the server-held rules.`,
+      ...(retired.length
+        ? [
+            `It retires ${retired.length} protected check(s): ${retired
+              .slice(0, 6)
+              .map((item) => item.subject)
+              .join("; ")}`,
+          ]
+        : []),
+    ],
     next: `scripts/ocv-tools.mjs merge ${n}`,
   }
 }
