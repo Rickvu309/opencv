@@ -1,0 +1,18 @@
+{
+  "id": "page-table-writes",
+  "file": "apps/api/src/paper/page-writes.test.ts",
+  "detector": {
+    "module": "apps/api/src/paper/page-writes.ts",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "b506553c773007315b93131706aa5f2ca9a03f34",
+    "path": "apps/api/src/paper/package-card-actions.ts",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/api/src/paper/package-card-actions.ts"
+    }
+  },
+  "reason": "Caught by review. A page row was inserted outside the paper store at b506553c: restoring a Word page from trash wrote its head from package-card-actions.ts, so no closed list of page creators existed and PR 1441 broke opening imported pages unseen. detect fires on that insert and stays quiet once the insert sits behind restoreWordHead in package-store.ts."
+}
