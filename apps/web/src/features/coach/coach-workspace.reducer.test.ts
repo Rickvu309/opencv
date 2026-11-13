@@ -133,8 +133,25 @@ describe("pending sent line", () => {
     ).toBeNull()
   })
 
-  it("hides the line when the turn ends, failed or stopped, even if nothing was stored", () => {
+  it("hides the line when the turn ends or is stopped, even if nothing was stored", () => {
     expect(pendingSentLine(sent(), turn({ phase: "idle" }))).toBeNull()
+  })
+
+  it("keeps an unstored line when the send failed", () => {
+    const line = sent()
+    expect(
+      pendingSentLine(line, turn({ phase: "idle", retainUnstored: true }))
+    ).toBe(line)
+    expect(
+      pendingSentLine(
+        line,
+        turn({
+          phase: "idle",
+          retainUnstored: true,
+          messages: [{ role: "user", text: TEXT }],
+        })
+      )
+    ).toBeNull()
   })
 
   it("never shows a line in another chat or after navigation", () => {

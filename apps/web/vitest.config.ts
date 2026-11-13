@@ -18,6 +18,7 @@ const ISOLATED_FILES = [
   "src/features/coach/coach-draft-ownership.test.tsx",
   "src/features/coach/coach-workspace-progress.test.tsx",
   "src/features/coach/coach-workspace-sent-line.test.tsx",
+  "src/features/coach/coach-failed-send.test.tsx",
   "src/features/paper/paper-letter.test.tsx",
   "src/features/paper-page/canvas-mount.test.tsx",
   "src/features/paper-page/canvas-package.test.tsx",

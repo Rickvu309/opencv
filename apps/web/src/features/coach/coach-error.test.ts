@@ -26,6 +26,27 @@ describe("coachSendErrorMessage", () => {
     )
   })
 
+  it("names the wait when a 429 says how long to wait", () => {
+    expect(
+      coachSendErrorMessage(
+        new ApiError(429, "REQUEST_FAILED", "slow down", { retryAfterMs: 2000 })
+      )
+    ).toBe(
+      "The Coach is getting too many requests. Wait 2 seconds, then retry."
+    )
+    expect(
+      coachSendErrorMessage(new ApiError(429, "REQUEST_FAILED", "slow down"))
+    ).toBe("The Coach is getting too many requests. Wait a moment, then retry.")
+  })
+
+  it("maps a timeout without the raw message", () => {
+    const error = new Error("socket hung up after 30000ms")
+    error.name = "TimeoutError"
+    expect(coachSendErrorMessage(error)).toBe(
+      "The Coach took too long to answer. Try again."
+    )
+  })
+
   it.each([
     [404, "USER_NOT_FOUND", "User not found."],
     [404, ERROR_CODES.NOT_FOUND, "Chat not found"],

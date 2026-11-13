@@ -148,7 +148,13 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
       ? (canonical ?? [])
       : (detail.data?.messages ?? [])
   const messages = toChatViewMessages(saved)
-  if (task && !taskIsTerminal(task.snapshot.state))
+  const partialLeft =
+    task?.snapshot.state === "failed" &&
+    task.draft.trim().length > 0 &&
+    !messages.some(
+      (message) => message.role === "coach" && message.text === task.draft
+    )
+  if (task && (!taskIsTerminal(task.snapshot.state) || partialLeft))
     messages.push({
       id: STREAMING_COACH_ID,
       role: "coach",
@@ -398,6 +404,12 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
         void executeStart(state.generation, state.request.startKey)
         return true
       }
+      if (
+        state.kind === "idle" &&
+        state.heldRequest &&
+        !state.heldRequest.regenerate
+      )
+        return launch(state.heldRequest.text, state.heldRequest.sendOptions)
       return Boolean(options.chatId) && launch("", {}, true)
     },
     regenerate: () => Boolean(options.chatId) && launch("", {}, true),

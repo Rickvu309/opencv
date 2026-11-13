@@ -254,6 +254,21 @@ it.each(table)("%s ignores foreign start keys and task ids", (_, state) => {
   }
 })
 
+it("keeps the typed message when the start never left the browser", () => {
+  const failed = reduce(unsent, {
+    type: "startLost",
+    generation,
+    startKey: TASK,
+    error: "offline",
+  })
+  expect(failed).toMatchObject({
+    kind: "idle",
+    error: "offline",
+    heldRequest: request,
+  })
+  expect(reduce(failed, { type: "detach" }).heldRequest).toBeNull()
+})
+
 it("retains exact recovery input and releases a detached start with a new generation", () => {
   expect(lost).toMatchObject({
     kind: "starting",

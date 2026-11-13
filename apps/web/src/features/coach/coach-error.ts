@@ -35,7 +35,13 @@ function apiErrorSentence(error: ApiError): string {
     return "Something went wrong: the Coach couldn't find this chat. Reload the page, or start a new chat."
   }
   if (error.status === 429) {
-    return "The Coach is getting too many requests. Wait a moment, then retry."
+    const ms = error.retryAfterMs
+    if (ms == null) {
+      return "The Coach is getting too many requests. Wait a moment, then retry."
+    }
+    const seconds = Math.max(1, Math.round(ms / 1000))
+    const unit = seconds === 1 ? "second" : "seconds"
+    return `The Coach is getting too many requests. Wait ${seconds} ${unit}, then retry.`
   }
   if (error.status >= 500) return UNAVAILABLE
   return GENERIC
@@ -46,6 +52,10 @@ export function coachSendErrorMessage(error: unknown): string {
 
   if (error instanceof TypeError) {
     return "Couldn't reach the Coach. Check your connection and try again."
+  }
+
+  if (error instanceof Error && error.name === "TimeoutError") {
+    return "The Coach took too long to answer. Try again."
   }
 
   return GENERIC

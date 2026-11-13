@@ -17,6 +17,7 @@ type Context = {
   task: CoachTaskState | null
   error: string | null
   failedStop: { taskId: string; chatId: string } | null
+  heldRequest: StartRequest | null
 }
 export type CoachTaskLifecycle = Context &
   (
@@ -59,6 +60,7 @@ export const idleCoachTask: CoachTaskLifecycle = {
   task: null,
   error: null,
   failedStop: null,
+  heldRequest: null,
 }
 export function coachTaskLifecycleReducer(
   state: CoachTaskLifecycle,
@@ -112,7 +114,12 @@ export function coachTaskLifecycleReducer(
       )
         return state
       return state.delivery.kind === "unsent"
-        ? { ...idleCoachTask, generation: state.generation, error: event.error }
+        ? {
+            ...idleCoachTask,
+            generation: state.generation,
+            error: event.error,
+            heldRequest: state.request,
+          }
         : {
             ...state,
             delivery: { ...state.delivery, kind: "lost" },

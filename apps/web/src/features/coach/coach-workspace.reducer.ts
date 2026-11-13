@@ -166,13 +166,16 @@ export function pendingSentLine(
     navigationRevision: number
     messages: readonly { role: string; text: string }[]
     phase: "idle" | "waiting" | "streaming"
+    retainUnstored?: boolean
   }
 ): SentBubble | null {
-  if (!sent || turn.phase === "idle") return null
+  if (!sent) return null
   if (sent.chatId !== turn.chatId || sent.revision !== turn.navigationRevision)
     return null
   const stored = turn.messages.filter(
     (message) => message.role === "user" && message.text === sent.text
   ).length
-  return stored > sent.seen ? null : sent
+  if (stored > sent.seen) return null
+  if (turn.phase === "idle" && !turn.retainUnstored) return null
+  return sent
 }

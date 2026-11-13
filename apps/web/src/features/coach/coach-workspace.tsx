@@ -113,12 +113,14 @@ export function CoachWorkspace({
   const chatSynced =
     draftChatId === activeChatId &&
     draftNavigationRevision === navigationRevision
+  const retainUnstored = Boolean(error) && error !== "The Coach stopped."
   const sentBubble = chatSynced
     ? pendingSentLine(sent, {
         chatId: activeChatId,
         navigationRevision,
         messages,
         phase,
+        retainUnstored,
       })
     : null
   if (chatSynced && sent && !sentBubble) {
@@ -460,6 +462,7 @@ export function CoachWorkspace({
                     id: "pending-user",
                     role: "user",
                     text: sentBubble.text,
+                    failed: retainUnstored && phase === "idle",
                     ...(sentBubble.attachments.length
                       ? { attachments: sentBubble.attachments }
                       : {}),
