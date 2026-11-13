@@ -5,6 +5,7 @@ import { decide } from "../rules/index.mjs"
 import { run } from "./common.mjs"
 import { runQuickChecks } from "./push-checks.mjs"
 import { testsForPush } from "./affected-tests.mjs"
+import { catalogFacts } from "./catalog-fresh.mjs"
 
 const LIMIT_BYTES = 20000
 const SUBMODULE_MODE = "160000"
@@ -52,6 +53,7 @@ function commitMsg(ctx, file) {
   const verdict = decide("commit", {
     commit: { branch: branchOf(ctx), first },
     commits: { trailers: trailer ? "this message" : "", oversize: "" },
+    catalog: {},
   })
   const warnings =
     first.length > 72
@@ -204,9 +206,15 @@ function preCommit(ctx) {
     lines = [
       "pre-commit: node_modules/.bin/prettier is missing (run pnpm install); skipping the format step.",
     ]
+  const staged = split(
+    run(ctx, "git", ["diff", "--cached", "--name-only", "--no-renames", "-z"], {
+      raw: true,
+    }).out
+  )
   const verdict = decide("commit", {
     commit: { branch: branchOf(ctx), first: null },
     commits: { trailers: "", oversize: oversizeStaged(ctx) },
+    catalog: catalogFacts(ctx, top, staged),
   })
   return report(verdict, lines)
 }

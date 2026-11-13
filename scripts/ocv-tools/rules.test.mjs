@@ -326,6 +326,12 @@ test("every checked rule has a failing and a passing fact", () => {
     "the tests this change reaches failed: tests apps/api"
   )
   check(
+    "CATALOG_STALE",
+    { catalog: { stale: ["packages/domain/src/generated/catalog.ts"] } },
+    { catalog: { stale: [] } },
+    "the tree this commit records has a stale generated contract catalog: packages/domain/src/generated/catalog.ts"
+  )
+  check(
     "FILE_SIZE",
     { commits: { oversize: "big.mjs (20001 bytes) " } },
     { commits: {} },

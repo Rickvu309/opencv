@@ -1,0 +1,12 @@
+{
+  "commit": "21f07dbec29d721d6590b9dd1721e2b91112e75c",
+  "pullRequest": 1370,
+  "expected": {
+    "packages/domain/src/generated/catalog.digest": "452d0b35519fd42c703fac4baaf6a06e9a9989e7ae7a5f235f60e513a4ed3bcc\n",
+    "packages/domain/src/generated/catalog.ts": "import { operation as operation0 } from \"../operations/job/priority-counts/operation.js\"\nimport { operation as operation1 } from \"../operations/job/set-priority/operation.js\"\nimport { operation as operation2 } from \"../operations/paper/export/operation.js\"\nimport { operation as operation3 } from \"../operations/paper/import/operation.js\"\nimport { operation as operation4 } from \"../operations/paper/read/operation.js\"\n\nexport const catalog = {\n  \"job.priorityCounts\": operation0,\n  \"job.setPriority\": operation1,\n  \"paper.export\": operation2,\n  \"paper.import\": operation3,\n  \"paper.read\": operation4,\n} as const\n\nexport const catalogDigest =\n  \"452d0b35519fd42c703fac4baaf6a06e9a9989e7ae7a5f235f60e513a4ed3bcc\"\n"
+  },
+  "current": {
+    "packages/domain/src/generated/catalog.digest": "1c17f49a4edbb080d713e6746925b3b01b7ff689242a06d9866a33e2fc089256\n",
+    "packages/domain/src/generated/catalog.ts": "import { operation as operation0 } from \"../operations/job/priority-counts/operation.js\"\nimport { operation as operation1 } from \"../operations/job/set-priority/operation.js\"\nimport { operation as operation2 } from \"../operations/paper/export/operation.js\"\nimport { operation as operation3 } from \"../operations/paper/import/operation.js\"\nimport { operation as operation4 } from \"../operations/paper/read/operation.js\"\n\nexport const catalog = {\n  \"job.priorityCounts\": operation0,\n  \"job.setPriority\": operation1,\n  \"paper.export\": operation2,\n  \"paper.import\": operation3,\n  \"paper.read\": operation4,\n} as const\n\nexport const catalogDigest =\n  \"1c17f49a4edbb080d713e6746925b3b01b7ff689242a06d9866a33e2fc089256\"\n"
+  }
+}
