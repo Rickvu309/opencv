@@ -39,9 +39,9 @@ function StoryDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md gap-6 p-6">
+      <DialogContent className="max-w-md gap-6">
         <DialogTitle className="sr-only">{subject.name}</DialogTitle>
-        <blockquote className="text-base leading-relaxed text-foreground">
+        <blockquote className="pr-8 text-base leading-relaxed text-foreground">
           <p>{subject.quote}</p>
         </blockquote>
         {story === null && (
