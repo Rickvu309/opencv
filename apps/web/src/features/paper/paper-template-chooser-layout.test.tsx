@@ -1,0 +1,92 @@
+import { afterEach, describe, expect, it } from "vitest"
+import { cleanup, screen } from "@testing-library/react"
+import { render } from "@/test/render-with-client.tsx"
+
+import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
+
+import {
+  PAPER_GALLERY_DIALOG_CLASS,
+  PaperTemplateGallery,
+} from "./paper-template-gallery.tsx"
+
+afterEach(() => {
+  cleanup()
+})
+
+function openChooser() {
+  render(
+    <Dialog open>
+      <DialogContent className={PAPER_GALLERY_DIALOG_CLASS}>
+        <PaperTemplateGallery
+          title="New CV"
+          description="Pick a page, or bring a file you already have."
+          onUse={() => undefined}
+          onBlank={() => undefined}
+          onImport={() => undefined}
+        />
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+const LAYOUT_HEADINGS: Record<string, string[]> = {
+  simple: ["Summary", "Experience", "Education", "Skills"],
+  modern: ["Profile", "Experience", "Selected work"],
+  compact: ["Work experience", "About", "Education", "Skills"],
+  academic: [
+    "Education",
+    "Projects & campus",
+    "Experience",
+    "Skills & languages",
+  ],
+}
+
+describe("Paper template chooser layout", () => {
+  it("shows each distinct page as its own card with that layout's headings, in a grid of two columns on phones and more on wider sheets", () => {
+    openChooser()
+    const grid = screen.getByRole("radiogroup", { name: "Templates" })
+    expect(grid.className).toMatch(/(^|\s)grid-cols-2(\s|$)/)
+    expect(grid.className).toContain("sm:grid-cols-3")
+    expect(
+      [...grid.querySelectorAll<HTMLElement>("[data-template-card]")].map(
+        (card) => card.dataset.templateCard
+      )
+    ).toEqual(["blank", "simple", "modern", "compact", "academic"])
+    for (const [id, headings] of Object.entries(LAYOUT_HEADINGS)) {
+      const page = grid.querySelector(`[data-template-page="${id}"]`)
+      expect(page, id).toBeTruthy()
+      expect(
+        [...page!.querySelectorAll("[data-page-heading]")].map(
+          (heading) => heading.textContent
+        ),
+        id
+      ).toEqual(headings)
+    }
+    expect(screen.getByRole("radio", { name: "Blank" })).toHaveAttribute(
+      "aria-checked",
+      "true"
+    )
+  })
+
+  it("keeps the actions in a row of their own below the scrolling grid, so they stay in view however far the grid scrolls", () => {
+    openChooser()
+    const content = document.querySelector<HTMLElement>(
+      "[data-slot='dialog-content']"
+    )!
+    const scroll = content.querySelector<HTMLElement>("[data-template-scroll]")
+    const actions = content.querySelector<HTMLElement>(
+      "[data-slot=paper-gallery-actions]"
+    )
+    expect(scroll?.className).toContain("overflow-y-auto")
+    expect(scroll?.className).toContain("min-h-0")
+    expect(actions?.className).toContain("shrink-0")
+    expect(scroll?.contains(actions)).toBe(false)
+    expect(actions?.compareDocumentPosition(scroll!)).toBe(
+      Node.DOCUMENT_POSITION_PRECEDING
+    )
+    expect(content.className).toContain("flex-col")
+    expect(actions?.querySelector("[data-variant=primary]")?.textContent).toBe(
+      "Start blank"
+    )
+  })
+})
