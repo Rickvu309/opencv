@@ -66,3 +66,19 @@ it("lets clicks through a toast while it slides in or out over the Coach dock", 
   expect(toast.className).toContain("data-[mounted=false]:pointer-events-none")
   expect(toast.className).toContain("data-[removed=true]:pointer-events-none")
 })
+
+it("moves each toast on the panel timing, leaves on the micro timing and only fades under reduced motion", async () => {
+  const { container } = render(<Toaster />)
+  const toaster = await shownToaster(container)
+  const toast = toaster!.querySelector("[data-sonner-toast]")!
+  const classes = toast.className.split(/\s+/)
+  expect(classes).toEqual(
+    expect.arrayContaining([
+      "transition-[transform,opacity,height]!",
+      "duration-(--duration-panel)!",
+      "ease-(--ease-panel)!",
+      "data-[removed=true]:duration-(--duration-micro)!",
+      "motion-reduce:transition-[opacity]!",
+    ])
+  )
+})

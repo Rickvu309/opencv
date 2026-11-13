@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import "./motion.css";
 @import "@fontsource-variable/inter";
 
 @custom-variant dark (&:is(.dark *));
@@ -54,6 +55,19 @@
   --ease-panel: cubic-bezier(0.32, 0.72, 0, 1);
   --default-transition-duration: var(--duration-micro);
   --default-transition-timing-function: var(--ease-micro);
+  --motion-enter-scale: 0.97;
+  --motion-press-scale: 0.97;
+  --motion-press-scale-soft: 0.98;
+  --animate-in: enter
+    var(--tw-animation-duration, var(--tw-duration, var(--duration-micro)))
+    var(--tw-ease, var(--ease-micro)) var(--tw-animation-delay, 0s)
+    var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal)
+    var(--tw-animation-fill-mode, none);
+  --animate-out: exit
+    var(--tw-animation-duration, var(--tw-duration, var(--duration-micro)))
+    var(--tw-ease, var(--ease-micro)) var(--tw-animation-delay, 0s)
+    var(--tw-animation-iteration-count, 1) var(--tw-animation-direction, normal)
+    var(--tw-animation-fill-mode, none);
 }
 
 :root {
@@ -143,7 +157,21 @@
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+    transition-property:
+      opacity, color, background-color, border-color, outline-color, box-shadow,
+      fill, stroke !important;
     scroll-behavior: auto !important;
+  }
+  [class*="animate-in"],
+  [class*="animate-out"] {
+    animation-duration: var(--duration-micro) !important;
+    --tw-enter-scale: 1 !important;
+    --tw-exit-scale: 1 !important;
+    --tw-enter-translate-x: 0 !important;
+    --tw-enter-translate-y: 0 !important;
+    --tw-exit-translate-x: 0 !important;
+    --tw-exit-translate-y: 0 !important;
+    --tw-enter-rotate: 0 !important;
+    --tw-exit-rotate: 0 !important;
   }
 }

@@ -1,0 +1,18 @@
+{
+  "id": "motion-tokens",
+  "file": "scripts/motion-tokens.test.mjs",
+  "detector": {
+    "module": "scripts/lib/motion-tokens.mjs",
+    "export": "motionTokenProblems"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "88fe915c",
+    "path": "apps/web/src/features/apply/apply-board-card.tsx",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "packages/ui/src/components/kanban.tsx"
+    }
+  },
+  "reason": "Commit 88fe915c (PR 306) gave the Apply board card a hand-written duration-150 instead of the micro token. That card moved into the kit board, packages/ui/src/components/kanban.tsx, which now runs its card ring and its drag timing on the tokens, so it is the fixed file."
+}
