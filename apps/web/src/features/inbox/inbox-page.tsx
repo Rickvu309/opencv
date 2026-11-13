@@ -103,7 +103,11 @@ export function InboxPage() {
   const connect = useQuery({
     queryKey: inboxConnectReadKeyOutsideContract,
     queryFn: fetchGmailConnectTargetNotAContractRead,
-    enabled: showConnect,
+    enabled: Boolean(
+      list.data &&
+      !list.data.connected &&
+      (showConnect || list.data.threads.length === 0)
+    ),
   })
   const threads =
     view === "snoozed"
@@ -155,10 +159,14 @@ export function InboxPage() {
   const index = threads.findIndex((thread) => thread.id === shownId)
 
   const pending = list.isLoading || list.isError
-  const titled =
-    pending ||
-    (!scanning && showConnect) ||
-    (!scanning && Boolean(list.data) && !showConnect && threads.length === 0)
+  const titled = pending || (!scanning && showConnect)
+  const exampleMail =
+    list.data?.connected === false &&
+    connect.isSuccess &&
+    connect.data?.url == null
+  const exampleNote = exampleMail
+    ? "Gmail is not connected on this server. Scan shows example mail, not yours."
+    : undefined
 
   return (
     <div
@@ -196,7 +204,12 @@ export function InboxPage() {
               <InboxSkeletonRows />
             </InboxListPane>
           )}
-          <Scanning progress={scanning} />
+          <Scanning
+            progress={scanning}
+            title={
+              exampleMail ? "Loading example mail" : "Finding your job emails"
+            }
+          />
         </div>
       ) : null}
       {!scanning && showConnect ? (
@@ -218,64 +231,75 @@ export function InboxPage() {
           onViewChange={(next) =>
             dispatch({ type: "view_changed", view: next })
           }
+          note={exampleNote}
         />
       ) : null}
       {!scanning && (threads.length > 0 || view === "snoozed") ? (
-        <div className="flex min-h-0 min-w-0 flex-1">
-          {narrow && shownId ? null : (
-            <InboxListPane narrow={narrow}>
-              <InboxList
-                threads={threads}
-                openId={shownId}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+          {list.data?.connected === false && threads.length > 0 ? (
+            <p
+              role="status"
+              className="px-5 pt-3 text-sm text-muted-foreground"
+            >
+              Gmail is not connected. These are examples, not your mail.
+            </p>
+          ) : null}
+          <div className="flex min-h-0 min-w-0 flex-1">
+            {narrow && shownId ? null : (
+              <InboxListPane narrow={narrow}>
+                <InboxList
+                  threads={threads}
+                  openId={shownId}
+                  now={now}
+                  zone={zone}
+                  scanning={false}
+                  view={view}
+                  onViewChange={(next) =>
+                    dispatch({ type: "view_changed", view: next })
+                  }
+                  onOpen={(id) => dispatch({ type: "thread_opened", id })}
+                  onScan={() => void onScan()}
+                />
+              </InboxListPane>
+            )}
+            {!narrow && !shownId && view === "inbox" ? (
+              <InboxOverview threads={threads} />
+            ) : null}
+            {shownId && detail.data ? (
+              <InboxReader
+                key={detail.data.id}
+                detail={detail.data}
+                index={index + 1}
+                count={threads.length}
+                narrow={narrow}
                 now={now}
                 zone={zone}
-                scanning={false}
-                view={view}
-                onViewChange={(next) =>
-                  dispatch({ type: "view_changed", view: next })
+                onBack={() => dispatch({ type: "thread_closed" })}
+                onReturnedToInbox={() =>
+                  dispatch({ type: "view_changed", view: "inbox" })
                 }
-                onOpen={(id) => dispatch({ type: "thread_opened", id })}
-                onScan={() => void onScan()}
+                onPrevious={() => {
+                  const previous = threads[index - 1]
+                  if (previous)
+                    dispatch({ type: "thread_opened", id: previous.id })
+                }}
+                onNext={() => {
+                  const next = threads[index + 1]
+                  if (next) dispatch({ type: "thread_opened", id: next.id })
+                }}
               />
-            </InboxListPane>
-          )}
-          {!narrow && !shownId && view === "inbox" ? (
-            <InboxOverview threads={threads} />
-          ) : null}
-          {shownId && detail.data ? (
-            <InboxReader
-              key={detail.data.id}
-              detail={detail.data}
-              index={index + 1}
-              count={threads.length}
-              narrow={narrow}
-              now={now}
-              zone={zone}
-              onBack={() => dispatch({ type: "thread_closed" })}
-              onReturnedToInbox={() =>
-                dispatch({ type: "view_changed", view: "inbox" })
-              }
-              onPrevious={() => {
-                const previous = threads[index - 1]
-                if (previous)
-                  dispatch({ type: "thread_opened", id: previous.id })
-              }}
-              onNext={() => {
-                const next = threads[index + 1]
-                if (next) dispatch({ type: "thread_opened", id: next.id })
-              }}
-            />
-          ) : null}
-          {shownId && detail.isLoading ? (
-            <p className="px-5 py-6 text-sm text-muted-foreground">
-              Loading inbox.
-            </p>
-          ) : null}
-          {shownId && detail.isError ? (
-            <p role="alert" className="px-5 py-6 text-sm">
-              Could not load inbox. Refresh the page.
-            </p>
-          ) : null}
+            ) : null}
+            {shownId && detail.isLoading ? (
+              <p className="px-5 py-6 text-sm text-muted-foreground">
+                Loading inbox.
+              </p>
+            ) : null}
+            {shownId && detail.isError ? (
+              <p role="alert" className="px-5 py-6 text-sm">
+                Could not load inbox. Refresh the page.
+              </p>
+            ) : null}
+          </div>
         </div>
       ) : null}
     </div>
@@ -288,7 +312,13 @@ type ScanProgress = {
   names: string[]
 }
 
-function Scanning({ progress }: { progress: ScanProgress }) {
+function Scanning({
+  progress,
+  title,
+}: {
+  progress: ScanProgress
+  title: string
+}) {
   return (
     <section
       aria-label="Scanning"
@@ -302,7 +332,7 @@ function Scanning({ progress }: { progress: ScanProgress }) {
         className="text-[15px] font-semibold text-foreground"
         data-user-content
       >
-        Finding your job emails
+        {title}
       </h2>
       <div
         role="progressbar"
