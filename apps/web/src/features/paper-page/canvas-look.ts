@@ -68,6 +68,66 @@ export function collectLooks(
   return next ?? book
 }
 
+const PAGE_MADE = /^p\d+$/
+
+export function isPageMade(id: string) {
+  return PAGE_MADE.test(id)
+}
+
+function paragraphLook(looks: LookBook, id: string): BlockLook | undefined {
+  const entry =
+    baseOf(id) === id
+      ? looks.get(id)
+      : (looks.get(`${baseOf(id)}#0`) ?? looks.get(id))
+  const form = entry?.look.form
+  const align = entry?.look.align
+  if (!form && !align) return undefined
+  return { ...(form ? { form } : {}), ...(align ? { align } : {}) }
+}
+
+function baseOf(id: string) {
+  const mark = id.lastIndexOf("#")
+  return mark > 0 ? id.slice(0, mark) : id
+}
+
+export function screenLooks(
+  blocks: readonly { id: string; text: string; held?: boolean }[],
+  looks: LookBook,
+  saved: readonly { id: string; held?: boolean }[] | undefined
+): LookBook {
+  const lines = saved
+    ? new Set(
+        saved
+          .filter((block) => !isPageMade(block.id))
+          .map((block) => baseOf(block.id))
+      )
+    : null
+  const kept = (id: string) =>
+    !isPageMade(id) && (lines === null || lines.has(baseOf(id)))
+  const keeps = blocks.some((block) => !block.held && kept(block.id))
+  const reused = keeps
+    ? undefined
+    : saved?.find((block) => !block.held && !isPageMade(block.id))
+  let carried = reused ? paragraphLook(looks, reused.id) : undefined
+  let next: Map<string, LookEntry> | null = null
+  for (const block of blocks) {
+    if (kept(block.id)) {
+      carried = paragraphLook(looks, block.id)
+      continue
+    }
+    if (!carried) {
+      if (looks.has(block.id)) {
+        next ??= new Map(looks)
+        next.delete(block.id)
+      }
+      continue
+    }
+    next ??= new Map(looks)
+    next.set(block.id, { text: block.text, look: carried })
+  }
+  return next ?? looks
+}
+
 export function withoutLooks<T extends { look?: BlockLook }>(
   blocks: readonly T[]
 ): Omit<T, "look">[] {

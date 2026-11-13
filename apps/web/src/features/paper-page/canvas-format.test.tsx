@@ -214,6 +214,38 @@ describe("an imported CV on the writing page", () => {
     expect(block(handles.lead).dataset.marker).toBe("•")
   })
 
+  it("draws a line made by Enter with the look of the line it was split from, before any save", async () => {
+    render(<WritingCanvas docId={DOC} seed={draftFromPage(cv())} />)
+    for (const handle of [handles.name, handles.section]) {
+      const text = textOf(block(handle))
+      caretIn(text, text.textContent?.length ?? 0)
+      await act(async () => {
+        page().dispatchEvent(
+          new InputEvent("beforeinput", {
+            inputType: "insertParagraph",
+            bubbles: true,
+            cancelable: true,
+          })
+        )
+      })
+      await typeText("Z")
+    }
+    const made = [...page().querySelectorAll<HTMLElement>(":scope > p")].filter(
+      (item) => item.textContent === "Z"
+    )
+    expect(
+      made.map((item) => [
+        item.dataset.align ?? null,
+        item.dataset.form ?? null,
+        item.getAttribute("aria-level"),
+      ])
+    ).toEqual([
+      ["center", "title", "1"],
+      [null, "heading", "2"],
+    ])
+    expect(block(handles.name).dataset.align).toBe("center")
+  })
+
   it("leaves a blank page as plain as before", () => {
     render(<WritingCanvas docId={DOC} />)
     const only = page().querySelector(":scope > p")

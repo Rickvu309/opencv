@@ -29,6 +29,7 @@ import {
   visibleText,
   type DrawnLooks,
 } from "./canvas-draw.ts"
+import { screenLooks } from "./canvas-look.ts"
 import { pageWords, settlePage } from "./canvas-save.ts"
 import { holdWritingCoachFocus } from "@/lib/writing-coach-focus.ts"
 import {
@@ -274,7 +275,7 @@ function WritingSheet({
     syncParagraphs(
       page,
       state.present.blocks,
-      state.looks,
+      screenLooks(state.present.blocks, state.looks, state.saved?.blocks),
       state.present.caret,
       drawnLooks.current
     )
@@ -289,7 +290,7 @@ function WritingSheet({
     }
     placeCaret(page, state.present.caret)
     if (scroll) revealCaret(page, scroll)
-  }, [state.present, state.looks, state.redraw])
+  }, [state.present, state.looks, state.saved, state.redraw])
 
   const bar = unsavedBar(state)
   const marked = markedLines(state).join(" ")
