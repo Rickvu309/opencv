@@ -3,6 +3,7 @@ import test from "node:test"
 import { runCli } from "./cli.mjs"
 import { ctxFor, fakePorts } from "./ports/fake.mjs"
 import { COMMANDS } from "./report.mjs"
+import { MERGE_GATE_CASES } from "./rules/merge-gate-cases.mjs"
 import { decide, evaluate, jobRows, needsOf, RULES } from "./rules/index.mjs"
 
 const TYPE_LIST = "feat, fix, hotfix, refactor, chore, docs"
@@ -301,24 +302,8 @@ test("every checked rule has a failing and a passing fact", () => {
     { quick: { failed: [] } },
     "the quick checks failed: no-comments, fast guards"
   )
-  check(
-    "MIGRATION_CHANGES",
-    {
-      pull: { n: 1326 },
-      migrations: {
-        allowed: [],
-        files: [{ tag: "0022_drop_notify", changes: ["DROP"] }],
-      },
-    },
-    {
-      pull: { n: 1326 },
-      migrations: {
-        allowed: ["0022_drop_notify"],
-        files: [{ tag: "0022_drop_notify", changes: ["DROP"] }],
-      },
-    },
-    "the merge runs 0022_drop_notify (DROP) on production data, and it changes existing things"
-  )
+  for (const [id, bad, good, message] of MERGE_GATE_CASES)
+    check(id, bad, good, message)
   check(
     "AFFECTED_TESTS",
     { affected: { failed: ["tests apps/api"] }, env: {} },

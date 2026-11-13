@@ -219,6 +219,20 @@ export function fixture(over = {}) {
           return ok({ workflow_runs: s.runs ?? [] })
         if (pair === "run rerun") return ok()
         if (a[0] === "api") return ok({ check_runs: s.checks })
+        if (pair === "issue list") return ok(s.redIssues ?? [])
+        if (pair === "label create") return ok()
+        if (pair === "pr edit") {
+          const added = a[a.indexOf("--add-label") + 1].split(",")
+          s.pull.labels = [...s.pull.labels, ...added.map((name) => ({ name }))]
+          return ok()
+        }
+        if (pair === "pr merge" && a.includes("--auto") && s.autoRefused)
+          return { ok: false, out: "", err: s.autoRefused }
+        if (pair === "pr merge" && a.includes("--auto") && s.autoOn) {
+          s.enqueued = true
+          s.pull.autoMergeRequest = { mergeMethod: "SQUASH" }
+          return ok()
+        }
         if (pair === "pr merge") {
           s.enqueued = true
           if (!s.queue) {

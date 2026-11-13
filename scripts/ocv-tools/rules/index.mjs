@@ -9,6 +9,13 @@ import { beforeAfterRows } from "./before-after.mjs"
 import { commitRows } from "./commits.mjs"
 
 export { issueKind, jobRows }
+export {
+  LABELS,
+  allowMigrationLabel,
+  allowedMigrationTags,
+  openProductionRed,
+  ownerBecause,
+} from "./merge-gate.mjs"
 
 export const MOMENTS = Object.freeze({
   commit: "The pre-commit hook, before git records the commit.",

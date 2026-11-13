@@ -102,35 +102,6 @@ const CASES = {
     queue({ kind: "LEFT_QUEUE" }),
     "CI cannot run on PR #7: GitHub did not start run 5 because the account's payments failed or its Actions spending limit is used up. A rerun or a new merge will not help.",
   ],
-  MIGRATION_CHANGES: [
-    {
-      pull: { n: 7 },
-      migrations: {
-        allowed: ["0023_package_trash"],
-        files: [
-          { tag: "0023_package_trash", changes: [] },
-          {
-            tag: "0024_word_rename_retained",
-            changes: ["CREATE OR REPLACE", "a trigger"],
-          },
-        ],
-      },
-    },
-    {
-      pull: { n: 7 },
-      migrations: {
-        allowed: ["0024_word_rename_retained"],
-        files: [
-          { tag: "0023_package_trash", changes: [] },
-          {
-            tag: "0024_word_rename_retained",
-            changes: ["CREATE OR REPLACE", "a trigger"],
-          },
-        ],
-      },
-    },
-    "the merge runs 0024_word_rename_retained (CREATE OR REPLACE, a trigger) on production data, and it changes existing things",
-  ],
   CI_FAILED: [
     queue({
       kind: "CI_FAILED",

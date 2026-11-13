@@ -1,15 +1,17 @@
 import { dirname, join } from "node:path"
-import {
-  deployLines,
-  liveCheckLine,
-  migrationFacts,
-} from "./migration-facts.mjs"
+import { deployLines, liveCheckLine } from "./migration-facts.mjs"
 import { PR_FIELDS, pullFacts, pullOf } from "./pull-facts.mjs"
-import { recorded, json, gh, git } from "./common.mjs"
+import { recorded, json, gh, git, run } from "./common.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
+import {
+  LABELS,
+  allowMigrationLabel,
+  ownerBecause,
+} from "../rules/merge-gate.mjs"
 import { cleanup } from "../work.mjs"
 import { conflictsOf, mergeResultFacts } from "./merged-tree.mjs"
 import { billingOfPullRun, rerunFailed, steplessRun } from "./infra-rerun.mjs"
+import { ciRunOf } from "./why.mjs"
 
 const WAIT_STEP_SECONDS = 15
 const WAIT_LIMIT_SECONDS = 45 * 60
@@ -105,7 +107,14 @@ function queueSnapshot(ctx, repo, n, waited) {
     inQueue: Boolean(pr.isInMergeQueue),
     queueState: pr.mergeQueueEntry?.state ?? null,
     queuedHead: pr.mergeQueueEntry?.headCommit?.oid ?? null,
-    ci: ci ? { status: ci.status, conclusion: ci.conclusion } : null,
+    ci: ci
+      ? {
+          status: String(ci.status).toLowerCase(),
+          conclusion: ci.conclusion
+            ? String(ci.conclusion).toLowerCase()
+            : null,
+        }
+      : null,
     removed,
     waited,
   }
@@ -321,17 +330,86 @@ function githubQueueHead(ctx, n) {
   return { inQueue: snapshot.inQueue, queuedByGitHub: snapshot.queuedHead }
 }
 
-function enqueue(ctx, n, head) {
+export function admit(facts, { allowMigrations = [], ownerYes = false } = {}) {
+  const allowed = [
+    ...new Set([...(facts.migrations?.allowed ?? []), ...allowMigrations]),
+  ]
+  const wanted = allowMigrations.map(allowMigrationLabel)
+  const owner = ownerBecause({
+    ...facts,
+    migrations: { ...facts.migrations, allowed },
+  })
+  if (ownerYes && owner.length) wanted.push(LABELS.ownerApproved)
+  const have = facts.pull?.labels ?? []
+  const add = [...new Set(wanted.filter((label) => !have.includes(label)))]
+  const admitted = {
+    ...facts,
+    pull: { ...facts.pull, labels: [...have, ...add] },
+    migrations: { ...facts.migrations, allowed },
+  }
+  const live = decide("pr", admitted)
+  if (!live.ok) throw refusalError(live.refusals[0])
+  return { facts: admitted, add, owner }
+}
+
+function applyLabels(ctx, n, add) {
+  if (!add.length) return
+  for (const label of add)
+    if (label.startsWith(`${LABELS.allowMigration}:`))
+      gh(
+        ctx,
+        "label",
+        "create",
+        label,
+        "--force",
+        "--color",
+        "B60205",
+        "--description",
+        "The owner allowed this migration to change existing things"
+      )
+  gh(ctx, "pr", "edit", String(n), "--add-label", add.join(","))
+}
+
+export function requestAutoMerge(ctx, n, head) {
+  const asked = run(ctx, "gh", [
+    "pr",
+    "merge",
+    String(n),
+    "--squash",
+    "--auto",
+    "--match-head-commit",
+    head,
+  ])
+  if (!asked.ok)
+    return {
+      queued: "off",
+      reason:
+        `${asked.err || asked.out}`
+          .split("\n")
+          .map((line) => line.trim())
+          .find(Boolean) ?? "gh gave no reason",
+    }
+  writeQueuedHead(ctx, n, head)
+  return { queued: "auto" }
+}
+
+export function enqueue(ctx, n, head, opts = {}) {
+  const { add } = admit(pullFacts(ctx, n), opts)
+  applyLabels(ctx, n, add)
+  return requestAutoMerge(ctx, n, head)
+}
+
+function queueNow(ctx, n, head) {
   gh(ctx, "pr", "merge", String(n), "--squash", "--match-head-commit", head)
   writeQueuedHead(ctx, n, head)
 }
 
 function requeueAfterRerun(ctx, n, startHead, snapshot, state) {
-  if (!state.reran || state.requeued || snapshot.inQueue) return
+  if (state.auto || !state.reran || state.requeued || snapshot.inQueue) return
   if (snapshot.ci?.status !== "completed") return
   if (snapshot.ci.conclusion !== "success") return
   state.requeued = true
-  enqueue(ctx, n, startHead)
+  queueNow(ctx, n, startHead)
   state.lines.push(
     `The rerun of run ${state.reran} passed, so PR #${n} was queued again at ${startHead}.`
   )
@@ -360,6 +438,81 @@ function waitForMerge(ctx, n, startHead, repo, state) {
   }
 }
 
+function repoName(ctx) {
+  return gh(
+    ctx,
+    "repo",
+    "view",
+    "--json",
+    "nameWithOwner",
+    "--jq",
+    ".nameWithOwner"
+  )
+}
+
+function mergedResult(ctx, n, pull, issue, migrations, state, wait) {
+  closeIssues(ctx, pull, Number(issue))
+  const lines = [
+    ...state.lines,
+    `Merged PR #${n} as ${pull.mergeCommit?.oid}. Linked issues are closed.`,
+    liveCheckLine(pull.mergeCommit?.oid, migrations),
+  ]
+  if (wait) {
+    try {
+      const result = cleanup(ctx, { n: Number(issue), flags: {} })
+      return { id: n, lines: [...lines, ...result.lines], next: result.next }
+    } catch (error) {
+      lines.push(
+        `Merged, but cleanup needs a hand: ${String(error.message).split("\n")[0]}`
+      )
+    }
+  }
+  return {
+    id: n,
+    lines,
+    next: `scripts/ocv-tools.mjs cleanup ${issue}`,
+  }
+}
+
+function waitOnAutoMerge(ctx, n, pull, issue, wait) {
+  const head = pull.headRefOid
+  const said = `PR #${n} is on auto-merge: GitHub queues ${head} when ci is green, so merge queues nothing and runs no merged-tree check.`
+  if (!wait)
+    return {
+      id: n,
+      status: "pending",
+      lines: [said],
+      next: `Run in the background and end the turn until it exits: scripts/ocv-tools.mjs merge ${n} --wait`,
+    }
+  const facts = pullFacts(ctx, n)
+  writeQueuedHead(ctx, n, head)
+  const state = {
+    lines: [...deployLines(facts.migrations), said],
+    reran: null,
+    requeued: false,
+    auto: true,
+  }
+  const merged = waitForMerge(ctx, n, head, repoName(ctx), state)
+  return mergedResult(ctx, n, merged, issue, facts.migrations, state, wait)
+}
+
+function rerunForLabels(ctx, n, head, repo, add) {
+  const ciRun = ciRunOf(ctx, repo, head)
+  if (ciRun) gh(ctx, "run", "rerun", String(ciRun.id), "--failed")
+  const asked = requestAutoMerge(ctx, n, head)
+  return {
+    id: n,
+    status: "pending",
+    lines: [
+      `Added ${add.join(", ")} to PR #${n}. The policy check read the labels before, so ${ciRun ? `the failed jobs of run ${ciRun.id} run again` : "ci must run again"}.`,
+      asked.queued === "auto"
+        ? `Auto-merge is on: GitHub queues ${head} when ci is green.`
+        : `Auto-merge could not be turned on (${asked.reason}); run merge ${n} again when ci is green.`,
+    ],
+    next: `Run in the background and end the turn until it exits: scripts/ocv-tools.mjs merge ${n} --wait`,
+  }
+}
+
 export function merge(ctx, n, { wait = false, allowMigrations = [] } = {}) {
   return recorded(ctx, "merge-pr", () => {
     let pull = json(ctx, "pr", "view", String(n), "--json", PR_FIELDS)
@@ -368,6 +521,12 @@ export function merge(ctx, n, { wait = false, allowMigrations = [] } = {}) {
       pull.headRefName
     )?.[1]
     const head = pull.headRefOid
+    if (
+      pull.state === "OPEN" &&
+      pull.autoMergeRequest &&
+      !allowMigrations.length
+    )
+      return waitOnAutoMerge(ctx, n, pull, issue, wait)
     const queued = readQueuedHead(ctx, n)
     if (wait && queued && queued !== head) {
       failWait(
@@ -398,30 +557,27 @@ export function merge(ctx, n, { wait = false, allowMigrations = [] } = {}) {
     }
     let repo = null
     const open = pull.state === "OPEN"
-    const facts = open
+    let facts = open
       ? { ...pullFacts(ctx, n), me }
-      : { pull: pullOf(pull), me, ci: null }
-    facts.migrations = open
-      ? migrationFacts(ctx, facts.diff?.files, head, allowMigrations)
-      : { files: [], allowed: allowMigrations }
+      : {
+          pull: pullOf(pull),
+          me,
+          ci: null,
+          migrations: { files: [], allowed: allowMigrations },
+        }
     if (open) {
-      const live = decide("pr", facts)
-      if (!live.ok) throw refusalError(live.refusals[0])
-      repo = gh(
-        ctx,
-        "repo",
-        "view",
-        "--json",
-        "nameWithOwner",
-        "--jq",
-        ".nameWithOwner"
-      )
+      const admitted = admit(facts, { allowMigrations, ownerYes: true })
+      facts = admitted.facts
+      applyLabels(ctx, n, admitted.add)
+      repo = repoName(ctx)
       facts.ci = newestCi(ctx, repo, head)
       const failedCi =
         facts.ci?.status === "completed" &&
         facts.ci.conclusion &&
         facts.ci.conclusion !== "success"
       facts.billing = failedCi ? billingOfPullRun(ctx, repo, head) : null
+      if (admitted.add.length && failedCi && !facts.billing)
+        return rerunForLabels(ctx, n, head, repo, admitted.add)
     }
     const ready = decide("merge", facts)
     if (!ready.ok) throw refusalError(ready.refusals[0])
@@ -447,7 +603,7 @@ export function merge(ctx, n, { wait = false, allowMigrations = [] } = {}) {
     }
     if (pull.state !== "MERGED") {
       if (!alreadyQueued) {
-        enqueue(ctx, n, head)
+        queueNow(ctx, n, head)
         pull = json(ctx, "pr", "view", String(n), "--json", PR_FIELDS)
       }
       const mergedAtHead =
@@ -468,26 +624,6 @@ export function merge(ctx, n, { wait = false, allowMigrations = [] } = {}) {
         pull = waitForMerge(ctx, n, head, repo, state)
       }
     }
-    closeIssues(ctx, pull, Number(issue))
-    const lines = [
-      ...state.lines,
-      `Merged PR #${n} as ${pull.mergeCommit?.oid}. Linked issues are closed.`,
-      liveCheckLine(pull.mergeCommit?.oid, facts.migrations),
-    ]
-    if (wait) {
-      try {
-        const result = cleanup(ctx, { n: Number(issue), flags: {} })
-        return { id: n, lines: [...lines, ...result.lines], next: result.next }
-      } catch (error) {
-        lines.push(
-          `Merged, but cleanup needs a hand: ${String(error.message).split("\n")[0]}`
-        )
-      }
-    }
-    return {
-      id: n,
-      lines,
-      next: `scripts/ocv-tools.mjs cleanup ${issue}`,
-    }
+    return mergedResult(ctx, n, pull, issue, facts.migrations, state, wait)
   })
 }

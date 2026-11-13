@@ -22,6 +22,7 @@ import { checkJob, passLines } from "./jobs/affected-tests.mjs"
 import { decide, refusalError } from "./rules/index.mjs"
 import { merge } from "./jobs/merge.mjs"
 import { policyReport } from "./jobs/policy.mjs"
+import { why } from "./jobs/why.mjs"
 import { pullFacts } from "./jobs/pull-facts.mjs"
 
 export function realCtx() {
@@ -286,6 +287,13 @@ function command(ctx, cmd, rest) {
       return policyReport(n, pullFacts(ctx, n), {
         annotate: ctx.env.GITHUB_ACTIONS === "true",
       })
+    }
+    case "why": {
+      const unknown = Object.keys(flags)[0]
+      if (unknown) unknownOption(unknown)
+      if (pos.length !== 1) throw new Error("usage: ocv-tools why <pr#>")
+      const n = issueNumber(pos[0], "why <pr#>")
+      return { id: n, lines: why(ctx, n), next: `gh pr checks ${n}` }
     }
     case "hook": {
       const unknown = Object.keys(flags)[0]

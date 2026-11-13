@@ -30,6 +30,8 @@ const clean = {
   },
   commits: { trailers: "", oversize: "" },
   pins: [],
+  migrations: { allowed: [], files: [] },
+  issues: [],
 }
 
 test("a clean pull request passes with exit 0", () => {

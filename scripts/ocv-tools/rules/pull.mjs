@@ -1,5 +1,34 @@
 import { FIXES } from "../result.mjs"
 import { closesIssue, issueInTitle } from "./pull-ref.mjs"
+import { LABELS, openProductionRed, ownerBecause } from "./merge-gate.mjs"
+
+function unallowedMigrations(facts) {
+  const allowed = facts.migrations?.allowed ?? []
+  return (facts.migrations?.files ?? []).filter(
+    (item) => item.changes.length && !allowed.includes(item.tag)
+  )
+}
+
+function migrationChanges(facts) {
+  const hits = unallowedMigrations(facts)
+  if (!hits.length) return null
+  return `the merge runs ${hits.map((item) => `${item.tag} (${item.changes.join(", ")})`).join("; ")} on production data, and it changes existing things`
+}
+
+function ownerYes(facts) {
+  const because = ownerBecause(facts)
+  if (!because.length) return null
+  if ((facts.pull?.labels ?? []).includes(LABELS.ownerApproved)) return null
+  return `this pull request is owner class (${because.slice(0, 3).join("; ")}), and it has no ${LABELS.ownerApproved} label`
+}
+
+function queueClosed(facts) {
+  const red = openProductionRed(facts.issues)
+  if (!red.length) return null
+  if ((facts.pull?.labels ?? []).includes(LABELS.productionRedRevert))
+    return null
+  return `production is red (${red.map((issue) => `#${issue.number}`).join(", ")} open), so only a pull request labeled ${LABELS.productionRedRevert} merges`
+}
 
 function rule(spec) {
   return {
@@ -87,5 +116,43 @@ export const pullRows = [
     check: pinnedFailures,
     fix: () =>
       "Fix the bug and turn the it.fails back into it, or cite the open issue that still tracks it and drop that issue from Closes",
+  }),
+  rule({
+    id: "OWNER_YES",
+    section: "6",
+    says: "An owner-class pull request (a risk:high file, or a migration off the only-adds list) merges only with the owner-approved label, which the coordinator adds by running merge after relaying the owner's yes.",
+    at: ["pr"],
+    needs: ["diff", "migrations", "pull"],
+    check: ownerYes,
+    fix: (facts) =>
+      `Relay the owner's yes, then from the main checkout run: scripts/ocv-tools.mjs merge ${facts.pull?.n ?? "<pr#>"}`,
+  }),
+  rule({
+    id: "QUEUE_CLOSED",
+    section: "6",
+    says: "While an issue labeled production-red is open, only a pull request labeled production-red-revert merges.",
+    at: ["pr"],
+    needs: ["pull", "issues"],
+    check: queueClosed,
+    fix: (facts) =>
+      `Wait until ${openProductionRed(facts.issues)
+        .map((issue) => `#${issue.number}`)
+        .join(
+          ", "
+        )} is closed, then run: gh run rerun --failed for the policy job of this pull request`,
+  }),
+  rule({
+    id: "MIGRATION_CHANGES",
+    section: "6",
+    says: "A PR whose database migration has a statement outside the only-adds list (a new table, its indexes and ADD clauses, a type, a sequence, a schema, a comment on what it made) merges only with the label allow-migration:<tag> for that migration, which merge --allow-migration adds, because the merge runs it on production data. The verdict is a static reading of the SQL, not a proof: any character or dollar tag the scanner does not read as Postgres does, any name not schema-qualified to opencv_app, and any journal edit other than appending the migrations the PR adds change existing things.",
+    at: ["pr"],
+    needs: ["pull", "migrations"],
+    check: migrationChanges,
+    fix: (facts) =>
+      `Name what it changes in Merge Danger, get the owner's yes, then run: scripts/ocv-tools.mjs merge ${facts.pull?.n ?? "<pr#>"} --allow-migration ${unallowedMigrations(
+        facts
+      )
+        .map((item) => item.tag)
+        .join(",")}`,
   }),
 ]
