@@ -1,5 +1,4 @@
 import {
-  useEffect,
   useId,
   useReducer,
   useRef,
@@ -195,12 +194,6 @@ export function PaperTemplateGallery({
     TEMPLATE_CHOICES.find((item) => item.id === chosen)?.label ?? null
   const searching = query.trim() !== ""
 
-  useEffect(() => {
-    gridRef.current?.ownerDocument
-      .querySelector<HTMLElement>(CHOSEN_CARD)
-      ?.focus()
-  }, [])
-
   function startWith(choice: Choice | null) {
     if (pending || choice === null) return
     if (choice === "blank") onBlank?.()
@@ -296,7 +289,7 @@ export function PaperTemplateGallery({
           aria-label="Templates"
           aria-busy={pending || undefined}
           data-template-grid=""
-          className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4 sm:gap-x-4 sm:gap-y-5 lg:grid-cols-5"
+          className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4 sm:gap-x-4 sm:gap-y-5 md:grid-cols-5"
           onKeyDown={moveFocus}
         >
           {hasBlank ? (
