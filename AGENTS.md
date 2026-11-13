@@ -85,3 +85,4 @@ The web is a React SPA in `apps/web`. The API is Hono in `apps/api`. The shared 
 - Production sign-in recovery: `scripts/verify-auth-production.mjs` and its test in `scripts/verify-auth-production.test.mjs`.
 - Issue tracker: GitHub issues of `Rickvu309/opencv`. `ready-for-human` is the triage label; leave those issues to humans. Other roles come from the issue and its PRs.
 - Product contracts: `packages/domain/src`. API bindings: `apps/api/src`. Web features: `apps/web/src/features`.
+- Vocabulary: `GLOSSARY-MAP.md` points to the checking glossary (`scripts/GLOSSARY.md`) and the product's words; decisions are in `docs/adr`.
