@@ -33,7 +33,7 @@ const violations = (id) =>
     .map((hit) => `${hit.where} uses "${hit.match}". ${hit.hint}`)
 const used = new Set(hits.map((hit) => hit.rule).filter(Boolean))
 
-test("no source file or file name uses a word CONTEXT.md retired", () => {
+test("no source file or file name uses a word AGENTS.md retired", () => {
   assert.deepEqual(
     [...violations("thread"), ...violations("opportunity")],
     [],
@@ -43,6 +43,46 @@ test("no source file or file name uses a word CONTEXT.md retired", () => {
 
 test("no file outside docs/adr uses the old project name", () => {
   assert.deepEqual(violations("openpath"), [])
+})
+
+test("no file or file name uses a checking word the glossary retired", () => {
+  assert.deepEqual(
+    [
+      ...violations("known-list"),
+      ...violations("waiver"),
+      ...violations("smoke-test"),
+      ...violations("risk-class"),
+    ],
+    []
+  )
+})
+
+test("a checking word the glossary retired fires anywhere, and the glossary may name it", () => {
+  assert.equal(detect("add it to the known list", "AGENTS.md").length, 1)
+  assert.equal(
+    detect("dated waivers in the file", "scripts/ocv-tools/jobs/x.mjs").length,
+    1
+  )
+  assert.equal(
+    detect("run a smoke test after deploy", ".agents/skills/x/SKILL.md").length,
+    1
+  )
+  assert.equal(
+    detect("type RiskClass = string", "scripts/ocv-tools/jobs/risk.mjs").length,
+    1
+  )
+  assert.equal(detect("", "scripts/known-list.json").length, 1)
+  assert.deepEqual(
+    detect(
+      "_Avoid_: known list, waiver, smoke test, risk class",
+      "scripts/GLOSSARY.md"
+    ),
+    []
+  )
+  assert.deepEqual(
+    detect("a ratchet only shrinks; the change class is strict", "AGENTS.md"),
+    []
+  )
 })
 
 test("every allowed retired-word use still matches something", () => {

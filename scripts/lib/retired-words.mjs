@@ -1,6 +1,25 @@
 const TEXT_FILE = /\.(?:[cm]?[jt]sx?|css|json|md|ya?ml)$/
 const SOURCE = /^(?:apps|packages)\/[^/]+\/src\//
 const GUARD_FILES = /^scripts\/(?:retired-words\.test|lib\/retired-words)\.mjs$/
+const CHECKING_GLOSSARY = /^scripts\/GLOSSARY\.md$/
+
+const checkingWord = (id, word, say) => ({
+  id,
+  word,
+  scope: () => true,
+  content: (file) => TEXT_FILE.test(file),
+  hint: `scripts/GLOSSARY.md retired this word for how a change is checked, so say ${say}. If it is a legitimate use, add the path and the exact word to the allowed list in scripts/lib/retired-words.mjs with a reason.`,
+  allowed: [
+    {
+      path: CHECKING_GLOSSARY,
+      why: "the checking glossary lists the words to avoid",
+    },
+    {
+      path: GUARD_FILES,
+      why: "the guard names the word it bars",
+    },
+  ],
+})
 
 export const RETIRED = [
   {
@@ -124,6 +143,22 @@ export const RETIRED = [
       },
     ],
   },
+  checkingWord("known-list", /known[- _]?lists?/gi, "ratchet"),
+  checkingWord(
+    "waiver",
+    /waivers?/gi,
+    "ratchet entry, allowed entry or quarantine"
+  ),
+  checkingWord(
+    "smoke-test",
+    /smoke[- _]?tests?/gi,
+    "sweep, core loop run or probe"
+  ),
+  checkingWord(
+    "risk-class",
+    /risk[- _]?class(?:es)?/gi,
+    "change class, or risk label for the issue"
+  ),
 ]
 
 export function matches(text, file) {
