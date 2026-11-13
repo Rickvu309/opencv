@@ -1,7 +1,5 @@
-import {
-  generatedDirectories,
-  staleOutputs,
-} from "../../lib/catalog-freshness.mjs"
+import { generatedDirectories } from "../../lib/catalog-freshness.mjs"
+import { staleFiles } from "../../lib/catalog-stale.mjs"
 import { run } from "./common.mjs"
 
 export const CATALOG_INPUTS =
@@ -9,10 +7,6 @@ export const CATALOG_INPUTS =
 
 export function touchesCatalog(files) {
   return files.some((file) => CATALOG_INPUTS.test(file))
-}
-
-export function staleFiles(expected, current) {
-  return staleOutputs(expected, current).map((error) => error.file)
 }
 
 export function catalogFacts(ctx, top, files) {

@@ -1,0 +1,18 @@
+{
+  "id": "catalog-stale",
+  "file": "scripts/catalog-stale.test.mjs",
+  "detector": {
+    "module": "scripts/lib/catalog-stale.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "HEAD",
+    "path": "scripts/fixtures/catalog-stale/mistake.json",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "scripts/fixtures/catalog-stale/clean.json"
+    }
+  },
+  "reason": "The fixtures hold the real generated files of PR #1370. Its commit 21f07dbe changed the domain contract and kept catalog digest 1c17f49a; that tree's own node scripts/catalog.mjs check reports stale-output for catalog.ts. The next commit in the PR only regenerated the two files to digest 452d0b35, and the commit between them changed no contract input, so 452d0b35 is what generate wrote for 21f07dbe. The commit check compares staged blobs, so a catalog generated but not staged is refused as well. The guard-proof tag keeps 21f07dbe reachable."
+}

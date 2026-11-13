@@ -49,20 +49,26 @@ test("the clean fixture stays quiet: the staged catalog matches what generate wr
   assert.equal(r.code, 0, r.text)
 })
 
-test("a commit that touches no contract file never runs the catalog", () => {
-  const { w, r } = commit({
-    staged: ["apps/web/src/a.tsx"],
-    catalog: { error: "x" },
-  })
-  assert.equal(r.code, 0, r.text)
-  assert.equal(
-    w.s.calls.filter((c) => String(c.args[0]).endsWith("catalog-expected.mjs"))
-      .length,
-    0
-  )
+const catalogRuns = (w) =>
+  w.s.calls.filter((c) => String(c.args[0]).endsWith("catalog-expected.mjs"))
+    .length
+
+test("honest commits that touch no contract file never run the catalog", () => {
+  for (const staged of [
+    ["apps/web/src/a.tsx"],
+    ["docs/agents/notes.md", "README.md"],
+    [
+      "apps/api/drizzle/0026_add_index.sql",
+      "apps/api/drizzle/meta/_journal.json",
+    ],
+  ]) {
+    const { w, r } = commit({ staged, catalog: { error: "x" } })
+    assert.equal(r.code, 0, r.text)
+    assert.equal(catalogRuns(w), 0, staged.join(", "))
+  }
 })
 
-test("a push whose branch changes the contract checks the catalog too", () => {
+test("only the commit checks the catalog: a push of a stale branch leaves it to CI", () => {
   const w = world({
     changed: [ADDED],
     catalog: expected,
@@ -72,6 +78,6 @@ test("a push whose branch changes the contract checks the catalog too", () => {
     stdin:
       "refs/heads/feat/1-x abc refs/heads/feat/1-x 0000000000000000000000000000000000000000",
   })
-  assert.equal(r.code, 2, r.text)
-  assert.match(r.text, /REFUSED CATALOG_STALE/)
+  assert.doesNotMatch(r.text, /CATALOG_STALE/)
+  assert.equal(catalogRuns(w), 0)
 })
