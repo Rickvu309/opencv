@@ -140,7 +140,7 @@ export function CoachDock({
         render={
           <InputGroupButton
             size="icon-sm"
-            className="size-11 rounded-full border border-border text-muted-foreground md:size-8"
+            className="size-11 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground md:size-8"
           />
         }
         disabled={disabled}
@@ -312,7 +312,7 @@ export function CoachDock({
       {turnActive ? (
         <Button
           type="button"
-          variant="secondary"
+          variant="primary"
           size="icon"
           onClick={(event) => {
             if (!repeatedClickOfSend(event)) onStop?.()
@@ -325,7 +325,7 @@ export function CoachDock({
       ) : (
         <Button
           type="button"
-          variant={canSend ? "default" : "secondary"}
+          variant={canSend ? "primary" : "secondary"}
           size="icon"
           onClick={onSend}
           disabled={!canSend}

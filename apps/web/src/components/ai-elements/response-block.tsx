@@ -38,12 +38,10 @@ export function ResponseBlock({ source }: { source: string }) {
   const block = JSON.parse(source) as CoachMarkdownBlock
   switch (block.type) {
     case "p":
-      return (
-        <p className="text-sm leading-[1.6]">{renderInline(block.children)}</p>
-      )
+      return <p>{renderInline(block.children)}</p>
     case "ul":
       return (
-        <ul className="list-disc space-y-1 pl-5 text-sm leading-[1.6]">
+        <ul className="list-disc space-y-1 pl-5">
           {block.items.map((item, itemIndex) => (
             <li key={itemIndex}>{renderInline(item)}</li>
           ))}
@@ -51,7 +49,7 @@ export function ResponseBlock({ source }: { source: string }) {
       )
     case "ol":
       return (
-        <ol className="list-decimal space-y-1 pl-5 text-sm leading-[1.6]">
+        <ol className="list-decimal space-y-1 pl-5">
           {block.items.map((item, itemIndex) => (
             <li key={itemIndex}>{renderInline(item)}</li>
           ))}

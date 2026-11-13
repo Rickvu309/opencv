@@ -28,7 +28,7 @@ describe("Coach home pane", () => {
     expect(heading.className).toContain("md:text-[28px]")
     expect(heading.className).toContain("font-medium")
     const composer = screen.getByText("Composer")
-    expect(composer.parentElement?.className).toContain("max-w-[720px]")
+    expect(composer.parentElement?.className).toContain("max-w-[760px]")
     const ideas = screen.getByRole("list", { name: "Ideas for Coach" })
     expect(
       composer.compareDocumentPosition(ideas) & Node.DOCUMENT_POSITION_FOLLOWING

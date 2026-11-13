@@ -20,7 +20,9 @@ export function ChatView({
       <ChatLog
         className={cn(
           chatColumn,
-          presentation === "compact" ? "gap-3.5 py-2" : "gap-7 pt-6 pb-4"
+          presentation === "compact"
+            ? "gap-3.5 py-2 text-[14px] leading-[22px]"
+            : "gap-8 pt-6 pb-4 text-base leading-[26px]"
         )}
         viewportClassName="[scrollbar-gutter:auto]!"
       >

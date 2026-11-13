@@ -7,6 +7,8 @@ import { DESIGN_MAP, validateDesignMap } from "./design-map.mjs"
 import {
   GROK_COACH_PAGE_COLUMN,
   GROK_COACH_PAGE_COMPOSER,
+  GROK_COACH_PAGE_COMPOSER_CONTROLS,
+  GROK_COACH_PAGE_COMPOSER_TEXT,
   GROK_COACH_PANEL_COMPOSER,
   WORD_SIZED_WRITING_PAGE,
   ownerDecisionProblems,
@@ -133,23 +135,40 @@ test("every writing page sheet row takes the Word size by owner decision and kee
         GROK_COACH_PAGE_COLUMN,
       ],
       ["coach-chat-finished", "Coach page composer", GROK_COACH_PAGE_COMPOSER],
+      [
+        "coach-chat-finished",
+        "Coach page composer text inset",
+        GROK_COACH_PAGE_COMPOSER_TEXT,
+      ],
+      [
+        "coach-chat-finished",
+        "Coach page composer toolbar inset",
+        GROK_COACH_PAGE_COMPOSER_CONTROLS,
+      ],
     ]
   )
 })
 
-test("the Grok decisions change only the turn gap and the composer radius, and keep the pen widths", () => {
-  for (const decision of [
+test("the Grok decisions are valid rows and change only the Coach chat geometry the owner asked for", () => {
+  const decisions = [
     GROK_COACH_PAGE_COLUMN,
     GROK_COACH_PAGE_COMPOSER,
+    GROK_COACH_PAGE_COMPOSER_TEXT,
+    GROK_COACH_PAGE_COMPOSER_CONTROLS,
     GROK_COACH_PANEL_COMPOSER,
-  ]) {
+  ]
+  for (const decision of decisions) {
     const row = DESIGN_MAP.find((entry) => entry.ownerDecision === decision)
     assert.deepEqual(ownerDecisionProblems(row, row.label), [])
-    assert.equal("width" in decision.expect, false)
+    assert.match(row.screen, /^(coach-chat-finished|paper-panel-open)$/)
   }
-  assert.deepEqual(GROK_COACH_PAGE_COMPOSER.expect, { height: 82, radius: 24 })
-  assert.deepEqual(GROK_COACH_PAGE_COLUMN.expect, { gap: 28 })
-  assert.deepEqual(GROK_COACH_PANEL_COMPOSER.expect, { radius: 20 })
+  assert.deepEqual(GROK_COACH_PAGE_COMPOSER.expect, {
+    width: 760,
+    height: 50,
+    radius: 24,
+  })
+  assert.deepEqual(GROK_COACH_PAGE_COLUMN.expect, { width: 760, gap: 32 })
+  assert.equal(GROK_COACH_PANEL_COMPOSER.expect.radius, 24)
 })
 
 test("check measures a decided row against the decision and says it is a decision, not the pen", () => {

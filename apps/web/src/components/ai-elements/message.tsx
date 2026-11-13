@@ -24,11 +24,11 @@ export function PersonMessage({
           aria-invalid={failed || undefined}
           data-failed={failed ? "true" : undefined}
           className={cn(
-            "max-w-[min(85%,28rem)] self-end",
+            "max-w-[min(85%,32rem)] self-end",
             failed && "*:data-[slot=bubble-content]:border-destructive/40"
           )}
         >
-          <BubbleContent className="rounded-[20px] px-4 py-3 text-[15px] leading-[1.5] [overflow-wrap:anywhere] whitespace-pre-wrap text-foreground">
+          <BubbleContent className="rounded-[20px] border-border px-4 py-3 [font-size:inherit] [line-height:inherit] [overflow-wrap:anywhere] whitespace-pre-wrap text-foreground">
             {children}
           </BubbleContent>
         </Bubble>
@@ -44,7 +44,7 @@ export function CoachMessage({
 }: ComponentProps<typeof Message>) {
   return (
     <Message data-ui-message className={cn("w-full", className)} {...props}>
-      <MessageContent className="min-w-0 gap-3 text-[15px] leading-6 [overflow-wrap:anywhere]">
+      <MessageContent className="min-w-0 gap-3 [font-size:inherit] [line-height:inherit] [overflow-wrap:anywhere]">
         {children}
       </MessageContent>
     </Message>

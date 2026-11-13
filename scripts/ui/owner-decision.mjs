@@ -18,26 +18,51 @@ const GROK_CLEAN_COACH =
 
 export const GROK_COACH_PAGE_COMPOSER = {
   decided: "2026-11-13",
-  reason: `${GROK_CLEAN_COACH}: the docked page composer keeps the council's one-line height of about 80 and rounds to 24 like the Grok, ChatGPT and Claude composers, instead of the 114px, radius 18 pen frame`,
+  reason: `${GROK_CLEAN_COACH}: the docked page composer is Grok's one-row pill, about 48 high and fully rounded, as wide as the 760 reading column, instead of the 720 wide, 114 high, radius 18 pen frame`,
   expect: {
-    height: 82,
+    width: 760,
+    height: 50,
     radius: 24,
+  },
+}
+
+export const GROK_COACH_PAGE_COMPOSER_TEXT = {
+  decided: "2026-11-13",
+  reason: `${GROK_CLEAN_COACH}: in the one-row pill the text sits between the add button and the controls, so it starts 6 after the add button and 12 from the top instead of the two-row frame's 18 and 16`,
+  expect: {
+    paddingTop: 12,
+    paddingLeft: 6,
+  },
+}
+
+export const GROK_COACH_PAGE_COMPOSER_CONTROLS = {
+  decided: "2026-11-13",
+  reason: `${GROK_CLEAN_COACH}: in the one-row pill the controls sit on the text row, 8 from the bottom edge, instead of a tool row under the text`,
+  expect: {
+    paddingRight: 0,
+    paddingBottom: 8,
   },
 }
 
 export const GROK_COACH_PAGE_COLUMN = {
   decided: "2026-11-13",
-  reason: `${GROK_CLEAN_COACH}: turns sit 28 apart like Grok's roomier column, instead of the pen frame's 20`,
+  reason: `${GROK_CLEAN_COACH}: the reading column is 760 with 16px text and turns 32 apart, Grok's measure, instead of the pen frame's 720 and 20`,
   expect: {
-    gap: 28,
+    width: 760,
+    gap: 32,
   },
 }
 
 export const GROK_COACH_PANEL_COMPOSER = {
   decided: "2026-11-13",
-  reason: `${GROK_CLEAN_COACH}: the panel composer rounds to 20, the page composer's shape at panel size, instead of the pen frame's 14`,
+  reason: `${GROK_CLEAN_COACH}: the panel composer is the same one-row pill as the page at panel size, fully rounded with its insets on the controls, instead of the pen frame's radius 14 two-row card with 12 padding and 10 gap`,
   expect: {
-    radius: 20,
+    radius: 24,
+    paddingTop: 0,
+    paddingRight: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
+    gap: 0,
   },
 }
 

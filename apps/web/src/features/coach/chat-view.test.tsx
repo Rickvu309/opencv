@@ -388,8 +388,9 @@ describe("ChatView pending message", () => {
     expect(screen.getByText("Tighten my summary")).toBeInTheDocument()
     expect(screen.getByRole("status")).toHaveTextContent(/^Working$/)
     const log = screen.getByRole("log", { name: "Chat" })
-    expect(log.className).toContain("max-w-[720px]")
-    expect(log.className).toContain("gap-7")
+    expect(log.className).toContain("max-w-[760px]")
+    expect(log.className).toContain("gap-8")
+    expect(log.className).toContain("text-base")
     expect(log.className).toContain("pt-6")
   })
 
@@ -409,7 +410,7 @@ describe("ChatView pending message", () => {
     )
     const log = screen.getByRole("log", { name: "Chat" })
     expect(log.className).toContain("gap-3.5")
-    expect(log.className).not.toContain("gap-7")
+    expect(log.className).not.toContain("gap-8")
     expect(log.className).not.toContain("pt-6")
   })
 

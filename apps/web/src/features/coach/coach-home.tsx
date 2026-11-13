@@ -44,7 +44,7 @@ export function CoachHome({
         How can I help?
       </h2>
       {children ? (
-        <div data-slot="coach-home-composer" className="w-full max-w-[720px]">
+        <div data-slot="coach-home-composer" className="w-full max-w-[760px]">
           {children}
         </div>
       ) : null}
@@ -52,7 +52,7 @@ export function CoachHome({
         data-slot="coach-ideas"
         aria-label="Ideas for Coach"
         className={cn(
-          "flex w-full max-w-[720px] min-w-0 flex-wrap justify-center gap-2",
+          "flex w-full max-w-[760px] min-w-0 flex-wrap justify-center gap-2",
           children ? "mt-4" : null
         )}
       >

@@ -1,4 +1,10 @@
-import { use, type ComponentProps, type ReactNode } from "react"
+import {
+  use,
+  useLayoutEffect,
+  useRef,
+  type ComponentProps,
+  type ReactNode,
+} from "react"
 
 import {
   InputGroup,
@@ -11,15 +17,36 @@ import { PromptInputFrame } from "./prompt-input-frame.ts"
 
 const frameClasses = {
   standard: {
-    textarea: "max-h-48 min-h-14 px-4 py-3.5 text-base md:text-base",
-    toolbar: "justify-between gap-2 px-3 pb-3",
+    textarea:
+      "max-h-48 min-h-[52px] px-1.5 py-3.5 text-base leading-6 md:min-h-11 md:py-2.5 md:text-[14px] md:leading-6",
+    start: "self-end ps-1.5 pb-1 md:ps-1.5 md:pb-1.5",
+    end: "self-end gap-1 pe-1.5 pb-1 md:pe-1.5 md:pb-1.5",
   },
   page: {
     textarea:
-      "max-h-48 min-h-14 px-4 py-3.5 text-base md:min-h-[55px] md:pt-[15px] md:pb-0 md:text-base",
-    toolbar: "justify-between gap-2 px-3 pb-3 md:pt-3.5 md:pb-[11px]",
+      "max-h-60 min-h-[52px] px-1.5 py-3.5 text-base leading-6 md:min-h-12 md:py-3 md:text-[15px] md:leading-6",
+    start: "self-end ps-1.5 pb-1 md:ps-2 md:pb-2",
+    end: "self-end gap-1 pe-1.5 pb-1 md:pe-2 md:pb-2",
   },
 }
+
+function nextStacked({
+  value,
+  stackedAt,
+  wraps,
+}: {
+  value: string
+  stackedAt: number | null
+  wraps: boolean
+}): number | null {
+  if (stackedAt !== null) return value.length >= stackedAt ? stackedAt : null
+  return wraps || value.includes("\n") ? value.length : null
+}
+
+const STACKED_TEXT =
+  "group-data-[stacked=true]/input-group:order-first group-data-[stacked=true]/input-group:basis-full group-data-[stacked=true]/input-group:px-4 group-data-[stacked=true]/input-group:pb-1"
+const STACKED_START = "group-data-[stacked=true]/input-group:order-1"
+const STACKED_END = "group-data-[stacked=true]/input-group:ms-auto"
 
 type PromptInputProps = Omit<ComponentProps<"div">, "onSubmit" | "children"> & {
   value: string
@@ -47,16 +74,50 @@ export function PromptInput({
   ...props
 }: PromptInputProps) {
   const frame = frameClasses[use(PromptInputFrame)]
+  const groupRef = useRef<HTMLDivElement>(null)
+  const textRef = useRef<HTMLTextAreaElement>(null)
+  const stackedAt = useRef<number | null>(null)
+
+  useLayoutEffect(() => {
+    const group = groupRef.current
+    const text = textRef.current
+    if (!group || !text) return
+    const wraps = () => {
+      const style = getComputedStyle(text)
+      const oneLine =
+        Number.parseFloat(style.lineHeight) +
+        Number.parseFloat(style.paddingTop) +
+        Number.parseFloat(style.paddingBottom)
+      return Number.isFinite(oneLine) && text.scrollHeight > oneLine + 2
+    }
+    const was = stackedAt.current
+    let next = nextStacked({ value, stackedAt: was, wraps: wraps() })
+    group.dataset.stacked = next === null ? "false" : "true"
+    if (was !== null && next === null && wraps()) next = value.length
+    stackedAt.current = next
+    group.dataset.stacked = next === null ? "false" : "true"
+  }, [value])
+
   return (
     <InputGroup
+      ref={groupRef}
+      data-stacked="false"
       data-slot="prompt-input"
+      data-layout="row"
       className={cn(
-        "h-auto flex-col items-stretch rounded-2xl bg-background shadow-xs has-disabled:bg-background has-disabled:opacity-100",
+        "h-auto flex-row flex-wrap items-end rounded-3xl bg-background shadow-xs has-disabled:bg-background has-disabled:opacity-100",
         className
       )}
       {...props}
     >
+      <InputGroupAddon
+        align="inline-start"
+        className={cn(frame.start, STACKED_START)}
+      >
+        {tools}
+      </InputGroupAddon>
       <InputGroupTextarea
+        ref={textRef}
         disabled={disabled}
         value={value}
         rows={1}
@@ -69,11 +130,13 @@ export function PromptInput({
           event.preventDefault()
           if (!submitBlocked && !disabled) onSubmit()
         }}
-        className={frame.textarea}
+        className={cn(frame.textarea, STACKED_TEXT)}
       />
-      <InputGroupAddon align="block-end" className={frame.toolbar}>
-        <div className="flex min-w-0 items-center gap-1">{tools}</div>
-        <div className="flex shrink-0 items-center gap-1">{actions}</div>
+      <InputGroupAddon
+        align="inline-end"
+        className={cn(frame.end, STACKED_END)}
+      >
+        {actions}
       </InputGroupAddon>
     </InputGroup>
   )

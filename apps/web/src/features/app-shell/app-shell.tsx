@@ -13,7 +13,7 @@ import {
   keepToastsClearOf,
 } from "@/lib/toast-clearance.ts"
 import { ignoreRejection } from "@/lib/quiet-rejection.ts"
-import { Outlet, useNavigate } from "@tanstack/react-router"
+import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router"
 import { useQueryClient } from "@tanstack/react-query"
 import { History, Menu, MessageCircle } from "lucide-react"
 
@@ -124,7 +124,10 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
     shellReducer,
     SHELL_START
   )
-  const panelOpen = panel.open
+  const onCoachPage = useRouterState({
+    select: (state) => isCoachPage(state.location.pathname),
+  })
+  const panelOpen = panel.open && !onCoachPage
   const openPanelRef = useRef<
     (next: { title: string; chatId: string | null }) => void
   >(() => {})
@@ -198,6 +201,11 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
   }
 
   function openPanel(next: { title: string; chatId: string | null }) {
+    if (onCoachPage) {
+      if (next.chatId)
+        void navigate({ to: "/coach", search: { chat: next.chatId } })
+      return
+    }
     rememberOpener()
     dispatch({ type: "panel_opened", title: next.title, chatId: next.chatId })
   }
@@ -207,6 +215,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
   })
 
   function toggleCoach() {
+    if (onCoachPage) return
     if (panel.open) {
       closePanel()
       return
@@ -406,6 +415,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
           </div>
           <ShellDock
             dockRef={dockRef}
+            onCoachPage={onCoachPage}
             titles={(chats.data ?? []).map((chat) => ({
               id: chat.id,
               title: chatDisplayTitle(chat.title),
@@ -453,8 +463,13 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
   )
 }
 
+function isCoachPage(pathname: string) {
+  return pathname === "/coach" || pathname.startsWith("/coach/")
+}
+
 function ShellDock({
   dockRef,
+  onCoachPage,
   titles,
   onOpenChat,
   coachOpen,
@@ -462,6 +477,7 @@ function ShellDock({
   onHistory,
 }: {
   dockRef: { current: HTMLDivElement | null }
+  onCoachPage: boolean
   titles: { id: string; title: string }[]
   onOpenChat: (chat: { title: string; chatId: string }) => void
   coachOpen: boolean
@@ -473,47 +489,54 @@ function ShellDock({
       ref={dockRef}
       data-slot="app-dock"
       data-pen-surface="app-shell"
+      data-coach-page={onCoachPage ? "" : undefined}
       className="flex h-12 shrink-0 items-center justify-end md:h-10"
     >
-      <div data-slot="dock-recent" className="flex min-w-0 overflow-x-auto">
-        {titles.map((chat) => (
+      {onCoachPage ? null : (
+        <>
+          <div data-slot="dock-recent" className="flex min-w-0 overflow-x-auto">
+            {titles.map((chat) => (
+              <Button
+                key={chat.id}
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-11 max-w-36 min-w-11 shrink md:h-7 md:min-w-0 md:shrink-0"
+                data-chat-id={chat.id}
+                title={chat.title}
+                onClick={() =>
+                  onOpenChat({ title: chat.title, chatId: chat.id })
+                }
+              >
+                <span className="truncate">{chat.title}</span>
+              </Button>
+            ))}
+          </div>
           <Button
-            key={chat.id}
             type="button"
             variant="ghost"
             size="sm"
-            className="h-11 max-w-36 min-w-11 shrink md:h-7 md:min-w-0 md:shrink-0"
-            data-chat-id={chat.id}
-            title={chat.title}
-            onClick={() => onOpenChat({ title: chat.title, chatId: chat.id })}
+            className="h-11 aria-expanded:bg-sidebar-accent md:h-7"
+            data-dock-coach=""
+            aria-expanded={coachOpen}
+            aria-controls={COACH_PANEL_ID}
+            onClick={onCoach}
           >
-            <span className="truncate">{chat.title}</span>
+            <MessageCircle aria-hidden="true" />
+            {shellCopy.coach}
           </Button>
-        ))}
-      </div>
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="h-11 aria-expanded:bg-sidebar-accent md:h-7"
-        data-dock-coach=""
-        aria-expanded={coachOpen}
-        aria-controls={COACH_PANEL_ID}
-        onClick={onCoach}
-      >
-        <MessageCircle aria-hidden="true" />
-        {shellCopy.coach}
-      </Button>
-      <Button
-        type="button"
-        variant="ghost"
-        size="icon-sm"
-        className="size-11 md:size-7"
-        aria-label={shellCopy.history}
-        onClick={onHistory}
-      >
-        <History aria-hidden="true" />
-      </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="size-11 md:size-7"
+            aria-label={shellCopy.history}
+            onClick={onHistory}
+          >
+            <History aria-hidden="true" />
+          </Button>
+        </>
+      )}
     </div>
   )
 }

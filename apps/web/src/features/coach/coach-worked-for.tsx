@@ -4,6 +4,7 @@ import {
   CollapsibleIndicator,
   CollapsibleTrigger,
 } from "@workspace/ui/components/collapsible"
+import { Lightbulb } from "lucide-react"
 
 import type { CoachReadTrace } from "./coach-read-trace.ts"
 
@@ -22,14 +23,16 @@ export function CoachWorkedFor({
     return (
       <p
         data-slot="coach-worked-for"
-        className="text-[13px] text-muted-foreground"
+        className="inline-flex items-center gap-1.5 text-[13px] text-muted-foreground"
       >
+        <Lightbulb aria-hidden="true" className="size-3.5 shrink-0" />
         {workedForText(workedMs)}
       </p>
     )
   return (
     <Collapsible data-slot="coach-worked-for">
-      <CollapsibleTrigger className="-mx-1 inline-flex min-h-11 items-center gap-1 rounded-md px-1 text-[13px] text-muted-foreground transition-colors duration-(--duration-micro) ease-(--ease-micro) outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 md:min-h-7">
+      <CollapsibleTrigger className="-mx-1 inline-flex min-h-11 items-center gap-1.5 rounded-md px-1 text-[13px] text-muted-foreground transition-colors duration-(--duration-micro) ease-(--ease-micro) outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 md:min-h-7">
+        <Lightbulb aria-hidden="true" className="size-3.5 shrink-0" />
         {workedForText(workedMs)}
         <CollapsibleIndicator className="size-3.5" />
       </CollapsibleTrigger>
