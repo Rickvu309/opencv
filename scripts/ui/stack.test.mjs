@@ -3,6 +3,7 @@ import test from "node:test"
 import { WORKTREE_PORTS } from "../../packages/domain/src/local-ports.ts"
 import { fakePorts } from "./fake-ports.mjs"
 import {
+  SEEDED_ACCOUNTS,
   cookiesFromSetCookie,
   down,
   lastSignInCode,
@@ -135,6 +136,8 @@ test("down stops what up started and removes its database and session", async ()
       [`${dir}/pglite/base`]: "x",
       [`${dir}/pool/ready/00001.json`]: "{}",
       [`${dir}/pool/used/ui-pool-00002@example.com`]: "paper-home",
+      [`${dir}/seeded/ready/00002.json`]: "{}",
+      [`${dir}/seeded/used/ui-seed-00001@example.com`]: "paper-home",
       [`${dir}/api.log`]: "kept",
     },
     alive: [7, 8, 9],
@@ -160,13 +163,58 @@ test("an up that finds a dead app starts api and web on fresh state", async () =
   })
   await assert.rejects(up(ctx), /api \(log .*api\.log\) did not become ready/)
   assert.deepEqual(
-    ctx.started.map((entry) => entry.args.slice(0, 3)),
+    ctx.started.map((entry) => [entry.pid === null, entry.args.at(5)]),
     [
-      ["--filter", "@workspace/domain", "build"],
-      ["--dir", "apps/api", "exec"],
-      ["--dir", "apps/web", "exec"],
+      [true, undefined],
+      [true, "src/test/seed-sessions.ts"],
+      [false, "src/index.ts"],
+      [false, "5333"],
     ]
   )
-  assert.equal(ctx.started[1].options.env.PORT, "4333")
+  const seed = ctx.started[1]
+  assert.deepEqual(seed.args.slice(6), [
+    `${dir}/pglite`,
+    String(SEEDED_ACCOUNTS),
+    `${dir}/seeded/ready`,
+  ])
+  assert.equal(seed.options.env.PGLITE_DATA_DIR, `${dir}/pglite`)
+  assert.equal(seed.options.env.AUTH_URL, "http://localhost:4333")
+  assert.equal(seed.options.env.WEB_ORIGINS, "http://localhost:5333")
+  assert.equal(ctx.started[2].options.env.PORT, "4333")
   assert.equal(ctx.store.has(`${dir}/pglite/old`), false)
+  assert.deepEqual(JSON.parse(ctx.store.get(`${dir}/state.json`)).seeded, {
+    count: SEEDED_ACCOUNTS,
+    dir: `${dir}/seeded`,
+  })
+})
+
+test("seeded accounts are made before the api opens the database, and an up whose seeding fails starts no api", async () => {
+  const dir = stateDir("/scratch/ocv-ui", "/work/opencv.worktrees/1-demo")
+  const ctx = fakePorts({
+    files: {
+      [`${dir}/seeded/ready/00001.json`]: "{}",
+      [`${dir}/seeded/used/ui-seed-00009@example.com`]: "old",
+    },
+    env: { PORT: "4333" },
+  })
+  ctx.fs.write(
+    "/work/opencv.worktrees/1-demo/packages/domain/dist/index.js",
+    ""
+  )
+  ctx.proc.run = async (command, args, options) => {
+    ctx.started.push({ command, args, options, pid: null })
+    return 1
+  }
+  await assert.rejects(
+    up(ctx),
+    /seeding 120 signed-in accounts failed \(log .*seed\.log\)/
+  )
+  assert.deepEqual(
+    ctx.started.map((entry) => entry.args.at(5)),
+    ["src/test/seed-sessions.ts"]
+  )
+  assert.deepEqual(
+    [...ctx.store.keys()].filter((key) => key.includes("/seeded/")),
+    []
+  )
 })
