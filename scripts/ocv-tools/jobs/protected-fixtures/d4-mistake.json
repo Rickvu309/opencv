@@ -1,0 +1,13 @@
+{
+  "pr": 1381,
+  "round": 1,
+  "head": "ea5b270c015d34190d797e8e87dadef826d8afa5",
+  "fork": "0ef36e9602544ffb0378d5f70929579e693d506e",
+  "files": [
+    {
+      "path": "apps/web/src/features/paper/paper-letter-edits.test.ts",
+      "baseText": "import { describe, expect, it } from \"vitest\"\n\nimport { letterEdits } from \"./paper-letter-start.tsx\"\n\nfunction savedParagraphs(markdown: string) {\n  const edits = letterEdits(markdown)\n  let blocks = [\"\"]\n  for (const edit of edits) {\n    if (edit.op === \"setText\") blocks[0] = edit.text\n    if (edit.op === \"insert\" && edit.after === \"letter-1\") {\n      const added = edit.blocks.map((block) =>\n        block.type === \"paragraph\" ? block.text : \"\"\n      )\n      blocks = [blocks[0]!, ...added, ...blocks.slice(1)]\n    }\n  }\n  return blocks\n}\n\ndescribe(\"letterEdits\", () => {\n  it(\"keeps a short letter in order\", () => {\n    expect(savedParagraphs(\"Alpha\\n\\nBeta\\n\\nGamma\")).toEqual([\n      \"Alpha\",\n      \"Beta\",\n      \"Gamma\",\n    ])\n  })\n\n  it(\"keeps every paragraph past the old thirty-chunk cut, in order\", () => {\n    const lines = Array.from(\n      { length: 32 },\n      (_, index) => `Paragraph ${index + 1} stays.`\n    )\n    expect(savedParagraphs(lines.join(\"\\n\\n\"))).toEqual(lines)\n  })\n\n  it(\"refuses a letter that needs more inserts than one save allows\", () => {\n    const lines = Array.from(\n      { length: 1 + 39 * 30 + 1 },\n      (_, index) => `P${index}`\n    )\n    expect(() => letterEdits(lines.join(\"\\n\\n\"))).toThrow(/too long to save/)\n  })\n})\n",
+      "headText": null
+    }
+  ]
+}

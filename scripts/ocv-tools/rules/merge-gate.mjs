@@ -50,6 +50,13 @@ export function mergeGateFiles(files) {
   )
 }
 
+export const RETIRED_DIR = "scripts/retired"
+export const RETIRED_FILE = /^scripts\/retired\/(\d+)\.json$/
+
+export function retiredFiles(files) {
+  return asLines(files).filter((file) => RETIRED_FILE.test(file))
+}
+
 export function allowMigrationLabel(tag) {
   return `${ALLOW_MIGRATION_PREFIX}${tag}`
 }
@@ -69,6 +76,8 @@ export function ownerBecause(facts) {
       .filter((file) => !risky.includes(file))
       .map((file) => `${file} decides what may merge`),
   ]
+  for (const file of retiredFiles(facts.diff?.files))
+    because.push(`${file} retires a protected check`)
   for (const item of facts.migrations?.files ?? [])
     if (item.changes?.length)
       because.push(`migration ${item.tag} changes existing things`)

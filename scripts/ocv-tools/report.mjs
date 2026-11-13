@@ -33,6 +33,11 @@ export const COMMANDS = [
     when: "Print the first failing cases of the newest ci run on the PR head, each with a repro command, in at most 30 lines. On a run still in progress it prints the failures so far and says the run is not finished; on a green run it says green.",
   },
   {
+    name: "retire",
+    usage: 'retire "<subject>" --because "<why>" --replaced-by <test file>',
+    when: "The one way to remove or weaken a protected check on purpose: a test case or assertion, a fixture, a corpus file, a ledger row, a ratchet or known-failures entry, a limit bound or a checker setting. The subject is what PROTECTED_WEAKENED printed (or its file, or a case title prefix). The replacement test must be in this change; retire runs it under the machine lock with the changed source files put back to the fork point (it must fail on an assertion) and on the head (it must pass), then writes the retirement and its proof to scripts/retired/<issue>.json. A pull request holding a retirement is owner class and waits for the owner's yes.",
+  },
+  {
     name: "policy",
     usage: "policy <pr#>",
     when: "Evaluate the server-held PR rules against a live pull request and print one line per refusal, each with its fix. Exit 2 when a rule refuses.",

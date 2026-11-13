@@ -23,6 +23,7 @@ import { decide, refusalError } from "./rules/index.mjs"
 import { merge } from "./jobs/merge.mjs"
 import { policyReport } from "./jobs/policy.mjs"
 import { why } from "./jobs/why.mjs"
+import { retire } from "./jobs/retire.mjs"
 import { pullFacts } from "./jobs/pull-facts.mjs"
 
 export function realCtx() {
@@ -59,6 +60,8 @@ const VALUED = new Set([
   "--name",
   "--role",
   "--allow-migration",
+  "--because",
+  "--replaced-by",
   "--base",
   "--head",
   ...TEMPLATE_FIELDS.map((f) => f.flag),
@@ -286,6 +289,21 @@ function command(ctx, cmd, rest) {
       const n = issueNumber(pos[0], "policy <pr#>")
       return policyReport(n, pullFacts(ctx, n), {
         annotate: ctx.env.GITHUB_ACTIONS === "true",
+      })
+    }
+    case "retire": {
+      const unknown = Object.keys(flags).find(
+        (flag) => !["--because", "--replaced-by"].includes(flag)
+      )
+      if (unknown) unknownOption(unknown)
+      if (pos.length !== 1)
+        throw new Error(
+          'usage: ocv-tools retire "<subject>" --because "<why>" --replaced-by <test file>'
+        )
+      return retire(ctx, {
+        subject: pos[0],
+        because: flags["--because"],
+        replacedBy: flags["--replaced-by"],
       })
     }
     case "why": {

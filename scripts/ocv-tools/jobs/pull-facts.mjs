@@ -3,6 +3,7 @@ import { run, git, json, diffFacts } from "./common.mjs"
 import { pinFacts } from "./pin-facts.mjs"
 import { migrationFacts } from "./migration-facts.mjs"
 import { LABELS, allowedMigrationTags } from "../rules/merge-gate.mjs"
+import { protectedFacts } from "./protected-facts.mjs"
 
 export const PR_FIELDS =
   "number,url,state,title,body,author,isDraft,labels,headRefOid,headRefName,baseRefName,mergeCommit,closingIssuesReferences,autoMergeRequest"
@@ -215,6 +216,7 @@ export function pullFacts(ctx, n) {
       allowedMigrationTags(shaped.labels)
     ),
     issues: productionRedIssues(ctx),
+    protected: protectedFacts(ctx, "origin/main", head),
   }
 }
 
@@ -234,5 +236,6 @@ export function planPull(ctx, { n, title, body, issue }) {
       ...commitFacts(ctx, "origin/main", "HEAD"),
       count: Number(git(ctx, "rev-list", "--count", "origin/main..HEAD")),
     },
+    protected: protectedFacts(ctx, "origin/main", "HEAD"),
   }
 }

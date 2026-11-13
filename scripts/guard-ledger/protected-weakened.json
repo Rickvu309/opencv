@@ -1,0 +1,18 @@
+{
+  "id": "protected-weakened",
+  "file": "scripts/ocv-tools/jobs/protected.test.mjs",
+  "detector": {
+    "module": "scripts/ocv-tools/jobs/protected.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "HEAD",
+    "path": "scripts/ocv-tools/jobs/protected-fixtures/d4-mistake.json",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "scripts/ocv-tools/jobs/protected-fixtures/d4-clean.json"
+    }
+  },
+  "reason": "Caught only by a reader. At the first round head of PR 1381, ea5b270c, the builder deleted apps/web/src/features/paper/paper-letter-edits.test.ts and with it the case that refuses a letter too long to save (row D4); the second fixture keeps the same text moved to a new path, which must stay quiet. The mistake fixture holds that file as it was at the fork point 0ef36e96 and records its deletion; the detector is the same judge the push, finish and pull request rows run, which compares two texts, so the row reads fixtures at HEAD the way catalog-stale does. scripts/ocv-tools/jobs/protected.test.mjs replays the same case and PR 1435 round 1 (7b79a562, row D52, the DOCX zip case deleted). The guard-proof tag keeps ea5b270c reachable."
+}

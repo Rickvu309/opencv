@@ -6,6 +6,7 @@ import { run } from "./common.mjs"
 import { runQuickChecks } from "./push-checks.mjs"
 import { testsForPush } from "./affected-tests.mjs"
 import { catalogFacts } from "./catalog-fresh.mjs"
+import { pushedProtectedFacts } from "./protected-facts.mjs"
 
 const LIMIT_BYTES = 20000
 const SUBMODULE_MODE = "160000"
@@ -236,7 +237,16 @@ function pushedRefs(text) {
 function prePush(ctx) {
   const refs = pushedRefs(ctx.readStdin())
   const pushing = refs.some((ref) => !ref.deleting)
-  const facts = { push: { refs }, env: pushing ? ctx.env : {} }
+  const top = run(ctx, "git", ["rev-parse", "--show-toplevel"]).out || ctx.cwd
+  const facts = {
+    push: { refs },
+    env: pushing ? ctx.env : {},
+    protected: pushedProtectedFacts(
+      ctx,
+      refs.filter((ref) => !ref.deleting).map((ref) => ref.sha),
+      top
+    ),
+  }
   const early = decide("push", {
     ...facts,
     quick: { failed: [] },
@@ -250,7 +260,6 @@ function prePush(ctx) {
         "pre-push: WARNING: SKIP_CHECKS=1, the quick checks are skipped. Emergencies only; say so in the PR.",
       ],
     }
-  const top = run(ctx, "git", ["rev-parse", "--show-toplevel"]).out || ctx.cwd
   const started = ctx.now()
   const quick = runQuickChecks(ctx, top)
   const affected = quick.failed.length

@@ -32,6 +32,7 @@ const clean = {
   pins: [],
   migrations: { allowed: [], files: [] },
   issues: [],
+  protected: { weakened: [], retired: [], retirements: [] },
 }
 
 test("a clean pull request passes with exit 0", () => {
