@@ -105,7 +105,7 @@ export const FEATURED_TEMPLATES: readonly PaperTemplateId[] = [
   "academic",
 ]
 
-const TEMPLATE_USES: Partial<Record<PaperTemplateId, string>> = {
+const TEMPLATE_USES: Record<string, string> = {
   simple: "Plain and safe for any role",
   modern: "Profile first, with selected work",
   compact: "Work experience leads",
@@ -118,21 +118,12 @@ export type TemplateChoice = {
   readonly use: string
 }
 
-function sameAs(id: PaperTemplateId) {
-  const twin = PAPER_TEMPLATE_LABELS.find(
-    (item) => item.id === previewTemplate(id)
-  )
-  return `Same page as ${twin?.label ?? "Simple"}`
-}
-
 export const TEMPLATE_CHOICES: readonly TemplateChoice[] =
-  PAPER_TEMPLATE_LABELS.filter(({ id }) => id !== "blank").map(
-    ({ id, label }) => ({
-      id,
-      label,
-      use: TEMPLATE_USES[id] ?? sameAs(id),
-    })
-  )
+  FEATURED_TEMPLATES.map((id) => ({
+    id,
+    label: PAPER_TEMPLATE_LABELS.find((item) => item.id === id)?.label ?? id,
+    use: TEMPLATE_USES[id] ?? "",
+  }))
 
 const words = (text: string) =>
   text
@@ -140,23 +131,21 @@ const words = (text: string) =>
     .split(/[^a-z0-9]+/)
     .filter(Boolean)
 
+const headingsOf = (id: PaperTemplateId) =>
+  templatePageLines(id)
+    .filter((line) => line.style === "Heading1")
+    .map((line) => line.text)
+    .join(" ")
+
 export function findTemplates(query: string): readonly TemplateChoice[] {
   const needles = words(query)
-  if (needles.length === 0)
-    return TEMPLATE_CHOICES.filter((choice) =>
-      FEATURED_TEMPLATES.includes(choice.id)
-    )
+  if (needles.length === 0) return TEMPLATE_CHOICES
   return TEMPLATE_CHOICES.filter((choice) => {
-    const label = words(choice.label).join("")
-    const haystack = [
-      ...words(`${choice.label} ${TEMPLATE_USES[choice.id] ?? ""}`),
-      label,
-    ]
+    const haystack = words(
+      `${choice.label} ${choice.use} ${headingsOf(choice.id)}`
+    )
     return needles.every((needle) =>
       haystack.some((word) => word.startsWith(needle))
     )
   })
 }
-
-export const MORE_TEMPLATE_COUNT =
-  TEMPLATE_CHOICES.length - FEATURED_TEMPLATES.length

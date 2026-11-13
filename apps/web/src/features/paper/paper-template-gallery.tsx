@@ -20,7 +20,6 @@ import { Spinner } from "@workspace/ui/components/spinner"
 
 import {
   findTemplates,
-  MORE_TEMPLATE_COUNT,
   TEMPLATE_CHOICES,
   type TemplateChoice,
 } from "./paper-template-pages.ts"
@@ -31,7 +30,7 @@ import {
 } from "./paper-template-thumb.tsx"
 
 export const PAPER_GALLERY_DIALOG_CLASS =
-  "flex flex-col sm:max-w-3xl lg:max-w-[960px] sm:h-[min(560px,calc(100dvh-clamp(16px,14dvh,120px)-16px))] max-sm:top-0 max-sm:left-0 max-sm:h-dvh max-sm:max-h-dvh max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:rounded-none overscroll-contain transition-[opacity,scale,translate]"
+  "flex flex-col sm:max-w-3xl lg:max-w-[1000px] xl:max-w-[1200px] sm:h-[min(600px,calc(100dvh-clamp(16px,14dvh,120px)-16px))] max-sm:top-0 max-sm:left-0 max-sm:h-dvh max-sm:max-h-dvh max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:rounded-none overscroll-contain transition-[opacity,scale,translate]"
 
 type Choice = PaperTemplateId | "blank"
 
@@ -92,7 +91,7 @@ const CARD_CLASS =
   "group/card h-auto min-w-0 flex-col items-stretch justify-start gap-2 rounded-[10px] p-1.5 font-normal whitespace-normal text-start outline-none [-webkit-tap-highlight-color:transparent] focus-visible:ring-3 focus-visible:ring-ring/50 aria-disabled:cursor-wait aria-disabled:opacity-60 hover:bg-muted/60 aria-checked:bg-muted"
 
 const PAGE_STATE_CLASS =
-  "group-hover/card:shadow-[0_0_0_1px_var(--ring),0_1px_3px_oklch(0_0_0/0.08)] group-aria-checked/card:shadow-[0_0_0_2px_var(--primary),0_4px_12px_oklch(0_0_0/0.12)]"
+  "shadow-[0_0_0_1px_oklch(0_0_0/0.14),0_1px_3px_oklch(0_0_0/0.08)] group-hover/card:shadow-[0_0_0_1px_oklch(0_0_0/0.45),0_2px_6px_oklch(0_0_0/0.1)] group-aria-checked/card:shadow-[0_0_0_2px_var(--primary),0_4px_12px_oklch(0_0_0/0.14)]"
 
 function ChoiceCard({
   id,
@@ -139,9 +138,9 @@ function ChoiceCard({
         {checked ? (
           <span
             aria-hidden="true"
-            className="absolute end-1.5 top-1.5 grid size-5 place-items-center rounded-full bg-primary text-primary-foreground"
+            className="absolute end-2 top-2 grid size-6 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_0_0_2px_var(--popover)]"
           >
-            <Check className="size-3" strokeWidth={3} />
+            <Check className="size-3.5" strokeWidth={3} />
           </span>
         ) : null}
       </span>
@@ -289,7 +288,7 @@ export function PaperTemplateGallery({
           aria-label="Templates"
           aria-busy={pending || undefined}
           data-template-grid=""
-          className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4 sm:gap-x-4 sm:gap-y-5 md:grid-cols-5"
+          className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-6 lg:grid-cols-4 xl:grid-cols-5"
           onKeyDown={moveFocus}
         >
           {hasBlank ? (
@@ -320,28 +319,27 @@ export function PaperTemplateGallery({
             </ChoiceCard>
           ))}
         </div>
-        <p
-          data-template-note=""
-          aria-live="polite"
-          className="mt-4 text-xs text-muted-foreground"
-        >
-          {searching && found.length === 0 ? (
-            <>
-              No template matches “{query.trim()}”.{" "}
-              <Button
-                type="button"
-                variant="link"
-                className="h-11 px-0 text-xs font-medium text-foreground underline md:h-auto"
-                onClick={() => dispatch({ type: "query_cleared" })}
-              >
-                Clear search
-              </Button>
-            </>
-          ) : searching ? (
-            `${found.length} ${found.length === 1 ? "template" : "templates"}`
-          ) : (
-            `${MORE_TEMPLATE_COUNT} more names, like Classic or Two column, share these pages. Search to find one.`
-          )}
+        {searching && found.length === 0 ? (
+          <p
+            data-template-note=""
+            className="mt-4 text-sm text-muted-foreground"
+          >
+            No template matches “{query.trim()}”. Start blank, or{" "}
+            <Button
+              type="button"
+              variant="link"
+              className="h-11 px-0 text-sm font-medium text-foreground underline md:h-auto"
+              onClick={() => dispatch({ type: "query_cleared" })}
+            >
+              clear the search
+            </Button>
+            .
+          </p>
+        ) : null}
+        <p aria-live="polite" className="sr-only">
+          {searching
+            ? `${found.length} ${found.length === 1 ? "template" : "templates"}`
+            : ""}
         </p>
       </div>
       {error ? (

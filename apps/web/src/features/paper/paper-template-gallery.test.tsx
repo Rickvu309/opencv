@@ -12,7 +12,11 @@ import {
   PAPER_GALLERY_DIALOG_CLASS,
   PaperTemplateGallery,
 } from "./paper-template-gallery.tsx"
-import { FEATURED_TEMPLATES, TEMPLATE_CHOICES } from "./paper-template-pages.ts"
+import {
+  FEATURED_TEMPLATES,
+  TEMPLATE_CHOICES,
+  templatePageLines,
+} from "./paper-template-pages.ts"
 import { PAPER_TEMPLATE_LABELS } from "./paper-templates.ts"
 import { panelFit } from "@workspace/ui/lib/dialog-fit"
 
@@ -131,41 +135,86 @@ describe("Paper template chooser", () => {
     expect(card("Blank")).toHaveAttribute("aria-checked", "true")
     expect(screen.getByRole("button", { name: "Start blank" })).toBeEnabled()
     expect(screen.getByRole("button", { name: "Import a file" })).toBeEnabled()
-    expect(
-      screen.getByText(
-        "11 more names, like Classic or Two column, share these pages. Search to find one."
-      )
-    ).toBeInTheDocument()
+    expect(screen.queryByText(/more names/)).toBeNull()
     expect(PAPER_TEMPLATE_LABELS).toHaveLength(16)
-    expect(TEMPLATE_CHOICES.map((choice) => choice.id)).not.toContain("blank")
+    expect(TEMPLATE_CHOICES.map((choice) => choice.id)).toEqual([
+      ...FEATURED_TEMPLATES,
+    ])
   })
 
-  it("draws each template as a small page of the lines its new page starts with", () => {
+  it("starts each template from the API's lines and draws its name, headings and line blocks large enough to tell apart", () => {
+    expect(templatePageLines("simple")).toEqual([
+      { style: "Title", text: "[Your name]", center: true },
+      { style: "Normal", text: "[Headline]", center: true },
+      {
+        style: "Normal",
+        text: "[Email] | [Phone] | [City] | [LinkedIn]",
+        center: true,
+      },
+      { style: "Heading1", text: "Summary" },
+      {
+        style: "Normal",
+        text: "[Two or three lines on who you are and the work you want]",
+      },
+      { style: "Heading1", text: "Experience" },
+      { style: "Normal", text: "[Role, company] | [Dates]" },
+      {
+        style: "ListBullet",
+        text: "[What you did, and what changed because of it]",
+      },
+      { style: "Heading1", text: "Education" },
+      { style: "Normal", text: "[School, degree] | [Dates]" },
+      {
+        style: "ListBullet",
+        text: "[A course, result or project worth naming]",
+      },
+      { style: "Heading1", text: "Skills" },
+      { style: "Normal", text: "[Tools, software and languages]" },
+    ])
     render(<Chooser onBlank={() => undefined} />)
     const page = (id: string) =>
-      [...document.querySelectorAll(`[data-template-page="${id}"] > span`)].map(
-        (line) => line.textContent
-      )
+      [
+        ...document.querySelectorAll(
+          `[data-template-page="${id}"] :is([data-page-name],[data-page-heading])`
+        ),
+      ].map((line) => line.textContent)
     expect(page("simple")).toEqual([
-      "[Your name]",
-      "[Headline]",
-      "[Email] | [Phone] | [City] | [LinkedIn]",
+      "Your name",
       "Summary",
-      "[Two or three lines on who you are and the work you want]",
       "Experience",
-      "[Role, company] | [Dates]",
-      "[What you did, and what changed because of it]",
       "Education",
-      "[School, degree] | [Dates]",
-      "[A course, result or project worth naming]",
       "Skills",
-      "[Tools, software and languages]",
     ])
-    expect(page("modern")).toContain("Selected work")
-    expect(page("compact")[3]).toBe("Work experience")
-    expect(page("academic")[3]).toBe("Education")
+    expect(page("modern")).toEqual([
+      "Your name",
+      "Profile",
+      "Experience",
+      "Selected work",
+    ])
+    expect(page("compact")).toEqual([
+      "Your name",
+      "Work experience",
+      "About",
+      "Education",
+      "Skills",
+    ])
+    expect(page("academic")).toEqual([
+      "Your name",
+      "Education",
+      "Projects & campus",
+      "Experience",
+      "Skills & languages",
+    ])
     expect(
-      document.querySelector('[data-template-page="blank"] > span')
+      document.querySelectorAll(
+        '[data-template-page="simple"] [data-page-line]'
+      )
+    ).toHaveLength(8)
+    const heading = document.querySelector<HTMLElement>("[data-page-heading]")
+    expect(heading?.className).toMatch(/text-\[4\.6cqw\]/)
+    expect(heading?.className).toContain("font-semibold")
+    expect(
+      document.querySelector('[data-template-page="blank"] [data-page-name]')
     ).toBeNull()
     expect(
       document.querySelector('[data-template-page="blank"] svg')
@@ -176,23 +225,22 @@ describe("Paper template chooser", () => {
     const onUse = vi.fn()
     const onBlank = vi.fn()
     render(<Chooser onUse={onUse} onBlank={onBlank} />)
-    fireEvent.change(search(), { target: { value: "two col" } })
-    expect(shownCards()).toEqual(["blank", "two-column"])
-    expect(card("Two column")).toHaveAccessibleDescription(
-      "Same page as Simple"
-    )
-    expect(card("Two column")).toHaveAttribute("aria-checked", "true")
-    fireEvent.change(search(), { target: { value: "TWOCOLUMN" } })
-    expect(shownCards()).toEqual(["blank", "two-column"])
+    fireEvent.change(search(), { target: { value: "proj" } })
+    expect(shownCards()).toEqual(["blank", "academic"])
+    expect(card("Academic")).toHaveAttribute("aria-checked", "true")
+    fireEvent.change(search(), { target: { value: "EDUC" } })
+    expect(shownCards()).toEqual(["blank", "simple", "compact", "academic"])
+    fireEvent.change(search(), { target: { value: "classic" } })
+    expect(shownCards()).toEqual(["blank"])
     fireEvent.change(search(), { target: { value: "mod" } })
-    expect(screen.getByText("1 template")).toBeInTheDocument()
+    expect(screen.getByText("1 template")).toHaveClass("sr-only")
     fireEvent.keyDown(search(), { key: "Enter" })
     expect(onUse).toHaveBeenCalledWith("modern")
     fireEvent.change(search(), { target: { value: "zzzz" } })
     expect(shownCards()).toEqual(["blank"])
     expect(screen.getByText(/No template matches/)).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Start blank" })).toBeEnabled()
-    fireEvent.click(screen.getByRole("button", { name: "Clear search" }))
+    fireEvent.click(screen.getByRole("button", { name: "clear the search" }))
     expect(shownCards()).toEqual(["blank", ...FEATURED_TEMPLATES])
     fireEvent.change(search(), { target: { value: "blank" } })
     expect(shownCards()).toEqual(["blank"])

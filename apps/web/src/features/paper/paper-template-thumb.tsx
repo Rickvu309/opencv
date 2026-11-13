@@ -7,32 +7,58 @@ import {
   type TemplatePageLine,
 } from "./paper-template-pages.ts"
 
-const LINE_CLASS: Record<TemplatePageLine["style"], string> = {
-  Title: "text-[3.27cqw] leading-[1.2] font-bold mb-[0.5cqw]",
-  Heading1:
-    "mt-[2cqw] mb-[0.7cqw] border-b-[0.15cqw] border-current text-[2.12cqw] leading-[1.25] font-bold",
-  ListBullet:
-    "mb-[1cqw] ps-[3cqw] -indent-[1.8cqw] text-[1.8cqw] leading-[1.25] before:me-[1cqw] before:content-['•']",
-  Normal: "mb-[1cqw] text-[1.8cqw] leading-[1.25]",
-}
-
 export const TEMPLATE_PAGE_CLASS =
-  "@container relative block aspect-[1/1.294] w-full overflow-hidden rounded-[4px] border border-transparent bg-white text-black/85 shadow-[0_0_0_1px_oklch(0_0_0/0.08),0_1px_3px_oklch(0_0_0/0.08)]"
+  "@container relative block aspect-[1/1.294] w-full overflow-hidden rounded-[6px] border border-transparent bg-white text-black/85"
+
+const plain = (text: string) => text.replace(/[[\]]/g, "")
+
+const barWidth = (text: string) =>
+  `${Math.min(94, 28 + plain(text).length * 1.25)}%`
+
+function PageLine({ line }: { line: TemplatePageLine }) {
+  if (line.style === "Title")
+    return (
+      <span
+        data-page-name=""
+        className="mb-[2.4cqw] block truncate text-center text-[7.2cqw] leading-[1.15] font-semibold tracking-[-0.01em]"
+      >
+        {plain(line.text)}
+      </span>
+    )
+  if (line.style === "Heading1")
+    return (
+      <span
+        data-page-heading=""
+        className="mt-[3.6cqw] mb-[1.8cqw] block truncate border-b-[0.5cqw] border-black/70 pb-[0.6cqw] text-[4.6cqw] leading-[1.2] font-semibold"
+      >
+        {line.text}
+      </span>
+    )
+  return (
+    <span
+      data-page-line={line.style}
+      className={`mb-[1.6cqw] flex items-center gap-[1.4cqw] ${line.center ? "justify-center" : ""}`}
+    >
+      {line.style === "ListBullet" ? (
+        <span className="size-[1.4cqw] shrink-0 rounded-full bg-black/45" />
+      ) : null}
+      <span
+        className="block h-[1.9cqw] rounded-full bg-black/18"
+        style={{ width: barWidth(line.text) }}
+      />
+    </span>
+  )
+}
 
 export function TemplatePage({ templateId }: { templateId: PaperTemplateId }) {
   return (
     <span
       aria-hidden="true"
       data-template-page={templateId}
-      className="absolute inset-0 overflow-hidden px-[11.76cqw] py-[11.76cqw] font-[Calibri,Carlito,ui-sans-serif,sans-serif]"
+      className="absolute inset-0 overflow-hidden px-[9cqw] py-[9cqw]"
     >
       {templatePageLines(templateId).map((line, index) => (
-        <span
-          key={index}
-          className={`block ${LINE_CLASS[line.style]}${line.center ? "text-center" : ""}`}
-        >
-          {line.text}
-        </span>
+        <PageLine key={index} line={line} />
       ))}
     </span>
   )
@@ -45,7 +71,7 @@ export function BlankPage() {
       data-template-page="blank"
       className="absolute inset-0 grid place-items-center"
     >
-      <Plus className="size-[14cqw] text-black/35" strokeWidth={1.5} />
+      <Plus className="size-[16cqw] text-black/45" strokeWidth={1.5} />
     </span>
   )
 }
