@@ -4,7 +4,7 @@ import { GRID, parseSize } from "../../../packages/ui/src/lib/viewport-grid.ts"
 import { UsageError } from "../args.mjs"
 import { SCREENS, pickScreens } from "../screens.mjs"
 import { liveState } from "../stack.mjs"
-import { pooled } from "./accounts.mjs"
+import { ACCOUNT_SOURCES, accountSource } from "./accounts.mjs"
 import { browserWorld } from "./browser-world.mjs"
 import { LOOP_FILES, coreLoop } from "./loop.mjs"
 import { routeScreens, staticRoutes } from "./routes.mjs"
@@ -53,10 +53,10 @@ export function sweepTargets({ mode, ids, routes, file }) {
 
 export const SWEEP_COMMAND = {
   usage:
-    "sweep screen <id...> | all | loop [--size WxH] [--file cv-formatted.docx|cv-text.pdf]",
+    "sweep screen <id...> | all | loop [--size WxH] [--file cv-formatted.docx|cv-text.pdf] [--accounts seeded|pooled]",
   about:
     "Open screens at ten window sizes and fail on a box that does not fit, a control that cannot be clicked, requests that do not settle, focus lost after Escape or a console error; loop runs the Paper core loop (import, open, type, Coach edit, approve, download Word).",
-  options: { valued: ["size", "file"] },
+  options: { valued: ["size", "file", "accounts"] },
   run: async (ctx, { positional, flags }) => {
     const [mode, ...ids] = positional
     if (!MODES.includes(mode))
@@ -68,6 +68,11 @@ export const SWEEP_COMMAND = {
       ctx.fs.read(join(ctx.repo, "apps/web/src/lib/product-paths.ts"))
     )
     const targets = sweepTargets({ mode, ids, routes, file: flags.file })
+    const accountKind = flags.accounts ?? "seeded"
+    if (!ACCOUNT_SOURCES.includes(accountKind))
+      throw new UsageError(
+        `--accounts takes ${ACCOUNT_SOURCES.join(" or ")}, got ${accountKind}`
+      )
     const grid = flags.size ? [parseSize(flags.size)] : GRID
     const state = await liveState(ctx)
     if (!state)
@@ -85,7 +90,7 @@ export const SWEEP_COMMAND = {
       const world = browserWorld({
         browser,
         state,
-        accounts: pooled(state),
+        accounts: accountSource(accountKind, state),
         shotsDir: join(state.dir, "sweep"),
         now: ctx.clock.now,
       })

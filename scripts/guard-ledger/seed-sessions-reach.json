@@ -1,0 +1,10 @@
+{
+  "id": "seed-sessions-reach",
+  "file": "apps/api/src/test/seed-sessions-reach.test.ts",
+  "detector": {
+    "module": "apps/api/src/test/seed-sessions-reach.ts",
+    "export": "detect"
+  },
+  "historic": null,
+  "reason": "Preventive guard added with the seeding module in issue 1477. The module that gives local test accounts a session is new in that pull request, so no earlier commit imported it from a non-test file and there is no past mistake to replay. The mistake fixtures in the test cover a static import from a product file, a dynamic import from the server entry, a re-export from a test helper, a bare side-effect import and a require call."
+}

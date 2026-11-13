@@ -8,6 +8,42 @@ const START_DEADLINE_MS = 180_000
 const BUILD_DEADLINE_MS = 300_000
 const DOMAIN_BUILD = join("packages", "domain", "dist", "index.js")
 const STOP_DEADLINE_MS = 10_000
+const SEED_DEADLINE_MS = 120_000
+export const SEEDED_ACCOUNTS = 120
+export const SEED_SESSIONS = join("src", "test", "seed-sessions.ts")
+
+export function seededPaths(dir) {
+  const root = join(dir, "seeded")
+  return {
+    root,
+    ready: join(root, "ready"),
+    taken: join(root, "taken"),
+    used: join(root, "used"),
+  }
+}
+
+async function seedAccounts(ctx, { dir, env, count }) {
+  const paths = seededPaths(dir)
+  const log = join(dir, "seed.log")
+  const code = await ctx.proc.run(
+    "pnpm",
+    [
+      "--dir",
+      "apps/api",
+      "exec",
+      "tsx",
+      "--conditions=opencv-source",
+      SEED_SESSIONS,
+      env.PGLITE_DATA_DIR,
+      String(count),
+      paths.ready,
+    ],
+    { cwd: ctx.repo, env, log, timeoutMs: SEED_DEADLINE_MS }
+  )
+  if (code !== 0)
+    throw new Error(`seeding ${count} signed-in accounts failed (log ${log})`)
+  return { count, dir: paths.root }
+}
 
 export function stateDir(scratchRoot, repo) {
   return join(scratchRoot, basename(repo))
@@ -233,6 +269,7 @@ export async function up(ctx, { port } = {}) {
     await stopPids(ctx, [...stale.pids, stale.pool?.pid].filter(Boolean))
   ctx.fs.remove(join(dir, "pglite"))
   ctx.fs.remove(poolPaths(dir).root)
+  ctx.fs.remove(seededPaths(dir).root)
   ctx.fs.mkdir(dir)
   const name = basename(ctx.repo)
   const ports = await choosePorts(ctx, port, dir)
@@ -256,6 +293,11 @@ export async function up(ctx, { port } = {}) {
     if (built !== 0)
       throw new Error(`the domain package build failed (log ${buildLog})`)
   }
+  const seeded = await seedAccounts(ctx, {
+    dir,
+    env: env.api,
+    count: SEEDED_ACCOUNTS,
+  })
   const apiPid = ctx.proc.start(
     "pnpm",
     [
@@ -288,6 +330,7 @@ export async function up(ctx, { port } = {}) {
     pids: [apiPid, webPid],
     ...ports,
     email: ACCOUNT.email,
+    seeded,
     storage: join(dir, "storage.json"),
     logs: { api: apiLog, web: webLog },
   }
@@ -319,6 +362,7 @@ export async function down(ctx) {
   await stopPids(ctx, [...state.pids, state.pool?.pid].filter(Boolean))
   ctx.fs.remove(join(state.dir, "pglite"))
   ctx.fs.remove(poolPaths(state.dir).root)
+  ctx.fs.remove(seededPaths(state.dir).root)
   ctx.fs.remove(join(state.dir, "state.json"))
   ctx.fs.remove(state.storage)
   releasePort(ctx, state)
