@@ -1,3 +1,4 @@
+import { Check } from "lucide-react"
 import { SegmentedControl } from "@workspace/ui/components/segmented-control"
 import {
   Select,
@@ -20,6 +21,11 @@ import {
 } from "@workspace/domain"
 
 import { START_PAGES, startPageEntry } from "@/lib/product-paths.ts"
+
+const LANGUAGES = [
+  { value: "en", label: "English" },
+  { value: "vi", label: "Tiếng Việt" },
+] as const
 
 const ZONES = [
   { value: "Asia/Ho_Chi_Minh", label: "Ho Chi Minh City (UTC+7)" },
@@ -60,14 +66,18 @@ export function PreferencesSection({
               <SegmentedControl
                 aria-label="Language"
                 size="sm"
-                className="pointer-fine:[--ui-segc-h:30px]! pointer-fine:[--ui-segc-px:10px]!"
+                className="max-md:[--ui-segc-h:48px]! pointer-fine:md:[--ui-segc-h:30px]! pointer-fine:md:[--ui-segc-px:10px]! max-md:[&_[role=radio]]:min-h-11 max-md:[&_[role=radio]]:min-w-11"
                 disabled={pending}
                 value={profile.language}
                 onChange={(language) => onSave({ language })}
-                options={[
-                  { value: "en", label: "English" },
-                  { value: "vi", label: "Tiếng Việt" },
-                ]}
+                options={LANGUAGES.map((choice) => ({
+                  value: choice.value,
+                  label: choice.label,
+                  icon:
+                    profile.language === choice.value ? (
+                      <Check aria-hidden="true" />
+                    ) : undefined,
+                }))}
               />
             }
           />

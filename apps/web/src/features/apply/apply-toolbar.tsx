@@ -110,10 +110,10 @@ export function ApplyToolbar({
               variant="ghost"
               aria-label="Filter"
               className={cn(
-                "mr-[34px] ml-auto h-11 rounded-full border border-border text-xs text-muted-foreground md:h-7",
+                "mr-[34px] ml-auto h-11 min-w-11 rounded-full border border-border text-xs text-muted-foreground md:h-7 md:min-w-0",
                 count > 0
                   ? "gap-[5px] bg-accent px-2.5 hover:bg-accent"
-                  : "w-7 bg-card"
+                  : "w-11 bg-card md:w-7"
               )}
             />
           }

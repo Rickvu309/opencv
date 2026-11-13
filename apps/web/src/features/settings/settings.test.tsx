@@ -107,9 +107,12 @@ describe("settings", () => {
 
   it("stores Tiếng Việt and keeps the page in English", async () => {
     renderApp("/settings")
+    const english = await screen.findByRole("radio", { name: "English" })
+    expect(english).toHaveAttribute("aria-checked", "true")
+    expect(english.querySelector("svg")).not.toBeNull()
     expect(
-      await screen.findByRole("radio", { name: "English" })
-    ).toHaveAttribute("aria-checked", "true")
+      screen.getByRole("radio", { name: "Tiếng Việt" }).querySelector("svg")
+    ).toBeNull()
     fireEvent.click(screen.getByRole("radio", { name: "Tiếng Việt" }))
     await waitFor(() => {
       expect(getLastProfileUpdate()).toEqual({ language: "vi" })

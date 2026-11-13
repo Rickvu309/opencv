@@ -38,6 +38,23 @@ export const menu = <Button size="icon-sm" className="size-11 md:size-7" aria-la
   assert.deepEqual(smallTargets(fixed), [])
 })
 
+test("a button that is 44px tall and 28px wide on a phone is a small target", () => {
+  const narrow = `export const filter = <Button className="h-11 w-7 md:h-7" aria-label="Filter" />`
+  const found = smallTargets(narrow)
+  assert.equal(found.length, 1)
+  assert.match(found[0].why, /w-7/)
+})
+
+test("a button that is 44px square on a phone and 28px on desktop passes", () => {
+  const wide = `export const filter = <Button className="h-11 w-11 md:h-7 md:w-7" aria-label="Filter" />`
+  assert.deepEqual(smallTargets(wide), [])
+})
+
+test("a button that may shrink, and is 44px tall on a phone, is not a narrow target", () => {
+  const row = `export const row = <Button className="h-11 min-w-0 md:h-7" aria-label="Row" />`
+  assert.deepEqual(smallTargets(row), [])
+})
+
 test("a non-interactive 28px block is not a target", () => {
   assert.deepEqual(smallTargets('const a = "mx-2 mt-3 h-7"'), [])
 })
