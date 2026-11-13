@@ -59,13 +59,15 @@ function chooserDialog() {
   return content!
 }
 
-function holdsTheChooserLayout() {
+function wideDialog() {
   const content = chooserDialog()
   for (const window of GALLERY_WINDOWS)
     expect(
       panelFit(content.className, window).problems,
       `${window.width}x${window.height}`
     ).toEqual([])
+  expect(content?.className).toContain("sm:max-w-3xl")
+  expect(content?.className).not.toContain("sm:max-w-sm")
   expect(content.className).toContain("max-sm:h-dvh")
   expect(content.className).toContain("max-sm:top-0")
   expect(content.className).toContain("flex-col")
@@ -77,6 +79,11 @@ function holdsTheChooserLayout() {
     "[data-slot=paper-gallery-actions]"
   )
   expect(actions?.className).toContain("shrink-0")
+  expect(
+    actions
+      ?.querySelector("button")
+      ?.closest("[data-slot=paper-gallery-actions]")
+  ).toBe(actions)
   expect(scroll?.contains(actions!)).toBe(false)
   expect(actions?.compareDocumentPosition(scroll!)).toBe(
     Node.DOCUMENT_POSITION_PRECEDING
@@ -128,7 +135,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe("Paper template chooser", () => {
+describe("Paper template gallery", () => {
   it("leads with Blank and the four distinct pages, and keeps the other names behind search", () => {
     render(<Chooser onBlank={() => undefined} onImport={() => undefined} />)
     expect(shownCards()).toEqual(["blank", ...FEATURED_TEMPLATES])
@@ -284,7 +291,7 @@ describe("Paper template chooser", () => {
     fireEvent.doubleClick(card("Academic"))
     expect(onUse).toHaveBeenCalledWith("academic")
     view.rerender(<Chooser onUse={onUse} onBlank={() => undefined} pending />)
-    const primary = holdsTheChooserLayout()
+    const primary = wideDialog()
     expect(primary).toBeDisabled()
     expect(primary).toHaveTextContent("Creating…")
     expect(
@@ -320,12 +327,12 @@ describe("Paper template chooser", () => {
     (_state, act_) => {
       render(<Chooser onBlank={() => undefined} onImport={() => undefined} />)
       act(act_)
-      const primary = holdsTheChooserLayout()
+      const primary = wideDialog()
       expect(primary).toBeEnabled()
     }
   )
 
-  it("gives both chooser dialogs the same frame, scrolling inside the window with its actions pinned", () => {
+  it("gives the dialog a wide frame that fits every window size and scrolls inside it, with its actions pinned in view", () => {
     const library = render(
       <PaperLibrary
         docs={[record]}
@@ -345,7 +352,7 @@ describe("Paper template chooser", () => {
     expect(screen.getByRole("dialog", { name: "New" })).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "CV" }))
     expect(screen.getByRole("dialog", { name: "New CV" })).toBeInTheDocument()
-    holdsTheChooserLayout()
+    wideDialog()
     library.unmount()
 
     vi.stubGlobal(
@@ -365,6 +372,6 @@ describe("Paper template chooser", () => {
       </ChatStoreProvider>
     )
     fireEvent.click(screen.getByRole("button", { name: "Change template" }))
-    holdsTheChooserLayout()
+    wideDialog()
   })
 })
