@@ -31,8 +31,6 @@ const NOT_A_CASE = new Set([
 export const MARKS = Object.freeze({
   skip: "skip",
   todo: "todo",
-  fails: "fails",
-  failing: "fails",
   only: "only",
   skipIf: "skip",
   runIf: "skip",
@@ -266,12 +264,107 @@ function literalsOf(node, source) {
   return out
 }
 
-export function meaningOf(call, source) {
-  const { root, names } = chainOf(call.expression)
-  return `${root}.${names.join(".")}|${literalsOf(call, source).join("\u0001")}`
+const EQUALS = new Set([
+  "toBe",
+  "toEqual",
+  "toStrictEqual",
+  "equal",
+  "strictEqual",
+  "deepEqual",
+  "deepStrictEqual",
+])
+const ASSERT_ARITY = Object.freeze({
+  ok: 1,
+  fail: 0,
+  ifError: 1,
+  doesNotThrow: 1,
+  doesNotReject: 1,
+})
+const sorted = (list) => [...list].sort()
+
+function rootCall(call) {
+  let at = call.expression
+  let found = null
+  for (;;) {
+    if (ts.isCallExpression(at)) {
+      found = at
+      at = at.expression
+    } else if (
+      ts.isPropertyAccessExpression(at) ||
+      ts.isElementAccessExpression(at) ||
+      ts.isNonNullExpression(at) ||
+      ts.isParenthesizedExpression(at)
+    )
+      at = at.expression
+    else break
+  }
+  return found
 }
 
-export function parseTests(file, text) {
+export function meaningParts(call, source, asserting, helpers) {
+  const { root, names } = chainOf(call.expression)
+  const method = names.at(-1)
+  const named = names.map((name) => (EQUALS.has(name) ? "eq" : name))
+  const head = `${root}.${named.join(".")}`
+  const literalsIn = (nodes) =>
+    nodes.flatMap((node) => literalsOf(node, source))
+  if (helpers.has(root) && names.length === 0)
+    return { head, subject: [], expected: literalsIn(call.arguments) }
+  const inner = rootCall(call)
+  if (inner && inner !== call) {
+    const outer = []
+    let at = call
+    while (at && at !== inner) {
+      if (ts.isCallExpression(at)) outer.push(...at.arguments)
+      at = at.expression
+    }
+    return {
+      head,
+      subject: literalsIn(inner.arguments.slice(0, 1)),
+      expected: literalsIn(outer),
+    }
+  }
+  const assertMethod =
+    names.length === 0 ? (root === "assert" ? "ok" : root) : method
+  const arity =
+    names.length === 0 && !asserting.has(root)
+      ? call.arguments.length
+      : (ASSERT_ARITY[assertMethod] ?? 2)
+  const args = call.arguments.slice(0, Math.max(arity, 0))
+  return {
+    head,
+    subject: literalsIn(args.slice(0, 1)),
+    expected: literalsIn(args.slice(1)),
+  }
+}
+
+export const meaningText = ({ head, subject, expected }) =>
+  `${head}|${sorted(subject).join("\u0001")}|${sorted(expected).join("\u0001")}`
+
+export function meaningOf(call, source) {
+  return meaningText(
+    meaningParts(call, source, new Set(ALWAYS_ASSERTING), new Set())
+  )
+}
+
+function iteratedTable(call, resolve) {
+  let at = call.parent
+  while (at) {
+    if (ts.isForOfStatement(at)) return resolve(at.expression)
+    if (
+      (ts.isArrowFunction(at) || ts.isFunctionExpression(at)) &&
+      at.parent &&
+      ts.isCallExpression(at.parent) &&
+      ts.isCallExpression(at.parent.expression) &&
+      chainOf(at.parent.expression.expression).names.at(-1) === "each"
+    )
+      return resolve(at.parent.expression.arguments[0])
+    at = at.parent
+  }
+  return null
+}
+
+export function parseTests(file, text, { tableRows = () => null } = {}) {
   const source = ts.createSourceFile(
     file,
     String(text),
@@ -281,6 +374,36 @@ export function parseTests(file, text) {
   )
   const asserting = bindings(source)
   const helpers = assertingHelpers(source, asserting)
+  const localArrays = new Map()
+  const importedFrom = new Map()
+  for (const statement of source.statements) {
+    if (ts.isImportDeclaration(statement)) {
+      const named = statement.importClause?.namedBindings
+      if (named && ts.isNamedImports(named))
+        for (const element of named.elements)
+          importedFrom.set(element.name.text, {
+            from: statement.moduleSpecifier.text,
+            name: (element.propertyName ?? element.name).text,
+          })
+    }
+    if (!ts.isVariableStatement(statement)) continue
+    for (const decl of statement.declarationList.declarations)
+      if (ts.isIdentifier(decl.name) && decl.initializer) {
+        const array = tableOf(decl.initializer)
+        if (array) localArrays.set(decl.name.text, array)
+      }
+  }
+  const resolveTable = (expression) => {
+    const array = tableOf(expression)
+    if (array)
+      return array.elements.map((element) => literalsOf(element, source))
+    if (!expression || !ts.isIdentifier(expression)) return null
+    const local = localArrays.get(expression.text)
+    if (local)
+      return local.elements.map((element) => literalsOf(element, source))
+    const imported = importedFrom.get(expression.text)
+    return imported ? tableRows(imported.from, imported.name) : null
+  }
   const cases = new Map()
   const tables = new Map()
   const bounds = new Map()
@@ -352,6 +475,15 @@ export function parseTests(file, text) {
       }
       return
     }
+    if (ts.isThrowStatement(node) && node.expression && top().into) {
+      top().into.assertions.push({
+        text: normalise(node.getText(source)),
+        meaning: `throw.||${sorted(literalsOf(node.expression, source)).join("\u0001")}`,
+        rows: [],
+        target: "throw",
+      })
+      return
+    }
     if (isAssertCall(node, asserting, helpers)) {
       const call = node
       const { root } = chainOf(call.expression)
@@ -369,9 +501,15 @@ export function parseTests(file, text) {
       }
       if (target === root && first)
         target = `${normalise(call.expression.getText(source))}(${normalise(first.getText(source))})`
+      const parts = meaningParts(call, source, asserting, helpers)
+      const rows = iteratedTable(call, resolveTable)
       holder().assertions.push({
         text: normalise(call.getText(source)),
-        meaning: meaningOf(call, source),
+        meaning: meaningText(parts),
+        rows: (rows ?? []).map(
+          (row) =>
+            `${parts.head}|*|${sorted([...parts.subject, ...parts.expected, ...row]).join("\u0001")}`
+        ),
         target,
       })
       return
@@ -383,4 +521,25 @@ export function parseTests(file, text) {
     if (made.title === "(setup)" && made.assertions.length === 0)
       cases.delete(key)
   return { cases, tables, bounds }
+}
+
+export function exportedTable(file, text, name) {
+  const source = ts.createSourceFile(
+    file,
+    String(text),
+    ts.ScriptTarget.Latest,
+    true,
+    scriptKind(file)
+  )
+  for (const statement of source.statements) {
+    if (!ts.isVariableStatement(statement)) continue
+    for (const decl of statement.declarationList.declarations) {
+      if (!ts.isIdentifier(decl.name) || decl.name.text !== name) continue
+      const array = tableOf(decl.initializer)
+      return array
+        ? array.elements.map((element) => literalsOf(element, source))
+        : null
+    }
+  }
+  return null
 }

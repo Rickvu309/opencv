@@ -1,9 +1,19 @@
 import { createRequire } from "node:module"
+import { minus, RUNS_NOTHING, stillChecks, weak } from "./assertion-match.mjs"
+import { addedChecks, unmoved } from "./protected-moves.mjs"
+import { retirementClass } from "./retirement-class.mjs"
 import { MARKS, normalise, parseTests } from "./protected-tests.mjs"
 
 const ts = createRequire(import.meta.url)("typescript")
 
 export { RETIRED_DIR, RETIRED_FILE } from "../rules/merge-gate.mjs"
+export { stillChecks } from "./assertion-match.mjs"
+export {
+  coversSubject,
+  guardFilesOf,
+  retirementClass,
+  standingPromise,
+} from "./retirement-class.mjs"
 
 const TEST = /\.(?:test|spec)\.[cm]?[jt]sx?$/
 const ACCEPTANCE = /(?:^|\/)acceptance\/[^/]+\.test\.[cm]?[jt]sx?$/
@@ -36,7 +46,10 @@ const BOUND_LOOSER = Object.freeze({
   uses: "down",
 })
 
-export function kindOf(path, acceptance = new Set()) {
+export function kindOf(
+  path,
+  { acceptance = new Set(), guards = new Set() } = {}
+) {
   if (acceptance.has(path) || ACCEPTANCE.test(path)) return "acceptance"
   if (path in CHECKER_CONFIG) {
     const spec = CHECKER_CONFIG[path]
@@ -44,7 +57,7 @@ export function kindOf(path, acceptance = new Set()) {
   }
   if (LEDGER_ROW.test(path)) return "ledger"
   if (RATCHET.test(path)) return "ratchet"
-  if (TEST.test(path)) return GUARD.test(path) ? "guard" : "test"
+  if (TEST.test(path)) return guards.has(path) ? "guard" : "test"
   if (BOUND.test(path)) return "bound"
   if (CORPUS.test(path)) return "corpus"
   if ((FIXTURE_DIR.test(path) && !CODE.test(path)) || FIXTURE_NAME.test(path))
@@ -52,52 +65,17 @@ export function kindOf(path, acceptance = new Set()) {
   return null
 }
 
-export function protectedSet(paths, acceptance = []) {
-  const accepted = new Set(acceptance)
+export function protectedSet(paths, { acceptance = [], guards = [] } = {}) {
+  const known = { acceptance: new Set(acceptance), guards: new Set(guards) }
   const set = new Map()
   for (const path of paths) {
-    const kind = kindOf(path, accepted)
+    const kind = kindOf(path, known)
     if (kind) set.set(path, kind)
   }
   return set
 }
 
-const weak = (path, kind, what, subject, extra = {}) => ({
-  path,
-  kind,
-  what,
-  subject,
-  ...extra,
-})
-
-function multiset(list) {
-  const counts = new Map()
-  for (const item of list) counts.set(item, (counts.get(item) ?? 0) + 1)
-  return counts
-}
-
-function minus(base, head) {
-  const left = multiset(head)
-  const gone = []
-  for (const item of base) {
-    const n = left.get(item) ?? 0
-    if (n > 0) left.set(item, n - 1)
-    else gone.push(item)
-  }
-  return gone
-}
-
-const RUNS_NOTHING = new Set(["skip", "todo"])
-
-export function tightens(was, now) {
-  const [wasCall, wasLiterals = ""] = was.split("|")
-  const [nowCall, nowLiterals = ""] = now.split("|")
-  if (wasCall !== nowCall) return false
-  const need = wasLiterals ? wasLiterals.split("\u0001") : []
-  const have = nowLiterals ? nowLiterals.split("\u0001") : []
-  if (have.length <= need.length) return false
-  return minus(need, have).length === 0
-}
+const pair = (a) => ({ meaning: a.meaning, text: a.text })
 
 function testWeakenings(baseText, headText, path, kind) {
   const base = parseTests(path, baseText)
@@ -108,7 +86,7 @@ function testWeakenings(baseText, headText, path, kind) {
         out[0].moved.push({
           key,
           title: item.title,
-          assertions: item.assertions.map((a) => a.meaning),
+          assertions: item.assertions.map(pair),
         })
     for (const [name, rows] of base.tables)
       for (const row of rows) out[0].moved.push({ key: name, row })
@@ -124,7 +102,7 @@ function testWeakenings(baseText, headText, path, kind) {
         out.push(
           weak(path, kind, "case-removed", `${path} > ${key}`, {
             title: item.title,
-            assertions: item.assertions.map((a) => a.meaning),
+            assertions: item.assertions.map(pair),
           })
         )
       continue
@@ -147,7 +125,7 @@ function testWeakenings(baseText, headText, path, kind) {
     )
     const spare = [...fresh]
     for (const meaning of gone) {
-      const tighter = spare.findIndex((next) => tightens(meaning, next))
+      const tighter = spare.findIndex((next) => stillChecks(meaning, next))
       if (tighter !== -1) {
         spare.splice(tighter, 1)
         continue
@@ -158,7 +136,7 @@ function testWeakenings(baseText, headText, path, kind) {
         : "assertion-removed"
       out.push(
         weak(path, kind, what, `${path} > ${key} :: ${was.text}`, {
-          assertions: [meaning],
+          assertions: [pair(was)],
         })
       )
     }
@@ -457,104 +435,6 @@ export function weakenings(baseText, headText, path, kind) {
   }
 }
 
-export function addedChecks(files) {
-  const assertions = []
-  const rows = []
-  const titles = []
-  const blobs = new Set()
-  for (const { path, baseText, headText, headBlob } of files) {
-    if (headBlob && headText !== null) blobs.add(headBlob)
-    if (headText === null || !TEST.test(path)) continue
-    const head = parseTests(path, headText)
-    const base = baseText === null ? null : parseTests(path, baseText)
-    const running = (parsed) =>
-      [...parsed.cases.values()].filter(
-        (c) => ![...c.marks].some((m) => RUNS_NOTHING.has(m))
-      )
-    const tableRows = (parsed) => [...parsed.tables.values()].flat()
-    for (const item of running(head)) {
-      const now = item.assertions.map((a) => a.meaning)
-      const was = base?.cases.get(item.key)
-      assertions.push(
-        ...(was
-          ? minus(
-              now,
-              was.assertions.map((a) => a.meaning)
-            )
-          : now)
-      )
-    }
-    rows.push(
-      ...(base ? minus(tableRows(head), tableRows(base)) : tableRows(head))
-    )
-    titles.push(
-      ...running(head)
-        .filter((c) => !base?.cases.has(c.key))
-        .map((c) => c.title)
-    )
-  }
-  return { assertions, rows, titles, blobs }
-}
-
-function take(pool, items, same = (a, b) => a === b) {
-  const left = [...pool]
-  for (const item of items) {
-    let at = left.indexOf(item)
-    if (at === -1) at = left.findIndex((next) => same(item, next))
-    if (at === -1) return false
-    left.splice(at, 1)
-  }
-  pool.length = 0
-  pool.push(...left)
-  return true
-}
-
-function keptCase(lost, pools) {
-  if (lost.row) return take(pools.rows, [lost.row])
-  if (lost.assertions?.length)
-    return take(pools.assertions, lost.assertions, tightens)
-  return take(pools.titles, [lost.title])
-}
-
-export function unmoved(found, added) {
-  const pools = {
-    assertions: [...added.assertions],
-    rows: [...added.rows],
-    titles: [...added.titles],
-  }
-  const out = []
-  for (const item of found) {
-    if (item.what === "file-removed" && item.moved) {
-      if (item.blob && added.blobs.has(item.blob)) continue
-      for (const lost of item.moved)
-        if (!keptCase(lost, pools))
-          out.push(
-            weak(
-              item.path,
-              item.kind,
-              "case-removed",
-              `${item.path} > ${lost.key}${lost.row ? `[${lost.row}]` : ""}`
-            )
-          )
-      continue
-    }
-    if (item.what === "file-removed") {
-      if (!(item.blob && added.blobs.has(item.blob))) out.push(item)
-      continue
-    }
-    if (item.what === "case-removed" && keptCase(item, pools)) continue
-    if (
-      item.what === "assertion-removed" &&
-      take(pools.assertions, item.assertions, tightens)
-    )
-      continue
-    out.push(item)
-  }
-  return out.map(
-    ({ moved, assertions: _a, row: _r, blob: _b, title: _t, ...rest }) => rest
-  )
-}
-
 export function retiredBy(item, retirements) {
   return retirements.find(
     (r) =>
@@ -568,6 +448,7 @@ export function retiredBy(item, retirements) {
 }
 
 export function judge(files, retirements = []) {
+  const byPath = new Map(files.map((f) => [f.path, f]))
   const found = files
     .filter((f) => f.kind && f.baseText !== null)
     .flatMap((f) =>
@@ -580,7 +461,13 @@ export function judge(files, retirements = []) {
   const retired = []
   for (const item of left) {
     const by = item.kind === "acceptance" ? null : retiredBy(item, retirements)
-    if (by) retired.push({ ...item, retiredBy: by.subject })
+    if (by)
+      retired.push({
+        ...item,
+        retiredBy: by.subject,
+        replacedBy: by.replacedBy ?? null,
+        ...retirementClass(item, by, byPath),
+      })
     else weakened.push(item)
   }
   return { weakened, retired }

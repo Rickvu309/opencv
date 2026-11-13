@@ -1,5 +1,5 @@
 import { run } from "./common.mjs"
-import { judge, kindOf, RETIRED_FILE } from "./protected.mjs"
+import { guardFilesOf, judge, kindOf, RETIRED_FILE } from "./protected.mjs"
 
 const ZERO = /^0+$/
 const READ_AS_TEXT = new Set([
@@ -12,6 +12,7 @@ const READ_AS_TEXT = new Set([
   "bound",
 ])
 const TEST = /\.(?:test|spec)\.[cm]?[jt]sx?$/
+const CODE = /\.[cm]?[jt]sx?$/
 
 function gitOut(ctx, args, cwd) {
   const r = run(ctx, "git", args, { raw: true, ...(cwd ? { cwd } : {}) })
@@ -66,12 +67,45 @@ export function readRetirements(ctx, changes, cwd) {
   return out
 }
 
+export function guardsAt(ctx, fork, cwd) {
+  const at = cwd ? { cwd } : {}
+  const r = run(
+    ctx,
+    "git",
+    [
+      "grep",
+      "-h",
+      "-o",
+      "-E",
+      '"file": *"[^"]+"',
+      fork,
+      "--",
+      "scripts/guard-ledger/",
+    ],
+    at
+  )
+  const rows = r.ok
+    ? r.out
+        .split("\n")
+        .map((line) => /"file": *"([^"]+)"/.exec(line)?.[1])
+        .filter(Boolean)
+    : []
+  const baseline = run(
+    ctx,
+    "git",
+    ["show", `${fork}:scripts/guard-ledger.baseline.json`],
+    at
+  )
+  return new Set([...rows, ...guardFilesOf(baseline.ok ? [baseline.out] : [])])
+}
+
 export function filesOf(ctx, changes, cwd) {
   return changes.map((change) => {
     const kind = change.baseBlob ? kindOf(change.path) : null
     const asText =
       (kind && READ_AS_TEXT.has(kind)) ||
       TEST.test(change.path) ||
+      CODE.test(change.path) ||
       (kind && /\.json$/.test(change.path))
     const text = (oid) => (asText ? blob(ctx, oid, cwd) : oid)
     return {
@@ -89,10 +123,19 @@ export function protectedFacts(ctx, base, head, { cwd } = {}) {
   const fork = gitOut(ctx, ["merge-base", base, head], cwd).trim()
   const changes = rawChanges(ctx, fork, head, cwd)
   const retirements = readRetirements(ctx, changes, cwd)
-  const verdict = judge(
-    filesOf(ctx, changes, cwd),
-    retirements.filter((r) => !r.broken)
-  )
+  const files = filesOf(ctx, changes, cwd)
+  const live = retirements.filter((r) => !r.broken)
+  let verdict = judge(files, live)
+  if (verdict.weakened.length || verdict.retired.length) {
+    const guards = guardsAt(ctx, fork, cwd)
+    verdict = judge(
+      files.map((f) => ({
+        ...f,
+        kind: f.baseBlob ? kindOf(f.path, { guards }) : null,
+      })),
+      live
+    )
+  }
   return {
     base: fork,
     head,

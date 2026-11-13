@@ -1,4 +1,5 @@
 import { decide } from "../rules/index.mjs"
+import { retiredLines } from "../rules/protected.mjs"
 
 export function policyReport(n, facts, { annotate = false } = {}) {
   const verdict = decide("pr", facts)
@@ -12,18 +13,10 @@ export function policyReport(n, facts, { annotate = false } = {}) {
       ),
       next: `gh pr view ${n}`,
     }
-  const retired = facts.protected?.retired ?? []
   return {
     lines: [
       `PR #${n} passes the server-held rules.`,
-      ...(retired.length
-        ? [
-            `It retires ${retired.length} protected check(s): ${retired
-              .slice(0, 6)
-              .map((item) => item.subject)
-              .join("; ")}`,
-          ]
-        : []),
+      ...retiredLines(facts.protected),
     ],
     next: `scripts/ocv-tools.mjs merge ${n}`,
   }

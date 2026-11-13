@@ -8,6 +8,7 @@ import { throwPushFailure } from "../push-failure.mjs"
 import { Refused } from "../result.mjs"
 import { migrationFacts } from "./migration-facts.mjs"
 import { ownerBecause } from "../rules/merge-gate.mjs"
+import { retiredLines } from "../rules/protected.mjs"
 import { enqueue } from "./merge.mjs"
 import {
   recorded,
@@ -50,7 +51,7 @@ function affectedReceipt(ctx, t) {
   return { head, receipt: hasReceipt(ctx, t.gitDir, head, tree) }
 }
 
-function autoMerge(ctx, n, diff) {
+function autoMerge(ctx, n, diff, protectedFacts) {
   const head = git(ctx, "rev-parse", "HEAD")
   const files = [
     ...new Set([
@@ -63,6 +64,7 @@ function autoMerge(ctx, n, diff) {
   const owner = ownerBecause({
     diff: { ...diff, files },
     migrations: migrationFacts(ctx, files, "HEAD", []),
+    protected: protectedFacts,
   })
   if (owner.length)
     return {
@@ -210,7 +212,11 @@ export function finish(ctx, { flags }) {
     }
     const verdict = decide("finish", facts)
     if (!verdict.ok) throw refusalError(verdict.refusals[0])
-    const bodyFile = ctx.writeScratch(`finish/${t.n}-body.md`, body)
+    const retiredNote = retiredLines(facts.protected)
+    const bodyFile = ctx.writeScratch(
+      `finish/${t.n}-body.md`,
+      retiredNote.length ? `${body}\n\n${retiredNote.join("\n\n")}\n` : body
+    )
     const upload = run(ctx, "git", ["push", "-u", "origin", t.branch])
     if (!upload.ok) throwPushFailure(ctx, upload)
     const pushed = decide("finish-pushed", {
@@ -232,13 +238,17 @@ export function finish(ctx, { flags }) {
       ...(flags["--draft"] ? ["--draft"] : [])
     )
     const n = Number(url.split("/").at(-1))
-    const opened = [...passLines(receiptOf(ctx, t)), `Opened ${url}`]
+    const opened = [
+      ...passLines(receiptOf(ctx, t)),
+      ...retiredNote,
+      `Opened ${url}`,
+    ]
     if (flags["--draft"])
       return {
         lines: [...opened, "A draft is not put on auto-merge."],
         next: `gh pr ready ${n}, then scripts/ocv-tools.mjs merge ${n}`,
       }
-    const auto = autoMerge(ctx, n, facts.diff)
+    const auto = autoMerge(ctx, n, facts.diff, facts.protected)
     return { ...auto, lines: [...opened, ...auto.lines] }
   })
 }

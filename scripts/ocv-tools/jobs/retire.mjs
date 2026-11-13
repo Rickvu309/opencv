@@ -94,13 +94,22 @@ function retireRefusal(facts, problem, fix) {
   return refusalError(verdict.refusals[0])
 }
 
-export function retire(ctx, { subject, because, replacedBy }) {
-  if (!subject || !because || !replacedBy)
+export function retire(ctx, args) {
+  if (!args.subject || !args.because)
     throw new Error(
-      'usage: ocv-tools retire "<subject>" --because "<why>" --replaced-by <test file>'
+      'usage: ocv-tools retire "<subject>" --because "<why>" [--replaced-by <test file>]'
     )
   const t = task(ctx)
-  const top = t.top
+  return retireIn(ctx, t.top, t.n, args)
+}
+
+export function retireIn(
+  ctx,
+  top,
+  n,
+  { subject, because, replacedBy },
+  { commandFor = (file) => testCommand(ctx, top, file) } = {}
+) {
   const dirty = gitIn(ctx, top, ["status", "--porcelain"])
   if (dirty.trim())
     throw retireRefusal(
@@ -128,6 +137,17 @@ export function retire(ctx, { subject, because, replacedBy }) {
       "an acceptance test cannot be retired inside the pull request that builds against it",
       "Restore the acceptance file."
     )
+  if (!replacedBy)
+    return writeRetirement(
+      ctx,
+      top,
+      n,
+      { subject, because, replacedBy: null },
+      [
+        `Retired ${hits.length} weakening(s) under "${subject}" with no replacement test, so no machine can prove it.`,
+        `Wrote ${RETIRED_DIR}/${n}.json. The pull request is owner class while it holds this retirement: it waits for the owner's yes.`,
+      ]
+    )
   const head = facts.changed.find((item) => item.path === replacedBy)
   if (!TEST.test(replacedBy) || !head?.headBlob)
     throw retireRefusal(
@@ -135,7 +155,7 @@ export function retire(ctx, { subject, because, replacedBy }) {
       `${replacedBy} is not a test file this branch adds or edits`,
       "Write the test of the new behaviour first, commit it, then retire."
     )
-  const command = testCommand(ctx, top, replacedBy)
+  const command = commandFor(replacedBy)
   if (!command)
     throw retireRefusal(
       facts,
@@ -153,31 +173,43 @@ export function retire(ctx, { subject, because, replacedBy }) {
   if (!proof.failedOnBase || !proof.passedOnHead)
     throw retireRefusal(
       facts,
-      `${replacedBy} ${proof.passedOnHead ? "passes" : "fails"} on the head and ${proof.failedOnBase ? "fails on an assertion" : "does not fail on an assertion"} at the fork point with ${proof.restored} source file(s) restored; a replacement must fail before the change and pass after it`,
-      "Make the replacement test check the new behaviour, then run retire again."
+      `${replacedBy} ${proof.passedOnHead ? "passes" : "fails"} on the head and ${proof.failedOnBase ? "fails on an assertion" : "does not fail on an assertion"} at the fork point with ${proof.restored} source file(s) put back; a replacement must fail before the change and pass after it`,
+      proof.failedOnBase
+        ? `Fix ${replacedBy} or the code until it passes on the head, commit, then run retire again.`
+        : `Make ${replacedBy} assert the new behaviour this change makes (it must fail on the old code), commit, then run retire again; or retire without --replaced-by, which waits for the owner's yes.`
     )
-  const file = join(top, RETIRED_DIR, `${t.n}.json`)
+  return writeRetirement(
+    ctx,
+    top,
+    n,
+    {
+      subject,
+      because,
+      replacedBy,
+      proof: {
+        fork: proof.fork,
+        replacedByBlob: head.headBlob,
+        failedOnBase: true,
+        passedOnHead: true,
+      },
+    },
+    [
+      `Retired ${hits.length} weakening(s) under "${subject}"; ${replacedBy} fails at ${proof.fork.slice(0, 8)} and passes on the head.`,
+      `Wrote ${RETIRED_DIR}/${n}.json. If ${replacedBy} covers the same module, command or route and nothing retired is a ratchet, bound, guard, ledger row, checker setting or skip mark, the pull request still merges itself; finish and the body say "Retired N checks with replacements".`,
+    ]
+  )
+}
+
+function writeRetirement(ctx, top, n, row, lines) {
+  const file = join(top, RETIRED_DIR, `${n}.json`)
   ctx.ports.fs.mkdir(join(top, RETIRED_DIR))
   let rows = []
   if (ctx.ports.fs.exists(file)) rows = JSON.parse(ctx.ports.fs.read(file))
-  rows = rows.filter((row) => row.subject !== subject)
-  rows.push({
-    subject,
-    because,
-    replacedBy,
-    proof: {
-      fork: proof.fork,
-      replacedByBlob: head.headBlob,
-      failedOnBase: true,
-      passedOnHead: true,
-    },
-  })
+  rows = rows.filter((item) => item.subject !== row.subject)
+  rows.push(row)
   ctx.ports.fs.write(file, `${JSON.stringify(rows, null, 2)}\n`)
   return {
-    lines: [
-      `Retired ${hits.length} weakening(s) under "${subject}"; ${replacedBy} fails at ${proof.fork.slice(0, 8)} and passes on the head.`,
-      `Wrote ${RETIRED_DIR}/${t.n}.json. The pull request is owner class while it holds a retirement, so it waits for the owner's yes.`,
-    ],
-    next: `scripts/ocv-tools.mjs save -m "test: retire ${subject.slice(0, 40)}"`,
+    lines,
+    next: `scripts/ocv-tools.mjs save -m "test: retire ${row.subject.slice(0, 40)}"`,
   }
 }

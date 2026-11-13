@@ -34,8 +34,8 @@ export const COMMANDS = [
   },
   {
     name: "retire",
-    usage: 'retire "<subject>" --because "<why>" --replaced-by <test file>',
-    when: "The one way to remove or weaken a protected check on purpose: a test case or assertion, a fixture, a corpus file, a ledger row, a ratchet or known-failures entry, a limit bound or a checker setting. The subject is what PROTECTED_WEAKENED printed (or its file, or a case title prefix). The replacement test must be in this change; retire runs it under the machine lock with the changed source files put back to the fork point (it must fail on an assertion) and on the head (it must pass), then writes the retirement and its proof to scripts/retired/<issue>.json. A pull request holding a retirement is owner class and waits for the owner's yes.",
+    usage: 'retire "<subject>" --because "<why>" [--replaced-by <test file>]',
+    when: "The one way to remove or weaken a protected check on purpose; the subject is what PROTECTED_WEAKENED printed, its file, or a case title prefix. With --replaced-by, retire runs that test under the machine lock with the changed source files put back to the fork point (it must fail on an assertion) and on the head (it must pass), and records the proof in scripts/retired/<issue>.json. Such a retirement is self-serve: the pull request still merges itself when the replacement covers the same module, command or route, and finish and the body say \"Retired N checks with replacements\". Without a replacement, or for a ratchet or known-failures entry, a limit bound, a guard or ledger row, a checker setting or a skip mark, the pull request is owner class and waits for the owner's yes. An expected-failure mark is PIN_ISSUE_OPEN's rule, not this one.",
   },
   {
     name: "policy",

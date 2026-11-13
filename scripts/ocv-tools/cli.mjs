@@ -299,7 +299,7 @@ function command(ctx, cmd, rest) {
       if (unknown) unknownOption(unknown)
       if (pos.length !== 1)
         throw new Error(
-          'usage: ocv-tools retire "<subject>" --because "<why>" --replaced-by <test file>'
+          'usage: ocv-tools retire "<subject>" --because "<why>" [--replaced-by <test file>]'
         )
       return retire(ctx, {
         subject: pos[0],

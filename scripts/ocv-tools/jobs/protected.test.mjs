@@ -8,7 +8,6 @@ import {
   protectedSet,
   weakenings,
 } from "./protected.mjs"
-import { failedOnAssertion, flipProof } from "./retire.mjs"
 import { retirementProblems } from "../rules/protected.mjs"
 
 const fixture = (name) =>
@@ -59,8 +58,13 @@ test("every protected kind is read from its path", () => {
     "scripts/ocv-tools/jobs/test-selection.mjs": "checker-config",
     "packages/guards/run-tests.mjs": "checker-config",
   }
+  const guards = new Set([
+    "scripts/ui/compare.test.mjs",
+    "packages/guards/run-tests.test.mjs",
+  ])
   for (const [path, kind] of Object.entries(cases))
-    assert.equal(kindOf(path), kind, path)
+    assert.equal(kindOf(path, { guards }), kind, path)
+  assert.equal(kindOf("scripts/ui/compare.test.mjs"), "test")
   for (const path of [
     "apps/web/src/test/apply-fixtures.ts",
     "apps/web/vitest.config.ts",
@@ -90,8 +94,12 @@ test("a removed case, a removed assertion and a changed expected value are weake
   assert.deepEqual(whats(one(T, SPEC, null)), ["case-removed", "case-removed"])
 })
 
-test("skip, todo, fails, only, skipIf and a skipped group are weakenings on an existing case", () => {
-  for (const mark of ["skip", "todo", "fails", "only"])
+test("skip, todo, only, skipIf and a skipped group are weakenings on an existing case; .fails is left to PIN_ISSUE_OPEN", () => {
+  assert.deepEqual(
+    whats(one(T, SPEC, SPEC.replace('it("keeps', 'it.fails("keeps'))),
+    []
+  )
+  for (const mark of ["skip", "todo", "only"])
     assert.deepEqual(
       whats(one(T, SPEC, SPEC.replace('it("keeps', `it.${mark}("keeps`))),
       ["skipped"],
@@ -583,51 +591,5 @@ it("lists", () => { expect(page).toMatchObject({ name: "Page.docx" }) })
       "fixture"
     ).map((w) => w.subject),
     [`${path}.a`, `${path}.b`]
-  )
-})
-
-test("the flip proof restores changed source files from the fork point, runs the replacement there and on the head, and puts the head back", () => {
-  const calls = []
-  const outcomes = [
-    { ok: false, out: "AssertionError: expected 1 to be 2", err: "" },
-    { ok: true, out: "pass", err: "" },
-  ]
-  const ctx = {
-    cwd: "/w",
-    ports: {
-      proc: {
-        run(cmd, args) {
-          calls.push(`${cmd} ${args.join(" ")}`)
-          return cmd === "git" ? { ok: true, out: "" } : outcomes.shift()
-        },
-      },
-    },
-  }
-  const proof = flipProof(ctx, "/w", {
-    fork: "f0",
-    replacedBy: "apps/web/src/a.test.ts",
-    command: {
-      cmd: "vitest",
-      args: ["run", "src/a.test.ts"],
-      cwd: "/w/apps/web",
-    },
-    changed: [
-      { path: "apps/web/src/a.ts", baseBlob: "1", headBlob: "2" },
-      { path: "apps/web/src/a.test.ts", baseBlob: "3", headBlob: "4" },
-      { path: "apps/web/src/new.ts", baseBlob: null, headBlob: "5" },
-      { path: "scripts/retired/9.json", baseBlob: "6", headBlob: "7" },
-    ],
-  })
-  assert.deepEqual(calls, [
-    "git checkout f0 -- apps/web/src/a.ts",
-    "vitest run src/a.test.ts",
-    "git checkout HEAD -- apps/web/src/a.ts",
-    "vitest run src/a.test.ts",
-  ])
-  assert.equal(proof.failedOnBase, true)
-  assert.equal(proof.passedOnHead, true)
-  assert.equal(
-    failedOnAssertion("Error: Cannot find module './a.ts'\nFAIL"),
-    false
   )
 })

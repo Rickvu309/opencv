@@ -119,13 +119,19 @@ test("a passing pull request that retires protected checks says how many and whi
     ...clean,
     protected: {
       weakened: [],
-      retired: [{ subject: "a.test.ts > old case", retiredBy: "a.test.ts" }],
+      retired: [
+        {
+          subject: "a.test.ts > old case",
+          retiredBy: "a.test.ts > old case",
+          class: "self",
+        },
+      ],
       retirements: [],
     },
   })
   assert.equal(r.exit, undefined)
   assert.deepEqual(r.lines, [
     "PR #91 passes the server-held rules.",
-    "It retires 1 protected check(s): a.test.ts > old case",
+    "Retired 1 checks with replacements: a.test.ts > old case",
   ])
 })

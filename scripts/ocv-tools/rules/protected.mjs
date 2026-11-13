@@ -29,8 +29,13 @@ export function retirementProblems(protectedFacts) {
       problems.push(`${r.file} is not a JSON list of retirements`)
       continue
     }
-    if (!r.subject || !r.because || !r.replacedBy) {
-      problems.push(`${name} needs a subject, a because and a replacedBy`)
+    if (!r.subject || !r.because) {
+      problems.push(`${name} needs a subject and a because`)
+      continue
+    }
+    if (!r.replacedBy) {
+      if (!used.some((item) => item.retiredBy === r.subject))
+        problems.push(`${name} retires nothing this change weakens`)
       continue
     }
     const blob = changed.get(r.replacedBy)
@@ -89,3 +94,22 @@ export const protectedRows = [
       `Run the retire verb again to prove it: ${RETIRE_FIX}`,
   },
 ]
+
+export function retiredLines(protectedFacts) {
+  const retired = protectedFacts?.retired ?? []
+  const self = retired.filter((item) => item.class === "self")
+  const owner = retired.filter((item) => item.class !== "self")
+  const unique = (list) => [...new Set(list)].join("; ")
+  return [
+    ...(self.length
+      ? [
+          `Retired ${self.length} checks with replacements: ${unique(self.map((item) => item.retiredBy))}`,
+        ]
+      : []),
+    ...(owner.length
+      ? [
+          `Retired ${owner.length} checks that wait for the owner: ${unique(owner.map((item) => `${item.retiredBy} (${item.because})`))}`,
+        ]
+      : []),
+  ]
+}
