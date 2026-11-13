@@ -564,7 +564,7 @@ img.ui-ct__avatar { box-shadow: 0 0 0 1px var(--ui-ct-avatar-ring); }
 }
 
 .ui-ct__morph { overflow: hidden; }
-.ui-ct__morph[data-smooth] { transition: height var(--duration-panel) cubic-bezier(0.22, 1, 0.36, 1); }
+.ui-ct__morph[data-smooth] { transition: height var(--duration-panel) var(--ease-micro); }
 @media (prefers-reduced-motion: reduce) { .ui-ct__morph[data-smooth] { transition: none; } }
 
 

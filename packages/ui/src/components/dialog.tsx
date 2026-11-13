@@ -24,16 +24,23 @@ function DialogClose({ ...props }: DialogPrimitive.Close.Props) {
 
 function DialogOverlay({
   className,
+  instant = false,
+  enterOnMount = false,
   ...props
-}: DialogPrimitive.Backdrop.Props) {
+}: DialogPrimitive.Backdrop.Props & {
+  instant?: boolean
+  enterOnMount?: boolean
+}) {
   return (
     <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        "fixed inset-0 isolate z-50 bg-foreground/10 duration-(--duration-micro) data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        "fixed inset-0 isolate z-50 bg-foreground/10 data-closed:pointer-events-none",
+        !instant && "motion-backdrop",
         className
       )}
       {...props}
+      {...(enterOnMount ? { "data-starting-style": "" } : {})}
     />
   )
 }
@@ -42,9 +49,32 @@ type DialogLayout = "dialog" | "sheet"
 
 const DIALOG_LAYOUT_CLASS: Record<DialogLayout, string> = {
   dialog:
-    "fixed top-[clamp(16px,14dvh,120px)] left-1/2 z-50 grid max-h-[calc(100dvh-clamp(16px,14dvh,120px)-16px)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 gap-4 overflow-y-auto rounded-[12px] bg-popover p-6 text-sm text-popover-foreground ring-1 ring-foreground/10 duration-(--duration-micro) outline-none sm:max-w-sm data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+    "fixed top-[clamp(16px,14dvh,120px)] left-1/2 z-50 grid max-h-[calc(100dvh-clamp(16px,14dvh,120px)-16px)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 gap-4 overflow-y-auto rounded-[12px] bg-popover p-6 text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none sm:max-w-sm",
   sheet:
-    "fixed z-50 bg-popover text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+    "fixed z-50 bg-popover text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none",
+}
+
+type DialogSide = "start" | "end"
+
+function dialogMotion(
+  layout: DialogLayout,
+  side: DialogSide,
+  instant: boolean
+) {
+  if (instant) return undefined
+  if (layout === "sheet")
+    return side === "end" ? "motion-sheet-end" : "motion-sheet-start"
+  return "motion-modal"
+}
+
+function useEnterOnMount(enabled: boolean) {
+  const [starting, setStarting] = React.useState(enabled)
+  React.useLayoutEffect(() => {
+    if (!starting) return
+    const frame = requestAnimationFrame(() => setStarting(false))
+    return () => cancelAnimationFrame(frame)
+  }, [starting])
+  return enabled && starting
 }
 
 function keepTabInside(event: React.KeyboardEvent<HTMLDivElement>) {
@@ -65,21 +95,33 @@ function DialogContent({
   showCloseButton = true,
   overlayClassName,
   layout = "dialog",
+  side = "start",
+  instant = false,
   onKeyDown,
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
   overlayClassName?: string
   layout?: DialogLayout
+  side?: DialogSide
+  instant?: boolean
 }) {
+  const enterOnMount = useEnterOnMount(layout === "sheet" && !instant)
   return (
     <DialogPortal>
-      <DialogOverlay className={overlayClassName} />
+      <DialogOverlay
+        className={overlayClassName}
+        instant={instant}
+        enterOnMount={enterOnMount}
+      />
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         data-layout={layout}
+        data-side={layout === "sheet" ? side : undefined}
         className={cn(
           DIALOG_LAYOUT_CLASS[layout],
+          "data-closed:pointer-events-none",
+          dialogMotion(layout, side, instant),
           showCloseButton && layout === "dialog" && "pt-2",
           className
         )}
@@ -88,6 +130,7 @@ function DialogContent({
           keepTabInside(event)
         }}
         {...props}
+        {...(enterOnMount ? { "data-starting-style": "" } : {})}
       >
         {children}
         {showCloseButton && (

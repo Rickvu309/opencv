@@ -192,9 +192,18 @@ export function SegmentedControl<T extends string = string>({
       fades()
     }
     sync()
-    const ready = requestAnimationFrame(() =>
-      root.current?.setAttribute("data-ready", "")
-    )
+    let cancelled = false
+    let readyFrame = 0
+    const markReadyAfterFonts = () => {
+      readyFrame = requestAnimationFrame(() => {
+        if (!cancelled) root.current?.setAttribute("data-ready", "")
+      })
+    }
+    void Promise.resolve(document.fonts?.ready)
+      .catch(() => undefined)
+      .then(() => {
+        if (!cancelled) markReadyAfterFonts()
+      })
     let frame = 0
     const syncOneFrameLaterSoWidthsSetInsideTheObserverNeverLoopIt = () => {
       cancelAnimationFrame(frame)
@@ -209,9 +218,10 @@ export function SegmentedControl<T extends string = string>({
       ro.observe(el)
     )
     return () => {
+      cancelled = true
       ro.disconnect()
       cancelAnimationFrame(frame)
-      cancelAnimationFrame(ready)
+      cancelAnimationFrame(readyFrame)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- measuring reruns when the options or look change, not when place or measure get new identities
   }, [options.length, fullWidth, variant, size])

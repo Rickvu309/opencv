@@ -82,6 +82,19 @@ describe("collapsible", () => {
     expect(trigger).toHaveAttribute("data-panel-open")
   })
 
+  it("grows on the collapse motion and keeps a caller's class", () => {
+    render(
+      <Collapsible defaultOpen>
+        <CollapsibleTrigger>Work</CollapsibleTrigger>
+        <CollapsibleContent className="caller">Body</CollapsibleContent>
+      </Collapsible>
+    )
+    const panel = document.querySelector("[data-slot=collapsible-content]")
+    expect(panel?.className.split(/\s+/)).toEqual(
+      expect.arrayContaining(["motion-collapse", "caller"])
+    )
+  })
+
   it("respects a controlled open value", async () => {
     render(<Controlled />)
     expect(screen.getByText("Body")).toBeVisible()

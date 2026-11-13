@@ -10,17 +10,11 @@
   "apps/web/src/features/landing/help/help.css": 1,
   "apps/web/src/features/paper/cv-editor.css": 2,
   "apps/web/src/styles/paper.css": 1,
-  "packages/ui/src/components/badge.tsx": 1,
-  "packages/ui/src/components/button.tsx": 1,
   "packages/ui/src/components/comment-thread.tsx": 6,
-  "packages/ui/src/components/dialog.tsx": 3,
-  "packages/ui/src/components/dropdown-menu.tsx": 2,
   "packages/ui/src/components/filter-menu.tsx": 3,
-  "packages/ui/src/components/segmented-control-styles.ts": 5,
-  "packages/ui/src/components/select.tsx": 1,
+  "packages/ui/src/components/segmented-control-styles.ts": 1,
   "packages/ui/src/components/shimmer-loader.tsx": 1,
-  "packages/ui/src/components/thinking-loader-styles.ts": 2,
+  "packages/ui/src/components/thinking-loader-styles.ts": 1,
   "packages/ui/src/components/thinking-loader.tsx": 1,
-  "packages/ui/src/components/tool-call-card-styles.ts": 11,
-  "packages/ui/src/components/tooltip.tsx": 1
+  "packages/ui/src/components/tool-call-card-styles.ts": 2
 }

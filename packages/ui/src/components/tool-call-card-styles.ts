@@ -64,11 +64,11 @@ export const css = `
   padding: 0 14px;
   border-radius: 10px;
   cursor: pointer;
-  transition: background-color var(--duration-micro) ease, border-radius 0ms linear var(--duration-panel);
+  transition: background-color var(--duration-micro) var(--ease-micro), border-radius 0ms var(--ease-micro) var(--duration-panel);
 }
 .ui-tcc[data-open] .ui-tcc__head {
   border-radius: 10px 10px 0 0;
-  transition: background-color var(--duration-micro) ease;
+  transition: background-color var(--duration-micro) var(--ease-micro);
 }
 .ui-tcc__head:focus-visible,
 .ui-tcc-group__head:focus-visible,
@@ -162,7 +162,7 @@ export const css = `
   stroke-width: 1.2;
   stroke-linecap: round;
   stroke-linejoin: round;
-  transition: transform var(--duration-panel) var(--ui-tcc-ease), stroke var(--duration-micro) ease;
+  transition: transform var(--duration-panel) var(--ui-tcc-ease), stroke var(--duration-micro) var(--ease-micro);
 }
 .ui-tcc[data-open] > .ui-tcc__head .ui-tcc__chevron,
 .ui-tcc-group[data-open] > .ui-tcc-group__head .ui-tcc__chevron { transform: rotate(180deg); }
@@ -171,7 +171,7 @@ export const css = `
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
-  transition: grid-template-rows var(--duration-panel) var(--ui-tcc-ease), opacity var(--duration-panel) ease;
+  transition: grid-template-rows var(--duration-panel) var(--ui-tcc-ease), opacity var(--duration-panel) var(--ease-micro);
 }
 .ui-tcc[data-open] > .ui-tcc__body,
 .ui-tcc-group[data-open] > .ui-tcc__body {
@@ -216,7 +216,7 @@ export const css = `
   box-shadow: var(--ui-tcc-shadow);
   color: var(--ui-tcc-icon);
   cursor: pointer;
-  transition: background-color var(--duration-micro) ease, color var(--duration-micro) ease;
+  transition: background-color var(--duration-micro) var(--ease-micro), color var(--duration-micro) var(--ease-micro);
 }
 .ui-tcc__copy svg {
   position: absolute;
@@ -227,7 +227,7 @@ export const css = `
   stroke-width: 1.4;
   stroke-linecap: round;
   stroke-linejoin: round;
-  transition: opacity var(--duration-micro) ease, transform var(--duration-panel) var(--ui-tcc-ease), filter var(--duration-micro) ease;
+  transition: opacity var(--duration-micro) var(--ease-micro), transform var(--duration-panel) var(--ui-tcc-ease), filter var(--duration-micro) var(--ease-micro);
 }
 .ui-tcc__copy-icon rect { fill: currentColor; stroke: none; }
 .ui-tcc__copy-done { opacity: 0; transform: scale(0.6); filter: blur(2px); stroke-width: 1.7; }
@@ -263,7 +263,7 @@ export const css = `
   border-radius: 0 0 7.5px 7.5px;
   background: linear-gradient(to bottom, transparent, var(--ui-tcc-code));
   opacity: 0;
-  transition: opacity var(--duration-panel) ease;
+  transition: opacity var(--duration-panel) var(--ease-micro);
   pointer-events: none;
 }
 .ui-tcc__code[data-capped]::after { opacity: 1; }
@@ -283,7 +283,7 @@ export const css = `
   line-height: 16px;
   font-weight: 500;
   cursor: pointer;
-  transition: color var(--duration-micro) ease;
+  transition: color var(--duration-micro) var(--ease-micro);
 }
 
 .ui-tcc__error {
@@ -323,7 +323,7 @@ export const css = `
   line-height: 20px;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color var(--duration-micro) ease;
+  transition: background-color var(--duration-micro) var(--ease-micro);
 }
 .ui-tcc__retry svg { width: 16px; height: 16px; fill: none; stroke: var(--ui-tcc-icon); stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
 .ui-tcc__retry:active svg { transform: rotate(-60deg); transition: transform var(--duration-micro) var(--ui-tcc-ease); }
@@ -343,7 +343,7 @@ export const css = `
   border-radius: 8px;
   color: var(--ui-tcc-ink);
   cursor: pointer;
-  transition: background-color var(--duration-micro) ease, color var(--duration-micro) ease;
+  transition: background-color var(--duration-micro) var(--ease-micro), color var(--duration-micro) var(--ease-micro);
 }
 .ui-tcc-group__stack { display: flex; flex: none; padding: 0.5px; }
 .ui-tcc-group__stack .ui-tcc__icon {

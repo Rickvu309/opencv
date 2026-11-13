@@ -22,9 +22,20 @@ function CollapsibleTrigger({
   )
 }
 
-function CollapsibleContent({ ...props }: CollapsiblePrimitive.Panel.Props) {
+function CollapsibleContent({
+  className,
+  ...props
+}: CollapsiblePrimitive.Panel.Props) {
   return (
-    <CollapsiblePrimitive.Panel data-slot="collapsible-content" {...props} />
+    <CollapsiblePrimitive.Panel
+      data-slot="collapsible-content"
+      className={
+        typeof className === "function"
+          ? (state) => cn("motion-collapse", className(state))
+          : cn("motion-collapse", className)
+      }
+      {...props}
+    />
   )
 }
 
