@@ -104,11 +104,10 @@ describe("UI package kit surface", () => {
       "--chart-4: oklch(0.758 0.156 81.298);",
       "--chart-5: oklch(0.706 0.003 286.326);",
       "--destructive: oklch(0.572 0.183 23.679);",
-      "@utility glow",
     ]) {
       expect(css, value).toContain(value)
     }
-    expect(css).not.toMatch(/@utility glow[\s\S]*#[0-9A-Fa-f]{3,8}/)
+    expect(css).not.toMatch(/@utility glow|radial-gradient/)
 
     for (const token of [
       "--duration-micro: 150ms",

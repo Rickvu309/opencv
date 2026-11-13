@@ -243,6 +243,53 @@ describe("dialog: one veil, one corner, one padding, anchored near the top", () 
   })
 })
 
+describe("dialog close control", () => {
+  it("stays pinned at the top of a panel whose content scrolls, after the content is scrolled to the bottom, and comes last in Tab order", () => {
+    render(
+      <Dialog open>
+        <DialogContent>
+          <DialogTitle>New CV</DialogTitle>
+          {Array.from({ length: 40 }, (_, index) => (
+            <button key={index} type="button">
+              Template {index}
+            </button>
+          ))}
+        </DialogContent>
+      </Dialog>
+    )
+    const panel = document.querySelector<HTMLElement>(
+      "[data-slot=dialog-content]"
+    )!
+    expect(classesOf(panel)).toEqual(
+      expect.arrayContaining(["overflow-y-auto", "pt-2"])
+    )
+    panel.scrollTop = panel.scrollHeight
+    const close = screen.getByRole("button", { name: "Close" })
+    const pin = close.closest("[data-slot=dialog-close-pin]")!
+    expect(pin.parentElement).toBe(panel)
+    expect(classesOf(pin)).toEqual(
+      expect.arrayContaining(["sticky", "top-2", "order-first", "h-0", "z-10"])
+    )
+    expect(classesOf(close)).toEqual(
+      expect.arrayContaining(["absolute", "bg-popover", "max-md:size-11"])
+    )
+    expect(panel.lastElementChild).toBe(pin)
+  })
+
+  it("leaves a panel without a close control at its own top padding", () => {
+    render(
+      <Dialog open>
+        <DialogContent showCloseButton={false}>
+          <DialogTitle>Delete “CV.docx”?</DialogTitle>
+        </DialogContent>
+      </Dialog>
+    )
+    const panel = document.querySelector("[data-slot=dialog-content]")!
+    expect(classesOf(panel)).not.toContain("pt-2")
+    expect(document.querySelector("[data-slot=dialog-close-pin]")).toBeNull()
+  })
+})
+
 describe("menu rows", () => {
   it("are 13px, 32 tall, 44 tall on phones, never wrap, and sit in a menu at least 220 wide", async () => {
     render(

@@ -15,12 +15,12 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-function glowCount() {
-  return document.querySelectorAll('[data-variant="glow"]').length
+function primaryCount() {
+  return document.querySelectorAll('[data-variant="primary"]').length
 }
 
 describe("coming soon and the calm 404", () => {
-  it("shows Jobs with one glow and a hidden preview", async () => {
+  it("shows Jobs with one solid primary and a hidden preview", async () => {
     renderPage(JobsPage)
 
     expect(
@@ -36,7 +36,7 @@ describe("coming soon and the calm 404", () => {
     expect(
       screen.getByRole("link", { name: "Track a job in Apply" })
     ).toHaveAttribute("href", "/apply")
-    expect(glowCount()).toBe(1)
+    expect(primaryCount()).toBe(1)
     const previewTitle = screen.getByText("Marketing Executive", {
       hidden: true,
     })
@@ -88,7 +88,7 @@ describe("coming soon and the calm 404", () => {
     await waitFor(() => {
       expect(notifyCalls()).toEqual([{ topic: "proof" }])
     })
-    expect(glowCount()).toBe(0)
+    expect(primaryCount()).toBe(0)
   })
 
   it("shows Pitch and posts pitch without an editor", async () => {

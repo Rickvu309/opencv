@@ -2,9 +2,6 @@ import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "cn"
 
-const glowButton =
-  "glow text-foreground hover:brightness-[0.97] active:brightness-[0.94] motion-reduce:transition-none motion-reduce:hover:brightness-100 motion-reduce:active:brightness-100"
-
 const secondaryButton =
   "bg-card text-foreground ring-1 ring-inset ring-border hover:bg-secondary active:bg-muted"
 
@@ -21,7 +18,6 @@ const buttonVariants = cva(
       variant: {
         default: secondaryButton,
         primary: primaryButton,
-        glow: glowButton,
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:

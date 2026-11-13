@@ -83,7 +83,7 @@ export function ComingSoonPage({
           <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
             <Button
               type="button"
-              variant="glow"
+              variant="primary"
               className="h-11 gap-2 rounded-[10px] px-[18px] font-semibold md:h-[42px]"
               disabled={pending}
               aria-busy={pending}

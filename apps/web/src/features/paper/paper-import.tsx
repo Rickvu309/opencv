@@ -180,7 +180,7 @@ export function CantReadDialog({
           <Button
             className="h-11 md:h-8"
             type="button"
-            variant="glow"
+            variant="primary"
             onClick={onRetry ?? onChoose}
           >
             {onRetry ? "Try again" : "Choose another file"}

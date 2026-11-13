@@ -78,7 +78,11 @@ function DialogContent({
       <DialogPrimitive.Popup
         data-slot="dialog-content"
         data-layout={layout}
-        className={cn(DIALOG_LAYOUT_CLASS[layout], className)}
+        className={cn(
+          DIALOG_LAYOUT_CLASS[layout],
+          showCloseButton && layout === "dialog" && "pt-2",
+          className
+        )}
         onKeyDown={(event) => {
           onKeyDown?.(event)
           keepTabInside(event)
@@ -87,19 +91,24 @@ function DialogContent({
       >
         {children}
         {showCloseButton && (
-          <DialogPrimitive.Close
-            data-slot="dialog-close"
-            render={
-              <Button
-                variant="ghost"
-                className="absolute top-3 right-3 max-md:top-1.5 max-md:right-1.5 max-md:size-11"
-                size="icon-sm"
-              />
-            }
+          <div
+            data-slot="dialog-close-pin"
+            className="pointer-events-none sticky top-2 z-10 order-first flex h-0 justify-end"
           >
-            <XIcon />
-            <span className="sr-only">Close</span>
-          </DialogPrimitive.Close>
+            <DialogPrimitive.Close
+              data-slot="dialog-close"
+              render={
+                <Button
+                  variant="ghost"
+                  className="pointer-events-auto absolute top-1 -right-3 bg-popover max-md:-top-0.5 max-md:-right-[18px] max-md:size-11"
+                  size="icon-sm"
+                />
+              }
+            >
+              <XIcon />
+              <span className="sr-only">Close</span>
+            </DialogPrimitive.Close>
+          </div>
         )}
       </DialogPrimitive.Popup>
     </DialogPortal>

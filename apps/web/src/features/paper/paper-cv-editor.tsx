@@ -409,7 +409,8 @@ export function PaperCvEditor({
             <div className="flex gap-2">
               <Button
                 type="button"
-                variant="glow"
+                size="sm"
+                variant="primary"
                 className="h-11 md:h-7"
                 onClick={() => void fitOnePage()}
               >

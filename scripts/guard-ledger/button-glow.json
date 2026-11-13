@@ -1,0 +1,13 @@
+{
+  "id": "button-glow",
+  "file": "scripts/button-glow.test.mjs",
+  "detector": {
+    "module": "scripts/lib/button-glow.mjs",
+    "export": "glowButtons"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "5df295b4",
+    "path": "packages/ui/src/components/button.tsx"
+  }
+}

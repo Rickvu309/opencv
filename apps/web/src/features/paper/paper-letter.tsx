@@ -229,7 +229,6 @@ export function PaperLetterEditor({
             <div className="flex gap-1 pt-1.5 pl-[22px]">
               <Button
                 type="button"
-                variant="glow"
                 className="h-11 rounded-[7px] px-2.5 text-[12px] font-semibold md:h-7"
                 onClick={addKeyword}
               >
