@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen, waitFor } from "@testing-library/react"
 
 import { importPaperFile, paperListKey } from "@/features/paper/paper-api.ts"
+import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
 import { runContractCommand } from "@/lib/contract-client.ts"
 import { PaperDocPage } from "@/routes/paper-doc.tsx"
 
@@ -372,7 +373,9 @@ function client() {
 function tree(queryClient: QueryClient) {
   return (
     <QueryClientProvider client={queryClient}>
-      <PaperDocPage />
+      <ChatStoreProvider>
+        <PaperDocPage />
+      </ChatStoreProvider>
     </QueryClientProvider>
   )
 }
@@ -397,6 +400,10 @@ async function expectOpened(server: Server, format: Format, docId: string) {
       expect(server.exchanges.map((exchange) => exchange.url)).toContain(
         `/api/paper/${docId}/pages`
       )
+    )
+    await waitFor(
+      () => expect(document.querySelector('[aria-busy="true"]')).toBeNull(),
+      { timeout: 5000 }
     )
   }
   expect(screen.queryByText("Document not found.")).toBeNull()
@@ -464,7 +471,8 @@ async function settleForAMinute() {
 function shown() {
   if (screen.queryByRole("article", { name: "Page" })) return "page"
   if (screen.queryByText("Document not found.")) return "not found"
-  if (screen.queryByText("Could not load documents.")) return "load error"
+  if (screen.queryByText("Could not load documents. Refresh the page."))
+    return "load error"
   if (screen.queryByText("Loading documents")) return "loading"
   return "other"
 }
@@ -610,13 +618,13 @@ describe("the route decides once and stops", () => {
     expect(outcome.listReads).toBeLessThanOrEqual(2)
   })
 
-  it("a list read that keeps failing shows the true error with Try again, and reads the list once", async () => {
+  it("a list read that keeps failing shows the true error with Refresh, and reads the list once", async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
     const server = fakeServer({ listFails: 1000 })
     mount(`/paper/${idNumber(999)}`, client())
     await settleForAMinute()
     expect(shown()).toBe("load error")
-    expect(screen.getByRole("button", { name: "Try again" })).toBeVisible()
+    expect(screen.getByRole("button", { name: "Refresh" })).toBeVisible()
     expect(listReads(server)).toBe(1)
   })
 

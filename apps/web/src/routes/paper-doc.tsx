@@ -177,8 +177,8 @@ export function PaperDocPage() {
     }
     const missing =
       validId === null ||
-      (!listQuery.isError &&
-        (docMissing || (wordPage && packageQuery.isSuccess)))
+      (docMissing && (!listQuery.isError || packageQuery.isSuccess)) ||
+      (wordPage && packageQuery.isSuccess)
     const retry = () =>
       void retryPaperDocReads(queryClient, [
         paperListKey(),
@@ -191,11 +191,15 @@ export function PaperDocPage() {
         aria-label="Paper"
         className="flex flex-col items-start gap-3 p-4"
       >
-        <p>{missing ? "Document not found." : "Could not load documents."}</p>
+        <p>
+          {missing
+            ? "Document not found."
+            : "Could not load documents. Refresh the page."}
+        </p>
         <div className="flex gap-2">
           {missing ? null : (
             <Button type="button" onClick={retry}>
-              Try again
+              Refresh
             </Button>
           )}
           <Button type="button" variant="outline" onClick={back}>
