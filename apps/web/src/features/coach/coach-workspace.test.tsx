@@ -116,6 +116,7 @@ describe("Coach workspace", () => {
       expect(screen.queryByRole("button", { name: "Stop" })).toBeNull()
     )
     expect(await screen.findByText("The Coach stopped.")).toBeVisible()
+    expect(screen.queryByText("Stop this new Chat")).not.toBeInTheDocument()
     expect(screen.queryByText("How can I help?")).not.toBeInTheDocument()
     expect(starts).toEqual([])
   })
