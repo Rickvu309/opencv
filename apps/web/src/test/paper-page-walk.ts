@@ -52,6 +52,7 @@ class Page {
   storedFor: unknown[] | null = null
   conflicted = false
   alive = true
+  reloaded = false
 
   constructor(world: World) {
     const page = world.page()
@@ -287,6 +288,13 @@ function check(world: World, page: Page, label: string) {
   if (state.unsaved.length > 1) count("several lines marked")
   if (state.unsaved.some((line) => line.removed)) count("removal marked")
   if (state.note === "Saved") count("saved")
+  const ownSaveSeenAsElsewhere =
+    !!state.moved &&
+    !!state.basis &&
+    world.onlyPageWroteSince(state.basis.revision, state.moved.basis.revision)
+  if (ownSaveSeenAsElsewhere) count("own save seen as changed elsewhere")
+  if (ownSaveSeenAsElsewhere && !page.reloaded)
+    count("own save seen as changed elsewhere without a reload")
   if (state.moved) {
     const head = linesAt(world, state.moved.basis.revision)
     if (
@@ -296,6 +304,10 @@ function check(world: World, page: Page, label: string) {
       fail(`the changed-elsewhere page is not a page the server had (${label})`)
     const stated = unsavedBar(state).discards
     const truth = oracleDiscards(state, basisLines ?? [])
+    if (stated !== truth && ownSaveSeenAsElsewhere)
+      fail(
+        `I4 honest marks: Use the saved page says it discards ${stated} lines but it discards ${truth}, after the page's own save was seen as a change elsewhere (${label})`
+      )
     if (stated !== truth)
       fail(
         `I4 honest marks: Use the saved page says it discards ${stated} lines but it discards ${truth} (${label})`
@@ -347,7 +359,9 @@ async function reloadPage(world: World, page: Page) {
   vi.clearAllTimers()
   await flush()
   await closeWritingDb()
-  return new Page(world)
+  const next = new Page(world)
+  next.reloaded = true
+  return next
 }
 
 export async function walk(steps: readonly Step[]): Promise<string | null> {

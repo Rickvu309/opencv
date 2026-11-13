@@ -320,7 +320,17 @@ export class World {
     } as unknown as WordPage
   }
 
+  authors: Author[] = ["other"]
+
+  onlyPageWroteSince(from: string, to: string) {
+    const index = (name: string) => Number(name.slice(-12))
+    return this.authors
+      .slice(index(from) + 1, index(to) + 1)
+      .every((author) => author === "page")
+  }
+
   bump(author: Author) {
+    this.authors.push(author)
     this.revision += 1
     for (const line of this.lines)
       if (line.version === -1) {

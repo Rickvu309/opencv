@@ -118,6 +118,13 @@ const SEED_664: Step[] = [
 ]
 
 describe("the writing page under a seeded random walk against a fake server", () => {
+  it.fails(
+    "known issue, own save seen as a change elsewhere after a reload: seed 1072 at 3,000 steps miscounts Use the saved page by one line",
+    async () => {
+      expect(await walk(walkSteps(1072, 3000))).toBeNull()
+    }
+  )
+
   it("replays seed 501: a removed line that still has a temporary id is counted in Use the saved page", async () => {
     expect(await walk(SEED_501)).toBeNull()
   })
@@ -143,9 +150,13 @@ describe("the writing page under a seeded random walk against a fake server", ()
     const seeds = process.env.WALK_SEED_LIST
       ? process.env.WALK_SEED_LIST.split(",").map(Number)
       : Array.from({ length: SEEDS }, (_, index) => FIRST_SEED + index)
+    const ownMoved: number[] = []
     for (const seed of seeds) {
       const steps = walkSteps(seed, STEPS)
+      const own = tally.get("own save seen as changed elsewhere") ?? 0
       const failure = await walk(steps)
+      if ((tally.get("own save seen as changed elsewhere") ?? 0) > own)
+        ownMoved.push(seed)
       if (!failure) continue
       const at = Number(failure.split(" at ").at(-1))
       if (process.env.WALK_SURVEY) {
@@ -160,6 +171,10 @@ describe("the writing page under a seeded random walk against a fake server", ()
         `seed ${seed}: ${failure}\nshortest ${short.length} steps:\n${JSON.stringify(short)}\nlast: ${await walk(short)}`
       )
     }
+    if (process.env.WALK_SURVEY)
+      console.log(
+        `own save seen as changed elsewhere: ${ownMoved.length} of ${seeds.length} seeds (${ownMoved.join(",")}); states without a reload: ${tally.get("own save seen as changed elsewhere without a reload") ?? 0}`
+      )
     if (found.size > 0)
       throw new Error(
         `seeds by invariant: ${JSON.stringify(Object.fromEntries(found))}`
