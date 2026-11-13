@@ -98,12 +98,10 @@ export function ApplyBoard({
   jobs,
   showClosed,
   onShowClosed,
-  justAddedJobId,
 }: {
   jobs: JobView[]
   showClosed: boolean
   onShowClosed: (show: boolean) => void
-  justAddedJobId?: string | null
 }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -117,16 +115,7 @@ export function ApplyBoard({
   }
   const lastOver = useRef<JobStage | null>(null)
   const [drag, dispatchDrag] = useReducer(dragReducer, null)
-  const renderedRef = useRef<string | null>(null)
-  const [justAdded, dispatchJustAdded] = useReducer(
-    justAddedReducer,
-    justAddedJobId ?? null
-  )
-
-  useEffect(() => {
-    if (!justAddedJobId) return
-    dispatchJustAdded({ type: "created", id: justAddedJobId })
-  }, [justAddedJobId])
+  const [justAdded, dispatchJustAdded] = useReducer(justAddedReducer, null)
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -153,16 +142,7 @@ export function ApplyBoard({
   useEffect(() => {
     if (!justAdded) return
     if (!shown.some((job) => job.id === justAdded)) return
-    if (renderedRef.current !== justAdded) {
-      renderedRef.current = justAdded
-      const timer = setTimeout(() => {
-        dispatchJustAdded({ type: "cleared" })
-        renderedRef.current = null
-      }, 300)
-      return () => clearTimeout(timer)
-    }
     dispatchJustAdded({ type: "cleared" })
-    renderedRef.current = null
   }, [justAdded, shown])
 
   function openJob(jobId: string) {
@@ -294,8 +274,7 @@ export function ApplyBoard({
                 className="min-h-0 flex-initial gap-2 p-0"
               >
                 {(item: Card) => {
-                  const isNew =
-                    item.id === justAdded && renderedRef.current !== justAdded
+                  const isNew = item.id === justAdded
                   return (
                     <KanbanCard
                       key={item.id}

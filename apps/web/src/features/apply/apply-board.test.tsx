@@ -321,6 +321,21 @@ describe("apply board", () => {
     const initialWrapper = initialCard.closest("[data-slot='kanban-card']")
     expect(initialWrapper).not.toHaveAttribute("data-new", "true")
 
+    const dataNewValues: (string | null)[] = []
+    const observer = new MutationObserver((mutations) => {
+      for (const m of mutations) {
+        if (m.type === "attributes" && m.attributeName === "data-new") {
+          dataNewValues.push(m.oldValue)
+        }
+      }
+    })
+    observer.observe(document.body, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["data-new"],
+      attributeOldValue: true,
+    })
+
     fireEvent.click(screen.getByRole("button", { name: "New job" }))
     const dialog = await screen.findByRole("dialog", { name: "New job" })
     fireEvent.change(within(dialog).getByLabelText("Role title"), {
@@ -335,8 +350,10 @@ describe("apply board", () => {
       name: "Lead Designer, Acme Studio",
     })
     const newWrapper = newCard.closest("[data-slot='kanban-card']")
-    expect(newWrapper).toHaveAttribute("data-new", "true")
+    expect(dataNewValues).toContain("true")
     expect(newWrapper?.className).toContain("data-[new=true]:motion-appear")
     expect(initialWrapper).not.toHaveAttribute("data-new", "true")
+    expect(newWrapper).not.toHaveAttribute("data-new")
+    observer.disconnect()
   })
 })
