@@ -303,6 +303,35 @@ it("shows the approved words without a reload", async () => {
   )
 })
 
+it.each([
+  ["approved", "After line", true],
+  ["undone", "Before line again", true],
+  ["denied", "Before line", false],
+  ["failed", "Before line", false],
+] as const)(
+  "logs no console error while the page renders a Coach receipt that was %s",
+  async (_outcome, after, rereads) => {
+    let serverText = "Before line"
+    const errors = vi.spyOn(console, "error")
+    vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {
+      if (String(url).includes("/api/reads/paper.read")) {
+        return Response.json({ ok: true, data: readPage(serverText) })
+      }
+      return Response.json({ ok: true, data: {} })
+    })
+    render(<WritingPage docId={DOC} seed={draft("Before line")} />)
+    await waitFor(() => expect(words()).toEqual(["Before line"]))
+    serverText = after
+    if (rereads) notifyWritingRefresh()
+    await waitFor(() => expect(words()).toEqual([after]))
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(errors.mock.calls.map((call) => String(call[0]))).toEqual([])
+    errors.mockRestore()
+  }
+)
+
 it("keeps unsent words when the approved page is newer", async () => {
   const calls: string[] = []
   vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {

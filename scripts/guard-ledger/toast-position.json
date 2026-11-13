@@ -1,0 +1,14 @@
+{
+  "id": "toast-position",
+  "file": "scripts/toast-position.test.mjs",
+  "detector": {
+    "module": "scripts/lib/toast-position.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "d6a8799a",
+    "path": "apps/web/src/features/paper/paper-library.tsx"
+  },
+  "reason": "Found by the browser sweep of PR 1473 on main at d6a8799a: the PDF import notice was shown top-center, outside the shared placement, and covered the phone Menu button and Download Word from 320 to 600 wide."
+}

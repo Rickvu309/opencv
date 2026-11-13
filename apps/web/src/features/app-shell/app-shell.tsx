@@ -396,7 +396,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
                 <main
                   id="app-main"
                   tabIndex={-1}
-                  className="h-full min-h-0 min-w-0 flex-1 overflow-hidden rounded-[inherit] outline-none"
+                  className="h-full min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto rounded-[inherit] outline-none"
                 >
                   <Outlet />
                 </main>

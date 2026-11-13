@@ -62,9 +62,13 @@ function savedRevision(docId: string) {
 export const DOWNLOAD_WAITS_FOR_SAVE =
   "Download Word is ready once your words are saved."
 
+function subscribeStoredDraftOutsideRender(listener: () => void) {
+  return subscribeStoredDraft(() => queueMicrotask(listener))
+}
+
 function DownloadWord({ docId, owner }: { docId: string; owner: string }) {
   const revision = useSyncExternalStore(
-    subscribeStoredDraft,
+    subscribeStoredDraftOutsideRender,
     () => savedRevision(docId),
     () => null
   )

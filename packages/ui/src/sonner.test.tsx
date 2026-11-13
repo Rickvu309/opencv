@@ -56,3 +56,13 @@ it("glides the toaster with the panel motion tokens and holds still for reduced 
   expect(toaster!.className).toContain("ease-(--ease-panel)!")
   expect(toaster!.className).toContain("motion-reduce:transition-none!")
 })
+
+it("lets clicks through a toast while it slides in or out over the Coach dock", async () => {
+  const { container } = render(<Toaster />)
+  const toaster = await shownToaster(container)
+  const toast = toaster!.querySelector("[data-sonner-toast]")!
+  expect(toast).toHaveAttribute("data-mounted")
+  expect(toast).toHaveAttribute("data-removed")
+  expect(toast.className).toContain("data-[mounted=false]:pointer-events-none")
+  expect(toast.className).toContain("data-[removed=true]:pointer-events-none")
+})
