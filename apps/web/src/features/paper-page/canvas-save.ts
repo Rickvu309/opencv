@@ -30,6 +30,14 @@ import {
 } from "./canvas-save-outcome.ts"
 import { diffParagraphs } from "./page-diff.ts"
 import {
+  closeRecordDb,
+  commitWords,
+  keepSent,
+  ownSent,
+  recordSent,
+  type SentRecord,
+} from "./canvas-save-record.ts"
+import {
   landedRenames,
   lineUnits,
   stillRefused,
@@ -40,20 +48,9 @@ import {
   type PageBlock,
 } from "./canvas-save-lines.ts"
 
-const DATABASE = "opencv-writing"
-const TABLE = "pages"
 const SERVER_NOTES = new Set([
   "This Word document has changed. Read it again before editing.",
 ])
-
-export type WritingRecord = {
-  key: string
-  commandId: string
-  generation: number
-  words: string
-  revision: string | null
-  idempotencyKey: string
-}
 
 export type SettleClaim = {
   basis: DraftBasis | null
@@ -97,6 +94,8 @@ export function savedNote(words: string, outcome: SaveOutcome): string | null {
   return "Saved"
 }
 
+export { commitWords }
+
 export function decideSave(
   draft: PackageDraft,
   local: LocalObservation | null,
@@ -105,115 +104,12 @@ export function decideSave(
   return applyReply(draft, local, reply)
 }
 
-function readRecord(
-  db: IDBDatabase,
-  docId: string
-): Promise<WritingRecord | undefined> {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(TABLE, "readonly")
-    const req = tx.objectStore(TABLE).get(docId)
-    let value: WritingRecord | undefined
-    req.onsuccess = () => {
-      value = req.result as WritingRecord | undefined
-    }
-    tx.oncomplete = () => resolve(value)
-    tx.onabort = () => reject(tx.error ?? new Error("aborted"))
-  })
-}
-
-function writeRecord(db: IDBDatabase, record: WritingRecord): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(TABLE, "readwrite")
-    tx.objectStore(TABLE).put(record)
-    tx.oncomplete = () => resolve()
-    tx.onabort = () => reject(tx.error ?? new Error("aborted"))
-  })
-}
-
-function openDatabase(): Promise<IDBDatabase> {
-  return new Promise((resolve, reject) => {
-    const opening = indexedDB.open(DATABASE, 1)
-    opening.onupgradeneeded = () => {
-      if (!opening.result.objectStoreNames.contains(TABLE)) {
-        opening.result.createObjectStore(TABLE, { keyPath: "key" })
-      }
-    }
-    opening.onsuccess = () => resolve(opening.result)
-    opening.onerror = () => reject(opening.error)
-  })
-}
-
-let opened: Promise<IDBDatabase> | null = null
-
-function database() {
-  opened ??= openDatabase()
-  return opened
-}
-
 export async function closeWritingDb() {
   ownWrites.clear()
   unanswered.clear()
   retryAt.clear()
   sentBlocks.clear()
-  const current = opened
-  opened = null
-  if (!current) return
-  const db = await current.catch(() => null)
-  db?.close()
-}
-
-function fresh(words: string): WritingRecord {
-  const commandId = crypto.randomUUID()
-  return {
-    key: "",
-    commandId,
-    generation: 1,
-    words,
-    revision: null,
-    idempotencyKey: commandId,
-  }
-}
-
-export async function commitWords(
-  docId: string,
-  words: string
-): Promise<{ local: LocalObservation; record: WritingRecord }> {
-  if (typeof indexedDB === "undefined") {
-    const record = fresh(words)
-    return {
-      local: { transaction: "aborted", generation: 1, words },
-      record,
-    }
-  }
-  try {
-    const db = await database()
-    const existing = await readRecord(db, docId)
-    const commandId = existing?.commandId ?? crypto.randomUUID()
-    const generation =
-      existing && existing.words === words
-        ? existing.generation
-        : (existing?.generation ?? 0) + 1
-    const record: WritingRecord = {
-      key: docId,
-      commandId,
-      generation,
-      words,
-      revision: existing?.revision ?? null,
-      idempotencyKey: existing?.idempotencyKey ?? commandId,
-    }
-    await writeRecord(db, record)
-    return {
-      local: { transaction: "complete", generation, words },
-      record,
-    }
-  } catch {
-    opened = null
-    const record = fresh(words)
-    return {
-      local: { transaction: "aborted", generation: record.generation, words },
-      record,
-    }
-  }
+  await closeRecordDb()
 }
 
 function serverNote(error: unknown): string | null {
@@ -242,9 +138,12 @@ async function readPage(docId: string, signal: AbortSignal) {
 function earlierRenames(
   docId: string,
   page: WordPage,
-  blocks: readonly PageBlock[]
+  blocks: readonly PageBlock[],
+  kept: SentRecord | undefined
 ): Record<string, string> {
-  const sent = sentBlocks.get(docId)
+  const sent =
+    sentBlocks.get(docId) ??
+    (kept ? { revision: null, blocks: kept.blocks } : undefined)
   const server = pageBlocks(page)
   const landed =
     sent &&
@@ -268,7 +167,8 @@ async function sendPage(
   docId: string,
   page: WordPage,
   blocks: readonly PageBlock[],
-  caret: TextPoint | null
+  caret: TextPoint | null,
+  held: string | null
 ): Promise<Sent> {
   const diff = diffParagraphs(page, blocks, caret)
   if ("refused" in diff) return { revision: null, note: diff.refused }
@@ -285,6 +185,11 @@ async function sendPage(
   const words = pageWords(blocks)
   unanswered.set(docId, words)
   sentBlocks.set(docId, { revision: null, blocks: blocks.slice() })
+  const fresh = await recordSent(docId, {
+    words,
+    bases: [...new Set([held, page.revision].filter((name) => name !== null))],
+    blocks: blocks.slice(),
+  })
   try {
     const revision = receiptRevision(
       await runContractCommand(commandClient(), "paper.canvas", input.data, {
@@ -300,6 +205,10 @@ async function sendPage(
   } catch (error) {
     const note = lineRefusalNote(error)
     if (note === null) throw error
+    if (fresh)
+      await keepSent(docId, (kept) =>
+        kept.filter((item) => item.words !== words)
+      )
     unanswered.delete(docId)
     sentBlocks.delete(docId)
     return { revision: null, note }
@@ -337,7 +246,8 @@ async function isolate(
   caret: TextPoint | null,
   signal: AbortSignal,
   firstNote: string,
-  answered: LineRefusal[]
+  answered: LineRefusal[],
+  held: string | null
 ): Promise<Isolated> {
   let head = page
   const refused: LineRefusal[] = []
@@ -369,7 +279,8 @@ async function isolate(
       docId,
       head,
       candidate,
-      caretIn(caret, [unit.id])
+      caretIn(caret, [unit.id]),
+      held
     )
     if (sent.note === null && sent.revision) {
       const next = await readPage(docId, signal)
@@ -386,7 +297,13 @@ async function isolate(
   if (!structural) return { head, refused, landed, renamed: {} }
   if (signal.aborted) return null
   const rest = withoutRefused(pageBlocks(head), blocks, refused)
-  const sent = await sendPage(docId, head, rest, caretIn(caret, units.rest))
+  const sent = await sendPage(
+    docId,
+    head,
+    rest,
+    caretIn(caret, units.rest),
+    held
+  )
   if (sent.note === null && sent.revision) {
     const next = await readPage(docId, signal)
     if (!next || next.revision !== sent.revision) return null
@@ -423,7 +340,8 @@ const sentBlocks = new Map<
 function basisAt(
   docId: string,
   page: WordPage,
-  claimed: DraftBasis | null
+  claimed: DraftBasis | null,
+  kept: SentRecord | undefined
 ): DraftBasis | null {
   const own = ownWrites.get(docId)
   if (own && own.revision === page.revision) return own
@@ -431,6 +349,7 @@ function basisAt(
   if (sent !== undefined && sent === pageText(page)) {
     return recordedBasis(page.revision, sent)
   }
+  if (kept) return recordedBasis(page.revision, kept.words)
   return claimed
 }
 
@@ -461,7 +380,17 @@ async function settleOnce(
   const page = await readPage(docId, signal)
   if (!page || signal.aborted) return missed(words)
   const seen = pageText(page)
-  const basis = basisAt(docId, page, claim.basis)
+  const kept = ownSent(committed.record, claim.basis, pageText(page))
+  if (kept)
+    await keepSent(docId, (sent) =>
+      sent.slice(
+        Math.max(
+          0,
+          sent.findIndex((item) => item.words === kept.words)
+        )
+      )
+    )
+  const basis = basisAt(docId, page, claim.basis, kept)
   if (words === seen && (words !== "" || basis !== null)) {
     const renames = landedRenames(given, pageBlocks(page)) ?? {}
     return withRenames(
@@ -475,7 +404,7 @@ async function settleOnce(
       renames
     )
   }
-  const renames = earlierRenames(docId, page, given)
+  const renames = earlierRenames(docId, page, given, kept)
   const blocks = renamedBlocks(given, renames)
   const changed = basis ? words !== basis.words : claim.typed
   const serverMoved =
@@ -497,7 +426,13 @@ async function settleOnce(
   const carried = stillRefused([...(claim.refused ?? []), ...answered], blocks)
   const sending = withoutRefused(pageBlocks(page), blocks, carried)
   const caret = claim.caret ?? null
-  const sent = await sendPage(docId, page, sending, caret)
+  const sent = await sendPage(
+    docId,
+    page,
+    sending,
+    caret,
+    claim.basis?.revision ?? null
+  )
   if (sent.note !== null) {
     const now = await stillOurs(docId, page, signal)
     if (now && "moved" in now) return movedTo(words, now.moved)
@@ -509,7 +444,8 @@ async function settleOnce(
       caret,
       signal,
       sent.note,
-      answered
+      answered,
+      claim.basis?.revision ?? null
     )
     if (!isolated)
       return withRefusals(

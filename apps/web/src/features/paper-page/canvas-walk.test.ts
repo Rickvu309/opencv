@@ -1,8 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { closeWritingDb } from "./canvas-save.ts"
-import { invariant, shortest, walk } from "@/test/paper-page-walk.ts"
-import { tally, walkSteps, type Step } from "@/test/paper-page-walk-world.ts"
+import {
+  invariant,
+  lookKey,
+  lookTrail,
+  shortest,
+  walk,
+} from "@/test/paper-page-walk.ts"
+import {
+  tally,
+  walkSteps,
+  type StartLine,
+  type Step,
+} from "@/test/paper-page-walk-world.ts"
 
 vi.mock("./package-read.ts", async () => {
   const { net } = await import("@/test/paper-page-walk-world.ts")
@@ -118,12 +129,9 @@ const SEED_664: Step[] = [
 ]
 
 describe("the writing page under a seeded random walk against a fake server", () => {
-  it.fails(
-    "#1452, own save seen as a change elsewhere after a reload: seed 1072 at 3,000 steps miscounts Use the saved page by one line",
-    async () => {
-      expect(await walk(walkSteps(1072, 3000))).toBeNull()
-    }
-  )
+  it("replays seed 1072 at 3,000 steps: after a reload the page knows its own save and shows no changed-elsewhere bar", async () => {
+    expect(await walk(walkSteps(1072, 3000))).toBeNull()
+  })
 
   it("replays seed 501: a removed line that still has a temporary id is counted in Use the saved page", async () => {
     expect(await walk(SEED_501)).toBeNull()
@@ -145,18 +153,14 @@ describe("the writing page under a seeded random walk against a fake server", ()
     expect(await walk(N2)).toBeNull()
   })
 
-  it(`keeps I1 to I4 over ${SEEDS} seeds of ${STEPS} steps`, async () => {
+  it(`keeps I1 to I5 over ${SEEDS} seeds of ${STEPS} steps`, async () => {
     const found = new Map<string, number[]>()
     const seeds = process.env.WALK_SEED_LIST
       ? process.env.WALK_SEED_LIST.split(",").map(Number)
       : Array.from({ length: SEEDS }, (_, index) => FIRST_SEED + index)
-    const ownMoved: number[] = []
     for (const seed of seeds) {
       const steps = walkSteps(seed, STEPS)
-      const own = tally.get("own save seen as changed elsewhere") ?? 0
       const failure = await walk(steps)
-      if ((tally.get("own save seen as changed elsewhere") ?? 0) > own)
-        ownMoved.push(seed)
       if (!failure) continue
       const at = Number(failure.split(" at ").at(-1))
       if (process.env.WALK_SURVEY) {
@@ -171,10 +175,6 @@ describe("the writing page under a seeded random walk against a fake server", ()
         `seed ${seed}: ${failure}\nshortest ${short.length} steps:\n${JSON.stringify(short)}\nlast: ${await walk(short)}`
       )
     }
-    if (process.env.WALK_SURVEY)
-      console.log(
-        `own save seen as changed elsewhere: ${ownMoved.length} of ${seeds.length} seeds (${ownMoved.join(",")}); states without a reload: ${tally.get("own save seen as changed elsewhere without a reload") ?? 0}`
-      )
     if (found.size > 0)
       throw new Error(
         `seeds by invariant: ${JSON.stringify(Object.fromEntries(found))}`
@@ -195,8 +195,153 @@ describe("the writing page under a seeded random walk against a fake server", ()
       "use saved page",
       "restore line",
       "saved",
+      "I5 new line checked",
     ])
       expect(tally.get(name) ?? 0, name).toBeGreaterThan(0)
     expect(tally.get("left asking after close") ?? 0).toBe(0)
   })
+})
+
+const BLANK: StartLine[] = [{ text: "", look: { align: "center" } }]
+
+const PAGES: Record<string, StartLine[]> = {
+  "a blank CV": BLANK,
+  "a plain blank page": [{ text: "" }],
+  "a template": [
+    { text: "Your Name", look: { form: { kind: "title" }, align: "center" } },
+    { text: "Experience", look: { form: { kind: "heading", level: 1 } } },
+    {
+      text: "Led a team of five",
+      look: { form: { kind: "bullet", level: 0 } },
+    },
+    { text: "Write a short summary here" },
+  ],
+  "an imported file": [
+    { text: "Linh Nguyen", look: { align: "center" } },
+    { text: "Hanoi, Vietnam", look: { align: "end" } },
+    { text: "I plan growth that ships.", look: { align: "justify" } },
+    { text: "Projects", look: { form: { kind: "heading", level: 2 } } },
+    { text: "First result", look: { form: { kind: "number", level: 0 } } },
+    { text: "An indented line with spacing" },
+  ],
+}
+
+function listed(line: StartLine) {
+  const kind = line.look?.form?.kind
+  return kind === "bullet" || kind === "number"
+}
+
+function lookName(line: StartLine) {
+  return line.look ? lookKey(line.look) : "left, no look"
+}
+
+function looksAt(index: number) {
+  return [...new Set(lookTrail.slice(1).map((lines) => lines[index]?.look))]
+}
+
+describe("a line's look is the same before its save, after the save lands and after a reload", () => {
+  it("B1: a name line on a blank CV and four lines typed under it stay centred", async () => {
+    const steps: Step[] = [
+      { kind: "type", line: 0, at: 0, text: "Linh Nguyen" },
+    ]
+    for (const [index, text] of [
+      "Marketing Intern",
+      "Hanoi",
+      "linh@example.com",
+      "Available from June",
+    ].entries())
+      steps.push(
+        { kind: "enter", line: index, at: 999 },
+        { kind: "type", line: index + 1, at: 0, text }
+      )
+    steps.push({ kind: "drain" }, { kind: "reload" }, { kind: "drain" })
+    expect(await walk(steps, BLANK)).toBeNull()
+    const centred = lookKey({ align: "center" })
+    expect(lookTrail.at(-1)?.map((line) => line.text)).toEqual([
+      "Linh Nguyen",
+      "Marketing Intern",
+      "Hanoi",
+      "linh@example.com",
+      "Available from June",
+    ])
+    expect(
+      new Set(lookTrail.flatMap((lines) => lines.map((line) => line.look)))
+    ).toEqual(new Set([centred]))
+  })
+
+  for (const [name, start] of Object.entries(PAGES))
+    start.forEach((line, index) => {
+      const places: [string, number][] =
+        line.text === ""
+          ? [["end", 999]]
+          : [
+              ["start", 0],
+              ["middle", Math.floor(line.text.length / 2)],
+              ["end", 999],
+            ]
+      for (const [where, at] of places)
+        it(`${name}, line ${index + 1} (${lookName(line)}): Enter at the ${where}`, async () => {
+          expect(
+            await walk(
+              [
+                { kind: "enter", line: index, at },
+                { kind: "type", line: index + 1, at: 0, text: "Z" },
+                { kind: "drain" },
+                { kind: "reload" },
+                { kind: "drain" },
+              ],
+              start
+            )
+          ).toBeNull()
+          if (listed(line)) {
+            expect(lookTrail.at(-1)?.length).toBe(start.length)
+            expect(looksAt(index)).toEqual([lookKey(line.look)])
+            return
+          }
+          expect(lookTrail.at(-1)?.length).toBe(start.length + 1)
+          expect(looksAt(index)).toEqual([lookKey(line.look)])
+          expect(looksAt(index + 1)).toEqual([lookKey(line.look)])
+        })
+      const previous = start[index - 1]
+      if (previous && !listed(previous) && !listed(line))
+        it(`${name}: Backspace joins line ${index + 1} (${lookName(line)}) into line ${index} (${lookName(previous)}), which keeps its look`, async () => {
+          expect(
+            await walk(
+              [
+                { kind: "join", line: index },
+                { kind: "drain" },
+                { kind: "reload" },
+                { kind: "drain" },
+              ],
+              start
+            )
+          ).toBeNull()
+          expect(lookTrail.at(-1)?.[index - 1]?.text).toBe(
+            previous.text + line.text
+          )
+          expect(looksAt(index - 1)).toEqual([lookKey(previous.look)])
+        })
+      if (!listed(line))
+        it(`${name}: three lines pasted at the end of line ${index + 1} (${lookName(line)}) take its look`, async () => {
+          expect(
+            await walk(
+              [
+                { kind: "paste", line: index, text: "one\ntwo\nthree" },
+                { kind: "drain" },
+                { kind: "reload" },
+                { kind: "drain" },
+              ],
+              start
+            )
+          ).toBeNull()
+          expect(
+            lookTrail
+              .at(-1)
+              ?.slice(index, index + 3)
+              .map((item) => item.text)
+          ).toEqual([`${line.text}one`, "two", "three"])
+          for (const at of [index, index + 1, index + 2])
+            expect(looksAt(at)).toEqual([lookKey(line.look)])
+        })
+    })
 })

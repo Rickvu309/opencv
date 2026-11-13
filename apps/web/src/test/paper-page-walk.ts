@@ -22,6 +22,8 @@ import {
   markedLines,
   unsavedBar,
 } from "@/features/paper-page/canvas-unsaved.ts"
+import { screenLooks } from "@/features/paper-page/canvas-look.ts"
+import { diffParagraphs } from "@/features/paper-page/page-diff.ts"
 import {
   Failure,
   World,
@@ -29,9 +31,12 @@ import {
   docId,
   fail,
   net,
+  landed,
   nextDoc,
   tinyIndexedDb,
   type Line,
+  type ParagraphLook,
+  type StartLine,
   type Step,
 } from "@/test/paper-page-walk-world.ts"
 
@@ -52,7 +57,6 @@ class Page {
   storedFor: unknown[] | null = null
   conflicted = false
   alive = true
-  reloaded = false
 
   constructor(world: World) {
     const page = world.page()
@@ -242,6 +246,71 @@ function oracleDiscards(state: CanvasState, saved: Line[]) {
   return lines + removed
 }
 
+export function lookKey(look: ParagraphLook | undefined) {
+  return JSON.stringify([look?.form ?? null, look?.align ?? null])
+}
+
+export const lookTrail: { text: string; look: string }[][] = []
+
+function checkLooks(
+  world: World,
+  state: CanvasState,
+  basisLines: Line[] | undefined,
+  label: string
+) {
+  const shown = screenLooks(
+    state.present.blocks,
+    state.looks,
+    state.saved?.blocks
+  )
+  const lookOn = (id: string) => lookKey(shown.get(id)?.look)
+  lookTrail.push(
+    state.present.blocks.map((block) => ({
+      text: block.text,
+      look: lookOn(block.id),
+    }))
+  )
+  if (!basisLines || !state.basis) return
+  const marked = new Set(markedLines(state))
+  const held = new Set(world.lines.map((line) => line.handle))
+  const gone = (id: string) =>
+    basisLines.some((line) => line.handle === id) && !held.has(id)
+  for (const block of state.present.blocks) {
+    const line = basisLines.find((item) => item.handle === block.id)
+    if (!line || line.text !== block.text || marked.has(block.id)) continue
+    if (gone(block.id)) continue
+    if (lookOn(block.id) !== lookKey(line.look))
+      fail(
+        `I5 saved look: "${block.text}" shows ${lookOn(block.id)} but the server holds ${lookKey(line.look)} (${label})`
+      )
+  }
+  if (state.basis.revision !== world.head()) return
+  const diff = diffParagraphs(
+    world.pageAt(basisLines, state.basis.revision),
+    state.present.blocks,
+    state.present.caret
+  )
+  if (!("ops" in diff)) return
+  const after = landed(basisLines, diff.ops)
+  if (
+    after.length !== state.present.blocks.length ||
+    after.some((line, index) => line.text !== state.present.blocks[index]?.text)
+  ) {
+    count("I5 landing not predicted")
+    return
+  }
+  if (after.some((line) => line.by === "page" && line.version === -1))
+    count("I5 new line checked")
+  state.present.blocks.forEach((block, index) => {
+    if (gone(block.id)) return
+    const look = lookKey(after[index]?.look)
+    if (lookOn(block.id) !== look)
+      fail(
+        `I5 saved look: "${block.text}" shows ${lookOn(block.id)} but its save lands as ${look} (${label})`
+      )
+  })
+}
+
 function check(world: World, page: Page, label: string) {
   if (world.violation) fail(`${world.violation} (${label})`)
   const state = page.state
@@ -292,9 +361,10 @@ function check(world: World, page: Page, label: string) {
     !!state.moved &&
     !!state.basis &&
     world.onlyPageWroteSince(state.basis.revision, state.moved.basis.revision)
-  if (ownSaveSeenAsElsewhere) count("own save seen as changed elsewhere")
-  if (ownSaveSeenAsElsewhere && !page.reloaded)
-    count("own save seen as changed elsewhere without a reload")
+  if (ownSaveSeenAsElsewhere)
+    fail(
+      `I6 own saves: the page shows changed elsewhere though only its own saves changed the server since its basis (${label})`
+    )
   if (state.moved) {
     const head = linesAt(world, state.moved.basis.revision)
     if (
@@ -313,6 +383,7 @@ function check(world: World, page: Page, label: string) {
         `I4 honest marks: Use the saved page says it discards ${stated} lines but it discards ${truth} (${label})`
       )
   }
+  checkLooks(world, state, basisLines, label)
   const kept = loadDraft(docId(), localStorage)
   if (!kept || pageWords(kept.blocks) !== words)
     fail(`I3 words kept: the local copy differs from the page (${label})`)
@@ -360,13 +431,16 @@ async function reloadPage(world: World, page: Page) {
   await flush()
   await closeWritingDb()
   const next = new Page(world)
-  next.reloaded = true
   return next
 }
 
-export async function walk(steps: readonly Step[]): Promise<string | null> {
+export async function walk(
+  steps: readonly Step[],
+  start?: readonly StartLine[]
+): Promise<string | null> {
   nextDoc()
-  const world = new World()
+  lookTrail.length = 0
+  const world = new World(start)
   vi.stubGlobal("indexedDB", tinyIndexedDb())
   net.read = (_docId, signal) => world.read(signal)
   net.send = (input) => world.send(input)

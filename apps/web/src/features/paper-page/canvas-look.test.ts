@@ -8,7 +8,9 @@ import {
   drawnSegments,
   listMarkers,
   lookOf,
+  screenLooks,
   withoutLooks,
+  type LookBook,
 } from "./canvas-look.ts"
 import { pageWords } from "./canvas-save.ts"
 import { diffParagraphs } from "./page-diff.ts"
@@ -257,5 +259,91 @@ describe("the page keeps the look of an imported line", () => {
     expect(diffParagraphs(page, elsewhere, null)).toEqual({
       ops: [{ op: "setText", handle: LEAD, text: "Led data work!" }],
     })
+  })
+})
+
+describe("the look the page draws for a line the server does not hold yet", () => {
+  const book: LookBook = new Map([
+    [NAME, { text: "Linh", look: { align: "center" } }],
+    [LEAD, { text: "Lead", look: { form: { kind: "heading", level: 1 } } }],
+  ])
+  const saved = [{ id: NAME }, { id: LEAD }]
+  const shown = (blocks: { id: string; text: string }[]) => {
+    const looks = screenLooks(blocks, book, saved)
+    return blocks.map((block) => looks.get(block.id)?.look ?? null)
+  }
+
+  it("takes the paragraph look of the saved line before it, without its marks", () => {
+    const marked: LookBook = new Map([
+      [
+        NAME,
+        {
+          text: "Linh",
+          look: {
+            align: "center",
+            spans: [{ from: 0, to: 4, marks: ["bold"] }],
+          },
+        },
+      ],
+    ])
+    const blocks = [
+      { id: NAME, text: "Linh" },
+      { id: "p7", text: "Intern" },
+      { id: "p8", text: "Hanoi" },
+    ]
+    expect(
+      blocks.map(
+        (block) =>
+          screenLooks(blocks, marked, [{ id: NAME }]).get(block.id)?.look
+      )
+    ).toEqual([
+      { align: "center", spans: [{ from: 0, to: 4, marks: ["bold"] }] },
+      { align: "center" },
+      { align: "center" },
+    ])
+  })
+
+  it("draws a line above every saved line plain, as the server inserts it with no look", () => {
+    expect(
+      shown([
+        { id: "p3", text: "Top" },
+        { id: NAME, text: "Linh" },
+      ])
+    ).toEqual([null, { align: "center" }])
+  })
+
+  it("draws a line the server deleted and Undo brought back with the look of the line before it", () => {
+    expect(
+      screenLooks(
+        [
+          { id: NAME, text: "Linh" },
+          { id: LEAD, text: "Lead" },
+        ],
+        book,
+        [{ id: NAME }]
+      ).get(LEAD)?.look
+    ).toEqual({ align: "center" })
+  })
+
+  it("draws new lines with the first saved line's look when every saved line was replaced", () => {
+    expect(
+      shown([
+        { id: "p4", text: "New" },
+        { id: "p5", text: "Also new" },
+      ])
+    ).toEqual([{ align: "center" }, { align: "center" }])
+  })
+
+  it("leaves the book untouched when every line is saved", () => {
+    expect(
+      screenLooks(
+        [
+          { id: NAME, text: "Linh" },
+          { id: LEAD, text: "Lead" },
+        ],
+        book,
+        saved
+      )
+    ).toBe(book)
   })
 })

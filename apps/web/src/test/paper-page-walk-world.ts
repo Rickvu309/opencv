@@ -1,4 +1,4 @@
-import type { WordPage } from "@workspace/domain"
+import type { WordAlign, WordForm, WordPage } from "@workspace/domain"
 
 import { ApiError } from "@/lib/api-error.ts"
 
@@ -63,9 +63,16 @@ type Mode = keyof typeof PAGE_MODES | "ok"
 type Fault = "none" | "offline" | "lost" | "busy429" | "busy503" | "timeout"
 const FAULTS: Fault[] = ["offline", "lost", "busy429", "busy503", "timeout"]
 
-export type Line = { handle: string; text: string; version: number; by: Author }
+export type ParagraphLook = { form?: WordForm; align?: WordAlign }
+export type Line = {
+  handle: string
+  text: string
+  version: number
+  by: Author
+  look?: ParagraphLook
+}
 type Author = "page" | "other"
-type Op =
+export type Op =
   | { op: "setText"; handle: string; text: string }
   | { op: "insert"; after: string | null; text: string }
   | { op: "delete"; handle: string }
@@ -267,22 +274,77 @@ export function tinyIndexedDb() {
   }
 }
 
-const START = [
-  "Linh Nguyen",
-  "Marketing Intern, Lumière",
-  "Available from June 2026",
-  "Education",
+export type StartLine = { text: string; look?: ParagraphLook }
+
+const START: StartLine[] = [
+  { text: "Linh Nguyen", look: { form: { kind: "title" }, align: "center" } },
+  { text: "Marketing Intern, Lumière", look: { align: "end" } },
+  { text: "Available from June 2026", look: { align: "justify" } },
+  { text: "Education", look: { form: { kind: "heading", level: 1 } } },
 ]
+
+export function insertAt(
+  lines: readonly { handle: string }[],
+  after: string | null,
+  added: ReadonlySet<string>
+) {
+  let at =
+    after === null ? 0 : lines.findIndex((line) => line.handle === after) + 1
+  while (lines[at] && added.has(lines[at]?.handle ?? "")) at += 1
+  return at
+}
+
+export function carriedLook(
+  lines: readonly Line[],
+  after: string | null
+): ParagraphLook | undefined {
+  if (after === null) return undefined
+  const look = lines.find((line) => line.handle === after)?.look
+  return look ? { ...look } : undefined
+}
+
+export function landed(lines: readonly Line[], ops: readonly Op[]): Line[] {
+  let out = lines.map((line) => ({ ...line }))
+  const added = new Set<string>()
+  for (const op of ops) {
+    if (op.op === "insert") {
+      const handle = `landed-${added.size}`
+      const look = carriedLook(out, op.after)
+      out.splice(insertAt(out, op.after, added), 0, {
+        handle,
+        text: op.text,
+        version: -1,
+        by: "page",
+        ...(look ? { look } : {}),
+      })
+      added.add(handle)
+    } else if (op.op === "delete")
+      out = out.filter((line) => line.handle !== op.handle)
+    else
+      out = out.map((line) =>
+        line.handle === op.handle ? { ...line, text: op.text } : line
+      )
+  }
+  return out
+}
+
+export function paragraphsOf(lines: readonly Line[]) {
+  return lines.map((line) => ({
+    handle: line.handle,
+    text: line.text,
+    pieces: line.text === "" ? [] : [{ text: line.text, editable: true }],
+    held: false,
+    message: "",
+    code: null,
+    ...(line.look?.form ? { form: line.look.form } : {}),
+    ...(line.look?.align ? { align: line.look.align } : {}),
+  }))
+}
 
 export class World {
   revision = 0
   handles = 10
-  lines: Line[] = START.map((text, index) => ({
-    handle: handleName(index + 1),
-    text,
-    version: 0,
-    by: "other",
-  }))
+  lines: Line[]
   history = new Map<string, Line[]>()
   mode: Mode = "ok"
   online = true
@@ -291,7 +353,14 @@ export class World {
   base = new Map<string, number>()
   violation: string | null = null
 
-  constructor() {
+  constructor(start: readonly StartLine[] = START) {
+    this.lines = start.map((line, index) => ({
+      handle: handleName(index + 1),
+      text: line.text,
+      version: 0,
+      by: "other",
+      ...(line.look ? { look: line.look } : {}),
+    }))
     this.history.set(revisionName(0), this.snapshot())
   }
 
@@ -309,14 +378,17 @@ export class World {
       revision: this.head(),
       name: "Page.docx",
       label: "cv",
-      paragraphs: this.lines.map((line) => ({
-        handle: line.handle,
-        text: line.text,
-        pieces: line.text === "" ? [] : [{ text: line.text, editable: true }],
-        held: false,
-        message: "",
-        code: null,
-      })),
+      paragraphs: paragraphsOf(this.lines),
+    } as unknown as WordPage
+  }
+
+  pageAt(lines: readonly Line[], revision: string): WordPage {
+    return {
+      doc: docId(),
+      revision,
+      name: "Page.docx",
+      label: "cv",
+      paragraphs: paragraphsOf(lines),
     } as unknown as WordPage
   }
 
@@ -454,19 +526,20 @@ export class World {
   }
 
   apply(ops: Op[]) {
+    const added = new Set<string>()
     for (const op of ops) {
       if (op.op === "insert") {
         this.handles += 1
-        const at =
-          op.after === null
-            ? 0
-            : this.lines.findIndex((line) => line.handle === op.after) + 1
-        this.lines.splice(at, 0, {
-          handle: handleName(this.handles),
+        const handle = handleName(this.handles)
+        const look = carriedLook(this.lines, op.after)
+        this.lines.splice(insertAt(this.lines, op.after, added), 0, {
+          handle,
           text: op.text,
           version: -1,
           by: "page",
+          ...(look ? { look } : {}),
         })
+        added.add(handle)
         continue
       }
       const line = this.lines.find((item) => item.handle === op.handle)
