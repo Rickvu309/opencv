@@ -44,4 +44,12 @@ describe("button", () => {
     )
     expect(classesOf(button)).not.toContain("bg-primary")
   })
+
+  it("presses with the shared press motion and does not nudge by a pixel", () => {
+    render(<Button>Save</Button>)
+    const button = screen.getByRole("button", { name: "Save" })
+    expect(classesOf(button)).toContain("motion-press")
+    expect(classesOf(button)).not.toContain("transition-all")
+    expect(button.className).not.toContain("translate-y-px")
+  })
 })

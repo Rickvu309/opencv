@@ -58,7 +58,7 @@ export const css = `
   scrollbar-width: none;
   -webkit-mask-image: linear-gradient(to right, transparent, #000 var(--ui-segc-fade-l), #000 calc(100% - var(--ui-segc-fade-r)), transparent);
   mask-image: linear-gradient(to right, transparent, #000 var(--ui-segc-fade-l), #000 calc(100% - var(--ui-segc-fade-r)), transparent);
-  transition: --ui-segc-fade-l var(--duration-micro) ease, --ui-segc-fade-r var(--duration-micro) ease;
+  transition: --ui-segc-fade-l var(--duration-micro) var(--ui-segc-ease), --ui-segc-fade-r var(--duration-micro) var(--ui-segc-ease);
 }
 .ui-segc__scroller::-webkit-scrollbar { display: none; }
 
@@ -88,9 +88,9 @@ export const css = `
   overflow: clip;
   border-radius: 6px;
   white-space: nowrap;
-  transition: color var(--duration-micro) ease, background-color var(--duration-micro) ease;
+  transition: color var(--duration-micro) var(--ui-segc-ease), background-color var(--duration-micro) var(--ui-segc-ease);
 }
-.ui-segc[data-ready]:not([data-full]) .ui-segc__opt { transition: color var(--duration-micro) ease, background-color var(--duration-micro) ease, width var(--duration-micro) var(--ui-segc-ease); }
+.ui-segc[data-ready]:not([data-full]) .ui-segc__opt { transition: color var(--duration-micro) var(--ui-segc-ease), background-color var(--duration-micro) var(--ui-segc-ease), width var(--duration-micro) var(--ui-segc-ease); }
 .ui-segc__opt[data-active] { color: var(--ui-segc-ink); }
 .ui-segc__opt:disabled { opacity: 0.4; cursor: not-allowed; }
 .ui-segc__opt:focus-visible { outline: 2px solid var(--ui-segc-focus); outline-offset: 1px; }
@@ -100,7 +100,7 @@ export const css = `
 
 .ui-segc__content { display: inline-flex; flex: none; align-items: center; gap: 6px; }
 .ui-segc[data-size="sm"] .ui-segc__content { gap: 5px; }
-.ui-segc__icon { display: grid; place-items: center; width: var(--ui-segc-icon); height: var(--ui-segc-icon); color: var(--muted-foreground); transition: color var(--duration-micro) ease; }
+.ui-segc__icon { display: grid; place-items: center; width: var(--ui-segc-icon); height: var(--ui-segc-icon); color: var(--muted-foreground); transition: color var(--duration-micro) var(--ui-segc-ease); }
 .ui-segc__opt[data-active] .ui-segc__icon { color: var(--ui-segc-ink); }
 .ui-segc__icon svg { width: 100%; height: 100%; }
 .ui-segc__label { display: block; }
@@ -147,7 +147,7 @@ export const css = `
   background: var(--ui-segc-fill);
   opacity: 0;
   pointer-events: none;
-  transition: left var(--duration-micro) var(--ui-segc-ease), right var(--duration-micro) var(--ui-segc-ease), scale var(--duration-micro) var(--ui-segc-ease), opacity var(--duration-micro) ease;
+  transition: left var(--duration-micro) var(--ui-segc-ease), right var(--duration-micro) var(--ui-segc-ease), scale var(--duration-micro) var(--ui-segc-ease), opacity var(--duration-micro) var(--ui-segc-ease);
 }
 .ui-segc__pill[data-dir="right"] { transition-duration: var(--duration-panel), var(--duration-micro), var(--duration-micro), var(--duration-micro); }
 .ui-segc__pill[data-dir="left"] { transition-duration: var(--duration-micro), var(--duration-panel), var(--duration-micro), var(--duration-micro); }

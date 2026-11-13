@@ -57,7 +57,7 @@ export const css = `
   width: 100%;
   height: 100%;
   overflow: visible;
-  transition: opacity var(--duration-panel) ease, transform var(--duration-panel) var(--ui-tlc-ease);
+  transition: opacity var(--duration-panel) var(--ease-micro), transform var(--duration-panel) var(--ui-tlc-ease);
 }
 .ui-tlc__spinner line {
   stroke: var(--ui-tlc-accent);
