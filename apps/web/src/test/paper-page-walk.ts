@@ -57,7 +57,6 @@ class Page {
   storedFor: unknown[] | null = null
   conflicted = false
   alive = true
-  reloaded = false
 
   constructor(world: World) {
     const page = world.page()
@@ -362,9 +361,10 @@ function check(world: World, page: Page, label: string) {
     !!state.moved &&
     !!state.basis &&
     world.onlyPageWroteSince(state.basis.revision, state.moved.basis.revision)
-  if (ownSaveSeenAsElsewhere) count("own save seen as changed elsewhere")
-  if (ownSaveSeenAsElsewhere && !page.reloaded)
-    count("own save seen as changed elsewhere without a reload")
+  if (ownSaveSeenAsElsewhere)
+    fail(
+      `I6 own saves: the page shows changed elsewhere though only its own saves changed the server since its basis (${label})`
+    )
   if (state.moved) {
     const head = linesAt(world, state.moved.basis.revision)
     if (
@@ -431,7 +431,6 @@ async function reloadPage(world: World, page: Page) {
   await flush()
   await closeWritingDb()
   const next = new Page(world)
-  next.reloaded = true
   return next
 }
 

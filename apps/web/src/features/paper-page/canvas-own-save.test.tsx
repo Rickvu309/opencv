@@ -47,20 +47,17 @@ describe("a save whose reply was lost", () => {
     expect(server.textOf(L.name)).toBe(`${START[L.name]}Q`)
   })
 
-  it.fails(
-    "is recognised after a reload when the person typed more offline before it (seed 1072 class, #1452)",
-    async () => {
-      await lostReplyOn(" A")
-      server.state.offline = true
-      await type(L.job, " B")
-      await settle()
-      await reload()
-      await goOnline()
-      expect(bar()).toBeNull()
-      await type(L.name, "Q")
-      await settle()
-      expect(server.textOf(L.name)).toBe(`${START[L.name]}Q`)
-      expect(server.textOf(L.job)).toBe(`${START[L.job]} A B`)
-    }
-  )
+  it("is recognised after a reload when the person typed more offline before it (seed 1072 class, #1452)", async () => {
+    await lostReplyOn(" A")
+    server.state.offline = true
+    await type(L.job, " B")
+    await settle()
+    await reload()
+    await goOnline()
+    expect(bar()).toBeNull()
+    await type(L.name, "Q")
+    await settle()
+    expect(server.textOf(L.name)).toBe(`${START[L.name]}Q`)
+    expect(server.textOf(L.job)).toBe(`${START[L.job]} A B`)
+  })
 })
