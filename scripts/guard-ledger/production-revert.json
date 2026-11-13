@@ -1,0 +1,6 @@
+{
+  "id": "production-revert",
+  "file": "scripts/production-revert.test.mjs",
+  "historic": null,
+  "reason": "the revert preparer is new and acts on history rather than detecting a mistake in it; the test proves its behaviour in throwaway repositories: the range after the last passing commit is reverted newest first, every migration file stays, a conflict or a finish without a pull request stops before any label or auto-merge, and the dry run changes nothing"
+}

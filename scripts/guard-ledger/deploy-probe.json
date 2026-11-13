@@ -1,0 +1,6 @@
+{
+  "id": "deploy-probe",
+  "file": "scripts/deploy-probe.test.mjs",
+  "historic": null,
+  "reason": "the probe checks the running product after a deploy, not a pattern in the tree, so no past commit can be replayed against it; the test proves both sides itself over fake ports built from a recording of the local app: a production shaped like the 2026-11 incident (the smoke CV opens to Document not found) gives product-red at the open step, a production shaped like main gives pass, and each other failure (sha never arrives, db down, schema behind, stale web version, CV missing from the library, Word file that does not parse, refused session) gives its own outcome"
+}

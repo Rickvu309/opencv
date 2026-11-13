@@ -1,0 +1,91 @@
+{
+  "recordedFrom": "node scripts/ui.mjs up, local app, 2026-11-13",
+  "health": {
+    "ok": true,
+    "sha": null,
+    "pdfReading": true
+  },
+  "deep": {
+    "ok": true,
+    "sha": null,
+    "db": true,
+    "mail": true,
+    "schemaVersion": "0025_word_rename_retained",
+    "pdfReading": true
+  },
+  "list": {
+    "ok": true,
+    "data": [
+      {
+        "id": "66c25aa5-5d87-4e2f-810b-40e5e03d75d7",
+        "name": "cv-formatted.docx",
+        "kind": "cv",
+        "format": "word"
+      }
+    ]
+  },
+  "read": {
+    "ok": true,
+    "data": {
+      "doc": "66c25aa5-5d87-4e2f-810b-40e5e03d75d7",
+      "revision": "3e95b1ae-7384-40ca-b7ef-303fc04c4a47",
+      "name": "cv-formatted.docx",
+      "label": "cv",
+      "paragraphs": [
+        {
+          "text": "Linh Nguyen"
+        },
+        {
+          "text": "linh@example.invalid | Ho Chi Minh City"
+        },
+        {
+          "text": "Experience"
+        },
+        {
+          "text": "Marketing Intern, Lumi\u00e8re"
+        },
+        {
+          "text": "Growth: grew followers by 38% in four months."
+        },
+        {
+          "text": "Content: wrote weekly scripts; three passed 100k views."
+        },
+        {
+          "text": "Ran weekly design critiques with the brand team."
+        },
+        {
+          "text": "Education"
+        },
+        {
+          "text": "Bachelor of Business, RMIT"
+        },
+        {
+          "text": "Thesis on social commerce"
+        },
+        {
+          "text": "Exchange term, Lyon"
+        },
+        {
+          "text": "Portfolio at "
+        },
+        {
+          "text": "Available from June 2026"
+        }
+      ]
+    }
+  },
+  "missingDocument": {
+    "ok": false,
+    "error": {
+      "code": "NOT_FOUND",
+      "message": "Document not found"
+    }
+  },
+  "refusedSession": {
+    "ok": false,
+    "error": {
+      "code": "UNAUTHORIZED",
+      "message": "Authentication required"
+    }
+  }
+}
