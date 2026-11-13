@@ -140,7 +140,7 @@ export function readGenerated(expected, directory = root) {
   return current
 }
 
-export async function catalog(mode = "check", directory = root) {
+export async function judgeCatalog(directory = root) {
   const snapshot = await discoverCatalog(directory)
   const errors = detect(snapshot)
   if (errors.length)
@@ -149,7 +149,11 @@ export async function catalog(mode = "check", directory = root) {
       errors.map((error) => error.message).join("\n")
     )
   const expected = await formatOutputs(renderCatalog(snapshot))
-  const current = readGenerated(expected, directory)
+  return { snapshot, expected, current: readGenerated(expected, directory) }
+}
+
+export async function catalog(mode = "check", directory = root) {
+  const { snapshot, expected, current } = await judgeCatalog(directory)
   if (mode === "check") {
     const stale = staleOutputs(expected, current)
     if (stale.length) throw stale[0]

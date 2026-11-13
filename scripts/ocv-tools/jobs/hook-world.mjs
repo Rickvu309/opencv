@@ -87,8 +87,8 @@ export function world(over = {}) {
       s.calls.push({ cmd, args, options })
       if (cmd === "pnpm")
         return s.pnpmOk ? ok() : { ok: false, out: "", err: "" }
-      if (cmd === "node" && String(args[0]).endsWith("catalog-expected.mjs"))
-        return ok(JSON.stringify(s.catalog ?? { expected: {} }))
+      if (cmd === "node" && String(args[0]).endsWith("catalog-judge.mjs"))
+        return ok(JSON.stringify(s.catalog ?? { stale: [] }))
       if (
         cmd === "node" ||
         cmd.endsWith("/vitest") ||
@@ -175,12 +175,11 @@ export function world(over = {}) {
       if (line.includes("--diff-filter=ACMRD -z base1 HEAD"))
         return ok([...s.changed, ...(s.deleted ?? [])].join("\0"))
       if (line === "ls-files -v -z") return ok(s.indexFlags ?? "")
+      if (args[0] === "ls-files" && args.includes("--others"))
+        return ok((s.untracked ?? []).join("\0"))
       if (args[0] === "ls-files" && args[2] === "--")
-        return ok(
-          Object.keys(s.blobs)
-            .filter((path) => path.startsWith(`${args[3]}/`))
-            .join("\0")
-        )
+        return ok("package.json\0")
+      if (args[0] === "checkout-index") return ok("")
       if (args[0] === "ls-files") return ok(s.toolTests.join("\0"))
       if (line.startsWith("rev-parse --show-toplevel")) return ok("/repo")
       if (line.startsWith("rev-parse --absolute-git-dir"))

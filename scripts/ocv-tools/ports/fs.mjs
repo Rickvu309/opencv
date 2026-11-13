@@ -5,6 +5,7 @@ import {
   readdirSync,
   rmdirSync,
   statfsSync,
+  symlinkSync,
   writeFileSync,
 } from "node:fs"
 import { homedir } from "node:os"
@@ -32,6 +33,15 @@ export function fsAdapter() {
     },
     rmdir(path) {
       rmdirSync(path)
+    },
+    scratchDir(prefix, run) {
+      return withTempDir(prefix, run, join(SCRATCH, "scratch-dirs"))
+    },
+    link(target, path) {
+      if (!existsSync(target)) return false
+      mkdirSync(dirname(path), { recursive: true })
+      symlinkSync(target, path)
+      return true
     },
     scratch(name, text) {
       const path = join(SCRATCH, name)

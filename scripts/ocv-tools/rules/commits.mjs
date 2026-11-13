@@ -1,11 +1,17 @@
 import { FIXES } from "../result.mjs"
 
+const SHOWN_UNTRACKED = 3
+
 function catalogStale(facts) {
   const catalog = facts.catalog ?? {}
+  if (catalog.untracked?.length) {
+    const more = catalog.untracked.length - SHOWN_UNTRACKED
+    return `these operation files are not staged: ${catalog.untracked.slice(0, SHOWN_UNTRACKED).join(", ")}${more > 0 ? ` and ${more} more` : ""}; add them or remove them, then commit`
+  }
   if (catalog.error)
-    return `the generated contract catalog could not be checked: ${catalog.error}`
+    return `the staged contract catalog could not be checked: ${catalog.error}`
   if (catalog.stale?.length)
-    return `the generated contract catalog is stale: ${catalog.stale.join(", ")}`
+    return `the tree this commit records has a stale generated contract catalog: ${catalog.stale.join(", ")}`
   return null
 }
 
@@ -93,11 +99,11 @@ export const commitRows = [
   rule({
     id: "CATALOG_STALE",
     section: "4",
-    says: "A commit that stages an operation, its server or a generated catalog file stages a catalog that node scripts/catalog.mjs generate would not change. The push does not repeat it; CI checks the pushed tree.",
+    says: "A commit that stages an operation, its server or a generated catalog file records a catalog that node scripts/catalog.mjs generate would write for the staged tree. The check copies only the index into a scratch folder and runs the same judgeCatalog the push-time catalog test runs, so files on disk outside the index never decide it; with a generated file staged, an untracked operation file is refused rather than guessed about.",
     at: ["commit"],
     needs: ["catalog"],
     check: catalogStale,
     fix: () =>
-      "Run node scripts/catalog.mjs generate, then git add packages/domain/src/generated apps/api/src/registry/generated and commit again. If the catalog cannot be read, fix the contract error it names; a missing package means pnpm install in this worktree, and a missing dist means pnpm --filter @workspace/domain build first.",
+      "Stage every operation and server file of the change, run node scripts/catalog.mjs generate, stage what it writes, and commit again: the check reads only what is staged. If a merge or rebase brought in someone else's operation, regenerate and stage the catalog the same way. If the catalog cannot be read, fix the contract error it names; a missing package means pnpm install in this worktree.",
   }),
 ]

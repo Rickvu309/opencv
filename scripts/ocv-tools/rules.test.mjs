@@ -329,7 +329,7 @@ test("every checked rule has a failing and a passing fact", () => {
     "CATALOG_STALE",
     { catalog: { stale: ["packages/domain/src/generated/catalog.ts"] } },
     { catalog: { stale: [] } },
-    "the generated contract catalog is stale: packages/domain/src/generated/catalog.ts"
+    "the tree this commit records has a stale generated contract catalog: packages/domain/src/generated/catalog.ts"
   )
   check(
     "FILE_SIZE",

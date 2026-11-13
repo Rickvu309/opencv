@@ -183,6 +183,12 @@ export function fakePorts(world = {}) {
         if (dir.startsWith(prefix)) throw new Error("ENOTEMPTY")
       dirs.delete(path)
     },
+    scratchDir(prefix, run) {
+      return run(`/scratch/${prefix}1`)
+    },
+    link() {
+      return true
+    },
     scratch(name, text) {
       const path = `/tmp/${name}`
       remember(path, text)
