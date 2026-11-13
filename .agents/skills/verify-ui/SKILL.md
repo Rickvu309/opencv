@@ -1,108 +1,126 @@
 ---
 name: verify-ui
-description: See any OpenCV screen in a known state and check it against the pen design with one command. Use for any change under apps/web or packages/ui.
+description: Verify your own OpenCV screen change with no reviewer. See any screen in a known state, check it against the pen design, and show the change as red numbered arrows in before and after pictures. Use for any change under apps/web or packages/ui.
 ---
 
 # Verify UI
 
-## When
+Last confirmed against `origin/main` at `89c3703c` on 2026-11-13: every command below was run on a worktree of that commit and printed what this file says.
 
-Use this for every change under `apps/web` or `packages/ui`, before the PR and again after review fixes. A screen nobody looked at is not verified. Typecheck and component tests do not show size, placement or overlap.
+## When this file is stale
+
+Run `git log --oneline 89c3703c..origin/main -- scripts/ui scripts/ui.mjs .agents/skills/verify-ui` before you start. When it prints commits, run `node scripts/ui.mjs help`: the usage lines there are the truth. If a step here fails or prints something else, follow `help`, then fix this file in the same PR and move the commit above. Never trust a list in prose over a command that prints it.
+
+## I changed a screen: the self-verify path
+
+No reviewer reads every PR. This path is your review. Run it in your worktree, in order, and keep each output. Only one `up` session may run per worktree (and at most one on the machine at a time): a second `up` reuses the first.
+
+| Step | Command                                                                                                              | Takes                                    | Expect                                                                                                         |
+| ---- | -------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| 1    | `node scripts/ui.mjs up`                                                                                             | 1 to 2 min                               | one JSON line with `web`, `api`, `email`                                                                       |
+| 2    | `node scripts/ui.mjs screens`                                                                                        | 1 s                                      | one JSON line per screen with `steps` or `unreachable`, and `designRows`                                       |
+| 3    | `node scripts/ui.mjs shot <screen...> --width 1440,390`                                                              | about 10 s per screen                    | one JSON line per PNG                                                                                          |
+| 4    | `node scripts/ui.mjs compare <screen...> --width 1440,390 --out ~/tmp/ui/<issue>`                                    | about 2 min for one screen at two widths | one line per capture, then `{"manifest":...,"problems":[]}`                                                    |
+| 5    | `node scripts/ui.mjs changes --manifest ~/tmp/ui/<issue>/manifest.json --spec ~/tmp/ui/<issue>/spec.json`            | under 1 s                                | one line per capture with `changes`, `added`, `removed`, then `{"spec":...}`                                   |
+| 6    | `node scripts/ui.mjs annotate --spec ~/tmp/ui/<issue>/spec.json --out ~/tmp/ui/<issue>/annotated.png`                | about 1 s per section                    | one line per section with `missing`, `crowded`, `marks`, then `{"out":...}`                                    |
+| 7    | `node scripts/ui.mjs check <screen> --known ~/tmp/ui/<issue>/manifest.json --annotate ~/tmp/ui/<issue>/check`        | about 6 s per screen                     | the table, `new since main: ...`, one JSON result; with failures also `{"annotated":".../<screen>-check.png"}` |
+| 8    | look, then annotate one image of anything you judged by eye (below)                                                  | 1 s                                      | `{"out":...}`                                                                                                  |
+| 9    | `node scripts/ui.mjs pr-section --annotated <png,...> --manifest ~/tmp/ui/<issue>/manifest.json --check --issue <n>` | about 30 s                               | the `## Before / after` markdown                                                                               |
+| 10   | `node scripts/ui.mjs down`                                                                                           | a few s                                  | the app and the throwaway database are gone                                                                    |
+
+Pick the screens for steps 3 to 7 from `screens`: every screen whose route or steps reach the file you changed, and every state of it you touched (open and closed panel, empty and full list, waiting and settled Coach). A state no recipe reaches is a gap: add a recipe (see Add a screen) or say so in the PR.
+
+If you touched `packages/ui` (buttons, menus, dialogs, toasts), also shoot one screen that opens a dialog at every size in this grid: `--width 1440,1024,820,390`. A dialog must keep its close button pinned and inside the window at each width.
+
+After step 5, open the spec and only trim or reword: drop a callout that is noise, and rewrite a note into plain words with both values ("Card corners 12px to 8px"). Do not type coordinates by hand when a selector exists.
+
+After step 6 and step 7, open every PNG with your image reader before you hand back. Say in the PR what you saw. A picture you did not look at is not evidence.
+
+What to look at by eye, because no command checks it: colours, type weight and shadows (`check` compares geometry only), copy and hierarchy, focus rings, text that wraps or is cut off, and anything at 390 (the pen file draws no phone frames). For each defect or doubt, write a single-image spec and annotate it so a reader sees it without reading coordinates:
+
+```json
+{
+  "manifest": "manifest.json",
+  "sections": [
+    {
+      "title": "Paper home at 390: New button",
+      "screen": "paper-home",
+      "width": 390,
+      "side": "after",
+      "callouts": [
+        {
+          "n": 1,
+          "note": "New button is 74x44px",
+          "target": { "selector": "[data-slot=\"button\"] >> nth=1" }
+        }
+      ]
+    }
+  ]
+}
+```
+
+A single image can also be any PNG: `"image": "shot.png"` with targets `{ "x": 10, "y": 20, "width": 120, "height": 32 }` in that image's pixels.
+
+## What the tool cannot verify
+
+Report these as not verified instead of claiming them:
+
+- Real phones: touch, the on-screen keyboard, browser chrome, safe areas, scroll bounce. Name the screen that needs a real phone.
+- Real keyboards beyond what a recipe presses: shortcuts across browsers, IME input.
+- Motion: shots stop animations. Easing, duration and jank need a person or a recording.
+- Taste: whether the screen reads well. Look at the pictures.
+- Fonts on other machines: shots use this machine's fonts (Linux renders).
+- The live Coach: `up` runs the fake Coach. `screens` lists what it cannot reach and why.
+- Screens with `designRows: 0` in `screens`: `check` refuses them with `no design rows for ...`. Compare them by eye with the nearest composed screen and say so.
 
 ## Rule
 
-The pen frame wins. The look, sizes and placement come from the pen design file, which was cloned from Linear. An audit, AI Elements or a component default never overrides a pen frame. AI Elements supply structure, states, accessibility and behavior; the pen frames supply geometry, color, type and placement. When they disagree, follow the frame and report the disagreement.
+The pen frame wins. The look, sizes and placement come from the pen design file, which was cloned from Linear. An audit, AI Elements or a component default never overrides a pen frame. When they disagree, follow the frame and report the disagreement.
 
-One owner exception, decided 2026-11-12: the Paper writing page sheet is sized like a real Word page, 816px wide with 96px margins, not the 560px pen frame. The design map holds it as a named `ownerDecision` (`scripts/ui/owner-decision.mjs`) on the sheet rows of `paper-blank`, `paper-typed` and `paper-letter-blank`, for width and padding only; radius and centering still follow the pen. `check` prints one line per decided value with the pen value beside it. Add a new exception only on an owner's word, with its reason and date.
+One owner exception, decided 2026-11-12: the Paper writing page sheet is sized like a real Word page, 816px wide with 96px margins, not the 560px pen frame. The design map holds it as an `ownerDecision` (`scripts/ui/owner-decision.mjs`); `check` prints one line per decided value with the pen value beside it. Add a new exception only on an owner's word, with its reason and date.
 
-The pen file draws some parts twice: once as a kit specimen on a sample sheet, and once inside a composed screen such as `OC App shell`. When a kit specimen and a composed screen frame disagree, the composed screen frame wins. Every row in the design map names its composed screen, and `check` fails a row whose frame is not inside it.
-
-A failing row means the screen and the mapped frame disagree. Before changing anything:
+When a kit specimen and a composed screen frame disagree, the composed screen frame wins. A failing row means the screen and the mapped frame disagree. Before changing anything:
 
 1. Run `node scripts/ui.mjs frame <id>` for the row's frame and read the pen path that `check` printed under the table.
-2. If the path does not start at the composed screen, the row maps a specimen. Fix the row in `scripts/ui/design-map.mjs` to the frame inside the composed screen.
+2. If the path does not start at the composed screen, the row maps a specimen. Fix the row in `scripts/ui/design-map.mjs`.
 3. Otherwise fix the screen, not the mapping.
 
-## Run
+## Commands in detail
 
-```sh
-node scripts/ui.mjs up
-node scripts/ui.mjs screens
-node scripts/ui.mjs shot coach-home paper-panel-open --width 1440,390
-node scripts/ui.mjs measure paper-panel-open --slot coach-panel
-node scripts/ui.mjs frame REfNk
-node scripts/ui.mjs check paper-panel-open
-node scripts/ui.mjs check --all
-node scripts/ui.mjs diff before.png after.png
-node scripts/ui.mjs down
-```
-
-- `up` starts a throwaway app for the current worktree: pglite database, fake Coach, Word pages on, a signed-in test account, and the background account pool that recipes take from. State, logs and shots live in `~/tmp/ocv-ui/<worktree>/`. It never uses `.env` secrets or a real database. A second `up` reuses the running app. It builds `packages/domain/dist` first when it is missing.
-- `shot` writes `<screen>-<width>.png` (or `@2x` with `--scale 2`) with fonts loaded and motion stopped, and prints one JSON line per file. Upload them to a PR with `node scripts/ocv-tools.mjs shot <files> --pr <n>`.
-- `measure` prints box, radius, padding, gap, font size, line height and colors for `--slot` names or `--selector` CSS. Without either it lists every `data-slot` on the screen, capped at 40.
-- `frame` prints one pen frame by id or name, with its `path` in the pen file. The pen file comes from `--pen`, then `OCV_PEN`, then `~/tmp/opencv-ui/opencv.pen`. When it is missing, the command prints the `git show` line that fetches it from the design branch.
-- `check` measures each row of `scripts/ui/design-map.mjs` for the screen and prints design, rendered and difference per property. For every failing frame row it prints the frame id, its pen path and a reminder to confirm the frame is the composed screen. Same-box rows open a second screen and compare one element's box there. It exits 1 on any difference over `--tolerance` (default 1px), a missing element, or a frame outside the row's composed screen. With `--known <manifest.json>` from `compare`, it also prints `new since main` and `already failing on main` per screen and adds `newFailed` and `knownFailed` to its JSON, so you can tell your own regressions from drift main already has. A failure main has with the same value, within `--tolerance`, is known; one whose value moved past the tolerance is listed under `changed since main` with both values and counts as new. When the manifest's base commit is not this branch's merge-base with `origin/main`, `check` says so first; rerun `compare`. The exit code is unchanged.
-- `check --all` runs the rows of every reachable screen in the design map and prints one line per screen (`pass` or `FAIL`, compared, failed; with `--known`, also already failing on main and changed since main), the screen's owner-decision lines under it, and a total line with the seconds it took. It exits 1 on any failure. `--json` prints one JSON object (`screens`, `compared`, `failed`, `failedScreens`, `seconds`, `ok` and per-screen `failures` with design, rendered and difference) for agents. It takes 10 pool accounts. On 2026-11-12 it checked 10 screens and 226 properties in 41 seconds when the pool held enough accounts. It took 184 seconds when run right after `up`, while the pool was still filling, so give it a 240-second timeout.
-- `diff` counts changed pixels between two PNGs and writes a red diff image next to the second one.
-- Always run `down` when you finish. It stops both servers and deletes the throwaway database.
-
-## Add a screen
-
-Add one entry to `SCREENS` in `scripts/ui/screens.mjs`: a kebab-case `id`, the `route`, and `steps` from `goto`, `click`, `fill`, `press`, `type`, `upload` and `waitFor`. Targets are `{ selector }`, `{ role, name }`, `{ text }` or `{ label }`. `upload` sets a file input to a file in `scripts/ui/fixtures` (`{ upload: { selector, file } }`); `cv-bold-bullets.docx` is a Word CV with a bold word beside plain text and two bulleted lines. End with a `waitFor` on what proves the state. Set `signedIn: false` for signed-out screens. If the fake Coach or the local app cannot reach the state, write `unreachable` with the exact reason instead of steps. Never fake a screenshot. The fake Coach proposes a Paper edit that waits for approval on a Start blank Word page; on a CV made with Use template it answers with no edit. A Chat has no URL, so a screen that shows a Chat after a reload goes to `/paper` and opens the newest dock chip (`REOPEN_LATEST_CHAT`). Pressing Stop also settles a waiting edit. Every recipe takes a new empty account from the account pool first, so it starts from the same state as a fresh `up` however often it runs: `paper-home` makes a CV first so the library is not the first-run page, and `apply-empty` sees no Job. The pool lives in `~/tmp/ocv-ui/<worktree>/pool/`. `up` starts a background filler (`scripts/ui/account-filler.mjs`, log `pool/filler.log`) that signs in up to 40 accounts named `ui-pool-NNNNN@example.com`. A recipe never gets an account twice: `pool/used/` records which screen used each one, and a recipe refuses an account whose Paper, Jobs or Chats changed since it was created. Screens show every pool account as `ui-pool-00000@example.com`, so shots of different accounts match pixel for pixel. Sign-in allows three per minute (`apps/api/src/auth.ts`), so the filler adds about three accounts a minute. When the pool is empty a recipe prints `account pool is empty` and waits for the filler's next account. A screen that ends with an edit waiting must list `after` steps that Deny it, because a waiting edit keeps Coach busy for the account and every later Coach screen fails with "Coach is already working". If a run stopped midway and left one waiting, run `down` and `up`. `node --test scripts/ui/screens.test.mjs` validates the table.
-
-## Add a design row
-
-Add one row to `DESIGN_MAP` in `scripts/ui/design-map.mjs`: the `screen`, a `label`, the `selector` (prefer `[data-slot="..."]`), the `composedScreen` it belongs to, the pen `frame` id and the `props` to compare from `width`, `height`, `x`, `y`, `radius`, the four paddings, `gap`, `fontSize`, `pitch`, `left`, `below` and `centerOffset`.
-
-From a frame to a row:
-
-1. Find the composed screen that draws the state, such as `W3.5 Coach working`, `W5.2 Paper library`, `W6.4 Editing`, `W9.3 Board`, `W12.1 Preferences` or `W1.1 Continue`. Most of them are instances of `OC App shell` whose main panel is redrawn inside the instance, so their frames have their own ids.
-2. Run `node scripts/ui.mjs frame "<name or id>"` and keep the match whose `path` starts at that composed screen. Run it again with the id and read the numbers. An unsized frame reports the height or width its shown children add up to, so a composer drawn as padding, a 40px row, a gap and a 32px row reads 114.
-3. Run `node scripts/ui.mjs measure <screen>` or `--selector` to find the rendered element that matches, and set `composedScreen` to the screen name.
-4. Run `node scripts/ui.mjs check <screen>`. A `missing` row means the selector found nothing; fix the selector, not the numbers.
-
-`fontSize` reads a text frame. `pitch` is the first child's width plus the gap, compared with the distance between the first two matches of the selector. `left`, `below` and `centerOffset` need a `from` selector: the rendered element's left edge minus the `from` element's left edge, its top minus the `from` element's bottom, and its center minus the `from` element's center. The design numbers come from the frame's parent: its left padding, its gap, and 0 when the parent centers its children. Pick the frame inside the composed screen, never the kit sample sheet: `node scripts/ui.mjs frame "<name>"` lists every match with its pen `path`. For a part of a master, such as the Coach panel body, set `via` to the instance placed in the composed screen (`G8L8J` for the Coach panel). For a part of a master inside another master, list the instances from the outside in, for example `via: ["jsloS", "n4ZOA1"]` for the label of the first sidebar nav item. Use an instance id when you compare placement, since `x` and `y` come from the instance in the 1440 by 900 app shell; a master such as `REfNk` prints `x: null`.
-
-To check that something does not move, add a same-box row: `kind: "same-box"`, the `screen`, the `against` screen, a `label`, the `selector` and the `props`. `check` opens both screens and compares the element's box with the same tolerance. The Coach card rows compare the main content and the writing page on `paper-panel-open` against `paper-panel-closed`.
-
-## No design frame
-
-The pen file has no frame for these screens, so they have no rows and `check` cannot judge them. Do not invent numbers for them; compare with the nearest composed screen by eye and say so in the PR.
-
-- Help.
-- The New document dialog.
-- Every screen at phone width. The pen file draws only desktop screens (1440 by 900); nothing exists at 390.
-- The Coach approval card itself. Its buttons map to the delete confirm dialog `W5.5 Delete confirm` (`I3clp`), the only composed screen with this button pair.
-- The approval card's kept outcome after a reload. These screens are shot-only, listed in `scripts/ui/shot-only.mjs`, and `check` says "no design frame for this screen" for them: `coach-denied-reloaded`, `coach-receipt-reloaded`, `coach-undone-reloaded`, `coach-stopped-reloaded`, `coach-expired-reloaded`. Use `shot`; `coach-expired-reloaded` is listed as unreachable because an approval expires only after a 24 hour wait.
+- `up` starts a throwaway app for the worktree: pglite database, fake Coach, Word pages on, a signed-in test account, and a background account pool (`pool/filler.log`) that recipes take from. State, logs and shots live in `~/tmp/ocv-ui/<worktree>/`. It never uses `.env` secrets or a real database.
+- `shot` writes `<screen>-<width>.png` with fonts loaded and motion stopped.
+- `measure <screen> --slot <name>` or `--selector <css>` prints box, radius, padding, gap, type and colours. Without either it lists the `data-slot`s on the screen, capped at 40.
+- `frame <id or name>` prints one pen frame with its `path`. The pen file comes from `--pen`, then `OCV_PEN`, then `~/tmp/opencv-ui/opencv.pen`; when it is missing the command prints the `git show` line that fetches it.
+- `check <screen...>` compares each design-map row for the screen with its pen frame at 1440 by 900 and exits 1 on any difference over `--tolerance` (default 1px). `--known <manifest.json>` from `compare` splits failures into `new since main`, `changed since main` and `already failing on main`; report only new ones as yours. When the manifest's base is not this branch's merge-base it says `known drift: ... rerun compare`. `--annotate <dir>` writes, per failing screen, `<screen>-check.png`: the screen with a red numbered arrow at each failing element (new failures first, at most 12 arrows; the rest and anything below the first screen go in the legend as text), each legend line reading `<element>: <property> expected X, measured Y, source pen frame <id>`.
+- `check --all` checks every reachable mapped screen and prints one line per screen and a total. On 2026-11-13 it checked 15 screens and 309 properties in 272 seconds; give it a 400-second time limit and run it alone. It is the ui tool's own check, not the delivery tool's `check --all`, which you never run on this machine.
+- `diff <before.png> <after.png>` counts changed pixels and writes a red diff image.
+- `down` stops both servers and deletes the throwaway database. Always run it.
 
 ## Before and after for a pull request
 
-A pull request that edits screen files (tsx or css under `apps/web/src/features`, `apps/web/src/components` or `packages/ui/src`, tests excluded) carries a `## Before / after` section. `finish` and the policy check refuse it otherwise (rule `NO_BEFORE_AFTER`). Run four commands in order:
+A PR that edits screen files (tsx or css under `apps/web/src/features`, `apps/web/src/components` or `packages/ui/src`, tests excluded) carries a `## Before / after` section; `finish` refuses it otherwise (rule `NO_BEFORE_AFTER`). The usual path is steps 4, 5, 6 and 9 above: `compare`, `changes --spec`, `annotate`, `pr-section`.
 
-```sh
-node scripts/ui.mjs compare paper-panel-open coach-chat-finished --base origin/main
-node scripts/ui.mjs changes --spec ~/tmp/ui-spec.json
-node scripts/ui.mjs annotate --spec ~/tmp/ui-spec.json --out ~/tmp/ui-annotated.png
-node scripts/ui.mjs pr-section --annotated ~/tmp/ui-annotated.png --check
-```
+- `compare` builds the base (`--base`, default `origin/main`) in a throwaway checkout under `~/tmp/ocv-ui/bases/`, captures each screen there and here with the same steps, and writes `<screen>-<width>.before.png`, `.after.png` and `manifest.json` with every `data-slot` box and style and the base `check` results. It is safe to run in parallel; clear copies left by crashed runs with `node scripts/ui.mjs prune-bases`.
+- `changes --spec` writes a ready spec: per image, the 6 largest findings (changed elements by size of change, plus elements that are new or removed, a new or removed child of a new or removed element left out) as numbered callouts, and the rest under `also`, which the legend prints as text.
+- `annotate` draws one dark composite per screen: a title, `Before (main)` and `After (this PR)` (rename with `"labels": { "before": "...", "after": "..." }`), and per callout a solid red arrow (`#e11d2e`, thin white outline) whose tip touches the element's edge, with a red badge and white bold number at its tail. The same number points at the same element in both images. Badges stay inside the image, off their own and every other marked element, off each other, and arrows do not cross when a non-crossing placement exists. A target named on one side only (`{ "after": {...} }`) is tagged `new` (or `removed`) in the legend and drawn on the other side as a dashed red box at the place it would be. Small changes get 3x crops beside their legend line. Sizes are set so a badge reads 26px wide and its number 14px after GitHub fits the image to its 880px column, the same for a 390 phone shot and a 1440 desktop shot. More than two sections write one composite per section; `--single` keeps one. At most 25 callouts per section.
+- `pr-section` uploads the composites in the order given and every capture through `scripts/ocv-tools.mjs shot` and prints the markdown: composites, the `| main | this PR |` table and, with `--check`, the check result per screen.
 
-- `compare` also runs `check` on the base for every screen with design rows and stores the results as `baseChecks` in `manifest.json`. `check --known <manifest.json>` and `pr-section --check` read them.
-- `compare` extracts the base into a throwaway checkout under `~/tmp/ocv-ui/bases/`, installs it, starts it on its own ports, captures each screen, stops it and deletes it, then captures the same screens from this worktree at the same viewport with the same steps. It writes `<screen>-<width>.before.png`, `.after.png` and `manifest.json` with every `data-slot` box and style. A screen that fails on one side is recorded with its reason. It never touches the main checkout.
-- `compare` is safe to run in parallel: each worktree gets its own base copy under `~/tmp/ocv-ui/bases/<commit>-<worktree>` and claims its ports, and a run removes only what it made. Clear copies left by crashed runs with `node scripts/ui.mjs prune-bases`.
-- `changes` lists up to 8 elements per screen whose box, radius, padding, gap, type, color, background, border or opacity differs, largest first, with a draft note of measured values. `--spec` writes a starting spec with the top 5 per screen.
-- `annotate` draws the composite: per section a title, `Before (main)`, `After (this PR)`, numbered pink circles with arrows to the same element in both images, and a legend. Each number takes the first direction in the order up-left, up-right, left, right, down-left, down-right, up, down that keeps its circle inside both images, off its own target, off any other target that does not contain it, and off earlier circles. When no direction is clear at the normal arrow length, it tries the same order with arrows 1.75 and 2.5 times as long. A circle never lands on an earlier circle while any position avoids it. A target is a `selector` from the manifest or a point `x`, `y` in page pixels.
-- Zoom crops: a callout gets a 3x crop from each image beside its legend line, labeled `Before 3x` and `After 3x`, when its two boxes differ by less than 8px in x, y, width and height, or when the element is under 40px wide or tall. The crop is the union of both boxes plus 12px on every side, kept inside the image, and the same rectangle is used on both sides. When that union is larger than 144 by 80, each side instead gets a crop of the same size starting 12px above and left of its own box. A dashed pink outline marks the target in each crop. A zoomed number takes its own legend row.
-- One composite per screen: a spec with more than two sections writes one composite per section, named from the section title (`Coach approval, expanded Chat (1440)` becomes `coach-approval-expanded-chat-1440.png`). With `--out dir` the files go in that folder; with `--out name.png` they go beside it as `name-<title>.png`. `--single` keeps one tall composite. Pass the files to `pr-section --annotated a.png,b.png` in the order the reader should see them.
-- `pr-section` uploads the composites in the order given and every capture through `scripts/ocv-tools.mjs shot` without a comment and prints the markdown: the composite, the `| main | this PR |` table and, with `--check`, `compared` and `failed` from `check` per screen. Paste it into the body file before `finish`. With `--check`, the section also carries the `check` result for every screen the PR touched, so a reviewer sees whether the screen still matches its frame, and a `new since main` column read from the base results `compare` stored.
+Write `No visible change.` with one sentence of reason only when `changes` lists nothing for a PR that still edits a screen file, and keep the pictures that show it. A PR that edits no screen file writes `No visible change.` and the reason.
 
-A good callout note says what changed in plain words with both values: "Composer corners 18px to 14px", not "radius tweak". Point at the thing that changed, not near it: if the draft selector is a wrapper the reader cannot see, target the visible element inside it. Keep at most 5 callouts per section, and only claims you measured.
+## Add a screen
 
-Write the line `No visible change.` under the heading, followed by one sentence of reason, only when `compare` shows identical images or `changes` lists nothing, for example a prop rename or a test-only refactor that still touches a screen file. A small change is still a visible change.
+Add one entry to `SCREENS` in `scripts/ui/screens.mjs`: a kebab-case `id`, the `route`, and `steps` from `goto`, `click`, `fill`, `press`, `type`, `upload` and `waitFor`. Targets are `{ selector }`, `{ role, name }`, `{ text }` or `{ label }`. `upload` sets a file input to a file in `scripts/ui/fixtures`. End with a `waitFor` on what proves the state. Set `signedIn: false` for signed-out screens. If the fake Coach or the local app cannot reach the state, write `unreachable` with the exact reason. Never fake a screenshot. Every recipe takes a new empty account from the pool, so it starts from the same state however often it runs; when the pool is empty a recipe prints `account pool is empty` and waits (sign-in allows three a minute). A screen that ends with a Coach edit waiting must list `after` steps that Deny it. Do not hard-code the sidebar's items in a recipe; click by role and name, since the items come from `apps/web/src/lib/product-paths.ts`. `node --test scripts/ui/screens.test.mjs` validates the table.
 
-## What it cannot tell you
+## Add a design row
 
-- Taste: whether the screen reads well, the hierarchy is clear or the copy is right. Look at the shots.
-- Real phones: keyboards, browser chrome, safe areas and touch. Say what still needs a real phone.
-- Real fonts on other machines: shots use the fonts on this machine.
-- Live Coach behavior: the app runs the fake Coach. States it cannot reach are listed by `screens` with the reason.
-- Colors, type and shadows: `check` compares geometry only. Compare colors from `measure` with the frame by hand.
+Add one row to `DESIGN_MAP` in `scripts/ui/design-map.mjs`: the `screen`, a `label`, the `selector` (prefer `[data-slot="..."]`), the `composedScreen`, the pen `frame` id and the `props` from `width`, `height`, `x`, `y`, `radius`, the four paddings, `gap`, `fontSize`, `pitch`, `left`, `below` and `centerOffset`.
+
+1. Find the composed screen that draws the state. Run `node scripts/ui.mjs frame "<name or id>"` and keep the match whose `path` starts at it.
+2. Run `node scripts/ui.mjs measure <screen>` to find the rendered element, and set `composedScreen`.
+3. Run `node scripts/ui.mjs check <screen>`. A `missing` row means the selector found nothing; fix the selector, not the numbers.
+
+`left`, `below` and `centerOffset` need a `from` selector. For a part of a master set `via` to the placed instance ids from the outside in. A same-box row (`kind: "same-box"`, `against` another screen) checks that an element does not move between two screens.
+
+## Checks and guards
+
+List the enforced checks with `node scripts/list-checks.mjs`, not from memory. The tests of this tool are `scripts/ui/*.test.mjs`; run the ones for files you touched, one at a time, with `node --test <file>`.

@@ -7,7 +7,6 @@ import {
   draftSpec,
   rankChanges,
 } from "./changes.mjs"
-import { EXIT, json, withBrowser } from "./cli-shared.mjs"
 import { readSpec, renderComposite } from "./composite.mjs"
 import { diffImages } from "./diff.mjs"
 import { readManifest } from "./manifest-file.mjs"
@@ -19,7 +18,7 @@ import {
   renderPrSection,
 } from "./pr-section.mjs"
 import { ZOOM } from "./zoom.mjs"
-import { runUi } from "./cli.mjs"
+import { EXIT, json, runUi, withBrowser } from "./cli.mjs"
 
 export const REVIEW_COMMANDS = {
   changes: {

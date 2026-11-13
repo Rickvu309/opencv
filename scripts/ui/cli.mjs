@@ -18,7 +18,6 @@ import {
 } from "./check-all.mjs"
 import { DESIGN_MAP, rowsForScreen } from "./design-map.mjs"
 import { unmappedMessage } from "./shot-only.mjs"
-import { EXIT, json, withBrowser } from "./cli-shared.mjs"
 import { REVIEW_COMMANDS } from "./cli-review.mjs"
 import { checkShotFile, writeFailureImages } from "./check-annotate.mjs"
 import {
@@ -31,7 +30,18 @@ import {
 import { SCREENS, pickScreens, shotName } from "./screens.mjs"
 import { down, liveState, up } from "./stack.mjs"
 
+export const EXIT = Object.freeze({ ok: 0, failed: 1, usage: 2 })
+export const json = (value) => JSON.stringify(value)
 const FRAME_MATCH_LIMIT = 5
+
+export async function withBrowser(ctx, work) {
+  const browser = await ctx.browser.launch()
+  try {
+    return await work(browser)
+  } finally {
+    await browser.close()
+  }
+}
 
 async function requireStack(ctx) {
   const state = await liveState(ctx)
@@ -132,7 +142,7 @@ export const COMMANDS = {
   screens: {
     usage: "screens",
     about:
-      "List the named screens, their route and whether they can be reached.",
+      "List the named screens, their route, whether they can be reached, and designRows: how many design-map rows check compares (0 means check cannot judge the screen).",
     run: async () => ({
       code: EXIT.ok,
       lines: SCREENS.map((screen) =>
@@ -142,6 +152,7 @@ export const COMMANDS = {
           ...(screen.unreachable
             ? { unreachable: screen.unreachable }
             : { steps: screen.steps.length }),
+          designRows: rowsForScreen(DESIGN_MAP, screen.id).length,
         })
       ),
     }),

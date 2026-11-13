@@ -5,6 +5,12 @@ description: Check a change to how a Coach or agent Word page edit is proposed, 
 
 # Verify a Word page edit
 
+Last confirmed against `origin/main` at `89c3703c` on 2026-11-13: every command under Run printed the exit codes and pass counts this file states.
+
+## When this file is stale
+
+Run `node scripts/tlc.mjs --stale` first. When it lists `apps/api/src/paper/WordEdit.tla` as STALE, or `git log --oneline 89c3703c..origin/main -- .agents/skills scripts/tlc.mjs` prints commits, rerun every command under Run before trusting a claim here. If a command fails or prints something else, believe the command, fix this file in the same PR, and move the commit above.
+
 Use this when a change touches `paper.edit` with a revision string, its approval, the head row of a Word page, the activity receipt written with it, or `paper.undoWord`.
 
 ## Rules
@@ -46,7 +52,9 @@ node scripts/tlc.mjs apps/api/src/paper/WordEdit.tla
 pnpm --filter api exec vitest run src/paper/word-edit-replay.test.ts
 ```
 
-`WordEdit.cfg` sets every guard TRUE and checks all four rules. Exit 0. `WordEdit.mutant.cfg` drops both basis compares, so `StaleNeverLands` fails. Exit 12. `node scripts/tlc.mjs --all` also runs the `gate`, `receipt` and `undo` pairs: each clean config exits 0, and each mutant exits 12 on `ChangesOnlyAfterApproval`, `BothOrNeither` and `UndoRestoresPriorHead`.
+`WordEdit.cfg` sets every guard TRUE and checks all four rules. Exit 0. `WordEdit.mutant.cfg` drops both basis compares, so `StaleNeverLands` fails. Exit 12. The replay prints `Tests 4 passed (4)`. List the other pairs with `ls apps/api/src/paper/WordEdit.*.cfg` (on 2026-11-13: `gate`, `receipt` and `undo`) and run each one by name, never `--all` on this machine: `node scripts/tlc.mjs apps/api/src/paper/WordEdit.tla --config apps/api/src/paper/WordEdit.gate.cfg` exits 0 and the matching `.mutant.cfg` exits 12 on `ChangesOnlyAfterApproval`; the `receipt` and `undo` pairs do the same on `BothOrNeither` and `UndoRestoresPriorHead`. TLC writes `tlc.out` in the current folder; delete it after the run.
+
+The writing page's own saves (the bar shown when a save is refused or the page changed elsewhere, and the random-walk invariants in `apps/web/src/features/paper-page/canvas-walk.test.ts`) are not part of this model. Run that test with `pnpm --filter web exec vitest run src/features/paper-page/canvas-walk.test.ts` when a change touches the page.
 
 The replay drives the real registry on a migrated PGlite database, one test per rule. A Coach batch leaves the head and words alone until approval, lands once, and a second approval returns the same activity. An approval after the person typed throws, keeps the typed words and head, and the proposal can still be denied. A trigger that refuses the activity insert makes approval throw and leaves the head where it was; after the trigger is dropped the same proposal lands. Undo returns the exact earlier revision, and refuses with `WORD_UNDO_MOVED` after later typing.
 
