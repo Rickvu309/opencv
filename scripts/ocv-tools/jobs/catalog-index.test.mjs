@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { spawnSync } from "node:child_process"
 import {
   chmodSync,
+  existsSync,
   mkdirSync,
   readdirSync,
   rmSync,
@@ -14,9 +15,9 @@ import { tempDir } from "../../lib/temp-dir.mjs"
 import { isolatedEnv } from "../ports/proc.mjs"
 
 const TOOL = fileURLToPath(new URL("../../ocv-tools.mjs", import.meta.url))
+const SPAWN_TIMEOUT_MS = 60_000
 const OPS = "packages/domain/src/operations"
 const GENERATED = "packages/domain/src/generated/catalog.ts"
-const SCRATCH = join(process.env.HOME ?? "", "tmp", "ocv-tools", "scratch-dirs")
 
 const STAND_IN_GENERATOR = `import { existsSync, readFileSync, readdirSync, writeFileSync, mkdirSync } from "node:fs"
 import path from "node:path"
@@ -48,9 +49,15 @@ function repo(t) {
     `#!/bin/sh\nexec "${process.execPath}" "${TOOL}" hook pre-commit "$@"\n`
   )
   chmodSync(join(hooks, "pre-commit"), 0o755)
-  const env = isolatedEnv(process.env)
+  const home = join(dir, "home")
+  const env = { ...isolatedEnv(process.env), HOME: home }
   const sh = (cmd, args) =>
-    spawnSync(cmd, args, { cwd: top, env, encoding: "utf8" })
+    spawnSync(cmd, args, {
+      cwd: top,
+      env,
+      encoding: "utf8",
+      timeout: SPAWN_TIMEOUT_MS,
+    })
   const git = (...args) => {
     const r = sh("git", args)
     assert.equal(r.status, 0, `git ${args.join(" ")}: ${r.stderr}${r.stdout}`)
@@ -87,7 +94,8 @@ function repo(t) {
   generate()
   git("add", "-A")
   assert.ok(commit("-m", "base").ok)
-  return { top, git, write, op, generate, commit }
+  const scratch = join(home, "tmp", "ocv-tools", "scratch-dirs")
+  return { top, git, write, op, generate, commit, scratch }
 }
 
 const refusedStale = (result) => {
@@ -96,16 +104,6 @@ const refusedStale = (result) => {
     result.text,
     /REFUSED CATALOG_STALE: the tree this commit records has a stale generated contract catalog: packages\/domain\/src\/generated\/catalog\.ts/
   )
-}
-
-const scratchLeft = () => {
-  try {
-    return readdirSync(SCRATCH).filter((name) =>
-      name.startsWith("catalog-index-")
-    )
-  } catch {
-    return []
-  }
 }
 
 test("the reviewer's sequence: an untracked operation, generate, then commit -a is refused by name", (t) => {
@@ -224,11 +222,13 @@ for (const how of ["merge", "rebase"])
               cwd: r.top,
               env: isolatedEnv(process.env),
               encoding: "utf8",
+              timeout: SPAWN_TIMEOUT_MS,
             })
           : spawnSync("git", ["rebase", "feat/2-theirs"], {
               cwd: r.top,
               env: isolatedEnv(process.env),
               encoding: "utf8",
+              timeout: SPAWN_TIMEOUT_MS,
             })
       assert.notEqual(start.status, 0, "the generated catalog conflicts")
       if (resolution === "regenerated") r.generate()
@@ -254,15 +254,15 @@ test("--amend is judged on the amended tree", (t) => {
   assert.ok(result.ok, result.text)
 })
 
-test("a docs-only commit never copies the index, and no scratch folder is left behind", (t) => {
-  const before = scratchLeft()
+test("a docs-only commit never copies the index, and a checked commit leaves no scratch folder behind", (t) => {
   const r = repo(t)
+  rmSync(r.scratch, { recursive: true, force: true })
   r.write("README.md", "more\n")
   r.git("add", "README.md")
   assert.ok(r.commit("-m", "docs").ok)
+  assert.equal(existsSync(r.scratch), false)
   r.op("beta")
   r.git("add", "-A")
   refusedStale(r.commit("-m", "stale"))
-  assert.deepEqual(scratchLeft(), before)
-  rmSync(join(r.top, OPS, "beta"), { recursive: true, force: true })
+  assert.deepEqual(readdirSync(r.scratch), [])
 })
