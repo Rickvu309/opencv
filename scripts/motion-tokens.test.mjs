@@ -47,7 +47,7 @@ const MISTAKES = [
   ],
   [
     ".x { transition: color var(--duration-micro) ease; }",
-    "packages/ui/src/styles/motion.css",
+    "packages/ui/src/styles/globals.css",
   ],
   [
     ".x { transition: opacity var(--duration-micro) linear; }",
@@ -177,7 +177,7 @@ test("tokens, motion utilities, loops, instant changes and the reduced-motion ru
     ],
     [
       "@utility motion-collapse { transition-property: height, opacity; }",
-      "packages/ui/src/styles/motion.css",
+      "packages/ui/src/styles/globals.css",
     ],
     [
       'export const a = "transition-[bottom,right,transform]! duration-(--duration-panel)!"',
