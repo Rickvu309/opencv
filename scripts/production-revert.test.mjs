@@ -1,15 +1,11 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import {
-  existsSync,
-  mkdirSync,
-  mkdtempSync,
-  readFileSync,
-  rmSync,
-} from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { homedir } from "node:os"
 import { join } from "node:path"
-import { after, test } from "node:test"
+import { test } from "node:test"
+
+import { tempDir } from "./lib/temp-dir.mjs"
 
 import {
   MIGRATIONS,
@@ -24,11 +20,6 @@ import {
 } from "./production-revert.mjs"
 
 const scratchRoot = join(homedir(), "tmp", "opencv-rollout", "tool-scratch")
-mkdirSync(scratchRoot, { recursive: true })
-const made = []
-after(() => {
-  for (const folder of made) rmSync(folder, { recursive: true, force: true })
-})
 
 function history(commits) {
   const stream = []
@@ -52,9 +43,8 @@ function history(commits) {
   return `${stream.join("\n")}\n`
 }
 
-function repository(commits) {
-  const folder = mkdtempSync(join(scratchRoot, "revert-"))
-  made.push(folder)
+function repository(t, commits) {
+  const folder = tempDir(t, "revert-", scratchRoot)
   const env = withoutGitVariables(process.env)
   execFileSync("git", ["init", "-q", "-b", "main", folder], { env })
   execFileSync("git", ["-C", folder, "fast-import", "--quiet"], {
@@ -95,8 +85,8 @@ const incident = [
   },
 ]
 
-test("the range is every merge after the last passing commit, newest first", () => {
-  const { git, shas } = repository(incident)
+test("the range is every merge after the last passing commit, newest first", (t) => {
+  const { git, shas } = repository(t, incident)
   const plan = planRevert({ bad: shas[2], good: shas[0] }, git)
   assert.deepEqual(plan.commits, [
     { sha: shas[2], subject: "fix: breaks the page (#12)" },
@@ -108,8 +98,8 @@ test("the range is every merge after the last passing commit, newest first", () 
   ])
 })
 
-test("refuses a bad request before changing anything", () => {
-  const { git, shas } = repository(incident)
+test("refuses a bad request before changing anything", (t) => {
+  const { git, shas } = repository(t, incident)
   assert.throws(
     () => planRevert({ bad: "abc", good: shas[0] }, git),
     /full sha/
@@ -127,6 +117,7 @@ test("refuses a bad request before changing anything", () => {
     /nothing to revert/
   )
   const long = repository(
+    t,
     Array.from({ length: MOST_MERGES + 2 }, (_, index) => ({
       subject: `feat: ${index}`,
       files: { "f.txt": `${index}\n` },
@@ -193,8 +184,8 @@ function fakePorts(folder, shapes = {}) {
   }
 }
 
-test("prepare reverts the code, keeps every migration file, and sets the label and auto-merge", () => {
-  const { folder, git, shas } = repository(incident)
+test("prepare reverts the code, keeps every migration file, and sets the label and auto-merge", (t) => {
+  const { folder, git, shas } = repository(t, incident)
   const plan = planRevert({ bad: shas[2], good: shas[0] }, git)
   const fake = fakePorts(folder)
   const prepared = prepare(plan, fake.ports)
@@ -224,8 +215,8 @@ test("prepare reverts the code, keeps every migration file, and sets the label a
   assert.equal(git(["rev-parse", "main"]).trim(), shas[2])
 })
 
-test("a conflicting revert stops before save, leaving nothing pushed", () => {
-  const { folder, git, shas } = repository([
+test("a conflicting revert stops before save, leaving nothing pushed", (t) => {
+  const { folder, git, shas } = repository(t, [
     ...incident,
     {
       subject: "feat: edits the same line (#13)",
@@ -245,8 +236,8 @@ test("a conflicting revert stops before save, leaving nothing pushed", () => {
   assert.deepEqual(fake.calls, ["tools take"])
 })
 
-test("a finish that opens no pull request stops before any label or auto-merge", () => {
-  const { folder, git, shas } = repository(incident)
+test("a finish that opens no pull request stops before any label or auto-merge", (t) => {
+  const { folder, git, shas } = repository(t, incident)
   const fake = fakePorts(folder, { finish: "refused: body problems" })
   assert.throws(
     () => prepare(planRevert({ bad: shas[2], good: shas[0] }, git), fake.ports),
@@ -255,8 +246,8 @@ test("a finish that opens no pull request stops before any label or auto-merge",
   assert.ok(!fake.calls.some((call) => call.startsWith("gh")))
 })
 
-test("the dry run prints the range, the kept migrations and the steps, and changes nothing", () => {
-  const { git, shas } = repository(incident)
+test("the dry run prints the range, the kept migrations and the steps, and changes nothing", (t) => {
+  const { git, shas } = repository(t, incident)
   const out = []
   const result = main([shas[2], "--good", shas[0]], {
     out: (line) => out.push(line),
@@ -287,8 +278,8 @@ test("the dry run prints the range, the kept migrations and the steps, and chang
   assert.equal(git(["status", "--porcelain"]), "")
 })
 
-test("the last passing commit comes from the probe history when --good is absent", () => {
-  const { git, shas } = repository(incident)
+test("the last passing commit comes from the probe history when --good is absent", (t) => {
+  const { git, shas } = repository(t, incident)
   const result = main([shas[2]], {
     out: () => {},
     git,

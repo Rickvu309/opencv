@@ -329,6 +329,7 @@ export function deployedShas(sha, git) {
 
 function gitIn(args) {
   return execFileSync("git", args, {
+    timeout: 60_000,
     cwd: repoRoot,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "ignore"],

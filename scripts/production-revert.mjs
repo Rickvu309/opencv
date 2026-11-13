@@ -22,6 +22,7 @@ export function liveGit(cwd) {
   return (args) =>
     execFileSync("git", ["-C", cwd, ...args], {
       encoding: "utf8",
+      timeout: 120_000,
       env: withoutGitVariables(process.env),
       stdio: ["ignore", "pipe", "pipe"],
     })
@@ -214,6 +215,7 @@ if (
     execFileSync(command, args, {
       cwd,
       encoding: "utf8",
+      timeout: command === "gh" ? 120_000 : 1_800_000,
       stdio: ["ignore", "pipe", "inherit"],
     })
   const gh = (args) => run("gh", args)

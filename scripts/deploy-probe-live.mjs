@@ -126,7 +126,8 @@ export function liveClock() {
 
 export function liveIssues({
   labels,
-  run = (args) => execFileSync("gh", args, { encoding: "utf8" }),
+  run = (args) =>
+    execFileSync("gh", args, { encoding: "utf8", timeout: 60_000 }),
 } = {}) {
   return {
     openLabels: () =>
