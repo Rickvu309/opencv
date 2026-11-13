@@ -4,6 +4,8 @@ const UNITS = 4
 const MIN_PX = 44
 const SIZE_UTILITY =
   /^(?:h|size|min-h)-(?:(\d+(?:\.\d+)?)|\[(\d+(?:\.\d+)?)px\])$/
+const WIDTH_UTILITY = /^w-(?:(\d+(?:\.\d+)?)|\[(\d+(?:\.\d+)?)px\])$/
+const WIDTH_FLOOR = /^(?:w|min-w)-(?:(\d+(?:\.\d+)?)|\[(\d+(?:\.\d+)?)px\])$/
 const INTERACTIVE_MARK = /(?:^|\s)(?:hover:|focus-visible:)/
 
 function pixels(token) {
@@ -28,6 +30,32 @@ export function hasPhoneTarget(classText) {
     .map((token) => token.replace(/^max-md:/, ""))
     .some((token) => {
       const px = pixels(token)
+      return px !== null && px >= MIN_PX
+    })
+}
+
+function widthPixels(token, pattern) {
+  const match = pattern.exec(token)
+  if (!match) return null
+  return match[1] ? Number(match[1]) * UNITS : Number(match[2])
+}
+
+export function smallPhoneWidths(classText) {
+  return classText
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter((token) => {
+      const px = widthPixels(token, WIDTH_UTILITY)
+      return px !== null && px < MIN_PX
+    })
+}
+
+export function hasPhoneWidth(classText) {
+  return classText
+    .split(/\s+/)
+    .filter(Boolean)
+    .some((token) => {
+      const px = widthPixels(token, WIDTH_FLOOR)
       return px !== null && px >= MIN_PX
     })
 }
@@ -87,6 +115,12 @@ export function smallTargets(source, fileName = "file.tsx") {
         found.push({
           line: lineOf(opening),
           why: "a Button needs a phone height of h-11 or size-11 (for example `size-11 md:size-7`)",
+        })
+      const narrow = smallPhoneWidths(text)
+      if (narrow.length > 0 && !hasPhoneWidth(text))
+        found.push({
+          line: lineOf(opening),
+          why: `a Button sets ${narrow.join(" ")} on a phone (use \`w-11 md:w-7\`)`,
         })
     }
     if (ts.isStringLiteral(node) || ts.isTemplateExpression(node)) {

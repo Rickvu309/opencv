@@ -44,7 +44,7 @@ export function AuthFrame({
         </p>
         <SegmentedControl
           aria-label={AUTH_COPY.language}
-          className="col-start-2 row-start-1 justify-self-end [&_[role=radio]]:min-h-11 md:[&_[role=radio]]:min-h-0"
+          className="col-start-2 row-start-1 justify-self-end [&_[role=radio]]:min-h-11 [&_[role=radio]]:min-w-11 md:[&_[role=radio]]:min-h-0 md:[&_[role=radio]]:min-w-0"
           value={language}
           onChange={onLanguage}
           options={[

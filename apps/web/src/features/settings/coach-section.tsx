@@ -83,7 +83,7 @@ export function CoachSection({
           control={
             <Switch
               data-slot="settings-switch"
-              className="data-[size=default]:h-[18px]"
+              className="h-11! w-11! after:inset-0! md:h-[18px]! md:w-8! md:after:-inset-3.5! max-md:[&_[data-slot=switch-thumb]]:data-checked:translate-x-[26px]!"
               aria-label={`Enable memory, ${profile.memoryEnabled ? "Enabled" : "Disabled"}`}
               checked={profile.memoryEnabled}
               disabled={pending}
