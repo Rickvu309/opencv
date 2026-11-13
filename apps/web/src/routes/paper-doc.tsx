@@ -1,6 +1,6 @@
 import { Suspense, lazy } from "react"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { ERROR_CODES, paperIdSchema, parsePaperId } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
@@ -24,6 +24,11 @@ import { authClient } from "@/lib/auth-client.ts"
 import { catalogClient } from "@/lib/contract-client.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { ApiError } from "@/lib/api-error.ts"
+import {
+  paperListRecheck,
+  paperListRecheckKey,
+  retryPaperDocReads,
+} from "@/lib/paper-list-recheck.ts"
 
 const PaperLetterEditor = lazy(() =>
   import("@/features/paper/paper-letter.tsx").then((module) => ({
@@ -74,6 +79,7 @@ export function PaperDocPage() {
   const validId = parsedId.success ? parsedId.data : null
   const session = authClient.useSession()
   const owner = session.data?.user.id ?? ""
+  const queryClient = useQueryClient()
   const listQuery = useQuery({
     queryKey: paperListKey(),
     queryFn: listPaper,
@@ -83,10 +89,33 @@ export function PaperDocPage() {
       ? undefined
       : listQuery.data?.find((item) => item.id === validId)
   const wordPage = listed?.format === "word"
+  const packageRead = catalogClient.options(owner, "paper.read", {
+    view: "page",
+    docId: validId ?? NO_DOC,
+  })
+  const wordReadFailed =
+    wordPage &&
+    queryClient.getQueryState(packageRead.queryKey)?.status === "error"
+  const recheckWanted =
+    validId !== null &&
+    listQuery.isSuccess &&
+    (listed === undefined || wordReadFailed)
+  const recheck = useQuery({
+    ...paperListRecheck(
+      queryClient,
+      { queryKey: paperListKey(), queryFn: listPaper },
+      validId ?? NO_DOC
+    ),
+    enabled: recheckWanted,
+  })
+  const rechecking =
+    recheck.isFetching ||
+    (recheckWanted && !recheck.isSuccess && !recheck.isError)
   const kindKnown =
     listed !== undefined ||
     listQuery.isError ||
-    (listQuery.isSuccess && !listQuery.isFetching)
+    recheck.isSuccess ||
+    recheck.isError
   const docQuery = useQuery({
     queryKey: paperGetKey(validId ?? NO_DOC),
     queryFn: () => getPaper(docId),
@@ -99,10 +128,6 @@ export function PaperDocPage() {
     docQuery.error.code === ERROR_CODES.NOT_FOUND
   const askWordPage =
     validId !== null && (wordPage || (listQuery.isError && docMissing))
-  const packageRead = catalogClient.options(owner, "paper.read", {
-    view: "page",
-    docId: validId ?? NO_DOC,
-  })
   const packageQuery = useQuery({
     queryKey: packageRead.queryKey,
     meta: packageRead.meta,
@@ -129,6 +154,7 @@ export function PaperDocPage() {
 
   if (
     (validId !== null && !kindKnown) ||
+    rechecking ||
     docQuery.isLoading ||
     packagePending
   ) {
@@ -150,7 +176,16 @@ export function PaperDocPage() {
       )
     }
     const missing =
-      validId === null || docMissing || (wordPage && packageQuery.isSuccess)
+      validId === null ||
+      (docMissing && (!listQuery.isError || packageQuery.isSuccess)) ||
+      (wordPage && packageQuery.isSuccess)
+    const retry = () =>
+      void retryPaperDocReads(queryClient, [
+        paperListKey(),
+        paperListRecheckKey(validId ?? NO_DOC),
+        paperGetKey(validId ?? NO_DOC),
+        packageRead.queryKey,
+      ])
     return (
       <section
         aria-label="Paper"
@@ -161,9 +196,16 @@ export function PaperDocPage() {
             ? "Document not found."
             : "Could not load documents. Refresh the page."}
         </p>
-        <Button type="button" variant="outline" onClick={back}>
-          Paper
-        </Button>
+        <div className="flex gap-2">
+          {missing ? null : (
+            <Button type="button" onClick={retry}>
+              Refresh
+            </Button>
+          )}
+          <Button type="button" variant="outline" onClick={back}>
+            Paper
+          </Button>
+        </div>
       </section>
     )
   }
