@@ -4,6 +4,7 @@ import { runCli } from "./cli.mjs"
 import { ctxFor, fakePorts } from "./ports/fake.mjs"
 import { COMMANDS } from "./report.mjs"
 import { MERGE_GATE_CASES } from "./rules/merge-gate-cases.mjs"
+import { PROTECTED_CASES } from "./rules/protected-cases.mjs"
 import { decide, evaluate, jobRows, needsOf, RULES } from "./rules/index.mjs"
 
 const TYPE_LIST = "feat, fix, hotfix, refactor, chore, docs"
@@ -303,6 +304,8 @@ test("every checked rule has a failing and a passing fact", () => {
     "the quick checks failed: no-comments, fast guards"
   )
   for (const [id, bad, good, message] of MERGE_GATE_CASES)
+    check(id, bad, good, message)
+  for (const [id, bad, good, message] of PROTECTED_CASES)
     check(id, bad, good, message)
   check(
     "AFFECTED_TESTS",

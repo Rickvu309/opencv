@@ -1,4 +1,5 @@
 import { decide } from "../rules/index.mjs"
+import { retiredLines } from "../rules/protected.mjs"
 
 export function policyReport(n, facts, { annotate = false } = {}) {
   const verdict = decide("pr", facts)
@@ -13,7 +14,10 @@ export function policyReport(n, facts, { annotate = false } = {}) {
       next: `gh pr view ${n}`,
     }
   return {
-    lines: [`PR #${n} passes the server-held rules.`],
+    lines: [
+      `PR #${n} passes the server-held rules.`,
+      ...retiredLines(facts.protected),
+    ],
     next: `scripts/ocv-tools.mjs merge ${n}`,
   }
 }

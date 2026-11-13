@@ -277,6 +277,7 @@ test("finish refuses a body with no Evidence before it pushes", () => {
     env: {},
     affected: { head: "h", receipt: true },
     diff: { files: "", labels: [], ciYmlAtHead: true, deleted: {} },
+    protected: { weakened: [], retired: [], retirements: [] },
   })
   assert.equal(verdict.refusals[0].id, "BAD_BODY")
   assert.equal(

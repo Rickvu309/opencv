@@ -33,6 +33,11 @@ export const COMMANDS = [
     when: "Print the first failing cases of the newest ci run on the PR head, each with a repro command, in at most 30 lines. On a run still in progress it prints the failures so far and says the run is not finished; on a green run it says green.",
   },
   {
+    name: "retire",
+    usage: 'retire "<subject>" --because "<why>" [--replaced-by <test file>]',
+    when: "The one way to remove or weaken a protected check on purpose; the subject is what PROTECTED_WEAKENED printed, its file, or a case title prefix. With --replaced-by, retire runs that test under the machine lock with the changed source files put back to the fork point (it must fail on an assertion) and on the head (it must pass), and records the proof in scripts/retired/<issue>.json. Such a retirement is self-serve: the pull request still merges itself when the replacement covers the same module, command or route, and finish and the body say \"Retired N checks with replacements\". Without a replacement, or for a ratchet or known-failures entry, a limit bound, a guard or ledger row, a checker setting or a skip mark, the pull request is owner class and waits for the owner's yes. An expected-failure mark is PIN_ISSUE_OPEN's rule, not this one.",
+  },
+  {
     name: "policy",
     usage: "policy <pr#>",
     when: "Evaluate the server-held PR rules against a live pull request and print one line per refusal, each with its fix. Exit 2 when a rule refuses.",
