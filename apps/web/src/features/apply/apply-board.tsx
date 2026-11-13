@@ -51,15 +51,6 @@ type Card = {
   job: JobView
 }
 
-type CreatedListener = (id: string) => void
-const createdListeners = new Set<CreatedListener>()
-
-export function reportJobCreated(id: string) {
-  for (const listener of createdListeners) {
-    listener(id)
-  }
-}
-
 type JustAddedAction = { type: "created"; id: string } | { type: "cleared" }
 
 function justAddedReducer(
@@ -138,12 +129,16 @@ export function ApplyBoard({
   }, [justAddedJobId])
 
   useEffect(() => {
-    const onCreated = (id: string) => {
-      dispatchJustAdded({ type: "created", id })
+    if (typeof window === "undefined") return
+    const onCreated = (event: Event) => {
+      const custom = event as CustomEvent<{ id: string }>
+      if (custom.detail?.id) {
+        dispatchJustAdded({ type: "created", id: custom.detail.id })
+      }
     }
-    createdListeners.add(onCreated)
+    window.addEventListener("opencv:job-created", onCreated)
     return () => {
-      createdListeners.delete(onCreated)
+      window.removeEventListener("opencv:job-created", onCreated)
     }
   }, [])
 

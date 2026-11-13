@@ -218,7 +218,7 @@ export const KanbanCard = ({
         <t.In>
           <Card
             className={cn(
-              "scale-[1.02] cursor-grab gap-4 rounded-md p-3 shadow-md shadow-sm ring-2 ring-ring transition-[scale,box-shadow] duration-(--duration-micro) ease-(--ease-micro) starting:scale-100 starting:shadow-sm",
+              "scale-[1.02] cursor-grab gap-4 rounded-md p-3 shadow-md ring-2 ring-ring transition-[scale,box-shadow] duration-(--duration-micro) ease-(--ease-micro) starting:scale-100 starting:shadow-sm",
               isDragging && "cursor-grabbing",
               className
             )}
