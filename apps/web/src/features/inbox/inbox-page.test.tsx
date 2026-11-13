@@ -60,9 +60,61 @@ describe("inbox page", () => {
     ).toBeInTheDocument()
     await userEvent.click(screen.getByRole("button", { name: "Skip for now" }))
     expect(await screen.findByText("No job emails yet")).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        "Gmail is not connected on this server. Scan shows example mail, not yours."
+      )
+    ).toBeInTheDocument()
+    expect(
+      screen.getAllByRole("heading", { level: 1, name: "Inbox" })
+    ).toHaveLength(1)
     expect(screen.getByRole("region", { name: "Messages" })).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Connect Gmail" })).toBeNull()
     expect(posts).toEqual(["/api/commands/inbox.skip"])
+  })
+
+  it("shows example mail when Scan runs with no Gmail", async () => {
+    let scanned = false
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = pathOf(input)
+        if (path === "/api/inbox/connect") return jsonOk({ url: null })
+        if (path === "/api/commands/inbox.scan") {
+          scanned = true
+          return jsonOk({
+            threads: INBOX_THREADS.slice(0, 1),
+            emailCount: 1,
+            companyCount: 1,
+          })
+        }
+        if (path === "/api/inbox") {
+          return jsonOk({
+            connected: false,
+            skipped: true,
+            threads: scanned ? INBOX_THREADS.slice(0, 1) : [],
+          })
+        }
+        if ((init?.method ?? "GET") === "POST") return jsonOk({})
+        return jsonOk({})
+      }
+    )
+    renderPage()
+    await userEvent.click(await screen.findByRole("button", { name: "Scan" }))
+    expect(await screen.findByRole("status")).toHaveTextContent(
+      "Gmail is not connected. These are examples, not your mail."
+    )
+    expect(
+      screen.getByRole("button", {
+        name: /Business Analyst, Regional bank/,
+      })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByText("Finding your job emails")
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getAllByRole("heading", { level: 1, name: "Inbox" })
+    ).toHaveLength(1)
   })
 
   it("opens no thread on desktop until a row is picked", async () => {

@@ -45,6 +45,10 @@ export function setMockInbox(data: unknown) {
   state.inbox = data
 }
 
+export function showSkippedInbox() {
+  state.inbox = { connected: false, skipped: true, threads: [] }
+}
+
 export function setMockSearch(hits: MockSearchHits) {
   state.searchHits = hits
 }

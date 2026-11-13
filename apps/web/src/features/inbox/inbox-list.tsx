@@ -179,11 +179,13 @@ export function InboxEmpty({
   scanning,
   view,
   onViewChange,
+  note,
 }: {
   onScan: () => void
   scanning: boolean
   view: "inbox" | "snoozed"
   onViewChange: (view: "inbox" | "snoozed") => void
+  note?: string
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -202,6 +204,11 @@ export function InboxEmpty({
             <EmptyTitle data-user-content>No job emails yet</EmptyTitle>
           </EmptyHeader>
           <EmptyContent>
+            {note ? (
+              <p className="max-w-sm text-center text-sm text-muted-foreground">
+                {note}
+              </p>
+            ) : null}
             <Button
               className="h-11 md:h-8"
               variant="ghost"

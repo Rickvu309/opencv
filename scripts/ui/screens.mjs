@@ -138,10 +138,7 @@ export const SCREENS = [
   {
     id: "paper-home-panel-open",
     route: "/paper",
-    steps: [
-      { waitFor: { selector: 'main input[aria-label="Search Paper"]' } },
-      ...OPEN_PANEL,
-    ],
+    steps: [{ waitFor: { role: "heading", name: "Paper" } }, ...OPEN_PANEL],
   },
   {
     id: "paper-home-new-cv",
@@ -473,6 +470,26 @@ export const SCREENS = [
     id: "inbox",
     route: "/inbox",
     steps: [{ waitFor: { role: "heading", name: "Inbox" } }],
+  },
+  {
+    id: "inbox-skipped",
+    route: "/inbox",
+    steps: [
+      { waitFor: { role: "button", name: "Skip for now" } },
+      { click: { role: "button", name: "Skip for now" } },
+      { waitFor: { text: "No job emails yet" } },
+    ],
+  },
+  {
+    id: "inbox-scan",
+    route: "/inbox",
+    steps: [
+      { waitFor: { role: "button", name: "Skip for now" } },
+      { click: { role: "button", name: "Skip for now" } },
+      { waitFor: { role: "button", name: "Scan" } },
+      { click: { role: "button", name: "Scan" } },
+      { waitFor: { text: "Regional bank" } },
+    ],
   },
   {
     id: "shell-sidebar-collapsed",
