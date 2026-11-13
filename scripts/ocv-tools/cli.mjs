@@ -177,6 +177,7 @@ function checkRun(ctx, flags) {
   const verdict = decide("push", {
     push: { refs: [] },
     env: {},
+    protected: { weakened: [], retired: [], retirements: [] },
     quick: { failed: [] },
     affected: { failed: result.failed, unreadable: result.unreadable },
   })
