@@ -63,7 +63,8 @@ function shownChoice(
   hasBlank: boolean
 ): Choice | null {
   if (selected === "blank" && hasBlank) return "blank"
-  if (found.some((item) => item.id === selected)) return selected
+  if (selected !== "top-match" && found.some((item) => item.id === selected))
+    return selected
   return found[0]?.id ?? (hasBlank ? "blank" : null)
 }
 
@@ -200,7 +201,7 @@ export function PaperTemplateGallery({
       ?.focus()
   }, [])
 
-  function use(choice: Choice | null) {
+  function startWith(choice: Choice | null) {
     if (pending || choice === null) return
     if (choice === "blank") onBlank?.()
     else onUse(choice)
@@ -215,7 +216,7 @@ export function PaperTemplateGallery({
     if (cards.length === 0) return
     if (event.key === "Enter") {
       event.preventDefault()
-      use(chosen)
+      startWith(chosen)
       return
     }
     const current = cards.findIndex(
@@ -274,7 +275,7 @@ export function PaperTemplateGallery({
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.preventDefault()
-                use(chosen)
+                startWith(chosen)
               }
               if (event.key === "Escape" && query !== "") {
                 event.preventDefault()
@@ -306,7 +307,7 @@ export function PaperTemplateGallery({
               checked={chosen === "blank"}
               disabled={pending}
               onPick={() => dispatch({ type: "choice_picked", id: "blank" })}
-              onUse={() => use("blank")}
+              onUse={() => startWith("blank")}
             >
               <BlankPage />
             </ChoiceCard>
@@ -320,7 +321,7 @@ export function PaperTemplateGallery({
               checked={chosen === item.id}
               disabled={pending}
               onPick={() => dispatch({ type: "choice_picked", id: item.id })}
-              onUse={() => use(item.id)}
+              onUse={() => startWith(item.id)}
             >
               <TemplatePage templateId={item.id} />
             </ChoiceCard>
@@ -375,7 +376,7 @@ export function PaperTemplateGallery({
           type="button"
           variant="primary"
           aria-busy={pending || undefined}
-          onClick={() => use(chosen)}
+          onClick={() => startWith(chosen)}
           disabled={pending || chosen === null}
         >
           {pending ? <Spinner aria-hidden="true" /> : null}
