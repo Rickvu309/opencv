@@ -146,7 +146,7 @@ async function sharedToken(as: Person) {
   return { token: idIn(shared, "token") }
 }
 
-async function thread(as: Person) {
+async function inboxEntry(as: Person) {
   const [row] = await as.db
     .insert(inboxThreads)
     .values({
@@ -157,7 +157,7 @@ async function thread(as: Person) {
       role: "Intern",
     })
     .returning({ id: inboxThreads.id })
-  if (!row) throw new Error("no thread")
+  if (!row) throw new Error("no inbox entry")
   return { id: row.id }
 }
 
@@ -326,7 +326,7 @@ export const ROUTE_CASES: readonly RouteCase[] = [
   get("/api/inbox/snoozed"),
   get("/api/inbox/connect"),
   get("/api/inbox/callback"),
-  get("/api/inbox/:id", thread),
+  get("/api/inbox/:id", inboxEntry),
   get("/api/profile"),
   get("/api/integrations"),
   get("/api/billing"),

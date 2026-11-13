@@ -48,6 +48,11 @@ export const RETIRED = [
         why: "maps the inbox_threads table to the inbox module",
       },
       {
+        path: /^apps\/api\/src\/(?:registry\/owned|test\/routes\/route-cases)\.ts$/,
+        match: /^(?:inboxThreads|threadId|providerThreadId)$/,
+        why: "the owned-row kind names the inbox_threads table and the threadId input of inbox.get, and the inbox route case seeds one mail thread row",
+      },
+      {
         path: /^apps\/api\/src\/registry\/contract\.type-test\.ts$/,
         match: /^threadId$/,
         why: "the inbox snooze input is keyed by an inbox threadId",
