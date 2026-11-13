@@ -2,59 +2,75 @@ import "./design/home.pen.css"
 
 import { useId, type ReactNode } from "react"
 import { Button } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
 
 import { COACH_STARTERS } from "./coach-starters.ts"
+
+export type CoachHomeSize = "page" | "panel"
 
 export function CoachHome({
   children,
   onChooseStarter,
   disabled,
+  size = "page",
 }: {
-  children: ReactNode
+  children?: ReactNode
   onChooseStarter: (text: string) => void
   disabled: boolean
+  size?: CoachHomeSize
 }) {
   const describedBy = useId()
+  const panel = size === "panel"
   return (
     <div
       data-slot="coach-home"
       data-pen-surface="coach"
-      className="pbs-22 sm:pbs-57 grid min-h-full grid-cols-[minmax(1rem,1fr)_minmax(0,42.5rem)_minmax(1rem,1fr)] content-start gap-y-3.5 pb-16"
+      data-size={size}
+      className={cn(
+        "flex w-full min-w-0 flex-col items-center",
+        panel
+          ? "my-auto py-6 [@media(max-height:20rem)]:hidden"
+          : "min-h-full justify-start px-4 pt-[14dvh] pb-16 md:justify-center md:pt-12 md:pb-[16dvh]"
+      )}
     >
-      <h2 className="pbe-2 col-start-2 text-center text-[20px] leading-[26px] font-medium tracking-[-0.3px]">
+      <h2
+        className={cn(
+          "text-center font-medium text-balance text-foreground",
+          panel
+            ? "mb-4 text-[20px] leading-[26px] tracking-[-0.01em]"
+            : "mb-6 text-[24px] leading-[30px] tracking-[-0.02em] md:text-[28px] md:leading-9"
+        )}
+      >
         How can I help?
       </h2>
-      <div className="col-start-2">{children}</div>
+      {children ? (
+        <div data-slot="coach-home-composer" className="w-full max-w-[760px]">
+          {children}
+        </div>
+      ) : null}
       <ul
         data-slot="coach-ideas"
         aria-label="Ideas for Coach"
-        className="col-start-2 grid min-w-0 grid-cols-1 gap-2 pt-1 sm:grid-cols-3"
+        className={cn(
+          "flex w-full max-w-[760px] min-w-0 flex-wrap justify-center gap-2",
+          children ? "mt-4" : null
+        )}
       >
         {COACH_STARTERS.map(({ title, description, icon: Icon }, index) => (
           <li key={title} className="min-w-0">
             <Button
               variant="outline"
               data-slot="coach-starter"
-              className="h-auto min-h-14 w-full flex-row items-center justify-start gap-3 rounded-[10px] bg-card px-3.5 py-2.5 text-left whitespace-normal sm:min-h-[124px] sm:flex-col sm:items-start sm:justify-between sm:gap-6 sm:p-4"
               aria-label={title}
+              className="h-11 max-w-full min-w-0 gap-2 rounded-full border-border bg-transparent px-3.5 text-[14px] leading-5 font-normal text-muted-foreground shadow-none hover:bg-muted hover:text-foreground md:h-9"
               aria-describedby={`${describedBy}-${index}`}
               disabled={disabled}
               onClick={() => onChooseStarter(title)}
             >
-              <Icon
-                aria-hidden="true"
-                className="size-3.5 text-muted-foreground"
-              />
-              <span className="flex min-w-0 flex-col gap-1">
-                <span className="text-[13px] leading-4 font-medium text-foreground">
-                  {title}
-                </span>
-                <span
-                  id={`${describedBy}-${index}`}
-                  className="text-xs leading-4 font-normal text-muted-foreground"
-                >
-                  {description}
-                </span>
+              <Icon aria-hidden="true" className="size-4 shrink-0" />
+              <span className="min-w-0 truncate">{title}</span>
+              <span id={`${describedBy}-${index}`} className="sr-only">
+                {description}
               </span>
             </Button>
           </li>

@@ -10,7 +10,7 @@ import {
 } from "@workspace/ui/components/message-scroller"
 import { cn } from "@workspace/ui/lib/utils"
 
-export const chatColumn = "mx-auto w-full min-w-0 max-w-[720px] max-sm:px-4"
+export const chatColumn = "mx-auto w-full min-w-0 max-w-[760px] max-sm:px-4"
 
 export function Conversation({
   className,

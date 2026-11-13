@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
+  act,
   cleanup,
   fireEvent,
   screen,
@@ -555,30 +556,20 @@ describe("app shell layout", () => {
     })
   })
 
-  it("keeps the dock and a recent chat on the Coach page", async () => {
-    setMockChats([
-      {
-        id: "chat-1",
-        title: "Checkout notes",
-        focusKind: null,
-        focusId: null,
-        createdAt: "2026-02-01T00:00:00.000Z",
-        updatedAt: "2026-02-02T00:00:00.000Z",
-      },
-    ])
+  it("clears the dock on the Coach page and never floats the panel over it", async () => {
     stubDesktopViewport(true)
-    renderApp(SURFACE_PATHS.coach)
+    const { router } = renderApp(SURFACE_PATHS.coach)
     await screen.findByRole("navigation", { name: "Main" })
-    const dock = document.querySelector<HTMLElement>('[data-slot="app-dock"]')
-    expect(dock).not.toBeNull()
-    expect(
-      within(dock as HTMLElement).getByRole("button", { name: "Coach" })
-    ).toBeInTheDocument()
-    expect(
-      within(dock as HTMLElement).getByRole("button", {
-        name: "Checkout notes",
-      })
-    ).toBeInTheDocument()
+    const dock = () =>
+      document.querySelector('[data-slot="app-dock"]') as HTMLElement
+    expect(within(dock()).queryAllByRole("button")).toHaveLength(0)
+    await act(() => router.navigate({ to: SURFACE_PATHS.paper }))
+    fireEvent.click(
+      await within(dock()).findByRole("button", { name: "Coach" })
+    )
+    await screen.findByRole("region", { name: "Coach" })
+    await act(() => router.navigate({ to: SURFACE_PATHS.coach }))
+    expect(screen.queryByRole("region", { name: "Coach" })).toBeNull()
   })
 
   it("hides the sidebar at 390 until Menu, and a link closes the drawer", async () => {
