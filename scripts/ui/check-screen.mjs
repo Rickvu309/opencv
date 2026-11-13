@@ -36,18 +36,20 @@ export async function checkScreen({
   rows,
   tolerance,
   onMain,
+  shot,
 }) {
-  const measureOn = async (target, list) => {
+  const measureOn = async (target, list, picture) => {
     const { page, close } = await openScreen(browser, state, target, {
       width: 1440,
     })
     const measured = await measure(page, measureTargets(list))
+    if (picture) await page.screenshot({ path: picture })
     await close()
     return rowsWithTargets(list, measured).map(({ items, from }) =>
       relate(items, from)
     )
   }
-  const rendered = await measureOn(screen, rows)
+  const rendered = await measureOn(screen, rows, shot)
   const baseline = new Map()
   for (const id of sameBoxAgainst(rows)) {
     const target = SCREENS.find((candidate) => candidate.id === id)
@@ -57,15 +59,18 @@ export async function checkScreen({
     const boxes = await measureOn(target, list)
     list.forEach((row, at) => baseline.set(row, boxes[at]))
   }
-  return screenReport({
-    screen,
-    rows,
+  return {
+    ...screenReport({
+      screen,
+      rows,
+      rendered,
+      baseline,
+      index,
+      tolerance,
+      onMain,
+    }),
     rendered,
-    baseline,
-    index,
-    tolerance,
-    onMain,
-  })
+  }
 }
 
 export function screenReport({

@@ -20,6 +20,7 @@ import { DESIGN_MAP, rowsForScreen } from "./design-map.mjs"
 import { unmappedMessage } from "./shot-only.mjs"
 import { EXIT, json, withBrowser } from "./cli-shared.mjs"
 import { REVIEW_COMMANDS } from "./cli-review.mjs"
+import { checkShotFile, writeFailureImages } from "./check-annotate.mjs"
 import {
   findFrames,
   framePath,
@@ -249,11 +250,11 @@ export const COMMANDS = {
   },
   check: {
     usage:
-      "check <screen...> | --all [--json] [--tolerance 1] [--pen file] [--known manifest]",
+      "check <screen...> | --all [--json] [--tolerance 1] [--pen file] [--known manifest] [--annotate dir]",
     about:
-      "Compare rendered elements with their composed-screen pen frames, and same-box rows with another screen, through scripts/ui/design-map.mjs. --all checks every reachable mapped screen and prints one line per screen and a total; --json prints one JSON result. --known reads the base results compare stored in its manifest and marks each failure new since main or already failing on main. Exit 1 on any mismatch.",
+      "Compare rendered elements with their composed-screen pen frames, and same-box rows with another screen, through scripts/ui/design-map.mjs. --all checks every reachable mapped screen and prints one line per screen and a total; --json prints one JSON result. --known reads the base results compare stored in its manifest and marks each failure new since main or already failing on main. --annotate <dir> also writes <screen>-check.png: the screen at 1440 with a red numbered arrow at each failing element and a legend line expected, measured and the pen frame it comes from. Exit 1 on any mismatch.",
     options: {
-      valued: ["tolerance", "pen", "known"],
+      valued: ["tolerance", "pen", "known", "annotate"],
       switches: ["all", "json"],
     },
     run: async (ctx, { positional, flags }) => {
@@ -281,6 +282,8 @@ export const COMMANDS = {
       const notices = baseNotice ? [baseNotice] : []
       const state = await requireStack(ctx)
       const detail = [...notices]
+      const annotateDir = flags.annotate ? resolve(flags.annotate) : null
+      if (annotateDir) ctx.fs.mkdir(annotateDir)
       const outcomes = []
       await withBrowser(ctx, async (browser) => {
         for (const { screen, rows } of plans) {
@@ -300,9 +303,10 @@ export const COMMANDS = {
               rows,
               tolerance,
               onMain: known ? baseCheckFor(known, screen.id) : undefined,
+              shot: annotateDir ? checkShotFile(annotateDir, screen.id) : null,
             })
             detail.push(...outcome.lines)
-            outcomes.push(outcome)
+            outcomes.push({ ...outcome, rows })
           } catch (error) {
             const message = error.message.split("\n")[0]
             detail.push(json({ screen: screen.id, error: message }))
@@ -310,6 +314,13 @@ export const COMMANDS = {
           }
         }
       })
+      if (annotateDir)
+        for (const image of await writeFailureImages(
+          ctx,
+          annotateDir,
+          outcomes
+        ))
+          detail.push(json(image))
       const results = outcomes.map((outcome) => outcome.result)
       const total = summarize(
         results,

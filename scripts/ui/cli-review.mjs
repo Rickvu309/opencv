@@ -1,7 +1,12 @@
 import { dirname, relative, resolve } from "node:path"
 import { UsageError } from "./args.mjs"
 import { compositeFiles, SPLIT_ABOVE } from "./annotate-split.mjs"
-import { CHANGES_PER_SCREEN, draftSpec, rankChanges } from "./changes.mjs"
+import {
+  ARROWS_PER_IMAGE,
+  CHANGES_PER_SCREEN,
+  draftSpec,
+  rankChanges,
+} from "./changes.mjs"
 import { EXIT, json, withBrowser } from "./cli-shared.mjs"
 import { readSpec, renderComposite } from "./composite.mjs"
 import { diffImages } from "./diff.mjs"
@@ -19,7 +24,7 @@ import { runUi } from "./cli.mjs"
 export const REVIEW_COMMANDS = {
   changes: {
     usage: "changes <screen...> [--manifest file] [--spec out.json]",
-    about: `List up to ${CHANGES_PER_SCREEN} elements per screen whose box or style differs between before and after, largest first, with a draft note. --spec writes a starting annotate spec with the top 5.`,
+    about: `List up to ${CHANGES_PER_SCREEN} elements per screen whose box or style differs between before and after, largest first, with a draft note. --spec writes a ready annotate spec: the ${ARROWS_PER_IMAGE} largest findings per image (changed, new or removed elements) as red numbered arrows, the rest as legend text under also.`,
     options: { valued: ["manifest", "spec"] },
     run: async (ctx, { positional, flags }) => {
       const { file, manifest } = readManifest(ctx, flags.manifest)

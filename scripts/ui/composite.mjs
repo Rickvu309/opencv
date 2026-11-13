@@ -150,7 +150,7 @@ export async function renderComposite(ctx, specFile, out, only) {
   let origins
   try {
     const context = await browser.newContext({
-      viewport: { width, height: 800 },
+      viewport: { width, height: 64 },
       deviceScaleFactor: CANVAS.scale,
     })
     const page = await context.newPage()
