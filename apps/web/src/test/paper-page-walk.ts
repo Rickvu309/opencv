@@ -300,7 +300,8 @@ function checkLooks(
     count("I5 landing not predicted")
     return
   }
-  if (diff.ops.some((op) => op.op === "insert")) count("I5 new line checked")
+  if (after.some((line) => line.by === "page" && line.version === -1))
+    count("I5 new line checked")
   state.present.blocks.forEach((block, index) => {
     if (gone(block.id)) return
     const look = lookKey(after[index]?.look)
