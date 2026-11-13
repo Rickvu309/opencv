@@ -119,3 +119,6 @@ export function higLine(item, specPath) {
 
 export const higFound = (cases) =>
   cases.filter((item) => item.advisory && item.findings?.length)
+
+export const hasShot = (item) =>
+  typeof item.shot === "string" && item.shot.endsWith(".png")

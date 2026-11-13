@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 
 import { validateSpec } from "../annotate.mjs"
-import { HIG_CALLOUTS, higFound, higLine, higSpec } from "./hig.mjs"
+import { HIG_CALLOUTS, hasShot, higFound, higLine, higSpec } from "./hig.mjs"
 
 const finding = (at, rect = { x: 10, y: 20 + at, width: 40, height: 16 }) => ({
   rule: "hig-contrast",
@@ -67,5 +67,17 @@ test("only guideline cases with findings are listed", () => {
       { rule: "fits", ok: false, findings: [finding(1)] },
     ]).map((found) => found.findings.length),
     [1]
+  )
+})
+
+test("a case whose screenshot failed gets no annotate spec", () => {
+  assert.equal(hasShot(item([finding(0)])), true)
+  assert.equal(
+    hasShot({ ...item([finding(0)]), shot: "no screenshot (page closed)" }),
+    false
+  )
+  assert.doesNotMatch(
+    higLine({ ...item([finding(0)]), shot: undefined }, null),
+    /annotate|screenshot/
   )
 })

@@ -201,7 +201,8 @@ export function textClipsInPage({ phase, limit }) {
     }
     const before = store.sizes.get(element)
     const now = parseFloat(style.fontSize)
-    if (ownText && before && now < before * 1.5)
+    const inDocument = Boolean(element.closest('[contenteditable="true"]'))
+    if (ownText && !inDocument && before && now < before * 1.5)
       found.push({
         name: label(element),
         how: "did not grow",
