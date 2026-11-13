@@ -1,0 +1,22 @@
+{
+  "id": "dialogs-fit-window",
+  "file": "apps/web/src/test/dialogs-fit-window.test.ts",
+  "historic": {
+    "mode": "restore",
+    "sha": "b19a5badaf90e75e73f28463047e39757f262fad",
+    "paths": [
+      "apps/web/src/features/app-shell/app-shell.tsx",
+      "apps/web/src/features/paper/paper-template-gallery.tsx"
+    ],
+    "command": [
+      "pnpm",
+      "--filter",
+      "web",
+      "exec",
+      "vitest",
+      "run",
+      "src/test/dialogs-fit-window.test.ts"
+    ]
+  },
+  "reason": "Caught by review of PR 1447. At its first head the kit dialog gained a height cap and inner scroll under a top anchor, which cut the phone drawer to 710 of 844px and clipped its close button, and left the New CV gallery's own 90vh cap running 34px past a 390x844 window. The test fails there and passes once the drawer is a sheet and the gallery uses the kit cap."
+}

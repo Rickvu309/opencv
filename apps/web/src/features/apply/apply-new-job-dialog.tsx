@@ -236,8 +236,7 @@ export function NewJobDialog({
         data-slot="new-job-dialog"
         showCloseButton={false}
         initialFocus={linkRef}
-        overlayClassName="bg-foreground/18 supports-backdrop-filter:backdrop-blur-none"
-        className="gap-0 bg-card p-0 shadow-lg ring-foreground/6 max-md:top-0 max-md:left-0 max-md:h-dvh max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:overflow-y-auto max-md:rounded-none sm:max-w-[620px] md:top-[140px] md:left-[calc(50%+122px)] md:translate-y-0"
+        className="gap-0 bg-card p-0 shadow-lg ring-foreground/6 max-md:top-0 max-md:left-0 max-md:h-dvh max-md:max-h-none max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:overflow-y-auto max-md:rounded-none sm:max-w-[620px] lg:left-[calc(50%+122px)]"
         aria-describedby={undefined}
       >
         <DialogDescription className="sr-only">
@@ -429,20 +428,20 @@ export function NewJobDialog({
               <Button
                 type="submit"
                 disabled={busy}
-                className="h-11 rounded-md px-3 text-[13px] font-semibold md:h-[30px]"
+                className="h-11 px-3 text-[13px] font-semibold md:h-7"
               >
                 Add anyway
               </Button>
             ) : (
               <Button
                 type="submit"
-                variant="glow"
+                variant="primary"
                 disabled={busy}
                 aria-label="Add job"
-                className="h-11 gap-2 rounded-md pr-2 pl-3 text-[13px] font-semibold md:h-[30px]"
+                className="h-11 gap-2 pr-2 pl-3 md:h-7"
               >
                 <span>Add job</span>
-                <Kbd className="h-[18px] min-w-0 rounded-[4px] bg-foreground/6 px-[5px] text-[11px] font-normal text-foreground/63">
+                <Kbd className="h-[18px] min-w-0 rounded-[4px] bg-primary-foreground/15 px-[5px] text-[11px] font-normal text-primary-foreground/75">
                   ↵
                 </Kbd>
               </Button>

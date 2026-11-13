@@ -428,8 +428,9 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
           }}
         >
           <DialogContent
+            layout="sheet"
             showCloseButton={false}
-            className="top-0 left-0 h-svh w-[244px] max-w-[80vw] translate-x-0 translate-y-0 rounded-none p-0 duration-(--duration-panel) ease-(--ease-panel)"
+            className="top-0 left-0 h-svh w-[244px] max-w-[80vw] duration-(--duration-panel) ease-(--ease-panel)"
           >
             <DialogTitle className="sr-only">{shellCopy.menu}</DialogTitle>
             <div className="absolute top-2 -right-11 z-10">

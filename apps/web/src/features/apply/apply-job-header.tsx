@@ -114,7 +114,10 @@ export function JobHeader({
             }
           />
           <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={onDelete}>Delete job</DropdownMenuItem>
+            <DropdownMenuItem variant="destructive" onClick={onDelete}>
+              <Trash2 aria-hidden="true" />
+              Delete job
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </PageHeaderTitleActions>

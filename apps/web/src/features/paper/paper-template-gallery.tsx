@@ -8,8 +8,7 @@ import { Input } from "@workspace/ui/components/input"
 import { MiniCv } from "./paper-parts.tsx"
 import { PAPER_TEMPLATE_LABELS, previewTemplate } from "./paper-templates.ts"
 
-export const PAPER_GALLERY_DIALOG_CLASS =
-  "max-h-[90vh] overflow-y-auto sm:max-w-3xl"
+export const PAPER_GALLERY_DIALOG_CLASS = "sm:max-w-3xl"
 
 type GalleryState = { query: string; selected: PaperTemplateId }
 
@@ -106,7 +105,10 @@ export function PaperTemplateGallery({
           <MiniCv templateId={current.id} />
         </div>
       </div>
-      <div className="flex flex-wrap justify-end gap-2">
+      <div
+        data-slot="paper-gallery-actions"
+        className="sticky -bottom-6 -mx-6 -mb-6 flex flex-wrap justify-end gap-2 border-t border-border bg-popover px-6 py-4"
+      >
         {onBlank ? (
           <Button
             className="h-11 md:h-8"
@@ -129,9 +131,10 @@ export function PaperTemplateGallery({
           </Button>
         ) : null}
         <Button
-          className="h-11 md:h-8"
+          className="h-11 md:h-7"
           type="button"
-          variant="glow"
+          size="sm"
+          variant="primary"
           onClick={() => onUse(current.id)}
           disabled={pending}
         >
