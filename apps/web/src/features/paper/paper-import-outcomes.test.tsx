@@ -205,6 +205,26 @@ function signalOf(call: number) {
   return signal
 }
 
+async function expectDialogClosed() {
+  await vi.waitFor(() => {
+    const dialog = screen.queryByRole("dialog")
+    if (!dialog) return
+    expect(dialog).toHaveAttribute("data-closed")
+    expect(dialog.className).toContain("data-closed:pointer-events-none")
+  })
+  const dialog = screen.queryByRole("dialog")
+  if (!dialog) return
+  expect(dialog).toHaveAttribute("data-closed")
+  expect(dialog.className).toContain("data-closed:pointer-events-none")
+  const overlay = document.querySelector("[data-slot=dialog-overlay]")
+  if (overlay) {
+    expect(overlay).toHaveAttribute("data-closed")
+    expect(overlay.className).toContain("data-closed:pointer-events-none")
+  }
+  dialog.dispatchEvent(new Event("transitionend", { bubbles: true }))
+  overlay?.dispatchEvent(new Event("transitionend", { bubbles: true }))
+}
+
 afterEach(() => {
   cleanup()
   vi.mocked(importPaperFile).mockReset()
@@ -224,7 +244,8 @@ describe("importing a file on Paper home", () => {
         file,
         expect.any(AbortSignal)
       )
-      expect(screen.queryByRole("dialog")).toBeNull()
+      await expectDialogClosed()
+      await vi.waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
     }
   )
 

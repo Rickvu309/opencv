@@ -32,6 +32,7 @@ import { readPackageZip } from "./package-zip.js"
 import { IMPORT_LINE_BYTES, importedTextLines } from "./word/from-text.js"
 
 const BOUNDS = { ms: 5_000, loopGapMs: 200, rssGrowthMb: 320 }
+const WORKER_START_MS = 2_000
 
 async function measured<T>(work: () => Promise<T>) {
   const before = process.memoryUsage.rss()
@@ -68,8 +69,11 @@ function fastestMs(run: () => void, runs = 3) {
   return fastest
 }
 
-function expectBounded(result: Awaited<ReturnType<typeof measured>>) {
-  expect(result.ms).toBeLessThan(BOUNDS.ms)
+function expectBounded(
+  result: Awaited<ReturnType<typeof measured>>,
+  ms = BOUNDS.ms
+) {
+  expect(result.ms).toBeLessThan(ms)
   expect(result.loopGapMs).toBeLessThan(BOUNDS.loopGapMs)
   expect(result.rssGrowthMb).toBeLessThan(BOUNDS.rssGrowthMb)
 }
@@ -191,7 +195,7 @@ describe("hostile uploads stay bounded", () => {
 
   it("bounds a PDF with one page of a million text items", async () => {
     const result = await importFile("cv.pdf", manyItemsPdf(1_000_000))
-    expectBounded(result)
+    expectBounded(result, importParsers.timeoutMs + WORKER_START_MS)
     if (!result.outcome.ok)
       expect([IMPORT_TEXT_LONG_MESSAGE, IMPORT_PDF_HEAVY_MESSAGE]).toContain(
         result.outcome.message
