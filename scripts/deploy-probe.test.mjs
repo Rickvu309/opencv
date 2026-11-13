@@ -10,14 +10,13 @@ import {
   deployedShas,
   issueActions,
   latestMigration,
-  liveHttp,
   main,
   probe,
-  readOnlyRequest,
   report,
   smokeHeading,
-  wordParagraphs,
 } from "./deploy-probe.mjs"
+import { liveHttp, readOnlyRequest } from "./deploy-probe-live.mjs"
+import { wordParagraphs } from "./deploy-probe-word.mjs"
 
 const fixture = (name) => new URL(`./fixtures/probe/${name}`, import.meta.url)
 const recorded = JSON.parse(readFileSync(fixture("local-app.json"), "utf8"))
