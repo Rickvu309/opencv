@@ -90,6 +90,28 @@ describe("the sidebar mode while a drag is active", () => {
   })
 })
 
+describe("sidebar motion", () => {
+  it("collapses from the keyboard with no travel, and a click brings the slide back", async () => {
+    await renderShell()
+    expect(frame()).toHaveAttribute("data-instant", "false")
+    expect(frame().className).not.toMatch(/transition-\[width\]/)
+    expect(
+      document.querySelector("[data-slot=shell-main]")?.className
+    ).not.toMatch(/transition-\[padding/)
+    fireEvent.keyDown(window, { key: "[" })
+    expect(frame()).toHaveAttribute("data-state", "collapsed")
+    expect(frame()).toHaveAttribute("data-instant", "true")
+    expect(aside().className).toContain(
+      "group-data-[instant=true]/frame:transition-none"
+    )
+    fireEvent.click(
+      document.querySelector("#app-main [data-slot=sidebar-expand]")!
+    )
+    expect(frame()).toHaveAttribute("data-state", "open")
+    expect(frame()).toHaveAttribute("data-instant", "false")
+  })
+})
+
 describe("focus after a keyboard collapse", () => {
   async function keyboardCollapse() {
     await renderShell()
