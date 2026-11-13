@@ -10,6 +10,7 @@ import {
   within,
 } from "@testing-library/react"
 
+import { expectNoReadFrom } from "@/test/paper-page-reads.ts"
 import { render } from "@/test/render-with-client.tsx"
 import { storeDraft } from "@/features/paper-page/canvas-edit.ts"
 import { closeWritingDb } from "@/features/paper-page/canvas-save.ts"
@@ -332,6 +333,8 @@ it.each([
   }
 )
 
+const READS_TO_OPEN_A_PAGE_THAT_CHANGED_ELSEWHERE = 2
+
 it("keeps unsent words when the approved page is newer", async () => {
   const calls: string[] = []
   vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {
@@ -361,14 +364,13 @@ it("keeps unsent words when the approved page is newer", async () => {
   )
   expect(words()).toEqual(["Before line extra"])
   const reads = () => calls.filter((path) => path.includes("paper.read")).length
-  const beforeReads = reads()
-  notifyWritingRefresh()
-  await act(async () => {
-    await Promise.resolve()
-  })
+  await expectNoReadFrom(
+    notifyWritingRefresh,
+    reads,
+    READS_TO_OPEN_A_PAGE_THAT_CHANGED_ELSEWHERE
+  )
   expect(words()).toEqual(["Before line extra"])
   expect(screen.getByRole("status")).toHaveTextContent(WRITING_CONFLICT_NOTE)
-  expect(reads()).toBe(beforeReads)
   expect(screen.getByRole("status").textContent).not.toMatch(/\bSaved\b/)
   expect(calls.some((path) => path.includes("/api/commands/paper.edit"))).toBe(
     false
