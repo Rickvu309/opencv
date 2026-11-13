@@ -1,4 +1,4 @@
-import { dirname, join, relative, resolve } from "node:path"
+import { join, resolve } from "node:path"
 import { UsageError, parseArgs, positiveIntegers } from "./args.mjs"
 import {
   compareDir,
@@ -18,11 +18,8 @@ import {
 } from "./check-all.mjs"
 import { DESIGN_MAP, rowsForScreen } from "./design-map.mjs"
 import { unmappedMessage } from "./shot-only.mjs"
-import { CHANGES_PER_SCREEN, draftSpec, rankChanges } from "./changes.mjs"
-import { compositeFiles, SPLIT_ABOVE } from "./annotate-split.mjs"
-import { readSpec, renderComposite } from "./composite.mjs"
-import { ZOOM } from "./zoom.mjs"
-import { diffImages } from "./diff.mjs"
+import { EXIT, json, withBrowser } from "./cli-shared.mjs"
+import { REVIEW_COMMANDS } from "./cli-review.mjs"
 import {
   findFrames,
   framePath,
@@ -30,19 +27,10 @@ import {
   indexPen,
   penPath,
 } from "./pen.mjs"
-import {
-  attachUrls,
-  checkSummary,
-  linksFromShot,
-  picturesToUpload,
-  renderPrSection,
-} from "./pr-section.mjs"
 import { SCREENS, pickScreens, shotName } from "./screens.mjs"
 import { down, liveState, up } from "./stack.mjs"
 
-const EXIT = { ok: 0, failed: 1, usage: 2 }
 const FRAME_MATCH_LIMIT = 5
-const json = (value) => JSON.stringify(value)
 
 async function requireStack(ctx) {
   const state = await liveState(ctx)
@@ -78,15 +66,6 @@ function loadPen(ctx, flag) {
       `no pen file at ${found.missing.join(" or ")}. Fetch it with: ${found.fetch}`
     )
   return indexPen(JSON.parse(ctx.fs.read(found.path)))
-}
-
-async function withBrowser(ctx, work) {
-  const browser = await ctx.browser.launch()
-  try {
-    return await work(browser)
-  } finally {
-    await browser.close()
-  }
 }
 
 function penOrNull(ctx, flag) {
@@ -389,157 +368,7 @@ export const COMMANDS = {
       }
     },
   },
-  changes: {
-    usage: "changes <screen...> [--manifest file] [--spec out.json]",
-    about: `List up to ${CHANGES_PER_SCREEN} elements per screen whose box or style differs between before and after, largest first, with a draft note. --spec writes a starting annotate spec with the top 5.`,
-    options: { valued: ["manifest", "spec"] },
-    run: async (ctx, { positional, flags }) => {
-      const { file, manifest } = readManifest(ctx, flags.manifest)
-      const wanted = new Set(positional)
-      const ranked = manifest.captures
-        .filter((capture) => !wanted.size || wanted.has(capture.screen))
-        .filter(
-          (capture) => capture.before?.elements && capture.after?.elements
-        )
-        .map((capture) => ({
-          capture,
-          result: rankChanges(capture.before.elements, capture.after.elements),
-        }))
-      if (ranked.length === 0)
-        throw new UsageError(
-          "no screen in the manifest has both sides captured; check compare's problems"
-        )
-      const lines = ranked.map(({ capture, result }) =>
-        json({ screen: capture.screen, width: capture.width, ...result })
-      )
-      if (flags.spec) {
-        const specFile = resolve(flags.spec)
-        const spec = draftSpec(ranked, {
-          manifestPath: relative(dirname(specFile), file),
-        })
-        ctx.fs.write(specFile, JSON.stringify(spec, null, 2))
-        lines.push(json({ spec: specFile }))
-      }
-      return { code: EXIT.ok, lines }
-    },
-  },
-  annotate: {
-    usage: "annotate --spec <file.json> --out <png or dir> [--single]",
-    about: `Render dark composites: per section a title, the before and after images, numbered callouts with arrows to the same target in both, and a legend with ${ZOOM.factor}x before and after crops for small changes. A spec with more than ${SPLIT_ABOVE} sections writes one composite per section named from its title, unless --single.`,
-    options: { valued: ["spec", "out"], switches: ["single"] },
-    run: async (ctx, { flags }) => {
-      if (!flags.spec || !flags.out)
-        throw new UsageError("give --spec <file.json> and --out <png>")
-      const specFile = resolve(flags.spec)
-      const { spec } = readSpec(ctx, specFile)
-      const files = compositeFiles(spec.sections, resolve(flags.out), {
-        single: flags.single === true,
-      })
-      const lines = []
-      let bad = false
-      for (const file of files) {
-        ctx.fs.mkdir(dirname(file.out))
-        const sections = await renderComposite(
-          ctx,
-          specFile,
-          file.out,
-          file.sections
-        )
-        bad ||= sections.some(
-          (section) =>
-            section.missing.before.length || section.missing.after.length
-        )
-        lines.push(...sections.map(json), json({ out: file.out }))
-      }
-      return { code: bad ? EXIT.failed : EXIT.ok, lines }
-    },
-  },
-  "pr-section": {
-    usage:
-      "pr-section --annotated <png,...> [--manifest file] [--check] [--pr n | --issue n]",
-    about:
-      "Upload the composite and every before and after through scripts/ocv-tools.mjs shot (no comment) and print the ## Before / after markdown: every composite in the order given, a | main | this PR | table and, with --check, the check summary per screen.",
-    options: {
-      valued: ["manifest", "pr", "issue"],
-      repeated: ["annotated"],
-      switches: ["check"],
-    },
-    run: async (ctx, { flags }) => {
-      if (!flags.annotated) throw new UsageError("give --annotated <png>")
-      const { file, manifest } = readManifest(ctx, flags.manifest)
-      const pictures = picturesToUpload(
-        manifest,
-        flags.annotated.map((file) => resolve(file))
-      ).map((picture) => ({
-        ...picture,
-        file: resolve(dirname(file), picture.file),
-      }))
-      const checks = []
-      if (flags.check)
-        for (const screen of [
-          ...new Set(manifest.captures.map((capture) => capture.screen)),
-        ])
-          checks.push(
-            checkSummary(
-              screen,
-              await runUi(
-                [
-                  "check",
-                  screen,
-                  ...(manifest.baseChecks ? ["--known", file] : []),
-                ],
-                ctx
-              )
-            )
-          )
-      const target = {
-        "--no-comment": true,
-        ...(flags.pr ? { "--pr": flags.pr } : {}),
-        ...(flags.issue ? { "--issue": flags.issue } : {}),
-      }
-      const shotLines = await ctx.upload(
-        pictures.map((picture) => picture.file),
-        target
-      )
-      const uploaded = attachUrls(pictures, linksFromShot(shotLines))
-      return {
-        code: EXIT.ok,
-        lines: [renderPrSection({ manifest, uploaded, checks })],
-      }
-    },
-  },
-  diff: {
-    usage: "diff <before.png> <after.png> [--out file]",
-    about:
-      "Count differing pixels and write a diff image (changed pixels in red).",
-    options: { valued: ["out"] },
-    run: async (ctx, { positional, flags }) => {
-      const [before, after] = positional
-      if (!before || !after)
-        throw new UsageError("give a before and an after PNG")
-      const dataUrl = (path) =>
-        `data:image/png;base64,${ctx.fs.readBytes(path).toString("base64")}`
-      const result = await withBrowser(ctx, (browser) =>
-        diffImages(browser, dataUrl(before), dataUrl(after))
-      )
-      const out = resolve(
-        flags.out ?? after.replace(/\.png$/i, "") + ".diff.png"
-      )
-      ctx.fs.write(out, Buffer.from(result.png, "base64"))
-      return {
-        code: result.different === 0 ? EXIT.ok : EXIT.failed,
-        lines: [
-          json({
-            before: result.before,
-            after: result.after,
-            different: result.different,
-            total: result.total,
-            diff: out,
-          }),
-        ],
-      }
-    },
-  },
+  ...REVIEW_COMMANDS,
 }
 
 export function renderHelp() {

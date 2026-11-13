@@ -1,0 +1,31 @@
+{
+  "sections": [
+    {
+      "title": "Phone home (dark): defect evidence",
+      "image": "dark-phone.png",
+      "callouts": [
+        {
+          "n": 1,
+          "note": "Top bar has no title",
+          "target": { "x": 0, "y": 0, "width": 40, "height": 56 }
+        },
+        {
+          "n": 2,
+          "note": "Card corners 12px, pen says 8px",
+          "target": { "x": 16, "y": 80, "width": 358, "height": 120 }
+        },
+        {
+          "n": 3,
+          "note": "Input is 44px tall",
+          "target": { "x": 16, "y": 224, "width": 358, "height": 44 }
+        },
+        {
+          "n": 4,
+          "note": "Bottom bar overlaps content",
+          "target": { "x": 350, "y": 780, "width": 40, "height": 64 }
+        },
+        { "n": 5, "note": "Corner point", "target": { "x": 4, "y": 840 } }
+      ]
+    }
+  ]
+}
