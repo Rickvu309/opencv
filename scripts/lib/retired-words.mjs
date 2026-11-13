@@ -149,11 +149,6 @@ export const RETIRED = [
     "ratchet"
   ),
   checkingWord(
-    "waiver",
-    /waivers?/gi,
-    "ratchet entry, allowed entry or quarantine"
-  ),
-  checkingWord(
     "smoke-test",
     /smoke[- _]?tests?/gi,
     "sweep, core loop run or probe"

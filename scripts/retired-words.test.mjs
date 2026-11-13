@@ -49,7 +49,6 @@ test("no file or file name uses a checking word the glossary retired", () => {
   assert.deepEqual(
     [
       ...violations("known-list"),
-      ...violations("waiver"),
       ...violations("smoke-test"),
       ...violations("risk-class"),
     ],
@@ -59,10 +58,6 @@ test("no file or file name uses a checking word the glossary retired", () => {
 
 test("a checking word the glossary retired fires anywhere, and the glossary may name it", () => {
   assert.equal(detect("add it to the known list", "AGENTS.md").length, 1)
-  assert.equal(
-    detect("dated waivers in the file", "scripts/ocv-tools/jobs/x.mjs").length,
-    1
-  )
   assert.equal(
     detect("run a smoke test after deploy", ".agents/skills/x/SKILL.md").length,
     1
@@ -84,7 +79,7 @@ test("a checking word the glossary retired fires anywhere, and the glossary may 
   )
   assert.deepEqual(
     detect(
-      "_Avoid_: known list, waiver, smoke test, risk class",
+      "_Avoid_: known list, smoke test, risk class",
       "scripts/GLOSSARY.md"
     ),
     []
