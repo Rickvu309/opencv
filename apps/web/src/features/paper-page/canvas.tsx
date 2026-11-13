@@ -10,27 +10,18 @@ import {
 import { cn } from "@workspace/ui/lib/utils"
 
 import {
-  adoptIds,
-  blankDraft,
   clearedOnReload,
-  commitComposition,
-  deleteBackward,
-  deleteForward,
-  insertText,
   keptOnThisComputer,
-  loadDraft,
-  loadDraftBasis,
   pointSpan,
-  replaceVisible,
-  splitParagraph,
   storeDraft,
-  type DraftBasis,
   type TextPoint,
   type TextSpan,
-  type WritingBlock,
   type WritingDraft,
 } from "./canvas-edit.ts"
-import { collectLooks, withoutLooks, type LookBook } from "./canvas-look.ts"
+import { inputRule, pageKey, type PageEdit } from "./canvas-input.ts"
+import { openSheet, reduce, type CanvasAction } from "./canvas-state.ts"
+import { markedLines, unsavedBar } from "./canvas-unsaved.ts"
+import { UnsavedBar } from "./canvas-unsaved-bar.tsx"
 import {
   placeCaret,
   syncParagraphs,
@@ -38,8 +29,7 @@ import {
   visibleText,
   type DrawnLooks,
 } from "./canvas-draw.ts"
-import { pastePlain } from "./canvas-paste.ts"
-import { pageWords, savedNote, settlePage } from "./canvas-save.ts"
+import { pageWords, settlePage } from "./canvas-save.ts"
 import { holdWritingCoachFocus } from "@/lib/writing-coach-focus.ts"
 import {
   setWritingConflict,
@@ -49,138 +39,6 @@ import {
 } from "@/lib/writing-refresh.ts"
 import "./canvas.css"
 import "./design/writing-page.pen.css"
-
-type CanvasState = {
-  past: WritingDraft[]
-  present: WritingDraft
-  looks: LookBook
-  note: string
-  basis: DraftBasis | null
-  typed: boolean
-}
-
-type CanvasAction =
-  | {
-      type: "insert"
-      span: TextSpan
-      text: string
-      live?: { id: string; text: string }[]
-      nextId?: number
-    }
-  | { type: "split"; span: TextSpan }
-  | { type: "backward"; span: TextSpan }
-  | { type: "forward"; span: TextSpan }
-  | { type: "paste"; span: TextSpan; text: string }
-  | {
-      type: "composed"
-      texts: { id: string; text: string }[]
-      caret: TextPoint
-      split: boolean
-      nextId: number
-    }
-  | { type: "undo" }
-  | { type: "note"; note: string }
-  | { type: "adopt"; blocks: WritingBlock[] }
-  | { type: "basis"; basis: DraftBasis; typed: boolean }
-  | { type: "replace"; draft: WritingDraft; basis: DraftBasis }
-
-function sameBasis(left: DraftBasis | null, right: DraftBasis | null) {
-  if (left === right) return true
-  if (!left || !right) return false
-  return left.revision === right.revision && left.words === right.words
-}
-
-function remember(state: CanvasState, present: WritingDraft): CanvasState {
-  if (JSON.stringify(state.present) === JSON.stringify(present)) return state
-  return {
-    ...state,
-    past: state.past.concat(state.present).slice(-50),
-    present,
-    note: state.note === "Saved" ? keptOnThisComputer() : state.note,
-    typed: true,
-  }
-}
-
-function reduce(state: CanvasState, action: CanvasAction): CanvasState {
-  if (action.type === "note") {
-    return state.note === action.note ? state : { ...state, note: action.note }
-  }
-  if (action.type === "basis") {
-    if (sameBasis(state.basis, action.basis) && state.typed === action.typed) {
-      return state
-    }
-    return { ...state, basis: action.basis, typed: action.typed }
-  }
-  if (action.type === "replace") {
-    const draft = plainDraft(action.draft)
-    const looks = collectLooks(state.looks, action.draft.blocks)
-    const same =
-      JSON.stringify(state.present) === JSON.stringify(draft) &&
-      sameBasis(state.basis, action.basis) &&
-      !state.typed
-    if (same) return looks === state.looks ? state : { ...state, looks }
-    return {
-      ...state,
-      past: [],
-      present: draft,
-      looks,
-      basis: action.basis,
-      typed: false,
-    }
-  }
-  if (action.type === "adopt") {
-    const present = adoptIds(state.present, withoutLooks(action.blocks))
-    const looks = collectLooks(state.looks, action.blocks)
-    return present === state.present && looks === state.looks
-      ? state
-      : { ...state, present, looks }
-  }
-  if (action.type === "undo") {
-    const present = state.past[state.past.length - 1]
-    if (!present) return state
-    const typed = state.basis
-      ? pageWords(present.blocks) !== state.basis.words
-      : state.typed
-    return { ...state, past: state.past.slice(0, -1), present, typed }
-  }
-  if (action.type === "composed") {
-    const visible = replaceVisible(
-      { ...state.present, nextId: action.nextId },
-      action.texts,
-      action.caret
-    )
-    const present = action.split
-      ? commitComposition({ ...visible, caret: action.caret }, "", true)
-      : visible
-    return remember(state, present)
-  }
-  const span = action.span
-  const base =
-    action.type === "insert" && action.live
-      ? replaceVisible(
-          { ...state.present, nextId: action.nextId ?? state.present.nextId },
-          action.live,
-          span.anchor
-        )
-      : state.present
-  const present =
-    action.type === "insert"
-      ? insertText(base, span, action.text)
-      : action.type === "split"
-        ? splitParagraph(state.present, span)
-        : action.type === "backward"
-          ? deleteBackward(state.present, span)
-          : action.type === "forward"
-            ? deleteForward(state.present, span)
-            : pastePlain(state.present, span, action.text)
-  return remember(state, present)
-}
-
-function plainDraft(draft: WritingDraft): WritingDraft {
-  return draft.blocks.some((block) => block.look)
-    ? { ...draft, blocks: withoutLooks(draft.blocks) }
-    : draft
-}
 
 function blockElement(node: Node | null) {
   const element =
@@ -199,11 +57,57 @@ function pointFrom(
   if (!block || !root.contains(block) || !block.dataset.block) return null
   const text = (block.textContent ?? "").replaceAll("\u200b", "")
   const raw =
-    node?.nodeType === Node.TEXT_NODE ? textOffsetIn(block, node, offset) : 0
+    node?.nodeType === Node.TEXT_NODE
+      ? textOffsetIn(block, node, offset)
+      : node && offset > 0
+        ? textBefore(block, node, offset)
+        : 0
   return {
     blockId: block.dataset.block,
     offset: Math.max(0, Math.min(raw, text.length)),
   }
+}
+
+function textBefore(block: HTMLElement, node: Node, offset: number) {
+  const range = block.ownerDocument.createRange()
+  range.setStart(block, 0)
+  range.setEnd(node, offset)
+  return range.toString().replaceAll("\u200b", "").length
+}
+
+function targetSpan(root: HTMLElement, input: InputEvent): TextSpan | null {
+  const range =
+    typeof input.getTargetRanges === "function"
+      ? input.getTargetRanges()[0]
+      : undefined
+  if (!range) return null
+  const anchor = pointFrom(root, range.startContainer, range.startOffset)
+  const focus = pointFrom(root, range.endContainer, range.endOffset)
+  return anchor && focus ? { anchor, focus } : null
+}
+
+function editAction(
+  edit: PageEdit,
+  span: TextSpan,
+  target: TextSpan | null,
+  input: InputEvent
+): CanvasAction | null {
+  if (edit.kind === "undo" || edit.kind === "redo") return { type: edit.kind }
+  if (edit.kind === "split") return { type: "split", span }
+  if (edit.kind === "replace") {
+    const text = input.data ?? input.dataTransfer?.getData("text/plain") ?? ""
+    return { type: "insert", span: target ?? span, text }
+  }
+  if (edit.kind === "delete") {
+    const wide = edit.reach === "word" || edit.reach === "line"
+    return {
+      type: "delete",
+      span: wide && target ? target : span,
+      direction: edit.direction,
+      reach: edit.reach,
+    }
+  }
+  return null
 }
 
 function spanFrom(root: HTMLElement, fallback: TextPoint): TextSpan {
@@ -270,29 +174,6 @@ function revealCaret(page: HTMLElement, scroll: HTMLElement) {
   target.scrollIntoView({ block: "nearest" })
 }
 
-function openSheet(
-  docId: string,
-  seed: WritingDraft | null,
-  seedRevision: string | null
-): CanvasState {
-  const stored = loadDraft(docId, localStorage)
-  const present = plainDraft(stored ?? seed ?? blankDraft())
-  const basis =
-    loadDraftBasis(docId, localStorage) ??
-    (seedRevision
-      ? { revision: seedRevision, words: pageWords(present.blocks) }
-      : null)
-  storeDraft(docId, present, localStorage, basis)
-  return {
-    past: [],
-    present,
-    looks: collectLooks(new Map(), seed?.blocks ?? []),
-    note: pageWords(present.blocks) === "" ? keptOnThisComputer() : "",
-    basis,
-    typed: false,
-  }
-}
-
 function WritingSheet({
   docId,
   seed,
@@ -308,6 +189,8 @@ function WritingSheet({
   const composing = useRef(false)
   const splitAfter = useRef(false)
   const pasteGuard = useRef(false)
+  const compositionSpan = useRef<TextSpan | null>(null)
+  const drawnFor = useRef(0)
   const compositionBase = useRef<{
     blockId: string
     text: string
@@ -317,6 +200,16 @@ function WritingSheet({
     openSheet(docId, seed, seedRevision)
   )
   const nextId = useRef(state.present.nextId)
+  const heldBack = useRef<CanvasAction[]>([])
+  const deliver = useCallback((action: CanvasAction) => {
+    if (composing.current) heldBack.current.push(action)
+    else dispatch(action)
+  }, [])
+  const flushHeldBack = useCallback(() => {
+    const held = heldBack.current
+    heldBack.current = []
+    for (const action of held) dispatch(action)
+  }, [])
   const drawnLooks = useRef<DrawnLooks>(new Map())
   const conflicted = useSyncExternalStore(
     subscribeWritingConflict,
@@ -326,55 +219,53 @@ function WritingSheet({
 
   useEffect(() => holdWritingCoachFocus(docId), [docId])
 
+  const latest = useRef(state)
+  const stored = useRef(true)
+  useLayoutEffect(() => {
+    latest.current = state
+  })
+
   useEffect(() => {
-    const kept = storeDraft(docId, state.present, localStorage, state.basis)
+    stored.current = storeDraft(
+      docId,
+      state.present,
+      localStorage,
+      state.basis,
+      { saved: state.saved, unsaved: state.unsaved }
+    )
     nextId.current = state.present.nextId
+    if (!stored.current) dispatch({ type: "note", note: clearedOnReload() })
+  }, [docId, state.present, state.basis, state.saved, state.unsaved])
+
+  useEffect(() => {
+    if (!stored.current) return
     const words = pageWords(state.present.blocks)
-    if (!kept) {
-      dispatch({ type: "note", note: clearedOnReload() })
-      return
-    }
-    if (words === "" || state.typed) {
+    const typed = state.typed
+    if (words === "" || typed) {
       dispatch({ type: "note", note: keptOnThisComputer() })
     }
     const controller = new AbortController()
     void settlePage(docId, state.present.blocks, controller.signal, {
       basis: state.basis,
-      typed: state.typed,
+      typed,
       caret: state.present.caret,
+      refused: latest.current.unsaved,
     })
-      .then((result) => {
+      .then((outcome) => {
         if (controller.signal.aborted) return
-        if (result.conflict) {
-          setWritingConflict(docId)
-          return
-        }
-        if (result.replace && result.basis) {
-          setWritingConflict(null)
-          dispatch({
-            type: "replace",
-            draft: result.replace,
-            basis: result.basis,
-          })
-          return
-        }
-        if (result.basis) {
-          dispatch({ type: "basis", basis: result.basis, typed: false })
-        }
-        if (result.blocks) dispatch({ type: "adopt", blocks: result.blocks })
-        const note = savedNote(words, result)
-        if (note) {
-          if (note === "Saved") setWritingConflict(null)
-          dispatch({ type: "note", note })
-          return
-        }
-        if (!state.typed && words !== "") {
-          dispatch({ type: "note", note: keptOnThisComputer() })
-        }
+        if (outcome.moved) setWritingConflict(docId)
+        else if (outcome.saved || outcome.replace) setWritingConflict(null)
+        deliver({ type: "settled", outcome, words, typed })
       })
       .catch(() => undefined)
     return () => controller.abort()
-  }, [docId, state.basis, state.present, state.typed])
+  }, [deliver, docId, state.present, state.basis, state.typed, conflicted])
+
+  useLayoutEffect(() => {
+    composing.current = false
+    compositionBase.current = null
+    compositionSpan.current = null
+  }, [state.redraw])
 
   useLayoutEffect(() => {
     const page = pageRef.current
@@ -392,9 +283,36 @@ function WritingSheet({
       if (scroll) scroll.scrollTop = 0
       opened.current = true
     }
+    if (drawnFor.current !== state.redraw) {
+      drawnFor.current = state.redraw
+      page.focus({ preventScroll: true })
+    }
     placeCaret(page, state.present.caret)
     if (scroll) revealCaret(page, scroll)
-  }, [state.present, state.looks])
+  }, [state.present, state.looks, state.redraw])
+
+  const bar = unsavedBar(state)
+  const marked = markedLines(state).join(" ")
+
+  useLayoutEffect(() => {
+    const page = pageRef.current
+    if (!page || composing.current) return
+    const ids = new Set(marked.split(" "))
+    for (const node of page.querySelectorAll<HTMLElement>(":scope > p")) {
+      if (ids.has(node.dataset.block ?? ""))
+        node.setAttribute("data-unsaved", "")
+      else node.removeAttribute("data-unsaved")
+    }
+  }, [marked, state.present, state.redraw])
+
+  const takeSavedPage = useCallback(() => {
+    setWritingConflict(null)
+    dispatch({ type: "useSaved" })
+  }, [])
+
+  const restoreLine = useCallback((id: string) => {
+    dispatch({ type: "restoreLine", id })
+  }, [])
 
   const applyPaste = useCallback(
     (text: string) => {
@@ -420,6 +338,18 @@ function WritingSheet({
       if (composing.current) return
       const input = event as InputEvent
       if (typeof input.inputType !== "string") return
+      const rule = inputRule(input.inputType)
+      if (rule.kind === "native") return
+      event.preventDefault()
+      if (rule.kind === "blocked") {
+        if (rule.notice) dispatch({ type: "notice", notice: rule.notice })
+        return
+      }
+      const edit = rule.edit
+      if (edit.kind === "undo" || edit.kind === "redo") {
+        dispatch({ type: edit.kind })
+        return
+      }
       const span = spanFrom(page, state.present.caret)
       if (
         state.present.blocks.some(
@@ -429,22 +359,15 @@ function WritingSheet({
               block.id === span.focus.blockId)
         )
       ) {
-        event.preventDefault()
         return
       }
-      if (
-        input.inputType === "insertCompositionText" ||
-        input.inputType === "insertParagraph"
-      ) {
+      if (edit.kind === "paste") {
+        applyPaste(
+          input.data ?? input.dataTransfer?.getData("text/plain") ?? ""
+        )
         return
       }
-      if (input.inputType === "insertFromPaste") {
-        event.preventDefault()
-        applyPaste(input.data ?? "")
-        return
-      }
-      if (input.inputType === "insertText") {
-        event.preventDefault()
+      if (edit.kind === "type") {
         const live = readBlocks(page, state.present.nextId)
         dispatch({
           type: "insert",
@@ -455,19 +378,23 @@ function WritingSheet({
         })
         return
       }
-      if (input.inputType === "deleteContentBackward") {
-        event.preventDefault()
-        dispatch({ type: "backward", span })
-        return
-      }
-      if (input.inputType === "deleteContentForward") {
-        event.preventDefault()
-        dispatch({ type: "forward", span })
-      }
+      const action = editAction(edit, span, targetSpan(page, input), input)
+      if (action) dispatch(action)
+    }
+    const onInput = (event: Event) => {
+      if (composing.current) return
+      const input = event as InputEvent
+      if (typeof input.inputType !== "string") return
+      if (inputRule(input.inputType).kind === "native") return
+      dispatch({ type: "redraw" })
     }
     page.addEventListener("beforeinput", onBefore)
-    return () => page.removeEventListener("beforeinput", onBefore)
-  }, [applyPaste, state.present])
+    page.addEventListener("input", onInput)
+    return () => {
+      page.removeEventListener("beforeinput", onBefore)
+      page.removeEventListener("input", onInput)
+    }
+  }, [applyPaste, state.present, state.redraw])
 
   return (
     <section
@@ -475,8 +402,15 @@ function WritingSheet({
       className="writing-sheet"
       data-pen-surface="paper-page"
     >
+      <UnsavedBar
+        key={bar.cause ?? "none"}
+        model={bar}
+        onUseSaved={takeSavedPage}
+        onRestore={restoreLine}
+      />
       <div className="writing-scroll" ref={scrollRef}>
         <article
+          key={state.redraw}
           ref={pageRef}
           className={cn("writing-page")}
           contentEditable
@@ -484,41 +418,39 @@ function WritingSheet({
           spellCheck
           aria-label="Page"
           onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault()
-              if (
-                state.present.blocks.some(
-                  (block) =>
-                    block.held && block.id === state.present.caret.blockId
-                )
-              ) {
-                return
-              }
-              const native = event.nativeEvent
-              if (native.isComposing || native.keyCode === 229) {
-                splitAfter.current = true
-                return
-              }
-              const page = pageRef.current
-              if (!page) return
-              dispatch({
-                type: "split",
-                span: spanFrom(page, state.present.caret),
-              })
+            const key = pageKey(event)
+            if (!key) return
+            event.preventDefault()
+            if (key === "undo" || key === "redo") {
+              dispatch({ type: key })
               return
             }
             if (
-              (event.metaKey || event.ctrlKey) &&
-              event.key.toLowerCase() === "z" &&
-              !event.shiftKey
+              state.present.blocks.some(
+                (block) =>
+                  block.held && block.id === state.present.caret.blockId
+              )
             ) {
-              event.preventDefault()
-              dispatch({ type: "undo" })
+              return
             }
+            const native = event.nativeEvent
+            if (native.isComposing || native.keyCode === 229) {
+              splitAfter.current = true
+              return
+            }
+            const page = pageRef.current
+            if (!page) return
+            dispatch({
+              type: "split",
+              span: spanFrom(page, state.present.caret),
+            })
           }}
           onCompositionStart={() => {
             composing.current = true
-            const caret = state.present.caret
+            const page = pageRef.current
+            const span = page ? spanFrom(page, state.present.caret) : null
+            compositionSpan.current = span
+            const caret = span ? span.focus : state.present.caret
             const block = state.present.blocks.find(
               (item) => item.id === caret.blockId
             )
@@ -528,12 +460,24 @@ function WritingSheet({
               offset: caret.offset,
             }
           }}
+          onBlur={() => {
+            if (!composing.current) return
+            composing.current = false
+            compositionBase.current = null
+            compositionSpan.current = null
+            flushHeldBack()
+          }}
           onCompositionEnd={(event) => {
             composing.current = false
             const page = pageRef.current
             const base = compositionBase.current
+            const from = compositionSpan.current
             compositionBase.current = null
-            if (!page) return
+            compositionSpan.current = null
+            if (!page) {
+              flushHeldBack()
+              return
+            }
             const read = readBlocks(page, nextId.current)
             nextId.current = read.nextId
             const selected =
@@ -566,9 +510,11 @@ function WritingSheet({
               type: "composed",
               texts,
               caret,
+              from,
               split,
               nextId: read.nextId,
             })
+            flushHeldBack()
           }}
           onPaste={(event) => {
             event.preventDefault()
@@ -593,7 +539,15 @@ function WritingSheet({
         </article>
       </div>
       <p className="writing-note" role="status">
-        {conflicted ? WRITING_CONFLICT_NOTE : state.note}
+        {conflicted ? (
+          WRITING_CONFLICT_NOTE
+        ) : state.notice ? (
+          <span key={state.notice} className="writing-notice">
+            {state.notice}
+          </span>
+        ) : (
+          state.note
+        )}
       </p>
     </section>
   )

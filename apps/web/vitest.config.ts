@@ -22,6 +22,8 @@ const ISOLATED_FILES = [
   "src/features/paper-page/canvas-mount.test.tsx",
   "src/features/paper-page/canvas-package.test.tsx",
   "src/routes/paper-doc-open.test.tsx",
+  "src/features/paper-page/canvas-recover.test.tsx",
+  "src/features/paper-page/canvas-walk.test.ts",
   "src/features/paper/paper-letter-print.test.tsx",
   "src/features/paper/paper-letter-start-context.test.tsx",
   "src/features/paper/paper-letter-start-draft.test.tsx",

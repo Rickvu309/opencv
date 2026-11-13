@@ -14,11 +14,31 @@ import {
   pageBlocks,
   type DraftBasis,
   type TextPoint,
-  type WritingBlock,
-  type WritingDraft,
 } from "./canvas-edit.ts"
 import { readWordPage } from "./package-read.ts"
+import {
+  adoptedBlocks,
+  headOf,
+  missed,
+  movedTo,
+  pageText,
+  recordedBasis,
+  renamedBlocks,
+  withRefusals,
+  withRenames,
+  type SaveOutcome,
+} from "./canvas-save-outcome.ts"
 import { diffParagraphs } from "./page-diff.ts"
+import {
+  landedRenames,
+  lineUnits,
+  stillRefused,
+  uniqueRefusals,
+  withLine,
+  withoutRefused,
+  type LineRefusal,
+  type PageBlock,
+} from "./canvas-save-lines.ts"
 
 const DATABASE = "opencv-writing"
 const TABLE = "pages"
@@ -35,24 +55,33 @@ export type WritingRecord = {
   idempotencyKey: string
 }
 
-export type SaveOutcome = {
-  saved: boolean
-  words: string
-  revision: string | null
-  note: string | null
-  blocks?: WritingBlock[]
-  basis?: DraftBasis
-  replace?: WritingDraft
-  conflict?: boolean
-}
-
 export type SettleClaim = {
   basis: DraftBasis | null
   typed: boolean
   caret?: TextPoint
+  refused?: readonly LineRefusal[]
 }
 
-type PageBlock = { id: string; text: string; held?: boolean }
+export const SIGNED_OUT = "You are signed out."
+
+const PAGE_REASONS = new Map<number, string>([
+  [401, SIGNED_OUT],
+  [403, "You no longer have access to this page."],
+  [404, "This page is no longer available."],
+  [410, "This page is no longer available."],
+])
+
+export function pageReason(error: unknown): string | null {
+  return error instanceof ApiError
+    ? (PAGE_REASONS.get(error.status) ?? null)
+    : null
+}
+
+function lineRefusalNote(error: unknown): string | null {
+  if (!(error instanceof ApiError)) return null
+  if (error.status !== 400 && error.status !== 409) return null
+  return error.message || "Paper could not save this line."
+}
 
 export function pageWords(blocks: readonly { text: string }[]): string {
   return blocks.map((block) => block.text).join("\n")
@@ -125,6 +154,7 @@ export async function closeWritingDb() {
   ownWrites.clear()
   unanswered.clear()
   retryAt.clear()
+  sentBlocks.clear()
   const current = opened
   opened = null
   if (!current) return
@@ -186,10 +216,6 @@ export async function commitWords(
   }
 }
 
-function missed(words: string): SaveOutcome {
-  return { saved: false, words, revision: null, note: null }
-}
-
 function serverNote(error: unknown): string | null {
   if (!(error instanceof ApiError) || error.message === "") return null
   if (
@@ -213,26 +239,37 @@ async function readPage(docId: string, signal: AbortSignal) {
   return readWordPage("page", docId, signal)
 }
 
-function pageText(page: WordPage) {
-  return pageWords(pageBlocks(page))
+function earlierRenames(
+  docId: string,
+  page: WordPage,
+  blocks: readonly PageBlock[]
+): Record<string, string> {
+  const sent = sentBlocks.get(docId)
+  const server = pageBlocks(page)
+  const landed =
+    sent &&
+    (sent.revision === page.revision ||
+      (sent.revision === null && pageWords(sent.blocks) === pageText(page)))
+      ? landedRenames(sent.blocks, server)
+      : null
+  const own = new Set(blocks.map((block) => block.id))
+  const onServer = new Set(server.map((block) => block.id))
+  return Object.fromEntries(
+    Object.entries(landed ?? {}).filter(
+      ([from, to]) => own.has(from) && !own.has(to) && onServer.has(to)
+    )
+  )
 }
 
-function adoptedBlocks(page: WordPage, blocks: readonly PageBlock[]) {
-  const next = pageBlocks(page)
-  if (next.length !== blocks.length) return undefined
-  const same = next.every(
-    (block, index) =>
-      block.text === blocks[index]?.text &&
-      !!block.held === !!blocks[index]?.held
-  )
-  return same ? next : undefined
-}
+type Sent =
+  { revision: string | null; note: null } | { revision: null; note: string }
 
 async function sendPage(
+  docId: string,
   page: WordPage,
   blocks: readonly PageBlock[],
   caret: TextPoint | null
-): Promise<{ revision: string | null; note: string | null }> {
+): Promise<Sent> {
   const diff = diffParagraphs(page, blocks, caret)
   if ("refused" in diff) return { revision: null, note: diff.refused }
   if (diff.ops.length === 0) return { revision: null, note: null }
@@ -241,15 +278,130 @@ async function sendPage(
     batch: { doc: page.doc, basedOn: page.revision, ops: diff.ops },
   })
   if (!input.success)
-    return { revision: null, note: input.error.issues[0]?.message ?? null }
-  return {
-    revision: receiptRevision(
+    return {
+      revision: null,
+      note: input.error.issues[0]?.message ?? "Paper could not save this line.",
+    }
+  const words = pageWords(blocks)
+  unanswered.set(docId, words)
+  sentBlocks.set(docId, { revision: null, blocks: blocks.slice() })
+  try {
+    const revision = receiptRevision(
       await runContractCommand(commandClient(), "paper.canvas", input.data, {
         refresh: false,
       })
-    ),
-    note: null,
+    )
+    unanswered.delete(docId)
+    if (revision) {
+      ownWrites.set(docId, recordedBasis(revision, words))
+      sentBlocks.set(docId, { revision, blocks: blocks.slice() })
+    }
+    return { revision, note: null }
+  } catch (error) {
+    const note = lineRefusalNote(error)
+    if (note === null) throw error
+    unanswered.delete(docId)
+    sentBlocks.delete(docId)
+    return { revision: null, note }
   }
+}
+
+function caretIn(caret: TextPoint | null, ids: readonly string[]) {
+  return caret && ids.includes(caret.blockId) ? caret : null
+}
+
+type Isolated =
+  | {
+      head: WordPage
+      refused: LineRefusal[]
+      landed: boolean
+      renamed: Record<string, string>
+    }
+  | { moved: WordPage }
+  | null
+
+async function stillOurs(
+  docId: string,
+  head: WordPage,
+  signal: AbortSignal
+): Promise<{ page: WordPage } | { moved: WordPage } | null> {
+  const now = await readPage(docId, signal)
+  if (!now || signal.aborted) return null
+  return now.revision === head.revision ? { page: now } : { moved: now }
+}
+
+async function isolate(
+  docId: string,
+  page: WordPage,
+  blocks: readonly PageBlock[],
+  caret: TextPoint | null,
+  signal: AbortSignal,
+  firstNote: string,
+  answered: LineRefusal[]
+): Promise<Isolated> {
+  let head = page
+  const refused: LineRefusal[] = []
+  const refuse = (line: LineRefusal) => {
+    refused.push(line)
+    answered.push(line)
+  }
+  let landed = false
+  const units = lineUnits(pageBlocks(page), blocks)
+  const texts = new Map(blocks.map((block) => [block.id, block.text]))
+  const structural = units.rest.length > 0 || units.removed.length > 0
+  const structure = (note: string): LineRefusal[] => [
+    ...units.rest.map((id) => ({ id, text: texts.get(id) ?? "", note })),
+    ...units.removed.map((line) => ({
+      ...line,
+      note,
+      removed: true as const,
+    })),
+  ]
+  if (units.lines.length + (structural ? 1 : 0) <= 1) {
+    units.lines.forEach((line) => refuse({ ...line, note: firstNote }))
+    structure(firstNote).forEach(refuse)
+    return { head, landed, refused, renamed: {} }
+  }
+  for (const unit of units.lines) {
+    if (signal.aborted) return null
+    const candidate = withLine(pageBlocks(head), unit.id, unit.text)
+    const sent = await sendPage(
+      docId,
+      head,
+      candidate,
+      caretIn(caret, [unit.id])
+    )
+    if (sent.note === null && sent.revision) {
+      const next = await readPage(docId, signal)
+      if (!next || next.revision !== sent.revision) return null
+      head = next
+      landed = true
+      continue
+    }
+    if (sent.note === null) continue
+    const now = await stillOurs(docId, head, signal)
+    if (!now || "moved" in now) return now
+    refuse({ ...unit, note: sent.note })
+  }
+  if (!structural) return { head, refused, landed, renamed: {} }
+  if (signal.aborted) return null
+  const rest = withoutRefused(pageBlocks(head), blocks, refused)
+  const sent = await sendPage(docId, head, rest, caretIn(caret, units.rest))
+  if (sent.note === null && sent.revision) {
+    const next = await readPage(docId, signal)
+    if (!next || next.revision !== sent.revision) return null
+    const renamed = landedRenames(rest, pageBlocks(next)) ?? {}
+    return { head: next, refused, landed: true, renamed }
+  }
+  if (sent.note === null) return { head, refused, landed, renamed: {} }
+  const now = await stillOurs(docId, head, signal)
+  if (!now || "moved" in now) return now
+  structure(sent.note).forEach(refuse)
+  return { head, refused, landed, renamed: {} }
+}
+
+function sameNote(refused: readonly LineRefusal[]) {
+  return refused.every((line) => line.note === refused[0]?.note)
 }
 
 function receiptRevision(value: unknown) {
@@ -263,6 +415,10 @@ const tails = new Map<string, Promise<unknown>>()
 const ownWrites = new Map<string, DraftBasis>()
 const unanswered = new Map<string, string>()
 const retryAt = new Map<string, number>()
+const sentBlocks = new Map<
+  string,
+  { revision: string | null; blocks: PageBlock[] }
+>()
 
 function basisAt(
   docId: string,
@@ -291,17 +447,14 @@ function serial<T>(docId: string, job: () => Promise<T>): Promise<T> {
   return run
 }
 
-function recordedBasis(revision: string, words: string): DraftBasis {
-  return { revision, words }
-}
-
 async function settleOnce(
   docId: string,
-  blocks: readonly PageBlock[],
+  given: readonly PageBlock[],
   signal: AbortSignal,
-  claim: SettleClaim
+  claim: SettleClaim,
+  answered: LineRefusal[]
 ): Promise<SaveOutcome> {
-  const words = pageWords(blocks)
+  const words = pageWords(given)
   if (signal.aborted) return missed(words)
   const committed = await commitWords(docId, words)
   if (committed.local.transaction !== "complete") return missed(words)
@@ -309,18 +462,24 @@ async function settleOnce(
   if (!page || signal.aborted) return missed(words)
   const seen = pageText(page)
   const basis = basisAt(docId, page, claim.basis)
+  if (words === seen && (words !== "" || basis !== null)) {
+    const renames = landedRenames(given, pageBlocks(page)) ?? {}
+    return withRenames(
+      {
+        saved: true,
+        words,
+        revision: page.revision,
+        note: null,
+        ...headOf(page),
+      },
+      renames
+    )
+  }
+  const renames = earlierRenames(docId, page, given)
+  const blocks = renamedBlocks(given, renames)
   const changed = basis ? words !== basis.words : claim.typed
   const serverMoved =
     basis?.revision != null && page.revision !== basis.revision
-  if (words === seen && (words !== "" || basis !== null)) {
-    return {
-      saved: true,
-      words,
-      revision: page.revision,
-      note: null,
-      basis: recordedBasis(page.revision, words),
-    }
-  }
   if (!changed) {
     if (words === "" && seen === "") return missed(words)
     const replacement = draftFromPage(page)
@@ -334,28 +493,90 @@ async function settleOnce(
       basis: recordedBasis(page.revision, seen),
     }
   }
-  if (serverMoved) {
-    return { saved: false, words, revision: null, note: null, conflict: true }
+  if (serverMoved) return movedTo(words, page)
+  const carried = stillRefused([...(claim.refused ?? []), ...answered], blocks)
+  const sending = withoutRefused(pageBlocks(page), blocks, carried)
+  const caret = claim.caret ?? null
+  const sent = await sendPage(docId, page, sending, caret)
+  if (sent.note !== null) {
+    const now = await stillOurs(docId, page, signal)
+    if (now && "moved" in now) return movedTo(words, now.moved)
+    if (!now) return withRefusals(missed(words), carried)
+    const isolated = await isolate(
+      docId,
+      now.page,
+      sending,
+      caret,
+      signal,
+      sent.note,
+      answered
+    )
+    if (!isolated)
+      return withRefusals(
+        missed(words),
+        stillRefused([...carried, ...answered], blocks)
+      )
+    if ("moved" in isolated) return movedTo(words, isolated.moved)
+    const refused = uniqueRefusals(carried.concat(isolated.refused))
+    const whole =
+      !isolated.landed &&
+      isolated.refused.length > 1 &&
+      sameNote(isolated.refused)
+    return withRenames(
+      {
+        saved: false,
+        words,
+        revision: isolated.head.revision,
+        note: null,
+        ...headOf(isolated.head),
+        refusedLines: refused,
+        pageRefusal: whole ? sent.note : null,
+      },
+      { ...renames, ...isolated.renamed }
+    )
   }
-  unanswered.set(docId, words)
-  const sent = await sendPage(page, blocks, claim.caret ?? null)
-  unanswered.delete(docId)
-  if (sent.note) return { saved: false, words, revision: null, note: sent.note }
-  if (sent.revision) ownWrites.set(docId, recordedBasis(sent.revision, words))
-  if (!sent.revision || signal.aborted) return missed(words)
+  if (!sent.revision) {
+    if (carried.length === 0 && Object.keys(renames).length === 0)
+      return missed(words)
+    return withRenames(
+      {
+        saved: false,
+        words,
+        revision: page.revision,
+        note: null,
+        ...headOf(page),
+        refusedLines: carried,
+        pageRefusal: null,
+      },
+      renames
+    )
+  }
+  if (signal.aborted) return missed(words)
+  const sentWords = pageWords(sending)
   const next = await readPage(docId, signal)
-  if (!next || next.revision !== sent.revision || pageText(next) !== words) {
+  if (
+    !next ||
+    next.revision !== sent.revision ||
+    pageText(next) !== sentWords
+  ) {
     return missed(words)
   }
   const adopted = adoptedBlocks(next, blocks)
-  return {
-    saved: true,
-    words,
-    revision: next.revision,
-    note: null,
-    basis: recordedBasis(next.revision, words),
-    ...(adopted ? { blocks: adopted } : {}),
-  }
+  const landed = landedRenames(sending, pageBlocks(next)) ?? {}
+  return withRenames(
+    {
+      saved: sentWords === words,
+      words,
+      revision: next.revision,
+      note: null,
+      ...headOf(next),
+      basis: recordedBasis(next.revision, sentWords),
+      refusedLines: carried,
+      pageRefusal: null,
+      ...(adopted ? { blocks: adopted } : {}),
+    },
+    { ...renames, ...landed }
+  )
 }
 
 type RetryWait = { until: number } | "online" | null
@@ -377,16 +598,31 @@ async function attempt(
   docId: string,
   blocks: readonly PageBlock[],
   signal: AbortSignal,
-  claim: SettleClaim
+  claim: SettleClaim,
+  answered: LineRefusal[]
 ): Promise<Attempt> {
   try {
     return {
-      outcome: await settleOnce(docId, blocks, signal, claim),
+      outcome: await settleOnce(docId, blocks, signal, claim, answered),
       wait: null,
     }
   } catch (error) {
+    const known = stillRefused([...(claim.refused ?? []), ...answered], blocks)
+    const page = pageReason(error)
+    if (page) {
+      return {
+        outcome: withRefusals(
+          { ...missed(pageWords(blocks)), pageRefusal: page },
+          known
+        ),
+        wait: null,
+      }
+    }
     return {
-      outcome: { ...missed(pageWords(blocks)), note: serverNote(error) },
+      outcome: withRefusals(
+        { ...missed(pageWords(blocks)), note: serverNote(error) },
+        answered.length > 0 ? known : []
+      ),
       wait: retryWait(error),
     }
   }
@@ -434,9 +670,16 @@ async function settleWhenReachable(
   signal: AbortSignal,
   claim: SettleClaim
 ): Promise<SaveOutcome> {
+  const answered: LineRefusal[] = []
   for (;;) {
     await serverReady(docId, signal)
-    const { outcome, wait } = await attempt(docId, blocks, signal, claim)
+    const { outcome, wait } = await attempt(
+      docId,
+      blocks,
+      signal,
+      claim,
+      answered
+    )
     if (wait === null || signal.aborted) return outcome
     if (wait === "online") await connectionBack(signal)
     else retryAt.set(docId, wait.until)

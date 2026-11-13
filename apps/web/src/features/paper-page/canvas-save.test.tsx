@@ -291,11 +291,12 @@ describe("settlePage", () => {
       [{ id: PARAGRAPH, text: "Hello!" }],
       new AbortController().signal
     )
-    expect(saved).toEqual({
+    expect(saved).toMatchObject({
       saved: false,
       words: "Hello!",
-      revision: null,
-      note: reason,
+      note: null,
+      refusedLines: [{ id: PARAGRAPH, text: "Hello!", note: reason }],
+      pageRefusal: null,
     })
   })
 

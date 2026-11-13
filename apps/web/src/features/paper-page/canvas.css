@@ -144,3 +144,126 @@
   line-height: 1.4;
   overflow-wrap: break-word;
 }
+
+.writing-notice {
+  animation: writing-notice-in var(--duration-micro) var(--ease-micro);
+}
+
+@keyframes writing-notice-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .writing-notice {
+    animation: none;
+  }
+}
+
+.writing-unsaved {
+  display: grid;
+  flex: none;
+  gap: 0.375rem;
+  padding-block: 0.5rem;
+  padding-inline: 1.5rem;
+  border-block-end: 1px solid var(--border);
+  background: var(--muted);
+  color: var(--foreground);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  animation: writing-notice-in var(--duration-micro) var(--ease-micro);
+}
+
+.writing-unsaved-row {
+  display: grid;
+  grid-template-areas:
+    "text toggle"
+    "actions actions";
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.375rem 0.75rem;
+  max-block-size: 10.5rem;
+}
+
+.writing-unsaved-row > .writing-unsaved-text {
+  grid-area: text;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.writing-unsaved-row > .writing-unsaved-actions {
+  grid-area: actions;
+}
+
+.writing-unsaved-toggle {
+  grid-area: toggle;
+}
+
+@media (min-width: 48rem) {
+  .writing-unsaved-row {
+    max-block-size: 5rem;
+  }
+}
+
+@media (min-width: 64rem) {
+  .writing-unsaved-row {
+    max-block-size: 2.5rem;
+    grid-template-areas: "text actions toggle";
+    grid-template-columns: minmax(0, 1fr) auto auto;
+  }
+}
+
+.writing-unsaved-text {
+  margin: 0;
+  color: var(--muted-foreground);
+  overflow-wrap: break-word;
+}
+
+.writing-unsaved-title {
+  color: var(--foreground);
+  font-weight: 500;
+}
+
+.writing-unsaved-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.writing-unsaved-count {
+  color: var(--muted-foreground);
+  font-weight: 400;
+}
+
+.writing-unsaved-detail {
+  display: grid;
+  gap: 0.5rem;
+  max-block-size: min(12rem, 25dvh);
+  margin: 0;
+  padding: 0.375rem 0 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-block-start: 1px solid var(--border);
+  list-style: none;
+}
+
+.writing-unsaved-line {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.writing-page p[data-unsaved] {
+  border-radius: 2px;
+  background: color-mix(in oklch, var(--destructive) 7%, transparent);
+  box-shadow: -0.625rem 0 0 -0.5rem var(--destructive);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .writing-unsaved {
+    animation: none;
+  }
+}
