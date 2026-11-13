@@ -2,7 +2,7 @@ import { LIMITS } from "@workspace/domain"
 import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
 
-import { exportDownload } from "../account/export-download.js"
+import { exportDownload } from "../account/index.js"
 import { virtualClock } from "./clock.js"
 import { keyFor } from "./key.js"
 import { limited } from "./limited.js"

@@ -14,6 +14,7 @@ export {
   toProfile,
   writeProfileDefaults,
 } from "./store.js"
+export { exportDownload } from "./export-download.js"
 export {
   createAccountRoutes,
   createActivityRoutes,

@@ -1,0 +1,17 @@
+{
+  "id": "raw-limit",
+  "file": "scripts/raw-limit.test.mjs",
+  "detector": {
+    "module": "scripts/lib/raw-limit.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "69a6caa7988ea5ab6daa3e71fff7d2c31ba17895",
+    "path": "apps/api/src/account/export-gate.ts",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/api/src/limits/refusal.ts"
+    }
+  }
+}

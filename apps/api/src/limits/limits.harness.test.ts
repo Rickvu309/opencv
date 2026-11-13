@@ -168,7 +168,7 @@ describe("export.running limit harness", () => {
 
   it("LIM-5 an abort while the build runs holds the slot until the build ends", async () => {
     const { clock, ledger } = leaseLedger()
-    let finish = (_value: string) => {}
+    let finish: (value: string) => void = () => {}
     const job = new Promise<string>((resolve) => {
       finish = resolve
     })
@@ -194,7 +194,7 @@ describe("export.running limit harness", () => {
     const { clock, ledger } = leaseLedger()
     const shape = spec.shape
     if (shape.kind !== "lease") throw new Error("export.running is a lease")
-    let finish = (_value: string) => {}
+    let finish: (value: string) => void = () => {}
     const job = new Promise<string>((resolve) => {
       finish = resolve
     })

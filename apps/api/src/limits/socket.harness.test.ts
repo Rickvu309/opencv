@@ -6,7 +6,7 @@ import { serve } from "@hono/node-server"
 import { Hono } from "hono"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { exportDownload } from "../account/export-download.js"
+import { exportDownload } from "../account/index.js"
 import { systemClock } from "./clock.js"
 import { keyFor } from "./key.js"
 import { limited } from "./limited.js"
@@ -36,7 +36,8 @@ afterEach(async () => {
     servers.splice(0).map(
       (server) =>
         new Promise((done) => {
-          server.closeAllConnections?.()
+          const closer = server as { closeAllConnections?: () => void }
+          closer.closeAllConnections?.()
           server.close(() => done(undefined))
         })
     )

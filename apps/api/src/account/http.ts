@@ -2,6 +2,7 @@ import {
   ERROR_CODES,
   errorEnvelope,
   httpStatusForError,
+  LIMITS,
   parseUserId,
   personActor,
   successEnvelope,
@@ -13,8 +14,9 @@ import type { AppDatabase } from "../db/context.js"
 import { jsonWithStatus } from "../http-json.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import { saveFile } from "../paper/index.js"
+import { keyFor, limited, memoryLedger, systemClock } from "../limits/index.js"
 import { registry } from "../registry/registry.js"
-import { createExportGate, gatedExport } from "./export-gate.js"
+import { exportDownload } from "./export-download.js"
 import { exportAccountArchive } from "./queries.js"
 
 function sessionApp(auth?: Auth, db?: AppDatabase) {
@@ -93,15 +95,20 @@ export function createAccountRoutes(auth?: Auth, db?: AppDatabase) {
     return c.json(successEnvelope(result.output))
   })
 
-  const exportGate = createExportGate()
-  routes.get("/export", (c) =>
-    gatedExport(
-      exportGate,
-      c.var.userId,
-      () => exportAccountArchive(c.var.userId),
-      undefined,
-      c.req.raw.signal
-    )
+  const clock = systemClock()
+  const exportLedger = memoryLedger(LIMITS["export.running"], clock)
+  routes.get(
+    "/export",
+    limited(
+      "export.running",
+      (c) => keyFor("account", c.var.userId),
+      exportLedger,
+      clock
+    ),
+    async (c) => {
+      const archive = await exportAccountArchive(c.var.userId)
+      return exportDownload(archive, c.req.raw.signal)
+    }
   )
 
   return routes
