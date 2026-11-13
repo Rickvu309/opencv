@@ -24,7 +24,8 @@ const cleanEnv = (extra = {}) => {
         !key.startsWith("GIT_") &&
         key !== "NODE_PATH" &&
         key !== "NODE_OPTIONS" &&
-        key !== "NODE_TEST_CONTEXT"
+        key !== "NODE_TEST_CONTEXT" &&
+        key !== "GITHUB_ACTIONS"
     )
   )
   return { ...env, ...extra }
