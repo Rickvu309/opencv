@@ -22,14 +22,20 @@ import {
 
 export type SidebarMode = "expanded" | "dragging" | "collapsed" | "peeking"
 
-type LayoutState = { width: number; collapsed: boolean; dragging: boolean }
+type LayoutState = {
+  width: number
+  collapsed: boolean
+  dragging: boolean
+  instant: boolean
+}
 
 type LayoutAction =
   | { type: "resized"; width: number }
-  | { type: "collapse_requested"; collapsed: boolean }
+  | { type: "collapse_requested"; collapsed: boolean; instant: boolean }
   | { type: "drag_started" }
   | { type: "drag_cancelled" }
   | { type: "drag_collapsed" }
+  | { type: "pointer_engaged" }
 
 function layoutReducer(state: LayoutState, action: LayoutAction): LayoutState {
   switch (action.type) {
@@ -41,14 +47,16 @@ function layoutReducer(state: LayoutState, action: LayoutAction): LayoutState {
       }
     case "collapse_requested":
       if (state.dragging) return state
-      return { ...state, collapsed: action.collapsed }
+      return { ...state, collapsed: action.collapsed, instant: action.instant }
     case "drag_started":
       if (state.collapsed) return state
-      return { ...state, dragging: true }
+      return { ...state, dragging: true, instant: false }
     case "drag_cancelled":
       return { ...state, dragging: false }
     case "drag_collapsed":
-      return { ...state, dragging: false, collapsed: true }
+      return { ...state, dragging: false, collapsed: true, instant: false }
+    case "pointer_engaged":
+      return state.instant ? { ...state, instant: false } : state
   }
 }
 
@@ -57,6 +65,7 @@ function initialLayout(): LayoutState {
     width: readSidebarWidth(),
     collapsed: readSidebarCollapsed(),
     dragging: false,
+    instant: false,
   }
 }
 
@@ -83,13 +92,13 @@ export function useSidebarLayout(enabled: boolean) {
   const { close: closeIntent } = intent
 
   const setCollapsed = useCallback(
-    (next: boolean) => {
+    (next: boolean, instant: boolean) => {
       if (dragging) return
       handoff.current = focusIsInSidebar()
       toSidebar.current = !next && focusIsInExpandButton()
       closeIntent()
       writeSidebarCollapsed(next)
-      dispatch({ type: "collapse_requested", collapsed: next })
+      dispatch({ type: "collapse_requested", collapsed: next, instant })
     },
     [closeIntent, dragging]
   )
@@ -119,7 +128,7 @@ export function useSidebarLayout(enabled: boolean) {
   useShortcut({
     key: "[",
     enabled,
-    onPress: () => setCollapsed(!collapsed),
+    onPress: () => setCollapsed(!collapsed, true),
   })
 
   const { contentProps: hoverContent } = intent
@@ -162,6 +171,7 @@ export function useSidebarLayout(enabled: boolean) {
   const triggerProps = {
     onPointerEnter: (event: ReactPointerEvent) => {
       onEdge.current = true
+      dispatch({ type: "pointer_engaged" })
       if (collapsed) intent.triggerProps.onPointerEnter(event)
     },
     onPointerLeave: (event: ReactPointerEvent) => {
@@ -186,8 +196,9 @@ export function useSidebarLayout(enabled: boolean) {
     collapsed,
     mode,
     peek,
-    toggle: () => setCollapsed(!collapsed),
-    expand: () => setCollapsed(false),
+    instant: state.instant,
+    toggle: () => setCollapsed(!collapsed, false),
+    expand: () => setCollapsed(false, false),
     dragStart,
     dragCancel,
     dragCollapse,

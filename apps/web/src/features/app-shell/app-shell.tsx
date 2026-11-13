@@ -35,6 +35,7 @@ import { CoachWorkspace } from "@/features/coach/coach-workspace.tsx"
 import { registerShellChatOpener } from "@/features/command-palette/shell-chat.ts"
 import { runContractCommand } from "@/lib/contract-client.ts"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
+import { motionToken, prefersReducedMotion } from "@workspace/ui/lib/motion"
 import { Mark } from "@workspace/ui/components/brand"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -49,6 +50,7 @@ const COACH_PANEL_ID = "coach-panel"
 type PanelState = {
   mounted: boolean
   open: boolean
+  closing: boolean
   mode: Exclude<CoachPanelMode, "dock">
   title: string
   chatId: string | null
@@ -57,6 +59,7 @@ type PanelState = {
 const NO_PANEL: PanelState = {
   mounted: false,
   open: false,
+  closing: false,
   mode: "side",
   title: "",
   chatId: null,
@@ -66,8 +69,9 @@ type ShellState = { panel: PanelState; drawerOpen: boolean }
 
 type ShellAction =
   | { type: "panel_opened"; title: string; chatId: string | null }
-  | { type: "panel_closed" }
+  | { type: "panel_closed"; animate: boolean }
   | { type: "panel_restored" }
+  | { type: "panel_exit_finished" }
   | { type: "panel_expanded" }
   | { type: "drawer_opened" }
   | { type: "drawer_closed" }
@@ -82,15 +86,30 @@ function shellReducer(state: ShellState, action: ShellAction): ShellState {
         panel: {
           mounted: true,
           open: true,
+          closing: false,
           mode: "side",
           title: action.title,
           chatId: action.chatId,
         },
       }
     case "panel_closed":
-      return { ...state, panel: { ...state.panel, open: false } }
+      if (!state.panel.open) return state
+      return {
+        ...state,
+        panel: {
+          ...state.panel,
+          open: false,
+          closing: action.animate,
+        },
+      }
     case "panel_restored":
-      return { ...state, panel: { ...state.panel, open: true } }
+      return {
+        ...state,
+        panel: { ...state.panel, open: true, closing: false },
+      }
+    case "panel_exit_finished":
+      if (state.panel.open) return state
+      return { ...state, panel: { ...state.panel, closing: false } }
     case "panel_expanded":
       return {
         ...state,
@@ -128,6 +147,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
     select: (state) => isCoachPage(state.location.pathname),
   })
   const panelOpen = panel.open && !onCoachPage
+  const panelShown = (panel.open || panel.closing) && !onCoachPage
   const openPanelRef = useRef<
     (next: { title: string; chatId: string | null }) => void
   >(() => {})
@@ -154,9 +174,45 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
   }, [panelOpen])
 
   useEffect(() => {
+    if (!panel.closing || panel.open || onCoachPage) return
+    const frame = document.getElementById(COACH_PANEL_ID)
+    if (!frame) {
+      dispatch({ type: "panel_exit_finished" })
+      return
+    }
+    let settled = false
+    function finish(event?: Event) {
+      if (settled) return
+      if (
+        event instanceof TransitionEvent &&
+        event.propertyName !== "translate" &&
+        event.propertyName !== "opacity"
+      ) {
+        return
+      }
+      settled = true
+      dispatch({ type: "panel_exit_finished" })
+    }
+    frame.addEventListener("transitionend", finish)
+    const timing = prefersReducedMotion()
+      ? motionToken("micro")
+      : motionToken("panel")
+    const timer = window.setTimeout(finish, timing.duration + 40)
+    return () => {
+      settled = true
+      frame.removeEventListener("transitionend", finish)
+      window.clearTimeout(timer)
+    }
+  }, [panel.closing, panel.open, onCoachPage])
+
+  useEffect(() => {
+    if (onCoachPage && panel.closing) dispatch({ type: "panel_exit_finished" })
+  }, [onCoachPage, panel.closing])
+
+  useEffect(() => {
     const viewport = window.visualViewport
     const frame = document.getElementById(COACH_PANEL_ID)
-    if (!panelSheet || !panelOpen || !viewport || !frame) return
+    if (!panelSheet || !panelShown || !viewport || !frame) return
     function resize() {
       frame?.style.setProperty("height", `${viewport?.height}px`)
       frame?.style.setProperty("top", `${viewport?.offsetTop}px`)
@@ -170,7 +226,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
       frame.style.removeProperty("height")
       frame.style.removeProperty("top")
     }
-  }, [panelSheet, panelOpen])
+  }, [panelSheet, panelShown])
 
   useShortcut({
     key: "Escape",
@@ -184,7 +240,10 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
   }
 
   function closePanel() {
-    dispatch({ type: "panel_closed" })
+    dispatch({
+      type: "panel_closed",
+      animate: panel.mode !== "full" || panelSheet,
+    })
     if (openerRef.current?.isConnected)
       openerRef.current.focus({ preventScroll: true })
     else focusCoachButton()
@@ -262,7 +321,8 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
       role={panelSheet && panelOpen ? "dialog" : undefined}
       aria-modal={panelSheet && panelOpen ? true : undefined}
       aria-label={panelSheet ? "Coach" : undefined}
-      hidden={!panelOpen}
+      hidden={!panelShown}
+      data-closing={panel.closing && !panel.open ? "" : undefined}
       concealed={!panelOpen}
       focusFallback={() =>
         openerRef.current ??
@@ -272,6 +332,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
       tabIndex={-1}
       className={cn(
         "z-10 min-h-0 bg-transparent outline-none",
+        panel.closing && !panel.open && "pointer-events-none",
         panelOpen && "flex flex-col",
         panelSheet && "fixed inset-x-0 top-0 z-40 h-dvh w-full",
         floating &&
@@ -386,7 +447,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
         <div
           data-slot="shell-main"
           className={cn(
-            "flex min-h-0 min-w-0 flex-1 flex-col bg-sidebar transition-[padding] duration-(--duration-panel) ease-(--ease-panel) motion-reduce:transition-none md:pt-2 md:pr-2",
+            "flex min-h-0 min-w-0 flex-1 flex-col bg-sidebar peer-data-[instant=true]/frame:transition-none md:pt-2 md:pr-2",
             collapsedRail && "md:pl-2",
             "peer-data-[collapse-preview=true]/frame:md:pl-2"
           )}
@@ -430,17 +491,18 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
           />
         </div>
       </div>
-      {!isDesktop && drawerOpen ? (
+      {!isDesktop ? (
         <Dialog
-          open
+          open={drawerOpen}
           onOpenChange={(open) => {
             if (!open) closeDrawer()
           }}
         >
           <DialogContent
             layout="sheet"
+            side="start"
             showCloseButton={false}
-            className="top-0 left-0 h-svh w-[244px] max-w-[80vw] duration-(--duration-panel) ease-(--ease-panel)"
+            className="top-0 left-0 h-svh w-[244px] max-w-[80vw]"
           >
             <DialogTitle className="sr-only">{shellCopy.menu}</DialogTitle>
             <div className="absolute top-2 -right-11 z-10">

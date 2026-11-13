@@ -51,9 +51,13 @@ describe("the Coach button in the dock", () => {
     expect(document.getElementById("coach-panel")).toHaveFocus()
 
     fireEvent.click(coachButton())
+    expect(document.getElementById("coach-panel")).toHaveAttribute(
+      "data-closing"
+    )
     await waitFor(() => {
-      expect(coachButton()).toHaveAttribute("aria-expanded", "false")
+      expect(document.getElementById("coach-panel")).toHaveAttribute("hidden")
     })
+    expect(coachButton()).toHaveAttribute("aria-expanded", "false")
     expect(screen.queryByRole("textbox", { name: "Message Coach" })).toBeNull()
     expect(coachButton()).toHaveAccessibleName("Coach")
 
@@ -126,9 +130,13 @@ describe("the Coach button in the dock", () => {
       fireEvent.change(box, { target: { value: "Keep me" } })
 
       close()
+      expect(document.getElementById("coach-panel")).toHaveAttribute(
+        "data-closing"
+      )
       await waitFor(() => {
-        expect(coachButton()).toHaveAttribute("aria-expanded", "false")
+        expect(document.getElementById("coach-panel")).toHaveAttribute("hidden")
       })
+      expect(coachButton()).toHaveAttribute("aria-expanded", "false")
       expect(coachButton()).toHaveFocus()
       expect(
         screen.queryByRole("textbox", { name: "Message Coach" })
@@ -260,8 +268,13 @@ describe("Coach sheet keyboard access", () => {
     expect(sheet.style.height).toBe("480px")
     expect(sheet.style.top).toBe("24px")
     fireEvent.keyDown(sheet, { key: "Escape" })
-    expect(sheet.style.height).toBe("")
-    expect(sheet.style.top).toBe("")
+    expect(sheet).toHaveAttribute("data-closing")
+    expect(sheet.style.height).toBe("480px")
+    expect(sheet.style.top).toBe("24px")
+    await waitFor(() => {
+      expect(sheet.style.height).toBe("")
+      expect(sheet.style.top).toBe("")
+    })
     vi.unstubAllGlobals()
   })
 

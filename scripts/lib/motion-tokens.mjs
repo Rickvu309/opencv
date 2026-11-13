@@ -9,8 +9,6 @@ const TOKEN_DEFINITION = /^--(?:duration|ease)-[a-z]+$/
 export const LAYOUT_MOTION_ALLOWED = Object.freeze({
   "packages/ui/src/styles/globals.css": ["height"],
   "packages/ui/src/components/sonner.tsx": ["bottom", "right", "height"],
-  "apps/web/src/features/app-shell/sidebar-frame.tsx": ["width"],
-  "apps/web/src/features/app-shell/app-shell.tsx": ["padding-left"],
   "packages/ui/src/components/segmented-control-styles.ts": ["left", "right"],
 })
 
