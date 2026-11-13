@@ -2,8 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 
 import { setMockSession } from "@/test/auth-client-mock.ts"
-import { renderApp, renderPage } from "@/test/render-app.tsx"
-import { JobsPage, PitchPage, ProofsPage } from "./pages.tsx"
+import { renderApp } from "@/test/render-app.tsx"
 import { notifyCalls } from "@/test/shell-api-mock.ts"
 
 beforeEach(() => {
@@ -21,7 +20,7 @@ function primaryCount() {
 
 describe("coming soon and the calm 404", () => {
   it("shows Jobs with one solid primary and a hidden preview", async () => {
-    renderPage(JobsPage)
+    renderApp("/jobs")
 
     expect(
       await screen.findByRole("heading", { level: 1, name: "Jobs" })
@@ -47,7 +46,7 @@ describe("coming soon and the calm 404", () => {
   })
 
   it("titles Jobs in the shared header, outside the scrolling body", async () => {
-    renderPage(JobsPage)
+    renderApp("/jobs")
 
     const title = await screen.findByRole("heading", { level: 1, name: "Jobs" })
     expect(title).toHaveAttribute("data-slot", "page-header-title")
@@ -57,7 +56,7 @@ describe("coming soon and the calm 404", () => {
   })
 
   it("posts jobs once and toasts the repeat", async () => {
-    renderPage(JobsPage)
+    renderApp("/jobs")
     const notify = await screen.findByRole("button", { name: "Notify me" })
 
     fireEvent.click(notify)
@@ -72,7 +71,7 @@ describe("coming soon and the calm 404", () => {
   })
 
   it("shows Proofs with one action that posts proof", async () => {
-    renderPage(ProofsPage)
+    renderApp("/proofs")
 
     expect(
       await screen.findByRole("heading", {
@@ -92,7 +91,7 @@ describe("coming soon and the calm 404", () => {
   })
 
   it("shows Pitch and posts pitch without an editor", async () => {
-    renderPage(PitchPage)
+    renderApp("/pitch")
 
     expect(
       await screen.findByRole("heading", { level: 1, name: "Pitch" })
@@ -113,10 +112,15 @@ describe("coming soon and the calm 404", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
   })
 
-  it("redirects /proof to start page", async () => {
+  it("redirects /proof to /proofs", async () => {
     const { router } = renderApp("/proof")
-    await screen.findByRole("heading", { level: 1, name: "Apply" })
-    expect(router.state.location.pathname).toBe("/apply")
+    expect(
+      await screen.findByRole("heading", {
+        level: 2,
+        name: "Back your CV with proof",
+      })
+    ).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe("/proofs")
   })
 
   it("sends a signed-out profile path to sign in", async () => {

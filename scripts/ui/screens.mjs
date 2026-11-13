@@ -472,8 +472,40 @@ export const SCREENS = [
   {
     id: "inbox",
     route: "/inbox",
-    unreachable:
-      "Inbox is a hidden surface (apps/web/src/lib/product-paths.ts shown: false), so /inbox sends a signed-in person to the start page",
+    steps: [{ waitFor: { role: "heading", name: "Inbox" } }],
+  },
+  {
+    id: "shell-sidebar-collapsed",
+    route: "/jobs",
+    steps: [
+      { click: { role: "heading", name: "Jobs, matched to you" } },
+      { press: "[" },
+      { waitFor: { role: "button", name: "Expand sidebar" } },
+    ],
+  },
+  {
+    id: "shell-menu-open",
+    route: "/inbox",
+    steps: [
+      { waitFor: { role: "heading", name: "Inbox" } },
+      { click: { role: "button", name: "Menu" } },
+      { waitFor: { role: "button", name: "Close menu" } },
+    ],
+  },
+  {
+    id: "jobs",
+    route: "/jobs",
+    steps: [{ waitFor: { role: "heading", name: "Jobs, matched to you" } }],
+  },
+  {
+    id: "pitch",
+    route: "/pitch",
+    steps: [{ waitFor: { role: "heading", name: "One link that sells you" } }],
+  },
+  {
+    id: "proofs",
+    route: "/proofs",
+    steps: [{ waitFor: { role: "heading", name: "Back your CV with proof" } }],
   },
 ]
 

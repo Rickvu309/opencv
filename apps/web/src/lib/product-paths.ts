@@ -4,12 +4,31 @@ export type SurfaceNavGroup = "primary" | "work"
 
 export const SURFACES = [
   {
+    id: "inbox",
+    path: "/inbox",
+    label: "Inbox",
+    shown: true,
+    canBeStartPage: true,
+    nav: "primary",
+    inSearch: true,
+  },
+  {
     id: "coach",
     path: "/coach",
     label: "Coach",
     shown: true,
     canBeStartPage: true,
     nav: "primary",
+    inSearch: true,
+  },
+  {
+    id: "jobs",
+    path: "/jobs",
+    label: "Jobs",
+    shown: true,
+    canBeStartPage: false,
+    nav: "primary",
+    inSearch: true,
   },
   {
     id: "paper",
@@ -18,6 +37,7 @@ export const SURFACES = [
     shown: true,
     canBeStartPage: true,
     nav: "work",
+    inSearch: true,
   },
   {
     id: "apply",
@@ -26,6 +46,34 @@ export const SURFACES = [
     shown: true,
     canBeStartPage: true,
     nav: "work",
+    inSearch: true,
+  },
+  {
+    id: "pitch",
+    path: "/pitch",
+    label: "Pitch",
+    shown: true,
+    canBeStartPage: false,
+    nav: "work",
+    inSearch: true,
+  },
+  {
+    id: "proofs",
+    path: "/proofs",
+    label: "Proofs",
+    shown: true,
+    canBeStartPage: false,
+    nav: null,
+    inSearch: false,
+  },
+  {
+    id: "proof",
+    path: "/proof",
+    label: "Proof",
+    shown: true,
+    canBeStartPage: false,
+    nav: null,
+    inSearch: false,
   },
   {
     id: "settings",
@@ -34,6 +82,7 @@ export const SURFACES = [
     shown: true,
     canBeStartPage: false,
     nav: null,
+    inSearch: true,
   },
   {
     id: "help",
@@ -42,46 +91,7 @@ export const SURFACES = [
     shown: true,
     canBeStartPage: false,
     nav: null,
-  },
-  {
-    id: "pitch",
-    path: "/pitch",
-    label: "Pitch",
-    shown: false,
-    canBeStartPage: false,
-    nav: "work",
-  },
-  {
-    id: "jobs",
-    path: "/jobs",
-    label: "Jobs",
-    shown: false,
-    canBeStartPage: false,
-    nav: "primary",
-  },
-  {
-    id: "proofs",
-    path: "/proofs",
-    label: "Proofs",
-    shown: false,
-    canBeStartPage: false,
-    nav: null,
-  },
-  {
-    id: "proof",
-    path: "/proof",
-    label: "Proof",
-    shown: false,
-    canBeStartPage: false,
-    nav: null,
-  },
-  {
-    id: "inbox",
-    path: "/inbox",
-    label: "Inbox",
-    shown: false,
-    canBeStartPage: false,
-    nav: "primary",
+    inSearch: true,
   },
   {
     id: "upgrade",
@@ -90,6 +100,7 @@ export const SURFACES = [
     shown: false,
     canBeStartPage: false,
     nav: null,
+    inSearch: false,
   },
   {
     id: "purchase",
@@ -98,6 +109,7 @@ export const SURFACES = [
     shown: false,
     canBeStartPage: false,
     nav: null,
+    inSearch: false,
   },
 ] as const
 
@@ -114,9 +126,9 @@ export function isSurfaceShown(surfaceId: SurfaceId): boolean {
 }
 
 export function isPathShown(pathname: string): boolean {
-  const surface = SURFACES.find(
+  const surface = SURFACES.filter(
     (item) => item.path === pathname || pathname.startsWith(`${item.path}/`)
-  )
+  ).sort((a, b) => b.path.length - a.path.length)[0]
   return surface ? surface.shown : true
 }
 

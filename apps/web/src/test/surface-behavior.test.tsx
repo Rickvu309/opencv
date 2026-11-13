@@ -15,8 +15,7 @@ import {
 } from "@/test/auth-client-mock.ts"
 import { getMockPaperDocs } from "@/test/paper-api-mock.ts"
 import { samplePaperDocs } from "@/test/paper-fixtures.ts"
-import { renderApp, renderPage } from "@/test/render-app.tsx"
-import { PitchPage } from "@/features/coming-soon/pitch-page.tsx"
+import { renderApp } from "@/test/render-app.tsx"
 import { FIXTURE_CHATS } from "@/test/chat-fixtures.ts"
 import { getMockChats } from "@/test/chat-api-mock.ts"
 
@@ -70,14 +69,8 @@ describe("empty api data shows empty states, never sample content", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("Pitch is hidden and redirects to start page", async () => {
-    const { router } = renderApp(SURFACE_PATHS.pitch)
-    await screen.findByRole("heading", { level: 1, name: "Apply" })
-    expect(router.state.location.pathname).toBe("/apply")
-  })
-
   it("Pitch shows the placeholder and no demo content", async () => {
-    renderPage(PitchPage)
+    renderApp(SURFACE_PATHS.pitch)
 
     expect(
       await screen.findByRole("heading", {
@@ -125,7 +118,7 @@ describe("Apply shows no Fit label", () => {
 describe("Pitch makes no third-party requests", () => {
   it("sends every request to the api origin", async () => {
     const requested: string[] = []
-    renderPage(PitchPage, (input) => {
+    renderApp(SURFACE_PATHS.pitch, (input) => {
       const raw =
         typeof input === "string"
           ? input
@@ -159,7 +152,7 @@ describe("Pitch does not seed a persona", () => {
       session: TEST_SESSION,
     })
     setMockProfile({ name: "Scout Tester", email: "scout@example.com" })
-    renderPage(PitchPage)
+    renderApp(SURFACE_PATHS.pitch)
 
     expect(
       await screen.findByRole("heading", {

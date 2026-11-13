@@ -33,3 +33,10 @@ function parseJobs(data: unknown): ShellJob[] {
 }
 
 export const starredJobs = parseJobs
+
+export function inboxUnreadCount(data: unknown) {
+  const threads = record(data)?.threads
+  if (!Array.isArray(threads)) return null
+  const count = threads.filter((item) => record(item)?.unread === true).length
+  return count > 0 ? count : null
+}

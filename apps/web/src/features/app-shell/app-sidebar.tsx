@@ -23,9 +23,13 @@ import {
   navActiveOptions,
   SHELL_PRIMARY,
   SHELL_WORK,
+  shellNavLabel,
 } from "@/features/app-shell/sidebar-nav.ts"
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
-import { useShellFavorites } from "@/features/app-shell/use-shell-chats.ts"
+import {
+  useInboxUnread,
+  useShellFavorites,
+} from "@/features/app-shell/use-shell-chats.ts"
 import { useSidebarGroup } from "@/features/app-shell/use-sidebar-groups.ts"
 import { Brand } from "@workspace/ui/components/brand"
 import { Button } from "@workspace/ui/components/button"
@@ -36,7 +40,7 @@ import {
   CollapsibleTrigger,
 } from "@workspace/ui/components/collapsible"
 import { Kbd } from "@workspace/ui/components/kbd"
-import { NavItem } from "@workspace/ui/components/nav-item"
+import { NavItem, NavItemBadge } from "@workspace/ui/components/nav-item"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -108,7 +112,9 @@ export function AppSidebar({
   onSearch,
   onNewChat,
 }: AppSidebarProps) {
+  const inbox = useInboxUnread()
   const favorites = useShellFavorites()
+  const count = inbox.data ?? null
   const favoriteEmpty =
     favorites.jobs.length === 0 && favorites.docs.length === 0
   const pathname = useLocation({ select: (location) => location.pathname })
@@ -171,12 +177,17 @@ export function AppSidebar({
                     activeOptions={navActiveOptions(item.to, current)}
                   />
                 }
-                aria-label={item.label}
+                aria-label={shellNavLabel(item, count)}
                 onClick={onNavigate}
                 className={NAV_ITEM_CLASS}
               >
                 <Icon aria-hidden="true" />
                 <span>{item.label}</span>
+                {item.id === "inbox" && count != null ? (
+                  <NavItemBadge className="md:text-[11px] md:font-medium">
+                    {count}
+                  </NavItemBadge>
+                ) : null}
               </NavItem>
             )
           })}
