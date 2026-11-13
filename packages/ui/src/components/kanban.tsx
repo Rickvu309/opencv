@@ -34,12 +34,14 @@ import {
   type HTMLAttributes,
   type ReactNode,
   useContext,
+  useMemo,
   useRef,
   useState,
 } from "react"
 import { createPortal } from "react-dom"
 import tunnel from "tunnel-rat"
 import { Card } from "@workspace/ui/components/card"
+import { travelToken } from "@workspace/ui/lib/motion"
 import { cn } from "@workspace/ui/lib/utils"
 
 const t = tunnel()
@@ -152,6 +154,7 @@ export const KanbanCard = ({
   onKeyDown,
   ...props
 }: KanbanCardProps) => {
+  const reorderTiming = useMemo(() => travelToken("micro"), [])
   const {
     attributes,
     listeners,
@@ -161,6 +164,7 @@ export const KanbanCard = ({
     isDragging,
   } = useSortable({
     id,
+    transition: reorderTiming,
   })
   const { activeCardId } = useContext(KanbanContext) as KanbanContextProps
 
@@ -280,6 +284,7 @@ export const KanbanProvider = <
   ...props
 }: KanbanProviderProps<T, C>) => {
   const [activeCardId, setActiveCardId] = useState<string | null>(null)
+  const dropTiming = useMemo(() => travelToken("panel"), [])
   const keyboardColumnId = useRef<UniqueIdentifier | null>(null)
 
   const stepOneColumnInBoardOrder: KeyboardCoordinateGetter = (
@@ -471,7 +476,7 @@ export const KanbanProvider = <
         </div>
         {typeof window !== "undefined" &&
           createPortal(
-            <DragOverlay>
+            <DragOverlay dropAnimation={dropTiming}>
               <div data-slot="kanban-overlay">
                 <t.Out />
               </div>

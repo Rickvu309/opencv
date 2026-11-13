@@ -26,6 +26,9 @@ const narrowsToTheRoomItIsGiven = {
 const glidesWithPanels =
   "transition-[bottom,right,transform]! duration-(--duration-panel)! ease-(--ease-panel)! motion-reduce:transition-none!"
 
+const toastMovesOnPanelTiming =
+  "transition-[transform,opacity,height]! duration-(--duration-panel)! ease-(--ease-panel)! data-[removed=true]:duration-(--duration-micro)! motion-reduce:transition-[opacity]!"
+
 const toastRow =
   "group toast flex min-h-11 w-full items-center gap-2 rounded-lg border border-border bg-popover py-1.5 pr-1.5 pl-3 text-[13px] text-popover-foreground shadow-lg data-[mounted=false]:pointer-events-none data-[removed=true]:pointer-events-none"
 
@@ -54,7 +57,7 @@ function Toaster({
       toastOptions={{
         unstyled: true,
         classNames: {
-          toast: toastRow,
+          toast: cn(toastRow, toastMovesOnPanelTiming),
           icon: toastIcon,
           content: "flex min-w-0 flex-1 flex-col gap-0.5",
           title: "text-[13px] leading-snug font-medium",
