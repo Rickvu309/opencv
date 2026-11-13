@@ -1,6 +1,6 @@
 # Known on main
 
-Run of `node scripts/ui.mjs sweep screen paper-home coach-home settings` on 2026-11-13 against `64864f32` with this skill's rules: 80 `HIG` findings, 4 `FAIL` cases. The `HIG` rules report without failing until these are fixed. When you fix one, rerun the sweep on its screen and remove its row here.
+Run of `node scripts/ui.mjs sweep screen paper-home coach-home settings` on 2026-11-13 against `33cdfab1` with this skill's rules: 80 `HIG` findings, 4 `FAIL` cases (same on `64864f32`). The `HIG` rules report without failing until these are fixed. When you fix one, rerun the sweep on its screen and remove its row here.
 
 | Screen                 | Size                      | Rule              | Measured                                                                                 | Root cause                                                                         |
 | ---------------------- | ------------------------- | ----------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
