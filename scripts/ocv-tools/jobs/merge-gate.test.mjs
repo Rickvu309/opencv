@@ -182,3 +182,85 @@ test("every label the merge gate reads is defined in labels.yml", async () => {
   for (const label of Object.values(LABELS))
     assert.match(defined, new RegExp(`^- name: "?${label}"?$`, "m"), label)
 })
+
+const GATE_PATHS = [
+  "scripts/ocv-tools/rules/merge-gate.mjs",
+  "scripts/ocv-tools/rules/index.mjs",
+  "scripts/ocv-tools/jobs/finish.mjs",
+  "scripts/ocv-tools.mjs",
+  "scripts/lib/ci-workflow.mjs",
+  ".githooks/pre-push",
+  ".github/labels.yml",
+  ".github/workflows/nightly.yml",
+  ".github/workflows/other.yml",
+  ".github/actions/setup/action.yml",
+  ".github/rulesets/main.json",
+  "scripts/check.mjs",
+]
+
+test("a diff touching any file that decides what may merge needs owner-approved", async () => {
+  const { evaluate } = await import("../rules/index.mjs")
+  const facts = (files, labels) => ({
+    pull: { n: 9, labels },
+    diff: { files },
+    migrations: { allowed: [], files: [] },
+  })
+  for (const file of GATE_PATHS) {
+    const hit = evaluate("OWNER_YES", facts([file], []))
+    assert.ok(hit, file)
+    assert.match(
+      hit.message,
+      new RegExp(
+        `${file.replaceAll(".", "\\.")} (decides what may merge|attests the ci check)`
+      )
+    )
+    assert.equal(
+      evaluate("OWNER_YES", facts([file], ["owner-approved"])),
+      null,
+      file
+    )
+  }
+  for (const file of [
+    "scripts/catalog.mjs",
+    "scripts/lib/other.mjs",
+    "scripts/ocv-tools-notes.md",
+    "apps/api/src/app.ts",
+    ".github/CODEOWNERS",
+  ])
+    assert.equal(evaluate("OWNER_YES", facts([file], [])), null, file)
+})
+
+test("a rename into or out of the gate folder is owner class, because the diff holds both sides", async () => {
+  const { evaluate } = await import("../rules/index.mjs")
+  const facts = (files) => ({
+    pull: { n: 9, labels: [] },
+    diff: { files },
+    migrations: { allowed: [], files: [] },
+  })
+  const into = ["scripts/lib/helper.mjs", "scripts/ocv-tools/jobs/helper.mjs"]
+  const out = [
+    "scripts/ocv-tools/rules/merge-gate.mjs",
+    "scripts/lib/merge-gate.mjs",
+  ]
+  assert.match(
+    evaluate("OWNER_YES", facts(into)).message,
+    /scripts\/ocv-tools\/jobs\/helper\.mjs decides what may merge/
+  )
+  assert.match(
+    evaluate("OWNER_YES", facts(out)).message,
+    /scripts\/ocv-tools\/rules\/merge-gate\.mjs decides what may merge/
+  )
+})
+
+test("policy refuses a PR that edits the gate until owner-approved", () => {
+  const bare = fixture({ changed: ["scripts/ocv-tools/rules/merge-gate.mjs"] })
+  const refused = bare.call("policy", "91")
+  assert.equal(refused.code, 2, refused.text)
+  assert.match(
+    refused.text,
+    /OWNER_YES: .*scripts\/ocv-tools\/rules\/merge-gate\.mjs decides what may merge/
+  )
+  const yes = fixture({ changed: ["scripts/ocv-tools/rules/merge-gate.mjs"] })
+  yes.s.pull.labels = [{ name: "owner-approved" }]
+  assert.equal(yes.call("policy", "91").code, 0)
+})

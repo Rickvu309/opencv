@@ -27,6 +27,29 @@ export function riskHighFiles(files) {
   )
 }
 
+const MERGE_GATE_FILES = [
+  "scripts/ocv-tools.mjs",
+  "scripts/lib/ci-workflow.mjs",
+  ".github/labels.yml",
+  "scripts/check.mjs",
+]
+
+const MERGE_GATE_FOLDERS = [
+  "scripts/ocv-tools/",
+  ".githooks/",
+  ".github/workflows/",
+  ".github/actions/",
+  ".github/rulesets/",
+]
+
+export function mergeGateFiles(files) {
+  return asLines(files).filter(
+    (file) =>
+      MERGE_GATE_FILES.includes(file) ||
+      MERGE_GATE_FOLDERS.some((folder) => file.startsWith(folder))
+  )
+}
+
 export function allowMigrationLabel(tag) {
   return `${ALLOW_MIGRATION_PREFIX}${tag}`
 }
@@ -39,9 +62,13 @@ export function allowedMigrationTags(labels) {
 }
 
 export function ownerBecause(facts) {
-  const because = riskHighFiles(facts.diff?.files).map(
-    (file) => `${file} attests the ci check`
-  )
+  const risky = riskHighFiles(facts.diff?.files)
+  const because = [
+    ...risky.map((file) => `${file} attests the ci check`),
+    ...mergeGateFiles(facts.diff?.files)
+      .filter((file) => !risky.includes(file))
+      .map((file) => `${file} decides what may merge`),
+  ]
   for (const item of facts.migrations?.files ?? [])
     if (item.changes?.length)
       because.push(`migration ${item.tag} changes existing things`)

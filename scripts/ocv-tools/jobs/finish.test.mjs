@@ -199,7 +199,7 @@ test("an ordinary PR is queued with auto-merge", () => {
 
 test("ordinary and strict PRs get auto-merge; an owner PR does not", () => {
   for (const changed of [
-    ["scripts/ocv-tools/brief.mjs"],
+    ["scripts/catalog.mjs"],
     ["apps/api/src/account/export-gate.ts"],
     ["apps/web/src/lib/paper-save.ts"],
   ]) {
@@ -272,4 +272,21 @@ test("finish leaves auto-merge off while production is red, and for a draft", ()
   const draft = fixture({ autoOn: true })
   assert.equal(finish(draft, "--draft").code, 0)
   assert.equal(draft.effects("gh", "pr merge").length, 0)
+})
+
+test("a PR that edits the merge gate is owner class at finish, and finish reads both sides of a rename", () => {
+  const f = fixture({
+    autoOn: true,
+    changed: ["scripts/ocv-tools/rules/merge-gate.mjs"],
+  })
+  const r = finish(f)
+  assert.equal(r.code, 0, r.text)
+  assert.equal(f.effects("gh", "pr merge").length, 0)
+  assert.match(
+    r.text,
+    /Owner class \(scripts\/ocv-tools\/rules\/merge-gate\.mjs decides what may merge\): auto-merge stays off/
+  )
+  assert.ok(
+    f.effects("git", "diff").some((e) => e.args.includes("--no-renames"))
+  )
 })

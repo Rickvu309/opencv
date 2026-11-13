@@ -52,9 +52,17 @@ function affectedReceipt(ctx, t) {
 
 function autoMerge(ctx, n, diff) {
   const head = git(ctx, "rev-parse", "HEAD")
+  const files = [
+    ...new Set([
+      ...diff.files,
+      ...git(ctx, "diff", "--no-renames", "--name-only", "origin/main...HEAD")
+        .split("\n")
+        .filter(Boolean),
+    ]),
+  ]
   const owner = ownerBecause({
-    diff,
-    migrations: migrationFacts(ctx, diff.files, "HEAD", []),
+    diff: { ...diff, files },
+    migrations: migrationFacts(ctx, files, "HEAD", []),
   })
   if (owner.length)
     return {

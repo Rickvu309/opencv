@@ -10,7 +10,7 @@ export const COMMANDS = [
   {
     name: "finish",
     usage: "finish --body-file <file> [-d <description>] [--draft] [--dry-run]",
-    when: "Run the pull request rules early, push through the hooks and open the PR (--draft opens a draft). Every problem in the body is named in one message. Unless the PR is a draft or owner class (a risk:high file, or a migration off the only-adds list), it turns on auto-merge, so the PR merges by itself when ci is green; if GitHub refuses auto-merge, it says so in one line and the coordinator merges with merge <pr#>. --dry-run checks only the body, not the title, pushes nothing and opens nothing, so it works with unsaved changes.",
+    when: "Run the pull request rules early, push through the hooks and open the PR (--draft opens a draft). Every problem in the body is named in one message. Unless the PR is a draft or owner class (a risk:high file, a file that decides what may merge such as scripts/ocv-tools, the hooks or the GitHub workflows, actions, rulesets and labels, or a migration off the only-adds list), it turns on auto-merge, so the PR merges by itself when ci is green; if GitHub refuses auto-merge, it says so in one line and the coordinator merges with merge <pr#>. --dry-run checks only the body, not the title, pushes nothing and opens nothing, so it works with unsaved changes.",
   },
   {
     name: "check",

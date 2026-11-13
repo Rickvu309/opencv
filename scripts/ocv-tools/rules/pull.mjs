@@ -120,7 +120,7 @@ export const pullRows = [
   rule({
     id: "OWNER_YES",
     section: "6",
-    says: "An owner-class pull request (a risk:high file, or a migration off the only-adds list) merges only with the owner-approved label, which the coordinator adds by running merge after relaying the owner's yes.",
+    says: "An owner-class pull request (a risk:high file, a file that decides what may merge, or a migration off the only-adds list) merges only with the owner-approved label, which the coordinator adds by running merge after relaying the owner's yes.",
     at: ["pr"],
     needs: ["diff", "migrations", "pull"],
     check: ownerYes,

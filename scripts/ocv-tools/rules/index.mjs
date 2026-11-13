@@ -14,6 +14,7 @@ export {
   allowMigrationLabel,
   allowedMigrationTags,
   openProductionRed,
+  mergeGateFiles,
   ownerBecause,
 } from "./merge-gate.mjs"
 
