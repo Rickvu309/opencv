@@ -4,6 +4,7 @@ import {
   TOAST_OFFSET_BOTTOM,
   TOAST_OFFSET_RIGHT,
 } from "@workspace/ui/lib/toast-offset"
+import { GRID } from "@workspace/ui/lib/viewport-grid"
 import {
   keepToastsClearOf,
   TOAST_CLEARANCE_GAP_PX,
@@ -212,10 +213,71 @@ function gridFaults(place: (room: ToastRoom) => ToastSpot) {
   )
 }
 
+const PANEL_FULL_SCREEN_BELOW_HEIGHT = 437
+
+function chromeButtons(width: number, height: number) {
+  return width >= DESKTOP_MIN_WIDTH
+    ? { "Coach dock button": box(width - 123, height - 34, 81, 28) }
+    : {
+        "Menu button": box(8, 2, 44, 44),
+        "Coach dock button": box(width - 128, height - 40, 72, 32),
+      }
+}
+
+function chromeFaults(
+  width: number,
+  height: number,
+  state: PanelState,
+  toastHeight: number
+) {
+  const { room } = layout(width, height, state, toastHeight)
+  const toast = toastBoxAt(room, toastSpot(room))
+  const faults = within(box(0, 0, width, height), toast)
+    ? []
+    : [`off screen at ${toast.left},${toast.top}`]
+  for (const [control, area] of Object.entries(chromeButtons(width, height)))
+    if (overlaps(toast, area)) faults.push(`covers the ${control}`)
+  return faults
+}
+
+const sweepCases = GRID.flatMap(({ width, height }) =>
+  states
+    .filter(
+      (state) =>
+        state !== "open" ||
+        width < DESKTOP_MIN_WIDTH ||
+        height >= PANEL_FULL_SCREEN_BELOW_HEIGHT
+    )
+    .flatMap((state) =>
+      toastKinds.map(([kind, toastHeight]) => ({
+        name: `${kind} ${width}x${height} ${state}`,
+        faults: () => chromeFaults(width, height, state, toastHeight),
+      }))
+    )
+)
+
 describe("toastSpot", () => {
   it("keeps every toast of the review grid on screen, off the bottom controls and headers, and at least the minimum width", () => {
     expect(grid).toHaveLength(16 * 10 * 3 * 2)
     expect(gridFaults(toastSpot)).toEqual([])
+  })
+
+  it("never covers the phone Menu button or the Coach dock button at any size of the browser sweep", () => {
+    expect(sweepCases.length).toBeGreaterThan(50)
+    expect(
+      sweepCases.flatMap(({ name, faults }) =>
+        faults().map((fault) => `${name}: ${fault}`)
+      )
+    ).toEqual([])
+  })
+
+  it("flags the corner the rule used to fall back to at 1280x117, on top of the Coach dock button", () => {
+    const { room } = layout(1280, 117, "closed")
+    const corner = toastBoxAt(room, { right: 24, width: 356, bottom: 24 })
+    expect(
+      overlaps(corner, chromeButtons(1280, 117)["Coach dock button"])
+    ).toBe(true)
+    expect(toastSpot(room).bottom).toBe(40 + TOAST_CLEARANCE_GAP_PX)
   })
 
   it("flags the top of the window that the rule used to fall back to at 768 wide with the panel open", () => {

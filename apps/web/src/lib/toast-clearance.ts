@@ -169,7 +169,7 @@ export function toastSpot(room: ToastRoom): ToastSpot {
     ({ spot, keepClear: clearOfInside }) => fitsAt(room, spot, clearOfInside)
   )
   if (inside) return inside.spot
-  return {
+  const lowest = {
     right: room.corner,
     width: room.toast.width,
     bottom: Math.max(
@@ -180,6 +180,21 @@ export function toastSpot(room: ToastRoom): ToastSpot {
       )
     ),
   }
+  return clearOfBottomChrome(room, shown, lowest)
+}
+
+function clearOfBottomChrome(
+  room: ToastRoom,
+  shown: readonly ToastBox[],
+  lowest: ToastSpot
+): ToastSpot {
+  const bottomChrome = shown.filter(
+    (box) => box.top + box.height >= room.viewport.height - 1
+  )
+  const lowestBox = toastBoxAt(room, lowest)
+  if (!bottomChrome.some((box) => covers(lowestBox, box))) return lowest
+  const lifted = liftedClear(room, bottomChrome, lowest.right, lowest.width)
+  return toastBoxAt(room, lifted).top >= room.pageTop ? lifted : lowest
 }
 
 const obstacles = new Set<HTMLElement>()

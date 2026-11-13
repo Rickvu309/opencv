@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useReducer, type ReactNode } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 
-import { fetchProfile } from "@/lib/account-api.ts"
+import { profileQuery } from "@/lib/account-api.ts"
 import { setSessionExpiredListener } from "@/lib/api.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { SIGNED_OUT_EMAIL_KEY } from "@/lib/auth-redirect.ts"
@@ -33,6 +34,7 @@ function overlayReducer(state: Overlays, action: OverlayAction): Overlays {
 
 export function ShellOverlays({ children }: { children: ReactNode }) {
   const { data } = authClient.useSession()
+  const queryClient = useQueryClient()
   const [{ phase, expired }, dispatch] = useReducer(overlayReducer, {
     phase: "loading",
     expired: { open: false, email: null },
@@ -56,7 +58,8 @@ export function ShellOverlays({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let cancelled = false
-    void fetchProfile()
+    void queryClient
+      .fetchQuery(profileQuery())
       .then((profile) => {
         if (cancelled) return
         dispatch({
@@ -70,7 +73,7 @@ export function ShellOverlays({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [queryClient])
 
   return (
     <>

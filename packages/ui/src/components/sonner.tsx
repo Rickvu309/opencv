@@ -27,7 +27,7 @@ const glidesWithPanels =
   "transition-[bottom,right,transform]! duration-(--duration-panel)! ease-(--ease-panel)! motion-reduce:transition-none!"
 
 const toastRow =
-  "group toast flex min-h-11 w-full items-center gap-2 rounded-lg border border-border bg-popover py-1.5 pr-1.5 pl-3 text-[13px] text-popover-foreground shadow-lg"
+  "group toast flex min-h-11 w-full items-center gap-2 rounded-lg border border-border bg-popover py-1.5 pr-1.5 pl-3 text-[13px] text-popover-foreground shadow-lg data-[mounted=false]:pointer-events-none data-[removed=true]:pointer-events-none"
 
 const toastIcon =
   "flex size-4 shrink-0 items-center justify-center text-muted-foreground [&>svg]:size-4"

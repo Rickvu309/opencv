@@ -166,7 +166,7 @@ export function PaperLibrary({
         return
       }
       dispatch({ type: "import_ended" })
-      if (created.notice) toast(created.notice, { position: "top-center" })
+      if (created.notice) toast(created.notice)
       onOpen(created.docId)
     } catch (err) {
       if (request.signal.aborted) return

@@ -1,7 +1,11 @@
 import { QueryClient } from "@tanstack/react-query"
 
+import { profileKey } from "@/lib/account-api.ts"
+
+export const PROFILE_FRESH_MS = 60_000
+
 export function createQueryClient() {
-  return new QueryClient({
+  const client = new QueryClient({
     defaultOptions: {
       queries: {
         retry: false,
@@ -9,4 +13,6 @@ export function createQueryClient() {
       },
     },
   })
+  client.setQueryDefaults(profileKey(), { staleTime: PROFILE_FRESH_MS })
+  return client
 }
