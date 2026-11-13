@@ -1,14 +1,18 @@
+import { LIMITS } from "@workspace/domain"
+import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
 
-import {
-  createExportGate,
-  EXPORT_ACCOUNT_BUSY,
-  EXPORT_SERVICE_BUSY,
-  EXPORT_TIMED_OUT,
-  EXPORTS_AT_ONCE,
-  gatedExport,
-  type ExportArchive,
-} from "./export-gate.js"
+import { virtualClock } from "../limits/clock.js"
+import { keyFor } from "../limits/key.js"
+import { limited } from "../limits/limited.js"
+import { memoryLedger } from "../limits/memory.js"
+import { exportDownload, type ExportArchive } from "./export-download.js"
+
+const spec = LIMITS["export.running"]
+const EXPORT_ACCOUNT_BUSY = spec.says.key
+const EXPORT_SERVICE_BUSY = spec.says.service
+const EXPORT_TIMED_OUT = spec.says.expired
+const EXPORTS_AT_ONCE = spec.shape.kind === "lease" ? spec.shape.total : 0
 
 function archive(): ExportArchive {
   const chunks = [Buffer.from("PK"), Buffer.from("body"), Buffer.from("end")]
@@ -23,17 +27,48 @@ function deferred() {
   return { promise, resolve }
 }
 
-function elapsed(ms: number) {
-  return new Promise((done) => setTimeout(done, ms))
+function holdMs() {
+  if (spec.shape.kind !== "lease") throw new Error("export.running is a lease")
+  return spec.shape.holdMs
+}
+
+function open(build: (owner: string) => Promise<ExportArchive>) {
+  const clock = virtualClock()
+  const ledger = memoryLedger(spec, clock)
+  const gate = { running: () => ledger.peek().units }
+  let current = build
+  const app = new Hono()
+  app.onError((error) => {
+    throw error
+  })
+  app.get(
+    "/export/:owner",
+    limited(
+      "export.running",
+      (c) => keyFor("account", c.req.param("owner")),
+      ledger,
+      clock
+    ),
+    async (c) => {
+      const built = await current(c.req.param("owner"))
+      return exportDownload(built, c.req.raw.signal)
+    }
+  )
+  return {
+    app,
+    gate,
+    clock,
+    use(next: (owner: string) => Promise<ExportArchive>) {
+      current = next
+    },
+  }
 }
 
 describe("export gate", () => {
   it("lets one export per account run and refuses the rest with 429", async () => {
-    const gate = createExportGate()
+    const { app, gate } = open(async () => archive())
     const responses = await Promise.all(
-      Array.from({ length: 20 }, () =>
-        gatedExport(gate, "ada", async () => archive())
-      )
+      Array.from({ length: 20 }, () => app.request("/export/ada"))
     )
     const statuses = responses.map((res) => res.status)
     expect(statuses.filter((status) => status === 200)).toHaveLength(1)
@@ -50,10 +85,10 @@ describe("export gate", () => {
   })
 
   it("never runs more exports across accounts than the ceiling and refuses with 503", async () => {
-    const gate = createExportGate()
+    const { app, gate } = open(async () => archive())
     const owners = Array.from({ length: 12 }, (_, index) => `person-${index}`)
     const responses = await Promise.all(
-      owners.map((owner) => gatedExport(gate, owner, async () => archive()))
+      owners.map((owner) => app.request(`/export/${owner}`))
     )
     const statuses = responses.map((res) => res.status)
     expect(statuses.filter((status) => status === 200)).toHaveLength(
@@ -77,34 +112,35 @@ describe("export gate", () => {
   })
 
   it("releases the lock when the client disconnects mid-export", async () => {
-    const gate = createExportGate()
-    const first = await gatedExport(gate, "ada", async () => archive())
+    const { app, gate } = open(async () => archive())
+    const first = await app.request("/export/ada")
     const reader = first.body!.getReader()
     await reader.read()
     await reader.cancel()
     expect(gate.running()).toBe(0)
-    const next = await gatedExport(gate, "ada", async () => archive())
+    const next = await app.request("/export/ada")
     expect(next.status).toBe(200)
     expect(Buffer.from(await next.arrayBuffer()).toString()).toBe("PKbodyend")
   })
 
   it("releases the lock when building the export throws", async () => {
-    const gate = createExportGate()
-    await expect(
-      gatedExport(gate, "ada", async () => {
-        throw new Error("database went away")
-      })
-    ).rejects.toThrow("database went away")
+    const { app, gate, use } = open(async () => {
+      throw new Error("database went away")
+    })
+    await expect(app.request("/export/ada")).rejects.toThrow(
+      "database went away"
+    )
     expect(gate.running()).toBe(0)
-    const next = await gatedExport(gate, "ada", async () => archive())
+    use(async () => archive())
+    const next = await app.request("/export/ada")
     expect(next.status).toBe(200)
   })
 
   it("releases the lock and refuses when building outlasts the time limit", async () => {
-    const gate = createExportGate()
     const slow = deferred()
-    const pending = gatedExport(gate, "ada", () => slow.promise, 10)
-    await elapsed(40)
+    const { app, gate, clock } = open(() => slow.promise)
+    const pending = app.request("/export/ada")
+    clock.advance(holdMs())
     expect(gate.running()).toBe(0)
     slow.resolve(archive())
     const res = await pending
@@ -116,19 +152,19 @@ describe("export gate", () => {
   })
 
   it("releases the lock and stops a download nobody reads past the time limit", async () => {
-    const gate = createExportGate()
-    const res = await gatedExport(gate, "ada", async () => archive(), 10)
+    const { app, gate, clock } = open(async () => archive())
+    const res = await app.request("/export/ada")
     expect(res.status).toBe(200)
-    await elapsed(40)
+    clock.advance(holdMs())
     expect(gate.running()).toBe(0)
     await expect(res.arrayBuffer()).rejects.toThrow(EXPORT_TIMED_OUT)
   })
 
   it("lets an honest person export twice in a row", async () => {
-    const gate = createExportGate()
-    const first = await gatedExport(gate, "ada", async () => archive())
+    const { app, gate } = open(async () => archive())
+    const first = await app.request("/export/ada")
     expect(Buffer.from(await first.arrayBuffer()).toString()).toBe("PKbodyend")
-    const second = await gatedExport(gate, "ada", async () => archive())
+    const second = await app.request("/export/ada")
     expect(second.status).toBe(200)
     expect(second.headers.get("content-type")).toBe("application/zip")
     expect(second.headers.get("x-content-type-options")).toBe("nosniff")
@@ -137,16 +173,10 @@ describe("export gate", () => {
   })
 
   it("frees the slot once the build ends when the person left while it was building", async () => {
-    const gate = createExportGate()
     const slow = deferred()
+    const { app, gate } = open(() => slow.promise)
     const gone = new AbortController()
-    const pending = gatedExport(
-      gate,
-      "ada",
-      () => slow.promise,
-      60_000,
-      gone.signal
-    )
+    const pending = app.request("/export/ada", { signal: gone.signal })
     gone.abort()
     expect(gate.running()).toBe(1)
     const built = archive()
@@ -155,21 +185,15 @@ describe("export gate", () => {
     expect(res.status).toBe(499)
     expect(built.chunks).toHaveLength(0)
     expect(gate.running()).toBe(0)
-    const next = await gatedExport(gate, "ada", async () => archive())
+    const next = await app.request("/export/ada")
     expect(next.status).toBe(200)
   })
 
   it("frees the slot when the person leaves before reading a built export", async () => {
-    const gate = createExportGate()
-    const gone = new AbortController()
     const built = archive()
-    const res = await gatedExport(
-      gate,
-      "ada",
-      async () => built,
-      60_000,
-      gone.signal
-    )
+    const { app, gate } = open(async () => built)
+    const gone = new AbortController()
+    const res = await app.request("/export/ada", { signal: gone.signal })
     expect(gate.running()).toBe(1)
     gone.abort()
     expect(gate.running()).toBe(0)
@@ -178,18 +202,13 @@ describe("export gate", () => {
   })
 
   it("does not free a newer export of the same person when an old request reports it left", async () => {
-    const gate = createExportGate()
-    const gone = new AbortController()
-    const first = await gatedExport(
-      gate,
-      "ada",
-      async () => archive(),
-      60_000,
-      gone.signal
-    )
-    await first.arrayBuffer()
     const slow = deferred()
-    const second = gatedExport(gate, "ada", () => slow.promise)
+    const { app, gate, use } = open(async () => archive())
+    const gone = new AbortController()
+    const first = await app.request("/export/ada", { signal: gone.signal })
+    await first.arrayBuffer()
+    use(() => slow.promise)
+    const second = app.request("/export/ada")
     gone.abort()
     expect(gate.running()).toBe(1)
     slow.resolve(archive())

@@ -1,15 +1,16 @@
 import net from "node:net"
 import type { AddressInfo } from "node:net"
 
+import { LIMITS } from "@workspace/domain"
 import { serve } from "@hono/node-server"
 import { Hono } from "hono"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import {
-  createExportGate,
-  gatedExport,
-  type ExportArchive,
-} from "./export-gate.js"
+import { systemClock } from "../limits/clock.js"
+import { keyFor } from "../limits/key.js"
+import { limited } from "../limits/limited.js"
+import { memoryLedger } from "../limits/memory.js"
+import { exportDownload, type ExportArchive } from "./export-download.js"
 
 const BUILD_MS = 200
 
@@ -48,19 +49,22 @@ afterEach(async () => {
 })
 
 async function listening() {
-  const gate = createExportGate()
+  const clock = systemClock()
+  const ledger = memoryLedger(LIMITS["export.running"], clock)
+  const gate = { running: () => ledger.peek().units }
   const app = new Hono()
-  app.get("/export/:owner", (c) =>
-    gatedExport(
-      gate,
-      c.req.param("owner"),
-      async () => {
-        await elapsed(BUILD_MS)
-        return archive()
-      },
-      60_000,
-      c.req.raw.signal
-    )
+  app.get(
+    "/export/:owner",
+    limited(
+      "export.running",
+      (c) => keyFor("account", c.req.param("owner")),
+      ledger,
+      clock
+    ),
+    async (c) => {
+      await elapsed(BUILD_MS)
+      return exportDownload(archive(), c.req.raw.signal)
+    }
   )
   const server = serve({ fetch: app.fetch, port: 0 })
   servers.push(server)

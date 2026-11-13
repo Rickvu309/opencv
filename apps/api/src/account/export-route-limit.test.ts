@@ -1,16 +1,18 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
+import { LIMITS } from "@workspace/domain"
+
 import {
   authHeaders,
   createMigratedTestDb,
   createTestApp,
   signUp,
 } from "../test/harness.js"
-import {
-  EXPORT_ACCOUNT_BUSY,
-  EXPORT_SERVICE_BUSY,
-  EXPORTS_AT_ONCE,
-} from "./export-gate.js"
+
+const spec = LIMITS["export.running"]
+const EXPORT_ACCOUNT_BUSY = spec.says.key
+const EXPORT_SERVICE_BUSY = spec.says.service
+const EXPORTS_AT_ONCE = spec.shape.kind === "lease" ? spec.shape.total : 0
 
 type Database = Awaited<ReturnType<typeof createMigratedTestDb>>
 
@@ -48,6 +50,7 @@ describe("account export limits on the route", () => {
     expect(statuses.filter((status) => status === 429)).toHaveLength(19)
     const refused = responses.find((res) => res.status === 429)!
     expect(refused.headers.get("retry-after")).toBe("30")
+    expect(refused.headers.get("x-limit")).toBe("export.running")
     expect(await refused.json()).toMatchObject({
       error: { message: EXPORT_ACCOUNT_BUSY },
     })
@@ -68,6 +71,7 @@ describe("account export limits on the route", () => {
     )
     const refused = responses.find((res) => res.status === 503)!
     expect(refused.headers.get("retry-after")).toBe("30")
+    expect(refused.headers.get("x-limit")).toBe("export.running")
     expect(await refused.json()).toMatchObject({
       error: { message: EXPORT_SERVICE_BUSY },
     })
@@ -103,5 +107,19 @@ describe("account export limits on the route", () => {
         .subarray(0, 2)
         .toString()
     ).toBe("PK")
+  })
+
+  it("keys the export on the signed-in account, not a userId in the query", async () => {
+    const first = await app.request("/api/account/export?userId=someone-else", {
+      headers: authHeaders(cookies[3]!),
+    })
+    expect(first.status).toBe(200)
+    const second = await app.request("/api/account/export?userId=ada", {
+      headers: authHeaders(cookies[3]!),
+    })
+    expect(second.status).toBe(429)
+    expect(second.headers.get("x-limit")).toBe("export.running")
+    await first.arrayBuffer()
+    await second.arrayBuffer().catch(() => undefined)
   })
 })

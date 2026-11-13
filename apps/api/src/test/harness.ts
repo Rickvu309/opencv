@@ -9,6 +9,7 @@ import { drizzle } from "drizzle-orm/pglite"
 import { vi } from "vitest"
 
 import { createApp } from "../app.js"
+import { installRawLimitCheck } from "../limits/raw-limit.js"
 import {
   authEmailFromFromEnv,
   googleClientIdFromEnv,
@@ -70,7 +71,7 @@ export function createTestApp(
     fetchJobPosting?: FetchJobPosting
   }
 ) {
-  return createApp({
+  const app = createApp({
     webOrigins: [testWebOrigin],
     sessionSecret: testSessionSecret,
     authUrl: testAuthUrl,
@@ -87,6 +88,8 @@ export function createTestApp(
     resendApiKey: resendApiKeyFromEnv(process.env),
     authEmailFrom: authEmailFromFromEnv(process.env),
   })
+  installRawLimitCheck(app)
+  return app
 }
 
 const codeLine = /^\[auth\] email code for (.+) type ([a-z-]+): ([0-9]{6})$/
