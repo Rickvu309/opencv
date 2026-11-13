@@ -44,7 +44,7 @@ export function CoachMessage({
 }: ComponentProps<typeof Message>) {
   return (
     <Message data-ui-message className={cn("w-full", className)} {...props}>
-      <MessageContent className="min-w-0 gap-3 text-sm leading-[1.6] [overflow-wrap:anywhere]">
+      <MessageContent className="min-w-0 gap-3 text-[15px] leading-6 [overflow-wrap:anywhere]">
         {children}
       </MessageContent>
     </Message>

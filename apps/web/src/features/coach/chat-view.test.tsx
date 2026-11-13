@@ -268,6 +268,75 @@ describe("ChatView reply actions", () => {
     expect(regenerate).toBeVisible()
   })
 
+  it("keeps the latest reply's actions shown and lets older replies show theirs on hover or focus, always on touch", () => {
+    render(
+      createElement(ChatView, {
+        messages: [
+          {
+            ...coachTurn([{ type: "text", text: "First." }]),
+            id: "coach-0",
+            text: "First.",
+          },
+          { id: "user-1", role: "user" as const, text: "And then?" },
+          coachTurn([{ type: "text", text: "Moved it." }]),
+        ],
+        onRegenerate: () => {},
+      })
+    )
+    const [older, latest] = screen.getAllByRole("group", {
+      name: "Reply actions",
+    })
+    const olderFooter = older.closest("[data-reveal]")
+    const latestFooter = latest.closest("[data-reveal]")
+    expect(latestFooter).toHaveAttribute("data-reveal", "always")
+    expect(latestFooter?.className).not.toMatch(/opacity-0/)
+    expect(olderFooter).toHaveAttribute("data-reveal", "on-hover")
+    expect(olderFooter?.className).toMatch(/(^|\s)pointer-fine:opacity-0(\s|$)/)
+    expect(olderFooter?.className).toMatch(
+      /pointer-fine:group-hover\/reply:opacity-100/
+    )
+    expect(olderFooter?.className).toMatch(
+      /pointer-fine:focus-within:opacity-100/
+    )
+    expect(olderFooter?.className).not.toMatch(/(^|\s)opacity-0(\s|$)/)
+    expect(older).not.toHaveAttribute("aria-hidden")
+    const olderCopy = within(older).getByRole("button", { name: "Copy" })
+    olderCopy.focus()
+    expect(olderCopy).toHaveFocus()
+  })
+
+  it("never hides a receipt's Undo on an older reply behind hover", () => {
+    render(
+      createElement(ChatView, {
+        messages: [
+          coachTurn([moveReceipt, { type: "text", text: "Moved it." }]),
+          { id: "user-2", role: "user" as const, text: "Thanks" },
+          {
+            ...coachTurn([{ type: "text", text: "Anytime." }]),
+            id: "coach-2",
+            text: "Anytime.",
+          },
+        ],
+        onRegenerate: () => {},
+        onUndo: async () => {},
+      })
+    )
+    const undo = screen.getByRole("button", { name: /undo/i })
+    expect(undo).toBeVisible()
+    expect(undo.closest("[data-reveal]")).toBeNull()
+    for (
+      let node: HTMLElement | null = undo;
+      node && node !== document.body;
+      node = node.parentElement
+    ) {
+      const hiding = node.className
+        .split(/\s+/)
+        .filter((name) => /^(pointer-fine:)?(opacity-0|invisible)$/.test(name))
+      expect(hiding).toEqual([])
+      expect(node).not.toHaveAttribute("aria-hidden", "true")
+    }
+  })
+
   it("hides Copy and Regenerate on an empty or failed reply and offers Retry on the alert", () => {
     const onRetry = vi.fn()
     render(
@@ -320,7 +389,7 @@ describe("ChatView pending message", () => {
     expect(screen.getByRole("status")).toHaveTextContent(/^Working$/)
     const log = screen.getByRole("log", { name: "Chat" })
     expect(log.className).toContain("max-w-[720px]")
-    expect(log.className).toContain("gap-5")
+    expect(log.className).toContain("gap-7")
     expect(log.className).toContain("pt-6")
   })
 
@@ -340,7 +409,7 @@ describe("ChatView pending message", () => {
     )
     const log = screen.getByRole("log", { name: "Chat" })
     expect(log.className).toContain("gap-3.5")
-    expect(log.className).not.toContain("gap-5")
+    expect(log.className).not.toContain("gap-7")
     expect(log.className).not.toContain("pt-6")
   })
 

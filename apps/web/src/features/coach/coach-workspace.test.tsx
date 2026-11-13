@@ -177,7 +177,7 @@ describe("Coach workspace", () => {
     }
   )
 
-  it("keeps the compact conversation empty with one header and a bottom reply composer", async () => {
+  it("greets in the empty panel with the page's heading and starters, one header and the composer at the bottom", async () => {
     render(
       <ChatStoreProvider>
         <CoachWorkspace
@@ -186,8 +186,20 @@ describe("Coach workspace", () => {
         />
       </ChatStoreProvider>
     )
-    expect(await screen.findByPlaceholderText("Reply…")).toBeVisible()
-    expect(screen.queryByText("How can I help?")).not.toBeInTheDocument()
+    const composer = await screen.findByPlaceholderText("Ask Coach anything")
+    expect(composer).toBeVisible()
+    const greeting = screen.getByRole("heading", { name: "How can I help?" })
+    const home = greeting.closest('[data-slot="coach-home"]')
+    expect(home).toHaveAttribute("data-size", "panel")
+    expect(home?.contains(composer)).toBe(false)
+    expect(
+      home?.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+    expect(
+      screen.getAllByRole("button", {
+        name: /Review my CV|Write a cover letter|Prep an interview/,
+      })
+    ).toHaveLength(3)
     expect(
       screen.getAllByRole("button", { name: "History, New chat" })
     ).toHaveLength(1)
@@ -264,7 +276,7 @@ describe("Coach workspace", () => {
         <CoachWorkspace presentation="compact" />
       </ChatStoreProvider>
     )
-    await screen.findByPlaceholderText("Reply…")
+    await screen.findByPlaceholderText("Ask Coach anything")
     expect(document.querySelector('[data-slot="page-header"]')).toBeNull()
     expect(
       document.querySelector('[data-slot="coach-panel-header"]')

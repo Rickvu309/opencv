@@ -36,6 +36,9 @@ export type CoachTurnsProps = {
   messageCite?: (message: ChatViewMessage) => ReactNode
 }
 
+export const REVEAL_ON_HOVER =
+  "transition-opacity duration-(--duration-micro) ease-(--ease-micro) pointer-fine:opacity-0 pointer-fine:group-hover/reply:opacity-100 pointer-fine:focus-within:opacity-100"
+
 function messagesWithPending(
   messages: readonly ChatViewMessage[],
   pending: ChatViewMessage | null | undefined,
@@ -172,7 +175,7 @@ export function CoachTurns({
             : { traces: [], answer: parts }
         return (
           <ChatItem key={message.id} messageId={message.id}>
-            <CoachMessage>
+            <CoachMessage className="group/reply">
               {message.workedMs ? (
                 <CoachWorkedFor workedMs={message.workedMs} traces={traces} />
               ) : null}
@@ -185,7 +188,15 @@ export function CoachTurns({
               />
               {streaming ? null : messageCite?.(message)}
               {replyActionsVisible(message, streaming) ? (
-                <MessageFooter className="px-0">
+                <MessageFooter
+                  data-reveal={
+                    message.id === latestCoachId ? "always" : "on-hover"
+                  }
+                  className={cn(
+                    "px-0",
+                    message.id !== latestCoachId && REVEAL_ON_HOVER
+                  )}
+                >
                   <CoachMessageActions
                     message={message}
                     canRegenerate={

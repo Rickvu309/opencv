@@ -1,8 +1,11 @@
 import {
+  useCallback,
   useEffect,
   useEffectEvent,
   useId,
+  useLayoutEffect,
   useReducer,
+  useRef,
   type ReactNode,
 } from "react"
 import { useQuery } from "@tanstack/react-query"
@@ -32,6 +35,7 @@ import { chatColumn } from "@/components/ai-elements/chat.tsx"
 import { PromptInputFrame } from "@/components/ai-elements/prompt-input-frame.ts"
 import { CoachDock, type DockRecentList } from "./coach-dock.tsx"
 import { CoachHome } from "./coach-home.tsx"
+import { startComposerGlide } from "./coach-composer-glide.ts"
 import { CoachCapNotice } from "./coach-cap-notice.tsx"
 import { ChatView } from "./chat-view.tsx"
 import { CoachHistory } from "./coach-history.tsx"
@@ -57,6 +61,8 @@ export function CoachWorkspace({
   headerActions?: ReactNode
 }) {
   const composerId = useId()
+  const composerBox = useRef<HTMLDivElement | null>(null)
+  const glideFromTop = useRef<number | null>(null)
   const store = useChatStore()
   const {
     activeChatId,
@@ -177,6 +183,10 @@ export function CoachWorkspace({
       composerId
     )
     if (!started) return
+    const box = composerBox.current
+    glideFromTop.current = box?.closest('[data-slot="coach-home"]')
+      ? box.getBoundingClientRect().top
+      : null
     dispatch({
       type: "draft_sent",
       sent: {
@@ -230,6 +240,28 @@ export function CoachWorkspace({
   const compact = presentation === "compact"
   const showHome = messages.length === 0 && !active && !error
   const showWelcome = showHome && !compact
+
+  const composerRef = useCallback(
+    (element: HTMLDivElement | null) => {
+      composerBox.current = element
+      if (!element || showWelcome) return
+      return keepToastsClearOf(element)
+    },
+    [showWelcome]
+  )
+
+  useLayoutEffect(() => {
+    if (showWelcome) return
+    const fromTop = glideFromTop.current
+    glideFromTop.current = null
+    const box = composerBox.current
+    if (fromTop === null || !box) return
+    startComposerGlide(
+      box,
+      fromTop,
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
+    )
+  }, [showWelcome])
   const coachDock = (
     <CoachDock
       draft={draft}
@@ -246,7 +278,7 @@ export function CoachWorkspace({
       placeholder={
         capped
           ? `Coach is back at ${resetTime}`
-          : compact
+          : compact && !showHome
             ? "Reply…"
             : "Ask Coach anything"
       }
@@ -271,13 +303,15 @@ export function CoachWorkspace({
   )
   const composer = (
     <div
-      ref={showWelcome ? undefined : keepToastsClearOf}
+      ref={composerRef}
       data-slot="coach-workspace-composer"
       className={cn(
         "space-y-2",
         !showWelcome && "shrink-0",
-        !showWelcome && !compact && chatColumn,
-        !showWelcome && compact && "w-full min-w-0 px-2 pb-2"
+        !showWelcome && !compact && cn(chatColumn, "pb-4"),
+        !showWelcome &&
+          compact &&
+          "mx-auto w-full max-w-[736px] min-w-0 px-2 pb-2"
       )}
     >
       {attachments.length ? (
@@ -408,6 +442,17 @@ export function CoachWorkspace({
         ) : (
           <ChatView
             presentation={presentation}
+            empty={
+              compact && showHome ? (
+                <CoachHome
+                  size="panel"
+                  onChooseStarter={(value) =>
+                    dispatch({ type: "draft_typed", value })
+                  }
+                  disabled={!enabled || capped}
+                />
+              ) : null
+            }
             messages={messages}
             pendingUser={
               sentBubble
