@@ -225,7 +225,7 @@ const scannedFiles = () =>
     .filter(scannedFile)
     .filter((file) => existsSync(path.join(root, file)))
 
-test("the app and the kit hold exactly the known hand-written motion, and the known list only shrinks", () => {
+test("the app and the kit hold exactly the known hand-written motion, and the ratchet only shrinks", () => {
   const known = JSON.parse(readFileSync(path.join(root, KNOWN_FILE), "utf8"))
   const counts = countsByFile(
     scannedFiles().flatMap((file) =>
