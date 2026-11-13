@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from "node:fs"
+import { readFileSync } from "node:fs"
 import path from "node:path"
 import { describe, expect, it } from "vitest"
 
@@ -12,13 +12,14 @@ type Fixture = {
   fires?: string[]
 }
 
-const FIXTURES = path.join(import.meta.dirname, "fit-fixtures")
-const fixtures = readdirSync(FIXTURES)
-  .filter((name) => name.endsWith(".json"))
-  .map((name) => ({
-    name,
-    ...(JSON.parse(readFileSync(path.join(FIXTURES, name), "utf8")) as Fixture),
-  }))
+const readFixtures = (file: string) =>
+  JSON.parse(
+    readFileSync(path.join(import.meta.dirname, file), "utf8")
+  ) as (Fixture & { name: string })[]
+const fixtures = [
+  ...readFixtures("fit-record.fixtures.json"),
+  ...readFixtures("fit-main.fixtures.json"),
+]
 
 const phone = { width: 390, height: 844 }
 const page = (width = 390): MeasuredBox => ({
@@ -209,5 +210,25 @@ describe("fit rule 3 also covers a control cut off by a box that does not scroll
     ).toEqual([
       'button "CV.docx, just now" cannot be reached: main "Paper" cuts it off at its centre (154, 456) and does not scroll',
     ])
+  })
+})
+
+describe("fit rule 4 leaves a growing text field to its own box", () => {
+  it("stays quiet on a one-line message field 24px tall on a phone", () => {
+    expect(
+      fitProblems(
+        phone,
+        [
+          control({
+            name: 'textarea "Message Coach"',
+            width: 348,
+            height: 24,
+            textEntry: true,
+            inModal: false,
+          }),
+        ],
+        false
+      )
+    ).toEqual([])
   })
 })

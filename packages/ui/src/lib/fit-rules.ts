@@ -19,6 +19,7 @@ export type MeasuredBox =
       clippedBy?: string
       inModal: boolean
       inline: boolean
+      textEntry?: boolean
     })
 
 export const PHONE_WIDTH = 430
@@ -80,6 +81,7 @@ export function fitProblems(
     if (
       viewport.width <= PHONE_WIDTH &&
       !box.inline &&
+      !box.textEntry &&
       (box.width < TARGET_MIN || box.height < TARGET_MIN) &&
       !(modalOpen && !box.inModal)
     )

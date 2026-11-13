@@ -1,0 +1,247 @@
+[
+  {
+    "name": "d10-toast-off-the-top",
+    "from": "PR 1388 round 2, D10: on a short window with the panel open the toast goes off the top, y -57 at 1366x657",
+    "viewport": {
+      "width": 1366,
+      "height": 657
+    },
+    "modalOpen": false,
+    "boxes": [
+      {
+        "kind": "document",
+        "name": "page",
+        "width": 1366,
+        "height": 657
+      },
+      {
+        "kind": "surface",
+        "name": "toast \"Saved\"",
+        "x": 483,
+        "y": -57,
+        "width": 400,
+        "height": 56,
+        "pinned": true,
+        "reachable": false
+      }
+    ],
+    "fires": ["runs off the window"]
+  },
+  {
+    "name": "d12-toast-over-panel-header",
+    "from": "PR 1388 round 3, D12: the toast sits at top 0 at widths 768 to 807 with the panel open, over the panel header",
+    "viewport": {
+      "width": 790,
+      "height": 900
+    },
+    "modalOpen": false,
+    "boxes": [
+      {
+        "kind": "document",
+        "name": "page",
+        "width": 790,
+        "height": 900
+      },
+      {
+        "kind": "surface",
+        "name": "toast \"Saved\"",
+        "x": 195,
+        "y": 0,
+        "width": 400,
+        "height": 56,
+        "pinned": true,
+        "reachable": false
+      },
+      {
+        "kind": "surface",
+        "name": "panel \"Coach\"",
+        "x": 390,
+        "y": 0,
+        "width": 400,
+        "height": 900,
+        "pinned": true,
+        "reachable": false
+      },
+      {
+        "kind": "control",
+        "name": "button \"Close Coach\"",
+        "x": 540,
+        "y": 12,
+        "width": 32,
+        "height": 32,
+        "pinned": true,
+        "hit": false,
+        "coveredBy": "toast \"Saved\"",
+        "inModal": false,
+        "inline": false
+      }
+    ],
+    "fires": ["cannot be clicked"]
+  },
+  {
+    "name": "d30-bar-without-height-limit",
+    "from": "PR 1426 round 3, D30: the bar has no height limit and pushes past the window at 820x512",
+    "viewport": {
+      "width": 820,
+      "height": 512
+    },
+    "modalOpen": false,
+    "boxes": [
+      {
+        "kind": "document",
+        "name": "page",
+        "width": 820,
+        "height": 512
+      },
+      {
+        "kind": "surface",
+        "name": "bar \"Word edit storage\"",
+        "x": 0,
+        "y": 312,
+        "width": 820,
+        "height": 640,
+        "pinned": true,
+        "reachable": false
+      }
+    ],
+    "fires": ["runs off the window"]
+  },
+  {
+    "name": "d61-coach-panel-collapsed",
+    "from": "PR 1441 round 1, D61: in a 1280x117 window the Coach panel collapses to nothing",
+    "viewport": {
+      "width": 1280,
+      "height": 117
+    },
+    "modalOpen": false,
+    "boxes": [
+      {
+        "kind": "document",
+        "name": "page",
+        "width": 1280,
+        "height": 117
+      },
+      {
+        "kind": "surface",
+        "name": "panel \"Coach\"",
+        "x": 860,
+        "y": 69,
+        "width": 400,
+        "height": 0,
+        "pinned": true,
+        "reachable": false
+      }
+    ],
+    "fires": ["collapsed to 0px"]
+  },
+  {
+    "name": "d68-drawer-close-clipped",
+    "from": "PR 1447 round 1, D68: the phone nav drawer is capped at 710 of 844 px and its close button is clipped",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "modalOpen": true,
+    "boxes": [
+      {
+        "kind": "document",
+        "name": "page",
+        "width": 390,
+        "height": 844
+      },
+      {
+        "kind": "surface",
+        "name": "dialog \"Navigation\"",
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 710,
+        "pinned": true,
+        "reachable": false
+      },
+      {
+        "kind": "control",
+        "name": "button \"Close\"",
+        "x": 328,
+        "y": 12,
+        "width": 44,
+        "height": 44,
+        "pinned": true,
+        "hit": false,
+        "coveredBy": "dialog overlay",
+        "inModal": true,
+        "inline": false
+      }
+    ],
+    "fires": ["cannot be clicked"]
+  },
+  {
+    "name": "d69-new-cv-gallery-off-bottom",
+    "from": "PR 1447 round 1, D69: the New CV gallery runs 34 px off the bottom at 390x844",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "modalOpen": true,
+    "boxes": [
+      {
+        "kind": "document",
+        "name": "page",
+        "width": 390,
+        "height": 844
+      },
+      {
+        "kind": "surface",
+        "name": "dialog \"New CV\"",
+        "x": 8,
+        "y": 0,
+        "width": 374,
+        "height": 878,
+        "pinned": true,
+        "reachable": false
+      }
+    ],
+    "fires": ["bottom 878 > 844"]
+  },
+  {
+    "name": "d7-toast-covers-controls",
+    "from": "PR 1388 round 1, D7: a top-centre toast covers primary controls at 390 px",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "modalOpen": false,
+    "boxes": [
+      {
+        "kind": "document",
+        "name": "page",
+        "width": 390,
+        "height": 844
+      },
+      {
+        "kind": "surface",
+        "name": "toast \"Saved\"",
+        "x": 16,
+        "y": 12,
+        "width": 358,
+        "height": 56,
+        "pinned": true,
+        "reachable": false
+      },
+      {
+        "kind": "control",
+        "name": "button \"New\"",
+        "x": 300,
+        "y": 16,
+        "width": 74,
+        "height": 44,
+        "pinned": true,
+        "hit": false,
+        "coveredBy": "toast \"Saved\"",
+        "inModal": false,
+        "inline": false
+      }
+    ],
+    "fires": ["cannot be clicked"]
+  }
+]

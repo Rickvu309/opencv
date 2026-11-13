@@ -1,3 +1,4 @@
+import { SWEEP_COMMAND } from "./sweep/command.mjs"
 import { join, resolve } from "node:path"
 import { UsageError, parseArgs, positiveIntegers } from "./args.mjs"
 import {
@@ -391,6 +392,7 @@ export const COMMANDS = {
     },
   },
   ...REVIEW_COMMANDS,
+  sweep: SWEEP_COMMAND,
 }
 
 export function renderHelp() {

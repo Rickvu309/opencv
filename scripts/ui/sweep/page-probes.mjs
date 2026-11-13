@@ -25,10 +25,13 @@ export function measureInPage(limit) {
     '[role="dialog"][aria-modal="true"],[role="alertdialog"],dialog[open]'
   const width = innerWidth
   const height = innerHeight
+  const visuallyHidden = (style) =>
+    /rect\(0px,? 0px,? 0px,? 0px\)/.test(style.clip) ||
+    style.clipPath === "inset(50%)"
   const shown = (element) =>
     element.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }) &&
     !element.closest('[aria-hidden="true"],[inert]') &&
-    !/rect\(0px,? 0px,? 0px,? 0px\)/.test(getComputedStyle(element).clip)
+    !visuallyHidden(getComputedStyle(element))
   const kind = (element) => {
     if (element.matches("[data-sonner-toast]")) return "toast"
     if (element.dataset.slot === "coach-panel") return "panel"
@@ -165,6 +168,9 @@ export function measureInPage(limit) {
       inline:
         style.display === "inline" ||
         Boolean(element.closest("p") && element.tagName === "A"),
+      textEntry: element.matches(
+        'textarea,input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"])'
+      ),
     })
   }
   return { boxes, modalOpen }
