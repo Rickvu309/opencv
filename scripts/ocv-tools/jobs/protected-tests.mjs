@@ -1,6 +1,18 @@
 import { createRequire } from "node:module"
 
-const ts = createRequire(import.meta.url)("typescript")
+let ts = null
+
+export function loadParser() {
+  if (ts) return ts
+  try {
+    ts = createRequire(import.meta.url)("typescript")
+  } catch (error) {
+    throw new Error(
+      `the TypeScript parser is not installed here (${String(error.message).split("\n")[0]}), so protected checks cannot be judged; run pnpm install, or read the guards job of ci`
+    )
+  }
+  return ts
+}
 
 const CASE_APIS = new Set([
   "it",
@@ -342,6 +354,7 @@ export const meaningText = ({ head, subject, expected }) =>
   `${head}|${sorted(subject).join("\u0001")}|${sorted(expected).join("\u0001")}`
 
 export function meaningOf(call, source) {
+  loadParser()
   return meaningText(
     meaningParts(call, source, new Set(ALWAYS_ASSERTING), new Set())
   )
@@ -365,6 +378,7 @@ function iteratedTable(call, resolve) {
 }
 
 export function parseTests(file, text, { tableRows = () => null } = {}) {
+  loadParser()
   const source = ts.createSourceFile(
     file,
     String(text),
@@ -524,6 +538,7 @@ export function parseTests(file, text, { tableRows = () => null } = {}) {
 }
 
 export function exportedTable(file, text, name) {
+  loadParser()
   const source = ts.createSourceFile(
     file,
     String(text),

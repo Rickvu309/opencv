@@ -142,6 +142,7 @@ export function protectedFacts(ctx, base, head, { cwd } = {}) {
     weakened: verdict.weakened,
     retired: verdict.retired,
     retirements,
+    files,
     changed: changes.map((change) => ({
       path: change.path,
       baseBlob: change.baseBlob,
@@ -180,4 +181,41 @@ export function pushedProtectedFacts(ctx, shas, cwd) {
     for (const key of Object.keys(merged)) merged[key].push(...facts[key])
   }
   return merged
+}
+
+export function recordedProtectedFacts(ctx, base, head, { cwd } = {}) {
+  const fork = gitOut(ctx, ["merge-base", base, head], cwd).trim()
+  const changes = rawChanges(ctx, fork, head, cwd)
+  const retirements = readRetirements(ctx, changes, cwd)
+  return {
+    recorded: true,
+    weakened: [],
+    retired: retirements.map((r) => ({
+      subject: r.subject ?? r.file,
+      retiredBy: r.subject ?? r.file,
+      class: !r.broken && r.class === "self" ? "self" : "owner",
+      because: r.broken
+        ? `an unreadable ${r.file}`
+        : r.class === "self"
+          ? null
+          : (r.classBecause ?? "no recorded proof of a covering replacement"),
+      count: Number.isInteger(r.items) && r.items > 0 ? r.items : 1,
+    })),
+    retirements,
+    changed: changes.map((change) => ({
+      path: change.path,
+      baseBlob: change.baseBlob,
+      headBlob: change.headBlob,
+    })),
+  }
+}
+
+export function branchVerdict(ctx, base, head, { cwd } = {}) {
+  let facts
+  try {
+    facts = protectedFacts(ctx, base, head, { cwd })
+  } catch (error) {
+    facts = unreadableProtected(error)
+  }
+  return facts
 }

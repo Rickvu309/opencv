@@ -1,10 +1,9 @@
-import { createRequire } from "node:module"
 import { minus, RUNS_NOTHING, stillChecks, weak } from "./assertion-match.mjs"
 import { addedChecks, unmoved } from "./protected-moves.mjs"
 import { retirementClass } from "./retirement-class.mjs"
-import { MARKS, normalise, parseTests } from "./protected-tests.mjs"
+import { MARKS, loadParser, normalise, parseTests } from "./protected-tests.mjs"
 
-const ts = createRequire(import.meta.url)("typescript")
+let ts = null
 
 export { RETIRED_DIR, RETIRED_FILE } from "../rules/merge-gate.mjs"
 export { stillChecks } from "./assertion-match.mjs"
@@ -417,6 +416,7 @@ function fileWeakenings(baseText, headText, path, kind) {
 }
 
 export function weakenings(baseText, headText, path, kind) {
+  ts = loadParser()
   switch (kind) {
     case "test":
     case "guard":

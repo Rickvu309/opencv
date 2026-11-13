@@ -2,7 +2,7 @@ import { join } from "node:path"
 import { decide, refusalError } from "../rules/index.mjs"
 import { run, task } from "./common.mjs"
 import { protectedFacts } from "./protected-facts.mjs"
-import { RETIRED_DIR, retiredBy } from "./protected.mjs"
+import { RETIRED_DIR, retiredBy, retirementClass } from "./protected.mjs"
 import { runnerOf, workspaceRunners } from "./test-runners.mjs"
 
 const TEST = /\.(?:test|spec)\.[cm]?[jt]sx?$/
@@ -137,12 +137,26 @@ export function retireIn(
       "an acceptance test cannot be retired inside the pull request that builds against it",
       "Restore the acceptance file."
     )
+  const recorded = (row) => {
+    const byPath = new Map((facts.files ?? []).map((f) => [f.path, f]))
+    const owner = hits
+      .map((item) => retirementClass(item, row, byPath))
+      .filter((c) => c.class !== "self")
+    return {
+      ...row,
+      class: owner.length ? "owner" : "self",
+      classBecause: owner.length
+        ? [...new Set(owner.map((c) => c.because))].join("; ")
+        : null,
+      items: hits.length,
+    }
+  }
   if (!replacedBy)
     return writeRetirement(
       ctx,
       top,
       n,
-      { subject, because, replacedBy: null },
+      recorded({ subject, because, replacedBy: null }),
       [
         `Retired ${hits.length} weakening(s) under "${subject}" with no replacement test, so no machine can prove it.`,
         `Wrote ${RETIRED_DIR}/${n}.json. The pull request is owner class while it holds this retirement: it waits for the owner's yes.`,
@@ -182,7 +196,7 @@ export function retireIn(
     ctx,
     top,
     n,
-    {
+    recorded({
       subject,
       because,
       replacedBy,
@@ -192,7 +206,7 @@ export function retireIn(
         failedOnBase: true,
         passedOnHead: true,
       },
-    },
+    }),
     [
       `Retired ${hits.length} weakening(s) under "${subject}"; ${replacedBy} fails at ${proof.fork.slice(0, 8)} and passes on the head.`,
       `Wrote ${RETIRED_DIR}/${n}.json. If ${replacedBy} covers the same module, command or route and nothing retired is a ratchet, bound, guard, ledger row, checker setting or skip mark, the pull request still merges itself; finish and the body say "Retired N checks with replacements".`,
@@ -209,7 +223,12 @@ function writeRetirement(ctx, top, n, row, lines) {
   rows.push(row)
   ctx.ports.fs.write(file, `${JSON.stringify(rows, null, 2)}\n`)
   return {
-    lines,
+    lines: [
+      lines[0],
+      row.class === "self"
+        ? `Wrote ${RETIRED_DIR}/${n}.json. Self-serve: the pull request still merges itself, and finish and the body say "Retired ${row.items} checks with replacements".`
+        : `Wrote ${RETIRED_DIR}/${n}.json. Owner class (${row.classBecause}): the pull request waits for the owner's yes.`,
+    ],
     next: `scripts/ocv-tools.mjs save -m "test: retire ${row.subject.slice(0, 40)}"`,
   }
 }

@@ -182,7 +182,7 @@ test("a check removed with no replacement is recorded, and the pull request beco
     subject: SUBJECT,
     because: "prices are set elsewhere",
   })
-  assert.match(done.lines[1], /owner class/)
+  assert.match(done.lines[1], /Owner class \(no replacement test\)/)
   w.commit("retire without a replacement")
   const after = decided(w.facts())
   assert.equal(after.weakened, null)
@@ -193,6 +193,18 @@ test("a check removed with no replacement is recorded, and the pull request beco
   assert.deepEqual(after.lines, [
     `Retired 1 checks that wait for the owner: ${SUBJECT} (no replacement test)`,
   ])
+  const file = join(w.dir, "scripts/retired/7.json")
+  const rows = JSON.parse(readFileSync(file, "utf8"))
+  assert.deepEqual(
+    [rows[0].class, rows[0].classBecause, rows[0].items],
+    ["owner", "no replacement test", 1]
+  )
+  writeFileSync(file, JSON.stringify([{ ...rows[0], class: "self" }]))
+  w.commit("hand-edit the record to self-serve")
+  assert.match(
+    decided(w.facts()).unproven.message,
+    /recorded as self-serve, but it retires a check that waits for the owner \(no replacement test\)/
+  )
 })
 
 test("retire refuses a dirty worktree and a subject the branch does not weaken", (t) => {

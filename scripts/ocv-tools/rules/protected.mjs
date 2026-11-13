@@ -33,8 +33,16 @@ export function retirementProblems(protectedFacts) {
       problems.push(`${name} needs a subject and a because`)
       continue
     }
+    const own = used.filter((item) => item.retiredBy === r.subject)
+    const waits = own.find((item) => item.class !== "self")
+    if (r.class === "self" && waits) {
+      problems.push(
+        `${name} is recorded as self-serve, but it retires a check that waits for the owner (${waits.because}); run retire again`
+      )
+      continue
+    }
     if (!r.replacedBy) {
-      if (!used.some((item) => item.retiredBy === r.subject))
+      if (!own.length)
         problems.push(`${name} retires nothing this change weakens`)
       continue
     }
@@ -56,7 +64,7 @@ export function retirementProblems(protectedFacts) {
       )
       continue
     }
-    if (!used.some((item) => item.retiredBy === r.subject))
+    if (!own.length)
       problems.push(`${name} retires nothing this change weakens`)
   }
   return problems
@@ -74,8 +82,8 @@ export const protectedRows = [
     kind: "rule",
     id: "PROTECTED_WEAKENED",
     section: "5",
-    says: "A change may not remove or weaken a test case, an assertion, a fixture, a corpus file, a ledger row, a ratchet or known-failures list, a limit bound or a checker setting that is on main, unless a retirement in scripts/retired names it; moved and renamed cases with the same assertions, added cases and tighter bounds are free.",
-    at: ["push", "finish", "pr"],
+    says: "Judged at push, at finish and in the guards job of ci (scripts/ocv-tools/jobs/protected-branch.test.mjs), where the TypeScript parser is installed; the policy job reads only the recorded retirements. A change may not remove or weaken a test case, an assertion, a fixture, a corpus file, a ledger row, a ratchet or known-failures list, a limit bound or a checker setting that is on main, unless a retirement in scripts/retired names it; moved and renamed cases with the same assertions, added cases and tighter bounds are free.",
+    at: ["push", "finish"],
     needs: ["protected"],
     check: protectedWeakened,
     fix: () =>
@@ -86,7 +94,7 @@ export const protectedRows = [
     id: "RETIRE_UNPROVEN",
     section: "5",
     says: "Each retirement names a replacement test this change adds or edits, carries a flip proof for that test's current text (fails on the fork point, passes on the head), and retires something the change weakens.",
-    at: ["push", "finish", "pr", "retire"],
+    at: ["push", "finish", "retire"],
     needs: ["protected"],
     check: retireUnproven,
     fix: (facts) =>
@@ -99,16 +107,17 @@ export function retiredLines(protectedFacts) {
   const retired = protectedFacts?.retired ?? []
   const self = retired.filter((item) => item.class === "self")
   const owner = retired.filter((item) => item.class !== "self")
+  const count = (list) => list.reduce((n, item) => n + (item.count ?? 1), 0)
   const unique = (list) => [...new Set(list)].join("; ")
   return [
     ...(self.length
       ? [
-          `Retired ${self.length} checks with replacements: ${unique(self.map((item) => item.retiredBy))}`,
+          `Retired ${count(self)} checks with replacements: ${unique(self.map((item) => item.retiredBy))}`,
         ]
       : []),
     ...(owner.length
       ? [
-          `Retired ${owner.length} checks that wait for the owner: ${unique(owner.map((item) => `${item.retiredBy} (${item.because})`))}`,
+          `Retired ${count(owner)} checks that wait for the owner: ${unique(owner.map((item) => `${item.retiredBy} (${item.because})`))}`,
         ]
       : []),
   ]
