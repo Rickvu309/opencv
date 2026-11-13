@@ -1,8 +1,9 @@
 import assert from "node:assert/strict"
 import test from "node:test"
+import { markSizes } from "./annotate-marks.mjs"
+import { badgeInside, distanceToBoxEdge } from "./annotate-place.mjs"
 import {
   CANVAS,
-  MARK,
   PLACEMENT_ORDER,
   compositeHtml,
   displaySize,
@@ -16,6 +17,9 @@ import {
   sideTarget,
   validateSpec,
 } from "./annotate.mjs"
+
+const SIZES = markSizes(CANVAS.width, CANVAS.scale)
+const MARK = SIZES
 
 const section = (callouts, extra = {}) => ({
   title: "Coach panel",
@@ -59,7 +63,7 @@ test("a valid spec has no problems; selectors need a manifest, a screen and a wi
   )
 })
 
-test("spec validation names every broken field and caps callouts at five", () => {
+test("spec validation names every broken field and caps callouts at twenty-five", () => {
   assert.deepEqual(validateSpec({}), [
     "the spec needs a non-empty sections list",
   ])
@@ -82,12 +86,24 @@ test("spec validation names every broken field and caps callouts at five", () =>
     "section 1 needs a title",
     "section 1 needs a before image, or a screen and width from the manifest",
     "section 1 needs a after image, or a screen and width from the manifest",
-    "section 1 has 6 callouts; keep at most 5",
     "section 1 callout 2 repeats number 1",
     "section 1 callout 2 needs a note",
     "section 1 callout 2 target needs a selector or numeric x and y",
     "section 1 callout 3 needs a whole number n from 1",
   ])
+  const many = Array.from({ length: 26 }, (_, at) => ({
+    n: at + 1,
+    note: "n",
+    target: { x: at, y: at },
+  }))
+  assert.deepEqual(
+    validateSpec({
+      sections: [
+        { title: "t", before: "a.png", after: "b.png", callouts: many },
+      ],
+    }),
+    ["section 1 has 26 callouts; keep at most 25 and list the rest under also"]
+  )
 })
 
 test("a selector resolves to its measured box on each side, scaled to image pixels; x and y are a point", () => {
@@ -141,7 +157,7 @@ test("png size reads the header, and images are never shown larger than their pi
   assert.equal(sectionArrangement(phone, column), "side-by-side")
 })
 
-test("placement takes the first direction in the fixed order whose circle stays inside and clear", () => {
+test("placement prefers the first clear direction in the fixed order and the tip lands on the element's edge", () => {
   assert.deepEqual(PLACEMENT_ORDER, [
     "up-left",
     "up-right",
@@ -153,38 +169,39 @@ test("placement takes the first direction in the fixed order whose circle stays 
     "down",
   ])
   const bounds = { width: 900, height: 560 }
-  const [[mark]] = placeCallouts([
-    {
-      marks: [{ n: 1, box: { x: 400, y: 200, width: 100, height: 50 } }],
-      bounds,
-    },
-  ])
+  const box = { x: 400, y: 200, width: 100, height: 50 }
+  const [[mark]] = placeCallouts([{ marks: [{ n: 1, box }], bounds }], SIZES)
   assert.equal(mark.direction, "up-left")
   assert.equal(mark.clear, true)
-  assert.deepEqual(
-    { x: Math.round(mark.to.x), y: Math.round(mark.to.y) },
-    { x: 401, y: 201 }
+  assert.deepEqual(mark.to, { x: 425, y: 200 })
+  assert.ok(distanceToBoxEdge(mark.to, box) < 0.01)
+  const corner = { x: 0, y: 0, width: 60, height: 30 }
+  const [[cornered]] = placeCallouts(
+    [{ marks: [{ n: 1, box: corner }], bounds }],
+    SIZES
   )
-  const [[corner]] = placeCallouts([
-    { marks: [{ n: 1, box: { x: 0, y: 0, width: 60, height: 30 } }], bounds },
-  ])
-  assert.equal(corner.direction, "right")
+  assert.equal(cornered.clear, true)
+  assert.ok(badgeInside(cornered.center, bounds, SIZES))
+  assert.ok(distanceToBoxEdge(cornered.to, corner) < 0.01)
 })
 
 test("a callout never covers its own target or a sibling target, but may sit inside a target that contains it", () => {
   const panel = { x: 600, y: 100, width: 260, height: 400 }
   const list = { x: 605, y: 150, width: 250, height: 290 }
   const composer = { x: 610, y: 445, width: 240, height: 50 }
-  const [marks] = placeCallouts([
-    {
-      marks: [
-        { n: 1, box: panel },
-        { n: 2, box: list },
-        { n: 3, box: composer },
-      ],
-      bounds: { width: 900, height: 560 },
-    },
-  ])
+  const [marks] = placeCallouts(
+    [
+      {
+        marks: [
+          { n: 1, box: panel },
+          { n: 2, box: list },
+          { n: 3, box: composer },
+        ],
+        bounds: { width: 900, height: 560 },
+      },
+    ],
+    SIZES
+  )
   assert.ok(
     marks.every((mark) => mark.clear),
     JSON.stringify(marks)
@@ -207,15 +224,18 @@ test("a callout never covers its own target or a sibling target, but may sit ins
 })
 
 test("two callouts on neighbouring targets do not stack their circles", () => {
-  const [[a, b]] = placeCallouts([
-    {
-      marks: [
-        { n: 1, box: { x: 300, y: 300, width: 20, height: 20 } },
-        { n: 2, box: { x: 330, y: 300, width: 20, height: 20 } },
-      ],
-      bounds: { width: 900, height: 560 },
-    },
-  ])
+  const [[a, b]] = placeCallouts(
+    [
+      {
+        marks: [
+          { n: 1, box: { x: 300, y: 300, width: 20, height: 20 } },
+          { n: 2, box: { x: 330, y: 300, width: 20, height: 20 } },
+        ],
+        bounds: { width: 900, height: 560 },
+      },
+    ],
+    SIZES
+  )
   assert.ok(
     Math.hypot(a.center.x - b.center.x, a.center.y - b.center.y) >=
       MARK.radius * 2
@@ -224,16 +244,19 @@ test("two callouts on neighbouring targets do not stack their circles", () => {
 
 test("one number takes the same direction in both images when that direction is clear in both", () => {
   const bounds = { width: 900, height: 560 }
-  const [[before], [after]] = placeCallouts([
-    {
-      marks: [{ n: 1, box: { x: 400, y: 200, width: 100, height: 50 } }],
-      bounds,
-    },
-    {
-      marks: [{ n: 1, box: { x: 400, y: 10, width: 100, height: 50 } }],
-      bounds,
-    },
-  ])
+  const [[before], [after]] = placeCallouts(
+    [
+      {
+        marks: [{ n: 1, box: { x: 400, y: 200, width: 100, height: 50 } }],
+        bounds,
+      },
+      {
+        marks: [{ n: 1, box: { x: 400, y: 10, width: 100, height: 50 } }],
+        bounds,
+      },
+    ],
+    SIZES
+  )
   assert.equal(before.direction, after.direction)
   assert.equal(after.clear, true)
 })
@@ -324,22 +347,25 @@ test("five crowded callouts on both sides never put one circle on another", () =
       box: { x, y, width, height },
     })),
   })
-  const placed = placeCallouts([
-    side([
-      [1, 1188, 144, 44, 25],
-      [2, 1198, 129, 22, 9],
-      [3, 1191, 137, 115, 42],
-      [4, 1140, 139, 64, 17],
-      [5, 1184, 105, 93, 16],
-    ]),
-    side([
-      [1, 1188, 119, 44, 25],
-      [2, 1186, 78, 22, 9],
-      [3, 1177, 165, 115, 42],
-      [4, 1116, 154, 64, 17],
-      [5, 1186, 53, 93, 16],
-    ]),
-  ])
+  const placed = placeCallouts(
+    [
+      side([
+        [1, 1188, 144, 44, 25],
+        [2, 1198, 129, 22, 9],
+        [3, 1191, 137, 115, 42],
+        [4, 1140, 139, 64, 17],
+        [5, 1184, 105, 93, 16],
+      ]),
+      side([
+        [1, 1188, 119, 44, 25],
+        [2, 1186, 78, 22, 9],
+        [3, 1177, 165, 115, 42],
+        [4, 1116, 154, 64, 17],
+        [5, 1186, 53, 93, 16],
+      ]),
+    ],
+    SIZES
+  )
   for (const marks of placed)
     for (const [at, a] of marks.entries())
       for (const b of marks.slice(at + 1))

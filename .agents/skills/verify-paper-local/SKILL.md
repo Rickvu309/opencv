@@ -5,6 +5,12 @@ description: Verify Paper input recovery, exact local completion, and the Saved 
 
 # Verify Paper local saves
 
+Last confirmed against `origin/main` at `89c3703c` on 2026-11-13: every command under Run printed the exit codes and pass counts this file states.
+
+## When this file is stale
+
+Run `node scripts/tlc.mjs --stale` first. When it lists `apps/web/src/lib/PaperLocal.tla` as STALE, or `git log --oneline 89c3703c..origin/main -- .agents/skills scripts/tlc.mjs` prints commits, rerun every command under Run before trusting a claim here. If a command fails or prints something else, believe the command, fix this file in the same PR, and move the commit above.
+
 ## Approved rules
 
 D is observed IndexedDB transaction complete for the exact snapshot containing the current words. Input return, localStorage return, request success, and elapsed time are not D. New typing requires its own D.
@@ -30,12 +36,14 @@ The sync commit and the covered files live in `"sync"` and `"covers"` of `apps/w
 Run sequentially with `TMPDIR=/home/quan/tmp` and the assigned heavy slot.
 
 ```sh
+pnpm --filter @workspace/paper-crdt build
 pnpm --filter web exec vitest run --isolate src/lib/paper-local-replay.test.ts src/lib/paper-sync-journal.test.ts
 node --test scripts/paper-local-durable.test.mjs scripts/paper-local-journal.test.mjs
-node scripts/tlc.mjs --all
+node scripts/tlc.mjs apps/web/src/lib/PaperLocal.tla
+node scripts/tlc.mjs apps/web/src/lib/PaperLocal.tla --mutant
 ```
 
-All four CI-discovered safe configurations must exit 0. Their four paired mutants must exit 12. The canonical mutant drops the input journal and breaks ordinary close recovery. The other pairs independently clear the journal after only one confirmation, show Saved before D, and resolve local success before transaction complete. A mutant passing means the proof cannot see its intended mistake. Read every result with `/statechart`; keep the shortest broken paths in the report.
+The build comes first on a fresh worktree: without `packages/paper-crdt/dist` both web tests fail with `Failed to resolve import "@workspace/paper-crdt"`. Then the web tests print `Tests 20 passed (20)`, the node tests `pass 4`, the clean model exits 0 and the mutant exits 12. List the other pairs with `ls apps/web/src/lib/PaperLocal.*.cfg` and run each by name with `--config`; never run `node scripts/tlc.mjs --all` on this machine, CI runs it. All four CI-discovered safe configurations must exit 0. Their four paired mutants must exit 12. The canonical mutant drops the input journal and breaks ordinary close recovery. The other pairs independently clear the journal after only one confirmation, show Saved before D, and resolve local success before transaction complete. A mutant passing means the proof cannot see its intended mistake. Read every result with `/statechart`; keep the shortest broken paths in the report.
 
 Follow the behavior checks on a scratch source mutation that makes `canShowSaved` always true; the fast-receipt test must fail. Restore the source and rerun. A scratch mutation that credits an older completion to the current version must fail the newer-input test. Keep source edits isolated and restore them before other checks or saving.
 

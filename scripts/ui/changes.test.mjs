@@ -1,6 +1,12 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { draftSpec, rankChanges, shorthand } from "./changes.mjs"
+import { validateSpec } from "./annotate.mjs"
+import {
+  ARROWS_PER_IMAGE,
+  draftSpec,
+  rankChanges,
+  shorthand,
+} from "./changes.mjs"
 
 const element = (key, extra = {}) => ({
   key,
@@ -132,7 +138,7 @@ test("style changes, unmatched elements and the cap of eight are reported withou
   assert.deepEqual(rankChanges(before, before).changes, [])
 })
 
-test("a draft spec takes the top five per screen as numbered selector callouts", () => {
+test("a draft spec numbers the largest findings per image, caps the arrows and keeps the rest as legend text", () => {
   const ranked = [
     {
       capture: { screen: "paper-panel-open", width: 1440 },
@@ -146,4 +152,60 @@ test("a draft spec takes the top five per screen as numbered selector callouts",
     note: "list: padding 32 24 to 8 18; gap 24px to 14px",
     target: { selector: "list" },
   })
+  assert.deepEqual(validateSpec(spec), [])
+  const many = Array.from({ length: 10 }, (_, at) =>
+    element(`row-${at}`, { y: at * 40, fontSize: 14 })
+  )
+  const grown = many.map((item, at) => ({ ...item, fontSize: 14 + at + 1 }))
+  const capped = draftSpec(
+    [
+      {
+        capture: { screen: "s", width: 390 },
+        result: rankChanges(many, grown),
+      },
+    ],
+    { manifestPath: "m.json" }
+  ).sections[0]
+  assert.equal(capped.callouts.length, ARROWS_PER_IMAGE)
+  assert.deepEqual(
+    capped.callouts.map((callout) => callout.note.split(":")[0]),
+    ["row-9", "row-8", "row-7", "row-6", "row-5", "row-4"]
+  )
+  assert.deepEqual(capped.also, [
+    "row-3: font size 14px to 18px",
+    "row-2: font size 14px to 17px",
+    "2 more changed elements not listed",
+  ])
+})
+
+test("an element on one side only becomes a new or removed callout, and its children stay out", () => {
+  const before = [
+    element("panel", { width: 400, height: 600 }),
+    element("old-link", { parent: "panel", width: 120, height: 20 }),
+  ]
+  const after = [
+    element("panel", { width: 400, height: 600 }),
+    element("search", { parent: "panel", width: 200, height: 32 }),
+    element("search-icon", { parent: "search", width: 16, height: 16 }),
+  ]
+  const result = rankChanges(before, after)
+  assert.deepEqual(
+    result.added.map((item) => item.key),
+    ["search"]
+  )
+  assert.deepEqual(
+    result.removed.map((item) => item.key),
+    ["old-link"]
+  )
+  const [section] = draftSpec(
+    [{ capture: { screen: "s", width: 1440 }, result }],
+    { manifestPath: "m.json" }
+  ).sections
+  assert.deepEqual(
+    section.callouts.map((callout) => [callout.note, callout.target]),
+    [
+      ["search: new, 200x32px", { after: { selector: "search" } }],
+      ["old-link: removed, was 120x20px", { before: { selector: "old-link" } }],
+    ]
+  )
 })

@@ -45,6 +45,12 @@ test("screens lists every screen with its steps or why it cannot be reached", as
       (screen) => screen.id === "coach-chat-streaming" && screen.unreachable
     )
   )
+  assert.ok(
+    screens.some(
+      (screen) => screen.id === "paper-home" && screen.designRows > 0
+    )
+  )
+  assert.ok(screens.every((screen) => Number.isInteger(screen.designRows)))
 })
 
 test("frame prints one geometry line from the pen file named by OCV_PEN", async () => {

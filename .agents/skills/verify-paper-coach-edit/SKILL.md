@@ -5,6 +5,12 @@ description: Check a change to Paper proposals, approval, basis validation, retr
 
 # Verify a Coach Paper edit
 
+Last confirmed against `origin/main` at `89c3703c` on 2026-11-13: every command under Run printed the exit codes and pass counts this file states.
+
+## When this file is stale
+
+Run `node scripts/tlc.mjs --stale` first. When it lists `apps/api/src/paper/CoachPaper.tla` as STALE, or `git log --oneline 89c3703c..origin/main -- .agents/skills scripts/tlc.mjs` prints commits, rerun every command under Run before trusting a claim here. If a command fails or prints something else, believe the command, fix this file in the same PR, and move the commit above. The clean configs exit 0, the mutants exit 12, `coach-paper-replay.test.ts` prints `Tests 4 passed (4)` and `mcp-proposal-replay.test.ts` prints `Tests 2 passed (2)`.
+
 Use this when a change touches a Coach proposal on a CV or letter, the approval of that proposal, the basis check, a retry of the same proposal, or Undo of that edit.
 
 ## Rules

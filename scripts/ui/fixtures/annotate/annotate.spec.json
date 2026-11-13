@@ -1,0 +1,120 @@
+{
+  "sections": [
+    {
+      "title": "Settings card (light)",
+      "before": "light-before.png",
+      "after": "light-after.png",
+      "callouts": [
+        {
+          "n": 1,
+          "note": "Card corners 12px to 8px",
+          "target": {
+            "x": 233,
+            "y": 128,
+            "width": 555,
+            "height": 160
+          }
+        },
+        {
+          "n": 2,
+          "note": "Save button black to blue",
+          "target": {
+            "x": 233,
+            "y": 312,
+            "width": 120,
+            "height": 36
+          }
+        },
+        {
+          "n": 3,
+          "note": "Search icon in the toolbar",
+          "target": {
+            "after": {
+              "x": 84,
+              "y": 10,
+              "width": 28,
+              "height": 28
+            }
+          }
+        },
+        {
+          "n": 4,
+          "note": "Last toolbar icon",
+          "target": {
+            "before": {
+              "x": 336,
+              "y": 10,
+              "width": 28,
+              "height": 28
+            }
+          }
+        },
+        {
+          "n": 5,
+          "note": "Heading width unchanged at 260px",
+          "target": {
+            "x": 233,
+            "y": 80,
+            "width": 260,
+            "height": 24
+          }
+        }
+      ],
+      "also": ["toolbar gap 8px unchanged"]
+    },
+    {
+      "title": "Phone home (dark): defect evidence",
+      "image": "dark-phone.png",
+      "callouts": [
+        {
+          "n": 1,
+          "note": "Top bar has no title",
+          "target": {
+            "x": 0,
+            "y": 0,
+            "width": 40,
+            "height": 56
+          }
+        },
+        {
+          "n": 2,
+          "note": "Card corners 12px, pen says 8px",
+          "target": {
+            "x": 16,
+            "y": 80,
+            "width": 358,
+            "height": 120
+          }
+        },
+        {
+          "n": 3,
+          "note": "Input is 44px tall",
+          "target": {
+            "x": 16,
+            "y": 224,
+            "width": 358,
+            "height": 44
+          }
+        },
+        {
+          "n": 4,
+          "note": "Bottom bar overlaps content",
+          "target": {
+            "x": 350,
+            "y": 780,
+            "width": 40,
+            "height": 64
+          }
+        },
+        {
+          "n": 5,
+          "note": "Corner point",
+          "target": {
+            "x": 4,
+            "y": 840
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,4 +1,5 @@
 export const CHANGES_PER_SCREEN = 8
+export const ARROWS_PER_IMAGE = 6
 export const PIXEL_TOLERANCE = 0.5
 const STYLE_WEIGHT = 12
 
@@ -96,6 +97,26 @@ const boxOf = (element) => ({
   height: element.height,
 })
 
+function appeared(list, other) {
+  const keys = new Set(list.map((element) => element.key))
+  return list
+    .filter((element) => !other.has(element.key))
+    .filter(
+      (element) =>
+        !element.parent ||
+        other.has(element.parent) ||
+        !keys.has(element.parent)
+    )
+    .map((element) => ({
+      key: element.key,
+      selector: element.selector,
+      score: Math.max(element.width, element.height),
+      box: boxOf(element),
+      slot: element.slot ?? element.key,
+    }))
+    .sort((a, b) => b.score - a.score || a.key.localeCompare(b.key))
+}
+
 export function rankChanges(before, after, limit = CHANGES_PER_SCREEN) {
   const index = (list) => new Map(list.map((element) => [element.key, element]))
   const context = { before: index(before), after: index(after) }
@@ -115,6 +136,8 @@ export function rankChanges(before, after, limit = CHANGES_PER_SCREEN) {
     })
   }
   changed.sort((a, b) => b.score - a.score || a.key.localeCompare(b.key))
+  const added = appeared(after, context.before)
+  const removed = appeared(before, context.after)
   return {
     changes: changed.slice(0, limit),
     more: Math.max(0, changed.length - limit),
@@ -122,21 +145,52 @@ export function rankChanges(before, after, limit = CHANGES_PER_SCREEN) {
       .length,
     onlyAfter: after.filter((element) => !context.before.has(element.key))
       .length,
+    added: added.slice(0, limit),
+    removed: removed.slice(0, limit),
   }
 }
 
-export function draftSpec(ranked, { picks = 5, manifestPath }) {
+const sizeText = (box) => `${Math.round(box.width)}x${Math.round(box.height)}px`
+
+function findings(result) {
+  return [
+    ...result.changes.map((change) => ({
+      score: change.score,
+      note: change.note,
+      target: { selector: change.selector },
+    })),
+    ...(result.added ?? []).map((item) => ({
+      score: item.score,
+      note: `${item.slot}: new, ${sizeText(item.box)}`,
+      target: { after: { selector: item.selector } },
+    })),
+    ...(result.removed ?? []).map((item) => ({
+      score: item.score,
+      note: `${item.slot}: removed, was ${sizeText(item.box)}`,
+      target: { before: { selector: item.selector } },
+    })),
+  ].sort((a, b) => b.score - a.score)
+}
+
+export function draftSpec(ranked, { picks = ARROWS_PER_IMAGE, manifestPath }) {
   return {
     manifest: manifestPath,
-    sections: ranked.map(({ capture, result }) => ({
-      title: `${capture.screen} at ${capture.width}`,
-      screen: capture.screen,
-      width: capture.width,
-      callouts: result.changes.slice(0, picks).map((change, at) => ({
-        n: at + 1,
-        note: change.note,
-        target: { selector: change.selector },
-      })),
-    })),
+    sections: ranked.map(({ capture, result }) => {
+      const all = findings(result)
+      const also = all.slice(picks).map((item) => item.note)
+      if (result.more)
+        also.push(`${result.more} more changed elements not listed`)
+      return {
+        title: `${capture.screen} at ${capture.width}`,
+        screen: capture.screen,
+        width: capture.width,
+        callouts: all.slice(0, picks).map((item, at) => ({
+          n: at + 1,
+          note: item.note,
+          target: item.target,
+        })),
+        ...(also.length ? { also } : {}),
+      }
+    }),
   }
 }
