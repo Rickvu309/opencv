@@ -30,3 +30,15 @@
 - name: "risk:high"
   color: "e11d21"
   description: High risk. ocv-tools reads it
+- name: owner-approved
+  color: "b60205"
+  description: The owner said yes to this owner-class pull request. ocv-tools merge adds it
+- name: production-red
+  color: "b60205"
+  description: Production is broken. While one is open only a production-red-revert pull request merges
+- name: production-red-revert
+  color: "fbca04"
+  description: Reverts production to the last good commit. It merges while production is red
+- name: allow-migration
+  color: "b60205"
+  description: The owner allowed a migration that changes existing things. ocv-tools merge adds allow-migration:<tag>

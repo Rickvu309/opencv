@@ -1,4 +1,5 @@
 import { FIXES } from "../result.mjs"
+import { riskHighFiles } from "./merge-gate.mjs"
 
 function rule(spec) {
   return {
@@ -49,18 +50,7 @@ function ciKept(facts) {
 }
 
 function riskHigh(facts) {
-  const watched = [
-    ".github/workflows/ci.yml",
-    ".github/workflows/nightly.yml",
-    "scripts/check.mjs",
-    ".github/rulesets/main.json",
-  ]
-  if (
-    !workflowFiles(facts).some(
-      (file) => watched.includes(file) || file.startsWith(".github/actions/")
-    )
-  )
-    return null
+  if (!riskHighFiles(workflowFiles(facts)).length) return null
   if (asLines(facts.diff?.labels).includes("risk:high")) return null
   return "the change touches ci.yml, nightly.yml, composite actions, check.mjs or the main ruleset, which attest the ci check itself, and the issue is not labeled risk:high"
 }

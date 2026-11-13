@@ -1,0 +1,96 @@
+2026-11-12T23:41:41.4100364Z 
+2026-11-12T23:41:41.4100983Z ##[endgroup]
+2026-11-12T23:42:51.9944951Z [;31mweb:test[;0m
+2026-11-12T23:42:51.9945644Z cache miss, executing d4c9934a3a224264
+2026-11-12T23:42:51.9946191Z 
+2026-11-12T23:42:51.9946557Z > web@0.0.1 test /home/runner/work/opencv/opencv/apps/web
+2026-11-12T23:42:52.0001975Z ##[error]command (/home/runner/work/opencv/opencv/apps/web) /home/runner/setup-pnpm/node_modules/.bin/pnpm run test --shard=2/3 exited (1)
+2026-11-12T23:42:52.0011212Z web#test:  ERROR  command (/home/runner/work/opencv/opencv/apps/web) /home/runner/setup-pnpm/node_modules/.bin/pnpm run test --shard=2/3 exited (1)
+2026-11-12T23:42:52.0012144Z  ERROR  run failed: command  exited (1)
+2026-11-12T23:42:52.0012680Z > vitest run --config vitest.config.ts --shard=2/3
+2026-11-12T23:42:52.0242047Z  [32m✓[39m [30m[43m shared-modules [49m[39m src/features/app-shell/sidebar-width.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+2026-11-12T23:42:52.0243107Z  [32m✓[39m [30m[43m shared-modules [49m[39m src/features/paper/cv-field-keys.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 284[2mms[22m[39m
+2026-11-12T23:42:52.0243968Z  [32m✓[39m [30m[43m shared-modules [49m[39m src/features/coach/coach-history.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 2063[2mms[22m[39m
+2026-11-12T23:42:52.0244490Z    [32m✓[39m Coach history [2m(4)[22m
+2026-11-12T23:42:52.0244991Z      [33m[2m✓[22m[39m closes the popover when New chat is clicked and starts a fresh chat[33m 653[2mms[22m[39m
+2026-11-12T23:42:52.0245560Z      [33m[2m✓[22m[39m keeps the open chat after visiting Paper[33m 944[2mms[22m[39m
+2026-11-12T23:42:52.0246309Z  [31m❯[39m [30m[43m shared-modules [49m[39m src/test/request-boundary.test.ts [2m([22m[2m1 test[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 33[2mms[22m[39m
+2026-11-12T23:42:52.0247170Z    [31m❯[39m an API path, fetch or query invalidation outside apps/web/src/lib is rejected [2m(1)[22m
+2026-11-12T23:42:52.0247837Z [31m     [31m×[31m keeps API paths, fetch and query invalidation inside lib/[39m[32m 31[2mms[22m[39m
+2026-11-12T23:42:52.0248619Z  [32m✓[39m [30m[43m shared-modules [49m[39m src/features/paper/paper-editor-type-menu.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 589[2mms[22m[39m
+2026-11-12T23:42:52.0249207Z    [32m✓[39m the format toolbar type menu [2m(2)[22m
+2026-11-12T23:42:52.0249843Z      [33m[2m✓[22m[39m keeps the toolbar and the menu open and sets the heading[33m 320[2mms[22m[39m
+2026-11-12T23:42:52.0250680Z  [32m✓[39m [30m[43m shared-modules [49m[39m src/features/coach/coach-tool-presentation.guard.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 3[2mms[22m[39m
+2026-11-12T23:42:52.0251529Z  [32m✓[39m [30m[43m shared-modules [49m[39m src/test/module-isolation.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+2026-11-12T23:42:52.0252339Z  [32m✓[39m [30m[43m shared-modules [49m[39m src/features/auth/auth-copy.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+2026-11-12T23:42:52.0253143Z  [32m✓[39m [30m[43m shared-modules [49m[39m src/features/paper/paper-templates.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+2026-11-12T23:42:52.0253988Z  [32m✓[39m [30m[43m shared-modules [49m[39m src/features/paper/paper-letter-context.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+2026-11-12T23:42:52.0254865Z  [32m✓[39m [30m[43m shared-modules [49m[39m src/features/coach/coach-turns-attachments.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 255[2mms[22m[39m
+2026-11-12T23:42:52.0255729Z  [2m[90m↓[39m[22m [30m[43m shared-modules [49m[39m src/test/ui-kit-styled.test.ts [2m([22m[2m1 test[22m[2m | [22m[33m1 skipped[39m[2m)[22m
+2026-11-12T23:42:52.0256573Z  [32m✓[39m [30m[43m shared-modules [49m[39m src/features/paper/paper.coach-selection.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 977[2mms[22m[39m
+2026-11-12T23:42:52.0257146Z    [32m✓[39m Paper selection chrome [2m(1)[22m
+2026-11-12T23:42:52.0257613Z      [33m[2m✓[22m[39m keeps Coach and Undo and drops the unsaved marks[33m 977[2mms[22m[39m
+2026-11-12T23:42:52.0258326Z  [32m✓[39m [30m[43m shared-modules [49m[39m src/features/paper/paper.coach-turns.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 439[2mms[22m[39m
+2026-11-12T23:42:52.0258857Z    [32m✓[39m Paper Coach entry [2m(1)[22m
+2026-11-12T23:42:52.0259325Z      [33m[2m✓[22m[39m puts the Coach button on the editor, not a second float[33m 438[2mms[22m[39m
+2026-11-12T23:42:52.0260236Z  [32m✓[39m [30m[43m shared-modules [49m[39m src/lib/connections-api.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 3[2mms[22m[39m
+2026-11-12T23:42:52.0260986Z  [32m✓[39m [30m[43m shared-modules [49m[39m src/lib/requests.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+2026-11-12T23:42:52.0261958Z  [32m✓[39m [30m[43m shared-modules [49m[39m src/features/landing/figures/oc/apply-board-columns.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 14[2mms[22m[39m
+2026-11-12T23:42:52.0262850Z  [32m✓[39m [30m[43m shared-modules [49m[39m src/features/coach/cap-notice-mesh.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 13[2mms[22m[39m
+2026-11-12T23:42:52.0263698Z  [32m✓[39m [30m[43m shared-modules [49m[39m src/features/paper/paper.coach-cites.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 429[2mms[22m[39m
+2026-11-12T23:42:52.0264219Z    [32m✓[39m Paper cites [2m(1)[22m
+2026-11-12T23:42:52.0264656Z      [33m[2m✓[22m[39m keeps the library free of the retired cite float[33m 428[2mms[22m[39m
+2026-11-12T23:42:52.0264923Z 
+2026-11-12T23:42:52.0265162Z [31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+2026-11-12T23:42:52.0265393Z 
+2026-11-12T23:42:52.0266432Z [41m[1m FAIL [22m[49m [30m[43m shared-modules [49m[39m src/test/request-boundary.test.ts[2m > [22man API path, fetch or query invalidation outside apps/web/src/lib is rejected[2m > [22mkeeps API paths, fetch and query invalidation inside lib/
+2026-11-12T23:42:52.0267539Z [31m[1mAssertionError[22m: expected [ 'routes/paper-doc.tsx: queryKey: [' ] to deeply equal [][39m
+2026-11-12T23:42:52.0267845Z 
+2026-11-12T23:42:52.0267954Z [32m- Expected[39m
+2026-11-12T23:42:52.0268167Z [31m+ Received[39m
+2026-11-12T23:42:52.0268280Z 
+2026-11-12T23:42:52.0268381Z [32m- [][39m
+2026-11-12T23:42:52.0268568Z [31m+ [[39m
+2026-11-12T23:42:52.0268837Z [31m+   "routes/paper-doc.tsx: queryKey: [",[39m
+2026-11-12T23:42:52.0269095Z [31m+ ][39m
+2026-11-12T23:42:52.0269189Z 
+2026-11-12T23:42:52.0269448Z [36m [2m❯[22m src/test/request-boundary.test.ts:[2m49:18[22m[39m
+2026-11-12T23:42:52.0270076Z     [90m 47|[39m       }
+2026-11-12T23:42:52.0270299Z     [90m 48|[39m     }
+2026-11-12T23:42:52.0270558Z     [90m 49|[39m     expect(hits).toEqual([])
+2026-11-12T23:42:52.0270862Z     [90m   |[39m                  [31m^[39m
+2026-11-12T23:42:52.0271105Z     [90m 50|[39m   })
+2026-11-12T23:42:52.0271305Z     [90m 51|[39m })
+2026-11-12T23:42:52.0271417Z 
+2026-11-12T23:42:52.0271606Z [31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+2026-11-12T23:42:52.0271765Z 
+2026-11-12T23:42:52.0271769Z 
+2026-11-12T23:42:52.0272216Z [2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m84 passed[39m[22m[2m | [22m[33m1 skipped[39m[90m (86)[39m
+2026-11-12T23:42:52.0272940Z [2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m721 passed[39m[22m[2m | [22m[33m1 skipped[39m[90m (723)[39m
+2026-11-12T23:42:52.0273390Z [2m   Start at [22m 23:41:41
+2026-11-12T23:42:52.0273850Z [2m   Duration [22m 69.90s[2m (tests 53%, environment 29%, setup 7%, import 7%, transform 4%)[22m
+2026-11-12T23:42:52.0274125Z 
+2026-11-12T23:42:52.0274130Z 
+2026-11-12T23:42:52.0278793Z ##[error]AssertionError: expected [ 'routes/paper-doc.tsx: queryKey: [' ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   "routes/paper-doc.tsx: queryKey: [",
++ ]
+
+ ❯ src/test/request-boundary.test.ts:49:18
+
+
+2026-11-12T23:42:52.0280476Z  ELIFECYCLE  Test failed. See above for more details.
+2026-11-12T23:42:52.0280695Z 
+2026-11-12T23:42:52.0280811Z  Tasks:    3 successful, 4 total
+2026-11-12T23:42:52.0281064Z Cached:    0 cached, 4 total
+2026-11-12T23:42:52.0281277Z   Time:    1m20.494s 
+2026-11-12T23:42:52.0281472Z Failed:    web#test
+2026-11-12T23:42:52.0281576Z 
+2026-11-12T23:42:52.0283171Z ##[error]Process completed with exit code 1.
+2026-11-12T23:42:52.0365713Z Post job cleanup.
+2026-11-12T23:42:52.0369119Z ##[start-action display=Run actions/setup-node@v4;id=__b32a0106-690a-4bdc-b4e3-67ff747f00ab.__actions_setup-node]

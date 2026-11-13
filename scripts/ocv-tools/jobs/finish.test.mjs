@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
 import test from "node:test"
 import { fixture } from "./fixture.mjs"
 
@@ -149,5 +150,143 @@ test("finish prints the partial pass the receipt holds, one plain line per packa
   assert.match(
     r.text,
     /Local pre-check passed for the part of this change it ran; CI runs the rest and is the gate\./
+  )
+})
+
+const MIGRATIONS = new URL("./migration-fixtures/", import.meta.url)
+const sqlOf = (name) => readFileSync(new URL(`${name}.sql`, MIGRATIONS), "utf8")
+const AUTO_REFUSED =
+  "GraphQL: Auto merge is not allowed for this repository (enablePullRequestAutoMerge)"
+
+function migrationWorld(tag, fixtureName, over = {}) {
+  const file = `apps/api/drizzle/${tag}.sql`
+  return fixture({
+    autoOn: true,
+    changed: ["apps/api/src/paper/store.ts", file],
+    intercept(cmd, args) {
+      if (cmd === "git" && args[0] === "show" && args[1].endsWith(file))
+        return { ok: true, out: sqlOf(fixtureName), err: "" }
+      return null
+    },
+    ...over,
+  })
+}
+
+const autoAsks = (f) =>
+  f.effects("gh", "pr merge").filter((e) => e.args.includes("--auto"))
+
+test("an ordinary PR is queued with auto-merge", () => {
+  const f = fixture({ autoOn: true, changed: ["apps/web/src/lib/jobs.ts"] })
+  const r = finish(f)
+  assert.equal(r.code, 0, r.text)
+  const asks = autoAsks(f)
+  assert.equal(asks.length, 1)
+  assert.deepEqual(asks[0].args, [
+    "pr",
+    "merge",
+    "91",
+    "--squash",
+    "--auto",
+    "--match-head-commit",
+    "base-1",
+  ])
+  assert.match(
+    r.text,
+    /Auto-merge is on: GitHub queues base-1 when ci is green/
+  )
+  assert.match(r.text, /why 91/)
+})
+
+test("ordinary and strict PRs get auto-merge; an owner PR does not", () => {
+  for (const changed of [
+    ["scripts/catalog.mjs"],
+    ["apps/api/src/account/export-gate.ts"],
+    ["apps/web/src/lib/paper-save.ts"],
+  ]) {
+    const f = fixture({ autoOn: true, changed })
+    assert.equal(finish(f).code, 0)
+    assert.equal(autoAsks(f).length, 1, changed[0])
+  }
+  for (const changed of [
+    [".github/workflows/ci.yml"],
+    [".github/actions/setup/action.yml"],
+    ["scripts/check.mjs"],
+  ]) {
+    const f = fixture({ autoOn: true, changed, issueLabels: ["risk:high"] })
+    const r = finish(f)
+    assert.equal(r.code, 0, r.text)
+    assert.equal(f.effects("gh", "pr merge").length, 0, changed[0])
+    assert.match(
+      r.text,
+      /Owner class \(.* attests the ci check\): auto-merge stays off/
+    )
+  }
+})
+
+test("a migration that changes existing things is owner class; an only-adds migration is not", () => {
+  const owner = migrationWorld(
+    "0024_word_rename_retained",
+    "pr-1407-0024_word_rename_retained"
+  )
+  const r = finish(owner)
+  assert.equal(r.code, 0, r.text)
+  assert.equal(owner.effects("gh", "pr merge").length, 0)
+  assert.match(
+    r.text,
+    /migration 0024_word_rename_retained changes existing things/
+  )
+  const adds = migrationWorld(
+    "0023_package_trash",
+    "pr-1407-0023_package_trash"
+  )
+  assert.equal(finish(adds).code, 0)
+  assert.equal(autoAsks(adds).length, 1)
+})
+
+test("when GitHub refuses auto-merge, finish still succeeds and says the old way in one line", () => {
+  const f = fixture({ autoRefused: AUTO_REFUSED })
+  const r = finish(f)
+  assert.equal(r.code, 0, r.text)
+  assert.equal(f.effects("gh", "pr merge").length, 1)
+  const said = r.text.split("\n").filter((line) => /Auto-merge/.test(line))
+  assert.deepEqual(said, [
+    `Auto-merge was refused (${AUTO_REFUSED}), so this PR merges the old way: the coordinator runs merge 91.`,
+  ])
+  assert.match(r.text, /Next: scripts\/ocv-tools\.mjs merge 91/)
+})
+
+test("finish leaves auto-merge off while production is red, and for a draft", () => {
+  const red = fixture({
+    autoOn: true,
+    redIssues: [
+      { number: 1600, state: "OPEN", labels: [{ name: "production-red" }] },
+    ],
+  })
+  const r = finish(red)
+  assert.equal(r.code, 0, r.text)
+  assert.match(
+    r.text,
+    /Auto-merge is off: QUEUE_CLOSED production is red \(#1600 open\)/
+  )
+  assert.equal(red.effects("gh", "pr merge").length, 0)
+  const draft = fixture({ autoOn: true })
+  assert.equal(finish(draft, "--draft").code, 0)
+  assert.equal(draft.effects("gh", "pr merge").length, 0)
+})
+
+test("a PR that edits the merge gate is owner class at finish, and finish reads both sides of a rename", () => {
+  const f = fixture({
+    autoOn: true,
+    changed: ["scripts/ocv-tools/rules/merge-gate.mjs"],
+  })
+  const r = finish(f)
+  assert.equal(r.code, 0, r.text)
+  assert.equal(f.effects("gh", "pr merge").length, 0)
+  assert.match(
+    r.text,
+    /Owner class \(scripts\/ocv-tools\/rules\/merge-gate\.mjs decides what may merge\): auto-merge stays off/
+  )
+  assert.ok(
+    f.effects("git", "diff").some((e) => e.args.includes("--no-renames"))
   )
 })

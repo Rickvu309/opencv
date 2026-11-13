@@ -5,6 +5,10 @@ import { decide, refusalError } from "../rules/index.mjs"
 import { planPull } from "./pull-facts.mjs"
 import { hasReceipt, passLines, receiptPath } from "./affected-tests.mjs"
 import { throwPushFailure } from "../push-failure.mjs"
+import { Refused } from "../result.mjs"
+import { migrationFacts } from "./migration-facts.mjs"
+import { ownerBecause } from "../rules/merge-gate.mjs"
+import { enqueue } from "./merge.mjs"
 import {
   recorded,
   task,
@@ -44,6 +48,53 @@ function affectedReceipt(ctx, t) {
   const head = git(ctx, "rev-parse", "HEAD")
   const tree = git(ctx, "rev-parse", "HEAD^{tree}")
   return { head, receipt: hasReceipt(ctx, t.gitDir, head, tree) }
+}
+
+function autoMerge(ctx, n, diff) {
+  const head = git(ctx, "rev-parse", "HEAD")
+  const files = [
+    ...new Set([
+      ...diff.files,
+      ...git(ctx, "diff", "--no-renames", "--name-only", "origin/main...HEAD")
+        .split("\n")
+        .filter(Boolean),
+    ]),
+  ]
+  const owner = ownerBecause({
+    diff: { ...diff, files },
+    migrations: migrationFacts(ctx, files, "HEAD", []),
+  })
+  if (owner.length)
+    return {
+      lines: [
+        `Owner class (${owner.slice(0, 3).join("; ")}): auto-merge stays off until the owner says yes.`,
+      ],
+      next: `After the owner's yes, from the main checkout: scripts/ocv-tools.mjs merge ${n}`,
+    }
+  let asked
+  try {
+    asked = enqueue(ctx, n, head, { allowMigrations: [] })
+  } catch (error) {
+    if (!(error instanceof Refused)) throw error
+    return {
+      status: "pending",
+      lines: [`Auto-merge is off: ${error.code} ${error.message}`],
+      next: error.fix ?? `scripts/ocv-tools.mjs policy ${n}`,
+    }
+  }
+  if (asked.queued === "auto")
+    return {
+      lines: [
+        `Auto-merge is on: GitHub queues ${head} when ci is green here and merges it when ci is green on the merged tree. Hand back now; do not wait for ci.`,
+      ],
+      next: `If ci turns red: scripts/ocv-tools.mjs why ${n}`,
+    }
+  return {
+    lines: [
+      `Auto-merge was refused (${asked.reason}), so this PR merges the old way: the coordinator runs merge ${n}.`,
+    ],
+    next: `scripts/ocv-tools.mjs merge ${n}`,
+  }
 }
 
 export function finish(ctx, { flags }) {
@@ -180,9 +231,14 @@ export function finish(ctx, { flags }) {
       bodyFile,
       ...(flags["--draft"] ? ["--draft"] : [])
     )
-    return {
-      lines: [...passLines(receiptOf(ctx, t)), `Opened ${url}`],
-      next: `scripts/ocv-tools.mjs merge ${url.split("/").at(-1)}`,
-    }
+    const n = Number(url.split("/").at(-1))
+    const opened = [...passLines(receiptOf(ctx, t)), `Opened ${url}`]
+    if (flags["--draft"])
+      return {
+        lines: [...opened, "A draft is not put on auto-merge."],
+        next: `gh pr ready ${n}, then scripts/ocv-tools.mjs merge ${n}`,
+      }
+    const auto = autoMerge(ctx, n, facts.diff)
+    return { ...auto, lines: [...opened, ...auto.lines] }
   })
 }

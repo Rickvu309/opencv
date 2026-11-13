@@ -1,9 +1,31 @@
 import { issueOfBranch } from "../rules/pull-ref.mjs"
 import { run, git, json, diffFacts } from "./common.mjs"
 import { pinFacts } from "./pin-facts.mjs"
+import { migrationFacts } from "./migration-facts.mjs"
+import { LABELS, allowedMigrationTags } from "../rules/merge-gate.mjs"
 
 export const PR_FIELDS =
-  "number,url,state,title,body,author,isDraft,labels,headRefOid,headRefName,baseRefName,mergeCommit,closingIssuesReferences"
+  "number,url,state,title,body,author,isDraft,labels,headRefOid,headRefName,baseRefName,mergeCommit,closingIssuesReferences,autoMergeRequest"
+
+export function productionRedIssues(ctx) {
+  return json(
+    ctx,
+    "issue",
+    "list",
+    "--label",
+    LABELS.productionRed,
+    "--state",
+    "open",
+    "--json",
+    "number,state,labels",
+    "--limit",
+    "20"
+  ).map((issue) => ({
+    number: issue.number,
+    state: issue.state,
+    labels: (issue.labels ?? []).map((label) => label.name),
+  }))
+}
 
 const generated = (out) =>
   out
@@ -156,6 +178,7 @@ export function pullOf(pull, extra = {}) {
     base: pull.baseRefName,
     mergeOid: pull.mergeCommit?.oid,
     closing: (pull.closingIssuesReferences ?? []).map((i) => i.number),
+    auto: Boolean(pull.autoMergeRequest),
     ...extra,
   }
 }
@@ -175,12 +198,23 @@ export function pullFacts(ctx, n) {
   const facts = diffFacts(ctx, files, head, labels)
   facts.diff.deleted = deletedFacts(ctx, base, head)
   facts.diff.changes = changeFacts(ctx, base, head)
+  const shaped = pullOf(pull, {
+    issue: issue || null,
+    issueState: linked?.state,
+  })
   return {
-    pull: pullOf(pull, { issue: issue || null, issueState: linked?.state }),
+    pull: shaped,
     issue: { n: issue, labels },
     diff: facts.diff,
     commits: commitFacts(ctx, base, head),
     pins: pinFacts(ctx, head),
+    migrations: migrationFacts(
+      ctx,
+      files,
+      head,
+      allowedMigrationTags(shaped.labels)
+    ),
+    issues: productionRedIssues(ctx),
   }
 }
 
