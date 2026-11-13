@@ -214,6 +214,26 @@ export async function stageWordPackage(
   })
 }
 
+export async function restoreWordHead(
+  owner: string,
+  trashed: {
+    docId: string
+    incarnation: string
+    revision: string
+    canvasProfile: string | null
+    headCreatedAt: Date
+  }
+) {
+  await getDb().insert(paperPackageHeads).values({
+    docId: trashed.docId,
+    userId: owner,
+    incarnation: trashed.incarnation,
+    revision: trashed.revision,
+    canvasProfile: trashed.canvasProfile,
+    createdAt: trashed.headCreatedAt,
+  })
+}
+
 export async function publishWordPackage(
   owner: string,
   stageId: string,

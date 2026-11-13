@@ -15,6 +15,7 @@ import { ownedPackagePaper } from "./package-list.js"
 import {
   exportWordPackage,
   publishWordPackage,
+  restoreWordHead,
   stageWordPackage,
 } from "./package-store.js"
 
@@ -159,14 +160,7 @@ export async function restoreWordPage(owner: string, docId: string) {
     const page = await ownedPackagePaper(owner, docId)
     return page ? { page, linkedJobs: [] as string[] } : null
   }
-  await getDb().insert(paperPackageHeads).values({
-    docId,
-    userId: owner,
-    incarnation: trashed.incarnation,
-    revision: trashed.revision,
-    canvasProfile: trashed.canvasProfile,
-    createdAt: trashed.headCreatedAt,
-  })
+  await restoreWordHead(owner, trashed)
   await getDb()
     .delete(paperPackageTrash)
     .where(

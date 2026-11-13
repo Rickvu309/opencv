@@ -24,6 +24,7 @@ import {
 } from "./import-parse.js"
 import { PDF_IMPORT_NOTICE } from "./import-word.js"
 import { OUTLINE_MAX_CHARS } from "./outline.js"
+import { expectListIsLivePages } from "../test/paper-live-pages.js"
 import { readWordOutline } from "./word-reading.js"
 import { IMPORT_SIZE_MESSAGE } from "./store.js"
 
@@ -133,6 +134,7 @@ describe("paper import", () => {
       "Imported sample",
       "Imported sample",
     ])
+    await expectListIsLivePages(app, db, owner)
     await client.close()
   })
 
@@ -161,6 +163,7 @@ describe("paper import", () => {
     const second = (await (await send()).json()) as { data: Published }
     expect(second.data.docId).toBe(first.data.docId)
     expect(await db.select().from(paperPackageHeads)).toHaveLength(1)
+    await expectListIsLivePages(app, db, owner)
     await client.close()
   })
 

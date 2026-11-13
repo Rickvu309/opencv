@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { readdirSync, readFileSync, statSync } from "node:fs"
+import { readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 
@@ -12,6 +12,7 @@ import { withDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
 import { installRegistry } from "../registry/install.js"
 import { registry } from "../registry/registry.js"
+import { expectListIsLivePages } from "../test/paper-live-pages.js"
 import {
   authHeaders,
   createMigratedTestDb,
@@ -21,7 +22,7 @@ import {
 } from "../test/harness.js"
 import { textDocx, textPdf } from "./import-fixtures.test.js"
 import { openWordPage } from "./index.js"
-import { pageCreatorSites, type SourceFile } from "./page-creator-sites.js"
+import { PAGE_STORE_FILES, pageInsertingExports } from "./page-writes.js"
 import { fixturePackage, paragraph } from "./package-fixtures.js"
 import { WORD_PACKAGE_MEDIA_TYPE } from "./package-store.js"
 
@@ -274,115 +275,24 @@ const CASES: Record<string, Maker> = {
   },
 }
 
-type Site = { count: number; command?: string; cases: string[] }
-
-const IMPORTS = [
-  "Import a Word file",
-  "Import a PDF",
-  "Import a text file",
-  "Own agent import (stage, then paper.import)",
-  "Duplicate an imported page (paper.duplicate)",
-  "Restore an imported page from trash (paper.restoreDeleted)",
-]
 const WORD_CASES = Object.keys(CASES).filter(
   (name) => !name.startsWith("Older") && !name.includes("older")
 )
 
-const CREATOR_SITES: Record<string, Site> = {
-  "paper/package-store.ts#publishWordPackage": {
-    count: 1,
-    cases: WORD_CASES.filter((name) => !name.startsWith("Restore")),
-  },
-  "paper/package-canvas.ts#registerCanvasCommit": {
-    count: 1,
-    command: "paper.canvas",
-    cases: [
-      "Start blank (paper.canvas mint)",
-      "Start from a template (paper.canvas mint with a template)",
-      "Start a letter for a Job (paper.canvas mint with a Job)",
-    ],
-  },
-  "paper/package-start.ts#paperStartReview": {
-    count: 1,
-    cases: ["Coach start (paper.start)"],
-  },
-  "paper/package-start.ts#registerPaperStart": {
-    count: 1,
-    command: "paper.start",
-    cases: ["Coach start (paper.start)"],
-  },
-  "paper/operations/import/server.ts#implementation": {
-    count: 1,
-    cases: IMPORTS.slice(0, 4),
-  },
-  "registry/generated/catalog.ts#command:paper.import": {
-    count: 1,
-    cases: IMPORTS.slice(0, 4),
-  },
-  "paper/http.ts#route:POST /import": {
-    count: 1,
-    cases: IMPORTS.slice(0, 3),
-  },
-  "paper/package-card-actions.ts#publishWordPageCopy": {
-    count: 1,
-    cases: [
-      "Duplicate an imported page (paper.duplicate)",
-      "Duplicate a started page (paper.duplicate)",
-    ],
-  },
-  "paper/store.ts#duplicatePaper": {
-    count: 2,
-    cases: [
-      "Duplicate an imported page (paper.duplicate)",
-      "Duplicate a started page (paper.duplicate)",
-      "Duplicate an older document (paper.duplicate)",
-    ],
-  },
-  "paper/card-action-commands.ts#registerDuplicate": {
-    count: 1,
-    command: "paper.duplicate",
-    cases: [
-      "Duplicate an imported page (paper.duplicate)",
-      "Duplicate a started page (paper.duplicate)",
-      "Duplicate an older document (paper.duplicate)",
-    ],
-  },
-  "paper/package-card-actions.ts#restoreWordPage": {
-    count: 1,
-    cases: [
-      "Restore an imported page from trash (paper.restoreDeleted)",
-      "Restore a started page from trash (paper.restoreDeleted)",
-    ],
-  },
-  "paper/store.ts#restoreDeletedPaper": {
-    count: 1,
-    cases: [
-      "Restore an imported page from trash (paper.restoreDeleted)",
-      "Restore a started page from trash (paper.restoreDeleted)",
-    ],
-  },
-  "paper/commands.ts#command:paper.restoreDeleted": {
-    count: 1,
-    cases: [
-      "Restore an imported page from trash (paper.restoreDeleted)",
-      "Restore a started page from trash (paper.restoreDeleted)",
-    ],
-  },
-  "paper/store.ts#createPaper": {
-    count: 1,
-    cases: [
-      "Older document (paper.create)",
-      "Duplicate an older document (paper.duplicate)",
-    ],
-  },
-  "paper/commands.ts#command:paper.create": {
-    count: 1,
-    cases: ["Older document (paper.create)"],
-  },
-  "paper/word/document.ts#open": {
-    count: 1,
-    cases: ["Word module open with a mint source (openWordPage)"],
-  },
+const CREATOR_EXPORTS: Record<string, string[]> = {
+  "paper/package-store.ts#publishWordPackage": WORD_CASES.filter(
+    (name) => !name.startsWith("Restore")
+  ),
+  "paper/package-store.ts#restoreWordHead": WORD_CASES.filter((name) =>
+    name.startsWith("Restore")
+  ),
+  "paper/store.ts#duplicatePaper": Object.keys(CASES).filter((name) =>
+    name.startsWith("Duplicate")
+  ),
+  "paper/store.ts#createPaper": [
+    "Older document (paper.create)",
+    "Duplicate an older document (paper.duplicate)",
+  ],
 }
 
 const CREATOR_COMMANDS = [
@@ -394,88 +304,24 @@ const CREATOR_COMMANDS = [
   "paper.start",
 ]
 
-function apiSources(dir: string): SourceFile[] {
-  return readdirSync(dir).flatMap((entry) => {
-    const full = path.join(dir, entry)
-    if (statSync(full).isDirectory())
-      return entry === "test" ? [] : apiSources(full)
-    if (!entry.endsWith(".ts") || entry.endsWith(".test.ts")) return []
-    return [
-      {
-        path: path.relative(srcRoot, full).split(path.sep).join("/"),
-        text: readFileSync(full, "utf8"),
-      },
-    ]
-  })
-}
-
-function namedCommands(sites: Record<string, Site>) {
-  return Object.fromEntries(
-    Object.entries(sites).flatMap(([site, entry]) =>
-      entry.command ? [[site, entry.command]] : []
-    )
-  )
-}
-
-function counts(sites: Record<string, Site>) {
-  return Object.fromEntries(
-    Object.entries(sites)
-      .map(([site, entry]) => [site, entry.count] as const)
-      .sort(([left], [right]) => left.localeCompare(right))
-  )
-}
-
-describe("every place that makes a page is named here", () => {
-  it("finds exactly the named places that write a page row, from the API source", () => {
+describe("every store function that inserts a page has cases", () => {
+  it("names exactly the exported store functions that insert a page row", () => {
+    const stores = PAGE_STORE_FILES.map((relative) => ({
+      path: relative,
+      text: readFileSync(path.join(srcRoot, relative), "utf8"),
+    }))
     expect(
-      pageCreatorSites(apiSources(srcRoot), namedCommands(CREATOR_SITES)),
-      "A new way to make a page needs a case in CASES and its place in CREATOR_SITES"
-    ).toEqual(counts(CREATOR_SITES))
+      pageInsertingExports(stores),
+      "A store function that inserts a page needs its cases in CREATOR_EXPORTS and CASES"
+    ).toEqual(Object.keys(CREATOR_EXPORTS).sort())
   })
 
-  it("covers every named place with a real case, and every case belongs to a place", () => {
-    const named = new Set(
-      Object.values(CREATOR_SITES).flatMap((site) => site.cases)
-    )
+  it("covers every store function with a real case, and every case belongs to one", () => {
+    const named = new Set(Object.values(CREATOR_EXPORTS).flat())
     expect([...named].filter((name) => !(name in CASES))).toEqual([])
     expect(Object.keys(CASES).filter((name) => !named.has(name))).toEqual([])
-    for (const site of Object.values(CREATOR_SITES))
-      expect(site.cases.length).toBeGreaterThan(0)
-  })
-
-  it("flags a new route that publishes a page and stays quiet on the named ones", () => {
-    const writer: SourceFile = {
-      path: "paper/package-store.ts",
-      text: "export async function publishWordPackage(owner: string) {\n  await getDb().insert(paperPackageHeads).values({ owner })\n}\n",
-    }
-    const quiet: SourceFile = {
-      path: "paper/read-only.ts",
-      text: 'import { open } from "./word/document.js"\nexport async function readOnly(owner: string, doc: string) {\n  return open(owner, { kind: "read", doc })\n}\n',
-    }
-    const route: SourceFile = {
-      path: "paper/new-route.ts",
-      text: 'import { publishWordPackage } from "./package-store.js"\nexport function routes(app: any) {\n  app.post("/quick", async () => publishWordPackage("owner"))\n}\n',
-    }
-    const viaCommand: SourceFile = {
-      path: "job/new-door.ts",
-      text: 'export function door(registry: any) {\n  return registry.execute({ name: "paper.import", input: {} })\n}\n',
-    }
-    const importer: SourceFile = {
-      path: "paper/operations/import/server.ts",
-      text: 'import { publishWordPackage } from "../../package-store.js"\nexport const implementation = { execute: () => publishWordPackage("owner") }\n',
-    }
-    expect(pageCreatorSites([writer, quiet], {})).toEqual({
-      "paper/package-store.ts#publishWordPackage": 1,
-    })
-    expect(pageCreatorSites([writer, quiet, route], {})).toEqual({
-      "paper/new-route.ts#route:POST /quick": 1,
-      "paper/package-store.ts#publishWordPackage": 1,
-    })
-    expect(pageCreatorSites([writer, importer, viaCommand], {})).toEqual({
-      "job/new-door.ts#door": 1,
-      "paper/operations/import/server.ts#implementation": 1,
-      "paper/package-store.ts#publishWordPackage": 1,
-    })
+    for (const cases of Object.values(CREATOR_EXPORTS))
+      expect(cases.length).toBeGreaterThan(0)
   })
 
   it("keeps the person's own agent door to its nine operations, none of which makes a page", async () => {
@@ -582,6 +428,8 @@ describe("a page made any way is listed, opens, and stays hidden from others", (
     expect(
       (await listed(stranger)).some((item) => item.id === made.docId)
     ).toBe(false)
+    await expectListIsLivePages(app, db, owner)
+    await expectListIsLivePages(app, db, stranger)
     const strangerSees = await routeReads(stranger, made.docId)
     expect(strangerSees.get.status).toBe(404)
     expect(strangerSees).toEqual(await routeReads(stranger, randomUUID()))
