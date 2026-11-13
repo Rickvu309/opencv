@@ -93,7 +93,7 @@ export const commitRows = [
   rule({
     id: "CATALOG_STALE",
     section: "4",
-    says: "A commit that changes the domain contract or the generated catalog stages a catalog that node scripts/catalog.mjs generate would not change. The push does not repeat it; CI checks the pushed tree.",
+    says: "A commit that stages an operation, its server or a generated catalog file stages a catalog that node scripts/catalog.mjs generate would not change. The push does not repeat it; CI checks the pushed tree.",
     at: ["commit"],
     needs: ["catalog"],
     check: catalogStale,

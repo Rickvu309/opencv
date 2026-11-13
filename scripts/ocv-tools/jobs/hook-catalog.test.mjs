@@ -53,10 +53,11 @@ const catalogRuns = (w) =>
   w.s.calls.filter((c) => String(c.args[0]).endsWith("catalog-expected.mjs"))
     .length
 
-test("honest commits that touch no contract file never run the catalog", () => {
+test("honest commits that cannot change the catalog never run it: no operation, server or generated file is staged", () => {
   for (const staged of [
     ["apps/web/src/a.tsx"],
     ["docs/agents/notes.md", "README.md"],
+    ["packages/domain/src/paper-word.ts", "packages/domain/src/job.ts"],
     [
       "apps/api/drizzle/0026_add_index.sql",
       "apps/api/drizzle/meta/_journal.json",

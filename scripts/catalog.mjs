@@ -18,7 +18,8 @@ import {
   browserSource,
   discoverCatalog,
 } from "./lib/catalog-discovery.mjs"
-import { generatedDirectories, staleOutputs } from "./lib/catalog-freshness.mjs"
+import { staleOutputs } from "./lib/catalog-freshness.mjs"
+import { generatedDirectories } from "./lib/catalog-stale.mjs"
 import {
   CatalogError,
   detect,

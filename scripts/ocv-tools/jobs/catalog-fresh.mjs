@@ -1,9 +1,8 @@
-import { generatedDirectories } from "../../lib/catalog-freshness.mjs"
-import { staleFiles } from "../../lib/catalog-stale.mjs"
+import { generatedDirectories, staleFiles } from "../../lib/catalog-stale.mjs"
 import { run } from "./common.mjs"
 
 export const CATALOG_INPUTS =
-  /^packages\/domain\/src\/|^apps\/api\/src\/[^/]+\/operations\/|^apps\/api\/src\/registry\/generated\//
+  /^packages\/domain\/src\/(?:operations\/|generated\/|operation\.ts$)|^apps\/api\/src\/[^/]+\/operations\/|^apps\/api\/src\/registry\/generated\//
 
 export function touchesCatalog(files) {
   return files.some((file) => CATALOG_INPUTS.test(file))
