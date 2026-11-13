@@ -1,0 +1,40 @@
+{
+  "from": "main at ed4f962d, sign-in measured by the sweep at 1280x117",
+  "viewport": {
+    "width": 1280,
+    "height": 117
+  },
+  "modalOpen": false,
+  "boxes": [
+    {
+      "kind": "document",
+      "name": "page",
+      "width": 1280,
+      "height": 875
+    },
+    {
+      "kind": "control",
+      "name": "button \"EN\"",
+      "x": 535,
+      "y": 30,
+      "width": 38,
+      "height": 24,
+      "pinned": false,
+      "hit": true,
+      "inModal": false,
+      "inline": false
+    },
+    {
+      "kind": "control",
+      "name": "button \"VI\"",
+      "x": 573,
+      "y": 30,
+      "width": 33,
+      "height": 24,
+      "pinned": false,
+      "hit": true,
+      "inModal": false,
+      "inline": false
+    }
+  ]
+}

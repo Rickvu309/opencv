@@ -1,0 +1,19 @@
+{
+  "from": "PR 1441 round 1, D61: in a 1280x117 window the Coach panel collapses to nothing",
+  "viewport": { "width": 1280, "height": 117 },
+  "modalOpen": false,
+  "boxes": [
+    { "kind": "document", "name": "page", "width": 1280, "height": 117 },
+    {
+      "kind": "surface",
+      "name": "panel \"Coach\"",
+      "x": 860,
+      "y": 69,
+      "width": 400,
+      "height": 0,
+      "pinned": true,
+      "reachable": false
+    }
+  ],
+  "fires": ["collapsed to 0px"]
+}

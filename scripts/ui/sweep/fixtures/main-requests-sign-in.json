@@ -1,0 +1,30 @@
+{
+  "from": "main at ed4f962d, sign-in recorded by the sweep",
+  "screen": "sign-in",
+  "log": [
+    {
+      "method": "GET",
+      "url": "/api/auth/get-session",
+      "at": 832,
+      "phase": "load"
+    },
+    {
+      "method": "GET",
+      "url": "/api/auth/get-session",
+      "at": 868,
+      "phase": "load"
+    },
+    {
+      "method": "GET",
+      "url": "/api/public-config",
+      "at": 1093,
+      "phase": "load"
+    },
+    {
+      "method": "GET",
+      "url": "/api/public-config",
+      "at": 1093,
+      "phase": "load"
+    }
+  ]
+}

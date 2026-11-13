@@ -1,0 +1,280 @@
+import { mkdirSync, readFileSync } from "node:fs"
+import { join } from "node:path"
+import { fileURLToPath } from "node:url"
+
+import { runStep, settle } from "../capture.mjs"
+import { contextOptions } from "../fresh-account.mjs"
+import { TYPED_LINE } from "./loop.mjs"
+import { HOME_SIZE } from "./runner.mjs"
+import { requestRecorder } from "./requests.mjs"
+import {
+  markOpeners,
+  measureInPage,
+  openLayer,
+  twoFrames,
+} from "./page-probes.mjs"
+
+const FIXTURES = new URL("../fixtures/", import.meta.url)
+const PAGE = '[contenteditable="true"]'
+const SAVED = 'p.writing-note:text-is("Saved")'
+const PANEL = '[data-slot="coach-panel"]'
+const COMPOSER = `${PANEL} [data-slot="coach-workspace-composer"] textarea`
+const PANEL_UNDO = `${PANEL} button[aria-label="Undo"]`
+const CONTROL_LIMIT = 400
+const STEP_MS = 20_000
+const PAGE_MS = 30_000
+const COACH_MS = 45_000
+const ESCAPE_SETTLE_MS = 200
+
+const safe = (name) => name.replace(/[^a-z0-9.-]+/gi, "_")
+const firstLine = (error) => error.message.split("\n")[0]
+
+export function browserWorld({ browser, state, accounts, shotsDir, now }) {
+  mkdirSync(shotsDir, { recursive: true })
+  let shared = null
+  const accountFor = async (screen) => {
+    if (screen.signedIn === false) return null
+    if (!screen.sharedAccount) return accounts.take(screen.id)
+    shared ??= accounts.take("sweep route smokes")
+    return shared
+  }
+  const shoot = async (page, name) => {
+    const path = join(shotsDir, `${safe(name)}.png`)
+    try {
+      await page.screenshot({ path })
+      return path
+    } catch (error) {
+      return `no screenshot (${firstLine(error)})`
+    }
+  }
+  const newContext = async (account) => {
+    const context = await browser.newContext({
+      ...contextOptions({ width: HOME_SIZE.width }),
+      viewport: HOME_SIZE,
+      acceptDownloads: true,
+    })
+    if (account) await context.addCookies(account.cookies)
+    return context
+  }
+
+  async function openScreen(screen) {
+    const account = await accountFor(screen)
+    const context = await newContext(account)
+    const recorder = requestRecorder({ apiOrigin: state.apiOrigin, now })
+    context.on("request", recorder.onRequest)
+    await context.addInitScript(markOpeners)
+    const page = await context.newPage()
+    const errors = []
+    page.on("console", (message) => {
+      if (message.type() === "error") errors.push(message.text().slice(0, 240))
+    })
+    page.on("pageerror", (error) => errors.push(firstLine(error).slice(0, 240)))
+    return {
+      runSteps: async () => {
+        try {
+          await page.goto(`${state.webOrigin}${screen.route}`, {
+            waitUntil: "domcontentloaded",
+          })
+        } catch (error) {
+          return `opening ${screen.route} failed: ${firstLine(error)}`
+        }
+        for (const [at, step] of (screen.steps ?? []).entries()) {
+          try {
+            await runStep(page, state.webOrigin, step)
+          } catch (error) {
+            return `step ${at + 1} ${JSON.stringify(step)} failed: ${firstLine(error)}`
+          }
+        }
+        return null
+      },
+      settle: () => settle(page),
+      idle: async (ms) => {
+        recorder.setPhase("idle")
+        await page.waitForTimeout(ms)
+        recorder.setPhase("done")
+      },
+      requests: () => recorder.log,
+      resize: async (viewport) => {
+        await page.setViewportSize(viewport)
+        await page.evaluate(twoFrames)
+      },
+      measure: () => page.evaluate(measureInPage, CONTROL_LIMIT),
+      escapeReturnsFocus: async () => {
+        const before = await page.evaluate(openLayer)
+        if (!before.layer || !before.opener) return { checked: false }
+        await page.keyboard.press("Escape")
+        await page.evaluate(twoFrames)
+        await page.waitForTimeout(ESCAPE_SETTLE_MS)
+        const after = await page.evaluate(openLayer)
+        if (after.count >= before.count)
+          return before.modal
+            ? { checked: true, problem: `Escape did not close ${before.layer}` }
+            : { checked: false }
+        if (after.onOpener) return { checked: true }
+        return {
+          checked: true,
+          problem: `${before.layer} closed and focus went to ${after.focus}, not back to its opener ${before.opener}`,
+        }
+      },
+      consoleErrors: () => errors,
+      screenshot: (name) => shoot(page, name),
+      close: () => context.close(),
+    }
+  }
+
+  async function loopDriver(file) {
+    const context = await newContext(null)
+    const page = await context.newPage()
+    const api = (path) =>
+      context.request.get(`${state.apiOrigin}${path}`, {
+        headers: { origin: state.webOrigin },
+      })
+    const docIdFromUrl = () =>
+      /\/paper\/([^/?#]+)/.exec(new URL(page.url()).pathname)?.[1] ?? null
+    const findEntry = (data, docId) => {
+      if (!data || typeof data !== "object") return null
+      if (data.id === docId || data.docId === docId) return data
+      for (const value of Object.values(data)) {
+        const found = findEntry(value, docId)
+        if (found) return found
+      }
+      return null
+    }
+    return {
+      signIn: async () => {
+        const account = await accounts.take(`sweep loop ${file}`)
+        await context.addCookies(account.cookies)
+      },
+      importFile: async (name) => {
+        await page.goto(`${state.webOrigin}/paper`, {
+          waitUntil: "domcontentloaded",
+        })
+        await page
+          .locator('input[type="file"]')
+          .first()
+          .setInputFiles(fileURLToPath(new URL(name, FIXTURES)), {
+            timeout: STEP_MS,
+          })
+      },
+      waitForPage: async (heading) => {
+        try {
+          const handle = await page.waitForFunction(
+            ([selector, wanted]) => {
+              const editor = document.querySelector(selector)
+              if (editor && editor.innerText.includes(wanted)) return "page"
+              const text = document.body.innerText
+              if (text.includes("Document not found")) return "missing"
+              return false
+            },
+            [PAGE, heading],
+            { timeout: PAGE_MS }
+          )
+          if ((await handle.jsonValue()) === "page")
+            return { ok: true, docId: docIdFromUrl() }
+        } catch {
+          return {
+            ok: false,
+            shows: `${(
+              await page
+                .locator("main")
+                .first()
+                .innerText({ timeout: 2_000 })
+                .catch(() => "nothing")
+            )
+              .replace(/\s+/g, " ")
+              .trim()
+              .slice(0, 120)} (after ${PAGE_MS / 1000} s)`,
+          }
+        }
+        return {
+          ok: false,
+          shows: (await page.locator("main").first().innerText())
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 120),
+        }
+      },
+      openFromLibrary: async (docId) => {
+        const library = await (await api("/api/paper")).json()
+        const entry = findEntry(library, docId)
+        if (!entry) return false
+        await page.goto(`${state.webOrigin}/paper`, {
+          waitUntil: "domcontentloaded",
+        })
+        const title = entry.title ?? entry.name
+        const link = page.locator(`main a[href$="/paper/${docId}"]`).first()
+        const row = title
+          ? page.locator("main").getByText(title, { exact: true }).first()
+          : link
+        await row.click({ timeout: STEP_MS })
+        return true
+      },
+      openByAddress: async (docId) => {
+        await page.goto(`${state.webOrigin}/paper/${docId}`, {
+          waitUntil: "domcontentloaded",
+        })
+      },
+      typeLine: async (text) => {
+        const editor = page.locator(PAGE).first()
+        await editor.click({ timeout: STEP_MS })
+        await page.keyboard.press("Control+End")
+        await page.keyboard.press("Enter")
+        await page.keyboard.type(text)
+        await page
+          .locator(SAVED)
+          .waitFor({ state: "visible", timeout: STEP_MS })
+      },
+      storedText: async (docId) => {
+        let text = ""
+        for (let tries = 0; tries < 4; tries += 1) {
+          text = await (await api(`/api/paper/packages/${docId}/read`)).text()
+          if (text.includes(TYPED_LINE)) return text
+          await page.waitForTimeout(750)
+        }
+        return text
+      },
+      askCoachForEdit: async () => {
+        await page
+          .locator("[data-dock-coach]")
+          .first()
+          .click({ timeout: STEP_MS })
+        await page
+          .locator(PANEL)
+          .waitFor({ state: "visible", timeout: STEP_MS })
+        await page
+          .locator(COMPOSER)
+          .fill("Please improve the summary", { timeout: STEP_MS })
+        await page.keyboard.press("Enter")
+        await page
+          .getByRole("button", { name: "Approve", exact: true })
+          .first()
+          .waitFor({ state: "visible", timeout: COACH_MS })
+      },
+      approve: async () => {
+        await page
+          .getByRole("button", { name: "Approve", exact: true })
+          .first()
+          .click({ timeout: STEP_MS })
+        await page
+          .locator(PANEL_UNDO)
+          .waitFor({ state: "visible", timeout: COACH_MS })
+      },
+      pageText: () => page.locator(PAGE).first().innerText(),
+      undoOffered: () => page.locator(PANEL_UNDO).first().isVisible(),
+      downloadWord: async () => {
+        const [download] = await Promise.all([
+          page.waitForEvent("download", { timeout: STEP_MS }),
+          page
+            .getByRole("link", { name: "Download Word", exact: true })
+            .first()
+            .click({ timeout: STEP_MS }),
+        ])
+        return readFileSync(await download.path())
+      },
+      screenshot: (name) => shoot(page, name),
+      close: () => context.close(),
+    }
+  }
+
+  return { now, openScreen, loopDriver }
+}

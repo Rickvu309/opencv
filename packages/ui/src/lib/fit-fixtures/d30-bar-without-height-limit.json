@@ -1,0 +1,19 @@
+{
+  "from": "PR 1426 round 3, D30: the bar has no height limit and pushes past the window at 820x512",
+  "viewport": { "width": 820, "height": 512 },
+  "modalOpen": false,
+  "boxes": [
+    { "kind": "document", "name": "page", "width": 820, "height": 512 },
+    {
+      "kind": "surface",
+      "name": "bar \"Word edit storage\"",
+      "x": 0,
+      "y": 312,
+      "width": 820,
+      "height": 640,
+      "pinned": true,
+      "reachable": false
+    }
+  ],
+  "fires": ["runs off the window"]
+}

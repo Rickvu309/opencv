@@ -1,0 +1,32 @@
+{
+  "from": "PR 1388 round 1, D7: a top-centre toast covers primary controls at 390 px",
+  "viewport": { "width": 390, "height": 844 },
+  "modalOpen": false,
+  "boxes": [
+    { "kind": "document", "name": "page", "width": 390, "height": 844 },
+    {
+      "kind": "surface",
+      "name": "toast \"Saved\"",
+      "x": 16,
+      "y": 12,
+      "width": 358,
+      "height": 56,
+      "pinned": true,
+      "reachable": false
+    },
+    {
+      "kind": "control",
+      "name": "button \"New\"",
+      "x": 300,
+      "y": 16,
+      "width": 74,
+      "height": 44,
+      "pinned": true,
+      "hit": false,
+      "coveredBy": "toast \"Saved\"",
+      "inModal": false,
+      "inline": false
+    }
+  ],
+  "fires": ["cannot be clicked"]
+}

@@ -1,0 +1,42 @@
+{
+  "from": "PR 1388 round 3, D12: the toast sits at top 0 at widths 768 to 807 with the panel open, over the panel header",
+  "viewport": { "width": 790, "height": 900 },
+  "modalOpen": false,
+  "boxes": [
+    { "kind": "document", "name": "page", "width": 790, "height": 900 },
+    {
+      "kind": "surface",
+      "name": "toast \"Saved\"",
+      "x": 195,
+      "y": 0,
+      "width": 400,
+      "height": 56,
+      "pinned": true,
+      "reachable": false
+    },
+    {
+      "kind": "surface",
+      "name": "panel \"Coach\"",
+      "x": 390,
+      "y": 0,
+      "width": 400,
+      "height": 900,
+      "pinned": true,
+      "reachable": false
+    },
+    {
+      "kind": "control",
+      "name": "button \"Close Coach\"",
+      "x": 540,
+      "y": 12,
+      "width": 32,
+      "height": 32,
+      "pinned": true,
+      "hit": false,
+      "coveredBy": "toast \"Saved\"",
+      "inModal": false,
+      "inline": false
+    }
+  ],
+  "fires": ["cannot be clicked"]
+}

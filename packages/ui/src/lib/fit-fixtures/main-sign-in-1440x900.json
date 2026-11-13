@@ -1,0 +1,64 @@
+{
+  "from": "main at ed4f962d, sign-in measured by the sweep at 1440x900",
+  "viewport": {
+    "width": 1440,
+    "height": 900
+  },
+  "modalOpen": false,
+  "boxes": [
+    {
+      "kind": "document",
+      "name": "page",
+      "width": 1440,
+      "height": 985
+    },
+    {
+      "kind": "control",
+      "name": "input \"Enter your email address\"",
+      "x": 190,
+      "y": 504.8,
+      "width": 340,
+      "height": 46,
+      "pinned": false,
+      "hit": true,
+      "inModal": false,
+      "inline": false
+    },
+    {
+      "kind": "control",
+      "name": "button \"Continue\"",
+      "x": 190,
+      "y": 574.8,
+      "width": 340,
+      "height": 46,
+      "pinned": false,
+      "hit": true,
+      "inModal": false,
+      "inline": false
+    },
+    {
+      "kind": "control",
+      "name": "button \"EN\"",
+      "x": 615,
+      "y": 30,
+      "width": 38,
+      "height": 24,
+      "pinned": false,
+      "hit": true,
+      "inModal": false,
+      "inline": false
+    },
+    {
+      "kind": "control",
+      "name": "button \"VI\"",
+      "x": 653,
+      "y": 30,
+      "width": 33,
+      "height": 24,
+      "pinned": false,
+      "hit": true,
+      "inModal": false,
+      "inline": false
+    }
+  ]
+}
