@@ -33,7 +33,10 @@ import {
   PaperImportDialog,
 } from "./paper-import.tsx"
 import { openBlankPage, PaperNewDialog } from "./paper-new-dialog.tsx"
-import { PAPER_GALLERY_DIALOG_CLASS } from "./paper-template-gallery.tsx"
+import {
+  PAPER_GALLERY_DIALOG_CLASS,
+  focusChosenTemplate,
+} from "./paper-template-gallery.tsx"
 import { PaperLetterStartPage } from "./paper-letter-start-page.tsx"
 import { PaperImportInput } from "./paper-import-input.tsx"
 import { PaperLibraryStarters } from "./paper-parts.tsx"
@@ -458,13 +461,16 @@ export function PaperLibrary({
       >
         <DialogContent
           className={newGallery ? PAPER_GALLERY_DIALOG_CLASS : undefined}
+          initialFocus={newGallery ? focusChosenTemplate : undefined}
         >
-          <DialogHeader>
-            <DialogTitle>{newGallery ? "New CV" : "New"}</DialogTitle>
-            <DialogDescription>
-              Pick a page, or bring a file you already have.
-            </DialogDescription>
-          </DialogHeader>
+          {newGallery ? null : (
+            <DialogHeader>
+              <DialogTitle>New</DialogTitle>
+              <DialogDescription>
+                Pick a page, or bring a file you already have.
+              </DialogDescription>
+            </DialogHeader>
+          )}
           {mode?.type === "new" ? (
             <PaperNewDialog
               step={mode.step}

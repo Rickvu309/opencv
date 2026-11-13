@@ -101,19 +101,15 @@ export function PaperNewDialog({
 
   if (step === "gallery") {
     return (
-      <div className="space-y-3">
-        {error ? (
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-        ) : null}
-        <PaperTemplateGallery
-          onUse={(templateId) => void applyTemplate(templateId)}
-          onImport={onImport}
-          onBlank={() => void startBlank()}
-          pending={pending}
-        />
-      </div>
+      <PaperTemplateGallery
+        title="New CV"
+        description="Pick a page, or bring a file you already have."
+        onUse={(templateId) => void applyTemplate(templateId)}
+        onImport={onImport}
+        onBlank={() => void startBlank()}
+        pending={pending}
+        error={error}
+      />
     )
   }
 
