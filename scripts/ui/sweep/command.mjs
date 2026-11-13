@@ -6,6 +6,7 @@ import { SCREENS, pickScreens } from "../screens.mjs"
 import { liveState } from "../stack.mjs"
 import { ACCOUNT_SOURCES, accountSource } from "./accounts.mjs"
 import { browserWorld } from "./browser-world.mjs"
+import { hasShot, higFound, higLine, higSpec } from "./hig.mjs"
 import { LOOP_FILES, coreLoop } from "./loop.mjs"
 import { routeScreens, staticRoutes } from "./routes.mjs"
 import { failureLine, summaryLine, sweepScreen } from "./runner.mjs"
@@ -55,7 +56,7 @@ export const SWEEP_COMMAND = {
   usage:
     "sweep screen <id...> | all | loop [--size WxH] [--file cv-formatted.docx|cv-text.pdf] [--accounts seeded|pooled]",
   about:
-    "Open screens at ten window sizes and fail on a box that does not fit, a control that cannot be clicked, requests that do not settle, focus lost after Escape or a console error; loop runs the Paper core loop (import, open, type, Coach edit, approve, download Word).",
+    "Open screens at ten window sizes and fail on a box that does not fit, a control that cannot be clicked, requests that do not settle, focus lost after Escape or a console error; report without failing the Apple interface guideline rules (contrast, 200% text, focus ring, reduced motion) at 1440 and 390 as HIG lines; loop runs the Paper core loop (import, open, type, Coach edit, approve, download Word).",
   options: { valued: ["size", "file", "accounts"] },
   run: async (ctx, { positional, flags }) => {
     const [mode, ...ids] = positional
@@ -107,9 +108,21 @@ export const SWEEP_COMMAND = {
           },
         ])
         cases.push(...found)
+        const higLines = higFound(found).map((item) => {
+          if (!hasShot(item)) return higLine(item, null)
+          const spec = join(
+            state.dir,
+            "sweep",
+            "hig",
+            `${item.screen}-${item.size}-${item.rule}.spec.json`
+          )
+          ctx.fs.write(spec, JSON.stringify(higSpec(item), null, 2))
+          return higLine(item, spec)
+        })
         const block = [
           summaryLine(screen.id, found),
           ...found.filter((item) => !item.ok).map(failureLine),
+          ...higLines,
         ]
         block.forEach((line) => say(line))
         lines.push(...block)
@@ -135,6 +148,10 @@ export const SWEEP_COMMAND = {
         loops: targets.files.length,
         cases: cases.length,
         failed: failed.length,
+        higFindings: higFound(cases).reduce(
+          (total, item) => total + item.findings.length,
+          0
+        ),
         seconds: Math.round((ctx.clock.now() - started) / 1000),
         report,
       })

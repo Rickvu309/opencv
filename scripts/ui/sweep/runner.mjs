@@ -1,5 +1,6 @@
 import { fitProblems } from "../../../packages/ui/src/lib/fit-rules.ts"
 import { sizeLabel } from "../../../packages/ui/src/lib/viewport-grid.ts"
+import { higFound, higRingCase, higSampleCases } from "./hig.mjs"
 import { budgetFor, requestProblems } from "./requests.mjs"
 
 export const HOME_SIZE = { width: 1440, height: 900 }
@@ -66,6 +67,7 @@ export async function sweepScreen(world, screen, grid) {
         })
       )
     }
+    cases.push(...(await higSampleCases(session, screen, grid, base)))
     await session.resize(HOME_SIZE)
     const focus = await session.escapeReturnsFocus()
     if (focus.checked)
@@ -79,6 +81,7 @@ export async function sweepScreen(world, screen, grid) {
             : {}),
         })
       )
+    cases.push(await higRingCase(session, screen, home, base))
     const errors = session.consoleErrors()
     cases.push(
       base(home, {
@@ -105,12 +108,17 @@ export function summaryLine(screenId, cases) {
   const fits = cases.filter((item) => item.rule === "fits")
   const requests = cases.find((item) => item.rule === "requests")
   const focus = cases.find((item) => item.rule === "focus")
+  const hig = higFound(cases).reduce(
+    (total, item) => total + item.findings.length,
+    0
+  )
   return [
     `${screenId}: opens`,
     `${fits.filter((item) => item.ok).length}/${fits.length} sizes fit`,
     focus ? (focus.ok ? "focus returns" : "focus lost") : "no layer to close",
     `${requests?.requests ?? 0} requests, idle ${requests?.idleRequests ?? 0} in 3 s`,
     `${failed.length ? `${failed.length} failing` : "ok"}`,
+    ...(hig ? [`${hig} HIG findings`] : []),
     seconds,
   ].join(" · ")
 }
