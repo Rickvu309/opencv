@@ -33,6 +33,12 @@ function stubSession(over = {}) {
     },
     measure: async () => quietBoxes(current),
     escapeReturnsFocus: async () => ({ checked: false }),
+    higSample: async () => ({
+      sample: { contrast: [], clips: [], rings: [], motion: [] },
+      baseShot: "/shots/hig.png",
+      clipShot: null,
+    }),
+    focusRings: async () => ({ rings: [], shot: "/shots/focus.png" }),
     consoleErrors: () => [],
     screenshot: async (name) => `/shots/${name}.png`,
     close: async () => {
@@ -59,6 +65,11 @@ test("a quiet screen is measured at every grid size and passes every rule", asyn
     session.seen.sizes.slice(0, 10),
     GRID.map((size) => `${size.width}x${size.height}`)
   )
+  assert.deepEqual(session.seen.sizes.slice(10), [
+    "1440x900",
+    "390x844",
+    "1440x900",
+  ])
   assert.equal(session.seen.closed, true)
   assert.match(
     summaryLine("paper-home", cases),
@@ -157,5 +168,75 @@ test("a request storm while idle and a console error each fail as their own rule
   assert.deepEqual(
     cases.filter((item) => !item.ok).map((item) => item.rule),
     ["requests", "console"]
+  )
+})
+
+test("guideline findings are reported with their source and screenshot but never fail the sweep", async () => {
+  const session = stubSession({
+    higSample: async () => ({
+      sample: {
+        contrast: [
+          {
+            name: '"Upload"',
+            kind: "text",
+            x: 10,
+            y: 20,
+            width: 60,
+            height: 16,
+            fontSize: 13,
+            fontWeight: 400,
+            color: [170, 170, 170, 1],
+            layers: [[255, 255, 255, 1]],
+            overImage: false,
+          },
+        ],
+        clips: [],
+        rings: [],
+        motion: [],
+      },
+      baseShot: "/shots/hig.png",
+      clipShot: null,
+    }),
+    focusRings: async () => ({
+      rings: [
+        {
+          name: 'switch "Email"',
+          ring: false,
+          x: 0,
+          y: 0,
+          width: 32,
+          height: 18,
+        },
+      ],
+      shot: "/shots/focus.png",
+    }),
+  })
+  const cases = await sweepScreen(worldWith(session), screen, GRID)
+  assert.deepEqual(
+    cases.filter((item) => !item.ok),
+    []
+  )
+  const contrast = cases.filter(
+    (item) => item.rule === "hig-contrast" && item.findings.length
+  )
+  assert.deepEqual(
+    contrast.map((item) => item.size),
+    ["1440x900", "390x844"]
+  )
+  assert.equal(contrast[0].shot, "/shots/hig.png")
+  assert.equal(
+    contrast[0].source.url,
+    "https://developer.apple.com/design/human-interface-guidelines/accessibility"
+  )
+  assert.match(
+    contrast[0].problem,
+    /"Upload" 13px\/400 text #aaaaaa on #ffffff is 2\.32:1, needs 4\.5:1/
+  )
+  const ring = cases.find((item) => item.rule === "hig-focus-ring")
+  assert.equal(ring.size, "1440x900")
+  assert.equal(ring.findings.length, 1)
+  assert.match(
+    summaryLine("paper-home", cases),
+    / · ok · 3 HIG findings · 0 s$/
   )
 })

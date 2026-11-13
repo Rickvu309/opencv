@@ -8,6 +8,14 @@ import { TYPED_LINE } from "./loop.mjs"
 import { HOME_SIZE } from "./runner.mjs"
 import { requestRecorder } from "./requests.mjs"
 import {
+  contrastInPage,
+  motionInPage,
+  ringBaseInPage,
+  ringOfFocusedInPage,
+  scaleTextInPage,
+  textClipsInPage,
+} from "./hig-probes.mjs"
+import {
   markOpeners,
   measureInPage,
   openLayer,
@@ -25,6 +33,9 @@ const STEP_MS = 20_000
 const PAGE_MS = 30_000
 const COACH_MS = 45_000
 const ESCAPE_SETTLE_MS = 200
+const HIG_TEXT_LIMIT = 600
+const HIG_CLIP_LIMIT = 3000
+const HIG_TABS = 16
 
 const safe = (name) => name.replace(/[^a-z0-9.-]+/gi, "_")
 const firstLine = (error) => error.message.split("\n")[0]
@@ -115,6 +126,52 @@ export function browserWorld({ browser, state, accounts, shotsDir, now }) {
           checked: true,
           problem: `${before.layer} closed and focus went to ${after.focus}, not back to its opener ${before.opener}`,
         }
+      },
+      higSample: async ({ textScale, shotName }) => {
+        const contrast = await page.evaluate(contrastInPage, HIG_TEXT_LIMIT)
+        const motion = await page.evaluate(motionInPage)
+        const baseShot = await shoot(page, shotName)
+        await page.evaluate(textClipsInPage, {
+          phase: "base",
+          limit: HIG_CLIP_LIMIT,
+        })
+        await page.evaluate(scaleTextInPage, textScale)
+        await page.evaluate(twoFrames)
+        const clips = await page.evaluate(textClipsInPage, {
+          phase: "scaled",
+          limit: HIG_CLIP_LIMIT,
+        })
+        const clipShot = clips.length
+          ? await shoot(page, `${shotName}-text-${textScale * 100}`)
+          : null
+        await page.evaluate(scaleTextInPage, 1)
+        await page.evaluate(twoFrames)
+        return {
+          sample: { contrast, motion, clips, rings: [] },
+          baseShot,
+          clipShot,
+        }
+      },
+      focusRings: async (shotName) => {
+        await page.evaluate(ringBaseInPage)
+        const rings = []
+        const keys = new Set()
+        for (let press = 0; press < HIG_TABS; press += 1) {
+          await page.keyboard.press("Tab")
+          const focused = await page.evaluate(ringOfFocusedInPage)
+          if (!focused || keys.has(focused.key)) break
+          keys.add(focused.key)
+          rings.push({
+            name: focused.name,
+            ring: focused.ring,
+            x: focused.x,
+            y: focused.y,
+            width: focused.width,
+            height: focused.height,
+          })
+          if (focused.editor) break
+        }
+        return { rings, shot: await shoot(page, shotName) }
       },
       consoleErrors: () => errors,
       screenshot: (name) => shoot(page, name),
