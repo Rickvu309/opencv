@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
 
+import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
+
 import { PaperNewDialog } from "./paper-new-dialog.tsx"
 
 function ok(data: unknown) {
@@ -40,8 +42,8 @@ describe("Paper new dialog", () => {
     })
     render(<Harness onMinted={onMinted} />)
     fireEvent.click(screen.getByRole("button", { name: "CV" }))
-    fireEvent.click(screen.getByRole("button", { name: "Modern" }))
-    fireEvent.click(screen.getByRole("button", { name: "Use template" }))
+    fireEvent.click(screen.getByRole("radio", { name: "Modern" }))
+    fireEvent.click(screen.getByRole("button", { name: "Use Modern" }))
     await vi.waitFor(() => expect(onMinted).toHaveBeenCalledWith(minted))
     expect(
       calls.find((call) => call.url.includes("/api/commands/paper.canvas"))
@@ -89,20 +91,43 @@ describe("Paper new dialog", () => {
       calls.some((call) => call.url.includes("/api/commands/paper.create"))
     ).toBe(false)
   })
+
+  it("opens the file picker from Import a file without making a page", () => {
+    const onImport = vi.fn()
+    const onMinted = vi.fn()
+    const fetch = vi.fn()
+    vi.stubGlobal("fetch", fetch)
+    render(<Harness onMinted={onMinted} onImport={onImport} />)
+    fireEvent.click(screen.getByRole("button", { name: "CV" }))
+    fireEvent.click(screen.getByRole("button", { name: "Import a file" }))
+    expect(onImport).toHaveBeenCalledTimes(1)
+    expect(fetch).not.toHaveBeenCalled()
+    expect(onMinted).not.toHaveBeenCalled()
+  })
 })
 
-function Harness({ onMinted }: { onMinted: (docId: string) => void }) {
+function Harness({
+  onMinted,
+  onImport = () => undefined,
+}: {
+  onMinted: (docId: string) => void
+  onImport?: () => void
+}) {
   const [step, setStep] = useReducer(
     (_: "kind" | "gallery", next: "kind" | "gallery") => next,
     "kind"
   )
   return (
-    <PaperNewDialog
-      step={step}
-      onStepChange={setStep}
-      onMinted={onMinted}
-      onChooseLetter={() => undefined}
-      onImport={() => undefined}
-    />
+    <Dialog open>
+      <DialogContent>
+        <PaperNewDialog
+          step={step}
+          onStepChange={setStep}
+          onMinted={onMinted}
+          onChooseLetter={() => undefined}
+          onImport={onImport}
+        />
+      </DialogContent>
+    </Dialog>
   )
 }

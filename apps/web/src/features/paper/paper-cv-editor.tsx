@@ -17,13 +17,7 @@ import {
 import type { ClientChange } from "@workspace/paper-crdt"
 
 import { Button } from "@workspace/ui/components/button"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@workspace/ui/components/dialog"
+import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
 import { toast } from "@workspace/ui/components/sonner"
 
 import { createChat } from "@/features/coach/chat-api.ts"
@@ -58,6 +52,7 @@ import { useShareLink } from "./paper-share-link.ts"
 import {
   PAPER_GALLERY_DIALOG_CLASS,
   PaperTemplateGallery,
+  focusChosenTemplate,
 } from "./paper-template-gallery.tsx"
 import { previewTemplate } from "./paper-templates.ts"
 
@@ -503,14 +498,14 @@ export function PaperCvEditor({
         open={state.galleryOpen}
         onOpenChange={(open) => dispatch({ type: "gallery", open })}
       >
-        <DialogContent className={PAPER_GALLERY_DIALOG_CLASS}>
-          <DialogHeader>
-            <DialogTitle>Choose a template</DialogTitle>
-            <DialogDescription>
-              The open CV keeps its text and uses this layout.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent
+          className={PAPER_GALLERY_DIALOG_CLASS}
+          initialFocus={focusChosenTemplate}
+        >
           <PaperTemplateGallery
+            title="Choose a template"
+            description="The open CV keeps its text and uses this layout."
+            initial={state.templateId ?? "simple"}
             onUse={(templateId) => void applyTemplate(templateId)}
           />
         </DialogContent>
