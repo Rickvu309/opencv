@@ -10,6 +10,7 @@ import type { TestProject } from "vitest/node"
 import type { AppDatabase } from "../db/context.js"
 import { runMigrations } from "../db/migrate.js"
 import * as schema from "../db/schema.js"
+import { installWriteLog } from "./write-log.js"
 
 declare module "vitest" {
   export interface ProvidedContext {
@@ -20,6 +21,7 @@ declare module "vitest" {
 export default async function setup(project: TestProject) {
   const client = new PGlite()
   await runMigrations(drizzle({ client, schema }) as unknown as AppDatabase)
+  await installWriteLog(client)
   const dump = await client.dumpDataDir("none")
   await client.close()
 

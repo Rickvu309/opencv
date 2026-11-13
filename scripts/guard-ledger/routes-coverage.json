@@ -1,0 +1,6 @@
+{
+  "id": "routes-coverage",
+  "file": "apps/api/src/registry/routes-coverage.test.ts",
+  "historic": null,
+  "reason": "No past mistake: before this guard no route list existed to fall out of date. It keeps every route outside the command door and the sign-in library under a route case, so the owned-row harness and its stranger reruns reach every path that can write a row; the real app is checked inside apps/api/src/registry/owned.harness.test.ts."
+}

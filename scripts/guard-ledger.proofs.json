@@ -15,6 +15,10 @@
     "passed": true,
     "fingerprint": "fe9b4af66899"
   },
+  "owned-rows": {
+    "passed": true,
+    "fingerprint": "40ad7a29509c"
+  },
   "pinned-history": {
     "passed": true,
     "fingerprint": "843512bd276e"
