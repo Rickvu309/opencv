@@ -42,7 +42,7 @@ type Stored = {
   mine: boolean
   deleted: boolean
 }
-type Exchange = { url: string; status: number }
+type Exchange = { url: string; status: number; method: string }
 
 function idNumber(n: number) {
   return `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`
@@ -93,7 +93,8 @@ const refused = (status: number) =>
     { status }
   )
 
-function fakeServer() {
+function fakeServer(options: { listFails?: number } = {}) {
+  let listFails = options.listFails ?? 0
   let next = 100
   const pages = new Map<string, Stored>()
   const exchanges: Exchange[] = []
@@ -146,6 +147,10 @@ function fakeServer() {
     }
   const answer = (url: string, body: string, method: string) => {
     const path = url.split("?")[0] ?? ""
+    if (path.endsWith("/api/paper") && method === "GET" && listFails > 0) {
+      listFails -= 1
+      return refused(500)
+    }
     if (path.endsWith("/api/paper") && method === "GET")
       return ok(
         [...pages.values()]
@@ -206,8 +211,14 @@ function fakeServer() {
     ).toUpperCase()
     const response = answer(url, String(init?.body ?? ""), method)
     if (!response) return Promise.reject(new TypeError("Failed to fetch"))
-    exchanges.push({ url: url.split("?")[0] ?? "", status: response.status })
-    return Promise.resolve(response)
+    exchanges.push({
+      url: url.split("?")[0] ?? "",
+      status: response.status,
+      method,
+    })
+    return new Promise<Response>((resolve) =>
+      setTimeout(() => resolve(response), 20)
+    )
   })
   return {
     pages,
@@ -441,60 +452,185 @@ describe.each(Object.entries(CREATORS))(
   }
 )
 
-describe("a page that is gone, or someone else's", () => {
-  it("says Document not found. for a Word page deleted in another tab that this tab still lists", async () => {
-    const server = fakeServer()
-    const home = server.add("word")
-    const gone = server.add("word")
-    const queryClient = client()
-    queryClient.setQueryData(paperListKey(), server.listed())
-    const go = mount(`/paper/${home.id}`, queryClient)
+const listReads = (server: Server) =>
+  server.exchanges.filter(
+    (exchange) => exchange.url === "/api/paper" && exchange.method === "GET"
+  ).length
+
+async function settleForAMinute() {
+  await vi.advanceTimersByTimeAsync(60_000)
+}
+
+function shown() {
+  if (screen.queryByRole("article", { name: "Page" })) return "page"
+  if (screen.queryByText("Document not found.")) return "not found"
+  if (screen.queryByText("Could not load documents.")) return "load error"
+  if (screen.queryByText("Loading documents")) return "loading"
+  return "other"
+}
+
+type Outcome = { screen: string; listReads: number; html: string }
+
+async function openedOn(
+  server: Server,
+  queryClient: QueryClient,
+  start: string | null,
+  steps: (go: (path: string) => void) => void,
+  target: string
+): Promise<Outcome> {
+  const go = mount(start ?? `/paper/${target}`, queryClient)
+  if (start) {
     expect(await screen.findByRole("article", { name: "Page" })).toBeVisible()
-    gone.deleted = true
-    go(`/paper/${gone.id}`)
-    expect(await screen.findByText("Document not found.")).toBeVisible()
-    expect(screen.queryByText(/Could not load documents/)).toBeNull()
+    server.exchanges.length = 0
+    steps(go)
+  }
+  await settleForAMinute()
+  const outcome = {
+    screen: shown(),
+    listReads: listReads(server),
+    html: document.body.innerHTML.replaceAll(target, "{id}"),
+  }
+  cleanup()
+  return outcome
+}
+
+describe("the route decides once and stops", () => {
+  afterEach(() => {
+    vi.useRealTimers()
   })
 
-  it.each([
-    ["by link in a page that was already open", true],
-    ["after a reload", false],
-  ])(
-    "shows another person's page exactly like a made-up id, %s",
-    async (_how, alreadyOpen) => {
-      const seen = async (id: (server: Server) => string) => {
-        const server = fakeServer()
-        const home = server.add("word")
-        const target = id(server)
-        const queryClient = client()
-        if (alreadyOpen) {
-          queryClient.setQueryData(paperListKey(), server.listed())
-          const go = mount(`/paper/${home.id}`, queryClient)
-          expect(
-            await screen.findByRole("article", { name: "Page" })
-          ).toBeVisible()
-          server.exchanges.length = 0
-          go(`/paper/${target}`)
-        } else {
-          mount(`/paper/${target}`, queryClient)
-        }
-        expect(await screen.findByText("Document not found.")).toBeVisible()
-        const html = document.body.innerHTML.replaceAll(target, "<id>")
-        const requests = server.exchanges.map((exchange) => ({
-          url: exchange.url.replaceAll(target, "<id>"),
-          status: exchange.status,
-        }))
-        cleanup()
-        return { html, requests }
-      }
-      const stranger = await seen(
-        (server) => server.add("word", "cv", { mine: false }).id
-      )
-      const madeUp = await seen(() => idNumber(999))
-      expect(stranger).toEqual(madeUp)
-      expect(
-        stranger.requests.filter((request) => request.status >= 400)
-      ).toEqual([{ url: "/api/paper/<id>", status: 404 }])
-    }
-  )
+  async function directLink(
+    prepare: (server: Server) => string,
+    serverOptions: { listFails?: number } = {}
+  ) {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const server = fakeServer(serverOptions)
+    const target = prepare(server)
+    const outcome = await openedOn(server, client(), null, () => {}, target)
+    return { ...outcome, server }
+  }
+
+  async function fromOpenPage(
+    prepare: (server: Server) => { target: string; after?: () => void },
+    path: (target: string) => string[] = (target) => [`/paper/${target}`]
+  ) {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const server = fakeServer()
+    const home = server.add("word")
+    const { target, after } = prepare(server)
+    const queryClient = client()
+    queryClient.setQueryData(paperListKey(), server.listed())
+    after?.()
+    const outcome = await openedOn(
+      server,
+      queryClient,
+      `/paper/${home.id}`,
+      (go) => path(target).forEach(go),
+      target
+    )
+    return { ...outcome, server }
+  }
+
+  it("a missing id: Document not found., at most two list reads, then nothing", async () => {
+    const outcome = await directLink(() => idNumber(999))
+    expect(outcome.screen).toBe("not found")
+    expect(outcome.listReads).toBeLessThanOrEqual(2)
+    expect(
+      outcome.server.exchanges.filter((exchange) => exchange.status >= 400)
+    ).toEqual([
+      { url: `/api/paper/${idNumber(999)}`, status: 404, method: "GET" },
+    ])
+  })
+
+  it("another person's id looks exactly like a missing id", async () => {
+    const stranger = await directLink(
+      (server) => server.add("word", "cv", { mine: false }).id
+    )
+    const missing = await directLink(() => idNumber(999))
+    expect(stranger.screen).toBe("not found")
+    expect(stranger.listReads).toBeLessThanOrEqual(2)
+    expect({
+      screen: stranger.screen,
+      html: stranger.html,
+      reads: stranger.listReads,
+    }).toEqual({
+      screen: missing.screen,
+      html: missing.html,
+      reads: missing.listReads,
+    })
+  })
+
+  it("a page deleted elsewhere that this tab still lists: Document not found., at most two list reads", async () => {
+    let gone: Stored | undefined
+    const outcome = await fromOpenPage((server) => {
+      gone = server.add("word")
+      return { target: gone.id, after: () => gone && (gone.deleted = true) }
+    })
+    expect(outcome.screen).toBe("not found")
+    expect(outcome.listReads).toBeLessThanOrEqual(2)
+  })
+
+  it("a page made elsewhere opens, with at most two list reads", async () => {
+    let made = ""
+    const outcome = await fromOpenPage(
+      (server) => ({
+        target: idNumber(500),
+        after: () => {
+          made = server.add("word").id
+        },
+      }),
+      () => [`/paper/${made}`]
+    )
+    expect(outcome.screen).toBe("page")
+    expect(outcome.listReads).toBeLessThanOrEqual(2)
+  })
+
+  it("an ordinary page from the library opens with one list read", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const server = fakeServer()
+    const page = server.add("word")
+    const queryClient = client()
+    queryClient.setQueryData(paperListKey(), server.listed())
+    const outcome = await openedOn(server, queryClient, null, () => {}, page.id)
+    expect(outcome.screen).toBe("page")
+    expect(outcome.listReads).toBeLessThanOrEqual(1)
+  })
+
+  it("a direct link in a fresh tab opens with one list read", async () => {
+    const outcome = await directLink((server) => server.add("word").id)
+    expect(outcome.screen).toBe("page")
+    expect(outcome.listReads).toBeLessThanOrEqual(1)
+  })
+
+  it("a list read that fails once still opens the page, with at most two list reads", async () => {
+    const outcome = await directLink((server) => server.add("word").id, {
+      listFails: 1,
+    })
+    expect(outcome.screen).toBe("page")
+    expect(outcome.listReads).toBeLessThanOrEqual(2)
+  })
+
+  it("a list read that keeps failing shows the true error with Try again, and reads the list once", async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    const server = fakeServer({ listFails: 1000 })
+    mount(`/paper/${idNumber(999)}`, client())
+    await settleForAMinute()
+    expect(shown()).toBe("load error")
+    expect(screen.getByRole("button", { name: "Try again" })).toBeVisible()
+    expect(listReads(server)).toBe(1)
+  })
+
+  it("rapid navigation across five pages ends on the last one with no extra list read", async () => {
+    let pages: string[] = []
+    const outcome = await fromOpenPage(
+      (server) => {
+        pages = [1, 2, 3, 4, 5].map(() => server.add("word").id)
+        return { target: pages[4] ?? "" }
+      },
+      () => pages.map((id) => `/paper/${id}`)
+    )
+    expect(outcome.screen).toBe("page")
+    expect(outcome.html).toContain("{id}")
+    expect(outcome.listReads).toBeLessThanOrEqual(1)
+  })
 })

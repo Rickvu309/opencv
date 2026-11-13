@@ -24,6 +24,11 @@ import { authClient } from "@/lib/auth-client.ts"
 import { catalogClient } from "@/lib/contract-client.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { ApiError } from "@/lib/api-error.ts"
+import {
+  paperListRecheck,
+  paperListRecheckKey,
+  retryPaperDocReads,
+} from "@/lib/paper-list-recheck.ts"
 
 const PaperLetterEditor = lazy(() =>
   import("@/features/paper/paper-letter.tsx").then((module) => ({
@@ -91,26 +96,26 @@ export function PaperDocPage() {
   const wordReadFailed =
     wordPage &&
     queryClient.getQueryState(packageRead.queryKey)?.status === "error"
-  const listSettled = listQuery.isSuccess && !listQuery.isFetching
-  const freshListQuery = useQuery({
-    queryKey: [...paperListKey(), "fresh-for", validId ?? NO_DOC],
-    queryFn: async () => {
-      const fresh = await queryClient.fetchQuery({
-        queryKey: paperListKey(),
-        queryFn: listPaper,
-      })
-      return { listed: fresh.some((item) => item.id === validId) }
-    },
-    enabled:
-      validId !== null &&
-      listSettled &&
-      (listed === undefined || wordReadFailed),
-    retry: false,
+  const recheckWanted =
+    validId !== null &&
+    listQuery.isSuccess &&
+    (listed === undefined || wordReadFailed)
+  const recheck = useQuery({
+    ...paperListRecheck(
+      queryClient,
+      { queryKey: paperListKey(), queryFn: listPaper },
+      validId ?? NO_DOC
+    ),
+    enabled: recheckWanted,
   })
+  const rechecking =
+    recheck.isFetching ||
+    (recheckWanted && !recheck.isSuccess && !recheck.isError)
   const kindKnown =
     listed !== undefined ||
     listQuery.isError ||
-    (listSettled && !freshListQuery.isFetching && !freshListQuery.isPending)
+    recheck.isSuccess ||
+    recheck.isError
   const docQuery = useQuery({
     queryKey: paperGetKey(validId ?? NO_DOC),
     queryFn: () => getPaper(docId),
@@ -149,6 +154,7 @@ export function PaperDocPage() {
 
   if (
     (validId !== null && !kindKnown) ||
+    rechecking ||
     docQuery.isLoading ||
     packagePending
   ) {
@@ -170,20 +176,32 @@ export function PaperDocPage() {
       )
     }
     const missing =
-      validId === null || docMissing || (wordPage && packageQuery.isSuccess)
+      validId === null ||
+      (!listQuery.isError &&
+        (docMissing || (wordPage && packageQuery.isSuccess)))
+    const retry = () =>
+      void retryPaperDocReads(queryClient, [
+        paperListKey(),
+        paperListRecheckKey(validId ?? NO_DOC),
+        paperGetKey(validId ?? NO_DOC),
+        packageRead.queryKey,
+      ])
     return (
       <section
         aria-label="Paper"
         className="flex flex-col items-start gap-3 p-4"
       >
-        <p>
-          {missing
-            ? "Document not found."
-            : "Could not load documents. Refresh the page."}
-        </p>
-        <Button type="button" variant="outline" onClick={back}>
-          Paper
-        </Button>
+        <p>{missing ? "Document not found." : "Could not load documents."}</p>
+        <div className="flex gap-2">
+          {missing ? null : (
+            <Button type="button" onClick={retry}>
+              Try again
+            </Button>
+          )}
+          <Button type="button" variant="outline" onClick={back}>
+            Paper
+          </Button>
+        </div>
       </section>
     )
   }
