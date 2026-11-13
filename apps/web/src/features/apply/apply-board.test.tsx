@@ -312,4 +312,31 @@ describe("apply board", () => {
       rect.mockRestore()
     }
   })
+  it("animates exactly the newly created card with motion-appear", async () => {
+    setMockJobs([junior])
+    renderApp("/apply")
+    const initialCard = await screen.findByRole("button", {
+      name: "Junior Marketing, Lumière Cosmetics",
+    })
+    const initialWrapper = initialCard.closest("[data-slot='kanban-card']")
+    expect(initialWrapper).not.toHaveAttribute("data-new", "true")
+
+    fireEvent.click(screen.getByRole("button", { name: "New job" }))
+    const dialog = await screen.findByRole("dialog", { name: "New job" })
+    fireEvent.change(within(dialog).getByLabelText("Role title"), {
+      target: { value: "Lead Designer" },
+    })
+    fireEvent.change(within(dialog).getByLabelText("Company"), {
+      target: { value: "Acme Studio" },
+    })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Add job" }))
+
+    const newCard = await screen.findByRole("button", {
+      name: "Lead Designer, Acme Studio",
+    })
+    const newWrapper = newCard.closest("[data-slot='kanban-card']")
+    expect(newWrapper).toHaveAttribute("data-new", "true")
+    expect(newWrapper?.className).toContain("data-[new=true]:motion-appear")
+    expect(initialWrapper).not.toHaveAttribute("data-new", "true")
+  })
 })

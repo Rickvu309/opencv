@@ -12,6 +12,7 @@ import type {
 } from "@dnd-kit/core"
 import {
   closestCenter,
+  defaultDropAnimation,
   DndContext,
   DragOverlay,
   KeyboardCode,
@@ -41,7 +42,11 @@ import {
 import { createPortal } from "react-dom"
 import tunnel from "tunnel-rat"
 import { Card } from "@workspace/ui/components/card"
-import { travelToken } from "@workspace/ui/lib/motion"
+import {
+  motionToken,
+  prefersReducedMotion,
+  type MotionTiming,
+} from "@workspace/ui/lib/motion"
 import { cn } from "@workspace/ui/lib/utils"
 
 const t = tunnel()
@@ -79,12 +84,18 @@ type KanbanContextProps<
   columns: C[]
   data: T[]
   activeCardId: string | null
+  micro: MotionTiming
+  panel: MotionTiming
+  reduced: boolean
 }
 
 const KanbanContext = createContext<KanbanContextProps>({
   columns: [],
   data: [],
   activeCardId: null,
+  micro: { duration: 0, easing: "" },
+  panel: { duration: 0, easing: "" },
+  reduced: false,
 })
 
 function columnIdForOver(
@@ -144,6 +155,7 @@ export type KanbanCardProps = Omit<
   id: string
   name: string
   children?: ReactNode
+  wrapperClassName?: string
 }
 
 export const KanbanCard = ({
@@ -151,10 +163,13 @@ export const KanbanCard = ({
   name,
   children,
   className,
+  wrapperClassName,
   onKeyDown,
   ...props
 }: KanbanCardProps) => {
-  const reorderTiming = useMemo(() => travelToken("micro"), [])
+  const { activeCardId, micro, reduced } = useContext(
+    KanbanContext
+  ) as KanbanContextProps
   const {
     attributes,
     listeners,
@@ -164,9 +179,10 @@ export const KanbanCard = ({
     isDragging,
   } = useSortable({
     id,
-    transition: reorderTiming,
+    transition: reduced
+      ? null
+      : { duration: micro.duration, easing: micro.easing },
   })
-  const { activeCardId } = useContext(KanbanContext) as KanbanContextProps
 
   const style = {
     transition,
@@ -178,6 +194,7 @@ export const KanbanCard = ({
       <div
         data-slot="kanban-card"
         style={style}
+        className={wrapperClassName}
         {...props}
         {...listeners}
         {...attributes}
@@ -201,7 +218,7 @@ export const KanbanCard = ({
         <t.In>
           <Card
             className={cn(
-              "cursor-grab gap-4 rounded-md p-3 shadow-sm ring-2 ring-ring",
+              "scale-[1.02] cursor-grab gap-4 rounded-md p-3 shadow-md shadow-sm ring-2 ring-ring transition-[scale,box-shadow] duration-(--duration-micro) ease-(--ease-micro) starting:scale-100 starting:shadow-sm",
               isDragging && "cursor-grabbing",
               className
             )}
@@ -284,7 +301,14 @@ export const KanbanProvider = <
   ...props
 }: KanbanProviderProps<T, C>) => {
   const [activeCardId, setActiveCardId] = useState<string | null>(null)
-  const dropTiming = useMemo(() => travelToken("panel"), [])
+  const motion = useMemo(
+    () => ({
+      micro: motionToken("micro"),
+      panel: motionToken("panel"),
+      reduced: prefersReducedMotion(),
+    }),
+    []
+  )
   const keyboardColumnId = useRef<UniqueIdentifier | null>(null)
 
   const stepOneColumnInBoardOrder: KeyboardCoordinateGetter = (
@@ -455,7 +479,7 @@ export const KanbanProvider = <
   }
 
   return (
-    <KanbanContext.Provider value={{ columns, data, activeCardId }}>
+    <KanbanContext.Provider value={{ columns, data, activeCardId, ...motion }}>
       <DndContext
         accessibility={{ announcements }}
         collisionDetection={collisionDetection}
@@ -476,7 +500,17 @@ export const KanbanProvider = <
         </div>
         {typeof window !== "undefined" &&
           createPortal(
-            <DragOverlay dropAnimation={dropTiming}>
+            <DragOverlay
+              dropAnimation={
+                motion.reduced
+                  ? null
+                  : {
+                      ...defaultDropAnimation,
+                      duration: motion.panel.duration,
+                      easing: motion.panel.easing,
+                    }
+              }
+            >
               <div data-slot="kanban-overlay">
                 <t.Out />
               </div>

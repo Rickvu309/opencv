@@ -1,3 +1,4 @@
+import { reportJobCreated } from "./apply-board.tsx"
 import { useReducer, useRef } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import {
@@ -188,6 +189,7 @@ export function NewJobDialog({
     try {
       const created = await run("job.create", parsed.data)
       if (created.stage === "saved") toast("Job added to Saved")
+      reportJobCreated(created.id)
       reset()
       onOpenChange(false)
     } catch (error) {
