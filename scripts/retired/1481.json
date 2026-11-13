@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/paper-template-gallery.test.tsx > Paper template gallery > lists the sixteen templates and maps preview layouts",
+    "because": "The chooser no longer lists sixteen name chips beside one skeleton preview: it shows Blank plus the four pages that differ, each drawn with its own headings. The replacement checks those cards, their headings and the new grid columns.",
+    "replacedBy": "apps/web/src/features/paper/paper-template-chooser-layout.test.tsx",
+    "proof": {
+      "fork": "3f02fa53918396e411f6ac529341574e290b3d99",
+      "replacedByBlob": "a3905b155efb0ac2c3327afc5c8a5fc67b7d934e",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 9
+  }
+]
