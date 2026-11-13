@@ -5,7 +5,9 @@ import { screenReport } from "./check-screen.mjs"
 import { PROPERTIES } from "./compare.mjs"
 import { DESIGN_MAP, validateDesignMap } from "./design-map.mjs"
 import {
-  COUNCIL_DOCKED_COACH_COMPOSER,
+  GROK_COACH_PAGE_COLUMN,
+  GROK_COACH_PAGE_COMPOSER,
+  GROK_COACH_PANEL_COMPOSER,
   WORD_SIZED_WRITING_PAGE,
   ownerDecisionProblems,
 } from "./owner-decision.mjs"
@@ -124,28 +126,30 @@ test("every writing page sheet row takes the Word size by owner decision and kee
       (row) => [row.screen, row.label, row.ownerDecision]
     ),
     [
+      ["paper-panel-open", "Coach composer", GROK_COACH_PANEL_COMPOSER],
       [
         "coach-chat-finished",
-        "Coach page composer",
-        COUNCIL_DOCKED_COACH_COMPOSER,
+        "Coach page message column",
+        GROK_COACH_PAGE_COLUMN,
       ],
+      ["coach-chat-finished", "Coach page composer", GROK_COACH_PAGE_COMPOSER],
     ]
   )
 })
 
-test("the council's docked composer decision changes only the height and keeps the pen width and radius", () => {
-  assert.deepEqual(
-    ownerDecisionProblems(
-      DESIGN_MAP.find(
-        (row) => row.ownerDecision === COUNCIL_DOCKED_COACH_COMPOSER
-      ),
-      "Coach page composer"
-    ),
-    []
-  )
-  assert.deepEqual(Object.keys(COUNCIL_DOCKED_COACH_COMPOSER.expect), [
-    "height",
-  ])
+test("the Grok decisions change only the turn gap and the composer radius, and keep the pen widths", () => {
+  for (const decision of [
+    GROK_COACH_PAGE_COLUMN,
+    GROK_COACH_PAGE_COMPOSER,
+    GROK_COACH_PANEL_COMPOSER,
+  ]) {
+    const row = DESIGN_MAP.find((entry) => entry.ownerDecision === decision)
+    assert.deepEqual(ownerDecisionProblems(row, row.label), [])
+    assert.equal("width" in decision.expect, false)
+  }
+  assert.deepEqual(GROK_COACH_PAGE_COMPOSER.expect, { height: 82, radius: 24 })
+  assert.deepEqual(GROK_COACH_PAGE_COLUMN.expect, { gap: 28 })
+  assert.deepEqual(GROK_COACH_PANEL_COMPOSER.expect, { radius: 20 })
 })
 
 test("check measures a decided row against the decision and says it is a decision, not the pen", () => {

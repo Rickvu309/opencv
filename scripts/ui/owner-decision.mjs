@@ -13,12 +13,31 @@ export const WORD_SIZED_WRITING_PAGE = {
   },
 }
 
-export const COUNCIL_DOCKED_COACH_COMPOSER = {
+const GROK_CLEAN_COACH =
+  "the owner asked for the Coach chat to look as clean as Grok, learning from ChatGPT and Claude, instead of the Linear-based council pass; see the chat references index of 2026-11-13"
+
+export const GROK_COACH_PAGE_COMPOSER = {
   decided: "2026-11-13",
-  reason:
-    "the owner asked for Linear parity judged by the review council, and council round 1 set the docked Coach page composer to about 80 high, one text line over the control row, instead of the 114px pen frame",
+  reason: `${GROK_CLEAN_COACH}: the docked page composer keeps the council's one-line height of about 80 and rounds to 24 like the Grok, ChatGPT and Claude composers, instead of the 114px, radius 18 pen frame`,
   expect: {
     height: 82,
+    radius: 24,
+  },
+}
+
+export const GROK_COACH_PAGE_COLUMN = {
+  decided: "2026-11-13",
+  reason: `${GROK_CLEAN_COACH}: turns sit 28 apart like Grok's roomier column, instead of the pen frame's 20`,
+  expect: {
+    gap: 28,
+  },
+}
+
+export const GROK_COACH_PANEL_COMPOSER = {
+  decided: "2026-11-13",
+  reason: `${GROK_CLEAN_COACH}: the panel composer rounds to 20, the page composer's shape at panel size, instead of the pen frame's 14`,
+  expect: {
+    radius: 20,
   },
 }
 

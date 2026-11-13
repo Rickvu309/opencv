@@ -29,7 +29,7 @@ export function CoachHome({
       className={cn(
         "flex w-full min-w-0 flex-col items-center",
         panel
-          ? "my-auto py-6"
+          ? "my-auto py-6 [@media(max-height:20rem)]:hidden"
           : "min-h-full justify-start px-4 pt-[14dvh] pb-16 md:justify-center md:pt-12 md:pb-[16dvh]"
       )}
     >

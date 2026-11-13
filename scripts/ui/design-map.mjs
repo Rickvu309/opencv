@@ -1,6 +1,8 @@
 import { RELATIVE } from "./compare.mjs"
 import {
-  COUNCIL_DOCKED_COACH_COMPOSER,
+  GROK_COACH_PAGE_COLUMN,
+  GROK_COACH_PAGE_COMPOSER,
+  GROK_COACH_PANEL_COMPOSER,
   WORD_SIZED_WRITING_PAGE,
   ownerDecisionProblems,
 } from "./owner-decision.mjs"
@@ -96,6 +98,7 @@ export const DESIGN_MAP = [
     via: SHELL_CHAT_PANEL,
     frame: "FAcND",
     props: ["radius", ...PADDING, "gap"],
+    ownerDecision: GROK_COACH_PANEL_COMPOSER,
   },
   {
     screen: "paper-panel-open",
@@ -422,6 +425,7 @@ export const DESIGN_MAP = [
     composedScreen: COACH_WORKING,
     frame: "QNqkY",
     props: ["width", "gap"],
+    ownerDecision: GROK_COACH_PAGE_COLUMN,
   },
   {
     screen: "coach-chat-finished",
@@ -439,7 +443,7 @@ export const DESIGN_MAP = [
     composedScreen: COACH_WORKING,
     frame: "KDAaX",
     props: ["width", "height", "radius"],
-    ownerDecision: COUNCIL_DOCKED_COACH_COMPOSER,
+    ownerDecision: GROK_COACH_PAGE_COMPOSER,
   },
   {
     screen: "coach-chat-finished",
