@@ -119,7 +119,7 @@ const SEED_664: Step[] = [
 
 describe("the writing page under a seeded random walk against a fake server", () => {
   it.fails(
-    "known issue, own save seen as a change elsewhere after a reload: seed 1072 at 3,000 steps miscounts Use the saved page by one line",
+    "#1452, own save seen as a change elsewhere after a reload: seed 1072 at 3,000 steps miscounts Use the saved page by one line",
     async () => {
       expect(await walk(walkSteps(1072, 3000))).toBeNull()
     }

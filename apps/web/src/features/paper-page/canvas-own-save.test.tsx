@@ -48,7 +48,7 @@ describe("a save whose reply was lost", () => {
   })
 
   it.fails(
-    "is recognised after a reload when the person typed more offline before it (seed 1072 class, known issue)",
+    "is recognised after a reload when the person typed more offline before it (seed 1072 class, #1452)",
     async () => {
       await lostReplyOn(" A")
       server.state.offline = true
