@@ -72,6 +72,16 @@ test("a checking word the glossary retired fires anywhere, and the glossary may 
     1
   )
   assert.equal(detect("", "scripts/known-list.json").length, 1)
+  assert.equal(detect("const isKnownList = true", "scripts/x.mjs").length, 1)
+  assert.equal(detect("computeRiskClass(diff)", "scripts/x.mjs").length, 1)
+  assert.equal(detect("const RISK_CLASS = 1", "scripts/x.mjs").length, 1)
+  assert.deepEqual(
+    detect(
+      "brisk classes, a well-known list and the known listing stay quiet",
+      "AGENTS.md"
+    ),
+    []
+  )
   assert.deepEqual(
     detect(
       "_Avoid_: known list, waiver, smoke test, risk class",

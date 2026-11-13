@@ -143,7 +143,11 @@ export const RETIRED = [
       },
     ],
   },
-  checkingWord("known-list", /known[- _]?lists?/gi, "ratchet"),
+  checkingWord(
+    "known-list",
+    /(?<![a-z-])[Kk]nown[- _]?[Ll]ists?(?![a-z])|(?<=[a-z])Known_?Lists?(?![a-z])|KNOWN[- _]?LISTS?/g,
+    "ratchet"
+  ),
   checkingWord(
     "waiver",
     /waivers?/gi,
@@ -156,7 +160,7 @@ export const RETIRED = [
   ),
   checkingWord(
     "risk-class",
-    /risk[- _]?class(?:es)?/gi,
+    /(?<![a-z])[Rr]isk[- _]?[Cc]lass(?:es)?|(?<=[a-z])Risk_?Class(?:es)?|RISK[- _]?CLASS(?:ES)?/g,
     "change class, or risk label for the issue"
   ),
 ]
