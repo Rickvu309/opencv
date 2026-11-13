@@ -1,0 +1,22 @@
+{
+  "id": "owned-rows",
+  "file": "apps/api/src/registry/owned.harness.test.ts",
+  "historic": {
+    "mode": "restore",
+    "sha": "5df295b4e45d678393249b83615228027ddfafc3",
+    "paths": [
+      "apps/api/src/paper/package-list.ts",
+      "apps/api/src/paper/store.ts"
+    ],
+    "command": [
+      "pnpm",
+      "--filter",
+      "api",
+      "exec",
+      "vitest",
+      "run",
+      "src/registry/owned.harness.test.ts"
+    ]
+  },
+  "reason": "Production incident on 2026-11-13. From dcb0e0dc until b506553c the Paper list read only minted Word pages, so every imported CV was written by the import path but left out of the list and opened as Document not found. With the list restored from b506553c's parent, the harness reports paperPackageHeads:OWN-1 for the Word, PDF and agent imports without knowing which code wrote the rows; at HEAD it holds."
+}
