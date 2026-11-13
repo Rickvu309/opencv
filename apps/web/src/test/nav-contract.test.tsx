@@ -9,7 +9,11 @@ import {
   getMockPaperDocs,
   setMockPaperFavorite,
 } from "@/test/paper-api-mock.ts"
-import { resetShellApiMock, setMockJobs } from "@/test/shell-api-mock.ts"
+import {
+  resetShellApiMock,
+  setMockInbox,
+  setMockJobs,
+} from "@/test/shell-api-mock.ts"
 
 const ITEMS = [...SHELL_PRIMARY, ...SHELL_WORK]
 const SAMPLE_ID = "11111111-1111-7111-8111-111111111111"
@@ -129,9 +133,20 @@ describe("each router route is current under exactly one nav item, with its coun
   })
 
   it("puts the count of every nav item in its accessible name", async () => {
-    renderApp(SHELL_PRIMARY[0].to)
-    const nav = await screen.findByRole("navigation", { name: "Main" })
-    const links = within(nav).getAllByRole("link")
+    setMockInbox({
+      connected: false,
+      skipped: true,
+      threads: [
+        { id: "a", unread: true },
+        { id: "b", unread: true },
+      ],
+    })
+    renderApp(SHELL_PRIMARY[1].to)
+    const inbox = await screen.findByRole("link", { name: /^Inbox/ })
+    await waitFor(() => expect(inbox).toHaveTextContent("2"))
+    const links = within(
+      screen.getByRole("navigation", { name: "Main" })
+    ).getAllByRole("link")
     const missing = links.flatMap((link) => {
       const badges = [...link.querySelectorAll('[aria-hidden="true"]')]
         .map((node) => node.textContent?.trim() ?? "")

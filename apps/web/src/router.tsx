@@ -9,6 +9,7 @@ import {
   notFound,
   redirect,
   type AnyRouter,
+  type RouteComponent,
   type RouterHistory,
 } from "@tanstack/react-router"
 
@@ -18,6 +19,7 @@ import {
   SURFACES,
   legacyAppPath,
   startPagePath,
+  type SurfaceId,
 } from "@/lib/product-paths.ts"
 
 import { NotFoundPage, UnknownShell } from "@/components/not-found-page.tsx"
@@ -304,14 +306,51 @@ const coachRoute = createRoute({
   ),
 })
 
-const hiddenRoutes = SURFACES.filter((surface) => !surface.shown).map(
-  (surface) =>
-    createRoute({
-      getParentRoute: () => productLayoutRoute,
-      path: surface.path,
-      beforeLoad: redirectHiddenSurface,
-      component: () => null,
-    })
+const surfacePagesShareOneChunk = () => import("@/routes/coming-soon.tsx")
+
+type SurfacePageRoute = {
+  component: RouteComponent
+  beforeLoad?: () => Promise<void> | void
+}
+
+const SURFACE_PAGE_ROUTES: Partial<Record<SurfaceId, SurfacePageRoute>> = {
+  inbox: {
+    component: lazyRouteComponent(
+      () => import("@/routes/inbox.tsx"),
+      "InboxPage"
+    ),
+  },
+  jobs: {
+    component: lazyRouteComponent(surfacePagesShareOneChunk, "JobsPage"),
+  },
+  pitch: {
+    component: lazyRouteComponent(surfacePagesShareOneChunk, "PitchPage"),
+  },
+  proofs: {
+    component: lazyRouteComponent(surfacePagesShareOneChunk, "ProofsPage"),
+  },
+  proof: {
+    beforeLoad: () => {
+      throw redirect({ href: SURFACE_PATHS.proofs, replace: true })
+    },
+    component: () => null,
+  },
+}
+
+const HIDDEN_SURFACE_ROUTE: SurfacePageRoute = {
+  beforeLoad: redirectHiddenSurface,
+  component: () => null,
+}
+
+const surfaceRoutes = SURFACES.filter(
+  (surface) => !surface.shown || surface.id in SURFACE_PAGE_ROUTES
+).map((surface) =>
+  createRoute({
+    getParentRoute: () => productLayoutRoute,
+    path: surface.path,
+    ...((surface.shown && SURFACE_PAGE_ROUTES[surface.id]) ||
+      HIDDEN_SURFACE_ROUTE),
+  })
 )
 
 const settingsRoute = createRoute({
@@ -409,7 +448,7 @@ const routeTree = rootRoute.addChildren([
     applyJobRoute,
     coachRoute,
     settingsRoute,
-    ...hiddenRoutes,
+    ...surfaceRoutes,
   ]),
   rootSplatRoute.addChildren([rootSplatIndexRoute]),
 ])

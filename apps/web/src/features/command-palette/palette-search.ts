@@ -10,11 +10,13 @@ export const PALETTE_PAGES: {
   id: string
   label: string
   surface: SurfaceId
-}[] = SURFACES.filter((surface) => surface.shown).map((surface) => ({
-  id: surface.id,
-  label: surface.label,
-  surface: surface.id,
-}))
+}[] = SURFACES.filter((surface) => surface.shown && surface.inSearch).map(
+  (surface) => ({
+    id: surface.id,
+    label: surface.label,
+    surface: surface.id,
+  })
+)
 
 export const PALETTE_SCOPES = [
   { id: "all", label: "All" },

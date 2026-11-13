@@ -1,3 +1,4 @@
+import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { SURFACES, SURFACE_PATHS } from "@/lib/product-paths.ts"
 
 export function currentNavPath(pathname: string, targets: readonly string[]) {
@@ -20,6 +21,15 @@ export function favoriteDocPath(docId: string) {
 
 export function favoriteJobPath(jobId: string) {
   return `${SURFACE_PATHS.apply}/${jobId}`
+}
+
+export function shellNavLabel(
+  item: { id: string; label: string },
+  inboxUnread: number | null
+) {
+  return item.id === "inbox" && inboxUnread
+    ? `${item.label}, ${inboxUnread} ${shellCopy.unread}`
+    : item.label
 }
 
 export const NAV_LABELS = Object.fromEntries(
