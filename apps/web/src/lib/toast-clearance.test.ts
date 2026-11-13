@@ -4,6 +4,7 @@ import {
   TOAST_OFFSET_BOTTOM,
   TOAST_OFFSET_RIGHT,
 } from "@workspace/ui/lib/toast-offset"
+import { GRID } from "@workspace/ui/lib/viewport-grid"
 import {
   keepToastsClearOf,
   TOAST_CLEARANCE_GAP_PX,
@@ -212,18 +213,6 @@ function gridFaults(place: (room: ToastRoom) => ToastSpot) {
   )
 }
 
-const SWEEP_GRID = [
-  [320, 568],
-  [390, 844],
-  [390, 560],
-  [600, 480],
-  [820, 512],
-  [1024, 700],
-  [1280, 400],
-  [1280, 117],
-  [1366, 657],
-  [1440, 900],
-] as const
 const PANEL_FULL_SCREEN_BELOW_HEIGHT = 437
 
 function chromeButtons(width: number, height: number) {
@@ -251,7 +240,7 @@ function chromeFaults(
   return faults
 }
 
-const sweepCases = SWEEP_GRID.flatMap(([width, height]) =>
+const sweepCases = GRID.flatMap(({ width, height }) =>
   states
     .filter(
       (state) =>
