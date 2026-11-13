@@ -5,11 +5,9 @@ import { fileURLToPath } from "node:url"
 import { compile } from "tailwindcss"
 import { beforeAll, describe, expect, it } from "vitest"
 
-const stylesDir = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  "styles"
-)
-const kitModules = path.join(stylesDir, "../../node_modules")
+const kitSource = path.dirname(fileURLToPath(import.meta.url))
+const stylesDir = path.join(kitSource, "styles")
+const kitModules = path.join(kitSource, "../node_modules")
 
 type ExportTarget = string | { style?: string; default?: string } | undefined
 
