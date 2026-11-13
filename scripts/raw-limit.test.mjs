@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url"
 import { detect } from "./lib/raw-limit.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
-const HISTORIC = "69a6caa7988ea5ab6daa3e71fff7d2c31ba17895"
+const HISTORIC = "7886139825cdc4e4824d9028d16c276cac08d45e"
 const PAST = "apps/api/src/account/export-gate.ts"
 const QUIET = "apps/api/src/limits/refusal.ts"
 
