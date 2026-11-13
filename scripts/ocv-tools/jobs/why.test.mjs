@@ -6,7 +6,7 @@ import { WHY_LINE_LIMIT, reproOf, whyLines } from "./why.mjs"
 
 const here = (path) => readFileSync(new URL(path, import.meta.url), "utf8")
 const RUN_1451 = JSON.parse(here("./why-fixtures/pr-1451-round-1-run.json"))
-const LOG_1451 = here("./why-fixtures/pr-1451-round-1-test-web-2.log")
+const LOG_1451 = here("./why-fixtures/pr-1451-round-1-test-web-2.txt")
 const NODE_LOG = here(
   "../../ci-first-errors.fixtures/node-test-41576406863-125720815496.txt"
 )
