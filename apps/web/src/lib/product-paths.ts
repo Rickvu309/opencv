@@ -1,7 +1,5 @@
 import { startPageSchema, type StartPage } from "@workspace/domain"
 
-export type SurfaceNavGroup = "primary" | "work"
-
 export const SURFACES = [
   {
     id: "inbox",
@@ -147,9 +145,6 @@ function startPageOf(surface: StartPageSurface): StartPage {
   return surface.id
 }
 
-export const START_PAGE_KEYS: readonly StartPage[] =
-  SURFACES.filter(isStartPageSurface).map(startPageOf)
-
 export const START_PAGES: Readonly<Partial<Record<StartPage, StartPageLink>>> =
   Object.fromEntries(
     SURFACES.filter(isStartPageSurface)
@@ -173,10 +168,6 @@ export function startPageEntry(startPage: unknown): StartPageLink {
 export function startPagePath(startPage: unknown) {
   return startPageEntry(startPage).path
 }
-
-export const NAV_LABELS = Object.fromEntries(
-  SURFACES.map((s) => [s.id, s.label])
-) as Record<SurfaceId, string>
 
 export function legacyPathname(pathname: string): string | undefined {
   if (pathname === "/app" || pathname === "/app/") return "/"

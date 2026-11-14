@@ -10,7 +10,6 @@ export const EMAIL_REJECTION = "Use a full email, like name@example.com."
 export const NAME_REJECTION = "Enter your name."
 export const TIME_ZONE_REJECTION = "Use a time zone like Asia/Ho_Chi_Minh."
 export const EXPORT_FILENAME = "opencv-export.zip"
-export const GMAIL_UNAVAILABLE = "Gmail is not available in this build."
 export const LOAD_ERROR = "Could not load settings."
 export const NO_WEEKLY_CAP = "No weekly cap on this mode."
 export const NO_SESSION_CAP = "No session cap on this mode."
@@ -98,19 +97,6 @@ export async function uploadPhoto(file: File) {
   }
   const body = (await res.json()) as SuccessBody<Profile>
   return unwrapData(body)
-}
-
-export async function connectGmail() {
-  const res = await fetchBinary(endpoints.inboxConnect, {
-    credentials: "include",
-  })
-  if (res.status === 404) return { url: null as string | null }
-  if (!res.ok) return { url: null as string | null }
-  const body = (await res.json()) as {
-    data?: { url?: string | null }
-  }
-  const url = body.data?.url
-  return { url: typeof url === "string" && url.length > 0 ? url : null }
 }
 
 export async function downloadExport() {

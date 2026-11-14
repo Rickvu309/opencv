@@ -110,35 +110,6 @@ export function draftFromPage(page: WordPage): WritingDraft | null {
   }
 }
 
-export function adoptIds(
-  draft: WritingDraft,
-  blocks: readonly WritingBlock[]
-): WritingDraft {
-  if (blocks.length !== draft.blocks.length) return draft
-  const aligned = draft.blocks.every((block, index) => {
-    const next = blocks[index]
-    return !!next && next.text === block.text && !!next.held === !!block.held
-  })
-  if (!aligned) return draft
-  if (draft.blocks.every((block, index) => block.id === blocks[index]?.id)) {
-    return draft
-  }
-  const index = Math.max(
-    0,
-    draft.blocks.findIndex((block) => block.id === draft.caret.blockId)
-  )
-  const next = blocks[index] ?? blocks[0]
-  if (!next) return draft
-  return {
-    blocks: blocks.map((block) => ({ ...block })),
-    caret: {
-      blockId: next.id,
-      offset: Math.min(draft.caret.offset, next.text.length),
-    },
-    nextId: draft.nextId,
-  }
-}
-
 export function pointSpan(point: TextPoint): TextSpan {
   return { anchor: point, focus: point }
 }

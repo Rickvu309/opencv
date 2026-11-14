@@ -27,12 +27,6 @@ export function fetchUsage() {
   ).then(unwrapData)
 }
 
-export function fetchIntegrations() {
-  return apiFetch<SuccessBody<QueryOutput<"integrations.list">>>(
-    endpoints.integrations
-  ).then(unwrapData)
-}
-
 export function fetchBilling() {
   return apiFetch<SuccessBody<QueryOutput<"billing.get">>>(
     endpoints.billing

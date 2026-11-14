@@ -54,10 +54,6 @@ async function lockedWordHead(owner: string, docId: string) {
   return head ?? null
 }
 
-export async function isWordPage(owner: string, docId: string) {
-  return (await ownedPackagePaper(owner, docId)) !== null
-}
-
 export async function renameWordPage(
   owner: string,
   docId: string,
