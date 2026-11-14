@@ -3,16 +3,18 @@ import path from "node:path"
 import ts from "typescript"
 
 export const WEB_SRC = "apps/web/src"
-const CHECKED_FOLDERS = ["components", "features", "lib"].map(
-  (folder) => `${WEB_SRC}/${folder}/`
-)
 const TEST_ONLY =
   /\.(?:test|type-test|fixtures)\.[cm]?[jt]sx?$|^apps\/web\/src\/test\//
 const MODULE = /\.[cm]?[jt]sx?$/
 const RESOLVE_SUFFIXES = ["", ".ts", ".tsx", "/index.ts", "/index.tsx"]
 
 function isProductModule(file) {
-  return MODULE.test(file) && !file.endsWith(".d.ts") && !TEST_ONLY.test(file)
+  return (
+    file.startsWith(`${WEB_SRC}/`) &&
+    MODULE.test(file) &&
+    !file.endsWith(".d.ts") &&
+    !TEST_ONLY.test(file)
+  )
 }
 
 function resolveSpecifier(fromFile, specifier, known) {
@@ -40,21 +42,24 @@ export function importedModules(fromFile, text, known) {
 }
 
 export function unusedWebModules(files) {
-  const known = new Set(files.map((file) => file.path))
-  const imported = new Set()
-  for (const file of files) {
-    if (!isProductModule(file.path)) continue
-    for (const target of importedModules(file.path, file.text, known)) {
-      if (target !== file.path) imported.add(target)
-    }
+  const modules = files.filter((file) => isProductModule(file.path))
+  const known = new Set(modules.map((file) => file.path))
+  const imports = new Map(
+    modules.map((file) => [
+      file.path,
+      importedModules(file.path, file.text, known),
+    ])
+  )
+  const reached = new Set()
+  const pending = [`${WEB_SRC}/main.tsx`]
+  while (pending.length > 0) {
+    const file = pending.pop()
+    if (reached.has(file)) continue
+    reached.add(file)
+    pending.push(...(imports.get(file) ?? []))
   }
-  return files
+  return modules
     .map((file) => file.path)
-    .filter(
-      (file) =>
-        isProductModule(file) &&
-        CHECKED_FOLDERS.some((folder) => file.startsWith(folder)) &&
-        !imported.has(file)
-    )
+    .filter((file) => !reached.has(file))
     .sort()
 }
