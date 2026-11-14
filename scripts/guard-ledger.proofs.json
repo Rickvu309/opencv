@@ -39,6 +39,10 @@
     "passed": true,
     "fingerprint": "ac368da6300c"
   },
+  "unused-web-exports": {
+    "passed": true,
+    "fingerprint": "05a6360053da"
+  },
   "write-grant": {
     "passed": true,
     "fingerprint": "a0076e820e72"

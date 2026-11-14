@@ -4,11 +4,12 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import test from "node:test"
-import { unusedWebExports } from "./lib/unused-web-exports.mjs"
+import { unusedExports } from "./lib/unused-exports.mjs"
 
 const root = path.resolve(fileURLToPath(new URL("..", import.meta.url)))
 const file = (name, text) => ({ path: `apps/web/src/${name}`, text })
-const names = (files) => unusedWebExports(files).map(({ name }) => name)
+const paths = { "@/*": ["/apps/web/src/*"] }
+const names = (files) => unusedExports(files, paths).map(({ name }) => name)
 
 test("an unreferenced declaration inside an imported module fires", () => {
   assert.deepEqual(
@@ -90,5 +91,5 @@ test("web exports have references in product code or their existing tests", () =
       path: name,
       text: readFileSync(path.join(root, name), "utf8"),
     }))
-  assert.deepEqual(unusedWebExports(files), [])
+  assert.deepEqual(unusedExports(files, paths), [])
 })

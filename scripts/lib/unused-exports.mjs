@@ -3,7 +3,7 @@ import ts from "typescript"
 
 const TEST_ONLY = /\.(?:test|type-test|fixtures)\.|\/(?:test|tests|__tests__)\//
 
-export function unusedWebExports(files) {
+export function unusedExports(files, paths = {}) {
   const sources = new Map(
     files.map(({ path: file, text }) => [
       path.posix.resolve("/", file),
@@ -33,7 +33,7 @@ export function unusedWebExports(files) {
       module: ts.ModuleKind.ESNext,
       moduleResolution: ts.ModuleResolutionKind.Bundler,
       jsx: ts.JsxEmit.ReactJSX,
-      paths: { "@/*": ["/apps/web/src/*"] },
+      paths,
     },
     host
   )

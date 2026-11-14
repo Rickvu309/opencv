@@ -1,0 +1,10 @@
+{
+  "id": "unused-api-exports",
+  "file": "scripts/unused-api-exports.test.mjs",
+  "historic": {
+    "mode": "restore",
+    "sha": "7e5fc2e1",
+    "paths": ["apps/api/src/paper/package-card-actions.ts"],
+    "command": ["node", "--test", "scripts/unused-api-exports.test.mjs"]
+  }
+}
