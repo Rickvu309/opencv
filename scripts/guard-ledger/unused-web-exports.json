@@ -1,0 +1,10 @@
+{
+  "id": "unused-web-exports",
+  "file": "scripts/unused-web-exports.test.mjs",
+  "historic": {
+    "mode": "restore",
+    "sha": "a4cb8522",
+    "paths": ["apps/web/src/features/paper-page/canvas-edit.ts"],
+    "command": ["node", "--test", "scripts/unused-web-exports.test.mjs"]
+  }
+}

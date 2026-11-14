@@ -32,10 +32,6 @@ export function shellNavLabel(
     : item.label
 }
 
-export const NAV_LABELS = Object.fromEntries(
-  SURFACES.map((surface) => [surface.id, surface.label])
-) as Record<string, string>
-
 export const SHELL_PRIMARY = SURFACES.filter(
   (surface) => surface.shown && surface.nav === "primary"
 ).map((surface) => ({

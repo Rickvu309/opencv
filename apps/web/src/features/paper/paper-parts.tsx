@@ -2,24 +2,6 @@ import { FileText, Upload, type LucideIcon } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 
-import { previewTemplate } from "./paper-templates.ts"
-
-export function MiniCv({ templateId }: { templateId: string }) {
-  return (
-    <div
-      data-template={previewTemplate(templateId)}
-      className="aspect-[1/1.294] overflow-hidden rounded-md border border-border bg-card p-3"
-    >
-      <div className="space-y-1.5" aria-hidden="true">
-        <div className="h-1.5 w-2/3 rounded-full bg-muted" />
-        <div className="mt-3 h-1.5 w-full rounded-full bg-muted" />
-        <div className="h-1.5 w-4/5 rounded-full bg-muted" />
-        <div className="h-1.5 w-3/5 rounded-full bg-muted" />
-      </div>
-    </div>
-  )
-}
-
 export function NewPaperCard({
   title,
   body,
