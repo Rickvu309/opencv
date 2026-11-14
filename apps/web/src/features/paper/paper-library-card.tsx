@@ -18,7 +18,7 @@ export type PaperCardAction = {
 }
 
 const SHEET =
-  "relative flex aspect-[150/212] w-full flex-col overflow-hidden rounded-[3px] bg-card px-[13px] py-[14px] text-left shadow-sm ring-1 ring-foreground/5 md:h-[212px] md:w-[150px]"
+  "relative flex aspect-[150/212] w-full flex-col overflow-hidden rounded-[3px] bg-card px-[13px] py-[14px] text-left shadow-sm ring-1 ring-foreground/5 transition-[box-shadow] duration-(--duration-micro) ease-(--ease-micro) group-hover/card:ring-foreground/15 group-focus-visible/card:ring-foreground/15 md:h-[212px] md:w-[150px]"
 
 function PaperSheet({ name, badge }: { name: string; badge?: string }) {
   return (
@@ -82,7 +82,7 @@ export function PaperLibraryCard({
           type="button"
           variant="ghost"
           aria-label={openLabel}
-          className="h-auto min-h-11 w-full min-w-0 flex-col items-start gap-3 rounded-[3px] p-0 font-normal whitespace-normal hover:bg-transparent aria-expanded:bg-transparent dark:hover:bg-transparent"
+          className="group/card h-auto min-h-11 w-full min-w-0 flex-col items-start gap-3 rounded-[3px] p-0 font-normal whitespace-normal hover:bg-transparent aria-expanded:bg-transparent dark:hover:bg-transparent"
           onClick={onOpen}
         >
           {body}

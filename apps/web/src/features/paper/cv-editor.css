@@ -67,9 +67,12 @@
 }
 
 [data-paper-editor] .bn-block-outer,
-[data-paper-editor] .bn-block-content {
-  transition-duration: 150ms;
-  animation-duration: 150ms;
+[data-paper-editor] .bn-block-content,
+[data-paper-editor] .bn-block-content::before,
+[data-paper-editor] .bn-block-group .bn-block-group .bn-block-outer::before,
+[data-paper-editor] .collaboration-cursor__caret,
+[data-paper-editor] .collaboration-cursor__label {
+  transition: none;
 }
 
 .prosemirror-dropcursor-block {
