@@ -14,7 +14,7 @@ import {
 type InlineText = {
   type: "text"
   text: string
-  styles: { bold?: true; italic?: true }
+  styles: { bold?: true; italic?: true; underline?: true }
 }
 type InlineLink = { type: "link"; href: string; content: InlineText[] }
 type InlineItem = InlineText | InlineLink
@@ -31,6 +31,7 @@ function styled(run: TextRun): InlineText {
     styles: {
       ...(run.bold ? { bold: true as const } : {}),
       ...(run.italic ? { italic: true as const } : {}),
+      ...(run.underline ? { underline: true as const } : {}),
     },
   }
 }
@@ -74,6 +75,7 @@ function runFields(item: InlineText): TextRun {
     text: item.text,
     ...(item.styles.bold ? { bold: true as const } : {}),
     ...(item.styles.italic ? { italic: true as const } : {}),
+    ...(item.styles.underline ? { underline: true as const } : {}),
   }
 }
 
@@ -302,25 +304,36 @@ function headerOf(block: EditorBlockLike | undefined): Record<string, unknown> {
 
 export function candidateOf(
   kind: PaperDocument["kind"],
-  blocks: readonly EditorBlockLike[]
+  blocks: readonly EditorBlockLike[],
+  version: 3 | 4 = 3
 ): unknown {
   return kind === "cv"
     ? {
-        version: 3,
+        version,
+        ...(version === 4 ? { schemaRevision: 1 } : {}),
         kind,
         header: headerOf(blocks[0]),
         blocks: blocks.slice(1).map(blockOf),
         clashes: [],
       }
-    : { version: 3, kind, blocks: blocks.map(blockOf), clashes: [] }
+    : {
+        version,
+        ...(version === 4 ? { schemaRevision: 1 } : {}),
+        kind,
+        blocks: blocks.map(blockOf),
+        clashes: [],
+      }
 }
 
 export function fromEditorBlocks(
   kind: PaperDocument["kind"],
-  blocks: readonly EditorBlockLike[]
+  blocks: readonly EditorBlockLike[],
+  version: 3 | 4 = 3
 ): PaperResult {
   try {
-    const parsed = paperDocumentSchema.safeParse(candidateOf(kind, blocks))
+    const parsed = paperDocumentSchema.safeParse(
+      candidateOf(kind, blocks, version)
+    )
     if (parsed.success) return { ok: true, document: parsed.data }
     const issue = parsed.error.issues[0]
     const where = issue?.path.length ? ` at ${issue.path.join(".")}` : ""

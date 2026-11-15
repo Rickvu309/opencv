@@ -6,11 +6,13 @@ function walk(node, visit) {
 }
 
 const path = (node) =>
-  ts.isIdentifier(node)
-    ? node.text
-    : ts.isPropertyAccessExpression(node)
-      ? `${path(node.expression)}.${node.name.text}`
-      : ""
+  !node
+    ? ""
+    : ts.isIdentifier(node)
+      ? node.text
+      : ts.isPropertyAccessExpression(node)
+        ? `${path(node.expression)}.${node.name.text}`
+        : ""
 
 const call = (node, name) =>
   ts.isCallExpression(node) && path(node.expression) === name
@@ -128,10 +130,109 @@ export function detectRollback(source, file = "content-store.ts") {
   return check.problems
 }
 
+function importedCalls(tree, module, name) {
+  const names = new Set()
+  for (const statement of tree.statements) {
+    if (
+      !ts.isImportDeclaration(statement) ||
+      !ts.isStringLiteral(statement.moduleSpecifier) ||
+      statement.moduleSpecifier.text !== module ||
+      statement.importClause?.isTypeOnly
+    )
+      continue
+    const bindings = statement.importClause?.namedBindings
+    if (bindings && ts.isNamedImports(bindings)) {
+      for (const item of bindings.elements)
+        if (!item.isTypeOnly && (item.propertyName ?? item.name).text === name)
+          names.add(item.name.text)
+    } else if (bindings && ts.isNamespaceImport(bindings)) {
+      names.add(`${bindings.name.text}.${name}`)
+    }
+  }
+  return names
+}
+
+function editorWriteChecks(tree, check) {
+  const writes = importedCalls(tree, "y-prosemirror", "updateYFragment")
+  writes.add("updateYFragment")
+  const admissions = importedCalls(tree, "./ydoc.js", "admitEditorWriteTarget")
+  const exported = new Set()
+  for (const statement of tree.statements) {
+    if (
+      !ts.isExportDeclaration(statement) ||
+      statement.moduleSpecifier ||
+      !statement.exportClause ||
+      !ts.isNamedExports(statement.exportClause)
+    )
+      continue
+    for (const item of statement.exportClause.elements)
+      exported.add((item.propertyName ?? item.name).text)
+  }
+  const owners = []
+  for (const statement of tree.statements) {
+    const directExport = statement.modifiers?.some(
+      (item) => item.kind === ts.SyntaxKind.ExportKeyword
+    )
+    if (
+      ts.isFunctionDeclaration(statement) &&
+      statement.body &&
+      (directExport || exported.has(statement.name?.text))
+    )
+      owners.push(statement)
+    if (ts.isVariableStatement(statement)) {
+      for (const declaration of statement.declarationList.declarations) {
+        const value = declaration.initializer
+        if (
+          (directExport || exported.has(path(declaration.name))) &&
+          value &&
+          (ts.isArrowFunction(value) || ts.isFunctionExpression(value))
+        )
+          owners.push(value)
+      }
+    }
+  }
+  for (const owner of owners) {
+    if (
+      nodes(
+        owner.body,
+        (node) => ts.isCallExpression(node) && writes.has(path(node.expression))
+      ).length === 0
+    )
+      continue
+    const first =
+      owner.body && ts.isBlock(owner.body)
+        ? owner.body.statements[0]
+        : undefined
+    const assignment =
+      first && ts.isExpressionStatement(first) ? first.expression : undefined
+    const admission =
+      assignment &&
+      ts.isBinaryExpression(assignment) &&
+      assignment.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+      path(assignment.left) === path(owner.parameters[1]?.name)
+        ? assignment.right
+        : undefined
+    check.require(
+      owner.parameters.length >= 2 &&
+        ts.isIdentifier(owner.parameters[0].name) &&
+        ts.isIdentifier(owner.parameters[1].name) &&
+        admission &&
+        ts.isCallExpression(admission) &&
+        admissions.has(path(admission.expression)) &&
+        admission.arguments.length === 2 &&
+        path(admission.arguments[0]) === path(owner.parameters[0].name) &&
+        path(admission.arguments[1]) === path(owner.parameters[1].name),
+      "paper-editor-write-admission",
+      owner
+    )
+  }
+}
+
 export function detect(source, file = "content-store.ts") {
   const { tree, functions } = declarations(source, file)
   const check = findings(tree)
   rollbackChecks(tree, functions, check)
+  editorWriteChecks(tree, check)
   const owner = functions.get("withContent")
   if (!owner) return check.problems
   const attempts = nodes(

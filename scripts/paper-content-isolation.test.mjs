@@ -132,3 +132,167 @@ test("Paper mutations detach cached heads and publish only after the outer commi
     ).some((problem) => problem.kind === "paper-live-transaction-boundary")
   )
 })
+
+const editorWriteClean = `
+import { updateYFragment } from "y-prosemirror"
+import { admitEditorWriteTarget, headlessEditor } from "./ydoc.js"
+export function writeAsEditor(yDoc, target, origin) {
+  target = admitEditorWriteTarget(yDoc, target)
+  const node = blocksToNode(headlessEditor(target.version), toEditorBlocks(target))
+  const binding = bindings.get(yDoc) ?? {mapping: new Map(), isOMark: new Map()}
+  bindings.set(yDoc, binding)
+  yDoc.transact(() => updateYFragment(yDoc, yDoc.getXmlFragment(FRAGMENT), node, binding), origin)
+}
+`
+
+const editorWriteMistakes = [
+  [
+    "canonical admission rejects repairable legacy editor shapes",
+    (source) => source.replaceAll("admitEditorWriteTarget", "admitWriteTarget"),
+  ],
+  [
+    "missing call",
+    (source) =>
+      source.replace("  target = admitEditorWriteTarget(yDoc, target)\n", ""),
+  ],
+  [
+    "after mutation",
+    (source) =>
+      source
+        .replace("  target = admitEditorWriteTarget(yDoc, target)\n", "")
+        .replace(
+          "), origin)",
+          "), origin)\n  target = admitEditorWriteTarget(yDoc, target)"
+        ),
+  ],
+  [
+    "after conversion",
+    (source) =>
+      source
+        .replace("  target = admitEditorWriteTarget(yDoc, target)\n", "")
+        .replace(
+          "  const binding =",
+          "  target = admitEditorWriteTarget(yDoc, target)\n  const binding ="
+        ),
+  ],
+  [
+    "after binding mutation",
+    (source) =>
+      source
+        .replace("  target = admitEditorWriteTarget(yDoc, target)\n", "")
+        .replace(
+          "  yDoc.transact",
+          "  target = admitEditorWriteTarget(yDoc, target)\n  yDoc.transact"
+        ),
+  ],
+  [
+    "conditional call",
+    (source) =>
+      source.replace(
+        "target = admitEditorWriteTarget(yDoc, target)",
+        "if (enabled) target = admitEditorWriteTarget(yDoc, target)"
+      ),
+  ],
+  [
+    "deferred call",
+    (source) =>
+      source.replace(
+        "target = admitEditorWriteTarget(yDoc, target)",
+        "const admit = () => admitEditorWriteTarget(yDoc, target)"
+      ),
+  ],
+  [
+    "wrong document",
+    (source) =>
+      source.replace(
+        "admitEditorWriteTarget(yDoc, target)",
+        "admitEditorWriteTarget(otherDoc, target)"
+      ),
+  ],
+  [
+    "wrong target",
+    (source) =>
+      source.replace(
+        "admitEditorWriteTarget(yDoc, target)",
+        "admitEditorWriteTarget(yDoc, otherTarget)"
+      ),
+  ],
+  [
+    "discarded parse",
+    (source) =>
+      source.replace(
+        "target = admitEditorWriteTarget(yDoc, target)",
+        "admitEditorWriteTarget(yDoc, target)"
+      ),
+  ],
+  [
+    "untrusted helper",
+    (source) => source.replace('from "./ydoc.js"', 'from "./other.js"'),
+  ],
+  [
+    "type-only helper",
+    (source) =>
+      source.replace(
+        "import { admitEditorWriteTarget, headlessEditor }",
+        "import type { admitEditorWriteTarget, headlessEditor }"
+      ),
+  ],
+]
+
+test("exported direct CRDT writers admit parsed identity before conversion, binding or mutation", () => {
+  assert.deepEqual(detect(editorWriteClean, "editor-write.ts"), [])
+  const source = readFileSync(
+    new URL("../packages/paper-crdt/src/editor-write.ts", import.meta.url),
+    "utf8"
+  )
+  assert.deepEqual(detect(source, "editor-write.ts"), [])
+  for (const [name, change] of editorWriteMistakes) {
+    const mistake = change(editorWriteClean)
+    assert.notEqual(mistake, editorWriteClean, name)
+    assert.ok(
+      detect(mistake, "editor-write.ts").some(
+        (problem) => problem.kind === "paper-editor-write-admission"
+      ),
+      name
+    )
+  }
+  assert.deepEqual(
+    detect(
+      editorWriteClean
+        .replace("admitEditorWriteTarget,", "admitEditorWriteTarget as admit,")
+        .replace("target = admitEditorWriteTarget(", "target = admit("),
+      "editor-write.ts"
+    ),
+    []
+  )
+  const alias = editorWriteClean
+    .replace("updateYFragment }", "updateYFragment as update }")
+    .replace("() => updateYFragment(", "() => update(")
+  assert.deepEqual(detect(alias, "editor-write.ts"), [])
+  assert.ok(
+    detect(editorWriteMistakes[0][1](alias), "editor-write.ts").some(
+      (problem) => problem.kind === "paper-editor-write-admission"
+    )
+  )
+  const variable = editorWriteClean.replace(
+    "export function writeAsEditor(yDoc, target, origin) {",
+    "export const writeAsEditor = (yDoc, target, origin) => {"
+  )
+  assert.deepEqual(detect(variable, "editor-write.ts"), [])
+  assert.ok(
+    detect(editorWriteMistakes[0][1](variable), "editor-write.ts").some(
+      (problem) => problem.kind === "paper-editor-write-admission"
+    )
+  )
+  const named =
+    editorWriteClean.replace(
+      "export function writeAsEditor",
+      "function writeAsEditor"
+    ) + "\nexport {writeAsEditor}"
+  assert.deepEqual(detect(named, "editor-write.ts"), [])
+  assert.ok(
+    detect(editorWriteMistakes[0][1](named), "editor-write.ts").some(
+      (problem) => problem.kind === "paper-editor-write-admission"
+    )
+  )
+})

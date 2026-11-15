@@ -1,5 +1,7 @@
 import {
   canonicalPaper,
+  sameNativeProvenance,
+  type NativeProvenance,
   rebasePending,
   type PaperDocument,
 } from "@workspace/domain"
@@ -11,6 +13,7 @@ export const REBASE_ORIGIN = "paper-rebase"
 export const SERVER_ORIGIN = "paper-server"
 
 export type SyncReply = {
+  readonly provenance?: NativeProvenance
   readonly epoch: number
   readonly revision: number
   readonly reset: boolean
@@ -20,6 +23,7 @@ export type SyncReply = {
 }
 
 export type Prepared = {
+  readonly provenance?: NativeProvenance
   readonly basedOn?: number
   readonly epoch: number
   readonly update: Uint8Array
@@ -27,6 +31,7 @@ export type Prepared = {
 }
 
 export type Stored = {
+  readonly provenance?: NativeProvenance
   readonly epoch: number
   readonly server: Uint8Array
   readonly pending: Uint8Array
@@ -49,6 +54,7 @@ export type ClientChange = "local" | "remote" | "reset"
 
 export type PaperClient = {
   readonly ydoc: Y.Doc
+  readonly provenance?: NativeProvenance
   readonly epoch: number
   readonly revision: number
   readonly rebuilds: number
@@ -128,17 +134,40 @@ class Client implements PaperClient {
   epoch: number
   revision: number
   rebuilds = 0
+  readonly provenance?: NativeProvenance
   private server: Y.Doc
   private readonly gc: boolean
   private listeners = new Set<(change: ClientChange) => void>()
   private detach: () => void = () => {}
 
-  constructor(stored: Stored | null, gc: boolean) {
+  constructor(
+    stored: Stored | null,
+    gc: boolean,
+    provenance?: NativeProvenance
+  ) {
+    if (stored && !sameNativeProvenance(stored.provenance, provenance))
+      throw new Error(
+        "The local document belongs to a different schema. Its recovery bytes were retained."
+      )
+    this.provenance = provenance
     this.gc = gc
     this.epoch = stored?.epoch ?? 0
     this.revision = stored?.revision ?? 0
     this.server = freshDoc(gc, stored?.server)
     this.ydoc = freshDoc(gc, stored?.server, stored?.pending)
+    if (stored) {
+      const document = read(this.ydoc)
+      if (
+        provenance
+          ? !document ||
+            document.version !== provenance.documentVersion ||
+            document.schemaRevision !== provenance.schemaRevision
+          : document?.version === 4
+      )
+        throw new Error(
+          "Local recovery bytes do not match their schema identity. They were retained."
+        )
+    }
     this.attach()
   }
 
@@ -177,6 +206,7 @@ class Client implements PaperClient {
   prepare(options: { readonly pullOnly?: boolean } = {}): Prepared {
     const push = options.pullOnly !== true && this.hasPending()
     return {
+      ...(this.provenance ? { provenance: this.provenance } : {}),
       epoch: this.epoch,
       update: push ? this.pendingBytes() : Y.encodeStateAsUpdate(new Y.Doc()),
       stateVector: Y.encodeStateVector(this.server),
@@ -186,6 +216,7 @@ class Client implements PaperClient {
 
   stored(): Stored {
     return {
+      ...(this.provenance ? { provenance: this.provenance } : {}),
       epoch: this.epoch,
       server: Y.encodeStateAsUpdate(this.server),
       pending: this.pendingBytes(),
@@ -223,6 +254,48 @@ class Client implements PaperClient {
   }
 
   receive(sent: Prepared, reply: SyncReply): Receipt {
+    const rejected = {
+      reset: false,
+      stale: false,
+      rebased: false,
+      failed: true,
+    }
+    if (
+      !sameNativeProvenance(this.provenance, reply.provenance) ||
+      !sameNativeProvenance(this.provenance, sent.provenance) ||
+      !Number.isSafeInteger(reply.epoch) ||
+      reply.epoch < 1 ||
+      !Number.isSafeInteger(reply.revision) ||
+      reply.revision < 0 ||
+      sent.epoch !== this.epoch ||
+      (!reply.reset && this.epoch !== 0 && reply.epoch !== this.epoch) ||
+      reply.epoch < this.epoch ||
+      reply.revision < this.revision
+    )
+      return rejected
+    try {
+      const candidate = reply.reset
+        ? freshDoc(false, reply.update)
+        : freshDoc(
+            false,
+            Y.encodeStateAsUpdate(this.server),
+            reply.stale ? null : sent.update,
+            reply.update
+          )
+      const document = read(candidate)
+      const current = read(this.ydoc)
+      if (current && document && current.kind !== document.kind) return rejected
+      if (
+        this.provenance
+          ? !document ||
+            document.version !== this.provenance.documentVersion ||
+            document.schemaRevision !== this.provenance.schemaRevision
+          : document?.version === 4
+      )
+        return rejected
+    } catch {
+      return rejected
+    }
     this.revision = reply.revision
     if (reply.reset) return this.resetTo(reply)
     this.epoch = reply.epoch
@@ -260,10 +333,23 @@ class Client implements PaperClient {
   }
 
   adopt(orphan: Stored): Adoption {
+    if (!sameNativeProvenance(this.provenance, orphan.provenance))
+      return { adopted: false, failed: true }
     const base = read(freshDoc(false, orphan.server))
     const ours = read(freshDoc(false, orphan.server, orphan.pending))
     const lead = read(this.ydoc)
     if (!base || !ours || !lead) return { adopted: false, failed: false }
+    if (
+      [base, ours].some(
+        (document) =>
+          document.kind !== lead.kind ||
+          document.version !== lead.version ||
+          (document.version === 4 &&
+            (lead.version !== 4 ||
+              document.schemaRevision !== lead.schemaRevision))
+      )
+    )
+      return { adopted: false, failed: true }
     if (same(base, ours)) return { adopted: true, failed: false }
     try {
       const merged = rebasePending({ base, ours, theirs: lead })
@@ -303,7 +389,10 @@ class Client implements PaperClient {
 
 export function openPaperClient(
   stored: Stored | null = null,
-  options: { readonly gc?: boolean } = {}
+  options: {
+    readonly gc?: boolean
+    readonly provenance?: NativeProvenance
+  } = {}
 ): PaperClient {
-  return new Client(stored, options.gc ?? false)
+  return new Client(stored, options.gc ?? false, options.provenance)
 }

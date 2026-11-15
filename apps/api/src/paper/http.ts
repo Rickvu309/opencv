@@ -3,6 +3,8 @@ import {
   errorEnvelope,
   httpStatusForError,
   paperImportResponseSchema,
+  nativeWriterSchema,
+  type NativeWriter,
   paperPackageStageInputSchema,
   catalog,
   parseFileId,
@@ -37,6 +39,19 @@ import {
   readSharedPhoto,
   saveFile,
 } from "./store.js"
+
+function readWriter(c: Context): NativeWriter | undefined {
+  const raw = c.req.header("x-paper-writer")
+  if (raw === undefined) return undefined
+  try {
+    return nativeWriterSchema.parse(JSON.parse(raw))
+  } catch {
+    throw new CommandError(
+      ERROR_CODES.VALIDATION_ERROR,
+      "This editor's document capabilities could not be read."
+    )
+  }
+}
 
 function person(userId: string) {
   return personActor(userId)
@@ -176,7 +191,7 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
   routes.get("/shared/:token", async (c) => {
     const data = await registry.read(
       "paper.shared",
-      { token: c.req.param("token") },
+      { token: c.req.param("token"), writer: readWriter(c) },
       personActor("public")
     )
     return c.json(successEnvelope(data))
@@ -200,7 +215,11 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
         httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
       )
     }
-    const input: { query?: string; kind?: "cv" | "letter" } = {}
+    const input: {
+      query?: string
+      kind?: "cv" | "letter"
+      writer?: NativeWriter
+    } = { writer: readWriter(c) }
     if (query) input.query = query
     if (kind === "cv" || kind === "letter") input.kind = kind
     const data = await registry.read("paper.list", input, person(c.var.userId))
@@ -390,7 +409,7 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
   routes.get("/:id/pages", async (c) => {
     const data = await registry.read(
       "paper.pageCount",
-      { docId: c.req.param("id") },
+      { docId: c.req.param("id"), writer: readWriter(c) },
       person(c.var.userId)
     )
     return c.json(successEnvelope(data))
@@ -399,7 +418,7 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
   routes.get("/:id", async (c) => {
     const data = await registry.read(
       "paper.get",
-      { docId: c.req.param("id") },
+      { docId: c.req.param("id"), writer: readWriter(c) },
       person(c.var.userId)
     )
     return c.json(successEnvelope(data))

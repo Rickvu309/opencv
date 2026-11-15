@@ -1,11 +1,15 @@
 import {
   ERROR_CODES,
+  nativeProvenance,
+  sameNativeProvenance,
+  type NativeWriter,
+  type NativeBasis,
+  type NativeProvenance,
   nodeFingerprint,
   repairPaper,
   paperDocumentSchema,
   type PaperDocument,
   type PaperId,
-  type PaperStoredKind,
   type UserId,
 } from "@workspace/domain"
 import {
@@ -21,7 +25,6 @@ import {
   lostCharacters,
   loadYDoc,
   materialize,
-  seedYDoc,
   stateVectorOf,
   updateSince,
   writeDocument,
@@ -37,6 +40,11 @@ import {
   droppedPhotoIds,
   foldSettledLog,
 } from "./content-compact.js"
+
+import { validated, sameDocumentIdentity } from "./content-document.js"
+import { admitBasis, admitDocument } from "./native-admission.js"
+
+export { seedColumns } from "./content-document.js"
 
 type PaperRow = typeof paperDocs.$inferSelect
 
@@ -94,6 +102,8 @@ export type LockedContent = {
 }
 
 export type SyncRequest = {
+  readonly writer?: NativeWriter
+  readonly provenance?: NativeProvenance
   readonly epoch: number
   readonly update: Uint8Array
   readonly stateVector: Uint8Array
@@ -101,6 +111,7 @@ export type SyncRequest = {
 }
 
 export type SyncReply = {
+  readonly provenance?: NativeProvenance
   readonly epoch: number
   readonly revision: number
   readonly reset: boolean
@@ -172,38 +183,6 @@ export function coachBasisOk(
   baseSeq: number
 ) {
   return basedOn <= revision && basedOn >= baseSeq
-}
-
-function validated(candidate: unknown, kind: PaperStoredKind): PaperDocument {
-  const parsed = paperDocumentSchema.safeParse(candidate)
-  if (!parsed.success) {
-    const issue = parsed.error.issues[0]
-    throw refuse(issue?.message ?? "The document is not valid")
-  }
-  if (parsed.data.kind !== kind) {
-    throw refuse(`A ${kind} cannot hold a ${parsed.data.kind}`)
-  }
-  return parsed.data
-}
-
-export function seedColumns(kind: PaperStoredKind, paper: PaperDocument) {
-  const seeded = validated(paper, kind)
-  let base: Uint8Array
-  try {
-    base = seedYDoc(seeded)
-  } catch (error) {
-    throw refuse(error instanceof Error ? error.message : "Cannot seed")
-  }
-  const materialized = materialize(base)
-  if (!materialized.ok) throw refuse(materialized.reason)
-  return {
-    crdtEpoch: FIRST_EPOCH,
-    crdtBase: Buffer.from(base),
-    crdtDocument: validated(materialized.document, kind) as unknown as Record<
-      string,
-      unknown
-    >,
-  }
 }
 
 async function lockedRow(userId: UserId, docId: PaperId): Promise<PaperRow> {
@@ -347,6 +326,7 @@ async function commit(
   const materialized = materialize(entry.yDoc)
   if (!materialized.ok) throw refuse(materialized.reason)
   const paper = validated(materialized.document, row.kind)
+  sameDocumentIdentity(validated(row.crdtDocument, row.kind), paper)
   const seq = nextContentSeq(entry.revision)
   const update = Buffer.from(effective)
   await getDb()
@@ -478,10 +458,20 @@ async function appendLocked(
 export async function withContent<T>(
   userId: UserId,
   docId: PaperId,
-  run: (content: LockedContent) => Promise<T>
+  run: (content: LockedContent) => Promise<T>,
+  admission?: { writer?: NativeWriter; basis?: NativeBasis; proposal?: boolean }
 ): Promise<T> {
   return withLiveTransaction(async (retain) => {
     const row = await lockedRow(userId, docId)
+    const document = validated(row.crdtDocument, row.kind)
+    admitDocument(document, admission?.writer)
+    if (admission?.proposal || admission?.basis)
+      admitBasis(
+        document,
+        row.crdtEpoch ?? FIRST_EPOCH,
+        row.contentVersion,
+        admission?.basis
+      )
     let entry = await hydrate(row)
     let latest = row
     const content: LockedContent = {
@@ -611,6 +601,22 @@ export async function syncContent(
 ): Promise<SyncReply> {
   return withLiveTransaction(async (retain) => {
     let row = await lockedRow(userId, docId)
+    const document = validated(row.crdtDocument, row.kind)
+    admitDocument(document, request.writer)
+    const provenance =
+      document.version === 4 ? nativeProvenance(document) : undefined
+    if (!sameNativeProvenance(provenance, request.provenance))
+      throw refuse(
+        "The update belongs to a different document schema. Nothing was acknowledged or changed."
+      )
+    if (
+      document.version === 4 &&
+      request.epoch === NO_LOCAL_COPY &&
+      carriesChange(request.update)
+    )
+      throw refuse(
+        "An unbased native update cannot be admitted. Recover its original local basis first."
+      )
     const entry = await hydrate(row)
     const reply = (
       reset: boolean,
@@ -621,6 +627,7 @@ export async function syncContent(
       if (!update) throw refuse("The state vector could not be read")
       retain(row.id, entry)
       return {
+        ...(provenance ? { provenance } : {}),
         epoch: entry.epoch,
         revision: entry.revision,
         reset,
