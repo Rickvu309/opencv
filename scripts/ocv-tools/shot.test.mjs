@@ -387,3 +387,27 @@ test("help names the shot limits", () => {
   assert.match(text, /10 MB/)
   assert.match(text, /20 pictures/)
 })
+
+test("shot keeps a full existing release and links the new picture from the next release", () => {
+  const rig = ready({ releases: ["screenshots"] })
+  try {
+    const read = rig.ports.gh.releaseAssets
+    const oldAssets = Array.from({ length: 1000 }, (_, i) => ({
+      name: `old-${i}.png`,
+    }))
+    rig.ports.gh.releaseAssets = (tag) =>
+      tag === "screenshots" ? oldAssets : read(tag)
+    const png = rig.box.file("proof.png", PNG)
+    const { code, text } = runCli(["shot", png, "--issue", "90"], rig.ctx)
+    assert.equal(code, 0, text)
+    assert.match(text, /releases\/download\/screenshots-2\/issue-90-proof\.png/)
+    assert.deepEqual(
+      effects(rig.ports, "releaseCreate").map((entry) => entry.tag),
+      ["screenshots-2"]
+    )
+    assert.equal(oldAssets.length, 1000)
+    assert.equal(effects(rig.ports, "releaseUpload")[0].clobber, false)
+  } finally {
+    rig.done()
+  }
+})
