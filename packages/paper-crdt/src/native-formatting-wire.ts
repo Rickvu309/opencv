@@ -100,10 +100,10 @@ export function validateFormattingWire(
   }
   visit(fragment)
 }
-function validateNodeAttrs(
+export function validateNodeAttrs(
   name: string,
   attrs: Record<string, unknown>,
-  engine: PrivateFormattingEditor
+  engine: Pick<PrivateFormattingEditor, "pmSchema">
 ) {
   const spec = engine.pmSchema.nodes[name]
   if (!spec) throw new Error("Unknown wire node")
@@ -119,6 +119,10 @@ function validateNodeAttrs(
     if (!(key in allowed)) throw new Error("Unknown wire attribute")
     const semantic =
       (name === "blockContainer" && key === "id") ||
+      (["paperFlow", "paperTable", "paperRow", "paperCell"].includes(name) &&
+        key === "id") ||
+      (name === "paperTable" && key === "columns") ||
+      (name === "paperCell" && key === "columnId") ||
       (name === "heading" && key === "level") ||
       (name === "paperCvHeader" && key === "photo") ||
       (name === "paperCvSection" && key === "kind") ||
@@ -137,10 +141,10 @@ function validateNodeAttrs(
     throw new Error("Invalid heading")
   if (inline) canonicalProps(attrs)
 }
-function validateMark(
+export function validateMark(
   key: string,
   value: unknown,
-  engine: PrivateFormattingEditor
+  engine: Pick<PrivateFormattingEditor, "pmSchema">
 ) {
   const attrs = object(value)
   const spec = engine.pmSchema.marks[key]

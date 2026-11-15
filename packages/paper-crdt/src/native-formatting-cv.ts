@@ -32,7 +32,7 @@ const ownerNames = {
   education: "paperCvEducation",
   skills: "paperCvSkills",
 } as const
-function blockOf(node: FormatNode): PrivateFormattingBlock {
+export function blockOf(node: FormatNode): PrivateFormattingBlock {
   if (node.type === "cvField")
     return {
       id: node.id,
@@ -105,7 +105,7 @@ function noChildren(block: Ordinary): void {
   if (block.children?.length)
     throw new Error("Leaf CV block cannot hold children")
 }
-function readBlock(input: unknown): unknown {
+export function readBlock(input: unknown): unknown {
   const shape = object(input, ["id", "type", "props", "content", "children"])
   const block: Ordinary = {
     id: string(shape.id),

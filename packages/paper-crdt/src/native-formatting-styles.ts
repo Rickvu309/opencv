@@ -23,11 +23,45 @@ function implementation(name: (typeof inlineKeys)[number]) {
       dom.dataset.paperValue = value
       return { dom, contentDOM: dom }
     },
-    parse(element: { getAttribute(name: string): string | null }) {
-      if (element.getAttribute("data-paper-style") !== name) return undefined
-      const value = element.getAttribute("data-paper-value")
-      canonicalStyles({ [name]: value })
-      return value ?? undefined
+    parse(element: HTMLElement) {
+      if (element.getAttribute("data-paper-style") === name) {
+        const value = element.getAttribute("data-paper-value")
+        canonicalStyles({ [name]: value })
+        return value ?? undefined
+      }
+      const { tagName, style } = element
+      if (name === "bold") {
+        if (style.fontWeight === "normal" || style.fontWeight === "400")
+          return "off"
+        if (
+          tagName === "STRONG" ||
+          tagName === "B" ||
+          style.fontWeight === "bold" ||
+          Number(style.fontWeight) >= 600
+        )
+          return "on"
+      }
+      if (name === "italic") {
+        if (style.fontStyle === "normal") return "off"
+        if (tagName === "EM" || tagName === "I" || style.fontStyle === "italic")
+          return "on"
+      }
+      if (name === "underline" || name === "strike") {
+        const decoration = style.textDecorationLine || style.textDecoration
+        if (decoration === "none") return "off"
+        if (
+          name === "underline" &&
+          (tagName === "U" || decoration.includes("underline"))
+        )
+          return "on"
+        if (
+          name === "strike" &&
+          (["S", "STRIKE", "DEL"].includes(tagName) ||
+            decoration.includes("line-through"))
+        )
+          return "on"
+      }
+      return undefined
     },
   }
 }

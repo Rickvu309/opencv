@@ -1,5 +1,25 @@
 export const clean = [
   {
+    path: "packages/paper-crdt/src/native-formatting-schema.ts",
+    text: 'createBlockSpec({ type: "bulletListItem" }, { parse: element => element.closest("ul, ol") ? {} : undefined, parseContent: nestedListContent })',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-mount.ts",
+    text: 'if (event.key === "Tab") { if (!target) return; event.preventDefault() }',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout.ts",
+    text: 'yXmlFragmentToBlocks(binding.engine, detached); doc.getXmlFragment("document-store")',
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting-schema.ts",
+    text: 'createBlockSpec({ type: "paragraph" }, { parse: element => element.tagName === "P" ? {} : undefined })',
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting-styles.ts",
+    text: 'const implementation = { parse(element) { return element.tagName === "STRONG" ? "on" : undefined } }',
+  },
+  {
     path: "apps/api/src/paper/native-output/formatted.ts",
     text: 'import { formattedStyles } from "./formatted-styles.js"',
   },
@@ -65,6 +85,38 @@ export const clean = [
   },
 ]
 export const mistakes = [
+  {
+    path: "packages/paper-crdt/src/native-formatting-schema.ts",
+    text: 'createBlockSpec({ type: "bulletListItem" }, { parse: element => element.parentElement?.tagName === "UL" ? {} : undefined })',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-mount.ts",
+    text: 'if (event.key === "Tab") { event.preventDefault(); if (!target) return }',
+  },
+  {
+    path: "packages/paper-crdt/src/index.ts",
+    text: 'export { mountPrivateLayout } from "./native-layout-mount.js"',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout.ts",
+    text: 'yXmlFragmentToBlocks(binding.engine, binding.fragment); doc.getText("table-mirror")',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout.ts",
+    text: 'doc.getXmlFragment("table-document"); doc.getMap("paper").set("runs", [])',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-mount.ts",
+    text: "BlockNoteEditor.create({ links: {} })",
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting-schema.ts",
+    text: 'createBlockSpec({ type: "paragraph" }, { render })',
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting-styles.ts",
+    text: 'const implementation = { parse(element) { return element.getAttribute("data-paper-value") } }',
+  },
   {
     path: "apps/api/src/paper/routes.ts",
     text: 'import { compileFormattedNativeDocx } from "./native-output/formatted.js"',

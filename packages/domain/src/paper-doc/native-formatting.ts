@@ -91,7 +91,7 @@ const bodyAt = (depth: number): z.ZodType<FormatBody> =>
       .strict(),
     z.object({ id: nodeIdSchema, type: z.literal("divider") }).strict(),
   ])
-const formatBodySchema = bodyAt(3)
+export const formatBodySchema = bodyAt(3)
 const field: z.ZodType<FormatField> = z
   .object({
     ...inline,
@@ -118,7 +118,7 @@ const field: z.ZodType<FormatField> = z
     itemId: nodeIdSchema.optional(),
   })
   .strict()
-const owner: z.ZodType<FormatOwner> = z
+export const formatOwnerSchema: z.ZodType<FormatOwner> = z
   .object({
     id: nodeIdSchema,
     type: z.enum(["header", "section", "experience", "education", "skills"]),
@@ -142,8 +142,8 @@ export const formattedDocumentSchema = z
         profile: z.literal("private-formatting-1"),
         kind: z.literal("cv"),
         presentation: documentPresentationSchema,
-        header: owner,
-        blocks: z.array(z.union([owner, formatBodySchema])),
+        header: formatOwnerSchema,
+        blocks: z.array(z.union([formatOwnerSchema, formatBodySchema])),
       })
       .strict(),
   ])
