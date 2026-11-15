@@ -5,6 +5,7 @@ export type SafeHref = string & { readonly [safeHrefBrand]: true }
 
 const SAFE_HREF_PATTERN = /^(?:https?:\/\/[^\s/?#]|mailto:\S)/i
 const MAX_HREF_LENGTH = 2000
+const HREF_EDGE_CHARACTER = /[\s\p{Cc}]/u
 
 function isControlCode(code: number): boolean {
   return code < 32 || code === 127
@@ -20,13 +21,16 @@ export function isSafeHref(value: string): value is SafeHref {
   )
 }
 
-function trimmedHref(value: string): string {
-  return value.replace(/^(?:\s|\p{Cc})+/u, "").replace(/(?:\s|\p{Cc})+$/u, "")
-}
-
 function safeHrefOf(value: string | undefined): SafeHref | undefined {
   if (value === undefined) return undefined
-  const trimmed = trimmedHref(value)
+  let start = 0
+  let end = value.length
+  while (start < end && HREF_EDGE_CHARACTER.test(value.charAt(start)))
+    start += 1
+  while (end > start && HREF_EDGE_CHARACTER.test(value.charAt(end - 1)))
+    end -= 1
+  if (end - start > MAX_HREF_LENGTH) return undefined
+  const trimmed = value.slice(start, end)
   return isSafeHref(trimmed) ? trimmed : undefined
 }
 
@@ -39,6 +43,7 @@ export type TextRun = {
   text: string
   bold?: true
   italic?: true
+  underline?: true
   href?: SafeHref
 }
 
@@ -67,6 +72,7 @@ function runOf(text: string, marks: CheckedMarks): TextRun {
     text,
     ...(marks.bold ? { bold: true as const } : {}),
     ...(marks.italic ? { italic: true as const } : {}),
+    ...(marks.underline ? { underline: true as const } : {}),
     ...(marks.href ? { href: marks.href } : {}),
   }
 }
@@ -75,6 +81,7 @@ function sameMarks(left: CheckedMarks, right: CheckedMarks): boolean {
   return (
     Boolean(left.bold) === Boolean(right.bold) &&
     Boolean(left.italic) === Boolean(right.italic) &&
+    Boolean(left.underline) === Boolean(right.underline) &&
     left.href === right.href
   )
 }
@@ -233,6 +240,7 @@ const textRunSchema = z
     text: z.string().min(1),
     bold: z.literal(true).optional(),
     italic: z.literal(true).optional(),
+    underline: z.literal(true).optional(),
     href: safeHrefSchema.optional(),
   })
   .strict()
