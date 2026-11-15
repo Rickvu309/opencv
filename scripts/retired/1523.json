@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-own-save.test.tsx",
+    "because": "A lost reply must replay the unchanged frozen original key and payload before sending changed words with a fresh key. The former one-request expectation omitted the required exact replay; replacement keeps the original text, conflict-bar and Saved assertions and verifies identical original attempts plus a fresh changed-draft key.",
+    "replacedBy": "apps/web/src/features/paper-page/canvas-own-save.test.tsx",
+    "proof": {
+      "fork": "876b9f7b80935dbf12709c937174f7ec1dbb039d",
+      "replacedByBlob": "7f093bbb125c682724a8d6de0c09433afd7d6114",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]
