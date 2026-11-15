@@ -1,0 +1,13 @@
+{
+  "id": "paper-tab-ownership",
+  "file": "scripts/paper-tab-ownership.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-tab-ownership.mjs",
+    "export": "detectUnownedWriting"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "e3bafddc4d965e80ef07a7ff94564afdc03d9a08",
+    "path": "apps/web/src/features/paper-page/canvas-save-record.ts"
+  }
+}

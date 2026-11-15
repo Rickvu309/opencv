@@ -7,6 +7,7 @@ import {
   goOnline,
   opened,
   reload,
+  recover,
   server,
   settle,
   status,
@@ -33,7 +34,11 @@ describe("a save whose reply was lost", () => {
     await settle()
     expect(bar()).toBeNull()
     expect(server.textOf(L.job)).toBe(`${START[L.job]} A B`)
-    expect(server.state.posts).toBe(posts + 1)
+    expect(server.state.posts).toBe(posts + 2)
+    expect(server.state.attempts[1]).toEqual(server.state.attempts[0])
+    expect(server.state.attempts[2]?.idempotencyKey).not.toBe(
+      server.state.attempts[0]?.idempotencyKey
+    )
     expect(status()).toMatch(/\bSaved\b/)
   })
 
@@ -53,6 +58,7 @@ describe("a save whose reply was lost", () => {
     await type(L.job, " B")
     await settle()
     await reload()
+    await recover()
     await goOnline()
     expect(bar()).toBeNull()
     await type(L.name, "Q")

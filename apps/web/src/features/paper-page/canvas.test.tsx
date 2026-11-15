@@ -1,5 +1,12 @@
+import { branchKey } from "./canvas-branch.ts"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, cleanup, fireEvent, screen } from "@testing-library/react"
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+} from "@testing-library/react"
 
 import { render } from "@/test/render-with-client.tsx"
 
@@ -172,14 +179,19 @@ describe("WritingCanvas", () => {
     )
     const view = render(<WritingCanvas docId={DOC} />)
     await typeText("Grace")
-    expect(localStorage.getItem(`opencv-writing:${DOC}`)).toContain("Grace")
+    expect(localStorage.getItem(branchKey(DOC))).toContain("Grace")
     view.rerender(<WritingCanvas docId={other} />)
-    expect(words()).toEqual(["Ada"])
+    expect(words()).toEqual([""])
+    const recover = await screen.findByRole("button", {
+      name: /^Recover local copy/,
+    })
+    await act(async () => fireEvent.click(recover))
+    await waitFor(() => expect(words()).toEqual(["Ada"]))
     expect(localStorage.getItem(`opencv-writing:${other}`)).toContain("Ada")
     expect(localStorage.getItem(`opencv-writing:${other}`)).not.toContain(
       "Grace"
     )
-    expect(localStorage.getItem(`opencv-writing:${DOC}`)).toContain("Grace")
+    expect(localStorage.getItem(branchKey(DOC))).toContain("Grace")
   })
 
   it("does not split twice when the browser already made the paragraph", () => {
@@ -197,7 +209,7 @@ describe("WritingCanvas", () => {
   it("keeps the words on this computer", async () => {
     const view = render(<WritingCanvas docId={DOC} />)
     await typeText("Kept")
-    expect(localStorage.getItem(`opencv-writing:${DOC}`)).toContain("Kept")
+    expect(localStorage.getItem(branchKey(DOC))).toContain("Kept")
     view.unmount()
     render(<WritingCanvas docId={DOC} />)
     expect(words()).toEqual(["Kept"])

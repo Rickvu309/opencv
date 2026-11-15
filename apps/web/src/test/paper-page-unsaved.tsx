@@ -6,6 +6,8 @@ import type { WordPage } from "@workspace/domain"
 
 import { render } from "@/test/render-with-client.tsx"
 
+import { branchKey, rotateWriter } from "@/features/paper-page/canvas-branch.ts"
+
 import { draftFromPage } from "@/features/paper-page/canvas-edit.ts"
 import { WritingCanvas } from "@/features/paper-page/canvas.tsx"
 import { closeWritingDb } from "@/features/paper-page/canvas-save.ts"
@@ -70,6 +72,7 @@ export function fakeServer() {
     })) as Line[],
     committed: [] as string[],
     batches: [] as Batch[],
+    attempts: [] as { input: { batch: Batch }; idempotencyKey: string }[],
     posts: 0,
     offline: false,
     loseReplies: 0,
@@ -80,6 +83,7 @@ export function fakeServer() {
     raceOnce: null as null | { handle: string; text: string; reply: string },
     hold: null as null | Promise<void>,
   }
+  const receipts = new Map<string, { input: string; data: unknown }>()
   let revisions = 0
   let handles = 10
   const words = () => state.lines.map((line) => line.text).join("\n")
@@ -157,9 +161,21 @@ export function fakeServer() {
       state.timeouts -= 1
       throw new DOMException("The operation timed out.", "TimeoutError")
     }
-    const batch = (
-      JSON.parse(String(init?.body)) as { input: { batch: Batch } }
-    ).input.batch
+    const command = JSON.parse(String(init?.body)) as {
+      input: { batch: Batch }
+      idempotencyKey: string
+    }
+    state.attempts.push(structuredClone(command))
+    const replay = receipts.get(command.idempotencyKey)
+    if (replay)
+      return JSON.stringify(command.input) === replay.input
+        ? Response.json({ ok: true, data: replay.data })
+        : failure(
+            409,
+            "IDEMPOTENCY_CONFLICT",
+            "The original command input changed."
+          )
+    const batch = command.input.batch
     state.batches.push(batch)
     if (state.hold) await state.hold
     const race = state.raceOnce
@@ -174,24 +190,27 @@ export function fakeServer() {
       : null
     if (refused) return failure(409, "CONFLICT", refused)
     apply(batch)
+    const data = {
+      generation: "package",
+      docId: DOC,
+      revision: state.revision,
+      activityId: revisionNumber(1000 + revisions),
+      name: "Page.docx",
+      kind: "cv",
+      packageHash: HASH,
+      byteSize: 128,
+      incarnation: INCARNATION,
+      restore: null,
+    }
+    receipts.set(command.idempotencyKey, {
+      input: JSON.stringify(command.input),
+      data,
+    })
     if (state.loseReplies > 0) {
       state.loseReplies -= 1
       throw new TypeError("Failed to fetch")
     }
-    return Response.json({
-      ok: true,
-      data: {
-        generation: "package",
-        docId: PACKAGE,
-        revision: state.revision,
-        name: "Page.docx",
-        kind: "cv",
-        packageHash: HASH,
-        byteSize: 128,
-        incarnation: INCARNATION,
-        restore: null,
-      },
-    })
+    return Response.json({ ok: true, data })
   }
   vi.stubGlobal("fetch", fetch)
   vi.spyOn(navigator, "onLine", "get").mockImplementation(() => !state.offline)
@@ -247,7 +266,7 @@ export function shown(id: string) {
 }
 
 export function stored(): string {
-  const raw = JSON.parse(localStorage.getItem(`opencv-writing:${DOC}`) ?? "{}")
+  const raw = JSON.parse(localStorage.getItem(branchKey(DOC)) ?? "{}")
   const draft = raw.draft ?? raw
   return (draft.blocks ?? [])
     .map((item: { text: string }) => item.text)
@@ -255,7 +274,7 @@ export function stored(): string {
 }
 
 export function status() {
-  return screen.getByRole("status").textContent ?? ""
+  return document.querySelector("p.writing-note")?.textContent ?? ""
 }
 
 export function bar() {
@@ -321,7 +340,16 @@ export function open() {
 export async function reload() {
   cleanup()
   await closeWritingDb()
+  rotateWriter(DOC)
   open()
+  await settle()
+}
+
+export async function recover() {
+  const button = await screen.findByRole("button", {
+    name: /^Recover local copy/,
+  })
+  await act(async () => button.click())
   await settle()
 }
 
@@ -343,6 +371,7 @@ export function release() {
 
 export function openUnsavedPageSuite() {
   beforeEach(() => {
+    rotateWriter(DOC)
     server = fakeServer()
     copied = []
     Object.defineProperty(navigator, "clipboard", {

@@ -1,0 +1,13 @@
+{
+  "id": "paper-writing-reconnect",
+  "file": "scripts/paper-tab-ownership.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-tab-ownership.mjs",
+    "export": "detectMissingWritingReconnect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "578cb23d55883118ded21f428840eed9d4c209de",
+    "path": "apps/web/src/features/paper-page/canvas.tsx"
+  }
+}

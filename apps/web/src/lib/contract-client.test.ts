@@ -219,3 +219,69 @@ it("matches collections, entities, owner workspace and owner isolation with pure
     false
   )
 })
+
+it("replays an explicit original command key and keeps generated keys fresh for changed input", async () => {
+  const queryClient = new QueryClient()
+  const bodies: { input: unknown; idempotencyKey?: string }[] = []
+  const receipts = new Map<string, { id: string }>()
+  vi.stubGlobal(
+    "fetch",
+    vi.fn((_url: string, init: RequestInit) => {
+      const body = JSON.parse(String(init.body)) as {
+        input: unknown
+        idempotencyKey: string
+      }
+      bodies.push(body)
+      const receipt = receipts.get(body.idempotencyKey) ?? {
+        id: crypto.randomUUID(),
+      }
+      receipts.set(body.idempotencyKey, receipt)
+      return Promise.resolve(Response.json({ ok: true, data: receipt }))
+    })
+  )
+  const idempotencyKey = crypto.randomUUID()
+  const original = await runContractCommand(
+    queryClient,
+    "chat.create",
+    { title: "Original" },
+    { refresh: false, idempotencyKey }
+  )
+  const replay = await runContractCommand(
+    queryClient,
+    "chat.create",
+    { title: "Original" },
+    { refresh: false, idempotencyKey }
+  )
+  await runContractCommand(
+    queryClient,
+    "chat.create",
+    { title: "Changed" },
+    { refresh: false }
+  )
+  await runContractCommand(
+    queryClient,
+    "chat.create",
+    { title: "Changed again" },
+    { refresh: false }
+  )
+  expect(replay).toEqual(original)
+  expect(bodies[1]).toEqual(bodies[0])
+  expect(new Set(bodies.map((body) => body.idempotencyKey)).size).toBe(3)
+  expect(bodies[2]?.input).toEqual({ title: "Changed" })
+  queryClient.clear()
+})
+it("omits even an explicit key for commands whose contract has idempotency none", async () => {
+  const queryClient = new QueryClient()
+  const fetch = vi.fn().mockResolvedValue(Response.json({ ok: true, data: {} }))
+  vi.stubGlobal("fetch", fetch)
+  await runContractCommand(
+    queryClient,
+    "profile.markWelcomed",
+    {},
+    { refresh: false, idempotencyKey: crypto.randomUUID() }
+  )
+  expect(JSON.parse(String(fetch.mock.calls[0]?.[1]?.body))).toEqual({
+    input: {},
+  })
+  queryClient.clear()
+})

@@ -19,6 +19,7 @@ import {
   refuseAvailable,
   release,
   reload,
+  recover,
   server,
   settle,
   shown,
@@ -76,6 +77,7 @@ describe.each(LINE_ROWS)("one line the server refuses ($code)", ({ note }) => {
     expect(stored()).toContain(`${START[L.available]}!`)
     expect(stored()).toContain(SENTENCE)
     await reload()
+    await recover()
     expect(shown(L.available)).toBe(`${START[L.available]}!`)
     expect(line(L.available)).toHaveAttribute("data-unsaved")
     expect(status()).not.toMatch(/\bSaved\b/)
@@ -242,6 +244,7 @@ describe("a refused line next to a new line, as in review N1", () => {
       )
     ).toEqual([])
     await reload()
+    await recover()
     expect(surface().querySelectorAll("p[data-unsaved]").length).toBe(1)
     expect(bar()?.textContent).toMatch(/is not saved/)
     await type(L.name, "Q")

@@ -1,3 +1,4 @@
+import { branchKey } from "./canvas-branch.ts"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, screen } from "@testing-library/react"
 
@@ -188,9 +189,7 @@ describe("an imported CV on the writing page", () => {
   it("keeps the words the page reads exactly as a plain page", () => {
     render(<WritingCanvas docId={DOC} seed={draftFromPage(cv())} />)
     expect(words()).toEqual(pageBlocks(cv()).map((item) => item.text))
-    expect(localStorage.getItem(`opencv-writing:${DOC}`)).not.toContain(
-      '"look"'
-    )
+    expect(localStorage.getItem(branchKey(DOC))).not.toContain('"look"')
   })
 
   it("keeps typing inside a bold word bold and after a bullet's last word plain", async () => {

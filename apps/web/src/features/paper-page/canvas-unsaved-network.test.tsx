@@ -9,6 +9,7 @@ import {
   caretAtEnd,
   opened,
   reload,
+  recover,
   server,
   settle,
   shown,
@@ -94,6 +95,7 @@ describe("saves that only wait for the network", () => {
     await settle()
     expect(status()).toMatch(/not saved yet/)
     await reload()
+    await recover()
     expect(shown(L.job)).toBe(`${START[L.job]}${SENTENCE}`)
     await act(async () => {
       server.state.offline = false

@@ -16,7 +16,6 @@ import {
 } from "./canvas-save.ts"
 
 const DOC = "11111111-1111-7111-8111-111111111111"
-const PACKAGE = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
 const REVISION = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
 const NEXT = "dddddddd-dddd-4ddd-8ddd-dddddddddddd"
 const PARAGRAPH = "33333333-3333-4333-8333-333333333333"
@@ -26,7 +25,7 @@ const HASH = "ab".repeat(32)
 function packageResult() {
   return {
     generation: "package" as const,
-    docId: PACKAGE,
+    docId: DOC,
     revision: REVISION,
     name: "Page.docx",
     kind: "letter" as const,
@@ -212,6 +211,7 @@ describe("settlePage", () => {
       new AbortController().signal
     )
     expect(saved).toEqual({
+      local: true,
       saved: false,
       words: "",
       revision: null,
@@ -289,7 +289,8 @@ describe("settlePage", () => {
     const saved = await settlePage(
       DOC,
       [{ id: PARAGRAPH, text: "Hello!" }],
-      new AbortController().signal
+      new AbortController().signal,
+      { basis: { revision: REVISION, words: "Hello" }, typed: true }
     )
     expect(saved).toMatchObject({
       saved: false,
@@ -310,6 +311,7 @@ describe("settlePage", () => {
       new AbortController().signal
     )
     expect(saved).toEqual({
+      local: true,
       saved: false,
       words: "Hello",
       revision: null,
@@ -318,13 +320,17 @@ describe("settlePage", () => {
   })
 
   it("does not say saved when the read-back has different words", async () => {
+    let wrote = false
     vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
       const url = String(input)
       if (url.includes("/api/commands/paper.canvas")) {
+        wrote = true
         return Promise.resolve(ok({ ...packageResult(), revision: NEXT }))
       }
       if (url.includes("/api/reads/paper.read")) {
-        return Promise.resolve(ok(readResult("Other", NEXT)))
+        return Promise.resolve(
+          ok(wrote ? readResult("Other", NEXT) : readResult(""))
+        )
       }
       return Promise.resolve(new Response("missing", { status: 404 }))
     })
@@ -334,6 +340,7 @@ describe("settlePage", () => {
       new AbortController().signal
     )
     expect(saved).toEqual({
+      local: true,
       saved: false,
       words: "Hello",
       revision: null,
@@ -387,7 +394,11 @@ describe("settlePage", () => {
         { id: table, text: "Cell", held: true },
       ],
       new AbortController().signal,
-      { basis: null, typed: true, caret: { blockId: "p3", offset: 5 } }
+      {
+        basis: { revision: REVISION, words: "Hello\nCell" },
+        typed: true,
+        caret: { blockId: "p3", offset: 5 },
+      }
     )
     expect(sentBatch(bodies)).toEqual({
       doc: DOC,
