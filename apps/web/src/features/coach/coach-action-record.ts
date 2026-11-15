@@ -1,7 +1,11 @@
 import type { ChatToolPart } from "@workspace/domain"
 
 import { coachReadLabel } from "./coach-tool-labels.ts"
-import { receiptHeadline, receiptShowsUndo } from "./coach-receipt.ts"
+import {
+  documentEditDetail,
+  receiptHeadline,
+  receiptShowsUndo,
+} from "./coach-receipt.ts"
 
 type RefusedStatus = "denied" | "expired" | "stopped"
 
@@ -30,26 +34,20 @@ function refusedStatus(part: ChatToolPart): RefusedStatus | null {
 }
 
 export function documentIdOf(part: ChatToolPart): string | null {
-  const { detail } = part
-  if (
-    (detail?.type === "paper.replace" || detail?.type === "paper.create") &&
-    detail.docId
-  )
-    return detail.docId
+  const detail =
+    documentEditDetail(part.detail) ??
+    (part.detail?.type === "paper.create" ? part.detail : null)
+  if (detail?.docId) return detail.docId
   const input = part.reversal?.input
   if (!input || typeof input !== "object") return null
   if ("docId" in input && typeof input.docId === "string") return input.docId
-  return part.reversal?.command === "paper.undoWord" &&
-    "doc" in input &&
-    typeof input.doc === "string"
-    ? input.doc
-    : null
+  return "doc" in input && typeof input.doc === "string" ? input.doc : null
 }
 
 function isDocumentRecord(part: ChatToolPart) {
   return (
     part.ok &&
-    (part.detail?.type === "paper.replace" || part.name === DOCUMENT_EDIT)
+    (documentEditDetail(part.detail) !== null || part.name === DOCUMENT_EDIT)
   )
 }
 

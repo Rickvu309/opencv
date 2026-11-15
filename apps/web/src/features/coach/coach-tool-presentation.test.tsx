@@ -389,7 +389,6 @@ describe("Coach trace and receipts", () => {
       reversal: {
         possible: true,
         description: "Edited CV.docx",
-        command: "paper.undoWord",
         input: {
           doc: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
           restore: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
