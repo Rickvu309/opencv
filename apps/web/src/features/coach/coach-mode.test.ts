@@ -2,7 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
-import { coachModeHelper, coachModeLabel } from "@/features/coach/coach-mode.ts"
+import {
+  COACH_MODE_LOCKED,
+  coachModeHelper,
+  coachModeLabel,
+} from "@/features/coach/coach-mode.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import {
   getMockCoachMode,
@@ -41,8 +45,12 @@ describe("coach mode copy", () => {
     expect(coachModeLabel("free")).toBe("Free")
     expect(coachModeLabel("light")).toBe("Light")
     expect(coachModeLabel("max")).toBe("Max")
-    expect(coachModeHelper("free")).toMatch(/free models/)
-    expect(coachModeHelper("free")).toMatch(/change between turns/)
+    for (const mode of ["free", "light", "max"] as const) {
+      expect(coachModeHelper(mode)).toMatch(/daily limit/)
+      expect(coachModeHelper(mode)).not.toMatch(
+        /OpenRouter|model|stronger|larger|quality|careful/i
+      )
+    }
     expect(coachModeHelper("free")).not.toMatch(/unlimited/i)
     expect(coachModeHelper("max")).not.toMatch(/unlimited/i)
   })
@@ -64,6 +72,26 @@ describe("Coach mode control", () => {
       expect.stringMatching(/^Light/),
       expect.stringMatching(/^Max/),
     ])
+  })
+
+  it("shows Light and Max as unavailable with a visible reason on Free and keeps Free", async () => {
+    setMockPlan("free")
+    renderApp(SURFACE_PATHS.coach)
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Choose Coach mode" })
+    )
+    const max = await screen.findByRole("menuitemradio", { name: "Max · Pro" })
+    expect(max).toHaveAttribute("aria-disabled", "true")
+    expect(max).toHaveAccessibleDescription(COACH_MODE_LOCKED)
+    expect(max).toHaveTextContent(COACH_MODE_LOCKED)
+    const free = screen.getByRole("menuitemradio", { name: "Free" })
+    expect(free).toHaveTextContent(coachModeHelper("free"))
+    fireEvent.click(max)
+    expect(
+      screen.getByRole("menuitemradio", { name: "Max · Pro" })
+    ).toBeVisible()
+    expectModeSelected("Free")
+    expect(getMockCoachMode()).toBe("free")
   })
 
   it("selects Free, Light, and Max and stores Max as max", async () => {

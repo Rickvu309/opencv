@@ -1,0 +1,14 @@
+{
+  "id": "coach-honest-controls",
+  "file": "scripts/coach-honest-controls.test.mjs",
+  "detector": {
+    "module": "scripts/lib/coach-honest-controls.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "2218357d1f6a25f693d0b933fe4e9b1aad219d1e",
+    "path": "apps/web/src/features/coach/coach-workspace.reducer.ts"
+  },
+  "reason": "Caught by the Coach UI audit for #1567. Introduced by 2c62f760d46d87251b7b5b2ed61217ed5d154fa4 (host-only link chips, next-message scope copy while context stays attached, silent slice to eight items), moved to the reducer by 2218357d1f6a25f693d0b933fe4e9b1aad219d1e, and by 506377b7d0f1744f14c1ee89f26126325152b85e where Coach capability toggles saved on a row click with a state word. detect fires on each of those sources and stays quiet once the limit is refused visibly, links carry their path, the scope copy says each message, and the toggles are Switches. The detector also rejects starters that only set a draft (2c62f760) and the bare Undone return introduced by 47367e71fa6ac307e6b6cf23e12d55341789a028, whose parent stays quiet. Document records retain their identity and Open action after Undo."
+}

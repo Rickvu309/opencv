@@ -16,6 +16,14 @@ const rowLook: Record<string, "insert" | "delete" | undefined> = {
   "New line": "insert",
 }
 
+const shownLabel: Record<string, string> = {
+  Before: "Before",
+  After: "After",
+  Line: "Remove",
+  Where: "Where",
+  "New line": "Add",
+}
+
 export function WordBatchPreview({ batch }: { batch: WordBatchView }) {
   if (batch.state === "none") return null
   if (batch.state === "withheld")
@@ -29,33 +37,38 @@ export function WordBatchPreview({ batch }: { batch: WordBatchView }) {
     )
   return (
     <Card className="gap-2 rounded-none bg-transparent ring-0 [--card-spacing:0px]">
-      <CardTitle className="text-xs font-medium text-muted-foreground">
-        Changes to approve
-      </CardTitle>
+      <CardTitle className="sr-only">Changes to approve</CardTitle>
       <CardContent>
-        <ol className="space-y-2">
+        <ol className="space-y-3">
           {batch.changes.map((change, index) =>
             change.op === "replace" ? null : (
-              <li key={index} className="space-y-1">
+              <li key={index} className="space-y-1.5">
                 <p className="text-xs font-medium text-muted-foreground">
                   {titles[change.op]}
                 </p>
-                <div className="space-y-1 font-sans text-sm leading-relaxed [overflow-wrap:anywhere] text-foreground">
+                <dl
+                  data-slot="word-change-rows"
+                  className="grid grid-cols-[3.25rem_minmax(0,1fr)] gap-x-2 gap-y-1 font-sans text-sm leading-relaxed [overflow-wrap:anywhere] text-foreground"
+                >
                   {wordChangeRows(change).map((row) => (
-                    <p key={row.label} className="whitespace-pre-wrap">
-                      <span className="sr-only">{row.label}: </span>
-                      {rowLook[row.label] === "insert" ? (
-                        <DiffInsert>{row.text}</DiffInsert>
-                      ) : rowLook[row.label] === "delete" ? (
-                        <DiffDelete>{row.text}</DiffDelete>
-                      ) : (
-                        <span className="text-muted-foreground">
-                          {row.text}
-                        </span>
-                      )}
-                    </p>
+                    <div key={row.label} className="contents">
+                      <dt className="pt-0.5 text-xs leading-5 text-muted-foreground">
+                        {shownLabel[row.label] ?? row.label}
+                      </dt>
+                      <dd className="min-w-0 whitespace-pre-wrap">
+                        {rowLook[row.label] === "insert" ? (
+                          <DiffInsert>{row.text}</DiffInsert>
+                        ) : rowLook[row.label] === "delete" ? (
+                          <DiffDelete>{row.text}</DiffDelete>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            {row.text}
+                          </span>
+                        )}
+                      </dd>
+                    </div>
                   ))}
-                </div>
+                </dl>
               </li>
             )
           )}
