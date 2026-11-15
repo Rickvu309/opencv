@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import {
+  ATTACHMENT_LIMIT,
   initialWorkspaceState,
   pendingSentLine,
   workspaceReducer,
@@ -157,5 +158,25 @@ describe("pending sent line", () => {
   it("never shows a line in another chat or after navigation", () => {
     expect(pendingSentLine(sent(), turn({ navigationRevision: 1 }))).toBeNull()
     expect(pendingSentLine(sent(), turn({ chatId: "chat-2" }))).toBeNull()
+  })
+})
+
+describe("context limit", () => {
+  it("refuses a ninth item instead of dropping it silently and keeps the first eight", () => {
+    let state = initialWorkspaceState("", null, 0)
+    for (let index = 0; index < ATTACHMENT_LIMIT + 1; index += 1)
+      state = workspaceReducer(state, {
+        type: "attached",
+        item: { kind: "paper", id: `doc-${index}`, label: `Doc ${index}` },
+      })
+    expect(state.attachments.map((item) => item.id)).toEqual(
+      Array.from({ length: ATTACHMENT_LIMIT }, (_, index) => `doc-${index}`)
+    )
+    const removed = workspaceReducer(state, {
+      type: "attachment_removed",
+      item: state.attachments[3]!,
+    })
+    expect(removed.attachments).toHaveLength(ATTACHMENT_LIMIT - 1)
+    expect(removed.attachments.map((item) => item.id)).not.toContain("doc-3")
   })
 })

@@ -1,15 +1,7 @@
-import { coachReadLabel, humanToolText } from "./coach-tool-labels.ts"
-import { documentEditDetail } from "./coach-receipt.ts"
+import { humanToolText } from "./coach-tool-labels.ts"
+import { coachActionView } from "./coach-action-record.ts"
 
 import type { CoachToolPart } from "./coach-parts.ts"
-
-export function refusedApproval(tool: CoachToolPart) {
-  const { approval } = tool.part
-  return !tool.part.pendingActionId &&
-    (approval === "denied" || approval === "expired" || approval === "stopped")
-    ? approval
-    : null
-}
 
 const REFUSED_APPROVAL_LINE = {
   denied: "Denied · nothing changed",
@@ -24,13 +16,7 @@ export function refusedApprovalLine(
 }
 
 export function isCompactCoachTool(tool: CoachToolPart) {
-  return Boolean(
-    tool.part.pendingActionId ||
-    refusedApproval(tool) ||
-    tool.part.undone ||
-    (tool.part.ok &&
-      (coachReadLabel(tool.name) || documentEditDetail(tool.part.detail)))
-  )
+  return coachActionView(tool.part).kind !== "receipt"
 }
 
 export function toolCardProps(tool: CoachToolPart) {

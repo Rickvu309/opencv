@@ -163,7 +163,7 @@ describe("Coach workspace", () => {
       )
       await user.click(screen.getByRole("button", { name: "Attach link" }))
       const chip = await screen.findByRole("button", {
-        name: "Remove jobs.example.com",
+        name: "Remove jobs.example.com/role",
       })
       const group = textbox.closest('[data-slot="coach-workspace-composer"]')
       expect(group).toContainElement(chip)
@@ -172,7 +172,7 @@ describe("Coach workspace", () => {
       ).toHaveLength(1)
       await user.click(chip)
       expect(
-        screen.queryByRole("button", { name: "Remove jobs.example.com" })
+        screen.queryByRole("button", { name: "Remove jobs.example.com/role" })
       ).not.toBeInTheDocument()
       expect(textbox).toHaveValue("Review this role")
     }
@@ -353,14 +353,16 @@ describe("Coach workspace", () => {
       screen.getByRole("textbox", { name: "Message Coach" })
     ).toBeDisabled()
     expect(screen.getByRole("button", { name: "Send" })).toBeDisabled()
-    expect(screen.getByRole("status")).toHaveTextContent("Resets at")
+    expect(screen.getByRole("status")).toHaveTextContent(
+      /Resets (today|tomorrow) at \d/
+    )
     expect(
       within(screen.getByRole("status")).queryByRole("link")
     ).not.toBeInTheDocument()
     expect(
       screen.queryByRole("link", { name: /upgrade/i })
     ).not.toBeInTheDocument()
-    expect(screen.getByPlaceholderText(/^Coach is back at/)).toBeDisabled()
+    expect(screen.getByPlaceholderText("Daily limit reached")).toBeDisabled()
     expect(screen.getByRole("button", { name: "Add" })).toBeDisabled()
     expect(
       screen.getByRole("button", { name: "Choose Coach mode" })

@@ -23,7 +23,7 @@ export function CoachCapNotice({ modeLabel, resetTime }: Props) {
           You’ve reached today’s {modeLabel} limit
         </p>
         <p className="text-[12.5px] leading-tight text-muted-foreground">
-          Resets at {resetTime}.
+          Resets {resetTime}.
         </p>
       </div>
     </div>

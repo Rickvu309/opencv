@@ -119,7 +119,7 @@ export function CoachHistory({
         <div
           data-pen-surface="coach"
           data-slot="history-panel"
-          className="flex w-full flex-col gap-px rounded-[10px] p-1.5"
+          className="flex max-h-[min(30rem,calc(var(--available-height,100dvh)-8px))] w-full flex-col gap-px rounded-[10px] p-1.5"
         >
           <div className="flex h-[34px] items-center gap-2 px-2.5">
             <svg
@@ -145,6 +145,12 @@ export function CoachHistory({
               placeholder="Search chats"
               value={search}
               onChange={(event) => onSearchChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key !== "Escape" || !search) return
+                event.preventDefault()
+                event.stopPropagation()
+                onSearchChange("")
+              }}
               className="h-auto flex-1 border-0 bg-transparent p-0 text-[13px] leading-[1.2] shadow-none ring-0 outline-none focus-visible:ring-0"
             />
           </div>
@@ -177,58 +183,90 @@ export function CoachHistory({
             <span className="flex-1">New chat</span>
             <span
               data-slot="history-shortcut"
-              className="text-[11.5px] leading-[1.2]"
+              className="text-[11.5px] leading-[1.2] max-md:hidden pointer-coarse:hidden"
             >
               ⌘ N
             </span>
           </Button>
 
-          {GROUPS.map((group) => {
-            const items = filtered.filter(
-              (chat) => historyGroup(chat.updatedAt) === group
-            )
-            if (!items.length) return null
-            return (
-              <section key={group}>
-                <div
-                  data-slot="history-section-label"
-                  className="flex h-7 items-end px-2.5 pt-1.5 pb-0 text-[11.5px] leading-[1.2] font-medium"
-                >
-                  {group}
-                </div>
-                {items.map((chat) => (
-                  <Button
-                    key={chat.id}
-                    type="button"
-                    variant="ghost"
-                    data-slot="history-item"
-                    data-active={chat.id === activeChatId ? "true" : undefined}
-                    className="flex h-11 w-full items-center gap-2.5 rounded-[6px] px-2.5 text-left text-[13px] leading-[1.2] md:h-8"
-                    onClick={() => {
-                      onSelect(chat.id)
-                      onOpenChange(false)
-                    }}
+          <div
+            data-slot="history-list"
+            className="-mx-1.5 flex min-h-0 flex-col gap-px overflow-y-auto overscroll-contain px-1.5"
+          >
+            {GROUPS.map((group) => {
+              const items = filtered.filter(
+                (chat) => historyGroup(chat.updatedAt) === group
+              )
+              if (!items.length) return null
+              return (
+                <section key={group}>
+                  <div
+                    data-slot="history-section-label"
+                    className="flex h-7 items-end px-2.5 pt-1.5 pb-0 text-[11.5px] leading-[1.2] font-medium"
                   >
-                    <span className="min-w-0 flex-1 truncate">
-                      {chat.title}
-                    </span>
-                    <span
-                      data-slot="history-item-time"
-                      className="shrink-0 text-[11.5px] leading-[1.2]"
+                    {group}
+                  </div>
+                  {items.map((chat) => (
+                    <Button
+                      key={chat.id}
+                      type="button"
+                      variant="ghost"
+                      data-slot="history-item"
+                      data-active={
+                        chat.id === activeChatId ? "true" : undefined
+                      }
+                      className="flex h-11 w-full items-center gap-2.5 rounded-[6px] px-2.5 text-left text-[13px] leading-[1.2] md:h-8"
+                      onClick={() => {
+                        onSelect(chat.id)
+                        onOpenChange(false)
+                      }}
                     >
-                      {historyTimestamp(chat.updatedAt, group)}
-                    </span>
-                  </Button>
-                ))}
-              </section>
-            )
-          })}
+                      <span className="min-w-0 flex-1 truncate">
+                        {chat.title}
+                      </span>
+                      <span
+                        data-slot="history-item-time"
+                        className="shrink-0 text-[11.5px] leading-[1.2]"
+                      >
+                        {historyTimestamp(chat.updatedAt, group)}
+                      </span>
+                    </Button>
+                  ))}
+                </section>
+              )
+            })}
 
-          {filtered.length === 0 ? (
-            <p className="px-2.5 py-2 text-[13px] text-muted-foreground">
-              No chats found.
-            </p>
-          ) : null}
+            {chats.length === 0 ? (
+              <p
+                data-slot="history-empty"
+                className="px-2.5 py-2 text-[13px] text-muted-foreground"
+              >
+                No chats yet. Your Chats with Coach appear here.
+              </p>
+            ) : filtered.length === 0 ? (
+              <div
+                role="status"
+                data-slot="history-no-match"
+                className="flex flex-wrap items-center gap-x-2 px-2.5 py-1 text-[13px] text-muted-foreground"
+              >
+                <p className="min-w-0 [overflow-wrap:anywhere]">
+                  No chats match “{search.trim()}”.
+                </p>
+                <Button
+                  type="button"
+                  variant="link"
+                  size="sm"
+                  className="h-11 px-0 text-[13px] md:h-8"
+                  onClick={() => {
+                    onSearchChange("")
+                    searchRef.current?.focus()
+                  }}
+                >
+                  Clear search
+                </Button>
+              </div>
+            ) : null}
+          </div>
         </div>
       </PopoverContent>
     </Popover>

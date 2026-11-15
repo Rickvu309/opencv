@@ -25,18 +25,24 @@ export function documentEditDetail(detail: CoachReceiptDetail | undefined) {
   return detail?.type === documentEditReceiptType ? detail : null
 }
 
+export function documentChangeCount(
+  detail: Extract<CoachReceiptDetail, { type: "paper.replace" }>
+) {
+  return detail.hunks.reduce(
+    (total, hunk) =>
+      total +
+      hunk.lines.filter(
+        (line, index) =>
+          line.kind !== "eq" &&
+          (index === 0 || hunk.lines[index - 1]?.kind === "eq")
+      ).length,
+    0
+  )
+}
+
 export function namedReceiptHeadline(detail: CoachReceiptDetail) {
   if (detail.type === documentEditReceiptType) {
-    const changes = detail.hunks.reduce(
-      (total, hunk) =>
-        total +
-        hunk.lines.filter(
-          (line, index) =>
-            line.kind !== "eq" &&
-            (index === 0 || hunk.lines[index - 1]?.kind === "eq")
-        ).length,
-      0
-    )
+    const changes = documentChangeCount(detail)
     return `Edited ${detail.docName} · ${changes} change${changes === 1 ? "" : "s"}`
   }
   if (detail.type === "job.move") {

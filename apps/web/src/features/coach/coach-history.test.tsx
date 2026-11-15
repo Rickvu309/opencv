@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import type { ChatSummary } from "@workspace/domain"
+
+import { CoachHistory } from "./coach-history.tsx"
 
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { expectPaperDrive } from "@/test/paper-drive.ts"
@@ -67,5 +70,63 @@ describe("Coach history", () => {
     expect(await screen.findByRole("log", { name: "Chat" })).toHaveTextContent(
       "Should I finish my CV first?"
     )
+  })
+})
+
+function renderHistory(chats: ChatSummary[], search: string) {
+  const onSearchChange = vi.fn()
+  render(
+    <CoachHistory
+      open
+      onOpenChange={vi.fn()}
+      headerTitle="New chat"
+      chats={chats}
+      activeChatId={null}
+      search={search}
+      onSearchChange={onSearchChange}
+      onSelect={vi.fn()}
+      onNewChat={vi.fn()}
+    />
+  )
+  return onSearchChange
+}
+
+const SAVED: ChatSummary = {
+  id: "chat-1",
+  title: "Plan my week",
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  focusDocId: null,
+}
+
+describe("Coach history states", () => {
+  it("says there are no chats yet when history is empty", async () => {
+    renderHistory([], "")
+    expect(
+      await screen.findByText(
+        "No chats yet. Your Chats with Coach appear here."
+      )
+    ).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Clear search" })).toBeNull()
+  })
+
+  it("names the search with no match and clears it", async () => {
+    const onSearchChange = renderHistory([SAVED], "zzz")
+    expect(await screen.findByText("No chats match “zzz”.")).toBeInTheDocument()
+    expect(screen.queryByText(/No chats yet/)).toBeNull()
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }))
+    expect(onSearchChange).toHaveBeenLastCalledWith("")
+    expect(
+      screen.getByRole("textbox", { name: "Search chat history" })
+    ).toHaveFocus()
+  })
+
+  it("clears a search on Escape before it closes", async () => {
+    const onSearchChange = renderHistory([SAVED], "zzz")
+    fireEvent.keyDown(
+      await screen.findByRole("textbox", { name: "Search chat history" }),
+      { key: "Escape" }
+    )
+    expect(onSearchChange).toHaveBeenLastCalledWith("")
   })
 })

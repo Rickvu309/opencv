@@ -35,6 +35,7 @@ import { chatColumn } from "@/components/ai-elements/chat.tsx"
 import { PromptInputFrame } from "@/components/ai-elements/prompt-input-frame.ts"
 import { CoachDock, type DockRecentList } from "./coach-dock.tsx"
 import { CoachHome } from "./coach-home.tsx"
+import { CoachContextAttachments } from "./coach-context-attachments.tsx"
 import { startComposerGlide } from "./coach-composer-glide.ts"
 import { CoachCapNotice } from "./coach-cap-notice.tsx"
 import { ChatView } from "./chat-view.tsx"
@@ -44,10 +45,14 @@ import { CoachPageHeader } from "./coach-page-header.tsx"
 import { useChatStore } from "./use-chat-store.ts"
 import {
   initialWorkspaceState,
+  ATTACHMENT_LIMIT,
   pendingSentLine,
   workspaceReducer,
   type Attachment,
 } from "./coach-workspace.reducer.ts"
+import { linkAttachmentLabel } from "./coach-attachment-view.ts"
+import { coachResetLabel } from "./coach-reset-label.ts"
+import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 
 export function CoachWorkspace({
   chatId = null,
@@ -135,13 +140,8 @@ export function CoachWorkspace({
       : usage.data?.mode === "max"
         ? "Max"
         : "Free"
-  const resetTime = day
-    ? new Date(day.resetsAt).toLocaleTimeString([], {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: false,
-      })
-    : "later"
+  const resetTime = day ? coachResetLabel(day.resetsAt, new Date()) : "later"
+  const contextFull = attachments.length >= ATTACHMENT_LIMIT
 
   const openRequestedChat = useEffectEvent((id: string) => openChat(id))
   useEffect(() => {
@@ -201,6 +201,16 @@ export function CoachWorkspace({
     })
   }
 
+  function chooseStarter(value: string) {
+    dispatch({ type: "draft_typed", value })
+    requestAnimationFrame(() => {
+      const field = composerBox.current?.querySelector("textarea")
+      if (!field) return
+      field.focus()
+      field.setSelectionRange(field.value.length, field.value.length)
+    })
+  }
+
   function attach(item: Attachment) {
     dispatch({ type: "attached", item })
   }
@@ -211,7 +221,7 @@ export function CoachWorkspace({
       if (!["http:", "https:"].includes(url.protocol)) throw new Error()
       dispatch({
         type: "link_attached",
-        item: { kind: "link", id: url.href, label: url.hostname },
+        item: { kind: "link", id: url.href, label: linkAttachmentLabel(url) },
       })
     } catch {
       dispatch({ type: "link_rejected" })
@@ -279,7 +289,7 @@ export function CoachWorkspace({
       }
       placeholder={
         capped
-          ? `Coach is back at ${resetTime}`
+          ? "Daily limit reached"
           : compact && !showHome
             ? "Reply…"
             : "Ask Coach anything"
@@ -292,6 +302,7 @@ export function CoachWorkspace({
       onAttachLink={() => dispatch({ type: "picker_opened", picker: "link" })}
       recent={recent}
       onRecentSelect={selectRecent}
+      contextFull={contextFull}
       onAddMenuOpenChange={(open) => {
         if (open) dispatch({ type: "add_menu_opened" })
       }}
@@ -316,27 +327,10 @@ export function CoachWorkspace({
           "mx-auto w-full max-w-[736px] min-w-0 px-2 pb-2"
       )}
     >
-      {attachments.length ? (
-        <div className="flex flex-wrap gap-1">
-          {attachments.map((item) => (
-            <Button
-              key={`${item.kind}:${item.id}`}
-              variant="secondary"
-              size="xs"
-              className="h-auto min-h-11 max-w-full min-w-0 text-left [overflow-wrap:anywhere] whitespace-normal md:min-h-0"
-              onClick={() => dispatch({ type: "attachment_removed", item })}
-              aria-label={`Remove ${item.label}`}
-            >
-              <span className="min-w-0 [overflow-wrap:anywhere]">
-                {item.label}
-              </span>
-              <span aria-hidden="true" className="shrink-0">
-                ×
-              </span>
-            </Button>
-          ))}
-        </div>
-      ) : null}
+      <CoachContextAttachments
+        attachments={attachments}
+        onRemove={(item) => dispatch({ type: "attachment_removed", item })}
+      />
       {!enabled ? (
         <p role="status" className="text-sm">
           Coach is turned off.{" "}
@@ -434,9 +428,7 @@ export function CoachWorkspace({
       >
         {showWelcome ? (
           <CoachHome
-            onChooseStarter={(value) =>
-              dispatch({ type: "draft_typed", value })
-            }
+            onChooseStarter={chooseStarter}
             disabled={!enabled || capped}
           >
             {composer}
@@ -448,9 +440,7 @@ export function CoachWorkspace({
               compact && showHome ? (
                 <CoachHome
                   size="panel"
-                  onChooseStarter={(value) =>
-                    dispatch({ type: "draft_typed", value })
-                  }
+                  onChooseStarter={chooseStarter}
                   disabled={!enabled || capped}
                 />
               ) : null
@@ -499,12 +489,12 @@ export function CoachWorkspace({
                 ? "Attach from Paper"
                 : picker === "job"
                   ? "Attach from Apply"
-                  : "Paste a link"}
+                  : "Paste a job link"}
             </DialogTitle>
             <DialogDescription>
               {picker === "link"
-                ? "Coach can use this URL as a reference. Paste the relevant text in your message too."
-                : "Choose context for your next message."}
+                ? "Paste a job post or any page Coach should use. It is included with each message until you remove it. Paste the key text in your message too."
+                : "What you add is included with each message until you remove it."}
             </DialogDescription>
           </DialogHeader>
           {picker === "link" ? (
@@ -583,9 +573,26 @@ export function CoachWorkspace({
                   ? papers.data?.length === 0
                   : jobs.data?.length === 0
               ) ? (
-                <p className="text-sm text-muted-foreground">
-                  Nothing to attach yet.
-                </p>
+                <div
+                  data-slot="coach-picker-empty"
+                  className="space-y-2 text-sm text-muted-foreground"
+                >
+                  <p>
+                    {picker === "paper"
+                      ? "You have no CVs or Letters in Paper yet. Create or import one in Paper, then add it here."
+                      : "You have no Jobs in Apply yet. Add the Jobs you are applying for in Apply, then add one here."}
+                  </p>
+                  <a
+                    href={
+                      picker === "paper"
+                        ? SURFACE_PATHS.paper
+                        : SURFACE_PATHS.apply
+                    }
+                    className="inline-flex min-h-11 items-center font-medium text-foreground underline underline-offset-2 md:min-h-0"
+                  >
+                    {picker === "paper" ? "Go to Paper" : "Go to Apply"}
+                  </a>
+                </div>
               ) : null}
             </div>
           )}

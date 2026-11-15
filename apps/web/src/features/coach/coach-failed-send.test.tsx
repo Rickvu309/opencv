@@ -273,9 +273,9 @@ describe("a failed Coach send keeps the typed line", () => {
           "Couldn't reach the Coach. Check your connection and try again."
         )
         expect(
-          screen.getByRole("button", { name: "Remove jobs.example.com" })
+          screen.getByRole("button", { name: "Remove jobs.example.com/role" })
         ).toBeVisible()
-        expect(within(log()).getByText("jobs.example.com")).toBeVisible()
+        expect(within(log()).getByText("jobs.example.com/role")).toBeVisible()
         expect(starts[0]?.context).toEqual([
           { kind: "link", id: "https://jobs.example.com/role" },
         ])

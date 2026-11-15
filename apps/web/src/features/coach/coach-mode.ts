@@ -1,23 +1,22 @@
 import type { CoachMode } from "@workspace/domain"
 
+export const COACH_MODE_LOCKED = "Needs a Pro plan. Free stays selected."
+
 export const COACH_MODE_OPTIONS = [
   {
     id: "free" as const,
     label: "Free",
-    helper:
-      "Zero-cost coaching on OpenRouter's free models. The model can change between turns. Daily turns are capped.",
+    helper: "Everyday Coach help with its own daily limit.",
   },
   {
     id: "light" as const,
     label: "Light",
-    helper:
-      "Stronger everyday coaching at low cost. Uses more of today's Light limit.",
+    helper: "The same Coach, counted against a separate Light daily limit.",
   },
   {
     id: "max" as const,
     label: "Max",
-    helper:
-      "Highest quality for hard turns. The smallest daily cap of the three modes.",
+    helper: "The same Coach, counted against a separate Max daily limit.",
   },
 ] as const satisfies readonly {
   id: CoachMode
@@ -36,4 +35,8 @@ export function coachModeHelper(mode: CoachMode) {
     COACH_MODE_OPTIONS.find((option) => option.id === mode)?.helper ??
     COACH_MODE_OPTIONS[0].helper
   )
+}
+
+export function coachModeAvailable(mode: CoachMode, plan: string | undefined) {
+  return mode === "free" || plan === "pro"
 }

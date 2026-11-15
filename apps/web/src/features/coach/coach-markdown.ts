@@ -3,14 +3,51 @@ export type CoachInline =
   | { type: "strong"; children: CoachInline[] }
   | { type: "em"; children: CoachInline[] }
   | { type: "code"; text: string }
+  | { type: "link"; href: string; children: CoachInline[] }
+
+export type CoachHeadingLevel = 1 | 2 | 3
 
 export type CoachMarkdownBlock =
   | { type: "p"; children: CoachInline[] }
+  | { type: "heading"; level: CoachHeadingLevel; children: CoachInline[] }
+  | { type: "table"; header: CoachInline[][]; rows: CoachInline[][][] }
   | { type: "ul"; items: CoachInline[][] }
   | { type: "ol"; items: CoachInline[][] }
   | { type: "pre"; text: string }
 
 const FENCE = "```"
+
+const SAFE_LINK = /^(?:https?:\/\/|mailto:)/i
+const BARE_URL = /^https?:\/\/[^\s<>()]+/i
+const TRAILING_PUNCTUATION = /[.,;:!?'"]+$/
+const HEADING = /^(#{1,6})\s+(.+?)(?:\s+#+)?\s*$/
+const TABLE_DIVIDER = /^\s*\|?\s*:?-{3,}:?\s*(?:\|\s*:?-{3,}:?\s*)*\|?\s*$/
+
+export function safeLinkHref(href: string): string | null {
+  const trimmed = href.trim()
+  if (!SAFE_LINK.test(trimmed)) return null
+  try {
+    const url = new URL(trimmed)
+    return ["http:", "https:", "mailto:"].includes(url.protocol)
+      ? url.href
+      : null
+  } catch {
+    return null
+  }
+}
+
+function tableCells(line: string) {
+  return line
+    .trim()
+    .replace(/^\|/, "")
+    .replace(/\|$/, "")
+    .split("|")
+    .map((cell) => cell.trim())
+}
+
+function isTableRow(line: string) {
+  return line.includes("|") && line.trim() !== ""
+}
 
 export function parseCoachMarkdown(text: string): CoachMarkdownBlock[] {
   const blocks: CoachMarkdownBlock[] = []
@@ -79,7 +116,47 @@ function parseFlow(text: string): CoachMarkdownBlock[] {
     list = null
   }
 
-  for (const line of lines) {
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index] ?? ""
+    const heading = HEADING.exec(line)
+    if (heading) {
+      flushParagraph()
+      flushList()
+      const depth = heading[1]?.length ?? 1
+      blocks.push({
+        type: "heading",
+        level: depth <= 1 ? 1 : depth === 2 ? 2 : 3,
+        children: parseInline(heading[2] ?? ""),
+      })
+      continue
+    }
+
+    const divider = lines[index + 1]
+    if (
+      isTableRow(line) &&
+      divider !== undefined &&
+      TABLE_DIVIDER.test(divider) &&
+      divider.includes("|") === line.includes("|")
+    ) {
+      flushParagraph()
+      flushList()
+      const header = tableCells(line)
+      const rows: CoachInline[][][] = []
+      index += 2
+      while (index < lines.length && isTableRow(lines[index] ?? "")) {
+        const cells = tableCells(lines[index] ?? "")
+        rows.push(header.map((_, column) => parseInline(cells[column] ?? "")))
+        index += 1
+      }
+      index -= 1
+      blocks.push({
+        type: "table",
+        header: header.map((cell) => parseInline(cell)),
+        rows,
+      })
+      continue
+    }
+
     const unordered = /^(?:[-*])\s+(.+)$/.exec(line)
     const ordered = /^(\d+)\.\s+(.+)$/.exec(line)
 
@@ -118,9 +195,14 @@ function parseFlow(text: string): CoachMarkdownBlock[] {
   return blocks
 }
 
-export function parseInline(text: string): CoachInline[] {
+export function parseInline(text: string, links = true): CoachInline[] {
   const tokens: CoachInline[] = []
   let i = 0
+
+  const pushNode = (node: CoachInline) => {
+    if (node.type === "text") pushText(node.text)
+    else tokens.push(node)
+  }
 
   const pushText = (value: string) => {
     if (!value) return
@@ -142,12 +224,44 @@ export function parseInline(text: string): CoachInline[] {
       }
     }
 
+    if (links && text[i] === "[") {
+      const close = text.indexOf("](", i + 1)
+      const end = close === -1 ? -1 : text.indexOf(")", close + 2)
+      if (close !== -1 && end !== -1) {
+        const href = safeLinkHref(text.slice(close + 2, end))
+        const label = parseInline(text.slice(i + 1, close), false)
+        if (href) tokens.push({ type: "link", href, children: label })
+        else for (const node of label) pushNode(node)
+        i = end + 1
+        continue
+      }
+    }
+
+    if (
+      links &&
+      text[i] === "h" &&
+      (i === 0 || /[\s(]/.test(text[i - 1] ?? ""))
+    ) {
+      const bare = BARE_URL.exec(text.slice(i))
+      const raw = bare?.[0].replace(TRAILING_PUNCTUATION, "") ?? ""
+      const href = raw ? safeLinkHref(raw) : null
+      if (href) {
+        tokens.push({
+          type: "link",
+          href,
+          children: [{ type: "text", text: raw }],
+        })
+        i += raw.length
+        continue
+      }
+    }
+
     if (text.startsWith("**", i)) {
       const end = text.indexOf("**", i + 2)
       if (end !== -1) {
         tokens.push({
           type: "strong",
-          children: parseInline(text.slice(i + 2, end)),
+          children: parseInline(text.slice(i + 2, end), links),
         })
         i = end + 2
         continue
@@ -160,7 +274,7 @@ export function parseInline(text: string): CoachInline[] {
       if (end !== -1 && text[end + 1] !== marker) {
         tokens.push({
           type: "em",
-          children: parseInline(text.slice(i + 1, end)),
+          children: parseInline(text.slice(i + 1, end), links),
         })
         i = end + 1
         continue

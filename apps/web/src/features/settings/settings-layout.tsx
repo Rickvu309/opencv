@@ -350,24 +350,6 @@ export function SettingsUsageLink({ desc }: { desc: string }) {
   )
 }
 
-export function StateWord({
-  on,
-  chevron = false,
-}: {
-  on: boolean
-  chevron?: boolean
-}) {
-  return (
-    <span
-      data-slot="settings-state"
-      className="flex shrink-0 items-center gap-1 text-[13px] text-muted-foreground"
-    >
-      {on ? "Enabled" : "Disabled"}
-      {chevron ? <ChevronRight className="size-3.5" /> : null}
-    </span>
-  )
-}
-
 export function SettingsSkeletons() {
   return (
     <div className="flex flex-col gap-3" aria-hidden>

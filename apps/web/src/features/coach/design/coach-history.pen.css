@@ -41,3 +41,32 @@
 [data-pen-surface="coach"] [data-slot="history-item-icon"] {
   color: #3c3c40;
 }
+
+.dark [data-pen-surface="coach"][data-slot="history-panel"] {
+  background: var(--popover);
+  border-color: var(--border);
+  color: var(--popover-foreground);
+}
+
+.dark [data-pen-surface="coach"] [data-slot="history-item"],
+.dark [data-pen-surface="coach"] [data-slot="history-new-chat"] {
+  color: var(--popover-foreground);
+}
+
+.dark
+  [data-pen-surface="coach"]
+  [data-slot="history-item"][data-active="true"] {
+  background: var(--accent);
+}
+
+.dark [data-pen-surface="coach"] [data-slot="history-search-icon"],
+.dark [data-pen-surface="coach"] [data-slot="history-section-label"],
+.dark [data-pen-surface="coach"] [data-slot="history-item-time"],
+.dark [data-pen-surface="coach"] [data-slot="history-shortcut"],
+.dark [data-pen-surface="coach"] [data-slot="history-item-icon"] {
+  color: var(--muted-foreground);
+}
+
+.dark [data-pen-surface="coach"] [data-slot="history-search"]::placeholder {
+  color: var(--muted-foreground);
+}
