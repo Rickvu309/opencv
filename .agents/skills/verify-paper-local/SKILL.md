@@ -7,6 +7,31 @@ description: Verify Paper input recovery, exact local completion, and the Saved 
 
 Last confirmed against `origin/main` at `89c3703c` on 2026-11-13: every command under Run printed the exit codes and pass counts this file states.
 
+## Native D1 verification
+
+Issue 1541 adds a private native transport. It does not activate a public editor, subscribe to authentication changes, or migrate documents. The caller must destroy the session when its owner or sign-in session changes. Every asynchronous boundary also checks that identity before exposing or acknowledging data.
+
+The native recovery scope contains the owner, document and format revision. It excludes the ephemeral sign-in session. Native storage uses a separate IndexedDB database and strict provenance-bearing journals. An unreadable scan or incompatible record blocks readiness and retains the original bytes. Recovery rereads orphan snapshots after acquiring their locks and keeps those locks until shutdown. Shutdown hides the client immediately and retains its own lock until already queued persistence settles.
+
+The candidate passed 24 native behavior tests, 16 API and registry tests, and 10 native and legacy detector tests on 2026-11-15. Both source mutations failed their intended assertions: premature Saved and crediting an old local completion to the current generation. Restoring the source passed all 24 native tests. The earlier legacy verification point above remains unchanged.
+
+Chromium used real IndexedDB transactions, localStorage and Web Locks with an internal admitted-read callback and a controlled in-browser CRDT server. Six scenarios passed: fast server receipt before exact local completion including newer input, ordinary offline reload before D, whole-browser kill after observed D and recovery in the same profile, a second live tab, session invalidation and owner isolation, and byte-identical malformed-journal refusal. Authenticated API behavior was tested separately. This is not an integrated browser-to-Hono proof. Browser transaction abort, malformed IndexedDB, lock-acquisition races, quota failures and server-reset recovery remain outside this browser run; controlled tests cover the abort, incompatible orphan and lock race.
+
+`PaperNativeLocal.tla` is a separate bounded native model. Its canonical, orphan and shutdown configurations each passed clean, intended mutant and clean runs. All three mutants exited 12. The model checks exact local and server generations, rereading an orphan under its lock, persistence before orphan deletion, retaining locks through pending writes, and clearing only entries covered by both receipts. It abstracts owner/session invalidation into one identity flag. It does not prove strict decoding, namespace construction, CRDT merge, epoch resets, physical disk durability or eventual delivery. Its new sync commit records the verified candidate source commit; it is not a claim that this candidate has merged. Do not advance the legacy model's sync commit.
+
+Reproduce the native checks sequentially:
+
+```sh
+pnpm --filter web exec vitest run --isolate src/lib/paper-sync-identity.test.ts src/lib/paper-sync-native.test.ts
+pnpm --filter api exec vitest run src/paper/native-admission.test.ts src/paper/content-sync-native-http.test.ts src/registry/paper-contract.test.ts src/registry/transaction.test.ts
+node --test scripts/paper-native-durable.test.mjs scripts/paper-local-durable.test.mjs scripts/paper-local-journal.test.mjs
+node scripts/guard-ledger.mjs prove paper-journal-preservation
+node scripts/tlc.mjs apps/web/src/lib/PaperNativeLocal.tla
+node scripts/tlc.mjs apps/web/src/lib/PaperNativeLocal.tla --mutant
+```
+
+Repeat clean, mutant and clean for each native configuration using `--config`. The full browser probe, mutation runner and per-configuration logs are retained with the issue 1541 change report under `~/tmp/paper-autopilot`. Historical journal-erasure metadata retains introducing commit `306161ecdd4184ffbf3fd9784cf8358b2b36f46c`. Run its committed guard proof before claiming delivery.
+
 ## When this file is stale
 
 Run `node scripts/tlc.mjs --stale` first. When it lists `apps/web/src/lib/PaperLocal.tla` as STALE, or `git log --oneline 89c3703c..origin/main -- .agents/skills scripts/tlc.mjs` prints commits, rerun every command under Run before trusting a claim here. If a command fails or prints something else, believe the command, fix this file in the same PR, and move the commit above.

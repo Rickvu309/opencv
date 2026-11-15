@@ -23,5 +23,18 @@
     "apps/web/src/lib/paper-sync-store.ts"
   ],
   "sync": "f8167a13418e8167eedde62be48f1d01cbee16d5",
-  "retiring": "The Yjs local journal of the old CV and Letter editors (apps/web/src/features/paper/paper-cv-editor.tsx, paper-letter.tsx). The Word writing page saves through paper.canvas in apps/web/src/features/paper-page/canvas-save.ts."
+  "retiring": "The Yjs local journal of the old CV and Letter editors (apps/web/src/features/paper/paper-cv-editor.tsx, paper-letter.tsx). The Word writing page saves through paper.canvas in apps/web/src/features/paper-page/canvas-save.ts.",
+  "nativeSourceCheckpoint": {
+    "status": "PRIVATE_CANDIDATE_VERIFIED",
+    "issue": 1541,
+    "entry": "openNativePaperSync",
+    "model": "apps/web/src/lib/PaperNativeLocal.tla",
+    "notModeled": [
+      "strict native decoding",
+      "native namespace construction",
+      "CRDT merge and epoch reset",
+      "physical disk durability and eventual delivery"
+    ],
+    "evidence": "Native three-pair and legacy four-pair clean/mutant/clean checks passed. Six real Chromium storage scenarios passed with a controlled CRDT server. Legacy sync verification point remains unchanged."
+  }
 }

@@ -14,10 +14,10 @@ import {
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"
+import { seedYDoc } from "@workspace/paper-crdt"
 
 import { withDatabase } from "../db/context.js"
 import { user, paperDocs } from "../db/schema.js"
-import { seedColumns } from "../paper/content-document.js"
 import { importedWordPage, saveFile, stageWordPackage } from "../paper/index.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { idOf } from "./coverage-helpers.js"
@@ -248,7 +248,11 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
       const nativeId = idOf(await run("paper.create", { kind: "letter" }))
       await db
         .update(paperDocs)
-        .set(seedColumns("letter", native))
+        .set({
+          crdtEpoch: 1,
+          crdtBase: Buffer.from(seedYDoc(native)),
+          crdtDocument: native,
+        })
         .where(eq(paperDocs.id, nativeId))
       await run("paper.nativeSync", {
         docId: nativeId,
