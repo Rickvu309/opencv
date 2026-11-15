@@ -1,0 +1,128 @@
+[
+  {
+    "subject": "apps/web/src/features/coach/coach-add-menu.test.tsx",
+    "because": "The link dialog now says Paste a job link; keyboard selection and Escape focus checks remain.",
+    "replacedBy": "apps/web/src/features/coach/coach-add-menu.test.tsx",
+    "proof": {
+      "fork": "075bb354fd5ad66ecaea75902003aef7ca69403a",
+      "replacedByBlob": "5a5a607da564e61b858e3dff4473bcfacaff6da3",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-draft-ownership.test.tsx",
+    "because": "Context labels now include the link path, and attachments persist across turns until explicitly removed. The same ownership scenarios assert the new names and persistence.",
+    "replacedBy": "apps/web/src/features/coach/coach-draft-ownership.test.tsx",
+    "proof": {
+      "fork": "075bb354fd5ad66ecaea75902003aef7ca69403a",
+      "replacedByBlob": "992ee603b2058e72aaf68c9a5179ec2add78c045",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 14
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-failed-send.test.tsx",
+    "because": "Removable context chips now include the URL path; failed-send recovery remains asserted using the full label.",
+    "replacedBy": "apps/web/src/features/coach/coach-failed-send.test.tsx",
+    "proof": {
+      "fork": "075bb354fd5ad66ecaea75902003aef7ca69403a",
+      "replacedByBlob": "0589049a23176f00b16d20c3cfc3683daaaa5dc0",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-markdown.test.ts",
+    "because": "Coach now renders Markdown headings while escaping raw HTML. Separate assertions cover both behaviors.",
+    "replacedBy": "apps/web/src/features/coach/coach-markdown.test.ts",
+    "proof": {
+      "fork": "075bb354fd5ad66ecaea75902003aef7ca69403a",
+      "replacedByBlob": "3ad1db5aec72f06da5529966a8020a09dc26ccd6",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-mode.test.ts",
+    "because": "All modes currently share the Coach backend with different limits. The copy must not promise different models or automatic switching.",
+    "replacedBy": "apps/web/src/features/coach/coach-mode.test.ts",
+    "proof": {
+      "fork": "075bb354fd5ad66ecaea75902003aef7ca69403a",
+      "replacedByBlob": "aa218007f194d1209aeb4f9564be1c81222723e4",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-tool-presentation.test.tsx",
+    "because": "Named proposals use readable Before and After labels. Undo preserves the document identity and Open link instead of discarding the receipt.",
+    "replacedBy": "apps/web/src/features/coach/coach-tool-presentation.test.tsx",
+    "proof": {
+      "fork": "075bb354fd5ad66ecaea75902003aef7ca69403a",
+      "replacedByBlob": "ffb7420018c26ab9c42f8d6ee4eb02e17c6e45d7",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-workspace.test.tsx",
+    "because": "Attachment labels include link paths and persist until removal; cap copy includes the reset date. Updated assertions retain send blocking and draft ownership checks.",
+    "replacedBy": "apps/web/src/features/coach/coach-workspace.test.tsx",
+    "proof": {
+      "fork": "075bb354fd5ad66ecaea75902003aef7ca69403a",
+      "replacedByBlob": "4805e6dccd42bbb861bac82e5e65fac0e2637f51",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/settings/settings.test.tsx",
+    "because": "Coach preference controls are accessible switches rather than buttons. The test now asserts the switch role and absence of the unavailable Weekly plan.",
+    "replacedBy": "apps/web/src/features/settings/settings.test.tsx",
+    "proof": {
+      "fork": "075bb354fd5ad66ecaea75902003aef7ca69403a",
+      "replacedByBlob": "364f35f9700b33a700bc192c367f0ac3e62a9651",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "scripts/ui/screens.test.mjs",
+    "because": "Screen recipes now support an explicit optional click step for responsive panel expansion. Unknown steps and invalid cleanup recipes remain refused.",
+    "replacedBy": "scripts/ui/screens.test.mjs",
+    "proof": {
+      "fork": "075bb354fd5ad66ecaea75902003aef7ca69403a",
+      "replacedByBlob": "aeb0d7815d3d112ecb487a5b1532ab64d5def16b",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  }
+]
