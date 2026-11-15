@@ -201,6 +201,7 @@ test("shot releases and check runs use the flags GitHub requires", () => {
     target: "main",
   })
   gh.releaseUpload("screenshots", ["/tmp/a.png"])
+  gh.releaseUpload("screenshots-2", ["/tmp/b.png"], { clobber: false })
   gh.checkRuns("abc")
   assert.equal(gh.viewIssue(90), true)
   assert.equal(gh.viewPr(12), true)
@@ -210,6 +211,12 @@ test("shot releases and check runs use the flags GitHub requires", () => {
   const upload = calls.find((c) => c.includes("release upload"))
   assert.match(upload, /--clobber/)
   assert.match(upload, /\/tmp\/a\.png/)
+  assert.equal(
+    calls
+      .find((c) => c.includes("release upload screenshots-2"))
+      .includes("--clobber"),
+    false
+  )
   const checks = calls.find((c) => c.includes("check-runs"))
   assert.match(checks, /--method GET/)
   assert.match(checks, /check_name=ci/)
@@ -226,5 +233,35 @@ test("editComment returns the PATCH updated_at", () => {
   assert.equal(
     ghAdapter(run).editComment(7, "body"),
     "2026-10-29T12:00:05.000Z"
+  )
+})
+
+test("release assets preserve count, names and hashes and distinguish absence from failure", () => {
+  const calls = []
+  const gh = ghAdapter((cmd, args) => {
+    calls.push(args)
+    return { ok: true, out: '[{"name":"old.png","digest":"sha256:abc"}]' }
+  })
+  assert.deepEqual(gh.releaseAssets("screenshots"), [
+    { name: "old.png", digest: "sha256:abc" },
+  ])
+  assert.deepEqual(calls[0], [
+    "api",
+    "repos/{owner}/{repo}/releases/tags/screenshots",
+    "--jq",
+    "[.assets[] | {name, digest}]",
+  ])
+  assert.equal(
+    ghAdapter(() => ({ ok: false, err: "HTTP 404" })).releaseAssets(
+      "screenshots"
+    ),
+    null
+  )
+  assert.throws(
+    () =>
+      ghAdapter(() => ({ ok: false, err: "HTTP 403" })).releaseAssets(
+        "screenshots"
+      ),
+    /HTTP 403/
   )
 })

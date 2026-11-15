@@ -1,0 +1,14 @@
+{
+  "id": "shot-capacity",
+  "file": "scripts/shot-capacity.test.mjs",
+  "detector": {
+    "module": "scripts/lib/shot-capacity.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "5bed2ad93e8fb7f988b99e2bbe8b95f04793907f",
+    "path": "scripts/ocv-tools/shot.mjs"
+  },
+  "reason": "Commit 5bed2ad9 introduced direct upload into the single screenshots release. The release reached GitHub's 1000-asset limit on issue #1528. Screenshot commands now route through capacity allocation, with behavioral tests for full releases, immutable names, retries and concurrent writers."
+}

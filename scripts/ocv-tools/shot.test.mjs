@@ -158,9 +158,12 @@ test("shot uploads to the screenshots prerelease and posts markdown links", () =
     const jpg = rig.box.file("wide.jpg", JPG)
     writeFileSync(join(rig.stage, "keep.txt"), "keep")
     const orig = rig.ports.gh.releaseUpload
-    rig.ports.gh.releaseUpload = (tag, files) => {
-      assert.equal(readFileSync(files[0])[0], 0x89)
-      return orig(tag, files)
+    rig.ports.gh.releaseUpload = (tag, files, options) => {
+      assert.equal(
+        readFileSync(files[0])[0],
+        files[0].endsWith(".png") ? 0x89 : 0xff
+      )
+      return orig(tag, files, options)
     }
     const { code, text } = runCli(
       ["shot", png, jpg, "--issue", "90", "--name", "dialog"],
@@ -177,9 +180,11 @@ test("shot uploads to the screenshots prerelease and posts markdown links", () =
     assert.equal(create.prerelease, true)
     assert.equal(create.target, "main")
     const upload = effect(rig.ports, "releaseUpload")
-    assert.equal(upload.clobber, true)
+    assert.equal(upload.clobber, false)
     assert.ok(
-      upload.files.some((file) => file.endsWith("issue-90-dialog-1.png"))
+      effects(rig.ports, "releaseUpload").some((entry) =>
+        entry.files.some((file) => file.endsWith("issue-90-dialog-1.png"))
+      )
     )
     const comment = effect(rig.ports, "comment")
     assert.match(comment.body, /Pictures from the agent:/)
@@ -238,7 +243,7 @@ test("shot does not create the release when it already exists", () => {
     const png = rig.box.file("plain.png", PNG)
     const { code } = runCli(["shot", png, "--issue", "90"], rig.ctx)
     assert.equal(code, 0)
-    assert.ok(effect(rig.ports, "releaseView"))
+    assert.ok(effect(rig.ports, "releaseAssets"))
     assert.equal(effect(rig.ports, "releaseCreate"), undefined)
   } finally {
     rig.done()
@@ -361,9 +366,9 @@ test("shot removes staging copies when the upload fails", () => {
     writeFileSync(join(rig.stage, "keep.txt"), "keep")
     const png = rig.box.file("plain.png", PNG)
     const orig = rig.ports.gh.releaseUpload
-    rig.ports.gh.releaseUpload = (tag, files) => {
+    rig.ports.gh.releaseUpload = (tag, files, options) => {
       assert.equal(existsSync(files[0]), true)
-      return orig(tag, files)
+      return orig(tag, files, options)
     }
     const { code, text } = runCli(["shot", png, "--issue", "90"], rig.ctx)
     assert.equal(code, 1, text)

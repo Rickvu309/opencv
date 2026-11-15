@@ -1,23 +1,14 @@
-import {
-  closeSync,
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  openSync,
-  readSync,
-  rmSync,
-  statSync,
-} from "node:fs"
+import { closeSync, existsSync, openSync, readSync, statSync } from "node:fs"
 import { basename, join } from "node:path"
 import { taskNow } from "./claim.mjs"
 import { SCRATCH } from "./ports/fs.mjs"
 import { decide, refusalError } from "./rules/index.mjs"
+import { uploadShots } from "./shot-release.mjs"
 
 const USAGE =
   "usage: ocv-tools shot <file...> [--pr <n> | --issue <n>] [--name <what>] [--no-comment]"
 const FLAGS = new Set(["--pr", "--issue", "--name", "--no-comment"])
 const RELEASE = "screenshots"
-const NOTES = "Pictures for issues and pull requests. Not a product release."
 const COMMENT_MAX = 60000
 const SLUG_MAX = 40
 
@@ -113,7 +104,7 @@ export function shotAssets(items, { kind, n, name }) {
 }
 
 export const shotLink = (repo, item) =>
-  `![${item.alt}](https://github.com/${repo}/releases/download/${RELEASE}/${item.asset})`
+  `![${item.alt}](https://github.com/${repo}/releases/download/${item.release ?? RELEASE}/${item.asset})`
 
 export const shotBody = (repo, items) =>
   `Pictures from the agent:\n\n${items.map((item) => shotLink(repo, item)).join("\n\n")}`
@@ -133,11 +124,6 @@ export function shotComments(repo, items) {
   }
   if (batch.length) chunks.push(shotBody(repo, batch))
   return chunks
-}
-
-function ensureRelease(gh) {
-  if (gh.releaseView(RELEASE)) return
-  gh.releaseCreate(RELEASE, { title: RELEASE, notes: NOTES, target: "main" })
 }
 
 function targetFound(gh, { kind, n }) {
@@ -183,7 +169,7 @@ export function shot(ctx, { files = [], flags = {} } = {}) {
     : issue
       ? { kind: "issue", n: issue }
       : { kind: "issue", n: here.n }
-  const items = shotAssets(
+  let items = shotAssets(
     checked.map((item) => ({ ...item, file: item.path })),
     { kind: target.kind, n: target.n, name: flags["--name"] }
   )
@@ -202,23 +188,14 @@ export function shot(ctx, { files = [], flags = {} } = {}) {
       },
     })
   )
-  ensureRelease(ctx.ports.gh)
-  const dir = ctx.shotDir ?? join(SCRATCH, "shots")
-  mkdirSync(dir, { recursive: true })
-  const staged = []
-  try {
-    for (const item of items) {
-      const to = join(dir, item.asset)
-      copyFileSync(item.file, to)
-      staged.push(to)
-    }
-    ctx.ports.gh.releaseUpload(RELEASE, staged)
-    for (const body of bodies) {
-      if (target.kind === "pr") ctx.ports.gh.commentPr(target.n, body)
-      else ctx.ports.gh.comment(target.n, body)
-    }
-  } finally {
-    for (const path of staged) rmSync(path, { force: true })
+  items = uploadShots(
+    ctx.ports.gh,
+    items,
+    ctx.shotDir ?? join(SCRATCH, "shots")
+  )
+  for (const body of flags["--no-comment"] ? [] : shotComments(repo, items)) {
+    if (target.kind === "pr") ctx.ports.gh.commentPr(target.n, body)
+    else ctx.ports.gh.comment(target.n, body)
   }
   const links = items.map((item) => shotLink(repo, item))
   const commented = bodies.length > 0
@@ -226,7 +203,7 @@ export function shot(ctx, { files = [], flags = {} } = {}) {
     target.kind === "pr" ? `pull request #${target.n}` : `#${target.n}`
   return {
     lines: [
-      `Uploaded ${items.length} picture(s) to release ${RELEASE} (not committed).`,
+      `Uploaded ${items.length} picture(s) to release ${[...new Set(items.map((item) => item.release))].join(", ")} (not committed).`,
       ...links,
       commented
         ? `Commented on ${where}.`

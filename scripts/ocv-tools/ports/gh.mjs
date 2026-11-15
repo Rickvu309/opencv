@@ -380,6 +380,21 @@ export function ghAdapter(run) {
     releaseView(tag) {
       return run("gh", ["release", "view", tag]).ok
     },
+    releaseAssets(tag) {
+      const result = run("gh", [
+        "api",
+        `repos/{owner}/{repo}/releases/tags/${tag}`,
+        "--jq",
+        "[.assets[] | {name, digest}]",
+      ])
+      if (!result.ok) {
+        if (/HTTP 404/.test(result.err || result.out)) return null
+        throw new Error(
+          `Reading screenshot assets failed: ${result.err || result.out}`
+        )
+      }
+      return JSON.parse(result.out)
+    },
     releaseCreate(tag, { title, notes, target }) {
       gh(
         "release",
@@ -394,8 +409,8 @@ export function ghAdapter(run) {
         target
       )
     },
-    releaseUpload(tag, files) {
-      gh("release", "upload", tag, ...files, "--clobber")
+    releaseUpload(tag, files, { clobber = true } = {}) {
+      gh("release", "upload", tag, ...files, ...(clobber ? ["--clobber"] : []))
     },
     issueLabels(n) {
       return JSON.parse(

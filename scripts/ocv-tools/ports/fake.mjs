@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto"
+import { basename } from "node:path"
 import { existsSync, readFileSync } from "node:fs"
 import { homedir, tmpdir } from "node:os"
 import { dirname, join } from "node:path"
@@ -98,6 +100,7 @@ export function fakePorts(world = {}) {
     nextCommentId: world.nextCommentId ?? 1000,
     commentUpdatedAt: world.commentUpdatedAt ?? "2026-10-29T12:00:05.000Z",
     releases: new Set(world.releases ?? []),
+    releaseAssets: structuredClone(world.releaseAssets ?? {}),
     uploadErr: world.uploadErr ?? null,
     nameWithOwner: world.nameWithOwner ?? null,
     checks: { ...(world.checks ?? {}) },
@@ -359,6 +362,12 @@ export function fakePorts(world = {}) {
       effect("releaseView", { tag })
       return state.releases.has(tag)
     },
+    releaseAssets(tag) {
+      effect("releaseAssets", { tag })
+      return state.releases.has(tag)
+        ? [...(state.releaseAssets[tag] ?? [])]
+        : null
+    },
     releaseCreate(tag, { title, notes, target }) {
       effect("releaseCreate", {
         tag,
@@ -369,9 +378,22 @@ export function fakePorts(world = {}) {
       })
       state.releases.add(tag)
     },
-    releaseUpload(tag, files) {
-      effect("releaseUpload", { tag, files: [...files], clobber: true })
+    releaseUpload(tag, files, { clobber = true } = {}) {
+      effect("releaseUpload", { tag, files: [...files], clobber })
       if (state.uploadErr) throw new Error(state.uploadErr)
+      state.releaseAssets[tag] ??= []
+      for (const file of files) {
+        const name = basename(file)
+        if (
+          !clobber &&
+          state.releaseAssets[tag].some((asset) => asset.name === name)
+        )
+          throw new Error("HTTP 422 already_exists")
+        state.releaseAssets[tag].push({
+          name,
+          digest: `sha256:${createHash("sha256").update(readFileSync(file)).digest("hex")}`,
+        })
+      }
     },
     issueLabels(n) {
       return state.issues.get(Number(n))?.labels ?? []
