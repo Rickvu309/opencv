@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import { joinBackward } from "@tiptap/pm/commands"
 import { TextSelection } from "@tiptap/pm/state"
 import * as Y from "yjs"
@@ -235,6 +235,32 @@ describe("mounted rich table editing", () => {
     expect(
       p && "content" in p && p.content.map((run) => run.text).join("")
     ).toBe("Replace")
+    roundtrip(binding)
+  })
+  it("strips executable clipboard markup while retaining safe rich content through reopen", () => {
+    const { binding, editor, host } = setup()
+    const parse = vi.spyOn(editor, "tryParseHTMLToBlocks")
+    caret(editor)
+    paste(
+      host,
+      "Safe Link",
+      '<p onclick="alert(1)"><script>alert(1)</script><strong>Safe</strong> <a href="javascript:alert(1)">Link</a></p>'
+    )
+    const cell = table(binding).children[0]?.children[0],
+      paragraph = cell?.children[0]
+    if (!paragraph || !("content" in paragraph))
+      throw new Error("Missing pasted paragraph")
+    expect(paragraph.content.map((run) => run.text).join("")).toBe(
+      "Safe LinkViệt e\u0302 😀"
+    )
+    expect(paragraph.content.find((run) => run.text === "Safe")?.bold).toBe(
+      true
+    )
+    expect(paragraph.content.every((run) => !run.href)).toBe(true)
+    expect(parse).toHaveBeenCalledWith(
+      "<p><strong>Safe</strong> <a>Link</a></p>"
+    )
+    expect(host.querySelector("script,[onclick],[onerror]")).toBeNull()
     roundtrip(binding)
   })
   it("pastes headings and lists as rich cell blocks while preserving surrounding text", () => {
