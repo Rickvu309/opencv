@@ -10,7 +10,7 @@ import {
 import type { DocumentPresentation } from "@workspace/domain/internal/paper-presentation"
 import { blockOf, readBlock } from "./native-formatting-cv.js"
 import { array, object, string } from "./native-formatting-inline.js"
-import type { PrivateLayoutBlock } from "./native-layout-schema.js"
+import type { HeadlessLayoutBlock as PrivateLayoutBlock } from "./native-formatting-headless.js"
 
 function contentBlock(node: FormatNode | LayoutPhoto): PrivateLayoutBlock {
   return node.type === "photo"

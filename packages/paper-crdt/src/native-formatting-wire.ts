@@ -1,8 +1,8 @@
 import { isSafeHref } from "@workspace/domain"
 import * as Y from "yjs"
 import { isWellFormed } from "@workspace/domain/internal/paper-presentation"
-import type { PrivateFormattingEditor } from "./native-formatting-schema.js"
-import { canonicalStyles } from "./native-formatting-styles.js"
+import type { HeadlessFormattingEditor as PrivateFormattingEditor } from "./native-formatting-headless.js"
+import { canonicalStyles } from "./native-formatting-values.js"
 import { object } from "./native-formatting-inline.js"
 import { canonicalProps, formattingProps } from "./native-formatting-props.js"
 export function validateFormattingWire(

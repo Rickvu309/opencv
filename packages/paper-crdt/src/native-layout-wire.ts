@@ -6,7 +6,7 @@ import {
   isWellFormed,
 } from "@workspace/domain/internal/paper-presentation"
 import { validateMark, validateNodeAttrs } from "./native-formatting-wire.js"
-import type { PrivateLayoutEditor } from "./native-layout-schema.js"
+import type { HeadlessLayoutEditor as PrivateLayoutEditor } from "./native-formatting-headless.js"
 
 const inline = [
   "paragraph",
