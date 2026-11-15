@@ -69,6 +69,8 @@ describe("isolated native prose model", () => {
     assert.equal(canonicalPaper(source), before)
     assert.equal(legacyPaperDocumentSchema.safeParse(target).success, false)
     assert.deepEqual(paperDocumentSchema.parse(target), target)
+    const unsupported = { ...target, schemaRevision: 2 }
+    assert.equal(paperDocumentSchema.safeParse(unsupported).success, false)
     assert.deepEqual(paperDocumentSchema.parse(source), source)
   })
 
