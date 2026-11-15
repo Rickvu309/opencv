@@ -1,5 +1,7 @@
 import {
   ERROR_CODES,
+  NATIVE_WRITER,
+  nativeBasisSchema,
   jobAddNoteInputSchema,
   type Actor,
   type CoachFocusDoc,
@@ -28,7 +30,11 @@ function missingDocument(error: unknown) {
 }
 
 async function listedPage(registry: Registry, actor: Actor, docId: string) {
-  const listed = await registry.read("paper.list", {}, actor)
+  const listed = await registry.read(
+    "paper.list",
+    { writer: NATIVE_WRITER },
+    actor
+  )
   if (!Array.isArray(listed)) return null
   for (const item of listed) {
     const row = record(item)
@@ -67,7 +73,9 @@ async function paperFocus(
 ): Promise<CoachFocusDoc | null> {
   let row: Record<string, unknown> | null
   try {
-    row = record(await registry.read("paper.get", { docId }, actor))
+    row = record(
+      await registry.read("paper.get", { docId, writer: NATIVE_WRITER }, actor)
+    )
   } catch (error) {
     if (!missingDocument(error)) throw error
     row = await listedPage(registry, actor, docId)
@@ -80,7 +88,11 @@ async function paperFocus(
   const status =
     row.status === "ready" || row.status === "published" ? row.status : "draft"
   const outline = record(
-    await registry.read("paper.outline", { docId, blockIds }, actor)
+    await registry.read(
+      "paper.outline",
+      { docId, blockIds, writer: NATIVE_WRITER },
+      actor
+    )
   )
   return {
     id: text(row.id),
@@ -88,6 +100,9 @@ async function paperFocus(
     kind,
     status,
     outline: text(outline?.outline),
+    ...(outline?.nativeBasis
+      ? { nativeBasis: nativeBasisSchema.parse(outline.nativeBasis) }
+      : {}),
     revision:
       typeof outline?.revision === "number" ||
       typeof outline?.revision === "string"

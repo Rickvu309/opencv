@@ -1,6 +1,10 @@
 import "fake-indexeddb/auto"
 
-import { type PaperDocument } from "@workspace/domain"
+import {
+  nativePaperFromLegacy,
+  nativeProvenance,
+  type PaperDocument,
+} from "@workspace/domain"
 import { materialize, writeDocument } from "@workspace/paper-crdt"
 import { describe, expect, it, vi } from "vitest"
 import * as Y from "yjs"
@@ -15,8 +19,89 @@ import {
   textOf,
   type,
 } from "@/test/paper-sync-kit.ts"
-import { type PaperSync } from "./paper-sync.ts"
+import { legacyRecoveryPending, type PaperSync } from "./paper-sync.ts"
 import { indexedDbStore, memoryStore } from "./paper-sync-store.ts"
+
+describe("native migration recovery admission", () => {
+  it("keeps an incompatible bootstrap out of recovery and opens the next valid receipt", async () => {
+    const source = nativePaperFromLegacy(letter(["p1", "Việt 😀 saved"]))
+    const remote = fakeServer(source)
+    const respond = server.run!
+    let compatible = false
+    server.run = async (input, options) => ({
+      ...((await respond(input, options)) as object),
+      ...(compatible ? { provenance: nativeProvenance(source) } : {}),
+    })
+    const store = memoryStore()
+    const save = vi.spyOn(store, "save")
+    const sync = await open({
+      store,
+      provenance: nativeProvenance(source),
+      legacyStore: memoryStore(),
+    })
+    expect(sync.status()).toBe("stuck")
+    expect(sync.ready()).toBe(false)
+    expect(save).not.toHaveBeenCalled()
+    expect((await store.load(`native-v4-r1:${DOC}`, "tab-a")).own).toBeNull()
+    window.dispatchEvent(new Event("pagehide"))
+    await vi.advanceTimersByTimeAsync(0)
+    expect(save).not.toHaveBeenCalled()
+    compatible = true
+    sync.poke()
+    await vi.advanceTimersByTimeAsync(0)
+    expect(remote.state.calls.length).toBe(2)
+    expect(sync.ready()).toBe(true)
+    expect(sync.status()).toBe("saved")
+    expect(textOf(sync, "p1")).toBe("Việt 😀 saved")
+    expect(save).toHaveBeenCalled()
+  })
+
+  it("refuses migration while this tab or another tab holds legacy input", async () => {
+    for (const tabId of ["own", "other"]) {
+      const store = memoryStore()
+      const doc = new Y.Doc()
+      const empty = Y.encodeStateAsUpdate(doc)
+      doc.getText("words").insert(0, "Việt 😀 unsaved")
+      const pending = Y.encodeStateAsUpdate(doc)
+      await store.save(DOC, tabId, { epoch: 1, server: empty, pending })
+      expect(await legacyRecoveryPending(DOC, "own", null, store)).toBe(true)
+      expect((await store.load(DOC, tabId)).own?.pending).toEqual(pending)
+    }
+  })
+
+  it("admits an acknowledged legacy checkpoint", async () => {
+    const store = memoryStore()
+    const doc = new Y.Doc()
+    doc.getText("words").insert(0, "Saved")
+    const server = Y.encodeStateAsUpdate(doc)
+    await store.save(DOC, "own", {
+      epoch: 1,
+      server,
+      pending: Y.encodeStateAsUpdate(doc, Y.encodeStateVector(doc)),
+    })
+    expect(await legacyRecoveryPending(DOC, "own", null, store)).toBe(false)
+  })
+
+  it("refuses migration when journal enumeration is denied", async () => {
+    const journal: Storage = {
+      get length() {
+        throw new Error("Denied")
+      },
+      clear() {},
+      getItem() {
+        return null
+      },
+      key() {
+        return null
+      },
+      removeItem() {},
+      setItem() {},
+    }
+    expect(
+      await legacyRecoveryPending(DOC, "own", journal, memoryStore())
+    ).toBe(true)
+  })
+})
 
 describe("openPaperSync", () => {
   it("loads the document and shows Saved", async () => {

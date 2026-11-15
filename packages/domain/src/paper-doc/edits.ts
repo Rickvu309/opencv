@@ -19,6 +19,7 @@ import {
   type PaperNode,
 } from "./nodes.js"
 import { insertedRuns } from "./text-align.js"
+import { retainUnderline } from "./merge-text.js"
 import { richTextFromInlineMarkdown } from "./rich-text.js"
 import {
   canonical,
@@ -305,11 +306,15 @@ function setTextEdit(
 ): PaperEditOutcome {
   const found = find(work, context, edit.blockId)
   if (isOutcome(found)) return found
-  const node = found.entry.node as PaperNode & Record<string, unknown>
+  const node = found.entry.node
   if (node.type === "section") {
     node.title = edit.text
   } else if ("content" in node) {
-    node.content = richTextFromInlineMarkdown(edit.text)
+    const replacement = richTextFromInlineMarkdown(edit.text)
+    node.content =
+      work.version === 4
+        ? retainUnderline(node.content, replacement)
+        : replacement
   } else {
     return invalid(
       `A ${node.type} holds no running text. Use setFields for its fields`

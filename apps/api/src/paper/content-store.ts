@@ -1,11 +1,16 @@
 import {
   ERROR_CODES,
+  nativePaperFromLegacy,
+  nativeProvenance,
+  sameNativeProvenance,
+  type NativeWriter,
+  type NativeBasis,
+  type NativeProvenance,
   nodeFingerprint,
   repairPaper,
   paperDocumentSchema,
   type PaperDocument,
   type PaperId,
-  type PaperStoredKind,
   type UserId,
 } from "@workspace/domain"
 import {
@@ -32,11 +37,16 @@ import { and, asc, eq, gte, gt } from "drizzle-orm"
 import { getDb, transaction } from "../db/context.js"
 import { paperDocUpdates, paperDocs } from "../db/schema.js"
 import { CommandError } from "../registry/errors.js"
+import { admitBasis, admitDocument } from "./native-admission.js"
 import {
   COMPACT_EVERY_SEQ,
   droppedPhotoIds,
   foldSettledLog,
 } from "./content-compact.js"
+
+import { validated } from "./content-document.js"
+
+export { seedColumns } from "./content-document.js"
 
 type PaperRow = typeof paperDocs.$inferSelect
 
@@ -94,6 +104,8 @@ export type LockedContent = {
 }
 
 export type SyncRequest = {
+  readonly writer?: NativeWriter
+  readonly provenance?: NativeProvenance
   readonly epoch: number
   readonly update: Uint8Array
   readonly stateVector: Uint8Array
@@ -101,6 +113,7 @@ export type SyncRequest = {
 }
 
 export type SyncReply = {
+  readonly provenance?: NativeProvenance
   readonly epoch: number
   readonly revision: number
   readonly reset: boolean
@@ -153,38 +166,6 @@ export function coachBasisOk(
   baseSeq: number
 ) {
   return basedOn <= revision && basedOn >= baseSeq
-}
-
-function validated(candidate: unknown, kind: PaperStoredKind): PaperDocument {
-  const parsed = paperDocumentSchema.safeParse(candidate)
-  if (!parsed.success) {
-    const issue = parsed.error.issues[0]
-    throw refuse(issue?.message ?? "The document is not valid")
-  }
-  if (parsed.data.kind !== kind) {
-    throw refuse(`A ${kind} cannot hold a ${parsed.data.kind}`)
-  }
-  return parsed.data
-}
-
-export function seedColumns(kind: PaperStoredKind, paper: PaperDocument) {
-  const seeded = validated(paper, kind)
-  let base: Uint8Array
-  try {
-    base = seedYDoc(seeded)
-  } catch (error) {
-    throw refuse(error instanceof Error ? error.message : "Cannot seed")
-  }
-  const materialized = materialize(base)
-  if (!materialized.ok) throw refuse(materialized.reason)
-  return {
-    crdtEpoch: FIRST_EPOCH,
-    crdtBase: Buffer.from(base),
-    crdtDocument: validated(materialized.document, kind) as unknown as Record<
-      string,
-      unknown
-    >,
-  }
 }
 
 async function lockedRow(userId: UserId, docId: PaperId): Promise<PaperRow> {
@@ -460,15 +441,25 @@ async function appendLocked(
 export async function withContent<T>(
   userId: UserId,
   docId: PaperId,
-  run: (content: LockedContent) => Promise<T>
+  run: (content: LockedContent) => Promise<T>,
+  admission?: { writer?: NativeWriter; basis?: NativeBasis; proposal?: boolean }
 ): Promise<T> {
   return transaction(async () => {
     const row = await lockedRow(userId, docId)
+    const document = validated(row.crdtDocument, row.kind)
+    admitDocument(document, admission?.writer)
+    if (admission?.proposal)
+      admitBasis(
+        document,
+        row.crdtEpoch ?? FIRST_EPOCH,
+        row.contentVersion,
+        admission.basis
+      )
     const entry = await hydrate(row)
     let latest = row
     const content: LockedContent = {
       row,
-      document: validated(row.crdtDocument, row.kind),
+      document,
       baseSeq: entry.baseSeq,
       edit: async (change) => {
         latest = await editLocked(latest, entry, change)
@@ -584,7 +575,24 @@ export async function syncContent(
 ): Promise<SyncReply> {
   return transaction(async () => {
     let row = await lockedRow(userId, docId)
-    const entry = await hydrate(row)
+    const document = validated(row.crdtDocument, row.kind)
+    admitDocument(document, request.writer)
+    const provenance =
+      document.version === 4 ? nativeProvenance(document) : undefined
+    if (!sameNativeProvenance(provenance, request.provenance))
+      throw refuse(
+        "The update belongs to a different document schema. Nothing was acknowledged or changed."
+      )
+    if (
+      document.version === 4 &&
+      request.epoch === NO_LOCAL_COPY &&
+      carriesChange(request.update)
+    )
+      throw refuse(
+        "An unbased native update cannot be admitted. Recover its original local basis first."
+      )
+    const current = await hydrate(row)
+    const entry = { ...current, yDoc: forkOf(current.yDoc) }
     const reply = (
       reset: boolean,
       since: Uint8Array,
@@ -593,6 +601,7 @@ export async function syncContent(
       const update = updateSince(entry.yDoc, since)
       if (!update) throw refuse("The state vector could not be read")
       return {
+        ...(provenance ? { provenance } : {}),
         epoch: entry.epoch,
         revision: entry.revision,
         reset,
@@ -617,6 +626,11 @@ export async function syncContent(
           : absorbUpdate(entry.yDoc, request.update, "person")
       if (!absorbed.ok) throw refuse(absorbed.reason)
       const fixed = await mended(row, entry, request, absorbed.effective)
+      const candidate = materialize(entry.yDoc)
+      if (!candidate.ok || candidate.document.version !== document.version)
+        throw refuse(
+          "The update would change or invalidate the document schema"
+        )
       if (fixed.effective) {
         row = await commit(row, entry, fixed.effective, {
           origin: "person",
@@ -625,10 +639,57 @@ export async function syncContent(
       }
       const after = knownAfter(request.stateVector, request.update)
       if (!after) throw refuse("The update could not be read")
+      remember(docId, entry)
       return reply(false, after)
     } catch (error) {
       live.delete(docId)
       throw error
     }
+  })
+}
+
+export async function migrateNativeContent(
+  userId: UserId,
+  docId: PaperId,
+  input: { epoch: number; basedOn: number; writer: NativeWriter }
+): Promise<PaperRow> {
+  return transaction(async () => {
+    const row = await lockedRow(userId, docId)
+    const source = validated(row.crdtDocument, row.kind)
+    const epoch = row.crdtEpoch ?? FIRST_EPOCH
+    if (source.version === 4) {
+      admitDocument(source, input.writer)
+      throw refuse(
+        "This document is already native. Read its current checkpoint before editing."
+      )
+    }
+    if (epoch !== input.epoch || row.contentVersion !== input.basedOn)
+      throw refuse(
+        "The document changed before its upgrade. Save and read it again."
+      )
+    if (source.clashes.length > 0)
+      throw refuse(
+        "Resolve the document's recovery clashes before upgrading it."
+      )
+    if (source.kind !== "letter")
+      throw refuse("Only an existing Letter can enable native underline.")
+    const target = nativePaperFromLegacy(source)
+    admitDocument(target, input.writer)
+    const base = seedYDoc(target)
+    const checked = materialize(base)
+    if (!checked.ok || checked.document.version !== 4)
+      throw refuse("The native checkpoint could not be verified")
+    const revision = nextContentSeq(row.contentVersion)
+    const patch = {
+      crdtEpoch: epoch + 1,
+      crdtBaseSeq: revision,
+      crdtBase: Buffer.from(base),
+      crdtDocument: target as unknown as Record<string, unknown>,
+      contentVersion: revision,
+      updatedAt: new Date(),
+    }
+    await getDb().update(paperDocs).set(patch).where(eq(paperDocs.id, row.id))
+    live.delete(row.id)
+    return { ...row, ...patch }
   })
 }

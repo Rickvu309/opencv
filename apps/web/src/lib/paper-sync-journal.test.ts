@@ -1,3 +1,4 @@
+import { nativePaperDocumentSchema, nativeProvenance } from "@workspace/domain"
 import { loadYDoc } from "@workspace/paper-crdt"
 import { expect, it } from "vitest"
 import * as Y from "yjs"
@@ -193,4 +194,59 @@ it("keeps newer input while an earlier receipt arrives", () => {
   expect(readText(mergeJournal(null, journalUpdates(storage, "doc"))!)).toBe(
     "first second"
   )
+})
+
+it("retains unreadable and future journal bytes and refuses completion", () => {
+  for (const raw of [
+    "{broken",
+    JSON.stringify({
+      entries: [],
+      next: 0,
+      idbThrough: 0,
+      serverThrough: 0,
+      futureSchema: 2,
+    }),
+  ]) {
+    const storage = memory()
+    const id = journalScope("doc", "tab")
+    storage.setItem(journalStorageKey(id), raw)
+    expect(appendJournal(storage, id, textUpdate("new"))).toBe("denied")
+    expect(noteJournal(storage, id, "idb", 1)).toBe("denied")
+    expect(storage.getItem(journalStorageKey(id))).toBe(raw)
+    expect(recoverJournals(storage, "doc")[0]?.readable).toBe(false)
+  }
+})
+
+it("keeps native provenance with the full local basis", () => {
+  const storage = memory()
+  const provenance = nativeProvenance(
+    nativePaperDocumentSchema.parse({
+      version: 4,
+      schemaRevision: 1,
+      kind: "letter",
+      blocks: [],
+      clashes: [],
+    })
+  )
+  const server = new Y.Doc()
+  server.getText("t").insert(0, "before")
+  const client = new Y.Doc()
+  Y.applyUpdate(client, Y.encodeStateAsUpdate(server))
+  client.getText("t").insert(6, " underlined")
+  const update = Y.encodeStateAsUpdate(client, Y.encodeStateVector(server))
+  const stored = {
+    epoch: 2,
+    revision: 7,
+    provenance,
+    server: Y.encodeStateAsUpdate(server),
+    pending: update,
+  }
+  const id = journalScope("native-v4-r1:doc", "tab")
+  expect(appendJournal(storage, id, update, stored)).toBe("kept")
+  const recovered = recoverJournals(storage, "native-v4-r1:doc")[0]!
+  expect(recovered.readable).toBe(true)
+  expect(recovered.states[0]?.provenance).toEqual(provenance)
+  expect(recovered.states[0]?.epoch).toBe(2)
+  expect(recovered.states[0]?.revision).toBe(7)
+  expect(readText(recovered.states[0]!)).toBe("before underlined")
 })

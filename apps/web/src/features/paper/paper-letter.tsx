@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useReducer, useRef } from "react"
+import { useCallback, useEffect, useMemo, useReducer, useRef } from "react"
 import {
   keywordGap,
+  nativeProvenance,
   paperPlainText,
   type JobView,
   type LetterPaper,
@@ -35,8 +36,12 @@ import {
 import "./design/letter-editor.pen.css"
 import "./design/letter-block-editor.pen.css"
 
+import { useQueryClient } from "@tanstack/react-query"
+
 import type { ClientChange } from "@workspace/paper-crdt"
 
+import { holdWritingCoachFocus } from "@/lib/writing-coach-focus.ts"
+import { enableLetterUnderline } from "@/lib/paper-native.ts"
 import { SYNC_LABEL, usePaperSync } from "@/lib/paper-sync.ts"
 import { setPaperSelection } from "@/lib/paper-selection.ts"
 import {
@@ -55,6 +60,8 @@ type EditorState = {
   editedAt: string
   gapHidden: boolean
   printing: boolean
+  upgrading: boolean
+  upgradeError: string | null
 }
 
 function mergeEditorState(state: EditorState, change: Partial<EditorState>) {
@@ -70,18 +77,26 @@ export function PaperLetterEditor({
   job: JobView | null
   onBack: () => void
 }) {
+  useEffect(() => holdWritingCoachFocus(doc.id), [doc.id])
   const shareLink = useShareLink(doc.id)
-  const { client, status, generation } = usePaperSync(doc.id)
-  const editorRef = useRef<PaperEditorHandle>(null)
-  const [{ letter, editedAt, gapHidden, printing }, patch] = useReducer(
-    mergeEditorState,
-    {
-      letter: null,
-      editedAt: doc.updatedAt,
-      gapHidden: false,
-      printing: false,
-    }
+  const queryClient = useQueryClient()
+  const provenance = useMemo(
+    () => (doc.paper?.version === 4 ? nativeProvenance(doc.paper) : undefined),
+    [doc.paper]
   )
+  const { client, status, generation } = usePaperSync(doc.id, provenance)
+  const editorRef = useRef<PaperEditorHandle>(null)
+  const [
+    { letter, editedAt, gapHidden, printing, upgrading, upgradeError },
+    patch,
+  ] = useReducer(mergeEditorState, {
+    letter: null,
+    editedAt: doc.updatedAt,
+    gapHidden: false,
+    printing: false,
+    upgrading: false,
+    upgradeError: null,
+  })
 
   const onDocument = useCallback(
     (next: PaperDocument | null, change: ClientChange) => {
@@ -101,6 +116,22 @@ export function PaperLetterEditor({
     return printPaper(doc.name, () => patch({ printing: false }))
   }, [printing, doc.name])
 
+  async function enableUnderline() {
+    patch({ upgrading: true, upgradeError: null })
+    try {
+      await enableLetterUnderline(doc.id, client, status, queryClient)
+    } catch (error) {
+      patch({
+        upgradeError:
+          error instanceof Error
+            ? error.message
+            : "Underline could not be enabled. Try again.",
+      })
+    } finally {
+      patch({ upgrading: false })
+    }
+  }
+
   const gap = gapHidden
     ? null
     : keywordGap(
@@ -108,7 +139,7 @@ export function PaperLetterEditor({
         job?.posting?.requirements ?? ""
       )
   function addKeyword() {
-    if (gap) editorRef.current?.insertText(gap.keyword)
+    if (gap && !upgrading) editorRef.current?.insertText(gap.keyword)
   }
 
   return (
@@ -118,6 +149,11 @@ export function PaperLetterEditor({
       data-slot="letter-editor-page"
       className="flex h-full min-h-0 min-w-0 flex-1 flex-col"
     >
+      {upgradeError ? (
+        <p role="alert" className="px-5 py-2 text-sm text-destructive">
+          {upgradeError}
+        </p>
+      ) : null}
       <header
         data-slot="letter-editor-header"
         className="flex min-h-12 min-w-0 flex-wrap items-center gap-2 border-b py-2 ps-5 pe-4 text-[13.5px] md:h-12 md:flex-nowrap md:py-0"
@@ -161,6 +197,14 @@ export function PaperLetterEditor({
               }
             />
             <DropdownMenuContent align="start">
+              {doc.paper?.version === 3 ? (
+                <DropdownMenuItem
+                  disabled={upgrading || status !== "saved"}
+                  onClick={() => void enableUnderline()}
+                >
+                  {upgrading ? "Enabling underline…" : "Enable underline"}
+                </DropdownMenuItem>
+              ) : null}
               <DropdownMenuItem onClick={() => patch({ printing: true })}>
                 Download PDF
               </DropdownMenuItem>
@@ -271,6 +315,7 @@ export function PaperLetterEditor({
                 kind="letter"
                 client={client}
                 generation={generation}
+                editable={!upgrading}
                 label={`Letter ${doc.name}`}
                 onDocument={onDocument}
                 onSelectedBlocks={onSelectedBlocks}

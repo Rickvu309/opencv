@@ -76,9 +76,25 @@ const letterPaperSchema = z
   })
   .strict()
 
-export type CvPaper = z.infer<typeof cvPaperSchema>
-export type LetterPaper = z.infer<typeof letterPaperSchema>
-export type PaperDocument = CvPaper | LetterPaper
+const nativeCvPaperSchema = cvPaperSchema.extend({
+  version: z.literal(4),
+  schemaRevision: z.literal(1),
+})
+
+const nativeLetterPaperSchema = letterPaperSchema.extend({
+  version: z.literal(4),
+  schemaRevision: z.literal(1),
+})
+
+export type LegacyPaperDocument =
+  z.infer<typeof cvPaperSchema> | z.infer<typeof letterPaperSchema>
+export type NativePaperDocument =
+  z.infer<typeof nativeCvPaperSchema> | z.infer<typeof nativeLetterPaperSchema>
+export type CvPaper =
+  z.infer<typeof cvPaperSchema> | z.infer<typeof nativeCvPaperSchema>
+export type LetterPaper =
+  z.infer<typeof letterPaperSchema> | z.infer<typeof nativeLetterPaperSchema>
+export type PaperDocument = LegacyPaperDocument | NativePaperDocument
 
 type IssueSink = (message: string, path: (string | number)[]) => void
 
@@ -174,13 +190,57 @@ function walkInvariants(document: PaperDocument, report: IssueSink): void {
   })
 }
 
-export const paperDocumentSchema = z
+function nativeMarkPaths(
+  value: unknown,
+  path: (string | number)[] = []
+): (string | number)[][] {
+  if (Array.isArray(value))
+    return value.flatMap((item, index) =>
+      nativeMarkPaths(item, [...path, index])
+    )
+  if (value === null || typeof value !== "object") return []
+  return Object.entries(value).flatMap(([key, item]) =>
+    key === "underline"
+      ? [[...path, key]]
+      : nativeMarkPaths(item, [...path, key])
+  )
+}
+
+export const legacyPaperDocumentSchema = z
   .discriminatedUnion("kind", [cvPaperSchema, letterPaperSchema])
+  .superRefine((document, context) => {
+    for (const path of nativeMarkPaths(document))
+      context.addIssue({
+        code: "custom",
+        message: "Underline requires native document version 4",
+        path,
+      })
+    walkInvariants(document, (message, path) =>
+      context.addIssue({ code: "custom", message, path })
+    )
+  })
+
+export const nativePaperDocumentSchema = z
+  .discriminatedUnion("kind", [nativeCvPaperSchema, nativeLetterPaperSchema])
   .superRefine((document, context) => {
     walkInvariants(document, (message, path) =>
       context.addIssue({ code: "custom", message, path })
     )
   })
+
+export const paperDocumentSchema = z.union([
+  legacyPaperDocumentSchema,
+  nativePaperDocumentSchema,
+])
+
+export function nativePaperFromLegacy(source: unknown): NativePaperDocument {
+  const document = legacyPaperDocumentSchema.parse(source)
+  return nativePaperDocumentSchema.parse({
+    ...document,
+    version: 4,
+    schemaRevision: 1,
+  })
+}
 
 const SECTION_TITLES: Record<CvSectionKind, string> = {
   summary: "Summary",

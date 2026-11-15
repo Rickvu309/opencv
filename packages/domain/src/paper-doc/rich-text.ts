@@ -39,6 +39,7 @@ export type TextRun = {
   text: string
   bold?: true
   italic?: true
+  underline?: true
   href?: SafeHref
 }
 
@@ -67,6 +68,7 @@ function runOf(text: string, marks: CheckedMarks): TextRun {
     text,
     ...(marks.bold ? { bold: true as const } : {}),
     ...(marks.italic ? { italic: true as const } : {}),
+    ...(marks.underline ? { underline: true as const } : {}),
     ...(marks.href ? { href: marks.href } : {}),
   }
 }
@@ -75,6 +77,7 @@ function sameMarks(left: CheckedMarks, right: CheckedMarks): boolean {
   return (
     Boolean(left.bold) === Boolean(right.bold) &&
     Boolean(left.italic) === Boolean(right.italic) &&
+    Boolean(left.underline) === Boolean(right.underline) &&
     left.href === right.href
   )
 }
@@ -233,6 +236,7 @@ const textRunSchema = z
     text: z.string().min(1),
     bold: z.literal(true).optional(),
     italic: z.literal(true).optional(),
+    underline: z.literal(true).optional(),
     href: safeHrefSchema.optional(),
   })
   .strict()

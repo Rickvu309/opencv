@@ -25,7 +25,7 @@ import { registerDuplicate, relinkJobs } from "./card-action-commands.js"
 import { isWordPageDeleted } from "./package-card-actions.js"
 import { missingDocument, ownedPackagePaper } from "./package-list.js"
 import { oldEditorUndoReasons, undoBlockedReasons } from "./undo-guard.js"
-import { syncContent } from "./content-store.js"
+import { migrateNativeContent, syncContent } from "./content-store.js"
 import { readOutline } from "./outline.js"
 import { coachPaperList, coachWordPageWithText } from "./coach-word-pages.js"
 import {
@@ -134,7 +134,8 @@ export function registerPaper(registry: Registry) {
         const result = await revertCoachEdit(
           actor.userId,
           input.docId,
-          input.editId
+          input.editId,
+          input.writer
         )
         return { docId: input.docId, editId: input.editId, ...result }
       },
@@ -161,11 +162,51 @@ export function registerPaper(registry: Registry) {
       reversal: noReversal,
       activity: noActivity,
     },
+    "paper.nativeSync": {
+      handler: async (input, actor) => {
+        const reply = await syncContent(actor.userId, input.docId, {
+          epoch: input.epoch,
+          update: bytesOf(input.update),
+          stateVector: bytesOf(input.stateVector),
+          basedOn: input.basedOn,
+          writer: input.writer,
+          provenance: input.provenance,
+        })
+        if (!reply.provenance)
+          throw new CommandError(
+            ERROR_CODES.CONFLICT,
+            "This document has not been upgraded to the native schema."
+          )
+        return {
+          ...reply,
+          provenance: reply.provenance,
+          update: encoded(reply.update),
+          stateVector: encoded(reply.stateVector),
+        }
+      },
+      reversal: noReversal,
+      activity: noActivity,
+    },
+    "paper.migrateNative": {
+      handler: async (input, actor) =>
+        toPaper(
+          await migrateNativeContent(actor.userId, input.docId, input),
+          undefined,
+          input.writer
+        ),
+      reversal: noReversal,
+      activity: noActivity,
+    },
     "paper.rename": {
-      handler: (input, actor) => renamePaper(actor, input.docId, input.name),
+      handler: (input, actor) =>
+        renamePaper(actor, input.docId, input.name, input.writer),
       reversal: (input, output) => ({
         command: "paper.rename",
-        input: { docId: input.docId, name: output.previousName },
+        input: {
+          docId: input.docId,
+          name: output.previousName,
+          ...(input.writer ? { writer: input.writer } : {}),
+        },
       }),
       activity: noActivity,
     },
@@ -221,15 +262,18 @@ export function registerPaper(registry: Registry) {
       activity: noActivity,
     },
     "paper.share": {
-      handler: (input, actor) => sharePaper(actor, input.docId),
+      handler: (input, actor) => sharePaper(actor, input.docId, input.writer),
       reversal: (input) => ({
         command: "paper.unshare",
-        input: { docId: input.docId },
+        input: {
+          docId: input.docId,
+          ...(input.writer ? { writer: input.writer } : {}),
+        },
       }),
       activity: noActivity,
     },
     "paper.unshare": {
-      handler: (input, actor) => unsharePaper(actor, input.docId),
+      handler: (input, actor) => unsharePaper(actor, input.docId, input.writer),
       reversal: noReversal,
       activity: noActivity,
     },
@@ -246,7 +290,7 @@ export function registerPaper(registry: Registry) {
     },
     "paper.setStatus": {
       handler: (input, actor) =>
-        setPaperStatus(actor, input.docId, input.status),
+        setPaperStatus(actor, input.docId, input.status, input.writer),
       reversal: noReversal,
       activity: noActivity,
     },
@@ -280,6 +324,8 @@ export function registerPaper(registry: Registry) {
       input.docId,
       {
         basedOn: input.basedOn,
+        writer: input.writer,
+        nativeBasis: input.nativeBasis,
         edits,
         editId: createId(),
         newId: newBlockId,
@@ -299,7 +345,8 @@ export function registerPaper(registry: Registry) {
       "List documents. A Word page is listed without a document body: read its text with paper_outline.",
     coach: true,
     step: () => "List documents",
-    read: (input, actor) => listPapers(actor.userId, input.query, input.kind),
+    read: (input, actor) =>
+      listPapers(actor.userId, input.query, input.kind, input.writer),
   })
   registry.addQuery({
     ...paperList,
@@ -316,7 +363,11 @@ export function registerPaper(registry: Registry) {
     coach: true,
     step: (input) => `Read document ${input.docId}`,
     read: async (input, actor) =>
-      toPaper(await ownedPaper(actor.userId, input.docId)),
+      toPaper(
+        await ownedPaper(actor.userId, input.docId, input.writer),
+        undefined,
+        input.writer
+      ),
   })
   registry.addQuery({
     ...paperGet,
@@ -334,11 +385,17 @@ export function registerPaper(registry: Registry) {
   registry.addQuery(
     tableQuery("paper.outline", {
       description:
-        "Read a bounded outline of a document with block ids, kinds, section titles, heading levels, marks and links, and the revision to pass as basedOn. Pass blockIds to mark selected blocks. If truncated, pass nextCursor as cursor to read the next Word part at the same saved revision.",
+        "Read a bounded outline of a document with block ids, kinds, section titles, heading levels, marks and links, and the revision to pass as basedOn. Pass blockIds to mark selected blocks. For native version 4 Letters, declare writer documentVersion 4, writerProtocol 1, supportedSchemaRevisions [1], capabilities structured-prose and underline; copy the returned nativeBasis unchanged into paper.edit. If truncated, pass nextCursor as cursor to read the next Word part at the same saved revision.",
       coach: true,
       step: () => "Read the document outline",
       read: (input, actor) =>
-        readOutline(actor.userId, input.docId, input.blockIds, input.cursor),
+        readOutline(
+          actor.userId,
+          input.docId,
+          input.blockIds,
+          input.cursor,
+          input.writer
+        ),
     })
   )
   registry.addQuery(
@@ -358,7 +415,7 @@ export function registerPaper(registry: Registry) {
       description: "Count pages in a document.",
       coach: true,
       step: () => "Count pages",
-      read: (input, actor) => pageCount(actor, input.docId),
+      read: (input, actor) => pageCount(actor, input.docId, input.writer),
     })
   )
   registry.addQuery(
@@ -366,7 +423,7 @@ export function registerPaper(registry: Registry) {
       description: "Read a shared document.",
       coach: false,
       step: () => "Read a shared document",
-      read: (input) => readShared(input.token),
+      read: (input) => readShared(input.token, input.writer),
     })
   )
   registry.addQuery(

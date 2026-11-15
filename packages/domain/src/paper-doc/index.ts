@@ -4,6 +4,8 @@ export type {
   CvPaper,
   LetterPaper,
   PaperDocument,
+  LegacyPaperDocument,
+  NativePaperDocument,
   SectionGroup,
 } from "./document.js"
 export {
@@ -11,6 +13,9 @@ export {
   blankLetter,
   clashSchema,
   paperDocumentSchema,
+  legacyPaperDocumentSchema,
+  nativePaperDocumentSchema,
+  nativePaperFromLegacy,
   sectionsOf,
 } from "./document.js"
 
@@ -96,3 +101,5 @@ export { canonical as canonicalPaper, rebuiltBy } from "./tree.js"
 export type { PaperRepair, RepairHints } from "./repair.js"
 export { nodeFingerprint, repairPaper } from "./repair.js"
 export { rebasePending } from "./rebase.js"
+
+export * from "./native.js"

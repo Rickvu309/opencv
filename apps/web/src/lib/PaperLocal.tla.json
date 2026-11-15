@@ -23,5 +23,5 @@
     "apps/web/src/lib/paper-sync-store.ts"
   ],
   "sync": "f8167a13418e8167eedde62be48f1d01cbee16d5",
-  "retiring": "The Yjs local journal of the old CV and Letter editors (apps/web/src/features/paper/paper-cv-editor.tsx, paper-letter.tsx). The Word writing page saves through paper.canvas in apps/web/src/features/paper-page/canvas-save.ts."
+  "boundary": "One openPaperSync document, tab and schema identity. Native v4 provenance, admission, migration races and multiple-tab recovery are concrete fixture and browser obligations. The Word canvas saves through paper.canvas and is outside this model."
 }

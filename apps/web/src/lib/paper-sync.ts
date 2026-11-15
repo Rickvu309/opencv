@@ -8,7 +8,12 @@ import {
   type PaperClient,
   type Stored,
 } from "@workspace/paper-crdt"
-import type { PaperId } from "@workspace/domain"
+import {
+  NATIVE_WRITER,
+  sameNativeProvenance,
+  type NativeProvenance,
+  type PaperId,
+} from "@workspace/domain"
 
 import { queryKey, runContractCommand } from "@/lib/contract-client.ts"
 import { ApiError } from "@/lib/api-error.ts"
@@ -29,6 +34,14 @@ import {
   type SyncStore,
 } from "@/lib/paper-sync-store.ts"
 
+import {
+  openJournal,
+  legacyRecoveryPending,
+} from "@/lib/paper-sync-recovery.ts"
+
+export { legacyRecoveryPending } from "@/lib/paper-sync-recovery.ts"
+import { toBase64, fromBase64 } from "@/lib/paper-sync-codec.ts"
+export { toBase64, fromBase64 } from "@/lib/paper-sync-codec.ts"
 export { indexedDbStore } from "@/lib/paper-sync-store.ts"
 
 export type SyncStatus =
@@ -74,21 +87,6 @@ const realTimers: Timers = {
   now: () => Date.now(),
 }
 
-export function toBase64(bytes: Uint8Array): string {
-  let text = ""
-  for (let at = 0; at < bytes.length; at += 8192) {
-    text += String.fromCharCode(...bytes.subarray(at, at + 8192))
-  }
-  return btoa(text)
-}
-
-export function fromBase64(text: string): Uint8Array {
-  const raw = atob(text)
-  const bytes = new Uint8Array(raw.length)
-  for (let at = 0; at < raw.length; at += 1) bytes[at] = raw.charCodeAt(at)
-  return bytes
-}
-
 async function tabIdentity(docId: string): Promise<string> {
   if (typeof sessionStorage === "undefined") return crypto.randomUUID()
   const known = sessionStorage.getItem(TAB_KEY)
@@ -116,6 +114,7 @@ function isGoneLetter(error: unknown) {
 }
 
 function replyOf(output: {
+  provenance?: NativeProvenance
   epoch: number
   revision: number
   reset: boolean
@@ -124,6 +123,7 @@ function replyOf(output: {
   stateVector: string
 }): ClientSyncReply {
   return {
+    ...(output.provenance ? { provenance: output.provenance } : {}),
     epoch: output.epoch,
     revision: output.revision,
     reset: output.reset,
@@ -147,6 +147,8 @@ export type PaperSync = {
 }
 
 export type SyncOptions = {
+  readonly provenance?: NativeProvenance
+  readonly legacyStore?: SyncStore
   readonly store?: SyncStore
   readonly timers?: Timers
   readonly tabId?: string
@@ -154,27 +156,14 @@ export type SyncOptions = {
   readonly run?: typeof runContractCommand
 }
 
-function openJournal(given: Storage | null | undefined): {
-  storage: Storage | null
-  denied: boolean
-} {
-  if (given === null) return { storage: null, denied: true }
-  if (given) return { storage: given, denied: false }
-  try {
-    if (typeof localStorage === "undefined")
-      return { storage: null, denied: false }
-    return { storage: localStorage, denied: false }
-  } catch {
-    return { storage: null, denied: true }
-  }
-}
-
 export function openPaperSync(
   docId: PaperId,
   queryClient: QueryClient,
   options: SyncOptions = {}
 ): PaperSync {
-  const store = options.store ?? defaultStore()
+  const provenance = options.provenance
+  const localDocId = provenance ? `native-v4-r1:${docId}` : docId
+  const store = options.store ?? defaultStore(provenance !== undefined)
   const timers = options.timers ?? realTimers
   const command = options.run ?? runContractCommand
   const openedJournal = openJournal(options.journal)
@@ -185,7 +174,7 @@ export function openPaperSync(
   let recoveredJournals: ReturnType<typeof recoverJournals> = []
   let canClearRecovered = false
   const blockedJournals = new Set<string>()
-  const journalId = () => journalScope(docId, tabId)
+  const journalId = () => journalScope(localDocId, tabId)
   const journalCheckpoint = () => [
     ...recoveredJournals
       .filter(
@@ -260,10 +249,11 @@ export function openPaperSync(
     durableVersion === version &&
     acceptedVersion === version &&
     !client.hasPending() &&
-    !localFailed
+    !localFailed &&
+    blockedJournals.size === 0
 
   const pumpSave = () => {
-    if (forgotten || !client || !tabId) {
+    if (forgotten || !client || !tabId || (provenance && !client.document())) {
       const pending = saveWaiters
       saveWaiters = []
       saving = false
@@ -279,7 +269,7 @@ export function openPaperSync(
     const versionOfSnapshot = version
     const snapshot = client.stored()
     void store
-      .save(docId, tabId, snapshot)
+      .save(localDocId, tabId, snapshot)
       .then(
         () => {
           durableVersion = versionOfSnapshot
@@ -323,23 +313,36 @@ export function openPaperSync(
     ...(sent.basedOn === undefined ? {} : { basedOn: sent.basedOn }),
   })
 
+  const send = (
+    sent: ReturnType<PaperClient["prepare"]>,
+    requestOptions: { refresh: false; keepalive?: boolean }
+  ) =>
+    provenance
+      ? command(
+          queryClient,
+          "paper.nativeSync",
+          { ...body(sent), writer: NATIVE_WRITER, provenance },
+          requestOptions
+        )
+      : command(queryClient, "paper.sync", body(sent), requestOptions)
+
   const exchange = async () => {
     const live = client!
     const sent = live.prepare()
     const covered = journalCheckpoint()
     void save()
-    const output = await command(queryClient, "paper.sync", body(sent), {
+    const output = await send(sent, {
       refresh: false,
     })
     const receipt = live.receive(sent, replyOf(output))
-    if (!receipt.failed && !receipt.stale && !live.hasPending())
-      acceptedVersion = version
+    if (receipt.failed) return receipt
+    if (!receipt.stale && !live.hasPending()) acceptedVersion = version
     if (receipt.reset) generation += 1
     ready = true
     replied = true
     forgotten = false
     void save()
-    if (journal && !receipt.failed && !receipt.stale && !receipt.reset)
+    if (journal && !receipt.stale && !receipt.reset)
       for (const { id, seq } of covered)
         markJournal(noteJournal(journal, id, "server", seq))
     return receipt
@@ -382,7 +385,7 @@ export function openPaperSync(
       if (isRefusal(error)) {
         if (isGoneLetter(error) && !client.hasPending()) {
           forgotten = true
-          void store.removeDoc(docId).catch(() => {})
+          void store.removeDoc(localDocId).catch(() => {})
         }
         setStatus("refused")
       } else if (error instanceof Contended) {
@@ -433,7 +436,7 @@ export function openPaperSync(
     await save()
     if (!localFailed) {
       for (const orphan of adopted) {
-        await store.remove(docId, orphan.tabId).catch(() => {})
+        await store.remove(localDocId, orphan.tabId).catch(() => {})
       }
     }
     if (adopted.length > 0 && !failed && client.hasPending()) schedule()
@@ -462,11 +465,15 @@ export function openPaperSync(
     if (!client) return
     void save()
     if (inFlight || !client.hasPending()) return
-    const payload = body(client.prepare())
+    const sent = client.prepare()
+    const payload = {
+      ...body(sent),
+      ...(provenance ? { writer: NATIVE_WRITER, provenance } : {}),
+    }
     if (JSON.stringify(payload).length > KEEPALIVE_LIMIT) return
     if (payload.update === lastKeepalive) return
     lastKeepalive = payload.update
-    void command(queryClient, "paper.sync", payload, {
+    void send(sent, {
       refresh: false,
       keepalive: true,
     }).catch(() => {})
@@ -481,7 +488,12 @@ export function openPaperSync(
       { contentVersion?: number } | undefined
     if (
       JSON.stringify(event.query.queryKey) ===
-        JSON.stringify(queryKey({ query: "paper.get", input: { docId } })) &&
+        JSON.stringify(
+          queryKey({
+            query: "paper.get",
+            input: { docId, writer: NATIVE_WRITER },
+          })
+        ) &&
       typeof data?.contentVersion === "number"
     ) {
       api.noteRevision(data.contentVersion)
@@ -536,35 +548,64 @@ export function openPaperSync(
   }
 
   void (async () => {
-    if (!tabId) tabId = await tabIdentity(docId)
+    if (!tabId) tabId = await tabIdentity(localDocId)
     if (destroyed) return
-    releaseLock = holdTabLock(docId, tabId)
-    const loaded = await store
-      .load(docId, tabId)
-      .catch(() => ({ own: null, orphans: [] }))
+    releaseLock = holdTabLock(localDocId, tabId)
+    if (
+      provenance &&
+      (await legacyRecoveryPending(docId, tabId, journal, options.legacyStore))
+    ) {
+      setStatus("stuck")
+      return
+    }
+    const loaded = await store.load(localDocId, tabId)
     if (destroyed) return
+    const allLocal = [
+      loaded.own,
+      ...loaded.orphans.map(({ stored }) => stored),
+    ].filter((stored): stored is Stored => stored !== null)
+    if (
+      allLocal.some(
+        (stored) => !sameNativeProvenance(stored.provenance, provenance)
+      )
+    ) {
+      setStatus("stuck")
+      return
+    }
     const lead = loaded.own ?? loaded.orphans[0]?.stored ?? null
     const rest = loaded.own ? loaded.orphans : loaded.orphans.slice(1)
     const held = await heldLocks()
     canClearRecovered = held !== null
     recoveredJournals = journal
-      ? recoverJournals(journal, docId).filter(
+      ? recoverJournals(journal, localDocId).filter(
           ({ id }) =>
             id === journalId() || held === null || !held.has(`paper-sync:${id}`)
         )
       : []
+    for (const recovered of recoveredJournals) {
+      if (
+        !recovered.readable ||
+        recovered.states.some(
+          (stored) => !sameNativeProvenance(stored.provenance, provenance)
+        )
+      )
+        blockedJournals.add(recovered.id)
+    }
+    const compatibleJournals = recoveredJournals.filter(
+      ({ id }) => !blockedJournals.has(id)
+    )
     const basis =
-      lead ?? recoveredJournals.flatMap(({ states }) => states)[0] ?? null
+      lead ?? compatibleJournals.flatMap(({ states }) => states)[0] ?? null
     const recovered = mergeJournal(
       basis,
-      recoveredJournals.flatMap(({ states }) =>
+      compatibleJournals.flatMap(({ states }) =>
         states
           .filter(({ epoch }) => epoch === basis?.epoch)
           .map(({ server, pending }) => mergedUpdate([server, pending]))
       )
     )
-    client = openPaperClient(recovered)
-    for (const { id, states } of recoveredJournals) {
+    client = openPaperClient(recovered, { provenance })
+    for (const { id, states } of compatibleJournals) {
       for (const stored of states) {
         if (stored.epoch === client.epoch) continue
         const result = client.adopt(stored)
@@ -582,16 +623,16 @@ export function openPaperSync(
       if (change === "reset") generation += 1
       emit()
     })
-    void store.prune(docId, timers.now()).catch(() => {})
+    void store.prune(localDocId, timers.now()).catch(() => {})
     if (!loaded.own && loaded.orphans.length > 0) {
       await save()
       if (!localFailed) {
-        await store.remove(docId, loaded.orphans[0]!.tabId).catch(() => {})
+        await store.remove(localDocId, loaded.orphans[0]!.tabId).catch(() => {})
       }
     }
     emit()
     await run()
-  })()
+  })().catch(() => setStatus("stuck"))
 
   return api
 }
@@ -601,40 +642,50 @@ type Held = { sync: PaperSync; users: number }
 const held = new Map<string, Held>()
 const watchers = new Set<() => void>()
 
-function acquire(docId: PaperId, queryClient: QueryClient) {
-  const known = held.get(docId)
+function acquire(
+  docId: PaperId,
+  queryClient: QueryClient,
+  provenance?: NativeProvenance
+) {
+  const key = provenance ? `native:${docId}` : docId
+  const known = held.get(key)
   if (known) {
     known.users += 1
     return
   }
-  held.set(docId, { sync: openPaperSync(docId, queryClient), users: 1 })
+  held.set(key, {
+    sync: openPaperSync(docId, queryClient, { provenance }),
+    users: 1,
+  })
   for (const watcher of [...watchers]) watcher()
 }
 
-function release(docId: PaperId) {
+function release(docId: PaperId, provenance?: NativeProvenance) {
+  const key = provenance ? `native:${docId}` : docId
   queueMicrotask(() => {
-    const known = held.get(docId)
+    const known = held.get(key)
     if (!known) return
     known.users -= 1
     if (known.users > 0) return
     known.sync.destroy()
-    held.delete(docId)
+    held.delete(key)
     for (const watcher of [...watchers]) watcher()
   })
 }
 
-export function usePaperSync(docId: PaperId) {
+export function usePaperSync(docId: PaperId, provenance?: NativeProvenance) {
+  const key = provenance ? `native:${docId}` : docId
   const queryClient = useQueryClient()
   const sync = useSyncExternalStore(
     (listener) => {
       watchers.add(listener)
-      acquire(docId, queryClient)
+      acquire(docId, queryClient, provenance)
       return () => {
         watchers.delete(listener)
-        release(docId)
+        release(docId, provenance)
       }
     },
-    () => held.get(docId)?.sync ?? null,
+    () => held.get(key)?.sync ?? null,
     () => null
   )
   const status = useSyncExternalStore(

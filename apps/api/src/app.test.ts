@@ -91,6 +91,26 @@ describe("request body limit", () => {
 })
 
 describe("CORS", () => {
+  it("admits the native Paper writer manifest from the web origin", async () => {
+    const api = createApp({ webOrigins: ["https://opencv.me"] })
+    const res = await api.request("/api/paper", {
+      method: "OPTIONS",
+      headers: {
+        Origin: "https://opencv.me",
+        "Access-Control-Request-Method": "GET",
+        "Access-Control-Request-Headers": "x-paper-writer",
+      },
+    })
+    expect(res.status).toBe(204)
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(
+      "https://opencv.me"
+    )
+    expect(
+      res.headers.get("Access-Control-Allow-Headers")?.toLowerCase().split(",")
+    ).toContain("x-paper-writer")
+    expect(res.headers.get("Access-Control-Allow-Credentials")).toBe("true")
+  })
+
   it("lets the configured web origin read the health response", async () => {
     const api = createApp({ webOrigins: ["https://opencv.me"] })
 

@@ -13,6 +13,7 @@ import type { PaperDocument } from "@workspace/domain"
 import {
   FRAGMENT,
   letterSchema,
+  nativeLetterSchema,
   type ClientChange,
   type PaperClient,
 } from "@workspace/paper-crdt"
@@ -53,6 +54,7 @@ type Props = {
   client: PaperClient
   generation: number
   label: string
+  editable?: boolean
   onDocument: (document: PaperDocument | null, change: ClientChange) => void
   onSelectedBlocks: (ids: string[]) => void
   handleRef?: Ref<PaperEditorHandle>
@@ -66,15 +68,16 @@ const LEAF_TEXT = "\ufffc"
 function useLetterEditor(
   ydoc: PaperClient["ydoc"],
   collaboration: ReturnType<typeof CollaborationExtension>,
-  generation: number
+  generation: number,
+  native: boolean
 ) {
   return useCreateBlockNote(
     {
-      schema: letterSchema,
+      schema: native ? nativeLetterSchema : letterSchema,
       trailingBlock: false,
       extensions: [collaboration, letterRulesExtension],
     },
-    [ydoc, generation]
+    [ydoc, generation, native]
   )
 }
 
@@ -91,6 +94,7 @@ function LetterPaperEngine({
   client,
   generation,
   label,
+  editable = true,
   onDocument,
   onSelectedBlocks,
   handleRef,
@@ -105,7 +109,8 @@ function LetterPaperEngine({
       }),
     [ydoc]
   )
-  const editor = useLetterEditor(ydoc, collaboration, generation)
+  const native = client.provenance !== undefined
+  const editor = useLetterEditor(ydoc, collaboration, generation, native)
   const [linkCount, requestLink] = useReducer((count: number) => count + 1, 0)
   const linkPending = useRef(false)
   const takeLink = useCallback(() => {
@@ -195,6 +200,7 @@ function LetterPaperEngine({
     <BlockNoteViewRaw
       editor={editor}
       theme="light"
+      editable={editable}
       aria-label={label}
       data-slot="letter-block-editor"
       formattingToolbar={false}
@@ -207,6 +213,24 @@ function LetterPaperEngine({
       onFocusCapture={focusIn}
       onBlurCapture={focusOut}
       onKeyDownCapture={(event) => {
+        if (!editable || event.nativeEvent.isComposing) return
+        if ((event.metaKey || event.ctrlKey) && !event.altKey) {
+          const key = event.key.toLowerCase()
+          if (key === "u" && !event.shiftKey) {
+            event.preventDefault()
+            event.stopPropagation()
+            if (native) editor._tiptapEditor.commands.toggleMark("underline")
+            return
+          }
+          if (key === "z" || (key === "y" && !event.shiftKey)) {
+            event.preventDefault()
+            event.stopPropagation()
+            bindYUndo(editor)
+            if (event.shiftKey || key === "y") editor.redo()
+            else editor.undo()
+            return
+          }
+        }
         if (
           (event.metaKey || event.ctrlKey) &&
           !event.altKey &&

@@ -1,0 +1,13 @@
+{
+  "id": "paper-coach-focus",
+  "file": "scripts/paper-coach-focus.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-coach-focus.mjs",
+    "export": "detectLetterCoachFocus"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "d3f444cc60c1359c142da54719bdba78b1cb6398",
+    "path": "apps/web/src/features/paper/paper-letter.tsx"
+  }
+}

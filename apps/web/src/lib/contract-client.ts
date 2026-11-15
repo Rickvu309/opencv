@@ -29,6 +29,7 @@ import { endpoints } from "@/lib/requests.ts"
 
 import { apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
+import { paperCommandInput } from "./paper-command-input.ts"
 
 export function queryKey(ref: QueryRef): readonly unknown[] {
   return ref.input ? [ref.query, ref.input] : [ref.query]
@@ -89,7 +90,7 @@ export async function runContractCommand<N extends ContractCommandName>(
   >(`/api/commands/${name}`, {
     method: "POST",
     body: JSON.stringify({
-      input,
+      input: paperCommandInput(name, input),
       ...((commands[name] as AnyCommandEntry).idempotency === "none"
         ? {}
         : { idempotencyKey: crypto.randomUUID() }),

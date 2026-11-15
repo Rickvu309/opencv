@@ -1,3 +1,4 @@
+import { nativeProvenanceSchema } from "@workspace/domain"
 import {
   absorbUpdate,
   emptyUpdate,
@@ -14,24 +15,30 @@ export const JOURNAL_CHARS = 48_000
 
 export type JournalResult = "kept" | "quota" | "denied"
 
-const recordSchema = z.object({
-  entries: z.array(
-    z.object({
-      seq: z.number().int().nonnegative(),
-      update: z.string(),
-      basis: z
+const recordSchema = z
+  .object({
+    entries: z.array(
+      z
         .object({
-          epoch: z.number().int().nonnegative(),
-          server: z.string(),
-          revision: z.number().int().nonnegative().optional(),
+          seq: z.number().int().nonnegative(),
+          update: z.string(),
+          basis: z
+            .object({
+              provenance: nativeProvenanceSchema.optional(),
+              epoch: z.number().int().nonnegative(),
+              server: z.string(),
+              revision: z.number().int().nonnegative().optional(),
+            })
+            .strict()
+            .optional(),
         })
-        .optional(),
-    })
-  ),
-  next: z.number().int().nonnegative(),
-  idbThrough: z.number().int().nonnegative(),
-  serverThrough: z.number().int().nonnegative(),
-})
+        .strict()
+    ),
+    next: z.number().int().nonnegative(),
+    idbThrough: z.number().int().nonnegative(),
+    serverThrough: z.number().int().nonnegative(),
+  })
+  .strict()
 
 type Record = z.infer<typeof recordSchema>
 
@@ -44,22 +51,22 @@ export function recoverJournals(storage: Storage, docId: string) {
     seq: number
     updates: Uint8Array[]
     states: Stored[]
+    readable: boolean
   }[] = []
   const prefix = `${keyOf(docId)}:`
-  try {
-    for (let at = 0; at < storage.length; at += 1) {
-      const key = storage.key(at)
-      if (!key?.startsWith(prefix)) continue
-      const id = key.slice("paper-sync-journal:".length)
-      journals.push({
-        id,
-        seq: journalTip(storage, id),
-        updates: journalUpdates(storage, id),
-        states: journalStates(storage, id),
-      })
-    }
-  } catch {
-    return journals
+  for (let at = 0; at < storage.length; at += 1) {
+    const key = storage.key(at)
+    if (!key?.startsWith(prefix)) continue
+    const id = key.slice("paper-sync-journal:".length)
+    const record = read(storage, id)
+    const states = journalStates(storage, id)
+    journals.push({
+      id,
+      readable: record !== "denied" && states.length === record.entries.length,
+      seq: journalTip(storage, id),
+      updates: journalUpdates(storage, id),
+      states,
+    })
   }
   return journals
 }
@@ -101,9 +108,9 @@ function parse(raw: string | null): Record | "denied" {
   if (!raw) return empty()
   try {
     const value = recordSchema.safeParse(JSON.parse(raw))
-    return value.success ? value.data : empty()
+    return value.success ? value.data : "denied"
   } catch {
-    return empty()
+    return "denied"
   }
 }
 
@@ -128,10 +135,13 @@ function bound(record: Record): Record {
   const chars = JSON.stringify(record).length
   if (record.entries.length <= JOURNAL_LIMIT && chars <= JOURNAL_CHARS)
     return record
-  const groups = new Map<number | undefined, Record["entries"]>()
+  const groups = new Map<string, Record["entries"]>()
   for (const entry of record.entries) {
-    const epoch = entry.basis?.epoch
-    groups.set(epoch, [...(groups.get(epoch) ?? []), entry])
+    const identity = JSON.stringify([
+      entry.basis?.epoch,
+      entry.basis?.provenance,
+    ])
+    groups.set(identity, [...(groups.get(identity) ?? []), entry])
   }
   try {
     const entries = [...groups.values()].map((group) => {
@@ -179,6 +189,7 @@ export function appendJournal(
         ...(stored
           ? {
               basis: {
+                ...(stored.provenance ? { provenance: stored.provenance } : {}),
                 epoch: stored.epoch,
                 server: toBase64(stored.server),
                 ...(stored.revision === undefined
@@ -223,6 +234,7 @@ function journalStates(storage: Storage, docId: string): Stored[] {
       const state = mergeJournal(
         basis
           ? {
+              ...(basis.provenance ? { provenance: basis.provenance } : {}),
               epoch: basis.epoch,
               server: fromBase64(basis.server),
               pending: emptyUpdate(),
@@ -276,6 +288,7 @@ export function mergeJournal(
   const pending =
     updateSince(doc, stateVectorOf(loadYDoc(server, []))) ?? emptyUpdate()
   return {
+    ...(stored?.provenance ? { provenance: stored.provenance } : {}),
     epoch: stored?.epoch ?? 0,
     server: stored?.server ?? emptyUpdate(),
     pending,

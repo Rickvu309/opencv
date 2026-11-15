@@ -78,6 +78,6 @@ export function registerDuplicate(
       }),
     },
     (input, actor, ahead) =>
-      duplicatePaper(actor, input.docId, duplicatePlan(ahead))
+      duplicatePaper(actor, input.docId, duplicatePlan(ahead), input.writer)
   )
 }

@@ -15,23 +15,34 @@ import {
 import { FRAGMENT, META } from "./names.js"
 import { repairBlocks } from "./blocks-repair.js"
 import { groupOf, writeFragment } from "./reconcile.js"
-import { paperSchema, type PaperEditor } from "./schema.js"
+import { nativePaperSchema } from "./schema.js"
 import { alignSkillItems } from "./skills.js"
 
-let headless: PaperEditor | null = null
+let headless: ReturnType<typeof createHeadless> | null = null
 
-function editor() {
-  headless ??= BlockNoteEditor.create({ schema: paperSchema })
+function createHeadless() {
+  return BlockNoteEditor.create({ schema: nativePaperSchema })
+}
+
+function editor(_version: 3 | 4 = 3) {
+  headless ??= createHeadless()
   return headless
 }
 
-export function headlessEditor() {
-  return editor()
+export function headlessEditor(version: 3 | 4 = 3) {
+  return editor(version)
 }
 
 function kindOf(yDoc: Y.Doc): PaperDocument["kind"] | null {
   const kind = yDoc.getMap<string>(META).get("kind")
   return kind === "cv" || kind === "letter" ? kind : null
+}
+
+export function documentVersionOf(yDoc: Y.Doc): 3 | 4 | null {
+  const meta = yDoc.getMap<string>(META)
+  const version = meta.get("version")
+  if (version === undefined || version === "3") return 3
+  return version === "4" && meta.get("schemaRevision") === "1" ? 4 : null
 }
 
 function diffInto(
@@ -44,7 +55,7 @@ function diffInto(
   const fragment = yDoc.getXmlFragment(FRAGMENT)
   const root = fragment.length === 1 ? groupOf(fragment) : null
   if (root) alignSkillItems(root, blocks)
-  const node = _blocksToProsemirrorNode(editor(), blocks)
+  const node = _blocksToProsemirrorNode(editor(target.version), blocks)
   yDoc.transact(() => writeFragment(yDoc, fragment, node, moved), origin)
 }
 
@@ -54,8 +65,72 @@ export function seedYDoc(document: PaperDocument): Uint8Array {
   }
   const yDoc = new Y.Doc()
   yDoc.getMap<string>(META).set("kind", document.kind)
+  yDoc.getMap<string>(META).set("version", String(document.version))
+  if (document.version === 4)
+    yDoc
+      .getMap<string>(META)
+      .set("schemaRevision", String(document.schemaRevision))
   diffInto(yDoc, document, "seed", new Set())
   return Y.encodeStateAsUpdate(yDoc)
+}
+
+function nativeStructureRefusal(fragment: Y.XmlFragment): string | null {
+  const schema = editor(4).pmSchema
+  const marks = new Set(["bold", "italic", "underline", "link"])
+  const nodes = new Set([
+    "blockGroup",
+    "blockContainer",
+    "paragraph",
+    "heading",
+    "bulletListItem",
+    "numberedListItem",
+    "divider",
+    "paperHeader",
+    "paperSection",
+    "paperExperience",
+    "paperEducation",
+    "paperSkills",
+    "paperSkillItem",
+    "hardBreak",
+  ])
+  const visit = (parent: Y.XmlFragment | Y.XmlElement): string | null => {
+    for (const child of parent.toArray()) {
+      if (child instanceof Y.XmlText) {
+        for (const delta of child.toDelta() as {
+          insert?: unknown
+          attributes?: Record<string, unknown>
+        }[]) {
+          if (typeof delta.insert !== "string")
+            return "Unsupported native inline content"
+          for (const [name, attrs] of Object.entries(delta.attributes ?? {})) {
+            const mark = schema.marks[name]
+            if (
+              !marks.has(name) ||
+              !mark ||
+              !attrs ||
+              typeof attrs !== "object" ||
+              Array.isArray(attrs)
+            )
+              return "Unsupported native text mark"
+            const allowed = mark.spec.attrs ?? {}
+            if (Object.keys(attrs).some((key) => !(key in allowed)))
+              return "Unsupported native mark attribute"
+          }
+        }
+      } else if (child instanceof Y.XmlElement) {
+        const node = schema.nodes[child.nodeName]
+        if (!nodes.has(child.nodeName) || !node)
+          return "Unsupported native node"
+        const allowed = node.spec.attrs ?? {}
+        if (Object.keys(child.getAttributes()).some((key) => !(key in allowed)))
+          return "Unsupported native node attribute"
+        const failure = visit(child)
+        if (failure) return failure
+      } else return "Unsupported native structure"
+    }
+    return null
+  }
+  return visit(fragment)
 }
 
 export function materialize(source: Uint8Array | Y.Doc): PaperResult {
@@ -74,7 +149,16 @@ export function materialize(source: Uint8Array | Y.Doc): PaperResult {
       reason: `The document holds ${fragment.length} roots, not one`,
     }
   }
-  return fromEditorBlocks(kind, yXmlFragmentToBlocks(editor(), fragment))
+  const version = documentVersionOf(doc)
+  if (version === null)
+    return { ok: false, reason: "Unsupported document schema" }
+  const unsupported = version === 4 ? nativeStructureRefusal(fragment) : null
+  if (unsupported) return { ok: false, reason: unsupported }
+  return fromEditorBlocks(
+    kind,
+    yXmlFragmentToBlocks(editor(version), fragment),
+    version
+  )
 }
 
 export function writeDocument(
@@ -83,7 +167,10 @@ export function writeDocument(
   origin: string,
   moved: ReadonlySet<string> = new Set()
 ): Uint8Array | null {
-  if (kindOf(yDoc) !== target.kind) {
+  if (
+    kindOf(yDoc) !== target.kind ||
+    documentVersionOf(yDoc) !== target.version
+  ) {
     throw new Error("The target is not the kind of paper this document holds")
   }
   const updates: Uint8Array[] = []
@@ -115,12 +202,17 @@ export function materializeCandidate(yDoc: Y.Doc): Candidate {
       reason: `The document holds ${fragment.length} roots, not one`,
     }
   }
-  const read = yXmlFragmentToBlocks(editor(), fragment)
+  const version = documentVersionOf(yDoc)
+  if (version === null)
+    return { ok: false, reason: "Unsupported document schema" }
+  const unsupported = version === 4 ? nativeStructureRefusal(fragment) : null
+  if (unsupported) return { ok: false, reason: unsupported }
+  const read = yXmlFragmentToBlocks(editor(version), fragment)
   const fixed = repairBlocks(kind, read as never)
   try {
     return {
       ok: true,
-      candidate: candidateOf(kind, fixed.blocks as never),
+      candidate: candidateOf(kind, fixed.blocks as never, version),
       repaired: fixed.repaired,
     }
   } catch (error) {

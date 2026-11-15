@@ -105,6 +105,8 @@ const TOOL_COPY = {
     read: "Checked your Paper's keywords",
   },
   "paper.list": { label: "Look at your Paper", read: "Looked at your Paper" },
+  "paper.migrateNative": { label: "Enable Letter underline" },
+  "paper.nativeSync": { label: "Save your Paper" },
   "paper.outline": {
     label: "Read your Paper outline",
     read: "Read your Paper outline",

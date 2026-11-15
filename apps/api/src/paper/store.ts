@@ -13,6 +13,7 @@ import {
   parsePaperId,
   parseUserId,
   type PaperDocument,
+  type NativeWriter,
   type Actor,
   type FileId,
   type PaperId,
@@ -26,6 +27,7 @@ import { getDb } from "../db/context.js"
 import { files, paperDocs, paperShares } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
+import { admitDocument } from "./native-admission.js"
 import { listPackagePapers } from "./package-list.js"
 import {
   deleteWordPage,
@@ -47,7 +49,7 @@ import {
   dropServerReleasedPhoto,
   referencedPhotoFileIds,
 } from "./photo-references.js"
-import { toPaper, tryReadStoredPaper } from "./read-paper.js"
+import { readStoredPaper, toPaper, tryReadStoredPaper } from "./read-paper.js"
 
 export const IMPORT_FILE_CAP = 8_000_000
 export const IMPORT_SIZE_MESSAGE = "File must be 8 MB or smaller."
@@ -72,8 +74,14 @@ async function ownedPaperOrNull(userId: UserId, docId: PaperId) {
   return rows[0] ?? null
 }
 
-export async function ownedPaper(userId: UserId, docId: PaperId) {
-  return (await ownedPaperOrNull(userId, docId)) ?? documentNotFound()
+export async function ownedPaper(
+  userId: UserId,
+  docId: PaperId,
+  writer?: NativeWriter
+) {
+  const row = (await ownedPaperOrNull(userId, docId)) ?? documentNotFound()
+  admitDocument(readStoredPaper(row), writer)
+  return row
 }
 
 function v3Of(kind: PaperStoredKind, value: unknown): PaperDocument | null {
@@ -95,7 +103,8 @@ function sharedPhotoRef(document: unknown): string | null {
 export async function listPapers(
   userId: UserId,
   query?: string,
-  kind?: PaperStoredKind
+  kind?: PaperStoredKind,
+  writer?: NativeWriter
 ) {
   const rows = await getDb()
     .select()
@@ -108,7 +117,7 @@ export async function listPapers(
     .filter((row) => !needle || row.name.toLowerCase().includes(needle))
     .flatMap((row) => {
       const paper = tryReadStoredPaper(row)
-      return paper ? [toPaper(row, paper)] : []
+      return paper ? [toPaper(row, paper, writer)] : []
     })
   const seen = new Set(stored.map((item) => item.id))
   const minted = (await listPackagePapers(userId)).filter(
@@ -134,14 +143,18 @@ export async function createPaper(
     templateId?: string
     document?: unknown
     paper?: PaperDocument
-  }
+  },
+  writer?: NativeWriter
 ) {
   const now = new Date()
   const id = createId(now.getTime())
   const paper =
-    v3Of(input.kind, input.paper) ??
+    (input.paper?.version === 4
+      ? paperDocumentSchema.parse(input.paper)
+      : v3Of(input.kind, input.paper)) ??
     v3Of(input.kind, input.document) ??
     blankPaper(input.kind)
+  admitDocument(paper, writer)
   await getDb()
     .insert(paperDocs)
     .values({
@@ -157,22 +170,32 @@ export async function createPaper(
       updatedAt: now,
     })
   importParsers.onInsert?.()
-  return toPaper(await ownedPaper(actor.userId, parsePaperId(id)))
+  return toPaper(
+    await ownedPaper(actor.userId, parsePaperId(id), writer),
+    undefined,
+    writer
+  )
 }
 
-export async function renamePaper(actor: Actor, docId: PaperId, name: string) {
+export async function renamePaper(
+  actor: Actor,
+  docId: PaperId,
+  name: string,
+  writer?: NativeWriter
+) {
   const current = await ownedPaperOrNull(actor.userId, docId)
   if (!current)
     return (
       (await renameWordPage(actor.userId, docId, name)) ?? documentNotFound()
     )
+  admitDocument(readStoredPaper(current), writer)
   const updatedAt = new Date()
   await getDb()
     .update(paperDocs)
     .set({ name, updatedAt })
     .where(eq(paperDocs.id, current.id))
   return {
-    ...toPaper({ ...current, name, updatedAt }),
+    ...toPaper({ ...current, name, updatedAt }, undefined, writer),
     previousName: current.name,
   }
 }
@@ -207,20 +230,25 @@ export async function planDuplicate(
 export async function duplicatePaper(
   actor: Actor,
   docId: PaperId,
-  plan: DuplicatePlan
+  plan: DuplicatePlan,
+  writer?: NativeWriter
 ) {
   if (plan.kind === "missing") return documentNotFound()
   if (plan.kind === "word")
     return (
       (await publishWordPageCopy(actor.userId, plan.copy)) ?? documentNotFound()
     )
-  const current = await ownedPaper(actor.userId, docId)
-  return createPaper(actor, {
-    kind: current.kind,
-    name: `Copy of ${current.name}`.slice(0, 200),
-    templateId: current.templateId ?? undefined,
-    paper: current.crdtDocument as unknown as PaperDocument,
-  })
+  const current = await ownedPaper(actor.userId, docId, writer)
+  return createPaper(
+    actor,
+    {
+      kind: current.kind,
+      name: `Copy of ${current.name}`.slice(0, 200),
+      templateId: current.templateId ?? undefined,
+      paper: readStoredPaper(current),
+    },
+    writer
+  )
 }
 
 export async function deletePaper(actor: Actor, docId: PaperId) {
@@ -254,18 +282,27 @@ export async function setPaperTemplate(
 export async function setPaperStatus(
   actor: Actor,
   docId: PaperId,
-  status: "draft" | "ready" | "published"
+  status: "draft" | "ready" | "published",
+  writer?: NativeWriter
 ) {
-  await ownedPaper(actor.userId, docId)
+  await ownedPaper(actor.userId, docId, writer)
   await getDb()
     .update(paperDocs)
     .set({ status, updatedAt: new Date() })
     .where(eq(paperDocs.id, docId))
-  return toPaper(await ownedPaper(actor.userId, docId))
+  return toPaper(
+    await ownedPaper(actor.userId, docId, writer),
+    undefined,
+    writer
+  )
 }
 
-export async function sharePaper(actor: Actor, docId: PaperId) {
-  await ownedPaper(actor.userId, docId)
+export async function sharePaper(
+  actor: Actor,
+  docId: PaperId,
+  writer?: NativeWriter
+) {
+  await ownedPaper(actor.userId, docId, writer)
   const existing = await getDb()
     .select()
     .from(paperShares)
@@ -277,8 +314,12 @@ export async function sharePaper(actor: Actor, docId: PaperId) {
   return { docId, token }
 }
 
-export async function unsharePaper(actor: Actor, docId: PaperId) {
-  await ownedPaper(actor.userId, docId)
+export async function unsharePaper(
+  actor: Actor,
+  docId: PaperId,
+  writer?: NativeWriter
+) {
+  await ownedPaper(actor.userId, docId, writer)
   await getDb().delete(paperShares).where(eq(paperShares.docId, docId))
   return { docId }
 }
@@ -312,8 +353,12 @@ export function coachPagesFromStoredJson(storedJsonChars: number): 1 | 2 {
   return storedJsonChars > COACH_TWO_PAGES_PAST_STORED_JSON_CHARS ? 2 : 1
 }
 
-export async function pageCount(actor: Actor, docId: PaperId) {
-  const doc = await ownedPaper(actor.userId, docId)
+export async function pageCount(
+  actor: Actor,
+  docId: PaperId,
+  writer?: NativeWriter
+) {
+  const doc = await ownedPaper(actor.userId, docId, writer)
   return {
     docId,
     pages: coachPagesFromStoredJson(JSON.stringify(doc.crdtDocument).length),
@@ -404,7 +449,7 @@ export async function attachPhoto(
   })
 }
 
-export async function readShared(token: string) {
+export async function readShared(token: string, writer?: NativeWriter) {
   const rows = await getDb()
     .select({ doc: paperDocs })
     .from(paperShares)
@@ -414,7 +459,11 @@ export async function readShared(token: string) {
   const row = rows[0]
   if (!row)
     throw new CommandError(ERROR_CODES.NOT_FOUND, "Share link not found")
-  const { isFavorite: _isFavorite, ...shared } = toPaper(row.doc)
+  const { isFavorite: _isFavorite, ...shared } = toPaper(
+    row.doc,
+    undefined,
+    writer
+  )
   void _isFavorite
   return shared
 }

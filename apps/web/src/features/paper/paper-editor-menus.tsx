@@ -22,6 +22,7 @@ import {
   ChevronDown,
   GripVertical,
   Italic,
+  Underline,
   Link as LinkIcon,
   MessageCircle,
   Plus,
@@ -218,7 +219,7 @@ function SelectionFormat() {
     document.activeElement?.closest("[data-cv-field]") != null,
     nodeName
   )
-  const toggle = (name: "bold" | "italic") => {
+  const toggle = (name: "bold" | "italic" | "underline") => {
     editor.toggleStyles({ [name]: true } as never)
     editor.focus()
   }
@@ -302,6 +303,19 @@ function SelectionFormat() {
       >
         <Italic className="size-3.5" aria-hidden="true" />
       </Button>
+      {"underline" in editor.schema.styleSchema ? (
+        <Button
+          type="button"
+          variant={styles.underline ? "secondary" : "ghost"}
+          size="sm"
+          aria-label="Underline"
+          aria-pressed={Boolean(styles.underline)}
+          className="size-11 p-0 md:size-6"
+          onClick={() => toggle("underline")}
+        >
+          <Underline className="size-3.5" aria-hidden="true" />
+        </Button>
+      ) : null}
       {cv ? (
         <span aria-hidden="true" className="inline-block w-[22px]" />
       ) : null}

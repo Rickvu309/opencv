@@ -8,29 +8,26 @@ import {
 import { createPortal } from "react-dom"
 import {
   cvPrintModel,
+  paperDocumentSchema,
   type CvDocument as CvDocumentData,
   type CvPaper,
   type LetterPaper,
 } from "@workspace/domain"
 
-import { LetterPrint } from "./paper-letter-print.tsx"
+import { LetterPrint, LetterPrintView } from "./paper-letter-print.tsx"
 import { CvDocument } from "./cv-print-document.tsx"
 import { CvPhotoFrame } from "./cv-templates/cv-parts.tsx"
 import { quietPaperChrome } from "./paper-print.ts"
 import { printLayout } from "./paper-templates.ts"
 
 function asCvPaper(source: unknown): CvPaper | null {
-  if (!source || typeof source !== "object") return null
-  const record = source as { version?: unknown; kind?: unknown }
-  if (record.version !== 3 || record.kind !== "cv") return null
-  return source as CvPaper
+  const result = paperDocumentSchema.safeParse(source)
+  return result.success && result.data.kind === "cv" ? result.data : null
 }
 
 function asLetterPaper(source: unknown): LetterPaper | null {
-  if (!source || typeof source !== "object") return null
-  const record = source as { version?: unknown; kind?: unknown }
-  if (record.version !== 3 || record.kind !== "letter") return null
-  return source as LetterPaper
+  const result = paperDocumentSchema.safeParse(source)
+  return result.success && result.data.kind === "letter" ? result.data : null
 }
 
 export function previewOf(
@@ -107,16 +104,21 @@ export function PaperPrintMeasure({
   measureRef: RefObject<HTMLDivElement | null>
 }) {
   const preview = previewOf(source, templateId)
+  const letter = asLetterPaper(source)
   const { hostRef, mount } = useMeasureMount(measureRef)
   useQuietPaper(measureRef)
-  if (!preview) return null
+  if (!preview && !letter) return null
   return (
     <div ref={hostRef} aria-hidden="true" className="paper-print-measure">
       {mount
         ? createPortal(
-            <CvPhotoFrame value={{ docId }}>
-              <CvDocument data={preview} onChange={() => undefined} />
-            </CvPhotoFrame>,
+            letter ? (
+              <LetterPrintView document={letter} />
+            ) : preview ? (
+              <CvPhotoFrame value={{ docId }}>
+                <CvDocument data={preview} onChange={() => undefined} />
+              </CvPhotoFrame>
+            ) : null,
             mount
           )
         : null}

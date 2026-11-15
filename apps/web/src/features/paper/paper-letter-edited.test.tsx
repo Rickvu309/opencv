@@ -1,8 +1,20 @@
-import { paperDocumentSchema, type PaperView } from "@workspace/domain"
-import { SERVER_ORIGIN, writeDocument } from "@workspace/paper-crdt"
+import {
+  nativePaperFromLegacy,
+  nativeProvenance,
+  legacyPaperDocumentSchema,
+  paperDocumentSchema,
+  type PaperView,
+} from "@workspace/domain"
+import {
+  openPaperClient,
+  seedYDoc,
+  SERVER_ORIGIN,
+  writeDocument,
+} from "@workspace/paper-crdt"
 import { act, cleanup, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 
+import { writingCoachFocus } from "@/lib/writing-coach-focus.ts"
 import { paragraph, seededLetterClient } from "@/test/paper-fixture.ts"
 import { render } from "@/test/render-with-client.tsx"
 
@@ -89,3 +101,38 @@ describe("the Edited label", () => {
     await waitFor(() => expect(edited()).toBe("Edited just now"))
   })
 })
+
+it.each([3, 4] as const)(
+  "keeps the open v%s Letter as Coach focus across navigation and close",
+  async (version) => {
+    const paper =
+      version === 4
+        ? nativePaperFromLegacy(legacyPaperDocumentSchema.parse(letterPaper))
+        : letterPaper
+    const provenance = paper.version === 4 ? nativeProvenance(paper) : undefined
+    const client = openPaperClient(null, { provenance })
+    client.receive(client.prepare(), {
+      ...(provenance ? { provenance } : {}),
+      epoch: 1,
+      revision: 1,
+      reset: false,
+      stale: false,
+      update: seedYDoc(paper),
+      stateVector: new Uint8Array(),
+    })
+    fixture.client = client
+    const first = { ...letter, paper }
+    const view = render(
+      <PaperLetterEditor doc={first} job={null} onBack={() => undefined} />
+    )
+    expect(writingCoachFocus()).toBe(first.id)
+    const second = { ...first, id: "letter-2" }
+    view.rerender(
+      <PaperLetterEditor doc={second} job={null} onBack={() => undefined} />
+    )
+    expect(writingCoachFocus()).toBe(second.id)
+    view.unmount()
+    await waitFor(() => expect(writingCoachFocus()).toBeNull())
+    client.ydoc.destroy()
+  }
+)

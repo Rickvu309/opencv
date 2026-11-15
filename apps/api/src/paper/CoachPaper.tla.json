@@ -20,6 +20,6 @@
     "apps/api/src/paper/commands.ts",
     "apps/api/src/connections/http.ts"
   ],
-  "sync": "f84f0e8f783a63488962725b4234190df4e8dad8",
-  "retiring": "The Paper reading covers the Yjs paper.edit branch, chosen when basedOn is a number in apps/api/src/paper/package-edit.ts. Word pages take the reviewed branch in the same file. The MCP Job reading is live."
+  "sync": "b2fd0ca0b1a47b3a782980ac7fb3694530b0134e",
+  "boundary": "The native numeric-basis approval and selective Undo branch remains live alongside Word. Schema-qualified basis, CRDT admission, merge preservation and races require independent API and browser evidence; the bounded model does not prove them."
 }

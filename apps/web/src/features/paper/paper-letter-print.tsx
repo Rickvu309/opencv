@@ -16,6 +16,7 @@ function Runs({ text }: { text: RichText }) {
         let node = <>{run.text}</>
         if (run.bold) node = <strong>{node}</strong>
         if (run.italic) node = <em>{node}</em>
+        if (run.underline) node = <u>{node}</u>
         if (run.href) node = <a href={run.href}>{node}</a>
         return <Fragment key={index}>{node}</Fragment>
       })}

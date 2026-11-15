@@ -9,6 +9,7 @@ import type {
 } from "./chat-messages.js"
 import type { ChatEntry, ChatEntryPart } from "./chat-messages.js"
 import type { ReversalPlan } from "./registry.js"
+import type { NativeBasis } from "./paper-doc/native.js"
 
 export const coachModeSchema = z.enum(["free", "light", "max"])
 export type CoachMode = z.infer<typeof coachModeSchema>
@@ -178,6 +179,7 @@ export type CoachFocusDoc = {
   status: "draft" | "ready" | "published"
   outline: string
   revision: number | string
+  nativeBasis?: NativeBasis
 }
 
 type CoachExecuted = {

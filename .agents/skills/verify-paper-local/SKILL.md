@@ -23,7 +23,7 @@ Clear journal entries only after both IndexedDB complete and a matching server r
 
 ## Coverage and history
 
-This model covers code scheduled for deletion. `openPaperSync` serves only the old CV and Letter editors (`apps/web/src/features/paper/paper-cv-editor.tsx`, `paper-letter.tsx`), which `apps/web/src/routes/paper-doc.tsx` opens only for an old Yjs row. The Word writing page saves through `paper.canvas` in `apps/web/src/features/paper-page/canvas-save.ts`, which this model does not cover.
+`openPaperSync` serves the native CV and Letter editors (`apps/web/src/features/paper/paper-cv-editor.tsx`, `paper-letter.tsx`). It keeps independent recovery namespaces for legacy v3 and native v4 schema revision1. The Word writing page saves through `paper.canvas` in `apps/web/src/features/paper-page/canvas-save.ts`, which this model does not cover.
 
 `apps/web/src/lib/PaperLocal.tla` models `openPaperSync`, its journal, and `indexedDbStore`. Its action map names the implementation entry points. The approved replacement explicitly separates ordinary pagehide from abrupt kill and names `DurabilityPointD`. It replaces the earlier immediate-kill model under the coordinator's approved rule. The earlier model and the 23 lost cases out of 120 remain prior evidence; this change does not turn them into passes.
 
@@ -54,5 +54,7 @@ The browser evidence must record the observed complete event for the snapshot co
 The model checks two cumulative edits, one document and tab, one transaction in progress, one ordinary close or kill followed by recovery, and one abort. It assumes completed snapshots are not later removed or overwritten by older writes. Prefixes abstract words and do not prove Yjs merge semantics, replacements, epochs, leases, orphan adoption, server idempotency, or multi-tab conflict policy. It checks safety, not eventual saving. Storage availability and delivery to the input subscription are assumed for ordinary lifecycle recovery. Quota denial, eviction, profile deletion, OS crashes, power loss, and browser implementation correctness are outside this model.
 
 ## When code changes
+
+Schema provenance, capability admission, migration races, cross-schema refusal and multiple-tab recovery require the native schema/admission/sync fixtures and browser evidence. The one-tab prefix model does not prove these obligations.
 
 Run `/maintain-formal-verification-skill` after changes to the covered code. Confirm the code, replay, model, and browser evidence agree before recording a new verification point. Keep `ContentStore.tla` unchanged.

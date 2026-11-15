@@ -6,6 +6,7 @@ export { aliveCharacters, lostCharacters, readEdit } from "./inspect.js"
 export type { EditReading } from "./inspect.js"
 export type { HistoryRow } from "./revert.js"
 export {
+  documentVersionOf,
   materialize,
   materializeCandidate,
   seedYDoc,
@@ -42,5 +43,10 @@ export type {
   SyncReply as ClientSyncReply,
 } from "./client.js"
 export { FRAGMENT, META } from "./names.js"
-export { letterSchema, paperSchema } from "./schema.js"
+export {
+  letterSchema,
+  paperSchema,
+  nativeLetterSchema,
+  nativePaperSchema,
+} from "./schema.js"
 export type { PaperEditor } from "./schema.js"

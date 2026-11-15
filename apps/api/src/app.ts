@@ -133,6 +133,7 @@ export function createApp({
       credentials: true,
       allowHeaders: [
         "Content-Type",
+        "X-Paper-Writer",
         "Last-Event-ID",
         "Authorization",
         "MCP-Protocol-Version",

@@ -5,6 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { createElement } from "react"
 import { act, cleanup } from "@testing-library/react"
 
+import { nativePaperDocumentSchema } from "@workspace/domain"
+
 import { endpoints } from "@/lib/requests.ts"
 import { pinTestClock, TEST_NOW } from "@/test/test-clock.ts"
 import { render } from "@/test/render-with-client.tsx"
@@ -146,6 +148,61 @@ describe("print paper", () => {
       .querySelectorAll("[data-paper-print], [data-paper-measure]")
       .forEach((node) => node.remove())
     vi.restoreAllMocks()
+  })
+
+  it("uses the same native mixed marks in the measuring clone and print sheet", () => {
+    const source = nativePaperDocumentSchema.parse({
+      ...printedLetter,
+      version: 4,
+      schemaRevision: 1,
+      blocks: [
+        {
+          id: "p1",
+          type: "paragraph",
+          content: [
+            {
+              text: "Việt é 😀",
+              bold: true,
+              italic: true,
+              underline: true,
+              href: "https://example.com",
+            },
+          ],
+        },
+      ],
+    })
+    const measureRef = { current: null as HTMLDivElement | null }
+    render(
+      createElement(PaperPrintMeasure, { source, templateId: null, measureRef })
+    )
+    render(
+      createElement(PaperPrintSheet, {
+        name: "Native Letter",
+        kind: "letter",
+        source,
+        templateId: null,
+      })
+    )
+    for (const root of [
+      measureRef.current,
+      document.querySelector("[data-paper-print]"),
+    ]) {
+      expect(
+        root?.querySelector("a[href='https://example.com'] u em strong")
+      ).toHaveTextContent("Việt é 😀")
+    }
+  })
+
+  it("refuses future native schema content instead of printing a partial page", () => {
+    render(
+      createElement(PaperPrintSheet, {
+        name: "Future Letter",
+        kind: "letter",
+        source: { ...printedLetter, version: 4, schemaRevision: 2 },
+        templateId: null,
+      })
+    )
+    expect(document.querySelector("[data-paper-print]")).toBeNull()
   })
 
   it("waits to print until the photo decode resolves", async () => {

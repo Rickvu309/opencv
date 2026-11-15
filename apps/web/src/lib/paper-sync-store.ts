@@ -5,7 +5,11 @@ export type Orphan = { readonly tabId: string; readonly stored: Stored }
 export type Loaded = { readonly own: Stored | null; readonly orphans: Orphan[] }
 
 export type SyncStore = {
-  load(docId: string, tabId: string): Promise<Loaded>
+  load(
+    docId: string,
+    tabId: string,
+    options?: { includeHeld?: boolean }
+  ): Promise<Loaded>
   save(docId: string, tabId: string, stored: Stored): Promise<void>
   remove(docId: string, tabId: string): Promise<void>
   removeDoc(docId: string): Promise<void>
@@ -24,17 +28,17 @@ type Seen = { [docId: string]: number }
 
 const SEEN_KEY = "paper-sync-seen"
 
-function seenDocs(): Seen {
+function seenDocs(key = SEEN_KEY): Seen {
   try {
-    return JSON.parse(localStorage.getItem(SEEN_KEY) ?? "{}")
+    return JSON.parse(localStorage.getItem(key) ?? "{}")
   } catch {
     return {}
   }
 }
 
-function rememberDocs(seen: Seen) {
+function rememberDocs(seen: Seen, key = SEEN_KEY) {
   try {
-    localStorage.setItem(SEEN_KEY, JSON.stringify(seen))
+    localStorage.setItem(key, JSON.stringify(seen))
   } catch {
     return
   }
@@ -70,9 +74,12 @@ function settled(transaction: IDBTransaction): Promise<void> {
   })
 }
 
-function openDatabase(onGone: () => void): Promise<IDBDatabase> {
+function openDatabase(
+  onGone: () => void,
+  databaseName: string
+): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const opening = indexedDB.open(DATABASE, 1)
+    const opening = indexedDB.open(databaseName, 1)
     opening.onupgradeneeded = () => {
       opening.result.createObjectStore(TABLE, { keyPath: "key" })
     }
@@ -108,12 +115,13 @@ export function holdTabLock(docId: string, tabId: string): () => void {
   return release
 }
 
-export function indexedDbStore(): SyncStore {
+export function indexedDbStore(databaseName = DATABASE): SyncStore {
+  const seenKey = databaseName === DATABASE ? SEEN_KEY : `${databaseName}-seen`
   let opened: Promise<IDBDatabase> | null = null
   const connection = () => {
     opened ??= openDatabase(() => {
       opened = null
-    })
+    }, databaseName)
     return opened
   }
   const table = async (mode: IDBTransactionMode) =>
@@ -124,7 +132,7 @@ export function indexedDbStore(): SyncStore {
       opened = null
       if (known) (await known.catch(() => null))?.close()
     },
-    async load(docId, tabId) {
+    async load(docId, tabId, options) {
       const all = (await request(
         (await table("readonly")).getAll(docRange(docId))
       )) as Record[]
@@ -136,13 +144,15 @@ export function indexedDbStore(): SyncStore {
           (record) =>
             record.docId === docId &&
             record.key !== keyOf(docId, tabId) &&
-            (held
-              ? !held.has(`paper-sync:${record.key}`)
-              : now - record.savedAt > ORPHAN_AGE_MS)
+            (options?.includeHeld ||
+              (held
+                ? !held.has(`paper-sync:${record.key}`)
+                : now - record.savedAt > ORPHAN_AGE_MS))
         )
         .map((record) => ({
           tabId: record.key.slice(docId.length + 1),
           stored: {
+            ...(record.provenance ? { provenance: record.provenance } : {}),
             epoch: record.epoch,
             server: record.server,
             pending: record.pending,
@@ -173,7 +183,7 @@ export function indexedDbStore(): SyncStore {
       for (const key of keys) await request(store.delete(key))
     },
     async prune(docId, now) {
-      const seen = seenDocs()
+      const seen = seenDocs(seenKey)
       const due = Object.entries(seen).filter(
         ([id, at]) => id !== docId && now - at > STALE_AGE_MS
       )
@@ -191,7 +201,7 @@ export function indexedDbStore(): SyncStore {
         }
         if (!kept) delete seen[id]
       }
-      rememberDocs(seen)
+      rememberDocs(seen, seenKey)
     },
   }
 }
@@ -226,6 +236,8 @@ export function memoryStore(): SyncStore {
   }
 }
 
-export function defaultStore(): SyncStore {
-  return typeof indexedDB === "undefined" ? memoryStore() : indexedDbStore()
+export function defaultStore(native = false): SyncStore {
+  return typeof indexedDB === "undefined"
+    ? memoryStore()
+    : indexedDbStore(native ? "paper-sync-native-v4-r1" : DATABASE)
 }

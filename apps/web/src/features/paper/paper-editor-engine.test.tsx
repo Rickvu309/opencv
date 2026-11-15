@@ -6,11 +6,15 @@ import {
   REBASE_ORIGIN,
   SERVER_ORIGIN,
   letterSchema,
+  openPaperClient,
+  seedYDoc,
   writeDocument,
   type PaperClient,
 } from "@workspace/paper-crdt"
 import { afterEach, beforeAll, describe, expect, it } from "vitest"
 import * as Y from "yjs"
+
+import { nativePaperDocumentSchema, nativeProvenance } from "@workspace/domain"
 
 import { withSelectedBlocks, setPaperSelection } from "@/lib/paper-selection.ts"
 import { paragraph, seededLetterClient } from "@/test/paper-fixture.ts"
@@ -69,6 +73,70 @@ const bullet = (id: string, text: string, children: unknown[] = []) => ({
 })
 
 describe("the letter editor", () => {
+  it("underlines a native Unicode selection with the keyboard and supports Undo and Redo", () => {
+    const source = nativePaperDocumentSchema.parse({
+      version: 4,
+      schemaRevision: 1,
+      kind: "letter",
+      blocks: [paragraph("p1", "Việt é 😀"), paragraph("p2", "Dear team")],
+      clashes: [],
+    })
+    const provenance = nativeProvenance(source)
+    const client = openPaperClient(
+      {
+        epoch: 2,
+        revision: 2,
+        server: seedYDoc(source),
+        pending: Y.encodeStateAsUpdate(new Y.Doc()),
+        provenance,
+      },
+      { provenance }
+    )
+    const { seen } = open(client)
+    act(() => {
+      seen.editor!.setSelection("p1", "p2")
+      fireEvent.keyDown(document.querySelector(".bn-editor")!, {
+        key: "u",
+        ctrlKey: true,
+      })
+    })
+    expect(JSON.stringify(client.document())).toContain('"underline":true')
+    expect(document.querySelector(".bn-editor u")).toHaveTextContent(
+      "Việt é 😀"
+    )
+    act(() => {
+      fireEvent.keyDown(document.querySelector(".bn-editor")!, {
+        key: "z",
+        ctrlKey: true,
+      })
+    })
+    expect(JSON.stringify(client.document())).not.toContain('"underline":true')
+    act(() => {
+      fireEvent.keyDown(document.querySelector(".bn-editor")!, {
+        key: "z",
+        ctrlKey: true,
+        shiftKey: true,
+      })
+    })
+    expect(JSON.stringify(client.document())).toContain('"underline":true')
+    expect(JSON.stringify(client.document())).toContain("Việt é 😀")
+  })
+
+  it("keeps the legacy Letter schema unchanged when underline is requested", () => {
+    const client = seededLetterClient([paragraph("p1", "Legacy")])
+    const { seen } = open(client)
+    act(() => {
+      seen.editor!.setTextCursorPosition("p1", "end")
+      fireEvent.keyDown(document.querySelector(".bn-editor")!, {
+        key: "u",
+        ctrlKey: true,
+      })
+    })
+    expect(client.document()?.version).toBe(3)
+    expect(JSON.stringify(client.document())).not.toContain("underline")
+    expect(client.hasPending()).toBe(false)
+  })
+
   it("shows the stored letter and writes typing into the shared document", async () => {
     const client = seededLetterClient([paragraph("p1", "Dear team")])
     const { seen } = open(client)

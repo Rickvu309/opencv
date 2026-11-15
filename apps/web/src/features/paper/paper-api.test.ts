@@ -1,5 +1,5 @@
 import { QueryClient } from "@tanstack/react-query"
-import { parsePaperId } from "@workspace/domain"
+import { NATIVE_WRITER, parsePaperId } from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { apiBaseUrl } from "@/lib/api-url.ts"
@@ -148,7 +148,7 @@ describe("paper commands through the contract client", () => {
     const call = fetchMock.mock.calls[0] ?? []
     expect(String(call[0])).toBe(`${apiBaseUrl}/api/commands/paper.rename`)
     expect(JSON.parse(String((call[1] as RequestInit).body))).toMatchObject({
-      input: { docId, name: "New" },
+      input: { docId, name: "New", writer: NATIVE_WRITER },
     })
     for (const key of [
       paperListKey(),
