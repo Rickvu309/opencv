@@ -13,7 +13,7 @@ function frame(block: { id: string; type: string }) {
   const slot = document.createElement("div")
   dom.dataset.paperLayout = block.type
   dom.dataset.paperId = block.id
-  if (block.type === "paperFlow" || block.type === "paperCell") {
+  if (["paperFlow", "paperCell", "paperFlowSection"].includes(block.type)) {
     slot.dataset.paperWrapSlot = ""
     const style = document.createElement("style")
     const scope =
@@ -52,6 +52,31 @@ export const nativeLayoutSchema = BlockNoteSchema.create({
   blockSpecs: {
     ...nativeFormattingSchema.blockSpecs,
     paperPhoto: photoBlockSpec,
+    paperPageBreak: createBlockSpec(
+      { type: "paperPageBreak", content: "none", propSchema: {} },
+      {
+        render() {
+          const dom = document.createElement("div")
+          dom.dataset.paperPageBreak = ""
+          dom.setAttribute("aria-label", "Page break")
+          dom.setAttribute("role", "separator")
+          return { dom }
+        },
+      }
+    )(),
+    paperFlowSection: createBlockSpec(
+      {
+        type: "paperFlowSection",
+        content: "none",
+        layoutOnly: true,
+        propSchema: { settings: { default: "" } },
+        children: {
+          allow: "blocks",
+          exclude: ["paperFlow", "paperFlowSection"],
+        },
+      },
+      implementation
+    )(),
     paperFlow: createBlockSpec(
       {
         type: "paperFlow",

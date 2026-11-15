@@ -94,3 +94,16 @@ export {
   layoutPhotoEditSchema,
 } from "./paper-doc/native-photo-edit.js"
 export type { LayoutPhotoReceipt } from "./paper-doc/native-photo-edit.js"
+export {
+  flowDocumentSchema,
+  flowSectionSchema,
+} from "./paper-doc/native-layout-flow.js"
+export type {
+  FlowDocument,
+  FlowSection,
+} from "./paper-doc/native-layout-flow.js"
+export {
+  flowReceiptSchema,
+  prepareFlowEdit,
+  reverseFlowEdit,
+} from "./paper-doc/native-layout-flow-edit.js"

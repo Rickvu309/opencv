@@ -22,7 +22,7 @@ export function layoutCellAt(
       return position.node(depth).attrs.id
   return null
 }
-function identities(document: LayoutDocument) {
+export function layoutIdentities(document: Pick<LayoutDocument, "flow">) {
   const owners = new Map<string, string | null>(),
     fields = new Map<string, string>(),
     grid: unknown[] = [],
@@ -81,8 +81,8 @@ export function acceptsLayoutTransaction(
       presentation,
       stored.profile
     )
-    const old = identities(before),
-      next = identities(after)
+    const old = layoutIdentities(before),
+      next = layoutIdentities(after)
     if (
       old.grid !== next.grid ||
       old.photos !== next.photos ||

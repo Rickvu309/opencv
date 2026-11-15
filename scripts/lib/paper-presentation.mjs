@@ -102,6 +102,17 @@ export function detect(text, path) {
   }
   function visit(node) {
     if (
+      path === "packages/paper-crdt/src/native-layout-flow-view.ts" &&
+      ts.isBinaryExpression(node) &&
+      node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+      ts.isPropertyAccessExpression(node.left) &&
+      ts.isPropertyAccessExpression(node.left.expression) &&
+      node.left.expression.name.text === "style"
+    )
+      hits.push(
+        "Page geometry must use editor decorations instead of mutating managed DOM styles"
+      )
+    if (
       (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
       node.moduleSpecifier &&
       ts.isStringLiteral(node.moduleSpecifier)

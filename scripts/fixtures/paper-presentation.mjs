@@ -1,5 +1,9 @@
 export const clean = [
   {
+    path: "packages/paper-crdt/src/native-layout-flow-view.ts",
+    text: "Decoration.node(pos, end, { style: `height:${height}px` })",
+  },
+  {
     path: "apps/api/src/paper/native-output/formatted-photos.ts",
     text: 'const bounds = photoBounds(photo); const frame = `<wp:extent cx="${boundWidth}" cy="${boundHeight}"/>`',
   },
@@ -101,6 +105,10 @@ export const clean = [
   },
 ]
 export const mistakes = [
+  {
+    path: "packages/paper-crdt/src/native-layout-flow-view.ts",
+    text: "block.style.height = `${height}px`",
+  },
   {
     path: "apps/api/src/paper/native-output/formatted-photos.ts",
     text: 'const frame = `<wp:extent cx="${width}" cy="${height}"/>`',

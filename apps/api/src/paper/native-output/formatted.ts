@@ -1,6 +1,9 @@
 import {
   formattedDocumentSchema,
   layoutDocumentSchema,
+  flowDocumentSchema,
+  type FlowDocument,
+  type FlowSection,
   type LayoutDocument,
   type LayoutPhoto,
   type LayoutTable,
@@ -60,7 +63,7 @@ export function compileLayoutNativeDocx(input: {
   }
 }
 function compileDocument(
-  document: FormattedDocument | LayoutDocument,
+  document: FormattedDocument | LayoutDocument | FlowDocument,
   photos: readonly PhotoMedia[] = []
 ): Uint8Array {
   const styles = formattedStyles(document.presentation)
@@ -91,7 +94,12 @@ function compileDocument(
   }
   function siblings(
     nodes: readonly (
-      FormatBody | FormatField | FormatOwner | LayoutTable | LayoutPhoto
+      | FormatBody
+      | FormatField
+      | FormatOwner
+      | LayoutTable
+      | LayoutPhoto
+      | { type: "pageBreak"; id: string }
     )[],
     depth: number,
     availableWidth = contentWidth
@@ -101,6 +109,8 @@ function compileDocument(
       .map((node) => {
         const list = node.type === "bullet" || node.type === "numbered"
         if (!list) sequence = undefined
+        if (node.type === "pageBreak")
+          return '<w:p><w:r><w:br w:type="page"/></w:r></w:p>'
         if (node.type === "photo") return pictures.render(node, availableWidth)
         if (node.type === "table") {
           const width = node.columns.reduce(
@@ -176,13 +186,33 @@ function compileDocument(
       .join("")
   }
   const body =
-    "flow" in document
-      ? siblings(document.flow.children, 0)
-      : document.kind === "cv"
-        ? siblings([document.header, ...document.blocks], 0)
-        : siblings(document.blocks, 0)
+    document.profile === "private-layout-3"
+      ? document.flow.children
+          .map((section, index) => {
+            const width =
+              (section.page.width -
+                section.page.start -
+                section.page.end -
+                (section.columns.count - 1) * section.columns.gap) /
+              section.columns.count
+            const body = siblings(section.children, 0, width)
+            const properties = flowSectionProperties(section)
+            return index === document.flow.children.length - 1
+              ? body + properties
+              : attachSection(body, properties)
+          })
+          .join("")
+      : "flow" in document
+        ? siblings(document.flow.children, 0)
+        : document.kind === "cv"
+          ? siblings([document.header, ...document.blocks], 0)
+          : siblings(document.blocks, 0)
   return wordPackage({
-    body: body + pageProperties(document.presentation.page),
+    body:
+      body +
+      (document.profile === "private-layout-3"
+        ? ""
+        : pageProperties(document.presentation.page)),
     styles: styles.output,
     numbering: numberingXml(sequences, {
       listStep: 720,
@@ -197,4 +227,46 @@ function compileDocument(
       ["PaperExporter", "formatted-native-word-1"],
     ],
   })
+}
+
+export function compileFlowNativeDocx(input: {
+  document: unknown
+  photos?: readonly PhotoMedia[]
+}): Result<Uint8Array> {
+  try {
+    assertCanonicalInput(input.document)
+    return ok(
+      compileDocument(flowDocumentSchema.parse(input.document), input.photos)
+    )
+  } catch (error) {
+    return refuse(
+      error instanceof Error
+        ? error.message
+        : "Section flow Word output refused"
+    )
+  }
+}
+function flowSectionProperties(section: FlowSection) {
+  return pageProperties(section.page)
+    .replace(
+      "<w:sectPr>",
+      `<w:sectPr><w:type w:val="${section.start === "continuous" ? "continuous" : "nextPage"}"/>`
+    )
+    .replace(
+      "</w:sectPr>",
+      `<w:cols w:num="${section.columns.count}" w:space="${section.columns.gap}" w:equalWidth="1"/></w:sectPr>`
+    )
+}
+function attachSection(body: string, properties: string) {
+  if (!body.endsWith("</w:p>"))
+    return `${body}<w:p><w:pPr><w:spacing w:before="0" w:after="0"/>${properties}</w:pPr></w:p>`
+  const start = body.lastIndexOf("<w:p>"),
+    paragraph = body.slice(start)
+  const end = paragraph.indexOf("</w:pPr>")
+  return (
+    body.slice(0, start) +
+    (end < 0
+      ? paragraph.replace("<w:p>", `<w:p><w:pPr>${properties}</w:pPr>`)
+      : paragraph.slice(0, end) + properties + paragraph.slice(end))
+  )
 }
