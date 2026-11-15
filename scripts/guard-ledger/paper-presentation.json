@@ -6,5 +6,5 @@
     "export": "detect"
   },
   "historic": null,
-  "reason": "New private formatting invariants: package boundaries, no public activation or fixture binding, one authoritative text store, property patches preserve anchors, and reads convert detached XML. Synthetic mistake/clean fixtures and the repository scan pass. No released introducing commit exists for this new source; historic proof is null. Literal AST checks do not prove alias, reflection, transitive activation or runtime fidelity. Ordinary accepted reconciliation remains an integration hazard."
+  "reason": "New private formatting invariants: package boundaries, no public activation or fixture binding, one authoritative text store, property patches preserve anchors, reads convert detached XML, and mounted link ancestors do not paint an underline over explicit off. The browser exposed the link issue in uncommitted mount source; no introducing commit exists for that candidate. Synthetic mistake/clean fixtures and the repository scan verify the literal source patterns. Historic proof is null for new source. Literal AST checks do not prove alias, reflection, transitive activation or runtime fidelity. Browser and mounted-engine tests cover the rendering behavior. Ordinary accepted reconciliation remains an integration hazard."
 }

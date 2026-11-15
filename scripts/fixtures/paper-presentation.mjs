@@ -1,5 +1,13 @@
 export const mistakes = [
   {
+    path: "packages/paper-crdt/src/native-formatting-mount.ts",
+    text: "BlockNoteEditor.create({ schema: nativeFormattingSchema })",
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting-mount.ts",
+    text: 'BlockNoteEditor.create({ links: { HTMLAttributes: { style: "text-decoration:underline" } } })',
+  },
+  {
     path: "packages/paper-crdt/src/native-formatting.ts",
     text: "yXmlFragmentToBlocks(binding.engine, binding.fragment)",
   },
@@ -85,6 +93,10 @@ export const mistakes = [
   },
 ]
 export const clean = [
+  {
+    path: "packages/paper-crdt/src/native-formatting-mount.ts",
+    text: 'BlockNoteEditor.create({ links: { HTMLAttributes: { style: "text-decoration:none;color:inherit" } } })',
+  },
   {
     path: "packages/paper-crdt/src/native-formatting.ts",
     text: "yXmlFragmentToBlocks(binding.engine, fragment)",

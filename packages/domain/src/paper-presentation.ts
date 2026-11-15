@@ -56,4 +56,9 @@ export type {
   FormatTarget,
   FormatChange,
 } from "./paper-doc/native-formatting-patch.js"
-export { styleSchema } from "./paper-doc/presentation-styles.js"
+export {
+  styleSchema,
+  resolveStyles,
+  resolveInline,
+  resolveParagraph,
+} from "./paper-doc/presentation-styles.js"

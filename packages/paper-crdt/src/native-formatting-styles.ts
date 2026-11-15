@@ -16,9 +16,12 @@ export const inlineKeys = [
 ] as const
 function implementation(name: (typeof inlineKeys)[number]) {
   return {
-    render(value: string): never {
+    render(value: string) {
       canonicalStyles({ [name]: value })
-      throw new Error("Private formatting has no mounted renderer")
+      const dom = globalThis.document.createElement("span")
+      dom.dataset.paperStyle = name
+      dom.dataset.paperValue = value
+      return { dom, contentDOM: dom }
     },
     parse(element: { getAttribute(name: string): string | null }) {
       if (element.getAttribute("data-paper-style") !== name) return undefined
