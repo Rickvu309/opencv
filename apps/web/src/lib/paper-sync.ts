@@ -17,7 +17,6 @@ import {
   openNativePaperSync,
   type NativeSessionOptions,
 } from "@/lib/paper-native-transport.ts"
-import { fromBase64, toBase64 } from "@/lib/paper-sync-bytes.ts"
 import {
   appendJournal,
   journalTip,
