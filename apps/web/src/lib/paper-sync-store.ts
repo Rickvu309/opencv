@@ -70,9 +70,12 @@ function settled(transaction: IDBTransaction): Promise<void> {
   })
 }
 
-function openDatabase(onGone: () => void): Promise<IDBDatabase> {
+function openDatabase(
+  onGone: () => void,
+  databaseName: string
+): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
-    const opening = indexedDB.open(DATABASE, 1)
+    const opening = indexedDB.open(databaseName, 1)
     opening.onupgradeneeded = () => {
       opening.result.createObjectStore(TABLE, { keyPath: "key" })
     }
@@ -108,12 +111,37 @@ export function holdTabLock(docId: string, tabId: string): () => void {
   return release
 }
 
-export function indexedDbStore(): SyncStore {
+export function holdNativeTabLock(
+  docId: string,
+  tabId: string
+): Promise<() => void> {
+  const locks = typeof navigator === "undefined" ? undefined : navigator.locks
+  if (!locks?.request)
+    return Promise.reject(new Error("Native tab locks unavailable"))
+  return new Promise((resolve, reject) => {
+    void locks
+      .request(lockOf(docId, tabId), { ifAvailable: true }, async (lock) => {
+        if (!lock) {
+          reject(new Error("Native tab already held"))
+          return
+        }
+        await new Promise<void>((release) => {
+          resolve(release)
+        })
+      })
+      .catch(reject)
+  })
+}
+
+export function indexedDbStore(native = false): SyncStore {
   let opened: Promise<IDBDatabase> | null = null
   const connection = () => {
-    opened ??= openDatabase(() => {
-      opened = null
-    })
+    opened ??= openDatabase(
+      () => {
+        opened = null
+      },
+      native ? "paper-native-sync-r1" : DATABASE
+    )
     return opened
   }
   const table = async (mode: IDBTransactionMode) =>
@@ -130,6 +158,19 @@ export function indexedDbStore(): SyncStore {
       )) as Record[]
       const mine = all.find((record) => record.key === keyOf(docId, tabId))
       const held = await heldLocks()
+      if (native && !held)
+        throw new Error("Native recovery lock scan unavailable")
+      if (
+        native &&
+        all.some(
+          (record) =>
+            record.docId !== docId ||
+            typeof record.key !== "string" ||
+            !record.key.startsWith(`${docId}:`) ||
+            record.key.length <= docId.length + 1
+        )
+      )
+        throw new Error("Malformed native recovery retained")
       const now = Date.now()
       const orphans = all
         .filter(
@@ -143,6 +184,7 @@ export function indexedDbStore(): SyncStore {
         .map((record) => ({
           tabId: record.key.slice(docId.length + 1),
           stored: {
+            ...(record.provenance ? { provenance: record.provenance } : {}),
             epoch: record.epoch,
             server: record.server,
             pending: record.pending,
@@ -173,6 +215,7 @@ export function indexedDbStore(): SyncStore {
       for (const key of keys) await request(store.delete(key))
     },
     async prune(docId, now) {
+      if (native) return
       const seen = seenDocs()
       const due = Object.entries(seen).filter(
         ([id, at]) => id !== docId && now - at > STALE_AGE_MS

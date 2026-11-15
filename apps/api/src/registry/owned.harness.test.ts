@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { readFileSync } from "node:fs"
 
-import { personActor } from "@workspace/domain"
+import { NATIVE_WRITER, personActor } from "@workspace/domain"
 import { sql } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"
@@ -133,8 +133,12 @@ class OwnedWatch {
     return { swap, named, masks: [...swap.keys(), ...swap.values()] }
   }
 
-  private read(name: string, input: unknown, userId: string) {
-    return this.registry.read(name, input, personActor(userId))
+  private read(name: string, input: Record<string, unknown>, userId: string) {
+    const qualified =
+      name === "paper.list" || name === "paper.get"
+        ? { ...input, writer: NATIVE_WRITER }
+        : input
+    return this.registry.read(name, qualified, personActor(userId))
   }
 
   async checkRows(where: string, writes: readonly LoggedWrite[]) {

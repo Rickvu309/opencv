@@ -17,7 +17,7 @@
   },
   "owned-rows": {
     "passed": true,
-    "fingerprint": "40ad7a29509c"
+    "fingerprint": "ef06e5e3e86e"
   },
   "pinned-history": {
     "passed": true,
@@ -30,6 +30,10 @@
   "private-output-keys": {
     "passed": true,
     "fingerprint": "0f5ff3a2ceb1"
+  },
+  "tla-sync-anchors": {
+    "passed": true,
+    "fingerprint": "073d15405b2b"
   },
   "touch-targets": {
     "passed": true,

@@ -1,0 +1,34 @@
+{
+  "module": "paper-native-transport.ts",
+  "actions": {
+    "Discover": "openNativePaperSync",
+    "OrphanWrites": null,
+    "LockAndReread": "openNativePaperSync",
+    "Adopt": "openNativePaperSync",
+    "Type": "openNativePaperSync",
+    "LocalRequest": "openNativePaperSync",
+    "DurabilityPointD": "openNativePaperSync",
+    "LocalAbort": "openNativePaperSync",
+    "DeleteAdoptedOrphan": "openNativePaperSync",
+    "Send": "openNativePaperSync",
+    "Receipt": "openNativePaperSync",
+    "ClearCovered": "openNativePaperSync",
+    "IdentityChanges": null,
+    "Destroy": "openNativePaperSync",
+    "Idle": null
+  },
+  "covers": [
+    "apps/web/src/lib/paper-native-transport.ts",
+    "apps/web/src/lib/paper-sync-recovery.ts",
+    "apps/web/src/lib/paper-sync-store.ts"
+  ],
+  "bounds": "Two cumulative generations, one recovering tab, one orphan, one local write and one reply in flight, one identity invalidation. Safety only. No proof of CRDT merge, strict decoding, namespace construction, epoch reset, physical disk durability or eventual delivery.",
+  "boundaries": {
+    "LocalRequest": ["paper-sync-store.ts:indexedDbStore"],
+    "DurabilityPointD": ["paper-sync-store.ts:indexedDbStore"],
+    "LocalAbort": ["paper-sync-store.ts:indexedDbStore"],
+    "ClearCovered": ["paper-sync-recovery.ts:acknowledgeNativeJournal"],
+    "LockAndReread": ["paper-sync-store.ts:holdNativeTabLock"]
+  },
+  "sync": "e3b6a3fef94bb22b241227ca304e0e5e24007145"
+}

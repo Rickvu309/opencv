@@ -348,3 +348,39 @@ export function detectSavedBeforeDurability(text) {
 export function detectLocalDurability(text) {
   return [...detectDelayedRecovery(text), ...detectSavedBeforeDurability(text)]
 }
+
+export function detectJournalErasure(text) {
+  const source = sourceOf(text)
+  const body =
+    functionBodies(source).get("parse") ?? functionBodies(source).get("read")
+  if (!body) return ["a journal parser must preserve unreadable recovery bytes"]
+  const hits = []
+  const visit = (node) => {
+    if (ts.isTryStatement(node) && callsNamed(node, "empty"))
+      hits.push(
+        "an unreadable recovery journal must refuse writes instead of becoming empty"
+      )
+    ts.forEachChild(node, visit)
+  }
+  visit(body)
+  const recovery =
+    functionBodies(source).get("recoverJournals") ??
+    functionBodies(source).get("scanNativeJournals")
+  if (recovery) {
+    const inspect = (node) => {
+      if (ts.isCatchClause(node)) {
+        const returns = (child) => {
+          if (ts.isReturnStatement(child))
+            hits.push(
+              "failed journal enumeration cannot acknowledge complete recovery"
+            )
+          ts.forEachChild(child, returns)
+        }
+        returns(node.block)
+      }
+      ts.forEachChild(node, inspect)
+    }
+    inspect(recovery)
+  }
+  return hits
+}

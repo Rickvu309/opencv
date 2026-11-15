@@ -7,13 +7,17 @@ import {
   paperQueries,
   parseUserId,
   personActor,
+  NATIVE_WRITER,
+  nativePaperDocumentSchema,
+  nativeProvenance,
 } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"
+import { seedYDoc } from "@workspace/paper-crdt"
 
 import { withDatabase } from "../db/context.js"
-import { user } from "../db/schema.js"
+import { user, paperDocs } from "../db/schema.js"
 import { importedWordPage, saveFile, stageWordPackage } from "../paper/index.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { idOf } from "./coverage-helpers.js"
@@ -227,6 +231,37 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
       await read("paper.isDeleted", { docId: minted.docId })
       await run("paper.restoreDeleted", { docId: minted.docId })
       await run("paper.start", { kind: "cv" })
+
+      const native = nativePaperDocumentSchema.parse({
+        version: 4,
+        schemaRevision: 1,
+        kind: "letter",
+        clashes: [],
+        blocks: [
+          {
+            id: "native-contract",
+            type: "paragraph",
+            content: [{ text: "Việt 😀", underline: true }],
+          },
+        ],
+      })
+      const nativeId = idOf(await run("paper.create", { kind: "letter" }))
+      await db
+        .update(paperDocs)
+        .set({
+          crdtEpoch: 1,
+          crdtBase: Buffer.from(seedYDoc(native)),
+          crdtDocument: native,
+        })
+        .where(eq(paperDocs.id, nativeId))
+      await run("paper.nativeSync", {
+        docId: nativeId,
+        writer: NATIVE_WRITER,
+        provenance: nativeProvenance(native),
+        epoch: 0,
+        update: "",
+        stateVector: "",
+      })
 
       expect([...seen].sort()).toEqual(
         [...Object.keys(paperContract), ...Object.keys(paperQueries)].sort()

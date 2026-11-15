@@ -133,6 +133,7 @@ const TOOL_COPY = {
     read: "Read the shared Paper",
   },
   "paper.start": { label: "Start a CV or Letter in Paper" },
+  "paper.nativeSync": { label: "Save your Paper" },
   "paper.sync": { label: "Save your Paper" },
   "paper.unshare": { label: "Stop sharing your Paper" },
   "profile.get": { label: "Read your Profile", read: "Read your Profile" },
