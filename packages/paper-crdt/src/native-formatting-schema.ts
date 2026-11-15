@@ -7,10 +7,7 @@ import {
 
 import { formattingStyles } from "./native-formatting-styles.js"
 import { formattingProps } from "./native-formatting-props.js"
-
-function render(): never {
-  throw new Error("Private CV schema is headless")
-}
+import { renderFormattingBlock as render } from "./native-formatting-render.js"
 const text = { default: "" } as const
 const inline = { content: "inline", propSchema: formattingProps } as const
 const owner = { content: "none", propSchema: {} } as const

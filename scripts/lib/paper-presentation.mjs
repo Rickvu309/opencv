@@ -14,6 +14,15 @@ export function detect(text, path) {
       path
     )
   const packageRoot = path.split("/").slice(0, 2).join("/")
+  function property(node, name) {
+    if (!node || !ts.isObjectLiteralExpression(node)) return undefined
+    return node.properties.find(
+      (item) =>
+        ts.isPropertyAssignment(item) &&
+        (ts.isIdentifier(item.name) || ts.isStringLiteral(item.name)) &&
+        item.name.text === name
+    )?.initializer
+  }
   function checkImport(specifier) {
     if (presentation && specifier.startsWith(".")) {
       const target = posix.normalize(posix.join(posix.dirname(path), specifier))
@@ -86,6 +95,26 @@ export function detect(text, path) {
       )
         hits.push("Formatting binding is private")
       if (ts.isCallExpression(node)) {
+        if (
+          path === "packages/paper-crdt/src/native-formatting-mount.ts" &&
+          ts.isPropertyAccessExpression(node.expression) &&
+          node.expression.getText(source) === "BlockNoteEditor.create"
+        ) {
+          const style = property(
+            property(property(node.arguments[0], "links"), "HTMLAttributes"),
+            "style"
+          )
+          if (
+            !style ||
+            !ts.isStringLiteral(style) ||
+            !/(?:^|;)\s*text-decoration(?:-line)?\s*:\s*none\s*(?:;|$)/.test(
+              style.text
+            )
+          )
+            hits.push(
+              "Mounted formatting links must leave underline painting to resolved text"
+            )
+        }
         if (
           privateCrdt &&
           ts.isIdentifier(node.expression) &&

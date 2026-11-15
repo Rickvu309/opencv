@@ -1,3 +1,69 @@
+export const clean = [
+  {
+    path: "apps/api/src/paper/native-output/formatted.ts",
+    text: 'import { formattedStyles } from "./formatted-styles.js"',
+  },
+  {
+    path: "apps/api/src/paper/native-output/formatted.test.ts",
+    text: 'import { compileFormattedNativeDocx } from "./formatted.js"',
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting.ts",
+    text: "yXmlFragmentToBlocks(binding.engine, fragment)",
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting.ts",
+    text: 'import { formattedDocumentSchema } from "@workspace/domain/internal/paper-presentation"',
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting.ts",
+    text: 'doc.getXmlFragment("private-native-cv-v4-r2")',
+  },
+  {
+    path: "packages/paper-crdt/src/presentation-codec.ts",
+    text: "write.text.format(write.from, write.length, write.attrs)",
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting.ts",
+    text: "updateYFragment(doc, fragment, node, mapping)",
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting-engine.test.ts",
+    text: 'import { createPrivateFormatting } from "./native-formatting.js"',
+  },
+  {
+    path: "packages/paper-crdt/src/presentation-codec.ts",
+    text: 'import { ok, type Result } from "@workspace/domain/internal/paper-presentation"',
+  },
+  {
+    path: "packages/paper-crdt/src/presentation-codec.test.ts",
+    text: 'import { validatePresentationPatch } from "@workspace/domain/internal/paper-presentation"',
+  },
+  {
+    path: "packages/domain/src/paper-presentation.ts",
+    text: 'export { ok } from "./paper-doc/presentation-values.js"',
+  },
+  {
+    path: "packages/paper-crdt/src/presentation-codec.ts",
+    text: 'import { readPresentationMeta } from "./presentation-meta.js"',
+  },
+  {
+    path: "packages/paper-crdt/src/presentation-codec.ts",
+    text: "span.text.format(offset, length, attributes)",
+  },
+  {
+    path: "packages/paper-crdt/src/presentation-meta.ts",
+    text: 'meta.set("inline", values)',
+  },
+  {
+    path: "packages/paper-crdt/src/presentation-codec.test.ts",
+    text: "function bindPresentationFixture(doc) { return doc }",
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting-mount.ts",
+    text: 'BlockNoteEditor.create({ links: { HTMLAttributes: { style: "text-decoration:none;color:inherit" } } })',
+  },
+]
 export const mistakes = [
   {
     path: "apps/api/src/paper/routes.ts",
@@ -95,66 +161,12 @@ export const mistakes = [
     path: "packages/paper-crdt/src/presentation-codec.ts",
     text: 'writePrivateFormatting(binding, candidate, "patch")',
   },
-]
-export const clean = [
   {
-    path: "apps/api/src/paper/native-output/formatted.ts",
-    text: 'import { formattedStyles } from "./formatted-styles.js"',
+    path: "packages/paper-crdt/src/native-formatting-mount.ts",
+    text: "BlockNoteEditor.create({ schema: nativeFormattingSchema })",
   },
   {
-    path: "apps/api/src/paper/native-output/formatted.test.ts",
-    text: 'import { compileFormattedNativeDocx } from "./formatted.js"',
-  },
-  {
-    path: "packages/paper-crdt/src/native-formatting.ts",
-    text: "yXmlFragmentToBlocks(binding.engine, fragment)",
-  },
-  {
-    path: "packages/paper-crdt/src/native-formatting.ts",
-    text: 'import { formattedDocumentSchema } from "@workspace/domain/internal/paper-presentation"',
-  },
-  {
-    path: "packages/paper-crdt/src/native-formatting.ts",
-    text: 'doc.getXmlFragment("private-native-cv-v4-r2")',
-  },
-  {
-    path: "packages/paper-crdt/src/presentation-codec.ts",
-    text: "write.text.format(write.from, write.length, write.attrs)",
-  },
-  {
-    path: "packages/paper-crdt/src/native-formatting.ts",
-    text: "updateYFragment(doc, fragment, node, mapping)",
-  },
-  {
-    path: "packages/paper-crdt/src/native-formatting-engine.test.ts",
-    text: 'import { createPrivateFormatting } from "./native-formatting.js"',
-  },
-  {
-    path: "packages/paper-crdt/src/presentation-codec.ts",
-    text: 'import { ok, type Result } from "@workspace/domain/internal/paper-presentation"',
-  },
-  {
-    path: "packages/paper-crdt/src/presentation-codec.test.ts",
-    text: 'import { validatePresentationPatch } from "@workspace/domain/internal/paper-presentation"',
-  },
-  {
-    path: "packages/domain/src/paper-presentation.ts",
-    text: 'export { ok } from "./paper-doc/presentation-values.js"',
-  },
-  {
-    path: "packages/paper-crdt/src/presentation-codec.ts",
-    text: 'import { readPresentationMeta } from "./presentation-meta.js"',
-  },
-  {
-    path: "packages/paper-crdt/src/presentation-codec.ts",
-    text: "span.text.format(offset, length, attributes)",
-  },
-  {
-    path: "packages/paper-crdt/src/presentation-meta.ts",
-    text: 'meta.set("inline", values)',
-  },
-  {
-    path: "packages/paper-crdt/src/presentation-codec.test.ts",
-    text: "function bindPresentationFixture(doc) { return doc }",
+    path: "packages/paper-crdt/src/native-formatting-mount.ts",
+    text: 'BlockNoteEditor.create({ links: { HTMLAttributes: { style: "text-decoration:underline" } } })',
   },
 ]
