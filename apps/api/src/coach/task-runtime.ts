@@ -1,6 +1,11 @@
 import { z } from "zod"
 import { eq } from "drizzle-orm"
-import { coachActor, coachModeSchema, planSchema } from "@workspace/domain"
+import {
+  coachActor,
+  coachModeSchema,
+  planSchema,
+  nativeBasisSchema,
+} from "@workspace/domain"
 import { operation as setJobPriority } from "@workspace/domain/operations/job/set-priority"
 import { coachModelEnv } from "../config.js"
 import { getDb } from "../db/context.js"
@@ -21,6 +26,7 @@ const contextSchema = z.object({
       id: z.string(),
       revision: z.union([z.number(), z.string().uuid()]),
       outline: z.string(),
+      nativeBasis: nativeBasisSchema.optional(),
     })
     .optional(),
   context: z.array(z.object({ kind: z.string(), id: z.string() })).optional(),

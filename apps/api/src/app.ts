@@ -132,6 +132,7 @@ export function createApp({
       origin: (origin) => (isAllowedOrigin(webOrigins, origin) ? origin : null),
       credentials: true,
       allowHeaders: [
+        "x-paper-writer",
         "Content-Type",
         "Last-Event-ID",
         "Authorization",

@@ -1,5 +1,7 @@
 import {
   ERROR_CODES,
+  NATIVE_WRITER,
+  nativeBasisSchema,
   jobAddNoteInputSchema,
   type Actor,
   type CoachFocusDoc,
@@ -28,7 +30,11 @@ function missingDocument(error: unknown) {
 }
 
 async function listedPage(registry: Registry, actor: Actor, docId: string) {
-  const listed = await registry.read("paper.list", {}, actor)
+  const listed = await registry.read(
+    "paper.list",
+    { writer: NATIVE_WRITER },
+    actor
+  )
   if (!Array.isArray(listed)) return null
   for (const item of listed) {
     const row = record(item)
@@ -67,7 +73,9 @@ async function paperFocus(
 ): Promise<CoachFocusDoc | null> {
   let row: Record<string, unknown> | null
   try {
-    row = record(await registry.read("paper.get", { docId }, actor))
+    row = record(
+      await registry.read("paper.get", { docId, writer: NATIVE_WRITER }, actor)
+    )
   } catch (error) {
     if (!missingDocument(error)) throw error
     row = await listedPage(registry, actor, docId)
@@ -80,9 +88,22 @@ async function paperFocus(
   const status =
     row.status === "ready" || row.status === "published" ? row.status : "draft"
   const outline = record(
-    await registry.read("paper.outline", { docId, blockIds }, actor)
+    await registry.read(
+      "paper.outline",
+      { docId, blockIds, writer: NATIVE_WRITER },
+      actor
+    )
   )
+  const nativeBasis =
+    outline?.nativeBasis === undefined
+      ? undefined
+      : nativeBasisSchema.parse(outline.nativeBasis)
+  if (nativeBasis && nativeBasis.revision !== outline?.revision)
+    throw new Error("Paper outline basis does not match its revision")
+  if (record(row.paper)?.version === 4 && !nativeBasis)
+    throw new Error("Native Paper outline is missing its saved basis")
   return {
+    nativeBasis,
     id: text(row.id),
     name: text(row.name),
     kind,
@@ -166,7 +187,11 @@ function linkedCvId(job: Record<string, unknown> | null) {
 }
 
 async function mainCvId(registry: Registry, actor: Actor) {
-  const listed = await registry.read("paper.list", { kind: "cv" }, actor)
+  const listed = await registry.read(
+    "paper.list",
+    { kind: "cv", writer: NATIVE_WRITER },
+    actor
+  )
   if (!Array.isArray(listed)) return undefined
   const rows = listed.flatMap((item) => {
     const row = record(item)
