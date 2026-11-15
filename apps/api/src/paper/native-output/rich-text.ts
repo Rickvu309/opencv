@@ -42,6 +42,34 @@ export function assertCanonicalInput(value: unknown): void {
 
 export type ExternalLink = { id: string; target: string }
 
+export function wordRun(
+  text: string,
+  properties: string,
+  href: string | undefined,
+  links: ExternalLink[]
+): string {
+  const content = text
+    .split(/([\t\n])/u)
+    .map((value) =>
+      value === "\t"
+        ? "<w:tab/>"
+        : value === "\n"
+          ? "<w:br/>"
+          : value === ""
+            ? ""
+            : `<w:t xml:space="preserve">${xml(value)}</w:t>`
+    )
+    .join("")
+  const body = `<w:r><w:rPr>${properties}</w:rPr>${content}</w:r>`
+  if (!href) return body
+  let link = links.find((entry) => entry.target === href)
+  if (!link) {
+    link = { id: `link${links.length + 1}`, target: href }
+    links.push(link)
+  }
+  return `<w:hyperlink r:id="${link.id}" w:history="1">${body}</w:hyperlink>`
+}
+
 export function richRuns(runs: RichText, links: ExternalLink[]): string {
   return runs
     .map((run) => {
@@ -50,26 +78,7 @@ export function richRuns(runs: RichText, links: ExternalLink[]): string {
         run.italic ? "<w:i/>" : "",
         run.underline ? '<w:u w:val="single"/>' : "",
       ].join("")
-      const content = run.text
-        .split(/([\t\n])/u)
-        .map((text) =>
-          text === "\t"
-            ? "<w:tab/>"
-            : text === "\n"
-              ? "<w:br/>"
-              : text === ""
-                ? ""
-                : `<w:t xml:space="preserve">${xml(text)}</w:t>`
-        )
-        .join("")
-      const body = `<w:r><w:rPr>${properties}</w:rPr>${content}</w:r>`
-      if (!run.href) return body
-      let link = links.find((entry) => entry.target === run.href)
-      if (!link) {
-        link = { id: `link${links.length + 1}`, target: run.href }
-        links.push(link)
-      }
-      return `<w:hyperlink r:id="${link.id}" w:history="1">${body}</w:hyperlink>`
+      return wordRun(run.text, properties, run.href, links)
     })
     .join("")
 }

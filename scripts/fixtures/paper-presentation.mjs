@@ -1,5 +1,17 @@
 export const mistakes = [
   {
+    path: "apps/api/src/paper/routes.ts",
+    text: 'import { compileFormattedNativeDocx } from "./native-output/formatted.js"',
+  },
+  {
+    path: "apps/api/src/paper/index.ts",
+    text: 'export { compileFormattedNativeDocx } from "./native-output/formatted.js"',
+  },
+  {
+    path: "apps/api/src/registry/paper.ts",
+    text: 'const compiler = await import("../paper/native-output/formatted.js")',
+  },
+  {
     path: "packages/paper-crdt/src/native-formatting.ts",
     text: "yXmlFragmentToBlocks(binding.engine, binding.fragment)",
   },
@@ -85,6 +97,14 @@ export const mistakes = [
   },
 ]
 export const clean = [
+  {
+    path: "apps/api/src/paper/native-output/formatted.ts",
+    text: 'import { formattedStyles } from "./formatted-styles.js"',
+  },
+  {
+    path: "apps/api/src/paper/native-output/formatted.test.ts",
+    text: 'import { compileFormattedNativeDocx } from "./formatted.js"',
+  },
   {
     path: "packages/paper-crdt/src/native-formatting.ts",
     text: "yXmlFragmentToBlocks(binding.engine, fragment)",
