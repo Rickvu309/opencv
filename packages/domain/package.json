@@ -11,6 +11,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./internal/paper-presentation": {
+      "opencv-source": "./src/paper-presentation.ts",
+      "types": "./dist/paper-presentation.d.ts",
+      "import": "./dist/paper-presentation.js"
+    },
     "./operations/*": {
       "opencv-source": "./src/operations/*/operation.ts",
       "types": "./dist/operations/*/operation.d.ts",
