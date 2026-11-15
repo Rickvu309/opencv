@@ -1,5 +1,6 @@
 import {
   ERROR_CODES,
+  canonicalPaper,
   nativeProvenance,
   sameNativeProvenance,
   type NativeWriter,
@@ -25,6 +26,7 @@ import {
   lostCharacters,
   loadYDoc,
   materialize,
+  materializeStored,
   stateVectorOf,
   updateSince,
   writeDocument,
@@ -41,7 +43,11 @@ import {
   foldSettledLog,
 } from "./content-compact.js"
 
-import { validated, sameDocumentIdentity } from "./content-document.js"
+import {
+  validated,
+  validatedStored,
+  sameDocumentIdentity,
+} from "./content-document.js"
 import { admitBasis, admitDocument } from "./native-admission.js"
 
 export { seedColumns } from "./content-document.js"
@@ -323,10 +329,10 @@ async function commit(
     rebuilt?: string[]
   }
 ): Promise<PaperRow> {
-  const materialized = materialize(entry.yDoc)
+  const materialized = materializeStored(entry.yDoc)
   if (!materialized.ok) throw refuse(materialized.reason)
-  const paper = validated(materialized.document, row.kind)
-  sameDocumentIdentity(validated(row.crdtDocument, row.kind), paper)
+  const paper = validatedStored(materialized.document, row.kind)
+  sameDocumentIdentity(validatedStored(row.crdtDocument, row.kind), paper)
   const seq = nextContentSeq(entry.revision)
   const update = Buffer.from(effective)
   await getDb()
@@ -554,6 +560,13 @@ async function mended(
   effective: Uint8Array | null
 ): Promise<Mended> {
   if (!effective) return { effective }
+  const previous = validatedStored(row.crdtDocument, row.kind)
+  if (previous.version === 4 && previous.schemaRevision === 2) {
+    const candidate = materializeStored(entry.yDoc)
+    if (!candidate.ok) throw refuse(candidate.reason)
+    sameDocumentIdentity(previous, candidate.document)
+    return { effective }
+  }
   const read = materializeCandidate(entry.yDoc)
   if (!read.ok) {
     console.error(`[paper] cannot read ${row.id} after a sync: ${read.reason}`)
@@ -601,7 +614,7 @@ export async function syncContent(
 ): Promise<SyncReply> {
   return withLiveTransaction(async (retain) => {
     let row = await lockedRow(userId, docId)
-    const document = validated(row.crdtDocument, row.kind)
+    const document = validatedStored(row.crdtDocument, row.kind)
     admitDocument(document, request.writer)
     const provenance =
       document.version === 4 ? nativeProvenance(document) : undefined
@@ -618,6 +631,14 @@ export async function syncContent(
         "An unbased native update cannot be admitted. Recover its original local basis first."
       )
     const entry = await hydrate(row)
+    if (document.version === 4 && document.schemaRevision === 2) {
+      const stored = materializeStored(entry.yDoc)
+      if (!stored.ok) throw refuse(stored.reason)
+      if (canonicalPaper(stored.document) !== canonicalPaper(document))
+        throw refuse(
+          "The rich document cache does not match its canonical content. Nothing was acknowledged or changed."
+        )
+    }
     const reply = (
       reset: boolean,
       since: Uint8Array,

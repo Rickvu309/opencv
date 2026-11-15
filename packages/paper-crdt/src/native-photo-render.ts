@@ -1,3 +1,4 @@
+import { layoutConfigs } from "./native-formatting-config.js"
 import { createBlockSpec } from "@blocknote/core"
 import {
   layoutPhotoSchema,
@@ -66,17 +67,10 @@ export function photoElement(photo: LayoutPhoto, source?: string) {
   dom.append(frame)
   return dom
 }
-export const photoBlockSpec = createBlockSpec(
-  {
-    type: "paperPhoto",
-    content: "none",
-    propSchema: { photo: { default: "" } },
+export const photoBlockSpec = createBlockSpec(layoutConfigs.paperPhoto, {
+  render: (block, editor) => {
+    const photo = layoutPhotoSchema.parse(JSON.parse(block.props.photo))
+    if (photo.id !== block.id) throw new Error("Photo identities disagree")
+    return { dom: photoElement(photo, resolvers.get(editor)?.(photo.source)) }
   },
-  {
-    render: (block, editor) => {
-      const photo = layoutPhotoSchema.parse(JSON.parse(block.props.photo))
-      if (photo.id !== block.id) throw new Error("Photo identities disagree")
-      return { dom: photoElement(photo, resolvers.get(editor)?.(photo.source)) }
-    },
-  }
-)()
+})()

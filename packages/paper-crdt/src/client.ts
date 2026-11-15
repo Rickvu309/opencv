@@ -4,10 +4,16 @@ import {
   type NativeProvenance,
   rebasePending,
   type PaperDocument,
+  type StoredPaperDocument,
+  type RichPaperDocument,
+  richPaperDocumentSchema,
+  nativeProvenanceSchema,
+  RICH_NATIVE_WRITER,
 } from "@workspace/domain"
 import * as Y from "yjs"
 
 import { materialize, writeDocument } from "./ydoc.js"
+import { materializeStored } from "./stored-document.js"
 
 export const REBASE_ORIGIN = "paper-rebase"
 export const SERVER_ORIGIN = "paper-server"
@@ -52,21 +58,22 @@ export type Adoption = {
 
 export type ClientChange = "local" | "remote" | "reset"
 
-export type PaperClient = {
-  readonly ydoc: Y.Doc
-  readonly provenance?: NativeProvenance
-  readonly epoch: number
-  readonly revision: number
-  readonly rebuilds: number
-  hasPending(): boolean
-  prepare(options?: { readonly pullOnly?: boolean }): Prepared
-  adopt(orphan: Stored): Adoption
-  receive(sent: Prepared, reply: SyncReply): Receipt
-  stored(): Stored
-  state(): Uint8Array
-  document(): PaperDocument | null
-  subscribe(listener: (change: ClientChange) => void): () => void
-}
+export type PaperClient<Document extends StoredPaperDocument = PaperDocument> =
+  {
+    readonly ydoc: Y.Doc
+    readonly provenance?: NativeProvenance
+    readonly epoch: number
+    readonly revision: number
+    readonly rebuilds: number
+    hasPending(): boolean
+    prepare(options?: { readonly pullOnly?: boolean }): Prepared
+    adopt(orphan: Stored): Adoption
+    receive(sent: Prepared, reply: SyncReply): Receipt
+    stored(): Stored
+    state(): Uint8Array
+    document(): Document | null
+    subscribe(listener: (change: ClientChange) => void): () => void
+  }
 
 function freshDoc(
   gc: boolean,
@@ -125,11 +132,50 @@ export function storedHasPending(stored: Stored): boolean {
   )
 }
 
-function same(a: PaperDocument | null, b: PaperDocument | null) {
+function same(a: StoredPaperDocument | null, b: StoredPaperDocument | null) {
   return a !== null && b !== null && canonicalPaper(a) === canonicalPaper(b)
 }
 
-class Client implements PaperClient {
+type DocumentAdapter<Document extends StoredPaperDocument> = {
+  read(doc: Y.Doc): Document | null
+  write(doc: Y.Doc, document: Document, origin: string): unknown
+  rebase(input: { base: Document; ours: Document; theirs: Document }): {
+    document: Document
+    failed: boolean
+  }
+  readonly semanticRebase: boolean
+}
+
+const proseAdapter: DocumentAdapter<PaperDocument> = {
+  read,
+  write: writeDocument,
+  rebase: rebasePending,
+  semanticRebase: true,
+}
+
+const richAdapter: DocumentAdapter<RichPaperDocument> = {
+  read(doc) {
+    const result = materializeStored(doc)
+    if (!result.ok) return null
+    const parsed = richPaperDocumentSchema.safeParse(result.document)
+    return parsed.success ? parsed.data : null
+  },
+  write() {
+    throw new Error(
+      "Rich recovery cannot rebuild a document from a second text store"
+    )
+  },
+  rebase() {
+    throw new Error(
+      "Rich recovery needs its original Yjs basis. Recovery bytes were retained."
+    )
+  },
+  semanticRebase: false,
+}
+
+class Client<
+  Document extends StoredPaperDocument,
+> implements PaperClient<Document> {
   ydoc: Y.Doc
   epoch: number
   revision: number
@@ -137,14 +183,17 @@ class Client implements PaperClient {
   readonly provenance?: NativeProvenance
   private server: Y.Doc
   private readonly gc: boolean
+  private readonly adapter: DocumentAdapter<Document>
   private listeners = new Set<(change: ClientChange) => void>()
   private detach: () => void = () => {}
 
   constructor(
     stored: Stored | null,
     gc: boolean,
-    provenance?: NativeProvenance
+    provenance: NativeProvenance | undefined,
+    adapter: DocumentAdapter<Document>
   ) {
+    this.adapter = adapter
     if (stored && !sameNativeProvenance(stored.provenance, provenance))
       throw new Error(
         "The local document belongs to a different schema. Its recovery bytes were retained."
@@ -156,7 +205,7 @@ class Client implements PaperClient {
     this.server = freshDoc(gc, stored?.server)
     this.ydoc = freshDoc(gc, stored?.server, stored?.pending)
     if (stored) {
-      const document = read(this.ydoc)
+      const document = this.adapter.read(this.ydoc)
       if (
         provenance
           ? !document ||
@@ -229,7 +278,7 @@ class Client implements PaperClient {
   }
 
   document() {
-    return read(this.ydoc)
+    return this.adapter.read(this.ydoc)
   }
 
   private applyHere(doc: Y.Doc, update: Uint8Array) {
@@ -240,12 +289,12 @@ class Client implements PaperClient {
     }
   }
 
-  private settle(target: PaperDocument) {
-    if (same(read(this.ydoc), target)) return
-    writeDocument(this.ydoc, target, REBASE_ORIGIN)
-    if (same(read(this.ydoc), target)) return
+  private settle(target: Document) {
+    if (same(this.adapter.read(this.ydoc), target)) return
+    this.adapter.write(this.ydoc, target, REBASE_ORIGIN)
+    if (same(this.adapter.read(this.ydoc), target)) return
     const rebuilt = freshDoc(this.gc, Y.encodeStateAsUpdate(this.server))
-    writeDocument(rebuilt, target, REBASE_ORIGIN)
+    this.adapter.write(rebuilt, target, REBASE_ORIGIN)
     this.rebuilds += 1
     this.detach()
     this.ydoc = rebuilt
@@ -282,8 +331,37 @@ class Client implements PaperClient {
             reply.stale ? null : sent.update,
             reply.update
           )
-      const document = read(candidate)
-      const current = read(this.ydoc)
+      const document = this.adapter.read(candidate)
+      const current = this.adapter.read(this.ydoc)
+      if (!this.adapter.semanticRebase) {
+        if (reply.reset && this.hasPending()) return rejected
+        const acknowledged = freshDoc(
+          false,
+          Y.encodeStateAsUpdate(this.server),
+          reply.stale ? null : sent.update
+        )
+        const changed = freshDoc(false, Y.encodeStateAsUpdate(candidate))
+        try {
+          const pending = aheadOf(this.ydoc, acknowledged)
+          if (pending && !sameState(stateOf(acknowledged), stateOf(changed)))
+            return rejected
+          if (!reply.reset) {
+            const merged = freshDoc(
+              false,
+              Y.encodeStateAsUpdate(this.ydoc),
+              reply.update
+            )
+            try {
+              if (!this.adapter.read(merged)) return rejected
+            } finally {
+              merged.destroy()
+            }
+          }
+        } finally {
+          acknowledged.destroy()
+          changed.destroy()
+        }
+      }
       if (current && document && current.kind !== document.kind) return rejected
       if (
         this.provenance
@@ -306,12 +384,12 @@ class Client implements PaperClient {
       failed: false,
     }
     if (!reply.stale) this.applyHere(this.server, sent.update)
-    const settled = read(this.server)
+    const settled = this.adapter.read(this.server)
     const pendingBeforeReply = this.hasPending()
     const before = stateOf(this.server)
     this.applyHere(this.server, reply.update)
-    const theirs = read(this.server)
-    const ours = read(this.ydoc)
+    const theirs = this.adapter.read(this.server)
+    const ours = this.adapter.read(this.ydoc)
     const foreign =
       settled !== null &&
       theirs !== null &&
@@ -320,9 +398,9 @@ class Client implements PaperClient {
       this.applyHere(this.ydoc, reply.update)
       return { ...plain, failed: theirs === null && settled !== null }
     }
-    let target: { readonly document: PaperDocument; readonly failed: boolean }
+    let target: { readonly document: Document; readonly failed: boolean }
     try {
-      target = rebasePending({ base: settled, ours, theirs })
+      target = this.adapter.rebase({ base: settled, ours, theirs })
     } catch {
       this.applyHere(this.ydoc, reply.update)
       return { ...plain, failed: true }
@@ -335,9 +413,12 @@ class Client implements PaperClient {
   adopt(orphan: Stored): Adoption {
     if (!sameNativeProvenance(this.provenance, orphan.provenance))
       return { adopted: false, failed: true }
-    const base = read(freshDoc(false, orphan.server))
-    const ours = read(freshDoc(false, orphan.server, orphan.pending))
-    const lead = read(this.ydoc)
+    if (!this.adapter.semanticRebase) return { adopted: false, failed: true }
+    const base = this.adapter.read(freshDoc(false, orphan.server))
+    const ours = this.adapter.read(
+      freshDoc(false, orphan.server, orphan.pending)
+    )
+    const lead = this.adapter.read(this.ydoc)
     if (!base || !ours || !lead) return { adopted: false, failed: false }
     if (
       [base, ours].some(
@@ -352,7 +433,7 @@ class Client implements PaperClient {
       return { adopted: false, failed: true }
     if (same(base, ours)) return { adopted: true, failed: false }
     try {
-      const merged = rebasePending({ base, ours, theirs: lead })
+      const merged = this.adapter.rebase({ base, ours, theirs: lead })
       this.settle(merged.document)
       return { adopted: true, failed: merged.failed }
     } catch {
@@ -361,17 +442,17 @@ class Client implements PaperClient {
   }
 
   private resetTo(reply: SyncReply): Receipt {
-    const base = read(this.server)
-    const ours = read(this.ydoc)
+    const base = this.adapter.read(this.server)
+    const ours = this.adapter.read(this.ydoc)
     const changed = base !== null && ours !== null && !same(base, ours)
     const server = freshDoc(this.gc, reply.update)
     const ydoc = freshDoc(this.gc, reply.update)
-    const theirs = read(server)
+    const theirs = this.adapter.read(server)
     const merged =
       changed && base && ours && theirs
-        ? rebasePending({ base, ours, theirs })
+        ? this.adapter.rebase({ base, ours, theirs })
         : null
-    if (merged) writeDocument(ydoc, merged.document, REBASE_ORIGIN)
+    if (merged) this.adapter.write(ydoc, merged.document, REBASE_ORIGIN)
     this.detach()
     this.server = server
     this.ydoc = ydoc
@@ -394,5 +475,28 @@ export function openPaperClient(
     readonly provenance?: NativeProvenance
   } = {}
 ): PaperClient {
-  return new Client(stored, options.gc ?? false, options.provenance)
+  return new Client(
+    stored,
+    options.gc ?? false,
+    options.provenance,
+    proseAdapter
+  )
+}
+
+export function openRichPaperClient(
+  stored: Stored | null,
+  options: { readonly gc?: boolean; readonly provenance: NativeProvenance }
+): PaperClient<RichPaperDocument> {
+  const provenance = nativeProvenanceSchema.parse(options.provenance)
+  if (
+    provenance.schemaRevision !== 2 ||
+    !RICH_NATIVE_WRITER.supportedSchemaRevisions.includes(
+      provenance.schemaRevision
+    ) ||
+    provenance.requiredCapabilities.some(
+      (capability) => !RICH_NATIVE_WRITER.capabilities.includes(capability)
+    )
+  )
+    throw new Error("Rich document provenance required")
+  return new Client(stored, options.gc ?? false, provenance, richAdapter)
 }

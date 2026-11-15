@@ -1,21 +1,23 @@
 import {
   ERROR_CODES,
-  paperDocumentSchema,
+  storedPaperDocumentSchema,
+  requirePaperDocument,
+  type StoredPaperDocument,
   type PaperDocument,
   type PaperStoredKind,
 } from "@workspace/domain"
-import { materialize, seedYDoc } from "@workspace/paper-crdt"
+import { materializeStored, seedStoredYDoc } from "@workspace/paper-crdt"
 import { CommandError } from "../registry/errors.js"
 
 function invalidDocument(message: string) {
   return new CommandError(ERROR_CODES.VALIDATION_ERROR, message)
 }
 
-export function validated(
+export function validatedStored(
   candidate: unknown,
   kind: PaperStoredKind
-): PaperDocument {
-  const parsed = paperDocumentSchema.safeParse(candidate)
+): StoredPaperDocument {
+  const parsed = storedPaperDocumentSchema.safeParse(candidate)
   if (!parsed.success) {
     const issue = parsed.error.issues[0]
     throw invalidDocument(issue?.message ?? "The document is not valid")
@@ -26,31 +28,48 @@ export function validated(
   return parsed.data
 }
 
-export function seedColumns(kind: PaperStoredKind, paper: PaperDocument) {
-  const seeded = validated(paper, kind)
+export function validated(
+  candidate: unknown,
+  kind: PaperStoredKind
+): PaperDocument {
+  try {
+    return requirePaperDocument(validatedStored(candidate, kind))
+  } catch (error) {
+    if (error instanceof CommandError) throw error
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      error instanceof Error
+        ? error.message
+        : "This document needs a newer editor"
+    )
+  }
+}
+
+export function seedColumns(kind: PaperStoredKind, paper: StoredPaperDocument) {
+  const seeded = validatedStored(paper, kind)
   let base: Uint8Array
   try {
-    base = seedYDoc(seeded)
+    base = seedStoredYDoc(seeded)
   } catch (error) {
     throw invalidDocument(
       error instanceof Error ? error.message : "Cannot seed"
     )
   }
-  const materialized = materialize(base)
+  const materialized = materializeStored(base)
   if (!materialized.ok) throw invalidDocument(materialized.reason)
   return {
     crdtEpoch: 1,
     crdtBase: Buffer.from(base),
-    crdtDocument: validated(materialized.document, kind) as unknown as Record<
-      string,
-      unknown
-    >,
+    crdtDocument: validatedStored(
+      materialized.document,
+      kind
+    ) as unknown as Record<string, unknown>,
   }
 }
 
 export function sameDocumentIdentity(
-  current: PaperDocument,
-  candidate: PaperDocument
+  current: StoredPaperDocument,
+  candidate: StoredPaperDocument
 ) {
   if (
     current.kind !== candidate.kind ||

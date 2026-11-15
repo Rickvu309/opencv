@@ -5,6 +5,35 @@ export function detect(text, path) {
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
   const hits = []
   const test = /\.test\.[cm]?[jt]sx?$/.test(path)
+  const storage = path === "packages/paper-crdt/src/stored-document.ts"
+  if (/^apps\/web\/vite(?:st)?\.config\.ts$/.test(path)) {
+    const aliases = []
+    function visitAlias(node) {
+      if (
+        ts.isPropertyAssignment(node) &&
+        ts.isStringLiteral(node.name) &&
+        node.name.text.startsWith("@workspace/domain")
+      )
+        aliases.push({
+          name: node.name.text,
+          value: node.initializer.getText(source),
+        })
+      ts.forEachChild(node, visitAlias)
+    }
+    visitAlias(source)
+    const root = aliases.findIndex(
+      (alias) => alias.name === "@workspace/domain"
+    )
+    const internal = aliases.findIndex(
+      (alias) =>
+        alias.name === "@workspace/domain/internal/paper-presentation" &&
+        alias.value.includes("packages/domain/src/paper-presentation.ts")
+    )
+    if (root >= 0 && (internal < 0 || internal > root))
+      hits.push(
+        "Resolve the internal presentation subpath before the broad domain source alias"
+      )
+  }
   if (
     path === "apps/api/src/paper/native-output/formatted-photos.ts" &&
     text.includes("<wp:extent") &&
@@ -26,6 +55,7 @@ export function detect(text, path) {
     )
 
   const presentation =
+    storage ||
     /\/(?:paper-presentation|presentation(?:[-.][^/]+)?|native-(?:formatting|layout|photo)(?:[-.][^/]+)?)\.ts$/.test(
       path
     )
@@ -65,7 +95,32 @@ export function detect(text, path) {
         item.name.text === name
     )?.initializer
   }
-  function checkImport(specifier) {
+  function checkImport(specifier, declaration) {
+    if (
+      /^packages\/paper-crdt\/src\/(?:stored-document|native-layout-flow|native-layout-flow-codec|native-layout-codec|native-layout-wire|native-formatting-(?:config|headless|shared|values|inline|cv|wire)|presentation-meta)\.ts$/.test(
+        path
+      ) &&
+      /^\.\/native-(?:formatting(?:-schema|-styles)?|layout-schema|photo-render)\.js$/.test(
+        specifier
+      )
+    )
+      hits.push(
+        "Canonical storage must use shared schema configuration and headless implementations"
+      )
+    const storageImport =
+      storage &&
+      ts.isImportDeclaration(declaration) &&
+      specifier === "./native-layout-flow.js" &&
+      !declaration.importClause?.name &&
+      declaration.importClause?.namedBindings &&
+      ts.isNamedImports(declaration.importClause.namedBindings) &&
+      declaration.importClause.namedBindings.elements.every(
+        (element) =>
+          !element.propertyName &&
+          ["createPrivateFlow", "openFlowBinary", "readFlow"].includes(
+            element.name.text
+          )
+      )
     if (presentation && specifier.startsWith(".")) {
       const target = posix.normalize(posix.join(posix.dirname(path), specifier))
       if (
@@ -93,6 +148,7 @@ export function detect(text, path) {
       hits.push("Production fixture binding has been removed")
     if (
       !privateCrdt &&
+      !storageImport &&
       /(?:^|\/)(?:presentation-(?:binding|meta|inline|codec|reverse)|native-(?:formatting|layout|photo)(?:-[^/]+)?)(?:\.[cm]?[jt]s)?$/.test(
         specifier
       ) &&
@@ -101,6 +157,22 @@ export function detect(text, path) {
       hits.push("Private formatting cannot be registered or exported publicly")
   }
   function visit(node) {
+    if (
+      storage &&
+      node.modifiers?.some(
+        (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword
+      ) &&
+      !(
+        ts.isFunctionDeclaration(node) &&
+        node.name &&
+        ["seedStoredYDoc", "materializeStored"].includes(node.name.text)
+      ) &&
+      !(
+        ts.isTypeAliasDeclaration(node) &&
+        node.name.text === "StoredDocumentResult"
+      )
+    )
+      hits.push("Rich storage exposes only validated bytes and document values")
     if (
       path === "packages/paper-crdt/src/native-layout-flow-view.ts" &&
       ts.isBinaryExpression(node) &&
@@ -117,20 +189,20 @@ export function detect(text, path) {
       node.moduleSpecifier &&
       ts.isStringLiteral(node.moduleSpecifier)
     )
-      checkImport(node.moduleSpecifier.text)
+      checkImport(node.moduleSpecifier.text, node)
     if (
       ts.isImportTypeNode(node) &&
       ts.isLiteralTypeNode(node.argument) &&
       ts.isStringLiteral(node.argument.literal)
     )
-      checkImport(node.argument.literal.text)
+      checkImport(node.argument.literal.text, node)
     if (
       ts.isCallExpression(node) &&
       node.expression.kind === ts.SyntaxKind.ImportKeyword &&
       node.arguments[0] &&
       ts.isStringLiteral(node.arguments[0])
     )
-      checkImport(node.arguments[0].text)
+      checkImport(node.arguments[0].text, node)
     if (!test) {
       if (
         ts.isIdentifier(node) &&

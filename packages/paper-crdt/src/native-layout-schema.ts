@@ -1,3 +1,4 @@
+import { layoutConfigs } from "./native-formatting-config.js"
 import {
   BlockNoteSchema,
   createBlockSpec,
@@ -52,73 +53,23 @@ export const nativeLayoutSchema = BlockNoteSchema.create({
   blockSpecs: {
     ...nativeFormattingSchema.blockSpecs,
     paperPhoto: photoBlockSpec,
-    paperPageBreak: createBlockSpec(
-      { type: "paperPageBreak", content: "none", propSchema: {} },
-      {
-        render() {
-          const dom = document.createElement("div")
-          dom.dataset.paperPageBreak = ""
-          dom.setAttribute("aria-label", "Page break")
-          dom.setAttribute("role", "separator")
-          return { dom }
-        },
-      }
-    )(),
+    paperPageBreak: createBlockSpec(layoutConfigs.paperPageBreak, {
+      render() {
+        const dom = document.createElement("div")
+        dom.dataset.paperPageBreak = ""
+        dom.setAttribute("aria-label", "Page break")
+        dom.setAttribute("role", "separator")
+        return { dom }
+      },
+    })(),
     paperFlowSection: createBlockSpec(
-      {
-        type: "paperFlowSection",
-        content: "none",
-        layoutOnly: true,
-        propSchema: { settings: { default: "" } },
-        children: {
-          allow: "blocks",
-          exclude: ["paperFlow", "paperFlowSection"],
-        },
-      },
+      layoutConfigs.paperFlowSection,
       implementation
     )(),
-    paperFlow: createBlockSpec(
-      {
-        type: "paperFlow",
-        content: "none",
-        layoutOnly: true,
-        propSchema: {},
-        children: { allow: "blocks", exclude: ["paperFlow"] },
-      },
-      implementation
-    )(),
-    paperTable: createBlockSpec(
-      {
-        type: "paperTable",
-        content: "none",
-        layoutOnly: true,
-        propSchema: { columns: { default: "" } },
-        children: { allow: ["paperRow"], min: 1, dissolve: false },
-      },
-      implementation
-    )(),
-    paperRow: createBlockSpec(
-      {
-        type: "paperRow",
-        content: "none",
-        layoutOnly: true,
-        placeable: "namedOnly",
-        propSchema: {},
-        children: { allow: ["paperCell"], min: 1, dissolve: false },
-      },
-      implementation
-    )(),
-    paperCell: createBlockSpec(
-      {
-        type: "paperCell",
-        content: "none",
-        layoutOnly: true,
-        placeable: "namedOnly",
-        propSchema: { columnId: { default: "" } },
-        children: { allow: "blocks", exclude: ["paperFlow", "paperTable"] },
-      },
-      implementation
-    )(),
+    paperFlow: createBlockSpec(layoutConfigs.paperFlow, implementation)(),
+    paperTable: createBlockSpec(layoutConfigs.paperTable, implementation)(),
+    paperRow: createBlockSpec(layoutConfigs.paperRow, implementation)(),
+    paperCell: createBlockSpec(layoutConfigs.paperCell, implementation)(),
   },
   styleSpecs: formattingStyles,
 })

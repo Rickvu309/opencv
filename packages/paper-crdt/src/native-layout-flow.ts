@@ -13,16 +13,16 @@ import {
   reverseFlowEdit,
   type FlowDocument,
 } from "@workspace/domain/internal/paper-presentation"
-import { attempt, formattingFragmentName } from "./native-formatting.js"
+import { attempt, formattingFragmentName } from "./native-formatting-shared.js"
 import { object, string } from "./native-formatting-inline.js"
 import {
   readPresentationMeta,
   writePresentationMeta,
 } from "./presentation-meta.js"
 import {
-  nativeLayoutSchema,
-  type PrivateLayoutEditor,
-} from "./native-layout-schema.js"
+  headlessLayoutSchema as nativeLayoutSchema,
+  type HeadlessLayoutEditor as PrivateLayoutEditor,
+} from "./native-formatting-headless.js"
 import { validateLayoutWire } from "./native-layout-wire.js"
 import { flowBlocks, readFlowBlocks } from "./native-layout-flow-codec.js"
 
