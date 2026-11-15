@@ -1,0 +1,10 @@
+{
+  "id": "tla-sync-anchors",
+  "file": "scripts/tla-sync-anchors.test.mjs",
+  "historic": {
+    "mode": "restore",
+    "sha": "e3b6a3fef94bb22b241227ca304e0e5e24007145",
+    "paths": ["apps/web/src/lib/PaperNativeLocal.tla.json"],
+    "command": ["node", "--test", "scripts/tla-sync-anchors.test.mjs"]
+  }
+}
