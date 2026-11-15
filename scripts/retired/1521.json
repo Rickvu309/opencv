@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/writing-page.test.tsx",
+    "because": "The prior assertion enabled export from another window's storage snapshot while this canvas still displayed unsent words. The replacement proves that shared storage cannot enable export until this canvas is Saved.",
+    "replacedBy": "apps/web/src/features/paper/writing-page.test.tsx",
+    "proof": {
+      "fork": "b2fd0ca0b1a47b3a782980ac7fb3694530b0134e",
+      "replacedByBlob": "24d389c20f5d9c916b87047c0067093f319ce02c",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]
