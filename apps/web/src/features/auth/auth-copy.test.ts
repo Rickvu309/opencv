@@ -1,14 +1,62 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import { retryAfterMinutes } from "@/lib/retry-after.ts"
 
 import {
   AUTH_COPY,
+  LANGUAGE_STORAGE_KEY,
   LONGEST_SHOWN_WAIT_MINUTES,
+  readLanguage,
   tooManyCodesText,
 } from "./auth-copy.ts"
 
 const NOW = Date.parse("2026-11-12T10:00:00Z")
+
+describe("readLanguage", () => {
+  it.each([
+    [null, "en"],
+    ["en", "en"],
+    ["vi", "vi"],
+    ["unknown", "en"],
+  ])("reads %s as %s", (stored, expected) => {
+    if (stored === null) sessionStorage.removeItem(LANGUAGE_STORAGE_KEY)
+    else sessionStorage.setItem(LANGUAGE_STORAGE_KEY, stored)
+    expect(readLanguage()).toBe(expected)
+  })
+
+  it("uses English when the session storage getter is denied", () => {
+    const descriptor = Object.getOwnPropertyDescriptor(
+      globalThis,
+      "sessionStorage"
+    )
+    Object.defineProperty(globalThis, "sessionStorage", {
+      configurable: true,
+      get() {
+        throw new DOMException("blocked", "SecurityError")
+      },
+    })
+    try {
+      expect(readLanguage()).toBe("en")
+    } finally {
+      if (descriptor)
+        Object.defineProperty(globalThis, "sessionStorage", descriptor)
+      else Reflect.deleteProperty(globalThis, "sessionStorage")
+    }
+  })
+
+  it("uses English when reading the session preference is denied", () => {
+    const read = vi
+      .spyOn(Storage.prototype, "getItem")
+      .mockImplementation(() => {
+        throw new DOMException("blocked", "SecurityError")
+      })
+    try {
+      expect(readLanguage()).toBe("en")
+    } finally {
+      read.mockRestore()
+    }
+  })
+})
 
 describe("tooManyCodesText", () => {
   it("rounds up to whole minutes under an hour with the right plural", () => {
