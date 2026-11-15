@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "scripts/ocv-tools/shot.test.mjs > shot does not create the release when it already exists",
+    "because": "The uploader reads asset metadata before allocation. The replacement preserves the existing-release no-create assertion and proves a full release rolls over without overwriting old assets.",
+    "replacedBy": "scripts/ocv-tools/shot.test.mjs",
+    "proof": {
+      "fork": "f8c7158a1d03c5f7d50801ca30481bdc1c542b12",
+      "replacedByBlob": "a5cddec7a466bfcd28190eeee2919035920e3c97",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]
