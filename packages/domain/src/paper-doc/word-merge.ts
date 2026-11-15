@@ -1,7 +1,13 @@
 import { normalizeRuns, type RichText, type TextRun } from "./rich-text.js"
 import { matchSequences } from "./text-align.js"
 
-type Cell = { ch: string; bold: boolean; italic: boolean; href: string }
+type Cell = {
+  ch: string
+  bold: boolean
+  italic: boolean
+  underline: boolean
+  href: string
+}
 
 type Token = { key: string; core: Cell[]; tail: Cell[] }
 
@@ -13,6 +19,7 @@ function cellsOf(runs: readonly TextRun[] | undefined): Cell[] {
         ch,
         bold: run.bold === true,
         italic: run.italic === true,
+        underline: run.underline === true,
         href: run.href ?? "",
       })
     }
@@ -28,6 +35,7 @@ function runsOfCells(cells: readonly Cell[]): RichText {
       last &&
       (last.bold === true) === cell.bold &&
       (last.italic === true) === cell.italic &&
+      (last.underline === true) === cell.underline &&
       (last.href ?? "") === cell.href
     ) {
       last.text += cell.ch
@@ -36,6 +44,7 @@ function runsOfCells(cells: readonly Cell[]): RichText {
     const run: TextRun = { text: cell.ch }
     if (cell.bold) run.bold = true
     if (cell.italic) run.italic = true
+    if (cell.underline) run.underline = true
     if (cell.href) run.href = cell.href as never
     runs.push(run)
   }
@@ -67,7 +76,10 @@ function tokensOf(cells: readonly Cell[]): Token[] {
 
 function marksOf(cells: readonly Cell[]) {
   return cells
-    .map((cell) => `${cell.bold ? 1 : 0}${cell.italic ? 1 : 0}${cell.href}`)
+    .map(
+      (cell) =>
+        `${cell.bold ? 1 : 0}${cell.italic ? 1 : 0}${cell.underline ? 1 : 0}${cell.href}`
+    )
     .join(",")
 }
 
@@ -167,7 +179,7 @@ function separated(tokens: readonly Token[]): Token[] {
     const shared =
       first !== undefined && marksOf([first]) === marksOf([last])
         ? last
-        : { ...last, bold: false, italic: false, href: "" }
+        : { ...last, bold: false, italic: false, underline: false, href: "" }
     return { ...token, tail: [{ ...shared, ch: " " }] }
   })
 }

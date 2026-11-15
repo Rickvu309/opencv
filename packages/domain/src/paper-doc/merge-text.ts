@@ -5,15 +5,11 @@ import {
   type TextRun,
 } from "./rich-text.js"
 
-type Marks = Pick<TextRun, "bold" | "italic" | "href">
+type Marks = Omit<TextRun, "text">
 
 function marksPerUnit(runs: RichText): Marks[] {
-  return runs.flatMap((run) =>
-    Array.from({ length: run.text.length }, () => ({
-      ...(run.bold ? { bold: true as const } : {}),
-      ...(run.italic ? { italic: true as const } : {}),
-      ...(run.href ? { href: run.href } : {}),
-    }))
+  return runs.flatMap(({ text, ...marks }) =>
+    Array.from({ length: text.length }, () => ({ ...marks }))
   )
 }
 
@@ -49,7 +45,7 @@ export function rebaseRuns(old: RichText, text: string): RichText {
   }
   const marks = marksPerUnit(old)
   const inserted: Marks = prefix > 0 ? (marks[prefix - 1] ?? {}) : {}
-  const runs: TextRun[] = Array.from(text, (_, index) => {
+  const runs: TextRun[] = Array.from({ length: text.length }, (_, index) => {
     const from = text.length - suffix
     const source =
       index < prefix
@@ -60,4 +56,22 @@ export function rebaseRuns(old: RichText, text: string): RichText {
     return { text: text[index] ?? "", ...(source ?? {}) }
   })
   return normalizeRuns(runs)
+}
+
+export function retainUnderline(before: RichText, after: RichText): RichText {
+  const inherited = marksPerUnit(rebaseRuns(before, plainTextOfRuns(after)))
+  let offset = 0
+  return normalizeRuns(
+    after.flatMap(({ text, ...marks }) =>
+      [...text].map((character) => {
+        const underline = inherited[offset]?.underline
+        offset += character.length
+        return {
+          text: character,
+          ...marks,
+          ...(underline ? { underline: true as const } : {}),
+        }
+      })
+    )
+  )
 }
