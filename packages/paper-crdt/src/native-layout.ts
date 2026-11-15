@@ -7,11 +7,15 @@ import { updateYFragment } from "y-prosemirror"
 import * as Y from "yjs"
 import {
   canonical,
-  privateLayoutSchema,
+  layoutDocumentSchema,
   prepareLayoutEdit,
   reverseLayoutEdit,
   layoutReceiptSchema,
-  type PrivateLayoutDocument,
+  layoutPhotoReceiptSchema,
+  prepareLayoutPhotoEdit,
+  reverseLayoutPhotoEdit,
+  type LayoutPhotoReceipt,
+  type LayoutDocument,
   type LayoutReceipt,
 } from "@workspace/domain/internal/paper-presentation"
 import { attempt, formattingFragmentName } from "./native-formatting.js"
@@ -38,14 +42,12 @@ function own(binding: LayoutBinding): LayoutBinding {
   owned.add(binding)
   return binding
 }
-export function readLayout(binding: LayoutBinding): PrivateLayoutDocument {
+export function readLayout(binding: LayoutBinding): LayoutDocument {
   if (!owned.has(binding)) throw new Error("Foreign layout binding")
-  if (
-    binding.doc.getMap<unknown>("paper").get("formattingProfile") !==
-    "private-layout-1"
-  )
+  const profile = binding.doc.getMap<unknown>("paper").get("formattingProfile")
+  if (profile !== "private-layout-1" && profile !== "private-layout-2")
     throw new Error("Wrong layout profile")
-  validateLayoutWire(binding.fragment, binding.engine)
+  validateLayoutWire(binding.fragment, binding.engine, profile)
   const detached = new Y.Doc()
   try {
     const fragment = detached.getXmlFragment(
@@ -62,14 +64,15 @@ export function readLayout(binding: LayoutBinding): PrivateLayoutDocument {
     return fromLayoutBlocks(
       yXmlFragmentToBlocks(binding.engine, fragment),
       binding.kind,
-      readPresentationMeta(binding.doc)
+      readPresentationMeta(binding.doc),
+      profile
     )
   } finally {
     detached.destroy()
   }
 }
-function admittedNode(input: PrivateLayoutDocument) {
-  const document = privateLayoutSchema.parse(input)
+function admittedNode(input: LayoutDocument) {
+  const document = layoutDocumentSchema.parse(input)
   const engine = BlockNoteEditor.create({ schema: nativeLayoutSchema })
   const doc = new Y.Doc()
   try {
@@ -80,7 +83,7 @@ function admittedNode(input: PrivateLayoutDocument) {
       isOMark: new Map(),
     })
     writePresentationMeta(doc, document.presentation)
-    doc.getMap<unknown>("paper").set("formattingProfile", "private-layout-1")
+    doc.getMap<unknown>("paper").set("formattingProfile", document.profile)
     if (
       canonical(
         readLayout(own({ doc, fragment, engine, kind: document.kind }))
@@ -95,7 +98,7 @@ function admittedNode(input: PrivateLayoutDocument) {
 }
 export function createPrivateLayout(input: unknown) {
   return attempt(() => {
-    const document = privateLayoutSchema.parse(input),
+    const document = layoutDocumentSchema.parse(input),
       node = admittedNode(document)
     const doc = new Y.Doc(),
       engine = BlockNoteEditor.create({ schema: nativeLayoutSchema })
@@ -111,7 +114,7 @@ export function createPrivateLayout(input: unknown) {
         isOMark: new Map(),
       })
       writePresentationMeta(doc, document.presentation)
-      doc.getMap<unknown>("paper").set("formattingProfile", "private-layout-1")
+      doc.getMap<unknown>("paper").set("formattingProfile", document.profile)
     }, "private-layout-create")
     return binding
   })
@@ -150,7 +153,9 @@ function record(binding: LayoutBinding, operationId: string) {
     throw new Error("Invalid reversal state")
   return {
     request: string(entry.request),
-    receipt: layoutReceiptSchema.parse(entry.receipt),
+    receipt: layoutReceiptSchema
+      .or(layoutPhotoReceiptSchema)
+      .parse(entry.receipt),
     undone: entry.undone,
   }
 }
@@ -167,7 +172,7 @@ export function commitLayoutEdit(
     if (previous) {
       if (previous.request !== request)
         throw new Error("Operation identity was reused")
-      return previous.receipt
+      return layoutReceiptSchema.parse(previous.receipt)
     }
     if (canonical(current) !== basis) throw new Error("Layout basis is stale")
     const prepared = prepareLayoutEdit(current, edit)
@@ -219,5 +224,76 @@ export function readLayoutReceipt(
   operationId: string
 ): LayoutReceipt | null {
   readLayout(binding)
-  return record(binding, operationId)?.receipt ?? null
+  const receipt = record(binding, operationId)?.receipt
+  return receipt ? layoutReceiptSchema.parse(receipt) : null
+}
+
+export function commitLayoutPhotoEdit(
+  binding: LayoutBinding,
+  operationId: string,
+  edit: unknown,
+  basis: string
+) {
+  return attempt(() => {
+    const current = readLayout(binding),
+      previous = record(binding, operationId)
+    const request = canonical({ edit, basis })
+    if (previous) {
+      if (previous.request !== request)
+        throw new Error("Operation identity was reused")
+      return layoutPhotoReceiptSchema.parse(previous.receipt)
+    }
+    if (canonical(current) !== basis) throw new Error("Layout basis is stale")
+    const prepared = prepareLayoutPhotoEdit(current, edit)
+    if (prepared.kind === "refused") throw new Error(prepared.reason)
+    const node = admittedNode(prepared.value.document)
+    binding.doc.transact(() => {
+      updateYFragment(binding.doc, binding.fragment, node, {
+        mapping: new Map(),
+        isOMark: new Map(),
+      })
+      binding.doc
+        .getMap<unknown>("paper")
+        .set(`layout-receipt:${operationId}`, {
+          request,
+          receipt: prepared.value.receipt,
+          undone: false,
+        })
+    }, "private-layout-photo-edit")
+    return prepared.value.receipt
+  })
+}
+export function undoLayoutPhotoEdit(
+  binding: LayoutBinding,
+  operationId: string,
+  basis: string
+) {
+  return attempt(() => {
+    const current = readLayout(binding),
+      previous = record(binding, operationId)
+    if (!previous) throw new Error("Missing durable photo receipt")
+    const receipt = layoutPhotoReceiptSchema.parse(previous.receipt)
+    if (previous.undone) return
+    if (canonical(current) !== basis) throw new Error("Layout basis is stale")
+    const reversed = reverseLayoutPhotoEdit(current, receipt)
+    if (reversed.kind === "refused") throw new Error(reversed.reason)
+    const node = admittedNode(reversed.value)
+    binding.doc.transact(() => {
+      updateYFragment(binding.doc, binding.fragment, node, {
+        mapping: new Map(),
+        isOMark: new Map(),
+      })
+      binding.doc
+        .getMap<unknown>("paper")
+        .set(`layout-receipt:${operationId}`, { ...previous, undone: true })
+    }, "private-layout-photo-undo")
+  })
+}
+export function readLayoutPhotoReceipt(
+  binding: LayoutBinding,
+  operationId: string
+): LayoutPhotoReceipt | null {
+  readLayout(binding)
+  const receipt = record(binding, operationId)?.receipt
+  return receipt ? layoutPhotoReceiptSchema.parse(receipt) : null
 }

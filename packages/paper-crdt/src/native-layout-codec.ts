@@ -1,7 +1,10 @@
 import {
-  privateLayoutSchema,
+  layoutDocumentSchema,
   canonical,
-  type PrivateLayoutDocument,
+  layoutPhotoSchema,
+  type LayoutPhoto,
+  type FormatNode,
+  type LayoutDocument,
   type LayoutTable,
 } from "@workspace/domain/internal/paper-presentation"
 import type { DocumentPresentation } from "@workspace/domain/internal/paper-presentation"
@@ -9,6 +12,11 @@ import { blockOf, readBlock } from "./native-formatting-cv.js"
 import { array, object, string } from "./native-formatting-inline.js"
 import type { PrivateLayoutBlock } from "./native-layout-schema.js"
 
+function contentBlock(node: FormatNode | LayoutPhoto): PrivateLayoutBlock {
+  return node.type === "photo"
+    ? { id: node.id, type: "paperPhoto", props: { photo: canonical(node) } }
+    : blockOf(node)
+}
 function tableBlock(table: LayoutTable): PrivateLayoutBlock {
   return {
     id: table.id,
@@ -21,21 +29,19 @@ function tableBlock(table: LayoutTable): PrivateLayoutBlock {
         id: cell.id,
         type: "paperCell",
         props: { columnId: cell.columnId },
-        children: cell.children.map(blockOf),
+        children: cell.children.map(contentBlock),
       })),
     })),
   }
 }
-export function toLayoutBlocks(
-  document: PrivateLayoutDocument
-): PrivateLayoutBlock[] {
-  const doc = privateLayoutSchema.parse(document)
+export function toLayoutBlocks(document: LayoutDocument): PrivateLayoutBlock[] {
+  const doc = layoutDocumentSchema.parse(document)
   return [
     {
       id: doc.flow.id,
       type: "paperFlow",
       children: doc.flow.children.map((node) =>
-        node.type === "table" ? tableBlock(node) : blockOf(node)
+        node.type === "table" ? tableBlock(node) : contentBlock(node)
       ),
     },
   ]
@@ -43,6 +49,15 @@ export function toLayoutBlocks(
 function readLayoutBlock(input: unknown): unknown {
   const block = object(input, ["id", "type", "props", "children", "content"])
   const type = string(block.type)
+  if (type === "paperPhoto") {
+    const props = object(block.props ?? {}, ["photo"])
+    if (block.content !== undefined || array(block.children ?? []).length)
+      throw new Error("Photo cannot hold content")
+    const photo = layoutPhotoSchema.parse(JSON.parse(string(props.photo)))
+    if (photo.id !== string(block.id) || canonical(photo) !== props.photo)
+      throw new Error("Noncanonical photo block")
+    return photo
+  }
   if (!["paperFlow", "paperTable", "paperRow", "paperCell"].includes(type))
     return readBlock(input)
   if (block.content !== undefined)
@@ -75,12 +90,13 @@ function readLayoutBlock(input: unknown): unknown {
 export function fromLayoutBlocks(
   input: unknown,
   kind: "cv" | "letter",
-  presentation: DocumentPresentation
-): PrivateLayoutDocument {
+  presentation: DocumentPresentation,
+  profile: LayoutDocument["profile"] = "private-layout-1"
+): LayoutDocument {
   const blocks = array(input)
   if (blocks.length !== 1) throw new Error("Layout requires one flow")
-  return privateLayoutSchema.parse({
-    profile: "private-layout-1",
+  return layoutDocumentSchema.parse({
+    profile,
     kind,
     presentation,
     flow: readLayoutBlock(blocks[0]),

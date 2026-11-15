@@ -1,7 +1,8 @@
 import {
   formattedDocumentSchema,
-  privateLayoutSchema,
-  type PrivateLayoutDocument,
+  layoutDocumentSchema,
+  type LayoutDocument,
+  type LayoutPhoto,
   type LayoutTable,
   ok,
   refuse,
@@ -20,6 +21,7 @@ import {
 import { formattedStyles } from "./formatted-styles.js"
 import { numberingXml, type ListSequence } from "./numbering.js"
 import { wordPackage } from "./package.js"
+import { photoWriter, type PhotoMedia } from "./formatted-photos.js"
 import {
   assertCanonicalInput,
   wordRun,
@@ -44,10 +46,13 @@ export function compileFormattedNativeDocx(input: {
 
 export function compileLayoutNativeDocx(input: {
   document: unknown
+  photos?: readonly PhotoMedia[]
 }): Result<Uint8Array> {
   try {
     assertCanonicalInput(input.document)
-    return ok(compileDocument(privateLayoutSchema.parse(input.document)))
+    return ok(
+      compileDocument(layoutDocumentSchema.parse(input.document), input.photos)
+    )
   } catch (error) {
     return refuse(
       error instanceof Error ? error.message : "Layout Word output refused"
@@ -55,11 +60,17 @@ export function compileLayoutNativeDocx(input: {
   }
 }
 function compileDocument(
-  document: FormattedDocument | PrivateLayoutDocument
+  document: FormattedDocument | LayoutDocument,
+  photos: readonly PhotoMedia[] = []
 ): Uint8Array {
   const styles = formattedStyles(document.presentation)
   const sequences: ListSequence[] = []
   const links: ExternalLink[] = []
+  const pictures = photoWriter(photos)
+  const contentWidth =
+    document.presentation.page.width -
+    document.presentation.page.start -
+    document.presentation.page.end
   function runs(content: readonly FormatRun[]): string {
     return content
       .map(({ text, href, ...direct }) => {
@@ -79,14 +90,18 @@ function compileDocument(
       .join("")
   }
   function siblings(
-    nodes: readonly (FormatBody | FormatField | FormatOwner | LayoutTable)[],
-    depth: number
+    nodes: readonly (
+      FormatBody | FormatField | FormatOwner | LayoutTable | LayoutPhoto
+    )[],
+    depth: number,
+    availableWidth = contentWidth
   ): string {
     let sequence: ListSequence | undefined
     return nodes
       .map((node) => {
         const list = node.type === "bullet" || node.type === "numbered"
         if (!list) sequence = undefined
+        if (node.type === "photo") return pictures.render(node, availableWidth)
         if (node.type === "table") {
           const width = node.columns.reduce(
             (sum, column) => sum + column.width,
@@ -113,7 +128,7 @@ function compileDocument(
           const rows = node.children
             .map(
               (row) =>
-                `<w:tr>${row.children.map((cell, index) => `<w:tc><w:tcPr><w:tcW w:w="${node.columns[index]?.width}" w:type="dxa"/></w:tcPr>${siblings(cell.children, 0)}</w:tc>`).join("")}</w:tr>`
+                `<w:tr>${row.children.map((cell, index) => `<w:tc><w:tcPr><w:tcW w:w="${node.columns[index]?.width}" w:type="dxa"/></w:tcPr>${siblings(cell.children, 0, (node.columns[index]?.width ?? 0) - 240)}</w:tc>`).join("")}</w:tr>`
             )
             .join("")
           return `<w:tbl><w:tblPr><w:tblW w:w="${width}" w:type="dxa"/><w:tblBorders>${borders}</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar>${margins}</w:tblCellMar></w:tblPr><w:tblGrid>${grid}</w:tblGrid>${rows}</w:tbl>`
@@ -125,7 +140,7 @@ function compileDocument(
             throw new Error(
               "Formatted Word output requires resolved photo media"
             )
-          return siblings(node.children, 0)
+          return siblings(node.children, 0, availableWidth)
         }
         let structure = ""
         if (list) {
@@ -153,12 +168,15 @@ function compileDocument(
             ? `<w:outlineLvl w:val="${node.level - 1}"/>`
             : ""
         const paragraph = `<w:p><w:pPr>${properties}${heading}</w:pPr>${runs(node.content)}</w:p>`
-        return paragraph + (list ? siblings(node.children, depth + 1) : "")
+        return (
+          paragraph +
+          (list ? siblings(node.children, depth + 1, availableWidth) : "")
+        )
       })
       .join("")
   }
   const body =
-    document.profile === "private-layout-1"
+    "flow" in document
       ? siblings(document.flow.children, 0)
       : document.kind === "cv"
         ? siblings([document.header, ...document.blocks], 0)
@@ -172,6 +190,7 @@ function compileDocument(
       paragraphIndent: false,
     }),
     links,
+    media: pictures.media,
     identity: [
       ["PaperProfile", document.profile],
       ["PaperKind", document.kind],

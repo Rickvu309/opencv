@@ -1,12 +1,13 @@
 import { z } from "zod"
 import { nodeIdSchema } from "./nodes.js"
 import {
+  photoLayoutTableSchema,
   layoutTableSchema,
-  layoutRowSchema,
+  photoLayoutRowSchema,
   layoutColumnSchema,
-  layoutCellSchema,
-  privateLayoutSchema,
-  type PrivateLayoutDocument,
+  photoLayoutCellSchema,
+  layoutDocumentSchema,
+  type LayoutDocument,
   type LayoutTable,
 } from "./native-layout.js"
 import { canonical, ok, refuse, type Result } from "./presentation-values.js"
@@ -16,7 +17,7 @@ const layoutEditSchema = z.discriminatedUnion("kind", [
     .object({
       kind: z.literal("insert-table"),
       afterId: nodeIdSchema.nullable(),
-      table: layoutTableSchema,
+      table: photoLayoutTableSchema,
     })
     .strict(),
   z.object({ kind: z.literal("remove-table"), tableId: nodeIdSchema }).strict(),
@@ -25,7 +26,7 @@ const layoutEditSchema = z.discriminatedUnion("kind", [
       kind: z.literal("insert-row"),
       tableId: nodeIdSchema,
       afterId: nodeIdSchema.nullable(),
-      row: layoutRowSchema,
+      row: photoLayoutRowSchema,
     })
     .strict(),
   z
@@ -43,7 +44,9 @@ const layoutEditSchema = z.discriminatedUnion("kind", [
       column: layoutColumnSchema,
       cells: z
         .array(
-          z.object({ rowId: nodeIdSchema, cell: layoutCellSchema }).strict()
+          z
+            .object({ rowId: nodeIdSchema, cell: photoLayoutCellSchema })
+            .strict()
         )
         .min(1)
         .max(100),
@@ -68,12 +71,12 @@ type LayoutEdit = z.infer<typeof layoutEditSchema>
 export const layoutReceiptSchema = z
   .object({
     version: z.literal(1),
-    profile: z.literal("private-layout-1"),
+    profile: z.enum(["private-layout-1", "private-layout-2"]),
     kind: z.enum(["cv", "letter"]),
     flowId: nodeIdSchema,
     tableId: nodeIdSchema,
-    before: layoutTableSchema.nullable(),
-    after: layoutTableSchema.nullable(),
+    before: photoLayoutTableSchema.nullable(),
+    after: photoLayoutTableSchema.nullable(),
     previousId: nodeIdSchema.nullable(),
     nextId: nodeIdSchema.nullable(),
   })
@@ -84,6 +87,14 @@ export const layoutReceiptSchema = z
       (!r.before || r.before.id === r.tableId) &&
       (!r.after || r.after.id === r.tableId),
     "Receipt identities disagree"
+  )
+  .refine(
+    (receipt) =>
+      receipt.profile !== "private-layout-1" ||
+      [receipt.before, receipt.after].every(
+        (table) => table === null || layoutTableSchema.safeParse(table).success
+      ),
+    "Layout v1 receipt cannot contain photos"
   )
 export type LayoutReceipt = z.infer<typeof layoutReceiptSchema>
 
@@ -152,20 +163,23 @@ function editTable(
       return exhaustive
     }
   }
-  return layoutTableSchema.parse(table)
+  return photoLayoutTableSchema.parse(table)
 }
 export function prepareLayoutEdit(
   input: unknown,
   edit: unknown
 ): Result<{
-  document: PrivateLayoutDocument
+  document: LayoutDocument
   receipt: LayoutReceipt
   basis: string
 }> {
   try {
-    const current = privateLayoutSchema.parse(input)
+    const current = layoutDocumentSchema.parse(input)
     const basis = canonical(current)
-    const doc = privateLayoutSchema.parse(current)
+    const doc = {
+      ...current,
+      flow: { ...current.flow, children: [...current.flow.children] },
+    }
     const change = layoutEditSchema.parse(edit)
     const index =
       change.kind === "insert-table"
@@ -179,7 +193,7 @@ export function prepareLayoutEdit(
       change.kind === "insert-table"
         ? null
         : existing?.type === "table"
-          ? layoutTableSchema.parse(existing)
+          ? photoLayoutTableSchema.parse(existing)
           : null
     const tableId =
       change.kind === "insert-table" ? change.table.id : change.tableId
@@ -194,11 +208,11 @@ export function prepareLayoutEdit(
       doc.flow.children.splice(index, 1)
     } else {
       if (!before) throw new Error("Missing table")
-      after = editTable(layoutTableSchema.parse(before), change)
+      after = editTable(photoLayoutTableSchema.parse(before), change)
       doc.flow.children.splice(index, 1, after)
     }
     return ok({
-      document: privateLayoutSchema.parse(doc),
+      document: layoutDocumentSchema.parse(doc),
       receipt: layoutReceiptSchema.parse({
         version: 1,
         profile: doc.profile,
@@ -220,7 +234,11 @@ export function prepareLayoutEdit(
 }
 
 const recordSchema = z.record(z.string(), z.unknown())
-function restore(before: unknown, after: unknown, current: unknown): unknown {
+export function restoreLayoutValue(
+  before: unknown,
+  after: unknown,
+  current: unknown
+): unknown {
   if (canonical(before) === canonical(after)) return current
   if (canonical(after) === canonical(current)) return before
   if (Array.isArray(before) && Array.isArray(after) && Array.isArray(current)) {
@@ -236,7 +254,7 @@ function restore(before: unknown, after: unknown, current: unknown): unknown {
         .map((node) => {
           const next = a.find((item) => item.id === node.id)
           const live = c.find((item) => item.id === node.id)
-          return next ? restore(node, next, live) : node
+          return next ? restoreLayoutValue(node, next, live) : node
         })
         .concat(
           c
@@ -261,7 +279,7 @@ function restore(before: unknown, after: unknown, current: unknown): unknown {
     return c.map((node) => {
       const old = b.find((item) => item.id === node.id),
         next = a.find((item) => item.id === node.id)
-      return old && next ? restore(old, next, node) : node
+      return old && next ? restoreLayoutValue(old, next, node) : node
     })
   }
   if (
@@ -278,7 +296,7 @@ function restore(before: unknown, after: unknown, current: unknown): unknown {
     const result = { ...c }
     for (const key of new Set([...Object.keys(b), ...Object.keys(a)])) {
       if (canonical(b[key]) === canonical(a[key])) continue
-      const value = restore(b[key], a[key], c[key])
+      const value = restoreLayoutValue(b[key], a[key], c[key])
       if (value === undefined) delete result[key]
       else result[key] = value
     }
@@ -289,11 +307,22 @@ function restore(before: unknown, after: unknown, current: unknown): unknown {
 export function reverseLayoutEdit(
   input: unknown,
   inverse: unknown
-): Result<PrivateLayoutDocument> {
+): Result<LayoutDocument> {
   try {
-    const doc = privateLayoutSchema.parse(input),
+    const currentDocument = layoutDocumentSchema.parse(input)
+    const doc = {
+        ...currentDocument,
+        flow: {
+          ...currentDocument.flow,
+          children: [...currentDocument.flow.children],
+        },
+      },
       receipt = layoutReceiptSchema.parse(inverse)
-    if (doc.kind !== receipt.kind || doc.flow.id !== receipt.flowId)
+    if (
+      doc.profile !== receipt.profile ||
+      doc.kind !== receipt.kind ||
+      doc.flow.id !== receipt.flowId
+    )
       throw new Error("Foreign layout receipt")
     const index = doc.flow.children.findIndex(
       (node) => node.id === receipt.tableId
@@ -305,7 +334,9 @@ export function reverseLayoutEdit(
       doc.flow.children.splice(
         index,
         1,
-        layoutTableSchema.parse(restore(receipt.before, receipt.after, current))
+        photoLayoutTableSchema.parse(
+          restoreLayoutValue(receipt.before, receipt.after, current)
+        )
       )
     } else if (receipt.after) {
       if (canonical(current) !== canonical(receipt.after))
@@ -318,7 +349,7 @@ export function reverseLayoutEdit(
         throw new Error("Table neighbors changed")
       doc.flow.children.splice(insert, 0, receipt.before)
     }
-    return ok(privateLayoutSchema.parse(doc))
+    return ok(layoutDocumentSchema.parse(doc))
   } catch (error) {
     return refuse(
       error instanceof Error ? error.message : "Invalid layout reversal"

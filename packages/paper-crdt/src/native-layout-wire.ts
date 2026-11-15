@@ -1,5 +1,9 @@
 import * as Y from "yjs"
-import { isWellFormed } from "@workspace/domain/internal/paper-presentation"
+import {
+  canonical,
+  layoutPhotoSchema,
+  isWellFormed,
+} from "@workspace/domain/internal/paper-presentation"
 import { validateMark, validateNodeAttrs } from "./native-formatting-wire.js"
 import type { PrivateLayoutEditor } from "./native-layout-schema.js"
 
@@ -22,8 +26,11 @@ const layouts = ["paperFlow", "paperTable", "paperRow", "paperCell"]
 
 export function validateLayoutWire(
   fragment: Y.XmlFragment,
-  engine: PrivateLayoutEditor
+  engine: PrivateLayoutEditor,
+  profile: "private-layout-1" | "private-layout-2" = "private-layout-1"
 ): void {
+  const contentNodes =
+    profile === "private-layout-2" ? [...content, "paperPhoto"] : content
   const ids = new Set<string>()
   const visit = (parent: Y.XmlFragment, container: string) => {
     const children = parent.toArray()
@@ -59,7 +66,7 @@ export function validateLayoutWire(
         children.length < 1 ||
         children.length > 2 ||
         !(body instanceof Y.XmlElement) ||
-        !content.includes(body.nodeName)
+        !contentNodes.includes(body.nodeName)
       )
         throw new Error("Invalid content container")
       if (
@@ -81,11 +88,32 @@ export function validateLayoutWire(
         )
       )
         throw new Error("Invalid inline layout content")
-    } else if ([...content, "hardBreak"].includes(name) && children.length)
+    } else if ([...contentNodes, "hardBreak"].includes(name) && children.length)
       throw new Error("Invalid noninline content")
     for (const child of children) {
       if (child instanceof Y.XmlElement) {
-        validateNodeAttrs(child.nodeName, child.getAttributes(), engine)
+        if (child.nodeName === "paperPhoto") {
+          if (profile !== "private-layout-2")
+            throw new Error("Photo requires layout v2")
+          const attrs = child.getAttributes()
+          const value = attrs.photo
+          if (typeof value !== "string") throw new Error("Missing photo value")
+          const photo = layoutPhotoSchema.parse(JSON.parse(value))
+          if (
+            canonical(photo) !== value ||
+            (parent instanceof Y.XmlElement
+              ? parent.getAttribute("id")
+              : undefined) !== photo.id
+          )
+            throw new Error("Noncanonical photo wire")
+          const allowed = engine.pmSchema.nodes.paperPhoto?.spec.attrs ?? {}
+          for (const [key, entry] of Object.entries(attrs))
+            if (
+              !(key in allowed) ||
+              (key !== "photo" && entry !== allowed[key]?.default)
+            )
+              throw new Error("Unknown photo wire attribute")
+        } else validateNodeAttrs(child.nodeName, child.getAttributes(), engine)
         if (
           child.nodeName === "blockContainer" ||
           layouts.includes(child.nodeName)
@@ -104,7 +132,7 @@ export function validateLayoutWire(
             "blockGroup",
             "blockContainer",
             "hardBreak",
-            ...content,
+            ...contentNodes,
             ...layouts,
           ].includes(child.nodeName)
         )

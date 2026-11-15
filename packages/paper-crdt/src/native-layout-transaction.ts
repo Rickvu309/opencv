@@ -2,8 +2,9 @@ import { docToBlocks } from "@blocknote/core"
 import type { EditorState, Transaction } from "@tiptap/pm/state"
 import type { ResolvedPos } from "@tiptap/pm/model"
 import type {
-  PrivateLayoutDocument,
+  LayoutDocument,
   FormatNode,
+  LayoutPhoto,
   LayoutTable,
   LayoutRow,
   LayoutCell,
@@ -21,12 +22,13 @@ export function layoutCellAt(
       return position.node(depth).attrs.id
   return null
 }
-function identities(document: PrivateLayoutDocument) {
+function identities(document: LayoutDocument) {
   const owners = new Map<string, string | null>(),
     fields = new Map<string, string>(),
-    grid: unknown[] = []
+    grid: unknown[] = [],
+    photos: unknown[] = []
   function visit(
-    node: FormatNode | LayoutTable | LayoutRow | LayoutCell,
+    node: FormatNode | LayoutPhoto | LayoutTable | LayoutRow | LayoutCell,
     parent: string,
     cell: string | null
   ) {
@@ -43,13 +45,19 @@ function identities(document: PrivateLayoutDocument) {
       ])
     if (node.type === "cell") cell = node.id
     owners.set(node.id, cell)
+    if (node.type === "photo") photos.push([parent, node])
     if (node.type === "cvField")
       fields.set(node.id, canonical([node.ownerId, node.fieldKey, node.itemId]))
     if ("children" in node)
       node.children.forEach((child) => visit(child, node.id, cell))
   }
   document.flow.children.forEach((node) => visit(node, document.flow.id, null))
-  return { owners, fields, grid: canonical([document.flow.id, grid]) }
+  return {
+    owners,
+    fields,
+    grid: canonical([document.flow.id, grid]),
+    photos: canonical(photos),
+  }
 }
 export function acceptsLayoutTransaction(
   binding: LayoutBinding,
@@ -63,18 +71,21 @@ export function acceptsLayoutTransaction(
     const after = fromLayoutBlocks(
       docToBlocks(tr.doc),
       binding.kind,
-      presentation
+      presentation,
+      stored.profile
     )
     if (canonical(after) === canonical(stored)) return true
     const before = fromLayoutBlocks(
       docToBlocks(state.doc),
       binding.kind,
-      presentation
+      presentation,
+      stored.profile
     )
     const old = identities(before),
       next = identities(after)
     if (
       old.grid !== next.grid ||
+      old.photos !== next.photos ||
       layoutCellAt(state.selection.$from) !== layoutCellAt(state.selection.$to)
     )
       return false

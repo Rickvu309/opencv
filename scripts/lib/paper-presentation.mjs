@@ -5,12 +5,32 @@ export function detect(text, path) {
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
   const hits = []
   const test = /\.test\.[cm]?[jt]sx?$/.test(path)
+  if (
+    path === "apps/api/src/paper/native-output/formatted-photos.ts" &&
+    text.includes("<wp:extent") &&
+    (!text.includes("photoBounds(photo)") ||
+      /<wp:extent[^>]*\$\{(?:width|height)\}/.test(text))
+  )
+    hits.push(
+      "Word photo frames must reserve rotated bounds and retain editable picture dimensions"
+    )
+  if (
+    path === "packages/paper-crdt/src/native-layout-schema.ts" &&
+    text.includes("photoBlockSpec") &&
+    (!text.includes("paperWrapSlot") ||
+      !text.includes("display:block") ||
+      !text.includes(".bn-block > ${text}"))
+  )
+    hits.push(
+      "Wrapped photo text must share the surrounding inline formatting context"
+    )
+
   const presentation =
-    /\/(?:paper-presentation|presentation(?:[-.][^/]+)?|native-(?:formatting|layout)(?:[-.][^/]+)?)\.ts$/.test(
+    /\/(?:paper-presentation|presentation(?:[-.][^/]+)?|native-(?:formatting|layout|photo)(?:[-.][^/]+)?)\.ts$/.test(
       path
     )
   const privateCrdt =
-    /^packages\/paper-crdt\/src\/(?:presentation-(?:binding|meta|inline|codec|reverse)|native-(?:formatting|layout)(?:-[^/]+)?)\.ts$/.test(
+    /^packages\/paper-crdt\/src\/(?:presentation-(?:binding|meta|inline|codec|reverse)|native-(?:formatting|layout|photo)(?:-[^/]+)?)\.ts$/.test(
       path
     )
   const packageRoot = path.split("/").slice(0, 2).join("/")
@@ -73,7 +93,7 @@ export function detect(text, path) {
       hits.push("Production fixture binding has been removed")
     if (
       !privateCrdt &&
-      /(?:^|\/)(?:presentation-(?:binding|meta|inline|codec|reverse)|native-(?:formatting|layout)(?:-[^/]+)?)(?:\.[cm]?[jt]s)?$/.test(
+      /(?:^|\/)(?:presentation-(?:binding|meta|inline|codec|reverse)|native-(?:formatting|layout|photo)(?:-[^/]+)?)(?:\.[cm]?[jt]s)?$/.test(
         specifier
       ) &&
       !path.startsWith("packages/domain/")
@@ -184,7 +204,7 @@ export function detect(text, path) {
             )
         }
         if (
-          /^packages\/paper-crdt\/src\/native-(?:formatting|layout)-mount\.ts$/.test(
+          /^packages\/paper-crdt\/src\/native-(?:formatting|layout|photo)-mount\.ts$/.test(
             path
           ) &&
           ts.isPropertyAccessExpression(node.expression) &&

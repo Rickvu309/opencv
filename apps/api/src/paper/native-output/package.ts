@@ -3,13 +3,14 @@ import { createRequire } from "node:module"
 import { z } from "zod"
 
 import { xml, type ExternalLink } from "./rich-text.js"
+import type { WordMedia } from "./formatted-photos.js"
 
 const required: unknown = createRequire(import.meta.url)(
   "../../../../../scripts/lib/paper-canvas-bytes.mjs"
 )
 const { writeZip } = z
   .object({
-    writeZip: z.custom<(files: [string, string][]) => Uint8Array>(
+    writeZip: z.custom<(files: [string, string | Uint8Array][]) => Uint8Array>(
       (value) => typeof value === "function"
     ),
   })
@@ -35,6 +36,7 @@ export function wordPackage(input: {
   numbering: string
   links: readonly ExternalLink[]
   identity: readonly (readonly [string, string])[]
+  media?: readonly WordMedia[]
 }): Uint8Array {
   const overrides = [
     ["/word/document.xml", "document.main"],
@@ -57,6 +59,10 @@ export function wordPackage(input: {
       ({ id, target }) =>
         `<Relationship Id="${id}" Type="${REL_NS}/hyperlink" Target="${xml(target)}" TargetMode="External"/>`
     ),
+    ...(input.media ?? []).map(
+      ({ id, name }) =>
+        `<Relationship Id="${id}" Type="${REL_NS}/image" Target="media/${xml(name)}"/>`
+    ),
   ].join("")
   const identity = input.identity
     .map(
@@ -67,7 +73,7 @@ export function wordPackage(input: {
   return writeZip([
     [
       "[Content_Types].xml",
-      `${XML_START}<Types xmlns="${TYPES_NS}"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${overrides}<Override PartName="/docProps/custom.xml" ContentType="application/vnd.openxmlformats-officedocument.custom-properties+xml"/></Types>`,
+      `${XML_START}<Types xmlns="${TYPES_NS}"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>${overrides}${(input.media ?? []).map(({ name, mediaType }) => `<Override PartName="/word/media/${xml(name)}" ContentType="${xml(mediaType)}"/>`).join("")}<Override PartName="/docProps/custom.xml" ContentType="application/vnd.openxmlformats-officedocument.custom-properties+xml"/></Types>`,
     ],
     [
       "_rels/.rels",
@@ -83,6 +89,10 @@ export function wordPackage(input: {
     ],
     ["word/styles.xml", wordPart("styles", input.styles)],
     ["word/numbering.xml", wordPart("numbering", input.numbering)],
+    ...(input.media ?? []).map(({ name, bytes }): [string, Uint8Array] => [
+      `word/media/${name}`,
+      bytes,
+    ]),
     [
       "docProps/custom.xml",
       `${XML_START}<Properties xmlns="${CUSTOM_NS}" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">${identity}</Properties>`,
