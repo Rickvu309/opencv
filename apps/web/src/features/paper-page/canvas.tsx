@@ -1,3 +1,4 @@
+import { writingStorage } from "./canvas-branch.ts"
 import {
   Fragment,
   type ReactNode,
@@ -9,6 +10,11 @@ import {
   useSyncExternalStore,
 } from "react"
 import { cn } from "@workspace/ui/lib/utils"
+
+import { useWritingReconnect } from "./canvas-reconnect.ts"
+import { RecoveryBar } from "./canvas-recovery.tsx"
+import { selectRecovery } from "./canvas-recovery-select.ts"
+import type { Recovery } from "./canvas-branch.ts"
 
 import { wordDownloadRevision } from "./canvas-download.ts"
 
@@ -205,6 +211,10 @@ function WritingSheet({
   const [state, dispatch] = useReducer(reduce, null, () =>
     openSheet(docId, seed, seedRevision)
   )
+  const connection = useWritingReconnect(
+    docId,
+    !state.recovering && !state.moved && !state.pageRefusal
+  )
   const nextId = useRef(state.present.nextId)
   const heldBack = useRef<CanvasAction[]>([])
   const deliver = useCallback((action: CanvasAction) => {
@@ -227,6 +237,8 @@ function WritingSheet({
 
   const latest = useRef(state)
   const stored = useRef(true)
+  const settlement = useRef<AbortController | null>(null)
+  const recovering = useRef(false)
   useLayoutEffect(() => {
     latest.current = state
   })
@@ -235,7 +247,7 @@ function WritingSheet({
     stored.current = storeDraft(
       docId,
       state.present,
-      localStorage,
+      writingStorage,
       state.basis,
       { saved: state.saved, unsaved: state.unsaved }
     )
@@ -244,13 +256,17 @@ function WritingSheet({
   }, [docId, state.present, state.basis, state.saved, state.unsaved])
 
   useEffect(() => {
-    if (!stored.current) return
+    if (state.recovering) return
     const words = pageWords(state.present.blocks)
     const typed = state.typed
     if (words === "" || typed) {
-      dispatch({ type: "note", note: keptOnThisComputer() })
+      dispatch({
+        type: "note",
+        note: stored.current ? keptOnThisComputer() : clearedOnReload(),
+      })
     }
     const controller = new AbortController()
+    settlement.current = controller
     void settlePage(docId, state.present.blocks, controller.signal, {
       basis: state.basis,
       typed,
@@ -262,10 +278,24 @@ function WritingSheet({
         if (outcome.moved) setWritingConflict(docId)
         else if (outcome.saved || outcome.replace) setWritingConflict(null)
         deliver({ type: "settled", outcome, words, typed })
+        if (!stored.current && !outcome.saved && !outcome.note)
+          dispatch({
+            type: "note",
+            note: outcome.local ? keptOnThisComputer() : clearedOnReload(),
+          })
       })
       .catch(() => undefined)
     return () => controller.abort()
-  }, [deliver, docId, state.present, state.basis, state.typed, conflicted])
+  }, [
+    deliver,
+    docId,
+    state.present,
+    state.basis,
+    state.typed,
+    state.recovering,
+    conflicted,
+    connection,
+  ])
 
   useLayoutEffect(() => {
     composing.current = false
@@ -311,10 +341,33 @@ function WritingSheet({
     }
   }, [marked, state.present, state.redraw])
 
-  const takeSavedPage = useCallback(() => {
-    setWritingConflict(null)
-    dispatch({ type: "useSaved" })
-  }, [])
+  const recover = useCallback(
+    (selected: Recovery | null) => {
+      if (recovering.current) return
+      recovering.current = true
+      settlement.current?.abort()
+      dispatch({ type: "recovering", active: true })
+      void selectRecovery(docId, selected)
+        .then((next) => {
+          setWritingConflict(null)
+          recovering.current = false
+          dispatch({ type: "recovered", state: next })
+        })
+        .catch((error: unknown) => {
+          recovering.current = false
+          dispatch({ type: "recovering", active: false })
+          dispatch({
+            type: "notice",
+            notice:
+              error instanceof Error
+                ? error.message
+                : "This copy could not be opened. Your words are still here.",
+          })
+        })
+    },
+    [docId]
+  )
+  const takeSavedPage = useCallback(() => recover(null), [recover])
 
   const restoreLine = useCallback((id: string) => {
     dispatch({ type: "restoreLine", id })
@@ -416,6 +469,7 @@ function WritingSheet({
           state.basis
         )
       )}
+      <RecoveryBar key={state.redraw} docId={docId} onRecover={recover} />
       <UnsavedBar
         key={bar.cause ?? "none"}
         model={bar}
@@ -427,7 +481,8 @@ function WritingSheet({
           key={state.redraw}
           ref={pageRef}
           className={cn("writing-page")}
-          contentEditable
+          aria-busy={state.recovering}
+          contentEditable={!state.recovering}
           suppressContentEditableWarning
           spellCheck
           aria-label="Page"

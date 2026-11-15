@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { act, fireEvent, within } from "@testing-library/react"
+import { act, fireEvent, waitFor, within } from "@testing-library/react"
 
 import {
   copied,
@@ -17,6 +17,7 @@ import {
   opened,
   refuseAvailable,
   reload,
+  recover,
   server,
   settle,
   shown,
@@ -138,6 +139,7 @@ describe.each(MOVED_ROWS)(
       expect(marked()).toEqual([L.name, L.job])
       expect(bar()?.textContent).toMatch(/discards 2 lines/)
       await reload()
+      await recover()
       await type(L.available, "!")
       await settle()
       expect(marked()).toEqual([L.name, L.job, L.available])
@@ -175,8 +177,16 @@ describe.each(MOVED_ROWS)(
     it("offers the same choice after a reload", async () => {
       await moved()
       await reload()
+      await recover()
       expect(shown(L.job)).toBe(`${START[L.job]}${SENTENCE}`)
-      expect(bar()).not.toBeNull()
+      await waitFor(() =>
+        expect(
+          bar(),
+          JSON.stringify({ status: status(), stored: stored() })
+        ).not.toBeNull()
+      )
+      expect(server.textOf(L.name)).toBe("Linh Nguyen, MBA")
+      expect(server.textOf(L.job)).toBe(START[L.job])
       expect(status()).not.toMatch(/\bSaved\b/)
     })
 
@@ -218,6 +228,7 @@ describe("a partial resend, an edit elsewhere and a reload, as in review N2", ()
     expect(line(L.available)).toHaveAttribute("data-unsaved")
     server.otherTab(L.education, "Education ELSEWHERE")
     await reload()
+    await recover()
     await type(L.name, "Q", 4)
     await settle()
     const marked = () =>

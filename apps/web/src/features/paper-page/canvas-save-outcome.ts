@@ -13,6 +13,7 @@ import {
 } from "./canvas-save-lines.ts"
 
 export type SaveOutcome = {
+  local?: boolean
   saved: boolean
   words: string
   revision: string | null

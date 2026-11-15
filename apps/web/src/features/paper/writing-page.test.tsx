@@ -1,3 +1,4 @@
+import { branchKey } from "../paper-page/canvas-branch.ts"
 import "fake-indexeddb/auto"
 
 import { afterEach, expect, it, vi } from "vitest"
@@ -104,7 +105,7 @@ it("ignores a Coach edit that is not one replacement", () => {
   expect(writingProposal()).toBeNull()
 })
 
-it("approves a Coach replacement onto the page and undoes it", async () => {
+it("approves a Coach page replacement and undoes it", async () => {
   let serverText = "Before line"
   const calls: string[] = []
   vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {
@@ -155,7 +156,7 @@ it("approves a Coach replacement onto the page and undoes it", async () => {
   expect(
     calls.some((path) => path.includes("/api/commands/actions.approve"))
   ).toBe(true)
-  expect(localStorage.getItem(`opencv-writing:${DOC}`)).toContain("After line")
+  expect(localStorage.getItem(branchKey(DOC))).toContain("After line")
   fireEvent.click(screen.getByRole("button", { name: "Undo" }))
   await waitFor(() => expect(words()).toEqual(["Before line"]))
   expect(screen.getByText("Undone")).toBeVisible()
@@ -537,7 +538,7 @@ it("holds Download Word for unsent canvas words even when shared storage claims 
       write.resolve(
         Response.json({
           ok: true,
-          data: { generation: "package", revision: NEXT },
+          data: exportOf(NEXT),
         })
       )
       await write.promise

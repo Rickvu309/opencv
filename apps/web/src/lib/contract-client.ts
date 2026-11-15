@@ -61,6 +61,7 @@ export type RunOptions = {
   refresh?: boolean
   signal?: AbortSignal
   keepalive?: boolean
+  idempotencyKey?: string
 }
 
 export type CommandResult<T> = T & { activityId?: string }
@@ -92,7 +93,7 @@ export async function runContractCommand<N extends ContractCommandName>(
       input,
       ...((commands[name] as AnyCommandEntry).idempotency === "none"
         ? {}
-        : { idempotencyKey: crypto.randomUUID() }),
+        : { idempotencyKey: options.idempotencyKey ?? crypto.randomUUID() }),
     }),
     ...(options.signal ? { signal: options.signal } : {}),
     ...(options.keepalive ? { keepalive: true } : {}),

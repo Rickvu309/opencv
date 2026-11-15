@@ -1,3 +1,4 @@
+import { branchKey } from "./canvas-branch.ts"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 
@@ -132,13 +133,13 @@ function words() {
 }
 
 function stored(): string[] {
-  const raw = JSON.parse(localStorage.getItem(`opencv-writing:${DOC}`) ?? "{}")
+  const raw = JSON.parse(localStorage.getItem(branchKey(DOC)) ?? "{}")
   const draft = raw.draft ?? raw
   return draft.blocks.map((item: { text: string }) => item.text)
 }
 
 function status() {
-  return screen.getByRole("status").textContent ?? ""
+  return document.querySelector("p.writing-note")?.textContent ?? ""
 }
 
 function pointAt(id: string, offset: number): [Node, number] {

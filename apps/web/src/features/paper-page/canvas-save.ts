@@ -1,4 +1,3 @@
-import { QueryClient } from "@tanstack/react-query"
 import { paperCanvasCommitSchema, type WordPage } from "@workspace/domain"
 
 import { ApiError } from "@/lib/api-error.ts"
@@ -8,7 +7,6 @@ import {
   type LocalObservation,
   type PackageDraft,
 } from "@/lib/paper-package-ack.ts"
-import { runContractCommand } from "@/lib/contract-client.ts"
 import {
   draftFromPage,
   pageBlocks,
@@ -29,10 +27,10 @@ import {
   type SaveOutcome,
 } from "./canvas-save-outcome.ts"
 import { diffParagraphs } from "./page-diff.ts"
+import { replayPending, transmit } from "./canvas-attempt.ts"
 import {
   closeRecordDb,
   commitWords,
-  keepSent,
   ownSent,
   recordSent,
   type SentRecord,
@@ -74,12 +72,6 @@ export function pageReason(error: unknown): string | null {
     : null
 }
 
-function lineRefusalNote(error: unknown): string | null {
-  if (!(error instanceof ApiError)) return null
-  if (error.status !== 400 && error.status !== 409) return null
-  return error.message || "Paper could not save this line."
-}
-
 export function pageWords(blocks: readonly { text: string }[]): string {
   return blocks.map((block) => block.text).join("\n")
 }
@@ -105,10 +97,7 @@ export function decideSave(
 }
 
 export async function closeWritingDb() {
-  ownWrites.clear()
-  unanswered.clear()
   retryAt.clear()
-  sentBlocks.clear()
   await closeRecordDb()
 }
 
@@ -124,32 +113,19 @@ function serverNote(error: unknown): string | null {
   return null
 }
 
-let commands: QueryClient | null = null
-
-function commandClient() {
-  commands ??= new QueryClient()
-  return commands
-}
-
 async function readPage(docId: string, signal: AbortSignal) {
   return readWordPage("page", docId, signal)
 }
 
 function earlierRenames(
-  docId: string,
   page: WordPage,
   blocks: readonly PageBlock[],
   kept: SentRecord | undefined
 ): Record<string, string> {
-  const sent =
-    sentBlocks.get(docId) ??
-    (kept ? { revision: null, blocks: kept.blocks } : undefined)
   const server = pageBlocks(page)
   const landed =
-    sent &&
-    (sent.revision === page.revision ||
-      (sent.revision === null && pageWords(sent.blocks) === pageText(page)))
-      ? landedRenames(sent.blocks, server)
+    kept?.receipt?.revision === page.revision
+      ? landedRenames(kept.blocks, server)
       : null
   const own = new Set(blocks.map((block) => block.id))
   const onServer = new Set(server.map((block) => block.id))
@@ -182,37 +158,18 @@ async function sendPage(
       revision: null,
       note: input.error.issues[0]?.message ?? "Paper could not save this line.",
     }
+  if (input.data.op !== "write") throw new Error("Expected a Word write.")
   const words = pageWords(blocks)
-  unanswered.set(docId, words)
-  sentBlocks.set(docId, { revision: null, blocks: blocks.slice() })
-  const fresh = await recordSent(docId, {
+  const frozen = await recordSent(docId, {
+    input: input.data,
     words,
     bases: [...new Set([held, page.revision].filter((name) => name !== null))],
     blocks: blocks.slice(),
   })
-  try {
-    const revision = receiptRevision(
-      await runContractCommand(commandClient(), "paper.canvas", input.data, {
-        refresh: false,
-      })
-    )
-    unanswered.delete(docId)
-    if (revision) {
-      ownWrites.set(docId, recordedBasis(revision, words))
-      sentBlocks.set(docId, { revision, blocks: blocks.slice() })
-    }
-    return { revision, note: null }
-  } catch (error) {
-    const note = lineRefusalNote(error)
-    if (note === null) throw error
-    if (fresh)
-      await keepSent(docId, (kept) =>
-        kept.filter((item) => item.words !== words)
-      )
-    unanswered.delete(docId)
-    sentBlocks.delete(docId)
-    return { revision: null, note }
-  }
+  const sent = await transmit(docId, frozen)
+  return sent.note !== null
+    ? { revision: null, note: sent.note }
+    : { revision: sent.revision, note: null }
 }
 
 function caretIn(caret: TextPoint | null, ids: readonly string[]) {
@@ -321,39 +278,20 @@ function sameNote(refused: readonly LineRefusal[]) {
   return refused.every((line) => line.note === refused[0]?.note)
 }
 
-function receiptRevision(value: unknown) {
-  if (!value || typeof value !== "object") return null
-  if (!("generation" in value) || value.generation !== "package") return null
-  if (!("revision" in value) || typeof value.revision !== "string") return null
-  return value.revision
-}
-
 const tails = new Map<string, Promise<unknown>>()
-const ownWrites = new Map<string, DraftBasis>()
-const unanswered = new Map<string, string>()
 const retryAt = new Map<string, number>()
-const sentBlocks = new Map<
-  string,
-  { revision: string | null; blocks: PageBlock[] }
->()
 
 function basisAt(
-  docId: string,
   page: WordPage,
   claimed: DraftBasis | null,
   kept: SentRecord | undefined
 ): DraftBasis | null {
-  const own = ownWrites.get(docId)
-  if (own && own.revision === page.revision) return own
-  const sent = unanswered.get(docId)
-  if (sent !== undefined && sent === pageText(page)) {
-    return recordedBasis(page.revision, sent)
-  }
-  if (kept) return recordedBasis(page.revision, kept.words)
-  return claimed
+  return kept?.receipt?.revision === page.revision
+    ? recordedBasis(page.revision, kept.words)
+    : claimed
 }
 
-function serial<T>(docId: string, job: () => Promise<T>): Promise<T> {
+export function serial<T>(docId: string, job: () => Promise<T>): Promise<T> {
   const previous = tails.get(docId) ?? Promise.resolve()
   const run = previous.then(job, job)
   tails.set(
@@ -375,22 +313,15 @@ async function settleOnce(
 ): Promise<SaveOutcome> {
   const words = pageWords(given)
   if (signal.aborted) return missed(words)
-  const committed = await commitWords(docId, words)
-  if (committed.local.transaction !== "complete") return missed(words)
+  const committed = await commitWords(docId, words, given, claim.basis)
+  if (committed.local.transaction !== "complete")
+    return { ...missed(words), local: false }
+  const record = await replayPending(docId, committed.record)
   const page = await readPage(docId, signal)
   if (!page || signal.aborted) return missed(words)
   const seen = pageText(page)
-  const kept = ownSent(committed.record, claim.basis, pageText(page))
-  if (kept)
-    await keepSent(docId, (sent) =>
-      sent.slice(
-        Math.max(
-          0,
-          sent.findIndex((item) => item.words === kept.words)
-        )
-      )
-    )
-  const basis = basisAt(docId, page, claim.basis, kept)
+  const kept = ownSent(record, claim.basis, page.revision, seen)
+  const basis = basisAt(page, claim.basis, kept)
   if (words === seen && (words !== "" || basis !== null)) {
     const renames = landedRenames(given, pageBlocks(page)) ?? {}
     return withRenames(
@@ -404,7 +335,7 @@ async function settleOnce(
       renames
     )
   }
-  const renames = earlierRenames(docId, page, given, kept)
+  const renames = earlierRenames(page, given, kept)
   const blocks = renamedBlocks(given, renames)
   const changed = basis ? words !== basis.words : claim.typed
   const serverMoved =
@@ -422,7 +353,7 @@ async function settleOnce(
       basis: recordedBasis(page.revision, seen),
     }
   }
-  if (serverMoved) return movedTo(words, page)
+  if (serverMoved || (!basis && seen !== "")) return movedTo(words, page)
   const carried = stillRefused([...(claim.refused ?? []), ...answered], blocks)
   const sending = withoutRefused(pageBlocks(page), blocks, carried)
   const caret = claim.caret ?? null
@@ -539,7 +470,10 @@ async function attempt(
 ): Promise<Attempt> {
   try {
     return {
-      outcome: await settleOnce(docId, blocks, signal, claim, answered),
+      outcome: {
+        local: true,
+        ...(await settleOnce(docId, blocks, signal, claim, answered)),
+      },
       wait: null,
     }
   } catch (error) {
@@ -548,7 +482,7 @@ async function attempt(
     if (page) {
       return {
         outcome: withRefusals(
-          { ...missed(pageWords(blocks)), pageRefusal: page },
+          { ...missed(pageWords(blocks)), local: true, pageRefusal: page },
           known
         ),
         wait: null,
@@ -556,7 +490,7 @@ async function attempt(
     }
     return {
       outcome: withRefusals(
-        { ...missed(pageWords(blocks)), note: serverNote(error) },
+        { ...missed(pageWords(blocks)), local: true, note: serverNote(error) },
         answered.length > 0 ? known : []
       ),
       wait: retryWait(error),

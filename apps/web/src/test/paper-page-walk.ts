@@ -1,3 +1,9 @@
+import {
+  branchKey,
+  readBranch,
+  rotateWriter,
+} from "@/features/paper-page/canvas-branch.ts"
+import { selectRecovery } from "@/features/paper-page/canvas-recovery-select.ts"
 import { vi } from "vitest"
 
 import {
@@ -161,12 +167,6 @@ class Page {
         this.dispatch({ type: "paste", span: at(point), text: step.text })
     } else if (step.kind === "undo" || step.kind === "redo") {
       this.dispatch({ type: step.kind })
-    } else if (step.kind === "useSaved") {
-      if (this.state.moved) {
-        count("use saved page")
-        this.conflicted = false
-        this.dispatch({ type: "useSaved" })
-      }
     } else if (step.kind === "restore") {
       const lines = unsavedBar(this.state).lines
       const line = lines[step.pick % Math.max(lines.length, 1)]
@@ -455,7 +455,7 @@ async function drain(world: World, page: Page, label: string) {
   }
 }
 
-async function reloadPage(world: World, page: Page) {
+async function reloadAndRecoverPage(world: World, page: Page) {
   page.close()
   while (world.pending.length > 0) {
     world.answer(0, "lost")
@@ -464,6 +464,18 @@ async function reloadPage(world: World, page: Page) {
   vi.clearAllTimers()
   await flush()
   await closeWritingDb()
+  const retained = readBranch(docId(), localStorage)
+  rotateWriter(docId())
+  if (retained) {
+    const key = branchKey(docId(), retained.writerId)
+    await selectRecovery(docId(), {
+      key,
+      identity: `${key}:${retained.snapshotId}`,
+      branch: retained,
+      legacy: false,
+    })
+    count("recover retained copy")
+  }
   const next = new Page(world)
   return next
 }
@@ -477,7 +489,7 @@ export async function walk(
   const world = new World(start)
   vi.stubGlobal("indexedDB", tinyIndexedDb())
   net.read = (_docId, signal) => world.read(signal)
-  net.send = (input) => world.send(input)
+  net.send = (input, key) => world.send(input, key)
   localStorage.clear()
   vi.spyOn(navigator, "onLine", "get").mockImplementation(() => world.online)
   let page = new Page(world)
@@ -513,11 +525,28 @@ export async function walk(
         world.online = step.online
         if (step.online) window.dispatchEvent(new Event("online"))
       } else if (step.kind === "reload") {
-        page = await reloadPage(world, page)
+        page = await reloadAndRecoverPage(world, page)
         if (pageWords(page.state.present.blocks) !== words)
           fail(
             `I3 words kept: a reload changed the words on the page (${label})`
           )
+      } else if (step.kind === "useSaved" && !page.composing) {
+        person = true
+        if (page.state.moved) {
+          count("use saved page")
+          page.close()
+          const selected = selectRecovery(docId(), null).then(
+            (state) => state,
+            () => null
+          )
+          await drain(world, page, label)
+          if (await selected) page = new Page(world)
+          else {
+            page.alive = true
+            page.savedFor = null
+            page.effects()
+          }
+        }
       } else if (!page.composing) {
         person = true
         page.person(step)

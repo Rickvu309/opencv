@@ -1,3 +1,4 @@
+import { branchKey } from "./canvas-branch.ts"
 import { describe, expect, it } from "vitest"
 
 import {
@@ -149,7 +150,7 @@ describe("writing draft", () => {
     const draft = insertText(blankDraft(), pointSpan(blankDraft().caret), "Hi")
     expect(storeDraft(DOC, draft, storage)).toBe(true)
     expect(loadDraft(DOC, storage)).toEqual(draft)
-    memory.set(`opencv-writing:${DOC}`, "{")
+    memory.set(branchKey(DOC), "{")
     expect(loadDraft(DOC, storage)).toBeNull()
     expect(
       storeDraft(DOC, draft, {

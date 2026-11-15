@@ -22,7 +22,7 @@ export function nextDoc() {
 
 export type Net = {
   read: (docId: string, signal: AbortSignal) => Promise<unknown>
-  send: (input: unknown) => Promise<unknown>
+  send: (input: unknown, key?: string) => Promise<unknown>
 }
 
 export const net: Net = {
@@ -227,35 +227,55 @@ export function tinyIndexedDb() {
     createObjectStore: () => undefined,
     close: () => undefined,
     transaction: () => {
+      const staged = new Map<string, unknown>()
+      let pending = 0
+      let ended = false
       const tx: {
         error: null
         oncomplete: null | (() => void)
         onabort: null | (() => void)
         objectStore: () => unknown
+        abort: () => void
       } = {
         error: null,
         oncomplete: null,
         onabort: null,
         objectStore: () => null,
+        abort: () => {
+          ended = true
+          later(() => tx.onabort?.())
+        },
+      }
+      const request = (read: () => unknown) => {
+        const result: { result: unknown; onsuccess: null | (() => void) } = {
+          result: undefined,
+          onsuccess: null,
+        }
+        pending++
+        later(() => {
+          if (ended) return
+          result.result = structuredClone(read())
+          result.onsuccess?.()
+          pending--
+          later(() => {
+            if (ended || pending) return
+            ended = true
+            for (const [key, value] of staged) rows.set(key, value)
+            tx.oncomplete?.()
+          })
+        })
+        return result
       }
       tx.objectStore = () => ({
-        get: (key: string) => {
-          const request: { result: unknown; onsuccess: null | (() => void) } = {
-            result: undefined,
-            onsuccess: null,
-          }
-          later(() => {
-            request.result = rows.get(key)
-            request.onsuccess?.()
-            later(() => tx.oncomplete?.())
-          })
-          return request
-        },
-        put: (value: { key: string }) => {
-          rows.set(value.key, value)
-          later(() => tx.oncomplete?.())
-          return {}
-        },
+        getAll: () =>
+          request(() => [...new Map([...rows, ...staged]).values()]),
+        get: (key: string) =>
+          request(() => (staged.has(key) ? staged.get(key) : rows.get(key))),
+        put: (value: { key: string }) =>
+          request(() => {
+            staged.set(value.key, structuredClone(value))
+            return value.key
+          }),
       })
       return tx
     },
@@ -526,13 +546,27 @@ export class World {
     })
   }
 
-  send(input: unknown): Promise<unknown> {
+  receipts = new Map<string, { input: string; receipt: unknown }>()
+
+  send(input: unknown, key = crypto.randomUUID()): Promise<unknown> {
     return new Promise((resolve, reject) => {
       this.pending.push({
         kind: "send",
         answer: (fault) => {
           const failure = this.transport(fault === "lost" ? "none" : fault)
           if (failure) return reject(failure)
+          const replay = this.receipts.get(key)
+          if (replay) {
+            if (replay.input !== JSON.stringify(input))
+              return reject(
+                new ApiError(
+                  409,
+                  "IDEMPOTENCY_CONFLICT",
+                  "Original input changed"
+                )
+              )
+            return resolve(structuredClone(replay.receipt))
+          }
           const refused = this.pageFailure(false)
           if (refused) return reject(refused)
           const batch = (input as { batch: { basedOn: string; ops: Op[] } })
@@ -548,10 +582,9 @@ export class World {
           }
           count("applied")
           this.apply(batch.ops)
-          if (fault === "lost") return reject(new TypeError("Failed to fetch"))
-          resolve({
+          const receipt = {
             generation: "package",
-            docId: PACKAGE,
+            docId: docId(),
             revision: this.head(),
             name: "Page.docx",
             kind: "cv",
@@ -559,7 +592,11 @@ export class World {
             byteSize: 128,
             incarnation: PACKAGE,
             restore: null,
-          })
+            activity: crypto.randomUUID(),
+          }
+          this.receipts.set(key, { input: JSON.stringify(input), receipt })
+          if (fault === "lost") return reject(new TypeError("Failed to fetch"))
+          resolve(structuredClone(receipt))
         },
       })
     })

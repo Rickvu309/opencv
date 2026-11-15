@@ -94,7 +94,7 @@ describe("minted package page", () => {
     expect(await screen.findByRole("article", { name: "Page" })).toBeVisible()
     expect(document.querySelector(`p[data-block="${WRITING}"]`)).not.toBeNull()
     expect(document.querySelector(`p[data-block="${CARRIER}"]`)).toBeNull()
-    expect(screen.getByRole("status")).toHaveTextContent(
+    expect(document.querySelector("p.writing-note")).toHaveTextContent(
       "Writing is not saved yet"
     )
   })

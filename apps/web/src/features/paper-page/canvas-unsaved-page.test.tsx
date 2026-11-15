@@ -12,6 +12,7 @@ import {
   copied,
   opened,
   reload,
+  recover,
   server,
   settle,
   shown,
@@ -126,6 +127,7 @@ describe.each(PAGE_ROWS)(
       await type(L.education, "Y")
       await settle()
       await reload()
+      await recover()
       expect(shown(L.job)).toBe(`${START[L.job]}${SENTENCE}`)
       expect(shown(L.education)).toBe("EducationY")
       expect(status()).not.toMatch(/\bSaved\b/)

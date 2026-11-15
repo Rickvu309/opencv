@@ -1,3 +1,4 @@
+import { writingStorage } from "./canvas-branch.ts"
 import { WORD_LIMITS } from "@workspace/domain"
 
 import {
@@ -55,6 +56,7 @@ export type CanvasState = {
   unsaved: LineRefusal[]
   pageRefusal: string | null
   moved: MovedPage | null
+  recovering?: boolean
 }
 
 export type CanvasAction =
@@ -87,6 +89,8 @@ export type CanvasAction =
   | { type: "notice"; notice: string }
   | { type: "settled"; outcome: SaveOutcome; words: string; typed: boolean }
   | { type: "useSaved" }
+  | { type: "recovered"; state: CanvasState }
+  | { type: "recovering"; active: boolean }
   | { type: "restoreLine"; id: string }
   | { type: "redraw" }
 
@@ -290,6 +294,10 @@ function edited(state: CanvasState, action: CanvasAction): CanvasState {
 }
 
 export function reduce(state: CanvasState, action: CanvasAction): CanvasState {
+  if (action.type === "recovering")
+    return { ...state, recovering: action.active }
+  if (action.type === "recovered")
+    return { ...action.state, redraw: state.redraw + 1 }
   if (action.type === "note") {
     return state.note === action.note ? state : { ...state, note: action.note }
   }
@@ -572,10 +580,10 @@ export function openSheet(
   seed: WritingDraft | null,
   seedRevision: string | null
 ): CanvasState {
-  const stored = loadDraft(docId, localStorage)
+  const stored = loadDraft(docId, writingStorage)
   const present = plainDraft(stored ?? seed ?? blankDraft())
   const basis =
-    loadDraftBasis(docId, localStorage) ??
+    loadDraftBasis(docId, writingStorage) ??
     (seedRevision
       ? { revision: seedRevision, words: pageWords(present.blocks) }
       : null)
@@ -587,13 +595,13 @@ export function openSheet(
     ? null
     : pageWords(present.blocks) === basis.words
       ? present
-      : (savedAtBasis(loadSavedDraft(docId, localStorage)) ??
+      : (savedAtBasis(loadSavedDraft(docId, writingStorage)) ??
         savedAtBasis(seed))
   const unsaved = stillRefused(
-    loadUnsavedLines(docId, localStorage),
+    loadUnsavedLines(docId, writingStorage),
     present.blocks
   )
-  storeDraft(docId, present, localStorage, basis, { saved, unsaved })
+  storeDraft(docId, present, writingStorage, basis, { saved, unsaved })
   return {
     past: [],
     present,

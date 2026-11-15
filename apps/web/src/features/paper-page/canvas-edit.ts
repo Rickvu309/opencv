@@ -1,5 +1,7 @@
 import type { WordPage } from "@workspace/domain"
 
+import { branchKey, readBranch, writeBranch } from "./canvas-branch.ts"
+
 import { lookOf, type BlockLook } from "./canvas-look.ts"
 import type { LineRefusal } from "./canvas-save-lines.ts"
 
@@ -216,130 +218,45 @@ export type DraftBasis = {
   words: string
 }
 
-function storedDraft(value: unknown): WritingDraft | null {
-  if (!value || typeof value !== "object") return null
-  const wrapped = value as { draft?: unknown; blocks?: unknown }
-  const source =
-    !Array.isArray(wrapped.blocks) &&
-    wrapped.draft &&
-    typeof wrapped.draft === "object"
-      ? wrapped.draft
-      : value
-  const draft = source as WritingDraft
-  if (!draft || !Array.isArray(draft.blocks) || draft.blocks.length === 0) {
-    return null
-  }
-  const blocksOk = draft.blocks.every(
-    (block) =>
-      !!block && typeof block.id === "string" && typeof block.text === "string"
-  )
-  if (!blocksOk || typeof draft.nextId !== "number" || !draft.caret) {
-    return null
-  }
-  return place(draft, draft.caret)
-}
-
 export function loadDraft(
   docId: string,
   storage: Pick<Storage, "getItem">
 ): WritingDraft | null {
-  try {
-    const raw = storage.getItem(storageKey(docId))
-    if (!raw) return null
-    return storedDraft(JSON.parse(raw) as unknown)
-  } catch {
-    return null
-  }
+  return readBranch(docId, storage)?.draft ?? null
 }
-
 export function loadSavedDraft(
   docId: string,
   storage: Pick<Storage, "getItem">
 ): WritingDraft | null {
-  try {
-    const raw = storage.getItem(storageKey(docId))
-    if (!raw) return null
-    const value = JSON.parse(raw) as { saved?: unknown }
-    return value && typeof value === "object" && value.saved
-      ? storedDraft(value.saved)
-      : null
-  } catch {
-    return null
-  }
+  return readBranch(docId, storage)?.saved ?? null
 }
-
 export function loadUnsavedLines(
   docId: string,
   storage: Pick<Storage, "getItem">
 ): LineRefusal[] {
-  try {
-    const raw = storage.getItem(storageKey(docId))
-    if (!raw) return []
-    const value = JSON.parse(raw) as { unsaved?: unknown }
-    if (!value || typeof value !== "object" || !Array.isArray(value.unsaved))
-      return []
-    return value.unsaved.filter(
-      (line): line is LineRefusal =>
-        !!line &&
-        typeof line.id === "string" &&
-        typeof line.text === "string" &&
-        typeof line.note === "string"
-    )
-  } catch {
-    return []
-  }
+  return readBranch(docId, storage)?.unsaved ?? []
 }
-
 export function loadDraftBasis(
   docId: string,
   storage: Pick<Storage, "getItem">
 ): DraftBasis | null {
-  try {
-    const raw = storage.getItem(storageKey(docId))
-    if (!raw) return null
-    const value = JSON.parse(raw) as { basis?: unknown }
-    if (!value || typeof value !== "object" || !value.basis) return null
-    const basis = value.basis as { revision?: unknown; words?: unknown }
-    if (typeof basis.words !== "string") return null
-    if (basis.revision !== null && typeof basis.revision !== "string") {
-      return null
-    }
-    return { revision: basis.revision, words: basis.words }
-  } catch {
-    return null
-  }
+  return readBranch(docId, storage)?.basis ?? null
 }
-
 export function storeDraft(
   docId: string,
   draft: WritingDraft,
-  storage: Pick<Storage, "setItem">,
+  storage: Pick<Storage, "getItem" | "setItem">,
   basis?: DraftBasis | null,
   kept: { saved?: WritingDraft | null; unsaved?: readonly LineRefusal[] } = {}
 ): boolean {
-  try {
-    const saved = kept.saved ? { saved: kept.saved } : {}
-    const unsaved = kept.unsaved?.length ? { unsaved: kept.unsaved } : {}
-    storage.setItem(
-      storageKey(docId),
-      JSON.stringify(basis ? { draft, basis, ...saved, ...unsaved } : draft)
-    )
-    return true
-  } catch {
-    return false
-  }
+  return writeBranch(docId, draft, basis ?? null, kept, storage)
 }
-
-function storageKey(docId: string) {
-  return `opencv-writing:${docId}`
-}
-
 export function forgetDraft(
   docId: string,
   storage: Pick<Storage, "removeItem">
 ) {
   try {
-    storage.removeItem(storageKey(docId))
+    storage.removeItem(branchKey(docId))
   } catch {
     return
   }
