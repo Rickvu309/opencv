@@ -46,7 +46,11 @@ export function ShellOverlays({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const email = data?.user.email
-    if (email) sessionStorage.setItem(SIGNED_OUT_EMAIL_KEY, email)
+    try {
+      if (email) sessionStorage.setItem(SIGNED_OUT_EMAIL_KEY, email)
+    } catch {
+      return
+    }
   }, [data?.user.email])
 
   useEffect(() => {

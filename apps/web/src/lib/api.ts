@@ -22,8 +22,12 @@ type UnauthorizedHandler = () => void
 type SessionExpiredListener = (email: string | null) => void
 
 function readSignedOutEmail() {
-  if (typeof sessionStorage === "undefined") return null
-  return sessionStorage.getItem(SIGNED_OUT_EMAIL_KEY)
+  try {
+    if (typeof sessionStorage === "undefined") return null
+    return sessionStorage.getItem(SIGNED_OUT_EMAIL_KEY)
+  } catch {
+    return null
+  }
 }
 
 function assignSignIn() {

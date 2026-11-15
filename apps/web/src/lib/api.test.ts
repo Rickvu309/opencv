@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { authMockState } from "@/test/auth-client-mock.ts"
+import { authClient } from "@/lib/auth-client.ts"
+import { SIGNED_OUT_EMAIL_KEY } from "@/lib/auth-redirect.ts"
+import { knownSession, rememberSession } from "@/lib/known-session.ts"
 
 import {
   ApiError,
@@ -16,6 +19,145 @@ import {
 afterEach(() => {
   vi.unstubAllGlobals()
   resetUnauthorizedHandler()
+})
+
+function denySessionRead(kind: "getter" | "getItem") {
+  if (kind === "getItem") {
+    const method = vi
+      .spyOn(Storage.prototype, "getItem")
+      .mockImplementation(() => {
+        throw new DOMException("blocked", "SecurityError")
+      })
+    return () => method.mockRestore()
+  }
+  const descriptor = Object.getOwnPropertyDescriptor(
+    globalThis,
+    "sessionStorage"
+  )
+  Object.defineProperty(globalThis, "sessionStorage", {
+    configurable: true,
+    get() {
+      throw new DOMException("blocked", "SecurityError")
+    },
+  })
+  return () => {
+    if (descriptor)
+      Object.defineProperty(globalThis, "sessionStorage", descriptor)
+    else Reflect.deleteProperty(globalThis, "sessionStorage")
+  }
+}
+
+describe("unauthorized requests with optional session hints", () => {
+  it.each(["getter", "getItem"] as const)(
+    "invalidates and handles a 401 when %s is denied",
+    async (kind) => {
+      const session = authMockState.data
+      if (!session) throw new Error("The test needs a signed-in session")
+      rememberSession(session)
+      const handler = vi.fn()
+      setUnauthorizedHandler(handler)
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          Response.json(
+            {
+              ok: false,
+              error: {
+                code: "UNAUTHORIZED",
+                message: "Authentication required",
+              },
+            },
+            { status: 401 }
+          )
+        )
+      )
+      const restore = denySessionRead(kind)
+      try {
+        const error = await apiFetch("/api/session").catch(
+          (caught: unknown) => caught
+        )
+        expect(error).toBeInstanceOf(ApiError)
+        expect(error).toMatchObject({
+          status: 401,
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
+        })
+        expect(authMockState.data).toBeNull()
+        expect(knownSession()).toBeNull()
+        expect(authClient.$store.notify).toHaveBeenCalledWith("$sessionSignal")
+        expect(handler).toHaveBeenCalledExactlyOnceWith()
+      } finally {
+        restore()
+      }
+    }
+  )
+
+  it.each(["getter", "getItem"] as const)(
+    "invalidates and notifies the listener when %s is denied",
+    async (kind) => {
+      const session = authMockState.data
+      if (!session) throw new Error("The test needs a signed-in session")
+      rememberSession(session)
+      const handler = vi.fn()
+      const listener = vi.fn()
+      setUnauthorizedHandler(handler)
+      setSessionExpiredListener(listener)
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValue(
+          Response.json(
+            {
+              ok: false,
+              error: {
+                code: "UNAUTHORIZED",
+                message: "Authentication required",
+              },
+            },
+            { status: 401 }
+          )
+        )
+      )
+      const restore = denySessionRead(kind)
+      try {
+        const error = await apiFetch("/api/session").catch(
+          (caught: unknown) => caught
+        )
+        expect(error).toBeInstanceOf(ApiError)
+        expect(error).toMatchObject({
+          status: 401,
+          code: "UNAUTHORIZED",
+          message: "Authentication required",
+        })
+        expect(authMockState.data).toBeNull()
+        expect(knownSession()).toBeNull()
+        expect(authClient.$store.notify).toHaveBeenCalledWith("$sessionSignal")
+        expect(listener).toHaveBeenCalledExactlyOnceWith(null)
+        expect(handler).not.toHaveBeenCalled()
+      } finally {
+        restore()
+      }
+    }
+  )
+
+  it("keeps a readable email hint for the session-expired listener", async () => {
+    sessionStorage.setItem(SIGNED_OUT_EMAIL_KEY, "ada@verify.local")
+    const listener = vi.fn()
+    setSessionExpiredListener(listener)
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(
+        Response.json(
+          {
+            ok: false,
+            error: { code: "UNAUTHORIZED", message: "Authentication required" },
+          },
+          { status: 401 }
+        )
+      )
+    )
+    await expect(apiFetch("/api/session")).rejects.toBeInstanceOf(ApiError)
+    expect(listener).toHaveBeenCalledExactlyOnceWith("ada@verify.local")
+  })
 })
 
 describe("fetchHealth", () => {

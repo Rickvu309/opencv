@@ -1,0 +1,13 @@
+{
+  "id": "auth-language-session-hint",
+  "file": "scripts/auth-session-hints.test.mjs",
+  "detector": {
+    "module": "scripts/lib/auth-session-hints.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "5711003a813e3b3bfe96fe8b2de45ffb35a95af5",
+    "path": "apps/web/src/features/auth/auth-copy.ts"
+  }
+}

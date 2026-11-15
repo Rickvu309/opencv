@@ -77,8 +77,12 @@ export function openEmailHref(email: string) {
 }
 
 export function readLanguage(): "en" | "vi" {
-  if (typeof sessionStorage === "undefined") return "en"
-  return sessionStorage.getItem(LANGUAGE_STORAGE_KEY) === "vi" ? "vi" : "en"
+  try {
+    if (typeof sessionStorage === "undefined") return "en"
+    return sessionStorage.getItem(LANGUAGE_STORAGE_KEY) === "vi" ? "vi" : "en"
+  } catch {
+    return "en"
+  }
 }
 
 export function storeLanguage(value: "en" | "vi") {
