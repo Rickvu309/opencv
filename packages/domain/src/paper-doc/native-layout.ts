@@ -52,7 +52,6 @@ export const layoutTableSchema = z
 export type LayoutTable = z.infer<typeof layoutTableSchema>
 export type LayoutRow = z.infer<typeof layoutRowSchema>
 export type LayoutCell = z.infer<typeof layoutCellSchema>
-export type LayoutColumn = z.infer<typeof layoutColumnSchema>
 export const privateLayoutSchema = z
   .object({
     profile: z.literal("private-layout-1"),

@@ -11,7 +11,7 @@ import {
 } from "./native-layout.js"
 import { canonical, ok, refuse, type Result } from "./presentation-values.js"
 
-export const layoutEditSchema = z.discriminatedUnion("kind", [
+const layoutEditSchema = z.discriminatedUnion("kind", [
   z
     .object({
       kind: z.literal("insert-table"),
@@ -64,7 +64,7 @@ export const layoutEditSchema = z.discriminatedUnion("kind", [
     })
     .strict(),
 ])
-export type LayoutEdit = z.infer<typeof layoutEditSchema>
+type LayoutEdit = z.infer<typeof layoutEditSchema>
 export const layoutReceiptSchema = z
   .object({
     version: z.literal(1),
