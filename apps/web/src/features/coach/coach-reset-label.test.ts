@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { coachResetLabel } from "./coach-reset-label.ts"
+import { coachResetLabel } from "./coach-mode.ts"
 
 const now = new Date(2026, 10, 16, 21, 30)
 

@@ -51,7 +51,7 @@ import {
   type Attachment,
 } from "./coach-workspace.reducer.ts"
 import { linkAttachmentLabel } from "./coach-attachment-view.ts"
-import { coachResetLabel } from "./coach-reset-label.ts"
+import { coachResetLabel } from "./coach-mode.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 
 export function CoachWorkspace({

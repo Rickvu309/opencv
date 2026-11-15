@@ -10,11 +10,12 @@ import { FileText } from "lucide-react"
 import { coachToolLabel, humanToolText } from "./coach-tool-labels.ts"
 import {
   isCompactCoachTool,
+  coachActionView,
+  type CoachActionView,
   refusedApprovalLine,
   toolCardProps,
 } from "./coach-tool-card.ts"
 import { documentChangeCount, documentEditDetail } from "./coach-receipt.ts"
-import { coachActionView, type CoachActionView } from "./coach-action-record.ts"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { parseChatId, parsePendingActionId } from "@workspace/domain"
 import { coachPaperOptions } from "@/lib/coach-context.ts"
