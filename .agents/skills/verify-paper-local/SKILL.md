@@ -34,6 +34,16 @@ node scripts/tlc.mjs apps/web/src/lib/PaperNativeLocal.tla --mutant
 
 Repeat clean, mutant and clean for each native configuration using `--config`. The full browser probe, mutation runner and per-configuration logs are retained with the issue 1541 change report under `~/tmp/paper-autopilot`. Historical journal-erasure metadata retains introducing commit `306161ecdd4184ffbf3fd9784cf8358b2b36f46c`. Run its committed guard proof before claiming delivery.
 
+## Rich editor qualification
+
+Issue 1569 mounts qualified native rich CVs and Letters through the owner-only document read. `openNativePaperSync` and `openRichNativePaperSync` share `openSession`, which now owns the generations, receipts, locks and shutdown lifecycle named in the native action map. The model properties and bounds are unchanged. Rich checkpoint lineage validation and strict decoding remain outside the model; controlled CRDT and transport tests cover their refusals. Public rich creation remains gated.
+
+The native model was synchronized against candidate product commit `7e25b97a` on 2026-11-16. The unchanged model passed before this update. All three native configurations then passed clean, intended mutant and clean runs; each mutant exited 12. Two mutations of the real transport failed their intended assertions: premature Saved and crediting an older local completion to newer input. Restoring the source passed all 24 native behavior tests. The legacy model sync and the issue 1541 historical browser results above remain unchanged.
+
+Authenticated Chromium against the assigned Hono and web runtime passed for both rich CV and Letter: typing and underline survived reload, the document photo decoded, phone controls and page fit, and interrupted offline input remained pending before recovery reached Saved after reload. This is integrated browser-to-Hono evidence using seeded documents and controlled network interruption, not a live-model or physical disk proof. The 38-case screen sweep passed its behavior checks. Existing shared shell contrast and fixed-size text advisories are retained in the report.
+
+Reproduce the targeted native behavior checks and each native model configuration with the commands above. Issue 1569 adds `src/lib/paper-rich-transport.test.ts`, `src/lib/paper-rich-editor.test.ts` and `src/routes/paper-doc-open.test.tsx` to the web check. The finite clean/mutant/clean runner, real-source mutation runner, authenticated browser script and full logs are retained under `~/tmp/paper-autopilot/1569-*`. This run does not rerun the issue 1541 whole-browser kill scenarios or establish new physical durability guarantees.
+
 ## When this file is stale
 
 Run `node scripts/tlc.mjs --stale` first. When it lists `apps/web/src/lib/PaperLocal.tla` as STALE, or `git log --oneline 89c3703c..origin/main -- .agents/skills scripts/tlc.mjs` prints commits, rerun every command under Run before trusting a claim here. If a command fails or prints something else, believe the command, fix this file in the same PR, and move the commit above.

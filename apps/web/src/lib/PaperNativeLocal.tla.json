@@ -1,20 +1,20 @@
 {
   "module": "paper-native-transport.ts",
   "actions": {
-    "Discover": "openNativePaperSync",
+    "Discover": "openSession",
     "OrphanWrites": null,
-    "LockAndReread": "openNativePaperSync",
-    "Adopt": "openNativePaperSync",
-    "Type": "openNativePaperSync",
-    "LocalRequest": "openNativePaperSync",
-    "DurabilityPointD": "openNativePaperSync",
-    "LocalAbort": "openNativePaperSync",
-    "DeleteAdoptedOrphan": "openNativePaperSync",
-    "Send": "openNativePaperSync",
-    "Receipt": "openNativePaperSync",
-    "ClearCovered": "openNativePaperSync",
+    "LockAndReread": "openSession",
+    "Adopt": "openSession",
+    "Type": "openSession",
+    "LocalRequest": "openSession",
+    "DurabilityPointD": "openSession",
+    "LocalAbort": "openSession",
+    "DeleteAdoptedOrphan": "openSession",
+    "Send": "openSession",
+    "Receipt": "openSession",
+    "ClearCovered": "openSession",
     "IdentityChanges": null,
-    "Destroy": "openNativePaperSync",
+    "Destroy": "openSession",
     "Idle": null
   },
   "covers": [
@@ -30,5 +30,5 @@
     "ClearCovered": ["paper-sync-recovery.ts:acknowledgeNativeJournal"],
     "LockAndReread": ["paper-sync-store.ts:holdNativeTabLock"]
   },
-  "sync": "e3b6a3fef94bb22b241227ca304e0e5e24007145"
+  "sync": "7e25b97a1255657315ece780059a3531aa5aba4d"
 }
