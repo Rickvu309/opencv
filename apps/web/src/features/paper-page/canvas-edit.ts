@@ -310,19 +310,6 @@ export function loadDraftBasis(
   }
 }
 
-const storedDraftListeners = new Set<() => void>()
-
-export function subscribeStoredDraft(listener: () => void) {
-  storedDraftListeners.add(listener)
-  return () => {
-    storedDraftListeners.delete(listener)
-  }
-}
-
-function storedDraftChanged() {
-  for (const listener of storedDraftListeners) listener()
-}
-
 export function storeDraft(
   docId: string,
   draft: WritingDraft,
@@ -340,8 +327,6 @@ export function storeDraft(
     return true
   } catch {
     return false
-  } finally {
-    storedDraftChanged()
   }
 }
 
@@ -357,8 +342,6 @@ export function forgetDraft(
     storage.removeItem(storageKey(docId))
   } catch {
     return
-  } finally {
-    storedDraftChanged()
   }
 }
 
