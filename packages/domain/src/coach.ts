@@ -1,4 +1,5 @@
 import { z } from "zod"
+import type { NativeBasis } from "./paper-doc/native.js"
 
 import type { ChatToolName } from "./chat-turn.js"
 import type { CommandEnvelope } from "./envelope.js"
@@ -178,6 +179,7 @@ export type CoachFocusDoc = {
   status: "draft" | "ready" | "published"
   outline: string
   revision: number | string
+  nativeBasis?: NativeBasis | undefined
 }
 
 type CoachExecuted = {

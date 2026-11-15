@@ -1,5 +1,7 @@
 import {
   DEFAULT_COACH_MODELS,
+  NATIVE_WRITER,
+  nativeBasisSchema,
   paperContract,
   type CoachFocusDoc,
   type ApplyScanExtractInput,
@@ -161,12 +163,20 @@ function fakeTemplateEdits(outline: string) {
 }
 
 export function fakePaperEdit(
-  focus: Pick<CoachFocusDoc, "id" | "revision" | "outline">
+  focus: Pick<CoachFocusDoc, "id" | "revision" | "outline" | "nativeBasis">
 ) {
+  if (focus.nativeBasis && focus.nativeBasis.revision !== focus.revision)
+    throw new Error("Native Paper proposal needs a matching outline")
   const body = focus.outline.split("\n").slice(1).join("\n")
   return paperContract["paper.edit"].input.parse({
     docId: focus.id,
     basedOn: focus.revision,
+    ...(focus.nativeBasis
+      ? {
+          writer: NATIVE_WRITER,
+          nativeBasis: nativeBasisSchema.parse(focus.nativeBasis),
+        }
+      : {}),
     edits:
       typeof focus.revision === "string"
         ? fakeWordEdits(body)

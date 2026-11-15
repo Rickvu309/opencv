@@ -2,6 +2,7 @@ import { QueryClient } from "@tanstack/react-query"
 import { NATIVE_WRITER, parsePaperId } from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
+import { qualifiedPaperKey } from "./paper-qualification.ts"
 import { runContractCommand } from "./contract-client.ts"
 
 afterEach(() => vi.unstubAllGlobals())
@@ -78,4 +79,52 @@ describe("native Paper metadata requests", () => {
       expect(input).not.toHaveProperty("writer")
     }
   })
+})
+
+it("retries a qualified edit with its exact intent key and input, then invalidates its qualified cache", async () => {
+  const docId = parsePaperId("01990b00-0000-7000-8000-000000000001")
+  const input = {
+    docId,
+    basedOn: 3,
+    writer: NATIVE_WRITER,
+    nativeBasis: {
+      provenance: {
+        documentVersion: 4 as const,
+        schemaRevision: 1 as const,
+        writerProtocol: 1 as const,
+        requiredCapabilities: ["structured-prose", "underline"] as (
+          "structured-prose" | "underline"
+        )[],
+      },
+      epoch: 1,
+      revision: 3,
+      digest: "a".repeat(64),
+    },
+    edits: [{ op: "setText" as const, blockId: "p1", text: "Words" }],
+  }
+  const original = structuredClone(input)
+  const fetch = vi
+    .fn()
+    .mockImplementation(async () => Response.json({ ok: true, data: {} }))
+  vi.stubGlobal("fetch", fetch)
+  const client = new QueryClient()
+  const key = qualifiedPaperKey(["paper.get", { docId }], {
+    ownerId: "owner",
+    sessionId: "session",
+  })
+  client.setQueryData(key, { old: true })
+  for (const attempt of [1, 2]) {
+    void attempt
+    await runContractCommand(client, "paper.edit", input, {
+      idempotencyKey: "same-native-intent",
+    })
+  }
+  const requests = fetch.mock.calls.map(([, init]) => JSON.parse(init.body))
+  expect(requests).toEqual([
+    { input: original, idempotencyKey: "same-native-intent" },
+    { input: original, idempotencyKey: "same-native-intent" },
+  ])
+  expect(input).toEqual(original)
+  expect(client.getQueryState(key)?.isInvalidated).toBe(true)
+  client.clear()
 })

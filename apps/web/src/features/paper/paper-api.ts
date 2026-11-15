@@ -19,6 +19,12 @@ import { tailCoachTask } from "@/lib/coach-task-client.ts"
 import type { CoachTaskState } from "@/lib/coach-task-state.ts"
 import { endpoints, fetchBinary } from "@/lib/requests.ts"
 
+import {
+  qualifiedPaperRead,
+  qualifiedPaperKey,
+  type PaperQualification,
+} from "@/lib/paper-qualification.ts"
+
 export const paperListKey = () => queryKey({ query: "paper.list" })
 export const paperGetKey = (docId: PaperId) =>
   queryKey({ query: "paper.get", input: { docId } })
@@ -56,6 +62,51 @@ export function getSharedPaper(token: string) {
   return apiFetch<SuccessBody<QueryOutput<"paper.shared">>>(
     endpoints.paperShared(token)
   ).then(unwrapData)
+}
+
+export const qualifiedPaperListKey = (options: PaperQualification) =>
+  qualifiedPaperKey(paperListKey(), options)
+export const qualifiedPaperGetKey = (
+  docId: PaperId,
+  options: PaperQualification
+) => qualifiedPaperKey(paperGetKey(docId), options)
+export const qualifiedPaperPagesKey = (
+  docId: PaperId,
+  options: PaperQualification
+) => qualifiedPaperKey(paperPagesKey(docId), options)
+export const qualifiedPaperSharedKey = (
+  token: string,
+  options: PaperQualification
+) => qualifiedPaperKey(paperSharedKey(token), options)
+
+export function listQualifiedPaper(options: PaperQualification) {
+  return qualifiedPaperRead("paper.list", endpoints.paper, options)
+}
+
+export function getQualifiedPaper(docId: string, options: PaperQualification) {
+  return qualifiedPaperRead("paper.get", endpoints.paperDoc(docId), options)
+}
+
+export function getQualifiedPaperPages(
+  docId: string,
+  options: PaperQualification
+) {
+  return qualifiedPaperRead(
+    "paper.pageCount",
+    endpoints.paperPages(docId),
+    options
+  )
+}
+
+export function getQualifiedSharedPaper(
+  token: string,
+  options: PaperQualification
+) {
+  return qualifiedPaperRead(
+    "paper.shared",
+    endpoints.paperShared(token),
+    options
+  )
 }
 
 export class PaperLimitError extends Error {
