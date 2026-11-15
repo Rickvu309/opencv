@@ -12,6 +12,7 @@ import type { PaperId } from "@workspace/domain"
 
 import { queryKey, runContractCommand } from "@/lib/contract-client.ts"
 import { ApiError } from "@/lib/api-error.ts"
+import { fromBase64, toBase64 } from "@/lib/paper-sync-bytes.ts"
 import {
   appendJournal,
   journalTip,
@@ -30,6 +31,7 @@ import {
 } from "@/lib/paper-sync-store.ts"
 
 export { indexedDbStore } from "@/lib/paper-sync-store.ts"
+export { fromBase64, toBase64 } from "@/lib/paper-sync-bytes.ts"
 
 export type SyncStatus =
   | "loading"
@@ -72,21 +74,6 @@ const realTimers: Timers = {
   },
   clearTimeout: (handle) => clearTimeout(handle as never),
   now: () => Date.now(),
-}
-
-export function toBase64(bytes: Uint8Array): string {
-  let text = ""
-  for (let at = 0; at < bytes.length; at += 8192) {
-    text += String.fromCharCode(...bytes.subarray(at, at + 8192))
-  }
-  return btoa(text)
-}
-
-export function fromBase64(text: string): Uint8Array {
-  const raw = atob(text)
-  const bytes = new Uint8Array(raw.length)
-  for (let at = 0; at < raw.length; at += 1) bytes[at] = raw.charCodeAt(at)
-  return bytes
 }
 
 async function tabIdentity(docId: string): Promise<string> {
