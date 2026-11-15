@@ -70,20 +70,6 @@
     "items": 2
   },
   {
-    "subject": "apps/web/src/features/coach/coach-tool-presentation.test.tsx",
-    "because": "Named proposals use readable Before and After labels. Undo preserves the document identity and Open link instead of discarding the receipt.",
-    "replacedBy": "apps/web/src/features/coach/coach-tool-presentation.test.tsx",
-    "proof": {
-      "fork": "075bb354fd5ad66ecaea75902003aef7ca69403a",
-      "replacedByBlob": "ffb7420018c26ab9c42f8d6ee4eb02e17c6e45d7",
-      "failedOnBase": true,
-      "passedOnHead": true
-    },
-    "class": "self",
-    "classBecause": null,
-    "items": 4
-  },
-  {
     "subject": "apps/web/src/features/coach/coach-workspace.test.tsx",
     "because": "Attachment labels include link paths and persist until removal; cap copy includes the reset date. Updated assertions retain send blocking and draft ownership checks.",
     "replacedBy": "apps/web/src/features/coach/coach-workspace.test.tsx",
@@ -124,5 +110,19 @@
     "class": "self",
     "classBecause": null,
     "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-tool-presentation.test.tsx",
+    "because": "Named proposals use readable Before and After labels. Undo preserves the document identity and Open link instead of discarding the receipt.",
+    "replacedBy": "apps/web/src/features/coach/coach-tool-presentation.test.tsx",
+    "proof": {
+      "fork": "075bb354fd5ad66ecaea75902003aef7ca69403a",
+      "replacedByBlob": "5c038585f8bba9618501001f6ebc0b2ff4a6195b",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 4
   }
 ]
