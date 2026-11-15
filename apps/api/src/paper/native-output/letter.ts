@@ -5,7 +5,7 @@ import {
 } from "@workspace/domain"
 
 import { numberingXml, type ListSequence } from "./numbering.js"
-import { letterPackage } from "./package.js"
+import { wordPackage } from "./package.js"
 import { LETTER_PROFILE } from "./profile.js"
 import {
   assertCanonicalInput,
@@ -88,10 +88,15 @@ export function compileNativeLetterDocx(input: {
   const { body, sequences, links } = project(document)
   const p = LETTER_PROFILE
   const geometry = `<w:sectPr><w:pgSz w:w="${p.pageWidth}" w:h="${p.pageHeight}"/><w:pgMar w:top="${p.margin}" w:right="${p.margin}" w:bottom="${p.margin}" w:left="${p.margin}" w:header="0" w:footer="0" w:gutter="0"/></w:sectPr>`
-  return letterPackage({
+  return wordPackage({
     body: body + geometry,
     styles: stylesXml(),
-    numbering: numberingXml(sequences),
+    numbering: numberingXml(sequences, LETTER_PROFILE),
     links,
+    identity: [
+      ["NativeLetterProfile", LETTER_PROFILE.id],
+      ["NativeLetterTemplate", LETTER_PROFILE.templateId],
+      ["NativeLetterExporter", LETTER_PROFILE.exporter],
+    ],
   })
 }

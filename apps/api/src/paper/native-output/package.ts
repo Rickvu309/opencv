@@ -2,7 +2,6 @@ import { createRequire } from "node:module"
 
 import { z } from "zod"
 
-import { LETTER_PROFILE } from "./profile.js"
 import { xml, type ExternalLink } from "./rich-text.js"
 
 const required: unknown = createRequire(import.meta.url)(
@@ -30,11 +29,12 @@ function wordPart(name: string, body: string): string {
   return `${XML_START}<w:${name} xmlns:w="${WORD_NS}" xmlns:r="${REL_NS}">${body}</w:${name}>`
 }
 
-export function letterPackage(input: {
+export function wordPackage(input: {
   body: string
   styles: string
   numbering: string
   links: readonly ExternalLink[]
+  identity: readonly (readonly [string, string])[]
 }): Uint8Array {
   const overrides = [
     ["/word/document.xml", "document.main"],
@@ -58,14 +58,10 @@ export function letterPackage(input: {
         `<Relationship Id="${id}" Type="${REL_NS}/hyperlink" Target="${xml(target)}" TargetMode="External"/>`
     ),
   ].join("")
-  const identity = [
-    ["NativeLetterProfile", LETTER_PROFILE.id],
-    ["NativeLetterTemplate", LETTER_PROFILE.templateId],
-    ["NativeLetterExporter", LETTER_PROFILE.exporter],
-  ]
+  const identity = input.identity
     .map(
       ([name, value], index) =>
-        `<property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="${index + 2}" name="${name}"><vt:lpwstr>${value}</vt:lpwstr></property>`
+        `<property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="${index + 2}" name="${xml(name)}"><vt:lpwstr>${xml(value)}</vt:lpwstr></property>`
     )
     .join("")
   return writeZip([

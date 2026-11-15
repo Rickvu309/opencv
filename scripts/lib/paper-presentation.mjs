@@ -35,6 +35,18 @@ export function detect(text, path) {
         )
     }
     if (test) return
+    const target = specifier.startsWith(".")
+      ? posix.normalize(posix.join(posix.dirname(path), specifier))
+      : specifier
+    if (
+      /(?:^|\/)native-output\/formatted(?:-[^/]+)?(?:\.[cm]?[jt]s)?$/.test(
+        target
+      ) &&
+      !path.startsWith("apps/api/src/paper/native-output/")
+    )
+      hits.push(
+        "Formatted Word output stays private until the full native flow is qualified"
+      )
     if (specifier.includes("presentation-fixtures"))
       hits.push("Production fixture binding has been removed")
     if (
