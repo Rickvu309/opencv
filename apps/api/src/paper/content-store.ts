@@ -29,7 +29,7 @@ import {
 } from "@workspace/paper-crdt"
 import { and, asc, eq, gte, gt } from "drizzle-orm"
 
-import { getDb, transaction } from "../db/context.js"
+import { getDb, insideTransaction, transaction } from "../db/context.js"
 import { paperDocUpdates, paperDocs } from "../db/schema.js"
 import { CommandError } from "../registry/errors.js"
 import {
@@ -122,6 +122,25 @@ function remember(docId: string, entry: Live) {
     if (live.size <= CACHE_LIMIT) break
     live.delete(oldest)
   }
+}
+
+function detached(entry: Live): Live {
+  return { ...entry, yDoc: forkOf(entry.yDoc) }
+}
+
+async function withLiveTransaction<T>(
+  run: (retain: (docId: string, entry: Live) => void) => Promise<T>
+): Promise<T> {
+  const committed: { head?: { docId: string; entry: Live } } = {}
+  const result = await transaction(() =>
+    run((docId, entry) => {
+      committed.head = { docId, entry }
+    })
+  )
+  if (committed.head && !insideTransaction()) {
+    remember(committed.head.docId, committed.head.entry)
+  }
+  return result
 }
 
 function refuse(message: string) {
@@ -302,16 +321,15 @@ async function hydrate(row: PaperRow): Promise<Live> {
   const base = row.crdtBase as Buffer
   const cached = live.get(row.id)
   if (cached) {
-    const current = await caughtUp(cached, row, base).catch(() => null)
+    const current = await caughtUp(detached(cached), row, base).catch(
+      () => null
+    )
     if (current) {
-      remember(row.id, current)
       return current
     }
     live.delete(row.id)
   }
-  const entry = await freshLive(row, base)
-  remember(row.id, entry)
-  return entry
+  return freshLive(row, base)
 }
 
 async function commit(
@@ -462,16 +480,19 @@ export async function withContent<T>(
   docId: PaperId,
   run: (content: LockedContent) => Promise<T>
 ): Promise<T> {
-  return transaction(async () => {
+  return withLiveTransaction(async (retain) => {
     const row = await lockedRow(userId, docId)
-    const entry = await hydrate(row)
+    let entry = await hydrate(row)
     let latest = row
     const content: LockedContent = {
       row,
       document: validated(row.crdtDocument, row.kind),
       baseSeq: entry.baseSeq,
       edit: async (change) => {
-        latest = await editLocked(latest, entry, change)
+        const candidate = detached(entry)
+        const next = await editLocked(latest, candidate, change)
+        entry = candidate
+        latest = next
         return latest
       },
       fork: async (basedOn) => {
@@ -488,13 +509,19 @@ export async function withContent<T>(
         base: entry.base,
         rows: await loggedRows(row.id, entry.baseSeq),
       }),
-      append: (change) =>
-        appendLocked(latest, entry, change).then((next) => {
-          if (next.row) latest = next.row
-          return next
-        }),
+      append: async (change) => {
+        const candidate = detached(entry)
+        const next = await appendLocked(latest, candidate, change)
+        if (next.row) {
+          entry = candidate
+          latest = next.row
+        }
+        return next
+      },
     }
-    return run(content)
+    const result = await run(content)
+    retain(row.id, entry)
+    return result
   })
 }
 
@@ -582,7 +609,7 @@ export async function syncContent(
   docId: PaperId,
   request: SyncRequest
 ): Promise<SyncReply> {
-  return transaction(async () => {
+  return withLiveTransaction(async (retain) => {
     let row = await lockedRow(userId, docId)
     const entry = await hydrate(row)
     const reply = (
@@ -592,6 +619,7 @@ export async function syncContent(
     ): SyncReply => {
       const update = updateSince(entry.yDoc, since)
       if (!update) throw refuse("The state vector could not be read")
+      retain(row.id, entry)
       return {
         epoch: entry.epoch,
         revision: entry.revision,

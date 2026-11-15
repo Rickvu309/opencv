@@ -1,0 +1,13 @@
+{
+  "id": "paper-content-isolation",
+  "file": "scripts/paper-content-isolation.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-content-isolation.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "4d674be96d840957100265da3fc30a2af896768e",
+    "path": "apps/api/src/paper/content-store.ts"
+  }
+}
