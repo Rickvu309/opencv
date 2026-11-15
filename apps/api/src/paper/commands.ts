@@ -27,6 +27,7 @@ import { missingDocument, ownedPackagePaper } from "./package-list.js"
 import { oldEditorUndoReasons, undoBlockedReasons } from "./undo-guard.js"
 import { syncContent } from "./content-store.js"
 import { readOutline } from "./outline.js"
+import { readPaperDocumentInfo } from "./document-info.js"
 import { coachPaperList, coachWordPageWithText } from "./coach-word-pages.js"
 import {
   attachPhoto,
@@ -333,6 +334,15 @@ export function registerPaper(registry: Registry) {
     }
   })
 
+  registry.addQuery(
+    tableQuery("paper.document", {
+      description: "Read the document identity and the editor it requires.",
+      coach: false,
+      step: () => "Read document identity",
+      read: (input, actor) =>
+        readPaperDocumentInfo(actor.userId, input.docId, input.writer),
+    })
+  )
   const paperList = tableQuery("paper.list", {
     description:
       "List documents. A Word page is listed without a document body: read its text with paper_outline.",
