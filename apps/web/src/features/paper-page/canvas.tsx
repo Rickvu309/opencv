@@ -1,5 +1,6 @@
 import {
   Fragment,
+  type ReactNode,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -8,6 +9,8 @@ import {
   useSyncExternalStore,
 } from "react"
 import { cn } from "@workspace/ui/lib/utils"
+
+import { wordDownloadRevision } from "./canvas-download.ts"
 
 import {
   clearedOnReload,
@@ -179,10 +182,12 @@ function WritingSheet({
   docId,
   seed,
   seedRevision,
+  renderHeader,
 }: {
   docId: string
   seed: WritingDraft | null
   seedRevision: string | null
+  renderHeader?: (note: string, revision: string | null) => ReactNode
 }) {
   const pageRef = useRef<HTMLElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -403,6 +408,14 @@ function WritingSheet({
       className="writing-sheet"
       data-pen-surface="paper-page"
     >
+      {renderHeader?.(
+        conflicted ? WRITING_CONFLICT_NOTE : state.note,
+        wordDownloadRevision(
+          conflicted ? WRITING_CONFLICT_NOTE : state.note,
+          pageWords(state.present.blocks),
+          state.basis
+        )
+      )}
       <UnsavedBar
         key={bar.cause ?? "none"}
         model={bar}
@@ -539,17 +552,22 @@ function WritingSheet({
           ))}
         </article>
       </div>
-      <p className="writing-note" role="status">
-        {conflicted ? (
-          WRITING_CONFLICT_NOTE
-        ) : state.notice ? (
-          <span key={state.notice} className="writing-notice">
-            {state.notice}
-          </span>
-        ) : (
-          state.note
-        )}
-      </p>
+      {!renderHeader || conflicted || state.notice ? (
+        <p
+          className="writing-note"
+          role={renderHeader && conflicted ? undefined : "status"}
+        >
+          {conflicted ? (
+            WRITING_CONFLICT_NOTE
+          ) : state.notice ? (
+            <span key={state.notice} className="writing-notice">
+              {state.notice}
+            </span>
+          ) : (
+            state.note
+          )}
+        </p>
+      ) : null}
     </section>
   )
 }
@@ -558,10 +576,12 @@ export function WritingCanvas({
   docId,
   seed = null,
   seedRevision = null,
+  renderHeader,
 }: {
   docId: string
   seed?: WritingDraft | null
   seedRevision?: string | null
+  renderHeader?: (note: string, revision: string | null) => ReactNode
 }) {
   return (
     <WritingSheet
@@ -569,6 +589,7 @@ export function WritingCanvas({
       docId={docId}
       seed={seed}
       seedRevision={seedRevision}
+      renderHeader={renderHeader}
     />
   )
 }

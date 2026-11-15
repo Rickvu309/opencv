@@ -170,6 +170,8 @@ export function PaperDocPage() {
         <WritingPage
           key={validId}
           docId={validId}
+          title={listed?.name ?? packagePage.name}
+          onBack={back}
           seed={seeded}
           seedRevision={packagePage.revision}
         />

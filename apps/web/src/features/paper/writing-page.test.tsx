@@ -471,7 +471,7 @@ it("downloads the saved revision as a Word file named after the page", async () 
   expect(exports.some((path) => path.includes(REVISION))).toBe(true)
 })
 
-it("holds Download Word while words are not saved yet", async () => {
+it("holds Download Word for unsent canvas words even when shared storage claims Saved", async () => {
   const exports: string[] = []
   vi.stubGlobal("fetch", async (url: RequestInfo | URL, init?: RequestInit) => {
     const path = String(url)
@@ -510,6 +510,76 @@ it("holds Download Word while words are not saved yet", async () => {
       words: "Saved line and more",
     })
   })
-  const link = await screen.findByRole("link", { name: "Download Word" })
-  expect(link.getAttribute("href")).toContain(`export?at=${NEXT}`)
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0))
+  })
+  expect(screen.queryByRole("link", { name: "Download Word" })).toBeNull()
+  expect(screen.getByRole("button", { name: "Download Word" })).toBeDisabled()
+  expect(exports).toEqual([])
+})
+
+it("keeps document identity, saving and Word download together with Paper navigation", async () => {
+  const back = vi.fn()
+  vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {
+    const path = String(url)
+    if (path.includes("/api/reads/paper.export"))
+      return Response.json({ ok: true, data: exportOf(REVISION) })
+    if (path.includes("/api/reads/paper.read"))
+      return Response.json({ ok: true, data: readPage("Saved line") })
+    return new Promise<Response>(() => undefined)
+  })
+  render(
+    <WritingPage
+      docId={DOC}
+      title="Designer CV"
+      onBack={back}
+      seed={draft("Saved line")}
+      seedRevision={REVISION}
+    />
+  )
+  const heading = screen.getByRole("heading", { name: "Designer CV" })
+  const header = heading.closest("header")
+  expect(header).not.toBeNull()
+  await waitFor(() =>
+    expect(screen.getByRole("status")).toHaveTextContent("Saved")
+  )
+  expect(header).toContainElement(screen.getByRole("status"))
+  expect(header).toContainElement(
+    await screen.findByRole("link", { name: "Download Word" })
+  )
+  fireEvent.click(screen.getByRole("link", { name: "Back to Paper" }))
+  expect(back).toHaveBeenCalledOnce()
+  expect(screen.queryByRole("button", { name: "Save", exact: true })).toBeNull()
+})
+
+it("refuses a Word download link when preparation rejects the saved revision", async () => {
+  vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {
+    const path = String(url)
+    if (path.includes("/api/reads/paper.export"))
+      return Response.json(
+        {
+          ok: false,
+          error: { code: "CONFLICT", message: "Read this document again." },
+        },
+        { status: 409 }
+      )
+    if (path.includes("/api/reads/paper.read"))
+      return Response.json({ ok: true, data: readPage("Saved line") })
+    return new Promise<Response>(() => undefined)
+  })
+  render(
+    <WritingPage
+      docId={DOC}
+      seed={draft("Saved line")}
+      seedRevision={REVISION}
+    />
+  )
+  expect(await screen.findByRole("alert")).toHaveTextContent(
+    "Download unavailable"
+  )
+  expect(screen.queryByRole("link", { name: "Download Word" })).toBeNull()
+  expect(screen.getByRole("button", { name: "Download Word" })).toBeDisabled()
+  expect(
+    screen.getByRole("button", { name: "Download Word" })
+  ).toHaveAccessibleDescription("Could not prepare this Word download.")
 })
