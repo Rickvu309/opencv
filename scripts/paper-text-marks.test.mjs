@@ -1,7 +1,10 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { detectMixedTextUnits } from "./lib/paper-text-marks.mjs"
+import {
+  detectMixedTextUnits,
+  detectUnboundedHrefTrim,
+} from "./lib/paper-text-marks.mjs"
 
 test("rich text preserves UTF-16 positions around emoji", () => {
   assert.ok(
@@ -26,6 +29,39 @@ test("rich text preserves UTF-16 positions around emoji", () => {
       readFileSync(
         new URL(
           "../packages/domain/src/paper-doc/merge-text.ts",
+          import.meta.url
+        ),
+        "utf8"
+      )
+    ),
+    []
+  )
+})
+
+test("href trimming cannot restart an unbounded whitespace suffix search", () => {
+  assert.ok(
+    detectUnboundedHrefTrim(String.raw`value.replace(/(?:\s|\p{Cc})+$/u, "")`)
+      .length > 0
+  )
+  assert.deepEqual(
+    detectUnboundedHrefTrim(String.raw`value.replace(/^(?:\s|\p{Cc})+/u, "")`),
+    []
+  )
+  assert.deepEqual(
+    detectUnboundedHrefTrim(String.raw`value.replace(/\s$/u, "")`),
+    []
+  )
+  assert.deepEqual(
+    detectUnboundedHrefTrim(
+      String.raw`while (end > start && /[\s\p{Cc}]/u.test(value.charAt(end - 1))) end -= 1`
+    ),
+    []
+  )
+  assert.deepEqual(
+    detectUnboundedHrefTrim(
+      readFileSync(
+        new URL(
+          "../packages/domain/src/paper-doc/rich-text.ts",
           import.meta.url
         ),
         "utf8"

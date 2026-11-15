@@ -44,3 +44,37 @@ export function detectMixedTextUnits(text) {
   visit(source)
   return hits
 }
+
+export function detectUnboundedHrefTrim(text) {
+  const source = ts.createSourceFile(
+    "href.ts",
+    text,
+    ts.ScriptTarget.Latest,
+    true
+  )
+  const hits = []
+  const visit = (node) => {
+    if (
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      ["replace", "replaceAll"].includes(node.expression.name.text)
+    ) {
+      const [pattern] = node.arguments
+      if (pattern && ts.isRegularExpressionLiteral(pattern)) {
+        const literal = pattern.getText(source)
+        const body = literal.slice(1, literal.lastIndexOf("/"))
+        if (
+          !body.startsWith("^") &&
+          (body.includes("\\s") || body.includes("\\p{Cc}")) &&
+          /[+*]\??\$$/.test(body)
+        )
+          hits.push(
+            "href edges require a linear scan instead of an unanchored repeated suffix"
+          )
+      }
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  return hits
+}
