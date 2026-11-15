@@ -50,3 +50,16 @@ export {
   nativePaperSchema,
 } from "./schema.js"
 export type { PaperEditor } from "./schema.js"
+
+export { nativeCvSchema } from "./native-cv-schema.js"
+export type {
+  NativeCvEditor,
+  NativeCvPartialBlock,
+} from "./native-cv-schema.js"
+export { toNativeCvBlocks, fromNativeCvBlocks } from "./native-cv-mapping.js"
+export {
+  openNativeCvDocument,
+  materializeNativeCv,
+  writeNativeCvDocument,
+  writeNativeCvBlocks,
+} from "./native-cv.js"
