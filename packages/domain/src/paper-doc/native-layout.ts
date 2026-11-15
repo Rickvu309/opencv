@@ -20,7 +20,7 @@ export const layoutColumnSchema = z
     width: z.number().int().min(480).max(31680),
   })
   .strict()
-export const layoutCellSchema = z
+const layoutCellSchema = z
   .object({
     id: nodeIdSchema,
     type: z.literal("cell"),
@@ -28,7 +28,7 @@ export const layoutCellSchema = z
     children: z.array(formatBodySchema).min(1).max(1000),
   })
   .strict()
-export const layoutRowSchema = z
+const layoutRowSchema = z
   .object({
     id: nodeIdSchema,
     type: z.literal("row"),
