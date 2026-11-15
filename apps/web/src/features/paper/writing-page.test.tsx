@@ -453,7 +453,7 @@ it("downloads the saved revision as a Word file named after the page", async () 
     if (path.includes("/api/reads/paper.read")) {
       return Response.json({ ok: true, data: readPage("Saved line") })
     }
-    return new Promise<Response>(() => undefined)
+    throw new Error(`Unexpected request: ${path}`)
   })
   render(
     <WritingPage
@@ -473,6 +473,10 @@ it("downloads the saved revision as a Word file named after the page", async () 
 
 it("holds Download Word for unsent canvas words even when shared storage claims Saved", async () => {
   const exports: string[] = []
+  const write = Promise.withResolvers<Response>()
+  const started = Promise.withResolvers<void>()
+  let serverText = "Saved line"
+  let serverRevision = REVISION
   vi.stubGlobal("fetch", async (url: RequestInfo | URL, init?: RequestInit) => {
     const path = String(url)
     if (path.includes("/api/reads/paper.export")) {
@@ -484,38 +488,67 @@ it("holds Download Word for unsent canvas words even when shared storage claims 
       })
     }
     if (path.includes("/api/reads/paper.read")) {
-      return Response.json({ ok: true, data: readPage("Saved line") })
+      return Response.json({
+        ok: true,
+        data: readPage(serverText, serverRevision),
+      })
     }
-    return new Promise<Response>(() => undefined)
+    if (path.includes("/api/commands/paper.canvas")) {
+      started.resolve()
+      return write.promise
+    }
+    throw new Error(`Unexpected request: ${path}`)
   })
   storeDraft(DOC, draft("Saved line and more"), localStorage, {
     revision: REVISION,
     words: "Saved line",
   })
-  render(
+  const page = render(
     <WritingPage
       docId={DOC}
       seed={draft("Saved line")}
       seedRevision={REVISION}
     />
   )
-  const button = await screen.findByRole("button", { name: "Download Word" })
-  expect(button).toBeDisabled()
-  expect(button).toHaveAccessibleDescription(DOWNLOAD_WAITS_FOR_SAVE)
-  expect(screen.queryByRole("link", { name: "Download Word" })).toBeNull()
-  expect(exports).toEqual([])
-  act(() => {
-    storeDraft(DOC, draft("Saved line and more"), localStorage, {
-      revision: NEXT,
-      words: "Saved line and more",
+  try {
+    await started.promise
+    const button = await screen.findByRole("button", { name: "Download Word" })
+    expect(button).toBeDisabled()
+    expect(button).toHaveAccessibleDescription(DOWNLOAD_WAITS_FOR_SAVE)
+    expect(screen.queryByRole("link", { name: "Download Word" })).toBeNull()
+    expect(exports).toEqual([])
+    act(() => {
+      storeDraft(DOC, draft("Saved line and more"), localStorage, {
+        revision: NEXT,
+        words: "Saved line and more",
+      })
     })
-  })
-  await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 0))
-  })
-  expect(screen.queryByRole("link", { name: "Download Word" })).toBeNull()
-  expect(screen.getByRole("button", { name: "Download Word" })).toBeDisabled()
-  expect(exports).toEqual([])
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(screen.queryByRole("link", { name: "Download Word" })).toBeNull()
+    expect(screen.getByRole("button", { name: "Download Word" })).toBeDisabled()
+    expect(exports).toEqual([])
+  } finally {
+    page.unmount()
+    serverText = "Saved line and more"
+    serverRevision = NEXT
+    await act(async () => {
+      write.resolve(
+        Response.json({
+          ok: true,
+          data: { generation: "package", revision: NEXT },
+        })
+      )
+      await write.promise
+    })
+  }
+  render(
+    <WritingPage docId={DOC} seed={draft(serverText)} seedRevision={NEXT} />
+  )
+  const link = await screen.findByRole("link", { name: "Download Word" })
+  expect(screen.getByRole("status")).toHaveTextContent("Saved")
+  expect(link.getAttribute("href")).toContain(`export?at=${NEXT}`)
 })
 
 it("keeps document identity, saving and Word download together with Paper navigation", async () => {
@@ -526,7 +559,7 @@ it("keeps document identity, saving and Word download together with Paper naviga
       return Response.json({ ok: true, data: exportOf(REVISION) })
     if (path.includes("/api/reads/paper.read"))
       return Response.json({ ok: true, data: readPage("Saved line") })
-    return new Promise<Response>(() => undefined)
+    throw new Error(`Unexpected request: ${path}`)
   })
   render(
     <WritingPage
@@ -565,7 +598,7 @@ it("refuses a Word download link when preparation rejects the saved revision", a
       )
     if (path.includes("/api/reads/paper.read"))
       return Response.json({ ok: true, data: readPage("Saved line") })
-    return new Promise<Response>(() => undefined)
+    throw new Error(`Unexpected request: ${path}`)
   })
   render(
     <WritingPage
