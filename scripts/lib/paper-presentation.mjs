@@ -14,6 +14,28 @@ export function detect(text, path) {
       path
     )
   const packageRoot = path.split("/").slice(0, 2).join("/")
+  const sanitizedHtml = new Set()
+  const purifierImported = source.statements.some(
+    (node) =>
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier) &&
+      node.moduleSpecifier.text === "dompurify" &&
+      node.importClause?.name?.text === "DOMPurify"
+  )
+  function collectSanitizedHtml(node) {
+    if (
+      purifierImported &&
+      ts.isVariableDeclaration(node) &&
+      ts.isIdentifier(node.name) &&
+      node.initializer &&
+      ts.isCallExpression(node.initializer) &&
+      node.initializer.expression.getText(source) === "DOMPurify.sanitize"
+    )
+      sanitizedHtml.add(node.name.text)
+    ts.forEachChild(node, collectSanitizedHtml)
+  }
+  if (path === "packages/paper-crdt/src/native-layout-paste.ts")
+    collectSanitizedHtml(source)
   function property(node, name) {
     if (!node || !ts.isObjectLiteralExpression(node)) return undefined
     return node.properties.find(
@@ -117,6 +139,19 @@ export function detect(text, path) {
           "Rich HTML marks must parse standard elements as well as private spans"
         )
       if (ts.isCallExpression(node)) {
+        if (
+          path === "packages/paper-crdt/src/native-layout-paste.ts" &&
+          ts.isPropertyAccessExpression(node.expression) &&
+          ["parseFromString", "tryParseHTMLToBlocks"].includes(
+            node.expression.name.text
+          ) &&
+          (!node.arguments[0] ||
+            !ts.isIdentifier(node.arguments[0]) ||
+            !sanitizedHtml.has(node.arguments[0].text))
+        )
+          hits.push(
+            "Clipboard HTML must be sanitized before DOM or editor parsing"
+          )
         if (
           path === "packages/paper-crdt/src/native-formatting-schema.ts" &&
           ts.isIdentifier(node.expression) &&

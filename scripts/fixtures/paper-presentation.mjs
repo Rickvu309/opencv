@@ -1,5 +1,9 @@
 export const clean = [
   {
+    path: "packages/paper-crdt/src/native-layout-paste.ts",
+    text: 'import DOMPurify from "dompurify"; const html = DOMPurify.sanitize(clipboard); new DOMParser().parseFromString(html, "text/html"); editor.tryParseHTMLToBlocks(html)',
+  },
+  {
     path: "packages/paper-crdt/src/native-formatting-schema.ts",
     text: 'createBlockSpec({ type: "bulletListItem" }, { parse: element => element.closest("ul, ol") ? {} : undefined, parseContent: nestedListContent })',
   },
@@ -85,6 +89,14 @@ export const clean = [
   },
 ]
 export const mistakes = [
+  {
+    path: "packages/paper-crdt/src/native-layout-paste.ts",
+    text: 'const html = clipboard; new DOMParser().parseFromString(html, "text/html")',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-paste.ts",
+    text: 'import DOMPurify from "dompurify"; const safe = DOMPurify.sanitize(clipboard); editor.tryParseHTMLToBlocks(clipboard)',
+  },
   {
     path: "packages/paper-crdt/src/native-formatting-schema.ts",
     text: 'createBlockSpec({ type: "bulletListItem" }, { parse: element => element.parentElement?.tagName === "UL" ? {} : undefined })',

@@ -1,5 +1,6 @@
 import { _blocksToProsemirrorNode } from "@blocknote/core/yjs"
 import { Fragment, type Node } from "@tiptap/pm/model"
+import DOMPurify from "dompurify"
 import { layoutCellAt } from "./native-layout-transaction.js"
 import type { PrivateLayoutEditor } from "./native-layout-schema.js"
 
@@ -18,7 +19,10 @@ export function pasteIntoLayoutCell(
     $to.node($to.depth - 2).type.name !== "paperCell"
   )
     return true
-  const html = event.clipboardData?.getData("text/html"),
+  const html = DOMPurify.sanitize(
+      event.clipboardData?.getData("text/html") ?? "",
+      { USE_PROFILES: { html: true } }
+    ),
     plain = event.clipboardData?.getData("text/plain")
   if (!html && plain === undefined) return true
   try {
