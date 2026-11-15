@@ -13,7 +13,7 @@ import {
   realTurns,
   turnsUntil,
   reconnect,
-} from "./test/canvas-network.ts"
+} from "./test/canvas-network.fixtures.ts"
 
 afterEach(cleanNetworkPage)
 

@@ -11,7 +11,7 @@ import {
   fakeServer,
   realTurns,
   turnsUntil,
-} from "./test/canvas-network.ts"
+} from "./test/canvas-network.fixtures.ts"
 
 afterEach(cleanNetworkPage)
 
