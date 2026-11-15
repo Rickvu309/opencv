@@ -1,5 +1,9 @@
 export const clean = [
   {
+    path: "packages/paper-crdt/src/native-layout-flow.ts",
+    text: 'import { headlessLayoutSchema } from "./native-formatting-headless.js"',
+  },
+  {
     path: "packages/paper-crdt/src/native-layout-flow-view.ts",
     text: "Decoration.node(pos, end, { style: `height:${height}px` })",
   },
@@ -105,6 +109,14 @@ export const clean = [
   },
 ]
 export const mistakes = [
+  {
+    path: "packages/paper-crdt/src/native-layout-flow.ts",
+    text: 'import { nativeLayoutSchema } from "./native-layout-schema.js"',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-flow-codec.ts",
+    text: 'import type { PrivateLayoutBlock } from "./native-layout-schema.js"',
+  },
   {
     path: "packages/paper-crdt/src/native-layout-flow-view.ts",
     text: "block.style.height = `${height}px`",

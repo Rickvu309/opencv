@@ -66,6 +66,17 @@ export function detect(text, path) {
     )?.initializer
   }
   function checkImport(specifier) {
+    if (
+      /^packages\/paper-crdt\/src\/(?:stored-document|native-layout-flow|native-layout-flow-codec|native-layout-codec|native-layout-wire|native-formatting-(?:config|headless|shared|values|inline|cv|wire)|presentation-meta)\.ts$/.test(
+        path
+      ) &&
+      /^\.\/native-(?:formatting(?:-schema|-styles)?|layout-schema|photo-render)\.js$/.test(
+        specifier
+      )
+    )
+      hits.push(
+        "Canonical storage must use shared schema configuration and headless implementations"
+      )
     if (presentation && specifier.startsWith(".")) {
       const target = posix.normalize(posix.join(posix.dirname(path), specifier))
       if (

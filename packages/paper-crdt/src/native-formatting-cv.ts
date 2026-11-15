@@ -4,7 +4,7 @@ import {
   type DocumentPresentation,
   type PrivateFormattedDocument,
 } from "@workspace/domain/internal/paper-presentation"
-import type { PrivateFormattingBlock } from "./native-formatting-schema.js"
+import type { HeadlessFormattingBlock as PrivateFormattingBlock } from "./native-formatting-headless.js"
 import {
   object,
   string,

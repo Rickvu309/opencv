@@ -8,8 +8,6 @@ import * as Y from "yjs"
 import {
   formattedDocumentSchema,
   canonical,
-  ok,
-  refuse,
   type Result,
   type PrivateFormattedDocument,
 } from "@workspace/domain/internal/paper-presentation"
@@ -35,15 +33,8 @@ import {
   validateFormattingEngine,
   validateFormattingWire,
 } from "./native-formatting-wire.js"
-export const formattingFragmentName = (kind: "cv" | "letter") =>
-  kind === "cv" ? "private-native-cv-v4-r2" : "document-store"
-export function attempt<T>(work: () => T): Result<T> {
-  try {
-    return ok(work())
-  } catch (error) {
-    return refuse(error instanceof Error ? error.message : "Formatting refused")
-  }
-}
+import { attempt, formattingFragmentName } from "./native-formatting-shared.js"
+export { attempt, formattingFragmentName } from "./native-formatting-shared.js"
 export function readFormatting(
   binding: EngineBinding
 ): PrivateFormattedDocument {

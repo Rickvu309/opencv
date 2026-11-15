@@ -4,7 +4,7 @@ import {
   mergeFormatRuns,
   type FormatRun,
 } from "@workspace/domain/internal/paper-presentation"
-import { canonicalStyles, engineStyles } from "./native-formatting-styles.js"
+import { canonicalStyles, engineStyles } from "./native-formatting-values.js"
 export function object(
   input: unknown,
   keys?: readonly string[]
