@@ -91,7 +91,7 @@ const bodyAt = (depth: number): z.ZodType<FormatBody> =>
       .strict(),
     z.object({ id: nodeIdSchema, type: z.literal("divider") }).strict(),
   ])
-export const formatBodySchema = bodyAt(3)
+const formatBodySchema = bodyAt(3)
 const field: z.ZodType<FormatField> = z
   .object({
     ...inline,

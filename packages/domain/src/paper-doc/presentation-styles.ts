@@ -33,11 +33,11 @@ export const styleSchema = z.discriminatedUnion("kind", [
     .strict(),
 ])
 export const catalogSchema = z.array(styleSchema).max(128)
-export type StyleDefinition = z.infer<typeof styleSchema>
-export type ResolvedStyle =
+type StyleDefinition = z.infer<typeof styleSchema>
+type ResolvedStyle =
   | { kind: "character"; id: StyleId; values: InlinePresentation }
   | { kind: "paragraph"; id: StyleId; values: ParagraphPresentation }
-export type ResolvedStyles = readonly ResolvedStyle[]
+type ResolvedStyles = readonly ResolvedStyle[]
 
 export function resolveStyles(input: unknown): Result<ResolvedStyles> {
   const parsed = parse(catalogSchema, input)

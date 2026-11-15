@@ -11,18 +11,15 @@ export function parse<T>(schema: z.ZodType<T>, value: unknown): Result<T> {
   const result = schema.safeParse(value)
   return result.success ? ok(result.data) : refuse(result.error.message)
 }
-export const twipsSchema = z.number().int().min(0).max(31680).brand<"Twips">()
-export type Twips = z.infer<typeof twipsSchema>
+const twipsSchema = z.number().int().min(0).max(31680).brand<"Twips">()
 export const fontIdSchema = z
   .enum(["liberation-sans", "liberation-serif", "liberation-mono"])
   .brand<"FontId">()
-export type FontId = z.infer<typeof fontIdSchema>
 export const styleIdSchema = z
   .string()
   .regex(/^[a-z][a-z0-9-]{0,63}$/)
   .brand<"StyleId">()
 export type StyleId = z.infer<typeof styleIdSchema>
-export type PresentationCodecVersion = 1
 const color = z.string().regex(/^#[0-9A-F]{6}$/)
 export const inlineSchema = z
   .object({
@@ -38,7 +35,7 @@ export const inlineSchema = z
   })
   .strict()
 export type InlinePresentation = z.infer<typeof inlineSchema>
-export const lineSpacingSchema = z.discriminatedUnion("kind", [
+const lineSpacingSchema = z.discriminatedUnion("kind", [
   z
     .object({ kind: z.literal("multiple"), value: z.number().min(0.5).max(10) })
     .strict(),
@@ -55,7 +52,6 @@ export const lineSpacingSchema = z.discriminatedUnion("kind", [
     })
     .strict(),
 ])
-export type LineSpacing = z.infer<typeof lineSpacingSchema>
 export const paragraphSchema = z
   .object({
     alignment: z.enum(["left", "center", "right", "justify"]).optional(),
@@ -97,7 +93,6 @@ export const pageSchema = pagePropertiesSchema.superRefine((p, ctx) => {
       message: "Orientation disagrees with dimensions",
     })
 })
-export type PageGeometry = z.infer<typeof pageSchema>
 export const inlinePatchSchema = inlineSchema
   .extend({
     bold: z.boolean().nullable().optional(),

@@ -18,6 +18,8 @@ import {
   catalogSchema,
   styleSchema,
   resolveStyles,
+  resolveInline,
+  resolveParagraph,
 } from "./presentation-styles.js"
 
 export const documentPresentationSchema = z
@@ -39,7 +41,7 @@ export const rangeSchema = z
   .strict()
   .refine((r) => r.from < r.to, "Collapsed styles belong to the editor")
 export type BodyTextRange = z.infer<typeof rangeSchema>
-export const snapshotSchema = z
+const snapshotSchema = z
   .object({
     document: documentPresentationSchema,
     blocks: z
@@ -65,7 +67,7 @@ export const snapshotSchema = z
   })
   .strict()
 export type PresentationSnapshot = z.infer<typeof snapshotSchema>
-export const patchSchema = z.discriminatedUnion("kind", [
+const patchSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("document-page"), page: pageSchema }).strict(),
   z
     .object({ kind: z.literal("document-inline"), values: inlinePatchSchema })
@@ -98,7 +100,6 @@ export const patchSchema = z.discriminatedUnion("kind", [
     })
     .strict(),
 ])
-export type PresentationPatch = z.infer<typeof patchSchema>
 export type PropertyChange =
   | {
       kind: "page"
@@ -167,7 +168,6 @@ export const validatedPatchSchema = z
   })
   .strict()
 export type ValidatedPresentationPatch = z.infer<typeof validatedPatchSchema>
-export type PresentationDelta = ValidatedPresentationPatch
 
 function selected(current: object, patch: object): object {
   const entries = new Map(Object.entries(current))
@@ -188,22 +188,24 @@ export function checkSnapshot(input: unknown): Result<PresentationSnapshot> {
     ...s.blocks.flatMap((b) => b.runs.map((r) => r.values)),
   ]
   const paragraphs = [s.document.paragraph, ...s.blocks.map((b) => b.paragraph)]
-  for (const value of inline)
-    if (
-      value.characterStyle &&
-      !styles.value.some(
-        (s) => s.id === value.characterStyle && s.kind === "character"
-      )
+  for (const value of inline) {
+    const { characterStyle, ...overrides } = value
+    const resolved = resolveInline(
+      styles.value,
+      characterStyle ?? null,
+      overrides
     )
-      return refuse("Invalid character style reference")
-  for (const value of paragraphs)
-    if (
-      value.paragraphStyle &&
-      !styles.value.some(
-        (s) => s.id === value.paragraphStyle && s.kind === "paragraph"
-      )
+    if (resolved.kind === "refused") return resolved
+  }
+  for (const value of paragraphs) {
+    const { paragraphStyle, ...overrides } = value
+    const resolved = resolveParagraph(
+      styles.value,
+      paragraphStyle ?? null,
+      overrides
     )
-      return refuse("Invalid paragraph style reference")
+    if (resolved.kind === "refused") return resolved
+  }
   return result
 }
 export function isWellFormed(text: string): boolean {
