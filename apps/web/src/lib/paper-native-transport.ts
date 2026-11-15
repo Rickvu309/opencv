@@ -6,10 +6,12 @@ import {
   type CommandInput,
   type CommandOutput,
   type Commands,
+  type StoredPaperDocument,
 } from "@workspace/domain"
 import {
   emptyUpdate,
   openPaperClient,
+  recoverRichPaperClient,
   type PaperClient,
   type Stored,
 } from "@workspace/paper-crdt"
@@ -60,6 +62,42 @@ export type NativeSessionOptions = {
 }
 
 export function openNativePaperSync(options: NativeSessionOptions) {
+  return openSession(options, (admitted, states, identity) => {
+    const client = openPaperClient(admitted, {
+      provenance: identity.provenance,
+    })
+    try {
+      for (const stored of states) {
+        const result = client.adopt(stored)
+        if (result.failed || !result.adopted)
+          throw new Error("Native recovery conflict retained")
+      }
+      return client
+    } catch (error) {
+      client.destroy()
+      throw error
+    }
+  })
+}
+
+export function openRichNativePaperSync(
+  options: NativeSessionOptions & {
+    readonly readAdmitted: (identity: NativeSyncIdentity) => Promise<Stored>
+  }
+) {
+  return openSession(options, (admitted, states, identity) =>
+    recoverRichPaperClient(admitted, states, identity.provenance)
+  )
+}
+
+function openSession<Document extends StoredPaperDocument>(
+  options: NativeSessionOptions,
+  recover: (
+    admitted: Stored,
+    states: readonly Stored[],
+    identity: NativeSyncIdentity
+  ) => PaperClient<Document>
+) {
   const identity = requireNativeIdentity(options.identity)
   const scope = nativeRecoveryScope(identity)
   const tabId = options.tabId ?? crypto.randomUUID()
@@ -68,7 +106,7 @@ export function openNativePaperSync(options: NativeSessionOptions) {
   const command: NativeSyncTransport = options.run ?? runContractCommand
   const cancellation = new AbortController()
   const listeners = new Set<() => void>()
-  let client: PaperClient | null = null
+  let client: PaperClient<Document> | null = null
   let state: SyncStatus = "loading"
   let ready = false
   let destroyed = false
@@ -93,8 +131,9 @@ export function openNativePaperSync(options: NativeSessionOptions) {
     destroyed = true
     cancellation.abort()
     ready = false
-    client = null
     detach()
+    client?.destroy()
+    client = null
     state = "refused"
     closing = persistence.then(async () => {
       releaseLock()
@@ -369,12 +408,7 @@ export function openNativePaperSync(options: NativeSessionOptions) {
           (stored): stored is Stored => stored !== null && stored !== undefined
         )
         .map((stored) => validateNativeStored(identity, stored))
-      client = openPaperClient(admitted, { provenance: identity.provenance })
-      for (const stored of states) {
-        const result = client.adopt(stored)
-        if (result.failed || !result.adopted)
-          throw new Error("Native recovery conflict retained")
-      }
+      client = recover(admitted, states, identity)
       checkpoints = journals.flatMap((entry) => entry.checkpoints)
       remember()
       await persist()
@@ -401,6 +435,8 @@ export function openNativePaperSync(options: NativeSessionOptions) {
       if (active()) {
         conflict = true
         ready = false
+        detach()
+        client?.destroy()
         client = null
         emit()
       }

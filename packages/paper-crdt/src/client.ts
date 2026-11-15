@@ -73,6 +73,8 @@ export type PaperClient<Document extends StoredPaperDocument = PaperDocument> =
     state(): Uint8Array
     document(): Document | null
     subscribe(listener: (change: ClientChange) => void): () => void
+    onDocumentRelease(listener: () => void): () => void
+    destroy(): void
   }
 
 function freshDoc(
@@ -80,8 +82,13 @@ function freshDoc(
   ...updates: (Uint8Array | null | undefined)[]
 ): Y.Doc {
   const doc = new Y.Doc({ gc })
-  for (const update of updates) if (update) Y.applyUpdate(doc, update)
-  return doc
+  try {
+    for (const update of updates) if (update) Y.applyUpdate(doc, update)
+    return doc
+  } catch (error) {
+    doc.destroy()
+    throw error
+  }
 }
 
 function read(doc: Y.Doc): PaperDocument | null {
@@ -126,10 +133,14 @@ function aheadOf(ydoc: Y.Doc, server: Y.Doc): boolean {
 }
 
 export function storedHasPending(stored: Stored): boolean {
-  return aheadOf(
-    freshDoc(false, stored.server, stored.pending),
-    freshDoc(false, stored.server)
-  )
+  const live = freshDoc(false, stored.server, stored.pending)
+  const server = freshDoc(false, stored.server)
+  try {
+    return aheadOf(live, server)
+  } finally {
+    live.destroy()
+    server.destroy()
+  }
 }
 
 function same(a: StoredPaperDocument | null, b: StoredPaperDocument | null) {
@@ -185,6 +196,8 @@ class Client<
   private readonly gc: boolean
   private readonly adapter: DocumentAdapter<Document>
   private listeners = new Set<(change: ClientChange) => void>()
+  private releases = new Set<() => void>()
+  private destroyed = false
   private detach: () => void = () => {}
 
   constructor(
@@ -238,10 +251,38 @@ class Client<
   }
 
   subscribe(listener: (change: ClientChange) => void) {
+    this.requireActive()
     this.listeners.add(listener)
     return () => {
       this.listeners.delete(listener)
     }
+  }
+
+  onDocumentRelease(listener: () => void) {
+    this.requireActive()
+    this.releases.add(listener)
+    return () => {
+      this.releases.delete(listener)
+    }
+  }
+
+  private requireActive() {
+    if (this.destroyed) throw new Error("Paper client is closed")
+  }
+
+  private releaseDocument() {
+    for (const release of [...this.releases]) release()
+    this.releases.clear()
+    this.detach()
+    this.ydoc.destroy()
+  }
+
+  destroy() {
+    if (this.destroyed) return
+    this.destroyed = true
+    this.releaseDocument()
+    this.server.destroy()
+    this.listeners.clear()
   }
 
   private pendingBytes() {
@@ -249,10 +290,12 @@ class Client<
   }
 
   hasPending() {
+    this.requireActive()
     return aheadOf(this.ydoc, this.server)
   }
 
   prepare(options: { readonly pullOnly?: boolean } = {}): Prepared {
+    this.requireActive()
     const push = options.pullOnly !== true && this.hasPending()
     return {
       ...(this.provenance ? { provenance: this.provenance } : {}),
@@ -264,6 +307,7 @@ class Client<
   }
 
   stored(): Stored {
+    this.requireActive()
     return {
       ...(this.provenance ? { provenance: this.provenance } : {}),
       epoch: this.epoch,
@@ -274,10 +318,12 @@ class Client<
   }
 
   state() {
+    this.requireActive()
     return Y.encodeStateAsUpdate(this.ydoc)
   }
 
   document() {
+    this.requireActive()
     return this.adapter.read(this.ydoc)
   }
 
@@ -296,13 +342,14 @@ class Client<
     const rebuilt = freshDoc(this.gc, Y.encodeStateAsUpdate(this.server))
     this.adapter.write(rebuilt, target, REBASE_ORIGIN)
     this.rebuilds += 1
-    this.detach()
+    this.releaseDocument()
     this.ydoc = rebuilt
     this.attach()
     this.announce("reset")
   }
 
   receive(sent: Prepared, reply: SyncReply): Receipt {
+    this.requireActive()
     const rejected = {
       reset: false,
       stale: false,
@@ -411,6 +458,7 @@ class Client<
   }
 
   adopt(orphan: Stored): Adoption {
+    this.requireActive()
     if (!sameNativeProvenance(this.provenance, orphan.provenance))
       return { adopted: false, failed: true }
     if (!this.adapter.semanticRebase) return { adopted: false, failed: true }
@@ -453,7 +501,8 @@ class Client<
         ? this.adapter.rebase({ base, ours, theirs })
         : null
     if (merged) this.adapter.write(ydoc, merged.document, REBASE_ORIGIN)
-    this.detach()
+    this.releaseDocument()
+    this.server.destroy()
     this.server = server
     this.ydoc = ydoc
     this.epoch = reply.epoch

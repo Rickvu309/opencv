@@ -22,7 +22,11 @@ export type PaperQualification = {
 }
 
 type QualifiedRead =
-  "paper.list" | "paper.get" | "paper.shared" | "paper.pageCount"
+  | "paper.list"
+  | "paper.get"
+  | "paper.shared"
+  | "paper.pageCount"
+  | "paper.document"
 
 export function paperWriter(options: PaperQualification) {
   return nativeWriterSchema.parse(options.writer ?? NATIVE_WRITER)
@@ -88,6 +92,11 @@ export function qualifiedPaperRead(
   path: string,
   options: PaperQualification
 ): Promise<QueryOutput<"paper.pageCount">>
+export async function qualifiedPaperRead(
+  name: "paper.document",
+  path: string,
+  options: PaperQualification
+): Promise<QueryOutput<"paper.document">>
 export async function qualifiedPaperRead(
   name: QualifiedRead,
   path: string,

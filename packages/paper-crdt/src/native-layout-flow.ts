@@ -139,6 +139,29 @@ export function openFlowBinary(
     throw error
   }
 }
+export function borrowFlowDocument(doc: Y.Doc, kind: "cv" | "letter") {
+  const view = engine()
+  const binding = own({
+    doc,
+    engine: view,
+    fragment: doc.getXmlFragment(formattingFragmentName(kind)),
+    kind,
+  })
+  try {
+    readFlow(binding)
+    return {
+      binding,
+      release() {
+        if (!owned.delete(binding)) return
+        view._tiptapEditor.destroy()
+      },
+    }
+  } catch (error) {
+    owned.delete(binding)
+    view._tiptapEditor.destroy()
+    throw error
+  }
+}
 function record(binding: FlowBinding, operationId: string) {
   if (!/^[A-Za-z0-9_-]{1,64}$/.test(operationId))
     throw new Error("Invalid operation identity")

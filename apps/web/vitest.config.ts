@@ -57,6 +57,10 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
+      "@workspace/paper-crdt/editor": path.resolve(
+        __dirname,
+        "../../packages/paper-crdt/src/editor.ts"
+      ),
       "@workspace/domain/internal/paper-presentation": path.resolve(
         __dirname,
         "../../packages/domain/src/paper-presentation.ts"

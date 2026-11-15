@@ -6,6 +6,27 @@ export function detect(text, path) {
   const hits = []
   const test = /\.test\.[cm]?[jt]sx?$/.test(path)
   const storage = path === "packages/paper-crdt/src/stored-document.ts"
+  const editorEntry = path === "packages/paper-crdt/src/editor.ts"
+  if (
+    path === "apps/web/src/lib/paper-sync-recovery.ts" &&
+    (!text.includes("identity.provenance.schemaRevision === 2") ||
+      !text.includes("? openRichPaperClient") ||
+      !text.includes(": openPaperClient") ||
+      !text.includes("}).destroy()"))
+  )
+    hits.push(
+      "Native recovery must validate the admitted schema and release validation clients"
+    )
+  if (
+    path === "packages/paper-crdt/src/native-layout-flow-mount.ts" &&
+    text.includes("defaultPasteHandler(") &&
+    (!text.includes("pasteIntoFlowText(editor, event)") ||
+      text.indexOf("pasteIntoFlowText(editor, event)") >
+        text.indexOf("defaultPasteHandler("))
+  )
+    hits.push(
+      "Flow paste must preserve inline text before converting clipboard content to blocks"
+    )
   if (/^apps\/web\/vite(?:st)?\.config\.ts$/.test(path)) {
     const aliases = []
     function visitAlias(node) {
@@ -121,6 +142,21 @@ export function detect(text, path) {
             element.name.text
           )
       )
+    const editorImport =
+      editorEntry &&
+      ts.isImportDeclaration(declaration) &&
+      !declaration.importClause?.name &&
+      declaration.importClause?.namedBindings &&
+      ts.isNamedImports(declaration.importClause.namedBindings) &&
+      declaration.importClause.namedBindings.elements.length === 1 &&
+      declaration.importClause.namedBindings.elements.every(
+        (element) =>
+          !element.propertyName &&
+          ((specifier === "./native-layout-flow.js" &&
+            element.name.text === "borrowFlowDocument") ||
+            (specifier === "./native-layout-flow-mount.js" &&
+              element.name.text === "mountPrivateFlow"))
+      )
     if (presentation && specifier.startsWith(".")) {
       const target = posix.normalize(posix.join(posix.dirname(path), specifier))
       if (
@@ -149,6 +185,7 @@ export function detect(text, path) {
     if (
       !privateCrdt &&
       !storageImport &&
+      !editorImport &&
       /(?:^|\/)(?:presentation-(?:binding|meta|inline|codec|reverse)|native-(?:formatting|layout|photo)(?:-[^/]+)?)(?:\.[cm]?[jt]s)?$/.test(
         specifier
       ) &&
@@ -157,6 +194,50 @@ export function detect(text, path) {
       hits.push("Private formatting cannot be registered or exported publicly")
   }
   function visit(node) {
+    if (
+      path === "apps/web/src/features/paper/rich-page.tsx" &&
+      (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) &&
+      node.tagName.getText(source) === "Button"
+    ) {
+      const attributes = node.attributes.properties.filter(ts.isJsxAttribute)
+      const icon = attributes.some(
+        (attribute) =>
+          attribute.name.getText(source) === "size" &&
+          attribute.initializer?.text === "icon"
+      )
+      const classes = attributes.find(
+        (attribute) => attribute.name.getText(source) === "className"
+      )?.initializer?.text
+      if (icon && !classes?.split(/\s+/).includes("size-11"))
+        hits.push("Rich Paper icon controls need a 44px phone target")
+    }
+    if (
+      path === "packages/paper-crdt/src/native-layout-flow-view.ts" &&
+      ts.isCallExpression(node) &&
+      ts.isPropertyAccessExpression(node.expression) &&
+      node.expression.name.text === "supports" &&
+      /^(?:globalThis\.)?CSS$/.test(
+        node.expression.expression.getText(source)
+      ) &&
+      (!node.questionDotToken || !node.expression.questionDotToken)
+    )
+      hits.push(
+        "Pagination must tolerate an absent CSS namespace or supports method"
+      )
+    if (
+      editorEntry &&
+      (ts.isExportDeclaration(node) ||
+        ts.isExportAssignment(node) ||
+        (node.modifiers?.some(
+          (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword
+        ) &&
+          !(
+            (ts.isFunctionDeclaration(node) &&
+              node.name?.text === "mountRichPaperEditor") ||
+            (ts.isTypeAliasDeclaration(node) && node.name.text === "RichMark")
+          )))
+    )
+      hits.push("The Paper editor entry exposes mounted controls only")
     if (
       storage &&
       node.modifiers?.some(

@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen, waitFor } from "@testing-library/react"
 
 import { paperListKey } from "@/features/paper/paper-api.ts"
+import { refreshQueries } from "@/lib/contract-client.ts"
 import { PaperDocPage } from "@/routes/paper-doc.tsx"
 
 const WORD_PAGE = "22222222-2222-4222-8222-222222222222"
@@ -26,7 +27,7 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("@/lib/auth-client.ts", () => ({
   authClient: {
     useSession: () => ({
-      data: { user: { id: "owner-1" } },
+      data: { user: { id: "owner-1" }, session: { id: "session-1" } },
       isPending: false,
       error: null,
     }),
@@ -89,6 +90,10 @@ function answer(url: string, body: string, listFails: boolean) {
   const path = url.split("?")[0] ?? ""
   if (path.endsWith("/api/paper"))
     return listFails ? missing(500) : ok([wordView, olderView])
+  if (path.endsWith(`/api/paper/${WORD_PAGE}/document`))
+    return ok({ id: WORD_PAGE, name: "Cv.docx", kind: "cv", format: "word" })
+  if (path.endsWith(`/api/paper/${OLDER_DOC}/document`))
+    return ok({ id: OLDER_DOC, name: "Older CV", kind: "cv", format: "prose" })
   if (path.endsWith(`/api/paper/${OLDER_DOC}/pages`))
     return ok({ docId: OLDER_DOC, pages: 1, pageChoice: "unset" })
   if (path.endsWith(`/api/paper/${OLDER_DOC}`)) return ok(olderView)
@@ -141,12 +146,30 @@ afterEach(() => {
 })
 
 describe("opening a document from its link", () => {
+  it("refreshes document metadata after a product command invalidates it", async () => {
+    const exchanges = stubServer()
+    const client = open(`/paper/${WORD_PAGE}`)
+    expect(await screen.findByRole("article", { name: "Page" })).toBeVisible()
+    await refreshQueries(client, [
+      { query: "paper.document", input: { docId: WORD_PAGE } },
+    ])
+    expect(
+      paperRequests(exchanges).filter(
+        (path) => path === `paper/${WORD_PAGE}/document`
+      )
+    ).toHaveLength(2)
+  })
+
   it("opens a Word page from a direct link with no failed request and no older read", async () => {
     const exchanges = stubServer()
     open(`/paper/${WORD_PAGE}`)
     expect(await screen.findByRole("article", { name: "Page" })).toBeVisible()
     expect(failed(exchanges)).toEqual([])
-    expect(paperRequests(exchanges)).toEqual(["paper", "reads/paper.read"])
+    expect(paperRequests(exchanges)).toEqual([
+      `paper/${WORD_PAGE}/document`,
+      "paper",
+      "reads/paper.read",
+    ])
   })
 
   it("opens a Word page from the library with no failed request and no older read", async () => {
@@ -185,7 +208,10 @@ describe("opening a document from its link", () => {
       open(`/paper/${id}`)
       expect(await screen.findByText("Document not found.")).toBeVisible()
       expect(failed(exchanges)).toEqual([
-        { url: expect.stringContaining(`/api/paper/${id}`), status: 404 },
+        {
+          url: expect.stringContaining(`/api/paper/${id}/document`),
+          status: 404,
+        },
       ])
       expect(paperRequests(exchanges)).not.toContain("reads/paper.read")
     }
@@ -196,7 +222,11 @@ describe("opening a document from its link", () => {
     open(`/paper/${WORD_PAGE}`, [olderView])
     expect(await screen.findByRole("article", { name: "Page" })).toBeVisible()
     expect(failed(exchanges)).toEqual([])
-    expect(paperRequests(exchanges)).toEqual(["paper", "reads/paper.read"])
+    expect(paperRequests(exchanges)).toEqual([
+      `paper/${WORD_PAGE}/document`,
+      "paper",
+      "reads/paper.read",
+    ])
   })
 
   it("still opens a Word page when the document list cannot load", async () => {

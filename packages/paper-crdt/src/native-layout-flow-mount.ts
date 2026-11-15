@@ -19,7 +19,10 @@ import {
   installFlowView,
 } from "./native-layout-flow-view.js"
 import { editableTarget } from "./native-layout-mount.js"
-import { pasteIntoLayoutCell } from "./native-layout-paste.js"
+import {
+  pasteIntoFlowText,
+  pasteIntoLayoutCell,
+} from "./native-layout-paste.js"
 import {
   setPhotoResolver,
   type PhotoUrlResolver,
@@ -60,6 +63,7 @@ export function mountPrivateFlow(
     links: { HTMLAttributes: { style: "text-decoration:none;color:inherit" } },
     pasteHandler: ({ event, editor, defaultPasteHandler }) =>
       pasteIntoLayoutCell(editor, event) ||
+      pasteIntoFlowText(editor, event) ||
       defaultPasteHandler({
         prioritizeMarkdownOverHTML: false,
         plainTextAsMarkdown: false,
@@ -79,6 +83,11 @@ export function mountPrivateFlow(
     if (!active) throw new Error("Layout view is unmounted")
     editor.addStyles(engineStyles(inlineSchema.parse(input)))
   }
+  const activeInline = () =>
+    effectiveInline(
+      readPresentationMeta(binding.doc),
+      canonicalStyles(editor.getActiveStyles())
+    )
   const keydown = (event: KeyboardEvent) => {
     if (
       event.key === "Tab" &&
@@ -140,10 +149,7 @@ export function mountPrivateFlow(
     if (!mark) return
     event.preventDefault()
     event.stopImmediatePropagation()
-    const effective = effectiveInline(
-      readPresentationMeta(binding.doc),
-      canonicalStyles(editor.getActiveStyles())
-    )
+    const effective = activeInline()
     setInline({ [mark]: !effective[mark] })
   }
   const refresh = () => {
@@ -179,6 +185,7 @@ export function mountPrivateFlow(
   return {
     editor,
     setInline,
+    activeInline,
     pagination: () => flowPaginationSupport(readFlow(binding)),
     unmount() {
       if (!active) return

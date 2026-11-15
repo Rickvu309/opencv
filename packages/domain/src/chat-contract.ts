@@ -127,6 +127,7 @@ const readsAnUndoOrApprovalCanChange = (): QueryRef[] => [
   { query: "job.calendar" },
   { query: "paper.list" },
   { query: "paper.get" },
+  { query: "paper.document" },
   { query: "paper.pageCount" },
   { query: "paper.outline" },
   { query: "paper.keywordGap" },

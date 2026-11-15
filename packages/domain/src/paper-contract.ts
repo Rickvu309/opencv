@@ -21,6 +21,7 @@ import {
   nativeWriterSchema,
   nativeSyncInputSchema,
   nativeSyncOutputSchema,
+  nativeProvenanceSchema,
 } from "./paper-doc/native.js"
 import {
   paperEditOutcomeSchema,
@@ -90,6 +91,21 @@ export const paperViewSchema = z
   .strict()
 
 export type PaperView = z.output<typeof paperViewSchema>
+
+const paperIdentitySchema = paperViewSchema.pick({
+  id: true,
+  name: true,
+  kind: true,
+})
+
+export const paperDocumentInfoSchema = z.discriminatedUnion("format", [
+  paperIdentitySchema.extend({ format: z.enum(["word", "prose"]) }).strict(),
+  paperIdentitySchema
+    .extend({ format: z.literal("rich"), provenance: nativeProvenanceSchema })
+    .strict(),
+])
+
+export type PaperDocumentInfo = z.output<typeof paperDocumentInfoSchema>
 
 export const paperSharedViewSchema = paperViewSchema
   .pick({ id: true, name: true, kind: true, templateId: true, paper: true })
@@ -168,6 +184,12 @@ const paperEditOutputSchema = z
 export const PAPER_RECEIPT_CHANGE_LIMIT = MAX_RECEIPT_CHANGES
 
 export const paperQueries = queryContract({
+  "paper.document": queryEntry({
+    input: z
+      .object({ docId: paperIdSchema, writer: nativeWriterSchema.optional() })
+      .strict(),
+    output: paperDocumentInfoSchema,
+  }),
   "paper.list": queryEntry({
     input: z
       .object({
@@ -246,6 +268,7 @@ type DocInput = { docId: z.output<typeof paperIdSchema> }
 const listChanged = (): QueryRef[] => [{ query: "paper.list" }]
 
 const docChanged = (input: DocInput): QueryRef[] => [
+  { query: "paper.document", input: { docId: input.docId } },
   { query: "paper.get", input: { docId: input.docId } },
   { query: "paper.pageCount", input: { docId: input.docId } },
   { query: "paper.outline", input: { docId: input.docId } },

@@ -6,6 +6,7 @@ import {
   NATIVE_WRITER,
   RICH_NATIVE_WRITER,
   paperPhotoRef,
+  paperDocumentInfoSchema,
   paperViewSchema,
   parseUserId,
 } from "@workspace/domain"
@@ -161,6 +162,35 @@ it("saves and reopens rich CVs and Letters over authenticated HTTP without legac
         ).toBe(false)
       }
       try {
+        const info = await fetch(`${origin}/api/paper/${docId}/document`, {
+          headers: {
+            Cookie: cookie,
+            "x-paper-writer": JSON.stringify(RICH_NATIVE_WRITER),
+          },
+        })
+        expect(info.status).toBe(200)
+        expect(paperDocumentInfoSchema.parse(await responseData(info))).toEqual(
+          {
+            id: docId,
+            name: expect.any(String),
+            kind,
+            format: "rich",
+            provenance: nativeProvenance(document),
+          }
+        )
+        expect(
+          (
+            await fetch(`${origin}/api/paper/${docId}/document`, {
+              headers: {
+                Cookie: cookie,
+                "x-paper-writer": JSON.stringify(NATIVE_WRITER),
+              },
+            })
+          ).status
+        ).toBe(409)
+        expect(
+          (await fetch(`${origin}/api/paper/${docId}/document`)).status
+        ).toBe(401)
         const pull = client.prepare()
         expect((await command(wire(pull), "")).status).toBe(401)
         expect(
