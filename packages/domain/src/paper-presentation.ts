@@ -62,3 +62,19 @@ export {
   resolveInline,
   resolveParagraph,
 } from "./paper-doc/presentation-styles.js"
+export {
+  privateLayoutSchema,
+  layoutTableSchema,
+} from "./paper-doc/native-layout.js"
+export type {
+  PrivateLayoutDocument,
+  LayoutTable,
+  LayoutRow,
+  LayoutCell,
+} from "./paper-doc/native-layout.js"
+export {
+  prepareLayoutEdit,
+  reverseLayoutEdit,
+  layoutReceiptSchema,
+} from "./paper-doc/native-layout-edit.js"
+export type { LayoutReceipt } from "./paper-doc/native-layout-edit.js"

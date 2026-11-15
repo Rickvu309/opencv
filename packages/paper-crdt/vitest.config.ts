@@ -16,6 +16,7 @@ export default defineConfig({
             ...configDefaults.exclude,
             "src/native-formatting-engine.test.ts",
             "src/native-formatting-mount.test.ts",
+            "src/native-layout-mount.test.ts",
           ],
         },
       },
@@ -28,6 +29,7 @@ export default defineConfig({
           include: [
             "../../packages/paper-crdt/src/native-formatting-engine.test.ts",
             "../../packages/paper-crdt/src/native-formatting-mount.test.ts",
+            "../../packages/paper-crdt/src/native-layout-mount.test.ts",
           ],
         },
       },

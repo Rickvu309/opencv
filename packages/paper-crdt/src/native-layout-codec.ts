@@ -1,0 +1,88 @@
+import {
+  privateLayoutSchema,
+  canonical,
+  type PrivateLayoutDocument,
+  type LayoutTable,
+} from "@workspace/domain/internal/paper-presentation"
+import type { DocumentPresentation } from "@workspace/domain/internal/paper-presentation"
+import { blockOf, readBlock } from "./native-formatting-cv.js"
+import { array, object, string } from "./native-formatting-inline.js"
+import type { PrivateLayoutBlock } from "./native-layout-schema.js"
+
+function tableBlock(table: LayoutTable): PrivateLayoutBlock {
+  return {
+    id: table.id,
+    type: "paperTable",
+    props: { columns: canonical(table.columns) },
+    children: table.children.map((row) => ({
+      id: row.id,
+      type: "paperRow",
+      children: row.children.map((cell) => ({
+        id: cell.id,
+        type: "paperCell",
+        props: { columnId: cell.columnId },
+        children: cell.children.map(blockOf),
+      })),
+    })),
+  }
+}
+export function toLayoutBlocks(
+  document: PrivateLayoutDocument
+): PrivateLayoutBlock[] {
+  const doc = privateLayoutSchema.parse(document)
+  return [
+    {
+      id: doc.flow.id,
+      type: "paperFlow",
+      children: doc.flow.children.map((node) =>
+        node.type === "table" ? tableBlock(node) : blockOf(node)
+      ),
+    },
+  ]
+}
+function readLayoutBlock(input: unknown): unknown {
+  const block = object(input, ["id", "type", "props", "children", "content"])
+  const type = string(block.type)
+  if (!["paperFlow", "paperTable", "paperRow", "paperCell"].includes(type))
+    return readBlock(input)
+  if (block.content !== undefined)
+    throw new Error("Layout containers cannot hold inline content")
+  const children = array(block.children).map(readLayoutBlock)
+  const id = string(block.id)
+  const props = object(block.props ?? {})
+  switch (type) {
+    case "paperFlow":
+      object(props, [])
+      return { id, type: "flow", children }
+    case "paperTable":
+      object(props, ["columns"])
+      return {
+        id,
+        type: "table",
+        columns: JSON.parse(string(props.columns)),
+        children,
+      }
+    case "paperRow":
+      object(props, [])
+      return { id, type: "row", children }
+    case "paperCell":
+      object(props, ["columnId"])
+      return { id, type: "cell", columnId: string(props.columnId), children }
+    default:
+      throw new Error("Unknown layout block")
+  }
+}
+export function fromLayoutBlocks(
+  input: unknown,
+  kind: "cv" | "letter",
+  presentation: DocumentPresentation
+): PrivateLayoutDocument {
+  const blocks = array(input)
+  if (blocks.length !== 1) throw new Error("Layout requires one flow")
+  return privateLayoutSchema.parse({
+    profile: "private-layout-1",
+    kind,
+    presentation,
+    flow: readLayoutBlock(blocks[0]),
+  })
+}

@@ -6,11 +6,11 @@ export function detect(text, path) {
   const hits = []
   const test = /\.test\.[cm]?[jt]sx?$/.test(path)
   const presentation =
-    /\/(?:paper-presentation|presentation(?:[-.][^/]+)?|native-formatting(?:[-.][^/]+)?)\.ts$/.test(
+    /\/(?:paper-presentation|presentation(?:[-.][^/]+)?|native-(?:formatting|layout)(?:[-.][^/]+)?)\.ts$/.test(
       path
     )
   const privateCrdt =
-    /^packages\/paper-crdt\/src\/(?:presentation-(?:binding|meta|inline|codec|reverse)|native-formatting(?:-[^/]+)?)\.ts$/.test(
+    /^packages\/paper-crdt\/src\/(?:presentation-(?:binding|meta|inline|codec|reverse)|native-(?:formatting|layout)(?:-[^/]+)?)\.ts$/.test(
       path
     )
   const packageRoot = path.split("/").slice(0, 2).join("/")
@@ -51,7 +51,7 @@ export function detect(text, path) {
       hits.push("Production fixture binding has been removed")
     if (
       !privateCrdt &&
-      /(?:^|\/)(?:presentation-(?:binding|meta|inline|codec|reverse)|native-formatting(?:-[^/]+)?)(?:\.[cm]?[jt]s)?$/.test(
+      /(?:^|\/)(?:presentation-(?:binding|meta|inline|codec|reverse)|native-(?:formatting|layout)(?:-[^/]+)?)(?:\.[cm]?[jt]s)?$/.test(
         specifier
       ) &&
       !path.startsWith("packages/domain/")
@@ -94,9 +94,64 @@ export function detect(text, path) {
         !privateCrdt
       )
         hits.push("Formatting binding is private")
+      if (
+        path === "packages/paper-crdt/src/native-layout-mount.ts" &&
+        ts.isIfStatement(node) &&
+        /event\.key\s*===\s*["']Tab["']/.test(node.expression.getText(source))
+      ) {
+        const body = node.thenStatement.getText(source)
+        const cancel = body.indexOf("event.preventDefault()")
+        const exit = body.search(/if\s*\(!target\)\s*return/)
+        if (cancel >= 0 && (exit < 0 || exit > cancel))
+          hits.push(
+            "Table Tab must leave native focus traversal available without a text target"
+          )
+      }
+      if (
+        path === "packages/paper-crdt/src/native-formatting-styles.ts" &&
+        ts.isMethodDeclaration(node) &&
+        node.name.getText(source) === "parse" &&
+        !node.body?.getText(source).includes("tagName")
+      )
+        hits.push(
+          "Rich HTML marks must parse standard elements as well as private spans"
+        )
       if (ts.isCallExpression(node)) {
         if (
-          path === "packages/paper-crdt/src/native-formatting-mount.ts" &&
+          path === "packages/paper-crdt/src/native-formatting-schema.ts" &&
+          ts.isIdentifier(node.expression) &&
+          node.expression.text === "createBlockSpec"
+        ) {
+          const type = property(node.arguments[0], "type")
+          if (
+            type &&
+            ts.isStringLiteral(type) &&
+            [
+              "paragraph",
+              "heading",
+              "bulletListItem",
+              "numberedListItem",
+            ].includes(type.text) &&
+            !property(node.arguments[1], "parse")
+          )
+            hits.push(
+              "Rich HTML body blocks must declare standard element parsing"
+            )
+          if (
+            type &&
+            ts.isStringLiteral(type) &&
+            ["bulletListItem", "numberedListItem"].includes(type.text) &&
+            (!property(node.arguments[1], "parseContent") ||
+              !node.arguments[1]?.getText(source).includes("closest"))
+          )
+            hits.push(
+              "Rich list parsing must retain nested content and recognize normalized wrappers"
+            )
+        }
+        if (
+          /^packages\/paper-crdt\/src\/native-(?:formatting|layout)-mount\.ts$/.test(
+            path
+          ) &&
           ts.isPropertyAccessExpression(node.expression) &&
           node.expression.getText(source) === "BlockNoteEditor.create"
         ) {
