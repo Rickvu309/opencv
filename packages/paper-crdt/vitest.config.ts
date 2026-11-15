@@ -15,6 +15,7 @@ export default defineConfig({
           exclude: [
             ...configDefaults.exclude,
             "src/native-formatting-engine.test.ts",
+            "src/native-formatting-mount.test.ts",
           ],
         },
       },
@@ -26,6 +27,7 @@ export default defineConfig({
           environment: "jsdom",
           include: [
             "../../packages/paper-crdt/src/native-formatting-engine.test.ts",
+            "../../packages/paper-crdt/src/native-formatting-mount.test.ts",
           ],
         },
       },
