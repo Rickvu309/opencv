@@ -102,4 +102,17 @@ export type { PaperRepair, RepairHints } from "./repair.js"
 export { nodeFingerprint, repairPaper } from "./repair.js"
 export { rebasePending } from "./rebase.js"
 
-export * from "./native.js"
+export type { NativeBasis, NativeProvenance, NativeWriter } from "./native.js"
+export {
+  NATIVE_WRITER,
+  nativeAdmission,
+  nativeBasisSchema,
+  nativeMigrateInputSchema,
+  nativeProvenance,
+  nativeProvenanceSchema,
+  nativeSyncInputSchema,
+  nativeSyncOutputSchema,
+  nativeWriterSchema,
+  sameNativeProvenance,
+} from "./native.js"
+export { retainUnderline } from "./merge-text.js"
