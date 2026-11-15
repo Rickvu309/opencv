@@ -5,10 +5,12 @@ import {
   parsePaperId,
   type PaperDocument,
   type PaperView,
+  type NativeWriter,
 } from "@workspace/domain"
 
 import { paperDocs } from "../db/schema.js"
 import { CommandError } from "../registry/errors.js"
+import { admitDocument, basisOf } from "./native-admission.js"
 
 type PaperRow = typeof paperDocs.$inferSelect
 
@@ -35,9 +37,13 @@ export function readStoredPaper(row: PaperRow): PaperDocument {
 
 export function toPaper(
   row: PaperRow,
-  paper: PaperDocument = readStoredPaper(row)
+  paper: PaperDocument = readStoredPaper(row),
+  writer?: NativeWriter
 ): PaperView {
+  admitDocument(paper, writer)
+  const nativeBasis = basisOf(paper, row.crdtEpoch ?? 1, row.contentVersion)
   return {
+    ...(nativeBasis ? { nativeBasis } : {}),
     id: parsePaperId(row.id),
     name: row.name,
     kind: row.kind,

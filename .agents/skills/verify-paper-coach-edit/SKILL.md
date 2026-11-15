@@ -5,11 +5,11 @@ description: Check a change to Paper proposals, approval, basis validation, retr
 
 # Verify a Coach Paper edit
 
-Last confirmed against `origin/main` at `89c3703c` on 2026-11-13: every command under Run printed the exit codes and pass counts this file states.
+Reconciled against accepted `origin/main` at `80c2542a95aa7ffcc51ef95dbd0559903f9bd33d` and the issue 1533 native admission candidate on 2026-11-15. The completed clean, paired-mutant, clean runs and registry replays produced the results below. The sync commit names accepted main, not an invented candidate commit.
 
 ## When this file is stale
 
-Run `node scripts/tlc.mjs --stale` first. When it lists `apps/api/src/paper/CoachPaper.tla` as STALE, or `git log --oneline 89c3703c..origin/main -- .agents/skills scripts/tlc.mjs` prints commits, rerun every command under Run before trusting a claim here. If a command fails or prints something else, believe the command, fix this file in the same PR, and move the commit above. The clean configs exit 0, the mutants exit 12, `coach-paper-replay.test.ts` prints `Tests 4 passed (4)` and `mcp-proposal-replay.test.ts` prints `Tests 2 passed (2)`.
+Run `node scripts/tlc.mjs --stale` first. When it lists `apps/api/src/paper/CoachPaper.tla` as STALE, or `git log --oneline 80c2542a95aa7ffcc51ef95dbd0559903f9bd33d..origin/main -- .agents/skills scripts/tlc.mjs` prints commits, rerun every command under Run before trusting a claim here. If a command fails or prints something else, believe the command, fix this file in the same PR, and move the commit above. The clean configs exit 0, the mutants exit 12, `coach-paper-replay.test.ts` prints `Tests 4 passed (4)` and `mcp-proposal-replay.test.ts` prints `Tests 2 passed (2)`.
 
 Use this when a change touches a Coach proposal on a CV or letter, the approval of that proposal, the basis check, a retry of the same proposal, or Undo of that edit.
 
@@ -21,16 +21,16 @@ These are the five rules of `CoachPaper.tla`. Do not weaken a rule to clear a fi
 
 ## Where the code lives
 
-The Paper reading below covers code scheduled for deletion. `paper.edit` takes this Yjs branch only when `basedOn` is a number (`select` in `apps/api/src/paper/package-edit.ts`). Word pages send a revision string and take the reviewed branch; `verify-paper-word` covers that. The MCP Job reading at the end is live.
+The Paper reading below is the legacy v3 numeric-edit projection. `paper.edit` takes this Yjs branch only when `basedOn` is a number (`select` in `apps/api/src/paper/package-edit.ts`). Word pages send a revision string and take the reviewed branch; `verify-paper-word` covers that. The MCP Job reading at the end is live.
 
 - `apps/api/src/paper/content-coach.ts` exports `editAsCoach`, `stalePaperBasis`, and `revertCoachEdit`. `stalePaperBasis` returns `refuse` when `basedOn` is not the current revision, and `apply` when it matches. `editAsCoach` calls it only for a coach actor, and throws before any write. Switching that return from `refuse` to `apply` is the one-line change to a clean merge. The replay and the guard `paper-coach-basis` both require `refuse`.
-- `apps/api/src/paper/content-store.ts` exports `coachBasisOk`, `withContent`, and `syncContent`. `coachBasisOk` still allows an older basis for a person edit. Do not use it as the coach approval rule. `syncContent` is the person write that raises the revision.
+- `apps/api/src/paper/content-store.ts` exports `coachBasisOk`, `withContent`, and `syncContent`. `coachBasisOk` still allows an older basis for a legacy person edit. Native numeric edits additionally require a qualified writer and an exact canonical native basis for every actor before hydration or mutation. Do not use it as the coach approval rule. `syncContent` is the person write that raises the revision.
 - `apps/api/src/registry/proposals.ts` exports `createProposal` and `lockProposal`. `createProposal` inserts a pending row and does not write the document. The basis read and the write stay one lock inside the approval transaction.
 - `apps/api/src/registry/registry.ts` holds `execute`, `approve`, `undo`, and `tools` as methods. They are not separate exports, so the coverage map cannot name them. A coach actor whose policy is `confirm` calls `createProposal` and does not run the effect. `approve` returns the saved activity when that proposal is already approved. That return is the retry. A throw inside the effect rolls the bytes back and leaves the proposal pending. `undo` runs the reversal as the person.
 - `apps/api/src/registry/coach-policy.ts` exports `coachRefusal`. `tools` and `execute` consult it. A refusal omits the command from the coach tools and rejects a coach execute with `COACH_NOT_ALLOWED`.
 - `packages/domain/src/paper-contract.ts` sets the `coach` field of `paper.edit` to `confirm`. The guard `paper-coach-approval` requires that string.
 
-`apps/api/src/paper/ContentStore.tla` models the Yjs log under both basis rules. Its `Coach` action is a coach actor: `editAsCoach` lands only on the revision it read, through `stalePaperBasis`, and the action property `CoachExact` in `ContentStore.coach.cfg` checks that rule. Its `PersonMerge` action is a signed-in person who posts `paper.edit` with a numeric `basedOn` to `createCommandRoutes` in `apps/api/src/registry/http.ts`, which runs it as `personActor`: `coachBasisOk` still lets that edit merge onto an older revision. A delegate never takes that path, because `admitCommand` in `apps/api/src/registry/registry-entries.ts` calls `paperEditBasisRefused`, defined in `apps/api/src/registry/paper-agent.ts`, which refuses a numeric `basedOn`. P1, P2, P3 and P5 run with both actions. `ContentStore.coach.mutant.cfg` gives the coach actor the person rule and must exit 13 on `CoachExact`. Every other ContentStore mutant must exit 12 on its own invariant. `ContentStore.tla.json` names the code of each edit action under `"boundaries"`. `node --test scripts/tla-specs.test.mjs` fails when a `"boundaries"` entry names something its file does not define, such as an import, or a file that `"covers"` does not list.
+`apps/api/src/paper/ContentStore.tla` models the Yjs log under both basis rules. Its `Coach` action is a coach actor: `editAsCoach` lands only on the revision it read, through `stalePaperBasis`, and the action property `CoachExact` in `ContentStore.coach.cfg` checks that rule. Its `PersonMerge` action is a signed-in person who posts `paper.edit` with a numeric `basedOn` to `createCommandRoutes` in `apps/api/src/registry/http.ts`, which runs it as `personActor`: `coachBasisOk` still lets that legacy edit merge onto an older revision. Native edits are a stricter admitted branch, not the `PersonMerge` interpretation. A delegate never takes that path, because `admitCommand` in `apps/api/src/registry/registry-entries.ts` calls `paperEditBasisRefused`, defined in `apps/api/src/registry/paper-agent.ts`, which refuses a numeric `basedOn`. P1, P2, P3 and P5 run with both actions. `ContentStore.coach.mutant.cfg` gives the coach actor the person rule and must exit 13 on `CoachExact`. Every other ContentStore mutant must exit 12 on its own invariant. `ContentStore.tla.json` names the code of each edit action under `"boundaries"`. `node --test scripts/tla-specs.test.mjs` fails when a `"boundaries"` entry names something its file does not define, such as an import, or a file that `"covers"` does not list.
 
 `apps/api/src/paper/CoachPaper.tla.json` maps each model action to one export of `content-coach.ts`. Null means the action is implemented outside that file.
 
@@ -41,9 +41,9 @@ The Paper reading below covers code scheduled for deletion. `paper.edit` takes t
 - `PersonUndo` is `revertCoachEdit`.
 - `AgentTriesUndo` is null. The function is `coachRefusal` in `apps/api/src/registry/coach-policy.ts`.
 
-## What main did
+## Historical failure
 
-Commit `a5c61cac` still auto-executes `paper.edit` for a Coach actor, because the contract said `coach: "auto"`. It also accepts a safely mergeable stale revision, because approval called `coachBasisOk`, which treats `basedOn` at or below the current revision as safe. Confirm the strict behavior with the registry replay, which must refuse that stale basis.
+Commit `a5c61cac` auto-executed `paper.edit` for a Coach actor, because the contract said `coach: "auto"`. It also accepted a safely mergeable stale revision, because approval called `coachBasisOk`, which treats `basedOn` at or below the current revision as safe. Confirm the strict behavior with the registry replay, which must refuse that stale basis.
 
 ## Run
 
@@ -52,6 +52,7 @@ From the repository root, one heavy command at a time.
 ```sh
 node scripts/tlc.mjs apps/api/src/paper/CoachPaper.tla
 node scripts/tlc.mjs apps/api/src/paper/CoachPaper.tla --mutant
+node scripts/tlc.mjs apps/api/src/paper/CoachPaper.tla
 pnpm --filter api exec vitest run src/paper/coach-paper-replay.test.ts
 ```
 
@@ -68,6 +69,26 @@ Show the three results in order. Clean, then the failing mutant, then clean agai
 ## Bounds
 
 One document. One immutable proposal. One person typing event. Revisions 0 through 3. One person Undo. One agent Undo attempt. Approval reads the basis and writes in one transaction. Byte sets stand in for document text. This check does not prove a Yjs merge, an auth session, or a durable task.
+
+## Native admission reconciliation
+
+Accepted save isolation at `876b9f7b80935dbf12709c937174f7ec1dbb039d` preserves detached hydration, a fork for each attempt, and cache promotion only after successful transaction completion. Recovery merge `e1f9be65238b08f3a77cbeba7da2418c0d27c98c` changes browser retry ownership and explicit idempotency keys; it does not change the modeled registry or numeric Paper transitions. The earlier Word routing commits keep string revision edits outside this projection. Accepted uploader commit `80c2542a95aa7ffcc51ef95dbd0559903f9bd33d` changes only delivery screenshot tooling and has no effect on these modeled transitions. No invariant, model, bound, clean configuration or original paired mutant changed.
+
+For privately seeded native v4r1 documents, `withContent` admits the writer and exact `nativeBasis` against locked canonical data before hydration, reset, acknowledgement or the callback. Every numeric edit forwards `proposal: true` for this native admission, independently of the existing actor-specific `checkedBasis`. `commit` compares kind, version and native schema revision before any database write. Reversal forwards its writer. These restrictions preserve the approval projection while refusing additional native states before a modeled write can happen.
+
+The model does not prove native canonical digests, provenance, epochs, schema identity, unknown-node refusal, Unicode offsets, marks, direct Yjs admission, authentication, per-attempt cache isolation or outer transaction rollback. Those require the concrete tests below. `ContentStore.tla.json` retains its earlier sync marker and legacy mapping; the runs here validate that bounded projection, not a claim that all ContentStore metadata is globally fresh. Public creation stays legacy, old unqualified native sync refuses, and this unit supplies no native browser CORS or native editor activation.
+
+```sh
+pnpm --filter api exec vitest run src/paper/native-admission.test.ts src/paper/content-store.test.ts src/paper/content-sync-native-http.test.ts
+pnpm --filter api exec vitest run --config vitest.formal.config.ts src/paper/content-sync.formal.test.ts
+node --test scripts/paper-content-isolation.test.mjs scripts/tla-specs.test.mjs
+```
+
+The native admission, store and real HTTP replay passed 14 tests. The sync formal replay passed 5. The detector fixture file passed 2 tests and the TLA metadata suite passed 42. The HTTP replay uses disposable private data and its own loopback server; it covers strict writer refusal before mutation, unchanged state after unauthorized or bad-basis attempts, qualified edits, stale refusal, metadata, duplicate, typed reversal and legacy create/read. It is not browser or live-model evidence.
+
+Run every ContentStore configuration as clean, paired mutant, clean using `node scripts/tlc.mjs apps/api/src/paper/ContentStore.tla --config <configuration>`. The configurations are `ContentStore.cfg`, `ContentStore.coach.cfg`, `ContentStore.seq.cfg`, `ContentStore.version.cfg` and `ContentStore.sync.cfg` in `apps/api/src/paper`. Insert `.mutant` before `.cfg` for each paired mutant. All clean runs exited 0. The coach mutant exited 13 on `CoachExact`; the other mutants exited 12 on their invariant. Statechart extraction confirmed the counterexamples; its mutant exit is 1. The 6,701-state clean ContentStore runs exceed the 500-state drawing budget, so no full clean chart is claimed.
+
+CoachPaper and MCP each reached 42 states and 58 steps. Their unchanged mutant counterexample is Propose, PersonTypes, Approve: the stale proposal commits when basis checking is disabled. Both clean runs on either side passed. The real Paper registry replay passed 4 tests, and the official MCP SDK loopback replay passed 2. These concrete replays preserve the original assertions and show that the modeled skipped-basis failure is refused by the implementation.
 
 ## When the code changes
 

@@ -535,6 +535,16 @@ export function rebasePending(
   readonly document: PaperDocument
   readonly failed: boolean
 } {
+  if (
+    input.base.version !== input.ours.version ||
+    input.base.version !== input.theirs.version ||
+    input.base.kind !== input.ours.kind ||
+    input.base.kind !== input.theirs.kind
+  ) {
+    throw new Error(
+      "Recovery across document schemas requires an explicit migration"
+    )
+  }
   try {
     return { document: merge(input), failed: false }
   } catch {

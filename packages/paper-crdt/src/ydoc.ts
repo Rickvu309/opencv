@@ -3,7 +3,7 @@ import {
   _blocksToProsemirrorNode,
   yXmlFragmentToBlocks,
 } from "@blocknote/core/yjs"
-import type { PaperDocument } from "@workspace/domain"
+import { paperDocumentSchema, type PaperDocument } from "@workspace/domain"
 import * as Y from "yjs"
 
 import {
@@ -15,23 +15,52 @@ import {
 import { FRAGMENT, META } from "./names.js"
 import { repairBlocks } from "./blocks-repair.js"
 import { groupOf, writeFragment } from "./reconcile.js"
-import { paperSchema, type PaperEditor } from "./schema.js"
+import { nativePaperSchema, paperSchema } from "./schema.js"
 import { alignSkillItems } from "./skills.js"
 
-let headless: PaperEditor | null = null
+let legacyHeadless: ReturnType<typeof createHeadless> | null = null
+let nativeHeadless: ReturnType<typeof createHeadless> | null = null
 
-function editor() {
-  headless ??= BlockNoteEditor.create({ schema: paperSchema })
-  return headless
+function createHeadless(version: 3 | 4) {
+  return BlockNoteEditor.create({
+    schema: version === 3 ? paperSchema : nativePaperSchema,
+  })
 }
 
-export function headlessEditor() {
-  return editor()
+function editor(version: 3 | 4) {
+  if (version === 3) {
+    legacyHeadless ??= createHeadless(version)
+    return legacyHeadless
+  }
+  nativeHeadless ??= createHeadless(version)
+  return nativeHeadless
+}
+
+export function headlessEditor(version: 3 | 4 = 3) {
+  return editor(version)
 }
 
 function kindOf(yDoc: Y.Doc): PaperDocument["kind"] | null {
   const kind = yDoc.getMap<string>(META).get("kind")
   return kind === "cv" || kind === "letter" ? kind : null
+}
+
+export function documentVersionOf(yDoc: Y.Doc): 3 | 4 | null {
+  const meta = yDoc.getMap<string>(META)
+  const version = meta.get("version")
+  if (version === undefined || version === "3")
+    return meta.has("schemaRevision") ? null : 3
+  return version === "4" && meta.get("schemaRevision") === "1" ? 4 : null
+}
+
+export function admitWriteTarget(yDoc: Y.Doc, target: unknown): PaperDocument {
+  const parsed = paperDocumentSchema.parse(target)
+  if (
+    kindOf(yDoc) !== parsed.kind ||
+    documentVersionOf(yDoc) !== parsed.version
+  )
+    throw new Error("The target belongs to a different document schema")
+  return parsed
 }
 
 function diffInto(
@@ -40,22 +69,186 @@ function diffInto(
   origin: string,
   moved: ReadonlySet<string>
 ): void {
+  target = paperDocumentSchema.parse(target)
   const blocks = toEditorBlocks(target)
   const fragment = yDoc.getXmlFragment(FRAGMENT)
   const root = fragment.length === 1 ? groupOf(fragment) : null
   if (root) alignSkillItems(root, blocks)
-  const node = _blocksToProsemirrorNode(editor(), blocks)
+  const node = _blocksToProsemirrorNode(editor(target.version), blocks)
   yDoc.transact(() => writeFragment(yDoc, fragment, node, moved), origin)
 }
 
 export function seedYDoc(document: PaperDocument): Uint8Array {
+  document = paperDocumentSchema.parse(document)
   if (document.clashes.length > 0) {
     throw new Error("A paper with open clashes cannot be seeded")
   }
   const yDoc = new Y.Doc()
   yDoc.getMap<string>(META).set("kind", document.kind)
+  yDoc.getMap<string>(META).set("version", String(document.version))
+  if (document.version === 4)
+    yDoc
+      .getMap<string>(META)
+      .set("schemaRevision", String(document.schemaRevision))
   diffInto(yDoc, document, "seed", new Set())
   return Y.encodeStateAsUpdate(yDoc)
+}
+
+function nativeStructureRefusal(fragment: Y.XmlFragment): string | null {
+  const schema = editor(4).pmSchema
+  const marks = new Set(["bold", "italic", "underline", "link"])
+  const nodes = new Set([
+    "blockGroup",
+    "blockContainer",
+    "paragraph",
+    "heading",
+    "bulletListItem",
+    "numberedListItem",
+    "divider",
+    "paperHeader",
+    "paperSection",
+    "paperExperience",
+    "paperEducation",
+    "paperSkills",
+    "paperSkillItem",
+    "hardBreak",
+  ])
+  const visit = (parent: Y.XmlFragment | Y.XmlElement): string | null => {
+    const children = parent.toArray()
+    const name = parent instanceof Y.XmlElement ? parent.nodeName : "root"
+    if (
+      name === "root" &&
+      (children.length !== 1 ||
+        !(children[0] instanceof Y.XmlElement) ||
+        children[0].nodeName !== "blockGroup")
+    )
+      return "Unsupported native structure"
+    if (
+      name === "blockGroup" &&
+      children.some(
+        (child) =>
+          !(child instanceof Y.XmlElement) ||
+          child.nodeName !== "blockContainer"
+      )
+    )
+      return "Unsupported native structure"
+    if (
+      name === "blockContainer" &&
+      (children.length < 1 ||
+        children.length > 2 ||
+        children.some(
+          (child, index) =>
+            !(child instanceof Y.XmlElement) ||
+            (index === 0
+              ? ["blockGroup", "blockContainer", "hardBreak"].includes(
+                  child.nodeName
+                )
+              : child.nodeName !== "blockGroup")
+        ))
+    )
+      return "Unsupported native structure"
+    if (
+      [
+        "paperHeader",
+        "paperExperience",
+        "paperEducation",
+        "paperSkills",
+        "divider",
+        "hardBreak",
+      ].includes(name) &&
+      children.length > 0
+    )
+      return "Unsupported native structure"
+    if (name === "blockContainer" && children.length === 2) {
+      const content = children[0]
+      if (
+        !(content instanceof Y.XmlElement) ||
+        ![
+          "paperExperience",
+          "paperEducation",
+          "paperSkills",
+          "bulletListItem",
+          "numberedListItem",
+        ].includes(content.nodeName)
+      )
+        return "Unsupported native structure"
+    }
+    if (
+      !["root", "blockGroup", "blockContainer"].includes(name) &&
+      children.some(
+        (child) =>
+          !(child instanceof Y.XmlText) &&
+          (!(child instanceof Y.XmlElement) || child.nodeName !== "hardBreak")
+      )
+    )
+      return "Unsupported native structure"
+    for (const child of children) {
+      if (child instanceof Y.XmlText) {
+        for (const delta of child.toDelta() as {
+          insert?: unknown
+          attributes?: Record<string, unknown>
+        }[]) {
+          if (typeof delta.insert !== "string")
+            return "Unsupported native inline content"
+          if (
+            ["paperSection", "paperSkillItem"].includes(name) &&
+            Object.keys(delta.attributes ?? {}).length > 0
+          )
+            return "Unsupported native text mark"
+          for (const [name, attrs] of Object.entries(delta.attributes ?? {})) {
+            const mark = schema.marks[name]
+            if (
+              !marks.has(name) ||
+              !mark ||
+              !attrs ||
+              typeof attrs !== "object" ||
+              Array.isArray(attrs)
+            )
+              return "Unsupported native text mark"
+            const allowed = mark.spec.attrs ?? {}
+            if (
+              Object.entries(attrs).some(
+                ([key, value]) =>
+                  !(key in allowed) ||
+                  (key !== "href" && value !== allowed[key].default)
+              )
+            )
+              return "Unsupported native mark attribute"
+          }
+        }
+      } else if (child instanceof Y.XmlElement) {
+        const node = schema.nodes[child.nodeName]
+        if (!nodes.has(child.nodeName) || !node)
+          return "Unsupported native node"
+        const allowed = node.spec.attrs ?? {}
+        if (Object.keys(child.getAttributes()).some((key) => !(key in allowed)))
+          return "Unsupported native node attribute"
+        if (
+          child.nodeName.startsWith("paper") &&
+          Object.entries(child.getAttributes()).some(
+            ([key, value]) => typeof value !== typeof allowed[key]?.default
+          )
+        )
+          return "Unsupported native node attribute value"
+        const carried = new Set([
+          ...(child.nodeName === "blockContainer" ? ["id"] : []),
+          ...(child.nodeName === "heading" ? ["level"] : []),
+          ...(child.nodeName.startsWith("paper") ? Object.keys(allowed) : []),
+        ])
+        if (
+          Object.entries(child.getAttributes()).some(
+            ([key, value]) =>
+              !carried.has(key) && value !== allowed[key]?.default
+          )
+        )
+          return "Unsupported native node attribute value"
+        const failure = visit(child)
+        if (failure) return failure
+      } else return "Unsupported native structure"
+    }
+    return null
+  }
+  return visit(fragment)
 }
 
 export function materialize(source: Uint8Array | Y.Doc): PaperResult {
@@ -74,7 +267,16 @@ export function materialize(source: Uint8Array | Y.Doc): PaperResult {
       reason: `The document holds ${fragment.length} roots, not one`,
     }
   }
-  return fromEditorBlocks(kind, yXmlFragmentToBlocks(editor(), fragment))
+  const version = documentVersionOf(doc)
+  if (version === null)
+    return { ok: false, reason: "Unsupported document schema" }
+  const unsupported = version === 4 ? nativeStructureRefusal(fragment) : null
+  if (unsupported) return { ok: false, reason: unsupported }
+  return fromEditorBlocks(
+    kind,
+    yXmlFragmentToBlocks(editor(version), fragment),
+    version
+  )
 }
 
 export function writeDocument(
@@ -83,9 +285,7 @@ export function writeDocument(
   origin: string,
   moved: ReadonlySet<string> = new Set()
 ): Uint8Array | null {
-  if (kindOf(yDoc) !== target.kind) {
-    throw new Error("The target is not the kind of paper this document holds")
-  }
+  target = admitWriteTarget(yDoc, target)
   const updates: Uint8Array[] = []
   const collect = (update: Uint8Array) => updates.push(update)
   yDoc.on("update", collect)
@@ -115,12 +315,17 @@ export function materializeCandidate(yDoc: Y.Doc): Candidate {
       reason: `The document holds ${fragment.length} roots, not one`,
     }
   }
-  const read = yXmlFragmentToBlocks(editor(), fragment)
+  const version = documentVersionOf(yDoc)
+  if (version === null)
+    return { ok: false, reason: "Unsupported document schema" }
+  const unsupported = version === 4 ? nativeStructureRefusal(fragment) : null
+  if (unsupported) return { ok: false, reason: unsupported }
+  const read = yXmlFragmentToBlocks(editor(version), fragment)
   const fixed = repairBlocks(kind, read as never)
   try {
     return {
       ok: true,
-      candidate: candidateOf(kind, fixed.blocks as never),
+      candidate: candidateOf(kind, fixed.blocks as never, version),
       repaired: fixed.repaired,
     }
   } catch (error) {
@@ -181,6 +386,7 @@ export function writeRepair(
   moved: ReadonlySet<string>,
   keep: ReadonlyMap<string, number>
 ): Uint8Array | null {
+  target = admitWriteTarget(yDoc, target)
   const updates: Uint8Array[] = []
   const collect = (update: Uint8Array) => updates.push(update)
   yDoc.on("update", collect)

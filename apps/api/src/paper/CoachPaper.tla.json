@@ -20,6 +20,7 @@
     "apps/api/src/paper/commands.ts",
     "apps/api/src/connections/http.ts"
   ],
-  "sync": "f84f0e8f783a63488962725b4234190df4e8dad8",
-  "retiring": "The Paper reading covers the Yjs paper.edit branch, chosen when basedOn is a number in apps/api/src/paper/package-edit.ts. Word pages take the reviewed branch in the same file. The MCP Job reading is live."
+  "sync": "80c2542a95aa7ffcc51ef95dbd0559903f9bd33d",
+  "retiring": "The legacy v3 numeric paper.edit branch is the Paper projection. Native v4r1 numeric edits add exact writer/basis admission before the same approval transition. Word string revisions use the reviewed branch; the MCP Job projection remains live.",
+  "boundary": "Reconciled with accepted main and issue 1533 using unchanged clean/mutant/clean CoachPaper, MCP and ContentStore models and real registry/API replays. Bounded approval and retry projections do not prove native digests, schema admission, Unicode, materialization, cache isolation, authentication or browser behavior; concrete tests cover those boundaries."
 }

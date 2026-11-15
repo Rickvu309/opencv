@@ -19,6 +19,7 @@ import type {
 } from "@workspace/domain"
 import {
   catalog,
+  NATIVE_WRITER,
   commands,
   parseActivityId,
   resourcesOverlap,
@@ -79,6 +80,19 @@ function isPending(output: unknown) {
   return pendingSchema.safeParse(output)
 }
 
+function paperCommandInput(name: string, input: unknown) {
+  if (
+    (name === "paper.rename" ||
+      name === "paper.duplicate" ||
+      name === "paper.setStatus") &&
+    input !== null &&
+    typeof input === "object" &&
+    !("writer" in input)
+  )
+    return { ...input, writer: NATIVE_WRITER }
+  return input
+}
+
 export async function runContractCommand<N extends ContractCommandName>(
   queryClient: QueryClient,
   name: N,
@@ -90,7 +104,7 @@ export async function runContractCommand<N extends ContractCommandName>(
   >(`/api/commands/${name}`, {
     method: "POST",
     body: JSON.stringify({
-      input,
+      input: paperCommandInput(name, input),
       ...((commands[name] as AnyCommandEntry).idempotency === "none"
         ? {}
         : { idempotencyKey: options.idempotencyKey ?? crypto.randomUUID() }),

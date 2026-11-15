@@ -1,4 +1,5 @@
-import { ERROR_CODES, type PaperDocument } from "@workspace/domain"
+import { ERROR_CODES } from "@workspace/domain"
+import { FRAGMENT } from "@workspace/paper-crdt"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
@@ -113,18 +114,52 @@ describe("paper.sync", () => {
     await withDatabase(store.db, async () => {
       const docId = await created("Invalid")
       const pulled = (await sync(docId, "", 0)).update
-      const tooDeep = typed(clientFrom(pulled), (paper) => {
-        let item = {
-          id: "deep-5",
-          type: "bullet",
-          content: [{ text: "five" }],
-          children: [],
+      const clientWithDeepList = clientFrom(pulled)
+      const deepUpdate: Uint8Array[] = []
+      clientWithDeepList.on("update", (update: Uint8Array) =>
+        deepUpdate.push(update)
+      )
+      const root = clientWithDeepList.getXmlFragment(FRAGMENT).get(0)
+      if (!("nodeName" in root)) throw new Error("Missing root")
+      const element = (name: string) => {
+        const node = root.clone()
+        node.nodeName = name
+        node.delete(0, node.length)
+        return node
+      }
+      const findText = (
+        node: typeof root
+      ):
+        | Extract<ReturnType<typeof root.toArray>[number], { toDelta: unknown }>
+        | undefined => {
+        for (const child of node.toArray()) {
+          if ("nodeName" in child) {
+            const text = findText(child)
+            if (text) return text
+          } else if ("toDelta" in child && child.length) return child
         }
-        for (const level of [4, 3, 2, 1]) {
-          item = { ...item, id: `deep-${level}`, children: [item] } as never
+        return undefined
+      }
+      const originalText = findText(root)
+      if (!originalText) throw new Error("Missing text")
+      const itemAt = (level: number): typeof root => {
+        const container = element("blockContainer")
+        container.setAttribute("id", `deep-${level}`)
+        const item = element("bulletListItem")
+        const text = originalText.clone()
+        text.delete(0, text.length)
+        text.insert(0, "five")
+        item.insert(0, [text])
+        container.insert(0, [item])
+        if (level < 5) {
+          const children = element("blockGroup")
+          children.insert(0, [itemAt(level + 1)])
+          container.insert(1, [children])
         }
-        return { ...paper, blocks: [...paper.blocks, item] } as PaperDocument
-      })
+        return container
+      }
+      clientWithDeepList.transact(() => root.insert(root.length, [itemAt(1)]))
+      const tooDeep = encoded(deepUpdate[0] ?? null)
       await sync(docId, tooDeep)
       const before = await snapshot(docId)
       expect(JSON.stringify(before.document)).toContain("five")

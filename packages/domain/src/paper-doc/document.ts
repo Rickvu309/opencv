@@ -90,9 +90,11 @@ export type LegacyPaperDocument =
   z.infer<typeof cvPaperSchema> | z.infer<typeof letterPaperSchema>
 export type NativePaperDocument =
   z.infer<typeof nativeCvPaperSchema> | z.infer<typeof nativeLetterPaperSchema>
-export type CvPaper = z.infer<typeof cvPaperSchema>
-export type LetterPaper = z.infer<typeof letterPaperSchema>
-export type PaperDocument = LegacyPaperDocument
+export type CvPaper =
+  z.infer<typeof cvPaperSchema> | z.infer<typeof nativeCvPaperSchema>
+export type LetterPaper =
+  z.infer<typeof letterPaperSchema> | z.infer<typeof nativeLetterPaperSchema>
+export type PaperDocument = LegacyPaperDocument | NativePaperDocument
 
 type IssueSink = (message: string, path: (string | number)[]) => void
 
@@ -107,10 +109,7 @@ function itemsOf(block: CvPaperBlock): readonly ListItem[] {
 
 const ENTRY_TYPES: readonly string[] = ["experience", "education", "skills"]
 
-function walkInvariants(
-  document: LegacyPaperDocument | NativePaperDocument,
-  report: IssueSink
-): void {
+function walkInvariants(document: PaperDocument, report: IssueSink): void {
   const typeById = new Map<string, PaperNodeType>()
   const claim = (
     id: string,
@@ -229,7 +228,10 @@ export const nativePaperDocumentSchema = z
     )
   })
 
-export const paperDocumentSchema = legacyPaperDocumentSchema
+export const paperDocumentSchema = z.discriminatedUnion("version", [
+  legacyPaperDocumentSchema,
+  nativePaperDocumentSchema,
+])
 
 export function nativePaperFromLegacy(source: unknown): NativePaperDocument {
   const document = legacyPaperDocumentSchema.parse(source)

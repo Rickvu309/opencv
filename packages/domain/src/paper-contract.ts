@@ -12,7 +12,11 @@ import {
   paperIdSchema,
   parsePaperId,
 } from "./ids.js"
-import { paperDocumentSchema } from "./paper-doc/document.js"
+import {
+  legacyPaperDocumentSchema,
+  paperDocumentSchema,
+} from "./paper-doc/document.js"
+import { nativeBasisSchema, nativeWriterSchema } from "./paper-doc/native.js"
 import {
   paperEditOutcomeSchema,
   paperEditsSchema,
@@ -68,6 +72,7 @@ export const paperViewSchema = z
     templateId: paperTemplateIdSchema.nullable(),
     status: paperDocStatusSchema,
     paper: paperDocumentSchema,
+    nativeBasis: nativeBasisSchema.optional(),
     contentVersion: z.number().int(),
     checks: z.array(paperCheckSchema),
     pageChoice: paperPageChoiceSchema,
@@ -153,13 +158,16 @@ export const paperQueries = queryContract({
     input: z
       .object({
         query: z.string().optional(),
+        writer: nativeWriterSchema.optional(),
         kind: paperStoredKindSchema.optional(),
       })
       .strict(),
     output: z.array(paperViewSchema),
   }),
   "paper.get": queryEntry({
-    input: z.object({ docId: paperIdSchema }).strict(),
+    input: z
+      .object({ docId: paperIdSchema, writer: nativeWriterSchema.optional() })
+      .strict(),
     output: paperViewSchema,
   }),
   "paper.isDeleted": queryEntry({
@@ -167,11 +175,18 @@ export const paperQueries = queryContract({
     output: z.object({ docId: paperIdSchema, deleted: z.boolean() }).strict(),
   }),
   "paper.pageCount": queryEntry({
-    input: z.object({ docId: paperIdSchema }).strict(),
+    input: z
+      .object({ docId: paperIdSchema, writer: nativeWriterSchema.optional() })
+      .strict(),
     output: paperPagesSchema,
   }),
   "paper.shared": queryEntry({
-    input: z.object({ token: z.string().min(8) }).strict(),
+    input: z
+      .object({
+        token: z.string().min(8),
+        writer: nativeWriterSchema.optional(),
+      })
+      .strict(),
     output: paperViewSchema.omit({ isFavorite: true }).strict(),
   }),
   "file.get": queryEntry({
@@ -187,12 +202,14 @@ export const paperQueries = queryContract({
       .object({
         docId: paperIdSchema,
         blockIds: z.array(blockIdSchema).max(50).optional(),
+        writer: nativeWriterSchema.optional(),
         cursor: z.string().min(1).max(2048).optional(),
       })
       .strict(),
     output: z
       .object({
         revision: z.union([z.number().int(), z.string().uuid()]),
+        nativeBasis: nativeBasisSchema.optional(),
         outline: z.string(),
         truncated: z.boolean(),
         nextCursor: z.string().max(2048).nullable().optional(),
@@ -239,7 +256,7 @@ const previousPaper = paperDocumentSchema.optional()
 const paperCreateInputSchema = z
   .object({
     kind: paperStoredKindSchema,
-    document: paperDocumentSchema.optional(),
+    document: legacyPaperDocumentSchema.optional(),
     templateId: paperTemplateIdSchema.optional(),
     name: paperDocNameSchema.optional(),
     jobId: jobIdSchema.optional(),
@@ -285,11 +302,13 @@ export const paperContract = commandContract({
   "paper.edit": commandEntry({
     delegate: { resource: "paper", access: "proposal" },
     description:
-      "Propose a change to a CV or Letter. Nothing is written until the person approves it in OpenCV; a pending result means the document is unchanged. On a saved Word document, read it first (paper_read for an agent, paper.outline for the Coach), pass its revision as basedOn and address lines by handle: setText (handle and the whole new text of that line, including first words on an empty line), insert (after a handle, or null for the start of the page, and the new line's text) and delete (handle). Send several operations in one edit to change several lines. Use only facts the person gave; do not invent the person's experience or qualifications. If the document changed after that read, the edit or its approval is refused and the document stays as it is; read it again and propose again. On a block page, address blocks by id from paper.outline: setText (a block's text as inline markdown), setFields (role, company, period, location, school, degree, detail, label, items, level, kind), setHeader (name, email, phone, city, linkedin), insert (new blocks after a block id or after the text @start), insertInto (list items inside an experience, education or list item), move (after a block id or the text @start), remove, and replaceText with a target id and exact before and after words.",
+      "Propose a change to a CV or Letter. Nothing is written until the person approves it in OpenCV; a pending result means the document is unchanged. On a saved Word document, read it first (paper_read for an agent, paper.outline for the Coach), pass its revision as basedOn and address lines by handle: setText (handle and the whole new text of that line, including first words on an empty line), insert (after a handle, or null for the start of the page, and the new line's text) and delete (handle). Send several operations in one edit to change several lines. Use only facts the person gave; do not invent the person's experience or qualifications. If the document changed after that read, the edit or its approval is refused and the document stays as it is; read it again and propose again. On a native block page, send writer version 4, protocol 1, supportedSchemaRevisions [1], capabilities structured-prose and underline, and copy nativeBasis from that exact paper.outline read. On a block page, address blocks by id from paper.outline: setText (a block's text as inline markdown), setFields (role, company, period, location, school, degree, detail, label, items, level, kind), setHeader (name, email, phone, city, linkedin), insert (new blocks after a block id or after the text @start), insertInto (list items inside an experience, education or list item), move (after a block id or the text @start), remove, and replaceText with a target id and exact before and after words.",
     input: z
       .object({
         docId: paperIdSchema,
         basedOn: z.union([z.number().int().min(0), z.string().uuid()]),
+        writer: nativeWriterSchema.optional(),
+        nativeBasis: nativeBasisSchema.optional(),
         edits: z.union([
           paperEditsSchema,
           paperPackageEditsSchema,
@@ -338,7 +357,13 @@ export const paperContract = commandContract({
   }),
   "paper.revertEdit": commandEntry({
     description: "Take back one Coach edit and keep later typing.",
-    input: z.object({ docId: paperIdSchema, editId: editIdSchema }).strict(),
+    input: z
+      .object({
+        docId: paperIdSchema,
+        editId: editIdSchema,
+        writer: nativeWriterSchema.optional(),
+      })
+      .strict(),
     output: z
       .object({
         docId: paperIdSchema,
@@ -365,7 +390,9 @@ export const paperContract = commandContract({
   }),
   "paper.rename": commandEntry({
     description: "Rename a document.",
-    input: paperRenameInputSchema,
+    input: paperRenameInputSchema.extend({
+      writer: nativeWriterSchema.optional(),
+    }),
     output: paperViewSchema.extend({ previousName: z.string() }).strict(),
     coach: "auto",
     destructive: false,
@@ -388,7 +415,9 @@ export const paperContract = commandContract({
   }),
   "paper.duplicate": commandEntry({
     description: "Duplicate a document.",
-    input: paperDuplicateInputSchema,
+    input: paperDuplicateInputSchema.extend({
+      writer: nativeWriterSchema.optional(),
+    }),
     output: paperViewSchema,
     coach: "auto",
     destructive: false,
@@ -439,7 +468,9 @@ export const paperContract = commandContract({
   }),
   "paper.share": commandEntry({
     description: "Share a document.",
-    input: paperShareInputSchema,
+    input: paperShareInputSchema
+      .extend({ writer: nativeWriterSchema.optional() })
+      .strict(),
     output: z.object({ docId: paperIdSchema, token: z.string() }).strict(),
     coach: "never",
     destructive: false,
@@ -448,7 +479,9 @@ export const paperContract = commandContract({
   }),
   "paper.unshare": commandEntry({
     description: "Stop sharing a document.",
-    input: paperUnshareInputSchema,
+    input: paperUnshareInputSchema
+      .extend({ writer: nativeWriterSchema.optional() })
+      .strict(),
     output: z.object({ docId: paperIdSchema }).strict(),
     coach: "never",
     destructive: false,
@@ -476,7 +509,9 @@ export const paperContract = commandContract({
   }),
   "paper.setStatus": commandEntry({
     description: "Set a document status.",
-    input: paperSetStatusCommandInputSchema,
+    input: paperSetStatusCommandInputSchema.extend({
+      writer: nativeWriterSchema.optional(),
+    }),
     output: paperViewSchema,
     coach: "never",
     destructive: false,

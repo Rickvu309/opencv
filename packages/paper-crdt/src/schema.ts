@@ -89,35 +89,46 @@ function headlessRender(): never {
   throw new Error("The server schema never renders")
 }
 
+const paperBlockSpecs = {
+  paragraph: defaultBlockSpecs.paragraph,
+  heading: createHeadingBlockSpec({ levels: [2, 3], defaultLevel: 2 }),
+  bulletListItem: defaultBlockSpecs.bulletListItem,
+  numberedListItem: defaultBlockSpecs.numberedListItem,
+  divider: defaultBlockSpecs.divider,
+  paperHeader: createBlockSpec(paperBlockConfigs.paperHeader, {
+    render: headlessRender,
+  })(),
+  paperSection: createBlockSpec(paperBlockConfigs.paperSection, {
+    render: headlessRender,
+  })(),
+  paperExperience: createBlockSpec(paperBlockConfigs.paperExperience, {
+    render: headlessRender,
+  })(),
+  paperEducation: createBlockSpec(paperBlockConfigs.paperEducation, {
+    render: headlessRender,
+  })(),
+  paperSkills: createBlockSpec(paperBlockConfigs.paperSkills, {
+    render: headlessRender,
+  })(),
+  paperSkillItem: createBlockSpec(paperBlockConfigs.paperSkillItem, {
+    render: headlessRender,
+  })(),
+}
+
 export const paperSchema = BlockNoteSchema.create({
-  blockSpecs: {
-    paragraph: defaultBlockSpecs.paragraph,
-    heading: createHeadingBlockSpec({ levels: [2, 3], defaultLevel: 2 }),
-    bulletListItem: defaultBlockSpecs.bulletListItem,
-    numberedListItem: defaultBlockSpecs.numberedListItem,
-    divider: defaultBlockSpecs.divider,
-    paperHeader: createBlockSpec(paperBlockConfigs.paperHeader, {
-      render: headlessRender,
-    })(),
-    paperSection: createBlockSpec(paperBlockConfigs.paperSection, {
-      render: headlessRender,
-    })(),
-    paperExperience: createBlockSpec(paperBlockConfigs.paperExperience, {
-      render: headlessRender,
-    })(),
-    paperEducation: createBlockSpec(paperBlockConfigs.paperEducation, {
-      render: headlessRender,
-    })(),
-    paperSkills: createBlockSpec(paperBlockConfigs.paperSkills, {
-      render: headlessRender,
-    })(),
-    paperSkillItem: createBlockSpec(paperBlockConfigs.paperSkillItem, {
-      render: headlessRender,
-    })(),
-  },
+  blockSpecs: paperBlockSpecs,
   styleSpecs: {
     bold: defaultStyleSpecs.bold,
     italic: defaultStyleSpecs.italic,
+  },
+})
+
+export const nativePaperSchema = BlockNoteSchema.create({
+  blockSpecs: paperBlockSpecs,
+  styleSpecs: {
+    bold: defaultStyleSpecs.bold,
+    italic: defaultStyleSpecs.italic,
+    underline: defaultStyleSpecs.underline,
   },
 })
 
@@ -152,5 +163,20 @@ export const letterSchema = BlockNoteSchema.create({
   styleSpecs: {
     bold: defaultStyleSpecs.bold,
     italic: defaultStyleSpecs.italic,
+  },
+})
+
+export const nativeLetterSchema = BlockNoteSchema.create({
+  blockSpecs: {
+    paragraph: defaultBlockSpecs.paragraph,
+    heading: createHeadingBlockSpec({ levels: [2, 3], defaultLevel: 2 }),
+    bulletListItem: defaultBlockSpecs.bulletListItem,
+    numberedListItem: defaultBlockSpecs.numberedListItem,
+    divider: defaultBlockSpecs.divider,
+  },
+  styleSpecs: {
+    bold: defaultStyleSpecs.bold,
+    italic: defaultStyleSpecs.italic,
+    underline: defaultStyleSpecs.underline,
   },
 })
