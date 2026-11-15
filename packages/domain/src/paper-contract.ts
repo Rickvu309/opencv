@@ -16,7 +16,12 @@ import {
   legacyPaperDocumentSchema,
   paperDocumentSchema,
 } from "./paper-doc/document.js"
-import { nativeBasisSchema, nativeWriterSchema } from "./paper-doc/native.js"
+import {
+  nativeBasisSchema,
+  nativeWriterSchema,
+  nativeSyncInputSchema,
+  nativeSyncOutputSchema,
+} from "./paper-doc/native.js"
 import {
   paperEditOutcomeSchema,
   paperEditsSchema,
@@ -385,6 +390,17 @@ export const paperContract = commandContract({
     destructive: false,
     step: () => "Undo a Coach edit",
     invalidates: (input) => [...docChanged(input), ...chatsChanged()],
+  }),
+  "paper.nativeSync": commandEntry({
+    description:
+      "Exchange admitted native document changes with explicit writer and provenance.",
+    input: nativeSyncInputSchema,
+    output: nativeSyncOutputSchema,
+    idempotency: "none",
+    coach: "never",
+    destructive: false,
+    step: () => "Sync the document",
+    invalidates: () => [],
   }),
   "paper.sync": commandEntry({
     description:

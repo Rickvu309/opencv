@@ -14,6 +14,10 @@ import { queryKey, runContractCommand } from "@/lib/contract-client.ts"
 import { ApiError } from "@/lib/api-error.ts"
 import { fromBase64, toBase64 } from "@/lib/paper-sync-bytes.ts"
 import {
+  openNativePaperSync,
+  type NativeSessionOptions,
+} from "@/lib/paper-native-transport.ts"
+import {
   appendJournal,
   journalTip,
   journalScope,
@@ -157,10 +161,21 @@ function openJournal(given: Storage | null | undefined): {
 }
 
 export function openPaperSync(
+  options: NativeSessionOptions
+): ReturnType<typeof openNativePaperSync>
+export function openPaperSync(
   docId: PaperId,
   queryClient: QueryClient,
+  options?: SyncOptions
+): PaperSync
+export function openPaperSync(
+  target: PaperId | NativeSessionOptions,
+  queryClient?: QueryClient,
   options: SyncOptions = {}
-): PaperSync {
+) {
+  if (typeof target === "object") return openNativePaperSync(target)
+  if (!queryClient) throw new Error("Paper query client required")
+  const docId = target
   const store = options.store ?? defaultStore()
   const timers = options.timers ?? realTimers
   const command = options.run ?? runContractCommand

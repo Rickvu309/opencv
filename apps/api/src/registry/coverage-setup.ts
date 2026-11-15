@@ -12,6 +12,7 @@ import type { CoverageCase, CoverageTools } from "./coverage-helpers.js"
 import { inboxCases } from "./coverage-inbox.js"
 import { jobCases } from "./coverage-job.js"
 import { paperCases } from "./coverage-paper.js"
+import { nativePaperCases } from "./coverage-paper-native.js"
 import { installRegistry } from "./install.js"
 import type { ExecuteResult, Registry } from "./registry.js"
 
@@ -82,6 +83,7 @@ export function coverageCases(
     ...chatCases(tools),
     ...coachCases(tools),
     ...paperCases(tools),
+    ...nativePaperCases(tools),
     ...jobCases(tools),
     ...inboxCases(tools),
     ...connectionsCases(tools),

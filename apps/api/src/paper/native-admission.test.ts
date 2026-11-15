@@ -1,10 +1,13 @@
 import {
   NATIVE_WRITER,
+  nativeProvenance,
+  nativeSyncOutputSchema,
   type NativeBasis,
   coachActor,
   nativePaperDocumentSchema,
   paperViewSchema,
   parsePaperId,
+  personActor,
   parseUserId,
 } from "@workspace/domain"
 import {
@@ -138,6 +141,79 @@ describe("native B locked canonical admission", () => {
       )
     ).toThrow()
   })
+
+  it("native sync uses registry admission without activity and refuses incompatible calls without writes", async () =>
+    inDatabase(async () => {
+      const docId = await seeded()
+      const input = {
+        docId,
+        writer: NATIVE_WRITER,
+        provenance: nativeProvenance(native()),
+        epoch: 0,
+        update: "",
+        stateVector: "",
+      }
+      const activityBefore = await getDb().select().from(activity)
+      const result = await run("paper.nativeSync", input)
+      expect(result.output).toMatchObject({
+        provenance: input.provenance,
+        stale: false,
+      })
+      expect(result.activityId).toBeNull()
+      const pulled = nativeSyncOutputSchema.parse(result.output)
+      const push = {
+        ...input,
+        epoch: pulled.epoch,
+        basedOn: pulled.revision,
+        stateVector: pulled.stateVector,
+        update: Buffer.from(
+          delta(Buffer.from(pulled.update, "base64"), "Synced Việt 😀")
+        ).toString("base64"),
+      }
+      const pushed = await run("paper.nativeSync", push)
+      expect(pushed.output).toMatchObject({ stale: false, reset: false })
+      expect((await snapshot(docId)).row.crdtDocument).toEqual(
+        native("Synced Việt 😀")
+      )
+      expect(await getDb().select().from(activity)).toEqual(activityBefore)
+      const before = await snapshot(docId)
+      expect((await run("paper.nativeSync", push)).output).toMatchObject({
+        stale: true,
+      })
+      expect(await snapshot(docId)).toEqual(before)
+      for (const changed of [
+        { ...input, writer: { ...NATIVE_WRITER, capabilities: [] } },
+        { ...input, provenance: { ...input.provenance, schemaRevision: 2 } },
+        { ...input, writer: undefined },
+      ]) {
+        await expect(run("paper.nativeSync", changed)).rejects.toThrow()
+        expect(await snapshot(docId)).toEqual(before)
+      }
+      await expect(
+        store.registry.execute({
+          name: "paper.nativeSync",
+          input,
+          actor: coach,
+        })
+      ).rejects.toThrow()
+      expect(await snapshot(docId)).toEqual(before)
+      await expect(
+        store.registry.execute({
+          name: "paper.nativeSync",
+          input,
+          actor: personActor(parseUserId("another-owner")),
+        })
+      ).rejects.toThrow()
+      expect(await snapshot(docId)).toEqual(before)
+      const legacyView = paperViewSchema.parse(
+        (await run("paper.create", { kind: "letter", document: legacy })).output
+      )
+      const legacyBefore = await snapshot(legacyView.id)
+      await expect(
+        run("paper.nativeSync", { ...input, docId: legacyView.id })
+      ).rejects.toThrow()
+      expect(await snapshot(legacyView.id)).toEqual(legacyBefore)
+    }))
 
   it("refuses unqualified reads, missing writer and old sync before callback or acknowledgement", async () =>
     inDatabase(async () => {
