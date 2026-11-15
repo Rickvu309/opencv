@@ -105,6 +105,7 @@ export { rebasePending } from "./rebase.js"
 export type { NativeBasis, NativeProvenance, NativeWriter } from "./native.js"
 export {
   NATIVE_WRITER,
+  RICH_NATIVE_WRITER,
   nativeAdmission,
   nativeBasisSchema,
   nativeMigrateInputSchema,
@@ -116,6 +117,16 @@ export {
   sameNativeProvenance,
 } from "./native.js"
 export { retainUnderline } from "./merge-text.js"
+export {
+  richPaperDocumentSchema,
+  storedPaperDocumentSchema,
+  requirePaperDocument,
+  storedPaperPhotoIds,
+} from "./stored-document.js"
+export type {
+  RichPaperDocument,
+  StoredPaperDocument,
+} from "./stored-document.js"
 
 export { cvSlots, cvFieldSchema, cvRichTextSchema } from "./cv-fields.js"
 export type {

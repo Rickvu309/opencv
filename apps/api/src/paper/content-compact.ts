@@ -1,4 +1,7 @@
-import { paperPhotoFileId, type PaperDocument } from "@workspace/domain"
+import {
+  storedPaperPhotoIds,
+  type StoredPaperDocument,
+} from "@workspace/domain"
 import { loadYDoc, updateSince } from "@workspace/paper-crdt"
 import { and, asc, eq, lt } from "drizzle-orm"
 
@@ -22,24 +25,12 @@ type FoldBase = {
   readonly baseSeq: number
 }
 
-function photoId(document: unknown): string | null {
-  if (!document || typeof document !== "object" || !("header" in document)) {
-    return null
-  }
-  const header = document.header
-  if (!header || typeof header !== "object" || !("photo" in header)) return null
-  const photo = header.photo
-  return paperPhotoFileId(typeof photo === "string" ? photo : null)
-}
-
 export function droppedPhotoIds(
   previous: unknown,
-  next: PaperDocument
+  next: StoredPaperDocument
 ): string[] {
-  const before = photoId(previous)
-  const after = photoId(next)
-  if (!before || before.toLowerCase() === after?.toLowerCase()) return []
-  return [before]
+  const after = new Set(storedPaperPhotoIds(next))
+  return storedPaperPhotoIds(previous).filter((id) => !after.has(id))
 }
 
 export function compactionHorizon(

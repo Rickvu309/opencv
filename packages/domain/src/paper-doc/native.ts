@@ -2,6 +2,7 @@ import { z } from "zod"
 
 import { paperIdSchema } from "../ids.js"
 import type { NativePaperDocument } from "./document.js"
+import type { RichPaperDocument } from "./stored-document.js"
 import { paperSyncInputSchema, paperSyncOutputSchema } from "./sync.js"
 
 export const nativeWriterSchema = z
@@ -25,7 +26,7 @@ export const NATIVE_WRITER: NativeWriter = {
   capabilities: ["structured-prose", "underline"],
 }
 
-export const nativeProvenanceSchema = z
+const proseProvenanceSchema = z
   .object({
     documentVersion: z.literal(4),
     schemaRevision: z.literal(1),
@@ -39,11 +40,64 @@ export const nativeProvenanceSchema = z
   })
   .strict()
 
+const richCapabilities = [
+  "rich-text-1",
+  "semantic-cv-fields-1",
+  "document-presentation-1",
+  "tables-1",
+  "photos-1",
+  "flow-sections-1",
+] as const
+
+export const RICH_NATIVE_WRITER: NativeWriter = {
+  documentVersion: 4,
+  writerProtocol: 1,
+  supportedSchemaRevisions: [2],
+  capabilities: [...richCapabilities],
+}
+
+const richProvenanceSchema = z
+  .object({
+    documentVersion: z.literal(4),
+    schemaRevision: z.literal(2),
+    writerProtocol: z.literal(1),
+    profile: z.literal("private-layout-3"),
+    requiredCapabilities: z
+      .array(z.enum(richCapabilities))
+      .length(richCapabilities.length)
+      .refine(
+        (capabilities) => new Set(capabilities).size === capabilities.length
+      ),
+  })
+  .strict()
+
+export const nativeProvenanceSchema = z.union([
+  proseProvenanceSchema,
+  richProvenanceSchema,
+])
+
 export type NativeProvenance = z.infer<typeof nativeProvenanceSchema>
 
 export function nativeProvenance(
   document: NativePaperDocument
+): z.infer<typeof proseProvenanceSchema>
+export function nativeProvenance(
+  document: RichPaperDocument
+): z.infer<typeof richProvenanceSchema>
+export function nativeProvenance(
+  document: NativePaperDocument | RichPaperDocument
+): NativeProvenance
+export function nativeProvenance(
+  document: NativePaperDocument | RichPaperDocument
 ): NativeProvenance {
+  if (document.schemaRevision === 2)
+    return {
+      documentVersion: 4,
+      schemaRevision: 2,
+      writerProtocol: 1,
+      profile: document.profile,
+      requiredCapabilities: [...richCapabilities],
+    }
   return {
     documentVersion: document.version,
     schemaRevision: document.schemaRevision,
@@ -53,7 +107,7 @@ export function nativeProvenance(
 }
 
 export function nativeAdmission(
-  document: NativePaperDocument,
+  document: NativePaperDocument | RichPaperDocument,
   writer: NativeWriter | undefined
 ): string | null {
   if (
@@ -107,12 +161,14 @@ export function sameNativeProvenance(
     left.documentVersion === right.documentVersion &&
     left.schemaRevision === right.schemaRevision &&
     left.writerProtocol === right.writerProtocol &&
+    (left.schemaRevision !== 2 ||
+      (right.schemaRevision === 2 && left.profile === right.profile)) &&
     left.requiredCapabilities.length === right.requiredCapabilities.length &&
     left.requiredCapabilities.every((capability) =>
-      right.requiredCapabilities.includes(capability)
+      right.requiredCapabilities.some((item) => item === capability)
     ) &&
     right.requiredCapabilities.every((capability) =>
-      left.requiredCapabilities.includes(capability)
+      left.requiredCapabilities.some((item) => item === capability)
     )
   )
 }

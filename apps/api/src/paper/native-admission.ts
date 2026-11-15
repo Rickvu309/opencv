@@ -9,11 +9,15 @@ import {
   type NativeBasis,
   type NativeWriter,
   type PaperDocument,
+  type StoredPaperDocument,
 } from "@workspace/domain"
 
 import { CommandError } from "../registry/errors.js"
 
-export function admitDocument(document: PaperDocument, writer?: NativeWriter) {
+export function admitDocument(
+  document: StoredPaperDocument,
+  writer?: NativeWriter
+) {
   if (document.version === 3) return
   const refusal = nativeAdmission(document, writer)
   if (refusal) throw new CommandError(ERROR_CODES.CONFLICT, refusal)
@@ -23,7 +27,7 @@ export function basisOf(
   document: PaperDocument,
   epoch: number,
   revision: number
-): NativeBasis | undefined {
+): (NativeBasis & { provenance: { schemaRevision: 1 } }) | undefined {
   if (document.version === 3) return undefined
   return {
     provenance: nativeProvenance(document),

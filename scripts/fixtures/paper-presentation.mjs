@@ -4,6 +4,14 @@ export const clean = [
     text: 'import { headlessLayoutSchema } from "./native-formatting-headless.js"',
   },
   {
+    path: "apps/web/vite.config.ts",
+    text: 'const alias = { "@workspace/domain/internal/paper-presentation": path.resolve("packages/domain/src/paper-presentation.ts"), "@workspace/domain": path.resolve("packages/domain/src/index.ts") }',
+  },
+  {
+    path: "packages/paper-crdt/src/stored-document.ts",
+    text: 'import { createPrivateFlow, openFlowBinary, readFlow } from "./native-layout-flow.js"; export function seedStoredYDoc() {}',
+  },
+  {
     path: "packages/paper-crdt/src/native-layout-flow-view.ts",
     text: "Decoration.node(pos, end, { style: `height:${height}px` })",
   },
@@ -116,6 +124,30 @@ export const mistakes = [
   {
     path: "packages/paper-crdt/src/native-layout-flow-codec.ts",
     text: 'import type { PrivateLayoutBlock } from "./native-layout-schema.js"',
+  },
+  {
+    path: "apps/web/vitest.config.ts",
+    text: 'const alias = { "@workspace/domain": path.resolve("packages/domain/src/index.ts") }',
+  },
+  {
+    path: "apps/web/vite.config.ts",
+    text: 'const alias = { "@workspace/domain": path.resolve("packages/domain/src/index.ts"), "@workspace/domain/internal/paper-presentation": path.resolve("packages/domain/src/paper-presentation.ts") }',
+  },
+  {
+    path: "packages/paper-crdt/src/stored-document.ts",
+    text: 'export { createPrivateFlow } from "./native-layout-flow.js"',
+  },
+  {
+    path: "packages/paper-crdt/src/stored-document.ts",
+    text: 'import { commitFlowEdit } from "./native-layout-flow.js"',
+  },
+  {
+    path: "packages/paper-crdt/src/stored-document.ts",
+    text: "export const rawBinding = binding",
+  },
+  {
+    path: "packages/paper-crdt/src/stored-document.ts",
+    text: 'doc.getMap("paper").set("richText", content)',
   },
   {
     path: "packages/paper-crdt/src/native-layout-flow-view.ts",

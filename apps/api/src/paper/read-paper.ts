@@ -1,6 +1,7 @@
 import {
   ERROR_CODES,
   paperDocumentSchema,
+  storedPaperDocumentSchema,
   paperSharedViewSchema,
   parseFileId,
   parsePaperId,
@@ -27,6 +28,16 @@ export function tryReadStoredPaper(row: PaperRow): PaperDocument | null {
 }
 
 export function readStoredPaper(row: PaperRow): PaperDocument {
+  const stored = storedPaperDocumentSchema.safeParse(row.crdtDocument)
+  if (
+    stored.success &&
+    stored.data.version === 4 &&
+    stored.data.schemaRevision === 2
+  )
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      "This document needs the rich Paper editor. Nothing was changed."
+    )
   const paper = tryReadStoredPaper(row)
   if (!paper) {
     throw new CommandError(

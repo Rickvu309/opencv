@@ -15,6 +15,7 @@ export {
   writeRepair,
 } from "./ydoc.js"
 export type { Candidate } from "./ydoc.js"
+export { materializeStored, seedStoredYDoc } from "./stored-document.js"
 export {
   absorbUpdate,
   carriesChange,
@@ -30,6 +31,7 @@ export type { Absorbed, PaperYDoc } from "./sync.js"
 export { writeAsEditor } from "./editor-write.js"
 export {
   openPaperClient,
+  openRichPaperClient,
   REBASE_ORIGIN,
   SERVER_ORIGIN,
   storedHasPending,

@@ -35,6 +35,10 @@ export default defineConfig(({ mode }) => {
     ],
     resolve: {
       alias: {
+        "@workspace/domain/internal/paper-presentation": path.resolve(
+          __dirname,
+          "../../packages/domain/src/paper-presentation.ts"
+        ),
         "@": path.resolve(__dirname, "./src"),
         "@workspace/domain": path.resolve(
           __dirname,

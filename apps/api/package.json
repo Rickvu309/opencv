@@ -40,6 +40,7 @@
     "@electric-sql/pglite": "^0.5.7",
     "@eslint/js": "^10",
     "@modelcontextprotocol/client": "2.4.0",
+    "@modelcontextprotocol/inspector": "2.14.0",
     "@types/node": "^24",
     "@types/pg": "^8.23.1",
     "drizzle-kit": "^0.31.11",
@@ -50,6 +51,6 @@
     "typescript": "~6",
     "typescript-eslint": "^8",
     "vitest": "^5.0.5",
-    "@modelcontextprotocol/inspector": "2.14.0"
+    "yjs": "13.6.33"
   }
 }
