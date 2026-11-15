@@ -209,10 +209,11 @@ describe("opening a document from its link", () => {
       expect(await screen.findByText("Document not found.")).toBeVisible()
       expect(failed(exchanges)).toEqual([
         {
-          url: expect.stringContaining(`/api/paper/${id}/document`),
+          url: expect.stringContaining(`/api/paper/${id}`),
           status: 404,
         },
       ])
+      expect(paperRequests(exchanges)).toEqual([`paper/${id}/document`])
       expect(paperRequests(exchanges)).not.toContain("reads/paper.read")
     }
   )
