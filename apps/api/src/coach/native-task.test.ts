@@ -4,6 +4,7 @@ import {
   nativePaperDocumentSchema,
   personActor,
 } from "@workspace/domain"
+import { seedYDoc } from "@workspace/paper-crdt"
 import { eq } from "drizzle-orm"
 import { expect, it } from "vitest"
 import { getDb } from "../db/context.js"
@@ -15,7 +16,6 @@ import {
   pendingActions,
   toolIntents,
 } from "../db/schema.js"
-import { seedColumns } from "../paper/content-document.js"
 import { resolveTurnGrounding } from "./context.js"
 import { createTaskRuntime } from "./task-runtime.js"
 import { runCoachWorker } from "./worker.js"
@@ -63,7 +63,11 @@ it.each([
       const docId = paperViewSchema.parse(created.output).id
       await getDb()
         .update(paperDocs)
-        .set(seedColumns("letter", native))
+        .set({
+          crdtEpoch: 1,
+          crdtBase: Buffer.from(seedYDoc(native)),
+          crdtDocument: native,
+        })
         .where(eq(paperDocs.id, docId))
       const read = async () =>
         paperViewSchema.parse(
@@ -151,7 +155,11 @@ it.each([
           if (decision === "digest")
             await getDb()
               .update(paperDocs)
-              .set(seedColumns("letter", changed))
+              .set({
+                crdtEpoch: 1,
+                crdtBase: Buffer.from(seedYDoc(changed)),
+                crdtDocument: changed,
+              })
               .where(eq(paperDocs.id, docId))
           if (decision === "provenance")
             await getDb()
