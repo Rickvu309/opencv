@@ -4,7 +4,6 @@ import {
   nativeProvenanceSchema,
   nativeWriterSchema,
   sameNativeProvenance,
-  type PaperId,
 } from "@workspace/domain"
 
 const nativeIdentitySchema = z
@@ -30,8 +29,6 @@ const nativeIdentitySchema = z
   })
 
 export type NativeSyncIdentity = z.infer<typeof nativeIdentitySchema>
-export type PaperSyncIdentity =
-  { readonly kind: "legacy"; readonly docId: PaperId } | NativeSyncIdentity
 
 export function requireNativeIdentity(value: unknown): NativeSyncIdentity {
   return nativeIdentitySchema.parse(value)

@@ -17,7 +17,8 @@ import { ApiError } from "@/lib/api-error.ts"
 import { runContractCommand } from "@/lib/contract-client.ts"
 import { qualifiedPaperRead } from "@/lib/paper-qualification.ts"
 import { endpoints } from "@/lib/requests.ts"
-import { fromBase64, toBase64, type SyncStatus } from "@/lib/paper-sync.ts"
+import type { SyncStatus } from "@/lib/paper-sync.ts"
+import { fromBase64, toBase64 } from "@/lib/paper-sync-bytes.ts"
 import {
   indexedDbStore,
   heldLocks,

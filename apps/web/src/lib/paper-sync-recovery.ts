@@ -5,7 +5,7 @@ import {
   openPaperClient,
   type Stored,
 } from "@workspace/paper-crdt"
-import { fromBase64, toBase64 } from "@/lib/paper-sync.ts"
+import { fromBase64, toBase64 } from "@/lib/paper-sync-bytes.ts"
 import {
   nativeRecoveryScope,
   type NativeSyncIdentity,

@@ -20,7 +20,7 @@ import {
 import { nativeRecoveryScope } from "./paper-sync-identity.ts"
 import { openNativePaperSync } from "./paper-native-transport.ts"
 import * as stores from "./paper-sync-store.ts"
-import { toBase64 } from "./paper-sync.ts"
+import { openPaperSync, toBase64 } from "./paper-sync.ts"
 import { indexedDbStore } from "./paper-sync-store.ts"
 
 it("selective native checkpoints retain later input and unrelated tabs", () => {
@@ -140,7 +140,7 @@ afterEach(() => {
 })
 it("a fast receipt cannot show Saved before the current local completion", async () => {
   const h = sessionHarness()
-  const sync = openNativePaperSync(h.options)
+  const sync = openPaperSync(h.options)
   await sync.initialized
   expect(sync.status()).toBe("saved")
   const gate = deferred()
@@ -175,7 +175,7 @@ it("a fast receipt cannot show Saved before the current local completion", async
 })
 it("a delayed old receipt and storage completion never cover later typing", async () => {
   const h = sessionHarness()
-  const sync = openNativePaperSync(h.options)
+  const sync = openPaperSync(h.options)
   await sync.initialized
   const gate = deferred()
   const next = deferred()
@@ -220,7 +220,7 @@ it("a delayed old receipt and storage completion never cover later typing", asyn
 })
 it("an older local completion cannot credit input awaiting its own transaction", async () => {
   const h = sessionHarness()
-  const sync = openNativePaperSync(h.options)
+  const sync = openPaperSync(h.options)
   await sync.initialized
   const first = deferred()
   const second = deferred()
@@ -304,7 +304,7 @@ it("bootstraps authoritative bytes after a qualified owner read instead of resee
     reset: true,
     update: toBase64(stored.server),
   })
-  const sync = openNativePaperSync({
+  const sync = openPaperSync({
     identity,
     currentIdentity: () => identity,
     queryClient: h.options.queryClient,
@@ -334,7 +334,7 @@ it("bootstraps authoritative bytes after a qualified owner read instead of resee
 })
 it("owner changes detach a delayed receipt and hide the previous client", async () => {
   const h = sessionHarness()
-  const sync = openNativePaperSync(h.options)
+  const sync = openPaperSync(h.options)
   await sync.initialized
   const gate = deferred()
   h.run.mockImplementationOnce(async () => {
@@ -351,7 +351,7 @@ it("owner changes detach a delayed receipt and hide the previous client", async 
 })
 it("a changed session refuses its old handle while keeping the owner's recovery scope", async () => {
   const h = sessionHarness()
-  const sync = openNativePaperSync(h.options)
+  const sync = openPaperSync(h.options)
   await sync.initialized
   h.changeSession()
   expect(sync.client()).toBeNull()
@@ -408,7 +408,7 @@ it("a compatible orphan is persisted before its old IndexedDB copy is removed", 
     )
     await original(...args)
   }
-  const sync = openNativePaperSync(h.options)
+  const sync = openPaperSync(h.options)
   await sync.initialized
   expect(sync.client()?.document()).toEqual(local.document())
   expect((await h.store.load(scope, "active")).orphans).toHaveLength(0)
@@ -420,7 +420,7 @@ it("an incompatible orphan remains untouched and blocks readiness", async () => 
   const incompatible = { ...stored, provenance: undefined }
   await h.store.save(scope, "orphan", incompatible)
   const remove = vi.spyOn(h.store, "remove")
-  const sync = openNativePaperSync(h.options)
+  const sync = openPaperSync(h.options)
   await sync.initialized
   expect(sync.ready()).toBe(false)
   expect(sync.status()).toBe("stuck")
@@ -438,7 +438,7 @@ it("a held tab's orphan is neither adopted nor removed", async () => {
     new Set([stores.lockOf(scope, "held")])
   )
   const remove = vi.spyOn(h.store, "remove")
-  const sync = openNativePaperSync(h.options)
+  const sync = openPaperSync(h.options)
   await sync.initialized
   expect(remove).not.toHaveBeenCalled()
   expect(stores.holdNativeTabLock).not.toHaveBeenCalledWith(scope, "held")
@@ -447,7 +447,7 @@ it("a held tab's orphan is neither adopted nor removed", async () => {
 })
 it("a failed local transaction retains recovery even after the server accepts", async () => {
   const h = sessionHarness()
-  const sync = openNativePaperSync(h.options)
+  const sync = openPaperSync(h.options)
   await sync.initialized
   h.store.save = async () => {
     throw new Error("transaction aborted")
@@ -488,7 +488,7 @@ it("a tab acquired during orphan recovery refuses without removing its copy", as
     }
   )
   const remove = vi.spyOn(h.store, "remove")
-  const sync = openNativePaperSync(h.options)
+  const sync = openPaperSync(h.options)
   await sync.initialized
   expect(sync.status()).toBe("stuck")
   expect(sync.ready()).toBe(false)
@@ -521,7 +521,7 @@ it("re-reads an orphan after acquiring its lock instead of deleting newer words"
       return () => {}
     }
   )
-  const sync = openNativePaperSync(h.options)
+  const sync = openPaperSync(h.options)
   await sync.initialized
   expect(sync.client()?.document()).toEqual(local.document())
   expect((await h.store.load(scope, "active")).orphans).toHaveLength(0)
@@ -533,7 +533,7 @@ it("retains orphan ownership through an offline retry and releases it at shutdow
   vi.mocked(stores.holdNativeTabLock).mockResolvedValue(release)
   appendNativeJournal(h.options.journal, identity, "orphan", stored)
   h.run.mockRejectedValueOnce(new Error("offline"))
-  const sync = openNativePaperSync(h.options)
+  const sync = openPaperSync(h.options)
   await sync.initialized
   expect(sync.status()).toBe("offline")
   expect(release).not.toHaveBeenCalled()
@@ -547,7 +547,7 @@ it("retains tab ownership until an already-started local transaction settles", a
   const h = sessionHarness()
   const release = vi.fn()
   vi.mocked(stores.holdNativeTabLock).mockResolvedValue(release)
-  const sync = openNativePaperSync(h.options)
+  const sync = openPaperSync(h.options)
   await sync.initialized
   const gate = deferred()
   const started = deferred()
@@ -583,7 +583,7 @@ it("retains tab ownership until an already-started local transaction settles", a
 })
 it("sends the requested newer generation after a delayed exchange", async () => {
   const h = sessionHarness()
-  const sync = openNativePaperSync(h.options)
+  const sync = openPaperSync(h.options)
   await sync.initialized
   const gate = deferred()
   h.run.mockImplementationOnce(async () => {

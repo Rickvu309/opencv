@@ -11,6 +11,8 @@ Last confirmed against `origin/main` at `89c3703c` on 2026-11-13: every command 
 
 Issue 1541 adds a private native transport. It does not activate a public editor, subscribe to authentication changes, or migrate documents. The caller must destroy the session when its owner or sign-in session changes. Every asynchronous boundary also checks that identity before exposing or acknowledging data.
 
+The shared `openPaperSync` factory accepts either the existing legacy arguments or qualified native session options. Native behavior tests and the browser probe enter through that factory. Native credentials select the native transport without activating an editor route.
+
 The native recovery scope contains the owner, document and format revision. It excludes the ephemeral sign-in session. Native storage uses a separate IndexedDB database and strict provenance-bearing journals. An unreadable scan or incompatible record blocks readiness and retains the original bytes. Recovery rereads orphan snapshots after acquiring their locks and keeps those locks until shutdown. Shutdown hides the client immediately and retains its own lock until already queued persistence settles.
 
 The candidate passed 24 native behavior tests, 16 API and registry tests, and 10 native and legacy detector tests on 2026-11-15. Both source mutations failed their intended assertions: premature Saved and crediting an old local completion to the current generation. Restoring the source passed all 24 native tests. The earlier legacy verification point above remains unchanged.
