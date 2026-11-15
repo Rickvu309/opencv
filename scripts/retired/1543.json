@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/api/src/paper/photo.test.ts > CV photo bytes > stores the image type from the bytes and ignores the client Content-Type",
+    "because": "Public photo caching can retain access after a share link is revoked. The replacement preserves image-byte and content-type assertions and requires no-store on public photos and revoked links.",
+    "replacedBy": "apps/api/src/paper/photo.test.ts",
+    "proof": {
+      "fork": "65ec766f09e3f88b0b3de7f920ffc76630345592",
+      "replacedByBlob": "08bf81392852b51e75a6d291cf4e053224e8554d",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]

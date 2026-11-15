@@ -1,0 +1,13 @@
+{
+  "id": "paper-shared-cache-policy",
+  "file": "scripts/paper-public-share.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-public-share.mjs",
+    "export": "detectSharedCachePolicy"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "2b14fc68d17459b8533e8b441421ea7ccb832d14",
+    "path": "apps/api/src/paper/http.ts"
+  }
+}

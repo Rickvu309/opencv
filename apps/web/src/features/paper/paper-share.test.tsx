@@ -6,7 +6,7 @@ import {
   paperDocumentSchema,
   type LetterPaper,
   type PaperDocument,
-  type PaperView,
+  type PaperSharedView,
 } from "@workspace/domain"
 import { StrictMode } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
@@ -36,19 +36,12 @@ function letterPaper(lines: string[]): PaperDocument {
   })
 }
 
-const shared: Omit<PaperView, "isFavorite"> = {
+const shared: PaperSharedView = {
   id: "doc-1",
   name: "PM track CV",
   kind: "cv",
   templateId: "modern",
-  status: "draft",
   paper: blankCv(),
-  contentVersion: 1,
-  checks: [],
-  pageChoice: "unset",
-  sourceFileId: null,
-  createdAt: "2020-01-01T00:00:00.000Z",
-  updatedAt: "2020-01-01T00:00:00.000Z",
 }
 
 function mountLetterStyles() {

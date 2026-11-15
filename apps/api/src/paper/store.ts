@@ -50,7 +50,12 @@ import {
   dropServerReleasedPhoto,
   referencedPhotoFileIds,
 } from "./photo-references.js"
-import { readStoredPaper, toPaper, tryReadStoredPaper } from "./read-paper.js"
+import {
+  readStoredPaper,
+  toPaper,
+  toSharedPaper,
+  tryReadStoredPaper,
+} from "./read-paper.js"
 
 export const IMPORT_FILE_CAP = 8_000_000
 export const IMPORT_SIZE_MESSAGE = "File must be 8 MB or smaller."
@@ -460,13 +465,7 @@ export async function readShared(token: string, writer?: NativeWriter) {
   const row = rows[0]
   if (!row)
     throw new CommandError(ERROR_CODES.NOT_FOUND, "Share link not found")
-  const { isFavorite: _isFavorite, ...shared } = toPaper(
-    row.doc,
-    undefined,
-    writer
-  )
-  void _isFavorite
-  return shared
+  return toSharedPaper(row.doc, writer)
 }
 
 export function mediaTypeFromImageBytes(bytes: Buffer) {
