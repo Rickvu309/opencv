@@ -30,7 +30,7 @@ import { canonicalStyles, engineStyles } from "./native-formatting-styles.js"
 import { effectiveInline } from "./native-formatting-render-values.js"
 
 const mounted = new WeakMap<LayoutBinding, PrivateLayoutEditor>()
-function editableTarget(
+export function editableTarget(
   node: FormatNode | LayoutPhoto | LayoutTable | LayoutRow | LayoutCell,
   reverse: boolean
 ): string | undefined {

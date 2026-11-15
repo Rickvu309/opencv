@@ -2,6 +2,7 @@ import * as Y from "yjs"
 import {
   canonical,
   layoutPhotoSchema,
+  flowSectionSchema,
   isWellFormed,
 } from "@workspace/domain/internal/paper-presentation"
 import { validateMark, validateNodeAttrs } from "./native-formatting-wire.js"
@@ -27,10 +28,19 @@ const layouts = ["paperFlow", "paperTable", "paperRow", "paperCell"]
 export function validateLayoutWire(
   fragment: Y.XmlFragment,
   engine: PrivateLayoutEditor,
-  profile: "private-layout-1" | "private-layout-2" = "private-layout-1"
+  profile:
+    | "private-layout-1"
+    | "private-layout-2"
+    | "private-layout-3" = "private-layout-1"
 ): void {
   const contentNodes =
-    profile === "private-layout-2" ? [...content, "paperPhoto"] : content
+    profile === "private-layout-3"
+      ? [...content, "paperPhoto", "paperPageBreak"]
+      : profile === "private-layout-2"
+        ? [...content, "paperPhoto"]
+        : content
+  const layoutNodes =
+    profile === "private-layout-3" ? [...layouts, "paperFlowSection"] : layouts
   const ids = new Set<string>()
   const visit = (parent: Y.XmlFragment, container: string) => {
     const children = parent.toArray()
@@ -51,9 +61,19 @@ export function validateLayoutWire(
       throw new Error("Invalid layout group")
     if (
       name === "paperFlow" &&
-      (!children.length || !only(["blockContainer", "paperTable"]))
+      (!children.length ||
+        !only(
+          profile === "private-layout-3"
+            ? ["paperFlowSection"]
+            : ["blockContainer", "paperTable"]
+        ))
     )
       throw new Error("Invalid flow")
+    if (
+      name === "paperFlowSection" &&
+      (!children.length || !only(["blockContainer", "paperTable"]))
+    )
+      throw new Error("Invalid flow section")
     if (name === "paperTable" && (!children.length || !only(["paperRow"])))
       throw new Error("Invalid table")
     if (name === "paperRow" && (!children.length || !only(["paperCell"])))
@@ -93,7 +113,7 @@ export function validateLayoutWire(
     for (const child of children) {
       if (child instanceof Y.XmlElement) {
         if (child.nodeName === "paperPhoto") {
-          if (profile !== "private-layout-2")
+          if (profile === "private-layout-1")
             throw new Error("Photo requires layout v2")
           const attrs = child.getAttributes()
           const value = attrs.photo
@@ -113,10 +133,26 @@ export function validateLayoutWire(
               (key !== "photo" && entry !== allowed[key]?.default)
             )
               throw new Error("Unknown photo wire attribute")
+        } else if (child.nodeName === "paperFlowSection") {
+          const attrs = child.getAttributes()
+          const settings = flowSectionSchema
+            .omit({ id: true, type: true, children: true })
+            .parse(JSON.parse(String(attrs.settings)))
+          if (canonical(settings) !== attrs.settings)
+            throw new Error("Noncanonical section settings")
+          const allowed =
+            engine.pmSchema.nodes.paperFlowSection?.spec.attrs ?? {}
+          for (const [key, value] of Object.entries(attrs))
+            if (
+              !(key in allowed) ||
+              (!["id", "settings"].includes(key) &&
+                value !== allowed[key]?.default)
+            )
+              throw new Error("Unknown section wire attribute")
         } else validateNodeAttrs(child.nodeName, child.getAttributes(), engine)
         if (
           child.nodeName === "blockContainer" ||
-          layouts.includes(child.nodeName)
+          layoutNodes.includes(child.nodeName)
         ) {
           const id = child.getAttribute("id")
           if (
@@ -133,7 +169,7 @@ export function validateLayoutWire(
             "blockContainer",
             "hardBreak",
             ...contentNodes,
-            ...layouts,
+            ...layoutNodes,
           ].includes(child.nodeName)
         )
           throw new Error("Unknown layout node")

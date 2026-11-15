@@ -34,19 +34,22 @@ function tableBlock(table: LayoutTable): PrivateLayoutBlock {
     })),
   }
 }
+export function layoutBlock(
+  node: FormatNode | LayoutPhoto | LayoutTable
+): PrivateLayoutBlock {
+  return node.type === "table" ? tableBlock(node) : contentBlock(node)
+}
 export function toLayoutBlocks(document: LayoutDocument): PrivateLayoutBlock[] {
   const doc = layoutDocumentSchema.parse(document)
   return [
     {
       id: doc.flow.id,
       type: "paperFlow",
-      children: doc.flow.children.map((node) =>
-        node.type === "table" ? tableBlock(node) : contentBlock(node)
-      ),
+      children: doc.flow.children.map(layoutBlock),
     },
   ]
 }
-function readLayoutBlock(input: unknown): unknown {
+export function readLayoutBlock(input: unknown): unknown {
   const block = object(input, ["id", "type", "props", "children", "content"])
   const type = string(block.type)
   if (type === "paperPhoto") {
