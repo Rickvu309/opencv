@@ -30,5 +30,5 @@
     "ClearCovered": ["paper-sync-recovery.ts:acknowledgeNativeJournal"],
     "LockAndReread": ["paper-sync-store.ts:holdNativeTabLock"]
   },
-  "sync": "7e25b97a1255657315ece780059a3531aa5aba4d"
+  "sync": "e3b6a3fef94bb22b241227ca304e0e5e24007145"
 }

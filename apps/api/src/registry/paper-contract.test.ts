@@ -99,6 +99,7 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
       }
 
       const cv = idOf(await run("paper.create", { kind: "cv", name: "My CV" }))
+      await read("paper.document", { docId: cv })
       const letter = idOf(await run("paper.create", { kind: "letter" }))
       await run("paper.rename", { docId: cv, name: "Ada CV" })
       const outline = (await read("paper.outline", { docId: cv })) as {

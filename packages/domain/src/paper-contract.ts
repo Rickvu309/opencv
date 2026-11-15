@@ -105,8 +105,6 @@ export const paperDocumentInfoSchema = z.discriminatedUnion("format", [
     .strict(),
 ])
 
-export type PaperDocumentInfo = z.output<typeof paperDocumentInfoSchema>
-
 export const paperSharedViewSchema = paperViewSchema
   .pick({ id: true, name: true, kind: true, templateId: true, paper: true })
   .extend({

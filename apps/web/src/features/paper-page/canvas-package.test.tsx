@@ -24,7 +24,7 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("@/lib/auth-client.ts", () => ({
   authClient: {
     useSession: () => ({
-      data: { user: { id: "owner-1" } },
+      data: { user: { id: "owner-1" }, session: { id: "session-1" } },
       isPending: false,
       error: null,
     }),
@@ -63,6 +63,13 @@ function page(paragraphs: unknown[]) {
   }
 }
 
+function metadata() {
+  return Response.json({
+    ok: true,
+    data: { id: DOC, name: "Page.docx", kind: "letter", format: "word" },
+  })
+}
+
 afterEach(() => {
   cleanup()
   localStorage.clear()
@@ -72,6 +79,8 @@ describe("minted package page", () => {
   it("opens the empty paragraph from the saved document", async () => {
     vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
       const url = String(input)
+      if (url.endsWith(`/api/paper/${DOC}/document`))
+        return Promise.resolve(metadata())
       if (url.includes("/api/reads/paper.read")) {
         return Promise.resolve(
           Response.json({
@@ -102,6 +111,8 @@ describe("minted package page", () => {
   it("leaves an imported file on the missing page", async () => {
     vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
       const url = String(input)
+      if (url.endsWith(`/api/paper/${DOC}/document`))
+        return Promise.resolve(metadata())
       if (url.includes("/api/reads/paper.read")) {
         return Promise.resolve(
           Response.json({
@@ -130,6 +141,7 @@ describe("minted package page", () => {
     const message = "This part stays locked."
     vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
       const url = String(input)
+      if (url.endsWith(`/api/paper/${DOC}/document`)) return metadata()
       if (url.includes("/api/reads/paper.read"))
         return Response.json({
           ok: true,
