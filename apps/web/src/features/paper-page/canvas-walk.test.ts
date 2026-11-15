@@ -240,6 +240,50 @@ function looksAt(index: number) {
 }
 
 describe("a line's look is the same before its save, after the save lands and after a reload", () => {
+  it("I5 compares marks at each character", () => {
+    expect(
+      lookKey({ spans: [{ from: 0, to: 1, marks: ["bold"] }] }, "ab")
+    ).not.toBe(lookKey({ marks: [[], ["bold"]] }, "ab"))
+    expect(
+      lookKey({ spans: [{ from: 0, to: 1, marks: ["bold"] }] }, "ab")
+    ).toBe(lookKey({ marks: [["bold"], []] }, "ab"))
+  })
+
+  for (const mark of ["bold", "italic", "underline"] as const)
+    for (const trailing of [false, true])
+      for (const saveBetween of [false, true])
+        it(`Enter inherits ${trailing ? mark : "plain"} with save between keys ${saveBetween}`, async () => {
+          const start: StartLine[] = [
+            {
+              text: "Lead tail",
+              look: {
+                marks: Array.from({ length: 9 }, (_, index) =>
+                  index >= 4 === trailing ? [mark] : []
+                ),
+              },
+            },
+          ]
+          const steps: Step[] = [{ kind: "enter", line: 0, at: 999 }]
+          if (saveBetween) steps.push({ kind: "drain" })
+          steps.push(
+            { kind: "type", line: 1, at: 0, text: "Next" },
+            { kind: "drain" },
+            { kind: "reload" },
+            { kind: "drain" }
+          )
+          expect(await walk(steps, start)).toBeNull()
+          expect(lookTrail.at(-1)?.[1]?.look).toBe(
+            lookKey(
+              {
+                marks: Array.from({ length: 4 }, () =>
+                  trailing ? [mark] : []
+                ),
+              },
+              "Next"
+            )
+          )
+        })
+
   it("B1: a name line on a blank CV and four lines typed under it stay centred", async () => {
     const steps: Step[] = [
       { kind: "type", line: 0, at: 0, text: "Linh Nguyen" },

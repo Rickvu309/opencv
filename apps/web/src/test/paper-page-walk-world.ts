@@ -1,4 +1,4 @@
-import type { WordAlign, WordForm, WordPage } from "@workspace/domain"
+import type { WordAlign, WordForm, WordMark, WordPage } from "@workspace/domain"
 
 import { ApiError } from "@/lib/api-error.ts"
 
@@ -63,7 +63,12 @@ type Mode = keyof typeof PAGE_MODES | "ok"
 type Fault = "none" | "offline" | "lost" | "busy429" | "busy503" | "timeout"
 const FAULTS: Fault[] = ["offline", "lost", "busy429", "busy503", "timeout"]
 
-export type ParagraphLook = { form?: WordForm; align?: WordAlign }
+export type ParagraphLook = {
+  form?: WordForm
+  align?: WordAlign
+  marks?: readonly (readonly WordMark[])[]
+  endMarks?: readonly WordMark[]
+}
 export type Line = {
   handle: string
   text: string
@@ -296,11 +301,47 @@ export function insertAt(
 
 export function carriedLook(
   lines: readonly Line[],
-  after: string | null
+  after: string | null,
+  text: string
 ): ParagraphLook | undefined {
   if (after === null) return undefined
-  const look = lines.find((line) => line.handle === after)?.look
-  return look ? { ...look } : undefined
+  const line = lines.find((line) => line.handle === after)
+  const look = line?.look
+  if (!look) return undefined
+  const marks = look.endMarks ?? look.marks?.at(-1) ?? []
+  return {
+    ...look,
+    marks: Array.from({ length: text.length }, () => marks),
+    endMarks: marks,
+  }
+}
+
+function rewrittenLook(line: Line, text: string): ParagraphLook | undefined {
+  const look = line.look
+  if (!look?.marks) return look
+  let head = 0
+  while (
+    head < line.text.length &&
+    head < text.length &&
+    line.text[head] === text[head]
+  )
+    head++
+  let tail = 0
+  while (
+    tail < line.text.length - head &&
+    tail < text.length - head &&
+    line.text.at(-tail - 1) === text.at(-tail - 1)
+  )
+    tail++
+  const typed = look.marks[Math.max(0, head - 1)] ?? look.endMarks ?? []
+  const marks = Array.from({ length: text.length }, (_, index) =>
+    index < head
+      ? (look.marks?.[index] ?? [])
+      : index >= text.length - tail
+        ? (look.marks?.[line.text.length - (text.length - index)] ?? [])
+        : typed
+  )
+  return { ...look, marks, endMarks: marks.at(-1) ?? look.endMarks ?? [] }
 }
 
 export function landed(lines: readonly Line[], ops: readonly Op[]): Line[] {
@@ -309,7 +350,7 @@ export function landed(lines: readonly Line[], ops: readonly Op[]): Line[] {
   for (const op of ops) {
     if (op.op === "insert") {
       const handle = `landed-${added.size}`
-      const look = carriedLook(out, op.after)
+      const look = carriedLook(out, op.after, op.text)
       out.splice(insertAt(out, op.after, added), 0, {
         handle,
         text: op.text,
@@ -322,7 +363,9 @@ export function landed(lines: readonly Line[], ops: readonly Op[]): Line[] {
       out = out.filter((line) => line.handle !== op.handle)
     else
       out = out.map((line) =>
-        line.handle === op.handle ? { ...line, text: op.text } : line
+        line.handle === op.handle
+          ? { ...line, text: op.text, look: rewrittenLook(line, op.text) }
+          : line
       )
   }
   return out
@@ -332,7 +375,14 @@ export function paragraphsOf(lines: readonly Line[]) {
   return lines.map((line) => ({
     handle: line.handle,
     text: line.text,
-    pieces: line.text === "" ? [] : [{ text: line.text, editable: true }],
+    pieces:
+      line.text === ""
+        ? [{ text: "", editable: true, marks: line.look?.endMarks ?? [] }]
+        : Array.from({ length: line.text.length }, (_, index) => ({
+            text: line.text[index] ?? "",
+            editable: true,
+            marks: line.look?.marks?.[index] ?? [],
+          })),
     held: false,
     message: "",
     code: null,
@@ -531,7 +581,7 @@ export class World {
       if (op.op === "insert") {
         this.handles += 1
         const handle = handleName(this.handles)
-        const look = carriedLook(this.lines, op.after)
+        const look = carriedLook(this.lines, op.after, op.text)
         this.lines.splice(insertAt(this.lines, op.after, added), 0, {
           handle,
           text: op.text,
@@ -555,6 +605,7 @@ export class World {
       if (op.op === "delete")
         this.lines = this.lines.filter((item) => item !== line)
       else {
+        line.look = rewrittenLook(line, op.text)
         line.text = op.text
         this.touch(line)
       }

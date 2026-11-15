@@ -1,0 +1,13 @@
+{
+  "id": "paper-insert-formatting",
+  "file": "scripts/paper-insert-formatting.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-insert-formatting.mjs",
+    "export": "detectPaperInsertFormatting"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "29c4ce336ca6d1bbebef759244fbdf7c15096d19",
+    "path": "apps/api/src/paper/word/mutate.ts"
+  }
+}
