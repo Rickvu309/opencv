@@ -1,5 +1,7 @@
 import {
   NATIVE_WRITER,
+  nativeProvenance,
+  nativeSyncOutputSchema,
   nativePaperDocumentSchema,
   paperViewSchema,
   parseUserId,
@@ -278,6 +280,44 @@ it("admits native HTTP reads and writes while refused requests leave canonical d
         })
       ).ok
     ).toBe(true)
+    const nativeInput = {
+      docId,
+      writer: NATIVE_WRITER,
+      provenance: nativeProvenance(native()),
+      epoch: 0,
+      update: "",
+      stateVector: "",
+    }
+    const nativeBefore = await inDatabase(() => snapshot(docId))
+    const legacyBefore = await inDatabase(() => snapshot(legacyView.id))
+    expect((await command("paper.nativeSync", nativeInput, "")).status).toBe(
+      401
+    )
+    for (const [input, expected] of [
+      [{ ...nativeInput, writer: undefined }, 400],
+      [{ ...nativeInput, writer: { ...NATIVE_WRITER, capabilities: [] } }, 409],
+      [
+        {
+          ...nativeInput,
+          provenance: { ...nativeInput.provenance, schemaRevision: 2 },
+        },
+        400,
+      ],
+      [{ ...nativeInput, docId: legacyView.id }, 400],
+    ] as const) {
+      expect((await command("paper.nativeSync", input)).status).toBe(expected)
+      expect(await inDatabase(() => snapshot(docId))).toEqual(nativeBefore)
+      expect(await inDatabase(() => snapshot(legacyView.id))).toEqual(
+        legacyBefore
+      )
+    }
+    const synced = await command("paper.nativeSync", nativeInput)
+    expect(synced.ok).toBe(true)
+    const syncedOutput = await responseData(synced)
+    expect(nativeSyncOutputSchema.parse(syncedOutput).provenance).toEqual(
+      nativeInput.provenance
+    )
+    expect(syncedOutput).not.toHaveProperty("activityId")
   } finally {
     await new Promise<void>((resolve, reject) =>
       server.close((error) => (error ? reject(error) : resolve()))

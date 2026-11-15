@@ -142,6 +142,34 @@ export function registerPaper(registry: Registry) {
       reversal: noReversal,
       activity: noActivity,
     },
+    "paper.nativeSync": {
+      handler: async (input, actor) => {
+        const reply = await syncContent(actor.userId, input.docId, {
+          writer: input.writer,
+          provenance: input.provenance,
+          epoch: input.epoch,
+          update: bytesOf(input.update),
+          stateVector: bytesOf(input.stateVector),
+          basedOn: input.basedOn,
+        })
+        if (!reply.provenance)
+          throw new CommandError(
+            ERROR_CODES.VALIDATION_ERROR,
+            "Native provenance required"
+          )
+        return {
+          provenance: reply.provenance,
+          epoch: reply.epoch,
+          revision: reply.revision,
+          reset: reply.reset,
+          stale: reply.stale,
+          update: encoded(reply.update),
+          stateVector: encoded(reply.stateVector),
+        }
+      },
+      reversal: noReversal,
+      activity: noActivity,
+    },
     "paper.sync": {
       handler: async (input, actor) => {
         const reply = await syncContent(actor.userId, input.docId, {
