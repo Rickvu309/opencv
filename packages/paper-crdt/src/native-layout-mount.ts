@@ -5,6 +5,7 @@ import {
   inlineSchema,
   type InlinePresentation,
   type FormatNode,
+  type LayoutPhoto,
   type LayoutTable,
   type LayoutRow,
   type LayoutCell,
@@ -21,12 +22,16 @@ import {
 } from "./native-layout-transaction.js"
 import { layoutDecorations } from "./native-layout-decorations.js"
 import { pasteIntoLayoutCell } from "./native-layout-paste.js"
+import {
+  setPhotoResolver,
+  type PhotoUrlResolver,
+} from "./native-photo-render.js"
 import { canonicalStyles, engineStyles } from "./native-formatting-styles.js"
 import { effectiveInline } from "./native-formatting-render-values.js"
 
 const mounted = new WeakMap<LayoutBinding, PrivateLayoutEditor>()
 function editableTarget(
-  node: FormatNode | LayoutTable | LayoutRow | LayoutCell,
+  node: FormatNode | LayoutPhoto | LayoutTable | LayoutRow | LayoutCell,
   reverse: boolean
 ): string | undefined {
   if ("content" in node) return node.id
@@ -40,7 +45,8 @@ function editableTarget(
 }
 export function mountPrivateLayout(
   binding: LayoutBinding,
-  element: HTMLElement
+  element: HTMLElement,
+  resolvePhoto?: PhotoUrlResolver
 ) {
   readLayout(binding)
   if (mounted.has(binding)) throw new Error("Layout binding is already mounted")
@@ -75,6 +81,7 @@ export function mountPrivateLayout(
       guard,
     ],
   })
+  setPhotoResolver(editor, resolvePhoto)
   let active = true
   const setInline = (input: InlinePresentation) => {
     if (!active) throw new Error("Layout view is unmounted")
@@ -90,7 +97,9 @@ export function mountPrivateLayout(
       const cellId = layoutCellAt(editor.prosemirrorState.selection.$from)
       if (!cellId) return
       const doc = readLayout(binding)
-      const tables = doc.flow.children.filter((node) => node.type === "table")
+      const tables = doc.flow.children.flatMap((node) =>
+        node.type === "table" ? [node] : []
+      )
       const table = tables.find((node) =>
         node.children.some((row) =>
           row.children.some((cell) => cell.id === cellId)

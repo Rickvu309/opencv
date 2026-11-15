@@ -1,7 +1,19 @@
 export const clean = [
   {
+    path: "apps/api/src/paper/native-output/formatted-photos.ts",
+    text: 'const bounds = photoBounds(photo); const frame = `<wp:extent cx="${boundWidth}" cy="${boundHeight}"/>`',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-schema.ts",
+    text: 'photoBlockSpec; slot.dataset.paperWrapSlot = ""; style.textContent = `${scope} > .bn-block > ${text}{display:block}`',
+  },
+  {
     path: "packages/paper-crdt/src/native-layout-paste.ts",
     text: 'import DOMPurify from "dompurify"; const html = DOMPurify.sanitize(clipboard); new DOMParser().parseFromString(html, "text/html"); editor.tryParseHTMLToBlocks(html)',
+  },
+  {
+    path: "packages/paper-crdt/src/native-photo.ts",
+    text: 'import { layoutDocumentSchema } from "@workspace/domain/internal/paper-presentation"',
   },
   {
     path: "packages/paper-crdt/src/native-formatting-schema.ts",
@@ -90,12 +102,28 @@ export const clean = [
 ]
 export const mistakes = [
   {
+    path: "apps/api/src/paper/native-output/formatted-photos.ts",
+    text: 'const frame = `<wp:extent cx="${width}" cy="${height}"/>`',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-schema.ts",
+    text: 'photoBlockSpec; slot.dataset.paperWrapSlot = ""',
+  },
+  {
     path: "packages/paper-crdt/src/native-layout-paste.ts",
     text: 'const html = clipboard; new DOMParser().parseFromString(html, "text/html")',
   },
   {
     path: "packages/paper-crdt/src/native-layout-paste.ts",
     text: 'import DOMPurify from "dompurify"; const safe = DOMPurify.sanitize(clipboard); editor.tryParseHTMLToBlocks(clipboard)',
+  },
+  {
+    path: "packages/paper-crdt/src/index.ts",
+    text: 'export { commitLayoutPhotoEdit } from "./native-photo.js"',
+  },
+  {
+    path: "apps/web/src/features/paper/photos.ts",
+    text: 'import { mountPrivateLayout } from "@workspace/paper-crdt/native-photo-mount"',
   },
   {
     path: "packages/paper-crdt/src/native-formatting-schema.ts",

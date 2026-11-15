@@ -64,10 +64,16 @@ export {
 } from "./paper-doc/presentation-styles.js"
 export {
   privateLayoutSchema,
+  privatePhotoLayoutSchema,
+  layoutDocumentSchema,
+  photoLayoutTableSchema,
+  photoLayoutRowSchema,
+  photoLayoutCellSchema,
   layoutTableSchema,
 } from "./paper-doc/native-layout.js"
 export type {
   PrivateLayoutDocument,
+  LayoutDocument,
   LayoutTable,
   LayoutRow,
   LayoutCell,
@@ -78,3 +84,13 @@ export {
   layoutReceiptSchema,
 } from "./paper-doc/native-layout-edit.js"
 export type { LayoutReceipt } from "./paper-doc/native-layout-edit.js"
+
+export { layoutPhotoSchema, photoBounds } from "./paper-doc/native-photo.js"
+export type { LayoutPhoto } from "./paper-doc/native-photo.js"
+export {
+  prepareLayoutPhotoEdit,
+  reverseLayoutPhotoEdit,
+  layoutPhotoReceiptSchema,
+  layoutPhotoEditSchema,
+} from "./paper-doc/native-photo-edit.js"
+export type { LayoutPhotoReceipt } from "./paper-doc/native-photo-edit.js"

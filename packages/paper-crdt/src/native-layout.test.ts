@@ -388,7 +388,7 @@ describe("private rich tables on the canonical editor fragment", () => {
         case "profile":
           binding.doc
             .getMap<unknown>("paper")
-            .set("formattingProfile", "private-layout-2")
+            .set("formattingProfile", "private-layout-3")
           break
       }
       unchanged(binding, () => expect(() => readLayout(binding)).toThrow())

@@ -4,6 +4,7 @@ import {
   type BlockNoteEditor,
   type PartialBlock,
 } from "@blocknote/core"
+import { photoBlockSpec } from "./native-photo-render.js"
 import { nativeFormattingSchema } from "./native-formatting-schema.js"
 import { formattingStyles } from "./native-formatting-styles.js"
 
@@ -12,6 +13,16 @@ function frame(block: { id: string; type: string }) {
   const slot = document.createElement("div")
   dom.dataset.paperLayout = block.type
   dom.dataset.paperId = block.id
+  if (block.type === "paperFlow" || block.type === "paperCell") {
+    slot.dataset.paperWrapSlot = ""
+    const style = document.createElement("style")
+    const scope =
+      '[data-paper-wrap-slot]:has(> [data-paper-photo-placement="wrap"]) > [data-node-type="blockOuter"]'
+    const text =
+      '.bn-block-content:is([data-content-type="paragraph"],[data-content-type="heading"])'
+    style.textContent = `${scope}:has(> .bn-block > ${text}),${scope} > .bn-block:has(> ${text}),${scope} > .bn-block > ${text}{display:block}`
+    dom.append(style)
+  }
   if (block.type === "paperTable") {
     dom.style.width = "var(--paper-table-width)"
     dom.style.maxWidth = "100%"
@@ -26,8 +37,8 @@ function frame(block: { id: string; type: string }) {
     slot.style.boxSizing = "border-box"
     slot.style.minWidth = "0"
     slot.style.overflowWrap = "anywhere"
-    slot.style.padding = "8px"
-    slot.style.border = "1px solid var(--border)"
+    slot.style.padding = "6pt"
+    slot.style.boxShadow = "inset 0 0 0 1px var(--border)"
   }
   dom.append(slot)
   return { dom, slot }
@@ -40,6 +51,7 @@ const implementation = {
 export const nativeLayoutSchema = BlockNoteSchema.create({
   blockSpecs: {
     ...nativeFormattingSchema.blockSpecs,
+    paperPhoto: photoBlockSpec,
     paperFlow: createBlockSpec(
       {
         type: "paperFlow",
