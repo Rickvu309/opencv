@@ -12,6 +12,7 @@ import type { PaperId } from "@workspace/domain"
 
 import { queryKey, runContractCommand } from "@/lib/contract-client.ts"
 import { ApiError } from "@/lib/api-error.ts"
+import { fromBase64, toBase64 } from "@/lib/paper-sync-bytes.ts"
 import {
   openNativePaperSync,
   type NativeSessionOptions,

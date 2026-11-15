@@ -1,0 +1,10 @@
+{
+  "id": "paper-presentation",
+  "file": "scripts/paper-presentation.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-presentation.mjs",
+    "export": "detect"
+  },
+  "historic": null,
+  "reason": "New private formatting invariants: package boundaries, no public activation or fixture binding, one authoritative text store, property patches preserve anchors, and reads convert detached XML. Synthetic mistake/clean fixtures and the repository scan pass. No released introducing commit exists for this new source; historic proof is null. Literal AST checks do not prove alias, reflection, transitive activation or runtime fidelity. Ordinary accepted reconciliation remains an integration hazard."
+}
