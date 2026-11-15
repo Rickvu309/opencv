@@ -86,6 +86,15 @@ export const paperViewSchema = z
 
 export type PaperView = z.output<typeof paperViewSchema>
 
+export const paperSharedViewSchema = paperViewSchema
+  .pick({ id: true, name: true, kind: true, templateId: true, paper: true })
+  .extend({
+    paper: paperDocumentSchema.refine((paper) => paper.clashes.length === 0),
+  })
+  .strict()
+
+export type PaperSharedView = z.output<typeof paperSharedViewSchema>
+
 export const PAPER_COACH_WORD_PAGE_NOTE =
   "This is a Word page. It has no document body in this result. Read its text with paper_outline before describing, reviewing or changing it."
 
@@ -187,7 +196,7 @@ export const paperQueries = queryContract({
         writer: nativeWriterSchema.optional(),
       })
       .strict(),
-    output: paperViewSchema.omit({ isFavorite: true }).strict(),
+    output: paperSharedViewSchema,
   }),
   "file.get": queryEntry({
     input: z.object({ fileId: fileIdSchema }).strict(),

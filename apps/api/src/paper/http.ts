@@ -181,11 +181,13 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
   const routes = new Hono<{ Variables: SessionVariables }>()
   routes.route("/packages", createPaperPackageRoutes(auth, db))
 
+  routes.use("/shared/*", async (c, next) => {
+    c.header("cache-control", "no-store")
+    await next()
+  })
+
   routes.get("/shared/:token/photo", async (c) => {
-    return photoBytes(
-      await readSharedPhoto(c.req.param("token")),
-      "public, max-age=60"
-    )
+    return photoBytes(await readSharedPhoto(c.req.param("token")), "no-store")
   })
 
   routes.get("/shared/:token", async (c) => {

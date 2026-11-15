@@ -99,9 +99,23 @@ describe("CV photo bytes", () => {
       .token
     const publicPhoto = await app.request(`/api/paper/shared/${token}/photo`)
     expect(publicPhoto.status).toBe(200)
+    expect(publicPhoto.headers.get("cache-control")).toBe("no-store")
     expect(new Uint8Array(await publicPhoto.arrayBuffer())).toEqual(png)
     const missing = await app.request("/api/paper/shared/not-a-share/photo")
     expect(missing.status).toBe(404)
+    expect(missing.headers.get("cache-control")).toBe("no-store")
+
+    const stopped = await app.request("/api/commands/paper.unshare", {
+      method: "POST",
+      headers: authHeaders(owner.cookie),
+      body: JSON.stringify({ input: { docId } }),
+    })
+    expect(stopped.status).toBe(200)
+    for (const suffix of ["", "/photo"]) {
+      const revoked = await app.request(`/api/paper/shared/${token}${suffix}`)
+      expect(revoked.status).toBe(404)
+      expect(revoked.headers.get("cache-control")).toBe("no-store")
+    }
 
     const undone = await app.request("/api/commands/activity.undo", {
       method: "POST",
@@ -360,7 +374,7 @@ describe("CV photo bytes", () => {
     const token = ((await shared.json()) as { data: { token: string } }).data
       .token
     const publicPhoto = await app.request(`/api/paper/shared/${token}/photo`)
-    expectPhotoHeaders(publicPhoto, "image/png", "png", "public, max-age=60")
+    expectPhotoHeaders(publicPhoto, "image/png", "png", "no-store")
 
     await client.close()
   })

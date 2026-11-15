@@ -1,9 +1,11 @@
 import {
   ERROR_CODES,
   paperDocumentSchema,
+  paperSharedViewSchema,
   parseFileId,
   parsePaperId,
   type PaperDocument,
+  type PaperSharedView,
   type PaperView,
   type NativeWriter,
 } from "@workspace/domain"
@@ -58,4 +60,19 @@ export function toPaper(
     updatedAt: iso(row.updatedAt),
     isFavorite: row.isFavorite,
   }
+}
+
+export function toSharedPaper(
+  row: PaperRow,
+  writer?: NativeWriter
+): PaperSharedView {
+  const paper = readStoredPaper(row)
+  admitDocument(paper, writer)
+  return paperSharedViewSchema.parse({
+    id: row.id,
+    name: row.name,
+    kind: row.kind,
+    templateId: row.templateId,
+    paper: { ...paper, clashes: [] },
+  })
 }

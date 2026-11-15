@@ -1,0 +1,13 @@
+{
+  "id": "paper-shared-owner-projection",
+  "file": "scripts/paper-public-share.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-public-share.mjs",
+    "export": "detectSharedOwnerProjection"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "63944da863f0f83436305a5a93d9a23303ce8070",
+    "path": "apps/api/src/paper/store.ts"
+  }
+}
