@@ -1,15 +1,18 @@
-import { useCallback, useEffect, useReducer, useSyncExternalStore } from "react"
+import { useCallback, useEffect, useReducer, useState } from "react"
+import { createPortal } from "react-dom"
 import { useQuery } from "@tanstack/react-query"
 import { paperIdSchema } from "@workspace/domain"
 
+import { ArrowLeft, Download } from "lucide-react"
+
 import { Button, buttonVariants } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
 
 import {
   draftFromPage,
   forgetDraft,
   loadDraft,
   loadDraftBasis,
-  subscribeStoredDraft,
   type WritingDraft,
 } from "@/features/paper-page/canvas-edit.ts"
 import { pageWords } from "@/features/paper-page/canvas-save.ts"
@@ -52,30 +55,22 @@ function unsent(docId: string) {
   return pageWords(draft.blocks) !== basis.words
 }
 
-function savedRevision(docId: string) {
-  const draft = loadDraft(docId, localStorage)
-  const basis = loadDraftBasis(docId, localStorage)
-  if (!draft || !basis?.revision) return null
-  return pageWords(draft.blocks) === basis.words ? basis.revision : null
-}
-
 export const DOWNLOAD_WAITS_FOR_SAVE =
   "Download Word is ready once your words are saved."
 
-function subscribeStoredDraftOutsideRender(listener: () => void) {
-  return subscribeStoredDraft(() => queueMicrotask(listener))
-}
-
-function DownloadWord({ docId, owner }: { docId: string; owner: string }) {
-  const revision = useSyncExternalStore(
-    subscribeStoredDraftOutsideRender,
-    () => savedRevision(docId),
-    () => null
-  )
+function DownloadWord({
+  docId,
+  owner,
+  revision,
+}: {
+  docId: string
+  owner: string
+  revision: string | null
+}) {
   return (
     <div
-      data-slot="writing-download"
-      className="flex h-10 shrink-0 items-center justify-end gap-3 px-4"
+      data-slot="writing-document-export"
+      className="flex max-w-full shrink-0 flex-wrap items-center gap-3"
     >
       {revision === null ? (
         <HeldDownload docId={docId} reason={DOWNLOAD_WAITS_FOR_SAVE} />
@@ -94,17 +89,24 @@ function DownloadWord({ docId, owner }: { docId: string; owner: string }) {
 function HeldDownload({
   docId,
   reason,
+  unavailable = false,
 }: {
   docId: string
   reason: string | null
+  unavailable?: boolean
 }) {
   const described = `${docId}-download`
   return (
     <>
       {reason ? (
-        <p className="text-sm text-muted-foreground" id={described}>
+        <p className="sr-only" id={described}>
           {reason}
         </p>
+      ) : null}
+      {unavailable ? (
+        <span className="text-xs text-muted-foreground" role="alert">
+          Download unavailable
+        </span>
       ) : null}
       <Button
         type="button"
@@ -112,8 +114,11 @@ function HeldDownload({
         disabled
         aria-describedby={reason ? described : undefined}
         className="h-11 md:h-8"
+        aria-label="Download Word"
       >
-        Download Word
+        <Download aria-hidden="true" />
+        <span className="hidden sm:inline">Download Word</span>
+        <span className="sm:hidden">Word</span>
       </Button>
     </>
   )
@@ -138,6 +143,7 @@ function SavedDownload({
       <HeldDownload
         docId={docId}
         reason={download.error ? "Could not prepare this Word download." : null}
+        unavailable={download.isError}
       />
     )
   }
@@ -145,27 +151,97 @@ function SavedDownload({
     <a
       href={`${apiBaseUrl}${download.data.downloadPath}`}
       download={download.data.name}
-      className={buttonVariants({
-        variant: "ghost",
-        className: "h-11 md:h-8",
-      })}
+      aria-label="Download Word"
+      className={cn(buttonVariants({ variant: "outline" }), "h-11 md:h-8")}
     >
-      Download Word
+      <Download aria-hidden="true" />
+      <span className="hidden sm:inline">Download Word</span>
+      <span className="sm:hidden">Word</span>
     </a>
+  )
+}
+
+function DocumentHeader({
+  docId,
+  owner,
+  title,
+  onBack,
+  note,
+  revision,
+}: {
+  docId: string
+  owner: string
+  title: string
+  onBack?: () => void
+  note: string
+  revision: string | null
+}) {
+  return (
+    <header
+      data-slot="writing-document-header"
+      className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b border-border px-4 py-2"
+    >
+      <div className="flex min-w-0 flex-[1_1_8rem] items-center gap-2">
+        <a
+          href="/paper"
+          aria-label="Back to Paper"
+          onClick={
+            onBack
+              ? (event) => {
+                  event.preventDefault()
+                  onBack()
+                }
+              : undefined
+          }
+          className={cn(
+            buttonVariants({ variant: "ghost" }),
+            "size-11 p-0 md:h-8 md:w-auto md:px-2"
+          )}
+        >
+          <ArrowLeft aria-hidden="true" />
+          <span className="hidden md:inline">Paper</span>
+        </a>
+        <h1 className="min-w-0 truncate text-sm font-medium" title={title}>
+          {title}
+        </h1>
+      </div>
+      <div className="flex max-w-full flex-wrap items-center gap-3">
+        <p
+          className="writing-note writing-header-status"
+          role="status"
+          title={note}
+        >
+          {note === "Saved" ? (
+            "Saved"
+          ) : (
+            <>
+              <span aria-hidden="true">Not saved</span>
+              <span className="sr-only">{note || "Checking saved words."}</span>
+            </>
+          )}
+        </p>
+        <DownloadWord docId={docId} owner={owner} revision={revision} />
+      </div>
+    </header>
   )
 }
 
 export function WritingPage({
   docId,
+  title = "Untitled document",
+  onBack,
   seed = null,
   seedRevision = null,
 }: {
   docId: string
+  title?: string
+  onBack?: () => void
   seed?: WritingDraft | null
   seedRevision?: string | null
 }) {
   const session = authClient.useSession()
   const owner = session.data?.user.id ?? ""
+  const [header, setHeader] = useState<HTMLDivElement | null>(null)
   const [shown, dispatch] = useReducer(pageReducer, {
     generation: 0,
     seed: undefined,
@@ -214,12 +290,27 @@ export function WritingPage({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <DownloadWord docId={docId} owner={owner} />
+      <div ref={setHeader} />
       <WritingProposalCard docId={docId} onApplied={applied} />
       <div className="min-h-0 flex-1">
         <WritingCanvas
           key={`${docId}:${shown.generation}`}
           docId={docId}
+          renderHeader={(note, revision) =>
+            header
+              ? createPortal(
+                  <DocumentHeader
+                    docId={docId}
+                    owner={owner}
+                    title={title}
+                    onBack={onBack}
+                    note={note}
+                    revision={revision}
+                  />,
+                  header
+                )
+              : null
+          }
           seed={shown.seed === undefined ? seed : shown.seed}
           seedRevision={
             shown.revision === undefined ? seedRevision : shown.revision

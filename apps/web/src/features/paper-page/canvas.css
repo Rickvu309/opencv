@@ -145,6 +145,10 @@
   overflow-wrap: break-word;
 }
 
+.writing-header-status {
+  padding: 0;
+}
+
 .writing-notice {
   animation: writing-notice-in var(--duration-micro) var(--ease-micro);
 }
