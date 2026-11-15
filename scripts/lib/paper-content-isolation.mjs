@@ -155,7 +155,7 @@ function importedCalls(tree, module, name) {
 function editorWriteChecks(tree, check) {
   const writes = importedCalls(tree, "y-prosemirror", "updateYFragment")
   writes.add("updateYFragment")
-  const admissions = importedCalls(tree, "./ydoc.js", "admitWriteTarget")
+  const admissions = importedCalls(tree, "./ydoc.js", "admitEditorWriteTarget")
   const exported = new Set()
   for (const statement of tree.statements) {
     if (

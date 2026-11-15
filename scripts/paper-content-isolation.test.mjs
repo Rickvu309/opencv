@@ -135,9 +135,9 @@ test("Paper mutations detach cached heads and publish only after the outer commi
 
 const editorWriteClean = `
 import { updateYFragment } from "y-prosemirror"
-import { admitWriteTarget, headlessEditor } from "./ydoc.js"
+import { admitEditorWriteTarget, headlessEditor } from "./ydoc.js"
 export function writeAsEditor(yDoc, target, origin) {
-  target = admitWriteTarget(yDoc, target)
+  target = admitEditorWriteTarget(yDoc, target)
   const node = blocksToNode(headlessEditor(target.version), toEditorBlocks(target))
   const binding = bindings.get(yDoc) ?? {mapping: new Map(), isOMark: new Map()}
   bindings.set(yDoc, binding)
@@ -147,78 +147,82 @@ export function writeAsEditor(yDoc, target, origin) {
 
 const editorWriteMistakes = [
   [
+    "canonical admission rejects repairable legacy editor shapes",
+    (source) => source.replaceAll("admitEditorWriteTarget", "admitWriteTarget"),
+  ],
+  [
     "missing call",
     (source) =>
-      source.replace("  target = admitWriteTarget(yDoc, target)\n", ""),
+      source.replace("  target = admitEditorWriteTarget(yDoc, target)\n", ""),
   ],
   [
     "after mutation",
     (source) =>
       source
-        .replace("  target = admitWriteTarget(yDoc, target)\n", "")
+        .replace("  target = admitEditorWriteTarget(yDoc, target)\n", "")
         .replace(
           "), origin)",
-          "), origin)\n  target = admitWriteTarget(yDoc, target)"
+          "), origin)\n  target = admitEditorWriteTarget(yDoc, target)"
         ),
   ],
   [
     "after conversion",
     (source) =>
       source
-        .replace("  target = admitWriteTarget(yDoc, target)\n", "")
+        .replace("  target = admitEditorWriteTarget(yDoc, target)\n", "")
         .replace(
           "  const binding =",
-          "  target = admitWriteTarget(yDoc, target)\n  const binding ="
+          "  target = admitEditorWriteTarget(yDoc, target)\n  const binding ="
         ),
   ],
   [
     "after binding mutation",
     (source) =>
       source
-        .replace("  target = admitWriteTarget(yDoc, target)\n", "")
+        .replace("  target = admitEditorWriteTarget(yDoc, target)\n", "")
         .replace(
           "  yDoc.transact",
-          "  target = admitWriteTarget(yDoc, target)\n  yDoc.transact"
+          "  target = admitEditorWriteTarget(yDoc, target)\n  yDoc.transact"
         ),
   ],
   [
     "conditional call",
     (source) =>
       source.replace(
-        "target = admitWriteTarget(yDoc, target)",
-        "if (enabled) target = admitWriteTarget(yDoc, target)"
+        "target = admitEditorWriteTarget(yDoc, target)",
+        "if (enabled) target = admitEditorWriteTarget(yDoc, target)"
       ),
   ],
   [
     "deferred call",
     (source) =>
       source.replace(
-        "target = admitWriteTarget(yDoc, target)",
-        "const admit = () => admitWriteTarget(yDoc, target)"
+        "target = admitEditorWriteTarget(yDoc, target)",
+        "const admit = () => admitEditorWriteTarget(yDoc, target)"
       ),
   ],
   [
     "wrong document",
     (source) =>
       source.replace(
-        "admitWriteTarget(yDoc, target)",
-        "admitWriteTarget(otherDoc, target)"
+        "admitEditorWriteTarget(yDoc, target)",
+        "admitEditorWriteTarget(otherDoc, target)"
       ),
   ],
   [
     "wrong target",
     (source) =>
       source.replace(
-        "admitWriteTarget(yDoc, target)",
-        "admitWriteTarget(yDoc, otherTarget)"
+        "admitEditorWriteTarget(yDoc, target)",
+        "admitEditorWriteTarget(yDoc, otherTarget)"
       ),
   ],
   [
     "discarded parse",
     (source) =>
       source.replace(
-        "target = admitWriteTarget(yDoc, target)",
-        "admitWriteTarget(yDoc, target)"
+        "target = admitEditorWriteTarget(yDoc, target)",
+        "admitEditorWriteTarget(yDoc, target)"
       ),
   ],
   [
@@ -229,8 +233,8 @@ const editorWriteMistakes = [
     "type-only helper",
     (source) =>
       source.replace(
-        "import { admitWriteTarget, headlessEditor }",
-        "import type { admitWriteTarget, headlessEditor }"
+        "import { admitEditorWriteTarget, headlessEditor }",
+        "import type { admitEditorWriteTarget, headlessEditor }"
       ),
   ],
 ]
@@ -255,8 +259,8 @@ test("exported direct CRDT writers admit parsed identity before conversion, bind
   assert.deepEqual(
     detect(
       editorWriteClean
-        .replace("admitWriteTarget,", "admitWriteTarget as admit,")
-        .replace("target = admitWriteTarget(", "target = admit("),
+        .replace("admitEditorWriteTarget,", "admitEditorWriteTarget as admit,")
+        .replace("target = admitEditorWriteTarget(", "target = admit("),
       "editor-write.ts"
     ),
     []

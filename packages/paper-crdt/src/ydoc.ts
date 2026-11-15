@@ -63,6 +63,15 @@ export function admitWriteTarget(yDoc: Y.Doc, target: unknown): PaperDocument {
   return parsed
 }
 
+export function admitEditorWriteTarget(
+  yDoc: Y.Doc,
+  target: PaperDocument
+): PaperDocument {
+  if (target.version !== 3) return admitWriteTarget(yDoc, target)
+  admitWriteTarget(yDoc, { ...target, blocks: [] })
+  return target
+}
+
 function diffInto(
   yDoc: Y.Doc,
   target: PaperDocument,

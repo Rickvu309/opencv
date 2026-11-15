@@ -1,8 +1,10 @@
 import {
   canonicalPaper,
+  legacyPaperDocumentSchema,
   nativePaperDocumentSchema,
   nativeProvenance,
   paperDocumentSchema,
+  type ListItem,
 } from "@workspace/domain"
 import * as Y from "yjs"
 import { describe, expect, it } from "vitest"
@@ -11,7 +13,13 @@ import { openPaperClient } from "./client.js"
 import { writeAsEditor } from "./editor-write.js"
 import { FRAGMENT, META } from "./names.js"
 import { loadYDoc } from "./sync.js"
-import { materialize, seedYDoc, writeDocument, writeRepair } from "./ydoc.js"
+import {
+  materialize,
+  materializeCandidate,
+  seedYDoc,
+  writeDocument,
+  writeRepair,
+} from "./ydoc.js"
 
 const document = (text = "Việt Nam é 😀") =>
   nativePaperDocumentSchema.parse({
@@ -37,6 +45,52 @@ const document = (text = "Việt Nam é 😀") =>
   })
 
 const empty = () => Y.encodeStateAsUpdate(new Y.Doc())
+
+it("allows legacy editor list repair without admitting invalid canonical or native targets", () => {
+  const legacy = legacyPaperDocumentSchema.parse({
+    version: 3,
+    kind: "letter",
+    blocks: [],
+    clashes: [],
+  })
+  const item = (id: string, children: ListItem[] = []): ListItem => {
+    const parsed = legacyPaperDocumentSchema.parse({
+      ...legacy,
+      blocks: [{ id, type: "bullet", content: [{ text: id }], children: [] }],
+    })
+    const block = parsed.blocks[0]
+    if (!block || block.type !== "bullet") throw new Error("Missing list")
+    return { ...block, children }
+  }
+  const target = {
+    ...legacy,
+    blocks: [item("one", [item("two", [item("three", [item("four")])])])],
+  }
+  expect(paperDocumentSchema.safeParse(target).success).toBe(false)
+  const doc = loadYDoc(seedYDoc(legacy), [])
+  const before = Y.encodeStateAsUpdate(doc)
+  expect(() => writeDocument(doc, target, "canonical")).toThrow()
+  expect(Y.encodeStateAsUpdate(doc)).toEqual(before)
+  const native = loadYDoc(seedYDoc(document()), [])
+  const nativeBefore = Y.encodeStateAsUpdate(native)
+  expect(() =>
+    writeAsEditor(
+      native,
+      { ...target, version: 4, schemaRevision: 1 },
+      "person"
+    )
+  ).toThrow()
+  expect(Y.encodeStateAsUpdate(native)).toEqual(nativeBefore)
+  writeAsEditor(doc, target, "person")
+  const candidate = materializeCandidate(doc)
+  expect(candidate).toMatchObject({ ok: true })
+  if (!candidate.ok) throw new Error(candidate.reason)
+  expect(legacyPaperDocumentSchema.safeParse(candidate.candidate).success).toBe(
+    false
+  )
+  for (const word of ["one", "two", "three", "four"])
+    expect(JSON.stringify(candidate.candidate)).toContain(`"text":"${word}"`)
+})
 
 function recovered(doc: Y.Doc) {
   const result = materialize(doc)

@@ -5,7 +5,7 @@ import * as Y from "yjs"
 
 import { toEditorBlocks } from "./mapping.js"
 import { FRAGMENT } from "./names.js"
-import { admitWriteTarget, headlessEditor } from "./ydoc.js"
+import { admitEditorWriteTarget, headlessEditor } from "./ydoc.js"
 
 type Binding = {
   mapping: Map<unknown, unknown>
@@ -19,7 +19,7 @@ export function writeAsEditor(
   target: PaperDocument,
   origin: string
 ): void {
-  target = admitWriteTarget(yDoc, target)
+  target = admitEditorWriteTarget(yDoc, target)
   const node = _blocksToProsemirrorNode(
     headlessEditor(target.version),
     toEditorBlocks(target)
