@@ -1,4 +1,4 @@
-import { NATIVE_WRITER } from "@workspace/domain"
+import { NATIVE_WRITER, type CoachStreamPart } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { expect, it } from "vitest"
 
@@ -42,7 +42,8 @@ it("keeps the native basis through the fake worker context and proposed edit", a
       registry
     )
     const steps: ModelStep[] = []
-    for await (const _part of runtime({
+    const parts: CoachStreamPart[] = []
+    for await (const part of runtime({
       messages: [],
       completedSteps: 0,
       signal: new AbortController().signal,
@@ -55,7 +56,9 @@ it("keeps the native basis through the fake worker context and proposed edit", a
         runIntent: async () => "{}",
       },
     })) {
+      parts.push(part)
     }
+    expect(parts.length).toBeGreaterThan(0)
     expect(steps[0]?.intents[0]).toMatchObject({
       name: "paper.edit",
       input: {

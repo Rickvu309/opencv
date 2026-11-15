@@ -24,13 +24,13 @@ function createHeadless() {
   return BlockNoteEditor.create({ schema: nativePaperSchema })
 }
 
-function editor(_version: 3 | 4 = 3) {
+function editor() {
   headless ??= createHeadless()
   return headless
 }
 
-export function headlessEditor(version: 3 | 4 = 3) {
-  return editor(version)
+export function headlessEditor() {
+  return editor()
 }
 
 function kindOf(yDoc: Y.Doc): PaperDocument["kind"] | null {
@@ -55,7 +55,7 @@ function diffInto(
   const fragment = yDoc.getXmlFragment(FRAGMENT)
   const root = fragment.length === 1 ? groupOf(fragment) : null
   if (root) alignSkillItems(root, blocks)
-  const node = _blocksToProsemirrorNode(editor(target.version), blocks)
+  const node = _blocksToProsemirrorNode(editor(), blocks)
   yDoc.transact(() => writeFragment(yDoc, fragment, node, moved), origin)
 }
 
@@ -75,7 +75,7 @@ export function seedYDoc(document: PaperDocument): Uint8Array {
 }
 
 function nativeStructureRefusal(fragment: Y.XmlFragment): string | null {
-  const schema = editor(4).pmSchema
+  const schema = editor().pmSchema
   const marks = new Set(["bold", "italic", "underline", "link"])
   const nodes = new Set([
     "blockGroup",
@@ -156,7 +156,7 @@ export function materialize(source: Uint8Array | Y.Doc): PaperResult {
   if (unsupported) return { ok: false, reason: unsupported }
   return fromEditorBlocks(
     kind,
-    yXmlFragmentToBlocks(editor(version), fragment),
+    yXmlFragmentToBlocks(editor(), fragment),
     version
   )
 }
@@ -207,7 +207,7 @@ export function materializeCandidate(yDoc: Y.Doc): Candidate {
     return { ok: false, reason: "Unsupported document schema" }
   const unsupported = version === 4 ? nativeStructureRefusal(fragment) : null
   if (unsupported) return { ok: false, reason: unsupported }
-  const read = yXmlFragmentToBlocks(editor(version), fragment)
+  const read = yXmlFragmentToBlocks(editor(), fragment)
   const fixed = repairBlocks(kind, read as never)
   try {
     return {
