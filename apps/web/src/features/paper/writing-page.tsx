@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useState } from "react"
+import { useCallback, useEffect, useReducer } from "react"
 import { createPortal } from "react-dom"
 import { useQuery } from "@tanstack/react-query"
 import { paperIdSchema } from "@workspace/domain"
@@ -7,6 +7,10 @@ import { ArrowLeft, Download } from "lucide-react"
 
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
+import {
+  PageHeader,
+  PageHeaderTitle,
+} from "@workspace/ui/components/page-header"
 
 import {
   draftFromPage,
@@ -177,10 +181,7 @@ function DocumentHeader({
   revision: string | null
 }) {
   return (
-    <header
-      data-slot="writing-document-header"
-      className="flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-b border-border px-4 py-2"
-    >
+    <PageHeader data-slot="writing-document-header">
       <div className="flex min-w-0 flex-[1_1_8rem] items-center gap-2">
         <a
           href="/paper"
@@ -201,9 +202,12 @@ function DocumentHeader({
           <ArrowLeft aria-hidden="true" />
           <span className="hidden md:inline">Paper</span>
         </a>
-        <h1 className="min-w-0 truncate text-sm font-medium" title={title}>
+        <PageHeaderTitle
+          className="min-w-0 text-sm leading-5 max-md:min-w-0"
+          title={title}
+        >
           {title}
-        </h1>
+        </PageHeaderTitle>
       </div>
       <div className="flex max-w-full flex-wrap items-center gap-3">
         <p
@@ -222,7 +226,7 @@ function DocumentHeader({
         </p>
         <DownloadWord docId={docId} owner={owner} revision={revision} />
       </div>
-    </header>
+    </PageHeader>
   )
 }
 
@@ -241,7 +245,16 @@ export function WritingPage({
 }) {
   const session = authClient.useSession()
   const owner = session.data?.user.id ?? ""
-  const [header, setHeader] = useState<HTMLDivElement | null>(null)
+  const [header, mountHeader] = useReducer(
+    (
+      _: HTMLDivElement | null,
+      event: { type: "mount"; node: HTMLDivElement | null }
+    ) => event.node,
+    null
+  )
+  const setHeader = useCallback((node: HTMLDivElement | null) => {
+    mountHeader({ type: "mount", node })
+  }, [])
   const [shown, dispatch] = useReducer(pageReducer, {
     generation: 0,
     seed: undefined,
