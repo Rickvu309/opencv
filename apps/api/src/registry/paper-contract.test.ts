@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto"
 
 import {
+  NATIVE_WRITER,
   catalog,
   commands,
   paperContract,
@@ -215,6 +216,32 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
         actor: person,
       })
       await read("paper.keywordGap", { docId: letter, jobId: idOf(job.output) })
+
+      const legacySync = paperContract["paper.sync"].output.parse(
+        await run("paper.sync", {
+          docId: letter,
+          epoch: 0,
+          update: "",
+          stateVector: "",
+        })
+      )
+      const native = paperContract["paper.migrateNative"].output.parse(
+        await run("paper.migrateNative", {
+          docId: letter,
+          epoch: legacySync.epoch,
+          basedOn: legacySync.revision,
+          writer: NATIVE_WRITER,
+        })
+      )
+      if (!native.nativeBasis) throw new Error("Missing native basis")
+      await run("paper.nativeSync", {
+        docId: letter,
+        epoch: 0,
+        update: "",
+        stateVector: "",
+        writer: NATIVE_WRITER,
+        provenance: native.nativeBasis.provenance,
+      })
 
       await run("paper.unshare", { docId: cv })
       await run("paper.delete", { docId: copy })

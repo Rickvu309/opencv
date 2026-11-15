@@ -228,7 +228,7 @@ export const nativePaperDocumentSchema = z
     )
   })
 
-export const paperDocumentSchema = z.union([
+export const paperDocumentSchema = z.discriminatedUnion("version", [
   legacyPaperDocumentSchema,
   nativePaperDocumentSchema,
 ])

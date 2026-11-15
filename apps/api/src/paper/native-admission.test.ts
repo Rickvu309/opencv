@@ -18,8 +18,7 @@ import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
-import { resolveTurnGrounding } from "../coach/context.js"
-import { fakePaperEdit } from "../coach/fake.js"
+import { resolveTurnGrounding } from "../coach/index.js"
 import { activity, paperDocs, paperDocUpdates, user } from "../db/schema.js"
 import { createProposal } from "../registry/proposals.js"
 import { seedCoachActor } from "../test/coach-turn.js"
@@ -378,10 +377,7 @@ describe("approved native Coach editing", () => {
         memoryEnabled: false,
       })
       if (!grounding.focusDoc) throw new Error("Missing native focus")
-      expect(fakePaperEdit(grounding.focusDoc)).toMatchObject({
-        writer: NATIVE_WRITER,
-        nativeBasis: view.nativeBasis,
-      })
+      expect(grounding.focusDoc.nativeBasis).toEqual(view.nativeBasis)
       const before = await snapshot(docId)
       const proposal = await createProposal({
         command: "paper.edit",

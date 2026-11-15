@@ -1,4 +1,4 @@
-import { ERROR_CODES, personActor } from "@workspace/domain"
+import { ERROR_CODES, NATIVE_WRITER, personActor } from "@workspace/domain"
 import type { ZodType } from "zod"
 import { describe, expect, it } from "vitest"
 
@@ -154,7 +154,23 @@ describe("every command runs in a transaction unless it declares none", () => {
           const input =
             name === "coach.start"
               ? { chatId: UUID, startKey: UUID, text: "Hello Coach" }
-              : sampleInput(schema)
+              : name === "paper.nativeSync"
+                ? {
+                    docId: UUID,
+                    epoch: 0,
+                    update: "",
+                    stateVector: "",
+                    writer: NATIVE_WRITER,
+                    provenance: {
+                      documentVersion: 4,
+                      schemaRevision: 1,
+                      writerProtocol: 1,
+                      requiredCapabilities: ["structured-prose", "underline"],
+                    },
+                  }
+                : name === "paper.migrateNative"
+                  ? { docId: UUID, epoch: 1, basedOn: 0, writer: NATIVE_WRITER }
+                  : sampleInput(schema)
           const parsed = schema.safeParse(input)
           if (!parsed.success) {
             throw new Error(`${name} rejected the sample input`)
