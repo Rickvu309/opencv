@@ -116,3 +116,26 @@ export {
   sameNativeProvenance,
 } from "./native.js"
 export { retainUnderline } from "./merge-text.js"
+
+export { cvSlots, cvFieldSchema, cvRichTextSchema } from "./cv-fields.js"
+export type {
+  CvField,
+  CvFieldKey,
+  CvFieldTarget,
+  CvFieldRange,
+} from "./cv-fields.js"
+export { nativeCvDocumentSchema, cvBodySchema, cvOwners } from "./native-cv.js"
+export type {
+  NativeCvDocument,
+  CvOwner,
+  CvOwnerType,
+  CvBody,
+} from "./native-cv.js"
+export {
+  resolveCvField,
+  replaceCvFieldRange,
+  formatCvFieldRange,
+} from "./cv-field-edits.js"
+export type { CvFieldEdit, CvFieldMarks } from "./cv-field-edits.js"
+export { projectCvDocument } from "./cv-projection.js"
+export type { CvProjection } from "./cv-projection.js"
