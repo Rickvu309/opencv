@@ -380,7 +380,7 @@ function inserted(
   if (blocked) return blocked
   if (entry.disposition.kind !== "line") return unsafe()
   const line = entry.disposition.line
-  const source = runsOf(line)[0]
+  const source = runsOf(line).at(-1)
   const added = lineWith("<w:p>", line.props, [
     source ? rebuiltRun(source, step.text) : plainRun(step.text),
   ])

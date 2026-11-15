@@ -22,7 +22,11 @@ import {
   markedLines,
   unsavedBar,
 } from "@/features/paper-page/canvas-unsaved.ts"
-import { screenLooks } from "@/features/paper-page/canvas-look.ts"
+import {
+  drawnSegments,
+  screenLooks,
+  type BlockLook,
+} from "@/features/paper-page/canvas-look.ts"
 import { diffParagraphs } from "@/features/paper-page/page-diff.ts"
 import {
   Failure,
@@ -246,8 +250,29 @@ function oracleDiscards(state: CanvasState, saved: Line[]) {
   return lines + removed
 }
 
-export function lookKey(look: ParagraphLook | undefined) {
-  return JSON.stringify([look?.form ?? null, look?.align ?? null])
+export function lookKey(
+  look: ParagraphLook | BlockLook | undefined,
+  text = "",
+  caret: number | null = null,
+  before = text
+) {
+  const marks =
+    look && "marks" in look
+      ? (look.marks ?? [])
+      : drawnSegments(
+          look ? { text: before, look } : undefined,
+          text,
+          caret
+        ).flatMap((segment) =>
+          Array.from({ length: segment.text.length }, () => segment.marks)
+        )
+  return JSON.stringify([
+    look?.form ?? null,
+    look?.align ?? null,
+    marks.flatMap((mark, index) =>
+      mark.length > 0 ? [[index, [...mark].sort()]] : []
+    ),
+  ])
 }
 
 export const lookTrail: { text: string; look: string }[][] = []
@@ -263,7 +288,16 @@ function checkLooks(
     state.looks,
     state.saved?.blocks
   )
-  const lookOn = (id: string) => lookKey(shown.get(id)?.look)
+  const lookOn = (id: string) => {
+    const block = state.present.blocks.find((item) => item.id === id)
+    const entry = shown.get(id)
+    return lookKey(
+      entry?.look,
+      block?.text,
+      state.present.caret?.blockId === id ? state.present.caret.offset : null,
+      entry?.text
+    )
+  }
   lookTrail.push(
     state.present.blocks.map((block) => ({
       text: block.text,
@@ -279,9 +313,9 @@ function checkLooks(
     const line = basisLines.find((item) => item.handle === block.id)
     if (!line || line.text !== block.text || marked.has(block.id)) continue
     if (gone(block.id)) continue
-    if (lookOn(block.id) !== lookKey(line.look))
+    if (lookOn(block.id) !== lookKey(line.look, line.text))
       fail(
-        `I5 saved look: "${block.text}" shows ${lookOn(block.id)} but the server holds ${lookKey(line.look)} (${label})`
+        `I5 saved look: "${block.text}" shows ${lookOn(block.id)} but the server holds ${lookKey(line.look, line.text)} (${label})`
       )
   }
   if (state.basis.revision !== world.head()) return
@@ -303,7 +337,7 @@ function checkLooks(
     count("I5 new line checked")
   state.present.blocks.forEach((block, index) => {
     if (gone(block.id)) return
-    const look = lookKey(after[index]?.look)
+    const look = lookKey(after[index]?.look, after[index]?.text)
     if (lookOn(block.id) !== look)
       fail(
         `I5 saved look: "${block.text}" shows ${lookOn(block.id)} but its save lands as ${look} (${label})`

@@ -34,8 +34,7 @@ export function lookOf(
   let at = 0
   for (const piece of pieces) {
     const to = at + piece.text.length
-    if (piece.marks && piece.text.length > 0)
-      spans.push({ from: at, to, marks: piece.marks })
+    if (piece.marks?.length) spans.push({ from: at, to, marks: piece.marks })
     at = to
   }
   if (!form && !align && spans.length === 0) return undefined
@@ -81,8 +80,17 @@ function paragraphLook(looks: LookBook, id: string): BlockLook | undefined {
       : (looks.get(`${baseOf(id)}#0`) ?? looks.get(id))
   const form = entry?.look.form
   const align = entry?.look.align
-  if (!form && !align) return undefined
-  return { ...(form ? { form } : {}), ...(align ? { align } : {}) }
+  const last = entry?.look.spans?.findLast(
+    (span) =>
+      span.from <= Math.max(0, entry.text.length - 1) &&
+      span.to >= entry.text.length
+  )
+  if (!form && !align && !last) return undefined
+  return {
+    ...(form ? { form } : {}),
+    ...(align ? { align } : {}),
+    ...(last ? { spans: [{ from: 0, to: 0, marks: last.marks }] } : {}),
+  }
 }
 
 function baseOf(id: string) {
@@ -123,7 +131,20 @@ export function screenLooks(
       continue
     }
     next ??= new Map(looks)
-    next.set(block.id, { text: block.text, look: carried })
+    next.set(block.id, {
+      text: block.text,
+      look: {
+        ...carried,
+        ...(carried.spans
+          ? {
+              spans: carried.spans.map((span) => ({
+                ...span,
+                to: block.text.length,
+              })),
+            }
+          : {}),
+      },
+    })
   }
   return next ?? looks
 }
@@ -196,7 +217,9 @@ function carriedMarks(
       ? (marks[head - 1] ?? [])
       : tail > 0
         ? (marks[before.length - tail] ?? [])
-        : []
+        : before.length === 0
+          ? (entry.look.spans?.at(-1)?.marks ?? [])
+          : []
   return Array.from(text, (_, index) => {
     if (index < head) return marks[index] ?? []
     if (index >= text.length - tail)

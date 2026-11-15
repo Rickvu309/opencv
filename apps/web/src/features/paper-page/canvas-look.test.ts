@@ -106,10 +106,81 @@ describe("the page keeps the look of an imported line", () => {
     ])
   })
 
+  it.each(["bold", "italic", "underline"] as const)(
+    "carries trailing %s onto a new line before and after an empty save",
+    (mark) => {
+      const looks: LookBook = new Map([
+        [
+          LEAD,
+          {
+            text: "Lead tail",
+            look: { spans: [{ from: 4, to: 9, marks: [mark] }] },
+          },
+        ],
+      ])
+      const shown = screenLooks(
+        [
+          { id: LEAD, text: "Lead tail" },
+          { id: "p1", text: "Next" },
+        ],
+        looks,
+        [{ id: LEAD }]
+      )
+      expect(drawnSegments(shown.get("p1"), "Next", 4)).toEqual([
+        { text: "Next", marks: [mark] },
+      ])
+      const blank = lookOf(
+        [{ text: "", editable: true, marks: [mark] }],
+        undefined,
+        undefined
+      )
+      expect(blank).toBeDefined()
+      expect(drawnSegments({ text: "", look: blank ?? {} }, "Next", 4)).toEqual(
+        [{ text: "Next", marks: [mark] }]
+      )
+    }
+  )
+
+  it("leaves a new line plain after a bold first run and a plain last run", () => {
+    const looks: LookBook = new Map([
+      [
+        LEAD,
+        {
+          text: "Lead tail",
+          look: { spans: [{ from: 0, to: 4, marks: ["bold"] }] },
+        },
+      ],
+    ])
+    const shown = screenLooks(
+      [
+        { id: LEAD, text: "Lead tail" },
+        { id: "p1", text: "Next" },
+      ],
+      looks,
+      [{ id: LEAD }]
+    )
+    expect(drawnSegments(shown.get("p1"), "Next", 4)).toEqual([
+      { text: "Next", marks: [] },
+    ])
+  })
+
   it("leaves a plain line without a look", () => {
     expect(
       lookOf([{ text: "plain", editable: true }], undefined, undefined)
     ).toBeUndefined()
+  })
+
+  it("keeps a full replacement plain when no surrounding text remains", () => {
+    expect(
+      drawnSegments(
+        {
+          text: "Lead tail",
+          look: { spans: [{ from: 0, to: 4, marks: ["bold"] }] },
+        },
+        "Next",
+        4
+      )
+    ).toEqual([{ text: "Next", marks: [] }])
   })
 
   it("sends the same batch for an edit in a bold-and-plain line as a plain page does", () => {
@@ -273,7 +344,7 @@ describe("the look the page draws for a line the server does not hold yet", () =
     return blocks.map((block) => looks.get(block.id)?.look ?? null)
   }
 
-  it("takes the paragraph look of the saved line before it, without its marks", () => {
+  it("takes the paragraph look and trailing marks of the saved line before it", () => {
     const marked: LookBook = new Map([
       [
         NAME,
@@ -298,8 +369,8 @@ describe("the look the page draws for a line the server does not hold yet", () =
       )
     ).toEqual([
       { align: "center", spans: [{ from: 0, to: 4, marks: ["bold"] }] },
-      { align: "center" },
-      { align: "center" },
+      { align: "center", spans: [{ from: 0, to: 6, marks: ["bold"] }] },
+      { align: "center", spans: [{ from: 0, to: 5, marks: ["bold"] }] },
     ])
   })
 
