@@ -438,3 +438,11 @@ for (const [path, text] of roundOneClean) {
   if (!clean.some((fixture) => fixture.path === path))
     clean.push({ path, text })
 }
+mistakes.push({
+  path: "packages/domain/src/paper-doc/paragraph-styles.ts",
+  text: 'return styleIdSchema.parse(style ?? "normal")',
+})
+clean.push({
+  path: "packages/domain/src/paper-doc/paragraph-styles.ts",
+  text: "return style == null ? undefined : styleIdSchema.parse(style)",
+})

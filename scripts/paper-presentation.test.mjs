@@ -102,3 +102,21 @@ test("round-one guards reject the reviewed head and accept the repaired sources"
     )
   }
 })
+
+test("unstyled paragraph defaults survive semantic heading resolution", () => {
+  const file = "packages/domain/src/paper-doc/paragraph-styles.ts"
+  const original = execFileSync(
+    "git",
+    ["show", "27680a33bfa52c3b2529e851047f6d9a354efca1:" + file],
+    { cwd: root, encoding: "utf8" }
+  )
+  assert.ok(
+    detect(original, file).some((hit) =>
+      hit.includes("document formatting defaults")
+    )
+  )
+  assert.deepEqual(
+    detect(readFileSync(path.join(root, file), "utf8"), file),
+    []
+  )
+})

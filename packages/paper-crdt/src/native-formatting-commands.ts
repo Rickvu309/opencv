@@ -222,7 +222,7 @@ export function richEditorCommands(
             ? block.attrs.paragraphStyle
             : undefined,
           block.attrs.level
-        )
+        ) ?? "normal"
       const style = blocks[0] ? blockStyle(blocks[0]) : "normal"
       return {
         paragraphStyle:

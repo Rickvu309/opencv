@@ -82,5 +82,5 @@ export function effectiveParagraphStyle(
     )
     if (heading) return styleIdSchema.parse(heading.id)
   }
-  return styleIdSchema.parse(style ?? "normal")
+  return style == null ? undefined : styleIdSchema.parse(style)
 }
