@@ -8,6 +8,12 @@ export function detect(text, path) {
         )
   }
   if (path.endsWith("rich-page.tsx")) {
+    if (
+      /editorError\s*\|\|\s*!\["loading",\s*"saving",\s*"saved"\]\.includes\(status\)/.test(
+        text
+      )
+    )
+      failures.push("Paper status detail disappears during offline typing")
     const actions = text.match(
       /<div className="([^"]+)">\s*<span\s+role="status"/
     )?.[1]

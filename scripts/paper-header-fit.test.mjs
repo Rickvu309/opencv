@@ -67,3 +67,24 @@ test("Paper header detector fires on the reviewed title mix and historic status 
     )
   }
 })
+
+test("Paper status detail cannot disappear at every offline typing pause", () => {
+  assert.deepEqual(
+    detect(
+      '{statusDetail.visible ? <p data-slot="paper-status-detail" /> : null}',
+      pagePath
+    ),
+    []
+  )
+  assert.ok(
+    detect(
+      '{editorError || !["loading", "saving", "saved"].includes(status) ? <p data-slot="paper-status-detail" /> : null}',
+      pagePath
+    ).some((hit) => hit.includes("offline typing"))
+  )
+  assert.ok(
+    detect(past("b6bd2419", pagePath), pagePath).some((hit) =>
+      hit.includes("offline typing")
+    )
+  )
+})

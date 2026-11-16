@@ -10,5 +10,5 @@
     "sha": "a7cdb745e7db7b63254b8c9d8a598f2b580bc7d9",
     "path": "apps/web/src/features/paper/design/rich-page-header.pen.css"
   },
-  "reason": "Pure source detector rejects the fixed-pixel plus font-relative title minimum, a status group that cannot shrink, and truncated status without a full body message. Clean and mistake fixtures and historical replays run without a browser. Real-browser geometry and status readability proofs stay local."
+  "reason": "Pure source detector rejects the fixed-pixel plus font-relative title minimum, a status group that cannot shrink, and truncated status without a full body message. Also rejects the transient Saving/Offline detail condition, replayed against b6bd2419. Clean and mistake fixtures and historical replays run without a browser. Real-browser geometry and status readability proofs stay local."
 }
