@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { appNotifications, findAppMain } from "@/test/app-regions.ts"
 import { renderApp } from "@/test/render-app.tsx"
+import { setMockTimeZone } from "@/test/profile-api-mock.ts"
 import { mockJob } from "@/test/apply-job-fixtures.ts"
 import {
   getMockJobPosts,
@@ -337,6 +338,25 @@ describe("job detail", () => {
       await screen.findByRole("heading", { name: "Next role" })
     ).toBeTruthy()
     expect(screen.queryByRole("dialog")).toBeNull()
+  })
+  it("shows the interview in the timezone chosen in Preferences", async () => {
+    setMockTimeZone("Asia/Singapore")
+    setMockJobs([
+      mockJob({
+        id,
+        title: "Junior Marketing",
+        company: "Lumière Cosmetics",
+        interviewAt: "2026-10-29T03:00:00.000Z",
+      }),
+    ])
+    renderApp(`/apply/${id}`)
+    const interview = await screen.findByRole("button", {
+      name: "Interview: Interview Oct 29, 11:00",
+    })
+    fireEvent.click(interview)
+    const field = await screen.findByLabelText("Interview")
+    expect(field).toHaveValue("2026-10-29T11:00")
+    expect(field.className).toMatch(/\btext-base\b/)
   })
   it("edits a property from its row, adds a prep step, and unlinks a CV", async () => {
     setMockJobs([

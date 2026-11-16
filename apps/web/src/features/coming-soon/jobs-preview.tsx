@@ -29,18 +29,22 @@ const ROWS = [
 
 export function JobsPreview() {
   return (
-    <div aria-hidden="true" className="flex flex-col gap-2.5 p-4">
-      <div className="flex h-11 items-center gap-2.5 rounded-[12px] border border-border bg-background px-3.5">
-        <Search className="size-[15px] text-muted-foreground" />
-        <span className="text-[13.5px] text-foreground/[.62]">
+    <div
+      aria-hidden="true"
+      data-slot="jobs-preview"
+      className="flex min-w-0 flex-col gap-2.5 p-4"
+    >
+      <div className="flex min-h-11 min-w-0 flex-wrap items-center gap-2.5 rounded-[12px] border border-border bg-background px-3.5 py-2">
+        <Search className="size-[15px] shrink-0 text-muted-foreground" />
+        <span className="min-w-0 text-[13.5px] break-words text-foreground/[.62]">
           Marketing, Hanoi
         </span>
       </div>
-      <div className="flex gap-1.5">
+      <div className="flex min-w-0 flex-wrap gap-1.5">
         {["Junior", "Full-time", "Hybrid", "Salary"].map((filter) => (
           <span
             key={filter}
-            className="inline-flex h-[26px] items-center rounded-[13px] border border-border px-2.5 text-xs text-muted-foreground"
+            className="inline-flex min-h-[26px] items-center rounded-[13px] border border-border px-2.5 text-xs break-words text-muted-foreground"
           >
             {filter}
           </span>
@@ -49,16 +53,16 @@ export function JobsPreview() {
       {ROWS.map((row) => (
         <div
           key={row.title}
-          className="flex h-[72px] items-center gap-3.5 rounded-[12px] border border-border bg-background px-4"
+          className="flex min-h-[72px] min-w-0 flex-wrap items-center gap-3.5 rounded-[12px] border border-border bg-background px-4 py-3"
         >
           <span className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-muted text-xs font-bold text-foreground/85">
             {row.initials}
           </span>
-          <span className="flex min-w-0 flex-1 flex-col">
-            <span className="truncate text-[14.5px] font-semibold text-foreground">
+          <span className="flex min-w-0 flex-1 basis-40 flex-col">
+            <span className="text-[14.5px] font-semibold break-words text-foreground">
               {row.title}
             </span>
-            <span className="truncate text-[12.5px] text-foreground/[.62]">
+            <span className="text-[12.5px] break-words text-foreground/[.62]">
               {row.company}
             </span>
           </span>

@@ -29,6 +29,20 @@ describe("new job dialog", () => {
   afterEach(() => {
     cleanup()
   })
+  it("centres on the page column and keeps phone fields at 16px", async () => {
+    const dialog = await openDialog()
+    expect(dialog.className).not.toContain("122px")
+    expect(dialog.className).toContain(
+      "md:left-[calc(50%+var(--new-job-shift,0px))]"
+    )
+    expect(screen.getByLabelText("Paste the job link").className).toMatch(
+      /\btext-base\b/
+    )
+    expect(screen.getByLabelText("Company").className).toMatch(/\btext-base\b/)
+    expect(screen.getByLabelText("Add the job description").className).toMatch(
+      /\btext-base\b/
+    )
+  })
   it("fills a readable link", async () => {
     const dialog = await openDialog()
     fireEvent.change(screen.getByLabelText("Paste the job link"), {

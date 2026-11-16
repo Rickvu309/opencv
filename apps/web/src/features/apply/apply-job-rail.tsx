@@ -61,6 +61,7 @@ import {
 } from "./apply-stages.ts"
 import { PostingSource } from "./apply-posting-source.tsx"
 import { FAINT_TEXT } from "./apply-tone.ts"
+import { useChosenTimeZone } from "./apply-time-zone.ts"
 
 const POPOVER =
   "w-[270px] gap-0.5 rounded-[10px] p-1.5 shadow-[0_2px_4px_rgb(0_0_0/0.06),0_24px_60px_rgb(0_0_0/0.14)] ring-foreground/6"
@@ -70,17 +71,17 @@ const PRIORITIES: readonly JobPriority[] = ["high", "normal", "low"]
 const PICKER_ROW =
   "w-full justify-start gap-[9px] rounded-[6px] px-2 text-[12.5px] font-normal text-foreground hover:bg-secondary"
 
-function interviewLabel(iso: string) {
+function interviewLabel(iso: string, zone: string) {
   const at = new Date(iso)
   const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Asia/Ho_Chi_Minh",
+    timeZone: zone,
     hour: "numeric",
     minute: "2-digit",
     hourCycle: "h23",
   }).formatToParts(at)
   const read = (type: Intl.DateTimeFormatPartTypes) =>
     parts.find((part) => part.type === type)?.value ?? ""
-  return `Interview ${monthDay(at)}, ${read("hour")}:${read("minute")}`
+  return `Interview ${monthDay(at, zone)}, ${read("hour")}:${read("minute")}`
 }
 
 function Label({ children, empty }: { children: ReactNode; empty?: boolean }) {
@@ -194,7 +195,7 @@ function EditRow({
             onChange={(event) =>
               dispatch({ type: "typed", value: event.target.value })
             }
-            className="h-8 rounded-[6px] text-[13px] md:text-[13px]"
+            className="h-11 rounded-[6px] text-base md:h-8 md:text-[13px]"
           />
           {error ? (
             <p role="alert" className="pt-1 text-[12px] text-destructive">
@@ -439,13 +440,13 @@ function PaperRow({ kind, job }: { kind: "cv" | "letter"; job: JobDetail }) {
             aria-label="Find in Paper"
             value={search}
             placeholder="Find in Paper"
-            className="h-11 border-0 bg-transparent px-0 text-[12.5px] shadow-none focus-visible:ring-0 md:h-8 md:text-[12.5px] dark:bg-transparent"
+            className="h-11 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0 md:h-8 md:text-[12.5px] dark:bg-transparent"
             onChange={(event) =>
               dispatch({ type: "search_typed", value: event.target.value })
             }
           />
         </div>
-        <div className="mt-1 flex flex-col gap-0.5">
+        <div className="mt-1 flex max-h-60 flex-col gap-0.5 overflow-y-auto overscroll-contain">
           {list.status === "loading" ? (
             <p
               role="status"
@@ -570,6 +571,7 @@ export function JobRail({
   onPriority: (priority: JobPriority) => void
 }) {
   const run = useRunCommand()
+  const zone = useChosenTimeZone()
 
   function save(
     patch: Parameters<typeof run<"job.update">>[1]["patch"]
@@ -603,13 +605,17 @@ export function JobRail({
           key={`interview-${job.interviewAt ?? ""}`}
           icon={<Calendar aria-hidden className="size-3.5 text-chart-3" />}
           label={
-            job.interviewAt ? interviewLabel(job.interviewAt) : "Add interview"
+            job.interviewAt
+              ? interviewLabel(job.interviewAt, zone)
+              : "Add interview"
           }
           empty={!job.interviewAt}
           ariaLabel="Interview"
           inputType="datetime-local"
-          value={interviewInputValue(job.interviewAt)}
-          onSave={(value) => save({ interviewAt: interviewInstant(value) })}
+          value={interviewInputValue(job.interviewAt, zone)}
+          onSave={(value) =>
+            save({ interviewAt: interviewInstant(value, zone) })
+          }
         />
         <EditRow
           key={`deadline-${deadline}`}

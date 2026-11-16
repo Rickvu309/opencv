@@ -72,4 +72,17 @@ describe("apply stages", () => {
     expect(interviewInputValue(iso)).toBe("2026-10-27T10:00")
     expect(interviewInstant("2026-10-27T10:00")).toBe(iso)
   })
+
+  it("keeps the interview hour in a chosen zone", () => {
+    const iso = "2026-10-27T03:00:00.000Z"
+    expect(interviewInputValue(iso, "Asia/Singapore")).toBe("2026-10-27T11:00")
+    expect(interviewInstant("2026-10-27T11:00", "Asia/Singapore")).toBe(iso)
+    expect(
+      listPhrase(
+        job({ stage: "interview", interviewAt: iso }),
+        now,
+        "Asia/Singapore"
+      )
+    ).toBe("Interview Tue, 11:00")
+  })
 })

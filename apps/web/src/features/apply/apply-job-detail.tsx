@@ -39,6 +39,9 @@ import { JobHeader } from "./apply-job-header.tsx"
 import { JobRail } from "./apply-job-rail.tsx"
 import { compareJobs } from "./apply-stages.ts"
 
+const JOB_NOTICE =
+  "flex max-w-lg flex-col items-start gap-3 p-6 text-sm text-foreground"
+
 type DetailState = { deleteOpen: boolean; railOpen: boolean }
 
 type DetailAction =
@@ -104,27 +107,32 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
     }
   }
 
-  if (detail.isLoading) return <p role="status">Loading jobs</p>
+  if (detail.isLoading)
+    return (
+      <p role="status" className={JOB_NOTICE}>
+        Loading jobs
+      </p>
+    )
   if (
     detail.error instanceof ApiError &&
     detail.error.code === ERROR_CODES.NOT_FOUND
   ) {
     return (
-      <div>
+      <div className={JOB_NOTICE}>
         <p>Job not found.</p>
         <Button
           className="h-11 md:h-8"
           type="button"
           onClick={() => void navigate({ to: SURFACE_PATHS.apply })}
         >
-          Apply
+          Back to Apply
         </Button>
       </div>
     )
   }
   if (detail.isError || !job) {
     return (
-      <div>
+      <div className={JOB_NOTICE}>
         <p>Could not load jobs. Refresh the page.</p>
         <Button
           className="h-11 md:h-8"

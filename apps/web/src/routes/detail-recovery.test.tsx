@@ -16,13 +16,16 @@ describe("detail recovery", () => {
 
   it.each([
     { path: "paper", message: "Document not found.", back: "Paper" },
-    { path: "apply", message: "Job not found.", back: "Apply" },
+    { path: "apply", message: "Job not found.", back: "Back to Apply" },
   ])(
     "returns from a missing $path record to its collection",
     async ({ path, message, back }) => {
       const { router } = renderApp(`/${path}/${missingId}`)
 
       expect(await screen.findByText(message)).toBeInTheDocument()
+      if (path === "apply") {
+        expect(screen.getByText(message).parentElement).toHaveClass("p-6")
+      }
       expect(screen.queryByText(/Refresh the page/)).not.toBeInTheDocument()
       expect(
         screen.queryByRole("button", { name: "Refresh" })

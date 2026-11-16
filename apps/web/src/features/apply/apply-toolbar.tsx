@@ -1,4 +1,3 @@
-import type { ReactNode } from "react"
 import {
   Calendar,
   Funnel,
@@ -61,13 +60,15 @@ export function ApplyToolbar({
   onView,
   filters,
   onFilters,
-  children,
+  priorityCounts,
+  priorityCountsFailed = false,
 }: {
   view: ApplyView
   onView: (view: ApplyView) => void
   filters: ApplyFilters
   onFilters: (filters: ApplyFilters) => void
-  children?: ReactNode
+  priorityCounts?: readonly { priority: string; count: number }[]
+  priorityCountsFailed?: boolean
 }) {
   const count = activeFilterCount(filters)
   return (
@@ -101,7 +102,6 @@ export function ApplyToolbar({
           </Button>
         )
       })}
-      {children}
       <Popover>
         <PopoverTrigger
           render={
@@ -124,6 +124,27 @@ export function ApplyToolbar({
           ) : null}
         </PopoverTrigger>
         <PopoverContent align="end" className="flex flex-col gap-2">
+          {priorityCounts || priorityCountsFailed ? (
+            <div className="flex flex-col gap-1.5 border-b border-border pb-2">
+              <p className="text-xs font-medium text-foreground">
+                Jobs by priority
+              </p>
+              <div
+                role="group"
+                aria-label="Jobs by priority"
+                className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground"
+              >
+                {priorityCounts?.map(({ priority, count }) => (
+                  <span key={priority} className="capitalize">
+                    {priority} <span className="tabular-nums">{count}</span>
+                  </span>
+                ))}
+                {priorityCountsFailed ? (
+                  <span>Could not load priority counts.</span>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
           <div className="flex flex-col gap-1">
             <Label htmlFor="filter-company">Company</Label>
             <Input

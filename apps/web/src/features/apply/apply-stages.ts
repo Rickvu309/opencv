@@ -105,23 +105,27 @@ export function monthDay(date: Date, zone = PROFILE_ZONE): string {
   }).format(date)
 }
 
-export function listPhrase(job: JobView, now = new Date()): string {
+export function listPhrase(
+  job: JobView,
+  now = new Date(),
+  zone = PROFILE_ZONE
+): string {
   if (job.stage === "offer") return "Offer"
   if (job.stage === "closed") return "Closed"
   if (job.stage === "interview" && job.interviewAt) {
-    const parts = zonedParts(new Date(job.interviewAt))
+    const parts = zonedParts(new Date(job.interviewAt), zone)
     const hour = String(Number(parts.hour))
     return `Interview ${parts.weekday}, ${hour}:${parts.minute}`
   }
   if (job.stage === "applied") {
-    return `Applied ${monthDay(new Date(job.updatedAt))}`
+    return `Applied ${monthDay(new Date(job.updatedAt), zone)}`
   }
   if (job.stage === "saved" && job.deadline) {
     return `Apply by ${monthDay(deadlineInstant(job.deadline), "UTC")}`
   }
   if (job.stage === "saved") {
-    const created = zonedParts(new Date(job.createdAt))
-    if (sameDay(created, zonedParts(now))) return "Saved today"
+    const created = zonedParts(new Date(job.createdAt), zone)
+    if (sameDay(created, zonedParts(now, zone))) return "Saved today"
     return "Saved"
   }
   return stageLabel(job.stage)

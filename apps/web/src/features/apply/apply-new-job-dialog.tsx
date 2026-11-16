@@ -1,4 +1,5 @@
-import { useReducer, useRef } from "react"
+import { useLayoutEffect, useReducer, useRef, useState } from "react"
+import type { CSSProperties } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import {
   jobCreateInputSchema,
@@ -30,6 +31,7 @@ import { ApiError } from "@/lib/api-error.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
 
 import { previewJob, useApplyPickerCards } from "./apply-api.ts"
+import { contentCenterShift } from "./apply-dialog-place.ts"
 import { ALL_STAGES } from "./apply-stages.ts"
 import {
   AlreadyTracked,
@@ -65,6 +67,28 @@ function shownUrl(value: string) {
 const INLINE_FIELD =
   "h-auto rounded-none border-0 bg-transparent p-0 shadow-none focus-visible:border-0 focus-visible:ring-0 aria-invalid:border-0 aria-invalid:ring-0 dark:bg-transparent"
 
+function useContentCenterShift(active: boolean) {
+  const [shift, setShift] = useState(0)
+  useLayoutEffect(() => {
+    if (!active) return
+    const main = document.getElementById("app-main")
+    if (!main) return
+    const measure = () => {
+      const rect = main.getBoundingClientRect()
+      setShift(contentCenterShift(rect, window.innerWidth))
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(main)
+    window.addEventListener("resize", measure)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener("resize", measure)
+    }
+  }, [active])
+  return shift
+}
+
 export function NewJobDialog({
   open,
   onOpenChange,
@@ -72,6 +96,7 @@ export function NewJobDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const shift = useContentCenterShift(open)
   const navigate = useNavigate()
   const run = useRunCommand()
   const { cards } = useApplyPickerCards()
@@ -241,7 +266,8 @@ export function NewJobDialog({
         data-slot="new-job-dialog"
         showCloseButton={false}
         initialFocus={linkRef}
-        className="gap-0 bg-card p-0 shadow-lg ring-foreground/6 max-md:top-0 max-md:left-0 max-md:h-dvh max-md:max-h-none max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:overflow-y-auto max-md:rounded-none sm:max-w-[620px] lg:left-[calc(50%+122px)]"
+        style={{ "--new-job-shift": `${shift}px` } as CSSProperties}
+        className="gap-0 bg-card p-0 shadow-lg ring-foreground/6 max-md:top-0 max-md:left-0 max-md:h-dvh max-md:max-h-none max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:overflow-y-auto max-md:rounded-none sm:max-w-[620px] md:left-[calc(50%+var(--new-job-shift,0px))]"
         aria-describedby={undefined}
       >
         <DialogDescription className="sr-only">
@@ -285,7 +311,7 @@ export function NewJobDialog({
               aria-label="Paste the job link"
               placeholder="Paste the job link"
               value={draft.url}
-              className={`${INLINE_FIELD} h-full flex-1 text-[13px] text-foreground md:text-[13px] ${PLACEHOLDER_SECONDARY}`}
+              className={`${INLINE_FIELD} h-full flex-1 text-base text-foreground md:text-[13px] ${PLACEHOLDER_SECONDARY}`}
               onChange={(event) => patch({ url: event.target.value })}
               onBlur={(event) => {
                 const url = event.currentTarget.value.trim()
@@ -371,7 +397,7 @@ export function NewJobDialog({
                 aria-describedby={
                   companyError ? "job-company-error" : undefined
                 }
-                className={`${INLINE_FIELD} mt-1.5 text-[15px] leading-[18px] text-muted-foreground md:text-[15px] ${PLACEHOLDER_CARD}`}
+                className={`${INLINE_FIELD} mt-1.5 text-base leading-6 text-muted-foreground md:text-[15px] md:leading-[18px] ${PLACEHOLDER_CARD}`}
                 onChange={(event) => {
                   dispatch({ type: "company_typed", value: event.target.value })
                 }}
@@ -387,7 +413,7 @@ export function NewJobDialog({
                 aria-describedby={
                   descriptionError ? "job-description-error" : undefined
                 }
-                className={`mt-4 field-sizing-fixed h-[120px] resize-none rounded-none border-0 bg-transparent p-0 text-sm leading-[1.55] text-muted-foreground shadow-none focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent ${PLACEHOLDER_CARD}`}
+                className={`mt-4 field-sizing-fixed h-[120px] resize-none rounded-none border-0 bg-transparent p-0 text-base leading-[1.55] text-muted-foreground shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-sm dark:bg-transparent ${PLACEHOLDER_CARD}`}
                 onChange={(event) => patch({ description: event.target.value })}
                 onBlur={() => {
                   if (

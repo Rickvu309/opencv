@@ -12,6 +12,24 @@ import { renderApp } from "@/test/render-app.tsx"
 import { mockJob } from "@/test/apply-job-fixtures.ts"
 import { setMockJobs } from "@/test/apply-jobs-mock.ts"
 
+async function openPriorityCounts() {
+  const open = screen.queryByRole("group", { name: "Jobs by priority" })
+  if (open) return open
+  const filter = await screen.findByRole("button", { name: "Filter" })
+  await userEvent.click(filter)
+  return screen.findByRole("group", { name: "Jobs by priority" })
+}
+
+async function closePriorityCounts() {
+  if (!screen.queryByRole("group", { name: "Jobs by priority" })) return
+  await userEvent.keyboard("{Escape}")
+  await waitFor(() => {
+    expect(
+      screen.queryByRole("group", { name: "Jobs by priority" })
+    ).not.toBeInTheDocument()
+  })
+}
+
 describe("apply list", () => {
   afterEach(() => {
     cleanup()
@@ -21,7 +39,11 @@ describe("apply list", () => {
       mockJob({ id: "01900000-0000-7000-8000-000000000021", priority: "high" }),
     ])
     renderApp("/apply")
-    const counts = await screen.findByLabelText("Jobs by priority")
+    await screen.findByRole("button", { name: "Filter" })
+    expect(
+      document.querySelector("[data-slot=apply-toolbar]")?.textContent ?? ""
+    ).not.toMatch(/low/i)
+    const counts = await openPriorityCounts()
     await waitFor(() => expect(counts).toHaveTextContent("low 0normal 0high 1"))
     expect(within(counts).getByText("high")).toBeVisible()
   })
@@ -33,11 +55,9 @@ describe("apply list", () => {
       }),
     ])
     renderApp("/apply")
-    await waitFor(() =>
-      expect(screen.getByLabelText("Jobs by priority")).toHaveTextContent(
-        "normal 1"
-      )
-    )
+    const before = await openPriorityCounts()
+    await waitFor(() => expect(before).toHaveTextContent("normal 1"))
+    await closePriorityCounts()
     fireEvent.click(
       screen.getByRole("button", {
         name: "Junior Marketing, Lumière Cosmetics",
@@ -56,16 +76,13 @@ describe("apply list", () => {
         { name: "Apply" }
       )
     )
-    await waitFor(() =>
-      expect(screen.getByLabelText("Jobs by priority")).toHaveTextContent(
-        "low 0normal 0high 1"
-      )
-    )
+    const raised = await openPriorityCounts()
+    await waitFor(() => expect(raised).toHaveTextContent("low 0normal 0high 1"))
+    await closePriorityCounts()
     fireEvent.click(screen.getByRole("button", { name: "Undo" }))
+    const restored = await openPriorityCounts()
     await waitFor(() =>
-      expect(screen.getByLabelText("Jobs by priority")).toHaveTextContent(
-        "low 0normal 1high 0"
-      )
+      expect(restored).toHaveTextContent("low 0normal 1high 0")
     )
   })
   it("phrases saved, deadline, and applied jobs", async () => {
