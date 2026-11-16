@@ -9,12 +9,22 @@
   [data-pen-surface="paper"].rich-paper-page
     > [data-slot="page-header"]
     > :first-child {
-    flex-basis: 0;
+    flex-basis: calc(52px + 4ch);
+    min-width: calc(52px + 4ch);
   }
 
   [data-pen-surface="paper"].rich-paper-page
     > [data-slot="page-header"]
     [data-slot="page-header-title"] {
+    min-width: 4ch;
     white-space: nowrap;
   }
+}
+
+[data-pen-surface="paper"].rich-paper-page
+  > [data-slot="page-header"]
+  > :nth-child(2) {
+  min-width: 0;
+  max-width: 100%;
+  flex-shrink: 1;
 }

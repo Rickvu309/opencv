@@ -1,11 +1,16 @@
-export function detect(text, path) {
-  if (path !== "apps/web/src/features/paper/design/rich-page-header.pen.css")
-    return []
-  return /@media\s*\(width < 48rem\)\s*\{[\s\S]*?page-header"\]\s*>\s*:first-child\s*\{[^}]*flex-basis:\s*0\s*;/.test(
-    text
-  ) && /page-header-title"\]\s*\{[^}]*white-space:\s*nowrap\s*;/.test(text)
-    ? []
-    : [
-        "Paper phone headers must let the title yield space to Saved and the menu",
-      ]
+export function detect(rows) {
+  return rows.flatMap((row) => {
+    const failures = []
+    if (row.title.width < row.minimum - 1)
+      failures.push("Paper title collapsed below four characters")
+    if (row.menu.right > row.viewport || row.menu.x < 0)
+      failures.push("Paper document menu leaves the viewport")
+    if (row.status.right > row.menu.x)
+      failures.push("Paper status overlaps the document menu")
+    if (row.title.y === row.menu.y && row.title.right > row.status.x)
+      failures.push("Paper title overlaps the status")
+    if (row.normal && !row.sameLine)
+      failures.push("Paper normal-text header unnecessarily wraps")
+    return failures.map((failure) => `${row.case}: ${failure}`)
+  })
 }
