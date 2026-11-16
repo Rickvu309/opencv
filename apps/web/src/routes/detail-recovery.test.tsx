@@ -2,7 +2,7 @@ import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import * as applyApi from "@/features/apply/apply-api.ts"
-import * as paperApi from "@/features/paper/paper-api.ts"
+import * as paperQualification from "@/lib/paper-qualification.ts"
 import { ApiError } from "@/lib/api-error.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
@@ -41,13 +41,13 @@ describe("detail recovery", () => {
   ])(
     "keeps a $status failure distinct from a missing record",
     async ({ status, code }) => {
-      vi.spyOn(paperApi, "getPaper").mockRejectedValue(
+      vi.spyOn(paperQualification, "qualifiedPaperRead").mockRejectedValue(
         new ApiError(status, code, "Request failed")
       )
       renderApp(`/paper/${missingId}`)
 
       expect(
-        await screen.findByText("Could not load documents. Refresh the page.")
+        await screen.findByText("Could not open this document.")
       ).toBeInTheDocument()
       expect(screen.queryByText("Document not found.")).not.toBeInTheDocument()
     }

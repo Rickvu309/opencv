@@ -1,0 +1,5 @@
+[data-pen-surface="paper"].rich-paper-page > [data-slot="page-header"] {
+  height: auto;
+  min-height: 52px;
+  padding-block: 0.5rem;
+}

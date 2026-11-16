@@ -3,6 +3,7 @@ import { nativeProvenanceSchema, sameNativeProvenance } from "@workspace/domain"
 import {
   emptyUpdate,
   openPaperClient,
+  openRichPaperClient,
   type Stored,
 } from "@workspace/paper-crdt"
 import { fromBase64, toBase64 } from "@/lib/paper-sync-bytes.ts"
@@ -72,11 +73,15 @@ export function validateNativeStored(
     stored.revision < 0
   )
     throw new Error("Incompatible native recovery retained")
-  openPaperClient(stored, { provenance: identity.provenance })
-  openPaperClient(
+  const open =
+    identity.provenance.schemaRevision === 2
+      ? openRichPaperClient
+      : openPaperClient
+  open(stored, { provenance: identity.provenance }).destroy()
+  open(
     { ...stored, pending: emptyUpdate() },
     { provenance: identity.provenance }
-  )
+  ).destroy()
   return stored
 }
 

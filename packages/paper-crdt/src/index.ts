@@ -16,6 +16,7 @@ export {
 } from "./ydoc.js"
 export type { Candidate } from "./ydoc.js"
 export { materializeStored, seedStoredYDoc } from "./stored-document.js"
+export { recoverRichPaperClient } from "./rich-recovery.js"
 export {
   absorbUpdate,
   carriesChange,

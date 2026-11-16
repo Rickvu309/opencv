@@ -1,5 +1,29 @@
 export const clean = [
   {
+    path: "apps/web/src/test/paper-api-mock.ts",
+    text: "const identity = /^\\/api\\/paper\\/([^/]+)\\/document$/.exec(path); paperDocumentInfoSchema.parse(identity)",
+  },
+  {
+    path: "apps/web/src/features/paper/rich-page.tsx",
+    text: '<Button size="icon" className="size-11 md:size-8" />',
+  },
+  {
+    path: "apps/web/src/lib/paper-sync-recovery.ts",
+    text: "const open = identity.provenance.schemaRevision === 2 ? openRichPaperClient : openPaperClient; open(stored, { provenance: identity.provenance }).destroy()",
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-flow-mount.ts",
+    text: "pasteIntoFlowText(editor, event) || defaultPasteHandler({})",
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-flow-view.ts",
+    text: 'globalThis.CSS?.supports?.("column-height: 100px")',
+  },
+  {
+    path: "packages/paper-crdt/src/editor.ts",
+    text: 'import { borrowFlowDocument } from "./native-layout-flow.js"; import { mountPrivateFlow } from "./native-layout-flow-mount.js"; export function mountRichPaperEditor() {}',
+  },
+  {
     path: "packages/paper-crdt/src/native-layout-flow.ts",
     text: 'import { headlessLayoutSchema } from "./native-formatting-headless.js"',
   },
@@ -117,6 +141,50 @@ export const clean = [
   },
 ]
 export const mistakes = [
+  {
+    path: "apps/web/src/test/paper-api-mock.ts",
+    text: "export async function paperApiFetch() { return null }",
+  },
+  {
+    path: "apps/web/src/features/paper/rich-page.tsx",
+    text: '<Button size="icon" />',
+  },
+  {
+    path: "apps/web/src/lib/paper-sync-recovery.ts",
+    text: "openPaperClient(stored, { provenance: identity.provenance })",
+  },
+  {
+    path: "apps/web/src/lib/paper-sync-recovery.ts",
+    text: "const open = identity.provenance.schemaRevision === 2 ? openRichPaperClient : openPaperClient; open(stored, { provenance: identity.provenance })",
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-flow-mount.ts",
+    text: "defaultPasteHandler({ plainTextAsMarkdown: false })",
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-flow-mount.ts",
+    text: "defaultPasteHandler({}) || pasteIntoFlowText(editor, event)",
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-flow-view.ts",
+    text: 'globalThis.CSS?.supports("column-height: 100px")',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-flow-view.ts",
+    text: 'CSS.supports?.("column-wrap: wrap")',
+  },
+  {
+    path: "packages/paper-crdt/src/editor.ts",
+    text: 'export { borrowFlowDocument } from "./native-layout-flow.js"',
+  },
+  {
+    path: "packages/paper-crdt/src/editor.ts",
+    text: 'import { commitFlowEdit } from "./native-layout-flow.js"',
+  },
+  {
+    path: "packages/paper-crdt/src/editor.ts",
+    text: "export const rawBinding = binding",
+  },
   {
     path: "packages/paper-crdt/src/native-layout-flow.ts",
     text: 'import { nativeLayoutSchema } from "./native-layout-schema.js"',

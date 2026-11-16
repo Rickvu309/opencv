@@ -67,6 +67,14 @@ function stubWordPage() {
     if (url.endsWith("/api/paper")) {
       return json([wordPageListed])
     }
+    if (url.endsWith(`/api/paper/${WORD_PAGE}/document`)) {
+      return json({
+        id: WORD_PAGE,
+        name: "Cover letter.docx",
+        kind: "letter",
+        format: "word",
+      })
+    }
     if (url.includes(`/api/paper/${WORD_PAGE}`)) {
       return Promise.resolve(
         Response.json(

@@ -4,6 +4,25 @@ import DOMPurify from "dompurify"
 import { layoutCellAt } from "./native-layout-transaction.js"
 import type { PrivateLayoutEditor } from "./native-layout-schema.js"
 
+export function pasteIntoFlowText(
+  editor: PrivateLayoutEditor,
+  event: ClipboardEvent
+): boolean {
+  const state = editor.prosemirrorState
+  if (
+    !state.selection.$from.sameParent(state.selection.$to) ||
+    !state.selection.$from.parent.inlineContent
+  )
+    return false
+  if (event.clipboardData?.getData("text/html")) return false
+  const text = event.clipboardData?.getData("text/plain")
+  if (text === undefined) return false
+  editor.prosemirrorView.dispatch(
+    state.tr.insertText(text.replace(/\r\n?/g, "\n"))
+  )
+  return true
+}
+
 export function pasteIntoLayoutCell(
   editor: PrivateLayoutEditor,
   event: ClipboardEvent

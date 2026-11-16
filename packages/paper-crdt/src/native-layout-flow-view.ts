@@ -9,8 +9,8 @@ import { layoutDecorations } from "./native-layout-decorations.js"
 
 export function flowPaginationSupport(document: FlowDocument) {
   if (
-    !globalThis.CSS?.supports("column-height: 100px") ||
-    !CSS.supports("column-wrap: wrap")
+    !globalThis.CSS?.supports?.("column-height: 100px") ||
+    !globalThis.CSS?.supports?.("column-wrap: wrap")
   )
     return {
       supported: false,
