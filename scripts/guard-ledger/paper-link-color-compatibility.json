@@ -1,0 +1,13 @@
+{
+  "id": "paper-link-color-compatibility",
+  "file": "scripts/paper-link-direct-marks.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-rich-structure.mjs",
+    "export": "detectLinkCompatibility"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "19b30732bbcda62ccedc7b1665d2fa3127be550d",
+    "path": "packages/domain/src/paper-doc/paragraph-styles.ts"
+  }
+}

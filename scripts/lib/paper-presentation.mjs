@@ -2,6 +2,7 @@ import { posix } from "node:path"
 import ts from "typescript"
 import { qualifiedNativeWord } from "./paper-native-word.mjs"
 import { detectTextFormatting } from "./paper-text-formatting.mjs"
+import { detectRichStructure } from "./paper-rich-structure.mjs"
 
 export function detect(text, path) {
   const hits = detectTextFormatting(text, path)
@@ -382,6 +383,18 @@ export function detect(text, path) {
           "Rich HTML marks must parse standard elements as well as private spans"
         )
       if (ts.isCallExpression(node)) {
+        if (
+          path === "packages/paper-crdt/src/native-layout-flow-mount.ts" &&
+          ts.isPropertyAccessExpression(node.expression) &&
+          node.expression.getText(source) === "BlockNoteEditor.create" &&
+          property(
+            property(node.arguments[0], "links"),
+            "isValidLink"
+          )?.getText(source) !== "isSafeHref"
+        )
+          hits.push(
+            "Rich editor links must use the domain http, https and mailto policy"
+          )
         if (
           path === "packages/paper-crdt/src/native-layout-paste.ts" &&
           ts.isPropertyAccessExpression(node.expression) &&

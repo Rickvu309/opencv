@@ -5,6 +5,7 @@ import type {
 } from "@workspace/domain/internal/paper-presentation"
 
 import { xml } from "./rich-text.js"
+import { wordParagraphStyleId } from "@workspace/domain/internal/paper-presentation"
 
 function toggle(name: string, value: boolean | undefined): string {
   return value === undefined ? "" : `<w:${name} w:val="${value ? 1 : 0}"/>`
@@ -82,7 +83,7 @@ export function paragraphProperties(
     )
   return [
     value.paragraphStyle
-      ? `<w:pStyle w:val="Paper-${xml(value.paragraphStyle)}"/>`
+      ? `<w:pStyle w:val="${xml(wordParagraphStyleId(value.paragraphStyle))}"/>`
       : "",
     toggle("keepNext", value.keepNext),
     toggle("keepLines", value.keepTogether),

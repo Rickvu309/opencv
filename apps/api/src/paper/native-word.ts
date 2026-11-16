@@ -13,7 +13,11 @@ export function downloadNativeWord(userId: UserId, input: RichSnapshotInput) {
     } = snapshot.document
     void _version
     void _schema
-    const result = await compileOwnedFlowNativeDocx({ userId, document })
+    const result = await compileOwnedFlowNativeDocx({
+      userId,
+      document,
+      generation: "rich",
+    })
     if (result.kind === "refused")
       throw new CommandError(ERROR_CODES.CONFLICT, result.reason)
     const stem =

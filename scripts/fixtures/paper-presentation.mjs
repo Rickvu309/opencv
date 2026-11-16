@@ -159,7 +159,20 @@ export const clean = [
     path: "packages/paper-crdt/src/native-formatting-mount.ts",
     text: 'BlockNoteEditor.create({ links: { HTMLAttributes: { style: "text-decoration:none;color:inherit" } } })',
   },
+  {
+    path: "packages/paper-crdt/src/native-formatting-commands.ts",
+    text: 'event.altKey && !mod && event.code === "Digit5" || event.metaKey && !event.altKey && key === "x"; depth + descendants(block) < 3',
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting-decorations.ts",
+    text: 'const list = { style: "list-style-type:disc", "aria-level": "1" }; mark.type.name === "link"; effectiveRunDecorations(direct, isLink, effective)',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-flow-mount.ts",
+    text: 'const active = { ...paragraphInlineValues(style), ...canonicalStyles(styles) }; BlockNoteEditor.create({ links: { isValidLink: isSafeHref, HTMLAttributes: { style: "text-decoration:none;color:inherit" } } })',
+  },
 ]
+
 export const mistakes = [
   {
     path: "apps/web/src/features/paper/rich-text-emphasis-group.tsx",
@@ -429,6 +442,22 @@ export const mistakes = [
     path: "packages/paper-crdt/src/native-formatting-mount.ts",
     text: 'BlockNoteEditor.create({ links: { HTMLAttributes: { style: "text-decoration:underline" } } })',
   },
+  {
+    path: "packages/paper-crdt/src/native-formatting-commands.ts",
+    text: 'if (mod && event.shiftKey && event.code === "Digit5") toggleMark("strike")',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-flow-mount.ts",
+    text: "BlockNoteEditor.create({ links: { isValidLink: isSafeHref } }); const active = canonicalStyles(styles)",
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting-decorations.ts",
+    text: "Decoration.node(pos, end, { style: paragraphCss(values) })",
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-flow-mount.ts",
+    text: "BlockNoteEditor.create({ links: {} })",
+  },
 ]
 
 export const roundTwo = [
@@ -474,3 +503,5 @@ export const roundTwo = [
     clean: 'import { detect } from "./lib/paper-presentation.mjs"',
   },
 ]
+
+export const roundOneClean = []
