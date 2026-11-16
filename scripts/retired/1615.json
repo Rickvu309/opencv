@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/apply/apply-list.test.tsx",
+    "because": "Priority counts moved into the Filter popover, so the board no longer prints low, normal and high on the page.",
+    "replacedBy": "apps/web/src/features/apply/apply-list.test.tsx",
+    "proof": {
+      "fork": "a887677ee976df2a519b5804ad24a48ed431fc11",
+      "replacedByBlob": "5e0c7a631de41d0cbb978233e6057084a5eecbff",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 5
+  }
+]
