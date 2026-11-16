@@ -6,6 +6,12 @@ export function detect(text, path) {
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
   const hits = []
   if (
+    path === "packages/paper-crdt/src/native-formatting-commands.ts" &&
+    (!text.includes('event.altKey && !mod && event.code === "Digit5"') ||
+      !text.includes('event.metaKey && !event.altKey && key === "x"'))
+  )
+    hits.push("Rich strikethrough must support the PC and Mac Docs shortcuts")
+  if (
     path === "packages/paper-crdt/src/native-layout-flow-mount.ts" &&
     text.includes("BlockNoteEditor.create(") &&
     !text.includes("...paragraphInlineValues(")

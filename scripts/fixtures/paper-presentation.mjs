@@ -1,5 +1,9 @@
 export const clean = [
   {
+    path: "packages/paper-crdt/src/native-formatting-commands.ts",
+    text: 'event.altKey && !mod && event.code === "Digit5" || event.metaKey && !event.altKey && key === "x"',
+  },
+  {
     path: "packages/paper-crdt/src/native-formatting-decorations.ts",
     text: 'const list = { style: "list-style-type:disc", "aria-level": "1" }',
   },
@@ -149,6 +153,10 @@ export const clean = [
   },
 ]
 export const mistakes = [
+  {
+    path: "packages/paper-crdt/src/native-formatting-commands.ts",
+    text: 'if (mod && event.shiftKey && event.code === "Digit5") toggleMark("strike")',
+  },
   {
     path: "packages/paper-crdt/src/native-layout-flow-mount.ts",
     text: "BlockNoteEditor.create({ links: { isValidLink: isSafeHref } }); const active = canonicalStyles(styles)",

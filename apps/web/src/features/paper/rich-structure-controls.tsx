@@ -1,7 +1,14 @@
-import { useEffect, useReducer, useState, type ReactNode } from "react"
+import { useEffect, useReducer, type ReactNode } from "react"
 import type { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select"
 import {
   Dialog,
   DialogContent,
@@ -21,6 +28,36 @@ import {
 } from "lucide-react"
 
 type Editor = ReturnType<typeof mountRichPaperEditor>
+type LinkDialog =
+  | { kind: "closed" }
+  | { kind: "open"; href: string; original: string; error: string }
+type LinkAction =
+  | { type: "open"; href: string }
+  | { type: "edit"; href: string }
+  | { type: "error" }
+  | { type: "close" }
+
+function linkDialogReducer(state: LinkDialog, action: LinkAction): LinkDialog {
+  switch (action.type) {
+    case "open":
+      return {
+        kind: "open",
+        href: action.href,
+        original: action.href,
+        error: "",
+      }
+    case "edit":
+      return state.kind === "open"
+        ? { ...state, href: action.href, error: "" }
+        : state
+    case "error":
+      return state.kind === "open"
+        ? { ...state, error: "Enter an http, https or mailto address." }
+        : state
+    case "close":
+      return { kind: "closed" }
+  }
+}
 
 export function RichStructureControls({
   editor,
@@ -32,17 +69,15 @@ export function RichStructureControls({
   children: ReactNode
 }) {
   const [, refresh] = useReducer((value: number) => value + 1, 0)
-  const [link, setLink] = useState<{ href: string; original: string } | null>(
-    null
-  )
-  const [error, setError] = useState("")
+  const [dialog, dispatch] = useReducer(linkDialogReducer, { kind: "closed" })
+  const link = dialog.kind === "open" ? dialog : null
+  const error = link?.error ?? ""
   useEffect(() => editor?.subscribe(refresh), [editor])
   useEffect(() => {
     const open = () => {
       const state = editor?.formattingState()
       if (blocked || !state?.canLink) return
-      setError("")
-      setLink({ href: state.href, original: state.href })
+      dispatch({ type: "open", href: state.href })
     }
     document.addEventListener("paper-edit-link", open)
     return () => document.removeEventListener("paper-edit-link", open)
@@ -66,8 +101,7 @@ export function RichStructureControls({
       label: "Link",
       Icon: Link,
       action: () => {
-        setError("")
-        setLink({ href: state?.href ?? "", original: state?.href ?? "" })
+        dispatch({ type: "open", href: state?.href ?? "" })
       },
       disabled: !state?.canLink,
     },
@@ -104,34 +138,50 @@ export function RichStructureControls({
   return (
     <>
       {controls.slice(0, 2).map(control)}
-      <select
-        aria-label="Paragraph style"
-        className="h-11 max-w-36 shrink-0 rounded-md border border-input bg-background px-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring md:h-8"
+      <Select
         value={
           state?.mixedStyle ? "mixed" : (state?.paragraphStyle ?? "normal")
         }
         disabled={disabled}
-        onChange={(event) => {
+        onValueChange={(value) => {
           const style = editor?.paragraphStyles.find(
-            (item) => item.id === event.target.value
+            (item) => item.id === value
           )
           if (style) editor?.setParagraphStyle(style.id)
         }}
       >
-        {state?.mixedStyle ? <option value="mixed">Mixed styles</option> : null}
-        {editor?.paragraphStyles.map((style) => (
-          <option key={style.id} value={style.id}>
-            {style.label}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger
+          aria-label="Paragraph style"
+          className="max-w-36 shrink-0 data-[size=default]:h-11 data-[size=default]:md:h-8"
+        >
+          <SelectValue>
+            {state?.mixedStyle
+              ? "Mixed styles"
+              : (editor?.paragraphStyles.find(
+                  (style) => style.id === state?.paragraphStyle
+                )?.label ?? "Normal text")}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {state?.mixedStyle ? (
+            <SelectItem value="mixed" disabled>
+              Mixed styles
+            </SelectItem>
+          ) : null}
+          {editor?.paragraphStyles.map((style) => (
+            <SelectItem key={style.id} value={style.id}>
+              {style.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       {children}
       {controls.slice(2).map(control)}
       <Dialog
         open={link !== null}
         onOpenChange={(open) => {
           if (!open) {
-            setLink(null)
+            dispatch({ type: "close" })
             editor?.focus()
           }
         }}
@@ -150,10 +200,10 @@ export function RichStructureControls({
             onSubmit={(event) => {
               event.preventDefault()
               if (!editor?.setLink(link?.href.trim() ?? "")) {
-                setError("Enter an http, https or mailto address.")
+                dispatch({ type: "error" })
                 return
               }
-              setLink(null)
+              dispatch({ type: "close" })
               refresh()
             }}
           >
@@ -168,11 +218,7 @@ export function RichStructureControls({
                 aria-invalid={Boolean(error)}
                 aria-describedby={error ? "paper-link-error" : undefined}
                 onChange={(event) => {
-                  setError("")
-                  setLink({
-                    href: event.target.value,
-                    original: link?.original ?? "",
-                  })
+                  dispatch({ type: "edit", href: event.target.value })
                 }}
               />
             </label>
@@ -202,7 +248,7 @@ export function RichStructureControls({
                     className="min-h-11"
                     onClick={() => {
                       editor?.removeLink()
-                      setLink(null)
+                      dispatch({ type: "close" })
                       refresh()
                     }}
                   >

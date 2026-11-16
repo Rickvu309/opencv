@@ -230,9 +230,10 @@ it.each(["cv", "letter"] as const)(
     expect(activeInline().bold).toBe(false)
     for (const keyName of ["b", "i", "u"])
       reversible(() => key(keyName, { ctrlKey: true }))
-    reversible(() =>
-      key("5", { ctrlKey: true, shiftKey: true, code: "Digit5" })
-    )
+    reversible(() => key("5", { altKey: true, shiftKey: true, code: "Digit5" }))
+    expect(activeInline().strike).toBe(true)
+    reversible(() => key("x", { metaKey: true, shiftKey: true }))
+    expect(activeInline().strike).toBe(false)
     reversible(() => key("\\", { ctrlKey: true }))
     expect(commands.formattingState().paragraphStyle).toBe("normal")
     const first = read().flow.children[0]!.children.find(

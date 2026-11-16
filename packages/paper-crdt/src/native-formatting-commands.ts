@@ -153,7 +153,11 @@ export function richEditorCommands(
       const mark = key === "b" ? "bold" : key === "i" ? "italic" : "underline"
       action = () => change(() => toggleMark(mark))
     }
-    if (mod && event.shiftKey && event.code === "Digit5")
+    if (
+      event.shiftKey &&
+      ((event.altKey && !mod && event.code === "Digit5") ||
+        (event.metaKey && !event.altKey && key === "x"))
+    )
       action = () => change(() => toggleMark("strike"))
     if (mod && key === "\\") action = clearFormatting
     if (mod && event.shiftKey && event.code === "Digit7")

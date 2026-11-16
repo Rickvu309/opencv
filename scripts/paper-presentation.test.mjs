@@ -69,3 +69,15 @@ test("the list marker guard catches the original custom rich renderer", () => {
     detect(original, file).some((hit) => hit.includes("render markers"))
   )
 })
+
+test("the Docs shortcut guard catches the original strikethrough mapping", () => {
+  const file = "packages/paper-crdt/src/native-formatting-commands.ts"
+  const original = execFileSync(
+    "git",
+    ["show", "caa5284fc9245f96e59d52b949e8f220c3955ce1:" + file],
+    { cwd: root, encoding: "utf8" }
+  )
+  assert.ok(
+    detect(original, file).some((hit) => hit.includes("Docs shortcuts"))
+  )
+})
