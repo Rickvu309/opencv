@@ -1,0 +1,14 @@
+{
+  "id": "paper-header-fit",
+  "file": "scripts/paper-header-fit.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-header-fit.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "7f4a5597",
+    "path": "apps/web/src/features/paper/design/rich-page-header.pen.css"
+  },
+  "reason": "At 320px the 12rem title basis wraps the Saved and menu group into a second row. The mobile title yields space and truncates while the enlarged-text header wrapping rule remains intact. Real-route screenshot checks cover 320, 360, 390 and 1440."
+}
