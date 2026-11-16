@@ -56,9 +56,6 @@
   border-block-end: 1px solid var(--border);
 }
 
-@media (max-width: 767px) {
-  .paper-table-menu {
-    inset-block-start: 0;
-    inset-inline-end: 0;
-  }
+.paper-rich-sheet[data-paper-reflow="true"] .paper-table-menu {
+  inset-inline-end: 0;
 }

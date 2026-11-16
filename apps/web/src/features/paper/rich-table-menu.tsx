@@ -106,7 +106,7 @@ export function RichTableMenu({
         <PopoverContent
           align="end"
           aria-label="Table options"
-          className="max-h-[calc(100dvh-3rem)] w-[min(18rem,calc(100vw-2rem))] overflow-y-auto"
+          className="max-h-[calc(100dvh-3rem)] w-[min(18rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain"
           finalFocus={() => editor.focus()}
         >
           <PopoverTitle>Table options</PopoverTitle>

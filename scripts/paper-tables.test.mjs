@@ -14,6 +14,7 @@ const files = [
   "apps/api/src/paper/native-output/formatted.ts",
   "apps/web/src/features/paper/rich-table.css",
   "packages/paper-crdt/src/native-layout-flow-mount.ts",
+  "apps/web/src/features/paper/rich-table-menu.tsx",
 ]
 
 test("table availability, row pagination and borders stay connected", () => {
@@ -39,6 +40,14 @@ test("table mistakes fire and clean fixtures stay quiet", () => {
       "paper-oversized-row=true]{height:var(--paper-column-height);overflow:auto",
       "paper-oversized-row=true]{overflow:visible",
     ],
+    [files[1], ":not([data-paper-reflow=true])", ""],
+    [files[2], "[data-is-empty-and-focused]", ""],
+    [
+      files[5],
+      '.paper-rich-sheet[data-paper-reflow="true"] .paper-table-menu',
+      "@media (max-width: 767px) .paper-table-menu",
+    ],
+    [files[7], "overscroll-contain", ""],
     [files[2], 'dom.style.height = "100%"', 'dom.style.height = "auto"'],
     [
       files[2],

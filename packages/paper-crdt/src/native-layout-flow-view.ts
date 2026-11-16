@@ -91,7 +91,7 @@ export function installFlowView(
   updateBreaks: (breaks: Map<string, number>) => void
 ) {
   const style = document.createElement("style")
-  style.textContent = `[data-paper-page-flow] .bn-block-group{padding:0}[data-paper-page-flow] [data-paper-layout=paperFlowSection]{width:var(--paper-flow-width);max-width:100%;margin-block:24px}[data-paper-page-flow] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]{display:block;column-count:var(--paper-columns);column-gap:var(--paper-column-gap);column-fill:auto}[data-paper-page-flow][data-paper-pagination=true] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]{column-height:var(--paper-column-height);column-wrap:wrap;row-gap:var(--paper-row-gap)}[data-paper-page-flow] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]>[data-node-type=blockOuter],[data-paper-page-flow] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]>[data-node-type=blockOuter]>.bn-block{display:block}[data-paper-page-flow] [data-paper-page-break]{height:0;min-height:0}[data-paper-page-flow] [data-content-type=paperPageBreak]{padding:0;margin:0;min-height:0}[data-paper-page-flow] [data-paper-layout=paperTable]{break-inside:auto}[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-layout=paperTable]),[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-layout=paperTable])>.bn-block{display:block;break-inside:auto}[data-paper-page-flow] [data-paper-layout=paperRow]{break-inside:avoid}[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-layout=paperRow]){break-inside:avoid;display:block}[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-layout=paperRow])>.bn-block{display:block}[data-paper-page-flow] [data-paper-layout=paperRow][data-paper-oversized-row=true]{height:var(--paper-column-height);overflow:auto;overscroll-behavior:contain;break-before:column;break-after:column}[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-oversized-row=true]){break-before:column;break-after:column}`
+  style.textContent = `[data-paper-page-flow] .bn-block-group{padding:0}[data-paper-page-flow] [data-paper-layout=paperFlowSection]{width:var(--paper-flow-width);max-width:100%;margin-block:24px}[data-paper-page-flow] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]{display:block;column-count:var(--paper-columns);column-gap:var(--paper-column-gap);column-fill:auto}[data-paper-page-flow][data-paper-pagination=true] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]{column-height:var(--paper-column-height);column-wrap:wrap;row-gap:var(--paper-row-gap)}[data-paper-page-flow] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]>[data-node-type=blockOuter],[data-paper-page-flow] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]>[data-node-type=blockOuter]>.bn-block{display:block}[data-paper-page-flow] [data-paper-page-break]{height:0;min-height:0}[data-paper-page-flow] [data-content-type=paperPageBreak]{padding:0;margin:0;min-height:0}[data-paper-page-flow] [data-paper-layout=paperTable]{break-inside:auto}[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-layout=paperTable]),[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-layout=paperTable])>.bn-block{display:block;break-inside:auto}[data-paper-page-flow] [data-paper-layout=paperRow]{break-inside:avoid}[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-layout=paperRow]){break-inside:avoid;display:block}[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-layout=paperRow])>.bn-block{display:block}[data-paper-page-flow][data-paper-pagination=true]:not([data-paper-reflow=true]) [data-paper-layout=paperRow][data-paper-oversized-row=true]{height:var(--paper-column-height);overflow:auto;overscroll-behavior:contain;break-before:column;break-after:column}[data-paper-page-flow][data-paper-pagination=true]:not([data-paper-reflow=true]) [data-node-type=blockOuter]:has(> .bn-block > [data-paper-oversized-row=true]){break-before:column;break-after:column}`
   element.before(style)
   element.dataset.paperPageFlow = ""
   let active = true,
@@ -137,11 +137,13 @@ export function installFlowView(
     const document = read(),
       support = flowPaginationSupport(document)
     element.dataset.paperPagination = String(support.supported)
-    markTableRows(document, support.supported)
-    if (element.classList.contains("paper-rich-sheet")) {
+    if (element.classList.contains("paper-rich-sheet"))
       updateBreaks(richPageLayout(element, document, support.supported))
-      return
-    }
+    markTableRows(
+      document,
+      support.supported && element.dataset.paperReflow !== "true"
+    )
+    if (element.classList.contains("paper-rich-sheet")) return
     const breaks = new Map<string, number>()
     for (const section of document.flow.children) {
       const dom = element.querySelector<HTMLElement>(

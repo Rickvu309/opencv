@@ -35,7 +35,7 @@ function frame(block: { id: string; type: string }) {
     slot.style.gridTemplateColumns = "var(--paper-table-columns)"
     const style = document.createElement("style")
     style.textContent =
-      '[data-paper-layout="paperRow"] > div > [data-node-type="blockOuter"] > .bn-block{height:100%}[data-paper-layout="paperCell"] .bn-is-empty::before{display:none}'
+      '[data-paper-layout="paperRow"] > div > [data-node-type="blockOuter"] > .bn-block{height:100%}[data-paper-layout="paperCell"] .bn-is-empty::before,[data-paper-layout="paperCell"] .bn-block-content[data-is-empty-and-focused]:has(.ProseMirror-trailingBreak:only-child)::after,[data-paper-layout="paperCell"] .bn-block-content[data-is-only-empty-block]:has(.ProseMirror-trailingBreak:only-child)::after{content:none !important;display:none}'
     dom.append(style)
   }
   if (block.type === "paperCell") {
