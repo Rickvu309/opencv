@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/routes/detail-recovery.test.tsx",
+    "because": "Paper now loads qualified document metadata and shows its document-specific failure message. The replacement still rejects missing-document copy for server and permission failures.",
+    "replacedBy": "apps/web/src/routes/detail-recovery.test.tsx",
+    "proof": {
+      "fork": "26355e46df156a6bbdf6a791ceb96a486daed4e9",
+      "replacedByBlob": "49a167708752dd5b580384945799022cb255ed84",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]
