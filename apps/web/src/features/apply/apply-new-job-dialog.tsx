@@ -1,4 +1,4 @@
-import { useLayoutEffect, useReducer, useRef, useState } from "react"
+import { useLayoutEffect, useReducer, useRef } from "react"
 import type { CSSProperties } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import {
@@ -67,8 +67,12 @@ function shownUrl(value: string) {
 const INLINE_FIELD =
   "h-auto rounded-none border-0 bg-transparent p-0 shadow-none focus-visible:border-0 focus-visible:ring-0 aria-invalid:border-0 aria-invalid:ring-0 dark:bg-transparent"
 
+function shiftReducer(_shift: number, next: number) {
+  return next
+}
+
 function useContentCenterShift(active: boolean) {
-  const [shift, setShift] = useState(0)
+  const [shift, setShift] = useReducer(shiftReducer, 0)
   useLayoutEffect(() => {
     if (!active) return
     const main = document.getElementById("app-main")
