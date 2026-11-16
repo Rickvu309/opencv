@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp, X } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import type { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
+import { useShortcut } from "@/lib/use-shortcut"
 import "./rich-find-bar.css"
 
 export type PaperFindMode = "closed" | "find" | "replace"
@@ -30,44 +31,39 @@ export function RichFindBar({
     editor?.search.snapshot ?? getEmpty
   )
   const open = mode !== "closed"
+  const close = () => {
+    editor?.search.close()
+    onModeChange("closed")
+    editor?.focus()
+  }
   useEffect(() => {
     if (open) {
       input.current?.focus()
       input.current?.select()
     }
   }, [mode, open])
-  useEffect(() => {
-    const keydown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && open && !event.isComposing) {
-        event.preventDefault()
-        editor?.search.close()
-        onModeChange("closed")
-        editor?.focus()
-        return
-      }
-      if (
-        !(event.ctrlKey || event.metaKey) ||
-        event.altKey ||
-        event.shiftKey ||
-        event.isComposing
-      )
-        return
+  useShortcut({
+    key: ["f", "h"],
+    mod: true,
+    inFields: true,
+    enabled: !!editor,
+    prevent: false,
+    onPress: (event) => {
+      if (event.shiftKey) return
       const key = event.key.toLowerCase()
-      if ((key !== "f" && key !== "h") || !editor) return
       event.preventDefault()
       onModeChange(key === "h" ? "replace" : "find")
       input.current?.focus()
       input.current?.select()
-    }
-    window.addEventListener("keydown", keydown)
-    return () => window.removeEventListener("keydown", keydown)
-  }, [editor, onModeChange, open])
+    },
+  })
+  useShortcut({
+    key: "Escape",
+    enabled: open,
+    inFields: true,
+    onPress: close,
+  })
   if (!open) return null
-  const close = () => {
-    editor?.search.close()
-    onModeChange("closed")
-    editor?.focus()
-  }
   const count = state.matches.length
   return (
     <div
