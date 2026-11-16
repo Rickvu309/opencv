@@ -6,6 +6,13 @@ import type { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select"
+import {
   Dialog,
   DialogContent,
   DialogTitle,
@@ -45,8 +52,16 @@ function reducer(state: State, action: Action): State {
   }
 }
 const edges = ["top", "right", "bottom", "left"] as const
-const shapes = ["rectangle", "rounded", "circle"] as const
-const alignments = ["left", "center", "right"] as const
+const shapes = [
+  { value: "rectangle", label: "Square corners" },
+  { value: "rounded", label: "Rounded" },
+  { value: "circle", label: "Circle" },
+]
+const alignments = [
+  { value: "left", label: "Left" },
+  { value: "center", label: "Center" },
+  { value: "right", label: "Right" },
+]
 
 export function RichPhotoControls({
   editor,
@@ -244,26 +259,35 @@ export function RichPhotoControls({
               {photos.length > 1 ? (
                 <label className="grid gap-1">
                   Photo
-                  <select
-                    aria-label="Choose photo"
-                    className="h-11 w-full rounded-md border bg-background px-3"
+                  <Select
                     value={selected.id}
-                    onChange={(event) =>
+                    items={photos.map((photo, index) => ({
+                      value: photo.id,
+                      label: photo.alt || `Photo ${index + 1}`,
+                    }))}
+                    disabled={held}
+                    onValueChange={(value) =>
                       dispatch({
                         type: "open",
                         photo:
-                          photos.find(
-                            (photo) => photo.id === event.target.value
-                          ) ?? null,
+                          photos.find((photo) => photo.id === value) ?? null,
                       })
                     }
                   >
-                    {photos.map((photo, index) => (
-                      <option key={photo.id} value={photo.id}>
-                        {photo.alt || `Photo ${index + 1}`}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger
+                      aria-label="Choose photo"
+                      className="w-full data-[size=default]:h-11"
+                    >
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {photos.map((photo, index) => (
+                        <SelectItem key={photo.id} value={photo.id}>
+                          {photo.alt || `Photo ${index + 1}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </label>
               ) : null}
               <img
@@ -310,40 +334,56 @@ export function RichPhotoControls({
                 <div className="grid grid-cols-2 gap-4">
                   <label className="grid gap-1">
                     Shape
-                    <select
+                    <Select
                       name="shape"
-                      className="h-11 w-full rounded-md border bg-background px-3"
+                      items={shapes}
+                      disabled={held}
                       defaultValue={selected.shape}
                     >
-                      {shapes.map((shape) => (
-                        <option key={shape} value={shape}>
-                          {shape === "rectangle"
-                            ? "Square corners"
-                            : shape === "rounded"
-                              ? "Rounded"
-                              : "Circle"}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger
+                        aria-label="Shape"
+                        className="w-full data-[size=default]:h-11"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {shapes.map((shape) => (
+                          <SelectItem key={shape.value} value={shape.value}>
+                            {shape.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </label>
                   <label className="grid gap-1">
                     Alignment
-                    <select
+                    <Select
                       name="alignment"
-                      className="h-11 w-full rounded-md border bg-background px-3"
+                      items={alignments}
+                      disabled={held}
                       defaultValue={
                         selected.placement.kind === "block"
                           ? selected.placement.alignment
                           : selected.placement.side
                       }
                     >
-                      {alignments.map((alignment) => (
-                        <option key={alignment} value={alignment}>
-                          {alignment.charAt(0).toUpperCase() +
-                            alignment.slice(1)}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger
+                        aria-label="Alignment"
+                        className="w-full data-[size=default]:h-11"
+                      >
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {alignments.map((alignment) => (
+                          <SelectItem
+                            key={alignment.value}
+                            value={alignment.value}
+                          >
+                            {alignment.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </label>
                 </div>
                 <label className="grid gap-1">
