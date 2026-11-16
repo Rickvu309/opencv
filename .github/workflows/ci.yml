@@ -44,7 +44,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2]
+        shard: [1, 2, 3]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -52,7 +52,7 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - run: pnpm exec turbo run test $TURBO_SCOPE --filter=api -- --shard=${{ matrix.shard }}/2
+      - run: pnpm exec turbo run test $TURBO_SCOPE --filter=api -- --shard=${{ matrix.shard }}/3
       - if: matrix.shard == 1
         run: pnpm exec turbo run test $TURBO_SCOPE --filter=@workspace/domain
 
