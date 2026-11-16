@@ -4,7 +4,9 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { nativeProvenance, richPaperDocumentSchema } from "@workspace/domain"
 import { openRichPaperClient, seedStoredYDoc } from "@workspace/paper-crdt"
 import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
+import * as editors from "@workspace/paper-crdt/editor"
 import { RichFindBar, type PaperFindMode } from "./rich-find-bar"
+import { mountRichEditorLifecycle } from "./rich-editor-lifecycle"
 
 const releases: (() => void)[] = []
 afterEach(() => {
@@ -13,7 +15,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-function setup(available = true) {
+function prepareDOM() {
   Object.defineProperty(document, "fonts", {
     configurable: true,
     value: { ready: Promise.resolve() },
@@ -30,6 +32,10 @@ function setup(available = true) {
     configurable: true,
     value: () => new DOMRect(),
   })
+}
+
+function setup(available = true) {
+  prepareDOM()
   const client = searchClient()
   const host = document.createElement("div")
   document.body.append(host)
@@ -56,6 +62,57 @@ function setup(available = true) {
   render(<Mounted />)
   return { host, editor }
 }
+
+it("rejects captured search calls after the mounted editor is released", () => {
+  prepareDOM()
+  const mount = vi.spyOn(editors, "mountRichPaperEditor")
+  const client = searchClient()
+  const host = document.createElement("div")
+  document.body.append(host)
+  const mounted =
+    vi.fn<(editor: ReturnType<typeof mountRichPaperEditor>) => void>()
+  const detach = mountRichEditorLifecycle(client, host, {
+    mounted,
+    released: vi.fn(),
+    failed: vi.fn(),
+  })
+  releases.push(() => {
+    detach()
+    client.destroy()
+    host.remove()
+  })
+  const raw = mount.mock.results[0]
+  const editor = mounted.mock.calls[0]?.[0]
+  if (raw?.type !== "return" || !editor) throw new Error("Editor did not mount")
+  const methods = [
+    "find",
+    "move",
+    "replace",
+    "close",
+    "snapshot",
+    "subscribe",
+  ] as const
+  const spies = methods.map((method) => vi.spyOn(raw.value.search, method))
+  const stale = editor.search
+  const find = stale.find
+  find("Ann", false)
+  expect(stale.snapshot().matches).toHaveLength(2)
+  detach()
+  for (const spy of spies) spy.mockClear()
+  find("Ann", false)
+  stale.move(1)
+  stale.close()
+  expect(stale.replace("Anna", false)).toBe(0)
+  expect(stale.snapshot()).toEqual({
+    query: "",
+    matchCase: false,
+    matches: [],
+    activeIndex: -1,
+  })
+  expect(stale.snapshot()).toBe(stale.snapshot())
+  stale.subscribe(vi.fn())()
+  for (const spy of spies) expect(spy).not.toHaveBeenCalled()
+})
 
 it("opens with Ctrl+F, navigates with Enter and Shift+Enter, ignores IME and returns focus on Escape", () => {
   const { host } = setup()
