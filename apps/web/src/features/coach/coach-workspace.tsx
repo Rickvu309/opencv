@@ -1,4 +1,5 @@
 import {
+  use,
   useCallback,
   useEffect,
   useEffectEvent,
@@ -34,6 +35,8 @@ import { keepToastsClearOf } from "@/lib/toast-clearance.ts"
 import { chatColumn } from "@/components/ai-elements/chat.tsx"
 import { PromptInputFrame } from "@/components/ai-elements/prompt-input-frame.ts"
 import { CoachDock, type DockRecentList } from "./coach-dock.tsx"
+import { CoachPresentation } from "./coach-presentation.ts"
+import "./coach-layout.css"
 import { CoachHome } from "./coach-home.tsx"
 import { CoachContextAttachments } from "./coach-context-attachments.tsx"
 import { startComposerGlide } from "./coach-composer-glide.ts"
@@ -53,6 +56,10 @@ import {
 import { linkAttachmentLabel } from "./coach-attachment-view.ts"
 import { coachResetLabel } from "./coach-mode.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
+import {
+  coachViewportIsNarrow,
+  releaseCoachComposerFocus,
+} from "./coach-composer-focus.ts"
 
 export function CoachWorkspace({
   chatId = null,
@@ -65,6 +72,8 @@ export function CoachWorkspace({
   presentation?: "page" | "compact"
   headerActions?: ReactNode
 }) {
+  const panelPresentation = use(CoachPresentation)
+  const resolvedPresentation = panelPresentation ?? presentation
   const composerId = useId()
   const composerBox = useRef<HTMLDivElement | null>(null)
   const glideFromTop = useRef<number | null>(null)
@@ -114,7 +123,24 @@ export function CoachWorkspace({
     queryFn: coachJobOptions,
     enabled: picker === "job",
   })
+  const awaitingApproval = messages.some((message) =>
+    message.parts?.some(
+      (part) =>
+        part.type === "tool" &&
+        (part.approval === "pending" ||
+          Boolean(part.pendingActionId && !part.approval))
+    )
+  )
   const active = phase !== "idle"
+
+  useLayoutEffect(() => {
+    const field = document.activeElement
+    if (!(field instanceof HTMLTextAreaElement)) return
+    if (!field.closest("[data-slot='coach-workspace-composer']")) return
+    if (awaitingApproval || coachViewportIsNarrow()) {
+      releaseCoachComposerFocus(field)
+    }
+  }, [awaitingApproval])
   const chatSynced =
     draftChatId === activeChatId &&
     draftNavigationRevision === navigationRevision
@@ -203,9 +229,10 @@ export function CoachWorkspace({
 
   function chooseStarter(value: string) {
     dispatch({ type: "draft_typed", value })
+    if (awaitingApproval || coachViewportIsNarrow()) return
     requestAnimationFrame(() => {
       const field = composerBox.current?.querySelector("textarea")
-      if (!field) return
+      if (!field || awaitingApproval || coachViewportIsNarrow()) return
       field.focus()
       field.setSelectionRange(field.value.length, field.value.length)
     })
@@ -249,7 +276,7 @@ export function CoachWorkspace({
     else attach({ kind: "paper", id, label: doc.name })
   }
 
-  const compact = presentation === "compact"
+  const compact = resolvedPresentation === "compact"
   const showHome = messages.length === 0 && !active && !error
   const showWelcome = showHome && !compact
 
@@ -280,19 +307,22 @@ export function CoachWorkspace({
       setDraft={(value) => dispatch({ type: "draft_typed", value })}
       onSend={() => send()}
       onStop={store.stop}
-      turnActive={active}
+      turnActive={active && !awaitingApproval}
       disabled={
+        awaitingApproval ||
         capped ||
         !enabled ||
         store.configuration === "loading" ||
         store.configuration === "error"
       }
       placeholder={
-        capped
-          ? "Daily limit reached"
-          : compact && !showHome
-            ? "Reply…"
-            : "Ask Coach anything"
+        awaitingApproval
+          ? "Approve or deny to continue"
+          : capped
+            ? "Daily limit reached"
+            : showHome
+              ? "Ask Coach anything"
+              : "Reply…"
       }
       menuPlacement={showWelcome ? "below" : "above"}
       onAttachFromPaper={() =>
@@ -368,11 +398,7 @@ export function CoachWorkspace({
           </Button>
         </p>
       ) : null}
-      <PromptInputFrame
-        value={!showWelcome && !compact && !capped ? "page" : "standard"}
-      >
-        {coachDock}
-      </PromptInputFrame>
+      <PromptInputFrame value="page">{coachDock}</PromptInputFrame>
     </div>
   )
   const headerTitle = showHome
@@ -399,7 +425,7 @@ export function CoachWorkspace({
   return (
     <div
       data-slot="coach-panel-body"
-      data-presentation={presentation}
+      data-presentation={resolvedPresentation}
       className="flex h-full min-h-0 flex-col"
     >
       {compact ? (
@@ -435,7 +461,7 @@ export function CoachWorkspace({
           </CoachHome>
         ) : (
           <ChatView
-            presentation={presentation}
+            presentation={resolvedPresentation}
             empty={
               compact && showHome ? (
                 <CoachHome

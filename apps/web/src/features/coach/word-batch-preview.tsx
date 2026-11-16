@@ -44,30 +44,38 @@ export function WordBatchPreview({ batch }: { batch: WordBatchView }) {
             change.op === "replace" ? null : (
               <li key={index} className="space-y-1.5">
                 <p className="text-xs font-medium text-muted-foreground">
-                  {titles[change.op]}
+                  {change.op === "setText" && change.before === ""
+                    ? "Add a line"
+                    : titles[change.op]}
                 </p>
                 <dl
                   data-slot="word-change-rows"
                   className="grid grid-cols-[3.25rem_minmax(0,1fr)] gap-x-2 gap-y-1 font-sans text-sm leading-relaxed [overflow-wrap:anywhere] text-foreground"
                 >
-                  {wordChangeRows(change).map((row) => (
-                    <div key={row.label} className="contents">
-                      <dt className="pt-0.5 text-xs leading-5 text-muted-foreground">
-                        {shownLabel[row.label] ?? row.label}
-                      </dt>
-                      <dd className="min-w-0 whitespace-pre-wrap">
-                        {rowLook[row.label] === "insert" ? (
-                          <DiffInsert>{row.text}</DiffInsert>
-                        ) : rowLook[row.label] === "delete" ? (
-                          <DiffDelete>{row.text}</DiffDelete>
-                        ) : (
-                          <span className="text-muted-foreground">
-                            {row.text}
-                          </span>
-                        )}
-                      </dd>
-                    </div>
-                  ))}
+                  {wordChangeRows(change)
+                    .filter(
+                      (row) => !(row.label === "Before" && change.before === "")
+                    )
+                    .map((row) => (
+                      <div key={row.label} className="contents">
+                        <dt className="pt-0.5 text-xs leading-5 text-muted-foreground">
+                          {row.label === "After" && change.before === ""
+                            ? "Add"
+                            : (shownLabel[row.label] ?? row.label)}
+                        </dt>
+                        <dd className="min-w-0 whitespace-pre-wrap">
+                          {rowLook[row.label] === "insert" ? (
+                            <DiffInsert>{row.text}</DiffInsert>
+                          ) : rowLook[row.label] === "delete" ? (
+                            <DiffDelete>{row.text}</DiffDelete>
+                          ) : (
+                            <span className="text-muted-foreground">
+                              {row.text}
+                            </span>
+                          )}
+                        </dd>
+                      </div>
+                    ))}
                 </dl>
               </li>
             )

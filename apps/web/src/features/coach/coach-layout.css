@@ -1,0 +1,10 @@
+[data-slot="coach-panel-body"][data-presentation="compact"]
+  [data-slot="message-scroller-content"] {
+  padding: 8px 18px;
+  gap: 14px;
+}
+
+[data-slot="coach-panel-body"][data-presentation="compact"]
+  > div:has([data-slot="chat"]) {
+  padding: 0;
+}

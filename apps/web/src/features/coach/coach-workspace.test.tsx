@@ -19,6 +19,7 @@ import {
 import { chatApiFetch, scriptCoachStream } from "@/test/chat-api-mock.ts"
 import { profileApiFetch } from "@/test/profile-api-mock.ts"
 import { ChatStoreProvider } from "./chat-store.tsx"
+import { CoachPresentation } from "./coach-presentation.ts"
 import { CoachWorkspace } from "./coach-workspace.tsx"
 
 vi.mock("@tanstack/react-router", async (original) => ({
@@ -523,4 +524,68 @@ describe("Coach workspace", () => {
       }
     }
   )
+})
+
+describe("Coach uses one full-page presentation", () => {
+  it("uses the page header and composer when the compact panel expands", async () => {
+    scriptCoachStream({})
+    const { container, rerender } = render(
+      <ChatStoreProvider>
+        <CoachPresentation value="compact">
+          <CoachWorkspace presentation="compact" />
+        </CoachPresentation>
+      </ChatStoreProvider>
+    )
+    const composer = await screen.findByRole("textbox", {
+      name: "Message Coach",
+    })
+    expect(composer).not.toHaveFocus()
+    const sizing = composer.className
+    expect(
+      container.querySelector('[data-slot="coach-panel-header"]')
+    ).not.toBeNull()
+    rerender(
+      <ChatStoreProvider>
+        <CoachPresentation value="page">
+          <CoachWorkspace presentation="compact" />
+        </CoachPresentation>
+      </ChatStoreProvider>
+    )
+    expect(
+      container.querySelector('[data-slot="coach-panel-header"]')
+    ).toBeNull()
+    expect(container.querySelector('[data-presentation="page"]')).not.toBeNull()
+    expect(sizing).toContain("md:min-h-12")
+    expect(sizing).toContain("md:text-[15px]")
+    expect(sizing).toContain("text-base")
+    expect(
+      screen.getByRole("textbox", { name: "Message Coach" }).className
+    ).toBe(sizing)
+  })
+
+  it("leaves the composer unfocused on a phone, including after a starter", async () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query === "(max-width: 767px)",
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }))
+    scriptCoachStream({})
+    render(
+      <ChatStoreProvider>
+        <CoachWorkspace />
+      </ChatStoreProvider>
+    )
+    const composer = await screen.findByRole("textbox", {
+      name: "Message Coach",
+    })
+    expect(composer).not.toHaveFocus()
+    fireEvent.click(screen.getByRole("button", { name: "Review my CV" }))
+    expect(composer).toHaveValue("Review my CV")
+    expect(composer).not.toHaveFocus()
+  })
 })

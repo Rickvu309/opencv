@@ -112,6 +112,8 @@ describe("Coach workspace shows streamed progress", () => {
 
   it("shows a pending action once, on its card with Approve and Deny, without a Working timer", async () => {
     const { feed, rowStatuses, working } = await openTurn()
+    const composer = screen.getByRole("textbox", { name: "Message Coach" })
+    composer.focus()
     const s = step("Move card")
     await feed(s.event, s.data)
     await feed(call("m", "job.move").event, call("m", "job.move").data)
@@ -122,6 +124,16 @@ describe("Coach workspace shows streamed progress", () => {
     expect(screen.getByRole("button", { name: "Approve" })).toBeEnabled()
     expect(screen.getByRole("button", { name: "Deny" })).toBeEnabled()
     expect(screen.getAllByText("Needs your approval")).toHaveLength(1)
+    expect(
+      screen.queryByRole("button", { name: "Stop" })
+    ).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Send" })).toBeDisabled()
+    expect(composer).toBeDisabled()
+    expect(composer).toHaveAttribute(
+      "placeholder",
+      "Approve or deny to continue"
+    )
+    expect(composer).not.toHaveFocus()
     expect(rowStatuses()).toEqual([])
     expect(screen.queryByText(/Working, \d+s/)).toBeNull()
     expect(working()).toBeNull()

@@ -41,13 +41,13 @@
   padding: 0;
 }
 
-[data-pen-surface="coach"][data-slot="coach-panel"]
+[data-pen-surface="coach"][data-slot="coach-panel"][data-panel-mode="side"]
   [data-slot="message-scroller-content"] {
   padding: 8px 18px;
   gap: 14px;
 }
 
-[data-pen-surface="coach"][data-slot="coach-panel"]
+[data-pen-surface="coach"][data-slot="coach-panel"][data-panel-mode="side"]
   [data-slot="coach-composer"][data-pen-surface="coach"] {
   background: var(--card);
   border-color: var(--border);

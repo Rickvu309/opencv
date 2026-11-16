@@ -389,8 +389,17 @@ describe("ChatView pending message", () => {
     expect(screen.getByRole("status")).toHaveTextContent(/^Working$/)
     const log = screen.getByRole("log", { name: "Chat" })
     expect(log.className).toContain("max-w-[760px]")
+    expect(log.className).not.toContain("max-w-[680px]")
     expect(log.className).toContain("gap-8")
-    expect(log.className).toContain("text-base")
+    expect(log.className).toContain(
+      "[&_[data-slot=message-content]]:text-[15px]"
+    )
+    expect(log.className).toContain(
+      "[&_[data-slot=message-content]]:leading-[1.5]"
+    )
+    expect(log.className).toContain(
+      "[&_[data-slot=message-content]]:max-w-[75ch]"
+    )
     expect(log.className).toContain("pt-6")
   })
 
