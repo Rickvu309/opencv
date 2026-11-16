@@ -14,9 +14,28 @@ export function mountRichEditorLifecycle(
 ) {
   let editor: Editor | undefined
   let selection: ReturnType<Editor["captureSelection"]>
-  const liveHandle = (target: Editor): Editor =>
-    new Proxy(target, {
+  const emptySearch: ReturnType<Editor["search"]["snapshot"]> = {
+    query: "",
+    matchCase: false,
+    matches: [],
+    activeIndex: -1,
+  }
+  const liveHandle = (target: Editor): Editor => {
+    const search = new Proxy(target.search, {
+      get(search, key, receiver) {
+        const value = Reflect.get(search, key, receiver)
+        if (typeof value !== "function") return value
+        return (...args: unknown[]) => {
+          if (editor === target) return Reflect.apply(value, search, args)
+          if (key === "snapshot") return emptySearch
+          if (key === "subscribe") return () => {}
+          if (key === "replace") return 0
+        }
+      },
+    })
+    return new Proxy(target, {
       get(target, key, receiver) {
+        if (key === "search") return search
         const value = Reflect.get(target, key, receiver)
         if (typeof value !== "function") return value
         return (...args: unknown[]) => {
@@ -32,6 +51,7 @@ export function mountRichEditorLifecycle(
         }
       },
     })
+  }
   const release = () => {
     editor?.destroy()
     editor = undefined

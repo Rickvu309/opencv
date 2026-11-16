@@ -21,6 +21,7 @@ import type { NativeSyncIdentity } from "@/lib/paper-sync-identity.ts"
 import { SYNC_LABEL } from "@/lib/paper-sync.ts"
 import { useRichStatusDetail } from "./rich-status-detail.ts"
 import { mountRichEditorLifecycle } from "./rich-editor-lifecycle.ts"
+import { RichFindBar, type PaperFindMode } from "./rich-find-bar.tsx"
 import { RichDocumentMenu } from "./rich-document-menu.tsx"
 import "./design/rich-page-header.pen.css"
 import "./rich-page-geometry.css"
@@ -64,6 +65,10 @@ export function RichPaperPage({
   identity: NativeSyncIdentity
   onBack: () => void
 }) {
+  const [findMode, setFindMode] = useReducer(
+    (_: PaperFindMode, mode: PaperFindMode) => mode,
+    "closed"
+  )
   const queryClient = useQueryClient()
   const currentIdentity = useRef(identity)
   useLayoutEffect(() => {
@@ -127,7 +132,7 @@ export function RichPaperPage({
     <section
       aria-label="Paper"
       data-pen-surface="paper"
-      className="rich-paper-page flex min-h-0 flex-1 flex-col"
+      className="rich-paper-page flex h-full min-h-0 flex-1 flex-col overflow-clip"
     >
       <PageHeader>
         <div className="flex min-w-0 flex-1 basis-48 items-center gap-2">
@@ -155,6 +160,7 @@ export function RichPaperPage({
           <RichDocumentMenu
             editorAvailable={!!editor}
             editor={editor}
+            onFind={setFindMode}
             session={session}
             status={status}
             blocked={blocked}
@@ -181,13 +187,22 @@ export function RichPaperPage({
           />
         )}
       </RichPhotoControls>
+      <RichFindBar
+        editor={editor}
+        disabled={blocked}
+        mode={findMode}
+        onModeChange={setFindMode}
+      />
       {blocked ? (
         <p role="alert" className="p-6 text-sm">
           Paper could not safely open these changes. Your saved document and
           recovery drafts are kept. Reload to try again.
         </p>
       ) : null}
-      <div className="min-h-0 flex-1 overflow-auto bg-muted/30 p-4 md:p-6">
+      <div
+        data-paper-document-pane=""
+        className="min-h-0 flex-1 overflow-auto overscroll-contain bg-muted/30 p-4 md:p-6"
+      >
         <div
           ref={element}
           aria-busy={status === "loading"}

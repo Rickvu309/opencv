@@ -1,3 +1,4 @@
+import { paperSearchPlugin, richEditorSearch } from "./native-layout-search.js"
 import { richEditorCommands } from "./native-formatting-commands.js"
 import { richPageCommands } from "./native-layout-page-commands.js"
 import { isSafeHref } from "@workspace/domain"
@@ -51,6 +52,7 @@ export function mountPrivateFlow(
   const guard = createExtension({
     key: "paperFlowAdmission",
     prosemirrorPlugins: [
+      paperSearchPlugin(),
       new Plugin({
         filterTransaction: (tr, state) =>
           acceptsFlowTransaction(binding, tr, state),
@@ -212,8 +214,10 @@ export function mountPrivateFlow(
   const commands = richEditorCommands(editor, (mark) =>
     setInline({ [mark]: !activeInline()[mark] })
   )
+  const search = richEditorSearch(editor)
   return {
     commands,
+    search,
     editor,
     pages: richPageCommands(binding, editor),
     photoControls: { ...flowPhotoControls(binding, editor), ...selection },
@@ -225,6 +229,7 @@ export function mountPrivateFlow(
       if (!active) return
       active = false
       selection.destroy()
+      search.destroy()
       commands.destroy()
       binding.doc.getMap("paper").unobserveDeep(refresh)
       element.removeEventListener("keydown", keydown, true)
