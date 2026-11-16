@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/lib/paper-rich-editor.test.ts",
+    "because": "Issue #1590 requires stale toolbar handlers to be harmless after document release; the old closed-error expectation encoded the bug.",
+    "replacedBy": "apps/web/src/lib/paper-rich-editor.test.ts",
+    "proof": {
+      "fork": "0342e329d002417ffc17ee98011225ffbc1aba9b",
+      "replacedByBlob": "0f1ca463a0d8c80f00b31dad89ded82c97ac17b7",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]
