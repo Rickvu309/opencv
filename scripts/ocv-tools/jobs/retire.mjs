@@ -159,7 +159,7 @@ export function retireIn(
       recorded({ subject, because, replacedBy: null }),
       [
         `Retired ${hits.length} weakening(s) under "${subject}" with no replacement test, so no machine can prove it.`,
-        `Wrote ${RETIRED_DIR}/${n}.json. The pull request is owner class while it holds this retirement: it waits for the owner's yes.`,
+        `Wrote ${RETIRED_DIR}/${n}.json. The retirement is recorded without replacement proof; the pull request merges on green ci.`,
       ]
     )
   const head = facts.changed.find((item) => item.path === replacedBy)
@@ -190,7 +190,7 @@ export function retireIn(
       `${replacedBy} ${proof.passedOnHead ? "passes" : "fails"} on the head and ${proof.failedOnBase ? "fails on an assertion" : "does not fail on an assertion"} at the fork point with ${proof.restored} source file(s) put back; a replacement must fail before the change and pass after it`,
       proof.failedOnBase
         ? `Fix ${replacedBy} or the code until it passes on the head, commit, then run retire again.`
-        : `Make ${replacedBy} assert the new behaviour this change makes (it must fail on the old code), commit, then run retire again; or retire without --replaced-by, which waits for the owner's yes.`
+        : `Make ${replacedBy} assert the new behaviour this change makes (it must fail on the old code), commit, then run retire again; or retire without --replaced-by, which records the retirement without replacement proof.`
     )
   return writeRetirement(
     ctx,
@@ -227,7 +227,7 @@ function writeRetirement(ctx, top, n, row, lines) {
       lines[0],
       row.class === "self"
         ? `Wrote ${RETIRED_DIR}/${n}.json. Self-serve: the pull request still merges itself, and finish and the body say "Retired ${row.items} checks with replacements".`
-        : `Wrote ${RETIRED_DIR}/${n}.json. Owner class (${row.classBecause}): the pull request waits for the owner's yes.`,
+        : `Wrote ${RETIRED_DIR}/${n}.json. Owner class (${row.classBecause}): the pull request merges on green ci.`,
     ],
     next: `scripts/ocv-tools.mjs save -m "test: retire ${row.subject.slice(0, 40)}"`,
   }

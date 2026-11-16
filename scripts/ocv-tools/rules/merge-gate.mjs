@@ -1,5 +1,4 @@
 export const LABELS = Object.freeze({
-  ownerApproved: "owner-approved",
   productionRed: "production-red",
   productionRedRevert: "production-red-revert",
   allowMigration: "allow-migration",

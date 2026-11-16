@@ -4,7 +4,7 @@ status: accepted
 
 # A merge to main is a production deploy, checked afterwards by a read-only probe
 
-There is no staging step: main deploys to production within minutes of each merge. The safety comes before the merge, where the merge queue runs the full checks on the merged tree, and after it, where a read-only probe opens a real imported CV in production. Two probe failures in a row put production red, which closes the queue to everything but a revert of the code; migrations are never reverted, because only-adds migrations are the norm and any other kind needs the owner's yes.
+There is no staging step: main deploys to production within minutes of each merge. The safety comes before the merge, where the merge queue runs the full checks on the merged tree, and after it, where a read-only probe opens a real imported CV in production. Two probe failures in a row put production red, which closes the queue to everything but a revert of the code; migrations are never reverted, because only-adds migrations are the norm and any other kind needs its allow-migration:<tag> label.
 
 ## Considered options
 

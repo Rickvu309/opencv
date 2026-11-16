@@ -30,9 +30,6 @@
 - name: "risk:high"
   color: "e11d21"
   description: High risk. ocv-tools reads it
-- name: owner-approved
-  color: "b60205"
-  description: The owner said yes to this owner-class pull request. ocv-tools merge adds it
 - name: production-red
   color: "b60205"
   description: Production is broken. While one is open only a production-red-revert pull request merges

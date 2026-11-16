@@ -156,15 +156,12 @@ test("why reads the failure note of a job that never ran a step, and of a log it
     annotations: [
       {
         annotation_level: "failure",
-        message: "OWNER_YES: this pull request is owner class",
+        message: "QUEUE_CLOSED: production is red",
       },
     ],
   })
   const r = why(f)
-  assert.match(
-    r.text,
-    /policy failed\n  OWNER_YES: this pull request is owner class/
-  )
+  assert.match(r.text, /policy failed\n  QUEUE_CLOSED: production is red/)
   assert.match(r.text, /repro: gh run view 8 --job 81 --log-failed \| tail -80/)
   assert.doesNotMatch(r.text, /^ci failed/m)
 })

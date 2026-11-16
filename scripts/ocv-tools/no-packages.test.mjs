@@ -151,24 +151,15 @@ test("the copy cannot see any installed package, so the checks below are not vac
   assert.match(r.out, MISSING)
 })
 
-test("policy runs with Node alone: it reads the recorded retirement, waits for the owner without the label and passes with it", (t) => {
+test("policy runs with Node alone and passes a recorded retirement without approval", (t) => {
   const w = world(t)
   const without = w.tool(["policy", "7"], { FAKE_PR: w.pr([]) })
   assert.doesNotMatch(without.out, MISSING)
-  assert.equal(without.status, 2, without.out)
+  assert.equal(without.status, 0, without.out)
+  assert.match(without.out, /PR #7 passes the server-held rules\./)
   assert.match(
     without.out,
-    /OWNER_YES: .*lib\/price\.test\.mjs > doubles a price is retired with no replacement test/
-  )
-  const approved = w.tool(["policy", "7"], {
-    FAKE_PR: w.pr(["owner-approved"]),
-  })
-  assert.doesNotMatch(approved.out, MISSING)
-  assert.equal(approved.status, 0, approved.out)
-  assert.match(approved.out, /PR #7 passes the server-held rules\./)
-  assert.match(
-    approved.out,
-    /Retired 1 checks that wait for the owner: lib\/price\.test\.mjs > doubles a price \(no replacement test\)/
+    /Retired 1 checks without self-serve replacement proof: lib\/price\.test\.mjs > doubles a price \(no replacement test\)/
   )
 })
 
