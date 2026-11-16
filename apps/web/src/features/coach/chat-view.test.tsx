@@ -391,6 +391,7 @@ describe("ChatView pending message", () => {
     expect(log.className).toContain("max-w-[760px]")
     expect(log.className).not.toContain("max-w-[680px]")
     expect(log.className).toContain("gap-8")
+    expect(log.className).toContain("text-base")
     expect(log.className).toContain(
       "[&_[data-slot=message-content]]:text-[15px]"
     )
