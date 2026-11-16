@@ -40,6 +40,7 @@ export function RichPaperTextFormatting({
   const host = useRef<HTMLDivElement>(null)
   const layout = useToolbarOverflow(host, editor)
   const compact = layout.more
+  if (!compact && open) setOpen(false)
   const hasPhotoControls = Boolean(photoControls)
   const focusFallback = () => {
     editor?.focus()
@@ -115,7 +116,7 @@ export function RichPaperTextFormatting({
         aria-label="Text formatting"
         data-slot="paper-text-formatting"
         className={cn(
-          "relative flex min-w-0 items-center gap-1 border-b px-[12px] py-2 [&_[data-toolbar-group]]:contents",
+          "relative flex min-w-0 items-center gap-1 border-b px-[12px] py-2 [&_[data-toolbar-group]]:contents [&_[data-toolbar-group][hidden]]:hidden",
           "shrink-0 [&>div]:flex-nowrap"
         )}
       >
@@ -190,7 +191,7 @@ export function RichPaperTextFormatting({
                   finalFocus={() => editor?.focus() ?? false}
                 >
                   <PopoverTitle>More formatting</PopoverTitle>
-                  <div className="flex flex-wrap items-center gap-2 [&_[data-toolbar-group]]:contents">
+                  <div className="flex flex-wrap items-center gap-2 [&_[data-toolbar-group]]:contents [&_[data-toolbar-group][hidden]]:hidden">
                     <ToolbarItemsContext
                       value={{
                         surface: "menu",

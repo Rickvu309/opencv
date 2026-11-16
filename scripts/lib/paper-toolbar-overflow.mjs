@@ -12,12 +12,45 @@ export function detect(layout) {
   for (const control of layout.controls)
     if (control.left < layout.left - 1 || control.right > layout.right + 1)
       problems.push(`${control.label} clips at ${layout.viewport}px`)
+  const ordered = [...layout.controls].sort((a, b) => a.left - b.left)
+  for (let index = 1; index < ordered.length; index++) {
+    const previous = ordered[index - 1]
+    const current = ordered[index]
+    if (current.left < previous.right - 0.25)
+      problems.push(
+        `${previous.label} overlaps ${current.label} at ${layout.viewport}px`
+      )
+  }
+  for (const item of layout.candidates) {
+    if (item.visible && item.width < item.minimum - 0.25)
+      problems.push(`${item.label} is below its floor at ${layout.viewport}px`)
+    if (
+      item.pair &&
+      layout.candidates.some(
+        (other) => other.pair === item.pair && other.visible !== item.visible
+      )
+    )
+      problems.push(`${item.pair} pair is split at ${layout.viewport}px`)
+  }
   for (const name of ["Undo", "Redo", ...(layout.overflow ? ["More"] : [])])
     if (!layout.controls.some((control) => control.label.startsWith(name)))
       problems.push(`${name} is missing at ${layout.viewport}px`)
-  const next = layout.candidates.find(
+  const blockedPair = layout.candidates.findIndex(
+    (item) => item.pair && !item.visible
+  )
+  const eligible =
+    blockedPair < 0
+      ? layout.candidates
+      : layout.candidates.slice(0, blockedPair)
+  const next = eligible.find(
     (item) =>
-      !item.visible && item.width + layout.gap <= layout.remaining + 0.25
+      !item.visible &&
+      (item.pair
+        ? layout.candidates
+            .filter((other) => other.pair === item.pair)
+            .reduce((sum, other) => sum + other.width + layout.gap, 0)
+        : item.width + layout.gap) <=
+        layout.remaining + 0.25
   )
   if (next)
     problems.push(`${next.label} fits but is hidden at ${layout.viewport}px`)
@@ -42,6 +75,10 @@ export function measureToolbar(row) {
     (item, index) => ({
       label: item.dataset.toolbarItem,
       width: item.getBoundingClientRect().width,
+      minimum: item.hasAttribute("data-toolbar-shrink")
+        ? Number.parseFloat(getComputedStyle(item).minWidth) || 112
+        : 0,
+      pair: item.dataset.toolbarPair,
       visible: item.checkVisibility({ visibilityProperty: true }),
       index,
     })

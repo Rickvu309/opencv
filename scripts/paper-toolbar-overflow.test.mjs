@@ -103,3 +103,54 @@ test("unmeasured and remounted toolbars retain their controls", () => {
     []
   )
 })
+
+test("Paper's geometry guard rejects adjacent overlap and a Font below its readable floor", () => {
+  const font = { label: "Font", width: 112, minimum: 112, visible: true }
+  const clean = {
+    ...layout,
+    viewport: 1300,
+    controls: [
+      ...layout.controls,
+      { label: "Font", left: 257, right: 369 },
+      { label: "Text size", left: 373, right: 453 },
+    ],
+    candidates: [...layout.candidates, font],
+    right: 1000,
+  }
+  assert.deepEqual(detect(clean), [])
+  const mistake = {
+    ...clean,
+    controls: clean.controls.map((control) =>
+      control.label === "Text size" ? { ...control, left: 362 } : control
+    ),
+    candidates: [...layout.candidates, { ...font, width: 18 }],
+  }
+  assert.deepEqual(detect(mistake), [
+    "Font overlaps Text size at 1300px",
+    "Font is below its floor at 1300px",
+  ])
+})
+
+test("Paper's geometry guard keeps paired indent controls on the same surface", () => {
+  const decrease = {
+    label: "Decrease indent",
+    width: 32,
+    visible: false,
+    pair: "indent",
+  }
+  const increase = {
+    label: "Increase indent",
+    width: 32,
+    visible: false,
+    pair: "indent",
+  }
+  const clean = { ...layout, remaining: 40, candidates: [decrease, increase] }
+  assert.deepEqual(detect(clean), [])
+  assert.match(
+    detect({
+      ...clean,
+      candidates: [decrease, { ...increase, visible: true }],
+    }).join("\n"),
+    /indent pair is split/
+  )
+})

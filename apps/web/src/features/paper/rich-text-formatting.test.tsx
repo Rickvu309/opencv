@@ -522,3 +522,27 @@ it("restores main's fallback and measures again when the editor returns", () => 
     screen.queryByRole("button", { name: "Underline", exact: true })
   ).toBeNull()
 })
+
+it("closes More when widening and keeps empty groups out of its accessible contents", async () => {
+  width = 859
+  const user = userEvent.setup()
+  const { editor, rerender } = setup()
+  await user.click(screen.getByRole("button", { name: "More formatting" }))
+  const menu = screen.getByRole("dialog", { name: "More formatting" })
+  for (const group of within(menu).queryAllByRole("group"))
+    expect(
+      within(group).queryAllByRole("button").length +
+        within(group).queryAllByRole("combobox").length
+    ).toBeGreaterThan(0)
+  width = 1440
+  rerender(<RichPaperTextFormatting editor={null} blocked={false} />)
+  await waitFor(() =>
+    expect(screen.queryByRole("dialog", { name: "More formatting" })).toBeNull()
+  )
+  width = 859
+  rerender(<RichPaperTextFormatting editor={editor} blocked={false} />)
+  expect(
+    screen.getByRole("button", { name: "More formatting" })
+  ).toHaveAttribute("aria-expanded", "false")
+  expect(screen.queryByRole("dialog", { name: "More formatting" })).toBeNull()
+})

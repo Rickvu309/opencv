@@ -61,8 +61,9 @@ export function useToolbarOverflow(
             item.getBoundingClientRect().width
           : item.getBoundingClientRect().width,
         minimum: item.hasAttribute("data-toolbar-shrink")
-          ? 0
+          ? Number.parseFloat(getComputedStyle(item).minWidth) || 0
           : item.getBoundingClientRect().width,
+        pair: item.dataset.toolbarPair,
         index,
       }))
       const fixed = pinned.reduce(
@@ -121,9 +122,20 @@ export function useToolbarOverflow(
         gap
       const visible = []
       for (const item of entries) {
-        if (used + item.width + gap > width) continue
-        visible.push(item.label)
-        used += item.width + gap
+        if (visible.includes(item.label)) continue
+        const group = item.pair
+          ? entries.filter((entry) => entry.pair === item.pair)
+          : [item]
+        const groupWidth = group.reduce(
+          (sum, entry) => sum + entry.width + gap,
+          0
+        )
+        if (used + groupWidth > width) {
+          if (item.pair) break
+          continue
+        }
+        visible.push(...group.map((entry) => entry.label))
+        used += groupWidth
       }
       update({ visible, more: true, iconOnly })
     }

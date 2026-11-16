@@ -115,7 +115,9 @@ test(
       const toolbar = page.locator('[data-slot="paper-text-formatting"]')
       await toolbar.getByRole("button", { name: "More formatting" }).waitFor()
       await page.evaluate(() => document.fonts.ready)
-      for (const width of [320, 360, 390, 1440, 1280, 320]) {
+      for (const width of [
+        320, 360, 390, 1440, 1280, 1286, 1290, 1300, 1325, 320,
+      ]) {
         await page.locator("#root").evaluate((root, width) => {
           root.style.marginInlineStart = width >= 768 ? "254px" : "0"
         }, width)

@@ -9,11 +9,16 @@ export const ToolbarItemsContext = createContext<{
 
 export function useToolbarGroup(labels: readonly string[]) {
   const layout = useContext(ToolbarItemsContext)
+  const concealed =
+    layout?.surface === "menu" &&
+    labels.every((label) => layout.visible.includes(label))
   return {
+    hidden: concealed || undefined,
     "data-toolbar-group": layout ? "" : undefined,
     "aria-hidden":
-      layout?.surface === "bar" &&
-      !labels.some((label) => layout.visible.includes(label))
+      concealed ||
+      (layout?.surface === "bar" &&
+        !labels.some((label) => layout.visible.includes(label)))
         ? true
         : undefined,
   }
@@ -39,16 +44,19 @@ export function ToolbarItem({
     <FocusSafeRegion
       data-toolbar-item={label}
       data-toolbar-shrink={label === "Font" || undefined}
+      data-toolbar-pair={
+        /^(Decrease|Increase) indent/.test(label) ? "indent" : undefined
+      }
       aria-hidden={!visible || undefined}
       concealed={!visible}
       focusFallback={layout.focusFallback}
       className={
         visible
           ? label === "Font"
-            ? "inline-flex min-w-0 shrink basis-44 [&_button]:w-full"
+            ? "inline-flex min-w-28 shrink basis-44 [&_button]:w-full"
             : "inline-flex shrink-0"
           : label === "Font"
-            ? "pointer-events-none invisible absolute inline-flex w-44 min-w-0 shrink-0 basis-44"
+            ? "pointer-events-none invisible absolute inline-flex w-44 min-w-28 shrink-0 basis-44"
             : "pointer-events-none invisible absolute inline-flex shrink-0"
       }
     >

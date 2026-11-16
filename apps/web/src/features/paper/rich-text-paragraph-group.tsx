@@ -55,7 +55,6 @@ export function RichTextParagraphGroup({
     shortcutLabel("Decrease indent (Ctrl+[)"),
     shortcutLabel("Increase indent (Ctrl+])"),
     "Special indent",
-    "Text direction",
   ])
   const Alignment =
     alignments.find((choice) => choice.value === formatting?.alignment)?.Icon ??
