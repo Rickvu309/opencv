@@ -91,6 +91,7 @@ const TOOL_COPY = {
   "paper.deleteFile": { label: "Remove this file" },
   "paper.dismissCheck": { label: "Dismiss this Paper check" },
   "paper.duplicate": { label: "Duplicate this Paper" },
+  "paper.document": { label: "Open your Paper", read: "Opened your Paper" },
   "paper.edit": { label: "Edit your Paper" },
   [catalog["paper.export"].name]: { label: "Export your Paper" },
   [catalog["paper.import"].name]: { label: "Import your Paper" },

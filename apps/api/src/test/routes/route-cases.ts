@@ -317,6 +317,7 @@ export const ROUTE_CASES: readonly RouteCase[] = [
   postForm("/api/paper/files", () => pngUpload),
   get("/api/paper/files/:id/bytes", uploadedFile),
   get("/api/paper/:id/pages", olderDoc),
+  get("/api/paper/:id/document", olderDoc),
   get("/api/paper/:id", olderDoc),
   get("/api/jobs"),
   get("/api/jobs/calendar"),
