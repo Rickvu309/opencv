@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/api/src/paper/native-output/formatted.test.ts",
+    "because": "All links now inherit the shared Word Hyperlink color and underline; preserving per-link colors or old link-package bytes would contradict the approved behavior.",
+    "replacedBy": "apps/api/src/paper/native-output/formatted.test.ts",
+    "proof": {
+      "fork": "0342e329d002417ffc17ee98011225ffbc1aba9b",
+      "replacedByBlob": "19bbcd508abf70acaf1588eb3b45da39d4c030b0",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  }
+]
