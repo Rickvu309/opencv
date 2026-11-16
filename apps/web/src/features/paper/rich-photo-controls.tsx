@@ -96,13 +96,11 @@ export function RichPhotoControls({
   )
   const selected = state.photo
   const fields = state.fields
-  const sourceRatio = selected
-    ? (sourceRatios.current.get(selected.source) ?? photoSourceRatio(selected))
-    : 1
-  const parsed =
-    selected && fields ? parsePhotoForm(selected, fields, sourceRatio) : null
+  const parsed = selected && fields ? parsePhotoForm(selected, fields) : null
   const setFields = (next: PhotoFields, field?: PhotoNumber) => {
     if (!selected) return
+    const sourceRatio =
+      sourceRatios.current.get(selected.source) ?? photoSourceRatio(selected)
     const result = parsePhotoForm(selected, next, sourceRatio, field)
     dispatch({
       type: "fields",
@@ -113,6 +111,8 @@ export function RichPhotoControls({
   }
   const commitField = (field: PhotoNumber | "shape", next = fields) => {
     if (!selected || !next) return
+    const sourceRatio =
+      sourceRatios.current.get(selected.source) ?? photoSourceRatio(selected)
     const result = parsePhotoForm(selected, next, sourceRatio, field)
     if (!result.ok) {
       dispatch({ type: "fields", fields: next, errors: result.errors })
@@ -251,6 +251,9 @@ export function RichPhotoControls({
                   )
                   return
                 }
+                const sourceRatio =
+                  sourceRatios.current.get(current.source) ??
+                  photoSourceRatio(current)
                 const photo = parsePhotoForm(
                   current,
                   fields,
