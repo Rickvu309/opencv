@@ -5,6 +5,13 @@ import { qualifiedNativeWord } from "./paper-native-word.mjs"
 export function detect(text, path) {
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
   const hits = []
+  if (
+    path === "apps/web/src/features/paper/design/rich-page-header.pen.css" &&
+    !/\[data-slot="page-header"\]\s*\{[^}]*\bflex-wrap:\s*wrap\s*;/.test(text)
+  )
+    hits.push(
+      "Rich Paper headers must wrap their title and actions at enlarged text sizes"
+    )
   const test = /\.test\.[cm]?[jt]sx?$/.test(path)
   const storage = path === "packages/paper-crdt/src/stored-document.ts"
   const editorEntry = path === "packages/paper-crdt/src/editor.ts"
@@ -204,19 +211,6 @@ export function detect(text, path) {
       hits.push("Private formatting cannot be registered or exported publicly")
   }
   function visit(node) {
-    if (
-      path === "apps/web/src/features/paper/rich-page.tsx" &&
-      ts.isJsxOpeningElement(node) &&
-      node.tagName.getText(source) === "PageHeader" &&
-      !node.attributes.properties
-        .filter(ts.isJsxAttribute)
-        .find((attribute) => attribute.name.getText(source) === "className")
-        ?.initializer?.text?.split(/\s+/)
-        .includes("flex-wrap")
-    )
-      hits.push(
-        "Rich Paper headers must wrap their title and actions at enlarged text sizes"
-      )
     if (
       path === "apps/web/src/features/paper/rich-page.tsx" &&
       (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) &&

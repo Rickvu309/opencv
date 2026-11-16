@@ -140,7 +140,7 @@ export function RichPaperPage({
       data-pen-surface="paper"
       className="rich-paper-page flex min-h-0 flex-1 flex-col"
     >
-      <PageHeader className="flex-wrap">
+      <PageHeader>
         <div className="flex min-w-0 flex-1 basis-48 items-center gap-2">
           <Button
             variant="ghost"

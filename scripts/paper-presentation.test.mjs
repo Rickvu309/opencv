@@ -9,10 +9,10 @@ import { clean, mistakes } from "./fixtures/paper-presentation.mjs"
 
 const root = path.resolve(fileURLToPath(new URL("..", import.meta.url)))
 test("rich document headers allow enlarged titles and actions to wrap", () => {
-  const path = "apps/web/src/features/paper/rich-page.tsx"
-  const clean =
-    '<PageHeader className="flex-wrap"><h1>Document</h1></PageHeader>'
-  const mistake = "<PageHeader><h1>Document</h1></PageHeader>"
+  const path = "apps/web/src/features/paper/design/rich-page-header.pen.css"
+  const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+  const mistake = clean.replace("flex-wrap: wrap;", "flex-wrap: nowrap;")
+  assert.notEqual(mistake, clean)
   assert.deepEqual(detect(clean, path), [])
   assert.ok(detect(mistake, path).some((hit) => hit.includes("enlarged text")))
 })

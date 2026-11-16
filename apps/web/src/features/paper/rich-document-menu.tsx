@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useReducer } from "react"
 import { Download, MoreHorizontal } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@workspace/ui/components/button"
@@ -20,7 +20,10 @@ export function RichDocumentMenu({
   status: SyncStatus
   blocked: boolean
 }) {
-  const [preparing, setPreparing] = useState(false)
+  const [preparing, dispatch] = useReducer(
+    (_: boolean, action: "prepare" | "finish") => action === "prepare",
+    false
+  )
   const available = session && status === "saved" && !blocked && !preparing
   return (
     <DropdownMenu>
@@ -41,7 +44,7 @@ export function RichDocumentMenu({
           disabled={!available}
           onClick={async () => {
             if (!available) return
-            setPreparing(true)
+            dispatch("prepare")
             try {
               await session.downloadWord()
             } catch {
@@ -50,7 +53,7 @@ export function RichDocumentMenu({
                   "Word download stopped. Wait until your changes are saved and try again."
                 )
             } finally {
-              setPreparing(false)
+              dispatch("finish")
             }
           }}
         >
