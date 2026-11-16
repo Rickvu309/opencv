@@ -331,3 +331,32 @@ it("names only the invalid visible link field", async () => {
     "true"
   )
 })
+
+it("describes only the failed field when inserting a link at a caret", async () => {
+  const { host } = setup()
+  fireEvent.keyDown(host, { key: "k", ctrlKey: true })
+  await screen.findByRole("dialog")
+  fireEvent.change(screen.getByLabelText("Link address"), {
+    target: { value: "example.com" },
+  })
+  fireEvent.click(screen.getByRole("button", { name: "Apply" }))
+  expect(screen.getByLabelText("Text to display")).toHaveAccessibleDescription(
+    "Enter text to display."
+  )
+  expect(screen.getByLabelText("Link address")).not.toHaveAttribute(
+    "aria-describedby"
+  )
+  fireEvent.change(screen.getByLabelText("Text to display"), {
+    target: { value: "Portfolio" },
+  })
+  fireEvent.change(screen.getByLabelText("Link address"), {
+    target: { value: "javascript:alert(1)" },
+  })
+  fireEvent.click(screen.getByRole("button", { name: "Apply" }))
+  expect(screen.getByLabelText("Link address")).toHaveAccessibleDescription(
+    "Enter a website or email address."
+  )
+  expect(screen.getByLabelText("Text to display")).not.toHaveAttribute(
+    "aria-describedby"
+  )
+})

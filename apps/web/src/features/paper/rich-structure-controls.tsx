@@ -276,7 +276,11 @@ export function RichStructureControls({
                 inputMode="url"
                 value={link?.href ?? ""}
                 aria-invalid={error === "Enter a website or email address."}
-                aria-describedby={error ? "paper-link-error" : undefined}
+                aria-describedby={
+                  error === "Enter a website or email address."
+                    ? "paper-link-error"
+                    : undefined
+                }
                 onChange={(event) => {
                   dispatch({ type: "edit", href: event.target.value })
                 }}

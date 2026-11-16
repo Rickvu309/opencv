@@ -138,6 +138,7 @@ function setup(kind: "cv" | "letter") {
     reversible,
     key,
     activeInline: mounted.activeInline,
+    setInline: mounted.setInline,
   }
 }
 
@@ -254,5 +255,32 @@ it.each(["cv", "letter"] as const)(
     expect(commands.formattingState().paragraphStyle).toBe("normal")
     key("z", { ctrlKey: true, shiftKey: true })
     expect(commands.formattingState().paragraphStyle).toBe("heading-2")
+  }
+)
+
+it.each(["cv", "letter"] as const)(
+  "renders all sixteen direct mark combinations on %s links",
+  (kind) => {
+    const { host, commands, select, setInline } = setup(kind)
+    select()
+    expect(commands.setLink("https://example.com/career")).toBe(true)
+    const marks = ["bold", "italic", "underline", "strike"] as const
+    for (let bits = 0; bits < 16; bits++) {
+      select()
+      setInline(
+        Object.fromEntries(
+          marks.map((mark, index) => [mark, Boolean(bits & (1 << index))])
+        )
+      )
+      const link = host.querySelector('a[href="https://example.com/career"]')!
+      const text = link.querySelector<HTMLElement>("[data-paper-resolved]")!
+      const css = getComputedStyle(text)
+      expect(css.textDecoration).toBe("")
+      expect(css.textDecorationLine).toBe(
+        bits & 8 ? "underline line-through" : "underline"
+      )
+      expect(css.fontWeight).toBe(bits & 1 ? "700" : "400")
+      expect(css.fontStyle).toBe(bits & 2 ? "italic" : "normal")
+    }
   }
 )

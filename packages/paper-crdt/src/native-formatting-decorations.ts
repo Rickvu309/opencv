@@ -55,11 +55,12 @@ export function formattingDecorations(
           .filter((mark) => mark.type.name !== "link")
           .map((mark) => [mark.type.name, mark.attrs.stringValue])
       )
+      const isLink = node.marks.some((mark) => mark.type.name === "link")
       decorations.push(
         Decoration.inline(pos, pos + node.nodeSize, {
           style:
-            inlineCss(
-              effectiveInline(presentation, {
+            inlineCss({
+              ...effectiveInline(presentation, {
                 ...paragraphInlineValues(
                   effectiveParagraphStyle(
                     doc.resolve(pos).parent.type.name,
@@ -68,11 +69,9 @@ export function formattingDecorations(
                   )
                 ),
                 ...canonicalStyles(marks),
-              })
-            ) +
-            (node.marks.some((mark) => mark.type.name === "link")
-              ? `;color:var(--paper-link, ${paperLinkColor});text-decoration:underline`
-              : ""),
+              }),
+              ...(isLink ? { underline: true } : {}),
+            }) + (isLink ? `;color:var(--paper-link, ${paperLinkColor})` : ""),
           "data-paper-resolved": "",
         })
       )

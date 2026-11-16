@@ -39,9 +39,8 @@ export function detectRichStructure(text, path) {
   if (
     path === "packages/paper-crdt/src/native-formatting-decorations.ts" &&
     (!text.includes('mark.type.name === "link"') ||
-      !text.includes(
-        "color:var(--paper-link, ${paperLinkColor});text-decoration:underline"
-      ))
+      !text.includes("color:var(--paper-link, ${paperLinkColor})") ||
+      !text.includes("underline: true"))
   )
     hits.push(
       "Rich link text must paint the visible underline and semantic color"
@@ -74,5 +73,14 @@ export function detectRichStructure(text, path) {
       !text.includes("paperLinkColor.slice(1)"))
   )
     hits.push("Word packages must define the shared Paper Hyperlink style")
+  if (
+    path === "packages/paper-crdt/src/native-formatting-decorations.ts" &&
+    /text-decoration(?:-line)?\s*:/.test(text)
+  )
+    hits.push(
+      "Resolved inline decorations must compose marks in inlineCss, never append a text-decoration override"
+    )
+  if (richControls && /aria-describedby=\{\s*error\s*\?/.test(text))
+    hits.push("Link error descriptions must match the failed field")
   return hits
 }

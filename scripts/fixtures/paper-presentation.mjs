@@ -5,7 +5,7 @@ export const clean = [
   },
   {
     path: "packages/paper-crdt/src/native-formatting-decorations.ts",
-    text: 'const list = { style: "list-style-type:disc", "aria-level": "1" }; mark.type.name === "link"; color:var(--paper-link, ${paperLinkColor});text-decoration:underline',
+    text: 'const list = { style: "list-style-type:disc", "aria-level": "1" }; mark.type.name === "link"; color:var(--paper-link, ${paperLinkColor}); underline: true',
   },
   {
     path: "packages/paper-crdt/src/native-layout-flow-mount.ts",
@@ -434,7 +434,7 @@ const roundOneClean = new Map([
   ],
   [
     "packages/paper-crdt/src/native-formatting-decorations.ts",
-    'mark.type.name === "link"; color:var(--paper-link, ${paperLinkColor});text-decoration:underline',
+    'mark.type.name === "link"; color:var(--paper-link, ${paperLinkColor}); underline: true',
   ],
 ])
 for (const fixture of clean) {
