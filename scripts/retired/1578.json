@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/native-output/formatted-layout.test.ts",
+    "because": "Rich table text uses the same Word font mapper as CV and Letter output; the replacement verifies canonical Word font names for every saved font ID in real document and style XML.",
+    "replacedBy": "scripts/paper-word-fonts.test.mjs",
+    "proof": {
+      "fork": "0342e329d002417ffc17ee98011225ffbc1aba9b",
+      "replacedByBlob": "28f055cc75baf9bd5cd8760d095dd9e83001035c",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
