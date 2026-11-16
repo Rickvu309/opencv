@@ -201,3 +201,23 @@ test("character inheritance and list indent dispatch have clean and mistake fixt
     assert.deepEqual(detectStyleCascade(clean, path), [])
   }
 })
+
+test("the merged history toolbar keeps paragraph controls on one desktop row", () => {
+  const path = "apps/web/src/features/paper/rich-text-formatting.tsx"
+  const before = execFileSync("git", ["show", `31528653:${path}`], {
+    encoding: "utf8",
+  })
+  const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+  assert.ok(
+    detectStyleCascade(before, path).some((hit) =>
+      hit.includes("single Docs row")
+    )
+  )
+  assert.deepEqual(detectStyleCascade(clean, path), [])
+  assert.ok(
+    detectStyleCascade(
+      clean.replace("shrink-0 [&>div]:flex-nowrap", "contents"),
+      path
+    ).length
+  )
+})

@@ -333,6 +333,8 @@ it("disables empty phone overflow while preserving document history", () => {
   expect(screen.getByRole("button", { name: "More formatting" })).toBeDisabled()
   act(() => editor.insertPhoto("file:00000000-0000-4000-8000-000000000002", 1))
   expect(screen.getByRole("button", { name: /^Undo / })).toBeEnabled()
+})
+
 it.each([390, 768, 820, 859])(
   "puts structure controls in More at %s pixels",
   async (viewport) => {

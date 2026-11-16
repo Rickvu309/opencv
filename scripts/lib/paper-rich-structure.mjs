@@ -163,6 +163,54 @@ export function detectRichStructure(text, path) {
     ...detectStyleCascade(text, path),
   ]
   if (
+    path === "packages/paper-crdt/src/native-formatting-commands.ts" &&
+    (!text.includes('event.altKey && !mod && event.code === "Digit5"') ||
+      !text.includes('event.metaKey && !event.altKey && key === "x"'))
+  )
+    hits.push("Rich strikethrough must support the PC and Mac Docs shortcuts")
+  if (
+    path === "packages/paper-crdt/src/native-layout-flow-mount.ts" &&
+    text.includes("BlockNoteEditor.create(") &&
+    !text.includes("...paragraphInlineValues(") &&
+    !text.includes("effectiveParagraphStyle(")
+  )
+    hits.push("Rich active marks need paragraph style defaults")
+  if (
+    path === "packages/paper-crdt/src/native-formatting-decorations.ts" &&
+    (!text.includes("list-style-type") || !text.includes("aria-level"))
+  )
+    hits.push("Rich lists must render markers and nested levels")
+  if (path === "packages/paper-crdt/src/native-layout-flow-mount.ts") {
+    const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
+    const property = (node, name) =>
+      node && ts.isObjectLiteralExpression(node)
+        ? node.properties.find(
+            (item) =>
+              ts.isPropertyAssignment(item) &&
+              (ts.isIdentifier(item.name) || ts.isStringLiteral(item.name)) &&
+              item.name.text === name
+          )?.initializer
+        : undefined
+    const visit = (node) => {
+      if (ts.isCallExpression(node)) {
+        if (
+          path === "packages/paper-crdt/src/native-layout-flow-mount.ts" &&
+          ts.isPropertyAccessExpression(node.expression) &&
+          node.expression.getText(source) === "BlockNoteEditor.create" &&
+          property(
+            property(node.arguments[0], "links"),
+            "isValidLink"
+          )?.getText(source) !== "isSafeHref"
+        )
+          hits.push(
+            "Rich editor links must use the domain http, https and mailto policy"
+          )
+      }
+      ts.forEachChild(node, visit)
+    }
+    visit(source)
+  }
+  if (
     path === "packages/domain/src/paper-doc/paragraph-styles.ts" &&
     /style\s*\?\?\s*["']normal["']/.test(text)
   )
@@ -322,5 +370,12 @@ export function detectStyleCascade(text, path) {
     !text.includes("controls: structure")
   )
     hits.push("Structure controls belong inside the compact More disclosure")
+  if (
+    path.endsWith("rich-text-formatting.tsx") &&
+    text.includes("<RichDocumentHistory") &&
+    text.includes("<RichTextParagraphGroup") &&
+    !text.includes("shrink-0 [&>div]:flex-nowrap")
+  )
+    hits.push("Desktop paragraph controls must stay in the single Docs row")
   return hits
 }

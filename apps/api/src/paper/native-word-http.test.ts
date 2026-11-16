@@ -25,10 +25,10 @@ import {
   savedRichWord,
   wordHeaders,
   portraitBytes,
+  richFormattingPaper,
 } from "./native-word.test-support.js"
 import { readPackageZip } from "./package-zip.js"
 import { parsePackageXml } from "./package-xml.js"
-import { richFormattingPaper } from "../test/rich-formatting-paper.js"
 import {
   elements,
   attribute,

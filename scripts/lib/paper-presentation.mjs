@@ -61,24 +61,6 @@ export function detect(text, path) {
     )
   hits.push(...detectRichStructure(text, path))
 
-  if (
-    path === "packages/paper-crdt/src/native-formatting-commands.ts" &&
-    (!text.includes('event.altKey && !mod && event.code === "Digit5"') ||
-      !text.includes('event.metaKey && !event.altKey && key === "x"'))
-  )
-    hits.push("Rich strikethrough must support the PC and Mac Docs shortcuts")
-  if (
-    path === "packages/paper-crdt/src/native-layout-flow-mount.ts" &&
-    text.includes("BlockNoteEditor.create(") &&
-    !text.includes("...paragraphInlineValues(") &&
-    !text.includes("effectiveParagraphStyle(")
-  )
-    hits.push("Rich active marks need paragraph style defaults")
-  if (
-    path === "packages/paper-crdt/src/native-formatting-decorations.ts" &&
-    (!text.includes("list-style-type") || !text.includes("aria-level"))
-  )
-    hits.push("Rich lists must render markers and nested levels")
   const test = /\.test\.[cm]?[jt]sx?$/.test(path)
   const storage = path === "packages/paper-crdt/src/stored-document.ts"
   const editorEntry = path === "packages/paper-crdt/src/editor.ts"
@@ -389,18 +371,6 @@ export function detect(text, path) {
           "Rich HTML marks must parse standard elements as well as private spans"
         )
       if (ts.isCallExpression(node)) {
-        if (
-          path === "packages/paper-crdt/src/native-layout-flow-mount.ts" &&
-          ts.isPropertyAccessExpression(node.expression) &&
-          node.expression.getText(source) === "BlockNoteEditor.create" &&
-          property(
-            property(node.arguments[0], "links"),
-            "isValidLink"
-          )?.getText(source) !== "isSafeHref"
-        )
-          hits.push(
-            "Rich editor links must use the domain http, https and mailto policy"
-          )
         if (
           path === "packages/paper-crdt/src/native-layout-paste.ts" &&
           ts.isPropertyAccessExpression(node.expression) &&
