@@ -1,5 +1,9 @@
 export const clean = [
   {
+    path: "apps/web/src/test/paper-api-mock.ts",
+    text: "const identity = /^\\/api\\/paper\\/([^/]+)\\/document$/.exec(path); paperDocumentInfoSchema.parse(identity)",
+  },
+  {
     path: "apps/web/src/features/paper/rich-page.tsx",
     text: '<Button size="icon" className="size-11 md:size-8" />',
   },
@@ -137,6 +141,10 @@ export const clean = [
   },
 ]
 export const mistakes = [
+  {
+    path: "apps/web/src/test/paper-api-mock.ts",
+    text: "export async function paperApiFetch() { return null }",
+  },
   {
     path: "apps/web/src/features/paper/rich-page.tsx",
     text: '<Button size="icon" />',

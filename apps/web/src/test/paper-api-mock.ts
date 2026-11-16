@@ -1,4 +1,8 @@
-import { emptyCvDocument, type PaperContentKind } from "@workspace/domain"
+import {
+  emptyCvDocument,
+  paperDocumentInfoSchema,
+  type PaperContentKind,
+} from "@workspace/domain"
 
 import { samplePaperDocs } from "./paper-fixtures.ts"
 import { isoNow, pathOf, jsonOk, jsonError } from "./mock-http.ts"
@@ -151,6 +155,20 @@ export async function paperApiFetch(
 
   if (method === "GET" && path === "/api/paper/files") {
     return jsonOk([])
+  }
+
+  const identity = /^\/api\/paper\/([^/]+)\/document$/.exec(path)
+  if (method === "GET" && identity) {
+    const doc = store.docs.find((item) => item.id === identity[1])
+    if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
+    return jsonOk(
+      paperDocumentInfoSchema.parse({
+        id: doc.id,
+        name: doc.name,
+        kind: doc.kind,
+        format: "prose",
+      })
+    )
   }
 
   const pages = /^\/api\/paper\/([^/]+)\/pages$/.exec(path)

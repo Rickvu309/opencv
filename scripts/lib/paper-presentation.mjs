@@ -8,6 +8,14 @@ export function detect(text, path) {
   const storage = path === "packages/paper-crdt/src/stored-document.ts"
   const editorEntry = path === "packages/paper-crdt/src/editor.ts"
   if (
+    path === "apps/web/src/test/paper-api-mock.ts" &&
+    (!text.includes("\\/document$/") ||
+      !text.includes("paperDocumentInfoSchema.parse("))
+  )
+    hits.push(
+      "Paper test transport must answer the qualified document identity read with its strict contract"
+    )
+  if (
     path === "apps/web/src/lib/paper-sync-recovery.ts" &&
     (!text.includes("identity.provenance.schemaRevision === 2") ||
       !text.includes("? openRichPaperClient") ||
