@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/paper-library-sections.test.tsx > Paper home sections > shows imported files without documents and keeps their delete action :: expect(screen.queryByRole(\"region\", {name: \"CVs\"})).not.toBeInTheDocument()",
+    "because": "Empty CVs and Cover letters stay once any file exists, so the old assertion that the CVs region is absent is wrong.",
+    "replacedBy": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "proof": {
+      "fork": "0fb283ba5896fb76d3b25f2fc2bcc7125bbd0f16",
+      "replacedByBlob": "c3f1307ff40fcd001ad3b0b52c0e0ddfdefdbaf6",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]
