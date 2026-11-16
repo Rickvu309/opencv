@@ -353,11 +353,12 @@ it.each([true, false])(
 )
 
 it.each([
-  ["Letter", 15840],
-  ["A4", 16838],
+  ["Letter", 15840, false],
+  ["A4", 16838, false],
+  ["Letter on the rich sheet", 15840, true],
 ] as const)(
   "paginates table rows inside %s margins and bounds an oversized row to its own page",
-  async (_, pageHeight) => {
+  async (_, pageHeight, sheet) => {
     vi.stubGlobal("CSS", { supports: () => true, escape: (id: string) => id })
     vi.stubGlobal(
       "ResizeObserver",
@@ -385,6 +386,10 @@ it.each([
       '[data-paper-layout="paperRow"]'
     )!
     const content = row.firstElementChild!
+    const anchor = document.createElement("div")
+    anchor.className = "paper-table-anchor"
+    row.prepend(anchor)
+    if (sheet) host.classList.add("paper-rich-sheet")
     const bounds = vi
       .spyOn(content, "getBoundingClientRect")
       .mockReturnValue(new DOMRect(0, 0, 300, printable + 100))

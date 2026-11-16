@@ -4,6 +4,8 @@ import {
   type TextFormatting,
 } from "./rich-text-toolbar-control.tsx"
 
+import { useToolbarGroup } from "./rich-text-toolbar-item.tsx"
+
 const sizes = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 72].map(
   (size) => ({ value: String(size), label: `${size} pt` })
 )
@@ -19,8 +21,10 @@ export function RichTextFontGroup({
   disabled: boolean
   choose: (patch: Parameters<TextEditor["formatInline"]>[0]) => void
 }) {
+  const group = useToolbarGroup(["Font", "Text size"])
   return (
     <div
+      {...group}
       role="group"
       aria-label="Font and size"
       className="flex min-w-0 items-center gap-1"

@@ -512,3 +512,29 @@ test("document history guard rejects misplaced and photo-owned history at its in
     []
   )
 })
+
+test("page layout guards reject the reviewed lifetime, phone and pagination regressions", () => {
+  const files = [
+    "packages/paper-crdt/src/presentation-meta.ts",
+    "packages/paper-crdt/src/native-layout-flow.ts",
+    "apps/web/src/features/paper/rich-page-geometry.css",
+    "packages/paper-crdt/src/native-layout-flow-mount.ts",
+    "packages/paper-crdt/src/rich-page-layout.ts",
+    "packages/paper-crdt/src/editor.ts",
+    "packages/paper-crdt/src/native-layout-page-commands.ts",
+    "apps/web/src/features/paper/rich-page-setup.tsx",
+    "apps/web/src/features/paper/rich-page-break.tsx",
+  ]
+  for (const file of files) {
+    const original = execFileSync("git", ["show", "6a8d3959:" + file], {
+      cwd: root,
+      encoding: "utf8",
+    })
+    assert.ok(detect(original, file).length, file)
+    assert.deepEqual(
+      detect(readFileSync(path.join(root, file), "utf8"), file),
+      [],
+      file
+    )
+  }
+})

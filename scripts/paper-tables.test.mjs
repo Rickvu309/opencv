@@ -33,6 +33,7 @@ test("table mistakes fire and clean fixtures stay quiet", () => {
       'node.type === "table" || node.type === "photo"',
     ],
     [files[1], "paperRow]{break-inside:avoid", "paperRow]{break-inside:auto"],
+    [files[1], ":not(.paper-table-anchor)", ":scope > div"],
     [
       files[1],
       "paper-oversized-row=true]{height:var(--paper-column-height);overflow:auto",

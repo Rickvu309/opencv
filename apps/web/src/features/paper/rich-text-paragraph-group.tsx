@@ -17,6 +17,8 @@ import {
   type TextFormatting,
 } from "./rich-text-toolbar-control.tsx"
 
+import { useToolbarGroup } from "./rich-text-toolbar-item.tsx"
+
 const alignments = [
   { value: "left", label: "Left", Icon: AlignLeft },
   { value: "center", label: "Center", Icon: AlignCenter },
@@ -47,11 +49,19 @@ export function RichTextParagraphGroup({
   disabled: boolean
   choose: (patch: Parameters<TextEditor["formatParagraph"]>[0]) => void
 }) {
+  const group = useToolbarGroup([
+    shortcutLabel("Alignment (Ctrl+Shift+L/E/R/J)"),
+    "Line spacing",
+    shortcutLabel("Decrease indent (Ctrl+[)"),
+    shortcutLabel("Increase indent (Ctrl+])"),
+    "Special indent",
+  ])
   const Alignment =
     alignments.find((choice) => choice.value === formatting?.alignment)?.Icon ??
     AlignLeft
   return (
     <div
+      {...group}
       role="group"
       aria-label="Paragraph formatting"
       className="flex flex-wrap items-center gap-1"

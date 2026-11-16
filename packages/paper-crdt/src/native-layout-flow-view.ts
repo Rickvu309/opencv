@@ -6,6 +6,7 @@ import {
   type DocumentPresentation,
 } from "@workspace/domain/internal/paper-presentation"
 import { layoutDecorations } from "./native-layout-decorations.js"
+import { richPageLayout } from "./rich-page-layout.js"
 
 export function flowPaginationSupport(document: FlowDocument) {
   if (
@@ -95,12 +96,7 @@ export function installFlowView(
   element.dataset.paperPageFlow = ""
   let active = true,
     frame = 0
-  function refresh() {
-    if (!active) return
-    const document = read(),
-      support = flowPaginationSupport(document)
-    element.dataset.paperPagination = String(support.supported)
-    const breaks = new Map<string, number>()
+  function markTableRows(document: FlowDocument, supported: boolean) {
     for (const section of document.flow.children) {
       const dom = element.querySelector<HTMLElement>(
         `[data-paper-layout=paperFlowSection][data-paper-id="${CSS.escape(section.id)}"]`
@@ -114,25 +110,49 @@ export function installFlowView(
       for (const row of slot.querySelectorAll<HTMLElement>(
         '[data-paper-layout="paperRow"]'
       )) {
-        const content = row.firstElementChild
-        if (content instanceof HTMLElement) {
-          const oversized =
-            support.supported && content.getBoundingClientRect().height > height
-          row.dataset.paperOversizedRow = String(oversized)
-          if (oversized) {
-            row.setAttribute("tabindex", "0")
-            row.setAttribute("role", "region")
-            row.setAttribute(
-              "aria-label",
-              "Table row taller than a page. Scroll to read all content."
-            )
-          } else {
-            row.removeAttribute("tabindex")
-            row.removeAttribute("role")
-            row.removeAttribute("aria-label")
-          }
+        const content = row.querySelector<HTMLElement>(
+          ":scope > :not(.paper-table-anchor)"
+        )
+        if (!(content instanceof HTMLElement)) continue
+        const oversized =
+          supported && content.getBoundingClientRect().height > height
+        row.dataset.paperOversizedRow = String(oversized)
+        if (oversized) {
+          row.setAttribute("tabindex", "0")
+          row.setAttribute("role", "region")
+          row.setAttribute(
+            "aria-label",
+            "Table row taller than a page. Scroll to read all content."
+          )
+        } else {
+          row.removeAttribute("tabindex")
+          row.removeAttribute("role")
+          row.removeAttribute("aria-label")
         }
       }
+    }
+  }
+  function refresh() {
+    if (!active) return
+    const document = read(),
+      support = flowPaginationSupport(document)
+    element.dataset.paperPagination = String(support.supported)
+    markTableRows(document, support.supported)
+    if (element.classList.contains("paper-rich-sheet")) {
+      updateBreaks(richPageLayout(element, document, support.supported))
+      return
+    }
+    const breaks = new Map<string, number>()
+    for (const section of document.flow.children) {
+      const dom = element.querySelector<HTMLElement>(
+        `[data-paper-layout=paperFlowSection][data-paper-id="${CSS.escape(section.id)}"]`
+      )
+      const slot = dom?.querySelector<HTMLElement>(
+        ":scope > [data-paper-wrap-slot]"
+      )
+      if (!slot) continue
+      const height =
+        (section.page.height - section.page.top - section.page.bottom) / 15
       const gap = section.columns.gap / 15,
         width = slot.getBoundingClientRect().width
       const columnWidth =
@@ -193,6 +213,7 @@ export function installFlowView(
   }
   const resize = new ResizeObserver(schedule)
   resize.observe(element)
+  if (element.parentElement) resize.observe(element.parentElement)
   document.fonts.ready.then(schedule)
   schedule()
   return {
@@ -204,6 +225,7 @@ export function installFlowView(
       style.remove()
       delete element.dataset.paperPageFlow
       delete element.dataset.paperPagination
+      delete element.dataset.paperReflow
     },
   }
 }

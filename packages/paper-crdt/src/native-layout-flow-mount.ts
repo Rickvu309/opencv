@@ -1,5 +1,6 @@
 import { flowTableControls } from "./native-layout-table-controls.js"
 import { richEditorCommands } from "./native-formatting-commands.js"
+import { richPageCommands } from "./native-layout-page-commands.js"
 import { paperTableLimits, isSafeHref } from "@workspace/domain"
 import { BlockNoteEditor, createExtension } from "@blocknote/core"
 import { CollaborationExtension } from "@blocknote/core/yjs"
@@ -240,6 +241,7 @@ export function mountPrivateFlow(
     commands,
     tables: tableControls,
     editor,
+    pages: richPageCommands(binding, editor),
     photoControls: { ...flowPhotoControls(binding, editor), ...selection },
     ...flowFormatting(binding, editor.prosemirrorView),
     setInline,

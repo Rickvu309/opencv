@@ -11,6 +11,7 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 import { ToolbarHint, type TextEditor } from "./rich-text-toolbar-control.tsx"
+import { ToolbarItem } from "./rich-text-toolbar-item.tsx"
 import { RichTableMenu } from "./rich-table-menu.tsx"
 import { RichTableResize } from "./rich-table-resize.tsx"
 import "./rich-table.css"
@@ -120,104 +121,106 @@ function InsertTable({
     if (!available) dispatch({ type: "open", value: false })
   }, [available])
   return (
-    <Popover
-      open={open && available}
-      onOpenChange={(value) => {
-        dispatch({ type: "error", value: "" })
-        dispatch({ type: "open", value })
-      }}
-    >
-      <ToolbarHint
-        label={
-          disabled && editor
-            ? "Place the cursor outside the table to insert another"
-            : "Insert table"
-        }
+    <ToolbarItem label="Insert table">
+      <Popover
+        open={open && available}
+        onOpenChange={(value) => {
+          dispatch({ type: "error", value: "" })
+          dispatch({ type: "open", value })
+        }}
       >
-        <PopoverTrigger
-          render={
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Insert table"
-              disabled={!editor || disabled}
-              className="size-11 shrink-0 md:size-8"
-              onMouseDown={(event) => event.preventDefault()}
-            />
+        <ToolbarHint
+          label={
+            disabled && editor
+              ? "Place the cursor outside the table to insert another"
+              : "Insert table"
           }
         >
-          <Table2 />
-        </PopoverTrigger>
-      </ToolbarHint>
-      <PopoverContent
-        align="start"
-        aria-label="Insert table"
-        className="w-[min(18rem,calc(100vw-2rem))]"
-        finalFocus={() => editor?.focus() ?? false}
-      >
-        <PopoverTitle>Insert table</PopoverTitle>
-        <form
-          className="grid gap-3"
-          onSubmit={(event) => {
-            event.preventDefault()
-            if (!available) return
-            try {
-              if (!editor.insertTable(Number(rows), Number(columns))) return
-              dispatch({ type: "inserted" })
-              close()
-            } catch (error) {
-              dispatch({
-                type: "error",
-                value:
-                  error instanceof Error
-                    ? error.message
-                    : "Choose fewer columns",
-              })
+          <PopoverTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Insert table"
+                disabled={!editor || disabled}
+                className="size-11 shrink-0 md:size-8"
+                onMouseDown={(event) => event.preventDefault()}
+              />
             }
-          }}
+          >
+            <Table2 />
+          </PopoverTrigger>
+        </ToolbarHint>
+        <PopoverContent
+          align="start"
+          aria-label="Insert table"
+          className="w-[min(18rem,calc(100vw-2rem))]"
+          finalFocus={() => editor?.focus() ?? false}
         >
-          <div className="grid grid-cols-2 gap-3">
-            <label className="grid gap-1">
-              Rows
-              <Input
-                aria-label="Table rows"
-                className="h-11 text-base"
-                type="number"
-                inputMode="numeric"
-                min={1}
-                max={paperTableLimits.rows}
-                required
-                disabled={!available}
-                value={rows}
-                onChange={(event) =>
-                  dispatch({ type: "rows", value: event.target.value })
-                }
-              />
-            </label>
-            <label className="grid gap-1">
-              Columns
-              <Input
-                aria-label="Table columns"
-                className="h-11 text-base"
-                type="number"
-                inputMode="numeric"
-                min={1}
-                max={paperTableLimits.columns}
-                required
-                disabled={!available}
-                value={columns}
-                onChange={(event) =>
-                  dispatch({ type: "columns", value: event.target.value })
-                }
-              />
-            </label>
-          </div>
-          {error ? <p role="alert">{error}</p> : null}
-          <Button disabled={!available} type="submit" className="min-h-11">
-            Insert table
-          </Button>
-        </form>
-      </PopoverContent>
-    </Popover>
+          <PopoverTitle>Insert table</PopoverTitle>
+          <form
+            className="grid gap-3"
+            onSubmit={(event) => {
+              event.preventDefault()
+              if (!available) return
+              try {
+                if (!editor.insertTable(Number(rows), Number(columns))) return
+                dispatch({ type: "inserted" })
+                close()
+              } catch (error) {
+                dispatch({
+                  type: "error",
+                  value:
+                    error instanceof Error
+                      ? error.message
+                      : "Choose fewer columns",
+                })
+              }
+            }}
+          >
+            <div className="grid grid-cols-2 gap-3">
+              <label className="grid gap-1">
+                Rows
+                <Input
+                  aria-label="Table rows"
+                  className="h-11 text-base"
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={paperTableLimits.rows}
+                  required
+                  disabled={!available}
+                  value={rows}
+                  onChange={(event) =>
+                    dispatch({ type: "rows", value: event.target.value })
+                  }
+                />
+              </label>
+              <label className="grid gap-1">
+                Columns
+                <Input
+                  aria-label="Table columns"
+                  className="h-11 text-base"
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  max={paperTableLimits.columns}
+                  required
+                  disabled={!available}
+                  value={columns}
+                  onChange={(event) =>
+                    dispatch({ type: "columns", value: event.target.value })
+                  }
+                />
+              </label>
+            </div>
+            {error ? <p role="alert">{error}</p> : null}
+            <Button disabled={!available} type="submit" className="min-h-11">
+              Insert table
+            </Button>
+          </form>
+        </PopoverContent>
+      </Popover>
+    </ToolbarItem>
   )
 }

@@ -1,5 +1,6 @@
 import * as Y from "yjs"
 import {
+  canonical,
   documentPresentationSchema,
   type DocumentPresentation,
 } from "@workspace/domain/internal/paper-presentation"
@@ -25,5 +26,6 @@ export function writePresentationMeta(
   if (!(nested instanceof Y.Map)) throw new Error("Invalid presentation map")
   for (const key of [...nested.keys()])
     if (!(key in checked)) nested.delete(key)
-  for (const [key, item] of Object.entries(checked)) nested.set(key, item)
+  for (const [key, item] of Object.entries(checked))
+    if (canonical(nested.get(key)) !== canonical(item)) nested.set(key, item)
 }

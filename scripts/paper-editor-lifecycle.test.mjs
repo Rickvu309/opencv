@@ -95,6 +95,40 @@ test("in-flight editor calls check the live identity immediately before invoking
   assert.deepEqual(detect(clean, lifecycle), [])
 })
 
+test("the table menu releases with the editor and mounts again from the live handle", () => {
+  const controls = "apps/web/src/features/paper/rich-table-controls.tsx"
+  const menu = "apps/web/src/features/paper/rich-table-menu.tsx"
+  assert.deepEqual(detect(read(controls), controls), [])
+  assert.deepEqual(detect(read(menu), menu), [])
+  assert.deepEqual(detect(read(page), page), [])
+  const leaked = read(controls).replace(
+    "anchor.remove()",
+    "anchor.hidden = true"
+  )
+  assert.notEqual(leaked, read(controls))
+  assert.ok(
+    detect(leaked, controls).includes(
+      "The table menu must release on editor teardown"
+    )
+  )
+  const raw = `${read(menu)}\nmountRichPaperEditor(client, host)`
+  assert.ok(
+    detect(raw, menu).includes(
+      "Toolbar, menu and shortcut handlers need a live handle"
+    )
+  )
+  const detached = read(page).replace(
+    "<RichTableControls editor={editor}",
+    "<RichTableControls "
+  )
+  assert.notEqual(detached, read(page))
+  assert.ok(
+    detect(detached, page).includes(
+      "The table menu must follow editor availability"
+    )
+  )
+})
+
 test("the document menu follows editor availability", () => {
   const clean = read(page)
   const mistake = clean.replace("editorAvailable={!!editor}", "")

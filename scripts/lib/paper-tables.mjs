@@ -25,6 +25,12 @@ export function detect(text, file) {
   if (file.endsWith("native-layout-flow-view.ts")) {
     if (/node\.type === "table"/.test(text))
       problems.push("Tables must retain automatic pagination")
+    const measure = text.indexOf(":not(.paper-table-anchor)")
+    const sheet = text.indexOf('classList.contains("paper-rich-sheet")')
+    if (measure < 0 || (sheet >= 0 && measure > sheet))
+      problems.push(
+        "The table menu anchor must not hide oversized-row pagination"
+      )
     for (const rule of [
       "paperRow]{break-inside:avoid",
       "paper-oversized-row=true]{height:var(--paper-column-height);overflow:auto",
