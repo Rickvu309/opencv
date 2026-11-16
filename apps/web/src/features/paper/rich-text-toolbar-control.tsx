@@ -20,6 +20,12 @@ export type TextFormatting = NonNullable<
 >
 export type TextChoice = { value: string; label: string; face?: string }
 
+export function shortcutLabel(shortcut: string, platform = navigator.platform) {
+  return /Mac|iPhone|iPad|iPod/.test(platform)
+    ? shortcut.replaceAll("Ctrl+", "⌘+")
+    : shortcut
+}
+
 export function ToolbarHint({
   label,
   children,

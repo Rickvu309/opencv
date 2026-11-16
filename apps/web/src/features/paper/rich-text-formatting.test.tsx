@@ -6,6 +6,7 @@ import { nativeProvenance } from "@workspace/domain"
 import { openRichPaperClient } from "../../../../../packages/paper-crdt/src/client.js"
 import { seedStoredYDoc } from "../../../../../packages/paper-crdt/src/stored-document.js"
 import { storedFlowFixture } from "../../../../../packages/paper-crdt/src/test/flow-fixture.js"
+import { shortcutLabel } from "./rich-text-toolbar-control.tsx"
 import { RichPaperTextFormatting } from "./rich-text-formatting.tsx"
 
 const disposals: (() => void)[] = []
@@ -88,9 +89,7 @@ function setup(nonText = false) {
   const editor = mountRichPaperEditor(client, host)
   disposals.push(() => editor.destroy())
   const rendered = render(
-    <RichPaperTextFormatting editor={editor} blocked={false}>
-      <button type="button">Bold</button>
-    </RichPaperTextFormatting>
+    <RichPaperTextFormatting editor={editor} blocked={false} />
   )
   return { editor, client, ...rendered }
 }
@@ -146,6 +145,11 @@ it("puts the remaining groups in a visible More control and returns focus after 
   expect(
     screen.getByRole("button", { name: "More formatting" })
   ).toHaveTextContent("More")
+  for (const name of ["Bold", "Italic", "Underline"])
+    expect(screen.getByRole("button", { name, exact: true })).toBeVisible()
+  expect(
+    screen.queryByRole("button", { name: "Strikethrough", exact: true })
+  ).not.toBeInTheDocument()
   expect(
     screen.queryByRole("button", { name: "Text color", exact: true })
   ).not.toBeInTheDocument()
@@ -168,26 +172,28 @@ it("puts the remaining groups in a visible More control and returns focus after 
 it("disables controls without showing Mixed while loading or blocked", () => {
   width = 390
   const { rerender } = render(
-    <RichPaperTextFormatting editor={null} blocked={false}>
-      <button type="button">Bold</button>
-    </RichPaperTextFormatting>
+    <RichPaperTextFormatting editor={null} blocked={false} />
   )
-  for (const choice of screen.getAllByRole("combobox"))
-    expect(choice).toBeDisabled()
+  for (const name of ["Bold", "Italic", "Underline"])
+    expect(screen.getByRole("button", { name, exact: true })).toBeDisabled()
   expect(screen.queryByText("Mixed")).not.toBeInTheDocument()
   expect(screen.getByRole("button", { name: "More formatting" })).toBeDisabled()
-  rerender(
-    <RichPaperTextFormatting editor={null} blocked>
-      <button type="button">Bold</button>
-    </RichPaperTextFormatting>
-  )
+  rerender(<RichPaperTextFormatting editor={null} blocked />)
   expect(screen.queryByText("Mixed")).not.toBeInTheDocument()
 })
 
 it("disables controls for a document containing only a non-text object", () => {
   const { editor } = setup(true)
   expect(editor.activeFormatting()?.hasText).toBe(false)
-  for (const choice of screen.getAllByRole("combobox"))
-    expect(choice).toBeDisabled()
+  for (const name of ["Bold", "Italic", "Underline"])
+    expect(screen.getByRole("button", { name, exact: true })).toBeDisabled()
   expect(screen.queryByText("Mixed")).not.toBeInTheDocument()
+})
+
+it("shows shortcuts for the current platform", () => {
+  expect(shortcutLabel("Ctrl+B", "MacIntel")).toBe("⌘+B")
+  expect(shortcutLabel("Ctrl+Shift+L/E/R/J", "MacIntel")).toBe(
+    "⌘+Shift+L/E/R/J"
+  )
+  expect(shortcutLabel("Ctrl+]", "Linux x86_64")).toBe("Ctrl+]")
 })

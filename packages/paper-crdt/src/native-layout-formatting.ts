@@ -85,6 +85,30 @@ export function flowFormatting(binding: FlowBinding, view: EditorView) {
         tr.setNodeMarkup(pos, undefined, { ...node.attrs, ...patch })
       if (tr.docChanged) dispatch(tr)
     },
+    adjustIndent(delta: 360 | -360) {
+      const presentation = readPresentationMeta(binding.doc)
+      const tr = view.state.tr
+      for (const { node, pos } of selectedParagraphs(view)) {
+        const current = effectiveParagraph(
+          presentation,
+          canonicalProps(node.attrs)
+        )
+        const hanging =
+          current.indent?.kind === "hanging" ? current.indent.value : 0
+        const start = Math.max(current.start ?? 0, hanging)
+        const next = Math.max(0, Math.min(2880, start + delta))
+        const patch = engineProps(
+          paragraphSchema.parse({
+            start: next,
+            ...(hanging > next
+              ? { indent: { kind: "hanging", value: next } }
+              : {}),
+          })
+        )
+        tr.setNodeMarkup(pos, undefined, { ...node.attrs, ...patch })
+      }
+      if (tr.docChanged) dispatch(tr)
+    },
     activeFormatting() {
       const presentation = readPresentationMeta(binding.doc)
       const inlines: InlinePresentation[] = []

@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, type ReactNode } from "react"
+import { useEffect, useReducer, useRef } from "react"
 import { Ellipsis } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -8,6 +8,7 @@ import {
   PopoverTitle,
 } from "@workspace/ui/components/popover"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
+import { RichTextEmphasisGroup } from "./rich-text-emphasis-group.tsx"
 import { RichTextFontGroup } from "./rich-text-font-group.tsx"
 import { RichTextColorGroup } from "./rich-text-color-group.tsx"
 import { RichTextParagraphGroup } from "./rich-text-paragraph-group.tsx"
@@ -35,11 +36,9 @@ function toolbarState(
 export function RichPaperTextFormatting({
   editor,
   blocked,
-  children,
 }: {
   editor: TextEditor | null
   blocked: boolean
-  children: ReactNode
 }) {
   const [formatting, update] = useReducer(
     (_: TextFormatting | null, next: TextFormatting | null) => next,
@@ -76,14 +75,12 @@ export function RichPaperTextFormatting({
   }
   const controls = (
     <>
-      <fieldset
+      <RichTextEmphasisGroup
+        editor={editor}
+        formatting={formatting}
         disabled={disabled}
-        onClick={() => setOpen(false)}
-        aria-label="Text emphasis"
-        className="flex shrink-0 items-center gap-1 border-s border-border ps-2"
-      >
-        {children}
-      </fieldset>
+        overflow
+      />
       <RichTextColorGroup
         editor={editor}
         formatting={formatting}
@@ -110,13 +107,20 @@ export function RichPaperTextFormatting({
         role="toolbar"
         aria-label="Text formatting"
         data-slot="paper-text-formatting"
-        className="flex min-w-0 shrink-0 items-center gap-1 border-b px-3 py-2"
+        className="flex min-w-0 shrink-0 items-center gap-1 border-b px-[12px] py-2"
       >
-        <RichTextFontGroup
+        {!compact ? (
+          <RichTextFontGroup
+            editor={editor}
+            formatting={formatting}
+            disabled={disabled}
+            choose={inline}
+          />
+        ) : null}
+        <RichTextEmphasisGroup
           editor={editor}
           formatting={formatting}
           disabled={disabled}
-          choose={inline}
         />
         {compact ? (
           <Popover open={open} onOpenChange={setOpen}>
@@ -137,10 +141,16 @@ export function RichPaperTextFormatting({
               align="end"
               aria-label="More formatting"
               className="w-[min(22rem,calc(100vw-2rem))]"
-              finalFocus={false}
+              finalFocus={() => editor?.focus() ?? false}
             >
               <PopoverTitle>More formatting</PopoverTitle>
               <div className="flex flex-wrap items-center gap-2">
+                <RichTextFontGroup
+                  editor={editor}
+                  formatting={formatting}
+                  disabled={disabled}
+                  choose={inline}
+                />
                 {controls}
               </div>
             </PopoverContent>

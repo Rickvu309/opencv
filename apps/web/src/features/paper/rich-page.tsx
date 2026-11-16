@@ -6,17 +6,13 @@ import {
   useSyncExternalStore,
 } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { ArrowLeft, Bold, Italic, Strikethrough, Underline } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import {
   PageHeader,
   PageHeaderTitle,
 } from "@workspace/ui/components/page-header"
-import {
-  mountRichPaperEditor,
-  type RichMark,
-} from "@workspace/paper-crdt/editor"
-import { ToolbarHint } from "./rich-text-toolbar-control.tsx"
+import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import { RichPaperTextFormatting } from "./rich-text-formatting.tsx"
 import { openRichPaperSession } from "@/lib/paper-rich.ts"
 import { resolvePhotoSrc } from "@/lib/requests.ts"
@@ -26,17 +22,15 @@ import "./design/rich-page-header.pen.css"
 
 type Session = ReturnType<typeof openRichPaperSession>
 type Editor = ReturnType<typeof mountRichPaperEditor>
-type ActiveMarks = Partial<Record<RichMark, boolean>>
 type EditorState = {
   session: Session | null
   editor: Editor | null
-  activeMarks: ActiveMarks
   editorError: boolean
 }
 type EditorAction =
   | { type: "session"; session: Session }
-  | { type: "mounted"; editor: Editor; activeMarks: ActiveMarks }
-  | { type: "marks"; activeMarks: ActiveMarks }
+  | { type: "mounted"; editor: Editor }
+  | { type: "marks" }
   | { type: "unmounted" }
   | { type: "failed" }
 
@@ -48,34 +42,14 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
       return {
         ...state,
         editor: action.editor,
-        activeMarks: action.activeMarks,
         editorError: false,
       }
-    case "marks":
-      return { ...state, activeMarks: action.activeMarks }
     case "unmounted":
       return { ...state, editor: null }
     case "failed":
       return { ...state, editorError: true }
   }
 }
-
-const marks = [
-  { mark: "bold", label: "Bold", shortcut: "Ctrl+B", Icon: Bold },
-  { mark: "italic", label: "Italic", shortcut: "Ctrl+I", Icon: Italic },
-  {
-    mark: "underline",
-    label: "Underline",
-    shortcut: "Ctrl+U",
-    Icon: Underline,
-  },
-  {
-    mark: "strike",
-    label: "Strikethrough",
-    shortcut: "Ctrl+Shift+X",
-    Icon: Strikethrough,
-  },
-] as const
 
 export function RichPaperPage({
   name,
@@ -91,12 +65,11 @@ export function RichPaperPage({
   useLayoutEffect(() => {
     currentIdentity.current = identity
   }, [identity])
-  const [{ session, editor, activeMarks, editorError }, dispatch] = useReducer(
+  const [{ session, editor, editorError }, dispatch] = useReducer(
     editorReducer,
     {
       session: null,
       editor: null,
-      activeMarks: {},
       editorError: false,
     }
   )
@@ -127,13 +100,8 @@ export function RichPaperPage({
       dispatch({
         type: "mounted",
         editor: mounted,
-        activeMarks: mounted.activeMarks(),
       })
-      const detach = mounted.subscribe(() =>
-        dispatch({ type: "marks", activeMarks: mounted.activeMarks() })
-      )
       return () => {
-        detach()
         mounted.destroy()
         dispatch({ type: "unmounted" })
       }
@@ -170,28 +138,7 @@ export function RichPaperPage({
             : SYNC_LABEL[status]}
         </span>
       </PageHeader>
-      <RichPaperTextFormatting editor={editor} blocked={blocked}>
-        {marks.map(({ mark, label, shortcut, Icon }) => (
-          <ToolbarHint key={mark} label={`${label} (${shortcut})`}>
-            <Button
-              variant={activeMarks[mark] ? "secondary" : "ghost"}
-              size="icon"
-              className="size-11 md:size-8"
-              aria-label={label}
-              aria-pressed={activeMarks[mark] === true}
-              disabled={!editor || blocked}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => {
-                editor?.toggleMark(mark)
-                if (editor)
-                  dispatch({ type: "marks", activeMarks: editor.activeMarks() })
-              }}
-            >
-              <Icon />
-            </Button>
-          </ToolbarHint>
-        ))}
-      </RichPaperTextFormatting>
+      <RichPaperTextFormatting editor={editor} blocked={blocked} />
       {blocked ? (
         <p role="alert" className="p-6 text-sm">
           Paper could not safely open these changes. Your saved document and

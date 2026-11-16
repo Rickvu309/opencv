@@ -2,10 +2,10 @@
   {
     "subject": "apps/api/src/paper/native-output/formatted.test.ts",
     "because": "Saved font IDs now export the metric-compatible Word names required by issue 1578; the replacement checks every Word font encoding in document and style XML for all three saved IDs.",
-    "replacedBy": "scripts/paper-word-fonts.test.mjs",
+    "replacedBy": "apps/api/src/paper/native-output/formatted-fonts.test.ts",
     "proof": {
       "fork": "0342e329d002417ffc17ee98011225ffbc1aba9b",
-      "replacedByBlob": "28f055cc75baf9bd5cd8760d095dd9e83001035c",
+      "replacedByBlob": "a8dad8bb4a28298bb76033f90c4b5ccfde74d090",
       "failedOnBase": true,
       "passedOnHead": true
     },
@@ -16,10 +16,10 @@
   {
     "subject": "apps/api/src/paper/native-output/formatted-layout.test.ts",
     "because": "Rich table text uses the same Word font mapper as CV and Letter output; the replacement verifies canonical Word font names for every saved font ID in real document and style XML.",
-    "replacedBy": "scripts/paper-word-fonts.test.mjs",
+    "replacedBy": "apps/api/src/paper/native-output/formatted-fonts.test.ts",
     "proof": {
       "fork": "0342e329d002417ffc17ee98011225ffbc1aba9b",
-      "replacedByBlob": "28f055cc75baf9bd5cd8760d095dd9e83001035c",
+      "replacedByBlob": "a8dad8bb4a28298bb76033f90c4b5ccfde74d090",
       "failedOnBase": true,
       "passedOnHead": true
     },

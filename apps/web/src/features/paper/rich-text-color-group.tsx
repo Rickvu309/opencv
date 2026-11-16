@@ -105,7 +105,11 @@ function ColorChoice({
                   <Check
                     className="size-4"
                     style={{
-                      color: highlight ? undefined : "var(--background)",
+                      color: choice.color
+                        ? highlight
+                          ? "black"
+                          : "white"
+                        : "currentColor",
                     }}
                   />
                 ) : !choice.color ? (

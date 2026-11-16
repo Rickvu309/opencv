@@ -1,10 +1,11 @@
 import { posix } from "node:path"
 import ts from "typescript"
 import { qualifiedNativeWord } from "./paper-native-word.mjs"
+import { detectTextFormatting } from "./paper-text-formatting.mjs"
 
 export function detect(text, path) {
+  const hits = detectTextFormatting(text, path)
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
-  const hits = []
   if (path === "packages/paper-crdt/src/editor.ts") {
     const visit = (node) => {
       if (ts.isMethodDeclaration(node)) {

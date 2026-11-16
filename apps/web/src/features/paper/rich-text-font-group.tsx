@@ -31,7 +31,7 @@ export function RichTextFontGroup({
         choices={editor?.formattingOptions.fonts ?? []}
         disabled={disabled}
         editor={editor}
-        className="w-36 min-w-0 shrink"
+        className="w-44 min-w-0 shrink"
         onChange={(fontId) => choose({ fontId })}
       />
       <ToolbarChoice

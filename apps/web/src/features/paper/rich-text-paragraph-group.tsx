@@ -10,6 +10,7 @@ import {
   WrapText,
 } from "lucide-react"
 import {
+  shortcutLabel,
   ToolbarButton,
   ToolbarChoice,
   type TextEditor,
@@ -49,9 +50,6 @@ export function RichTextParagraphGroup({
   const Alignment =
     alignments.find((choice) => choice.value === formatting?.alignment)?.Icon ??
     AlignLeft
-  const start = Number(formatting?.start ?? 0) * 1440
-  const indent = (delta: number) =>
-    choose({ start: Math.max(0, Math.min(2880, start + delta)) })
   return (
     <div
       role="group"
@@ -59,7 +57,7 @@ export function RichTextParagraphGroup({
       className="flex flex-wrap items-center gap-1"
     >
       <ToolbarChoice
-        label="Alignment (Ctrl+Shift+L/E/R/J)"
+        label={shortcutLabel("Alignment (Ctrl+Shift+L/E/R/J)")}
         value={formatting?.alignment ?? null}
         choices={[...alignments]}
         icon={<Alignment />}
@@ -87,16 +85,16 @@ export function RichTextParagraphGroup({
         }
       />
       <ToolbarButton
-        label="Decrease indent (Ctrl+[)"
-        disabled={disabled || start <= 0}
-        onClick={() => indent(-360)}
+        label={shortcutLabel("Decrease indent (Ctrl+[)")}
+        disabled={disabled}
+        onClick={() => editor?.adjustIndent(-360)}
       >
         <IndentDecrease />
       </ToolbarButton>
       <ToolbarButton
-        label="Increase indent (Ctrl+])"
-        disabled={disabled || start >= 2880}
-        onClick={() => indent(360)}
+        label={shortcutLabel("Increase indent (Ctrl+])")}
+        disabled={disabled}
+        onClick={() => editor?.adjustIndent(360)}
       >
         <IndentIncrease />
       </ToolbarButton>

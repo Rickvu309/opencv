@@ -301,3 +301,44 @@ describe("rich Paper selection formatting", () => {
     expect(client.state()).toEqual(before)
   })
 })
+
+it("adjusts mixed paragraph indents relative to each effective depth and restores them in one Undo", () => {
+  const { mounted, client, select, view } = setup("letter")
+  select("intro")
+  mounted.formatParagraph({ start: 360 })
+  select("after")
+  mounted.formatParagraph({ start: 720 })
+  select("intro", "after")
+  expect(mounted.activeFormatting().start).toBeNull()
+  mounted.adjustIndent(360)
+  expect(paragraph(client).paragraph?.start).toBe(720)
+  expect(paragraph(client, "after").paragraph?.start).toBe(1080)
+  expect(undo(view.state)).toBe(true)
+  expect(paragraph(client).paragraph?.start).toBe(360)
+  expect(paragraph(client, "after").paragraph?.start).toBe(720)
+  expect(redo(view.state)).toBe(true)
+  mounted.adjustIndent(-360)
+  expect(paragraph(client).paragraph?.start).toBe(360)
+  expect(paragraph(client, "after").paragraph?.start).toBe(720)
+})
+it("moves a hanging paragraph on the first increase and decrease and respects bounds", () => {
+  const { mounted, client } = setup("letter")
+  mounted.formatParagraph({ start: 0, indent: { kind: "hanging", value: 720 } })
+  mounted.adjustIndent(360)
+  expect(paragraph(client).paragraph).toMatchObject({
+    start: 1080,
+    indent: { kind: "hanging", value: 720 },
+  })
+  mounted.formatParagraph({ start: 0, indent: { kind: "hanging", value: 720 } })
+  mounted.adjustIndent(-360)
+  expect(paragraph(client).paragraph).toMatchObject({
+    start: 360,
+    indent: { kind: "hanging", value: 360 },
+  })
+  mounted.adjustIndent(-360)
+  mounted.adjustIndent(-360)
+  expect(paragraph(client).paragraph?.start).toBe(0)
+  mounted.formatParagraph({ start: 2880 })
+  mounted.adjustIndent(360)
+  expect(paragraph(client).paragraph?.start).toBe(2880)
+})

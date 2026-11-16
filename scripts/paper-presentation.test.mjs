@@ -5,7 +5,7 @@ import path from "node:path"
 import { fileURLToPath } from "node:url"
 import test from "node:test"
 import { detect } from "./lib/paper-presentation.mjs"
-import { clean, mistakes } from "./fixtures/paper-presentation.mjs"
+import { clean, mistakes, roundTwo } from "./fixtures/paper-presentation.mjs"
 
 const root = path.resolve(fileURLToPath(new URL("..", import.meta.url)))
 test("private formatting preserves package boundaries, real owners, XML anchors and one text store", () => {
@@ -23,6 +23,7 @@ test("private formatting preserves package boundaries, real owners, XML anchors 
       "--",
       "packages",
       "apps",
+      "scripts",
     ],
     {
       cwd: root,
@@ -56,5 +57,27 @@ test("round-one guards refuse the introducing formatting commit", () => {
       encoding: "utf8",
     })
     assert.ok(detect(text, file).length > 0, file)
+  }
+})
+
+test("round-two regressions fire on fixtures and the introducing head, while the fixes stay quiet", () => {
+  for (const fixture of roundTwo) {
+    assert.ok(detect(fixture.mistake, fixture.path).length, fixture.path)
+    assert.deepEqual(detect(fixture.clean, fixture.path), [], fixture.path)
+    const old = execFileSync(
+      "git",
+      ["show", `09c29ba06a01cf6b7961c03a46f5b068b6258cf9:${fixture.path}`],
+      { cwd: root, encoding: "utf8" }
+    )
+    assert.ok(detect(old, fixture.path).length, fixture.path)
+    if (existsSync(path.join(root, fixture.path)))
+      assert.deepEqual(
+        detect(
+          readFileSync(path.join(root, fixture.path), "utf8"),
+          fixture.path
+        ),
+        [],
+        fixture.path
+      )
   }
 })
