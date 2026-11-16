@@ -4,7 +4,7 @@ import type { TestDatabase } from "../../db/context.js"
 import { inboxThreads } from "../../db/schema.js"
 import { authHeaders, testWebOrigin } from "../harness.js"
 import { textPdf } from "./route-files.js"
-import { nativeWordRouteCase } from "../../paper/native-word.test-support.js"
+import { nativeWordRouteCase } from "./native-word.js"
 
 export type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
 

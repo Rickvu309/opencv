@@ -106,6 +106,8 @@ const NEVER_SNAPSHOT_REASON: Partial<Record<QueryName, string>> = {
   "activity.list": "every command refreshes it",
   "paper.export":
     "pinned binary download metadata is covered by the package HTTP replay",
+  "paper.nativeWord":
+    "exact-basis Word qualification is covered by the native Word HTTP replay",
   "coach.status":
     "task snapshots are read with a cursor, outside the query cache",
   "coach.events": "SSE replay advances its own cursor, outside the query cache",
