@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "packages/paper-crdt/src/native-layout-flow.test.ts > private section flow on the canonical editor fragment > reports unsupported browsers and unqualified section or blank-page layouts",
+    "because": "Coordinator authorized replacing the engine limitation assertion: tables must paginate with whole rows, oversized rows bounded to their own page, and bottom margins respected in Letter and A4. Browser evidence covers CV and Letter at 1440 and 390.",
+    "replacedBy": "packages/paper-crdt/src/native-layout-flow.test.ts",
+    "proof": {
+      "fork": "bde3238ecbf6cda68cb7658f82d6f4794c07ad40",
+      "replacedByBlob": "2b61dabc51316de90afa275abd733f659697a05f",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]
