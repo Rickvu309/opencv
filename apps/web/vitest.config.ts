@@ -36,6 +36,7 @@ const ISOLATED_FILES = [
   "src/lib/paper-local-replay.test.ts",
   "src/features/paper/cv-photo.test.tsx",
   "src/features/paper/paper-share.test.tsx",
+  "src/features/paper/paper-print-callers.test.tsx",
   "src/features/paper/paper-v2-preview.test.tsx",
   "src/features/paper/paper-import-outcomes.test.tsx",
   "src/features/paper/paper-library.test.tsx",
