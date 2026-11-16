@@ -10,8 +10,12 @@ export type AgentSnippet = {
   id: "claude" | "cursor" | "codex" | "chatgpt"
   title: string
   detail: string
+  more?: { title: string; body: string }
   copies: AgentCopy[]
 }
+
+const AGENT_CAPABILITY =
+  "Consent lists what the agent can use. Approve one that includes documents to let it work on your CVs and Letters. A connection made for Jobs only stays that way, so connect again to add documents. The agent reads a document with paper_read and proposes changes with paper_edit."
 
 export function mcpResourceUrl(value: string) {
   const url = new URL(value)
@@ -28,7 +32,11 @@ export function agentSnippets(serverUrl: string): AgentSnippet[] {
       id: "claude",
       title: "Claude Code",
       detail:
-        "Run the add command in a terminal. Then run the login command, or open Claude Code and run /mcp to authenticate. Consent lists what the agent can use; approve one that includes documents to let it work on your CVs and Letters. A connection made for Jobs only stays that way, so connect again to add documents. The agent reads a document with paper_read and proposes changes with paper_edit; nothing changes until you approve it in OpenCV.",
+        "Add the server, then sign in. Nothing changes until you approve it in OpenCV.",
+      more: {
+        title: "What the agent can do",
+        body: `You can also sign in from Claude Code with /mcp. ${AGENT_CAPABILITY}`,
+      },
       copies: [
         {
           id: "claude-add",
@@ -65,7 +73,11 @@ export function agentSnippets(serverUrl: string): AgentSnippet[] {
       id: "codex",
       title: "Codex",
       detail:
-        "Add this table to ~/.codex/config.toml. Then run the login command and approve the connection here. Consent lists what the agent can use; approve one that includes documents to let it work on your CVs and Letters. A connection made for Jobs only stays that way, so connect again to add documents. The agent reads a document with paper_read and proposes changes with paper_edit; nothing changes until you approve it in OpenCV.",
+        "Add the table, then sign in. Nothing changes until you approve it in OpenCV.",
+      more: {
+        title: "What the agent can do",
+        body: AGENT_CAPABILITY,
+      },
       copies: [
         {
           id: "codex-table",

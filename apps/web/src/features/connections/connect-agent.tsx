@@ -1,4 +1,10 @@
 import { CopyButton } from "@workspace/ui/components/copy-button"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleIndicator,
+  CollapsibleTrigger,
+} from "@workspace/ui/components/collapsible"
 import { agentServerUrl } from "@/lib/connections-api.ts"
 import { agentSnippets } from "./snippets.ts"
 
@@ -29,7 +35,22 @@ export function ConnectAgent() {
           >
             <div className="min-w-0">
               <p className="font-medium">{snippet.title}</p>
-              <p className="text-sm text-muted-foreground">{snippet.detail}</p>
+              <p className="max-w-[60ch] text-sm text-muted-foreground">
+                {snippet.detail}
+              </p>
+              {snippet.more ? (
+                <Collapsible className="mt-2">
+                  <CollapsibleTrigger className="inline-flex min-h-11 items-center gap-1 rounded-md text-left text-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring/50 md:min-h-6">
+                    {snippet.more.title}
+                    <CollapsibleIndicator className="size-3" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <p className="max-w-[60ch] pt-3 text-sm text-muted-foreground">
+                      {snippet.more.body}
+                    </p>
+                  </CollapsibleContent>
+                </Collapsible>
+              ) : null}
             </div>
             {snippet.copies.map((copy) => (
               <div key={copy.id} className="flex flex-col gap-2">

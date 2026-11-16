@@ -45,7 +45,7 @@ const AGENTS = [
 ] as const
 
 const SWITCH_CLASS =
-  "h-11! w-11! after:inset-0! md:h-[18px]! md:w-8! md:after:-inset-3.5! max-md:bg-transparent! max-md:before:absolute max-md:before:top-3 max-md:before:left-[5px] max-md:before:h-[18px] max-md:before:w-8 max-md:before:rounded-full max-md:before:bg-input max-md:before:content-[''] max-md:data-checked:before:bg-primary max-md:[&_[data-slot=switch-thumb]]:relative max-md:[&_[data-slot=switch-thumb]]:ml-1.5"
+  "h-11! w-11! after:inset-0! after:content-[''] md:h-[18px]! md:w-8! md:after:-inset-3.5! max-md:bg-transparent! max-md:before:absolute max-md:before:top-3 max-md:before:left-[5px] max-md:before:h-[18px] max-md:before:w-8 max-md:before:rounded-full max-md:before:bg-input max-md:before:content-[''] max-md:data-checked:before:bg-primary max-md:[&_[data-slot=switch-thumb]]:relative max-md:[&_[data-slot=switch-thumb]]:ml-1.5"
 
 export function CoachSection({
   profile,

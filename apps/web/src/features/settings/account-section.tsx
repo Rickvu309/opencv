@@ -67,6 +67,7 @@ export function AccountSection({
   ] = useReducer(accountReducer, ACCOUNT_START)
   const name =
     draftName !== null && draftName !== profile.name ? draftName : profile.name
+  const nameMessage = nameError ?? (errorKey === "name" ? error : undefined)
   const photoSrc = resolveProfileImageSrc(profile.image)
 
   function onPhoto(file: File | undefined) {
@@ -128,12 +129,17 @@ export function AccountSection({
           <SettingsRow
             id="name"
             label="Name"
-            error={nameError ?? (errorKey === "name" ? error : undefined)}
+            error={nameMessage}
+            errorId={nameMessage ? "account-name-error" : undefined}
             control={
               <Input
                 aria-label="Name"
+                aria-invalid={nameMessage ? true : undefined}
+                aria-describedby={
+                  nameMessage ? "account-name-error" : undefined
+                }
                 data-slot="settings-name-input"
-                className="rounded-[7px] max-md:h-11 md:w-60 md:text-[13px]"
+                className="rounded-[7px] text-base max-md:h-11 md:w-60 md:text-[13px]"
                 value={name}
                 disabled={pending}
                 onChange={(event) =>

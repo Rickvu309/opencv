@@ -58,7 +58,7 @@ export function SettingsLayout({
       >
         <div
           data-slot="settings-column"
-          className="mx-auto flex w-full max-w-[640px] flex-col"
+          className="@container/settings mx-auto flex w-full max-w-[640px] flex-col"
         >
           {children}
         </div>
@@ -222,7 +222,7 @@ export function SettingsCard({
       data-slot="settings-card"
       data-card={name}
       className={cn(
-        "flex flex-col divide-y divide-border overflow-hidden rounded-lg border border-border bg-card",
+        "flex min-w-0 flex-col divide-y divide-border overflow-hidden rounded-lg border border-border bg-card",
         className
       )}
     >
@@ -254,6 +254,8 @@ export function SettingsRow({
   onClick,
   disabled,
   error,
+  errorId,
+  stack = false,
 }: {
   id?: string
   label: ReactNode
@@ -265,11 +267,19 @@ export function SettingsRow({
   onClick?: () => void
   disabled?: boolean
   error?: string
+  errorId?: string
+  stack?: boolean
 }) {
   const body = (
     <>
       {leading}
-      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+      <span
+        className={cn(
+          "flex min-w-0 flex-1 flex-col gap-0.5",
+          stack &&
+            "@max-[479px]/settings:w-full @max-[479px]/settings:flex-none"
+        )}
+      >
         <span
           data-slot="settings-row-label"
           className="text-[13px] leading-4 font-medium break-words"
@@ -279,7 +289,10 @@ export function SettingsRow({
         {desc ? (
           <span
             data-slot="settings-row-desc"
-            className="text-[12.5px] leading-4 break-words text-muted-foreground"
+            className={cn(
+              "text-[12.5px] leading-4 break-words text-muted-foreground",
+              stack && "@max-[479px]/settings:leading-[18px]"
+            )}
           >
             {desc}
           </span>
@@ -300,6 +313,8 @@ export function SettingsRow({
           onClick={onClick}
           className={cn(
             "h-auto min-h-11 w-full flex-wrap justify-between rounded-none text-left font-normal whitespace-normal hover:bg-muted md:min-h-0",
+            stack &&
+              "@max-[479px]/settings:flex-col @max-[479px]/settings:items-start @max-[479px]/settings:gap-3",
             spacing,
             ROW_INSET[inset]
           )}
@@ -310,7 +325,9 @@ export function SettingsRow({
         <div
           data-slot="settings-row-body"
           className={cn(
-            "flex w-full flex-wrap items-center justify-between",
+            "flex w-full min-w-0 flex-wrap items-center justify-between",
+            stack &&
+              "@max-[479px]/settings:flex-col @max-[479px]/settings:items-start @max-[479px]/settings:gap-3",
             spacing,
             ROW_INSET[inset]
           )}
@@ -319,7 +336,11 @@ export function SettingsRow({
         </div>
       )}
       {error ? (
-        <p role="alert" className="px-4 pb-3 text-sm text-destructive">
+        <p
+          id={errorId}
+          role="alert"
+          className="px-4 pb-3 text-sm text-destructive"
+        >
           {error}
         </p>
       ) : null}

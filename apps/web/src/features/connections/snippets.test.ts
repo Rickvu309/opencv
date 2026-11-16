@@ -65,7 +65,14 @@ it("builds a pasteable step for each client from the mcp address", () => {
   const codex = snippets.find((item) => item.id === "codex")
   const chatgpt = snippets.find((item) => item.id === "chatgpt")
 
-  expect(claude?.detail).toMatch(/\/mcp/)
+  expect(claude?.detail).toBe(
+    "Add the server, then sign in. Nothing changes until you approve it in OpenCV."
+  )
+  expect(claude?.detail).not.toMatch(/paper_read/)
+  expect(claude?.more?.title).toBe("What the agent can do")
+  expect(claude?.more?.body).toMatch(/\/mcp/)
+  expect(claude?.more?.body).toMatch(/paper_read/)
+  expect(claude?.more?.body).toMatch(/paper_edit/)
   expect(commandArgs(copy("claude", "claude-add").text)).toEqual([
     "claude",
     "mcp",
@@ -89,7 +96,12 @@ it("builds a pasteable step for each client from the mcp address", () => {
     mcpServers: { opencv: { url: address } },
   })
 
-  expect(codex?.detail).toContain("~/.codex/config.toml")
+  expect(codex?.detail).toBe(
+    "Add the table, then sign in. Nothing changes until you approve it in OpenCV."
+  )
+  expect(codex?.detail).not.toMatch(/paper_read/)
+  expect(codex?.more?.body).toMatch(/paper_read/)
+  expect(copy("codex", "codex-table").label).toContain("~/.codex/config.toml")
   const table = copy("codex", "codex-table").text
   expect(table).not.toMatch(/codex mcp/)
   expect(parseToml(table).mcp_servers.opencv).toEqual({
