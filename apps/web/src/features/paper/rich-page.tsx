@@ -20,6 +20,7 @@ import { openRichPaperSession } from "@/lib/paper-rich.ts"
 import { resolvePhotoSrc } from "@/lib/requests.ts"
 import type { NativeSyncIdentity } from "@/lib/paper-sync-identity.ts"
 import { SYNC_LABEL } from "@/lib/paper-sync.ts"
+import { useRichStatusDetail } from "./rich-status-detail.ts"
 import { mountRichEditorLifecycle } from "./rich-editor-lifecycle.ts"
 import { RichDocumentMenu } from "./rich-document-menu.tsx"
 import "./design/rich-page-header.pen.css"
@@ -109,6 +110,15 @@ export function RichPaperPage({
       },
     })
   }, [client])
+  const statusLabel = editorError
+    ? "Editor unavailable. Your document is kept"
+    : SYNC_LABEL[status]
+  const {
+    statusRef,
+    detailRef,
+    visible: statusDetailVisible,
+    minHeight: statusDetailHeight,
+  } = useRichStatusDetail(statusLabel, status === "saved" && !editorError)
   const blocked = status === "stuck" || status === "refused" || editorError
   useEffect(() => {
     editor?.setEditable(!blocked)
@@ -134,11 +144,13 @@ export function RichPaperPage({
             {name}
           </PageHeaderTitle>
         </div>
-        <div className="ml-auto flex shrink-0 items-center gap-2">
-          <span role="status" className="text-sm text-muted-foreground">
-            {editorError
-              ? "Editor unavailable. Your document is kept"
-              : SYNC_LABEL[status]}
+        <div className="ml-auto flex max-w-full min-w-0 items-center gap-2">
+          <span
+            role="status"
+            ref={statusRef}
+            className="min-w-0 truncate text-sm text-muted-foreground"
+          >
+            {statusLabel}
           </span>
           <RichDocumentMenu
             editorAvailable={!!editor}
@@ -148,6 +160,17 @@ export function RichPaperPage({
           />
         </div>
       </PageHeader>
+      {statusDetailVisible ? (
+        <p
+          aria-hidden="true"
+          ref={detailRef}
+          style={{ minHeight: statusDetailHeight }}
+          data-slot="paper-status-detail"
+          className="shrink-0 px-6 py-3 text-sm [overflow-wrap:anywhere] text-muted-foreground"
+        >
+          {statusLabel}
+        </p>
+      ) : null}
       <RichTableControls editor={editor} disabled={blocked}>
         {(tableControls) => (
           <RichPhotoControls editor={editor} disabled={blocked}>
