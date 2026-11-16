@@ -1,5 +1,5 @@
 import { Bar, Text } from "@workspace/stageshow/kit/window.tsx"
-import { Button } from "@workspace/stageshow/kit/controls/Button.tsx"
+import { Button as DrawnButton } from "@workspace/stageshow/kit/controls/Button.tsx"
 import { Card } from "@workspace/stageshow/kit/parts/Card.tsx"
 import { Check } from "@workspace/stageshow/kit/parts/Check.tsx"
 import { Collapse } from "@workspace/stageshow/kit/motion/Collapse.tsx"
@@ -102,7 +102,7 @@ export function ApplyScene() {
               className="oa-link"
               box={{ "data-target": "job-link", "data-cursor": "ibeam" }}
             />
-            <Button
+            <DrawnButton
               variant="primary"
               size="large"
               data-target="save-job"
@@ -122,7 +122,7 @@ export function ApplyScene() {
                 : s.phase === "saved"
                   ? "Saved"
                   : "Save"}
-            </Button>
+            </DrawnButton>
           </div>
           <div className="oa-heading" data-target="saved-heading">
             <div className="oa-group">
@@ -130,9 +130,9 @@ export function ApplyScene() {
               <Count value={s.count} className="oa-count" />
             </div>
             <div className="oa-undo" data-visible={s.added || undefined}>
-              <Button variant="ghost" size="small" data-target="undo-save">
+              <DrawnButton variant="ghost" size="small" data-target="undo-save">
                 Undo
-              </Button>
+              </DrawnButton>
             </div>
           </div>
           <div className="oa-list">

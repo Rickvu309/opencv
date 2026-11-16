@@ -1,6 +1,6 @@
 import { ArrowRight, Bold, Check, Italic, List, Undo2 } from "lucide-react"
 import { Bar } from "@workspace/stageshow/kit/window.tsx"
-import { Button } from "@workspace/stageshow/kit/controls/Button.tsx"
+import { Button as DrawnButton } from "@workspace/stageshow/kit/controls/Button.tsx"
 import { Popover } from "@workspace/stageshow/kit/motion/Popover.tsx"
 import { Roll } from "@workspace/stageshow/kit/motion/Roll.tsx"
 import { Stage } from "@workspace/stageshow/kit/stage.tsx"
@@ -130,7 +130,7 @@ export function PaperScene() {
                 <span className="paper-after">Wrote</span>
               </div>
               <div className="paper-actions">
-                <Button
+                <DrawnButton
                   variant="primary"
                   size="medium"
                   data-target="accept"
@@ -139,8 +139,8 @@ export function PaperScene() {
                   }
                 >
                   {accepted ? "Accepted" : "Accept"}
-                </Button>
-                <Button
+                </DrawnButton>
+                <DrawnButton
                   variant="ghost"
                   size="medium"
                   data-target="undo"
@@ -149,7 +149,7 @@ export function PaperScene() {
                   }
                 >
                   {accepted ? "Undo" : "Reject"}
-                </Button>
+                </DrawnButton>
               </div>
             </Popover>
           </>

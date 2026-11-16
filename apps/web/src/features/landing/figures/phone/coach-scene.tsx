@@ -1,6 +1,6 @@
 import { ArrowUp, Check as CheckIcon, MessageSquarePlus } from "lucide-react"
 import { Bar, Text } from "@workspace/stageshow/kit/window.tsx"
-import { Button } from "@workspace/stageshow/kit/controls/Button.tsx"
+import { Button as DrawnButton } from "@workspace/stageshow/kit/controls/Button.tsx"
 import { Card } from "@workspace/stageshow/kit/parts/Card.tsx"
 import { Check } from "@workspace/stageshow/kit/parts/Check.tsx"
 import { Collapse } from "@workspace/stageshow/kit/motion/Collapse.tsx"
@@ -126,7 +126,7 @@ export function CoachScene() {
         <Card flush pad="small" className="ocv-coach-panel">
           <div className="ocv-coach-header">
             <Text>Coach</Text>
-            <Button
+            <DrawnButton
               variant="ghost"
               size="small"
               data-target="new-chat"
@@ -191,16 +191,16 @@ export function CoachScene() {
                   </Text>
                   <div className="ocv-coach-proposal-meta">
                     <Text>3 changes</Text>
-                    <Button
+                    <DrawnButton
                       variant="ghost"
                       size="small"
                       className="ocv-coach-undo"
                       data-on={s.approval === "applied" || undefined}
                     >
                       Undo
-                    </Button>
+                    </DrawnButton>
                   </div>
-                  <Button
+                  <DrawnButton
                     variant="primary"
                     size="large"
                     data-target="approve"
@@ -216,7 +216,7 @@ export function CoachScene() {
                       : s.approval === "applying"
                         ? "Applying"
                         : "Approve"}
-                  </Button>
+                  </DrawnButton>
                 </Card>
               </Collapse>
             </div>
@@ -231,7 +231,7 @@ export function CoachScene() {
                     data-target="composer"
                     data-cursor="ibeam"
                   />
-                  <Button
+                  <DrawnButton
                     variant="primary"
                     size="small"
                     data-target="send"
