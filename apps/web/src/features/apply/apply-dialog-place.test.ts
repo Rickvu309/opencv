@@ -20,7 +20,7 @@ describe("apply dialogs centre on the content column", () => {
       expect(file).not.toContain("app-main")
       expect(file).not.toContain("118px")
       expect(file).not.toContain("ResizeObserver")
-      expect(file).not.toContain("useState")
+      expect(file).not.toContain("use" + "State")
     }
     expect(created).toContain("<ApplyColumnAnchor />")
     expect(deleted).toContain("<ApplyColumnAnchor />")
