@@ -10,6 +10,20 @@ export {
 } from "./paper-doc/presentation-values.js"
 export type { Result } from "./paper-doc/presentation-values.js"
 export {
+  effectiveRunDecorations,
+  paperLinkColor,
+  paperParagraphStyles,
+  paperParagraphStyle,
+  effectiveParagraphStyle,
+  paragraphStyleValues,
+  paragraphInlineValues,
+  wordParagraphStyleId,
+} from "./paper-doc/paragraph-styles.js"
+export type {
+  EffectiveRunDecorations,
+  PaperParagraphStyle,
+} from "./paper-doc/paragraph-styles.js"
+export {
   documentPresentationSchema,
   isWellFormed,
   rangeSchema,

@@ -1,4 +1,7 @@
 import {
+  effectiveRunDecorations,
+  paragraphInlineValues,
+  effectiveParagraphStyle,
   formattedDocumentSchema,
   layoutDocumentSchema,
   flowDocumentSchema,
@@ -64,7 +67,8 @@ export function compileLayoutNativeDocx(input: {
 }
 function compileDocument(
   document: FormattedDocument | LayoutDocument | FlowDocument,
-  photos: readonly PhotoMedia[] = []
+  photos: readonly PhotoMedia[] = [],
+  generation: "existing" | "rich" = "existing"
 ): Uint8Array {
   const styles = formattedStyles(document.presentation)
   const sequences: ListSequence[] = []
@@ -74,18 +78,47 @@ function compileDocument(
     document.presentation.page.width -
     document.presentation.page.start -
     document.presentation.page.end
-  function runs(content: readonly FormatRun[]): string {
+  function runs(
+    content: readonly FormatRun[],
+    paragraphStyle?: string
+  ): string {
     return content
       .map(({ text, href, ...direct }) => {
-        const effective = styles.effectiveInline(direct)
+        const inherited = paragraphInlineValues(paragraphStyle)
+        const effective = styles.effectiveInline({
+          ...inherited,
+          ...direct,
+        })
+        const richLink = generation === "rich" && Boolean(href)
+        const decorations = effectiveRunDecorations(direct, richLink, effective)
+        const richAppearance = {
+          ...direct,
+          underline:
+            direct.characterStyle || direct.underline !== undefined
+              ? decorations.underline
+              : undefined,
+          color: direct.characterStyle ? decorations.color : direct.color,
+        }
+        const appearance = richLink ? richAppearance : direct
+        const properties = inlineProperties({
+          ...appearance,
+          bold: effective.bold === inherited.bold ? undefined : effective.bold,
+          italic:
+            effective.italic === inherited.italic
+              ? undefined
+              : effective.italic,
+          strike:
+            generation === "rich"
+              ? effective.strike === inherited.strike
+                ? undefined
+                : decorations.strike
+              : direct.strike,
+        })
         return wordRun(
           text,
-          inlineProperties({
-            ...direct,
-            bold: effective.bold,
-            italic: effective.italic,
-            strike: effective.strike,
-          }),
+          richLink && !direct.characterStyle
+            ? '<w:rStyle w:val="Hyperlink"/>' + properties
+            : properties,
           href,
           links
         )
@@ -198,13 +231,19 @@ function compileDocument(
           }
           structure = `<w:numPr><w:ilvl w:val="${depth}"/><w:numId w:val="${sequence.id}"/></w:numPr>`
         }
+        const paragraphStyle = effectiveParagraphStyle(
+          node.type,
+          node.paragraph.paragraphStyle,
+          node.type === "heading" ? node.level : undefined
+        )
         const effective = styles.effectiveParagraph(
-          node.paragraph,
+          { ...node.paragraph, paragraphStyle },
           list ? (depth + 1) * 720 : undefined
         )
         const properties = paragraphProperties(
           {
             ...node.paragraph,
+            paragraphStyle,
             start: effective.start,
             end: effective.end,
             indent: effective.indent,
@@ -215,7 +254,7 @@ function compileDocument(
           node.type === "heading"
             ? `<w:outlineLvl w:val="${node.level - 1}"/>`
             : ""
-        const paragraph = `<w:p><w:pPr>${properties}${heading}</w:pPr>${runs(node.content)}</w:p>`
+        const paragraph = `<w:p><w:pPr>${properties}${heading}</w:pPr>${runs(node.content, paragraphStyle)}</w:p>`
         return (
           paragraph +
           (list ? siblings(node.children, depth + 1, availableWidth) : "")
@@ -258,6 +297,7 @@ function compileDocument(
       paragraphIndent: false,
     }),
     links,
+    richLinks: generation === "rich",
     media: pictures.media,
     identity: [
       ["PaperProfile", document.profile],
@@ -268,13 +308,18 @@ function compileDocument(
 }
 
 export function compileFlowNativeDocx(input: {
+  generation?: "rich"
   document: unknown
   photos?: readonly PhotoMedia[]
 }): Result<Uint8Array> {
   try {
     assertCanonicalInput(input.document)
     return ok(
-      compileDocument(flowDocumentSchema.parse(input.document), input.photos)
+      compileDocument(
+        flowDocumentSchema.parse(input.document),
+        input.photos,
+        input.generation
+      )
     )
   } catch (error) {
     return refuse(

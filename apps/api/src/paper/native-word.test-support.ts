@@ -8,6 +8,7 @@ import {
   richPaperDocumentSchema,
   safeHrefSchema,
   type NativeBasis,
+  type RichPaperDocument,
 } from "@workspace/domain"
 import { withDatabase, type TestDatabase } from "../db/context.js"
 import { insertPaperFixture } from "../test/paper-row.js"
@@ -23,7 +24,8 @@ export const portraitBytes = Buffer.from(
 export async function savedRichWord(
   db: TestDatabase,
   userId: string,
-  kind: "cv" | "letter"
+  kind: "cv" | "letter",
+  prepare?: (document: RichPaperDocument) => void
 ) {
   return withDatabase(db, async () => {
     const photo = await saveFile({
@@ -45,6 +47,7 @@ export async function savedRichWord(
           })
       }
     }
+    prepare?.(document)
     const qualified = richPaperDocumentSchema.parse(document)
     const id = randomUUID()
     await insertPaperFixture(db, {
