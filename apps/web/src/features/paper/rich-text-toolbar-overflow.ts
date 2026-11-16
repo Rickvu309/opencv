@@ -120,7 +120,7 @@ export function useToolbarOverflow(
         fixed +
         (iconOnly ? more.getBoundingClientRect().height : fullWidth) +
         gap
-      const visible = []
+      const visible: string[] = []
       for (const item of entries) {
         if (visible.includes(item.label)) continue
         const group = item.pair
