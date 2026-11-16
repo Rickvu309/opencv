@@ -51,10 +51,23 @@ html:has(.landing-root) {
 .landing-grid {
   display: grid;
   grid-template-columns:
-    [full-width-start] minmax(clamp(1.25rem, 3.34vw, 3rem), 1fr)
-    [content-start] min(100% - clamp(1.25rem, 3.34vw, 3rem) * 2, 84rem)
+    [full-width-start]
+    minmax(
+      max(clamp(1.25rem, 3.34vw, 3rem), env(safe-area-inset-left, 0px)),
+      1fr
+    )
+    [content-start]
+    min(
+      100% - max(clamp(1.25rem, 3.34vw, 3rem), env(safe-area-inset-left, 0px)) -
+        max(clamp(1.25rem, 3.34vw, 3rem), env(safe-area-inset-right, 0px)),
+      84rem
+    )
     [content-end]
-    minmax(clamp(1.25rem, 3.34vw, 3rem), 1fr) [full-width-end];
+    minmax(
+      max(clamp(1.25rem, 3.34vw, 3rem), env(safe-area-inset-right, 0px)),
+      1fr
+    )
+    [full-width-end];
 }
 
 .landing-grid > * {
@@ -104,6 +117,7 @@ html:has(.landing-root) {
   inset-block-start: 0;
   z-index: 40;
   container-type: inline-size;
+  padding-block-start: env(safe-area-inset-top, 0px);
   background: var(--background);
   border-block-end: 1px solid transparent;
 }
@@ -646,7 +660,7 @@ html:has(.landing-root) {
 
 .landing-footer {
   margin-block-start: clamp(4rem, 11vw, 10rem);
-  padding-block: 3.5rem 3rem;
+  padding-block: 3.5rem calc(3rem + env(safe-area-inset-bottom, 0px));
   border-block-start: 1px solid var(--border);
 }
 
