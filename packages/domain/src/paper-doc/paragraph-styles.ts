@@ -1,4 +1,8 @@
-import { inlineSchema, paragraphSchema } from "./presentation-values.js"
+import {
+  inlineSchema,
+  paragraphSchema,
+  styleIdSchema,
+} from "./presentation-values.js"
 
 export const paperParagraphStyles = [
   {
@@ -65,4 +69,18 @@ export function paragraphInlineValues(id: string | null | undefined) {
 
 export function wordParagraphStyleId(id: string) {
   return paperParagraphStyle(id)?.wordId ?? `Paper-${id}`
+}
+
+export function effectiveParagraphStyle(
+  type: string,
+  style: string | null | undefined,
+  level?: unknown
+) {
+  if (type === "heading") {
+    const heading = paperParagraphStyles.find(
+      (item) => item.outline !== null && item.outline + 1 === level
+    )
+    if (heading) return styleIdSchema.parse(heading.id)
+  }
+  return styleIdSchema.parse(style ?? "normal")
 }

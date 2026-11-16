@@ -224,6 +224,7 @@ it.each(["cv", "letter"] as const)(
     expect(commands.formattingState().canLink).toBe(true)
     reversible(() => commands.removeLink())
     select()
+    commands.setLink("mailto:linh@example.com")
     commands.setParagraphStyle("heading-2")
     expect(activeInline().bold).toBe(true)
     reversible(() => commands.toggleMark("bold"))
@@ -240,10 +241,12 @@ it.each(["cv", "letter"] as const)(
       (node) => node.id === "first"
     )
     expect(first).toMatchObject({
-      content: [{ text: "first Việt e\u0302 😀" }],
+      content: [
+        { text: "first Việt e\u0302 😀", href: "mailto:linh@example.com" },
+      ],
     })
     expect(first && "content" in first ? first.content : []).toEqual([
-      { text: "first Việt e\u0302 😀" },
+      { text: "first Việt e\u0302 😀", href: "mailto:linh@example.com" },
     ])
     select("third")
     reversible(() => key("2", { ctrlKey: true, altKey: true, code: "Digit2" }))

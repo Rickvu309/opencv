@@ -1,6 +1,7 @@
-import { isSafeHref } from "@workspace/domain"
+import { normalizeLinkHref } from "@workspace/domain"
 import {
   paperParagraphStyle,
+  effectiveParagraphStyle,
   paperParagraphStyles,
   type PaperParagraphStyle,
 } from "@workspace/domain/internal/paper-presentation"
@@ -88,14 +89,22 @@ export function richEditorCommands(
     const link = editor.getLinkMarkAtPos(from)
     return empty && link ? { from: link.from, to: link.to } : { from, to }
   }
-  const setLink = (href: string) => {
-    if (!editor.isEditable || !isSafeHref(href)) return false
+  const setLink = (address: string, text?: string) => {
+    const href = normalizeLinkHref(address)
+    if (!editor.isEditable || !href) return false
     const { from, to } = linkRange()
     const mark = view.state.schema.marks.link
-    if (!mark || from === to) return false
-    change(() =>
-      view.dispatch(view.state.tr.addMark(from, to, mark.create({ href })))
-    )
+    if (!mark || (from === to && !text?.trim())) return false
+    change(() => {
+      const tr = view.state.tr
+      if (from === to && text) tr.insertText(text, from)
+      tr.addMark(
+        from,
+        from === to ? from + (text?.length ?? 0) : to,
+        mark.create({ href })
+      )
+      view.dispatch(tr)
+    })
     return true
   }
   const removeLink = () =>
@@ -110,7 +119,15 @@ export function richEditorCommands(
   const clearFormatting = () =>
     change(() => {
       const { from, to } = view.state.selection
-      const tr = view.state.tr.removeMark(from, to).setStoredMarks([])
+      const tr = view.state.tr
+      for (const mark of Object.values(view.state.schema.marks)) {
+        if (mark.name !== "link") tr.removeMark(from, to, mark)
+      }
+      tr.setStoredMarks(
+        (view.state.storedMarks ?? view.state.selection.$from.marks()).filter(
+          (mark) => mark.type.name === "link"
+        )
+      )
       for (const block of textBlocks()) {
         const props = Object.fromEntries(
           Object.keys(formattingProps).map((key) => [key, undefined])
@@ -198,19 +215,25 @@ export function richEditorCommands(
       change(() => toggleMark(mark)),
     formattingState() {
       const blocks = textBlocks()
-      const style = blocks[0]?.attrs.paragraphStyle
+      const blockStyle = (block: (typeof blocks)[number]) =>
+        effectiveParagraphStyle(
+          block.type,
+          typeof block.attrs.paragraphStyle === "string"
+            ? block.attrs.paragraphStyle
+            : undefined,
+          block.attrs.level
+        )
+      const style = blocks[0] ? blockStyle(blocks[0]) : "normal"
       return {
         paragraphStyle:
           paperParagraphStyle(typeof style === "string" ? style : undefined)
             ?.id ?? "normal",
-        mixedStyle: blocks.some(
-          (block) =>
-            (block.attrs.paragraphStyle ?? "normal") !== (style ?? "normal")
-        ),
+        mixedStyle: blocks.some((block) => blockStyle(block) !== style),
         list: blocks[0]?.type,
         href: editor.getSelectedLinkUrl() ?? "",
-        canLink:
-          !view.state.selection.empty || Boolean(editor.getSelectedLinkUrl()),
+        canLink: view.state.selection.$from.parent.inlineContent,
+        linkNeedsText:
+          view.state.selection.empty && !editor.getSelectedLinkUrl(),
         canUndo: Boolean(history()?.undoStack.length),
         canRedo: Boolean(history()?.redoStack.length),
         canIndent:

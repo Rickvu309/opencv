@@ -2,6 +2,7 @@ import type { Node } from "@tiptap/pm/model"
 import { Decoration, DecorationSet } from "@tiptap/pm/view"
 import {
   paragraphInlineValues,
+  effectiveParagraphStyle,
   type DocumentPresentation,
 } from "@workspace/domain/internal/paper-presentation"
 import { canonicalStyles } from "./native-formatting-styles.js"
@@ -55,14 +56,22 @@ export function formattingDecorations(
       )
       decorations.push(
         Decoration.inline(pos, pos + node.nodeSize, {
-          style: inlineCss(
-            effectiveInline(presentation, {
-              ...paragraphInlineValues(
-                doc.resolve(pos).parent.attrs.paragraphStyle
-              ),
-              ...canonicalStyles(marks),
-            })
-          ),
+          style:
+            inlineCss(
+              effectiveInline(presentation, {
+                ...paragraphInlineValues(
+                  effectiveParagraphStyle(
+                    doc.resolve(pos).parent.type.name,
+                    doc.resolve(pos).parent.attrs.paragraphStyle,
+                    doc.resolve(pos).parent.attrs.level
+                  )
+                ),
+                ...canonicalStyles(marks),
+              })
+            ) +
+            (node.marks.some((mark) => mark.type.name === "link")
+              ? ";color:var(--primary);text-decoration:underline"
+              : ""),
           "data-paper-resolved": "",
         })
       )

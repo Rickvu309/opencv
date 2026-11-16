@@ -12,6 +12,7 @@ export type { Result } from "./paper-doc/presentation-values.js"
 export {
   paperParagraphStyles,
   paperParagraphStyle,
+  effectiveParagraphStyle,
   paragraphStyleValues,
   paragraphInlineValues,
   wordParagraphStyleId,

@@ -410,3 +410,31 @@ export const mistakes = [
     text: 'BlockNoteEditor.create({ links: { HTMLAttributes: { style: "text-decoration:underline" } } })',
   },
 ]
+
+const roundOneClean = new Map([
+  [
+    "apps/web/src/features/paper/rich-structure-controls.tsx",
+    "SelectContent finalFocus={returnToDocument}; DialogContent finalFocus={returnToDocument}; editor?.apply(); onOpenChangeComplete={finishInteraction}; onOpenChangeComplete={finishInteraction}; isSafeHref(link.original); Text to display; linkNeedsText",
+  ],
+  [
+    "packages/paper-crdt/src/native-formatting-commands.ts",
+    'effectiveParagraphStyle(); mark.name !== "link"; normalizeLinkHref(address)',
+  ],
+  [
+    "apps/api/src/paper/native-output/formatted.ts",
+    "effectiveParagraphStyle(); effective.bold === inherited.bold",
+  ],
+  [
+    "packages/paper-crdt/src/native-formatting-decorations.ts",
+    'mark.type.name === "link"; color:var(--primary);text-decoration:underline',
+  ],
+])
+for (const fixture of clean) {
+  const required = roundOneClean.get(fixture.path)
+  if (required) fixture.text += `;${required}`
+}
+for (const [path, text] of roundOneClean) {
+  mistakes.push({ path, text: "export const old = true" })
+  if (!clean.some((fixture) => fixture.path === path))
+    clean.push({ path, text })
+}

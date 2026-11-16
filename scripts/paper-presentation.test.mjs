@@ -81,3 +81,24 @@ test("the Docs shortcut guard catches the original strikethrough mapping", () =>
     detect(original, file).some((hit) => hit.includes("Docs shortcuts"))
   )
 })
+
+test("round-one guards reject the reviewed head and accept the repaired sources", () => {
+  for (const file of [
+    "apps/web/src/features/paper/rich-structure-controls.tsx",
+    "packages/paper-crdt/src/native-formatting-commands.ts",
+    "packages/paper-crdt/src/native-formatting-decorations.ts",
+    "apps/api/src/paper/native-output/formatted.ts",
+  ]) {
+    const original = execFileSync(
+      "git",
+      ["show", "76bc742eaf0cbfd579d930a91bea052dc7193570:" + file],
+      { cwd: root, encoding: "utf8" }
+    )
+    assert.ok(detect(original, file).length, file)
+    assert.deepEqual(
+      detect(readFileSync(path.join(root, file), "utf8"), file),
+      [],
+      file
+    )
+  }
+})

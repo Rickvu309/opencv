@@ -43,14 +43,19 @@ export function mountRichPaperEditor(
       lease.release()
     }
     removeRelease = client.onDocumentRelease(destroy)
+    const apply = (action: () => unknown = () => {}) => {
+      if (!active) return false
+      if (action() === false) return false
+      view.focus()
+      return view.dom
+    }
     return {
       ...commands,
+      apply,
       setEditable(editable: boolean) {
         if (active) mounted.editor.isEditable = editable
       },
-      focus() {
-        if (active) view.focus()
-      },
+      focus: () => apply(),
       toggleMark(mark: RichMark) {
         if (!active) throw new Error("Paper editor is closed")
         commands.toggleMark(mark)

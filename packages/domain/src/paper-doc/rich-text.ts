@@ -21,6 +21,16 @@ export function isSafeHref(value: string): value is SafeHref {
   )
 }
 
+export function normalizeLinkHref(value: string): SafeHref | undefined {
+  const address = value.trim()
+  const href = /^[^\s@:/]+@[^\s@:/]+\.[^\s@:/]+$/.test(address)
+    ? `mailto:${address}`
+    : /^(?:[\p{L}\d-]+\.)+[\p{L}\d-]+(?::\d+)?(?:[/?#]|$)/u.test(address)
+      ? `https://${address}`
+      : address
+  return isSafeHref(href) ? href : undefined
+}
+
 function safeHrefOf(value: string | undefined): SafeHref | undefined {
   if (value === undefined) return undefined
   let start = 0

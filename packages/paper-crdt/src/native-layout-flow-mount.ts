@@ -6,6 +6,7 @@ import { Plugin } from "@tiptap/pm/state"
 import {
   inlineSchema,
   paragraphInlineValues,
+  effectiveParagraphStyle,
   type InlinePresentation,
 } from "@workspace/domain/internal/paper-presentation"
 import {
@@ -90,10 +91,17 @@ export function mountPrivateFlow(
     editor.addStyles(engineStyles(inlineSchema.parse(input)))
   }
   const activeInline = () => {
-    const props = editor.getTextCursorPosition().block.props
+    const block = editor.getTextCursorPosition().block
+    const props = block.props
     const style = "paragraphStyle" in props ? props.paragraphStyle : undefined
     return effectiveInline(readPresentationMeta(binding.doc), {
-      ...paragraphInlineValues(style),
+      ...paragraphInlineValues(
+        effectiveParagraphStyle(
+          block.type,
+          style,
+          "level" in props ? props.level : undefined
+        )
+      ),
       ...canonicalStyles(editor.getActiveStyles()),
     })
   }

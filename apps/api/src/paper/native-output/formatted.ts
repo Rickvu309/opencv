@@ -1,5 +1,6 @@
 import {
   paragraphInlineValues,
+  effectiveParagraphStyle,
   formattedDocumentSchema,
   layoutDocumentSchema,
   flowDocumentSchema,
@@ -81,17 +82,25 @@ function compileDocument(
   ): string {
     return content
       .map(({ text, href, ...direct }) => {
+        const inherited = paragraphInlineValues(paragraphStyle)
         const effective = styles.effectiveInline({
-          ...paragraphInlineValues(paragraphStyle),
+          ...inherited,
           ...direct,
         })
         return wordRun(
           text,
           inlineProperties({
             ...direct,
-            bold: effective.bold,
-            italic: effective.italic,
-            strike: effective.strike,
+            bold:
+              effective.bold === inherited.bold ? undefined : effective.bold,
+            italic:
+              effective.italic === inherited.italic
+                ? undefined
+                : effective.italic,
+            strike:
+              effective.strike === inherited.strike
+                ? undefined
+                : effective.strike,
           }),
           href,
           links
@@ -205,13 +214,19 @@ function compileDocument(
           }
           structure = `<w:numPr><w:ilvl w:val="${depth}"/><w:numId w:val="${sequence.id}"/></w:numPr>`
         }
+        const paragraphStyle = effectiveParagraphStyle(
+          node.type,
+          node.paragraph.paragraphStyle,
+          node.type === "heading" ? node.level : undefined
+        )
         const effective = styles.effectiveParagraph(
-          node.paragraph,
+          { ...node.paragraph, paragraphStyle },
           list ? (depth + 1) * 720 : undefined
         )
         const properties = paragraphProperties(
           {
             ...node.paragraph,
+            paragraphStyle,
             start: effective.start,
             end: effective.end,
             indent: effective.indent,
@@ -222,7 +237,7 @@ function compileDocument(
           node.type === "heading"
             ? `<w:outlineLvl w:val="${node.level - 1}"/>`
             : ""
-        const paragraph = `<w:p><w:pPr>${properties}${heading}</w:pPr>${runs(node.content, node.paragraph.paragraphStyle)}</w:p>`
+        const paragraph = `<w:p><w:pPr>${properties}${heading}</w:pPr>${runs(node.content, paragraphStyle)}</w:p>`
         return (
           paragraph +
           (list ? siblings(node.children, depth + 1, availableWidth) : "")

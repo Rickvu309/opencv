@@ -1,4 +1,5 @@
 import { useEffect, useReducer, type ReactNode } from "react"
+import { isSafeHref } from "@workspace/domain"
 import type { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -30,10 +31,18 @@ import {
 type Editor = ReturnType<typeof mountRichPaperEditor>
 type LinkDialog =
   | { kind: "closed" }
-  | { kind: "open"; href: string; original: string; error: string }
+  | {
+      kind: "open"
+      href: string
+      original: string
+      error: string
+      needsText: boolean
+      text: string
+    }
 type LinkAction =
-  | { type: "open"; href: string }
+  | { type: "open"; href: string; needsText: boolean }
   | { type: "edit"; href: string }
+  | { type: "text"; text: string }
   | { type: "error" }
   | { type: "close" }
 
@@ -44,15 +53,24 @@ function linkDialogReducer(state: LinkDialog, action: LinkAction): LinkDialog {
         kind: "open",
         href: action.href,
         original: action.href,
+        needsText: action.needsText,
+        text: "",
         error: "",
       }
     case "edit":
       return state.kind === "open"
         ? { ...state, href: action.href, error: "" }
         : state
+    case "text":
+      return state.kind === "open"
+        ? { ...state, text: action.text, error: "" }
+        : state
     case "error":
       return state.kind === "open"
-        ? { ...state, error: "Enter an http, https or mailto address." }
+        ? {
+            ...state,
+            error: "Enter a website or email address and text to display.",
+          }
         : state
     case "close":
       return { kind: "closed" }
@@ -77,13 +95,21 @@ export function RichStructureControls({
     const open = () => {
       const state = editor?.formattingState()
       if (blocked || !state?.canLink) return
-      dispatch({ type: "open", href: state.href })
+      dispatch({
+        type: "open",
+        href: state.href,
+        needsText: state.linkNeedsText,
+      })
     }
     document.addEventListener("paper-edit-link", open)
     return () => document.removeEventListener("paper-edit-link", open)
   }, [editor, blocked])
   const state = editor?.formattingState()
   const disabled = !editor || blocked
+  const returnToDocument = () => editor?.apply() ?? false
+  const finishInteraction = (open: boolean) => {
+    if (!open) returnToDocument()
+  }
   const controls = [
     {
       label: "Undo",
@@ -101,7 +127,11 @@ export function RichStructureControls({
       label: "Link",
       Icon: Link,
       action: () => {
-        dispatch({ type: "open", href: state?.href ?? "" })
+        dispatch({
+          type: "open",
+          href: state?.href ?? "",
+          needsText: state?.linkNeedsText ?? true,
+        })
       },
       disabled: !state?.canLink,
     },
@@ -139,6 +169,7 @@ export function RichStructureControls({
     <>
       {controls.slice(0, 2).map(control)}
       <Select
+        onOpenChangeComplete={finishInteraction}
         value={
           state?.mixedStyle ? "mixed" : (state?.paragraphStyle ?? "normal")
         }
@@ -147,7 +178,7 @@ export function RichStructureControls({
           const style = editor?.paragraphStyles.find(
             (item) => item.id === value
           )
-          if (style) editor?.setParagraphStyle(style.id)
+          if (style) editor?.apply(() => editor.setParagraphStyle(style.id))
         }}
       >
         <SelectTrigger
@@ -162,7 +193,7 @@ export function RichStructureControls({
                 )?.label ?? "Normal text")}
           </SelectValue>
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent finalFocus={returnToDocument}>
           {state?.mixedStyle ? (
             <SelectItem value="mixed" disabled className="min-h-11 md:min-h-8">
               Mixed styles
@@ -182,28 +213,29 @@ export function RichStructureControls({
       {children}
       {controls.slice(2).map(control)}
       <Dialog
+        onOpenChangeComplete={finishInteraction}
         open={link !== null}
         onOpenChange={(open) => {
-          if (!open) {
-            dispatch({ type: "close" })
-            editor?.focus()
-          }
+          if (!open) dispatch({ type: "close" })
         }}
       >
-        <DialogContent>
+        <DialogContent finalFocus={returnToDocument}>
           <DialogHeader>
             <DialogTitle>
               {link?.original ? "Edit link" : "Add link"}
             </DialogTitle>
             <DialogDescription>
-              Use an http, https or mailto address.
+              Use a website or email address.
             </DialogDescription>
           </DialogHeader>
           <form
             className="grid gap-4"
             onSubmit={(event) => {
               event.preventDefault()
-              if (!editor?.setLink(link?.href.trim() ?? "")) {
+              const applied = editor?.apply(() =>
+                editor.setLink(link?.href ?? "", link?.text)
+              )
+              if (!applied) {
                 dispatch({ type: "error" })
                 return
               }
@@ -211,6 +243,19 @@ export function RichStructureControls({
               refresh()
             }}
           >
+            {link?.needsText ? (
+              <label className="grid gap-2 text-sm">
+                Text to display
+                <Input
+                  className="min-h-11"
+                  value={link.text}
+                  disabled={disabled}
+                  onChange={(event) =>
+                    dispatch({ type: "text", text: event.target.value })
+                  }
+                />
+              </label>
+            ) : null}
             <label className="grid gap-2 text-sm">
               Link address
               <Input
@@ -238,20 +283,22 @@ export function RichStructureControls({
             <div className="flex flex-wrap items-center gap-2">
               {link?.original ? (
                 <>
-                  <a
-                    className="inline-flex min-h-11 items-center rounded-md px-3 text-sm underline focus-visible:ring-2 focus-visible:ring-ring"
-                    href={link.original}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    Open link
-                  </a>
+                  {isSafeHref(link.original) ? (
+                    <a
+                      className="inline-flex min-h-11 items-center rounded-md px-3 text-sm underline focus-visible:ring-2 focus-visible:ring-ring"
+                      href={link.original}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      Open link
+                    </a>
+                  ) : null}
                   <Button
                     type="button"
                     variant="outline"
                     className="min-h-11"
                     onClick={() => {
-                      editor?.removeLink()
+                      editor?.apply(() => editor.removeLink())
                       dispatch({ type: "close" })
                       refresh()
                     }}
@@ -286,7 +333,7 @@ export function RichStructureControls({
         disabled={disabled || item.disabled}
         onMouseDown={(event) => event.preventDefault()}
         onClick={() => {
-          item.action()
+          editor?.apply(item.action)
           refresh()
         }}
       >

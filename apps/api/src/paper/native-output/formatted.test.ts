@@ -301,6 +301,33 @@ describe("formatted native Word output", () => {
     expect(expected).toContain("TypeScript & Vietnamese")
   })
 
+  it("exports legacy headings as named Word styles without repeating inherited bold", async () => {
+    const archive = await inspect(
+      compile(
+        letter([
+          { ...paragraph("legacy"), type: "heading", level: 2 },
+          { ...paragraph("named"), paragraph: { paragraphStyle: "heading-1" } },
+          {
+            ...paragraph("off"),
+            paragraph: { paragraphStyle: "heading-3" },
+            content: [{ text: "off", bold: false }],
+          },
+        ])
+      )
+    )
+    const paragraphs = elements(archive.part("word/document.xml").root, "p")
+    expect(paragraphs.map((p) => attribute(one(p, "pStyle"), "val"))).toEqual([
+      "Heading2",
+      "Heading1",
+      "Heading3",
+    ])
+    for (const p of paragraphs.slice(0, 2)) {
+      expect(elements(p, "b")).toHaveLength(0)
+      expect(elements(p, "bCs")).toHaveLength(0)
+    }
+    expect(attribute(one(paragraphs[2]!, "b"), "val")).toBe("0")
+  })
+
   it("writes landscape page geometry, nested list counters, semantic headings and dividers", async () => {
     const list = (
       id: string,

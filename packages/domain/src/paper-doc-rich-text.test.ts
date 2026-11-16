@@ -6,6 +6,7 @@ import * as fc from "fast-check"
 import {
   inlineMarkdownOf,
   isSafeHref,
+  normalizeLinkHref,
   normalizeRuns,
   plainTextOfRuns,
   richTextFromInlineMarkdown,
@@ -22,6 +23,24 @@ const HREFS = [
   "mailto:lan@example.com",
   "https://example.com/(x)*y\\z",
 ] as const
+
+it("normalizes website and email input through the safe href policy", () => {
+  for (const [input, href] of [
+    [" example.com/work ", "https://example.com/work"],
+    ["linh@example.com", "mailto:linh@example.com"],
+    ["http://example.com", "http://example.com"],
+    ["mailto:linh@example.com", "mailto:linh@example.com"],
+  ] as const)
+    assert.equal(normalizeLinkHref(input), href)
+  for (const input of [
+    "javascript:alert(1)",
+    "data:text/html,x",
+    "ftp://example.com",
+    "javascript:foo@example.com",
+    "https://example.com/\u200b",
+  ])
+    assert.equal(normalizeLinkHref(input), undefined)
+})
 
 const runArbitrary = fc.record({
   text: fc
