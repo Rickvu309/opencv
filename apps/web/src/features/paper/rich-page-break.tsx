@@ -4,6 +4,7 @@ import {
   shortcutLabel,
   type TextEditor,
 } from "./rich-text-toolbar-control.tsx"
+import { useToolbarGroup } from "./rich-text-toolbar-item.tsx"
 
 export function RichPageBreak({
   editor,
@@ -14,10 +15,16 @@ export function RichPageBreak({
   blocked: boolean
   onAction: () => void
 }) {
+  const label = shortcutLabel("Insert page break (Ctrl+Enter)")
+  const group = useToolbarGroup([label])
   return (
-    <fieldset aria-label="Insert" className="flex shrink-0 items-center gap-1">
+    <fieldset
+      {...group}
+      aria-label="Insert"
+      className="flex shrink-0 items-center gap-1"
+    >
       <ToolbarButton
-        label={shortcutLabel("Insert page break (Ctrl+Enter)")}
+        label={label}
         disabled={!editor || blocked || !editor.canInsertPageBreak()}
         onClick={() => {
           editor?.apply(() => editor.insertPageBreak())
