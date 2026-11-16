@@ -31,14 +31,33 @@ describe("inbox connect", () => {
     const explore = screen.getByRole("button", { name: "View example inbox" })
     const connect = screen.getByRole("button", { name: "Connect Gmail" })
     expect(explore).toBeEnabled()
+    expect(explore).toHaveAttribute("data-variant", "primary")
     expect(explore).toHaveAttribute("aria-describedby", "inbox-gmail-hint")
     expect(connect).toBeDisabled()
-    expect(connect).toHaveAttribute("data-variant", "outline")
-    expect(screen.getByText(GMAIL_UNAVAILABLE_COPY)).toHaveAttribute(
-      "id",
-      "inbox-gmail-hint"
+    expect(screen.getByRole("button", { name: "Skip for now" })).toHaveClass(
+      "-ms-2"
     )
-    const hint = screen.getByText(GMAIL_UNAVAILABLE_COPY)
+    const hero = screen.getByRole("heading", {
+      name: "Never miss a recruiter reply",
+    })
+    const column = hero.closest("section")
+    expect(column?.className).toContain("overflow-y-auto")
+    expect(column?.className).not.toContain("justify-center")
+    expect(column?.firstElementChild?.className).toContain("my-auto")
+    expect(hero.className).toContain("min-w-0")
+    expect(hero.className).toContain("wrap-break-word")
+    const aside = screen.getByRole("complementary", { name: "Example" })
+    expect(aside.className).toContain("w-150")
+    expect(aside.className).toContain("max-w-[600px]")
+    expect(aside.className).toContain("shrink-0")
+    expect(aside.className).not.toContain("justify-center")
+    expect(connect).toHaveAttribute("data-variant", "outline")
+    const hint = document.getElementById("inbox-gmail-hint")
+    if (!hint) throw new Error("missing inbox-gmail-hint")
+    expect(hint.textContent?.replace(/\s+/g, " ").trim()).toBe(
+      GMAIL_UNAVAILABLE_COPY
+    )
+    expect(hint.querySelector("span")?.className).toContain("max-md:hidden")
     expect(
       explore.compareDocumentPosition(hint) & Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy()
@@ -70,6 +89,6 @@ describe("inbox connect", () => {
     expect(
       screen.queryByRole("button", { name: "View example inbox" })
     ).toBeNull()
-    expect(screen.queryByText(GMAIL_UNAVAILABLE_COPY)).toBeNull()
+    expect(document.getElementById("inbox-gmail-hint")).toBeNull()
   })
 })

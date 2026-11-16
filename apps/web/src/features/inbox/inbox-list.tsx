@@ -21,6 +21,8 @@ import {
   PageHeaderTitleActions,
 } from "@workspace/ui/components/page-header"
 
+import { cn } from "@workspace/ui/lib/utils"
+
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 import { InboxRow, VIEW_EXAMPLE_LABEL } from "./inbox-parts.tsx"
 import { inboxWhen, unreadCount } from "./inbox-time.ts"
@@ -234,12 +236,21 @@ export function InboxEmpty({
   )
 }
 
-function InboxExampleBanner({ text }: { text: string }) {
+export function InboxExampleBanner({
+  text,
+  className,
+}: {
+  text: string
+  className?: string
+}) {
   return (
     <p
       role="status"
       data-slot="inbox-example-banner"
-      className="mx-3 mt-2 rounded-md border border-border bg-muted/50 px-3 py-2 text-[13px] leading-normal text-pretty text-foreground"
+      className={cn(
+        "mx-3 mt-2 rounded-md border border-border bg-muted/50 px-3 py-2 text-[13px] leading-normal text-pretty text-foreground",
+        className
+      )}
     >
       {text}
     </p>

@@ -11,6 +11,11 @@ import {
 } from "lucide-react"
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
 import { toast, toastWithUndo } from "@workspace/ui/components/sonner"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@workspace/ui/components/tooltip"
 
 import { reportRejected } from "@/lib/command-failure.ts"
 import { Button } from "@workspace/ui/components/button"
@@ -27,12 +32,15 @@ import {
 import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
 
 import { inboxLimitFrom, isCoachLimit } from "./inbox-api.ts"
+import { InboxExampleBanner } from "./inbox-list.tsx"
 import { InboxReaderHeader } from "./inbox-reader-header.tsx"
 import { initialReaderState, readerReducer } from "./inbox-reader.reducer.ts"
 import {
+  ACTION_FAILED,
   FAINT_TEXT,
   GmailMark,
   INBOX_NOTICE,
+  NO_GMAIL_LINK,
   SOFT_TEXT,
 } from "./inbox-parts.tsx"
 import { chipClock, inboxChip, inboxStamp, inboxWhen } from "./inbox-time.ts"
@@ -59,6 +67,7 @@ export function InboxReader({
   onReturnedToInbox,
   onPrevious,
   onNext,
+  exampleNotice,
 }: {
   detail: InboxDetail
   index: number
@@ -70,6 +79,7 @@ export function InboxReader({
   onReturnedToInbox: () => void
   onPrevious: () => void
   onNext: () => void
+  exampleNotice?: string
 }) {
   const draft =
     detail.draft && (detail.draft.body !== "" || detail.draft.times.length > 0)
@@ -111,11 +121,7 @@ export function InboxReader({
         dispatch({ type: "limit_reached", limit: await inboxLimitFrom(error) })
         return
       }
-      toast(
-        error instanceof ApiError
-          ? error.message
-          : "Could not load inbox. Refresh the page."
-      )
+      toast(error instanceof ApiError ? error.message : ACTION_FAILED)
     } finally {
       dispatch({ type: "task_ended" })
     }
@@ -141,6 +147,9 @@ export function InboxReader({
         onPrevious={onPrevious}
         onNext={onNext}
       />
+      {exampleNotice ? (
+        <InboxExampleBanner text={exampleNotice} className="mx-5 md:mx-12" />
+      ) : null}
       <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-12 pt-7 pb-6 max-md:px-5">
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
           <h2 className="text-xl font-semibold tracking-tight text-foreground">
@@ -152,21 +161,31 @@ export function InboxReader({
             </span>
           ) : null}
           <span className="flex-1" />
-          <Button
-            variant="ghost"
-            className={cn(
-              "h-11 gap-1.5 rounded-[7px] px-2.5 text-[12.5px] md:h-7",
-              SOFT_TEXT
-            )}
-            disabled
-            aria-describedby="inbox-gmail-closed"
-          >
-            <GmailMark className="h-3.75 w-5" />
-            Open in Gmail
-            <ArrowUpRight className="size-3" />
-          </Button>
-          <span id="inbox-gmail-closed" className="sr-only">
-            Gmail connection isn't available yet.
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  type="button"
+                  variant="ghost"
+                  aria-disabled="true"
+                  data-disabled=""
+                  aria-describedby="inbox-gmail-link"
+                  className={cn(
+                    "h-11 gap-1.5 rounded-[7px] px-2.5 text-[12.5px] active:scale-100 md:h-7",
+                    SOFT_TEXT
+                  )}
+                  onClick={(event) => event.preventDefault()}
+                />
+              }
+            >
+              <GmailMark className="h-3.75 w-5" />
+              Open in Gmail
+              <ArrowUpRight className="size-3" />
+            </TooltipTrigger>
+            <TooltipContent>{NO_GMAIL_LINK}</TooltipContent>
+          </Tooltip>
+          <span id="inbox-gmail-link" className="sr-only">
+            {NO_GMAIL_LINK}
           </span>
         </div>
         {prompt ? (
@@ -380,7 +399,7 @@ export function InboxReader({
                 <Textarea
                   aria-label="Reply"
                   disabled={busy}
-                  className="min-h-11 resize-none rounded-none border-0 bg-transparent p-0 text-sm leading-relaxed shadow-none focus-visible:ring-0 md:min-h-0 dark:bg-transparent"
+                  className="min-h-11 resize-none rounded-none border-0 bg-transparent p-0 text-base leading-relaxed shadow-none focus-visible:ring-0 md:min-h-0 md:text-sm dark:bg-transparent"
                   value={body}
                   onChange={(event) =>
                     dispatch({ type: "reply_typed", value: event.target.value })
@@ -388,17 +407,10 @@ export function InboxReader({
                   onBlur={() => {
                     if (body === savedBody) return
                     void saveDraft(body)
-                      .catch(reportRejected("save the draft"))
-                      .then(() =>
+                      .then(() => {
                         dispatch({ type: "draft_saved", body, receivedBody })
-                      )
-                      .catch((error: unknown) => {
-                        toast(
-                          error instanceof ApiError
-                            ? error.message
-                            : "Could not load inbox. Refresh the page."
-                        )
                       })
+                      .catch(reportRejected("save the draft"))
                   }}
                 />
               </div>

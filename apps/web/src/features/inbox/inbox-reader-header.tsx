@@ -12,6 +12,11 @@ import {
   PageHeaderTitle,
 } from "@workspace/ui/components/page-header"
 import { toast, toastWithUndo } from "@workspace/ui/components/sonner"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@workspace/ui/components/tooltip"
 
 import { reportRejected } from "@/lib/command-failure.ts"
 import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
@@ -117,23 +122,26 @@ export function InboxReaderHeader({
             })
           }
         />
-        <PageHeaderAction
-          label="More"
-          icon={<Ellipsis />}
-          className="opacity-50 max-md:hidden"
-          hint={INBOX_MORE_REASON}
-          render={
-            <Button
-              type="button"
-              variant="ghost"
-              className="size-11 md:size-7"
-              aria-disabled="true"
-              aria-describedby="inbox-reader-more-reason"
-              data-slot="page-header-action"
-              onClick={(event) => event.preventDefault()}
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <span
+                className="inline-flex max-md:hidden"
+                data-slot="inbox-more"
+              />
+            }
+          >
+            <PageHeaderAction
+              label="More"
+              icon={<Ellipsis />}
+              disabled
+              className="pointer-events-none"
             />
-          }
-        />
+          </TooltipTrigger>
+          <TooltipContent>
+            More has no other actions for this email.
+          </TooltipContent>
+        </Tooltip>
         <PageHeaderAction
           label="Previous"
           icon={<ChevronUp />}
@@ -149,9 +157,7 @@ export function InboxReaderHeader({
           onSelect={onNext}
         />
       </PageHeaderActions>
-      <span id="inbox-reader-more-reason" className="sr-only">
-        {INBOX_MORE_REASON}
-      </span>
+      <span className="sr-only">{INBOX_MORE_REASON}</span>
     </PageHeader>
   )
 }

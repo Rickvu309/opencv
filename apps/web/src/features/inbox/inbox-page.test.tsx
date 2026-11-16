@@ -1,5 +1,11 @@
 import { QueryClientProvider } from "@tanstack/react-query"
-import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
@@ -12,7 +18,8 @@ import {
 } from "@/test/inbox-fixtures.ts"
 
 import { InboxPage } from "./inbox-page.tsx"
-import { GMAIL_UNAVAILABLE_COPY } from "./inbox-parts.tsx"
+import { inboxReducer } from "./inbox-state.ts"
+import { EXAMPLE_MAIL_BANNER, GMAIL_UNAVAILABLE_COPY } from "./inbox-parts.tsx"
 
 afterEach(() => {
   cleanup()
@@ -26,6 +33,30 @@ function renderPage() {
     </QueryClientProvider>
   )
 }
+
+describe("inbox explore", () => {
+  it("starts an example explore and clears it when the explore fails", () => {
+    const start = {
+      openId: null,
+      view: "inbox" as const,
+      scanning: null,
+      skipping: false,
+    }
+    const started = inboxReducer(start, { type: "explore_started" })
+    expect(started.skipping).toBe(true)
+    expect(started.scanning).toEqual({
+      emails: null,
+      companies: null,
+      names: [],
+    })
+    const found = inboxReducer(started, {
+      type: "scan_found",
+      progress: { emails: 1, companies: 1, names: ["Regional bank"] },
+    })
+    const failed = inboxReducer(found, { type: "explore_failed" })
+    expect(failed).toEqual(start)
+  })
+})
 
 describe("inbox page", () => {
   it("skips without scanning and then offers an example inbox", async () => {
@@ -104,7 +135,8 @@ describe("inbox page", () => {
       await screen.findByRole("button", { name: "View example inbox" })
     )
     const banner = await screen.findByRole("status")
-    expect(banner).toHaveTextContent(GMAIL_UNAVAILABLE_COPY)
+    expect(banner).toHaveTextContent(EXAMPLE_MAIL_BANNER)
+    expect(screen.queryByText(GMAIL_UNAVAILABLE_COPY)).toBeNull()
     const pane = document.querySelector('[data-pen-section="List pane"]')
     expect(pane?.contains(banner)).toBe(true)
     const header = pane?.querySelector("header")
@@ -145,6 +177,20 @@ describe("inbox page", () => {
     expect(await screen.findByText("4 unread")).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Snooze" })).toBeNull()
     expect(paths.filter((path) => path.startsWith("/api/inbox/"))).toEqual([])
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: /Business Analyst, Regional bank/,
+      })
+    )
+    const reader = await screen.findByRole("region", { name: "Reading pane" })
+    expect(within(reader).getByRole("status")).toHaveTextContent(
+      EXAMPLE_MAIL_BANNER
+    )
+    expect(
+      document.querySelector(
+        '[data-pen-section="List pane"] [data-slot="inbox-example-banner"]'
+      )
+    ).toHaveTextContent(EXAMPLE_MAIL_BANNER)
   })
 
   it("opens a row into the reader with Back to inbox when narrow", async () => {
@@ -181,6 +227,11 @@ describe("inbox page", () => {
     expect(
       await screen.findByRole("button", { name: "Back to inbox" })
     ).toBeInTheDocument()
+    expect(
+      within(screen.getByRole("region", { name: "Reading pane" })).getByRole(
+        "status"
+      )
+    ).toHaveTextContent(EXAMPLE_MAIL_BANNER)
     await waitFor(() => {
       expect(
         screen.queryByRole("button", { name: /Associate PM, Local startup/ })

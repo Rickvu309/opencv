@@ -26,7 +26,9 @@ import {
   InboxOverview,
 } from "./inbox-list.tsx"
 import {
+  ACTION_FAILED,
   CompanyChip,
+  EXAMPLE_MAIL_BANNER,
   GMAIL_UNAVAILABLE_COPY,
   GmailMark,
   INBOX_NOTICE,
@@ -34,57 +36,10 @@ import {
   VIEW_EXAMPLE_LABEL,
 } from "./inbox-parts.tsx"
 import { InboxReader } from "./inbox-reader.tsx"
+import { INBOX_START, inboxReducer, type ScanProgress } from "./inbox-state.ts"
 import { inboxConnectReadKeyOutsideContract } from "@/lib/requests.ts"
 
 const NARROW = "(max-width: 767px)"
-
-type InboxState = {
-  openId: string | null
-  view: "inbox" | "snoozed"
-  scanning: ScanProgress | null
-  skipping: boolean
-}
-
-type InboxAction =
-  | { type: "view_changed"; view: "inbox" | "snoozed" }
-  | { type: "thread_opened"; id: string }
-  | { type: "thread_closed" }
-  | { type: "skip_started" }
-  | { type: "skip_ended" }
-  | { type: "scan_started" }
-  | { type: "scan_found"; progress: ScanProgress }
-  | { type: "scan_ended" }
-
-const INBOX_START: InboxState = {
-  openId: null,
-  view: "inbox",
-  scanning: null,
-  skipping: false,
-}
-
-function inboxReducer(state: InboxState, action: InboxAction): InboxState {
-  switch (action.type) {
-    case "view_changed":
-      return { ...state, view: action.view, openId: null }
-    case "thread_opened":
-      return { ...state, openId: action.id }
-    case "thread_closed":
-      return { ...state, openId: null }
-    case "skip_started":
-      return { ...state, skipping: true }
-    case "skip_ended":
-      return { ...state, skipping: false }
-    case "scan_started":
-      return {
-        ...state,
-        scanning: { emails: null, companies: null, names: [] },
-      }
-    case "scan_found":
-      return { ...state, scanning: action.progress }
-    case "scan_ended":
-      return { ...state, scanning: null }
-  }
-}
 
 export function InboxPage() {
   const runCommand = useRunCommand()
@@ -144,18 +99,23 @@ export function InboxPage() {
     }
   }
 
-  async function finishScan() {
+  async function publishScan() {
+    const result = await runCommand("inbox.scan", {})
+    dispatch({
+      type: "scan_found",
+      progress: {
+        emails: result.emailCount,
+        companies: result.companyCount,
+        names: result.threads.map((thread) => thread.company),
+      },
+    })
+    await panelHold(holdTimer)
+  }
+
+  async function onScan() {
+    dispatch({ type: "scan_started" })
     try {
-      const result = await runCommand("inbox.scan", {})
-      dispatch({
-        type: "scan_found",
-        progress: {
-          emails: result.emailCount,
-          companies: result.companyCount,
-          names: result.threads.map((thread) => thread.company),
-        },
-      })
-      await panelHold(holdTimer)
+      await publishScan()
     } catch (error) {
       toast(messageOf(error))
     } finally {
@@ -163,24 +123,16 @@ export function InboxPage() {
     }
   }
 
-  async function onScan() {
-    dispatch({ type: "scan_started" })
-    await finishScan()
-  }
-
   async function onExplore() {
-    dispatch({ type: "skip_started" })
-    dispatch({ type: "scan_started" })
+    dispatch({ type: "explore_started" })
     try {
       await runCommand("inbox.skip", {})
+      await publishScan()
+      dispatch({ type: "scan_ended" })
     } catch (error) {
       toast(messageOf(error))
-      dispatch({ type: "skip_ended" })
-      dispatch({ type: "scan_ended" })
-      return
+      dispatch({ type: "explore_failed" })
     }
-    dispatch({ type: "skip_ended" })
-    await finishScan()
   }
 
   const index = threads.findIndex((thread) => thread.id === shownId)
@@ -279,7 +231,7 @@ export function InboxPage() {
                 view={view}
                 notice={
                   list.data?.connected === false && threads.length > 0
-                    ? GMAIL_UNAVAILABLE_COPY
+                    ? EXAMPLE_MAIL_BANNER
                     : undefined
                 }
                 scanLabel={scanLabel}
@@ -316,6 +268,9 @@ export function InboxPage() {
                 const next = threads[index + 1]
                 if (next) dispatch({ type: "thread_opened", id: next.id })
               }}
+              exampleNotice={
+                list.data?.connected === false ? EXAMPLE_MAIL_BANNER : undefined
+              }
             />
           ) : null}
           {shownId && (detail.isLoading || detail.isError) ? (
@@ -337,12 +292,6 @@ export function InboxPage() {
       ) : null}
     </div>
   )
-}
-
-type ScanProgress = {
-  emails: number | null
-  companies: number | null
-  names: string[]
 }
 
 function Scanning({
@@ -420,9 +369,7 @@ function InboxRefresh({
 }
 
 function messageOf(error: unknown) {
-  return error instanceof ApiError
-    ? error.message
-    : "Could not load inbox. Refresh the page."
+  return error instanceof ApiError ? error.message : ACTION_FAILED
 }
 
 function panelHold(timer: { current: number | undefined }) {
