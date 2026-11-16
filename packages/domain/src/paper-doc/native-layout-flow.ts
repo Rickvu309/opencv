@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { nodeIdSchema } from "./nodes.js"
+import { paperPhotoFileId } from "../paper.js"
 import {
   formatBodySchema,
   formatOwnerSchema,
@@ -125,6 +126,14 @@ export const flowDocumentSchema = z
         ? left
         : right
     )
+    const withoutHeaderPortrait = (node: FlowNode) => {
+      if (node.type !== "header" || node.photo === undefined) return node
+      if (paperPhotoFileId(node.photo) === null)
+        fail("Header portrait requires an owned file reference")
+      const { photo: _photo, ...header } = node
+      void _photo
+      return header
+    }
     const projection = layoutDocumentSchema.safeParse({
       profile: "private-layout-2",
       kind: document.kind,
@@ -133,7 +142,9 @@ export const flowDocumentSchema = z
         id: document.flow.id,
         type: "flow",
         children: sections.flatMap((section) =>
-          section.children.filter((node) => node.type !== "pageBreak")
+          section.children
+            .filter((node) => node.type !== "pageBreak")
+            .map(withoutHeaderPortrait)
         ),
       },
     })

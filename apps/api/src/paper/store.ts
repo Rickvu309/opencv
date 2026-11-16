@@ -24,7 +24,7 @@ import {
 } from "@workspace/domain"
 import { and, desc, eq, ne } from "drizzle-orm"
 
-import { getDb } from "../db/context.js"
+import { getDb, insideTransaction } from "../db/context.js"
 import { files, paperDocs, paperShares } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
@@ -409,16 +409,30 @@ async function requireAvatarFile(userId: UserId, fileId: FileId) {
   return row
 }
 
-export async function readOwnedPhoto(userId: UserId, fileId: FileId) {
-  const meta = await requireAvatarFile(userId, fileId)
-  const rows = await getDb()
-    .select({ bytes: files.bytes })
+export async function readOwnedPhoto(
+  userId: UserId,
+  fileId: FileId,
+  options?: { lock: true }
+) {
+  if (options?.lock && !insideTransaction())
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      "Photo download must own its snapshot"
+    )
+  const query = getDb()
+    .select({
+      purpose: files.purpose,
+      mediaType: files.mediaType,
+      bytes: files.bytes,
+    })
     .from(files)
     .where(and(eq(files.id, fileId), eq(files.userId, userId)))
     .limit(1)
-  const bytes = rows[0]?.bytes
-  if (!bytes) throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo not found")
-  return { mediaType: meta.mediaType, bytes }
+  const rows = await (options?.lock ? query.for("share") : query)
+  const row = rows[0]
+  if (!row || row.purpose !== "avatar" || !row.mediaType.startsWith("image/"))
+    throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo file not found")
+  return { mediaType: row.mediaType, bytes: row.bytes }
 }
 
 export async function readSharedPhoto(token: string) {
