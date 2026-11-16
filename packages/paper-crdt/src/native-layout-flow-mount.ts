@@ -1,3 +1,4 @@
+import { paperSearchPlugin } from "./editor-search.js"
 import { richEditorCommands } from "./native-formatting-commands.js"
 import { isSafeHref } from "@workspace/domain"
 import { BlockNoteEditor, createExtension } from "@blocknote/core"
@@ -50,6 +51,7 @@ export function mountPrivateFlow(
   const guard = createExtension({
     key: "paperFlowAdmission",
     prosemirrorPlugins: [
+      paperSearchPlugin(),
       new Plugin({
         filterTransaction: (tr, state) =>
           acceptsFlowTransaction(binding, tr, state),

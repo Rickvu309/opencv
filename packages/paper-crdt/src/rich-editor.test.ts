@@ -6,6 +6,7 @@ import { openRichPaperClient } from "./client.js"
 import { seedStoredYDoc } from "./stored-document.js"
 import { borrowFlowDocument } from "./native-layout-flow.js"
 import { mountPrivateFlow } from "./native-layout-flow-mount.js"
+import { richEditorSearch } from "./editor-search.js"
 import { storedFlowFixture } from "./test/flow-fixture.js"
 
 const cleanups = new Set<() => void>()
@@ -16,7 +17,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-function setup(kind: "cv" | "letter") {
+function setup(kind: "cv" | "letter", includeTable = false) {
   vi.stubGlobal(
     "ResizeObserver",
     class {
@@ -39,7 +40,10 @@ function setup(kind: "cv" | "letter") {
   const input = storedFlowFixture(kind)
   const section = input.flow.children[0]!
   const children = [
-    ...section.children.filter((node) => node.type === "header"),
+    ...section.children.filter(
+      (node) =>
+        node.type === "header" || (includeTable && node.type === "table")
+    ),
     ...["first", "second", "third"].map((id) => ({
       id,
       type: "paragraph" as const,
@@ -286,3 +290,95 @@ it.each(["cv", "letter"] as const)(
     }
   }
 )
+
+it.each(["cv", "letter"] as const)(
+  "finds and replaces normalized %s text with marks, one Undo and reload",
+  (kind) => {
+    const { editor, commands, select, read, roundtrip, host, setInline } =
+      setup(kind)
+    const scroll = vi.fn()
+    Object.defineProperty(Element.prototype, "scrollIntoView", {
+      configurable: true,
+      value: scroll,
+    })
+    const search = richEditorSearch(editor)
+    cleanups.add(() => search.destroy())
+    select()
+    setInline({ bold: true })
+    select("second")
+    setInline({ italic: true })
+    editor.setTextCursorPosition("first", "start")
+    editor.prosemirrorView.dispatch(
+      editor.prosemirrorState.tr.insertText("Earlier typing ")
+    )
+    const before = read()
+    const listener = vi.fn()
+    const unsubscribe = search.subscribe(listener)
+    search.find("VIE\u0323\u0302T", false)
+    expect(search.snapshot().matches).toHaveLength(3)
+    expect(host.querySelectorAll(".paper-search-match")).toHaveLength(3)
+    expect(search.snapshot().activeIndex).toBe(0)
+    search.move(-1)
+    expect(search.snapshot().activeIndex).toBe(2)
+    search.move(1)
+    expect(search.snapshot().activeIndex).toBe(0)
+    expect(scroll).toHaveBeenCalled()
+    search.find("VIỆT", true)
+    expect(search.snapshot().matches).toHaveLength(0)
+    search.find("Việt", true)
+    expect(search.replace("Career", true)).toBe(3)
+    const after = read()
+    const first = after.flow.children[0]!.children.find(
+      (node) => node.id === "first"
+    )
+    const second = after.flow.children[0]!.children.find(
+      (node) => node.id === "second"
+    )
+    expect(first).toMatchObject({
+      content: [{ text: "Earlier typing first Career e\u0302 😀", bold: true }],
+    })
+    expect(second).toMatchObject({
+      content: [{ text: "second Career e\u0302 😀", italic: true }],
+    })
+    expect(search.snapshot().matches).toHaveLength(0)
+    commands.undo()
+    expect(read()).toEqual(before)
+    expect(search.snapshot().matches).toHaveLength(3)
+    commands.redo()
+    expect(read()).toEqual(after)
+    roundtrip()
+    search.find("ê", false)
+    expect(search.snapshot().matches).toHaveLength(3)
+    expect(search.replace("é", false)).toBe(1)
+    expect(search.snapshot().matches).toHaveLength(2)
+    commands.undo()
+    editor.isEditable = false
+    expect(search.replace("Blocked", true)).toBe(0)
+    search.close()
+    expect(host.querySelectorAll(".paper-search-match")).toHaveLength(0)
+    expect(listener).toHaveBeenCalled()
+    unsubscribe()
+    search.destroy()
+  }
+)
+
+it("replaces all matches in four table cells and body text with one Undo", () => {
+  const { editor, commands, read, roundtrip, select } = setup("letter", true)
+  Object.defineProperty(Element.prototype, "scrollIntoView", {
+    configurable: true,
+    value: vi.fn(),
+  })
+  const search = richEditorSearch(editor)
+  select()
+  const before = read()
+  search.find("Việt", false)
+  expect(search.snapshot().matches).toHaveLength(7)
+  expect(search.replace("Career", true)).toBe(7)
+  expect(JSON.stringify(read())).not.toContain("Việt")
+  expect(JSON.stringify(read())).toContain("Career")
+  commands.undo()
+  expect(read()).toEqual(before)
+  commands.redo()
+  roundtrip()
+  search.destroy()
+})
