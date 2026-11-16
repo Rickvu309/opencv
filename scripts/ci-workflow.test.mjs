@@ -368,3 +368,18 @@ test("Vitest lists every ordinary file once and the dedicated walk separately", 
     []
   )
 })
+
+test("guards runs both file groups and open-pr once while retaining full history", () => {
+  const guards = section("guards")
+  assert.match(guards, /group: \[ordinary, temp-dirs\]/)
+  assert.match(guards, /fail-fast: false/)
+  assert.match(guards, /fetch-depth: 0/)
+  assert.match(
+    guards,
+    /--filter=@workspace\/guards -- --group=\$\{\{ matrix.group \}\}/
+  )
+  assert.match(
+    guards,
+    /if: matrix.group == 'ordinary'\n        run: pnpm exec turbo run test:open-pr --filter=@workspace\/guards/
+  )
+})

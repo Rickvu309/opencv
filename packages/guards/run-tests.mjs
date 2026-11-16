@@ -3,6 +3,17 @@ import { availableParallelism } from "node:os"
 import { fileURLToPath } from "node:url"
 
 const root = fileURLToPath(new URL("../..", import.meta.url))
+export const TEMP_DIRS = "scripts/temp-dirs.test.mjs"
+
+export function testGroup(files, group) {
+  if (!group) return files
+  if (group !== "ordinary" && group !== "temp-dirs")
+    throw new Error(`unknown guards group: ${group}`)
+  return files.filter(
+    (file) => (file === TEMP_DIRS) === (group === "temp-dirs")
+  )
+}
+
 export const SLOW = "scripts/ocv-tools/jobs/finish.test.mjs"
 
 const gitList = () =>
@@ -96,6 +107,7 @@ export async function runFiles(
     for (let file = queue.shift(); file; file = queue.shift()) {
       const result = await runFile(file, { timeoutMs, cwd, timers })
       results.push(result)
+      log(`${result.ok ? "PASS" : "FAIL"} ${file} ${result.ms} ms`)
       if (!result.ok) {
         log(result.output.trimEnd().split("\n").slice(-60).join("\n"))
         log(
@@ -118,7 +130,8 @@ export async function runFiles(
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const open = process.argv.includes("--open-pr")
-  const files = open ? [SLOW] : discoverTests()
+  const group = process.argv.find((arg) => arg.startsWith("--group="))?.slice(8)
+  const files = open ? [SLOW] : testGroup(discoverTests(), group)
   const timeoutMs =
     Number(process.env.GUARDS_FILE_TIMEOUT_MS) ||
     (open ? SLOW_FILE_TIMEOUT_MS : FILE_TIMEOUT_MS)

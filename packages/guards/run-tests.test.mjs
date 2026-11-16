@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { existsSync, rmSync, watch, writeFileSync } from "node:fs"
 import { join } from "node:path"
 import test from "node:test"
-import { runFiles } from "./run-tests.mjs"
+import { discoverTests, runFiles, testGroup, TEMP_DIRS } from "./run-tests.mjs"
 import { makeTempDir } from "../../scripts/lib/temp-dir.mjs"
 
 function fixtures(files) {
@@ -114,4 +114,15 @@ test("a failing file is reported by name and does not stop the others", async ()
   } finally {
     rmSync(dir, { recursive: true, force: true })
   }
+})
+
+test("the two guards groups cover every discovered test file exactly once", () => {
+  const complete = discoverTests()
+  const ordinary = testGroup(complete, "ordinary")
+  const dedicated = testGroup(complete, "temp-dirs")
+  assert.deepEqual(dedicated, [TEMP_DIRS])
+  assert.deepEqual([...ordinary, ...dedicated].sort(), complete)
+  assert.equal(new Set([...ordinary, ...dedicated]).size, complete.length)
+  assert.deepEqual(testGroup(complete), complete)
+  assert.throws(() => testGroup(complete, "typo"), /unknown guards group/)
 })
