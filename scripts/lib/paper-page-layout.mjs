@@ -1,5 +1,30 @@
 import ts from "typescript"
 
+export function repeatingGapBands(painted, pageHeight, gap, sheetHeight) {
+  if (!painted || !(pageHeight > 0) || !(gap > 0)) return []
+  const pitch = pageHeight + gap
+  const bands = []
+  for (let top = pageHeight; top + 0.5 < sheetHeight; top += pitch)
+    bands.push({ top, bottom: Math.min(sheetHeight, top + gap) })
+  return bands
+}
+
+export function pageBandHits(lines, bands, content) {
+  const gapHits = []
+  const marginHits = []
+  for (const line of lines) {
+    if (line.top < content.top - 0.5 || line.bottom > content.bottom + 0.5)
+      marginHits.push(line)
+    if (
+      bands.some(
+        (band) => line.bottom > band.top + 0.5 && line.top < band.bottom - 0.5
+      )
+    )
+      gapHits.push(line)
+  }
+  return { gapHits, marginHits }
+}
+
 export function detectPageLayout(text, path) {
   const hits = []
   if (
@@ -14,21 +39,64 @@ export function detectPageLayout(text, path) {
     )
   )
     hits.push("Unchanged flow profile must not create Undo entries")
-  if (
-    path === "packages/paper-crdt/src/rich-page-layout.ts" &&
-    /const scale = Math.min/.test(text)
-  )
-    hits.push("Phone Paper must reflow without scaling text")
+  if (path === "packages/paper-crdt/src/rich-page-layout.ts") {
+    const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
+    const visit = (node) => {
+      if (
+        ts.isCallExpression(node) &&
+        ts.isPropertyAccessExpression(node.expression) &&
+        node.expression.name.text === "setProperty" &&
+        node.arguments[0] &&
+        ts.isStringLiteral(node.arguments[0]) &&
+        node.arguments[0].text === "--cv-rich-page-scale" &&
+        (!node.arguments[1] ||
+          !ts.isStringLiteral(node.arguments[1]) ||
+          node.arguments[1].text !== "1")
+      )
+        hits.push("Paper must reflow at full text size instead of scaling")
+      ts.forEachChild(node, visit)
+    }
+    visit(source)
+  }
   if (
     path === "packages/paper-crdt/src/native-layout-flow-mount.ts" &&
     text.includes('!element.classList.contains("paper-rich-sheet")')
   )
     hits.push("Rich Paper must preserve automatic pagination")
-  if (
-    path === "apps/web/src/features/paper/rich-page-geometry.css" &&
-    /column-(height: auto|wrap: nowrap)/.test(text.split("@media")[0])
-  )
-    hits.push("Rich Paper must preserve automatic column wrapping on desktop")
+  if (path === "apps/web/src/features/paper/rich-page-geometry.css") {
+    for (const [, selector, declarations] of text.matchAll(
+      /([^{}]+)\{([^{}]*)\}/g
+    )) {
+      if (
+        /repeating-linear-gradient|min-block-size:\s*var\(--cv-rich-page-height/.test(
+          declarations
+        ) &&
+        !selector
+          .split(",")
+          .every(
+            (part) =>
+              /\[data-paper-pagination=["']?true["']?\]/.test(part) &&
+              /\[data-paper-reflow=["']?false["']?\]/.test(part)
+          )
+      )
+        hits.push(
+          "Page gaps and page height require supported pagination without reflow"
+        )
+      if (
+        /column-(height:\s*auto|wrap:\s*nowrap)/.test(declarations) &&
+        !/\[data-paper-reflow=["']?true["']?\]/.test(selector)
+      )
+        hits.push(
+          "Rich Paper must preserve automatic column wrapping on desktop"
+        )
+      if (
+        [...declarations.matchAll(/\bzoom:\s*([^;]+)/g)].some(
+          (match) => match[1].trim() !== "1"
+        )
+      )
+        hits.push("Paper must reflow at full text size instead of scaling")
+    }
+  }
   if (path === "packages/paper-crdt/src/editor.ts") {
     const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
     const visit = (node) => {
@@ -58,6 +126,39 @@ export function detectPageLayout(text, path) {
   )
     hits.push("Page breaks must not jump outside nested content")
   if (path === "apps/web/src/features/paper/rich-page-setup.tsx") {
+    const source = ts.createSourceFile(
+      path,
+      text,
+      ts.ScriptTarget.Latest,
+      true,
+      ts.ScriptKind.TSX
+    )
+    const visit = (node) => {
+      if (ts.isJsxSelfClosingElement(node) || ts.isJsxOpeningElement(node)) {
+        const attributes = new Map(
+          node.attributes.properties.flatMap((attribute) =>
+            ts.isJsxAttribute(attribute) &&
+            attribute.initializer &&
+            ts.isStringLiteral(attribute.initializer)
+              ? [[attribute.name.getText(source), attribute.initializer.text]]
+              : []
+          )
+        )
+        if (
+          node.tagName.getText(source) === "Input" &&
+          attributes.get("type") === "number" &&
+          attributes.get("step") !== "any"
+        )
+          hits.push("Page setup must accept fractional imported margins")
+        if (
+          node.tagName.getText(source) === "Button" &&
+          !/\bmin-h-\[44px\]/.test(attributes.get("className") ?? "")
+        )
+          hits.push("Page setup phone actions need a 44px minimum height")
+      }
+      ts.forEachChild(node, visit)
+    }
+    visit(source)
     if (
       text.includes("editor.pageSetup()") &&
       !text.includes("const page = editor.pageSetup()")

@@ -178,7 +178,7 @@ function PageSetupForm({
               type="number"
               min="0"
               max="3"
-              step="0.01"
+              step="any"
               required
               defaultValue={page[key] / 1440}
               onChange={(event) =>
@@ -201,7 +201,7 @@ function PageSetupForm({
         <Button
           type="button"
           variant="outline"
-          className="min-h-11 md:min-h-8"
+          className="h-[44px] min-h-[44px] md:h-8 md:min-h-8"
           onClick={close}
         >
           Cancel
@@ -209,7 +209,7 @@ function PageSetupForm({
         <Button
           type="submit"
           disabled={blocked}
-          className="min-h-11 md:min-h-8"
+          className="h-[44px] min-h-[44px] md:h-8 md:min-h-8"
         >
           Apply
         </Button>

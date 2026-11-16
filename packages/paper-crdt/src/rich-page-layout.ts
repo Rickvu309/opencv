@@ -16,15 +16,14 @@ export function richPageLayout(
         parseFloat(parentStyle.paddingLeft) -
         parseFloat(parentStyle.paddingRight)
       : width
-  const phone = window.matchMedia("(max-width: 639px)").matches
-  const scale = phone ? 1 : Math.min(1, available / width)
+  const reflow = available < width
+  element.dataset.paperReflow = String(reflow)
   element.style.setProperty("--cv-rich-page-width", `${width}px`)
   element.style.setProperty("--cv-rich-page-height", `${height}px`)
   element.style.setProperty("--cv-rich-page-pitch", `${height + 24}px`)
-  element.style.setProperty("--cv-rich-page-scale", String(scale))
+  element.style.setProperty("--cv-rich-page-scale", "1")
   for (const key of ["top", "bottom", "start", "end"] as const)
     element.style.setProperty(`--cv-rich-page-${key}`, `${page[key] / 15}px`)
-  const top = element.getBoundingClientRect().top + (page.top / 15) * scale
   const pitch = height + 24
   const breaks = new Map<string, number>()
   for (const section of document.flow.children) {
@@ -34,19 +33,17 @@ export function richPageLayout(
         `[data-node-type=blockOuter][data-id="${CSS.escape(node.id)}"]`
       )
       if (!block) continue
-      const offset = (block.getBoundingClientRect().top - top) / scale
-      const remainder = ((offset % pitch) + pitch) % pitch
-      breaks.set(node.id, phone ? 24 : paginated ? 0 : pitch - remainder)
+      breaks.set(node.id, reflow || !paginated ? 24 : 0)
     }
   }
   const content = element.querySelector<HTMLElement>(":scope > .bn-block-group")
   const bottom = content
-    ? (content.getBoundingClientRect().bottom -
-        element.getBoundingClientRect().top) /
-        scale +
+    ? content.getBoundingClientRect().bottom -
+      element.getBoundingClientRect().top +
       page.bottom / 15
     : height
   const pages = Math.max(1, Math.ceil((bottom + 24 - 0.5) / pitch))
-  element.style.minHeight = phone ? "" : `${pages * pitch - 24}px`
+  element.style.minHeight =
+    reflow || !paginated ? "" : `${pages * pitch - 24}px`
   return breaks
 }

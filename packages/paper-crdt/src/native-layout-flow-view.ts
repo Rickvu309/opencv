@@ -190,6 +190,7 @@ export function installFlowView(
       style.remove()
       delete element.dataset.paperPageFlow
       delete element.dataset.paperPagination
+      delete element.dataset.paperReflow
     },
   }
 }

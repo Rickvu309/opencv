@@ -287,3 +287,25 @@ it("refuses a break inside a nested list instead of moving it after the whole li
   expect(editor.insertPageBreak()).toBe(false)
   expect(client.document()).toEqual(before)
 })
+
+it("keeps fractional imported margins valid when only orientation changes", async () => {
+  const { editor } = setup()
+  act(() => editor.setPageSetup({ ...editor.pageSetup()!, top: 1134 }))
+  const user = userEvent.setup()
+  await user.click(screen.getByRole("button", { name: "Page setup" }))
+  const top = screen.getByRole("spinbutton", { name: "Top", exact: true })
+  expect(top).toHaveValue(0.7875)
+  expect(top).toBeValid()
+  await user.click(screen.getByRole("combobox", { name: "Orientation" }))
+  await user.click(
+    await screen.findByRole("option", { name: "Landscape", exact: true })
+  )
+  await user.click(screen.getByRole("button", { name: "Apply", exact: true }))
+  await waitFor(() =>
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+  )
+  expect(editor.pageSetup()).toMatchObject({
+    top: 1134,
+    orientation: "landscape",
+  })
+})
