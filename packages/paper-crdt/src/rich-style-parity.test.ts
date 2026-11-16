@@ -1,4 +1,7 @@
-import type { InlinePresentation } from "@workspace/domain/internal/paper-presentation"
+import {
+  inlineSchema,
+  type InlinePresentation,
+} from "@workspace/domain/internal/paper-presentation"
 import { compileFlowNativeDocx } from "../../../apps/api/src/paper/native-output/formatted.js"
 import { readPackageZip } from "../../../apps/api/src/paper/package-zip.js"
 import { afterEach, expect, it, vi } from "vitest"
@@ -100,7 +103,11 @@ it.each(["cv", "letter"] as const)(
         }))
       ),
       ...cascade,
-    ].map((row, index) => ({ ...row, id: `case-${index}` }))
+    ].map((row, index) => ({
+      ...row,
+      marks: inlineSchema.parse(row.marks),
+      id: `case-${index}`,
+    }))
     const source = richPaperDocumentSchema.parse({
       ...input,
       presentation: {
