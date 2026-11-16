@@ -106,12 +106,19 @@ function compileDocument(
         const appearance = richLink ? richAppearance : direct
         const properties = inlineProperties({
           ...appearance,
-          bold: effective.bold === inherited.bold ? undefined : effective.bold,
+          bold:
+            generation === "rich"
+              ? (effective.bold ?? false)
+              : effective.bold === inherited.bold
+                ? undefined
+                : effective.bold,
           italic:
-            effective.italic === inherited.italic
-              ? undefined
-              : effective.italic,
-          strike: generation === "rich" ? decorations.strike : direct.strike,
+            generation === "rich"
+              ? (effective.italic ?? false)
+              : effective.italic === inherited.italic
+                ? undefined
+                : effective.italic,
+          strike: generation === "rich" ? effective.strike : direct.strike,
         })
         return wordRun(
           text,

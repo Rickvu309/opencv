@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process"
 import {
   consumers,
   detectStyleCascade,
+  detectWordToggles,
   detectLinkCompatibility,
   detectLinkDecorations as detectDecorations,
 } from "./lib/paper-rich-structure.mjs"
@@ -219,5 +220,31 @@ test("the merged history toolbar keeps paragraph controls on one desktop row", (
       clean.replace("shrink-0 [&>div]:flex-nowrap", "contents"),
       path
     ).length
+  )
+})
+
+test("rich Word toggle overrides reject the heading regression", () => {
+  const path = "apps/api/src/paper/native-output/formatted.ts"
+  const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+  assert.deepEqual(detectWordToggles(clean, path), [])
+  for (const property of ["bold", "italic", "strike"])
+    assert.ok(
+      detectWordToggles(
+        clean.replaceAll(`effective.${property}`, `direct.${property}`),
+        path
+      ).length
+    )
+  for (const commit of ["69e82217", "46709cf2"])
+    assert.ok(
+      detectWordToggles(
+        execFileSync("git", ["show", `${commit}:${path}`], {
+          encoding: "utf8",
+        }),
+        path
+      ).length
+    )
+  assert.deepEqual(
+    detectWordToggles("", "apps/api/src/paper/native-output/rich-text.ts"),
+    []
   )
 })

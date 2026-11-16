@@ -22,6 +22,26 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
+function wordToggle(
+  defaultValue: boolean,
+  styles: readonly boolean[],
+  direct?: boolean
+) {
+  const inherited = styles.reduce(
+    (value, toggle) => value !== toggle,
+    defaultValue
+  )
+  return direct ?? inherited
+}
+
+it("resolves Word style toggles before absolute direct run properties", () => {
+  expect(wordToggle(false, [true, true])).toBe(false)
+  expect(wordToggle(false, [true, false])).toBe(true)
+  expect(wordToggle(true, [true])).toBe(false)
+  expect(wordToggle(false, [true, true], true)).toBe(true)
+  expect(wordToggle(false, [true, false], false)).toBe(false)
+})
+
 const states = [undefined, false, true] as const
 const combinations = states.flatMap((bold) =>
   states.flatMap((italic) =>
@@ -118,13 +138,13 @@ it.each(["cv", "letter"] as const)(
             id: "plain",
             kind: "character",
             parent: null,
-            values: { size: 360, bold: false },
+            values: { size: 360, bold: false, italic: false, strike: false },
           },
           {
             id: "strong",
             kind: "character",
             parent: null,
-            values: { size: 360, bold: true },
+            values: { size: 360, bold: true, italic: true, strike: true },
           },
           {
             id: "underlined",
@@ -250,16 +270,17 @@ it.each(["cv", "letter"] as const)(
       const paragraph = paragraphStyles[paragraphStyle ?? ""]
       const character =
         marks.characterStyle === "plain"
-          ? { size: 360, bold: false }
+          ? { size: 360, bold: false, italic: false, strike: false }
           : marks.characterStyle === "strong"
-            ? { size: 360, bold: true }
+            ? { size: 360, bold: true, italic: true, strike: true }
             : undefined
       const direct: InlinePresentation = marks
       const expected = {
         size: direct.size ?? character?.size ?? paragraph?.size ?? 240,
         bold: marks.bold ?? character?.bold ?? paragraph?.bold ?? false,
+        italic: marks.italic ?? character?.italic ?? false,
         underline: marks.underline ?? (linked || inheritedUnderline),
-        strike: marks.strike ?? true,
+        strike: marks.strike ?? character?.strike ?? true,
         color: marks.color ?? (linked ? "#1D4ED8" : "#009900"),
       }
       const color = document.createElement("span")
@@ -267,6 +288,7 @@ it.each(["cv", "letter"] as const)(
       const page = {
         size: Number.parseFloat(span.style.fontSize) * 20,
         bold: span.style.fontWeight === "700",
+        italic: span.style.fontStyle === "italic",
         underline: span.style.textDecorationLine.includes("underline"),
         strike: span.style.textDecorationLine.includes("line-through"),
         color: span.style.color,
@@ -291,20 +313,40 @@ it.each(["cv", "letter"] as const)(
           if (property) return attribute(property, "val")
         }
       }
+      const toggle = (name: string) => {
+        const read = (source?: Element) => {
+          const property = source && elements(source, name)[0]
+          return property
+            ? !["0", "false", "off"].includes(attribute(property, "val") ?? "1")
+            : undefined
+        }
+        return wordToggle(
+          read(defaults) ?? false,
+          [read(paragraphDefinition), read(namedStyle)].map(
+            (value) => value ?? false
+          ),
+          read(run)
+        )
+      }
       const word = {
         size: Number(value("sz")) * 10,
-        bold: value("b") === "1",
+        bold: toggle("b"),
+        italic: toggle("i"),
         underline: value("u") === "single",
-        strike: value("strike") === "1",
+        strike: toggle("strike"),
         color: `#${value("color")}`,
       }
       expect(page, id).toEqual({ ...expected, color: color.style.color })
       expect(word, id).toEqual(expected)
+      expect(toggle("bCs"), id).toBe(expected.bold)
+      expect(toggle("iCs"), id).toBe(expected.italic)
       const wordColor = document.createElement("span")
       wordColor.style.color = word.color
       expect(page, id).toEqual({ ...word, color: wordColor.style.color })
       expect(span.style.fontWeight, id).toBe(expected.bold ? "700" : "400")
-      expect(span.style.fontStyle, id).toBe(marks.italic ? "italic" : "normal")
+      expect(span.style.fontStyle, id).toBe(
+        expected.italic ? "italic" : "normal"
+      )
       const activeState = `${linked}:${marks.underline}:${inheritedUnderline}:${paragraphStyle}:${marks.characterStyle}`
       if (checkedActiveStates.has(activeState)) continue
       checkedActiveStates.add(activeState)
@@ -323,9 +365,11 @@ it.each(["cv", "letter"] as const)(
       expect(active.underline, id).toBe(page.underline)
       expect(active.size, id).toBe(page.size)
       expect(active.bold ?? false, id).toBe(page.bold)
+      expect(active.italic ?? false, id).toBe(page.italic)
       expect(mounted.activeFormatting().underline, id).toBe(page.underline)
       expect(mounted.activeFormatting().size, id).toBe(String(page.size / 20))
       expect(mounted.activeFormatting().bold, id).toBe(page.bold)
+      expect(mounted.activeFormatting().italic, id).toBe(page.italic)
     }
   },
   60_000

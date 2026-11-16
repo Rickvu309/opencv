@@ -161,6 +161,7 @@ export function detectRichStructure(text, path) {
   const hits = [
     ...detectLinkCompatibility(text, path),
     ...detectStyleCascade(text, path),
+    ...detectWordToggles(text, path),
   ]
   if (
     path === "packages/paper-crdt/src/native-formatting-commands.ts" &&
@@ -377,5 +378,28 @@ export function detectStyleCascade(text, path) {
     !text.includes("shrink-0 [&>div]:flex-nowrap")
   )
     hits.push("Desktop paragraph controls must stay in the single Docs row")
+  return hits
+}
+
+export function detectWordToggles(text, path) {
+  if (
+    path !== "apps/api/src/paper/native-output/formatted.ts" ||
+    !text.includes("function compileDocument(")
+  )
+    return []
+  const hits = []
+  for (const name of ["bold", "italic"])
+    if (
+      !new RegExp(
+        `${name}:\\s*generation === "rich"\\s*\\?\\s*\\(?effective\\.${name} \\?\\? false\\)?`
+      ).test(text)
+    )
+      hits.push(
+        `Rich Word runs must write absolute ${name} from the shared resolver`
+      )
+  if (!/strike:\s*generation === "rich"\s*\?\s*effective\.strike/.test(text))
+    hits.push(
+      "Rich Word runs must write resolved strike without an implicit false"
+    )
   return hits
 }
