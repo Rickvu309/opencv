@@ -25,8 +25,8 @@ export function RichTableControls({
 }) {
   const [, refresh] = useReducer((value: number) => value + 1, 0)
   useEffect(() => editor?.subscribe(refresh), [editor])
-  const selected = editor?.activeTable()
-  const element = editor?.tableElement()
+  const selected = !disabled ? editor?.activeTable() : null
+  const element = !disabled ? editor?.tableElement() : null
   return (
     <>
       {children((close) => (
@@ -77,12 +77,25 @@ function InsertTable({
         : { ...state, [action.type]: action.value },
     { open: false, rows: "2", columns: "2", error: "" }
   )
+  const available = !!editor && !disabled
+  useEffect(() => {
+    if (!available) dispatch({ type: "open", value: false })
+  }, [available])
   return (
     <Popover
-      open={open}
-      onOpenChange={(value) => dispatch({ type: "open", value })}
+      open={open && available}
+      onOpenChange={(value) => {
+        dispatch({ type: "error", value: "" })
+        dispatch({ type: "open", value })
+      }}
     >
-      <ToolbarHint label="Insert table">
+      <ToolbarHint
+        label={
+          disabled && editor
+            ? "Place the cursor outside the table to insert another"
+            : "Insert table"
+        }
+      >
         <PopoverTrigger
           render={
             <Button
@@ -109,8 +122,9 @@ function InsertTable({
           className="grid gap-3"
           onSubmit={(event) => {
             event.preventDefault()
+            if (!available) return
             try {
-              editor?.insertTable(Number(rows), Number(columns))
+              if (!editor.insertTable(Number(rows), Number(columns))) return
               dispatch({ type: "inserted" })
               close()
             } catch (error) {
@@ -135,6 +149,7 @@ function InsertTable({
                 min={1}
                 max={paperTableLimits.rows}
                 required
+                disabled={!available}
                 value={rows}
                 onChange={(event) =>
                   dispatch({ type: "rows", value: event.target.value })
@@ -151,6 +166,7 @@ function InsertTable({
                 min={1}
                 max={paperTableLimits.columns}
                 required
+                disabled={!available}
                 value={columns}
                 onChange={(event) =>
                   dispatch({ type: "columns", value: event.target.value })
@@ -159,7 +175,7 @@ function InsertTable({
             </label>
           </div>
           {error ? <p role="alert">{error}</p> : null}
-          <Button type="submit" className="min-h-11">
+          <Button disabled={!available} type="submit" className="min-h-11">
             Insert table
           </Button>
         </form>

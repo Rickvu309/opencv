@@ -130,7 +130,9 @@ export function flowTableControls(
           section.columns.count
       )
       if (available < columns * 480)
-        throw new Error("Choose fewer columns to fit the page")
+        throw new Error(
+          `Choose at most ${Math.floor(available / 480)} columns to fit this page`
+        )
       const grid = Array.from({ length: columns }, () => ({
         id: id(),
         width: Math.floor(available / columns),
@@ -167,15 +169,35 @@ export function flowTableControls(
           (section.columns.count - 1) * section.columns.gap) /
           section.columns.count
       )
-      const width = Math.floor(available / (table.columns.length + 1))
+      const total = table.columns.reduce((sum, column) => sum + column.width, 0)
+      const target = Math.min(available, total)
+      const width = Math.floor(target / (table.columns.length + 1))
       if (width < 480) throw new Error("No room for another column")
       const column = { id: id(), width }
+      const surplus = total - table.columns.length * 480
+      let remaining = target - width - table.columns.length * 480
+      const resized = table.columns.map((item, index) => {
+        const extra =
+          index === table.columns.length - 1
+            ? remaining
+            : Math.min(
+                remaining,
+                Math.floor(
+                  (target - width - table.columns.length * 480) *
+                    (surplus
+                      ? (item.width - 480) / surplus
+                      : 1 / table.columns.length)
+                )
+              )
+        remaining -= extra
+        return { ...item, width: 480 + extra }
+      })
       change([
-        ...table.columns
+        ...resized
           .map((column) => ({
             kind: "resize-column",
             tableId: table.id,
-            column: { ...column, width },
+            column,
           }))
           .sort(
             (a, b) =>

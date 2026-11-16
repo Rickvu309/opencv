@@ -67,9 +67,10 @@ describe("private section flow on the canonical editor fragment", () => {
     vi.stubGlobal("CSS", { supports: () => true })
     const section = document.flow.children[0]
     if (!section) throw new Error("Missing section")
-    expect(flowPaginationSupport(document).reason).toContain(
-      "tables and photos"
-    )
+    expect(flowPaginationSupport(document)).toEqual({
+      supported: true,
+      reason: null,
+    })
     section.children = section.children.filter((node) => node.type !== "table")
     expect(flowPaginationSupport(document).supported).toBe(true)
     const continuous = flowDocumentSchema.parse({

@@ -1,6 +1,6 @@
 import { flowTableControls } from "./native-layout-table-controls.js"
 import { richEditorCommands } from "./native-formatting-commands.js"
-import { isSafeHref } from "@workspace/domain"
+import { paperTableLimits, isSafeHref } from "@workspace/domain"
 import { BlockNoteEditor, createExtension } from "@blocknote/core"
 import { CollaborationExtension } from "@blocknote/core/yjs"
 import { Plugin } from "@tiptap/pm/state"
@@ -123,9 +123,8 @@ export function mountPrivateFlow(
   const keydown = (event: KeyboardEvent) => {
     if (!active || !editor.isEditable) return
     if (
-      !editor.isEditable ||
-      (event.target instanceof Element &&
-        event.target.closest("[data-paper-table-controls]"))
+      event.target instanceof Element &&
+      event.target.closest("[data-paper-table-controls]")
     )
       return
     if (
@@ -135,7 +134,8 @@ export function mountPrivateFlow(
       !event.metaKey
     ) {
       if (
-        !layoutCellAt(editor.prosemirrorState.selection.$from) &&
+        (!docsTables ||
+          !layoutCellAt(editor.prosemirrorState.selection.$from)) &&
         ["bulletListItem", "numberedListItem"].includes(
           editor.getTextCursorPosition().block.type
         )
@@ -161,7 +161,7 @@ export function mountPrivateFlow(
         docsTables &&
         !next &&
         !event.shiftKey &&
-        table.children.length < 100
+        table.children.length < paperTableLimits.rows
       ) {
         event.preventDefault()
         tableControls.addTableRow(true, true)

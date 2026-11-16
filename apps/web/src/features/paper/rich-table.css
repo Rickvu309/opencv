@@ -4,14 +4,13 @@
 .paper-table-menu {
   position: absolute;
   inset-block-start: 0;
-  inset-inline-end: 0;
-  transform: translate(40%, -60%);
+  inset-inline-end: -48px;
   z-index: 3;
 }
 .paper-table-resize {
   position: absolute;
   inset-block: 0;
-  width: 24px;
+  width: 44px;
   transform: translateX(-50%);
   cursor: col-resize;
   touch-action: none;
@@ -21,7 +20,7 @@
   content: "";
   position: absolute;
   inset-block: 0;
-  inset-inline-start: 11px;
+  inset-inline-start: 21px;
   width: 2px;
   background: transparent;
 }
@@ -36,5 +35,15 @@
 @media (hover: hover) and (pointer: fine) {
   .paper-table-resize:hover::after {
     background: var(--primary);
+  }
+}
+
+@media (max-width: 767px) {
+  [data-paper-layout="paperTable"] {
+    margin-block-start: 48px;
+  }
+  .paper-table-menu {
+    inset-block-start: -46px;
+    inset-inline-end: 0;
   }
 }

@@ -1,3 +1,7 @@
+import {
+  flowPaginationSupport,
+  installFlowView,
+} from "./native-layout-flow-view.js"
 import { afterEach, expect, it, vi } from "vitest"
 import { TextSelection } from "@tiptap/pm/state"
 import * as Y from "yjs"
@@ -6,6 +10,7 @@ import { prepareFlowTableEdit } from "@workspace/domain/internal/paper-presentat
 import { openRichPaperClient } from "./client.js"
 import { seedStoredYDoc } from "./stored-document.js"
 import { borrowFlowDocument } from "./native-layout-flow.js"
+import { mountRichPaperEditor } from "./editor.js"
 import { mountPrivateFlow } from "./native-layout-flow-mount.js"
 import { flowFixture, storedFlowFixture } from "./test/flow-fixture.js"
 
@@ -17,7 +22,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-function setup(kind: "cv" | "letter") {
+function setup(kind: "cv" | "letter", docsTables = true) {
   vi.stubGlobal(
     "ResizeObserver",
     class {
@@ -69,7 +74,7 @@ function setup(kind: "cv" | "letter") {
   const lease = borrowFlowDocument(client.ydoc, kind)
   const host = window.document.createElement("div")
   window.document.body.append(host)
-  const mounted = mountPrivateFlow(lease.binding, host, undefined, true)
+  const mounted = mountPrivateFlow(lease.binding, host, undefined, docsTables)
   const editor = mounted.editor
   const commands = mounted.commands
   cleanups.add(() => {
@@ -142,6 +147,8 @@ function setup(kind: "cv" | "letter") {
   }
   return {
     host,
+    client,
+    unmount: mounted.unmount,
     editor,
     commands,
     select,
@@ -274,3 +281,120 @@ it("keeps an editable paragraph when deleting the only table", () => {
       },
     ])
 })
+
+it("released public table controls cannot read or write the destroyed editor", () => {
+  const { client, host, unmount } = setup("cv")
+  unmount()
+  const editor = mountRichPaperEditor(client, host)
+  client.destroy()
+  expect(editor.activeTable()).toBeNull()
+  expect(editor.tableElement()).toBeNull()
+  for (const action of [
+    () => editor.insertTable(2, 2),
+    () => editor.addTableRow(),
+    () => editor.removeTableRow(),
+    () => editor.addTableColumn(),
+    () => editor.removeTableColumn(),
+    () => editor.resizeTableColumn(0, 600),
+    () => editor.removeTable(),
+  ])
+    expect(action()).toBe(false)
+})
+
+it.each([true, false])(
+  "table list Tab respects the Docs mount mode %s",
+  (docsTables) => {
+    const { tables, editor, commands, select, key } = setup(
+      "letter",
+      docsTables
+    )
+    select("first")
+    tables.insertTable(1, 2)
+    commands.toggleList("bulletListItem")
+    const first = editor.getTextCursorPosition().block
+    editor.updateBlock(first, { content: "First list entry" })
+    const [second] = editor.insertBlocks(
+      [{ type: "bulletListItem", content: "Second list entry" }],
+      first,
+      "after"
+    )
+    editor.setTextCursorPosition(second!.id, "start")
+    const before = editor.prosemirrorState.selection.from
+    key("Tab")
+    if (docsTables) expect(tables.activeTable()?.columnIndex).toBe(1)
+    else {
+      expect(editor.prosemirrorState.selection.from).toBe(before)
+      expect(commands.formattingState().canOutdent).toBe(true)
+    }
+  }
+)
+
+it.each([
+  ["Letter", 15840],
+  ["A4", 16838],
+] as const)(
+  "paginates table rows inside %s margins and bounds an oversized row to its own page",
+  async (_, pageHeight) => {
+    vi.stubGlobal("CSS", { supports: () => true, escape: (id: string) => id })
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        disconnect() {}
+      }
+    )
+    Object.defineProperty(document, "fonts", {
+      configurable: true,
+      value: { ready: Promise.resolve() },
+    })
+    const input = flowFixture()
+    const section = input.flow.children[0]!
+    section.page.height = pageHeight
+    const printable = (pageHeight - section.page.top - section.page.bottom) / 15
+    const host = document.createElement("div")
+    host.innerHTML =
+      '<div data-paper-layout="paperFlowSection" data-paper-id="section-1"><div data-paper-wrap-slot><div data-paper-layout="paperRow"><div></div></div></div></div>'
+    document.body.append(host)
+    const row = host.querySelector<HTMLElement>(
+      '[data-paper-layout="paperRow"]'
+    )!
+    const content = row.firstElementChild!
+    const bounds = vi
+      .spyOn(content, "getBoundingClientRect")
+      .mockReturnValue(new DOMRect(0, 0, 300, printable + 100))
+    const view = installFlowView(
+      host,
+      () => input,
+      () => {}
+    )
+    try {
+      await new Promise(requestAnimationFrame)
+      expect(flowPaginationSupport(input)).toEqual({
+        supported: true,
+        reason: null,
+      })
+      expect(host.dataset.paperPagination).toBe("true")
+      expect(row.dataset.paperOversizedRow).toBe("true")
+      expect(row.getAttribute("tabindex")).toBe("0")
+      expect(row.getAttribute("aria-label")).toBe(
+        "Table row taller than a page. Scroll to read all content."
+      )
+      const rules = host.previousElementSibling?.textContent
+      expect(rules).toContain("paperRow]{break-inside:avoid")
+      expect(rules).toContain(
+        "paper-oversized-row=true]{height:var(--paper-column-height);overflow:auto"
+      )
+      expect(rules).toContain(
+        "paper-oversized-row=true]){break-before:column;break-after:column}"
+      )
+      bounds.mockReturnValue(new DOMRect(0, 0, 300, printable - 10))
+      view.schedule()
+      await new Promise(requestAnimationFrame)
+      expect(row.dataset.paperOversizedRow).toBe("false")
+      expect(row.hasAttribute("tabindex")).toBe(false)
+    } finally {
+      view.destroy()
+      host.remove()
+    }
+  }
+)

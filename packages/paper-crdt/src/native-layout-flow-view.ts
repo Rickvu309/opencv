@@ -40,14 +40,12 @@ export function flowPaginationSupport(document: FlowDocument) {
     }
   if (
     document.flow.children.some((section) =>
-      section.children.some(
-        (node) => node.type === "table" || node.type === "photo"
-      )
+      section.children.some((node) => node.type === "photo")
     )
   )
     return {
       supported: false,
-      reason: "Pagination around tables and photos is not qualified",
+      reason: "Pagination around photos is not qualified",
     }
   return { supported: true, reason: null }
 }
@@ -92,7 +90,7 @@ export function installFlowView(
   updateBreaks: (breaks: Map<string, number>) => void
 ) {
   const style = document.createElement("style")
-  style.textContent = `[data-paper-page-flow] .bn-block-group{padding:0}[data-paper-page-flow] [data-paper-layout=paperFlowSection]{width:var(--paper-flow-width);max-width:100%;margin-block:24px}[data-paper-page-flow] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]{display:block;column-count:var(--paper-columns);column-gap:var(--paper-column-gap);column-fill:auto}[data-paper-page-flow][data-paper-pagination=true] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]{column-height:var(--paper-column-height);column-wrap:wrap;row-gap:var(--paper-row-gap)}[data-paper-page-flow] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]>[data-node-type=blockOuter],[data-paper-page-flow] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]>[data-node-type=blockOuter]>.bn-block{display:block}[data-paper-page-flow] [data-paper-page-break]{height:0;min-height:0}[data-paper-page-flow] [data-content-type=paperPageBreak]{padding:0;margin:0;min-height:0}[data-paper-page-flow] [data-paper-layout=paperTable]{break-inside:avoid}`
+  style.textContent = `[data-paper-page-flow] .bn-block-group{padding:0}[data-paper-page-flow] [data-paper-layout=paperFlowSection]{width:var(--paper-flow-width);max-width:100%;margin-block:24px}[data-paper-page-flow] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]{display:block;column-count:var(--paper-columns);column-gap:var(--paper-column-gap);column-fill:auto}[data-paper-page-flow][data-paper-pagination=true] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]{column-height:var(--paper-column-height);column-wrap:wrap;row-gap:var(--paper-row-gap)}[data-paper-page-flow] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]>[data-node-type=blockOuter],[data-paper-page-flow] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]>[data-node-type=blockOuter]>.bn-block{display:block}[data-paper-page-flow] [data-paper-page-break]{height:0;min-height:0}[data-paper-page-flow] [data-content-type=paperPageBreak]{padding:0;margin:0;min-height:0}[data-paper-page-flow] [data-paper-layout=paperTable]{break-inside:auto}[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-layout=paperTable]),[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-layout=paperTable])>.bn-block{display:block;break-inside:auto}[data-paper-page-flow] [data-paper-layout=paperRow]{break-inside:avoid}[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-layout=paperRow]){break-inside:avoid;display:block}[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-layout=paperRow])>.bn-block{display:block}[data-paper-page-flow] [data-paper-layout=paperRow][data-paper-oversized-row=true]{height:var(--paper-column-height);overflow:auto;overscroll-behavior:contain;break-before:column;break-after:column}[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-oversized-row=true]){break-before:column;break-after:column}`
   element.before(style)
   element.dataset.paperPageFlow = ""
   let active = true,
@@ -113,6 +111,28 @@ export function installFlowView(
       if (!slot) continue
       const height =
         (section.page.height - section.page.top - section.page.bottom) / 15
+      for (const row of slot.querySelectorAll<HTMLElement>(
+        '[data-paper-layout="paperRow"]'
+      )) {
+        const content = row.lastElementChild
+        if (content instanceof HTMLElement) {
+          const oversized =
+            support.supported && content.getBoundingClientRect().height > height
+          row.dataset.paperOversizedRow = String(oversized)
+          if (oversized) {
+            row.setAttribute("tabindex", "0")
+            row.setAttribute("role", "region")
+            row.setAttribute(
+              "aria-label",
+              "Table row taller than a page. Scroll to read all content."
+            )
+          } else {
+            row.removeAttribute("tabindex")
+            row.removeAttribute("role")
+            row.removeAttribute("aria-label")
+          }
+        }
+      }
       const gap = section.columns.gap / 15,
         width = slot.getBoundingClientRect().width
       const columnWidth =

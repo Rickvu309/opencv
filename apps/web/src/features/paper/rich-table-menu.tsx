@@ -30,11 +30,30 @@ export function RichTableMenu({
     (state: { open: boolean; error: string }, action: MenuAction) =>
       action.type === "completed"
         ? { open: false, error: "" }
-        : { ...state, [action.type]: action.value },
+        : {
+            ...state,
+            [action.type]: action.value,
+            error: action.type === "open" ? "" : action.value,
+          },
     { open: false, error: "" }
   )
   const width = useRef<HTMLInputElement>(null)
   const column = selected.table.columns[selected.columnIndex]
+  const neighbor =
+    selected.table.columns[selected.columnIndex + 1] ??
+    selected.table.columns[selected.columnIndex - 1]
+  const page = selected.section.page
+  const printable =
+    (page.width -
+      page.start -
+      page.end -
+      (selected.section.columns.count - 1) * selected.section.columns.gap) /
+    selected.section.columns.count
+  const maximumWidth =
+    column && neighbor ? column.width + neighbor.width - 480 : printable
+  const cannotAddColumn =
+    selected.table.columns.length >= paperTableLimits.columns ||
+    printable < (selected.table.columns.length + 1) * 480
   const actions = [
     {
       label: "Insert row above",
@@ -49,12 +68,12 @@ export function RichTableMenu({
     {
       label: "Insert column left",
       run: () => editor.addTableColumn(false),
-      disabled: selected.table.columns.length >= paperTableLimits.columns,
+      disabled: cannotAddColumn,
     },
     {
       label: "Insert column right",
       run: () => editor.addTableColumn(),
-      disabled: selected.table.columns.length >= paperTableLimits.columns,
+      disabled: cannotAddColumn,
     },
     {
       label: "Delete row",
@@ -106,7 +125,7 @@ export function RichTableMenu({
                 disabled={action.disabled}
                 onClick={() => {
                   try {
-                    action.run()
+                    if (!action.run()) return
                     dispatch({ type: "completed" })
                     editor.focus()
                   } catch (error) {
@@ -131,9 +150,25 @@ export function RichTableMenu({
                 event.preventDefault()
                 const value = width.current?.valueAsNumber
                 if (value && Number.isFinite(value)) {
-                  editor.resizeTableColumn(selected.columnIndex, value * 20)
-                  dispatch({ type: "completed" })
-                  editor.focus()
+                  try {
+                    if (
+                      !editor.resizeTableColumn(
+                        selected.columnIndex,
+                        value * 20
+                      )
+                    )
+                      return
+                    dispatch({ type: "completed" })
+                    editor.focus()
+                  } catch (error) {
+                    dispatch({
+                      type: "error",
+                      value:
+                        error instanceof Error
+                          ? error.message
+                          : "Column could not resize",
+                    })
+                  }
                 }
               }}
             >
@@ -146,7 +181,7 @@ export function RichTableMenu({
                   className="h-11 text-base"
                   type="number"
                   min={24}
-                  max={1584}
+                  max={maximumWidth / 20}
                   step="any"
                   defaultValue={column.width / 20}
                   required

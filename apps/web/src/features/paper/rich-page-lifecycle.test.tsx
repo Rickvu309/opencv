@@ -201,7 +201,55 @@ it.each([
     )
     expect(client.hasPending()).toBe(true)
     if (mode === "accepted epoch reset") await exerciseToolbar(host, client)
+    if (mode === "accepted epoch reset") {
+      act(() =>
+        mounted.editor.setTextCursorPosition(
+          kind === "cv" ? "intro" : "r1-a-p",
+          "end"
+        )
+      )
+      if (kind === "cv") {
+        const more = screen.getByRole("button", {
+          name: "More formatting",
+          exact: true,
+        })
+        if (more.getAttribute("aria-expanded") !== "true") fireEvent.click(more)
+        fireEvent.click(
+          await screen.findByRole("button", {
+            name: "Insert table",
+            exact: true,
+          })
+        )
+        expect(
+          await screen.findByRole("spinbutton", { name: "Table rows" })
+        ).toBeEnabled()
+      } else {
+        fireEvent.click(
+          await screen.findByRole("button", {
+            name: "Table options",
+            exact: true,
+          })
+        )
+        expect(
+          await screen.findByRole("button", {
+            name: "Insert row below",
+            exact: true,
+          })
+        ).toBeEnabled()
+      }
+    }
     act(() => client.destroy())
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("spinbutton", { name: "Table rows" })
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole("button", { name: "Table options", exact: true })
+      ).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole("button", { name: "Insert row below", exact: true })
+      ).not.toBeInTheDocument()
+    })
     expect(
       screen.getByRole("button", { name: "Bold", exact: true })
     ).toBeDisabled()
