@@ -39,7 +39,7 @@
   opacity: 0;
 }
 
-.ocv-coach .ocv-coach-thread {
+.ocv-coach .ocv-coach-chat {
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -61,7 +61,7 @@
   justify-self: end;
 }
 
-.ocv-coach .ocv-coach-thread > .ss-collapse {
+.ocv-coach .ocv-coach-chat > .ss-collapse {
   flex-shrink: 0;
 }
 

@@ -139,7 +139,7 @@ export function CoachScene() {
             data-crop
             data-resetting={s.resetting || undefined}
           >
-            <div className="ocv-coach-thread" data-crop>
+            <div className="ocv-coach-chat" data-crop>
               {[0, 1, 2].map((item) => (
                 <div className="ocv-coach-history" key={item}>
                   <Bar
