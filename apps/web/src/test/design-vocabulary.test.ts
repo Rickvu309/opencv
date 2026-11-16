@@ -205,6 +205,10 @@ const AFFECT_INJECTED_STYLESHEET_VARIABLE_RE = /^(?:ui-[a-z]+-|[ui]$)/
 
 const AFFECT_FILES_KEPT_IN_THE_APP = new Set<string>()
 
+const STAGESHOW_SCENE_DIR = "features/landing/figures/phone/"
+
+const STAGESHOW_KIT_VARIABLE_RE = /^ss-/
+
 const RETIRED_CLASS_RE = new RegExp(
   [
     "(?<![\\w-])text-(?:3xs|2xs|micro|page-title|section-title|body|label)(?![\\w-])",
@@ -394,6 +398,10 @@ describe("app code uses shadcn variables and stock Tailwind, with no raw hex or 
             !READABLE_VARIABLES.has(name) &&
             !PAPER_CSS_CV_PRINT_VARIABLE_RE.test(name) &&
             !(isAffect && AFFECT_INJECTED_STYLESHEET_VARIABLE_RE.test(name)) &&
+            !(
+              rel(file).startsWith(STAGESHOW_SCENE_DIR) &&
+              STAGESHOW_KIT_VARIABLE_RE.test(name)
+            ) &&
             !name.startsWith("tw-")
         )
       if (unknown.length > 0) {

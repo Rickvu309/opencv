@@ -18,3 +18,8 @@ runs:
         git show-ref --verify --quiet refs/remotes/origin/main || git fetch origin main:refs/remotes/origin/main
         git branch -f main origin/main
       shell: bash
+    - run: |
+        if [[ -n "$(git diff --name-only origin/main...HEAD -- .github/workflows/ci.yml .github/actions/setup)" ]]; then
+          echo "TURBO_SCOPE=" >> "$GITHUB_ENV"
+        fi
+      shell: bash

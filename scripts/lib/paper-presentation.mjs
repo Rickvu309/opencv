@@ -47,6 +47,13 @@ export function detect(text, path) {
       "Paper Word fonts must use the metric-compatible Word family names"
     )
 
+  if (
+    path === "apps/web/src/features/paper/design/rich-page-header.pen.css" &&
+    !/\[data-slot="page-header"\]\s*\{[^}]*\bflex-wrap:\s*wrap\s*;/.test(text)
+  )
+    hits.push(
+      "Rich Paper headers must wrap their title and actions at enlarged text sizes"
+    )
   const test = /\.test\.[cm]?[jt]sx?$/.test(path)
   const storage = path === "packages/paper-crdt/src/stored-document.ts"
   const editorEntry = path === "packages/paper-crdt/src/editor.ts"

@@ -1,6 +1,10 @@
 import "fake-indexeddb/auto"
 import * as Y from "yjs"
-import { nativeProvenance, RICH_NATIVE_WRITER } from "@workspace/domain"
+import {
+  canonicalPaper,
+  nativeProvenance,
+  RICH_NATIVE_WRITER,
+} from "@workspace/domain"
 import {
   emptyUpdate,
   openRichPaperClient,
@@ -78,6 +82,9 @@ it.each(["cv", "letter"] as const)(
       await sync.initialized
       expect(sync.client()?.document()).toEqual(expected)
       expect(sync.status()).toBe("saved")
+      const saved = sync.captureSaved()
+      expect(saved?.canonical).toBe(canonicalPaper(expected))
+      expect(saved?.current()).toBe(true)
       const save = h.store.save.bind(h.store)
       h.store.save = async (...args) => {
         await gate.promise
@@ -97,9 +104,14 @@ it.each(["cv", "letter"] as const)(
       await vi.waitFor(() => expect(h.run).toHaveBeenCalled())
       await vi.waitFor(() => expect(live.hasPending()).toBe(false))
       expect(sync.status()).not.toBe("saved")
+      expect(sync.captureSaved()).toBeNull()
+      expect(saved?.current()).toBe(false)
       gate.release()
       await flushing
       expect(sync.status()).toBe("saved")
+      expect(saved?.current()).toBe(false)
+      const latest = sync.captureSaved()
+      expect(latest?.current()).toBe(true)
       expect(
         scanNativeJournals(h.options.journal, identity).flatMap(
           (entry) => entry.states
@@ -110,6 +122,8 @@ it.each(["cv", "letter"] as const)(
         ownerId: "different-owner",
       })
       expect(sync.status()).toBe("refused")
+      expect(latest?.current()).toBe(false)
+      expect(sync.captureSaved()).toBeNull()
       expect(sync.client()).toBeNull()
     } finally {
       gate.release()

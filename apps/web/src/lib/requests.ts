@@ -22,6 +22,8 @@ export const endpoints = {
   paper: "/api/paper",
   paperOfKind: (kind: "cv" | "letter") => `/api/paper?kind=${kind}`,
   paperDoc: (docId: string) => `/api/paper/${docId}`,
+  paperNativeWord: (docId: string, kind: "cv" | "letter") =>
+    `/api/paper/${docId}/native-word?kind=${kind}`,
   paperDocument: (docId: string) => `/api/paper/${docId}/document`,
   paperFiles: "/api/paper/files",
   paperFileBytes: (fileId: string) => `/api/paper/files/${fileId}/bytes`,

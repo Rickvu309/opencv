@@ -62,14 +62,41 @@ describe("mounted photo geometry on the owned fragment", () => {
     expect(frame instanceof HTMLElement && frame.style.transform).toBe(
       "rotate(30deg)"
     )
-    expect(frame instanceof HTMLElement && frame.style.borderRadius).toBe(
-      "12pt"
-    )
+    const radii =
+      frame instanceof HTMLElement
+        ? frame.style.borderRadius.split(" / ").map(Number.parseFloat)
+        : []
+    expect(radii[0]).toBeCloseTo(100 / 6)
+    expect(radii[1]).toBeCloseTo((1440 / (6 * 1800)) * 100)
     expect(image?.getAttribute("src")).toBe(
       "/owned/00000000-0000-4000-8000-000000000001"
     )
     expect(image?.alt).toBe("Linh at work")
     expect(image?.style.width).toBe(`${10000000 / 70000}%`)
+  })
+  it("keeps the photo, rotated bounds and spacing proportional inside a narrow column without changing saved geometry", () => {
+    const { binding, host } = setup(),
+      before = canonical(readLayout(binding)),
+      photo = photoFixture(),
+      bounds = photoBounds(photo),
+      width = bounds.width + photo.spacing.left + photo.spacing.right,
+      height = bounds.height + photo.spacing.top + photo.spacing.bottom,
+      figure = host.querySelector<HTMLElement>("[data-paper-photo='portrait']"),
+      outer = figure?.closest<HTMLElement>("[data-paper-photo-placement]"),
+      frame = figure?.querySelector("div")
+    expect(outer?.style.maxWidth).toBe("100%")
+    expect(figure?.style.maxWidth).toBe("100%")
+    expect(figure?.style.height).toBe("auto")
+    expect(figure?.style.aspectRatio).toBe(`${width} / ${height}`)
+    expect(frame?.style.width).toBe(`${(photo.width / width) * 100}%`)
+    expect(frame?.style.height).toBe(`${(photo.height / height) * 100}%`)
+    expect(frame?.style.left).toBe(
+      `${(((bounds.width - photo.width) / 2 + photo.spacing.left) / width) * 100}%`
+    )
+    expect(frame?.style.top).toBe(
+      `${(((bounds.height - photo.height) / 2 + photo.spacing.top) / height) * 100}%`
+    )
+    expect(canonical(readLayout(binding))).toBe(before)
   })
   it("updates the mounted photo from a durable command and rejects direct unreceipted mutation", () => {
     const { binding, host, mount } = setup()

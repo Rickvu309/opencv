@@ -3,11 +3,7 @@ import { deployLines, liveCheckLine } from "./migration-facts.mjs"
 import { PR_FIELDS, pullFacts, pullOf } from "./pull-facts.mjs"
 import { recorded, json, gh, git, run } from "./common.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
-import {
-  LABELS,
-  allowMigrationLabel,
-  ownerBecause,
-} from "../rules/merge-gate.mjs"
+import { LABELS, allowMigrationLabel } from "../rules/merge-gate.mjs"
 import { cleanup } from "../work.mjs"
 import { conflictsOf, mergeResultFacts } from "./merged-tree.mjs"
 import { billingOfPullRun, rerunFailed, steplessRun } from "./infra-rerun.mjs"
@@ -330,16 +326,11 @@ function githubQueueHead(ctx, n) {
   return { inQueue: snapshot.inQueue, queuedByGitHub: snapshot.queuedHead }
 }
 
-export function admit(facts, { allowMigrations = [], ownerYes = false } = {}) {
+export function admit(facts, { allowMigrations = [] } = {}) {
   const allowed = [
     ...new Set([...(facts.migrations?.allowed ?? []), ...allowMigrations]),
   ]
   const wanted = allowMigrations.map(allowMigrationLabel)
-  const owner = ownerBecause({
-    ...facts,
-    migrations: { ...facts.migrations, allowed },
-  })
-  if (ownerYes && owner.length) wanted.push(LABELS.ownerApproved)
   const have = facts.pull?.labels ?? []
   const add = [...new Set(wanted.filter((label) => !have.includes(label)))]
   const admitted = {
@@ -349,7 +340,7 @@ export function admit(facts, { allowMigrations = [], ownerYes = false } = {}) {
   }
   const live = decide("pr", admitted)
   if (!live.ok) throw refusalError(live.refusals[0])
-  return { facts: admitted, add, owner }
+  return { facts: admitted, add }
 }
 
 function applyLabels(ctx, n, add) {
@@ -566,7 +557,7 @@ export function merge(ctx, n, { wait = false, allowMigrations = [] } = {}) {
           migrations: { files: [], allowed: allowMigrations },
         }
     if (open) {
-      const admitted = admit(facts, { allowMigrations, ownerYes: true })
+      const admitted = admit(facts, { allowMigrations })
       facts = admitted.facts
       applyLabels(ctx, n, admitted.add)
       repo = repoName(ctx)

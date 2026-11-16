@@ -20,9 +20,14 @@
   animation: lm-scroll 32s linear infinite;
 }
 
-.lm-root:hover .lm-track,
 .lm-root[data-paused] .lm-track {
   animation-play-state: paused;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .lm-root:hover .lm-track {
+    animation-play-state: paused;
+  }
 }
 
 .lm-item {
