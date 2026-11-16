@@ -49,21 +49,25 @@ html:has(.landing-root) {
 }
 
 .landing-grid {
-  --landing-gutter-start: max(
-    clamp(1.25rem, 3.34vw, 3rem),
-    env(safe-area-inset-left, 0px)
-  );
-  --landing-gutter-end: max(
-    clamp(1.25rem, 3.34vw, 3rem),
-    env(safe-area-inset-right, 0px)
-  );
   display: grid;
   grid-template-columns:
-    [full-width-start] minmax(var(--landing-gutter-start), 1fr)
+    [full-width-start]
+    minmax(
+      max(clamp(1.25rem, 3.34vw, 3rem), env(safe-area-inset-left, 0px)),
+      1fr
+    )
     [content-start]
-    min(100% - var(--landing-gutter-start) - var(--landing-gutter-end), 84rem)
+    min(
+      100% - max(clamp(1.25rem, 3.34vw, 3rem), env(safe-area-inset-left, 0px)) -
+        max(clamp(1.25rem, 3.34vw, 3rem), env(safe-area-inset-right, 0px)),
+      84rem
+    )
     [content-end]
-    minmax(var(--landing-gutter-end), 1fr) [full-width-end];
+    minmax(
+      max(clamp(1.25rem, 3.34vw, 3rem), env(safe-area-inset-right, 0px)),
+      1fr
+    )
+    [full-width-end];
 }
 
 .landing-grid > * {
