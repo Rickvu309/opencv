@@ -1,5 +1,4 @@
 import assert from "node:assert/strict"
-import { execFileSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 import {
@@ -89,19 +88,37 @@ test("page scaling is refused structurally across viewport and measured-width va
   )
 })
 
-test("the round-two introducing head fails both guards and repaired sources pass", () => {
-  for (const file of [css, layout]) {
-    const old = execFileSync("git", ["show", `28aa8eb4:${file}`], {
-      cwd: root,
-      encoding: "utf8",
-    })
-    assert.ok(detectPageLayout(old, file).length, file)
+const reviewedGapSheet = `.paper-rich-sheet {
+  min-block-size: var(--cv-rich-page-height, 1056px);
+  zoom: var(--cv-rich-page-scale, 1);
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--card) 0 var(--cv-rich-page-height, 1056px),
+    var(--muted) var(--cv-rich-page-height, 1056px)
+      var(--cv-rich-page-pitch, 1080px)
+  );
+}
+
+@media (max-width: 639px) {
+  .paper-rich-sheet [data-paper-layout="paperFlowSection"] > [data-paper-wrap-slot] {
+    column-height: auto !important;
+    column-wrap: nowrap !important;
+  }
+}
+`
+
+const reviewedScale =
+  'element.style.setProperty("--cv-rich-page-scale", String(scale))'
+
+test("the reviewed page sheet fails both guards and repaired sources pass", () => {
+  assert.ok(detectPageLayout(reviewedGapSheet, css).length)
+  assert.ok(detectPageLayout(reviewedScale, layout).length)
+  for (const file of [css, layout])
     assert.deepEqual(
       detectPageLayout(readFileSync(new URL(file, root), "utf8"), file),
       [],
       file
     )
-  }
 })
 
 test("page setup preserves fractional margins and physical phone targets", () => {
@@ -114,11 +131,9 @@ test("page setup preserves fractional margins and physical phone targets", () =>
     assert.notEqual(clean.replaceAll(before, after), clean)
     assert.ok(detectPageLayout(clean.replaceAll(before, after), setup).length)
   }
-  const old = execFileSync("git", ["show", `28aa8eb4:${setup}`], {
-    cwd: root,
-    encoding: "utf8",
-  })
-  const hits = detectPageLayout(old, setup)
+  const reviewedSetup = `<Input type="number" step="0.01" />
+<Button className="min-h-11 md:min-h-8">Cancel</Button>`
+  const hits = detectPageLayout(reviewedSetup, setup)
   assert.ok(hits.some((hit) => hit.includes("fractional")))
   assert.ok(hits.some((hit) => hit.includes("44px")))
 })
