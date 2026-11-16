@@ -29,6 +29,7 @@ test("every workspace package with a test script gets a runner, read from the wo
       "packages/domain",
       "packages/guards",
       "packages/paper-crdt",
+      "packages/stageshow",
       "packages/ui",
     ]
   )
