@@ -1,5 +1,6 @@
-import { useEffect, useReducer, useRef } from "react"
+import { useEffect, useReducer, useRef, type ReactNode } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { Button } from "@workspace/ui/components/button"
 import { toast } from "@workspace/ui/components/sonner"
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
 
@@ -24,7 +25,14 @@ import {
   InboxListPane,
   InboxOverview,
 } from "./inbox-list.tsx"
-import { CompanyChip, GmailMark, InboxSkeletonRows } from "./inbox-parts.tsx"
+import {
+  CompanyChip,
+  GMAIL_UNAVAILABLE_COPY,
+  GmailMark,
+  INBOX_NOTICE,
+  InboxSkeletonRows,
+  VIEW_EXAMPLE_LABEL,
+} from "./inbox-parts.tsx"
 import { InboxReader } from "./inbox-reader.tsx"
 import { inboxConnectReadKeyOutsideContract } from "@/lib/requests.ts"
 
@@ -136,8 +144,7 @@ export function InboxPage() {
     }
   }
 
-  async function onScan() {
-    dispatch({ type: "scan_started" })
+  async function finishScan() {
     try {
       const result = await runCommand("inbox.scan", {})
       dispatch({
@@ -156,6 +163,26 @@ export function InboxPage() {
     }
   }
 
+  async function onScan() {
+    dispatch({ type: "scan_started" })
+    await finishScan()
+  }
+
+  async function onExplore() {
+    dispatch({ type: "skip_started" })
+    dispatch({ type: "scan_started" })
+    try {
+      await runCommand("inbox.skip", {})
+    } catch (error) {
+      toast(messageOf(error))
+      dispatch({ type: "skip_ended" })
+      dispatch({ type: "scan_ended" })
+      return
+    }
+    dispatch({ type: "skip_ended" })
+    await finishScan()
+  }
+
   const index = threads.findIndex((thread) => thread.id === shownId)
 
   const pending = list.isLoading || list.isError
@@ -164,9 +191,8 @@ export function InboxPage() {
     list.data?.connected === false &&
     connect.isSuccess &&
     connect.data?.url == null
-  const exampleNote = exampleMail
-    ? "Gmail is not connected on this server. Scan shows example mail, not yours."
-    : undefined
+  const exampleNote = exampleMail ? GMAIL_UNAVAILABLE_COPY : undefined
+  const scanLabel = exampleMail ? VIEW_EXAMPLE_LABEL : "Scan"
 
   return (
     <div
@@ -175,19 +201,23 @@ export function InboxPage() {
     >
       {titled ? <InboxTitleBar /> : null}
       {list.isLoading || (view === "snoozed" && snoozed.isLoading) ? (
-        <p className="px-5 py-6 text-sm text-muted-foreground">
-          Loading inbox.
-        </p>
+        <InboxNotice>Loading inbox.</InboxNotice>
       ) : null}
       {list.isError ? (
-        <p role="alert" className="px-5 py-6 text-sm">
-          Could not load inbox. Refresh the page.
-        </p>
+        <InboxNotice tone="alert">
+          <InboxRefresh
+            text="Could not load inbox."
+            onRefresh={() => void list.refetch()}
+          />
+        </InboxNotice>
       ) : null}
       {view === "snoozed" && snoozed.isError ? (
-        <p role="alert" className="px-5 py-6 text-sm">
-          Could not load snoozed emails. Refresh the page.
-        </p>
+        <InboxNotice tone="alert">
+          <InboxRefresh
+            text="Could not load snoozed emails."
+            onRefresh={() => void snoozed.refetch()}
+          />
+        </InboxNotice>
       ) : null}
       {scanning ? (
         <div className="flex min-h-0 min-w-0 flex-1">
@@ -196,6 +226,7 @@ export function InboxPage() {
               <InboxListHeader
                 scanning
                 onScan={() => void onScan()}
+                scanLabel={scanLabel}
                 view={view}
                 onViewChange={(next) =>
                   dispatch({ type: "view_changed", view: next })
@@ -215,8 +246,9 @@ export function InboxPage() {
       {!scanning && showConnect ? (
         <InboxConnect
           url={connect.data?.url ?? null}
-          pending={skipping}
+          pending={skipping || scanning != null}
           onSkip={() => void onSkip()}
+          onExplore={() => void onExplore()}
         />
       ) : null}
       {!scanning &&
@@ -235,71 +267,72 @@ export function InboxPage() {
         />
       ) : null}
       {!scanning && (threads.length > 0 || view === "snoozed") ? (
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-          {list.data?.connected === false && threads.length > 0 ? (
-            <p
-              role="status"
-              className="px-5 pt-3 text-sm text-muted-foreground"
-            >
-              Gmail is not connected. These are examples, not your mail.
-            </p>
-          ) : null}
-          <div className="flex min-h-0 min-w-0 flex-1">
-            {narrow && shownId ? null : (
-              <InboxListPane narrow={narrow}>
-                <InboxList
-                  threads={threads}
-                  openId={shownId}
-                  now={now}
-                  zone={zone}
-                  scanning={false}
-                  view={view}
-                  onViewChange={(next) =>
-                    dispatch({ type: "view_changed", view: next })
-                  }
-                  onOpen={(id) => dispatch({ type: "thread_opened", id })}
-                  onScan={() => void onScan()}
-                />
-              </InboxListPane>
-            )}
-            {!narrow && !shownId && view === "inbox" ? (
-              <InboxOverview threads={threads} />
-            ) : null}
-            {shownId && detail.data ? (
-              <InboxReader
-                key={detail.data.id}
-                detail={detail.data}
-                index={index + 1}
-                count={threads.length}
-                narrow={narrow}
+        <div className="flex min-h-0 min-w-0 flex-1">
+          {narrow && shownId ? null : (
+            <InboxListPane narrow={narrow}>
+              <InboxList
+                threads={threads}
+                openId={shownId}
                 now={now}
                 zone={zone}
-                onBack={() => dispatch({ type: "thread_closed" })}
-                onReturnedToInbox={() =>
-                  dispatch({ type: "view_changed", view: "inbox" })
+                scanning={false}
+                view={view}
+                notice={
+                  list.data?.connected === false && threads.length > 0
+                    ? GMAIL_UNAVAILABLE_COPY
+                    : undefined
                 }
-                onPrevious={() => {
-                  const previous = threads[index - 1]
-                  if (previous)
-                    dispatch({ type: "thread_opened", id: previous.id })
-                }}
-                onNext={() => {
-                  const next = threads[index + 1]
-                  if (next) dispatch({ type: "thread_opened", id: next.id })
-                }}
+                scanLabel={scanLabel}
+                onViewChange={(next) =>
+                  dispatch({ type: "view_changed", view: next })
+                }
+                onOpen={(id) => dispatch({ type: "thread_opened", id })}
+                onScan={() => void onScan()}
               />
-            ) : null}
-            {shownId && detail.isLoading ? (
-              <p className="px-5 py-6 text-sm text-muted-foreground">
-                Loading inbox.
-              </p>
-            ) : null}
-            {shownId && detail.isError ? (
-              <p role="alert" className="px-5 py-6 text-sm">
-                Could not load inbox. Refresh the page.
-              </p>
-            ) : null}
-          </div>
+            </InboxListPane>
+          )}
+          {!narrow && !shownId && view === "inbox" ? (
+            <InboxOverview threads={threads} />
+          ) : null}
+          {shownId && detail.data ? (
+            <InboxReader
+              key={detail.data.id}
+              detail={detail.data}
+              index={index + 1}
+              count={threads.length}
+              narrow={narrow}
+              now={now}
+              zone={zone}
+              onBack={() => dispatch({ type: "thread_closed" })}
+              onReturnedToInbox={() =>
+                dispatch({ type: "view_changed", view: "inbox" })
+              }
+              onPrevious={() => {
+                const previous = threads[index - 1]
+                if (previous)
+                  dispatch({ type: "thread_opened", id: previous.id })
+              }}
+              onNext={() => {
+                const next = threads[index + 1]
+                if (next) dispatch({ type: "thread_opened", id: next.id })
+              }}
+            />
+          ) : null}
+          {shownId && (detail.isLoading || detail.isError) ? (
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+              {detail.isLoading ? (
+                <InboxNotice>Loading this email.</InboxNotice>
+              ) : null}
+              {detail.isError ? (
+                <InboxNotice tone="alert">
+                  <InboxRefresh
+                    text="Could not load this email."
+                    onRefresh={() => void detail.refetch()}
+                  />
+                </InboxNotice>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>
@@ -352,6 +385,37 @@ function Scanning({
         ))}
       </ul>
     </section>
+  )
+}
+
+function InboxNotice({
+  children,
+  tone = "status",
+}: {
+  children: ReactNode
+  tone?: "status" | "alert"
+}) {
+  return (
+    <div role={tone} className={`mx-5 my-4 ${INBOX_NOTICE}`}>
+      {children}
+    </div>
+  )
+}
+
+function InboxRefresh({
+  text,
+  onRefresh,
+}: {
+  text: string
+  onRefresh: () => void
+}) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3">
+      <p>{text}</p>
+      <Button variant="outline" className="h-11 md:h-8" onClick={onRefresh}>
+        Refresh
+      </Button>
+    </div>
   )
 }
 

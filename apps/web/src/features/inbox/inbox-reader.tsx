@@ -29,7 +29,12 @@ import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
 import { inboxLimitFrom, isCoachLimit } from "./inbox-api.ts"
 import { InboxReaderHeader } from "./inbox-reader-header.tsx"
 import { initialReaderState, readerReducer } from "./inbox-reader.reducer.ts"
-import { FAINT_TEXT, GmailMark, SOFT_TEXT } from "./inbox-parts.tsx"
+import {
+  FAINT_TEXT,
+  GmailMark,
+  INBOX_NOTICE,
+  SOFT_TEXT,
+} from "./inbox-parts.tsx"
 import { chipClock, inboxChip, inboxStamp, inboxWhen } from "./inbox-time.ts"
 
 function resetClock(iso: string | null, zone: string) {
@@ -161,7 +166,7 @@ export function InboxReader({
             <ArrowUpRight className="size-3" />
           </Button>
           <span id="inbox-gmail-closed" className="sr-only">
-            Gmail is not connected
+            Gmail connection isn't available yet.
           </span>
         </div>
         {prompt ? (
@@ -363,8 +368,9 @@ export function InboxReader({
               </div>
               {limit ? (
                 <div
-                  role="alert"
-                  className="flex flex-col gap-1 px-4 pt-3 text-sm"
+                  role="status"
+                  data-slot="inbox-cap-notice"
+                  className={`mx-4 mt-3 flex flex-col gap-1 ${INBOX_NOTICE}`}
                 >
                   <p>You've reached today's Free limit.</p>
                   <p>{limit.message}</p>

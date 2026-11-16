@@ -16,6 +16,7 @@ import { toast, toastWithUndo } from "@workspace/ui/components/sonner"
 import { reportRejected } from "@/lib/command-failure.ts"
 import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
 
+import { INBOX_MORE_REASON } from "./inbox-parts.tsx"
 import { nextMorningIso, SNOOZED_UNTIL_WAKE_TOAST } from "./inbox-time.ts"
 
 export function InboxReaderHeader({
@@ -119,8 +120,18 @@ export function InboxReaderHeader({
         <PageHeaderAction
           label="More"
           icon={<Ellipsis />}
-          disabled
-          className="max-md:hidden"
+          className="opacity-50 max-md:hidden"
+          hint={INBOX_MORE_REASON}
+          render={
+            <Button
+              type="button"
+              variant="ghost"
+              aria-disabled="true"
+              aria-describedby="inbox-reader-more-reason"
+              data-slot="page-header-action"
+              onClick={(event) => event.preventDefault()}
+            />
+          }
         />
         <PageHeaderAction
           label="Previous"
@@ -137,6 +148,9 @@ export function InboxReaderHeader({
           onSelect={onNext}
         />
       </PageHeaderActions>
+      <span id="inbox-reader-more-reason" className="sr-only">
+        {INBOX_MORE_REASON}
+      </span>
     </PageHeader>
   )
 }

@@ -8,6 +8,12 @@ import { companyInitials } from "@/features/apply/apply-stages.ts"
 
 export const SOFT_TEXT = "text-muted-foreground"
 export const FAINT_TEXT = "text-muted-foreground"
+export const GMAIL_UNAVAILABLE_COPY =
+  "Gmail connection isn't available yet. You can explore an example inbox."
+export const VIEW_EXAMPLE_LABEL = "View example inbox"
+export const INBOX_MORE_REASON = "No other actions for this email."
+export const INBOX_NOTICE =
+  "rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm leading-normal text-pretty text-foreground"
 
 export function GmailMark({ className }: { className?: string }) {
   return (

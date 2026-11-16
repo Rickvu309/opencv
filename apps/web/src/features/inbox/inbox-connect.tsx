@@ -17,7 +17,13 @@ import { PageHeaderTitle } from "@workspace/ui/components/page-header"
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { FAINT_TEXT, GmailMark, SOFT_TEXT } from "./inbox-parts.tsx"
+import {
+  FAINT_TEXT,
+  GMAIL_UNAVAILABLE_COPY,
+  GmailMark,
+  SOFT_TEXT,
+  VIEW_EXAMPLE_LABEL,
+} from "./inbox-parts.tsx"
 
 const TILE =
   "flex size-14 shrink-0 items-center justify-center rounded-2xl border border-border bg-linear-to-b from-card to-secondary shadow-md"
@@ -54,10 +60,12 @@ export function InboxConnect({
   url,
   pending,
   onSkip,
+  onExplore,
 }: {
   url: string | null
   pending: boolean
   onSkip: () => void
+  onExplore: () => void
 }) {
   const closed = url == null
   return (
@@ -106,8 +114,19 @@ export function InboxConnect({
           ))}
         </ul>
         <div className="flex flex-col gap-3.5">
-          <div className="flex flex-wrap items-center gap-4.5">
+          <div className="flex max-w-full flex-wrap items-center gap-3">
+            {closed ? (
+              <Button
+                className="h-11 gap-2.5 rounded-[10px] ps-3.5 pe-4.5 text-[14.5px] shadow-xs"
+                disabled={pending}
+                aria-describedby="inbox-gmail-hint"
+                onClick={onExplore}
+              >
+                {VIEW_EXAMPLE_LABEL}
+              </Button>
+            ) : null}
             <Button
+              variant={closed ? "outline" : "default"}
               className="h-11 gap-2.5 rounded-[10px] ps-3.5 pe-4.5 text-[14.5px] shadow-xs"
               disabled={closed}
               aria-describedby={closed ? "inbox-gmail-hint" : undefined}
@@ -118,15 +137,35 @@ export function InboxConnect({
               <GmailMark className="h-4 w-5.5" />
               Connect Gmail
             </Button>
+            {closed ? null : (
+              <Button
+                variant="ghost"
+                className={cn("h-11 px-2 text-[13.5px] md:h-8", SOFT_TEXT)}
+                disabled={pending}
+                onClick={onSkip}
+              >
+                Skip for now
+              </Button>
+            )}
+          </div>
+          {closed ? (
+            <p
+              id="inbox-gmail-hint"
+              className="max-w-105 text-sm leading-normal text-pretty text-foreground"
+            >
+              {GMAIL_UNAVAILABLE_COPY}
+            </p>
+          ) : null}
+          {closed ? (
             <Button
               variant="ghost"
-              className={cn("h-11 px-2 text-[13.5px] md:h-8", SOFT_TEXT)}
+              className={cn("h-11 w-fit px-2 text-[13.5px] md:h-8", SOFT_TEXT)}
               disabled={pending}
               onClick={onSkip}
             >
               Skip for now
             </Button>
-          </div>
+          ) : null}
           <p
             data-user-content
             className={cn("flex items-center gap-1.75 text-xs", FAINT_TEXT)}
@@ -134,11 +173,6 @@ export function InboxConnect({
             <Lock className="size-3.25 shrink-0" aria-hidden />
             Reads job emails only. Nothing is sent without you.
           </p>
-          {closed ? (
-            <p id="inbox-gmail-hint" className="text-sm text-muted-foreground">
-              Gmail is not connected on this server. You can skip for now.
-            </p>
-          ) : null}
         </div>
       </section>
       <aside

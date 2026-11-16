@@ -66,6 +66,12 @@ describe("inbox reader header", () => {
       expect(screen.getByRole("button", { name })).toBeInTheDocument()
     }
     expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled()
+    const more = screen.getByRole("button", { name: "More" })
+    expect(more).toHaveAttribute("aria-disabled", "true")
+    expect(more).toHaveAttribute("aria-describedby", "inbox-reader-more-reason")
+    expect(
+      screen.getByText("No other actions for this email.")
+    ).toBeInTheDocument()
     expect(
       screen.getByRole("button", { name: "More actions" })
     ).toBeInTheDocument()
@@ -329,9 +335,11 @@ describe("inbox reader", () => {
     await userEvent.click(
       screen.getByRole("button", { name: "Suggest another time" })
     )
-    expect(
-      await screen.findByText("You've reached today's Free limit.")
-    ).toBeInTheDocument()
+    const notice = await screen.findByRole("status")
+    expect(notice).toHaveTextContent("You've reached today's Free limit.")
+    expect(notice).toHaveAttribute("data-slot", "inbox-cap-notice")
+    expect(notice.className).toContain("border")
+    expect(notice.className).toContain("bg-muted/50")
     expect(
       screen.getByText(
         "You've reached today's Free limit. Resets at 7:00. Pro has unlimited Coach chats."

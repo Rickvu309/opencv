@@ -22,7 +22,7 @@ import {
 } from "@workspace/ui/components/page-header"
 
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
-import { InboxRow } from "./inbox-parts.tsx"
+import { InboxRow, VIEW_EXAMPLE_LABEL } from "./inbox-parts.tsx"
 import { inboxWhen, unreadCount } from "./inbox-time.ts"
 
 export function InboxListPane({
@@ -49,11 +49,13 @@ export function InboxListPane({
 export function InboxListHeader({
   scanning,
   onScan,
+  scanLabel = "Scan",
   view,
   onViewChange,
 }: {
   scanning: boolean
   onScan: () => void
+  scanLabel?: string
   view: "inbox" | "snoozed"
   onViewChange: (view: "inbox" | "snoozed") => void
 }) {
@@ -82,7 +84,7 @@ export function InboxListHeader({
           />
           <DropdownMenuContent align="start">
             <DropdownMenuItem disabled={scanning} onClick={onScan}>
-              Scan
+              {scanLabel}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -107,6 +109,8 @@ export function InboxList({
   zone,
   onOpen,
   onScan,
+  scanLabel = "Scan",
+  notice,
   scanning,
   view,
   onViewChange,
@@ -117,6 +121,8 @@ export function InboxList({
   zone?: string
   onOpen: (id: string) => void
   onScan: () => void
+  scanLabel?: string
+  notice?: string
   scanning: boolean
   view: "inbox" | "snoozed"
   onViewChange: (view: "inbox" | "snoozed") => void
@@ -129,9 +135,11 @@ export function InboxList({
       <InboxListHeader
         scanning={scanning}
         onScan={onScan}
+        scanLabel={scanLabel}
         view={view}
         onViewChange={onViewChange}
       />
+      {notice ? <InboxExampleBanner text={notice} /> : null}
       <div
         data-user-content
         className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto p-2"
@@ -187,17 +195,19 @@ export function InboxEmpty({
   onViewChange: (view: "inbox" | "snoozed") => void
   note?: string
 }) {
+  const example = Boolean(note)
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col">
       <InboxListHeader
         scanning={scanning}
         onScan={onScan}
+        scanLabel={example ? VIEW_EXAMPLE_LABEL : "Scan"}
         view={view}
         onViewChange={onViewChange}
       />
       <section
         aria-label="Messages"
-        className="flex min-h-0 flex-1 items-center justify-center p-6"
+        className="flex min-h-0 min-w-0 flex-1 items-center justify-center p-6"
       >
         <Empty>
           <EmptyHeader>
@@ -205,21 +215,33 @@ export function InboxEmpty({
           </EmptyHeader>
           <EmptyContent>
             {note ? (
-              <p className="max-w-sm text-center text-sm text-muted-foreground">
+              <p className="max-w-sm text-center text-sm leading-normal text-pretty text-foreground">
                 {note}
               </p>
             ) : null}
             <Button
-              className="h-11 md:h-8"
-              variant="ghost"
+              className="h-11 max-w-full md:h-8"
+              variant={example ? "outline" : "ghost"}
               disabled={scanning}
               onClick={onScan}
             >
-              Scan
+              {example ? VIEW_EXAMPLE_LABEL : "Scan"}
             </Button>
           </EmptyContent>
         </Empty>
       </section>
     </div>
+  )
+}
+
+function InboxExampleBanner({ text }: { text: string }) {
+  return (
+    <p
+      role="status"
+      data-slot="inbox-example-banner"
+      className="mx-3 mt-2 rounded-md border border-border bg-muted/50 px-3 py-2 text-[13px] leading-normal text-pretty text-foreground"
+    >
+      {text}
+    </p>
   )
 }
