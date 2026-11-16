@@ -16,6 +16,7 @@ import {
   mountRichPaperEditor,
   type RichMark,
 } from "@workspace/paper-crdt/editor"
+import { RichPaperTextFormatting } from "./rich-text-formatting"
 import { openRichPaperSession } from "@/lib/paper-rich.ts"
 import { resolvePhotoSrc } from "@/lib/requests.ts"
 import type { NativeSyncIdentity } from "@/lib/paper-sync-identity.ts"
@@ -158,11 +159,7 @@ export function RichPaperPage({
             : SYNC_LABEL[status]}
         </span>
       </PageHeader>
-      <div
-        role="toolbar"
-        aria-label="Text formatting"
-        className="flex flex-wrap items-center gap-3 border-b px-4 py-2"
-      >
+      <RichPaperTextFormatting editor={editor} blocked={blocked}>
         {marks.map(({ mark, label, Icon }) => (
           <Button
             key={mark}
@@ -182,7 +179,7 @@ export function RichPaperPage({
             <Icon />
           </Button>
         ))}
-      </div>
+      </RichPaperTextFormatting>
       {blocked ? (
         <p role="alert" className="p-6 text-sm">
           Paper could not safely open these changes. Your saved document and

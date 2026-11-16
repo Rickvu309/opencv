@@ -54,6 +54,18 @@ export function mountRichPaperEditor(
         mounted.setInline({ [mark]: !mounted.activeInline()[mark] })
         view.focus()
       },
+      formatInline(input: Parameters<typeof mounted.formatInline>[0]) {
+        if (!active) throw new Error("Paper editor is closed")
+        mounted.formatInline(input)
+      },
+      formatParagraph(input: Parameters<typeof mounted.formatParagraph>[0]) {
+        if (!active) throw new Error("Paper editor is closed")
+        mounted.formatParagraph(input)
+      },
+      activeFormatting() {
+        if (!active) throw new Error("Paper editor is closed")
+        return mounted.activeFormatting()
+      },
       activeMarks() {
         if (!active) return {}
         const styles = mounted.activeInline()
