@@ -28,7 +28,7 @@ export function layoutDecorations(
           : `clear:both;margin-left:${photo.placement.alignment === "left" ? "0" : "auto"};margin-right:${photo.placement.alignment === "right" ? "0" : "auto"}`
       decorations.push(
         Decoration.node(pos, pos + node.nodeSize, {
-          style: `display:block;width:${(bounds.width + photo.spacing.left + photo.spacing.right) / 20}pt;${placement}`,
+          style: `display:block;max-width:100%;width:${(bounds.width + photo.spacing.left + photo.spacing.right) / 20}pt;${placement}`,
           "data-paper-photo-placement": photo.placement.kind,
         })
       )
