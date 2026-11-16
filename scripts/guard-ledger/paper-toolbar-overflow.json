@@ -1,0 +1,10 @@
+{
+  "id": "paper-toolbar-overflow",
+  "file": "scripts/paper-toolbar-overflow.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-toolbar-overflow.mjs",
+    "export": "detect"
+  },
+  "historic": null,
+  "reason": "Runtime geometry needs a browser unavailable to the guards job. Run scripts/paper-toolbar-overflow.browser.mjs locally with PAPER_TOOLBAR_REF=641e3ef5 for greedy fill and PAPER_TOOLBAR_REF=3eeadf98 for 320px clipping; both must fail, while the working tree passes. CI runs the pure geometry detector fixtures. Desktop sidebar regression: PAPER_TOOLBAR_REF=6736f401 must fail the main control-order and four-separator geometry guard at 1440; the working tree passes at 1440 and 1280 with the sidebar. Font-floor regression: the pure detector fixtures cover pairwise overlap and the 112px minimum in the 1286-1325 sidebar band, and the local browser proof passes that band. Indent pairs remain on one surface and take priority over later controls."
+}

@@ -22,6 +22,8 @@ import { List, ListOrdered, Link, RemoveFormatting } from "lucide-react"
 
 import { ToolbarHint } from "./rich-text-toolbar-control.tsx"
 
+import { ToolbarItem } from "./rich-text-toolbar-item.tsx"
+
 type Editor = ReturnType<typeof mountRichPaperEditor>
 type LinkDialog =
   | { kind: "closed" }
@@ -143,46 +145,52 @@ export function RichStructureControls({
     },
   ]
   const styleControl = (
-    <Select
-      onOpenChangeComplete={finishInteraction}
-      value={state?.mixedStyle ? "mixed" : (state?.paragraphStyle ?? "normal")}
-      disabled={disabled}
-      onValueChange={(value) => {
-        const style = editor?.paragraphStyles.find((item) => item.id === value)
-        if (style) editor?.apply(() => editor.setParagraphStyle(style.id))
-      }}
-    >
-      <SelectTrigger
-        aria-label="Paragraph style"
-        className="min-h-11 w-36 shrink-0 border-transparent px-2 md:min-h-8"
+    <ToolbarItem label="Paragraph style">
+      <Select
+        onOpenChangeComplete={finishInteraction}
+        value={
+          state?.mixedStyle ? "mixed" : (state?.paragraphStyle ?? "normal")
+        }
+        disabled={disabled}
+        onValueChange={(value) => {
+          const style = editor?.paragraphStyles.find(
+            (item) => item.id === value
+          )
+          if (style) editor?.apply(() => editor.setParagraphStyle(style.id))
+        }}
       >
-        <SelectValue>
-          {state?.mixedStyle
-            ? "Mixed styles"
-            : (editor?.paragraphStyles.find(
-                (style) => style.id === state?.paragraphStyle
-              )?.label ??
-              (state?.paragraphStyle ? "Custom style" : undefined) ??
-              "Normal text")}
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent finalFocus={returnToDocument}>
-        {state?.mixedStyle ? (
-          <SelectItem value="mixed" disabled className="min-h-11 md:min-h-8">
-            Mixed styles
-          </SelectItem>
-        ) : null}
-        {editor?.paragraphStyles.map((style) => (
-          <SelectItem
-            key={style.id}
-            value={style.id}
-            className="min-h-11 md:min-h-8"
-          >
-            {style.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+        <SelectTrigger
+          aria-label="Paragraph style"
+          className="min-h-11 w-36 shrink-0 border-transparent px-2 md:min-h-8"
+        >
+          <SelectValue>
+            {state?.mixedStyle
+              ? "Mixed styles"
+              : (editor?.paragraphStyles.find(
+                  (style) => style.id === state?.paragraphStyle
+                )?.label ??
+                (state?.paragraphStyle ? "Custom style" : undefined) ??
+                "Normal text")}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent finalFocus={returnToDocument}>
+          {state?.mixedStyle ? (
+            <SelectItem value="mixed" disabled className="min-h-11 md:min-h-8">
+              Mixed styles
+            </SelectItem>
+          ) : null}
+          {editor?.paragraphStyles.map((style) => (
+            <SelectItem
+              key={style.id}
+              value={style.id}
+              className="min-h-11 md:min-h-8"
+            >
+              {style.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </ToolbarItem>
   )
   const structureControls = controls.map(control)
   return (
@@ -330,23 +338,25 @@ export function RichStructureControls({
   )
   function control(item: (typeof controls)[number]) {
     return (
-      <ToolbarHint key={item.label} label={item.label}>
-        <Button
-          variant={item.pressed ? "secondary" : "ghost"}
-          size="icon"
-          className="size-11 shrink-0 md:size-8"
-          aria-label={item.label}
-          aria-pressed={item.pressed}
-          disabled={disabled || item.disabled}
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={() => {
-            editor?.apply(item.action)
-            refresh()
-          }}
-        >
-          <item.Icon />
-        </Button>
-      </ToolbarHint>
+      <ToolbarItem key={item.label} label={item.label}>
+        <ToolbarHint label={item.label}>
+          <Button
+            variant={item.pressed ? "secondary" : "ghost"}
+            size="icon"
+            className="size-11 shrink-0 md:size-8"
+            aria-label={item.label}
+            aria-pressed={item.pressed}
+            disabled={disabled || item.disabled}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => {
+              editor?.apply(item.action)
+              refresh()
+            }}
+          >
+            <item.Icon />
+          </Button>
+        </ToolbarHint>
+      </ToolbarItem>
     )
   }
 }

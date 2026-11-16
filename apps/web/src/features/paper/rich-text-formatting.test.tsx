@@ -21,6 +21,67 @@ const disposals: (() => void)[] = []
 let width = 1200
 beforeEach(() => {
   width = 1200
+  const computedStyle = window.getComputedStyle.bind(window)
+  vi.spyOn(window, "getComputedStyle").mockImplementation((element) => {
+    const style = computedStyle(element)
+    if (
+      element.getAttribute("role") === "toolbar" ||
+      element.hasAttribute("data-toolbar-more")
+    )
+      return new Proxy(style, {
+        get(target, property) {
+          if (property === "columnGap") return "4px"
+          if (
+            property === "paddingInlineStart" ||
+            property === "paddingInlineEnd"
+          )
+            return "12px"
+          return Reflect.get(target, property)
+        },
+      })
+    return style
+  })
+  vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(
+    function () {
+      const label = this.getAttribute("data-toolbar-item")
+      const phone = width < 768
+      if (this.tagName.toLowerCase() === "svg") return new DOMRect(0, 0, 16, 16)
+      if (label)
+        return new DOMRect(
+          0,
+          0,
+          label === "Font"
+            ? 176
+            : label === "Text size"
+              ? 80
+              : label === "Line spacing" ||
+                  label === "Special indent" ||
+                  label.startsWith("Alignment")
+                ? 56
+                : label === "Paragraph style"
+                  ? 144
+                  : phone
+                    ? 44
+                    : 32,
+          phone ? 44 : 32
+        )
+      if (this.hasAttribute("data-toolbar-more-label"))
+        return new DOMRect(0, 0, 32, 20)
+      if (this.hasAttribute("data-toolbar-more"))
+        return new DOMRect(0, 0, 76, phone ? 44 : 32)
+      if (this.hasAttribute("data-toolbar-pinned"))
+        return new DOMRect(
+          0,
+          0,
+          this.getAttribute("role") === "separator" ? 1 : phone ? 92 : 68,
+          44
+        )
+      if (this.getAttribute("role") === "toolbar")
+        return new DOMRect(0, 0, width, 60)
+      return new DOMRect()
+    }
+  )
+  disposals.push(() => vi.restoreAllMocks())
   const observer = globalThis.ResizeObserver
   globalThis.ResizeObserver = class implements ResizeObserver {
     constructor(private callback: ResizeObserverCallback) {}
@@ -398,4 +459,90 @@ it("uses one indent pair for list levels and paragraph indentation", async () =>
     screen.getAllByRole("button", { name: /Decrease indent/ })
   ).toHaveLength(1)
   expect(client.document()).toEqual(before)
+})
+
+it("uses main's inline controls and More contents before width is known", async () => {
+  width = 0
+  const user = userEvent.setup()
+  setup(false, true)
+  const toolbar = screen.getByRole("toolbar", { name: "Text formatting" })
+  expect(
+    within(toolbar)
+      .getAllByRole("button")
+      .map((button) => button.getAttribute("aria-label"))
+  ).toEqual([
+    shortcutLabel("Undo (Ctrl+Z)"),
+    shortcutLabel("Redo (Ctrl+Shift+Z)"),
+    "Bold",
+    "Italic",
+    "Underline",
+    "More formatting",
+  ])
+  expect(within(toolbar).queryByRole("combobox")).toBeNull()
+  await user.click(screen.getByRole("button", { name: "More formatting" }))
+  const menu = screen.getByRole("dialog", { name: "More formatting" })
+  expect(
+    within(menu).getByRole("combobox", { name: "Paragraph style" })
+  ).toBeVisible()
+  expect(within(menu).getByRole("combobox", { name: "Font" })).toBeVisible()
+  expect(
+    within(menu).getByRole("combobox", { name: "Text size" })
+  ).toBeVisible()
+  for (const name of [
+    "Strikethrough",
+    "Text color",
+    "Highlight",
+    "Insert photo",
+    "Link",
+    "Bulleted list",
+    "Numbered list",
+    "Remove formatting",
+  ])
+    expect(
+      within(menu).getByRole("button", { name, exact: true })
+    ).toBeVisible()
+  for (const name of ["Bold", "Italic", "Underline"])
+    expect(within(menu).queryByRole("button", { name, exact: true })).toBeNull()
+})
+
+it("restores main's fallback and measures again when the editor returns", () => {
+  width = 390
+  const { editor, rerender } = setup()
+  expect(screen.getByRole("button", { name: "More formatting" })).toBeVisible()
+  width = 0
+  rerender(<RichPaperTextFormatting editor={null} blocked={false} />)
+  for (const name of ["Bold", "Italic", "Underline", "More formatting"])
+    expect(screen.getByRole("button", { name, exact: true })).toBeVisible()
+  expect(screen.queryByRole("button", { name: "Link", exact: true })).toBeNull()
+  expect(screen.queryByRole("combobox", { name: "Font" })).toBeNull()
+  width = 240
+  rerender(<RichPaperTextFormatting editor={editor} blocked={false} />)
+  expect(screen.getByRole("button", { name: "More formatting" })).toBeVisible()
+  expect(
+    screen.queryByRole("button", { name: "Underline", exact: true })
+  ).toBeNull()
+})
+
+it("closes More when widening and keeps empty groups out of its accessible contents", async () => {
+  width = 859
+  const user = userEvent.setup()
+  const { editor, rerender } = setup()
+  await user.click(screen.getByRole("button", { name: "More formatting" }))
+  const menu = screen.getByRole("dialog", { name: "More formatting" })
+  for (const group of within(menu).queryAllByRole("group"))
+    expect(
+      within(group).queryAllByRole("button").length +
+        within(group).queryAllByRole("combobox").length
+    ).toBeGreaterThan(0)
+  width = 1440
+  rerender(<RichPaperTextFormatting editor={null} blocked={false} />)
+  await waitFor(() =>
+    expect(screen.queryByRole("dialog", { name: "More formatting" })).toBeNull()
+  )
+  width = 859
+  rerender(<RichPaperTextFormatting editor={editor} blocked={false} />)
+  expect(
+    screen.getByRole("button", { name: "More formatting" })
+  ).toHaveAttribute("aria-expanded", "false")
+  expect(screen.queryByRole("dialog", { name: "More formatting" })).toBeNull()
 })
