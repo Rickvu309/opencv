@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/native-output/formatted-layout.test.ts",
+    "because": "Rich cell links inherit the shared Word Hyperlink style rather than direct underline and per-link color.",
+    "replacedBy": "apps/api/src/paper/native-output/formatted-layout.test.ts",
+    "proof": {
+      "fork": "0342e329d002417ffc17ee98011225ffbc1aba9b",
+      "replacedByBlob": "993695b2b92041d62d3f12333762c60fca81224b",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
