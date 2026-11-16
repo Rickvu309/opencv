@@ -309,9 +309,7 @@ describe("job detail", () => {
 
   it("shows a message instead of crashing when the link has a bad job id", async () => {
     renderApp("/apply/not-a-job-id")
-    expect(
-      await screen.findByText("Could not load jobs. Check the link.")
-    ).toBeTruthy()
+    expect(await screen.findByText("This job link isn't valid.")).toBeTruthy()
   })
 
   it("opens the next job with no delete dialog left open after a delete", async () => {

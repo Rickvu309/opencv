@@ -168,7 +168,7 @@ export function ApplyToolbar({
                     )
                   : null}
                 {priorityCountsFailed ? (
-                  <span>Could not load priority counts.</span>
+                  <span>Couldn't load priority counts.</span>
                 ) : null}
               </div>
             </div>
