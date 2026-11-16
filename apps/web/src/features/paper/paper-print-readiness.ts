@@ -79,6 +79,11 @@ export function capturePrintReadiness(signal: AbortSignal) {
       selected: image.currentSrc,
     }))
   const fonts = textFonts(sheets)
+  const fontTexts = new Map<string, string>()
+  for (const { font, text } of fonts) {
+    fontTexts.set(font, (fontTexts.get(font) ?? "") + text)
+  }
+  const requiredFonts = [...fontTexts].map(([font, text]) => ({ font, text }))
   const matches = () => {
     const current = printSheets()
     const images = current.flatMap((sheet) => [
@@ -115,7 +120,7 @@ export function capturePrintReadiness(signal: AbortSignal) {
       if (!matches()) throw new Error("Paper changed")
       photo.selected = photo.image.currentSrc
     }),
-    ...fonts.map(async ({ font, text }) => {
+    ...requiredFonts.map(async ({ font, text }) => {
       if (!document.fonts) return
       const faces = await document.fonts.load(font, text)
       if (
@@ -130,7 +135,7 @@ export function capturePrintReadiness(signal: AbortSignal) {
     isCurrent: () =>
       matches() &&
       photos.every(({ image }) => loadedPhoto(image)) &&
-      fonts.every(
+      requiredFonts.every(
         ({ font, text }) => !document.fonts || document.fonts.check(font, text)
       ),
   }

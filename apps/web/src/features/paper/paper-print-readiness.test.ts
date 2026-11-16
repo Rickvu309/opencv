@@ -115,7 +115,9 @@ describe("Paper print readiness", () => {
     photo.reject(new Error("Unavailable photo"))
     await settle()
     expect(print).not.toHaveBeenCalled()
-    expect(toast.error).toHaveBeenCalledTimes(1)
+    expect(toast.error).toHaveBeenCalledWith(
+      "Paper could not print because a photo or font did not load. Try Download PDF again, or replace the photo."
+    )
     expect(done).toHaveBeenCalledTimes(1)
     expect(document.body).not.toHaveAttribute("data-print")
     expect(document.title).toBe("Workspace")
@@ -344,7 +346,21 @@ describe("Paper print readiness", () => {
     }
   )
 
-  it("cancels quietly, releases the caller once and cannot print later", async () => {
+  it("loads and checks each distinct font once with all its text", async () => {
+    const root = sheet()
+    root.innerHTML = "<p>Alpha</p><p>Beta Ω</p>"
+    begin()
+    await settle()
+    expect(document.fonts.load).toHaveBeenCalledTimes(1)
+    expect(document.fonts.load).toHaveBeenCalledWith(
+      expect.any(String),
+      "AlphaBeta Ω"
+    )
+    expect(document.fonts.check).toHaveBeenCalledTimes(2)
+    expect(print).toHaveBeenCalledTimes(1)
+  })
+
+  it("cancels quietly without completing the caller and cannot print later", async () => {
     const photo = deferred()
     image(sheet(), photo.promise)
     const { stop, done } = begin()
@@ -354,7 +370,7 @@ describe("Paper print readiness", () => {
     await settle()
     window.dispatchEvent(new Event("afterprint"))
     expect(print).not.toHaveBeenCalled()
-    expect(done).toHaveBeenCalledTimes(1)
+    expect(done).not.toHaveBeenCalled()
     expect(toast.error).not.toHaveBeenCalled()
     expect(document.title).toBe("Workspace")
     expect(document.body).not.toHaveAttribute("data-print")
@@ -365,6 +381,7 @@ describe("Paper print readiness", () => {
     sheet()
     const first = begin()
     const second = begin()
+    first.stop()
     first.stop()
     await settle()
     expect(print).toHaveBeenCalledTimes(1)
@@ -459,7 +476,7 @@ describe("Paper print readiness", () => {
     img.dispatchEvent(new Event("error"))
     await settle()
     expect(print).not.toHaveBeenCalled()
-    expect(done).toHaveBeenCalledTimes(1)
+    expect(done).not.toHaveBeenCalled()
     expect(toast.error).not.toHaveBeenCalled()
     expect(vi.getTimerCount()).toBe(0)
   })

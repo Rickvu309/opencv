@@ -62,7 +62,7 @@ export function printPaper(title: string | undefined, onDone?: () => void) {
   let finished = false
   let timer = 0
 
-  const finish = () => {
+  const cancel = () => {
     if (finished) return
     finished = true
     window.clearTimeout(timer)
@@ -71,6 +71,10 @@ export function printPaper(title: string | undefined, onDone?: () => void) {
     root.removeAttribute("data-print")
     if (title) document.title = previousTitle
     if (cancelActivePrint === finish) cancelActivePrint = undefined
+  }
+  const finish = () => {
+    if (finished) return
+    cancel()
     onDone?.()
   }
   cancelActivePrint = finish
@@ -82,7 +86,7 @@ export function printPaper(title: string | undefined, onDone?: () => void) {
     if (finished) return
     finish()
     toast.error(
-      "Paper could not print. Check that photos and fonts have loaded, then try Download PDF again."
+      "Paper could not print because a photo or font did not load. Try Download PDF again, or replace the photo."
     )
   }
   try {
@@ -109,5 +113,5 @@ export function printPaper(title: string | undefined, onDone?: () => void) {
   } catch {
     refuse()
   }
-  return finish
+  return cancel
 }
