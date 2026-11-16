@@ -10,7 +10,7 @@ export const COMMANDS = [
   {
     name: "finish",
     usage: "finish --body-file <file> [-d <description>] [--draft] [--dry-run]",
-    when: "Run the pull request rules early, push through the hooks and open the PR (--draft opens a draft). Every problem in the body is named in one message. Unless the PR is a draft or owner class (a risk:high file, a file that decides what may merge such as scripts/ocv-tools, the hooks or the GitHub workflows, actions, rulesets and labels, or a migration off the only-adds list), it turns on auto-merge, so the PR merges by itself when ci is green; if GitHub refuses auto-merge, it says so in one line and the coordinator merges with merge <pr#>. --dry-run checks only the body, not the title, pushes nothing and opens nothing, so it works with unsaved changes.",
+    when: "Run the pull request rules early, push through the hooks and open the PR (--draft opens a draft). Every problem in the body is named in one message. Unless the PR is a draft or blocked by the migration allow-label or production-red rules, it turns on auto-merge, so the PR merges by itself when ci is green; if GitHub refuses auto-merge, it says so in one line and the coordinator merges with merge <pr#>. --dry-run checks only the body, not the title, pushes nothing and opens nothing, so it works with unsaved changes.",
   },
   {
     name: "check",
@@ -25,7 +25,7 @@ export const COMMANDS = [
   {
     name: "merge",
     usage: "merge <pr#> [--wait] [--allow-migration <tag,...>]",
-    when: "Require ci success on the head and enqueue a squash merge; for an owner-class PR it adds the owner-approved label (run it only after the owner's yes), and --allow-migration adds the allow-migration:<tag> label. On a PR already on auto-merge it queues nothing: --wait only waits. With --wait it stays until the PR merges (or leaves the queue, or 45 minutes pass), then closes linked issues and removes the worktree and branch. If the PR is already queued or already merged, --wait skips the merged-tree check and reports what the queue did. Run it in the background after queuing. Run again later to confirm closure. Before it queues it says the merge deploys to production and names each migration, and it refuses a migration that does more than add unless --allow-migration names it. After the merge it prints the command that shows the live commit and schema version.",
+    when: "Require ci success on the head and enqueue a squash merge; --allow-migration adds the allow-migration:<tag> label. On a PR already on auto-merge it queues nothing: --wait only waits. With --wait it stays until the PR merges (or leaves the queue, or 45 minutes pass), then closes linked issues and removes the worktree and branch. If the PR is already queued or already merged, --wait skips the merged-tree check and reports what the queue did. Run it in the background after queuing. Run again later to confirm closure. Before it queues it says the merge deploys to production and names each migration, and it refuses a migration that does more than add unless --allow-migration names it. After the merge it prints the command that shows the live commit and schema version.",
   },
   {
     name: "why",
@@ -35,7 +35,7 @@ export const COMMANDS = [
   {
     name: "retire",
     usage: 'retire "<subject>" --because "<why>" [--replaced-by <test file>]',
-    when: "The one way to remove or weaken a protected check on purpose; the subject is what PROTECTED_WEAKENED printed, its file, or a case title prefix. With --replaced-by, retire runs that test under the machine lock with the changed source files put back to the fork point (it must fail on an assertion) and on the head (it must pass), and records the proof in scripts/retired/<issue>.json. Such a retirement is self-serve: the pull request still merges itself when the replacement covers the same module, command or route, and finish and the body say \"Retired N checks with replacements\". Without a replacement, or for a ratchet or known-failures entry, a limit bound, a guard or ledger row, a checker setting or a skip mark, the pull request is owner class and waits for the owner's yes. An expected-failure mark is PIN_ISSUE_OPEN's rule, not this one.",
+    when: 'The one way to remove or weaken a protected check on purpose; the subject is what PROTECTED_WEAKENED printed, its file, or a case title prefix. With --replaced-by, retire runs that test under the machine lock with the changed source files put back to the fork point (it must fail on an assertion) and on the head (it must pass), and records the proof in scripts/retired/<issue>.json. Such a retirement is self-serve: the pull request still merges itself when the replacement covers the same module, command or route, and finish and the body say "Retired N checks with replacements". Without a replacement, or for a ratchet or known-failures entry, a limit bound, a guard or ledger row, a checker setting or a skip mark, the retirement is recorded without self-serve replacement proof and the pull request still merges on green ci. An expected-failure mark is PIN_ISSUE_OPEN\'s rule, not this one.',
   },
   {
     name: "policy",

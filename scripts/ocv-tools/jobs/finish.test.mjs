@@ -197,7 +197,7 @@ test("an ordinary PR is queued with auto-merge", () => {
   assert.match(r.text, /why 91/)
 })
 
-test("ordinary and strict PRs get auto-merge; an owner PR does not", () => {
+test("ordinary, strict and high-risk PRs all get auto-merge", () => {
   for (const changed of [
     ["scripts/catalog.mjs"],
     ["apps/api/src/account/export-gate.ts"],
@@ -215,15 +215,12 @@ test("ordinary and strict PRs get auto-merge; an owner PR does not", () => {
     const f = fixture({ autoOn: true, changed, issueLabels: ["risk:high"] })
     const r = finish(f)
     assert.equal(r.code, 0, r.text)
-    assert.equal(f.effects("gh", "pr merge").length, 0, changed[0])
-    assert.match(
-      r.text,
-      /Owner class \(.* attests the ci check\): auto-merge stays off/
-    )
+    assert.equal(autoAsks(f).length, 1, changed[0])
+    assert.match(r.text, /Auto-merge is on/)
   }
 })
 
-test("a migration that changes existing things is owner class; an only-adds migration is not", () => {
+test("a migration that changes existing things needs its allow label; an only-adds migration does not", () => {
   const owner = migrationWorld(
     "0024_word_rename_retained",
     "pr-1407-0024_word_rename_retained"
@@ -231,10 +228,17 @@ test("a migration that changes existing things is owner class; an only-adds migr
   const r = finish(owner)
   assert.equal(r.code, 0, r.text)
   assert.equal(owner.effects("gh", "pr merge").length, 0)
-  assert.match(
-    r.text,
-    /migration 0024_word_rename_retained changes existing things/
+  assert.match(r.text, /Auto-merge is off: MIGRATION_CHANGES/)
+  const allowed = migrationWorld(
+    "0024_word_rename_retained",
+    "pr-1407-0024_word_rename_retained"
   )
+  allowed.s.pull.labels = [
+    { name: "allow-migration:0024_word_rename_retained" },
+  ]
+  const passed = finish(allowed)
+  assert.equal(passed.code, 0, passed.text)
+  assert.equal(autoAsks(allowed).length, 1)
   const adds = migrationWorld(
     "0023_package_trash",
     "pr-1407-0023_package_trash"
@@ -274,19 +278,13 @@ test("finish leaves auto-merge off while production is red, and for a draft", ()
   assert.equal(draft.effects("gh", "pr merge").length, 0)
 })
 
-test("a PR that edits the merge gate is owner class at finish, and finish reads both sides of a rename", () => {
+test("a PR that edits the merge gate enables auto-merge without approval", () => {
   const f = fixture({
     autoOn: true,
     changed: ["scripts/ocv-tools/rules/merge-gate.mjs"],
   })
   const r = finish(f)
   assert.equal(r.code, 0, r.text)
-  assert.equal(f.effects("gh", "pr merge").length, 0)
-  assert.match(
-    r.text,
-    /Owner class \(scripts\/ocv-tools\/rules\/merge-gate\.mjs decides what may merge\): auto-merge stays off/
-  )
-  assert.ok(
-    f.effects("git", "diff").some((e) => e.args.includes("--no-renames"))
-  )
+  assert.equal(autoAsks(f).length, 1)
+  assert.match(r.text, /Auto-merge is on/)
 })

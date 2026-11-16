@@ -26,17 +26,9 @@ const labelled = (f) =>
     .effects("gh", "pr edit")
     .map((e) => e.args[e.args.indexOf("--add-label") + 1])
 
-test("policy refuses an owner PR without owner-approved and passes it with the label", () => {
+test("policy passes a high-risk PR without an approval label", () => {
   const bare = fixture({ changed: [CI_FILE], issueLabels: ["risk:high"] })
-  const refused = bare.call("policy", "91")
-  assert.equal(refused.code, 2, refused.text)
-  assert.match(
-    refused.text,
-    /OWNER_YES: this pull request is owner class \(\.github\/workflows\/ci\.yml attests the ci check\)/
-  )
-  const yes = fixture({ changed: [CI_FILE], issueLabels: ["risk:high"] })
-  yes.s.pull.labels = [{ name: "owner-approved" }]
-  const passed = yes.call("policy", "91")
+  const passed = bare.call("policy", "91")
   assert.equal(passed.code, 0, passed.text)
 })
 
@@ -50,10 +42,7 @@ test("policy holds a migration off the only-adds list until its allow label; an 
     /MIGRATION_CHANGES: the merge runs 0024_word_rename_retained/
   )
   const allowed = migrationWorld(tag, "pr-1407-0024_word_rename_retained")
-  allowed.s.pull.labels = [
-    { name: `allow-migration:${tag}` },
-    { name: "owner-approved" },
-  ]
+  allowed.s.pull.labels = [{ name: `allow-migration:${tag}` }]
   const passed = allowed.call("policy", "91")
   assert.equal(passed.code, 0, passed.text)
   const adds = migrationWorld(
@@ -83,19 +72,17 @@ test("an open production-red issue holds every PR but the revert; a closed one d
   assert.equal(merging.effects("gh", "pr merge").length, 0)
 })
 
-test("merge on an owner PR adds owner-approved, and with --allow-migration adds the allow label", () => {
+test("merge adds only requested migration allow labels, including for high-risk PRs", () => {
   const owner = fixture({ changed: [CI_FILE], issueLabels: ["risk:high"] })
   const r = owner.call("merge", "91")
   assert.equal(r.code, 0, r.text)
-  assert.deepEqual(labelled(owner), ["owner-approved"])
+  assert.deepEqual(labelled(owner), [])
   assert.equal(owner.effects("gh", "pr merge").length, 1)
   const tag = "0024_word_rename_retained"
   const migration = migrationWorld(tag, "pr-1407-0024_word_rename_retained")
   const m = migration.call("merge", "91", "--allow-migration", tag)
   assert.equal(m.code, 0, m.text)
-  assert.deepEqual(labelled(migration), [
-    `allow-migration:${tag},owner-approved`,
-  ])
+  assert.deepEqual(labelled(migration), [`allow-migration:${tag}`])
   assert.equal(
     migration.effects("gh", "label create")[0].args[2],
     `allow-migration:${tag}`
@@ -105,10 +92,9 @@ test("merge on an owner PR adds owner-approved, and with --allow-migration adds 
   assert.equal(ordinary.effects("gh", "pr edit").length, 0)
 })
 
-test("labels added to a PR whose ci failed rerun its failed jobs and turn on auto-merge", () => {
-  const f = fixture({
-    changed: [CI_FILE],
-    issueLabels: ["risk:high"],
+test("a migration allow label reruns failed jobs and turns on auto-merge", () => {
+  const tag = "0024_word_rename_retained"
+  const f = migrationWorld(tag, "pr-1407-0024_word_rename_retained", {
     autoOn: true,
     checks: [
       {
@@ -121,7 +107,7 @@ test("labels added to a PR whose ci failed rerun its failed jobs and turn on aut
     ],
     runs: [{ id: 77, event: "pull_request", path: CI_FILE }],
   })
-  const r = f.call("merge", "91")
+  const r = f.call("merge", "91", "--allow-migration", tag)
   assert.equal(r.code, 0, r.text)
   assert.deepEqual(f.effects("gh", "run rerun")[0].args, [
     "run",
@@ -129,7 +115,7 @@ test("labels added to a PR whose ci failed rerun its failed jobs and turn on aut
     "77",
     "--failed",
   ])
-  assert.match(r.text, /Added owner-approved to PR #91/)
+  assert.deepEqual(labelled(f), [`allow-migration:${tag}`])
   assert.match(r.text, /Auto-merge is on/)
   assert.ok(f.effects("gh", "pr merge")[0].args.includes("--auto"))
 })
@@ -198,69 +184,25 @@ const GATE_PATHS = [
   "scripts/check.mjs",
 ]
 
-test("a diff touching any file that decides what may merge needs owner-approved", async () => {
-  const { evaluate } = await import("../rules/index.mjs")
-  const facts = (files, labels) => ({
-    pull: { n: 9, labels },
-    diff: { files },
-    migrations: { allowed: [], files: [] },
-  })
+test("every merge-rule path passes policy without an approval label", () => {
   for (const file of GATE_PATHS) {
-    const hit = evaluate("OWNER_YES", facts([file], []))
-    assert.ok(hit, file)
-    assert.match(
-      hit.message,
-      new RegExp(
-        `${file.replaceAll(".", "\\.")} (decides what may merge|attests the ci check)`
-      )
-    )
-    assert.equal(
-      evaluate("OWNER_YES", facts([file], ["owner-approved"])),
-      null,
-      file
-    )
+    const f = fixture({ changed: [file], issueLabels: ["risk:high"] })
+    const r = f.call("policy", "91")
+    if (file === ".github/workflows/other.yml") {
+      assert.equal(r.code, 2, r.text)
+      assert.match(r.text, /NO_WORKFLOWS/)
+      assert.doesNotMatch(r.text, /OWNER_YES/)
+    } else assert.equal(r.code, 0, `${file}: ${r.text}`)
   }
-  for (const file of [
-    "scripts/catalog.mjs",
-    "scripts/lib/other.mjs",
-    "scripts/ocv-tools-notes.md",
-    "apps/api/src/app.ts",
-    ".github/CODEOWNERS",
-  ])
-    assert.equal(evaluate("OWNER_YES", facts([file], [])), null, file)
 })
 
-test("a rename into or out of the gate folder is owner class, because the diff holds both sides", async () => {
-  const { evaluate } = await import("../rules/index.mjs")
-  const facts = (files) => ({
-    pull: { n: 9, labels: [] },
-    diff: { files },
-    migrations: { allowed: [], files: [] },
-  })
-  const into = ["scripts/lib/helper.mjs", "scripts/ocv-tools/jobs/helper.mjs"]
-  const out = [
-    "scripts/ocv-tools/rules/merge-gate.mjs",
-    "scripts/lib/merge-gate.mjs",
-  ]
-  assert.match(
-    evaluate("OWNER_YES", facts(into)).message,
-    /scripts\/ocv-tools\/jobs\/helper\.mjs decides what may merge/
-  )
-  assert.match(
-    evaluate("OWNER_YES", facts(out)).message,
-    /scripts\/ocv-tools\/rules\/merge-gate\.mjs decides what may merge/
-  )
-})
-
-test("policy refuses a PR that edits the gate until owner-approved", () => {
-  const bare = fixture({ changed: ["scripts/ocv-tools/rules/merge-gate.mjs"] })
-  const refused = bare.call("policy", "91")
-  assert.equal(refused.code, 2, refused.text)
-  assert.match(
-    refused.text,
-    /OWNER_YES: .*scripts\/ocv-tools\/rules\/merge-gate\.mjs decides what may merge/
-  )
-  const yes = fixture({ changed: ["scripts/ocv-tools/rules/merge-gate.mjs"] })
-  yes.s.pull.labels = [{ name: "owner-approved" }]
-  assert.equal(yes.call("policy", "91").code, 0)
+test("renames into and out of merge-rule folders pass policy without approval", () => {
+  for (const changed of [
+    ["scripts/lib/helper.mjs", "scripts/ocv-tools/jobs/helper.mjs"],
+    ["scripts/ocv-tools/rules/merge-gate.mjs", "scripts/lib/merge-gate.mjs"],
+  ]) {
+    const f = fixture({ changed })
+    const r = f.call("policy", "91")
+    assert.equal(r.code, 0, r.text)
+  }
 })
