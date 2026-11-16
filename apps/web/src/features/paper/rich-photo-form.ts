@@ -121,7 +121,8 @@ export function parsePhotoForm(
     Math.abs(
       (100000 - photo.crop.left - photo.crop.right) * sourceRatio -
         (100000 - photo.crop.top - photo.crop.bottom)
-    ) > 2
+    ) >
+    1 + sourceRatio
   const crop =
     photo.shape === "circle" && (editedField || cropNeedsFit)
       ? fitPhotoCrop(sourceRatio, 1, photo.crop, editedEdge)
@@ -130,9 +131,10 @@ export function parsePhotoForm(
   const sizeNeedsFit =
     photo.shape === "circle"
       ? photo.width !== photo.height
-      : Math.abs(
-          photo.height - photo.width / croppedPhotoRatio(sourceRatio, crop)
-        ) > 1
+      : Math.round(photo.width / croppedPhotoRatio(sourceRatio, crop)) !==
+          photo.height &&
+        Math.round(photo.height * croppedPhotoRatio(sourceRatio, crop)) !==
+          photo.width
   if (geometryChanged && (editedField || sizeNeedsFit)) {
     const dimension =
       editedField === "height" ||
