@@ -26,5 +26,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/apply-job-detail.test.tsx > job detail > shows a message instead of crashing when the link has a bad job id",
+    "because": "The invalid-link message now reads This job link isn't valid.; the same case asserts the new text.",
+    "replacedBy": "apps/web/src/features/apply/apply-job-detail.test.tsx",
+    "proof": {
+      "fork": "a887677ee976df2a519b5804ad24a48ed431fc11",
+      "replacedByBlob": "6655e6adeb967fcc31709a0cbff5c319e8a3599b",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
