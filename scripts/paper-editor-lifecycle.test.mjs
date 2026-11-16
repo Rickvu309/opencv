@@ -94,3 +94,15 @@ test("in-flight editor calls check the live identity immediately before invoking
   )
   assert.deepEqual(detect(clean, lifecycle), [])
 })
+
+test("the document menu follows editor availability", () => {
+  const clean = read(page)
+  const mistake = clean.replace("editorAvailable={!!editor}", "")
+  assert.notEqual(mistake, clean)
+  assert.deepEqual(detect(clean, page), [])
+  assert.ok(
+    detect(mistake, page).includes(
+      "Document menu must follow editor availability"
+    )
+  )
+})

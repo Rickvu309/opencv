@@ -140,6 +140,7 @@ export function RichPaperPage({
               : SYNC_LABEL[status]}
           </span>
           <RichDocumentMenu
+            editorAvailable={!!editor}
             session={session}
             status={status}
             blocked={blocked}

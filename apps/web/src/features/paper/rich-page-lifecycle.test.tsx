@@ -88,6 +88,7 @@ it.each([
       client.destroy()
       remote.destroy()
     })
+    const downloadWord = vi.fn(async () => {})
     vi.mocked(openRichPaperSession).mockReturnValue({
       initialized: Promise.resolve(),
       status: () => "saved",
@@ -96,12 +97,14 @@ it.each([
       subscribe: () => () => {},
       flush: async () => {},
       persist: async () => {},
+      downloadWord,
       destroy: async () => {
         client.destroy()
       },
     })
-    render(
+    const page = (key: string) => (
       <RichPaperPage
+        key={key}
         name={`My ${kind}`}
         identity={{
           kind: "native",
@@ -114,6 +117,7 @@ it.each([
         onBack={() => {}}
       />
     )
+    const view = render(page("initial"))
     const host = await screen.findByLabelText("Document content")
     await waitFor(() =>
       expect(
@@ -184,7 +188,13 @@ it.each([
       focusOffset: window.getSelection()?.focusOffset,
     }).toEqual(selection)
     expect(document.activeElement).toBe(host)
-    fireEvent.click(screen.getByRole("button", { name: "Bold", exact: true }))
+    const bold = screen.getByRole("button", { name: "Bold", exact: true })
+    const pressed = bold.getAttribute("aria-pressed")
+    fireEvent.click(bold)
+    expect(bold).toHaveAttribute(
+      "aria-pressed",
+      pressed === "true" ? "false" : "true"
+    )
     act(() => paste(host, "After sync "))
     await waitFor(() =>
       expect(JSON.stringify(client.document())).toContain("After sync")
@@ -195,6 +205,45 @@ it.each([
     expect(
       screen.getByRole("button", { name: "Bold", exact: true })
     ).toBeDisabled()
+    fireEvent.click(screen.getByRole("button", { name: "Document menu" }))
+    const download = await screen.findByRole("menuitem", {
+      name: "Download Word",
+    })
+    expect(download).toHaveAttribute("aria-disabled", "true")
+    expect(download).toHaveAccessibleDescription(
+      "The document is reloading. Please wait."
+    )
+    fireEvent.click(download)
+    expect(downloadWord).not.toHaveBeenCalled()
+    const replacement = openRichPaperClient(
+      {
+        epoch: 2,
+        revision: 1,
+        provenance,
+        server: seedStoredYDoc(initial),
+        pending: emptyUpdate(),
+      },
+      { provenance }
+    )
+    cleanups.add(() => replacement.destroy())
+    const session = vi.mocked(openRichPaperSession).mock.results.at(-1)?.value
+    vi.mocked(openRichPaperSession).mockReturnValue({
+      ...session,
+      client: () => replacement,
+    })
+    view.rerender(page("remounted"))
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Bold", exact: true })
+      ).toBeEnabled()
+    )
+    fireEvent.click(screen.getByRole("button", { name: "Document menu" }))
+    const remountedDownload = await screen.findByRole("menuitem", {
+      name: "Download Word",
+    })
+    expect(remountedDownload).not.toHaveAttribute("aria-disabled", "true")
+    fireEvent.click(remountedDownload)
+    await waitFor(() => expect(downloadWord).toHaveBeenCalledOnce())
   },
   60_000
 )
@@ -318,5 +367,8 @@ async function exerciseToolbar(
     paste(host, "Shortcut after reset")
   })
   expect(before()).toContain("Shortcut after reset")
+  expect(mounted.editor.getTextCursorPosition().block.props.textAlignment).toBe(
+    "center"
+  )
   expect(errors).toEqual([])
 }

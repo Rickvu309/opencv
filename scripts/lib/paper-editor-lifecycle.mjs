@@ -11,6 +11,23 @@ export function detect(text, file = "rich-page.tsx") {
   const hasCall = (name) =>
     calls.some((node) => node.expression.getText(source).endsWith(name))
   const problems = []
+  if (file.endsWith("rich-page.tsx")) {
+    function checkMenu(node) {
+      if (
+        ts.isJsxSelfClosingElement(node) &&
+        node.tagName.getText(source) === "RichDocumentMenu" &&
+        !node.attributes.properties.some(
+          (attribute) =>
+            ts.isJsxAttribute(attribute) &&
+            attribute.name.getText(source) === "editorAvailable" &&
+            attribute.initializer?.getText(source) === "{!!editor}"
+        )
+      )
+        problems.push("Document menu must follow editor availability")
+      ts.forEachChild(node, checkMenu)
+    }
+    checkMenu(source)
+  }
   if (file.endsWith("rich-page.tsx") && !hasCall("mountRichEditorLifecycle"))
     problems.push("Paper must mount through the document lifecycle")
   if (file.endsWith("rich-editor-lifecycle.ts")) {
