@@ -92,7 +92,24 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - run: pnpm exec turbo run test $TURBO_SCOPE --filter='!api' --filter='!@workspace/domain' --filter='!@workspace/guards' -- --shard=${{ matrix.shard }}/3
+      - run: pnpm exec turbo run test $TURBO_SCOPE --filter='!api' --filter='!@workspace/domain' --filter='!@workspace/guards' -- --shard=${{ matrix.shard }}/3 --exclude='**/canvas-walk.test.ts'
+
+  test-web-walk:
+    strategy:
+      fail-fast: false
+      matrix:
+        first-seed: [1, 101]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      WALK_FIRST_SEED: ${{ matrix.first-seed }}
+      WALK_SEEDS: 100
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/setup
+      - run: pnpm --filter web exec vitest run --config vitest.config.ts src/features/paper-page/canvas-walk.test.ts
 
   formal-tla:
     runs-on: ubuntu-latest
@@ -182,7 +199,16 @@ jobs:
 
   ci:
     needs:
-      [guards, static, test-api, formal-postgres, test-web, formal-tla, policy]
+      [
+        guards,
+        static,
+        test-api,
+        formal-postgres,
+        test-web,
+        test-web-walk,
+        formal-tla,
+        policy,
+      ]
     if: ${{ always() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5

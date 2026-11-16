@@ -303,3 +303,15 @@ test("policy skips an event with no pull request and fails a pull request event 
     /::error title=POLICY::no pull request number in the merge_group event/
   )
 })
+test("the Paper walk keeps all 200 seeds while the other web shards exclude only its file", () => {
+  const walk = section("test-web-walk")
+  assert.match(walk, /first-seed: \[1, 101\]/)
+  assert.match(walk, /WALK_FIRST_SEED: \$\{\{ matrix.first-seed \}\}/)
+  assert.match(walk, /WALK_SEEDS: 100/)
+  assert.doesNotMatch(walk, /WALK_STEPS|WALK_SEED_LIST|WALK_SURVEY/)
+  assert.match(
+    walk,
+    /vitest run --config vitest.config.ts src\/features\/paper-page\/canvas-walk\.test\.ts/
+  )
+  assert.match(section("test-web"), /--exclude='\*\*\/canvas-walk\.test\.ts'/)
+})
