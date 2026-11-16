@@ -122,7 +122,7 @@ export function RichFindBar({
             role="status"
             aria-live="polite"
             aria-atomic="true"
-            className="max-w-16 min-w-10 shrink-0 text-center text-xs break-words text-muted-foreground tabular-nums"
+            className="min-w-10 shrink-0 text-center text-xs whitespace-nowrap text-muted-foreground tabular-nums"
           >
             {state.query
               ? count
