@@ -1,26 +1,43 @@
-import { useLayoutEffect, useRef, useState } from "react"
+import { useLayoutEffect, useReducer, useRef } from "react"
+
+type DetailState = { visible: boolean; minHeight: number }
+type DetailAction =
+  { type: "saved" } | { type: "measured"; clipped: boolean; height: number }
+
+function detailReducer(state: DetailState, action: DetailAction): DetailState {
+  const next =
+    action.type === "saved"
+      ? { visible: false, minHeight: 0 }
+      : {
+          visible: state.visible || action.clipped,
+          minHeight: Math.max(state.minHeight, action.height),
+        }
+  return next.visible === state.visible && next.minHeight === state.minHeight
+    ? state
+    : next
+}
 
 export function useRichStatusDetail(label: string, saved: boolean) {
   const statusRef = useRef<HTMLSpanElement>(null)
   const detailRef = useRef<HTMLParagraphElement>(null)
-  const [visible, setVisible] = useState(false)
-  const [minHeight, setMinHeight] = useState(0)
+  const [{ visible, minHeight }, dispatch] = useReducer(detailReducer, {
+    visible: false,
+    minHeight: 0,
+  })
 
   useLayoutEffect(() => {
     const status = statusRef.current
     if (!status) return
     const measure = () => {
-      if (saved) {
-        setVisible(false)
-        setMinHeight(0)
-      } else if (status.scrollWidth > status.clientWidth) {
-        setVisible(true)
-      }
-      const detail = detailRef.current
-      if (!saved && detail)
-        setMinHeight((height) =>
-          Math.max(height, detail.getBoundingClientRect().height)
-        )
+      dispatch(
+        saved
+          ? { type: "saved" }
+          : {
+              type: "measured",
+              clipped: status.scrollWidth > status.clientWidth,
+              height: detailRef.current?.getBoundingClientRect().height ?? 0,
+            }
+      )
     }
     measure()
     const observer = new ResizeObserver(measure)
