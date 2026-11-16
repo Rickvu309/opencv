@@ -94,6 +94,12 @@ test("Word downloads retain their URL while the browser starts saving", () => {
   )
   assert.notEqual(aborted, clean)
   assert.ok(detect(aborted, path).length)
+  const cleared = clean.replace(
+    "if (triggered) {",
+    "if (triggered) { clearTimeout(retention)"
+  )
+  assert.notEqual(cleared, clean)
+  assert.ok(detect(cleared, path).length)
 })
 
 test("Word response filenames and media types tolerate valid HTTP variations", () => {

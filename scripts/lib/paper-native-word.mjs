@@ -87,7 +87,14 @@ export function detect(text, path) {
     if (
       !started ||
       calls(started, "URL.revokeObjectURL").length !== 1 ||
-      calls(started, "clearTimeout").length ||
+      calls(started, "clearTimeout").some(
+        (clear) =>
+          !calls(started, "setTimeout").some(
+            (timer) =>
+              timer.arguments[0] &&
+              calls(timer.arguments[0], "clearTimeout").includes(clear)
+          )
+      ) ||
       calls(started, "signal.addEventListener").length ||
       nodes(started, ts.isIfStatement).length
     )

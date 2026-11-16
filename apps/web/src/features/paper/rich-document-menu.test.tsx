@@ -9,7 +9,7 @@ afterEach(() => cleanup())
 
 function menu(status: SyncStatus = "saved", blocked = false) {
   let finish = () => {}
-  let fail = (_error: Error) => {}
+  let fail: (error: Error) => void = () => {}
   const downloadWord = vi.fn(
     () =>
       new Promise<void>((resolve, reject) => {

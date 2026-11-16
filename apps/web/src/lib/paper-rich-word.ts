@@ -91,7 +91,8 @@ export async function downloadSavedRichWord(saved: Saved, signal: AbortSignal) {
   } finally {
     anchor.remove()
     if (triggered) {
-      setTimeout(() => {
+      const retention = setTimeout(() => {
+        clearTimeout(retention)
         URL.revokeObjectURL(url)
       }, 1000)
     } else URL.revokeObjectURL(url)
