@@ -564,7 +564,10 @@ describe("app shell layout", () => {
     await expectPitch()
 
     expect(
-      (await screen.findByRole("button", { name: "Menu" })).querySelector("svg")
+      await screen.findByRole("button", { name: "Menu" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "Menu" }).querySelector("svg")
     ).toHaveAttribute("aria-hidden", "true")
     expect(screen.queryByRole("link", { name: "Inbox" })).toBeNull()
     expect(screen.getByRole("button", { name: "Coach" })).toBeInTheDocument()
