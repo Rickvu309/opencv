@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useState,
   useLayoutEffect,
   useRef,
   useReducer,
@@ -21,6 +22,7 @@ import type { NativeSyncIdentity } from "@/lib/paper-sync-identity.ts"
 import { SYNC_LABEL } from "@/lib/paper-sync.ts"
 import { useRichStatusDetail } from "./rich-status-detail.ts"
 import { mountRichEditorLifecycle } from "./rich-editor-lifecycle.ts"
+import { RichFindBar, type PaperFindMode } from "./rich-find-bar.tsx"
 import { RichDocumentMenu } from "./rich-document-menu.tsx"
 import "./design/rich-page-header.pen.css"
 
@@ -63,6 +65,7 @@ export function RichPaperPage({
   identity: NativeSyncIdentity
   onBack: () => void
 }) {
+  const [findMode, setFindMode] = useState<PaperFindMode>("closed")
   const queryClient = useQueryClient()
   const currentIdentity = useRef(identity)
   useLayoutEffect(() => {
@@ -153,6 +156,7 @@ export function RichPaperPage({
           </span>
           <RichDocumentMenu
             editorAvailable={!!editor}
+            onFind={setFindMode}
             session={session}
             status={status}
             blocked={blocked}
@@ -179,6 +183,12 @@ export function RichPaperPage({
           />
         )}
       </RichPhotoControls>
+      <RichFindBar
+        editor={editor}
+        disabled={blocked}
+        mode={findMode}
+        onModeChange={setFindMode}
+      />
       {blocked ? (
         <p role="alert" className="p-6 text-sm">
           Paper could not safely open these changes. Your saved document and

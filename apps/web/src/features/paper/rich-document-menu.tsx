@@ -1,5 +1,5 @@
 import { useId, useReducer, useRef } from "react"
-import { Download, MoreHorizontal } from "lucide-react"
+import { Download, MoreHorizontal, Search, Replace } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -14,11 +14,13 @@ import { SavedRichWordChanged } from "@/lib/paper-rich-word.ts"
 
 export function RichDocumentMenu({
   session,
+  onFind,
   status,
   blocked,
   editorAvailable,
 }: {
   session: Pick<ReturnType<typeof openRichPaperSession>, "downloadWord"> | null
+  onFind?: (mode: "find" | "replace") => void
   status: SyncStatus
   blocked: boolean
   editorAvailable: boolean
@@ -54,6 +56,18 @@ export function RichDocumentMenu({
         }
       />
       <DropdownMenuContent align="end">
+        {onFind ? (
+          <>
+            <DropdownMenuItem onClick={() => onFind("find")}>
+              <Search />
+              Find
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => onFind("replace")}>
+              <Replace />
+              Find and replace
+            </DropdownMenuItem>
+          </>
+        ) : null}
         <DropdownMenuItem
           disabled={!available}
           aria-describedby={hint ? hintId : undefined}

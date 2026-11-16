@@ -1,5 +1,6 @@
 import type { RichPaperDocument } from "@workspace/domain"
 import { TextSelection } from "@tiptap/pm/state"
+import { richEditorSearch } from "./editor-search.js"
 import type { PaperClient } from "./client.js"
 import {
   richTextColors,
@@ -34,6 +35,7 @@ export function mountRichPaperEditor(
     const mounted = mountPrivateFlow(lease.binding, element, options.photoUrl)
     const commands = mounted.commands
     const view = mounted.editor.prosemirrorView
+    const search = richEditorSearch(mounted.editor)
     if (!view.state.selection.$from.parent.inlineContent) {
       let start: number | undefined
       view.state.doc.descendants((node, position) => {
@@ -84,6 +86,7 @@ export function mountRichPaperEditor(
       removeRelease()
       view.dom.removeEventListener("keydown", shortcuts)
       options.onRelease?.(selection)
+      search.destroy()
       mounted.unmount()
       lease.release()
     }
@@ -95,6 +98,7 @@ export function mountRichPaperEditor(
       return view.dom
     }
     return {
+      search,
       photos: () => (active ? mounted.photoControls.photos() : []),
       insertPhoto(
         ...args: Parameters<typeof mounted.photoControls.insertPhoto>
