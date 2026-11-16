@@ -29,10 +29,12 @@ describe("Coach history", () => {
     const trigger = screen.getByRole("button", { name: "History, New chat" })
     expect(trigger).toHaveAttribute("data-slot", "coach-history-trigger")
     fireEvent.click(trigger)
-    const search = await screen.findByRole("textbox", {
+    expect(
+      await screen.findByRole("textbox", { name: "Search chat history" })
+    ).toBeInTheDocument()
+    const search = screen.getByRole("textbox", {
       name: "Search chat history",
     })
-    expect(search).toBeInTheDocument()
     expect(search.className).toContain("text-base")
     expect(search.className).toContain("md:text-[13px]")
   })
