@@ -5,6 +5,17 @@ import { qualifiedNativeWord } from "./paper-native-word.mjs"
 export function detect(text, path) {
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
   const hits = []
+  if (
+    path === "packages/paper-crdt/src/native-layout-flow-mount.ts" &&
+    text.includes("BlockNoteEditor.create(") &&
+    !text.includes("...paragraphInlineValues(")
+  )
+    hits.push("Rich active marks must include the paragraph style defaults")
+  if (
+    path === "packages/paper-crdt/src/native-formatting-decorations.ts" &&
+    (!text.includes("list-style-type") || !text.includes("aria-level"))
+  )
+    hits.push("Rich list decorations must render markers and nested levels")
   const test = /\.test\.[cm]?[jt]sx?$/.test(path)
   const storage = path === "packages/paper-crdt/src/stored-document.ts"
   const editorEntry = path === "packages/paper-crdt/src/editor.ts"
@@ -333,6 +344,18 @@ export function detect(text, path) {
           "Rich HTML marks must parse standard elements as well as private spans"
         )
       if (ts.isCallExpression(node)) {
+        if (
+          path === "packages/paper-crdt/src/native-layout-flow-mount.ts" &&
+          ts.isPropertyAccessExpression(node.expression) &&
+          node.expression.getText(source) === "BlockNoteEditor.create" &&
+          property(
+            property(node.arguments[0], "links"),
+            "isValidLink"
+          )?.getText(source) !== "isSafeHref"
+        )
+          hits.push(
+            "Rich editor links must use the domain http, https and mailto policy"
+          )
         if (
           path === "packages/paper-crdt/src/native-layout-paste.ts" &&
           ts.isPropertyAccessExpression(node.expression) &&

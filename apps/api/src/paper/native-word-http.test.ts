@@ -28,7 +28,13 @@ import {
 } from "./native-word.test-support.js"
 import { readPackageZip } from "./package-zip.js"
 import { parsePackageXml } from "./package-xml.js"
-import { textOf } from "./native-output/inspect.test-support.js"
+import { richFormattingPaper } from "../test/rich-formatting-paper.js"
+import {
+  elements,
+  attribute,
+  one,
+  textOf,
+} from "./native-output/inspect.test-support.js"
 import { WORD_PACKAGE_MEDIA_TYPE } from "./package-store.js"
 
 async function responseData(response: Response): Promise<unknown> {
@@ -69,7 +75,12 @@ it("downloads real saved CV and Letter HTTP edits, refuses stale requests and pr
       .where(eq(user.email, owner.user.email))
     if (!person) throw new Error("Missing owner")
     for (const kind of ["cv", "letter"] as const) {
-      const saved = await savedRichWord(db, parseUserId(person.id), kind)
+      const saved = await savedRichWord(
+        db,
+        parseUserId(person.id),
+        kind,
+        richFormattingPaper
+      )
       const documentClient = openRichPaperClient(null, {
         provenance: nativeProvenance(saved.document),
       })
@@ -151,6 +162,70 @@ it("downloads real saved CV and Letter HTTP edits, refuses stale requests and pr
         if (!xml) throw new Error("Missing Word body")
         const part = parsePackageXml(xml)
         expect(textOf(part, part.root)).toContain("Saved over HTTP — Việt")
+        const paragraphs = elements(part.root, "p")
+        for (const [id, wordId] of [
+          ["normal", "Normal"],
+          ["title", "Title"],
+          ["heading-1", "Heading1"],
+          ["heading-2", "Heading2"],
+          ["heading-3", "Heading3"],
+        ]) {
+          const paragraph = paragraphs.find(
+            (node) => textOf(part, node) === `${id} Việt e\u0302 😀`
+          )
+          if (!paragraph) throw new Error(`Missing ${id}`)
+          expect(attribute(one(paragraph, "pStyle"), "val")).toBe(wordId)
+        }
+        const styles = archive.files.get("word/styles.xml")
+        const numbering = archive.files.get("word/numbering.xml")
+        const relationships = archive.files.get("word/_rels/document.xml.rels")
+        if (!styles || !numbering || !relationships)
+          throw new Error("Missing formatting parts")
+        const stylesPart = parsePackageXml(styles)
+        for (const [id, level] of [
+          ["Heading1", "0"],
+          ["Heading2", "1"],
+          ["Heading3", "2"],
+        ]) {
+          const style = elements(stylesPart.root, "style").find(
+            (node) => attribute(node, "styleId") === id
+          )
+          if (!style) throw new Error(`Missing named style ${id}`)
+          expect(attribute(one(style, "outlineLvl"), "val")).toBe(level)
+          expect(elements(style, "sz")).toHaveLength(1)
+        }
+        for (const id of ["bullets", "numbers"]) {
+          const paragraph = paragraphs.find(
+            (node) => textOf(part, node) === `${id} nested`
+          )
+          if (!paragraph) throw new Error(`Missing nested ${id}`)
+          expect(attribute(one(paragraph, "ilvl"), "val")).toBe("1")
+        }
+        const formats = elements(parsePackageXml(numbering).root, "numFmt").map(
+          (node) => attribute(node, "val")
+        )
+        expect(formats).toContain("bullet")
+        expect(formats).toContain("decimal")
+        const relationshipXml = new TextDecoder().decode(relationships)
+        for (const href of [
+          "https://example.com/career",
+          "http://example.com/work",
+          "mailto:linh@example.com",
+        ])
+          expect(relationshipXml).toContain(href)
+        expect(elements(part.root, "hyperlink").length).toBeGreaterThanOrEqual(
+          3
+        )
+        const cleared = paragraphs.find(
+          (node) => textOf(part, node) === "Cleared formatting"
+        )
+        if (!cleared) throw new Error("Missing cleared paragraph")
+        for (const mark of ["b", "i", "strike"])
+          for (const value of elements(cleared, mark))
+            expect(attribute(value, "val")).toBe("0")
+        for (const value of elements(cleared, "u"))
+          expect(attribute(value, "val")).toBe("none")
+        expect(elements(cleared, "hyperlink")).toHaveLength(0)
         expect(
           await db.select().from(paperDocs).where(eq(paperDocs.id, saved.id))
         ).toEqual(before)
@@ -187,7 +262,7 @@ it("downloads real saved CV and Letter HTTP edits, refuses stale requests and pr
             )
           ).status
         ).toBe(404)
-        const artifacts = join(homedir(), "tmp/paper-autopilot/1574-render")
+        const artifacts = join(homedir(), "tmp/paper-council/1581/docx")
         await mkdir(artifacts, { recursive: true })
         await writeFile(join(artifacts, `${kind}.docx`), bytes)
       } finally {

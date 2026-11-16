@@ -1,8 +1,11 @@
+import { richEditorCommands } from "./native-formatting-commands.js"
+import { isSafeHref } from "@workspace/domain"
 import { BlockNoteEditor, createExtension } from "@blocknote/core"
 import { CollaborationExtension } from "@blocknote/core/yjs"
 import { Plugin } from "@tiptap/pm/state"
 import {
   inlineSchema,
+  paragraphInlineValues,
   type InlinePresentation,
 } from "@workspace/domain/internal/paper-presentation"
 import {
@@ -60,7 +63,10 @@ export function mountPrivateFlow(
   const editor = BlockNoteEditor.create({
     schema: nativeLayoutSchema,
     trailingBlock: false,
-    links: { HTMLAttributes: { style: "text-decoration:none;color:inherit" } },
+    links: {
+      isValidLink: isSafeHref,
+      HTMLAttributes: { style: "text-decoration:none;color:inherit" },
+    },
     pasteHandler: ({ event, editor, defaultPasteHandler }) =>
       pasteIntoLayoutCell(editor, event) ||
       pasteIntoFlowText(editor, event) ||
@@ -83,11 +89,14 @@ export function mountPrivateFlow(
     if (!active) throw new Error("Layout view is unmounted")
     editor.addStyles(engineStyles(inlineSchema.parse(input)))
   }
-  const activeInline = () =>
-    effectiveInline(
-      readPresentationMeta(binding.doc),
-      canonicalStyles(editor.getActiveStyles())
-    )
+  const activeInline = () => {
+    const props = editor.getTextCursorPosition().block.props
+    const style = "paragraphStyle" in props ? props.paragraphStyle : undefined
+    return effectiveInline(readPresentationMeta(binding.doc), {
+      ...paragraphInlineValues(style),
+      ...canonicalStyles(editor.getActiveStyles()),
+    })
+  }
   const keydown = (event: KeyboardEvent) => {
     if (
       event.key === "Tab" &&
@@ -95,6 +104,12 @@ export function mountPrivateFlow(
       !event.ctrlKey &&
       !event.metaKey
     ) {
+      if (
+        ["bulletListItem", "numberedListItem"].includes(
+          editor.getTextCursorPosition().block.type
+        )
+      )
+        return
       const cellId = layoutCellAt(editor.prosemirrorState.selection.$from)
       if (!cellId) return
       const doc = readFlow(binding)
@@ -134,24 +149,8 @@ export function mountPrivateFlow(
       editor.focus()
       return
     }
-    if (!(event.metaKey || event.ctrlKey) || event.altKey) return
-    const key = event.key.toLowerCase()
-    const mark =
-      key === "b"
-        ? "bold"
-        : key === "i"
-          ? "italic"
-          : key === "u"
-            ? "underline"
-            : key === "x" && event.shiftKey
-              ? "strike"
-              : undefined
-    if (!mark) return
-    event.preventDefault()
-    event.stopImmediatePropagation()
-    const effective = activeInline()
-    setInline({ [mark]: !effective[mark] })
   }
+
   const refresh = () => {
     if (active) {
       editor.prosemirrorView.dispatch(editor.prosemirrorState.tr)
@@ -182,7 +181,11 @@ export function mountPrivateFlow(
     editor._tiptapEditor.destroy()
     throw error
   }
+  const commands = richEditorCommands(editor, (mark) =>
+    setInline({ [mark]: !activeInline()[mark] })
+  )
   return {
+    commands,
     editor,
     setInline,
     activeInline,
@@ -190,6 +193,7 @@ export function mountPrivateFlow(
     unmount() {
       if (!active) return
       active = false
+      commands.destroy()
       binding.doc.getMap("paper").unobserveDeep(refresh)
       element.removeEventListener("keydown", keydown, true)
       flowView?.destroy()

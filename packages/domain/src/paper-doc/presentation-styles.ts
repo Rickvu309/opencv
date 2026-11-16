@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { paragraphStyleValues } from "./paragraph-styles.js"
 import {
   inlineSchema,
   inlinePatchSchema,
@@ -117,7 +118,15 @@ export function resolveParagraph(
     return refuse("Supply the style reference separately")
   const style =
     reference === null ? undefined : styles.find((s) => s.id === reference)
-  if (reference !== null && (!style || style.kind !== "paragraph"))
+  const builtin =
+    reference === null ? undefined : paragraphStyleValues(reference)
+  if (
+    reference !== null &&
+    ((!style && !builtin) || (style && style.kind !== "paragraph"))
+  )
     return refuse("Missing or wrong-kind style")
-  return parse(paragraphSchema, overlay(style?.values ?? {}, patch.value))
+  return parse(
+    paragraphSchema,
+    overlay(style?.values ?? builtin ?? {}, patch.value)
+  )
 }

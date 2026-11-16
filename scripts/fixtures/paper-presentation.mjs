@@ -1,5 +1,13 @@
 export const clean = [
   {
+    path: "packages/paper-crdt/src/native-formatting-decorations.ts",
+    text: 'const list = { style: "list-style-type:disc", "aria-level": "1" }',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-flow-mount.ts",
+    text: 'const active = { ...paragraphInlineValues(style), ...canonicalStyles(styles) }; BlockNoteEditor.create({ links: { isValidLink: isSafeHref, HTMLAttributes: { style: "text-decoration:none;color:inherit" } } })',
+  },
+  {
     path: "apps/web/src/test/paper-api-mock.ts",
     text: "const identity = /^\\/api\\/paper\\/([^/]+)\\/document$/.exec(path); paperDocumentInfoSchema.parse(identity)",
   },
@@ -141,6 +149,18 @@ export const clean = [
   },
 ]
 export const mistakes = [
+  {
+    path: "packages/paper-crdt/src/native-layout-flow-mount.ts",
+    text: "BlockNoteEditor.create({ links: { isValidLink: isSafeHref } }); const active = canonicalStyles(styles)",
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting-decorations.ts",
+    text: "Decoration.node(pos, end, { style: paragraphCss(values) })",
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-flow-mount.ts",
+    text: "BlockNoteEditor.create({ links: {} })",
+  },
   {
     path: "apps/web/src/test/paper-api-mock.ts",
     text: "export async function paperApiFetch() { return null }",

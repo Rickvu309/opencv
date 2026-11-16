@@ -18,6 +18,7 @@ export function mountRichPaperEditor(
   let removeRelease = () => {}
   try {
     const mounted = mountPrivateFlow(lease.binding, element, options.photoUrl)
+    const commands = mounted.commands
     const view = mounted.editor.prosemirrorView
     if (!view.state.selection.$from.parent.inlineContent) {
       let start: number | undefined
@@ -43,6 +44,7 @@ export function mountRichPaperEditor(
     }
     removeRelease = client.onDocumentRelease(destroy)
     return {
+      ...commands,
       setEditable(editable: boolean) {
         if (active) mounted.editor.isEditable = editable
       },
@@ -51,8 +53,7 @@ export function mountRichPaperEditor(
       },
       toggleMark(mark: RichMark) {
         if (!active) throw new Error("Paper editor is closed")
-        mounted.setInline({ [mark]: !mounted.activeInline()[mark] })
-        view.focus()
+        commands.toggleMark(mark)
       },
       activeMarks() {
         if (!active) return {}

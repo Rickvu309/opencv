@@ -1,4 +1,5 @@
 import {
+  paragraphInlineValues,
   formattedDocumentSchema,
   layoutDocumentSchema,
   flowDocumentSchema,
@@ -74,10 +75,16 @@ function compileDocument(
     document.presentation.page.width -
     document.presentation.page.start -
     document.presentation.page.end
-  function runs(content: readonly FormatRun[]): string {
+  function runs(
+    content: readonly FormatRun[],
+    paragraphStyle?: string
+  ): string {
     return content
       .map(({ text, href, ...direct }) => {
-        const effective = styles.effectiveInline(direct)
+        const effective = styles.effectiveInline({
+          ...paragraphInlineValues(paragraphStyle),
+          ...direct,
+        })
         return wordRun(
           text,
           inlineProperties({
@@ -215,7 +222,7 @@ function compileDocument(
           node.type === "heading"
             ? `<w:outlineLvl w:val="${node.level - 1}"/>`
             : ""
-        const paragraph = `<w:p><w:pPr>${properties}${heading}</w:pPr>${runs(node.content)}</w:p>`
+        const paragraph = `<w:p><w:pPr>${properties}${heading}</w:pPr>${runs(node.content, node.paragraph.paragraphStyle)}</w:p>`
         return (
           paragraph +
           (list ? siblings(node.children, depth + 1, availableWidth) : "")

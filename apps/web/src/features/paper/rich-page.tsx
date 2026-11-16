@@ -21,6 +21,7 @@ import { resolvePhotoSrc } from "@/lib/requests.ts"
 import type { NativeSyncIdentity } from "@/lib/paper-sync-identity.ts"
 import { SYNC_LABEL } from "@/lib/paper-sync.ts"
 import "./design/rich-page-header.pen.css"
+import { RichStructureControls } from "./rich-structure-controls"
 
 type Session = ReturnType<typeof openRichPaperSession>
 type Editor = ReturnType<typeof mountRichPaperEditor>
@@ -161,27 +162,29 @@ export function RichPaperPage({
       <div
         role="toolbar"
         aria-label="Text formatting"
-        className="flex flex-wrap items-center gap-3 border-b px-4 py-2"
+        className="flex shrink-0 items-center gap-1 overflow-x-auto border-b px-4 py-2"
       >
-        {marks.map(({ mark, label, Icon }) => (
-          <Button
-            key={mark}
-            variant={activeMarks[mark] ? "secondary" : "ghost"}
-            size="icon"
-            className="size-11 md:size-8"
-            aria-label={label}
-            aria-pressed={activeMarks[mark] === true}
-            disabled={!editor || blocked}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => {
-              editor?.toggleMark(mark)
-              if (editor)
-                dispatch({ type: "marks", activeMarks: editor.activeMarks() })
-            }}
-          >
-            <Icon />
-          </Button>
-        ))}
+        <RichStructureControls editor={editor} blocked={blocked}>
+          {marks.map(({ mark, label, Icon }) => (
+            <Button
+              key={mark}
+              variant={activeMarks[mark] ? "secondary" : "ghost"}
+              size="icon"
+              className="size-11 shrink-0 md:size-8"
+              aria-label={label}
+              aria-pressed={activeMarks[mark] === true}
+              disabled={!editor || blocked}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                editor?.toggleMark(mark)
+                if (editor)
+                  dispatch({ type: "marks", activeMarks: editor.activeMarks() })
+              }}
+            >
+              <Icon />
+            </Button>
+          ))}
+        </RichStructureControls>
       </div>
       {blocked ? (
         <p role="alert" className="p-6 text-sm">
