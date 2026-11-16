@@ -7,10 +7,23 @@ type Saved = NonNullable<
   ReturnType<ReturnType<typeof openRichNativePaperSync>["captureSaved"]>
 >
 
+export class SavedRichWordChanged extends Error {
+  constructor() {
+    super("Your document changed. Download again when it is saved.")
+  }
+}
+
 function filename(disposition: string | null) {
   const encoded = disposition?.match(/filename\*=UTF-8''([^;]+)/i)?.[1]
   const quoted = disposition?.match(/filename="([^"]+)"/i)?.[1]
-  const value = encoded ? decodeURIComponent(encoded) : quoted
+  let value = quoted
+  if (encoded) {
+    try {
+      value = decodeURIComponent(encoded)
+    } catch {
+      value = quoted
+    }
+  }
   const unsafe = value?.split("").some((character) => {
     const code = character.charCodeAt(0)
     return code < 32 || code === 127 || character === "/" || character === "\\"
@@ -21,8 +34,7 @@ function filename(disposition: string | null) {
 export async function downloadSavedRichWord(saved: Saved, signal: AbortSignal) {
   const check = () => {
     signal.throwIfAborted()
-    if (!saved.current())
-      throw new Error("Your document changed. Download again when it is saved.")
+    if (!saved.current()) throw new SavedRichWordChanged()
   }
   check()
   const hash = await crypto.subtle.digest(
@@ -54,7 +66,11 @@ export async function downloadSavedRichWord(saved: Saved, signal: AbortSignal) {
     returned.revision !== basis.revision ||
     returned.digest !== basis.digest ||
     !sameNativeProvenance(returned.provenance, basis.provenance) ||
-    response.headers.get("content-type")?.split(";")[0]?.trim() !==
+    response.headers
+      .get("content-type")
+      ?.split(";")[0]
+      ?.trim()
+      .toLowerCase() !==
       "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   )
     throw new Error("Paper could not confirm this Word download. Try again.")
@@ -75,17 +91,9 @@ export async function downloadSavedRichWord(saved: Saved, signal: AbortSignal) {
   } finally {
     anchor.remove()
     if (triggered) {
-      const timer = setTimeout(() => {
-        signal.removeEventListener("abort", cancel)
+      setTimeout(() => {
         URL.revokeObjectURL(url)
       }, 1000)
-      const cancel = () => {
-        clearTimeout(timer)
-        signal.removeEventListener("abort", cancel)
-        URL.revokeObjectURL(url)
-      }
-      signal.addEventListener("abort", cancel, { once: true })
-      if (signal.aborted) cancel()
     } else URL.revokeObjectURL(url)
   }
 }

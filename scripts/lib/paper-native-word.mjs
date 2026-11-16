@@ -77,6 +77,64 @@ export function detect(text, path) {
       hits.push(
         "Word downloads must retain the file URL until the browser can start saving"
       )
+    const started =
+      entry &&
+      nodes(
+        entry,
+        (node) =>
+          ts.isIfStatement(node) && node.expression.getText() === "triggered"
+      )[0]?.thenStatement
+    if (
+      !started ||
+      calls(started, "URL.revokeObjectURL").length !== 1 ||
+      calls(started, "clearTimeout").length ||
+      calls(started, "signal.addEventListener").length ||
+      nodes(started, ts.isIfStatement).length
+    )
+      hits.push(
+        "A started Word download must retain its URL even when its session aborts"
+      )
+    const decode = calls(source, "decodeURIComponent")
+    if (
+      decode.some(
+        (call) =>
+          !nodes(source, ts.isTryStatement).some(
+            (attempt) =>
+              attempt.catchClause &&
+              calls(attempt.tryBlock, "decodeURIComponent").includes(call)
+          )
+      )
+    )
+      hits.push(
+        "Malformed Word filenames must fall back without stopping the download"
+      )
+    if (
+      !nodes(source, ts.isCallExpression).some(
+        (call) =>
+          ts.isPropertyAccessExpression(call.expression) &&
+          call.expression.name.text === "toLowerCase" &&
+          call.expression.expression.getText().includes('"content-type"')
+      )
+    )
+      hits.push("Word media types must be compared without case sensitivity")
+  }
+  if (path === "apps/web/src/features/paper/rich-document-menu.tsx") {
+    if (
+      !text.includes("error instanceof SavedRichWordChanged") ||
+      !text.includes("toast.loading(") ||
+      !text.includes("toast.success(")
+    )
+      hits.push(
+        "Word downloads must resolve visible progress and distinguish changed documents from preparation failures"
+      )
+    if (
+      !text.includes("aria-describedby=") ||
+      !text.includes('status === "refused"') ||
+      !text.includes('status === "stuck"')
+    )
+      hits.push(
+        "Disabled Word downloads must describe their actual blocked state"
+      )
   }
   if (path === "apps/api/src/app.ts") {
     const options = calls(source, "cors")[0]?.arguments[0]

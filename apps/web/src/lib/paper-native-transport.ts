@@ -452,7 +452,7 @@ function openSession<Document extends StoredPaperDocument>(
       const document = source.document()
       if (!document) return null
       const generation = version
-      const { epoch, revision } = source.stored()
+      const { epoch, revision } = source
       return {
         canonical: canonicalPaper(document),
         kind: document.kind,

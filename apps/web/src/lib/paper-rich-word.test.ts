@@ -178,12 +178,52 @@ it("refuses an aborted session even when the response resolves successfully", as
   expect(h.click).not.toHaveBeenCalled()
 })
 
-it("releases the pending file URL when its session ends", async () => {
+it.each(["after", "during"])(
+  "retains the file URL when its session ends %s the click",
+  async (stage) => {
+    vi.useFakeTimers()
+    const h = fixture()
+    if (stage === "during") h.click.mockImplementation(() => h.signal.abort())
+    await downloadSavedRichWord(h.saved, h.signal.signal)
+    h.signal.abort()
+    expect(h.revoke).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(999)
+    expect(h.revoke).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(1)
+    expect(h.revoke).toHaveBeenCalledExactlyOnceWith("blob:word")
+  }
+)
+
+it.each([
+  [
+    "attachment; filename=\"Quoted.docx\"; filename*=UTF-8''CV%ZZ.docx",
+    "Quoted.docx",
+  ],
+  ["attachment; filename*=UTF-8''CV%E1.docx", "Paper.docx"],
+])(
+  "falls back when an encoded filename is malformed: %s",
+  async (disposition, expected) => {
+    vi.useFakeTimers()
+    const h = fixture()
+    h.response.headers.set("content-disposition", disposition)
+    let name = ""
+    h.click.mockImplementation(function () {
+      name = this.download
+    })
+    await downloadSavedRichWord(h.saved, h.signal.signal)
+    expect(name).toBe(expected)
+    await vi.advanceTimersByTimeAsync(1000)
+  }
+)
+
+it("accepts a case-insensitive Word media type with parameters", async () => {
   vi.useFakeTimers()
   const h = fixture()
+  h.response.headers.set(
+    "content-type",
+    "Application/Vnd.Openxmlformats-Officedocument.Wordprocessingml.Document; charset=binary"
+  )
   await downloadSavedRichWord(h.saved, h.signal.signal)
-  h.signal.abort()
-  expect(h.revoke).toHaveBeenCalledExactlyOnceWith("blob:word")
+  expect(h.click).toHaveBeenCalledOnce()
   await vi.advanceTimersByTimeAsync(1000)
-  expect(h.revoke).toHaveBeenCalledTimes(1)
 })
