@@ -1,6 +1,6 @@
 import { StrictMode } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, cleanup, fireEvent, screen } from "@testing-library/react"
+import { act, cleanup, fireEvent, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { render } from "@/test/render-with-client.tsx"
 import {
@@ -12,6 +12,10 @@ import {
 import { ApiError } from "@/lib/api-error.ts"
 
 import { PaperLibrary } from "./paper-library.tsx"
+
+vi.mock("@/features/apply/apply-api.ts", () => ({
+  listJobs: vi.fn(() => Promise.resolve([])),
+}))
 import {
   cv,
   letter,
@@ -260,14 +264,25 @@ describe("Paper library", () => {
       screen.getAllByRole("button", { name: "Import", exact: true }).at(0) ??
         missingImport()
     )
-    const field = screen.getByRole("textbox", { name: "Paste a link" })
+    const dialog = screen.getByRole("dialog", { name: "Import", exact: true })
+    const field = within(dialog).getByRole("textbox", {
+      name: "Paste a link",
+    })
+    const submit = within(dialog).getByRole("button", { name: "Import" })
+    expect(submit).toBeEnabled()
+    fireEvent.click(submit)
+    expect(vi.mocked(importPaperLink)).not.toHaveBeenCalled()
     fireEvent.change(field, {
       target: { value: "https://docs.google.com/document/d/abc" },
     })
-    fireEvent.keyDown(field, { key: "Enter" })
+    fireEvent.click(submit)
     expect(
       await screen.findByRole("heading", { name: "Can't read this file" })
     ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("dialog", { name: "Import", exact: true })
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole("textbox", { name: "Paste a link" })).toBeNull()
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Google Docs aren't supported. Download a PDF or Word file."
     )
@@ -456,7 +471,9 @@ describe("Paper library", () => {
         await user.clear(field)
         if (value !== "") await user.type(field, value)
         await user.keyboard("{Enter}")
-        expect(await screen.findByText(error)).toBeInTheDocument()
+        expect(await screen.findByRole("alert")).toHaveTextContent(error)
+        expect(field).toHaveAttribute("aria-invalid", "true")
+        expect(field).toHaveAttribute("aria-describedby", "paper-rename-error")
         expect(field).toHaveValue(value)
         expect(
           screen.getByRole("textbox", { name: "Name" })

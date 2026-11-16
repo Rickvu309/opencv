@@ -11,7 +11,11 @@ import {
   Trash2,
   type LucideIcon,
 } from "lucide-react"
-import type { PaperFile, PaperView } from "@workspace/domain"
+import {
+  paperPlainText,
+  type PaperFile,
+  type PaperView,
+} from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 
@@ -22,6 +26,44 @@ import {
 import { fileBadge, type LibraryEntry } from "./paper-library-entries.ts"
 import type { WordDocument } from "./paper-package-library.tsx"
 import { paperEditedLabel } from "./paper-templates.ts"
+
+const PREVIEW_LINE_LIMIT = 12
+
+export function librarySheetPreview(doc: PaperView): string | undefined {
+  if (doc.format === "word") return undefined
+  const lines = paperPlainText(doc.paper)
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+  if (lines.length === 0) return undefined
+  return lines.slice(0, PREVIEW_LINE_LIMIT).join("\n")
+}
+
+export function PaperProofsLink() {
+  return (
+    <section
+      aria-label="Proofs"
+      data-slot="paper-library-section"
+      className="flex flex-col gap-2 md:gap-3.5"
+    >
+      <Button
+        nativeButton={false}
+        role="link"
+        variant="ghost"
+        render={<a href="/proofs" />}
+        data-slot="paper-library-section-head"
+        className="h-11 w-full justify-start gap-2 rounded-md px-0 text-sm font-semibold text-foreground hover:bg-transparent md:h-8"
+      >
+        <ChevronRight
+          data-slot="paper-library-section-icon"
+          className="size-[13px] text-muted-foreground"
+          aria-hidden="true"
+        />
+        Proofs
+      </Button>
+    </section>
+  )
+}
 
 export function PaperLibrarySection({
   title,
@@ -130,6 +172,7 @@ export function LibraryEntryCard({
       <PaperLibraryCard
         name={doc.name}
         meta={edited}
+        preview={librarySheetPreview(doc)}
         openLabel={`${doc.name}, ${edited}`}
         onOpen={() => on.onOpen(doc.id)}
         actions={paperActions(doc, entry.word, on)}

@@ -42,6 +42,7 @@ const ISOLATED_FILES = [
   "src/features/paper/paper-v2-preview.test.tsx",
   "src/features/paper/paper-import-outcomes.test.tsx",
   "src/features/paper/paper-library.test.tsx",
+  "src/features/paper/paper-library-status.test.tsx",
   "src/features/paper/paper-letter-start-parity.test.tsx",
   "src/features/paper/paper-letter-drafting-parity.test.tsx",
   "src/features/paper/paper-letter-slow-coach.test.tsx",

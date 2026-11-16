@@ -36,18 +36,28 @@ export function PaperImportRow({
       <p className="text-sm text-muted-foreground">
         Drop a PDF, Word or Google Doc, or paste a LinkedIn link.
       </p>
-      <Input
-        aria-label="Paste a link"
-        placeholder="Paste a link"
-        value={link}
-        className="mt-3"
-        onChange={(event) => onLinkChange(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key !== "Enter") return
+      <form
+        className="mt-3 flex flex-wrap items-center gap-2"
+        onSubmit={(event) => {
           event.preventDefault()
           onSubmitLink()
         }}
-      />
+      >
+        <Input
+          aria-label="Paste a link"
+          placeholder="Paste a link"
+          value={link}
+          className="h-11 min-w-0 flex-1 basis-40 text-base md:h-8 md:text-sm"
+          onChange={(event) => onLinkChange(event.target.value)}
+        />
+        <Button
+          type="submit"
+          variant="primary"
+          className="h-11 shrink-0 md:h-8"
+        >
+          Import
+        </Button>
+      </form>
       <Button
         type="button"
         variant="outline"

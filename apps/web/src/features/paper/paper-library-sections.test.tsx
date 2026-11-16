@@ -36,6 +36,12 @@ describe("Paper home sections", () => {
     expect(
       screen.getByRole("button", { name: /^Design letter,/ })
     ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: "Proofs" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "New letter" })
+    ).not.toBeInTheDocument()
     fireEvent.change(screen.getByRole("textbox", { name: "Search Paper" }), {
       target: { value: "nothing" },
     })
@@ -95,8 +101,20 @@ describe("Paper home sections", () => {
     ).not.toHaveLength(0)
     expect(within(filesSection).getByText("PDF")).toBeInTheDocument()
     expect(
-      screen.queryByRole("region", { name: "CVs" })
-    ).not.toBeInTheDocument()
+      within(screen.getByRole("region", { name: "CVs" })).getByRole("button", {
+        name: "New CV",
+      })
+    ).toBeInTheDocument()
+    expect(
+      within(screen.getByRole("region", { name: "Cover letters" })).getByRole(
+        "button",
+        { name: "New letter" }
+      )
+    ).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Proofs" })).toHaveAttribute(
+      "href",
+      "/proofs"
+    )
     fireEvent.click(
       screen.getByRole("button", { name: "Original CV.pdf menu" })
     )
@@ -154,5 +172,43 @@ describe("Paper home sections", () => {
     expect(
       screen.getByText("Try another word, or clear the search.")
     ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: "Proofs" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "New letter" })
+    ).not.toBeInTheDocument()
+  })
+
+  it("keeps Cover letters and Proofs beside a CV, and shows the page's first lines", () => {
+    renderLibrary([letter("Design letter")])
+    expect(
+      within(screen.getByRole("region", { name: "Cover letters" })).getByRole(
+        "button",
+        { name: "New letter" }
+      )
+    ).toBeInTheDocument()
+    expect(screen.getByRole("link", { name: "Proofs" })).toHaveAttribute(
+      "href",
+      "/proofs"
+    )
+    const preview = document.querySelector("[data-slot=paper-library-preview]")
+    expect(preview).toHaveTextContent("A cover letter.")
+    expect(preview?.className).toMatch(/text-\[13px\]/)
+    expect(preview?.className).not.toMatch(/text-\[9px\]|line-clamp-4/)
+    const sheet = document.querySelector("[data-slot=paper-library-sheet]")
+    const tile = screen.getByRole("button", { name: "New CV" })
+    expect(sheet?.className).toMatch(/md:h-\[212px\] md:w-\[150px\]/)
+    expect(tile.className).toMatch(/md:h-\[212px\] md:w-\[150px\]/)
+    expect(
+      screen.getByRole("button", { name: /^Design letter,/ }).className
+    ).toMatch(/\bborder-0\b/)
+  })
+
+  it("shows a Word page title in the thumbnail when the page has no body", () => {
+    renderLibrary([{ ...letter("Word letter"), format: "word" }])
+    const preview = document.querySelector("[data-slot=paper-library-preview]")
+    expect(preview).toHaveTextContent("Word letter")
+    expect(preview).not.toHaveTextContent("A cover letter.")
   })
 })

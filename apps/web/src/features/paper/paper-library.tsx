@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, type DragEvent } from "react"
+import { Fragment, useEffect, useReducer, useRef, type DragEvent } from "react"
 import { FileUp, Plus } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
@@ -63,8 +63,10 @@ import {
 import {
   LibraryEntryCard,
   PaperLibrarySection,
+  PaperProofsLink,
   type LibraryEntryHandlers,
 } from "./paper-library-sections.tsx"
+import { PaperLinkDialog } from "./paper-library-link.tsx"
 import "./design/paper-library.pen.css"
 
 export function PaperLibrary({
@@ -101,6 +103,7 @@ export function PaperLibrary({
       renameError,
       jobs,
       jobsError,
+      jobsLoading,
       printTarget,
       printNonce,
       link,
@@ -322,7 +325,15 @@ export function PaperLibrary({
         onClick={() => dispatch({ type: "new_dialog_opened", step: "gallery" })}
       />
     ),
-    letter: null,
+    letter: (
+      <PaperLibraryTile
+        key="letter"
+        label="New letter"
+        icon={Plus}
+        slot="paper-library-new-letter"
+        onClick={() => dispatch({ type: "letter_dialog_opened" })}
+      />
+    ),
     files: (
       <PaperLibraryTile
         key="import"
@@ -392,10 +403,16 @@ export function PaperLibrary({
           New
         </Button>
       </div>
-      {loading ? <p>Loading documents</p> : null}
+      {loading ? (
+        <p role="status" className="py-6 text-sm text-muted-foreground">
+          Loading documents…
+        </p>
+      ) : null}
       {error ? (
-        <div className="flex flex-col items-start gap-3">
-          <p>{error}</p>
+        <div className="flex flex-col items-start gap-3 py-6">
+          <p role="alert" className="text-sm text-destructive">
+            {error}
+          </p>
           <Button
             className="h-11 md:h-8"
             type="button"
@@ -425,33 +442,38 @@ export function PaperLibrary({
         ? LIBRARY_SECTIONS.map(({ id, title }) => {
             const items = sections[id]
             const tile = searching ? null : tiles[id]
-            if (items.length === 0 && (searching || id !== "files")) return null
+            if (items.length === 0 && searching) return null
             return (
-              <PaperLibrarySection key={id} title={title}>
-                {items.map((entry) => (
-                  <LibraryEntryCard
-                    key={entry.key}
-                    entry={entry}
-                    on={handlers}
-                  />
-                ))}
-                {tile}
-              </PaperLibrarySection>
+              <Fragment key={id}>
+                {id === "files" && !searching ? <PaperProofsLink /> : null}
+                <PaperLibrarySection title={title}>
+                  {items.map((entry) => (
+                    <LibraryEntryCard
+                      key={entry.key}
+                      entry={entry}
+                      on={handlers}
+                    />
+                  ))}
+                  {tile}
+                </PaperLibrarySection>
+              </Fragment>
             )
           })
         : null}
 
       <PaperPackageLibrary library={wordLibrary} />
 
-      <PaperImportDialog
-        open={mode?.type === "import"}
-        onClose={closeDialog}
-        link={link}
-        onLinkChange={(next) => dispatch({ type: "link_typed", link: next })}
-        onSubmitLink={() => void onPasteLink()}
-        onChooseFile={chooseFile}
-        onDropFile={onDropFile}
-      />
+      {mode?.type === "import" ? (
+        <PaperImportDialog
+          open
+          onClose={closeDialog}
+          link={link}
+          onLinkChange={(next) => dispatch({ type: "link_typed", link: next })}
+          onSubmitLink={() => void onPasteLink()}
+          onChooseFile={chooseFile}
+          onDropFile={onDropFile}
+        />
+      ) : null}
 
       <Dialog
         open={mode?.type === "new"}
@@ -508,13 +530,22 @@ export function PaperLibrary({
           >
             <Input
               aria-label="Name"
+              className="h-11 text-base md:h-8 md:text-sm"
+              aria-invalid={renameError ? true : undefined}
+              aria-describedby={renameError ? "paper-rename-error" : undefined}
               value={rename}
               onChange={(event) =>
                 dispatch({ type: "rename_typed", value: event.target.value })
               }
             />
             {renameError ? (
-              <p className="text-sm text-destructive">{renameError}</p>
+              <p
+                id="paper-rename-error"
+                role="alert"
+                className="text-sm text-destructive"
+              >
+                {renameError}
+              </p>
             ) : null}
             <div className="flex justify-end gap-2">
               <Button
@@ -586,65 +617,48 @@ export function PaperLibrary({
         </DialogContent>
       </Dialog>
 
-      <ImportProgressDialog
-        open={importState.type === "importing"}
-        filename={importState.type === "importing" ? importState.name : ""}
-        onCancel={cancelImport}
-      />
-      <CantReadDialog
-        open={importState.type === "error"}
-        sentence={importState.type === "error" ? importState.message : ""}
-        onChoose={chooseFile}
-        onBlank={() => void startBlank()}
-        onClose={() => dispatch({ type: "import_ended" })}
-        onRetry={retryFile ? () => void onImport(retryFile) : undefined}
-        blankPending={creatingBlank}
-      />
+      {importState.type === "importing" ? (
+        <ImportProgressDialog
+          open
+          filename={importState.type === "importing" ? importState.name : ""}
+          onCancel={cancelImport}
+        />
+      ) : null}
+      {importState.type === "error" ? (
+        <CantReadDialog
+          open
+          sentence={importState.type === "error" ? importState.message : ""}
+          onChoose={chooseFile}
+          onBlank={() => void startBlank()}
+          onClose={() => dispatch({ type: "import_ended" })}
+          onRetry={retryFile ? () => void onImport(retryFile) : undefined}
+          blankPending={creatingBlank}
+        />
+      ) : null}
 
-      <Dialog
-        open={mode?.type === "link"}
-        onOpenChange={(open) => {
-          if (!open) closeDialog()
+      <PaperLinkDialog
+        doc={mode?.type === "link" ? mode.doc : null}
+        jobs={jobs}
+        jobsLoading={jobsLoading}
+        jobsError={jobsError}
+        onClose={closeDialog}
+        onLink={(job) => {
+          if (mode?.type !== "link") return
+          const kind = mode.doc.kind === "letter" ? "letter" : "cv"
+          void run("job.linkPaper", {
+            jobId: job.id,
+            docId: mode.doc.id,
+            kind,
+          })
+            .then(() => {
+              toast(`Linked to ${job.title}`)
+              closeDialog()
+            })
+            .catch((err: unknown) => {
+              toast(messageOf(err, "Could not link. Try again."))
+            })
         }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Link to application</DialogTitle>
-            <DialogDescription>
-              Choose the job this page belongs to.
-            </DialogDescription>
-          </DialogHeader>
-          {jobsError ? <p>{jobsError}</p> : null}
-          <div className="grid gap-2">
-            {jobs.map((job) => (
-              <Button
-                key={job.id}
-                type="button"
-                variant="outline"
-                className="h-auto min-h-11 justify-start whitespace-normal md:min-h-0"
-                onClick={() => {
-                  if (!mode || mode.type !== "link") return
-                  const kind = mode.doc.kind === "letter" ? "letter" : "cv"
-                  void run("job.linkPaper", {
-                    jobId: job.id,
-                    docId: mode.doc.id,
-                    kind,
-                  })
-                    .then(() => {
-                      toast(`Linked to ${job.title}`)
-                      closeDialog()
-                    })
-                    .catch((err: unknown) => {
-                      toast(messageOf(err, "Could not link. Try again."))
-                    })
-                }}
-              >
-                {job.title}, {job.company}
-              </Button>
-            ))}
-          </div>
-        </DialogContent>
-      </Dialog>
+      />
     </section>
   )
 }
