@@ -431,11 +431,19 @@ export function PaperLibrary({
         />
       ) : null}
       {ready && searching && noResults ? (
-        <div>
+        <div role="status" className="flex flex-col items-start gap-2">
           <p>No results for &quot;{query.trim()}&quot;</p>
           <p className="text-sm text-muted-foreground">
             Try another word, or clear the search.
           </p>
+          <Button
+            type="button"
+            variant="link"
+            className="h-11 px-0 text-sm md:h-8"
+            onClick={() => onQueryChange("")}
+          >
+            Clear search
+          </Button>
         </div>
       ) : null}
       {ready
@@ -475,25 +483,25 @@ export function PaperLibrary({
         />
       ) : null}
 
-      <Dialog
-        open={mode?.type === "new"}
-        onOpenChange={(open) => {
-          if (!open) closeDialog()
-        }}
-      >
-        <DialogContent
-          className={newGallery ? PAPER_GALLERY_DIALOG_CLASS : undefined}
-          initialFocus={newGallery ? focusChosenTemplate : undefined}
+      {mode?.type === "new" ? (
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) closeDialog()
+          }}
         >
-          {newGallery ? null : (
-            <DialogHeader>
-              <DialogTitle>New</DialogTitle>
-              <DialogDescription>
-                Pick a page, or bring a file you already have.
-              </DialogDescription>
-            </DialogHeader>
-          )}
-          {mode?.type === "new" ? (
+          <DialogContent
+            className={newGallery ? PAPER_GALLERY_DIALOG_CLASS : undefined}
+            initialFocus={newGallery ? focusChosenTemplate : undefined}
+          >
+            {newGallery ? null : (
+              <DialogHeader>
+                <DialogTitle>New</DialogTitle>
+                <DialogDescription>
+                  Pick a page, or bring a file you already have.
+                </DialogDescription>
+              </DialogHeader>
+            )}
             <PaperNewDialog
               step={mode.step}
               onStepChange={(step) =>
@@ -506,51 +514,98 @@ export function PaperLibrary({
               onChooseLetter={() => dispatch({ type: "letter_dialog_opened" })}
               onImport={chooseFile}
             />
-          ) : null}
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      ) : null}
 
-      <Dialog
-        open={mode?.type === "rename"}
-        onOpenChange={(open) => {
-          if (!open) closeDialog()
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rename</DialogTitle>
-            <DialogDescription>Name is required.</DialogDescription>
-          </DialogHeader>
-          <form
-            className="grid gap-4"
-            onSubmit={(event) => {
-              event.preventDefault()
-              void confirmRename()
-            }}
-          >
-            <Input
-              aria-label="Name"
-              className="h-11 text-base md:h-8 md:text-sm"
-              aria-invalid={renameError ? true : undefined}
-              aria-describedby={renameError ? "paper-rename-error" : undefined}
-              value={rename}
-              onChange={(event) =>
-                dispatch({ type: "rename_typed", value: event.target.value })
-              }
-            />
-            {renameError ? (
-              <p
-                id="paper-rename-error"
-                role="alert"
-                className="text-sm text-destructive"
-              >
-                {renameError}
-              </p>
-            ) : null}
+      {mode?.type === "rename" ? (
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) closeDialog()
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Rename</DialogTitle>
+              <DialogDescription>Name is required.</DialogDescription>
+            </DialogHeader>
+            <form
+              className="grid gap-4"
+              onSubmit={(event) => {
+                event.preventDefault()
+                void confirmRename()
+              }}
+            >
+              <Input
+                aria-label="Name"
+                className="h-11 text-base md:h-8 md:text-sm"
+                aria-invalid={renameError ? true : undefined}
+                aria-describedby={
+                  renameError ? "paper-rename-error" : undefined
+                }
+                value={rename}
+                onChange={(event) =>
+                  dispatch({ type: "rename_typed", value: event.target.value })
+                }
+              />
+              {renameError ? (
+                <p
+                  id="paper-rename-error"
+                  role="alert"
+                  className="text-sm text-destructive"
+                >
+                  {renameError}
+                </p>
+              ) : null}
+              <div className="flex justify-end gap-2">
+                <Button
+                  className="h-11 md:h-8"
+                  type="button"
+                  variant="ghost"
+                  onClick={closeDialog}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="h-11 md:h-7"
+                  type="submit"
+                  size="sm"
+                  variant="primary"
+                >
+                  Save
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      ) : null}
+
+      {mode && (mode.type === "delete" || mode.type === "delete-file") ? (
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) closeDialog()
+          }}
+        >
+          <DialogContent showCloseButton={false}>
+            <DialogHeader>
+              <DialogTitle>
+                {mode.type === "delete-file"
+                  ? `Delete "${mode.file.name}"?`
+                  : `Delete "${mode.doc.name}"?`}
+              </DialogTitle>
+              <DialogDescription>
+                {deletingWordPage
+                  ? "You can undo this from the message that follows."
+                  : "This can't be undone."}
+              </DialogDescription>
+            </DialogHeader>
             <div className="flex justify-end gap-2">
               <Button
-                className="h-11 md:h-8"
+                className="h-11 md:h-7"
                 type="button"
+                size="sm"
                 variant="ghost"
                 onClick={closeDialog}
               >
@@ -558,76 +613,31 @@ export function PaperLibrary({
               </Button>
               <Button
                 className="h-11 md:h-7"
-                type="submit"
+                type="button"
                 size="sm"
-                variant="primary"
+                variant="destructive"
+                onClick={() =>
+                  void (mode.type === "delete-file"
+                    ? confirmDeleteFile()
+                    : confirmDelete())
+                }
               >
-                Save
+                Delete
               </Button>
             </div>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={mode?.type === "delete" || mode?.type === "delete-file"}
-        onOpenChange={(open) => {
-          if (!open) closeDialog()
-        }}
-      >
-        <DialogContent showCloseButton={false}>
-          <DialogHeader>
-            <DialogTitle>
-              {mode?.type === "delete-file"
-                ? `Delete "${mode.file.name}"?`
-                : mode?.type === "delete"
-                  ? `Delete "${mode.doc.name}"?`
-                  : null}
-            </DialogTitle>
-            <DialogDescription>
-              {deletingWordPage
-                ? "You can undo this from the message that follows."
-                : "This can't be undone."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end gap-2">
-            <Button
-              className="h-11 md:h-7"
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={closeDialog}
-            >
-              Cancel
-            </Button>
-            <Button
-              className="h-11 md:h-7"
-              type="button"
-              size="sm"
-              variant="destructive"
-              onClick={() =>
-                void (mode?.type === "delete-file"
-                  ? confirmDeleteFile()
-                  : confirmDelete())
-              }
-            >
-              Delete
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      ) : null}
 
       {importState.type === "importing" ? (
         <ImportProgressDialog
-          open
-          filename={importState.type === "importing" ? importState.name : ""}
+          filename={importState.name}
           onCancel={cancelImport}
         />
       ) : null}
       {importState.type === "error" ? (
         <CantReadDialog
-          open
-          sentence={importState.type === "error" ? importState.message : ""}
+          sentence={importState.message}
           onChoose={chooseFile}
           onBlank={() => void startBlank()}
           onClose={() => dispatch({ type: "import_ended" })}

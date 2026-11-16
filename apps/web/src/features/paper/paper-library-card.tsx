@@ -18,25 +18,28 @@ export type PaperCardAction = {
 }
 
 const SHEET =
-  "relative flex aspect-[150/212] w-full flex-col overflow-hidden rounded-[3px] bg-card px-[13px] py-[14px] text-left shadow-sm ring-1 ring-foreground/5 transition-[box-shadow] duration-(--duration-micro) ease-(--ease-micro) group-hover/card:ring-foreground/15 group-focus-visible/card:ring-foreground/15 md:h-[212px] md:w-[150px]"
+  "relative flex aspect-[150/212] w-full flex-col gap-[3.5px] overflow-hidden rounded-[3px] bg-card px-[13px] py-[14px] text-left shadow-sm ring-1 ring-foreground/5 transition-[box-shadow] duration-(--duration-micro) ease-(--ease-micro) group-hover/card:ring-foreground/15 group-focus-visible/card:ring-foreground/15 md:h-[212px] md:w-[150px]"
 
-function PaperSheet({
-  name,
-  badge,
-  preview,
-}: {
-  name: string
-  badge?: string
-  preview?: string
-}) {
+function PaperSheet({ lines, badge }: { lines: string[]; badge?: string }) {
+  const [lead, ...rest] = lines
   return (
     <span data-slot="paper-library-sheet" className={SHEET} aria-hidden="true">
-      <span
-        data-slot="paper-library-preview"
-        className="line-clamp-8 text-[13px] leading-5 font-medium break-words whitespace-pre-line text-foreground"
-      >
-        {preview && preview.length > 0 ? preview : name}
-      </span>
+      {lead ? (
+        <span
+          data-slot="paper-library-preview-name"
+          className="line-clamp-2 text-[9px] leading-[11px] font-bold break-words text-foreground"
+        >
+          {lead}
+        </span>
+      ) : null}
+      {rest.length > 0 ? (
+        <span
+          data-slot="paper-library-preview"
+          className="line-clamp-8 text-[3.8px] leading-[1.45] font-normal break-words whitespace-pre-line text-muted-foreground"
+        >
+          {rest.join("\n")}
+        </span>
+      ) : null}
       {badge ? (
         <span className="absolute bottom-2.5 left-2.5 flex h-5 items-center rounded-[5px] bg-foreground px-[7px] text-[10px] font-bold text-card">
           {badge}
@@ -66,7 +69,7 @@ export function PaperLibraryCard({
   name,
   meta,
   badge,
-  preview,
+  lines = [],
   openLabel,
   onOpen,
   actions,
@@ -74,14 +77,14 @@ export function PaperLibraryCard({
   name: string
   meta: string
   badge?: string
-  preview?: string
+  lines?: string[]
   openLabel?: string
   onOpen?: () => void
   actions: PaperCardAction[]
 }) {
   const body: ReactNode = (
     <>
-      <PaperSheet name={name} badge={badge} preview={preview} />
+      <PaperSheet lines={lines} badge={badge} />
       <PaperLabel name={name} meta={meta} />
     </>
   )

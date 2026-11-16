@@ -1,6 +1,8 @@
+import { Link } from "@tanstack/react-router"
 import type { JobView, PaperView } from "@workspace/domain"
 
-import { Button } from "@workspace/ui/components/button"
+import { SURFACE_PATHS } from "@/lib/product-paths.ts"
+import { Button, buttonVariants } from "@workspace/ui/components/button"
 import {
   Dialog,
   DialogContent,
@@ -24,9 +26,10 @@ export function PaperLinkDialog({
   onClose: () => void
   onLink: (job: JobView) => void
 }) {
+  if (doc === null) return null
   return (
     <Dialog
-      open={doc !== null}
+      open
       onOpenChange={(open) => {
         if (!open) onClose()
       }}
@@ -51,15 +54,15 @@ export function PaperLinkDialog({
         {!jobsLoading && !jobsError && jobs.length === 0 ? (
           <div className="flex flex-col items-start gap-3">
             <p className="text-sm text-muted-foreground">No jobs yet.</p>
-            <Button
-              nativeButton={false}
-              role="link"
-              variant="outline"
-              render={<a href="/apply" />}
-              className="h-11 md:h-8"
+            <Link
+              to={SURFACE_PATHS.apply}
+              className={buttonVariants({
+                variant: "outline",
+                className: "h-11 md:h-8",
+              })}
             >
               Add a job in Apply
-            </Button>
+            </Link>
           </div>
         ) : null}
         <div

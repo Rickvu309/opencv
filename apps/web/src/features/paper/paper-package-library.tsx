@@ -108,7 +108,9 @@ export function PaperPackageLibrary({
         <section aria-label="Word documents" className="flex flex-col gap-3">
           {library.query.error ? (
             <div>
-              <p>Could not load Word documents.</p>
+              <p role="alert" className="text-sm text-destructive">
+                Could not load Word documents.
+              </p>
               <Button
                 className="h-11 md:h-9"
                 variant="outline"
@@ -142,29 +144,31 @@ export function PaperPackageLibrary({
           ) : null}
         </section>
       ) : null}
-      <Dialog
-        open={selected !== null}
-        onOpenChange={(open) => {
-          if (!open) onSelect(null)
-        }}
-      >
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{selected?.name ?? "Word document"}</DialogTitle>
-            <DialogDescription>
-              Text preview of this saved Word version. Download Word to keep its
-              original layout.
-            </DialogDescription>
-          </DialogHeader>
-          {selected ? (
-            <WordSnapshot
-              key={`${selected.docId}:${selected.revision}`}
-              document={selected}
-              owner={library.owner}
-            />
-          ) : null}
-        </DialogContent>
-      </Dialog>
+      {selected !== null ? (
+        <Dialog
+          open
+          onOpenChange={(open) => {
+            if (!open) onSelect(null)
+          }}
+        >
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{selected?.name ?? "Word document"}</DialogTitle>
+              <DialogDescription>
+                Text preview of this saved Word version. Download Word to keep
+                its original layout.
+              </DialogDescription>
+            </DialogHeader>
+            {selected ? (
+              <WordSnapshot
+                key={`${selected.docId}:${selected.revision}`}
+                document={selected}
+                owner={library.owner}
+              />
+            ) : null}
+          </DialogContent>
+        </Dialog>
+      ) : null}
     </>
   )
 }

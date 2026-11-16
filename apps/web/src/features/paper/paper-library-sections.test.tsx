@@ -1,7 +1,22 @@
 import { afterEach, describe, expect, it } from "vitest"
-import { cleanup, fireEvent, screen, within } from "@testing-library/react"
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
+import { RouterContextProvider } from "@tanstack/react-router"
 
-import { cv, letter, renderLibrary } from "./paper-library.fixtures.tsx"
+import { render } from "@/test/render-with-client.tsx"
+import { PaperLibrary } from "./paper-library.tsx"
+import {
+  createLibraryRouter,
+  cv,
+  letter,
+  letterPaper,
+  renderLibrary,
+} from "./paper-library.fixtures.tsx"
 
 afterEach(() => {
   cleanup()
@@ -27,7 +42,7 @@ describe("Paper home sections", () => {
         { name: "Import a file" }
       )
     ).toBeInTheDocument()
-    fireEvent.change(screen.getByRole("textbox", { name: "Search Paper" }), {
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search Paper" }), {
       target: { value: "design" },
     })
     expect(
@@ -42,10 +57,31 @@ describe("Paper home sections", () => {
     expect(
       screen.queryByRole("button", { name: "New letter" })
     ).not.toBeInTheDocument()
-    fireEvent.change(screen.getByRole("textbox", { name: "Search Paper" }), {
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search Paper" }), {
       target: { value: "nothing" },
     })
     expect(screen.getByText('No results for "nothing"')).toBeInTheDocument()
+    const empty = screen.getByRole("status")
+    expect(empty).toHaveTextContent("Try another word, or clear the search.")
+    fireEvent.keyDown(screen.getByRole("searchbox", { name: "Search Paper" }), {
+      key: "Escape",
+    })
+    expect(screen.getByRole("searchbox", { name: "Search Paper" })).toHaveValue(
+      ""
+    )
+    expect(screen.getByRole("region", { name: "CVs" })).toBeInTheDocument()
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search Paper" }), {
+      target: { value: "nothing" },
+    })
+    fireEvent.click(
+      within(screen.getByRole("status")).getByRole("button", {
+        name: "Clear search",
+      })
+    )
+    expect(screen.getByRole("searchbox", { name: "Search Paper" })).toHaveValue(
+      ""
+    )
+    expect(screen.getByRole("region", { name: "CVs" })).toBeInTheDocument()
   })
 
   it("keeps the header to the title, search and New", () => {
@@ -161,7 +197,7 @@ describe("Paper home sections", () => {
       screen.getByRole("button", { name: /^PM track CV,/ })
     ).toBeInTheDocument()
 
-    fireEvent.change(screen.getByRole("textbox", { name: "Search Paper" }), {
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search Paper" }), {
       target: { value: "portfolio" },
     })
 
@@ -188,14 +224,22 @@ describe("Paper home sections", () => {
         { name: "New letter" }
       )
     ).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: "Proofs" })).toHaveAttribute(
-      "href",
-      "/proofs"
+    const proofs = screen.getByRole("link", { name: "Proofs" })
+    expect(proofs).toHaveAttribute("href", "/proofs")
+    expect(proofs.className).toMatch(/hover:bg-muted/)
+    expect(proofs.className).not.toMatch(/hover:bg-transparent/)
+    expect(proofs.querySelector("span[aria-hidden]")).toBeNull()
+    expect(proofs.querySelector("svg")).toHaveAttribute("aria-hidden", "true")
+    const lead = document.querySelector(
+      "[data-slot=paper-library-preview-name]"
     )
-    const preview = document.querySelector("[data-slot=paper-library-preview]")
-    expect(preview).toHaveTextContent("A cover letter.")
-    expect(preview?.className).toMatch(/text-\[13px\]/)
-    expect(preview?.className).not.toMatch(/text-\[9px\]|line-clamp-4/)
+    expect(lead).toHaveTextContent("A cover letter.")
+    expect(lead).not.toHaveTextContent("Design letter")
+    expect(lead?.className).toMatch(/text-\[9px\]/)
+    expect(lead?.className).toMatch(/font-bold/)
+    expect(
+      document.querySelector("[data-slot=paper-library-preview]")
+    ).toBeNull()
     const sheet = document.querySelector("[data-slot=paper-library-sheet]")
     const tile = screen.getByRole("button", { name: "New CV" })
     expect(sheet?.className).toMatch(/md:h-\[212px\] md:w-\[150px\]/)
@@ -205,10 +249,67 @@ describe("Paper home sections", () => {
     ).toMatch(/\bborder-0\b/)
   })
 
-  it("shows a Word page title in the thumbnail when the page has no body", () => {
-    renderLibrary([{ ...letter("Word letter"), format: "word" }])
-    const preview = document.querySelector("[data-slot=paper-library-preview]")
-    expect(preview).toHaveTextContent("Word letter")
-    expect(preview).not.toHaveTextContent("A cover letter.")
+  it("shows stored Word lines and leaves a title-only sheet empty", () => {
+    renderLibrary([
+      {
+        ...letter("Word letter"),
+        format: "word",
+        paper: letterPaper(["A cover letter.", "The second line."]),
+      },
+    ])
+    const lead = document.querySelector(
+      "[data-slot=paper-library-preview-name]"
+    )
+    expect(lead).toHaveTextContent("A cover letter.")
+    expect(lead).not.toHaveTextContent("Word letter")
+    const body = document.querySelector("[data-slot=paper-library-preview]")
+    expect(body).toHaveTextContent("The second line.")
+    expect(body?.className).toMatch(/text-\[3\.8px\]/)
+    expect(body?.className).toMatch(/text-muted-foreground/)
+    cleanup()
+    renderLibrary([
+      {
+        ...letter("Only title"),
+        format: "word",
+        paper: letterPaper(["Only title"]),
+      },
+    ])
+    expect(
+      document.querySelector("[data-slot=paper-library-preview-name]")
+    ).toBeNull()
+    expect(
+      document.querySelector("[data-slot=paper-library-preview]")
+    ).toBeNull()
+    expect(
+      document.querySelector("[data-slot=paper-library-sheet]")?.textContent
+    ).toBe("")
+    expect(
+      screen.getByRole("button", { name: /^Only title,/ })
+    ).toBeInTheDocument()
+  })
+
+  it("follows Proofs inside the app and keeps a modified click on this page", async () => {
+    const router = createLibraryRouter()
+    render(
+      <RouterContextProvider router={router}>
+        <PaperLibrary
+          docs={[cv("My CV")]}
+          files={[]}
+          loading={false}
+          error={null}
+          onRetry={() => undefined}
+          onOpen={() => undefined}
+          query=""
+          onQueryChange={() => undefined}
+        />
+      </RouterContextProvider>
+    )
+    const proofs = screen.getByRole("link", { name: "Proofs" })
+    fireEvent.click(proofs, { metaKey: true })
+    expect(router.state.location.pathname).toBe("/")
+    fireEvent.click(proofs)
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe("/proofs")
+    })
   })
 })

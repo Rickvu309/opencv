@@ -1,4 +1,11 @@
-import { useReducer } from "react"
+import { useReducer, useState, type ReactNode } from "react"
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  RouterContextProvider,
+} from "@tanstack/react-router"
 import {
   blankCv,
   paperDocumentSchema,
@@ -9,6 +16,32 @@ import {
 
 import { render } from "@/test/render-with-client.tsx"
 import { PaperLibrary } from "./paper-library.tsx"
+
+export function createLibraryRouter() {
+  const root = createRootRoute()
+  const proofs = createRoute({
+    getParentRoute: () => root,
+    path: "/proofs",
+    component: () => null,
+  })
+  const apply = createRoute({
+    getParentRoute: () => root,
+    path: "/apply",
+    component: () => null,
+  })
+  return createRouter({
+    routeTree: root.addChildren([proofs, apply]),
+    history: createMemoryHistory({ initialEntries: ["/"] }),
+  })
+}
+
+export function libraryRouter(children: ReactNode) {
+  return (
+    <RouterContextProvider router={createLibraryRouter()}>
+      {children}
+    </RouterContextProvider>
+  )
+}
 
 export function letterPaper(lines: string[]): PaperView["paper"] {
   return paperDocumentSchema.parse({
@@ -53,21 +86,24 @@ export function letter(name: string): PaperView {
 
 export function renderLibrary(docs: PaperView[], files: PaperFile[] = []) {
   function Harness() {
+    const [router] = useState(createLibraryRouter)
     const [query, setQuery] = useReducer(
       (_query: string, nextQuery: string) => nextQuery,
       ""
     )
     return (
-      <PaperLibrary
-        docs={docs}
-        files={files}
-        loading={false}
-        error={null}
-        onRetry={() => undefined}
-        onOpen={() => undefined}
-        query={query}
-        onQueryChange={setQuery}
-      />
+      <RouterContextProvider router={router}>
+        <PaperLibrary
+          docs={docs}
+          files={files}
+          loading={false}
+          error={null}
+          onRetry={() => undefined}
+          onOpen={() => undefined}
+          query={query}
+          onQueryChange={setQuery}
+        />
+      </RouterContextProvider>
     )
   }
   render(<Harness />)

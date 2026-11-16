@@ -54,6 +54,7 @@ export function PaperImportRow({
           type="submit"
           variant="primary"
           className="h-11 shrink-0 md:h-8"
+          disabled={link.trim().length === 0}
         >
           Import
         </Button>
@@ -97,17 +98,15 @@ export function PaperImportDialog({
 }
 
 export function ImportProgressDialog({
-  open,
   filename,
   onCancel,
 }: {
-  open: boolean
   filename: string
   onCancel: () => void
 }) {
   return (
     <Dialog
-      open={open}
+      open
       onOpenChange={(next) => {
         if (!next) onCancel()
       }}
@@ -136,7 +135,6 @@ export function ImportProgressDialog({
 }
 
 export function CantReadDialog({
-  open,
   sentence,
   onChoose,
   onBlank,
@@ -144,7 +142,6 @@ export function CantReadDialog({
   onRetry,
   blankPending = false,
 }: {
-  open: boolean
   sentence: string
   onChoose: () => void
   onBlank: () => void
@@ -154,7 +151,7 @@ export function CantReadDialog({
 }) {
   return (
     <Dialog
-      open={open}
+      open
       onOpenChange={(next) => {
         if (!next) onClose()
       }}

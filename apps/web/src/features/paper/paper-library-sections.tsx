@@ -1,4 +1,5 @@
 import { useReducer, type ReactNode } from "react"
+import { Link } from "@tanstack/react-router"
 import {
   ChevronDown,
   ChevronRight,
@@ -17,7 +18,9 @@ import {
   type PaperView,
 } from "@workspace/domain"
 
-import { Button } from "@workspace/ui/components/button"
+import { Button, buttonVariants } from "@workspace/ui/components/button"
+
+import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 
 import {
   PaperLibraryCard,
@@ -29,14 +32,15 @@ import { paperEditedLabel } from "./paper-templates.ts"
 
 const PREVIEW_LINE_LIMIT = 12
 
-export function librarySheetPreview(doc: PaperView): string | undefined {
-  if (doc.format === "word") return undefined
-  const lines = paperPlainText(doc.paper)
+export function librarySheetLines(doc: PaperView): string[] {
+  const paper = doc.paper
+  if (!paper || (paper.kind !== "cv" && paper.kind !== "letter")) return []
+  const name = doc.name.trim()
+  return paperPlainText(paper)
     .split("\n")
     .map((line) => line.trim())
-    .filter((line) => line.length > 0)
-  if (lines.length === 0) return undefined
-  return lines.slice(0, PREVIEW_LINE_LIMIT).join("\n")
+    .filter((line) => line.length > 0 && line !== name)
+    .slice(0, PREVIEW_LINE_LIMIT)
 }
 
 export function PaperProofsLink() {
@@ -46,22 +50,21 @@ export function PaperProofsLink() {
       data-slot="paper-library-section"
       className="flex flex-col gap-2 md:gap-3.5"
     >
-      <Button
-        nativeButton={false}
-        role="link"
-        variant="ghost"
-        render={<a href="/proofs" />}
+      <Link
+        to={SURFACE_PATHS.proofs}
         data-slot="paper-library-section-head"
-        className="h-11 w-full justify-start gap-2 rounded-md px-0 text-sm font-semibold text-foreground hover:bg-transparent md:h-8"
+        className={buttonVariants({
+          variant: "ghost",
+          className:
+            "h-11 w-full justify-start gap-2 rounded-md px-0 text-sm font-semibold text-foreground md:h-8",
+        })}
       >
-        <span aria-hidden="true" className="inline-flex">
-          <ChevronRight
-            data-slot="paper-library-section-icon"
-            className="size-[13px] text-muted-foreground"
-          />
-        </span>
+        <ChevronRight
+          data-slot="paper-library-section-icon"
+          className="size-[13px] text-muted-foreground"
+        />
         Proofs
-      </Button>
+      </Link>
     </section>
   )
 }
@@ -173,7 +176,7 @@ export function LibraryEntryCard({
       <PaperLibraryCard
         name={doc.name}
         meta={edited}
-        preview={librarySheetPreview(doc)}
+        lines={librarySheetLines(doc)}
         openLabel={`${doc.name}, ${edited}`}
         onOpen={() => on.onOpen(doc.id)}
         actions={paperActions(doc, entry.word, on)}

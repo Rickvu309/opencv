@@ -389,6 +389,29 @@ export const SCREENS = [
     ],
   },
   {
+    id: "paper-home-no-match",
+    route: "/paper",
+    steps: [
+      ...OPEN_BLANK_CV,
+      { goto: "/paper" },
+      {
+        fill: {
+          selector: 'main input[aria-label="Search Paper"]',
+          text: "zzzz-no-match",
+        },
+      },
+      { waitFor: { role: "button", name: "Clear search" } },
+    ],
+  },
+  {
+    id: "paper-import-link",
+    route: "/paper",
+    steps: [
+      { click: { role: "button", name: "Import" } },
+      { waitFor: { role: "textbox", name: "Paste a link" } },
+    ],
+  },
+  {
     id: "apply-board",
     route: "/apply",
     steps: ADD_A_JOB,

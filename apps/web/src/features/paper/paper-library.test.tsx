@@ -20,6 +20,7 @@ import {
   cv,
   letter,
   letterPaper,
+  libraryRouter,
   renderLibrary,
 } from "./paper-library.fixtures.tsx"
 import { importPaperFile, importPaperLink } from "./paper-api.ts"
@@ -225,6 +226,10 @@ describe("Paper library", () => {
     expect(
       screen.getByRole("button", { name: "Start blank" })
     ).toBeInTheDocument()
+    expect(screen.getAllByRole("dialog")).toHaveLength(1)
+    expect(
+      document.querySelectorAll("[data-slot='dialog-content']")
+    ).toHaveLength(1)
     const retryInput = document.querySelector('input[type="file"]')
     if (!retryInput) throw new Error("Missing retry input")
     const picker = vi.spyOn(retryInput, "click")
@@ -269,7 +274,7 @@ describe("Paper library", () => {
       name: "Paste a link",
     })
     const submit = within(dialog).getByRole("button", { name: "Import" })
-    expect(submit).toBeEnabled()
+    expect(submit).toBeDisabled()
     fireEvent.click(submit)
     expect(vi.mocked(importPaperLink)).not.toHaveBeenCalled()
     fireEvent.change(field, {
@@ -299,7 +304,7 @@ describe("Paper library", () => {
       screen.getByRole("button", { name: "Cover letter" })
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole("textbox", { name: "Search Paper" })
+      screen.queryByRole("searchbox", { name: "Search Paper" })
     ).not.toBeInTheDocument()
     fireEvent.click(
       screen.getAllByRole("button", { name: "Import", exact: true }).at(0) ??
@@ -388,18 +393,20 @@ describe("Paper library", () => {
   it("prints once in strict mode and unmounts the library sheet", async () => {
     const print = vi.spyOn(window, "print").mockImplementation(() => undefined)
     render(
-      <StrictMode>
-        <PaperLibrary
-          docs={[cv("PM track CV")]}
-          files={[]}
-          loading={false}
-          error={null}
-          onRetry={() => undefined}
-          onOpen={() => undefined}
-          query=""
-          onQueryChange={() => undefined}
-        />
-      </StrictMode>
+      libraryRouter(
+        <StrictMode>
+          <PaperLibrary
+            docs={[cv("PM track CV")]}
+            files={[]}
+            loading={false}
+            error={null}
+            onRetry={() => undefined}
+            onOpen={() => undefined}
+            query=""
+            onQueryChange={() => undefined}
+          />
+        </StrictMode>
+      )
     )
     fireEvent.click(screen.getByRole("button", { name: "PM track CV menu" }))
     fireEvent.click(
