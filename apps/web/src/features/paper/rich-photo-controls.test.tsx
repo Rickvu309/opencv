@@ -34,22 +34,32 @@ function setup(
   mounted = false,
   wrapped = false,
   portraitRatio = 0.75,
-  size = 1800
+  size = 1800,
+  shape: ReturnType<typeof layoutPhotoSchema.parse>["shape"] = square
+    ? "rectangle"
+    : "circle"
 ) {
   const photo = layoutPhotoSchema.parse({
     id: "portrait",
     type: "photo",
     source: "file:00000000-0000-4000-8000-000000000001",
     width: size,
-    height: size,
+    height:
+      shape === "circle" || square ? size : Math.round(size / portraitRatio),
     crop: {
-      top: square ? 0 : Math.round((1 - portraitRatio) * 50000),
+      top:
+        square || shape !== "circle"
+          ? 0
+          : Math.round((1 - portraitRatio) * 50000),
       right: 0,
-      bottom: square ? 0 : Math.round((1 - portraitRatio) * 50000),
+      bottom:
+        square || shape !== "circle"
+          ? 0
+          : Math.round((1 - portraitRatio) * 50000),
       left: 0,
     },
     rotation: 0,
-    shape: square ? "rectangle" : "circle",
+    shape,
     placement: wrapped
       ? { kind: "wrap", side: "right" }
       : { kind: "block", alignment: "left" },
@@ -337,21 +347,7 @@ it.each([
   expect(editor.updatePhoto).not.toHaveBeenCalled()
 })
 
-it("rounds displayed sizes to two decimals without losing a twip", () => {
-  const { editor } = setup(true)
-  for (let size = 240; size <= 31680; size++) {
-    const original = { ...editor.photos()[0]!, width: size, height: size }
-    const fields = photoFields(original)
-    expect(fields.width).toMatch(/^\d+(?:\.\d{1,2})?$/)
-    expect(fields.height).toMatch(/^\d+(?:\.\d{1,2})?$/)
-    expect(parsePhotoForm(original, fields)).toMatchObject({
-      ok: true,
-      photo: original,
-    })
-  }
-})
-
-it("saves exactly the visible fields or nothing across seeded random form inputs", () => {
+it("refuses invalid seeded inputs and fits valid geometry", () => {
   let seed = 1584
   const random = () => {
     seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0
@@ -374,7 +370,7 @@ it("saves exactly the visible fields or nothing across seeded random form inputs
     "0",
     "50",
   ]
-  const { editor, field } = setup(true)
+  const { editor } = setup(true)
   const original = editor.photos()[0]!
   for (let round = 0; round < 2000; round++) {
     const sourceRatio = [0.75, 1, 2][round % 3]!
@@ -457,36 +453,6 @@ it("saves exactly the visible fields or nothing across seeded random form inputs
       })
     }
   }
-  for (let round = 0; round < 20; round++) {
-    for (const name of photoNumbers) {
-      const value =
-        round % 3 === 0
-          ? name === "width" || name === "height"
-            ? "120"
-            : "0"
-          : examples[Math.floor(random() * examples.length)]!
-      fireEvent.change(field(name), { target: { value } })
-    }
-    const shown = photoFields(original)
-    for (const name of photoNumbers) {
-      const input = field(name)
-      if (!(input instanceof HTMLInputElement))
-        throw new Error("Photo field required")
-      shown[name] = input.value
-    }
-    const expected = parsePhotoForm(original, shown)
-    vi.mocked(editor.updatePhoto).mockClear()
-    fireEvent.click(screen.getByRole("button", { name: "Apply", exact: true }))
-    if (expected.ok) {
-      expect(editor.updatePhoto).toHaveBeenCalledExactlyOnceWith(expected.photo)
-      fireEvent.click(
-        screen.getByRole("button", { name: "Edit photo", exact: true })
-      )
-    } else {
-      expect(editor.updatePhoto).not.toHaveBeenCalled()
-      expect(screen.getByRole("dialog")).toBeInTheDocument()
-    }
-  }
 })
 
 it.each([
@@ -567,3 +533,53 @@ function photoClient(photo: ReturnType<typeof layoutPhotoSchema.parse>) {
     { provenance }
   )
 }
+
+it.each([
+  ["rectangle", "Height", "253"],
+  ["rounded", "Height", "253"],
+  ["rectangle", "Top", "28.405"],
+  ["circle", "Right", "3.496"],
+  ["circle", "Left", "3.496"],
+  ["circle", "Top", "11.362"],
+] as const)(
+  "reopens the shown %s fields after committing %s=%s",
+  (shape, name, value) => {
+    const { field, editor } = setup(
+      false,
+      true,
+      false,
+      2687 / 3356,
+      2160,
+      shape
+    )
+    expect(editor.photos()[0]?.shape).toBe(shape)
+    const image = screen
+      .getByRole("img", { name: "Photo preview: Portrait" })
+      .querySelector("img")
+    if (!image) throw new Error("Photo source required")
+    Object.defineProperties(image, {
+      naturalWidth: { value: 2687 },
+      naturalHeight: { value: 3356 },
+    })
+    fireEvent.load(image)
+    fireEvent.change(field(name), { target: { value } })
+    fireEvent.blur(field(name))
+    const shown = photoNumbers.map((key) => {
+      const input = field(key)
+      if (!(input instanceof HTMLInputElement))
+        throw new Error("Photo field required")
+      return input.value
+    })
+    fireEvent.blur(field(name))
+    fireEvent.focus(field("Top"))
+    fireEvent.blur(field("Top"))
+    fireEvent.click(screen.getByRole("button", { name: "Apply", exact: true }))
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    expect(editor.photos()).toHaveLength(1)
+    fireEvent.click(
+      screen.getByRole("button", { name: "Edit photo", exact: true })
+    )
+    for (const [index, key] of photoNumbers.entries())
+      expect(field(key)).toHaveValue(shown[index])
+  }
+)

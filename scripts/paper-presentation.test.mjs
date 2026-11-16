@@ -5,6 +5,7 @@ import path from "node:path"
 import { fileURLToPath } from "node:url"
 import test from "node:test"
 import { detect } from "./lib/paper-presentation.mjs"
+import { detectPhotoApplyRounding } from "./lib/paper-photo-guard.mjs"
 import { clean, mistakes } from "./fixtures/paper-presentation.mjs"
 
 const root = path.resolve(fileURLToPath(new URL("..", import.meta.url)))
@@ -126,6 +127,38 @@ test("round-five photo Apply rejects conditional geometry, lost placement and ra
   assert.ok(detect(before, file).length > 0)
   assert.deepEqual(
     detect(readFileSync(path.join(root, file), "utf8"), file),
+    []
+  )
+})
+
+test("round-six photo Apply guard refuses refitting consistent fields at the introducing head", () => {
+  const file = "apps/web/src/features/paper/rich-photo-form.ts"
+  const mistake = execFileSync("git", ["show", `dfdf0043:${file}`], {
+    cwd: root,
+    encoding: "utf8",
+  })
+  const clean = readFileSync(path.join(root, file), "utf8")
+  assert.equal(detectPhotoApplyRounding(mistake, file).length, 2)
+  assert.deepEqual(detectPhotoApplyRounding(clean, file), [])
+  for (const gate of ["cropNeedsFit", "sizeNeedsFit"]) {
+    assert.ok(
+      detectPhotoApplyRounding(
+        clean.replace(`editedField || ${gate}`, "true"),
+        file
+      ).length > 0
+    )
+  }
+})
+
+test("round-six photo blur guard catches the original unconditional commit", () => {
+  const file = "apps/web/src/features/paper/rich-photo-number.tsx"
+  const mistake = execFileSync("git", ["show", `dfdf0043:${file}`], {
+    cwd: root,
+    encoding: "utf8",
+  })
+  assert.equal(detectPhotoApplyRounding(mistake, file).length, 1)
+  assert.deepEqual(
+    detectPhotoApplyRounding(readFileSync(path.join(root, file), "utf8"), file),
     []
   )
 })

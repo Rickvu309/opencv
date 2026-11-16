@@ -1,5 +1,6 @@
 import {
   layoutPhotoSchema,
+  croppedPhotoRatio,
   fitPhotoCrop,
   resizePhoto,
   photoSourceRatio,
@@ -116,12 +117,23 @@ export function parsePhotoForm(
     editedField !== "shape"
       ? editedField
       : undefined
+  const cropNeedsFit =
+    Math.abs(
+      (100000 - photo.crop.left - photo.crop.right) * sourceRatio -
+        (100000 - photo.crop.top - photo.crop.bottom)
+    ) > 2
   const crop =
-    photo.shape === "circle"
+    photo.shape === "circle" && (editedField || cropNeedsFit)
       ? fitPhotoCrop(sourceRatio, 1, photo.crop, editedEdge)
       : photo.crop
   photo = { ...photo, crop }
-  if (geometryChanged) {
+  const sizeNeedsFit =
+    photo.shape === "circle"
+      ? photo.width !== photo.height
+      : Math.abs(
+          photo.height - photo.width / croppedPhotoRatio(sourceRatio, crop)
+        ) > 1
+  if (geometryChanged && (editedField || sizeNeedsFit)) {
     const dimension =
       editedField === "height" ||
       (!editedField &&

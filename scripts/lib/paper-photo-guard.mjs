@@ -1,7 +1,71 @@
 import ts from "typescript"
 
-export function detectPhotoPresentation(text, path, source) {
+export function detectPhotoApplyRounding(text, path) {
+  if (path === "apps/web/src/features/paper/rich-photo-number.tsx") {
+    const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
+    const hits = []
+    const visit = (node) => {
+      if (
+        ts.isJsxAttribute(node) &&
+        node.name.getText(source) === "onBlur" &&
+        node.initializer?.getText(source) === "{onCommit}"
+      )
+        hits.push("Photo fields must not re-commit unchanged values on blur")
+      ts.forEachChild(node, visit)
+    }
+    visit(source)
+    return hits
+  }
+  if (path !== "apps/web/src/features/paper/rich-photo-form.ts") return []
+  const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
   const hits = []
+  const visit = (node) => {
+    if (
+      ts.isCallExpression(node) &&
+      ["fitPhotoCrop", "resizePhoto"].includes(node.expression.getText(source))
+    ) {
+      const gate =
+        node.expression.getText(source) === "fitPhotoCrop"
+          ? "cropNeedsFit"
+          : "sizeNeedsFit"
+      let parent = node.parent
+      let guarded = false
+      while (parent && !ts.isFunctionDeclaration(parent)) {
+        if (
+          (ts.isConditionalExpression(parent) &&
+            parent.whenTrue.pos <= node.pos &&
+            node.end <= parent.whenTrue.end) ||
+          (ts.isIfStatement(parent) &&
+            parent.thenStatement.pos <= node.pos &&
+            node.end <= parent.thenStatement.end)
+        ) {
+          const condition = ts.isIfStatement(parent)
+            ? parent.expression
+            : parent.condition
+          const identifiers = new Set()
+          const names = (item) => {
+            if (ts.isIdentifier(item)) identifiers.add(item.text)
+            ts.forEachChild(item, names)
+          }
+          names(condition)
+          if (identifiers.has("editedField") && identifiers.has(gate))
+            guarded = true
+        }
+        parent = parent.parent
+      }
+      if (!guarded)
+        hits.push(
+          "Photo Apply must preserve already-consistent shown fields instead of fitting them again"
+        )
+    }
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  return hits
+}
+
+export function detectPhotoPresentation(text, path, source) {
+  const hits = detectPhotoApplyRounding(text, path)
   if (
     path === "apps/web/src/features/paper/rich-photo-error.ts" &&
     !text.includes('error.message.trimStart().startsWith("[")')

@@ -1,7 +1,7 @@
 export const clean = [
   {
     path: "apps/web/src/features/paper/rich-photo-form.ts",
-    text: 'function parsePhotoForm() { const crop = photo.shape === "circle" ? fitPhotoCrop(sourceRatio, 1, photo.crop) : photo.crop; return { ...photo, crop, placement: original.placement, width: Math.round((photo.width / 15) * 100) } }',
+    text: 'function parsePhotoForm() { const crop = photo.shape === "circle" && (editedField || cropNeedsFit) ? fitPhotoCrop(sourceRatio, 1, photo.crop) : photo.crop; return { ...photo, crop, placement: original.placement, width: Math.round((photo.width / 15) * 100) } }',
   },
   {
     path: "apps/web/src/features/paper/rich-photo-controls.tsx",
@@ -25,7 +25,7 @@ export const clean = [
   },
   {
     path: "apps/web/src/features/paper/rich-photo-number.tsx",
-    text: `const field = <Input value={value} className="tabular-nums" aria-invalid={Boolean(error)} aria-describedby={errorId} onChange={event => onChange(event.target.value)} onBlur={onCommit} />`,
+    text: `const field = <Input value={value} className="tabular-nums" aria-invalid={Boolean(error)} aria-describedby={errorId} onChange={event => onChange(event.target.value)} onBlur={commitChangedField} />`,
   },
   {
     path: "apps/web/src/features/paper/rich-photo-controls.tsx",

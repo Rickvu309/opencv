@@ -1,4 +1,4 @@
-import { useId } from "react"
+import { useId, useRef } from "react"
 import { Input } from "@workspace/ui/components/input"
 
 export function RichPhotoNumber({
@@ -15,6 +15,12 @@ export function RichPhotoNumber({
   onCommit: () => void
 }) {
   const errorId = useId()
+  const changed = useRef(false)
+  const commitChangedField = () => {
+    if (!changed.current) return
+    changed.current = false
+    onCommit()
+  }
   return (
     <>
       <Input
@@ -27,12 +33,15 @@ export function RichPhotoNumber({
         value={value}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? errorId : undefined}
-        onChange={(event) => onChange(event.currentTarget.value)}
-        onBlur={onCommit}
+        onChange={(event) => {
+          changed.current = true
+          onChange(event.currentTarget.value)
+        }}
+        onBlur={commitChangedField}
         onKeyDown={(event) => {
           if (event.key !== "Enter") return
           event.preventDefault()
-          onCommit()
+          commitChangedField()
         }}
       />
       {error ? (
