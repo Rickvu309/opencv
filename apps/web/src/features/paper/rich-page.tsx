@@ -30,7 +30,6 @@ type EditorState = {
 type EditorAction =
   | { type: "session"; session: Session }
   | { type: "mounted"; editor: Editor }
-  | { type: "marks" }
   | { type: "unmounted" }
   | { type: "failed" }
 
