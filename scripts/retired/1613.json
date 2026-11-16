@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/routes/paper-search.test.tsx > Paper search route state",
+    "because": "The field is the kit SearchInput, so its role is searchbox and the old textbox role is wrong.",
+    "replacedBy": "apps/web/src/routes/paper-search.test.tsx",
+    "proof": {
+      "fork": "f66e65e0971ee269c95607147eb2d1db2cb88683",
+      "replacedByBlob": "a95e700bdf04e9e39132bc7cb8e8284e950707ee",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
   }
 ]
