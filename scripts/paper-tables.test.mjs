@@ -39,6 +39,11 @@ test("table mistakes fire and clean fixtures stay quiet", () => {
     [files[2], 'dom.style.height = "100%"', 'dom.style.height = "auto"'],
     [
       files[2],
+      'if (block.type === "paperRow") dom.prepend(slot)',
+      'if (block.type === "paperRow") dom.append(slot)',
+    ],
+    [
+      files[2],
       'dom.style.border = "1px solid var(--border)"',
       'slot.style.boxShadow = "inset 0 0 0 1px var(--border)"',
     ],

@@ -114,7 +114,7 @@ export function installFlowView(
       for (const row of slot.querySelectorAll<HTMLElement>(
         '[data-paper-layout="paperRow"]'
       )) {
-        const content = row.lastElementChild
+        const content = row.firstElementChild
         if (content instanceof HTMLElement) {
           const oversized =
             support.supported && content.getBoundingClientRect().height > height

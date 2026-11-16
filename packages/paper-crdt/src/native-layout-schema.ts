@@ -47,7 +47,8 @@ function frame(block: { id: string; type: string }) {
     dom.style.border = "1px solid var(--border)"
     dom.style.boxSizing = "border-box"
   }
-  dom.append(slot)
+  if (block.type === "paperRow") dom.prepend(slot)
+  else dom.append(slot)
   return { dom, slot }
 }
 const implementation = {

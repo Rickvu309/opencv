@@ -32,6 +32,8 @@ export function detect(text, file) {
         problems.push("Table rows must stay whole and inside printable pages")
   }
   if (file.endsWith("native-layout-schema.ts")) {
+    if (!text.includes('if (block.type === "paperRow") dom.prepend(slot)'))
+      problems.push("Table row grids must remain the first element")
     if (
       text.includes("slot.style.boxShadow") ||
       !text.includes('dom.style.border = "1px solid var(--border)"') ||
