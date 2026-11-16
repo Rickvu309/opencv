@@ -8,6 +8,7 @@ import {
   PopoverTitle,
 } from "@workspace/ui/components/popover"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
+import { cn } from "@workspace/ui/lib/utils"
 import { FocusSafeRegion } from "@/components/focus-safe-region.tsx"
 import { RichDocumentHistory } from "./rich-document-toolbar.tsx"
 import { RichTextEmphasisGroup } from "./rich-text-emphasis-group.tsx"
@@ -38,6 +39,8 @@ export function RichPaperTextFormatting({
   const [open, setOpen] = useReducer((_: boolean, next: boolean) => next, false)
   const host = useRef<HTMLDivElement>(null)
   const layout = useToolbarOverflow(host)
+  const compact = layout.more
+  const hasPhotoControls = Boolean(photoControls)
   const focusFallback = () => {
     editor?.focus()
     return document.activeElement instanceof HTMLElement
@@ -97,7 +100,10 @@ export function RichPaperTextFormatting({
         role="toolbar"
         aria-label="Text formatting"
         data-slot="paper-text-formatting"
-        className="relative flex min-w-0 shrink-0 items-center gap-1 border-b px-[12px] py-2 [&_[data-toolbar-group]]:contents"
+        className={cn(
+          "relative flex min-w-0 items-center gap-1 border-b px-[12px] py-2 [&_[data-toolbar-group]]:contents",
+          "shrink-0 [&>div]:flex-nowrap"
+        )}
       >
         <div data-toolbar-pinned className="shrink-0">
           <RichDocumentHistory editor={editor} blocked={blocked} />
@@ -120,7 +126,7 @@ export function RichPaperTextFormatting({
               >
                 {controls(style, structure)}
               </ToolbarItemsContext>
-              <Popover open={open && layout.more} onOpenChange={setOpen}>
+              <Popover open={!compact ? false : open} onOpenChange={setOpen}>
                 <FocusSafeRegion
                   className={
                     layout.more
@@ -145,7 +151,7 @@ export function RichPaperTextFormatting({
                         disabled={
                           !editor ||
                           blocked ||
-                          (!formatting?.hasText && !photoControls)
+                          (!formatting?.hasText && !hasPhotoControls)
                         }
                       />
                     }
