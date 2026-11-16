@@ -13,11 +13,11 @@ function toggle(name: string, value: boolean | undefined): string {
 function fontName(id: NonNullable<InlinePresentation["fontId"]>): string {
   switch (id) {
     case "liberation-sans":
-      return "Liberation Sans"
+      return "Arial"
     case "liberation-serif":
-      return "Liberation Serif"
+      return "Times New Roman"
     case "liberation-mono":
-      return "Liberation Mono"
+      return "Courier New"
     default: {
       throw new Error(`Unsupported Paper font ${id}`)
     }
@@ -71,7 +71,10 @@ export function paragraphProperties(
     )
   }
   const indent: string[] = []
-  if (value.start !== undefined) indent.push(`w:left="${value.start}"`)
+  if (value.start !== undefined || value.indent?.kind === "hanging")
+    indent.push(
+      `w:left="${Math.max(value.start ?? 0, value.indent?.kind === "hanging" ? value.indent.value : 0)}"`
+    )
   if (value.end !== undefined) indent.push(`w:right="${value.end}"`)
   if (value.indent)
     indent.push(

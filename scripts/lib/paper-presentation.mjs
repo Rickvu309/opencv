@@ -1,10 +1,52 @@
 import { posix } from "node:path"
 import ts from "typescript"
 import { qualifiedNativeWord } from "./paper-native-word.mjs"
+import { detectTextFormatting } from "./paper-text-formatting.mjs"
 
 export function detect(text, path) {
+  const hits = detectTextFormatting(text, path)
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
-  const hits = []
+  if (path === "packages/paper-crdt/src/editor.ts") {
+    const visit = (node) => {
+      if (ts.isMethodDeclaration(node)) {
+        const name = node.name.getText(source)
+        const body = node.body?.getText(source) ?? ""
+        if (name === "subscribe" && !/\.on\(["']transaction["']/.test(body))
+          hits.push(
+            "Paper formatting subscribers must observe stored-mark transactions"
+          )
+        if (
+          ["formatInline", "formatParagraph"].includes(name) &&
+          !body.includes("view.focus()")
+        )
+          hits.push(
+            "Paper toolbar choices must return focus without changing selection"
+          )
+      }
+      ts.forEachChild(node, visit)
+    }
+    visit(source)
+  }
+  if (
+    path === "packages/paper-crdt/src/native-layout-formatting.ts" &&
+    text.includes("inlines") &&
+    !text.includes("!inlines.length")
+  )
+    hits.push("Paper empty selections need effective inline values")
+  if (
+    path === "packages/paper-crdt/src/native-formatting-render-values.ts" &&
+    text.includes("text-indent:") &&
+    !text.includes("Math.max(v.start ?? 0, indent?.kind")
+  )
+    hits.push("Paper hanging indents must reserve their start space")
+  if (
+    path === "apps/api/src/paper/native-output/formatted-properties.ts" &&
+    /return "Liberation (Sans|Serif|Mono)"/.test(text)
+  )
+    hits.push(
+      "Paper Word fonts must use the metric-compatible Word family names"
+    )
+
   if (
     path === "apps/web/src/features/paper/design/rich-page-header.pen.css" &&
     !/\[data-slot="page-header"\]\s*\{[^}]*\bflex-wrap:\s*wrap\s*;/.test(text)

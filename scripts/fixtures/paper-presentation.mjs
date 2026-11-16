@@ -1,5 +1,25 @@
 export const clean = [
   {
+    path: "apps/web/src/features/paper/rich-text-emphasis-group.tsx",
+    text: '<Button className="size-[44px] md:size-8" />',
+  },
+  {
+    path: "packages/paper-crdt/src/editor.ts",
+    text: 'const editor = { subscribe(listener) { tiptap.on("transaction", listener) }, formatInline() { view.focus() }, formatParagraph() { view.focus() } }',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-formatting.ts",
+    text: "if (!inlines.length) inlines.push(readMarks([]))",
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting-render-values.ts",
+    text: 'const start = Math.max(v.start ?? 0, indent?.kind === "hanging" ? indent.value : 0); const css = `text-indent:${value}`',
+  },
+  {
+    path: "apps/api/src/paper/native-output/formatted-properties.ts",
+    text: 'function fontName() { return "Arial" }',
+  },
+  {
     path: "apps/web/src/test/paper-api-mock.ts",
     text: "const identity = /^\\/api\\/paper\\/([^/]+)\\/document$/.exec(path); paperDocumentInfoSchema.parse(identity)",
   },
@@ -141,6 +161,34 @@ export const clean = [
   },
 ]
 export const mistakes = [
+  {
+    path: "apps/web/src/features/paper/rich-text-emphasis-group.tsx",
+    text: '<Button className="size-11 md:size-8" />',
+  },
+  {
+    path: "packages/paper-crdt/src/editor.ts",
+    text: "const editor = { subscribe(listener) { editor.onChange(listener) } }",
+  },
+  {
+    path: "packages/paper-crdt/src/editor.ts",
+    text: "const editor = { formatInline(input) { mounted.formatInline(input) } }",
+  },
+  {
+    path: "packages/paper-crdt/src/editor.ts",
+    text: "const editor = { formatParagraph(input) { mounted.formatParagraph(input) } }",
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-formatting.ts",
+    text: "const inlines = []; return common(inlines)",
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting-render-values.ts",
+    text: "const css = `text-indent:${-indent.value}pt`",
+  },
+  {
+    path: "apps/api/src/paper/native-output/formatted-properties.ts",
+    text: 'function fontName() { return "Liberation Sans" }',
+  },
   {
     path: "apps/web/src/test/paper-api-mock.ts",
     text: "export async function paperApiFetch() { return null }",
@@ -380,5 +428,49 @@ export const mistakes = [
   {
     path: "packages/paper-crdt/src/native-formatting-mount.ts",
     text: 'BlockNoteEditor.create({ links: { HTMLAttributes: { style: "text-decoration:underline" } } })',
+  },
+]
+
+export const roundTwo = [
+  {
+    path: "packages/ui/src/components/select.tsx",
+    mistake: "select-value]:line-clamp-1 select-value]:flex",
+    clean: "select-value]:min-w-0 select-value]:truncate",
+  },
+  {
+    path: "packages/paper-crdt/src/editor.ts",
+    mistake: 'view.dom.setAttribute("aria-label", "Document content")',
+    clean:
+      'view.dom.setAttribute("aria-label", "Document content"); view.dom.style.outline = "none"',
+  },
+  {
+    path: "packages/paper-crdt/src/editor.ts",
+    mistake: "const start = mounted.activeFormatting().start",
+    clean: "mounted.adjustIndent(360)",
+  },
+  {
+    path: "apps/web/src/features/paper/rich-text-paragraph-group.tsx",
+    mistake: "const start = formatting?.start",
+    clean: "editor.adjustIndent(360)",
+  },
+  {
+    path: "apps/web/src/features/paper/rich-text-paragraph-group.tsx",
+    mistake: 'label="Increase indent (Ctrl+])"',
+    clean: 'label={shortcutLabel("Increase indent (Ctrl+])")}',
+  },
+  {
+    path: "apps/web/src/features/paper/rich-text-formatting.tsx",
+    mistake: "const controls = (<fieldset>{children}</fieldset>)",
+    clean: "const controls = <RichTextColorGroup />",
+  },
+  {
+    path: "apps/web/src/features/paper/rich-text-color-group.tsx",
+    mistake: 'color: "var(--background)"',
+    clean: 'color: "white"',
+  },
+  {
+    path: "scripts/paper-word-fonts.test.mjs",
+    mistake: 'await import("../apps/api/src/paper/native-output/formatted.js")',
+    clean: 'import { detect } from "./lib/paper-presentation.mjs"',
   },
 ]

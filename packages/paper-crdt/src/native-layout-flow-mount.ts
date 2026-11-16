@@ -29,6 +29,7 @@ import {
 } from "./native-photo-render.js"
 import { canonicalStyles, engineStyles } from "./native-formatting-styles.js"
 import { effectiveInline } from "./native-formatting-render-values.js"
+import { flowFormatting } from "./native-layout-formatting.js"
 
 const mounted = new WeakMap<FlowBinding, PrivateLayoutEditor>()
 export function mountPrivateFlow(
@@ -184,6 +185,7 @@ export function mountPrivateFlow(
   }
   return {
     editor,
+    ...flowFormatting(binding, editor.prosemirrorView),
     setInline,
     activeInline,
     pagination: () => flowPaginationSupport(readFlow(binding)),
