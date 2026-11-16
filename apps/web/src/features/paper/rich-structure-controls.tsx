@@ -1,5 +1,6 @@
 import { useEffect, useReducer, type ReactNode } from "react"
-import { isSafeHref, normalizeLinkHref } from "@workspace/domain"
+import { isSafeHref } from "@workspace/domain"
+import { normalizeLinkHref } from "@workspace/domain/internal/paper-presentation"
 import type { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"

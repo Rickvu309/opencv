@@ -2,6 +2,7 @@ import {
   effectiveRunDecorations,
   paragraphInlineValues,
   effectiveParagraphStyle,
+  wordParagraphStyleId,
   formattedDocumentSchema,
   layoutDocumentSchema,
   flowDocumentSchema,
@@ -31,6 +32,7 @@ import { photoWriter, type PhotoMedia } from "./formatted-photos.js"
 import {
   assertCanonicalInput,
   wordRun,
+  xml,
   type ExternalLink,
 } from "./rich-text.js"
 
@@ -240,16 +242,20 @@ function compileDocument(
           { ...node.paragraph, paragraphStyle },
           list ? (depth + 1) * 720 : undefined
         )
-        const properties = paragraphProperties(
-          {
-            ...node.paragraph,
-            paragraphStyle,
-            start: effective.start,
-            end: effective.end,
-            indent: effective.indent,
-          },
-          structure
-        )
+        const properties =
+          (paragraphStyle
+            ? `<w:pStyle w:val="${xml(wordParagraphStyleId(paragraphStyle))}"/>`
+            : "") +
+          paragraphProperties(
+            {
+              ...node.paragraph,
+              paragraphStyle: undefined,
+              start: effective.start,
+              end: effective.end,
+              indent: effective.indent,
+            },
+            structure
+          )
         const heading =
           node.type === "heading"
             ? `<w:outlineLvl w:val="${node.level - 1}"/>`

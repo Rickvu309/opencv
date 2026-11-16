@@ -1,3 +1,4 @@
+export { normalizeLinkHref } from "./paper-doc/rich-text.js"
 export {
   ok,
   refuse,

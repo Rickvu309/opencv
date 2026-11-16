@@ -1,5 +1,5 @@
-import { normalizeLinkHref } from "@workspace/domain"
 import {
+  normalizeLinkHref,
   effectiveParagraphStyle,
   paperParagraphStyles,
   type PaperParagraphStyle,

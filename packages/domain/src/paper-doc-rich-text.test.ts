@@ -3,10 +3,11 @@ import { describe, it } from "node:test"
 
 import * as fc from "fast-check"
 
+import { normalizeLinkHref } from "./paper-presentation.ts"
+
 import {
   inlineMarkdownOf,
   isSafeHref,
-  normalizeLinkHref,
   normalizeRuns,
   plainTextOfRuns,
   richTextFromInlineMarkdown,

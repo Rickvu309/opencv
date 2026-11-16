@@ -47,7 +47,6 @@ export type { RichText, SafeHref, TextRun } from "./rich-text.js"
 export {
   inlineMarkdownOf,
   isSafeHref,
-  normalizeLinkHref,
   normalizeRuns,
   plainTextOfRuns,
   richTextFromInlineMarkdown,
