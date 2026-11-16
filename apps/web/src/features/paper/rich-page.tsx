@@ -21,6 +21,7 @@ import type { NativeSyncIdentity } from "@/lib/paper-sync-identity.ts"
 import { SYNC_LABEL } from "@/lib/paper-sync.ts"
 import { RichDocumentMenu } from "./rich-document-menu.tsx"
 import "./design/rich-page-header.pen.css"
+import "./rich-page-geometry.css"
 
 type Session = ReturnType<typeof openRichPaperSession>
 type Editor = ReturnType<typeof mountRichPaperEditor>
@@ -142,6 +143,7 @@ export function RichPaperPage({
               : SYNC_LABEL[status]}
           </span>
           <RichDocumentMenu
+            editor={editor}
             session={session}
             status={status}
             blocked={blocked}
@@ -167,7 +169,8 @@ export function RichPaperPage({
         <div
           ref={element}
           aria-busy={status === "loading"}
-          className="mx-auto min-h-[11in] w-full max-w-[8.5in] border bg-card p-5 text-card-foreground shadow-sm sm:p-[1in]"
+          data-slot="paper-rich-sheet"
+          className="paper-rich-sheet mx-auto text-card-foreground shadow-sm"
         />
       </div>
     </section>

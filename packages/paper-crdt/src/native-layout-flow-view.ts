@@ -6,6 +6,7 @@ import {
   type DocumentPresentation,
 } from "@workspace/domain/internal/paper-presentation"
 import { layoutDecorations } from "./native-layout-decorations.js"
+import { richPageLayout } from "./rich-page-layout.js"
 
 export function flowPaginationSupport(document: FlowDocument) {
   if (
@@ -102,6 +103,10 @@ export function installFlowView(
     const document = read(),
       support = flowPaginationSupport(document)
     element.dataset.paperPagination = String(support.supported)
+    if (element.classList.contains("paper-rich-sheet")) {
+      updateBreaks(richPageLayout(element, document))
+      return
+    }
     const breaks = new Map<string, number>()
     for (const section of document.flow.children) {
       const dom = element.querySelector<HTMLElement>(
@@ -173,6 +178,7 @@ export function installFlowView(
   }
   const resize = new ResizeObserver(schedule)
   resize.observe(element)
+  if (element.parentElement) resize.observe(element.parentElement)
   document.fonts.ready.then(schedule)
   schedule()
   return {

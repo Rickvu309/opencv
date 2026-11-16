@@ -19,6 +19,7 @@ import {
 } from "./rich-text-toolbar-control.tsx"
 
 import { RichStructureControls } from "./rich-structure-controls.tsx"
+import { RichPageBreak } from "./rich-page-break.tsx"
 
 type ToolbarState = { compact: boolean; open: boolean }
 type ToolbarAction =
@@ -104,6 +105,11 @@ export function RichPaperTextFormatting({
         />
       ) : null}
       {photoControls?.(() => setOpen(false))}
+      <RichPageBreak
+        editor={editor}
+        blocked={blocked}
+        onAction={() => setOpen(false)}
+      />
       {!compact && hasPhotoControls ? (
         <div
           role="separator"
