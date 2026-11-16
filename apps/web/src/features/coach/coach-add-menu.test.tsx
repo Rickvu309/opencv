@@ -215,6 +215,8 @@ describe("Coach Add menu against its pen frame (kfJuz popover f0tcTl)", () => {
     for (let step = 0; step < 8 && document.activeElement !== again; step += 1)
       await user.keyboard("{ArrowDown}")
     await user.keyboard("{Enter}")
-    expect(await screen.findByRole("dialog")).toHaveTextContent("Paste a link")
+    expect(await screen.findByRole("dialog")).toHaveTextContent(
+      "Paste a job link"
+    )
   })
 })

@@ -178,10 +178,28 @@ describe("settings", () => {
     })
   })
 
+  it("turns Coach chat off with a switch that states its state, not a navigation row", async () => {
+    renderApp("/settings/coach")
+    const chat = await screen.findByRole("switch", {
+      name: "Coach chat, Enabled",
+    })
+    expect(chat).toBeChecked()
+    expect(
+      screen.getByText("Chat with Coach on its page and in the side panel")
+    ).toBeInTheDocument()
+    const row = chat.closest("[data-row=agentChat]")
+    expect(row?.querySelector("button[data-slot=settings-row-body]")).toBeNull()
+    expect(row?.querySelector("svg.lucide-chevron-right")).toBeNull()
+    fireEvent.click(chat)
+    await waitFor(() => {
+      expect(getLastProfileUpdate()).toEqual({ agentChat: false })
+    })
+  })
+
   it("offers no Weekly plan, since nothing sends one", async () => {
     renderApp("/settings/coach")
     expect(
-      await screen.findByRole("button", { name: /Interview prep/ })
+      await screen.findByRole("switch", { name: /Interview prep/ })
     ).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: /Weekly plan/ })).toBeNull()
     expect(screen.queryByRole("switch", { name: /Weekly plan/ })).toBeNull()
@@ -191,7 +209,7 @@ describe("settings", () => {
   it("turns interview prep off", async () => {
     renderApp("/settings/coach")
     fireEvent.click(
-      await screen.findByRole("button", { name: /Interview prep/ })
+      await screen.findByRole("switch", { name: /Interview prep/ })
     )
     await waitFor(() => {
       expect(getLastProfileUpdate()).toEqual({ agentInterview: false })

@@ -49,7 +49,7 @@ const STOP_THE_WAITING_EDIT = [
 
 const APPROVE_THE_EDIT = [
   ...ASK_FOR_AN_EDIT,
-  { click: { role: "button", name: "Approve" } },
+  { click: { selector: `${PANEL} button:text-is("Approve")` } },
   { waitFor: { selector: PANEL_UNDO } },
 ]
 
@@ -278,7 +278,7 @@ export const SCREENS = [
     route: "/paper",
     steps: [
       ...ASK_FOR_AN_EDIT,
-      { click: { role: "button", name: "Expand" } },
+      { clickIfShown: { role: "button", name: "Expand" } },
       { waitFor: { role: "button", name: "Deny" } },
     ],
     after: DENY_THE_WAITING_EDIT,
@@ -288,7 +288,7 @@ export const SCREENS = [
     route: "/paper",
     steps: [
       ...APPROVE_THE_EDIT,
-      { click: { role: "button", name: "Expand" } },
+      { clickIfShown: { role: "button", name: "Expand" } },
       { waitFor: { selector: PANEL_UNDO } },
     ],
   },
@@ -297,7 +297,7 @@ export const SCREENS = [
     route: "/paper",
     steps: [
       ...UNDO_THE_EDIT,
-      { click: { role: "button", name: "Expand" } },
+      { clickIfShown: { role: "button", name: "Expand" } },
       { waitFor: { text: "Undone" } },
     ],
   },
@@ -306,7 +306,7 @@ export const SCREENS = [
     route: "/paper",
     steps: [
       ...ASK_FOR_AN_EDIT,
-      { click: { role: "button", name: "Expand" } },
+      { clickIfShown: { role: "button", name: "Expand" } },
       { waitFor: { role: "button", name: "Deny" } },
       ...DENY_THE_WAITING_EDIT,
     ],
@@ -560,6 +560,7 @@ export const SCREENS = [
 const STEP_KINDS = new Set([
   "goto",
   "click",
+  "clickIfShown",
   "fill",
   "press",
   "type",

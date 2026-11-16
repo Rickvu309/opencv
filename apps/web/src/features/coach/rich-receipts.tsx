@@ -37,6 +37,8 @@ export function DiffDelete({ children }: { children: ReactNode }) {
   )
 }
 
+const DIFF_LINE_LABEL = { add: "After", del: "Before", eq: "" } as const
+
 export function DiffBlock({ detail }: { detail: UpdateContentDetail }) {
   const [expanded, toggleExpanded] = useReducer((open: boolean) => !open, false)
   const changed = countChangedLines(detail.hunks)
@@ -58,14 +60,20 @@ export function DiffBlock({ detail }: { detail: UpdateContentDetail }) {
             {hunk.lines.map((line, index) => (
               <p
                 key={`${hunk.sectionId}-${index}`}
-                className="whitespace-pre-wrap"
+                className="flex min-w-0 gap-2 whitespace-pre-wrap"
               >
+                <span
+                  data-slot="diff-line-label"
+                  className="w-[3.25rem] shrink-0 pt-0.5 text-xs leading-5 text-muted-foreground"
+                >
+                  {DIFF_LINE_LABEL[line.kind]}
+                </span>
                 {line.kind === "add" ? (
                   <DiffInsert>{line.text}</DiffInsert>
                 ) : line.kind === "del" ? (
                   <DiffDelete>{line.text}</DiffDelete>
                 ) : (
-                  line.text
+                  <span className="min-w-0">{line.text}</span>
                 )}
               </p>
             ))}

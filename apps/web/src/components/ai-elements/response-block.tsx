@@ -21,6 +21,18 @@ function renderInline(nodes: CoachInline[]): ReactNode {
         return <strong key={index}>{renderInline(node.children)}</strong>
       case "em":
         return <em key={index}>{renderInline(node.children)}</em>
+      case "link":
+        return (
+          <a
+            key={index}
+            href={node.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium [overflow-wrap:anywhere] text-foreground underline decoration-muted-foreground/60 underline-offset-2 hover:decoration-foreground focus-visible:rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            {renderInline(node.children)}
+          </a>
+        )
       case "code":
         return (
           <code
@@ -39,6 +51,59 @@ export function ResponseBlock({ source }: { source: string }) {
   switch (block.type) {
     case "p":
       return <p>{renderInline(block.children)}</p>
+    case "heading":
+      return block.level === 3 ? (
+        <h4 className="pt-1 text-[0.9375rem] leading-6 font-semibold">
+          {renderInline(block.children)}
+        </h4>
+      ) : (
+        <h3 className="pt-2 text-[1.0625rem] leading-6 font-semibold tracking-[-0.01em]">
+          {renderInline(block.children)}
+        </h3>
+      )
+    case "table":
+      return (
+        <div
+          role="region"
+          aria-label="Table"
+          tabIndex={0}
+          data-slot="response-table"
+          className="max-w-full overflow-x-auto rounded-[10px] border border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >
+          <table className="w-full border-collapse text-left text-[0.875rem] leading-5">
+            <thead className="bg-muted/50">
+              <tr>
+                {block.header.map((cell, column) => (
+                  <th
+                    key={column}
+                    scope="col"
+                    className="min-w-[7rem] border-b border-border px-3 py-2 align-bottom font-semibold [overflow-wrap:normal]"
+                  >
+                    {renderInline(cell)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {block.rows.map((row, rowIndex) => (
+                <tr
+                  key={rowIndex}
+                  className="border-b border-border last:border-b-0"
+                >
+                  {row.map((cell, column) => (
+                    <td
+                      key={column}
+                      className="min-w-[7rem] px-3 py-2 align-top [overflow-wrap:normal]"
+                    >
+                      {renderInline(cell)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )
     case "ul":
       return (
         <ul className="list-disc space-y-1 pl-5">

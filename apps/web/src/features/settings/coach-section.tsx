@@ -9,7 +9,6 @@ import {
   SettingsTile,
   SettingsTitle,
   SettingsUsageLink,
-  StateWord,
 } from "./settings-layout.tsx"
 import {
   NO_WEEKLY_CAP,
@@ -23,7 +22,7 @@ const AGENTS = [
     key: "agentChat",
     icon: MessageCircle,
     label: "Coach chat",
-    desc: "Set your background and how Coach replies",
+    desc: "Chat with Coach on its page and in the side panel",
   },
   {
     key: "agentCvs",
@@ -44,6 +43,9 @@ const AGENTS = [
     desc: "Move jobs when a recruiter replies in Gmail",
   },
 ] as const
+
+const SWITCH_CLASS =
+  "h-11! w-11! after:inset-0! md:h-[18px]! md:w-8! md:after:-inset-3.5! max-md:bg-transparent! max-md:before:absolute max-md:before:top-3 max-md:before:left-[5px] max-md:before:h-[18px] max-md:before:w-8 max-md:before:rounded-full max-md:before:bg-input max-md:before:content-[''] max-md:data-checked:before:bg-primary max-md:[&_[data-slot=switch-thumb]]:relative max-md:[&_[data-slot=switch-thumb]]:ml-1.5"
 
 export function CoachSection({
   profile,
@@ -83,7 +85,7 @@ export function CoachSection({
           control={
             <Switch
               data-slot="settings-switch"
-              className="h-11! w-11! after:inset-0! md:h-[18px]! md:w-8! md:after:-inset-3.5! max-md:[&_[data-slot=switch-thumb]]:data-checked:translate-x-[26px]!"
+              className={SWITCH_CLASS}
               aria-label={`Enable memory, ${profile.memoryEnabled ? "Enabled" : "Disabled"}`}
               checked={profile.memoryEnabled}
               disabled={pending}
@@ -117,15 +119,20 @@ export function CoachSection({
               inset="wide"
               label={agent.label}
               desc={agent.desc}
-              disabled={pending}
               error={errorKey === agent.key ? error : undefined}
-              onClick={() =>
-                onSave({
-                  [agent.key]: !profile[agent.key],
-                } as ProfileUpdateInput)
-              }
               leading={<SettingsTile icon={agent.icon} />}
-              control={<StateWord on={profile[agent.key]} chevron />}
+              control={
+                <Switch
+                  data-slot="settings-switch"
+                  className={SWITCH_CLASS}
+                  aria-label={`${agent.label}, ${profile[agent.key] ? "Enabled" : "Disabled"}`}
+                  checked={profile[agent.key]}
+                  disabled={pending}
+                  onCheckedChange={(on) =>
+                    onSave({ [agent.key]: on } as ProfileUpdateInput)
+                  }
+                />
+              }
             />
           ))}
         </SettingsCard>

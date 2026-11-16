@@ -63,6 +63,12 @@ export async function runStep(page, origin, step) {
     return page.goto(`${origin}${step.goto}`, { waitUntil: "domcontentloaded" })
   if (step.click)
     return locate(page, step.click).click({ timeout: STEP_TIMEOUT_MS })
+  if (step.clickIfShown) {
+    const target = locate(page, step.clickIfShown)
+    return (await target.isVisible())
+      ? target.click({ timeout: STEP_TIMEOUT_MS })
+      : undefined
+  }
   if (step.fill)
     return locate(page, step.fill).fill(step.fill.text, {
       timeout: STEP_TIMEOUT_MS,

@@ -2,6 +2,7 @@ import "./design/dock.pen.css"
 
 import {
   useEffect,
+  useEffectEvent,
   useLayoutEffect,
   useReducer,
   useRef,
@@ -161,6 +162,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
   const menuRef = useRef<HTMLButtonElement>(null)
   const dockRef = useRef<HTMLDivElement>(null)
   const openerRef = useRef<HTMLElement | null>(null)
+  const focusAfterClose = useRef(false)
 
   useEffect(() => {
     if (!panelOpen) return
@@ -239,15 +241,26 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
     dockRef.current?.querySelector<HTMLElement>("[data-dock-coach]")?.focus()
   }
 
+  function restoreOpenerFocus() {
+    if (openerRef.current?.isConnected)
+      openerRef.current.focus({ preventScroll: true })
+    else focusCoachButton()
+  }
+
   function closePanel() {
     dispatch({
       type: "panel_closed",
       animate: panel.mode !== "full" || panelSheet,
     })
-    if (openerRef.current?.isConnected)
-      openerRef.current.focus({ preventScroll: true })
-    else focusCoachButton()
+    focusAfterClose.current = true
   }
+
+  const restoreAfterClose = useEffectEvent(restoreOpenerFocus)
+  useEffect(() => {
+    if (panelOpen || !focusAfterClose.current) return
+    focusAfterClose.current = false
+    restoreAfterClose()
+  }, [panelOpen])
 
   function rememberOpener() {
     if (

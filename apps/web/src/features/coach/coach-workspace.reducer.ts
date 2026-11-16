@@ -3,6 +3,8 @@ import type { CoachContextItem } from "@workspace/domain"
 export type Attachment = CoachContextItem & { label: string }
 export type Picker = "paper" | "job" | "link" | null
 
+export const ATTACHMENT_LIMIT = 8
+
 export type SentBubble = {
   text: string
   seen: number
@@ -79,11 +81,11 @@ function attached(state: WorkspaceState, item: Attachment): WorkspaceState {
   const { attachments } = state
   return {
     ...state,
-    attachments: attachments.some(
-      (a) => a.kind === item.kind && a.id === item.id
-    )
-      ? attachments
-      : [...attachments, item].slice(0, 8),
+    attachments:
+      attachments.some((a) => a.kind === item.kind && a.id === item.id) ||
+      attachments.length >= ATTACHMENT_LIMIT
+        ? attachments
+        : [...attachments, item],
     picker: null,
   }
 }

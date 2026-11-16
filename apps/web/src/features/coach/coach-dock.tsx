@@ -35,7 +35,11 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { PromptInput } from "@/components/ai-elements/prompt-input.tsx"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
-import { COACH_MODE_OPTIONS } from "@/features/coach/coach-mode.ts"
+import {
+  COACH_MODE_LOCKED,
+  COACH_MODE_OPTIONS,
+  coachModeAvailable,
+} from "@/features/coach/coach-mode.ts"
 import { useCoachMode } from "@/features/coach/use-coach-mode.ts"
 
 const DOCK_MENU = [
@@ -48,6 +52,9 @@ const DOCK_MENU = [
 type MenuId = Exclude<(typeof DOCK_MENU)[number]["id"], "upload">
 
 export const COACH_NO_UPLOAD_ROUTE = "Coach cannot read uploaded files yet."
+
+export const COACH_CONTEXT_FULL =
+  "This Chat has 8 items. Remove one to add another."
 
 export type DockRecent = {
   id: string
@@ -84,6 +91,7 @@ type Props = {
   recent?: DockRecentList
   onRecentSelect?: (id: string) => void
   onAddMenuOpenChange?: (open: boolean) => void
+  contextFull?: boolean
   disabled?: boolean
   notice?: ReactNode
   primaryAction?: boolean
@@ -108,6 +116,7 @@ export function CoachDock({
   recent,
   onRecentSelect,
   onAddMenuOpenChange,
+  contextFull = false,
   disabled = false,
   notice,
   primaryAction = false,
@@ -161,11 +170,14 @@ export function CoachDock({
         {DOCK_MENU.filter((item) => item.id !== "link" || onAttachLink).map(
           (item) => {
             const Icon = item.icon
-            const unavailable = item.id === "upload"
+            const unavailable = item.id === "upload" || contextFull
+            const reason =
+              item.id === "upload" ? COACH_NO_UPLOAD_ROUTE : COACH_CONTEXT_FULL
             return (
               <DropdownMenuItem
                 key={item.id}
                 data-add-row=""
+                data-add-note-row={item.id === "upload" ? "" : undefined}
                 disabled={unavailable}
                 onClick={
                   item.id === "upload"
@@ -174,15 +186,27 @@ export function CoachDock({
                 }
               >
                 <Icon />
-                <span data-add-label="">{item.label}</span>
-                {unavailable ? (
-                  <span className="sr-only">{COACH_NO_UPLOAD_ROUTE}</span>
+                {item.id === "upload" ? (
+                  <span data-add-text="">
+                    <span data-add-label="">{item.label}</span>
+                    <span data-add-note="">{reason}</span>
+                  </span>
+                ) : (
+                  <span data-add-label="">{item.label}</span>
+                )}
+                {unavailable && item.id !== "upload" ? (
+                  <span className="sr-only">{reason}</span>
                 ) : null}
                 {item.caret ? <ChevronRight data-add-caret="" /> : null}
               </DropdownMenuItem>
             )
           }
         )}
+        {contextFull ? (
+          <p data-add-status="" data-add-full="" role="status">
+            {COACH_CONTEXT_FULL}
+          </p>
+        ) : null}
         {recent ? (
           <>
             <div data-add-divider="">
@@ -211,6 +235,7 @@ export function CoachDock({
                     <DropdownMenuItem
                       key={item.id}
                       data-add-row=""
+                      disabled={contextFull && !item.attached}
                       aria-label={
                         item.attached ? `${item.label}, attached` : item.label
                       }
@@ -270,34 +295,61 @@ export function CoachDock({
           value={mode}
           onValueChange={(next) => {
             if (next !== "free" && next !== "light" && next !== "max") return
-            if (next !== "free" && plan !== "pro") {
-              return
-            }
+            if (!coachModeAvailable(next, plan)) return
             setMode(next)
           }}
         >
           {COACH_MODE_OPTIONS.map((option) => {
             const Icon = MODE_ICONS[option.id]
+            const available = coachModeAvailable(option.id, plan)
+            const noteId = `coach-mode-${option.id}-note`
             return (
               <DropdownMenuRadioItem
                 key={option.id}
                 value={option.id}
                 closeOnClick
-                className="h-10 gap-3.5 rounded-lg px-3 data-checked:pe-8"
+                disabled={!available}
+                data-slot="coach-mode-option"
+                data-available={available ? "" : undefined}
+                className="h-auto min-h-11 items-start gap-3.5 rounded-lg px-3 py-2 data-checked:pe-8 data-disabled:opacity-100"
                 aria-label={
                   option.id === "free" ? option.label : `${option.label} · Pro`
                 }
+                aria-describedby={noteId}
               >
-                <Icon className="size-4.5 shrink-0 text-muted-foreground" />
-                <span className="flex min-w-0 flex-1">{option.label}</span>
-                {option.id !== "free" ? (
+                <Icon
+                  className={cn(
+                    "mt-0.5 size-4.5 shrink-0",
+                    available
+                      ? "text-muted-foreground"
+                      : "text-muted-foreground/60"
+                  )}
+                />
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <span
-                    data-slot="coach-pro-badge"
-                    className="ms-auto rounded border border-border px-1.5 text-xs font-medium text-muted-foreground"
+                    className={cn(
+                      "flex items-center gap-2",
+                      !available && "text-muted-foreground"
+                    )}
                   >
-                    Pro
+                    {option.label}
+                    {option.id !== "free" ? (
+                      <span
+                        data-slot="coach-pro-badge"
+                        className="rounded border border-border px-1.5 text-xs font-medium text-muted-foreground"
+                      >
+                        Pro
+                      </span>
+                    ) : null}
                   </span>
-                ) : null}
+                  <span
+                    id={noteId}
+                    data-slot="coach-mode-note"
+                    className="text-xs leading-4 whitespace-normal text-muted-foreground"
+                  >
+                    {available ? option.helper : COACH_MODE_LOCKED}
+                  </span>
+                </span>
               </DropdownMenuRadioItem>
             )
           })}

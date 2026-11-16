@@ -41,3 +41,32 @@
 [data-pen-surface="coach"] [data-slot="history-item-icon"] {
   color: #3c3c40;
 }
+
+[data-pen-surface="coach"]:is(.dark *)[data-slot="history-panel"] {
+  background: var(--popover);
+  border-color: var(--border);
+  color: var(--popover-foreground);
+}
+
+[data-pen-surface="coach"]:is(.dark *) [data-slot="history-item"],
+[data-pen-surface="coach"]:is(.dark *) [data-slot="history-new-chat"] {
+  color: var(--popover-foreground);
+}
+
+[data-pen-surface="coach"]:is(.dark *)
+  [data-slot="history-item"][data-active="true"] {
+  background: var(--accent);
+}
+
+[data-pen-surface="coach"]:is(.dark *) [data-slot="history-search-icon"],
+[data-pen-surface="coach"]:is(.dark *) [data-slot="history-section-label"],
+[data-pen-surface="coach"]:is(.dark *) [data-slot="history-item-time"],
+[data-pen-surface="coach"]:is(.dark *) [data-slot="history-shortcut"],
+[data-pen-surface="coach"]:is(.dark *) [data-slot="history-item-icon"] {
+  color: var(--muted-foreground);
+}
+
+[data-pen-surface="coach"]:is(.dark *)
+  [data-slot="history-search"]::placeholder {
+  color: var(--muted-foreground);
+}

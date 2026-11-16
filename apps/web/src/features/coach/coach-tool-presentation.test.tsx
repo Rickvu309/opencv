@@ -107,10 +107,11 @@ describe("Coach approval presentation", () => {
     const { container } = render(
       <CoachToolLine tool={toolOf(pending)} canUndo />
     )
-    expect(
-      screen.getByRole("heading", { name: "Coach wants to edit Untitled CV" })
-    ).toBeVisible()
+    expect(screen.getByRole("heading", { name: "Untitled CV" })).toBeVisible()
+    expect(screen.getByText("1 proposed change")).toBeVisible()
     expect(screen.getByText("Needs your approval")).toBeVisible()
+    expect(screen.getByText("Before")).toBeVisible()
+    expect(screen.getByText("After")).toBeVisible()
     expect(screen.getByText("I worked on support.").tagName).toBe("DEL")
     const insertion = screen.getByText(
       "I helped customers resolve support requests."
@@ -142,9 +143,7 @@ describe("Coach approval presentation", () => {
         canUndo={false}
       />
     )
-    expect(
-      screen.getByRole("heading", { name: "Coach wants to edit your document" })
-    ).toBeVisible()
+    expect(screen.getByRole("heading", { name: "Your document" })).toBeVisible()
     expect(
       screen.getByText(/The proposed words are not available in this Chat/)
     ).toHaveTextContent("Open the document in Paper")
@@ -264,7 +263,7 @@ describe("Coach trace and receipts", () => {
       <CoachParts parts={parts} ctx={{ canUndo: true, onUndo: vi.fn() }} />
     )
     const title = screen.getByText("Edited Untitled CV · 1 change")
-    const row = title.parentElement
+    const row = title.closest("[data-slot=coach-action-record]")
     if (!row) throw new Error("Expected receipt row")
     expect(within(row).getByRole("link", { name: "Open" })).toHaveAttribute(
       "href",
@@ -287,7 +286,7 @@ describe("Coach trace and receipts", () => {
     expect(container.textContent).not.toMatch(/Edited CV Untitled|Reversible/)
   })
 
-  it("leaves one Undone line after reversal without the old receipt or diff", () => {
+  it("keeps the document record with Open and an Undone state after reversal, without the diff or Undo", () => {
     const parts = toCoachParts({
       id: "coach",
       role: "coach",
@@ -297,7 +296,15 @@ describe("Coach trace and receipts", () => {
     const { container } = render(
       <CoachParts parts={parts} ctx={{ canUndo: true }} />
     )
-    expect(container.textContent).toBe("Undone")
+    const record = container.querySelector("[data-slot=coach-action-record]")
+    expect(record).toHaveAttribute("data-state", "undone")
+    expect(record).toHaveTextContent("Edited Untitled CV · 1 change")
+    expect(screen.getByText("Undone")).toBeVisible()
+    expect(screen.getByRole("link", { name: "Open" })).toHaveAttribute(
+      "href",
+      "/paper/cccccccc-cccc-4ccc-8ccc-cccccccccccc"
+    )
+    expect(container.querySelectorAll("ins, del")).toHaveLength(0)
     expect(screen.queryByRole("button")).not.toBeInTheDocument()
   })
 
@@ -337,7 +344,12 @@ describe("Coach trace and receipts", () => {
     expect(inserted.compareDocumentPosition(approve)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     )
-    expect(screen.getByText("Changes to approve")).toBeVisible()
+    expect(screen.getByText("Changes to approve")).toHaveClass("sr-only")
+    expect(screen.getByText("2 proposed changes")).toBeVisible()
+    expect(screen.getAllByText("Needs your approval")).toHaveLength(1)
+    const rows = container.querySelector("[data-slot=word-change-rows]")
+    expect(rows).toHaveTextContent("BeforeDear Ada,AfterDear Grace,")
+    expect(container.textContent).toContain("RemoveOld line")
     expect(container.textContent).not.toMatch(/not available in this Chat/)
   })
 
@@ -364,5 +376,63 @@ describe("Coach trace and receipts", () => {
       </ToolCallGroup>
     )
     expect(screen.getByRole("button", { name: /Used 1 tool/ })).toBeVisible()
+  })
+
+  it("keeps an applied Word edit as one record that names the document and keeps Open after Undo", () => {
+    const word: ChatToolPart = {
+      type: "tool",
+      name: "paper.edit",
+      summary: "Edited CV.docx",
+      ok: true,
+      toolCallId: "call-word",
+      activityId: "activity-word",
+      reversal: {
+        possible: true,
+        description: "Edited CV.docx",
+        input: {
+          doc: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+          restore: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+          revision: "ffffffff-ffff-4fff-8fff-ffffffffffff",
+        },
+      },
+    }
+    const applied = render(
+      <CoachParts
+        parts={toCoachParts({
+          id: "c",
+          role: "coach",
+          text: "",
+          parts: [word],
+        })}
+        ctx={{ canUndo: true, onUndo: vi.fn() }}
+      />
+    )
+    const record = applied.container.querySelector(
+      "[data-slot=coach-action-record]"
+    )
+    expect(record).toHaveAttribute("data-state", "applied")
+    expect(record).toHaveTextContent("Edited CV.docx")
+    expect(record).toHaveTextContent("Applied")
+    expect(applied.container.textContent).not.toMatch(/Reversible/)
+    expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled()
+    applied.unmount()
+    render(
+      <CoachParts
+        parts={toCoachParts({
+          id: "c",
+          role: "coach",
+          text: "",
+          parts: [{ ...word, undone: true, outcome: "undone" }],
+        })}
+        ctx={{ canUndo: true, onUndo: vi.fn() }}
+      />
+    )
+    expect(screen.getByText("Edited CV.docx")).toBeVisible()
+    expect(screen.getByText("Undone")).toBeVisible()
+    expect(screen.getByRole("link", { name: "Open" })).toHaveAttribute(
+      "href",
+      "/paper/dddddddd-dddd-4ddd-8ddd-dddddddddddd"
+    )
+    expect(screen.queryByRole("button", { name: "Undo" })).toBeNull()
   })
 })
