@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "packages/paper-crdt/src/native-photo-mount.test.ts",
+    "because": "The rounded radius scales with the screen photo; proportional radius assertions replace the fixed point CSS assertion while preserving the same authored corner geometry.",
+    "replacedBy": "packages/paper-crdt/src/native-photo-mount.test.ts",
+    "proof": {
+      "fork": "a4edb7deb700e2ca7f6113ea6f4702b26bb0334c",
+      "replacedByBlob": "2812af85e47cb1267fcdf954731abd9257d7929e",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]
