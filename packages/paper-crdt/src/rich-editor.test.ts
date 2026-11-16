@@ -5,6 +5,8 @@ import { nativeProvenance, richPaperDocumentSchema } from "@workspace/domain"
 import { openRichPaperClient } from "./client.js"
 import { seedStoredYDoc } from "./stored-document.js"
 import { borrowFlowDocument } from "./native-layout-flow.js"
+import { richPageCommands } from "./rich-page-commands.js"
+import { richPageLayout } from "./rich-page-layout.js"
 import { mountPrivateFlow } from "./native-layout-flow-mount.js"
 import { storedFlowFixture } from "./test/flow-fixture.js"
 
@@ -131,6 +133,7 @@ function setup(kind: "cv" | "letter") {
   return {
     host,
     editor,
+    pages: richPageCommands(lease.binding, editor),
     commands,
     select,
     read,
@@ -284,5 +287,116 @@ it.each(["cv", "letter"] as const)(
       expect(css.fontWeight).toBe(bits & 1 ? "700" : "400")
       expect(css.fontStyle).toBe(bits & 2 ? "italic" : "normal")
     }
+  }
+)
+
+it.each(["cv", "letter"] as const)(
+  "keeps %s page setup and split-at-caret page breaks through Undo, Redo, save and reload",
+  (kind) => {
+    const { editor, pages, read, reversible, roundtrip } = setup(kind)
+    editor.setTextCursorPosition("first", "start")
+    const original = pages.pageSetup()
+    reversible(() =>
+      pages.setPageSetup({
+        width: 16838,
+        height: 11906,
+        orientation: "landscape",
+        top: 720,
+        bottom: 1080,
+        start: 1440,
+        end: 1800,
+      })
+    )
+    expect(read().presentation.page).toEqual(pages.pageSetup())
+    expect(
+      read().flow.children.every((section) => section.page.width === 16838)
+    ).toBe(true)
+    expect(() =>
+      pages.setPageSetup({ ...original, start: original.width })
+    ).toThrow()
+    editor.setTextCursorPosition("first", "start")
+    const state = editor.prosemirrorState
+    editor.prosemirrorView.dispatch(
+      state.tr.setSelection(
+        TextSelection.create(state.doc, state.selection.from + 5)
+      )
+    )
+    reversible(() => expect(pages.insertPageBreak()).toBe(true))
+    const children = read().flow.children[0]!.children
+    const index = children.findIndex((node) => node.type === "pageBreak")
+    expect(children[index - 1]).toMatchObject({ content: [{ text: "first" }] })
+    expect(children[index + 1]).toMatchObject({
+      content: [{ text: " Việt e\u0302 😀" }],
+    })
+    editor.setTextCursorPosition(children[index + 1]!.id, "start")
+    reversible(() => expect(pages.removePageBreak(true)).toBe(true))
+    expect(
+      read().flow.children[0]!.children.some(
+        (node) => node.type === "pageBreak"
+      )
+    ).toBe(false)
+    roundtrip()
+  }
+)
+
+it.each([1232, 390])(
+  "keeps every sheet full height at viewport %s",
+  (width) => {
+    vi.stubGlobal("CSS", {
+      ...globalThis.CSS,
+      escape: (value: string) => value,
+    })
+    const fixture = storedFlowFixture()
+    const page = {
+      width: 12240,
+      height: 15840,
+      orientation: "portrait",
+      top: 1440,
+      bottom: 1440,
+      start: 1440,
+      end: 1440,
+    }
+    const flow = richPaperDocumentSchema.parse({
+      ...fixture,
+      presentation: { ...fixture.presentation, page },
+      flow: {
+        ...fixture.flow,
+        children: fixture.flow.children.map((section) => ({
+          ...section,
+          page,
+        })),
+      },
+    })
+    const parent = window.document.createElement("div")
+    parent.style.padding = "16px"
+    Object.defineProperty(parent, "clientWidth", { value: width })
+    const host = window.document.createElement("div")
+    host.className = "ProseMirror"
+    const content = window.document.createElement("div")
+    content.className = "bn-block-group"
+    const block = window.document.createElement("div")
+    block.dataset.nodeType = "blockOuter"
+    block.dataset.id = "break"
+    content.append(block)
+    host.append(content)
+    parent.append(host)
+    window.document.body.append(parent)
+    cleanups.add(() => parent.remove())
+    const scale = Math.min(1, (width - 32) / 816)
+    vi.spyOn(host, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(0, 100, 816 * scale, 1056 * scale)
+    )
+    vi.spyOn(content, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(0, 100 + 96 * scale, 624 * scale, 1100 * scale)
+    )
+    vi.spyOn(block, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(0, 100 + 196 * scale, 624 * scale, 0)
+    )
+    expect(richPageLayout(host, flow).get("break")).toBeCloseTo(980)
+    expect(host.style.minHeight).toBe("2136px")
+    expect(Number(host.style.getPropertyValue("--paper-page-scale"))).toBe(
+      scale
+    )
+    expect(host.style.getPropertyValue("--paper-page-start")).toBe("96px")
   }
 )

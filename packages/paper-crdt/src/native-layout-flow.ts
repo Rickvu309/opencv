@@ -251,3 +251,18 @@ export function commitFlowPhotoEdit(
     return prepared.value.document
   })
 }
+
+export function commitFlowPageDocument(
+  binding: FlowBinding,
+  input: FlowDocument
+) {
+  return attempt(() => {
+    const document = flowDocumentSchema.parse(input)
+    const node = nodeOf(document)
+    binding.doc.transact(
+      () => write(binding, document, node),
+      "private-flow-page"
+    )
+    return document
+  })
+}
