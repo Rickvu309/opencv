@@ -193,5 +193,71 @@ export function detectPhotoPresentation(text, path, source) {
     hits.push(
       "Circle crop projection must bound the opposite edge by the edited edge"
     )
+  if (
+    path === "apps/api/src/paper/native-output/formatted-photos.ts" &&
+    text.includes("<wp:extent") &&
+    (!text.includes("photoBounds(photo)") ||
+      /<wp:extent[^>]*\$\{(?:width|height)\}/.test(text))
+  )
+    hits.push(
+      "Word photo frames must reserve rotated bounds and retain editable picture dimensions"
+    )
+  if (
+    path === "packages/paper-crdt/src/native-layout-schema.ts" &&
+    text.includes("photoBlockSpec") &&
+    (!text.includes("paperWrapSlot") ||
+      !text.includes("display:block") ||
+      !text.includes(".bn-block > ${text}"))
+  )
+    hits.push(
+      "Wrapped photo text must share the surrounding inline formatting context"
+    )
+
+  if (
+    [
+      "packages/paper-crdt/src/native-layout-photo-controls.ts",
+      "packages/domain/src/paper-doc/native-layout-photo-destination.ts",
+    ].includes(path) &&
+    (/\?\?\s*document\.flow\.children\[0\]/.test(text) ||
+      /afterId:\s*anchor\?\.id\s*\?\?\s*null/.test(text))
+  )
+    hits.push(
+      "Photo insertion must resolve the cursor ancestry and refuse a missing destination"
+    )
+  if (
+    path === "packages/paper-crdt/src/native-layout-photo-controls.ts" &&
+    text.includes('change({ kind: "remove-photo", photoId })') &&
+    !text.includes("TextSelection.findFrom(")
+  )
+    hits.push(
+      "Photo removal must leave a text selection before deleting its node"
+    )
+  if (
+    [
+      "apps/web/src/features/paper/rich-photo-controls.tsx",
+      "apps/web/src/features/paper/rich-photo-preview.tsx",
+    ].includes(path)
+  ) {
+    if (/name=\{edge\}[\s\S]*?step="(?!any")/.test(text))
+      hits.push("Photo crop inputs must accept precise centered crop values")
+    if (/photos\[photos\.length\s*-\s*1\]/.test(text))
+      hits.push(
+        "Photo editing must use the page selection instead of the last photo"
+      )
+    if (
+      text.includes('data.get("height")') &&
+      text.includes('data.get("width")')
+    )
+      hits.push(
+        "Photo dimensions must resize together with the cropped source ratio"
+      )
+    if (
+      text.includes('alt={selected.alt || "Photo to edit"}') &&
+      (!text.includes("selected.crop.left") ||
+        !text.includes("selected.shape ==="))
+    )
+      hits.push("Photo preview must reflect the pending crop and shape")
+  }
+
   return hits
 }

@@ -1,3 +1,6 @@
+import { toast } from "sonner"
+
+import { capturePrintReadiness } from "./paper-print-readiness.ts"
 import { readA4HeightPx } from "./paper-cv-a4.tsx"
 import "./paper-print.css"
 
@@ -49,61 +52,66 @@ export function quietPaperChrome(root: ParentNode) {
   }
 }
 
+let cancelActivePrint: (() => void) | undefined
+
 export function printPaper(title: string | undefined, onDone?: () => void) {
+  cancelActivePrint?.()
   const root = document.body
   const previousTitle = document.title
-  if (title) document.title = title
-  root.setAttribute("data-print", "paper")
-  let cancelled = false
+  const controller = new AbortController()
   let finished = false
   let timer = 0
 
-  const finish = () => {
+  const cancel = () => {
     if (finished) return
     finished = true
     window.clearTimeout(timer)
+    controller.abort()
+    window.removeEventListener("afterprint", finish)
     root.removeAttribute("data-print")
     if (title) document.title = previousTitle
+    if (cancelActivePrint === finish) cancelActivePrint = undefined
+  }
+  const finish = () => {
+    if (finished) return
+    cancel()
     onDone?.()
   }
+  cancelActivePrint = finish
+  if (title) document.title = title
+  root.setAttribute("data-print", "paper")
+  window.addEventListener("afterprint", finish)
 
-  const onAfter = () => {
-    window.removeEventListener("afterprint", onAfter)
-    finish()
-  }
-  window.addEventListener("afterprint", onAfter)
-
-  const images = [
-    ...root.querySelectorAll<HTMLImageElement>("[data-paper-print] img"),
-  ]
-  const fonts = document.fonts?.ready ?? Promise.resolve()
-  const decoded = Promise.all(
-    images.map((img) => {
-      if (typeof img.decode !== "function") return Promise.resolve()
-      return img.decode().catch(() => undefined)
-    })
-  )
-  const bound = new Promise<void>((resolve) => {
-    timer = window.setTimeout(resolve, PRINT_WAIT_MS)
-  })
-
-  void Promise.race([Promise.all([fonts, decoded]), bound]).then(() => {
-    window.clearTimeout(timer)
-    if (cancelled || finished) return
-    try {
-      window.print()
-    } catch {
-      window.removeEventListener("afterprint", onAfter)
-      finish()
-    }
-  })
-
-  return () => {
-    cancelled = true
-    window.clearTimeout(timer)
-    window.removeEventListener("afterprint", onAfter)
+  const refuse = () => {
     if (finished) return
-    root.removeAttribute("data-print")
-    if (title) document.title = previousTitle
+    finish()
+    toast.error(
+      "Paper could not print because a photo or font did not load. Try Download PDF again, or replace the photo."
+    )
   }
+  try {
+    const readiness = capturePrintReadiness(controller.signal)
+    const deadline = new Promise<never>((_, reject) => {
+      timer = window.setTimeout(
+        () => reject(new Error("Print readiness timed out")),
+        PRINT_WAIT_MS
+      )
+    })
+    void Promise.race([readiness.ready, deadline]).then(() => {
+      window.clearTimeout(timer)
+      if (finished) return
+      if (!readiness.isCurrent()) {
+        refuse()
+        return
+      }
+      try {
+        window.print()
+      } catch {
+        refuse()
+      }
+    }, refuse)
+  } catch {
+    refuse()
+  }
+  return cancel
 }

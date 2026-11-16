@@ -9,6 +9,7 @@ import { applyLocalApiUrl } from "./local-env"
 applyLocalApiUrl("test")
 
 const ISOLATED_FILES = [
+  "src/lib/paper-rich-word.test.ts",
   "src/features/landing/landing-redirect-warmup.test.ts",
   "src/features/app-shell/app-shell-warmup.test.ts",
   "src/router-lazy.test.tsx",
@@ -36,6 +37,7 @@ const ISOLATED_FILES = [
   "src/features/paper/cv-photo.test.tsx",
   "src/features/paper/rich-photo-controls.test.tsx",
   "src/features/paper/paper-share.test.tsx",
+  "src/features/paper/paper-print-callers.test.tsx",
   "src/features/paper/paper-v2-preview.test.tsx",
   "src/features/paper/paper-import-outcomes.test.tsx",
   "src/features/paper/paper-library.test.tsx",
@@ -48,6 +50,11 @@ const ISOLATED_FILES = [
   "src/features/apply/apply-board-queue.test.tsx",
   "src/local-env.test.ts",
 ]
+
+const SEPARATE_WALK_FILES =
+  process.env.CI_SEPARATE_PAPER_WALK === "1"
+    ? ["src/features/paper-page/canvas-walk.test.ts"]
+    : []
 
 const DROP_FETCH_STUBS_BETWEEN_FILES_THAT_SHARE_A_MODULE_GRAPH = true
 const DRAIN_SETUP_OWNED_ROUTERS_BEFORE_FILE_HOOKS = "list" as const
@@ -88,6 +95,7 @@ export default defineConfig({
           isolate: false,
           exclude: [
             ...configDefaults.exclude,
+            ...SEPARATE_WALK_FILES,
             ...quarantine.map((entry) => entry.file),
             ...ISOLATED_FILES,
           ],
@@ -99,7 +107,10 @@ export default defineConfig({
           name: "isolated",
           isolate: true,
           include: ISOLATED_FILES,
-          exclude: quarantine.map((entry) => entry.file),
+          exclude: [
+            ...quarantine.map((entry) => entry.file),
+            ...SEPARATE_WALK_FILES,
+          ],
         },
       },
     ],

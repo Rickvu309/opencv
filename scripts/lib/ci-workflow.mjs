@@ -39,6 +39,18 @@ const REQUIRED = [
   ],
 ]
 
+export function walkCoverageErrors({ complete, ordinary, dedicated }) {
+  const walk = "[isolated] src/features/paper-page/canvas-walk.test.ts"
+  const expected = complete.filter((file) => file !== walk).sort()
+  const hits = []
+  if (!complete.includes(walk)) hits.push("complete suite lacks the Paper walk")
+  if (JSON.stringify([...ordinary].sort()) !== JSON.stringify(expected))
+    hits.push("ordinary shards must contain every file except the Paper walk")
+  if (dedicated.length !== 1 || dedicated[0] !== walk)
+    hits.push("dedicated jobs must contain only the Paper walk")
+  return hits
+}
+
 export function namedModules(mapTexts) {
   const named = []
   for (const [mapPath, text] of Object.entries(mapTexts)) {

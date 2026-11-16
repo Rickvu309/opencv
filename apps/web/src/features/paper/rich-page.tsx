@@ -6,36 +6,32 @@ import {
   useSyncExternalStore,
 } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { ArrowLeft, Bold, Italic, Strikethrough, Underline } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import {
   PageHeader,
   PageHeaderTitle,
 } from "@workspace/ui/components/page-header"
-import {
-  mountRichPaperEditor,
-  type RichMark,
-} from "@workspace/paper-crdt/editor"
+import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
+import { RichPhotoControls } from "./rich-photo-controls.tsx"
+import { RichPaperTextFormatting } from "./rich-text-formatting.tsx"
 import { openRichPaperSession } from "@/lib/paper-rich.ts"
 import { resolvePhotoSrc } from "@/lib/requests.ts"
 import type { NativeSyncIdentity } from "@/lib/paper-sync-identity.ts"
 import { SYNC_LABEL } from "@/lib/paper-sync.ts"
+import { RichDocumentMenu } from "./rich-document-menu.tsx"
 import "./design/rich-page-header.pen.css"
-import { RichPhotoControls } from "./rich-photo-controls.tsx"
 
 type Session = ReturnType<typeof openRichPaperSession>
 type Editor = ReturnType<typeof mountRichPaperEditor>
-type ActiveMarks = Partial<Record<RichMark, boolean>>
 type EditorState = {
   session: Session | null
   editor: Editor | null
-  activeMarks: ActiveMarks
   editorError: boolean
 }
 type EditorAction =
   | { type: "session"; session: Session }
-  | { type: "mounted"; editor: Editor; activeMarks: ActiveMarks }
-  | { type: "marks"; activeMarks: ActiveMarks }
+  | { type: "mounted"; editor: Editor }
   | { type: "unmounted" }
   | { type: "failed" }
 
@@ -47,24 +43,14 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
       return {
         ...state,
         editor: action.editor,
-        activeMarks: action.activeMarks,
         editorError: false,
       }
-    case "marks":
-      return { ...state, activeMarks: action.activeMarks }
     case "unmounted":
       return { ...state, editor: null }
     case "failed":
       return { ...state, editorError: true }
   }
 }
-
-const marks = [
-  { mark: "bold", label: "Bold", Icon: Bold },
-  { mark: "italic", label: "Italic", Icon: Italic },
-  { mark: "underline", label: "Underline", Icon: Underline },
-  { mark: "strike", label: "Strikethrough", Icon: Strikethrough },
-] as const
 
 export function RichPaperPage({
   name,
@@ -80,12 +66,11 @@ export function RichPaperPage({
   useLayoutEffect(() => {
     currentIdentity.current = identity
   }, [identity])
-  const [{ session, editor, activeMarks, editorError }, dispatch] = useReducer(
+  const [{ session, editor, editorError }, dispatch] = useReducer(
     editorReducer,
     {
       session: null,
       editor: null,
-      activeMarks: {},
       editorError: false,
     }
   )
@@ -116,13 +101,8 @@ export function RichPaperPage({
       dispatch({
         type: "mounted",
         editor: mounted,
-        activeMarks: mounted.activeMarks(),
       })
-      const detach = mounted.subscribe(() =>
-        dispatch({ type: "marks", activeMarks: mounted.activeMarks() })
-      )
       return () => {
-        detach()
         mounted.destroy()
         dispatch({ type: "unmounted" })
       }
@@ -141,44 +121,41 @@ export function RichPaperPage({
       className="rich-paper-page flex min-h-0 flex-1 flex-col"
     >
       <PageHeader>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-11 shrink-0 md:size-8"
-          aria-label="Back to Paper"
-          onClick={onBack}
-        >
-          <ArrowLeft />
-        </Button>
-        <PageHeaderTitle className="text-[0.8125rem] leading-[1rem] [overflow-wrap:anywhere] whitespace-normal max-md:min-w-0">
-          {name}
-        </PageHeaderTitle>
-        <span role="status" className="ml-auto text-sm text-muted-foreground">
-          {editorError
-            ? "Editor unavailable. Your document is kept"
-            : SYNC_LABEL[status]}
-        </span>
+        <div className="flex min-w-0 flex-1 basis-48 items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-11 shrink-0 md:size-8"
+            aria-label="Back to Paper"
+            onClick={onBack}
+          >
+            <ArrowLeft />
+          </Button>
+          <PageHeaderTitle className="text-[0.8125rem] leading-[1rem] [overflow-wrap:anywhere] whitespace-normal max-md:min-w-0">
+            {name}
+          </PageHeaderTitle>
+        </div>
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <span role="status" className="text-sm text-muted-foreground">
+            {editorError
+              ? "Editor unavailable. Your document is kept"
+              : SYNC_LABEL[status]}
+          </span>
+          <RichDocumentMenu
+            session={session}
+            status={status}
+            blocked={blocked}
+          />
+        </div>
       </PageHeader>
       <RichPhotoControls editor={editor} disabled={blocked}>
-        {marks.map(({ mark, label, Icon }) => (
-          <Button
-            key={mark}
-            variant={activeMarks[mark] ? "secondary" : "ghost"}
-            size="icon"
-            className="size-11 md:size-8"
-            aria-label={label}
-            aria-pressed={activeMarks[mark] === true}
-            disabled={!editor || blocked}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => {
-              editor?.toggleMark(mark)
-              if (editor)
-                dispatch({ type: "marks", activeMarks: editor.activeMarks() })
-            }}
-          >
-            <Icon />
-          </Button>
-        ))}
+        {(photoControls) => (
+          <RichPaperTextFormatting
+            editor={editor}
+            blocked={blocked}
+            photoControls={photoControls}
+          />
+        )}
       </RichPhotoControls>
       {blocked ? (
         <p role="alert" className="p-6 text-sm">
@@ -190,7 +167,7 @@ export function RichPaperPage({
         <div
           ref={element}
           aria-busy={status === "loading"}
-          className="mx-auto min-h-[11in] w-full max-w-[8.5in] border bg-card p-5 text-card-foreground shadow-sm sm:p-[1in] [&_figure[data-paper-photo]]:cursor-pointer [&_figure[data-paper-photo]]:touch-manipulation [&_figure[data-paper-photo]]:select-none [&_figure[data-paper-photo]]:active:opacity-80 [@media(hover:hover)_and_(pointer:fine)]:[&_figure[data-paper-photo]]:hover:ring-1 [@media(hover:hover)_and_(pointer:fine)]:[&_figure[data-paper-photo]]:hover:ring-ring"
+          className="mx-auto min-h-[11in] w-full max-w-[8.5in] border bg-card p-5 text-card-foreground shadow-sm sm:p-[1in]"
         />
       </div>
     </section>

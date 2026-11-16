@@ -26,9 +26,9 @@ import {
 import { RichPhotoToolbar } from "./rich-photo-toolbar.tsx"
 import { RichPhotoChoice } from "./rich-photo-choice.tsx"
 import { RichPhotoNumber } from "./rich-photo-number.tsx"
-import { photoErrorMessage } from "./rich-photo-error.ts"
 import { RichPhotoPreview } from "./rich-photo-preview.tsx"
 import {
+  photoErrorMessage,
   parsePhotoForm,
   photoNumbers,
   photoFields,
@@ -106,6 +106,7 @@ export function RichPhotoControls({
 }: {
   editor: Pick<
     Editor,
+    | "focus"
     | "photos"
     | "subscribe"
     | "photoHistory"
@@ -119,7 +120,7 @@ export function RichPhotoControls({
     | "removePhoto"
   > | null
   disabled: boolean
-  children: ReactNode
+  children: (controls: (onAction: () => void) => ReactNode) => ReactNode
 }) {
   const [state, dispatch] = useReducer(photoDraft, {
     photo: null,
@@ -229,26 +230,38 @@ export function RichPhotoControls({
           if (file) void upload(file)
         }}
       />
-      <RichPhotoToolbar
-        held={held}
-        canUndo={Boolean(history?.undo)}
-        canRedo={Boolean(history?.redo)}
-        hasPhotos={photos.length > 0}
-        onUndo={() => editor?.undoPhoto()}
-        onRedo={() => editor?.redoPhoto()}
-        onInsert={() => pick(null)}
-        onEdit={() =>
-          dispatch({
-            type: "open",
-            photo:
-              photos.find((photo) => photo.id === editor?.selectedPhoto()) ??
-              photos[0] ??
-              null,
-          })
-        }
-      >
-        {children}
-      </RichPhotoToolbar>
+      {children((onAction) => (
+        <RichPhotoToolbar
+          held={held}
+          canUndo={Boolean(history?.undo)}
+          canRedo={Boolean(history?.redo)}
+          hasPhotos={photos.length > 0}
+          onUndo={() => {
+            editor?.undoPhoto()
+            editor?.focus()
+            onAction()
+          }}
+          onRedo={() => {
+            editor?.redoPhoto()
+            editor?.focus()
+            onAction()
+          }}
+          onInsert={() => {
+            pick(null)
+            onAction()
+          }}
+          onEdit={() => {
+            onAction()
+            dispatch({
+              type: "open",
+              photo:
+                photos.find((photo) => photo.id === editor?.selectedPhoto()) ??
+                photos[0] ??
+                null,
+            })
+          }}
+        />
+      ))}
       <div
         role="status"
         className={
@@ -268,7 +281,10 @@ export function RichPhotoControls({
           if (!open && !state.busy) dispatch({ type: "open", photo: null })
         }}
       >
-        <DialogContent className="flex flex-col overflow-hidden p-0 sm:max-w-md [&_[data-slot=dialog-close-pin]]:absolute [&_[data-slot=dialog-close-pin]]:right-6">
+        <DialogContent
+          finalFocus={() => editor?.focus() ?? false}
+          className="flex flex-col overflow-hidden p-0 sm:max-w-md [&_[data-slot=dialog-close-pin]]:absolute [&_[data-slot=dialog-close-pin]]:right-6"
+        >
           <DialogHeader className="shrink-0 px-6 pt-6">
             <DialogTitle>Edit photo</DialogTitle>
             <DialogDescription>

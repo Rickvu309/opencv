@@ -2,10 +2,59 @@ import { posix } from "node:path"
 import ts from "typescript"
 import { detectPhotoPresentation } from "./paper-photo-guard.mjs"
 import { qualifiedNativeWord } from "./paper-native-word.mjs"
+import { detectTextFormatting } from "./paper-text-formatting.mjs"
 
 export function detect(text, path) {
+  const hits = detectTextFormatting(text, path)
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
-  const hits = []
+  if (path === "packages/paper-crdt/src/editor.ts") {
+    const visit = (node) => {
+      if (ts.isMethodDeclaration(node)) {
+        const name = node.name.getText(source)
+        const body = node.body?.getText(source) ?? ""
+        if (name === "subscribe" && !/\.on\(["']transaction["']/.test(body))
+          hits.push(
+            "Paper formatting subscribers must observe stored-mark transactions"
+          )
+        if (
+          ["formatInline", "formatParagraph"].includes(name) &&
+          !body.includes("view.focus()")
+        )
+          hits.push(
+            "Paper toolbar choices must return focus without changing selection"
+          )
+      }
+      ts.forEachChild(node, visit)
+    }
+    visit(source)
+  }
+  if (
+    path === "packages/paper-crdt/src/native-layout-formatting.ts" &&
+    text.includes("inlines") &&
+    !text.includes("!inlines.length")
+  )
+    hits.push("Paper empty selections need effective inline values")
+  if (
+    path === "packages/paper-crdt/src/native-formatting-render-values.ts" &&
+    text.includes("text-indent:") &&
+    !text.includes("Math.max(v.start ?? 0, indent?.kind")
+  )
+    hits.push("Paper hanging indents must reserve their start space")
+  if (
+    path === "apps/api/src/paper/native-output/formatted-properties.ts" &&
+    /return "Liberation (Sans|Serif|Mono)"/.test(text)
+  )
+    hits.push(
+      "Paper Word fonts must use the metric-compatible Word family names"
+    )
+
+  if (
+    path === "apps/web/src/features/paper/design/rich-page-header.pen.css" &&
+    !/\[data-slot="page-header"\]\s*\{[^}]*\bflex-wrap:\s*wrap\s*;/.test(text)
+  )
+    hits.push(
+      "Rich Paper headers must wrap their title and actions at enlarged text sizes"
+    )
   const test = /\.test\.[cm]?[jt]sx?$/.test(path)
   const storage = path === "packages/paper-crdt/src/stored-document.ts"
   const editorEntry = path === "packages/paper-crdt/src/editor.ts"
@@ -65,72 +114,7 @@ export function detect(text, path) {
         "Resolve the internal presentation subpath before the broad domain source alias"
       )
   }
-  if (
-    path === "apps/api/src/paper/native-output/formatted-photos.ts" &&
-    text.includes("<wp:extent") &&
-    (!text.includes("photoBounds(photo)") ||
-      /<wp:extent[^>]*\$\{(?:width|height)\}/.test(text))
-  )
-    hits.push(
-      "Word photo frames must reserve rotated bounds and retain editable picture dimensions"
-    )
-  if (
-    path === "packages/paper-crdt/src/native-layout-schema.ts" &&
-    text.includes("photoBlockSpec") &&
-    (!text.includes("paperWrapSlot") ||
-      !text.includes("display:block") ||
-      !text.includes(".bn-block > ${text}"))
-  )
-    hits.push(
-      "Wrapped photo text must share the surrounding inline formatting context"
-    )
-
   hits.push(...detectPhotoPresentation(text, path, source))
-  if (
-    [
-      "packages/paper-crdt/src/native-layout-photo-controls.ts",
-      "packages/domain/src/paper-doc/native-layout-photo-destination.ts",
-    ].includes(path) &&
-    (/\?\?\s*document\.flow\.children\[0\]/.test(text) ||
-      /afterId:\s*anchor\?\.id\s*\?\?\s*null/.test(text))
-  )
-    hits.push(
-      "Photo insertion must resolve the cursor ancestry and refuse a missing destination"
-    )
-  if (
-    path === "packages/paper-crdt/src/native-layout-photo-controls.ts" &&
-    text.includes('change({ kind: "remove-photo", photoId })') &&
-    !text.includes("TextSelection.findFrom(")
-  )
-    hits.push(
-      "Photo removal must leave a text selection before deleting its node"
-    )
-  if (
-    [
-      "apps/web/src/features/paper/rich-photo-controls.tsx",
-      "apps/web/src/features/paper/rich-photo-preview.tsx",
-    ].includes(path)
-  ) {
-    if (/name=\{edge\}[\s\S]*?step="(?!any")/.test(text))
-      hits.push("Photo crop inputs must accept precise centered crop values")
-    if (/photos\[photos\.length\s*-\s*1\]/.test(text))
-      hits.push(
-        "Photo editing must use the page selection instead of the last photo"
-      )
-    if (
-      text.includes('data.get("height")') &&
-      text.includes('data.get("width")')
-    )
-      hits.push(
-        "Photo dimensions must resize together with the cropped source ratio"
-      )
-    if (
-      text.includes('alt={selected.alt || "Photo to edit"}') &&
-      (!text.includes("selected.crop.left") ||
-        !text.includes("selected.shape ==="))
-    )
-      hits.push("Photo preview must reflect the pending crop and shape")
-  }
 
   const presentation =
     storage ||

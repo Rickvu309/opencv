@@ -20,6 +20,7 @@
     "@tanstack/react-router": "^1.170.45",
     "@workspace/domain": "workspace:*",
     "@workspace/paper-crdt": "workspace:*",
+    "@workspace/stageshow": "workspace:*",
     "@workspace/ui": "workspace:*",
     "better-auth": "^1.7.7",
     "lucide-react": "^1.60.0",

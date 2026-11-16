@@ -2,3 +2,4 @@
 pnpm-lock.yaml linguist-generated
 apps/api/drizzle/** linguist-generated
 apps/web/src/features/landing/design/landing.styles.json linguist-generated
+packages/stageshow/src/kit/** linguist-generated

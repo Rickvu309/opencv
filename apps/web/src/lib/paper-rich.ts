@@ -4,6 +4,10 @@ import { emptyUpdate } from "@workspace/paper-crdt"
 import { runContractCommand } from "./contract-client.ts"
 import { openRichNativePaperSync } from "./paper-native-transport.ts"
 import type { NativeSyncIdentity } from "./paper-sync-identity.ts"
+import {
+  downloadSavedRichWord,
+  SavedRichWordChanged,
+} from "./paper-rich-word.ts"
 import { fromBase64 } from "./paper-sync-bytes.ts"
 
 export function openRichPaperSession(options: {
@@ -46,6 +50,7 @@ export function openRichPaperSession(options: {
       }
     },
   })
+  let downloading: Promise<void> | undefined
   let active = true
   let timer: ReturnType<typeof setTimeout> | undefined
   let detach = () => {}
@@ -75,6 +80,22 @@ export function openRichPaperSession(options: {
   document.addEventListener("visibilitychange", visibility)
   return {
     ...session,
+    downloadWord() {
+      if (downloading) return downloading
+      const saved = session.captureSaved()
+      if (!saved)
+        return Promise.reject(
+          session.ready()
+            ? new SavedRichWordChanged()
+            : new Error("Paper could not prepare the Word file.")
+        )
+      downloading = downloadSavedRichWord(saved, cancellation.signal).finally(
+        () => {
+          downloading = undefined
+        }
+      )
+      return downloading
+    },
     destroy() {
       if (!active) return session.destroy()
       active = false

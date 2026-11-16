@@ -191,7 +191,7 @@ test("a check removed with no replacement is recorded, and the pull request beco
     `${SUBJECT} is retired with no replacement test`,
   ])
   assert.deepEqual(after.lines, [
-    `Retired 1 checks that wait for the owner: ${SUBJECT} (no replacement test)`,
+    `Retired 1 checks without self-serve replacement proof: ${SUBJECT} (no replacement test)`,
   ])
   const file = join(w.dir, "scripts/retired/7.json")
   const rows = JSON.parse(readFileSync(file, "utf8"))
@@ -203,7 +203,7 @@ test("a check removed with no replacement is recorded, and the pull request beco
   w.commit("hand-edit the record to self-serve")
   assert.match(
     decided(w.facts()).unproven.message,
-    /recorded as self-serve, but it retires a check that waits for the owner \(no replacement test\)/
+    /recorded as self-serve, but it retires a check without self-serve replacement proof \(no replacement test\)/
   )
 })
 

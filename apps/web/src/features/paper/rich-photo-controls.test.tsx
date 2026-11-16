@@ -14,10 +14,11 @@ import {
   croppedPhotoRatio,
   layoutPhotoSchema,
 } from "@workspace/domain/internal/paper-presentation"
+import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { RichPhotoControls } from "./rich-photo-controls.tsx"
 import { uploadPaperPhoto } from "./paper-api.ts"
 import { parsePhotoForm, photoFields, photoNumbers } from "./rich-photo-form.ts"
-import { photoErrorMessage } from "./rich-photo-error.ts"
+import { photoErrorMessage } from "./rich-photo-form.ts"
 
 vi.mock("./paper-api.ts", () => ({ uploadPaperPhoto: vi.fn() }))
 
@@ -83,6 +84,7 @@ function setup(
   const editor = client
     ? mountRichPaperEditor(client, host, { photoUrl: (id) => `/owned/${id}` })
     : ({
+        focus: vi.fn(() => false),
         photos: () => [photo],
         subscribe: () => () => {},
         photoHistory: () => ({ undo: false, redo: false }),
@@ -105,7 +107,7 @@ function setup(
     })
   render(
     <RichPhotoControls editor={editor} disabled={false}>
-      {null}
+      {(controls) => <TooltipProvider>{controls(() => {})}</TooltipProvider>}
     </RichPhotoControls>
   )
   fireEvent.click(screen.getByRole("button", { name: "Edit photo" }))
@@ -206,7 +208,8 @@ it("retains a refused crop and applies exactly the fields shown after recovery",
   })
   const figure = host.querySelector<HTMLElement>("figure[data-paper-photo]")!
   expect(figure.style.width).toBe("90pt")
-  expect(figure.style.height).toBe("36pt")
+  expect(figure.style.height).toBe("auto")
+  expect(figure.style.aspectRatio).toBe("1800 / 720")
   expect(parseFloat(figure.querySelector("img")!.style.top)).toBeCloseTo(-25)
   const stored = client!.stored()
   const recovered = openRichPaperClient(stored, {

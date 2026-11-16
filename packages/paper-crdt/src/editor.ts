@@ -1,6 +1,11 @@
 import type { RichPaperDocument } from "@workspace/domain"
 import { TextSelection } from "@tiptap/pm/state"
 import type { PaperClient } from "./client.js"
+import {
+  richTextColors,
+  richTextHighlights,
+  richTextFonts,
+} from "./formatting-options.js"
 import { borrowFlowDocument } from "./native-layout-flow.js"
 import { mountPrivateFlow } from "./native-layout-flow-mount.js"
 
@@ -34,26 +39,74 @@ export function mountRichPaperEditor(
         )
     }
     view.dom.setAttribute("aria-label", "Document content")
+    view.dom.style.outline = "none"
+    const shortcuts = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey) return
+      const alignments = new Map([
+        ["l", "left"],
+        ["e", "center"],
+        ["r", "right"],
+        ["j", "justify"],
+      ] satisfies [string, "left" | "center" | "right" | "justify"][])
+      const alignment = event.shiftKey
+        ? alignments.get(event.key.toLowerCase())
+        : undefined
+      if (alignment) {
+        event.preventDefault()
+        mounted.formatParagraph({ alignment })
+      } else if (!event.shiftKey && (event.key === "[" || event.key === "]")) {
+        event.preventDefault()
+        mounted.adjustIndent(event.key === "]" ? 360 : -360)
+      }
+    }
+    view.dom.addEventListener("keydown", shortcuts)
     const destroy = () => {
       if (!active) return
       active = false
       removeRelease()
+      view.dom.removeEventListener("keydown", shortcuts)
       mounted.unmount()
       lease.release()
     }
     removeRelease = client.onDocumentRelease(destroy)
     return {
       ...mounted.photoControls,
+      formattingOptions: {
+        colors: richTextColors,
+        highlights: richTextHighlights,
+        fonts: richTextFonts,
+      },
       setEditable(editable: boolean) {
         if (active) mounted.editor.isEditable = editable
       },
       focus() {
-        if (active) view.focus()
+        if (!active) return false
+        view.focus()
+        return view.dom
       },
       toggleMark(mark: RichMark) {
         if (!active) throw new Error("Paper editor is closed")
         mounted.setInline({ [mark]: !mounted.activeInline()[mark] })
         view.focus()
+      },
+      formatInline(input: Parameters<typeof mounted.formatInline>[0]) {
+        if (!active) throw new Error("Paper editor is closed")
+        mounted.formatInline(input)
+        view.focus()
+      },
+      formatParagraph(input: Parameters<typeof mounted.formatParagraph>[0]) {
+        if (!active) throw new Error("Paper editor is closed")
+        mounted.formatParagraph(input)
+        view.focus()
+      },
+      adjustIndent(delta: 360 | -360) {
+        if (!active) throw new Error("Paper editor is closed")
+        mounted.adjustIndent(delta)
+        view.focus()
+      },
+      activeFormatting() {
+        if (!active) return null
+        return mounted.activeFormatting()
       },
       activeMarks() {
         if (!active) return {}
@@ -66,12 +119,12 @@ export function mountRichPaperEditor(
         }
       },
       subscribe(listener: () => void) {
-        const offSelection = mounted.editor.onSelectionChange(listener)
-        const offChange = mounted.editor.onChange(listener)
+        if (!active) return () => {}
+        const tiptap = mounted.editor._tiptapEditor
+        tiptap.on("transaction", listener)
         const offPhoto = mounted.photoControls.subscribePhotoSelection(listener)
         return () => {
-          offSelection()
-          offChange()
+          tiptap.off("transaction", listener)
           offPhoto()
         }
       },

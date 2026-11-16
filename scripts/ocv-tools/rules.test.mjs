@@ -645,3 +645,12 @@ test("cli refusal text matches the table", () => {
     )
   }
 })
+
+test("the merge rules contain no owner approval gate", () => {
+  assert.equal(
+    RULES.some((row) => row.id === "OWNER_YES"),
+    false
+  )
+  for (const row of RULES)
+    assert.doesNotMatch(row.says ?? "", /owner-approved|owner's yes/)
+})
