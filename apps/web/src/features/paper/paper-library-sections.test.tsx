@@ -6,17 +6,35 @@ import {
   waitFor,
   within,
 } from "@testing-library/react"
-import { RouterContextProvider } from "@tanstack/react-router"
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  RouterContextProvider,
+} from "@tanstack/react-router"
 
 import { render } from "@/test/render-with-client.tsx"
 import { PaperLibrary } from "./paper-library.tsx"
 import {
-  createLibraryRouter,
   cv,
   letter,
   letterPaper,
   renderLibrary,
 } from "./paper-library.fixtures.tsx"
+
+function proofsRouter() {
+  const root = createRootRoute()
+  const proofs = createRoute({
+    getParentRoute: () => root,
+    path: "/proofs",
+    component: () => null,
+  })
+  return createRouter({
+    routeTree: root.addChildren([proofs]),
+    history: createMemoryHistory({ initialEntries: ["/"] }),
+  })
+}
 
 afterEach(() => {
   cleanup()
@@ -289,7 +307,7 @@ describe("Paper home sections", () => {
   })
 
   it("follows Proofs inside the app and keeps a modified click on this page", async () => {
-    const router = createLibraryRouter()
+    const router = proofsRouter()
     render(
       <RouterContextProvider router={router}>
         <PaperLibrary

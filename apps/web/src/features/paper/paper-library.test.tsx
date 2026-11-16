@@ -304,7 +304,7 @@ describe("Paper library", () => {
       screen.getByRole("button", { name: "Cover letter" })
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole("searchbox", { name: "Search Paper" })
+      screen.queryByRole("textbox", { name: "Search Paper" })
     ).not.toBeInTheDocument()
     fireEvent.click(
       screen.getAllByRole("button", { name: "Import", exact: true }).at(0) ??
