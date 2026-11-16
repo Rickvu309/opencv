@@ -14,6 +14,24 @@ export function mountRichEditorLifecycle(
 ) {
   let editor: Editor | undefined
   let selection: ReturnType<Editor["captureSelection"]>
+  const liveHandle = (target: Editor): Editor =>
+    new Proxy(target, {
+      get(target, key, receiver) {
+        const value = Reflect.get(target, key, receiver)
+        if (typeof value !== "function") return value
+        return (...args: unknown[]) => {
+          if (editor === target) return Reflect.apply(value, target, args)
+          if (key === "subscribe") return () => {}
+          if (key === "photos") return []
+          if (key === "activeMarks") return {}
+          if (key === "documentHistory") return { undo: false, redo: false }
+          if (key === "apply" || key === "focus" || key === "setLink")
+            return false
+          if (key === "captureSelection" || key === "restoreSelection") return
+          return null
+        }
+      },
+    })
   const release = () => {
     editor?.destroy()
     editor = undefined
@@ -29,7 +47,7 @@ export function mountRichEditorLifecycle(
         },
       })
       editor.restoreSelection(selection)
-      options.mounted(editor)
+      options.mounted(liveHandle(editor))
     } catch {
       release()
       options.failed()

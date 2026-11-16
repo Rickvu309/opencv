@@ -8,6 +8,6 @@
   "historic": {
     "mode": "detect",
     "sha": "0342e329d002417ffc17ee98011225ffbc1aba9b",
-    "path": "packages/paper-crdt/src/editor.ts"
+    "path": "apps/web/src/features/paper/rich-page.tsx"
   }
 }

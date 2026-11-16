@@ -6,36 +6,33 @@ import {
   useSyncExternalStore,
 } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { ArrowLeft, Bold, Italic, Strikethrough, Underline } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import {
   PageHeader,
   PageHeaderTitle,
 } from "@workspace/ui/components/page-header"
-import {
-  mountRichPaperEditor,
-  type RichMark,
-} from "@workspace/paper-crdt/editor"
+import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
+import { RichPhotoControls } from "./rich-photo-controls.tsx"
+import { RichPaperTextFormatting } from "./rich-text-formatting.tsx"
 import { openRichPaperSession } from "@/lib/paper-rich.ts"
 import { resolvePhotoSrc } from "@/lib/requests.ts"
 import type { NativeSyncIdentity } from "@/lib/paper-sync-identity.ts"
 import { SYNC_LABEL } from "@/lib/paper-sync.ts"
 import { mountRichEditorLifecycle } from "./rich-editor-lifecycle.ts"
+import { RichDocumentMenu } from "./rich-document-menu.tsx"
 import "./design/rich-page-header.pen.css"
 
 type Session = ReturnType<typeof openRichPaperSession>
 type Editor = ReturnType<typeof mountRichPaperEditor>
-type ActiveMarks = Partial<Record<RichMark, boolean>>
 type EditorState = {
   session: Session | null
   editor: Editor | null
-  activeMarks: ActiveMarks
   editorError: boolean
 }
 type EditorAction =
   | { type: "session"; session: Session }
-  | { type: "mounted"; editor: Editor; activeMarks: ActiveMarks }
-  | { type: "marks"; activeMarks: ActiveMarks }
+  | { type: "mounted"; editor: Editor }
   | { type: "unmounted" }
   | { type: "failed" }
 
@@ -47,24 +44,14 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
       return {
         ...state,
         editor: action.editor,
-        activeMarks: action.activeMarks,
         editorError: false,
       }
-    case "marks":
-      return { ...state, activeMarks: action.activeMarks }
     case "unmounted":
-      return { ...state, editor: null, activeMarks: {} }
+      return { ...state, editor: null }
     case "failed":
       return { ...state, editorError: true }
   }
 }
-
-const marks = [
-  { mark: "bold", label: "Bold", Icon: Bold },
-  { mark: "italic", label: "Italic", Icon: Italic },
-  { mark: "underline", label: "Underline", Icon: Underline },
-  { mark: "strike", label: "Strikethrough", Icon: Strikethrough },
-] as const
 
 export function RichPaperPage({
   name,
@@ -80,12 +67,11 @@ export function RichPaperPage({
   useLayoutEffect(() => {
     currentIdentity.current = identity
   }, [identity])
-  const [{ session, editor, activeMarks, editorError }, dispatch] = useReducer(
+  const [{ session, editor, editorError }, dispatch] = useReducer(
     editorReducer,
     {
       session: null,
       editor: null,
-      activeMarks: {},
       editorError: false,
     }
   )
@@ -109,21 +95,12 @@ export function RichPaperPage({
   const client = session?.client() ?? null
   useEffect(() => {
     if (!client || !element.current) return
-    let detach = () => {}
     return mountRichEditorLifecycle(client, element.current, {
       photoUrl: resolvePhotoSrc,
       mounted(mounted) {
-        dispatch({
-          type: "mounted",
-          editor: mounted,
-          activeMarks: mounted.activeMarks(),
-        })
-        detach = mounted.subscribe(() =>
-          dispatch({ type: "marks", activeMarks: mounted.activeMarks() })
-        )
+        dispatch({ type: "mounted", editor: mounted })
       },
       released() {
-        detach()
         dispatch({ type: "unmounted" })
       },
       failed() {
@@ -142,49 +119,42 @@ export function RichPaperPage({
       className="rich-paper-page flex min-h-0 flex-1 flex-col"
     >
       <PageHeader>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-11 shrink-0 md:size-8"
-          aria-label="Back to Paper"
-          onClick={onBack}
-        >
-          <ArrowLeft />
-        </Button>
-        <PageHeaderTitle className="text-[0.8125rem] leading-[1rem] [overflow-wrap:anywhere] whitespace-normal max-md:min-w-0">
-          {name}
-        </PageHeaderTitle>
-        <span role="status" className="ml-auto text-sm text-muted-foreground">
-          {editorError
-            ? "Editor unavailable. Your document is kept"
-            : SYNC_LABEL[status]}
-        </span>
-      </PageHeader>
-      <div
-        role="toolbar"
-        aria-label="Text formatting"
-        className="flex flex-wrap items-center gap-3 border-b px-4 py-2"
-      >
-        {marks.map(({ mark, label, Icon }) => (
+        <div className="flex min-w-0 flex-1 basis-48 items-center gap-2">
           <Button
-            key={mark}
-            variant={activeMarks[mark] ? "secondary" : "ghost"}
+            variant="ghost"
             size="icon"
-            className="size-11 md:size-8"
-            aria-label={label}
-            aria-pressed={activeMarks[mark] === true}
-            disabled={!editor || blocked}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => {
-              editor?.toggleMark(mark)
-              if (editor)
-                dispatch({ type: "marks", activeMarks: editor.activeMarks() })
-            }}
+            className="size-11 shrink-0 md:size-8"
+            aria-label="Back to Paper"
+            onClick={onBack}
           >
-            <Icon />
+            <ArrowLeft />
           </Button>
-        ))}
-      </div>
+          <PageHeaderTitle className="text-[0.8125rem] leading-[1rem] [overflow-wrap:anywhere] whitespace-normal max-md:min-w-0">
+            {name}
+          </PageHeaderTitle>
+        </div>
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <span role="status" className="text-sm text-muted-foreground">
+            {editorError
+              ? "Editor unavailable. Your document is kept"
+              : SYNC_LABEL[status]}
+          </span>
+          <RichDocumentMenu
+            session={session}
+            status={status}
+            blocked={blocked}
+          />
+        </div>
+      </PageHeader>
+      <RichPhotoControls editor={editor} disabled={blocked}>
+        {(photoControls) => (
+          <RichPaperTextFormatting
+            editor={editor}
+            blocked={blocked}
+            photoControls={photoControls}
+          />
+        )}
+      </RichPhotoControls>
       {blocked ? (
         <p role="alert" className="p-6 text-sm">
           Paper could not safely open these changes. Your saved document and

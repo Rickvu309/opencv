@@ -1,0 +1,58 @@
+[
+  {
+    "subject": "scripts/ocv-tools/jobs/finish.test.mjs",
+    "because": "The owner removed the merge approval requirement. Tests now require automatic merging without an approval label while preserving migration labels, production-red and retirement validation.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "scripts/ocv-tools/jobs/merge-gate.test.mjs",
+    "because": "The owner removed the merge approval requirement. Tests now require automatic merging without an approval label while preserving migration labels, production-red and retirement validation.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "scripts/ocv-tools/jobs/protected-retire.test.mjs",
+    "because": "The owner removed the merge approval requirement. Tests now require automatic merging without an approval label while preserving migration labels, production-red and retirement validation.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ocv-tools/jobs/retire.test.mjs",
+    "because": "The owner removed the merge approval requirement. Tests now require automatic merging without an approval label while preserving migration labels, production-red and retirement validation.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "scripts/ocv-tools/jobs/why.test.mjs",
+    "because": "The owner removed the merge approval requirement. Tests now require automatic merging without an approval label while preserving migration labels, production-red and retirement validation.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ocv-tools/no-packages.test.mjs",
+    "because": "The owner removed the merge approval requirement. Tests now require automatic merging without an approval label while preserving migration labels, production-red and retirement validation.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "scripts/pr/doctor.test.mjs",
+    "because": "The owner removed the merge approval requirement. Tests now require automatic merging without an approval label while preserving migration labels, production-red and retirement validation.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

@@ -1,0 +1,61 @@
+@layer stageshow {
+  .ss-count {
+    display: inline-flex;
+    align-items: baseline;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .ss-count__char {
+    display: inline-block;
+  }
+
+  .ss-count__unit {
+    display: inline-block;
+    margin-left: var(--ss-count-unit-gap, 0.08em);
+  }
+
+  .ss-count__unit[data-space] {
+    margin-left: 0.28em;
+  }
+
+  .ss-count__digit {
+    display: inline-block;
+    height: 1em;
+    overflow: hidden;
+    line-height: 1;
+    vertical-align: baseline;
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      #000 8%,
+      #000 92%,
+      transparent
+    );
+  }
+
+  .ss-count__strip {
+    display: flex;
+    flex-direction: column;
+    will-change: transform;
+    transition-property: transform;
+    transition-timing-function: cubic-bezier(0.3, 0.75, 0.1, 1);
+  }
+
+  .ss-count__strip > span {
+    display: block;
+    height: 1em;
+    line-height: 1;
+    text-align: left;
+  }
+
+  .ss-count[data-snap] .ss-count__strip {
+    transition: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .ss-count__strip {
+      transition: none;
+    }
+  }
+}

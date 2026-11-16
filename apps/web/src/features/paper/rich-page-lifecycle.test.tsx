@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import { act, fireEvent, screen, waitFor } from "@testing-library/react"
 import * as Y from "yjs"
+import userEvent from "@testing-library/user-event"
+import { uploadPaperPhoto } from "./paper-api.ts"
 import {
   nativeProvenance,
   parsePaperId,
@@ -15,11 +17,20 @@ import { openRichPaperSession } from "@/lib/paper-rich.ts"
 import { render } from "@/test/render-with-client.tsx"
 import { storedFlowFixture } from "../../../../../packages/paper-crdt/src/test/flow-fixture.ts"
 import { RichPaperPage } from "./rich-page.tsx"
+import * as flowMount from "../../../../../packages/paper-crdt/src/native-layout-flow-mount.ts"
 
 vi.mock("@/lib/paper-rich.ts", () => ({ openRichPaperSession: vi.fn() }))
 
+vi.mock("./paper-api.ts", () => ({ uploadPaperPhoto: vi.fn() }))
+
 const cleanups = new Set<() => void>()
+let mounted: ReturnType<typeof flowMount.mountPrivateFlow>
 beforeEach(() => {
+  const mount = flowMount.mountPrivateFlow
+  vi.spyOn(flowMount, "mountPrivateFlow").mockImplementation((...args) => {
+    mounted = mount(...args)
+    return mounted
+  })
   vi.stubGlobal("ClipboardEvent", class extends Event {})
   Object.defineProperties(Range.prototype, {
     getClientRects: { configurable: true, value: () => [] },
@@ -33,6 +44,7 @@ beforeEach(() => {
 afterEach(() => {
   for (const cleanup of cleanups) cleanup()
   cleanups.clear()
+  vi.restoreAllMocks()
   vi.unstubAllGlobals()
 })
 
@@ -55,129 +67,256 @@ it.each([
   ["letter", "refused pending epoch reset"],
   ["cv", "fresh-history epoch reset"],
   ["letter", "fresh-history epoch reset"],
-] as const)("keeps the %s page usable after a %s", async (kind, mode) => {
-  const initial = storedFlowFixture(kind)
-  const provenance = nativeProvenance(initial)
-  const remote = new Y.Doc()
-  Y.applyUpdate(remote, seedStoredYDoc(initial))
-  const client = openRichPaperClient(
-    {
-      epoch: 1,
-      revision: 0,
-      provenance,
-      server: Y.encodeStateAsUpdate(remote),
-      pending: emptyUpdate(),
-    },
-    { provenance }
-  )
-  cleanups.add(() => {
-    client.destroy()
-    remote.destroy()
-  })
-  vi.mocked(openRichPaperSession).mockReturnValue({
-    initialized: Promise.resolve(),
-    status: () => "saved",
-    ready: () => true,
-    client: () => client,
-    subscribe: () => () => {},
-    flush: async () => {},
-    persist: async () => {},
-    destroy: async () => {
-      client.destroy()
-    },
-  })
-  render(
-    <RichPaperPage
-      name={`My ${kind}`}
-      identity={{
-        kind: "native",
-        ownerId: "lifecycle",
-        sessionId: "lifecycle",
-        docId: parsePaperId("15900000-0000-4000-8000-000000000001"),
+] as const)(
+  "keeps the %s page usable after a %s",
+  async (kind, mode) => {
+    const initial = storedFlowFixture(kind)
+    const provenance = nativeProvenance(initial)
+    const remote = new Y.Doc()
+    Y.applyUpdate(remote, seedStoredYDoc(initial))
+    const client = openRichPaperClient(
+      {
+        epoch: 1,
+        revision: 0,
         provenance,
-        writer: RICH_NATIVE_WRITER,
-      }}
-      onBack={() => {}}
-    />
-  )
-  const host = await screen.findByLabelText("Document content")
-  await waitFor(() =>
+        server: Y.encodeStateAsUpdate(remote),
+        pending: emptyUpdate(),
+      },
+      { provenance }
+    )
+    cleanups.add(() => {
+      client.destroy()
+      remote.destroy()
+    })
+    vi.mocked(openRichPaperSession).mockReturnValue({
+      initialized: Promise.resolve(),
+      status: () => "saved",
+      ready: () => true,
+      client: () => client,
+      subscribe: () => () => {},
+      flush: async () => {},
+      persist: async () => {},
+      destroy: async () => {
+        client.destroy()
+      },
+    })
+    render(
+      <RichPaperPage
+        name={`My ${kind}`}
+        identity={{
+          kind: "native",
+          ownerId: "lifecycle",
+          sessionId: "lifecycle",
+          docId: parsePaperId("15900000-0000-4000-8000-000000000001"),
+          provenance,
+          writer: RICH_NATIVE_WRITER,
+        }}
+        onBack={() => {}}
+      />
+    )
+    const host = await screen.findByLabelText("Document content")
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "Bold", exact: true })
+      ).toBeEnabled()
+    )
+    act(() => {
+      host.focus()
+      paste(host, "Unsaved Việt 😀 ")
+    })
+    await waitFor(() =>
+      expect(JSON.stringify(client.document())).toContain("Unsaved Việt 😀")
+    )
+    const pending = client.stored().pending
+    const reply = (reset: boolean) => ({
+      provenance,
+      epoch: reset ? 2 : 1,
+      revision: 1,
+      reset,
+      stale: false,
+      update: Y.encodeStateAsUpdate(remote),
+      stateVector: Y.encodeStateVector(remote),
+    })
+    if (mode === "refused pending epoch reset") {
+      const rejected = client.receive(client.prepare(), reply(true))
+      expect(rejected.failed).toBe(true)
+      expect(client.stored().pending).toEqual(pending)
+      expect(host.childElementCount).toBeGreaterThan(0)
+    }
+    const sent = client.prepare()
+    Y.applyUpdate(remote, sent.update)
+    act(() => {
+      expect(client.receive(sent, reply(false)).failed).toBe(false)
+    })
+    const oldDocument = client.ydoc
+    const selected = window.getSelection()
+    const selection = {
+      anchor: selected?.anchorNode?.textContent,
+      anchorOffset: selected?.anchorOffset,
+      focus: selected?.focusNode?.textContent,
+      focusOffset: selected?.focusOffset,
+    }
+    act(() => {
+      const reset = reply(true)
+      if (mode === "fresh-history epoch reset") {
+        const saved = client.document()
+        expect(saved).toBeDefined()
+        if (!saved) throw new Error("Saved document required")
+        const fresh = new Y.Doc()
+        try {
+          Y.applyUpdate(fresh, seedStoredYDoc(saved))
+          expect(Y.encodeStateVector(fresh)).not.toEqual(reset.stateVector)
+          reset.update = Y.encodeStateAsUpdate(fresh)
+          reset.stateVector = Y.encodeStateVector(fresh)
+        } finally {
+          fresh.destroy()
+        }
+      }
+      expect(client.receive(client.prepare(), reset).failed).toBe(false)
+    })
+    expect(client.ydoc).not.toBe(oldDocument)
+    await waitFor(() => expect(host.childElementCount).toBeGreaterThan(0))
+    expect(host.textContent).toContain("Unsaved Việt 😀")
+    expect({
+      anchor: window.getSelection()?.anchorNode?.textContent,
+      anchorOffset: window.getSelection()?.anchorOffset,
+      focus: window.getSelection()?.focusNode?.textContent,
+      focusOffset: window.getSelection()?.focusOffset,
+    }).toEqual(selection)
+    expect(document.activeElement).toBe(host)
+    fireEvent.click(screen.getByRole("button", { name: "Bold", exact: true }))
+    act(() => paste(host, "After sync "))
+    await waitFor(() =>
+      expect(JSON.stringify(client.document())).toContain("After sync")
+    )
+    expect(client.hasPending()).toBe(true)
+    if (mode === "accepted epoch reset") await exerciseToolbar(host, client)
+    act(() => client.destroy())
     expect(
       screen.getByRole("button", { name: "Bold", exact: true })
-    ).toBeEnabled()
+    ).toBeDisabled()
+  },
+  60_000
+)
+
+async function exerciseToolbar(
+  host: HTMLElement,
+  client: ReturnType<typeof openRichPaperClient>
+) {
+  const errors: unknown[] = []
+  const onError = (event: ErrorEvent) => errors.push(event.error)
+  window.addEventListener("error", onError)
+  cleanups.add(() => window.removeEventListener("error", onError))
+  const user = userEvent.setup({ delay: null })
+  const button = (name: string | RegExp) =>
+    screen.getByRole("button", { name, exact: true })
+  const more = async () => {
+    const trigger = button("More formatting")
+    if (trigger.getAttribute("aria-expanded") !== "true")
+      await user.click(trigger)
+  }
+  const choose = async (name: string | RegExp, option: string) => {
+    await more()
+    await user.click(screen.getByRole("combobox", { name }))
+    await user.click(
+      await screen.findByRole("option", { name: option, exact: true })
+    )
+  }
+  const before = () => JSON.stringify(client.document())
+  act(() => {
+    mounted.editor.setTextCursorPosition("intro", "end")
+    host.focus()
+  })
+  for (const name of ["Italic", "Underline", "Strikethrough"]) {
+    await more()
+    const pressed = button(name).getAttribute("aria-pressed")
+    await user.click(button(name))
+    await more()
+    expect(button(name)).toHaveAttribute(
+      "aria-pressed",
+      pressed === "true" ? "false" : "true"
+    )
+  }
+  await choose("Paragraph style", "Heading 1")
+  await more()
+  expect(
+    screen.getByRole("combobox", { name: "Paragraph style" })
+  ).toHaveTextContent("Heading 1")
+  await choose("Paragraph style", "Normal text")
+  await choose("Font", "Courier New")
+  await choose("Text size", "14 pt")
+  for (const [name, color] of [
+    ["Text color", "Navy"],
+    ["Highlight", "Yellow"],
+  ]) {
+    await more()
+    await user.click(button(name!))
+    await user.click(button(color!))
+  }
+  act(() => paste(host, "Formatted after reset"))
+  expect(before()).toContain("liberation-mono")
+  expect(before()).toContain("#1E3A8A")
+  expect(before()).toContain("#FEF3C7")
+  await choose(/Alignment/, "Center")
+  await choose("Line spacing", "Double")
+  await choose("Special indent", "First line 0.5 in")
+  for (const name of [
+    /Increase indent/,
+    /Decrease indent/,
+    "Bulleted list",
+    "Numbered list",
+  ]) {
+    await more()
+    const previous = before()
+    await user.click(button(name))
+    expect(before()).not.toEqual(previous)
+  }
+  await more()
+  await user.click(button("Link"))
+  const text = screen.queryByRole("textbox", {
+    name: "Text to display",
+    exact: true,
+  })
+  if (text) await user.type(text, "Portfolio")
+  await user.type(
+    screen.getByRole("textbox", { name: "Link address", exact: true }),
+    "https://example.com"
   )
+  await user.click(button("Apply"))
+  expect(before()).toContain("https://example.com")
+  await more()
+  await user.click(button("Remove formatting"))
+  vi.stubGlobal(
+    "createImageBitmap",
+    vi.fn(async () => ({ width: 160, height: 200, close() {} }))
+  )
+  vi.mocked(uploadPaperPhoto).mockResolvedValue(
+    "15900000-0000-4000-8000-000000000002"
+  )
+  await more()
+  await user.click(button("Insert photo"))
+  fireEvent.change(screen.getByLabelText("Photo file"), {
+    target: {
+      files: [new File(["illustrated"], "portrait.png", { type: "image/png" })],
+    },
+  })
+  await screen.findByRole("dialog", { name: "Edit photo" })
+  await user.click(button("Apply"))
+  expect(before()).toContain('"type":"photo"')
+  await more()
+  await user.click(button("Edit photo"))
+  await screen.findByRole("dialog", { name: "Edit photo" })
+  await user.click(button("Apply"))
+  const withPhoto = before()
+  await user.click(button(/Undo \(/))
+  expect(before()).not.toEqual(withPhoto)
+  await user.click(button(/Redo \(/))
+  expect(before()).toEqual(withPhoto)
   act(() => {
     host.focus()
-    paste(host, "Unsaved Việt 😀 ")
+    fireEvent.keyDown(host, { key: "e", ctrlKey: true, shiftKey: true })
+    paste(host, "Shortcut after reset")
   })
-  await waitFor(() =>
-    expect(JSON.stringify(client.document())).toContain("Unsaved Việt 😀")
-  )
-  const pending = client.stored().pending
-  const reply = (reset: boolean) => ({
-    provenance,
-    epoch: reset ? 2 : 1,
-    revision: 1,
-    reset,
-    stale: false,
-    update: Y.encodeStateAsUpdate(remote),
-    stateVector: Y.encodeStateVector(remote),
-  })
-  if (mode === "refused pending epoch reset") {
-    const rejected = client.receive(client.prepare(), reply(true))
-    expect(rejected.failed).toBe(true)
-    expect(client.stored().pending).toEqual(pending)
-    expect(host.childElementCount).toBeGreaterThan(0)
-  }
-  const sent = client.prepare()
-  Y.applyUpdate(remote, sent.update)
-  act(() => {
-    expect(client.receive(sent, reply(false)).failed).toBe(false)
-  })
-  const oldDocument = client.ydoc
-  const selected = window.getSelection()
-  const selection = {
-    anchor: selected?.anchorNode?.textContent,
-    anchorOffset: selected?.anchorOffset,
-    focus: selected?.focusNode?.textContent,
-    focusOffset: selected?.focusOffset,
-  }
-  act(() => {
-    const reset = reply(true)
-    if (mode === "fresh-history epoch reset") {
-      const saved = client.document()
-      expect(saved).toBeDefined()
-      if (!saved) throw new Error("Saved document required")
-      const fresh = new Y.Doc()
-      try {
-        Y.applyUpdate(fresh, seedStoredYDoc(saved))
-        expect(Y.encodeStateVector(fresh)).not.toEqual(reset.stateVector)
-        reset.update = Y.encodeStateAsUpdate(fresh)
-        reset.stateVector = Y.encodeStateVector(fresh)
-      } finally {
-        fresh.destroy()
-      }
-    }
-    expect(client.receive(client.prepare(), reset).failed).toBe(false)
-  })
-  expect(client.ydoc).not.toBe(oldDocument)
-  await waitFor(() => expect(host.childElementCount).toBeGreaterThan(0))
-  expect(host.textContent).toContain("Unsaved Việt 😀")
-  expect({
-    anchor: window.getSelection()?.anchorNode?.textContent,
-    anchorOffset: window.getSelection()?.anchorOffset,
-    focus: window.getSelection()?.focusNode?.textContent,
-    focusOffset: window.getSelection()?.focusOffset,
-  }).toEqual(selection)
-  expect(document.activeElement).toBe(host)
-  fireEvent.click(screen.getByRole("button", { name: "Bold", exact: true }))
-  act(() => paste(host, "After sync "))
-  await waitFor(() =>
-    expect(JSON.stringify(client.document())).toContain("After sync")
-  )
-  expect(client.hasPending()).toBe(true)
-  act(() => client.destroy())
-  expect(
-    screen.getByRole("button", { name: "Bold", exact: true })
-  ).toBeDisabled()
-})
+  expect(before()).toContain("Shortcut after reset")
+  expect(errors).toEqual([])
+}

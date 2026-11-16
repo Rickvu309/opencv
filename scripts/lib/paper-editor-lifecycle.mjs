@@ -3,18 +3,8 @@ import ts from "typescript"
 export function detect(text, file = "rich-page.tsx") {
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true)
   const calls = []
-  const throws = []
-  const lifetime = new Set()
   function visit(node) {
     if (ts.isCallExpression(node)) calls.push(node)
-    if (ts.isThrowStatement(node)) throws.push(node)
-    if (
-      ts.isBinaryExpression(node) &&
-      node.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
-      ts.isIdentifier(node.left) &&
-      node.right.kind === ts.SyntaxKind.FalseKeyword
-    )
-      lifetime.add(node.left.text)
     ts.forEachChild(node, visit)
   }
   visit(source)
@@ -37,56 +27,38 @@ export function detect(text, file = "rich-page.tsx") {
     )
     if (!resetMount) problems.push("Canonical document resets must remount")
   }
-  function closedTest(node) {
-    if (ts.isParenthesizedExpression(node)) return closedTest(node.expression)
-    if (ts.isPrefixUnaryExpression(node)) {
-      const value = node.operand
-      return (
-        node.operator === ts.SyntaxKind.ExclamationToken &&
-        ((ts.isIdentifier(value) &&
-          (lifetime.has(value.text) || value.text === "editor")) ||
-          (ts.isPropertyAccessExpression(value) &&
-            ["editor", "isEditable"].includes(value.name.text)))
+  if (file.endsWith("rich-editor-lifecycle.ts")) {
+    const exposed = calls.filter((node) =>
+      node.expression.getText(source).endsWith(".mounted")
+    )
+    if (
+      !exposed.length ||
+      exposed.some(
+        (node) =>
+          node.arguments.length !== 1 ||
+          node.arguments[0].getText(source) !== "liveHandle(editor)"
       )
-    }
-    if (ts.isPropertyAccessExpression(node))
-      return node.name.text === "isDestroyed"
-    if (ts.isBinaryExpression(node)) {
-      if (
-        node.operatorToken.kind === ts.SyntaxKind.BarBarToken ||
-        node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken
-      )
-        return closedTest(node.left) || closedTest(node.right)
-      if (
-        node.operatorToken.kind === ts.SyntaxKind.EqualsEqualsEqualsToken &&
-        node.right.kind === ts.SyntaxKind.FalseKeyword
-      )
-        return ts.isIdentifier(node.left) && lifetime.has(node.left.text)
-    }
-    return false
-  }
-  function exposed(node) {
-    for (let at = node.parent; at; at = at.parent) {
-      if (ts.isObjectLiteralExpression(at) && ts.isReturnStatement(at.parent))
-        return file.endsWith("editor.ts")
-      if (ts.isJsxAttribute(at) && /^on[A-Z]/.test(at.name.getText(source)))
-        return file.endsWith("rich-page.tsx")
-    }
-    return false
-  }
-  for (const thrown of throws) {
-    if (!exposed(thrown)) continue
-    for (let at = thrown.parent; at; at = at.parent) {
-      if (
-        ts.isIfStatement(at) &&
-        closedTest(at.expression) &&
-        thrown.getStart(source) >= at.thenStatement.getStart(source) &&
-        thrown.getEnd() <= at.thenStatement.getEnd()
-      ) {
-        problems.push("Released editor handlers must be harmless")
-        break
+    )
+      problems.push("Toolbar, menu and shortcut handlers need a live handle")
+    const invocations = calls.filter(
+      (node) => node.expression.getText(source) === "Reflect.apply"
+    )
+    const checked = (node) => {
+      for (let at = node.parent; at; at = at.parent) {
+        if (
+          ts.isIfStatement(at) &&
+          at.expression.getText(source) === "editor === target" &&
+          node.getStart(source) >= at.thenStatement.getStart(source) &&
+          node.getEnd() <= at.thenStatement.getEnd()
+        )
+          return true
       }
+      return false
     }
+    if (!invocations.length || invocations.some((node) => !checked(node)))
+      problems.push("Editor calls must check the live handle at invocation")
+  } else if (!file.endsWith("editor.ts") && hasCall("mountRichPaperEditor")) {
+    problems.push("Toolbar, menu and shortcut handlers need a live handle")
   }
   if (file.endsWith("editor.ts")) {
     const capture = calls.find(

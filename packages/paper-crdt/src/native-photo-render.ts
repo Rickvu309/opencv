@@ -16,12 +16,20 @@ export function setPhotoResolver(editor: object, resolver?: PhotoUrlResolver) {
 }
 export function photoElement(photo: LayoutPhoto, source?: string) {
   const dom = document.createElement("figure")
-  const bounds = photoBounds(photo)
+  const bounds = photoBounds(photo),
+    width = bounds.width + photo.spacing.left + photo.spacing.right,
+    height = bounds.height + photo.spacing.top + photo.spacing.bottom
   dom.dataset.paperPhoto = photo.id
   dom.contentEditable = "false"
+  dom.tabIndex = 0
+  dom.setAttribute("role", "button")
+  dom.setAttribute("aria-label", `Select photo: ${photo.alt || "Photo"}`)
+  dom.setAttribute("aria-pressed", "false")
   dom.style.position = "relative"
-  dom.style.width = `${(bounds.width + photo.spacing.left + photo.spacing.right) / 20}pt`
-  dom.style.height = `${(bounds.height + photo.spacing.top + photo.spacing.bottom) / 20}pt`
+  dom.style.width = `${width / 20}pt`
+  dom.style.maxWidth = "100%"
+  dom.style.height = "auto"
+  dom.style.aspectRatio = `${width} / ${height}`
   dom.style.margin = "0"
   if (photo.placement.kind === "wrap") dom.style.cssFloat = photo.placement.side
   else {
@@ -34,10 +42,10 @@ export function photoElement(photo: LayoutPhoto, source?: string) {
   }
   const frame = document.createElement("div")
   frame.style.position = "absolute"
-  frame.style.width = `${photo.width / 20}pt`
-  frame.style.height = `${photo.height / 20}pt`
-  frame.style.left = `${(bounds.width - photo.width) / 40 + photo.spacing.left / 20}pt`
-  frame.style.top = `${(bounds.height - photo.height) / 40 + photo.spacing.top / 20}pt`
+  frame.style.width = `${(photo.width / width) * 100}%`
+  frame.style.height = `${(photo.height / height) * 100}%`
+  frame.style.left = `${(((bounds.width - photo.width) / 2 + photo.spacing.left) / width) * 100}%`
+  frame.style.top = `${(((bounds.height - photo.height) / 2 + photo.spacing.top) / height) * 100}%`
   frame.style.overflow = "hidden"
   frame.style.transform = `rotate(${photo.rotation}deg)`
   frame.style.transformOrigin = "center"
@@ -45,7 +53,7 @@ export function photoElement(photo: LayoutPhoto, source?: string) {
     photo.shape === "circle"
       ? "50%"
       : photo.shape === "rounded"
-        ? `${Math.min(photo.width, photo.height) / 120}pt`
+        ? `${(Math.min(photo.width, photo.height) / (6 * photo.width)) * 100}% / ${(Math.min(photo.width, photo.height) / (6 * photo.height)) * 100}%`
         : "0"
   if (source) {
     const image = document.createElement("img")

@@ -14,8 +14,11 @@ import {
   LandingLogos,
   LandingStatement,
 } from "./landing-sections.tsx"
+import { useEdgeToEdgeViewport } from "./use-edge-to-edge-viewport.ts"
 
 export function LandingPage() {
+  useEdgeToEdgeViewport()
+
   return (
     <div className="landing-root landing-home min-h-svh">
       <title>{LANDING_TITLE}</title>

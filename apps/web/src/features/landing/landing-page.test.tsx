@@ -47,6 +47,20 @@ async function renderLanding() {
 }
 
 describe("landing page", () => {
+  it("paints edge to edge on a notched phone while open and letterboxes again after", async () => {
+    const viewport = document.createElement("meta")
+    viewport.name = "viewport"
+    viewport.content = "width=device-width, initial-scale=1.0"
+    document.head.append(viewport)
+    const { unmount } = await renderLanding()
+    expect(viewport.content).toBe(
+      "width=device-width, initial-scale=1.0, viewport-fit=cover"
+    )
+    unmount()
+    expect(viewport.content).toBe("width=device-width, initial-scale=1.0")
+    viewport.remove()
+  })
+
   it("keeps a signed-out visitor on / under the design headline", async () => {
     const { router, headline } = await renderLanding()
 

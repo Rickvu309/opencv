@@ -1,4 +1,30 @@
+import {
+  clean as photoClean,
+  mistakes as photoMistakes,
+} from "./paper-photo-presentation.mjs"
+
 export const clean = [
+  ...photoClean,
+  {
+    path: "apps/web/src/features/paper/rich-text-emphasis-group.tsx",
+    text: '<Button className="size-[44px] md:size-8" />',
+  },
+  {
+    path: "packages/paper-crdt/src/editor.ts",
+    text: 'const editor = { subscribe(listener) { tiptap.on("transaction", listener) }, formatInline() { view.focus() }, formatParagraph() { view.focus() } }',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-formatting.ts",
+    text: "if (!inlines.length) inlines.push(readMarks([]))",
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting-render-values.ts",
+    text: 'const start = Math.max(v.start ?? 0, indent?.kind === "hanging" ? indent.value : 0); const css = `text-indent:${value}`',
+  },
+  {
+    path: "apps/api/src/paper/native-output/formatted-properties.ts",
+    text: 'function fontName() { return "Arial" }',
+  },
   {
     path: "apps/web/src/test/paper-api-mock.ts",
     text: "const identity = /^\\/api\\/paper\\/([^/]+)\\/document$/.exec(path); paperDocumentInfoSchema.parse(identity)",
@@ -40,20 +66,12 @@ export const clean = [
     text: "Decoration.node(pos, end, { style: `height:${height}px` })",
   },
   {
-    path: "apps/api/src/paper/native-output/formatted-photos.ts",
-    text: 'const bounds = photoBounds(photo); const frame = `<wp:extent cx="${boundWidth}" cy="${boundHeight}"/>`',
-  },
-  {
     path: "packages/paper-crdt/src/native-layout-schema.ts",
     text: 'photoBlockSpec; slot.dataset.paperWrapSlot = ""; style.textContent = `${scope} > .bn-block > ${text}{display:block}`',
   },
   {
     path: "packages/paper-crdt/src/native-layout-paste.ts",
     text: 'import DOMPurify from "dompurify"; const html = DOMPurify.sanitize(clipboard); new DOMParser().parseFromString(html, "text/html"); editor.tryParseHTMLToBlocks(html)',
-  },
-  {
-    path: "packages/paper-crdt/src/native-photo.ts",
-    text: 'import { layoutDocumentSchema } from "@workspace/domain/internal/paper-presentation"',
   },
   {
     path: "packages/paper-crdt/src/native-formatting-schema.ts",
@@ -77,7 +95,7 @@ export const clean = [
   },
   {
     path: "apps/api/src/paper/native-output/formatted.ts",
-    text: 'import { formattedStyles } from "./formatted-styles.js"',
+    text: `import { formattedStyles } from "./formatted-styles.js"; effectiveParagraphStyle(paragraph); const bold = effective.bold === inherited.bold ? undefined : effective.bold; const link = richLink && !direct.characterStyle ? '<w:rStyle w:val="Hyperlink"/>' : ""`,
   },
   {
     path: "apps/api/src/paper/native-output/formatted.test.ts",
@@ -139,8 +157,50 @@ export const clean = [
     path: "packages/paper-crdt/src/native-formatting-mount.ts",
     text: 'BlockNoteEditor.create({ links: { HTMLAttributes: { style: "text-decoration:none;color:inherit" } } })',
   },
+  {
+    path: "packages/paper-crdt/src/native-formatting-commands.ts",
+    text: 'event.altKey && !mod && event.code === "Digit5" || event.metaKey && !event.altKey && key === "x"; depth + descendants(block) < 3; effectiveParagraphStyle(block); marks.filter(mark => mark.name !== "link"); normalizeLinkHref(address)',
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting-decorations.ts",
+    text: 'const list = { style: "list-style-type:disc", "aria-level": "1" }; mark.type.name === "link"; effectiveRunDecorations(direct, isLink, effective)',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-flow-mount.ts",
+    text: 'const active = { ...paragraphInlineValues(style), ...canonicalStyles(styles) }; BlockNoteEditor.create({ links: { isValidLink: isSafeHref, HTMLAttributes: { style: "text-decoration:none;color:inherit" } } })',
+  },
 ]
+
 export const mistakes = [
+  ...photoMistakes,
+  {
+    path: "apps/web/src/features/paper/rich-text-emphasis-group.tsx",
+    text: '<Button className="size-11 md:size-8" />',
+  },
+  {
+    path: "packages/paper-crdt/src/editor.ts",
+    text: "const editor = { subscribe(listener) { editor.onChange(listener) } }",
+  },
+  {
+    path: "packages/paper-crdt/src/editor.ts",
+    text: "const editor = { formatInline(input) { mounted.formatInline(input) } }",
+  },
+  {
+    path: "packages/paper-crdt/src/editor.ts",
+    text: "const editor = { formatParagraph(input) { mounted.formatParagraph(input) } }",
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-formatting.ts",
+    text: "const inlines = []; return common(inlines)",
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting-render-values.ts",
+    text: "const css = `text-indent:${-indent.value}pt`",
+  },
+  {
+    path: "apps/api/src/paper/native-output/formatted-properties.ts",
+    text: 'function fontName() { return "Liberation Sans" }',
+  },
   {
     path: "apps/web/src/test/paper-api-mock.ts",
     text: "export async function paperApiFetch() { return null }",
@@ -222,10 +282,6 @@ export const mistakes = [
     text: "block.style.height = `${height}px`",
   },
   {
-    path: "apps/api/src/paper/native-output/formatted-photos.ts",
-    text: 'const frame = `<wp:extent cx="${width}" cy="${height}"/>`',
-  },
-  {
     path: "packages/paper-crdt/src/native-layout-schema.ts",
     text: 'photoBlockSpec; slot.dataset.paperWrapSlot = ""',
   },
@@ -240,10 +296,6 @@ export const mistakes = [
   {
     path: "packages/paper-crdt/src/index.ts",
     text: 'export { commitLayoutPhotoEdit } from "./native-photo.js"',
-  },
-  {
-    path: "apps/web/src/features/paper/photos.ts",
-    text: 'import { mountPrivateLayout } from "@workspace/paper-crdt/native-photo-mount"',
   },
   {
     path: "packages/paper-crdt/src/native-formatting-schema.ts",
@@ -381,4 +433,66 @@ export const mistakes = [
     path: "packages/paper-crdt/src/native-formatting-mount.ts",
     text: 'BlockNoteEditor.create({ links: { HTMLAttributes: { style: "text-decoration:underline" } } })',
   },
+  {
+    path: "packages/paper-crdt/src/native-formatting-commands.ts",
+    text: 'if (mod && event.shiftKey && event.code === "Digit5") toggleMark("strike")',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-flow-mount.ts",
+    text: "BlockNoteEditor.create({ links: { isValidLink: isSafeHref } }); const active = canonicalStyles(styles)",
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting-decorations.ts",
+    text: "Decoration.node(pos, end, { style: paragraphCss(values) })",
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-flow-mount.ts",
+    text: "BlockNoteEditor.create({ links: {} })",
+  },
 ]
+
+export const roundTwo = [
+  {
+    path: "packages/ui/src/components/select.tsx",
+    mistake: "select-value]:line-clamp-1 select-value]:flex",
+    clean: "select-value]:min-w-0 select-value]:truncate",
+  },
+  {
+    path: "packages/paper-crdt/src/editor.ts",
+    mistake: 'view.dom.setAttribute("aria-label", "Document content")',
+    clean:
+      'view.dom.setAttribute("aria-label", "Document content"); view.dom.style.outline = "none"',
+  },
+  {
+    path: "packages/paper-crdt/src/editor.ts",
+    mistake: "const start = mounted.activeFormatting().start",
+    clean: "mounted.adjustIndent(360)",
+  },
+  {
+    path: "apps/web/src/features/paper/rich-text-paragraph-group.tsx",
+    mistake: "const start = formatting?.start",
+    clean: "editor.adjustIndent(360)",
+  },
+  {
+    path: "apps/web/src/features/paper/rich-text-paragraph-group.tsx",
+    mistake: 'label="Increase indent (Ctrl+])"',
+    clean: 'label={shortcutLabel("Increase indent (Ctrl+])")}',
+  },
+  {
+    path: "apps/web/src/features/paper/rich-text-formatting.tsx",
+    mistake: "const controls = (<fieldset>{children}</fieldset>)",
+    clean: "const controls = <RichTextColorGroup />",
+  },
+  {
+    path: "apps/web/src/features/paper/rich-text-color-group.tsx",
+    mistake: 'color: "var(--background)"',
+    clean: 'color: "white"',
+  },
+  {
+    path: "scripts/paper-word-fonts.test.mjs",
+    mistake: 'await import("../apps/api/src/paper/native-output/formatted.js")',
+    clean: 'import { detect } from "./lib/paper-presentation.mjs"',
+  },
+]
+
+export const roundOneClean = []

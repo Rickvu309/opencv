@@ -77,7 +77,7 @@ test("the flip proof restores changed source files from the fork point, runs the
   )
 })
 
-test("a retirement is self-serve only with a replacement on the same subject; no replacement or a standing promise waits for the owner", () => {
+test("a retirement is self-serve only with a replacement on the same subject; no replacement or a standing promise is classified without self-serve proof", () => {
   const removed = SPEC.replace(/  it\("refuses[^]*?\n  }\)\n/, "")
   const subject = `${T} > letter > refuses a letter that is too long`
   const classOf = (retirement) =>
@@ -141,7 +141,7 @@ it("keeps a long letter", () => { expect(save(long)).toBe(true) })
     retiredLines({ retired: [covered, { ...grown, retiredBy: reds }] }),
     [
       `Retired 1 checks with replacements: ${subject}`,
-      `Retired 1 checks that wait for the owner: ${reds} (ratchet-raised (ratchet))`,
+      `Retired 1 checks without self-serve replacement proof: ${reds} (ratchet-raised (ratchet))`,
     ]
   )
 })

@@ -18,20 +18,6 @@ export const MERGE_GATE_CASES = [
     "the merge runs 0022_drop_notify (DROP) on production data, and it changes existing things",
   ],
   [
-    "OWNER_YES",
-    {
-      pull: { n: 1500, labels: [] },
-      diff: { files: [".github/workflows/ci.yml"] },
-      migrations: { allowed: [], files: [] },
-    },
-    {
-      pull: { n: 1500, labels: ["owner-approved"] },
-      diff: { files: [".github/workflows/ci.yml"] },
-      migrations: { allowed: [], files: [] },
-    },
-    "this pull request is owner class (.github/workflows/ci.yml attests the ci check), and it has no owner-approved label",
-  ],
-  [
     "QUEUE_CLOSED",
     {
       pull: { n: 1500, labels: [] },

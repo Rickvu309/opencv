@@ -91,6 +91,41 @@ describe("request body limit", () => {
 })
 
 describe("CORS", () => {
+  it("allows the browser to send and inspect exact Word download metadata", async () => {
+    const api = createApp({ webOrigins: ["https://opencv.me"] })
+    const path =
+      "/api/paper/00000000-0000-4000-8000-000000000001/native-word?kind=cv"
+    const preflight = await api.request(path, {
+      method: "OPTIONS",
+      headers: {
+        Origin: "https://opencv.me",
+        "Access-Control-Request-Method": "GET",
+        "Access-Control-Request-Headers": "x-paper-writer,x-paper-basis",
+      },
+    })
+    expect(preflight.status).toBe(204)
+    expect(preflight.headers.get("access-control-allow-credentials")).toBe(
+      "true"
+    )
+    const allowed = preflight.headers
+      .get("access-control-allow-headers")
+      ?.toLowerCase()
+      .split(",")
+    expect(allowed).toEqual(
+      expect.arrayContaining(["x-paper-writer", "x-paper-basis"])
+    )
+    const response = await api.request(path, {
+      headers: { Origin: "https://opencv.me" },
+    })
+    const exposed = response.headers
+      .get("access-control-expose-headers")
+      ?.toLowerCase()
+      .split(",")
+    expect(exposed).toEqual(
+      expect.arrayContaining(["x-paper-basis", "content-disposition"])
+    )
+  })
+
   it("lets the configured web origin read the health response", async () => {
     const api = createApp({ webOrigins: ["https://opencv.me"] })
 

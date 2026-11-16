@@ -1,0 +1,30 @@
+.look-opencv .ss-stage {
+  --ss-canvas: var(--background);
+  --ss-surface: var(--card);
+  --ss-chrome: var(--sidebar);
+  --ss-well: var(--secondary);
+  --ss-raised: var(--card);
+  --ss-line: var(--border);
+  --ss-line-faint: var(--muted);
+  --ss-text-strong: var(--foreground);
+  --ss-text: color-mix(in oklch, var(--foreground) 88%, var(--background));
+  --ss-text-faint: var(--muted-foreground);
+  --ss-icon: var(--muted-foreground);
+  --ss-icon-faint: color-mix(
+    in oklch,
+    var(--muted-foreground) 60%,
+    var(--background)
+  );
+  --ss-accent: var(--primary);
+  --ss-accent-2: color-mix(in oklch, var(--primary) 85%, var(--background));
+  --ss-accent-soft: var(--accent);
+  --ss-accent-text: var(--primary-foreground);
+  --ss-font: Inter, sans-serif;
+  --ss-radius-sm: 6px;
+  --ss-radius-md: 8px;
+  --ss-radius-lg: 10px;
+  --ss-radius-window: 12px;
+  --ss-control: 36px;
+  --ss-row: 28px;
+  background: transparent;
+}

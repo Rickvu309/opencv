@@ -10,6 +10,7 @@ import {
   flowDocumentSchema,
   flowReceiptSchema,
   prepareFlowEdit,
+  prepareFlowPhotoEdit,
   reverseFlowEdit,
   type FlowDocument,
 } from "@workspace/domain/internal/paper-presentation"
@@ -229,5 +230,24 @@ export function undoFlowEdit(
         .set(`flow-receipt:${operationId}`, { ...previous, undone: true })
     }, "private-flow-undo")
     return prepared.value
+  })
+}
+
+export function commitFlowPhotoEdit(
+  binding: FlowBinding,
+  edit: unknown,
+  basis: string
+) {
+  return attempt(() => {
+    const current = readFlow(binding)
+    if (canonical(current) !== basis) throw new Error("Photo basis is stale")
+    const prepared = prepareFlowPhotoEdit(current, edit)
+    if (prepared.kind === "refused") throw new Error(prepared.reason)
+    const node = nodeOf(prepared.value.document)
+    binding.doc.transact(
+      () => write(binding, prepared.value.document, node),
+      "private-flow-photo"
+    )
+    return prepared.value.document
   })
 }

@@ -1,0 +1,14 @@
+{
+  "id": "landing-sticky-hover",
+  "file": "scripts/landing-sticky-hover.test.mjs",
+  "detector": {
+    "module": "scripts/lib/landing-sticky-hover.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "cb35023e",
+    "path": "apps/web/src/features/landing/figures/oc/logo-marquee.css"
+  },
+  "reason": "Found by the mobile-native pass of issue 1586: since cb35023e the landing logo marquee paused on :hover with no hover-capable media query, so a tap on a phone froze the marquee until the next tap elsewhere."
+}

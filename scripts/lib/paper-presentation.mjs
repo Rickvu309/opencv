@@ -1,10 +1,66 @@
 import { posix } from "node:path"
 import ts from "typescript"
+import { detectPhotoPresentation } from "./paper-photo-guard.mjs"
 import { qualifiedNativeWord } from "./paper-native-word.mjs"
+import { detectTextFormatting } from "./paper-text-formatting.mjs"
+import { detectRichStructure } from "./paper-rich-structure.mjs"
 
 export function detect(text, path) {
+  const hits = [
+    ...detectTextFormatting(text, path),
+    ...detectDocumentHistory(text, path),
+  ]
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
-  const hits = []
+  if (path === "packages/paper-crdt/src/editor.ts") {
+    const visit = (node) => {
+      if (ts.isMethodDeclaration(node)) {
+        const name = node.name.getText(source)
+        const body = node.body?.getText(source) ?? ""
+        if (name === "subscribe" && !/\.on\(["']transaction["']/.test(body))
+          hits.push(
+            "Paper formatting subscribers must observe stored-mark transactions"
+          )
+        if (
+          ["formatInline", "formatParagraph"].includes(name) &&
+          !body.includes("view.focus()")
+        )
+          hits.push(
+            "Paper toolbar choices must return focus without changing selection"
+          )
+      }
+      ts.forEachChild(node, visit)
+    }
+    visit(source)
+  }
+  if (
+    path === "packages/paper-crdt/src/native-layout-formatting.ts" &&
+    text.includes("inlines") &&
+    !text.includes("!inlines.length")
+  )
+    hits.push("Paper empty selections need effective inline values")
+  if (
+    path === "packages/paper-crdt/src/native-formatting-render-values.ts" &&
+    text.includes("text-indent:") &&
+    !text.includes("Math.max(v.start ?? 0, indent?.kind")
+  )
+    hits.push("Paper hanging indents must reserve their start space")
+  if (
+    path === "apps/api/src/paper/native-output/formatted-properties.ts" &&
+    /return "Liberation (Sans|Serif|Mono)"/.test(text)
+  )
+    hits.push(
+      "Paper Word fonts must use the metric-compatible Word family names"
+    )
+
+  if (
+    path === "apps/web/src/features/paper/design/rich-page-header.pen.css" &&
+    !/\[data-slot="page-header"\]\s*\{[^}]*\bflex-wrap:\s*wrap\s*;/.test(text)
+  )
+    hits.push(
+      "Rich Paper headers must wrap their title and actions at enlarged text sizes"
+    )
+  hits.push(...detectRichStructure(text, path))
+
   const test = /\.test\.[cm]?[jt]sx?$/.test(path)
   const storage = path === "packages/paper-crdt/src/stored-document.ts"
   const editorEntry = path === "packages/paper-crdt/src/editor.ts"
@@ -64,25 +120,7 @@ export function detect(text, path) {
         "Resolve the internal presentation subpath before the broad domain source alias"
       )
   }
-  if (
-    path === "apps/api/src/paper/native-output/formatted-photos.ts" &&
-    text.includes("<wp:extent") &&
-    (!text.includes("photoBounds(photo)") ||
-      /<wp:extent[^>]*\$\{(?:width|height)\}/.test(text))
-  )
-    hits.push(
-      "Word photo frames must reserve rotated bounds and retain editable picture dimensions"
-    )
-  if (
-    path === "packages/paper-crdt/src/native-layout-schema.ts" &&
-    text.includes("photoBlockSpec") &&
-    (!text.includes("paperWrapSlot") ||
-      !text.includes("display:block") ||
-      !text.includes(".bn-block > ${text}"))
-  )
-    hits.push(
-      "Wrapped photo text must share the surrounding inline formatting context"
-    )
+  hits.push(...detectPhotoPresentation(text, path, source))
 
   const presentation =
     storage ||
@@ -446,5 +484,43 @@ export function detect(text, path) {
     ts.forEachChild(node, visit)
   }
   visit(source)
+  return hits
+}
+
+export function detectDocumentHistory(text, path) {
+  const hits = []
+  if (
+    path === "apps/web/src/features/paper/rich-text-formatting.tsx" &&
+    text.includes('role="toolbar"')
+  ) {
+    const toolbar = text.slice(text.indexOf('role="toolbar"'))
+    const history = toolbar.indexOf("<RichDocumentHistory")
+    const compact = toolbar.indexOf("{!compact")
+    if (history < 0 || history > compact)
+      hits.push(
+        "Document Undo and Redo must lead the toolbar outside compact overflow"
+      )
+    if (
+      text.includes('aria-label="More formatting"') &&
+      !/!formatting\?\.hasText\s*&&\s*!hasPhotoControls/.test(text)
+    )
+      hits.push("Empty formatting overflow must be disabled")
+  }
+  if (
+    /apps\/web\/src\/features\/paper\/rich-(?:photo|document)-toolbar\.tsx$/.test(
+      path
+    )
+  ) {
+    const photos = text.slice(text.indexOf("export function RichPhotoToolbar"))
+    if (/onUndo|onRedo|<Undo2|<Redo2/.test(photos))
+      hits.push("Photo controls cannot own whole-document history")
+    if (photos.includes('role="separator"'))
+      hits.push("Photo controls cannot append a separator in phone overflow")
+  }
+  if (
+    /undoPhoto|redoPhoto|photoHistory/.test(text) &&
+    /(?:native-layout-photo-controls|rich-photo-controls)\.tsx?$/.test(path)
+  )
+    hits.push("Document history must not use photo-only names")
   return hits
 }

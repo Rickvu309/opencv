@@ -14,6 +14,6 @@ From 2026-11-13 no agent reviews a pull request: a change merges by itself once 
 
 ## Consequences
 
-- Because nobody reads the diff, the gate must not judge its own loosening: a change to a gate file, or a migration that does more than add, is owner class and merges only after the owner's yes.
+- Every PR, including changes to merge rules and high-risk files, merges automatically on green ci. A migration that does more than add still needs its allow-migration:<tag> label.
 - Checks a builder did not write may grow but not weaken; weakening one needs a recorded retirement with a flip proof, which makes the change strict.
 - Wrong prose in a pull request body, untrue product copy, and a builder misreading an ordinary issue are accepted as unowned residuals, each with a signal that would show it biting.

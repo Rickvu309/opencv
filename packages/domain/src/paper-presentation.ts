@@ -1,3 +1,4 @@
+export { normalizeLinkHref } from "./paper-doc/rich-text.js"
 export {
   ok,
   refuse,
@@ -9,6 +10,20 @@ export {
   inlineOperationsSchema,
 } from "./paper-doc/presentation-values.js"
 export type { Result } from "./paper-doc/presentation-values.js"
+export {
+  effectiveRunDecorations,
+  paperLinkColor,
+  paperParagraphStyles,
+  paperParagraphStyle,
+  effectiveParagraphStyle,
+  paragraphStyleValues,
+  paragraphInlineValues,
+  wordParagraphStyleId,
+} from "./paper-doc/paragraph-styles.js"
+export type {
+  EffectiveRunDecorations,
+  PaperParagraphStyle,
+} from "./paper-doc/paragraph-styles.js"
 export {
   documentPresentationSchema,
   isWellFormed,
@@ -60,6 +75,7 @@ export {
   styleSchema,
   resolveStyles,
   resolveInline,
+  effectiveRunInline,
   resolveParagraph,
 } from "./paper-doc/presentation-styles.js"
 export {
@@ -107,3 +123,13 @@ export {
   prepareFlowEdit,
   reverseFlowEdit,
 } from "./paper-doc/native-layout-flow-edit.js"
+export { prepareFlowPhotoEdit } from "./paper-doc/native-layout-flow-photo.js"
+
+export { photoDestination } from "./paper-doc/native-layout-photo-destination.js"
+export {
+  photoInsertSize,
+  photoSourceRatio,
+  croppedPhotoRatio,
+  fitPhotoCrop,
+  resizePhoto,
+} from "./paper-doc/native-photo-geometry.js"

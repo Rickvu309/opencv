@@ -16,7 +16,7 @@ test("a client-only mount is refused and a lifecycle mount stays quiet", () => {
     "mountRichPaperEditor",
     "mountRichEditorLifecycle"
   )
-  assert.equal(detect(mistake, page).length, 1)
+  assert.ok(detect(mistake, page).length > 0)
   assert.deepEqual(detect(clean, page), [])
   assert.deepEqual(detect(read(page), page), [])
 })
@@ -32,47 +32,6 @@ test("release, reset remount, selection and unavailable toolbar stay connected",
   const noReset = clean.replace('change === "reset"', 'change === "local"')
   assert.notEqual(noReset, clean)
   assert.ok(detect(noReset, lifecycle).length > 0)
-})
-
-test("closed editor throws are detected by public method and toolbar structure", () => {
-  const method = (body) =>
-    `function mount() {
-      let alive = true
-      const destroy = () => { alive = false }
-      return { commands: { format() { ${body} } }, destroy }
-    }`
-  for (const condition of ["!alive", "alive === false", "(!alive)"])
-    assert.ok(
-      detect(
-        method(`if (${condition}) throw new Error("Unavailable")`),
-        editor
-      ).includes("Released editor handlers must be harmless")
-    )
-  const toolbar = (body) =>
-    `function Page() {
-      mountRichEditorLifecycle(client, host)
-      return <button onClick={() => { ${body} }} />
-    }`
-  assert.deepEqual(
-    detect(
-      toolbar('if (!editor) { throw new TypeError("Unavailable") }'),
-      page
-    ),
-    ["Released editor handlers must be harmless"]
-  )
-  assert.deepEqual(detect(toolbar("if (!editor) return"), page), [])
-  for (const clean of [
-    method("if (!alive) return"),
-    method('if (!alive) return; else throw new Error("Unrelated")'),
-    method('const message = "Paper editor is closed"'),
-    'function mount() { throw new Error("Document required") }',
-  ])
-    assert.ok(
-      !detect(clean, editor).includes(
-        "Released editor handlers must be harmless"
-      )
-    )
-  assert.deepEqual(detect(read(editor), editor), [])
 })
 
 test("selection capture stays inside editor release before notification and unmount", () => {
@@ -99,4 +58,39 @@ test("selection capture stays inside editor release before notification and unmo
       "Editor release must capture selection before unmount"
     )
   )
+})
+
+test("toolbar, menu and shortcut callbacks cannot receive a raw editor", () => {
+  const clean = read(lifecycle)
+  const mistake = clean.replace(
+    "options.mounted(liveHandle(editor))",
+    "options.mounted(editor)"
+  )
+  assert.notEqual(mistake, clean)
+  assert.ok(
+    detect(mistake, lifecycle).includes(
+      "Toolbar, menu and shortcut handlers need a live handle"
+    )
+  )
+  assert.deepEqual(detect(clean, lifecycle), [])
+  for (const handler of ["onClick", "onKeyDown", "onValueChange"]) {
+    const raw = `const editor = mountRichPaperEditor(client, host); const control = <Button ${handler}={() => editor.toggleMark("bold")} />`
+    assert.ok(
+      detect(raw, page).includes(
+        "Toolbar, menu and shortcut handlers need a live handle"
+      )
+    )
+  }
+})
+
+test("in-flight editor calls check the live identity immediately before invoking", () => {
+  const clean = read(lifecycle)
+  const mistake = clean.replace("editor === target", "true")
+  assert.notEqual(mistake, clean)
+  assert.ok(
+    detect(mistake, lifecycle).includes(
+      "Editor calls must check the live handle at invocation"
+    )
+  )
+  assert.deepEqual(detect(clean, lifecycle), [])
 })

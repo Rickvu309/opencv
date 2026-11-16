@@ -1,0 +1,158 @@
+.ocv-coach .ss-stage {
+  overflow: hidden;
+}
+
+.ocv-coach .ocv-coach-panel {
+  position: absolute;
+  top: 28px;
+  left: 28px;
+  width: 292px;
+  height: 480px;
+  border-radius: 12px;
+  box-shadow: var(--ss-shadow-hero);
+  overflow: hidden;
+  font-size: 12px;
+}
+
+.ocv-coach .ocv-coach-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 44px;
+  font-weight: 600;
+  color: var(--ss-text-strong);
+}
+
+.ocv-coach .ocv-coach-body {
+  display: flex;
+  flex-direction: column;
+  height: 368px;
+  gap: 10px;
+  padding: 12px 10px;
+  overflow: hidden;
+  background: var(--ss-surface);
+  opacity: 1;
+  transition: opacity var(--duration-panel) var(--ease-panel);
+}
+
+.ocv-coach .ocv-coach-body[data-resetting] {
+  opacity: 0;
+}
+
+.ocv-coach .ocv-coach-chat {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 8px;
+  min-height: 0;
+  overflow: hidden;
+  mask-image: linear-gradient(to bottom, transparent, black 12px);
+}
+
+.ocv-coach .ocv-coach-history {
+  display: grid;
+  flex-shrink: 0;
+  gap: 7px;
+  padding-bottom: 6px;
+}
+
+.ocv-coach .ocv-coach-history-question {
+  justify-self: end;
+}
+
+.ocv-coach .ocv-coach-chat > .ss-collapse {
+  flex-shrink: 0;
+}
+
+.ocv-coach .ocv-coach-question {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ocv-coach .ocv-coach-question .ss-text {
+  width: 224px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--ss-ink-1);
+  color: var(--ss-text-strong);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ocv-coach .ocv-coach-steps {
+  color: var(--ss-text-faint);
+  --ss-accent: var(--ss-text-faint);
+}
+
+.ocv-coach .ocv-coach-step {
+  font-size: 11px;
+  line-height: 1.4;
+  --ss-row-title: 11px;
+}
+
+.ocv-coach .ocv-coach-answer {
+  color: var(--ss-text-strong);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ocv-coach .ocv-coach-proposal {
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.ocv-coach .ocv-coach-proposal-title {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.ocv-coach .ocv-coach-proposal-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 24px;
+  color: var(--ss-text-faint);
+  font-size: 11px;
+}
+
+.ocv-coach .ocv-coach-approve {
+  width: 100%;
+}
+
+.ocv-coach .ocv-coach-undo {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-micro) var(--ease-micro);
+}
+
+.ocv-coach .ocv-coach-undo[data-on] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.ocv-coach .ocv-coach-composer-slot {
+  flex-shrink: 0;
+  will-change: transform;
+}
+
+.ocv-coach .ocv-coach-compose {
+  display: grid;
+  gap: 8px;
+  padding: 1px 2px 2px;
+  --ss-draft-ring: var(--ss-line);
+  --ss-draft-radius: 8px;
+  --ss-draft-pad-y: 10px;
+  --ss-draft-pad-x: 12px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.ocv-coach .ocv-coach-send {
+  justify-self: end;
+}
+
+.ocv-coach .ocv-coach-composer {
+  --ss-control: 36px;
+}

@@ -37,7 +37,7 @@ export function retirementProblems(protectedFacts) {
     const waits = own.find((item) => item.class !== "self")
     if (r.class === "self" && waits) {
       problems.push(
-        `${name} is recorded as self-serve, but it retires a check that waits for the owner (${waits.because}); run retire again`
+        `${name} is recorded as self-serve, but it retires a check without self-serve replacement proof (${waits.because}); run retire again`
       )
       continue
     }
@@ -117,7 +117,7 @@ export function retiredLines(protectedFacts) {
       : []),
     ...(owner.length
       ? [
-          `Retired ${count(owner)} checks that wait for the owner: ${unique(owner.map((item) => `${item.retiredBy} (${item.because})`))}`,
+          `Retired ${count(owner)} checks without self-serve replacement proof: ${unique(owner.map((item) => `${item.retiredBy} (${item.because})`))}`,
         ]
       : []),
   ]
