@@ -54,11 +54,12 @@ export function PaperProofsLink() {
         data-slot="paper-library-section-head"
         className="h-11 w-full justify-start gap-2 rounded-md px-0 text-sm font-semibold text-foreground hover:bg-transparent md:h-8"
       >
-        <ChevronRight
-          data-slot="paper-library-section-icon"
-          className="size-[13px] text-muted-foreground"
-          aria-hidden="true"
-        />
+        <span aria-hidden="true" className="inline-flex">
+          <ChevronRight
+            data-slot="paper-library-section-icon"
+            className="size-[13px] text-muted-foreground"
+          />
+        </span>
         Proofs
       </Button>
     </section>
