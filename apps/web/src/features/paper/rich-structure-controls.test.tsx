@@ -278,7 +278,9 @@ it("shows custom paragraph ids and disables indentation at the persisted nesting
   )
   act(() => engine.setTextCursorPosition("l3", "start"))
   expect(editor.formattingState().canIndent).toBe(false)
-  expect(screen.getByRole("button", { name: "Increase indent" })).toBeDisabled()
+  expect(
+    screen.getByRole("button", { name: "Increase list level" })
+  ).toBeDisabled()
   const before = view.state.doc.toJSON()
   act(() => editor.listLevel("in"))
   expect(view.state.doc.toJSON()).toEqual(before)

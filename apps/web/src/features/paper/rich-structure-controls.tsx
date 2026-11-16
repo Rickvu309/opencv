@@ -150,13 +150,13 @@ export function RichStructureControls({
       pressed: state?.list === "numberedListItem",
     },
     {
-      label: "Increase indent",
+      label: "Increase list level",
       Icon: IndentIncrease,
       action: () => editor?.listLevel("in"),
       disabled: !state?.canIndent,
     },
     {
-      label: "Decrease indent",
+      label: "Decrease list level",
       Icon: IndentDecrease,
       action: () => editor?.listLevel("out"),
       disabled: !state?.canOutdent,

@@ -90,6 +90,7 @@ export function detectDirectMarks(text) {
 }
 
 export const consumers = [
+  "packages/paper-crdt/src/native-layout-formatting.ts",
   "packages/paper-crdt/src/native-formatting-decorations.ts",
   "packages/paper-crdt/src/native-layout-flow-mount.ts",
   "apps/api/src/paper/native-output/formatted.ts",

@@ -95,7 +95,7 @@ export const clean = [
   },
   {
     path: "apps/api/src/paper/native-output/formatted.ts",
-    text: 'import { formattedStyles } from "./formatted-styles.js"',
+    text: `import { formattedStyles } from "./formatted-styles.js"; effectiveParagraphStyle(paragraph); const bold = effective.bold === inherited.bold ? undefined : effective.bold; const link = richLink && !direct.characterStyle ? '<w:rStyle w:val="Hyperlink"/>' : ""`,
   },
   {
     path: "apps/api/src/paper/native-output/formatted.test.ts",
@@ -159,7 +159,7 @@ export const clean = [
   },
   {
     path: "packages/paper-crdt/src/native-formatting-commands.ts",
-    text: 'event.altKey && !mod && event.code === "Digit5" || event.metaKey && !event.altKey && key === "x"; depth + descendants(block) < 3',
+    text: 'event.altKey && !mod && event.code === "Digit5" || event.metaKey && !event.altKey && key === "x"; depth + descendants(block) < 3; effectiveParagraphStyle(block); marks.filter(mark => mark.name !== "link"); normalizeLinkHref(address)',
   },
   {
     path: "packages/paper-crdt/src/native-formatting-decorations.ts",

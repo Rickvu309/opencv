@@ -59,6 +59,25 @@ export function detect(text, path) {
     hits.push(
       "Rich Paper headers must wrap their title and actions at enlarged text sizes"
     )
+  hits.push(...detectRichStructure(text, path))
+
+  if (
+    path === "packages/paper-crdt/src/native-formatting-commands.ts" &&
+    (!text.includes('event.altKey && !mod && event.code === "Digit5"') ||
+      !text.includes('event.metaKey && !event.altKey && key === "x"'))
+  )
+    hits.push("Rich strikethrough must support the PC and Mac Docs shortcuts")
+  if (
+    path === "packages/paper-crdt/src/native-layout-flow-mount.ts" &&
+    text.includes("BlockNoteEditor.create(") &&
+    !text.includes("...paragraphInlineValues(")
+  )
+    hits.push("Rich active marks must include the paragraph style defaults")
+  if (
+    path === "packages/paper-crdt/src/native-formatting-decorations.ts" &&
+    (!text.includes("list-style-type") || !text.includes("aria-level"))
+  )
+    hits.push("Rich list decorations must render markers and nested levels")
   const test = /\.test\.[cm]?[jt]sx?$/.test(path)
   const storage = path === "packages/paper-crdt/src/stored-document.ts"
   const editorEntry = path === "packages/paper-crdt/src/editor.ts"

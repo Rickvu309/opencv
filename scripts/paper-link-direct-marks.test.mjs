@@ -57,11 +57,14 @@ function readCurrent(path) {
   )
 }
 
-test("rejects both independent implementations at 7195fc72", () => {
+test("rejects independent implementations at their introducing commits", () => {
   for (const path of consumers) {
     const before = execFileSync(
       "git",
-      ["show", `7195fc723aa9061d12debf62aa1261924a791f54:${path}`],
+      [
+        "show",
+        `${path.endsWith("native-layout-formatting.ts") ? "2d8c005a50b97a773349d415aa6b1b410a6ca71f" : "7195fc723aa9061d12debf62aa1261924a791f54"}:${path}`,
+      ],
       { encoding: "utf8" }
     )
     assert.ok(detectDecorations(before, path).length, path)

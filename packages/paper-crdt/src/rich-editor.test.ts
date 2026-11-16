@@ -505,6 +505,7 @@ it.each(["cv", "letter"] as const)(
       )
       const active: InlinePresentation = mounted.activeInline()
       expect(active.underline, id).toBe(page.underline)
+      expect(mounted.activeFormatting().underline, id).toBe(page.underline)
     }
   },
   60_000

@@ -149,7 +149,7 @@ describe("formatted native Word output", () => {
         (node) => attribute(node, "styleId") === "Paper-contact"
       )
       if (!named) throw new Error("Missing named character style")
-      expect(attribute(one(named, "rFonts"), "ascii")).toBe("Liberation Serif")
+      expect(attribute(one(named, "rFonts"), "ascii")).toBe("Times New Roman")
       expect(attribute(one(named, "sz"), "val")).toBe("36")
       expect(attribute(one(named, "shd"), "fill")).toBe("FFFF00")
       const hyperlink = styles.find(

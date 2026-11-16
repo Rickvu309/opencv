@@ -2,6 +2,9 @@ import type { Node, Mark } from "@tiptap/pm/model"
 import type { EditorView } from "@tiptap/pm/view"
 import { yUndoPluginKey } from "y-prosemirror"
 import {
+  effectiveRunDecorations,
+  effectiveParagraphStyle,
+  paragraphInlineValues,
   inlinePatchSchema,
   inlineSchema,
   paragraphSchema,
@@ -112,26 +115,48 @@ export function flowFormatting(binding: FlowBinding, view: EditorView) {
     activeFormatting() {
       const presentation = readPresentationMeta(binding.doc)
       const inlines: InlinePresentation[] = []
-      const readMarks = (marks: readonly Mark[]) =>
-        effectiveInline(
-          presentation,
-          canonicalStyles(
-            Object.fromEntries(
-              marks
-                .filter((mark) => mark.type.name !== "link")
-                .map((mark) => [mark.type.name, mark.attrs.stringValue])
-            )
+      const readMarks = (marks: readonly Mark[], node: Node) => {
+        const direct = canonicalStyles(
+          Object.fromEntries(
+            marks
+              .filter((mark) => mark.type.name !== "link")
+              .map((mark) => [mark.type.name, mark.attrs.stringValue])
           )
         )
+        const inherited = effectiveInline(presentation, {
+          ...paragraphInlineValues(
+            effectiveParagraphStyle(
+              node.type.name,
+              canonicalProps(node.attrs).paragraphStyle,
+              node.attrs.level
+            )
+          ),
+          ...direct,
+        })
+        return {
+          ...inherited,
+          ...effectiveRunDecorations(
+            direct,
+            marks.some((mark) => mark.type.name === "link"),
+            inherited
+          ),
+        }
+      }
       const { selection, doc, storedMarks } = view.state
       if (selection.empty)
-        inlines.push(readMarks(storedMarks ?? selection.$from.marks()))
+        inlines.push(
+          readMarks(
+            storedMarks ?? selection.$from.marks(),
+            selection.$from.parent
+          )
+        )
       else
-        doc.nodesBetween(selection.from, selection.to, (node) => {
-          if (node.isText) inlines.push(readMarks(node.marks))
+        doc.nodesBetween(selection.from, selection.to, (node, pos) => {
+          if (node.isText)
+            inlines.push(readMarks(node.marks, doc.resolve(pos).parent))
         })
       if (!inlines.length && selectedParagraphs(view).length)
-        inlines.push(readMarks(selection.$from.marks()))
+        inlines.push(readMarks(selection.$from.marks(), selection.$from.parent))
       const paragraphs = selectedParagraphs(view).map(({ node }) =>
         effectiveParagraph(presentation, canonicalProps(node.attrs))
       )
