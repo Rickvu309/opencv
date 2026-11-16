@@ -168,11 +168,20 @@ describe("native layout Word output", () => {
     if (!run) throw new Error("Missing rich run")
     expect(attribute(one(run, "b"), "val")).toBe("0")
     expect(attribute(one(run, "i"), "val")).toBe("1")
-    expect(attribute(one(run, "u"), "val")).toBe("single")
+    expect(attribute(one(run, "rStyle"), "val")).toBe("Hyperlink")
+    expect(elements(run, "u")).toHaveLength(0)
     expect(attribute(one(run, "strike"), "val")).toBe("1")
     expect(attribute(one(run, "rFonts"), "ascii")).toBe("Liberation Sans")
     expect(attribute(one(run, "sz"), "val")).toBe("24")
-    expect(attribute(one(run, "color"), "val")).toBe("123456")
+    expect(elements(run, "color")).toHaveLength(0)
+    const hyperlinkStyle = elements(
+      archive.part("word/styles.xml").root,
+      "style"
+    ).find((node) => attribute(node, "styleId") === "Hyperlink")
+    if (!hyperlinkStyle) throw new Error("Missing Hyperlink character style")
+    expect(attribute(hyperlinkStyle, "type")).toBe("character")
+    expect(attribute(one(hyperlinkStyle, "u"), "val")).toBe("single")
+    expect(attribute(one(hyperlinkStyle, "color"), "val")).toBe("1D4ED8")
     expect(attribute(one(actual, "jc"), "val")).toBe("right")
     expect(
       elements(actual, "ilvl").map((node) => attribute(node, "val"))
