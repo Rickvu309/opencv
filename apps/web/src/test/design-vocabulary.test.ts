@@ -193,11 +193,6 @@ const READABLE_VARIABLE_GROUPS: readonly ReadableVariableGroup[] = [
       "sidebar-frame.tsx sets it inline from the resized width, and the frame's w-(--sidebar-width) class reads it",
     names: ["sidebar-width"],
   },
-  {
-    reason:
-      "the new job dialog sets it inline from the page column center, and its md left class reads it",
-    names: ["new-job-shift"],
-  },
 ]
 
 const READABLE_VARIABLES = new Set<string>(

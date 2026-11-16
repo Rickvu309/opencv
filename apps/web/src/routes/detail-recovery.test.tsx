@@ -64,7 +64,7 @@ describe("detail recovery", () => {
     renderApp(`/apply/${missingId}`)
 
     expect(
-      await screen.findByText("Could not load jobs. Refresh the page.")
+      await screen.findByText("Couldn't load this job.")
     ).toBeInTheDocument()
     expect(screen.queryByText("Job not found.")).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Refresh" }))

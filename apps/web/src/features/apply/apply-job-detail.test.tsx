@@ -96,6 +96,10 @@ describe("job detail", () => {
     ])
     renderApp(`/apply/${id}`)
     const note = await screen.findByRole("textbox", { name: "Leave a note" })
+    expect(note.className).toMatch(/\btext-base\b/)
+    const prep = screen.getByRole("button", { name: "Interview prep" })
+    expect(prep.className).toMatch(/\bmd:h-6\b/)
+    expect(prep.className).not.toMatch(/\bmd:h-4\b/)
     const draft = "x".repeat(4001)
     fireEvent.change(note, { target: { value: draft } })
     fireEvent.keyDown(note, { key: "Enter" })
@@ -417,6 +421,7 @@ describe("job detail", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Add a step" }))
     const step = await screen.findByRole("textbox", { name: "Add a step" })
+    expect(step.className).toMatch(/\btext-base\b/)
     fireEvent.change(step, { target: { value: "Print the CV" } })
     submitPrepStep(step)
     await waitFor(() => {
@@ -450,6 +455,11 @@ describe("job detail", () => {
     const dialog = await screen.findByRole("dialog", {
       name: "Delete First role?",
     })
+    expect(dialog).toHaveAttribute("data-slot", "confirm-delete")
+    expect(dialog.className).not.toContain("118px")
+    expect(
+      document.querySelector("[data-slot='apply-column-anchor']")
+    ).not.toBeNull()
     expect(within(dialog).getByText("This can't be undone.")).toBeTruthy()
     expect(
       within(dialog)

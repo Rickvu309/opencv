@@ -53,21 +53,21 @@ export function JobsPreview() {
       {ROWS.map((row) => (
         <div
           key={row.title}
-          className="flex min-h-[72px] min-w-0 flex-wrap items-center gap-3.5 rounded-[12px] border border-border bg-background px-4 py-3"
+          className="flex min-h-[72px] min-w-0 items-center gap-3.5 rounded-[12px] border border-border bg-background px-4 py-3"
         >
           <span className="flex size-10 shrink-0 items-center justify-center rounded-[10px] bg-muted text-xs font-bold text-foreground/85">
             {row.initials}
           </span>
-          <span className="flex min-w-0 flex-1 basis-40 flex-col">
+          <span className="flex min-w-0 flex-1 flex-col items-start">
             <span className="text-[14.5px] font-semibold break-words text-foreground">
               {row.title}
             </span>
             <span className="text-[12.5px] break-words text-foreground/[.62]">
               {row.company}
             </span>
-          </span>
-          <span className="inline-flex h-6 shrink-0 items-center rounded-[12px] bg-muted px-[9px] text-xs font-semibold text-foreground/90">
-            {row.fit}
+            <span className="mt-1.5 inline-flex h-6 items-center rounded-[12px] bg-muted px-[9px] text-xs font-semibold text-foreground/90">
+              {row.fit}
+            </span>
           </span>
         </div>
       ))}

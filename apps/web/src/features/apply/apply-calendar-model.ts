@@ -1,7 +1,7 @@
 import type { JobView } from "@workspace/domain"
 
 import { FAINT_TEXT } from "./apply-tone.ts"
-import { PROFILE_ZONE, deadlineInstant, zonedYmd } from "./apply-stages.ts"
+import { deadlineInstant, zonedYmd } from "./apply-stages.ts"
 
 export const WEEKDAYS = [
   "Mon",
@@ -57,27 +57,27 @@ export function weekDays(anchor: string) {
   return Array.from({ length: 7 }, (_, index) => addDays(start, index))
 }
 
-function dayStart(ymd: string) {
+function dayStart(ymd: string, zone: string) {
   const [year, month, day] = ymd.split("-").map(Number)
   const utc = Date.UTC(year!, month! - 1, day!)
   const local = (at: number) => {
-    const [y, m, d] = zonedYmd(new Date(at)).split("-").map(Number)
-    return Date.UTC(y!, m! - 1, d!, ...zonedClock(at))
+    const [y, m, d] = zonedYmd(new Date(at), zone).split("-").map(Number)
+    return Date.UTC(y!, m! - 1, d!, ...zonedClock(at, zone))
   }
   let guess = utc
   for (let pass = 0; pass < 2; pass += 1) guess -= local(guess) - utc
   return new Date(guess)
 }
 
-function zonedClock(at: number): [number, number] {
-  const minutes = minutesOfDay(new Date(at).toISOString())
+function zonedClock(at: number, zone: string): [number, number] {
+  const minutes = minutesOfDay(new Date(at).toISOString(), zone)
   return [Math.floor(minutes / 60), minutes % 60]
 }
 
-export function rangeFor(days: string[]) {
+export function rangeFor(days: string[], zone: string) {
   return {
-    from: dayStart(days[0]!).toISOString(),
-    to: dayStart(addDays(days.at(-1)!, 1)).toISOString(),
+    from: dayStart(days[0]!, zone).toISOString(),
+    to: dayStart(addDays(days.at(-1)!, 1), zone).toISOString(),
   }
 }
 
@@ -131,9 +131,9 @@ export function clock(minutes: number) {
   return `${hour}:${String(minutes % 60).padStart(2, "0")}`
 }
 
-function minutesOfDay(iso: string) {
+function minutesOfDay(iso: string, zone: string) {
   const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: PROFILE_ZONE,
+    timeZone: zone,
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23",
@@ -143,7 +143,7 @@ function minutesOfDay(iso: string) {
   return read("hour") * 60 + read("minute")
 }
 
-export function calendarEvents(jobs: JobView[]): CalendarEvent[] {
+export function calendarEvents(jobs: JobView[], zone: string): CalendarEvent[] {
   return jobs.flatMap((job) => {
     const events: CalendarEvent[] = []
     if (job.deadline) {
@@ -157,12 +157,12 @@ export function calendarEvents(jobs: JobView[]): CalendarEvent[] {
       })
     }
     if (job.interviewAt) {
-      const start = minutesOfDay(job.interviewAt)
+      const start = minutesOfDay(job.interviewAt, zone)
       events.push({
         key: `${job.id}-interview`,
         job,
         kind: "interview",
-        day: zonedYmd(new Date(job.interviewAt)),
+        day: zonedYmd(new Date(job.interviewAt), zone),
         startMinutes: start,
         endMinutes: start + INTERVIEW_MINUTES,
       })

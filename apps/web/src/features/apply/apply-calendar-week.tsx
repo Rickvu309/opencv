@@ -50,7 +50,7 @@ function EventBlock({
       <span className="truncate text-xs font-medium text-[color-mix(in_oklab,var(--chart-2),var(--foreground)_38%)]">
         {job.title}
       </span>
-      <span className="truncate text-[11.5px] text-[color-mix(in_oklab,var(--chart-2),var(--foreground)_19%)]">
+      <span className="truncate text-[11.5px] text-[color-mix(in_oklab,var(--chart-2),var(--foreground)_28%)]">
         {job.company}
       </span>
       <span className="truncate text-[11px] font-normal text-[color-mix(in_srgb,var(--chart-2)_68%,var(--foreground))]">

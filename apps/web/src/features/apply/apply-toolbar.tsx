@@ -1,3 +1,4 @@
+import { useId } from "react"
 import {
   Calendar,
   Funnel,
@@ -49,6 +50,24 @@ export function ApplyHeader({ onNewJob }: { onNewJob: () => void }) {
   )
 }
 
+const PRIORITY_COUNT_ORDER = ["high", "normal", "low"] as const
+
+const PRIORITY_COUNT_LABEL = {
+  high: "High",
+  normal: "Normal",
+  low: "Low",
+} as const
+
+function priorityCountRows(
+  rows: readonly { priority: string; count: number }[]
+) {
+  return PRIORITY_COUNT_ORDER.map((priority) => ({
+    priority,
+    label: PRIORITY_COUNT_LABEL[priority],
+    count: rows.find((row) => row.priority === priority)?.count ?? 0,
+  }))
+}
+
 const VIEWS: { view: ApplyView; label: string; icon: LucideIcon }[] = [
   { view: "board", label: "Board", icon: Kanban },
   { view: "list", label: "List", icon: List },
@@ -71,6 +90,7 @@ export function ApplyToolbar({
   priorityCountsFailed?: boolean
 }) {
   const count = activeFilterCount(filters)
+  const priorityHeadingId = useId()
   return (
     <div
       data-slot="apply-toolbar"
@@ -126,19 +146,27 @@ export function ApplyToolbar({
         <PopoverContent align="end" className="flex flex-col gap-2">
           {priorityCounts || priorityCountsFailed ? (
             <div className="flex flex-col gap-1.5 border-b border-border pb-2">
-              <p className="text-xs font-medium text-foreground">
+              <p
+                id={priorityHeadingId}
+                className="text-sm font-medium text-foreground"
+              >
                 Jobs by priority
               </p>
               <div
                 role="group"
-                aria-label="Jobs by priority"
+                aria-labelledby={priorityHeadingId}
                 className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground"
               >
-                {priorityCounts?.map(({ priority, count }) => (
-                  <span key={priority} className="capitalize">
-                    {priority} <span className="tabular-nums">{count}</span>
-                  </span>
-                ))}
+                {priorityCounts
+                  ? priorityCountRows(priorityCounts).map(
+                      ({ priority, label, count: priorityCount }) => (
+                        <span key={priority}>
+                          {label}{" "}
+                          <span className="tabular-nums">{priorityCount}</span>
+                        </span>
+                      )
+                    )
+                  : null}
                 {priorityCountsFailed ? (
                   <span>Could not load priority counts.</span>
                 ) : null}

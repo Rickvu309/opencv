@@ -17,6 +17,7 @@ import {
   placeInterviews,
   rangeFor,
 } from "./apply-calendar-model.ts"
+import { PROFILE_ZONE } from "./apply-stages.ts"
 
 const PINNED_NOW = new Date("2026-10-29T05:00:00.000Z")
 const TODAY = new Intl.DateTimeFormat("en-CA", {
@@ -177,7 +178,7 @@ describe("apply calendar", () => {
       deadline: "2026-11-02",
     })
     const visible = eventsInDays(
-      calendarEvents([firstDay, lastDay, adjacentDay]),
+      calendarEvents([firstDay, lastDay, adjacentDay], PROFILE_ZONE),
       [
         "2026-10-26",
         "2026-10-27",
@@ -195,30 +196,34 @@ describe("apply calendar", () => {
   })
 
   it("a calendar day starts at midnight in the profile zone", () => {
-    expect(rangeFor(["2026-10-26"])).toEqual({
+    expect(rangeFor(["2026-10-26"], PROFILE_ZONE)).toEqual({
       from: "2026-10-25T17:00:00.000Z",
       to: "2026-10-26T17:00:00.000Z",
     })
   })
 
   it("every interview block lasts 60 minutes because a job stores one start", () => {
-    const [event] = calendarEvents([
-      mockJob({ interviewAt: "2026-10-26T03:00:00.000Z" }),
-    ]).filter((item) => item.kind === "interview")
+    const [event] = calendarEvents(
+      [mockJob({ interviewAt: "2026-10-26T03:00:00.000Z" })],
+      PROFILE_ZONE
+    ).filter((item) => item.kind === "interview")
     expect(event?.endMinutes - (event?.startMinutes ?? 0)).toBe(60)
   })
 
   it("interviews that overlap share the column side by side", () => {
-    const events = calendarEvents([
-      mockJob({
-        id: "01900000-0000-7000-8000-000000000051",
-        interviewAt: "2026-10-26T03:00:00.000Z",
-      }),
-      mockJob({
-        id: "01900000-0000-7000-8000-000000000052",
-        interviewAt: "2026-10-26T03:30:00.000Z",
-      }),
-    ]).filter((item) => item.kind === "interview")
+    const events = calendarEvents(
+      [
+        mockJob({
+          id: "01900000-0000-7000-8000-000000000051",
+          interviewAt: "2026-10-26T03:00:00.000Z",
+        }),
+        mockJob({
+          id: "01900000-0000-7000-8000-000000000052",
+          interviewAt: "2026-10-26T03:30:00.000Z",
+        }),
+      ],
+      PROFILE_ZONE
+    ).filter((item) => item.kind === "interview")
     const placed = placeInterviews(events)
     expect(placed.map((item) => item.lane)).toEqual([0, 1])
     expect(placed.every((item) => item.lanes === 2)).toBe(true)

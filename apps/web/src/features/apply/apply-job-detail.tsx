@@ -110,7 +110,7 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
   if (detail.isLoading)
     return (
       <p role="status" className={JOB_NOTICE}>
-        Loading jobs
+        Loading job…
       </p>
     )
   if (
@@ -133,7 +133,7 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
   if (detail.isError || !job) {
     return (
       <div className={JOB_NOTICE}>
-        <p>Could not load jobs. Refresh the page.</p>
+        <p>Couldn't load this job.</p>
         <Button
           className="h-11 md:h-8"
           type="button"
@@ -175,7 +175,7 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
   return (
     <div
       data-pen-surface="apply"
-      className="flex h-full min-h-0 flex-col bg-card"
+      className="relative flex h-full min-h-0 flex-col bg-card"
     >
       <JobHeader
         job={job}

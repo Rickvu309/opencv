@@ -44,6 +44,11 @@ describe("coming soon and the calm 404", () => {
     expect(previewTitle.className).toMatch(/\bbreak-words\b/)
     expect(previewTitle.className).not.toMatch(/\btruncate\b/)
     expect(previewTitle.closest("[data-slot='jobs-preview']")).not.toBeNull()
+    const fit = screen.getByText("82% fit", { hidden: true })
+    expect(fit.parentElement).toBe(previewTitle.parentElement)
+    expect(fit.compareDocumentPosition(previewTitle)).toBe(
+      Node.DOCUMENT_POSITION_PRECEDING
+    )
     expect(
       screen.queryByRole("button", { name: "Marketing Executive" })
     ).not.toBeInTheDocument()

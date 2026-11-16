@@ -148,7 +148,7 @@ export function ApplyPage() {
   return (
     <div
       data-pen-surface="apply"
-      className="flex h-full min-h-0 flex-col bg-card"
+      className="relative flex h-full min-h-0 flex-col bg-card"
     >
       <ApplyHeader onNewJob={() => dispatch({ type: "dialog_opened" })} />
       <ApplyToolbar
@@ -168,8 +168,12 @@ export function ApplyPage() {
         ) : null}
         {jobs.isError ? (
           <div className="px-5">
-            <p>Could not load jobs. Refresh the page.</p>
-            <Button type="button" onClick={() => void jobs.refetch()}>
+            <p>Couldn't load jobs.</p>
+            <Button
+              type="button"
+              className="h-11 md:h-8"
+              onClick={() => void jobs.refetch()}
+            >
               Refresh
             </Button>
           </div>
