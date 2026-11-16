@@ -227,7 +227,9 @@ it("downloads real saved CV and Letter HTTP edits, refuses stale requests and pr
           for (const run of elements(link, "r")) {
             expect(attribute(one(run, "rStyle"), "val")).toBe("Hyperlink")
             expect(elements(run, "color")).toHaveLength(0)
-            expect(elements(run, "u")).toHaveLength(0)
+            if (textOf(part, run) === " Link")
+              expect(attribute(one(run, "u"), "val")).toBe("single")
+            else expect(elements(run, "u")).toHaveLength(0)
           }
         const cleared = paragraphs.find(
           (node) => textOf(part, node) === "Cleared formatting"
