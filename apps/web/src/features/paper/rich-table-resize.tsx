@@ -21,6 +21,11 @@ export function RichTableResize({
   element: HTMLElement
 }) {
   const drag = useRef<Drag | null>(null)
+  const cancel = () => {
+    for (const grid of drag.current?.grids ?? [])
+      grid.element.style.gridTemplateColumns = grid.columns
+    drag.current = null
+  }
   const columns = selected.table.columns
   const total = columns.reduce((sum, column) => sum + column.width, 0)
   return columns.slice(0, -1).map((column, index) => {
@@ -120,13 +125,8 @@ export function RichTableResize({
           event.currentTarget.releasePointerCapture(event.pointerId)
           editor.resizeTableColumn(index, current.next)
         }}
-        onLostPointerCapture={() => {
-          if (drag.current) {
-            for (const grid of drag.current.grids)
-              grid.element.style.gridTemplateColumns = grid.columns
-            drag.current = null
-          }
-        }}
+        onPointerCancel={cancel}
+        onLostPointerCapture={cancel}
       />
     )
   })

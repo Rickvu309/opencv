@@ -1,5 +1,5 @@
 import { paperTableLimits } from "@workspace/domain"
-import { useEffect, useReducer, useState, type ReactNode } from "react"
+import { useEffect, useReducer, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { Table2 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
@@ -50,6 +50,17 @@ export function RichTableControls({
   )
 }
 
+type InsertState = {
+  open: boolean
+  rows: string
+  columns: string
+  error: string
+}
+type InsertAction =
+  | { type: "open"; value: boolean }
+  | { type: "rows" | "columns" | "error"; value: string }
+  | { type: "inserted" }
+
 function InsertTable({
   editor,
   disabled,
@@ -59,12 +70,18 @@ function InsertTable({
   disabled: boolean
   close: () => void
 }) {
-  const [open, setOpen] = useState(false)
-  const [rows, setRows] = useState("2")
-  const [columns, setColumns] = useState("2")
-  const [error, setError] = useState("")
+  const [{ open, rows, columns, error }, dispatch] = useReducer(
+    (state: InsertState, action: InsertAction): InsertState =>
+      action.type === "inserted"
+        ? { ...state, open: false, error: "" }
+        : { ...state, [action.type]: action.value },
+    { open: false, rows: "2", columns: "2", error: "" }
+  )
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(value) => dispatch({ type: "open", value })}
+    >
       <ToolbarHint label="Insert table">
         <PopoverTrigger
           render={
@@ -94,13 +111,16 @@ function InsertTable({
             event.preventDefault()
             try {
               editor?.insertTable(Number(rows), Number(columns))
-              setOpen(false)
+              dispatch({ type: "inserted" })
               close()
-              setError("")
             } catch (error) {
-              setError(
-                error instanceof Error ? error.message : "Choose fewer columns"
-              )
+              dispatch({
+                type: "error",
+                value:
+                  error instanceof Error
+                    ? error.message
+                    : "Choose fewer columns",
+              })
             }
           }}
         >
@@ -116,7 +136,9 @@ function InsertTable({
                 max={paperTableLimits.rows}
                 required
                 value={rows}
-                onChange={(event) => setRows(event.target.value)}
+                onChange={(event) =>
+                  dispatch({ type: "rows", value: event.target.value })
+                }
               />
             </label>
             <label className="grid gap-1">
@@ -130,7 +152,9 @@ function InsertTable({
                 max={paperTableLimits.columns}
                 required
                 value={columns}
-                onChange={(event) => setColumns(event.target.value)}
+                onChange={(event) =>
+                  dispatch({ type: "columns", value: event.target.value })
+                }
               />
             </label>
           </div>

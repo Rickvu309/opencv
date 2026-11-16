@@ -91,6 +91,16 @@ function setup(kind: "cv" | "letter") {
     )
   }
   const read = () => client.document()!
+  const selectTable = () => {
+    const table = read().flow.children[0]!.children.find(
+      (node) => node.type === "table"
+    )
+    if (table?.type !== "table") throw new Error("Missing table")
+    editor.setTextCursorPosition(
+      table.children[0]!.children[0]!.children[0]!.id,
+      "start"
+    )
+  }
   const roundtrip = () => {
     const expected = read()
     const stored = client.stored()
@@ -135,6 +145,7 @@ function setup(kind: "cv" | "letter") {
     editor,
     commands,
     select,
+    selectTable,
     read,
     roundtrip,
     reversible,
@@ -146,10 +157,23 @@ function setup(kind: "cv" | "letter") {
 }
 
 it.each(["cv", "letter"] as const)(
-  "table commands are single history steps with durable %s content",
+  "table row edits are single history steps with durable %s content",
   (kind) => {
-    const { tables, editor, commands, select, reversible, read, key } =
-      setup(kind)
+    const { tables, select, selectTable, reversible } = setup(kind)
+    select("first")
+    reversible(() => tables.insertTable(2, 3))
+    selectTable()
+    reversible(() => tables.addTableRow())
+    reversible(() => tables.addTableRow(false))
+    reversible(() => tables.removeTableRow())
+    reversible(() => tables.removeTable())
+  }
+)
+
+it.each(["cv", "letter"] as const)(
+  "table column edits are single history steps with durable %s widths",
+  (kind) => {
+    const { tables, select, selectTable, reversible } = setup(kind)
     const active = () => {
       const selected = tables.activeTable()
       if (!selected) throw new Error("No table selected")
@@ -157,17 +181,7 @@ it.each(["cv", "letter"] as const)(
     }
     select("first")
     reversible(() => tables.insertTable(2, 3))
-    let table = read().flow.children[0]!.children.find(
-      (node) => node.type === "table"
-    )
-    if (table?.type !== "table") throw new Error("Missing table")
-    editor.setTextCursorPosition(
-      table.children[0]!.children[0]!.children[0]!.id,
-      "start"
-    )
-    reversible(() => tables.addTableRow())
-    reversible(() => tables.addTableRow(false))
-    reversible(() => tables.removeTableRow())
+    selectTable()
     reversible(() => tables.resizeTableColumn(0, 480))
     reversible(() => tables.addTableColumn())
     reversible(() => tables.addTableColumn(false))
@@ -175,7 +189,31 @@ it.each(["cv", "letter"] as const)(
     const before = active().table.columns[0]!.width
     reversible(() => tables.resizeTableColumn(0, before + 300))
     expect(active().table.columns[0]!.width).toBe(before + 300)
-    table = active().table
+  }
+)
+
+it.each(["cv", "letter"] as const)(
+  "table navigation retains shared formatting and durable %s content",
+  (kind) => {
+    const {
+      tables,
+      editor,
+      commands,
+      select,
+      selectTable,
+      reversible,
+      read,
+      key,
+    } = setup(kind)
+    const active = () => {
+      const selected = tables.activeTable()
+      if (!selected) throw new Error("No table selected")
+      return selected
+    }
+    select("first")
+    reversible(() => tables.insertTable(2, 3))
+    selectTable()
+    const table = active().table
     const first = table.children[0]!.children[0]!.children[0]!
     editor.setTextCursorPosition(first.id, "start")
     editor.insertInlineContent("Skills Việt 😀")
@@ -193,7 +231,6 @@ it.each(["cv", "letter"] as const)(
     key("Tab", { shiftKey: true })
     expect(active().rowIndex).toBe(table.children.length - 1)
     expect(JSON.stringify(read())).toContain("Skills Việt 😀")
-    reversible(() => tables.removeTable())
   }
 )
 

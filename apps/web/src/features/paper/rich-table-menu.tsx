@@ -1,7 +1,8 @@
 import { paperTableLimits } from "@workspace/domain"
-import { useRef, useState } from "react"
+import { useReducer, useRef } from "react"
 import { Ellipsis } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
+import { Input } from "@workspace/ui/components/input"
 import {
   Popover,
   PopoverContent,
@@ -12,6 +13,10 @@ import type { TextEditor } from "./rich-text-toolbar-control.tsx"
 import { RichTableResize } from "./rich-table-resize.tsx"
 
 type Selected = NonNullable<ReturnType<TextEditor["activeTable"]>>
+type MenuAction =
+  | { type: "open"; value: boolean }
+  | { type: "error"; value: string }
+  | { type: "completed" }
 export function RichTableMenu({
   editor,
   selected,
@@ -21,8 +26,13 @@ export function RichTableMenu({
   selected: Selected
   element: HTMLElement
 }) {
-  const [open, setOpen] = useState(false)
-  const [error, setError] = useState("")
+  const [{ open, error }, dispatch] = useReducer(
+    (state: { open: boolean; error: string }, action: MenuAction) =>
+      action.type === "completed"
+        ? { open: false, error: "" }
+        : { ...state, [action.type]: action.value },
+    { open: false, error: "" }
+  )
   const width = useRef<HTMLInputElement>(null)
   const column = selected.table.columns[selected.columnIndex]
   const actions = [
@@ -60,7 +70,10 @@ export function RichTableMenu({
   ]
   return (
     <div contentEditable={false} data-paper-table-controls="">
-      <Popover open={open} onOpenChange={setOpen}>
+      <Popover
+        open={open}
+        onOpenChange={(value) => dispatch({ type: "open", value })}
+      >
         <PopoverTrigger
           render={
             <Button
@@ -94,15 +107,16 @@ export function RichTableMenu({
                 onClick={() => {
                   try {
                     action.run()
-                    setOpen(false)
-                    setError("")
+                    dispatch({ type: "completed" })
                     editor.focus()
                   } catch (error) {
-                    setError(
-                      error instanceof Error
-                        ? error.message
-                        : "Table could not change"
-                    )
+                    dispatch({
+                      type: "error",
+                      value:
+                        error instanceof Error
+                          ? error.message
+                          : "Table could not change",
+                    })
                   }
                 }}
               >
@@ -118,18 +132,18 @@ export function RichTableMenu({
                 const value = width.current?.valueAsNumber
                 if (value && Number.isFinite(value)) {
                   editor.resizeTableColumn(selected.columnIndex, value * 20)
-                  setOpen(false)
+                  dispatch({ type: "completed" })
                   editor.focus()
                 }
               }}
             >
               <label className="grid gap-1">
                 Column width (pt)
-                <input
+                <Input
                   ref={width}
                   key={`${column.id}-${column.width}`}
                   aria-label="Column width in points"
-                  className="h-11 min-w-0 rounded-md border bg-background px-3 text-base focus-visible:outline-2 focus-visible:outline-ring"
+                  className="h-11 text-base"
                   type="number"
                   min={24}
                   max={1584}
