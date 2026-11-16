@@ -20,6 +20,7 @@ import { openRichPaperSession } from "@/lib/paper-rich.ts"
 import { resolvePhotoSrc } from "@/lib/requests.ts"
 import type { NativeSyncIdentity } from "@/lib/paper-sync-identity.ts"
 import { SYNC_LABEL } from "@/lib/paper-sync.ts"
+import { RichDocumentMenu } from "./rich-document-menu.tsx"
 import "./design/rich-page-header.pen.css"
 
 type Session = ReturnType<typeof openRichPaperSession>
@@ -140,23 +141,32 @@ export function RichPaperPage({
       className="rich-paper-page flex min-h-0 flex-1 flex-col"
     >
       <PageHeader>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-11 shrink-0 md:size-8"
-          aria-label="Back to Paper"
-          onClick={onBack}
-        >
-          <ArrowLeft />
-        </Button>
-        <PageHeaderTitle className="text-[0.8125rem] leading-[1rem] [overflow-wrap:anywhere] whitespace-normal max-md:min-w-0">
-          {name}
-        </PageHeaderTitle>
-        <span role="status" className="ml-auto text-sm text-muted-foreground">
-          {editorError
-            ? "Editor unavailable. Your document is kept"
-            : SYNC_LABEL[status]}
-        </span>
+        <div className="flex min-w-0 flex-1 basis-48 items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-11 shrink-0 md:size-8"
+            aria-label="Back to Paper"
+            onClick={onBack}
+          >
+            <ArrowLeft />
+          </Button>
+          <PageHeaderTitle className="text-[0.8125rem] leading-[1rem] [overflow-wrap:anywhere] whitespace-normal max-md:min-w-0">
+            {name}
+          </PageHeaderTitle>
+        </div>
+        <div className="ml-auto flex shrink-0 items-center gap-2">
+          <span role="status" className="text-sm text-muted-foreground">
+            {editorError
+              ? "Editor unavailable. Your document is kept"
+              : SYNC_LABEL[status]}
+          </span>
+          <RichDocumentMenu
+            session={session}
+            status={status}
+            blocked={blocked}
+          />
+        </div>
       </PageHeader>
       <div
         role="toolbar"

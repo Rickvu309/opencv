@@ -62,3 +62,75 @@ test("saved Word, photo reads and CV portrait admission retain their boundary gu
     []
   )
 })
+
+test("cross-origin Word downloads retain readable exact snapshot metadata", () => {
+  const path = "apps/api/src/app.ts"
+  const clean = `cors({ allowHeaders: ["x-paper-writer", "x-paper-basis"], exposeHeaders: ["x-paper-basis", "Content-Disposition"] })`
+  assert.deepEqual(detect(clean, path), [])
+  for (const missing of [
+    clean.replace('"x-paper-writer", ', ""),
+    clean.replace('"x-paper-basis"', '"unrelated"'),
+    clean.replace('exposeHeaders: ["x-paper-basis", ', "exposeHeaders: ["),
+    clean.replace('"Content-Disposition"', '"unrelated"'),
+  ])
+    assert.ok(detect(missing, path).length)
+  assert.deepEqual(
+    detect(readFileSync(new URL(`../${path}`, import.meta.url), "utf8"), path),
+    []
+  )
+})
+
+test("Word downloads retain their URL while the browser starts saving", () => {
+  const path = "apps/web/src/lib/paper-rich-word.ts"
+  const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+  assert.deepEqual(detect(clean, path), [])
+  const mistake = clean.replace("}, 1000)", "}, 0)")
+  assert.notEqual(mistake, clean)
+  assert.ok(detect(mistake, path).length)
+  const aborted = clean.replace(
+    "if (triggered) {",
+    `if (triggered) {
+    signal.addEventListener("abort", () => URL.revokeObjectURL(url))`
+  )
+  assert.notEqual(aborted, clean)
+  assert.ok(detect(aborted, path).length)
+  const cleared = clean.replace(
+    "if (triggered) {",
+    "if (triggered) { clearTimeout(retention)"
+  )
+  assert.notEqual(cleared, clean)
+  assert.ok(detect(cleared, path).length)
+})
+
+test("Word response filenames and media types tolerate valid HTTP variations", () => {
+  const path = "apps/web/src/lib/paper-rich-word.ts"
+  const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+  assert.deepEqual(detect(clean, path), [])
+  for (const mistake of [
+    clean.replace(
+      "try {\n      value = decodeURIComponent(encoded)\n    } catch {\n      value = quoted\n    }",
+      "value = decodeURIComponent(encoded)"
+    ),
+    clean.replace(".toLowerCase()", ""),
+  ]) {
+    assert.notEqual(mistake, clean)
+    assert.ok(detect(mistake, path).length)
+  }
+})
+
+test("Word menu progress, failure copy and disabled descriptions stay connected", () => {
+  const path = "apps/web/src/features/paper/rich-document-menu.tsx"
+  const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+  assert.deepEqual(detect(clean, path), [])
+  for (const [before, after] of [
+    ["error instanceof SavedRichWordChanged", "true"],
+    ["toast.loading(", "toast.message("],
+    ["toast.success(", "toast.message("],
+    ["aria-describedby=", "data-description="],
+    ['status === "refused"', "false"],
+    ['status === "stuck"', "false"],
+  ]) {
+    assert.notEqual(clean.replace(before, after), clean)
+    assert.ok(detect(clean.replace(before, after), path).length)
+  }
+})
