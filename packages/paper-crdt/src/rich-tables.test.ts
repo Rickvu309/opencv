@@ -263,7 +263,7 @@ it.each(["cell", "body"] as const)(
           "after"
         )
         if (!added) throw new Error("Missing paragraph")
-        reference = added.id
+        reference = added.id as typeof reference
       }
       const cell = read().flow.children[0]!.children.find(
         (node) => node.type === "table"
@@ -279,7 +279,7 @@ it.each(["cell", "body"] as const)(
           "after"
         )
         if (!added) throw new Error("Missing paragraph")
-        reference = added.id
+        reference = added.id as typeof reference
       }
     }
     expect(read()).toBeTruthy()
