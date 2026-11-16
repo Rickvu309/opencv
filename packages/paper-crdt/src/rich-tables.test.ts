@@ -6,7 +6,10 @@ import { afterEach, expect, it, vi } from "vitest"
 import { TextSelection } from "@tiptap/pm/state"
 import * as Y from "yjs"
 import { nativeProvenance, richPaperDocumentSchema } from "@workspace/domain"
-import { prepareFlowTableEdit } from "@workspace/domain/internal/paper-presentation"
+import {
+  flowSectionSchema,
+  prepareFlowTableEdit,
+} from "@workspace/domain/internal/paper-presentation"
 import { openRichPaperClient } from "./client.js"
 import { seedStoredYDoc } from "./stored-document.js"
 import { borrowFlowDocument } from "./native-layout-flow.js"
@@ -349,7 +352,10 @@ it.each([
     })
     const input = flowFixture()
     const section = input.flow.children[0]!
-    section.page.height = pageHeight
+    section.page = flowSectionSchema.parse({
+      ...section,
+      page: { ...section.page, height: pageHeight },
+    }).page
     const printable = (pageHeight - section.page.top - section.page.bottom) / 15
     const host = document.createElement("div")
     host.innerHTML =
