@@ -1,6 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
-  act,
   cleanup,
   fireEvent,
   screen,
