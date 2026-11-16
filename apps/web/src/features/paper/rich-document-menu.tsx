@@ -1,5 +1,11 @@
 import { useId, useReducer, useRef } from "react"
-import { Download, MoreHorizontal, FileCog } from "lucide-react"
+import {
+  Download,
+  FileCog,
+  MoreHorizontal,
+  Replace,
+  Search,
+} from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -16,12 +22,14 @@ import type { TextEditor } from "./rich-text-toolbar-control.tsx"
 
 export function RichDocumentMenu({
   session,
+  onFind,
   status,
   blocked,
   editorAvailable,
   editor,
 }: {
   session: Pick<ReturnType<typeof openRichPaperSession>, "downloadWord"> | null
+  onFind?: (mode: "find" | "replace") => void
   status: SyncStatus
   blocked: boolean
   editorAvailable: boolean
@@ -60,6 +68,18 @@ export function RichDocumentMenu({
             }
           />
           <DropdownMenuContent align="end">
+            {onFind ? (
+              <>
+                <DropdownMenuItem onClick={() => onFind("find")}>
+                  <Search />
+                  Find
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onFind("replace")}>
+                  <Replace />
+                  Find and replace
+                </DropdownMenuItem>
+              </>
+            ) : null}
             <DropdownMenuItem disabled={!editor || blocked} onClick={openSetup}>
               <FileCog />
               Page setup

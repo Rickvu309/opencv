@@ -39,6 +39,7 @@ export function mountRichPaperEditor(
     )
     const commands = mounted.commands
     const view = mounted.editor.prosemirrorView
+    const search = mounted.search
     const pages = mounted.pages
     if (!view.state.selection.$from.parent.inlineContent) {
       let start: number | undefined
@@ -116,6 +117,7 @@ export function mountRichPaperEditor(
       return view.dom
     }
     return {
+      search,
       photos: () => (active ? mounted.photoControls.photos() : []),
       insertPhoto(
         ...args: Parameters<typeof mounted.photoControls.insertPhoto>

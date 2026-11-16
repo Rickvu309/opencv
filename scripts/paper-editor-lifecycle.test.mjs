@@ -129,6 +129,22 @@ test("the table menu releases with the editor and mounts again from the live han
   )
 })
 
+test("nested search controls use the same live handle", () => {
+  const clean = read(lifecycle)
+  assert.deepEqual(detect(clean, lifecycle), [])
+  for (const mistake of [
+    clean.replace("new Proxy(target.search,", "new Proxy(target,"),
+    clean.replace('if (key === "search") return search', ""),
+  ]) {
+    assert.notEqual(mistake, clean)
+    assert.ok(
+      detect(mistake, lifecycle).includes(
+        "Search controls must use the live editor handle"
+      )
+    )
+  }
+})
+
 test("the document menu follows editor availability", () => {
   const clean = read(page)
   const mistake = clean.replace("editorAvailable={!!editor}", "")

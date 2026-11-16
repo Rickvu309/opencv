@@ -3,8 +3,13 @@ import ts from "typescript"
 export function detect(text, file = "rich-page.tsx") {
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true)
   const calls = []
+  const proxies = []
+  const returns = []
   function visit(node) {
     if (ts.isCallExpression(node)) calls.push(node)
+    if (ts.isNewExpression(node) && node.expression.getText(source) === "Proxy")
+      proxies.push(node)
+    if (ts.isReturnStatement(node)) returns.push(node)
     ts.forEachChild(node, visit)
   }
   visit(source)
@@ -57,6 +62,22 @@ export function detect(text, file = "rich-page.tsx") {
     if (!resetMount) problems.push("Canonical document resets must remount")
   }
   if (file.endsWith("rich-editor-lifecycle.ts")) {
+    const searchProxy = proxies.find(
+      (node) => node.arguments?.[0]?.getText(source) === "target.search"
+    )
+    const searchName = searchProxy?.parent
+    if (
+      !searchName ||
+      !ts.isVariableDeclaration(searchName) ||
+      !returns.some(
+        (node) =>
+          node.expression?.getText(source) ===
+            searchName.name.getText(source) &&
+          ts.isIfStatement(node.parent) &&
+          node.parent.expression.getText(source) === 'key === "search"'
+      )
+    )
+      problems.push("Search controls must use the live editor handle")
     const exposed = calls.filter((node) =>
       node.expression.getText(source).endsWith(".mounted")
     )
