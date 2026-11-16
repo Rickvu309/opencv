@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { detect } from "./lib/paper-link-patterns.mjs"
+import { detect } from "./lib/paper-rich-structure.mjs"
 
 test("link normalization refuses nested and overlapping repetitions and accepts split labels", () => {
   for (const pattern of [

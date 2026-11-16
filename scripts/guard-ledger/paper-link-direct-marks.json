@@ -2,7 +2,7 @@
   "id": "paper-link-direct-marks",
   "file": "scripts/paper-link-direct-marks.test.mjs",
   "detector": {
-    "module": "scripts/lib/paper-link-patterns.mjs",
+    "module": "scripts/lib/paper-rich-structure.mjs",
     "export": "detectDirectMarks"
   },
   "historic": {

@@ -2,7 +2,7 @@
   "id": "paper-link-patterns",
   "file": "scripts/paper-link-patterns.test.mjs",
   "detector": {
-    "module": "scripts/lib/paper-link-patterns.mjs",
+    "module": "scripts/lib/paper-rich-structure.mjs",
     "export": "detect"
   },
   "historic": {
