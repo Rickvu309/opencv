@@ -87,12 +87,14 @@ jobs:
         shard: [1, 2, 3]
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    env:
+      CI_SEPARATE_PAPER_WALK: "1"
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - run: pnpm exec turbo run test $TURBO_SCOPE --filter='!api' --filter='!@workspace/domain' --filter='!@workspace/guards' -- --shard=${{ matrix.shard }}/3 --exclude='**/canvas-walk.test.ts'
+      - run: pnpm exec turbo run test $TURBO_SCOPE --filter='!api' --filter='!@workspace/domain' --filter='!@workspace/guards' -- --shard=${{ matrix.shard }}/3
 
   test-web-walk:
     strategy:
