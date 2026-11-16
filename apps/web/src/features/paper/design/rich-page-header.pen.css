@@ -4,3 +4,17 @@
   padding-block: 0.5rem;
   flex-wrap: wrap;
 }
+
+@media (width < 48rem) {
+  [data-pen-surface="paper"].rich-paper-page
+    > [data-slot="page-header"]
+    > :first-child {
+    flex-basis: 0;
+  }
+
+  [data-pen-surface="paper"].rich-paper-page
+    > [data-slot="page-header"]
+    [data-slot="page-header-title"] {
+    white-space: nowrap;
+  }
+}
