@@ -9,7 +9,8 @@
   },
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "test": "node --test kit-imports.test.mjs"
+    "test": "node --test kit-imports.test.mjs",
+    "vendor": "node vendor.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.60.0",
