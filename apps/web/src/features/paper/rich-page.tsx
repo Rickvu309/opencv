@@ -138,7 +138,7 @@ export function RichPaperPage({
             {name}
           </PageHeaderTitle>
         </div>
-        <div className="ml-auto flex shrink-0 items-center gap-2">
+        <div className="ml-auto flex max-w-full min-w-0 items-center gap-2">
           <span
             role="status"
             aria-label={statusLabel}
@@ -154,6 +154,14 @@ export function RichPaperPage({
           />
         </div>
       </PageHeader>
+      {editorError || !["loading", "saving", "saved"].includes(status) ? (
+        <p
+          data-slot="paper-status-detail"
+          className="shrink-0 px-6 py-3 text-sm [overflow-wrap:anywhere] text-muted-foreground"
+        >
+          {statusLabel}
+        </p>
+      ) : null}
       <RichPhotoControls editor={editor} disabled={blocked}>
         {(photoControls) => (
           <RichPaperTextFormatting
