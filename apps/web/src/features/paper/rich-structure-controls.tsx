@@ -164,12 +164,16 @@ export function RichStructureControls({
         </SelectTrigger>
         <SelectContent>
           {state?.mixedStyle ? (
-            <SelectItem value="mixed" disabled>
+            <SelectItem value="mixed" disabled className="min-h-11 md:min-h-8">
               Mixed styles
             </SelectItem>
           ) : null}
           {editor?.paragraphStyles.map((style) => (
-            <SelectItem key={style.id} value={style.id}>
+            <SelectItem
+              key={style.id}
+              value={style.id}
+              className="min-h-11 md:min-h-8"
+            >
               {style.label}
             </SelectItem>
           ))}
