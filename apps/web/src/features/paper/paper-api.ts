@@ -64,16 +64,10 @@ export function getSharedPaper(token: string) {
   ).then(unwrapData)
 }
 
-export const qualifiedPaperListKey = (options: PaperQualification) =>
-  qualifiedPaperKey(paperListKey(), options)
 export const qualifiedPaperGetKey = (
   docId: PaperId,
   options: PaperQualification
 ) => qualifiedPaperKey(paperGetKey(docId), options)
-export const qualifiedPaperPagesKey = (
-  docId: PaperId,
-  options: PaperQualification
-) => qualifiedPaperKey(paperPagesKey(docId), options)
 export const qualifiedPaperSharedKey = (
   token: string,
   options: PaperQualification
