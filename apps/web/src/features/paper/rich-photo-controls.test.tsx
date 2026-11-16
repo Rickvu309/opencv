@@ -10,7 +10,10 @@ import {
 import { nativeProvenance, richPaperDocumentSchema } from "@workspace/domain"
 import { openRichPaperClient, seedStoredYDoc } from "@workspace/paper-crdt"
 import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
-import { layoutPhotoSchema } from "@workspace/domain/internal/paper-presentation"
+import {
+  croppedPhotoRatio,
+  layoutPhotoSchema,
+} from "@workspace/domain/internal/paper-presentation"
 import { RichPhotoControls } from "./rich-photo-controls.tsx"
 import { uploadPaperPhoto } from "./paper-api.ts"
 import { parsePhotoForm, photoFields, photoNumbers } from "./rich-photo-form.ts"
@@ -26,22 +29,30 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-function setup(square = false, mounted = false) {
+function setup(
+  square = false,
+  mounted = false,
+  wrapped = false,
+  portraitRatio = 0.75,
+  size = 1800
+) {
   const photo = layoutPhotoSchema.parse({
     id: "portrait",
     type: "photo",
     source: "file:00000000-0000-4000-8000-000000000001",
-    width: 1800,
-    height: 1800,
+    width: size,
+    height: size,
     crop: {
-      top: square ? 0 : 12500,
+      top: square ? 0 : Math.round((1 - portraitRatio) * 50000),
       right: 0,
-      bottom: square ? 0 : 12500,
+      bottom: square ? 0 : Math.round((1 - portraitRatio) * 50000),
       left: 0,
     },
     rotation: 0,
     shape: square ? "rectangle" : "circle",
-    placement: { kind: "block", alignment: "left" },
+    placement: wrapped
+      ? { kind: "wrap", side: "right" }
+      : { kind: "block", alignment: "left" },
     spacing: { top: 0, right: 0, bottom: 0, left: 0 },
     alt: "Portrait",
   })
@@ -215,13 +226,13 @@ it.each([
     fireEvent.click(screen.getByRole("button", { name: "Apply", exact: true }))
     expect(screen.getByRole("dialog")).toBeInTheDocument()
     expect(field("Bottom")).toHaveValue("50")
-    for (const edge of ["Top", "Bottom"]) {
-      expect(field(edge)).toHaveAttribute("aria-invalid", "true")
-      expect(field(edge)).toHaveAccessibleDescription(
-        /Keep some of the photo visible/
-      )
-    }
-    expect(field("Top")).toHaveFocus()
+    expect(field("Bottom")).toHaveAttribute("aria-invalid", "true")
+    expect(field("Bottom")).toHaveAccessibleDescription(/Reduce Bottom/)
+    expect(field("Top")).not.toHaveAttribute("aria-invalid", "true")
+    expect(screen.getAllByText(/Keep some of the photo visible/)).toHaveLength(
+      1
+    )
+    expect(field("Bottom")).toHaveFocus()
     expect(client!.document()).toEqual(before)
     fireEvent.change(field("Width"), { target: { value: "5" } })
     if (blur) fireEvent.blur(field("Width"))
@@ -262,6 +273,84 @@ it("validates every field together and preserves text on Enter", () => {
   expect(editor.updatePhoto).not.toHaveBeenCalled()
 })
 
+it.each([true, false])(
+  "fits the final Circle crop after Claude's refused crop sequence, blur=%s",
+  (blur) => {
+    const { field, client } = setup(false, true, false, 2687 / 3356, 2700)
+    fireEvent.change(field("Width"), { target: { value: "" } })
+    fireEvent.blur(field("Width"))
+    fireEvent.change(field("Top"), { target: { value: "30" } })
+    fireEvent.blur(field("Top"))
+    expect(field("Top")).toHaveValue("30")
+    expect(field("Width")).toHaveValue("")
+    fireEvent.change(field("Width"), { target: { value: "120" } })
+    if (blur) fireEvent.blur(field("Width"))
+    fireEvent.click(screen.getByRole("button", { name: "Apply", exact: true }))
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    const photo = client!
+      .document()!
+      .flow.children.flatMap((section) => section.children)
+      .find((node) => node.type === "photo")!
+    expect(photo).toMatchObject({ shape: "circle", width: 1800, height: 1800 })
+    if (photo.type !== "photo") throw new Error("Photo required")
+    expect(croppedPhotoRatio(2687 / 3356, photo.crop)).toBeCloseTo(1, 4)
+  }
+)
+
+it("keeps wrap placement and all untouched properties when applying", () => {
+  const { editor, field } = setup(true, false, true)
+  const original = editor.photos()[0]!
+  fireEvent.change(field("Alternative text"), {
+    target: { value: "Updated portrait" },
+  })
+  fireEvent.click(screen.getByRole("button", { name: "Apply", exact: true }))
+  expect(editor.updatePhoto).toHaveBeenCalledExactlyOnceWith({
+    ...original,
+    alt: "Updated portrait",
+  })
+  expect(parsePhotoForm(original, photoFields(original))).toMatchObject({
+    ok: true,
+    photo: original,
+  })
+  expect(
+    parsePhotoForm(original, { ...photoFields(original), alignment: "left" })
+  ).toMatchObject({
+    ok: true,
+    photo: { placement: { kind: "block", alignment: "left" } },
+  })
+})
+
+it.each([
+  ["Top", "Bottom"],
+  ["Bottom", "Top"],
+])("ties one crop error to the last edited %s/%s field", (first, second) => {
+  const { field, editor } = setup(true)
+  fireEvent.change(field(first), { target: { value: "60" } })
+  fireEvent.blur(field(first))
+  fireEvent.change(field(second), { target: { value: "50" } })
+  fireEvent.blur(field(second))
+  fireEvent.click(screen.getByRole("button", { name: "Apply", exact: true }))
+  expect(field(second)).toHaveAttribute("aria-invalid", "true")
+  expect(field(first)).toHaveAttribute("aria-invalid", "false")
+  expect(field(second)).toHaveFocus()
+  expect(screen.getAllByText(/Keep some of the photo visible/)).toHaveLength(1)
+  expect(editor.updatePhoto).not.toHaveBeenCalled()
+})
+
+it("rounds displayed sizes to two decimals without losing a twip", () => {
+  const { editor } = setup(true)
+  for (let size = 240; size <= 31680; size++) {
+    const original = { ...editor.photos()[0]!, width: size, height: size }
+    const fields = photoFields(original)
+    expect(fields.width).toMatch(/^\d+(?:\.\d{1,2})?$/)
+    expect(fields.height).toMatch(/^\d+(?:\.\d{1,2})?$/)
+    expect(parsePhotoForm(original, fields)).toMatchObject({
+      ok: true,
+      photo: original,
+    })
+  }
+})
+
 it("saves exactly the visible fields or nothing across seeded random form inputs", () => {
   let seed = 1584
   const random = () => {
@@ -288,8 +377,13 @@ it("saves exactly the visible fields or nothing across seeded random form inputs
   const { editor, field } = setup(true)
   const original = editor.photos()[0]!
   for (let round = 0; round < 2000; round++) {
-    const fields = photoFields(original)
-    fields.shape = round % 2 ? "circle" : "rectangle"
+    const sourceRatio = [0.75, 1, 2][round % 3]!
+    const sample = {
+      ...original,
+      height: Math.round(original.width / sourceRatio),
+    }
+    const fields = photoFields(sample)
+    fields.shape = (["circle", "rounded", "rectangle"] as const)[round % 3]!
     fields.alignment = round % 2 ? "right" : "center"
     fields.alt = `Portrait ${round}`
     for (const name of photoNumbers) {
@@ -308,7 +402,7 @@ it("saves exactly the visible fields or nothing across seeded random form inputs
       fields.width = fields.height = "120"
       fields.top = fields.bottom = fields.left = fields.right = "0"
     }
-    const parsed = parsePhotoForm(original, fields)
+    const parsed = parsePhotoForm(sample, fields, sourceRatio)
     const validNumbers = photoNumbers.every((name) => {
       const n = Number(fields[name])
       return (
@@ -325,18 +419,35 @@ it("saves exactly the visible fields or nothing across seeded random form inputs
         100000 &&
       Math.round(Number(fields.left) * 1000) +
         Math.round(Number(fields.right) * 1000) <
-        100000 &&
-      (fields.shape !== "circle" ||
-        Math.round(Number(fields.width) * 15) ===
-          Math.round(Number(fields.height) * 15))
+        100000
     )
-    expect(parsed.ok).toBe(valid)
+    if (!valid) expect(parsed.ok).toBe(false)
     if (parsed.ok) {
-      expect(parsed.photo.width).toBe(Math.round(Number(fields.width) * 15))
-      expect(parsed.photo.height).toBe(Math.round(Number(fields.height) * 15))
+      expect(layoutPhotoSchema.safeParse(parsed.photo).success).toBe(true)
+      expect(parsed.photo.width).toBe(
+        Math.round(Number(parsed.fields.width) * 15)
+      )
+      expect(parsed.photo.height).toBe(
+        Math.round(Number(parsed.fields.height) * 15)
+      )
+      const ratio = croppedPhotoRatio(sourceRatio, parsed.photo.crop)
+      if (parsed.photo.shape === "circle") {
+        expect(parsed.photo.width).toBe(parsed.photo.height)
+        expect(
+          Math.abs(
+            (100000 - parsed.photo.crop.left - parsed.photo.crop.right) *
+              sourceRatio -
+              (100000 - parsed.photo.crop.top - parsed.photo.crop.bottom)
+          )
+        ).toBeLessThanOrEqual(2)
+      } else {
+        expect(
+          Math.abs(parsed.photo.height - parsed.photo.width / ratio)
+        ).toBeLessThanOrEqual(0.5)
+      }
       for (const edge of ["top", "right", "bottom", "left"] as const)
         expect(parsed.photo.crop[edge]).toBe(
-          Math.round(Number(fields[edge]) * 1000)
+          Math.round(Number(parsed.fields[edge]) * 1000)
         )
       expect(parsed.photo.shape).toBe(fields.shape)
       expect(parsed.photo.alt).toBe(fields.alt)

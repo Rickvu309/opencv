@@ -7,6 +7,32 @@ export function detectPhotoPresentation(text, path, source) {
     !text.includes('error.message.trimStart().startsWith("[")')
   )
     hits.push("Photo errors must hide schema details after serialization")
+  if (path === "apps/web/src/features/paper/rich-photo-form.ts") {
+    const form = source.statements.find(
+      (node) =>
+        ts.isFunctionDeclaration(node) && node.name?.text === "parsePhotoForm"
+    )
+    const crop = form?.body?.statements.find(
+      (node) =>
+        ts.isVariableStatement(node) &&
+        node.declarationList.declarations.some(
+          (declaration) =>
+            declaration.name.getText(source) === "crop" &&
+            declaration.initializer
+              ?.getText(source)
+              .includes("fitPhotoCrop(sourceRatio, 1, photo.crop")
+        )
+    )
+    if (
+      !crop ||
+      !text.includes("original.placement") ||
+      !text.includes("Math.round((photo.width / 15) * 100)") ||
+      text.includes("errors[second] =")
+    )
+      hits.push(
+        "Photo Apply must fit Circle from the final fields, preserve untouched placement and round displayed sizes"
+      )
+  }
   if (path === "apps/web/src/features/paper/rich-photo-number.tsx") {
     if (
       /use(?:Reducer|State|Effect)\s*\(/.test(text) ||
@@ -36,7 +62,9 @@ export function detectPhotoPresentation(text, path, source) {
         const submit = node.getText(source)
         if (
           submit.includes("editor.updatePhoto(") &&
-          (!/parsePhotoForm\([^,]+,\s*fields\)/.test(submit) ||
+          (!/parsePhotoForm\([^,]+,\s*fields(?:,\s*sourceRatio(?:,[\s\S]*?)?)?\s*\)/.test(
+            submit
+          ) ||
             !submit.includes("photo.ok") ||
             !submit.includes(".focus()"))
         )

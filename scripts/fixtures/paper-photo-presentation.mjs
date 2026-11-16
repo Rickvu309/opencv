@@ -1,5 +1,9 @@
 export const clean = [
   {
+    path: "apps/web/src/features/paper/rich-photo-form.ts",
+    text: 'function parsePhotoForm() { const crop = photo.shape === "circle" ? fitPhotoCrop(sourceRatio, 1, photo.crop) : photo.crop; return { ...photo, crop, placement: original.placement, width: Math.round((photo.width / 15) * 100) } }',
+  },
+  {
     path: "apps/web/src/features/paper/rich-photo-controls.tsx",
     text: "<form onSubmit={() => { const photo = parsePhotoForm(current, fields); if (!photo.ok) { input.focus(); return }; editor.updatePhoto(photo.photo) }} />",
   },
@@ -66,6 +70,10 @@ export const clean = [
 ]
 
 export const mistakes = [
+  {
+    path: "apps/web/src/features/paper/rich-photo-form.ts",
+    text: "function parsePhotoForm() { if (commit) { const crop = fitPhotoCrop(sourceRatio, 1, photo.crop); } return layoutPhotoSchema.safeParse(photo) }",
+  },
   {
     path: "apps/web/src/features/paper/rich-photo-controls.tsx",
     text: "<form onSubmit={() => { const photo = layoutPhotoSchema.safeParse(selected); editor.updatePhoto(photo.data) }} />",

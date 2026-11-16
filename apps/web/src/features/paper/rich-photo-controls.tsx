@@ -96,10 +96,14 @@ export function RichPhotoControls({
   )
   const selected = state.photo
   const fields = state.fields
-  const parsed = selected && fields ? parsePhotoForm(selected, fields) : null
-  const setFields = (next: PhotoFields) => {
+  const sourceRatio = selected
+    ? (sourceRatios.current.get(selected.source) ?? photoSourceRatio(selected))
+    : 1
+  const parsed =
+    selected && fields ? parsePhotoForm(selected, fields, sourceRatio) : null
+  const setFields = (next: PhotoFields, field?: PhotoNumber) => {
     if (!selected) return
-    const result = parsePhotoForm(selected, next)
+    const result = parsePhotoForm(selected, next, sourceRatio, field)
     dispatch({
       type: "fields",
       fields: next,
@@ -109,16 +113,12 @@ export function RichPhotoControls({
   }
   const commitField = (field: PhotoNumber | "shape", next = fields) => {
     if (!selected || !next) return
-    const result = parsePhotoForm(selected, next, {
-      field,
-      sourceRatio:
-        sourceRatios.current.get(selected.source) ?? photoSourceRatio(selected),
-    })
+    const result = parsePhotoForm(selected, next, sourceRatio, field)
     if (!result.ok) {
       dispatch({ type: "fields", fields: next, errors: result.errors })
       return
     }
-    const validated = parsePhotoForm(selected, result.fields)
+    const validated = parsePhotoForm(selected, result.fields, sourceRatio)
     dispatch({
       type: "fields",
       fields: result.fields,
@@ -251,7 +251,12 @@ export function RichPhotoControls({
                   )
                   return
                 }
-                const photo = parsePhotoForm(current, fields)
+                const photo = parsePhotoForm(
+                  current,
+                  fields,
+                  sourceRatio,
+                  edges.find((edge) => state.errors[edge])
+                )
                 if (!photo.ok) {
                   dispatch({ type: "validate", errors: photo.errors })
                   const first = [...photoNumbers, "alt"].find(
@@ -319,7 +324,7 @@ export function RichPhotoControls({
                           value={fields[edge]}
                           error={state.errors[edge]}
                           onChange={(value) =>
-                            setFields({ ...fields, [edge]: value })
+                            setFields({ ...fields, [edge]: value }, edge)
                           }
                           onCommit={() => commitField(edge)}
                         />
@@ -397,6 +402,7 @@ export function RichPhotoControls({
                     Alternative text
                     <Input
                       name="alt"
+                      aria-label="Alternative text"
                       className="h-11 md:h-8"
                       maxLength={
                         layoutPhotoSchema.shape.alt.maxLength ?? undefined

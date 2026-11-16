@@ -1,8 +1,8 @@
 import {
   layoutPhotoSchema,
-  croppedPhotoRatio,
   fitPhotoCrop,
   resizePhoto,
+  photoSourceRatio,
 } from "@workspace/domain/internal/paper-presentation"
 
 import type { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
@@ -28,8 +28,8 @@ export type PhotoErrors = Partial<Record<keyof PhotoFields, string>>
 
 export function photoFields(photo: Photo): PhotoFields {
   return {
-    width: String(photo.width / 15),
-    height: String(photo.height / 15),
+    width: String(Math.round((photo.width / 15) * 100) / 100),
+    height: String(Math.round((photo.height / 15) * 100) / 100),
     top: String(photo.crop.top / 1000),
     right: String(photo.crop.right / 1000),
     bottom: String(photo.crop.bottom / 1000),
@@ -46,7 +46,8 @@ export function photoFields(photo: Photo): PhotoFields {
 export function parsePhotoForm(
   original: Photo,
   fields: PhotoFields,
-  commit?: { field: PhotoNumber | "shape"; sourceRatio: number }
+  sourceRatio = photoSourceRatio(original),
+  editedField?: PhotoNumber | "shape"
 ):
   | { ok: true; photo: Photo; fields: PhotoFields }
   | { ok: false; errors: PhotoErrors } {
@@ -72,19 +73,23 @@ export function parsePhotoForm(
       Math.round(values[first] * 1000) + Math.round(values[second] * 1000) >=
       100000
     ) {
-      errors[first] =
-        errors[first] ?? "Keep some of the photo visible. Reduce Top or Bottom."
-      errors[second] = errors[second] ?? errors[first]
-      if (first === "left") {
-        errors[first] = "Keep some of the photo visible. Reduce Left or Right."
-        errors[second] = errors[first]
+      if (!errors[first] && !errors[second]) {
+        const field =
+          editedField === first || editedField === second
+            ? editedField
+            : fields[second] !== photoFields(original)[second]
+              ? second
+              : first
+        errors[field] =
+          `Keep some of the photo visible. Reduce ${field[0].toUpperCase() + field.slice(1)}.`
       }
     }
   }
   if (!layoutPhotoSchema.shape.alt.safeParse(fields.alt).success)
     errors.alt = `Use at most ${layoutPhotoSchema.shape.alt.maxLength} characters.`
   if (Object.keys(errors).length) return { ok: false, errors }
-  let photo = {
+  const initial = photoFields(original)
+  let photo: Photo = {
     ...original,
     width: Math.round(values.width * 15),
     height: Math.round(values.height * 15),
@@ -95,38 +100,39 @@ export function parsePhotoForm(
       left: Math.round(values.left * 1000),
     },
     shape: fields.shape,
-    placement: {
-      kind: "block",
-      alignment: fields.alignment,
-    } satisfies Photo["placement"],
+    placement:
+      fields.alignment === initial.alignment
+        ? original.placement
+        : { kind: "block", alignment: fields.alignment },
     alt: fields.alt,
   }
-  if (commit) {
-    const { field, sourceRatio } = commit
-    if (field === "width" || field === "height") {
-      photo = resizePhoto(photo, field, photo[field], sourceRatio)
-      if (photo.shape === "circle")
-        photo = { ...photo, width: photo[field], height: photo[field] }
-    } else {
-      const crop =
-        photo.shape === "circle"
-          ? fitPhotoCrop(
-              sourceRatio,
-              1,
-              photo.crop,
-              field === "shape" ? undefined : field
-            )
-          : photo.crop
-      photo = {
-        ...photo,
-        crop,
-        height:
-          photo.shape === "circle"
-            ? photo.width
-            : Math.round(photo.width / croppedPhotoRatio(sourceRatio, crop)),
-      }
-    }
-    return { ok: true, photo, fields: photoFields(photo) }
+  const geometryChanged = [...photoNumbers, "shape" as const].some(
+    (field) => fields[field] !== initial[field]
+  )
+  const editedEdge =
+    editedField &&
+    editedField !== "width" &&
+    editedField !== "height" &&
+    editedField !== "shape"
+      ? editedField
+      : undefined
+  const crop =
+    photo.shape === "circle"
+      ? fitPhotoCrop(sourceRatio, 1, photo.crop, editedEdge)
+      : photo.crop
+  photo = { ...photo, crop }
+  if (geometryChanged) {
+    const dimension =
+      editedField === "height" ||
+      (!editedField &&
+        fields.width === initial.width &&
+        fields.height !== initial.height)
+        ? "height"
+        : "width"
+    photo =
+      photo.shape === "circle"
+        ? { ...photo, width: photo[dimension], height: photo[dimension] }
+        : resizePhoto(photo, dimension, photo[dimension], sourceRatio)
   }
   const parsed = layoutPhotoSchema.safeParse(photo)
   if (!parsed.success) {
@@ -143,5 +149,5 @@ export function parsePhotoForm(
     }
     return { ok: false, errors }
   }
-  return { ok: true, photo, fields }
+  return { ok: true, photo, fields: photoFields(photo) }
 }

@@ -116,3 +116,16 @@ test("round-four photo guards reject split text state and Apply without whole-fo
     )
   }
 })
+
+test("round-five photo Apply rejects conditional geometry, lost placement and raw display precision at the introducing head", () => {
+  const file = "apps/web/src/features/paper/rich-photo-form.ts"
+  const before = execFileSync("git", ["show", `fe40fd4f:${file}`], {
+    cwd: root,
+    encoding: "utf8",
+  })
+  assert.ok(detect(before, file).length > 0)
+  assert.deepEqual(
+    detect(readFileSync(path.join(root, file), "utf8"), file),
+    []
+  )
+})
