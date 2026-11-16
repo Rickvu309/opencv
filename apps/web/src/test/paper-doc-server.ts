@@ -1,5 +1,5 @@
 import { blankCv, blankLetter, ERROR_CODES } from "@workspace/domain"
-import { vi } from "vitest"
+import { afterEach, vi } from "vitest"
 
 const WHEN = "2026-11-13T00:00:00.000Z"
 const REVISION = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
@@ -79,6 +79,11 @@ export function fakeServer(
   let next = 100
   const pages = new Map<string, Stored>()
   const exchanges: Exchange[] = []
+  const timers = new Set<ReturnType<typeof setTimeout>>()
+  afterEach(() => {
+    for (const timer of timers) clearTimeout(timer)
+    timers.clear()
+  })
   const add = (
     format: Format,
     kind: Kind = "cv",
@@ -210,9 +215,13 @@ export function fakeServer(
       status: response.status,
       method,
     })
-    return new Promise<Response>((resolve) =>
-      setTimeout(() => resolve(response), 20)
-    )
+    return new Promise<Response>((resolve) => {
+      const timer = setTimeout(() => {
+        timers.delete(timer)
+        resolve(response)
+      }, 20)
+      timers.add(timer)
+    })
   })
   return {
     pages,
