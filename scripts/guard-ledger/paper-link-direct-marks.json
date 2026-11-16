@@ -2,8 +2,8 @@
   "id": "paper-link-direct-marks",
   "file": "scripts/paper-link-direct-marks.test.mjs",
   "detector": {
-    "module": "scripts/lib/paper-link-direct-marks.mjs",
-    "export": "detect"
+    "module": "scripts/lib/paper-link-patterns.mjs",
+    "export": "detectDirectMarks"
   },
   "historic": {
     "mode": "detect",

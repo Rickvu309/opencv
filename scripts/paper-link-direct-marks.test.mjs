@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { detect } from "./lib/paper-link-direct-marks.mjs"
+import { detectDirectMarks as detect } from "./lib/paper-link-patterns.mjs"
 
 test("Word link styling preserves direct marks instead of stripping their XML", () => {
   for (const mark of ["b", "i", "u", "strike"])
