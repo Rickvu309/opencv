@@ -1,4 +1,4 @@
-import { useReducer, useState, type ReactNode } from "react"
+import { useReducer, type ReactNode } from "react"
 import {
   createMemoryHistory,
   createRootRoute,
@@ -86,7 +86,11 @@ export function letter(name: string): PaperView {
 
 export function renderLibrary(docs: PaperView[], files: PaperFile[] = []) {
   function Harness() {
-    const [router] = useState(createLibraryRouter)
+    const [router] = useReducer(
+      (current: ReturnType<typeof createLibraryRouter>) => current,
+      undefined,
+      () => createLibraryRouter()
+    )
     const [query, setQuery] = useReducer(
       (_query: string, nextQuery: string) => nextQuery,
       ""
