@@ -26,5 +26,19 @@
     "class": "self",
     "classBecause": null,
     "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/inbox/inbox-reader.test.tsx",
+    "because": "The daily limit sentence stays, and the test now checks it on the status notice.",
+    "replacedBy": "apps/web/src/features/inbox/inbox-reader.test.tsx",
+    "proof": {
+      "fork": "7bd95e39fa2f4a9d7cc5dacafd177a171da7d963",
+      "replacedByBlob": "2d4227043f0b50a1c5d369d9dad47f1da298398f",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
