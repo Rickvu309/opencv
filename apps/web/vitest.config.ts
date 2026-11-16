@@ -14,6 +14,8 @@ const ISOLATED_FILES = [
   "src/features/app-shell/app-shell-warmup.test.ts",
   "src/router-lazy.test.tsx",
   "src/features/connections/connections.test.tsx",
+  "src/features/coach/coach-config-states.test.tsx",
+  "src/features/coach/coach-tool-presentation.test.tsx",
   "src/features/coach/coach-workspace.test.tsx",
   "src/components/ai-elements/response.test.tsx",
   "src/features/coach/coach-draft-ownership.test.tsx",

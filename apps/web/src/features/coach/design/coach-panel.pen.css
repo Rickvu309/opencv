@@ -40,7 +40,8 @@
   color: #8a8a8e;
 }
 
-[data-slot="coach-panel-body"][data-presentation="compact"]
+[data-pen-surface="coach"][data-slot="coach-panel"]
+  [data-slot="coach-panel-body"][data-presentation="compact"]
   [data-slot="message-scroller-content"] {
   padding: 8px 18px;
   gap: 14px;
