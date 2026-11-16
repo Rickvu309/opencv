@@ -184,7 +184,7 @@ export function CommandPalette({
         instant
         showCloseButton={false}
         aria-describedby={undefined}
-        className="top-0 left-0 flex h-dvh max-h-none w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-none bg-background p-0 text-foreground ring-1 ring-border sm:top-[12vh] sm:left-1/2 sm:h-[min(32rem,70vh)] sm:max-w-3xl sm:-translate-x-1/2 sm:translate-y-0 sm:rounded-xl"
+        className="top-0 left-0 flex h-dvh max-h-none w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden overscroll-contain rounded-none bg-background p-0 text-foreground ring-1 ring-border sm:top-[12vh] sm:left-1/2 sm:h-[min(32rem,70vh)] sm:max-w-3xl sm:-translate-x-1/2 sm:translate-y-0 sm:rounded-xl"
       >
         <DialogTitle className="sr-only">Search</DialogTitle>
         <div className="flex items-center gap-3 border-b border-border px-4 py-3">
@@ -205,11 +205,12 @@ export function CommandPalette({
               }
             }}
             aria-label="Search"
+            placeholder="Search jobs, Paper, and chats…"
             aria-controls="palette-results"
             aria-activedescendant={
               active ? `palette-row-${active.id}` : undefined
             }
-            className="h-auto min-w-0 flex-1 border-0 bg-transparent px-0 shadow-none focus-visible:border-0 focus-visible:ring-0"
+            className="h-auto min-w-0 flex-1 border-0 bg-transparent px-0 text-base shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-sm"
           />
           <Button
             className="h-11 md:h-7"
@@ -240,8 +241,17 @@ export function CommandPalette({
         <div
           ref={resultsRef}
           id="palette-results"
-          className="min-h-0 flex-1 overflow-auto px-2 py-2"
+          aria-busy={waiting}
+          className="min-h-0 flex-1 overflow-auto overscroll-contain px-2 py-2"
         >
+          <p
+            role="status"
+            className={
+              waiting ? "px-3 py-3 text-sm text-muted-foreground" : "sr-only"
+            }
+          >
+            {waiting ? "Searching…" : ""}
+          </p>
           {failed ? (
             <p className="px-3 py-6 text-sm text-muted-foreground">
               {copy.failed}
@@ -302,12 +312,14 @@ export function CommandPalette({
             )
           })}
         </div>
-        <p
-          data-slot="palette-properties"
-          className="border-t border-border px-4 py-3 text-sm text-muted-foreground"
-        >
-          {active ? rowProperties(active) : ""}
-        </p>
+        {active ? (
+          <p
+            data-slot="palette-properties"
+            className="border-t border-border px-4 py-3 text-sm text-muted-foreground"
+          >
+            {rowProperties(active)}
+          </p>
+        ) : null}
       </DialogContent>
     </Dialog>
   )

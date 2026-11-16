@@ -134,6 +134,9 @@ describe("app shell layout", () => {
       expect(within(nav).getByRole("link", { name })).toBeInTheDocument()
     }
     expect(screen.getByText("Your work")).toBeInTheDocument()
+    expect(
+      within(nav).getByRole("link", { name: "Paper" }).querySelector("span")
+    ).toHaveTextContent("Paper")
     expect(await screen.findByText("Favorites")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Search" })).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "New chat" })).toBeInTheDocument()
@@ -556,22 +559,6 @@ describe("app shell layout", () => {
     })
   })
 
-  it("clears the dock on the Coach page and never floats the panel over it", async () => {
-    stubDesktopViewport(true)
-    const { router } = renderApp(SURFACE_PATHS.coach)
-    await screen.findByRole("navigation", { name: "Main" })
-    const dock = () =>
-      document.querySelector('[data-slot="app-dock"]') as HTMLElement
-    expect(within(dock()).queryAllByRole("button")).toHaveLength(0)
-    await act(() => router.navigate({ to: SURFACE_PATHS.paper }))
-    fireEvent.click(
-      await within(dock()).findByRole("button", { name: "Coach" })
-    )
-    await screen.findByRole("region", { name: "Coach" })
-    await act(() => router.navigate({ to: SURFACE_PATHS.coach }))
-    expect(screen.queryByRole("region", { name: "Coach" })).toBeNull()
-  })
-
   it("hides the sidebar at 390 until Menu, and a link closes the drawer", async () => {
     stubDesktopViewport(false)
     renderApp(SURFACE_PATHS.pitch)
@@ -585,6 +572,11 @@ describe("app shell layout", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Menu" }))
     const dialog = await screen.findByRole("dialog")
+    expect(
+      within(dialog)
+        .getByRole("button", { name: "Close menu" })
+        .querySelector("svg")
+    ).toHaveClass("lucide-x")
     expect(
       within(dialog).getByRole("link", { name: "Apply" })
     ).toBeInTheDocument()

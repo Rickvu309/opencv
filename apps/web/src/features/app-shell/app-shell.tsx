@@ -16,7 +16,7 @@ import {
 import { ignoreRejection } from "@/lib/quiet-rejection.ts"
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router"
 import { useQueryClient } from "@tanstack/react-query"
-import { History, Menu, MessageCircle } from "lucide-react"
+import { History, Menu, MessageCircle, PanelLeft, X } from "lucide-react"
 
 import { FocusSafeRegion } from "@/components/focus-safe-region.tsx"
 import { AppSidebar } from "@/features/app-shell/app-sidebar.tsx"
@@ -396,7 +396,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
 
   const collapsedRail = isDesktop && layout.collapsed && !sidebar
   const sidebarExpand = {
-    collapsed: collapsedRail,
+    collapsed: false,
     expand: layout.expand,
   }
 
@@ -467,6 +467,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
         >
           <div
             ref={keepToastsBelowPageHeaderOf}
+            data-sidebar-collapsed={collapsedRail ? "" : undefined}
             className="relative flex min-h-0 min-w-0 flex-1 bg-background md:rounded-[8px] md:border-[0.5px] md:border-border"
           >
             <SidebarExpandContext value={sidebarExpand}>
@@ -481,6 +482,21 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
                   tabIndex={-1}
                   className="h-full min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto rounded-[inherit] outline-none"
                 >
+                  {collapsedRail ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      data-slot="sidebar-expand"
+                      aria-label="Expand sidebar"
+                      aria-keyshortcuts="["
+                      title="Expand sidebar ([)"
+                      className="absolute z-40 size-7 bg-background text-muted-foreground hover:text-foreground"
+                      onClick={layout.expand}
+                    >
+                      <PanelLeft aria-hidden="true" />
+                    </Button>
+                  ) : null}
                   <Outlet />
                 </main>
               </FocusSafeRegion>
@@ -527,7 +543,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
                 aria-label={shellCopy.closeMenu}
                 onClick={closeDrawer}
               >
-                <Menu />
+                <X />
               </Button>
             </div>
             {nav}
@@ -567,51 +583,47 @@ function ShellDock({
       data-coach-page={onCoachPage ? "" : undefined}
       className="flex h-12 shrink-0 items-center justify-end md:h-10"
     >
-      {onCoachPage ? null : (
-        <>
-          <div data-slot="dock-recent" className="flex min-w-0 overflow-x-auto">
-            {titles.map((chat) => (
-              <Button
-                key={chat.id}
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-11 max-w-36 min-w-11 shrink md:h-7 md:min-w-0 md:shrink-0"
-                data-chat-id={chat.id}
-                title={chat.title}
-                onClick={() =>
-                  onOpenChat({ title: chat.title, chatId: chat.id })
-                }
-              >
-                <span className="truncate">{chat.title}</span>
-              </Button>
-            ))}
-          </div>
+      <div data-slot="dock-recent" className="flex min-w-0 overflow-x-auto">
+        {titles.map((chat) => (
           <Button
+            key={chat.id}
             type="button"
             variant="ghost"
             size="sm"
-            className="h-11 aria-expanded:bg-sidebar-accent md:h-7"
-            data-dock-coach=""
-            aria-expanded={coachOpen}
-            aria-controls={COACH_PANEL_ID}
-            onClick={onCoach}
+            className="h-11 max-w-36 min-w-11 shrink md:h-7 md:min-w-0 md:shrink-0"
+            data-chat-id={chat.id}
+            title={chat.title}
+            onClick={() => onOpenChat({ title: chat.title, chatId: chat.id })}
           >
-            <MessageCircle aria-hidden="true" />
-            {shellCopy.coach}
+            <span className="truncate">{chat.title}</span>
           </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            className="size-11 md:size-7"
-            aria-label={shellCopy.history}
-            onClick={onHistory}
-          >
-            <History aria-hidden="true" />
-          </Button>
-        </>
+        ))}
+      </div>
+      {onCoachPage ? null : (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-11 aria-expanded:bg-sidebar-accent md:h-7"
+          data-dock-coach=""
+          aria-expanded={coachOpen}
+          aria-controls={COACH_PANEL_ID}
+          onClick={onCoach}
+        >
+          <MessageCircle aria-hidden="true" />
+          {shellCopy.coach}
+        </Button>
       )}
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        className="size-11 md:size-7"
+        aria-label={shellCopy.history}
+        onClick={onHistory}
+      >
+        <History aria-hidden="true" />
+      </Button>
     </div>
   )
 }

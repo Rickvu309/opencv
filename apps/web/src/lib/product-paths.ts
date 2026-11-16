@@ -62,7 +62,7 @@ export const SURFACES = [
     shown: true,
     canBeStartPage: false,
     nav: null,
-    inSearch: false,
+    inSearch: true,
   },
   {
     id: "proof",

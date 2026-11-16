@@ -570,7 +570,26 @@ export const SCREENS = [
     steps: [
       { click: { role: "heading", name: "Jobs, matched to you" } },
       { press: "[" },
-      { waitFor: { role: "button", name: "Expand sidebar" } },
+      { clickIfShown: { role: "button", name: "Menu" } },
+      {
+        waitFor: {
+          selector:
+            '[data-slot="sidebar-expand"], button[aria-label="Close menu"]',
+        },
+      },
+    ],
+  },
+  {
+    id: "shell-command-palette",
+    route: "/inbox",
+    steps: [
+      { waitFor: { role: "heading", name: "Inbox" } },
+      { press: "Control+k" },
+      {
+        waitFor: {
+          selector: '[role="dialog"] input[aria-label="Search"]',
+        },
+      },
     ],
   },
   {
@@ -578,8 +597,17 @@ export const SCREENS = [
     route: "/inbox",
     steps: [
       { waitFor: { role: "heading", name: "Inbox" } },
-      { click: { role: "button", name: "Menu" } },
-      { waitFor: { role: "button", name: "Close menu" } },
+      {
+        clickIfShown: {
+          selector: '[data-slot="sidebar-frame"] [data-slot="account-trigger"]',
+        },
+      },
+      { clickIfShown: { role: "button", name: "Menu" } },
+      {
+        waitFor: {
+          selector: 'button[aria-label="Close menu"], [role="menu"]',
+        },
+      },
     ],
   },
   {

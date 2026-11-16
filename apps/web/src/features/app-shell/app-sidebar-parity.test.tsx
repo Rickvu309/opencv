@@ -19,7 +19,7 @@ import {
   setMockJobs,
 } from "@/test/shell-api-mock.ts"
 
-import { profileInitials } from "./profile-display.ts"
+import { personInitials } from "@/features/settings/person-initials.ts"
 import layout from "./design/app-sidebar.layout.json"
 import snapshot from "./design/app-sidebar.snapshot.json"
 import styles from "./design/app-sidebar.styles.json"
@@ -153,7 +153,7 @@ describe("app sidebar pen parity (YC0lV / jsloS)", () => {
     )!.textContent!
     expect(name.length).toBeGreaterThan(0)
     expect(footer.querySelector("[data-slot='avatar']")).toHaveTextContent(
-      profileInitials(name)
+      personInitials(name, "")
     )
   })
 

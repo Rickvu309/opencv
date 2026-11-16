@@ -57,6 +57,16 @@ function openPeek() {
 }
 
 describe("peek hover intent", () => {
+  it("opens below the expand control so the mark cannot cover it", async () => {
+    await collapsedShell()
+    expect(
+      document.querySelector("#app-main [data-slot=sidebar-expand]")
+    ).toBeTruthy()
+    openPeek()
+    expect(aside().className).toContain("top-14")
+    expect(aside().className).not.toContain("inset-y-2")
+  })
+
   it("opens only after the pointer rests on the edge for 150 ms", async () => {
     await collapsedShell()
     enterEdge()

@@ -50,6 +50,35 @@ test("screens are picked in the asked order and unknown ids are named", () => {
   assert.deepEqual(missing, ["nope"])
 })
 
+test("shell recipes reach a menu at both widths and a collapsed control at both widths", () => {
+  const collapsed = SCREENS.find(
+    (screen) => screen.id === "shell-sidebar-collapsed"
+  )
+  const menu = SCREENS.find((screen) => screen.id === "shell-menu-open")
+  assert.equal(
+    collapsed.steps.some((step) => step.click?.name === "Menu"),
+    false
+  )
+  assert.equal(
+    menu.steps.some((step) => step.click?.name === "Menu"),
+    false
+  )
+  assert.equal(
+    menu.steps.some((step) => step.clickIfShown?.name === "Menu"),
+    true
+  )
+  assert.equal(
+    menu.steps.some((step) =>
+      String(step.clickIfShown?.selector ?? "").includes("account-trigger")
+    ),
+    true
+  )
+  assert.match(JSON.stringify(collapsed.steps), /sidebar-expand/)
+  assert.match(JSON.stringify(collapsed.steps), /Close menu/)
+  assert.match(JSON.stringify(menu.steps), /Close menu/)
+  assert.match(JSON.stringify(menu.steps), /role=\\"menu\\"/)
+})
+
 test("shot names and viewports are deterministic", () => {
   assert.equal(shotName("coach-home", 1440, 1), "coach-home-1440.png")
   assert.equal(shotName("coach-home", 390, 2), "coach-home-390@2x.png")

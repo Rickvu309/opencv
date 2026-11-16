@@ -29,7 +29,27 @@ const state = {
   notifies: [] as { topic: string }[],
 }
 
+let searchBlock: Promise<void> | null = null
+let releaseSearchBlock: (() => void) | null = null
+
+export function holdShellSearch() {
+  releaseSearchBlock?.()
+  let release!: () => void
+  searchBlock = new Promise((resolve) => {
+    release = () => {
+      if (releaseSearchBlock === release) {
+        releaseSearchBlock = null
+        searchBlock = null
+      }
+      resolve()
+    }
+  })
+  releaseSearchBlock = release
+  return release
+}
+
 export function resetShellApiMock() {
+  releaseSearchBlock?.()
   state.jobs = []
   state.inbox = { connected: false, threads: [] }
   state.searchHits = emptyHits()
@@ -71,6 +91,7 @@ export async function shellApiFetch(
 
   if (method === "GET" && path === "/api/search") {
     state.searchQueries.push(urlOf(input).searchParams.get("q") ?? "")
+    if (searchBlock) await searchBlock
     return jsonOk(state.searchHits)
   }
   if (method === "POST" && path === "/api/commands/notify.request") {

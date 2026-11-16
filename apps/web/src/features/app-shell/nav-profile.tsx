@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 
-import { profileInitials } from "@/features/app-shell/profile-display.ts"
+import { personInitials } from "@/features/settings/person-initials.ts"
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { useShellProfile } from "@/features/app-shell/use-shell-profile.ts"
@@ -59,7 +59,7 @@ export function NavProfile({ onNavigate, onMenuOpenChange }: Props) {
           <Avatar size="sm">
             {imageSrc ? <AvatarImage src={imageSrc} alt="" /> : null}
             <AvatarFallback className="font-semibold">
-              {profileInitials(name)}
+              {personInitials(name, email)}
             </AvatarFallback>
           </Avatar>
           <span className="flex min-w-0 flex-1 flex-col text-left">

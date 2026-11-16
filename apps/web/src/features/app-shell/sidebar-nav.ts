@@ -2,6 +2,7 @@ import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { SURFACES, SURFACE_PATHS } from "@/lib/product-paths.ts"
 
 export function currentNavPath(pathname: string, targets: readonly string[]) {
+  if (/^\/proofs?(?:\/|$)/.test(pathname)) return SURFACE_PATHS.paper
   return (
     targets
       .filter(
