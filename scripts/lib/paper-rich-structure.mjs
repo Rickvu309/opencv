@@ -15,6 +15,10 @@ export function detectLinkDecorations(text, path) {
   let imported = false
   let called = false
   const decoration = (node) => {
+    if (ts.isPropertyAccessExpression(node))
+      return /^(underline|strike|color)$/.test(node.name.text)
+    if (ts.isIdentifier(node))
+      return /^(underline|strike|color)$/.test(node.text)
     if (ts.isPropertyAssignment(node))
       return /^(underline|strike|color)$/.test(node.name.getText(source))
     if (ts.isStringLiteralLike(node))

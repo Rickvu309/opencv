@@ -41,6 +41,8 @@ test("page, toolbar and Word delegate link decorations to the domain", () => {
     for (const mistake of [
       "const decorations = isLink ? { underline: true } : marks",
       `${delegated}; const value = { ...decorations, ...(isLink ? { underline: true } : {}) }`,
+      `${delegated}; if (href) { value.underline = true }`,
+      `${delegated}; const underline = isLink || marks.underline`,
       `${delegated}; if (href) { value.color = paperLinkColor }`,
       `${delegated}; const xml = href ? '<w:u w:val="single"/>' : ''`,
       `${delegated}; const style = isLink && 'color:#1D4ED8'`,

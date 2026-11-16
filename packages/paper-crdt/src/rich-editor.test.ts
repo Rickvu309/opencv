@@ -1,12 +1,6 @@
 import type { InlinePresentation } from "@workspace/domain/internal/paper-presentation"
 import { compileFlowNativeDocx } from "../../../apps/api/src/paper/native-output/formatted.js"
-import {
-  attribute,
-  elements,
-  inspect,
-  one,
-  textOf,
-} from "../../../apps/api/src/paper/native-output/inspect.test-support.js"
+import { readPackageZip } from "../../../apps/api/src/paper/package-zip.js"
 import { afterEach, expect, it, vi } from "vitest"
 import { TextSelection } from "@tiptap/pm/state"
 import * as Y from "yjs"
@@ -415,9 +409,30 @@ it.each(["cv", "letter"] as const)(
     expect([version, schemaRevision]).toEqual([4, 2])
     const compiled = compileFlowNativeDocx({ document: flow })
     if (compiled.kind === "refused") throw new Error(compiled.reason)
-    const archive = await inspect(compiled.value)
-    const part = archive.part("word/document.xml")
-    const styles = archive.part("word/styles.xml")
+    const { files } = await readPackageZip(compiled.value)
+    const xmlPart = (name: string) => {
+      const xml = files.get(name)
+      if (!xml) throw new Error(`Missing Word part ${name}`)
+      return {
+        root: new DOMParser().parseFromString(
+          xml.toString("utf8"),
+          "application/xml"
+        ).documentElement,
+      }
+    }
+    const wordNamespace =
+      "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
+    const elements = (root: Element, name: string) =>
+      Array.from(root.getElementsByTagNameNS(wordNamespace, name))
+    const attribute = (node: Element, name: string) =>
+      node.getAttributeNS(wordNamespace, name) ?? undefined
+    const one = (root: Element, name: string) => {
+      const found = elements(root, name)
+      expect(found).toHaveLength(1)
+      return found[0]!
+    }
+    const part = xmlPart("word/document.xml")
+    const styles = xmlPart("word/styles.xml")
     const defaults = one(one(styles.root, "docDefaults"), "rPr")
     const namedStyles = new Map(
       elements(styles.root, "style").map((style) => [
@@ -426,7 +441,7 @@ it.each(["cv", "letter"] as const)(
       ])
     )
     const wordRuns = new Map(
-      elements(part.root, "r").map((run) => [textOf(part, run), run])
+      elements(part.root, "r").map((run) => [run.textContent ?? "", run])
     )
     const spans = new Map(
       [...host.querySelectorAll<HTMLElement>("[data-paper-resolved]")].map(
