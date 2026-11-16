@@ -23,6 +23,7 @@ function menu(status: SyncStatus = "saved", blocked = false) {
         session={{ downloadWord }}
         status={status}
         blocked={blocked}
+        editorAvailable
       />
       <Toaster />
     </>
