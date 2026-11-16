@@ -16,7 +16,7 @@ describe("detail recovery", () => {
 
   it.each([
     { path: "paper", message: "Document not found.", back: "Paper" },
-    { path: "apply", message: "Job not found.", back: "Back to Apply" },
+    { path: "apply", message: "Job not found.", back: "Apply" },
   ])(
     "returns from a missing $path record to its collection",
     async ({ path, message, back }) => {
@@ -30,7 +30,8 @@ describe("detail recovery", () => {
       expect(
         screen.queryByRole("button", { name: "Refresh" })
       ).not.toBeInTheDocument()
-      fireEvent.click(screen.getByRole("button", { name: back, exact: true }))
+      const label = path === "apply" ? "Back to Apply" : back
+      fireEvent.click(screen.getByRole("button", { name: label, exact: true }))
 
       await waitFor(() =>
         expect(router.state.location.pathname).toBe(`/${path}`)
