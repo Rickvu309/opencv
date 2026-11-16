@@ -4,9 +4,6 @@ import {
   layoutPhotoSchema,
   photoSourceRatio,
   photoInsertSize,
-  croppedPhotoRatio,
-  fitPhotoCrop,
-  resizePhoto,
 } from "@workspace/domain/internal/paper-presentation"
 import type { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import { Button } from "@workspace/ui/components/button"
@@ -31,6 +28,12 @@ import { RichPhotoChoice } from "./rich-photo-choice.tsx"
 import { RichPhotoNumber } from "./rich-photo-number.tsx"
 import { photoErrorMessage } from "./rich-photo-error.ts"
 import { RichPhotoPreview } from "./rich-photo-preview.tsx"
+import {
+  parsePhotoForm,
+  photoNumbers,
+  type PhotoFields,
+  type PhotoNumber,
+} from "./rich-photo-form.ts"
 import { photoDraft } from "./rich-photo-draft.ts"
 import { uploadPaperPhoto } from "./paper-api.ts"
 
@@ -71,6 +74,8 @@ export function RichPhotoControls({
 }) {
   const [state, dispatch] = useReducer(photoDraft, {
     photo: null,
+    fields: null,
+    errors: {},
     busy: false,
     error: "",
     revision: 0,
@@ -90,6 +95,36 @@ export function RichPhotoControls({
     [editor]
   )
   const selected = state.photo
+  const fields = state.fields
+  const parsed = selected && fields ? parsePhotoForm(selected, fields) : null
+  const setFields = (next: PhotoFields) => {
+    if (!selected) return
+    const result = parsePhotoForm(selected, next)
+    dispatch({
+      type: "fields",
+      fields: next,
+      errors:
+        Object.keys(state.errors).length && !result.ok ? result.errors : {},
+    })
+  }
+  const commitField = (field: PhotoNumber | "shape", next = fields) => {
+    if (!selected || !next) return
+    const result = parsePhotoForm(selected, next, {
+      field,
+      sourceRatio:
+        sourceRatios.current.get(selected.source) ?? photoSourceRatio(selected),
+    })
+    if (!result.ok) {
+      dispatch({ type: "fields", fields: next, errors: result.errors })
+      return
+    }
+    const validated = parsePhotoForm(selected, result.fields)
+    dispatch({
+      type: "fields",
+      fields: result.fields,
+      errors: validated.ok ? {} : validated.errors,
+    })
+  }
   const photos = editor?.photos() ?? []
   const history = editor?.photoHistory()
   const held = disabled || !editor || state.busy
@@ -191,8 +226,9 @@ export function RichPhotoControls({
               Size in pixels. Crop removes a percentage from each edge.
             </DialogDescription>
           </DialogHeader>
-          {selected ? (
+          {selected && fields ? (
             <form
+              noValidate
               key={selected.id + selected.source}
               className="flex min-h-0 flex-col overflow-hidden"
               onSubmit={(event) => {
@@ -215,25 +251,20 @@ export function RichPhotoControls({
                   )
                   return
                 }
-                const photo = layoutPhotoSchema.safeParse({
-                  ...current,
-                  width: selected.width,
-                  height: selected.height,
-                  shape: selected.shape,
-                  placement: selected.placement,
-                  alt: selected.alt,
-                  crop: selected.crop,
-                })
-                if (!photo.success) {
-                  fail(
-                    new Error(
-                      "Use a size of at least 16 pixels and keep some of the photo visible. Proportions stay locked."
-                    )
+                const photo = parsePhotoForm(current, fields)
+                if (!photo.ok) {
+                  dispatch({ type: "validate", errors: photo.errors })
+                  const first = [...photoNumbers, "alt"].find(
+                    (name) => name in photo.errors
                   )
+                  if (first)
+                    event.currentTarget
+                      .querySelector<HTMLInputElement>(`[name="${first}"]`)
+                      ?.focus()
                   return
                 }
                 try {
-                  editor.updatePhoto(photo.data)
+                  editor.updatePhoto(photo.photo)
                   dispatch({ type: "open", photo: null })
                 } catch (error) {
                   fail(error)
@@ -253,7 +284,7 @@ export function RichPhotoControls({
                   }
                 />
                 <RichPhotoPreview
-                  selected={selected}
+                  selected={parsed?.ok ? parsed.photo : selected}
                   onSourceRatio={(ratio) =>
                     sourceRatios.current.set(selected.source, ratio)
                   }
@@ -261,29 +292,19 @@ export function RichPhotoControls({
                 <fieldset disabled={held} className="grid min-w-0 gap-4">
                   <div className="grid grid-cols-2 gap-4">
                     {(["width", "height"] as const).map((dimension) => (
-                      <label key={dimension} className="grid gap-1 capitalize">
-                        {dimension}
+                      <label
+                        key={dimension}
+                        className="grid content-start gap-1"
+                      >
+                        {dimension === "width" ? "Width" : "Height"}
                         <RichPhotoNumber
                           name={dimension}
-                          min={16}
-                          max={2112}
-                          value={
-                            Math.round((selected[dimension] / 15) * 100) / 100
+                          value={fields[dimension]}
+                          error={state.errors[dimension]}
+                          onChange={(value) =>
+                            setFields({ ...fields, [dimension]: value })
                           }
-                          onCommit={(pixels) => {
-                            const value = Math.round(pixels * 15)
-                            if (value <= 0) return
-                            dispatch({
-                              type: "draft",
-                              photo: resizePhoto(
-                                selected,
-                                dimension,
-                                value,
-                                sourceRatios.current.get(selected.source) ??
-                                  photoSourceRatio(selected)
-                              ),
-                            })
-                          }}
+                          onCommit={() => commitField(dimension)}
                         />
                       </label>
                     ))}
@@ -291,52 +312,16 @@ export function RichPhotoControls({
                   <fieldset className="grid grid-cols-2 gap-4 sm:grid-cols-4">
                     <legend className="mb-2">Crop (%)</legend>
                     {edges.map((edge) => (
-                      <label key={edge} className="grid gap-1 capitalize">
-                        {edge}
+                      <label key={edge} className="grid content-start gap-1">
+                        {edge[0].toUpperCase() + edge.slice(1)}
                         <RichPhotoNumber
                           name={edge}
-                          min={0}
-                          max={99.9}
-                          value={selected.crop[edge] / 1000}
-                          onCommit={(percent) => {
-                            const crop = {
-                              ...selected.crop,
-                              [edge]: Math.round(percent * 1000),
-                            }
-                            if (
-                              selected.shape !== "circle" &&
-                              (crop.top + crop.bottom >= 100000 ||
-                                crop.left + crop.right >= 100000)
-                            ) {
-                              fail(
-                                new Error(
-                                  "Keep some of the photo visible. Reduce the crop on the opposite edge."
-                                )
-                              )
-                              return false
-                            }
-                            const ratio =
-                              sourceRatios.current.get(selected.source) ??
-                              photoSourceRatio(selected)
-                            const fitted =
-                              selected.shape === "circle"
-                                ? fitPhotoCrop(ratio, 1, crop, edge)
-                                : crop
-                            dispatch({
-                              type: "draft",
-                              photo: {
-                                ...selected,
-                                crop: fitted,
-                                height:
-                                  selected.shape === "circle"
-                                    ? selected.width
-                                    : Math.round(
-                                        selected.width /
-                                          croppedPhotoRatio(ratio, fitted)
-                                      ),
-                              },
-                            })
-                          }}
+                          value={fields[edge]}
+                          error={state.errors[edge]}
+                          onChange={(value) =>
+                            setFields({ ...fields, [edge]: value })
+                          }
+                          onCommit={() => commitField(edge)}
                         />
                       </label>
                     ))}
@@ -348,36 +333,14 @@ export function RichPhotoControls({
                         name="shape"
                         items={shapes}
                         disabled={held}
-                        value={selected.shape}
+                        value={fields.shape}
                         onValueChange={(value) => {
                           if (
-                            value !== "circle" &&
-                            value !== "rectangle" &&
-                            value !== "rounded"
+                            value === "circle" ||
+                            value === "rectangle" ||
+                            value === "rounded"
                           )
-                            return
-                          const ratio =
-                            sourceRatios.current.get(selected.source) ??
-                            photoSourceRatio(selected)
-                          const crop =
-                            value === "circle"
-                              ? fitPhotoCrop(ratio, 1, selected.crop)
-                              : selected.crop
-                          dispatch({
-                            type: "draft",
-                            photo: {
-                              ...selected,
-                              shape: value,
-                              crop,
-                              height:
-                                value === "circle"
-                                  ? selected.width
-                                  : Math.round(
-                                      selected.width /
-                                        croppedPhotoRatio(ratio, crop)
-                                    ),
-                            },
-                          })
+                            commitField("shape", { ...fields, shape: value })
                         }}
                       >
                         <SelectTrigger
@@ -401,24 +364,14 @@ export function RichPhotoControls({
                         name="alignment"
                         items={alignments}
                         disabled={held}
-                        value={
-                          selected.placement.kind === "block"
-                            ? selected.placement.alignment
-                            : selected.placement.side
-                        }
+                        value={fields.alignment}
                         onValueChange={(value) => {
                           if (
                             value === "left" ||
                             value === "center" ||
                             value === "right"
                           )
-                            dispatch({
-                              type: "draft",
-                              photo: {
-                                ...selected,
-                                placement: { kind: "block", alignment: value },
-                              },
-                            })
+                            setFields({ ...fields, alignment: value })
                         }}
                       >
                         <SelectTrigger
@@ -448,21 +401,27 @@ export function RichPhotoControls({
                       maxLength={
                         layoutPhotoSchema.shape.alt.maxLength ?? undefined
                       }
-                      value={selected.alt}
+                      value={fields.alt}
+                      aria-invalid={Boolean(state.errors.alt)}
+                      aria-describedby={
+                        state.errors.alt ? "photo-alt-error" : undefined
+                      }
                       onChange={(event) =>
-                        dispatch({
-                          type: "draft",
-                          photo: {
-                            ...selected,
-                            alt: event.currentTarget.value,
-                          },
-                        })
+                        setFields({ ...fields, alt: event.currentTarget.value })
                       }
                       placeholder="Describe the photo"
                     />
+                    {state.errors.alt ? (
+                      <span
+                        id="photo-alt-error"
+                        className="text-sm text-destructive"
+                      >
+                        {state.errors.alt}
+                      </span>
+                    ) : null}
                   </label>
                   <p className="text-sm text-muted-foreground">
-                    Proportions stay locked. Circle crops a centered square.
+                    Proportions stay locked. Circle keeps a square crop.
                   </p>
                   <div className="flex flex-wrap gap-3">
                     <Button

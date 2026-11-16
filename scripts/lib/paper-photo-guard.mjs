@@ -9,13 +9,13 @@ export function detectPhotoPresentation(text, path, source) {
     hits.push("Photo errors must hide schema details after serialization")
   if (path === "apps/web/src/features/paper/rich-photo-number.tsx") {
     if (
-      !/useReducer\([^,]+,\s*String\(value\)\)/.test(text) ||
+      /use(?:Reducer|State|Effect)\s*\(/.test(text) ||
       !text.includes("tabular-nums") ||
-      !text.includes("validity.valid") ||
-      /onChange=\{[\s\S]*?onCommit\(/.test(text.split("onBlur=")[0])
+      !text.includes("aria-invalid") ||
+      !text.includes("aria-describedby")
     )
       hits.push(
-        "Photo numbers must keep an empty string draft and validate only on commit with tabular figures"
+        "Photo fields must be controlled by the shared form with linked errors and tabular figures"
       )
   }
   if (path === "apps/web/src/features/paper/rich-photo-controls.tsx") {
@@ -31,6 +31,22 @@ export function detectPhotoPresentation(text, path, source) {
       ts.forEachChild(node, inspectPhotoInput)
     }
     inspectPhotoInput(source)
+    function inspectSubmit(node) {
+      if (ts.isJsxAttribute(node) && node.name.getText(source) === "onSubmit") {
+        const submit = node.getText(source)
+        if (
+          submit.includes("editor.updatePhoto(") &&
+          (!/parsePhotoForm\([^,]+,\s*fields\)/.test(submit) ||
+            !submit.includes("photo.ok") ||
+            !submit.includes(".focus()"))
+        )
+          hits.push(
+            "Photo Apply must validate all visible fields and focus the first invalid field before saving"
+          )
+      }
+      ts.forEachChild(node, inspectSubmit)
+    }
+    inspectSubmit(source)
     if (
       text.includes("<DialogContent") &&
       (!text.includes("<DialogHeader") ||
@@ -69,11 +85,6 @@ export function detectPhotoPresentation(text, path, source) {
     hits.push(
       "Photo preview must expose its image role and match physical crop edges and rounded geometry"
     )
-  if (
-    path === "apps/web/src/features/paper/rich-photo-number.tsx" &&
-    !text.includes("onCommit(Number(draft)) === false")
-  )
-    hits.push("Refused photo numbers must reset to the committed draft")
   if (
     path === "apps/web/src/features/paper/rich-photo-controls.tsx" &&
     text.includes("uploadPaperPhoto(file)") &&

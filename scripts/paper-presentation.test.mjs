@@ -98,3 +98,21 @@ test("round-three photo guards reject refused drafts, late upload checks and inv
     )
   }
 })
+
+test("round-four photo guards reject split text state and Apply without whole-form validation at the reviewed head", () => {
+  for (const file of [
+    "apps/web/src/features/paper/rich-photo-number.tsx",
+    "apps/web/src/features/paper/rich-photo-controls.tsx",
+  ]) {
+    const before = execFileSync("git", ["show", `14318911:${file}`], {
+      cwd: root,
+      encoding: "utf8",
+    })
+    assert.ok(detect(before, file).length > 0, file)
+    assert.deepEqual(
+      detect(readFileSync(path.join(root, file), "utf8"), file),
+      [],
+      file
+    )
+  }
+})
