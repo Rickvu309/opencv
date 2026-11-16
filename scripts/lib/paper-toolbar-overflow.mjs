@@ -1,5 +1,14 @@
 export function detect(layout) {
   const problems = []
+  if (layout.expected) {
+    const labels = layout.controls.map((control) => control.label)
+    if (labels.join("\n") !== layout.expected.controls.join("\n"))
+      problems.push(`Desktop controls differ from main at ${layout.viewport}px`)
+    if (layout.separators !== layout.expected.separators)
+      problems.push(
+        `Desktop separators differ from main at ${layout.viewport}px`
+      )
+  }
   for (const control of layout.controls)
     if (control.left < layout.left - 1 || control.right > layout.right + 1)
       problems.push(`${control.label} clips at ${layout.viewport}px`)
@@ -75,6 +84,7 @@ export function measureToolbar(row) {
     Math.max(0, controls.length + separators.length - 1) * gap
   return {
     viewport: innerWidth,
+    separators: separators.length,
     left,
     right,
     gap,

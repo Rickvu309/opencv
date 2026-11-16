@@ -60,7 +60,19 @@ export function RichPaperTextFormatting({
     editor?.formatParagraph(patch)
     setOpen(false)
   }
-  const controls = (style: ReactNode, structure: ReactNode) => (
+  const separator = (
+    <div
+      data-toolbar-desktop-separator
+      role="separator"
+      aria-orientation="vertical"
+      className={compact ? "hidden" : "h-6 shrink-0 border-s border-border"}
+    />
+  )
+  const controls = (
+    style: ReactNode,
+    structure: ReactNode,
+    groupSeparator: ReactNode
+  ) => (
     <>
       {style}
       <RichTextFontGroup
@@ -82,15 +94,17 @@ export function RichPaperTextFormatting({
         disabled={disabled}
         choose={inline}
       />
-      {Array.isArray(structure) ? structure.slice(0, 1) : null}
+      {groupSeparator}
       {photoControls?.(() => setOpen(false))}
+      {hasPhotoControls ? groupSeparator : null}
       <RichTextParagraphGroup
         editor={editor}
         formatting={formatting}
         disabled={disabled}
         choose={paragraph}
       />
-      {Array.isArray(structure) ? structure.slice(1) : structure}
+      {groupSeparator}
+      {structure}
     </>
   )
   return (
@@ -124,7 +138,7 @@ export function RichPaperTextFormatting({
                   focusFallback,
                 }}
               >
-                {controls(style, structure)}
+                {controls(style, structure, separator)}
               </ToolbarItemsContext>
               <Popover open={!compact ? false : open} onOpenChange={setOpen}>
                 <FocusSafeRegion
@@ -184,7 +198,7 @@ export function RichPaperTextFormatting({
                         focusFallback,
                       }}
                     >
-                      {controls(style, structure)}
+                      {controls(style, structure, null)}
                     </ToolbarItemsContext>
                   </div>
                 </PopoverContent>

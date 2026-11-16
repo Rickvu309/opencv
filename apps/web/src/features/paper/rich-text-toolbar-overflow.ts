@@ -37,14 +37,25 @@ export function useToolbarOverflow(host: RefObject<HTMLDivElement | null>) {
       if (!more || !label || width <= 0) return
       const entries = items.map((item, index) => ({
         label: item.dataset.toolbarItem ?? "",
-        width: item.getBoundingClientRect().width,
+        width: item.hasAttribute("data-toolbar-shrink")
+          ? Number.parseFloat(getComputedStyle(item).flexBasis) ||
+            item.getBoundingClientRect().width
+          : item.getBoundingClientRect().width,
+        minimum: item.hasAttribute("data-toolbar-shrink")
+          ? 0
+          : item.getBoundingClientRect().width,
         index,
       }))
       const fixed = pinned.reduce(
         (sum, item) => sum + item.getBoundingClientRect().width + gap,
         -gap
       )
-      const total = entries.reduce((sum, item) => sum + item.width + gap, fixed)
+      const separators = row.querySelectorAll(
+        "[data-toolbar-desktop-separator]"
+      ).length
+      const total =
+        entries.reduce((sum, item) => sum + item.minimum + gap, fixed) +
+        separators * (1 + gap)
       if (total <= width) {
         update({
           visible: entries.map((item) => item.label),

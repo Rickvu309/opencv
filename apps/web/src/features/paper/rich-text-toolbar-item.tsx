@@ -38,13 +38,18 @@ export function ToolbarItem({
   return (
     <FocusSafeRegion
       data-toolbar-item={label}
+      data-toolbar-shrink={label === "Font" || undefined}
       aria-hidden={!visible || undefined}
       concealed={!visible}
       focusFallback={layout.focusFallback}
       className={
         visible
-          ? "inline-flex shrink-0"
-          : "pointer-events-none invisible absolute inline-flex shrink-0"
+          ? label === "Font"
+            ? "inline-flex min-w-0 shrink basis-44 [&_button]:w-full"
+            : "inline-flex shrink-0"
+          : label === "Font"
+            ? "pointer-events-none invisible absolute inline-flex w-44 min-w-0 shrink-0 basis-44"
+            : "pointer-events-none invisible absolute inline-flex shrink-0"
       }
     >
       {children}

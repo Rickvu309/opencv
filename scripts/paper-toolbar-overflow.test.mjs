@@ -46,3 +46,25 @@ test("Paper's geometry guard refuses an empty slot that fits the next control", 
     "Underline fits but is hidden at 320px",
   ])
 })
+
+test("Paper's desktop geometry guard preserves main's controls and separators", () => {
+  const desktop = {
+    ...layout,
+    viewport: 1440,
+    overflow: false,
+    separators: 4,
+    expected: {
+      controls: layout.controls.map((control) => control.label),
+      separators: 4,
+    },
+  }
+  assert.deepEqual(detect(desktop), [])
+  assert.match(
+    detect({ ...desktop, controls: desktop.controls.slice(0, -1) }).join("\n"),
+    /Desktop controls differ/
+  )
+  assert.match(
+    detect({ ...desktop, separators: 1 }).join("\n"),
+    /Desktop separators differ/
+  )
+})

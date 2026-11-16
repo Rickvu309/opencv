@@ -1,11 +1,10 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
 import { createRequire } from "node:module"
-import { mkdtemp, rm } from "node:fs/promises"
 import { homedir } from "node:os"
-import { join } from "node:path"
 import { fileURLToPath } from "node:url"
 import test from "node:test"
+import { tempDir } from "./lib/temp-dir.mjs"
 import { detect, measureToolbar } from "./lib/paper-toolbar-overflow.mjs"
 
 const root = fileURLToPath(new URL("../", import.meta.url)).replace(/\/$/, "")
@@ -14,7 +13,11 @@ const require = createRequire(`${web}/package.json`)
 const { createServer } = await import(require.resolve("vite"))
 const { chromium } = require("playwright-core")
 const ref = process.env.PAPER_TOOLBAR_REF
-const files = ["rich-text-formatting.tsx", "rich-text-toolbar-overflow.ts"]
+const files = [
+  "rich-text-formatting.tsx",
+  "rich-text-toolbar-overflow.ts",
+  "rich-text-toolbar-item.tsx",
+]
 const historic = new Map(
   ref
     ? files.flatMap((file) => {
@@ -61,8 +64,12 @@ createRoot(globalThis.document.querySelector('#root')).render(React.createElemen
 test(
   "the rendered Paper toolbar greedily fits at phone and desktop widths",
   { timeout: 120000 },
-  async () => {
-    const cache = await mkdtemp(join(homedir(), "tmp/paper-toolbar-vite-"))
+  async (t) => {
+    const cache = tempDir(
+      t,
+      "paper-toolbar-vite-",
+      `${homedir()}/tmp/paper-council/1600`
+    )
     const server = await createServer({
       root: web,
       cacheDir: cache,
@@ -88,7 +95,7 @@ test(
                 response.end(
                   await server.transformIndexHtml(
                     "/toolbar-regression",
-                    '<html><body><div id="root"></div><div id="editor"></div><script type="module" src="/@id/__x00__paper-toolbar"></script></body></html>'
+                    '<html><body style="margin:0"><div id="root"></div><div id="editor"></div><script type="module" src="/@id/__x00__paper-toolbar"></script></body></html>'
                   )
                 )
               }
@@ -108,7 +115,10 @@ test(
       const toolbar = page.locator('[data-slot="paper-text-formatting"]')
       await toolbar.getByRole("button", { name: "More formatting" }).waitFor()
       await page.evaluate(() => document.fonts.ready)
-      for (const width of [320, 360, 390, 1440, 320]) {
+      for (const width of [320, 360, 390, 1440, 1280, 320]) {
+        await page.locator("#root").evaluate((root, width) => {
+          root.style.marginInlineStart = width >= 768 ? "254px" : "0"
+        }, width)
         await page.setViewportSize({ width, height: 900 })
         await page.evaluate(
           () =>
@@ -117,6 +127,48 @@ test(
             )
         )
         const snapshot = await toolbar.evaluate(measureToolbar)
+        if (width === 1440) {
+          snapshot.expected = {
+            controls: [
+              "Undo (Ctrl+Z)",
+              "Redo (Ctrl+Shift+Z)",
+              "Paragraph style",
+              "Font",
+              "Text size",
+              "Bold",
+              "Italic",
+              "Underline",
+              "Strikethrough",
+              "Text color",
+              "Highlight",
+              "Insert photo",
+              "Edit photo",
+              "Alignment (Ctrl+Shift+L/E/R/J)",
+              "Line spacing",
+              "Decrease indent (Ctrl+[)",
+              "Increase indent (Ctrl+])",
+              "Special indent",
+              "Link",
+              "Bulleted list",
+              "Numbered list",
+              "Remove formatting",
+            ],
+            separators: 4,
+          }
+        }
+        if (width === 1280) {
+          for (const label of [
+            "Bold",
+            "Italic",
+            "Underline",
+            "More formatting",
+          ])
+            assert.ok(
+              snapshot.controls.some((control) => control.label === label),
+              `${label} from main must remain visible with the sidebar`
+            )
+          assert.equal(snapshot.separators, 1)
+        }
         assert.deepEqual(detect(snapshot), [], JSON.stringify(snapshot))
         if (width === 320)
           for (const label of ["Bold", "Italic"])
@@ -170,7 +222,6 @@ test(
     } finally {
       await browser?.close()
       await server.close()
-      await rm(cache, { recursive: true, force: true })
     }
   }
 )
