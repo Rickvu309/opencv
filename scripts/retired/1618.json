@@ -1,19 +1,5 @@
 [
   {
-    "subject": "apps/web/src/features/inbox/inbox-page.test.tsx",
-    "because": "The empty inbox and the example banner now use the example-inbox sentence, and the empty action is View example inbox. The new test checks both.",
-    "replacedBy": "apps/web/src/features/inbox/inbox-page.test.tsx",
-    "proof": {
-      "fork": "7bd95e39fa2f4a9d7cc5dacafd177a171da7d963",
-      "replacedByBlob": "d7e1c8fc447e37373ba925fc180d886dd1e9b9a8",
-      "failedOnBase": true,
-      "passedOnHead": true
-    },
-    "class": "self",
-    "classBecause": null,
-    "items": 2
-  },
-  {
     "subject": "apps/web/src/features/inbox/inbox-reader.test.tsx",
     "because": "The daily limit sentence stays, and the test now checks it on the status notice.",
     "replacedBy": "apps/web/src/features/inbox/inbox-reader.test.tsx",
@@ -34,6 +20,20 @@
     "proof": {
       "fork": "a887677ee976df2a519b5804ad24a48ed431fc11",
       "replacedByBlob": "c0d7e0fe205904946e8b47fd2c881f14d899b660",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/inbox/inbox-page.test.tsx",
+    "because": "The example banner names the rows, the reader keeps that notice, and explore has one start and one failure. The test checks that.",
+    "replacedBy": "apps/web/src/features/inbox/inbox-page.test.tsx",
+    "proof": {
+      "fork": "a887677ee976df2a519b5804ad24a48ed431fc11",
+      "replacedByBlob": "3dd94f154dcba172fe2c24df5a6eb4f4177d287b",
       "failedOnBase": true,
       "passedOnHead": true
     },
