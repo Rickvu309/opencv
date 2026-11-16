@@ -12,7 +12,6 @@ import {
   captureEditorSelection,
   restoreEditorSelection,
 } from "./editor-selection.js"
-import { richPageCommands } from "./rich-page-commands.js"
 
 export type RichMark = "bold" | "italic" | "underline" | "strike"
 
@@ -35,7 +34,7 @@ export function mountRichPaperEditor(
     const mounted = mountPrivateFlow(lease.binding, element, options.photoUrl)
     const commands = mounted.commands
     const view = mounted.editor.prosemirrorView
-    const pages = richPageCommands(lease.binding, mounted.editor)
+    const pages = mounted.pages
     if (!view.state.selection.$from.parent.inlineContent) {
       let start: number | undefined
       view.state.doc.descendants((node, position) => {

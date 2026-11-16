@@ -13,12 +13,12 @@ export function richPageLayout(element: HTMLElement, document: FlowDocument) {
         parseFloat(parentStyle.paddingRight)
       : width
   const scale = Math.min(1, available / width)
-  element.style.setProperty("--paper-page-width", `${width}px`)
-  element.style.setProperty("--paper-page-height", `${height}px`)
-  element.style.setProperty("--paper-page-pitch", `${height + 24}px`)
-  element.style.setProperty("--paper-page-scale", String(scale))
+  element.style.setProperty("--cv-rich-page-width", `${width}px`)
+  element.style.setProperty("--cv-rich-page-height", `${height}px`)
+  element.style.setProperty("--cv-rich-page-pitch", `${height + 24}px`)
+  element.style.setProperty("--cv-rich-page-scale", String(scale))
   for (const key of ["top", "bottom", "start", "end"] as const)
-    element.style.setProperty(`--paper-page-${key}`, `${page[key] / 15}px`)
+    element.style.setProperty(`--cv-rich-page-${key}`, `${page[key] / 15}px`)
   const top = element.getBoundingClientRect().top + (page.top / 15) * scale
   const pitch = height + 24
   const breaks = new Map<string, number>()

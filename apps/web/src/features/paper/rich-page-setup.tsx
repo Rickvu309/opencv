@@ -3,6 +3,13 @@ import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@workspace/ui/components/select"
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -70,39 +77,56 @@ function PageSetupForm({
           )
         }
       }}
-      className="flex min-h-0 flex-col gap-5"
+      className="flex min-h-0 min-w-0 flex-col gap-5"
     >
       <div className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,8rem),1fr))] gap-4">
-        <div className="grid gap-2">
+        <div className="grid min-w-0 grid-cols-1 gap-2">
           <Label htmlFor={`${id}-size`}>Paper size</Label>
-          <select
-            id={`${id}-size`}
+          <Select
             value={size}
-            onChange={(event) =>
-              selectSize(event.target.value === "a4" ? "a4" : "letter")
+            items={[
+              { value: "letter", label: "Letter" },
+              { value: "a4", label: "A4" },
+            ]}
+            onValueChange={(value) =>
+              selectSize(value === "a4" ? "a4" : "letter")
             }
-            className="h-11 w-full rounded-md border border-input bg-background px-3 text-base focus-visible:outline-2 focus-visible:outline-ring"
           >
-            <option value="letter">Letter</option>
-            <option value="a4">A4</option>
-          </select>
+            <SelectTrigger
+              id={`${id}-size`}
+              className="w-full min-w-0 text-base data-[size=default]:h-11"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="letter">Letter</SelectItem>
+              <SelectItem value="a4">A4</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
-        <div className="grid gap-2">
+        <div className="grid min-w-0 grid-cols-1 gap-2">
           <Label htmlFor={`${id}-orientation`}>Orientation</Label>
-          <select
-            id={`${id}-orientation`}
+          <Select
             value={page.orientation}
-            onChange={(event) =>
-              selectSize(
-                size,
-                event.target.value === "landscape" ? "landscape" : "portrait"
-              )
+            items={[
+              { value: "portrait", label: "Portrait" },
+              { value: "landscape", label: "Landscape" },
+            ]}
+            onValueChange={(value) =>
+              selectSize(size, value === "landscape" ? "landscape" : "portrait")
             }
-            className="h-11 w-full rounded-md border border-input bg-background px-3 text-base focus-visible:outline-2 focus-visible:outline-ring"
           >
-            <option value="portrait">Portrait</option>
-            <option value="landscape">Landscape</option>
-          </select>
+            <SelectTrigger
+              id={`${id}-orientation`}
+              className="w-full min-w-0 text-base data-[size=default]:h-11"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="portrait">Portrait</SelectItem>
+              <SelectItem value="landscape">Landscape</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
       <fieldset
@@ -113,7 +137,7 @@ function PageSetupForm({
           Margins (inches)
         </legend>
         {margins.map(({ key, label }) => (
-          <div key={key} className="grid gap-2">
+          <div key={key} className="grid min-w-0 grid-cols-1 gap-2">
             <Label htmlFor={`${id}-${key}`}>{label}</Label>
             <Input
               id={`${id}-${key}`}

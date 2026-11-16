@@ -5,7 +5,6 @@ import { nativeProvenance, richPaperDocumentSchema } from "@workspace/domain"
 import { openRichPaperClient } from "./client.js"
 import { seedStoredYDoc } from "./stored-document.js"
 import { borrowFlowDocument } from "./native-layout-flow.js"
-import { richPageCommands } from "./rich-page-commands.js"
 import { richPageLayout } from "./rich-page-layout.js"
 import { mountPrivateFlow } from "./native-layout-flow-mount.js"
 import { storedFlowFixture } from "./test/flow-fixture.js"
@@ -133,7 +132,7 @@ function setup(kind: "cv" | "letter") {
   return {
     host,
     editor,
-    pages: richPageCommands(lease.binding, editor),
+    pages: mounted.pages,
     commands,
     select,
     read,
@@ -394,9 +393,9 @@ it.each([1232, 390])(
     )
     expect(richPageLayout(host, flow).get("break")).toBeCloseTo(980)
     expect(host.style.minHeight).toBe("2136px")
-    expect(Number(host.style.getPropertyValue("--paper-page-scale"))).toBe(
+    expect(Number(host.style.getPropertyValue("--cv-rich-page-scale"))).toBe(
       scale
     )
-    expect(host.style.getPropertyValue("--paper-page-start")).toBe("96px")
+    expect(host.style.getPropertyValue("--cv-rich-page-start")).toBe("96px")
   }
 )
