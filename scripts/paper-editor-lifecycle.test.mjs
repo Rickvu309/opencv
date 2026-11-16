@@ -24,13 +24,7 @@ test("a client-only mount is refused and a lifecycle mount stays quiet", () => {
 test("release, reset remount, selection and unavailable toolbar stay connected", () => {
   const clean = read(lifecycle)
   assert.deepEqual(detect(clean, lifecycle), [])
-  for (const operation of [
-    "onDocumentRelease",
-    "subscribe",
-    "captureSelection",
-    "restoreSelection",
-    "released",
-  ]) {
+  for (const operation of ["subscribe", "restoreSelection", "released"]) {
     const mistake = clean.replace(`.${operation}`, ".missing")
     assert.notEqual(mistake, clean)
     assert.ok(detect(mistake, lifecycle).length > 0)
@@ -40,10 +34,69 @@ test("release, reset remount, selection and unavailable toolbar stay connected",
   assert.ok(detect(noReset, lifecycle).length > 0)
 })
 
-test("stale formatting handlers cannot throw the closed editor error", () => {
-  const mistake =
-    'function toggleMark() { throw new Error("Paper editor is closed") }'
-  assert.equal(detect(mistake, editor).length, 1)
-  assert.deepEqual(detect("function toggleMark() { return }", editor), [])
+test("closed editor throws are detected by public method and toolbar structure", () => {
+  const method = (body) =>
+    `function mount() {
+      let alive = true
+      const destroy = () => { alive = false }
+      return { commands: { format() { ${body} } }, destroy }
+    }`
+  for (const condition of ["!alive", "alive === false", "(!alive)"])
+    assert.ok(
+      detect(
+        method(`if (${condition}) throw new Error("Unavailable")`),
+        editor
+      ).includes("Released editor handlers must be harmless")
+    )
+  const toolbar = (body) =>
+    `function Page() {
+      mountRichEditorLifecycle(client, host)
+      return <button onClick={() => { ${body} }} />
+    }`
+  assert.deepEqual(
+    detect(
+      toolbar('if (!editor) { throw new TypeError("Unavailable") }'),
+      page
+    ),
+    ["Released editor handlers must be harmless"]
+  )
+  assert.deepEqual(detect(toolbar("if (!editor) return"), page), [])
+  for (const clean of [
+    method("if (!alive) return"),
+    method('if (!alive) return; else throw new Error("Unrelated")'),
+    method('const message = "Paper editor is closed"'),
+    'function mount() { throw new Error("Document required") }',
+  ])
+    assert.ok(
+      !detect(clean, editor).includes(
+        "Released editor handlers must be harmless"
+      )
+    )
   assert.deepEqual(detect(read(editor), editor), [])
+})
+
+test("selection capture stays inside editor release before notification and unmount", () => {
+  const clean = read(editor)
+  for (const operation of [
+    "captureEditorSelection(view)",
+    "options.onRelease?.(selection)",
+  ]) {
+    const mistake = clean.replace(operation, "undefined")
+    assert.notEqual(mistake, clean)
+    assert.ok(
+      detect(mistake, editor).includes(
+        "Editor release must capture selection before unmount"
+      )
+    )
+  }
+  const mistake = clean.replace(
+    "options.onRelease?.(selection)\n      mounted.unmount()",
+    "mounted.unmount()\n      options.onRelease?.(selection)"
+  )
+  assert.notEqual(mistake, clean)
+  assert.ok(
+    detect(mistake, editor).includes(
+      "Editor release must capture selection before unmount"
+    )
+  )
 })

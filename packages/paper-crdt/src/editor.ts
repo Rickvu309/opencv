@@ -13,7 +13,12 @@ export type RichMark = "bold" | "italic" | "underline" | "strike"
 export function mountRichPaperEditor(
   client: PaperClient<RichPaperDocument>,
   element: HTMLElement,
-  options: { readonly photoUrl?: (fileId: string) => string | undefined } = {}
+  options: {
+    readonly photoUrl?: (fileId: string) => string | undefined
+    readonly onRelease?: (
+      selection: ReturnType<typeof captureEditorSelection>
+    ) => void
+  } = {}
 ) {
   const document = client.document()
   if (!document) throw new Error("Rich Paper document required")
@@ -40,8 +45,10 @@ export function mountRichPaperEditor(
     view.dom.setAttribute("aria-label", "Document content")
     const destroy = () => {
       if (!active) return
+      const selection = captureEditorSelection(view)
       active = false
       removeRelease()
+      options.onRelease?.(selection)
       mounted.unmount()
       lease.release()
     }
@@ -56,7 +63,7 @@ export function mountRichPaperEditor(
       captureSelection() {
         if (active) return captureEditorSelection(view)
       },
-      restoreSelection(selection: ReturnType<typeof captureEditorSelection>) {
+      restoreSelection(selection?: ReturnType<typeof captureEditorSelection>) {
         if (active && selection) restoreEditorSelection(view, selection)
       },
       toggleMark(mark: RichMark) {

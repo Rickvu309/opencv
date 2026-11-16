@@ -49,10 +49,12 @@ function paste(host: HTMLElement, words: string) {
 }
 
 it.each([
-  ["cv", "rebuild"],
-  ["letter", "rebuild"],
-  ["cv", "rebase"],
-  ["letter", "rebase"],
+  ["cv", "accepted epoch reset"],
+  ["letter", "accepted epoch reset"],
+  ["cv", "refused pending epoch reset"],
+  ["letter", "refused pending epoch reset"],
+  ["cv", "fresh-history epoch reset"],
+  ["letter", "fresh-history epoch reset"],
 ] as const)("keeps the %s page usable after a %s", async (kind, mode) => {
   const initial = storedFlowFixture(kind)
   const provenance = nativeProvenance(initial)
@@ -121,7 +123,7 @@ it.each([
     update: Y.encodeStateAsUpdate(remote),
     stateVector: Y.encodeStateVector(remote),
   })
-  if (mode === "rebase") {
+  if (mode === "refused pending epoch reset") {
     const rejected = client.receive(client.prepare(), reply(true))
     expect(rejected.failed).toBe(true)
     expect(client.stored().pending).toEqual(pending)
@@ -141,7 +143,22 @@ it.each([
     focusOffset: selected?.focusOffset,
   }
   act(() => {
-    expect(client.receive(client.prepare(), reply(true)).failed).toBe(false)
+    const reset = reply(true)
+    if (mode === "fresh-history epoch reset") {
+      const saved = client.document()
+      expect(saved).toBeDefined()
+      if (!saved) throw new Error("Saved document required")
+      const fresh = new Y.Doc()
+      try {
+        Y.applyUpdate(fresh, seedStoredYDoc(saved))
+        expect(Y.encodeStateVector(fresh)).not.toEqual(reset.stateVector)
+        reset.update = Y.encodeStateAsUpdate(fresh)
+        reset.stateVector = Y.encodeStateVector(fresh)
+      } finally {
+        fresh.destroy()
+      }
+    }
+    expect(client.receive(client.prepare(), reset).failed).toBe(false)
   })
   expect(client.ydoc).not.toBe(oldDocument)
   await waitFor(() => expect(host.childElementCount).toBeGreaterThan(0))

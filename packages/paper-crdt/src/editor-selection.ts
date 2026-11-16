@@ -9,8 +9,8 @@ import {
 } from "y-prosemirror"
 
 type Selection = {
-  anchor: RelativePosition
-  head: RelativePosition
+  plain: { anchor: number; head: number }
+  relative?: { anchor: RelativePosition; head: RelativePosition }
   focused: boolean
 }
 
@@ -20,51 +20,52 @@ function binding(view: EditorView) {
   return sync?.binding
 }
 
-export function captureEditorSelection(
-  view: EditorView
-): Selection | undefined {
+export function captureEditorSelection(view: EditorView): Selection {
   const current = binding(view)
-  if (!current || !(view.state.selection instanceof TextSelection)) return
+  const { anchor, head } = view.state.selection
   return {
-    anchor: absolutePositionToRelativePosition(
-      view.state.selection.anchor,
-      current.type,
-      current.mapping
-    ),
-    head: absolutePositionToRelativePosition(
-      view.state.selection.head,
-      current.type,
-      current.mapping
-    ),
+    plain: { anchor, head },
+    relative:
+      current && view.state.selection instanceof TextSelection
+        ? {
+            anchor: absolutePositionToRelativePosition(
+              anchor,
+              current.type,
+              current.mapping
+            ),
+            head: absolutePositionToRelativePosition(
+              head,
+              current.type,
+              current.mapping
+            ),
+          }
+        : undefined,
     focused: view.hasFocus(),
   }
 }
 
 export function restoreEditorSelection(view: EditorView, selection: Selection) {
   const current = binding(view)
-  if (!current) return
-  const anchor = relativePositionToAbsolutePosition(
-    current.doc,
-    current.type,
-    selection.anchor,
-    current.mapping
-  )
-  const head = relativePositionToAbsolutePosition(
-    current.doc,
-    current.type,
-    selection.head,
-    current.mapping
-  )
-  if (
-    anchor === null ||
-    head === null ||
-    !view.state.doc.resolve(anchor).parent.inlineContent ||
-    !view.state.doc.resolve(head).parent.inlineContent
-  )
-    return
+  const resolve = (relative: RelativePosition | undefined, plain: number) => {
+    const position =
+      current && relative
+        ? relativePositionToAbsolutePosition(
+            current.doc,
+            current.type,
+            relative,
+            current.mapping
+          )
+        : null
+    return view.state.doc.resolve(
+      Math.max(0, Math.min(position ?? plain, view.state.doc.content.size))
+    )
+  }
   view.dispatch(
     view.state.tr.setSelection(
-      TextSelection.create(view.state.doc, anchor, head)
+      TextSelection.between(
+        resolve(selection.relative?.anchor, selection.plain.anchor),
+        resolve(selection.relative?.head, selection.plain.head)
+      )
     )
   )
   if (selection.focused) view.focus()

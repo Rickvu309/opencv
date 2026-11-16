@@ -43,7 +43,8 @@ it.each(["cv", "letter"] as const)(
     )
     const host = window.document.createElement("div")
     window.document.body.append(host)
-    const mounted = mountRichPaperEditor(client, host)
+    const onRelease = vi.fn()
+    const mounted = mountRichPaperEditor(client, host, { onRelease })
     cleanups.add(() => {
       mounted.destroy()
       client.destroy()
@@ -88,7 +89,20 @@ it.each(["cv", "letter"] as const)(
       })
     )
     expect(client.document()).toEqual(blocked)
+    mounted.setEditable(true)
+    mounted.restoreSelection({
+      plain: { anchor: 1e6, head: 1e6 },
+      focused: true,
+    })
+    expect(window.document.activeElement).toBe(host)
+    expect(window.getSelection()?.anchorNode).not.toBeNull()
+    expect(host.contains(window.getSelection()?.anchorNode ?? null)).toBe(true)
+    const captured = mounted.captureSelection()
+    expect(captured?.focused).toBe(true)
     client.destroy()
+    expect(onRelease).toHaveBeenCalledExactlyOnceWith(captured)
+    mounted.destroy()
+    expect(onRelease).toHaveBeenCalledTimes(1)
     expect(() => mounted.toggleMark("bold")).not.toThrow()
     expect(host.childElementCount).toBe(0)
   }

@@ -14,18 +14,20 @@ export function mountRichEditorLifecycle(
 ) {
   let editor: Editor | undefined
   let selection: ReturnType<Editor["captureSelection"]>
-  let removeRelease = () => {}
   const release = () => {
-    selection = editor?.captureSelection()
-    options.released()
     editor?.destroy()
     editor = undefined
-    removeRelease()
   }
   const mount = () => {
-    removeRelease = client.onDocumentRelease(release)
     try {
-      editor = mountRichPaperEditor(client, element, options)
+      editor = mountRichPaperEditor(client, element, {
+        ...options,
+        onRelease(captured) {
+          selection = captured
+          editor = undefined
+          options.released()
+        },
+      })
       editor.restoreSelection(selection)
       options.mounted(editor)
     } catch {
