@@ -1,5 +1,4 @@
 import {
-  use,
   useCallback,
   useEffect,
   useEffectEvent,
@@ -10,6 +9,7 @@ import {
   type ReactNode,
 } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
 
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
@@ -35,8 +35,6 @@ import { keepToastsClearOf } from "@/lib/toast-clearance.ts"
 import { chatColumn } from "@/components/ai-elements/chat.tsx"
 import { PromptInputFrame } from "@/components/ai-elements/prompt-input-frame.ts"
 import { CoachDock, type DockRecentList } from "./coach-dock.tsx"
-import { CoachPresentation } from "./coach-presentation.ts"
-import "./coach-layout.css"
 import { CoachHome } from "./coach-home.tsx"
 import { CoachContextAttachments } from "./coach-context-attachments.tsx"
 import { startComposerGlide } from "./coach-composer-glide.ts"
@@ -56,10 +54,7 @@ import {
 import { linkAttachmentLabel } from "./coach-attachment-view.ts"
 import { coachResetLabel } from "./coach-mode.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
-import {
-  coachViewportIsNarrow,
-  releaseCoachComposerFocus,
-} from "./coach-composer-focus.ts"
+import { coachViewportIsNarrow } from "./coach-composer-focus.ts"
 
 export function CoachWorkspace({
   chatId = null,
@@ -72,8 +67,6 @@ export function CoachWorkspace({
   presentation?: "page" | "compact"
   headerActions?: ReactNode
 }) {
-  const panelPresentation = use(CoachPresentation)
-  const resolvedPresentation = panelPresentation ?? presentation
   const composerId = useId()
   const composerBox = useRef<HTMLDivElement | null>(null)
   const glideFromTop = useRef<number | null>(null)
@@ -132,15 +125,6 @@ export function CoachWorkspace({
     )
   )
   const active = phase !== "idle"
-
-  useLayoutEffect(() => {
-    const field = document.activeElement
-    if (!(field instanceof HTMLTextAreaElement)) return
-    if (!field.closest("[data-slot='coach-workspace-composer']")) return
-    if (awaitingApproval || coachViewportIsNarrow()) {
-      releaseCoachComposerFocus(field)
-    }
-  }, [awaitingApproval])
   const chatSynced =
     draftChatId === activeChatId &&
     draftNavigationRevision === navigationRevision
@@ -192,7 +176,7 @@ export function CoachWorkspace({
   }
 
   function send(text = draft) {
-    if (!enabled || capped || active) return
+    if (!enabled || capped || active || awaitingApproval) return
     const trimmed = text.trim()
     const sentAttachments = attachments.map(({ kind, id, label }) => ({
       kind,
@@ -276,7 +260,7 @@ export function CoachWorkspace({
     else attach({ kind: "paper", id, label: doc.name })
   }
 
-  const compact = resolvedPresentation === "compact"
+  const compact = presentation === "compact"
   const showHome = messages.length === 0 && !active && !error
   const showWelcome = showHome && !compact
 
@@ -308,8 +292,8 @@ export function CoachWorkspace({
       onSend={() => send()}
       onStop={store.stop}
       turnActive={active && !awaitingApproval}
+      holdReason={awaitingApproval ? "Approve or deny above" : undefined}
       disabled={
-        awaitingApproval ||
         capped ||
         !enabled ||
         store.configuration === "loading" ||
@@ -317,7 +301,7 @@ export function CoachWorkspace({
       }
       placeholder={
         awaitingApproval
-          ? "Approve or deny to continue"
+          ? "Approve or deny"
           : capped
             ? "Daily limit reached"
             : showHome
@@ -362,11 +346,15 @@ export function CoachWorkspace({
         onRemove={(item) => dispatch({ type: "attachment_removed", item })}
       />
       {!enabled ? (
-        <p role="status" className="text-sm">
+        <p role="status" className="text-sm text-muted-foreground">
           Coach is turned off.{" "}
-          <a href="/settings/coach" className="underline underline-offset-2">
+          <Link
+            to="/settings/{-$section}"
+            params={{ section: "coach" }}
+            className="font-medium text-foreground underline underline-offset-2"
+          >
             Open Settings
-          </a>
+          </Link>
         </p>
       ) : null}
       {usage.isError ? (
@@ -383,10 +371,12 @@ export function CoachWorkspace({
         </p>
       ) : null}
       {store.configuration === "loading" ? (
-        <p role="status">Loading Coach settings…</p>
+        <p role="status" className="text-sm text-muted-foreground">
+          Loading Coach settings…
+        </p>
       ) : null}
       {store.configuration === "error" ? (
-        <p role="alert" className="text-sm">
+        <p role="alert" className="text-sm text-destructive">
           {error}{" "}
           <Button
             variant="link"
@@ -425,7 +415,7 @@ export function CoachWorkspace({
   return (
     <div
       data-slot="coach-panel-body"
-      data-presentation={resolvedPresentation}
+      data-presentation={presentation}
       className="flex h-full min-h-0 flex-col"
     >
       {compact ? (
@@ -448,8 +438,7 @@ export function CoachWorkspace({
       <div
         className={cn(
           "min-h-0 flex-1",
-          showWelcome ? "overflow-auto" : "flex flex-col overflow-hidden",
-          compact && "px-[18px] py-2"
+          showWelcome ? "overflow-auto" : "flex flex-col overflow-hidden"
         )}
       >
         {showWelcome ? (
@@ -461,7 +450,7 @@ export function CoachWorkspace({
           </CoachHome>
         ) : (
           <ChatView
-            presentation={resolvedPresentation}
+            presentation={presentation}
             empty={
               compact && showHome ? (
                 <CoachHome

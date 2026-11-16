@@ -104,4 +104,33 @@ describe("Coach panel", () => {
     expect(screen.queryByRole("region")).not.toBeInTheDocument()
     expect(screen.queryByText("Saved conversation")).not.toBeInTheDocument()
   })
+
+  it("gives a full panel the page presentation and a side panel the compact one", () => {
+    function Probe({
+      presentation = "page",
+    }: {
+      presentation?: "page" | "compact"
+    }) {
+      return <p>{presentation}</p>
+    }
+    const props = {
+      title: "Tailor CV",
+      open: true,
+      onMinimize: vi.fn(),
+      onExpand: vi.fn(),
+      onClose: vi.fn(),
+    }
+    const { rerender } = render(
+      <CoachPanel {...props} mode="side">
+        {() => <Probe />}
+      </CoachPanel>
+    )
+    expect(screen.getByText("compact")).toBeVisible()
+    rerender(
+      <CoachPanel {...props} mode="full">
+        {() => <Probe />}
+      </CoachPanel>
+    )
+    expect(screen.getByText("page")).toBeVisible()
+  })
 })

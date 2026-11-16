@@ -21,7 +21,6 @@ const shownLabel: Record<string, string> = {
   After: "After",
   Line: "Remove",
   Where: "Where",
-  "New line": "Add",
 }
 
 export function WordBatchPreview({ batch }: { batch: WordBatchView }) {
@@ -56,26 +55,40 @@ export function WordBatchPreview({ batch }: { batch: WordBatchView }) {
                     .filter(
                       (row) => !(row.label === "Before" && change.before === "")
                     )
-                    .map((row) => (
-                      <div key={row.label} className="contents">
-                        <dt className="pt-0.5 text-xs leading-5 text-muted-foreground">
-                          {row.label === "After" && change.before === ""
-                            ? "Add"
-                            : (shownLabel[row.label] ?? row.label)}
-                        </dt>
-                        <dd className="min-w-0 whitespace-pre-wrap">
-                          {rowLook[row.label] === "insert" ? (
-                            <DiffInsert>{row.text}</DiffInsert>
-                          ) : rowLook[row.label] === "delete" ? (
-                            <DiffDelete>{row.text}</DiffDelete>
-                          ) : (
-                            <span className="text-muted-foreground">
-                              {row.text}
-                            </span>
-                          )}
-                        </dd>
-                      </div>
-                    ))}
+                    .map((row) => {
+                      const text =
+                        rowLook[row.label] === "insert" ? (
+                          <DiffInsert>{row.text}</DiffInsert>
+                        ) : rowLook[row.label] === "delete" ? (
+                          <DiffDelete>{row.text}</DiffDelete>
+                        ) : (
+                          <span className="text-muted-foreground">
+                            {row.text}
+                          </span>
+                        )
+                      if (
+                        row.label === "New line" ||
+                        (row.label === "After" && change.before === "")
+                      )
+                        return (
+                          <dd
+                            key={row.label}
+                            className="col-span-2 min-w-0 whitespace-pre-wrap"
+                          >
+                            {text}
+                          </dd>
+                        )
+                      return (
+                        <div key={row.label} className="contents">
+                          <dt className="pt-0.5 text-xs leading-5 text-muted-foreground">
+                            {shownLabel[row.label] ?? row.label}
+                          </dt>
+                          <dd className="min-w-0 whitespace-pre-wrap">
+                            {text}
+                          </dd>
+                        </div>
+                      )
+                    })}
                 </dl>
               </li>
             )

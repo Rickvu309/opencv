@@ -419,7 +419,6 @@ describe("ChatView pending message", () => {
       })
     )
     const log = screen.getByRole("log", { name: "Chat" })
-    expect(log.className).toContain("gap-3.5")
     expect(log.className).not.toContain("gap-8")
     expect(log.className).not.toContain("pt-6")
   })

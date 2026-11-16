@@ -1,12 +1,16 @@
-import type { ReactNode } from "react"
+import { cloneElement, isValidElement, type ReactNode } from "react"
 import { Maximize2, Minus, X } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 
-import { CoachPresentation } from "./coach-presentation.ts"
-
 import "./design/coach-panel.pen.css"
 import "./coach-panel-sheet.css"
+
+function withPresentation(node: ReactNode, presentation: "page" | "compact") {
+  if (!isValidElement<{ presentation?: "page" | "compact" }>(node)) return node
+  if (typeof node.type !== "function") return node
+  return cloneElement(node, { presentation })
+}
 
 export type CoachPanelMode = "dock" | "side" | "full"
 
@@ -39,8 +43,8 @@ export function CoachPanel({
       aria-label={title}
       className="flex h-full min-h-0 w-full flex-1 flex-col bg-background duration-(--duration-panel) ease-(--ease-panel)"
     >
-      <CoachPresentation value={mode === "full" ? "page" : "compact"}>
-        {children(
+      {withPresentation(
+        children(
           <>
             <Button
               type="button"
@@ -74,8 +78,9 @@ export function CoachPanel({
               <X />
             </Button>
           </>
-        )}
-      </CoachPresentation>
+        ),
+        mode === "full" ? "page" : "compact"
+      )}
     </section>
   )
 }

@@ -11,10 +11,3 @@ export function coachViewportIsNarrow() {
     return false
   }
 }
-
-export function releaseCoachComposerFocus(field: HTMLTextAreaElement) {
-  const restoreDisabled = field.disabled
-  if (restoreDisabled) field.disabled = false
-  field.blur()
-  if (restoreDisabled) field.disabled = true
-}

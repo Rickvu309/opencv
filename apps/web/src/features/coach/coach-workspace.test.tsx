@@ -19,12 +19,35 @@ import {
 import { chatApiFetch, scriptCoachStream } from "@/test/chat-api-mock.ts"
 import { profileApiFetch } from "@/test/profile-api-mock.ts"
 import { ChatStoreProvider } from "./chat-store.tsx"
-import { CoachPresentation } from "./coach-presentation.ts"
 import { CoachWorkspace } from "./coach-workspace.tsx"
 
 vi.mock("@tanstack/react-router", async (original) => ({
   ...(await original<object>()),
   useNavigate: () => vi.fn(),
+  Link: ({
+    to,
+    params,
+    className,
+    children,
+  }: {
+    to: string
+    params?: { section?: string; docId?: string }
+    className?: string
+    children?: unknown
+  }) => (
+    <a
+      href={
+        params?.section
+          ? `/settings/${params.section}`
+          : params?.docId
+            ? `/paper/${params.docId}`
+            : to
+      }
+      className={className}
+    >
+      {children as never}
+    </a>
+  ),
 }))
 afterEach(() => {
   cleanup()
@@ -531,9 +554,7 @@ describe("Coach uses one full-page presentation", () => {
     scriptCoachStream({})
     const { container, rerender } = render(
       <ChatStoreProvider>
-        <CoachPresentation value="compact">
-          <CoachWorkspace presentation="compact" />
-        </CoachPresentation>
+        <CoachWorkspace presentation="compact" />
       </ChatStoreProvider>
     )
     const composer = await screen.findByRole("textbox", {
@@ -546,9 +567,7 @@ describe("Coach uses one full-page presentation", () => {
     ).not.toBeNull()
     rerender(
       <ChatStoreProvider>
-        <CoachPresentation value="page">
-          <CoachWorkspace presentation="compact" />
-        </CoachPresentation>
+        <CoachWorkspace presentation="page" />
       </ChatStoreProvider>
     )
     expect(

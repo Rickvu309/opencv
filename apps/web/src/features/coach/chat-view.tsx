@@ -21,9 +21,7 @@ export function ChatView({
         className={cn(
           chatColumn,
           "[&_[data-slot=message-content]]:max-w-[75ch] [&_[data-slot=message-content]]:text-[15px] [&_[data-slot=message-content]]:leading-[1.5]",
-          presentation === "compact"
-            ? "gap-3.5 py-2"
-            : "gap-8 pt-6 pb-4 text-base"
+          presentation === "compact" ? undefined : "gap-8 pt-6 pb-4 text-base"
         )}
         viewportClassName="[scrollbar-gutter:auto]!"
       >

@@ -22,7 +22,7 @@ describe("Word proposal additions", () => {
       />
     )
     expect(screen.getByText("Add a line")).toBeVisible()
-    expect(screen.getByText("Add")).toBeVisible()
+    expect(screen.queryByText("Add", { exact: true })).not.toBeInTheDocument()
     expect(container.querySelector("del")).toBeNull()
     expect(screen.queryByText("Before")).not.toBeInTheDocument()
     expect(screen.queryByText("(empty line)")).not.toBeInTheDocument()

@@ -1,7 +1,7 @@
 import "./design/coach.pen.css"
 import "./design/composer-menus.pen.css"
 
-import { useReducer, type ReactNode } from "react"
+import { useId, useReducer, type ReactNode } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import {
   ArrowUp,
@@ -93,6 +93,7 @@ type Props = {
   onAddMenuOpenChange?: (open: boolean) => void
   contextFull?: boolean
   disabled?: boolean
+  holdReason?: string
   notice?: ReactNode
   primaryAction?: boolean
 }
@@ -118,14 +119,17 @@ export function CoachDock({
   onAddMenuOpenChange,
   contextFull = false,
   disabled = false,
+  holdReason,
   notice,
   primaryAction = false,
 }: Props) {
   const navigate = useNavigate()
+  const sendHoldId = useId()
   const [menuOpen, menuDispatch] = useReducer(menuReducer, false)
   const [modeMenuOpen, modeMenuDispatch] = useReducer(menuReducer, false)
   const { mode, setMode, plan } = useCoachMode()
-  const canSend = draft.trim().length > 0 && !disabled
+  const held = Boolean(holdReason)
+  const canSend = draft.trim().length > 0 && !disabled && !held
 
   function handleMenuAction(id: MenuId) {
     menuDispatch({ type: "closed" })
@@ -382,11 +386,17 @@ export function CoachDock({
           onClick={onSend}
           disabled={!canSend}
           aria-label="Send"
+          aria-describedby={held ? sendHoldId : undefined}
           className="size-11 rounded-full md:size-8"
         >
           <ArrowUp className="size-4" />
         </Button>
       )}
+      {held ? (
+        <span id={sendHoldId} className="sr-only">
+          {holdReason}
+        </span>
+      ) : null}
     </>
   )
 
@@ -402,7 +412,7 @@ export function CoachDock({
       value={draft}
       onValueChange={setDraft}
       onSubmit={onSend}
-      submitBlocked={turnActive || disabled}
+      submitBlocked={turnActive || disabled || held}
       disabled={disabled}
       placeholder={placeholder}
       label="Message Coach"
