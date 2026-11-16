@@ -1,4 +1,5 @@
 import { richEditorCommands } from "./native-formatting-commands.js"
+import { richPageCommands } from "./native-layout-page-commands.js"
 import { isSafeHref } from "@workspace/domain"
 import { BlockNoteEditor, createExtension } from "@blocknote/core"
 import { CollaborationExtension } from "@blocknote/core/yjs"
@@ -58,7 +59,8 @@ export function mountPrivateFlow(
             flowDecorations(
               state.doc,
               readPresentationMeta(binding.doc),
-              flowPaginationSupport(readFlow(binding)).supported,
+              !element.classList.contains("paper-rich-sheet") &&
+                flowPaginationSupport(readFlow(binding)).supported,
               breaks
             ),
         },
@@ -213,6 +215,7 @@ export function mountPrivateFlow(
   return {
     commands,
     editor,
+    pages: richPageCommands(binding, editor),
     photoControls: { ...flowPhotoControls(binding, editor), ...selection },
     ...flowFormatting(binding, editor.prosemirrorView),
     setInline,

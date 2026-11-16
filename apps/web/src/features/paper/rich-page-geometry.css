@@ -1,15 +1,15 @@
 .paper-rich-sheet {
   box-sizing: border-box;
-  inline-size: var(--paper-page-width, 816px);
-  min-block-size: var(--paper-page-height, 1056px);
-  padding-block: var(--paper-page-top, 96px) var(--paper-page-bottom, 96px);
-  padding-inline: var(--paper-page-start, 96px) var(--paper-page-end, 96px);
-  zoom: var(--paper-page-scale, 1);
+  inline-size: var(--cv-rich-page-width, 816px);
+  min-block-size: var(--cv-rich-page-height, 1056px);
+  padding-block: var(--cv-rich-page-top, 96px) var(--cv-rich-page-bottom, 96px);
+  padding-inline: var(--cv-rich-page-start, 96px) var(--cv-rich-page-end, 96px);
+  zoom: var(--cv-rich-page-scale, 1);
   background: repeating-linear-gradient(
     to bottom,
-    var(--card) 0 var(--paper-page-height, 1056px),
-    var(--muted) var(--paper-page-height, 1056px)
-      var(--paper-page-pitch, 1080px)
+    var(--card) 0 var(--cv-rich-page-height, 1056px),
+    var(--muted) var(--cv-rich-page-height, 1056px)
+      var(--cv-rich-page-pitch, 1080px)
   );
 }
 

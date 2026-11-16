@@ -4,11 +4,13 @@ import { detectPhotoPresentation } from "./paper-photo-guard.mjs"
 import { qualifiedNativeWord } from "./paper-native-word.mjs"
 import { detectTextFormatting } from "./paper-text-formatting.mjs"
 import { detectRichStructure } from "./paper-rich-structure.mjs"
+import { detectPageLayout } from "./paper-page-layout.mjs"
 
 export function detect(text, path) {
   const hits = [
     ...detectTextFormatting(text, path),
     ...detectDocumentHistory(text, path),
+    ...detectPageLayout(text, path),
   ]
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
   if (path === "packages/paper-crdt/src/editor.ts") {

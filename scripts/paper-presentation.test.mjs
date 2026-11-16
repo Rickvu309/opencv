@@ -512,3 +512,26 @@ test("document history guard rejects misplaced and photo-owned history at its in
     []
   )
 })
+
+test("rich sheets disable CSS column breaks before measuring page spacers", () => {
+  const file = "packages/paper-crdt/src/native-layout-flow-mount.ts"
+  const message =
+    "Rich Paper sheets must use measured page spacers without CSS column breaks"
+  const mistake = "flowDecorations(doc, presentation, supported, breaks)"
+  const clean =
+    'flowDecorations(doc, presentation, !element.classList.contains("paper-rich-sheet") && supported, breaks)'
+  assert.ok(detect(mistake, file).includes(message))
+  assert.ok(!detect(clean, file).includes(message))
+  assert.ok(
+    !detect(readFileSync(path.join(root, file), "utf8"), file).includes(message)
+  )
+  const introduced = execFileSync(
+    "git",
+    ["show", "fe6c3e9ce2b8c57179c2d72c055f7af633c3488d:" + file],
+    {
+      cwd: root,
+      encoding: "utf8",
+    }
+  )
+  assert.ok(detect(introduced, file).includes(message))
+})
