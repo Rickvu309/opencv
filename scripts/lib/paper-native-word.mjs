@@ -1,0 +1,122 @@
+import ts from "typescript"
+
+function nodes(source, predicate) {
+  const found = []
+  const visit = (node) => {
+    if (predicate(node)) found.push(node)
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  return found
+}
+
+function calls(source, name) {
+  return nodes(
+    source,
+    (node) => ts.isCallExpression(node) && node.expression.getText() === name
+  )
+}
+
+function body(source, name) {
+  return nodes(
+    source,
+    (node) => ts.isFunctionDeclaration(node) && node.name?.text === name
+  )[0]?.body
+}
+
+export function qualifiedNativeWord(text, path) {
+  if (path !== "apps/api/src/paper/native-word.ts") return false
+  const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
+  const entry = body(source, "downloadNativeWord")
+  if (!entry) return false
+  const snapshots = calls(entry, "withRichSnapshot")
+  const callback = snapshots[0]?.arguments[2]
+  const compilations = calls(source, "compileOwnedFlowNativeDocx")
+  return (
+    snapshots.length === 1 &&
+    callback &&
+    ts.isArrowFunction(callback) &&
+    snapshots[0].arguments[0]?.getText() === "userId" &&
+    snapshots[0].arguments[1]?.getText() === "input" &&
+    callback.parameters[0]?.name.getText() === "snapshot" &&
+    callback.getText().includes("snapshot.document") &&
+    compilations.length === 1 &&
+    calls(callback, "compileOwnedFlowNativeDocx")[0] === compilations[0] &&
+    source.statements.some(
+      (node) =>
+        ts.isImportDeclaration(node) &&
+        node.moduleSpecifier.text === "./content-store.js" &&
+        node.importClause?.namedBindings &&
+        ts.isNamedImports(node.importClause.namedBindings) &&
+        node.importClause.namedBindings.elements.some(
+          (item) => !item.propertyName && item.name.text === "withRichSnapshot"
+        )
+    )
+  )
+}
+
+export function detect(text, path) {
+  const hits = []
+  const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
+  if (
+    path === "packages/domain/src/paper-doc/native-layout-flow.ts" &&
+    (!text.includes("paperPhotoFileId(node.photo)") ||
+      !text.includes(".map(withoutHeaderPortrait)"))
+  )
+    hits.push(
+      "Flow validation must retain owned CV portraits while projecting older layout validation"
+    )
+  if (
+    path === "apps/api/src/paper/native-word.ts" &&
+    !qualifiedNativeWord(text, path)
+  )
+    hits.push(
+      "Rich Word compilation must remain inside the exact owned snapshot"
+    )
+  if (path === "apps/api/src/paper/content-store.ts") {
+    const snapshot = body(source, "withRichSnapshot")
+    if (
+      snapshot &&
+      (!calls(snapshot, "ownedTaskTransaction").length ||
+        !calls(snapshot, "lockedRow").length ||
+        !calls(snapshot, "qualifyRichDocument").length ||
+        !calls(snapshot, "hydrate").length ||
+        !calls(snapshot, "qualifyRichSnapshot").length ||
+        !calls(snapshot, "entry.yDoc.destroy").length)
+    )
+      hits.push(
+        "Word snapshots must own the transaction, lock, admit, hydrate, qualify and release their detached document"
+      )
+  }
+  if (path === "apps/api/src/paper/native-output/formatted-owned.ts") {
+    const compiler = body(source, "compileOwnedFlowNativeDocx")
+    if (
+      compiler &&
+      (!calls(compiler, "insideTransaction").length ||
+        !compiler.getText().includes("sources.add(node.photo)") ||
+        !compiler.getText().includes("sources.add(node.source)") ||
+        !calls(compiler, "readOwnedPhoto").every((call) =>
+          call.arguments[2]?.getText().match(/lock:\s*true/)
+        ))
+    )
+      hits.push(
+        "Flow Word output must resolve locked owned photos in both semantic headers and content"
+      )
+  }
+  if (path === "apps/api/src/paper/store.ts") {
+    const reader = body(source, "readOwnedPhoto")
+    if (
+      reader &&
+      (calls(reader, "requireAvatarFile").length ||
+        !reader.getText().includes("purpose: files.purpose") ||
+        !reader.getText().includes("bytes: files.bytes") ||
+        !calls(reader, "query.for").some(
+          (call) => call.arguments[0]?.getText() === '"share"'
+        ))
+    )
+      hits.push(
+        "Photo purpose, media type and bytes must come from the same owned read with a snapshot lock option"
+      )
+  }
+  return hits
+}

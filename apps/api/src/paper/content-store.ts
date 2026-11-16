@@ -1,15 +1,14 @@
 import {
   ERROR_CODES,
+  parsePaperId,
   canonicalPaper,
   nativeProvenance,
   sameNativeProvenance,
   type NativeWriter,
   type NativeBasis,
-  type NativeProvenance,
   nodeFingerprint,
   repairPaper,
   paperDocumentSchema,
-  type PaperDocument,
   type PaperId,
   type UserId,
 } from "@workspace/domain"
@@ -30,11 +29,15 @@ import {
   stateVectorOf,
   updateSince,
   writeDocument,
-  type PaperYDoc,
 } from "@workspace/paper-crdt"
 import { and, asc, eq, gte, gt } from "drizzle-orm"
 
-import { getDb, insideTransaction, transaction } from "../db/context.js"
+import {
+  getDb,
+  insideTransaction,
+  transaction,
+  ownedTaskTransaction,
+} from "../db/context.js"
 import { paperDocUpdates, paperDocs } from "../db/schema.js"
 import { CommandError } from "../registry/errors.js"
 import {
@@ -49,82 +52,35 @@ import {
   sameDocumentIdentity,
 } from "./content-document.js"
 import { admitBasis, admitDocument } from "./native-admission.js"
+import {
+  qualifyRichDocument,
+  qualifyRichSnapshot,
+  type RichSnapshot,
+  type RichSnapshotInput,
+} from "./rich-snapshot.js"
 
 export { seedColumns } from "./content-document.js"
 
-type PaperRow = typeof paperDocs.$inferSelect
-
-type Live = {
-  readonly yDoc: PaperYDoc
-  readonly epoch: number
-  baseSeq: number
-  base: Buffer
-  revision: number
-  tip: Buffer | null
-}
-
-export type ContentEdit = {
-  readonly origin: string
-  readonly editId?: string
-  readonly target: PaperDocument | ((current: PaperDocument) => PaperDocument)
-  readonly witness?: unknown
-}
-
-export type LogRow = {
-  readonly seq: number
-  readonly origin: string
-  readonly editId: string | null
-  readonly basedOn: number | null
-  readonly touched: string[] | null
-  readonly rebuilt: string[] | null
-  readonly update: Uint8Array
-}
-
-export type Appended = {
-  readonly origin: "coach" | "revert"
-  readonly editId: string
-  readonly basedOn?: number
-  readonly touched?: string[] | ((merged: PaperDocument) => string[])
-  readonly rebuilt?: string[] | ((merged: PaperDocument) => string[])
-  readonly protect?: readonly Uint8Array[]
-  readonly update: Uint8Array
-  readonly keepIfIneffective?: boolean
-  readonly check?: (merged: PaperDocument) => string[]
-}
-
-export type AppendResult = {
-  readonly row: PaperRow | null
-  readonly problems: string[]
-}
-
-export type LockedContent = {
-  readonly row: PaperRow
-  readonly document: PaperDocument
-  readonly baseSeq: number
-  edit(change: ContentEdit): Promise<PaperRow>
-  fork(basedOn: number): Promise<PaperYDoc>
-  history(): Promise<{ base: Uint8Array; rows: LogRow[] }>
-  append(change: Appended): Promise<AppendResult>
-}
-
-export type SyncRequest = {
-  readonly writer?: NativeWriter
-  readonly provenance?: NativeProvenance
-  readonly epoch: number
-  readonly update: Uint8Array
-  readonly stateVector: Uint8Array
-  readonly basedOn?: number | undefined
-}
-
-export type SyncReply = {
-  readonly provenance?: NativeProvenance
-  readonly epoch: number
-  readonly revision: number
-  readonly reset: boolean
-  readonly stale: boolean
-  readonly update: Uint8Array
-  readonly stateVector: Uint8Array
-}
+import type {
+  PaperRow,
+  Live,
+  ContentEdit,
+  LogRow,
+  Appended,
+  AppendResult,
+  LockedContent,
+  SyncRequest,
+  SyncReply,
+} from "./content-types.js"
+export type {
+  ContentEdit,
+  LogRow,
+  Appended,
+  AppendResult,
+  LockedContent,
+  SyncRequest,
+  SyncReply,
+} from "./content-types.js"
 
 const FIRST_EPOCH = 1
 const NO_LOCAL_COPY = 0
@@ -685,6 +641,23 @@ export async function syncContent(
     } catch (error) {
       live.delete(docId)
       throw error
+    }
+  })
+}
+
+export async function withRichSnapshot<T>(
+  userId: UserId,
+  input: RichSnapshotInput,
+  run: (snapshot: RichSnapshot) => Promise<T>
+): Promise<T> {
+  return ownedTaskTransaction(async () => {
+    const row = await lockedRow(userId, parsePaperId(input.docId))
+    const document = qualifyRichDocument(row, input)
+    const entry = await hydrate(row)
+    try {
+      return await run(qualifyRichSnapshot({ row, entry, input, document }))
+    } finally {
+      entry.yDoc.destroy()
     }
   })
 }
