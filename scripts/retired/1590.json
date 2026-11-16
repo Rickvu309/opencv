@@ -1,11 +1,11 @@
 [
   {
     "subject": "apps/web/src/lib/paper-rich-editor.test.ts",
-    "because": "Issue #1590 requires stale toolbar handlers to be harmless after document release; the old closed-error expectation encoded the bug.",
+    "because": "Released editor handlers must return harmlessly; a closed-editor throw prevents typing after an epoch reset. The replacement verifies refusal of stale calls and safe release.",
     "replacedBy": "apps/web/src/lib/paper-rich-editor.test.ts",
     "proof": {
       "fork": "0342e329d002417ffc17ee98011225ffbc1aba9b",
-      "replacedByBlob": "0f1ca463a0d8c80f00b31dad89ded82c97ac17b7",
+      "replacedByBlob": "ad511bac0ca45c9e375317dc0ab550ba6567e714",
       "failedOnBase": true,
       "passedOnHead": true
     },
