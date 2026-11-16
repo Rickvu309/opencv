@@ -1,3 +1,4 @@
+import { flowTableControls } from "./native-layout-table-controls.js"
 import { richEditorCommands } from "./native-formatting-commands.js"
 import { isSafeHref } from "@workspace/domain"
 import { BlockNoteEditor, createExtension } from "@blocknote/core"
@@ -42,7 +43,8 @@ const mounted = new WeakMap<FlowBinding, PrivateLayoutEditor>()
 export function mountPrivateFlow(
   binding: FlowBinding,
   element: HTMLElement,
-  resolvePhoto?: PhotoUrlResolver
+  resolvePhoto?: PhotoUrlResolver,
+  docsTables = false
 ) {
   readFlow(binding)
   if (mounted.has(binding)) throw new Error("Layout binding is already mounted")
@@ -120,12 +122,19 @@ export function mountPrivateFlow(
   }
   const keydown = (event: KeyboardEvent) => {
     if (
+      !editor.isEditable ||
+      (event.target instanceof Element &&
+        event.target.closest("[data-paper-table-controls]"))
+    )
+      return
+    if (
       event.key === "Tab" &&
       !event.altKey &&
       !event.ctrlKey &&
       !event.metaKey
     ) {
       if (
+        !layoutCellAt(editor.prosemirrorState.selection.$from) &&
         ["bulletListItem", "numberedListItem"].includes(
           editor.getTextCursorPosition().block.type
         )
@@ -147,6 +156,16 @@ export function mountPrivateFlow(
       const cells = table.children.flatMap((row) => row.children),
         index = cells.findIndex((cell) => cell.id === cellId)
       const next = cells[index + (event.shiftKey ? -1 : 1)]
+      if (
+        docsTables &&
+        !next &&
+        !event.shiftKey &&
+        table.children.length < 100
+      ) {
+        event.preventDefault()
+        tableControls.addTableRow(true, true)
+        return
+      }
       let target = next && editableTarget(next, false)
       if (!target) {
         const siblings = doc.flow.children
@@ -207,11 +226,13 @@ export function mountPrivateFlow(
     editor._tiptapEditor.destroy()
     throw error
   }
+  const tableControls = flowTableControls(binding, editor)
   const commands = richEditorCommands(editor, (mark) =>
     setInline({ [mark]: !activeInline()[mark] })
   )
   return {
     commands,
+    tables: tableControls,
     editor,
     photoControls: { ...flowPhotoControls(binding, editor), ...selection },
     ...flowFormatting(binding, editor.prosemirrorView),

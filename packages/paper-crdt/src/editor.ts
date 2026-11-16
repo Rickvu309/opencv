@@ -22,7 +22,12 @@ export function mountRichPaperEditor(
   let active = true
   let removeRelease = () => {}
   try {
-    const mounted = mountPrivateFlow(lease.binding, element, options.photoUrl)
+    const mounted = mountPrivateFlow(
+      lease.binding,
+      element,
+      options.photoUrl,
+      true
+    )
     const commands = mounted.commands
     const view = mounted.editor.prosemirrorView
     if (!view.state.selection.$from.parent.inlineContent) {
@@ -90,6 +95,15 @@ export function mountRichPaperEditor(
         fonts: richTextFonts,
       },
       ...commands,
+      ...mounted.tables,
+      tableElement() {
+        const selected = mounted.tables.activeTable()
+        return selected
+          ? element.querySelector<HTMLElement>(
+              `[data-paper-layout="paperTable"][data-paper-id="${CSS.escape(selected.table.id)}"]`
+            )
+          : null
+      },
       apply,
       setEditable(editable: boolean) {
         if (active) mounted.editor.isEditable = editable
