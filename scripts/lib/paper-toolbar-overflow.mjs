@@ -1,24 +1,86 @@
-const toolbar = "apps/web/src/features/paper/rich-text-formatting.tsx"
-const measurement = "apps/web/src/features/paper/rich-text-toolbar-overflow.ts"
+export function detect(layout) {
+  const problems = []
+  for (const control of layout.controls)
+    if (control.left < layout.left - 1 || control.right > layout.right + 1)
+      problems.push(`${control.label} clips at ${layout.viewport}px`)
+  for (const name of ["Undo", "Redo", ...(layout.overflow ? ["More"] : [])])
+    if (!layout.controls.some((control) => control.label.startsWith(name)))
+      problems.push(`${name} is missing at ${layout.viewport}px`)
+  const next = layout.candidates.find(
+    (item) =>
+      !item.visible && item.width + layout.gap <= layout.remaining + 0.25
+  )
+  if (next)
+    problems.push(`${next.label} fits but is hidden at ${layout.viewport}px`)
+  return problems
+}
 
-export function detect(text, path) {
-  if (
-    path === toolbar &&
-    text.includes("<RichDocumentHistory") &&
-    (!text.includes("useToolbarEmphasisOverflow(host, compact)") ||
-      !text.includes("{!emphasisOverflow ? (") ||
-      !text.includes("{emphasisOverflow ? ("))
+export function measureToolbar(row) {
+  const rect = row.getBoundingClientRect()
+  const style = getComputedStyle(row)
+  const gap = Number.parseFloat(style.columnGap) || 0
+  const left = rect.left + (Number.parseFloat(style.paddingLeft) || 0)
+  const right = rect.right - (Number.parseFloat(style.paddingRight) || 0)
+  const controls = [...row.querySelectorAll("button")]
+    .filter((button) => button.checkVisibility({ visibilityProperty: true }))
+    .map((button) => ({
+      label: button.getAttribute("aria-label") ?? button.textContent,
+      left: button.getBoundingClientRect().left,
+      right: button.getBoundingClientRect().right,
+      width: button.getBoundingClientRect().width,
+    }))
+  const candidates = [...row.querySelectorAll("[data-toolbar-item]")].map(
+    (item, index) => ({
+      label: item.dataset.toolbarItem,
+      width: item.getBoundingClientRect().width,
+      visible: item.checkVisibility({ visibilityProperty: true }),
+      index,
+    })
   )
-    return ["Paper history and More need measured emphasis overflow"]
-  if (
-    path === measurement &&
-    (!text.includes("entry.contentRect.width") ||
-      !text.includes("child.getBoundingClientRect().width") ||
-      !text.includes("getComputedStyle(row).columnGap") ||
-      !text.includes("required > width"))
+  const emphasis = ["Bold", "Italic", "Underline"]
+  const structure = [
+    "Paragraph style",
+    "Link",
+    "Bulleted list",
+    "Numbered list",
+    "Remove formatting",
+  ]
+  const rank = (item) => {
+    const index = emphasis.indexOf(item.label)
+    return index >= 0
+      ? index
+      : emphasis.length +
+          item.index +
+          (structure.includes(item.label) ? candidates.length : 0)
+  }
+  candidates.sort((a, b) => rank(a) - rank(b))
+  if (!candidates.length)
+    for (const label of emphasis) {
+      const control = controls.find((item) => item.label === label)
+      candidates.push({
+        label,
+        width: control?.width ?? (innerWidth < 768 ? 44 : 32),
+        visible: !!control,
+      })
+    }
+  const separators = [...row.querySelectorAll('[role="separator"]')].filter(
+    (item) => item.checkVisibility({ visibilityProperty: true })
   )
-    return [
-      "Paper overflow must compare measured controls and gaps to available width",
-    ]
-  return []
+  const used =
+    controls.reduce((sum, item) => sum + item.width, 0) +
+    separators.reduce(
+      (sum, item) => sum + item.getBoundingClientRect().width,
+      0
+    ) +
+    Math.max(0, controls.length + separators.length - 1) * gap
+  return {
+    viewport: innerWidth,
+    left,
+    right,
+    gap,
+    controls,
+    candidates,
+    overflow: candidates.some((item) => !item.visible),
+    remaining: right - left - used,
+  }
 }

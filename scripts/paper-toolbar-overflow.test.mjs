@@ -1,44 +1,48 @@
 import assert from "node:assert/strict"
-import { execFileSync } from "node:child_process"
-import { readFileSync } from "node:fs"
 import test from "node:test"
 import { detect } from "./lib/paper-toolbar-overflow.mjs"
 
-const toolbar = "apps/web/src/features/paper/rich-text-formatting.tsx"
-const measurement = "apps/web/src/features/paper/rich-text-toolbar-overflow.ts"
-const read = (path) =>
-  readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+const layout = {
+  viewport: 320,
+  left: 12,
+  right: 308,
+  gap: 4,
+  remaining: 20,
+  overflow: true,
+  controls: [
+    { label: "Undo document edit", left: 12, right: 56 },
+    { label: "Redo document edit", left: 60, right: 104 },
+    { label: "Bold", left: 113, right: 157 },
+    { label: "Italic", left: 161, right: 205 },
+    { label: "More formatting", left: 209, right: 253 },
+  ],
+  candidates: [
+    { label: "Bold", width: 44, visible: true },
+    { label: "Italic", width: 44, visible: true },
+    { label: "Underline", width: 44, visible: false },
+  ],
+}
 
-test("Paper keeps history and More visible by moving emphasis with measured width", () => {
-  const clean = read(toolbar)
-  assert.deepEqual(detect(clean, toolbar), [])
-  for (const token of [
-    "useToolbarEmphasisOverflow(host, compact)",
-    "{!emphasisOverflow ? (",
-    "{emphasisOverflow ? (",
-  ]) {
-    const mistake = clean.replace(token, "missing")
-    assert.notEqual(mistake, clean)
-    assert.equal(detect(mistake, toolbar).length, 1)
-  }
-  const before = execFileSync("git", ["show", `31528653:${toolbar}`], {
-    encoding: "utf8",
-  })
-  assert.equal(detect(before, toolbar).length, 1)
+test("Paper's geometry guard accepts fitting controls and refuses clipping", () => {
+  assert.deepEqual(detect(layout), [])
+  assert.match(
+    detect({ ...layout, right: 240 }).join("\n"),
+    /More formatting clips/
+  )
+  for (const name of ["Undo", "Redo", "More"])
+    assert.match(
+      detect({
+        ...layout,
+        controls: layout.controls.filter(
+          (item) => !item.label.startsWith(name)
+        ),
+      }).join("\n"),
+      new RegExp(`${name} is missing`)
+    )
 })
 
-test("Paper overflow counts actual child widths and CSS gaps without a phone breakpoint", () => {
-  const clean = read(measurement)
-  assert.deepEqual(detect(clean, measurement), [])
-  for (const token of [
-    "entry.contentRect.width",
-    "child.getBoundingClientRect().width",
-    "getComputedStyle(row).columnGap",
-    "required > width",
-  ]) {
-    const mistake = clean.replace(token, "320")
-    assert.notEqual(mistake, clean)
-    assert.equal(detect(mistake, measurement).length, 1)
-  }
-  assert.deepEqual(detect("unrelated", "unrelated.ts"), [])
+test("Paper's geometry guard refuses an empty slot that fits the next control", () => {
+  assert.deepEqual(detect({ ...layout, remaining: 48 }), [
+    "Underline fits but is hidden at 320px",
+  ])
 })

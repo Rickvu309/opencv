@@ -3,6 +3,7 @@ import ts from "typescript"
 import { detectPhotoPresentation } from "./paper-photo-guard.mjs"
 import { qualifiedNativeWord } from "./paper-native-word.mjs"
 import { detectTextFormatting } from "./paper-text-formatting.mjs"
+import { detectRichStructure } from "./paper-rich-structure.mjs"
 
 export function detect(text, path) {
   const hits = [
@@ -58,6 +59,8 @@ export function detect(text, path) {
     hits.push(
       "Rich Paper headers must wrap their title and actions at enlarged text sizes"
     )
+  hits.push(...detectRichStructure(text, path))
+
   const test = /\.test\.[cm]?[jt]sx?$/.test(path)
   const storage = path === "packages/paper-crdt/src/stored-document.ts"
   const editorEntry = path === "packages/paper-crdt/src/editor.ts"

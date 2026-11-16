@@ -14,6 +14,8 @@ import {
 } from "@workspace/ui/components/select"
 import type { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 
+import { ToolbarItem } from "./rich-text-toolbar-item.tsx"
+
 export type TextEditor = ReturnType<typeof mountRichPaperEditor>
 export type TextFormatting = NonNullable<
   ReturnType<TextEditor["activeFormatting"]>
@@ -53,19 +55,21 @@ export function ToolbarButton({
   children: ReactNode
 }) {
   return (
-    <ToolbarHint label={label}>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-11 shrink-0 md:size-8"
-        aria-label={label}
-        disabled={disabled}
-        onMouseDown={(event) => event.preventDefault()}
-        onClick={onClick}
-      >
-        {children}
-      </Button>
-    </ToolbarHint>
+    <ToolbarItem label={label}>
+      <ToolbarHint label={label}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-[44px] shrink-0 md:size-8"
+          aria-label={label}
+          disabled={disabled}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={onClick}
+        >
+          {children}
+        </Button>
+      </ToolbarHint>
+    </ToolbarItem>
   )
 }
 
@@ -101,44 +105,51 @@ export function ToolbarChoice({
       : choices
   const selected = options.find((choice) => choice.value === value)
   return (
-    <Select
-      open={open}
-      onOpenChange={setOpen}
-      onOpenChangeComplete={(isOpen) => {
-        if (!isOpen) editor?.focus()
-      }}
-      value={disabled ? null : value}
-      items={options}
-      disabled={disabled}
-      onValueChange={(next) => {
-        if (next !== null) {
-          onChange(next)
-          setOpen(false)
-        }
-      }}
-    >
-      <ToolbarHint label={selected ? `${label}: ${selected.label}` : label}>
-        <SelectTrigger
-          aria-label={label}
-          className={`min-h-11 shrink-0 border-transparent px-2 md:min-h-8 ${className}`}
+    <ToolbarItem label={label}>
+      <Select
+        open={open}
+        onOpenChange={setOpen}
+        onOpenChangeComplete={(isOpen) => {
+          if (!isOpen) editor?.focus()
+        }}
+        value={disabled ? null : value}
+        items={options}
+        disabled={disabled}
+        onValueChange={(next) => {
+          if (next !== null) {
+            onChange(next)
+            setOpen(false)
+          }
+        }}
+      >
+        <ToolbarHint label={selected ? `${label}: ${selected.label}` : label}>
+          <SelectTrigger
+            aria-label={label}
+            className={`min-h-11 shrink-0 border-transparent px-2 md:min-h-8 ${className}`}
+          >
+            {icon}
+            <SelectValue
+              placeholder={disabled ? "—" : "Mixed"}
+              className={icon ? "sr-only" : ""}
+              style={selected?.face ? { fontFamily: selected.face } : undefined}
+            />
+          </SelectTrigger>
+        </ToolbarHint>
+        <SelectContent
+          align="start"
+          finalFocus={() => editor?.focus() ?? false}
         >
-          {icon}
-          <SelectValue
-            placeholder={disabled ? "—" : "Mixed"}
-            className={icon ? "sr-only" : ""}
-            style={selected?.face ? { fontFamily: selected.face } : undefined}
-          />
-        </SelectTrigger>
-      </ToolbarHint>
-      <SelectContent align="start" finalFocus={() => editor?.focus() ?? false}>
-        {options.map((choice) => (
-          <SelectItem key={choice.value} value={choice.value}>
-            <span style={choice.face ? { fontFamily: choice.face } : undefined}>
-              {choice.label}
-            </span>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+          {options.map((choice) => (
+            <SelectItem key={choice.value} value={choice.value}>
+              <span
+                style={choice.face ? { fontFamily: choice.face } : undefined}
+              >
+                {choice.label}
+              </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </ToolbarItem>
   )
 }

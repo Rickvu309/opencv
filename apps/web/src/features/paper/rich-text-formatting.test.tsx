@@ -21,6 +21,67 @@ const disposals: (() => void)[] = []
 let width = 1200
 beforeEach(() => {
   width = 1200
+  const computedStyle = window.getComputedStyle.bind(window)
+  vi.spyOn(window, "getComputedStyle").mockImplementation((element) => {
+    const style = computedStyle(element)
+    if (
+      element.getAttribute("role") === "toolbar" ||
+      element.hasAttribute("data-toolbar-more")
+    )
+      return new Proxy(style, {
+        get(target, property) {
+          if (property === "columnGap") return "4px"
+          if (
+            property === "paddingInlineStart" ||
+            property === "paddingInlineEnd"
+          )
+            return "12px"
+          return Reflect.get(target, property)
+        },
+      })
+    return style
+  })
+  vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(
+    function () {
+      const label = this.getAttribute("data-toolbar-item")
+      const phone = width < 768
+      if (this.tagName.toLowerCase() === "svg") return new DOMRect(0, 0, 16, 16)
+      if (label)
+        return new DOMRect(
+          0,
+          0,
+          label === "Font"
+            ? 176
+            : label === "Text size"
+              ? 80
+              : label === "Line spacing" ||
+                  label === "Special indent" ||
+                  label.startsWith("Alignment")
+                ? 56
+                : label === "Paragraph style"
+                  ? 144
+                  : phone
+                    ? 44
+                    : 32,
+          phone ? 44 : 32
+        )
+      if (this.hasAttribute("data-toolbar-more-label"))
+        return new DOMRect(0, 0, 32, 20)
+      if (this.hasAttribute("data-toolbar-more"))
+        return new DOMRect(0, 0, 76, phone ? 44 : 32)
+      if (this.hasAttribute("data-toolbar-pinned"))
+        return new DOMRect(
+          0,
+          0,
+          this.getAttribute("role") === "separator" ? 1 : phone ? 92 : 68,
+          44
+        )
+      if (this.getAttribute("role") === "toolbar")
+        return new DOMRect(0, 0, width, 60)
+      return new DOMRect()
+    }
+  )
+  disposals.push(() => vi.restoreAllMocks())
   const observer = globalThis.ResizeObserver
   globalThis.ResizeObserver = class implements ResizeObserver {
     constructor(private callback: ResizeObserverCallback) {}
@@ -335,52 +396,67 @@ it("disables empty phone overflow while preserving document history", () => {
   expect(screen.getByRole("button", { name: /^Undo / })).toBeEnabled()
 })
 
-it("moves emphasis into More when the measured 320 pixel toolbar cannot fit it", async () => {
-  width = 296
-  const rect = vi
-    .spyOn(HTMLElement.prototype, "getBoundingClientRect")
-    .mockImplementation(function (this: HTMLElement) {
-      const label = this.getAttribute("aria-label")
-      const measured =
-        label === "Document history"
-          ? 92
-          : label === "Text emphasis"
-            ? 140
-            : label === "More formatting"
-              ? 80
-              : this.getAttribute("role") === "separator"
-                ? 1
-                : 0
-      return new DOMRect(0, 0, measured, 44)
-    })
-  try {
+it.each([390, 768, 820, 859])(
+  "puts structure controls in More at %s pixels",
+  async (viewport) => {
+    width = viewport
     const user = userEvent.setup()
     setup()
-    const toolbar = screen.getByRole("toolbar", { name: "Text formatting" })
-    expect(within(toolbar).getByRole("button", { name: /Undo/ })).toBeVisible()
-    expect(within(toolbar).getByRole("button", { name: /Redo/ })).toBeVisible()
     expect(
-      within(toolbar).queryByRole("button", { name: "Bold", exact: true })
-    ).not.toBeInTheDocument()
-    await user.click(
-      within(toolbar).getByRole("button", { name: "More formatting" })
-    )
+      screen.queryByRole("combobox", { name: "Paragraph style" })
+    ).toBeNull()
     expect(
-      screen.getByRole("button", { name: "Bold", exact: true })
+      screen.queryByRole("button", { name: "Link", exact: true })
+    ).toBeNull()
+    expect(
+      screen.queryByRole("button", { name: "Undo", exact: true })
+    ).toBeNull()
+    expect(
+      screen.queryByRole("button", { name: "Redo", exact: true })
+    ).toBeNull()
+    await user.click(screen.getByRole("button", { name: "More formatting" }))
+    expect(
+      screen.getByRole("combobox", { name: "Paragraph style" })
     ).toBeVisible()
+    for (const name of [
+      "Link",
+      "Bulleted list",
+      "Numbered list",
+      "Remove formatting",
+    ])
+      expect(screen.getByRole("button", { name, exact: true })).toBeVisible()
     expect(
-      screen.getByRole("button", { name: "Italic", exact: true })
-    ).toBeVisible()
+      screen.getAllByRole("button", { name: /Increase indent/ })
+    ).toHaveLength(1)
     expect(
-      screen.getByRole("button", { name: "Underline", exact: true })
+      screen.getAllByRole("button", { name: /Decrease indent/ })
+    ).toHaveLength(1)
+    await user.click(screen.getByRole("button", { name: "Link", exact: true }))
+    expect(
+      await screen.findByRole("dialog", { name: "Add link" })
     ).toBeVisible()
-    await user.click(screen.getByRole("button", { name: "Bold", exact: true }))
+    await user.keyboard("{Escape}")
     await waitFor(() =>
-      expect(
-        screen.getByRole("textbox", { name: "Document content" })
-      ).toHaveFocus()
+      expect(screen.queryByRole("dialog", { name: "Add link" })).toBeNull()
     )
-  } finally {
-    rect.mockRestore()
   }
+)
+
+it("uses one indent pair for list levels and paragraph indentation", async () => {
+  const user = userEvent.setup()
+  const { editor, client } = setup()
+  act(() => editor.focus())
+  await user.click(screen.getByRole("button", { name: /Increase indent/ }))
+  expect(editor.activeFormatting()?.start).toBe("0.25")
+  act(() => editor.toggleList("bulletListItem"))
+  const before = client.document()
+  await user.click(screen.getByRole("button", { name: /Increase indent/ }))
+  expect(editor.activeFormatting()?.start).toBe("0.25")
+  expect(
+    screen.getAllByRole("button", { name: /Increase indent/ })
+  ).toHaveLength(1)
+  expect(
+    screen.getAllByRole("button", { name: /Decrease indent/ })
+  ).toHaveLength(1)
+  expect(client.document()).toEqual(before)
 })

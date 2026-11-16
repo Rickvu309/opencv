@@ -5,9 +5,6 @@
     "module": "scripts/lib/paper-toolbar-overflow.mjs",
     "export": "detect"
   },
-  "historic": {
-    "mode": "detect",
-    "sha": "31528653",
-    "path": "apps/web/src/features/paper/rich-text-formatting.tsx"
-  }
+  "historic": null,
+  "reason": "Runtime geometry needs a browser unavailable to the guards job. Run scripts/paper-toolbar-overflow.browser.mjs locally with PAPER_TOOLBAR_REF=641e3ef5 for greedy fill and PAPER_TOOLBAR_REF=3eeadf98 for 320px clipping; both must fail, while the working tree passes. CI runs the pure geometry detector fixtures."
 }

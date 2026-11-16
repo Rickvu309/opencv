@@ -1,5 +1,8 @@
 import { createRequire } from "node:module"
 
+import { effectiveRunDecorations } from "@workspace/domain/internal/paper-presentation"
+import { inlineProperties } from "./formatted-properties.js"
+
 import { z } from "zod"
 
 import { xml, type ExternalLink } from "./rich-text.js"
@@ -36,6 +39,7 @@ export function wordPackage(input: {
   numbering: string
   links: readonly ExternalLink[]
   identity: readonly (readonly [string, string])[]
+  richLinks?: boolean
   media?: readonly WordMedia[]
 }): Uint8Array {
   const overrides = [
@@ -70,6 +74,10 @@ export function wordPackage(input: {
         `<property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="${index + 2}" name="${xml(name)}"><vt:lpwstr>${xml(value)}</vt:lpwstr></property>`
     )
     .join("")
+  const linkProperties = inlineProperties({
+    ...effectiveRunDecorations({}, true),
+    strike: undefined,
+  })
   return writeZip([
     [
       "[Content_Types].xml",
@@ -87,7 +95,16 @@ export function wordPackage(input: {
       "word/_rels/document.xml.rels",
       `${XML_START}<Relationships xmlns="${PKG_NS}">${relationships}</Relationships>`,
     ],
-    ["word/styles.xml", wordPart("styles", input.styles)],
+    [
+      "word/styles.xml",
+      wordPart(
+        "styles",
+        input.styles +
+          (input.richLinks && input.links.length
+            ? `<w:style w:type="character" w:styleId="Hyperlink"><w:name w:val="Hyperlink"/><w:rPr>${linkProperties}</w:rPr></w:style>`
+            : "")
+      ),
+    ],
     ["word/numbering.xml", wordPart("numbering", input.numbering)],
     ...(input.media ?? []).map(({ name, bytes }): [string, Uint8Array] => [
       `word/media/${name}`,

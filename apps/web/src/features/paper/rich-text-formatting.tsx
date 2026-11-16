@@ -13,27 +13,13 @@ import { RichTextEmphasisGroup } from "./rich-text-emphasis-group.tsx"
 import { RichTextFontGroup } from "./rich-text-font-group.tsx"
 import { RichTextColorGroup } from "./rich-text-color-group.tsx"
 import { RichTextParagraphGroup } from "./rich-text-paragraph-group.tsx"
-import { useToolbarEmphasisOverflow } from "./rich-text-toolbar-overflow.ts"
+import { useToolbarOverflow } from "./rich-text-toolbar-overflow.ts"
+import { ToolbarItemsContext } from "./rich-text-toolbar-item.tsx"
 import {
   type TextEditor,
   type TextFormatting,
 } from "./rich-text-toolbar-control.tsx"
-
-type ToolbarState = { compact: boolean; open: boolean }
-type ToolbarAction =
-  { type: "resize"; compact: boolean } | { type: "open"; open: boolean }
-
-function toolbarState(
-  state: ToolbarState,
-  action: ToolbarAction
-): ToolbarState {
-  switch (action.type) {
-    case "resize":
-      return { ...state, compact: action.compact }
-    case "open":
-      return { ...state, open: action.open }
-  }
-}
+import { RichStructureControls } from "./rich-structure-controls.tsx"
 
 export function RichPaperTextFormatting({
   editor,
@@ -48,31 +34,13 @@ export function RichPaperTextFormatting({
     (_: TextFormatting | null, next: TextFormatting | null) => next,
     null
   )
+  const [open, setOpen] = useReducer((_: boolean, next: boolean) => next, false)
   const host = useRef<HTMLDivElement>(null)
-  const [{ compact, open }, dispatch] = useReducer(toolbarState, {
-    compact: true,
-    open: false,
-  })
-  const setOpen = (open: boolean) => dispatch({ type: "open", open })
-  const emphasisOverflow = useToolbarEmphasisOverflow(host, compact)
+  const layout = useToolbarOverflow(host)
   useEffect(() => {
     update(editor?.activeFormatting() ?? null)
     return editor?.subscribe(() => update(editor.activeFormatting()))
   }, [editor])
-  const hasPhotoControls = Boolean(photoControls)
-  useEffect(() => {
-    if (!host.current) return
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0]
-      if (entry)
-        dispatch({
-          type: "resize",
-          compact: entry.contentRect.width < (hasPhotoControls ? 1040 : 860),
-        })
-    })
-    observer.observe(host.current)
-    return () => observer.disconnect()
-  }, [hasPhotoControls])
   const disabled = !editor || blocked || !formatting?.hasText
   const inline = (patch: Parameters<TextEditor["formatInline"]>[0]) => {
     editor?.formatInline(patch)
@@ -82,13 +50,21 @@ export function RichPaperTextFormatting({
     editor?.formatParagraph(patch)
     setOpen(false)
   }
-  const controls = (
+  const controls = (style: ReactNode, structure: ReactNode) => (
     <>
+      {style}
+      <RichTextFontGroup
+        editor={editor}
+        formatting={formatting}
+        disabled={disabled}
+        choose={inline}
+      />
       <RichTextEmphasisGroup
         editor={editor}
         formatting={formatting}
         disabled={disabled}
-        overflow
+        all
+        onAction={() => setOpen(false)}
       />
       <RichTextColorGroup
         editor={editor}
@@ -96,27 +72,15 @@ export function RichPaperTextFormatting({
         disabled={disabled}
         choose={inline}
       />
-      {!compact ? (
-        <div
-          role="separator"
-          aria-orientation="vertical"
-          className="h-6 border-s border-border"
-        />
-      ) : null}
+      {Array.isArray(structure) ? structure.slice(0, 1) : null}
       {photoControls?.(() => setOpen(false))}
-      {!compact && hasPhotoControls ? (
-        <div
-          role="separator"
-          aria-orientation="vertical"
-          className="h-6 border-s border-border"
-        />
-      ) : null}
       <RichTextParagraphGroup
         editor={editor}
         formatting={formatting}
         disabled={disabled}
         choose={paragraph}
       />
+      {Array.isArray(structure) ? structure.slice(1) : structure}
     </>
   )
   return (
@@ -126,76 +90,86 @@ export function RichPaperTextFormatting({
         role="toolbar"
         aria-label="Text formatting"
         data-slot="paper-text-formatting"
-        className="flex min-w-0 shrink-0 items-center gap-1 border-b px-[12px] py-2"
+        className="relative flex min-w-0 shrink-0 items-center gap-1 border-b px-[12px] py-2 [&_[data-toolbar-group]]:contents"
       >
-        <RichDocumentHistory editor={editor} blocked={blocked} />
+        <div data-toolbar-pinned className="shrink-0">
+          <RichDocumentHistory editor={editor} blocked={blocked} />
+        </div>
         <div
+          data-toolbar-pinned
           role="separator"
           aria-orientation="vertical"
           className="h-6 shrink-0 border-s border-border"
         />
-        {!compact ? (
-          <RichTextFontGroup
-            editor={editor}
-            formatting={formatting}
-            disabled={disabled}
-            choose={inline}
-          />
-        ) : null}
-        {!emphasisOverflow ? (
-          <RichTextEmphasisGroup
-            editor={editor}
-            formatting={formatting}
-            disabled={disabled}
-          />
-        ) : null}
-        {compact ? (
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  aria-label="More formatting"
-                  className="min-h-11 shrink-0 gap-1"
-                  disabled={
-                    !editor ||
-                    blocked ||
-                    (!formatting?.hasText && !hasPhotoControls)
+        <RichStructureControls editor={editor} blocked={blocked}>
+          {({ style, controls: structure }) => (
+            <>
+              <ToolbarItemsContext
+                value={{ surface: "bar", visible: layout.visible }}
+              >
+                {controls(style, structure)}
+              </ToolbarItemsContext>
+              <Popover open={open && layout.more} onOpenChange={setOpen}>
+                <span
+                  className={
+                    layout.more
+                      ? "inline-flex shrink-0"
+                      : "pointer-events-none invisible absolute inline-flex"
                   }
-                />
-              }
-            >
-              <Ellipsis />
-              More
-            </PopoverTrigger>
-            <PopoverContent
-              align="end"
-              aria-label="More formatting"
-              className="w-[min(22rem,calc(100vw-2rem))]"
-              finalFocus={() => editor?.focus() ?? false}
-            >
-              <PopoverTitle>More formatting</PopoverTitle>
-              <div className="flex flex-wrap items-center gap-2">
-                {emphasisOverflow ? (
-                  <RichTextEmphasisGroup
-                    editor={editor}
-                    formatting={formatting}
-                    disabled={disabled}
-                  />
-                ) : null}
-                <RichTextFontGroup
-                  editor={editor}
-                  formatting={formatting}
-                  disabled={disabled}
-                  choose={inline}
-                />
-                {controls}
-              </div>
-            </PopoverContent>
-          </Popover>
-        ) : (
-          controls
-        )}
+                  aria-hidden={!layout.more || undefined}
+                  inert={!layout.more || undefined}
+                >
+                  <PopoverTrigger
+                    render={
+                      <Button
+                        data-toolbar-more
+                        variant="ghost"
+                        aria-label="More formatting"
+                        className={
+                          layout.iconOnly
+                            ? "size-[44px] shrink-0 md:size-8"
+                            : "min-h-11 shrink-0 gap-1 md:min-h-8"
+                        }
+                        disabled={
+                          !editor ||
+                          blocked ||
+                          (!formatting?.hasText && !photoControls)
+                        }
+                      />
+                    }
+                  >
+                    <Ellipsis />
+                    <span
+                      data-toolbar-more-label
+                      className={
+                        layout.iconOnly
+                          ? "invisible absolute whitespace-nowrap"
+                          : undefined
+                      }
+                    >
+                      More
+                    </span>
+                  </PopoverTrigger>
+                </span>
+                <PopoverContent
+                  align="end"
+                  aria-label="More formatting"
+                  className="max-h-[calc(100dvh-8rem)] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain"
+                  finalFocus={() => editor?.focus() ?? false}
+                >
+                  <PopoverTitle>More formatting</PopoverTitle>
+                  <div className="flex flex-wrap items-center gap-2 [&_[data-toolbar-group]]:contents">
+                    <ToolbarItemsContext
+                      value={{ surface: "menu", visible: layout.visible }}
+                    >
+                      {controls(style, structure)}
+                    </ToolbarItemsContext>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </>
+          )}
+        </RichStructureControls>
       </div>
     </TooltipProvider>
   )

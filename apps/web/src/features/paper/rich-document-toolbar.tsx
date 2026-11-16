@@ -5,6 +5,8 @@ import {
   type TextEditor,
 } from "./rich-text-toolbar-control.tsx"
 
+import { useToolbarGroup } from "./rich-text-toolbar-item.tsx"
+
 export function RichDocumentHistory({
   editor,
   blocked,
@@ -54,8 +56,10 @@ export function RichPhotoToolbar({
   onInsert: () => void
   onEdit: () => void
 }) {
+  const group = useToolbarGroup(["Insert photo", "Edit photo"])
   return (
     <fieldset
+      {...group}
       disabled={held}
       aria-label="Photos"
       className="flex shrink-0 items-center gap-1"
