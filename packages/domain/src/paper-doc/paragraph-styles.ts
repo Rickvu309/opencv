@@ -1,4 +1,5 @@
 import {
+  type InlinePresentation,
   inlineSchema,
   paragraphSchema,
   styleIdSchema,
@@ -85,4 +86,22 @@ export function effectiveParagraphStyle(
     if (heading) return styleIdSchema.parse(heading.id)
   }
   return style == null ? undefined : styleIdSchema.parse(style)
+}
+
+export type EffectiveRunDecorations = {
+  underline: boolean
+  strike: boolean
+  color: InlinePresentation["color"]
+}
+
+export function effectiveRunDecorations(
+  marks: InlinePresentation,
+  isLink: boolean,
+  inherited: InlinePresentation = {}
+): EffectiveRunDecorations {
+  return {
+    underline: marks.underline ?? (isLink || (inherited.underline ?? false)),
+    strike: marks.strike ?? inherited.strike ?? false,
+    color: isLink ? paperLinkColor : (marks.color ?? inherited.color),
+  }
 }

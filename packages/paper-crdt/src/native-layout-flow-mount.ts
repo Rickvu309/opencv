@@ -5,6 +5,7 @@ import { CollaborationExtension } from "@blocknote/core/yjs"
 import { Plugin } from "@tiptap/pm/state"
 import {
   inlineSchema,
+  effectiveRunDecorations,
   paragraphInlineValues,
   effectiveParagraphStyle,
   type InlinePresentation,
@@ -94,7 +95,8 @@ export function mountPrivateFlow(
     const block = editor.getTextCursorPosition().block
     const props = block.props
     const style = "paragraphStyle" in props ? props.paragraphStyle : undefined
-    return effectiveInline(readPresentationMeta(binding.doc), {
+    const direct = canonicalStyles(editor.getActiveStyles())
+    const effective = effectiveInline(readPresentationMeta(binding.doc), {
       ...paragraphInlineValues(
         effectiveParagraphStyle(
           block.type,
@@ -102,8 +104,16 @@ export function mountPrivateFlow(
           "level" in props ? props.level : undefined
         )
       ),
-      ...canonicalStyles(editor.getActiveStyles()),
+      ...direct,
     })
+    return {
+      ...effective,
+      ...effectiveRunDecorations(
+        direct,
+        Boolean(editor.getSelectedLinkUrl()),
+        effective
+      ),
+    }
   }
   const keydown = (event: KeyboardEvent) => {
     if (

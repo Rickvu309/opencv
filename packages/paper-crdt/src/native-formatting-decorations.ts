@@ -1,7 +1,7 @@
 import type { Node } from "@tiptap/pm/model"
 import { Decoration, DecorationSet } from "@tiptap/pm/view"
 import {
-  paperLinkColor,
+  effectiveRunDecorations,
   paragraphInlineValues,
   effectiveParagraphStyle,
   type DocumentPresentation,
@@ -56,22 +56,23 @@ export function formattingDecorations(
           .map((mark) => [mark.type.name, mark.attrs.stringValue])
       )
       const isLink = node.marks.some((mark) => mark.type.name === "link")
+      const direct = canonicalStyles(marks)
+      const effective = effectiveInline(presentation, {
+        ...paragraphInlineValues(
+          effectiveParagraphStyle(
+            doc.resolve(pos).parent.type.name,
+            doc.resolve(pos).parent.attrs.paragraphStyle,
+            doc.resolve(pos).parent.attrs.level
+          )
+        ),
+        ...direct,
+      })
       decorations.push(
         Decoration.inline(pos, pos + node.nodeSize, {
-          style:
-            inlineCss({
-              ...effectiveInline(presentation, {
-                ...paragraphInlineValues(
-                  effectiveParagraphStyle(
-                    doc.resolve(pos).parent.type.name,
-                    doc.resolve(pos).parent.attrs.paragraphStyle,
-                    doc.resolve(pos).parent.attrs.level
-                  )
-                ),
-                ...canonicalStyles(marks),
-              }),
-              ...(isLink ? { underline: true } : {}),
-            }) + (isLink ? `;color:var(--paper-link, ${paperLinkColor})` : ""),
+          style: inlineCss({
+            ...effective,
+            ...effectiveRunDecorations(direct, isLink, effective),
+          }),
           "data-paper-resolved": "",
         })
       )

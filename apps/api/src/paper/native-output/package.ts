@@ -1,6 +1,7 @@
 import { createRequire } from "node:module"
 
-import { paperLinkColor } from "@workspace/domain/internal/paper-presentation"
+import { effectiveRunDecorations } from "@workspace/domain/internal/paper-presentation"
+import { inlineProperties } from "./formatted-properties.js"
 
 import { z } from "zod"
 
@@ -72,6 +73,10 @@ export function wordPackage(input: {
         `<property fmtid="{D5CDD505-2E9C-101B-9397-08002B2CF9AE}" pid="${index + 2}" name="${xml(name)}"><vt:lpwstr>${xml(value)}</vt:lpwstr></property>`
     )
     .join("")
+  const linkProperties = inlineProperties({
+    ...effectiveRunDecorations({}, true),
+    strike: undefined,
+  })
   return writeZip([
     [
       "[Content_Types].xml",
@@ -95,7 +100,7 @@ export function wordPackage(input: {
         "styles",
         input.styles +
           (input.links.length
-            ? `<w:style w:type="character" w:styleId="Hyperlink"><w:name w:val="Hyperlink"/><w:rPr><w:color w:val="${paperLinkColor.slice(1)}"/><w:u w:val="single"/></w:rPr></w:style>`
+            ? `<w:style w:type="character" w:styleId="Hyperlink"><w:name w:val="Hyperlink"/><w:rPr>${linkProperties}</w:rPr></w:style>`
             : "")
       ),
     ],

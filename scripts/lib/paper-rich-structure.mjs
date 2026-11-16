@@ -1,3 +1,69 @@
+import ts from "typescript"
+
+export const consumers = [
+  "packages/paper-crdt/src/native-formatting-decorations.ts",
+  "packages/paper-crdt/src/native-layout-flow-mount.ts",
+  "apps/api/src/paper/native-output/formatted.ts",
+  "apps/api/src/paper/native-output/rich-text.ts",
+  "apps/api/src/paper/native-output/package.ts",
+]
+
+export function detectLinkDecorations(text, path) {
+  if (!consumers.includes(path)) return []
+  const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
+  const hits = []
+  let imported = false
+  let called = false
+  const decoration = (node) => {
+    if (ts.isPropertyAssignment(node))
+      return /^(underline|strike|color)$/.test(node.name.getText(source))
+    if (ts.isStringLiteralLike(node))
+      return /(?:text-decoration|color\s*:|<w:(?:u|strike|color)\b)/.test(
+        node.text
+      )
+    return ts.forEachChild(node, decoration) ?? false
+  }
+  const visit = (node) => {
+    if (
+      ts.isImportDeclaration(node) &&
+      ts.isStringLiteral(node.moduleSpecifier) &&
+      node.moduleSpecifier.text ===
+        "@workspace/domain/internal/paper-presentation" &&
+      node.importClause?.namedBindings &&
+      ts.isNamedImports(node.importClause.namedBindings)
+    )
+      imported ||= node.importClause.namedBindings.elements.some(
+        (item) => item.name.text === "effectiveRunDecorations"
+      )
+    if (ts.isCallExpression(node))
+      called ||= node.expression.getText(source) === "effectiveRunDecorations"
+    if (ts.isIdentifier(node) && node.text === "paperLinkColor")
+      hits.push("Only the domain resolver owns the link color")
+    const condition = ts.isConditionalExpression(node)
+      ? node.condition
+      : ts.isIfStatement(node)
+        ? node.expression
+        : ts.isBinaryExpression(node) &&
+            [
+              ts.SyntaxKind.AmpersandAmpersandToken,
+              ts.SyntaxKind.BarBarToken,
+            ].includes(node.operatorToken.kind)
+          ? node.left
+          : undefined
+    if (
+      condition &&
+      /link|href/i.test(condition.getText(source)) &&
+      decoration(node)
+    )
+      hits.push("Link decorations must be resolved in effectiveRunDecorations")
+    ts.forEachChild(node, visit)
+  }
+  visit(source)
+  if (!imported || !called)
+    hits.push("Page, toolbar and Word must call the domain decoration resolver")
+  return hits
+}
+
 export function detectRichStructure(text, path) {
   const hits = []
   if (
@@ -39,8 +105,7 @@ export function detectRichStructure(text, path) {
   if (
     path === "packages/paper-crdt/src/native-formatting-decorations.ts" &&
     (!text.includes('mark.type.name === "link"') ||
-      !text.includes("color:var(--paper-link, ${paperLinkColor})") ||
-      !text.includes("underline: true"))
+      !text.includes("effectiveRunDecorations(direct, isLink, effective)"))
   )
     hits.push(
       "Rich link text must paint the visible underline and semantic color"
@@ -70,7 +135,7 @@ export function detectRichStructure(text, path) {
   if (
     path === "apps/api/src/paper/native-output/package.ts" &&
     (!text.includes('w:styleId="Hyperlink"') ||
-      !text.includes("paperLinkColor.slice(1)"))
+      !text.includes("effectiveRunDecorations({}, true)"))
   )
     hits.push("Word packages must define the shared Paper Hyperlink style")
   if (

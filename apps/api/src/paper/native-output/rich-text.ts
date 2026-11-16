@@ -1,4 +1,5 @@
 import type { RichText } from "@workspace/domain"
+import { effectiveRunDecorations } from "@workspace/domain/internal/paper-presentation"
 
 export function xml(value: string): string {
   return value
@@ -62,9 +63,7 @@ export function wordRun(
     .join("")
   const runProperties = href
     ? '<w:rStyle w:val="Hyperlink"/>' +
-      properties
-        .replace(/<w:rStyle\b[^>]*\/>/g, "")
-        .replace(/<w:color\b[^>]*\/>/g, "")
+      properties.replace(/<w:rStyle\b[^>]*\/>/g, "")
     : properties
   const body = `<w:r><w:rPr>${runProperties}</w:rPr>${content}</w:r>`
   if (!href) return body
@@ -79,10 +78,13 @@ export function wordRun(
 export function richRuns(runs: RichText, links: ExternalLink[]): string {
   return runs
     .map((run) => {
+      const decorations = effectiveRunDecorations(run, Boolean(run.href))
       const properties = [
         run.bold ? "<w:b/>" : "",
         run.italic ? "<w:i/>" : "",
-        run.underline ? '<w:u w:val="single"/>' : "",
+        run.underline === undefined
+          ? ""
+          : `<w:u w:val="${decorations.underline ? "single" : "none"}"/>`,
       ].join("")
       return wordRun(run.text, properties, run.href, links)
     })

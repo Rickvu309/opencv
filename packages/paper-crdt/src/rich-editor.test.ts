@@ -1,3 +1,12 @@
+import type { InlinePresentation } from "@workspace/domain/internal/paper-presentation"
+import { compileFlowNativeDocx } from "../../../apps/api/src/paper/native-output/formatted.js"
+import {
+  attribute,
+  elements,
+  inspect,
+  one,
+  textOf,
+} from "../../../apps/api/src/paper/native-output/inspect.test-support.js"
 import { afterEach, expect, it, vi } from "vitest"
 import { TextSelection } from "@tiptap/pm/state"
 import * as Y from "yjs"
@@ -277,10 +286,208 @@ it.each(["cv", "letter"] as const)(
       const css = getComputedStyle(text)
       expect(css.textDecoration).toBe("")
       expect(css.textDecorationLine).toBe(
-        bits & 8 ? "underline line-through" : "underline"
+        [bits & 4 ? "underline" : "", bits & 8 ? "line-through" : ""]
+          .filter(Boolean)
+          .join(" ") || "none"
       )
       expect(css.fontWeight).toBe(bits & 1 ? "700" : "400")
       expect(css.fontStyle).toBe(bits & 2 ? "italic" : "normal")
     }
   }
+)
+
+const states = [undefined, false, true] as const
+const combinations = states.flatMap((bold) =>
+  states.flatMap((italic) =>
+    states.flatMap((underline) =>
+      states.flatMap((strike) =>
+        [false, true].flatMap((linked) =>
+          [undefined, "#AA0000"].map((color) => ({
+            marks: { bold, italic, underline, strike, color },
+            linked,
+          }))
+        )
+      )
+    )
+  )
+)
+
+it.each(["cv", "letter"] as const)(
+  "matches page, Underline state and Word for every unset/on/off mark combination in a %s",
+  async (kind) => {
+    vi.stubGlobal("CSS", { escape: (value: string) => value })
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        disconnect() {}
+      }
+    )
+    Object.defineProperty(document, "fonts", {
+      configurable: true,
+      value: { ready: Promise.resolve() },
+    })
+    Object.defineProperty(Range.prototype, "getClientRects", {
+      configurable: true,
+      value: () => [],
+    })
+    Object.defineProperty(Range.prototype, "getBoundingClientRect", {
+      configurable: true,
+      value: () => new DOMRect(),
+    })
+    const input = storedFlowFixture(kind)
+    const section = input.flow.children[0]!
+    const rows = [false, true].flatMap((inheritedUnderline) =>
+      combinations.map((combination, index) => ({
+        ...combination,
+        inheritedUnderline,
+        id: `case-${Number(inheritedUnderline)}-${index}`,
+      }))
+    )
+    const source = richPaperDocumentSchema.parse({
+      ...input,
+      presentation: {
+        ...input.presentation,
+        inline: { strike: true, color: "#009900" },
+        styles: [
+          {
+            id: "underlined",
+            kind: "character",
+            parent: null,
+            values: { underline: true },
+          },
+        ],
+      },
+      flow: {
+        ...input.flow,
+        children: [
+          {
+            ...section,
+            children: [
+              ...section.children.filter((node) => node.type === "header"),
+              ...rows.map(({ marks, linked, inheritedUnderline, id }) => ({
+                id,
+                type: "paragraph",
+                paragraph: {},
+                content: [
+                  {
+                    ...marks,
+                    characterStyle: inheritedUnderline
+                      ? "underlined"
+                      : undefined,
+                    text: id,
+                    href: linked ? "https://example.com/career" : undefined,
+                  },
+                ],
+              })),
+            ],
+          },
+        ],
+      },
+    })
+    const server = new Y.Doc()
+    Y.applyUpdate(server, seedStoredYDoc(source))
+    const provenance = nativeProvenance(source)
+    const client = openRichPaperClient(null, { provenance })
+    expect(
+      client.receive(client.prepare(), {
+        provenance,
+        epoch: 1,
+        revision: 0,
+        reset: false,
+        stale: false,
+        update: Y.encodeStateAsUpdate(server),
+        stateVector: Y.encodeStateVector(server),
+      }).failed
+    ).toBe(false)
+    const lease = borrowFlowDocument(client.ydoc, kind)
+    const host = document.createElement("div")
+    document.body.append(host)
+    const mounted = mountPrivateFlow(lease.binding, host)
+    cleanups.add(() => {
+      mounted.unmount()
+      lease.release()
+      client.ydoc.destroy()
+      server.destroy()
+      host.remove()
+    })
+    const { version, schemaRevision, ...flow } = source
+    expect([version, schemaRevision]).toEqual([4, 2])
+    const compiled = compileFlowNativeDocx({ document: flow })
+    if (compiled.kind === "refused") throw new Error(compiled.reason)
+    const archive = await inspect(compiled.value)
+    const part = archive.part("word/document.xml")
+    const styles = archive.part("word/styles.xml")
+    const defaults = one(one(styles.root, "docDefaults"), "rPr")
+    const namedStyles = new Map(
+      elements(styles.root, "style").map((style) => [
+        attribute(style, "styleId"),
+        style,
+      ])
+    )
+    const wordRuns = new Map(
+      elements(part.root, "r").map((run) => [textOf(part, run), run])
+    )
+    const spans = new Map(
+      [...host.querySelectorAll<HTMLElement>("[data-paper-resolved]")].map(
+        (span) => [span.textContent, span]
+      )
+    )
+    const checkedActiveStates = new Set<string>()
+    for (const { marks, linked, inheritedUnderline, id } of rows) {
+      const span = spans.get(id)
+      const run = wordRuns.get(id)
+      if (!span || !run) throw new Error(`Missing rendered run ${id}`)
+      const expected = {
+        underline: marks.underline ?? (linked || inheritedUnderline),
+        strike: marks.strike ?? true,
+        color: linked ? "#1D4ED8" : (marks.color ?? "#009900"),
+      }
+      const color = document.createElement("span")
+      color.style.color = expected.color
+      const page = {
+        underline: span.style.textDecorationLine.includes("underline"),
+        strike: span.style.textDecorationLine.includes("line-through"),
+        color: span.style.color,
+      }
+      const runStyle = elements(run, "rStyle")[0]
+      const namedStyle = runStyle && namedStyles.get(attribute(runStyle, "val"))
+      const sources = namedStyle ? [run, namedStyle, defaults] : [run, defaults]
+      const value = (name: string) => {
+        for (const source of sources) {
+          const property = elements(source, name)[0]
+          if (property) return attribute(property, "val")
+        }
+      }
+      const word = {
+        underline: value("u") === "single",
+        strike: value("strike") === "1",
+        color: `#${value("color")}`,
+      }
+      expect(page, id).toEqual({ ...expected, color: color.style.color })
+      expect(word, id).toEqual(expected)
+      const wordColor = document.createElement("span")
+      wordColor.style.color = word.color
+      expect(page, id).toEqual({ ...word, color: wordColor.style.color })
+      expect(span.style.fontWeight, id).toBe(marks.bold ? "700" : "400")
+      expect(span.style.fontStyle, id).toBe(marks.italic ? "italic" : "normal")
+      const activeState = `${linked}:${marks.underline}:${inheritedUnderline}`
+      if (checkedActiveStates.has(activeState)) continue
+      checkedActiveStates.add(activeState)
+      mounted.editor.setTextCursorPosition(id, "start")
+      const state = mounted.editor.prosemirrorState
+      mounted.editor.prosemirrorView.dispatch(
+        state.tr.setSelection(
+          TextSelection.create(
+            state.doc,
+            state.selection.from,
+            state.selection.from + id.length
+          )
+        )
+      )
+      const active: InlinePresentation = mounted.activeInline()
+      expect(active.underline, id).toBe(page.underline)
+    }
+  },
+  60_000
 )

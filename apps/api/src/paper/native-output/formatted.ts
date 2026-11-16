@@ -1,4 +1,5 @@
 import {
+  effectiveRunDecorations,
   paragraphInlineValues,
   effectiveParagraphStyle,
   formattedDocumentSchema,
@@ -87,6 +88,12 @@ function compileDocument(
           ...inherited,
           ...direct,
         })
+        const decorations = effectiveRunDecorations(
+          direct,
+          Boolean(href),
+          effective
+        )
+        const defaults = effectiveRunDecorations({}, Boolean(href))
         return wordRun(
           text,
           inlineProperties({
@@ -100,7 +107,13 @@ function compileDocument(
             strike:
               effective.strike === inherited.strike
                 ? undefined
-                : effective.strike,
+                : decorations.strike,
+            underline:
+              direct.underline === undefined
+                ? undefined
+                : decorations.underline,
+            color:
+              decorations.color === defaults.color ? undefined : direct.color,
           }),
           href,
           links

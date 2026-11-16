@@ -171,7 +171,10 @@ test("round-three guards reject decoration overrides and shared field errors wit
     const current = readFileSync(path.join(root, file), "utf8")
     assert.deepEqual(detect(current, file), [])
     const mistake = file.endsWith("decorations.ts")
-      ? current.replace("color:var", "text-decoration:underline;color:var")
+      ? current.replace(
+          "style: inlineCss({",
+          'style: "text-decoration:underline;" + inlineCss({'
+        )
       : current.replace(
           /error === "Enter a website or email address\."\s*\? "paper-link-error"/,
           'error ? "paper-link-error"'
