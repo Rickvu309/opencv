@@ -3,6 +3,10 @@ import { TextSelection } from "@tiptap/pm/state"
 import type { PaperClient } from "./client.js"
 import { borrowFlowDocument } from "./native-layout-flow.js"
 import { mountPrivateFlow } from "./native-layout-flow-mount.js"
+import {
+  captureEditorSelection,
+  restoreEditorSelection,
+} from "./editor-selection.js"
 
 export type RichMark = "bold" | "italic" | "underline" | "strike"
 
@@ -49,8 +53,14 @@ export function mountRichPaperEditor(
       focus() {
         if (active) view.focus()
       },
+      captureSelection() {
+        if (active) return captureEditorSelection(view)
+      },
+      restoreSelection(selection: ReturnType<typeof captureEditorSelection>) {
+        if (active && selection) restoreEditorSelection(view, selection)
+      },
       toggleMark(mark: RichMark) {
-        if (!active) throw new Error("Paper editor is closed")
+        if (!active || !mounted.editor.isEditable) return
         mounted.setInline({ [mark]: !mounted.activeInline()[mark] })
         view.focus()
       },

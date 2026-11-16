@@ -89,6 +89,7 @@ export function mountPrivateFlow(
       canonicalStyles(editor.getActiveStyles())
     )
   const keydown = (event: KeyboardEvent) => {
+    if (!active || !editor.isEditable) return
     if (
       event.key === "Tab" &&
       !event.altKey &&

@@ -76,8 +76,20 @@ it.each(["cv", "letter"] as const)(
     } finally {
       reopened.destroy()
     }
+    mounted.setEditable(false)
+    const blocked = client.document()
+    mounted.toggleMark("bold")
+    host.dispatchEvent(
+      new KeyboardEvent("keydown", {
+        key: "b",
+        ctrlKey: true,
+        bubbles: true,
+        cancelable: true,
+      })
+    )
+    expect(client.document()).toEqual(blocked)
     client.destroy()
-    expect(() => mounted.toggleMark("bold")).toThrow("closed")
+    expect(() => mounted.toggleMark("bold")).not.toThrow()
     expect(host.childElementCount).toBe(0)
   }
 )
