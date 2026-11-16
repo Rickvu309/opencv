@@ -114,7 +114,7 @@ describe("formatted native Word output", () => {
     if (!child) throw new Error("Missing named style")
     expect(elements(child, "basedOn")).toHaveLength(0)
     expect(elements(child, "i")).toHaveLength(0)
-    expect(attribute(one(child, "rFonts"), "ascii")).toBe("Liberation Serif")
+    expect(attribute(one(child, "rFonts"), "ascii")).toBe("Times New Roman")
     expect(attribute(one(child, "shd"), "fill")).toBe("FFCC99")
     const defaults = one(styles.root, "docDefaults")
     expect(attribute(one(defaults, "color"), "val")).toBe("112233")
@@ -163,7 +163,7 @@ describe("formatted native Word output", () => {
     expect(elements(run, "br")).toHaveLength(1)
     expect(
       elements(part.root, "rFonts").map((node) => attribute(node, "ascii"))
-    ).toEqual(["Liberation Mono", "Liberation Serif", "Liberation Sans"])
+    ).toEqual(["Courier New", "Times New Roman", "Arial"])
     const rels = archive.part("word/_rels/document.xml.rels")
     const relation = elements(
       rels.root,
@@ -254,6 +254,7 @@ describe("formatted native Word output", () => {
     expect(attribute(one(first, "ind"), "hanging")).toBeUndefined()
     expect(attribute(one(hanging, "ind"), "firstLine")).toBeUndefined()
     expect(attribute(one(hanging, "ind"), "hanging")).toBe("180")
+    expect(attribute(one(hanging, "ind"), "left")).toBe("180")
     expect(
       rows
         .map((p) => elements(p, "spacing")[0])

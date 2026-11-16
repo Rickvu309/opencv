@@ -1,233 +1,134 @@
-import { useEffect, useReducer, type ReactNode } from "react"
+import { useEffect, useReducer, useRef, useState, type ReactNode } from "react"
+import { Ellipsis } from "lucide-react"
+import { Button } from "@workspace/ui/components/button"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@workspace/ui/components/select"
-import type { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
-
-type Editor = ReturnType<typeof mountRichPaperEditor>
-type Formatting = ReturnType<Editor["activeFormatting"]>
-type Choice = {
-  value: string
-  label: string
-  color?: string
-  disabled?: boolean
-}
-
-const fonts: Choice[] = [
-  { value: "default", label: "Default" },
-  { value: "liberation-sans", label: "Liberation Sans" },
-  { value: "liberation-serif", label: "Liberation Serif" },
-  { value: "liberation-mono", label: "Liberation Mono" },
-]
-const sizes: Choice[] = [
-  { value: "default", label: "Default" },
-  ...[8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 72].map((size) => ({
-    value: String(size),
-    label: `${size} pt`,
-  })),
-]
-const alignments = ["left", "center", "right", "justify"] as const
-const alignmentChoices = alignments.map((value) => ({
-  value,
-  label:
-    value === "justify"
-      ? "Justified"
-      : value.charAt(0).toUpperCase() + value.slice(1),
-}))
-const lineSpacings: Choice[] = [
-  ...[1, 1.15, 1.5, 2, 2.5, 3].map((value) => ({
-    value: String(value),
-    label: String(value),
-  })),
-]
-const indents = [0, 0.25, 0.5, 0.75, 1, 1.5, 2].map((value) => ({
-  value: String(value),
-  label: value === 0 ? "None" : `${value} in`,
-}))
-const firstLines = [
-  { value: "firstline:0", label: "None" },
-  { value: "firstline:360", label: "First 0.25 in" },
-  { value: "firstline:720", label: "First 0.5 in" },
-  { value: "hanging:360", label: "Hang 0.25 in" },
-  { value: "hanging:720", label: "Hang 0.5 in" },
-]
-function FormatChoice({
-  label,
-  value,
-  choices,
-  disabled,
-  onChange,
-}: {
-  label: string
-  value: string | null
-  choices: Choice[]
-  disabled: boolean
-  onChange: (value: string) => void
-}) {
-  const options =
-    value && !choices.some((choice) => choice.value === value)
-      ? [
-          ...choices,
-          {
-            value,
-            label: value === "default" ? "Default" : value,
-            disabled: true,
-          },
-        ]
-      : choices
-  return (
-    <Select
-      value={value}
-      items={options}
-      disabled={disabled}
-      onValueChange={(next) => {
-        if (next !== null) onChange(next)
-      }}
-    >
-      <SelectTrigger
-        aria-label={label}
-        title={label}
-        className="min-h-11 shrink-0 md:min-h-8"
-      >
-        <SelectValue placeholder="Mixed" />
-      </SelectTrigger>
-      <SelectContent align="start">
-        {options.map((choice) => (
-          <SelectItem
-            key={choice.value}
-            value={choice.value}
-            disabled={choice.disabled}
-          >
-            {choice.color ? (
-              <span
-                aria-hidden="true"
-                className="size-3 shrink-0 rounded-sm border"
-                style={{ backgroundColor: choice.color }}
-              />
-            ) : null}
-            {choice.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  )
-}
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  PopoverTitle,
+} from "@workspace/ui/components/popover"
+import { TooltipProvider } from "@workspace/ui/components/tooltip"
+import { RichTextFontGroup } from "./rich-text-font-group.tsx"
+import { RichTextColorGroup } from "./rich-text-color-group.tsx"
+import { RichTextParagraphGroup } from "./rich-text-paragraph-group.tsx"
+import {
+  type TextEditor,
+  type TextFormatting,
+} from "./rich-text-toolbar-control.tsx"
 
 export function RichPaperTextFormatting({
   editor,
   blocked,
   children,
 }: {
-  editor: Editor | null
+  editor: TextEditor | null
   blocked: boolean
   children: ReactNode
 }) {
   const [formatting, update] = useReducer(
-    (_: Formatting | null, next: Formatting | null) => next,
+    (_: TextFormatting | null, next: TextFormatting | null) => next,
     null
   )
+  const host = useRef<HTMLDivElement>(null)
+  const [compact, setCompact] = useState(true)
+  const [open, setOpen] = useState(false)
   useEffect(() => {
     update(editor?.activeFormatting() ?? null)
     return editor?.subscribe(() => update(editor.activeFormatting()))
   }, [editor])
+  useEffect(() => {
+    if (!host.current) return
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (entry) setCompact(entry.contentRect.width < 860)
+    })
+    observer.observe(host.current)
+    return () => observer.disconnect()
+  }, [])
   const disabled = !editor || blocked || !formatting?.hasText
-  const inline = (patch: Parameters<Editor["formatInline"]>[0]) =>
+  const inline = (patch: Parameters<TextEditor["formatInline"]>[0]) => {
     editor?.formatInline(patch)
-  return (
-    <div
-      role="toolbar"
-      aria-label="Text formatting"
-      data-slot="paper-text-formatting"
-      className="flex min-w-0 shrink-0 items-center gap-2 overflow-x-auto border-b px-4 py-2"
-    >
-      <FormatChoice
-        label="Font"
-        value={formatting?.fontId ?? null}
-        choices={fonts}
+    setOpen(false)
+  }
+  const paragraph = (patch: Parameters<TextEditor["formatParagraph"]>[0]) => {
+    editor?.formatParagraph(patch)
+    setOpen(false)
+  }
+  const controls = (
+    <>
+      <fieldset
         disabled={disabled}
-        onChange={(fontId) =>
-          inline({ fontId: fontId === "default" ? null : fontId })
-        }
-      />
-      <FormatChoice
-        label="Text size"
-        value={formatting?.size ?? null}
-        choices={sizes}
-        disabled={disabled}
-        onChange={(size) =>
-          inline({ size: size === "default" ? null : Number(size) * 20 })
-        }
-      />
-      <div
-        role="group"
+        onClick={() => setOpen(false)}
         aria-label="Text emphasis"
-        className="flex shrink-0 items-center gap-1 border-x px-2"
+        className="flex shrink-0 items-center gap-1 border-s border-border ps-2"
       >
         {children}
+      </fieldset>
+      <RichTextColorGroup
+        editor={editor}
+        formatting={formatting}
+        disabled={disabled}
+        choose={inline}
+      />
+      <div
+        role="separator"
+        aria-orientation="vertical"
+        className="h-6 border-s border-border"
+      />
+      <RichTextParagraphGroup
+        editor={editor}
+        formatting={formatting}
+        disabled={disabled}
+        choose={paragraph}
+      />
+    </>
+  )
+  return (
+    <TooltipProvider>
+      <div
+        ref={host}
+        role="toolbar"
+        aria-label="Text formatting"
+        data-slot="paper-text-formatting"
+        className="flex min-w-0 shrink-0 items-center gap-1 border-b px-3 py-2"
+      >
+        <RichTextFontGroup
+          editor={editor}
+          formatting={formatting}
+          disabled={disabled}
+          choose={inline}
+        />
+        {compact ? (
+          <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  aria-label="More formatting"
+                  className="min-h-11 shrink-0 gap-1"
+                  disabled={disabled}
+                />
+              }
+            >
+              <Ellipsis />
+              More
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              aria-label="More formatting"
+              className="w-[min(22rem,calc(100vw-2rem))]"
+              finalFocus={false}
+            >
+              <PopoverTitle>More formatting</PopoverTitle>
+              <div className="flex flex-wrap items-center gap-2">
+                {controls}
+              </div>
+            </PopoverContent>
+          </Popover>
+        ) : (
+          controls
+        )}
       </div>
-      <FormatChoice
-        label="Text color"
-        value={formatting?.color ?? null}
-        choices={editor?.formattingOptions.colors ?? []}
-        disabled={disabled}
-        onChange={(color) =>
-          inline({ color: color === "default" ? null : color })
-        }
-      />
-      <FormatChoice
-        label="Highlight"
-        value={formatting?.highlight ?? null}
-        choices={editor?.formattingOptions.highlights ?? []}
-        disabled={disabled}
-        onChange={(highlight) =>
-          inline({ highlight: highlight === "default" ? null : highlight })
-        }
-      />
-      <FormatChoice
-        label="Alignment"
-        value={formatting?.alignment ?? null}
-        choices={alignmentChoices}
-        disabled={disabled}
-        onChange={(value) => {
-          const alignment = alignments.find((alignment) => alignment === value)
-          if (alignment) editor?.formatParagraph({ alignment })
-        }}
-      />
-      <FormatChoice
-        label="Line spacing"
-        value={formatting?.lineSpacing ?? null}
-        choices={lineSpacings}
-        disabled={disabled}
-        onChange={(value) =>
-          editor?.formatParagraph({
-            lineSpacing: { kind: "multiple", value: Number(value) },
-          })
-        }
-      />
-      <FormatChoice
-        label="Indent"
-        value={formatting?.start ?? null}
-        choices={indents}
-        disabled={disabled}
-        onChange={(value) =>
-          editor?.formatParagraph({ start: Number(value) * 1440 })
-        }
-      />
-      <FormatChoice
-        label="First line"
-        value={formatting?.indent ?? null}
-        choices={firstLines}
-        disabled={disabled}
-        onChange={(value) => {
-          const [kind, amount] = value.split(":")
-          if (kind === "firstline" || kind === "hanging")
-            editor?.formatParagraph({ indent: { kind, value: Number(amount) } })
-        }}
-      />
-    </div>
+    </TooltipProvider>
   )
 }

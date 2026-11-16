@@ -1,5 +1,21 @@
 export const clean = [
   {
+    path: "packages/paper-crdt/src/editor.ts",
+    text: 'const editor = { subscribe(listener) { tiptap.on("transaction", listener) }, formatInline() { view.focus() }, formatParagraph() { view.focus() } }',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-formatting.ts",
+    text: "if (!inlines.length) inlines.push(readMarks([]))",
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting-render-values.ts",
+    text: 'const start = Math.max(v.start ?? 0, indent?.kind === "hanging" ? indent.value : 0); const css = `text-indent:${value}`',
+  },
+  {
+    path: "apps/api/src/paper/native-output/formatted-properties.ts",
+    text: 'function fontName() { return "Arial" }',
+  },
+  {
     path: "apps/web/src/test/paper-api-mock.ts",
     text: "const identity = /^\\/api\\/paper\\/([^/]+)\\/document$/.exec(path); paperDocumentInfoSchema.parse(identity)",
   },
@@ -141,6 +157,30 @@ export const clean = [
   },
 ]
 export const mistakes = [
+  {
+    path: "packages/paper-crdt/src/editor.ts",
+    text: "const editor = { subscribe(listener) { editor.onChange(listener) } }",
+  },
+  {
+    path: "packages/paper-crdt/src/editor.ts",
+    text: "const editor = { formatInline(input) { mounted.formatInline(input) } }",
+  },
+  {
+    path: "packages/paper-crdt/src/editor.ts",
+    text: "const editor = { formatParagraph(input) { mounted.formatParagraph(input) } }",
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-formatting.ts",
+    text: "const inlines = []; return common(inlines)",
+  },
+  {
+    path: "packages/paper-crdt/src/native-formatting-render-values.ts",
+    text: "const css = `text-indent:${-indent.value}pt`",
+  },
+  {
+    path: "apps/api/src/paper/native-output/formatted-properties.ts",
+    text: 'function fontName() { return "Liberation Sans" }',
+  },
   {
     path: "apps/web/src/test/paper-api-mock.ts",
     text: "export async function paperApiFetch() { return null }",

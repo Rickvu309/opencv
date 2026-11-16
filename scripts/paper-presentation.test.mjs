@@ -42,3 +42,19 @@ test("private formatting preserves package boundaries, real owners, XML anchors 
       file
     )
 })
+
+test("round-one guards refuse the introducing formatting commit", () => {
+  const introduced = "2d8c005a50b97a773349d415aa6b1b410a6ca71f"
+  for (const file of [
+    "packages/paper-crdt/src/editor.ts",
+    "packages/paper-crdt/src/native-layout-formatting.ts",
+    "packages/paper-crdt/src/native-formatting-render-values.ts",
+    "apps/api/src/paper/native-output/formatted-properties.ts",
+  ]) {
+    const text = execFileSync("git", ["show", `${introduced}:${file}`], {
+      cwd: root,
+      encoding: "utf8",
+    })
+    assert.ok(detect(text, file).length > 0, file)
+  }
+})

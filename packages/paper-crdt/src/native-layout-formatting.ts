@@ -106,6 +106,8 @@ export function flowFormatting(binding: FlowBinding, view: EditorView) {
         doc.nodesBetween(selection.from, selection.to, (node) => {
           if (node.isText) inlines.push(readMarks(node.marks))
         })
+      if (!inlines.length && selectedParagraphs(view).length)
+        inlines.push(readMarks(selection.$from.marks()))
       const paragraphs = selectedParagraphs(view).map(({ node }) =>
         effectiveParagraph(presentation, canonicalProps(node.attrs))
       )
@@ -115,14 +117,10 @@ export function flowFormatting(binding: FlowBinding, view: EditorView) {
         italic: common(inlines.map((v) => v.italic ?? false)),
         underline: common(inlines.map((v) => v.underline ?? false)),
         strike: common(inlines.map((v) => v.strike ?? false)),
-        color: common(inlines.map((v) => v.color ?? "default")),
+        color: common(inlines.map((v) => v.color ?? "#000000")),
         highlight: common(inlines.map((v) => v.highlight ?? "default")),
-        fontId: common(inlines.map((v) => v.fontId ?? "default")),
-        size: common(
-          inlines.map((v) =>
-            v.size === undefined ? "default" : String(v.size / 20)
-          )
-        ),
+        fontId: common(inlines.map((v) => v.fontId ?? "liberation-sans")),
+        size: common(inlines.map((v) => String((v.size ?? 220) / 20))),
         alignment: common(paragraphs.map((v) => v.alignment ?? "left")),
         lineSpacing: common(
           paragraphs.map((v) =>
@@ -130,7 +128,7 @@ export function flowFormatting(binding: FlowBinding, view: EditorView) {
               ? v.lineSpacing.kind === "multiple"
                 ? String(v.lineSpacing.value)
                 : `${v.lineSpacing.value / 20} pt${v.lineSpacing.kind === "atleast" ? " minimum" : " exact"}`
-              : "default"
+              : "1.2"
           )
         ),
         start: common(paragraphs.map((v) => String((v.start ?? 0) / 1440))),

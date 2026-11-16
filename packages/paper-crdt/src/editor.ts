@@ -1,7 +1,11 @@
 import type { RichPaperDocument } from "@workspace/domain"
 import { TextSelection } from "@tiptap/pm/state"
 import type { PaperClient } from "./client.js"
-import { richTextColors, richTextHighlights } from "./formatting-options.js"
+import {
+  richTextColors,
+  richTextHighlights,
+  richTextFonts,
+} from "./formatting-options.js"
 import { borrowFlowDocument } from "./native-layout-flow.js"
 import { mountPrivateFlow } from "./native-layout-flow-mount.js"
 
@@ -35,10 +39,37 @@ export function mountRichPaperEditor(
         )
     }
     view.dom.setAttribute("aria-label", "Document content")
+    const shortcuts = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || event.altKey) return
+      const alignments = new Map([
+        ["l", "left"],
+        ["e", "center"],
+        ["r", "right"],
+        ["j", "justify"],
+      ] satisfies [string, "left" | "center" | "right" | "justify"][])
+      const alignment = event.shiftKey
+        ? alignments.get(event.key.toLowerCase())
+        : undefined
+      if (alignment) {
+        event.preventDefault()
+        mounted.formatParagraph({ alignment })
+      } else if (!event.shiftKey && (event.key === "[" || event.key === "]")) {
+        event.preventDefault()
+        const start = Number(mounted.activeFormatting().start ?? 0) * 1440
+        mounted.formatParagraph({
+          start: Math.max(
+            0,
+            Math.min(2880, start + (event.key === "]" ? 360 : -360))
+          ),
+        })
+      }
+    }
+    view.dom.addEventListener("keydown", shortcuts)
     const destroy = () => {
       if (!active) return
       active = false
       removeRelease()
+      view.dom.removeEventListener("keydown", shortcuts)
       mounted.unmount()
       lease.release()
     }
@@ -47,28 +78,33 @@ export function mountRichPaperEditor(
       formattingOptions: {
         colors: richTextColors,
         highlights: richTextHighlights,
+        fonts: richTextFonts,
       },
       setEditable(editable: boolean) {
         if (active) mounted.editor.isEditable = editable
       },
       focus() {
-        if (active) view.focus()
+        if (!active) return false
+        view.focus()
+        return view.dom
       },
       toggleMark(mark: RichMark) {
-        if (!active) throw new Error("Paper editor is closed")
+        if (!active) return
         mounted.setInline({ [mark]: !mounted.activeInline()[mark] })
         view.focus()
       },
       formatInline(input: Parameters<typeof mounted.formatInline>[0]) {
-        if (!active) throw new Error("Paper editor is closed")
+        if (!active) return
         mounted.formatInline(input)
+        view.focus()
       },
       formatParagraph(input: Parameters<typeof mounted.formatParagraph>[0]) {
-        if (!active) throw new Error("Paper editor is closed")
+        if (!active) return
         mounted.formatParagraph(input)
+        view.focus()
       },
       activeFormatting() {
-        if (!active) throw new Error("Paper editor is closed")
+        if (!active) return null
         return mounted.activeFormatting()
       },
       activeMarks() {
@@ -82,12 +118,10 @@ export function mountRichPaperEditor(
         }
       },
       subscribe(listener: () => void) {
-        const offSelection = mounted.editor.onSelectionChange(listener)
-        const offChange = mounted.editor.onChange(listener)
-        return () => {
-          offSelection()
-          offChange()
-        }
+        if (!active) return () => {}
+        const tiptap = mounted.editor._tiptapEditor
+        tiptap.on("transaction", listener)
+        return () => tiptap.off("transaction", listener)
       },
       pagination: mounted.pagination,
       destroy,

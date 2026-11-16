@@ -170,7 +170,7 @@ describe("native layout Word output", () => {
     expect(attribute(one(run, "i"), "val")).toBe("1")
     expect(attribute(one(run, "u"), "val")).toBe("single")
     expect(attribute(one(run, "strike"), "val")).toBe("1")
-    expect(attribute(one(run, "rFonts"), "ascii")).toBe("Liberation Sans")
+    expect(attribute(one(run, "rFonts"), "ascii")).toBe("Arial")
     expect(attribute(one(run, "sz"), "val")).toBe("24")
     expect(attribute(one(run, "color"), "val")).toBe("123456")
     expect(attribute(one(actual, "jc"), "val")).toBe("right")

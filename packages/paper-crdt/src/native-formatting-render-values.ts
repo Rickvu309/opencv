@@ -39,8 +39,9 @@ export function effectiveParagraph(
   }
 }
 
-function fontCss(fontId: NonNullable<InlinePresentation["fontId"]>): string {
+function fontCss(fontId: InlinePresentation["fontId"]): string {
   switch (fontId) {
+    case undefined:
     case "liberation-sans":
       return '"Liberation Sans", Arial, sans-serif'
     case "liberation-serif":
@@ -63,10 +64,10 @@ export function inlineCss(v: InlinePresentation): string {
     `font-weight:${v.bold ? "700" : "400"}`,
     `font-style:${v.italic ? "italic" : "normal"}`,
     `text-decoration-line:${decoration || "none"}`,
-    `color:${v.color ?? "inherit"}`,
+    `color:${v.color ?? "#000000"}`,
     `background-color:${v.highlight ?? "transparent"}`,
-    ...(v.fontId ? [`font-family:${fontCss(v.fontId)}`] : []),
-    ...(v.size === undefined ? [] : [`font-size:${v.size / 20}pt`]),
+    `font-family:${fontCss(v.fontId)}`,
+    `font-size:${(v.size ?? 220) / 20}pt`,
   ].join(";")
 }
 
@@ -77,13 +78,13 @@ export function paragraphCss(v: ParagraphPresentation): string {
     `text-align:${v.alignment ?? "left"}`,
     `margin-block-start:${(v.before ?? 0) / 20}pt`,
     `margin-block-end:${(v.after ?? 0) / 20}pt`,
-    `padding-inline-start:${(v.start ?? 0) / 20}pt`,
+    `padding-inline-start:${Math.max(v.start ?? 0, indent?.kind === "hanging" ? indent.value : 0) / 20}pt`,
     `padding-inline-end:${(v.end ?? 0) / 20}pt`,
     ...(line
       ? [
           `line-height:${line.kind === "multiple" ? line.value : `${line.value / 20}pt`}`,
         ]
-      : []),
+      : ["line-height:1.2"]),
     ...(indent
       ? [
           `text-indent:${(indent.kind === "hanging" ? -indent.value : indent.value) / 20}pt`,

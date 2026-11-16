@@ -9,6 +9,7 @@ import { seedStoredYDoc } from "./stored-document.js"
 import { recoverRichPaperClient } from "./rich-recovery.js"
 import { borrowFlowDocument } from "./native-layout-flow.js"
 import { mountPrivateFlow } from "./native-layout-flow-mount.js"
+import { mountRichPaperEditor } from "./editor.js"
 import { storedFlowFixture } from "./test/flow-fixture.js"
 
 const cleanups: (() => void)[] = []
@@ -239,6 +240,52 @@ describe("rich Paper selection formatting", () => {
     mounted.formatInline({ highlight: null })
     expect(paragraph(client).content[0]?.highlight).toBeUndefined()
     expect(mounted.activeFormatting().highlight).toBe("default")
+  })
+
+  it("notifies subscribers for caret marks and resets, preserves selection and returns focus", () => {
+    const { client, mounted, host, select } = setup("letter")
+    select("intro", "intro", 2, 0)
+    mounted.unmount()
+    const editor = mountRichPaperEditor(client, host)
+    cleanups.push(() => editor.destroy())
+    const values: unknown[] = []
+    const detach = editor.subscribe(() =>
+      values.push(editor.activeFormatting())
+    )
+    cleanups.push(detach)
+    const button = document.createElement("button")
+    host.append(button)
+    button.focus()
+    editor.formatInline({ size: 280, color: "#B91C1C" })
+    expect(values.at(-1)).toMatchObject({ size: "14", color: "#B91C1C" })
+    expect(document.activeElement?.getAttribute("aria-label")).toBe(
+      "Document content"
+    )
+    editor.formatInline({ size: null, color: null })
+    expect(values.at(-1)).toMatchObject({ size: "11", color: "#000000" })
+    const notifications = values.length
+    detach()
+    editor.formatInline({ size: 320 })
+    expect(values).toHaveLength(notifications)
+    editor.destroy()
+    expect(editor.activeFormatting()).toBeNull()
+    expect(() => editor.formatInline({ size: 280 })).not.toThrow()
+  })
+
+  it("shows effective values across empty paragraphs without inventing mixed formatting", () => {
+    const { mounted, view, select } = setup("letter")
+    select("intro")
+    view.dispatch(view.state.tr.deleteSelection())
+    select("after")
+    view.dispatch(view.state.tr.deleteSelection())
+    select("intro", "after")
+    expect(mounted.activeFormatting()).toMatchObject({
+      hasText: true,
+      size: "11",
+      fontId: "liberation-serif",
+      color: "#000000",
+      lineSpacing: "1.2",
+    })
   })
 
   it("rejects unsupported fonts, malformed colors and non-Word sizes without a change", () => {

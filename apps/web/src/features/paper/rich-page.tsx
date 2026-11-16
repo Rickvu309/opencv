@@ -16,7 +16,8 @@ import {
   mountRichPaperEditor,
   type RichMark,
 } from "@workspace/paper-crdt/editor"
-import { RichPaperTextFormatting } from "./rich-text-formatting"
+import { ToolbarHint } from "./rich-text-toolbar-control.tsx"
+import { RichPaperTextFormatting } from "./rich-text-formatting.tsx"
 import { openRichPaperSession } from "@/lib/paper-rich.ts"
 import { resolvePhotoSrc } from "@/lib/requests.ts"
 import type { NativeSyncIdentity } from "@/lib/paper-sync-identity.ts"
@@ -60,10 +61,20 @@ function editorReducer(state: EditorState, action: EditorAction): EditorState {
 }
 
 const marks = [
-  { mark: "bold", label: "Bold", Icon: Bold },
-  { mark: "italic", label: "Italic", Icon: Italic },
-  { mark: "underline", label: "Underline", Icon: Underline },
-  { mark: "strike", label: "Strikethrough", Icon: Strikethrough },
+  { mark: "bold", label: "Bold", shortcut: "Ctrl+B", Icon: Bold },
+  { mark: "italic", label: "Italic", shortcut: "Ctrl+I", Icon: Italic },
+  {
+    mark: "underline",
+    label: "Underline",
+    shortcut: "Ctrl+U",
+    Icon: Underline,
+  },
+  {
+    mark: "strike",
+    label: "Strikethrough",
+    shortcut: "Ctrl+Shift+X",
+    Icon: Strikethrough,
+  },
 ] as const
 
 export function RichPaperPage({
@@ -160,24 +171,25 @@ export function RichPaperPage({
         </span>
       </PageHeader>
       <RichPaperTextFormatting editor={editor} blocked={blocked}>
-        {marks.map(({ mark, label, Icon }) => (
-          <Button
-            key={mark}
-            variant={activeMarks[mark] ? "secondary" : "ghost"}
-            size="icon"
-            className="size-11 md:size-8"
-            aria-label={label}
-            aria-pressed={activeMarks[mark] === true}
-            disabled={!editor || blocked}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => {
-              editor?.toggleMark(mark)
-              if (editor)
-                dispatch({ type: "marks", activeMarks: editor.activeMarks() })
-            }}
-          >
-            <Icon />
-          </Button>
+        {marks.map(({ mark, label, shortcut, Icon }) => (
+          <ToolbarHint key={mark} label={`${label} (${shortcut})`}>
+            <Button
+              variant={activeMarks[mark] ? "secondary" : "ghost"}
+              size="icon"
+              className="size-11 md:size-8"
+              aria-label={label}
+              aria-pressed={activeMarks[mark] === true}
+              disabled={!editor || blocked}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => {
+                editor?.toggleMark(mark)
+                if (editor)
+                  dispatch({ type: "marks", activeMarks: editor.activeMarks() })
+              }}
+            >
+              <Icon />
+            </Button>
+          </ToolbarHint>
         ))}
       </RichPaperTextFormatting>
       {blocked ? (
