@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 
-import { personInitials } from "@/features/settings/person-initials.ts"
+import { personInitials } from "@/lib/person-initials.ts"
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { useShellProfile } from "@/features/app-shell/use-shell-profile.ts"

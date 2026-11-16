@@ -491,7 +491,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
                       aria-label="Expand sidebar"
                       aria-keyshortcuts="["
                       title="Expand sidebar ([)"
-                      className="absolute z-40 size-7 bg-background text-muted-foreground hover:text-foreground"
+                      className="absolute z-40 size-11 bg-background text-muted-foreground hover:text-foreground md:size-7"
                       onClick={layout.expand}
                     >
                       <PanelLeft aria-hidden="true" />

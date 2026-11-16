@@ -29,7 +29,7 @@ import {
   settingsViewFromPath,
   type SettingsSectionId,
 } from "./sections.ts"
-import { useShellProfile } from "@/features/app-shell/use-shell-profile.ts"
+import { useShellProfile } from "@/lib/use-shell-profile.ts"
 import { personInitials } from "./person-initials.ts"
 
 const SETTINGS_NAV_ITEM =
