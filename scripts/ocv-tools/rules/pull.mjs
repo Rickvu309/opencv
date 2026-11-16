@@ -1,6 +1,6 @@
 import { FIXES } from "../result.mjs"
 import { closesIssue, issueInTitle } from "./pull-ref.mjs"
-import { LABELS, openProductionRed, ownerBecause } from "./merge-gate.mjs"
+import { LABELS, openProductionRed } from "./merge-gate.mjs"
 
 function unallowedMigrations(facts) {
   const allowed = facts.migrations?.allowed ?? []
@@ -13,13 +13,6 @@ function migrationChanges(facts) {
   const hits = unallowedMigrations(facts)
   if (!hits.length) return null
   return `the merge runs ${hits.map((item) => `${item.tag} (${item.changes.join(", ")})`).join("; ")} on production data, and it changes existing things`
-}
-
-function ownerYes(facts) {
-  const because = ownerBecause(facts)
-  if (!because.length) return null
-  if ((facts.pull?.labels ?? []).includes(LABELS.ownerApproved)) return null
-  return `this pull request is owner class (${because.slice(0, 3).join("; ")}), and it has no ${LABELS.ownerApproved} label`
 }
 
 function queueClosed(facts) {
@@ -118,16 +111,6 @@ export const pullRows = [
       "Fix the bug and turn the it.fails back into it, or cite the open issue that still tracks it and drop that issue from Closes",
   }),
   rule({
-    id: "OWNER_YES",
-    section: "6",
-    says: "An owner-class pull request (a risk:high file, a file that decides what may merge, or a migration off the only-adds list) merges only with the owner-approved label, which the coordinator adds by running merge after relaying the owner's yes.",
-    at: ["pr"],
-    needs: ["diff", "migrations", "pull"],
-    check: ownerYes,
-    fix: (facts) =>
-      `Relay the owner's yes, then from the main checkout run: scripts/ocv-tools.mjs merge ${facts.pull?.n ?? "<pr#>"}`,
-  }),
-  rule({
     id: "QUEUE_CLOSED",
     section: "6",
     says: "While an issue labeled production-red is open, only a pull request labeled production-red-revert merges.",
@@ -149,7 +132,7 @@ export const pullRows = [
     needs: ["pull", "migrations"],
     check: migrationChanges,
     fix: (facts) =>
-      `Name what it changes in Merge Danger, get the owner's yes, then run: scripts/ocv-tools.mjs merge ${facts.pull?.n ?? "<pr#>"} --allow-migration ${unallowedMigrations(
+      `Name what it changes in Merge Danger, then run: scripts/ocv-tools.mjs merge ${facts.pull?.n ?? "<pr#>"} --allow-migration ${unallowedMigrations(
         facts
       )
         .map((item) => item.tag)

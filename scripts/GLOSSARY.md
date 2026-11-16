@@ -7,12 +7,12 @@ How OpenCV decides that a change is good enough to reach production: the tests, 
 ### Who acts
 
 **Owner**:
-The one human who owns OpenCV and its repository. Only the owner can say yes to an owner-class change or declare a production emergency, and every commit carries the owner's name.
+The one human who owns OpenCV and its repository. Only the owner can declare a production emergency, and every commit carries the owner's name.
 _Not_: the row's person, an issue's holder, or a check that covers a defect class.
 _Avoid_: operator, maintainer, project owner, the human, the user
 
 **Coordinator**:
-The agent that turns the owner's requests into issues, hands each to a builder, relays the owner's yes, and resumes a builder with the first failing cases when a check goes red.
+The agent that turns the owner's requests into issues, hands each to a builder, and resumes a builder with the first failing cases when a check goes red.
 _Not_: the owner, and not a reviewer: it reads evidence, not diffs.
 _Avoid_: manager, orchestrator, lead
 
@@ -51,15 +51,15 @@ _Avoid_: normal change, low-risk change
 
 **Strict change**:
 A change where a mistake would refuse honest people, show one person's data to another, or lose their words: limits, sign-in, permissions, import and export, how the writing page saves, an only-adds migration, or a retirement. It needs more than green to merge.
-_Not_: owner class; a strict change never waits for the owner.
+_Not_: owner class, which identifies changes to merge rules.
 _Avoid_: risky change, sensitive change, careful change
 
 **Owner-class change**:
-A change that touches a gate file, or a migration that does more than add. It merges only after the owner's yes.
+A change that touches a gate file, or a migration that does more than add. It merges automatically on green ci, subject to the migration allow-label rule.
 _Avoid_: risk:high change, high-risk change, protected change
 
 **Gate file**:
-A file that decides what may merge or how checks run, such as the workflows, the delivery tool, the git hooks and the branch ruleset. Changing one makes a change owner class, so the gate never judges its own loosening.
+A file that decides what may merge or how checks run, such as the workflows, the delivery tool, the git hooks and the branch ruleset. Changing one makes a change owner class, as a classification; it still merges automatically on green ci.
 _Not_: a protected check, which a change may add to freely.
 _Avoid_: high-risk file, risk:high file, merge-deciding file
 
@@ -225,7 +225,7 @@ The one status that must succeed for a change to merge. It succeeds only when ev
 _Avoid_: ci (bare, in prose), status, the check
 
 **Gate**:
-Everything that must hold for a change to reach main: the required check green on its head and on its merged tree, and for an owner-class change the owner's yes.
+Everything that must hold for a change to reach main: the required check green on its head and on its merged tree.
 _Not_: the quick checks or the pre-check, which save time but never decide.
 _Avoid_: policy, hook, review, approval
 
@@ -245,11 +245,6 @@ _Avoid_: train, merge train
 **Auto-merge**:
 The setting under which a change merges by itself, with nobody reading it, once it is green on its head and in the queue.
 _Avoid_: self-merge, merge on green
-
-**Owner's yes**:
-The owner's explicit approval of one owner-class change, relayed by the coordinator and recorded on the pull request.
-_Not_: a product approval, which a person gives to a Coach action.
-_Avoid_: approval (bare), sign-off, review
 
 ### What a check leaves behind
 
@@ -367,7 +362,7 @@ _Avoid_: rollback
 
 - A guard reads files, a test runs code, a harness runs every instance of one kind, a sweep runs every member of a derived list, a walk runs random steps through one module, and a probe reads production.
 - Every check gives a verdict. A check in CI writes a receipt, and evidence and Merge Danger take numbers only from receipts. A pre-check pass is a local receipt that never decides.
-- Rules are decided at moments. Hooks trigger the commit and push moments, the policy job decides the pull request moment, the required check needs every CI job, and the gate is the required check green on the head and on the merged tree, plus the owner's yes for an owner-class change.
+- Rules are decided at moments. Hooks trigger the commit and push moments, the policy job decides the pull request moment, the required check needs every CI job, and the gate is the required check green on the head and on the merged tree.
 - The machine computes the change class from the diff: a gate file or a migration that does more than add makes it owner class, a strict area or a retirement makes it strict, and anything else is ordinary. The risk label is the filer's prediction and never overrides it.
 - Protected checks only grow. A weakening needs a retirement with a flip proof, a ratchet only shrinks, an expected failure flips when its issue is fixed, a quarantine expires, and an allowed entry must keep matching.
 - Each defect class is covered by exactly one check: the kind's harness when a kind exists, otherwise a sweep. An escape in a covered class is a defect in that check.

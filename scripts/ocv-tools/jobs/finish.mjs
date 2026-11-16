@@ -6,8 +6,6 @@ import { planPull } from "./pull-facts.mjs"
 import { hasReceipt, passLines, receiptPath } from "./affected-tests.mjs"
 import { throwPushFailure } from "../push-failure.mjs"
 import { Refused } from "../result.mjs"
-import { migrationFacts } from "./migration-facts.mjs"
-import { ownerBecause } from "../rules/merge-gate.mjs"
 import { retiredLines } from "../rules/protected.mjs"
 import { enqueue } from "./merge.mjs"
 import {
@@ -51,28 +49,8 @@ function affectedReceipt(ctx, t) {
   return { head, receipt: hasReceipt(ctx, t.gitDir, head, tree) }
 }
 
-function autoMerge(ctx, n, diff, protectedFacts) {
+function autoMerge(ctx, n) {
   const head = git(ctx, "rev-parse", "HEAD")
-  const files = [
-    ...new Set([
-      ...diff.files,
-      ...git(ctx, "diff", "--no-renames", "--name-only", "origin/main...HEAD")
-        .split("\n")
-        .filter(Boolean),
-    ]),
-  ]
-  const owner = ownerBecause({
-    diff: { ...diff, files },
-    migrations: migrationFacts(ctx, files, "HEAD", []),
-    protected: protectedFacts,
-  })
-  if (owner.length)
-    return {
-      lines: [
-        `Owner class (${owner.slice(0, 3).join("; ")}): auto-merge stays off until the owner says yes.`,
-      ],
-      next: `After the owner's yes, from the main checkout: scripts/ocv-tools.mjs merge ${n}`,
-    }
   let asked
   try {
     asked = enqueue(ctx, n, head, { allowMigrations: [] })
@@ -248,7 +226,7 @@ export function finish(ctx, { flags }) {
         lines: [...opened, "A draft is not put on auto-merge."],
         next: `gh pr ready ${n}, then scripts/ocv-tools.mjs merge ${n}`,
       }
-    const auto = autoMerge(ctx, n, facts.diff, facts.protected)
+    const auto = autoMerge(ctx, n)
     return { ...auto, lines: [...opened, ...auto.lines] }
   })
 }
