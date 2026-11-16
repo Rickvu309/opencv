@@ -107,3 +107,13 @@ export {
   prepareFlowEdit,
   reverseFlowEdit,
 } from "./paper-doc/native-layout-flow-edit.js"
+export { prepareFlowPhotoEdit } from "./paper-doc/native-layout-flow-photo.js"
+
+export { photoDestination } from "./paper-doc/native-layout-photo-destination.js"
+export {
+  photoInsertSize,
+  photoSourceRatio,
+  croppedPhotoRatio,
+  fitPhotoCrop,
+  resizePhoto,
+} from "./paper-doc/native-photo-geometry.js"

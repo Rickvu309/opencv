@@ -29,6 +29,9 @@ import {
 } from "./native-photo-render.js"
 import { canonicalStyles, engineStyles } from "./native-formatting-styles.js"
 import { effectiveInline } from "./native-formatting-render-values.js"
+import { flowPhotoControls } from "./native-layout-photo-controls.js"
+
+import { photoSelection } from "./native-photo-selection.js"
 import { flowFormatting } from "./native-layout-formatting.js"
 
 const mounted = new WeakMap<FlowBinding, PrivateLayoutEditor>()
@@ -78,6 +81,7 @@ export function mountPrivateFlow(
     ],
   })
   setPhotoResolver(editor, resolvePhoto)
+  const selection = photoSelection(element)
   let active = true
   let flowView: ReturnType<typeof installFlowView> | undefined
   const setInline = (input: InlinePresentation) => {
@@ -156,6 +160,7 @@ export function mountPrivateFlow(
   const refresh = () => {
     if (active) {
       editor.prosemirrorView.dispatch(editor.prosemirrorState.tr)
+      selection.paint()
       flowView?.schedule()
     }
   }
@@ -174,17 +179,22 @@ export function mountPrivateFlow(
         editor.prosemirrorView.dispatch(editor.prosemirrorState.tr)
       }
     )
-    editor.onChange(() => flowView?.schedule())
+    editor.onChange(() => {
+      selection.paint()
+      flowView?.schedule()
+    })
     mounted.set(binding, editor)
     element.addEventListener("keydown", keydown, true)
     binding.doc.getMap("paper").observeDeep(refresh)
   } catch (error) {
+    selection.destroy()
     flowView?.destroy()
     editor._tiptapEditor.destroy()
     throw error
   }
   return {
     editor,
+    photoControls: { ...flowPhotoControls(binding, editor), ...selection },
     ...flowFormatting(binding, editor.prosemirrorView),
     setInline,
     activeInline,
@@ -192,6 +202,7 @@ export function mountPrivateFlow(
     unmount() {
       if (!active) return
       active = false
+      selection.destroy()
       binding.doc.getMap("paper").unobserveDeep(refresh)
       element.removeEventListener("keydown", keydown, true)
       flowView?.destroy()

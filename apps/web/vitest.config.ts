@@ -35,6 +35,7 @@ const ISOLATED_FILES = [
   "src/lib/paper-sync-stuck.test.ts",
   "src/lib/paper-local-replay.test.ts",
   "src/features/paper/cv-photo.test.tsx",
+  "src/features/paper/rich-photo-controls.test.tsx",
   "src/features/paper/paper-share.test.tsx",
   "src/features/paper/paper-print-callers.test.tsx",
   "src/features/paper/paper-v2-preview.test.tsx",

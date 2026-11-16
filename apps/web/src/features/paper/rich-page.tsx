@@ -13,6 +13,7 @@ import {
   PageHeaderTitle,
 } from "@workspace/ui/components/page-header"
 import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
+import { RichPhotoControls } from "./rich-photo-controls.tsx"
 import { RichPaperTextFormatting } from "./rich-text-formatting.tsx"
 import { openRichPaperSession } from "@/lib/paper-rich.ts"
 import { resolvePhotoSrc } from "@/lib/requests.ts"
@@ -147,7 +148,15 @@ export function RichPaperPage({
           />
         </div>
       </PageHeader>
-      <RichPaperTextFormatting editor={editor} blocked={blocked} />
+      <RichPhotoControls editor={editor} disabled={blocked}>
+        {(photoControls) => (
+          <RichPaperTextFormatting
+            editor={editor}
+            blocked={blocked}
+            photoControls={photoControls}
+          />
+        )}
+      </RichPhotoControls>
       {blocked ? (
         <p role="alert" className="p-6 text-sm">
           Paper could not safely open these changes. Your saved document and

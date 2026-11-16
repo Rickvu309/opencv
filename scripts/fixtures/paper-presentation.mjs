@@ -1,4 +1,10 @@
+import {
+  clean as photoClean,
+  mistakes as photoMistakes,
+} from "./paper-photo-presentation.mjs"
+
 export const clean = [
+  ...photoClean,
   {
     path: "apps/web/src/features/paper/rich-text-emphasis-group.tsx",
     text: '<Button className="size-[44px] md:size-8" />',
@@ -60,20 +66,12 @@ export const clean = [
     text: "Decoration.node(pos, end, { style: `height:${height}px` })",
   },
   {
-    path: "apps/api/src/paper/native-output/formatted-photos.ts",
-    text: 'const bounds = photoBounds(photo); const frame = `<wp:extent cx="${boundWidth}" cy="${boundHeight}"/>`',
-  },
-  {
     path: "packages/paper-crdt/src/native-layout-schema.ts",
     text: 'photoBlockSpec; slot.dataset.paperWrapSlot = ""; style.textContent = `${scope} > .bn-block > ${text}{display:block}`',
   },
   {
     path: "packages/paper-crdt/src/native-layout-paste.ts",
     text: 'import DOMPurify from "dompurify"; const html = DOMPurify.sanitize(clipboard); new DOMParser().parseFromString(html, "text/html"); editor.tryParseHTMLToBlocks(html)',
-  },
-  {
-    path: "packages/paper-crdt/src/native-photo.ts",
-    text: 'import { layoutDocumentSchema } from "@workspace/domain/internal/paper-presentation"',
   },
   {
     path: "packages/paper-crdt/src/native-formatting-schema.ts",
@@ -160,7 +158,9 @@ export const clean = [
     text: 'BlockNoteEditor.create({ links: { HTMLAttributes: { style: "text-decoration:none;color:inherit" } } })',
   },
 ]
+
 export const mistakes = [
+  ...photoMistakes,
   {
     path: "apps/web/src/features/paper/rich-text-emphasis-group.tsx",
     text: '<Button className="size-11 md:size-8" />',
@@ -270,10 +270,6 @@ export const mistakes = [
     text: "block.style.height = `${height}px`",
   },
   {
-    path: "apps/api/src/paper/native-output/formatted-photos.ts",
-    text: 'const frame = `<wp:extent cx="${width}" cy="${height}"/>`',
-  },
-  {
     path: "packages/paper-crdt/src/native-layout-schema.ts",
     text: 'photoBlockSpec; slot.dataset.paperWrapSlot = ""',
   },
@@ -288,10 +284,6 @@ export const mistakes = [
   {
     path: "packages/paper-crdt/src/index.ts",
     text: 'export { commitLayoutPhotoEdit } from "./native-photo.js"',
-  },
-  {
-    path: "apps/web/src/features/paper/photos.ts",
-    text: 'import { mountPrivateLayout } from "@workspace/paper-crdt/native-photo-mount"',
   },
   {
     path: "packages/paper-crdt/src/native-formatting-schema.ts",

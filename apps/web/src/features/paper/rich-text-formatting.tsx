@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef } from "react"
+import { useEffect, useReducer, useRef, type ReactNode } from "react"
 import { Ellipsis } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -8,6 +8,7 @@ import {
   PopoverTitle,
 } from "@workspace/ui/components/popover"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
+import { RichDocumentHistory } from "./rich-document-toolbar.tsx"
 import { RichTextEmphasisGroup } from "./rich-text-emphasis-group.tsx"
 import { RichTextFontGroup } from "./rich-text-font-group.tsx"
 import { RichTextColorGroup } from "./rich-text-color-group.tsx"
@@ -36,9 +37,11 @@ function toolbarState(
 export function RichPaperTextFormatting({
   editor,
   blocked,
+  photoControls,
 }: {
   editor: TextEditor | null
   blocked: boolean
+  photoControls?: (onAction: () => void) => ReactNode
 }) {
   const [formatting, update] = useReducer(
     (_: TextFormatting | null, next: TextFormatting | null) => next,
@@ -54,16 +57,20 @@ export function RichPaperTextFormatting({
     update(editor?.activeFormatting() ?? null)
     return editor?.subscribe(() => update(editor.activeFormatting()))
   }, [editor])
+  const hasPhotoControls = Boolean(photoControls)
   useEffect(() => {
     if (!host.current) return
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0]
       if (entry)
-        dispatch({ type: "resize", compact: entry.contentRect.width < 860 })
+        dispatch({
+          type: "resize",
+          compact: entry.contentRect.width < (hasPhotoControls ? 1040 : 860),
+        })
     })
     observer.observe(host.current)
     return () => observer.disconnect()
-  }, [])
+  }, [hasPhotoControls])
   const disabled = !editor || blocked || !formatting?.hasText
   const inline = (patch: Parameters<TextEditor["formatInline"]>[0]) => {
     editor?.formatInline(patch)
@@ -87,11 +94,21 @@ export function RichPaperTextFormatting({
         disabled={disabled}
         choose={inline}
       />
-      <div
-        role="separator"
-        aria-orientation="vertical"
-        className="h-6 border-s border-border"
-      />
+      {!compact ? (
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          className="h-6 border-s border-border"
+        />
+      ) : null}
+      {photoControls?.(() => setOpen(false))}
+      {!compact && hasPhotoControls ? (
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          className="h-6 border-s border-border"
+        />
+      ) : null}
       <RichTextParagraphGroup
         editor={editor}
         formatting={formatting}
@@ -109,6 +126,12 @@ export function RichPaperTextFormatting({
         data-slot="paper-text-formatting"
         className="flex min-w-0 shrink-0 items-center gap-1 border-b px-[12px] py-2"
       >
+        <RichDocumentHistory editor={editor} blocked={blocked} />
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          className="h-6 shrink-0 border-s border-border"
+        />
         {!compact ? (
           <RichTextFontGroup
             editor={editor}
@@ -130,7 +153,11 @@ export function RichPaperTextFormatting({
                   variant="ghost"
                   aria-label="More formatting"
                   className="min-h-11 shrink-0 gap-1"
-                  disabled={disabled}
+                  disabled={
+                    !editor ||
+                    blocked ||
+                    (!formatting?.hasText && !hasPhotoControls)
+                  }
                 />
               }
             >

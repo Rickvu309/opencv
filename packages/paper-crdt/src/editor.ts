@@ -70,6 +70,7 @@ export function mountRichPaperEditor(
     }
     removeRelease = client.onDocumentRelease(destroy)
     return {
+      ...mounted.photoControls,
       formattingOptions: {
         colors: richTextColors,
         highlights: richTextHighlights,
@@ -121,7 +122,11 @@ export function mountRichPaperEditor(
         if (!active) return () => {}
         const tiptap = mounted.editor._tiptapEditor
         tiptap.on("transaction", listener)
-        return () => tiptap.off("transaction", listener)
+        const offPhoto = mounted.photoControls.subscribePhotoSelection(listener)
+        return () => {
+          tiptap.off("transaction", listener)
+          offPhoto()
+        }
       },
       pagination: mounted.pagination,
       destroy,
