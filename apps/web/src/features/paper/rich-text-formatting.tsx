@@ -22,6 +22,7 @@ import {
   type TextFormatting,
 } from "./rich-text-toolbar-control.tsx"
 import { RichStructureControls } from "./rich-structure-controls.tsx"
+import { RichPageBreak } from "./rich-page-break.tsx"
 
 export function RichPaperTextFormatting({
   editor,
@@ -98,6 +99,12 @@ export function RichPaperTextFormatting({
       {groupSeparator}
       {photoControls?.(() => setOpen(false))}
       {hasPhotoControls ? groupSeparator : null}
+      <RichPageBreak
+        editor={editor}
+        blocked={blocked}
+        onAction={() => setOpen(false)}
+      />
+      {groupSeparator}
       <RichTextParagraphGroup
         editor={editor}
         formatting={formatting}

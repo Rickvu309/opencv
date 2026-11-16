@@ -34,6 +34,7 @@ export function mountRichPaperEditor(
     const mounted = mountPrivateFlow(lease.binding, element, options.photoUrl)
     const commands = mounted.commands
     const view = mounted.editor.prosemirrorView
+    const pages = mounted.pages
     if (!view.state.selection.$from.parent.inlineContent) {
       let start: number | undefined
       view.state.doc.descendants((node, position) => {
@@ -57,7 +58,22 @@ export function mountRichPaperEditor(
       else mounted.adjustIndent(delta)
     }
     const shortcuts = (event: KeyboardEvent) => {
-      if (!active || !mounted.editor.isEditable) return
+      if (!active || !mounted.editor.isEditable || event.isComposing) return
+      if (!event.altKey && !event.shiftKey) {
+        const handled =
+          (event.ctrlKey || event.metaKey) && event.key === "Enter"
+            ? pages.insertPageBreak()
+            : !event.ctrlKey &&
+                !event.metaKey &&
+                (event.key === "Backspace" || event.key === "Delete")
+              ? pages.removePageBreak(event.key === "Backspace")
+              : false
+        if (handled) {
+          event.preventDefault()
+          event.stopImmediatePropagation()
+          return
+        }
+      }
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return
       const alignments = new Map([
         ["l", "left"],
@@ -76,13 +92,13 @@ export function mountRichPaperEditor(
         adjustIndent(event.key === "]" ? 360 : -360)
       }
     }
-    view.dom.addEventListener("keydown", shortcuts)
+    view.dom.addEventListener("keydown", shortcuts, true)
     const destroy = () => {
       if (!active) return
       const selection = captureEditorSelection(view)
       active = false
       removeRelease()
-      view.dom.removeEventListener("keydown", shortcuts)
+      view.dom.removeEventListener("keydown", shortcuts, true)
       options.onRelease?.(selection)
       mounted.unmount()
       lease.release()
@@ -131,6 +147,16 @@ export function mountRichPaperEditor(
           : { undo: false, redo: false },
       undoDocument: () => apply(commands.undo),
       redoDocument: () => apply(commands.redo),
+      pageSetup: () => (active ? pages.pageSetup() : null),
+      setPageSetup(value: Parameters<typeof pages.setPageSetup>[0]) {
+        if (!active || !mounted.editor.isEditable) return false
+        pages.setPageSetup(value)
+        return true
+      },
+      canInsertPageBreak: () => active && pages.canInsertPageBreak(),
+      insertPageBreak: () => active && pages.insertPageBreak(),
+      removePageBreak: (backward: boolean) =>
+        active && pages.removePageBreak(backward),
       formattingOptions: {
         colors: richTextColors,
         highlights: richTextHighlights,
