@@ -108,13 +108,13 @@ export function flowPhotoControls(
       editor.prosemirrorView.dispatch(state.tr.setSelection(selection))
       change({ kind: "remove-photo", photoId })
     },
-    undoPhoto() {
+    undoDocument() {
       editor.undo()
     },
-    redoPhoto() {
+    redoDocument() {
       editor.redo()
     },
-    photoHistory() {
+    documentHistory() {
       return {
         undo: history.undoStack.length > 0,
         redo: history.redoStack.length > 0,

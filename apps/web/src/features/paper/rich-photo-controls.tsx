@@ -23,7 +23,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@workspace/ui/components/dialog"
-import { RichPhotoToolbar } from "./rich-photo-toolbar.tsx"
+import { RichPhotoToolbar } from "./rich-document-toolbar.tsx"
 import { RichPhotoChoice } from "./rich-photo-choice.tsx"
 import { RichPhotoNumber } from "./rich-photo-number.tsx"
 import { RichPhotoPreview } from "./rich-photo-preview.tsx"
@@ -109,9 +109,6 @@ export function RichPhotoControls({
     | "focus"
     | "photos"
     | "subscribe"
-    | "photoHistory"
-    | "undoPhoto"
-    | "redoPhoto"
     | "insertPhoto"
     | "replacePhoto"
     | "selectedPhoto"
@@ -176,7 +173,6 @@ export function RichPhotoControls({
     })
   }
   const photos = editor?.photos() ?? []
-  const history = editor?.photoHistory()
   const held = disabled || !editor || state.busy
   const fail = (error: unknown) =>
     dispatch({
@@ -233,19 +229,7 @@ export function RichPhotoControls({
       {children((onAction) => (
         <RichPhotoToolbar
           held={held}
-          canUndo={Boolean(history?.undo)}
-          canRedo={Boolean(history?.redo)}
           hasPhotos={photos.length > 0}
-          onUndo={() => {
-            editor?.undoPhoto()
-            editor?.focus()
-            onAction()
-          }}
-          onRedo={() => {
-            editor?.redoPhoto()
-            editor?.focus()
-            onAction()
-          }}
           onInsert={() => {
             pick(null)
             onAction()

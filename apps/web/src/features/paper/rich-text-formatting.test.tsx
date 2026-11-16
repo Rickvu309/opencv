@@ -1,4 +1,11 @@
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react"
+import {
+  act,
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
@@ -245,4 +252,85 @@ it("keeps photo editing available in More on a phone with no text selection", as
   expect(screen.getByRole("dialog", { name: "Edit photo" })).toBeVisible()
   await user.keyboard("{Escape}")
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+})
+
+it.each([1440, 390])(
+  "keeps one document history pair first and visible at %i",
+  async (viewport) => {
+    width = viewport
+    const user = userEvent.setup()
+    const { editor, client } = setup(false, true)
+    const toolbar = screen.getByRole("toolbar", { name: "Text formatting" })
+    const undo = within(toolbar).getAllByRole("button", {
+      name: /^Undo \(.*Z\)$/,
+    })
+    const redo = within(toolbar).getAllByRole("button", {
+      name: /^Redo \(.*Shift\+Z\)$/,
+    })
+    expect(undo).toHaveLength(1)
+    expect(redo).toHaveLength(1)
+    expect(undo[0]).toBeVisible()
+    expect(redo[0]).toBeVisible()
+    expect(within(toolbar).getAllByRole("button").slice(0, 2)).toEqual([
+      undo[0],
+      redo[0],
+    ])
+    expect(undo[0]?.closest("fieldset")).toHaveAccessibleName(
+      "Document history"
+    )
+    act(() => editor.focus())
+    const content = screen.getByRole("textbox", { name: "Document content" })
+    const inline = content.querySelector(".bn-inline-content")
+    if (!inline) throw new Error("Text paragraph missing")
+    act(() => {
+      const range = document.createRange()
+      range.selectNodeContents(inline)
+      const selection = getSelection()
+      selection?.removeAllRanges()
+      selection?.addRange(range)
+      document.dispatchEvent(new Event("selectionchange"))
+    })
+    const before = client.document()
+    act(() => editor.formatParagraph({ alignment: "center" }))
+    const textEdit = client.document()
+    expect(textEdit).not.toEqual(before)
+    if (!undo[0] || !redo[0]) throw new Error("History buttons missing")
+    await user.click(undo[0])
+    expect(client.document()).toEqual(before)
+    await user.click(redo[0])
+    expect(client.document()).toEqual(textEdit)
+    act(() =>
+      editor.insertPhoto(
+        "file:00000000-0000-4000-8000-000000000002",
+        2687 / 3356
+      )
+    )
+    const photoEdit = client.document()
+    expect(photoEdit).not.toEqual(textEdit)
+    await user.click(undo[0])
+    expect(client.document()).toEqual(textEdit)
+    await user.click(redo[0])
+    expect(client.document()).toEqual(photoEdit)
+    if (viewport === 390) {
+      await user.click(screen.getByRole("button", { name: "More formatting" }))
+      expect(screen.getAllByRole("button", { name: /^Undo / })).toHaveLength(1)
+      expect(screen.getAllByRole("button", { name: /^Redo / })).toHaveLength(1)
+      expect(
+        screen.getByRole("dialog", { name: "More formatting" })
+      ).not.toContainElement(undo[0])
+      expect(
+        screen
+          .getByRole("dialog", { name: "More formatting" })
+          .querySelector('[role="separator"]')
+      ).toBeNull()
+    }
+  }
+)
+
+it("disables empty phone overflow while preserving document history", () => {
+  width = 390
+  const { editor } = setup(true)
+  expect(screen.getByRole("button", { name: "More formatting" })).toBeDisabled()
+  act(() => editor.insertPhoto("file:00000000-0000-4000-8000-000000000002", 1))
+  expect(screen.getByRole("button", { name: /^Undo / })).toBeEnabled()
 })

@@ -5,7 +5,10 @@ import { qualifiedNativeWord } from "./paper-native-word.mjs"
 import { detectTextFormatting } from "./paper-text-formatting.mjs"
 
 export function detect(text, path) {
-  const hits = detectTextFormatting(text, path)
+  const hits = [
+    ...detectTextFormatting(text, path),
+    ...detectDocumentHistory(text, path),
+  ]
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
   if (path === "packages/paper-crdt/src/editor.ts") {
     const visit = (node) => {
@@ -478,5 +481,43 @@ export function detect(text, path) {
     ts.forEachChild(node, visit)
   }
   visit(source)
+  return hits
+}
+
+export function detectDocumentHistory(text, path) {
+  const hits = []
+  if (
+    path === "apps/web/src/features/paper/rich-text-formatting.tsx" &&
+    text.includes('role="toolbar"')
+  ) {
+    const toolbar = text.slice(text.indexOf('role="toolbar"'))
+    const history = toolbar.indexOf("<RichDocumentHistory")
+    const compact = toolbar.indexOf("{!compact")
+    if (history < 0 || history > compact)
+      hits.push(
+        "Document Undo and Redo must lead the toolbar outside compact overflow"
+      )
+    if (
+      text.includes('aria-label="More formatting"') &&
+      !/!formatting\?\.hasText\s*&&\s*!hasPhotoControls/.test(text)
+    )
+      hits.push("Empty formatting overflow must be disabled")
+  }
+  if (
+    /apps\/web\/src\/features\/paper\/rich-(?:photo|document)-toolbar\.tsx$/.test(
+      path
+    )
+  ) {
+    const photos = text.slice(text.indexOf("export function RichPhotoToolbar"))
+    if (/onUndo|onRedo|<Undo2|<Redo2/.test(photos))
+      hits.push("Photo controls cannot own whole-document history")
+    if (photos.includes('role="separator"'))
+      hits.push("Photo controls cannot append a separator in phone overflow")
+  }
+  if (
+    /undoPhoto|redoPhoto|photoHistory/.test(text) &&
+    /(?:native-layout-photo-controls|rich-photo-controls)\.tsx?$/.test(path)
+  )
+    hits.push("Document history must not use photo-only names")
   return hits
 }

@@ -8,6 +8,7 @@ import {
   PopoverTitle,
 } from "@workspace/ui/components/popover"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
+import { RichDocumentHistory } from "./rich-document-toolbar.tsx"
 import { RichTextEmphasisGroup } from "./rich-text-emphasis-group.tsx"
 import { RichTextFontGroup } from "./rich-text-font-group.tsx"
 import { RichTextColorGroup } from "./rich-text-color-group.tsx"
@@ -93,12 +94,21 @@ export function RichPaperTextFormatting({
         disabled={disabled}
         choose={inline}
       />
-      <div
-        role="separator"
-        aria-orientation="vertical"
-        className="h-6 border-s border-border"
-      />
+      {!compact ? (
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          className="h-6 border-s border-border"
+        />
+      ) : null}
       {photoControls?.(() => setOpen(false))}
+      {!compact && hasPhotoControls ? (
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          className="h-6 border-s border-border"
+        />
+      ) : null}
       <RichTextParagraphGroup
         editor={editor}
         formatting={formatting}
@@ -116,6 +126,12 @@ export function RichPaperTextFormatting({
         data-slot="paper-text-formatting"
         className="flex min-w-0 shrink-0 items-center gap-1 border-b px-[12px] py-2"
       >
+        <RichDocumentHistory editor={editor} blocked={blocked} />
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          className="h-6 shrink-0 border-s border-border"
+        />
         {!compact ? (
           <RichTextFontGroup
             editor={editor}
@@ -137,7 +153,11 @@ export function RichPaperTextFormatting({
                   variant="ghost"
                   aria-label="More formatting"
                   className="min-h-11 shrink-0 gap-1"
-                  disabled={!editor || blocked}
+                  disabled={
+                    !editor ||
+                    blocked ||
+                    (!formatting?.hasText && !hasPhotoControls)
+                  }
                 />
               }
             >

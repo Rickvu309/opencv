@@ -228,9 +228,9 @@ describe("rich CV and Letter photo editing", () => {
           ).toMatchObject({ width: 960, height: 1280 })
           if (later)
             expect(after.flow.children[0]).toEqual(before.flow.children[0])
-          mount.photoControls.undoPhoto()
+          mount.photoControls.undoDocument()
           expect(readFlow(binding)).toEqual(before)
-          mount.photoControls.redoPhoto()
+          mount.photoControls.redoDocument()
           expect(readFlow(binding)).toEqual(after)
           const figure = host.querySelector<HTMLElement>(
             `[data-paper-photo="${id}"]`
@@ -263,7 +263,7 @@ describe("rich CV and Letter photo editing", () => {
           expect(
             mount.photoControls.photos().some((photo) => photo.id === id)
           ).toBe(false)
-          mount.photoControls.undoPhoto()
+          mount.photoControls.undoDocument()
           expect(readFlow(binding)).toEqual(after)
           if (later) {
             mount.editor.setTextCursorPosition("later-after", "end")
@@ -321,9 +321,9 @@ describe("rich CV and Letter photo editing", () => {
         )
         const inserted = controls.photos().find((photo) => photo.id === id)
         expect(inserted).toMatchObject({ width: 2160, height: 1080 })
-        controls.undoPhoto()
+        controls.undoDocument()
         expect(readFlow(binding)).toEqual(initial)
-        controls.redoPhoto()
+        controls.redoDocument()
         expect(controls.photos()).toContainEqual(inserted)
         if (!inserted) throw new Error("Inserted photo missing")
         for (const shape of ["rectangle", "rounded", "circle"] as const) {
@@ -343,9 +343,9 @@ describe("rich CV and Letter photo editing", () => {
               .querySelector(`figure[data-paper-photo="${id}"] img`)
               ?.getAttribute("alt")
           ).toBe("Portrait of Linh")
-          controls.undoPhoto()
+          controls.undoDocument()
           expect(readFlow(binding)).toEqual(before)
-          controls.redoPhoto()
+          controls.redoDocument()
           expect(readFlow(binding)).toEqual(after)
           const reopened = openFlowBinary(
             Y.encodeStateAsUpdate(binding.doc),
@@ -361,15 +361,15 @@ describe("rich CV and Letter photo editing", () => {
         const beforeReplace = readFlow(binding)
         controls.replacePhoto(id, "file:00000000-0000-4000-8000-000000000003")
         const replaced = readFlow(binding)
-        controls.undoPhoto()
+        controls.undoDocument()
         expect(readFlow(binding)).toEqual(beforeReplace)
-        controls.redoPhoto()
+        controls.redoDocument()
         expect(readFlow(binding)).toEqual(replaced)
         controls.removePhoto(id)
         expect(controls.photos().some((photo) => photo.id === id)).toBe(false)
-        controls.undoPhoto()
+        controls.undoDocument()
         expect(readFlow(binding)).toEqual(replaced)
-        controls.redoPhoto()
+        controls.redoDocument()
         expect(controls.photos().some((photo) => photo.id === id)).toBe(false)
       } finally {
         mount.unmount()

@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import test from "node:test"
-import { detect } from "./lib/paper-presentation.mjs"
+import { detect, detectDocumentHistory } from "./lib/paper-presentation.mjs"
 import { detectPhotoApplyRounding } from "./lib/paper-photo-guard.mjs"
 import { clean, mistakes, roundTwo } from "./fixtures/paper-presentation.mjs"
 
@@ -141,6 +141,50 @@ test("round-five photo Apply rejects conditional geometry, lost placement and ra
   )
 })
 
+test("phone overflow guard refuses empty menus and dangling photo separators", () => {
+  const formatting = "apps/web/src/features/paper/rich-text-formatting.tsx"
+  const photos = "apps/web/src/features/paper/rich-photo-toolbar.tsx"
+  for (const [path, commit, message] of [
+    [formatting, "54fbdb62", "Empty formatting overflow"],
+    [photos, "e1507671", "append a separator"],
+  ]) {
+    const before = execFileSync("git", ["show", `${commit}:${path}`], {
+      cwd: root,
+      encoding: "utf8",
+    })
+    assert.ok(
+      detectDocumentHistory(before, path).some((hit) => hit.includes(message))
+    )
+  }
+  const toolbar =
+    'role="toolbar" <RichDocumentHistory /> {!compact <Font />} aria-label="More formatting"'
+  assert.ok(
+    detectDocumentHistory(toolbar, formatting).some((hit) =>
+      hit.includes("Empty formatting overflow")
+    )
+  )
+  assert.deepEqual(
+    detectDocumentHistory(
+      toolbar + " !formatting?.hasText && !hasPhotoControls",
+      formatting
+    ),
+    []
+  )
+  assert.ok(
+    detectDocumentHistory(
+      'export function RichPhotoToolbar() { role="separator" }',
+      photos
+    ).length
+  )
+  assert.deepEqual(
+    detectDocumentHistory(
+      "export function RichPhotoToolbar() { <Photos /> }",
+      photos
+    ),
+    []
+  )
+})
+
 test("round-six photo Apply guard refuses refitting consistent fields at the introducing head", () => {
   const file = "apps/web/src/features/paper/rich-photo-form.ts"
   const mistake = execFileSync("git", ["show", `dfdf0043:${file}`], {
@@ -209,4 +253,46 @@ test("round-two regressions fire on fixtures and the introducing head, while the
         fixture.path
       )
   }
+})
+
+test("document history guard rejects misplaced and photo-owned history at its introducing head", () => {
+  const paths = [
+    "apps/web/src/features/paper/rich-text-formatting.tsx",
+    "apps/web/src/features/paper/rich-document-toolbar.tsx",
+    "packages/paper-crdt/src/native-layout-photo-controls.ts",
+  ]
+  for (const path of paths) {
+    const oldPath = path.replace("rich-document-toolbar", "rich-photo-toolbar")
+    const introduced = path.endsWith("rich-text-formatting.tsx")
+      ? "54fbdb62"
+      : path.endsWith("native-layout-photo-controls.ts")
+        ? "b45e5d82"
+        : "dd38b260"
+    const before = execFileSync("git", ["show", `${introduced}:${oldPath}`], {
+      cwd: root,
+      encoding: "utf8",
+    })
+    assert.ok(detectDocumentHistory(before, oldPath).length > 0, oldPath)
+    assert.deepEqual(
+      detectDocumentHistory(
+        readFileSync(new URL(`../${path}`, import.meta.url), "utf8"),
+        path
+      ),
+      [],
+      path
+    )
+  }
+  assert.ok(
+    detectDocumentHistory(
+      'role="toolbar" {!compact ? <RichDocumentHistory /> : null}',
+      paths[0]
+    ).length > 0
+  )
+  assert.deepEqual(
+    detectDocumentHistory(
+      'role="toolbar" <RichDocumentHistory /> {!compact ? <Font /> : null}',
+      paths[0]
+    ),
+    []
+  )
 })
