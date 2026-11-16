@@ -1,4 +1,4 @@
-import type { LayoutPhoto } from "@workspace/domain/internal/paper-presentation"
+import type { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import {
   Select,
   SelectContent,
@@ -6,6 +6,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
+
+type LayoutPhoto = ReturnType<
+  ReturnType<typeof mountRichPaperEditor>["photos"]
+>[number]
 
 export function RichPhotoChoice({
   photos,
