@@ -53,7 +53,7 @@ export function ToolbarItem({
       className={
         visible
           ? label === "Font"
-            ? "inline-flex min-w-28 shrink basis-44 [&_button]:w-full"
+            ? "inline-flex min-w-28 shrink basis-44 [&_button]:w-full [&_button]:max-w-full [&_button]:min-w-0"
             : "inline-flex shrink-0"
           : label === "Font"
             ? "pointer-events-none invisible absolute inline-flex w-44 min-w-28 shrink-0 basis-44"

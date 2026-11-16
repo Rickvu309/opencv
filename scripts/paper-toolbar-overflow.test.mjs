@@ -104,31 +104,49 @@ test("unmeasured and remounted toolbars retain their controls", () => {
   )
 })
 
-test("Paper's geometry guard rejects adjacent overlap and a Font below its readable floor", () => {
+test("Paper's geometry guard rejects overlapping controls and a Font below its readable floor", () => {
   const font = { label: "Font", width: 112, minimum: 112, visible: true }
   const clean = {
     ...layout,
-    viewport: 1300,
+    viewport: 1290,
     controls: [
       ...layout.controls,
-      { label: "Font", left: 257, right: 369 },
-      { label: "Text size", left: 373, right: 453 },
+      { label: "Font", left: 482, right: 594 },
+      { label: "Text size", left: 598, right: 678 },
     ],
     candidates: [...layout.candidates, font],
-    right: 1000,
+    right: 1280,
   }
   assert.deepEqual(detect(clean), [])
   const mistake = {
     ...clean,
     controls: clean.controls.map((control) =>
-      control.label === "Text size" ? { ...control, left: 362 } : control
+      control.label === "Font"
+        ? { ...control, left: 482, right: 500 }
+        : control.label === "Text size"
+          ? { ...control, left: 490, right: 570 }
+          : control
     ),
     candidates: [...layout.candidates, { ...font, width: 18 }],
   }
   assert.deepEqual(detect(mistake), [
-    "Font overlaps Text size at 1300px",
-    "Font is below its floor at 1300px",
+    "Font overlaps Text size at 1290px",
+    "Font is below its floor at 1290px",
   ])
+  assert.deepEqual(
+    detect({
+      ...clean,
+      controls: [
+        ...clean.controls,
+        { label: "Strikethrough", left: 610, right: 650 },
+        { label: "Highlight", left: 660, right: 700 },
+      ],
+    }),
+    [
+      "Text size overlaps Strikethrough at 1290px",
+      "Text size overlaps Highlight at 1290px",
+    ]
+  )
 })
 
 test("Paper's geometry guard keeps paired indent controls on the same surface", () => {

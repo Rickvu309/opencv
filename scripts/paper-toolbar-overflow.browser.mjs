@@ -116,7 +116,14 @@ test(
       await toolbar.getByRole("button", { name: "More formatting" }).waitFor()
       await page.evaluate(() => document.fonts.ready)
       for (const width of [
-        320, 360, 390, 1440, 1280, 1286, 1290, 1300, 1325, 320,
+        320,
+        360,
+        390,
+        1100,
+        1440,
+        1280,
+        ...Array.from({ length: 40 }, (_, index) => 1286 + index),
+        320,
       ]) {
         await page.locator("#root").evaluate((root, width) => {
           root.style.marginInlineStart = width >= 768 ? "254px" : "0"
@@ -172,6 +179,14 @@ test(
           assert.equal(snapshot.separators, 1)
         }
         assert.deepEqual(detect(snapshot), [], JSON.stringify(snapshot))
+        if (width >= 1286 && width <= 1325) {
+          const font = snapshot.candidates.find((item) => item.label === "Font")
+          assert.ok(font && (!font.visible || font.width >= 112))
+          assert.ok(
+            snapshot.overflow,
+            `More must remain available at ${width}px`
+          )
+        }
         if (width === 320)
           for (const label of ["Bold", "Italic"])
             assert.ok(

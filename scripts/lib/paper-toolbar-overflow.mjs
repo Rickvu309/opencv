@@ -13,14 +13,14 @@ export function detect(layout) {
     if (control.left < layout.left - 1 || control.right > layout.right + 1)
       problems.push(`${control.label} clips at ${layout.viewport}px`)
   const ordered = [...layout.controls].sort((a, b) => a.left - b.left)
-  for (let index = 1; index < ordered.length; index++) {
-    const previous = ordered[index - 1]
-    const current = ordered[index]
-    if (current.left < previous.right - 0.25)
-      problems.push(
-        `${previous.label} overlaps ${current.label} at ${layout.viewport}px`
-      )
-  }
+  for (let index = 0; index < ordered.length; index++)
+    for (const current of ordered.slice(index + 1)) {
+      const previous = ordered[index]
+      if (current.left < previous.right - 0.25)
+        problems.push(
+          `${previous.label} overlaps ${current.label} at ${layout.viewport}px`
+        )
+    }
   for (const item of layout.candidates) {
     if (item.visible && item.width < item.minimum - 0.25)
       problems.push(`${item.label} is below its floor at ${layout.viewport}px`)
