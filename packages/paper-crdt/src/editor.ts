@@ -68,9 +68,11 @@ export function mountRichPaperEditor(
       subscribe(listener: () => void) {
         const offSelection = mounted.editor.onSelectionChange(listener)
         const offChange = mounted.editor.onChange(listener)
+        const offPhoto = mounted.photoControls.subscribePhotoSelection(listener)
         return () => {
           offSelection()
           offChange()
+          offPhoto()
         }
       },
       pagination: mounted.pagination,

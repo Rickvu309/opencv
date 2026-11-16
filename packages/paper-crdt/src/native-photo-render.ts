@@ -19,6 +19,10 @@ export function photoElement(photo: LayoutPhoto, source?: string) {
   const bounds = photoBounds(photo)
   dom.dataset.paperPhoto = photo.id
   dom.contentEditable = "false"
+  dom.tabIndex = 0
+  dom.setAttribute("role", "button")
+  dom.setAttribute("aria-label", `Select photo: ${photo.alt || "Photo"}`)
+  dom.setAttribute("aria-pressed", "false")
   dom.style.position = "relative"
   dom.style.width = `${(bounds.width + photo.spacing.left + photo.spacing.right) / 20}pt`
   dom.style.height = `${(bounds.height + photo.spacing.top + photo.spacing.bottom) / 20}pt`

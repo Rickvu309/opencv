@@ -1,7 +1,10 @@
+import { TextSelection } from "@tiptap/pm/state"
 import { yUndoPluginKey } from "y-prosemirror"
 import {
   canonical,
   layoutPhotoSchema,
+  photoDestination,
+  fitPhotoCrop,
 } from "@workspace/domain/internal/paper-presentation"
 import {
   commitFlowPhotoEdit,
@@ -47,38 +50,19 @@ export function flowPhotoControls(
     insertPhoto(source: string, aspectRatio = 1) {
       const document = readFlow(binding)
       const cursor = editor.getTextCursorPosition().block.id
-      const section =
-        document.flow.children.find((section) =>
-          section.children.some(
-            (node) =>
-              node.id === cursor ||
-              ("children" in node &&
-                node.children.some((child) => child.id === cursor))
-          )
-        ) ?? document.flow.children[0]
-      if (!section) throw new Error("Photo insertion point is missing")
-      const anchor = section.children.find(
-        (node) =>
-          node.id === cursor ||
-          ("children" in node &&
-            node.children.some((child) => child.id === cursor))
+      const { width: available, ...destination } = photoDestination(
+        document,
+        cursor
       )
-      const width = Math.min(
-        2160,
-        Math.floor(
-          (section.page.width -
-            section.page.start -
-            section.page.end -
-            (section.columns.count - 1) * section.columns.gap) /
-            section.columns.count
-        )
-      )
+      if (!Number.isFinite(aspectRatio) || aspectRatio <= 0)
+        throw new Error("This image could not be read")
+      const width = Math.round(Math.min(2160, available, 31680 * aspectRatio))
       const photo = layoutPhotoSchema.parse({
         id: crypto.randomUUID(),
         type: "photo",
         source,
         width,
-        height: Math.max(240, Math.min(31680, Math.round(width / aspectRatio))),
+        height: Math.round(width / aspectRatio),
         crop: { top: 0, right: 0, bottom: 0, left: 0 },
         rotation: 0,
         shape: "rectangle",
@@ -89,17 +73,40 @@ export function flowPhotoControls(
       change({
         kind: "insert-photo",
         photo,
-        destination: { parentId: section.id, afterId: anchor?.id ?? null },
+        destination,
       })
       return photo.id
     },
     updatePhoto(input: unknown) {
       change({ kind: "update-photo", photo: layoutPhotoSchema.parse(input) })
     },
-    replacePhoto(photoId: string, source: string) {
-      change({ kind: "replace-photo", photoId, source })
+    replacePhoto(photoId: string, source: string, aspectRatio?: number) {
+      const photo = photos().find((photo) => photo.id === photoId)
+      if (!photo) throw new Error("Photo is missing")
+      change({
+        kind: "update-photo",
+        photo: {
+          ...photo,
+          source,
+          crop:
+            aspectRatio === undefined
+              ? photo.crop
+              : fitPhotoCrop(aspectRatio, photo.width / photo.height, {
+                  top: 0,
+                  right: 0,
+                  bottom: 0,
+                  left: 0,
+                }),
+        },
+      })
     },
     removePhoto(photoId: string) {
+      const state = editor.prosemirrorState
+      const selection =
+        TextSelection.findFrom(state.selection.$from, -1, true) ??
+        TextSelection.findFrom(state.selection.$to, 1, true)
+      if (!selection) throw new Error("Place the cursor in the document")
+      editor.prosemirrorView.dispatch(state.tr.setSelection(selection))
       change({ kind: "remove-photo", photoId })
     },
     undoPhoto() {

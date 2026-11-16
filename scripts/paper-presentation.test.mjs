@@ -42,3 +42,21 @@ test("private formatting preserves package boundaries, real owners, XML anchors 
       file
     )
 })
+
+test("photo guards catch the reviewed insertion, dimension, selection and preview mistakes", () => {
+  for (const file of [
+    "packages/paper-crdt/src/native-layout-photo-controls.ts",
+    "apps/web/src/features/paper/rich-photo-controls.tsx",
+  ]) {
+    const before = execFileSync("git", ["show", `810e5694:${file}`], {
+      cwd: root,
+      encoding: "utf8",
+    })
+    assert.ok(detect(before, file).length > 0, file)
+    assert.deepEqual(
+      detect(readFileSync(path.join(root, file), "utf8"), file),
+      [],
+      file
+    )
+  }
+})

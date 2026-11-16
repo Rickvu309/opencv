@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest"
 import {
   flowDocumentSchema,
   prepareFlowPhotoEdit,
+  fitPhotoCrop,
+  resizePhoto,
+  layoutPhotoSchema,
 } from "@workspace/domain/internal/paper-presentation"
 import { compileFlowNativeDocx } from "./formatted.js"
 import { cv, paragraph, presentation } from "./formatted.test-support.js"
@@ -21,6 +24,81 @@ const bytes = Buffer.from(
 
 describe("rich CV and Letter photo Word output", () => {
   for (const kind of ["cv", "letter"] as const) {
+    it(`exports ${kind} locked portrait sizing and centered circle crop`, async () => {
+      const appearance = presentation()
+      const portrait = layoutPhotoSchema.parse({
+        id: "portrait",
+        type: "photo",
+        source,
+        width: 1800,
+        height: 2400,
+        crop: { top: 0, right: 0, bottom: 0, left: 0 },
+        rotation: 0,
+        shape: "rectangle",
+        placement: { kind: "block", alignment: "center" },
+        spacing: { top: 0, right: 0, bottom: 0, left: 0 },
+        alt: "Portrait",
+      })
+      const resized = resizePhoto(portrait, "height", 3200, 0.75)
+      for (const photo of [
+        resized,
+        {
+          ...resized,
+          shape: "circle",
+          height: resized.width,
+          crop: fitPhotoCrop(0.75, 1, portrait.crop),
+        },
+      ]) {
+        const document = flowDocumentSchema.parse({
+          profile: "private-layout-3",
+          kind,
+          presentation: appearance,
+          flow: {
+            id: "flow",
+            type: "flow",
+            children: [
+              {
+                id: "section",
+                type: "flowSection",
+                start: "continuous",
+                page: appearance.page,
+                columns: { count: 1, gap: 360 },
+                children: [
+                  ...(kind === "cv" ? [cv().header] : []),
+                  paragraph("body", "Portrait proof"),
+                  photo,
+                ],
+              },
+            ],
+          },
+        })
+        const output = compileFlowNativeDocx({
+          document,
+          photos: [{ source, mediaType: "image/png", bytes }],
+        })
+        if (output.kind === "refused") throw new Error(output.reason)
+        const archive = await readPackageZip(output.value)
+        const xml = archive.files.get("word/document.xml")
+        if (!xml) throw new Error("Missing Word document")
+        const { root } = parsePackageXml(xml)
+        expect(
+          ["cx", "cy"].map((key) => attribute(one(root, "extent", WP), key, ""))
+        ).toEqual(
+          photo.shape === "circle"
+            ? ["1524000", "1524000"]
+            : ["1524000", "2032000"]
+        )
+        expect(
+          ["t", "r", "b", "l"].map((key) =>
+            attribute(one(root, "srcRect", A), key, "")
+          )
+        ).toEqual(
+          photo.shape === "circle"
+            ? ["12500", "0", "12500", "0"]
+            : ["0", "0", "0", "0"]
+        )
+      }
+    })
     for (const [shape, geometry] of [
       ["rectangle", "rect"],
       ["rounded", "roundRect"],

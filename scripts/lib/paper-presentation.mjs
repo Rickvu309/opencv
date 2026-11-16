@@ -84,6 +84,49 @@ export function detect(text, path) {
       "Wrapped photo text must share the surrounding inline formatting context"
     )
 
+  if (
+    path === "packages/paper-crdt/src/native-layout-photo-controls.ts" &&
+    (/\?\?\s*document\.flow\.children\[0\]/.test(text) ||
+      /afterId:\s*anchor\?\.id\s*\?\?\s*null/.test(text))
+  )
+    hits.push(
+      "Photo insertion must resolve the cursor ancestry and refuse a missing destination"
+    )
+  if (
+    path === "packages/paper-crdt/src/native-layout-photo-controls.ts" &&
+    text.includes('change({ kind: "remove-photo", photoId })') &&
+    !text.includes("TextSelection.findFrom(")
+  )
+    hits.push(
+      "Photo removal must leave a text selection before deleting its node"
+    )
+  if (
+    [
+      "apps/web/src/features/paper/rich-photo-controls.tsx",
+      "apps/web/src/features/paper/rich-photo-preview.tsx",
+    ].includes(path)
+  ) {
+    if (/name=\{edge\}[\s\S]*?step="(?!any")/.test(text))
+      hits.push("Photo crop inputs must accept precise centered crop values")
+    if (/photos\[photos\.length\s*-\s*1\]/.test(text))
+      hits.push(
+        "Photo editing must use the page selection instead of the last photo"
+      )
+    if (
+      text.includes('data.get("height")') &&
+      text.includes('data.get("width")')
+    )
+      hits.push(
+        "Photo dimensions must resize together with the cropped source ratio"
+      )
+    if (
+      text.includes('alt={selected.alt || "Photo to edit"}') &&
+      (!text.includes("selected.crop.left") ||
+        !text.includes("selected.shape ==="))
+    )
+      hits.push("Photo preview must reflect the pending crop and shape")
+  }
+
   const presentation =
     storage ||
     /\/(?:paper-presentation|presentation(?:[-.][^/]+)?|native-(?:formatting|layout|photo)(?:[-.][^/]+)?)\.ts$/.test(

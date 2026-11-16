@@ -1,4 +1,5 @@
 import * as Y from "yjs"
+import { NodeSelection } from "@tiptap/pm/state"
 import {
   createPrivateFlow,
   readFlow,
@@ -18,6 +19,7 @@ import {
 import {
   canonical,
   photoBounds,
+  flowSectionSchema,
   type Result,
 } from "@workspace/domain/internal/paper-presentation"
 import {
@@ -137,6 +139,128 @@ describe("rich CV and Letter photo editing", () => {
     Reflect.deleteProperty(document, "fonts")
   })
   for (const kind of ["cv", "letter"] as const) {
+    for (const later of [false, true]) {
+      it(`inserts ${kind} at its ${later ? "later-section" : "first-section"} cell cursor with its column width`, () => {
+        const { version, schemaRevision, ...flow } = storedFlowFixture(kind)
+        void version
+        void schemaRevision
+        const first = flow.flow.children[0]!
+        const table = first.children.find((node) => node.type === "table")
+        if (!table) throw new Error("Missing fixture table")
+        table.columns[0]!.width = 1200
+        if (later) {
+          first.children = first.children.filter((node) => node !== table)
+          flow.flow.children.push(
+            flowSectionSchema.parse({
+              ...first,
+              id: "later-section",
+              start: "next-page",
+              children: [
+                table,
+                {
+                  id: "later-after",
+                  type: "paragraph",
+                  content: [],
+                  paragraph: {},
+                },
+              ],
+            })
+          )
+        }
+        const binding = value(createPrivateFlow(flow))
+        const host = document.createElement("div")
+        document.body.append(host)
+        const mount = mountPrivateFlow(binding, host)
+        try {
+          mount.editor.setTextCursorPosition("r1-a-p", "end")
+          expect(mount.editor.getTextCursorPosition().block.id).toBe("r1-a-p")
+          const before = readFlow(binding)
+          const id = mount.photoControls.insertPhoto(
+            "file:00000000-0000-4000-8000-000000000002",
+            0.75
+          )
+          const after = readFlow(binding)
+          const section = after.flow.children[later ? 1 : 0]!
+          const updated = section.children.find((node) => node.type === "table")
+          expect(
+            updated?.children[0]?.children[0]?.children.map((node) => node.id)
+          ).toEqual(["r1-a-p", id])
+          expect(
+            mount.photoControls.photos().find((photo) => photo.id === id)
+          ).toMatchObject({ width: 960, height: 1280 })
+          if (later)
+            expect(after.flow.children[0]).toEqual(before.flow.children[0])
+          mount.photoControls.undoPhoto()
+          expect(readFlow(binding)).toEqual(before)
+          mount.photoControls.redoPhoto()
+          expect(readFlow(binding)).toEqual(after)
+          const figure = host.querySelector<HTMLElement>(
+            `[data-paper-photo="${id}"]`
+          )
+          figure?.click()
+          expect(mount.photoControls.selectedPhoto()).toBe(id)
+          expect(figure?.dataset.selected).toBe("true")
+          expect(figure?.style.outline).toContain("2px")
+          host
+            .querySelector<HTMLElement>('[data-paper-photo="portrait"]')
+            ?.click()
+          expect(mount.photoControls.selectedPhoto()).toBe("portrait")
+          expect(figure?.dataset.selected).toBe("false")
+          const state = mount.editor.prosemirrorState
+          let photoPosition = -1
+          state.doc.descendants((node, position) => {
+            if (
+              node.type.name === "paperPhoto" &&
+              node.attrs.photo.includes(id)
+            )
+              photoPosition = position
+          })
+          expect(photoPosition).toBeGreaterThan(-1)
+          mount.editor.prosemirrorView.dispatch(
+            state.tr.setSelection(
+              NodeSelection.create(state.doc, photoPosition)
+            )
+          )
+          mount.photoControls.removePhoto(id)
+          expect(
+            mount.photoControls.photos().some((photo) => photo.id === id)
+          ).toBe(false)
+          mount.photoControls.undoPhoto()
+          expect(readFlow(binding)).toEqual(after)
+          if (later) {
+            mount.editor.setTextCursorPosition("later-after", "end")
+            const next = mount.photoControls.insertPhoto(
+              "file:00000000-0000-4000-8000-000000000002",
+              0.75
+            )
+            expect(
+              readFlow(binding).flow.children[1]?.children.at(-1)?.id
+            ).toBe(next)
+          }
+          const cursor = mount.editor.getTextCursorPosition()
+          const missing = vi
+            .spyOn(mount.editor, "getTextCursorPosition")
+            .mockReturnValue({
+              ...cursor,
+              block: { ...cursor.block, id: "missing-paragraph" },
+            })
+          const unchanged = readFlow(binding)
+          expect(() =>
+            mount.photoControls.insertPhoto(
+              "file:00000000-0000-4000-8000-000000000002",
+              0.75
+            )
+          ).toThrow("Place the cursor in the document")
+          expect(readFlow(binding)).toEqual(unchanged)
+          missing.mockRestore()
+        } finally {
+          mount.unmount()
+          binding.engine._tiptapEditor.destroy()
+          binding.doc.destroy()
+          host.remove()
+        }
+      })
+    }
     it(`persists ${kind} insert, resize, crop, shape, alignment, alt, replacement and removal through history and binary reload`, () => {
       const { version, schemaRevision, ...flow } = storedFlowFixture(kind)
       void version

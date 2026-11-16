@@ -1,5 +1,25 @@
 export const clean = [
   {
+    path: "apps/web/src/features/paper/rich-photo-preview.tsx",
+    text: '<img alt={selected.alt || "Photo to edit"} style={{left: selected.crop.left, borderRadius: selected.shape === "circle" ? "50%" : 0}} />',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-photo-controls.ts",
+    text: 'TextSelection.findFrom(state.selection.$from, -1, true); change({ kind: "remove-photo", photoId })',
+  },
+  {
+    path: "apps/web/src/features/paper/rich-photo-controls.tsx",
+    text: '<Input name={edge} step="any" />',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-photo-controls.ts",
+    text: "const destination = photoDestination(document, cursor)",
+  },
+  {
+    path: "apps/web/src/features/paper/rich-photo-controls.tsx",
+    text: "resizePhoto(selected, dimension, value, sourceRatio); selected.crop.left; selected.shape === 'circle'; editor.selectedPhoto()",
+  },
+  {
     path: "apps/web/src/test/paper-api-mock.ts",
     text: "const identity = /^\\/api\\/paper\\/([^/]+)\\/document$/.exec(path); paperDocumentInfoSchema.parse(identity)",
   },
@@ -141,6 +161,38 @@ export const clean = [
   },
 ]
 export const mistakes = [
+  {
+    path: "apps/web/src/features/paper/rich-photo-preview.tsx",
+    text: '<img alt={selected.alt || "Photo to edit"} />',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-photo-controls.ts",
+    text: 'removePhoto(photoId: string) { change({ kind: "remove-photo", photoId }) }',
+  },
+  {
+    path: "apps/web/src/features/paper/rich-photo-controls.tsx",
+    text: '<Input name={edge} step="0.1" />',
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-photo-controls.ts",
+    text: "const section = document.flow.children.find(match) ?? document.flow.children[0]",
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-photo-controls.ts",
+    text: "const destination = { afterId: anchor?.id ?? null }",
+  },
+  {
+    path: "apps/web/src/features/paper/rich-photo-controls.tsx",
+    text: "const photo = photos[photos.length - 1]",
+  },
+  {
+    path: "apps/web/src/features/paper/rich-photo-controls.tsx",
+    text: 'const width = data.get("width"), height = data.get("height")',
+  },
+  {
+    path: "apps/web/src/features/paper/rich-photo-controls.tsx",
+    text: '<img alt={selected.alt || "Photo to edit"} />',
+  },
   {
     path: "apps/web/src/test/paper-api-mock.ts",
     text: "export async function paperApiFetch() { return null }",
