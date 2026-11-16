@@ -12,24 +12,29 @@ export function RichPhotoPreview({
   selected: LayoutPhoto
   onSourceRatio: (ratio: number) => void
 }) {
+  const width = Math.min(240, (144 * selected.width) / selected.height)
+  const height = (width * selected.height) / selected.width
   return (
     <div
-      aria-label="Photo preview"
+      role="img"
+      aria-label={
+        selected.alt ? `Photo preview: ${selected.alt}` : "Photo preview"
+      }
       className="relative mx-auto overflow-clip"
       style={{
-        width: Math.min(240, (144 * selected.width) / selected.height),
+        width,
         aspectRatio: `${selected.width} / ${selected.height}`,
         borderRadius:
           selected.shape === "circle"
             ? "50%"
             : selected.shape === "rounded"
-              ? Math.min(240, (144 * selected.width) / selected.height, 144) / 6
+              ? Math.min(width, height) / 6
               : 0,
       }}
     >
       <img
         src={resolvePhotoSrc(selected.source)}
-        alt={selected.alt || "Photo to edit"}
+        alt=""
         onLoad={(event) => {
           const image = event.currentTarget
           onSourceRatio(image.naturalWidth / image.naturalHeight)
@@ -38,8 +43,8 @@ export function RichPhotoPreview({
         style={{
           width: `${10000000 / (100000 - selected.crop.left - selected.crop.right)}%`,
           height: `${10000000 / (100000 - selected.crop.top - selected.crop.bottom)}%`,
-          insetInlineStart: `${(-selected.crop.left * 100) / (100000 - selected.crop.left - selected.crop.right)}%`,
-          insetBlockStart: `${(-selected.crop.top * 100) / (100000 - selected.crop.top - selected.crop.bottom)}%`,
+          left: `${(-selected.crop.left * 100) / (100000 - selected.crop.left - selected.crop.right)}%`,
+          top: `${(-selected.crop.top * 100) / (100000 - selected.crop.top - selected.crop.bottom)}%`,
         }}
       />
     </div>

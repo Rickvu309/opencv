@@ -1,11 +1,27 @@
 export const clean = [
   {
+    path: "apps/web/src/features/paper/rich-photo-error.ts",
+    text: 'if (error.message.trimStart().startsWith("[")) return "Use a smaller size"',
+  },
+  {
+    path: "apps/web/src/features/paper/rich-photo-number.tsx",
+    text: `const [draft, setDraft] = useState(String(value)); const field = <Input className="tabular-nums" onChange={event => setDraft(event.target.value)} onBlur={event => event.target.validity.valid && onCommit(Number(draft))} />`,
+  },
+  {
+    path: "apps/web/src/features/paper/rich-photo-controls.tsx",
+    text: "<RichPhotoNumber onCommit={(value) => fitPhotoCrop(ratio, 1, crop, edge)} />",
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-photo-controls.ts",
+    text: 'if (width < 240 || Math.round(width / aspectRatio) < 240) throw new Error("Crop this image and try again"); layoutPhotoSchema.parse({})',
+  },
+  {
     path: "packages/domain/src/paper-doc/native-layout-photo-destination.ts",
     text: 'throw new Error("Place the cursor in the document before inserting a photo")',
   },
   {
     path: "apps/web/src/features/paper/rich-photo-preview.tsx",
-    text: '<img alt={selected.alt || "Photo to edit"} style={{left: selected.crop.left, borderRadius: selected.shape === "circle" ? "50%" : 0}} />',
+    text: '<div role="img"><img alt="" style={{left: selected.crop.left, top: selected.crop.top, borderRadius: Math.min(width, height) / 6}} /></div>',
   },
   {
     path: "packages/paper-crdt/src/native-layout-photo-controls.ts",
@@ -165,6 +181,38 @@ export const clean = [
   },
 ]
 export const mistakes = [
+  {
+    path: "apps/web/src/features/paper/rich-photo-error.ts",
+    text: 'if (error.name === "ZodError") return "Use a smaller size"; return error.message',
+  },
+  {
+    path: "apps/web/src/features/paper/rich-photo-number.tsx",
+    text: `const change = (event) => onCommit(Number(event.target.value) || 1)`,
+  },
+  {
+    path: "apps/web/src/features/paper/rich-photo-controls.tsx",
+    text: "<Input onChange={(event) => fitPhotoCrop(ratio, 1, crop)} />",
+  },
+  {
+    path: "apps/web/src/features/paper/rich-photo-controls.tsx",
+    text: "<Input onChange={(event) => resizePhoto(selected, dimension, event.target.value, ratio)} />",
+  },
+  {
+    path: "apps/web/src/features/paper/rich-photo-controls.tsx",
+    text: "<DialogContent><DialogTitle>Edit photo</DialogTitle><DialogFooter><Button>Apply</Button></DialogFooter></DialogContent>",
+  },
+  {
+    path: "apps/web/src/features/paper/rich-photo-controls.tsx",
+    text: "fail(error.message)",
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-photo-controls.ts",
+    text: "layoutPhotoSchema.parse({ width, height: Math.round(width / aspectRatio) })",
+  },
+  {
+    path: "apps/web/src/features/paper/rich-photo-preview.tsx",
+    text: "<img style={{ insetInlineStart: crop.left, borderRadius: previewWidth / 6 }} />",
+  },
   {
     path: "packages/domain/src/paper-doc/native-layout-photo-destination.ts",
     text: "const section = document.flow.children.find(match) ?? document.flow.children[0]",

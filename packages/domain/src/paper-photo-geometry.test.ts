@@ -63,3 +63,21 @@ it("preserves an existing crop while fitting its visible region", () => {
   assert.equal(croppedPhotoRatio(0.75, fitted), 1)
   assert.throws(() => fitPhotoCrop(0.75, 1, { ...crop, left: 100000 }))
 })
+
+it("keeps the committed circle edge and can reverse every crop to zero", () => {
+  const ratio = 2687 / 3356
+  let fitted = fitPhotoCrop(ratio, 1, crop)
+  fitted = fitPhotoCrop(ratio, 1, { ...fitted, top: 5000 }, "top")
+  assert.equal(fitted.top, 5000)
+  assert.ok(Math.abs(croppedPhotoRatio(ratio, fitted) - 1) < 0.00002)
+  fitted = fitPhotoCrop(ratio, 1, { ...fitted, bottom: 0 }, "bottom")
+  assert.equal(fitted.bottom, 0)
+  assert.equal(fitted.left, 0)
+  assert.equal(fitted.right, 0)
+  for (const edge of ["top", "right", "bottom", "left"] as const) {
+    fitted = fitPhotoCrop(ratio, 1, { ...fitted, [edge]: 25000 }, edge)
+    fitted = fitPhotoCrop(ratio, 1, { ...fitted, [edge]: 0 }, edge)
+    assert.equal(fitted[edge], 0)
+    assert.ok(Math.abs(croppedPhotoRatio(ratio, fitted) - 1) < 0.0001)
+  }
+})

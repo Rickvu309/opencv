@@ -57,6 +57,10 @@ export function flowPhotoControls(
       if (!Number.isFinite(aspectRatio) || aspectRatio <= 0)
         throw new Error("This image could not be read")
       const width = Math.round(Math.min(2160, available, 31680 * aspectRatio))
+      if (width < 240 || Math.round(width / aspectRatio) < 240)
+        throw new Error(
+          "This image is too wide or tall. Crop it closer to a square and try again."
+        )
       const photo = layoutPhotoSchema.parse({
         id: crypto.randomUUID(),
         type: "photo",

@@ -1,5 +1,6 @@
 import { posix } from "node:path"
 import ts from "typescript"
+import { detectPhotoPresentation } from "./paper-photo-guard.mjs"
 import { qualifiedNativeWord } from "./paper-native-word.mjs"
 
 export function detect(text, path) {
@@ -84,6 +85,7 @@ export function detect(text, path) {
       "Wrapped photo text must share the surrounding inline formatting context"
     )
 
+  hits.push(...detectPhotoPresentation(text, path, source))
   if (
     [
       "packages/paper-crdt/src/native-layout-photo-controls.ts",

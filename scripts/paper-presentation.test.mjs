@@ -60,3 +60,22 @@ test("photo guards catch the reviewed insertion, dimension, selection and previe
     )
   }
 })
+
+test("round-two photo guards reject the crop ratchet and hidden actions at their introducing heads", () => {
+  for (const file of [
+    "apps/web/src/features/paper/rich-photo-controls.tsx",
+    "apps/web/src/features/paper/rich-photo-preview.tsx",
+    "packages/paper-crdt/src/native-layout-photo-controls.ts",
+  ]) {
+    const before = execFileSync("git", ["show", `75fd7496:${file}`], {
+      cwd: root,
+      encoding: "utf8",
+    })
+    assert.ok(detect(before, file).length > 0, file)
+    assert.deepEqual(
+      detect(readFileSync(path.join(root, file), "utf8"), file),
+      [],
+      file
+    )
+  }
+})

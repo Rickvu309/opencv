@@ -159,12 +159,7 @@ export function RichPaperPage({
             : SYNC_LABEL[status]}
         </span>
       </PageHeader>
-      <div
-        role="toolbar"
-        aria-label="Text formatting"
-        className="flex items-center gap-3 overflow-x-auto border-b px-4 py-2"
-      >
-        <RichPhotoControls editor={editor} disabled={blocked} />
+      <RichPhotoControls editor={editor} disabled={blocked}>
         {marks.map(({ mark, label, Icon }) => (
           <Button
             key={mark}
@@ -184,7 +179,7 @@ export function RichPaperPage({
             <Icon />
           </Button>
         ))}
-      </div>
+      </RichPhotoControls>
       {blocked ? (
         <p role="alert" className="p-6 text-sm">
           Paper could not safely open these changes. Your saved document and
@@ -195,7 +190,7 @@ export function RichPaperPage({
         <div
           ref={element}
           aria-busy={status === "loading"}
-          className="mx-auto min-h-[11in] w-full max-w-[8.5in] border bg-card p-5 text-card-foreground shadow-sm sm:p-[1in]"
+          className="mx-auto min-h-[11in] w-full max-w-[8.5in] border bg-card p-5 text-card-foreground shadow-sm sm:p-[1in] [&_figure[data-paper-photo]]:cursor-pointer [&_figure[data-paper-photo]]:touch-manipulation [&_figure[data-paper-photo]]:select-none [&_figure[data-paper-photo]]:active:opacity-80 [@media(hover:hover)_and_(pointer:fine)]:[&_figure[data-paper-photo]]:hover:ring-1 [@media(hover:hover)_and_(pointer:fine)]:[&_figure[data-paper-photo]]:hover:ring-ring"
         />
       </div>
     </section>

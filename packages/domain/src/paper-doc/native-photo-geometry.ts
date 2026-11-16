@@ -23,8 +23,11 @@ export function croppedPhotoRatio(
 export function fitPhotoCrop(
   sourceRatio: number,
   frameRatio: number,
-  crop: LayoutPhoto["crop"]
+  crop: LayoutPhoto["crop"],
+  editedEdge?: keyof LayoutPhoto["crop"]
 ) {
+  if (editedEdge)
+    return fitEditedCrop(sourceRatio, frameRatio, crop, editedEdge)
   const visibleRatio = croppedPhotoRatio(sourceRatio, crop)
   if (!Number.isFinite(visibleRatio) || visibleRatio <= 0 || frameRatio <= 0)
     throw new Error("Keep some of the photo visible")
@@ -56,5 +59,38 @@ export function resizePhoto<T extends PhotoGeometry>(
     ...photo,
     width: dimension === "width" ? value : Math.round(value * ratio),
     height: dimension === "height" ? value : Math.round(value / ratio),
+  }
+}
+
+function fitEditedCrop(
+  sourceRatio: number,
+  frameRatio: number,
+  crop: LayoutPhoto["crop"],
+  editedEdge: keyof LayoutPhoto["crop"]
+) {
+  const ratio = sourceRatio / frameRatio
+  const weights = { left: ratio, right: ratio, top: -1, bottom: -1 }
+  const edges = ["left", "right", "top", "bottom"] as const
+  const target = (ratio - 1) * 100000
+  const project = (edge: keyof typeof crop, offset: number) =>
+    edge === editedEdge
+      ? crop[edge]
+      : Math.max(0, Math.min(99999, crop[edge] - offset * weights[edge]))
+  let low = -100000 / Math.min(ratio, 1)
+  let high = -low
+  for (let step = 0; step < 64; step++) {
+    const offset = (low + high) / 2
+    const total = edges.reduce(
+      (sum, edge) => sum + weights[edge] * project(edge, offset),
+      0
+    )
+    if (total > target) low = offset
+    else high = offset
+  }
+  return {
+    left: Math.round(project("left", high)),
+    right: Math.round(project("right", high)),
+    top: Math.round(project("top", high)),
+    bottom: Math.round(project("bottom", high)),
   }
 }

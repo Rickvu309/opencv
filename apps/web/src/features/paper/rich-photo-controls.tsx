@@ -1,5 +1,4 @@
-import { useEffect, useReducer, useRef } from "react"
-import { ImagePlus, Image, Undo2, Redo2 } from "lucide-react"
+import { useEffect, useReducer, useRef, type ReactNode } from "react"
 import { paperPhotoRef } from "@workspace/domain"
 import {
   layoutPhotoSchema,
@@ -21,10 +20,15 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
   DialogTitle,
   DialogDescription,
   DialogFooter,
 } from "@workspace/ui/components/dialog"
+import { RichPhotoToolbar } from "./rich-photo-toolbar.tsx"
+import { RichPhotoChoice } from "./rich-photo-choice.tsx"
+import { RichPhotoNumber } from "./rich-photo-number.tsx"
+import { photoErrorMessage } from "./rich-photo-error.ts"
 import { RichPhotoPreview } from "./rich-photo-preview.tsx"
 import { photoDraft } from "./rich-photo-draft.ts"
 import { uploadPaperPhoto } from "./paper-api.ts"
@@ -45,9 +49,24 @@ const alignments = [
 export function RichPhotoControls({
   editor,
   disabled,
+  children,
 }: {
-  editor: Editor | null
+  editor: Pick<
+    Editor,
+    | "photos"
+    | "subscribe"
+    | "photoHistory"
+    | "undoPhoto"
+    | "redoPhoto"
+    | "insertPhoto"
+    | "replacePhoto"
+    | "selectedPhoto"
+    | "selectPhoto"
+    | "updatePhoto"
+    | "removePhoto"
+  > | null
   disabled: boolean
+  children: ReactNode
 }) {
   const [state, dispatch] = useReducer(photoDraft, {
     photo: null,
@@ -76,10 +95,7 @@ export function RichPhotoControls({
   const fail = (error: unknown) =>
     dispatch({
       type: "error",
-      error:
-        error instanceof Error
-          ? error.message
-          : "Could not change the photo. Try again.",
+      error: photoErrorMessage(error),
     })
   const pick = (id: string | null) => {
     replacement.current = id
@@ -127,43 +143,15 @@ export function RichPhotoControls({
           if (file) void upload(file)
         }}
       />
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-11 shrink-0 md:size-8"
-        aria-label="Undo"
-        disabled={held || !history?.undo}
-        onClick={() => editor?.undoPhoto()}
-      >
-        <Undo2 />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-11 shrink-0 md:size-8"
-        aria-label="Redo"
-        disabled={held || !history?.redo}
-        onClick={() => editor?.redoPhoto()}
-      >
-        <Redo2 />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-11 shrink-0 md:size-8"
-        aria-label="Insert photo"
-        disabled={held}
-        onClick={() => pick(null)}
-      >
-        <ImagePlus />
-      </Button>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="size-11 shrink-0 md:size-8"
-        aria-label="Edit photo"
-        disabled={held || photos.length === 0}
-        onClick={() =>
+      <RichPhotoToolbar
+        held={held}
+        canUndo={Boolean(history?.undo)}
+        canRedo={Boolean(history?.redo)}
+        hasPhotos={photos.length > 0}
+        onUndo={() => editor?.undoPhoto()}
+        onRedo={() => editor?.redoPhoto()}
+        onInsert={() => pick(null)}
+        onEdit={() =>
           dispatch({
             type: "open",
             photo:
@@ -173,17 +161,20 @@ export function RichPhotoControls({
           })
         }
       >
-        <Image />
-      </Button>
-      {state.busy ? (
-        <span role="status" className="text-sm">
-          Uploading photo…
-        </span>
-      ) : null}
+        {children}
+      </RichPhotoToolbar>
+      <div
+        role="status"
+        className={
+          state.busy ? "px-4 py-2 text-sm text-muted-foreground" : "sr-only"
+        }
+      >
+        {state.busy ? "Uploading photo…" : ""}
+      </div>
       {!selected && state.error ? (
-        <span role="alert" className="text-sm">
+        <p role="alert" className="px-4 py-2 text-sm text-destructive">
           {state.error}
-        </span>
+        </p>
       ) : null}
       <Dialog
         open={selected !== null}
@@ -191,15 +182,17 @@ export function RichPhotoControls({
           if (!open && !state.busy) dispatch({ type: "open", photo: null })
         }}
       >
-        <DialogContent className="sm:max-w-md">
-          <DialogTitle>Edit photo</DialogTitle>
-          <DialogDescription>
-            Size in pixels. Crop removes a percentage from each edge.
-          </DialogDescription>
+        <DialogContent className="flex flex-col overflow-hidden p-0 sm:max-w-md [&_[data-slot=dialog-close-pin]]:absolute [&_[data-slot=dialog-close-pin]]:right-6">
+          <DialogHeader className="shrink-0 px-6 pt-6">
+            <DialogTitle>Edit photo</DialogTitle>
+            <DialogDescription>
+              Size in pixels. Crop removes a percentage from each edge.
+            </DialogDescription>
+          </DialogHeader>
           {selected ? (
             <form
               key={selected.id + selected.source}
-              className="grid gap-4"
+              className="flex min-h-0 flex-col overflow-hidden"
               onSubmit={(event) => {
                 event.preventDefault()
                 if (!editor || held || !selected) return
@@ -245,295 +238,284 @@ export function RichPhotoControls({
                 }
               }}
             >
-              {photos.length > 1 ? (
-                <label className="grid gap-1">
-                  Photo
-                  <Select
-                    value={selected.id}
-                    items={photos.map((photo, index) => ({
-                      value: photo.id,
-                      label: photo.alt || `Photo ${index + 1}`,
-                    }))}
-                    disabled={held}
-                    onValueChange={(value) =>
-                      dispatch({
-                        type: "open",
-                        photo:
-                          photos.find((photo) => photo.id === value) ?? null,
-                      })
-                    }
-                  >
-                    <SelectTrigger
-                      aria-label="Choose photo"
-                      className="w-full data-[size=default]:h-11"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {photos.map((photo, index) => (
-                        <SelectItem key={photo.id} value={photo.id}>
-                          {photo.alt || `Photo ${index + 1}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </label>
-              ) : null}
-              <RichPhotoPreview
-                selected={selected}
-                onSourceRatio={(ratio) =>
-                  sourceRatios.current.set(selected.source, ratio)
-                }
-              />
-              <fieldset disabled={held} className="grid gap-4">
-                <div className="grid grid-cols-2 gap-4">
-                  {(["width", "height"] as const).map((dimension) => (
-                    <label key={dimension} className="grid gap-1 capitalize">
-                      {dimension}
-                      <Input
-                        name={dimension}
-                        className="h-11 md:h-8"
-                        type="number"
-                        min="16"
-                        max="2112"
-                        step="any"
-                        value={
-                          Math.round((selected[dimension] / 15) * 100) / 100
-                        }
-                        onChange={(event) => {
-                          const value = Math.round(
-                            Number(event.currentTarget.value) * 15
-                          )
-                          if (value <= 0) return
-                          dispatch({
-                            type: "draft",
-                            photo: resizePhoto(
-                              selected,
-                              dimension,
-                              value,
-                              sourceRatios.current.get(selected.source) ??
-                                photoSourceRatio(selected)
-                            ),
-                          })
-                        }}
-                        required
-                      />
-                    </label>
-                  ))}
-                </div>
-                <fieldset className="grid grid-cols-2 gap-4">
-                  <legend className="mb-2">Crop (%)</legend>
-                  {edges.map((edge) => (
-                    <label key={edge} className="grid gap-1 capitalize">
-                      {edge}
-                      <Input
-                        name={edge}
-                        className="h-11 md:h-8"
-                        type="number"
-                        min="0"
-                        max="99.9"
-                        step="any"
-                        value={selected.crop[edge] / 1000}
-                        onChange={(event) => {
-                          const crop = {
-                            ...selected.crop,
-                            [edge]: Math.round(
-                              Number(event.currentTarget.value) * 1000
-                            ),
+              <div className="grid min-h-0 grid-cols-1 gap-4 overflow-y-auto overscroll-contain px-6 pb-4">
+                <RichPhotoChoice
+                  photos={photos}
+                  selectedId={selected.id}
+                  disabled={held}
+                  onChoose={(value) =>
+                    dispatch({
+                      type: "open",
+                      photo: photos.find((photo) => photo.id === value) ?? null,
+                    })
+                  }
+                />
+                <RichPhotoPreview
+                  selected={selected}
+                  onSourceRatio={(ratio) =>
+                    sourceRatios.current.set(selected.source, ratio)
+                  }
+                />
+                <fieldset disabled={held} className="grid min-w-0 gap-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    {(["width", "height"] as const).map((dimension) => (
+                      <label key={dimension} className="grid gap-1 capitalize">
+                        {dimension}
+                        <RichPhotoNumber
+                          name={dimension}
+                          min={16}
+                          max={2112}
+                          value={
+                            Math.round((selected[dimension] / 15) * 100) / 100
                           }
+                          onCommit={(pixels) => {
+                            const value = Math.round(pixels * 15)
+                            if (value <= 0) return
+                            dispatch({
+                              type: "draft",
+                              photo: resizePhoto(
+                                selected,
+                                dimension,
+                                value,
+                                sourceRatios.current.get(selected.source) ??
+                                  photoSourceRatio(selected)
+                              ),
+                            })
+                          }}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                  <fieldset className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                    <legend className="mb-2">Crop (%)</legend>
+                    {edges.map((edge) => (
+                      <label key={edge} className="grid gap-1 capitalize">
+                        {edge}
+                        <RichPhotoNumber
+                          name={edge}
+                          min={0}
+                          max={99.9}
+                          value={selected.crop[edge] / 1000}
+                          onCommit={(percent) => {
+                            const crop = {
+                              ...selected.crop,
+                              [edge]: Math.round(percent * 1000),
+                            }
+                            if (
+                              selected.shape !== "circle" &&
+                              (crop.top + crop.bottom >= 100000 ||
+                                crop.left + crop.right >= 100000)
+                            ) {
+                              fail(
+                                new Error(
+                                  "Keep some of the photo visible. Reduce the crop on the opposite edge."
+                                )
+                              )
+                              return
+                            }
+                            const ratio =
+                              sourceRatios.current.get(selected.source) ??
+                              photoSourceRatio(selected)
+                            const fitted =
+                              selected.shape === "circle"
+                                ? fitPhotoCrop(ratio, 1, crop, edge)
+                                : crop
+                            dispatch({
+                              type: "draft",
+                              photo: {
+                                ...selected,
+                                crop: fitted,
+                                height:
+                                  selected.shape === "circle"
+                                    ? selected.width
+                                    : Math.round(
+                                        selected.width /
+                                          croppedPhotoRatio(ratio, fitted)
+                                      ),
+                              },
+                            })
+                          }}
+                        />
+                      </label>
+                    ))}
+                  </fieldset>
+                  <div className="grid grid-cols-2 gap-4">
+                    <label className="grid min-w-0 gap-1">
+                      Shape
+                      <Select
+                        name="shape"
+                        items={shapes}
+                        disabled={held}
+                        value={selected.shape}
+                        onValueChange={(value) => {
                           if (
-                            crop.top + crop.bottom >= 100000 ||
-                            crop.left + crop.right >= 100000
+                            value !== "circle" &&
+                            value !== "rectangle" &&
+                            value !== "rounded"
                           )
                             return
                           const ratio =
                             sourceRatios.current.get(selected.source) ??
                             photoSourceRatio(selected)
-                          const fitted =
-                            selected.shape === "circle"
-                              ? fitPhotoCrop(ratio, 1, crop)
-                              : crop
+                          const crop =
+                            value === "circle"
+                              ? fitPhotoCrop(ratio, 1, selected.crop)
+                              : selected.crop
                           dispatch({
                             type: "draft",
                             photo: {
                               ...selected,
-                              crop: fitted,
-                              height: Math.round(
-                                selected.width /
-                                  croppedPhotoRatio(ratio, fitted)
-                              ),
+                              shape: value,
+                              crop,
+                              height:
+                                value === "circle"
+                                  ? selected.width
+                                  : Math.round(
+                                      selected.width /
+                                        croppedPhotoRatio(ratio, crop)
+                                    ),
                             },
                           })
                         }}
-                        required
-                      />
+                      >
+                        <SelectTrigger
+                          aria-label="Shape"
+                          className="w-full data-[size=default]:h-11"
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {shapes.map((shape) => (
+                            <SelectItem key={shape.value} value={shape.value}>
+                              {shape.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </label>
-                  ))}
-                </fieldset>
-                <div className="grid grid-cols-2 gap-4">
-                  <label className="grid gap-1">
-                    Shape
-                    <Select
-                      name="shape"
-                      items={shapes}
-                      disabled={held}
-                      value={selected.shape}
-                      onValueChange={(value) => {
-                        if (
-                          value !== "circle" &&
-                          value !== "rectangle" &&
-                          value !== "rounded"
-                        )
-                          return
-                        const ratio =
-                          sourceRatios.current.get(selected.source) ??
-                          photoSourceRatio(selected)
-                        const crop =
-                          value === "circle"
-                            ? fitPhotoCrop(ratio, 1, selected.crop)
-                            : selected.crop
+                    <label className="grid min-w-0 gap-1">
+                      Alignment
+                      <Select
+                        name="alignment"
+                        items={alignments}
+                        disabled={held}
+                        value={
+                          selected.placement.kind === "block"
+                            ? selected.placement.alignment
+                            : selected.placement.side
+                        }
+                        onValueChange={(value) => {
+                          if (
+                            value === "left" ||
+                            value === "center" ||
+                            value === "right"
+                          )
+                            dispatch({
+                              type: "draft",
+                              photo: {
+                                ...selected,
+                                placement: { kind: "block", alignment: value },
+                              },
+                            })
+                        }}
+                      >
+                        <SelectTrigger
+                          aria-label="Alignment"
+                          className="w-full data-[size=default]:h-11"
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {alignments.map((alignment) => (
+                            <SelectItem
+                              key={alignment.value}
+                              value={alignment.value}
+                            >
+                              {alignment.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </label>
+                  </div>
+                  <label className="grid min-w-0 gap-1">
+                    Alternative text
+                    <Input
+                      name="alt"
+                      className="h-11 md:h-8"
+                      maxLength={
+                        layoutPhotoSchema.shape.alt.maxLength ?? undefined
+                      }
+                      value={selected.alt}
+                      onChange={(event) =>
                         dispatch({
                           type: "draft",
                           photo: {
                             ...selected,
-                            shape: value,
-                            crop,
-                            height:
-                              value === "circle"
-                                ? selected.width
-                                : Math.round(
-                                    selected.width /
-                                      croppedPhotoRatio(ratio, crop)
-                                  ),
+                            alt: event.currentTarget.value,
                           },
                         })
+                      }
+                      placeholder="Describe the photo"
+                    />
+                  </label>
+                  <p className="text-sm text-muted-foreground">
+                    Proportions stay locked. Circle crops a centered square.
+                  </p>
+                  <div className="flex flex-wrap gap-3">
+                    <Button
+                      className="h-11 md:h-8"
+                      type="button"
+                      variant="outline"
+                      onClick={() => pick(selected.id)}
+                    >
+                      Replace photo
+                    </Button>
+                    <Button
+                      className="h-11 md:h-8"
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        try {
+                          editor?.removePhoto(selected.id)
+                          dispatch({ type: "open", photo: null })
+                        } catch (error) {
+                          fail(error)
+                        }
                       }}
                     >
-                      <SelectTrigger
-                        aria-label="Shape"
-                        className="w-full data-[size=default]:h-11"
-                      >
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {shapes.map((shape) => (
-                          <SelectItem key={shape.value} value={shape.value}>
-                            {shape.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </label>
-                  <label className="grid gap-1">
-                    Alignment
-                    <Select
-                      name="alignment"
-                      items={alignments}
+                      Remove photo
+                    </Button>
+                  </div>
+                </fieldset>
+              </div>
+              <DialogFooter className="sticky bottom-0 mx-0 mb-0 shrink-0 border-t bg-popover px-6 py-4">
+                <div className="grid w-full gap-3">
+                  {state.error ? (
+                    <p role="alert" className="text-sm text-destructive">
+                      {state.error}
+                    </p>
+                  ) : null}
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      className="h-11 md:h-8"
+                      type="button"
+                      variant="outline"
+                      disabled={state.busy}
+                      onClick={() => dispatch({ type: "open", photo: null })}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      className="h-11 md:h-8"
+                      variant="primary"
+                      type="submit"
                       disabled={held}
-                      value={
-                        selected.placement.kind === "block"
-                          ? selected.placement.alignment
-                          : selected.placement.side
-                      }
-                      onValueChange={(value) => {
-                        if (
-                          value === "left" ||
-                          value === "center" ||
-                          value === "right"
-                        )
-                          dispatch({
-                            type: "draft",
-                            photo: {
-                              ...selected,
-                              placement: { kind: "block", alignment: value },
-                            },
-                          })
-                      }}
                     >
-                      <SelectTrigger
-                        aria-label="Alignment"
-                        className="w-full data-[size=default]:h-11"
-                      >
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {alignments.map((alignment) => (
-                          <SelectItem
-                            key={alignment.value}
-                            value={alignment.value}
-                          >
-                            {alignment.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </label>
+                      Apply
+                    </Button>
+                  </div>
                 </div>
-                <label className="grid gap-1">
-                  Alternative text
-                  <Input
-                    name="alt"
-                    className="h-11 md:h-8"
-                    maxLength={
-                      layoutPhotoSchema.shape.alt.maxLength ?? undefined
-                    }
-                    value={selected.alt}
-                    onChange={(event) =>
-                      dispatch({
-                        type: "draft",
-                        photo: { ...selected, alt: event.currentTarget.value },
-                      })
-                    }
-                    placeholder="Describe the photo"
-                  />
-                </label>
-                <p className="text-sm text-muted-foreground">
-                  Proportions stay locked. Circle crops a centered square.
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  <Button
-                    className="h-11 md:h-8"
-                    type="button"
-                    variant="outline"
-                    onClick={() => pick(selected.id)}
-                  >
-                    Replace photo
-                  </Button>
-                  <Button
-                    className="h-11 md:h-8"
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      try {
-                        editor?.removePhoto(selected.id)
-                        dispatch({ type: "open", photo: null })
-                      } catch (error) {
-                        fail(error)
-                      }
-                    }}
-                  >
-                    Remove photo
-                  </Button>
-                </div>
-              </fieldset>
-              {state.error ? (
-                <p role="alert" className="text-sm">
-                  {state.error}
-                </p>
-              ) : null}
-              <DialogFooter>
-                <Button
-                  className="h-11 md:h-8"
-                  type="button"
-                  variant="outline"
-                  disabled={state.busy}
-                  onClick={() => dispatch({ type: "open", photo: null })}
-                >
-                  Cancel
-                </Button>
-                <Button className="h-11 md:h-8" type="submit" disabled={held}>
-                  Apply
-                </Button>
               </DialogFooter>
             </form>
           ) : null}

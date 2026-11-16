@@ -175,6 +175,17 @@ describe("rich CV and Letter photo editing", () => {
           mount.editor.setTextCursorPosition("r1-a-p", "end")
           expect(mount.editor.getTextCursorPosition().block.id).toBe("r1-a-p")
           const before = readFlow(binding)
+          for (const ratio of [1000, 0.001]) {
+            expect(() =>
+              mount.photoControls.insertPhoto(
+                "file:00000000-0000-4000-8000-000000000002",
+                ratio
+              )
+            ).toThrow(
+              "This image is too wide or tall. Crop it closer to a square and try again."
+            )
+            expect(readFlow(binding)).toEqual(before)
+          }
           const id = mount.photoControls.insertPhoto(
             "file:00000000-0000-4000-8000-000000000002",
             0.75
