@@ -20,7 +20,7 @@ test("Paper header detector rejects mixed title units and an unshrinkable status
     [cssPath, "min-height: 52px; min-width: 4ch;"],
     [
       pagePath,
-      '<div className="ml-auto flex min-w-0 max-w-full items-center gap-2"><span role="status">Saved</span></div><p data-slot="paper-status-detail">Offline, retrying</p>',
+      '<div className="ml-auto flex min-w-0 max-w-full items-center gap-2"><span role="status">Saved</span></div><p aria-hidden="true" data-slot="paper-status-detail">Offline, retrying</p>',
     ],
   ]
   const mistakes = [
@@ -28,15 +28,15 @@ test("Paper header detector rejects mixed title units and an unshrinkable status
     [cssPath, "min-width: calc(4ch + 52px);"],
     [
       pagePath,
-      '<div className="ml-auto flex shrink-0 items-center gap-2"><span role="status">Saved</span></div><p data-slot="paper-status-detail">Offline, retrying</p>',
+      '<div className="ml-auto flex shrink-0 items-center gap-2"><span role="status">Saved</span></div><p aria-hidden="true" data-slot="paper-status-detail">Offline, retrying</p>',
     ],
     [
       pagePath,
-      '<div className="ml-auto flex items-center gap-2"><span role="status">Saved</span></div><p data-slot="paper-status-detail">Offline, retrying</p>',
+      '<div className="ml-auto flex items-center gap-2"><span role="status">Saved</span></div><p aria-hidden="true" data-slot="paper-status-detail">Offline, retrying</p>',
     ],
     [
       pagePath,
-      '<div className="ml-auto flex min-w-0 items-center gap-2"><span role="status" className="shrink-0 truncate">Saved</span></div><p data-slot="paper-status-detail">Offline, retrying</p>',
+      '<div className="ml-auto flex min-w-0 items-center gap-2"><span role="status" className="shrink-0 truncate">Saved</span></div><p aria-hidden="true" data-slot="paper-status-detail">Offline, retrying</p>',
     ],
     [
       pagePath,
@@ -71,14 +71,14 @@ test("Paper header detector fires on the reviewed title mix and historic status 
 test("Paper status detail cannot disappear at every offline typing pause", () => {
   assert.deepEqual(
     detect(
-      '{statusDetail.visible ? <p data-slot="paper-status-detail" /> : null}',
+      '{statusDetail.visible ? <p aria-hidden="true" data-slot="paper-status-detail" /> : null}',
       pagePath
     ),
     []
   )
   assert.ok(
     detect(
-      '{editorError || !["loading", "saving", "saved"].includes(status) ? <p data-slot="paper-status-detail" /> : null}',
+      '{editorError || !["loading", "saving", "saved"].includes(status) ? <p aria-hidden="true" data-slot="paper-status-detail" /> : null}',
       pagePath
     ).some((hit) => hit.includes("offline typing"))
   )
@@ -86,5 +86,35 @@ test("Paper status detail cannot disappear at every offline typing pause", () =>
     detect(past("b6bd2419", pagePath), pagePath).some((hit) =>
       hit.includes("offline typing")
     )
+  )
+})
+
+test("Paper status stays in one permanently exposed live region", () => {
+  const clean =
+    '<span role="status">Offline, retrying</span><p aria-hidden="true" data-slot="paper-status-detail">Offline, retrying</p>'
+  assert.deepEqual(detect(clean, pagePath), [])
+  for (const mistake of [
+    clean.replace(
+      'role="status"',
+      'role="status" aria-hidden={statusDetailVisible}'
+    ),
+    clean.replace('aria-hidden="true"', 'role="status"'),
+    clean.replace('aria-hidden="true"', ""),
+  ])
+    assert.ok(detect(mistake, pagePath).length)
+  const hits = detect(past("4958d450", pagePath), pagePath)
+  assert.ok(hits.some((hit) => hit.includes("stay exposed")))
+  assert.ok(hits.some((hit) => hit.includes("hidden from assistive")))
+})
+
+test("Paper detail resets on layout changes without resetting for typing", () => {
+  const path = "apps/web/src/features/paper/rich-status-detail.ts"
+  assert.deepEqual(detect(read(path), path), [])
+  assert.ok(detect(past("4958d450", path), path).length)
+  const clean =
+    "previous.width !== layout.width; previous.font !== layout.font; visible: action.resized ? action.clipped : state.visible || action.clipped"
+  assert.deepEqual(detect(clean, path), [])
+  assert.ok(
+    detect(clean.replace("action.resized ? action.clipped : ", ""), path).length
   )
 })

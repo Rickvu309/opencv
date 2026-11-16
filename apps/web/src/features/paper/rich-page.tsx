@@ -149,7 +149,6 @@ export function RichPaperPage({
           <span
             role="status"
             ref={statusRef}
-            aria-hidden={statusDetailVisible}
             className="min-w-0 truncate text-sm text-muted-foreground"
           >
             {statusLabel}
@@ -163,7 +162,7 @@ export function RichPaperPage({
       </PageHeader>
       {statusDetailVisible ? (
         <p
-          role="status"
+          aria-hidden="true"
           ref={detailRef}
           style={{ minHeight: statusDetailHeight }}
           data-slot="paper-status-detail"

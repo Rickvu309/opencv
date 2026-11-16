@@ -7,6 +7,15 @@ export function detect(text, path) {
           "Paper title minimum mixes fixed pixels with font-relative space"
         )
   }
+  if (
+    path.endsWith("rich-status-detail.ts") &&
+    (!text.includes("previous.width !== layout.width") ||
+      !text.includes("previous.font !== layout.font") ||
+      !/visible:\s*action.resized\s*\?\s*action.clipped/.test(text))
+  )
+    failures.push(
+      "Paper status detail must recheck clipping when layout changes"
+    )
   if (path.endsWith("rich-page.tsx")) {
     if (
       /editorError\s*\|\|\s*!\["loading",\s*"saving",\s*"saved"\]\.includes\(status\)/.test(
@@ -14,6 +23,19 @@ export function detect(text, path) {
       )
     )
       failures.push("Paper status detail disappears during offline typing")
+    const live = [...text.matchAll(/<span\b[^>]*role="status"[^>]*>/g)]
+    if (live.some(([tag]) => /aria-hidden=/.test(tag)))
+      failures.push("Paper header live status must stay exposed")
+    const detail = text.match(
+      /<p\b[^>]*data-slot="paper-status-detail"[^>]*>/
+    )?.[0]
+    if (
+      detail &&
+      (!detail.includes('aria-hidden="true"') || /role=/.test(detail))
+    )
+      failures.push(
+        "Paper visible detail must be hidden from assistive technology"
+      )
     const actions = text.match(
       /<div className="([^"]+)">\s*<span\s+role="status"/
     )?.[1]
