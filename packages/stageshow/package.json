@@ -8,7 +8,8 @@
     "./*": "./src/*"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test kit-imports.test.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.60.0",
