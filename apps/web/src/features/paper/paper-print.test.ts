@@ -159,7 +159,14 @@ describe("print paper", () => {
     })
     const sheet = document.createElement("div")
     sheet.setAttribute("data-paper-print", "")
-    sheet.append(document.createElement("img"))
+    const photo = document.createElement("img")
+    photo.src = "https://photos.test/ada.png"
+    Object.defineProperties(photo, {
+      complete: { value: true },
+      naturalWidth: { value: 120 },
+      naturalHeight: { value: 160 },
+    })
+    sheet.append(photo)
     document.body.append(sheet)
     const print = vi.spyOn(window, "print").mockImplementation(() => undefined)
     printPaper("Ada Photo")
