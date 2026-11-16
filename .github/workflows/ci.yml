@@ -19,6 +19,10 @@ env:
 
 jobs:
   guards:
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [ordinary, temp-dirs]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -26,8 +30,9 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - run: pnpm exec turbo run test --filter=@workspace/guards
-      - run: pnpm exec turbo run test:open-pr --filter=@workspace/guards
+      - run: pnpm exec node packages/guards/run-group.mjs ${{ matrix.group }}
+      - if: matrix.group == 'ordinary'
+        run: pnpm exec turbo run test:open-pr --filter=@workspace/guards
 
   static:
     runs-on: ubuntu-latest
