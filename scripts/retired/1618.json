@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/inbox/inbox-page.test.tsx",
+    "because": "The empty inbox and the example banner now use the example-inbox sentence, and the empty action is View example inbox. The new test checks both.",
+    "replacedBy": "apps/web/src/features/inbox/inbox-page.test.tsx",
+    "proof": {
+      "fork": "7bd95e39fa2f4a9d7cc5dacafd177a171da7d963",
+      "replacedByBlob": "d7e1c8fc447e37373ba925fc180d886dd1e9b9a8",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
   }
 ]
