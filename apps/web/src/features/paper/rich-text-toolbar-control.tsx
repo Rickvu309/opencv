@@ -1,4 +1,4 @@
-import { useState, type ReactElement, type ReactNode } from "react"
+import { useReducer, type ReactElement, type ReactNode } from "react"
 import { Button } from "@workspace/ui/components/button"
 import {
   Tooltip,
@@ -84,7 +84,11 @@ export function ToolbarChoice({
   className?: string
   fallback?: (value: string) => string
 }) {
-  const [open, setOpen] = useState(false)
+  const [open, dispatch] = useReducer(
+    (_: boolean, action: { type: "open"; open: boolean }) => action.open,
+    false
+  )
+  const setOpen = (open: boolean) => dispatch({ type: "open", open })
   const options =
     value && !choices.some((choice) => choice.value === value)
       ? [...choices, { value, label: fallback?.(value) ?? "Custom" }]

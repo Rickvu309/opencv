@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useRef, useState, type ReactNode } from "react"
+import { useEffect, useReducer, useRef, type ReactNode } from "react"
 import { Ellipsis } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -16,6 +16,22 @@ import {
   type TextFormatting,
 } from "./rich-text-toolbar-control.tsx"
 
+type ToolbarState = { compact: boolean; open: boolean }
+type ToolbarAction =
+  { type: "resize"; compact: boolean } | { type: "open"; open: boolean }
+
+function toolbarState(
+  state: ToolbarState,
+  action: ToolbarAction
+): ToolbarState {
+  switch (action.type) {
+    case "resize":
+      return { ...state, compact: action.compact }
+    case "open":
+      return { ...state, open: action.open }
+  }
+}
+
 export function RichPaperTextFormatting({
   editor,
   blocked,
@@ -30,8 +46,11 @@ export function RichPaperTextFormatting({
     null
   )
   const host = useRef<HTMLDivElement>(null)
-  const [compact, setCompact] = useState(true)
-  const [open, setOpen] = useState(false)
+  const [{ compact, open }, dispatch] = useReducer(toolbarState, {
+    compact: true,
+    open: false,
+  })
+  const setOpen = (open: boolean) => dispatch({ type: "open", open })
   useEffect(() => {
     update(editor?.activeFormatting() ?? null)
     return editor?.subscribe(() => update(editor.activeFormatting()))
@@ -40,7 +59,8 @@ export function RichPaperTextFormatting({
     if (!host.current) return
     const observer = new ResizeObserver((entries) => {
       const entry = entries[0]
-      if (entry) setCompact(entry.contentRect.width < 860)
+      if (entry)
+        dispatch({ type: "resize", compact: entry.contentRect.width < 860 })
     })
     observer.observe(host.current)
     return () => observer.disconnect()

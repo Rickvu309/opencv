@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useReducer } from "react"
 import { Baseline, Highlighter, PaintBucket, Check } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -31,7 +31,11 @@ function ColorChoice({
   onChange: (value: string) => void
   highlight?: boolean
 }) {
-  const [open, setOpen] = useState(false)
+  const [open, dispatch] = useReducer(
+    (_: boolean, action: { type: "open"; open: boolean }) => action.open,
+    false
+  )
+  const setOpen = (open: boolean) => dispatch({ type: "open", open })
   const selected = choices.find(
     (choice) =>
       choice.value === value ||

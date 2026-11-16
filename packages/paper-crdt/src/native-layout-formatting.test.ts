@@ -269,7 +269,11 @@ describe("rich Paper selection formatting", () => {
     expect(values).toHaveLength(notifications)
     editor.destroy()
     expect(editor.activeFormatting()).toBeNull()
-    expect(() => editor.formatInline({ size: 280 })).not.toThrow()
+    expect(() => editor.formatInline({ size: 280 })).toThrow("closed")
+    expect(() => editor.formatParagraph({ alignment: "center" })).toThrow(
+      "closed"
+    )
+    expect(() => editor.toggleMark("bold")).toThrow("closed")
   })
 
   it("shows effective values across empty paragraphs without inventing mixed formatting", () => {

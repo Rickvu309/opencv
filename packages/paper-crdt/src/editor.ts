@@ -89,17 +89,17 @@ export function mountRichPaperEditor(
         return view.dom
       },
       toggleMark(mark: RichMark) {
-        if (!active) return
+        if (!active) throw new Error("Paper editor is closed")
         mounted.setInline({ [mark]: !mounted.activeInline()[mark] })
         view.focus()
       },
       formatInline(input: Parameters<typeof mounted.formatInline>[0]) {
-        if (!active) return
+        if (!active) throw new Error("Paper editor is closed")
         mounted.formatInline(input)
         view.focus()
       },
       formatParagraph(input: Parameters<typeof mounted.formatParagraph>[0]) {
-        if (!active) return
+        if (!active) throw new Error("Paper editor is closed")
         mounted.formatParagraph(input)
         view.focus()
       },

@@ -1,0 +1,6 @@
+{
+  "id": "paper-word-fonts",
+  "file": "scripts/paper-word-fonts.test.mjs",
+  "historic": null,
+  "reason": "New Word font fidelity requirement keeps existing saved Liberation ids while exporting the metric-compatible Word face names. The actual DOCX compiler checks all three faces in document and style XML. The replacement proof in scripts/retired/1578.json records failure on the previous compiler and success on the new compiler; this is a behavior test rather than a source detector."
+}
