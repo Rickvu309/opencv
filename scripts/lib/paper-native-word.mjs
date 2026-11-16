@@ -58,6 +58,51 @@ export function qualifiedNativeWord(text, path) {
 export function detect(text, path) {
   const hits = []
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
+  if (path === "apps/web/src/lib/paper-rich-word.ts") {
+    const entry = body(source, "downloadSavedRichWord")
+    const delayed =
+      entry &&
+      calls(entry, "setTimeout").some((call) => {
+        const callback = call.arguments[0]
+        return (
+          callback &&
+          ts.isArrowFunction(callback) &&
+          calls(callback, "URL.revokeObjectURL").length === 1 &&
+          call.arguments[1] &&
+          ts.isNumericLiteral(call.arguments[1]) &&
+          Number(call.arguments[1].text) >= 1000
+        )
+      })
+    if (!delayed)
+      hits.push(
+        "Word downloads must retain the file URL until the browser can start saving"
+      )
+  }
+  if (path === "apps/api/src/app.ts") {
+    const options = calls(source, "cors")[0]?.arguments[0]
+    const headers = (name) => {
+      if (!options || !ts.isObjectLiteralExpression(options)) return []
+      const property = options.properties.find(
+        (node) => ts.isPropertyAssignment(node) && node.name.getText() === name
+      )
+      if (!property || !ts.isArrayLiteralExpression(property.initializer))
+        return []
+      return property.initializer.elements
+        .filter(ts.isStringLiteral)
+        .map((node) => node.text.toLowerCase())
+    }
+    if (
+      !["x-paper-writer", "x-paper-basis"].every((name) =>
+        headers("allowHeaders").includes(name)
+      ) ||
+      !["x-paper-basis", "content-disposition"].every((name) =>
+        headers("exposeHeaders").includes(name)
+      )
+    )
+      hits.push(
+        "Word downloads must allow their exact basis and expose the qualified basis and filename across origins"
+      )
+  }
   if (
     path === "packages/domain/src/paper-doc/native-layout-flow.ts" &&
     (!text.includes("paperPhotoFileId(node.photo)") ||

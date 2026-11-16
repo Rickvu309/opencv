@@ -1,5 +1,6 @@
 import type { QueryClient } from "@tanstack/react-query"
 import {
+  canonicalPaper,
   parsePaperId,
   nativeSyncOutputSchema,
   sameNativeProvenance,
@@ -445,6 +446,26 @@ function openSession<Document extends StoredPaperDocument>(
   return {
     initialized,
     status,
+    captureSaved() {
+      if (status() !== "saved" || !client) return null
+      const source = client
+      const document = source.document()
+      if (!document) return null
+      const generation = version
+      const { epoch, revision } = source.stored()
+      return {
+        canonical: canonicalPaper(document),
+        kind: document.kind,
+        identity: requireNativeIdentity(identity),
+        basis: { provenance: identity.provenance, epoch, revision },
+        current: () =>
+          status() === "saved" &&
+          client === source &&
+          version === generation &&
+          source.epoch === epoch &&
+          source.revision === revision,
+      }
+    },
     ready: () => active() && ready && !conflict,
     client: () => (active() && ready && !conflict ? client : null),
     subscribe(listener: () => void) {

@@ -62,3 +62,29 @@ test("saved Word, photo reads and CV portrait admission retain their boundary gu
     []
   )
 })
+
+test("cross-origin Word downloads retain readable exact snapshot metadata", () => {
+  const path = "apps/api/src/app.ts"
+  const clean = `cors({ allowHeaders: ["x-paper-writer", "x-paper-basis"], exposeHeaders: ["x-paper-basis", "Content-Disposition"] })`
+  assert.deepEqual(detect(clean, path), [])
+  for (const missing of [
+    clean.replace('"x-paper-writer", ', ""),
+    clean.replace('"x-paper-basis"', '"unrelated"'),
+    clean.replace('exposeHeaders: ["x-paper-basis", ', "exposeHeaders: ["),
+    clean.replace('"Content-Disposition"', '"unrelated"'),
+  ])
+    assert.ok(detect(missing, path).length)
+  assert.deepEqual(
+    detect(readFileSync(new URL(`../${path}`, import.meta.url), "utf8"), path),
+    []
+  )
+})
+
+test("Word downloads retain their URL while the browser starts saving", () => {
+  const path = "apps/web/src/lib/paper-rich-word.ts"
+  const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+  assert.deepEqual(detect(clean, path), [])
+  const mistake = clean.replace("}, 1000)", "}, 0)")
+  assert.notEqual(mistake, clean)
+  assert.ok(detect(mistake, path).length)
+})

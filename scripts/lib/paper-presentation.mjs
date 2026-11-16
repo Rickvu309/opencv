@@ -206,6 +206,19 @@ export function detect(text, path) {
   function visit(node) {
     if (
       path === "apps/web/src/features/paper/rich-page.tsx" &&
+      ts.isJsxOpeningElement(node) &&
+      node.tagName.getText(source) === "PageHeader" &&
+      !node.attributes.properties
+        .filter(ts.isJsxAttribute)
+        .find((attribute) => attribute.name.getText(source) === "className")
+        ?.initializer?.text?.split(/\s+/)
+        .includes("flex-wrap")
+    )
+      hits.push(
+        "Rich Paper headers must wrap their title and actions at enlarged text sizes"
+      )
+    if (
+      path === "apps/web/src/features/paper/rich-page.tsx" &&
       (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) &&
       node.tagName.getText(source) === "Button"
     ) {
