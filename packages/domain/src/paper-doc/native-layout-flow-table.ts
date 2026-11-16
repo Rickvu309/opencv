@@ -4,7 +4,11 @@ import { layoutEditSchema, editTable } from "./native-layout-edit.js"
 import { photoLayoutTableSchema } from "./native-layout.js"
 import { ok, refuse } from "./presentation-values.js"
 
-export function prepareFlowTableEdit(input: unknown, change: unknown) {
+export function prepareFlowTableEdit(
+  input: unknown,
+  change: unknown,
+  replacementId?: string
+) {
   try {
     const document = flowDocumentSchema.parse(input)
     const edit = layoutEditSchema.parse(change)
@@ -26,7 +30,7 @@ export function prepareFlowTableEdit(input: unknown, change: unknown) {
       section.children.splice(index, 1)
       if (!section.children.length)
         section.children.push({
-          id: nodeIdSchema.parse(crypto.randomUUID()),
+          id: nodeIdSchema.parse(replacementId),
           type: "paragraph",
           paragraph: {},
           content: [],

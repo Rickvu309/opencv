@@ -1,3 +1,4 @@
+import { paperTableLimits } from "@workspace/domain"
 import { useRef, useState } from "react"
 import { Ellipsis } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
@@ -28,22 +29,22 @@ export function RichTableMenu({
     {
       label: "Insert row above",
       run: () => editor.addTableRow(false),
-      disabled: selected.table.children.length >= 100,
+      disabled: selected.table.children.length >= paperTableLimits.rows,
     },
     {
       label: "Insert row below",
       run: () => editor.addTableRow(),
-      disabled: selected.table.children.length >= 100,
+      disabled: selected.table.children.length >= paperTableLimits.rows,
     },
     {
       label: "Insert column left",
       run: () => editor.addTableColumn(false),
-      disabled: selected.table.columns.length >= 20,
+      disabled: selected.table.columns.length >= paperTableLimits.columns,
     },
     {
       label: "Insert column right",
       run: () => editor.addTableColumn(),
-      disabled: selected.table.columns.length >= 20,
+      disabled: selected.table.columns.length >= paperTableLimits.columns,
     },
     {
       label: "Delete row",

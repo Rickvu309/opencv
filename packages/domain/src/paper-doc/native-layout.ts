@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { paperTableLimits } from "../limits/paper-table.js"
 import {
   layoutPhotoSchema,
   photoBounds,
@@ -32,15 +33,15 @@ const layoutRowSchema = z
   .object({
     id: nodeIdSchema,
     type: z.literal("row"),
-    children: z.array(layoutCellSchema).min(1).max(20),
+    children: z.array(layoutCellSchema).min(1).max(paperTableLimits.columns),
   })
   .strict()
 export const layoutTableSchema = z
   .object({
     id: nodeIdSchema,
     type: z.literal("table"),
-    columns: z.array(layoutColumnSchema).min(1).max(20),
-    children: z.array(layoutRowSchema).min(1).max(100),
+    columns: z.array(layoutColumnSchema).min(1).max(paperTableLimits.columns),
+    children: z.array(layoutRowSchema).min(1).max(paperTableLimits.rows),
   })
   .strict()
   .superRefine((table, ctx) => {
@@ -152,14 +153,14 @@ export const photoLayoutCellSchema = layoutCellSchema.extend({
     .max(1000),
 })
 export const photoLayoutRowSchema = layoutRowSchema.extend({
-  children: z.array(photoLayoutCellSchema).min(1).max(20),
+  children: z.array(photoLayoutCellSchema).min(1).max(paperTableLimits.columns),
 })
 export const photoLayoutTableSchema = z
   .object({
     id: nodeIdSchema,
     type: z.literal("table"),
-    columns: z.array(layoutColumnSchema).min(1).max(20),
-    children: z.array(photoLayoutRowSchema).min(1).max(100),
+    columns: z.array(layoutColumnSchema).min(1).max(paperTableLimits.columns),
+    children: z.array(photoLayoutRowSchema).min(1).max(paperTableLimits.rows),
   })
   .strict()
   .superRefine((table, ctx) => {

@@ -1,3 +1,4 @@
+import { paperTableLimits } from "@workspace/domain"
 import { TextSelection } from "@tiptap/pm/state"
 import { yUndoPluginKey } from "y-prosemirror"
 import {
@@ -101,10 +102,10 @@ export function flowTableControls(
       if (
         !Number.isInteger(rows) ||
         rows < 1 ||
-        rows > 100 ||
+        rows > paperTableLimits.rows ||
         !Number.isInteger(columns) ||
         columns < 1 ||
-        columns > 20
+        columns > paperTableLimits.columns
       )
         throw new Error("Choose 1–100 rows and 1–20 columns")
       const document = readFlow(binding)

@@ -1,3 +1,4 @@
+import { paperTableLimits } from "@workspace/domain"
 import { useEffect, useReducer, useState, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { Table2 } from "lucide-react"
@@ -112,7 +113,7 @@ function InsertTable({
                 type="number"
                 inputMode="numeric"
                 min={1}
-                max={100}
+                max={paperTableLimits.rows}
                 required
                 value={rows}
                 onChange={(event) => setRows(event.target.value)}
@@ -126,7 +127,7 @@ function InsertTable({
                 type="number"
                 inputMode="numeric"
                 min={1}
-                max={20}
+                max={paperTableLimits.columns}
                 required
                 value={columns}
                 onChange={(event) => setColumns(event.target.value)}

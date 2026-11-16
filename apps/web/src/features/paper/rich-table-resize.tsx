@@ -9,7 +9,7 @@ type Drag = {
   next: number
   total: number
   pixels: number
-  grid: string
+  grids: { element: HTMLElement; columns: string }[]
 }
 export function RichTableResize({
   editor,
@@ -23,9 +23,10 @@ export function RichTableResize({
   const drag = useRef<Drag | null>(null)
   const columns = selected.table.columns
   const total = columns.reduce((sum, column) => sum + column.width, 0)
-  let offset = 0
   return columns.slice(0, -1).map((column, index) => {
-    offset += column.width
+    const offset = columns
+      .slice(0, index + 1)
+      .reduce((sum, item) => sum + item.width, 0)
     const neighbor = columns[index + 1]
     if (!neighbor) return null
     const maximum = column.width + neighbor.width - 480
@@ -70,7 +71,22 @@ export function RichTableResize({
             next: column.width,
             total,
             pixels: element.getBoundingClientRect().width,
-            grid: element.style.getPropertyValue("--paper-table-columns"),
+            grids: Array.from(
+              element.querySelectorAll<HTMLElement>(
+                '[data-paper-layout="paperRow"]'
+              )
+            ).flatMap((row) =>
+              Array.from(row.children).flatMap((child) =>
+                child instanceof HTMLElement && child.style.gridTemplateColumns
+                  ? [
+                      {
+                        element: child,
+                        columns: child.style.gridTemplateColumns,
+                      },
+                    ]
+                  : []
+              )
+            ),
           }
         }}
         onPointerMove={(event) => {
@@ -86,30 +102,28 @@ export function RichTableResize({
               )
             )
           )
-          element.style.setProperty(
-            "--paper-table-columns",
-            columns
-              .map(
-                (item, position) =>
-                  `minmax(0,${position === index ? current.next : position === index + 1 ? neighbor.width + current.width - current.next : item.width}fr)`
-              )
-              .join(" ")
-          )
+          const preview = columns
+            .map(
+              (item, position) =>
+                `minmax(0,${position === index ? current.next : position === index + 1 ? neighbor.width + current.width - current.next : item.width}fr)`
+            )
+            .join(" ")
+          for (const grid of current.grids)
+            grid.element.style.gridTemplateColumns = preview
         }}
         onPointerUp={(event) => {
           const current = drag.current
           if (!current || current.pointer !== event.pointerId) return
           drag.current = null
-          element.style.setProperty("--paper-table-columns", current.grid)
+          for (const grid of current.grids)
+            grid.element.style.gridTemplateColumns = grid.columns
           event.currentTarget.releasePointerCapture(event.pointerId)
           editor.resizeTableColumn(index, current.next)
         }}
         onLostPointerCapture={() => {
           if (drag.current) {
-            element.style.setProperty(
-              "--paper-table-columns",
-              drag.current.grid
-            )
+            for (const grid of drag.current.grids)
+              grid.element.style.gridTemplateColumns = grid.columns
             drag.current = null
           }
         }}

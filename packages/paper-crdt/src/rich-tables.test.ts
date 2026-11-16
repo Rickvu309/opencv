@@ -2,11 +2,12 @@ import { afterEach, expect, it, vi } from "vitest"
 import { TextSelection } from "@tiptap/pm/state"
 import * as Y from "yjs"
 import { nativeProvenance, richPaperDocumentSchema } from "@workspace/domain"
+import { prepareFlowTableEdit } from "@workspace/domain/internal/paper-presentation"
 import { openRichPaperClient } from "./client.js"
 import { seedStoredYDoc } from "./stored-document.js"
 import { borrowFlowDocument } from "./native-layout-flow.js"
 import { mountPrivateFlow } from "./native-layout-flow-mount.js"
-import { storedFlowFixture } from "./test/flow-fixture.js"
+import { flowFixture, storedFlowFixture } from "./test/flow-fixture.js"
 
 const cleanups = new Set<() => void>()
 afterEach(() => {
@@ -213,4 +214,26 @@ it("refuses nested tables, locked edits and invalid dimensions without changing 
   editor.isEditable = false
   expect(() => tables.addTableRow()).toThrow()
   expect(read()).toEqual(before)
+})
+
+it("keeps an editable paragraph when deleting the only table", () => {
+  const document = flowFixture()
+  const section = document.flow.children[0]!
+  const table = section.children.find((node) => node.type === "table")!
+  section.children = [table]
+  const result = prepareFlowTableEdit(
+    document,
+    { kind: "remove-table", tableId: table.id },
+    "replacement-paragraph"
+  )
+  expect(result).toMatchObject({ kind: "ok" })
+  if (result.kind === "ok")
+    expect(result.value.flow.children[0]!.children).toEqual([
+      {
+        id: "replacement-paragraph",
+        type: "paragraph",
+        paragraph: {},
+        content: [],
+      },
+    ])
 })

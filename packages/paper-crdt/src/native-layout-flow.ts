@@ -260,7 +260,7 @@ export function commitFlowTableEdits(
   return attempt(() => {
     let document = readFlow(binding)
     for (const edit of edits) {
-      const result = prepareFlowTableEdit(document, edit)
+      const result = prepareFlowTableEdit(document, edit, crypto.randomUUID())
       if (result.kind === "refused") throw new Error(result.reason)
       document = result.value
     }
