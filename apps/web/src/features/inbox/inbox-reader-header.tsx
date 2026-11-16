@@ -126,6 +126,7 @@ export function InboxReaderHeader({
             <Button
               type="button"
               variant="ghost"
+              className="size-11 md:size-7"
               aria-disabled="true"
               aria-describedby="inbox-reader-more-reason"
               data-slot="page-header-action"
