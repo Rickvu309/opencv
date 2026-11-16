@@ -6,7 +6,7 @@ import { openRichPaperClient } from "./client.js"
 import { seedStoredYDoc } from "./stored-document.js"
 import { borrowFlowDocument } from "./native-layout-flow.js"
 import { mountPrivateFlow } from "./native-layout-flow-mount.js"
-import { richEditorSearch } from "./editor-search.js"
+import { richEditorSearch } from "./native-layout-search.js"
 import { storedFlowFixture } from "./test/flow-fixture.js"
 
 const cleanups = new Set<() => void>()

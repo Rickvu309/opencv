@@ -1,6 +1,6 @@
 import { expect, it } from "vitest"
 import { Schema } from "@tiptap/pm/model"
-import { paperSearchMatches } from "./editor-search.js"
+import { paperSearchMatches } from "./native-layout-search.js"
 
 const schema = new Schema({
   nodes: {

@@ -1,4 +1,4 @@
-import { paperSearchPlugin } from "./editor-search.js"
+import { paperSearchPlugin, richEditorSearch } from "./native-layout-search.js"
 import { richEditorCommands } from "./native-formatting-commands.js"
 import { isSafeHref } from "@workspace/domain"
 import { BlockNoteEditor, createExtension } from "@blocknote/core"
@@ -213,8 +213,10 @@ export function mountPrivateFlow(
   const commands = richEditorCommands(editor, (mark) =>
     setInline({ [mark]: !activeInline()[mark] })
   )
+  const search = richEditorSearch(editor)
   return {
     commands,
+    search,
     editor,
     photoControls: { ...flowPhotoControls(binding, editor), ...selection },
     ...flowFormatting(binding, editor.prosemirrorView),
@@ -225,6 +227,7 @@ export function mountPrivateFlow(
       if (!active) return
       active = false
       selection.destroy()
+      search.destroy()
       commands.destroy()
       binding.doc.getMap("paper").unobserveDeep(refresh)
       element.removeEventListener("keydown", keydown, true)

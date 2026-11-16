@@ -1,4 +1,10 @@
-import { useEffect, useId, useRef, useState, useSyncExternalStore } from "react"
+import {
+  useEffect,
+  useId,
+  useRef,
+  useReducer,
+  useSyncExternalStore,
+} from "react"
 import { ChevronDown, ChevronUp, X } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -25,7 +31,11 @@ export function RichFindBar({
 }) {
   const input = useRef<HTMLInputElement>(null)
   const replacementId = useId()
-  const [replacement, setReplacement] = useState("")
+  const [replacement, setReplacement] = useReducer(
+    (_: string, action: { type: "replace-text"; value: string }) =>
+      action.value,
+    ""
+  )
   const state = useSyncExternalStore(
     editor?.search.subscribe ?? subscribeEmpty,
     editor?.search.snapshot ?? getEmpty
@@ -156,7 +166,12 @@ export function RichFindBar({
               autoCapitalize="none"
               spellCheck={false}
               className="h-11 min-w-0 flex-[1_1_12rem] text-base md:h-8 md:text-sm"
-              onChange={(event) => setReplacement(event.target.value)}
+              onChange={(event) =>
+                setReplacement({
+                  type: "replace-text",
+                  value: event.target.value,
+                })
+              }
             />
             <Button
               variant="outline"
@@ -178,8 +193,9 @@ export function RichFindBar({
         ) : null}
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
           <label className="flex min-h-11 cursor-pointer items-center gap-2 md:min-h-8">
-            <input
+            <Input
               type="checkbox"
+              className="size-4 shrink-0 appearance-auto p-0 accent-primary"
               checked={state.matchCase}
               onChange={(event) =>
                 editor?.search.find(state.query, event.target.checked)

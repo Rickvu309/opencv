@@ -1,6 +1,5 @@
 import {
   useEffect,
-  useState,
   useLayoutEffect,
   useRef,
   useReducer,
@@ -65,7 +64,10 @@ export function RichPaperPage({
   identity: NativeSyncIdentity
   onBack: () => void
 }) {
-  const [findMode, setFindMode] = useState<PaperFindMode>("closed")
+  const [findMode, setFindMode] = useReducer(
+    (_: PaperFindMode, mode: PaperFindMode) => mode,
+    "closed"
+  )
   const queryClient = useQueryClient()
   const currentIdentity = useRef(identity)
   useLayoutEffect(() => {
