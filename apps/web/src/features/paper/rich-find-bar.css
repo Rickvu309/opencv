@@ -18,6 +18,10 @@
   outline-offset: 1px;
 }
 
+[data-paper-search-active] {
+  scroll-margin-block: 4rem;
+}
+
 @media (forced-colors: active) {
   .paper-search-match {
     background-color: Highlight !important;

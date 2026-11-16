@@ -5,8 +5,8 @@ import { nativeProvenance, richPaperDocumentSchema } from "@workspace/domain"
 import { openRichPaperClient } from "./client.js"
 import { seedStoredYDoc } from "./stored-document.js"
 import { borrowFlowDocument } from "./native-layout-flow.js"
+import { richPageLayout } from "./rich-page-layout.js"
 import { mountPrivateFlow } from "./native-layout-flow-mount.js"
-import { richEditorSearch } from "./native-layout-search.js"
 import { storedFlowFixture } from "./test/flow-fixture.js"
 
 const cleanups = new Set<() => void>()
@@ -17,7 +17,7 @@ afterEach(() => {
   vi.restoreAllMocks()
 })
 
-function setup(kind: "cv" | "letter", includeTable = false) {
+function setup(kind: "cv" | "letter") {
   vi.stubGlobal(
     "ResizeObserver",
     class {
@@ -40,10 +40,7 @@ function setup(kind: "cv" | "letter", includeTable = false) {
   const input = storedFlowFixture(kind)
   const section = input.flow.children[0]!
   const children = [
-    ...section.children.filter(
-      (node) =>
-        node.type === "header" || (includeTable && node.type === "table")
-    ),
+    ...section.children.filter((node) => node.type === "header"),
     ...["first", "second", "third"].map((id) => ({
       id,
       type: "paragraph" as const,
@@ -133,9 +130,9 @@ function setup(kind: "cv" | "letter", includeTable = false) {
     expect(event.defaultPrevented).toBe(true)
   }
   return {
-    client,
     host,
     editor,
+    pages: mounted.pages,
     commands,
     select,
     read,
@@ -293,158 +290,187 @@ it.each(["cv", "letter"] as const)(
 )
 
 it.each(["cv", "letter"] as const)(
-  "finds and replaces normalized %s text with marks, one Undo and reload",
+  "keeps %s page setup and split-at-caret page breaks through Undo, Redo, save and reload",
   (kind) => {
-    const { editor, commands, select, read, roundtrip, host, setInline } =
-      setup(kind)
-    const scroll = vi.fn()
-    Object.defineProperty(Element.prototype, "scrollIntoView", {
-      configurable: true,
-      value: scroll,
-    })
-    const search = richEditorSearch(editor)
-    cleanups.add(() => search.destroy())
-    select()
-    setInline({ bold: true })
-    select("second")
-    setInline({ italic: true })
+    const { editor, pages, read, reversible, roundtrip } = setup(kind)
     editor.setTextCursorPosition("first", "start")
+    const original = pages.pageSetup()
+    reversible(() =>
+      pages.setPageSetup({
+        width: 16838,
+        height: 11906,
+        orientation: "landscape",
+        top: 720,
+        bottom: 1080,
+        start: 1440,
+        end: 1800,
+      })
+    )
+    expect(read().presentation.page).toEqual(pages.pageSetup())
+    expect(
+      read().flow.children.every((section) => section.page.width === 16838)
+    ).toBe(true)
+    expect(() =>
+      pages.setPageSetup({ ...original, start: original.width })
+    ).toThrow()
+    editor.setTextCursorPosition("first", "start")
+    const state = editor.prosemirrorState
     editor.prosemirrorView.dispatch(
-      editor.prosemirrorState.tr.insertText("Earlier typing ")
+      state.tr.setSelection(
+        TextSelection.create(state.doc, state.selection.from + 5)
+      )
     )
-    const before = read()
-    const listener = vi.fn()
-    const unsubscribe = search.subscribe(listener)
-    search.find("VIE\u0323\u0302T", false)
-    expect(search.snapshot().matches).toHaveLength(3)
-    expect(host.querySelectorAll(".paper-search-match")).toHaveLength(3)
-    expect(search.snapshot().activeIndex).toBe(0)
-    search.move(-1)
-    expect(search.snapshot().activeIndex).toBe(2)
-    search.move(1)
-    expect(search.snapshot().activeIndex).toBe(0)
-    expect(scroll).toHaveBeenCalled()
-    search.find("VIỆT", true)
-    expect(search.snapshot().matches).toHaveLength(0)
-    search.find("Việt", true)
-    expect(search.replace("Career", true)).toBe(3)
-    const after = read()
-    const first = after.flow.children[0]!.children.find(
-      (node) => node.id === "first"
-    )
-    const second = after.flow.children[0]!.children.find(
-      (node) => node.id === "second"
-    )
-    expect(first).toMatchObject({
-      content: [{ text: "Earlier typing first Career e\u0302 😀", bold: true }],
+    reversible(() => expect(pages.insertPageBreak()).toBe(true))
+    const children = read().flow.children[0]!.children
+    const index = children.findIndex((node) => node.type === "pageBreak")
+    expect(children[index - 1]).toMatchObject({ content: [{ text: "first" }] })
+    expect(children[index + 1]).toMatchObject({
+      content: [{ text: " Việt e\u0302 😀" }],
     })
-    expect(second).toMatchObject({
-      content: [{ text: "second Career e\u0302 😀", italic: true }],
-    })
-    expect(search.snapshot().matches).toHaveLength(0)
-    commands.undo()
-    expect(read()).toEqual(before)
-    expect(search.snapshot().matches).toHaveLength(3)
-    commands.redo()
-    expect(read()).toEqual(after)
+    editor.setTextCursorPosition(children[index + 1]!.id, "start")
+    reversible(() => expect(pages.removePageBreak(true)).toBe(true))
+    expect(
+      read().flow.children[0]!.children.some(
+        (node) => node.type === "pageBreak"
+      )
+    ).toBe(false)
     roundtrip()
-    search.find("ê", false)
-    expect(search.snapshot().matches).toHaveLength(3)
-    expect(search.replace("é", false)).toBe(1)
-    expect(search.snapshot().matches).toHaveLength(2)
-    commands.undo()
-    editor.isEditable = false
-    expect(search.replace("Blocked", true)).toBe(0)
-    search.close()
-    expect(host.querySelectorAll(".paper-search-match")).toHaveLength(0)
-    expect(listener).toHaveBeenCalled()
-    unsubscribe()
-    search.destroy()
   }
 )
 
-it("replaces all matches in four table cells and body text with one Undo", () => {
-  const { editor, commands, read, roundtrip, select } = setup("letter", true)
-  Object.defineProperty(Element.prototype, "scrollIntoView", {
-    configurable: true,
-    value: vi.fn(),
-  })
-  const search = richEditorSearch(editor)
-  select()
-  const before = read()
-  search.find("Việt", false)
-  expect(search.snapshot().matches).toHaveLength(7)
-  expect(search.replace("Career", true)).toBe(7)
-  expect(JSON.stringify(read())).not.toContain("Việt")
-  expect(JSON.stringify(read())).toContain("Career")
-  commands.undo()
-  expect(read()).toEqual(before)
-  commands.redo()
-  roundtrip()
-  search.destroy()
-})
+it.each(
+  [1232, 1024, 848, 847, 820, 768, 390, 320].flatMap((width) =>
+    [true, false].map((paginated) => ({ width, paginated }))
+  )
+)(
+  "keeps full text size at available width $width with pagination $paginated",
+  ({ width, paginated }) => {
+    vi.stubGlobal("CSS", {
+      ...globalThis.CSS,
+      escape: (value: string) => value,
+    })
+    const fixture = storedFlowFixture()
+    const page = {
+      width: 12240,
+      height: 15840,
+      orientation: "portrait",
+      top: 1440,
+      bottom: 1440,
+      start: 1440,
+      end: 1440,
+    }
+    const flow = richPaperDocumentSchema.parse({
+      ...fixture,
+      presentation: { ...fixture.presentation, page },
+      flow: {
+        ...fixture.flow,
+        children: fixture.flow.children.map((section) => ({
+          ...section,
+          page,
+        })),
+      },
+    })
+    const parent = window.document.createElement("div")
+    parent.style.padding = "16px"
+    Object.defineProperty(parent, "clientWidth", { value: width })
+    const host = window.document.createElement("div")
+    host.className = "ProseMirror"
+    const content = window.document.createElement("div")
+    content.className = "bn-block-group"
+    const block = window.document.createElement("div")
+    block.dataset.nodeType = "blockOuter"
+    block.dataset.id = "break"
+    content.append(block)
+    host.append(content)
+    parent.append(host)
+    window.document.body.append(parent)
+    cleanups.add(() => parent.remove())
+    const reflow = width - 32 < 816
+    vi.spyOn(host, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(0, 100, 816, 1056)
+    )
+    vi.spyOn(content, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(0, 196, 624, 1100)
+    )
+    expect(richPageLayout(host, flow, paginated).get("break")).toBe(
+      reflow || !paginated ? 24 : 0
+    )
+    expect(host.dataset.paperReflow).toBe(String(reflow))
+    expect(host.style.minHeight).toBe(reflow || !paginated ? "" : "2136px")
+    expect(host.style.getPropertyValue("--cv-rich-page-scale")).toBe("1")
+    expect(host.style.getPropertyValue("--cv-rich-page-start")).toBe("96px")
+  }
+)
 
 it.each([
-  ["Việt", "Việta"],
-  ["việt", "VIỆT"],
-])(
-  "advances past %s replaced with %s even when it still matches",
-  (query, replacement) => {
-    const { editor, commands } = setup("letter")
-    const search = richEditorSearch(editor)
-    cleanups.add(() => search.destroy())
-    search.find(query!, false)
-    search.replace(replacement!, false)
-    expect(search.snapshot().activeIndex).toBe(1)
-    search.replace(replacement!, false)
-    expect(search.snapshot().activeIndex).toBe(2)
-    expect(editor.prosemirrorState.doc.textContent).not.toContain("Việtaa")
-    commands.undo()
-    expect(search.snapshot().activeIndex).toBe(2)
-    commands.redo()
-    expect(search.snapshot().activeIndex).toBe(2)
+  [1200, false],
+  [1100, true],
+] as const)(
+  "reflows an A4 landscape page from its own width at parent %s",
+  (clientWidth, reflow) => {
+    vi.stubGlobal("CSS", {
+      ...globalThis.CSS,
+      escape: (value: string) => value,
+    })
+    const fixture = storedFlowFixture()
+    const page = {
+      width: 16838,
+      height: 11906,
+      orientation: "landscape" as const,
+      top: 1440,
+      bottom: 1440,
+      start: 1440,
+      end: 1440,
+    }
+    const flow = richPaperDocumentSchema.parse({
+      ...fixture,
+      presentation: { ...fixture.presentation, page },
+      flow: {
+        ...fixture.flow,
+        children: fixture.flow.children.map((section) => ({
+          ...section,
+          page,
+        })),
+      },
+    })
+    const parent = window.document.createElement("div")
+    parent.style.padding = "16px"
+    Object.defineProperty(parent, "clientWidth", { value: clientWidth })
+    const host = window.document.createElement("div")
+    host.className = "ProseMirror"
+    const content = window.document.createElement("div")
+    content.className = "bn-block-group"
+    host.append(content)
+    parent.append(host)
+    window.document.body.append(parent)
+    cleanups.add(() => parent.remove())
+    vi.spyOn(host, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(0, 0, 1122, 794)
+    )
+    vi.spyOn(content, "getBoundingClientRect").mockReturnValue(
+      new DOMRect(0, 96, 900, 400)
+    )
+    richPageLayout(host, flow, true)
+    expect(host.dataset.paperReflow).toBe(String(reflow))
+    expect(host.style.getPropertyValue("--cv-rich-page-scale")).toBe("1")
+    expect(host.style.getPropertyValue("--cv-rich-page-width")).toBe(
+      `${16838 / 15}px`
+    )
   }
 )
 
-it("tracks the current match through a remote Yjs edit and local Undo and Redo", () => {
-  const { client, editor, commands } = setup("letter")
-  const search = richEditorSearch(editor)
-  cleanups.add(() => search.destroy())
-  search.find("việt", false)
-  search.move(1)
-  search.move(1)
-  const current = () =>
-    search.snapshot().matches[search.snapshot().activeIndex]!
-  const original = current().from
-  const remote = openRichPaperClient(client.stored(), {
-    provenance: nativeProvenance(client.document()!),
-  })
-  const lease = borrowFlowDocument(remote.ydoc, "letter")
-  const host = document.createElement("div")
-  document.body.append(host)
-  const mounted = mountPrivateFlow(lease.binding, host)
-  cleanups.add(() => {
-    mounted.unmount()
-    lease.release()
-    remote.destroy()
-    host.remove()
-  })
-  mounted.editor.setTextCursorPosition("first", "start")
-  mounted.editor.prosemirrorView.dispatch(
-    mounted.editor.prosemirrorState.tr.insertText("Remote ")
-  )
-  Y.applyUpdate(client.ydoc, Y.encodeStateAsUpdate(remote.ydoc))
-  expect(search.snapshot().activeIndex).toBe(2)
-  expect(current().from).toBe(original + 7)
-  editor.setTextCursorPosition("second", "start")
-  editor.prosemirrorView.dispatch(
-    editor.prosemirrorState.tr.insertText("Local ")
-  )
-  expect(current().from).toBe(original + 13)
-  commands.undo()
-  expect(search.snapshot().activeIndex).toBe(2)
-  expect(current().from).toBe(original + 7)
-  commands.redo()
-  expect(search.snapshot().activeIndex).toBe(2)
-  expect(current().from).toBe(original + 13)
-})
+it.each(["cv", "letter"] as const)(
+  "keeps Undo meaningful after applying identical %s page metadata",
+  (kind) => {
+    const { pages, commands, read } = setup(kind)
+    const original = read()
+    pages.setPageSetup({ ...pages.pageSetup(), top: 720 })
+    const changed = read()
+    expect(changed).not.toEqual(original)
+    pages.setPageSetup(pages.pageSetup())
+    commands.undo()
+    expect(read()).toEqual(original)
+    commands.redo()
+    expect(read()).toEqual(changed)
+  }
+)

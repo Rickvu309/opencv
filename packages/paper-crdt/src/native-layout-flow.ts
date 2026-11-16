@@ -60,9 +60,9 @@ function write(
     isOMark: new Map(),
   })
   writePresentationMeta(binding.doc, document.presentation)
-  binding.doc
-    .getMap<unknown>("paper")
-    .set("formattingProfile", document.profile)
+  const root = binding.doc.getMap<unknown>("paper")
+  if (root.get("formattingProfile") !== document.profile)
+    root.set("formattingProfile", document.profile)
 }
 export function readFlow(binding: FlowBinding): FlowDocument {
   if (!owned.has(binding)) throw new Error("Foreign flow binding")
@@ -249,5 +249,20 @@ export function commitFlowPhotoEdit(
       "private-flow-photo"
     )
     return prepared.value.document
+  })
+}
+
+export function commitFlowPageDocument(
+  binding: FlowBinding,
+  input: FlowDocument
+) {
+  return attempt(() => {
+    const document = flowDocumentSchema.parse(input)
+    const node = nodeOf(document)
+    binding.doc.transact(
+      () => write(binding, document, node),
+      "private-flow-page"
+    )
+    return document
   })
 }

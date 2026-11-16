@@ -37,4 +37,11 @@ describe("search decorations over inline text formatting", () => {
     const css = readFileSync("src/features/paper/rich-find-bar.css", "utf8")
     expect(maskedSearchColors(css)).toEqual([])
   })
+
+  it("keeps the current match clear of the document pane edge", () => {
+    const css = readFileSync("src/features/paper/rich-find-bar.css", "utf8")
+    expect(css).toMatch(
+      /\[data-paper-search-active\]\s*\{[^}]*scroll-margin-block:\s*4rem/
+    )
+  })
 })

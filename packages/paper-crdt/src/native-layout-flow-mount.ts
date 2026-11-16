@@ -1,5 +1,6 @@
 import { paperSearchPlugin, richEditorSearch } from "./native-layout-search.js"
 import { richEditorCommands } from "./native-formatting-commands.js"
+import { richPageCommands } from "./native-layout-page-commands.js"
 import { isSafeHref } from "@workspace/domain"
 import { BlockNoteEditor, createExtension } from "@blocknote/core"
 import { CollaborationExtension } from "@blocknote/core/yjs"
@@ -218,6 +219,7 @@ export function mountPrivateFlow(
     commands,
     search,
     editor,
+    pages: richPageCommands(binding, editor),
     photoControls: { ...flowPhotoControls(binding, editor), ...selection },
     ...flowFormatting(binding, editor.prosemirrorView),
     setInline,
