@@ -169,7 +169,7 @@ describe("native layout Word output", () => {
     expect(attribute(one(run, "b"), "val")).toBe("0")
     expect(attribute(one(run, "i"), "val")).toBe("1")
     expect(attribute(one(run, "rStyle"), "val")).toBe("Hyperlink")
-    expect(elements(run, "u")).toHaveLength(0)
+    expect(attribute(one(run, "u"), "val")).toBe("single")
     expect(attribute(one(run, "strike"), "val")).toBe("1")
     expect(attribute(one(run, "rFonts"), "ascii")).toBe("Liberation Sans")
     expect(attribute(one(run, "sz"), "val")).toBe("24")

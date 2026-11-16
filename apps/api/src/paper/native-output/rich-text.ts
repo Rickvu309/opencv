@@ -65,7 +65,6 @@ export function wordRun(
       properties
         .replace(/<w:rStyle\b[^>]*\/>/g, "")
         .replace(/<w:color\b[^>]*\/>/g, "")
-        .replace(/<w:u\b[^>]*\/>/g, "")
     : properties
   const body = `<w:r><w:rPr>${runProperties}</w:rPr>${content}</w:r>`
   if (!href) return body

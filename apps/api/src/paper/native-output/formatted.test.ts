@@ -26,6 +26,62 @@ function compile(document: unknown) {
 }
 
 describe("formatted native Word output", () => {
+  it.each(["cv", "letter"])(
+    "preserves all sixteen direct mark combinations on %s links",
+    async (kind) => {
+      const runs = [false, true].flatMap((bold) =>
+        [false, true].flatMap((italic) =>
+          [false, true].flatMap((underline) =>
+            [false, true].flatMap((strike) =>
+              [false, true].map((linked) => ({
+                text: `${bold}-${italic}-${underline}-${strike}-${linked}`,
+                bold,
+                italic,
+                underline,
+                strike,
+                ...(linked ? { href: "https://example.org/marks" } : {}),
+              }))
+            )
+          )
+        )
+      )
+      const block = { ...paragraph("marks"), content: runs }
+      const document =
+        kind === "letter" ? letter([block]) : { ...cv(), blocks: [block] }
+      const archive = await inspect(compile(document))
+      const part = archive.part("word/document.xml")
+      for (const expected of runs) {
+        const run = elements(part.root, "r").find(
+          (node) => textOf(part, node) === expected.text
+        )
+        if (!run) throw new Error(`Missing mark combination ${expected.text}`)
+        for (const [key, tag] of [
+          ["bold", "b"],
+          ["italic", "i"],
+          ["strike", "strike"],
+        ] as const) {
+          if (expected[key]) expect(attribute(one(run, tag), "val")).toBe("1")
+          else
+            for (const mark of elements(run, tag))
+              expect(attribute(mark, "val")).toBe("0")
+        }
+        expect(attribute(one(run, "u"), "val")).toBe(
+          expected.underline ? "single" : "none"
+        )
+        expect(run.parent?.local === "hyperlink").toBe(Boolean(expected.href))
+        if (expected.href)
+          expect(attribute(one(run, "rStyle"), "val")).toBe("Hyperlink")
+      }
+      const style = elements(
+        archive.part("word/styles.xml").root,
+        "style"
+      ).find((node) => attribute(node, "styleId") === "Hyperlink")
+      if (!style) throw new Error("Missing default link style")
+      expect(attribute(one(style, "color"), "val")).toBe("1D4ED8")
+      expect(attribute(one(style, "u"), "val")).toBe("single")
+    }
+  )
+
   it("keeps named styles, flattened parent deletions, document defaults and direct off values", async () => {
     const archive = await inspect(
       compile(
@@ -157,7 +213,7 @@ describe("formatted native Word output", () => {
     expect(attribute(one(run, "rStyle"), "val")).toBe("Hyperlink")
     expect(elements(run, "color")).toHaveLength(0)
     expect(attribute(one(run, "shd"), "fill")).toBe("FEDCBA")
-    expect(elements(run, "u")).toHaveLength(0)
+    expect(attribute(one(run, "u"), "val")).toBe("single")
     for (const name of ["b", "bCs", "i", "iCs", "strike"])
       expect(attribute(one(run, name), "val")).toBe("1")
     expect(elements(run, "tab")).toHaveLength(1)
@@ -473,7 +529,7 @@ describe("formatted native Word output", () => {
     expect(result).not.toHaveProperty("value")
   })
 
-  it("is deterministic, does not change its input, and styles legacy Letter links consistently", () => {
+  it("is deterministic, does not change its input, and styles legacy Letter links consistently", async () => {
     const source = cv()
     const before = JSON.stringify(source)
     expect(compile(source)).toEqual(compile(source))
@@ -503,8 +559,14 @@ describe("formatted native Word output", () => {
       templateId: LETTER_PROFILE.templateId,
       profileId: LETTER_PROFILE.id,
     })
+    const archive = await inspect(legacy)
+    const run = one(archive.part("word/document.xml").root, "r")
+    expect(attribute(one(run, "rStyle"), "val")).toBe("Hyperlink")
+    expect(attribute(one(run, "u"), "val")).toBe("single")
+    expect(elements(run, "b")).toHaveLength(1)
+    expect(elements(run, "i")).toHaveLength(1)
     expect(createHash("sha256").update(legacy).digest("hex")).toBe(
-      "615b9d05fbc0d88da66ea831a61b1c053fbaf1b50e20966da7c39ee1e8b207fc"
+      "f830c65e1d22608e38c383d8fc159fc7893bd45a2a7b232bf5ad056c8a48dc83"
     )
   })
 })
