@@ -4,6 +4,8 @@ import type { PaperClient } from "./client.js"
 import { borrowFlowDocument } from "./native-layout-flow.js"
 import { mountPrivateFlow } from "./native-layout-flow-mount.js"
 
+export { richTextColors, richTextHighlights } from "./formatting-options.js"
+
 export type RichMark = "bold" | "italic" | "underline" | "strike"
 
 export function mountRichPaperEditor(
