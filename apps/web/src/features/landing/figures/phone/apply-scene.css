@@ -1,0 +1,113 @@
+.opencv-apply {
+  .ss-stage {
+    overflow: hidden;
+  }
+
+  .oa-panel {
+    position: absolute;
+    inset-block-start: 28px;
+    inset-inline-start: 28px;
+    inline-size: 292px;
+    min-block-size: 492px;
+    --ss-card-radius: 12px;
+    box-shadow:
+      inset 0 0 0 1px var(--ss-line),
+      var(--ss-shadow-hero);
+  }
+
+  .oa-add {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .oa-link {
+    --ss-control: 38px;
+  }
+
+  .oa-link .ss-field__box {
+    font-size: 12px;
+  }
+
+  .oa-save {
+    justify-content: center;
+    font-size: 12px;
+  }
+
+  .oa-save .ss-check {
+    --ss-text-strong: var(--ss-accent-text);
+    --ss-ink-4: color-mix(in srgb, var(--ss-accent-text) 30%, transparent);
+  }
+
+  .oa-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-block-size: 56px;
+    gap: 12px;
+  }
+
+  .oa-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .oa-title {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--ss-text-strong);
+  }
+
+  .oa-count {
+    min-inline-size: 16px;
+    font-size: 12px;
+    line-height: 18px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ss-text-faint);
+  }
+
+  .oa-undo {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .oa-undo[data-visible] {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .oa-list {
+    margin-inline: -4px;
+  }
+
+  .oa-job {
+    --ss-row-title: 14px;
+    --ss-row-subtitle: 12px;
+    --ss-row-meta: 12px;
+    --ss-row-line: 20px;
+  }
+
+  .oa-event {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ss-text-faint);
+  }
+
+  .oa-continuation {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 12px;
+    border-block-start: 1px solid var(--ss-line-faint);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .oa-undo {
+      transition: opacity var(--duration-panel) var(--ease-panel);
+    }
+  }
+}
