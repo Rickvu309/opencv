@@ -31,6 +31,7 @@ import {
   parseImportLink,
 } from "./import-parse.js"
 import { importedWordPage } from "./import-word.js"
+import { createNativeWordRoutes } from "./native-word-http.js"
 import { createPaperPackageRoutes } from "./package-http.js"
 import {
   IMPORT_FILE_CAP,
@@ -203,6 +204,8 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
     if (c.req.path.includes("/shared/")) return next()
     return requireSession(auth, db)(c, next)
   })
+
+  routes.route("/", createNativeWordRoutes())
 
   routes.get("/", async (c) => {
     const kind = c.req.query("kind")

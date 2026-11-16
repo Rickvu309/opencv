@@ -71,6 +71,7 @@ const SNAPSHOT_QUERIES: {
   "paper.list": () => [{}],
   "paper.read": () => [{ view: "library" }],
   "paper.export": null,
+  "paper.nativeWord": null,
   "paper.get": (ids) =>
     [...ids.docs, ...ids.minted].map((docId) => ({ docId })),
   "paper.document": (ids) =>

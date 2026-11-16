@@ -1,0 +1,64 @@
+import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import test from "node:test"
+import { detect } from "./lib/paper-native-word.mjs"
+import { detect as presentation } from "./lib/paper-presentation.mjs"
+
+const service = "apps/api/src/paper/native-word.ts"
+const qualified = `import { withRichSnapshot } from "./content-store.js"
+import { compileOwnedFlowNativeDocx } from "./native-output/formatted-owned.js"
+export function downloadNativeWord(userId, input) {
+  return withRichSnapshot(userId, input, async snapshot => compileOwnedFlowNativeDocx({userId, document: snapshot.document}))
+}`
+
+test("only canonical snapshot qualification admits rich Word compiler activation", () => {
+  assert.deepEqual(presentation(qualified, service), [])
+  assert.deepEqual(detect(qualified, service), [])
+  for (const mistake of [
+    qualified.replace("withRichSnapshot(userId, input,", "transaction("),
+    qualified.replace("snapshot.document", "input.document"),
+    qualified.replace('"./content-store.js"', '"./unqualified.js"'),
+    qualified.replace(
+      "return withRichSnapshot",
+      "compileOwnedFlowNativeDocx(input); return withRichSnapshot"
+    ),
+  ]) {
+    assert.ok(detect(mistake, service).length)
+    assert.ok(presentation(mistake, service).length)
+  }
+  assert.ok(presentation(qualified, "apps/api/src/paper/http.ts").length)
+})
+
+test("saved Word, photo reads and CV portrait admission retain their boundary guards", () => {
+  const cases = [
+    [
+      "packages/domain/src/paper-doc/native-layout-flow.ts",
+      ".map(withoutHeaderPortrait)",
+      ".map(node => node)",
+    ],
+    [
+      "apps/api/src/paper/content-store.ts",
+      "return ownedTaskTransaction(async () =>",
+      "return transaction(async () =>",
+    ],
+    [
+      "apps/api/src/paper/native-output/formatted-owned.ts",
+      "sources.add(node.photo)",
+      "sources.add(node.id)",
+    ],
+    ["apps/api/src/paper/store.ts", 'query.for("share")', "query"],
+  ]
+  for (const [path, before, after] of cases) {
+    const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+    assert.deepEqual(detect(clean, path), [], path)
+    assert.notEqual(clean.replace(before, after), clean, path)
+    assert.ok(detect(clean.replace(before, after), path).length, path)
+  }
+  assert.deepEqual(
+    detect(
+      readFileSync(new URL(`../${service}`, import.meta.url), "utf8"),
+      service
+    ),
+    []
+  )
+})

@@ -146,7 +146,45 @@ function compileDocument(
         if (!("content" in node)) {
           if (node.type === "divider")
             return '<w:p><w:pPr><w:pBdr><w:bottom w:val="single" w:sz="4" w:space="1" w:color="B5B5B5"/></w:pBdr></w:pPr></w:p>'
-          if (node.photo !== undefined)
+          if (node.type === "header" && node.photo !== undefined) {
+            if (document.profile !== "private-layout-3")
+              throw new Error(
+                "Formatted Word output requires resolved photo media"
+              )
+            const size = Math.min(1800, Math.floor(availableWidth / 3))
+            const gap = Math.min(240, Math.floor(availableWidth / 12))
+            const portrait = pictures.render(
+              {
+                id: node.id,
+                type: "photo",
+                source: node.photo,
+                width: size,
+                height: size,
+                crop: { top: 0, right: 0, bottom: 0, left: 0 },
+                rotation: 0,
+                shape: "rectangle",
+                placement: { kind: "block", alignment: "right" },
+                spacing: { top: 0, right: 0, bottom: 0, left: 0 },
+                alt: "CV portrait",
+              },
+              size
+            )
+            const textWidth = Math.floor(availableWidth) - size - gap
+            const cell = (width: number, content: string) =>
+              `<w:tc><w:tcPr><w:tcW w:w="${width}" w:type="dxa"/><w:vAlign w:val="top"/></w:tcPr>${content}</w:tc>`
+            const borders = [
+              "top",
+              "left",
+              "bottom",
+              "right",
+              "insideH",
+              "insideV",
+            ]
+              .map((edge) => `<w:${edge} w:val="nil"/>`)
+              .join("")
+            return `<w:tbl><w:tblPr><w:tblW w:w="${Math.floor(availableWidth)}" w:type="dxa"/><w:tblLayout w:type="fixed"/><w:tblBorders>${borders}</w:tblBorders><w:tblCellMar><w:top w:w="0" w:type="dxa"/><w:left w:w="0" w:type="dxa"/><w:bottom w:w="0" w:type="dxa"/><w:right w:w="0" w:type="dxa"/></w:tblCellMar></w:tblPr><w:tblGrid><w:gridCol w:w="${textWidth}"/><w:gridCol w:w="${gap}"/><w:gridCol w:w="${size}"/></w:tblGrid><w:tr>${cell(textWidth, siblings(node.children, 0, textWidth))}${cell(gap, "<w:p/>")}${cell(size, portrait)}</w:tr></w:tbl><w:p><w:pPr><w:spacing w:before="0" w:after="0"/></w:pPr></w:p>`
+          }
+          if ("photo" in node && node.photo !== undefined)
             throw new Error(
               "Formatted Word output requires resolved photo media"
             )

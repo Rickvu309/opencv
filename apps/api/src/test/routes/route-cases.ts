@@ -4,6 +4,7 @@ import type { TestDatabase } from "../../db/context.js"
 import { inboxThreads } from "../../db/schema.js"
 import { authHeaders, testWebOrigin } from "../harness.js"
 import { textPdf } from "./route-files.js"
+import { nativeWordRouteCase } from "../../paper/native-word.test-support.js"
 
 export type Method = "GET" | "POST" | "PUT" | "PATCH" | "DELETE"
 
@@ -318,6 +319,7 @@ export const ROUTE_CASES: readonly RouteCase[] = [
   get("/api/paper/files/:id/bytes", uploadedFile),
   get("/api/paper/:id/pages", olderDoc),
   get("/api/paper/:id/document", olderDoc),
+  nativeWordRouteCase,
   get("/api/paper/:id", olderDoc),
   get("/api/jobs"),
   get("/api/jobs/calendar"),

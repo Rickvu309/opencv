@@ -1,5 +1,6 @@
 import { posix } from "node:path"
 import ts from "typescript"
+import { qualifiedNativeWord } from "./paper-native-word.mjs"
 
 export function detect(text, path) {
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
@@ -139,7 +140,8 @@ export function detect(text, path) {
       /(?:^|\/)native-output\/formatted(?:-[^/]+)?(?:\.[cm]?[jt]s)?$/.test(
         target
       ) &&
-      !path.startsWith("apps/api/src/paper/native-output/")
+      !path.startsWith("apps/api/src/paper/native-output/") &&
+      !qualifiedNativeWord(text, path)
     )
       hits.push(
         "Formatted Word output stays private until the full native flow is qualified"
