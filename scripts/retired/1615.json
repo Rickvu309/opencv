@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 5
+  },
+  {
+    "subject": "apps/web/src/routes/detail-recovery.test.tsx",
+    "because": "A failed job list now says Couldn't load jobs. and offers Refresh, so the old Refresh the page sentence is wrong.",
+    "replacedBy": "apps/web/src/routes/detail-recovery.test.tsx",
+    "proof": {
+      "fork": "a887677ee976df2a519b5804ad24a48ed431fc11",
+      "replacedByBlob": "fe26cf022d759edd494451039fe441dbfc9be47f",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
