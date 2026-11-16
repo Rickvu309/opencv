@@ -134,6 +134,11 @@ export function mountPrivateFlow(
       !event.metaKey
     ) {
       if (
+        event.target instanceof Element &&
+        event.target.closest("[data-paper-oversized-row='true']")
+      )
+        return
+      if (
         (!docsTables ||
           !layoutCellAt(editor.prosemirrorState.selection.$from)) &&
         ["bulletListItem", "numberedListItem"].includes(

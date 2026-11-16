@@ -44,7 +44,8 @@ function frame(block: { id: string; type: string }) {
     slot.style.overflowWrap = "anywhere"
     slot.style.padding = "6pt"
     dom.style.height = "100%"
-    dom.style.border = "1px solid var(--border)"
+    dom.style.borderBlockStart = "1px solid var(--border)"
+    dom.style.borderInlineEnd = "1px solid var(--border)"
     dom.style.boxSizing = "border-box"
   }
   if (block.type === "paperRow") dom.prepend(slot)

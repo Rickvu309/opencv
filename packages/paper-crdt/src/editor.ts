@@ -172,6 +172,16 @@ export function mountRichPaperEditor(
             )
           : null
       },
+      tableRowElement() {
+        if (!active) return null
+        const selected = mounted.tables.activeTable()
+        const row = selected?.table.children[selected.rowIndex]
+        return row
+          ? element.querySelector<HTMLElement>(
+              `[data-paper-layout="paperRow"][data-paper-id="${CSS.escape(row.id)}"]`
+            )
+          : null
+      },
       insertTable(...args: Parameters<typeof mounted.tables.insertTable>) {
         return apply(() => mounted.tables.insertTable(...args))
       },

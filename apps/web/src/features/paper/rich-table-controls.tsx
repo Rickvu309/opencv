@@ -12,6 +12,7 @@ import {
 } from "@workspace/ui/components/popover"
 import { ToolbarHint, type TextEditor } from "./rich-text-toolbar-control.tsx"
 import { RichTableMenu } from "./rich-table-menu.tsx"
+import { RichTableResize } from "./rich-table-resize.tsx"
 import "./rich-table.css"
 
 export function RichTableControls({
@@ -27,6 +28,7 @@ export function RichTableControls({
   useEffect(() => editor?.subscribe(refresh), [editor])
   const selected = !disabled ? editor?.activeTable() : null
   const element = !disabled ? editor?.tableElement() : null
+  const row = !disabled ? editor?.tableRowElement() : null
   return (
     <>
       {children((close) => (
@@ -38,16 +40,52 @@ export function RichTableControls({
       ))}
       {editor && selected && element && !disabled
         ? createPortal(
-            <RichTableMenu
-              editor={editor}
-              selected={selected}
-              element={element}
-            />,
+            <div contentEditable={false} data-paper-table-controls="">
+              <RichTableResize
+                editor={editor}
+                selected={selected}
+                element={element}
+              />
+            </div>,
             element
           )
         : null}
+      {editor && selected && row && !disabled ? (
+        <TableMenuAnchor row={row}>
+          <RichTableMenu editor={editor} selected={selected} />
+        </TableMenuAnchor>
+      ) : null}
     </>
   )
+}
+
+type AnchorAction = { type: "mount"; host: HTMLDivElement } | { type: "clear" }
+
+function TableMenuAnchor({
+  row,
+  children,
+}: {
+  row: HTMLElement
+  children: ReactNode
+}) {
+  const [host, dispatch] = useReducer(
+    (_host: HTMLDivElement | null, action: AnchorAction) =>
+      action.type === "mount" ? action.host : null,
+    null
+  )
+  useEffect(() => {
+    const anchor = document.createElement("div")
+    anchor.className = "paper-table-anchor"
+    anchor.dataset.paperTableControls = ""
+    anchor.contentEditable = "false"
+    row.prepend(anchor)
+    dispatch({ type: "mount", host: anchor })
+    return () => {
+      anchor.remove()
+      dispatch({ type: "clear" })
+    }
+  }, [row])
+  return host ? createPortal(children, host) : null
 }
 
 type InsertState = {

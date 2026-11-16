@@ -10,7 +10,6 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 import type { TextEditor } from "./rich-text-toolbar-control.tsx"
-import { RichTableResize } from "./rich-table-resize.tsx"
 
 type Selected = NonNullable<ReturnType<TextEditor["activeTable"]>>
 type MenuAction =
@@ -20,11 +19,9 @@ type MenuAction =
 export function RichTableMenu({
   editor,
   selected,
-  element,
 }: {
   editor: TextEditor
   selected: Selected
-  element: HTMLElement
 }) {
   const [{ open, error }, dispatch] = useReducer(
     (state: { open: boolean; error: string }, action: MenuAction) =>
@@ -195,7 +192,6 @@ export function RichTableMenu({
           {error ? <p role="alert">{error}</p> : null}
         </PopoverContent>
       </Popover>
-      <RichTableResize editor={editor} selected={selected} element={element} />
     </div>
   )
 }

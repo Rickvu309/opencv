@@ -12,6 +12,8 @@ const files = [
   "packages/paper-crdt/src/native-layout-schema.ts",
   "apps/web/src/features/paper/rich-table-controls.tsx",
   "apps/api/src/paper/native-output/formatted.ts",
+  "apps/web/src/features/paper/rich-table.css",
+  "packages/paper-crdt/src/native-layout-flow-mount.ts",
 ]
 
 test("table availability, row pagination and borders stay connected", () => {
@@ -44,8 +46,14 @@ test("table mistakes fire and clean fixtures stay quiet", () => {
     ],
     [
       files[2],
-      'dom.style.border = "1px solid var(--border)"',
+      'dom.style.borderBlockStart = "1px solid var(--border)"',
       'slot.style.boxShadow = "inset 0 0 0 1px var(--border)"',
+    ],
+    [files[5], "position: sticky", "position: absolute"],
+    [
+      files[6],
+      "closest(\"[data-paper-oversized-row='true']\")",
+      'closest("[data-paper-row]")',
     ],
     [files[3], "open={open && available}", "open={open}"],
     [files[3], "disabled={!available}", ""],

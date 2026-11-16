@@ -263,6 +263,25 @@ it("refuses nested tables, locked edits and invalid dimensions without changing 
   expect(read()).toEqual(before)
 })
 
+it("leaves Tab on an oversized row for the table menu", () => {
+  const { editor, host, tables, select } = setup("letter")
+  select("first")
+  tables.insertTable(2, 2)
+  const row = host.querySelector<HTMLElement>('[data-paper-layout="paperRow"]')
+  if (!row) throw new Error("Missing row")
+  row.dataset.paperOversizedRow = "true"
+  row.tabIndex = 0
+  const before = editor.prosemirrorState.selection.from
+  const event = new KeyboardEvent("keydown", {
+    key: "Tab",
+    bubbles: true,
+    cancelable: true,
+  })
+  row.dispatchEvent(event)
+  expect(event.defaultPrevented).toBe(false)
+  expect(editor.prosemirrorState.selection.from).toBe(before)
+})
+
 it("keeps an editable paragraph when deleting the only table", () => {
   const document = flowFixture()
   const section = document.flow.children[0]!
@@ -292,6 +311,7 @@ it("released public table controls cannot read or write the destroyed editor", (
   client.destroy()
   expect(editor.activeTable()).toBeNull()
   expect(editor.tableElement()).toBeNull()
+  expect(editor.tableRowElement()).toBeNull()
   for (const action of [
     () => editor.insertTable(2, 2),
     () => editor.addTableRow(),
