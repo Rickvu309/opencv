@@ -351,7 +351,9 @@ export function RichPhotoControls({
                   <Input
                     name="alt"
                     className="h-11 md:h-8"
-                    maxLength={2000}
+                    maxLength={
+                      layoutPhotoSchema.shape.alt.maxLength ?? undefined
+                    }
                     defaultValue={selected.alt}
                     placeholder="Describe the photo"
                   />
