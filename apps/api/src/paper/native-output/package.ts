@@ -1,5 +1,7 @@
 import { createRequire } from "node:module"
 
+import { paperLinkColor } from "@workspace/domain/internal/paper-presentation"
+
 import { z } from "zod"
 
 import { xml, type ExternalLink } from "./rich-text.js"
@@ -87,7 +89,16 @@ export function wordPackage(input: {
       "word/_rels/document.xml.rels",
       `${XML_START}<Relationships xmlns="${PKG_NS}">${relationships}</Relationships>`,
     ],
-    ["word/styles.xml", wordPart("styles", input.styles)],
+    [
+      "word/styles.xml",
+      wordPart(
+        "styles",
+        input.styles +
+          (input.links.length
+            ? `<w:style w:type="character" w:styleId="Hyperlink"><w:name w:val="Hyperlink"/><w:rPr><w:color w:val="${paperLinkColor.slice(1)}"/><w:u w:val="single"/></w:rPr></w:style>`
+            : "")
+      ),
+    ],
     ["word/numbering.xml", wordPart("numbering", input.numbering)],
     ...(input.media ?? []).map(({ name, bytes }): [string, Uint8Array] => [
       `word/media/${name}`,

@@ -4,6 +4,8 @@ import {
   styleIdSchema,
 } from "./presentation-values.js"
 
+export const paperLinkColor = "#1D4ED8"
+
 export const paperParagraphStyles = [
   {
     id: "normal",

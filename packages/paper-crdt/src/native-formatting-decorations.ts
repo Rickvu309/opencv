@@ -1,6 +1,7 @@
 import type { Node } from "@tiptap/pm/model"
 import { Decoration, DecorationSet } from "@tiptap/pm/view"
 import {
+  paperLinkColor,
   paragraphInlineValues,
   effectiveParagraphStyle,
   type DocumentPresentation,
@@ -70,7 +71,7 @@ export function formattingDecorations(
               })
             ) +
             (node.marks.some((mark) => mark.type.name === "link")
-              ? ";color:var(--primary);text-decoration:underline"
+              ? `;color:var(--paper-link, ${paperLinkColor});text-decoration:underline`
               : ""),
           "data-paper-resolved": "",
         })

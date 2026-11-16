@@ -1,11 +1,11 @@
 export const clean = [
   {
     path: "packages/paper-crdt/src/native-formatting-commands.ts",
-    text: 'event.altKey && !mod && event.code === "Digit5" || event.metaKey && !event.altKey && key === "x"',
+    text: 'event.altKey && !mod && event.code === "Digit5" || event.metaKey && !event.altKey && key === "x"; depth + descendants(block) < 3',
   },
   {
     path: "packages/paper-crdt/src/native-formatting-decorations.ts",
-    text: 'const list = { style: "list-style-type:disc", "aria-level": "1" }',
+    text: 'const list = { style: "list-style-type:disc", "aria-level": "1" }; mark.type.name === "link"; color:var(--paper-link, ${paperLinkColor});text-decoration:underline',
   },
   {
     path: "packages/paper-crdt/src/native-layout-flow-mount.ts",
@@ -413,12 +413,20 @@ export const mistakes = [
 
 const roundOneClean = new Map([
   [
+    "apps/api/src/paper/native-output/rich-text.ts",
+    '<w:rStyle w:val="Hyperlink"/>',
+  ],
+  [
+    "apps/api/src/paper/native-output/package.ts",
+    'w:styleId="Hyperlink"; paperLinkColor.slice(1)',
+  ],
+  [
     "apps/web/src/features/paper/rich-structure-controls.tsx",
-    "SelectContent finalFocus={returnToDocument}; DialogContent finalFocus={returnToDocument}; editor?.apply(); onOpenChangeComplete={finishInteraction}; onOpenChangeComplete={finishInteraction}; isSafeHref(link.original); Text to display; linkNeedsText",
+    "SelectContent finalFocus={returnToDocument}; DialogContent finalFocus={returnToDocument}; editor?.apply(); onOpenChangeComplete={finishInteraction}; onOpenChangeComplete={finishInteraction}; isSafeHref(link.original); Text to display; linkNeedsText; normalizeLinkHref(state.href); value ?? state?.paragraphStyle",
   ],
   [
     "packages/paper-crdt/src/native-formatting-commands.ts",
-    'effectiveParagraphStyle(); mark.name !== "link"; normalizeLinkHref(address)',
+    'effectiveParagraphStyle(); mark.name !== "link"; normalizeLinkHref(address); depth + descendants(block) < 3',
   ],
   [
     "apps/api/src/paper/native-output/formatted.ts",
@@ -426,7 +434,7 @@ const roundOneClean = new Map([
   ],
   [
     "packages/paper-crdt/src/native-formatting-decorations.ts",
-    'mark.type.name === "link"; color:var(--primary);text-decoration:underline',
+    'mark.type.name === "link"; color:var(--paper-link, ${paperLinkColor});text-decoration:underline',
   ],
 ])
 for (const fixture of clean) {

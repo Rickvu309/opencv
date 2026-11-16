@@ -1,6 +1,5 @@
 import { normalizeLinkHref } from "@workspace/domain"
 import {
-  paperParagraphStyle,
   effectiveParagraphStyle,
   paperParagraphStyles,
   type PaperParagraphStyle,
@@ -76,12 +75,33 @@ export function richEditorCommands(
         )
       view.dispatch(tr)
     })
+  const canIndent = () => {
+    const block = editor.getTextCursorPosition().block
+    if (
+      !["bulletListItem", "numberedListItem"].includes(block.type) ||
+      !editor.canNestBlock()
+    )
+      return false
+    const point = view.state.selection.$from
+    let depth = 0
+    for (let index = 1; index < point.depth; index++)
+      if (
+        point.node(index).type.name === "blockContainer" &&
+        ["bulletListItem", "numberedListItem"].includes(
+          point.node(index).firstChild?.type.name ?? ""
+        )
+      )
+        depth++
+    const descendants = (node: typeof block): number =>
+      Math.max(0, ...node.children.map((child) => 1 + descendants(child)))
+    return depth + descendants(block) < 3
+  }
   const listLevel = (direction: "in" | "out") =>
     change(() => {
       const block = editor.getTextCursorPosition().block
       if (block.type !== "bulletListItem" && block.type !== "numberedListItem")
         return
-      if (direction === "in" && editor.canNestBlock()) editor.nestBlock()
+      if (direction === "in" && canIndent()) editor.nestBlock()
       if (direction === "out" && editor.canUnnestBlock()) editor.unnestBlock()
     })
   const linkRange = () => {
@@ -225,9 +245,7 @@ export function richEditorCommands(
         ) ?? "normal"
       const style = blocks[0] ? blockStyle(blocks[0]) : "normal"
       return {
-        paragraphStyle:
-          paperParagraphStyle(typeof style === "string" ? style : undefined)
-            ?.id ?? "normal",
+        paragraphStyle: style,
         mixedStyle: blocks.some((block) => blockStyle(block) !== style),
         list: blocks[0]?.type,
         href: editor.getSelectedLinkUrl() ?? "",
@@ -236,10 +254,7 @@ export function richEditorCommands(
           view.state.selection.empty && !editor.getSelectedLinkUrl(),
         canUndo: Boolean(history()?.undoStack.length),
         canRedo: Boolean(history()?.redoStack.length),
-        canIndent:
-          ["bulletListItem", "numberedListItem"].includes(
-            editor.getTextCursorPosition().block.type
-          ) && editor.canNestBlock(),
+        canIndent: canIndent(),
         canOutdent:
           ["bulletListItem", "numberedListItem"].includes(
             editor.getTextCursorPosition().block.type

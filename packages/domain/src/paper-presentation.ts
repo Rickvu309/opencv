@@ -10,6 +10,7 @@ export {
 } from "./paper-doc/presentation-values.js"
 export type { Result } from "./paper-doc/presentation-values.js"
 export {
+  paperLinkColor,
   paperParagraphStyles,
   paperParagraphStyle,
   effectiveParagraphStyle,

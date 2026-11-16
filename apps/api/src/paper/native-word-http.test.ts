@@ -216,6 +216,19 @@ it("downloads real saved CV and Letter HTTP edits, refuses stale requests and pr
         expect(elements(part.root, "hyperlink").length).toBeGreaterThanOrEqual(
           3
         )
+        const hyperlinkStyle = elements(stylesPart.root, "style").find(
+          (node) => attribute(node, "styleId") === "Hyperlink"
+        )
+        if (!hyperlinkStyle) throw new Error("Missing Hyperlink style")
+        expect(attribute(hyperlinkStyle, "type")).toBe("character")
+        expect(attribute(one(hyperlinkStyle, "color"), "val")).toBe("1D4ED8")
+        expect(attribute(one(hyperlinkStyle, "u"), "val")).toBe("single")
+        for (const link of elements(part.root, "hyperlink"))
+          for (const run of elements(link, "r")) {
+            expect(attribute(one(run, "rStyle"), "val")).toBe("Hyperlink")
+            expect(elements(run, "color")).toHaveLength(0)
+            expect(elements(run, "u")).toHaveLength(0)
+          }
         const cleared = paragraphs.find(
           (node) => textOf(part, node) === "Cleared formatting"
         )

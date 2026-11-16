@@ -1,5 +1,5 @@
 import { useEffect, useReducer, type ReactNode } from "react"
-import { isSafeHref } from "@workspace/domain"
+import { isSafeHref, normalizeLinkHref } from "@workspace/domain"
 import type { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -69,7 +69,9 @@ function linkDialogReducer(state: LinkDialog, action: LinkAction): LinkDialog {
       return state.kind === "open"
         ? {
             ...state,
-            error: "Enter a website or email address and text to display.",
+            error: !normalizeLinkHref(state.href)
+              ? "Enter a website or email address."
+              : "Enter text to display.",
           }
         : state
     case "close":
@@ -190,7 +192,9 @@ export function RichStructureControls({
               ? "Mixed styles"
               : (editor?.paragraphStyles.find(
                   (style) => style.id === state?.paragraphStyle
-                )?.label ?? "Normal text")}
+                )?.label ??
+                state?.paragraphStyle ??
+                "Normal text")}
           </SelectValue>
         </SelectTrigger>
         <SelectContent finalFocus={returnToDocument}>
@@ -248,6 +252,13 @@ export function RichStructureControls({
                 Text to display
                 <Input
                   className="min-h-11"
+                  autoFocus
+                  aria-invalid={error === "Enter text to display."}
+                  aria-describedby={
+                    error === "Enter text to display."
+                      ? "paper-link-error"
+                      : undefined
+                  }
                   value={link.text}
                   disabled={disabled}
                   onChange={(event) =>
@@ -260,11 +271,11 @@ export function RichStructureControls({
               Link address
               <Input
                 className="min-h-11"
-                autoFocus
+                autoFocus={!link?.needsText}
                 type="text"
                 inputMode="url"
                 value={link?.href ?? ""}
-                aria-invalid={Boolean(error)}
+                aria-invalid={error === "Enter a website or email address."}
                 aria-describedby={error ? "paper-link-error" : undefined}
                 onChange={(event) => {
                   dispatch({ type: "edit", href: event.target.value })

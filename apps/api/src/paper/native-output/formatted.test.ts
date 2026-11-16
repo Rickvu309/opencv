@@ -154,9 +154,10 @@ describe("formatted native Word output", () => {
     expect(textOf(part, run)).toBe(text)
     expect(attribute(one(run, "sz"), "val")).toBe("27")
     expect(attribute(one(run, "szCs"), "val")).toBe("27")
-    expect(attribute(one(run, "color"), "val")).toBe("1234AB")
+    expect(attribute(one(run, "rStyle"), "val")).toBe("Hyperlink")
+    expect(elements(run, "color")).toHaveLength(0)
     expect(attribute(one(run, "shd"), "fill")).toBe("FEDCBA")
-    expect(attribute(one(run, "u"), "val")).toBe("single")
+    expect(elements(run, "u")).toHaveLength(0)
     for (const name of ["b", "bCs", "i", "iCs", "strike"])
       expect(attribute(one(run, name), "val")).toBe("1")
     expect(elements(run, "tab")).toHaveLength(1)
@@ -472,7 +473,7 @@ describe("formatted native Word output", () => {
     expect(result).not.toHaveProperty("value")
   })
 
-  it("is deterministic, does not change its input, and preserves the old Letter package bytes", () => {
+  it("is deterministic, does not change its input, and styles legacy Letter links consistently", () => {
     const source = cv()
     const before = JSON.stringify(source)
     expect(compile(source)).toEqual(compile(source))
@@ -503,7 +504,7 @@ describe("formatted native Word output", () => {
       profileId: LETTER_PROFILE.id,
     })
     expect(createHash("sha256").update(legacy).digest("hex")).toBe(
-      "1aa6c2fd80aba0c2b9811cf2b6a2ed6e1d06a14fc838486a8a116c2bb60a17c7"
+      "615b9d05fbc0d88da66ea831a61b1c053fbaf1b50e20966da7c39ee1e8b207fc"
     )
   })
 })

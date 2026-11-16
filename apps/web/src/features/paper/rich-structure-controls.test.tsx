@@ -45,6 +45,13 @@ function setup() {
   const section = input.flow.children[0]!
   const documentValue = richPaperDocumentSchema.parse({
     ...input,
+    presentation: {
+      ...input.presentation,
+      styles: [
+        ...input.presentation.styles,
+        { id: "custom-career", parent: null, kind: "paragraph", values: {} },
+      ],
+    },
     flow: {
       ...input.flow,
       children: [
@@ -242,4 +249,85 @@ it("does not offer Open for an unsafe stored target and disables the controls wh
   ).toBeDisabled()
   fireEvent.keyDown(document.activeElement!, { key: "k", ctrlKey: true })
   expect(screen.queryByRole("dialog")).toBeNull()
+})
+
+it("shows custom paragraph ids and disables indentation at the persisted nesting cap", () => {
+  const { editor, engine, view, controls } = setup()
+  act(() =>
+    engine.insertBlocks(
+      [
+        {
+          id: "l1",
+          type: "bulletListItem",
+          content: "First",
+          children: [
+            {
+              id: "l2",
+              type: "bulletListItem",
+              content: "Second",
+              children: [
+                { id: "l3", type: "bulletListItem", content: "Third" },
+              ],
+            },
+          ],
+        },
+      ],
+      "body",
+      "after"
+    )
+  )
+  act(() => engine.setTextCursorPosition("l3", "start"))
+  expect(editor.formattingState().canIndent).toBe(false)
+  expect(screen.getByRole("button", { name: "Increase indent" })).toBeDisabled()
+  const before = view.state.doc.toJSON()
+  act(() => editor.listLevel("in"))
+  expect(view.state.doc.toJSON()).toEqual(before)
+  act(() => {
+    engine.setTextCursorPosition("body", "start")
+    const position = view.state.selection.$from.before()
+    view.dispatch(
+      view.state.tr.setNodeMarkup(position, undefined, {
+        ...view.state.selection.$from.parent.attrs,
+        paragraphStyle: "custom-career",
+      })
+    )
+  })
+  expect(editor.formattingState().paragraphStyle).toBe("custom-career")
+  controls.rerender(
+    <RichStructureControls editor={editor} blocked={false}>
+      {null}
+    </RichStructureControls>
+  )
+  expect(
+    screen.getByRole("combobox", { name: "Paragraph style" })
+  ).toHaveTextContent("custom-career")
+})
+
+it("names only the invalid visible link field", async () => {
+  const { host, view } = setup()
+  act(() =>
+    view.dispatch(
+      view.state.tr.setSelection(
+        TextSelection.create(
+          view.state.doc,
+          view.state.selection.from,
+          view.state.selection.from + 4
+        )
+      )
+    )
+  )
+  fireEvent.keyDown(host, { key: "k", ctrlKey: true })
+  await screen.findByRole("dialog")
+  expect(screen.queryByLabelText("Text to display")).toBeNull()
+  fireEvent.change(screen.getByLabelText("Link address"), {
+    target: { value: "javascript:alert(1)" },
+  })
+  fireEvent.click(screen.getByRole("button", { name: "Apply" }))
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    /^Enter a website or email address\.$/
+  )
+  expect(screen.getByLabelText("Link address")).toHaveAttribute(
+    "aria-invalid",
+    "true"
+  )
 })

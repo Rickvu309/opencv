@@ -39,11 +39,40 @@ export function detectRichStructure(text, path) {
   if (
     path === "packages/paper-crdt/src/native-formatting-decorations.ts" &&
     (!text.includes('mark.type.name === "link"') ||
-      !text.includes("color:var(--primary);text-decoration:underline"))
+      !text.includes(
+        "color:var(--paper-link, ${paperLinkColor});text-decoration:underline"
+      ))
   )
     hits.push(
       "Rich link text must paint the visible underline and semantic color"
     )
 
+  if (
+    richControls &&
+    (!text.includes("normalizeLinkHref(state.href)") ||
+      !/\?\?\s*state\?\.paragraphStyle/.test(text))
+  )
+    hits.push(
+      "Rich controls must identify invalid fields and preserve custom style names"
+    )
+  if (
+    path === "packages/paper-crdt/src/native-formatting-commands.ts" &&
+    (!text.includes("depth + descendants(block) < 3") ||
+      text.includes('?.id ?? "normal"'))
+  )
+    hits.push(
+      "Rich list indentation must respect the persisted depth cap and preserve custom styles"
+    )
+  if (
+    path === "apps/api/src/paper/native-output/rich-text.ts" &&
+    !text.includes('<w:rStyle w:val="Hyperlink"/>')
+  )
+    hits.push("Every Word link run must use the Hyperlink character style")
+  if (
+    path === "apps/api/src/paper/native-output/package.ts" &&
+    (!text.includes('w:styleId="Hyperlink"') ||
+      !text.includes("paperLinkColor.slice(1)"))
+  )
+    hits.push("Word packages must define the shared Paper Hyperlink style")
   return hits
 }
