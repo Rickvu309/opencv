@@ -8,13 +8,22 @@ import {
 } from "./formatting-options.js"
 import { borrowFlowDocument } from "./native-layout-flow.js"
 import { mountPrivateFlow } from "./native-layout-flow-mount.js"
+import {
+  captureEditorSelection,
+  restoreEditorSelection,
+} from "./editor-selection.js"
 
 export type RichMark = "bold" | "italic" | "underline" | "strike"
 
 export function mountRichPaperEditor(
   client: PaperClient<RichPaperDocument>,
   element: HTMLElement,
-  options: { readonly photoUrl?: (fileId: string) => string | undefined } = {}
+  options: {
+    readonly photoUrl?: (fileId: string) => string | undefined
+    readonly onRelease?: (
+      selection: ReturnType<typeof captureEditorSelection>
+    ) => void
+  } = {}
 ) {
   const document = client.document()
   if (!document) throw new Error("Rich Paper document required")
@@ -48,6 +57,7 @@ export function mountRichPaperEditor(
       else mounted.adjustIndent(delta)
     }
     const shortcuts = (event: KeyboardEvent) => {
+      if (!active || !mounted.editor.isEditable) return
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return
       const alignments = new Map([
         ["l", "left"],
@@ -69,48 +79,115 @@ export function mountRichPaperEditor(
     view.dom.addEventListener("keydown", shortcuts)
     const destroy = () => {
       if (!active) return
+      const selection = captureEditorSelection(view)
       active = false
       removeRelease()
       view.dom.removeEventListener("keydown", shortcuts)
+      options.onRelease?.(selection)
       mounted.unmount()
       lease.release()
     }
     removeRelease = client.onDocumentRelease(destroy)
     const apply = (action: () => unknown = () => {}) => {
-      if (!active) return false
+      if (!active || !mounted.editor.isEditable) return false
       if (action() === false) return false
       view.focus()
       return view.dom
     }
     return {
-      ...mounted.photoControls,
+      photos: () => (active ? mounted.photoControls.photos() : []),
+      insertPhoto(
+        ...args: Parameters<typeof mounted.photoControls.insertPhoto>
+      ) {
+        if (!active || !mounted.editor.isEditable) return null
+        return mounted.photoControls.insertPhoto(...args)
+      },
+      updatePhoto(
+        ...args: Parameters<typeof mounted.photoControls.updatePhoto>
+      ) {
+        if (active && mounted.editor.isEditable)
+          mounted.photoControls.updatePhoto(...args)
+      },
+      replacePhoto(
+        ...args: Parameters<typeof mounted.photoControls.replacePhoto>
+      ) {
+        if (active && mounted.editor.isEditable)
+          mounted.photoControls.replacePhoto(...args)
+      },
+      removePhoto(
+        ...args: Parameters<typeof mounted.photoControls.removePhoto>
+      ) {
+        if (active && mounted.editor.isEditable)
+          mounted.photoControls.removePhoto(...args)
+      },
+      selectedPhoto: () =>
+        active ? mounted.photoControls.selectedPhoto() : null,
+      selectPhoto(id: string | null) {
+        if (active) mounted.photoControls.selectPhoto(id)
+      },
+      documentHistory: () =>
+        active
+          ? mounted.photoControls.documentHistory()
+          : { undo: false, redo: false },
+      undoDocument: () => apply(commands.undo),
+      redoDocument: () => apply(commands.redo),
       formattingOptions: {
         colors: richTextColors,
         highlights: richTextHighlights,
         fonts: richTextFonts,
       },
-      ...commands,
+      paragraphStyles: commands.paragraphStyles,
+      setParagraphStyle(
+        ...args: Parameters<typeof commands.setParagraphStyle>
+      ) {
+        return apply(() => commands.setParagraphStyle(...args))
+      },
+      toggleList(...args: Parameters<typeof commands.toggleList>) {
+        return apply(() => commands.toggleList(...args))
+      },
+      listLevel(...args: Parameters<typeof commands.listLevel>) {
+        return apply(() => commands.listLevel(...args))
+      },
+      setLink(...args: Parameters<typeof commands.setLink>) {
+        if (!active || !mounted.editor.isEditable) return false
+        return commands.setLink(...args)
+      },
+      removeLink: () => apply(commands.removeLink),
+      clearFormatting: () => apply(commands.clearFormatting),
+      undo: () => apply(commands.undo),
+      redo: () => apply(commands.redo),
+      formattingState: () => (active ? commands.formattingState() : null),
       apply,
       setEditable(editable: boolean) {
         if (active) mounted.editor.isEditable = editable
       },
       focus: () => apply(),
+      captureSelection() {
+        if (active) return captureEditorSelection(view)
+      },
+      restoreSelection(selection?: ReturnType<typeof captureEditorSelection>) {
+        if (active && selection) restoreEditorSelection(view, selection)
+      },
       toggleMark(mark: RichMark) {
         if (!active) throw new Error("Paper editor is closed")
+        if (!mounted.editor.isEditable) return
         commands.toggleMark(mark)
       },
       formatInline(input: Parameters<typeof mounted.formatInline>[0]) {
         if (!active) throw new Error("Paper editor is closed")
+        if (!mounted.editor.isEditable) return
         mounted.formatInline(input)
         view.focus()
       },
       formatParagraph(input: Parameters<typeof mounted.formatParagraph>[0]) {
         if (!active) throw new Error("Paper editor is closed")
+        if (!mounted.editor.isEditable) return
         mounted.formatParagraph(input)
         view.focus()
       },
       adjustIndent(delta: 360 | -360) {
         if (!active) throw new Error("Paper editor is closed")
+        if (!mounted.editor.isEditable) return
         adjustIndent(delta)
         view.focus()
       },
