@@ -51,6 +51,22 @@ export const LANDING_NAV_LINKS: readonly LandingNavLink[] = [
 export type LandingFigureId =
   "apply-board" | "paper" | "apply" | "coach" | "proof" | "pitch"
 
+export type LandingPhoneSceneId = Extract<
+  LandingFigureId,
+  "apply-board" | "paper" | "apply" | "coach"
+>
+
+export const LANDING_PHONE_SCENE_LABELS: Record<LandingPhoneSceneId, string> = {
+  "apply-board":
+    "The Apply board on a phone: the Junior Marketing job at Lumière Cosmetics is dragged from Applied to Interview and gains its interview on Thursday at 10:00.",
+  paper:
+    "The Paper editor on a phone: Coach suggests starting a CV bullet with Wrote instead of Responsible for, the change is accepted, and the CV still fits one page.",
+  apply:
+    "Apply on a phone: a job link is pasted and saved, and the Marketing intern job at Lumière Cosmetics joins Saved with its Oct 25 deadline.",
+  coach:
+    "Coach on a phone: asked to tailor a CV for the Lumière role, Coach reads the CV and the posting, rewords existing bullets, and the person approves the edit.",
+}
+
 export const LANDING_FIGURE_LABELS: Record<LandingFigureId, string> = {
   "apply-board":
     "The Apply board with jobs in Saved, Applied and Interview columns, each card showing its company, city and date.",

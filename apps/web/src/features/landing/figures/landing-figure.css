@@ -16,3 +16,16 @@
 .landing-figure[data-paused] * {
   animation-play-state: paused !important;
 }
+
+.landing-panel:has(> .landing-phone-scene) {
+  padding: 0;
+}
+
+.landing-phone-scene {
+  display: block;
+  inline-size: 100%;
+}
+
+.landing-phone-scene[data-loading] {
+  aspect-ratio: 348 / 420;
+}

@@ -1,0 +1,50 @@
+@layer stageshow {
+  .ss-popover {
+    position: absolute;
+    z-index: 25;
+    isolation: isolate;
+    overflow: visible !important;
+    padding: 4px;
+    border-radius: var(--ss-radius-lg);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .ss-popover::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    background: var(--ss-popover-bg, var(--ss-raised));
+    box-shadow: var(--ss-popover-shadow, var(--ss-shadow-float));
+    transform: scale(0.96);
+    transform-origin: var(--ss-popover-origin, top left);
+    transition: transform 0.3s ease;
+    pointer-events: none;
+  }
+
+  .ss-popover[data-show] {
+    opacity: 1;
+    transition: opacity 0.18s ease;
+  }
+
+  .ss-popover[data-show]::before {
+    transform: none;
+    transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .ss-popover:not([data-show]):not([data-instant]) {
+    transform: scale(0.96);
+    transform-origin: var(--ss-popover-origin, top left);
+    transition:
+      opacity 0.24s ease,
+      transform 0.24s cubic-bezier(0.4, 0, 1, 1);
+  }
+
+  .ss-popover:not([data-show]):not([data-instant])::before {
+    transform: none;
+    transition: none;
+  }
+}
