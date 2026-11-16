@@ -9,7 +9,7 @@ export function detectPhotoPresentation(text, path, source) {
     hits.push("Photo errors must hide schema details after serialization")
   if (path === "apps/web/src/features/paper/rich-photo-number.tsx") {
     if (
-      !text.includes("useState(String(value))") ||
+      !/useReducer\([^,]+,\s*String\(value\)\)/.test(text) ||
       !text.includes("tabular-nums") ||
       !text.includes("validity.valid") ||
       /onChange=\{[\s\S]*?onCommit\(/.test(text.split("onBlur=")[0])

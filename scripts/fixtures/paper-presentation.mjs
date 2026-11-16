@@ -5,7 +5,7 @@ export const clean = [
   },
   {
     path: "apps/web/src/features/paper/rich-photo-number.tsx",
-    text: `const [draft, setDraft] = useState(String(value)); const field = <Input className="tabular-nums" onChange={event => setDraft(event.target.value)} onBlur={event => event.target.validity.valid && onCommit(Number(draft))} />`,
+    text: `const [draft, dispatch] = useReducer(photoNumberDraft, String(value)); const field = <Input className="tabular-nums" onChange={event => dispatch({ type: "edit", value: event.target.value })} onBlur={event => event.target.validity.valid && onCommit(Number(draft))} />`,
   },
   {
     path: "apps/web/src/features/paper/rich-photo-controls.tsx",
