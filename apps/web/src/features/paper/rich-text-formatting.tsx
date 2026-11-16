@@ -8,6 +8,7 @@ import {
   PopoverTitle,
 } from "@workspace/ui/components/popover"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
+import { FocusSafeRegion } from "@/components/focus-safe-region.tsx"
 import { RichDocumentHistory } from "./rich-document-toolbar.tsx"
 import { RichTextEmphasisGroup } from "./rich-text-emphasis-group.tsx"
 import { RichTextFontGroup } from "./rich-text-font-group.tsx"
@@ -37,6 +38,12 @@ export function RichPaperTextFormatting({
   const [open, setOpen] = useReducer((_: boolean, next: boolean) => next, false)
   const host = useRef<HTMLDivElement>(null)
   const layout = useToolbarOverflow(host)
+  const focusFallback = () => {
+    editor?.focus()
+    return document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null
+  }
   useEffect(() => {
     update(editor?.activeFormatting() ?? null)
     return editor?.subscribe(() => update(editor.activeFormatting()))
@@ -105,19 +112,24 @@ export function RichPaperTextFormatting({
           {({ style, controls: structure }) => (
             <>
               <ToolbarItemsContext
-                value={{ surface: "bar", visible: layout.visible }}
+                value={{
+                  surface: "bar",
+                  visible: layout.visible,
+                  focusFallback,
+                }}
               >
                 {controls(style, structure)}
               </ToolbarItemsContext>
               <Popover open={open && layout.more} onOpenChange={setOpen}>
-                <span
+                <FocusSafeRegion
                   className={
                     layout.more
                       ? "inline-flex shrink-0"
                       : "pointer-events-none invisible absolute inline-flex"
                   }
                   aria-hidden={!layout.more || undefined}
-                  inert={!layout.more || undefined}
+                  concealed={!layout.more}
+                  focusFallback={focusFallback}
                 >
                   <PopoverTrigger
                     render={
@@ -150,7 +162,7 @@ export function RichPaperTextFormatting({
                       More
                     </span>
                   </PopoverTrigger>
-                </span>
+                </FocusSafeRegion>
                 <PopoverContent
                   align="end"
                   aria-label="More formatting"
@@ -160,7 +172,11 @@ export function RichPaperTextFormatting({
                   <PopoverTitle>More formatting</PopoverTitle>
                   <div className="flex flex-wrap items-center gap-2 [&_[data-toolbar-group]]:contents">
                     <ToolbarItemsContext
-                      value={{ surface: "menu", visible: layout.visible }}
+                      value={{
+                        surface: "menu",
+                        visible: layout.visible,
+                        focusFallback,
+                      }}
                     >
                       {controls(style, structure)}
                     </ToolbarItemsContext>

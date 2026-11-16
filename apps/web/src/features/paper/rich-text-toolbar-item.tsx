@@ -1,8 +1,10 @@
 import { createContext, useContext, type ReactNode } from "react"
+import { FocusSafeRegion } from "@/components/focus-safe-region.tsx"
 
 export const ToolbarItemsContext = createContext<{
   surface: "bar" | "menu"
   visible: readonly string[]
+  focusFallback: () => HTMLElement | null
 } | null>(null)
 
 export function useToolbarGroup(labels: readonly string[]) {
@@ -34,10 +36,11 @@ export function ToolbarItem({
       </span>
     )
   return (
-    <span
+    <FocusSafeRegion
       data-toolbar-item={label}
       aria-hidden={!visible || undefined}
-      inert={!visible || undefined}
+      concealed={!visible}
+      focusFallback={layout.focusFallback}
       className={
         visible
           ? "inline-flex shrink-0"
@@ -45,6 +48,6 @@ export function ToolbarItem({
       }
     >
       {children}
-    </span>
+    </FocusSafeRegion>
   )
 }
