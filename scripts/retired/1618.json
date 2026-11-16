@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/inbox/inbox-connect.test.tsx",
+    "because": "Connect Gmail stays disabled when there is no connection, and the sentence now tells the person they can explore an example inbox. The new test checks both.",
+    "replacedBy": "apps/web/src/features/inbox/inbox-connect.test.tsx",
+    "proof": {
+      "fork": "7bd95e39fa2f4a9d7cc5dacafd177a171da7d963",
+      "replacedByBlob": "8f5372e3aa512e1aae207ff1163bdf98abeada52",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  }
+]
