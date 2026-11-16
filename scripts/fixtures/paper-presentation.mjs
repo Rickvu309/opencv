@@ -1,5 +1,9 @@
 export const clean = [
   {
+    path: "packages/domain/src/paper-doc/native-layout-photo-destination.ts",
+    text: 'throw new Error("Place the cursor in the document before inserting a photo")',
+  },
+  {
     path: "apps/web/src/features/paper/rich-photo-preview.tsx",
     text: '<img alt={selected.alt || "Photo to edit"} style={{left: selected.crop.left, borderRadius: selected.shape === "circle" ? "50%" : 0}} />',
   },
@@ -161,6 +165,10 @@ export const clean = [
   },
 ]
 export const mistakes = [
+  {
+    path: "packages/domain/src/paper-doc/native-layout-photo-destination.ts",
+    text: "const section = document.flow.children.find(match) ?? document.flow.children[0]",
+  },
   {
     path: "apps/web/src/features/paper/rich-photo-preview.tsx",
     text: '<img alt={selected.alt || "Photo to edit"} />',

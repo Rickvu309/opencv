@@ -85,7 +85,10 @@ export function detect(text, path) {
     )
 
   if (
-    path === "packages/paper-crdt/src/native-layout-photo-controls.ts" &&
+    [
+      "packages/paper-crdt/src/native-layout-photo-controls.ts",
+      "packages/domain/src/paper-doc/native-layout-photo-destination.ts",
+    ].includes(path) &&
     (/\?\?\s*document\.flow\.children\[0\]/.test(text) ||
       /afterId:\s*anchor\?\.id\s*\?\?\s*null/.test(text))
   )
