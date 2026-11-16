@@ -138,22 +138,6 @@
     block-size: 78px;
   }
 
-  .ocvh-undo {
-    position: absolute;
-    inset-block-start: 310px;
-    inset-inline-end: 12px;
-    opacity: 0;
-    transform: translateY(8px);
-    will-change: transform;
-    pointer-events: none;
-  }
-
-  .ocvh-undo[data-show] {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-  }
-
   .ocvh-rest {
     position: absolute;
     inset-inline-start: 330px;
@@ -169,12 +153,6 @@
 
     .ocvh-job {
       transition: transform var(--duration-panel) var(--ease-panel);
-    }
-
-    .ocvh-undo {
-      transition:
-        opacity var(--duration-micro) var(--ease-micro),
-        transform var(--duration-panel) var(--ease-panel);
     }
   }
 }

@@ -1,5 +1,4 @@
 import { Bar } from "@workspace/stageshow/kit/window.tsx"
-import { Button as DrawnButton } from "@workspace/stageshow/kit/controls/Button.tsx"
 import { Card } from "@workspace/stageshow/kit/parts/Card.tsx"
 import { Count } from "@workspace/stageshow/kit/motion/Count.tsx"
 import { Roll } from "@workspace/stageshow/kit/motion/Roll.tsx"
@@ -184,15 +183,6 @@ function Board({ scene, active = false }: { scene: Scene; active?: boolean }) {
             ))}
           </div>
         </div>
-      </div>
-      <div className="ocvh-undo" data-show={scheduled || undefined}>
-        <DrawnButton
-          size="small"
-          variant="primary"
-          data-target={active ? "undo" : undefined}
-        >
-          Undo
-        </DrawnButton>
       </div>
     </Card>
   )
