@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/coach/chat-view.test.tsx > ChatView pending message > keeps the compact log on the panel gap",
+    "because": "The compact log no longer carries gap-3.5. Panel padding and the 14px gap live in one rule in coach-panel.pen.css, and the test now fails if that class returns.",
+    "replacedBy": "apps/web/src/features/coach/chat-view.test.tsx",
+    "proof": {
+      "fork": "f66e65e0971ee269c95607147eb2d1db2cb88683",
+      "replacedByBlob": "c0709e5c9e7a2504590e59774659e9570ca70895",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]
