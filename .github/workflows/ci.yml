@@ -30,7 +30,7 @@ jobs:
         with:
           fetch-depth: 0
       - uses: ./.github/actions/setup
-      - run: pnpm exec turbo run test --filter=@workspace/guards -- --group=${{ matrix.group }}
+      - run: pnpm exec node packages/guards/run-group.mjs ${{ matrix.group }}
       - if: matrix.group == 'ordinary'
         run: pnpm exec turbo run test:open-pr --filter=@workspace/guards
 

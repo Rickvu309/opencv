@@ -376,7 +376,7 @@ test("guards runs both file groups and open-pr once while retaining full history
   assert.match(guards, /fetch-depth: 0/)
   assert.match(
     guards,
-    /--filter=@workspace\/guards -- --group=\$\{\{ matrix.group \}\}/
+    /node packages\/guards\/run-group\.mjs \$\{\{ matrix.group \}\}/
   )
   assert.match(
     guards,
