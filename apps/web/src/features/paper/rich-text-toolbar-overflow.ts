@@ -1,8 +1,23 @@
 import { useLayoutEffect, useReducer, type RefObject } from "react"
 
-type ToolbarLayout = { visible: string[]; more: boolean; iconOnly: boolean }
+import type { TextEditor } from "./rich-text-toolbar-control.tsx"
 
-export function useToolbarOverflow(host: RefObject<HTMLDivElement | null>) {
+type ToolbarLayout = {
+  visible: string[]
+  more: boolean
+  iconOnly: boolean
+}
+
+const unmeasuredLayout: ToolbarLayout = {
+  visible: ["Bold", "Italic", "Underline"],
+  more: true,
+  iconOnly: false,
+}
+
+export function useToolbarOverflow(
+  host: RefObject<HTMLDivElement | null>,
+  editor: TextEditor | null
+) {
   const [layout, update] = useReducer(
     (previous: ToolbarLayout, next: ToolbarLayout) =>
       previous.more === next.more &&
@@ -10,7 +25,7 @@ export function useToolbarOverflow(host: RefObject<HTMLDivElement | null>) {
       previous.visible.join("\n") === next.visible.join("\n")
         ? previous
         : next,
-    { visible: [], more: true, iconOnly: false }
+    unmeasuredLayout
   )
   useLayoutEffect(() => {
     const row = host.current
@@ -34,7 +49,11 @@ export function useToolbarOverflow(host: RefObject<HTMLDivElement | null>) {
       )
       const more = row.querySelector<HTMLElement>("[data-toolbar-more]")
       const label = row.querySelector<HTMLElement>("[data-toolbar-more-label]")
-      if (!more || !label || width <= 0) return
+      if (!(width > 0)) {
+        update(unmeasuredLayout)
+        return
+      }
+      if (!more || !label) return
       const entries = items.map((item, index) => ({
         label: item.dataset.toolbarItem ?? "",
         width: item.hasAttribute("data-toolbar-shrink")
@@ -122,6 +141,6 @@ export function useToolbarOverflow(host: RefObject<HTMLDivElement | null>) {
       observer.disconnect()
       document.fonts?.removeEventListener?.("loadingdone", measure)
     }
-  }, [host])
+  }, [host, editor])
   return layout
 }

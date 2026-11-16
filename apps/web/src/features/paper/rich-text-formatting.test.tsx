@@ -460,3 +460,65 @@ it("uses one indent pair for list levels and paragraph indentation", async () =>
   ).toHaveLength(1)
   expect(client.document()).toEqual(before)
 })
+
+it("uses main's inline controls and More contents before width is known", async () => {
+  width = 0
+  const user = userEvent.setup()
+  setup(false, true)
+  const toolbar = screen.getByRole("toolbar", { name: "Text formatting" })
+  expect(
+    within(toolbar)
+      .getAllByRole("button")
+      .map((button) => button.getAttribute("aria-label"))
+  ).toEqual([
+    shortcutLabel("Undo (Ctrl+Z)"),
+    shortcutLabel("Redo (Ctrl+Shift+Z)"),
+    "Bold",
+    "Italic",
+    "Underline",
+    "More formatting",
+  ])
+  expect(within(toolbar).queryByRole("combobox")).toBeNull()
+  await user.click(screen.getByRole("button", { name: "More formatting" }))
+  const menu = screen.getByRole("dialog", { name: "More formatting" })
+  expect(
+    within(menu).getByRole("combobox", { name: "Paragraph style" })
+  ).toBeVisible()
+  expect(within(menu).getByRole("combobox", { name: "Font" })).toBeVisible()
+  expect(
+    within(menu).getByRole("combobox", { name: "Text size" })
+  ).toBeVisible()
+  for (const name of [
+    "Strikethrough",
+    "Text color",
+    "Highlight",
+    "Insert photo",
+    "Link",
+    "Bulleted list",
+    "Numbered list",
+    "Remove formatting",
+  ])
+    expect(
+      within(menu).getByRole("button", { name, exact: true })
+    ).toBeVisible()
+  for (const name of ["Bold", "Italic", "Underline"])
+    expect(within(menu).queryByRole("button", { name, exact: true })).toBeNull()
+})
+
+it("restores main's fallback and measures again when the editor returns", () => {
+  width = 390
+  const { editor, rerender } = setup()
+  expect(screen.getByRole("button", { name: "More formatting" })).toBeVisible()
+  width = 0
+  rerender(<RichPaperTextFormatting editor={null} blocked={false} />)
+  for (const name of ["Bold", "Italic", "Underline", "More formatting"])
+    expect(screen.getByRole("button", { name, exact: true })).toBeVisible()
+  expect(screen.queryByRole("button", { name: "Link", exact: true })).toBeNull()
+  expect(screen.queryByRole("combobox", { name: "Font" })).toBeNull()
+  width = 240
+  rerender(<RichPaperTextFormatting editor={editor} blocked={false} />)
+  expect(screen.getByRole("button", { name: "More formatting" })).toBeVisible()
+  expect(
+    screen.queryByRole("button", { name: "Underline", exact: true })
+  ).toBeNull()
+})

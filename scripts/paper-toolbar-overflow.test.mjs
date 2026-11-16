@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { detect } from "./lib/paper-toolbar-overflow.mjs"
+import { readFileSync } from "node:fs"
+import { detect, detectMeasurement } from "./lib/paper-toolbar-overflow.mjs"
 
 const layout = {
   viewport: 320,
@@ -66,5 +67,39 @@ test("Paper's desktop geometry guard preserves main's controls and separators", 
   assert.match(
     detect({ ...desktop, separators: 1 }).join("\n"),
     /Desktop separators differ/
+  )
+})
+
+test("unmeasured and remounted toolbars retain their controls", () => {
+  const clean = `
+    const unmeasuredLayout = { visible: ["Bold", "Italic", "Underline"], more: true, iconOnly: false }
+    useReducer(reduce, unmeasuredLayout)
+    if (!(width > 0)) {
+      update(unmeasuredLayout)
+      return
+    }
+    useLayoutEffect(measure, [host, editor])
+  `
+  assert.deepEqual(detectMeasurement(clean), [])
+  const mistake = clean
+    .replace('["Bold", "Italic", "Underline"]', "[]")
+    .replace("update(unmeasuredLayout)", "return")
+    .replace("[host, editor]", "[host]")
+  assert.equal(detectMeasurement(mistake).length, 3)
+  assert.equal(
+    detectMeasurement(clean.replace("if (!(width > 0))", "if (false)")).length,
+    1
+  )
+  assert.deepEqual(
+    detectMeasurement(
+      readFileSync(
+        new URL(
+          "../apps/web/src/features/paper/rich-text-toolbar-overflow.ts",
+          import.meta.url
+        ),
+        "utf8"
+      )
+    ),
+    []
   )
 })

@@ -38,7 +38,7 @@ export function RichPaperTextFormatting({
   )
   const [open, setOpen] = useReducer((_: boolean, next: boolean) => next, false)
   const host = useRef<HTMLDivElement>(null)
-  const layout = useToolbarOverflow(host)
+  const layout = useToolbarOverflow(host, editor)
   const compact = layout.more
   const hasPhotoControls = Boolean(photoControls)
   const focusFallback = () => {

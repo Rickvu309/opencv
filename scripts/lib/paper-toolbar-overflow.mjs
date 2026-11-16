@@ -94,3 +94,19 @@ export function measureToolbar(row) {
     remaining: right - left - used,
   }
 }
+
+export function detectMeasurement(source) {
+  const problems = []
+  const fallback =
+    /const unmeasuredLayout[^=]*=\s*\{\s*visible:\s*\["Bold",\s*"Italic",\s*"Underline"\],\s*more:\s*true,\s*iconOnly:\s*false,?\s*\}/
+  if (
+    !fallback.test(source) ||
+    !/useReducer\([\s\S]*?,\s*unmeasuredLayout\s*\)/.test(source)
+  )
+    problems.push("Unmeasured toolbar must start with main's layout")
+  if (!/if \(!\(width > 0\)\) \{\s*update\(unmeasuredLayout\)/.test(source))
+    problems.push("Unknown width must restore main's layout")
+  if (!/\[host, editor\]/.test(source))
+    problems.push("Editor remount must measure the toolbar again")
+  return problems
+}
