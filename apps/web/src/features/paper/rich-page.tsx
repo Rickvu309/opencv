@@ -110,6 +110,9 @@ export function RichPaperPage({
       dispatch({ type: "failed" })
     }
   }, [client])
+  const statusLabel = editorError
+    ? "Editor unavailable. Your document is kept"
+    : SYNC_LABEL[status]
   const blocked = status === "stuck" || status === "refused" || editorError
   useEffect(() => {
     editor?.setEditable(!blocked)
@@ -136,10 +139,13 @@ export function RichPaperPage({
           </PageHeaderTitle>
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-2">
-          <span role="status" className="text-sm text-muted-foreground">
-            {editorError
-              ? "Editor unavailable. Your document is kept"
-              : SYNC_LABEL[status]}
+          <span
+            role="status"
+            aria-label={statusLabel}
+            title={statusLabel}
+            className="min-w-0 truncate text-sm text-muted-foreground"
+          >
+            {statusLabel}
           </span>
           <RichDocumentMenu
             session={session}

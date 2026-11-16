@@ -5,10 +5,6 @@
     "module": "scripts/lib/paper-header-fit.mjs",
     "export": "detect"
   },
-  "historic": {
-    "mode": "detect",
-    "sha": "7f4a5597",
-    "path": "apps/web/src/features/paper/design/rich-page-header.pen.css"
-  },
-  "reason": "At 320px the 12rem title basis wraps the Saved and menu group into a second row. The mobile title yields space and truncates while the enlarged-text header wrapping rule remains intact. Real-route screenshot checks cover 320, 360, 390 and 1440."
+  "historic": null,
+  "reason": "Browser layout guard renders the actual rich-page header JSX with the real UI kit and stylesheet. It measures every status at 320, 360, 390 and 1440 with 100% and 200% text, and proves collapse on b25d93f1 and status overflow on main 31528653 and 7f4a5597. Its pure detector consumes measured geometry, with clean and mistake fixtures in the test."
 }
