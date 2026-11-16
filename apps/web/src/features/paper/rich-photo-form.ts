@@ -81,7 +81,8 @@ export function parsePhotoForm(
       }
     }
   }
-  if (fields.alt.length > 2000) errors.alt = "Use at most 2000 characters."
+  if (!layoutPhotoSchema.shape.alt.safeParse(fields.alt).success)
+    errors.alt = `Use at most ${layoutPhotoSchema.shape.alt.maxLength} characters.`
   if (Object.keys(errors).length) return { ok: false, errors }
   let photo = {
     ...original,
@@ -133,7 +134,8 @@ export function parsePhotoForm(
       const field = issue.path[0]
       if (field === "width" || field === "height")
         errors[field] = "Use 16 to 2112 pixels."
-      else if (field === "alt") errors.alt = "Use at most 2000 characters."
+      else if (field === "alt")
+        errors.alt = `Use at most ${layoutPhotoSchema.shape.alt.maxLength} characters.`
       else {
         errors.width = "Use equal Width and Height for a circle."
         errors.height = errors.width
