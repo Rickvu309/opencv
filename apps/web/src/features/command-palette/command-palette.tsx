@@ -67,8 +67,10 @@ export function CommandPalette({
   const inputRef = useRef<HTMLInputElement>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
-  const [{ query, scope, activeId, hits, recent, failed, wasOpen }, dispatch] =
-    useReducer(paletteReducer, open, initialPaletteState)
+  const [
+    { query, scope, activeId, hits, recent, failed, wasOpen, searchAttempt },
+    dispatch,
+  ] = useReducer(paletteReducer, open, initialPaletteState)
   const sawOpen = useRef(false)
 
   if (open !== wasOpen) dispatch({ type: open ? "opened" : "closed" })
@@ -114,7 +116,7 @@ export function CommandPalette({
     return () => {
       cancelled = true
     }
-  }, [open, query])
+  }, [open, query, searchAttempt])
 
   useShortcut({
     key: "Escape",
@@ -210,7 +212,7 @@ export function CommandPalette({
             aria-activedescendant={
               active ? `palette-row-${active.id}` : undefined
             }
-            className="h-auto min-w-0 flex-1 border-0 bg-transparent px-0 text-base shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-sm"
+            className="h-auto min-w-0 flex-1 border-0 bg-transparent px-0 text-base shadow-none md:text-sm"
           />
           <Button
             className="h-11 md:h-7"
@@ -253,9 +255,20 @@ export function CommandPalette({
             {waiting ? "Searching…" : ""}
           </p>
           {failed ? (
-            <p className="px-3 py-6 text-sm text-muted-foreground">
-              {copy.failed}
-            </p>
+            <div
+              role="alert"
+              className="flex flex-col items-start gap-3 px-3 py-6"
+            >
+              <p className="text-sm text-destructive">{copy.failed}</p>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-11 md:h-7"
+                onClick={() => dispatch({ type: "search_retried" })}
+              >
+                Retry
+              </Button>
+            </div>
           ) : null}
           {!failed && !waiting && trimmed && rows.length === 0 ? (
             <div className="px-3 py-6">

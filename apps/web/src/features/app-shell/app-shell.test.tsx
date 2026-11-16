@@ -564,8 +564,8 @@ describe("app shell layout", () => {
     await expectPitch()
 
     expect(
-      await screen.findByRole("button", { name: "Menu" })
-    ).toBeInTheDocument()
+      (await screen.findByRole("button", { name: "Menu" })).querySelector("svg")
+    ).toHaveAttribute("aria-hidden", "true")
     expect(screen.queryByRole("link", { name: "Inbox" })).toBeNull()
     expect(screen.getByRole("button", { name: "Coach" })).toBeInTheDocument()
 
@@ -576,6 +576,11 @@ describe("app shell layout", () => {
         .getByRole("button", { name: "Close menu" })
         .querySelector("svg")
     ).toHaveClass("lucide-x")
+    expect(
+      within(dialog)
+        .getByRole("button", { name: "Close menu" })
+        .querySelector("svg")
+    ).toHaveAttribute("aria-hidden", "true")
     expect(
       within(dialog).getByRole("link", { name: "Apply" })
     ).toBeInTheDocument()

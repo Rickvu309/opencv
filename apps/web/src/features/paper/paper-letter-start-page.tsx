@@ -8,6 +8,7 @@ import {
   BreadcrumbSeparator,
 } from "@workspace/ui/components/breadcrumb"
 import { Button } from "@workspace/ui/components/button"
+import { SidebarExpandButton } from "@workspace/ui/components/page-header"
 import { PaperLetterStart } from "./paper-letter-start.tsx"
 import { PaperLetterDraftingPage } from "./paper-letter-drafting-page.tsx"
 import { ChatStoreContext } from "@/features/coach/chat-store-context.ts"
@@ -111,6 +112,7 @@ export function PaperLetterStartPage({
           data-slot="letter-start-header"
           className="flex min-h-12 min-w-0 shrink-0 flex-wrap items-center gap-2 border-b px-4 py-2 pl-5 text-[13.5px] md:py-0"
         >
+          <SidebarExpandButton />
           <Breadcrumb className="min-w-0">
             <BreadcrumbList className="flex-wrap text-[13.5px] leading-[inherit] text-inherit">
               <BreadcrumbItem>

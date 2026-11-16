@@ -14,6 +14,7 @@ import {
   BreadcrumbSeparator,
 } from "@workspace/ui/components/breadcrumb"
 import { Button } from "@workspace/ui/components/button"
+import { SidebarExpandButton } from "@workspace/ui/components/page-header"
 import { CopyButton } from "@workspace/ui/components/copy-button"
 import {
   DropdownMenu,
@@ -77,6 +78,7 @@ export function CvEditorBar({
       data-slot="cv-editor-header"
       className="flex min-h-12 min-w-0 flex-wrap items-center gap-2 border-b py-2 ps-5 pe-4 text-[13.5px] leading-4 md:h-12 md:flex-nowrap md:py-0"
     >
+      <SidebarExpandButton />
       <Breadcrumb className="flex w-full min-w-0 flex-none items-center gap-2 md:w-auto">
         <BreadcrumbList className="text-[13.5px] leading-4 text-inherit">
           <BreadcrumbItem>

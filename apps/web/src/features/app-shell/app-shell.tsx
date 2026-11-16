@@ -16,7 +16,7 @@ import {
 import { ignoreRejection } from "@/lib/quiet-rejection.ts"
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router"
 import { useQueryClient } from "@tanstack/react-query"
-import { History, Menu, MessageCircle, PanelLeft, X } from "lucide-react"
+import { History, Menu, MessageCircle, X } from "lucide-react"
 
 import { FocusSafeRegion } from "@/components/focus-safe-region.tsx"
 import { AppSidebar } from "@/features/app-shell/app-sidebar.tsx"
@@ -396,7 +396,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
 
   const collapsedRail = isDesktop && layout.collapsed && !sidebar
   const sidebarExpand = {
-    collapsed: false,
+    collapsed: collapsedRail,
     expand: layout.expand,
   }
 
@@ -447,7 +447,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
             aria-label={shellCopy.menu}
             onClick={() => dispatch({ type: "drawer_opened" })}
           >
-            <Menu />
+            <Menu aria-hidden="true" />
           </Button>
           <Mark size={16} />
           <span className="text-sm font-semibold">{shellCopy.wordmark}</span>
@@ -482,21 +482,6 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
                   tabIndex={-1}
                   className="h-full min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto rounded-[inherit] outline-none"
                 >
-                  {collapsedRail ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-sm"
-                      data-slot="sidebar-expand"
-                      aria-label="Expand sidebar"
-                      aria-keyshortcuts="["
-                      title="Expand sidebar ([)"
-                      className="absolute z-40 size-11 bg-background text-muted-foreground hover:text-foreground md:size-7"
-                      onClick={layout.expand}
-                    >
-                      <PanelLeft aria-hidden="true" />
-                    </Button>
-                  ) : null}
                   <Outlet />
                 </main>
               </FocusSafeRegion>
@@ -543,7 +528,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
                 aria-label={shellCopy.closeMenu}
                 onClick={closeDrawer}
               >
-                <X />
+                <X aria-hidden="true" />
               </Button>
             </div>
             {nav}

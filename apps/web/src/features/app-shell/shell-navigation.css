@@ -1,19 +1,4 @@
-[data-sidebar-collapsed]
-  #app-main
-  :is([data-slot="page-header"], [data-slot="writing-document-header"]) {
-  padding-inline-start: 48px;
-}
-
-[data-sidebar-collapsed] [data-slot="sidebar-expand"] {
-  inset-block-start: 12px;
-  inset-inline-start: 12px;
-}
-
-[data-sidebar-collapsed] [data-slot="paper-library-header"] {
-  padding-inline-start: 48px;
-}
-
 [data-pen-surface="app-shell"]
   :is([data-slot="nav-item-badge"], [data-slot="sidebar-group-label"]) {
-  color: color-mix(in oklab, var(--muted-foreground) 90%, transparent);
+  color: color-mix(in oklab, var(--muted-foreground) 92%, transparent);
 }

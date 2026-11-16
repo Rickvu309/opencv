@@ -56,10 +56,18 @@ function contrast(fg: number[], bg: number[], alpha: number) {
   return (lighter + 0.05) / (darker + 0.05)
 }
 
+function srgbByteToLinear(channel: number) {
+  const unit = channel / 255
+  return unit <= 0.04045 ? unit / 12.92 : ((unit + 0.055) / 1.055) ** 2.4
+}
+
+const ACTIVE = [0xe1, 0xe1, 0xe2].map(srgbByteToLinear)
+
 const LIGHT = {
   fg: oklchToLinear(0.465, 0.003, 286.275),
   bg: oklchToLinear(0.952, 0.001, 286.375),
   hover: oklchToLinear(0.931, 0.001, 286.374),
+  active: ACTIVE,
 }
 const DARK = {
   fg: oklchToLinear(0.709, 0.013, 286.065),
@@ -68,10 +76,12 @@ const DARK = {
 }
 
 function passes(alpha: number) {
-  return [LIGHT, DARK].every(
-    (theme) =>
-      contrast(theme.fg, theme.bg, alpha) >= 4.5 &&
-      contrast(theme.fg, theme.hover, alpha) >= 4.5
+  return (
+    [LIGHT, DARK].every(
+      (theme) =>
+        contrast(theme.fg, theme.bg, alpha) >= 4.5 &&
+        contrast(theme.fg, theme.hover, alpha) >= 4.5
+    ) && contrast(LIGHT.fg, LIGHT.active, alpha) >= 4.5
   )
 }
 
@@ -95,10 +105,9 @@ describe("Your work contrast", () => {
     expect(passes((percent - 1) / 100)).toBe(false)
   })
 
-  it("indents a collapsed library title by the same 48px as a page header", () => {
-    const pads = [...css.matchAll(/padding-inline-start: (\d+)px;/g)].map(
-      (match) => Number(match[1])
+  it("does not pad or position another feature's header", () => {
+    expect(css).not.toMatch(
+      /page-header|writing-document-header|paper-library-header|letter-start-header|letter-drafting-header|cv-editor-header|letter-editor-header|sidebar-expand|padding-inline-start/
     )
-    expect(pads).toEqual([48, 48])
   })
 })

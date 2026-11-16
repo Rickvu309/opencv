@@ -62,6 +62,7 @@ export const SURFACES = [
     shown: true,
     canBeStartPage: false,
     nav: null,
+    navParent: "paper",
     inSearch: true,
   },
   {
@@ -71,6 +72,7 @@ export const SURFACES = [
     shown: true,
     canBeStartPage: false,
     nav: null,
+    navParent: "paper",
     inSearch: false,
   },
   {

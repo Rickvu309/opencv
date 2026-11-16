@@ -9,6 +9,7 @@ import {
   BreadcrumbSeparator,
 } from "@workspace/ui/components/breadcrumb"
 import { Button } from "@workspace/ui/components/button"
+import { SidebarExpandButton } from "@workspace/ui/components/page-header"
 import "./design/letter-drafting.pen.css"
 
 export function PaperLetterDraftingPage({
@@ -43,6 +44,7 @@ export function PaperLetterDraftingPage({
         data-slot="letter-drafting-header"
         className="flex min-h-12 min-w-0 shrink-0 flex-wrap items-center gap-2 border-b px-4 py-2 ps-5 text-[13.5px] leading-4 md:py-0"
       >
+        <SidebarExpandButton />
         <Breadcrumb className="min-w-0">
           <BreadcrumbList className="flex-wrap text-[13.5px] leading-4 text-inherit">
             <BreadcrumbItem>

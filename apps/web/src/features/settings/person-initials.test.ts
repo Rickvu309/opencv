@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { personInitials, personName } from "./person-initials.ts"
+import { personInitials, personName } from "@/lib/person-initials.ts"
 
 describe("one name and initials for every footer", () => {
   it("uses the name when there is one", () => {

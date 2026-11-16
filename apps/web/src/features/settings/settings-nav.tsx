@@ -30,7 +30,7 @@ import {
   type SettingsSectionId,
 } from "./sections.ts"
 import { useShellProfile } from "@/lib/use-shell-profile.ts"
-import { personInitials } from "./person-initials.ts"
+import { personInitials } from "@/lib/person-initials.ts"
 
 const SETTINGS_NAV_ITEM =
   "h-11 rounded-sm text-[13px] font-normal hover:bg-sidebar-accent aria-[current=page]:bg-sidebar-accent aria-[current=page]:font-medium aria-[current=page]:text-foreground md:h-7"

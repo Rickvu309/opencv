@@ -1,4 +1,4 @@
-import { jsonOk, pathOf, urlOf } from "./mock-http.ts"
+import { jsonError, jsonOk, pathOf, urlOf } from "./mock-http.ts"
 
 export { chatCreateCalls, setMockChats } from "./chat-api-mock.ts"
 
@@ -31,6 +31,11 @@ const state = {
 
 let searchBlock: Promise<void> | null = null
 let releaseSearchBlock: (() => void) | null = null
+let searchFails = false
+
+export function failShellSearch(fails = true) {
+  searchFails = fails
+}
 
 export function holdShellSearch() {
   releaseSearchBlock?.()
@@ -55,6 +60,7 @@ export function resetShellApiMock() {
   state.searchHits = emptyHits()
   state.searchQueries = []
   state.notifies = []
+  searchFails = false
 }
 
 export function setMockJobs(jobs: MockShellJob[]) {
@@ -92,6 +98,7 @@ export async function shellApiFetch(
   if (method === "GET" && path === "/api/search") {
     state.searchQueries.push(urlOf(input).searchParams.get("q") ?? "")
     if (searchBlock) await searchBlock
+    if (searchFails) return jsonError(500, "search_failed", "Could not search")
     return jsonOk(state.searchHits)
   }
   if (method === "POST" && path === "/api/commands/notify.request") {

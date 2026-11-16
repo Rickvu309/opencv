@@ -27,7 +27,8 @@ describe("shell identity and Proofs", () => {
     const account = await screen.findByRole("button", {
       name: /you@opencv\.me/,
     })
-    expect(within(account).getByText("you")).toBeInTheDocument()
+    expect(within(account).getByText("you@opencv.me")).toBeInTheDocument()
+    expect(account.querySelector("[data-slot='account-email']")).toBeNull()
     expect(within(account).queryByText("Account")).toBeNull()
     expect(account.querySelector("[data-slot='avatar']")).toHaveTextContent("Y")
 
