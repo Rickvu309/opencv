@@ -18,6 +18,8 @@ import {
   type TextFormatting,
 } from "./rich-text-toolbar-control.tsx"
 
+import { RichStructureControls } from "./rich-structure-controls.tsx"
+
 type ToolbarState = { compact: boolean; open: boolean }
 type ToolbarAction =
   { type: "resize"; compact: boolean } | { type: "open"; open: boolean }
@@ -109,12 +111,14 @@ export function RichPaperTextFormatting({
           className="h-6 border-s border-border"
         />
       ) : null}
-      <RichTextParagraphGroup
-        editor={editor}
-        formatting={formatting}
-        disabled={disabled}
-        choose={paragraph}
-      />
+      <div className={compact ? "contents" : "shrink-0 [&>div]:flex-nowrap"}>
+        <RichTextParagraphGroup
+          editor={editor}
+          formatting={formatting}
+          disabled={disabled}
+          choose={paragraph}
+        />
+      </div>
     </>
   )
   return (
@@ -124,7 +128,7 @@ export function RichPaperTextFormatting({
         role="toolbar"
         aria-label="Text formatting"
         data-slot="paper-text-formatting"
-        className="flex min-w-0 shrink-0 items-center gap-1 border-b px-[12px] py-2"
+        className="flex min-w-0 shrink-0 items-center gap-1 overflow-x-auto border-b px-[12px] py-2"
       >
         <RichDocumentHistory editor={editor} blocked={blocked} />
         <div
@@ -132,59 +136,78 @@ export function RichPaperTextFormatting({
           aria-orientation="vertical"
           className="h-6 shrink-0 border-s border-border"
         />
-        {!compact ? (
-          <RichTextFontGroup
-            editor={editor}
-            formatting={formatting}
-            disabled={disabled}
-            choose={inline}
-          />
-        ) : null}
-        <RichTextEmphasisGroup
-          editor={editor}
-          formatting={formatting}
-          disabled={disabled}
-        />
-        {compact ? (
-          <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  aria-label="More formatting"
-                  className="min-h-11 shrink-0 gap-1"
-                  disabled={
-                    !editor ||
-                    blocked ||
-                    (!formatting?.hasText && !hasPhotoControls)
-                  }
-                />
-              }
-            >
-              <Ellipsis />
-              More
-            </PopoverTrigger>
-            <PopoverContent
-              align="end"
-              aria-label="More formatting"
-              className="w-[min(22rem,calc(100vw-2rem))]"
-              finalFocus={() => editor?.focus() ?? false}
-            >
-              <PopoverTitle>More formatting</PopoverTitle>
-              <div className="flex flex-wrap items-center gap-2">
-                <RichTextFontGroup
-                  editor={editor}
-                  formatting={formatting}
-                  disabled={disabled}
-                  choose={inline}
-                />
-                {controls}
-              </div>
-            </PopoverContent>
-          </Popover>
-        ) : (
-          controls
-        )}
+        <RichStructureControls editor={editor} blocked={blocked}>
+          {({ style, controls: structure }) => (
+            <>
+              {!compact ? (
+                <>
+                  {style}
+                  <RichTextFontGroup
+                    editor={editor}
+                    formatting={formatting}
+                    disabled={disabled}
+                    choose={inline}
+                  />
+                </>
+              ) : null}
+              <RichTextEmphasisGroup
+                editor={editor}
+                formatting={formatting}
+                disabled={disabled}
+              />
+              {compact ? (
+                <Popover open={open} onOpenChange={setOpen}>
+                  <PopoverTrigger
+                    render={
+                      <Button
+                        variant="ghost"
+                        aria-label="More formatting"
+                        className="min-h-11 shrink-0 gap-1"
+                        disabled={
+                          !editor ||
+                          blocked ||
+                          (!formatting?.hasText && !hasPhotoControls)
+                        }
+                      />
+                    }
+                  >
+                    <Ellipsis />
+                    More
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="end"
+                    aria-label="More formatting"
+                    className="max-h-[calc(100dvh-8rem)] w-[min(22rem,calc(100vw-2rem))] overflow-y-auto overscroll-contain"
+                    finalFocus={() => editor?.focus() ?? false}
+                  >
+                    <PopoverTitle>More formatting</PopoverTitle>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {style}
+                      <RichTextFontGroup
+                        editor={editor}
+                        formatting={formatting}
+                        disabled={disabled}
+                        choose={inline}
+                      />
+                      {controls}
+                      {structure}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              ) : (
+                <>
+                  {controls}
+                  <div
+                    role="separator"
+                    aria-orientation="vertical"
+                    className="h-6 border-s border-border"
+                  />
+                  {structure}
+                </>
+              )}
+            </>
+          )}
+        </RichStructureControls>
       </div>
     </TooltipProvider>
   )

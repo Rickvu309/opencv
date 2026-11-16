@@ -334,3 +334,68 @@ it("disables empty phone overflow while preserving document history", () => {
   act(() => editor.insertPhoto("file:00000000-0000-4000-8000-000000000002", 1))
   expect(screen.getByRole("button", { name: /^Undo / })).toBeEnabled()
 })
+
+it.each([390, 768, 820, 859])(
+  "puts structure controls in More at %s pixels",
+  async (viewport) => {
+    width = viewport
+    const user = userEvent.setup()
+    setup()
+    expect(
+      screen.queryByRole("combobox", { name: "Paragraph style" })
+    ).toBeNull()
+    expect(
+      screen.queryByRole("button", { name: "Link", exact: true })
+    ).toBeNull()
+    expect(
+      screen.queryByRole("button", { name: "Undo", exact: true })
+    ).toBeNull()
+    expect(
+      screen.queryByRole("button", { name: "Redo", exact: true })
+    ).toBeNull()
+    await user.click(screen.getByRole("button", { name: "More formatting" }))
+    expect(
+      screen.getByRole("combobox", { name: "Paragraph style" })
+    ).toBeVisible()
+    for (const name of [
+      "Link",
+      "Bulleted list",
+      "Numbered list",
+      "Remove formatting",
+    ])
+      expect(screen.getByRole("button", { name, exact: true })).toBeVisible()
+    expect(
+      screen.getAllByRole("button", { name: /Increase indent/ })
+    ).toHaveLength(1)
+    expect(
+      screen.getAllByRole("button", { name: /Decrease indent/ })
+    ).toHaveLength(1)
+    await user.click(screen.getByRole("button", { name: "Link", exact: true }))
+    expect(
+      await screen.findByRole("dialog", { name: "Add link" })
+    ).toBeVisible()
+    await user.keyboard("{Escape}")
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Add link" })).toBeNull()
+    )
+  }
+)
+
+it("uses one indent pair for list levels and paragraph indentation", async () => {
+  const user = userEvent.setup()
+  const { editor, client } = setup()
+  act(() => editor.focus())
+  await user.click(screen.getByRole("button", { name: /Increase indent/ }))
+  expect(editor.activeFormatting()?.start).toBe("0.25")
+  act(() => editor.toggleList("bulletListItem"))
+  const before = client.document()
+  await user.click(screen.getByRole("button", { name: /Increase indent/ }))
+  expect(editor.activeFormatting()?.start).toBe("0.25")
+  expect(
+    screen.getAllByRole("button", { name: /Increase indent/ })
+  ).toHaveLength(1)
+  expect(
+    screen.getAllByRole("button", { name: /Decrease indent/ })
+  ).toHaveLength(1)
+  expect(client.document()).toEqual(before)
+})

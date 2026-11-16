@@ -16,6 +16,10 @@ import {
   validatePresentationPatch,
   checkSnapshot,
 } from "./paper-doc/presentation-edit.js"
+import {
+  effectiveParagraphStyle,
+  paragraphInlineValues,
+} from "./paper-doc/paragraph-styles.js"
 
 const page = {
   width: 11906,
@@ -44,6 +48,15 @@ function value<T>(
   return r.value
 }
 describe("private presentation values", () => {
+  it("inherits unstyled document defaults while resolving semantic headings", () => {
+    for (const style of [undefined, null])
+      assert.deepEqual(
+        paragraphInlineValues(effectiveParagraphStyle("paragraph", style)),
+        {}
+      )
+    assert.equal(effectiveParagraphStyle("paragraph", "normal"), "normal")
+    assert.equal(effectiveParagraphStyle("heading", undefined, 2), "heading-2")
+  })
   it("refuses unknown values, unsupported fonts, units and geometry", () => {
     for (const input of [
       { mystery: true },

@@ -59,6 +59,7 @@ export async function compileOwnedLayoutNativeDocx(input: {
 }
 
 export async function compileOwnedFlowNativeDocx(input: {
+  generation?: "rich"
   userId: UserId
   document: unknown
 }): Promise<Result<Uint8Array>> {
@@ -99,7 +100,11 @@ export async function compileOwnedFlowNativeDocx(input: {
         throw new Error("Word photo output needs PNG, JPEG or GIF media")
       media.push({ source, mediaType, bytes: new Uint8Array(bytes) })
     }
-    return compileFlowNativeDocx({ document, photos: media })
+    return compileFlowNativeDocx({
+      document,
+      photos: media,
+      generation: input.generation,
+    })
   } catch (error) {
     return refuse(
       error instanceof Error ? error.message : "Owned photo output refused"

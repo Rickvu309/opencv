@@ -1,6 +1,6 @@
 import {
   resolveStyles,
-  resolveInline,
+  effectiveRunInline,
   resolveParagraph,
   type DocumentPresentation,
   type InlinePresentation,
@@ -15,15 +15,10 @@ function value<T>(result: Result<T>): T {
 
 export function effectiveInline(
   document: DocumentPresentation,
-  overrides: InlinePresentation
+  overrides: InlinePresentation,
+  paragraphStyle?: string
 ): InlinePresentation {
-  const styles = value(resolveStyles(document.styles))
-  const { characterStyle: defaultStyle, ...defaults } = document.inline
-  const { characterStyle, ...direct } = overrides
-  return {
-    ...value(resolveInline(styles, defaultStyle ?? null, defaults)),
-    ...value(resolveInline(styles, characterStyle ?? null, direct)),
-  }
+  return value(effectiveRunInline(document, paragraphStyle, overrides))
 }
 
 export function effectiveParagraph(
