@@ -273,7 +273,7 @@ describe("mounted private formatting with real BlockNote, DOM and canonical Yjs"
     reopened(source)
   })
 
-  it("paints link underline on the resolved text so explicit off remains visible", () => {
+  it("paints the Word Hyperlink underline when a direct underline mark is off", () => {
     const input = letter()
     input.presentation.inline.underline = true
     const first = input.blocks[0]
@@ -284,7 +284,9 @@ describe("mounted private formatting with real BlockNote, DOM and canonical Yjs"
     ])
     const source = binding(input)
     const view = mount(source)
-    expect(resolved(view.element, "Linked off").textDecorationLine).toBe("none")
+    expect(resolved(view.element, "Linked off").textDecorationLine).toBe(
+      "underline"
+    )
     expect(resolved(view.element, "Linked inherited").textDecorationLine).toBe(
       "underline"
     )
