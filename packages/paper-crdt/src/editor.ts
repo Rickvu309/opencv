@@ -1,10 +1,9 @@
 import type { RichPaperDocument } from "@workspace/domain"
 import { TextSelection } from "@tiptap/pm/state"
 import type { PaperClient } from "./client.js"
+import { richTextColors, richTextHighlights } from "./formatting-options.js"
 import { borrowFlowDocument } from "./native-layout-flow.js"
 import { mountPrivateFlow } from "./native-layout-flow-mount.js"
-
-export { richTextColors, richTextHighlights } from "./formatting-options.js"
 
 export type RichMark = "bold" | "italic" | "underline" | "strike"
 
@@ -45,6 +44,10 @@ export function mountRichPaperEditor(
     }
     removeRelease = client.onDocumentRelease(destroy)
     return {
+      formattingOptions: {
+        colors: richTextColors,
+        highlights: richTextHighlights,
+      },
       setEditable(editable: boolean) {
         if (active) mounted.editor.isEditable = editable
       },

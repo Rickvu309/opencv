@@ -6,11 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@workspace/ui/components/select"
-import {
-  richTextColors,
-  richTextHighlights,
-  type mountRichPaperEditor,
-} from "@workspace/paper-crdt/editor"
+import type { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 
 type Editor = ReturnType<typeof mountRichPaperEditor>
 type Formatting = ReturnType<Editor["activeFormatting"]>
@@ -21,8 +17,6 @@ type Choice = {
   disabled?: boolean
 }
 
-const colors: Choice[] = richTextColors
-const highlights: Choice[] = richTextHighlights
 const fonts: Choice[] = [
   { value: "default", label: "Default" },
   { value: "liberation-sans", label: "Liberation Sans" },
@@ -178,7 +172,7 @@ export function RichPaperTextFormatting({
       <FormatChoice
         label="Text color"
         value={formatting?.color ?? null}
-        choices={colors}
+        choices={editor?.formattingOptions.colors ?? []}
         disabled={disabled}
         onChange={(color) =>
           inline({ color: color === "default" ? null : color })
@@ -187,7 +181,7 @@ export function RichPaperTextFormatting({
       <FormatChoice
         label="Highlight"
         value={formatting?.highlight ?? null}
-        choices={highlights}
+        choices={editor?.formattingOptions.highlights ?? []}
         disabled={disabled}
         onChange={(highlight) =>
           inline({ highlight: highlight === "default" ? null : highlight })
