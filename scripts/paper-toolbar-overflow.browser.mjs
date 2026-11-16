@@ -116,9 +116,7 @@ test(
       await toolbar.getByRole("button", { name: "More formatting" }).waitFor()
       await page.evaluate(() => document.fonts.ready)
       for (const width of [
-        320,
-        360,
-        390,
+        ...Array.from({ length: 161 }, (_, index) => 320 + index),
         1100,
         1440,
         1280,

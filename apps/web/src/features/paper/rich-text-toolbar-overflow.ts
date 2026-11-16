@@ -107,8 +107,10 @@ export function useToolbarOverflow(
       const moreStyle = getComputedStyle(more)
       const icon = more.querySelector("svg")?.getBoundingClientRect().width ?? 0
       const fullWidth =
+        (Number.parseFloat(moreStyle.borderInlineStartWidth) || 0) +
         (Number.parseFloat(moreStyle.paddingInlineStart) || 0) +
         (Number.parseFloat(moreStyle.paddingInlineEnd) || 0) +
+        (Number.parseFloat(moreStyle.borderInlineEndWidth) || 0) +
         icon +
         (Number.parseFloat(moreStyle.columnGap) || 0) +
         label.getBoundingClientRect().width
