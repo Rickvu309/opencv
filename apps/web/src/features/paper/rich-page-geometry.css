@@ -17,13 +17,6 @@
   margin-block: 0 !important;
 }
 
-.paper-rich-sheet
-  [data-paper-layout="paperFlowSection"]
-  > [data-paper-wrap-slot] {
-  column-height: auto !important;
-  column-wrap: nowrap !important;
-}
-
 .paper-rich-sheet [data-paper-page-break] {
   position: relative;
 }
@@ -34,4 +27,26 @@
   inset-inline: 0;
   border-block-start: 1px dashed var(--border);
   content: "";
+}
+
+@media (max-width: 639px) {
+  .paper-rich-sheet {
+    inline-size: 100%;
+    min-block-size: 0;
+    padding: 1.25rem;
+    zoom: 1;
+    background: var(--card);
+  }
+
+  .paper-rich-sheet
+    [data-paper-layout="paperFlowSection"]
+    > [data-paper-wrap-slot] {
+    column-count: 1;
+    column-height: auto !important;
+    column-wrap: nowrap !important;
+  }
+
+  .paper-rich-sheet [data-node-type="blockOuter"] {
+    break-before: auto !important;
+  }
 }

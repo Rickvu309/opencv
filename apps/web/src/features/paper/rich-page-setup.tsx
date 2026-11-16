@@ -34,18 +34,27 @@ const margins = [
 function PageSetupForm({
   editor,
   close,
+  initialPage,
+  blocked,
 }: {
   editor: TextEditor
   close: () => void
+  initialPage: Page
+  blocked: boolean
 }) {
   const id = useId()
   const [page, update] = useReducer(
     (value: Page, patch: Partial<Page>) => ({ ...value, ...patch }),
-    editor.pageSetup()
+    initialPage
   )
   const [error, setError] = useReducer((_: string, value: string) => value, "")
   const size =
-    Math.min(page.width, page.height) === sizes.a4[0] ? "a4" : "letter"
+    Object.entries(sizes).find(
+      ([, [short, long]]) =>
+        Math.min(page.width, page.height) === short &&
+        Math.max(page.width, page.height) === long
+    )?.[0] ?? "custom"
+  const customLabel = `Custom (${(page.width / 1440).toFixed(2)} × ${(page.height / 1440).toFixed(2)} in)`
   const selectSize = (
     size: "letter" | "a4",
     orientation = page.orientation
@@ -69,11 +78,16 @@ function PageSetupForm({
           return
         }
         try {
-          editor.setPageSetup(page)
+          if (blocked || !editor.apply(() => editor.setPageSetup(page))) {
+            setError(
+              "Paper is unavailable for editing. Reload the page and try again. Your document is kept."
+            )
+            return
+          }
           close()
         } catch {
           setError(
-            "This setup leaves too little room for your content. Reduce the margins or choose a larger page."
+            "Paper couldn't apply the page setup. Reload the page and try again. Your document is kept."
           )
         }
       }}
@@ -87,6 +101,9 @@ function PageSetupForm({
             items={[
               { value: "letter", label: "Letter" },
               { value: "a4", label: "A4" },
+              ...(size === "custom"
+                ? [{ value: "custom", label: customLabel }]
+                : []),
             ]}
             onValueChange={(value) =>
               selectSize(value === "a4" ? "a4" : "letter")
@@ -99,6 +116,11 @@ function PageSetupForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              {size === "custom" ? (
+                <SelectItem value="custom" disabled>
+                  {customLabel}
+                </SelectItem>
+              ) : null}
               <SelectItem value="letter">Letter</SelectItem>
               <SelectItem value="a4">A4</SelectItem>
             </SelectContent>
@@ -112,9 +134,21 @@ function PageSetupForm({
               { value: "portrait", label: "Portrait" },
               { value: "landscape", label: "Landscape" },
             ]}
-            onValueChange={(value) =>
-              selectSize(size, value === "landscape" ? "landscape" : "portrait")
-            }
+            onValueChange={(value) => {
+              const orientation =
+                value === "landscape" ? "landscape" : "portrait"
+              update({
+                width:
+                  orientation === "portrait"
+                    ? Math.min(page.width, page.height)
+                    : Math.max(page.width, page.height),
+                height:
+                  orientation === "portrait"
+                    ? Math.max(page.width, page.height)
+                    : Math.min(page.width, page.height),
+                orientation,
+              })
+            }}
           >
             <SelectTrigger
               id={`${id}-orientation`}
@@ -172,7 +206,11 @@ function PageSetupForm({
         >
           Cancel
         </Button>
-        <Button type="submit" className="min-h-11 md:min-h-8">
+        <Button
+          type="submit"
+          disabled={blocked}
+          className="min-h-11 md:min-h-8"
+        >
           Apply
         </Button>
       </DialogFooter>
@@ -183,17 +221,32 @@ function PageSetupForm({
 export function RichPageSetup({
   editor,
   children,
+  blocked = false,
 }: {
   editor: TextEditor | null
+  blocked?: boolean
   children: (open: () => void) => ReactNode
 }) {
   const [open, setOpen] = useReducer(
     (_: boolean, value: boolean) => value,
     false
   )
+  const [initialPage, setInitialPage] = useReducer(
+    (_: Page | null, value: Page | null) => value,
+    null
+  )
   return (
     <>
-      {children(() => setOpen(true))}
+      {children(() => {
+        if (!editor || blocked) return
+        editor.apply(() => {
+          const page = editor.pageSetup()
+          if (!page) return false
+          setInitialPage(page)
+          setOpen(true)
+          return true
+        })
+      })}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent finalFocus={() => editor?.focus() ?? false}>
           <DialogHeader>
@@ -202,8 +255,13 @@ export function RichPageSetup({
               Choose the paper and margins for your document and Word download.
             </DialogDescription>
           </DialogHeader>
-          {open && editor ? (
-            <PageSetupForm editor={editor} close={() => setOpen(false)} />
+          {open && editor && initialPage ? (
+            <PageSetupForm
+              editor={editor}
+              initialPage={initialPage}
+              blocked={blocked}
+              close={() => setOpen(false)}
+            />
           ) : null}
         </DialogContent>
       </Dialog>

@@ -102,11 +102,9 @@ export function installFlowView(
     if (!active) return
     const document = read(),
       support = flowPaginationSupport(document)
-    element.dataset.paperPagination = String(
-      !element.classList.contains("paper-rich-sheet") && support.supported
-    )
+    element.dataset.paperPagination = String(support.supported)
     if (element.classList.contains("paper-rich-sheet")) {
-      updateBreaks(richPageLayout(element, document))
+      updateBreaks(richPageLayout(element, document, support.supported))
       return
     }
     const breaks = new Map<string, number>()

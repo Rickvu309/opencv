@@ -192,7 +192,7 @@ export function RichPaperPage({
           ref={element}
           aria-busy={status === "loading"}
           data-slot="paper-rich-sheet"
-          className="paper-rich-sheet mx-auto text-card-foreground shadow-sm"
+          className="paper-rich-sheet mx-auto text-card-foreground shadow-sm ring-1 ring-border"
         />
       </div>
     </section>

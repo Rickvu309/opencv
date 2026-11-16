@@ -46,7 +46,11 @@ export function richPageCommands(
     canInsertPageBreak() {
       const { $from, $to } = view.state.selection
       return (
-        editor.isEditable && $from.sameParent($to) && $from.parent.isTextblock
+        editor.isEditable &&
+        $from.sameParent($to) &&
+        $from.parent.isTextblock &&
+        $from.depth === 5 &&
+        $from.node(2).firstChild?.type.name === "paperFlowSection"
       )
     },
     insertPageBreak() {
@@ -110,6 +114,7 @@ export function richPageCommands(
       return true
     },
     removePageBreak(backward: boolean) {
+      if (!editor.isEditable) return false
       const { selection, doc } = view.state
       if (!selection.empty || !selection.$from.parent.isTextblock) return false
       const point = selection.$from

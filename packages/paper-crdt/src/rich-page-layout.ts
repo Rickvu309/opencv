@@ -1,6 +1,10 @@
 import type { FlowDocument } from "@workspace/domain/internal/paper-presentation"
 
-export function richPageLayout(element: HTMLElement, document: FlowDocument) {
+export function richPageLayout(
+  element: HTMLElement,
+  document: FlowDocument,
+  paginated = false
+) {
   const page = document.presentation.page
   const width = page.width / 15
   const height = page.height / 15
@@ -12,7 +16,8 @@ export function richPageLayout(element: HTMLElement, document: FlowDocument) {
         parseFloat(parentStyle.paddingLeft) -
         parseFloat(parentStyle.paddingRight)
       : width
-  const scale = Math.min(1, available / width)
+  const phone = window.matchMedia("(max-width: 639px)").matches
+  const scale = phone ? 1 : Math.min(1, available / width)
   element.style.setProperty("--cv-rich-page-width", `${width}px`)
   element.style.setProperty("--cv-rich-page-height", `${height}px`)
   element.style.setProperty("--cv-rich-page-pitch", `${height + 24}px`)
@@ -31,7 +36,7 @@ export function richPageLayout(element: HTMLElement, document: FlowDocument) {
       if (!block) continue
       const offset = (block.getBoundingClientRect().top - top) / scale
       const remainder = ((offset % pitch) + pitch) % pitch
-      breaks.set(node.id, pitch - remainder)
+      breaks.set(node.id, phone ? 24 : paginated ? 0 : pitch - remainder)
     }
   }
   const content = element.querySelector<HTMLElement>(":scope > .bn-block-group")
@@ -42,6 +47,6 @@ export function richPageLayout(element: HTMLElement, document: FlowDocument) {
       page.bottom / 15
     : height
   const pages = Math.max(1, Math.ceil((bottom + 24 - 0.5) / pitch))
-  element.style.minHeight = `${pages * pitch - 24}px`
+  element.style.minHeight = phone ? "" : `${pages * pitch - 24}px`
   return breaks
 }

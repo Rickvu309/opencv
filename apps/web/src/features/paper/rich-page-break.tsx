@@ -20,7 +20,7 @@ export function RichPageBreak({
         label={shortcutLabel("Insert page break (Ctrl+Enter)")}
         disabled={!editor || blocked || !editor.canInsertPageBreak()}
         onClick={() => {
-          editor?.insertPageBreak()
+          editor?.apply(() => editor.insertPageBreak())
           onAction()
         }}
       >

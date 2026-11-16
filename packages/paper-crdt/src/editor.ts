@@ -58,7 +58,7 @@ export function mountRichPaperEditor(
       else mounted.adjustIndent(delta)
     }
     const shortcuts = (event: KeyboardEvent) => {
-      if (!active || !mounted.editor.isEditable) return
+      if (!active || !mounted.editor.isEditable || event.isComposing) return
       if (!event.altKey && !event.shiftKey) {
         const handled =
           (event.ctrlKey || event.metaKey) && event.key === "Enter"
@@ -147,8 +147,16 @@ export function mountRichPaperEditor(
           : { undo: false, redo: false },
       undoDocument: () => apply(commands.undo),
       redoDocument: () => apply(commands.redo),
-      ...pages,
-      ...mounted.photoControls,
+      pageSetup: () => (active ? pages.pageSetup() : null),
+      setPageSetup(value: Parameters<typeof pages.setPageSetup>[0]) {
+        if (!active || !mounted.editor.isEditable) return false
+        pages.setPageSetup(value)
+        return true
+      },
+      canInsertPageBreak: () => active && pages.canInsertPageBreak(),
+      insertPageBreak: () => active && pages.insertPageBreak(),
+      removePageBreak: (backward: boolean) =>
+        active && pages.removePageBreak(backward),
       formattingOptions: {
         colors: richTextColors,
         highlights: richTextHighlights,

@@ -59,8 +59,7 @@ export function mountPrivateFlow(
             flowDecorations(
               state.doc,
               readPresentationMeta(binding.doc),
-              !element.classList.contains("paper-rich-sheet") &&
-                flowPaginationSupport(readFlow(binding)).supported,
+              flowPaginationSupport(readFlow(binding)).supported,
               breaks
             ),
         },

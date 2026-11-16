@@ -339,7 +339,7 @@ it.each(["cv", "letter"] as const)(
 )
 
 it.each([1232, 390])(
-  "keeps every sheet full height at viewport %s",
+  "keeps desktop sheets and readable phone reflow at viewport %s",
   (width) => {
     vi.stubGlobal("CSS", {
       ...globalThis.CSS,
@@ -381,7 +381,8 @@ it.each([1232, 390])(
     parent.append(host)
     window.document.body.append(parent)
     cleanups.add(() => parent.remove())
-    const scale = Math.min(1, (width - 32) / 816)
+    vi.stubGlobal("matchMedia", () => ({ matches: width < 640 }))
+    const scale = width < 640 ? 1 : Math.min(1, (width - 32) / 816)
     vi.spyOn(host, "getBoundingClientRect").mockReturnValue(
       new DOMRect(0, 100, 816 * scale, 1056 * scale)
     )
@@ -391,11 +392,29 @@ it.each([1232, 390])(
     vi.spyOn(block, "getBoundingClientRect").mockReturnValue(
       new DOMRect(0, 100 + 196 * scale, 624 * scale, 0)
     )
-    expect(richPageLayout(host, flow).get("break")).toBeCloseTo(980)
-    expect(host.style.minHeight).toBe("2136px")
+    expect(richPageLayout(host, flow).get("break")).toBeCloseTo(
+      width < 640 ? 24 : 980
+    )
+    expect(host.style.minHeight).toBe(width < 640 ? "" : "2136px")
     expect(Number(host.style.getPropertyValue("--cv-rich-page-scale"))).toBe(
       scale
     )
     expect(host.style.getPropertyValue("--cv-rich-page-start")).toBe("96px")
+  }
+)
+
+it.each(["cv", "letter"] as const)(
+  "keeps Undo meaningful after applying identical %s page metadata",
+  (kind) => {
+    const { pages, commands, read } = setup(kind)
+    const original = read()
+    pages.setPageSetup({ ...pages.pageSetup(), top: 720 })
+    const changed = read()
+    expect(changed).not.toEqual(original)
+    pages.setPageSetup(pages.pageSetup())
+    commands.undo()
+    expect(read()).toEqual(original)
+    commands.redo()
+    expect(read()).toEqual(changed)
   }
 )

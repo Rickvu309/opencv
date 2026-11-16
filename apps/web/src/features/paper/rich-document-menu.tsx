@@ -44,7 +44,7 @@ export function RichDocumentMenu({
           ? "Wait until your changes are saved."
           : undefined
   return (
-    <RichPageSetup editor={editor ?? null}>
+    <RichPageSetup editor={editor ?? null} blocked={blocked}>
       {(openSetup) => (
         <DropdownMenu>
           <DropdownMenuTrigger
