@@ -16,10 +16,12 @@ export function RichDocumentMenu({
   session,
   status,
   blocked,
+  editorAvailable,
 }: {
   session: Pick<ReturnType<typeof openRichPaperSession>, "downloadWord"> | null
   status: SyncStatus
   blocked: boolean
+  editorAvailable: boolean
 }) {
   const hintId = useId()
   const inFlight = useRef(false)
@@ -27,13 +29,16 @@ export function RichDocumentMenu({
     (_: boolean, action: "prepare" | "finish") => action === "prepare",
     false
   )
-  const available = session && status === "saved" && !blocked && !preparing
+  const available =
+    session && status === "saved" && !blocked && editorAvailable && !preparing
   const hint =
     blocked || !session || status === "refused" || status === "stuck"
       ? "Paper couldn't prepare the Word file. Reload the page and try again."
-      : status !== "saved"
-        ? "Wait until your changes are saved."
-        : undefined
+      : !editorAvailable
+        ? "The document is reloading. Please wait."
+        : status !== "saved"
+          ? "Wait until your changes are saved."
+          : undefined
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
