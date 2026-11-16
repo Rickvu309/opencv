@@ -5,7 +5,6 @@ import {
   openFlowBinary,
 } from "./native-layout-flow.js"
 import { mountPrivateFlow } from "./native-layout-flow-mount.js"
-import { flowPhotoControls } from "./native-layout-photo-controls.js"
 import { storedFlowFixture } from "./test/flow-fixture.js"
 import {
   afterAll,
@@ -150,7 +149,7 @@ describe("rich CV and Letter photo editing", () => {
         host,
         (source) => `/owned/${source.slice(5)}`
       )
-      const controls = flowPhotoControls(binding, mount)
+      const controls = mount.photoControls
       try {
         mount.editor.setTextCursorPosition("after", "end")
         const initial = readFlow(binding)

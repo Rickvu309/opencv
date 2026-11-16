@@ -131,7 +131,7 @@ export function RichPhotoControls({
   }
   return (
     <>
-      <input
+      <Input
         ref={fileInput}
         type="file"
         accept="image/png,image/jpeg,image/gif"

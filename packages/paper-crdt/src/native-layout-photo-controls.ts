@@ -8,13 +8,12 @@ import {
   readFlow,
   type FlowBinding,
 } from "./native-layout-flow.js"
-import type { mountPrivateFlow } from "./native-layout-flow-mount.js"
+import type { PrivateLayoutEditor } from "./native-layout-schema.js"
 
 export function flowPhotoControls(
   binding: FlowBinding,
-  mounted: ReturnType<typeof mountPrivateFlow>
+  editor: PrivateLayoutEditor
 ) {
-  const editor = mounted.editor
   const history = yUndoPluginKey.getState(editor.prosemirrorState)?.undoManager
   if (!history) throw new Error("Photo editing needs document history")
   history.addTrackedOrigin("private-flow-photo")
