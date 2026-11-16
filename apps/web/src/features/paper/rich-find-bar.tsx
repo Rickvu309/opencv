@@ -5,8 +5,13 @@ import {
   useReducer,
   useSyncExternalStore,
 } from "react"
-import { ChevronDown, ChevronUp, X } from "lucide-react"
+import { ChevronDown, ChevronUp, SlidersHorizontal, X } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@workspace/ui/components/popover"
 import { Input } from "@workspace/ui/components/input"
 import type { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import { useShortcut } from "@/lib/use-shortcut"
@@ -59,8 +64,8 @@ export function RichFindBar({
     enabled: !!editor,
     prevent: false,
     onPress: (event) => {
-      if (event.shiftKey) return
       const key = event.key.toLowerCase()
+      if (event.shiftKey && !(event.metaKey && key === "h")) return
       event.preventDefault()
       onModeChange(key === "h" ? "replace" : "find")
       input.current?.focus()
@@ -88,7 +93,8 @@ export function RichFindBar({
           close()
         } else if (
           event.key === "Enter" &&
-          event.target instanceof HTMLInputElement
+          event.target instanceof HTMLInputElement &&
+          event.target.type !== "checkbox"
         ) {
           event.preventDefault()
           editor?.search.move(event.shiftKey ? -1 : 1)
@@ -116,9 +122,13 @@ export function RichFindBar({
             role="status"
             aria-live="polite"
             aria-atomic="true"
-            className="min-w-12 shrink-0 text-center text-xs text-muted-foreground tabular-nums"
+            className="max-w-16 min-w-10 shrink-0 text-center text-xs break-words text-muted-foreground tabular-nums"
           >
-            {state.query ? `${state.activeIndex + 1} of ${count}` : "Find"}
+            {state.query
+              ? count
+                ? `${state.activeIndex + 1} of ${count}`
+                : "No matches"
+              : ""}
           </span>
           <Button
             variant="ghost"
@@ -142,6 +152,48 @@ export function RichFindBar({
           >
             <ChevronDown />
           </Button>
+          <Popover>
+            <PopoverTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="size-11 shrink-0 md:size-8"
+                  aria-label="Find options"
+                  title="Find options"
+                  disabled={!editor}
+                />
+              }
+            >
+              <SlidersHorizontal />
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-48">
+              <label className="flex min-h-11 cursor-pointer items-center gap-2 md:min-h-8">
+                <Input
+                  type="checkbox"
+                  className="size-4 shrink-0 appearance-auto p-0 accent-primary"
+                  disabled={!editor}
+                  checked={state.matchCase}
+                  onChange={(event) =>
+                    editor?.search.find(state.query, event.target.checked)
+                  }
+                />
+                Match case
+              </label>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="min-h-11 md:min-h-8"
+                disabled={!editor}
+                aria-expanded={mode === "replace"}
+                onClick={() =>
+                  onModeChange(mode === "replace" ? "find" : "replace")
+                }
+              >
+                {mode === "replace" ? "Hide replace" : "Find and replace"}
+              </Button>
+            </PopoverContent>
+          </Popover>
           <Button
             variant="ghost"
             size="icon"
@@ -154,7 +206,7 @@ export function RichFindBar({
           </Button>
         </div>
         {mode === "replace" ? (
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2">
             <label htmlFor={replacementId} className="sr-only">
               Replace with
             </label>
@@ -165,7 +217,7 @@ export function RichFindBar({
               autoComplete="off"
               autoCapitalize="none"
               spellCheck={false}
-              className="h-11 min-w-0 flex-[1_1_12rem] text-base md:h-8 md:text-sm"
+              className="h-11 min-w-0 flex-1 text-base md:h-8 md:text-sm"
               onChange={(event) =>
                 setReplacement({
                   type: "replace-text",
@@ -175,7 +227,7 @@ export function RichFindBar({
             />
             <Button
               variant="outline"
-              className="min-h-11 md:min-h-8"
+              className="h-auto min-h-11 min-w-0 shrink px-3 whitespace-normal md:min-h-8"
               disabled={disabled || !count}
               onClick={() => editor?.search.replace(replacement, false)}
             >
@@ -183,7 +235,7 @@ export function RichFindBar({
             </Button>
             <Button
               variant="outline"
-              className="min-h-11 md:min-h-8"
+              className="h-auto min-h-11 min-w-0 shrink px-3 whitespace-normal md:min-h-8"
               disabled={disabled || !count}
               onClick={() => editor?.search.replace(replacement, true)}
             >
@@ -191,33 +243,6 @@ export function RichFindBar({
             </Button>
           </div>
         ) : null}
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-          <label className="flex min-h-11 cursor-pointer items-center gap-2 md:min-h-8">
-            <Input
-              type="checkbox"
-              className="size-4 shrink-0 appearance-auto p-0 accent-primary"
-              checked={state.matchCase}
-              onChange={(event) =>
-                editor?.search.find(state.query, event.target.checked)
-              }
-            />
-            Match case
-          </label>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="min-h-11 md:min-h-8"
-            aria-expanded={mode === "replace"}
-            onClick={() =>
-              onModeChange(mode === "replace" ? "find" : "replace")
-            }
-          >
-            {mode === "replace" ? "Hide replace" : "Find and replace"}
-          </Button>
-          {state.query && !count ? (
-            <span className="text-muted-foreground">No matches</span>
-          ) : null}
-        </div>
       </div>
     </div>
   )

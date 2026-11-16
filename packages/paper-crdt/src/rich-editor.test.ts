@@ -133,6 +133,7 @@ function setup(kind: "cv" | "letter", includeTable = false) {
     expect(event.defaultPrevented).toBe(true)
   }
   return {
+    client,
     host,
     editor,
     commands,
@@ -381,4 +382,69 @@ it("replaces all matches in four table cells and body text with one Undo", () =>
   commands.redo()
   roundtrip()
   search.destroy()
+})
+
+it.each([
+  ["Việt", "Việta"],
+  ["việt", "VIỆT"],
+])(
+  "advances past %s replaced with %s even when it still matches",
+  (query, replacement) => {
+    const { editor, commands } = setup("letter")
+    const search = richEditorSearch(editor)
+    cleanups.add(() => search.destroy())
+    search.find(query!, false)
+    search.replace(replacement!, false)
+    expect(search.snapshot().activeIndex).toBe(1)
+    search.replace(replacement!, false)
+    expect(search.snapshot().activeIndex).toBe(2)
+    expect(editor.prosemirrorState.doc.textContent).not.toContain("Việtaa")
+    commands.undo()
+    expect(search.snapshot().activeIndex).toBe(2)
+    commands.redo()
+    expect(search.snapshot().activeIndex).toBe(2)
+  }
+)
+
+it("tracks the current match through a remote Yjs edit and local Undo and Redo", () => {
+  const { client, editor, commands } = setup("letter")
+  const search = richEditorSearch(editor)
+  cleanups.add(() => search.destroy())
+  search.find("việt", false)
+  search.move(1)
+  search.move(1)
+  const current = () =>
+    search.snapshot().matches[search.snapshot().activeIndex]!
+  const original = current().from
+  const remote = openRichPaperClient(client.stored(), {
+    provenance: nativeProvenance(client.document()!),
+  })
+  const lease = borrowFlowDocument(remote.ydoc, "letter")
+  const host = document.createElement("div")
+  document.body.append(host)
+  const mounted = mountPrivateFlow(lease.binding, host)
+  cleanups.add(() => {
+    mounted.unmount()
+    lease.release()
+    remote.destroy()
+    host.remove()
+  })
+  mounted.editor.setTextCursorPosition("first", "start")
+  mounted.editor.prosemirrorView.dispatch(
+    mounted.editor.prosemirrorState.tr.insertText("Remote ")
+  )
+  Y.applyUpdate(client.ydoc, Y.encodeStateAsUpdate(remote.ydoc))
+  expect(search.snapshot().activeIndex).toBe(2)
+  expect(current().from).toBe(original + 7)
+  editor.setTextCursorPosition("second", "start")
+  editor.prosemirrorView.dispatch(
+    editor.prosemirrorState.tr.insertText("Local ")
+  )
+  expect(current().from).toBe(original + 13)
+  commands.undo()
+  expect(search.snapshot().activeIndex).toBe(2)
+  expect(current().from).toBe(original + 7)
+  commands.redo()
+  expect(search.snapshot().activeIndex).toBe(2)
+  expect(current().from).toBe(original + 13)
 })

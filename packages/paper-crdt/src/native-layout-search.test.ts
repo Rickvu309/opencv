@@ -1,4 +1,4 @@
-import { expect, it } from "vitest"
+import { expect, it, vi } from "vitest"
 import { Schema } from "@tiptap/pm/model"
 import { paperSearchMatches } from "./native-layout-search.js"
 
@@ -48,4 +48,49 @@ it("does not span a block boundary, an inline object or part of a grapheme", () 
   expect(paperSearchMatches(doc, "İef", false)).toEqual([])
   expect(paperSearchMatches(doc, "i", false)).toEqual([])
   expect(paperSearchMatches(doc, "aba", false)).toHaveLength(1)
+})
+
+it("folds Greek final sigma on both sides of the same grapheme index", () => {
+  const doc = schema.node("doc", null, [
+    schema.node("paragraph", null, [
+      schema.text("ΟΣ ος οσ ΟΣΑ Vie\u0323\u0302t"),
+    ]),
+  ])
+  for (const query of ["ΟΣ", "ος", "οσ"])
+    expect(
+      paperSearchMatches(doc, query, false).map(({ from, to }) =>
+        doc.textBetween(from, to)
+      )
+    ).toEqual(["ΟΣ", "ος", "οσ", "ΟΣ"])
+  expect(paperSearchMatches(doc, "ΟΣ", true)).toHaveLength(2)
+  expect(
+    paperSearchMatches(doc, "VIỆT", false).map(({ from, to }) =>
+      doc.textBetween(from, to)
+    )
+  ).toEqual(["Vie\u0323\u0302t"])
+})
+
+it("reuses the normalized index of unchanged blocks after an edit", () => {
+  const unchanged = schema.node("paragraph", null, [
+    schema.text("Việt unchanged"),
+  ])
+  const doc = schema.node("doc", null, [
+    unchanged,
+    schema.node("paragraph", null, [schema.text("Việt edited")]),
+  ])
+  paperSearchMatches(doc, "việt", false)
+  const segment = vi.spyOn(Intl.Segmenter.prototype, "segment")
+  try {
+    const next = schema.node("doc", null, [
+      unchanged,
+      schema.node("paragraph", null, [schema.text("Việt edited x")]),
+    ])
+    expect(paperSearchMatches(next, "VIỆT", false)).toHaveLength(2)
+    expect(segment.mock.calls.map(([text]) => text)).not.toContain(
+      "Việt unchanged"
+    )
+    expect(segment.mock.calls.map(([text]) => text)).toContain("Việt edited x")
+  } finally {
+    segment.mockRestore()
+  }
 })
