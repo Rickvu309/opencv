@@ -2,6 +2,18 @@ import type { LayoutPhoto } from "./native-photo.js"
 
 type PhotoGeometry = Pick<LayoutPhoto, "width" | "height" | "crop">
 
+export function photoInsertSize(aspectRatio: number, availableWidth = 2160) {
+  if (!Number.isFinite(aspectRatio) || aspectRatio <= 0)
+    throw new Error("This image could not be read")
+  const width = Math.round(Math.min(2160, availableWidth, 31680 * aspectRatio))
+  const height = Math.round(width / aspectRatio)
+  if (width < 240 || height < 240)
+    throw new Error(
+      "This image is too wide or tall. Crop it closer to a square and try again."
+    )
+  return { width, height }
+}
+
 export function photoSourceRatio(photo: PhotoGeometry) {
   return (
     (photo.width / photo.height) *
@@ -72,10 +84,18 @@ function fitEditedCrop(
   const weights = { left: ratio, right: ratio, top: -1, bottom: -1 }
   const edges = ["left", "right", "top", "bottom"] as const
   const target = (ratio - 1) * 100000
+  const sameAxis = (edge: keyof typeof crop) =>
+    ["left", "right"].includes(edge) === ["left", "right"].includes(editedEdge)
   const project = (edge: keyof typeof crop, offset: number) =>
     edge === editedEdge
       ? crop[edge]
-      : Math.max(0, Math.min(99999, crop[edge] - offset * weights[edge]))
+      : Math.max(
+          0,
+          Math.min(
+            sameAxis(edge) ? 99900 - crop[editedEdge] : 99999,
+            crop[edge] - offset * weights[edge]
+          )
+        )
   let low = -100000 / Math.min(ratio, 1)
   let high = -low
   for (let step = 0; step < 64; step++) {

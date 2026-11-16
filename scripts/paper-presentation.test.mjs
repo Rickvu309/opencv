@@ -79,3 +79,22 @@ test("round-two photo guards reject the crop ratchet and hidden actions at their
     )
   }
 })
+
+test("round-three photo guards reject refused drafts, late upload checks and invisible circle projections", () => {
+  for (const file of [
+    "apps/web/src/features/paper/rich-photo-number.tsx",
+    "apps/web/src/features/paper/rich-photo-controls.tsx",
+    "packages/domain/src/paper-doc/native-photo-geometry.ts",
+  ]) {
+    const before = execFileSync("git", ["show", `c9f04c8f:${file}`], {
+      cwd: root,
+      encoding: "utf8",
+    })
+    assert.ok(detect(before, file).length > 0, file)
+    assert.deepEqual(
+      detect(readFileSync(path.join(root, file), "utf8"), file),
+      [],
+      file
+    )
+  }
+})

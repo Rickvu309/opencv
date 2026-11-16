@@ -111,6 +111,7 @@ export { prepareFlowPhotoEdit } from "./paper-doc/native-layout-flow-photo.js"
 
 export { photoDestination } from "./paper-doc/native-layout-photo-destination.js"
 export {
+  photoInsertSize,
   photoSourceRatio,
   croppedPhotoRatio,
   fitPhotoCrop,

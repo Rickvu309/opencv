@@ -52,7 +52,8 @@ export function detectPhotoPresentation(text, path, source) {
   if (
     path === "packages/paper-crdt/src/native-layout-photo-controls.ts" &&
     text.includes("layoutPhotoSchema.parse({") &&
-    !text.includes("width / aspectRatio) < 240")
+    !text.includes("width / aspectRatio) < 240") &&
+    !text.includes("photoInsertSize(aspectRatio, available)")
   )
     hits.push(
       "Photo insertion must refuse unsupported source proportions before parsing geometry"
@@ -67,6 +68,27 @@ export function detectPhotoPresentation(text, path, source) {
   )
     hits.push(
       "Photo preview must expose its image role and match physical crop edges and rounded geometry"
+    )
+  if (
+    path === "apps/web/src/features/paper/rich-photo-number.tsx" &&
+    !text.includes("onCommit(Number(draft)) === false")
+  )
+    hits.push("Refused photo numbers must reset to the committed draft")
+  if (
+    path === "apps/web/src/features/paper/rich-photo-controls.tsx" &&
+    text.includes("uploadPaperPhoto(file)") &&
+    (text.indexOf("photoInsertSize(ratio)") < 0 ||
+      text.indexOf("photoInsertSize(ratio)") >
+        text.indexOf("uploadPaperPhoto(file)"))
+  )
+    hits.push("Unsupported photo proportions must be refused before upload")
+  if (
+    path === "packages/domain/src/paper-doc/native-photo-geometry.ts" &&
+    text.includes("function fitEditedCrop(") &&
+    !text.includes("99900 - crop[editedEdge]")
+  )
+    hits.push(
+      "Circle crop projection must bound the opposite edge by the edited edge"
     )
   return hits
 }

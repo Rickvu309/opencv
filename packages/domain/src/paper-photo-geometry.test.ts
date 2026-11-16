@@ -3,6 +3,7 @@ import { it } from "node:test"
 import { layoutPhotoSchema } from "./paper-doc/native-photo.js"
 import {
   croppedPhotoRatio,
+  photoInsertSize,
   fitPhotoCrop,
   photoSourceRatio,
   resizePhoto,
@@ -79,5 +80,34 @@ it("keeps the committed circle edge and can reverse every crop to zero", () => {
     fitted = fitPhotoCrop(ratio, 1, { ...fitted, [edge]: 0 }, edge)
     assert.equal(fitted[edge], 0)
     assert.ok(Math.abs(croppedPhotoRatio(ratio, fitted) - 1) < 0.0001)
+  }
+})
+
+it("refuses source proportions that cannot fit before storing a photo", () => {
+  for (const ratio of [20, 1 / 200, 0, Infinity, NaN])
+    assert.throws(() => photoInsertSize(ratio))
+  assert.deepEqual(photoInsertSize(1), { width: 2160, height: 2160 })
+  assert.deepEqual(photoInsertSize(2, 1200), { width: 1200, height: 600 })
+})
+
+it("keeps a visible square when an extreme circle edge follows deep zoom", () => {
+  const zoomed = { left: 24300, right: 29100, top: 60000, bottom: 2700 }
+  for (const edge of ["left", "right", "top", "bottom"] as const) {
+    const fitted = fitPhotoCrop(
+      2687 / 3356,
+      1,
+      { ...zoomed, [edge]: 99900 },
+      edge
+    )
+    assert.equal(fitted[edge], 99900)
+    assert.ok(fitted.left + fitted.right < 100000)
+    assert.ok(fitted.top + fitted.bottom < 100000)
+    assert.ok(Math.abs(croppedPhotoRatio(2687 / 3356, fitted) - 1) < 0.015)
+    layoutPhotoSchema.parse({
+      ...portrait,
+      shape: "circle",
+      height: 1800,
+      crop: fitted,
+    })
   }
 })

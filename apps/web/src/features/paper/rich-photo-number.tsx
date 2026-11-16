@@ -26,7 +26,7 @@ export function RichPhotoNumber({
   value: number
   min: number
   max: number
-  onCommit: (value: number) => void
+  onCommit: (value: number) => boolean | void
 }) {
   const [draft, dispatch] = useReducer(photoNumberDraft, String(value))
   useEffect(() => dispatch({ type: "sync", value }), [value])
@@ -46,7 +46,8 @@ export function RichPhotoNumber({
       }
       onBlur={(event) => {
         if (draft.trim() && event.currentTarget.validity.valid) {
-          onCommit(Number(draft))
+          if (onCommit(Number(draft)) === false)
+            dispatch({ type: "sync", value })
         } else {
           dispatch({ type: "sync", value })
         }

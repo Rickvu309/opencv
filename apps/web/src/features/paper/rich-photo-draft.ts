@@ -27,7 +27,7 @@ export function photoDraft(state: State, action: Action): State {
     case "error":
       return { ...state, error: action.error }
     case "draft":
-      return { ...state, photo: action.photo }
+      return { ...state, photo: action.photo, error: "" }
     case "refresh":
       return { ...state, revision: state.revision + 1 }
   }

@@ -5,6 +5,7 @@ import {
   layoutPhotoSchema,
   photoDestination,
   fitPhotoCrop,
+  photoInsertSize,
 } from "@workspace/domain/internal/paper-presentation"
 import {
   commitFlowPhotoEdit,
@@ -54,19 +55,13 @@ export function flowPhotoControls(
         document,
         cursor
       )
-      if (!Number.isFinite(aspectRatio) || aspectRatio <= 0)
-        throw new Error("This image could not be read")
-      const width = Math.round(Math.min(2160, available, 31680 * aspectRatio))
-      if (width < 240 || Math.round(width / aspectRatio) < 240)
-        throw new Error(
-          "This image is too wide or tall. Crop it closer to a square and try again."
-        )
+      const { width, height } = photoInsertSize(aspectRatio, available)
       const photo = layoutPhotoSchema.parse({
         id: crypto.randomUUID(),
         type: "photo",
         source,
         width,
-        height: Math.round(width / aspectRatio),
+        height,
         crop: { top: 0, right: 0, bottom: 0, left: 0 },
         rotation: 0,
         shape: "rectangle",

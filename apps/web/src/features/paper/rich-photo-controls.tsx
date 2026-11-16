@@ -3,6 +3,7 @@ import { paperPhotoRef } from "@workspace/domain"
 import {
   layoutPhotoSchema,
   photoSourceRatio,
+  photoInsertSize,
   croppedPhotoRatio,
   fitPhotoCrop,
   resizePhoto,
@@ -112,6 +113,7 @@ export function RichPhotoControls({
       })
       const ratio = bitmap.width / bitmap.height
       bitmap.close()
+      photoInsertSize(ratio)
       const source = paperPhotoRef(await uploadPaperPhoto(file))
       if (liveEditor.current !== editor) return
       const id = replacement.current
@@ -311,7 +313,7 @@ export function RichPhotoControls({
                                   "Keep some of the photo visible. Reduce the crop on the opposite edge."
                                 )
                               )
-                              return
+                              return false
                             }
                             const ratio =
                               sourceRatios.current.get(selected.source) ??

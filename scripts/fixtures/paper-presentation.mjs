@@ -1,11 +1,23 @@
 export const clean = [
   {
+    path: "apps/web/src/features/paper/rich-photo-controls.tsx",
+    text: "photoInsertSize(ratio); uploadPaperPhoto(file)",
+  },
+  {
+    path: "packages/domain/src/paper-doc/native-photo-geometry.ts",
+    text: "function fitEditedCrop() { return 99900 - crop[editedEdge] }",
+  },
+  {
+    path: "packages/paper-crdt/src/native-layout-photo-controls.ts",
+    text: "const { width, height } = photoInsertSize(aspectRatio, available); layoutPhotoSchema.parse({ width, height })",
+  },
+  {
     path: "apps/web/src/features/paper/rich-photo-error.ts",
     text: 'if (error.message.trimStart().startsWith("[")) return "Use a smaller size"',
   },
   {
     path: "apps/web/src/features/paper/rich-photo-number.tsx",
-    text: `const [draft, dispatch] = useReducer(photoNumberDraft, String(value)); const field = <Input className="tabular-nums" onChange={event => dispatch({ type: "edit", value: event.target.value })} onBlur={event => event.target.validity.valid && onCommit(Number(draft))} />`,
+    text: `const [draft, dispatch] = useReducer(photoNumberDraft, String(value)); const field = <Input className="tabular-nums" onChange={event => dispatch({ type: "edit", value: event.target.value })} onBlur={event => event.target.validity.valid && (onCommit(Number(draft)) === false ? dispatch({ type: "sync", value }) : undefined)} />`,
   },
   {
     path: "apps/web/src/features/paper/rich-photo-controls.tsx",
@@ -181,6 +193,18 @@ export const clean = [
   },
 ]
 export const mistakes = [
+  {
+    path: "apps/web/src/features/paper/rich-photo-controls.tsx",
+    text: "uploadPaperPhoto(file); photoInsertSize(ratio)",
+  },
+  {
+    path: "apps/web/src/features/paper/rich-photo-number.tsx",
+    text: "onCommit(Number(draft))",
+  },
+  {
+    path: "packages/domain/src/paper-doc/native-photo-geometry.ts",
+    text: "function fitEditedCrop() { return Math.min(99999, crop[edge]) }",
+  },
   {
     path: "apps/web/src/features/paper/rich-photo-error.ts",
     text: 'if (error.name === "ZodError") return "Use a smaller size"; return error.message',
