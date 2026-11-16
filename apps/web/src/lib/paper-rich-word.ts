@@ -11,9 +11,11 @@ function filename(disposition: string | null) {
   const encoded = disposition?.match(/filename\*=UTF-8''([^;]+)/i)?.[1]
   const quoted = disposition?.match(/filename="([^"]+)"/i)?.[1]
   const value = encoded ? decodeURIComponent(encoded) : quoted
-  return value && !/[\x00-\x1f\x7f/\\]/.test(value) && value.endsWith(".docx")
-    ? value
-    : "Paper.docx"
+  const unsafe = value?.split("").some((character) => {
+    const code = character.charCodeAt(0)
+    return code < 32 || code === 127 || character === "/" || character === "\\"
+  })
+  return value && !unsafe && value.endsWith(".docx") ? value : "Paper.docx"
 }
 
 export async function downloadSavedRichWord(saved: Saved, signal: AbortSignal) {

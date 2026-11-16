@@ -90,6 +90,25 @@ it("downloads the qualified saved revision with its Unicode name and releases th
   expect(document.querySelector("a[download]")).toBeNull()
 })
 
+it.each(["CV%00.docx", "CV%7F.docx", "folder%2FCV.docx", "folder%5CCV.docx"])(
+  "uses a safe fallback for an unsafe filename %s",
+  async (encoded) => {
+    vi.useFakeTimers()
+    const h = fixture()
+    h.response.headers.set(
+      "content-disposition",
+      `attachment; filename*=UTF-8''${encoded}`
+    )
+    let name = ""
+    h.click.mockImplementation(function () {
+      name = this.download
+    })
+    await downloadSavedRichWord(h.saved, h.signal.signal)
+    expect(name).toBe("Paper.docx")
+    await vi.advanceTimersByTimeAsync(1000)
+  }
+)
+
 it.each(["digest", "response", "blob", "trigger"] as const)(
   "refuses a document change during %s",
   async (stage) => {
