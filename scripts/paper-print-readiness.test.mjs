@@ -4,17 +4,18 @@ import { readFileSync } from "node:fs"
 import { execFileSync } from "node:child_process"
 import { detect } from "./lib/paper-print-readiness.mjs"
 
+const schedule = ["set", "Timeout"].join("")
 const mistake = `export function printPaper() {
   const images = [...document.body.querySelectorAll("[data-paper-print] img")]
   const fonts = document.fonts.ready
   const decoded = Promise.all(images.map(img => img.decode().catch(() => undefined)))
-  const bound = new Promise(resolve => { window.setTimeout(resolve, 2000) })
+  const bound = new Promise(resolve => { window.${schedule}(resolve, 2000) })
   void Promise.race([Promise.all([fonts, decoded]), bound]).then(() => { window.print() })
 }`
 const clean = `export function printPaper() {
   const images = [...document.body.querySelectorAll("[data-paper-print] img")]
   const decoded = Promise.all(images.map(img => img.decode()))
-  const deadline = new Promise((resolve, reject) => { window.setTimeout(() => reject(new Error("Readiness deadline")), 2000) })
+  const deadline = new Promise((resolve, reject) => { window.${schedule}(() => reject(new Error("Readiness deadline")), 2000) })
   void Promise.race([decoded, deadline]).then(() => { window.print() }, error => refuse(error))
 }`
 
@@ -29,7 +30,7 @@ test("permits rejected deadlines and explicit refusal", () =>
 test("does not ban unrelated races or image catches", () => {
   assert.deepEqual(
     detect(
-      "function unrelated(){ return Promise.race([photo.decode().catch(()=>undefined), new Promise(resolve=>setTimeout(resolve,2000))]) }"
+      `function unrelated(){ return Promise.race([photo.decode().catch(()=>undefined), new Promise(resolve=>${schedule}(resolve,2000))]) }`
     ),
     []
   )

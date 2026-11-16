@@ -3,8 +3,6 @@ import { toast } from "sonner"
 
 import { printPaper } from "./paper-print.ts"
 
-vi.mock("sonner", () => ({ toast: { error: vi.fn() } }))
-
 function deferred() {
   let resolve: () => void = () => undefined
   let reject: (reason: Error) => void = () => undefined
@@ -74,6 +72,7 @@ async function settle() {
 
 beforeEach(() => {
   vi.useFakeTimers()
+  vi.spyOn(toast, "error").mockReturnValue("print-error")
   document.title = "Workspace"
   previousFonts = Object.getOwnPropertyDescriptor(document, "fonts")
   fonts()
@@ -90,7 +89,6 @@ afterEach(() => {
   else Reflect.deleteProperty(document, "fonts")
   vi.useRealTimers()
   vi.restoreAllMocks()
-  vi.mocked(toast.error).mockClear()
 })
 
 describe("Paper print readiness", () => {
