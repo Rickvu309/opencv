@@ -13,6 +13,7 @@ import { RichTextEmphasisGroup } from "./rich-text-emphasis-group.tsx"
 import { RichTextFontGroup } from "./rich-text-font-group.tsx"
 import { RichTextColorGroup } from "./rich-text-color-group.tsx"
 import { RichTextParagraphGroup } from "./rich-text-paragraph-group.tsx"
+import { useToolbarEmphasisOverflow } from "./rich-text-toolbar-overflow.ts"
 import {
   type TextEditor,
   type TextFormatting,
@@ -53,6 +54,7 @@ export function RichPaperTextFormatting({
     open: false,
   })
   const setOpen = (open: boolean) => dispatch({ type: "open", open })
+  const emphasisOverflow = useToolbarEmphasisOverflow(host, compact)
   useEffect(() => {
     update(editor?.activeFormatting() ?? null)
     return editor?.subscribe(() => update(editor.activeFormatting()))
@@ -140,11 +142,13 @@ export function RichPaperTextFormatting({
             choose={inline}
           />
         ) : null}
-        <RichTextEmphasisGroup
-          editor={editor}
-          formatting={formatting}
-          disabled={disabled}
-        />
+        {!emphasisOverflow ? (
+          <RichTextEmphasisGroup
+            editor={editor}
+            formatting={formatting}
+            disabled={disabled}
+          />
+        ) : null}
         {compact ? (
           <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger
@@ -172,6 +176,13 @@ export function RichPaperTextFormatting({
             >
               <PopoverTitle>More formatting</PopoverTitle>
               <div className="flex flex-wrap items-center gap-2">
+                {emphasisOverflow ? (
+                  <RichTextEmphasisGroup
+                    editor={editor}
+                    formatting={formatting}
+                    disabled={disabled}
+                  />
+                ) : null}
                 <RichTextFontGroup
                   editor={editor}
                   formatting={formatting}

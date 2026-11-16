@@ -334,3 +334,53 @@ it("disables empty phone overflow while preserving document history", () => {
   act(() => editor.insertPhoto("file:00000000-0000-4000-8000-000000000002", 1))
   expect(screen.getByRole("button", { name: /^Undo / })).toBeEnabled()
 })
+
+it("moves emphasis into More when the measured 320 pixel toolbar cannot fit it", async () => {
+  width = 296
+  const rect = vi
+    .spyOn(HTMLElement.prototype, "getBoundingClientRect")
+    .mockImplementation(function (this: HTMLElement) {
+      const label = this.getAttribute("aria-label")
+      const measured =
+        label === "Document history"
+          ? 92
+          : label === "Text emphasis"
+            ? 140
+            : label === "More formatting"
+              ? 80
+              : this.getAttribute("role") === "separator"
+                ? 1
+                : 0
+      return new DOMRect(0, 0, measured, 44)
+    })
+  try {
+    const user = userEvent.setup()
+    setup()
+    const toolbar = screen.getByRole("toolbar", { name: "Text formatting" })
+    expect(within(toolbar).getByRole("button", { name: /Undo/ })).toBeVisible()
+    expect(within(toolbar).getByRole("button", { name: /Redo/ })).toBeVisible()
+    expect(
+      within(toolbar).queryByRole("button", { name: "Bold", exact: true })
+    ).not.toBeInTheDocument()
+    await user.click(
+      within(toolbar).getByRole("button", { name: "More formatting" })
+    )
+    expect(
+      screen.getByRole("button", { name: "Bold", exact: true })
+    ).toBeVisible()
+    expect(
+      screen.getByRole("button", { name: "Italic", exact: true })
+    ).toBeVisible()
+    expect(
+      screen.getByRole("button", { name: "Underline", exact: true })
+    ).toBeVisible()
+    await user.click(screen.getByRole("button", { name: "Bold", exact: true }))
+    await waitFor(() =>
+      expect(
+        screen.getByRole("textbox", { name: "Document content" })
+      ).toHaveFocus()
+    )
+  } finally {
+    rect.mockRestore()
+  }
+})

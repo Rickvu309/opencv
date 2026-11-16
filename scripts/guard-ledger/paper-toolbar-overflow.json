@@ -1,0 +1,13 @@
+{
+  "id": "paper-toolbar-overflow",
+  "file": "scripts/paper-toolbar-overflow.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-toolbar-overflow.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "31528653",
+    "path": "apps/web/src/features/paper/rich-text-formatting.tsx"
+  }
+}
