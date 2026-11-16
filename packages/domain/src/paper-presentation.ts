@@ -107,3 +107,4 @@ export {
   prepareFlowEdit,
   reverseFlowEdit,
 } from "./paper-doc/native-layout-flow-edit.js"
+export { prepareFlowPhotoEdit } from "./paper-doc/native-layout-flow-photo.js"

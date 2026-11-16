@@ -21,6 +21,7 @@ import { resolvePhotoSrc } from "@/lib/requests.ts"
 import type { NativeSyncIdentity } from "@/lib/paper-sync-identity.ts"
 import { SYNC_LABEL } from "@/lib/paper-sync.ts"
 import "./design/rich-page-header.pen.css"
+import { RichPhotoControls } from "./rich-photo-controls.tsx"
 
 type Session = ReturnType<typeof openRichPaperSession>
 type Editor = ReturnType<typeof mountRichPaperEditor>
@@ -161,8 +162,9 @@ export function RichPaperPage({
       <div
         role="toolbar"
         aria-label="Text formatting"
-        className="flex flex-wrap items-center gap-3 border-b px-4 py-2"
+        className="flex items-center gap-3 overflow-x-auto border-b px-4 py-2"
       >
+        <RichPhotoControls editor={editor} disabled={blocked} />
         {marks.map(({ mark, label, Icon }) => (
           <Button
             key={mark}
