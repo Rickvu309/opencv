@@ -20,6 +20,7 @@ import { openRichPaperSession } from "@/lib/paper-rich.ts"
 import { resolvePhotoSrc } from "@/lib/requests.ts"
 import type { NativeSyncIdentity } from "@/lib/paper-sync-identity.ts"
 import { SYNC_LABEL } from "@/lib/paper-sync.ts"
+import { mountRichEditorLifecycle } from "./rich-editor-lifecycle.ts"
 import { RichDocumentMenu } from "./rich-document-menu.tsx"
 import "./design/rich-page-header.pen.css"
 
@@ -95,21 +96,18 @@ export function RichPaperPage({
   const client = session?.client() ?? null
   useEffect(() => {
     if (!client || !element.current) return
-    try {
-      const mounted = mountRichPaperEditor(client, element.current, {
-        photoUrl: resolvePhotoSrc,
-      })
-      dispatch({
-        type: "mounted",
-        editor: mounted,
-      })
-      return () => {
-        mounted.destroy()
+    return mountRichEditorLifecycle(client, element.current, {
+      photoUrl: resolvePhotoSrc,
+      mounted(mounted) {
+        dispatch({ type: "mounted", editor: mounted })
+      },
+      released() {
         dispatch({ type: "unmounted" })
-      }
-    } catch {
-      dispatch({ type: "failed" })
-    }
+      },
+      failed() {
+        dispatch({ type: "failed" })
+      },
+    })
   }, [client])
   const blocked = status === "stuck" || status === "refused" || editorError
   useEffect(() => {
@@ -143,6 +141,7 @@ export function RichPaperPage({
               : SYNC_LABEL[status]}
           </span>
           <RichDocumentMenu
+            editorAvailable={!!editor}
             session={session}
             status={status}
             blocked={blocked}

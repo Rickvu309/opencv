@@ -121,6 +121,7 @@ export function mountPrivateFlow(
     }
   }
   const keydown = (event: KeyboardEvent) => {
+    if (!active || !editor.isEditable) return
     if (
       !editor.isEditable ||
       (event.target instanceof Element &&
