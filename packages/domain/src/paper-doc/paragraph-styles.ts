@@ -67,7 +67,9 @@ export function paragraphStyleValues(id: string) {
 
 export function paragraphInlineValues(id: string | null | undefined) {
   const style = paperParagraphStyle(id)
-  return inlineSchema.parse(style ? { size: style.size, bold: style.bold } : {})
+  return inlineSchema.parse(
+    style && style.id !== "normal" ? { size: style.size, bold: style.bold } : {}
+  )
 }
 
 export function wordParagraphStyleId(id: string) {

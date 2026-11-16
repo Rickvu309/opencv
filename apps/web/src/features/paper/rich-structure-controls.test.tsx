@@ -18,6 +18,7 @@ import {
 import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import * as flowMount from "../../../../../packages/paper-crdt/src/native-layout-flow-mount.ts"
 import { storedFlowFixture } from "../../../../../packages/paper-crdt/src/test/flow-fixture.ts"
+import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { RichStructureControls } from "./rich-structure-controls"
 
 const disposals: (() => void)[] = []
@@ -101,9 +102,11 @@ function setup() {
   const view = engine.prosemirrorView
   view.dom.tabIndex = 0
   const controls = render(
-    <RichStructureControls editor={editor} blocked={false}>
-      {null}
-    </RichStructureControls>
+    <TooltipProvider>
+      <RichStructureControls editor={editor} blocked={false}>
+        {null}
+      </RichStructureControls>
+    </TooltipProvider>
   )
   const caret = (id: string) =>
     act(() => {
@@ -229,18 +232,22 @@ it("does not offer Open for an unsafe stored target and disables the controls wh
     linkNeedsText: false,
   })
   controls.rerender(
-    <RichStructureControls editor={editor} blocked={false}>
-      {null}
-    </RichStructureControls>
+    <TooltipProvider>
+      <RichStructureControls editor={editor} blocked={false}>
+        {null}
+      </RichStructureControls>
+    </TooltipProvider>
   )
   fireEvent.click(screen.getByRole("button", { name: "Link", exact: true }))
   expect(await screen.findByRole("dialog", { name: "Edit link" })).toBeVisible()
   expect(screen.queryByRole("link", { name: "Open link" })).toBeNull()
   fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" })
   controls.rerender(
-    <RichStructureControls editor={editor} blocked>
-      {null}
-    </RichStructureControls>
+    <TooltipProvider>
+      <RichStructureControls editor={editor} blocked>
+        {null}
+      </RichStructureControls>
+    </TooltipProvider>
   )
   for (const button of screen.getAllByRole("button"))
     expect(button).toBeDisabled()
@@ -278,9 +285,7 @@ it("shows custom paragraph ids and disables indentation at the persisted nesting
   )
   act(() => engine.setTextCursorPosition("l3", "start"))
   expect(editor.formattingState().canIndent).toBe(false)
-  expect(
-    screen.getByRole("button", { name: "Increase list level" })
-  ).toBeDisabled()
+  expect(editor.formattingState().canIndent).toBe(false)
   const before = view.state.doc.toJSON()
   act(() => editor.listLevel("in"))
   expect(view.state.doc.toJSON()).toEqual(before)
@@ -296,13 +301,15 @@ it("shows custom paragraph ids and disables indentation at the persisted nesting
   })
   expect(editor.formattingState().paragraphStyle).toBe("custom-career")
   controls.rerender(
-    <RichStructureControls editor={editor} blocked={false}>
-      {null}
-    </RichStructureControls>
+    <TooltipProvider>
+      <RichStructureControls editor={editor} blocked={false}>
+        {null}
+      </RichStructureControls>
+    </TooltipProvider>
   )
   expect(
     screen.getByRole("combobox", { name: "Paragraph style" })
-  ).toHaveTextContent("custom-career")
+  ).toHaveTextContent("Custom style")
 })
 
 it("names only the invalid visible link field", async () => {
@@ -328,6 +335,7 @@ it("names only the invalid visible link field", async () => {
   expect(screen.getByRole("alert")).toHaveTextContent(
     /^Enter a website or email address\.$/
   )
+  expect(screen.getByLabelText("Link address")).toHaveFocus()
   expect(screen.getByLabelText("Link address")).toHaveAttribute(
     "aria-invalid",
     "true"
@@ -342,6 +350,11 @@ it("describes only the failed field when inserting a link at a caret", async () 
     target: { value: "example.com" },
   })
   fireEvent.click(screen.getByRole("button", { name: "Apply" }))
+  expect(screen.getByLabelText("Text to display")).toHaveFocus()
+  expect(screen.getByRole("button", { name: "Apply" })).toHaveAttribute(
+    "data-variant",
+    "primary"
+  )
   expect(screen.getByLabelText("Text to display")).toHaveAccessibleDescription(
     "Enter text to display."
   )

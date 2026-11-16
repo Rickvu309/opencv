@@ -4,6 +4,7 @@ import {
   styleIdSchema,
   resolveStyles,
   resolveInline,
+  effectiveRunInline,
   resolveParagraph,
   paperParagraphStyles,
   paperParagraphStyle,
@@ -73,12 +74,11 @@ export function formattedStyles(document: DocumentPresentation) {
       ...value(resolveParagraph(styles, reference ?? null, direct)),
     }
   }
-  function effectiveInline(overrides: InlinePresentation) {
-    const { characterStyle: reference, ...direct } = overrides
-    return {
-      ...defaults.inline,
-      ...value(resolveInline(styles, reference ?? null, direct)),
-    }
+  function effectiveInline(
+    overrides: InlinePresentation,
+    paragraphStyle?: string
+  ) {
+    return value(effectiveRunInline(document, paragraphStyle, overrides))
   }
   function withoutIndent(input: ParagraphPresentation) {
     const result = { ...input }

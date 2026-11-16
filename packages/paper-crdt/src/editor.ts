@@ -41,6 +41,12 @@ export function mountRichPaperEditor(
     }
     view.dom.setAttribute("aria-label", "Document content")
     view.dom.style.outline = "none"
+    const adjustIndent = (delta: 360 | -360) => {
+      const list = commands.formattingState().list
+      if (list === "bulletListItem" || list === "numberedListItem")
+        commands.listLevel(delta > 0 ? "in" : "out")
+      else mounted.adjustIndent(delta)
+    }
     const shortcuts = (event: KeyboardEvent) => {
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return
       const alignments = new Map([
@@ -57,7 +63,7 @@ export function mountRichPaperEditor(
         mounted.formatParagraph({ alignment })
       } else if (!event.shiftKey && (event.key === "[" || event.key === "]")) {
         event.preventDefault()
-        mounted.adjustIndent(event.key === "]" ? 360 : -360)
+        adjustIndent(event.key === "]" ? 360 : -360)
       }
     }
     view.dom.addEventListener("keydown", shortcuts)
@@ -105,7 +111,7 @@ export function mountRichPaperEditor(
       },
       adjustIndent(delta: 360 | -360) {
         if (!active) throw new Error("Paper editor is closed")
-        mounted.adjustIndent(delta)
+        adjustIndent(delta)
         view.focus()
       },
       activeFormatting() {

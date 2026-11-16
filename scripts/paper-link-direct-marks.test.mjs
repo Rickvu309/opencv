@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process"
 import {
   consumers,
+  detectStyleCascade,
   detectLinkCompatibility,
   detectLinkDecorations as detectDecorations,
 } from "./lib/paper-rich-structure.mjs"
@@ -123,4 +124,80 @@ test("explicit link color, named styles and legacy packages survive rich link de
     ),
     []
   )
+})
+
+test("the full style cascade and shared Docs groups reject their introducing mistakes", () => {
+  for (const path of [
+    "packages/paper-crdt/src/native-formatting-decorations.ts",
+    "packages/paper-crdt/src/editor.ts",
+    "packages/paper-crdt/src/native-layout-flow-mount.ts",
+    "packages/paper-crdt/src/native-layout-formatting.ts",
+    "apps/api/src/paper/native-output/formatted.ts",
+    "packages/domain/src/paper-doc/paragraph-styles.ts",
+    "packages/domain/src/paper-doc/presentation-styles.ts",
+    "apps/web/src/features/paper/rich-structure-controls.tsx",
+    "apps/web/src/features/paper/rich-text-formatting.tsx",
+  ]) {
+    const before = execFileSync(
+      "git",
+      [
+        "show",
+        `${path.endsWith("native-layout-formatting.ts") ? "2d8c005a" : "6017f74c"}:${path}`,
+      ],
+      { encoding: "utf8" }
+    )
+    assert.ok(detectStyleCascade(before, path).length, path)
+    assert.deepEqual(
+      detectStyleCascade(
+        readFileSync(new URL(`../${path}`, import.meta.url), "utf8"),
+        path
+      ),
+      [],
+      path
+    )
+  }
+  const path = "packages/paper-crdt/src/native-formatting-decorations.ts"
+  assert.ok(
+    detectStyleCascade(
+      "effectiveInline(presentation, { ...paragraphInlineValues(style), ...direct })",
+      path
+    ).length
+  )
+  assert.deepEqual(
+    detectStyleCascade("effectiveInline(presentation, direct, style)", path),
+    []
+  )
+})
+
+test("character inheritance and list indent dispatch have clean and mistake fixtures", () => {
+  for (const [path, mistake, clean] of [
+    [
+      "packages/domain/src/paper-doc/presentation-styles.ts",
+      "{ ...paragraph, ...character.value, ...direct }",
+      "overlay(overlay(paragraph, character.value), direct)",
+    ],
+    [
+      "apps/web/src/features/paper/rich-text-formatting.tsx",
+      "<RichTextParagraphGroup />",
+      "<RichTextParagraphGroup />; controls: structure",
+    ],
+    [
+      "packages/paper-crdt/src/native-layout-formatting.ts",
+      "effectiveInline(presentation, direct)",
+      "effectiveInline(presentation, direct, effectiveParagraphStyle())",
+    ],
+    [
+      "apps/api/src/paper/native-output/formatted.ts",
+      "const inherited = paragraphInlineValues(paragraphStyle)",
+      "const inherited = direct.characterStyle ? styles.effectiveInline(direct) : paragraphInlineValues(paragraphStyle)",
+    ],
+    [
+      "packages/paper-crdt/src/editor.ts",
+      "mounted.adjustIndent(delta)",
+      "else mounted.adjustIndent(delta)",
+    ],
+  ]) {
+    assert.ok(detectStyleCascade(mistake, path).length)
+    assert.deepEqual(detectStyleCascade(clean, path), [])
+  }
 })

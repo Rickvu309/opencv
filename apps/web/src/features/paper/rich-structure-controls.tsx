@@ -1,4 +1,4 @@
-import { useEffect, useReducer, type ReactNode } from "react"
+import { useEffect, useReducer, useRef, type ReactNode } from "react"
 import { isSafeHref } from "@workspace/domain"
 import { normalizeLinkHref } from "@workspace/domain/internal/paper-presentation"
 import type { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
@@ -18,16 +18,9 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@workspace/ui/components/dialog"
-import {
-  Undo2,
-  Redo2,
-  List,
-  ListOrdered,
-  IndentIncrease,
-  IndentDecrease,
-  Link,
-  RemoveFormatting,
-} from "lucide-react"
+import { List, ListOrdered, Link, RemoveFormatting } from "lucide-react"
+
+import { ToolbarHint } from "./rich-text-toolbar-control.tsx"
 
 type Editor = ReturnType<typeof mountRichPaperEditor>
 type LinkDialog =
@@ -70,9 +63,10 @@ function linkDialogReducer(state: LinkDialog, action: LinkAction): LinkDialog {
       return state.kind === "open"
         ? {
             ...state,
-            error: !normalizeLinkHref(state.href)
-              ? "Enter a website or email address."
-              : "Enter text to display.",
+            error:
+              state.needsText && !state.text.trim()
+                ? "Enter text to display."
+                : "Enter a website or email address.",
           }
         : state
     case "close":
@@ -87,10 +81,14 @@ export function RichStructureControls({
 }: {
   editor: Editor | null
   blocked: boolean
-  children: ReactNode
+  children:
+    | ReactNode
+    | ((slots: { style: ReactNode; controls: ReactNode }) => ReactNode)
 }) {
   const [, refresh] = useReducer((value: number) => value + 1, 0)
   const [dialog, dispatch] = useReducer(linkDialogReducer, { kind: "closed" })
+  const textInput = useRef<HTMLInputElement>(null)
+  const addressInput = useRef<HTMLInputElement>(null)
   const link = dialog.kind === "open" ? dialog : null
   const error = link?.error ?? ""
   useEffect(() => editor?.subscribe(refresh), [editor])
@@ -114,18 +112,6 @@ export function RichStructureControls({
     if (!open) returnToDocument()
   }
   const controls = [
-    {
-      label: "Undo",
-      Icon: Undo2,
-      action: () => editor?.undo(),
-      disabled: !state?.canUndo,
-    },
-    {
-      label: "Redo",
-      Icon: Redo2,
-      action: () => editor?.redo(),
-      disabled: !state?.canRedo,
-    },
     {
       label: "Link",
       Icon: Link,
@@ -151,72 +137,65 @@ export function RichStructureControls({
       pressed: state?.list === "numberedListItem",
     },
     {
-      label: "Increase list level",
-      Icon: IndentIncrease,
-      action: () => editor?.listLevel("in"),
-      disabled: !state?.canIndent,
-    },
-    {
-      label: "Decrease list level",
-      Icon: IndentDecrease,
-      action: () => editor?.listLevel("out"),
-      disabled: !state?.canOutdent,
-    },
-    {
       label: "Remove formatting",
       Icon: RemoveFormatting,
       action: () => editor?.clearFormatting(),
     },
   ]
+  const styleControl = (
+    <Select
+      onOpenChangeComplete={finishInteraction}
+      value={state?.mixedStyle ? "mixed" : (state?.paragraphStyle ?? "normal")}
+      disabled={disabled}
+      onValueChange={(value) => {
+        const style = editor?.paragraphStyles.find((item) => item.id === value)
+        if (style) editor?.apply(() => editor.setParagraphStyle(style.id))
+      }}
+    >
+      <SelectTrigger
+        aria-label="Paragraph style"
+        className="min-h-11 w-36 shrink-0 border-transparent px-2 md:min-h-8"
+      >
+        <SelectValue>
+          {state?.mixedStyle
+            ? "Mixed styles"
+            : (editor?.paragraphStyles.find(
+                (style) => style.id === state?.paragraphStyle
+              )?.label ??
+              (state?.paragraphStyle ? "Custom style" : undefined) ??
+              "Normal text")}
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent finalFocus={returnToDocument}>
+        {state?.mixedStyle ? (
+          <SelectItem value="mixed" disabled className="min-h-11 md:min-h-8">
+            Mixed styles
+          </SelectItem>
+        ) : null}
+        {editor?.paragraphStyles.map((style) => (
+          <SelectItem
+            key={style.id}
+            value={style.id}
+            className="min-h-11 md:min-h-8"
+          >
+            {style.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  )
+  const structureControls = controls.map(control)
   return (
     <>
-      {controls.slice(0, 2).map(control)}
-      <Select
-        onOpenChangeComplete={finishInteraction}
-        value={
-          state?.mixedStyle ? "mixed" : (state?.paragraphStyle ?? "normal")
-        }
-        disabled={disabled}
-        onValueChange={(value) => {
-          const style = editor?.paragraphStyles.find(
-            (item) => item.id === value
-          )
-          if (style) editor?.apply(() => editor.setParagraphStyle(style.id))
-        }}
-      >
-        <SelectTrigger
-          aria-label="Paragraph style"
-          className="max-w-36 shrink-0 data-[size=default]:h-11 data-[size=default]:md:h-8"
-        >
-          <SelectValue>
-            {state?.mixedStyle
-              ? "Mixed styles"
-              : (editor?.paragraphStyles.find(
-                  (style) => style.id === state?.paragraphStyle
-                )?.label ??
-                state?.paragraphStyle ??
-                "Normal text")}
-          </SelectValue>
-        </SelectTrigger>
-        <SelectContent finalFocus={returnToDocument}>
-          {state?.mixedStyle ? (
-            <SelectItem value="mixed" disabled className="min-h-11 md:min-h-8">
-              Mixed styles
-            </SelectItem>
-          ) : null}
-          {editor?.paragraphStyles.map((style) => (
-            <SelectItem
-              key={style.id}
-              value={style.id}
-              className="min-h-11 md:min-h-8"
-            >
-              {style.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      {children}
-      {controls.slice(2).map(control)}
+      {typeof children === "function" ? (
+        children({ style: styleControl, controls: structureControls })
+      ) : (
+        <>
+          {styleControl}
+          {children}
+          {structureControls}
+        </>
+      )}
       <Dialog
         onOpenChangeComplete={finishInteraction}
         open={link !== null}
@@ -237,11 +216,21 @@ export function RichStructureControls({
             className="grid gap-4"
             onSubmit={(event) => {
               event.preventDefault()
-              const applied = editor?.apply(() =>
-                editor.setLink(link?.href ?? "", link?.text)
-              )
+              const valid =
+                normalizeLinkHref(link?.href ?? "") &&
+                (!link?.needsText || link.text.trim())
+              const applied =
+                valid &&
+                editor?.apply(() =>
+                  editor.setLink(link?.href ?? "", link?.text)
+                )
               if (!applied) {
                 dispatch({ type: "error" })
+                const firstInvalid =
+                  link?.needsText && !link.text.trim()
+                    ? textInput
+                    : addressInput
+                firstInvalid.current?.focus()
                 return
               }
               dispatch({ type: "close" })
@@ -252,6 +241,7 @@ export function RichStructureControls({
               <label className="grid gap-2 text-sm">
                 Text to display
                 <Input
+                  ref={textInput}
                   className="min-h-11"
                   autoFocus
                   aria-invalid={error === "Enter text to display."}
@@ -271,6 +261,7 @@ export function RichStructureControls({
             <label className="grid gap-2 text-sm">
               Link address
               <Input
+                ref={addressInput}
                 className="min-h-11"
                 autoFocus={!link?.needsText}
                 type="text"
@@ -325,6 +316,7 @@ export function RichStructureControls({
               ) : null}
               <Button
                 type="submit"
+                variant="primary"
                 className="ml-auto min-h-11"
                 disabled={disabled}
               >
@@ -338,23 +330,23 @@ export function RichStructureControls({
   )
   function control(item: (typeof controls)[number]) {
     return (
-      <Button
-        key={item.label}
-        variant={item.pressed ? "secondary" : "ghost"}
-        size="icon"
-        className="size-11 shrink-0 md:size-8"
-        aria-label={item.label}
-        title={item.label}
-        aria-pressed={item.pressed}
-        disabled={disabled || item.disabled}
-        onMouseDown={(event) => event.preventDefault()}
-        onClick={() => {
-          editor?.apply(item.action)
-          refresh()
-        }}
-      >
-        <item.Icon />
-      </Button>
+      <ToolbarHint key={item.label} label={item.label}>
+        <Button
+          variant={item.pressed ? "secondary" : "ghost"}
+          size="icon"
+          className="size-11 shrink-0 md:size-8"
+          aria-label={item.label}
+          aria-pressed={item.pressed}
+          disabled={disabled || item.disabled}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => {
+            editor?.apply(item.action)
+            refresh()
+          }}
+        >
+          <item.Icon />
+        </Button>
+      </ToolbarHint>
     )
   }
 }

@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from "node:crypto"
-import { writeFile, mkdir } from "node:fs/promises"
+import { writeFile, mkdtemp, rm } from "node:fs/promises"
 import { join } from "node:path"
-import { homedir } from "node:os"
+import { tmpdir } from "node:os"
 import { serve } from "@hono/node-server"
 import {
   canonicalPaper,
@@ -277,9 +277,12 @@ it("downloads real saved CV and Letter HTTP edits, refuses stale requests and pr
             )
           ).status
         ).toBe(404)
-        const artifacts = join(homedir(), "tmp/paper-council/1581/docx")
-        await mkdir(artifacts, { recursive: true })
-        await writeFile(join(artifacts, `${kind}.docx`), bytes)
+        const artifacts = await mkdtemp(join(tmpdir(), "paper-word-"))
+        try {
+          await writeFile(join(artifacts, `${kind}.docx`), bytes)
+        } finally {
+          await rm(artifacts, { recursive: true, force: true })
+        }
       } finally {
         documentClient.ydoc.destroy()
       }

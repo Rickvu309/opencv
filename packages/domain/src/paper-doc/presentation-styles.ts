@@ -1,5 +1,9 @@
+import type { DocumentPresentation } from "./presentation-edit.js"
 import { z } from "zod"
-import { paragraphStyleValues } from "./paragraph-styles.js"
+import {
+  paragraphInlineValues,
+  paragraphStyleValues,
+} from "./paragraph-styles.js"
 import {
   inlineSchema,
   inlinePatchSchema,
@@ -128,5 +132,28 @@ export function resolveParagraph(
   return parse(
     paragraphSchema,
     overlay(style?.values ?? builtin ?? {}, patch.value)
+  )
+}
+
+export function effectiveRunInline(
+  document: DocumentPresentation,
+  paragraphStyle: string | null | undefined,
+  marks: InlinePresentation
+): Result<InlinePresentation> {
+  const styles = resolveStyles(document.styles)
+  if (styles.kind === "refused") return styles
+  const { characterStyle: defaultStyle, ...defaults } = document.inline
+  const base = resolveInline(styles.value, defaultStyle ?? null, defaults)
+  if (base.kind === "refused") return base
+  const { characterStyle, ...direct } = marks
+  const character = resolveInline(styles.value, characterStyle ?? null, {})
+  if (character.kind === "refused") return character
+  const paragraph = overlay(
+    base.value,
+    paragraphInlineValues(paragraphStyle ?? document.paragraph.paragraphStyle)
+  )
+  return parse(
+    inlineSchema,
+    overlay(overlay(paragraph, character.value), direct)
   )
 }

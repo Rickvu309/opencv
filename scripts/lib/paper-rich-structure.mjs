@@ -94,7 +94,6 @@ export const consumers = [
   "packages/paper-crdt/src/native-formatting-decorations.ts",
   "packages/paper-crdt/src/native-layout-flow-mount.ts",
   "apps/api/src/paper/native-output/formatted.ts",
-  "apps/api/src/paper/native-output/rich-text.ts",
   "apps/api/src/paper/native-output/package.ts",
 ]
 
@@ -159,7 +158,10 @@ export function detectLinkDecorations(text, path) {
 }
 
 export function detectRichStructure(text, path) {
-  const hits = detectLinkCompatibility(text, path)
+  const hits = [
+    ...detectLinkCompatibility(text, path),
+    ...detectStyleCascade(text, path),
+  ]
   if (
     path === "packages/domain/src/paper-doc/paragraph-styles.ts" &&
     /style\s*\?\?\s*["']normal["']/.test(text)
@@ -214,8 +216,8 @@ export function detectRichStructure(text, path) {
 
   if (
     richControls &&
-    (!text.includes("normalizeLinkHref(state.href)") ||
-      !/\?\?\s*state\?\.paragraphStyle/.test(text))
+    (!text.includes("normalizeLinkHref(link?.href") ||
+      !text.includes("Custom style"))
   )
     hits.push(
       "Rich controls must identify invalid fields and preserve custom style names"
@@ -259,5 +261,66 @@ export function detectLinkCompatibility(text, path) {
     !text.includes("input.richLinks && input.links.length")
   )
     hits.push("Hyperlink styles belong only to rich document packages")
+  return hits
+}
+
+export function detectStyleCascade(text, path) {
+  const hits = []
+  if (
+    /native-layout-(?:flow-mount|formatting)\.ts$/.test(path) &&
+    text.includes("effectiveInline(") &&
+    !text.includes("effectiveParagraphStyle(")
+  )
+    hits.push("Both toolbar readers must resolve the selected paragraph style")
+  if (
+    path.endsWith("paper-doc/presentation-styles.ts") &&
+    !text.includes("overlay(overlay(paragraph, character.value), direct)")
+  )
+    hits.push("The Word cascade must ignore unset direct properties")
+  if (
+    path.includes("paper-crdt/src/") ||
+    path.endsWith("native-output/formatted.ts")
+  ) {
+    if (/effectiveInline\([^;]*\.\.\.paragraphInlineValues\(/s.test(text))
+      hits.push("Paragraph styles must resolve below character styles")
+  }
+  if (
+    path.endsWith("paper-doc/paragraph-styles.ts") &&
+    !text.includes('style.id !== "normal"')
+  )
+    hits.push("Normal text must inherit document defaults")
+  if (
+    path.endsWith("native-output/formatted.ts") &&
+    text.includes("const inherited =") &&
+    !/const inherited = direct\.characterStyle\s*\?/.test(text)
+  )
+    hits.push(
+      "Word inheritance must include the named character style before direct marks"
+    )
+  if (
+    path.endsWith("editor.ts") &&
+    text.includes("mounted.adjustIndent(delta)") &&
+    !text.includes("else mounted.adjustIndent(delta)")
+  )
+    hits.push(
+      "The shared indent command must handle lists before paragraph indentation"
+    )
+  if (path.endsWith("rich-structure-controls.tsx")) {
+    if (/title=|Undo2|Redo2|IndentIncrease|IndentDecrease/.test(text))
+      hits.push(
+        "Structure controls share the Docs tooltip, indent and history groups"
+      )
+    if (
+      !text.includes("firstInvalid.current?.focus()") ||
+      !text.includes('variant="primary"')
+    )
+      hits.push("Link errors focus the invalid field and Apply is primary")
+  }
+  if (
+    path.endsWith("rich-text-formatting.tsx") &&
+    text.includes("<RichTextParagraphGroup") &&
+    !text.includes("controls: structure")
+  )
+    hits.push("Structure controls belong inside the compact More disclosure")
   return hits
 }

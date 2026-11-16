@@ -6,7 +6,6 @@ import { Plugin } from "@tiptap/pm/state"
 import {
   inlineSchema,
   effectiveRunDecorations,
-  paragraphInlineValues,
   effectiveParagraphStyle,
   type InlinePresentation,
 } from "@workspace/domain/internal/paper-presentation"
@@ -101,16 +100,15 @@ export function mountPrivateFlow(
     const props = block.props
     const style = "paragraphStyle" in props ? props.paragraphStyle : undefined
     const direct = canonicalStyles(editor.getActiveStyles())
-    const effective = effectiveInline(readPresentationMeta(binding.doc), {
-      ...paragraphInlineValues(
-        effectiveParagraphStyle(
-          block.type,
-          style,
-          "level" in props ? props.level : undefined
-        )
-      ),
-      ...direct,
-    })
+    const effective = effectiveInline(
+      readPresentationMeta(binding.doc),
+      direct,
+      effectiveParagraphStyle(
+        block.type,
+        style,
+        "level" in props ? props.level : undefined
+      )
+    )
     return {
       ...effective,
       ...effectiveRunDecorations(

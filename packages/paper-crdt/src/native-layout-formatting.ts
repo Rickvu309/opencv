@@ -4,7 +4,6 @@ import { yUndoPluginKey } from "y-prosemirror"
 import {
   effectiveRunDecorations,
   effectiveParagraphStyle,
-  paragraphInlineValues,
   inlinePatchSchema,
   inlineSchema,
   paragraphSchema,
@@ -123,16 +122,15 @@ export function flowFormatting(binding: FlowBinding, view: EditorView) {
               .map((mark) => [mark.type.name, mark.attrs.stringValue])
           )
         )
-        const inherited = effectiveInline(presentation, {
-          ...paragraphInlineValues(
-            effectiveParagraphStyle(
-              node.type.name,
-              canonicalProps(node.attrs).paragraphStyle,
-              node.attrs.level
-            )
-          ),
-          ...direct,
-        })
+        const inherited = effectiveInline(
+          presentation,
+          direct,
+          effectiveParagraphStyle(
+            node.type.name,
+            canonicalProps(node.attrs).paragraphStyle,
+            node.attrs.level
+          )
+        )
         return {
           ...inherited,
           ...effectiveRunDecorations(

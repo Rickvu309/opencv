@@ -75,6 +75,7 @@ export {
   styleSchema,
   resolveStyles,
   resolveInline,
+  effectiveRunInline,
   resolveParagraph,
 } from "./paper-doc/presentation-styles.js"
 export {

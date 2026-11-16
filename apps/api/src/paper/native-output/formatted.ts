@@ -86,11 +86,13 @@ function compileDocument(
   ): string {
     return content
       .map(({ text, href, ...direct }) => {
-        const inherited = paragraphInlineValues(paragraphStyle)
-        const effective = styles.effectiveInline({
-          ...inherited,
-          ...direct,
-        })
+        const inherited = direct.characterStyle
+          ? styles.effectiveInline(
+              { characterStyle: direct.characterStyle },
+              paragraphStyle
+            )
+          : paragraphInlineValues(paragraphStyle)
+        const effective = styles.effectiveInline(direct, paragraphStyle)
         const richLink = generation === "rich" && Boolean(href)
         const decorations = effectiveRunDecorations(direct, richLink, effective)
         const richAppearance = {
@@ -109,12 +111,7 @@ function compileDocument(
             effective.italic === inherited.italic
               ? undefined
               : effective.italic,
-          strike:
-            generation === "rich"
-              ? effective.strike === inherited.strike
-                ? undefined
-                : decorations.strike
-              : direct.strike,
+          strike: generation === "rich" ? decorations.strike : direct.strike,
         })
         return wordRun(
           text,

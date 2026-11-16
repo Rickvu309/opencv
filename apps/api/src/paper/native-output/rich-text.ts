@@ -1,5 +1,4 @@
 import type { RichText } from "@workspace/domain"
-import { effectiveRunDecorations } from "@workspace/domain/internal/paper-presentation"
 
 export function xml(value: string): string {
   return value
@@ -74,11 +73,10 @@ export function wordRun(
 export function richRuns(runs: RichText, links: ExternalLink[]): string {
   return runs
     .map((run) => {
-      const decorations = effectiveRunDecorations(run, false)
       const properties = [
         run.bold ? "<w:b/>" : "",
         run.italic ? "<w:i/>" : "",
-        run.underline && decorations.underline ? '<w:u w:val="single"/>' : "",
+        run.underline ? '<w:u w:val="single"/>' : "",
       ].join("")
       return wordRun(run.text, properties, run.href, links)
     })
