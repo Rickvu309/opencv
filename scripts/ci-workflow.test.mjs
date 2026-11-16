@@ -10,6 +10,7 @@ import {
   detect as formalDetect,
   modelChanges,
   policyChoice,
+  walkCoverageErrors,
 } from "./lib/ci-workflow.mjs"
 
 const SPAWN_TIMEOUT_MS = 30_000
@@ -301,5 +302,69 @@ test("policy skips an event with no pull request and fails a pull request event 
   assert.match(
     queue.stdout,
     /::error title=POLICY::no pull request number in the merge_group event/
+  )
+})
+test("the Paper walk keeps all 200 seeds while the other web shards exclude only its file", () => {
+  const walk = section("test-web-walk")
+  assert.match(walk, /first-seed: \[1, 101\]/)
+  assert.match(walk, /WALK_FIRST_SEED: \$\{\{ matrix.first-seed \}\}/)
+  assert.match(walk, /WALK_SEEDS: 100/)
+  assert.doesNotMatch(walk, /WALK_STEPS|WALK_SEED_LIST|WALK_SURVEY/)
+  assert.match(
+    walk,
+    /vitest run --config vitest.config.ts src\/features\/paper-page\/canvas-walk\.test\.ts/
+  )
+  assert.match(section("test-web"), /CI_SEPARATE_PAPER_WALK: "1"/)
+})
+
+test("walk coverage rejects duplicate or lost files and accepts the partition", () => {
+  const walk = "[isolated] src/features/paper-page/canvas-walk.test.ts"
+  const other = "[isolated] src/features/app-shell/app-shell.test.tsx"
+  const fixture = {
+    complete: [walk, other],
+    ordinary: [other],
+    dedicated: [walk],
+  }
+  assert.deepEqual(walkCoverageErrors(fixture), [])
+  assert.ok(walkCoverageErrors({ ...fixture, ordinary: [walk, other] }).length)
+  assert.ok(walkCoverageErrors({ ...fixture, ordinary: [] }).length)
+  assert.ok(walkCoverageErrors({ ...fixture, dedicated: [] }).length)
+})
+
+test("Vitest lists every ordinary file once and the dedicated walk separately", () => {
+  function files(separate, filters = []) {
+    const result = spawnSync(
+      "pnpm",
+      [
+        "exec",
+        "vitest",
+        "list",
+        "--config",
+        "vitest.config.ts",
+        "--filesOnly",
+        ...filters,
+      ],
+      {
+        cwd: join(root, "apps/web"),
+        env: { ...process.env, CI_SEPARATE_PAPER_WALK: separate },
+        encoding: "utf8",
+        timeout: SPAWN_TIMEOUT_MS,
+      }
+    )
+    assert.equal(result.status, 0, result.stderr)
+    return result.stdout
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => /^\[(shared-modules|isolated)\] src\//.test(line))
+  }
+  const complete = files("")
+  assert.ok(complete.length > 200)
+  assert.deepEqual(
+    walkCoverageErrors({
+      complete,
+      ordinary: files("1"),
+      dedicated: files("", ["src/features/paper-page/canvas-walk.test.ts"]),
+    }),
+    []
   )
 })
