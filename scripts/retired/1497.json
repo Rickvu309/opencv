@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "scripts/temp-dirs.test.mjs",
+    "because": "The folder guard must not assert inner suite success; the replacement replays the real inner failure through the skip and merge refusal.",
+    "replacedBy": "scripts/temp-dirs-failure.test.mjs",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "18f2ca5a8a484913c14a8d58c436389b211387c2",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]
