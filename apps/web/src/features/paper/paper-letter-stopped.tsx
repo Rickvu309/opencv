@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useSyncExternalStore } from "react"
+import { useEffect, useReducer, useRef, useSyncExternalStore } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Button } from "@workspace/ui/components/button"
 
@@ -14,7 +14,24 @@ import {
   subscribeStoppedLetter,
 } from "./paper-letter-resume.ts"
 
-type NoticePhase = "idle" | "busy" | "failed"
+type NoticeState = {
+  phase: "idle" | "busy" | "failed"
+  error: string | null
+}
+
+type NoticeAction =
+  { type: "busy" } | { type: "idle" } | { type: "failed"; error: string }
+
+function noticeReducer(_state: NoticeState, action: NoticeAction): NoticeState {
+  switch (action.type) {
+    case "busy":
+      return { phase: "busy", error: null }
+    case "idle":
+      return { phase: "idle", error: null }
+    case "failed":
+      return { phase: "failed", error: action.error }
+  }
+}
 
 export function LetterStoppedNotice({
   docId,
@@ -35,8 +52,10 @@ export function LetterStoppedNotice({
   const session = authClient.useSession()
   const owner = session.data?.user.id ?? ""
   const email = session.data?.user.email
-  const [phase, setPhase] = useState<NoticePhase>("idle")
-  const [error, setError] = useState<string | null>(null)
+  const [notice, dispatchNotice] = useReducer(noticeReducer, {
+    phase: "idle",
+    error: null,
+  })
   const abortRef = useRef<AbortController | null>(null)
 
   useEffect(() => {
@@ -64,8 +83,7 @@ export function LetterStoppedNotice({
     if (!current || current.docId !== docId) return
     const controller = new AbortController()
     abortRef.current = controller
-    setPhase("busy")
-    setError(null)
+    dispatchNotice({ type: "busy" })
     try {
       await redraftStoppedLetter({
         record: current,
@@ -76,31 +94,33 @@ export function LetterStoppedNotice({
         signal: controller.signal,
         onWritten,
       })
-      if (!controller.signal.aborted) setPhase("idle")
+      if (!controller.signal.aborted) dispatchNotice({ type: "idle" })
     } catch (cause) {
       if (isAbortError(cause) || controller.signal.aborted) {
-        setPhase("idle")
+        dispatchNotice({ type: "idle" })
         return
       }
-      setPhase("failed")
-      setError(messageOf(cause, "Could not draft the letter. Try again."))
+      dispatchNotice({
+        type: "failed",
+        error: messageOf(cause, "Could not draft the letter. Try again."),
+      })
     }
   }
 
   function stop() {
     abortRef.current?.abort()
-    setPhase("idle")
+    dispatchNotice({ type: "idle" })
   }
 
-  const writing = phase === "busy"
+  const writing = notice.phase === "busy"
   return (
     <section
       data-slot="letter-stopped-notice"
       className="mx-auto flex w-[min(100%-3rem,816px)] flex-wrap items-center gap-x-3 gap-y-2 pt-4"
     >
-      {phase === "failed" ? (
+      {notice.phase === "failed" ? (
         <p role="alert" className="text-sm text-destructive">
-          {error}
+          {notice.error}
         </p>
       ) : (
         <p

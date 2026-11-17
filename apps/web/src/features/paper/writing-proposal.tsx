@@ -1,4 +1,4 @@
-import { useEffect, useState, useSyncExternalStore } from "react"
+import { useEffect, useReducer, useSyncExternalStore } from "react"
 import { Button } from "@workspace/ui/components/button"
 
 import {
@@ -11,6 +11,15 @@ import {
 import { subscribeWritingRefresh } from "@/lib/writing-refresh.ts"
 
 const DOCK_MISSING = "Open Coach from the dock to review this change."
+
+type ReviewErrorAction = { type: "set"; message: string | null }
+
+function reviewErrorReducer(
+  _state: string | null,
+  action: ReviewErrorAction
+): string | null {
+  return action.message
+}
 
 function suggestionLine(count: number) {
   const changes = Math.max(count, 1)
@@ -44,7 +53,10 @@ export function WritingProposalCard({ docId }: { docId: string }) {
     writingOutcome,
     () => null
   )
-  const [reviewError, setReviewError] = useState<string | null>(null)
+  const [reviewError, dispatchReviewError] = useReducer(
+    reviewErrorReducer,
+    null
+  )
   useEffect(
     () =>
       subscribeWritingRefresh(() => {
@@ -62,10 +74,10 @@ export function WritingProposalCard({ docId }: { docId: string }) {
   function review() {
     const dock = document.querySelector("[data-dock-coach]")
     if (!(dock instanceof HTMLElement)) {
-      setReviewError(DOCK_MISSING)
+      dispatchReviewError({ type: "set", message: DOCK_MISSING })
       return
     }
-    setReviewError(null)
+    dispatchReviewError({ type: "set", message: null })
     openCoach(dock)
   }
 
