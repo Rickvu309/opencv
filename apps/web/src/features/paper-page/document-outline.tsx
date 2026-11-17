@@ -120,11 +120,9 @@ export function PaperDocumentOutline({
         <PopoverContent
           side="right"
           align="center"
-          className="w-64 max-w-[calc(100vw-5rem)] motion-pop"
+          aria-label="Headings"
+          className="w-max max-w-[min(13rem,calc(100vw-5rem))] min-w-40 motion-pop gap-0 p-1.5"
         >
-          <p className="px-2 py-1 text-xs text-muted-foreground">
-            On this page
-          </p>
           {headings.map((heading, index) => (
             <Button
               variant="ghost"
