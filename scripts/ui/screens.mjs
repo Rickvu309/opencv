@@ -548,9 +548,20 @@ export const SCREENS = [
     steps: [
       { waitFor: { role: "button", name: "Skip for now" } },
       { click: { role: "button", name: "Skip for now" } },
-      { waitFor: { role: "button", name: "Scan" } },
-      { click: { role: "button", name: "Scan" } },
+      { waitFor: { role: "button", name: "View example inbox" } },
+      { click: { role: "button", name: "View example inbox" } },
       { waitFor: { text: "Regional bank" } },
+    ],
+  },
+  {
+    id: "inbox-open",
+    route: "/inbox",
+    steps: [
+      { waitFor: { role: "button", name: "View example inbox" } },
+      { click: { role: "button", name: "View example inbox" } },
+      { waitFor: { selector: '[data-slot="inbox-row"]' } },
+      { click: { selector: '[data-slot="inbox-row"]' } },
+      { waitFor: { role: "region", name: "Reading pane" } },
     ],
   },
   {
