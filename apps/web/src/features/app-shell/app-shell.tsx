@@ -382,10 +382,10 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
           onExpand={() => dispatch({ type: "panel_expanded" })}
           onClose={closePanel}
         >
-          {(controls) => (
+          {(controls, presentation) => (
             <CoachWorkspace
               chatId={panel.chatId}
-              presentation="compact"
+              presentation={presentation}
               headerActions={controls}
             />
           )}

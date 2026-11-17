@@ -20,7 +20,7 @@ export function ChatView({
       <ChatLog
         className={cn(
           chatColumn,
-          "[&_[data-slot=message-content]]:max-w-[75ch] [&_[data-slot=message-content]]:text-[15px] [&_[data-slot=message-content]]:leading-[1.5]",
+          "[&_[data-slot=message-content]]:text-[15px] [&_[data-slot=message-content]]:leading-[1.5] [&_[data-slot=response]]:max-w-[75ch]",
           presentation === "compact" ? undefined : "gap-8 pt-6 pb-4 text-base"
         )}
         viewportClassName="[scrollbar-gutter:auto]!"

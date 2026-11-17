@@ -129,6 +129,7 @@ export function CoachDock({
   const [modeMenuOpen, modeMenuDispatch] = useReducer(menuReducer, false)
   const { mode, setMode, plan } = useCoachMode()
   const held = Boolean(holdReason)
+  const showHold = held && draft.trim().length > 0
   const canSend = draft.trim().length > 0 && !disabled && !held
 
   function handleMenuAction(id: MenuId) {
@@ -392,7 +393,7 @@ export function CoachDock({
           <ArrowUp className="size-4" />
         </Button>
       )}
-      {held ? (
+      {held && !showHold ? (
         <span id={sendHoldId} className="sr-only">
           {holdReason}
         </span>
@@ -400,7 +401,7 @@ export function CoachDock({
     </>
   )
 
-  const composer = (
+  const field = (
     <PromptInput
       data-slot="coach-composer"
       data-pen-surface="coach"
@@ -419,6 +420,20 @@ export function CoachDock({
       tools={tools}
       actions={actions}
     />
+  )
+  const composer = showHold ? (
+    <div className="flex flex-col gap-1.5">
+      <p
+        id={sendHoldId}
+        data-slot="coach-send-hold"
+        className="px-3 text-xs leading-4 text-muted-foreground"
+      >
+        {holdReason}
+      </p>
+      {field}
+    </div>
+  ) : (
+    field
   )
   return notice ? (
     <div

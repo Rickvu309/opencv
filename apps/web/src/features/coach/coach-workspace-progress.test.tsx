@@ -132,9 +132,17 @@ describe("Coach workspace shows streamed progress", () => {
     expect(composer).toBeEnabled()
     expect(composer).toHaveAttribute("placeholder", "Approve or deny")
     expect(composer).not.toHaveFocus()
+    expect(document.querySelector("[data-slot='coach-send-hold']")).toBeNull()
     fireEvent.change(composer, { target: { value: "Why this wording?" } })
+    const heldSend = screen.getByRole("button", { name: "Send" })
     expect(composer).toHaveValue("Why this wording?")
-    expect(send).toBeDisabled()
+    expect(heldSend).toBeDisabled()
+    expect(heldSend).toHaveAccessibleDescription("Approve or deny above")
+    expect(screen.getByText("Approve or deny above")).toBeVisible()
+    expect(screen.getByText("Approve or deny above")).toHaveAttribute(
+      "data-slot",
+      "coach-send-hold"
+    )
     expect(rowStatuses()).toEqual([])
     expect(screen.queryByText(/Working, \d+s/)).toBeNull()
     expect(working()).toBeNull()

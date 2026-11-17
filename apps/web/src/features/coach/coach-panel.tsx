@@ -1,4 +1,4 @@
-import { cloneElement, isValidElement, type ReactNode } from "react"
+import type { ReactNode } from "react"
 import { Maximize2, Minus, X } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
@@ -6,13 +6,8 @@ import { Button } from "@workspace/ui/components/button"
 import "./design/coach-panel.pen.css"
 import "./coach-panel-sheet.css"
 
-function withPresentation(node: ReactNode, presentation: "page" | "compact") {
-  if (!isValidElement<{ presentation?: "page" | "compact" }>(node)) return node
-  if (typeof node.type !== "function") return node
-  return cloneElement(node, { presentation })
-}
-
 export type CoachPanelMode = "dock" | "side" | "full"
+export type CoachPresentation = "page" | "compact"
 
 type CoachPanelProps = {
   title: string
@@ -21,7 +16,7 @@ type CoachPanelProps = {
   onMinimize: () => void
   onExpand: () => void
   onClose: () => void
-  children: (controls: ReactNode) => ReactNode
+  children: (controls: ReactNode, presentation: CoachPresentation) => ReactNode
 }
 
 export function CoachPanel({
@@ -43,42 +38,40 @@ export function CoachPanel({
       aria-label={title}
       className="flex h-full min-h-0 w-full flex-1 flex-col bg-background duration-(--duration-panel) ease-(--ease-panel)"
     >
-      {withPresentation(
-        children(
-          <>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="size-11 shrink-0 rounded-[6px] max-md:hidden md:size-7"
-              aria-label="Minimize"
-              onClick={onMinimize}
-            >
-              <Minus />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="size-11 shrink-0 rounded-[6px] max-md:hidden md:size-7"
-              aria-label="Expand"
-              aria-pressed={mode === "full"}
-              onClick={onExpand}
-            >
-              <Maximize2 />
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon-sm"
-              className="size-11 shrink-0 rounded-[6px] md:size-7"
-              aria-label="Close"
-              onClick={onClose}
-            >
-              <X />
-            </Button>
-          </>
-        ),
+      {children(
+        <>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="size-11 shrink-0 rounded-[6px] max-md:hidden md:size-7"
+            aria-label="Minimize"
+            onClick={onMinimize}
+          >
+            <Minus />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="size-11 shrink-0 rounded-[6px] max-md:hidden md:size-7"
+            aria-label="Expand"
+            aria-pressed={mode === "full"}
+            onClick={onExpand}
+          >
+            <Maximize2 />
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="size-11 shrink-0 rounded-[6px] md:size-7"
+            aria-label="Close"
+            onClick={onClose}
+          >
+            <X />
+          </Button>
+        </>,
         mode === "full" ? "page" : "compact"
       )}
     </section>

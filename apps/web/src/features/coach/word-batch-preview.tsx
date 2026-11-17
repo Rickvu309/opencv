@@ -1,13 +1,11 @@
 import { Card, CardContent, CardTitle } from "@workspace/ui/components/card"
 
 import { DiffDelete, DiffInsert } from "@/features/coach/rich-receipts.tsx"
-import { wordChangeRows, type WordBatchView } from "@/lib/writing-proposal.ts"
-
-const titles = {
-  setText: "Change a line",
-  insert: "Add a line",
-  delete: "Remove a line",
-} as const
+import {
+  wordChangeHeading,
+  wordChangeRows,
+  type WordBatchView,
+} from "@/lib/writing-proposal.ts"
 
 const rowLook: Record<string, "insert" | "delete" | undefined> = {
   Before: "delete",
@@ -39,60 +37,51 @@ export function WordBatchPreview({ batch }: { batch: WordBatchView }) {
       <CardTitle className="sr-only">Changes to approve</CardTitle>
       <CardContent>
         <ol className="space-y-3">
-          {batch.changes.map((change, index) =>
-            change.op === "replace" ? null : (
+          {batch.changes.map((change, index) => {
+            const title = wordChangeHeading(change)
+            if (!title) return null
+            return (
               <li key={index} className="space-y-1.5">
                 <p className="text-xs font-medium text-muted-foreground">
-                  {change.op === "setText" && change.before === ""
-                    ? "Add a line"
-                    : titles[change.op]}
+                  {title}
                 </p>
                 <dl
                   data-slot="word-change-rows"
                   className="grid grid-cols-[3.25rem_minmax(0,1fr)] gap-x-2 gap-y-1 font-sans text-sm leading-relaxed [overflow-wrap:anywhere] text-foreground"
                 >
-                  {wordChangeRows(change)
-                    .filter(
-                      (row) => !(row.label === "Before" && change.before === "")
-                    )
-                    .map((row) => {
-                      const text =
-                        rowLook[row.label] === "insert" ? (
-                          <DiffInsert>{row.text}</DiffInsert>
-                        ) : rowLook[row.label] === "delete" ? (
-                          <DiffDelete>{row.text}</DiffDelete>
-                        ) : (
-                          <span className="text-muted-foreground">
-                            {row.text}
-                          </span>
-                        )
-                      if (
-                        row.label === "New line" ||
-                        (row.label === "After" && change.before === "")
+                  {wordChangeRows(change).map((row) => {
+                    const text =
+                      rowLook[row.label] === "insert" ? (
+                        <DiffInsert>{row.text}</DiffInsert>
+                      ) : rowLook[row.label] === "delete" ? (
+                        <DiffDelete>{row.text}</DiffDelete>
+                      ) : (
+                        <span className="text-muted-foreground">
+                          {row.text}
+                        </span>
                       )
-                        return (
-                          <dd
-                            key={row.label}
-                            className="col-span-2 min-w-0 whitespace-pre-wrap"
-                          >
-                            {text}
-                          </dd>
-                        )
+                    if (row.label === "New line")
                       return (
-                        <div key={row.label} className="contents">
-                          <dt className="pt-0.5 text-xs leading-5 text-muted-foreground">
-                            {shownLabel[row.label] ?? row.label}
-                          </dt>
-                          <dd className="min-w-0 whitespace-pre-wrap">
-                            {text}
-                          </dd>
-                        </div>
+                        <dd
+                          key={row.label}
+                          className="col-span-2 min-w-0 whitespace-pre-wrap"
+                        >
+                          {text}
+                        </dd>
                       )
-                    })}
+                    return (
+                      <div key={row.label} className="contents">
+                        <dt className="pt-0.5 text-xs leading-5 text-muted-foreground">
+                          {shownLabel[row.label] ?? row.label}
+                        </dt>
+                        <dd className="min-w-0 whitespace-pre-wrap">{text}</dd>
+                      </div>
+                    )
+                  })}
                 </dl>
               </li>
             )
-          )}
+          })}
         </ol>
       </CardContent>
     </Card>

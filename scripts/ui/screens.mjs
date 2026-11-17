@@ -280,6 +280,22 @@ export const SCREENS = [
     after: DENY_THE_WAITING_EDIT,
   },
   {
+    id: "coach-approval-draft",
+    route: "/paper",
+    steps: [
+      ...ASK_FOR_AN_EDIT,
+      { clickIfShown: { role: "button", name: "Expand" } },
+      {
+        fill: {
+          selector: `${PANEL} ${COMPOSER}`,
+          text: "Why this wording?",
+        },
+      },
+      { waitFor: { selector: '[data-slot="coach-send-hold"]' } },
+    ],
+    after: DENY_THE_WAITING_EDIT,
+  },
+  {
     id: "coach-receipt",
     route: "/paper",
     steps: [

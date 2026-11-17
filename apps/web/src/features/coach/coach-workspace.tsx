@@ -597,16 +597,21 @@ export function CoachWorkspace({
                       ? "You have no CVs or Letters in Paper yet. Create or import one in Paper, then add it here."
                       : "You have no Jobs in Apply yet. Add the Jobs you are applying for in Apply, then add one here."}
                   </p>
-                  <a
-                    href={
-                      picker === "paper"
-                        ? SURFACE_PATHS.paper
-                        : SURFACE_PATHS.apply
-                    }
-                    className="inline-flex min-h-11 items-center font-medium text-foreground underline underline-offset-2 md:min-h-0"
-                  >
-                    {picker === "paper" ? "Go to Paper" : "Go to Apply"}
-                  </a>
+                  {picker === "paper" ? (
+                    <Link
+                      to={SURFACE_PATHS.paper}
+                      className="inline-flex min-h-11 items-center font-medium text-foreground underline underline-offset-2 md:min-h-0"
+                    >
+                      Go to Paper
+                    </Link>
+                  ) : (
+                    <Link
+                      to={SURFACE_PATHS.apply}
+                      className="inline-flex min-h-11 items-center font-medium text-foreground underline underline-offset-2 md:min-h-0"
+                    >
+                      Go to Apply
+                    </Link>
+                  )}
                 </div>
               ) : null}
             </div>

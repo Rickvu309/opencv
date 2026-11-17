@@ -398,7 +398,8 @@ describe("ChatView pending message", () => {
     expect(log.className).toContain(
       "[&_[data-slot=message-content]]:leading-[1.5]"
     )
-    expect(log.className).toContain(
+    expect(log.className).toContain("[&_[data-slot=response]]:max-w-[75ch]")
+    expect(log.className).not.toContain(
       "[&_[data-slot=message-content]]:max-w-[75ch]"
     )
     expect(log.className).toContain("pt-6")
