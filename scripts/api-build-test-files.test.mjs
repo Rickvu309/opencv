@@ -17,7 +17,12 @@ test("the API production compiler must not include test-only files", () => {
       "-p",
       "apps/api/tsconfig.build.json",
     ],
-    { cwd: root, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 }
+    {
+      cwd: root,
+      encoding: "utf8",
+      maxBuffer: 16 * 1024 * 1024,
+      timeout: 120_000,
+    }
   )
     .trim()
     .split("\n")
