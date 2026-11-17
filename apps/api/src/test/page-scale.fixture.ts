@@ -4,8 +4,8 @@ import { drizzle } from "drizzle-orm/pglite"
 import { eq } from "drizzle-orm"
 import { createId } from "../id.js"
 import * as schema from "../db/schema.js"
-import { seedColumns } from "./content-document.js"
-import { richPaper } from "../test/rich-paper.js"
+import { seedStoredYDoc } from "@workspace/paper-crdt"
+import { richPaper } from "./rich-paper.js"
 import { paperPhotoRef, richPaperDocumentSchema } from "@workspace/domain"
 
 const [dataDir, email, out] = process.argv.slice(2)
@@ -70,7 +70,9 @@ try {
     name: "Page scale CV",
     kind: "cv",
     templateId: "simple",
-    ...seedColumns("cv", seeded),
+    crdtEpoch: 1,
+    crdtBase: Buffer.from(seedStoredYDoc(seeded)),
+    crdtDocument: seeded,
     crdtBaseSeq: 1,
     contentVersion: 1,
     createdAt: new Date(),
