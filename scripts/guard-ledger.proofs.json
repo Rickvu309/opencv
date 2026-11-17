@@ -21,7 +21,7 @@
   },
   "owned-rows": {
     "passed": true,
-    "fingerprint": "ef06e5e3e86e"
+    "fingerprint": "0d3110284e79"
   },
   "pinned-history": {
     "passed": true,
@@ -57,10 +57,10 @@
   },
   "write-grant": {
     "passed": true,
-    "fingerprint": "a0076e820e72"
+    "fingerprint": "1bbc12333d55"
   },
   "write-grant-formal": {
     "passed": true,
-    "fingerprint": "da3fc77ea7db"
+    "fingerprint": "90a6cd54f4e3"
   }
 }
