@@ -71,11 +71,11 @@
   },
   {
     "subject": "apps/web/src/features/coming-soon/coming-soon.test.tsx",
-    "because": "Proofs intentionally uses the kit primary CTA; require exactly one primary action and verify Get early access owns it",
+    "because": "The Proofs CTA moves to the kit primary variant on purpose; the test now requires the primary CTA on Pitch and Proofs.",
     "replacedBy": "apps/web/src/features/coming-soon/coming-soon.test.tsx",
     "proof": {
-      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
-      "replacedByBlob": "59c52704cd6b3a964c0c7e08fb52f91b8f3c89fb",
+      "fork": "383ed419e6283b055d7361893dc6feee4a89b3d8",
+      "replacedByBlob": "3f87e54fafb93e9c5fec8c4a8811a5fcef584208",
       "failedOnBase": true,
       "passedOnHead": true
     },
