@@ -4,45 +4,34 @@
   box-sizing: border-box;
   block-size: 100%;
   min-block-size: 0;
-  container: writing-sheet / inline-size;
   background: var(--background);
   color: var(--foreground);
 }
 
 .writing-scroll {
-  display: grid;
+  display: block;
   flex: 1;
-  grid-template-columns:
-    [full-width-start] minmax(1.5rem, 1fr)
-    [breakout-start] minmax(0, 0px)
-    [content-start] min(100% - 3rem, 8.5in) [content-end]
-    minmax(0, 0px) [breakout-end]
-    minmax(1.5rem, 1fr) [full-width-end];
   align-content: start;
   box-sizing: border-box;
   min-block-size: 0;
-  padding-block: 1.5rem;
+  padding: 1.5rem;
   overflow: auto;
   overscroll-behavior: contain;
-  scrollbar-gutter: stable;
+  scrollbar-gutter: stable both-edges;
   background: var(--background);
 }
 
-@container writing-sheet (width >= calc(8.5in + 5.5rem)) {
-  .writing-scroll {
-    scrollbar-gutter: stable both-edges;
-  }
-}
-
-.writing-scroll > * {
-  grid-column: content;
+[data-paper-page-viewport].writing-page-viewport {
+  margin-inline: auto;
+  overflow: clip;
 }
 
 .writing-page {
   box-sizing: border-box;
+  inline-size: 8.5in;
   min-block-size: 11in;
-  padding-block: clamp(1.5rem, 12%, 1in);
-  padding-inline: clamp(1.25rem, 12%, 1in);
+  padding: 1in;
+  transform-origin: top left;
   border: 1px solid var(--border);
   background: var(--card);
   color: var(--card-foreground);

@@ -39,25 +39,6 @@ export function detectPageLayout(text, path) {
     )
   )
     hits.push("Unchanged flow profile must not create Undo entries")
-  if (path === "packages/paper-crdt/src/rich-page-layout.ts") {
-    const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
-    const visit = (node) => {
-      if (
-        ts.isCallExpression(node) &&
-        ts.isPropertyAccessExpression(node.expression) &&
-        node.expression.name.text === "setProperty" &&
-        node.arguments[0] &&
-        ts.isStringLiteral(node.arguments[0]) &&
-        node.arguments[0].text === "--cv-rich-page-scale" &&
-        (!node.arguments[1] ||
-          !ts.isStringLiteral(node.arguments[1]) ||
-          node.arguments[1].text !== "1")
-      )
-        hits.push("Paper must reflow at full text size instead of scaling")
-      ts.forEachChild(node, visit)
-    }
-    visit(source)
-  }
   if (
     path === "packages/paper-crdt/src/native-layout-flow-mount.ts" &&
     text.includes('!element.classList.contains("paper-rich-sheet")')
@@ -73,28 +54,15 @@ export function detectPageLayout(text, path) {
         ) &&
         !selector
           .split(",")
-          .every(
-            (part) =>
-              /\[data-paper-pagination=["']?true["']?\]/.test(part) &&
-              /\[data-paper-reflow=["']?false["']?\]/.test(part)
+          .every((part) =>
+            /\[data-paper-pagination=["']?true["']?\]/.test(part)
           )
       )
-        hits.push(
-          "Page gaps and page height require supported pagination without reflow"
-        )
-      if (
-        /column-(height:\s*auto|wrap:\s*nowrap)/.test(declarations) &&
-        !/\[data-paper-reflow=["']?true["']?\]/.test(selector)
-      )
+        hits.push("Page gaps and page height require supported pagination")
+      if (/column-(height:\s*auto|wrap:\s*nowrap)/.test(declarations))
         hits.push(
           "Rich Paper must preserve automatic column wrapping on desktop"
         )
-      if (
-        [...declarations.matchAll(/\bzoom:\s*([^;]+)/g)].some(
-          (match) => match[1].trim() !== "1"
-        )
-      )
-        hits.push("Paper must reflow at full text size instead of scaling")
     }
   }
   if (path === "packages/paper-crdt/src/editor.ts") {

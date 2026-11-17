@@ -526,7 +526,11 @@ test("page layout guards reject the reviewed lifetime, phone and pagination regr
     "apps/web/src/features/paper/rich-page-break.tsx",
   ]
   for (const file of files) {
-    const original = execFileSync("git", ["show", "6a8d3959:" + file], {
+    const reviewed =
+      file === "packages/paper-crdt/src/rich-page-layout.ts"
+        ? "f66e65e0"
+        : "6a8d3959"
+    const original = execFileSync("git", ["show", `${reviewed}:${file}`], {
       cwd: root,
       encoding: "utf8",
     })
@@ -535,6 +539,28 @@ test("page layout guards reject the reviewed lifetime, phone and pagination regr
       detect(readFileSync(path.join(root, file), "utf8"), file),
       [],
       file
+    )
+  }
+})
+
+test("all responsive queries preserve physical Paper geometry", () => {
+  const file = "apps/web/src/features/paper/rich-page-geometry.css"
+  for (const query of [
+    "@media (max-height: 600px)",
+    "@media (aspect-ratio < 1)",
+    "@media (pointer: coarse)",
+    "@container paper (block-size < 600px)",
+  ]) {
+    assert.match(
+      detect(
+        `${query} { .paper-rich-sheet p { font-size: 20px; } }`,
+        file
+      ).join(),
+      /scale the page in rich-page-layout.ts instead/
+    )
+    assert.deepEqual(
+      detect(`${query} { .paper-toolbar { padding: 12px; } }`, file),
+      []
     )
   }
 })

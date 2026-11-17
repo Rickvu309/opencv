@@ -35,18 +35,9 @@ export function detect(text, file) {
       "paperRow]{break-inside:avoid",
       "paper-oversized-row=true]{height:var(--paper-column-height);overflow:auto",
       "paper-oversized-row=true]){break-before:column;break-after:column}",
-      ":not([data-paper-reflow=true])",
     ])
       if (!text.includes(rule))
         problems.push("Table rows must stay whole and inside printable pages")
-    if (text.split(":not([data-paper-reflow=true])").length - 1 < 2)
-      problems.push(
-        "Oversized row column breaks must be off while the sheet reflows"
-      )
-    if (!text.includes('element.dataset.paperReflow !== "true"'))
-      problems.push(
-        "Oversized rows must stay in normal flow while the sheet reflows"
-      )
   }
   if (file.endsWith("native-layout-schema.ts")) {
     if (!text.includes("[data-is-empty-and-focused]"))
@@ -85,13 +76,6 @@ export function detect(text, file) {
       problems.push("The table menu must stay on the active row")
     if (!text.includes("border-inline-start: 1px solid var(--border)"))
       problems.push("Interior cell borders must stay a single line")
-    if (
-      text.includes("@media (max-width: 767px)") ||
-      !text.includes(
-        '.paper-rich-sheet[data-paper-reflow="true"] .paper-table-menu'
-      )
-    )
-      problems.push("Table options must follow sheet reflow, not the viewport")
   }
   if (
     file.endsWith("rich-table-menu.tsx") &&

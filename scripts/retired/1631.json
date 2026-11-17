@@ -1,0 +1,44 @@
+[
+  {
+    "subject": "packages/paper-crdt/src/rich-editor.test.ts",
+    "because": "owner correction 2026-11-17: Paper must keep the same physical page and uniformly scale at every width; reflow and scale=1 assertions describe rejected behavior",
+    "replacedBy": "scripts/paper-page-scale.test.mjs",
+    "proof": {
+      "fork": "1f15240557337b86a6f3f7436f6467d243160c1f",
+      "replacedByBlob": "710427d1c1aa1a7c0fe091d490cc7c8c868332d0",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "owner",
+    "classBecause": "scripts/paper-page-scale.test.mjs shares no module, command or route with packages/paper-crdt/src/rich-editor.test.ts",
+    "items": 7
+  },
+  {
+    "subject": "packages/paper-crdt/src/rich-tables.test.ts",
+    "because": "owner correction 2026-11-17: oversized table rows use physical page geometry at every scale; the reflow exemption is rejected",
+    "replacedBy": "scripts/paper-page-scale.test.mjs",
+    "proof": {
+      "fork": "1f15240557337b86a6f3f7436f6467d243160c1f",
+      "replacedByBlob": "710427d1c1aa1a7c0fe091d490cc7c8c868332d0",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "owner",
+    "classBecause": "scripts/paper-page-scale.test.mjs shares no module, command or route with packages/paper-crdt/src/rich-tables.test.ts",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-page-layout.test.mjs",
+    "because": "owner correction 2026-11-17: uniform page scaling is required; refusing scale and requiring reflow-qualified gaps enforces rejected behavior",
+    "replacedBy": "scripts/paper-page-scale.test.mjs",
+    "proof": {
+      "fork": "1f15240557337b86a6f3f7436f6467d243160c1f",
+      "replacedByBlob": "710427d1c1aa1a7c0fe091d490cc7c8c868332d0",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "owner",
+    "classBecause": "scripts/paper-page-scale.test.mjs shares no module, command or route with scripts/paper-page-layout.test.mjs; a guard case-removed",
+    "items": 2
+  }
+]

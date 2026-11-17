@@ -91,7 +91,7 @@ export function installFlowView(
   updateBreaks: (breaks: Map<string, number>) => void
 ) {
   const style = document.createElement("style")
-  style.textContent = `[data-paper-page-flow] .bn-block-group{padding:0}[data-paper-page-flow] [data-paper-layout=paperFlowSection]{width:var(--paper-flow-width);max-width:100%;margin-block:24px}[data-paper-page-flow] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]{display:block;column-count:var(--paper-columns);column-gap:var(--paper-column-gap);column-fill:auto}[data-paper-page-flow][data-paper-pagination=true] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]{column-height:var(--paper-column-height);column-wrap:wrap;row-gap:var(--paper-row-gap)}[data-paper-page-flow] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]>[data-node-type=blockOuter],[data-paper-page-flow] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]>[data-node-type=blockOuter]>.bn-block{display:block}[data-paper-page-flow] [data-paper-page-break]{height:0;min-height:0}[data-paper-page-flow] [data-content-type=paperPageBreak]{padding:0;margin:0;min-height:0}[data-paper-page-flow] [data-paper-layout=paperTable]{break-inside:auto}[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-layout=paperTable]),[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-layout=paperTable])>.bn-block{display:block;break-inside:auto}[data-paper-page-flow] [data-paper-layout=paperRow]{break-inside:avoid}[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-layout=paperRow]){break-inside:avoid;display:block}[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-layout=paperRow])>.bn-block{display:block}[data-paper-page-flow][data-paper-pagination=true]:not([data-paper-reflow=true]) [data-paper-layout=paperRow][data-paper-oversized-row=true]{height:var(--paper-column-height);overflow:auto;overscroll-behavior:contain;break-before:column;break-after:column}[data-paper-page-flow][data-paper-pagination=true]:not([data-paper-reflow=true]) [data-node-type=blockOuter]:has(> .bn-block > [data-paper-oversized-row=true]){break-before:column;break-after:column}`
+  style.textContent = `[data-paper-page-flow] .bn-block-group{padding:0}[data-paper-page-flow] [data-paper-layout=paperFlowSection]{width:var(--paper-flow-width);max-width:100%;margin-block:24px}[data-paper-page-flow] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]{display:block;column-count:var(--paper-columns);column-gap:var(--paper-column-gap);column-fill:auto}[data-paper-page-flow][data-paper-pagination=true] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]{column-height:var(--paper-column-height);column-wrap:wrap;row-gap:var(--paper-row-gap)}[data-paper-page-flow] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]>[data-node-type=blockOuter],[data-paper-page-flow] [data-paper-layout=paperFlowSection]>[data-paper-wrap-slot]>[data-node-type=blockOuter]>.bn-block{display:block}[data-paper-page-flow] [data-paper-page-break]{height:0;min-height:0}[data-paper-page-flow] [data-content-type=paperPageBreak]{padding:0;margin:0;min-height:0}[data-paper-page-flow] [data-paper-layout=paperTable]{break-inside:auto}[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-layout=paperTable]),[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-layout=paperTable])>.bn-block{display:block;break-inside:auto}[data-paper-page-flow] [data-paper-layout=paperRow]{break-inside:avoid}[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-layout=paperRow]){break-inside:avoid;display:block}[data-paper-page-flow] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-layout=paperRow])>.bn-block{display:block}[data-paper-page-flow][data-paper-pagination=true] [data-paper-layout=paperRow][data-paper-oversized-row=true]{height:var(--paper-column-height);overflow:auto;overscroll-behavior:contain;break-before:column;break-after:column}[data-paper-page-flow][data-paper-pagination=true] [data-node-type=blockOuter]:has(> .bn-block > [data-paper-oversized-row=true]){break-before:column;break-after:column}`
   element.before(style)
   element.dataset.paperPageFlow = ""
   let active = true,
@@ -116,7 +116,12 @@ export function installFlowView(
         )
         if (!(content instanceof HTMLElement)) continue
         const oversized =
-          supported && content.getBoundingClientRect().height > height
+          supported &&
+          content.getBoundingClientRect().height /
+            Number(
+              element.style.getPropertyValue("--cv-rich-page-scale") || 1
+            ) >
+            height
         if (row.dataset.paperOversizedRow !== String(oversized)) changed = true
         row.dataset.paperOversizedRow = String(oversized)
         if (oversized) {
@@ -142,12 +147,7 @@ export function installFlowView(
     element.dataset.paperPagination = String(support.supported)
     if (element.classList.contains("paper-rich-sheet")) {
       let breaks = richPageLayout(element, document, support.supported)
-      if (
-        markTableRows(
-          document,
-          support.supported && element.dataset.paperReflow !== "true"
-        )
-      )
+      if (markTableRows(document, support.supported))
         breaks = richPageLayout(element, document, support.supported)
       updateBreaks(breaks)
       return
@@ -224,7 +224,10 @@ export function installFlowView(
   }
   const resize = new ResizeObserver(schedule)
   resize.observe(element)
-  if (element.parentElement) resize.observe(element.parentElement)
+  const parent = element.parentElement?.hasAttribute("data-paper-page-viewport")
+    ? element.parentElement.parentElement
+    : element.parentElement
+  if (parent) resize.observe(parent)
   document.fonts.ready.then(schedule)
   schedule()
   return {
@@ -236,7 +239,6 @@ export function installFlowView(
       style.remove()
       delete element.dataset.paperPageFlow
       delete element.dataset.paperPagination
-      delete element.dataset.paperReflow
     },
   }
 }

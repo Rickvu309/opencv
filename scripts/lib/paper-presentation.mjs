@@ -5,12 +5,14 @@ import { qualifiedNativeWord } from "./paper-native-word.mjs"
 import { detectTextFormatting } from "./paper-text-formatting.mjs"
 import { detectRichStructure } from "./paper-rich-structure.mjs"
 import { detectPageLayout } from "./paper-page-layout.mjs"
+import { detect as detectPageScale } from "./paper-page-scale.mjs"
 
 export function detect(text, path) {
   const hits = [
     ...detectTextFormatting(text, path),
     ...detectDocumentHistory(text, path),
     ...detectPageLayout(text, path),
+    ...detectPageScale(text, path),
   ]
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
   if (path === "packages/paper-crdt/src/editor.ts") {
