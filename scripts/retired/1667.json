@@ -54,5 +54,19 @@
     "class": "self",
     "classBecause": null,
     "items": 5
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-template-gallery.test.tsx",
+    "because": "The content-sized picker keeps actions by its footer and shows Blank as an empty sheet.",
+    "replacedBy": "apps/web/src/features/paper/paper-template-gallery.test.tsx",
+    "proof": {
+      "fork": "976628fc1f4263be91e7d6db104d75441d52966c",
+      "replacedByBlob": "04e24eaacb644301eabd783f4b6b658f6c22a107",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 3
   }
 ]
