@@ -395,10 +395,9 @@ export function PaperLibrary({
           <PaperLibrarySearch query={query} onQueryChange={onQueryChange} />
         ) : null}
         <Button
-          className="h-11 gap-1.5 md:h-7"
+          className="h-11 gap-1.5 text-[0.8125rem] md:h-7"
           type="button"
           size="sm"
-          className="text-[0.8125rem]"
           variant={dialogOpen ? "outline" : "primary"}
           data-primary-action
           ref={newButtonRef}
