@@ -28,5 +28,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/package-canvas.formal.test.ts",
+    "because": "owner correction 2026-11-17: replace the extra starter carrier and applied color with one unformatted paragraph; retain split, merge, delete, IDs, page properties and replay receipts.",
+    "replacedBy": "apps/api/src/paper/package-canvas.formal.test.ts",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "904cbaa1c7c6a94a162f55b51dc63168ea83f4d4",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 10
   }
 ]
