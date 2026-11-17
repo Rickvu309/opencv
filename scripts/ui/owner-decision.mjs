@@ -17,11 +17,21 @@ const GROK_CLEAN_COACH =
   "the owner asked for the Coach chat to look as clean as Grok, learning from ChatGPT and Claude, instead of the Linear-based council pass; see the chat references index of 2026-11-13"
 
 export const LINEAR_COACH_PAGE_COMPOSER = {
-  decided: "2026-11-17",
+  decided: "2026-11-18",
   reason:
-    "the owner asked for the Coach to look like Linear's agent page: the page composer is Linear's two-row card at the pen frame's 114 high and radius 18, kept as wide as the 760 reading column instead of the pen frame's 720",
+    "the owner asked for the Coach to look like Linear's agent page: the page composer is Linear's two-row card at the pen frame's 114 high with Linear's 10px corners instead of the pen frame's 18, kept as wide as the 760 reading column instead of the pen frame's 720",
   expect: {
     width: 760,
+    radius: 10,
+  },
+}
+
+export const LINEAR_COACH_PANEL_COMPOSER = {
+  decided: "2026-11-18",
+  reason:
+    "the owner asked for the Coach composer corners to match Linear's agent composer: 10px in the Coach panel instead of the pen frame's 14",
+  expect: {
+    radius: 10,
   },
 }
 

@@ -436,7 +436,7 @@ export function CoachDock({
   return notice ? (
     <div
       data-slot="coach-composer-card"
-      className="overflow-hidden rounded-2xl border border-border/60 bg-card"
+      className="overflow-hidden rounded-lg border border-border/60 bg-card"
     >
       <div className="border-b border-border/60 bg-muted/40 px-4 py-3">
         {notice}

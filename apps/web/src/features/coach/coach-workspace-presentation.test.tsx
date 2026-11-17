@@ -84,7 +84,7 @@ describe("Coach uses one full-page presentation", () => {
     expect(sizing).toContain("md:text-[14px]")
     const pageComposer = screen.getByRole("textbox", { name: "Message Coach" })
     expect(pageComposer.className).toContain("min-h-[68px]")
-    expect(pageComposer.className).toContain("md:text-[15px]")
+    expect(pageComposer.className).toContain("md:text-base")
     expect(pageComposer.closest("[data-stacked]")).toHaveAttribute(
       "data-stacked",
       "true"

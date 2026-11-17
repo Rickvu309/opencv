@@ -51,7 +51,7 @@
   [data-slot="coach-composer"][data-pen-surface="coach"] {
   background: var(--card);
   border-color: var(--border);
-  border-radius: 14px;
+  border-radius: 10px;
   box-shadow: none;
 }
 
