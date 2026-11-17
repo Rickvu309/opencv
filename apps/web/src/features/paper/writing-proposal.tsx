@@ -4,8 +4,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react"
-import { loadDraft, loadDraftBasis } from "@/features/paper-page/canvas-edit.ts"
-import { pageWords } from "@/features/paper-page/canvas-save.ts"
+import { loadDraftBasis } from "@/features/paper-page/canvas-edit.ts"
 import { clearStoppedLetter } from "./paper-letter-resume.ts"
 import { Button } from "@workspace/ui/components/button"
 
@@ -49,22 +48,21 @@ function openCoach(dock: HTMLElement) {
 
 export function WritingDocumentNoticeSync({
   docId,
+  text,
   onText,
 }: {
   docId: string
+  text: string
   onText: (text: string) => void
 }) {
   useEffect(() => {
     let active = true
     queueMicrotask(() => {
       if (!active) return
-      const draft = loadDraft(docId, localStorage)
-      if (!draft) return
-      const words = pageWords(draft.blocks)
-      onText(words)
-      if (words.trim().length > 0) clearStoppedLetter(docId)
+      onText(text)
+      if (text.trim().length > 0) clearStoppedLetter(docId)
       const basis = loadDraftBasis(docId, localStorage)
-      if (basis && words !== basis.words) dropWritingOutcome(docId)
+      if (basis && text !== basis.words) dropWritingOutcome(docId)
     })
     return () => {
       active = false

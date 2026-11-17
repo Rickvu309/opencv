@@ -1,7 +1,14 @@
 import "fake-indexeddb/auto"
 
 import { afterEach, expect, it, vi } from "vitest"
-import { act, cleanup, fireEvent, screen, within } from "@testing-library/react"
+import {
+  act,
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
 
 import { render } from "@/test/render-with-client.tsx"
 import { closeWritingDb } from "@/features/paper-page/canvas-save.ts"
@@ -14,7 +21,12 @@ import {
   WORD_BATCH_HIDDEN,
   writingProposal,
 } from "@/lib/writing-proposal.ts"
-import { WritingProposalCard } from "./writing-proposal.tsx"
+import { storeDraft } from "@/features/paper-page/canvas-edit.ts"
+import { rememberStoppedLetter, stoppedLetter } from "./paper-letter-resume.ts"
+import {
+  WritingDocumentNoticeSync,
+  WritingProposalCard,
+} from "./writing-proposal.tsx"
 import { WritingPage } from "./writing-page.tsx"
 
 const DOC = "11111111-1111-4111-8111-111111111111"
@@ -312,4 +324,29 @@ it("reserves no notice row when this document has no Coach state", () => {
   expect(
     container.querySelector('[data-slot="writing-proposal-notice"]')
   ).toBeNull()
+})
+
+it("reads explicit document text for notices instead of the stored draft", async () => {
+  storeDraft(DOC, draft(""), localStorage)
+  rememberStoppedLetter({
+    docId: DOC,
+    chatId: "stopped-chat",
+    prompt: "Draft a letter",
+    jobId: null,
+  })
+  const onText = vi.fn()
+  const { rerender } = render(
+    <WritingDocumentNoticeSync docId={DOC} text="" onText={onText} />
+  )
+  await waitFor(() => expect(onText).toHaveBeenCalledWith(""))
+  expect(stoppedLetter()?.docId).toBe(DOC)
+  rerender(
+    <WritingDocumentNoticeSync
+      docId={DOC}
+      text="My live opening"
+      onText={onText}
+    />
+  )
+  await waitFor(() => expect(stoppedLetter()).toBeNull())
+  expect(onText).toHaveBeenLastCalledWith("My live opening")
 })

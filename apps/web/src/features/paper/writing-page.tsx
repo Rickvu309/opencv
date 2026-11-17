@@ -335,9 +335,13 @@ export function WritingPage({
         <WritingCanvas
           key={`${docId}:${shown.generation}`}
           docId={docId}
-          renderHeader={(note, revision) => (
+          renderHeader={(note, revision, text) => (
             <>
-              <WritingDocumentNoticeSync docId={docId} onText={onText} />
+              <WritingDocumentNoticeSync
+                docId={docId}
+                text={text}
+                onText={onText}
+              />
               {header
                 ? createPortal(
                     <DocumentHeader
