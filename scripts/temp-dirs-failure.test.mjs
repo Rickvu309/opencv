@@ -19,7 +19,7 @@ test("an inner failure is named in the folder skip and merge refusal, while a cl
   for (const broken of [true, false]) {
     writeFileSync(
       file,
-      `import test from "node:test"\nimport assert from "node:assert/strict"\ntest(${JSON.stringify(name)}, () => { ${broken ? `assert.fail(${JSON.stringify(message)})` : "assert.ok(true)"} })\n`
+      `import test from "node:test"\nimport assert from "node:assert/strict"\ntest(${JSON.stringify(name)}, () => { ${broken ? `assert.deepEqual([${JSON.stringify(message)}], [])` : "assert.ok(true)"} })\n`
     )
     const run = spawnSync(
       process.execPath,
@@ -43,13 +43,12 @@ test("an inner failure is named in the folder skip and merge refusal, while a cl
       continue
     }
     assert.equal(skips.length, 1)
+    assert.ok(skips[0].includes(name) && skips[0].includes(message), skips[0])
+    assert.equal(failures.length, 1)
     assert.ok(
-      skips[0].includes(`${name}: AssertionError [ERR_ASSERTION]: ${message}`),
-      skips[0]
+      failures[0].startsWith(`${name}: AssertionError [ERR_ASSERTION]:`)
     )
-    assert.deepEqual(failures, [
-      `${name}: AssertionError [ERR_ASSERTION]: ${message}`,
-    ])
+    assert.ok(failures[0].includes(message), failures[0])
     const f = fixture({ behind: 1, guardOutput: run.stdout })
     const refusal = f.call("merge", "91")
     assert.equal(refusal.code, 2, refusal.text)

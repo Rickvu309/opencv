@@ -112,7 +112,9 @@ test("real git: main gains a guard the head breaks, so the merged tree fails and
   const ctx = realCtx(clone, root)
   const facts = mergeResultFacts(ctx, 5, headOf(clone))
   assert.deepEqual(facts.conflicts, [])
-  assert.deepEqual(facts.failed, ["forbidden.txt is never added"])
+  assert.deepEqual(facts.failed, [
+    "forbidden.txt is never added: AssertionError [ERR_ASSERTION]: Expected values to be strictly equal: true !== false",
+  ])
   assert.equal(
     decide("merge-result", { mergeResult: facts }).refusals[0].id,
     "MERGED_TREE_FAILS"

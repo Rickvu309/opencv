@@ -7,9 +7,13 @@ export function failedGuards(result) {
     const match = /^✖ (.+?) \(\d[\d.]*ms\)$/.exec(lines[i])
     if (!match) continue
     const detail = []
-    for (let j = i + 1; j < lines.length && /^  \S|^   /.test(lines[j]); j++) {
+    for (
+      let j = i + 1;
+      j < lines.length && (lines[j] === "" || /^  \S|^   /.test(lines[j]));
+      j++
+    ) {
       if (/^\s+at |^\s+\}/.test(lines[j])) break
-      detail.push(lines[j].trim())
+      if (lines[j].trim()) detail.push(lines[j].trim())
     }
     if (!cases.has(match[1]) || detail.length)
       cases.set(
