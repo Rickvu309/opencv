@@ -12,19 +12,25 @@ const name = "protected branch rejects removed assertions"
 const message =
   "PROTECTED_WEAKENED: removed 16 assertions: scripts/example.test.mjs"
 
+const innerHead =
+  'import test from "node:test"\nimport assert from "node:assert/strict"\n'
+const brokenInner =
+  innerHead +
+  'test("protected branch rejects removed assertions", () => { assert.deepEqual(["PROTECTED_WEAKENED: removed 16 assertions: scripts/example.test.mjs"], []) })\n'
+const cleanInner =
+  innerHead +
+  'test("protected branch rejects removed assertions", () => { assert.ok(true) })\n'
+
 test("an inner failure is named in the folder skip and merge refusal, while a clean run stays quiet", (t) => {
   const dir = tempDir(t, "temp-failure-")
   const file = join(dir, "inner.test.mjs")
   const { NODE_TEST_CONTEXT: _outer, ...env } = process.env
   for (const broken of [true, false]) {
-    writeFileSync(
-      file,
-      `import test from "node:test"\nimport assert from "node:assert/strict"\ntest(${JSON.stringify(name)}, () => { ${broken ? `assert.deepEqual([${JSON.stringify(message)}], [])` : "assert.ok(true)"} })\n`
-    )
+    writeFileSync(file, broken ? brokenInner : cleanInner)
     const run = spawnSync(
       process.execPath,
       ["--test", "--test-reporter=spec", file],
-      { env, encoding: "utf8" }
+      { env, encoding: "utf8", timeout: 60_000 }
     )
     assert.equal(run.status, broken ? 1 : 0, run.stderr)
     const skips = []
