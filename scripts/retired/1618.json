@@ -1,19 +1,5 @@
 [
   {
-    "subject": "apps/web/src/features/inbox/inbox-reader.test.tsx",
-    "because": "More is a real disabled control, Open in Gmail says there is no Gmail link, the phone reply is 16px, and a rejected draft save is not marked saved. The test checks that.",
-    "replacedBy": "apps/web/src/features/inbox/inbox-reader.test.tsx",
-    "proof": {
-      "fork": "a887677ee976df2a519b5804ad24a48ed431fc11",
-      "replacedByBlob": "998864b5eac1c6410918138d4089f0085a1b8123",
-      "failedOnBase": true,
-      "passedOnHead": true
-    },
-    "class": "self",
-    "classBecause": null,
-    "items": 2
-  },
-  {
     "subject": "apps/web/src/features/inbox/inbox-connect.test.tsx",
     "because": "Connect Gmail stays disabled when there is no connection, View example inbox is the filled action, the sentence is built from its lead and hint, and the decorative example is hidden from assistive tech. The test checks that.",
     "replacedBy": "apps/web/src/features/inbox/inbox-connect.test.tsx",
@@ -34,6 +20,20 @@
     "proof": {
       "fork": "a887677ee976df2a519b5804ad24a48ed431fc11",
       "replacedByBlob": "91991413dc95e7a25c81a9a30960973d6c12fd0c",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/inbox/inbox-reader.test.tsx",
+    "because": "More and Open in Gmail are focusable unavailable actions dimmed alike, More has one tooltip with the shared reason and no loose sr-only text, the counter uses tabular digits, the phone reply is 16px, and a rejected draft save is not marked saved. The test checks that.",
+    "replacedBy": "apps/web/src/features/inbox/inbox-reader.test.tsx",
+    "proof": {
+      "fork": "a887677ee976df2a519b5804ad24a48ed431fc11",
+      "replacedByBlob": "cc4e49234caa9dcfb10079e17260bb38283c4e27",
       "failedOnBase": true,
       "passedOnHead": true
     },
