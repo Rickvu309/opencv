@@ -22,6 +22,7 @@ import {
   readTextBlobs,
 } from "./git-reads.mjs"
 import { RAW_CHANGED, push, world } from "./hook-world.mjs"
+import { CODE_EXT } from "./import-graph.mjs"
 import { workspaceRunners } from "./test-runners.mjs"
 import { MAX_PER_RUNNER } from "./test-selection.mjs"
 
@@ -105,14 +106,20 @@ test("B1 invariant: every test file this repository's index lists is read whole,
       const [, mode, oid, path] = line.match(/^(\d{6}) ([0-9a-f]+) \d\t(.*)$/s)
       return { mode, oid, path }
     })
-    .filter((entry) => /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(entry.path))
-  assert.ok(entries.length > 300, `only ${entries.length} test files listed`)
+    .filter((entry) => CODE_EXT.test(entry.path))
+  const tests = entries.filter((entry) =>
+    /\.(?:test|spec)\.[cm]?[jt]sx?$/.test(entry.path)
+  )
+  assert.ok(tests.length > 300, `only ${tests.length} test files listed`)
   assert.deepEqual(
     entries.filter((entry) => !["100644", "100755"].includes(entry.mode)),
     []
   )
-  const texts = readTextBlobs(realCtx(REPO), REPO, entries)
+  const texts = readTextBlobs(realCtx(REPO), REPO, entries, {
+    mayBeEmpty: (path) => !/\.(?:test|spec)\.[cm]?[jt]sx?$/.test(path),
+  })
   assert.equal(texts.size, entries.length)
+  assert.ok(texts.has("scripts/list-checks.mjs"))
   for (const entry of entries)
     assert.equal(
       blobId(Buffer.from(texts.get(entry.path), "utf8"), entry.oid.length),
