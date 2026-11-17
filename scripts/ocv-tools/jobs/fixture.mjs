@@ -54,6 +54,7 @@ export function fixture(over = {}) {
     files: { "/tmp/opencv.worktrees/90-keep-my-search/body.md": BODY },
     env: over.env,
     dirs: over.dirs,
+    affectedReceipts: over.affectedReceipts,
     ...(over.now == null ? {} : { now: over.now }),
     onPause: (total) => s.onPause?.(total, s),
     run(cmd, a, options) {

@@ -1,3 +1,6 @@
+import { fileURLToPath } from "node:url"
+import { hasReceipt } from "./jobs/affected-tests.mjs"
+import { git as readGit, run } from "./jobs/common.mjs"
 import { EXIT, FIXES } from "./result.mjs"
 import { agentIdFor, heartbeat, nowOf, readClaim, taskHere } from "./claim.mjs"
 import { throwPushFailure } from "./push-failure.mjs"
@@ -119,12 +122,28 @@ export function save(ctx, { message }) {
         `commit failed: ${commit.err || commit.out}`.slice(0, 800)
       )
   }
+  const checked = run(
+    ctx,
+    "node",
+    [fileURLToPath(new URL("../ocv-tools.mjs", import.meta.url)), "check"],
+    { cwd: ctx.cwd, inherit: true }
+  )
+  if (!checked.ok)
+    throw new Error(`Checks failed before push: ${checked.err || checked.out}`)
+  const head = readGit(ctx, "rev-parse", "HEAD")
+  const tree = readGit(ctx, "rev-parse", "HEAD^{tree}")
+  if (!hasReceipt(ctx, t.gitDir, head, tree))
+    throw new Error(
+      "No recorded pass for HEAD; run scripts/ocv-tools.mjs check before pushing."
+    )
   const beforePushRead = readClaim(ctx, t.n, true)
   const beforePush = beforePushRead.holder
   if (lostNow(t, { claim: beforePush, me, issue: beforePushRead.issue }))
     return lost(ctx, t, beforePush)
   heartbeat(ctx, t.n, beforePush, me)
+  const pushStarted = ctx.now()
   const pushed = git.push(ctx.cwd)
+  const pushSeconds = ((ctx.now() - pushStarted) / 1000).toFixed(3)
   if (!pushed.ok) throwPushFailure(ctx, pushed)
   const afterPushRead = readClaim(ctx, t.n, true)
   const afterPush = afterPushRead.holder
@@ -134,6 +153,7 @@ export function save(ctx, { message }) {
   return {
     lines: [
       `Saved #${t.n} on ${t.branch} at ${git.shortHead(ctx.cwd)}.`,
+      `git push connection window: ${pushSeconds}s (includes hook and transfer).`,
       "Pushed, and the claim is refreshed.",
     ],
     next: "Keep working and save again, or run scripts/ocv-tools.mjs finish --body-file <file> when it is done",
