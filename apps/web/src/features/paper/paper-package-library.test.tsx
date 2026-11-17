@@ -199,6 +199,22 @@ it("opens the saved page without leaving the preview", async () => {
   expect(await screen.findByText("First saved paragraph")).toBeVisible()
 })
 
+it("shows a Word library failure as an alert", async () => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn<typeof fetch>(async () =>
+      Response.json(
+        { ok: false, error: { code: "INTERNAL", message: "Down" } },
+        { status: 500 }
+      )
+    )
+  )
+  render(<Harness />)
+  const alert = await screen.findByRole("alert")
+  expect(alert).toHaveTextContent("Could not load Word documents.")
+  expect(alert.className).toMatch(/text-destructive/)
+})
+
 it("keeps the disabled package library out of the legacy screen", async () => {
   const response = Promise.withResolvers<Response>()
   const fetchMock = vi.fn<typeof fetch>(() => response.promise)

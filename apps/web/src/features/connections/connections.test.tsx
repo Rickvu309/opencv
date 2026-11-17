@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { connectionIdSchema } from "@workspace/domain"
 import {
+  act,
   render,
   screen,
   cleanup,
@@ -32,6 +33,12 @@ vi.mock("@/lib/connections-api.ts", () => ({
   answerConsent: vi.fn(),
 }))
 vi.mock("@/lib/contract-client.ts", () => ({ runContractCommand: runCommand }))
+vi.mock("@/lib/account-api.ts", () => ({
+  profileQuery: () => ({
+    queryKey: ["profile.get"],
+    queryFn: async () => ({ timeZone: "UTC" }),
+  }),
+}))
 
 function show(component: React.ReactNode) {
   const client = new QueryClient({
@@ -476,4 +483,62 @@ it("offers only documents when that is all the agent asked for", async () => {
     )
   ).toBeInTheDocument()
   expect(screen.queryByText(/Jobs/)).not.toBeInTheDocument()
+})
+
+it("shows all agent timestamps in the saved time zone and updates when it changes", async () => {
+  vi.mocked(fetchConnections).mockResolvedValue([
+    {
+      id: connectionIdSchema.parse("11070000-0000-4000-8000-000000000001"),
+      clientId: "agent",
+      name: "Test agent",
+      audience: "http://localhost:4107/mcp",
+      scopes: ["connection.status"],
+      resources: { kind: "none" },
+      policy: { reads: "allow", writes: "approval" },
+      version: 1,
+      consentVersion: 1,
+      createdAt: "2026-01-01T20:00:00.000Z",
+      lastUsedAt: "2026-07-01T21:00:00.000Z",
+      expiresAt: "2027-01-01T22:00:00.000Z",
+      revokedAt: null,
+    },
+  ])
+  const queryClient = show(<ConnectionList />)
+  await screen.findByText("Test agent")
+  await waitFor(() =>
+    expect(queryClient.getQueryData(["profile.get"])).toBeDefined()
+  )
+  act(() => {
+    queryClient.setQueryData<{ timeZone: string }>(
+      ["profile.get"],
+      (profile) =>
+        profile ? { ...profile, timeZone: "Asia/Singapore" } : profile
+    )
+  })
+  await waitFor(() => {
+    for (const text of [
+      "1/2/2026, 4:00:00 AM",
+      "7/2/2026, 5:00:00 AM",
+      "1/2/2027, 6:00:00 AM",
+    ]) {
+      expect(screen.getByText(text).tagName).toBe("TIME")
+    }
+  })
+  act(() => {
+    queryClient.setQueryData<{ timeZone: string }>(
+      ["profile.get"],
+      (profile) =>
+        profile ? { ...profile, timeZone: "America/Los_Angeles" } : profile
+    )
+  })
+  await waitFor(() => {
+    for (const text of [
+      "1/1/2026, 12:00:00 PM",
+      "7/1/2026, 2:00:00 PM",
+      "1/1/2027, 2:00:00 PM",
+    ]) {
+      expect(screen.getByText(text).tagName).toBe("TIME")
+    }
+  })
+  expect(screen.queryByText("1/2/2026, 4:00:00 AM")).toBeNull()
 })

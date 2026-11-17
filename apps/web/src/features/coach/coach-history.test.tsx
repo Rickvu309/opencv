@@ -32,6 +32,11 @@ describe("Coach history", () => {
     expect(
       await screen.findByRole("textbox", { name: "Search chat history" })
     ).toBeInTheDocument()
+    const search = screen.getByRole("textbox", {
+      name: "Search chat history",
+    })
+    expect(search.className).toContain("text-base")
+    expect(search.className).toContain("md:text-[13px]")
   })
 
   it("shows New chat and shortcut in the history popover", async () => {

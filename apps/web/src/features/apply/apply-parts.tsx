@@ -12,14 +12,15 @@ import {
   priorityLabel,
 } from "./apply-stages.ts"
 import { FAINT_TEXT } from "./apply-tone.ts"
+import { useChosenTimeZone } from "./apply-time-zone.ts"
 
 const WEEKDAY_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
 
-function interviewTag(job: JobView, now: Date): string | null {
+function interviewTag(job: JobView, now: Date, zone: string): string | null {
   if (job.stage !== "interview" || !job.interviewAt) return null
   const wait = new Date(job.interviewAt).getTime() - now.getTime()
   if (wait < 0 || wait >= WEEKDAY_WINDOW_MS) return null
-  return listPhrase(job)
+  return listPhrase(job, now, zone)
 }
 
 const bars = [
@@ -54,7 +55,8 @@ export function PriorityBox({ level }: { level: JobPriority }) {
 }
 
 export function JobCard({ job }: { job: JobView }) {
-  const interview = interviewTag(job, new Date())
+  const zone = useChosenTimeZone()
+  const interview = interviewTag(job, new Date(), zone)
   return (
     <div data-slot="job-card" className="flex flex-col text-left">
       <span className="flex items-center gap-2.5">
@@ -94,7 +96,7 @@ export function JobCard({ job }: { job: JobView }) {
           dateTime={job.createdAt}
           className="ml-auto shrink-0 text-[11.5px] text-muted-foreground"
         >
-          {monthDay(new Date(job.createdAt))}
+          {monthDay(new Date(job.createdAt), zone)}
         </time>
       </span>
     </div>

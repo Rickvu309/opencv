@@ -112,6 +112,7 @@ describe("Coach workspace shows streamed progress", () => {
 
   it("shows a pending action once, on its card with Approve and Deny, without a Working timer", async () => {
     const { feed, rowStatuses, working } = await openTurn()
+    const composer = screen.getByRole("textbox", { name: "Message Coach" })
     const s = step("Move card")
     await feed(s.event, s.data)
     await feed(call("m", "job.move").event, call("m", "job.move").data)
@@ -122,6 +123,41 @@ describe("Coach workspace shows streamed progress", () => {
     expect(screen.getByRole("button", { name: "Approve" })).toBeEnabled()
     expect(screen.getByRole("button", { name: "Deny" })).toBeEnabled()
     expect(screen.getAllByText("Needs your approval")).toHaveLength(1)
+    expect(
+      screen.queryByRole("button", { name: "Stop" })
+    ).not.toBeInTheDocument()
+    const send = screen.getByRole("button", { name: "Send" })
+    expect(send).toBeDisabled()
+    expect(send).toHaveAccessibleDescription("Approve or deny above")
+    expect(composer).toBeEnabled()
+    expect(composer).toHaveAttribute("placeholder", "Approve or deny")
+    expect(composer).not.toHaveFocus()
+    const hold = document.querySelector("[data-slot='coach-send-hold']")
+    expect(hold).toHaveClass("invisible")
+    const composerWrap = composer.closest(
+      "[data-slot='coach-composer']"
+    )?.parentElement
+    expect(hold?.parentElement).toBe(composerWrap)
+    composer.focus()
+    fireEvent.change(composer, { target: { value: "Why this wording?" } })
+    expect(screen.getByRole("textbox", { name: "Message Coach" })).toBe(
+      composer
+    )
+    expect(composer).toHaveFocus()
+    const heldSend = screen.getByRole("button", { name: "Send" })
+    expect(composer).toHaveValue("Why this wording?")
+    expect(heldSend).toBeDisabled()
+    expect(heldSend).toHaveAccessibleDescription("Approve or deny above")
+    expect(screen.getByText("Approve or deny above")).toBe(hold)
+    expect(hold).not.toHaveClass("invisible")
+    expect(
+      composer.closest("[data-slot='coach-composer']")?.parentElement
+    ).toBe(composerWrap)
+    expect(screen.getByText("Approve or deny above")).toBeVisible()
+    expect(screen.getByText("Approve or deny above")).toHaveAttribute(
+      "data-slot",
+      "coach-send-hold"
+    )
     expect(rowStatuses()).toEqual([])
     expect(screen.queryByText(/Working, \d+s/)).toBeNull()
     expect(working()).toBeNull()

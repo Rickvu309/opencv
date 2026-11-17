@@ -21,7 +21,7 @@ describe("Paper search route state", () => {
     "restores the query after browser Back from $kind",
     async ({ name, query }) => {
       const { router } = renderApp("/paper")
-      const search = await screen.findByRole("textbox", {
+      const search = await screen.findByRole("searchbox", {
         name: "Search Paper",
       })
       fireEvent.change(search, { target: { value: query } })
@@ -38,7 +38,7 @@ describe("Paper search route state", () => {
       router.history.back()
       await waitFor(() =>
         expect(
-          screen.getByRole("textbox", { name: "Search Paper" })
+          screen.getByRole("searchbox", { name: "Search Paper" })
         ).toHaveValue(query)
       )
       expect(
@@ -51,7 +51,7 @@ describe("Paper search route state", () => {
     "restores the query after the Paper button from $kind",
     async ({ name, query }) => {
       renderApp("/paper")
-      const search = await screen.findByRole("textbox", {
+      const search = await screen.findByRole("searchbox", {
         name: "Search Paper",
       })
       fireEvent.change(search, { target: { value: query } })
@@ -77,7 +77,7 @@ describe("Paper search route state", () => {
       )
       await waitFor(() =>
         expect(
-          screen.getByRole("textbox", { name: "Search Paper" })
+          screen.getByRole("searchbox", { name: "Search Paper" })
         ).toHaveValue(query)
       )
       expect(
@@ -88,7 +88,9 @@ describe("Paper search route state", () => {
 
   it("keeps URL search strings verbatim and removes q when cleared", async () => {
     const { router } = renderApp("/paper?q=Untitled")
-    const search = await screen.findByRole("textbox", { name: "Search Paper" })
+    const search = await screen.findByRole("searchbox", {
+      name: "Search Paper",
+    })
     expect(search).toHaveValue("Untitled")
     const special = ' 123 {"n":1} '
     fireEvent.change(search, { target: { value: special } })

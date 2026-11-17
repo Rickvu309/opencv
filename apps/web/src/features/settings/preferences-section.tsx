@@ -54,11 +54,14 @@ export function PreferencesSection({
   const startLabel = startPageEntry(profile.startPage).label
   return (
     <>
-      <SettingsTitle title="Preferences" />
+      <SettingsTitle title="Preferences">
+        Language, time zone and where you start.
+      </SettingsTitle>
       <SettingsSection id="interface" label="Interface">
         <SettingsCard name="interface">
           <SettingsRow
             id="language"
+            stack
             label="Language"
             desc="Menus and buttons stay in English for now"
             error={errorKey === "language" ? error : undefined}
@@ -66,7 +69,7 @@ export function PreferencesSection({
               <SegmentedControl
                 aria-label="Language"
                 size="sm"
-                className="max-md:[--ui-segc-h:48px]! pointer-fine:md:[--ui-segc-h:30px]! pointer-fine:md:[--ui-segc-px:10px]! max-md:[&_[role=radio]]:min-h-11 max-md:[&_[role=radio]]:min-w-11"
+                className="max-md:[--ui-segc-h:48px]! @max-[479px]/settings:max-w-full pointer-fine:md:[--ui-segc-h:30px]! pointer-fine:md:[--ui-segc-px:10px]! max-md:[&_[role=radio]]:min-h-11 max-md:[&_[role=radio]]:min-w-11"
                 disabled={pending}
                 value={profile.language}
                 onChange={(language) => onSave({ language })}
@@ -83,6 +86,7 @@ export function PreferencesSection({
           />
           <SettingsRow
             id="time-zone"
+            stack
             label="Time zone"
             desc="Used for interviews and deadlines"
             error={errorKey === "timeZone" ? error : undefined}
@@ -95,10 +99,20 @@ export function PreferencesSection({
               >
                 <SelectTrigger
                   aria-label="Time zone"
+                  aria-invalid={
+                    errorKey === "timeZone" && error ? true : undefined
+                  }
+                  aria-describedby={
+                    errorKey === "timeZone" && error
+                      ? "settings-row-time-zone-error"
+                      : undefined
+                  }
                   disabled={pending}
-                  className="touch-manipulation gap-2 rounded-[7px] px-2.5 data-[size=default]:max-md:h-11 md:text-[13px]"
+                  className="touch-manipulation gap-2 rounded-[7px] px-2.5 data-[size=default]:max-md:h-11 md:text-[13px] @max-[479px]/settings:w-full @max-[479px]/settings:min-w-0"
                 >
-                  <SelectValue>{zoneLabel}</SelectValue>
+                  <SelectValue className="min-w-0 truncate" title={zoneLabel}>
+                    {zoneLabel}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {zones.map((zone) => (
@@ -112,6 +126,7 @@ export function PreferencesSection({
           />
           <SettingsRow
             id="start-page"
+            stack
             label="Start page"
             desc="What opens when you sign in"
             error={errorKey === "startPage" ? error : undefined}
@@ -125,6 +140,14 @@ export function PreferencesSection({
               >
                 <SelectTrigger
                   aria-label="Start page"
+                  aria-invalid={
+                    errorKey === "startPage" && error ? true : undefined
+                  }
+                  aria-describedby={
+                    errorKey === "startPage" && error
+                      ? "settings-row-start-page-error"
+                      : undefined
+                  }
                   disabled={pending}
                   className="touch-manipulation gap-2 rounded-[7px] px-2.5 data-[size=default]:max-md:h-11 md:text-[13px]"
                 >

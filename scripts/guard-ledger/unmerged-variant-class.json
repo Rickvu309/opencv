@@ -1,0 +1,13 @@
+{
+  "id": "unmerged-variant-class",
+  "file": "scripts/unmerged-variant-class.test.mjs",
+  "detector": {
+    "module": "scripts/lib/unmerged-variant-class.mjs",
+    "export": "unmergedVariantClasses"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "0bbef4fe",
+    "path": "apps/web/src/features/paper-page/canvas-unsaved-bar.tsx"
+  }
+}

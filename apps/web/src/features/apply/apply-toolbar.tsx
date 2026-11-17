@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import { useId } from "react"
 import {
   Calendar,
   Funnel,
@@ -50,6 +50,24 @@ export function ApplyHeader({ onNewJob }: { onNewJob: () => void }) {
   )
 }
 
+const PRIORITY_COUNT_ORDER = ["high", "normal", "low"] as const
+
+const PRIORITY_COUNT_LABEL = {
+  high: "High",
+  normal: "Normal",
+  low: "Low",
+} as const
+
+function priorityCountRows(
+  rows: readonly { priority: string; count: number }[]
+) {
+  return PRIORITY_COUNT_ORDER.map((priority) => ({
+    priority,
+    label: PRIORITY_COUNT_LABEL[priority],
+    count: rows.find((row) => row.priority === priority)?.count ?? 0,
+  }))
+}
+
 const VIEWS: { view: ApplyView; label: string; icon: LucideIcon }[] = [
   { view: "board", label: "Board", icon: Kanban },
   { view: "list", label: "List", icon: List },
@@ -61,15 +79,18 @@ export function ApplyToolbar({
   onView,
   filters,
   onFilters,
-  children,
+  priorityCounts,
+  priorityCountsFailed = false,
 }: {
   view: ApplyView
   onView: (view: ApplyView) => void
   filters: ApplyFilters
   onFilters: (filters: ApplyFilters) => void
-  children?: ReactNode
+  priorityCounts?: readonly { priority: string; count: number }[]
+  priorityCountsFailed?: boolean
 }) {
   const count = activeFilterCount(filters)
+  const priorityHeadingId = useId()
   return (
     <div
       data-slot="apply-toolbar"
@@ -101,7 +122,6 @@ export function ApplyToolbar({
           </Button>
         )
       })}
-      {children}
       <Popover>
         <PopoverTrigger
           render={
@@ -124,6 +144,35 @@ export function ApplyToolbar({
           ) : null}
         </PopoverTrigger>
         <PopoverContent align="end" className="flex flex-col gap-2">
+          {priorityCounts || priorityCountsFailed ? (
+            <div className="flex flex-col gap-1.5 border-b border-border pb-2">
+              <p
+                id={priorityHeadingId}
+                className="text-sm font-medium text-foreground"
+              >
+                Jobs by priority
+              </p>
+              <div
+                role="group"
+                aria-labelledby={priorityHeadingId}
+                className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground"
+              >
+                {priorityCounts
+                  ? priorityCountRows(priorityCounts).map(
+                      ({ priority, label, count: priorityCount }) => (
+                        <span key={priority}>
+                          {label}{" "}
+                          <span className="tabular-nums">{priorityCount}</span>
+                        </span>
+                      )
+                    )
+                  : null}
+                {priorityCountsFailed ? (
+                  <span>Couldn't load priority counts.</span>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
           <div className="flex flex-col gap-1">
             <Label htmlFor="filter-company">Company</Label>
             <Input

@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react"
 import { useQuery } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
 
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
@@ -53,6 +54,7 @@ import {
 import { linkAttachmentLabel } from "./coach-attachment-view.ts"
 import { coachResetLabel } from "./coach-mode.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
+import { coachViewportIsNarrow } from "./coach-composer-focus.ts"
 
 export function CoachWorkspace({
   chatId = null,
@@ -114,6 +116,14 @@ export function CoachWorkspace({
     queryFn: coachJobOptions,
     enabled: picker === "job",
   })
+  const awaitingApproval = messages.some((message) =>
+    message.parts?.some(
+      (part) =>
+        part.type === "tool" &&
+        (part.approval === "pending" ||
+          Boolean(part.pendingActionId && !part.approval))
+    )
+  )
   const active = phase !== "idle"
   const chatSynced =
     draftChatId === activeChatId &&
@@ -166,7 +176,7 @@ export function CoachWorkspace({
   }
 
   function send(text = draft) {
-    if (!enabled || capped || active) return
+    if (!enabled || capped || active || awaitingApproval) return
     const trimmed = text.trim()
     const sentAttachments = attachments.map(({ kind, id, label }) => ({
       kind,
@@ -203,9 +213,10 @@ export function CoachWorkspace({
 
   function chooseStarter(value: string) {
     dispatch({ type: "draft_typed", value })
+    if (awaitingApproval || coachViewportIsNarrow()) return
     requestAnimationFrame(() => {
       const field = composerBox.current?.querySelector("textarea")
-      if (!field) return
+      if (!field || awaitingApproval || coachViewportIsNarrow()) return
       field.focus()
       field.setSelectionRange(field.value.length, field.value.length)
     })
@@ -280,7 +291,8 @@ export function CoachWorkspace({
       setDraft={(value) => dispatch({ type: "draft_typed", value })}
       onSend={() => send()}
       onStop={store.stop}
-      turnActive={active}
+      turnActive={active && !awaitingApproval}
+      holdReason={awaitingApproval ? "Approve or deny above" : undefined}
       disabled={
         capped ||
         !enabled ||
@@ -288,11 +300,13 @@ export function CoachWorkspace({
         store.configuration === "error"
       }
       placeholder={
-        capped
-          ? "Daily limit reached"
-          : compact && !showHome
-            ? "Reply…"
-            : "Ask Coach anything"
+        awaitingApproval
+          ? "Approve or deny"
+          : capped
+            ? "Daily limit reached"
+            : showHome
+              ? "Ask Coach anything"
+              : "Reply…"
       }
       menuPlacement={showWelcome ? "below" : "above"}
       onAttachFromPaper={() =>
@@ -332,11 +346,15 @@ export function CoachWorkspace({
         onRemove={(item) => dispatch({ type: "attachment_removed", item })}
       />
       {!enabled ? (
-        <p role="status" className="text-sm">
+        <p role="status" className="text-sm text-muted-foreground">
           Coach is turned off.{" "}
-          <a href="/settings/coach" className="underline underline-offset-2">
+          <Link
+            to="/settings/{-$section}"
+            params={{ section: "coach" }}
+            className="font-medium text-foreground underline underline-offset-2"
+          >
             Open Settings
-          </a>
+          </Link>
         </p>
       ) : null}
       {usage.isError ? (
@@ -353,10 +371,12 @@ export function CoachWorkspace({
         </p>
       ) : null}
       {store.configuration === "loading" ? (
-        <p role="status">Loading Coach settings…</p>
+        <p role="status" className="text-sm text-muted-foreground">
+          Loading Coach settings…
+        </p>
       ) : null}
       {store.configuration === "error" ? (
-        <p role="alert" className="text-sm">
+        <p role="alert" className="text-sm text-destructive">
           {error}{" "}
           <Button
             variant="link"
@@ -368,11 +388,7 @@ export function CoachWorkspace({
           </Button>
         </p>
       ) : null}
-      <PromptInputFrame
-        value={!showWelcome && !compact && !capped ? "page" : "standard"}
-      >
-        {coachDock}
-      </PromptInputFrame>
+      <PromptInputFrame value="page">{coachDock}</PromptInputFrame>
     </div>
   )
   const headerTitle = showHome
@@ -422,8 +438,7 @@ export function CoachWorkspace({
       <div
         className={cn(
           "min-h-0 flex-1",
-          showWelcome ? "overflow-auto" : "flex flex-col overflow-hidden",
-          compact && "px-[18px] py-2"
+          showWelcome ? "overflow-auto" : "flex flex-col overflow-hidden"
         )}
       >
         {showWelcome ? (
@@ -582,16 +597,21 @@ export function CoachWorkspace({
                       ? "You have no CVs or Letters in Paper yet. Create or import one in Paper, then add it here."
                       : "You have no Jobs in Apply yet. Add the Jobs you are applying for in Apply, then add one here."}
                   </p>
-                  <a
-                    href={
-                      picker === "paper"
-                        ? SURFACE_PATHS.paper
-                        : SURFACE_PATHS.apply
-                    }
-                    className="inline-flex min-h-11 items-center font-medium text-foreground underline underline-offset-2 md:min-h-0"
-                  >
-                    {picker === "paper" ? "Go to Paper" : "Go to Apply"}
-                  </a>
+                  {picker === "paper" ? (
+                    <Link
+                      to={SURFACE_PATHS.paper}
+                      className="inline-flex min-h-11 items-center font-medium text-foreground underline underline-offset-2 md:min-h-0"
+                    >
+                      Go to Paper
+                    </Link>
+                  ) : (
+                    <Link
+                      to={SURFACE_PATHS.apply}
+                      className="inline-flex min-h-11 items-center font-medium text-foreground underline underline-offset-2 md:min-h-0"
+                    >
+                      Go to Apply
+                    </Link>
+                  )}
                 </div>
               ) : null}
             </div>

@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react"
+import { memo, type ComponentProps } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 
@@ -103,5 +103,40 @@ describe("Coach panel", () => {
     )
     expect(screen.queryByRole("region")).not.toBeInTheDocument()
     expect(screen.queryByText("Saved conversation")).not.toBeInTheDocument()
+  })
+
+  it("passes page or compact to the caller and does not overwrite the child", () => {
+    const Probe = memo(function Probe({
+      presentation = "own",
+    }: {
+      presentation?: string
+    }) {
+      return <p>{presentation}</p>
+    })
+    const props = {
+      title: "Tailor CV",
+      open: true,
+      onMinimize: vi.fn(),
+      onExpand: vi.fn(),
+      onClose: vi.fn(),
+    }
+    const { rerender } = render(
+      <CoachPanel {...props} mode="full">
+        {() => <Probe presentation="own" />}
+      </CoachPanel>
+    )
+    expect(screen.getByText("own")).toBeVisible()
+    rerender(
+      <CoachPanel {...props} mode="side">
+        {(_controls, presentation) => <Probe presentation={presentation} />}
+      </CoachPanel>
+    )
+    expect(screen.getByText("compact")).toBeVisible()
+    rerender(
+      <CoachPanel {...props} mode="full">
+        {(_controls, presentation) => <Probe presentation={presentation} />}
+      </CoachPanel>
+    )
+    expect(screen.getByText("page")).toBeVisible()
   })
 })

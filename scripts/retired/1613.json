@@ -1,0 +1,30 @@
+[
+  {
+    "subject": "apps/web/src/routes/paper-search.test.tsx > Paper search route state",
+    "because": "The field is the kit SearchInput, so its role is searchbox and the old textbox role is wrong.",
+    "replacedBy": "apps/web/src/routes/paper-search.test.tsx",
+    "proof": {
+      "fork": "f66e65e0971ee269c95607147eb2d1db2cb88683",
+      "replacedByBlob": "a95e700bdf04e9e39132bc7cb8e8284e950707ee",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library-sections.test.tsx > Paper home sections > shows imported files without documents and keeps their delete action :: expect(screen.queryByRole(\"region\", {name: \"CVs\"})).not.toBeInTheDocument()",
+    "because": "Empty CVs and Cover letters stay once any file exists, so the old assertion that the CVs region is absent is wrong.",
+    "replacedBy": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "proof": {
+      "fork": "a887677ee976df2a519b5804ad24a48ed431fc11",
+      "replacedByBlob": "50f7d63f55bbcee0990590acd62766f6d32fa5af",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]

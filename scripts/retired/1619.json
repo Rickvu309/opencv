@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/connections/snippets.test.ts",
+    "because": "Agent capabilities intentionally use plain product language, with Claude sign-in help beside the setup step",
+    "replacedBy": "apps/web/src/features/connections/snippets.test.ts",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "97904dff4a444b05cf1c961b8a8325fff6cb9f05",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]

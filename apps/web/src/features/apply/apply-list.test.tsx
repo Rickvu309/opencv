@@ -6,24 +6,67 @@ import {
   within,
 } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { renderApp } from "@/test/render-app.tsx"
+import * as applyApi from "./apply-api.ts"
 import { mockJob } from "@/test/apply-job-fixtures.ts"
 import { setMockJobs } from "@/test/apply-jobs-mock.ts"
+
+async function openPriorityCounts() {
+  const open = screen.queryByRole("group", { name: "Jobs by priority" })
+  if (open) return open
+  const filter = await screen.findByRole("button", { name: "Filter" })
+  await userEvent.click(filter)
+  return screen.findByRole("group", { name: "Jobs by priority" })
+}
+
+async function closePriorityCounts() {
+  if (!screen.queryByRole("group", { name: "Jobs by priority" })) return
+  await userEvent.keyboard("{Escape}")
+  await waitFor(() => {
+    expect(
+      screen.queryByRole("group", { name: "Jobs by priority" })
+    ).not.toBeInTheDocument()
+  })
+}
 
 describe("apply list", () => {
   afterEach(() => {
     cleanup()
+    vi.restoreAllMocks()
+  })
+  it("says the jobs could not load and gives Refresh a phone-sized target", async () => {
+    vi.spyOn(applyApi, "listJobs").mockRejectedValue(new Error("down"))
+    renderApp("/apply")
+    expect(await screen.findByText("Couldn't load jobs.")).toBeInTheDocument()
+    expect(screen.queryByText(/Refresh the page/)).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Refresh" }).className).toMatch(
+      /\bh-11\b/
+    )
   })
   it("shows all priority counts including zeros", async () => {
     setMockJobs([
       mockJob({ id: "01900000-0000-7000-8000-000000000021", priority: "high" }),
     ])
     renderApp("/apply")
-    const counts = await screen.findByLabelText("Jobs by priority")
-    await waitFor(() => expect(counts).toHaveTextContent("low 0normal 0high 1"))
-    expect(within(counts).getByText("high")).toBeVisible()
+    await screen.findByRole("button", { name: "Filter" })
+    expect(
+      document.querySelector("[data-slot=apply-toolbar]")?.textContent ?? ""
+    ).not.toMatch(/low/i)
+    const counts = await openPriorityCounts()
+    await waitFor(() => expect(counts).toHaveTextContent("High 1Normal 0Low 0"))
+    const heading = screen.getByText("Jobs by priority")
+    expect(heading.className).toMatch(/\btext-sm\b/)
+    expect(counts).toHaveAttribute("aria-labelledby", heading.id)
+    expect(counts).not.toHaveAttribute("aria-label")
+    expect(within(counts).getByText("High")).toBeVisible()
+    expect(counts.textContent?.indexOf("High")).toBeLessThan(
+      counts.textContent?.indexOf("Normal") ?? -1
+    )
+    expect(counts.textContent?.indexOf("Normal")).toBeLessThan(
+      counts.textContent?.indexOf("Low") ?? -1
+    )
   })
   it("refreshes cached counts after setting priority and Undo", async () => {
     setMockJobs([
@@ -33,11 +76,9 @@ describe("apply list", () => {
       }),
     ])
     renderApp("/apply")
-    await waitFor(() =>
-      expect(screen.getByLabelText("Jobs by priority")).toHaveTextContent(
-        "normal 1"
-      )
-    )
+    const before = await openPriorityCounts()
+    await waitFor(() => expect(before).toHaveTextContent("Normal 1"))
+    await closePriorityCounts()
     fireEvent.click(
       screen.getByRole("button", {
         name: "Junior Marketing, Lumière Cosmetics",
@@ -56,16 +97,13 @@ describe("apply list", () => {
         { name: "Apply" }
       )
     )
-    await waitFor(() =>
-      expect(screen.getByLabelText("Jobs by priority")).toHaveTextContent(
-        "low 0normal 0high 1"
-      )
-    )
+    const raised = await openPriorityCounts()
+    await waitFor(() => expect(raised).toHaveTextContent("High 1Normal 0Low 0"))
+    await closePriorityCounts()
     fireEvent.click(screen.getByRole("button", { name: "Undo" }))
+    const restored = await openPriorityCounts()
     await waitFor(() =>
-      expect(screen.getByLabelText("Jobs by priority")).toHaveTextContent(
-        "low 0normal 1high 0"
-      )
+      expect(restored).toHaveTextContent("High 0Normal 1Low 0")
     )
   })
   it("phrases saved, deadline, and applied jobs", async () => {

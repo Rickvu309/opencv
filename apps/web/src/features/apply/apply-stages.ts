@@ -54,7 +54,7 @@ type Zoned = {
   minute: string
 }
 
-function zonedParts(date: Date, zone = PROFILE_ZONE): Zoned {
+function zonedParts(date: Date, zone: string): Zoned {
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: zone,
     year: "numeric",
@@ -97,7 +97,7 @@ export function deadlineInstant(ymd: string): Date {
   )
 }
 
-export function monthDay(date: Date, zone = PROFILE_ZONE): string {
+export function monthDay(date: Date, zone: string): string {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
     day: "numeric",
@@ -105,29 +105,29 @@ export function monthDay(date: Date, zone = PROFILE_ZONE): string {
   }).format(date)
 }
 
-export function listPhrase(job: JobView, now = new Date()): string {
+export function listPhrase(job: JobView, now: Date, zone: string): string {
   if (job.stage === "offer") return "Offer"
   if (job.stage === "closed") return "Closed"
   if (job.stage === "interview" && job.interviewAt) {
-    const parts = zonedParts(new Date(job.interviewAt))
+    const parts = zonedParts(new Date(job.interviewAt), zone)
     const hour = String(Number(parts.hour))
     return `Interview ${parts.weekday}, ${hour}:${parts.minute}`
   }
   if (job.stage === "applied") {
-    return `Applied ${monthDay(new Date(job.updatedAt))}`
+    return `Applied ${monthDay(new Date(job.updatedAt), zone)}`
   }
   if (job.stage === "saved" && job.deadline) {
     return `Apply by ${monthDay(deadlineInstant(job.deadline), "UTC")}`
   }
   if (job.stage === "saved") {
-    const created = zonedParts(new Date(job.createdAt))
-    if (sameDay(created, zonedParts(now))) return "Saved today"
+    const created = zonedParts(new Date(job.createdAt), zone)
+    if (sameDay(created, zonedParts(now, zone))) return "Saved today"
     return "Saved"
   }
   return stageLabel(job.stage)
 }
 
-export function zonedYmd(date: Date, zone = PROFILE_ZONE) {
+export function zonedYmd(date: Date, zone: string) {
   const parts = zonedParts(date, zone)
   return `${parts.year}-${parts.month}-${parts.day}`
 }
@@ -136,10 +136,7 @@ function clockHour(hour: string) {
   return hour === "24" ? "00" : hour
 }
 
-export function interviewInputValue(
-  iso: string | null,
-  zone = PROFILE_ZONE
-): string {
+export function interviewInputValue(iso: string | null, zone: string): string {
   if (!iso) return ""
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return ""
@@ -147,10 +144,7 @@ export function interviewInputValue(
   return `${parts.year}-${parts.month}-${parts.day}T${clockHour(parts.hour)}:${parts.minute}`
 }
 
-export function interviewInstant(
-  local: string,
-  zone = PROFILE_ZONE
-): string | null {
+export function interviewInstant(local: string, zone: string): string | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(local)
   if (!match) return null
   const year = Number(match[1])

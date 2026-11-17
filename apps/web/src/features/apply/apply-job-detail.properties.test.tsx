@@ -53,9 +53,12 @@ describe("job property drafts", () => {
 
       expect(draft).toHaveLength(201)
       expect(input).toHaveValue(draft)
-      expect(await screen.findByRole("alert")).toHaveTextContent(
+      const alert = await screen.findByRole("alert")
+      expect(alert).toHaveTextContent(
         `${label} must be 200 characters or fewer.`
       )
+      expect(input).toHaveAttribute("aria-invalid", "true")
+      expect(input).toHaveAttribute("aria-describedby", alert.id)
       expect(
         getMockJobPosts().filter((post) => post.name === "job.update")
       ).toHaveLength(0)

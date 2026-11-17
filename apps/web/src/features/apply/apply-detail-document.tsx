@@ -31,6 +31,7 @@ import {
 } from "./apply-detail-parts.tsx"
 import { companyInitials, monthDay } from "./apply-stages.ts"
 import { FAINT_TEXT } from "./apply-tone.ts"
+import { useChosenTimeZone } from "./apply-time-zone.ts"
 
 const NOTE_PLACEHOLDER = "placeholder:text-muted-foreground/84"
 
@@ -180,7 +181,7 @@ function InterviewPrep({ job }: { job: JobDetail }) {
             <Button
               type="button"
               variant="ghost"
-              className="h-11 flex-1 justify-start gap-2 px-0 text-[13px] font-medium text-muted-foreground hover:bg-transparent aria-expanded:bg-transparent aria-expanded:text-muted-foreground md:h-4"
+              className="h-11 flex-1 justify-start gap-2 px-0 text-[13px] font-medium text-muted-foreground hover:bg-transparent aria-expanded:bg-transparent aria-expanded:text-muted-foreground md:h-6"
             />
           }
         >
@@ -269,7 +270,7 @@ function InterviewPrep({ job }: { job: JobDetail }) {
                 autoFocus
                 value={step}
                 placeholder="Add a step"
-                className="h-11 border-0 bg-transparent px-0 text-[13.5px] shadow-none focus-visible:ring-0 md:h-7 md:text-[13.5px] dark:bg-transparent"
+                className="h-11 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0 md:h-7 md:text-[13.5px] dark:bg-transparent"
                 onChange={(event) =>
                   dispatch({ type: "step_typed", value: event.target.value })
                 }
@@ -305,6 +306,7 @@ function InterviewPrep({ job }: { job: JobDetail }) {
 }
 
 function Comment({ row, author }: { row: ActivityFeedRow; author: string }) {
+  const zone = useChosenTimeZone()
   return (
     <li
       data-slot="comment"
@@ -323,7 +325,7 @@ function Comment({ row, author }: { row: ActivityFeedRow; author: string }) {
           dateTime={row.createdAt}
           className={cn("text-[12.5px]", FAINT_TEXT.card)}
         >
-          {monthDay(new Date(row.createdAt))}
+          {monthDay(new Date(row.createdAt), zone)}
         </time>
       </div>
       <p
@@ -422,7 +424,7 @@ function NoteComposer({ jobId }: { jobId: JobId }) {
           rows={1}
           placeholder="Leave a note…"
           className={cn(
-            "min-h-11 flex-1 resize-none border-0 bg-transparent p-0 text-[13px] shadow-none focus-visible:ring-0 md:min-h-0 md:text-[13px] dark:bg-transparent",
+            "min-h-11 flex-1 resize-none border-0 bg-transparent p-0 text-base shadow-none focus-visible:ring-0 md:min-h-0 md:text-[13px] dark:bg-transparent",
             NOTE_PLACEHOLDER
           )}
           onChange={(event) =>
