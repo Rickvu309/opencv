@@ -14,6 +14,11 @@ const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 const RATCHET = "scripts/internal-anchors.ratchet.json"
 
 const MISTAKE = `
+const paperHref = "/paper"
+const jobHref = \`/apply/\${id}\`
+<a href={paperHref}>Paper</a>
+<a href={jobHref}>Job</a>
+<a href={("/paper")}>Grouped</a>
 <a href="/paper">Paper</a>
 <a href={\`/paper/\${id}\`}>Name</a>
 <a href={kind === "paper" ? SURFACE_PATHS.paper : SURFACE_PATHS.apply}>Go</a>
@@ -24,6 +29,13 @@ const CLEAN = `
 <a href="https://example.com/jobs" target="_blank" rel="noopener noreferrer">Jobs</a>
 <a href="#app-main">Skip</a>
 <a href={url}>Posting</a>
+<a data-href="/paper">Data</a>
+<a href="https://example.com" data-path="/paper">External</a>
+<a href={url} data-path="/paper">Posting</a>
+<a href={url} title={SURFACE_PATHS.paper}>Posting</a>
+<a data-href="/paper" href="https://example.com">Posting</a>
+<a href={\`\${companyWebsite}/careers\`}>Careers</a>
+<a title='href="/paper"' href="https://example.com">Title</a>
 <a href={\`\${apiBaseUrl}\${downloadPath}\`} download>Word</a>
 <a href={documentHref("/sign-in")}>Sign in</a>
 <a href={inbox} target="_blank" rel="noreferrer" />
@@ -35,9 +47,9 @@ const CLEAN = `
 
 test("the mistake fixture fires on a raw internal anchor", () => {
   const found = detect(MISTAKE, "mistake.tsx")
-  assert.equal(found.length, 4)
-  assert.match(found.join("\n"), /mistake\.tsx:2 raw internal anchor/)
+  assert.equal(found.length, 7)
   assert.match(found.join("\n"), /mistake\.tsx:4 raw internal anchor/)
+  assert.match(found.join("\n"), /mistake\.tsx:6 raw internal anchor/)
 })
 
 test("the clean fixture stays quiet", () => {

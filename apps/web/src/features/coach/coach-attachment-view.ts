@@ -7,8 +7,15 @@ export type AttachmentView = {
   kind: Attachment["kind"]
   label: string
   title: string
-  href: string | null
-  external: boolean
+  target:
+    | {
+        kind: "internal"
+        route:
+          | { to: "/paper/$docId"; params: { docId: string } }
+          | { to: "/apply/$jobId"; params: { jobId: string } }
+      }
+    | { kind: "external"; href: string }
+    | { kind: "none" }
 }
 
 const KIND_NAME = {
@@ -28,20 +35,26 @@ export function linkAttachmentLabel(url: URL) {
 }
 
 export function attachmentView(item: Attachment): AttachmentView {
-  const href =
+  const target = (
     item.kind === "paper"
-      ? `/paper/${item.id}`
+      ? {
+          kind: "internal",
+          route: { to: "/paper/$docId", params: { docId: item.id } },
+        }
       : item.kind === "job"
-        ? `/apply/${item.id}`
+        ? {
+            kind: "internal",
+            route: { to: "/apply/$jobId", params: { jobId: item.id } },
+          }
         : item.kind === "link"
-          ? item.id
-          : null
+          ? { kind: "external", href: item.id }
+          : { kind: "none" }
+  ) satisfies AttachmentView["target"]
   return {
     key: `${item.kind}:${item.id}`,
     kind: item.kind,
     label: item.label,
     title: `${KIND_NAME[item.kind]}: ${item.kind === "link" ? item.id : item.label}`,
-    href,
-    external: item.kind === "link",
+    target,
   }
 }

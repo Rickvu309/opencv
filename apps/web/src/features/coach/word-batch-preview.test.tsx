@@ -23,12 +23,38 @@ describe("Word proposal additions", () => {
     )
     expect(screen.getByText("Add a line")).toBeVisible()
     expect(screen.queryByText("Add", { exact: true })).not.toBeInTheDocument()
+    const definition = container.querySelector("dd")
+    expect(definition?.previousElementSibling?.tagName).toBe("DT")
+    expect(definition?.previousElementSibling).toHaveTextContent("New line")
     expect(container.querySelector("del")).toBeNull()
     expect(screen.queryByText("Before")).not.toBeInTheDocument()
     expect(screen.queryByText("(empty line)")).not.toBeInTheDocument()
     expect(
       screen.getByText("Helped customers resolve requests.").closest("ins")
     ).not.toBeNull()
+  })
+
+  it("gives an inserted line its own term after its location", () => {
+    const { container } = render(
+      <WordBatchPreview
+        batch={{
+          state: "ready",
+          changes: [
+            {
+              op: "insert",
+              before: "",
+              after: "Resolved requests.",
+              place: "Experience",
+            },
+          ],
+        }}
+      />
+    )
+    const definitions = [...container.querySelectorAll("dd")]
+    expect(
+      definitions.map((row) => row.previousElementSibling?.textContent)
+    ).toEqual(["Where", "New line"])
+    expect(definitions[1]).toHaveTextContent("Resolved requests.")
   })
 
   it("keeps the before text when an existing line changes", () => {
@@ -51,5 +77,8 @@ describe("Word proposal additions", () => {
       "Supported customers."
     )
     expect(screen.getByText("After")).toBeVisible()
+    for (const definition of container.querySelectorAll("dd")) {
+      expect(definition.previousElementSibling?.tagName).toBe("DT")
+    }
   })
 })

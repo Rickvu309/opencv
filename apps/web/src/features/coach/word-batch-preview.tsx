@@ -62,12 +62,12 @@ export function WordBatchPreview({ batch }: { batch: WordBatchView }) {
                       )
                     if (row.label === "New line")
                       return (
-                        <dd
-                          key={row.label}
-                          className="col-span-2 min-w-0 whitespace-pre-wrap"
-                        >
-                          {text}
-                        </dd>
+                        <div key={row.label} className="contents">
+                          <dt className="sr-only">{row.label}</dt>
+                          <dd className="col-span-2 min-w-0 whitespace-pre-wrap">
+                            {text}
+                          </dd>
+                        </div>
                       )
                     return (
                       <div key={row.label} className="contents">

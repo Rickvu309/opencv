@@ -132,12 +132,27 @@ describe("Coach workspace shows streamed progress", () => {
     expect(composer).toBeEnabled()
     expect(composer).toHaveAttribute("placeholder", "Approve or deny")
     expect(composer).not.toHaveFocus()
-    expect(document.querySelector("[data-slot='coach-send-hold']")).toBeNull()
+    const hold = document.querySelector("[data-slot='coach-send-hold']")
+    expect(hold).toHaveClass("invisible")
+    const composerWrap = composer.closest(
+      "[data-slot='coach-composer']"
+    )?.parentElement
+    expect(hold?.parentElement).toBe(composerWrap)
+    composer.focus()
     fireEvent.change(composer, { target: { value: "Why this wording?" } })
+    expect(screen.getByRole("textbox", { name: "Message Coach" })).toBe(
+      composer
+    )
+    expect(composer).toHaveFocus()
     const heldSend = screen.getByRole("button", { name: "Send" })
     expect(composer).toHaveValue("Why this wording?")
     expect(heldSend).toBeDisabled()
     expect(heldSend).toHaveAccessibleDescription("Approve or deny above")
+    expect(screen.getByText("Approve or deny above")).toBe(hold)
+    expect(hold).not.toHaveClass("invisible")
+    expect(
+      composer.closest("[data-slot='coach-composer']")?.parentElement
+    ).toBe(composerWrap)
     expect(screen.getByText("Approve or deny above")).toBeVisible()
     expect(screen.getByText("Approve or deny above")).toHaveAttribute(
       "data-slot",

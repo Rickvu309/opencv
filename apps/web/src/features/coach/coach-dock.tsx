@@ -393,11 +393,6 @@ export function CoachDock({
           <ArrowUp className="size-4" />
         </Button>
       )}
-      {held && !showHold ? (
-        <span id={sendHoldId} className="sr-only">
-          {holdReason}
-        </span>
-      ) : null}
     </>
   )
 
@@ -421,19 +416,22 @@ export function CoachDock({
       actions={actions}
     />
   )
-  const composer = showHold ? (
+  const composer = (
     <div className="flex flex-col gap-1.5">
-      <p
-        id={sendHoldId}
-        data-slot="coach-send-hold"
-        className="px-3 text-xs leading-4 text-muted-foreground"
-      >
-        {holdReason}
-      </p>
+      {held ? (
+        <p
+          id={sendHoldId}
+          data-slot="coach-send-hold"
+          className={cn(
+            "px-3 text-xs leading-4 text-muted-foreground",
+            !showHold && "invisible"
+          )}
+        >
+          {holdReason}
+        </p>
+      ) : null}
       {field}
     </div>
-  ) : (
-    field
   )
   return notice ? (
     <div

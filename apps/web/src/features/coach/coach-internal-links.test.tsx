@@ -7,6 +7,7 @@ import { profileApiFetch } from "@/test/profile-api-mock.ts"
 import { render } from "@/test/render-with-client.tsx"
 
 import { ChatStoreProvider } from "./chat-store.tsx"
+import { CoachContextAttachments } from "./coach-context-attachments.tsx"
 import { CoachWorkspace } from "./coach-workspace.tsx"
 import { ReceiptDetail } from "./rich-receipts.tsx"
 
@@ -20,19 +21,21 @@ vi.mock("@tanstack/react-router", async (original) => ({
     children,
   }: {
     to?: string
-    params?: { section?: string; docId?: string }
+    params?: { section?: string; docId?: string; jobId?: string }
     className?: string
     children?: unknown
   }) => (
     <a
       data-router-link=""
-      data-to={params?.docId ? "/paper/$docId" : (to ?? "")}
+      data-to={to ?? ""}
       href={
         params?.docId
           ? `/paper/${params.docId}`
-          : params?.section
-            ? `/settings/${params.section}`
-            : (to ?? "")
+          : params?.jobId
+            ? `/apply/${params.jobId}`
+            : params?.section
+              ? `/settings/${params.section}`
+              : (to ?? "")
       }
       className={className}
     >
@@ -63,6 +66,38 @@ function emptyLists() {
 }
 
 describe("Coach internal links", () => {
+  it("opens Paper and Job context chips through the router and external context in a new tab", () => {
+    render(
+      <CoachContextAttachments
+        attachments={[
+          { kind: "paper", id: "p1", label: "My CV" },
+          { kind: "job", id: "j1", label: "Analyst at Acme" },
+          {
+            kind: "link",
+            id: "https://example.com/careers",
+            label: "example.com/careers",
+          },
+        ]}
+        onRemove={vi.fn()}
+      />
+    )
+    for (const [name, to, href] of [
+      ["My CV", "/paper/$docId", "/paper/p1"],
+      ["Analyst at Acme", "/apply/$jobId", "/apply/j1"],
+    ]) {
+      const link = screen.getByRole("link", { name })
+      expect(link).toHaveAttribute("data-router-link", "")
+      expect(link).toHaveAttribute("data-to", to)
+      expect(link).toHaveAttribute("href", href)
+      expect(link).not.toHaveAttribute("target")
+    }
+    const external = screen.getByRole("link", { name: "example.com/careers" })
+    expect(external).not.toHaveAttribute("data-router-link")
+    expect(external).toHaveAttribute("href", "https://example.com/careers")
+    expect(external).toHaveAttribute("target", "_blank")
+    expect(external).toHaveAttribute("rel", "noopener noreferrer")
+  })
+
   it("opens a created document through the router", () => {
     render(
       <ReceiptDetail
