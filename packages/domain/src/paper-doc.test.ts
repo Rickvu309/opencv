@@ -69,7 +69,7 @@ describe("paper document v3", () => {
       assert.equal(paper.blocks.length, 1)
       assert.equal("header" in paper, false)
       assert.deepEqual(paper.blocks[0], {
-        id: "paragraph-1",
+        id: paper.kind === "letter" ? "letter-1" : "paragraph-1",
         type: "paragraph",
         content: [],
       })

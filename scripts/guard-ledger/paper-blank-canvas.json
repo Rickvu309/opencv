@@ -1,0 +1,14 @@
+{
+  "id": "paper-blank-canvas",
+  "file": "scripts/paper-blank-canvas.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-blank-canvas.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "c998b453c",
+    "path": "packages/domain/src/paper-doc/document.ts"
+  },
+  "reason": "Owner correction 2026-11-17: blank CVs and Letters contain one empty paragraph with no starter header, sections or formatting. Clean and mistake fixtures reject starter structure, and historic main and introducing-commit replays fire. Letter anchors and explicit header edits also retain their existing meaning."
+}

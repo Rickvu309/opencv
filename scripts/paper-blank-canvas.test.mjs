@@ -3,7 +3,13 @@ import { execFileSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 import { emptyPaper } from "../packages/domain/src/paper-doc/blank-canvas.ts"
-import { detect, detectDocument, message } from "./lib/paper-blank-canvas.mjs"
+import {
+  detect,
+  detectDocument,
+  detectHeaderEdit,
+  detectHeaderUndo,
+  message,
+} from "./lib/paper-blank-canvas.mjs"
 import {
   applyCanvasBytes,
   mainXml,
@@ -37,6 +43,49 @@ test("every blank kind contains only one empty paragraph", () => {
       [message]
     )
   }
+})
+
+test("blank edits retain the Letter anchor and allow an explicitly requested CV header", () => {
+  assert.deepEqual(detectDocument(emptyPaper("letter")), [])
+  assert.deepEqual(
+    detectDocument({
+      ...emptyPaper("letter"),
+      blocks: [{ id: "paragraph-1", type: "paragraph", content: [] }],
+    }),
+    [message]
+  )
+  const clean = read("packages/domain/src/paper-doc/edits.ts")
+  assert.deepEqual(detectHeaderEdit(clean), [])
+  assert.equal(
+    detectHeaderEdit(clean.replace("work.header ??=", "work.header =")).length,
+    1
+  )
+  const historic = execFileSync(
+    "git",
+    ["show", "999443f9:packages/domain/src/paper-doc/edits.ts"],
+    { encoding: "utf8" }
+  )
+  assert.equal(detectHeaderEdit(historic).length, 1)
+  const undo = read("packages/domain/src/paper-doc/undo.ts")
+  assert.deepEqual(detectHeaderUndo(undo), [])
+  assert.equal(
+    detectHeaderUndo(undo.replace("delete work.header", "delete work.missing"))
+      .length,
+    1
+  )
+  const oldUndo = execFileSync(
+    "git",
+    ["show", "999443f9:packages/domain/src/paper-doc/undo.ts"],
+    { encoding: "utf8" }
+  )
+  assert.equal(detectHeaderUndo(oldUndo).length, 1)
+  const oldBlank = execFileSync(
+    "git",
+    ["show", "999443f9:packages/domain/src/paper-doc/blank-canvas.ts"],
+    { encoding: "utf8" }
+  )
+  assert.match(oldBlank, /id: "paragraph-1"/)
+  assert.doesNotMatch(oldBlank, /letter-1/)
 })
 
 test("blank factories delegate and the historical starter CV fails", () => {
