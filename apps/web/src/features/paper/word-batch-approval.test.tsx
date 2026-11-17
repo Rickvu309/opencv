@@ -27,6 +27,7 @@ const OTHER = "44444444-4444-4444-8444-444444444444"
 
 const store = {
   chats: [],
+  chatsLoaded: true,
   activeChatId: null,
   navigationRevision: 0,
   creationOwner: null,

@@ -57,7 +57,7 @@ export const REVIEW_COMMANDS = {
   },
   annotate: {
     usage: "annotate --spec <file.json> --out <png or dir> [--single]",
-    about: `Render dark composites: per section a title, the before and after images (or one image for a section with image or side), red arrows with a numbered red badge pointing at the same target in both, and a legend in the same badges with ${ZOOM.factor}x before and after crops for small changes. A target named on one side only is tagged new or removed and marked at its place on the other side. A spec with more than ${SPLIT_ABOVE} sections writes one composite per section named from its title, unless --single.`,
+    about: `Render light grey composites: per section a title, the before and after images (or one image for a section with image or side), red arrows with a numbered red badge pointing at the same target in both, and a legend in the same badges with ${ZOOM.factor}x before and after crops for small changes. A target named on one side only is tagged new or removed and marked at its place on the other side. A spec with more than ${SPLIT_ABOVE} sections writes one composite per section named from its title, unless --single.`,
     options: { valued: ["spec", "out"], switches: ["single"] },
     run: async (ctx, { flags }) => {
       if (!flags.spec || !flags.out)

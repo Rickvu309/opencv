@@ -1,6 +1,8 @@
 import { fireEvent, render, screen, within } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 
+import type { ChatSummary } from "@workspace/domain"
+
 import { CoachHome } from "./coach-home.tsx"
 import { COACH_STARTERS } from "./coach-starters.ts"
 
@@ -21,14 +23,13 @@ function renderHome(disabled = false, size?: "page" | "panel") {
 }
 
 describe("Coach home pane", () => {
-  it("leads with one short heading, then the composer, then three quiet starter chips", () => {
+  it("names the empty page for screen readers only, then shows the composer and three quiet starter chips", () => {
     renderHome()
     const heading = screen.getByRole("heading", { level: 2 })
     expect(heading).toHaveTextContent("How can I help?")
-    expect(heading.className).toContain("md:text-[28px]")
-    expect(heading.className).toContain("font-medium")
+    expect(heading.className).toContain("sr-only")
     const composer = screen.getByText("Composer")
-    expect(composer.parentElement?.className).toContain("max-w-[760px]")
+    expect(composer.parentElement?.className).toContain("max-w-[680px]")
     const ideas = screen.getByRole("list", { name: "Ideas for Coach" })
     expect(
       composer.compareDocumentPosition(ideas) & Node.DOCUMENT_POSITION_FOLLOWING
@@ -100,5 +101,71 @@ describe("Coach home pane", () => {
     expect(within(ideas).getAllByRole("button")).toHaveLength(3)
     fireEvent.click(screen.getByRole("button", { name: "Prep an interview" }))
     expect(choose).toHaveBeenLastCalledWith("Prep an interview")
+  })
+
+  it("lists recent Chats under the composer instead of starters, newest first with a short age", () => {
+    const now = Date.now()
+    const chats: ChatSummary[] = Array.from({ length: 10 }, (_, index) => ({
+      id: `chat-${index}`,
+      title: `Chat ${index}`,
+      createdAt: new Date(now - (index + 1) * 86400000).toISOString(),
+      updatedAt: new Date(now - (index + 1) * 86400000).toISOString(),
+      focusDocId: null,
+    }))
+    const open = vi.fn()
+    render(
+      <CoachHome
+        onChooseStarter={vi.fn()}
+        disabled={false}
+        recentChats={chats}
+        onOpenChat={open}
+      >
+        <div>Composer</div>
+      </CoachHome>
+    )
+    expect(
+      screen.queryByRole("list", { name: "Ideas for Coach" })
+    ).not.toBeInTheDocument()
+    const recent = screen.getByRole("list", { name: "Recent chats" })
+    expect(
+      screen.getByText("Composer").compareDocumentPosition(recent) &
+        Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
+    const rows = within(recent).getAllByRole("button")
+    expect(rows).toHaveLength(8)
+    expect(rows[0]).toHaveAccessibleName("Chat 0, 1 day ago")
+    expect(within(rows[0]).getByText("1d")).toHaveAttribute(
+      "aria-hidden",
+      "true"
+    )
+    expect(rows[7]).toHaveAccessibleName("Chat 7, 1 week ago")
+    fireEvent.click(rows[2])
+    expect(open).toHaveBeenCalledWith("chat-2")
+  })
+
+  it("keeps the starters in the panel even when Chats exist", () => {
+    render(
+      <CoachHome
+        size="panel"
+        onChooseStarter={vi.fn()}
+        disabled={false}
+        recentChats={[
+          {
+            id: "chat-1",
+            title: "Old chat",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            focusDocId: null,
+          },
+        ]}
+        onOpenChat={vi.fn()}
+      />
+    )
+    expect(
+      screen.queryByRole("list", { name: "Recent chats" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("list", { name: "Ideas for Coach" })
+    ).toBeInTheDocument()
   })
 })

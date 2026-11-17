@@ -71,6 +71,7 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
     queryFn: listChats,
   })
   const chats = listQuery.data ?? EMPTY_CHATS
+  const chatsLoaded = !listQuery.isPending
   const writingPageDocId = useSyncExternalStore(
     subscribeWritingCoachFocus,
     writingCoachFocus,
@@ -142,6 +143,7 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       chats,
+      chatsLoaded,
       activeChatId,
       navigationRevision,
       creationOwner,
@@ -162,6 +164,7 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
     }),
     [
       chats,
+      chatsLoaded,
       activeChatId,
       navigationRevision,
       creationOwner,

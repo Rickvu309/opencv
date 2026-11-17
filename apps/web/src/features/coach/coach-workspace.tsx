@@ -388,7 +388,9 @@ export function CoachWorkspace({
           </Button>
         </p>
       ) : null}
-      <PromptInputFrame value="page">{coachDock}</PromptInputFrame>
+      <PromptInputFrame value={compact ? "panel" : "page"}>
+        {coachDock}
+      </PromptInputFrame>
     </div>
   )
   const headerTitle = showHome
@@ -445,12 +447,17 @@ export function CoachWorkspace({
           <CoachHome
             onChooseStarter={chooseStarter}
             disabled={!enabled || capped}
+            recentChats={store.chatsLoaded ? chats : null}
+            onOpenChat={openChat}
           >
             {composer}
           </CoachHome>
         ) : (
           <ChatView
             presentation={presentation}
+            startedAt={
+              chats.find((chat) => chat.id === activeChatId)?.createdAt ?? null
+            }
             empty={
               compact && showHome ? (
                 <CoachHome

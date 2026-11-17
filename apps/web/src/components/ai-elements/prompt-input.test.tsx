@@ -50,7 +50,7 @@ describe("PromptInput", () => {
     expect(onSubmit).not.toHaveBeenCalled()
   })
 
-  it("lays the composer out as one row at rest and keeps the controls on the bottom row when the text wraps", () => {
+  it("lays the standard composer out as one row at rest and the Coach card frames as text over a control row", () => {
     const prompt = (
       <PromptInput
         value=""
@@ -86,10 +86,19 @@ describe("PromptInput", () => {
 
     rerender(<PromptInputFrame value="page">{prompt}</PromptInputFrame>)
     const page = parts()
-    expect(page.box.className).toContain("md:min-h-12")
+    expect(page.group).toHaveAttribute("data-stacked", "true")
+    expect(page.box.className).toContain("min-h-[68px]")
     expect(page.box.className).toContain("text-base")
     expect(page.box.className).toContain("md:text-[15px]")
     expect(page.box.className).toContain("max-h-60")
+    expect(page.start).toHaveTextContent("Add")
+    expect(page.end).toHaveTextContent("Send")
+
+    rerender(<PromptInputFrame value="panel">{prompt}</PromptInputFrame>)
+    const panel = parts()
+    expect(panel.group).toHaveAttribute("data-stacked", "true")
+    expect(panel.group.className).toContain("gap-2.5")
+    expect(panel.box.className).toContain("md:text-[14px]")
   })
 
   it("starts one row and stacks the text above the controls when the text has a second line", () => {

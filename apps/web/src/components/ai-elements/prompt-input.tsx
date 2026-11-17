@@ -13,9 +13,21 @@ import {
 } from "@workspace/ui/components/input-group"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { PromptInputFrame } from "./prompt-input-frame.ts"
+import {
+  PromptInputFrame,
+  type PromptInputFrameName,
+} from "./prompt-input-frame.ts"
 
-const frameClasses = {
+const frameClasses: Record<
+  PromptInputFrameName,
+  {
+    textarea: string
+    start: string
+    end: string
+    group?: string
+    stacked?: true
+  }
+> = {
   standard: {
     textarea:
       "max-h-48 min-h-[52px] px-1.5 py-3.5 text-base leading-6 md:min-h-11 md:py-2.5 md:text-[14px] md:leading-6",
@@ -24,9 +36,18 @@ const frameClasses = {
   },
   page: {
     textarea:
-      "max-h-60 min-h-[52px] px-1.5 py-3.5 text-base leading-6 md:min-h-12 md:py-3 md:text-[15px] md:leading-6",
-    start: "self-end ps-1.5 pb-1 md:ps-2 md:pb-2",
-    end: "self-end gap-1 pe-1.5 pb-1 md:pe-2 md:pb-2",
+      "max-h-60 min-h-[68px] pt-4 pb-3 text-base leading-6 md:text-[15px] group-data-[stacked=true]/input-group:px-[18px] group-data-[stacked=true]/input-group:pb-3",
+    start: "self-end ps-3 pe-3 pt-0 pb-3",
+    end: "self-end gap-1.5 pe-3 pt-0 pb-3",
+    stacked: true,
+  },
+  panel: {
+    group: "gap-2.5 px-3 pt-3 pb-2.5",
+    textarea:
+      "max-h-48 min-h-6 p-0 text-base leading-6 md:text-[14px] group-data-[stacked=true]/input-group:p-0",
+    start: "self-end p-0",
+    end: "self-end gap-1 p-0",
+    stacked: true,
   },
 }
 
@@ -79,6 +100,7 @@ export function PromptInput({
   const stackedAt = useRef<number | null>(null)
 
   useLayoutEffect(() => {
+    if (frame.stacked) return
     const group = groupRef.current
     const text = textRef.current
     if (!group || !text) return
@@ -96,16 +118,17 @@ export function PromptInput({
     if (was !== null && next === null && wraps()) next = value.length
     stackedAt.current = next
     group.dataset.stacked = next === null ? "false" : "true"
-  }, [value])
+  }, [value, frame.stacked])
 
   return (
     <InputGroup
       ref={groupRef}
-      data-stacked="false"
+      data-stacked={frame.stacked ? "true" : "false"}
       data-slot="prompt-input"
       data-layout="row"
       className={cn(
         "h-auto flex-row flex-wrap items-end rounded-3xl bg-background shadow-xs has-disabled:bg-background has-disabled:opacity-100",
+        frame.group,
         className
       )}
       {...props}
@@ -130,7 +153,7 @@ export function PromptInput({
           event.preventDefault()
           if (!submitBlocked && !disabled) onSubmit()
         }}
-        className={cn(frame.textarea, STACKED_TEXT)}
+        className={cn(STACKED_TEXT, frame.textarea)}
       />
       <InputGroupAddon
         align="inline-end"

@@ -210,6 +210,7 @@ it.each(["loading", "error"] as const)(
     const retry = vi.fn(() => true)
     const store: ChatStoreValue = {
       chats: [],
+      chatsLoaded: true,
       activeChatId: null,
       navigationRevision: 0,
       creationOwner: null,
