@@ -16,10 +16,6 @@ afterEach(() => {
 })
 
 function prepareDOM() {
-  Object.defineProperty(document, "fonts", {
-    configurable: true,
-    value: { ready: Promise.resolve() },
-  })
   Object.defineProperty(Element.prototype, "scrollIntoView", {
     configurable: true,
     value: vi.fn(),

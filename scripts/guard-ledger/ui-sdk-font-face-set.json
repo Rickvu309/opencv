@@ -1,0 +1,13 @@
+{
+  "id": "ui-sdk-font-face-set",
+  "file": "scripts/ui-sdk-popover.test.mjs",
+  "detector": {
+    "module": "scripts/lib/ui-sdk-popover.mjs",
+    "export": "partialFonts"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "54fbdb62a45523693033307a8cae5d6ddc08dbb6",
+    "path": "apps/web/src/features/paper/rich-text-formatting.test.tsx"
+  }
+}

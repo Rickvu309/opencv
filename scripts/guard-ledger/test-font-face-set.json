@@ -1,0 +1,6 @@
+{
+  "id": "test-font-face-set",
+  "file": "apps/web/src/test/font-face-set.test.ts",
+  "historic": null,
+  "reason": "The runtime shim is new; the ui-sdk-font-face-set detector proves the historical partial mock and this behavior test checks ready, loading listeners and removal."
+}

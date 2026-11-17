@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
 import { afterEach, describe, expect, it } from "vitest"
 
 import { renderApp } from "@/test/render-app.tsx"
@@ -98,7 +104,8 @@ describe("new job dialog", () => {
       target: { value: "Lumière Cosmetics" },
     })
     fireEvent.click(screen.getByRole("button", { name: "Deadline" }))
-    fireEvent.change(await screen.findByLabelText("Deadline"), {
+    const deadline = await screen.findByRole("dialog", { name: "Deadline" })
+    fireEvent.change(within(deadline).getByLabelText("Deadline"), {
       target: { value: "2026-11-15" },
     })
     expect(screen.getByRole("button", { name: "Nov 15" })).toBeInTheDocument()

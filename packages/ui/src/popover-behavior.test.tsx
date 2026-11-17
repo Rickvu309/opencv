@@ -17,6 +17,13 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "./components/popover"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./components/select"
 import { Button } from "./components/button"
 
 afterEach(cleanup)
@@ -135,6 +142,36 @@ describe("the kit popover behavior adapter", () => {
       )
     )
     expect(screen.getByRole("dialog")).toBeTruthy()
+  })
+
+  it("keeps a nested Select available without closing the parent", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup()
+    const onValueChange = vi.fn()
+    render(
+      <Popover>
+        <PopoverTrigger>Paragraph</PopoverTrigger>
+        <PopoverContent>
+          <Select defaultValue="single" onValueChange={onValueChange}>
+            <SelectTrigger aria-label="Line spacing">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="single">Single</SelectItem>
+              <SelectItem value="double">Double</SelectItem>
+            </SelectContent>
+          </Select>
+        </PopoverContent>
+      </Popover>
+    )
+    await user.click(screen.getByRole("button", { name: "Paragraph" }))
+    await user.click(screen.getByRole("combobox", { name: "Line spacing" }))
+    const option = await screen.findByRole("option", { name: "Double" })
+    expect(
+      screen.getByRole("dialog", { name: "Paragraph" }).contains(option)
+    ).toBe(true)
+    await user.click(option)
+    expect(onValueChange).toHaveBeenCalledWith("double", expect.any(Object))
+    expect(screen.getByRole("dialog", { name: "Paragraph" })).toBeTruthy()
   })
 
   it("passes the UI SDK WAI-ARIA dialog pattern check", async () => {

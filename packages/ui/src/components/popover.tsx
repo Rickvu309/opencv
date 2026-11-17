@@ -11,6 +11,7 @@ import {
   PopoverTrigger as PopoverButton,
 } from "@ui-sdk/react/popover"
 import { cn } from "cn"
+import { PopupContainerContext } from "../lib/popup-container"
 
 type FocusTarget = BasePopover.Popup.Props["initialFocus"]
 type Interaction = "mouse" | "touch" | "pen" | "keyboard"
@@ -94,6 +95,7 @@ function PopoverTrigger({
 }
 
 function PopoverContent({
+  ref,
   className,
   align = "center",
   alignOffset = 0,
@@ -108,6 +110,7 @@ function PopoverContent({
 > &
   Pick<BasePopover.Popup.Props, "initialFocus" | "finalFocus">) {
   const focus = React.useContext(FocusContext)
+  const container = React.useRef<HTMLDivElement>(null)
   const resolveFocus = (target: FocusTarget, closing: boolean) => {
     if (typeof target === "function") {
       return () => {
@@ -125,20 +128,27 @@ function PopoverContent({
     return () => target.current
   }
   return (
-    <PopoverPopup
-      data-slot="popover-content"
-      align={align}
-      alignOffset={alignOffset}
-      side={side}
-      sideOffset={sideOffset}
-      initialFocus={resolveFocus(initialFocus, false)}
-      finalFocus={resolveFocus(finalFocus, true)}
-      className={cn(
-        "isolate z-50 flex w-72 motion-pop flex-col gap-2.5 rounded-lg bg-popover p-2.5 text-sm text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-hidden data-closed:pointer-events-none",
-        className
-      )}
-      {...props}
-    />
+    <PopupContainerContext value={container}>
+      <PopoverPopup
+        ref={(element) => {
+          container.current = element
+          if (typeof ref === "function") return ref(element)
+          if (ref) ref.current = element
+        }}
+        data-slot="popover-content"
+        align={align}
+        alignOffset={alignOffset}
+        side={side}
+        sideOffset={sideOffset}
+        initialFocus={resolveFocus(initialFocus, false)}
+        finalFocus={resolveFocus(finalFocus, true)}
+        className={cn(
+          "isolate z-50 flex w-72 motion-pop flex-col gap-2.5 rounded-lg bg-popover p-2.5 text-sm text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-hidden data-closed:pointer-events-none",
+          className
+        )}
+        {...props}
+      />
+    </PopupContainerContext>
   )
 }
 
