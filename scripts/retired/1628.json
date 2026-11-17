@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/auth/auth-welcome-parity.test.tsx",
+    "because": "The pen specifies Welcome to OpenCV. The previous test rewrote OpenCV to lowercase and protected incorrect sentence casing. The replacement compares the rendered text directly with the pen.",
+    "replacedBy": "apps/web/src/features/auth/auth-welcome-parity.test.tsx",
+    "proof": {
+      "fork": "e794a7bc0281ba32d6eff4a4ecd59b4f346e1475",
+      "replacedByBlob": "8cb64d1fceafb08a7341c7072ec09f0b8d593a02",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]
