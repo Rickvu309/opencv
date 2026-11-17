@@ -66,12 +66,14 @@ it("keeps the stopped notice row during typing and releases it on another docume
     '[data-slot="letter-stopped-notice"]'
   )
   expect(row).toHaveClass("min-h-24", "md:min-h-16")
+  const contents = row?.innerHTML
   view.rerender(<LetterStoppedNotice docId={DOC} pageText="M" />)
   expect(
     view.container.querySelector('[data-slot="letter-stopped-notice"]')
   ).toBe(row)
   expect(row).toHaveAttribute("aria-hidden", "true")
-  expect(row).toHaveClass("min-h-24", "md:min-h-16")
+  expect(row).toHaveClass("min-h-24", "md:min-h-16", "invisible")
+  expect(row?.innerHTML).toBe(contents)
   expect(screen.queryByRole("button", { name: "Continue drafting" })).toBeNull()
   view.rerender(<LetterStoppedNotice docId={DOC} pageText="My opening" />)
   expect(

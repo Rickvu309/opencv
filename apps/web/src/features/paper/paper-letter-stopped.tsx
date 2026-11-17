@@ -7,6 +7,7 @@ import {
 } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Button } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
 
 import { messageOf } from "@/features/paper/paper-library-support.ts"
 import { authClient } from "@/lib/auth-client.ts"
@@ -141,48 +142,47 @@ export function LetterStoppedNotice({
     <section
       data-slot="letter-stopped-notice"
       aria-hidden={!visible || undefined}
-      className="mx-auto flex min-h-24 w-[min(100%-3rem,816px)] shrink-0 flex-wrap items-center justify-between gap-3 py-3 md:min-h-16"
+      className={cn(
+        "mx-auto flex min-h-24 w-[min(100%-3rem,816px)] shrink-0 flex-wrap items-center justify-between gap-3 py-3 md:min-h-16",
+        !visible && "invisible"
+      )}
     >
-      {visible ? (
-        <>
-          {notice.phase === "failed" ? (
-            <p
-              role="alert"
-              className="min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-destructive"
-            >
-              {notice.error}
-            </p>
-          ) : (
-            <p
-              role="status"
-              className={
-                writing
-                  ? "min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-foreground"
-                  : "min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-muted-foreground"
-              }
-            >
-              {writing ? "Coach is writing…" : "Coach stopped before writing."}
-            </p>
-          )}
-          {writing ? (
-            <Button
-              type="button"
-              variant="outline"
-              className="ms-auto h-auto min-h-11 max-w-full whitespace-normal md:min-h-8"
-              onClick={stop}
-            >
-              Stop
-            </Button>
-          ) : record?.docId === docId ? (
-            <Button
-              type="button"
-              className="ms-auto h-auto min-h-11 max-w-full whitespace-normal md:min-h-8"
-              onClick={() => void go()}
-            >
-              Continue drafting
-            </Button>
-          ) : null}
-        </>
+      {notice.phase === "failed" ? (
+        <p
+          role="alert"
+          className="min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-destructive"
+        >
+          {notice.error}
+        </p>
+      ) : (
+        <p
+          role="status"
+          className={
+            writing
+              ? "min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-foreground"
+              : "min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-muted-foreground"
+          }
+        >
+          {writing ? "Coach is writing…" : "Coach stopped before writing."}
+        </p>
+      )}
+      {writing ? (
+        <Button
+          type="button"
+          variant="outline"
+          className="ms-auto h-auto min-h-11 max-w-full whitespace-normal md:min-h-8"
+          onClick={stop}
+        >
+          Stop
+        </Button>
+      ) : record?.docId === docId || reservedDocId === docId ? (
+        <Button
+          type="button"
+          className="ms-auto h-auto min-h-11 max-w-full whitespace-normal md:min-h-8"
+          onClick={() => void go()}
+        >
+          Continue drafting
+        </Button>
       ) : null}
     </section>
   )
