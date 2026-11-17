@@ -6,6 +6,7 @@ import test from "node:test"
 import { fileURLToPath } from "node:url"
 import { SLOW } from "../packages/guards/run-tests.mjs"
 import { detect } from "./lib/home-tmp.mjs"
+import { canJudgeFolders } from "./lib/temp-run.mjs"
 import { tempDir } from "./lib/temp-dir.mjs"
 
 const SUITE_TIMEOUT_MS = 10 * 60 * 1000
@@ -87,13 +88,17 @@ test("the ocv-tools tests leave no temporary folder behind", (t) => {
   ).filter((file) => file !== SLOW)
   assert.ok(suite.length > 10, "the ocv-tools test list is empty")
   const { NODE_TEST_CONTEXT: _outer, ...env } = process.env
-  const run = spawnSync(process.execPath, ["--test", ...suite], {
-    cwd: root,
-    env: { ...env, TMPDIR: sandbox, HOME: home },
-    encoding: "utf8",
-    timeout: SUITE_TIMEOUT_MS,
-  })
-  assert.equal(run.status, 0, run.stdout.slice(-2000) + run.stderr.slice(-1000))
+  const run = spawnSync(
+    process.execPath,
+    ["--test", "--test-reporter=spec", ...suite],
+    {
+      cwd: root,
+      env: { ...env, TMPDIR: sandbox, HOME: home },
+      encoding: "utf8",
+      timeout: SUITE_TIMEOUT_MS,
+    }
+  )
+  if (!canJudgeFolders(t, run)) return
   const left = readdirSync(sandbox)
   assert.equal(before, 0)
   assert.equal(

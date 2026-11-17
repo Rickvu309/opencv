@@ -2,6 +2,7 @@ import { homedir } from "node:os"
 import { join } from "node:path"
 import { FAST_GUARDS } from "./push-checks.mjs"
 import { run } from "./common.mjs"
+import { failedGuards } from "../../lib/test-failures.mjs"
 
 const OID = /^[0-9a-f]{40,64}$/
 const GUARD_TIMEOUT_SECONDS = "600"
@@ -21,19 +22,7 @@ export function parseMergeTree(result) {
   return { tree: lines[0], conflicts: [...new Set(names)] }
 }
 
-export function failedGuards(result) {
-  if (result.ok) return []
-  const text = `${result.out}\n${result.err}`.replace(/\u001b\[[0-9;]*m/g, "")
-  const names = [...text.matchAll(/^✖ (.+?) \(\d[\d.]*ms\)$/gm)].map(
-    (m) => m[1]
-  )
-  const files = [...text.matchAll(/^FAIL (\S+)/gm)].map((m) => m[1])
-  const found = [...new Set([...names, ...files])]
-  if (found.length) return found
-  return [
-    `the guards exited without naming a test (${result.err || "no output"})`,
-  ]
-}
+export { failedGuards } from "../../lib/test-failures.mjs"
 
 function git(ctx, args, options) {
   return run(ctx, "git", args, options)
