@@ -182,6 +182,7 @@ export function SignInScreen() {
     const address = email.trim()
     if (!EMAIL_PATTERN.test(address)) {
       dispatch({ type: "email_invalid" })
+      emailRef.current?.focus()
       return
     }
     await sendCode(address)
@@ -234,8 +235,7 @@ export function SignInScreen() {
       notice === "locked" ||
       notice === "rate" ||
       notice === "send")
-  const fieldRefused =
-    step === "email" && (notice === "rate" || notice === "email")
+  const fieldRefused = step === "email" && notice === "email"
   const noticeText =
     notice === "rate"
       ? tooManyCodesText(
@@ -260,7 +260,7 @@ export function SignInScreen() {
             className="flex flex-col items-center gap-4 text-center text-[26px] leading-[31px] font-semibold tracking-[-0.7px]"
           >
             <Mark size={32} />
-            <span>Log in to opencv</span>
+            <span>{AUTH_COPY.logIn}</span>
           </h1>
           {googleNotice ? (
             <p role="alert" className="text-center text-sm text-destructive">
@@ -305,11 +305,16 @@ export function SignInScreen() {
                 })
               }
               aria-invalid={fieldRefused || undefined}
-              className="h-[46px] rounded-[10px] px-3.5 text-[15px] md:text-[15px]"
+              aria-describedby={fieldRefused ? "sign-in-notice" : undefined}
+              className="h-[46px] rounded-[10px] px-3.5 text-base md:text-[15px]"
             />
           </div>
           {noticeText ? (
-            <p role="alert" className="text-sm text-destructive">
+            <p
+              id="sign-in-notice"
+              role="alert"
+              className="text-sm text-destructive"
+            >
               {noticeText}
             </p>
           ) : null}

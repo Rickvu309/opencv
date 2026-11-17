@@ -259,7 +259,7 @@ describe("app shell layout", () => {
     setMockSession(null)
     const { router } = renderApp("/coach?x=1#h")
     expect(
-      await screen.findByRole("heading", { name: "Log in to opencv" })
+      await screen.findByRole("heading", { name: "Log in to OpenCV" })
     ).toBeInTheDocument()
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/sign-in")

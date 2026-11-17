@@ -50,7 +50,8 @@ describe("sign-in look", () => {
   it("puts the mark above the title and keeps the title's name", async () => {
     const heading = await openSignIn()
     expect(heading.firstElementChild?.getAttribute("data-slot")).toBe("mark")
-    expect(heading).toHaveTextContent("Log in to opencv")
+    expect(heading).toHaveTextContent("Log in to OpenCV")
+    expect(screen.getByRole("main")).toContainElement(heading)
   })
 
   it("makes Continue a solid primary with hover and pressed fills and the input's radius", async () => {
@@ -66,14 +67,29 @@ describe("sign-in look", () => {
     expect(button).toBeEnabled()
   })
 
+  it("explains the stored Vietnamese choice while the app stays in English", async () => {
+    await openSignIn()
+    const status = screen.getByRole("status")
+    expect(status).toBeEmptyDOMElement()
+    fireEvent.click(screen.getByRole("radio", { name: "VI" }))
+    expect(status).toHaveTextContent(AUTH_COPY.vietnameseNotice)
+    expect(screen.getByRole("radio", { name: "VI" })).toBeChecked()
+    expect(continueButton()).toBeVisible()
+    fireEvent.click(screen.getByRole("radio", { name: "EN" }))
+    expect(status).toBeEmptyDOMElement()
+  })
+
   it("marks the field when the email is not a full address", async () => {
     await openSignIn()
     fireEvent.change(emailBox(), { target: { value: "a@b" } })
+    continueButton().focus()
     fireEvent.click(continueButton())
+    expect(emailBox()).toHaveFocus()
     expect(await screen.findByRole("alert")).toHaveTextContent(
       AUTH_COPY.emailInvalid
     )
     expect(emailBox()).toHaveAttribute("aria-invalid", "true")
+    expect(emailBox()).toHaveAccessibleDescription(AUTH_COPY.emailInvalid)
     expect(continueButton()).toBeEnabled()
   })
 
@@ -97,7 +113,8 @@ describe("sign-in look", () => {
       AUTH_COPY.tooManyCodes
     )
     expect(continueButton()).toBeEnabled()
-    expect(emailBox()).toHaveAttribute("aria-invalid", "true")
+    expect(emailBox()).not.toHaveAttribute("aria-invalid")
+    expect(emailBox()).not.toHaveAttribute("aria-describedby")
   })
 
   it("focuses the email field after Back to login, keeps the email and sends nothing going back and forth", async () => {
@@ -143,7 +160,8 @@ function heldShows(expected: {
     expect(emailBox()).not.toHaveAttribute("aria-invalid")
   } else {
     expect(alert).toHaveTextContent(expected.error)
-    expect(emailBox()).toHaveAttribute("aria-invalid", "true")
+    expect(emailBox()).not.toHaveAttribute("aria-invalid")
+    expect(emailBox()).not.toHaveAttribute("aria-describedby")
   }
 }
 
