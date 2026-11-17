@@ -42,5 +42,19 @@
     "class": "self",
     "classBecause": null,
     "items": 10
+  },
+  {
+    "subject": "apps/web/src/features/paper/cv-rules.test.ts",
+    "because": "owner correction 2026-11-17: an empty canvas and headerless CV are valid; retain misplaced-header, orphan-entry, child-depth, paste and section-move checks.",
+    "replacedBy": "apps/web/src/features/paper/cv-rules.test.ts",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "e906b56e4ab049522864d5ddee4653744425a5ef",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
   }
 ]
