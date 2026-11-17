@@ -18,7 +18,7 @@ const files = [
   "packages/paper-crdt/src/measured-flow-pagination.ts",
 ]
 
-test("table availability, measured row pagination and borders stay connected", () => {
+test("table availability, row pagination and borders stay connected", () => {
   for (const file of files) assert.deepEqual(detect(read(file), file), [], file)
 })
 
