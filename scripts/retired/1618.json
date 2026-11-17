@@ -1,19 +1,5 @@
 [
   {
-    "subject": "apps/web/src/features/inbox/inbox-connect.test.tsx",
-    "because": "Connect Gmail stays disabled when there is no connection, View example inbox is the filled action, and the sentence says Gmail is not available yet. The test checks that.",
-    "replacedBy": "apps/web/src/features/inbox/inbox-connect.test.tsx",
-    "proof": {
-      "fork": "a887677ee976df2a519b5804ad24a48ed431fc11",
-      "replacedByBlob": "c0d7e0fe205904946e8b47fd2c881f14d899b660",
-      "failedOnBase": true,
-      "passedOnHead": true
-    },
-    "class": "self",
-    "classBecause": null,
-    "items": 2
-  },
-  {
     "subject": "apps/web/src/features/inbox/inbox-page.test.tsx",
     "because": "The example banner names the rows, the reader keeps that notice, and explore has one start and one failure. The test checks that.",
     "replacedBy": "apps/web/src/features/inbox/inbox-page.test.tsx",
@@ -34,6 +20,20 @@
     "proof": {
       "fork": "a887677ee976df2a519b5804ad24a48ed431fc11",
       "replacedByBlob": "998864b5eac1c6410918138d4089f0085a1b8123",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/inbox/inbox-connect.test.tsx",
+    "because": "Connect Gmail stays disabled when there is no connection, View example inbox is the filled action, the sentence is built from its lead and hint, and the decorative example is hidden from assistive tech. The test checks that.",
+    "replacedBy": "apps/web/src/features/inbox/inbox-connect.test.tsx",
+    "proof": {
+      "fork": "a887677ee976df2a519b5804ad24a48ed431fc11",
+      "replacedByBlob": "51ff162f6eca1d27dd5bb4a5edc79c5902e2bb06",
       "failedOnBase": true,
       "passedOnHead": true
     },
