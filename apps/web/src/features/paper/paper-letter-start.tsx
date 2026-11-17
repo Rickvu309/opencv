@@ -426,12 +426,14 @@ export function PaperLetterStart({
               aria-pressed={selected?.id === job.id}
               onClick={() => dispatch({ type: "picked_job", job })}
             >
-              <span className="min-w-0 truncate">{job.title}</span>
-              <span
-                data-slot="letter-start-company"
-                className="min-w-0 truncate font-normal text-muted-foreground"
-              >
-                {job.company}
+              <span data-slot="letter-start-job-labels">
+                <span>{job.title}</span>
+                <span
+                  data-slot="letter-start-company"
+                  className="font-normal text-muted-foreground"
+                >
+                  {job.company}
+                </span>
               </span>
               {selected?.id === job.id ? (
                 <Check aria-hidden="true" className="ml-auto size-4 shrink-0" />

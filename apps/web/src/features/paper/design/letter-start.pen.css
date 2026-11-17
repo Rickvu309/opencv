@@ -14,6 +14,19 @@
 [data-pen-surface="paper"] [data-slot="letter-start-desk"] {
   background: color-mix(in oklab, var(--secondary) 50%, var(--background));
 }
+[data-pen-surface="paper"] [data-slot="letter-start-job"] {
+  height: auto;
+  padding-block: 0.5rem;
+}
+[data-pen-surface="paper"] [data-slot="letter-start-job-labels"] {
+  display: flex;
+  flex-wrap: wrap;
+  column-gap: 0.5rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: start;
+  white-space: normal;
+}
 [data-pen-surface="paper"] [data-slot="letter-start-return"] {
   background: color-mix(in oklab, currentColor 12%, transparent);
 }
