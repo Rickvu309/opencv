@@ -244,8 +244,15 @@ describe("Paper home sections", () => {
     ).toBeInTheDocument()
     const proofs = screen.getByRole("link", { name: "Proofs" })
     expect(proofs).toHaveAttribute("href", "/proofs")
-    expect(proofs.className).toMatch(/hover:bg-muted/)
-    expect(proofs.className).not.toMatch(/hover:bg-transparent/)
+    const classes = (element: Element) =>
+      element.className.split(" ").filter(Boolean).sort()
+    const cvHead = within(
+      screen.getByRole("region", { name: "CVs" })
+    ).getByRole("button", { name: "CVs" })
+    expect(classes(proofs)).toEqual(classes(cvHead))
+    expect(classes(proofs)).not.toContain("px-2.5")
+    expect(classes(proofs)).not.toContain("h-8")
+    expect(classes(proofs)).not.toContain("hover:bg-muted")
     expect(proofs.querySelector("span[aria-hidden]")).toBeNull()
     expect(proofs.querySelector("svg")).toHaveAttribute("aria-hidden", "true")
     const lead = document.querySelector(

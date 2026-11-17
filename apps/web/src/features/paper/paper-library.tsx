@@ -17,7 +17,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@workspace/ui/components/dialog"
-import { Input } from "@workspace/ui/components/input"
 
 import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
 import { listJobs } from "@/features/apply/apply-api.ts"
@@ -67,6 +66,11 @@ import {
   type LibraryEntryHandlers,
 } from "./paper-library-sections.tsx"
 import { PaperLinkDialog } from "./paper-library-link.tsx"
+import { useShownWhileClosing } from "./paper-library-closing.ts"
+import {
+  PaperDeleteDialog,
+  PaperRenameDialog,
+} from "./paper-library-dialogs.tsx"
 import "./design/paper-library.pen.css"
 
 export function PaperLibrary({
@@ -117,13 +121,25 @@ export function PaperLibrary({
     }
   }, [mode])
   const closeDialog = () => dispatch({ type: "dialog_closed" })
-  const newGallery = mode?.type === "new" && mode.step === "gallery"
+  const newStep = useShownWhileClosing(mode?.type === "new" ? mode.step : null)
+  const newGallery = newStep === "gallery"
+  const deleting = useShownWhileClosing(
+    mode?.type === "delete" || mode?.type === "delete-file" ? mode : null
+  )
+  const importingName = useShownWhileClosing(
+    importState.type === "importing" ? importState.name : null
+  )
+  const importError = useShownWhileClosing(
+    importState.type === "error" ? importState : null
+  )
+  const linkDoc = useShownWhileClosing(mode?.type === "link" ? mode.doc : null)
+  const retryFile = importError?.retry ?? null
   const dialogOpen = mode !== null || importState.type !== "idle"
-  const retryFile = importState.type === "error" ? importState.retry : null
   const needle = query.trim().toLowerCase()
   const wordLibrary = useWordLibrary()
   const entries = libraryEntries({ docs, files, words: wordLibrary.items })
-  const deletingWordPage = mode?.type === "delete" && mode.doc.format === "word"
+  const deletingWordPage =
+    deleting?.type === "delete" && deleting.doc.format === "word"
   const sections = librarySections(entries, needle)
   const searching = needle !== ""
   const noResults = LIBRARY_SECTIONS.every(
@@ -471,21 +487,19 @@ export function PaperLibrary({
 
       <PaperPackageLibrary library={wordLibrary} />
 
-      {mode?.type === "import" ? (
-        <PaperImportDialog
-          open
-          onClose={closeDialog}
-          link={link}
-          onLinkChange={(next) => dispatch({ type: "link_typed", link: next })}
-          onSubmitLink={() => void onPasteLink()}
-          onChooseFile={chooseFile}
-          onDropFile={onDropFile}
-        />
-      ) : null}
+      <PaperImportDialog
+        open={mode?.type === "import"}
+        onClose={closeDialog}
+        link={link}
+        onLinkChange={(next) => dispatch({ type: "link_typed", link: next })}
+        onSubmitLink={() => void onPasteLink()}
+        onChooseFile={chooseFile}
+        onDropFile={onDropFile}
+      />
 
-      {mode?.type === "new" ? (
+      {newStep !== null ? (
         <Dialog
-          open
+          open={mode?.type === "new"}
           onOpenChange={(open) => {
             if (!open) closeDialog()
           }}
@@ -503,7 +517,7 @@ export function PaperLibrary({
               </DialogHeader>
             )}
             <PaperNewDialog
-              step={mode.step}
+              step={newStep}
               onStepChange={(step) =>
                 dispatch({ type: "new_dialog_opened", step })
               }
@@ -518,126 +532,44 @@ export function PaperLibrary({
         </Dialog>
       ) : null}
 
-      {mode?.type === "rename" ? (
-        <Dialog
-          open
-          onOpenChange={(open) => {
-            if (!open) closeDialog()
-          }}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Rename</DialogTitle>
-              <DialogDescription>Name is required.</DialogDescription>
-            </DialogHeader>
-            <form
-              className="grid gap-4"
-              onSubmit={(event) => {
-                event.preventDefault()
-                void confirmRename()
-              }}
-            >
-              <Input
-                aria-label="Name"
-                className="h-11 text-base md:h-8 md:text-sm"
-                aria-invalid={renameError ? true : undefined}
-                aria-describedby={
-                  renameError ? "paper-rename-error" : undefined
-                }
-                value={rename}
-                onChange={(event) =>
-                  dispatch({ type: "rename_typed", value: event.target.value })
-                }
-              />
-              {renameError ? (
-                <p
-                  id="paper-rename-error"
-                  role="alert"
-                  className="text-sm text-destructive"
-                >
-                  {renameError}
-                </p>
-              ) : null}
-              <div className="flex justify-end gap-2">
-                <Button
-                  className="h-11 md:h-8"
-                  type="button"
-                  variant="ghost"
-                  onClick={closeDialog}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="h-11 md:h-7"
-                  type="submit"
-                  size="sm"
-                  variant="primary"
-                >
-                  Save
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
+      <PaperRenameDialog
+        open={mode?.type === "rename"}
+        name={rename}
+        error={renameError}
+        onNameChange={(value) => dispatch({ type: "rename_typed", value })}
+        onSave={() => void confirmRename()}
+        onClose={closeDialog}
+      />
+
+      {deleting !== null ? (
+        <PaperDeleteDialog
+          open={mode?.type === "delete" || mode?.type === "delete-file"}
+          name={
+            deleting.type === "delete-file"
+              ? deleting.file.name
+              : deleting.doc.name
+          }
+          undoable={deletingWordPage}
+          onDelete={() =>
+            void (deleting.type === "delete-file"
+              ? confirmDeleteFile()
+              : confirmDelete())
+          }
+          onClose={closeDialog}
+        />
       ) : null}
 
-      {mode && (mode.type === "delete" || mode.type === "delete-file") ? (
-        <Dialog
-          open
-          onOpenChange={(open) => {
-            if (!open) closeDialog()
-          }}
-        >
-          <DialogContent showCloseButton={false}>
-            <DialogHeader>
-              <DialogTitle>
-                {mode.type === "delete-file"
-                  ? `Delete "${mode.file.name}"?`
-                  : `Delete "${mode.doc.name}"?`}
-              </DialogTitle>
-              <DialogDescription>
-                {deletingWordPage
-                  ? "You can undo this from the message that follows."
-                  : "This can't be undone."}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex justify-end gap-2">
-              <Button
-                className="h-11 md:h-7"
-                type="button"
-                size="sm"
-                variant="ghost"
-                onClick={closeDialog}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="h-11 md:h-7"
-                type="button"
-                size="sm"
-                variant="destructive"
-                onClick={() =>
-                  void (mode.type === "delete-file"
-                    ? confirmDeleteFile()
-                    : confirmDelete())
-                }
-              >
-                Delete
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      ) : null}
-
-      {importState.type === "importing" ? (
+      {importingName !== null ? (
         <ImportProgressDialog
-          filename={importState.name}
+          open={importState.type === "importing"}
+          filename={importingName}
           onCancel={cancelImport}
         />
       ) : null}
-      {importState.type === "error" ? (
+      {importError !== null ? (
         <CantReadDialog
-          sentence={importState.message}
+          open={importState.type === "error"}
+          sentence={importError.message}
           onChoose={chooseFile}
           onBlank={() => void startBlank()}
           onClose={() => dispatch({ type: "import_ended" })}
@@ -647,7 +579,8 @@ export function PaperLibrary({
       ) : null}
 
       <PaperLinkDialog
-        doc={mode?.type === "link" ? mode.doc : null}
+        open={mode?.type === "link"}
+        doc={linkDoc}
         jobs={jobs}
         jobsLoading={jobsLoading}
         jobsError={jobsError}

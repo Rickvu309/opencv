@@ -48,10 +48,14 @@ describe("Paper library status", () => {
       name: "Link to application",
     })
     expect(await within(dialog).findByText("No jobs yet.")).toBeInTheDocument()
-    expect(
-      within(dialog).getByRole("link", { name: "Add a job in Apply" })
-    ).toHaveAttribute("href", "/apply")
+    const apply = within(dialog).getByRole("link", {
+      name: "Add a job in Apply",
+    })
+    expect(apply).toHaveAttribute("href", "/apply")
+    expect(apply.className.split(" ")).toContain("h-11")
+    expect(apply.className.split(" ")).not.toContain("h-8")
     expect(within(dialog).queryByRole("status")).not.toBeInTheDocument()
+    expect(dialog.querySelector("[data-slot=paper-link-jobs]")).toBeNull()
   })
 
   it("caps the job list so a long board scrolls inside the dialog", async () => {

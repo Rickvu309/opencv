@@ -3,6 +3,7 @@ import type { JobView, PaperView } from "@workspace/domain"
 
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
 import {
   Dialog,
   DialogContent,
@@ -12,6 +13,7 @@ import {
 } from "@workspace/ui/components/dialog"
 
 export function PaperLinkDialog({
+  open,
   doc,
   jobs,
   jobsLoading,
@@ -19,6 +21,7 @@ export function PaperLinkDialog({
   onClose,
   onLink,
 }: {
+  open: boolean
   doc: PaperView | null
   jobs: JobView[]
   jobsLoading: boolean
@@ -29,7 +32,7 @@ export function PaperLinkDialog({
   if (doc === null) return null
   return (
     <Dialog
-      open
+      open={open}
       onOpenChange={(open) => {
         if (!open) onClose()
       }}
@@ -56,31 +59,33 @@ export function PaperLinkDialog({
             <p className="text-sm text-muted-foreground">No jobs yet.</p>
             <Link
               to={SURFACE_PATHS.apply}
-              className={buttonVariants({
-                variant: "outline",
-                className: "h-11 md:h-8",
-              })}
+              className={cn(
+                buttonVariants({ variant: "outline" }),
+                "h-11 md:h-8"
+              )}
             >
               Add a job in Apply
             </Link>
           </div>
         ) : null}
-        <div
-          data-slot="paper-link-jobs"
-          className="grid max-h-72 gap-2 overflow-y-auto overscroll-contain"
-        >
-          {jobs.map((job) => (
-            <Button
-              key={job.id}
-              type="button"
-              variant="outline"
-              className="h-auto min-h-11 justify-start whitespace-normal md:min-h-0"
-              onClick={() => onLink(job)}
-            >
-              {job.title}, {job.company}
-            </Button>
-          ))}
-        </div>
+        {jobs.length > 0 ? (
+          <div
+            data-slot="paper-link-jobs"
+            className="grid max-h-72 gap-2 overflow-y-auto overscroll-contain"
+          >
+            {jobs.map((job) => (
+              <Button
+                key={job.id}
+                type="button"
+                variant="outline"
+                className="h-auto min-h-11 justify-start whitespace-normal md:min-h-0"
+                onClick={() => onLink(job)}
+              >
+                {job.title}, {job.company}
+              </Button>
+            ))}
+          </div>
+        ) : null}
       </DialogContent>
     </Dialog>
   )

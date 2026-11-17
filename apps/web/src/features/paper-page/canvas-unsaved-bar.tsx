@@ -1,5 +1,6 @@
 import { useId, useReducer } from "react"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
 import { CopyButton } from "@workspace/ui/components/copy-button"
 
 import type { LineRefusal } from "./canvas-save-lines.ts"
@@ -127,11 +128,10 @@ function Actions({ model, onUseSaved, onRestore }: UnsavedBarProps) {
         </CopyButton>
         {model.signIn ? (
           <a
-            className={buttonVariants({
-              size: "sm",
-              variant: "ghost",
-              className: "h-11 md:h-7",
-            })}
+            className={cn(
+              buttonVariants({ size: "sm", variant: "ghost" }),
+              "h-11 md:h-7"
+            )}
             href="/sign-in"
             target="_blank"
             rel="noopener"
