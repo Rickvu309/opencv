@@ -40,13 +40,7 @@ test("table mistakes fire and clean fixtures stay quiet", () => {
       "paper-oversized-row=true]{height:var(--paper-column-height);overflow:auto",
       "paper-oversized-row=true]{overflow:visible",
     ],
-    [files[1], ":not([data-paper-reflow=true])", ""],
     [files[2], "[data-is-empty-and-focused]", ""],
-    [
-      files[5],
-      '.paper-rich-sheet[data-paper-reflow="true"] .paper-table-menu',
-      "@media (max-width: 767px) .paper-table-menu",
-    ],
     [files[7], "overscroll-contain", ""],
     [files[2], 'dom.style.height = "100%"', 'dom.style.height = "auto"'],
     [

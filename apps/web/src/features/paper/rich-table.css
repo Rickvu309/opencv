@@ -55,7 +55,3 @@
   [data-paper-layout="paperCell"] {
   border-block-end: 1px solid var(--border);
 }
-
-.paper-rich-sheet[data-paper-reflow="true"] .paper-table-menu {
-  inset-inline-end: 0;
-}

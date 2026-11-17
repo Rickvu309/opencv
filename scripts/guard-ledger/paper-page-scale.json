@@ -1,0 +1,13 @@
+{
+  "id": "paper-page-scale",
+  "file": "scripts/paper-page-scale.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-page-scale.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "f66e65e0",
+    "path": "packages/paper-crdt/src/rich-page-layout.ts"
+  }
+}

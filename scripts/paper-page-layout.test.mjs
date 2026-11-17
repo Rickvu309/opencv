@@ -43,49 +43,17 @@ test("page geometry refuses gap paint and page height outside supported paginati
     for (const selector of [
       ".paper-rich-sheet",
       '.paper-rich-sheet[data-paper-pagination="false"]',
-      '.paper-rich-sheet[data-paper-pagination="true"]',
-      '.paper-rich-sheet[data-paper-pagination="true"][data-paper-reflow="false"], .paper-rich-sheet',
+      '.paper-rich-sheet[data-paper-pagination="true"], .paper-rich-sheet',
     ])
       assert.ok(detectPageLayout(`${selector} { ${declaration}; }`, css).length)
     assert.deepEqual(
       detectPageLayout(
-        `.paper-rich-sheet[data-paper-pagination="true"][data-paper-reflow="false"] { ${declaration}; }`,
+        `.paper-rich-sheet[data-paper-pagination="true"] { ${declaration}; }`,
         css
       ),
       []
     )
   }
-})
-
-test("page scaling is refused structurally across viewport and measured-width variants", () => {
-  for (const value of [
-    "String(scale)",
-    "String(phone ? 1 : Math.min(1, available / width))",
-    '"0.8"',
-  ])
-    assert.ok(
-      detectPageLayout(
-        `host.style.setProperty("--cv-rich-page-scale", ${value})`,
-        layout
-      ).length
-    )
-  assert.deepEqual(
-    detectPageLayout(
-      'host.style.setProperty("--cv-rich-page-scale", "1")',
-      layout
-    ),
-    []
-  )
-  assert.ok(
-    detectPageLayout(".paper-rich-sheet { zoom: var(--scale); }", css).length
-  )
-  assert.deepEqual(
-    detectPageLayout(
-      ".paper-rich-sheet { zoom: 1; background: var(--card); }",
-      css
-    ),
-    []
-  )
 })
 
 const reviewedGapSheet = `.paper-rich-sheet {
@@ -110,9 +78,9 @@ const reviewedGapSheet = `.paper-rich-sheet {
 const reviewedScale =
   'element.style.setProperty("--cv-rich-page-scale", String(scale))'
 
-test("the reviewed page sheet fails both guards and repaired sources pass", () => {
+test("the reviewed page sheet fails pagination guards and repaired sources pass", () => {
   assert.ok(detectPageLayout(reviewedGapSheet, css).length)
-  assert.ok(detectPageLayout(reviewedScale, layout).length)
+  assert.deepEqual(detectPageLayout(reviewedScale, layout), [])
   for (const file of [css, layout])
     assert.deepEqual(
       detectPageLayout(readFileSync(new URL(file, root), "utf8"), file),

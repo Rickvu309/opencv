@@ -1,12 +1,19 @@
+[data-paper-page-viewport] {
+  margin-inline: auto;
+  overflow: clip;
+}
+
 .paper-rich-sheet {
   box-sizing: border-box;
+  transform: scale(var(--cv-rich-page-scale, 1));
+  transform-origin: top left;
   inline-size: var(--cv-rich-page-width, 816px);
   padding-block: var(--cv-rich-page-top, 96px) var(--cv-rich-page-bottom, 96px);
   padding-inline: var(--cv-rich-page-start, 96px) var(--cv-rich-page-end, 96px);
   background: var(--card);
 }
 
-.paper-rich-sheet[data-paper-pagination="true"][data-paper-reflow="false"] {
+.paper-rich-sheet[data-paper-pagination="true"] {
   min-block-size: var(--cv-rich-page-height, 1056px);
   background: repeating-linear-gradient(
     to bottom,
@@ -30,31 +37,4 @@
   inset-inline: 0;
   border-block-start: 1px dashed var(--border);
   content: "";
-}
-
-.paper-rich-sheet[data-paper-reflow="true"] {
-  inline-size: 100%;
-  min-block-size: 0;
-  padding-block: 1.25rem;
-  padding-inline: 1.25rem;
-}
-
-.paper-rich-sheet[data-paper-reflow="true"]
-  [data-paper-layout="paperFlowSection"]
-  > [data-paper-wrap-slot] {
-  column-count: 1;
-  column-height: auto !important;
-  column-wrap: nowrap !important;
-}
-
-.paper-rich-sheet[data-paper-reflow="true"] [data-node-type="blockOuter"] {
-  break-before: auto !important;
-  break-after: auto !important;
-}
-
-.paper-rich-sheet[data-paper-reflow="true"] [data-paper-layout="paperRow"] {
-  height: auto !important;
-  overflow: visible !important;
-  break-before: auto !important;
-  break-after: auto !important;
 }

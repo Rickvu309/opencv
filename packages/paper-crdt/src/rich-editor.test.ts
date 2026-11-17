@@ -343,7 +343,7 @@ it.each(
     [true, false].map((paginated) => ({ width, paginated }))
   )
 )(
-  "keeps full text size at available width $width with pagination $paginated",
+  "scales the same page at available width $width with pagination $paginated",
   ({ width, paginated }) => {
     vi.stubGlobal("CSS", {
       ...globalThis.CSS,
@@ -382,32 +382,44 @@ it.each(
     block.dataset.id = "break"
     content.append(block)
     host.append(content)
-    parent.append(host)
+    const viewport = window.document.createElement("div")
+    viewport.dataset.paperPageViewport = ""
+    viewport.append(host)
+    parent.append(viewport)
+    Object.defineProperty(host, "offsetHeight", {
+      get: () => parseFloat(host.style.minHeight),
+    })
     window.document.body.append(parent)
     cleanups.add(() => parent.remove())
-    const reflow = width - 32 < 816
+    const scale = Math.min(1, (width - 32) / 816)
     vi.spyOn(host, "getBoundingClientRect").mockReturnValue(
-      new DOMRect(0, 100, 816, 1056)
+      new DOMRect(0, 100, 816 * scale, 1056 * scale)
     )
     vi.spyOn(content, "getBoundingClientRect").mockReturnValue(
-      new DOMRect(0, 196, 624, 1100)
+      new DOMRect(0, 100 + 96 * scale, 624 * scale, 1100 * scale)
     )
     expect(richPageLayout(host, flow, paginated).get("break")).toBe(
-      reflow || !paginated ? 24 : 0
+      !paginated ? 24 : 0
     )
-    expect(host.dataset.paperReflow).toBe(String(reflow))
-    expect(host.style.minHeight).toBe(reflow || !paginated ? "" : "2136px")
-    expect(host.style.getPropertyValue("--cv-rich-page-scale")).toBe("1")
+    expect(host.hasAttribute("data-paper-reflow")).toBe(false)
+    expect(host.style.minHeight).toBe(!paginated ? "1056px" : "2136px")
+    expect(host.style.getPropertyValue("--cv-rich-page-scale")).toBe(
+      String(scale)
+    )
     expect(host.style.getPropertyValue("--cv-rich-page-start")).toBe("96px")
+    expect(viewport.style.width).toBe(`${816 * scale}px`)
+    expect(parseFloat(viewport.style.height)).toBeCloseTo(
+      (paginated ? 2136 : 1056) * scale
+    )
   }
 )
 
 it.each([
-  [1200, false],
-  [1100, true],
+  [1200, 1],
+  [1100, (1100 - 32) / (16838 / 15)],
 ] as const)(
-  "reflows an A4 landscape page from its own width at parent %s",
-  (clientWidth, reflow) => {
+  "scales an A4 landscape page from its own width at parent %s",
+  (clientWidth, scale) => {
     vi.stubGlobal("CSS", {
       ...globalThis.CSS,
       escape: (value: string) => value,
@@ -445,14 +457,16 @@ it.each([
     window.document.body.append(parent)
     cleanups.add(() => parent.remove())
     vi.spyOn(host, "getBoundingClientRect").mockReturnValue(
-      new DOMRect(0, 0, 1122, 794)
+      new DOMRect(0, 0, 1122 * scale, 794 * scale)
     )
     vi.spyOn(content, "getBoundingClientRect").mockReturnValue(
-      new DOMRect(0, 96, 900, 400)
+      new DOMRect(0, 96 * scale, 900 * scale, 400 * scale)
     )
     richPageLayout(host, flow, true)
-    expect(host.dataset.paperReflow).toBe(String(reflow))
-    expect(host.style.getPropertyValue("--cv-rich-page-scale")).toBe("1")
+    expect(host.hasAttribute("data-paper-reflow")).toBe(false)
+    expect(host.style.getPropertyValue("--cv-rich-page-scale")).toBe(
+      String(scale)
+    )
     expect(host.style.getPropertyValue("--cv-rich-page-width")).toBe(
       `${16838 / 15}px`
     )

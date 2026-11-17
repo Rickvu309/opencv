@@ -213,12 +213,14 @@ export function RichPaperPage({
         data-paper-document-pane=""
         className="min-h-0 flex-1 overflow-auto overscroll-contain bg-muted/30 p-4 md:p-6"
       >
-        <div
-          ref={element}
-          aria-busy={status === "loading"}
-          data-slot="paper-rich-sheet"
-          className="paper-rich-sheet mx-auto text-card-foreground shadow-sm ring-1 ring-border"
-        />
+        <div data-paper-page-viewport>
+          <div
+            ref={element}
+            aria-busy={status === "loading"}
+            data-slot="paper-rich-sheet"
+            className="paper-rich-sheet mx-auto text-card-foreground shadow-sm ring-1 ring-border"
+          />
+        </div>
       </div>
     </section>
   )

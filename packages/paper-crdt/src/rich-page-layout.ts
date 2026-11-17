@@ -8,7 +8,12 @@ export function richPageLayout(
   const page = document.presentation.page
   const width = page.width / 15
   const height = page.height / 15
-  const parent = element.parentElement
+  const viewport = element.parentElement?.hasAttribute(
+    "data-paper-page-viewport"
+  )
+    ? element.parentElement
+    : null
+  const parent = viewport?.parentElement ?? element.parentElement
   const parentStyle = parent && getComputedStyle(parent)
   const available =
     parent && parentStyle
@@ -16,12 +21,11 @@ export function richPageLayout(
         parseFloat(parentStyle.paddingLeft) -
         parseFloat(parentStyle.paddingRight)
       : width
-  const reflow = available < width
-  element.dataset.paperReflow = String(reflow)
+  const scale = Math.min(1, Math.max(1, available) / width)
   element.style.setProperty("--cv-rich-page-width", `${width}px`)
   element.style.setProperty("--cv-rich-page-height", `${height}px`)
   element.style.setProperty("--cv-rich-page-pitch", `${height + 24}px`)
-  element.style.setProperty("--cv-rich-page-scale", "1")
+  element.style.setProperty("--cv-rich-page-scale", String(scale))
   for (const key of ["top", "bottom", "start", "end"] as const)
     element.style.setProperty(`--cv-rich-page-${key}`, `${page[key] / 15}px`)
   const pitch = height + 24
@@ -33,17 +37,23 @@ export function richPageLayout(
         `[data-node-type=blockOuter][data-id="${CSS.escape(node.id)}"]`
       )
       if (!block) continue
-      breaks.set(node.id, reflow || !paginated ? 24 : 0)
+      breaks.set(node.id, !paginated ? 24 : 0)
     }
   }
   const content = element.querySelector<HTMLElement>(":scope > .bn-block-group")
   const bottom = content
-    ? content.getBoundingClientRect().bottom -
-      element.getBoundingClientRect().top +
+    ? (content.getBoundingClientRect().bottom -
+        element.getBoundingClientRect().top) /
+        scale +
       page.bottom / 15
     : height
   const pages = Math.max(1, Math.ceil((bottom + 24 - 0.5) / pitch))
-  element.style.minHeight =
-    reflow || !paginated ? "" : `${pages * pitch - 24}px`
+  element.style.minHeight = !paginated
+    ? `${height}px`
+    : `${pages * pitch - 24}px`
+  if (viewport) {
+    viewport.style.width = `${width * scale}px`
+    viewport.style.height = `${element.offsetHeight * scale}px`
+  }
   return breaks
 }
