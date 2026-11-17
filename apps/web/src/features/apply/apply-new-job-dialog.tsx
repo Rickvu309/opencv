@@ -31,7 +31,7 @@ import { useRunCommand } from "@/lib/contract-client.ts"
 
 import { previewJob, useApplyPickerCards } from "./apply-api.ts"
 import { ApplyColumnAnchor } from "./apply-column-anchor.tsx"
-import { ALL_STAGES } from "./apply-stages.ts"
+import { ALL_STAGES, stageLabel } from "./apply-stages.ts"
 import {
   AlreadyTracked,
   Hint,
@@ -39,7 +39,7 @@ import {
   PLACEHOLDER_SECONDARY,
 } from "./apply-new-job-parts.tsx"
 import {
-  DIALOG_START,
+  dialogStart,
   dialogReducer,
   type Draft,
 } from "./apply-new-job-dialog.reducer.ts"
@@ -67,9 +67,11 @@ const INLINE_FIELD =
   "h-auto rounded-none border-0 bg-transparent p-0 shadow-none focus-visible:border-0 focus-visible:ring-0 aria-invalid:border-0 aria-invalid:ring-0 dark:bg-transparent"
 
 export function NewJobDialog({
+  stage,
   open,
   onOpenChange,
 }: {
+  stage: JobStage
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
@@ -92,14 +94,14 @@ export function NewJobDialog({
       busy,
     },
     dispatch,
-  ] = useReducer(dialogReducer, DIALOG_START)
+  ] = useReducer(dialogReducer, stage, dialogStart)
 
   function patch(fields: Partial<Draft>) {
     dispatch({ type: "fields_edited", fields })
   }
 
   function reset() {
-    dispatch({ type: "closed" })
+    dispatch({ type: "closed", stage })
   }
 
   async function runPreview(input: { url?: string; text?: string }) {
@@ -189,7 +191,7 @@ export function NewJobDialog({
     dispatch({ type: "save_started" })
     try {
       const created = await run("job.create", parsed.data)
-      if (created.stage === "saved") toast("Job added to Saved")
+      toast(`Job added to ${stageLabel(created.stage)}`)
       if (typeof window !== "undefined") {
         window.dispatchEvent(
           new CustomEvent("opencv:job-created", { detail: { id: created.id } })

@@ -1,5 +1,6 @@
 import { useEffect, useReducer, useRef } from "react"
 import { useQueryClient } from "@tanstack/react-query"
+import { Plus } from "lucide-react"
 import { useNavigate } from "@tanstack/react-router"
 import { parseJobId, type JobStage, type JobView } from "@workspace/domain"
 
@@ -98,10 +99,12 @@ export function ApplyBoard({
   jobs,
   showClosed,
   onShowClosed,
+  onNewJob,
 }: {
   jobs: JobView[]
   showClosed: boolean
   onShowClosed: (show: boolean) => void
+  onNewJob: (stage: JobStage) => void
 }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -260,13 +263,14 @@ export function ApplyBoard({
               role="region"
               aria-label={column.name}
               data-stage={column.id}
-              className="min-h-0 w-[244px] min-w-[244px] gap-2 rounded-[6px] border-0 bg-background px-2 pt-1 pb-2 ring-0"
+              className="group/lane min-h-0 w-[244px] min-w-[244px] gap-2 rounded-[6px] border-0 bg-background px-2 pt-1 pb-2 ring-0"
             >
               <KanbanHeader className="p-0 font-normal">
                 <BoardLane
                   name={column.name}
                   stage={stage}
                   count={data.filter((card) => card.column === stage).length}
+                  onAdd={() => onNewJob(stage)}
                 />
               </KanbanHeader>
               <KanbanCards
@@ -301,6 +305,9 @@ export function ApplyBoard({
               {drag?.over === stage && activeStage !== stage ? (
                 <DropLine />
               ) : null}
+              {drag ? null : (
+                <LaneAdd name={column.name} onAdd={() => onNewJob(stage)} />
+              )}
             </KanbanBoard>
           )
         }}
@@ -311,6 +318,23 @@ export function ApplyBoard({
         onShowClosed={onShowClosed}
       />
     </div>
+  )
+}
+
+function LaneAdd({ name, onAdd }: { name: string; onAdd: () => void }) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      aria-hidden
+      tabIndex={-1}
+      data-slot="lane-add"
+      title={`New job in ${name}`}
+      className="h-11 w-full shrink-0 rounded-[10px] border border-foreground/6 bg-card text-muted-foreground opacity-0 group-hover/lane:opacity-100 hover:bg-card hover:text-foreground max-md:hidden md:h-8"
+      onClick={onAdd}
+    >
+      <Plus />
+    </Button>
   )
 }
 

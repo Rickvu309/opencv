@@ -96,6 +96,7 @@ function Board({ showClosed = false }: { showClosed?: boolean }) {
       jobs={query.data ?? []}
       showClosed={showClosed}
       onShowClosed={() => {}}
+      onNewJob={() => {}}
     />
   )
 }
