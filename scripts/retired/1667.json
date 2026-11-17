@@ -82,5 +82,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/test/surface-behavior.test.tsx",
+    "because": "The Paper section controls offer CV creation, Letter creation and import in their own empty states.",
+    "replacedBy": "apps/web/src/test/surface-behavior.test.tsx",
+    "proof": {
+      "fork": "976628fc1f4263be91e7d6db104d75441d52966c",
+      "replacedByBlob": "2fb30388a26c40f53a9628dfeb90a6ff56cdcf4f",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 4
   }
 ]
