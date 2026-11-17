@@ -1,7 +1,7 @@
 import ts from "typescript"
 
 export const message =
-  "Use blankPaper(kind), backed by emptyPaper(kind): a blank has one empty paragraph and no header, sections or formatting."
+  "Use blankCv() or blankLetter(), backed by emptyPaper(kind): a blank has one empty paragraph and no header, sections or formatting."
 
 export function detectDocument(document) {
   const paragraph = document?.blocks?.[0]
@@ -33,7 +33,12 @@ export function detect(text, file = "document.ts") {
       )
     ) {
       const body = node.body?.getText(source) ?? ""
-      if (!/\b(blankPaper|emptyPaper)\(/.test(body)) problems.push(message)
+      const shared = /\b(blankPaper|emptyPaper)\(/.test(body)
+      const dispatch =
+        node.name?.text === "blankPaper" &&
+        /\bblankCv\(\)/.test(body) &&
+        /\bblankLetter\(\)/.test(body)
+      if (!shared && !dispatch) problems.push(message)
     }
     ts.forEachChild(node, visit)
   }

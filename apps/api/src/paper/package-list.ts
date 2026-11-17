@@ -1,6 +1,7 @@
 import {
   ERROR_CODES,
-  blankPaper,
+  blankCv,
+  blankLetter,
   paperViewSchema,
   parsePaperId,
   type PaperView,
@@ -28,7 +29,7 @@ function packagePaper(row: {
     kind: row.kind,
     templateId: "simple",
     status: "draft",
-    paper: blankPaper(row.kind),
+    paper: row.kind === "cv" ? blankCv() : blankLetter(),
     contentVersion: 1,
     checks: [],
     pageChoice: "unset",

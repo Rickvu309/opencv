@@ -260,21 +260,12 @@ export function sectionMarker(
   return { id, type: "section", kind, title: SECTION_TITLES[kind] }
 }
 
-export function blankPaper(kind: "cv"): CvPaper
-export function blankPaper(kind: "letter"): LetterPaper
-export function blankPaper(kind: PaperDocument["kind"]): PaperDocument
-export function blankPaper(kind: PaperDocument["kind"]): PaperDocument {
-  return kind === "cv"
-    ? cvPaperSchema.parse(emptyPaper(kind))
-    : letterPaperSchema.parse(emptyPaper(kind))
-}
-
 export function blankCv(): CvPaper {
-  return blankPaper("cv")
+  return cvPaperSchema.parse(emptyPaper("cv"))
 }
 
 export function blankLetter(): LetterPaper {
-  return blankPaper("letter")
+  return letterPaperSchema.parse(emptyPaper("letter"))
 }
 
 export type SectionGroup = {

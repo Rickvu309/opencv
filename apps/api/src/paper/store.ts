@@ -4,7 +4,8 @@ import {
   DEFAULT_PAPER_DOC_NAME,
   ERROR_CODES,
   IMPORT_PAGES_MESSAGE,
-  blankPaper,
+  blankCv,
+  blankLetter,
   paperNodeSpecs,
   paperDocumentSchema,
   legacyPaperDocumentSchema,
@@ -94,6 +95,10 @@ function v3Of(kind: PaperStoredKind, value: unknown): PaperDocument | null {
   const parsed = legacyPaperDocumentSchema.safeParse(value)
   if (!parsed.success || parsed.data.kind !== kind) return null
   return parsed.data
+}
+
+function blankPaper(kind: PaperStoredKind): PaperDocument {
+  return kind === "cv" ? blankCv() : blankLetter()
 }
 
 function sharedPhotoRef(document: unknown): string | null {

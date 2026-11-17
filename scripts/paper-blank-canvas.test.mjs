@@ -89,6 +89,7 @@ test("blank edits retain the Letter anchor and allow an explicitly requested CV 
 })
 
 test("blank factories delegate and the historical starter CV fails", () => {
+  assert.deepEqual(detect('function blankCv() { return emptyPaper("cv") }'), [])
   assert.deepEqual(detect('function blankCv() { return blankPaper("cv") }'), [])
   assert.deepEqual(
     detect(
@@ -96,9 +97,22 @@ test("blank factories delegate and the historical starter CV fails", () => {
     ),
     [message]
   )
+  assert.deepEqual(
+    detect(
+      'function blankPaper(kind) { return kind === "cv" ? blankCv() : blankLetter() }'
+    ),
+    []
+  )
+  assert.deepEqual(
+    detect(
+      "function blankPaper() { return { header: seed(), blocks: sections() } }"
+    ),
+    [message]
+  )
   for (const file of [
     "packages/domain/src/paper-doc/document.ts",
     "scripts/lib/paper-canvas-mint.mjs",
+    "apps/api/src/paper/store.ts",
   ])
     assert.deepEqual(detect(read(file), file), [])
   const introduced = execFileSync(
@@ -116,7 +130,7 @@ test("blank factories delegate and the historical starter CV fails", () => {
   assert.match(read("apps/api/src/paper/store.ts"), /blankPaper\(input.kind\)/)
   assert.match(
     read("apps/api/src/paper/package-list.ts"),
-    /blankPaper\(row.kind\)/
+    /row\.kind === "cv"\s*\?\s*blankCv\(\)\s*:\s*blankLetter\(\)/
   )
   assert.match(
     read("apps/web/src/features/paper/paper-new-dialog.tsx"),

@@ -9,7 +9,6 @@ export type {
   SectionGroup,
 } from "./document.js"
 export {
-  blankPaper,
   blankCv,
   blankLetter,
   clashSchema,
