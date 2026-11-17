@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-attachment-view.test.ts",
+    "because": "Paper and Job attachment targets now require typed router destinations; bare href and external flags allowed reloads that dropped the draft. The replacement preserves each destination and external URL in the new discriminated target contract.",
+    "replacedBy": "apps/web/src/features/coach/coach-attachment-view.test.ts",
+    "proof": {
+      "fork": "1edeb9b935aa4f5330cdf105001f3be3c56a7b84",
+      "replacedByBlob": "e6249fabff9a3dd75d8840cbb780da7705a1d45b",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 3
   }
 ]
