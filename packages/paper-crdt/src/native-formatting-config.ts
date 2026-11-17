@@ -64,7 +64,7 @@ export const layoutConfigs = {
     type: "paperTable",
     content: "none",
     layoutOnly: true,
-    propSchema: { columns: text },
+    propSchema: { columns: text, borders: text },
     children: { allow: ["paperRow"], min: 1, dissolve: false },
   },
   paperRow: {

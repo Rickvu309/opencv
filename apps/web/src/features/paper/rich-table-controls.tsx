@@ -60,8 +60,6 @@ export function RichTableControls({
   )
 }
 
-type AnchorAction = { type: "mount"; host: HTMLDivElement } | { type: "clear" }
-
 function TableMenuAnchor({
   row,
   children,
@@ -69,24 +67,22 @@ function TableMenuAnchor({
   row: HTMLElement
   children: ReactNode
 }) {
-  const [host, dispatch] = useReducer(
-    (_host: HTMLDivElement | null, action: AnchorAction) =>
-      action.type === "mount" ? action.host : null,
-    null
+  const [anchor] = useReducer(
+    (anchor: HTMLDivElement) => anchor,
+    null,
+    () => {
+      const created = document.createElement("div")
+      created.className = "paper-table-anchor"
+      created.dataset.paperTableControls = ""
+      created.contentEditable = "false"
+      return created
+    }
   )
   useEffect(() => {
-    const anchor = document.createElement("div")
-    anchor.className = "paper-table-anchor"
-    anchor.dataset.paperTableControls = ""
-    anchor.contentEditable = "false"
     row.prepend(anchor)
-    dispatch({ type: "mount", host: anchor })
-    return () => {
-      anchor.remove()
-      dispatch({ type: "clear" })
-    }
-  }, [row])
-  return host ? createPortal(children, host) : null
+    return () => anchor.remove()
+  }, [row, anchor])
+  return createPortal(children, anchor)
 }
 
 type InsertState = {
