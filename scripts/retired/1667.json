@@ -68,5 +68,19 @@
     "class": "self",
     "classBecause": null,
     "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-import-outcomes.test.tsx",
+    "because": "Cancel returns to the CV empty state. The Paper router fixture keeps import behavior and its routes available.",
+    "replacedBy": "apps/web/src/features/paper/paper-import-outcomes.test.tsx",
+    "proof": {
+      "fork": "976628fc1f4263be91e7d6db104d75441d52966c",
+      "replacedByBlob": "bc55f2d156ee0b799c0bc4e9239c72f0851e80c3",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
