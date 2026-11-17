@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/paper/package-canvas.test.ts",
+    "because": "owner correction 2026-11-17: one empty paragraph replaces the carrier-paragraph promise. New assertions pass locally; the canonical blank detector fires on main and the introducing commit. The automated replacement flip timed out waiting for the shared lock, so no machine flip proof is claimed.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
