@@ -1,4 +1,4 @@
-import { scalePaperPage } from "@workspace/paper-crdt"
+import { scalePaperPage } from "@workspace/paper-crdt/editor"
 import { type RefObject, useLayoutEffect } from "react"
 
 export function useCanvasScale(
