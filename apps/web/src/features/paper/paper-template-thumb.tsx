@@ -6,7 +6,7 @@ import {
 } from "./paper-template-pages.ts"
 
 export const TEMPLATE_PAGE_CLASS =
-  "@container relative block aspect-[17/22] w-full overflow-hidden rounded-[6px] border border-transparent bg-white text-black/85"
+  "@container relative block aspect-[17/22] w-full overflow-hidden rounded-[6px] border border-transparent bg-white text-black/85 [word-spacing:0.15em]"
 
 const plain = (text: string) => text.replace(/[[\]]/g, "")
 
