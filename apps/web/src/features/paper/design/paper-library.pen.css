@@ -74,6 +74,6 @@
   }
 }
 
-.dark [data-pen-surface="paper"] [data-slot="paper-library-header"] {
+[data-pen-surface="paper"]:is(.dark *) [data-slot="paper-library-header"] {
   border-color: var(--border);
 }
