@@ -54,5 +54,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/settings/settings.test.tsx",
+    "because": "Keep account deletion and sign-out heading assertions and match the pen OpenCV casing",
+    "replacedBy": "apps/web/src/features/settings/settings.test.tsx",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "813d370319dd0261555b0eb6f1c6e2f1a3ee101a",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
   }
 ]
