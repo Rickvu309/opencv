@@ -67,7 +67,7 @@ export function detect(text, file) {
   }
   if (file.endsWith("rich-table-controls.tsx")) {
     if (
-      !text.includes("const [host] = useReducer(") ||
+      !text.includes("const [anchor] = useReducer(") ||
       /dispatch\(\{ type: "mount"/.test(text)
     )
       problems.push(

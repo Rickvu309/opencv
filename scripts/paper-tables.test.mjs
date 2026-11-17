@@ -109,7 +109,7 @@ test("row replacement keeps the menu host and rejects the introducing commit", (
   const file = files[3]
   const clean = read(file)
   const mistake = clean.replace(
-    "const [host] = useReducer(",
+    "const [anchor] = useReducer(",
     "const host = createHost("
   )
   const expected =

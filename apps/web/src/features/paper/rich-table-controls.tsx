@@ -67,22 +67,22 @@ function TableMenuAnchor({
   row: HTMLElement
   children: ReactNode
 }) {
-  const [host] = useReducer(
-    (host: HTMLDivElement) => host,
+  const [anchor] = useReducer(
+    (anchor: HTMLDivElement) => anchor,
     null,
     () => {
-      const anchor = document.createElement("div")
-      anchor.className = "paper-table-anchor"
-      anchor.dataset.paperTableControls = ""
-      anchor.contentEditable = "false"
-      return anchor
+      const created = document.createElement("div")
+      created.className = "paper-table-anchor"
+      created.dataset.paperTableControls = ""
+      created.contentEditable = "false"
+      return created
     }
   )
   useEffect(() => {
-    row.prepend(host)
-    return () => host.remove()
-  }, [row, host])
-  return createPortal(children, host)
+    row.prepend(anchor)
+    return () => anchor.remove()
+  }, [row, anchor])
+  return createPortal(children, anchor)
 }
 
 type InsertState = {
