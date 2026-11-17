@@ -28,20 +28,28 @@ describe("attachment view", () => {
   })
 
   it("gives each kind its own place to inspect it", () => {
-    expect(attachmentView({ kind: "paper", id: "p1", label: "CV" }).href).toBe(
-      "/paper/p1"
-    )
     expect(
-      attachmentView({ kind: "job", id: "j1", label: "Analyst at Acme" }).href
-    ).toBe("/apply/j1")
+      attachmentView({ kind: "paper", id: "p1", label: "CV" }).target
+    ).toEqual({
+      kind: "internal",
+      route: { to: "/paper/$docId", params: { docId: "p1" } },
+    })
+    expect(
+      attachmentView({ kind: "job", id: "j1", label: "Analyst at Acme" }).target
+    ).toEqual({
+      kind: "internal",
+      route: { to: "/apply/$jobId", params: { jobId: "j1" } },
+    })
+    expect(
+      attachmentView({ kind: "file", id: "f1", label: "Notes" }).target
+    ).toEqual({ kind: "none" })
     const link = attachmentView({
       kind: "link",
       id: "https://example.com/a",
       label: "example.com/a",
     })
     expect(link).toMatchObject({
-      href: "https://example.com/a",
-      external: true,
+      target: { kind: "external", href: "https://example.com/a" },
       title: "Link: https://example.com/a",
     })
   })

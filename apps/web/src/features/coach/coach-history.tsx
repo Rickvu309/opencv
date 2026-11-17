@@ -151,7 +151,7 @@ export function CoachHistory({
                 event.stopPropagation()
                 onSearchChange("")
               }}
-              className="h-auto flex-1 border-0 bg-transparent p-0 text-[13px] leading-[1.2] shadow-none ring-0 outline-none focus-visible:ring-0"
+              className="h-auto flex-1 border-0 bg-transparent p-0 text-base leading-[1.2] shadow-none ring-0 outline-none focus-visible:ring-0 md:text-[13px]"
             />
           </div>
 

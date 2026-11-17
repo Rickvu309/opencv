@@ -29,6 +29,8 @@ export function shownWord(text: string) {
 }
 
 export function wordChangeRows(change: WritingChange) {
+  if (change.op === "setText" && change.before === "")
+    return [{ label: "New line", text: shownWord(change.after) }]
   if (change.op === "setText") {
     return [
       { label: "Before", text: shownWord(change.before) },
@@ -49,6 +51,22 @@ export function wordChangeRows(change: WritingChange) {
     },
     { label: "New line", text: shownWord(change.after) },
   ]
+}
+
+const CHANGE_TITLES = {
+  setText: "Change a line",
+  insert: "Add a line",
+  delete: "Remove a line",
+} as const
+
+export function wordChangeHeading(change: WritingChange) {
+  if (change.op === "replace") return null
+  if (
+    change.op === "setText" &&
+    wordChangeRows(change).some((row) => row.label === "New line")
+  )
+    return "Add a line"
+  return CHANGE_TITLES[change.op]
 }
 
 type Listener = () => void

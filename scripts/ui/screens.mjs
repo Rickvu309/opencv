@@ -43,10 +43,6 @@ const DENY_THE_WAITING_EDIT = [
   { waitFor: { text: "Denied · nothing changed" } },
 ]
 
-const STOP_THE_WAITING_EDIT = [
-  { click: { selector: `${PANEL} button[aria-label="Stop"]` } },
-]
-
 const APPROVE_THE_EDIT = [
   ...ASK_FOR_AN_EDIT,
   { click: { selector: `${PANEL} button:text-is("Approve")` } },
@@ -284,6 +280,22 @@ export const SCREENS = [
     after: DENY_THE_WAITING_EDIT,
   },
   {
+    id: "coach-approval-draft",
+    route: "/paper",
+    steps: [
+      ...ASK_FOR_AN_EDIT,
+      { clickIfShown: { role: "button", name: "Expand" } },
+      {
+        fill: {
+          selector: `${PANEL} ${COMPOSER}`,
+          text: "Why this wording?",
+        },
+      },
+      { waitFor: { role: "button", name: "Deny" } },
+    ],
+    after: DENY_THE_WAITING_EDIT,
+  },
+  {
     id: "coach-receipt",
     route: "/paper",
     steps: [
@@ -447,12 +459,8 @@ export const SCREENS = [
   {
     id: "coach-stopped-reloaded",
     route: "/paper",
-    steps: [
-      ...ASK_FOR_AN_EDIT,
-      ...STOP_THE_WAITING_EDIT,
-      ...REOPEN_LATEST_CHAT,
-      { waitFor: { text: "Stopped · ask Coach again" } },
-    ],
+    unreachable:
+      "Stop is hidden while an approval waits, and the line Stopped · ask Coach again is stored only when that waiting approval is cancelled. Stopping while the turn streams ends the turn before a proposal exists, and that stop is not written into the reopened chat.",
   },
   {
     id: "coach-expired-reloaded",
