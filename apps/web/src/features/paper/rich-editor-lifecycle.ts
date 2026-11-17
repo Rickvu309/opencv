@@ -42,7 +42,6 @@ export function mountRichEditorLifecycle(
           if (editor === target) return Reflect.apply(value, target, args)
           if (key === "subscribe") return () => {}
           if (key === "photos") return []
-          if (key === "selectedBlockIds") return []
           if (key === "activeMarks") return {}
           if (key === "documentHistory") return { undo: false, redo: false }
           if (key === "apply" || key === "focus" || key === "setLink")

@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/writing-page.test.tsx",
+    "because": "The proposal notice replaces the duplicate in-page diff and approval controls, with action-specific receipt and focus coverage.",
+    "replacedBy": "apps/web/src/features/paper/writing-proposal-notice.test.tsx",
+    "proof": {
+      "fork": "33b208300272f2b77654a9da7808302cc978ae71",
+      "replacedByBlob": "e10cf89ea6ab468281a68e653d797c0890283759",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 14
+  }
+]

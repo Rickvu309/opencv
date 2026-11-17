@@ -14,6 +14,7 @@ import { ApiError } from "@/lib/api.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { catalogClient, refreshCatalogReads } from "@/lib/contract-client.ts"
+import { useShownWhileClosing } from "./paper-library-closing.ts"
 
 export type WordDocument = z.output<typeof paperPackageMetadataSchema>
 
@@ -95,6 +96,7 @@ export function PaperPackageLibrary({
   library: ReturnType<typeof useWordLibrary>
 }) {
   const { selected, onSelect } = library
+  const shownWord = useShownWhileClosing(selected)
   const unavailable =
     library.query.error instanceof ApiError &&
     library.query.error.status === 404
@@ -108,7 +110,9 @@ export function PaperPackageLibrary({
         <section aria-label="Word documents" className="flex flex-col gap-3">
           {library.query.error ? (
             <div>
-              <p>Could not load Word documents.</p>
+              <p role="alert" className="text-sm text-destructive">
+                Could not load Word documents.
+              </p>
               <Button
                 className="h-11 md:h-9"
                 variant="outline"
@@ -148,22 +152,22 @@ export function PaperPackageLibrary({
           if (!open) onSelect(null)
         }}
       >
-        <DialogContent className="sm:max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{selected?.name ?? "Word document"}</DialogTitle>
-            <DialogDescription>
-              Text preview of this saved Word version. Download Word to keep its
-              original layout.
-            </DialogDescription>
-          </DialogHeader>
-          {selected ? (
+        {shownWord !== null ? (
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{shownWord.name}</DialogTitle>
+              <DialogDescription>
+                Text preview of this saved Word version. Download Word to keep
+                its original layout.
+              </DialogDescription>
+            </DialogHeader>
             <WordSnapshot
-              key={`${selected.docId}:${selected.revision}`}
-              document={selected}
+              key={`${shownWord.docId}:${shownWord.revision}`}
+              document={shownWord}
               owner={library.owner}
             />
-          ) : null}
-        </DialogContent>
+          </DialogContent>
+        ) : null}
       </Dialog>
     </>
   )

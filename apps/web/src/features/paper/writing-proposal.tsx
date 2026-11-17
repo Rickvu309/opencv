@@ -1,236 +1,158 @@
-import { useEffect, useReducer, useSyncExternalStore } from "react"
-import { useQueryClient } from "@tanstack/react-query"
-import { parseActivityId, parsePendingActionId } from "@workspace/domain"
+import {
+  useEffect,
+  useReducer,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react"
+import { clearStoppedLetter } from "./paper-letter-resume.ts"
 import { Button } from "@workspace/ui/components/button"
 
-import { messageOf } from "@/features/paper/paper-library-support.ts"
-import { runContractCommand, undoActivity } from "@/lib/contract-client.ts"
 import {
+  subscribeWritingOutcome,
   subscribeWritingProposal,
-  wordChangeRows,
+  writingOutcome,
   writingProposal,
-  type WritingChange,
 } from "@/lib/writing-proposal.ts"
 
-type ProposalPhase = "idle" | "approving" | "approved" | "undoing" | "undone"
+const DOCK_MISSING = "Open Coach from the dock to review this change."
 
-type ProposalState = {
-  phase: ProposalPhase
-  error: string | null
-  activityId: string | null
-  toolCallId: string | null
+type ReviewErrorAction = { type: "set"; message: string | null }
+
+function reviewErrorReducer(
+  _state: string | null,
+  action: ReviewErrorAction
+): string | null {
+  return action.message
 }
 
-type ProposalEvent =
-  | { type: "reset"; toolCallId: string | null }
-  | { type: "approving" }
-  | { type: "undoing" }
-  | { type: "approved"; activityId: string | null }
-  | { type: "undone" }
-  | { type: "failed"; message: string }
-
-const IDLE: ProposalState = {
-  phase: "idle",
-  error: null,
-  activityId: null,
-  toolCallId: null,
+function suggestionLine(count: number) {
+  const changes = Math.max(count, 1)
+  return changes === 1
+    ? "Coach suggested 1 change"
+    : `Coach suggested ${changes} changes`
 }
 
-function proposalReducer(
-  state: ProposalState,
-  event: ProposalEvent
-): ProposalState {
-  switch (event.type) {
-    case "reset":
-      if (state.toolCallId === event.toolCallId) return state
-      return { ...IDLE, toolCallId: event.toolCallId }
-    case "approving":
-      return { ...state, phase: "approving", error: null }
-    case "undoing":
-      return { ...state, phase: "undoing", error: null }
-    case "approved":
-      return {
-        ...state,
-        phase: "approved",
-        error: null,
-        activityId: event.activityId,
-      }
-    case "undone":
-      return { ...state, phase: "undone", error: null }
-    case "failed":
-      return {
-        ...state,
-        phase:
-          state.phase === "approving"
-            ? "idle"
-            : state.phase === "undoing"
-              ? "approved"
-              : state.phase,
-        error: event.message,
-      }
-  }
+function openCoach(dock: HTMLElement) {
+  if (dock.getAttribute("aria-expanded") !== "true") dock.click()
+  requestAnimationFrame(() => {
+    const panel = document.getElementById("coach-panel")
+    const card = panel?.querySelector('[aria-label="Review Coach action"]')
+    if (card instanceof HTMLElement) {
+      card.tabIndex = -1
+      card.focus()
+    }
+  })
 }
 
-const changeTitles = {
-  setText: "Change a line",
-  insert: "Add a line",
-  delete: "Remove a line",
-} as const
-
-function shownWords(change: WritingChange, text: string) {
-  return change.op !== "replace" && text === "" ? "(empty line)" : text
-}
-
-function activityIdFrom(result: unknown) {
-  if (!result || typeof result !== "object") return null
-  if ("activityId" in result && typeof result.activityId === "string") {
-    return result.activityId
-  }
-  if ("id" in result && typeof result.id === "string") return result.id
+export function WritingDocumentNoticeSync({
+  docId,
+  text,
+  onText,
+}: {
+  docId: string
+  text: string
+  onText: (text: string) => void
+}) {
+  useEffect(() => {
+    let active = true
+    queueMicrotask(() => {
+      if (!active) return
+      onText(text)
+      if (text.trim().length > 0) clearStoppedLetter(docId)
+    })
+    return () => {
+      active = false
+    }
+  })
   return null
 }
 
 export function WritingProposalCard({
   docId,
-  onApplied,
+  children,
 }: {
   docId: string
-  onApplied: () => Promise<void>
+  children?: ReactNode
 }) {
-  const queryClient = useQueryClient()
   const proposal = useSyncExternalStore(
     subscribeWritingProposal,
     writingProposal,
     () => null
   )
-  const [{ phase, error, activityId }, dispatch] = useReducer(
-    proposalReducer,
-    IDLE
+  const outcome = useSyncExternalStore(
+    subscribeWritingOutcome,
+    writingOutcome,
+    () => null
   )
-  const toolCallId = proposal?.toolCallId ?? null
-  useEffect(() => {
-    dispatch({ type: "reset", toolCallId })
-  }, [toolCallId])
+  const [reviewError, dispatchReviewError] = useReducer(
+    reviewErrorReducer,
+    null
+  )
 
-  if (!proposal || proposal.docId !== docId) return null
-  const pending = proposal.pendingActionId
-  const busy = phase === "approving" || phase === "undoing"
+  const mine = proposal?.docId === docId ? proposal : null
+  const settled = !mine && outcome?.docId === docId ? outcome : null
 
-  async function approve() {
-    if (!pending || busy || phase === "approved" || phase === "undone") return
-    dispatch({ type: "approving" })
-    try {
-      const result = await runContractCommand(queryClient, "actions.approve", {
-        pendingActionId: parsePendingActionId(pending),
-      })
-      dispatch({ type: "approved", activityId: activityIdFrom(result) })
-      try {
-        await onApplied()
-      } catch (cause) {
-        dispatch({
-          type: "failed",
-          message: messageOf(cause, "Could not read this page. Try again."),
-        })
-      }
-    } catch (cause) {
-      dispatch({
-        type: "failed",
-        message: messageOf(cause, "Could not apply this edit. Try again."),
-      })
+  function review() {
+    const dock = document.querySelector("[data-dock-coach]")
+    if (!(dock instanceof HTMLElement)) {
+      dispatchReviewError({ type: "set", message: DOCK_MISSING })
+      return
     }
+    dispatchReviewError({ type: "set", message: null })
+    openCoach(dock)
   }
 
-  async function undo() {
-    if (!activityId || busy || phase !== "approved") return
-    dispatch({ type: "undoing" })
-    try {
-      parseActivityId(activityId)
-      await undoActivity(queryClient, activityId)
-      dispatch({ type: "undone" })
-      try {
-        await onApplied()
-      } catch (cause) {
-        dispatch({
-          type: "failed",
-          message: messageOf(cause, "Could not read this page. Try again."),
-        })
-      }
-    } catch (cause) {
-      dispatch({
-        type: "failed",
-        message: messageOf(cause, "Could not undo this edit. Try again."),
-      })
-    }
-  }
+  if (!reviewError && !mine && !settled) return children
 
+  const showReview = Boolean(reviewError || mine)
   return (
     <section
-      aria-label="Coach proposal"
-      className="mx-auto flex w-[min(100%-3rem,8.5in)] flex-col gap-3 pt-4"
+      aria-label={reviewError || mine || settled ? "Coach proposal" : undefined}
+      data-slot="writing-proposal-notice"
+      className="mx-auto flex min-h-24 w-[min(100%-3rem,816px)] shrink-0 flex-wrap items-center justify-between gap-3 py-3 md:min-h-16"
     >
-      <h2 className="text-sm font-medium">Coach proposal</h2>
-      <p className="text-sm text-muted-foreground">
-        This change waits for you.
-      </p>
-      <ol className="flex flex-col gap-3">
-        {proposal.changes.map((change, index) => (
-          <li key={index} className="flex flex-col gap-2">
-            {change.op === "replace" ? null : (
-              <p className="text-sm font-medium">{changeTitles[change.op]}</p>
-            )}
-            {wordChangeRows(change)
-              .filter((row) => row.label === "Where")
-              .map((row) => (
-                <p key={row.label}>{row.text}</p>
-              ))}
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] gap-3">
-              {change.op === "insert" ? null : (
-                <div className="flex flex-col gap-1 rounded-md border p-3">
-                  <p className="text-sm text-muted-foreground">Before</p>
-                  <p className="break-words whitespace-pre-wrap">
-                    {shownWords(change, change.before)}
-                  </p>
-                </div>
-              )}
-              {change.op === "delete" ? null : (
-                <div className="flex flex-col gap-1 rounded-md border p-3">
-                  <p className="text-sm text-muted-foreground">After</p>
-                  <p className="break-words whitespace-pre-wrap">
-                    {shownWords(change, change.after)}
-                  </p>
-                </div>
-              )}
-            </div>
-          </li>
-        ))}
-      </ol>
-      <div className="flex flex-wrap gap-2">
-        {(phase === "idle" || phase === "approving") && !proposal.withheld ? (
-          <Button
-            type="button"
-            className="h-11 md:h-9"
-            disabled={!pending || busy}
-            onClick={() => void approve()}
-          >
-            Approve
-          </Button>
-        ) : null}
-        {activityId && (phase === "approved" || phase === "undoing") ? (
-          <Button
-            type="button"
-            variant="outline"
-            className="h-11 md:h-9"
-            disabled={busy}
-            onClick={() => void undo()}
-          >
-            Undo
-          </Button>
-        ) : null}
-        {phase === "approved" ? <p>Approved</p> : null}
-        {phase === "undone" ? <p>Undone</p> : null}
-      </div>
-      {proposal.withheld ? <p>{proposal.withheld}</p> : null}
-      {error ? <p role="alert">{error}</p> : null}
+      {reviewError ? (
+        <p
+          role="alert"
+          className="min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-destructive"
+        >
+          {reviewError}
+        </p>
+      ) : mine?.withheld ? (
+        <p
+          role="status"
+          className="min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-muted-foreground"
+        >
+          {mine.withheld}
+        </p>
+      ) : mine ? (
+        <p
+          key={mine.pendingActionId ?? mine.toolCallId}
+          role="status"
+          className="min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-foreground"
+        >
+          {suggestionLine(mine.changes.length)}
+        </p>
+      ) : settled ? (
+        <p
+          role="status"
+          className="min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-muted-foreground"
+        >
+          {settled.phase === "approved"
+            ? "Coach's change approved"
+            : "Coach's change undone"}
+        </p>
+      ) : null}
+      {showReview ? (
+        <Button
+          type="button"
+          variant="outline"
+          className="ms-auto h-auto min-h-11 max-w-full whitespace-normal md:min-h-8"
+          onClick={review}
+        >
+          Review in Coach
+        </Button>
+      ) : null}
     </section>
   )
 }

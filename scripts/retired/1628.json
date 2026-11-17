@@ -1,0 +1,86 @@
+[
+  {
+    "subject": "apps/web/src/features/app-shell/app-shell.settings.test.tsx",
+    "because": "Keep the sign-out heading assertion and match the pen OpenCV casing",
+    "replacedBy": "apps/web/src/features/app-shell/app-shell.settings.test.tsx",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "be1749bb901331b071273d1f3d8e1809cc2a9a27",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/app-shell/app-shell.test.tsx",
+    "because": "Keep the signed-out redirect heading assertion and match the pen OpenCV casing",
+    "replacedBy": "apps/web/src/features/app-shell/app-shell.test.tsx",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "e41ea9631ba0eed3783440672d0cb1a537e385c2",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/settings/settings.test.tsx",
+    "because": "Keep account deletion and sign-out heading assertions and match the pen OpenCV casing",
+    "replacedBy": "apps/web/src/features/settings/settings.test.tsx",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "813d370319dd0261555b0eb6f1c6e2f1a3ee101a",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/auth/auth-welcome-parity.test.tsx",
+    "because": "Compare the Welcome heading directly with the pen OpenCV casing and verify the main landmark",
+    "replacedBy": "apps/web/src/features/auth/auth-welcome-parity.test.tsx",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "13c9e15ab7cbe1c6a1b4433a588d4d77ed8564ae",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/auth/sign-in-look.test.tsx",
+    "because": "Keep pen heading casing, invalid-email focus and description, and a neutral valid field during cooldown",
+    "replacedBy": "apps/web/src/features/auth/sign-in-look.test.tsx",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "a725e8f618c00a6ee66195dcc1a307facd2c5380",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/coming-soon/coming-soon.test.tsx",
+    "because": "The Proofs CTA moves to the kit primary variant on purpose; the test now requires the primary CTA on Pitch and Proofs.",
+    "replacedBy": "apps/web/src/features/coming-soon/coming-soon.test.tsx",
+    "proof": {
+      "fork": "383ed419e6283b055d7361893dc6feee4a89b3d8",
+      "replacedByBlob": "3f87e54fafb93e9c5fec8c4a8811a5fcef584208",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]

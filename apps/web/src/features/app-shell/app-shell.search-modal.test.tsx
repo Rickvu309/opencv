@@ -10,6 +10,7 @@ import {
 import { FIXTURE_CHATS } from "@/test/chat-fixtures.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import {
+  holdShellSearch,
   searchQueries,
   setMockChats,
   setMockSearch,
@@ -62,6 +63,32 @@ describe("command palette", () => {
     expect(
       await screen.findByRole("dialog", { name: "Search" })
     ).toBeInTheDocument()
+  })
+
+  it("names the field, announces searching, and hides an empty footer", async () => {
+    const release = holdShellSearch()
+    try {
+      const dialog = await openSearch()
+      const input = within(dialog).getByRole("textbox", { name: "Search" })
+      expect(input).toHaveAttribute(
+        "placeholder",
+        "Search jobs, Paper, and chats…"
+      )
+      expect(input.className).toContain("text-base")
+      expect(dialog.className).toContain("overscroll-contain")
+      expect(dialog.querySelector("#palette-results")?.className).toContain(
+        "overscroll-contain"
+      )
+      fireEvent.change(input, { target: { value: "north" } })
+      expect(await within(dialog).findByRole("status")).toHaveTextContent(
+        "Searching…"
+      )
+      expect(
+        dialog.querySelector("[data-slot='palette-properties']")
+      ).toBeNull()
+    } finally {
+      release()
+    }
   })
 
   it("lists pages for an empty query and does not call search", async () => {

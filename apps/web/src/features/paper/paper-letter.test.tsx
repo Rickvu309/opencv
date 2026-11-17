@@ -96,7 +96,11 @@ describe("Cover letter editor", () => {
     render(
       <PaperLetterEditor doc={letter} job={job} onBack={() => undefined} />
     )
-    fireEvent.click(screen.getByRole("button", { name: "Copy share link" }))
+    const copy = screen.getByRole("button", { name: "Copy share link" })
+    expect(copy.className).toContain("size-11")
+    expect(copy.className).toContain("md:h-7")
+    expect(copy.className).toContain("md:w-[30px]")
+    fireEvent.click(copy)
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
     })

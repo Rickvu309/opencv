@@ -213,7 +213,7 @@ export const DESIGN_MAP = [
   {
     screen: "paper-home",
     label: "Paper search",
-    selector: `${PAPER_HEADER} input[aria-label="Search Paper"]`,
+    selector: `${PAPER_HEADER} [data-slot="search-input"]`,
     composedScreen: PAPER_LIBRARY,
     frame: "LYZTY",
     props: ["width", "height", "radius"],
@@ -229,7 +229,7 @@ export const DESIGN_MAP = [
   {
     screen: "paper-home",
     label: "Paper search icon",
-    selector: `${PAPER_HEADER} [data-slot="paper-library-search-icon"]`,
+    selector: `${PAPER_HEADER} [data-slot="search-input"] svg`,
     composedScreen: PAPER_LIBRARY,
     frame: "BzQxH",
     props: ["width", "height"],

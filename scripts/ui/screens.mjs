@@ -43,10 +43,6 @@ const DENY_THE_WAITING_EDIT = [
   { waitFor: { text: "Denied · nothing changed" } },
 ]
 
-const STOP_THE_WAITING_EDIT = [
-  { click: { selector: `${PANEL} button[aria-label="Stop"]` } },
-]
-
 const APPROVE_THE_EDIT = [
   ...ASK_FOR_AN_EDIT,
   { click: { selector: `${PANEL} button:text-is("Approve")` } },
@@ -284,6 +280,22 @@ export const SCREENS = [
     after: DENY_THE_WAITING_EDIT,
   },
   {
+    id: "coach-approval-draft",
+    route: "/paper",
+    steps: [
+      ...ASK_FOR_AN_EDIT,
+      { clickIfShown: { role: "button", name: "Expand" } },
+      {
+        fill: {
+          selector: `${PANEL} ${COMPOSER}`,
+          text: "Why this wording?",
+        },
+      },
+      { waitFor: { role: "button", name: "Deny" } },
+    ],
+    after: DENY_THE_WAITING_EDIT,
+  },
+  {
     id: "coach-receipt",
     route: "/paper",
     steps: [
@@ -389,6 +401,29 @@ export const SCREENS = [
     ],
   },
   {
+    id: "paper-home-no-match",
+    route: "/paper",
+    steps: [
+      ...OPEN_BLANK_CV,
+      { goto: "/paper" },
+      {
+        fill: {
+          selector: 'main input[aria-label="Search Paper"]',
+          text: "zzzz-no-match",
+        },
+      },
+      { waitFor: { role: "button", name: "Clear search" } },
+    ],
+  },
+  {
+    id: "paper-import-link",
+    route: "/paper",
+    steps: [
+      { click: { role: "button", name: "Import" } },
+      { waitFor: { role: "textbox", name: "Paste a link" } },
+    ],
+  },
+  {
     id: "apply-board",
     route: "/apply",
     steps: ADD_A_JOB,
@@ -424,12 +459,8 @@ export const SCREENS = [
   {
     id: "coach-stopped-reloaded",
     route: "/paper",
-    steps: [
-      ...ASK_FOR_AN_EDIT,
-      ...STOP_THE_WAITING_EDIT,
-      ...REOPEN_LATEST_CHAT,
-      { waitFor: { text: "Stopped · ask Coach again" } },
-    ],
+    unreachable:
+      "Stop is hidden while an approval waits, and the line Stopped · ask Coach again is stored only when that waiting approval is cancelled. Stopping while the turn streams ends the turn before a proposal exists, and that stop is not written into the reopened chat.",
   },
   {
     id: "coach-expired-reloaded",
@@ -517,18 +548,49 @@ export const SCREENS = [
     steps: [
       { waitFor: { role: "button", name: "Skip for now" } },
       { click: { role: "button", name: "Skip for now" } },
-      { waitFor: { role: "button", name: "Scan" } },
-      { click: { role: "button", name: "Scan" } },
+      { waitFor: { role: "button", name: "View example inbox" } },
+      { click: { role: "button", name: "View example inbox" } },
       { waitFor: { text: "Regional bank" } },
+    ],
+  },
+  {
+    id: "inbox-open",
+    route: "/inbox",
+    steps: [
+      { waitFor: { role: "button", name: "View example inbox" } },
+      { click: { role: "button", name: "View example inbox" } },
+      { waitFor: { selector: '[data-slot="inbox-row"]' } },
+      { click: { selector: '[data-slot="inbox-row"]' } },
+      { waitFor: { role: "region", name: "Reading pane" } },
     ],
   },
   {
     id: "shell-sidebar-collapsed",
     route: "/jobs",
+    restPointer: "center",
     steps: [
       { click: { role: "heading", name: "Jobs, matched to you" } },
       { press: "[" },
-      { waitFor: { role: "button", name: "Expand sidebar" } },
+      { clickIfShown: { role: "button", name: "Menu" } },
+      {
+        waitFor: {
+          selector:
+            '[data-slot="sidebar-expand"], button[aria-label="Close menu"]',
+        },
+      },
+    ],
+  },
+  {
+    id: "shell-command-palette",
+    route: "/inbox",
+    steps: [
+      { waitFor: { role: "heading", name: "Inbox" } },
+      { press: "Control+k" },
+      {
+        waitFor: {
+          selector: '[role="dialog"] input[aria-label="Search"]',
+        },
+      },
     ],
   },
   {
@@ -536,8 +598,17 @@ export const SCREENS = [
     route: "/inbox",
     steps: [
       { waitFor: { role: "heading", name: "Inbox" } },
-      { click: { role: "button", name: "Menu" } },
-      { waitFor: { role: "button", name: "Close menu" } },
+      {
+        clickIfShown: {
+          selector: '[data-slot="sidebar-frame"] [data-slot="account-trigger"]',
+        },
+      },
+      { clickIfShown: { role: "button", name: "Menu" } },
+      {
+        waitFor: {
+          selector: 'button[aria-label="Close menu"], [role="menu"]',
+        },
+      },
     ],
   },
   {
@@ -618,6 +689,15 @@ const HEIGHTS = new Map([
   [1280, 800],
   [390, 844],
 ])
+
+export function restPoint(screen, viewport) {
+  if (screen?.restPointer !== "center" || !viewport?.width || !viewport?.height)
+    return { x: 0, y: 0 }
+  return {
+    x: Math.round(viewport.width / 2),
+    y: Math.round(viewport.height / 2),
+  }
+}
 
 export function viewportFor(width) {
   return { width, height: HEIGHTS.get(width) ?? Math.round((width * 10) / 16) }

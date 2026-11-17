@@ -112,7 +112,7 @@ function renderBoth(review: ReturnType<typeof reviewOf>) {
   render(
     <ChatStoreContext.Provider value={store}>
       <CoachToolLine tool={toolOf(review)} canUndo={false} />
-      <WritingProposalCard docId={DOC} onApplied={async () => undefined} />
+      <WritingProposalCard docId={DOC} />
     </ChatStoreContext.Provider>
   )
 }
@@ -131,21 +131,22 @@ describe("a Word batch is shown before Approve", () => {
       .getByText("Changes to approve")
       .closest("[data-slot=card]")
     if (!coach) throw new Error("missing batch preview")
-    for (const surface of [card, coach]) {
-      expect(within(surface).getByText("Change a line")).toBeVisible()
-      expect(within(surface).getByText("Add a line")).toBeVisible()
-      expect(within(surface).getByText("Remove a line")).toBeVisible()
-      expect(
-        within(surface).getByText("After this line: Dear Ada,")
-      ).toBeVisible()
-      expect(within(surface).getByText("Dear Ada,")).toBeVisible()
-      expect(within(surface).getByText("Dear Grace,")).toBeVisible()
-      expect(within(surface).getByText("I write about the role.")).toBeVisible()
-      expect(within(surface).getByText("Old line")).toBeVisible()
-    }
-    const approve = screen.getAllByRole("button", { name: "Approve" })
-    expect(approve).toHaveLength(2)
-    for (const button of approve) expect(button).toBeEnabled()
+    expect(card).toHaveTextContent("Coach suggested 3 changes")
+    expect(card).not.toHaveTextContent("(empty line)")
+    expect(within(card).queryByRole("button", { name: "Approve" })).toBeNull()
+    expect(
+      within(card).getByRole("button", { name: "Review in Coach" })
+    ).toBeEnabled()
+    expect(within(coach).getByText("Change a line")).toBeVisible()
+    expect(within(coach).getByText("Add a line")).toBeVisible()
+    expect(within(coach).getByText("Remove a line")).toBeVisible()
+    expect(within(coach).getByText("After this line: Dear Ada,")).toBeVisible()
+    expect(within(coach).getByText("Dear Ada,")).toBeVisible()
+    expect(within(coach).getByText("Dear Grace,")).toBeVisible()
+    expect(within(coach).getByText("I write about the role.")).toBeVisible()
+    expect(within(coach).getByText("Old line")).toBeVisible()
+    expect(screen.getAllByRole("button", { name: "Approve" })).toHaveLength(1)
+    expect(screen.getByRole("button", { name: "Approve" })).toBeEnabled()
   })
 
   it("offers no Approve when an operation cannot be shown", () => {

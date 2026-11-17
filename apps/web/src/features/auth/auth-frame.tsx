@@ -15,7 +15,7 @@ export function AuthFrame({
   children: ReactNode
 }) {
   return (
-    <div
+    <main
       data-pen-frame
       className="grid min-h-dvh bg-background text-foreground lg:grid-cols-2"
     >
@@ -42,18 +42,26 @@ export function AuthFrame({
         >
           {AUTH_COPY.terms}
         </p>
-        <SegmentedControl
-          aria-label={AUTH_COPY.language}
-          className="col-start-2 row-start-1 justify-self-end [&_[role=radio]]:min-h-11 [&_[role=radio]]:min-w-11 md:[&_[role=radio]]:min-h-0 md:[&_[role=radio]]:min-w-0"
-          value={language}
-          onChange={onLanguage}
-          options={[
-            { value: "en", label: AUTH_COPY.en },
-            { value: "vi", label: AUTH_COPY.vi },
-          ]}
-        />
+        <div className="relative col-start-2 row-start-1 justify-self-end">
+          <SegmentedControl
+            aria-label={AUTH_COPY.language}
+            className="[&_[role=radio]]:min-h-11 [&_[role=radio]]:min-w-11 md:[&_[role=radio]]:min-h-0 md:[&_[role=radio]]:min-w-0"
+            value={language}
+            onChange={onLanguage}
+            options={[
+              { value: "en", label: AUTH_COPY.en },
+              { value: "vi", label: AUTH_COPY.vi },
+            ]}
+          />
+          <p
+            role="status"
+            className="absolute end-0 w-[260px] max-w-[calc(100vw-64px)] text-end text-xs text-pretty text-muted-foreground [inset-block-start:100%] [margin-block-start:0.5rem]"
+          >
+            {language === "vi" ? AUTH_COPY.vietnameseNotice : ""}
+          </p>
+        </div>
       </div>
       <AuthShaderPanel />
-    </div>
+    </main>
   )
 }

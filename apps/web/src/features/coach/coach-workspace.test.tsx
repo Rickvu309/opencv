@@ -24,6 +24,30 @@ import { CoachWorkspace } from "./coach-workspace.tsx"
 vi.mock("@tanstack/react-router", async (original) => ({
   ...(await original<object>()),
   useNavigate: () => vi.fn(),
+  Link: ({
+    to,
+    params,
+    className,
+    children,
+  }: {
+    to: string
+    params?: { section?: string; docId?: string }
+    className?: string
+    children?: unknown
+  }) => (
+    <a
+      href={
+        params?.section
+          ? `/settings/${params.section}`
+          : params?.docId
+            ? `/paper/${params.docId}`
+            : to
+      }
+      className={className}
+    >
+      {children as never}
+    </a>
+  ),
 }))
 afterEach(() => {
   cleanup()
@@ -523,4 +547,64 @@ describe("Coach workspace", () => {
       }
     }
   )
+})
+
+describe("Coach uses one full-page presentation", () => {
+  it("uses the page header and composer when the compact panel expands", async () => {
+    scriptCoachStream({})
+    const { container, rerender } = render(
+      <ChatStoreProvider>
+        <CoachWorkspace presentation="compact" />
+      </ChatStoreProvider>
+    )
+    const composer = await screen.findByRole("textbox", {
+      name: "Message Coach",
+    })
+    expect(composer).not.toHaveFocus()
+    const sizing = composer.className
+    expect(
+      container.querySelector('[data-slot="coach-panel-header"]')
+    ).not.toBeNull()
+    rerender(
+      <ChatStoreProvider>
+        <CoachWorkspace presentation="page" />
+      </ChatStoreProvider>
+    )
+    expect(
+      container.querySelector('[data-slot="coach-panel-header"]')
+    ).toBeNull()
+    expect(container.querySelector('[data-presentation="page"]')).not.toBeNull()
+    expect(sizing).toContain("md:min-h-12")
+    expect(sizing).toContain("md:text-[15px]")
+    expect(sizing).toContain("text-base")
+    expect(
+      screen.getByRole("textbox", { name: "Message Coach" }).className
+    ).toBe(sizing)
+  })
+
+  it("leaves the composer unfocused on a phone, including after a starter", async () => {
+    vi.stubGlobal("matchMedia", (query: string) => ({
+      matches: query === "(max-width: 767px)",
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }))
+    scriptCoachStream({})
+    render(
+      <ChatStoreProvider>
+        <CoachWorkspace />
+      </ChatStoreProvider>
+    )
+    const composer = await screen.findByRole("textbox", {
+      name: "Message Coach",
+    })
+    expect(composer).not.toHaveFocus()
+    fireEvent.click(screen.getByRole("button", { name: "Review my CV" }))
+    expect(composer).toHaveValue("Review my CV")
+    expect(composer).not.toHaveFocus()
+  })
 })

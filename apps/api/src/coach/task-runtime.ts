@@ -12,7 +12,11 @@ import { getDb } from "../db/context.js"
 import { coachUsage } from "../db/schema.js"
 import type { Registry } from "../registry/registry.js"
 import { streamAnthropicSteps } from "./anthropic-runtime.js"
-import { createScriptedWorkerRuntime, fakePaperIntent } from "./fake.js"
+import {
+  createScriptedWorkerRuntime,
+  FAKE_PROPOSED_EDIT_TEXT,
+  fakePaperIntent,
+} from "./fake.js"
 import { paperStartAsk, paperStartRuntime } from "./fake-paper-start.js"
 import { modelMessageSchema, type WorkerRuntime } from "./model-step.js"
 import { COACH_STABLE_PROMPT } from "./prompt.js"
@@ -101,7 +105,7 @@ function demoTaskRuntime(task: Task): WorkerRuntime {
         },
         {
           text: focus
-            ? "I made one edit."
+            ? FAKE_PROPOSED_EDIT_TEXT
             : jobId
               ? "I updated the Job priority."
               : "Prep the starred Job next.",

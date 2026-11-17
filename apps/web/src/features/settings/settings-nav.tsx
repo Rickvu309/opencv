@@ -29,7 +29,8 @@ import {
   settingsViewFromPath,
   type SettingsSectionId,
 } from "./sections.ts"
-import { personInitials } from "./person-initials.ts"
+import { useShellProfile } from "@/lib/use-shell-profile.ts"
+import { personInitials } from "@/lib/person-initials.ts"
 
 const SETTINGS_NAV_ITEM =
   "h-11 rounded-sm text-[13px] font-normal hover:bg-sidebar-accent aria-[current=page]:bg-sidebar-accent aria-[current=page]:font-medium aria-[current=page]:text-foreground md:h-7"
@@ -49,8 +50,8 @@ export function SettingsNav() {
   })
   const current = settingsViewFromPath(pathname)
   const profile = useQuery({ queryKey: profileKey(), queryFn: fetchProfile })
-  const person = profile.data?.name || profile.data?.email
-  const photoSrc = resolveProfileImageSrc(profile.data?.image)
+  const identity = useShellProfile()
+  const photoSrc = resolveProfileImageSrc(identity.image)
   return (
     <aside
       data-slot="settings-nav"
@@ -86,7 +87,7 @@ export function SettingsNav() {
           )
         })}
       </nav>
-      {person ? (
+      {!profile.isPending && (identity.email || identity.name) ? (
         <div
           data-slot="settings-nav-footer"
           className="mt-auto flex h-8 shrink-0 items-center gap-2 px-2"
@@ -94,14 +95,15 @@ export function SettingsNav() {
           <Avatar size="sm" className="size-5">
             {photoSrc ? <AvatarImage alt="" src={photoSrc} /> : null}
             <AvatarFallback className="bg-sidebar-accent text-[10px] font-semibold">
-              {personInitials(
-                profile.data?.name ?? "",
-                profile.data?.email ?? ""
-              )}
+              {personInitials(identity.name, identity.email)}
             </AvatarFallback>
           </Avatar>
-          <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
-            {person}
+          <span
+            data-slot="account-name"
+            title={identity.email || identity.name}
+            className="min-w-0 flex-1 truncate text-[13px] font-medium"
+          >
+            {identity.name}
           </span>
         </div>
       ) : null}

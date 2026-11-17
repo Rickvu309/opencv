@@ -2,15 +2,17 @@ import {
   cloneElement,
   createContext,
   useContext,
+  useId,
   type ComponentProps,
   type ReactElement,
   type ReactNode,
 } from "react"
 import { useRender } from "@base-ui/react/use-render"
 import { cn } from "cn"
-import { ChevronLeftIcon, EllipsisIcon } from "lucide-react"
+import { ChevronLeftIcon, EllipsisIcon, PanelLeft } from "lucide-react"
 
 import { Button } from "./button"
+import { Kbd } from "./kbd"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +25,16 @@ type ActionsMode = "inline" | "menu"
 
 const ActionsModeContext = createContext<ActionsMode>("inline")
 const TitleActionsContext = createContext(false)
+
+export type SidebarExpand = { collapsed: boolean; expand: () => void }
+
+const CLOSED_SIDEBAR: SidebarExpand = { collapsed: false, expand: () => {} }
+
+export const SidebarExpandContext = createContext<SidebarExpand>(CLOSED_SIDEBAR)
+
+export function useSidebarExpand() {
+  return useContext(SidebarExpandContext)
+}
 
 const TOUCH =
   "touch-manipulation select-none [-webkit-tap-highlight-color:transparent]"
@@ -46,6 +58,7 @@ function PageHeader({
       )}
       {...props}
     >
+      <SidebarExpandButton />
       {title === undefined ? null : <PageHeaderTitle>{title}</PageHeaderTitle>}
       {children}
     </header>
@@ -210,6 +223,7 @@ function PageHeaderAction({
   showLabel = false,
   pressed,
   disabled,
+  disabledReason,
   render,
   hint,
   className,
@@ -221,25 +235,35 @@ function PageHeaderAction({
   showLabel?: boolean
   pressed?: boolean
   disabled?: boolean
+  disabledReason?: string
   render?: ReactElement<{ className?: string; disabled?: boolean }>
   hint?: ReactNode
   className?: string
 }) {
   const mode = useContext(ActionsModeContext)
   const inTitle = useContext(TitleActionsContext)
+  const reasonId = useId()
+  const unavailable = disabled || Boolean(disabledReason)
+  const select = unavailable ? undefined : onSelect
 
   if (mode === "menu") {
     if (!collapse) return null
     return (
       <DropdownMenuItem
-        disabled={disabled}
-        onClick={() => onSelect?.()}
+        disabled={unavailable}
+        aria-describedby={disabledReason ? reasonId : undefined}
+        onClick={() => select?.()}
         data-slot="page-header-menu-action"
       >
         <span aria-hidden="true" className="inline-flex">
           {icon}
         </span>
         {label}
+        {disabledReason ? (
+          <span id={reasonId} className="sr-only">
+            {disabledReason}
+          </span>
+        ) : null}
       </DropdownMenuItem>
     )
   }
@@ -254,7 +278,7 @@ function PageHeaderAction({
     className
   )
 
-  if (showLabel) {
+  if (showLabel && !disabledReason) {
     return (
       <Button
         type="button"
@@ -274,7 +298,7 @@ function PageHeaderAction({
   const control = render ? (
     cloneElement(render, {
       className: cn(classes, render.props.className),
-      disabled,
+      disabled: disabledReason ? undefined : disabled,
     })
   ) : (
     // eslint-disable-next-line no-restricted-syntax -- the TooltipTrigger that renders it owns onClick
@@ -282,26 +306,54 @@ function PageHeaderAction({
       type="button"
       variant="ghost"
       data-slot="page-header-action"
-      disabled={disabled}
+      disabled={disabledReason ? undefined : disabled}
       className={classes}
     />
   )
 
   return (
-    <Tooltip>
-      <TooltipTrigger
-        render={control}
-        aria-label={label}
-        aria-pressed={pressed}
-        onClick={onSelect}
-      >
-        {icon}
-      </TooltipTrigger>
-      <TooltipContent>
-        {label}
-        {hint}
-      </TooltipContent>
-    </Tooltip>
+    <>
+      <Tooltip>
+        <TooltipTrigger
+          render={control}
+          aria-label={label}
+          aria-pressed={pressed}
+          aria-disabled={disabledReason ? true : undefined}
+          aria-describedby={disabledReason ? reasonId : undefined}
+          data-disabled={disabledReason ? "" : undefined}
+          onClick={select}
+        >
+          {icon}
+          {showLabel ? label : null}
+        </TooltipTrigger>
+        <TooltipContent>
+          {disabledReason ?? label}
+          {hint}
+        </TooltipContent>
+      </Tooltip>
+      {disabledReason ? (
+        <span id={reasonId} className="sr-only">
+          {disabledReason}
+        </span>
+      ) : null}
+    </>
+  )
+}
+
+function SidebarExpandButton() {
+  const { collapsed, expand } = useSidebarExpand()
+  if (!collapsed) return null
+  return (
+    <PageHeaderAction
+      label="Expand sidebar"
+      icon={<PanelLeft aria-hidden="true" />}
+      hint={<Kbd className="ml-1.5">[</Kbd>}
+      onSelect={expand}
+      className="-ml-2 text-muted-foreground hover:text-foreground max-md:hidden"
+      render={
+        <Button type="button" variant="ghost" data-slot="sidebar-expand" />
+      }
+    />
   )
 }
 
@@ -351,4 +403,5 @@ export {
   PageHeaderActions,
   PageHeaderAction,
   PageHeaderPrimary,
+  SidebarExpandButton,
 }

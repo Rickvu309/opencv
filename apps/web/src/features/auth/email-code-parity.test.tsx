@@ -47,6 +47,8 @@ describe("email code pen frames", () => {
     expect(
       screen.getAllByRole("textbox").map((input) => input.getAttribute("value"))
     ).toEqual(["4", "8", "1", "", "", ""])
+    for (const input of screen.getAllByRole("textbox"))
+      expect(input).not.toHaveAttribute("aria-describedby")
   })
 
   it("shows the verifying frame and locks all digits until verification returns", () => {
@@ -76,8 +78,10 @@ describe("email code pen frames", () => {
     )
     expectTexts(formTexts(error))
     expect(screen.getByRole("alert")).toHaveTextContent(notice)
-    for (const input of screen.getAllByRole("textbox"))
+    for (const input of screen.getAllByRole("textbox")) {
       expect(input).toHaveAttribute("aria-invalid", "true")
+      expect(input).toHaveAccessibleDescription(notice)
+    }
     screen.getByRole("button", { name: "Send a new code" }).click()
     expect(props.onResend).toHaveBeenCalledOnce()
   })

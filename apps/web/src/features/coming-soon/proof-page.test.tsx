@@ -69,6 +69,11 @@ describe("Proofs coming soon", () => {
 
   it("asks to be notified about Proofs", async () => {
     renderPage(ProofsPage)
+    const action = await screen.findByRole("button", {
+      name: "Get early access",
+    })
+    expect(action).toHaveAttribute("data-variant", "primary")
+    expect(action.querySelector("svg")).toHaveAttribute("aria-hidden", "true")
     const before = notifyCalls().length
 
     fireEvent.click(

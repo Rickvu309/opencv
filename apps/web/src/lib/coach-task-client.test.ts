@@ -2,54 +2,19 @@ import { QueryClient } from "@tanstack/react-query"
 import { afterEach, expect, it, vi } from "vitest"
 import {
   getCoachConfig,
-  startCoachTask,
   tailCoachTask,
   subscribeCoachTask,
 } from "./coach-task-client.ts"
-import {
-  taskSnapshot,
-  taskEvent,
-  TASK,
-  CHAT,
-} from "@/test/coach-task-fixture.ts"
-import { setPaperSelection } from "@/lib/paper-selection.ts"
+import { taskSnapshot, taskEvent, TASK } from "@/test/coach-task-fixture.ts"
 import type { CoachTaskState } from "./coach-task-state.ts"
 
 afterEach(() => {
-  setPaperSelection("", [])
   vi.unstubAllGlobals()
   vi.useRealTimers()
 })
 const json = (data: unknown) => Response.json({ ok: true, data })
 const sse = (event: string, data: unknown) =>
   new Response(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`)
-
-it("sends the selected Paper passage through the saved Coach task", async () => {
-  const docId = "15900000-0000-4000-8000-000000000001"
-  setPaperSelection(docId, ["intro"])
-  const bodies: unknown[] = []
-  vi.stubGlobal("fetch", async (_url: URL, init?: RequestInit) => {
-    bodies.push(JSON.parse(String(init?.body)))
-    return json({ taskId: TASK })
-  })
-  await startCoachTask(new QueryClient(), {
-    chatId: CHAT,
-    text: "Improve this passage",
-    mode: "free",
-    context: [],
-  })
-  expect(bodies[0]).toMatchObject({
-    input: { context: [{ kind: "paper", id: docId, blockIds: ["intro"] }] },
-  })
-  setPaperSelection(docId, [])
-  await startCoachTask(new QueryClient(), {
-    chatId: CHAT,
-    text: "Read my document",
-    mode: "free",
-    context: [],
-  })
-  expect(bodies[1]).toMatchObject({ input: { context: [] } })
-})
 
 it("recovers a terminal reply after a connection ends without a terminal event", async () => {
   vi.useFakeTimers()

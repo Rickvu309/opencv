@@ -148,9 +148,13 @@ describe("session expired dialog pen parity (DhG87 / mjDga)", () => {
     const body = text("Log in again. Your work is saved.")
     expect(css).toContain(`line-height: ${body.lineHeight}`)
     expect(css).toContain(`color: ${body.fill.toLowerCase()}`)
-    for (const label of ["Email me a code", "Log out"]) {
-      expect(css).toContain(`color: ${text(label).fill.toLowerCase()}`)
-      expect(css).toContain(`font-size: ${text(label).fontSize}px`)
-    }
+    expect(css).toContain(
+      `color: ${text("Email me a code").fill.toLowerCase()}`
+    )
+    expect(css).toContain(`font-size: ${text("Email me a code").fontSize}px`)
+    expect(css).toContain(
+      "color: color-mix(in oklab, var(--muted-foreground) 83%, transparent)"
+    )
+    expect(css).toContain(`font-size: ${text("Log out").fontSize}px`)
   })
 })

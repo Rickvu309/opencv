@@ -29,7 +29,8 @@ vi.mock("@/lib/paper-sync.ts", async (importOriginal) => ({
 }))
 beforeAll(installEditorPolyfills)
 
-vi.mock("@tanstack/react-router", () => ({
+vi.mock("@tanstack/react-router", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@tanstack/react-router")>()),
   useRouterState: (options: {
     select: (state: { location: { pathname: string } }) => unknown
   }) => options.select({ location: { pathname: "/share/tok" } }),

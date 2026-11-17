@@ -260,19 +260,6 @@ export function mountRichPaperEditor(
       captureSelection() {
         if (active) return captureEditorSelection(view)
       },
-      selectedBlockIds() {
-        if (!active || view.state.selection.empty) return []
-        const { from, to } = view.state.selection
-        const ids = new Set<string>()
-        view.state.doc.nodesBetween(from, to, (node) => {
-          if (
-            node.type.name === "blockContainer" &&
-            typeof node.attrs.id === "string"
-          )
-            ids.add(node.attrs.id)
-        })
-        return [...ids]
-      },
       restoreSelection(selection?: ReturnType<typeof captureEditorSelection>) {
         if (active && selection) restoreEditorSelection(view, selection)
       },

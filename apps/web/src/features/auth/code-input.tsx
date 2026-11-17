@@ -16,6 +16,7 @@ export function CodeInput({
   value,
   disabled,
   invalid = false,
+  describedBy,
   focusNonce,
   onChange,
   onComplete,
@@ -23,6 +24,7 @@ export function CodeInput({
   value: string
   disabled: boolean
   invalid?: boolean
+  describedBy?: string
   focusNonce: number
   onChange: (next: string) => void
   onComplete: (code: string) => void
@@ -96,6 +98,7 @@ export function CodeInput({
             autoComplete={index === 0 ? "one-time-code" : "off"}
             disabled={disabled}
             aria-invalid={invalid || undefined}
+            aria-describedby={describedBy}
             data-filled={digit !== ""}
             value={digit}
             className="h-[52px] min-w-0 flex-1 rounded-[10px] px-0 text-center text-[26px] font-semibold md:text-[26px]"

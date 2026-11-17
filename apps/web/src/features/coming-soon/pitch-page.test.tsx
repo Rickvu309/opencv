@@ -44,6 +44,10 @@ describe("Pitch coming soon", () => {
 
   it("asks to be notified about Pitch", async () => {
     renderPage(PitchPage)
+    const action = await screen.findByRole("button", {
+      name: "Get early access",
+    })
+    expect(action.querySelector("svg")).toHaveAttribute("aria-hidden", "true")
     const before = notifyCalls().length
 
     fireEvent.click(
