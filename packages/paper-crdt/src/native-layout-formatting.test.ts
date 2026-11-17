@@ -373,7 +373,8 @@ describe("exact rich Paper typography", () => {
       const rendered = host.querySelector<HTMLElement>(
         '[data-id="intro"] .bn-block-content'
       )
-      expect(rendered?.style.marginBlock).toBe("6.25pt 4.25pt")
+      expect(rendered?.style.marginBlockStart).toBe("6.25pt")
+      expect(rendered?.style.marginBlockEnd).toBe("4.25pt")
       expect(rendered?.style.lineHeight).toBe("1.25")
       expect(mounted.activeFormatting()).toMatchObject({
         size: "10.5",
