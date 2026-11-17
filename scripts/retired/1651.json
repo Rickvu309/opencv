@@ -1,19 +1,5 @@
 [
   {
-    "subject": "packages/paper-crdt/src/native-layout-flow.test.ts",
-    "because": "issue #1651 replaces experimental CSS column pagination with browser-independent pagination",
-    "replacedBy": "packages/paper-crdt/src/pagination-browser-contract.test.ts",
-    "proof": {
-      "fork": "64de35c64f45f44a40915c416a1e49104800ee04",
-      "replacedByBlob": "672ceaf69c3a858b99cec2cdb38e0a647b0e1efa",
-      "failedOnBase": true,
-      "passedOnHead": true
-    },
-    "class": "self",
-    "classBecause": null,
-    "items": 3
-  },
-  {
     "subject": "packages/paper-crdt/src/rich-table-pagination.test.ts",
     "because": "issue #1651 replaces experimental CSS column pagination with browser-independent pagination",
     "replacedBy": "packages/paper-crdt/src/pagination-browser-contract.test.ts",
@@ -26,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "packages/paper-crdt/src/native-layout-flow.test.ts",
+    "because": "issue #1651 replaces experimental CSS column pagination with browser-independent pagination",
+    "replacedBy": "packages/paper-crdt/src/pagination-browser-contract.test.ts",
+    "proof": {
+      "fork": "dbb058d0146837ec7ce164ebb04f9ca21a6e1516",
+      "replacedByBlob": "672ceaf69c3a858b99cec2cdb38e0a647b0e1efa",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 3
   }
 ]
