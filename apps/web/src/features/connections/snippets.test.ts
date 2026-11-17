@@ -65,7 +65,11 @@ it("builds a pasteable step for each client from the mcp address", () => {
   const codex = snippets.find((item) => item.id === "codex")
   const chatgpt = snippets.find((item) => item.id === "chatgpt")
 
-  expect(claude?.detail).toMatch(/\/mcp/)
+  expect(claude?.detail).toBe(
+    "Add the server, then sign in. Nothing changes until you approve it in OpenCV."
+  )
+  expect(claude?.detail).not.toMatch(/paper_read/)
+  expect(claude?.more?.title).toBe("What the agent can do")
   expect(commandArgs(copy("claude", "claude-add").text)).toEqual([
     "claude",
     "mcp",
@@ -89,7 +93,11 @@ it("builds a pasteable step for each client from the mcp address", () => {
     mcpServers: { opencv: { url: address } },
   })
 
-  expect(codex?.detail).toContain("~/.codex/config.toml")
+  expect(codex?.detail).toBe(
+    "Add the table, then sign in. Nothing changes until you approve it in OpenCV."
+  )
+  expect(codex?.detail).not.toMatch(/paper_read/)
+  expect(copy("codex", "codex-table").label).toContain("~/.codex/config.toml")
   const table = copy("codex", "codex-table").text
   expect(table).not.toMatch(/codex mcp/)
   expect(parseToml(table).mcp_servers.opencv).toEqual({
@@ -108,4 +116,20 @@ it("builds a pasteable step for each client from the mcp address", () => {
     "plugin that points at an existing remote server"
   )
   expect(copy("chatgpt", "chatgpt").text).toContain(address)
+})
+
+it("explains capabilities without tool ids and keeps sign-in tips with setup", () => {
+  const snippets = agentSnippets(address)
+  for (const id of ["claude", "codex"]) {
+    const snippet = snippets.find((item) => item.id === id)
+    expect(snippet?.more?.body).toContain(
+      "Read your CVs and Letters, and propose edits you approve in OpenCV."
+    )
+    expect(snippet?.more?.body).toContain("You choose what to share")
+    expect(snippet?.more?.body).toContain("connect again to include documents")
+    expect(snippet?.more?.body).not.toMatch(/paper_read|paper_edit|\/mcp/)
+  }
+  expect(copy("claude", "claude-login").tip).toBe(
+    "You can also sign in from Claude Code with /mcp."
+  )
 })

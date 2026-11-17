@@ -41,7 +41,12 @@ export function UsageSection({
     )
   }
   if (usage.isError || !usage.data) {
-    return <SettingsLoadError onRetry={() => void usage.refetch()} />
+    return (
+      <>
+        <SettingsTitle title="Usage & limits">{planLine}</SettingsTitle>
+        <SettingsLoadError onRetry={() => void usage.refetch()} />
+      </>
+    )
   }
 
   const snapshot = usage.data
