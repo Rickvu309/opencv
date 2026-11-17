@@ -1,6 +1,12 @@
 export const MARK_RED = "#e11d2e"
 export const MARK_OUTLINE = "#ffffff"
 export const NUMBER_INK = "#ffffff"
+export const CANVAS_COLORS = {
+  canvas: "#e4e4e7",
+  ink: "#18181b",
+  muted: "#3f3f46",
+  line: "#a1a1aa",
+}
 export const GITHUB_COLUMN = 880
 
 export const ON_SCREEN = Object.freeze({

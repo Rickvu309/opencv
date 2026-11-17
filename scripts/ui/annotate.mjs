@@ -1,5 +1,6 @@
 import { SIDES } from "./before-after.mjs"
 import {
+  CANVAS_COLORS,
   MARK_OUTLINE,
   MARK_RED,
   NUMBER_INK,
@@ -478,7 +479,7 @@ export function compositeHtml(
   const columns = legendColumns(width) === 1 ? "1fr" : "1fr 1fr"
   const badge = round(sizes.badge * 0.85)
   return `<!doctype html><html><head><meta charset="utf-8"><style>
-:root{--mark:${MARK_RED};--canvas:#0d0d0f;--ink:#ececef;--muted:#9b9ba3;--line:#2b2b31}
+:root{--mark:${MARK_RED};--canvas:${CANVAS_COLORS.canvas};--ink:${CANVAS_COLORS.ink};--muted:${CANVAS_COLORS.muted};--line:${CANVAS_COLORS.line}}
 *{box-sizing:border-box;margin:0;padding:0}
 body{width:${width}px;background:var(--canvas);color:var(--ink);font:500 14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans",sans-serif;padding:${CANVAS.pad}px}
 section+section{margin-top:36px}
@@ -487,7 +488,7 @@ figure{display:flex;flex-direction:column;gap:6px}
 figcaption{font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .pair{display:flex;gap:${CANVAS.gap}px}
 .pair.stacked{flex-direction:column;gap:16px}
-.shot{position:relative;outline:1px solid var(--line);border-radius:4px;overflow:hidden}
+.shot{position:relative;outline:1px solid var(--line);border-radius:4px;overflow:hidden;box-shadow:0 1px 3px rgb(0 0 0 / 0.12)}
 .shot img,.shot svg{position:absolute;inset:0;display:block}
 svg text{fill:${NUMBER_INK};font:800 ${round(sizes.number)}px system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
 .legend{list-style:none;margin-top:14px;display:flex;flex-direction:column;gap:8px}

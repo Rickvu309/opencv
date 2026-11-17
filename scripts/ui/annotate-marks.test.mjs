@@ -4,6 +4,7 @@ import test from "node:test"
 import { fileURLToPath } from "node:url"
 import { inflateSync } from "node:zlib"
 import {
+  CANVAS_COLORS,
   GITHUB_COLUMN,
   MARK_OUTLINE,
   MARK_RED,
@@ -101,9 +102,22 @@ const TIP_BACK = 6
 test("the red holds 3:1 against light and dark screenshots and the white number holds 4.5:1 on it", () => {
   assert.ok(contrast(RED, LIGHT_PAGE) >= 3, "red on white")
   assert.ok(contrast(RED, DARK_PAGE) >= 3, "red on black")
-  assert.ok(contrast(RED, hexRgb("#0d0d0f")) >= 3, "red on the canvas")
+  assert.ok(
+    contrast(RED, hexRgb(CANVAS_COLORS.canvas)) >= 3,
+    "red on the canvas"
+  )
   assert.ok(contrast(hexRgb(NUMBER_INK), RED) >= 4.5, "number on red")
   assert.ok(contrast(WHITE, DARK_PAGE) >= 3, "outline on dark")
+})
+
+test("legend text reads at 4.5:1 on the light canvas", () => {
+  const canvas = hexRgb(CANVAS_COLORS.canvas)
+  assert.ok(contrast(hexRgb(CANVAS_COLORS.ink), canvas) >= 4.5, "ink")
+  assert.ok(contrast(hexRgb(CANVAS_COLORS.muted), canvas) >= 4.5, "muted")
+  assert.ok(
+    contrast(LIGHT_PAGE, canvas) > 1.2,
+    "a white screenshot stands off the canvas"
+  )
 })
 
 test("badge, number and stroke read at the same size on screen for a phone, a desktop and a composite", () => {

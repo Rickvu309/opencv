@@ -81,9 +81,9 @@ export function CoachHome({
           <span
             data-slot="coach-home-mark"
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-[calc(100%-24px)] left-1/2 -z-10 size-56 -translate-x-1/2 [mask-image:linear-gradient(to_bottom,black_30%,transparent_92%)] max-md:hidden [@media(max-height:40rem)]:hidden"
+            className="pointer-events-none absolute -top-48 left-1/2 -z-10 size-96 -translate-x-1/2 [mask-image:linear-gradient(to_bottom,black_30%,transparent_80%)] max-md:hidden [@media(max-height:45rem)]:hidden"
           >
-            <OpenCvMark className="size-full text-foreground/[0.035]" />
+            <OpenCvMark className="size-full text-foreground/[0.04]" />
           </span>
           {children}
         </div>
