@@ -1,4 +1,4 @@
-import { countedSourceFiles } from "./rules/diff.mjs"
+import { countedSourceFiles } from "./rules/index.mjs"
 
 export const isFix = (title) => /^(fix|hotfix)\b/i.test(title)
 
