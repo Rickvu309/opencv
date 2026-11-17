@@ -1,0 +1,6 @@
+{
+  "id": "ui-sdk-color-layer",
+  "file": "scripts/ui-sdk-popover.test.mjs",
+  "historic": null,
+  "reason": "The SDK reset layer already precedes Tailwind. Prevent moving it above kit utility colors; the observed history color regression came from caller ancestry, covered by ui-sdk-popover-portal."
+}

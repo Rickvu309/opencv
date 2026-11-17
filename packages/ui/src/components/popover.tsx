@@ -12,6 +12,7 @@ import {
 } from "@ui-sdk/react/popover"
 import { cn } from "cn"
 import { PopupContainerContext } from "../lib/popup-container"
+import { popoverAlignment, popoverCoordinate } from "../lib/popover-alignment"
 
 type FocusTarget = BasePopover.Popup.Props["initialFocus"]
 type Interaction = "mouse" | "touch" | "pen" | "keyboard"
@@ -101,6 +102,7 @@ function PopoverContent({
   alignOffset = 0,
   side = "bottom",
   sideOffset = 4,
+  collisionPadding = 8,
   initialFocus,
   finalFocus,
   ...props
@@ -111,6 +113,86 @@ function PopoverContent({
   Pick<BasePopover.Popup.Props, "initialFocus" | "finalFocus">) {
   const focus = React.useContext(FocusContext)
   const container = React.useRef<HTMLDivElement>(null)
+  const [popup, setPopup] = React.useState<HTMLDivElement | null>(null)
+  const [collisionAlign, setCollisionAlign] = React.useState(align)
+  const setContainer = React.useCallback(
+    (element: HTMLDivElement | null) => {
+      container.current = element
+      setPopup(element)
+      if (typeof ref === "function") return ref(element)
+      if (ref) ref.current = element
+    },
+    [ref]
+  )
+  React.useLayoutEffect(() => {
+    const view = popup?.ownerDocument.defaultView
+    if (!popup || !view) return
+    const update = () => {
+      for (const axis of ["left", "top"] as const) {
+        const coordinate = Number.parseFloat(popup.style[axis])
+        if (!Number.isFinite(coordinate)) continue
+        const rounded = `${popoverCoordinate(coordinate, view.devicePixelRatio || 1)}px`
+        if (popup.style[axis] !== rounded) popup.style[axis] = rounded
+      }
+    }
+    const observer = new MutationObserver(update)
+    observer.observe(popup, { attributes: true, attributeFilter: ["style"] })
+    update()
+    return () => observer.disconnect()
+  }, [popup])
+  React.useLayoutEffect(() => {
+    const trigger = focus?.trigger.current
+    if (!popup || !trigger || props.anchor) return
+    const view = popup.ownerDocument.defaultView
+    if (!view) return
+    const update = () => {
+      const rect = trigger.getBoundingClientRect()
+      const vertical = side === "top" || side === "bottom"
+      const viewport = view.visualViewport
+      setCollisionAlign(
+        popoverAlignment({
+          align,
+          start: vertical ? rect.x : rect.y,
+          anchorSize: vertical ? rect.width : rect.height,
+          popupSize: vertical ? popup.offsetWidth : popup.offsetHeight,
+          viewportStart:
+            (vertical ? viewport?.offsetLeft : viewport?.offsetTop) ?? 0,
+          viewportSize: vertical
+            ? (viewport?.width ??
+              popup.ownerDocument.documentElement.clientWidth)
+            : (viewport?.height ??
+              popup.ownerDocument.documentElement.clientHeight),
+          offset: alignOffset,
+          padding: collisionPadding,
+          reverse:
+            vertical && view.getComputedStyle(trigger).direction === "rtl",
+        })
+      )
+    }
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(trigger)
+    observer.observe(popup)
+    view.addEventListener("resize", update)
+    view.addEventListener("scroll", update, true)
+    view.visualViewport?.addEventListener("resize", update)
+    view.visualViewport?.addEventListener("scroll", update)
+    return () => {
+      observer.disconnect()
+      view.removeEventListener("resize", update)
+      view.removeEventListener("scroll", update, true)
+      view.visualViewport?.removeEventListener("resize", update)
+      view.visualViewport?.removeEventListener("scroll", update)
+    }
+  }, [
+    popup,
+    focus?.trigger,
+    props.anchor,
+    align,
+    side,
+    alignOffset,
+    collisionPadding,
+  ])
   const resolveFocus = (target: FocusTarget, closing: boolean) => {
     if (typeof target === "function") {
       return () => {
@@ -130,16 +212,14 @@ function PopoverContent({
   return (
     <PopupContainerContext value={container}>
       <PopoverPopup
-        ref={(element) => {
-          container.current = element
-          if (typeof ref === "function") return ref(element)
-          if (ref) ref.current = element
-        }}
+        ref={setContainer}
+        container={focus?.trigger.current?.ownerDocument.body}
         data-slot="popover-content"
-        align={align}
+        align={props.anchor ? align : collisionAlign}
         alignOffset={alignOffset}
         side={side}
         sideOffset={sideOffset}
+        collisionPadding={collisionPadding}
         initialFocus={resolveFocus(initialFocus, false)}
         finalFocus={resolveFocus(finalFocus, true)}
         className={cn(

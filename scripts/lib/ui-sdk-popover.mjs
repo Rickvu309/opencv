@@ -7,3 +7,29 @@ export function partialFonts(source) {
 export function selectPortalLeavesParent(source) {
   return /<SelectPrimitive\.Portal\s*>/.test(source)
 }
+
+export function popoverOnlyShifts(source) {
+  return (
+    source.includes("@ui-sdk/react/popover") && /\balign=\{align\}/.test(source)
+  )
+}
+
+export function popoverInheritsCallerStyles(source) {
+  return (
+    source.includes("@ui-sdk/react/popover") &&
+    !/container=\{[^}]*ownerDocument\.body\}/.test(source)
+  )
+}
+
+export function sdkLayerOverridesKit(source) {
+  const layer = source.indexOf("@layer ui-sdk;")
+  const tailwind = source.indexOf('@import "tailwindcss"')
+  return layer < 0 || tailwind < 0 || layer > tailwind
+}
+
+export function fractionalPopoverPosition(source) {
+  return (
+    source.includes("@ui-sdk/react/popover") &&
+    !source.includes("popoverCoordinate(coordinate, view.devicePixelRatio")
+  )
+}

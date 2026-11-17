@@ -4,6 +4,10 @@ import test from "node:test"
 import {
   partialFonts,
   selectPortalLeavesParent,
+  popoverOnlyShifts,
+  popoverInheritsCallerStyles,
+  sdkLayerOverridesKit,
+  fractionalPopoverPosition,
 } from "./lib/ui-sdk-popover.mjs"
 
 const read = (path) =>
@@ -26,6 +30,67 @@ test("rich Paper tests keep the shared FontFaceSet event API", () => {
       false,
       file
     )
+})
+
+test("SDK popovers flip alignment before shifting at viewport edges", () => {
+  const sdk =
+    'import { PopoverContent as PopoverPopup } from "@ui-sdk/react/popover"'
+  assert.equal(popoverOnlyShifts(`${sdk}<PopoverPopup align={align} />`), true)
+  assert.equal(
+    popoverOnlyShifts(`${sdk}<PopoverPopup align={collisionAlign} />`),
+    false
+  )
+  assert.equal(
+    popoverOnlyShifts(read("packages/ui/src/components/popover.tsx")),
+    false
+  )
+})
+
+test("SDK popovers escape caller descendant button colors", () => {
+  const sdk =
+    'import { PopoverContent as PopoverPopup } from "@ui-sdk/react/popover"'
+  assert.equal(popoverInheritsCallerStyles(`${sdk}<PopoverPopup />`), true)
+  assert.equal(
+    popoverInheritsCallerStyles(
+      `${sdk}<PopoverPopup container={trigger.ownerDocument.body} />`
+    ),
+    false
+  )
+  assert.equal(
+    popoverInheritsCallerStyles(read("packages/ui/src/components/popover.tsx")),
+    false
+  )
+})
+
+test("SDK reset colors stay below kit component utility colors", () => {
+  assert.equal(
+    sdkLayerOverridesKit('@import "tailwindcss";\n@layer ui-sdk;'),
+    true
+  )
+  assert.equal(sdkLayerOverridesKit('@import "tailwindcss";'), true)
+  assert.equal(
+    sdkLayerOverridesKit('@layer ui-sdk;\n@import "tailwindcss";'),
+    false
+  )
+  assert.equal(
+    sdkLayerOverridesKit(read("packages/ui/src/styles/globals.css")),
+    false
+  )
+})
+
+test("SDK popup coordinates use the same device pixel grid as Base UI", () => {
+  const sdk = 'import { PopoverContent } from "@ui-sdk/react/popover"'
+  assert.equal(fractionalPopoverPosition(sdk), true)
+  assert.equal(
+    fractionalPopoverPosition(
+      `${sdk}popoverCoordinate(coordinate, view.devicePixelRatio || 1)`
+    ),
+    false
+  )
+  assert.equal(
+    fractionalPopoverPosition(read("packages/ui/src/components/popover.tsx")),
+    false
+  )
 })
 
 test("a Select portal stays in its parent popup container", () => {
