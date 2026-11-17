@@ -6,6 +6,7 @@ import { blankCv, type PaperPages, type PaperView } from "@workspace/domain"
 
 import { PaperCvEditor } from "./paper-cv-editor.tsx"
 import { PaperLibrary } from "./paper-library.tsx"
+import { libraryRouter } from "./paper-library.fixtures.tsx"
 import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
 
 import {
@@ -334,16 +335,18 @@ describe("Paper template gallery", () => {
 
   it("gives the dialog a wide frame that fits every window size and scrolls inside it, with its actions pinned in view", () => {
     const library = render(
-      <PaperLibrary
-        docs={[record]}
-        files={[]}
-        loading={false}
-        error={null}
-        onRetry={() => undefined}
-        onOpen={() => undefined}
-        query=""
-        onQueryChange={() => undefined}
-      />
+      libraryRouter(
+        <PaperLibrary
+          docs={[record]}
+          files={[]}
+          loading={false}
+          error={null}
+          onRetry={() => undefined}
+          onOpen={() => undefined}
+          query=""
+          onQueryChange={() => undefined}
+        />
+      )
     )
     fireEvent.click(screen.getByRole("button", { name: "New" }))
     const kindDialog = document.querySelector("[data-slot='dialog-content']")
