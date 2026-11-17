@@ -188,7 +188,6 @@
 
   .paper-canvas-field:focus {
     background-color: color-mix(in oklch, var(--muted) 30%, transparent);
-    box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 50%, transparent);
   }
 
   .paper-canvas-field::selection {

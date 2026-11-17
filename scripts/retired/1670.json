@@ -1,0 +1,30 @@
+[
+  {
+    "subject": "apps/web/src/features/coach/coach-composer-quiet-focus.test.ts",
+    "because": "the repo-wide click-focus-glow guard replaces the Coach-only composer focus test and covers the same pen CSS",
+    "replacedBy": "scripts/click-focus-glow.test.mjs",
+    "proof": {
+      "fork": "fb99e1ac801aaddaf7011ee36c39554fdf18ad2e",
+      "replacedByBlob": "eec3c15bb71fa37afad5e1f4538b40a2389315e7",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "owner",
+    "classBecause": "scripts/click-focus-glow.test.mjs shares no module, command or route with apps/web/src/features/coach/coach-composer-quiet-focus.test.ts",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-cv-document.test.tsx > paper canvas field CSS (QVE-206) > uses kit ring + muted wash, not cite-jump info or Coach pills",
+    "because": "the canvas field no longer draws a coloured glow when clicked; the test now asserts the muted wash and no ring shadow",
+    "replacedBy": "apps/web/src/features/paper/paper-cv-document.test.tsx",
+    "proof": {
+      "fork": "fb99e1ac801aaddaf7011ee36c39554fdf18ad2e",
+      "replacedByBlob": "6eb87113681df35e82390f69a674e0173f7af096",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  }
+]
