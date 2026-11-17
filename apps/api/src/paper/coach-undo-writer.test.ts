@@ -12,8 +12,10 @@ import { z } from "zod"
 import { getDb } from "../db/context.js"
 import { coachTasks, paperDocs } from "../db/schema.js"
 import { seedCoachActor } from "../test/coach-turn.js"
-import { richTaskFixture as fixture } from "../coach/rich-task.test-support.js"
-import { savedRichWord } from "./native-word.test-support.js"
+import {
+  richTaskFixture as fixture,
+  savedRichPaper,
+} from "../test/rich-coach.test-support.js"
 
 it.each([
   NATIVE_WRITER,
@@ -43,7 +45,7 @@ it.each([
           )[0]
         )
       const coach = await seedCoachActor(ownerId, task.chatId)
-      const saved = await savedRichWord(db, ownerId, "letter")
+      const saved = await savedRichPaper(db, ownerId, "letter")
       const native = nativePaperDocumentSchema.parse({
         version: 4,
         schemaRevision: 1,

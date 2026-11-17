@@ -11,7 +11,7 @@ import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 
 import { paperDocs } from "../db/schema.js"
-import { savedRichWord } from "../paper/native-word.test-support.js"
+import { savedRichPaper } from "../test/rich-coach.test-support.js"
 import { bytesOf, encoded } from "../test/paper-content.js"
 import { richElement, richFragment, richText } from "../test/rich-paper.js"
 import type {
@@ -21,7 +21,7 @@ import type {
 
 export function richPaperCases(tools: CoverageTools): CoverageCase[] {
   const { db, registry, run, undo, userId } = tools
-  let richSaved: Awaited<ReturnType<typeof savedRichWord>>
+  let richSaved: Awaited<ReturnType<typeof savedRichPaper>>
   async function richDocument() {
     const [row] = await db
       .select()
@@ -34,7 +34,7 @@ export function richPaperCases(tools: CoverageTools): CoverageCase[] {
     {
       name: "paper.editRich",
       arrange: async () => {
-        richSaved = await savedRichWord(db, userId, "cv")
+        richSaved = await savedRichPaper(db, userId, "cv")
         const input = { docId: richSaved.id, writer: RICH_NATIVE_WRITER }
         expect(
           await registry.read("paper.document", input, personActor(userId))

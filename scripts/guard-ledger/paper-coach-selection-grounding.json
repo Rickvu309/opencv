@@ -1,0 +1,13 @@
+{
+  "id": "paper-coach-selection-grounding",
+  "file": "scripts/paper-coach-selection.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-coach-selection.mjs",
+    "export": "detectCoachSelection"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "00fb77fe412b476d337d3c317e3fc04a6fa02d1e",
+    "path": "apps/api/src/coach/context.ts"
+  }
+}

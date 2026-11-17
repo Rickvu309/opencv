@@ -10,13 +10,15 @@ import { expect, it } from "vitest"
 import { z } from "zod"
 import { getDb } from "../db/context.js"
 import { coachTasks, paperDocs, pendingActions } from "../db/schema.js"
-import { savedRichWord } from "../paper/native-word.test-support.js"
 import { resolveTurnGrounding } from "./context.js"
 import { fakePaperIntent } from "./fake.js"
 import { createTaskRuntime } from "./task-runtime.js"
 import { runCoachWorker } from "./worker.js"
 import { settings } from "./worker-fixture.test-support.js"
-import { richTaskFixture as fixture } from "./rich-task.test-support.js"
+import {
+  richTaskFixture as fixture,
+  savedRichPaper,
+} from "../test/rich-coach.test-support.js"
 
 it.each([
   { kind: "cv" as const, introLength: 40 },
@@ -28,7 +30,7 @@ it.each([
   ({ kind, introLength }) =>
     fixture(async ({ ownerId, taskId, db }, registry) => {
       const actor = personActor(ownerId)
-      const saved = await savedRichWord(db, ownerId, kind, (doc) => {
+      const saved = await savedRichPaper(db, ownerId, kind, (doc) => {
         const intro = richTextNodes(doc).find((node) => node.id === "intro")
         if (!intro) throw new Error("Missing introduction")
         intro.content = [{ text: "ế".repeat(introLength) }]
@@ -129,7 +131,7 @@ it.each(["cv", "letter"] as const)(
   "saved fake %s worker preserves block IDs independently of focus flags",
   (kind) =>
     fixture(async ({ ownerId, taskId, db }, registry) => {
-      const saved = await savedRichWord(db, ownerId, kind)
+      const saved = await savedRichPaper(db, ownerId, kind)
       const grounding = await resolveTurnGrounding({
         registry,
         actor: personActor(ownerId),
@@ -175,7 +177,7 @@ it.each(["cv", "letter"] as const)(
   (kind) =>
     fixture(async ({ ownerId, db }, registry) => {
       const actor = personActor(ownerId)
-      const saved = await savedRichWord(db, ownerId, kind)
+      const saved = await savedRichPaper(db, ownerId, kind)
       for (const blockId of ["missing", "table", "cell-text", "photo"]) {
         await expect(
           resolveTurnGrounding({

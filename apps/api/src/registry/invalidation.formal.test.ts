@@ -1,5 +1,6 @@
 import {
   PAPER_CANVAS_PROFILE,
+  RICH_NATIVE_WRITER,
   coachActor,
   commands,
   catalog,
@@ -72,7 +73,11 @@ const SNAPSHOT_QUERIES: {
   "paper.read": () => [{ view: "library" }],
   "paper.export": null,
   "paper.nativeWord": null,
-  "paper.readRich": null,
+  "paper.readRich": (ids) =>
+    [...ids.docs, ...ids.minted].map((docId) => ({
+      docId,
+      writer: RICH_NATIVE_WRITER,
+    })),
   "paper.get": (ids) =>
     [...ids.docs, ...ids.minted].map((docId) => ({ docId })),
   "paper.document": (ids) =>
@@ -579,6 +584,16 @@ describe("every changed read is named by the command that changed it", () => {
     )
     const gaps = gapsIn(acts, mutant)
     expect(gaps.join("\n")).toContain("paper.setFavorite changed paper.list")
+  })
+
+  it("rich Paper refresh omissions are caught for sync, edits and Undo", () => {
+    for (const command of ["paper.sync", "paper.editRich", "activity.undo"]) {
+      const mutant = without(invalidatesTable(), command, "paper.readRich")
+      const gaps = gapsIn([...acts, ...undos], mutant)
+      const label =
+        command === "activity.undo" ? "paper.editRich undo" : command
+      expect(gaps.join("\n")).toContain(`${label} changed paper.readRich`)
+    }
   })
 
   it("mutant R2: activity.undo without paper.list is caught", () => {
