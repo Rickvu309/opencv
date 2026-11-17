@@ -6,7 +6,7 @@ import { createId } from "../id.js"
 import * as schema from "../db/schema.js"
 import { seedColumns } from "../paper/content-document.js"
 import { richPaper } from "./rich-paper.js"
-import { paperPhotoRef } from "@workspace/domain"
+import { paperPhotoRef, richPaperDocumentSchema } from "@workspace/domain"
 
 const [dataDir, email, out] = process.argv.slice(2)
 if (!dataDir || !email || !out || process.env.NODE_ENV === "production")
@@ -22,7 +22,11 @@ try {
   const document = richPaper("cv", paperPhotoRef(createId()))
   const header = document.flow.children[0]!.children[0]!
   if (header.type !== "header") throw new Error("Missing CV header")
-  header.children[0]!.content = [{ text: "Ada Nguyen" }]
+  const name = header.children.find(
+    (child) => child.type === "cvField" && child.fieldKey === "name"
+  )
+  if (!name || name.type !== "cvField") throw new Error("Missing CV name")
+  name.content = [{ text: "Ada Nguyen" }]
   const lines = [
     "Product designer | Hanoi | ada@example.com",
     "Summary",
@@ -39,15 +43,26 @@ try {
     "Education",
     "Bachelor of Design, Example University",
   ]
-  document.flow.children[0]!.children = [
-    header,
-    ...lines.map((text, i) => ({
-      id: `paragraph-${i}`,
-      type: "paragraph" as const,
-      paragraph: {},
-      content: [{ text }],
-    })),
-  ]
+  const seeded = richPaperDocumentSchema.parse({
+    ...document,
+    flow: {
+      ...document.flow,
+      children: [
+        {
+          ...document.flow.children[0]!,
+          children: [
+            header,
+            ...lines.map((text, i) => ({
+              id: `paragraph-${i}`,
+              type: "paragraph",
+              paragraph: {},
+              content: [{ text }],
+            })),
+          ],
+        },
+      ],
+    },
+  })
   const id = createId()
   await db.insert(schema.paperDocs).values({
     id,
@@ -55,7 +70,7 @@ try {
     name: "Page scale CV",
     kind: "cv",
     templateId: "simple",
-    ...seedColumns("cv", document),
+    ...seedColumns("cv", seeded),
     crdtBaseSeq: 1,
     contentVersion: 1,
     createdAt: new Date(),
