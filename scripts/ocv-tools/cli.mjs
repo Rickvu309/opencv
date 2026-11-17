@@ -25,6 +25,7 @@ import { policyReport } from "./jobs/policy.mjs"
 import { why } from "./jobs/why.mjs"
 import { retire } from "./jobs/retire.mjs"
 import { pullFacts } from "./jobs/pull-facts.mjs"
+import { friction } from "./jobs/friction.mjs"
 
 export function realCtx() {
   const ports = realPorts()
@@ -64,6 +65,8 @@ const VALUED = new Set([
   "--replaced-by",
   "--base",
   "--head",
+  "--since",
+  "--until",
   ...TEMPLATE_FIELDS.map((f) => f.flag),
 ])
 
@@ -203,6 +206,8 @@ function command(ctx, cmd, rest) {
     }
   const { flags, pos } = parseArgs(rest)
   switch (cmd) {
+    case "friction":
+      return friction(ctx, { flags, pos })
     case undefined:
     case "--help":
     case "-h":

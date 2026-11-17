@@ -10,6 +10,7 @@ import { commitRows } from "./commits.mjs"
 import { protectedRows } from "./protected.mjs"
 
 export { issueKind, jobRows }
+export { countedSourceFiles } from "./diff.mjs"
 export {
   LABELS,
   allowMigrationLabel,
