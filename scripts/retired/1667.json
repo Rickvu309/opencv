@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "because": "The old fixed styles and Word block fallback were replaced by short display names, accessible section controls, and real first-page Word previews.",
+    "replacedBy": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "proof": {
+      "fork": "976628fc1f4263be91e7d6db104d75441d52966c",
+      "replacedByBlob": "a534caa76691a1e1f0af3949e74e4abaf89c624d",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 20
   }
 ]
