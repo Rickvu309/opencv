@@ -16,7 +16,7 @@ import {
   idOf,
   type CoverageCase,
   type CoverageTools,
-} from "./coverage-helpers.js"
+} from "./coverage-helpers.test-support.js"
 
 export function nativePaperCases(tools: CoverageTools): CoverageCase[] {
   const { db, registry, run, userId } = tools

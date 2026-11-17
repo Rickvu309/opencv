@@ -1,18 +1,21 @@
-import { connectionsCases } from "./coverage-connections.js"
+import { connectionsCases } from "./coverage-connections.test-support.js"
 import { personActor } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 
 import type { TestDatabase } from "../db/context.js"
 import { jobChecklist, paperShares } from "../db/schema.js"
-import { accountCases } from "./coverage-account.js"
-import { coachCases } from "./coverage-coach.js"
-import { chatCases } from "./coverage-chat.js"
-import type { CoverageCase, CoverageTools } from "./coverage-helpers.js"
-import { inboxCases } from "./coverage-inbox.js"
-import { jobCases } from "./coverage-job.js"
-import { paperCases } from "./coverage-paper.js"
-import { nativePaperCases } from "./coverage-paper-native.js"
+import { accountCases } from "./coverage-account.test-support.js"
+import { coachCases } from "./coverage-coach.test-support.js"
+import { chatCases } from "./coverage-chat.test-support.js"
+import type {
+  CoverageCase,
+  CoverageTools,
+} from "./coverage-helpers.test-support.js"
+import { inboxCases } from "./coverage-inbox.test-support.js"
+import { jobCases } from "./coverage-job.test-support.js"
+import { paperCases } from "./coverage-paper.test-support.js"
+import { nativePaperCases } from "./coverage-paper-native.test-support.js"
 import { installRegistry } from "./install.js"
 import type { ExecuteResult, Registry } from "./registry.js"
 

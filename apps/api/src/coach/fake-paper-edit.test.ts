@@ -16,7 +16,7 @@ import {
 import { openCoachStore, type CoachStore } from "../test/paper-coach.js"
 import { resolveTurnGrounding } from "./context.js"
 import { createDemoCoachRuntime } from "./fake.js"
-import { idOf } from "../registry/coverage-helpers.js"
+import { idOf } from "../registry/coverage-helpers.test-support.js"
 import { openWordPage, applyWordOps } from "../paper/index.js"
 import { seedCoachActor } from "../test/coach-turn.js"
 

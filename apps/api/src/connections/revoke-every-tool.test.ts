@@ -13,7 +13,7 @@ import {
 } from "../db/schema.js"
 import { getDb, insideTransaction, withDatabase } from "../db/context.js"
 import * as delegatePolicy from "../registry/delegate-policy.js"
-import { idOf } from "../registry/coverage-helpers.js"
+import { idOf } from "../registry/coverage-helpers.test-support.js"
 import { registry } from "../registry/registry.js"
 import {
   createMigratedTestDb,

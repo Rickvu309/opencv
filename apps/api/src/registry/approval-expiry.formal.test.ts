@@ -17,7 +17,7 @@ import {
 } from "../db/schema.js"
 import { seedTask } from "../test/coach-task-support.js"
 import { openBackend } from "../test/registry-formal-support.js"
-import { idOf } from "./coverage-helpers.js"
+import { idOf } from "./coverage-helpers.test-support.js"
 import { installRegistry } from "./install.js"
 import { lockProposal as loadProposal } from "./proposals.js"
 import { inputHash } from "./receipt.js"

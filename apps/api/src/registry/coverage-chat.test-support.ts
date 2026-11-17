@@ -9,7 +9,7 @@ import {
   text,
   type CoverageCase,
   type CoverageTools,
-} from "./coverage-helpers.js"
+} from "./coverage-helpers.test-support.js"
 import { seedCoachActor } from "../test/coach-turn.js"
 
 export function chatCases(tools: CoverageTools): CoverageCase[] {
