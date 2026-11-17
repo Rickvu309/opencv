@@ -21,11 +21,7 @@ function cssMistake(text) {
       }
       const selector = body.slice(start, open).trim()
       const content = body.slice(open + 1, end - 1)
-      const active =
-        responsive ||
-        /^@(?:media|container)\b[\s\S]*(?:width|inline-size|orientation)/.test(
-          selector
-        )
+      const active = responsive || /^@(?:media|container)\b/.test(selector)
       const paper = inSheet || sheet.test(selector)
       if (
         active &&
