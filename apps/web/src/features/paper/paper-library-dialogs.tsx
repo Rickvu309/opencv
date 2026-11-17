@@ -91,7 +91,7 @@ export function PaperDeleteDialog({
   onClose,
 }: {
   open: boolean
-  name: string
+  name: string | null
   undoable: boolean
   onDelete: () => void
   onClose: () => void
@@ -103,36 +103,38 @@ export function PaperDeleteDialog({
         if (!next) onClose()
       }}
     >
-      <DialogContent showCloseButton={false}>
-        <DialogHeader>
-          <DialogTitle>{`Delete "${name}"?`}</DialogTitle>
-          <DialogDescription>
-            {undoable
-              ? "You can undo this from the message that follows."
-              : "This can't be undone."}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="flex justify-end gap-2">
-          <Button
-            className="h-11 md:h-7"
-            type="button"
-            size="sm"
-            variant="ghost"
-            onClick={onClose}
-          >
-            Cancel
-          </Button>
-          <Button
-            className="h-11 md:h-7"
-            type="button"
-            size="sm"
-            variant="destructive"
-            onClick={onDelete}
-          >
-            Delete
-          </Button>
-        </div>
-      </DialogContent>
+      {name === null ? null : (
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>{`Delete "${name}"?`}</DialogTitle>
+            <DialogDescription>
+              {undoable
+                ? "You can undo this from the message that follows."
+                : "This can't be undone."}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
+            <Button
+              className="h-11 md:h-7"
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={onClose}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="h-11 md:h-7"
+              type="button"
+              size="sm"
+              variant="destructive"
+              onClick={onDelete}
+            >
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      )}
     </Dialog>
   )
 }

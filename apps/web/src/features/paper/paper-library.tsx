@@ -497,13 +497,13 @@ export function PaperLibrary({
         onDropFile={onDropFile}
       />
 
-      {newStep !== null ? (
-        <Dialog
-          open={mode?.type === "new"}
-          onOpenChange={(open) => {
-            if (!open) closeDialog()
-          }}
-        >
+      <Dialog
+        open={mode?.type === "new"}
+        onOpenChange={(open) => {
+          if (!open) closeDialog()
+        }}
+      >
+        {newStep !== null ? (
           <DialogContent
             className={newGallery ? PAPER_GALLERY_DIALOG_CLASS : undefined}
             initialFocus={newGallery ? focusChosenTemplate : undefined}
@@ -529,8 +529,8 @@ export function PaperLibrary({
               onImport={chooseFile}
             />
           </DialogContent>
-        </Dialog>
-      ) : null}
+        ) : null}
+      </Dialog>
 
       <PaperRenameDialog
         open={mode?.type === "rename"}
@@ -541,42 +541,36 @@ export function PaperLibrary({
         onClose={closeDialog}
       />
 
-      {deleting !== null ? (
-        <PaperDeleteDialog
-          open={mode?.type === "delete" || mode?.type === "delete-file"}
-          name={
-            deleting.type === "delete-file"
-              ? deleting.file.name
-              : deleting.doc.name
-          }
-          undoable={deletingWordPage}
-          onDelete={() =>
-            void (deleting.type === "delete-file"
-              ? confirmDeleteFile()
-              : confirmDelete())
-          }
-          onClose={closeDialog}
-        />
-      ) : null}
+      <PaperDeleteDialog
+        open={mode?.type === "delete" || mode?.type === "delete-file"}
+        name={
+          deleting?.type === "delete-file"
+            ? deleting.file.name
+            : (deleting?.doc.name ?? null)
+        }
+        undoable={deletingWordPage}
+        onDelete={() =>
+          void (deleting?.type === "delete-file"
+            ? confirmDeleteFile()
+            : confirmDelete())
+        }
+        onClose={closeDialog}
+      />
 
-      {importingName !== null ? (
-        <ImportProgressDialog
-          open={importState.type === "importing"}
-          filename={importingName}
-          onCancel={cancelImport}
-        />
-      ) : null}
-      {importError !== null ? (
-        <CantReadDialog
-          open={importState.type === "error"}
-          sentence={importError.message}
-          onChoose={chooseFile}
-          onBlank={() => void startBlank()}
-          onClose={() => dispatch({ type: "import_ended" })}
-          onRetry={retryFile ? () => void onImport(retryFile) : undefined}
-          blankPending={creatingBlank}
-        />
-      ) : null}
+      <ImportProgressDialog
+        open={importState.type === "importing"}
+        filename={importingName}
+        onCancel={cancelImport}
+      />
+      <CantReadDialog
+        open={importState.type === "error"}
+        sentence={importError?.message ?? null}
+        onChoose={chooseFile}
+        onBlank={() => void startBlank()}
+        onClose={() => dispatch({ type: "import_ended" })}
+        onRetry={retryFile ? () => void onImport(retryFile) : undefined}
+        blankPending={creatingBlank}
+      />
 
       <PaperLinkDialog
         open={mode?.type === "link"}

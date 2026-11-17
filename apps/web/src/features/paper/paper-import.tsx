@@ -103,7 +103,7 @@ export function ImportProgressDialog({
   onCancel,
 }: {
   open: boolean
-  filename: string
+  filename: string | null
   onCancel: () => void
 }) {
   return (
@@ -113,25 +113,27 @@ export function ImportProgressDialog({
         if (!next) onCancel()
       }}
     >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Importing…</DialogTitle>
-        </DialogHeader>
-        <div role="status" className="flex items-center gap-3">
-          <Spinner aria-hidden />
-          <p className="truncate text-sm text-muted-foreground">{filename}</p>
-        </div>
-        <div className="flex justify-end">
-          <Button
-            className="h-11 md:h-8"
-            type="button"
-            variant="ghost"
-            onClick={onCancel}
-          >
-            Cancel
-          </Button>
-        </div>
-      </DialogContent>
+      {filename === null ? null : (
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Importing…</DialogTitle>
+          </DialogHeader>
+          <div role="status" className="flex items-center gap-3">
+            <Spinner aria-hidden />
+            <p className="truncate text-sm text-muted-foreground">{filename}</p>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              className="h-11 md:h-8"
+              type="button"
+              variant="ghost"
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      )}
     </Dialog>
   )
 }
@@ -146,7 +148,7 @@ export function CantReadDialog({
   blankPending = false,
 }: {
   open: boolean
-  sentence: string
+  sentence: string | null
   onChoose: () => void
   onBlank: () => void
   onClose: () => void
@@ -160,44 +162,46 @@ export function CantReadDialog({
         if (!next) onClose()
       }}
     >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {onRetry ? "File not imported yet" : "Can't read this file"}
-          </DialogTitle>
-          <DialogDescription role="alert">{sentence}</DialogDescription>
-        </DialogHeader>
-        <div className="flex flex-wrap justify-end gap-2">
-          {onRetry ? (
+      {sentence === null ? null : (
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {onRetry ? "File not imported yet" : "Can't read this file"}
+            </DialogTitle>
+            <DialogDescription role="alert">{sentence}</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-wrap justify-end gap-2">
+            {onRetry ? (
+              <Button
+                className="h-11 md:h-8"
+                type="button"
+                variant="ghost"
+                onClick={onChoose}
+              >
+                Choose another file
+              </Button>
+            ) : (
+              <Button
+                className="h-11 md:h-8"
+                type="button"
+                variant="ghost"
+                onClick={onBlank}
+                disabled={blankPending}
+              >
+                Start blank
+              </Button>
+            )}
             <Button
               className="h-11 md:h-8"
               type="button"
-              variant="ghost"
-              onClick={onChoose}
+              variant="primary"
+              onClick={onRetry ?? onChoose}
             >
-              Choose another file
+              {onRetry ? "Try again" : "Choose another file"}
             </Button>
-          ) : (
-            <Button
-              className="h-11 md:h-8"
-              type="button"
-              variant="ghost"
-              onClick={onBlank}
-              disabled={blankPending}
-            >
-              Start blank
-            </Button>
-          )}
-          <Button
-            className="h-11 md:h-8"
-            type="button"
-            variant="primary"
-            onClick={onRetry ?? onChoose}
-          >
-            {onRetry ? "Try again" : "Choose another file"}
-          </Button>
-        </div>
-      </DialogContent>
+          </div>
+        </DialogContent>
+      )}
     </Dialog>
   )
 }
