@@ -29,11 +29,11 @@
   },
   {
     "subject": "apps/web/src/features/inbox/inbox-reader.test.tsx",
-    "because": "More and Open in Gmail are focusable unavailable actions dimmed alike, More has one tooltip with the shared reason and no loose sr-only text, the counter uses tabular digits, the phone reply is 16px, and a rejected draft save is not marked saved. The test checks that.",
+    "because": "Unavailable reader actions now use aria-describedby with sr-only reasons and the kit overflow behavior; the replacement checks both descriptions, keyboard access, inert activation and one More control.",
     "replacedBy": "apps/web/src/features/inbox/inbox-reader.test.tsx",
     "proof": {
-      "fork": "a887677ee976df2a519b5804ad24a48ed431fc11",
-      "replacedByBlob": "cc4e49234caa9dcfb10079e17260bb38283c4e27",
+      "fork": "1edeb9b935aa4f5330cdf105001f3be3c56a7b84",
+      "replacedByBlob": "7b4ecf543475295ffaa9774d3c3273f1eecc017c",
       "failedOnBase": true,
       "passedOnHead": true
     },
