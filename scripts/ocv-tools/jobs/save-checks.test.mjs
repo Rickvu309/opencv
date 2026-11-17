@@ -3,7 +3,7 @@ import test from "node:test"
 import { claimMarker } from "../claim-marker.mjs"
 import { minutesAgo } from "../ports/fake.mjs"
 import { receiptPath } from "./affected-tests.mjs"
-import { fixture } from "./fixture.mjs"
+import { readFileSync } from "node:fs"
 
 export function detect(effects) {
   const push = effects.findIndex((effect) => effect.op === "push")
@@ -21,12 +21,13 @@ export function detect(effects) {
   return check >= 0 && receipt > check ? [] : ["push without a checked receipt"]
 }
 
-function saving({
+async function saving({
   checkOk = true,
   record = true,
   ahead = false,
   stale = false,
 } = {}) {
+  const { fixture } = await import("./fixture.mjs")
   const w = fixture({
     env: { OCV_TOOLS_AGENT: "me" },
     affectedReceipts: false,
@@ -63,9 +64,9 @@ function saving({
   return w
 }
 
-test("save checks and validates the head receipt before opening git push, including an already committed head", () => {
+test("save checks and validates the head receipt before opening git push, including an already committed head", async () => {
   for (const ahead of [false, true]) {
-    const w = saving({ ahead })
+    const w = await saving({ ahead })
     const result = w.call("save", "-m", "fix: keep the connection short")
     assert.equal(result.code, 0, result.text)
     assert.equal(
@@ -77,13 +78,13 @@ test("save checks and validates the head receipt before opening git push, includ
   }
 })
 
-test("save never pushes after a failed check, missing receipt or receipt for another head", () => {
+test("save never pushes after a failed check, missing receipt or receipt for another head", async () => {
   for (const options of [
     { checkOk: false },
     { record: false },
     { stale: true },
   ]) {
-    const w = saving(options)
+    const w = await saving(options)
     const result = w.call("save", "-m", "fix: keep the connection short")
     assert.notEqual(result.code, 0, result.text)
     assert.equal(
@@ -106,4 +107,26 @@ test("the old ordering and an unchecked successful command fire; check then rece
   ])
   assert.deepEqual(detect([check, push]), ["push without a checked receipt"])
   assert.deepEqual(detect([check, receipt, push]), [])
+})
+
+export function detectSource(source) {
+  const save = source.slice(
+    source.indexOf("export function save("),
+    source.indexOf("function workOf(")
+  )
+  const push = save.indexOf("git.push(")
+  const check = save.indexOf('"check"]')
+  const receipt = save.indexOf("if (!hasReceipt(")
+  return push >= 0 && check >= 0 && check < receipt && receipt < push
+    ? []
+    : ["push before checked receipt"]
+}
+
+test("save source keeps the check and receipt gate ahead of git push", () => {
+  const source = readFileSync(new URL("../work.mjs", import.meta.url), "utf8")
+  assert.deepEqual(detectSource(source), [])
+  assert.deepEqual(
+    detectSource("export function save() { git.push(ctx.cwd) }"),
+    ["push before checked receipt"]
+  )
 })

@@ -5,7 +5,12 @@
     "mode": "restore",
     "sha": "59c277a823d9225cdcb7450fc5cabf1b416a6fed",
     "paths": ["scripts/ocv-tools/work.mjs"],
-    "command": ["node", "--test", "scripts/ocv-tools/jobs/save-checks.test.mjs"]
+    "command": [
+      "node",
+      "--test",
+      "--test-name-pattern=save source",
+      "scripts/ocv-tools/jobs/save-checks.test.mjs"
+    ]
   },
-  "reason": "The first save adapter committed then opened git push before checks. Restoring it must fail the ordered effects and refusal cases."
+  "reason": "The first save adapter committed then opened git push before checks. Restoring it must fail the source ordering assertion; the current behavioral fixtures also reject unchecked pushes."
 }
