@@ -14,6 +14,7 @@ import { ApiError } from "@/lib/api.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { catalogClient, refreshCatalogReads } from "@/lib/contract-client.ts"
+import { useShownWhileClosing } from "./paper-library-closing.ts"
 
 export type WordDocument = z.output<typeof paperPackageMetadataSchema>
 
@@ -95,6 +96,7 @@ export function PaperPackageLibrary({
   library: ReturnType<typeof useWordLibrary>
 }) {
   const { selected, onSelect } = library
+  const shownWord = useShownWhileClosing(selected)
   const unavailable =
     library.query.error instanceof ApiError &&
     library.query.error.status === 404
@@ -144,31 +146,29 @@ export function PaperPackageLibrary({
           ) : null}
         </section>
       ) : null}
-      {selected !== null ? (
-        <Dialog
-          open
-          onOpenChange={(open) => {
-            if (!open) onSelect(null)
-          }}
-        >
+      <Dialog
+        open={selected !== null}
+        onOpenChange={(open) => {
+          if (!open) onSelect(null)
+        }}
+      >
+        {shownWord !== null ? (
           <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
-              <DialogTitle>{selected?.name ?? "Word document"}</DialogTitle>
+              <DialogTitle>{shownWord.name}</DialogTitle>
               <DialogDescription>
                 Text preview of this saved Word version. Download Word to keep
                 its original layout.
               </DialogDescription>
             </DialogHeader>
-            {selected ? (
-              <WordSnapshot
-                key={`${selected.docId}:${selected.revision}`}
-                document={selected}
-                owner={library.owner}
-              />
-            ) : null}
+            <WordSnapshot
+              key={`${shownWord.docId}:${shownWord.revision}`}
+              document={shownWord}
+              owner={library.owner}
+            />
           </DialogContent>
-        </Dialog>
-      ) : null}
+        ) : null}
+      </Dialog>
     </>
   )
 }
