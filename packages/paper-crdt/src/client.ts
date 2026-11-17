@@ -14,6 +14,10 @@ import * as Y from "yjs"
 
 import { materialize, writeDocument } from "./ydoc.js"
 import { materializeStored } from "./stored-document.js"
+import {
+  preservePendingContent,
+  restorePendingContent,
+} from "./pending-content.js"
 
 export const REBASE_ORIGIN = "paper-rebase"
 export const SERVER_ORIGIN = "paper-server"
@@ -370,6 +374,7 @@ class Client<
     )
       return rejected
     let candidate: Y.Doc | undefined
+    let restorations: ReturnType<typeof preservePendingContent> = []
     try {
       candidate = reply.reset
         ? freshDoc(false, reply.update)
@@ -390,6 +395,12 @@ class Client<
             reply.update
           )
           try {
+            restorations = preservePendingContent(
+              this.ydoc,
+              this.server,
+              merged
+            )
+            restorePendingContent(merged, restorations)
             if (!this.adapter.read(merged)) return rejected
           } finally {
             merged.destroy()
@@ -437,6 +448,7 @@ class Client<
       ours === null
     ) {
       this.applyHere(this.ydoc, reply.update)
+      restorePendingContent(this.ydoc, restorations)
       return { ...plain, failed: theirs === null && settled !== null }
     }
     let target: { readonly document: Document; readonly failed: boolean }

@@ -33,3 +33,12 @@ test("rich concurrency validates merges and retains refused live content", () =>
       []
     )
 })
+
+test("rich merge acceptance preserves unacknowledged content before validation", () => {
+  const mistake =
+    "try { if (!this.adapter.read(merged)) return rejected } finally { merged.destroy() }"
+  assert.equal(detect(mistake).length, 1)
+  const clean =
+    "try { restorations = preservePendingContent(this.ydoc, this.server, merged); restorePendingContent(merged, restorations); if (!this.adapter.read(merged)) return rejected } finally { merged.destroy() }"
+  assert.deepEqual(detect(clean), [])
+})
