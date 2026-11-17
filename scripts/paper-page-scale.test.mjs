@@ -70,6 +70,7 @@ test("the original reflow commit fails and current Paper sources pass", () => {
     [
       "ls-files",
       "apps/web/src/features/paper",
+      "apps/web/src/features/paper-page",
       "apps/web/src/styles",
       "packages/paper-crdt/src",
     ],
@@ -79,4 +80,36 @@ test("the original reflow commit fails and current Paper sources pass", () => {
     .split("\n")
   for (const file of files)
     assert.deepEqual(detect(readFileSync(file, "utf8"), file), [], file)
+})
+
+const canvasCss = "apps/web/src/features/paper-page/canvas.css"
+const canvas = "apps/web/src/features/paper-page/canvas.tsx"
+
+test("older Word canvas refuses responsive page geometry", () => {
+  for (const source of [
+    ".writing-page { padding-inline: clamp(1.25rem, 12%, 1in); }",
+    ".writing-page { width: min(100% - 3rem, 8.5in); }",
+    ".writing-scroll { grid-template-columns: min(100% - 3rem, 8.5in); }",
+    "@container writing-sheet (width < 800px) { .writing-page p { font-size: 12pt; } }",
+    "@media (max-width: 767px) { .writing-page { padding: 1rem; } }",
+  ])
+    assert.match(
+      detect(source, canvasCss).join(),
+      /scale the page in rich-page-layout.ts instead/
+    )
+  assert.ok(
+    detect("if (scroll.clientWidth < 816) page.style.padding = '20px'", canvas)
+      .length
+  )
+  assert.deepEqual(
+    detect(
+      ".writing-page { inline-size: 8.5in; min-block-size: 11in; padding: 1in; transform: scale(var(--cv-rich-page-scale)); }",
+      canvasCss
+    ),
+    []
+  )
+  const historic = execFileSync("git", ["show", `ca453aae:${canvasCss}`], {
+    encoding: "utf8",
+  })
+  assert.ok(detect(historic, canvasCss).length)
 })

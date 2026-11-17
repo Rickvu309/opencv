@@ -1,3 +1,5 @@
+import { proveScaledEditing } from "./ui/paper-scale-editing.mjs"
+import { proveWordCanvas } from "./ui/paper-scale-canvas.mjs"
 import assert from "node:assert/strict"
 import { readFileSync, mkdirSync, writeFileSync } from "node:fs"
 import { homedir } from "node:os"
@@ -235,100 +237,16 @@ try {
       results.push({ size, viewport: width, ...value, screenshot })
     }
   }
-  await page.setViewportSize({ width: 390, height: 1000 })
-  const first = editor.getByText("Summary", { exact: true }).first()
-  await first.click({ clickCount: 3 })
-  assert.match(await page.evaluate(() => getSelection()?.toString()), /Summary/)
-  await first.click()
-  const caret = await page.evaluate(() => {
-    const selection = getSelection()
-    return {
-      text: selection.anchorNode.textContent,
-      offset: selection.anchorOffset,
-    }
-  })
-  assert.equal(caret.text, "Summary")
-  const expected =
-    caret.text.slice(0, caret.offset) + "HIT" + caret.text.slice(caret.offset)
-  await page.keyboard.type("HIT")
-  await page.waitForFunction(
-    (expected) =>
-      document
-        .querySelector(".paper-rich-sheet")
-        ?.textContent.includes(expected),
-    expected
-  )
-  await page.keyboard.press("Control+z")
-  await page.keyboard.press("Control+f")
-  await page
-    .getByRole("textbox", { name: "Find in document", exact: true })
-    .fill("Experience 12")
-  await page.getByRole("button", { name: "Next match", exact: true }).click()
-  await page.getByRole("button", { name: "Close find", exact: true }).click()
-  await page.screenshot({ path: join(out, "find-390.png") })
-  await first.click()
-  const action = async (name) => {
-    const button = page.getByRole("button", { name, exact: true })
-    if (!(await button.isVisible()))
-      await page
-        .getByRole("button", { name: "More formatting", exact: true })
-        .click()
-    await button.click()
-  }
-  await action("Insert table")
-  await page
-    .getByRole("button", { name: "Insert table", exact: true })
-    .last()
-    .click()
-  const table = editor.locator('[data-paper-layout="paperTable"]').last()
-  await table.locator('[data-paper-layout="paperCell"]').first().click()
-  await page.getByRole("button", { name: "Table options", exact: true }).click()
-  await page
-    .getByRole("button", { name: "Insert row below", exact: true })
-    .click()
-  assert.equal(await table.locator('[data-paper-layout="paperRow"]').count(), 3)
-  await page.screenshot({ path: join(out, "table-390.png") })
-  await first.click()
-  const portrait = await page.evaluate(() => {
-    const canvas = document.createElement("canvas")
-    canvas.width = 120
-    canvas.height = 160
-    const draw = canvas.getContext("2d")
-    draw.fillStyle = "#e2e8f0"
-    draw.fillRect(0, 0, 120, 160)
-    draw.fillStyle = "#475569"
-    draw.beginPath()
-    draw.arc(60, 48, 24, 0, Math.PI * 2)
-    draw.fill()
-    draw.fillRect(24, 90, 72, 70)
-    return canvas.toDataURL("image/png").split(",")[1]
-  })
-  await page.getByLabel("Photo file", { exact: true }).setInputFiles({
-    name: "illustrated-portrait.png",
-    mimeType: "image/png",
-    buffer: Buffer.from(portrait, "base64"),
-  })
-  await page.getByRole("textbox", { name: "Width", exact: true }).fill("120")
-  await page.getByRole("button", { name: "Apply", exact: true }).click()
-  const photo = editor.locator("[data-paper-photo]").last()
-  await photo.click()
-  assert.equal(await photo.getAttribute("aria-pressed"), "true")
-  const photoSize = await photo.evaluate((element) => ({
-    width: element.getBoundingClientRect().width,
-    scale: Number(
-      element
-        .closest(".paper-rich-sheet")
-        .style.getPropertyValue("--cv-rich-page-scale")
-    ),
-  }))
-  assert.ok(Math.abs(photoSize.width / photoSize.scale - 120) < 1)
-  await page.screenshot({ path: join(out, "photo-390.png") })
+  const interactionResults = await proveScaledEditing({ page, editor, out })
+  const canvasResults = await proveWordCanvas({ page, state, out })
   writeFileSync(
     join(out, "result.json"),
     JSON.stringify(
       {
         status: "pass",
         results,
+        interactionResults,
+        canvasResults,
         interactions: [
           "scaled pointer selection",
           "typing at selected caret",

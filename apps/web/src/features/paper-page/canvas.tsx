@@ -1,3 +1,4 @@
+import { revealCaret, useCanvasScale } from "./canvas-viewport.ts"
 import { writingStorage } from "./canvas-branch.ts"
 import {
   Fragment,
@@ -171,19 +172,6 @@ function withCommittedWord(
   return next
 }
 
-function revealCaret(page: HTMLElement, scroll: HTMLElement) {
-  const node = page.ownerDocument.getSelection()?.focusNode
-  const target =
-    node?.nodeType === Node.TEXT_NODE
-      ? node.parentElement
-      : (node as HTMLElement | null)
-  if (!target) return
-  const caretBox = target.getBoundingClientRect()
-  const frame = scroll.getBoundingClientRect()
-  if (caretBox.top >= frame.top && caretBox.bottom <= frame.bottom) return
-  target.scrollIntoView({ block: "nearest" })
-}
-
 function WritingSheet({
   docId,
   seed,
@@ -232,6 +220,8 @@ function WritingSheet({
     () => writingConflictDoc() === docId,
     () => false
   )
+
+  useCanvasScale(pageRef, scrollRef, state.redraw)
 
   useEffect(() => holdWritingCoachFocus(docId), [docId])
 
@@ -477,135 +467,137 @@ function WritingSheet({
         onRestore={restoreLine}
       />
       <div className="writing-scroll" ref={scrollRef}>
-        <article
-          key={state.redraw}
-          ref={pageRef}
-          className={cn("writing-page")}
-          aria-busy={state.recovering}
-          contentEditable={!state.recovering}
-          suppressContentEditableWarning
-          spellCheck
-          aria-label="Page"
-          onKeyDown={(event) => {
-            const key = pageKey(event)
-            if (!key) return
-            event.preventDefault()
-            if (key === "undo" || key === "redo") {
-              dispatch({ type: key })
-              return
-            }
-            if (
-              state.present.blocks.some(
-                (block) =>
-                  block.held && block.id === state.present.caret.blockId
+        <div className="writing-page-viewport" data-paper-page-viewport>
+          <article
+            key={state.redraw}
+            ref={pageRef}
+            className={cn("writing-page")}
+            aria-busy={state.recovering}
+            contentEditable={!state.recovering}
+            suppressContentEditableWarning
+            spellCheck
+            aria-label="Page"
+            onKeyDown={(event) => {
+              const key = pageKey(event)
+              if (!key) return
+              event.preventDefault()
+              if (key === "undo" || key === "redo") {
+                dispatch({ type: key })
+                return
+              }
+              if (
+                state.present.blocks.some(
+                  (block) =>
+                    block.held && block.id === state.present.caret.blockId
+                )
+              ) {
+                return
+              }
+              const native = event.nativeEvent
+              if (native.isComposing || native.keyCode === 229) {
+                splitAfter.current = true
+                return
+              }
+              const page = pageRef.current
+              if (!page) return
+              dispatch({
+                type: "split",
+                span: spanFrom(page, state.present.caret),
+              })
+            }}
+            onCompositionStart={() => {
+              composing.current = true
+              const page = pageRef.current
+              const span = page ? spanFrom(page, state.present.caret) : null
+              compositionSpan.current = span
+              const caret = span ? span.focus : state.present.caret
+              const block = state.present.blocks.find(
+                (item) => item.id === caret.blockId
               )
-            ) {
-              return
-            }
-            const native = event.nativeEvent
-            if (native.isComposing || native.keyCode === 229) {
-              splitAfter.current = true
-              return
-            }
-            const page = pageRef.current
-            if (!page) return
-            dispatch({
-              type: "split",
-              span: spanFrom(page, state.present.caret),
-            })
-          }}
-          onCompositionStart={() => {
-            composing.current = true
-            const page = pageRef.current
-            const span = page ? spanFrom(page, state.present.caret) : null
-            compositionSpan.current = span
-            const caret = span ? span.focus : state.present.caret
-            const block = state.present.blocks.find(
-              (item) => item.id === caret.blockId
-            )
-            compositionBase.current = {
-              blockId: caret.blockId,
-              text: block?.text ?? "",
-              offset: caret.offset,
-            }
-          }}
-          onBlur={() => {
-            if (!composing.current) return
-            composing.current = false
-            compositionBase.current = null
-            compositionSpan.current = null
-            flushHeldBack()
-          }}
-          onCompositionEnd={(event) => {
-            composing.current = false
-            const page = pageRef.current
-            const base = compositionBase.current
-            const from = compositionSpan.current
-            compositionBase.current = null
-            compositionSpan.current = null
-            if (!page) {
+              compositionBase.current = {
+                blockId: caret.blockId,
+                text: block?.text ?? "",
+                offset: caret.offset,
+              }
+            }}
+            onBlur={() => {
+              if (!composing.current) return
+              composing.current = false
+              compositionBase.current = null
+              compositionSpan.current = null
               flushHeldBack()
-              return
-            }
-            const read = readBlocks(page, nextId.current)
-            nextId.current = read.nextId
-            const selected =
-              pointFrom(
-                page,
-                page.ownerDocument.getSelection()?.focusNode ?? null,
-                page.ownerDocument.getSelection()?.focusOffset ?? 0
-              ) ?? state.present.caret
-            const grew = read.texts.length > state.present.blocks.length
-            const split = splitAfter.current && !grew
-            splitAfter.current = false
-            const target =
-              base && read.texts.some((item) => item.id === base.blockId)
-                ? base.blockId
-                : selected.blockId
-            const texts = withCommittedWord(
-              read.texts,
-              target,
-              event.data,
-              base && base.blockId === target ? base : null
-            )
-            const block = texts.find((item) => item.id === target) ?? texts[0]
-            const caret = split
-              ? {
-                  blockId: block?.id ?? target,
-                  offset: block?.text.length ?? 0,
-                }
-              : selected
-            dispatch({
-              type: "composed",
-              texts,
-              caret,
-              from,
-              split,
-              nextId: read.nextId,
-            })
-            flushHeldBack()
-          }}
-          onPaste={(event) => {
-            event.preventDefault()
-            applyPaste(event.clipboardData.getData("text/plain"))
-          }}
-        >
-          {state.present.blocks.map((block) => (
-            <Fragment key={block.id}>
-              <p
-                data-block={block.id}
-                contentEditable={block.held ? false : undefined}
-              >
-                {visibleText(block.text)}
-              </p>
-              {block.held && block.reason ? (
-                <div className="text-xs text-muted-foreground">
-                  {block.reason}
-                </div>
-              ) : null}
-            </Fragment>
-          ))}
-        </article>
+            }}
+            onCompositionEnd={(event) => {
+              composing.current = false
+              const page = pageRef.current
+              const base = compositionBase.current
+              const from = compositionSpan.current
+              compositionBase.current = null
+              compositionSpan.current = null
+              if (!page) {
+                flushHeldBack()
+                return
+              }
+              const read = readBlocks(page, nextId.current)
+              nextId.current = read.nextId
+              const selected =
+                pointFrom(
+                  page,
+                  page.ownerDocument.getSelection()?.focusNode ?? null,
+                  page.ownerDocument.getSelection()?.focusOffset ?? 0
+                ) ?? state.present.caret
+              const grew = read.texts.length > state.present.blocks.length
+              const split = splitAfter.current && !grew
+              splitAfter.current = false
+              const target =
+                base && read.texts.some((item) => item.id === base.blockId)
+                  ? base.blockId
+                  : selected.blockId
+              const texts = withCommittedWord(
+                read.texts,
+                target,
+                event.data,
+                base && base.blockId === target ? base : null
+              )
+              const block = texts.find((item) => item.id === target) ?? texts[0]
+              const caret = split
+                ? {
+                    blockId: block?.id ?? target,
+                    offset: block?.text.length ?? 0,
+                  }
+                : selected
+              dispatch({
+                type: "composed",
+                texts,
+                caret,
+                from,
+                split,
+                nextId: read.nextId,
+              })
+              flushHeldBack()
+            }}
+            onPaste={(event) => {
+              event.preventDefault()
+              applyPaste(event.clipboardData.getData("text/plain"))
+            }}
+          >
+            {state.present.blocks.map((block) => (
+              <Fragment key={block.id}>
+                <p
+                  data-block={block.id}
+                  contentEditable={block.held ? false : undefined}
+                >
+                  {visibleText(block.text)}
+                </p>
+                {block.held && block.reason ? (
+                  <div className="text-xs text-muted-foreground">
+                    {block.reason}
+                  </div>
+                ) : null}
+              </Fragment>
+            ))}
+          </article>
+        </div>
       </div>
       {!renderHeader || conflicted || state.notice ? (
         <p

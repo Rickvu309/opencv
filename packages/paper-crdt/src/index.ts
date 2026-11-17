@@ -66,3 +66,5 @@ export {
   writeNativeCvDocument,
   writeNativeCvBlocks,
 } from "./native-cv.js"
+
+export { scalePaperPage } from "./rich-page-layout.js"

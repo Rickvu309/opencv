@@ -2,11 +2,12 @@ import ts from "typescript"
 
 const message =
   "The Paper page is the same page on every screen; scale the page in rich-page-layout.ts instead"
-const sheet = /\.paper-rich-sheet\b|\[data-paper-(?:layout|wrap-slot|page-flow)/
+const sheet =
+  /\.(?:paper-rich-sheet|writing-page)\b|\[data-paper-(?:layout|wrap-slot|page-flow)/
 const geometry =
   /^(?:inline-size|block-size|min-(?:inline|block)-size|max-(?:inline|block)-size|width|height|min-width|max-width|min-height|max-height|padding(?:-[\w-]+)?|columns|column-[\w-]+|font(?:-[\w-]+)?|line-height|zoom|transform)$/
 
-function cssMistake(text) {
+function cssMistake(text, physical) {
   const visit = (body, responsive = false, inSheet = false) => {
     let start = 0
     while (start < body.length) {
@@ -24,12 +25,20 @@ function cssMistake(text) {
       const active = responsive || /^@(?:media|container)\b/.test(selector)
       const paper = inSheet || sheet.test(selector)
       if (
-        active &&
-        paper &&
+        (paper || /\.writing-scroll\b/.test(selector)) &&
         content
           .split(";")
-          .some((declaration) =>
-            geometry.test(declaration.split(":")[0].trim())
+          .some(
+            (declaration) =>
+              (paper
+                ? geometry.test(declaration.split(":")[0].trim())
+                : declaration.split(":")[0].trim() ===
+                  "grid-template-columns") &&
+              (active ||
+                (physical &&
+                  /%|\bclamp\(|[\d.](?:d?vw|cqw)\b/.test(
+                    declaration.split(":").slice(1).join(":")
+                  )))
           )
       )
         return true
@@ -43,14 +52,14 @@ function cssMistake(text) {
 
 export function detect(text, path = "") {
   if (
-    !/^(?:apps\/web\/src\/(?:features\/paper|styles)|packages\/paper-crdt\/src)\//.test(
+    !/^(?:apps\/web\/src\/(?:features\/paper(?:-page)?|styles)|packages\/paper-crdt\/src)\//.test(
       path
     )
   )
     return []
   if (/\.(?:test|browser)\./.test(path)) return []
   if (/data-paper-reflow|dataset\.paperReflow/.test(text)) return [message]
-  if (cssMistake(text)) return [message]
+  if (cssMistake(text, /\.css$/.test(path))) return [message]
   if (!/\.[cm]?[jt]sx?$/.test(path)) return []
   const source = ts.createSourceFile(
     path,
@@ -94,7 +103,7 @@ export function detect(text, path = "") {
         return true
     }
     if (
-      /(?:rich-page|native-layout-flow)/.test(path) &&
+      /(?:rich-page|native-layout-flow|features\/paper-page\/)/.test(path) &&
       (ts.isIfStatement(node) || ts.isConditionalExpression(node)) &&
       widthDependent(node.expression ?? node.condition) &&
       /(?:style|dataset|setAttribute|setProperty|classList)/.test(
