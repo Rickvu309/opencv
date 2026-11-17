@@ -22,7 +22,7 @@ import {
   type RouteCase,
 } from "../test/routes/route-cases.js"
 import { lastWrite, writesAfter, type LoggedWrite } from "../test/write-log.js"
-import { coverageCases } from "./coverage-setup.js"
+import { coverageCases } from "./coverage-setup.test-support.js"
 import { installRegistry } from "./install.js"
 import {
   OWNED_READS,

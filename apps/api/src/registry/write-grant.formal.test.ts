@@ -13,7 +13,7 @@ import { jobs, user } from "../db/schema.js"
 import { writePriority } from "../job/index.js"
 import { openBackend, REAL } from "../test/registry-formal-support.js"
 import { seedCoachActor } from "../test/coach-turn.js"
-import { idOf } from "./coverage-helpers.js"
+import { idOf } from "./coverage-helpers.test-support.js"
 import { installRegistry } from "./install.js"
 import {
   takePriorityGrant,

@@ -8,6 +8,11 @@ export { riskOf }
 
 export const COMMANDS = [
   {
+    name: "friction",
+    usage: "friction --since <iso> [--until <iso>] [--json]",
+    when: "Measure weekly friction from origin/main committer dates, merged PRs and ci.yml runs in an inclusive window. Fetches origin/main and reads GitHub; never changes product state. With --until the report uses no wall clock; without it the end is now. JSON has metric rows, targets, evidence and explicit reasons for metrics that cannot be measured from these sources. Requires git and authenticated gh; use smaller windows if a GitHub search reaches 1000 results.",
+  },
+  {
     name: "finish",
     usage: "finish --body-file <file> [-d <description>] [--draft] [--dry-run]",
     when: "Run the pull request rules early, push through the hooks and open the PR (--draft opens a draft). Every problem in the body is named in one message. Unless the PR is a draft or blocked by the migration allow-label or production-red rules, it turns on auto-merge, so the PR merges by itself when ci is green; if GitHub refuses auto-merge, it says so in one line and the coordinator merges with merge <pr#>. --dry-run checks only the body, not the title, pushes nothing and opens nothing, so it works with unsaved changes.",

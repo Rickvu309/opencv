@@ -19,7 +19,7 @@ import {
 import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "./install.js"
 import { seedCoachActor } from "../test/coach-turn.js"
-import { idOf } from "./coverage-helpers.js"
+import { idOf } from "./coverage-helpers.test-support.js"
 
 const coachToolNames = [
   "chat.delete",

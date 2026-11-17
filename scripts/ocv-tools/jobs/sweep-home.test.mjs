@@ -36,7 +36,14 @@ test("the ocv-tools tests pass while an unrelated merge worktree sits in the tem
   const mirror = path.join(home, "mirror")
   const foreign = path.join(home, "tmp", "ocv-merge-999-deadbeef")
   mkdirSync(path.join(home, "tmp"), { recursive: true })
-  gitQuiet(["clone", "--shared", "--no-checkout", root, mirror])
+  gitQuiet([
+    "clone",
+    "--no-hardlinks",
+    "--shared",
+    "--no-checkout",
+    root,
+    mirror,
+  ])
   gitQuiet(["-C", mirror, "worktree", "add", "--detach", foreign, "HEAD"])
   cpSync(path.join(root, "scripts"), path.join(foreign, "scripts"), {
     recursive: true,

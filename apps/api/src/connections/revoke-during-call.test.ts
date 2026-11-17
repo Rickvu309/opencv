@@ -23,7 +23,7 @@ import {
   authenticateAgent,
   hashAgentToken,
 } from "./oauth.js"
-import { idOf } from "../registry/coverage-helpers.js"
+import { idOf } from "../registry/coverage-helpers.test-support.js"
 import { registry } from "../registry/registry.js"
 
 let database: Awaited<ReturnType<typeof createMigratedTestDb>>

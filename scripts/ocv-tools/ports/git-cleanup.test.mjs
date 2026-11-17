@@ -22,9 +22,18 @@ test("cleanup retains advanced remote tips and a concurrent push defeats its del
         maxBuffer: 1024 * 1024,
       }).trim()
     const source = fileURLToPath(new URL("../../../", import.meta.url))
-    sh(root, ["clone", "--quiet", "--bare", "--shared", source, "origin.git"])
     sh(root, [
       "clone",
+      "--no-hardlinks",
+      "--quiet",
+      "--bare",
+      "--shared",
+      source,
+      "origin.git",
+    ])
+    sh(root, [
+      "clone",
+      "--no-hardlinks",
       "--quiet",
       "--shared",
       "--no-checkout",

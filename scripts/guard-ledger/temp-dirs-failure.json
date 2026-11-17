@@ -1,0 +1,13 @@
+{
+  "id": "temp-dirs-failure",
+  "file": "scripts/temp-dirs-failure.test.mjs",
+  "detector": {
+    "module": "scripts/lib/temp-run.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "b680aafb",
+    "path": "scripts/temp-dirs.test.mjs"
+  }
+}

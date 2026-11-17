@@ -1,4 +1,8 @@
 {
+  "api-build-test-files": {
+    "passed": true,
+    "fingerprint": "4b28ace05beb"
+  },
   "delegate-reach": {
     "passed": true,
     "fingerprint": "ff451b533174"
@@ -17,7 +21,7 @@
   },
   "owned-rows": {
     "passed": true,
-    "fingerprint": "ef06e5e3e86e"
+    "fingerprint": "0d3110284e79"
   },
   "pinned-history": {
     "passed": true,
@@ -30,6 +34,14 @@
   "private-output-keys": {
     "passed": true,
     "fingerprint": "0f5ff3a2ceb1"
+  },
+  "save-checks": {
+    "passed": true,
+    "fingerprint": "b10ec3332824"
+  },
+  "scanner-ancestor-roots": {
+    "passed": true,
+    "fingerprint": "758b50f2567f"
   },
   "tla-sync-anchors": {
     "passed": true,
@@ -53,10 +65,10 @@
   },
   "write-grant": {
     "passed": true,
-    "fingerprint": "a0076e820e72"
+    "fingerprint": "1bbc12333d55"
   },
   "write-grant-formal": {
     "passed": true,
-    "fingerprint": "da3fc77ea7db"
+    "fingerprint": "90a6cd54f4e3"
   }
 }

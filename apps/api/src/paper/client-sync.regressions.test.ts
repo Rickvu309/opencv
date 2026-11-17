@@ -1,4 +1,4 @@
-import { registerRegressions } from "./client-sync-property.js"
+import { registerRegressions } from "./client-sync-property.test-support.js"
 
 registerRegressions([
   {
