@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/writing-page.test.tsx",
+    "because": "The page keeps one Coach line and reviews it in Coach, so the old in-page Before, After and Approve checks no longer describe the screen.",
+    "replacedBy": "apps/web/src/features/paper/writing-proposal-notice.test.tsx",
+    "proof": {
+      "fork": "a887677ee976df2a519b5804ad24a48ed431fc11",
+      "replacedByBlob": "c3fb34ae189ce8b81d6b23cb2e13bd04907d3f25",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 14
+  }
+]
