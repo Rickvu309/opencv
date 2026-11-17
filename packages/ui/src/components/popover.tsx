@@ -17,6 +17,7 @@ type Interaction = "mouse" | "touch" | "pen" | "keyboard"
 
 const FocusContext = React.createContext<{
   trigger: React.RefObject<HTMLButtonElement | null>
+  setTrigger: React.RefCallback<HTMLButtonElement>
   interaction: React.RefObject<Interaction>
 } | null>(null)
 
@@ -26,8 +27,13 @@ function Popover({
 }: React.ComponentProps<typeof PopoverRoot>) {
   const triggerRef = React.useRef<HTMLButtonElement>(null)
   const interactionRef = React.useRef<Interaction>("keyboard")
+  const setTrigger = React.useCallback((element: HTMLButtonElement | null) => {
+    triggerRef.current = element
+  }, [])
   return (
-    <FocusContext value={{ trigger: triggerRef, interaction: interactionRef }}>
+    <FocusContext
+      value={{ trigger: triggerRef, setTrigger, interaction: interactionRef }}
+    >
       <PopoverRoot
         {...props}
         onOpenChange={(open, details) => {
@@ -78,7 +84,7 @@ function PopoverTrigger({
         />
       )}
       ref={(element) => {
-        if (focus) focus.trigger.current = element
+        focus?.setTrigger(element)
         if (typeof ref === "function") return ref(element)
         if (ref) ref.current = element
       }}
