@@ -30,6 +30,7 @@ test("test folders, fixtures, suites and helpers fire even when imported transit
     "test/seed-sessions.ts",
     "connections/test/projection.ts",
     "auth.fixtures.ts",
+    "coach/anthropic-fixture.ts",
     "paper/package-fixtures.ts",
     "coach/worker-fixture.test-support.ts",
     "paper/photo-lifetime.support.ts",
