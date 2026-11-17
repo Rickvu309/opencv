@@ -62,5 +62,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/ui/owner-decision.test.mjs",
+    "because": "The owner asked on 2026-11-17 for the Coach to look like Linear's agent page and for light annotation pictures: the Coach composers follow the pen frames instead of the Grok decisions, and the annotation canvas is light grey",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
   }
 ]
