@@ -70,6 +70,10 @@ export default defineConfig({
         __dirname,
         "../../packages/paper-crdt/src/editor.ts"
       ),
+      "@workspace/domain/internal/paper-page-scale": path.resolve(
+        __dirname,
+        "../../packages/domain/src/paper-page-scale.ts"
+      ),
       "@workspace/domain/internal/paper-presentation": path.resolve(
         __dirname,
         "../../packages/domain/src/paper-presentation.ts"

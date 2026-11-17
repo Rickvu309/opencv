@@ -73,7 +73,7 @@ test("the original reflow commit fails and current Paper sources pass", () => {
       "apps/web/src/features/paper-page",
       "apps/web/src/styles",
       "packages/paper-crdt/src",
-      "packages/ui/src/lib/paper-viewport.ts",
+      "packages/domain/src/paper-page-scale.ts",
     ],
     { encoding: "utf8" }
   )
@@ -117,7 +117,7 @@ test("older Word canvas refuses responsive page geometry", () => {
 
 test("shared viewport geometry preserves the lazy editor boundary", () => {
   const canvasViewport = "apps/web/src/features/paper-page/canvas-viewport.ts"
-  const viewport = "packages/ui/src/lib/paper-viewport.ts"
+  const viewport = "packages/domain/src/paper-page-scale.ts"
   const message = /independent of the lazy letter editor/
   assert.match(
     detect(
@@ -134,7 +134,7 @@ test("shared viewport geometry preserves the lazy editor boundary", () => {
     assert.match(detect(source, viewport).join(), message)
   assert.deepEqual(
     detect(
-      'import { scalePaperPage } from "@workspace/ui/lib/paper-viewport"',
+      'import { scalePaperPage } from "@workspace/domain/internal/paper-page-scale"',
       canvasViewport
     ),
     []

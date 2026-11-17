@@ -52,7 +52,7 @@ function cssMistake(text, physical) {
 
 export function detect(text, path = "") {
   if (
-    !/^(?:apps\/web\/src\/(?:features\/paper(?:-page)?|styles)|packages\/(?:paper-crdt\/src|ui\/src\/lib))\//.test(
+    !/^(?:apps\/web\/src\/(?:features\/paper(?:-page)?|styles)|packages\/(?:paper-crdt\/src|domain\/src))\//.test(
       path
     )
   )
@@ -70,7 +70,7 @@ export function detect(text, path = "") {
   )
   const eagerCanvas =
     path === "apps/web/src/features/paper-page/canvas-viewport.ts"
-  const sharedViewport = path === "packages/ui/src/lib/paper-viewport.ts"
+  const sharedViewport = path === "packages/domain/src/paper-page-scale.ts"
   const importsEditor = (node) => {
     if (
       (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&

@@ -1,4 +1,4 @@
-import { scalePaperPage } from "@workspace/ui/lib/paper-viewport"
+import { scalePaperPage } from "@workspace/domain/internal/paper-page-scale"
 import { type RefObject, useLayoutEffect } from "react"
 
 export function useCanvasScale(
@@ -10,7 +10,20 @@ export function useCanvasScale(
     const page = pageRef.current
     const scroll = scrollRef.current
     if (!page || !scroll) return
-    const layout = () => scalePaperPage(page, 816)
+    const layout = () => {
+      const style = getComputedStyle(scroll)
+      const available =
+        scroll.clientWidth -
+        parseFloat(style.paddingLeft) -
+        parseFloat(style.paddingRight)
+      const geometry = scalePaperPage(816, page.offsetHeight, available)
+      page.style.setProperty("--cv-rich-page-scale", String(geometry.scale))
+      const viewport = page.parentElement
+      if (viewport?.hasAttribute("data-paper-page-viewport")) {
+        viewport.style.width = `${geometry.width}px`
+        viewport.style.height = `${geometry.height}px`
+      }
+    }
     layout()
     if (typeof ResizeObserver === "undefined") return
     const observer = new ResizeObserver(layout)

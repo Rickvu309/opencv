@@ -1,6 +1,29 @@
 import type { FlowDocument } from "@workspace/domain/internal/paper-presentation"
 
-import { scalePaperPage } from "@workspace/ui/lib/paper-viewport"
+import { scalePaperPage } from "@workspace/domain/internal/paper-page-scale"
+
+function scalePage(element: HTMLElement, width: number) {
+  const viewport = element.parentElement?.hasAttribute(
+    "data-paper-page-viewport"
+  )
+    ? element.parentElement
+    : null
+  const parent = viewport?.parentElement ?? element.parentElement
+  const parentStyle = parent && getComputedStyle(parent)
+  const available =
+    parent && parentStyle
+      ? parent.clientWidth -
+        parseFloat(parentStyle.paddingLeft) -
+        parseFloat(parentStyle.paddingRight)
+      : width
+  const geometry = scalePaperPage(width, element.offsetHeight, available)
+  element.style.setProperty("--cv-rich-page-scale", String(geometry.scale))
+  if (viewport) {
+    viewport.style.width = `${geometry.width}px`
+    viewport.style.height = `${geometry.height}px`
+  }
+  return geometry.scale
+}
 
 export function richPageLayout(
   element: HTMLElement,
@@ -10,7 +33,7 @@ export function richPageLayout(
   const page = document.presentation.page
   const width = page.width / 15
   const height = page.height / 15
-  const scale = scalePaperPage(element, width)
+  const scale = scalePage(element, width)
   element.style.setProperty("--cv-rich-page-width", `${width}px`)
   element.style.setProperty("--cv-rich-page-height", `${height}px`)
   element.style.setProperty("--cv-rich-page-pitch", `${height + 24}px`)
@@ -39,6 +62,6 @@ export function richPageLayout(
   element.style.minHeight = !paginated
     ? `${height}px`
     : `${pages * pitch - 24}px`
-  scalePaperPage(element, width)
+  scalePage(element, width)
   return breaks
 }

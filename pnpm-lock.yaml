@@ -286,9 +286,6 @@ importers:
       '@workspace/domain':
         specifier: workspace:*
         version: link:../domain
-      '@workspace/ui':
-        specifier: workspace:*
-        version: link:../ui
       dompurify:
         specifier: 3.4.18
         version: 3.4.18
