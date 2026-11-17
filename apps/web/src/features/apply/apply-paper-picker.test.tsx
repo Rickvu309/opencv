@@ -14,14 +14,12 @@ const id = "01900000-0000-7000-8000-000000000041"
 const cases = [
   {
     kind: "cv",
-    title: "CV",
     trigger: "Add CV",
     noun: "CVs",
     name: "PM track CV",
   },
   {
     kind: "letter",
-    title: "Cover letter",
     trigger: "Add cover letter",
     noun: "cover letters",
     name: "Cover: Associate PM intern",
@@ -39,7 +37,8 @@ describe("job Paper picker feedback", () => {
 
   it.each(cases)(
     "names the $kind picker by kind before and after linking",
-    async ({ kind, trigger, title, name }) => {
+    async ({ kind, trigger, name }) => {
+      const title = kind === "cv" ? "CV" : "Cover letter"
       await openPicker(trigger)
       expect(
         await screen.findByRole("dialog", { name: title })
