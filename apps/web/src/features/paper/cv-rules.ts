@@ -272,8 +272,9 @@ function walkShape(
 export function cvCounts(doc: Node): Counts {
   const counts: Counts = { header: 0, entry: 0, shape: 0 }
   const top = topOf(doc)
-  if (top.length === 0 || top[0]?.type !== "paperHeader") counts.header += 1
-  if (top.filter((item) => item.type === "paperHeader").length !== 1) {
+  if (top.some((item, index) => item.type === "paperHeader" && index !== 0))
+    counts.header += 1
+  if (top.filter((item) => item.type === "paperHeader").length > 1) {
     counts.header += 1
   }
   let seen = false

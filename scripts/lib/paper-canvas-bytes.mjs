@@ -420,8 +420,14 @@ function plainParagraph(paragraph) {
 function shapeRefusal(paragraphs) {
   const body = paragraphs[0]?.node.parent
   const last = paragraphs[paragraphs.length - 1]
-  if (!body || !word(body, "body") || paragraphs.length < 2 || !last)
-    return "shape"
+  if (!body || !word(body, "body") || !last) return "shape"
+  const section = body.children.at(-1)
+  if (word(section, "sectPr")) {
+    if (body.children.slice(0, -1).some((child) => !word(child, "p")))
+      return "shape"
+    return paragraphs.every(plainParagraph) ? null : "shape"
+  }
+  if (paragraphs.length < 2) return "shape"
   if (body.children.some((child) => !word(child, "p"))) return "shape"
   if (
     !isCarrier(last) ||

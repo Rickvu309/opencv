@@ -16,7 +16,7 @@ export function childrenOf(node: PaperNode): PaperNode[] | null {
 
 export function indexOf(doc: PaperDocument): Index {
   const index: Index = new Map()
-  if (doc.kind === "cv") {
+  if (doc.kind === "cv" && doc.header) {
     index.set(doc.header.id, { node: doc.header, owner: "header", list: null })
   }
   const visit = (list: PaperNode[], owner: string) => {

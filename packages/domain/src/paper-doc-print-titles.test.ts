@@ -2,9 +2,14 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
 import { blankCv, cvPrintModel, type CvPaper } from "./paper-doc/index.ts"
+import { sectionMarker } from "./paper-doc/document.ts"
+import { nodeIdSchema } from "./paper-doc/nodes.ts"
 
 function withSecondExperience(document: CvPaper, firstTitle: string): CvPaper {
-  const blocks = document.blocks.map((block) =>
+  const blocks = [
+    ...document.blocks,
+    sectionMarker("experience", nodeIdSchema.parse("experience-section")),
+  ].map((block) =>
     block.type === "section" && block.kind === "experience"
       ? { ...block, title: firstTitle }
       : block

@@ -190,7 +190,7 @@ export async function play(steps: Step[], twoTabs: boolean) {
       const key = pick(HEADER_KEYS, s.a)!
       const value = token("f")
       const next = clone(doc)
-      if (next.kind !== "cv") continue
+      if (next.kind !== "cv" || !next.header) continue
       next.header = { ...next.header, [key]: value }
       write(next)
       note(
@@ -537,7 +537,9 @@ export function verdict(out: Awaited<ReturnType<typeof play>>) {
   const parsed = paperDocumentSchema.safeParse(out.final.doc)
   expect(parsed.success, parsed.success ? "" : parsed.error.message).toBe(true)
   const ids = [
-    ...(out.final.doc.kind === "cv" ? [out.final.doc.header.id] : []),
+    ...(out.final.doc.kind === "cv" && out.final.doc.header
+      ? [out.final.doc.header.id]
+      : []),
     ...flat(out.final.doc.blocks).map((block) => block.id),
   ]
   expect(new Set(ids).size).toBe(ids.length)

@@ -113,7 +113,8 @@ export function paperOutline(
 ): PaperOutline {
   const selected = new Set(options.selected ?? [])
   const groups: Group[] = []
-  if (doc.kind === "cv") groups.push(groupOf(doc.header, selected))
+  if (doc.kind === "cv" && doc.header)
+    groups.push(groupOf(doc.header, selected))
   for (const block of doc.blocks) groups.push(groupOf(block, selected))
 
   const footerRoom = 80

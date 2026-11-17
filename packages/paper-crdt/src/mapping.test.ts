@@ -46,13 +46,14 @@ describe("editor block mapping", () => {
     })
   })
 
-  it("refuses a CV without its header first", () => {
-    const blocks = toEditorBlocks(v3Fixtures.richCv as PaperDocument).slice(1)
+  it("accepts a CV without a header", () => {
+    const fixture = v3Fixtures.richCv as PaperDocument
+    const blocks = toEditorBlocks(fixture).slice(1)
     const result = fromEditorBlocks("cv", blocks)
-    expect(result).toEqual({
-      ok: false,
-      reason: "A CV starts with its header block",
-    })
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.document).not.toHaveProperty("header")
+    expect(toEditorBlocks(result.document)).toEqual(blocks)
   })
 
   it("refuses a child block under a paragraph", () => {

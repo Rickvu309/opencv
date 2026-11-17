@@ -87,7 +87,10 @@ function ids(doc: Node) {
 
 it("refuses a document the server repair would rewrite, coerces a paste, and moves a section with its group", () => {
   const base = [header, section, experience]
-  expect(filter(base, [section, experience])).toBe(false)
+  expect(filter(base, [{ id: "blank", type: "paragraph", content: [] }])).toBe(
+    true
+  )
+  expect(filter(base, [section, experience])).toBe(true)
   expect(filter(base, [section, header, experience])).toBe(false)
   expect(
     filter(base, [header, { ...experience, id: "e9" }, section, experience])
@@ -105,7 +108,7 @@ it("refuses a document the server repair would rewrite, coerces a paste, and mov
       [header, section, item("a", [item("b", [item("c", [item("d")])])])]
     )
   ).toBe(false)
-  expect(filter(base, [section])).toBe(false)
+  expect(filter(base, [section])).toBe(true)
   expect(filter(base, [section], true)).toBe(true)
 
   const state = EditorState.create({

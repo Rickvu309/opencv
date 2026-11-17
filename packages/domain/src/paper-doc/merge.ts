@@ -132,6 +132,12 @@ function mergeCv(current: CvPaper, sent: CvPaper): CvPaper {
       blocks.push(...(mergeItems(items, run) as ListBlock[]))
     }
   }
+  if (!sent.header) {
+    const { header, ...body } = current
+    void header
+    return { ...body, blocks }
+  }
+  if (!current.header) return { ...current, header: sent.header, blocks }
   const { photo: _photo, ...kept } = current.header
   void _photo
   return {

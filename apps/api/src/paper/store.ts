@@ -6,6 +6,7 @@ import {
   IMPORT_PAGES_MESSAGE,
   blankCv,
   blankLetter,
+  paperNodeSpecs,
   paperDocumentSchema,
   legacyPaperDocumentSchema,
   paperPhotoFileId,
@@ -103,7 +104,7 @@ function blankPaper(kind: PaperStoredKind): PaperDocument {
 function sharedPhotoRef(document: unknown): string | null {
   const parsed = paperDocumentSchema.safeParse(document)
   if (!parsed.success || parsed.data.kind !== "cv") return null
-  return parsed.data.header.photo ?? null
+  return parsed.data.header?.photo ?? null
 }
 
 export async function listPapers(
@@ -383,13 +384,17 @@ function withPhotoRef(
     )
   }
   if (!ref) {
+    if (!document.header) return document
     const { photo: _removed, ...header } = document.header
     void _removed
     return { ...document, header }
   }
   return {
     ...document,
-    header: { ...document.header, photo: ref },
+    header: {
+      ...(document.header ?? paperNodeSpecs.header.blank()),
+      photo: ref,
+    },
   }
 }
 

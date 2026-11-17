@@ -81,7 +81,7 @@ describe("paper.canvas", () => {
       incarnation,
       revision,
     })
-    expect(opened.read().regions).toHaveLength(2)
+    expect(opened.read().regions).toHaveLength(1)
     const side = opened.sidecar()
     const applied = loaded.applyCanvasBytes(
       minted,
@@ -110,7 +110,7 @@ describe("paper.canvas", () => {
         paragraphs: applied.sidecar.paragraphs,
       }
     )
-    expect(again.sidecar().paragraphs).toHaveLength(3)
+    expect(again.sidecar().paragraphs).toHaveLength(2)
     expect(again.read().regions.length).toBeGreaterThan(0)
   })
 })

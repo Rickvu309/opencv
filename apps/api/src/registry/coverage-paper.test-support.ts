@@ -1,3 +1,4 @@
+import { paperNodeSpecs } from "@workspace/domain"
 import { randomUUID } from "node:crypto"
 
 import { parseUserId, personActor, type PaperDocument } from "@workspace/domain"
@@ -122,7 +123,10 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         }
         const typed = {
           ...materialized.document,
-          header: { ...materialized.document.header, name: "Synced name" },
+          header: {
+            ...(materialized.document.header ?? paperNodeSpecs.header.blank()),
+            name: "Synced name",
+          },
         }
         const update = writeDocument(client, typed, "person")
         syncPush = Buffer.from(update ?? new Uint8Array()).toString("base64")

@@ -199,12 +199,17 @@ describe("public Paper projection", () => {
         clashes: [
           {
             id: "private-alternative",
-            node: paper.kind === "cv" ? paper.header.id : "body",
+            node:
+              paper.kind === "cv"
+                ? (paper.header?.id ?? paper.blocks[0]!.id)
+                : "body",
             offer: {
               kind: "fields",
               fields:
                 paper.kind === "cv"
-                  ? { name: privateAlternative }
+                  ? paper.header
+                    ? { name: privateAlternative }
+                    : { content: privateAlternative }
                   : { content: privateAlternative },
             },
             offeredBy: "coach",

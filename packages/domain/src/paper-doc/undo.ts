@@ -141,7 +141,8 @@ function stripCreated(
     const propsOnly = Object.keys(now.text).length === 0
     if (kids.length > 0 && propsOnly) refuse(YOURS)
     if (!remaining && kids.length === 0) {
-      entry.list!.splice(entry.list!.indexOf(entry.node), 1)
+      if (entry.owner === "header" && work.kind === "cv") delete work.header
+      else entry.list!.splice(entry.list!.indexOf(entry.node), 1)
     }
   }
 }

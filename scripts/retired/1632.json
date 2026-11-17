@@ -1,0 +1,60 @@
+[
+  {
+    "subject": "apps/api/src/paper/package-canvas.test.ts",
+    "because": "owner correction 2026-11-17: one empty paragraph replaces the carrier-paragraph promise. New assertions pass locally; the canonical blank detector fires on main and the introducing commit. The automated replacement flip timed out waiting for the shared lock, so no machine flip proof is claimed.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "packages/paper-crdt/src/mapping.test.ts",
+    "because": "owner correction 2026-11-17: headerless CVs must round-trip. Replacement assertions pass locally and the pure blank detector fires on main. Automated replacement flip timed out on the shared lock; no machine flip proof is claimed.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/package-canvas-write.formal.test.ts",
+    "because": "owner correction 2026-11-17: a blank page has one empty paragraph; retain first-text saving, the receipt, stale refusal and Undo without a starter carrier.",
+    "replacedBy": "apps/api/src/paper/package-canvas-write.formal.test.ts",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "dca008bb98b5b8cdc18ae98119b69cd971fc9d03",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/package-canvas.formal.test.ts",
+    "because": "owner correction 2026-11-17: replace the extra starter carrier and applied color with one unformatted paragraph; retain split, merge, delete, IDs, page properties and replay receipts.",
+    "replacedBy": "apps/api/src/paper/package-canvas.formal.test.ts",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "904cbaa1c7c6a94a162f55b51dc63168ea83f4d4",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 10
+  },
+  {
+    "subject": "apps/web/src/features/paper/cv-rules.test.ts",
+    "because": "owner correction 2026-11-17: an empty canvas and headerless CV are valid; retain misplaced-header, orphan-entry, child-depth, paste and section-move checks.",
+    "replacedBy": "apps/web/src/features/paper/cv-rules.test.ts",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "e906b56e4ab049522864d5ddee4653744425a5ef",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  }
+]

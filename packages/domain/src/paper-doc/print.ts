@@ -410,12 +410,12 @@ export function cvPrintModel(
   const { header } = document
   const preview: CvPrintModel = {
     templateId,
-    name: header.name,
+    name: header?.name ?? "",
     headline: summary.headline,
     contact: {
-      email: header.email,
-      phone: header.phone,
-      location: header.city,
+      email: header?.email ?? "",
+      phone: header?.phone ?? "",
+      location: header?.city ?? "",
     },
     summary: summary.summary,
     experience: readExperience(fragmentsFor("experience")),
@@ -426,8 +426,8 @@ export function cvPrintModel(
     activities: lineList(fragmentsFor("activities")),
     awards: lineList(fragmentsFor("awards")),
   }
-  if (header.linkedin) preview.contact.linkedin = header.linkedin
-  if (header.photo) preview.photoUrl = header.photo
+  if (header?.linkedin) preview.contact.linkedin = header.linkedin
+  if (header?.photo) preview.photoUrl = header.photo
   const sectionTitles = customSectionTitles(document)
   if (sectionTitles) preview.sectionTitles = sectionTitles
   return preview
@@ -506,7 +506,7 @@ export function letterPrintModel(document: LetterPaper): LetterPrintModel {
 }
 
 function nodesOf(document: CvPaper | LetterPaper): PaperNode[] {
-  return document.kind === "cv"
+  return document.kind === "cv" && document.header
     ? [document.header, ...document.blocks]
     : [...document.blocks]
 }

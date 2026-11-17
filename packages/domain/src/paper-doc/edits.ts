@@ -12,6 +12,7 @@ import {
 import {
   fieldSetMisfit,
   HEADER_NODE_ID,
+  paperNodeSpecs,
   type CvPaperBlock,
   type ListItem,
   type NodeFieldSet,
@@ -368,6 +369,15 @@ function setHeaderEdit(
   edit: Extract<PaperEdit, { op: "setHeader" }>
 ): PaperEditOutcome {
   if (work.kind !== "cv") return invalid("A letter has no header")
+  if (!context.base.has(HEADER_NODE_ID)) {
+    if (context.live.has(HEADER_NODE_ID))
+      return stale("Header changed since you read the document")
+    const entries = setEntries(edit.fields)
+    if (entries.length === 0) return invalid("There is nothing to set")
+    work.header ??= paperNodeSpecs.header.blank()
+    Object.assign(work.header, Object.fromEntries(entries))
+    return { status: "applied" }
+  }
   const found = find(work, context, HEADER_NODE_ID)
   if (isOutcome(found)) return found
   return assignFields(found, edit.fields, "Header")

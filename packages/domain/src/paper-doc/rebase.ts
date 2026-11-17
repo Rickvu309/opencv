@@ -13,8 +13,9 @@ import {
   type Mut,
 } from "./rebase-nodes.js"
 import { repairPaper } from "./repair.js"
+import { paperNodeSpecs, type CvHeader } from "./nodes.js"
 import type { TextRun } from "./rich-text.js"
-import { childrenOf, cloned, indexOf, type Index } from "./tree.js"
+import { canonical, childrenOf, cloned, indexOf, type Index } from "./tree.js"
 import {
   containsRun,
   graftRun,
@@ -556,17 +557,43 @@ export function rebasePending(
   }
 }
 
+function mergeHeader({
+  base,
+  ours,
+  theirs,
+}: {
+  base: CvHeader | undefined
+  ours: CvHeader | undefined
+  theirs: CvHeader | undefined
+}): CvHeader | undefined {
+  if (!ours || !theirs) {
+    const remaining = ours ?? theirs
+    return remaining && canonical(remaining) !== canonical(base)
+      ? cloned(remaining)
+      : undefined
+  }
+  const before = base ?? paperNodeSpecs.header.blank()
+  return paperNodeSpecs.header.schema.parse({
+    id: ours.id,
+    ...mergedFields(before, ours, theirs),
+  })
+}
+
 function withMergedHeader(target: PaperDocument, input: RebaseInput) {
-  if (target.kind !== "cv" || input.ours.kind !== "cv") return
-  const base = input.base.kind === "cv" ? input.base.header : undefined
-  const header = mergedFields(
-    base as unknown as Mut | undefined,
-    input.ours.header as unknown as Mut,
-    input.theirs.kind === "cv"
-      ? (input.theirs.header as unknown as Mut)
-      : (input.ours.header as unknown as Mut)
+  if (
+    target.kind !== "cv" ||
+    input.base.kind !== "cv" ||
+    input.ours.kind !== "cv" ||
+    input.theirs.kind !== "cv"
   )
-  target.header = { ...target.header, ...header } as never
+    return
+  const header = mergeHeader({
+    base: input.base.header,
+    ours: input.ours.header,
+    theirs: input.theirs.header,
+  })
+  if (header) target.header = header
+  else delete target.header
 }
 
 function merged(input: RebaseInput): PaperDocument {

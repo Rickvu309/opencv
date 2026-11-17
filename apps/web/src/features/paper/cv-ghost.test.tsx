@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { blankCv } from "@workspace/domain"
+import { structuredCv } from "@/test/paper-structured-cv.ts"
 import { afterEach, beforeAll, expect, it } from "vitest"
 
 import { installEditorPolyfills } from "@/test/paper-engine-kit.tsx"
@@ -20,7 +20,7 @@ afterEach(() => {
 })
 
 async function mount() {
-  const client = seededCvClient(blankCv())
+  const client = seededCvClient(structuredCv())
   act(() => {
     render(
       <PaperEditorEngine

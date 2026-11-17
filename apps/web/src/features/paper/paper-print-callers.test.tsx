@@ -1,6 +1,5 @@
 import { afterEach, beforeAll, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
-import { blankCv } from "@workspace/domain"
 import type { PaperClient } from "@workspace/paper-crdt"
 import userEvent from "@testing-library/user-event"
 import { toast } from "sonner"
@@ -15,6 +14,7 @@ import {
   pages,
 } from "./paper-editor.fixtures.tsx"
 import { seededCvClient } from "@/test/paper-fixture.ts"
+import { structuredCv } from "@/test/paper-structured-cv.ts"
 import { installEditorPolyfills } from "@/test/paper-engine-kit.tsx"
 
 const fixture = vi.hoisted(() => ({ client: null as PaperClient | null }))
@@ -100,7 +100,7 @@ it("library prints once after two Download PDF requests during readiness", async
 })
 
 it("CV editor name change restarts readiness without clearing the print request", async () => {
-  const base = blankCv()
+  const base = structuredCv()
   fixture.client = seededCvClient({
     ...base,
     header: { ...base.header, name: "Ada Lovelace" },
