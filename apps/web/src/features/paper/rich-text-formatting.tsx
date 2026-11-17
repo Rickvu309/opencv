@@ -83,6 +83,7 @@ export function RichPaperTextFormatting({
         formatting={formatting}
         disabled={disabled}
         choose={inline}
+        onAction={() => setOpen(false)}
       />
       <RichTextEmphasisGroup
         editor={editor}

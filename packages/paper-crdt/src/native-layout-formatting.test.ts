@@ -1,105 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { describe, expect, it } from "vitest"
 import { TextSelection } from "@tiptap/pm/state"
 import { undo, redo } from "y-prosemirror"
 import * as Y from "yjs"
-import { nativeProvenance, richPaperDocumentSchema } from "@workspace/domain"
-import { openRichPaperClient, type PaperClient } from "./client.js"
-import type { RichPaperDocument } from "@workspace/domain"
-import { seedStoredYDoc } from "./stored-document.js"
+import { nativeProvenance } from "@workspace/domain"
+import { openRichPaperClient } from "./client.js"
 import { recoverRichPaperClient } from "./rich-recovery.js"
-import { borrowFlowDocument } from "./native-layout-flow.js"
-import { mountPrivateFlow } from "./native-layout-flow-mount.js"
 import { mountRichPaperEditor } from "./editor.js"
-import { storedFlowFixture } from "./test/flow-fixture.js"
-import { inlineCss, paragraphCss } from "./native-formatting-render-values.js"
-import {
-  inlineSchema,
-  paragraphSchema,
-} from "@workspace/domain/internal/paper-presentation"
-
-const cleanups: (() => void)[] = []
-beforeEach(() => {
-  vi.stubGlobal(
-    "ResizeObserver",
-    class {
-      observe() {}
-      disconnect() {}
-    }
-  )
-  const fonts = Object.getOwnPropertyDescriptor(document, "fonts")
-  Object.defineProperty(document, "fonts", {
-    configurable: true,
-    value: { ready: Promise.resolve() },
-  })
-  cleanups.push(() => {
-    if (fonts) Object.defineProperty(document, "fonts", fonts)
-    else Reflect.deleteProperty(document, "fonts")
-  })
-})
-afterEach(() => {
-  for (const cleanup of cleanups.reverse()) cleanup()
-  cleanups.length = 0
-  vi.restoreAllMocks()
-  vi.unstubAllGlobals()
-})
-function setup(kind: "cv" | "letter") {
-  const input = storedFlowFixture(kind)
-  const document = richPaperDocumentSchema.parse({
-    ...input,
-    flow: {
-      ...input.flow,
-      children: input.flow.children.map((section) => ({
-        ...section,
-        children: section.children.filter(
-          (node) => node.type === "paragraph" || node.type === "header"
-        ),
-      })),
-    },
-  })
-  const provenance = nativeProvenance(document)
-  const client = openRichPaperClient(
-    {
-      epoch: 1,
-      revision: 0,
-      provenance,
-      server: seedStoredYDoc(document),
-      pending: Uint8Array.of(0, 0),
-    },
-    { provenance }
-  )
-  cleanups.push(() => client.destroy())
-  const host = globalThis.document.createElement("div")
-  globalThis.document.body.append(host)
-  cleanups.push(() => host.remove())
-  const lease = borrowFlowDocument(client.ydoc, kind)
-  cleanups.push(() => lease.release())
-  const mounted = mountPrivateFlow(lease.binding, host)
-  cleanups.push(() => mounted.unmount())
-  const view = mounted.editor.prosemirrorView
-  function select(from = "intro", to = from, start = 0, end?: number) {
-    mounted.editor.setTextCursorPosition(from, "start")
-    const anchor = view.state.selection.from + start
-    mounted.editor.setTextCursorPosition(to, "end")
-    view.dispatch(
-      view.state.tr.setSelection(
-        TextSelection.create(
-          view.state.doc,
-          anchor,
-          end === undefined ? view.state.selection.to : anchor + end
-        )
-      )
-    )
-  }
-  select()
-  return { client, mounted, view, select, host }
-}
-function paragraph(client: PaperClient<RichPaperDocument>, id = "intro") {
-  const result = client
-    .document()
-    ?.flow.children[0]?.children.find((node) => node.id === id)
-  if (result?.type !== "paragraph") throw new Error("Missing paragraph")
-  return result
-}
+import { cleanups, paragraph, setup } from "./native-layout-test-setup.js"
 
 describe("rich Paper selection formatting", () => {
   it.each(["cv", "letter"] as const)(
@@ -472,32 +379,3 @@ describe("exact rich Paper typography", () => {
     }
   })
 })
-
-it.each([20, 3200])(
-  "renders an at-least %s twip minimum on mixed-size runs",
-  (minimum) => {
-    const { mounted, select, host } = setup("letter")
-    select("intro", "intro", 0, 4)
-    mounted.formatInline({ size: 480 })
-    select("intro", "intro", 4, 4)
-    mounted.formatInline({ size: 220 })
-    mounted.formatParagraph({
-      lineSpacing: { kind: "atleast", value: minimum },
-    })
-    const runs = [
-      ...host.querySelectorAll<HTMLElement>(
-        '[data-id="intro"] [data-paper-resolved]'
-      ),
-    ]
-    expect(runs.some((run) => run.style.fontSize === "24pt")).toBe(true)
-    expect(runs.some((run) => run.style.fontSize === "11pt")).toBe(true)
-    const { lineSpacing } = paragraphSchema.parse({
-      lineSpacing: { kind: "atleast", value: minimum },
-    })
-    const sizes = [220, 480].map((size) => inlineSchema.parse({ size }).size)
-    const lineHeight = `line-height:max(${minimum / 20}pt,1.2em)`
-    expect(paragraphCss({ lineSpacing })).toContain(lineHeight)
-    for (const size of sizes)
-      expect(inlineCss({ size }, lineSpacing)).toContain(lineHeight)
-  }
-)

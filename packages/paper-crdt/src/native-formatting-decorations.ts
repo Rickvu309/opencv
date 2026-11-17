@@ -83,7 +83,16 @@ export function formattingDecorations(
           ...list,
           style:
             paragraphCss(
-              effectiveParagraph(presentation, canonicalProps(node.attrs))
+              effectiveParagraph(presentation, canonicalProps(node.attrs)),
+              effectiveInline(
+                presentation,
+                {},
+                effectiveParagraphStyle(
+                  node.type.name,
+                  node.attrs.paragraphStyle,
+                  node.attrs.level
+                )
+              )
             ) +
             ";" +
             (list.style ?? ""),

@@ -35,9 +35,25 @@ export const inlineSchema = z
   })
   .strict()
 export type InlinePresentation = z.infer<typeof inlineSchema>
+function exactWordUnits(amount: number): number | null {
+  const rounded = Math.round(amount)
+  return Number.isFinite(amount) &&
+    Math.abs(amount - rounded) <= Number.EPSILON * Math.max(1, Math.abs(amount))
+    ? rounded
+    : null
+}
 const lineSpacingSchema = z.discriminatedUnion("kind", [
   z
-    .object({ kind: z.literal("multiple"), value: z.number().min(0.5).max(10) })
+    .object({
+      kind: z.literal("multiple"),
+      value: z
+        .number()
+        .min(0.5)
+        .max(10)
+        .refine((v) => exactWordUnits(v * 240) !== null, {
+          message: "Word line spacing must use exact Word units",
+        }),
+    })
     .strict(),
   z
     .object({
@@ -55,12 +71,12 @@ const lineSpacingSchema = z.discriminatedUnion("kind", [
 export function lineSpacingWordUnits(
   line: z.input<typeof lineSpacingSchema>
 ): Result<number> {
-  const amount = line.kind === "multiple" ? line.value * 240 : line.value
-  const rounded = Math.round(amount)
-  return Number.isFinite(amount) &&
-    Math.abs(amount - rounded) <= Number.EPSILON * Math.max(1, Math.abs(amount))
-    ? ok(rounded)
-    : refuse("Word line spacing must use exact Word units")
+  const units = exactWordUnits(
+    line.kind === "multiple" ? line.value * 240 : line.value
+  )
+  return units === null
+    ? refuse("Word line spacing must use exact Word units")
+    : ok(units)
 }
 export const paragraphSchema = z
   .object({

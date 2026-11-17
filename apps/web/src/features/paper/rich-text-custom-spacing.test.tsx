@@ -163,7 +163,7 @@ it("applies exact size and spacing, restores them with Undo/Redo, and clears eve
     ["Space after (pt)", "4.25"],
     ["Line spacing (lines)", "1.25"],
   ]) {
-    const input = within(dialog).getByRole("spinbutton", { name })
+    const input = within(dialog).getByRole("textbox", { name })
     await user.clear(input)
     await user.type(input, value!)
   }
@@ -211,11 +211,11 @@ it("shows mixed exact fields and leaves untouched values unchanged", async () =>
   await user.click(screen.getByRole("button", { name: "Size and spacing" }))
   const dialog = screen.getByRole("dialog", { name: "Size and spacing" })
   expect(
-    within(dialog).getByRole("spinbutton", { name: "Text size (pt)" })
+    within(dialog).getByRole("textbox", { name: "Text size (pt)" })
   ).toHaveAttribute("placeholder", "Mixed")
   expect(
-    within(dialog).getByRole("spinbutton", { name: "Text size (pt)" })
-  ).toHaveValue(null)
+    within(dialog).getByRole("textbox", { name: "Text size (pt)" })
+  ).toHaveValue("")
   await user.click(within(dialog).getByRole("button", { name: "Apply" }))
   expect(client.document()).toEqual(before)
 })
@@ -225,7 +225,7 @@ async function fillNumber(
   name: string,
   value: string
 ) {
-  const input = screen.getByRole("spinbutton", { name, exact: true })
+  const input = screen.getByRole("textbox", { name, exact: true })
   await user.clear(input)
   await user.type(input, value)
 }
@@ -323,7 +323,7 @@ it("explains an unrepresentable multiple before changing the document", async ()
 it("types and steps the toolbar size and retains the font and color pickers' typing marks", async () => {
   width = 2000
   const user = userEvent.setup()
-  const { editor } = setup()
+  const { editor, client } = setup()
   act(() => editor.focus())
   await fillNumber(user, "Font size (pt)", "10.5")
   await user.keyboard("{Enter}")
@@ -340,14 +340,136 @@ it("types and steps the toolbar size and retains the font and color pickers' typ
     screen.getByRole("button", { name: "Text color", exact: true })
   )
   await user.click(screen.getByRole("button", { name: "Navy", exact: true }))
-  act(() => editor.restoreSelection(editor.captureSelection()))
   const content = screen.getByRole("textbox", { name: "Document content" })
   act(() => editor.focus())
   await user.type(content, "Styled", { skipClick: true })
   expect(content).toHaveTextContent("Styled")
-  expect(editor.activeFormatting()).toMatchObject({
-    size: "10.5",
+  const inserted = JSON.stringify(client.document())
+  expect(inserted).toMatch(/\{[^{}]*"text":"Styled"[^{}]*\}/)
+  const run = JSON.parse(
+    /\{[^{}]*"text":"Styled"[^{}]*\}/.exec(inserted)![0]
+  ) as Record<string, unknown>
+  expect(run).toMatchObject({
+    size: 210,
     fontId: "liberation-mono",
     color: "#1E3A8A",
   })
+})
+
+function sizesOf(client: ReturnType<typeof setup>["client"]) {
+  return [...JSON.stringify(client.document()).matchAll(/"size":(\d+)/g)].map(
+    (match) => Number(match[1])
+  )
+}
+
+it("steps each run of a mixed selection from its own size in one Undo", async () => {
+  width = 2000
+  const user = userEvent.setup()
+  const { editor, client } = setup()
+  const start = editor.captureSelection()!.plain.anchor
+  const select = (from: number, length: number) =>
+    editor.restoreSelection({
+      plain: { anchor: start + from, head: start + from + length },
+      focused: true,
+    })
+  act(() => {
+    select(0, 4)
+    editor.formatInline({ size: 200 })
+    select(4, 4)
+    editor.formatInline({ size: 480 })
+    select(8, 3)
+    editor.formatInline({ size: 200 })
+    select(0, 11)
+  })
+  const before = client.document()
+  expect(sizesOf(client)).toEqual(expect.arrayContaining([200, 480]))
+  expect(screen.getByRole("textbox", { name: "Font size (pt)" })).toHaveValue(
+    ""
+  )
+  await user.click(screen.getByRole("button", { name: "Increase font size" }))
+  expect(sizesOf(client)).toEqual(expect.arrayContaining([210, 490]))
+  expect(sizesOf(client)).not.toContain(230)
+  expect(sizesOf(client)).not.toContain(200)
+  await user.click(screen.getByRole("button", { name: "Decrease font size" }))
+  await user.click(screen.getByRole("button", { name: "Decrease font size" }))
+  expect(sizesOf(client)).toEqual(expect.arrayContaining([190, 470]))
+  act(() => editor.undo())
+  act(() => editor.undo())
+  act(() => editor.undo())
+  expect(client.document()).toEqual(before)
+})
+
+it.each([
+  ["10,5", "10.5"],
+  ["10.5", "10.5"],
+])(
+  "reads %s in the toolbar size box as a decimal, never as thousands",
+  async (typed, size) => {
+    width = 2000
+    const user = userEvent.setup()
+    const { editor } = setup()
+    act(() => editor.focus())
+    await fillNumber(user, "Font size (pt)", typed)
+    await user.keyboard("{Enter}")
+    expect(editor.activeFormatting()?.size).toBe(size)
+  }
+)
+
+it("refuses an unreadable toolbar size with a message and keeps the document", async () => {
+  width = 2000
+  const user = userEvent.setup()
+  const { editor, client } = setup()
+  act(() => editor.focus())
+  const before = client.document()
+  await fillNumber(user, "Font size (pt)", "10,25")
+  await user.keyboard("{Enter}")
+  const input = screen.getByRole("textbox", { name: "Font size (pt)" })
+  expect(input).toBeInvalid()
+  expect((input as HTMLInputElement).validationMessage).toMatch(/half points/)
+  expect(client.document()).toEqual(before)
+})
+
+it("reads decimal commas in the dialog as decimals", async () => {
+  width = 2000
+  const user = userEvent.setup()
+  const { editor } = setup()
+  act(() => editor.focus())
+  await user.click(screen.getByRole("button", { name: "Size and spacing" }))
+  await fillNumber(user, "Text size (pt)", "10,5")
+  await fillNumber(user, "Space before (pt)", "6,15")
+  await fillNumber(user, "Line spacing (lines)", "2,05")
+  await user.click(screen.getByRole("button", { name: "Apply", exact: true }))
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+  expect(editor.activeFormatting()).toMatchObject({
+    size: "10.5",
+    before: "6.15",
+    lineValue: "2.05",
+  })
+})
+
+it("closes More after a size is applied from it on a phone", async () => {
+  width = 390
+  const user = userEvent.setup()
+  const { editor } = setup()
+  act(() => editor.focus())
+  await user.click(screen.getByRole("button", { name: "More formatting" }))
+  const more = screen.getByRole("dialog", { name: "More formatting" })
+  const input = within(more).getByRole("textbox", { name: "Font size (pt)" })
+  await user.clear(input)
+  await user.type(input, "13{Enter}")
+  expect(editor.activeFormatting()?.size).toBe("13")
+  expect(
+    screen.queryByRole("dialog", { name: "More formatting" })
+  ).not.toBeInTheDocument()
+  await user.click(screen.getByRole("button", { name: "More formatting" }))
+  await user.click(
+    within(screen.getByRole("dialog", { name: "More formatting" })).getByRole(
+      "button",
+      { name: "Increase font size" }
+    )
+  )
+  expect(editor.activeFormatting()?.size).toBe("13.5")
+  expect(
+    screen.queryByRole("dialog", { name: "More formatting" })
+  ).not.toBeInTheDocument()
 })

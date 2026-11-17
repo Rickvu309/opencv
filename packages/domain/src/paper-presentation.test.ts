@@ -70,9 +70,17 @@ describe("private presentation values", () => {
       { alignment: "middle" },
       { before: -1 },
       { lineSpacing: { kind: "exact", value: 0 } },
+      { lineSpacing: { kind: "multiple", value: 1.001 } },
+      { lineSpacing: { kind: "multiple", value: 1.0001 } },
       { indent: { kind: "hanging", value: 2, extra: true } },
     ])
       assert.equal(parse(paragraphSchema, input).kind, "refused")
+    for (const value of [0.5, 1, 1.125, 1.15, 1.2, 1.25, 1.5, 2.05, 4.15, 10])
+      assert.equal(
+        parse(paragraphSchema, { lineSpacing: { kind: "multiple", value } })
+          .kind,
+        "ok"
+      )
     for (const input of [
       { ...page, top: 16838 },
       { ...page, orientation: "landscape" },

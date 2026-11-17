@@ -1,5 +1,7 @@
+import { detectSizeSpacing } from "./paper-size-spacing.mjs"
+
 export function detectTextFormatting(text, path) {
-  const hits = []
+  const hits = detectSizeSpacing(text, path)
   if (
     path === "packages/ui/src/components/select.tsx" &&
     /select-value.*line-clamp-1.*select-value.*:flex/.test(text)

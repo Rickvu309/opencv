@@ -43,6 +43,37 @@ function selectedParagraphs(view: EditorView) {
   return paragraphs
 }
 
+function runPresentation(
+  presentation: ReturnType<typeof readPresentationMeta>,
+  marks: readonly Mark[],
+  node: Node
+): InlinePresentation {
+  const direct = canonicalStyles(
+    Object.fromEntries(
+      marks
+        .filter((mark) => mark.type.name !== "link")
+        .map((mark) => [mark.type.name, mark.attrs.stringValue])
+    )
+  )
+  const inherited = effectiveInline(
+    presentation,
+    direct,
+    effectiveParagraphStyle(
+      node.type.name,
+      canonicalProps(node.attrs).paragraphStyle,
+      node.attrs.level
+    )
+  )
+  return {
+    ...inherited,
+    ...effectiveRunDecorations(
+      direct,
+      marks.some((mark) => mark.type.name === "link"),
+      inherited
+    ),
+  }
+}
+
 export function flowFormatting(binding: FlowBinding, view: EditorView) {
   const dispatch = (tr: typeof view.state.tr) => {
     yUndoPluginKey.getState(view.state)?.undoManager.stopCapturing()
@@ -130,35 +161,44 @@ export function flowFormatting(binding: FlowBinding, view: EditorView) {
       }
       if (tr.docChanged) dispatch(tr)
     },
+    stepTextSize(delta: 10 | -10) {
+      const presentation = readPresentationMeta(binding.doc)
+      const mark = view.state.schema.marks.size
+      if (!mark) throw new Error("Unsupported Paper formatting")
+      const { selection, doc, storedMarks } = view.state
+      const next = (marks: readonly Mark[], node: Node) => {
+        const current = runPresentation(presentation, marks, node).size ?? 220
+        const size =
+          (delta > 0 ? Math.floor(current / 10) : Math.ceil(current / 10)) *
+            10 +
+          delta
+        const encoded = engineStyles(
+          inlineSchema.parse({ size: Math.max(80, Math.min(2880, size)) })
+        )
+        return mark.create({ stringValue: Object.values(encoded)[0] })
+      }
+      const tr = view.state.tr
+      if (!selectedParagraphs(view).length) return
+      if (selection.empty)
+        tr.addStoredMark(
+          next(storedMarks ?? selection.$from.marks(), selection.$from.parent)
+        )
+      else
+        doc.nodesBetween(selection.from, selection.to, (node, pos) => {
+          if (!node.isText) return
+          tr.addMark(
+            Math.max(pos, selection.from),
+            Math.min(pos + node.nodeSize, selection.to),
+            next(node.marks, doc.resolve(pos).parent)
+          )
+        })
+      if (tr.docChanged || tr.storedMarksSet) dispatch(tr)
+    },
     activeFormatting() {
       const presentation = readPresentationMeta(binding.doc)
       const inlines: InlinePresentation[] = []
-      const readMarks = (marks: readonly Mark[], node: Node) => {
-        const direct = canonicalStyles(
-          Object.fromEntries(
-            marks
-              .filter((mark) => mark.type.name !== "link")
-              .map((mark) => [mark.type.name, mark.attrs.stringValue])
-          )
-        )
-        const inherited = effectiveInline(
-          presentation,
-          direct,
-          effectiveParagraphStyle(
-            node.type.name,
-            canonicalProps(node.attrs).paragraphStyle,
-            node.attrs.level
-          )
-        )
-        return {
-          ...inherited,
-          ...effectiveRunDecorations(
-            direct,
-            marks.some((mark) => mark.type.name === "link"),
-            inherited
-          ),
-        }
-      }
+      const readMarks = (marks: readonly Mark[], node: Node) =>
+        runPresentation(presentation, marks, node)
       const { selection, doc, storedMarks } = view.state
       if (selection.empty)
         inlines.push(
