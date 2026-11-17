@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useReducer, useRef } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { wordPageSchema, type WordPage } from "@workspace/domain"
 
@@ -44,8 +44,9 @@ function FirstPage({ page }: { page: WordPage }) {
 
 export function PaperWordPreview({ docId }: { docId: string }) {
   const host = useRef<HTMLDivElement>(null)
-  const [visible, setVisible] = useState(
-    () => typeof IntersectionObserver === "undefined"
+  const [visible, markVisible] = useReducer(
+    () => true,
+    typeof IntersectionObserver === "undefined"
   )
   const { data: session } = authClient.useSession()
   const owner = session?.user.id ?? ""
@@ -54,7 +55,7 @@ export function PaperWordPreview({ docId }: { docId: string }) {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) {
-          setVisible(true)
+          markVisible()
           observer.disconnect()
         }
       },

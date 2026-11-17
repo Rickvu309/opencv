@@ -353,7 +353,7 @@ export function PaperLetterStart({
       >
         <Search aria-hidden="true" className="size-[15px] shrink-0" />
         <Input
-          className="h-11 min-w-0 flex-1 border-0 bg-transparent p-0 text-base text-foreground shadow-none focus-visible:ring-0 md:text-[13px] dark:bg-transparent"
+          className="h-11 min-w-0 flex-1 border-0 bg-transparent p-0 text-base text-foreground shadow-none focus-visible:ring-0 md:text-[0.8125rem] dark:bg-transparent"
           aria-label="Search jobs, paste a link or attach a file"
           placeholder="Search or paste a link"
           value={query}
@@ -497,7 +497,7 @@ export function PaperLetterStart({
               <span
                 aria-hidden="true"
                 data-slot="letter-start-return"
-                className="flex size-[18px] items-center justify-center rounded-[4px] text-[11px] font-normal"
+                className="flex size-[18px] items-center justify-center rounded-[4px] text-[0.6875rem] font-normal"
               >
                 ↵
               </span>

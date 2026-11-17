@@ -2,7 +2,7 @@ import { useId, useReducer, type ReactNode } from "react"
 import { Link } from "@tanstack/react-router"
 import {
   ChevronDown,
-  ChevronRight,
+  ArrowRight,
   Copy,
   Download,
   FileText,
@@ -61,7 +61,7 @@ export function PaperProofsLink() {
           "h-11 w-fit justify-start gap-2 px-0 text-sm font-medium text-muted-foreground hover:bg-transparent hover:text-foreground md:h-8"
         )}
       >
-        <ChevronRight
+        <ArrowRight
           data-slot="paper-library-section-icon"
           className="size-[13px]"
           aria-hidden="true"
@@ -91,7 +91,6 @@ export function PaperLibrarySection({
 }) {
   const [open, toggle] = useReducer((value: boolean) => !value, true)
   const bodyId = useId()
-  const Chevron = open ? ChevronDown : ChevronRight
   return (
     <section
       aria-label={title}
@@ -110,9 +109,9 @@ export function PaperLibrarySection({
           className="h-11 justify-start gap-2 px-0 text-sm font-medium text-muted-foreground hover:bg-transparent hover:text-foreground aria-expanded:bg-transparent md:h-8"
           onClick={toggle}
         >
-          <Chevron
+          <ChevronDown
             data-slot="paper-library-section-icon"
-            className="size-[13px]"
+            className={cn("size-[13px]", !open && "-rotate-90")}
             aria-hidden="true"
           />
           {title}

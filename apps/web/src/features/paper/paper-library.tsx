@@ -398,6 +398,7 @@ export function PaperLibrary({
           className="h-11 gap-1.5 md:h-7"
           type="button"
           size="sm"
+          className="text-[0.8125rem]"
           variant={dialogOpen ? "outline" : "primary"}
           data-primary-action
           ref={newButtonRef}
