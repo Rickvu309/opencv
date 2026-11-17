@@ -124,13 +124,15 @@ export function scannerMap({ paths, runnable, textOf, importersOf }) {
     const sources = [test, ...(helpers.get(test) ?? [])]
     const listing = sources.filter((file) => LISTS_FILES.test(textOf(file)))
     if (!listing.length) continue
-    const anchors = (dir) => `${dirname(test)}/`.startsWith(`${dir}/`)
     const found = [
       ...new Set(listing.flatMap((file) => dirsIn(file, textOf(file), dirs))),
-    ].filter((dir) => !anchors(dir))
+    ]
+    const hasTarget = found.some(
+      (dir) => !`${dirname(test)}/`.startsWith(`${dir}/`)
+    )
     map.set(test, {
       patterns: [],
-      dirs: found.length ? found : [""],
+      dirs: hasTarget ? found : [...found, ""],
       how: listing[0] === test ? "own code" : `its helper ${listing[0]}`,
     })
   }
