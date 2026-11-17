@@ -1,0 +1,14 @@
+{
+  "id": "paper-header-rebase",
+  "file": "scripts/paper-header-rebase.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-blank-canvas.mjs",
+    "export": "detectHeaderRebase"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "d64d3db9",
+    "path": "packages/domain/src/paper-doc/rebase.ts"
+  },
+  "reason": "The blank-canvas header rebase silently overwrote independently added remote contact fields and resurrected untouched headers after remote removal. Route presence and field merging through the three-way header merge, with behavioral domain and CRDT regressions."
+}
