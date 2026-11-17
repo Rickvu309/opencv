@@ -9,9 +9,10 @@ import {
 } from "react"
 import { useRender } from "@base-ui/react/use-render"
 import { cn } from "cn"
-import { ChevronLeftIcon, EllipsisIcon } from "lucide-react"
+import { ChevronLeftIcon, EllipsisIcon, PanelLeft } from "lucide-react"
 
 import { Button } from "./button"
+import { Kbd } from "./kbd"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,16 @@ type ActionsMode = "inline" | "menu"
 
 const ActionsModeContext = createContext<ActionsMode>("inline")
 const TitleActionsContext = createContext(false)
+
+export type SidebarExpand = { collapsed: boolean; expand: () => void }
+
+const CLOSED_SIDEBAR: SidebarExpand = { collapsed: false, expand: () => {} }
+
+export const SidebarExpandContext = createContext<SidebarExpand>(CLOSED_SIDEBAR)
+
+export function useSidebarExpand() {
+  return useContext(SidebarExpandContext)
+}
 
 const TOUCH =
   "touch-manipulation select-none [-webkit-tap-highlight-color:transparent]"
@@ -47,6 +58,7 @@ function PageHeader({
       )}
       {...props}
     >
+      <SidebarExpandButton />
       {title === undefined ? null : <PageHeaderTitle>{title}</PageHeaderTitle>}
       {children}
     </header>
@@ -328,6 +340,23 @@ function PageHeaderAction({
   )
 }
 
+function SidebarExpandButton() {
+  const { collapsed, expand } = useSidebarExpand()
+  if (!collapsed) return null
+  return (
+    <PageHeaderAction
+      label="Expand sidebar"
+      icon={<PanelLeft aria-hidden="true" />}
+      hint={<Kbd className="ml-1.5">[</Kbd>}
+      onSelect={expand}
+      className="-ml-2 text-muted-foreground hover:text-foreground max-md:hidden"
+      render={
+        <Button type="button" variant="ghost" data-slot="sidebar-expand" />
+      }
+    />
+  )
+}
+
 function PageHeaderPrimary({
   icon,
   className,
@@ -374,4 +403,5 @@ export {
   PageHeaderActions,
   PageHeaderAction,
   PageHeaderPrimary,
+  SidebarExpandButton,
 }

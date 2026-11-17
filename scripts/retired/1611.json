@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/app-shell/app-shell.test.tsx > app shell layout > clears the dock on the Coach page and never floats the panel over it",
+    "because": "The Coach page keeps History and recent chats in the dock and hides only the Coach toggle. An empty dock was the bug.",
+    "replacedBy": "apps/web/src/features/app-shell/app-shell.coach-toggle.test.tsx",
+    "proof": {
+      "fork": "0fb283ba5896fb76d3b25f2fc2bcc7125bbd0f16",
+      "replacedByBlob": "79543e617eb036adef018e6d0144ad59024ef378",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]

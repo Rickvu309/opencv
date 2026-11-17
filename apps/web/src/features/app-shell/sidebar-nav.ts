@@ -2,6 +2,14 @@ import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { SURFACES, SURFACE_PATHS } from "@/lib/product-paths.ts"
 
 export function currentNavPath(pathname: string, targets: readonly string[]) {
+  const parented = SURFACES.filter(
+    (surface) =>
+      "navParent" in surface &&
+      (pathname === surface.path || pathname.startsWith(`${surface.path}/`))
+  ).sort((a, b) => b.path.length - a.path.length)[0]
+  if (parented && "navParent" in parented) {
+    return SURFACE_PATHS[parented.navParent]
+  }
   return (
     targets
       .filter(

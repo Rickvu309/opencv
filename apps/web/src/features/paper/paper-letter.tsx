@@ -18,6 +18,7 @@ import {
   BreadcrumbSeparator,
 } from "@workspace/ui/components/breadcrumb"
 import { Button } from "@workspace/ui/components/button"
+import { SidebarExpandButton } from "@workspace/ui/components/page-header"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -130,6 +131,7 @@ export function PaperLetterEditor({
         data-slot="letter-editor-header"
         className="flex min-h-12 min-w-0 flex-wrap items-center gap-2 border-b py-2 ps-5 pe-4 text-[13.5px] md:h-12 md:flex-nowrap md:py-0"
       >
+        <SidebarExpandButton />
         <Breadcrumb className="flex w-full min-w-0 flex-none items-center gap-2 md:w-auto md:flex-1">
           <BreadcrumbList className="flex-wrap text-[13.5px] leading-[inherit] text-inherit">
             <BreadcrumbItem>

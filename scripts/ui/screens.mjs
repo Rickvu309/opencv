@@ -567,10 +567,30 @@ export const SCREENS = [
   {
     id: "shell-sidebar-collapsed",
     route: "/jobs",
+    restPointer: "center",
     steps: [
       { click: { role: "heading", name: "Jobs, matched to you" } },
       { press: "[" },
-      { waitFor: { role: "button", name: "Expand sidebar" } },
+      { clickIfShown: { role: "button", name: "Menu" } },
+      {
+        waitFor: {
+          selector:
+            '[data-slot="sidebar-expand"], button[aria-label="Close menu"]',
+        },
+      },
+    ],
+  },
+  {
+    id: "shell-command-palette",
+    route: "/inbox",
+    steps: [
+      { waitFor: { role: "heading", name: "Inbox" } },
+      { press: "Control+k" },
+      {
+        waitFor: {
+          selector: '[role="dialog"] input[aria-label="Search"]',
+        },
+      },
     ],
   },
   {
@@ -578,8 +598,17 @@ export const SCREENS = [
     route: "/inbox",
     steps: [
       { waitFor: { role: "heading", name: "Inbox" } },
-      { click: { role: "button", name: "Menu" } },
-      { waitFor: { role: "button", name: "Close menu" } },
+      {
+        clickIfShown: {
+          selector: '[data-slot="sidebar-frame"] [data-slot="account-trigger"]',
+        },
+      },
+      { clickIfShown: { role: "button", name: "Menu" } },
+      {
+        waitFor: {
+          selector: 'button[aria-label="Close menu"], [role="menu"]',
+        },
+      },
     ],
   },
   {
@@ -660,6 +689,15 @@ const HEIGHTS = new Map([
   [1280, 800],
   [390, 844],
 ])
+
+export function restPoint(screen, viewport) {
+  if (screen?.restPointer !== "center" || !viewport?.width || !viewport?.height)
+    return { x: 0, y: 0 }
+  return {
+    x: Math.round(viewport.width / 2),
+    y: Math.round(viewport.height / 2),
+  }
+}
 
 export function viewportFor(width) {
   return { width, height: HEIGHTS.get(width) ?? Math.round((width * 10) / 16) }
