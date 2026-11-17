@@ -1,6 +1,8 @@
 import type { Node as DocumentNode } from "@tiptap/pm/model"
 import { Decoration, type EditorView } from "@tiptap/pm/view"
 import type { FlowDocument } from "@workspace/domain/internal/paper-presentation"
+import { canonicalProps } from "./native-formatting-props.js"
+import { effectiveParagraph } from "./native-formatting-render-values.js"
 import {
   measuredPageBreaks,
   type LayoutUnit,
@@ -17,8 +19,8 @@ function textLines(
   view: EditorView,
   block: MeasuredBlock,
   scale: number,
-  from: number
-) {
+  input: FlowDocument
+): LayoutUnit[] {
   const units: LayoutUnit[] = []
   const origin = view.dom.getBoundingClientRect().top
   const walker = document.createTreeWalker(block.dom, NodeFilter.SHOW_TEXT, {
@@ -31,11 +33,9 @@ function textLines(
   while (walker.nextNode()) {
     const text = walker.currentNode
     if (!(text instanceof Text) || !text.length) continue
-    const position = view.posAtDOM(text, 0)
-    if (position + text.length <= from) continue
     const style = getComputedStyle(text.parentElement!)
     const lineHeight = parseFloat(style.lineHeight)
-    for (let start = Math.max(0, from - position); start < text.length;) {
+    for (let start = 0; start < text.length;) {
       range.setStart(text, start)
       range.setEnd(text, start + 1)
       const first = range.getBoundingClientRect()
@@ -65,19 +65,34 @@ function textLines(
           bottom,
           kind: "line",
           keepWithNext: false,
+          paragraph: null,
         })
       start = low
     }
   }
-  return units
+  const properties = effectiveParagraph(
+    input.presentation,
+    canonicalProps(block.node.firstChild?.attrs ?? {})
+  )
+  return units.map((unit, line) => ({
+    ...unit,
+    keepWithNext: Boolean(properties.keepNext),
+    paragraph: {
+      id: block.pos,
+      line,
+      count: units.length,
+      keepTogether: Boolean(properties.keepTogether),
+      widowOrphan: properties.widowOrphan !== false,
+    },
+  }))
 }
 
 function blockUnits(
   view: EditorView,
   block: MeasuredBlock,
   scale: number,
-  from: number
-) {
+  input: FlowDocument
+): LayoutUnit[] {
   const type =
     block.node.type.name === "paperRow"
       ? "paperRow"
@@ -85,7 +100,7 @@ function blockUnits(
   if (
     ["paragraph", "bulletListItem", "numberedListItem"].includes(type ?? "")
   ) {
-    const lines = textLines(view, block, scale, from)
+    const lines = textLines(view, block, scale, input)
     if (lines.length) return lines
   }
   const rect = block.dom.getBoundingClientRect()
@@ -103,6 +118,7 @@ function blockUnits(
             ? "row"
             : "block",
       keepWithNext: type === "heading",
+      paragraph: null,
     } satisfies LayoutUnit,
   ]
 }
@@ -140,8 +156,6 @@ export function measuredFlowPagination(
   paint: (decorations: Decoration[]) => boolean
 ) {
   let previous: MeasuredBlock[] = []
-  let previousDocument = view.state.doc
-  const previousLines = new Map<number, LayoutUnit[]>()
   let offsets: PageOffset[] = []
   let settings = ""
   let invalidated = true
@@ -180,18 +194,21 @@ export function measuredFlowPagination(
           from++
         if (from === blocks.length && from === previous.length) return
         from = Math.max(0, from - 1)
+        while (from > 0) {
+          const before = blocks[from - 1]!.node.firstChild
+          if (
+            before?.type.name !== "heading" &&
+            !effectiveParagraph(
+              input.presentation,
+              canonicalProps(before?.attrs ?? {})
+            ).keepNext
+          )
+            break
+          from--
+        }
       }
       const start = blocks[from]?.pos ?? view.state.doc.content.size
-      const changedAt =
-        invalidated || settings !== nextSettings
-          ? 0
-          : (previousDocument.content.findDiffStart(view.state.doc.content) ??
-            0)
-      offsets = offsets.filter(
-        (offset) =>
-          offset.pos < start ||
-          (offset.kind === "line" && offset.pos < changedAt)
-      )
+      offsets = offsets.filter((offset) => offset.pos < start)
       const page = input.presentation.page
       const capacity = (page.height - page.top - page.bottom) / 15
       const clips = blocks.flatMap((block) => {
@@ -221,31 +238,9 @@ export function measuredFlowPagination(
       const scale = Number(
         view.dom.style.getPropertyValue("--cv-rich-page-scale") || 1
       )
-      const units = blocks.slice(from).flatMap((block) => {
-        const lines = previousLines.get(block.pos) ?? []
-        const followingLine = lines.findIndex((line) => line.pos > changedAt)
-        const changedLine =
-          !cleared &&
-          changedAt >= block.pos &&
-          changedAt < block.pos + block.node.nodeSize
-            ? (followingLine < 0 ? lines.length : followingLine) - 1
-            : -1
-        const start = lines[Math.max(0, changedLine - 1)]?.pos ?? 0
-        const measured = blockUnits(
-          view,
-          block,
-          scale,
-          changedLine > 0 ? start : 0
-        )
-        const prefix =
-          changedLine > 0 ? lines.filter((line) => line.pos < start) : []
-        const next = [...prefix, ...measured]
-        previousLines.set(
-          block.pos,
-          next.filter((unit) => unit.kind === "line")
-        )
-        return next
-      })
+      const units = blocks
+        .slice(from)
+        .flatMap((block) => blockUnits(view, block, scale, input))
       offsets.push(
         ...measuredPageBreaks(units, {
           height: page.height / 15,
@@ -255,11 +250,7 @@ export function measuredFlowPagination(
         })
       )
       const painted = paint([...clips, ...offsets.map(offsetDecoration)])
-      const positions = new Set(blocks.map((block) => block.pos))
-      for (const position of previousLines.keys())
-        if (!positions.has(position)) previousLines.delete(position)
       previous = blocks
-      previousDocument = view.state.doc
       settings = nextSettings
       invalidated = false
       return cleared || painted

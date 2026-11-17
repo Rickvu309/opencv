@@ -29,6 +29,7 @@ it("paginates photos and text in browsers without experimental columns", () => {
         bottom: 936,
         kind: "line",
         keepWithNext: false,
+        paragraph: null,
       },
       {
         pos: 11,
@@ -37,6 +38,7 @@ it("paginates photos and text in browsers without experimental columns", () => {
         bottom: 1056,
         kind: "block",
         keepWithNext: false,
+        paragraph: null,
       },
       {
         pos: 13,
@@ -45,6 +47,7 @@ it("paginates photos and text in browsers without experimental columns", () => {
         bottom: 1116,
         kind: "row",
         keepWithNext: false,
+        paragraph: null,
       },
       {
         pos: 21,
@@ -53,6 +56,7 @@ it("paginates photos and text in browsers without experimental columns", () => {
         bottom: 1116,
         kind: "break",
         keepWithNext: false,
+        paragraph: null,
       },
       {
         pos: 23,
@@ -61,6 +65,7 @@ it("paginates photos and text in browsers without experimental columns", () => {
         bottom: 1140,
         kind: "line",
         keepWithNext: false,
+        paragraph: null,
       },
     ]
     const offsets = measuredPageBreaks(units, {

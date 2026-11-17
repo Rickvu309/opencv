@@ -61,3 +61,28 @@ test("the column-based fork fails and measured Paper pagination stays quiet", ()
     assert.deepEqual(detect(readFileSync(path, "utf8"), path), [], path)
   }
 })
+
+test("Word break properties and Find settling reject their introducing commit", () => {
+  for (const [path, from, to] of [
+    [
+      "packages/paper-crdt/src/measured-flow-pagination.ts",
+      "properties.widowOrphan !== false",
+      "false",
+    ],
+    [
+      "packages/paper-crdt/src/native-layout-search.ts",
+      "if (active) scroll()",
+      "scrollFrame = 0",
+    ],
+  ]) {
+    const clean = readFileSync(path, "utf8")
+    assert.deepEqual(detect(clean, path), [])
+    const mistake = clean.replace(from, to)
+    assert.notEqual(mistake, clean)
+    assert.equal(detect(mistake, path).length, 1)
+    const historic = execFileSync("git", ["show", `68bd981a:${path}`], {
+      encoding: "utf8",
+    })
+    assert.equal(detect(historic, path).length, 1)
+  }
+})

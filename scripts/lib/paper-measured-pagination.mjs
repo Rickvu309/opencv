@@ -5,6 +5,26 @@ export function detect(source, file = "") {
       : []
   if (!/paper-crdt\/src\/[^/]+\.(?:ts|js)$/.test(file)) return []
   const problems = []
+  if (file.endsWith("/measured-flow-pagination.ts")) {
+    if (
+      !source.includes("effectiveParagraph(") ||
+      !source.includes("canonicalProps(") ||
+      !source.includes("properties.keepNext") ||
+      !source.includes("properties.keepTogether") ||
+      !source.includes("properties.widowOrphan !== false")
+    )
+      problems.push("Measured pages must preserve Word paragraph break rules")
+  }
+  if (file.endsWith("/native-layout-search.ts")) {
+    if (
+      !/scrollFrame = requestAnimationFrame[\s\S]*?scrollFrame = requestAnimationFrame[\s\S]*?if \(active\) scroll\(\)/.test(
+        source
+      )
+    )
+      problems.push(
+        "Find must reveal its match after browser scroll anchoring settles"
+      )
+  }
   if (/(?:^|[^\w-])column-(?:height|wrap)\s*[:"']/.test(source))
     problems.push("Measure Paper page breaks without experimental CSS columns")
   if (
