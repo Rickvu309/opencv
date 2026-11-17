@@ -1,6 +1,8 @@
 import {
   ERROR_CODES,
   NATIVE_WRITER,
+  RICH_NATIVE_WRITER,
+  richReadOutputSchema,
   nativeBasisSchema,
   jobAddNoteInputSchema,
   type Actor,
@@ -77,6 +79,37 @@ async function paperFocus(
       await registry.read("paper.get", { docId, writer: NATIVE_WRITER }, actor)
     )
   } catch (error) {
+    if (
+      error instanceof CommandError &&
+      error.code === ERROR_CODES.CONFLICT &&
+      error.detail.format === "rich"
+    ) {
+      const identity = record(
+        await registry.read(
+          "paper.document",
+          { docId, writer: RICH_NATIVE_WRITER },
+          actor
+        )
+      )
+      if (identity?.format === "rich") {
+        const rich = richReadOutputSchema.parse(
+          await registry.read(
+            "paper.readRich",
+            { docId, blockIds, writer: RICH_NATIVE_WRITER },
+            actor
+          )
+        )
+        return {
+          id: rich.docId,
+          name: rich.name,
+          kind: rich.kind,
+          status: "draft",
+          outline: rich.outline,
+          revision: rich.basis.revision,
+          nativeBasis: rich.basis,
+        }
+      }
+    }
     if (!missingDocument(error)) throw error
     row = await listedPage(registry, actor, docId)
     if (!row) row = await importedPackageRow(registry, actor, docId)

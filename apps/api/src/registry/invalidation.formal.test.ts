@@ -72,6 +72,7 @@ const SNAPSHOT_QUERIES: {
   "paper.read": () => [{ view: "library" }],
   "paper.export": null,
   "paper.nativeWord": null,
+  "paper.readRich": null,
   "paper.get": (ids) =>
     [...ids.docs, ...ids.minted].map((docId) => ({ docId })),
   "paper.document": (ids) =>
@@ -103,6 +104,8 @@ const SNAPSHOT_QUERIES: {
 }
 
 const NEVER_SNAPSHOT_REASON: Partial<Record<QueryName, string>> = {
+  "paper.readRich":
+    "Coach reads an exact basis directly, outside the query cache",
   "activity.list": "every command refreshes it",
   "paper.export":
     "pinned binary download metadata is covered by the package HTTP replay",

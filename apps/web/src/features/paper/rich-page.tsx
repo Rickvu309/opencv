@@ -16,6 +16,8 @@ import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import { RichTableControls } from "./rich-table-controls.tsx"
 import { RichPhotoControls } from "./rich-photo-controls.tsx"
 import { RichPaperTextFormatting } from "./rich-text-formatting.tsx"
+import { holdWritingCoachFocus } from "@/lib/writing-coach-focus.ts"
+import { setPaperSelection } from "@/lib/paper-selection.ts"
 import { openRichPaperSession } from "@/lib/paper-rich.ts"
 import { resolvePhotoSrc } from "@/lib/requests.ts"
 import type { NativeSyncIdentity } from "@/lib/paper-sync-identity.ts"
@@ -71,6 +73,7 @@ export function RichPaperPage({
     "closed"
   )
   const queryClient = useQueryClient()
+  useEffect(() => holdWritingCoachFocus(identity.docId), [identity.docId])
   const currentIdentity = useRef(identity)
   useLayoutEffect(() => {
     currentIdentity.current = identity
@@ -84,6 +87,17 @@ export function RichPaperPage({
     }
   )
   const element = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!editor) return
+    const update = () =>
+      setPaperSelection(identity.docId, editor.selectedBlockIds())
+    update()
+    const detach = editor.subscribe(update)
+    return () => {
+      detach()
+      setPaperSelection(identity.docId, [])
+    }
+  }, [editor, identity.docId])
   useEffect(() => {
     const opened = openRichPaperSession({
       identity: currentIdentity.current,

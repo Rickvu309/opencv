@@ -95,6 +95,17 @@ export function readFlow(binding: FlowBinding): FlowDocument {
     detached.destroy()
   }
 }
+
+export function writeCoachFlow(binding: FlowBinding, document: FlowDocument) {
+  const validated = flowDocumentSchema.parse(document)
+  if (validated.kind !== binding.kind) throw new Error("Document kind changed")
+  const node = nodeOf(validated)
+  const vector = Y.encodeStateVector(binding.doc)
+  binding.doc.transact(() => write(binding, validated, node), "coach-rich")
+  if (canonical(readFlow(binding)) !== canonical(validated))
+    throw new Error("The Coach edit could not be applied exactly")
+  return Y.encodeStateAsUpdate(binding.doc, vector)
+}
 function createFlow(document: FlowDocument): FlowBinding {
   const doc = new Y.Doc(),
     view = engine()

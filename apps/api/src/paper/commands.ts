@@ -21,6 +21,7 @@ import { editAsCoach, revertCoachEdit } from "./content-coach.js"
 import { registerCanvasCommit } from "./package-canvas.js"
 import { registerPaperStart } from "./package-start.js"
 import { registerWordPackageEdit } from "./package-edit.js"
+import { registerRichCoach } from "./rich-coach.js"
 import { registerDuplicate, relinkJobs } from "./card-action-commands.js"
 import { isWordPageDeleted } from "./package-card-actions.js"
 import { missingDocument, ownedPackagePaper } from "./package-list.js"
@@ -102,11 +103,13 @@ export function registerPaper(registry: Registry) {
   registry.addUndoGuard("paper.restore", oldEditorUndoReasons)
   const {
     "paper.edit": paperEdit,
+    "paper.editRich": paperEditRich,
     "paper.canvas": paperCanvas,
     "paper.start": paperStart,
     "paper.duplicate": paperDuplicate,
     ...paperCommands
   } = paperContract
+  registerRichCoach(registry, paperEditRich)
   bindCommands(registry, paperCommands, {
     "paper.create": {
       handler: async (input, actor) => {
@@ -337,7 +340,7 @@ export function registerPaper(registry: Registry) {
   registry.addQuery(
     tableQuery("paper.document", {
       description: "Read the document identity and the editor it requires.",
-      coach: false,
+      coach: true,
       step: () => "Read document identity",
       read: (input, actor) =>
         readPaperDocumentInfo(actor.userId, input.docId, input.writer),

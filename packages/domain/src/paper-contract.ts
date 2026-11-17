@@ -57,6 +57,7 @@ import {
   paperUnshareInputSchema,
 } from "./paper.js"
 import type { QueryRef } from "./queries.js"
+import { richPaperCommands, richPaperQueries } from "./paper-rich-contract.js"
 
 export const paperCheckSchema = z
   .object({
@@ -182,6 +183,7 @@ const paperEditOutputSchema = z
 export const PAPER_RECEIPT_CHANGE_LIMIT = MAX_RECEIPT_CHANGES
 
 export const paperQueries = queryContract({
+  ...richPaperQueries,
   "paper.document": queryEntry({
     input: z
       .object({ docId: paperIdSchema, writer: nativeWriterSchema.optional() })
@@ -266,6 +268,7 @@ type DocInput = { docId: z.output<typeof paperIdSchema> }
 const listChanged = (): QueryRef[] => [{ query: "paper.list" }]
 
 const docChanged = (input: DocInput): QueryRef[] => [
+  { query: "paper.readRich", input: { docId: input.docId } },
   { query: "paper.document", input: { docId: input.docId } },
   { query: "paper.get", input: { docId: input.docId } },
   { query: "paper.pageCount", input: { docId: input.docId } },
@@ -308,6 +311,7 @@ const paperCreateInputSchema = z
   })
 
 export const paperContract = commandContract({
+  ...richPaperCommands((input) => [...docChanged(input), ...chatsChanged()]),
   "paper.create": commandEntry({
     description: "Create a CV or letter.",
     input: paperCreateInputSchema,

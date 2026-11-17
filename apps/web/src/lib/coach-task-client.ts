@@ -15,6 +15,7 @@ import { refreshReads, runContractCommand } from "@/lib/contract-client.ts"
 import { endpoints } from "@/lib/requests.ts"
 import { createToolRefresher } from "@/lib/coach-stream.ts"
 import { readSseStream } from "@/lib/sse.ts"
+import { withSelectedBlocks } from "@/lib/paper-selection.ts"
 import {
   coachTaskReducer,
   taskFromSnapshot,
@@ -59,6 +60,7 @@ export async function startCoachTask(
     "coach.start",
     {
       ...input,
+      context: withSelectedBlocks(input.context),
       startKey,
     },
     { signal }

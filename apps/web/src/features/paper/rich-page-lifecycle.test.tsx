@@ -2,6 +2,8 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import { act, fireEvent, screen, waitFor } from "@testing-library/react"
 import * as Y from "yjs"
 import userEvent from "@testing-library/user-event"
+import { TextSelection } from "prosemirror-state"
+import { withSelectedBlocks } from "@/lib/paper-selection.ts"
 import { uploadPaperPhoto } from "./paper-api.ts"
 import {
   nativeProvenance,
@@ -124,6 +126,28 @@ it.each([
         screen.getByRole("button", { name: "Bold", exact: true })
       ).toBeEnabled()
     )
+    act(() => {
+      mounted.editor.setTextCursorPosition("intro", "start")
+      const state = mounted.editor.prosemirrorState
+      mounted.editor.prosemirrorView.dispatch(
+        state.tr.setSelection(
+          TextSelection.create(
+            state.doc,
+            state.selection.from,
+            state.selection.from + 4
+          )
+        )
+      )
+    })
+    expect(withSelectedBlocks([])).toEqual([
+      {
+        kind: "paper",
+        id: "15900000-0000-4000-8000-000000000001",
+        blockIds: ["intro"],
+      },
+    ])
+    act(() => mounted.editor.setTextCursorPosition("intro", "start"))
+    expect(withSelectedBlocks([])).toEqual([])
     act(() => {
       host.focus()
       paste(host, "Unsaved Việt 😀 ")

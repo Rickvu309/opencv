@@ -36,7 +36,8 @@ export function readStoredPaper(row: PaperRow): PaperDocument {
   )
     throw new CommandError(
       ERROR_CODES.CONFLICT,
-      "This document needs the rich Paper editor. Nothing was changed."
+      "This document needs the rich Paper editor. Nothing was changed.",
+      { format: "rich" }
     )
   const paper = tryReadStoredPaper(row)
   if (!paper) {

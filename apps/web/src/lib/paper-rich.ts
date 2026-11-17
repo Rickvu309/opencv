@@ -1,3 +1,4 @@
+import { subscribeWritingRefresh } from "./writing-refresh.ts"
 import type { QueryClient } from "@tanstack/react-query"
 import { nativeSyncOutputSchema, sameNativeProvenance } from "@workspace/domain"
 import { emptyUpdate } from "@workspace/paper-crdt"
@@ -73,6 +74,7 @@ export function openRichPaperSession(options: {
       }) ?? (() => {})
     if (session.client()?.hasPending()) schedule()
   })
+  const detachRefresh = subscribeWritingRefresh(flush)
   const visibility = () => {
     if (document.visibilityState === "hidden") flush()
   }
@@ -108,6 +110,7 @@ export function openRichPaperSession(options: {
       if (timer !== undefined) clearTimeout(timer)
       clearInterval(pull)
       detach()
+      detachRefresh()
       window.removeEventListener("pagehide", flush)
       window.removeEventListener("online", flush)
       window.removeEventListener("focus", flush)

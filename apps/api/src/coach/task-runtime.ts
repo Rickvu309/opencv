@@ -12,7 +12,7 @@ import { getDb } from "../db/context.js"
 import { coachUsage } from "../db/schema.js"
 import type { Registry } from "../registry/registry.js"
 import { streamAnthropicSteps } from "./anthropic-runtime.js"
-import { createScriptedWorkerRuntime, fakePaperEdit } from "./fake.js"
+import { createScriptedWorkerRuntime, fakePaperIntent } from "./fake.js"
 import { paperStartAsk, paperStartRuntime } from "./fake-paper-start.js"
 import { modelMessageSchema, type WorkerRuntime } from "./model-step.js"
 import { COACH_STABLE_PROMPT } from "./prompt.js"
@@ -76,8 +76,7 @@ function demoTaskRuntime(task: Task): WorkerRuntime {
       ? [
           {
             id: "call_edit",
-            name: "paper.edit" as const,
-            input: fakePaperEdit(focus),
+            ...fakePaperIntent(focus),
           },
         ]
       : jobId

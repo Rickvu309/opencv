@@ -32,6 +32,7 @@ import {
 } from "@workspace/paper-crdt"
 
 import { CommandError } from "../registry/errors.js"
+import { revertRichCoachEdit } from "./rich-coach.js"
 import { blockingEdit, NEWER_FIRST, revertedIds } from "./undo-rules.js"
 import {
   coachBasisOk,
@@ -260,6 +261,8 @@ export async function revertCoachEdit(
   editId: string,
   writer?: NativeWriter
 ): Promise<{ revision: number; reverted: boolean }> {
+  if (writer?.supportedSchemaRevisions.includes(2))
+    return revertRichCoachEdit(userId, docId, editId, writer)
   return withContent(
     userId,
     docId,

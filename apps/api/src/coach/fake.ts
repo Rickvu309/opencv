@@ -1,6 +1,8 @@
 import {
   DEFAULT_COACH_MODELS,
   NATIVE_WRITER,
+  RICH_NATIVE_WRITER,
+  formatRunsSchema,
   nativeBasisSchema,
   paperContract,
   type CoachFocusDoc,
@@ -10,6 +12,8 @@ import {
   type CoachStreamPart,
   type CoachTurnInput,
 } from "@workspace/domain"
+
+import { z } from "zod"
 
 import {
   createRequestStepBoundary,
@@ -184,25 +188,71 @@ export function fakePaperEdit(
   })
 }
 
+export function fakePaperIntent(
+  focus: Pick<CoachFocusDoc, "id" | "revision" | "outline" | "nativeBasis">
+) {
+  const rich = focus.nativeBasis?.provenance.schemaRevision === 2
+  const richRows = rich
+    ? z
+        .array(
+          z.object({
+            id: z.string(),
+            type: z.string(),
+            selected: z.boolean(),
+            content: formatRunsSchema,
+          })
+        )
+        .parse(JSON.parse(focus.outline))
+    : []
+  const row =
+    richRows.find((node) => node.selected && node.content?.length) ??
+    richRows.find((node) => node.type === "paragraph" && node.content?.length)
+  if (rich && !row) throw new Error("Write a passage before requesting an edit")
+  const runs = rich ? formatRunsSchema.parse(row?.content) : []
+  const words = runs.map((run) => run.text).join("")
+  const input = rich
+    ? paperContract["paper.editRich"].input.parse({
+        docId: focus.id,
+        writer: RICH_NATIVE_WRITER,
+        basis: focus.nativeBasis,
+        edits: [
+          {
+            op: "formatText",
+            blockId: z.string().parse(row?.id),
+            from: 0,
+            to: words.length,
+            before: words,
+            marks: { bold: true, underline: true },
+          },
+        ],
+      })
+    : fakePaperEdit(focus)
+  const name = rich ? ("paper.editRich" as const) : ("paper.edit" as const)
+  return { name, input }
+}
+
 function paperEditScript(
   input: CoachTurnInput
 ): AsyncIterable<CoachStreamPart> {
   const focus = input.focusDoc
   const execute = input.execute
   if (!focus || !execute) return replay(DEMO_COACH_SCRIPT)
-  const call = fakePaperEdit(focus)
+  const { name, input: call } = fakePaperIntent(focus)
   return (async function* () {
-    yield { type: "text-delta", text: "I made one edit. " } as const
+    yield {
+      type: "text-delta",
+      text: "Here is an edit for your review. ",
+    } as const
     yield {
       type: "tool-call",
       toolCallId: "call_edit",
-      name: "paper.edit",
+      name,
       input: call,
     } as const
-    const result = await execute({ name: "paper.edit", input: call })
+    const result = await execute({ name, input: call })
     yield toolResultFromExecute({
       toolCallId: "call_edit",
-      name: "paper.edit",
+      name,
       summary: "Edit the document",
       result,
     })

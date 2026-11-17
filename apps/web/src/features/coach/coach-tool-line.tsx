@@ -17,7 +17,11 @@ import {
 } from "./coach-tool-card.ts"
 import { documentChangeCount, documentEditDetail } from "./coach-receipt.ts"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { parseChatId, parsePendingActionId } from "@workspace/domain"
+import {
+  parseChatId,
+  parsePendingActionId,
+  richReviewSchema,
+} from "@workspace/domain"
 import { coachPaperOptions } from "@/lib/coach-context.ts"
 import { useChatStore } from "./use-chat-store.ts"
 import {
@@ -39,6 +43,7 @@ import {
 } from "@/features/coach/coach-receipt.ts"
 import { DiffBlock, ReceiptDetail } from "@/features/coach/rich-receipts.tsx"
 import { WordBatchPreview } from "@/features/coach/word-batch-preview.tsx"
+import { RichPaperPreview } from "./rich-paper-preview.tsx"
 import { useWordBatchApproval } from "@/lib/writing-proposal.ts"
 
 import type { CoachToolPart } from "./coach-parts.ts"
@@ -320,6 +325,8 @@ function CoachApproval({
   const client = useQueryClient()
   const { activeChatId } = useChatStore()
   const batch = useWordBatchApproval(id, review)
+  const rich = command === "paper.editRich"
+  const richReview = richReviewSchema.safeParse(review)
   const [{ busy: working, error }, dispatch] = useReducer(
     actionReducer,
     IDLE_ACTION
@@ -341,7 +348,7 @@ function CoachApproval({
         approve ? "actions.approve" : "actions.deny",
         { pendingActionId: parsePendingActionId(id) }
       )
-      if (approve && command === "paper.edit") notifyWritingRefresh()
+      if (approve && (command === "paper.edit" || rich)) notifyWritingRefresh()
       await refreshReads(client, [{ query: "chat.list" }])
       if (activeChatId)
         await refreshReads(client, [
@@ -362,18 +369,22 @@ function CoachApproval({
     }
   }
   const detail = documentEditDetail(tool.part.detail)
-  const isDocument = command === "paper.edit"
+  const isDocument = command === "paper.edit" || rich
   const storedName = useDocumentName(
-    isDocument && !detail ? reviewDocId(review) : null
+    isDocument && !detail && !rich ? reviewDocId(review) : null
   )
   const subject = isDocument
-    ? (detail?.docName ?? storedName ?? "Your document")
+    ? richReview.success
+      ? richReview.data.name
+      : (detail?.docName ?? storedName ?? "Your document")
     : coachToolLabel(command)
-  const changeCount = detail?.hunks.length
-    ? documentChangeCount(detail)
-    : batch.state === "ready"
-      ? batch.changes.length
-      : 0
+  const changeCount = richReview.success
+    ? richReview.data.changes.length
+    : detail?.hunks.length
+      ? documentChangeCount(detail)
+      : batch.state === "ready"
+        ? batch.changes.length
+        : 0
   const action = isDocument
     ? changeCount > 0
       ? `${changeCount} proposed change${changeCount === 1 ? "" : "s"}`
@@ -413,7 +424,9 @@ function CoachApproval({
             </p>
           </div>
         </div>
-        {detail?.hunks.length ? (
+        {rich ? (
+          <RichPaperPreview review={review} />
+        ) : detail?.hunks.length ? (
           <DiffBlock detail={detail} />
         ) : batch.state !== "none" ? null : (
           <div className="space-y-1 text-sm leading-relaxed text-muted-foreground">
@@ -436,7 +449,7 @@ function CoachApproval({
         )}
       </ConfirmationRejected>
       <ConfirmationActions className="justify-start self-start">
-        {batch.state === "withheld" ? null : (
+        {batch.state === "withheld" || (rich && !richReview.success) ? null : (
           <ConfirmationAction
             variant="primary"
             disabled={working}
