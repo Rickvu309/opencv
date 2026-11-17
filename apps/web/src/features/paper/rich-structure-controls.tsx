@@ -80,12 +80,19 @@ export function RichStructureControls({
   editor,
   blocked,
   children,
+  compact = false,
 }: {
   editor: Editor | null
   blocked: boolean
+  compact?: boolean
   children:
     | ReactNode
-    | ((slots: { style: ReactNode; controls: ReactNode }) => ReactNode)
+    | ((slots: {
+        style: ReactNode
+        controls: ReactNode
+        link: ReactNode
+        lists: ReactNode
+      }) => ReactNode)
 }) {
   const [, refresh] = useReducer((value: number) => value + 1, 0)
   const [dialog, dispatch] = useReducer(linkDialogReducer, { kind: "closed" })
@@ -161,17 +168,27 @@ export function RichStructureControls({
       >
         <SelectTrigger
           aria-label="Paragraph style"
-          className="min-h-11 w-36 shrink-0 border-transparent px-2 md:min-h-8"
+          className={
+            compact
+              ? "min-h-11 w-14 shrink-0 border-transparent px-2 md:min-h-8"
+              : "min-h-11 w-36 shrink-0 border-transparent px-2 md:min-h-8"
+          }
         >
-          <SelectValue>
-            {state?.mixedStyle
-              ? "Mixed styles"
-              : (editor?.paragraphStyles.find(
-                  (style) => style.id === state?.paragraphStyle
-                )?.label ??
-                (state?.paragraphStyle ? "Custom style" : undefined) ??
-                "Normal text")}
-          </SelectValue>
+          {compact ? (
+            <span aria-hidden="true" className="text-base">
+              Aa
+            </span>
+          ) : (
+            <SelectValue>
+              {state?.mixedStyle
+                ? "Mixed styles"
+                : (editor?.paragraphStyles.find(
+                    (style) => style.id === state?.paragraphStyle
+                  )?.label ??
+                  (state?.paragraphStyle ? "Custom style" : undefined) ??
+                  "Normal text")}
+            </SelectValue>
+          )}
         </SelectTrigger>
         <SelectContent finalFocus={returnToDocument}>
           {state?.mixedStyle ? (
@@ -196,7 +213,12 @@ export function RichStructureControls({
   return (
     <>
       {typeof children === "function" ? (
-        children({ style: styleControl, controls: structureControls })
+        children({
+          style: styleControl,
+          controls: structureControls,
+          link: structureControls[0],
+          lists: structureControls.slice(1, 3),
+        })
       ) : (
         <>
           {styleControl}

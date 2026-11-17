@@ -32,13 +32,11 @@
   min-block-size: 11in;
   padding: 1in;
   transform-origin: top left;
-  border: 1px solid var(--border);
-  background: var(--card);
+  border: 0;
+  background: var(--background);
   color: var(--card-foreground);
   caret-color: var(--card-foreground);
-  box-shadow:
-    0 1px 2px oklch(0 0 0 / 0.06),
-    0 12px 32px oklch(0 0 0 / 0.05);
+  box-shadow: none;
   font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   font-size: 12pt;
   line-height: 1.6;

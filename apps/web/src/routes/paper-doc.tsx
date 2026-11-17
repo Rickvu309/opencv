@@ -146,6 +146,7 @@ export function PaperDocPage() {
       <RichPaperPage
         key={`${ownerId}:${sessionId}:${docId}`}
         name={document.data.name}
+        kind={document.data.kind}
         identity={{
           kind: "native",
           ownerId,
@@ -269,6 +270,7 @@ function LegacyPaperDocPage() {
           key={validId}
           docId={validId}
           title={listed?.name ?? packagePage.name}
+          kind={listed?.kind ?? packagePage.kind}
           onBack={back}
           seed={seeded}
           seedRevision={packagePage.revision}

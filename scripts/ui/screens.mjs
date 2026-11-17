@@ -1,6 +1,6 @@
 const COMPOSER = '[data-slot="coach-workspace-composer"] textarea'
 const PAGE = '[contenteditable="true"]'
-const SAVED = 'p.writing-note:text-is("Saved")'
+const SAVED = 'p.writing-note[title="Saved"], p.writing-note:text-is("Saved")'
 
 const OPEN_BLANK_CV = [
   { goto: "/paper" },
@@ -203,6 +203,29 @@ export const SCREENS = [
     route: "/paper",
     steps: OPEN_BLANK_CV,
   },
+  ...[
+    ["paper-rich", []],
+    [
+      "paper-rich-selection",
+      [
+        {
+          click: {
+            selector: '.paper-rich-sheet [data-content-type="paragraph"]',
+          },
+        },
+        { press: "Home" },
+        { press: "Control+Shift+ArrowRight" },
+      ],
+    ],
+    [
+      "paper-rich-outline",
+      [{ clickIfShown: { role: "button", name: "Document outline" } }],
+    ],
+  ].map(([id, steps]) => ({
+    id,
+    route: "/paper",
+    steps: [{ richDocument: true }, ...steps],
+  })),
   {
     id: "paper-typed",
     route: "/paper",
@@ -661,6 +684,7 @@ const STEP_KINDS = new Set([
   "upload",
   "waitFor",
   "respond",
+  "richDocument",
 ])
 const ID = /^[a-z][a-z0-9-]*$/
 

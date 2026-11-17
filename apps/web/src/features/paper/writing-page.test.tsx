@@ -383,8 +383,9 @@ it("keeps document identity, saving and Word download together with Paper naviga
     />
   )
   const heading = screen.getByRole("heading", { name: "Designer CV" })
-  const header = heading.closest("header")
-  expect(header).not.toBeNull()
+  const header = screen.getByRole("banner")
+  expect(heading).toBeVisible()
+  expect(header).toHaveTextContent("Designer CV")
   await waitFor(() =>
     expect(screen.getByRole("status")).toHaveTextContent("Saved")
   )
