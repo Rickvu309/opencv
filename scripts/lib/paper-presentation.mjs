@@ -7,9 +7,11 @@ import { detectRichStructure } from "./paper-rich-structure.mjs"
 import { detectPageLayout } from "./paper-page-layout.mjs"
 import { detect as detectPageScale } from "./paper-page-scale.mjs"
 import { detectStorageExports } from "./paper-storage-boundary.mjs"
+import { detectCoachSelection } from "./paper-coach-selection.mjs"
 
 export function detect(text, path) {
   const hits = [
+    ...detectCoachSelection(text, path),
     ...detectTextFormatting(text, path),
     ...detectDocumentHistory(text, path),
     ...detectPageLayout(text, path),

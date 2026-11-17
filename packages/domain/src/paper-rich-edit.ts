@@ -66,6 +66,14 @@ export const richReadInputSchema = richEditInputSchema
     blockIds: z.array(z.string()).max(50).optional(),
   })
   .strict()
+export const richOutlineSchema = z.array(
+  z.object({
+    id: z.string(),
+    type: z.string(),
+    selected: z.boolean(),
+    content: formatRunsSchema,
+  })
+)
 export const richReadOutputSchema = z
   .object({
     docId: paperIdSchema,

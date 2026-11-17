@@ -184,8 +184,15 @@ export function registerRichCoach(
           input.writer,
           async (content) => {
             const selected = new Set(input.blockIds ?? [])
+            const nodes = richTextNodes(content.document)
+            if (
+              [...selected].some((id) => !nodes.some((node) => node.id === id))
+            )
+              return conflict(
+                "The selected passage is unavailable. Select text again before asking Coach to edit."
+              )
             const outline = JSON.stringify(
-              richTextNodes(content.document).map((node) => ({
+              nodes.map((node) => ({
                 id: node.id,
                 type: node.type,
                 selected: selected.has(node.id),

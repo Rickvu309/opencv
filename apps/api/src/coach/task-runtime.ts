@@ -5,6 +5,7 @@ import {
   coachModeSchema,
   planSchema,
   nativeBasisSchema,
+  chatAttachmentSchema,
 } from "@workspace/domain"
 import { operation as setJobPriority } from "@workspace/domain/operations/job/set-priority"
 import { coachModelEnv } from "../config.js"
@@ -33,7 +34,15 @@ const contextSchema = z.object({
       nativeBasis: nativeBasisSchema.optional(),
     })
     .optional(),
-  context: z.array(z.object({ kind: z.string(), id: z.string() })).optional(),
+  context: z
+    .array(
+      z.object({
+        kind: z.string(),
+        id: z.string(),
+        blockIds: chatAttachmentSchema.shape.blockIds,
+      })
+    )
+    .optional(),
 })
 
 export function createTaskRuntime(
@@ -80,7 +89,14 @@ function demoTaskRuntime(task: Task): WorkerRuntime {
       ? [
           {
             id: "call_edit",
-            ...fakePaperIntent(focus),
+            ...fakePaperIntent(
+              focus,
+              context.context
+                ?.filter(
+                  (item) => item.kind === "paper" && item.id === focus.id
+                )
+                .flatMap((item) => item.blockIds ?? [])
+            ),
           },
         ]
       : jobId

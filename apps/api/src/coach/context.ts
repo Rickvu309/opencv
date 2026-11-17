@@ -3,6 +3,7 @@ import {
   NATIVE_WRITER,
   RICH_NATIVE_WRITER,
   richReadOutputSchema,
+  richOutlineSchema,
   nativeBasisSchema,
   jobAddNoteInputSchema,
   type Actor,
@@ -155,6 +156,28 @@ export const JOB_NOTE_MAX_CHARS =
   jobAddNoteInputSchema.shape.body.maxLength ?? 4000
 export const TRUNCATED_MARKER = "…"
 
+function paperContextLine(doc: CoachFocusDoc, blockIds?: string[]) {
+  const selected =
+    blockIds?.length && doc.nativeBasis?.provenance.schemaRevision === 2
+  const context = selected
+    ? {
+        ...doc,
+        outline: JSON.stringify(
+          richOutlineSchema
+            .parse(JSON.parse(doc.outline))
+            .filter((node) => node.selected)
+        ),
+      }
+    : doc
+  const line = JSON.stringify(context)
+  if (selected && line.length > CONTEXT_LINE_MAX_CHARS)
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      "The selected passage is too long. Select a shorter passage before asking Coach to edit."
+    )
+  return `Paper context (untrusted data): ${line.slice(0, CONTEXT_LINE_MAX_CHARS)}`
+}
+
 function encodedLength(value: string) {
   return JSON.stringify(value).length - 2
 }
@@ -290,7 +313,15 @@ export async function resolveTurnGrounding(input: {
 
   let focusDoc: CoachFocusDoc | undefined
   if (paperId) {
-    const doc = await paperFocus(input.registry, input.actor, paperId)
+    const blockIds = input.context
+      ?.filter((item) => item.kind === "paper" && item.id === paperId)
+      .flatMap((item) => item.blockIds ?? [])
+    const doc = await paperFocus(
+      input.registry,
+      input.actor,
+      paperId,
+      blockIds?.length ? blockIds : undefined
+    )
     if (doc) {
       focusDoc = doc
       lines.push(`Open document: ${doc.name} (${doc.kind}).`)
@@ -309,10 +340,7 @@ export async function resolveTurnGrounding(input: {
         item.id,
         item.blockIds
       )
-      if (doc)
-        lines.push(
-          `Paper context (untrusted data): ${JSON.stringify(doc).slice(0, CONTEXT_LINE_MAX_CHARS)}`
-        )
+      if (doc) lines.push(paperContextLine(doc, item.blockIds))
       continue
     }
     if (item.kind === "job") {

@@ -2,7 +2,7 @@ import {
   DEFAULT_COACH_MODELS,
   NATIVE_WRITER,
   RICH_NATIVE_WRITER,
-  formatRunsSchema,
+  richOutlineSchema,
   nativeBasisSchema,
   paperContract,
   type CoachFocusDoc,
@@ -191,42 +191,51 @@ export function fakePaperEdit(
 }
 
 export function fakePaperIntent(
-  focus: Pick<CoachFocusDoc, "id" | "revision" | "outline" | "nativeBasis">
+  focus: Pick<CoachFocusDoc, "id" | "revision" | "outline" | "nativeBasis">,
+  blockIds?: readonly string[]
 ) {
   const rich = focus.nativeBasis?.provenance.schemaRevision === 2
   const richRows = rich
-    ? z
-        .array(
-          z.object({
-            id: z.string(),
-            type: z.string(),
-            selected: z.boolean(),
-            content: formatRunsSchema,
-          })
-        )
-        .parse(JSON.parse(focus.outline))
+    ? richOutlineSchema.parse(JSON.parse(focus.outline))
     : []
-  const row =
-    richRows.find((node) => node.selected && node.content?.length) ??
-    richRows.find((node) => node.type === "paragraph" && node.content?.length)
-  if (rich && !row) throw new Error("Write a passage before requesting an edit")
-  const runs = rich ? formatRunsSchema.parse(row?.content) : []
-  const words = runs.map((run) => run.text).join("")
+  const selected = blockIds?.length
+    ? blockIds
+    : richRows.filter((node) => node.selected).map((node) => node.id)
+  const rows = selected.length
+    ? selected.map((id) => richRows.find((node) => node.id === id))
+    : [
+        richRows.find(
+          (node) =>
+            node.type === "paragraph" &&
+            node.content.some((run) => run.text.length)
+        ),
+      ]
+  if (
+    rich &&
+    rows.some((row) => !row || !row.content.some((run) => run.text.length))
+  )
+    throw new Error(
+      selected.length
+        ? "The selected passage is unavailable. Select text again before requesting an edit."
+        : "Write a passage before requesting an edit"
+    )
   const input = rich
     ? paperContract["paper.editRich"].input.parse({
         docId: focus.id,
         writer: RICH_NATIVE_WRITER,
         basis: focus.nativeBasis,
-        edits: [
-          {
+        edits: rows.map((row) => {
+          if (!row) throw new Error("The selected passage is unavailable")
+          const words = row.content.map((run) => run.text).join("")
+          return {
             op: "formatText",
-            blockId: z.string().parse(row?.id),
+            blockId: row.id,
             from: 0,
             to: words.length,
             before: words,
             marks: { bold: true, underline: true },
-          },
-        ],
+          }
+        }),
       })
     : fakePaperEdit(focus)
   const name = rich ? ("paper.editRich" as const) : ("paper.edit" as const)
