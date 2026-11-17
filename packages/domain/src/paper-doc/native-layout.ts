@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { tableBordersSchema } from "./table-borders.js"
 import { paperTableLimits } from "../limits/paper-table.js"
 import {
   layoutPhotoSchema,
@@ -40,6 +41,7 @@ export const layoutTableSchema = z
   .object({
     id: nodeIdSchema,
     type: z.literal("table"),
+    borders: tableBordersSchema.optional(),
     columns: z.array(layoutColumnSchema).min(1).max(paperTableLimits.columns),
     children: z.array(layoutRowSchema).min(1).max(paperTableLimits.rows),
   })
@@ -159,6 +161,7 @@ export const photoLayoutTableSchema = z
   .object({
     id: nodeIdSchema,
     type: z.literal("table"),
+    borders: tableBordersSchema.optional(),
     columns: z.array(layoutColumnSchema).min(1).max(paperTableLimits.columns),
     children: z.array(photoLayoutRowSchema).min(1).max(paperTableLimits.rows),
   })

@@ -387,3 +387,55 @@ it.each([true, false])(
     }
   }
 )
+
+it.each(["cv", "letter"] as const)(
+  "table borders survive history, storage and grid edits in %s",
+  (kind) => {
+    const { tables, select, selectTable, reversible, host, roundtrip } =
+      setup(kind)
+    select("first")
+    tables.insertTable(2, 2)
+    selectTable()
+    const active = () => {
+      const selected = tables.activeTable()
+      if (!selected) throw new Error("Missing table")
+      return selected.table
+    }
+    expect(active().borders).toBeUndefined()
+    const cells = () => [
+      ...host.querySelectorAll<HTMLElement>('[data-paper-layout="paperCell"]'),
+    ]
+    for (const mode of ["none", "all", "outer"] as const) {
+      reversible(() =>
+        tables.setTableBorders({ mode, color: "#1E3A8A", weight: "medium" })
+      )
+      expect(active().borders).toEqual({
+        mode,
+        color: "#1E3A8A",
+        weight: "medium",
+      })
+      expect(cells()[0]!.style.getPropertyValue("border-block-start")).toBe(
+        mode === "none" ? "0px solid transparent" : "2px solid #1E3A8A"
+      )
+      expect(cells()[0]!.style.getPropertyValue("border-inline-end")).toBe(
+        mode === "all" ? "2px solid #1E3A8A" : "0px solid transparent"
+      )
+      expect(cells()[3]!.style.getPropertyValue("border-block-end")).toBe(
+        mode === "none" ? "0px solid transparent" : "2px solid #1E3A8A"
+      )
+    }
+    const borders = active().borders
+    reversible(() => tables.addTableRow())
+    reversible(() => tables.addTableColumn())
+    reversible(() => tables.removeTableRow())
+    reversible(() => tables.removeTableColumn())
+    expect(active().borders).toEqual(borders)
+    reversible(() =>
+      tables.setTableBorders({ mode: "all", color: "default", weight: "thin" })
+    )
+    expect(cells()[0]!.style.getPropertyValue("border-block-start")).toBe(
+      "1px solid #000000"
+    )
+    roundtrip()
+  }
+)

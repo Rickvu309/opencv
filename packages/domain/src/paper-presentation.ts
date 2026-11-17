@@ -135,3 +135,9 @@ export {
 } from "./paper-doc/native-photo-geometry.js"
 
 export { prepareFlowTableEdit } from "./paper-doc/native-layout-flow-table.js"
+
+export {
+  tableBordersSchema,
+  resolveTableBorders,
+} from "./paper-doc/table-borders.js"
+export type { TableBorders } from "./paper-doc/table-borders.js"

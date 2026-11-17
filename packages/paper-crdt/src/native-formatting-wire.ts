@@ -121,7 +121,7 @@ export function validateNodeAttrs(
       (name === "blockContainer" && key === "id") ||
       (["paperFlow", "paperTable", "paperRow", "paperCell"].includes(name) &&
         key === "id") ||
-      (name === "paperTable" && key === "columns") ||
+      (name === "paperTable" && ["columns", "borders"].includes(key)) ||
       (name === "paperCell" && key === "columnId") ||
       (name === "heading" && key === "level") ||
       (name === "paperCvHeader" && key === "photo") ||

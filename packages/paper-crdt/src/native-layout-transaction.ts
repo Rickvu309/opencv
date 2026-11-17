@@ -38,7 +38,7 @@ export function layoutIdentities(document: Pick<LayoutDocument, "flow">) {
         node.type,
         parent,
         node.type === "table"
-          ? node.columns
+          ? [node.columns, node.borders]
           : node.type === "cell"
             ? node.columnId
             : null,

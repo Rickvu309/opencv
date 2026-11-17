@@ -1,4 +1,5 @@
 import { z } from "zod"
+import { tableBordersSchema } from "./table-borders.js"
 import { nodeIdSchema } from "./nodes.js"
 import {
   photoLayoutTableSchema,
@@ -13,6 +14,13 @@ import {
 import { canonical, ok, refuse, type Result } from "./presentation-values.js"
 
 export const layoutEditSchema = z.discriminatedUnion("kind", [
+  z
+    .object({
+      kind: z.literal("set-table-borders"),
+      tableId: nodeIdSchema,
+      borders: tableBordersSchema,
+    })
+    .strict(),
   z
     .object({
       kind: z.literal("insert-table"),
@@ -109,6 +117,9 @@ export function editTable(
   change: Exclude<LayoutEdit, { kind: "insert-table" | "remove-table" }>
 ): LayoutTable {
   switch (change.kind) {
+    case "set-table-borders":
+      table.borders = change.borders
+      break
     case "insert-row":
       table.children.splice(
         indexAfter(table.children, change.afterId),
