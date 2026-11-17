@@ -256,7 +256,9 @@ function LegacyPaperDocPage() {
   ) {
     return (
       <section aria-label="Paper" className="p-4">
-        <p>Loading documents</p>
+        <p role="status" className="text-sm text-muted-foreground">
+          Loading documents
+        </p>
       </section>
     )
   }
