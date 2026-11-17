@@ -183,9 +183,8 @@ describe("inbox page", () => {
       })
     )
     const reader = await screen.findByRole("region", { name: "Reading pane" })
-    expect(within(reader).getByRole("status")).toHaveTextContent(
-      EXAMPLE_MAIL_BANNER
-    )
+    expect(within(reader).queryByRole("status")).toBeNull()
+    expect(screen.getAllByRole("status")).toHaveLength(1)
     expect(
       document.querySelector(
         '[data-pen-section="List pane"] [data-slot="inbox-example-banner"]'
@@ -227,11 +226,11 @@ describe("inbox page", () => {
     expect(
       await screen.findByRole("button", { name: "Back to inbox" })
     ).toBeInTheDocument()
-    expect(
-      within(screen.getByRole("region", { name: "Reading pane" })).getByRole(
-        "status"
-      )
-    ).toHaveTextContent(EXAMPLE_MAIL_BANNER)
+    const reader = screen.getByRole("region", { name: "Reading pane" })
+    expect(within(reader).getByRole("status")).toHaveTextContent(
+      EXAMPLE_MAIL_BANNER
+    )
+    expect(screen.getAllByRole("status")).toHaveLength(1)
     await waitFor(() => {
       expect(
         screen.queryByRole("button", { name: /Associate PM, Local startup/ })

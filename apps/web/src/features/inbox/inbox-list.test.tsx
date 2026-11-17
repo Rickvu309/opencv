@@ -51,7 +51,7 @@ describe("inbox list", () => {
 
   it("counts unread threads in the overview", () => {
     render(<InboxOverview threads={INBOX_THREADS} />)
-    expect(screen.getByText("4 unread")).toBeInTheDocument()
+    expect(screen.getByText("4 unread")).toHaveClass("tabular-nums")
   })
 
   it("formats list times in a non-default zone", () => {

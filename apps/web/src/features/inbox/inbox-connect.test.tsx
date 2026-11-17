@@ -3,7 +3,11 @@ import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { InboxConnect } from "./inbox-connect.tsx"
-import { GMAIL_UNAVAILABLE_COPY } from "./inbox-parts.tsx"
+import {
+  EXPLORE_EXAMPLE_HINT,
+  GMAIL_UNAVAILABLE_COPY,
+  GMAIL_UNAVAILABLE_LEAD,
+} from "./inbox-parts.tsx"
 
 afterEach(() => {
   cleanup()
@@ -46,7 +50,11 @@ describe("inbox connect", () => {
     expect(column?.firstElementChild?.className).toContain("my-auto")
     expect(hero.className).toContain("min-w-0")
     expect(hero.className).toContain("wrap-break-word")
-    const aside = screen.getByRole("complementary", { name: "Example" })
+    expect(screen.queryByRole("complementary", { name: "Example" })).toBeNull()
+    const aside = document.querySelector("aside")
+    if (!aside) throw new Error("missing example illustration")
+    expect(aside).toHaveAttribute("aria-hidden", "true")
+    expect(aside).not.toHaveAttribute("aria-label")
     expect(aside.className).toContain("w-150")
     expect(aside.className).toContain("max-w-[600px]")
     expect(aside.className).toContain("shrink-0")
@@ -54,9 +62,14 @@ describe("inbox connect", () => {
     expect(connect).toHaveAttribute("data-variant", "outline")
     const hint = document.getElementById("inbox-gmail-hint")
     if (!hint) throw new Error("missing inbox-gmail-hint")
+    expect(GMAIL_UNAVAILABLE_COPY).toBe(
+      `${GMAIL_UNAVAILABLE_LEAD} ${EXPLORE_EXAMPLE_HINT}`
+    )
     expect(hint.textContent?.replace(/\s+/g, " ").trim()).toBe(
       GMAIL_UNAVAILABLE_COPY
     )
+    expect(hint.querySelector("span")).toHaveTextContent(EXPLORE_EXAMPLE_HINT)
+    expect(hint.textContent?.startsWith(GMAIL_UNAVAILABLE_LEAD)).toBe(true)
     expect(hint.querySelector("span")?.className).toContain("max-md:hidden")
     expect(
       explore.compareDocumentPosition(hint) & Node.DOCUMENT_POSITION_FOLLOWING

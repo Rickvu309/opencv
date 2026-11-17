@@ -176,7 +176,7 @@ export function InboxOverview({ threads }: { threads: InboxThread[] }) {
         <span className="flex size-12 items-center justify-center rounded-[14px] border border-border bg-card text-foreground/80 shadow-xs">
           <InboxIcon className="size-5.5" aria-hidden />
         </span>
-        <p className="text-sm font-medium text-muted-foreground">
+        <p className="text-sm font-medium text-muted-foreground tabular-nums">
           {unreadCount(threads)} unread
         </p>
       </div>

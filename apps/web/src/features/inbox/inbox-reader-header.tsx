@@ -12,6 +12,7 @@ import {
   PageHeaderTitle,
 } from "@workspace/ui/components/page-header"
 import { toast, toastWithUndo } from "@workspace/ui/components/sonner"
+import { cn } from "@workspace/ui/lib/utils"
 import {
   Tooltip,
   TooltipContent,
@@ -21,7 +22,7 @@ import {
 import { reportRejected } from "@/lib/command-failure.ts"
 import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
 
-import { INBOX_MORE_REASON } from "./inbox-parts.tsx"
+import { INBOX_MORE_REASON, UNAVAILABLE_ACTION } from "./inbox-parts.tsx"
 import { nextMorningIso, SNOOZED_UNTIL_WAKE_TOAST } from "./inbox-time.ts"
 
 export function InboxReaderHeader({
@@ -75,7 +76,9 @@ export function InboxReaderHeader({
       <PageHeaderTitle as={narrow ? "h1" : "div"}>
         {detail.subject}
       </PageHeaderTitle>
-      <PageHeaderMeta showOnPhone>{`${index} of ${count}`}</PageHeaderMeta>
+      <PageHeaderMeta showOnPhone className="tabular-nums">
+        {`${index} of ${count}`}
+      </PageHeaderMeta>
       <PageHeaderActions overflowLabel="More actions">
         <PageHeaderAction
           label="Done"
@@ -125,22 +128,25 @@ export function InboxReaderHeader({
         <Tooltip>
           <TooltipTrigger
             render={
-              <span
-                className="inline-flex max-md:hidden"
-                data-slot="inbox-more"
+              <Button
+                type="button"
+                variant="ghost"
+                aria-label="More"
+                aria-disabled="true"
+                aria-description={INBOX_MORE_REASON}
+                data-disabled=""
+                data-slot="page-header-action"
+                className={cn(
+                  "size-7 touch-manipulation rounded-[6px] select-none [-webkit-tap-highlight-color:transparent] active:scale-100 max-md:hidden [&_svg:not([class*='size-'])]:size-[15px]",
+                  UNAVAILABLE_ACTION
+                )}
+                onClick={(event) => event.preventDefault()}
               />
             }
           >
-            <PageHeaderAction
-              label="More"
-              icon={<Ellipsis />}
-              disabled
-              className="pointer-events-none"
-            />
+            <Ellipsis aria-hidden />
           </TooltipTrigger>
-          <TooltipContent>
-            More has no other actions for this email.
-          </TooltipContent>
+          <TooltipContent>{INBOX_MORE_REASON}</TooltipContent>
         </Tooltip>
         <PageHeaderAction
           label="Previous"
@@ -157,7 +163,6 @@ export function InboxReaderHeader({
           onSelect={onNext}
         />
       </PageHeaderActions>
-      <span className="sr-only">{INBOX_MORE_REASON}</span>
     </PageHeader>
   )
 }

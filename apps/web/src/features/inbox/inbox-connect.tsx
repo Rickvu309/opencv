@@ -18,16 +18,13 @@ import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 import { cn } from "@workspace/ui/lib/utils"
 
 import {
+  EXPLORE_EXAMPLE_HINT,
   FAINT_TEXT,
-  GMAIL_UNAVAILABLE_COPY,
+  GMAIL_UNAVAILABLE_LEAD,
   GmailMark,
   SOFT_TEXT,
   VIEW_EXAMPLE_LABEL,
 } from "./inbox-parts.tsx"
-
-const unavailableBreak = GMAIL_UNAVAILABLE_COPY.indexOf(". ")
-const UNAVAILABLE_LEAD = GMAIL_UNAVAILABLE_COPY.slice(0, unavailableBreak + 1)
-const UNAVAILABLE_REST = GMAIL_UNAVAILABLE_COPY.slice(unavailableBreak + 2)
 
 const TILE =
   "flex size-14 shrink-0 items-center justify-center rounded-2xl border border-border bg-linear-to-b from-card to-secondary shadow-md"
@@ -166,8 +163,8 @@ export function InboxConnect({
                   id="inbox-gmail-hint"
                   className="max-w-105 min-w-0 text-sm leading-normal text-pretty text-foreground"
                 >
-                  {UNAVAILABLE_LEAD}{" "}
-                  <span className="max-md:hidden">{UNAVAILABLE_REST}</span>
+                  {GMAIL_UNAVAILABLE_LEAD}{" "}
+                  <span className="max-md:hidden">{EXPLORE_EXAMPLE_HINT}</span>
                 </p>
                 <Button
                   variant="ghost"
@@ -193,7 +190,7 @@ export function InboxConnect({
         </div>
       </section>
       <aside
-        aria-label="Example"
+        aria-hidden="true"
         className="relative flex w-150 max-w-[600px] shrink-0 flex-col overflow-y-auto rounded-2xl border border-border bg-secondary max-xl:hidden"
       >
         <img

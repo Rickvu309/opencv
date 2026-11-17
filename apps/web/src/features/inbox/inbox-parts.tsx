@@ -8,10 +8,13 @@ import { companyInitials } from "@/features/apply/apply-stages.ts"
 
 export const SOFT_TEXT = "text-muted-foreground"
 export const FAINT_TEXT = "text-muted-foreground"
-export const GMAIL_UNAVAILABLE_COPY =
-  "Gmail connection isn't available yet. You can explore an example inbox."
+export const GMAIL_UNAVAILABLE_LEAD = "Gmail connection isn't available yet."
+export const EXPLORE_EXAMPLE_HINT = "You can explore an example inbox."
+export const GMAIL_UNAVAILABLE_COPY = `${GMAIL_UNAVAILABLE_LEAD} ${EXPLORE_EXAMPLE_HINT}`
 export const EXAMPLE_MAIL_BANNER =
   "Example emails, not yours. Gmail connection isn't available yet."
+export const UNAVAILABLE_ACTION =
+  "aria-disabled:cursor-default aria-disabled:opacity-50 aria-disabled:hover:bg-transparent"
 export const VIEW_EXAMPLE_LABEL = "View example inbox"
 export const INBOX_MORE_REASON = "No other actions for this email."
 export const NO_GMAIL_LINK = "No Gmail link for this email."

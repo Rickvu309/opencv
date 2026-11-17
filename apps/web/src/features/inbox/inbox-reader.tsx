@@ -42,6 +42,7 @@ import {
   INBOX_NOTICE,
   NO_GMAIL_LINK,
   SOFT_TEXT,
+  UNAVAILABLE_ACTION,
 } from "./inbox-parts.tsx"
 import { chipClock, inboxChip, inboxStamp, inboxWhen } from "./inbox-time.ts"
 
@@ -172,7 +173,9 @@ export function InboxReader({
                   aria-describedby="inbox-gmail-link"
                   className={cn(
                     "h-11 gap-1.5 rounded-[7px] px-2.5 text-[12.5px] active:scale-100 md:h-7",
-                    SOFT_TEXT
+                    SOFT_TEXT,
+                    UNAVAILABLE_ACTION,
+                    "aria-disabled:hover:text-muted-foreground"
                   )}
                   onClick={(event) => event.preventDefault()}
                 />

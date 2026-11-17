@@ -269,7 +269,9 @@ export function InboxPage() {
                 if (next) dispatch({ type: "thread_opened", id: next.id })
               }}
               exampleNotice={
-                list.data?.connected === false ? EXAMPLE_MAIL_BANNER : undefined
+                narrow && list.data?.connected === false
+                  ? EXAMPLE_MAIL_BANNER
+                  : undefined
               }
             />
           ) : null}

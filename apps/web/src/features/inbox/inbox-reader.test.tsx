@@ -15,7 +15,12 @@ import {
 
 import { initialReaderState, readerReducer } from "./inbox-reader.reducer.ts"
 import { InboxReader } from "./inbox-reader.tsx"
-import { ACTION_FAILED, NO_GMAIL_LINK } from "./inbox-parts.tsx"
+import {
+  ACTION_FAILED,
+  INBOX_MORE_REASON,
+  NO_GMAIL_LINK,
+  UNAVAILABLE_ACTION,
+} from "./inbox-parts.tsx"
 
 afterEach(() => {
   cleanup()
@@ -70,24 +75,39 @@ describe("inbox reader header", () => {
     }
     expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled()
     const more = screen.getByRole("button", { name: "More" })
-    expect(more).toBeDisabled()
-    expect(more).not.toHaveAttribute("aria-disabled")
+    expect(more).not.toBeDisabled()
+    expect(more).toHaveAttribute("aria-disabled", "true")
+    expect(more).toHaveAttribute("aria-description", INBOX_MORE_REASON)
     expect(more).toHaveAttribute("data-slot", "page-header-action")
+    expect(more.className).toContain(UNAVAILABLE_ACTION)
+    expect(more.className).toContain("active:scale-100")
+    expect(header?.querySelector(".sr-only")).toBeNull()
+    expect(screen.queryByText(INBOX_MORE_REASON)).toBeNull()
     expect(
-      screen.getByText("No other actions for this email.")
-    ).toBeInTheDocument()
-    const moreTip = more.closest("[data-slot='inbox-more']")
-    expect(moreTip).not.toBeNull()
-    expect(moreTip).not.toHaveAttribute("tabindex")
-    await userEvent.hover(moreTip!)
+      screen.queryByText("More has no other actions for this email.")
+    ).toBeNull()
     expect(
-      await screen.findByText("More has no other actions for this email.", {
+      document.querySelector('[data-slot="page-header-meta"]')
+    ).toHaveClass("tabular-nums")
+    screen.getByRole("button", { name: "Done" }).focus()
+    await userEvent.tab()
+    expect(screen.getByRole("button", { name: "Snooze" })).toHaveFocus()
+    await userEvent.tab()
+    expect(more).toHaveFocus()
+    expect(
+      await screen.findByText(INBOX_MORE_REASON, {
         selector: "[data-slot='tooltip-content']",
       })
     ).toBeInTheDocument()
+    expect(
+      screen.getAllByText(INBOX_MORE_REASON, {
+        selector: "[data-slot='tooltip-content']",
+      })
+    ).toHaveLength(1)
     const gmail = screen.getByRole("button", { name: "Open in Gmail" })
     expect(gmail).toHaveAttribute("aria-disabled", "true")
     expect(gmail).not.toBeDisabled()
+    expect(gmail.className).toContain(UNAVAILABLE_ACTION)
     expect(gmail).toHaveAccessibleDescription(NO_GMAIL_LINK)
     await userEvent.hover(gmail)
     expect(
