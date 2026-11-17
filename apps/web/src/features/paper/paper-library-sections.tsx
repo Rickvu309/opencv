@@ -33,9 +33,6 @@ import { paperEditedLabel } from "./paper-templates.ts"
 
 const PREVIEW_LINE_LIMIT = 12
 
-const PAPER_SECTION_HEAD_CLASS =
-  "h-11 w-full justify-start gap-2 rounded-md px-0 text-sm font-semibold text-foreground hover:bg-transparent aria-expanded:bg-transparent md:h-8"
-
 export function librarySheetLines(doc: PaperView): string[] {
   const paper = doc.paper
   if (!paper || (paper.kind !== "cv" && paper.kind !== "letter")) return []
@@ -59,13 +56,12 @@ export function PaperProofsLink() {
         data-slot="paper-library-section-head"
         className={cn(
           buttonVariants({ variant: "ghost" }),
-          PAPER_SECTION_HEAD_CLASS
+          "h-11 w-full justify-start gap-2 rounded-md px-0 text-sm font-semibold text-foreground hover:bg-transparent aria-expanded:bg-transparent md:h-8"
         )}
       >
         <ChevronRight
           data-slot="paper-library-section-icon"
           className="size-[13px] text-muted-foreground"
-          aria-hidden="true"
         />
         Proofs
       </Link>
@@ -93,7 +89,7 @@ export function PaperLibrarySection({
         variant="ghost"
         data-slot="paper-library-section-head"
         aria-expanded={open}
-        className={PAPER_SECTION_HEAD_CLASS}
+        className="h-11 w-full justify-start gap-2 rounded-md px-0 text-sm font-semibold text-foreground hover:bg-transparent aria-expanded:bg-transparent md:h-8"
         onClick={toggle}
       >
         <Chevron
