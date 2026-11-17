@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-workspace-presentation.test.tsx > Coach uses one full-page presentation > uses the page header and composer when the compact panel expands",
+    "because": "the owner asked for the Coach page composer text at 16px, Linear's composer-to-list ratio, instead of 15px",
+    "replacedBy": "apps/web/src/features/coach/coach-workspace-presentation.test.tsx",
+    "proof": {
+      "fork": "7fecdb6b07762eb7494bf4e984ab14df196bcc92",
+      "replacedByBlob": "2f266f438d408ad91965dcb8bd69d9acfedc44e0",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
