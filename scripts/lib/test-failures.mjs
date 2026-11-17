@@ -9,7 +9,8 @@ export function failedGuards(result) {
     const detail = []
     for (
       let j = i + 1;
-      j < lines.length && (lines[j] === "" || /^  \S|^   /.test(lines[j]));
+      j < lines.length &&
+      (lines[j].trim() === "" || /^  \S|^   /.test(lines[j]));
       j++
     ) {
       if (/^\s+at |^\s+\}/.test(lines[j])) break
