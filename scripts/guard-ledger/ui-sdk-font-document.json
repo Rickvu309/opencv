@@ -1,0 +1,13 @@
+{
+  "id": "ui-sdk-font-document",
+  "file": "scripts/ui-sdk-popover.test.mjs",
+  "detector": {
+    "module": "scripts/lib/ui-sdk-popover.mjs",
+    "export": "fontsWithoutDocument"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "3a1d939c",
+    "path": "apps/web/src/test/setup.ts"
+  }
+}

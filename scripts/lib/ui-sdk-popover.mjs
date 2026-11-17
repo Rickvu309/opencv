@@ -4,6 +4,15 @@ export function partialFonts(source) {
   )
 }
 
+export function fontsWithoutDocument(source) {
+  return (
+    source.includes("installTestFonts()") &&
+    !/if\s*\(\s*typeof document\s*!==\s*["']undefined["']\s*\)\s*(?:\{\s*)?installTestFonts\(\)/.test(
+      source
+    )
+  )
+}
+
 export function selectPortalLeavesParent(source) {
   return /<SelectPrimitive\.Portal\s*>/.test(source)
 }

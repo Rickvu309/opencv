@@ -3,6 +3,7 @@ import { readFileSync, readdirSync } from "node:fs"
 import test from "node:test"
 import {
   partialFonts,
+  fontsWithoutDocument,
   selectPortalLeavesParent,
   popoverOnlyShifts,
   popoverInheritsCallerStyles,
@@ -12,6 +13,20 @@ import {
 
 const read = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+
+test("shared FontFaceSet setup leaves Node test environments alone", () => {
+  assert.equal(
+    fontsWithoutDocument("beforeEach(() => { installTestFonts() })"),
+    true
+  )
+  assert.equal(
+    fontsWithoutDocument(
+      'beforeEach(() => { if (typeof document !== "undefined") installTestFonts() })'
+    ),
+    false
+  )
+  assert.equal(fontsWithoutDocument(read("apps/web/src/test/setup.ts")), false)
+})
 
 test("rich Paper tests keep the shared FontFaceSet event API", () => {
   assert.equal(
