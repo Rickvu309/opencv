@@ -582,7 +582,7 @@ export function useCoachTurn({
       if (!id || phase !== "idle") return
 
       await undoActivity(queryClient, activityId)
-      noteWritingUndo()
+      noteWritingUndo(activityId)
       await hydrateChat(id)
       dispatch({ type: "reset" })
       onAfterUndo?.()

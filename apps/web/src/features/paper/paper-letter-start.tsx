@@ -272,6 +272,7 @@ export function PaperLetterStart({
       if (activeDraft.current === operation) {
         if (operation.stopped && lines.length === 0) {
           rememberStoppedLetter({
+            chatId: chat.id,
             docId: created.docId,
             prompt: turnText,
             jobId: selected?.id ?? null,
@@ -352,7 +353,7 @@ export function PaperLetterStart({
       >
         <Search aria-hidden="true" className="size-[15px] shrink-0" />
         <Input
-          className="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-[13px] shadow-none focus-visible:ring-0 md:text-[13px]"
+          className="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-base shadow-none focus-visible:ring-0 md:text-[13px]"
           aria-label="Search jobs, paste a link or attach a file"
           placeholder="Search jobs, paste a link or attach a file"
           value={query}
@@ -451,7 +452,11 @@ export function PaperLetterStart({
           ) : null}
         </div>
       )}
-      {attaching ? <p role="status">Reading attachment…</p> : null}
+      {attaching ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          Reading attachment…
+        </p>
+      ) : null}
       {attached ? (
         <div className="min-w-0 text-sm">
           <p className="break-words">Context: {attached.name}</p>
@@ -513,10 +518,7 @@ export function PaperLetterStart({
         )}
       </div>
       {needsContext && !unread ? (
-        <p
-          id={guidanceId}
-          className="absolute top-full mt-2 text-xs text-muted-foreground"
-        >
+        <p id={guidanceId} className="text-xs leading-5 text-muted-foreground">
           Choose a job, paste job text or a link, or attach a file to draft a
           letter.
         </p>
@@ -534,12 +536,19 @@ export function PaperLetterStart({
         </div>
       ) : null}
       {limit ? (
-        <div>
+        <div
+          role="status"
+          className="space-y-1 rounded-lg border bg-muted/40 p-3 text-sm text-muted-foreground"
+        >
           <p>You&apos;ve reached today&apos;s Free limit.</p>
           <p>{limit.message}</p>
         </div>
       ) : null}
-      {error ? <p role="alert">{error}</p> : null}
+      {error ? (
+        <p role="alert" className="text-sm leading-5 text-destructive">
+          {error}
+        </p>
+      ) : null}
     </div>
   )
 }

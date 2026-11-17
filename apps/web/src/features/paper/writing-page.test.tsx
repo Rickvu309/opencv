@@ -18,7 +18,17 @@ import {
   setWritingConflict,
   WRITING_CONFLICT_NOTE,
 } from "@/lib/writing-refresh.ts"
-import { clearWritingProposal } from "@/lib/writing-proposal.ts"
+import {
+  attachWritingProposal,
+  clearWritingProposal,
+  publishWritingProposal,
+  syncWritingProposalFromActions,
+} from "@/lib/writing-proposal.ts"
+import {
+  clearStoppedLetter,
+  rememberStoppedLetter,
+  stoppedLetter,
+} from "./paper-letter-resume.ts"
 import { DOWNLOAD_WAITS_FOR_SAVE, WritingPage } from "./writing-page.tsx"
 
 const DOC = "11111111-1111-4111-8111-111111111111"
@@ -65,6 +75,7 @@ function words() {
 
 afterEach(async () => {
   clearWritingProposal()
+  clearStoppedLetter()
   setWritingConflict(null)
   localStorage.clear()
   cleanup()
@@ -414,4 +425,72 @@ it("refuses a Word download link when preparation rejects the saved revision", a
   expect(
     screen.getByRole("button", { name: "Download Word" })
   ).toHaveAccessibleDescription("Could not prepare this Word download.")
+})
+
+function enterWords(text: string) {
+  const page = screen.getByRole("article", { name: "Page" })
+  fireEvent(
+    page,
+    new InputEvent("beforeinput", {
+      inputType: "insertText",
+      data: text,
+      bubbles: true,
+      cancelable: true,
+    })
+  )
+}
+
+it("clears a stopped notice from document edits even without an input event", async () => {
+  vi.stubGlobal("fetch", async () =>
+    Response.json({ ok: true, data: readPage("") })
+  )
+  rememberStoppedLetter({
+    docId: DOC,
+    chatId: "stopped-chat",
+    prompt: "Draft a letter",
+    jobId: null,
+  })
+  render(<WritingPage docId={DOC} seed={draft("")} seedRevision={REVISION} />)
+  expect(
+    screen.getByRole("button", { name: "Continue drafting" })
+  ).toBeVisible()
+  enterWords("My opening")
+  await waitFor(() => expect(stoppedLetter()).toBeNull())
+  expect(words()).toEqual(["My opening"])
+  expect(screen.queryByRole("button", { name: "Continue drafting" })).toBeNull()
+})
+
+it("clears a settled receipt on the next document edit", async () => {
+  vi.stubGlobal("fetch", async () =>
+    Response.json({ ok: true, data: readPage("After") })
+  )
+  render(
+    <WritingPage docId={DOC} seed={draft("After")} seedRevision={REVISION} />
+  )
+  await waitFor(() =>
+    expect(screen.getByRole("status")).toHaveTextContent("Saved")
+  )
+  act(() => {
+    publishWritingProposal("own-call", {
+      docId: DOC,
+      edits: [{ op: "replaceText", before: "Before", after: "After" }],
+    })
+    attachWritingProposal("own-call", "own-action")
+    syncWritingProposalFromActions(
+      [
+        {
+          toolCallId: "own-call",
+          operation: "paper.edit",
+          input: { docId: DOC },
+          state: "committed",
+          proposalId: "own-action",
+          activityId: "own-activity",
+        },
+      ],
+      []
+    )
+  })
+  expect(screen.getByText("Approved")).toBeVisible()
+  enterWords("Extra ")
+  await waitFor(() => expect(screen.queryByText("Approved")).toBeNull())
 })

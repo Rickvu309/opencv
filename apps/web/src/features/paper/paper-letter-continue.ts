@@ -50,23 +50,24 @@ export async function redraftStoppedLetter(input: {
   run: Run
   signal: AbortSignal
   onWritten?: (text: string) => void
+  isBlank: () => boolean
 }) {
   if (input.signal.aborted) return
-  const draft = loadDraft(input.record.docId, localStorage)
-  if (draft && pageWords(draft.blocks).trim().length > 0) {
-    clearStoppedLetter(input.record.docId)
-    return
+  const assertBlank = () => {
+    const draft = loadDraft(input.record.docId, localStorage)
+    if (
+      !input.isBlank() ||
+      (draft && pageWords(draft.blocks).trim().length > 0)
+    ) {
+      clearStoppedLetter(input.record.docId)
+      throw new Error(
+        "Drafting stopped because you added words. Your text is unchanged."
+      )
+    }
   }
+  assertBlank()
   if (!input.onWritten && input.owner === "") throw new Error(READ_FAILED)
-  const chat = await input.run(
-    "chat.create",
-    { title: "Cover letter" },
-    { signal: input.signal }
-  )
-  if (input.signal.aborted) {
-    void stopPaperChat(chat.id)
-    return
-  }
+  const chat = { id: input.record.chatId }
   let text = ""
   try {
     const end = await streamPaperTurn({
@@ -111,6 +112,7 @@ export async function redraftStoppedLetter(input: {
   }
   const lines = letterLines(text, input.email)
   if (lines.length === 0) throw new Error(DRAFT_FAILED)
+  assertBlank()
   if (input.onWritten) {
     input.onWritten(text)
     clearStoppedLetter(input.record.docId)
@@ -118,6 +120,13 @@ export async function redraftStoppedLetter(input: {
   }
   const page = await readWordPage(input.owner, input.record.docId, input.signal)
   if (!page) throw new Error(READ_FAILED)
+  if (page.paragraphs.some((paragraph) => paragraph.text.trim().length > 0)) {
+    clearStoppedLetter(input.record.docId)
+    throw new Error(
+      "Drafting stopped because you added words. Your text is unchanged."
+    )
+  }
+  assertBlank()
   const diff = diffParagraphs(page, blocksForLetterLines(page, lines), null)
   if ("refused" in diff) throw new Error(diff.refused)
   if (diff.ops.length === 0) {

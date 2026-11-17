@@ -23,7 +23,10 @@ import { pageWords } from "@/features/paper-page/canvas-save.ts"
 import { WritingCanvas } from "@/features/paper-page/canvas.tsx"
 import { readWordPage } from "@/features/paper-page/package-read.ts"
 import { LetterStoppedNotice } from "@/features/paper/paper-letter-stopped.tsx"
-import { WritingProposalCard } from "@/features/paper/writing-proposal.tsx"
+import {
+  WritingDocumentNoticeSync,
+  WritingProposalCard,
+} from "@/features/paper/writing-proposal.tsx"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { catalogClient } from "@/lib/contract-client.ts"
@@ -302,35 +305,54 @@ export function WritingPage({
     [docId]
   )
 
+  const [liveText, updateLiveText] = useReducer(
+    (
+      state: { docId: string; text: string } | null,
+      next: { docId: string; text: string }
+    ) =>
+      state?.docId === next.docId && state.text === next.text ? state : next,
+    null
+  )
+  const onText = useCallback(
+    (text: string) => updateLiveText({ docId, text }),
+    [docId]
+  )
   const visibleSeed = shown.seed === undefined ? seed : shown.seed
-  const pageText = visibleSeed
-    ? visibleSeed.blocks.map((block) => block.text).join("\n")
-    : null
+  const pageText =
+    liveText?.docId === docId
+      ? liveText.text
+      : visibleSeed
+        ? visibleSeed.blocks.map((block) => block.text).join("\n")
+        : null
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div ref={setHeader} />
-      <WritingProposalCard docId={docId} />
-      <LetterStoppedNotice docId={docId} pageText={pageText} />
+      <WritingProposalCard docId={docId}>
+        <LetterStoppedNotice docId={docId} pageText={pageText} inset />
+      </WritingProposalCard>
       <div className="min-h-0 flex-1">
         <WritingCanvas
           key={`${docId}:${shown.generation}`}
           docId={docId}
-          renderHeader={(note, revision) =>
-            header
-              ? createPortal(
-                  <DocumentHeader
-                    docId={docId}
-                    owner={owner}
-                    title={title}
-                    onBack={onBack}
-                    note={note}
-                    revision={revision}
-                  />,
-                  header
-                )
-              : null
-          }
+          renderHeader={(note, revision) => (
+            <>
+              <WritingDocumentNoticeSync docId={docId} onText={onText} />
+              {header
+                ? createPortal(
+                    <DocumentHeader
+                      docId={docId}
+                      owner={owner}
+                      title={title}
+                      onBack={onBack}
+                      note={note}
+                      revision={revision}
+                    />,
+                    header
+                  )
+                : null}
+            </>
+          )}
           seed={visibleSeed}
           seedRevision={
             shown.revision === undefined ? seedRevision : shown.revision

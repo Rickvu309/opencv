@@ -112,6 +112,7 @@ it("names one Coach change and reviews it in Coach", async () => {
   card.setAttribute("aria-label", "Review Coach action")
   const approve = document.createElement("button")
   approve.textContent = "Approve"
+  card.tabIndex = -1
   card.append(approve)
   panel.append(card)
   document.body.append(dock, panel)
@@ -121,6 +122,8 @@ it("names one Coach change and reviews it in Coach", async () => {
       name: "Coach proposal",
     })
     expect(proposal).toHaveTextContent("Coach suggested 1 change")
+    const announcement = within(proposal).getByRole("status")
+    expect(proposal).toHaveClass("h-24", "md:h-16")
     expect(proposal).not.toHaveTextContent("(empty line)")
     expect(proposal).not.toHaveTextContent("Before")
     expect(
@@ -135,8 +138,9 @@ it("names one Coach change and reviews it in Coach", async () => {
       )
     })
     expect(opened).toHaveBeenCalledTimes(1)
-    expect(document.activeElement).toBe(approve)
+    expect(document.activeElement).toBe(card)
     act(() => notifyWritingRefresh())
+    expect(within(proposal).getByRole("status")).toBe(announcement)
     expect(proposal).toHaveTextContent("Coach suggested 1 change")
     act(() => {
       syncWritingProposalFromActions(
@@ -145,6 +149,7 @@ it("names one Coach change and reviews it in Coach", async () => {
             toolCallId: "call-1",
             operation: "paper.edit",
             state: "committed",
+            activityId: "activity-1",
             proposalId: PENDING,
             input: { docId: DOC },
           },
@@ -153,6 +158,7 @@ it("names one Coach change and reviews it in Coach", async () => {
       )
     })
     expect(within(proposal).getByRole("status")).toHaveTextContent("Approved")
+    expect(proposal).toHaveClass("h-24", "md:h-16")
   } finally {
     dock.remove()
     panel.remove()
@@ -177,7 +183,7 @@ it("says when Coach cannot be opened from the page", async () => {
   )
 })
 
-it("shows a waiting change as the words before and after", async () => {
+it("summarizes a waiting replacement without duplicating its diff", async () => {
   const before = "The second line stays blue."
   const after = "The second line stays green."
   const input = {
@@ -207,7 +213,7 @@ it("shows a waiting change as the words before and after", async () => {
   expect(proposal).not.toHaveTextContent('{"command":"paper.edit"}')
 })
 
-it("lists every operation of a waiting Word batch before approval", async () => {
+it("summarizes the count of a waiting Word batch for review in Coach", async () => {
   const handle = "33333333-3333-4333-8333-333333333333"
   const input = {
     docId: DOC,

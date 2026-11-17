@@ -24,7 +24,6 @@ import { startCoachTask, subscribeCoachTask } from "@/lib/coach-task-client.ts"
 import { taskIsTerminal, taskParts } from "@/lib/coach-task-state.ts"
 import { notifyWritingRefresh } from "@/lib/writing-refresh.ts"
 import {
-  noteWritingProposalOutcome,
   noteWritingUndo,
   syncWritingProposalFromActions,
 } from "@/lib/writing-proposal.ts"
@@ -40,12 +39,6 @@ import {
   idleCoachTask,
   type CoachTaskLifecycleEvent,
 } from "./coach-task-lifecycle.ts"
-
-function docIdOf(input: unknown) {
-  if (!input || typeof input !== "object" || !("docId" in input)) return null
-  const docId = input.docId
-  return typeof docId === "string" ? docId : null
-}
 
 export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
   const queryClient = useQueryClient()
@@ -131,8 +124,6 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
       const id = action.activityId ?? action.toolCallId
       if (refreshedEdits.current.has(id)) continue
       refreshedEdits.current.add(id)
-      const docId = docIdOf(action.input)
-      if (docId) noteWritingProposalOutcome(docId, "approved")
       notifyWritingRefresh()
     }
   }, [task])
@@ -428,7 +419,7 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
     stop: () => stop(),
     undo: async (activityId: string) => {
       await undoActivity(queryClient, activityId)
-      noteWritingUndo()
+      noteWritingUndo(activityId)
       options.onAfterUndo?.()
     },
     cancelInFlight: () => {

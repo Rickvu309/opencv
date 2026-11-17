@@ -16,6 +16,7 @@ import {
   publishWritingProposal,
   syncWritingProposalFromActions,
   writingOutcome,
+  writingProposal,
 } from "@/lib/writing-proposal.ts"
 import { WritingPage } from "./writing-page.tsx"
 
@@ -80,6 +81,7 @@ it("shows Approved, then Undone, after the panel settles the change", async () =
           toolCallId: "call-1",
           operation: "paper.edit",
           state: "committed",
+          activityId: "activity-1",
           proposalId: PENDING,
           input: { docId: DOC },
         },
@@ -90,9 +92,102 @@ it("shows Approved, then Undone, after the panel settles the change", async () =
   expect(within(proposal).getByRole("status")).toHaveTextContent("Approved")
   const seen: string[] = []
   const stop = subscribeWritingRefresh(() => seen.push("refresh"))
-  act(() => noteWritingUndo())
+  act(() => noteWritingUndo("activity-1"))
   stop()
-  expect(writingOutcome()).toEqual({ docId: DOC, phase: "undone" })
+  expect(writingOutcome()).toEqual({
+    docId: DOC,
+    pendingActionId: PENDING,
+    activityId: "activity-1",
+    phase: "undone",
+  })
   expect(seen).toEqual(["refresh"])
   expect(within(proposal).getByRole("status")).toHaveTextContent("Undone")
+})
+
+function propose() {
+  publishWritingProposal("call-1", {
+    docId: DOC,
+    edits: [{ op: "replaceText", before: "Before", after: "After" }],
+  })
+  attachWritingProposal("call-1", PENDING)
+}
+
+it("does not turn refresh followed by Deny into an approval", () => {
+  propose()
+  notifyWritingRefresh()
+  syncWritingProposalFromActions(
+    [
+      {
+        toolCallId: "call-1",
+        operation: "paper.edit",
+        state: "proposed",
+        proposalId: PENDING,
+        input: { docId: DOC },
+      },
+    ],
+    [{ id: PENDING, status: "denied", input: {} }]
+  )
+  expect(writingProposal()).toBeNull()
+  expect(writingOutcome()).toBeNull()
+})
+
+it("clears a proposal that disappears without a commit", () => {
+  propose()
+  notifyWritingRefresh()
+  syncWritingProposalFromActions([], [])
+  expect(writingProposal()).toBeNull()
+  expect(writingOutcome()).toBeNull()
+})
+
+it("requires the proposal's own committed action and activity", () => {
+  propose()
+  syncWritingProposalFromActions(
+    [
+      {
+        toolCallId: "other-call",
+        operation: "paper.edit",
+        state: "committed",
+        proposalId: "other-proposal",
+        activityId: "other-activity",
+        input: { docId: DOC },
+      },
+    ],
+    []
+  )
+  expect(writingOutcome()).toBeNull()
+})
+
+it("ignores Undo for another activity or document", () => {
+  propose()
+  syncWritingProposalFromActions(
+    [
+      {
+        toolCallId: "call-1",
+        operation: "paper.edit",
+        state: "committed",
+        proposalId: PENDING,
+        activityId: "activity-1",
+        input: { docId: DOC },
+      },
+    ],
+    []
+  )
+  noteWritingUndo("another-activity")
+  expect(writingOutcome()?.phase).toBe("approved")
+  noteWritingUndo("activity-1")
+  expect(writingOutcome()?.phase).toBe("undone")
+  syncWritingProposalFromActions(
+    [
+      {
+        toolCallId: "call-1",
+        operation: "paper.edit",
+        state: "committed",
+        proposalId: PENDING,
+        activityId: "activity-1",
+        input: { docId: DOC },
+      },
+    ],
+    []
+  )
+  expect(writingOutcome()?.phase).toBe("undone")
 })

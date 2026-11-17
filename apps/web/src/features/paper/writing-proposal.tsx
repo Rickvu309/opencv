@@ -1,14 +1,21 @@
-import { useEffect, useReducer, useSyncExternalStore } from "react"
+import {
+  useEffect,
+  useReducer,
+  useSyncExternalStore,
+  type ReactNode,
+} from "react"
+import { loadDraft, loadDraftBasis } from "@/features/paper-page/canvas-edit.ts"
+import { pageWords } from "@/features/paper-page/canvas-save.ts"
+import { clearStoppedLetter } from "./paper-letter-resume.ts"
 import { Button } from "@workspace/ui/components/button"
 
 import {
-  noteWritingProposalOutcome,
+  dropWritingOutcome,
   subscribeWritingOutcome,
   subscribeWritingProposal,
   writingOutcome,
   writingProposal,
 } from "@/lib/writing-proposal.ts"
-import { subscribeWritingRefresh } from "@/lib/writing-refresh.ts"
 
 const DOCK_MISSING = "Open Coach from the dock to review this change."
 
@@ -33,16 +40,46 @@ function openCoach(dock: HTMLElement) {
   requestAnimationFrame(() => {
     const panel = document.getElementById("coach-panel")
     const card = panel?.querySelector('[aria-label="Review Coach action"]')
-    const button = card?.querySelector("button:not([disabled])")
-    if (button instanceof HTMLElement) {
-      button.focus()
-      return
+    if (card instanceof HTMLElement) {
+      card.tabIndex = -1
+      card.focus()
     }
-    if (card instanceof HTMLElement) card.focus()
   })
 }
 
-export function WritingProposalCard({ docId }: { docId: string }) {
+export function WritingDocumentNoticeSync({
+  docId,
+  onText,
+}: {
+  docId: string
+  onText: (text: string) => void
+}) {
+  useEffect(() => {
+    let active = true
+    queueMicrotask(() => {
+      if (!active) return
+      const draft = loadDraft(docId, localStorage)
+      if (!draft) return
+      const words = pageWords(draft.blocks)
+      onText(words)
+      if (words.trim().length > 0) clearStoppedLetter(docId)
+      const basis = loadDraftBasis(docId, localStorage)
+      if (basis && words !== basis.words) dropWritingOutcome(docId)
+    })
+    return () => {
+      active = false
+    }
+  })
+  return null
+}
+
+export function WritingProposalCard({
+  docId,
+  children,
+}: {
+  docId: string
+  children?: ReactNode
+}) {
   const proposal = useSyncExternalStore(
     subscribeWritingProposal,
     writingProposal,
@@ -57,19 +94,9 @@ export function WritingProposalCard({ docId }: { docId: string }) {
     reviewErrorReducer,
     null
   )
-  useEffect(
-    () =>
-      subscribeWritingRefresh(() => {
-        const live = writingProposal()
-        if (!live || live.docId !== docId || live.withheld) return
-        noteWritingProposalOutcome(docId, "approved")
-      }),
-    [docId]
-  )
 
   const mine = proposal?.docId === docId ? proposal : null
   const settled = !mine && outcome?.docId === docId ? outcome : null
-  if (!reviewError && !mine && !settled) return null
 
   function review() {
     const dock = document.querySelector("[data-dock-coach]")
@@ -84,24 +111,29 @@ export function WritingProposalCard({ docId }: { docId: string }) {
   const showReview = Boolean(reviewError || mine)
   return (
     <section
-      aria-label="Coach proposal"
+      aria-label={reviewError || mine || settled ? "Coach proposal" : undefined}
       data-slot="writing-proposal-notice"
-      className="mx-auto flex w-[min(100%-3rem,816px)] flex-wrap items-center gap-x-3 gap-y-2 pt-4"
+      className="mx-auto flex h-24 w-[min(100%-3rem,816px)] shrink-0 items-center justify-between gap-3 md:h-16"
     >
+      {!reviewError && !mine && !settled ? children : null}
       {reviewError ? (
         <p role="alert" className="text-sm text-destructive">
           {reviewError}
         </p>
       ) : mine?.withheld ? (
-        <p role="status" className="text-sm text-muted-foreground/84">
+        <p role="status" className="text-sm text-muted-foreground">
           {mine.withheld}
         </p>
       ) : mine ? (
-        <p className="text-sm text-foreground">
+        <p
+          key={mine.pendingActionId ?? mine.toolCallId}
+          role="status"
+          className="text-sm text-foreground"
+        >
           {suggestionLine(mine.changes.length)}
         </p>
       ) : settled ? (
-        <p role="status" className="text-sm text-muted-foreground/84">
+        <p role="status" className="text-sm text-muted-foreground">
           {settled.phase === "approved" ? "Approved" : "Undone"}
         </p>
       ) : null}
@@ -109,7 +141,7 @@ export function WritingProposalCard({ docId }: { docId: string }) {
         <Button
           type="button"
           variant="outline"
-          className="h-11 md:h-8"
+          className="h-auto min-h-11 max-w-1/2 whitespace-normal md:min-h-8"
           onClick={review}
         >
           Review in Coach

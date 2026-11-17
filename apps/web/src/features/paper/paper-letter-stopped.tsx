@@ -1,4 +1,10 @@
-import { useEffect, useReducer, useRef, useSyncExternalStore } from "react"
+import {
+  useEffect,
+  useLayoutEffect,
+  useReducer,
+  useRef,
+  useSyncExternalStore,
+} from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Button } from "@workspace/ui/components/button"
 
@@ -37,10 +43,12 @@ export function LetterStoppedNotice({
   docId,
   pageText,
   onWritten,
+  inset = false,
 }: {
   docId: string
   pageText: string | null
   onWritten?: (text: string) => void
+  inset?: boolean
 }) {
   const record = useSyncExternalStore(
     subscribeStoppedLetter,
@@ -63,20 +71,19 @@ export function LetterStoppedNotice({
       clearStoppedLetter(docId)
   }, [docId, pageText])
 
-  useEffect(() => {
-    const page = document.querySelector('article[aria-label="Page"]')
-    if (!(page instanceof HTMLElement)) return
-    const onInput = () => {
-      if ((page.textContent ?? "").replaceAll("\u200b", "").trim().length > 0) {
-        clearStoppedLetter(docId)
-      }
-    }
-    page.addEventListener("input", onInput)
-    return () => page.removeEventListener("input", onInput)
-  }, [docId, pageText])
+  const latestText = useRef(pageText)
+  useLayoutEffect(() => {
+    latestText.current = pageText
+  }, [pageText])
 
-  if (pageText === null || pageText.trim().length > 0) return null
-  if (!record || record.docId !== docId) return null
+  if (
+    notice.phase !== "failed" &&
+    (pageText === null ||
+      pageText.trim().length > 0 ||
+      !record ||
+      record.docId !== docId)
+  )
+    return null
 
   async function go() {
     const current = stoppedLetter()
@@ -93,6 +100,8 @@ export function LetterStoppedNotice({
         run,
         signal: controller.signal,
         onWritten,
+        isBlank: () =>
+          latestText.current !== null && latestText.current.trim().length === 0,
       })
       if (!controller.signal.aborted) dispatchNotice({ type: "idle" })
     } catch (cause) {
@@ -116,10 +125,14 @@ export function LetterStoppedNotice({
   return (
     <section
       data-slot="letter-stopped-notice"
-      className="mx-auto flex w-[min(100%-3rem,816px)] flex-wrap items-center gap-x-3 gap-y-2 pt-4"
+      className={
+        inset
+          ? "flex h-full w-full items-center justify-between gap-3"
+          : "mx-auto flex h-24 w-[min(100%-3rem,816px)] shrink-0 items-center justify-between gap-3 md:h-16"
+      }
     >
       {notice.phase === "failed" ? (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="min-w-0 text-sm text-destructive">
           {notice.error}
         </p>
       ) : (
@@ -127,8 +140,8 @@ export function LetterStoppedNotice({
           role="status"
           className={
             writing
-              ? "text-sm text-foreground"
-              : "text-sm text-muted-foreground/84"
+              ? "min-w-0 text-sm text-foreground"
+              : "min-w-0 text-sm text-muted-foreground"
           }
         >
           {writing ? "Coach is writing…" : "Coach stopped before writing."}
@@ -138,16 +151,20 @@ export function LetterStoppedNotice({
         <Button
           type="button"
           variant="outline"
-          className="h-11 md:h-8"
+          className="h-auto min-h-11 max-w-1/2 whitespace-normal md:min-h-8"
           onClick={stop}
         >
           Stop
         </Button>
-      ) : (
-        <Button type="button" className="h-11 md:h-8" onClick={() => void go()}>
+      ) : record?.docId === docId ? (
+        <Button
+          type="button"
+          className="h-auto min-h-11 max-w-1/2 whitespace-normal md:min-h-8"
+          onClick={() => void go()}
+        >
           Continue drafting
         </Button>
-      )}
+      ) : null}
     </section>
   )
 }

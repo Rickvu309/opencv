@@ -23,6 +23,8 @@ export type WritingProposal = {
 
 export type WritingOutcome = {
   docId: string
+  pendingActionId: string
+  activityId: string
   phase: "approved" | "undone"
 }
 
@@ -44,24 +46,20 @@ export function subscribeWritingOutcome(listener: () => void) {
   }
 }
 
-function dropOutcome(docId: string) {
+export function dropWritingOutcome(docId: string) {
   if (!outcome || outcome.docId !== docId) return
   outcome = null
   emitOutcome()
 }
 
-export function noteWritingProposalOutcome(
-  docId: string,
-  phase: WritingOutcome["phase"]
-) {
-  if (outcome?.docId === docId && outcome.phase === phase) return
-  outcome = { docId, phase }
-  emitOutcome()
-}
-
-export function noteWritingUndo() {
-  if (!outcome || outcome.phase !== "approved") return
-  outcome = { docId: outcome.docId, phase: "undone" }
+export function noteWritingUndo(activityId: string) {
+  if (
+    !outcome ||
+    outcome.activityId !== activityId ||
+    outcome.phase !== "approved"
+  )
+    return
+  outcome = { ...outcome, phase: "undone" }
   emitOutcome()
   notifyWritingRefresh()
 }
@@ -274,7 +272,7 @@ function publish(
   const pendingActionId =
     current?.toolCallId === toolCallId ? current.pendingActionId : null
   current = { toolCallId, pendingActionId, ...parsed }
-  dropOutcome(current.docId)
+  dropWritingOutcome(current.docId)
   emit()
 }
 
@@ -317,6 +315,7 @@ type TaskAction = {
   input: unknown
   state: string
   proposalId: string | null
+  activityId?: string | null
 }
 
 type TaskConfirmation = {
@@ -342,7 +341,12 @@ export function syncWritingProposalFromActions(
   confirmations: readonly TaskConfirmation[]
 ) {
   const pending = actions.find(
-    (action) => action.operation === "paper.edit" && action.state === "proposed"
+    (action) =>
+      action.operation === "paper.edit" &&
+      action.state === "proposed" &&
+      !confirmations.some(
+        (item) => item.id === action.proposalId && item.status === "denied"
+      )
   )
   if (pending) {
     const confirmation = confirmations.find(
@@ -361,7 +365,7 @@ export function syncWritingProposalFromActions(
       }
       if (!sameProposal(next)) {
         current = next
-        dropOutcome(next.docId)
+        dropWritingOutcome(next.docId)
         emit()
       }
       return
@@ -369,10 +373,34 @@ export function syncWritingProposalFromActions(
   }
   if (!current) return
   const owner = actions.find(
-    (action) => action.toolCallId === current?.toolCallId
+    (action) =>
+      action.toolCallId === current?.toolCallId &&
+      action.proposalId === current.pendingActionId
   )
-  if (owner && (owner.state === "proposed" || owner.state === "planned")) {
+  const confirmation = confirmations.find(
+    (item) => item.id === current?.pendingActionId
+  )
+  if (
+    owner?.state === "committed" &&
+    owner.activityId &&
+    current.pendingActionId &&
+    confirmation?.status !== "denied"
+  ) {
+    outcome = {
+      docId: current.docId,
+      pendingActionId: current.pendingActionId,
+      activityId: owner.activityId,
+      phase: "approved",
+    }
+    emitOutcome()
+  } else if (
+    confirmation?.status !== "denied" &&
+    owner &&
+    (owner.state === "proposed" || owner.state === "planned")
+  ) {
     return
+  } else {
+    dropWritingOutcome(current.docId)
   }
   current = null
   emit()
