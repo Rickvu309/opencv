@@ -18,8 +18,8 @@ export function PitchPage() {
         <PageHeaderTitle>{soonCopy.pitchPage}</PageHeaderTitle>
       </WorkspaceHeader>
       <div className="@container/pitch flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">
-        <div className="relative flex shrink-0 flex-col gap-12 overflow-hidden bg-[radial-gradient(ellipse_55%_65%_at_85%_45%,var(--muted),var(--card))] px-6 py-12 leading-[1.21] xl:@min-[64em]/pitch:block xl:@min-[64em]/pitch:min-h-[700px] xl:@min-[64em]/pitch:flex-1 xl:@min-[64em]/pitch:px-16 xl:@min-[64em]/pitch:pt-[250px]">
-          <div className="relative z-10 flex min-w-0 flex-col xl:@min-[64em]/pitch:w-[470px] xl:@min-[64em]/pitch:max-w-full">
+        <div className="relative flex shrink-0 flex-col gap-12 overflow-hidden bg-[radial-gradient(ellipse_55%_65%_at_85%_45%,var(--muted),var(--card))] px-6 py-12 leading-[1.21] xl:@min-[73em]/pitch:block xl:@min-[73em]/pitch:min-h-[700px] xl:@min-[73em]/pitch:flex-1 xl:@min-[73em]/pitch:px-16 xl:@min-[73em]/pitch:pt-[250px]">
+          <div className="relative z-10 flex min-w-0 flex-col xl:@min-[73em]/pitch:w-[470px] xl:@min-[73em]/pitch:max-w-full">
             <p className="inline-flex min-h-[26px] w-fit items-center gap-1.5 rounded-full border border-border bg-card px-2.5 text-[12.5px] font-medium text-muted-foreground">
               <span
                 aria-hidden="true"
