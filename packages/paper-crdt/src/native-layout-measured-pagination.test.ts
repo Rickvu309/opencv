@@ -142,7 +142,7 @@ it("keeps unchanged downstream breaks without repainting on an inline edit", () 
     vi.spyOn(dom, "getBoundingClientRect").mockReturnValue(
       new DOMRect(0, 96, 500, 16)
     )
-    const paint = vi.fn((_decorations: Decoration[]) => false)
+    const paint = vi.fn<(decorations: Decoration[]) => boolean>(() => false)
     const pagination = measuredFlowPagination(view, paint)
     pagination.refresh(flowFixture())
     expect(paint).toHaveBeenCalled()
@@ -171,7 +171,7 @@ it("makes an oversized atomic block a labelled keyboard scroll region", () => {
     const dom = view.nodeDOM(0)
     if (!(dom instanceof HTMLElement)) throw new Error("Missing atomic block")
     Object.defineProperty(dom, "scrollHeight", { value: 2000 })
-    const paint = vi.fn((_decorations: Decoration[]) => false)
+    const paint = vi.fn<(decorations: Decoration[]) => boolean>(() => false)
     measuredFlowPagination(view, paint).refresh(flowFixture())
     const decorations = paint.mock.calls[0]?.[0]
     expect(decorations).toEqual(
