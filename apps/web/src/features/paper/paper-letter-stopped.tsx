@@ -175,7 +175,7 @@ export function LetterStoppedNotice({
         >
           Stop
         </Button>
-      ) : record?.docId === docId || reservedDocId === docId ? (
+      ) : record?.docId === docId || (!visible && reservedDocId === docId) ? (
         <Button
           type="button"
           className="ms-auto h-auto min-h-11 max-w-full whitespace-normal md:min-h-8"

@@ -137,6 +137,7 @@ it("keeps Stop available after typing until the stream ends and clears its alert
     "Your text is unchanged"
   )
   expect(screen.queryByRole("button", { name: "Stop", exact: true })).toBeNull()
+  expect(screen.queryByRole("button", { name: "Continue drafting" })).toBeNull()
   view.rerender(
     <LetterStoppedNotice docId={DOC} pageText="My opening sentence" />
   )
