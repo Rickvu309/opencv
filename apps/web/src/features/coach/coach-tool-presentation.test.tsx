@@ -51,6 +51,7 @@ function render(ui: ReactElement) {
     <ChatStoreContext.Provider
       value={{
         chats: [],
+        chatsLoaded: true,
         activeChatId: null,
         navigationRevision: 0,
         creationOwner: null,

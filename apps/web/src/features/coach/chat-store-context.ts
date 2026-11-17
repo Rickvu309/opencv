@@ -9,6 +9,7 @@ export type TurnPhase = "idle" | "waiting" | "streaming"
 
 export type ChatStoreValue = {
   chats: ChatSummary[]
+  chatsLoaded: boolean
   activeChatId: string | null
   navigationRevision: number
   creationOwner: string | null

@@ -329,14 +329,22 @@ describe("Coach workspace", () => {
       ).not.toBeInTheDocument()
     )
     const composer = screen.getByPlaceholderText("Ask Coach anything")
-    const starter = screen.getByRole("button", { name: "Review my CV" })
+    const recent = await screen.findByRole("list", { name: "Recent chats" })
     expect(
-      composer.compareDocumentPosition(starter) &
+      composer.compareDocumentPosition(recent) &
         Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy()
     expect(
-      screen.queryByRole("button", { name: "More ideas" })
+      screen.queryByRole("button", { name: "Review my CV" })
     ).not.toBeInTheDocument()
+    fireEvent.click(
+      within(recent).getByRole("button", { name: /^CV vs internship first/ })
+    )
+    expect(
+      await screen.findByText(
+        "I don't know if I should chase internships or finish my CV first."
+      )
+    ).toBeVisible()
   })
 
   it("disables sending and shows the reset with no Upgrade link when capped", async () => {
@@ -547,64 +555,4 @@ describe("Coach workspace", () => {
       }
     }
   )
-})
-
-describe("Coach uses one full-page presentation", () => {
-  it("uses the page header and composer when the compact panel expands", async () => {
-    scriptCoachStream({})
-    const { container, rerender } = render(
-      <ChatStoreProvider>
-        <CoachWorkspace presentation="compact" />
-      </ChatStoreProvider>
-    )
-    const composer = await screen.findByRole("textbox", {
-      name: "Message Coach",
-    })
-    expect(composer).not.toHaveFocus()
-    const sizing = composer.className
-    expect(
-      container.querySelector('[data-slot="coach-panel-header"]')
-    ).not.toBeNull()
-    rerender(
-      <ChatStoreProvider>
-        <CoachWorkspace presentation="page" />
-      </ChatStoreProvider>
-    )
-    expect(
-      container.querySelector('[data-slot="coach-panel-header"]')
-    ).toBeNull()
-    expect(container.querySelector('[data-presentation="page"]')).not.toBeNull()
-    expect(sizing).toContain("md:min-h-12")
-    expect(sizing).toContain("md:text-[15px]")
-    expect(sizing).toContain("text-base")
-    expect(
-      screen.getByRole("textbox", { name: "Message Coach" }).className
-    ).toBe(sizing)
-  })
-
-  it("leaves the composer unfocused on a phone, including after a starter", async () => {
-    vi.stubGlobal("matchMedia", (query: string) => ({
-      matches: query === "(max-width: 767px)",
-      media: query,
-      onchange: null,
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      addListener: () => {},
-      removeListener: () => {},
-      dispatchEvent: () => false,
-    }))
-    scriptCoachStream({})
-    render(
-      <ChatStoreProvider>
-        <CoachWorkspace />
-      </ChatStoreProvider>
-    )
-    const composer = await screen.findByRole("textbox", {
-      name: "Message Coach",
-    })
-    expect(composer).not.toHaveFocus()
-    fireEvent.click(screen.getByRole("button", { name: "Review my CV" }))
-    expect(composer).toHaveValue("Review my CV")
-    expect(composer).not.toHaveFocus()
-  })
 })

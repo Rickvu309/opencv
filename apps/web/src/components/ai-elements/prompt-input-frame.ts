@@ -1,5 +1,5 @@
 import { createContext } from "react"
 
-export type PromptInputFrameName = "page" | "standard"
+export type PromptInputFrameName = "home" | "page" | "standard"
 
 export const PromptInputFrame = createContext<PromptInputFrameName>("standard")

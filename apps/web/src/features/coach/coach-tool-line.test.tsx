@@ -169,6 +169,7 @@ describe("CoachToolLine", () => {
     })
     const store = {
       chats: [],
+      chatsLoaded: true,
       activeChatId: null,
       navigationRevision: 0,
       creationOwner: null,

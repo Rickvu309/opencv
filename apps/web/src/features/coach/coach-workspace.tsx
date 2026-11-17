@@ -388,7 +388,9 @@ export function CoachWorkspace({
           </Button>
         </p>
       ) : null}
-      <PromptInputFrame value="page">{coachDock}</PromptInputFrame>
+      <PromptInputFrame value={showWelcome ? "home" : "page"}>
+        {coachDock}
+      </PromptInputFrame>
     </div>
   )
   const headerTitle = showHome
@@ -445,6 +447,8 @@ export function CoachWorkspace({
           <CoachHome
             onChooseStarter={chooseStarter}
             disabled={!enabled || capped}
+            recentChats={store.chatsLoaded ? chats : null}
+            onOpenChat={openChat}
           >
             {composer}
           </CoachHome>

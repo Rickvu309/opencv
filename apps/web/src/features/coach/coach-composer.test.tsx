@@ -9,7 +9,11 @@ import {
 
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { expectCoachIdle } from "@/test/coach-chat-helpers.ts"
-import { getLastCoachRequest, scriptCoachStream } from "@/test/chat-api-mock.ts"
+import {
+  getLastCoachRequest,
+  scriptCoachStream,
+  setMockChats,
+} from "@/test/chat-api-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
 beforeEach(() => {
@@ -27,6 +31,7 @@ function composer() {
 
 describe("Coach composer", () => {
   it("fills the composer with a starter's text and sends nothing", async () => {
+    setMockChats([])
     renderApp(SURFACE_PATHS.coach)
     await expectCoachIdle()
 
@@ -38,6 +43,7 @@ describe("Coach composer", () => {
   })
 
   it("shows three starters the Coach can do and none that need job search", async () => {
+    setMockChats([])
     renderApp(SURFACE_PATHS.coach)
     await expectCoachIdle()
 
