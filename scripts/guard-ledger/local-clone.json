@@ -1,0 +1,13 @@
+{
+  "id": "local-clone",
+  "file": "scripts/local-clone.test.mjs",
+  "detector": {
+    "module": "scripts/lib/local-clone.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "8fbd90c11",
+    "path": "scripts/ocv-tools/jobs/ref-safety.test.mjs"
+  }
+}

@@ -23,7 +23,7 @@ function repoWithTheMistake(t, headFiles) {
   const clone = join(root, "clone")
   mkdirSync(origin)
   runGit(origin, "init", "--bare", "-b", "main")
-  runGit(root, "clone", origin, clone)
+  runGit(root, "clone", "--no-hardlinks", origin, clone)
   runGit(clone, "config", "user.email", "t@example.com")
   runGit(clone, "config", "user.name", "t")
   mkdirSync(join(clone, "scripts"))

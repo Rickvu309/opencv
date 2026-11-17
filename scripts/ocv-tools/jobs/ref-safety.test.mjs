@@ -57,7 +57,15 @@ function throwawayRepo(t) {
       env: isolatedEnv(process.env),
       encoding: "utf8",
     })
-  git("clone", "--quiet", "--local", "--no-checkout", root, clone)
+  git(
+    "clone",
+    "--no-hardlinks",
+    "--quiet",
+    "--local",
+    "--no-checkout",
+    root,
+    clone
+  )
   const repo = join(clone, ".git")
   const state = () => ({
     refs: git("--git-dir", repo, "for-each-ref"),
