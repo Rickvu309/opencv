@@ -1,0 +1,34 @@
+declare global {
+  var __UI_SDK_STRICT__: boolean | undefined
+}
+
+export function installUiSdkTestPlatform() {
+  globalThis.__UI_SDK_STRICT__ = true
+  HTMLElement.prototype.showPopover = function () {
+    this.setAttribute("data-test-popover-open", "")
+  }
+  HTMLElement.prototype.hidePopover = function () {
+    this.removeAttribute("data-test-popover-open")
+  }
+  Element.prototype.getAnimations = () => []
+  Element.prototype.checkVisibility = function () {
+    for (
+      let element: Element | null = this;
+      element;
+      element = element.parentElement
+    ) {
+      const style = getComputedStyle(element)
+      if (style.display === "none" || style.visibility === "hidden")
+        return false
+    }
+    return true
+  }
+  document.elementFromPoint = () => null
+  document.elementsFromPoint = () => []
+  document.head.append(
+    Object.assign(document.createElement("style"), {
+      textContent:
+        "[popover] { display: none !important } [popover][data-test-popover-open] { display: block !important }",
+    })
+  )
+}
