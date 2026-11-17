@@ -270,7 +270,7 @@ function LegacyPaperDocPage() {
           key={validId}
           docId={validId}
           title={listed?.name ?? packagePage.name}
-          kind={listed?.kind ?? packagePage.kind}
+          kind={listed?.kind ?? packagePage.label}
           onBack={back}
           seed={seeded}
           seedRevision={packagePage.revision}

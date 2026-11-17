@@ -125,6 +125,33 @@ it.each([
     )
     const view = render(page("initial"))
     const host = await screen.findByLabelText("Document content")
+    if (kind === "cv" && mode === "accepted epoch reset") {
+      const paragraph = host.querySelector("[data-content-type=paragraph]")
+      if (!paragraph) throw new Error("Document paragraph required")
+      const text = document
+        .createTreeWalker(paragraph, NodeFilter.SHOW_TEXT)
+        .nextNode()
+      if (!text) throw new Error("Document text required")
+      act(() => {
+        host.focus()
+        const range = document.createRange()
+        range.setStart(text, 0)
+        range.setEnd(text, Math.min(5, text.textContent?.length ?? 0))
+        window.getSelection()?.removeAllRanges()
+        window.getSelection()?.addRange(range)
+        document.dispatchEvent(new Event("selectionchange"))
+      })
+      expect(
+        await screen.findByRole("toolbar", { name: "Selection formatting" })
+      ).toBeVisible()
+      host.addEventListener("keydown", (event) => event.preventDefault(), {
+        once: true,
+      })
+      fireEvent.keyDown(host, { key: "Escape" })
+      expect(
+        screen.queryByRole("toolbar", { name: "Selection formatting" })
+      ).not.toBeInTheDocument()
+    }
     fireEvent.click(
       screen.getByRole("button", { name: "Formatting and insert" })
     )

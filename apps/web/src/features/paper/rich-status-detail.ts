@@ -25,7 +25,7 @@ function detailReducer(state: DetailState, action: DetailAction): DetailState {
 }
 
 export function useRichStatusDetail(label: string, saved: boolean) {
-  const statusRef = useRef<HTMLSpanElement>(null)
+  const statusRef = useRef<HTMLParagraphElement>(null)
   const layoutRef = useRef<{ width: number; font: string } | null>(null)
   const detailRef = useRef<HTMLParagraphElement>(null)
   const [{ visible, minHeight }, dispatch] = useReducer(detailReducer, {
