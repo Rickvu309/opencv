@@ -1,6 +1,10 @@
 import type { Node as DocumentNode } from "@tiptap/pm/model"
 import { Decoration, type EditorView } from "@tiptap/pm/view"
 import type { FlowDocument } from "@workspace/domain/internal/paper-presentation"
+import {
+  measuredTextLines,
+  type TextLineCache,
+} from "./native-layout-text-lines.js"
 import { canonicalProps } from "./native-formatting-props.js"
 import { effectiveParagraph } from "./native-formatting-render-values.js"
 import {
@@ -15,92 +19,23 @@ type MeasuredBlock = {
   dom: HTMLElement
 }
 
-function textLines(
-  view: EditorView,
-  block: MeasuredBlock,
-  scale: number,
-  input: FlowDocument
-): LayoutUnit[] {
-  const units: LayoutUnit[] = []
-  const origin = view.dom.getBoundingClientRect().top
-  const walker = document.createTreeWalker(block.dom, NodeFilter.SHOW_TEXT, {
-    acceptNode: (node) =>
-      node.parentElement?.closest('style, [contenteditable="false"]')
-        ? NodeFilter.FILTER_REJECT
-        : NodeFilter.FILTER_ACCEPT,
-  })
-  const range = document.createRange()
-  while (walker.nextNode()) {
-    const text = walker.currentNode
-    if (!(text instanceof Text) || !text.length) continue
-    const style = getComputedStyle(text.parentElement!)
-    const lineHeight = parseFloat(style.lineHeight)
-    for (let start = 0; start < text.length;) {
-      range.setStart(text, start)
-      range.setEnd(text, start + 1)
-      const first = range.getBoundingClientRect()
-      let low = start + 1
-      let high = text.length
-      while (low < high) {
-        const middle = Math.floor((low + high) / 2)
-        range.setStart(text, middle)
-        range.setEnd(text, middle + 1)
-        if (Math.abs(range.getBoundingClientRect().top - first.top) < 1)
-          low = middle + 1
-        else high = middle
-      }
-      const leading = Number.isFinite(lineHeight)
-        ? Math.max(0, lineHeight - first.height / scale) / 2
-        : 0
-      const top = (first.top - origin) / scale - leading
-      const bottom = (first.bottom - origin) / scale + leading
-      const previous = units[units.length - 1]
-      if (previous && Math.abs(previous.top - top) < 1)
-        previous.bottom = Math.max(previous.bottom, bottom)
-      else
-        units.push({
-          pos: view.posAtDOM(text, start),
-          end: block.pos + block.node.nodeSize,
-          top,
-          bottom,
-          kind: "line",
-          keepWithNext: false,
-          paragraph: null,
-        })
-      start = low
-    }
-  }
-  const properties = effectiveParagraph(
-    input.presentation,
-    canonicalProps(block.node.firstChild?.attrs ?? {})
-  )
-  return units.map((unit, line) => ({
-    ...unit,
-    keepWithNext: Boolean(properties.keepNext),
-    paragraph: {
-      id: block.pos,
-      line,
-      count: units.length,
-      keepTogether: Boolean(properties.keepTogether),
-      widowOrphan: properties.widowOrphan !== false,
-    },
-  }))
-}
-
 function blockUnits(
   view: EditorView,
   block: MeasuredBlock,
   scale: number,
-  input: FlowDocument
+  input: FlowDocument,
+  cache: TextLineCache
 ): LayoutUnit[] {
   const type =
     block.node.type.name === "paperRow"
       ? "paperRow"
       : block.node.firstChild?.type.name
   if (
-    ["paragraph", "bulletListItem", "numberedListItem"].includes(type ?? "")
+    ["paragraph", "bulletListItem", "numberedListItem", "cvField"].includes(
+      type ?? ""
+    )
   ) {
-    const lines = textLines(view, block, scale, input)
+    const lines = measuredTextLines(view, block, scale, input, cache)
     if (lines.length) return lines
   }
   const rect = block.dom.getBoundingClientRect()
@@ -156,12 +91,16 @@ export function measuredFlowPagination(
   paint: (decorations: Decoration[]) => boolean
 ) {
   let previous: MeasuredBlock[] = []
+  const lineCache: TextLineCache = new Map()
+  const paintedUnits = new Map<string, LayoutUnit[]>()
+  let previousDoc: DocumentNode | null = null
   let offsets: PageOffset[] = []
   let settings = ""
   let invalidated = true
   return {
     invalidate() {
       invalidated = true
+      lineCache.clear()
     },
     refresh(input: FlowDocument) {
       const nextSettings = JSON.stringify(input.presentation)
@@ -175,6 +114,7 @@ export function measuredFlowPagination(
         if (node.type.name !== "blockContainer") return
         const type = node.firstChild?.type.name
         if (
+          node.childCount > 1 ||
           ["paperFlow", "paperFlowSection", "paperTable", "paperCell"].includes(
             type ?? ""
           )
@@ -184,6 +124,80 @@ export function measuredFlowPagination(
         if (dom instanceof HTMLElement) blocks.push({ node, pos, dom })
         return false
       })
+      if (invalidated || settings !== nextSettings) lineCache.clear()
+      if (
+        !invalidated &&
+        settings === nextSettings &&
+        previousDoc &&
+        blocks.length === previous.length
+      ) {
+        const changed = blocks.filter(
+          (block, index) => !block.node.eq(previous[index]!.node)
+        )
+        const start = previousDoc.content.findDiffStart(view.state.doc.content)
+        const end = previousDoc.content.findDiffEnd(view.state.doc.content)
+        const updates = changed.map((block) => ({
+          block,
+          units: blockUnits(
+            view,
+            block,
+            Number(
+              view.dom.style.getPropertyValue("--cv-rich-page-scale") || 1
+            ),
+            input,
+            lineCache
+          ),
+        }))
+        if (
+          changed.length > 0 &&
+          start !== null &&
+          end &&
+          !offsets.some((offset) => offset.pos > start && offset.pos < end.a) &&
+          updates.every(({ block, units }) => {
+            const before = paintedUnits.get(block.node.attrs.id)
+            return (
+              before &&
+              before.length === units.length &&
+              units.every((unit, index) => {
+                const old = before[index]!
+                return (
+                  Math.abs(old.top - unit.top) < 0.1 &&
+                  Math.abs(old.bottom - unit.bottom) < 0.1 &&
+                  (!offsets.some((offset) => offset.pos === old.pos) ||
+                    unit.pos ===
+                      (old.pos >= end.a ? old.pos + end.b - end.a : old.pos)) &&
+                  old.kind === unit.kind &&
+                  old.keepWithNext === unit.keepWithNext &&
+                  old.paragraph?.keepTogether ===
+                    unit.paragraph?.keepTogether &&
+                  old.paragraph?.widowOrphan === unit.paragraph?.widowOrphan
+                )
+              })
+            )
+          })
+        ) {
+          const delta = end.b - end.a
+          offsets = offsets.map((offset) => ({
+            ...offset,
+            pos: offset.pos >= end.a ? offset.pos + delta : offset.pos,
+            end: offset.end >= end.a ? offset.end + delta : offset.end,
+          }))
+          for (const [id, units] of paintedUnits)
+            paintedUnits.set(
+              id,
+              units.map((unit) => ({
+                ...unit,
+                pos: unit.pos >= end.a ? unit.pos + delta : unit.pos,
+                end: unit.end >= end.a ? unit.end + delta : unit.end,
+              }))
+            )
+          for (const { block, units } of updates)
+            paintedUnits.set(block.node.attrs.id, units)
+          previous = blocks
+          previousDoc = view.state.doc
+          return false
+        }
+      }
       let from = 0
       if (!invalidated && settings === nextSettings) {
         while (
@@ -214,7 +228,13 @@ export function measuredFlowPagination(
       const clips = blocks.flatMap((block) => {
         const type = block.node.firstChild?.type.name
         if (
-          !["paperPhoto", "heading"].includes(type ?? "") ||
+          [
+            "paragraph",
+            "bulletListItem",
+            "numberedListItem",
+            "cvField",
+            "paperPageBreak",
+          ].includes(type ?? "") ||
           block.dom.scrollHeight <= capacity
         )
           return []
@@ -225,6 +245,7 @@ export function measuredFlowPagination(
             {
               style: `max-height:${capacity}px;overflow:auto;overscroll-behavior:contain`,
               tabindex: "0",
+              contenteditable: "false",
               role: "region",
               "aria-label":
                 "Content taller than a page. Scroll to read all content.",
@@ -232,6 +253,16 @@ export function measuredFlowPagination(
             },
             { key: `clip:${capacity}` }
           ),
+          ...(block.node.firstChild?.isTextblock
+            ? [
+                Decoration.node(
+                  block.pos + 1,
+                  block.pos + 1 + block.node.firstChild.nodeSize,
+                  { contenteditable: "true" },
+                  { key: "clip-content" }
+                ),
+              ]
+            : []),
         ]
       })
       const cleared = paint([...clips, ...offsets.map(offsetDecoration)])
@@ -240,7 +271,7 @@ export function measuredFlowPagination(
       )
       const units = blocks
         .slice(from)
-        .flatMap((block) => blockUnits(view, block, scale, input))
+        .flatMap((block) => blockUnits(view, block, scale, input, lineCache))
       offsets.push(
         ...measuredPageBreaks(units, {
           height: page.height / 15,
@@ -249,10 +280,57 @@ export function measuredFlowPagination(
           gap: 24,
         })
       )
-      const painted = paint([...clips, ...offsets.map(offsetDecoration)])
+      let painted = paint([...clips, ...offsets.map(offsetDecoration)])
+      for (let pass = 0; pass < 4; pass++) {
+        const corrections = measuredPageBreaks(
+          blocks
+            .slice(from)
+            .flatMap((block) =>
+              blockUnits(view, block, scale, input, lineCache)
+            ),
+          {
+            height: page.height / 15,
+            top: page.top / 15,
+            bottom: page.bottom / 15,
+            gap: 24,
+          }
+        ).filter((offset) => offset.kind !== "break")
+        if (!corrections.length) break
+        for (const correction of corrections) {
+          const existing = offsets.find(
+            (offset) => offset.pos === correction.pos
+          )
+          if (existing) existing.height += correction.height
+          else offsets.push(correction)
+        }
+        painted = paint([...clips, ...offsets.map(offsetDecoration)]) || painted
+      }
+      const finalUnits = blocks.flatMap((block) =>
+        blockUnits(view, block, scale, input, lineCache)
+      )
+      const settled = !measuredPageBreaks(
+        finalUnits.filter((unit) => unit.pos >= start),
+        {
+          height: page.height / 15,
+          top: page.top / 15,
+          bottom: page.bottom / 15,
+          gap: 24,
+        }
+      ).some((offset) => offset.kind !== "break")
+      paintedUnits.clear()
+      for (const block of blocks)
+        paintedUnits.set(
+          block.node.attrs.id,
+          finalUnits.filter(
+            (unit) =>
+              unit.pos >= block.pos &&
+              unit.pos < block.pos + block.node.nodeSize
+          )
+        )
       previous = blocks
+      previousDoc = view.state.doc
       settings = nextSettings
-      invalidated = false
+      invalidated = !settled
       return cleared || painted
     },
   }

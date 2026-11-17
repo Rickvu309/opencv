@@ -83,7 +83,8 @@ export function installFlowView(
   element.before(style)
   element.dataset.paperPageFlow = ""
   let active = true,
-    frame = 0
+    frame = 0,
+    afterPaint = 0
   function markTableRows(document: FlowDocument, supported: boolean) {
     let changed = false
     for (const section of document.flow.children) {
@@ -113,6 +114,8 @@ export function installFlowView(
         if (row.dataset.paperOversizedRow !== String(oversized)) changed = true
         row.dataset.paperOversizedRow = String(oversized)
         if (oversized) {
+          row.contentEditable = "false"
+          content.contentEditable = "true"
           row.setAttribute("tabindex", "0")
           row.setAttribute("role", "region")
           row.setAttribute(
@@ -120,6 +123,8 @@ export function installFlowView(
             "Table row taller than a page. Scroll to read all content."
           )
         } else {
+          row.removeAttribute("contenteditable")
+          content.removeAttribute("contenteditable")
           row.removeAttribute("tabindex")
           row.removeAttribute("role")
           row.removeAttribute("aria-label")
@@ -209,7 +214,15 @@ export function installFlowView(
     if (frame) cancelAnimationFrame(frame)
     frame = requestAnimationFrame(() => {
       frame = 0
-      refresh()
+      if (!pagination) {
+        refresh()
+        return
+      }
+      clearTimeout(afterPaint)
+      afterPaint = window.setTimeout(() => {
+        afterPaint = 0
+        refresh()
+      }, 0)
     })
   }
   const invalidate = () => {
@@ -231,6 +244,7 @@ export function installFlowView(
     destroy() {
       active = false
       cancelAnimationFrame(frame)
+      clearTimeout(afterPaint)
       resize.disconnect()
       document.fonts.removeEventListener?.("loadingdone", invalidate)
       element.removeEventListener("load", invalidate, true)

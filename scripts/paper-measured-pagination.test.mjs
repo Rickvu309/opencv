@@ -52,7 +52,7 @@ test("the column-based fork fails and measured Paper pagination stays quiet", ()
     const historic = execFileSync("git", ["show", `${revision}:${file}`], {
       encoding: "utf8",
     })
-    assert.equal(detect(historic, file).length, 2)
+    assert.equal(detect(historic, file).length, 3)
   }
   for (const name of readdirSync("packages/paper-crdt/src").filter(
     (name) => name.endsWith(".ts") && !name.endsWith(".test.ts")
@@ -65,7 +65,7 @@ test("the column-based fork fails and measured Paper pagination stays quiet", ()
 test("Word break properties and Find settling reject their introducing commit", () => {
   for (const [path, from, to] of [
     [
-      "packages/paper-crdt/src/native-layout-measured-pagination.ts",
+      "packages/paper-crdt/src/native-layout-text-lines.ts",
       "properties.widowOrphan !== false",
       "false",
     ],
@@ -81,12 +81,92 @@ test("Word break properties and Find settling reject their introducing commit", 
     assert.notEqual(mistake, clean)
     assert.equal(detect(mistake, path).length, 1)
     const historicPath = path.replace(
-      "native-layout-measured-pagination",
+      "native-layout-text-lines",
       "measured-flow-pagination"
     )
     const historic = execFileSync("git", ["show", `68bd981a:${historicPath}`], {
       encoding: "utf8",
     })
-    assert.equal(detect(historic, path).length, 1)
+    assert.equal(
+      detect(historic, path).length,
+      path.endsWith("native-layout-text-lines.ts") ? 2 : 1
+    )
   }
+})
+
+test("semantic owners, visual lines and typing reject the reviewed regression", () => {
+  const file = "packages/paper-crdt/src/native-layout-measured-pagination.ts"
+  const clean = readFileSync(file, "utf8")
+  assert.deepEqual(detect(clean, file), [])
+  for (const [from, to] of [
+    ["node.childCount > 1", "false"],
+    ['"data-paper-oversized-block": "true"', '"data-paper-clip": "true"'],
+    ['contenteditable: "false"', 'contenteditable: "inherit"'],
+    ["pass < 4", "false"],
+    ["updates.every", "updates.some"],
+  ]) {
+    const mistake = clean.replace(from, to)
+    assert.notEqual(mistake, clean)
+    assert.equal(detect(mistake, file).length, 1)
+  }
+  const historic = execFileSync("git", ["show", `655f6a7b:${file}`], {
+    encoding: "utf8",
+  })
+  assert.equal(detect(historic, file).length, 4)
+})
+
+test("pagination yields the input frame before measuring browser layout", () => {
+  const clean = readFileSync(file, "utf8")
+  assert.deepEqual(detect(clean, file), [])
+  const mistake = clean.replace(
+    "afterPaint = window.setTimeout",
+    "afterPaint = run"
+  )
+  assert.notEqual(mistake, clean)
+  assert.equal(detect(mistake, file).length, 1)
+  const historic = execFileSync("git", ["show", `655f6a7b:${file}`], {
+    encoding: "utf8",
+  })
+  assert.equal(detect(historic, file).length, 1)
+})
+
+test("visual line overlap cannot regress to top-coordinate grouping", () => {
+  const file = "packages/paper-crdt/src/native-layout-text-lines.ts"
+  const clean = readFileSync(file, "utf8")
+  assert.deepEqual(detect(clean, file), [])
+  const mistake = clean.replace(
+    "Math.min(previous.bottom, bottom) - Math.max(previous.top, top)",
+    "Math.abs(previous.top - top)"
+  )
+  assert.notEqual(mistake, clean)
+  assert.equal(detect(mistake, file).length, 1)
+})
+
+test("oversized keyboard scrolling rejects the reviewed focus loss", () => {
+  const file = "packages/paper-crdt/src/native-layout-flow-mount.ts"
+  const clean = readFileSync(file, "utf8")
+  assert.deepEqual(detect(clean, file), [])
+  const mistake = clean.replace("scrollOversizedContent(event)", "false")
+  assert.notEqual(mistake, clean)
+  assert.equal(detect(mistake, file).length, 1)
+  const historic = execFileSync("git", ["show", `655f6a7b:${file}`], {
+    encoding: "utf8",
+  })
+  assert.equal(detect(historic, file).length, 1)
+})
+
+test("oversized rows retain region focus and editable cells", () => {
+  const clean = readFileSync(file, "utf8")
+  for (const from of [
+    'row.contentEditable = "false"',
+    'content.contentEditable = "true"',
+  ]) {
+    const mistake = clean.replace(from, "")
+    assert.notEqual(mistake, clean)
+    assert.equal(detect(mistake, file).length, 1)
+  }
+  const historic = execFileSync("git", ["show", `655f6a7b:${file}`], {
+    encoding: "utf8",
+  })
+  assert.equal(detect(historic, file).length, 1)
 })

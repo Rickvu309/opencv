@@ -1,3 +1,4 @@
+import { scrollOversizedContent } from "./native-layout-scroll.js"
 import { flowTableControls } from "./native-layout-table-controls.js"
 import { paperSearchPlugin, richEditorSearch } from "./native-layout-search.js"
 import { richEditorCommands } from "./native-formatting-commands.js"
@@ -135,6 +136,7 @@ export function mountPrivateFlow(
   }
   const keydown = (event: KeyboardEvent) => {
     if (!active || !editor.isEditable) return
+    if (scrollOversizedContent(event)) return
     if (
       event.target instanceof Element &&
       event.target.closest("[data-paper-table-controls]")
