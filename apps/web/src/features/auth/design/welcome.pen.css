@@ -11,7 +11,7 @@
 }
 
 [data-pen-surface="auth"] [data-welcome-step="done"] {
-  color: #a0a0a2;
+  color: color-mix(in oklab, var(--muted-foreground) 83%, transparent);
   font-weight: 400;
 }
 

@@ -68,6 +68,9 @@ describe("W1.5 Welcome parity", () => {
       ...steps().map((step) => step.text),
     ]
     expect(shown).toEqual(penTexts)
+    expect(screen.getByRole("main")).toContainElement(
+      screen.getByRole("heading")
+    )
     expect(steps().map((step) => step.state)).toEqual([
       "done",
       "done",

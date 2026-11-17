@@ -11,7 +11,7 @@ export const AUTH_COPY = {
   language: "Language",
   en: "EN",
   vi: "VI",
-  vietnameseNotice: "Tiếng Việt is coming. Menus stay in English for now.",
+  vietnameseNotice: "Tiếng Việt is coming. For now, the app uses English.",
   checkEmail: "Check your email",
   sentTo: "We sent a 6-digit code to",
   change: "Change",

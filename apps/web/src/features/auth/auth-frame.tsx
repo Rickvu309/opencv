@@ -15,7 +15,7 @@ export function AuthFrame({
   children: ReactNode
 }) {
   return (
-    <div
+    <main
       data-pen-frame
       className="grid min-h-dvh bg-background text-foreground lg:grid-cols-2"
     >
@@ -55,13 +55,13 @@ export function AuthFrame({
           />
           <p
             role="status"
-            className="absolute end-0 w-[260px] max-w-[calc(100vw-64px)] text-end text-xs text-muted-foreground [inset-block-start:100%] [margin-block-start:0.5rem]"
+            className="absolute end-0 w-[260px] max-w-[calc(100vw-64px)] text-end text-xs text-pretty text-muted-foreground [inset-block-start:100%] [margin-block-start:0.5rem]"
           >
             {language === "vi" ? AUTH_COPY.vietnameseNotice : ""}
           </p>
         </div>
       </div>
       <AuthShaderPanel />
-    </div>
+    </main>
   )
 }

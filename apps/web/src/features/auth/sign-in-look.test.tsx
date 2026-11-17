@@ -51,6 +51,7 @@ describe("sign-in look", () => {
     const heading = await openSignIn()
     expect(heading.firstElementChild?.getAttribute("data-slot")).toBe("mark")
     expect(heading).toHaveTextContent("Log in to OpenCV")
+    expect(screen.getByRole("main")).toContainElement(heading)
   })
 
   it("makes Continue a solid primary with hover and pressed fills and the input's radius", async () => {
@@ -66,7 +67,7 @@ describe("sign-in look", () => {
     expect(button).toBeEnabled()
   })
 
-  it("explains the stored Vietnamese choice while menus stay in English", async () => {
+  it("explains the stored Vietnamese choice while the app stays in English", async () => {
     await openSignIn()
     const status = screen.getByRole("status")
     expect(status).toBeEmptyDOMElement()
@@ -81,7 +82,9 @@ describe("sign-in look", () => {
   it("marks the field when the email is not a full address", async () => {
     await openSignIn()
     fireEvent.change(emailBox(), { target: { value: "a@b" } })
+    continueButton().focus()
     fireEvent.click(continueButton())
+    expect(emailBox()).toHaveFocus()
     expect(await screen.findByRole("alert")).toHaveTextContent(
       AUTH_COPY.emailInvalid
     )

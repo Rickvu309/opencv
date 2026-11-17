@@ -182,6 +182,7 @@ export function SignInScreen() {
     const address = email.trim()
     if (!EMAIL_PATTERN.test(address)) {
       dispatch({ type: "email_invalid" })
+      emailRef.current?.focus()
       return
     }
     await sendCode(address)
