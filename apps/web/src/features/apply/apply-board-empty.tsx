@@ -4,41 +4,52 @@ import { Button } from "@workspace/ui/components/button"
 import { Empty } from "@workspace/ui/components/empty"
 import { Kbd } from "@workspace/ui/components/kbd"
 
+const COINS = [
+  { x: 0, y: 0 },
+  { x: 54, y: 0 },
+  { x: 0, y: 54 },
+  { x: 54, y: 54 },
+]
+
 function StageCoins() {
   return (
-    <svg viewBox="0 0 92 92" aria-hidden="true" className="size-[92px]">
-      <g fill="var(--card)" stroke="var(--foreground)" strokeWidth={1.2}>
-        {[0, 50].flatMap((y) =>
-          [0, 50].flatMap((x) => [
-            <ellipse
-              key={`${x}-${y}-edge`}
-              cx={x + 20}
-              cy={y + 23}
-              rx={20}
-              ry={18}
-            />,
-            <ellipse
-              key={`${x}-${y}-top`}
-              cx={x + 20}
-              cy={y + 18}
-              rx={20}
-              ry={18}
-            />,
-          ])
-        )}
-        <ellipse cx={20} cy={18} rx={12} ry={10} />
-        <ellipse cx={70} cy={18} rx={12} ry={10} />
-        <ellipse cx={20} cy={68} rx={12} ry={10} />
-        <ellipse cx={70} cy={68} rx={12} ry={10} fill="var(--foreground)" />
+    <svg viewBox="0 0 96 96" aria-hidden="true" className="size-[96px]">
+      <g
+        fill="var(--card)"
+        stroke="var(--muted-foreground)"
+        strokeOpacity={0.55}
+        strokeWidth={1.2}
+      >
+        {COINS.flatMap(({ x, y }) => [
+          <ellipse
+            key={`${x}-${y}-edge`}
+            cx={x + 21}
+            cy={y + 24}
+            rx={20}
+            ry={17}
+          />,
+          <ellipse
+            key={`${x}-${y}-top`}
+            cx={x + 21}
+            cy={y + 19}
+            rx={20}
+            ry={17}
+          />,
+        ])}
       </g>
-      <path d="M70 8a12 10 0 0 0 0 20z" fill="var(--foreground)" />
-      <path d="M20 68l0-10a12 10 0 1 0 12 10z" fill="var(--foreground)" />
+      <g fill="none" stroke="var(--foreground)" strokeWidth={1.6}>
+        <ellipse cx={21} cy={19} rx={11.5} ry={9.5} />
+        <ellipse cx={75} cy={19} rx={11.5} ry={9.5} />
+        <ellipse cx={21} cy={73} rx={11.5} ry={9.5} />
+      </g>
+      <path d="M75 11.5a8 6.5 0 0 0 0 15z" fill="var(--foreground)" />
+      <path d="M21 73v-7.5a8 6.5 0 1 0 8 7.5z" fill="var(--foreground)" />
+      <ellipse cx={75} cy={73} rx={11.5} ry={9.5} fill="var(--foreground)" />
       <path
-        d="M20 6 9 17l-5-5"
-        transform="translate(64 62) scale(0.5)"
+        d="m70 73 3.5 3.2L80 69.6"
         fill="none"
         stroke="var(--card)"
-        strokeWidth={2.25}
+        strokeWidth={1.8}
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -57,9 +68,13 @@ export function ApplyEmpty({
     <Empty className="min-h-0 gap-0 rounded-none border-0 bg-background p-0 pb-20 text-start">
       <div className="flex flex-col items-start">
         <StageCoins />
-        <h2 className="mt-7 text-[15px] font-semibold">Track your first job</h2>
+        <h2 className="mt-6 text-[15px] font-semibold">Track your first job</h2>
         <p className="mt-2 text-[13px] text-muted-foreground">
           Add the jobs you're applying to.
+        </p>
+        <p className="mt-3 max-w-[300px] text-[13px] leading-[1.55] text-muted-foreground">
+          Paste a posting link and the role, company and location fill in for
+          you.
         </p>
         <Button
           type="button"
