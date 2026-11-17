@@ -20,6 +20,7 @@ import {
   PaperDocumentTitle,
 } from "@/features/paper-page/document-chrome.tsx"
 import { PaperDocumentShare } from "./document-share.tsx"
+import { RichLinkDialog } from "./rich-link-dialog.tsx"
 import { RichSelectionBubble } from "./rich-selection-bubble.tsx"
 import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import { RichTableControls } from "./rich-table-controls.tsx"
@@ -228,6 +229,7 @@ export function RichPaperPage({
           {statusLabel}
         </p>
       ) : null}
+      <RichLinkDialog editor={editor} blocked={blocked} />
       <RichSelectionBubble
         editor={editor}
         root={element}

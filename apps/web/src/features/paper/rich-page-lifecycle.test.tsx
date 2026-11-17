@@ -132,6 +132,35 @@ it.each([
         .createTreeWalker(paragraph, NodeFilter.SHOW_TEXT)
         .nextNode()
       if (!text) throw new Error("Document text required")
+      const caret = () =>
+        act(() => {
+          host.focus()
+          const range = document.createRange()
+          range.setStart(text, 1)
+          range.collapse(true)
+          window.getSelection()?.removeAllRanges()
+          window.getSelection()?.addRange(range)
+          document.dispatchEvent(new Event("selectionchange"))
+        })
+      caret()
+      expect(
+        screen.queryByRole("toolbar", { name: "Selection formatting" })
+      ).toBeNull()
+      expect(
+        screen.getByRole("button", { name: "Formatting and insert" })
+      ).toHaveAttribute("aria-expanded", "false")
+      fireEvent.keyDown(host, { key: "k", ctrlKey: true })
+      expect(
+        await screen.findByRole("dialog", { name: "Add link" })
+      ).toBeVisible()
+      expect(screen.getAllByRole("dialog")).toHaveLength(1)
+      fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" })
+      await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
+      act(() => {
+        const engine = mounted.editor
+        engine.setTextCursorPosition(engine.document[0]!.id, "start")
+      })
+      caret()
       act(() => {
         host.focus()
         const range = document.createRange()

@@ -123,10 +123,13 @@ export function PaperDocumentTitle({
     name
   )
   const [error, setError] = useReducer((_: string, next: string) => next, "")
+  const [pending, setPending] = useReducer(
+    (_: boolean, next: boolean) => next,
+    false
+  )
   const saving = useRef(false)
   useEffect(() => {
     setSavedName(name)
-    setDraft(name)
   }, [name])
   const save = async () => {
     if (saving.current) return
@@ -143,6 +146,7 @@ export function PaperDocumentTitle({
       return
     }
     saving.current = true
+    setPending(true)
     try {
       await run("paper.rename", { ...parsed.data, writer: RICH_NATIVE_WRITER })
       setSavedName(parsed.data.name)
@@ -152,6 +156,7 @@ export function PaperDocumentTitle({
       setError("Could not rename this document. Try again.")
     } finally {
       saving.current = false
+      setPending(false)
     }
   }
   return (
@@ -169,6 +174,7 @@ export function PaperDocumentTitle({
           aria-label="Document name"
           aria-invalid={!!error}
           value={draft}
+          disabled={pending}
           onChange={(event) => setDraft(event.target.value)}
           onBlur={() => void save()}
           onKeyDown={(event) => {

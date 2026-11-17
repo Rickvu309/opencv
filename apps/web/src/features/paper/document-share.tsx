@@ -1,22 +1,12 @@
 import { Link } from "lucide-react"
 import { paperIdSchema } from "@workspace/domain"
 import { CopyButton } from "@workspace/ui/components/copy-button"
-import { useShareLink } from "./paper-share-link.ts"
 
 export function PaperDocumentShare({ docId }: { docId: string }) {
-  const parsed = paperIdSchema.safeParse(docId)
-  return parsed.success ? <CopyLink docId={parsed.data} /> : null
-}
-
-function CopyLink({
-  docId,
-}: {
-  docId: ReturnType<typeof paperIdSchema.parse>
-}) {
-  const share = useShareLink(docId)
+  if (!paperIdSchema.safeParse(docId).success) return null
   return (
     <CopyButton
-      value={share}
+      value={() => window.location.href}
       aria-label="Copy link"
       copiedMessage="Link copied"
       errorMessage="Could not copy the document link."

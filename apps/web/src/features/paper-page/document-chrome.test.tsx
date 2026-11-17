@@ -14,6 +14,7 @@ import {
   PaperDocumentHeader,
   PaperDocumentTitle,
 } from "./document-chrome.tsx"
+import { PaperDocumentShare } from "../paper/document-share.tsx"
 import { PaperDocumentOutline } from "./document-outline.tsx"
 
 afterEach(() => {
@@ -139,4 +140,73 @@ it("opens the outline for headings and scrolls the chosen heading with the keybo
   await waitFor(() =>
     expect(screen.queryByRole("navigation", { name: "Outline" })).toBeNull()
   )
+})
+
+it("copies the authenticated document URL without a share command", async () => {
+  const previous = window.location.href
+  window.history.replaceState(
+    null,
+    "",
+    "/paper/16590000-0000-4000-8000-000000000001"
+  )
+  const writeText = vi.fn().mockResolvedValue(undefined)
+  Object.defineProperty(navigator, "clipboard", {
+    configurable: true,
+    value: { writeText },
+  })
+  const fetch = vi.fn()
+  vi.stubGlobal("fetch", fetch)
+  render(<PaperDocumentShare docId="16590000-0000-4000-8000-000000000001" />)
+  try {
+    const copy = screen.getByRole("button", { name: "Copy link" })
+    fireEvent.click(copy)
+    await waitFor(() => expect(copy).toHaveAttribute("data-state", "copied"))
+    expect(writeText).toHaveBeenCalledWith(window.location.href)
+    expect(fetch).not.toHaveBeenCalled()
+  } finally {
+    window.history.replaceState(null, "", previous)
+  }
+})
+
+it("preserves the active title draft across refreshes and disables it until rename settles", async () => {
+  let respond: (response: Response) => void = () => {
+    throw new Error("Rename not started")
+  }
+  const fetch = vi.fn(
+    () =>
+      new Promise<Response>((resolve) => {
+        respond = resolve
+      })
+  )
+  vi.stubGlobal("fetch", fetch)
+  const title = (name: string) => (
+    <PaperDocumentTitle
+      name={name}
+      docId="16590000-0000-4000-8000-000000000001"
+    />
+  )
+  const view = render(title("My CV"))
+  const user = userEvent.setup()
+  await user.click(screen.getByRole("button", { name: "Rename document" }))
+  const input = screen.getByRole("textbox", { name: "Document name" })
+  await user.clear(input)
+  await user.type(input, "Designer CV")
+  view.rerender(title("Remote CV"))
+  expect(input).toHaveValue("Designer CV")
+  await user.keyboard("{Enter}")
+  await waitFor(() => expect(fetch).toHaveBeenCalledOnce())
+  expect(input).toBeDisabled()
+  await user.type(input, "Newer draft")
+  expect(input).toHaveValue("Designer CV")
+  view.rerender(title("Designer CV"))
+  expect(input).toHaveValue("Designer CV")
+  expect(input).toBeDisabled()
+  respond(Response.json({ ok: true, data: {} }))
+  expect(
+    await screen.findByRole("heading", { name: "Designer CV" })
+  ).toBeVisible()
+  expect(fetch).toHaveBeenCalledOnce()
+  await user.click(screen.getByRole("button", { name: "Rename document" }))
+  expect(screen.getByRole("textbox", { name: "Document name" })).toBeEnabled()
+  expect(screen.getByRole("textbox")).toHaveValue("Designer CV")
 })

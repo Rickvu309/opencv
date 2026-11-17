@@ -32,7 +32,7 @@
   min-block-size: 11in;
   padding: 1in;
   transform-origin: top left;
-  border: 0;
+  border: 1px solid transparent;
   background: var(--background);
   color: var(--card-foreground);
   caret-color: var(--card-foreground);
