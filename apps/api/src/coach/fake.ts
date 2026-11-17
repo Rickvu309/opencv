@@ -13,8 +13,6 @@ import {
   type CoachTurnInput,
 } from "@workspace/domain"
 
-import { z } from "zod"
-
 import {
   createRequestStepBoundary,
   scriptedSteps,
