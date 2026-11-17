@@ -1,4 +1,3 @@
-import { blankCv } from "@workspace/domain"
 import {
   SERVER_ORIGIN,
   writeDocument,
@@ -16,6 +15,7 @@ import {
 } from "vitest"
 import * as Y from "yjs"
 
+import { structuredCv } from "@/test/paper-structured-cv.ts"
 import { installEditorPolyfills } from "@/test/paper-engine-kit.tsx"
 import {
   paragraph,
@@ -132,7 +132,7 @@ describe("Cover letter editor", () => {
 
 describe("CV editor on the paper route", () => {
   it("sends typing through the sync client and keeps a Coach edit beside it", async () => {
-    const base = blankCv()
+    const base = structuredCv()
     const client = seededCvClient({
       ...base,
       blocks: [

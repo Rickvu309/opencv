@@ -185,7 +185,7 @@ async function exported(owner: string, docId: string, revision: string) {
 }
 
 describe("a blank page saves through the existing check", () => {
-  it("mints one empty line and a section mark, then splits, merges, and deletes", () =>
+  it("mints one unformatted empty paragraph, then splits, merges, and deletes", () =>
     run(async () => {
       const id = await seed()
       const minted = await canvas(id, { op: "mint", label: "letter" })
@@ -193,7 +193,7 @@ describe("a blank page saves through the existing check", () => {
       expect(again.docId).not.toBe(minted.docId)
       const bytes = await exported(id, minted.docId, minted.revision)
       const body = paragraphs(bytes)
-      expect(body).toHaveLength(2)
+      expect(body).toHaveLength(1)
       expect(loaded.sectCount(bytes)).toBe(1)
       expect(loaded.wordIds(body[0])).toEqual({
         paraId: "11111111",
@@ -201,13 +201,8 @@ describe("a blank page saves through the existing check", () => {
       })
       expect(loaded.emptyTextNode(body[0])).toBe(true)
       expect(loaded.isCarrier(body[0])).toBe(false)
-      expect(loaded.wordIds(body[1])).toEqual({
-        paraId: "22222221",
-        textId: "22222222",
-      })
-      expect(loaded.isCarrier(body[1])).toBe(true)
       const side = await sidecarOf(id, minted.revision)
-      const carrierKey = side.paragraphs[1]!.key
+      expect(side.paragraphs).toHaveLength(1)
       const beforeIds = side.paragraphs[0]!.textIds.length
       const splitKey = randomUUID()
       const split = await canvas(
@@ -237,7 +232,7 @@ describe("a blank page saves through the existing check", () => {
       expect(await counts(id)).toEqual(savedRows)
       const splitBytes = await exported(id, split.docId, split.revision)
       const splitBody = paragraphs(splitBytes)
-      expect(splitBody).toHaveLength(3)
+      expect(splitBody).toHaveLength(2)
       expect(loaded.wordIds(splitBody[0])).toEqual({
         paraId: "11111111",
         textId: "11111112",
@@ -248,10 +243,10 @@ describe("a blank page saves through the existing check", () => {
       })
       expect(loaded.emptyTextNode(splitBody[0])).toBe(true)
       expect(loaded.emptyTextNode(splitBody[1])).toBe(true)
-      expect(loaded.isCarrier(splitBody[2])).toBe(true)
+      expect(splitBody.some(loaded.isCarrier)).toBe(false)
       expect(loaded.sectCount(splitBytes)).toBe(1)
       const splitSide = await sidecarOf(id, split.revision)
-      expect(splitSide.paragraphs[2]!.key).toBe(carrierKey)
+      expect(splitSide.paragraphs).toHaveLength(2)
       expect(splitSide.paragraphs[0]!.key).toBe(side.paragraphs[0]!.key)
       expect(splitSide.paragraphs[1]!.textIds).toEqual([])
       expect(splitSide.paragraphs[0]!.textIds).toHaveLength(beforeIds)
@@ -270,15 +265,15 @@ describe("a blank page saves through the existing check", () => {
       )
       const removedBytes = await exported(id, removed.docId, removed.revision)
       const removedBody = paragraphs(removedBytes)
-      expect(removedBody).toHaveLength(2)
+      expect(removedBody).toHaveLength(1)
       expect(loaded.wordIds(removedBody[0])).toEqual({
         paraId: "11111111",
         textId: "11111112",
       })
-      expect(loaded.isCarrier(removedBody[1])).toBe(true)
+      expect(loaded.sectCount(removedBytes)).toBe(1)
       const removedSide = await sidecarOf(id, removed.revision)
       expect(removedSide.paragraphs[0]!.key).toBe(splitSide.paragraphs[0]!.key)
-      expect(removedSide.paragraphs[1]!.key).toBe(carrierKey)
+      expect(removedSide.paragraphs).toHaveLength(1)
       const only = await canvas(id, { op: "mint", label: "letter" })
       const onlySide = await sidecarOf(id, only.revision)
       await expect(
@@ -324,12 +319,12 @@ describe("a blank page saves through the existing check", () => {
       const runs = loaded.runsOf(mergedBody[0])
       expect(runs).toHaveLength(2)
       expect(runs[0]!.rPr).toBe(runs[1]!.rPr)
-      expect(runs[0]!.rPr).toContain("231F20")
+      expect(runs[0]!.rPr).toBe("")
       expect(loaded.wordIds(mergedBody[0])).toEqual({
         paraId: "11111111",
         textId: "11111112",
       })
-      expect(loaded.isCarrier(mergedBody[1])).toBe(true)
+      expect(mergedBody).toHaveLength(1)
     }))
 
   it("refuses numbering and a paragraph mark", () =>

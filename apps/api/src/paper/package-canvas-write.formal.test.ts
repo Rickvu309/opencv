@@ -94,14 +94,7 @@ describe("the first words on a minted page", () => {
       expect(empty.paragraph).toMatch(
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
       )
-      const carrier = page.regions.find(
-        (item) =>
-          item.kind === "locked" &&
-          item.reason.code === "UNSUPPORTED_TARGET_PROPERTY"
-      )
-      if (!carrier || carrier.kind !== "locked" || !carrier.paragraph)
-        throw new Error("Missing carrier")
-      expect(carrier.paragraph).not.toBe(empty.paragraph)
+      expect(page.regions).toHaveLength(1)
       const wrote = await canvas(id, {
         op: "write",
         batch: {
