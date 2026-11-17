@@ -75,7 +75,7 @@ export const richReadOutputSchema = z
     outline: z.string().max(200000),
   })
   .strict()
-export type RichChange = z.output<typeof richChangeSchema>
+type RichChange = z.output<typeof richChangeSchema>
 type TextNode = Extract<FormatNode, { content: FormatRun[] }>
 
 export function richTextNodes(document: RichPaperDocument): TextNode[] {
