@@ -20,7 +20,7 @@ function tempClone() {
   const sh = (cwd, ...args) =>
     execFileSync("git", args, { cwd, env: scratchEnv(), encoding: "utf8" })
   sh(root, "init", "-q", "--bare", "-b", "main", "origin.git")
-  sh(root, "clone", "-q", "origin.git", "opencv")
+  sh(root, "clone", "--no-hardlinks", "-q", "origin.git", "opencv")
   const work = join(root, "opencv")
   for (const [k, v] of [
     ["user.name", "t"],
@@ -165,7 +165,14 @@ test("diffCached keeps a blank context line and a binary hunk that applies", () 
     assert.equal(diff.out, raw)
     assert.ok(diff.out.split("\n").includes(" "))
     const dst = join(t.root, "apply")
-    t.sh(t.root, "clone", "-q", join(t.root, "origin.git"), "apply")
+    t.sh(
+      t.root,
+      "clone",
+      "--no-hardlinks",
+      "-q",
+      join(t.root, "origin.git"),
+      "apply"
+    )
     writeFileSync(join(dst, "lost.patch"), diff.out)
     t.sh(dst, "apply", "--check", "lost.patch")
   } finally {
