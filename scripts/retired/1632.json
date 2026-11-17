@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "packages/paper-crdt/src/mapping.test.ts",
+    "because": "owner correction 2026-11-17: headerless CVs must round-trip. Replacement assertions pass locally and the pure blank detector fires on main. Automated replacement flip timed out on the shared lock; no machine flip proof is claimed.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
