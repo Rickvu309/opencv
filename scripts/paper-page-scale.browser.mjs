@@ -43,7 +43,7 @@ try {
       email,
       fixture,
     ],
-    { stdio: "pipe" }
+    { stdio: "pipe", timeout: 120000 }
   )
   const env = stackEnv({
     base: process.env,
