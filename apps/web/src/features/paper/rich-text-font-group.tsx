@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useReducer, useRef } from "react"
 import { ChevronDown, Minus, Plus } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -26,14 +26,20 @@ function TextSize({
   disabled: boolean
   choose: (patch: Parameters<TextEditor["formatInline"]>[0]) => void
 }) {
-  const [draft, setDraft] = useState<string | null>(null)
+  const [draft, dispatch] = useReducer(
+    (
+      _state: string | null,
+      action: { type: "edit"; value: string } | { type: "reset" }
+    ) => (action.type === "edit" ? action.value : null),
+    null
+  )
   const selection =
     useRef<ReturnType<TextEditor["captureSelection"]>>(undefined)
   const apply = (size: number) => {
     if (disabled || !editor) return
     editor.restoreSelection(selection.current)
     choose({ size: size * 20 })
-    setDraft(null)
+    dispatch({ type: "reset" })
     editor.focus()
   }
   const step = (delta: number) => {
@@ -87,9 +93,11 @@ function TextSize({
                 selection.current = editor?.captureSelection()
                 event.currentTarget.select()
               }}
-              onChange={(event) => setDraft(event.currentTarget.value)}
+              onChange={(event) =>
+                dispatch({ type: "edit", value: event.currentTarget.value })
+              }
               onBlur={() => {
-                setDraft(null)
+                dispatch({ type: "reset" })
                 selection.current = undefined
               }}
               onKeyDown={(event) => {
@@ -102,7 +110,7 @@ function TextSize({
                     apply(event.currentTarget.valueAsNumber)
                 } else if (event.key === "Escape") {
                   event.preventDefault()
-                  setDraft(null)
+                  dispatch({ type: "reset" })
                   editor?.focus()
                 }
               }}
