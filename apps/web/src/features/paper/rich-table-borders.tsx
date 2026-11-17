@@ -1,3 +1,4 @@
+import { resolveTableBorders } from "@workspace/domain/internal/paper-presentation"
 import { Button } from "@workspace/ui/components/button"
 import { Check } from "lucide-react"
 import type { TextEditor } from "./rich-text-toolbar-control.tsx"
@@ -19,7 +20,11 @@ export function RichTableBorders({
   borders: Borders | undefined
   onError: (message: string) => void
 }) {
-  const current = borders ?? { mode: "all", color: "#B5B5B5", weight: "thin" }
+  const current: Borders = borders ?? {
+    mode: "all",
+    color: resolveTableBorders(undefined).color,
+    weight: "thin",
+  }
   const choose = (patch: Partial<Borders>) => {
     try {
       editor.setTableBorders({ ...current, ...patch })
