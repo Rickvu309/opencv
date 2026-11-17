@@ -33,7 +33,10 @@ export function ProofsPage() {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink render={<Link to="/paper" />}>
+              <BreadcrumbLink
+                render={<Link to="/paper" />}
+                className="inline-flex min-h-11 items-center md:min-h-6"
+              >
                 Paper
               </BreadcrumbLink>
             </BreadcrumbItem>
