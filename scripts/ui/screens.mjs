@@ -291,7 +291,7 @@ export const SCREENS = [
           text: "Why this wording?",
         },
       },
-      { waitFor: { selector: '[data-slot="coach-send-hold"]' } },
+      { waitFor: { role: "button", name: "Deny" } },
     ],
     after: DENY_THE_WAITING_EDIT,
   },
