@@ -13,9 +13,11 @@ import {
   openRichPaperClient,
   seedStoredYDoc,
 } from "@workspace/paper-crdt"
+import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import { openRichPaperSession } from "@/lib/paper-rich.ts"
 import { render } from "@/test/render-with-client.tsx"
 import { storedFlowFixture } from "../../../../../packages/paper-crdt/src/test/flow-fixture.ts"
+import { RichTableControls } from "./rich-table-controls.tsx"
 import { RichPaperPage } from "./rich-page.tsx"
 import * as flowMount from "../../../../../packages/paper-crdt/src/native-layout-flow-mount.ts"
 
@@ -420,3 +422,63 @@ async function exerciseToolbar(
   )
   expect(errors).toEqual([])
 }
+
+it.each(["cv", "letter"] as const)(
+  "keeps the %s table menu and focus through consecutive border choices",
+  async (kind) => {
+    const initial = storedFlowFixture(kind)
+    const provenance = nativeProvenance(initial)
+    const client = openRichPaperClient(
+      {
+        epoch: 1,
+        revision: 0,
+        provenance,
+        server: seedStoredYDoc(initial),
+        pending: emptyUpdate(),
+      },
+      { provenance }
+    )
+    const host = document.createElement("div")
+    document.body.append(host)
+    const editor = mountRichPaperEditor(client, host)
+    cleanups.add(() => {
+      editor.destroy()
+      client.destroy()
+      host.remove()
+    })
+    act(() => {
+      editor.insertTable(2, 2)
+    })
+    const selected = editor.activeTable()!
+    render(
+      <>
+        <RichTableControls editor={editor} disabled={false}>
+          {() => null}
+        </RichTableControls>
+        <button>Outside table</button>
+      </>
+    )
+    const user = userEvent.setup()
+    await user.click(screen.getByRole("button", { name: "Table options" }))
+    for (const name of ["Outer border", "Medium", "Navy border"]) {
+      const choice = screen.getByRole("button", { name, exact: true })
+      await user.click(choice)
+      expect(choice).toHaveAttribute("aria-pressed", "true")
+      expect(choice).toHaveFocus()
+      expect(
+        screen.getByRole("dialog", { name: "Table options" })
+      ).toBeVisible()
+      expect(editor.activeTable()).toMatchObject({
+        table: { id: selected.table.id },
+        rowIndex: selected.rowIndex,
+        columnIndex: selected.columnIndex,
+      })
+    }
+    await user.keyboard("{Escape}")
+    expect(screen.queryByRole("dialog", { name: "Table options" })).toBeNull()
+    await user.click(screen.getByRole("button", { name: "Table options" }))
+    await user.click(screen.getByRole("button", { name: "Thin", exact: true }))
+    await user.click(screen.getByRole("button", { name: "Outside table" }))
+    expect(screen.queryByRole("dialog", { name: "Table options" })).toBeNull()
+  }
+)

@@ -206,7 +206,9 @@ export function mountRichPaperEditor(
       setTableBorders(
         ...args: Parameters<typeof mounted.tables.setTableBorders>
       ) {
-        return apply(() => mounted.tables.setTableBorders(...args))
+        if (!active || !mounted.editor.isEditable) return false
+        mounted.tables.setTableBorders(...args)
+        return true
       },
       activeTable: () => (active ? mounted.tables.activeTable() : null),
       tableElement() {

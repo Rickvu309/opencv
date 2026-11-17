@@ -1,5 +1,5 @@
 import { paperTableLimits } from "@workspace/domain"
-import { useEffect, useReducer, type ReactNode } from "react"
+import { useEffect, useReducer, useState, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { Table2 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
@@ -60,8 +60,6 @@ export function RichTableControls({
   )
 }
 
-type AnchorAction = { type: "mount"; host: HTMLDivElement } | { type: "clear" }
-
 function TableMenuAnchor({
   row,
   children,
@@ -69,24 +67,18 @@ function TableMenuAnchor({
   row: HTMLElement
   children: ReactNode
 }) {
-  const [host, dispatch] = useReducer(
-    (_host: HTMLDivElement | null, action: AnchorAction) =>
-      action.type === "mount" ? action.host : null,
-    null
-  )
-  useEffect(() => {
+  const [host] = useState(() => {
     const anchor = document.createElement("div")
     anchor.className = "paper-table-anchor"
     anchor.dataset.paperTableControls = ""
     anchor.contentEditable = "false"
-    row.prepend(anchor)
-    dispatch({ type: "mount", host: anchor })
-    return () => {
-      anchor.remove()
-      dispatch({ type: "clear" })
-    }
-  }, [row])
-  return host ? createPortal(children, host) : null
+    return anchor
+  })
+  useEffect(() => {
+    row.prepend(host)
+    return () => host.remove()
+  }, [row, host])
+  return createPortal(children, host)
 }
 
 type InsertState = {

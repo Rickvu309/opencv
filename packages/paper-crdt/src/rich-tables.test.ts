@@ -349,6 +349,8 @@ it("released public table controls cannot read or write the destroyed editor", (
   expect(editor.tableElement()).toBeNull()
   expect(editor.tableRowElement()).toBeNull()
   for (const action of [
+    () =>
+      editor.setTableBorders({ mode: "all", color: "default", weight: "thin" }),
     () => editor.insertTable(2, 2),
     () => editor.addTableRow(),
     () => editor.removeTableRow(),
@@ -358,6 +360,34 @@ it("released public table controls cannot read or write the destroyed editor", (
     () => editor.removeTable(),
   ])
     expect(action()).toBe(false)
+})
+
+it("border choices preserve control focus and the selected table cell", () => {
+  const { client, host, unmount } = setup("cv")
+  unmount()
+  const editor = mountRichPaperEditor(client, host)
+  const button = window.document.createElement("button")
+  window.document.body.append(button)
+  cleanups.add(() => {
+    editor.destroy()
+    button.remove()
+  })
+  editor.insertTable(2, 2)
+  const selected = editor.activeTable()!
+  button.focus()
+  for (const borders of [
+    { mode: "outer", color: "default", weight: "thin" },
+    { mode: "outer", color: "default", weight: "medium" },
+    { mode: "outer", color: "#1E3A8A", weight: "medium" },
+  ] as const) {
+    expect(editor.setTableBorders(borders)).toBeTruthy()
+    expect(window.document.activeElement).toBe(button)
+    expect(editor.activeTable()).toMatchObject({
+      rowIndex: selected.rowIndex,
+      columnIndex: selected.columnIndex,
+      table: { id: selected.table.id, borders },
+    })
+  }
 })
 
 it.each([true, false])(
@@ -437,5 +467,46 @@ it.each(["cv", "letter"] as const)(
       "1px solid #000000"
     )
     roundtrip()
+  }
+)
+
+it.each(["cv", "letter"] as const)(
+  "concurrent border styling and row insertion converge in %s",
+  (kind) => {
+    const { client, tables, select, selectTable, read } = setup(kind)
+    select("first")
+    tables.insertTable(2, 2)
+    selectTable()
+    const peer = openRichPaperClient(client.stored(), {
+      provenance: nativeProvenance(read()),
+    })
+    const host = window.document.createElement("div")
+    window.document.body.append(host)
+    const selected = tables.activeTable()!
+    const paragraph = selected.table.children[0]!.children[0]!.children[0]!.id
+    const lease = borrowFlowDocument(peer.ydoc, kind)
+    const mounted = mountPrivateFlow(lease.binding, host)
+    cleanups.add(() => {
+      mounted.unmount()
+      lease.release()
+      peer.destroy()
+      host.remove()
+    })
+    mounted.editor.setTextCursorPosition(paragraph, "start")
+    const base = Y.encodeStateVector(client.ydoc)
+    const borders = {
+      mode: "outer",
+      color: "#1E3A8A",
+      weight: "medium",
+    } as const
+    tables.setTableBorders(borders)
+    mounted.tables.addTableRow()
+    const local = Y.encodeStateAsUpdate(client.ydoc, base)
+    const remote = Y.encodeStateAsUpdate(peer.ydoc, base)
+    Y.applyUpdate(client.ydoc, remote)
+    Y.applyUpdate(peer.ydoc, local)
+    expect(peer.document()).toEqual(read())
+    expect(tables.activeTable()!.table).toMatchObject({ borders })
+    expect(tables.activeTable()!.table.children).toHaveLength(3)
   }
 )

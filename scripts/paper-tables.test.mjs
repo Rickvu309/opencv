@@ -80,3 +80,45 @@ test("the original table commit reproduces all three blocking mistakes", () => {
     assert.ok(detect(historic, file).length, file)
   }
 })
+
+test("border focus mistakes fire on the introducing commit and stay quiet after the fix", () => {
+  const file = files[0]
+  const clean = read(file)
+  assert.deepEqual(detect(clean, file), [])
+  const mistake = clean.replace(
+    "mounted.tables.setTableBorders(...args)",
+    "apply(() => mounted.tables.setTableBorders(...args))"
+  )
+  assert.notEqual(mistake, clean)
+  assert.ok(
+    detect(mistake, file).includes(
+      "Border choices must keep control focus and check editor availability"
+    )
+  )
+  const historic = execFileSync("git", ["show", `9f201aba:${file}`], {
+    encoding: "utf8",
+  })
+  assert.ok(
+    detect(historic, file).includes(
+      "Border choices must keep control focus and check editor availability"
+    )
+  )
+})
+
+test("row replacement keeps the menu host and rejects the introducing commit", () => {
+  const file = files[3]
+  const clean = read(file)
+  const mistake = clean.replace(
+    "const [host] = useState(() =>",
+    "const host = (() =>"
+  )
+  const expected =
+    "Table menu portals must keep their host when table rows change"
+  assert.notEqual(mistake, clean)
+  assert.deepEqual(detect(clean, file), [])
+  assert.ok(detect(mistake, file).includes(expected))
+  const historic = execFileSync("git", ["show", `9f201aba:${file}`], {
+    encoding: "utf8",
+  })
+  assert.ok(detect(historic, file).includes(expected))
+})

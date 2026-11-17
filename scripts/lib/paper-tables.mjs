@@ -1,6 +1,17 @@
 export function detect(text, file) {
   const problems = []
   if (file.endsWith("editor.ts")) {
+    const borders = text.match(/setTableBorders\([\s\S]*?\n      },/)?.[0]
+    if (
+      borders &&
+      (!borders.includes(
+        "if (!active || !mounted.editor.isEditable) return false"
+      ) ||
+        /apply\(|\.focus\(/.test(borders))
+    )
+      problems.push(
+        "Border choices must keep control focus and check editor availability"
+      )
     if (text.includes("...mounted.tables"))
       problems.push("Table operations must check the live editor")
     if (!text.includes('[data-paper-layout="paperRow"]'))
@@ -55,6 +66,13 @@ export function detect(text, file) {
       problems.push("Cell borders must fill the row box")
   }
   if (file.endsWith("rich-table-controls.tsx")) {
+    if (
+      !text.includes("const [host] = useState(() =>") ||
+      /dispatch\(\{ type: "mount"/.test(text)
+    )
+      problems.push(
+        "Table menu portals must keep their host when table rows change"
+      )
     if (
       !text.includes("open={open && available}") ||
       (text.match(/disabled={!available}/g)?.length ?? 0) < 3
