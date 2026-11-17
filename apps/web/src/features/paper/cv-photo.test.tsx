@@ -4,6 +4,7 @@ import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 import { blankCv, emptyCvDocument, type PaperView } from "@workspace/domain"
 
 import { render } from "@/test/render-with-client.tsx"
+import { structuredCv } from "@/test/paper-structured-cv.ts"
 import { Toaster } from "@workspace/ui/components/sonner"
 
 import { CvDocument } from "./cv-print-document.tsx"
@@ -379,7 +380,7 @@ describe("CV photo", () => {
   })
 
   it("renders the file id as the public photo on the share page", async () => {
-    const paper = blankCv()
+    const paper = structuredCv()
     const shared: Omit<PaperView, "isFavorite"> = {
       id: DOC_ID,
       name: "Photo CV",
