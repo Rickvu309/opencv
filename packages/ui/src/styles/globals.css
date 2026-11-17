@@ -267,6 +267,9 @@
     height: 0;
     opacity: 0;
   }
+  &[data-ending-style] {
+    transition-duration: var(--duration-micro);
+  }
 }
 
 @utility motion-appear {

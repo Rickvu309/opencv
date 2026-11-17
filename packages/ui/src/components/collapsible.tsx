@@ -24,18 +24,21 @@ function CollapsibleTrigger({
 
 function CollapsibleContent({
   className,
+  children,
   ...props
-}: CollapsiblePrimitive.Panel.Props) {
+}: Omit<CollapsiblePrimitive.Panel.Props, "className"> & {
+  className?: string
+}) {
   return (
     <CollapsiblePrimitive.Panel
       data-slot="collapsible-content"
-      className={
-        typeof className === "function"
-          ? (state) => cn("motion-collapse", className(state))
-          : cn("motion-collapse", className)
-      }
+      className="motion-collapse"
       {...props}
-    />
+    >
+      <div data-slot="collapsible-body" className={className}>
+        {children}
+      </div>
+    </CollapsiblePrimitive.Panel>
   )
 }
 
