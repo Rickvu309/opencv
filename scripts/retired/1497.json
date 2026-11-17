@@ -1,24 +1,24 @@
 [
   {
-    "subject": "scripts/temp-dirs.test.mjs",
-    "because": "The folder guard must judge folders rather than inner suite status; the replacement proves the real cause reaches the refusal.",
-    "replacedBy": "scripts/temp-dirs-failure.test.mjs",
-    "proof": {
-      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
-      "replacedByBlob": "be3cb1dd219c2d9644564656ad9323e048592764",
-      "failedOnBase": true,
-      "passedOnHead": true
-    },
-    "class": "self",
-    "classBecause": null,
-    "items": 1
-  },
-  {
     "subject": "scripts/ocv-tools/jobs/merged-tree-git.test.mjs",
     "because": "The exact expected refusal now includes the assertion and diff instead of only its test title; the real-git test still asserts the same refusal and cleanup, and the new replay separately proves cause preservation.",
     "replacedBy": null,
     "class": "owner",
     "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/temp-dirs.test.mjs",
+    "because": "The folder guard must judge folders rather than inner suite status; the replacement proves the real cause reaches the refusal.",
+    "replacedBy": "scripts/temp-dirs-failure.test.mjs",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "bdee5a330e4e905e6efba591a1652705862f20f7",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
     "items": 1
   }
 ]
