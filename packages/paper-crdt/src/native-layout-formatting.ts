@@ -8,7 +8,7 @@ import {
   inlineSchema,
   paragraphSchema,
   type InlinePresentation,
-  type ParagraphPresentation,
+  type ParagraphPresentationInput,
 } from "@workspace/domain/internal/paper-presentation"
 import type { FlowBinding } from "./native-layout-flow.js"
 import { readPresentationMeta } from "./presentation-meta.js"
@@ -77,14 +77,10 @@ export function flowFormatting(binding: FlowBinding, view: EditorView) {
     }
     return tr
   }
-  type ParagraphInput = {
-    alignment?: "left" | "center" | "right" | "justify"
-    lineSpacing?: ParagraphPresentation["lineSpacing"]
-    before?: number
-    after?: number
-    start?: number
-    indent?: { kind: "firstline" | "hanging"; value: number }
-  }
+  type ParagraphInput = Pick<
+    ParagraphPresentationInput,
+    "alignment" | "lineSpacing" | "before" | "after" | "start" | "indent"
+  >
   const paragraphTransaction = (input: ParagraphInput, tr = view.state.tr) => {
     const patch = engineProps(paragraphSchema.parse(input))
     if (!Object.keys(patch).length) return tr
@@ -100,12 +96,11 @@ export function flowFormatting(binding: FlowBinding, view: EditorView) {
       const tr = paragraphTransaction(input)
       if (tr.docChanged) dispatch(tr)
     },
-    formatTypography(input: {
-      size?: number
-      before?: number
-      after?: number
-      lineSpacing?: ParagraphPresentation["lineSpacing"]
-    }) {
+    formatTypography(
+      input: Pick<ParagraphInput, "before" | "after" | "lineSpacing"> & {
+        size?: number
+      }
+    ) {
       const { size, ...paragraph } = input
       const tr = paragraphTransaction(paragraph)
       inlineTransaction(size === undefined ? {} : { size }, tr)

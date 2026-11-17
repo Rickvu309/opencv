@@ -185,7 +185,7 @@ function SpacingForm({
           }
           placeholder="Mixed"
           disabled={disabled || !kind}
-          required={dirty.current.has("lineValue")}
+          required={kind !== initial.lineKind}
           onChange={() => dirty.current.add("lineValue")}
           className="h-11 text-base tabular-nums"
         />

@@ -73,6 +73,7 @@ export const paragraphSchema = z
   })
   .strict()
 export type ParagraphPresentation = z.infer<typeof paragraphSchema>
+export type ParagraphPresentationInput = z.input<typeof paragraphSchema>
 export const pagePropertiesSchema = z
   .object({
     width: twipsSchema.refine((v) => v >= 1440),

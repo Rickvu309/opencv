@@ -48,6 +48,7 @@ export {
 export type {
   InlinePresentation,
   ParagraphPresentation,
+  ParagraphPresentationInput,
 } from "./paper-doc/presentation-values.js"
 export {
   formattedDocumentSchema,
