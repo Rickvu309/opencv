@@ -28,9 +28,11 @@ export function RichPaperTextFormatting({
   editor,
   blocked,
   photoControls,
+  panel = false,
 }: {
   editor: TextEditor | null
   blocked: boolean
+  panel?: boolean
   photoControls?: (onAction: () => void) => ReactNode
 }) {
   const [formatting, update] = useReducer(
@@ -115,6 +117,23 @@ export function RichPaperTextFormatting({
       {structure}
     </>
   )
+  if (panel)
+    return (
+      <TooltipProvider>
+        <div
+          role="toolbar"
+          aria-label="Text formatting"
+          className="flex flex-wrap items-center gap-2"
+        >
+          <RichDocumentHistory editor={editor} blocked={blocked} />
+          <RichStructureControls editor={editor} blocked={blocked}>
+            {({ style, controls: structure }) =>
+              controls(style, structure, null)
+            }
+          </RichStructureControls>
+        </div>
+      </TooltipProvider>
+    )
   return (
     <TooltipProvider>
       <div

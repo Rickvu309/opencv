@@ -1,3 +1,4 @@
+import { openRichDocument } from "./rich-document.mjs"
 import { fileURLToPath } from "node:url"
 
 import { SHOWN_EMAIL } from "./account-pool.mjs"
@@ -59,7 +60,7 @@ function answerInThisBrowser(page, answer) {
   )
 }
 
-export async function runStep(page, origin, step) {
+export async function runStep(page, origin, step, repo) {
   if (step.goto)
     return page.goto(`${origin}${step.goto}`, { waitUntil: "domcontentloaded" })
   if (step.click)
@@ -80,6 +81,8 @@ export async function runStep(page, origin, step) {
       { timeout: STEP_TIMEOUT_MS }
     )
   if (step.respond) return answerInThisBrowser(page, step.respond)
+  if (step.richDocument)
+    return openRichDocument(page, origin, cannedAnswer, repo)
   if (step.press) return page.keyboard.press(step.press)
   if (step.type) return page.keyboard.type(step.type)
   if (step.waitFor)
@@ -150,7 +153,8 @@ export async function openScreen(browser, state, screen, { width, scale = 1 }) {
     screen.id,
     "step",
     screen.steps,
-    context
+    context,
+    state.repo
   )
   await settle(page, restPoint(screen, page.viewportSize()))
   const close = async () => {
@@ -160,17 +164,18 @@ export async function openScreen(browser, state, screen, { width, scale = 1 }) {
       screen.id,
       "after step",
       screen.after ?? [],
-      context
+      context,
+      state.repo
     )
     await context.close()
   }
   return { page, close }
 }
 
-async function runSteps(page, origin, screenId, kind, steps, context) {
+async function runSteps(page, origin, screenId, kind, steps, context, repo) {
   for (const [at, step] of steps.entries()) {
     try {
-      await runStep(page, origin, step)
+      await runStep(page, origin, step, repo)
     } catch (error) {
       await context.close()
       throw new Error(

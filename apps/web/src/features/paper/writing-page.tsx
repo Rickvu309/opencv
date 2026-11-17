@@ -3,14 +3,15 @@ import { createPortal } from "react-dom"
 import { useQuery } from "@tanstack/react-query"
 import { paperIdSchema } from "@workspace/domain"
 
-import { ArrowLeft, Download } from "lucide-react"
+import { Download } from "lucide-react"
 
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import {
-  PageHeader,
-  PageHeaderTitle,
-} from "@workspace/ui/components/page-header"
+  PaperDocumentHeader,
+  PaperDocumentShare,
+  PaperDocumentTitle,
+} from "./document-chrome.tsx"
 
 import {
   draftFromPage,
@@ -160,7 +161,7 @@ function SavedDownload({
       href={`${apiBaseUrl}${download.data.downloadPath}`}
       download={download.data.name}
       aria-label="Download Word"
-      className={cn(buttonVariants({ variant: "outline" }), "h-11 md:h-8")}
+      className={cn(buttonVariants({ variant: "ghost" }), "h-11 md:h-8")}
     >
       <Download aria-hidden="true" />
       <span className="hidden sm:inline">Download Word</span>
@@ -176,73 +177,43 @@ function DocumentHeader({
   onBack,
   note,
   revision,
+  kind,
 }: {
   docId: string
   owner: string
   title: string
+  kind: "cv" | "letter"
   onBack?: () => void
   note: string
   revision: string | null
 }) {
   return (
-    <PageHeader data-slot="writing-document-header">
-      <div className="flex min-w-0 flex-[1_1_8rem] items-center gap-2">
-        <a
-          href="/paper"
-          aria-label="Back to Paper"
-          onClick={
-            onBack
-              ? (event) => {
-                  event.preventDefault()
-                  onBack()
-                }
-              : undefined
-          }
-          className={cn(
-            buttonVariants({ variant: "ghost" }),
-            "size-11 p-0 md:h-8 md:w-auto md:px-2"
-          )}
-        >
-          <ArrowLeft aria-hidden="true" />
-          <span className="hidden md:inline">Paper</span>
-        </a>
-        <PageHeaderTitle
-          className="min-w-0 text-sm leading-5 max-md:min-w-0"
-          title={title}
-        >
-          {title}
-        </PageHeaderTitle>
-      </div>
-      <div className="flex max-w-full flex-wrap items-center gap-3">
-        <p
-          className="writing-note writing-header-status"
-          role="status"
-          title={note}
-        >
-          {note === "Saved" ? (
-            "Saved"
-          ) : (
-            <>
-              <span aria-hidden="true">Not saved</span>
-              <span className="sr-only">{note || "Checking saved words."}</span>
-            </>
-          )}
-        </p>
-        <DownloadWord docId={docId} owner={owner} revision={revision} />
-      </div>
-    </PageHeader>
+    <PaperDocumentHeader
+      name={title}
+      kind={kind}
+      onBack={onBack}
+      status={note || "Checking saved words."}
+      actions={
+        <>
+          <PaperDocumentShare docId={docId} />
+          <DownloadWord docId={docId} owner={owner} revision={revision} />
+        </>
+      }
+    />
   )
 }
 
 export function WritingPage({
   docId,
   title = "Untitled document",
+  kind = "cv",
   onBack,
   seed = null,
   seedRevision = null,
 }: {
   docId: string
   title?: string
+  kind?: "cv" | "letter"
   onBack?: () => void
   seed?: WritingDraft | null
   seedRevision?: string | null
@@ -335,6 +306,7 @@ export function WritingPage({
         <WritingCanvas
           key={`${docId}:${shown.generation}`}
           docId={docId}
+          title={<PaperDocumentTitle name={title} docId={docId} />}
           renderHeader={(note, revision, text) => (
             <>
               <WritingDocumentNoticeSync
@@ -348,6 +320,7 @@ export function WritingPage({
                       docId={docId}
                       owner={owner}
                       title={title}
+                      kind={kind}
                       onBack={onBack}
                       note={note}
                       revision={revision}

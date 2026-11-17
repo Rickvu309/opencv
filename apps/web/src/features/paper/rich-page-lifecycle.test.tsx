@@ -25,6 +25,10 @@ vi.mock("@/lib/paper-rich.ts", () => ({ openRichPaperSession: vi.fn() }))
 
 vi.mock("./paper-api.ts", () => ({ uploadPaperPhoto: vi.fn() }))
 
+vi.mock("@/features/coach/use-chat-store.ts", () => ({
+  useChatStore: () => ({ openChat: vi.fn() }),
+}))
+
 const cleanups = new Set<() => void>()
 let mounted: ReturnType<typeof flowMount.mountPrivateFlow>
 beforeEach(() => {
@@ -121,6 +125,9 @@ it.each([
     )
     const view = render(page("initial"))
     const host = await screen.findByLabelText("Document content")
+    fireEvent.click(
+      screen.getByRole("button", { name: "Formatting and insert" })
+    )
     await waitFor(() =>
       expect(
         screen.getByRole("button", { name: "Bold", exact: true })
@@ -212,7 +219,7 @@ it.each([
       )
       if (kind === "cv") {
         const more = screen.getByRole("button", {
-          name: "More formatting",
+          name: "Formatting and insert",
           exact: true,
         })
         if (more.getAttribute("aria-expanded") !== "true") fireEvent.click(more)
@@ -282,6 +289,9 @@ it.each([
       client: () => replacement,
     })
     view.rerender(page("remounted"))
+    fireEvent.click(
+      screen.getByRole("button", { name: "Formatting and insert" })
+    )
     await waitFor(() =>
       expect(
         screen.getByRole("button", { name: "Bold", exact: true })
@@ -310,7 +320,7 @@ async function exerciseToolbar(
   const button = (name: string | RegExp) =>
     screen.getByRole("button", { name, exact: true })
   const more = async () => {
-    const trigger = button("More formatting")
+    const trigger = button("Formatting and insert")
     if (trigger.getAttribute("aria-expanded") !== "true")
       await user.click(trigger)
   }
@@ -407,8 +417,10 @@ async function exerciseToolbar(
   await screen.findByRole("dialog", { name: "Edit photo" })
   await user.click(button("Apply"))
   const withPhoto = before()
+  await more()
   await user.click(button(/Undo \(/))
   expect(before()).not.toEqual(withPhoto)
+  await more()
   await user.click(button(/Redo \(/))
   expect(before()).toEqual(withPhoto)
   act(() => {

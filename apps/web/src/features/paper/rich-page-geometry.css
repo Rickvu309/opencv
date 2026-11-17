@@ -10,15 +10,17 @@
   inline-size: var(--cv-rich-page-width, 816px);
   padding-block: var(--cv-rich-page-top, 96px) var(--cv-rich-page-bottom, 96px);
   padding-inline: var(--cv-rich-page-start, 96px) var(--cv-rich-page-end, 96px);
-  background: var(--card);
+  background: var(--background);
 }
 
 .paper-rich-sheet[data-paper-pagination="true"] {
   min-block-size: var(--cv-rich-page-height, 1056px);
   background: repeating-linear-gradient(
     to bottom,
-    var(--card) 0 var(--cv-rich-page-height, 1056px),
-    var(--muted) var(--cv-rich-page-height, 1056px)
+    var(--background) 0 var(--cv-rich-page-height, 1056px),
+    var(--border) var(--cv-rich-page-height, 1056px)
+      calc(var(--cv-rich-page-height, 1056px) + 1px),
+    var(--background) calc(var(--cv-rich-page-height, 1056px) + 1px)
       var(--cv-rich-page-pitch, 1080px)
   );
 }
@@ -35,6 +37,6 @@
   position: absolute;
   inset-block-start: 0;
   inset-inline: 0;
-  border-block-start: 1px dashed var(--border);
+  border-block-start: 1px solid var(--border);
   content: "";
 }
