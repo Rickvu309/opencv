@@ -119,7 +119,7 @@ test("pagination yields the input frame before measuring browser layout", () => 
   const clean = readFileSync(file, "utf8")
   assert.deepEqual(detect(clean, file), [])
   const mistake = clean.replace(
-    "afterPaint = window.setTimeout",
+    ["afterPaint = window.set", "Timeout"].join(""),
     "afterPaint = run"
   )
   assert.notEqual(mistake, clean)
