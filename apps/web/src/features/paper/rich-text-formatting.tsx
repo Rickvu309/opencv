@@ -22,6 +22,7 @@ import {
   type TextFormatting,
 } from "./rich-text-toolbar-control.tsx"
 import { RichStructureControls } from "./rich-structure-controls.tsx"
+import { RichTextCustomSpacing } from "./rich-text-custom-spacing.tsx"
 import { RichPageBreak } from "./rich-page-break.tsx"
 
 export function RichPaperTextFormatting({
@@ -110,6 +111,12 @@ export function RichPaperTextFormatting({
         formatting={formatting}
         disabled={disabled}
         choose={paragraph}
+      />
+      <RichTextCustomSpacing
+        editor={editor}
+        formatting={formatting}
+        disabled={disabled}
+        onAction={() => setOpen(false)}
       />
       {groupSeparator}
       {structure}

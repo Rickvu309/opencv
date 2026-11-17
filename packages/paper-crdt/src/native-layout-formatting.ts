@@ -8,6 +8,7 @@ import {
   inlineSchema,
   paragraphSchema,
   type InlinePresentation,
+  type ParagraphPresentation,
 } from "@workspace/domain/internal/paper-presentation"
 import type { FlowBinding } from "./native-layout-flow.js"
 import { readPresentationMeta } from "./presentation-meta.js"
@@ -48,44 +49,67 @@ export function flowFormatting(binding: FlowBinding, view: EditorView) {
     view.dispatch(tr)
     yUndoPluginKey.getState(view.state)?.undoManager.stopCapturing()
   }
-  return {
-    formatInline(input: {
+  const inlineTransaction = (
+    input: {
       color?: string | null
       highlight?: string | null
       fontId?: string | null
       size?: number | null
-    }) {
-      const patch = inlinePatchSchema.parse(input)
-      if (patch.size != null && patch.size % 10 !== 0)
-        throw new Error("Paper text size must use half points")
-      const { state } = view
-      if (!selectedParagraphs(view).length) return
-      const tr = state.tr
-      for (const [key, value] of Object.entries(patch)) {
-        const mark = state.schema.marks[key]
-        if (!mark) throw new Error("Unsupported Paper formatting")
-        if (state.selection.empty) tr.removeStoredMark(mark)
-        else tr.removeMark(state.selection.from, state.selection.to, mark)
-        if (value !== null) {
-          const encoded = engineStyles(inlineSchema.parse({ [key]: value }))
-          const next = mark.create({ stringValue: Object.values(encoded)[0] })
-          if (state.selection.empty) tr.addStoredMark(next)
-          else tr.addMark(state.selection.from, state.selection.to, next)
-        }
-      }
-      dispatch(tr)
     },
-    formatParagraph(input: {
-      alignment?: "left" | "center" | "right" | "justify"
-      lineSpacing?: { kind: "multiple"; value: number }
-      start?: number
-      indent?: { kind: "firstline" | "hanging"; value: number }
-    }) {
-      const patch = engineProps(paragraphSchema.parse(input))
-      const tr = view.state.tr
-      for (const { node, pos } of selectedParagraphs(view))
-        tr.setNodeMarkup(pos, undefined, { ...node.attrs, ...patch })
+    tr = view.state.tr
+  ) => {
+    const patch = inlinePatchSchema.parse(input)
+    if (patch.size != null && patch.size % 10 !== 0)
+      throw new Error("Paper text size must use half points")
+    const { state } = view
+    if (!selectedParagraphs(view).length) return tr
+    for (const [key, value] of Object.entries(patch)) {
+      const mark = state.schema.marks[key]
+      if (!mark) throw new Error("Unsupported Paper formatting")
+      if (state.selection.empty) tr.removeStoredMark(mark)
+      else tr.removeMark(state.selection.from, state.selection.to, mark)
+      if (value !== null) {
+        const encoded = engineStyles(inlineSchema.parse({ [key]: value }))
+        const next = mark.create({ stringValue: Object.values(encoded)[0] })
+        if (state.selection.empty) tr.addStoredMark(next)
+        else tr.addMark(state.selection.from, state.selection.to, next)
+      }
+    }
+    return tr
+  }
+  type ParagraphInput = {
+    alignment?: "left" | "center" | "right" | "justify"
+    lineSpacing?: ParagraphPresentation["lineSpacing"]
+    before?: number
+    after?: number
+    start?: number
+    indent?: { kind: "firstline" | "hanging"; value: number }
+  }
+  const paragraphTransaction = (input: ParagraphInput, tr = view.state.tr) => {
+    const patch = engineProps(paragraphSchema.parse(input))
+    if (!Object.keys(patch).length) return tr
+    for (const { node, pos } of selectedParagraphs(view))
+      tr.setNodeMarkup(pos, undefined, { ...node.attrs, ...patch })
+    return tr
+  }
+  return {
+    formatInline(input: Parameters<typeof inlineTransaction>[0]) {
+      dispatch(inlineTransaction(input))
+    },
+    formatParagraph(input: ParagraphInput) {
+      const tr = paragraphTransaction(input)
       if (tr.docChanged) dispatch(tr)
+    },
+    formatTypography(input: {
+      size?: number
+      before?: number
+      after?: number
+      lineSpacing?: ParagraphPresentation["lineSpacing"]
+    }) {
+      const { size, ...paragraph } = input
+      const tr = paragraphTransaction(paragraph)
+      inlineTransaction(size === undefined ? {} : { size }, tr)
+      if (tr.docChanged || tr.storedMarksSet) dispatch(tr)
     },
     adjustIndent(delta: 360 | -360) {
       const presentation = readPresentationMeta(binding.doc)
@@ -176,6 +200,21 @@ export function flowFormatting(binding: FlowBinding, view: EditorView) {
                 ? String(v.lineSpacing.value)
                 : `${v.lineSpacing.value / 20} pt${v.lineSpacing.kind === "atleast" ? " minimum" : " exact"}`
               : "1.2"
+          )
+        ),
+        before: common(paragraphs.map((v) => String((v.before ?? 0) / 20))),
+        after: common(paragraphs.map((v) => String((v.after ?? 0) / 20))),
+        lineKind: common(
+          paragraphs.map((v) => v.lineSpacing?.kind ?? "multiple")
+        ),
+        lineValue: common(
+          paragraphs.map((v) =>
+            String(
+              v.lineSpacing
+                ? v.lineSpacing.value /
+                    (v.lineSpacing.kind === "multiple" ? 1 : 20)
+                : 1.2
+            )
           )
         ),
         start: common(paragraphs.map((v) => String((v.start ?? 0) / 1440))),

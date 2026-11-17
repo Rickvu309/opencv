@@ -342,3 +342,127 @@ it("moves a hanging paragraph on the first increase and decrease and respects bo
   mounted.adjustIndent(360)
   expect(paragraph(client).paragraph?.start).toBe(2880)
 })
+
+describe("exact rich Paper typography", () => {
+  it.each(["cv", "letter"] as const)(
+    "stores %s half points and paragraph spacing in one reversible edit",
+    (kind) => {
+      const { client, mounted, view, select, host } = setup(kind)
+      const before = client.document()
+      mounted.formatTypography({
+        size: 210,
+        before: 125,
+        after: 85,
+        lineSpacing: { kind: "multiple", value: 1.25 },
+      })
+      expect(paragraph(client)).toMatchObject({
+        paragraph: {
+          before: 125,
+          after: 85,
+          lineSpacing: { kind: "multiple", value: 1.25 },
+        },
+      })
+      expect(paragraph(client).content.every((run) => run.size === 210)).toBe(
+        true
+      )
+      expect(host.querySelector('[data-id="intro"]')?.textContent).toBeTruthy()
+      const text = [...host.querySelectorAll("span")].find(
+        (element) => element.style.fontSize === "10.5pt"
+      )
+      expect(text).toBeTruthy()
+      const rendered = host.querySelector<HTMLElement>(
+        '[data-id="intro"] .bn-block-content'
+      )
+      expect(rendered?.style.marginBlock).toBe("6.25pt 4.25pt")
+      expect(rendered?.style.lineHeight).toBe("1.25")
+      expect(mounted.activeFormatting()).toMatchObject({
+        size: "10.5",
+        before: "6.25",
+        after: "4.25",
+        lineValue: "1.25",
+        lineKind: "multiple",
+      })
+      const after = client.document()
+      expect(undo(view.state)).toBe(true)
+      expect(client.document()).toEqual(before)
+      expect(redo(view.state)).toBe(true)
+      expect(client.document()).toEqual(after)
+      const provenance = nativeProvenance(after!)
+      const reopened = openRichPaperClient(
+        {
+          epoch: 1,
+          revision: 1,
+          provenance,
+          server: Y.encodeStateAsUpdate(client.ydoc),
+          pending: Uint8Array.of(0, 0),
+        },
+        { provenance }
+      )
+      cleanups.push(() => reopened.destroy())
+      expect(reopened.document()).toEqual(after)
+      select("intro", "after")
+      expect(mounted.activeFormatting()).toMatchObject({
+        size: null,
+        before: null,
+        after: null,
+        lineValue: null,
+      })
+    }
+  )
+
+  it.each(["exact", "atleast"] as const)(
+    "keeps custom %s point line spacing",
+    (kind) => {
+      const { mounted, client } = setup("letter")
+      mounted.formatParagraph({
+        before: 0,
+        after: 150,
+        lineSpacing: { kind, value: 285 },
+      })
+      expect(paragraph(client).paragraph).toMatchObject({
+        before: 0,
+        after: 150,
+        lineSpacing: { kind, value: 285 },
+      })
+      expect(mounted.activeFormatting()).toMatchObject({
+        before: "0",
+        after: "7.5",
+        lineKind: kind,
+        lineValue: "14.25",
+      })
+    }
+  )
+
+  it("keeps an exact typing size while changing the current paragraph spacing", () => {
+    const { mounted, client, view } = setup("letter")
+    view.dispatch(
+      view.state.tr.setSelection(
+        TextSelection.create(view.state.doc, view.state.selection.from)
+      )
+    )
+    mounted.formatTypography({ size: 210, before: 125 })
+    expect(mounted.activeFormatting()).toMatchObject({
+      size: "10.5",
+      before: "6.25",
+    })
+    view.dispatch(view.state.tr.insertText("Typed"))
+    expect(
+      paragraph(client).content.find((run) => run.text.includes("Typed"))?.size
+    ).toBe(210)
+  })
+
+  it("refuses invalid typography atomically", () => {
+    const { mounted, client } = setup("letter")
+    const before = client.document()
+    for (const patch of [
+      { size: 70 },
+      { size: 211 },
+      { size: 210, before: -1 },
+      { size: 210, after: 31681 },
+      { size: 210, lineSpacing: { kind: "multiple" as const, value: 11 } },
+    ]) {
+      expect(() => mounted.formatTypography(patch)).toThrow()
+      expect(client.document()).toEqual(before)
+    }
+  })
+})
