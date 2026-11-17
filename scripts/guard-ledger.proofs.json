@@ -1,4 +1,8 @@
 {
+  "api-build-test-files": {
+    "passed": true,
+    "fingerprint": "f031bf422b5b"
+  },
   "delegate-reach": {
     "passed": true,
     "fingerprint": "ff451b533174"
