@@ -575,6 +575,12 @@ export function fakePorts(world = {}) {
       run(cmd, args, options) {
         effect("proc", { cmd, args })
         if (world.run) return world.run(cmd, args, options)
+        if (cmd === "git" && args[0] === "rev-parse")
+          return {
+            ok: true,
+            out: args[1] === "HEAD" ? state.head : "tree-1",
+            err: "",
+          }
         return { ok: true, out: "", err: "" }
       },
       listening(port) {
