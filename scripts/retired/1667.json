@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-start-parity.test.tsx",
+    "because": "The shorter visible search prompt still exposes every supported input in its accessible name and keeps initial focus.",
+    "replacedBy": "apps/web/src/features/paper/paper-letter-start-parity.test.tsx",
+    "proof": {
+      "fork": "976628fc1f4263be91e7d6db104d75441d52966c",
+      "replacedByBlob": "e5817975d885b037930a19b91b74ab9ef5eeba13",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  }
+]
