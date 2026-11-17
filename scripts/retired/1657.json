@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/components/ai-elements/prompt-input.test.tsx",
+    "because": "The owner asked for the Coach to look like Linear's agent page on 2026-11-17: the composer is the pen's two-row card, the home drops the visible heading, and saved Chats replace the starters",
+    "replacedBy": "apps/web/src/components/ai-elements/prompt-input.test.tsx",
+    "proof": {
+      "fork": "d0e4bf96a952f095858db11bc39a94bbe14f0137",
+      "replacedByBlob": "aebf88621c08c84e2151258463a3383a72247052",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]
