@@ -1,11 +1,29 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
+import { execFileSync } from "node:child_process"
 import test from "node:test"
 
 import { detect } from "./lib/paper-print-body.mjs"
 
 const read = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+
+test("Word cards cannot fall back to a missing block body", () => {
+  const mistake = `<PaperLibraryCard lines={librarySheetLines(doc)} />`
+  const clean = `<PaperLibraryCard lines={librarySheetLines(doc)} preview={doc.format === "word" ? <PaperWordPreview docId={doc.id} /> : undefined} />`
+  assert.equal(detect(mistake)[0]?.kind, "word-card-without-first-page-preview")
+  assert.deepEqual(detect(clean), [])
+  const path = "apps/web/src/features/paper/paper-library-sections.tsx"
+  const historic = execFileSync("git", ["show", `92613ff1:${path}`], {
+    encoding: "utf8",
+  })
+  assert.ok(
+    detect(historic, path).some(
+      ({ kind }) => kind === "word-card-without-first-page-preview"
+    )
+  )
+  assert.deepEqual(detect(read(path), path), [])
+})
 
 test("a Word page is never offered Download PDF over a stand-in body", () => {
   const listedMistake = `function packagePaper(row) { return paperViewSchema.parse({ id: row.docId, kind: row.kind, paper: row.kind === "cv" ? blankCv() : blankLetter() }) }`

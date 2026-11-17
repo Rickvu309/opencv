@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useReducer, useRef, type DragEvent } from "react"
-import { FileUp, Plus } from "lucide-react"
+import { Plus } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   paperDocNameSchema,
@@ -39,7 +39,6 @@ import {
 } from "./paper-template-gallery.tsx"
 import { PaperLetterStartPage } from "./paper-letter-start-page.tsx"
 import { PaperImportInput } from "./paper-import-input.tsx"
-import { PaperLibraryStarters } from "./paper-parts.tsx"
 import { PaperPrintSheet } from "./paper-print-sheet.tsx"
 import { printPaper } from "./paper-print.ts"
 import { initialLibrary, libraryReducer } from "./paper-library.reducer.ts"
@@ -54,9 +53,9 @@ import {
   useWordLibrary,
 } from "./paper-package-library.tsx"
 import { PaperLibrarySearch } from "./paper-library-search.tsx"
-import { PaperLibraryTile } from "./paper-library-card.tsx"
 import {
   LIBRARY_SECTIONS,
+  libraryDisplayName,
   libraryEntries,
   librarySections,
 } from "./paper-library-entries.ts"
@@ -146,8 +145,7 @@ export function PaperLibrary({
   const noResults = LIBRARY_SECTIONS.every(
     ({ id }) => sections[id].length === 0
   )
-  const firstRun = !loading && !error && entries.length === 0 && !searching
-  const ready = !loading && !error && !firstRun
+  const ready = !loading && !error
 
   useEffect(() => () => importRequest.current?.abort(), [])
 
@@ -285,7 +283,7 @@ export function PaperLibrary({
 
   async function confirmDelete() {
     if (!mode || mode.type !== "delete") return
-    const name = mode.doc.name
+    const name = libraryDisplayName(mode.doc.name)
     try {
       const deleted = await run("paper.delete", { docId: mode.doc.id })
       closeDialog()
@@ -301,7 +299,7 @@ export function PaperLibrary({
     if (!mode || mode.type !== "delete-file") return
     try {
       await run("paper.deleteFile", { fileId: mode.file.id })
-      toast(`Deleted ${mode.file.name}`)
+      toast(`Deleted ${libraryDisplayName(mode.file.name)}`)
       closeDialog()
     } catch (err) {
       toast(messageOf(err, "Could not delete that file. Try again."))
@@ -311,7 +309,7 @@ export function PaperLibrary({
   async function duplicate(doc: PaperView) {
     try {
       const copy = await run("paper.duplicate", { docId: doc.id })
-      await rememberUndo(copy.id, `Duplicated ${doc.name}`)
+      await rememberUndo(copy.id, `Duplicated ${libraryDisplayName(doc.name)}`)
     } catch (err) {
       toast(messageOf(err, "Could not duplicate. Try again."))
     }
@@ -332,34 +330,22 @@ export function PaperLibrary({
     onDeleteFile: (file) => dispatch({ type: "delete_file_requested", file }),
   }
 
-  const tiles = {
-    cv: (
-      <PaperLibraryTile
-        key="new-cv"
-        label="New CV"
-        icon={Plus}
-        slot="paper-library-new-cv"
-        onClick={() => dispatch({ type: "new_dialog_opened", step: "gallery" })}
-      />
-    ),
-    letter: (
-      <PaperLibraryTile
-        key="letter"
-        label="New letter"
-        icon={Plus}
-        slot="paper-library-new-letter"
-        onClick={() => dispatch({ type: "letter_dialog_opened" })}
-      />
-    ),
-    files: (
-      <PaperLibraryTile
-        key="import"
-        label="Import a file"
-        icon={FileUp}
-        slot="paper-library-import"
-        onClick={() => dispatch({ type: "import_dialog_opened" })}
-      />
-    ),
+  const sectionActions = {
+    cv: {
+      label: "New CV",
+      empty: "No CVs yet.",
+      onCreate: () => dispatch({ type: "new_dialog_opened", step: "gallery" }),
+    },
+    letter: {
+      label: "New letter",
+      empty: "No letters yet.",
+      onCreate: () => dispatch({ type: "letter_dialog_opened" }),
+    },
+    files: {
+      label: "Import a file",
+      empty: "No files yet.",
+      onCreate: () => dispatch({ type: "import_dialog_opened" }),
+    },
   }
 
   if (mode?.type === "letter") {
@@ -382,7 +368,7 @@ export function PaperLibrary({
       aria-label="Paper"
       data-pen-surface="paper"
       data-slot="paper-library"
-      className="flex min-w-0 flex-col gap-6 p-4 sm:p-6"
+      className="flex min-w-0 flex-col gap-4 p-4 sm:gap-6 sm:p-6"
     >
       <PaperImportInput
         inputRef={importRef}
@@ -441,13 +427,6 @@ export function PaperLibrary({
           </Button>
         </div>
       ) : null}
-      {firstRun ? (
-        <PaperLibraryStarters
-          onCv={() => dispatch({ type: "new_dialog_opened", step: "gallery" })}
-          onLetter={() => dispatch({ type: "letter_dialog_opened" })}
-          onImport={() => dispatch({ type: "import_dialog_opened" })}
-        />
-      ) : null}
       {ready && searching && noResults ? (
         <div role="status" className="flex flex-col items-start gap-2">
           <p>No results for &quot;{query.trim()}&quot;</p>
@@ -467,12 +446,15 @@ export function PaperLibrary({
       {ready
         ? LIBRARY_SECTIONS.map(({ id, title }) => {
             const items = sections[id]
-            const tile = searching ? null : tiles[id]
             if (items.length === 0 && searching) return null
             return (
               <Fragment key={id}>
                 {id === "files" && !searching ? <PaperProofsLink /> : null}
-                <PaperLibrarySection title={title}>
+                <PaperLibrarySection
+                  title={title}
+                  count={items.length}
+                  action={searching ? undefined : sectionActions[id]}
+                >
                   {items.map((entry) => (
                     <LibraryEntryCard
                       key={entry.key}
@@ -480,7 +462,6 @@ export function PaperLibrary({
                       on={handlers}
                     />
                   ))}
-                  {tile}
                 </PaperLibrarySection>
               </Fragment>
             )
@@ -547,8 +528,10 @@ export function PaperLibrary({
         open={mode?.type === "delete" || mode?.type === "delete-file"}
         name={
           deleting?.type === "delete-file"
-            ? deleting.file.name
-            : (deleting?.doc.name ?? null)
+            ? libraryDisplayName(deleting.file.name)
+            : deleting
+              ? libraryDisplayName(deleting.doc.name)
+              : null
         }
         undoable={deletingWordPage}
         onDelete={() =>

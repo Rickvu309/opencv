@@ -30,7 +30,7 @@ import {
 } from "./paper-template-thumb.tsx"
 
 export const PAPER_GALLERY_DIALOG_CLASS =
-  "flex flex-col sm:max-w-3xl lg:max-w-[1000px] xl:max-w-[1200px] sm:h-[min(600px,calc(100dvh-clamp(16px,14dvh,120px)-16px))] max-sm:top-0 max-sm:left-0 max-sm:h-dvh max-sm:max-h-dvh max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:rounded-none overscroll-contain transition-[opacity,scale,translate]"
+  "flex flex-col sm:max-w-3xl lg:max-w-[960px] max-h-[calc(100dvh-clamp(16px,14dvh,120px)-16px)] overscroll-contain transition-[opacity,scale,translate]"
 
 type Choice = PaperTemplateId | "blank"
 
@@ -88,10 +88,10 @@ const STEP: Record<string, (columns: number) => number> = {
 }
 
 const CARD_CLASS =
-  "group/card h-auto min-w-0 flex-col items-stretch justify-start gap-2 rounded-[10px] p-1.5 font-normal whitespace-normal text-start outline-none [-webkit-tap-highlight-color:transparent] focus-visible:ring-3 focus-visible:ring-ring/50 aria-disabled:cursor-wait aria-disabled:opacity-60 hover:bg-muted/60 aria-checked:bg-muted"
+  "group/card h-auto min-w-0 flex-col items-stretch justify-start gap-2 rounded-[10px] p-1.5 font-normal whitespace-normal text-start outline-none [-webkit-tap-highlight-color:transparent] focus-visible:ring-3 focus-visible:ring-ring/50 aria-disabled:cursor-wait aria-disabled:opacity-60 hover:bg-muted/60"
 
 const PAGE_STATE_CLASS =
-  "shadow-[0_0_0_1px_oklch(0_0_0/0.14),0_1px_3px_oklch(0_0_0/0.08)] group-hover/card:shadow-[0_0_0_1px_oklch(0_0_0/0.45),0_2px_6px_oklch(0_0_0/0.1)] group-aria-checked/card:shadow-[0_0_0_2px_var(--primary),0_4px_12px_oklch(0_0_0/0.14)]"
+  "shadow-[0_0_0_1px_oklch(0_0_0/0.14),0_1px_3px_oklch(0_0_0/0.08)] group-hover/card:shadow-[0_0_0_1px_oklch(0_0_0/0.45),0_2px_6px_oklch(0_0_0/0.1)]"
 
 function ChoiceCard({
   id,
@@ -280,7 +280,7 @@ export function PaperTemplateGallery({
       </div>
       <div
         data-template-scroll=""
-        className="-mx-6 min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pt-1 pb-4"
+        className="-mx-6 min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pt-1 pb-2 sm:pb-4"
       >
         <div
           ref={gridRef}
@@ -288,7 +288,7 @@ export function PaperTemplateGallery({
           aria-label="Templates"
           aria-busy={pending || undefined}
           data-template-grid=""
-          className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-3 sm:gap-x-5 sm:gap-y-6 lg:grid-cols-4 xl:grid-cols-5"
+          className="grid grid-cols-2 gap-x-2 gap-y-3 min-[375px]:grid-cols-3 sm:gap-x-5 sm:gap-y-6 lg:grid-cols-5"
           onKeyDown={moveFocus}
         >
           {hasBlank ? (
@@ -322,9 +322,10 @@ export function PaperTemplateGallery({
         {searching && found.length === 0 ? (
           <p
             data-template-note=""
-            className="mt-4 text-sm text-muted-foreground"
+            className="mt-4 text-sm [overflow-wrap:anywhere] text-muted-foreground"
           >
-            No template matches “{query.trim()}”. Start blank, or{" "}
+            No template matches “{query.trim()}”.{" "}
+            {hasBlank ? "Start blank, or" : "Try another term, or"}{" "}
             <Button
               type="button"
               variant="link"
@@ -355,7 +356,7 @@ export function PaperTemplateGallery({
           <Button
             className="h-11 gap-1.5 md:h-8"
             type="button"
-            variant="outline"
+            variant="ghost"
             onClick={onImport}
           >
             <FileUp aria-hidden="true" />

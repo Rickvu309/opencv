@@ -69,8 +69,6 @@ function wideDialog() {
     ).toEqual([])
   expect(content?.className).toContain("sm:max-w-3xl")
   expect(content?.className).not.toContain("sm:max-w-sm")
-  expect(content.className).toContain("max-sm:h-dvh")
-  expect(content.className).toContain("max-sm:top-0")
   expect(content.className).toContain("flex-col")
   const scroll = content.querySelector<HTMLElement>("[data-template-scroll]")
   expect(scroll?.className).toContain("overflow-y-auto")
@@ -225,8 +223,8 @@ describe("Paper template gallery", () => {
       document.querySelector('[data-template-page="blank"] [data-page-name]')
     ).toBeNull()
     expect(
-      document.querySelector('[data-template-page="blank"] svg')
-    ).toBeTruthy()
+      document.querySelector('[data-template-page="blank"]')
+    ).toBeEmptyDOMElement()
   })
 
   it("searches forgivingly, picks the top match, and says when nothing matches", () => {

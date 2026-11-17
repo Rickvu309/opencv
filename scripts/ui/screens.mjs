@@ -13,6 +13,7 @@ const OPEN_BLANK_CV = [
 const SEARCH_TEMPLATES = '[role="dialog"] input[aria-label="Search templates"]'
 
 const OPEN_NEW_CV = [
+  { click: { role: "button", name: "New" } },
   { click: { role: "button", name: "CV" } },
   { waitFor: { role: "dialog", name: "New CV" } },
 ]
@@ -151,15 +152,24 @@ export const SCREENS = [
     id: "paper-home",
     route: "/paper",
     steps: [
-      ...OPEN_BLANK_CV,
+      ...OPEN_NEW_CV,
+      { click: { role: "radio", name: "Modern" } },
+      { click: { role: "button", name: "Use Modern" } },
+      { waitFor: { selector: PAGE } },
       { goto: "/paper" },
-      { waitFor: { selector: 'main input[aria-label="Search Paper"]' } },
+      ...OPEN_NEW_CV,
+      { click: { role: "radio", name: "Simple" } },
+      { click: { role: "button", name: "Use Simple" } },
+      { waitFor: { selector: PAGE } },
+      { goto: "/paper" },
+      { waitFor: { text: "Simple CV" } },
+      { waitFor: { text: "Modern CV" } },
     ],
   },
   {
     id: "paper-home-empty",
     route: "/paper",
-    steps: [{ waitFor: { text: "Start a document" } }],
+    steps: [{ waitFor: { text: "No CVs yet." } }],
   },
   {
     id: "paper-home-panel-open",
@@ -170,6 +180,17 @@ export const SCREENS = [
     id: "paper-home-new-cv",
     route: "/paper",
     steps: OPEN_NEW_CV,
+  },
+  {
+    id: "paper-home-new-letter",
+    route: "/apply",
+    steps: [
+      ...ADD_A_JOB,
+      { goto: "/paper" },
+      { click: { role: "button", name: "New" } },
+      { click: { role: "button", name: "Cover letter" } },
+      { waitFor: { role: "button", name: "Product designer, Lumiere" } },
+    ],
   },
   {
     id: "paper-new-cv-searching",

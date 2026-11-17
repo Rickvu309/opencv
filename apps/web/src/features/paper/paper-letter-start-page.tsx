@@ -140,9 +140,9 @@ export function PaperLetterStartPage({
         </header>
         <div
           data-slot="letter-start-desk"
-          className="flex min-h-0 flex-1 items-center justify-center overflow-auto px-4 py-8 md:pt-0 md:pb-12"
+          className="grid min-h-0 flex-1 justify-items-center overflow-auto px-4 py-8 md:px-8"
         >
-          <div className="w-full max-w-[600px]">
+          <div className="my-auto w-full max-w-[560px] rounded-xl border bg-card p-4 md:p-6">
             <h1 className="mb-5 text-xl leading-6 font-semibold tracking-[-0.2px]">
               Start a cover letter
             </h1>
