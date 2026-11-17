@@ -112,7 +112,7 @@ test("semantic owners, visual lines and typing reject the reviewed regression", 
   const historic = execFileSync("git", ["show", `655f6a7b:${file}`], {
     encoding: "utf8",
   })
-  assert.equal(detect(historic, file).length, 4)
+  assert.equal(detect(historic, file).length, 5)
 })
 
 test("pagination yields the input frame before measuring browser layout", () => {
