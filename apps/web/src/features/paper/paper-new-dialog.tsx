@@ -103,7 +103,7 @@ export function PaperNewDialog({
     return (
       <PaperTemplateGallery
         title="New CV"
-        description="Pick a page, or bring a file you already have."
+        description="Choose a starting point for your CV."
         onUse={(templateId) => void applyTemplate(templateId)}
         onImport={onImport}
         onBlank={() => void startBlank()}

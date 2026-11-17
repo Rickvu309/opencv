@@ -1,5 +1,5 @@
 import { afterEach, expect, it } from "vitest"
-import { cleanup, render } from "@testing-library/react"
+import { cleanup, render, screen } from "@testing-library/react"
 
 import { PaperLibraryCard } from "./paper-library-card"
 
@@ -24,4 +24,20 @@ it("answers hover and focus with a token-timed ring and keeps the kit press", ()
   expect(
     container.querySelector("[data-slot=paper-library-preview-name]")
   ).toBeNull()
+})
+
+it("shows the document name without its extension and exposes the full long name", () => {
+  const name =
+    "Senior product designer portfolio and application for international opportunities"
+  render(
+    <PaperLibraryCard
+      name={`${name}.docx`}
+      meta="Edited today"
+      onOpen={() => undefined}
+      actions={[]}
+    />
+  )
+  expect(screen.getByRole("button", { name })).toBeInTheDocument()
+  expect(screen.getByTitle(name)).toHaveTextContent(name)
+  expect(screen.queryByText(`${name}.docx`)).not.toBeInTheDocument()
 })

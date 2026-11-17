@@ -1,5 +1,3 @@
-import { Plus } from "lucide-react"
-
 import type { PaperTemplateId } from "@workspace/domain"
 
 import {
@@ -8,7 +6,7 @@ import {
 } from "./paper-template-pages.ts"
 
 export const TEMPLATE_PAGE_CLASS =
-  "@container relative block aspect-[1/1.294] w-full overflow-hidden rounded-[6px] border border-transparent bg-white text-black/85"
+  "@container relative block aspect-[17/22] w-full overflow-hidden rounded-[6px] border border-transparent bg-white text-black/85"
 
 const plain = (text: string) => text.replace(/[[\]]/g, "")
 
@@ -69,9 +67,7 @@ export function BlankPage() {
     <span
       aria-hidden="true"
       data-template-page="blank"
-      className="absolute inset-0 grid place-items-center"
-    >
-      <Plus className="size-[16cqw] text-black/45" strokeWidth={1.5} />
-    </span>
+      className="absolute inset-0"
+    />
   )
 }

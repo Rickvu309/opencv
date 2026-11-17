@@ -90,3 +90,7 @@ export function fileBadge(file: PaperFile) {
   const extension = /\.([a-z0-9]{1,5})$/i.exec(file.name)?.[1]
   return extension ? extension.toUpperCase() : "FILE"
 }
+
+export function libraryDisplayName(name: string) {
+  return name.replace(/\.(docx?|pdf|rtf|txt|odt)$/i, "")
+}

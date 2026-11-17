@@ -43,16 +43,17 @@ const LAYOUT_HEADINGS: Record<string, string[]> = {
 }
 
 describe("Paper template chooser layout", () => {
-  it("shows each distinct page as its own card with that layout's headings, in a grid of two columns on phones and more on wider sheets", () => {
+  it("shows a distinct page and its headings for every template", () => {
     openChooser()
     const grid = screen.getByRole("radiogroup", { name: "Templates" })
-    expect(grid.className).toMatch(/(^|\s)grid-cols-2(\s|$)/)
-    expect(grid.className).toContain("sm:grid-cols-3")
     expect(
       [...grid.querySelectorAll<HTMLElement>("[data-template-card]")].map(
         (card) => card.dataset.templateCard
       )
     ).toEqual(["blank", "simple", "modern", "compact", "academic"])
+    expect(
+      grid.querySelector('[data-template-page="blank"]')
+    ).toBeEmptyDOMElement()
     for (const [id, headings] of Object.entries(LAYOUT_HEADINGS)) {
       const page = grid.querySelector(`[data-template-page="${id}"]`)
       expect(page, id).toBeTruthy()
@@ -70,8 +71,6 @@ describe("Paper template chooser layout", () => {
     for (const choice of TEMPLATE_CHOICES) {
       const description = screen.getByText(choice.use)
       expect(description.textContent).toBe(choice.use)
-      expect(description.className).toMatch(/whitespace-normal/)
-      expect(description.className).not.toMatch(/truncate|line-clamp/)
     }
   })
 

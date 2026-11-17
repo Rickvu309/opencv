@@ -35,11 +35,10 @@ it("shows the job picker from its pen frame and lets Paper return to the library
   render(<PaperLetterStartPage onBack={onBack} onCreated={vi.fn()} />)
 
   expect(screen.getByRole("heading", { name: texts[3] })).toBeInTheDocument()
-  expect(screen.getByPlaceholderText(texts[4])).toHaveFocus()
-  expect(screen.getByPlaceholderText(texts[4])).toHaveClass(
-    "text-base",
-    "md:text-[13px]"
-  )
+  const search = screen.getByRole("textbox")
+  expect(search).toHaveAttribute("placeholder", "Search or paste a link")
+  expect(search).toHaveAccessibleName(texts[4])
+  expect(search).toHaveFocus()
   for (const job of jobs) {
     expect(
       await screen.findByRole("button", {

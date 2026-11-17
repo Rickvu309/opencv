@@ -1,4 +1,4 @@
-import { useReducer, type ReactNode } from "react"
+import { useId, useReducer, type ReactNode } from "react"
 import { Link } from "@tanstack/react-router"
 import {
   ChevronDown,
@@ -8,6 +8,7 @@ import {
   FileText,
   Link2,
   Pencil,
+  Plus,
   SquareArrowOutUpRight,
   Trash2,
   type LucideIcon,
@@ -29,6 +30,7 @@ import {
 } from "./paper-library-card.tsx"
 import { fileBadge, type LibraryEntry } from "./paper-library-entries.ts"
 import type { WordDocument } from "./paper-package-library.tsx"
+import { PaperWordPreview } from "./paper-word-preview.tsx"
 import { paperEditedLabel } from "./paper-templates.ts"
 
 const PREVIEW_LINE_LIMIT = 12
@@ -49,19 +51,20 @@ export function PaperProofsLink() {
     <section
       aria-label="Proofs"
       data-slot="paper-library-section"
-      className="flex flex-col gap-2 md:gap-3.5"
+      className="flex flex-col gap-2"
     >
       <Link
         to={SURFACE_PATHS.proofs}
         data-slot="paper-library-section-head"
         className={cn(
           buttonVariants({ variant: "ghost" }),
-          "h-11 w-full justify-start gap-2 rounded-md px-0 text-sm font-semibold text-foreground hover:bg-transparent aria-expanded:bg-transparent md:h-8"
+          "h-11 w-fit justify-start gap-2 px-0 text-sm font-medium text-muted-foreground hover:bg-transparent hover:text-foreground md:h-8"
         )}
       >
         <ChevronRight
           data-slot="paper-library-section-icon"
-          className="size-[13px] text-muted-foreground"
+          className="size-[13px]"
+          aria-hidden="true"
         />
         Proofs
       </Link>
@@ -69,42 +72,93 @@ export function PaperProofsLink() {
   )
 }
 
+type SectionAction = {
+  label: string
+  empty: string
+  onCreate: () => void
+}
+
 export function PaperLibrarySection({
   title,
+  count = 0,
+  action,
   children,
 }: {
   title: string
+  count?: number
+  action?: SectionAction
   children: ReactNode
 }) {
   const [open, toggle] = useReducer((value: boolean) => !value, true)
+  const bodyId = useId()
   const Chevron = open ? ChevronDown : ChevronRight
   return (
     <section
       aria-label={title}
       data-slot="paper-library-section"
-      className="flex flex-col gap-2 md:gap-3.5"
+      className="group/section flex flex-col gap-2 sm:gap-3.5"
     >
-      <Button
-        type="button"
-        variant="ghost"
-        data-slot="paper-library-section-head"
-        aria-expanded={open}
-        className="h-11 w-full justify-start gap-2 rounded-md px-0 text-sm font-semibold text-foreground hover:bg-transparent aria-expanded:bg-transparent md:h-8"
-        onClick={toggle}
-      >
-        <Chevron
-          data-slot="paper-library-section-icon"
-          className="size-[13px] text-muted-foreground"
-          aria-hidden="true"
-        />
-        {title}
-      </Button>
+      <div className="flex items-center gap-1">
+        <Button
+          type="button"
+          variant="ghost"
+          data-slot="paper-library-section-head"
+          aria-label={title}
+          aria-expanded={open}
+          aria-controls={open ? bodyId : undefined}
+          aria-describedby={`${bodyId}-count`}
+          className="h-11 justify-start gap-2 px-0 text-sm font-medium text-muted-foreground hover:bg-transparent hover:text-foreground aria-expanded:bg-transparent md:h-8"
+          onClick={toggle}
+        >
+          <Chevron
+            data-slot="paper-library-section-icon"
+            className="size-[13px]"
+            aria-hidden="true"
+          />
+          {title}
+          <span
+            className="text-xs font-normal tabular-nums"
+            id={`${bodyId}-count`}
+          >
+            {count}
+          </span>
+        </Button>
+        {action ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={action.label}
+            className="size-11 text-muted-foreground [@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:group-focus-within/section:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:group-hover/section:opacity-100 md:[@media(pointer:fine)]:size-8"
+            onClick={action.onCreate}
+          >
+            <Plus className="size-3.5" aria-hidden="true" />
+          </Button>
+        ) : null}
+      </div>
       {open ? (
         <div
+          id={bodyId}
           data-slot="paper-library-row"
-          className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:flex md:flex-wrap md:gap-7"
+          className={
+            count === 0
+              ? "flex min-w-0 items-center gap-3 ps-[21px]"
+              : "grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 md:flex md:flex-wrap md:gap-7"
+          }
         >
           {children}
+          {count === 0 && action ? (
+            <div className="flex flex-wrap items-center gap-x-3 text-sm text-muted-foreground">
+              <p>{action.empty}</p>
+              <Button
+                variant="link"
+                className="h-11 px-0 text-sm md:h-8"
+                onClick={action.onCreate}
+              >
+                {action.label}
+              </Button>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </section>
@@ -177,6 +231,11 @@ export function LibraryEntryCard({
         name={doc.name}
         meta={edited}
         lines={librarySheetLines(doc)}
+        preview={
+          doc.format === "word" ? (
+            <PaperWordPreview docId={doc.id} />
+          ) : undefined
+        }
         openLabel={`${doc.name}, ${edited}`}
         onOpen={() => on.onOpen(doc.id)}
         actions={paperActions(doc, entry.word, on)}
@@ -189,6 +248,7 @@ export function LibraryEntryCard({
       <PaperLibraryCard
         name={word.name}
         meta="Word file"
+        preview={<PaperWordPreview docId={word.docId} />}
         openLabel={`Open ${word.name}`}
         onOpen={() => on.onOpen(word.docId)}
         actions={[

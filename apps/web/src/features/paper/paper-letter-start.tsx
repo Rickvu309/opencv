@@ -334,7 +334,7 @@ export function PaperLetterStart({
     : "Draft letter"
 
   return (
-    <div data-slot="letter-start-form" className="relative flex flex-col gap-5">
+    <div data-slot="letter-start-form" className="flex min-w-0 flex-col gap-3">
       <Input
         ref={attachmentInput}
         type="file"
@@ -349,13 +349,13 @@ export function PaperLetterStart({
       />
       <div
         data-slot="letter-start-search"
-        className="flex h-11 items-center gap-2.5 rounded-[12px] border pr-2 pl-3.5 has-[input:focus-visible]:border-muted-foreground/50"
+        className="flex min-h-11 items-center gap-2 rounded-lg border bg-background pl-3 text-muted-foreground has-[input:focus-visible]:border-muted-foreground/50"
       >
         <Search aria-hidden="true" className="size-[15px] shrink-0" />
         <Input
-          className="h-full min-w-0 flex-1 border-0 bg-transparent p-0 text-base shadow-none focus-visible:ring-0 md:text-[13px]"
+          className="h-11 min-w-0 flex-1 border-0 bg-transparent p-0 text-base text-foreground shadow-none focus-visible:ring-0 md:text-[13px] dark:bg-transparent"
           aria-label="Search jobs, paste a link or attach a file"
-          placeholder="Search jobs, paste a link or attach a file"
+          placeholder="Search or paste a link"
           value={query}
           onChange={(event) =>
             dispatch({ type: "query_typed", query: event.target.value })
@@ -379,7 +379,7 @@ export function PaperLetterStart({
           variant="ghost"
           size="icon"
           aria-label="Attach a file"
-          className="size-11 shrink-0 rounded-[7px] md:size-7"
+          className="size-11 shrink-0 rounded-lg md:[@media(pointer:fine)]:size-9"
           disabled={drafting || attaching}
           onClick={() => attachmentInput.current?.click()}
         >
@@ -391,7 +391,7 @@ export function PaperLetterStart({
           data-slot="letter-unreadable-link"
           role="status"
           id={guidanceId}
-          className="-mt-3 h-[228px] flex-none gap-[6px] p-0 text-[13px] leading-[15.5px] text-wrap"
+          className="gap-2 rounded-lg bg-muted/50 px-4 py-5 text-sm"
         >
           <EmptyMedia className="mb-0">
             <Link2Off
@@ -400,58 +400,46 @@ export function PaperLetterStart({
               className="size-[18px] shrink-0"
             />
           </EmptyMedia>
-          <EmptyTitle className="text-[13px] leading-[15.5px] font-semibold tracking-normal">
+          <EmptyTitle className="text-sm font-medium tracking-normal">
             Can't read this link
           </EmptyTitle>
           <EmptyDescription
             data-slot="letter-unreadable-help"
-            className="text-[13px] leading-[15.5px]"
+            className="text-sm"
           >
             Paste the job text or attach a file.
           </EmptyDescription>
         </Empty>
-      ) : (
-        <div data-slot="letter-start-jobs-wrap" className="relative -mt-3">
-          <div
-            data-slot="letter-start-jobs"
-            className="grid h-[228px] auto-rows-[40px] content-start gap-0.5 overflow-auto"
-          >
-            {shown.map((job) => (
-              <Button
-                key={job.id}
-                type="button"
-                variant={selected?.id === job.id ? "secondary" : "outline"}
-                data-slot="letter-start-job"
-                className="h-11 min-w-0 justify-start gap-[5px] rounded-[8px] border-transparent px-3.5 text-[13px] leading-[15.5px] font-medium md:h-10"
-                aria-label={`${job.title}, ${job.company}`}
-                aria-pressed={selected?.id === job.id}
-                onClick={() => dispatch({ type: "picked_job", job })}
+      ) : shown.length > 0 ? (
+        <div
+          data-slot="letter-start-jobs"
+          className="grid max-h-56 gap-0.5 overflow-auto rounded-lg bg-secondary/50 p-1"
+        >
+          {shown.map((job) => (
+            <Button
+              key={job.id}
+              type="button"
+              variant="ghost"
+              data-slot="letter-start-job"
+              className="min-h-11 w-full min-w-0 justify-start gap-2 rounded-md px-2.5 text-sm md:[@media(pointer:fine)]:min-h-10"
+              aria-label={`${job.title}, ${job.company}`}
+              aria-pressed={selected?.id === job.id}
+              onClick={() => dispatch({ type: "picked_job", job })}
+            >
+              <span className="min-w-0 truncate">{job.title}</span>
+              <span
+                data-slot="letter-start-company"
+                className="min-w-0 truncate font-normal text-muted-foreground"
               >
-                <span className="truncate">{job.title}</span>
-                <span
-                  data-slot="letter-start-company"
-                  className="truncate font-normal"
-                >
-                  @{job.company}
-                </span>
-                {selected?.id === job.id ? (
-                  <Check
-                    aria-hidden="true"
-                    className="ml-auto size-3.5 shrink-0"
-                  />
-                ) : null}
-              </Button>
-            ))}
-          </div>
-          {shown.length > 5 ? (
-            <div
-              aria-hidden="true"
-              data-slot="letter-start-fade"
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-10"
-            />
-          ) : null}
+                {job.company}
+              </span>
+              {selected?.id === job.id ? (
+                <Check aria-hidden="true" className="ml-auto size-4 shrink-0" />
+              ) : null}
+            </Button>
+          ))}
         </div>
-      )}
+      ) : null}
       {attaching ? (
         <p role="status" className="text-sm text-muted-foreground">
           Reading attachment…
@@ -481,7 +469,7 @@ export function PaperLetterStart({
           type="button"
           variant="outline"
           data-slot="letter-start-blank"
-          className="mr-auto h-11 rounded-[8px] px-3 text-xs font-medium md:h-[34px]"
+          className="mr-auto min-h-11 rounded-lg px-3 text-sm md:[@media(pointer:fine)]:min-h-9"
           onClick={() => void startBlank()}
         >
           <FilePlus aria-hidden="true" className="size-3.5" />
@@ -497,7 +485,7 @@ export function PaperLetterStart({
           <Button
             type="button"
             data-slot="letter-start-draft"
-            className="h-11 gap-2 rounded-[8px] px-3.5 text-[13px] font-semibold md:h-[34px]"
+            className="min-h-11 gap-2 rounded-lg px-3 text-sm md:[@media(pointer:fine)]:min-h-9"
             variant={limit ? "outline" : "primary"}
             disabled={Boolean(limit) || attaching || needsContext}
             aria-label={draftName}
