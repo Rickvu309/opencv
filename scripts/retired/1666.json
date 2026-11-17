@@ -26,5 +26,13 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "scripts/ui/owner-decision.test.mjs > the Coach chat decisions are valid rows and change only the Coach chat geometry the owner asked for",
+    "because": "the owner asked for Linear's 10px composer corners in the Coach panel, recorded as an owner decision instead of the pen frame's 14; the updated test asserts the new decision but fails on an import, not an assertion, at the fork point",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
