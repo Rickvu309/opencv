@@ -125,18 +125,19 @@ function PopoverContent({
     [ref]
   )
   React.useLayoutEffect(() => {
-    const view = popup?.ownerDocument.defaultView
-    if (!popup || !view) return
+    const element = container.current
+    const view = element?.ownerDocument.defaultView
+    if (!element || !view) return
     const update = () => {
       for (const axis of ["left", "top"] as const) {
-        const coordinate = Number.parseFloat(popup.style[axis])
+        const coordinate = Number.parseFloat(element.style[axis])
         if (!Number.isFinite(coordinate)) continue
         const rounded = `${popoverCoordinate(coordinate, view.devicePixelRatio || 1)}px`
-        if (popup.style[axis] !== rounded) popup.style[axis] = rounded
+        if (element.style[axis] !== rounded) element.style[axis] = rounded
       }
     }
     const observer = new MutationObserver(update)
-    observer.observe(popup, { attributes: true, attributeFilter: ["style"] })
+    observer.observe(element, { attributes: true, attributeFilter: ["style"] })
     update()
     return () => observer.disconnect()
   }, [popup])
