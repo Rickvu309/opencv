@@ -12,5 +12,19 @@
     "class": "owner",
     "classBecause": "scripts/paper-page-scale.test.mjs shares no module, command or route with packages/paper-crdt/src/rich-editor.test.ts",
     "items": 7
+  },
+  {
+    "subject": "packages/paper-crdt/src/rich-tables.test.ts",
+    "because": "owner correction 2026-11-17: oversized table rows use physical page geometry at every scale; the reflow exemption is rejected",
+    "replacedBy": "scripts/paper-page-scale.test.mjs",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "60f9bfcf1a5b1a4bf9329b3d9c9663f1b8c4eb1c",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "owner",
+    "classBecause": "scripts/paper-page-scale.test.mjs shares no module, command or route with packages/paper-crdt/src/rich-tables.test.ts",
+    "items": 1
   }
 ]
