@@ -1,19 +1,5 @@
 [
   {
-    "subject": "apps/web/src/features/auth/sign-in-look.test.tsx",
-    "because": "The pen specifies Log in to OpenCV and only malformed email may be aria-invalid. The previous tests protected lowercase sentence casing and marked a valid email invalid during the form-level cooldown. Replacements assert the pen casing, format-error description, and neutral cooldown field.",
-    "replacedBy": "apps/web/src/features/auth/sign-in-look.test.tsx",
-    "proof": {
-      "fork": "e794a7bc0281ba32d6eff4a4ecd59b4f346e1475",
-      "replacedByBlob": "0e02569d94572b85b08698bb515db45d667fe064",
-      "failedOnBase": true,
-      "passedOnHead": true
-    },
-    "class": "self",
-    "classBecause": null,
-    "items": 3
-  },
-  {
     "subject": "apps/web/src/features/app-shell/app-shell.settings.test.tsx",
     "because": "Keep the sign-out heading assertion and match the pen OpenCV casing",
     "replacedBy": "apps/web/src/features/app-shell/app-shell.settings.test.tsx",
@@ -68,5 +54,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/auth/sign-in-look.test.tsx",
+    "because": "Keep pen heading casing, invalid-email focus and description, and a neutral valid field during cooldown",
+    "replacedBy": "apps/web/src/features/auth/sign-in-look.test.tsx",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "a725e8f618c00a6ee66195dcc1a307facd2c5380",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 3
   }
 ]
