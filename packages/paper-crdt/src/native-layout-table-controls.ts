@@ -6,6 +6,7 @@ import {
   photoLayoutRowSchema,
   photoLayoutTableSchema,
   type LayoutTable,
+  type TableBorders,
 } from "@workspace/domain/internal/paper-presentation"
 import {
   commitFlowTableEdits,
@@ -98,6 +99,10 @@ export function flowTableControls(
   }
   return {
     activeTable,
+    setTableBorders(borders: TableBorders) {
+      const { table } = selected()
+      change([{ kind: "set-table-borders", tableId: table.id, borders }])
+    },
     insertTable(rows: number, columns: number) {
       if (
         !Number.isInteger(rows) ||
