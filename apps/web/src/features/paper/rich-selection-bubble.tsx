@@ -71,7 +71,7 @@ export function RichSelectionBubble({
         })
       } else if (
         !document.activeElement?.closest(
-          "[data-paper-selection-control], [role='dialog'], [role='listbox']"
+          "[data-paper-selection-control], [role~=dialog], [role='listbox']"
         )
       )
         setSelection(null)
@@ -85,7 +85,7 @@ export function RichSelectionBubble({
         event.target instanceof Element &&
         !root.current?.contains(event.target) &&
         !event.target.closest(
-          "[data-paper-selection-control], [role='dialog'], [role='listbox']"
+          "[data-paper-selection-control], [role~=dialog], [role='listbox']"
         )
       )
         setSelection(null)

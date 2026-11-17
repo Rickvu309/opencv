@@ -8,10 +8,10 @@ import { Download } from "lucide-react"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import {
-  PaperDocumentHeader,
-  PaperDocumentShare,
+  PaperDocumentHeader as PageHeader,
   PaperDocumentTitle,
-} from "./document-chrome.tsx"
+} from "@/features/paper-page/document-chrome.tsx"
+import { PaperDocumentShare } from "./document-share.tsx"
 
 import {
   draftFromPage,
@@ -188,7 +188,8 @@ function DocumentHeader({
   revision: string | null
 }) {
   return (
-    <PaperDocumentHeader
+    <PageHeader
+      data-slot="writing-document-header"
       name={title}
       kind={kind}
       onBack={onBack}

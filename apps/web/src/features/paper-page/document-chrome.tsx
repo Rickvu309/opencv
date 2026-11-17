@@ -1,22 +1,28 @@
 import {
+  createContext,
+  useContext,
   useEffect,
   useRef,
   useReducer,
   type ReactNode,
   type Ref,
   type MouseEvent,
+  type CSSProperties,
 } from "react"
-import { ChevronRight, FileText, Link } from "lucide-react"
-import {
-  paperIdSchema,
-  paperRenameInputSchema,
-  RICH_NATIVE_WRITER,
-} from "@workspace/domain"
+import { FileText } from "lucide-react"
+import { paperRenameInputSchema, RICH_NATIVE_WRITER } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { useRunCommand } from "@/lib/contract-client.ts"
-import { toast } from "sonner"
-import { useShareLink } from "./paper-share-link.ts"
+import { PageHeader } from "@workspace/ui/components/page-header"
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@workspace/ui/components/breadcrumb"
 import { PaperDocumentOutline } from "./document-outline.tsx"
 import "./document-chrome.css"
 
@@ -44,27 +50,35 @@ export function PaperDocumentHeader({
     }
   }
   return (
-    <header
-      data-slot="writing-document-header"
-      className="paper-document-header"
-    >
-      <nav aria-label="Breadcrumb" className="paper-document-breadcrumb">
-        <a href="/paper" aria-label="Back to Paper" onClick={back}>
-          Paper
-        </a>
-        <ChevronRight aria-hidden="true" />
-        <a
-          href={kind === "cv" ? "/paper?tab=cvs" : "/paper?tab=letters"}
-          onClick={back}
-        >
-          {kind === "cv" ? "CVs" : "Letters"}
-        </a>
-        <ChevronRight aria-hidden="true" />
-        <FileText aria-hidden="true" />
-        <span className="truncate" title={name}>
-          {name}
-        </span>
-      </nav>
+    <PageHeader data-slot="writing-document-header">
+      <Breadcrumb className="paper-document-breadcrumb">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              href="/paper"
+              aria-label="Back to Paper"
+              onClick={back}
+            >
+              Paper
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink
+              href={kind === "cv" ? "/paper?tab=cvs" : "/paper?tab=letters"}
+              onClick={back}
+            >
+              {kind === "cv" ? "CVs" : "Letters"}
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage icon={<FileText />} title={name}>
+              {name}
+            </BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
       {menu}
       <div className="paper-document-header-actions">
         <p
@@ -84,42 +98,11 @@ export function PaperDocumentHeader({
         </p>
         {actions}
       </div>
-    </header>
+    </PageHeader>
   )
 }
 
-export function PaperDocumentShare({ docId }: { docId: string }) {
-  const parsed = paperIdSchema.safeParse(docId)
-  return parsed.success ? <CopyLink docId={parsed.data} /> : null
-}
-
-function CopyLink({
-  docId,
-}: {
-  docId: ReturnType<typeof paperIdSchema.parse>
-}) {
-  const share = useShareLink(docId)
-  const [copied, setCopied] = useReducer(
-    (_: boolean, next: boolean) => next,
-    false
-  )
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="size-11 shrink-0 md:size-8"
-      aria-label={copied ? "Link copied" : "Copy link"}
-      onClick={() => {
-        void share()
-          .then((url) => navigator.clipboard.writeText(url))
-          .then(() => setCopied(true))
-          .catch(() => toast.error("Could not copy the document link."))
-      }}
-    >
-      <Link aria-hidden="true" />
-    </Button>
-  )
-}
+const TitleLayout = createContext<CSSProperties>({})
 
 export function PaperDocumentTitle({
   name,
@@ -128,6 +111,7 @@ export function PaperDocumentTitle({
   name: string
   docId: string
 }) {
+  const layout = useContext(TitleLayout)
   const run = useRunCommand()
   const [editing, setEditing] = useReducer(
     (_: boolean, next: boolean) => next,
@@ -171,7 +155,11 @@ export function PaperDocumentTitle({
     }
   }
   return (
-    <div className="paper-document-title" data-slot="paper-document-title">
+    <div
+      className="paper-document-title"
+      data-slot="paper-document-title"
+      style={layout}
+    >
       <div className="mb-3 flex size-10 items-center justify-center rounded-md bg-muted text-muted-foreground">
         <FileText className="size-5" aria-hidden="true" />
       </div>
@@ -198,8 +186,9 @@ export function PaperDocumentTitle({
         />
       ) : (
         <h1 aria-label={savedName}>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            className="h-11 max-w-full justify-start p-0 whitespace-normal md:h-auto"
             aria-label="Rename document"
             onClick={() => {
               setDraft(savedName)
@@ -207,7 +196,7 @@ export function PaperDocumentTitle({
             }}
           >
             {savedName}
-          </button>
+          </Button>
         </h1>
       )}
       {error ? (
@@ -227,6 +216,16 @@ export function PaperDocumentCanvas({
   children: ReactNode
 }) {
   const host = useRef<HTMLDivElement>(null)
+  const [layout, setLayout] = useReducer(
+    (previous: CSSProperties, next: CSSProperties) =>
+      previous.width === next.width &&
+      previous.paddingInlineStart === next.paddingInlineStart &&
+      previous.paddingInlineEnd === next.paddingInlineEnd &&
+      previous.marginBlockEnd === next.marginBlockEnd
+        ? previous
+        : next,
+    {}
+  )
   useEffect(() => {
     const element = host.current
     if (!element) return
@@ -238,16 +237,12 @@ export function PaperDocumentCanvas({
       const box = page.getBoundingClientRect()
       const style = getComputedStyle(page)
       const scale = page.offsetWidth ? box.width / page.offsetWidth : 1
-      const values = {
-        "--document-width": `${box.width}px`,
-        "--document-inset": `${parseFloat(style.paddingLeft) * scale}px`,
-        "--document-end": `${parseFloat(style.paddingRight) * scale}px`,
-        "--document-top": `${parseFloat(style.paddingTop) * scale}px`,
-      }
-      for (const [key, value] of Object.entries(values)) {
-        if (element.style.getPropertyValue(key) !== value)
-          element.style.setProperty(key, value)
-      }
+      setLayout({
+        width: `${box.width}px`,
+        paddingInlineStart: `${parseFloat(style.paddingLeft) * scale}px`,
+        paddingInlineEnd: `${parseFloat(style.paddingRight) * scale}px`,
+        marginBlockEnd: `calc(2rem - ${parseFloat(style.paddingTop) * scale}px)`,
+      })
     }
     align()
     const mutations = new MutationObserver(align)
@@ -267,7 +262,7 @@ export function PaperDocumentCanvas({
   }, [])
   return (
     <div ref={host} className="paper-document-canvas">
-      {title}
+      <TitleLayout value={layout}>{title}</TitleLayout>
       {children}
       <PaperDocumentOutline host={host} />
     </div>

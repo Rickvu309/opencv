@@ -94,9 +94,9 @@ it("aligns the title with the page even when the editor injects a style sibling"
     </PaperDocumentCanvas>
   )
   await waitFor(() =>
-    expect(view.container.querySelector(".paper-document-canvas")).toHaveStyle({
-      "--document-width": "816px",
-      "--document-inset": "96px",
+    expect(view.container.querySelector(".paper-document-title")).toHaveStyle({
+      width: "816px",
+      paddingInlineStart: "96px",
     })
   )
 })

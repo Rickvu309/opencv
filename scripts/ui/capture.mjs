@@ -80,9 +80,9 @@ export async function runStep(page, origin, step, repo) {
       fileURLToPath(new URL(step.upload.file, FIXTURES)),
       { timeout: STEP_TIMEOUT_MS }
     )
-  if (step.respond) return answerInThisBrowser(page, step.respond)
-  if (step.richDocument)
+  if (step.respond?.fixture === "rich-document")
     return openRichDocument(page, origin, cannedAnswer, repo)
+  if (step.respond) return answerInThisBrowser(page, step.respond)
   if (step.press) return page.keyboard.press(step.press)
   if (step.type) return page.keyboard.type(step.type)
   if (step.waitFor)
