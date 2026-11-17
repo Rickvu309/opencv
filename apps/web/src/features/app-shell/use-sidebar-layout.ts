@@ -1,5 +1,5 @@
 import type { PointerEvent as ReactPointerEvent } from "react"
-import { useCallback, useEffect, useReducer, useRef, useState } from "react"
+import { useCallback, useEffect, useReducer, useRef } from "react"
 import { flushSync } from "react-dom"
 
 import { useHoverIntent } from "@/lib/use-hover-intent.ts"
@@ -32,6 +32,7 @@ type LayoutState = {
   collapsed: boolean
   dragging: boolean
   instant: boolean
+  floating: boolean
 }
 
 type LayoutAction =
@@ -41,6 +42,7 @@ type LayoutAction =
   | { type: "drag_cancelled" }
   | { type: "drag_collapsed" }
   | { type: "pointer_engaged" }
+  | { type: "peek_shown" }
 
 function layoutReducer(state: LayoutState, action: LayoutAction): LayoutState {
   switch (action.type) {
@@ -52,7 +54,12 @@ function layoutReducer(state: LayoutState, action: LayoutAction): LayoutState {
       }
     case "collapse_requested":
       if (state.dragging) return state
-      return { ...state, collapsed: action.collapsed, instant: action.instant }
+      return {
+        ...state,
+        collapsed: action.collapsed,
+        instant: action.instant,
+        floating: action.collapsed && state.floating,
+      }
     case "drag_started":
       if (state.collapsed) return state
       return { ...state, dragging: true, instant: false }
@@ -62,6 +69,8 @@ function layoutReducer(state: LayoutState, action: LayoutAction): LayoutState {
       return { ...state, dragging: false, collapsed: true, instant: false }
     case "pointer_engaged":
       return state.instant ? { ...state, instant: false } : state
+    case "peek_shown":
+      return state.floating ? state : { ...state, floating: true }
   }
 }
 
@@ -71,6 +80,7 @@ function initialLayout(): LayoutState {
     collapsed: readSidebarCollapsed(),
     dragging: false,
     instant: false,
+    floating: false,
   }
 }
 
@@ -95,9 +105,7 @@ export function useSidebarLayout(enabled: boolean) {
         ? "collapsed"
         : "expanded"
   const { close: closeIntent } = intent
-  const [floating, setFloating] = useState(false)
-  if (peek && !floating) setFloating(true)
-  if (!collapsed && floating) setFloating(false)
+  if (peek && !state.floating) dispatch({ type: "peek_shown" })
 
   const setCollapsed = useCallback(
     (next: boolean, instant: boolean) => {
@@ -210,7 +218,7 @@ export function useSidebarLayout(enabled: boolean) {
     mode,
     peek,
     instant: state.instant,
-    floating,
+    floating: state.floating,
     toggle: () => setCollapsed(!collapsed, true),
     expand: () => setCollapsed(false, false),
     dragStart,
