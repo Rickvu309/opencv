@@ -6,6 +6,9 @@ export {
   canonical,
   overlay,
   paragraphSchema,
+  paragraphEditSchema,
+  paragraphEditPatchSchema,
+  lineSpacingWordUnits,
   inlineSchema,
   inlineOperationsSchema,
 } from "./paper-doc/presentation-values.js"
@@ -48,6 +51,7 @@ export {
 export type {
   InlinePresentation,
   ParagraphPresentation,
+  ParagraphPresentationInput,
 } from "./paper-doc/presentation-values.js"
 export {
   formattedDocumentSchema,

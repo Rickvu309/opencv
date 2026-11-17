@@ -83,6 +83,7 @@ export function ToolbarChoice({
   icon,
   className = "",
   fallback,
+  controls,
 }: {
   label: string
   value: string | null
@@ -93,6 +94,7 @@ export function ToolbarChoice({
   icon?: ReactNode
   className?: string
   fallback?: (value: string) => string
+  controls?: ReactNode
 }) {
   const [open, dispatch] = useReducer(
     (_: boolean, action: { type: "open"; open: boolean }) => action.open,
@@ -106,6 +108,7 @@ export function ToolbarChoice({
   const selected = options.find((choice) => choice.value === value)
   return (
     <ToolbarItem label={label}>
+      {controls}
       <Select
         open={open}
         onOpenChange={setOpen}

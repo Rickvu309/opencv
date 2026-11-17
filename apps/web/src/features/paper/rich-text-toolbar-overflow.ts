@@ -99,7 +99,9 @@ export function useToolbarOverflow(
                   "Remove formatting",
                 ].includes(item.label)
                   ? entries.length
-                  : 0)
+                  : item.label === "Size and spacing"
+                    ? entries.length * 2
+                    : 0)
             : index
         }
         return rank(a) - rank(b)

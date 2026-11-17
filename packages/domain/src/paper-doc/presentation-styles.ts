@@ -9,6 +9,7 @@ import {
   inlinePatchSchema,
   paragraphSchema,
   paragraphPatchSchema,
+  paragraphEditPatchSchema,
   styleIdSchema,
   parse,
   ok,
@@ -36,6 +37,10 @@ export const styleSchema = z.discriminatedUnion("kind", [
       values: paragraphPatchSchema,
     })
     .strict(),
+])
+export const styleEditSchema = z.discriminatedUnion("kind", [
+  styleSchema.options[0],
+  styleSchema.options[1].extend({ values: paragraphEditPatchSchema }),
 ])
 export const catalogSchema = z.array(styleSchema).max(128)
 type StyleDefinition = z.infer<typeof styleSchema>

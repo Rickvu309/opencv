@@ -2,14 +2,14 @@ import { z } from "zod"
 import { nodeIdSchema } from "./nodes.js"
 import {
   inlinePatchSchema,
-  paragraphPatchSchema,
+  paragraphEditPatchSchema,
   paragraphSchema,
   inlineSchema,
   pageSchema,
   pagePropertiesSchema,
   styleIdSchema,
 } from "./presentation-values.js"
-import { styleSchema } from "./presentation-styles.js"
+import { styleSchema, styleEditSchema } from "./presentation-styles.js"
 import { formatRunsSchema } from "./native-formatting.js"
 export const formatTargetSchema = z.discriminatedUnion("kind", [
   z.object({ kind: z.literal("body"), blockId: nodeIdSchema }).strict(),
@@ -60,7 +60,7 @@ export const formatChangeSchema = z.discriminatedUnion("kind", [
     .object({
       kind: z.literal("document-paragraph"),
       expected: paragraphSchema,
-      values: paragraphPatchSchema,
+      values: paragraphEditPatchSchema,
     })
     .strict(),
   z
@@ -68,7 +68,7 @@ export const formatChangeSchema = z.discriminatedUnion("kind", [
       kind: z.literal("named-style"),
       id: styleIdSchema,
       expected: styleSchema.nullable(),
-      values: styleSchema.nullable(),
+      values: styleEditSchema.nullable(),
     })
     .strict(),
   z
@@ -91,7 +91,7 @@ export const formatChangeSchema = z.discriminatedUnion("kind", [
       kind: z.literal("paragraph"),
       target: formatTargetSchema,
       expected: paragraphSchema,
-      values: paragraphPatchSchema,
+      values: paragraphEditPatchSchema,
     })
     .strict(),
 ])

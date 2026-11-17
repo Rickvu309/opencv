@@ -281,6 +281,18 @@ export function mountRichPaperEditor(
         mounted.formatInline(input)
         view.focus()
       },
+      formatTypography(input: Parameters<typeof mounted.formatTypography>[0]) {
+        if (!active) throw new Error("Paper editor is closed")
+        if (!mounted.editor.isEditable) return
+        mounted.formatTypography(input)
+        view.focus()
+      },
+      stepTextSize(delta: 10 | -10) {
+        if (!active) throw new Error("Paper editor is closed")
+        if (!mounted.editor.isEditable) return
+        mounted.stepTextSize(delta)
+        view.focus()
+      },
       formatParagraph(input: Parameters<typeof mounted.formatParagraph>[0]) {
         if (!active) throw new Error("Paper editor is closed")
         if (!mounted.editor.isEditable) return

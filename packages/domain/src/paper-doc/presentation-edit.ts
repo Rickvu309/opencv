@@ -4,6 +4,7 @@ import {
   inlinePatchSchema,
   paragraphSchema,
   paragraphPatchSchema,
+  paragraphEditPatchSchema,
   pageSchema,
   pagePropertiesSchema,
   parse,
@@ -17,6 +18,7 @@ import {
 import {
   catalogSchema,
   styleSchema,
+  styleEditSchema,
   resolveStyles,
   resolveInline,
   resolveParagraph,
@@ -75,21 +77,21 @@ const patchSchema = z.discriminatedUnion("kind", [
   z
     .object({
       kind: z.literal("document-paragraph"),
-      values: paragraphPatchSchema,
+      values: paragraphEditPatchSchema,
     })
     .strict(),
   z
     .object({
       kind: z.literal("named-style"),
       id: styleSchema.options[0].shape.id,
-      style: styleSchema.nullable(),
+      style: styleEditSchema.nullable(),
     })
     .strict(),
   z
     .object({
       kind: z.literal("body-paragraph"),
       ownerId: z.string().min(1).max(128),
-      values: paragraphPatchSchema,
+      values: paragraphEditPatchSchema,
     })
     .strict(),
   z

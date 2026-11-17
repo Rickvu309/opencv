@@ -1,7 +1,8 @@
-import type {
-  DocumentPresentation,
-  InlinePresentation,
-  ParagraphPresentation,
+import {
+  lineSpacingWordUnits,
+  type DocumentPresentation,
+  type InlinePresentation,
+  type ParagraphPresentation,
 } from "@workspace/domain/internal/paper-presentation"
 
 import { xml } from "./rich-text.js"
@@ -62,9 +63,9 @@ export function paragraphProperties(
   if (value.after !== undefined) spacing.push(`w:after="${value.after}"`)
   if (value.lineSpacing) {
     const line = value.lineSpacing
-    const amount = line.kind === "multiple" ? line.value * 240 : line.value
-    if (!Number.isInteger(amount))
-      throw new Error("Word line spacing must use exact Word units")
+    const units = lineSpacingWordUnits(line)
+    if (units.kind === "refused") throw new Error(units.reason)
+    const amount = units.value
     spacing.push(
       `w:line="${amount}"`,
       `w:lineRule="${line.kind === "multiple" ? "auto" : line.kind === "exact" ? "exact" : "atLeast"}"`
