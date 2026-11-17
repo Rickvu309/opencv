@@ -26,5 +26,19 @@
     "class": "self",
     "classBecause": null,
     "items": 20
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library.test.tsx",
+    "because": "Page-sized starters became section actions that still open the picker or import and preserve the cancel path.",
+    "replacedBy": "apps/web/src/features/paper/paper-library.test.tsx",
+    "proof": {
+      "fork": "976628fc1f4263be91e7d6db104d75441d52966c",
+      "replacedByBlob": "1754087cd7eab397dbe9eb01e922f0aa9ce30264",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 5
   }
 ]
