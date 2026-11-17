@@ -1,11 +1,11 @@
 [
   {
     "subject": "apps/web/src/features/paper/writing-page.test.tsx",
-    "because": "The page keeps one Coach line and reviews it in Coach, so the old in-page Before, After and Approve checks no longer describe the screen.",
+    "because": "The proposal notice replaces the duplicate in-page diff and approval controls, with action-specific receipt and focus coverage.",
     "replacedBy": "apps/web/src/features/paper/writing-proposal-notice.test.tsx",
     "proof": {
       "fork": "a887677ee976df2a519b5804ad24a48ed431fc11",
-      "replacedByBlob": "c3fb34ae189ce8b81d6b23cb2e13bd04907d3f25",
+      "replacedByBlob": "8e4adc0bafb38f0f23925b38b8c699e03502eee2",
       "failedOnBase": true,
       "passedOnHead": true
     },
