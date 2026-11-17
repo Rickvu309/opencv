@@ -39,7 +39,7 @@ export function SidebarFrame({ layout, children }: Props) {
           "absolute inset-y-0 left-0 flex w-(--sidebar-width) bg-sidebar transition-[translate,box-shadow] duration-(--duration-panel) ease-(--ease-panel) group-data-[collapse-preview=true]/frame:-translate-x-[calc(100%+0.5rem)] group-data-[instant=true]/frame:transition-none motion-reduce:transition-none",
           collapsed && "-translate-x-[calc(100%+0.5rem)]",
           peek &&
-            "inset-y-2 left-2 translate-x-0 overflow-hidden rounded-lg shadow-xl ring-1 ring-foreground/10"
+            "bottom-2 left-2 translate-x-0 overflow-hidden rounded-lg shadow-xl ring-1 ring-foreground/10"
         )}
       >
         {children}

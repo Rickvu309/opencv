@@ -1,4 +1,5 @@
 import "./design/app-sidebar.pen.css"
+import "./shell-navigation.css"
 
 import type { ReactNode } from "react"
 import { Link, useLocation } from "@tanstack/react-router"
@@ -175,6 +176,7 @@ export function AppSidebar({
                   <Link
                     to={item.to}
                     activeOptions={navActiveOptions(item.to, current)}
+                    aria-current={item.to === current ? "page" : undefined}
                   />
                 }
                 aria-label={shellNavLabel(item, count)}
@@ -205,13 +207,14 @@ export function AppSidebar({
                     <Link
                       to={item.to}
                       activeOptions={navActiveOptions(item.to, current)}
+                      aria-current={item.to === current ? "page" : undefined}
                     />
                   }
                   onClick={onNavigate}
                   className={NAV_ITEM_CLASS}
                 >
                   <Icon aria-hidden="true" />
-                  {item.label}
+                  <span>{item.label}</span>
                 </NavItem>
               )
             })}

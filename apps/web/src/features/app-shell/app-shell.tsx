@@ -16,7 +16,7 @@ import {
 import { ignoreRejection } from "@/lib/quiet-rejection.ts"
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router"
 import { useQueryClient } from "@tanstack/react-query"
-import { History, Menu, MessageCircle } from "lucide-react"
+import { History, Menu, MessageCircle, X } from "lucide-react"
 
 import { FocusSafeRegion } from "@/components/focus-safe-region.tsx"
 import { AppSidebar } from "@/features/app-shell/app-sidebar.tsx"
@@ -25,7 +25,7 @@ import { useSidebarLayout } from "@/features/app-shell/use-sidebar-layout.ts"
 import { chatDisplayTitle } from "@workspace/domain"
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { DESKTOP_MEDIA_QUERY, useMediaQuery } from "@/lib/use-media-query.ts"
-import { SidebarExpandContext } from "@/lib/sidebar-expand.tsx"
+import { SidebarExpandContext } from "@workspace/ui/components/page-header"
 import { useShellChats } from "@/features/app-shell/use-shell-chats.ts"
 import {
   CoachPanel,
@@ -447,7 +447,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
             aria-label={shellCopy.menu}
             onClick={() => dispatch({ type: "drawer_opened" })}
           >
-            <Menu />
+            <Menu aria-hidden="true" />
           </Button>
           <Mark size={16} />
           <span className="text-sm font-semibold">{shellCopy.wordmark}</span>
@@ -527,7 +527,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
                 aria-label={shellCopy.closeMenu}
                 onClick={closeDrawer}
               >
-                <Menu />
+                <X aria-hidden="true" />
               </Button>
             </div>
             {nav}
@@ -567,51 +567,47 @@ function ShellDock({
       data-coach-page={onCoachPage ? "" : undefined}
       className="flex h-12 shrink-0 items-center justify-end md:h-10"
     >
-      {onCoachPage ? null : (
-        <>
-          <div data-slot="dock-recent" className="flex min-w-0 overflow-x-auto">
-            {titles.map((chat) => (
-              <Button
-                key={chat.id}
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-11 max-w-36 min-w-11 shrink md:h-7 md:min-w-0 md:shrink-0"
-                data-chat-id={chat.id}
-                title={chat.title}
-                onClick={() =>
-                  onOpenChat({ title: chat.title, chatId: chat.id })
-                }
-              >
-                <span className="truncate">{chat.title}</span>
-              </Button>
-            ))}
-          </div>
+      <div data-slot="dock-recent" className="flex min-w-0 overflow-x-auto">
+        {titles.map((chat) => (
           <Button
+            key={chat.id}
             type="button"
             variant="ghost"
             size="sm"
-            className="h-11 aria-expanded:bg-sidebar-accent md:h-7"
-            data-dock-coach=""
-            aria-expanded={coachOpen}
-            aria-controls={COACH_PANEL_ID}
-            onClick={onCoach}
+            className="h-11 max-w-36 min-w-11 shrink md:h-7 md:min-w-0 md:shrink-0"
+            data-chat-id={chat.id}
+            title={chat.title}
+            onClick={() => onOpenChat({ title: chat.title, chatId: chat.id })}
           >
-            <MessageCircle aria-hidden="true" />
-            {shellCopy.coach}
+            <span className="truncate">{chat.title}</span>
           </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            className="size-11 md:size-7"
-            aria-label={shellCopy.history}
-            onClick={onHistory}
-          >
-            <History aria-hidden="true" />
-          </Button>
-        </>
+        ))}
+      </div>
+      {onCoachPage ? null : (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-11 aria-expanded:bg-sidebar-accent md:h-7"
+          data-dock-coach=""
+          aria-expanded={coachOpen}
+          aria-controls={COACH_PANEL_ID}
+          onClick={onCoach}
+        >
+          <MessageCircle aria-hidden="true" />
+          {shellCopy.coach}
+        </Button>
       )}
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        className="size-11 md:size-7"
+        aria-label={shellCopy.history}
+        onClick={onHistory}
+      >
+        <History aria-hidden="true" />
+      </Button>
     </div>
   )
 }

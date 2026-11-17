@@ -1,5 +1,5 @@
 export const AUTH_COPY = {
-  logIn: "Log in to opencv",
+  logIn: "Log in to OpenCV",
   google: "Continue with Google",
   or: "or",
   email: "Email",
@@ -11,6 +11,7 @@ export const AUTH_COPY = {
   language: "Language",
   en: "EN",
   vi: "VI",
+  vietnameseNotice: "Tiếng Việt is coming. For now, the app uses English.",
   checkEmail: "Check your email",
   sentTo: "We sent a 6-digit code to",
   change: "Change",
@@ -26,7 +27,7 @@ export const AUTH_COPY = {
   sendFailed: "We could not send the code. Try again.",
   emailInvalid: "Use a full email, like name@example.com.",
   googleUnavailable: "Google sign-in is not available. Use your email.",
-  welcome: "Welcome to opencv",
+  welcome: "Welcome to OpenCV",
   accountCreated: "Account created",
   workspaceReady: "Workspace ready",
   coachReady: "Getting your coach ready",

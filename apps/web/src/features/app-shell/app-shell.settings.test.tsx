@@ -63,7 +63,7 @@ describe("settings workspace", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Sign out" }))
     expect(
-      await screen.findByRole("heading", { name: "Log in to opencv" })
+      await screen.findByRole("heading", { name: "Log in to OpenCV" })
     ).toBeInTheDocument()
     await waitFor(() => {
       expect(router.state.location.pathname).toBe("/sign-in")

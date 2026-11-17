@@ -11,6 +11,7 @@ import {
 import {
   SCREENS,
   pickScreens,
+  restPoint,
   shotName,
   validateScreens,
   viewportFor,
@@ -48,6 +49,48 @@ test("screens are picked in the asked order and unknown ids are named", () => {
     ["paper-panel-open", "coach-home"]
   )
   assert.deepEqual(missing, ["nope"])
+})
+
+test("shell recipes reach a menu at both widths and a collapsed control at both widths", () => {
+  const collapsed = SCREENS.find(
+    (screen) => screen.id === "shell-sidebar-collapsed"
+  )
+  const menu = SCREENS.find((screen) => screen.id === "shell-menu-open")
+  assert.equal(
+    collapsed.steps.some((step) => step.click?.name === "Menu"),
+    false
+  )
+  assert.equal(
+    menu.steps.some((step) => step.click?.name === "Menu"),
+    false
+  )
+  assert.equal(
+    menu.steps.some((step) => step.clickIfShown?.name === "Menu"),
+    true
+  )
+  assert.equal(
+    menu.steps.some((step) =>
+      String(step.clickIfShown?.selector ?? "").includes("account-trigger")
+    ),
+    true
+  )
+  assert.equal(collapsed.restPointer, "center")
+  assert.deepEqual(restPoint(collapsed, { width: 1440, height: 900 }), {
+    x: 720,
+    y: 450,
+  })
+  assert.deepEqual(restPoint(collapsed, { width: 390, height: 844 }), {
+    x: 195,
+    y: 422,
+  })
+  assert.deepEqual(restPoint({ id: "jobs" }, { width: 1440, height: 900 }), {
+    x: 0,
+    y: 0,
+  })
+  assert.match(JSON.stringify(collapsed.steps), /sidebar-expand/)
+  assert.match(JSON.stringify(collapsed.steps), /Close menu/)
+  assert.match(JSON.stringify(menu.steps), /Close menu/)
+  assert.match(JSON.stringify(menu.steps), /role=\\"menu\\"/)
 })
 
 test("shot names and viewports are deterministic", () => {

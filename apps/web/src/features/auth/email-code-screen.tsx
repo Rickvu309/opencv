@@ -66,7 +66,7 @@ export function EmailCodeScreen({
             type="button"
             variant="ghost"
             data-slot="email-code-change"
-            className="h-auto min-h-11 shrink-0 rounded border-0 px-0 py-0 text-[13.5px] leading-4 font-medium md:min-h-0"
+            className="h-auto min-h-11 shrink-0 rounded border-0 px-0 py-0 text-[13.5px] leading-4 font-medium md:min-h-6"
             onClick={onChangeEmail}
           >
             {AUTH_COPY.change}
@@ -77,6 +77,9 @@ export function EmailCodeScreen({
         value={code}
         disabled={state === "verifying"}
         invalid={invalid}
+        describedBy={
+          notice && state === "code" ? "email-code-notice" : undefined
+        }
         focusNonce={focusNonce}
         onChange={onChange}
         onComplete={onComplete}
@@ -94,6 +97,7 @@ export function EmailCodeScreen({
         <>
           {notice ? (
             <p
+              id="email-code-notice"
               role="alert"
               data-slot="email-code-error"
               className="flex items-center gap-1.5 text-[13px] leading-[15.5px]"
@@ -125,7 +129,7 @@ export function EmailCodeScreen({
                 type="button"
                 variant="ghost"
                 data-slot="email-code-send"
-                className="h-auto min-h-11 rounded px-0 py-0 text-[13px] leading-[15.5px] font-semibold md:min-h-0"
+                className="h-auto min-h-11 rounded px-0 py-0 text-[13px] leading-[15.5px] font-semibold md:min-h-6"
                 disabled={sending}
                 onClick={onResend}
               >
@@ -141,7 +145,7 @@ export function EmailCodeScreen({
             type="button"
             variant="ghost"
             data-slot="email-code-back"
-            className="h-auto min-h-11 rounded px-1 py-0 text-[13px] leading-[15.5px] font-medium hover:bg-transparent hover:underline md:min-h-0"
+            className="h-auto min-h-11 rounded px-1 py-0 text-[13px] leading-[15.5px] font-medium hover:bg-transparent hover:underline md:min-h-6"
             onClick={onBack}
           >
             {AUTH_COPY.backToLogin}

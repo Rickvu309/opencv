@@ -288,6 +288,38 @@ describe("Coach sheet keyboard access", () => {
     expect(document.getElementById("app-main")).not.toHaveAttribute("hidden")
     expect(screen.queryByRole("dialog", { name: "Coach" })).toBeNull()
   })
+
+  it("keeps history and recent chats on the Coach page and hides the Coach toggle", async () => {
+    setMockChats([
+      {
+        id: "11111111-1111-4111-8111-111111111111",
+        title: "CV vs internship first",
+        focusKind: null,
+        focusId: null,
+        createdAt: "2026-02-01T00:00:00.000Z",
+        updatedAt: "2026-02-02T00:00:00.000Z",
+      },
+    ])
+    const { router } = renderApp(SURFACE_PATHS.coach)
+    await screen.findByRole("navigation", { name: "Main" })
+    const dock = () =>
+      document.querySelector('[data-slot="app-dock"]') as HTMLElement
+    expect(dock()).toHaveAttribute("data-coach-page", "")
+    expect(
+      within(dock()).getByRole("button", { name: "History" })
+    ).toBeInTheDocument()
+    expect(
+      within(dock()).getByRole("button", { name: "CV vs internship first" })
+    ).toBeInTheDocument()
+    expect(within(dock()).queryByRole("button", { name: "Coach" })).toBeNull()
+    await act(() => router.navigate({ to: SURFACE_PATHS.paper }))
+    fireEvent.click(
+      await within(dock()).findByRole("button", { name: "Coach" })
+    )
+    await screen.findByRole("region", { name: "Coach" })
+    await act(() => router.navigate({ to: SURFACE_PATHS.coach }))
+    expect(screen.queryByRole("region", { name: "Coach" })).toBeNull()
+  })
 })
 
 function mainColumnLayout() {

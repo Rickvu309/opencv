@@ -1,3 +1,5 @@
+import { dropWritingOutcome } from "@/lib/writing-proposal.ts"
+import { clearStoppedLetter } from "./paper-letter-resume.ts"
 import { useCallback, useEffect, useReducer, useRef } from "react"
 import {
   keywordGap,
@@ -16,6 +18,7 @@ import {
   BreadcrumbSeparator,
 } from "@workspace/ui/components/breadcrumb"
 import { Button } from "@workspace/ui/components/button"
+import { SidebarExpandButton } from "@workspace/ui/components/page-header"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,6 +26,8 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import { CopyButton } from "@workspace/ui/components/copy-button"
+
+import { LetterStoppedNotice } from "@/features/paper/paper-letter-stopped.tsx"
 
 import {
   Ellipsis,
@@ -87,9 +92,13 @@ export function PaperLetterEditor({
     (next: PaperDocument | null, change: ClientChange) => {
       if (next?.kind !== "letter") return
       patch({ letter: next })
-      if (change === "local") patch({ editedAt: new Date().toISOString() })
+      if (paperPlainText(next).trim().length > 0) clearStoppedLetter(doc.id)
+      if (change === "local") {
+        dropWritingOutcome(doc.id)
+        patch({ editedAt: new Date().toISOString() })
+      }
     },
-    []
+    [doc.id]
   )
   const onSelectedBlocks = useCallback(
     (ids: string[]) => setPaperSelection(doc.id, ids),
@@ -122,8 +131,9 @@ export function PaperLetterEditor({
         data-slot="letter-editor-header"
         className="flex min-h-12 min-w-0 flex-wrap items-center gap-2 border-b py-2 ps-5 pe-4 text-[13.5px] md:h-12 md:flex-nowrap md:py-0"
       >
+        <SidebarExpandButton />
         <Breadcrumb className="flex w-full min-w-0 flex-none items-center gap-2 md:w-auto md:flex-1">
-          <BreadcrumbList className="text-[13.5px] leading-[inherit] text-inherit">
+          <BreadcrumbList className="flex-wrap text-[13.5px] leading-[inherit] text-inherit">
             <BreadcrumbItem>
               <Button
                 type="button"
@@ -140,7 +150,7 @@ export function PaperLetterEditor({
             <BreadcrumbSeparator className="[&>svg]:size-3.5" />
             <BreadcrumbItem>
               <Mail className="size-[15px] shrink-0" aria-hidden="true" />
-              <BreadcrumbPage className="font-normal max-md:min-w-0">
+              <BreadcrumbPage className="min-w-0 font-normal [overflow-wrap:anywhere]">
                 {doc.name}
               </BreadcrumbPage>
             </BreadcrumbItem>
@@ -185,7 +195,7 @@ export function PaperLetterEditor({
                 ? error.message
                 : "Could not copy the link. Try again."
             }
-            className="h-7 w-[30px] shrink-0 rounded-[7px] p-0"
+            className="size-11 shrink-0 rounded-[7px] p-0 md:h-7 md:w-[30px]"
             aria-label="Copy share link"
           >
             <LinkIcon className="size-4" aria-hidden="true" />
@@ -193,6 +203,11 @@ export function PaperLetterEditor({
         </div>
       </header>
       {printing && letter ? <LetterPrint document={letter} /> : null}
+      <LetterStoppedNotice
+        docId={doc.id}
+        pageText={letter ? paperPlainText(letter) : null}
+        onWritten={(text) => editorRef.current?.insertText(text)}
+      />
       <div
         data-slot="letter-editor-desk"
         tabIndex={-1}

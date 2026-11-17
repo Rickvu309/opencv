@@ -33,7 +33,7 @@ import {
   initialEmailState,
 } from "./account-section.reducer.ts"
 import { DeleteAccountDialog } from "./delete-account-dialog.tsx"
-import { personInitials } from "./person-initials.ts"
+import { personInitials } from "@/lib/person-initials.ts"
 import {
   SettingsRowButton,
   SettingsCard,

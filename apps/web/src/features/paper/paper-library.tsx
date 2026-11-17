@@ -10,6 +10,7 @@ import { toast, toastWithUndo } from "@workspace/ui/components/sonner"
 
 import { reportRejected } from "@/lib/command-failure.ts"
 import { Button } from "@workspace/ui/components/button"
+import { SidebarExpandButton } from "@workspace/ui/components/page-header"
 import {
   Dialog,
   DialogContent,
@@ -399,8 +400,9 @@ export function PaperLibrary({
       ) : null}
       <div
         data-slot="paper-library-header"
-        className="flex flex-wrap items-center gap-2"
+        className="sticky top-0 z-20 flex flex-wrap items-center gap-2 bg-background"
       >
+        <SidebarExpandButton />
         <h1 className="text-lg font-medium">Paper</h1>
         <div data-slot="paper-library-spacer" className="flex-1" />
         {ready ? (
