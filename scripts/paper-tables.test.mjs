@@ -109,8 +109,8 @@ test("row replacement keeps the menu host and rejects the introducing commit", (
   const file = files[3]
   const clean = read(file)
   const mistake = clean.replace(
-    "const [host] = useState(() =>",
-    "const host = (() =>"
+    "const [host] = useReducer(",
+    "const host = createHost("
   )
   const expected =
     "Table menu portals must keep their host when table rows change"

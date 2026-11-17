@@ -1,5 +1,5 @@
 import { paperTableLimits } from "@workspace/domain"
-import { useEffect, useReducer, useState, type ReactNode } from "react"
+import { useEffect, useReducer, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { Table2 } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
@@ -67,13 +67,17 @@ function TableMenuAnchor({
   row: HTMLElement
   children: ReactNode
 }) {
-  const [host] = useState(() => {
-    const anchor = document.createElement("div")
-    anchor.className = "paper-table-anchor"
-    anchor.dataset.paperTableControls = ""
-    anchor.contentEditable = "false"
-    return anchor
-  })
+  const [host] = useReducer(
+    (host: HTMLDivElement) => host,
+    null,
+    () => {
+      const anchor = document.createElement("div")
+      anchor.className = "paper-table-anchor"
+      anchor.dataset.paperTableControls = ""
+      anchor.contentEditable = "false"
+      return anchor
+    }
+  )
   useEffect(() => {
     row.prepend(host)
     return () => host.remove()
