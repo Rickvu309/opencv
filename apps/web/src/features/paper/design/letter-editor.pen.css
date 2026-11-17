@@ -13,7 +13,7 @@
   color: #8a8a8e;
 }
 [data-pen-surface="paper"] [data-slot="letter-editor-edited"] {
-  color: #6b6b70;
+  color: var(--muted-foreground);
 }
 [data-pen-surface="paper"] [data-slot="letter-editor-desk"] {
   background: #f7f7f8;
@@ -32,7 +32,7 @@
   box-shadow: 0 4px 16px #0000000a;
 }
 [data-pen-surface="paper"] [data-slot="letter-editor-suggestion"] .lucide {
-  color: #969799;
+  color: var(--muted-foreground);
 }
 [data-pen-surface="paper"] [data-slot="letter-editor-suggestion-copy"] {
   color: #59595b;
@@ -70,7 +70,7 @@
   color: #3c3c40;
 }
 [data-pen-surface="paper"] [data-slot="letter-editor-link"] {
-  color: #6b6b70;
+  color: var(--muted-foreground);
 }
 
 @media (max-width: 767px), (pointer: coarse) {

@@ -96,7 +96,10 @@ describe("coming soon and the calm 404", () => {
     await waitFor(() => {
       expect(notifyCalls()).toEqual([{ topic: "proof" }])
     })
-    expect(primaryCount()).toBe(0)
+    expect(primaryCount()).toBe(1)
+    expect(
+      screen.getByRole("button", { name: "Get early access" })
+    ).toHaveAttribute("data-variant", "primary")
   })
 
   it("shows Pitch and posts pitch without an editor", async () => {

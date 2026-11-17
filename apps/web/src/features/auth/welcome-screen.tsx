@@ -60,7 +60,7 @@ export function WelcomeScreen({ onDone }: { onDone: () => void }) {
   }, [onDone, runCommand])
 
   return (
-    <div
+    <main
       data-pen-surface="auth"
       data-slot="welcome"
       className="flex min-h-dvh flex-col items-center justify-center px-4 pb-10"
@@ -79,7 +79,7 @@ export function WelcomeScreen({ onDone }: { onDone: () => void }) {
         <WelcomeLine done label={AUTH_COPY.workspaceReady} />
         <WelcomeLine done={coachReady} label={AUTH_COPY.coachReady} />
       </ul>
-    </div>
+    </main>
   )
 }
 

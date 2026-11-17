@@ -8,9 +8,6 @@ import { renderApp } from "@/test/render-app.tsx"
 import { authShaderFill } from "./auth-shader-fill.ts"
 import snapshotFile from "./design/auth.snapshot.json"
 
-const PEN_HEADING_WITH_CAPS_BRAND = "Log in to OpenCV"
-const ACCESSIBLE_HEADING_NAME = "Log in to opencv"
-
 const SCREEN_ONLY_COPY_NEVER_A_HIDDEN_PEN_LINE = [
   AUTH_COPY.googleUnavailable,
   AUTH_COPY.emailInvalid,
@@ -41,10 +38,6 @@ afterEach(() => {
 
 function normalize(value: string): string {
   return value.replaceAll(/\s+/g, " ").trim()
-}
-
-function shown(text: string): string {
-  return text === PEN_HEADING_WITH_CAPS_BRAND ? ACCESSIBLE_HEADING_NAME : text
 }
 
 function isWordChar(char: string): boolean {
@@ -126,7 +119,7 @@ function missingInOrder(
   haystack: string,
   texts: readonly string[]
 ): string | null {
-  const shownTexts = texts.map((text) => normalize(shown(text)))
+  const shownTexts = texts.map((text) => normalize(text))
   let cursor = 0
   for (let index = 0; index < shownTexts.length; index += 1) {
     const needle = shownTexts[index] ?? ""
@@ -255,7 +248,7 @@ describe("auth design parity", () => {
     }
 
     const needles = [
-      ...snapshot.sections.flatMap((section) => section.texts.map(shown)),
+      ...snapshot.sections.flatMap((section) => section.texts),
       ...SCREEN_ONLY_COPY_NEVER_A_HIDDEN_PEN_LINE,
     ]
     const extra = stripNeedles(visibleText(frame), needles)

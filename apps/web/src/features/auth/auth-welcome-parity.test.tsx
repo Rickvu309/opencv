@@ -67,8 +67,9 @@ describe("W1.5 Welcome parity", () => {
       screen.getByRole("heading").textContent,
       ...steps().map((step) => step.text),
     ]
-    expect(shown).toEqual(
-      penTexts.map((text) => text.replace("OpenCV", "opencv"))
+    expect(shown).toEqual(penTexts)
+    expect(screen.getByRole("main")).toContainElement(
+      screen.getByRole("heading")
     )
     expect(steps().map((step) => step.state)).toEqual([
       "done",

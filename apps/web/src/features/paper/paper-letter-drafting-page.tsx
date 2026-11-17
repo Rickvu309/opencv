@@ -41,10 +41,10 @@ export function PaperLetterDraftingPage({
     >
       <header
         data-slot="letter-drafting-header"
-        className="flex h-12 min-w-0 shrink-0 items-center gap-2 border-b px-4 ps-5 text-[13.5px] leading-4"
+        className="flex min-h-12 min-w-0 shrink-0 flex-wrap items-center gap-2 border-b px-4 py-2 ps-5 text-[13.5px] leading-4 md:py-0"
       >
-        <Breadcrumb>
-          <BreadcrumbList className="text-[13.5px] leading-4 text-inherit">
+        <Breadcrumb className="min-w-0">
+          <BreadcrumbList className="flex-wrap text-[13.5px] leading-4 text-inherit">
             <BreadcrumbItem>
               <Button
                 variant="ghost"
@@ -59,9 +59,9 @@ export function PaperLetterDraftingPage({
               Cover letters
             </BreadcrumbItem>
             <BreadcrumbSeparator className="[&>svg]:size-3.5" />
-            <BreadcrumbItem className="gap-2">
+            <BreadcrumbItem className="min-w-0 gap-2">
               <Mail aria-hidden="true" className="size-[15px] shrink-0" />
-              <BreadcrumbPage className="font-normal max-md:min-w-0">
+              <BreadcrumbPage className="min-w-0 font-normal [overflow-wrap:anywhere]">
                 {draftName}
               </BreadcrumbPage>
             </BreadcrumbItem>
@@ -69,7 +69,7 @@ export function PaperLetterDraftingPage({
         </Breadcrumb>
         <span
           aria-hidden="true"
-          className="hidden shrink-0 items-center gap-2 md:flex"
+          className="pointer-events-none hidden shrink-0 items-center gap-2 md:flex"
         >
           <Star className="size-[15px]" />
           <Ellipsis className="size-4" />
@@ -77,7 +77,7 @@ export function PaperLetterDraftingPage({
         <span
           data-slot="letter-drafting-status"
           aria-live="polite"
-          className="ms-auto flex shrink-0 items-center gap-[7px] px-2 text-[13.5px]"
+          className="ms-auto flex min-w-0 items-center gap-[7px] px-2 text-[13.5px]"
         >
           <Spinner aria-hidden="true" className="size-[15px] shrink-0" />
           {onOpenChat ? (
@@ -91,7 +91,7 @@ export function PaperLetterDraftingPage({
         <span
           aria-hidden="true"
           data-slot="letter-drafting-header-actions"
-          className="hidden shrink-0 items-center gap-[18px] px-[7px] md:flex"
+          className="pointer-events-none hidden shrink-0 items-center gap-[18px] px-[7px] md:flex"
         >
           <Link className="size-4" />
           <Bell className="size-4" />

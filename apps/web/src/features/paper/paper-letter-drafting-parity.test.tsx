@@ -41,6 +41,20 @@ it("shows pen-frame static texts in the drafting screen", () => {
   expect(screen.getByRole("button", { name: "Paper" })).toBeInTheDocument()
   expect(screen.getByText("Cover letters")).toBeInTheDocument()
   expect(screen.getByText("Cover letter, Lumière")).toBeInTheDocument()
+  const header = document.querySelector('[data-slot="letter-drafting-header"]')
+  const chrome = [
+    ...(header?.querySelectorAll(":scope > [aria-hidden='true']") ?? []),
+  ]
+  expect(chrome).toHaveLength(2)
+  for (const node of chrome) {
+    expect(node).toHaveAttribute("aria-hidden", "true")
+    expect(node.className).toContain("pointer-events-none")
+    expect(node.querySelector("button")).toBeNull()
+    expect(node.querySelector("svg")).not.toBeNull()
+  }
+  expect(
+    header?.querySelector('[data-slot="letter-drafting-header-actions"]')
+  ).toBe(chrome[1])
 })
 
 it("shows attribution from attached file when provided", () => {
