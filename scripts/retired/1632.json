@@ -14,5 +14,19 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/package-canvas-write.formal.test.ts",
+    "because": "owner correction 2026-11-17: a blank page has one empty paragraph; retain first-text saving, the receipt, stale refusal and Undo without a starter carrier.",
+    "replacedBy": "apps/api/src/paper/package-canvas-write.formal.test.ts",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "dca008bb98b5b8cdc18ae98119b69cd971fc9d03",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
