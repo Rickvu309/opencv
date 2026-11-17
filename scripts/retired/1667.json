@@ -40,5 +40,19 @@
     "class": "self",
     "classBecause": null,
     "items": 5
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-template-chooser-layout.test.tsx",
+    "because": "The template grid keeps each layout and description, fits three columns on a 390 px phone, and shows an empty Blank page.",
+    "replacedBy": "apps/web/src/features/paper/paper-template-chooser-layout.test.tsx",
+    "proof": {
+      "fork": "976628fc1f4263be91e7d6db104d75441d52966c",
+      "replacedByBlob": "1457914195417f710fc7be44f56f3688ae648a70",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 5
   }
 ]
