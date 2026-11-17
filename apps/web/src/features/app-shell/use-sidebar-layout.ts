@@ -1,5 +1,6 @@
 import type { PointerEvent as ReactPointerEvent } from "react"
-import { useCallback, useEffect, useReducer, useRef } from "react"
+import { useCallback, useEffect, useReducer, useRef, useState } from "react"
+import { flushSync } from "react-dom"
 
 import { useHoverIntent } from "@/lib/use-hover-intent.ts"
 import { useShortcut } from "@/lib/use-shortcut.ts"
@@ -19,6 +20,7 @@ import {
   writeSidebarCollapsed,
   writeSidebarWidth,
 } from "@/features/app-shell/sidebar-width.ts"
+import { followSidebar } from "@/features/app-shell/sidebar-follow.ts"
 
 export type SidebarMode = "expanded" | "dragging" | "collapsed" | "peeking"
 
@@ -90,6 +92,9 @@ export function useSidebarLayout(enabled: boolean) {
         ? "collapsed"
         : "expanded"
   const { close: closeIntent } = intent
+  const [floating, setFloating] = useState(false)
+  if (peek && !floating) setFloating(true)
+  if (!collapsed && floating) setFloating(false)
 
   const setCollapsed = useCallback(
     (next: boolean, instant: boolean) => {
@@ -98,7 +103,10 @@ export function useSidebarLayout(enabled: boolean) {
       toSidebar.current = !next && focusIsInExpandButton()
       closeIntent()
       writeSidebarCollapsed(next)
-      dispatch({ type: "collapse_requested", collapsed: next, instant })
+      const request = () =>
+        dispatch({ type: "collapse_requested", collapsed: next, instant })
+      if (instant) request()
+      else followSidebar(next, () => flushSync(request))
     },
     [closeIntent, dragging]
   )
@@ -197,7 +205,8 @@ export function useSidebarLayout(enabled: boolean) {
     mode,
     peek,
     instant: state.instant,
-    toggle: () => setCollapsed(!collapsed, false),
+    floating,
+    toggle: () => setCollapsed(!collapsed, true),
     expand: () => setCollapsed(false, false),
     dragStart,
     dragCancel,

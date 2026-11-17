@@ -453,7 +453,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
           <span className="text-sm font-semibold">{shellCopy.wordmark}</span>
         </div>
       )}
-      <div className="flex min-h-0 min-w-0 flex-1">
+      <div className="flex min-h-0 min-w-0 flex-1 md:bg-sidebar">
         {isDesktop
           ? (sidebar ?? <SidebarFrame layout={layout}>{nav}</SidebarFrame>)
           : null}
