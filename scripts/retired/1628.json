@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/auth/sign-in-look.test.tsx",
+    "because": "The pen specifies Log in to OpenCV and only malformed email may be aria-invalid. The previous tests protected lowercase sentence casing and marked a valid email invalid during the form-level cooldown. Replacements assert the pen casing, format-error description, and neutral cooldown field.",
+    "replacedBy": "apps/web/src/features/auth/sign-in-look.test.tsx",
+    "proof": {
+      "fork": "e794a7bc0281ba32d6eff4a4ecd59b4f346e1475",
+      "replacedByBlob": "0e02569d94572b85b08698bb515db45d667fe064",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 3
   }
 ]
