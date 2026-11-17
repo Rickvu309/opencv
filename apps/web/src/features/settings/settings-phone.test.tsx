@@ -24,7 +24,7 @@ describe("settings phone layout", () => {
     expect(field).toHaveAttribute("aria-describedby", "account-name-error")
   })
 
-  it("stacks Language and Time zone when the settings column is under 480px", async () => {
+  it("stacks every preference when the settings column is under 480px", async () => {
     renderApp("/settings")
     expect(
       await screen.findByText("Language, time zone and where you start.")
@@ -55,8 +55,25 @@ describe("settings phone layout", () => {
     expect(
       document.querySelector(
         '[data-row="start-page"] [data-slot="settings-row-body"]'
-      )?.className
-    ).not.toContain("@max-[479px]/settings:flex-col")
+      )
+    ).toHaveClass(
+      "@max-[479px]/settings:flex-col",
+      "@max-[479px]/settings:gap-3"
+    )
+    expect(screen.getByText("Ho Chi Minh City (UTC+7)")).toHaveAttribute(
+      "title",
+      "Ho Chi Minh City (UTC+7)"
+    )
+  })
+
+  it("keeps the account identity on one line with its full value available", async () => {
+    renderApp("/settings/account")
+    await screen.findByRole("button", { name: "Change photo" })
+    const identity = document.querySelector(
+      '[data-row="profile"] [data-slot="settings-row-label"] [title]'
+    )
+    expect(identity).toHaveClass("truncate")
+    expect(identity).toHaveAttribute("title", identity?.textContent)
   })
 
   it("keeps the Coach switch track at 18px and extends its hit area past 24px", async () => {

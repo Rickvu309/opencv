@@ -98,8 +98,21 @@ export function AccountSection({
           <SettingsRow
             id="profile"
             gap="avatar"
-            label={profile.name || profile.email}
-            desc={profile.name ? profile.email : undefined}
+            label={
+              <span
+                className="block truncate"
+                title={profile.name || profile.email}
+              >
+                {profile.name || profile.email}
+              </span>
+            }
+            desc={
+              profile.name ? (
+                <span className="block truncate" title={profile.email}>
+                  {profile.email}
+                </span>
+              ) : undefined
+            }
             error={photoError}
             leading={
               <Avatar
@@ -115,7 +128,13 @@ export function AccountSection({
             }
             control={
               <>
-                <SettingsRowButton onClick={() => fileRef.current?.click()}>
+                <SettingsRowButton
+                  onClick={() => fileRef.current?.click()}
+                  aria-invalid={photoError ? true : undefined}
+                  aria-describedby={
+                    photoError ? "settings-row-profile-error" : undefined
+                  }
+                >
                   Change photo
                 </SettingsRowButton>
                 <HiddenFilePicker
@@ -141,11 +160,12 @@ export function AccountSection({
                 data-slot="settings-name-input"
                 className="rounded-[7px] text-base max-md:h-11 md:w-60 md:text-[13px]"
                 value={name}
-                disabled={pending}
+                readOnly={pending}
                 onChange={(event) =>
                   dispatch({ type: "name_typed", value: event.target.value })
                 }
                 onBlur={() => {
+                  if (pending) return
                   const next = name.trim()
                   if (!next) {
                     dispatch({ type: "name_rejected", message: NAME_REJECTION })
@@ -324,13 +344,21 @@ function ChangeEmailDialog({
           <DialogDescription>We send sign-in codes here</DialogDescription>
         </DialogHeader>
         {pendingEmail ? (
-          <CodeInput
-            value={code}
-            disabled={false}
-            focusNonce={focusNonce}
-            onChange={(value) => dispatch({ type: "code_typed", value })}
-            onComplete={(otp) => void onCode(otp)}
-          />
+          <fieldset
+            className="min-w-0"
+            aria-label="Verification code"
+            aria-invalid={error ? true : undefined}
+            aria-describedby={error ? "account-email-code-error" : undefined}
+          >
+            <CodeInput
+              value={code}
+              disabled={false}
+              invalid={Boolean(error)}
+              focusNonce={focusNonce}
+              onChange={(value) => dispatch({ type: "code_typed", value })}
+              onComplete={(otp) => void onCode(otp)}
+            />
+          </fieldset>
         ) : (
           <Field label="Email" error={error}>
             <Input
@@ -344,7 +372,11 @@ function ChangeEmailDialog({
           </Field>
         )}
         {pendingEmail && error ? (
-          <p role="alert" className="text-sm text-destructive">
+          <p
+            id="account-email-code-error"
+            role="alert"
+            className="text-sm text-destructive"
+          >
             {error}
           </p>
         ) : null}

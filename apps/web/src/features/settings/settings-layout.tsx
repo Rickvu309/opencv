@@ -270,6 +270,8 @@ export function SettingsRow({
   errorId?: string
   stack?: boolean
 }) {
+  const labelId = id ? `settings-row-${id}-label` : undefined
+  const messageId = errorId ?? (id ? `settings-row-${id}-error` : undefined)
   const body = (
     <>
       {leading}
@@ -281,6 +283,7 @@ export function SettingsRow({
         )}
       >
         <span
+          id={labelId}
           data-slot="settings-row-label"
           className="text-[13px] leading-4 font-medium break-words"
         >
@@ -303,7 +306,14 @@ export function SettingsRow({
   )
   const spacing = ROW_GAP[gap ?? (leading ? "tile" : "text")]
   return (
-    <div data-slot="settings-row" data-row={id}>
+    <div
+      data-slot="settings-row"
+      data-row={id}
+      role="group"
+      aria-labelledby={labelId}
+      aria-invalid={error ? true : undefined}
+      aria-describedby={error ? messageId : undefined}
+    >
       {onClick ? (
         <Button
           data-slot="settings-row-body"
@@ -337,7 +347,7 @@ export function SettingsRow({
       )}
       {error ? (
         <p
-          id={errorId}
+          id={messageId}
           role="alert"
           className="px-4 pb-3 text-sm text-destructive"
         >

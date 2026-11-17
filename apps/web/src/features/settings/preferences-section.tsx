@@ -99,10 +99,20 @@ export function PreferencesSection({
               >
                 <SelectTrigger
                   aria-label="Time zone"
+                  aria-invalid={
+                    errorKey === "timeZone" && error ? true : undefined
+                  }
+                  aria-describedby={
+                    errorKey === "timeZone" && error
+                      ? "settings-row-time-zone-error"
+                      : undefined
+                  }
                   disabled={pending}
                   className="touch-manipulation gap-2 rounded-[7px] px-2.5 data-[size=default]:max-md:h-11 md:text-[13px] @max-[479px]/settings:w-full @max-[479px]/settings:min-w-0"
                 >
-                  <SelectValue>{zoneLabel}</SelectValue>
+                  <SelectValue className="min-w-0 truncate" title={zoneLabel}>
+                    {zoneLabel}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {zones.map((zone) => (
@@ -116,6 +126,7 @@ export function PreferencesSection({
           />
           <SettingsRow
             id="start-page"
+            stack
             label="Start page"
             desc="What opens when you sign in"
             error={errorKey === "startPage" ? error : undefined}
@@ -129,6 +140,14 @@ export function PreferencesSection({
               >
                 <SelectTrigger
                   aria-label="Start page"
+                  aria-invalid={
+                    errorKey === "startPage" && error ? true : undefined
+                  }
+                  aria-describedby={
+                    errorKey === "startPage" && error
+                      ? "settings-row-start-page-error"
+                      : undefined
+                  }
                   disabled={pending}
                   className="touch-manipulation gap-2 rounded-[7px] px-2.5 data-[size=default]:max-md:h-11 md:text-[13px]"
                 >

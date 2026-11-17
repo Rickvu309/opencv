@@ -87,6 +87,14 @@ export function CoachSection({
               data-slot="settings-switch"
               className={SWITCH_CLASS}
               aria-label={`Enable memory, ${profile.memoryEnabled ? "Enabled" : "Disabled"}`}
+              aria-invalid={
+                errorKey === "memoryEnabled" && error ? true : undefined
+              }
+              aria-describedby={
+                errorKey === "memoryEnabled" && error
+                  ? "settings-row-memory-error"
+                  : undefined
+              }
               checked={profile.memoryEnabled}
               disabled={pending}
               onCheckedChange={(memoryEnabled) => onSave({ memoryEnabled })}
@@ -126,6 +134,14 @@ export function CoachSection({
                   data-slot="settings-switch"
                   className={SWITCH_CLASS}
                   aria-label={`${agent.label}, ${profile[agent.key] ? "Enabled" : "Disabled"}`}
+                  aria-invalid={
+                    errorKey === agent.key && error ? true : undefined
+                  }
+                  aria-describedby={
+                    errorKey === agent.key && error
+                      ? `settings-row-${agent.key}-error`
+                      : undefined
+                  }
                   checked={profile[agent.key]}
                   disabled={pending}
                   onCheckedChange={(on) =>
