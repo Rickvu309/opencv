@@ -23,6 +23,7 @@ import {
 import { MonthGrid } from "./apply-calendar-month.tsx"
 import { WeekGrid } from "./apply-calendar-week.tsx"
 import { zonedYmd } from "./apply-stages.ts"
+import { useChosenTimeZone } from "./apply-time-zone.ts"
 
 function matches(job: JobView, company: string, location: string) {
   const companyNeedle = company.trim().toLowerCase()
@@ -39,11 +40,26 @@ function matches(job: JobView, company: string, location: string) {
   return true
 }
 
-type AnchorAction =
-  { type: "stepped"; next: string } | { type: "today_chosen"; today: string }
+type AnchorState = { day: string; zone: string }
 
-function anchorReducer(_anchor: string, action: AnchorAction) {
-  return action.type === "stepped" ? action.next : action.today
+type AnchorAction =
+  | { type: "stepped"; next: string }
+  | { type: "today_chosen"; today: string }
+  | {
+      type: "zone_seen"
+      zone: string
+      today: string
+      previousToday: string
+    }
+
+function anchorReducer(state: AnchorState, action: AnchorAction): AnchorState {
+  if (action.type === "stepped") return { ...state, day: action.next }
+  if (action.type === "today_chosen") return { ...state, day: action.today }
+  if (state.zone === action.zone) return state
+  return {
+    zone: action.zone,
+    day: state.day === action.previousToday ? action.today : state.day,
+  }
 }
 
 export function ApplyCalendar({
@@ -60,16 +76,27 @@ export function ApplyCalendar({
   showClosed: boolean
 }) {
   const navigate = useNavigate()
-  const [anchor, dispatchAnchor] = useReducer(anchorReducer, undefined, () =>
-    zonedYmd(new Date())
-  )
-  const today = zonedYmd(new Date())
+  const zone = useChosenTimeZone()
+  const today = zonedYmd(new Date(), zone)
+  const [anchorState, dispatchAnchor] = useReducer(anchorReducer, {
+    day: today,
+    zone,
+  })
+  if (anchorState.zone !== zone) {
+    dispatchAnchor({
+      type: "zone_seen",
+      zone,
+      today,
+      previousToday: zonedYmd(new Date(), anchorState.zone),
+    })
+  }
+  const anchor = anchorState.day
   const weeks = useMemo(() => monthWeeks(anchor), [anchor])
   const days = useMemo(
     () => (span === "week" ? weekDays(anchor) : weeks.flat()),
     [span, anchor, weeks]
   )
-  const range = useMemo(() => rangeFor(days), [days])
+  const range = useMemo(() => rangeFor(days, zone), [days, zone])
   const query = useQuery({
     queryKey: jobCalendarKey(range.from, range.to),
     queryFn: () => calendarJobs(range.from, range.to),
@@ -82,11 +109,12 @@ export function ApplyCalendar({
             (job) =>
               matches(job, company, location) &&
               (showClosed || job.stage !== "closed")
-          )
+          ),
+          zone
         ),
         days
       ),
-    [query.data, company, location, showClosed, days]
+    [query.data, company, location, showClosed, days, zone]
   )
   const openJob = (jobId: string) => {
     void navigate({ to: "/apply/$jobId", params: { jobId } })
@@ -157,7 +185,7 @@ export function ApplyCalendar({
       ) : null}
       {query.isError ? (
         <div className="px-6">
-          <p>Could not load jobs. Refresh the page.</p>
+          <p>Couldn't load jobs.</p>
           <Button
             className="h-11 md:h-8"
             type="button"

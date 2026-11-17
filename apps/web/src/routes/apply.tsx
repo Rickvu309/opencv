@@ -148,7 +148,7 @@ export function ApplyPage() {
   return (
     <div
       data-pen-surface="apply"
-      className="flex h-full min-h-0 flex-col bg-card"
+      className="relative flex h-full min-h-0 flex-col bg-card"
     >
       <ApplyHeader onNewJob={() => dispatch({ type: "dialog_opened" })} />
       <ApplyToolbar
@@ -156,21 +156,9 @@ export function ApplyPage() {
         onView={setView}
         filters={filters}
         onFilters={setFilters}
-      >
-        <div
-          aria-label="Jobs by priority"
-          className="order-last flex basis-full gap-4 pb-2 text-sm text-muted-foreground md:order-none md:basis-auto md:pb-0 md:pl-3"
-        >
-          {counts.data?.map(({ priority, count }) => (
-            <span key={priority} className="capitalize">
-              {priority} <span className="tabular-nums">{count}</span>
-            </span>
-          ))}
-          {ownerId && counts.isError ? (
-            <span>Could not load priority counts.</span>
-          ) : null}
-        </div>
-      </ApplyToolbar>
+        priorityCounts={counts.data}
+        priorityCountsFailed={Boolean(ownerId && counts.isError)}
+      />
       <ActiveFilters filters={filters} onFilters={setFilters} />
       <div className="flex min-h-0 flex-1 flex-col overflow-auto">
         {jobs.isLoading ? (
@@ -180,8 +168,12 @@ export function ApplyPage() {
         ) : null}
         {jobs.isError ? (
           <div className="px-5">
-            <p>Could not load jobs. Refresh the page.</p>
-            <Button type="button" onClick={() => void jobs.refetch()}>
+            <p>Couldn't load jobs.</p>
+            <Button
+              type="button"
+              className="h-11 md:h-8"
+              onClick={() => void jobs.refetch()}
+            >
               Refresh
             </Button>
           </div>

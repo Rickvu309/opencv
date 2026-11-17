@@ -74,6 +74,17 @@ describe("job Paper picker feedback", () => {
     }
   )
 
+  it("scrolls a long Paper list and keeps the search at 16px on a phone", async () => {
+    await openPicker("Add CV")
+    const search = await screen.findByRole("textbox", { name: "Find in Paper" })
+    expect(search.className).toMatch(/\btext-base\b/)
+    expect(search.parentElement?.nextElementSibling).toHaveClass(
+      "max-h-60",
+      "overflow-y-auto",
+      "overscroll-contain"
+    )
+  })
+
   it("shows loading until the list resolves", async () => {
     const release = holdPaperList()
     try {

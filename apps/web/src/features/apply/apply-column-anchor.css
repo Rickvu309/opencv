@@ -1,0 +1,11 @@
+[data-slot="apply-column-anchor"] {
+  anchor-name: --apply-column;
+}
+
+@media (min-width: 768px) {
+  [data-slot="new-job-dialog"],
+  [data-slot="confirm-delete"] {
+    position-anchor: --apply-column;
+    left: anchor(center);
+  }
+}

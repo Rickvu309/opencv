@@ -40,6 +40,7 @@ export function NewJobProperties({
   deadline,
   location,
   dateError,
+  dateErrorId,
   onStage,
   onDeadline,
   onLocation,
@@ -48,6 +49,7 @@ export function NewJobProperties({
   deadline: string
   location: string
   dateError: boolean
+  dateErrorId?: string
   onStage: (stage: JobStage) => void
   onDeadline: (deadline: string) => void
   onLocation: (location: string) => void
@@ -94,6 +96,7 @@ export function NewJobProperties({
               type="button"
               variant="ghost"
               aria-invalid={dateError ? true : undefined}
+              aria-describedby={dateError ? dateErrorId : undefined}
               className={`h-11 md:h-7 ${CHIP} ${deadlineValid ? "" : "text-muted-foreground"}`}
             />
           }

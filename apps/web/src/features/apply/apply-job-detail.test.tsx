@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { appNotifications, findAppMain } from "@/test/app-regions.ts"
 import { renderApp } from "@/test/render-app.tsx"
+import { setMockTimeZone } from "@/test/profile-api-mock.ts"
 import { mockJob } from "@/test/apply-job-fixtures.ts"
 import {
   getMockJobPosts,
@@ -95,6 +96,10 @@ describe("job detail", () => {
     ])
     renderApp(`/apply/${id}`)
     const note = await screen.findByRole("textbox", { name: "Leave a note" })
+    expect(note.className).toMatch(/\btext-base\b/)
+    const prep = screen.getByRole("button", { name: "Interview prep" })
+    expect(prep.className).toMatch(/\bmd:h-6\b/)
+    expect(prep.className).not.toMatch(/\bmd:h-4\b/)
     const draft = "x".repeat(4001)
     fireEvent.change(note, { target: { value: draft } })
     fireEvent.keyDown(note, { key: "Enter" })
@@ -304,9 +309,7 @@ describe("job detail", () => {
 
   it("shows a message instead of crashing when the link has a bad job id", async () => {
     renderApp("/apply/not-a-job-id")
-    expect(
-      await screen.findByText("Could not load jobs. Check the link.")
-    ).toBeTruthy()
+    expect(await screen.findByText("This job link isn't valid.")).toBeTruthy()
   })
 
   it("opens the next job with no delete dialog left open after a delete", async () => {
@@ -337,6 +340,25 @@ describe("job detail", () => {
       await screen.findByRole("heading", { name: "Next role" })
     ).toBeTruthy()
     expect(screen.queryByRole("dialog")).toBeNull()
+  })
+  it("shows the interview in the timezone chosen in Preferences", async () => {
+    setMockTimeZone("Asia/Singapore")
+    setMockJobs([
+      mockJob({
+        id,
+        title: "Junior Marketing",
+        company: "Lumière Cosmetics",
+        interviewAt: "2026-10-29T03:00:00.000Z",
+      }),
+    ])
+    renderApp(`/apply/${id}`)
+    const interview = await screen.findByRole("button", {
+      name: "Interview: Interview Oct 29, 11:00",
+    })
+    fireEvent.click(interview)
+    const field = await screen.findByLabelText("Interview")
+    expect(field).toHaveValue("2026-10-29T11:00")
+    expect(field.className).toMatch(/\btext-base\b/)
   })
   it("edits a property from its row, adds a prep step, and unlinks a CV", async () => {
     setMockJobs([
@@ -397,6 +419,7 @@ describe("job detail", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Add a step" }))
     const step = await screen.findByRole("textbox", { name: "Add a step" })
+    expect(step.className).toMatch(/\btext-base\b/)
     fireEvent.change(step, { target: { value: "Print the CV" } })
     submitPrepStep(step)
     await waitFor(() => {
@@ -430,6 +453,11 @@ describe("job detail", () => {
     const dialog = await screen.findByRole("dialog", {
       name: "Delete First role?",
     })
+    expect(dialog).toHaveAttribute("data-slot", "confirm-delete")
+    expect(dialog.className).not.toContain("118px")
+    expect(
+      document.querySelector("[data-slot='apply-column-anchor']")
+    ).not.toBeNull()
     expect(within(dialog).getByText("This can't be undone.")).toBeTruthy()
     expect(
       within(dialog)

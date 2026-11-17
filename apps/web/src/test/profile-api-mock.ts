@@ -162,6 +162,10 @@ export function setMockProfile(patch: Partial<BaseProfile>) {
   store.profile = { ...store.profile, ...patch }
 }
 
+export function setMockTimeZone(timeZone: string) {
+  extras.timeZone = timeZone
+}
+
 export function getMockCoachMode() {
   return store.profile.coachMode
 }

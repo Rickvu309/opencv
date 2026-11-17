@@ -20,21 +20,22 @@ import {
   stageLabel,
 } from "./apply-stages.ts"
 import { FAINT_TEXT } from "./apply-tone.ts"
+import { useChosenTimeZone } from "./apply-time-zone.ts"
 
 const WEEKDAY_WINDOW_MS = 7 * 24 * 60 * 60 * 1000
 
 type RowPhrase = { text: string; soon: boolean }
 
-function rowPhrase(job: JobView, now = new Date()): RowPhrase {
+function rowPhrase(job: JobView, zone: string, now = new Date()): RowPhrase {
   if (job.stage === "interview" && job.interviewAt) {
     const at = new Date(job.interviewAt)
     const wait = at.getTime() - now.getTime()
     if (wait >= 0 && wait < WEEKDAY_WINDOW_MS) {
-      return { text: listPhrase(job, now), soon: true }
+      return { text: listPhrase(job, now, zone), soon: true }
     }
-    return { text: `Interview on ${monthDay(at)}`, soon: false }
+    return { text: `Interview on ${monthDay(at, zone)}`, soon: false }
   }
-  return { text: listPhrase(job, now), soon: false }
+  return { text: listPhrase(job, now, zone), soon: false }
 }
 
 export function ListGroup({
@@ -84,7 +85,8 @@ export function ListGroup({
 }
 
 export function JobRow({ job, onOpen }: { job: JobView; onOpen: () => void }) {
-  const phrase = rowPhrase(job)
+  const zone = useChosenTimeZone()
+  const phrase = rowPhrase(job, zone)
   return (
     <Button
       type="button"
@@ -121,7 +123,7 @@ export function JobRow({ job, onOpen }: { job: JobView; onOpen: () => void }) {
           FAINT_TEXT.card
         )}
       >
-        {monthDay(new Date(job.createdAt))}
+        {monthDay(new Date(job.createdAt), zone)}
       </time>
     </Button>
   )
