@@ -26,5 +26,19 @@
     "class": "self",
     "classBecause": null,
     "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/app-shell/app-shell.settings.test.tsx",
+    "because": "Keep the sign-out heading assertion and match the pen OpenCV casing",
+    "replacedBy": "apps/web/src/features/app-shell/app-shell.settings.test.tsx",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "be1749bb901331b071273d1f3d8e1809cc2a9a27",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
