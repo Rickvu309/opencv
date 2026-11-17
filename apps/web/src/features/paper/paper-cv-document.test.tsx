@@ -174,10 +174,9 @@ describe("EditableField café keyboard (QVE-208)", () => {
 })
 
 describe("paper canvas field CSS (QVE-206)", () => {
-  it("uses kit ring + muted wash, not cite-jump info or Coach pills", () => {
+  it("uses a muted wash with no coloured glow, not cite-jump info or Coach pills", () => {
     expect(paperCss).toMatch(/\.paper-canvas-field:focus/)
     expect(paperCss).toMatch(/var\(--muted\)/)
-    expect(paperCss).toMatch(/var\(--ring\)/)
     expect(paperCss).toMatch(/\.paper-canvas-field::selection/)
     expect(paperCss).toMatch(/currentColor/)
 
@@ -186,7 +185,7 @@ describe("paper canvas field CSS (QVE-206)", () => {
     const chrome = paperCss.slice(start, end).replace(/\/\*[\s\S]*?\*\//g, "")
     expect(chrome).toContain(".paper-canvas-field:focus")
     expect(chrome).toContain("var(--muted)")
-    expect(chrome).toContain("var(--ring)")
+    expect(chrome).not.toMatch(/box-shadow:[^;]*var\(--ring\)/)
     expect(chrome).not.toMatch(/var\(--info\)/)
     expect(chrome).not.toMatch(/rounded-full/)
     expect(chrome).not.toMatch(/bg-muted\/70/)

@@ -403,7 +403,7 @@ function NoteComposer({ jobId }: { jobId: JobId }) {
   return (
     <div className="flex flex-col gap-1.5">
       <form
-        className="flex min-h-11 items-center gap-2 rounded-[10px] border border-border py-1.5 pr-2 pl-3.5 focus-within:ring-3 focus-within:ring-ring/50"
+        className="flex min-h-11 items-center gap-2 rounded-[10px] border border-border py-1.5 pr-2 pl-3.5 focus-within:border-muted-foreground/50"
         onSubmit={(event) => {
           event.preventDefault()
           void submit()

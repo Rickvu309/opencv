@@ -349,7 +349,7 @@ export function PaperLetterStart({
       />
       <div
         data-slot="letter-start-search"
-        className="flex h-11 items-center gap-2.5 rounded-[12px] border pr-2 pl-3.5 has-[input:focus-visible]:ring-3 has-[input:focus-visible]:ring-ring/50"
+        className="flex h-11 items-center gap-2.5 rounded-[12px] border pr-2 pl-3.5 has-[input:focus-visible]:border-muted-foreground/50"
       >
         <Search aria-hidden="true" className="size-[15px] shrink-0" />
         <Input

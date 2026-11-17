@@ -1,0 +1,13 @@
+{
+  "id": "click-focus-glow",
+  "file": "scripts/click-focus-glow.test.mjs",
+  "detector": {
+    "module": "scripts/lib/click-focus-glow.mjs",
+    "export": "clickFocusGlows"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "03280500",
+    "path": "apps/web/src/features/coach/design/coach.pen.css"
+  }
+}

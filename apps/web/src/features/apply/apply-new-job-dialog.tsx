@@ -281,7 +281,7 @@ export function NewJobDialog({
                 <span className="sr-only">Close</span>
               </DialogClose>
             </div>
-            <div className="mt-3.5 flex h-10 items-center gap-2 rounded-[11px] bg-secondary pr-[5px] pl-3 focus-within:ring-3 focus-within:ring-ring/50">
+            <div className="mt-3.5 flex h-10 items-center gap-2 rounded-[11px] bg-secondary pr-[5px] pl-3 focus-within:ring-1 focus-within:ring-muted-foreground/50">
               <LinkIcon
                 className="size-3.5 shrink-0 text-muted-foreground"
                 aria-hidden
