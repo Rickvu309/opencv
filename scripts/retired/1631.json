@@ -1,19 +1,5 @@
 [
   {
-    "subject": "packages/paper-crdt/src/rich-tables.test.ts",
-    "because": "owner correction 2026-11-17: oversized table rows use physical page geometry at every scale; the reflow exemption is rejected",
-    "replacedBy": "scripts/paper-page-scale.test.mjs",
-    "proof": {
-      "fork": "646b7471c3e539016c66a255f24b5aafabf6dfe6",
-      "replacedByBlob": "810b7e163e9f878d8fedefaa45e13ba620fa19a8",
-      "failedOnBase": true,
-      "passedOnHead": true
-    },
-    "class": "owner",
-    "classBecause": "scripts/paper-page-scale.test.mjs shares no module, command or route with packages/paper-crdt/src/rich-tables.test.ts",
-    "items": 1
-  },
-  {
     "subject": "scripts/paper-page-layout.test.mjs",
     "because": "owner correction 2026-11-17: uniform page scaling is required; refusing scale and requiring reflow-qualified gaps enforces rejected behavior",
     "replacedBy": "scripts/paper-page-scale.test.mjs",
@@ -40,5 +26,19 @@
     "class": "owner",
     "classBecause": "scripts/paper-page-scale.test.mjs shares no module, command or route with packages/paper-crdt/src/rich-editor.test.ts",
     "items": 7
+  },
+  {
+    "subject": "packages/paper-crdt/src/rich-tables.test.ts",
+    "because": "owner correction 2026-11-17: oversized table rows use physical page geometry at every scale; the reflow exemption is rejected",
+    "replacedBy": "scripts/paper-page-scale.test.mjs",
+    "proof": {
+      "fork": "1f15240557337b86a6f3f7436f6467d243160c1f",
+      "replacedByBlob": "97e719b5a1de605c4942bd381d370341e432d9e1",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "owner",
+    "classBecause": "scripts/paper-page-scale.test.mjs shares no module, command or route with packages/paper-crdt/src/rich-tables.test.ts",
+    "items": 1
   }
 ]
