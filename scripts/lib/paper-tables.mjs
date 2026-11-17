@@ -1,0 +1,109 @@
+export function detect(text, file) {
+  const problems = []
+  if (file.endsWith("editor.ts")) {
+    if (text.includes("...mounted.tables"))
+      problems.push("Table operations must check the live editor")
+    if (!text.includes('[data-paper-layout="paperRow"]'))
+      problems.push("The table menu must anchor to the active row")
+    for (const name of [
+      "insertTable",
+      "addTableRow",
+      "removeTableRow",
+      "addTableColumn",
+      "removeTableColumn",
+      "resizeTableColumn",
+      "removeTable",
+    ]) {
+      if (
+        !new RegExp(
+          `return apply\\(\\(\\) => mounted\\.tables\\.${name}\\(`
+        ).test(text)
+      )
+        problems.push(`${name} must use the editor availability gate`)
+    }
+  }
+  if (file.endsWith("native-layout-flow-view.ts")) {
+    if (/node\.type === "table"/.test(text))
+      problems.push("Tables must retain automatic pagination")
+    const measure = text.indexOf(":not(.paper-table-anchor)")
+    const sheet = text.indexOf('classList.contains("paper-rich-sheet")')
+    if (measure < 0 || (sheet >= 0 && measure > sheet))
+      problems.push(
+        "The table menu anchor must not hide oversized-row pagination"
+      )
+    for (const rule of [
+      "paperRow]{break-inside:avoid",
+      "paper-oversized-row=true]{height:var(--paper-column-height);overflow:auto",
+      "paper-oversized-row=true]){break-before:column;break-after:column}",
+      ":not([data-paper-reflow=true])",
+    ])
+      if (!text.includes(rule))
+        problems.push("Table rows must stay whole and inside printable pages")
+    if (text.split(":not([data-paper-reflow=true])").length - 1 < 2)
+      problems.push(
+        "Oversized row column breaks must be off while the sheet reflows"
+      )
+    if (!text.includes('element.dataset.paperReflow !== "true"'))
+      problems.push(
+        "Oversized rows must stay in normal flow while the sheet reflows"
+      )
+  }
+  if (file.endsWith("native-layout-schema.ts")) {
+    if (!text.includes("[data-is-empty-and-focused]"))
+      problems.push("Empty table cells must hide the editor placeholder")
+    if (!text.includes('if (block.type === "paperRow") dom.prepend(slot)'))
+      problems.push("Table row grids must remain the first element")
+    if (
+      text.includes("slot.style.boxShadow") ||
+      !text.includes(
+        'dom.style.borderBlockStart = "1px solid var(--border)"'
+      ) ||
+      !text.includes('dom.style.borderInlineEnd = "1px solid var(--border)"') ||
+      !text.includes('dom.style.height = "100%"')
+    )
+      problems.push("Cell borders must fill the row box")
+  }
+  if (file.endsWith("rich-table-controls.tsx")) {
+    if (
+      !text.includes("open={open && available}") ||
+      (text.match(/disabled={!available}/g)?.length ?? 0) < 3
+    )
+      problems.push("Open table forms must follow editor availability")
+    if (
+      !text.includes("tableRowElement") ||
+      !text.includes("paper-table-anchor")
+    )
+      problems.push("The table menu must anchor to the active row")
+  }
+  if (file.endsWith("rich-table.css")) {
+    if (
+      text.includes("inset-block-start: -46px") ||
+      text.includes("margin-block-start: 48px") ||
+      !text.includes("position: sticky") ||
+      !text.includes("inset-block-start: 0")
+    )
+      problems.push("The table menu must stay on the active row")
+    if (!text.includes("border-inline-start: 1px solid var(--border)"))
+      problems.push("Interior cell borders must stay a single line")
+    if (
+      text.includes("@media (max-width: 767px)") ||
+      !text.includes(
+        '.paper-rich-sheet[data-paper-reflow="true"] .paper-table-menu'
+      )
+    )
+      problems.push("Table options must follow sheet reflow, not the viewport")
+  }
+  if (
+    file.endsWith("rich-table-menu.tsx") &&
+    !text.includes("overscroll-contain")
+  )
+    problems.push("The table menu scroller must contain overscroll")
+  if (
+    file.endsWith("native-layout-flow-mount.ts") &&
+    !text.includes("closest(\"[data-paper-oversized-row='true']\")")
+  )
+    problems.push("Tab from an oversized row must reach the table menu")
+  if (file.endsWith("formatted.ts") && !text.includes("<w:cantSplit/>"))
+    problems.push("Word table rows must request whole-row pagination")
+  return problems
+}

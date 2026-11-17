@@ -31,7 +31,12 @@ export function mountRichPaperEditor(
   let active = true
   let removeRelease = () => {}
   try {
-    const mounted = mountPrivateFlow(lease.binding, element, options.photoUrl)
+    const mounted = mountPrivateFlow(
+      lease.binding,
+      element,
+      options.photoUrl,
+      true
+    )
     const commands = mounted.commands
     const view = mounted.editor.prosemirrorView
     const search = mounted.search
@@ -185,6 +190,55 @@ export function mountRichPaperEditor(
       undo: () => apply(commands.undo),
       redo: () => apply(commands.redo),
       formattingState: () => (active ? commands.formattingState() : null),
+      activeTable: () => (active ? mounted.tables.activeTable() : null),
+      tableElement() {
+        if (!active) return null
+        const selected = mounted.tables.activeTable()
+        return selected
+          ? element.querySelector<HTMLElement>(
+              `[data-paper-layout="paperTable"][data-paper-id="${CSS.escape(selected.table.id)}"]`
+            )
+          : null
+      },
+      tableRowElement() {
+        if (!active) return null
+        const selected = mounted.tables.activeTable()
+        const row = selected?.table.children[selected.rowIndex]
+        return row
+          ? element.querySelector<HTMLElement>(
+              `[data-paper-layout="paperRow"][data-paper-id="${CSS.escape(row.id)}"]`
+            )
+          : null
+      },
+      insertTable(...args: Parameters<typeof mounted.tables.insertTable>) {
+        return apply(() => mounted.tables.insertTable(...args))
+      },
+      addTableRow(...args: Parameters<typeof mounted.tables.addTableRow>) {
+        return apply(() => mounted.tables.addTableRow(...args))
+      },
+      removeTableRow(
+        ...args: Parameters<typeof mounted.tables.removeTableRow>
+      ) {
+        return apply(() => mounted.tables.removeTableRow(...args))
+      },
+      addTableColumn(
+        ...args: Parameters<typeof mounted.tables.addTableColumn>
+      ) {
+        return apply(() => mounted.tables.addTableColumn(...args))
+      },
+      removeTableColumn(
+        ...args: Parameters<typeof mounted.tables.removeTableColumn>
+      ) {
+        return apply(() => mounted.tables.removeTableColumn(...args))
+      },
+      resizeTableColumn(
+        ...args: Parameters<typeof mounted.tables.resizeTableColumn>
+      ) {
+        return apply(() => mounted.tables.resizeTableColumn(...args))
+      },
+      removeTable(...args: Parameters<typeof mounted.tables.removeTable>) {
+        return apply(() => mounted.tables.removeTable(...args))
+      },
       apply,
       setEditable(editable: boolean) {
         if (active) mounted.editor.isEditable = editable

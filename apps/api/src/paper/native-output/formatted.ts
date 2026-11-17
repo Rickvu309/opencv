@@ -177,7 +177,7 @@ function compileDocument(
           const rows = node.children
             .map(
               (row) =>
-                `<w:tr>${row.children.map((cell, index) => `<w:tc><w:tcPr><w:tcW w:w="${node.columns[index]?.width}" w:type="dxa"/></w:tcPr>${siblings(cell.children, 0, (node.columns[index]?.width ?? 0) - 240)}</w:tc>`).join("")}</w:tr>`
+                `<w:tr><w:trPr><w:cantSplit/></w:trPr>${row.children.map((cell, index) => `<w:tc><w:tcPr><w:tcW w:w="${node.columns[index]?.width}" w:type="dxa"/></w:tcPr>${siblings(cell.children, 0, (node.columns[index]?.width ?? 0) - 240)}</w:tc>`).join("")}</w:tr>`
             )
             .join("")
           return `<w:tbl><w:tblPr><w:tblW w:w="${width}" w:type="dxa"/><w:tblBorders>${borders}</w:tblBorders><w:tblLayout w:type="fixed"/><w:tblCellMar>${margins}</w:tblCellMar></w:tblPr><w:tblGrid>${grid}</w:tblGrid>${rows}</w:tbl>`

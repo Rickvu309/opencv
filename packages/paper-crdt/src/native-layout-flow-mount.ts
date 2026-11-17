@@ -1,7 +1,8 @@
+import { flowTableControls } from "./native-layout-table-controls.js"
 import { paperSearchPlugin, richEditorSearch } from "./native-layout-search.js"
 import { richEditorCommands } from "./native-formatting-commands.js"
 import { richPageCommands } from "./native-layout-page-commands.js"
-import { isSafeHref } from "@workspace/domain"
+import { paperTableLimits, isSafeHref } from "@workspace/domain"
 import { BlockNoteEditor, createExtension } from "@blocknote/core"
 import { CollaborationExtension } from "@blocknote/core/yjs"
 import { Plugin } from "@tiptap/pm/state"
@@ -44,7 +45,8 @@ const mounted = new WeakMap<FlowBinding, PrivateLayoutEditor>()
 export function mountPrivateFlow(
   binding: FlowBinding,
   element: HTMLElement,
-  resolvePhoto?: PhotoUrlResolver
+  resolvePhoto?: PhotoUrlResolver,
+  docsTables = false
 ) {
   readFlow(binding)
   if (mounted.has(binding)) throw new Error("Layout binding is already mounted")
@@ -124,12 +126,24 @@ export function mountPrivateFlow(
   const keydown = (event: KeyboardEvent) => {
     if (!active || !editor.isEditable) return
     if (
+      event.target instanceof Element &&
+      event.target.closest("[data-paper-table-controls]")
+    )
+      return
+    if (
       event.key === "Tab" &&
       !event.altKey &&
       !event.ctrlKey &&
       !event.metaKey
     ) {
       if (
+        event.target instanceof Element &&
+        event.target.closest("[data-paper-oversized-row='true']")
+      )
+        return
+      if (
+        (!docsTables ||
+          !layoutCellAt(editor.prosemirrorState.selection.$from)) &&
         ["bulletListItem", "numberedListItem"].includes(
           editor.getTextCursorPosition().block.type
         )
@@ -151,6 +165,16 @@ export function mountPrivateFlow(
       const cells = table.children.flatMap((row) => row.children),
         index = cells.findIndex((cell) => cell.id === cellId)
       const next = cells[index + (event.shiftKey ? -1 : 1)]
+      if (
+        docsTables &&
+        !next &&
+        !event.shiftKey &&
+        table.children.length < paperTableLimits.rows
+      ) {
+        event.preventDefault()
+        tableControls.addTableRow(true, true)
+        return
+      }
       let target = next && editableTarget(next, false)
       if (!target) {
         const siblings = doc.flow.children
@@ -211,12 +235,14 @@ export function mountPrivateFlow(
     editor._tiptapEditor.destroy()
     throw error
   }
+  const tableControls = flowTableControls(binding, editor)
   const commands = richEditorCommands(editor, (mark) =>
     setInline({ [mark]: !activeInline()[mark] })
   )
   const search = richEditorSearch(editor)
   return {
     commands,
+    tables: tableControls,
     search,
     editor,
     pages: richPageCommands(binding, editor),

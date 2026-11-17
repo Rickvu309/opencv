@@ -33,15 +33,23 @@ function frame(block: { id: string; type: string }) {
     slot.style.gridAutoFlow = "column"
     slot.style.gridAutoColumns = "minmax(0, 1fr)"
     slot.style.gridTemplateColumns = "var(--paper-table-columns)"
+    const style = document.createElement("style")
+    style.textContent =
+      '[data-paper-layout="paperRow"] > div > [data-node-type="blockOuter"] > .bn-block{height:100%}[data-paper-layout="paperCell"] .bn-is-empty::before,[data-paper-layout="paperCell"] .bn-block-content[data-is-empty-and-focused]:has(.ProseMirror-trailingBreak:only-child)::after,[data-paper-layout="paperCell"] .bn-block-content[data-is-only-empty-block]:has(.ProseMirror-trailingBreak:only-child)::after{content:none !important;display:none}'
+    dom.append(style)
   }
   if (block.type === "paperCell") {
     slot.style.boxSizing = "border-box"
     slot.style.minWidth = "0"
     slot.style.overflowWrap = "anywhere"
     slot.style.padding = "6pt"
-    slot.style.boxShadow = "inset 0 0 0 1px var(--border)"
+    dom.style.height = "100%"
+    dom.style.borderBlockStart = "1px solid var(--border)"
+    dom.style.borderInlineEnd = "1px solid var(--border)"
+    dom.style.boxSizing = "border-box"
   }
-  dom.append(slot)
+  if (block.type === "paperRow") dom.prepend(slot)
+  else dom.append(slot)
   return { dom, slot }
 }
 const implementation = {

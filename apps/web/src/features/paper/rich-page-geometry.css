@@ -49,4 +49,12 @@
 
 .paper-rich-sheet[data-paper-reflow="true"] [data-node-type="blockOuter"] {
   break-before: auto !important;
+  break-after: auto !important;
+}
+
+.paper-rich-sheet[data-paper-reflow="true"] [data-paper-layout="paperRow"] {
+  height: auto !important;
+  overflow: visible !important;
+  break-before: auto !important;
+  break-after: auto !important;
 }

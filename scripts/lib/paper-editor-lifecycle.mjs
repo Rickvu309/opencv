@@ -35,6 +35,18 @@ export function detect(text, file = "rich-page.tsx") {
   }
   if (file.endsWith("rich-page.tsx") && !hasCall("mountRichEditorLifecycle"))
     problems.push("Paper must mount through the document lifecycle")
+  if (
+    file.endsWith("rich-page.tsx") &&
+    text.includes("RichTableControls") &&
+    !text.includes("<RichTableControls editor={editor}")
+  )
+    problems.push("The table menu must follow editor availability")
+  if (file.endsWith("rich-table-controls.tsx")) {
+    if (hasCall("mountRichPaperEditor") || !text.includes("anchor.remove()"))
+      problems.push("The table menu must release on editor teardown")
+  }
+  if (file.endsWith("rich-table-menu.tsx") && hasCall("mountRichPaperEditor"))
+    problems.push("Toolbar, menu and shortcut handlers need a live handle")
   if (file.endsWith("rich-editor-lifecycle.ts")) {
     for (const name of [".subscribe", ".restoreSelection", ".released"])
       if (!hasCall(name)) problems.push(`Missing lifecycle operation ${name}`)

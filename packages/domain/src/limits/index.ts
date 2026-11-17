@@ -6,3 +6,4 @@ export {
   type LimitShape,
   type LimitSpec,
 } from "./catalog.js"
+export { paperTableLimits } from "./paper-table.js"

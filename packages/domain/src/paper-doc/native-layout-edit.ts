@@ -12,7 +12,7 @@ import {
 } from "./native-layout.js"
 import { canonical, ok, refuse, type Result } from "./presentation-values.js"
 
-const layoutEditSchema = z.discriminatedUnion("kind", [
+export const layoutEditSchema = z.discriminatedUnion("kind", [
   z
     .object({
       kind: z.literal("insert-table"),
@@ -104,7 +104,7 @@ function indexAfter(nodes: readonly { id: string }[], id: string | null) {
   if (index < 0) throw new Error("Missing insertion neighbor")
   return index + 1
 }
-function editTable(
+export function editTable(
   table: LayoutTable,
   change: Exclude<LayoutEdit, { kind: "insert-table" | "remove-table" }>
 ): LayoutTable {

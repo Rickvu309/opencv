@@ -11,6 +11,7 @@ import {
   flowReceiptSchema,
   prepareFlowEdit,
   prepareFlowPhotoEdit,
+  prepareFlowTableEdit,
   reverseFlowEdit,
   type FlowDocument,
 } from "@workspace/domain/internal/paper-presentation"
@@ -249,6 +250,26 @@ export function commitFlowPhotoEdit(
       "private-flow-photo"
     )
     return prepared.value.document
+  })
+}
+
+export function commitFlowTableEdits(
+  binding: FlowBinding,
+  edits: readonly unknown[]
+) {
+  return attempt(() => {
+    let document = readFlow(binding)
+    for (const edit of edits) {
+      const result = prepareFlowTableEdit(document, edit, crypto.randomUUID())
+      if (result.kind === "refused") throw new Error(result.reason)
+      document = result.value
+    }
+    const node = nodeOf(document)
+    binding.doc.transact(
+      () => write(binding, document, node),
+      "private-flow-table"
+    )
+    return document
   })
 }
 
