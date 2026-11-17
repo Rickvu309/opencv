@@ -44,6 +44,88 @@ async function responseData(response: Response): Promise<unknown> {
   return body.data
 }
 
+it("downloads the saved table border mode, palette color and weight in CVs and Letters", async () => {
+  const { db, client: database } = await createMigratedTestDb()
+  const app = createTestApp(db)
+  const server = serve({
+    port: 0,
+    hostname: "127.0.0.1",
+    fetch: (request) => app.fetch(request),
+  })
+  await new Promise<void>((resolve, reject) => {
+    server.once("listening", resolve)
+    server.once("error", reject)
+  })
+  const address = server.address()
+  if (!address || typeof address === "string")
+    throw new Error("Missing HTTP port")
+  try {
+    const owner = await signUp(app, {
+      name: "Linh",
+      email: "table-borders@example.com",
+    })
+    const [person] = await db
+      .select()
+      .from(user)
+      .where(eq(user.email, owner.user.email))
+    if (!person) throw new Error("Missing owner")
+    for (const kind of ["cv", "letter"] as const) {
+      for (const mode of ["none", "all", "outer"] as const) {
+        for (const weight of ["thin", "medium"] as const) {
+          const saved = await savedRichWord(db, person.id, kind, (document) => {
+            const table = document.flow.children
+              .flatMap((section) => section.children)
+              .find((node) => node.type === "table")
+            if (!table || table.type !== "table")
+              throw new Error("Missing test table")
+            table.borders = { mode, color: "#1E3A8A", weight }
+          })
+          const response = await fetch(
+            `http://127.0.0.1:${address.port}/api/paper/${saved.id}/native-word?kind=${kind}`,
+            { headers: wordHeaders(owner.cookie, saved.basis) }
+          )
+          expect(response.status).toBe(200)
+          const archive = await readPackageZip(
+            new Uint8Array(await response.arrayBuffer())
+          )
+          const part = archive.files.get("word/document.xml")
+          if (!part) throw new Error("Missing document XML")
+          const table = elements(parsePackageXml(part).root, "tbl").find(
+            (node) =>
+              elements(node, "gridCol").some(
+                (column) => attribute(column, "w") === "5000"
+              )
+          )
+          if (!table) throw new Error("Missing saved table")
+          const borders = one(table, "tblBorders")
+          for (const edge of [
+            "top",
+            "left",
+            "bottom",
+            "right",
+            "insideH",
+            "insideV",
+          ]) {
+            const line = one(borders, edge)
+            const visible =
+              mode === "all" || (mode === "outer" && !edge.startsWith("inside"))
+            expect(attribute(line, "val")).toBe(visible ? "single" : "nil")
+            if (visible) {
+              expect(attribute(line, "color")).toBe("1E3A8A")
+              expect(attribute(line, "sz")).toBe(weight === "thin" ? "6" : "12")
+            }
+          }
+        }
+      }
+    }
+  } finally {
+    await new Promise<void>((resolve, reject) =>
+      server.close((error) => (error ? reject(error) : resolve()))
+    )
+    await database.close()
+  }
+})
+
 it("downloads real saved CV and Letter HTTP edits, refuses stale requests and preserves exact DOCX artifacts", async () => {
   const { db, client: database } = await createMigratedTestDb()
   const app = createTestApp(db)

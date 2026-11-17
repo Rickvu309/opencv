@@ -2,6 +2,8 @@ import type { Node } from "@tiptap/pm/model"
 import { Decoration, DecorationSet } from "@tiptap/pm/view"
 import {
   layoutTableSchema,
+  tableBordersSchema,
+  resolveTableBorders,
   layoutPhotoSchema,
   photoBounds,
   type DocumentPresentation,
@@ -37,6 +39,29 @@ export function layoutDecorations(
     const columns = layoutTableSchema.shape.columns.parse(
       JSON.parse(node.attrs.columns)
     )
+    if (node.attrs.borders) {
+      const borders = resolveTableBorders(
+        tableBordersSchema.parse(JSON.parse(node.attrs.borders))
+      )
+      let rows = 0
+      node.descendants((child) => {
+        if (child.type.name === "paperRow") rows++
+      })
+      let index = 0
+      node.descendants((child, offset) => {
+        if (child.type.name !== "paperCell") return
+        const row = Math.floor(index / columns.length)
+        const column = index++ % columns.length
+        const stroke = `${borders.size / 6}px solid ${borders.color}`
+        const edge = (visible: boolean) =>
+          borders.mode !== "none" && visible ? stroke : "0px solid transparent"
+        decorations.push(
+          Decoration.node(pos + 1 + offset, pos + 1 + offset + child.nodeSize, {
+            style: `border-block-start:${edge(borders.mode === "all" || row === 0)};border-inline-end:${edge(borders.mode === "all" || column === columns.length - 1)};border-block-end:${edge(row === rows - 1)};border-inline-start:${edge(column === 0)}`,
+          })
+        )
+      })
+    }
     const total = columns.reduce((sum, column) => sum + column.width, 0)
     const grid = columns
       .map((column) => `minmax(0,${column.width}fr)`)

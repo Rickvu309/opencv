@@ -9,6 +9,7 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
+import { RichTableBorders } from "./rich-table-borders.tsx"
 import type { TextEditor } from "./rich-text-toolbar-control.tsx"
 
 type Selected = NonNullable<ReturnType<TextEditor["activeTable"]>>
@@ -113,6 +114,11 @@ export function RichTableMenu({
           <p className="text-xs text-muted-foreground">
             Row {selected.rowIndex + 1}, column {selected.columnIndex + 1}
           </p>
+          <RichTableBorders
+            editor={editor}
+            borders={selected.table.borders}
+            onError={(value) => dispatch({ type: "error", value })}
+          />
           <div className="grid gap-1">
             {actions.map((action) => (
               <Button

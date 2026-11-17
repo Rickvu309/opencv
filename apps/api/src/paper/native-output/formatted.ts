@@ -1,3 +1,4 @@
+import { resolveTableBorders } from "@workspace/domain/internal/paper-presentation"
 import {
   effectiveRunDecorations,
   paragraphInlineValues,
@@ -159,6 +160,7 @@ function compileDocument(
           const grid = node.columns
             .map((column) => `<w:gridCol w:w="${column.width}"/>`)
             .join("")
+          const border = resolveTableBorders(node.borders)
           const borders = [
             "top",
             "left",
@@ -167,8 +169,11 @@ function compileDocument(
             "insideH",
             "insideV",
           ]
-            .map(
-              (edge) => `<w:${edge} w:val="single" w:sz="6" w:color="B5B5B5"/>`
+            .map((edge) =>
+              border.mode === "none" ||
+              (border.mode === "outer" && edge.startsWith("inside"))
+                ? `<w:${edge} w:val="nil"/>`
+                : `<w:${edge} w:val="single" w:sz="${border.size}" w:color="${border.color.slice(1)}"/>`
             )
             .join("")
           const margins = ["top", "left", "bottom", "right"]

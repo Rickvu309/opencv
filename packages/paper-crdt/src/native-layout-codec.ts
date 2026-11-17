@@ -1,6 +1,7 @@
 import {
   layoutDocumentSchema,
   canonical,
+  tableBordersSchema,
   layoutPhotoSchema,
   type LayoutPhoto,
   type FormatNode,
@@ -21,7 +22,10 @@ function tableBlock(table: LayoutTable): PrivateLayoutBlock {
   return {
     id: table.id,
     type: "paperTable",
-    props: { columns: canonical(table.columns) },
+    props: {
+      columns: canonical(table.columns),
+      ...(table.borders ? { borders: canonical(table.borders) } : {}),
+    },
     children: table.children.map((row) => ({
       id: row.id,
       type: "paperRow",
@@ -73,11 +77,18 @@ export function readLayoutBlock(input: unknown): unknown {
       object(props, [])
       return { id, type: "flow", children }
     case "paperTable":
-      object(props, ["columns"])
+      object(props, ["columns", "borders"])
       return {
         id,
         type: "table",
         columns: JSON.parse(string(props.columns)),
+        ...(props.borders
+          ? {
+              borders: tableBordersSchema.parse(
+                JSON.parse(string(props.borders))
+              ),
+            }
+          : {}),
         children,
       }
     case "paperRow":
