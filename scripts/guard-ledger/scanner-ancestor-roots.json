@@ -1,0 +1,16 @@
+{
+  "id": "scanner-ancestor-roots",
+  "file": "scripts/ocv-tools/jobs/test-selection.test.mjs",
+  "historic": {
+    "mode": "restore",
+    "sha": "8fbd90c115ac2a247820c00926273fc856b13bd8",
+    "paths": ["scripts/ocv-tools/jobs/test-selection.mjs"],
+    "command": [
+      "node",
+      "--test",
+      "--test-name-pattern=adding scripts/new",
+      "scripts/ocv-tools/jobs/test-selection.test.mjs"
+    ]
+  },
+  "reason": "Restoring the scanner selector that introduced the anchors filter must fail the real scripts/new.test.mjs selection replay on an assertion. The fixed selector retains own and ancestor scan roots; explicit TREE_SCANS mappings still override incidental literals."
+}
