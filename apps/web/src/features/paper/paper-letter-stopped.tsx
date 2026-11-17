@@ -26,10 +26,15 @@ type NoticeState = {
 }
 
 type NoticeAction =
-  { type: "busy" } | { type: "idle" } | { type: "failed"; error: string }
+  | { type: "busy" }
+  | { type: "idle" }
+  | { type: "edited" }
+  | { type: "failed"; error: string }
 
-function noticeReducer(_state: NoticeState, action: NoticeAction): NoticeState {
+function noticeReducer(state: NoticeState, action: NoticeAction): NoticeState {
   switch (action.type) {
+    case "edited":
+      return state.phase === "failed" ? { phase: "idle", error: null } : state
     case "busy":
       return { phase: "busy", error: null }
     case "idle":
@@ -43,12 +48,10 @@ export function LetterStoppedNotice({
   docId,
   pageText,
   onWritten,
-  inset = false,
 }: {
   docId: string
   pageText: string | null
   onWritten?: (text: string) => void
-  inset?: boolean
 }) {
   const record = useSyncExternalStore(
     subscribeStoppedLetter,
@@ -76,8 +79,14 @@ export function LetterStoppedNotice({
     latestText.current = pageText
   }, [pageText])
 
+  useEffect(() => {
+    dispatchNotice({ type: "edited" })
+  }, [docId, pageText])
+
+  useEffect(() => () => abortRef.current?.abort(), [docId])
+
   if (
-    notice.phase !== "failed" &&
+    notice.phase === "idle" &&
     (pageText === null ||
       pageText.trim().length > 0 ||
       !record ||
@@ -125,14 +134,13 @@ export function LetterStoppedNotice({
   return (
     <section
       data-slot="letter-stopped-notice"
-      className={
-        inset
-          ? "flex h-full w-full items-center justify-between gap-3"
-          : "mx-auto flex h-24 w-[min(100%-3rem,816px)] shrink-0 items-center justify-between gap-3 md:h-16"
-      }
+      className="mx-auto flex min-h-24 w-[min(100%-3rem,816px)] shrink-0 flex-wrap items-center justify-between gap-3 py-3 md:min-h-16"
     >
       {notice.phase === "failed" ? (
-        <p role="alert" className="min-w-0 text-sm text-destructive">
+        <p
+          role="alert"
+          className="min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-destructive"
+        >
           {notice.error}
         </p>
       ) : (
@@ -140,8 +148,8 @@ export function LetterStoppedNotice({
           role="status"
           className={
             writing
-              ? "min-w-0 text-sm text-foreground"
-              : "min-w-0 text-sm text-muted-foreground"
+              ? "min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-foreground"
+              : "min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-muted-foreground"
           }
         >
           {writing ? "Coach is writing…" : "Coach stopped before writing."}
@@ -151,7 +159,7 @@ export function LetterStoppedNotice({
         <Button
           type="button"
           variant="outline"
-          className="h-auto min-h-11 max-w-1/2 whitespace-normal md:min-h-8"
+          className="ms-auto h-auto min-h-11 max-w-full whitespace-normal md:min-h-8"
           onClick={stop}
         >
           Stop
@@ -159,7 +167,7 @@ export function LetterStoppedNotice({
       ) : record?.docId === docId ? (
         <Button
           type="button"
-          className="h-auto min-h-11 max-w-1/2 whitespace-normal md:min-h-8"
+          className="ms-auto h-auto min-h-11 max-w-full whitespace-normal md:min-h-8"
           onClick={() => void go()}
         >
           Continue drafting

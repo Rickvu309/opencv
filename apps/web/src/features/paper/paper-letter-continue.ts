@@ -2,7 +2,6 @@ import type { QueryClient } from "@tanstack/react-query"
 import { paperCanvasCommitSchema, type WordPage } from "@workspace/domain"
 
 import {
-  forgetDraft,
   loadDraft,
   pageBlocks,
   type WritingBlock,
@@ -23,6 +22,8 @@ import {
 
 const DRAFT_FAILED = "Could not draft the letter. Try again."
 const READ_FAILED = "Could not read this page. Try again."
+const PAGE_EDITED =
+  "Coach's draft was not applied because you edited this page. Your text is unchanged."
 
 type Run = ReturnType<typeof useRunCommand>
 
@@ -60,9 +61,7 @@ export async function redraftStoppedLetter(input: {
       (draft && pageWords(draft.blocks).trim().length > 0)
     ) {
       clearStoppedLetter(input.record.docId)
-      throw new Error(
-        "Drafting stopped because you added words. Your text is unchanged."
-      )
+      throw new Error(PAGE_EDITED)
     }
   }
   assertBlank()
@@ -122,9 +121,7 @@ export async function redraftStoppedLetter(input: {
   if (!page) throw new Error(READ_FAILED)
   if (page.paragraphs.some((paragraph) => paragraph.text.trim().length > 0)) {
     clearStoppedLetter(input.record.docId)
-    throw new Error(
-      "Drafting stopped because you added words. Your text is unchanged."
-    )
+    throw new Error(PAGE_EDITED)
   }
   assertBlank()
   const diff = diffParagraphs(page, blocksForLetterLines(page, lines), null)
@@ -139,8 +136,17 @@ export async function redraftStoppedLetter(input: {
   })
   if (!parsed.success || parsed.data.op !== "write")
     throw new Error(DRAFT_FAILED)
+  const startedDraft = JSON.stringify(
+    loadDraft(input.record.docId, localStorage)
+  )
   await input.run("paper.canvas", parsed.data, { signal: input.signal })
-  forgetDraft(input.record.docId, localStorage)
+  assertBlank()
+  if (
+    JSON.stringify(loadDraft(input.record.docId, localStorage)) !== startedDraft
+  ) {
+    clearStoppedLetter(input.record.docId)
+    throw new Error(PAGE_EDITED)
+  }
   clearStoppedLetter(input.record.docId)
   notifyWritingRefresh()
 }

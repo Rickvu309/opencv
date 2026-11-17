@@ -108,40 +108,52 @@ export function WritingProposalCard({
     openCoach(dock)
   }
 
+  if (!reviewError && !mine && !settled) return children
+
   const showReview = Boolean(reviewError || mine)
   return (
     <section
       aria-label={reviewError || mine || settled ? "Coach proposal" : undefined}
       data-slot="writing-proposal-notice"
-      className="mx-auto flex h-24 w-[min(100%-3rem,816px)] shrink-0 items-center justify-between gap-3 md:h-16"
+      className="mx-auto flex min-h-24 w-[min(100%-3rem,816px)] shrink-0 flex-wrap items-center justify-between gap-3 py-3 md:min-h-16"
     >
-      {!reviewError && !mine && !settled ? children : null}
       {reviewError ? (
-        <p role="alert" className="text-sm text-destructive">
+        <p
+          role="alert"
+          className="min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-destructive"
+        >
           {reviewError}
         </p>
       ) : mine?.withheld ? (
-        <p role="status" className="text-sm text-muted-foreground">
+        <p
+          role="status"
+          className="min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-muted-foreground"
+        >
           {mine.withheld}
         </p>
       ) : mine ? (
         <p
           key={mine.pendingActionId ?? mine.toolCallId}
           role="status"
-          className="text-sm text-foreground"
+          className="min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-foreground"
         >
           {suggestionLine(mine.changes.length)}
         </p>
       ) : settled ? (
-        <p role="status" className="text-sm text-muted-foreground">
-          {settled.phase === "approved" ? "Approved" : "Undone"}
+        <p
+          role="status"
+          className="min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-muted-foreground"
+        >
+          {settled.phase === "approved"
+            ? "Coach's change approved"
+            : "Coach's change undone"}
         </p>
       ) : null}
       {showReview ? (
         <Button
           type="button"
           variant="outline"
-          className="h-auto min-h-11 max-w-1/2 whitespace-normal md:min-h-8"
+          className="ms-auto h-auto min-h-11 max-w-full whitespace-normal md:min-h-8"
           onClick={review}
         >
           Review in Coach

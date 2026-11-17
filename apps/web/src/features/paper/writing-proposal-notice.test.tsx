@@ -14,6 +14,7 @@ import {
   WORD_BATCH_HIDDEN,
   writingProposal,
 } from "@/lib/writing-proposal.ts"
+import { WritingProposalCard } from "./writing-proposal.tsx"
 import { WritingPage } from "./writing-page.tsx"
 
 const DOC = "11111111-1111-4111-8111-111111111111"
@@ -123,7 +124,7 @@ it("names one Coach change and reviews it in Coach", async () => {
     })
     expect(proposal).toHaveTextContent("Coach suggested 1 change")
     const announcement = within(proposal).getByRole("status")
-    expect(proposal).toHaveClass("h-24", "md:h-16")
+    expect(proposal).toHaveClass("min-h-24", "md:min-h-16")
     expect(proposal).not.toHaveTextContent("(empty line)")
     expect(proposal).not.toHaveTextContent("Before")
     expect(
@@ -157,8 +158,10 @@ it("names one Coach change and reviews it in Coach", async () => {
         []
       )
     })
-    expect(within(proposal).getByRole("status")).toHaveTextContent("Approved")
-    expect(proposal).toHaveClass("h-24", "md:h-16")
+    expect(within(proposal).getByRole("status")).toHaveTextContent(
+      "Coach's change approved"
+    )
+    expect(proposal).toHaveClass("min-h-24", "md:min-h-16")
   } finally {
     dock.remove()
     panel.remove()
@@ -302,4 +305,11 @@ it("shows nothing to approve for a Word batch without its review", async () => {
     within(proposal).getByRole("button", { name: "Review in Coach" })
   ).toBeEnabled()
   expect(writingProposal()?.withheld).toBe(WORD_BATCH_HIDDEN)
+})
+
+it("reserves no notice row when this document has no Coach state", () => {
+  const { container } = render(<WritingProposalCard docId={DOC} />)
+  expect(
+    container.querySelector('[data-slot="writing-proposal-notice"]')
+  ).toBeNull()
 })

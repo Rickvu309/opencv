@@ -108,7 +108,7 @@ it("shows the approved words without a reload", async () => {
   expect(calls.some((path) => path.includes("/api/commands/paper.edit"))).toBe(
     false
   )
-  expect(screen.queryByText("Approved")).not.toBeInTheDocument()
+  expect(screen.queryByText("Coach's change approved")).not.toBeInTheDocument()
   expect(
     screen.queryByRole("region", { name: "Coach proposal" })
   ).not.toBeInTheDocument()
@@ -490,7 +490,9 @@ it("clears a settled receipt on the next document edit", async () => {
       []
     )
   })
-  expect(screen.getByText("Approved")).toBeVisible()
+  expect(screen.getByText("Coach's change approved")).toBeVisible()
   enterWords("Extra ")
-  await waitFor(() => expect(screen.queryByText("Approved")).toBeNull())
+  await waitFor(() =>
+    expect(screen.queryByText("Coach's change approved")).toBeNull()
+  )
 })

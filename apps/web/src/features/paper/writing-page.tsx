@@ -329,7 +329,7 @@ export function WritingPage({
     <div className="flex h-full min-h-0 flex-col">
       <div ref={setHeader} />
       <WritingProposalCard docId={docId}>
-        <LetterStoppedNotice docId={docId} pageText={pageText} inset />
+        <LetterStoppedNotice docId={docId} pageText={pageText} />
       </WritingProposalCard>
       <div className="min-h-0 flex-1">
         <WritingCanvas

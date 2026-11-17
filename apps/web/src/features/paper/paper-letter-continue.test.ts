@@ -3,6 +3,7 @@ import type { WordPage, WordParagraph } from "@workspace/domain"
 
 import { diffParagraphs } from "@/features/paper-page/page-diff.ts"
 import { QueryClient } from "@tanstack/react-query"
+import { subscribeWritingRefresh } from "@/lib/writing-refresh.ts"
 import { loadDraft, storeDraft } from "@/features/paper-page/canvas-edit.ts"
 import {
   blocksForLetterLines,
@@ -155,4 +156,59 @@ it("continues in the stopped Chat and writes when the page stays blank", async (
   ).toBe(false)
   expect(input.run).not.toHaveBeenCalled()
   expect(written).toHaveBeenCalledWith("Generated letter")
+})
+
+it.each(["My words typed while save is pending", ""])(
+  "preserves a newer local draft %j while the final canvas command is pending",
+  async (words) => {
+    const { generation } = generationFetch()
+    generation.resolve(generatedResponse())
+    const command = Promise.withResolvers<object>()
+    const started = Promise.withResolvers<void>()
+    const input = continuation()
+    input.run.mockImplementation(() => {
+      started.resolve()
+      return command.promise
+    })
+    const refreshed = vi.fn()
+    const unsubscribe = subscribeWritingRefresh(refreshed)
+    try {
+      const pending = redraftStoppedLetter(input)
+      await started.promise
+      storeDraft(
+        DOC,
+        {
+          blocks: [{ id: HANDLE, text: words }],
+          caret: { blockId: HANDLE, offset: words.length },
+          nextId: 2,
+        },
+        localStorage
+      )
+      command.resolve({})
+      await expect(pending).rejects.toThrow("Coach's draft was not applied")
+      expect(loadDraft(DOC, localStorage)?.blocks[0].text).toBe(words)
+      expect(refreshed).not.toHaveBeenCalled()
+    } finally {
+      unsubscribe()
+    }
+  }
+)
+
+it("refreshes the generated letter when the canvas command finishes on a blank page", async () => {
+  const { generation } = generationFetch()
+  generation.resolve(generatedResponse())
+  const input = continuation()
+  const refreshed = vi.fn()
+  const unsubscribe = subscribeWritingRefresh(refreshed)
+  try {
+    await redraftStoppedLetter(input)
+    expect(input.run).toHaveBeenCalledWith(
+      "paper.canvas",
+      expect.objectContaining({ op: "write" }),
+      expect.objectContaining({ signal: input.signal })
+    )
+    expect(refreshed).toHaveBeenCalledTimes(1)
+  } finally {
+    unsubscribe()
+  }
 })

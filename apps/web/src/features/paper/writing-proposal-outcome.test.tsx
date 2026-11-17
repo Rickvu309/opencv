@@ -89,7 +89,9 @@ it("shows Approved, then Undone, after the panel settles the change", async () =
       []
     )
   })
-  expect(within(proposal).getByRole("status")).toHaveTextContent("Approved")
+  expect(within(proposal).getByRole("status")).toHaveTextContent(
+    "Coach's change approved"
+  )
   const seen: string[] = []
   const stop = subscribeWritingRefresh(() => seen.push("refresh"))
   act(() => noteWritingUndo("activity-1"))
@@ -101,7 +103,9 @@ it("shows Approved, then Undone, after the panel settles the change", async () =
     phase: "undone",
   })
   expect(seen).toEqual(["refresh"])
-  expect(within(proposal).getByRole("status")).toHaveTextContent("Undone")
+  expect(within(proposal).getByRole("status")).toHaveTextContent(
+    "Coach's change undone"
+  )
 })
 
 function propose() {
