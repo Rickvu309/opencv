@@ -267,6 +267,7 @@ function openSession<Document extends StoredPaperDocument>(
             failRecovery()
           }
         }
+        if (live.hasPending()) queued = true
         await persist()
       } catch (error) {
         if (active()) {
@@ -469,7 +470,7 @@ function openSession<Document extends StoredPaperDocument>(
       }
     },
     ready: () => active() && ready && !conflict,
-    client: () => (active() && ready && !conflict ? client : null),
+    client: () => (active() && (ready || conflict) ? client : null),
     subscribe(listener: () => void) {
       listeners.add(listener)
       return () => {

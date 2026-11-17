@@ -20,7 +20,7 @@ import { withDatabase } from "../db/context.js"
 import { user, paperDocs } from "../db/schema.js"
 import { importedWordPage, saveFile, stageWordPackage } from "../paper/index.js"
 import { createMigratedTestDb } from "../test/harness.js"
-import { idOf } from "./coverage-helpers.js"
+import { idOf } from "./coverage-helpers.test-support.js"
 import { installRegistry } from "./install.js"
 import { seedCoachActor } from "../test/coach-turn.js"
 

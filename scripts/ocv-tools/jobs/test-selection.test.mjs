@@ -186,6 +186,53 @@ test("a change under what a listing scanner reads selects it: touch targets, use
   }
 })
 
+test("adding scripts/new.test.mjs selects the scanner of its own scripts folder", () => {
+  const { paths, texts } = realRepository()
+  const changed = "scripts/new.test.mjs"
+  const selection = selectAndAccount({
+    changed: [changed],
+    tests: [...paths, changed],
+    textOf: (file) => texts.get(file) ?? "",
+    workspace,
+  })
+  assert.match(
+    String(picked(selection)["scripts/unbounded-spawn.test.mjs"]),
+    /scans the tree that holds scripts\/new\.test\.mjs/
+  )
+})
+
+test("scanner roots retain own and ancestor folders while explicit mappings exclude incidental folder names", () => {
+  const own = "scripts/tools/own.test.mjs"
+  const helper = "scripts/tools/list.mjs"
+  const inherited = "scripts/tools/helper.test.mjs"
+  const explicit = "scripts/ocv-tools/brief.test.mjs"
+  const incidental = "scripts/unknown.test.mjs"
+  const texts = {
+    [own]: 'readdirSync("scripts/tools")',
+    [helper]: 'execFileSync("git", ["ls-files", "scripts"])',
+    [explicit]: 'const cwd = "scripts"; readdirSync("docs")',
+    [incidental]: 'const cwd = "scripts"; readdirSync(target)',
+  }
+  const map = scannerMap({
+    paths: [
+      own,
+      helper,
+      inherited,
+      explicit,
+      incidental,
+      "docs/agents/brief-fences.json",
+    ],
+    runnable: [own, inherited, explicit, incidental],
+    textOf: (file) => texts[file] ?? "",
+    importersOf: new Map([[helper, [inherited]]]),
+  })
+  assert.ok(map.get(own).dirs.includes("scripts/tools"))
+  assert.ok(map.get(inherited).dirs.includes("scripts"))
+  assert.deepEqual(map.get(explicit).dirs, [])
+  assert.equal(map.get(explicit).how, "table")
+  assert.ok(map.get(incidental).dirs.includes(""))
+})
+
 test("a package whose suite runs its files from the repository root (the guards suite) has its selected files run from the root too", () => {
   const file = "packages/guards/test-completeness.test.mjs"
   const selection = selectAndAccount({

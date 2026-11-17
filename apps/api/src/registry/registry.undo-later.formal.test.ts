@@ -11,8 +11,14 @@ import {
   registerBackendHooks,
   registry,
 } from "../test/registry-formal-support.js"
-import { flag, idOf, list, record, text } from "./coverage-helpers.js"
-import { coverageCases } from "./coverage-setup.js"
+import {
+  flag,
+  idOf,
+  list,
+  record,
+  text,
+} from "./coverage-helpers.test-support.js"
+import { coverageCases } from "./coverage-setup.test-support.js"
 import { undoKeyFor } from "./expectation.js"
 import { REVERSAL_EXPECT_PENDING } from "./expect-pending.js"
 import type { ExecuteResult } from "./registry.js"

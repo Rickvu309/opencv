@@ -9,7 +9,7 @@ import {
   text,
   type CoverageCase,
   type CoverageTools,
-} from "./coverage-helpers.js"
+} from "./coverage-helpers.test-support.js"
 
 export function accountCases(tools: CoverageTools): CoverageCase[] {
   const { ctx, db, run, profileOf, userId } = tools

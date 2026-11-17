@@ -19,7 +19,7 @@ import {
 import { createMigratedTestDb } from "../test/harness.js"
 import { seedCoachActor } from "../test/coach-turn.js"
 import { writePriority } from "../job/index.js"
-import { idOf } from "./coverage-helpers.js"
+import { idOf } from "./coverage-helpers.test-support.js"
 import { installRegistry } from "./install.js"
 import {
   assertPriorityGrant,

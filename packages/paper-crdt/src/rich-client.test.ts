@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it } from "vitest"
 import * as Y from "yjs"
 import {
+  canonicalPaper,
+  richPaperDocumentSchema,
   nativeProvenance,
   NATIVE_WRITER,
   nativePaperDocumentSchema,
@@ -11,7 +13,7 @@ import {
   openRichPaperClient,
   type PaperClient,
 } from "./client.js"
-import { seedStoredYDoc } from "./stored-document.js"
+import { materializeStored, seedStoredYDoc } from "./stored-document.js"
 import { storedFlowFixture } from "./test/flow-fixture.js"
 
 const documents = new Set<Y.Doc>()
@@ -44,11 +46,11 @@ function prime(doc: Y.Doc) {
   documents.add(client.ydoc)
   return client
 }
-function type(doc: Y.Doc) {
+function type(doc: Y.Doc, value = " added 😀") {
   const visit = (node: Y.XmlFragment): boolean => {
     for (const child of node.toArray()) {
       if (child instanceof Y.XmlText && child.length) {
-        child.insert(child.length, " added 😀")
+        child.insert(child.length, value)
         return true
       }
       if (child instanceof Y.XmlElement && visit(child)) return true
@@ -120,7 +122,56 @@ describe("rich local recovery keeps the canonical editor update", () => {
     expect(client.document()).not.toEqual(storedFlowFixture())
   })
 
-  it.each(["foreign", "reset", "malformed"])(
+  it.each(["cv", "letter"] as const)(
+    "converges simultaneous %s edits, including typing during a stale reply, to canonical server content",
+    (kind) => {
+      const remote = server(kind)
+      const first = prime(remote)
+      const second = prime(remote)
+      type(first.ydoc, " first-tab Việt 😀")
+      type(second.ydoc, " second-tab 東京")
+      const sent = second.prepare()
+      type(second.ydoc, " during-save")
+      const firstSent = first.prepare()
+      Y.applyUpdate(remote, firstSent.update)
+      expect(first.receive(firstSent, reply(remote, 1)).failed).toBe(false)
+      expect(second.receive(sent, reply(remote, 1, false, true))).toEqual({
+        reset: false,
+        stale: true,
+        rebased: false,
+        failed: false,
+      })
+      expect(second.hasPending()).toBe(true)
+      const retry = second.prepare()
+      Y.applyUpdate(remote, retry.update)
+      expect(second.receive(retry, reply(remote, 2)).failed).toBe(false)
+      expect(first.receive(first.prepare(), reply(remote, 2)).failed).toBe(
+        false
+      )
+      const result = materializeStored(remote)
+      expect(result.ok).toBe(true)
+      if (!result.ok) throw new Error(result.reason)
+      expect(richPaperDocumentSchema.safeParse(result.document).success).toBe(
+        true
+      )
+      const canonical = canonicalPaper(result.document)
+      for (const token of [
+        "first-tab Việt 😀",
+        "second-tab 東京",
+        "during-save",
+      ])
+        expect(canonical).toContain(token)
+      for (const client of [first, second]) {
+        expect(canonicalPaper(client.document())).toBe(canonical)
+        expect(client.hasPending()).toBe(false)
+        expect(client.rebuilds).toBe(0)
+      }
+      const reopened = prime(remote)
+      expect(canonicalPaper(reopened.document())).toBe(canonical)
+    }
+  )
+
+  it.each(["reset", "malformed"])(
     "refuses %s recovery without acknowledgement or loss of pending bytes",
     (mistake) => {
       const remote = server("letter"),
@@ -129,13 +180,9 @@ describe("rich local recovery keeps the canonical editor update", () => {
       const before = client.stored(),
         bytes = client.state(),
         sent = client.prepare({ pullOnly: true })
-      if (mistake === "foreign") type(remote)
       if (mistake === "malformed")
         remote.getMap("paper").set("richText", "shadow copy")
-      const result = client.receive(
-        sent,
-        reply(remote, 1, mistake === "reset", mistake === "foreign")
-      )
+      const result = client.receive(sent, reply(remote, 1, mistake === "reset"))
       expect(result.failed).toBe(true)
       expect(client.stored()).toEqual(before)
       expect(client.state()).toEqual(bytes)

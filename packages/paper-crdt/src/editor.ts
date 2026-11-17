@@ -1,5 +1,8 @@
 import type { RichPaperDocument } from "@workspace/domain"
 import { TextSelection } from "@tiptap/pm/state"
+import { yUndoPluginKey } from "y-prosemirror"
+import type { Transaction } from "yjs"
+import { PENDING_CONTENT_ORIGIN } from "./pending-content.js"
 import type { PaperClient } from "./client.js"
 import {
   richTextColors,
@@ -39,6 +42,14 @@ export function mountRichPaperEditor(
     )
     const commands = mounted.commands
     const view = mounted.editor.prosemirrorView
+    const history = yUndoPluginKey.getState(view.state)?.undoManager
+    history?.addTrackedOrigin(PENDING_CONTENT_ORIGIN)
+    const separatePendingHistory = (transaction: Transaction) => {
+      if (transaction.origin === PENDING_CONTENT_ORIGIN)
+        history?.stopCapturing()
+    }
+    client.ydoc.on("beforeTransaction", separatePendingHistory)
+    client.ydoc.on("afterTransaction", separatePendingHistory)
     const search = mounted.search
     const pages = mounted.pages
     if (!view.state.selection.$from.parent.inlineContent) {
@@ -104,6 +115,8 @@ export function mountRichPaperEditor(
       const selection = captureEditorSelection(view)
       active = false
       removeRelease()
+      client.ydoc.off("beforeTransaction", separatePendingHistory)
+      client.ydoc.off("afterTransaction", separatePendingHistory)
       view.dom.removeEventListener("keydown", shortcuts, true)
       options.onRelease?.(selection)
       mounted.unmount()

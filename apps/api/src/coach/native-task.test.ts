@@ -20,7 +20,7 @@ import { resolveTurnGrounding } from "./context.js"
 import { createTaskRuntime } from "./task-runtime.js"
 import { runCoachWorker } from "./worker.js"
 import { claim, finalize, runIntent } from "./task-store.js"
-import { fixture, settings } from "./worker-fixture.js"
+import { fixture, settings } from "./worker-fixture.test-support.js"
 
 it.each([
   "approve",

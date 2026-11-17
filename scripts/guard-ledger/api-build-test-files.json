@@ -1,0 +1,10 @@
+{
+  "id": "api-build-test-files",
+  "file": "scripts/api-build-test-files.test.mjs",
+  "historic": {
+    "mode": "restore",
+    "sha": "33cdfab1875d66de67e25d1fa9e9018a8e11ab06",
+    "paths": ["apps/api/tsconfig.build.json"],
+    "command": ["node", "--test", "scripts/api-build-test-files.test.mjs"]
+  }
+}

@@ -2,7 +2,10 @@ import { randomUUID } from "node:crypto"
 import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 import { agentConnections, oauthClient } from "../db/schema.js"
-import type { CoverageCase, CoverageTools } from "./coverage-helpers.js"
+import type {
+  CoverageCase,
+  CoverageTools,
+} from "./coverage-helpers.test-support.js"
 
 export function connectionsCases({
   db,
