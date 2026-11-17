@@ -4,14 +4,9 @@ import { Button } from "@workspace/ui/components/button"
 import { StageIcon } from "@workspace/ui/components/stage-icon"
 import { cn } from "@workspace/ui/lib/utils"
 
-import type { JobPriority, JobStage, JobView } from "@workspace/domain"
+import type { JobStage, JobView } from "@workspace/domain"
 
-import {
-  companyInitials,
-  listPhrase,
-  monthDay,
-  priorityLabel,
-} from "./apply-stages.ts"
+import { companyInitials, listPhrase, monthDay } from "./apply-stages.ts"
 import { FAINT_TEXT } from "./apply-tone.ts"
 import { useChosenTimeZone } from "./apply-time-zone.ts"
 
@@ -22,37 +17,6 @@ function interviewTag(job: JobView, now: Date, zone: string): string | null {
   const wait = new Date(job.interviewAt).getTime() - now.getTime()
   if (wait < 0 || wait >= WEEKDAY_WINDOW_MS) return null
   return listPhrase(job, now, zone)
-}
-
-const bars = [
-  { x: 0, height: 4 },
-  { x: 4.5, height: 7 },
-  { x: 9, height: 10 },
-]
-
-export function PriorityBox({ level }: { level: JobPriority }) {
-  const filled = level === "low" ? 1 : level === "high" ? 3 : 2
-  return (
-    <svg
-      data-slot="priority-bars"
-      viewBox="0 0 12 10"
-      role="img"
-      aria-label={priorityLabel(level)}
-      className="size-[22px] shrink-0 rounded-[6px] border border-border px-1 py-[5px]"
-    >
-      {bars.map((bar, index) => (
-        <rect
-          key={bar.x}
-          x={bar.x}
-          y={10 - bar.height}
-          width="2.5"
-          height={bar.height}
-          rx="1"
-          className={index < filled ? "fill-muted-foreground" : "fill-input"}
-        />
-      ))}
-    </svg>
-  )
 }
 
 export function JobCard({ job }: { job: JobView }) {
@@ -78,21 +42,25 @@ export function JobCard({ job }: { job: JobView }) {
           {job.title}
         </span>
       </span>
-      <span className="mt-2.5 flex flex-wrap items-center gap-1">
-        <PriorityBox level={job.priority} />
-        {interview ? (
-          <span className="inline-flex h-[22px] items-center gap-1 rounded-[6px] border border-border px-[7px] text-[11.5px] font-medium">
-            <Calendar className="size-[11px] text-chart-3" aria-hidden />
-            {interview}
-          </span>
-        ) : null}
-        {job.location ? (
-          <span className="inline-flex h-[22px] min-w-0 items-center gap-1 rounded-[6px] border border-border px-[7px] text-[11.5px] text-muted-foreground">
-            <MapPin className="size-[11px] shrink-0 text-chart-1" aria-hidden />
-            <span className="truncate">{job.location}</span>
-          </span>
-        ) : null}
-      </span>
+      {interview || job.location ? (
+        <span className="mt-2.5 flex flex-wrap items-center gap-1">
+          {interview ? (
+            <span className="inline-flex h-[22px] items-center gap-1 rounded-[6px] border border-border px-[7px] text-[11.5px] font-medium">
+              <Calendar className="size-[11px] text-chart-3" aria-hidden />
+              {interview}
+            </span>
+          ) : null}
+          {job.location ? (
+            <span className="inline-flex h-[22px] min-w-0 items-center gap-1 rounded-[6px] border border-border px-[7px] text-[11.5px] text-muted-foreground">
+              <MapPin
+                className="size-[11px] shrink-0 text-chart-1"
+                aria-hidden
+              />
+              <span className="truncate">{job.location}</span>
+            </span>
+          ) : null}
+        </span>
+      ) : null}
       <span className="mt-2.5 text-xs text-muted-foreground">
         Created{" "}
         <time dateTime={job.createdAt}>
