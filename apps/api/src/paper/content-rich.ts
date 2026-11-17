@@ -7,11 +7,7 @@ import {
   type NativeWriter,
   type RichPaperDocument,
 } from "@workspace/domain"
-import {
-  borrowFlowDocument,
-  materializeStored,
-  writeCoachFlow,
-} from "@workspace/paper-crdt"
+import { materializeStored, writeStoredYDoc } from "@workspace/paper-crdt"
 import { CommandError } from "../registry/errors.js"
 import { sameDocumentIdentity, validatedStored } from "./content-document.js"
 import type { Live, PaperRow } from "./content-types.js"
@@ -55,17 +51,7 @@ export function richContent(row: PaperRow, entry: Live, writer: NativeWriter) {
     },
     write(target: RichPaperDocument) {
       sameDocumentIdentity(document, target)
-      const borrowed = borrowFlowDocument(entry.yDoc, document.kind)
-      try {
-        const {
-          version: _version,
-          schemaRevision: _schemaRevision,
-          ...flow
-        } = target
-        return writeCoachFlow(borrowed.binding, flow)
-      } finally {
-        borrowed.release()
-      }
+      return writeStoredYDoc(entry.yDoc, target)
     },
   }
 }

@@ -1,4 +1,9 @@
-import { ERROR_CODES, NATIVE_WRITER, personActor } from "@workspace/domain"
+import {
+  ERROR_CODES,
+  NATIVE_WRITER,
+  RICH_NATIVE_WRITER,
+  personActor,
+} from "@workspace/domain"
 import type { ZodType } from "zod"
 import { describe, expect, it } from "vitest"
 
@@ -168,7 +173,34 @@ describe("every command runs in a transaction unless it declares none", () => {
                       requiredCapabilities: ["structured-prose", "underline"],
                     },
                   }
-                : sampleInput(schema)
+                : name === "paper.editRich"
+                  ? {
+                      docId: UUID,
+                      writer: RICH_NATIVE_WRITER,
+                      basis: {
+                        provenance: {
+                          documentVersion: 4,
+                          schemaRevision: 2,
+                          writerProtocol: 1,
+                          profile: "private-layout-3",
+                          requiredCapabilities: RICH_NATIVE_WRITER.capabilities,
+                        },
+                        epoch: 1,
+                        revision: 0,
+                        digest: "a".repeat(64),
+                      },
+                      edits: [
+                        {
+                          op: "replaceText",
+                          blockId: "intro",
+                          from: 0,
+                          to: 1,
+                          before: "A",
+                          text: "B",
+                        },
+                      ],
+                    }
+                  : sampleInput(schema)
           const parsed = schema.safeParse(input)
           if (!parsed.success) {
             throw new Error(`${name} rejected the sample input`)

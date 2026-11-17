@@ -29,6 +29,7 @@ import { getDb, insideTransaction } from "../db/context.js"
 import { files, paperDocs, paperShares } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
+import type { RowBasis } from "../registry/frozen-review.js"
 import { admitDocument } from "./native-admission.js"
 import { listPackagePapers } from "./package-list.js"
 import {
@@ -67,6 +68,22 @@ function iso(value: Date) {
 }
 
 export { toPaper, tryReadStoredPaper }
+
+export const richEditBasis: RowBasis = {
+  table: paperDocs,
+  key: [
+    { column: paperDocs.id, source: "candidate", field: "docId" },
+    { column: paperDocs.userId, source: "candidate", field: "owner" },
+    { column: paperDocs.crdtEpoch, source: "candidate", field: "epoch" },
+  ],
+  compared: [
+    {
+      column: paperDocs.contentVersion,
+      source: "candidate",
+      field: "revision",
+    },
+  ],
+}
 
 function documentNotFound(): never {
   throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")

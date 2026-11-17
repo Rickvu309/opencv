@@ -248,7 +248,10 @@ function classified() {
       writes.set(selected.name, writesActivity(selected.activity, sf))
     }
   }
-  for (const file of filesNamed(apiSrc, "package-start.ts")) {
+  for (const file of [
+    ...filesNamed(apiSrc, "package-start.ts"),
+    ...filesNamed(apiSrc, "rich-coach.ts"),
+  ]) {
     const sf = parse(file)
     for (const selected of selectedCommands(sf, "addReviewedCommand")) {
       if (writes.has(selected.name))

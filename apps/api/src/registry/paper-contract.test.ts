@@ -8,13 +8,16 @@ import {
   parseUserId,
   personActor,
   NATIVE_WRITER,
+  RICH_NATIVE_WRITER,
+  paperPhotoRef,
+  richReadOutputSchema,
   nativePaperDocumentSchema,
   nativeProvenance,
 } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"
-import { seedYDoc } from "@workspace/paper-crdt"
+import { seedStoredYDoc, seedYDoc } from "@workspace/paper-crdt"
 
 import { withDatabase } from "../db/context.js"
 import { user, paperDocs } from "../db/schema.js"
@@ -23,6 +26,7 @@ import { createMigratedTestDb } from "../test/harness.js"
 import { idOf } from "./coverage-helpers.test-support.js"
 import { installRegistry } from "./install.js"
 import { seedCoachActor } from "../test/coach-turn.js"
+import { richPaper } from "../test/rich-paper.js"
 
 async function seed(
   userId: string,
@@ -263,6 +267,41 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
         update: "",
         stateVector: "",
       })
+
+      for (const kind of ["cv", "letter"] as const) {
+        const rich = richPaper(kind, paperPhotoRef(photo.id))
+        const richId = idOf(await run("paper.create", { kind }))
+        await db
+          .update(paperDocs)
+          .set({
+            crdtEpoch: 1,
+            crdtBase: Buffer.from(seedStoredYDoc(rich)),
+            crdtDocument: rich,
+          })
+          .where(eq(paperDocs.id, richId))
+        const richRead = richReadOutputSchema.parse(
+          await read("paper.readRich", {
+            docId: richId,
+            writer: RICH_NATIVE_WRITER,
+            blockIds: ["intro"],
+          })
+        )
+        await run("paper.editRich", {
+          docId: richId,
+          writer: RICH_NATIVE_WRITER,
+          basis: richRead.basis,
+          edits: [
+            {
+              op: "formatText",
+              blockId: "intro",
+              from: 0,
+              to: 4,
+              before: "Việt",
+              marks: { italic: true },
+            },
+          ],
+        })
+      }
 
       expect([...seen].sort()).toEqual(
         [...Object.keys(paperContract), ...Object.keys(paperQueries)].sort()

@@ -96,7 +96,7 @@ export function readFlow(binding: FlowBinding): FlowDocument {
   }
 }
 
-export function writeCoachFlow(binding: FlowBinding, document: FlowDocument) {
+function writeCoachFlow(binding: FlowBinding, document: FlowDocument) {
   const validated = flowDocumentSchema.parse(document)
   if (validated.kind !== binding.kind) throw new Error("Document kind changed")
   const node = nodeOf(validated)
@@ -164,6 +164,9 @@ export function borrowFlowDocument(doc: Y.Doc, kind: "cv" | "letter") {
     readFlow(binding)
     return {
       binding,
+      write(document: FlowDocument) {
+        return writeCoachFlow(binding, document)
+      },
       release() {
         if (!owned.delete(binding)) return
         view._tiptapEditor.destroy()

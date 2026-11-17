@@ -9,6 +9,28 @@ import { detectPhotoApplyRounding } from "./lib/paper-photo-guard.mjs"
 import { clean, mistakes, roundTwo } from "./fixtures/paper-presentation.mjs"
 
 const root = path.resolve(fileURLToPath(new URL("..", import.meta.url)))
+test("rich storage writes return bytes while formatting bindings stay private", () => {
+  const storage = "packages/paper-crdt/src/stored-document.ts"
+  assert.deepEqual(
+    detect(
+      'import { borrowFlowDocument } from "./native-layout-flow.js"; export function writeStoredYDoc(): Uint8Array { return new Uint8Array() }',
+      storage
+    ),
+    []
+  )
+  assert.ok(
+    detect(
+      "export function writeStoredYDoc(): FlowBinding { return binding }",
+      storage
+    ).includes("Rich storage writes expose only update bytes")
+  )
+  assert.ok(
+    detect(
+      'export { borrowFlowDocument, writeCoachFlow } from "./native-layout-flow.js"',
+      "packages/paper-crdt/src/index.ts"
+    ).includes("Private formatting cannot be registered or exported publicly")
+  )
+})
 test("rich document headers allow enlarged titles and actions to wrap", () => {
   const path = "apps/web/src/features/paper/design/rich-page-header.pen.css"
   const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")

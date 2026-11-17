@@ -20,7 +20,7 @@ const range = z.object({
   to: z.number().int().min(0),
   before: z.string().max(100000),
 })
-export const richTextEditSchema = z.discriminatedUnion("op", [
+const richTextEditSchema = z.discriminatedUnion("op", [
   range
     .extend({ op: z.literal("replaceText"), text: z.string().max(100000) })
     .strict(),
@@ -39,7 +39,7 @@ export const richEditInputSchema = z
     edits: z.array(richTextEditSchema).min(1).max(30),
   })
   .strict()
-export const richChangeSchema = z
+const richChangeSchema = z
   .object({
     blockId: z.string(),
     before: formatRunsSchema,

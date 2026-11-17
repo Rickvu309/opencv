@@ -15,12 +15,12 @@ import {
 } from "@workspace/domain"
 import { loadYDoc, materializeStored } from "@workspace/paper-crdt"
 import { z } from "zod"
-import { paperDocs } from "../db/schema.js"
 import { tableQuery } from "../registry/bind.js"
 import { CommandError } from "../registry/errors.js"
 import type { ReviewedCommand } from "../registry/frozen-review.js"
 import type { Registry } from "../registry/registry.js"
 import { withRichContent } from "./content-store.js"
+import { richEditBasis } from "./store.js"
 
 type Input = z.output<(typeof paperContract)["paper.editRich"]["input"]>
 type Output = z.output<(typeof paperContract)["paper.editRich"]["output"]>
@@ -72,21 +72,7 @@ const reviewed: ReviewedCommand<
   version: "rich-paper-text-1",
   candidate: candidateSchema,
   review: richReviewSchema,
-  basis: {
-    table: paperDocs,
-    key: [
-      { column: paperDocs.id, source: "candidate", field: "docId" },
-      { column: paperDocs.userId, source: "candidate", field: "owner" },
-      { column: paperDocs.crdtEpoch, source: "candidate", field: "epoch" },
-    ],
-    compared: [
-      {
-        column: paperDocs.contentVersion,
-        source: "candidate",
-        field: "revision",
-      },
-    ],
-  },
+  basis: richEditBasis,
   prepare: async (input, actor) => {
     const plan = await prepare(actor.userId, input)
     return {
