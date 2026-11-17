@@ -26,6 +26,7 @@ import {
   runContractCommand,
 } from "@/lib/contract-client.ts"
 import { useReducer, useRef } from "react"
+import { Link } from "@tanstack/react-router"
 
 import { Button } from "@workspace/ui/components/button"
 import { ToolCallCard } from "@workspace/ui/components/tool-call-card"
@@ -159,9 +160,13 @@ function DocumentActionRecord({
           </div>
         </div>
         {view.docId ? (
-          <a href={`/paper/${view.docId}`} className={RECORD_ACTION}>
+          <Link
+            to="/paper/$docId"
+            params={{ docId: view.docId }}
+            className={RECORD_ACTION}
+          >
             Open
-          </a>
+          </Link>
         ) : null}
         {!undone && canUndo && view.canUndo ? (
           <Button

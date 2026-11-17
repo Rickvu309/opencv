@@ -1,10 +1,16 @@
 import { QueryClientProvider } from "@tanstack/react-query"
-import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { createQueryClient } from "@/lib/query-client.ts"
-import { jsonOk, pathOf } from "@/test/mock-http.ts"
+import { jsonError, jsonOk, pathOf } from "@/test/mock-http.ts"
 import {
   INBOX_THREADS,
   LOCAL_DETAIL,
@@ -12,6 +18,8 @@ import {
 } from "@/test/inbox-fixtures.ts"
 
 import { InboxPage } from "./inbox-page.tsx"
+import { inboxReducer } from "./inbox-state.ts"
+import { EXAMPLE_MAIL_BANNER, GMAIL_UNAVAILABLE_COPY } from "./inbox-parts.tsx"
 
 afterEach(() => {
   cleanup()
@@ -26,8 +34,32 @@ function renderPage() {
   )
 }
 
+describe("inbox explore", () => {
+  it("starts an example explore and clears it when the explore fails", () => {
+    const start = {
+      openId: null,
+      view: "inbox" as const,
+      scanning: null,
+      skipping: false,
+    }
+    const started = inboxReducer(start, { type: "explore_started" })
+    expect(started.skipping).toBe(true)
+    expect(started.scanning).toEqual({
+      emails: null,
+      companies: null,
+      names: [],
+    })
+    const found = inboxReducer(started, {
+      type: "scan_found",
+      progress: { emails: 1, companies: 1, names: ["Regional bank"] },
+    })
+    const failed = inboxReducer(found, { type: "explore_failed" })
+    expect(failed).toEqual(start)
+  })
+})
+
 describe("inbox page", () => {
-  it("skips without scanning and then offers Scan", async () => {
+  it("skips without scanning and then offers an example inbox", async () => {
     let skipped = false
     const posts: string[] = []
     vi.stubGlobal(
@@ -60,11 +92,10 @@ describe("inbox page", () => {
     ).toBeInTheDocument()
     await userEvent.click(screen.getByRole("button", { name: "Skip for now" }))
     expect(await screen.findByText("No job emails yet")).toBeInTheDocument()
+    expect(screen.getByText(GMAIL_UNAVAILABLE_COPY)).toBeInTheDocument()
     expect(
-      screen.getByText(
-        "Gmail is not connected on this server. Scan shows example mail, not yours."
-      )
-    ).toBeInTheDocument()
+      screen.getByRole("button", { name: "View example inbox" })
+    ).toHaveAttribute("data-variant", "outline")
     expect(
       screen.getAllByRole("heading", { level: 1, name: "Inbox" })
     ).toHaveLength(1)
@@ -73,7 +104,7 @@ describe("inbox page", () => {
     expect(posts).toEqual(["/api/commands/inbox.skip"])
   })
 
-  it("shows example mail when Scan runs with no Gmail", async () => {
+  it("shows example mail from View example inbox when Gmail cannot connect", async () => {
     let scanned = false
     vi.stubGlobal(
       "fetch",
@@ -100,10 +131,20 @@ describe("inbox page", () => {
       }
     )
     renderPage()
-    await userEvent.click(await screen.findByRole("button", { name: "Scan" }))
-    expect(await screen.findByRole("status")).toHaveTextContent(
-      "Gmail is not connected. These are examples, not your mail."
+    await userEvent.click(
+      await screen.findByRole("button", { name: "View example inbox" })
     )
+    const banner = await screen.findByRole("status")
+    expect(banner).toHaveTextContent(EXAMPLE_MAIL_BANNER)
+    expect(screen.queryByText(GMAIL_UNAVAILABLE_COPY)).toBeNull()
+    const pane = document.querySelector('[data-pen-section="List pane"]')
+    expect(pane?.contains(banner)).toBe(true)
+    const header = pane?.querySelector("header")
+    expect(
+      header &&
+        header.compareDocumentPosition(banner) &
+          Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy()
     expect(
       screen.getByRole("button", {
         name: /Business Analyst, Regional bank/,
@@ -136,6 +177,19 @@ describe("inbox page", () => {
     expect(await screen.findByText("4 unread")).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Snooze" })).toBeNull()
     expect(paths.filter((path) => path.startsWith("/api/inbox/"))).toEqual([])
+    await userEvent.click(
+      screen.getByRole("button", {
+        name: /Business Analyst, Regional bank/,
+      })
+    )
+    const reader = await screen.findByRole("region", { name: "Reading pane" })
+    expect(within(reader).queryByRole("status")).toBeNull()
+    expect(screen.getAllByRole("status")).toHaveLength(1)
+    expect(
+      document.querySelector(
+        '[data-pen-section="List pane"] [data-slot="inbox-example-banner"]'
+      )
+    ).toHaveTextContent(EXAMPLE_MAIL_BANNER)
   })
 
   it("opens a row into the reader with Back to inbox when narrow", async () => {
@@ -172,6 +226,11 @@ describe("inbox page", () => {
     expect(
       await screen.findByRole("button", { name: "Back to inbox" })
     ).toBeInTheDocument()
+    const reader = screen.getByRole("region", { name: "Reading pane" })
+    expect(within(reader).getByRole("status")).toHaveTextContent(
+      EXAMPLE_MAIL_BANNER
+    )
+    expect(screen.getAllByRole("status")).toHaveLength(1)
     await waitFor(() => {
       expect(
         screen.queryByRole("button", { name: /Associate PM, Local startup/ })
@@ -372,5 +431,123 @@ describe("inbox page", () => {
       expect(count("/api/inbox")).toBe(2)
       expect(count(threadPath)).toBe(2)
     })
+  })
+
+  it("keeps Scan when a connected inbox is empty", async () => {
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      if (pathOf(input) === "/api/inbox") {
+        return jsonOk({ connected: true, skipped: false, threads: [] })
+      }
+      return jsonOk({})
+    })
+    renderPage()
+    const scan = await screen.findByRole("button", { name: "Scan" })
+    expect(scan).toHaveAttribute("data-variant", "ghost")
+    expect(screen.queryByText(GMAIL_UNAVAILABLE_COPY)).toBeNull()
+  })
+
+  it("announces loading as a notice", async () => {
+    let release: (value: Response) => void = () => {}
+    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+      if (pathOf(input) === "/api/inbox") {
+        return new Promise<Response>((resolve) => {
+          release = resolve
+        })
+      }
+      return Promise.resolve(jsonOk({}))
+    })
+    renderPage()
+    const status = await screen.findByRole("status")
+    expect(status).toHaveTextContent("Loading inbox.")
+    expect(status.className).toContain("bg-muted/50")
+    release(jsonOk({ connected: true, skipped: true, threads: [] }))
+    expect(await screen.findByText("No job emails yet")).toBeInTheDocument()
+  })
+
+  it("refreshes a list that failed to load", async () => {
+    let fail = true
+    let reads = 0
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      const path = pathOf(input)
+      if (path === "/api/inbox") {
+        reads += 1
+        if (fail) return jsonError(500, "INTERNAL", "no")
+        return jsonOk({ connected: true, skipped: true, threads: [] })
+      }
+      return jsonOk({})
+    })
+    renderPage()
+    const alert = await screen.findByRole("alert")
+    expect(alert).toHaveTextContent("Could not load inbox.")
+    expect(alert.className).toContain("bg-muted/50")
+    fail = false
+    await userEvent.click(screen.getByRole("button", { name: "Refresh" }))
+    expect(await screen.findByText("No job emails yet")).toBeInTheDocument()
+    expect(reads).toBeGreaterThan(1)
+  })
+
+  it("refreshes a message that failed to load", async () => {
+    let fail = true
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      const path = pathOf(input)
+      if (path === "/api/inbox") {
+        return jsonOk({
+          connected: true,
+          skipped: true,
+          threads: [INBOX_THREADS[0]],
+        })
+      }
+      if (path.startsWith("/api/inbox/")) {
+        if (fail) return jsonError(500, "INTERNAL", "no")
+        return jsonOk(REGIONAL_DETAIL)
+      }
+      return jsonOk({})
+    })
+    renderPage()
+    await userEvent.click(
+      await screen.findByRole("button", {
+        name: /Business Analyst, Regional bank/,
+      })
+    )
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Could not load this email."
+    )
+    fail = false
+    await userEvent.click(screen.getByRole("button", { name: "Refresh" }))
+    expect(
+      await screen.findByRole("button", { name: "Snooze" })
+    ).toBeInTheDocument()
+  })
+
+  it("refreshes snoozed mail that failed to load", async () => {
+    let fail = true
+    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
+      const path = pathOf(input)
+      if (path === "/api/inbox") {
+        return jsonOk({
+          connected: true,
+          skipped: true,
+          threads: [INBOX_THREADS[0]],
+        })
+      }
+      if (path === "/api/inbox/snoozed") {
+        if (fail) return jsonError(500, "INTERNAL", "no")
+        return jsonOk({ connected: true, skipped: true, threads: [] })
+      }
+      return jsonOk({})
+    })
+    renderPage()
+    await userEvent.click(
+      await screen.findByRole("button", { name: "Snoozed" })
+    )
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Could not load snoozed emails."
+    )
+    fail = false
+    await userEvent.click(screen.getByRole("button", { name: "Refresh" }))
+    await waitFor(() => {
+      expect(screen.queryByRole("alert")).toBeNull()
+    })
+    expect(screen.getByText("No snoozed emails.")).toBeInTheDocument()
   })
 })

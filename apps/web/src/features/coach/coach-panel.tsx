@@ -7,6 +7,7 @@ import "./design/coach-panel.pen.css"
 import "./coach-panel-sheet.css"
 
 export type CoachPanelMode = "dock" | "side" | "full"
+export type CoachPresentation = "page" | "compact"
 
 type CoachPanelProps = {
   title: string
@@ -15,7 +16,7 @@ type CoachPanelProps = {
   onMinimize: () => void
   onExpand: () => void
   onClose: () => void
-  children: (controls: ReactNode) => ReactNode
+  children: (controls: ReactNode, presentation: CoachPresentation) => ReactNode
 }
 
 export function CoachPanel({
@@ -70,7 +71,8 @@ export function CoachPanel({
           >
             <X />
           </Button>
-        </>
+        </>,
+        mode === "full" ? "page" : "compact"
       )}
     </section>
   )

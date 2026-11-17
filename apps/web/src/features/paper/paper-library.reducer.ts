@@ -23,6 +23,7 @@ export type LibraryState = {
   renameError: string | null
   jobs: JobView[]
   jobsError: string | null
+  jobsLoading: boolean
   printTarget: PaperView | null
   printNonce: number
   link: string
@@ -58,6 +59,7 @@ export const initialLibrary: LibraryState = {
   renameError: null,
   jobs: [],
   jobsError: null,
+  jobsLoading: false,
   printTarget: null,
   printNonce: 0,
   link: "",
@@ -95,12 +97,14 @@ export function libraryReducer(
       return {
         ...state,
         mode: { type: "link", doc: action.doc },
+        jobs: [],
         jobsError: null,
+        jobsLoading: true,
       }
     case "jobs_loaded":
-      return { ...state, jobs: action.jobs }
+      return { ...state, jobs: action.jobs, jobsLoading: false }
     case "jobs_failed":
-      return { ...state, jobsError: action.message }
+      return { ...state, jobsError: action.message, jobsLoading: false }
     case "import_started":
       return {
         ...state,

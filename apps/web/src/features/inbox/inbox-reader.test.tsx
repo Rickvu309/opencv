@@ -1,9 +1,11 @@
 import { QueryClientProvider } from "@tanstack/react-query"
-import { act, cleanup, render, screen } from "@testing-library/react"
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { createQueryClient } from "@/lib/query-client.ts"
+import { Toaster } from "@workspace/ui/components/sonner"
+
 import { jsonOk, pathOf } from "@/test/mock-http.ts"
 import {
   INBOX_NOW,
@@ -13,6 +15,12 @@ import {
 
 import { initialReaderState, readerReducer } from "./inbox-reader.reducer.ts"
 import { InboxReader } from "./inbox-reader.tsx"
+import {
+  ACTION_FAILED,
+  INBOX_MORE_REASON,
+  NO_GMAIL_LINK,
+  UNAVAILABLE_ACTION,
+} from "./inbox-parts.tsx"
 
 afterEach(() => {
   cleanup()
@@ -55,7 +63,7 @@ function renderReader(
 }
 
 describe("inbox reader header", () => {
-  it("is the kit header with the counter, the actions and an overflow menu", () => {
+  it("is the kit header with the counter, the actions and an overflow menu", async () => {
     renderReader(LOCAL_DETAIL)
     const header = document.querySelector('[data-slot="page-header"]')
     expect(header).not.toBeNull()
@@ -66,10 +74,85 @@ describe("inbox reader header", () => {
       expect(screen.getByRole("button", { name })).toBeInTheDocument()
     }
     expect(screen.getByRole("button", { name: "Previous" })).toBeDisabled()
+    const more = screen.getByRole("button", { name: "More" })
+    expect(more).not.toBeDisabled()
+    expect(more).toHaveAttribute("aria-disabled", "true")
+    expect(more).toHaveAccessibleDescription(INBOX_MORE_REASON)
+    expect(more).toHaveAttribute("aria-describedby")
+    expect(more).toHaveAttribute("data-slot", "page-header-action")
+    expect(more.className).toContain(UNAVAILABLE_ACTION)
+    expect(more.className).toContain("active:scale-100")
+    expect(header?.querySelector(".sr-only")).toHaveTextContent(
+      INBOX_MORE_REASON
+    )
+    expect(
+      screen.queryByText("More has no other actions for this email.")
+    ).toBeNull()
+    expect(
+      document.querySelector('[data-slot="page-header-meta"]')
+    ).toHaveClass("tabular-nums")
+    screen.getByRole("button", { name: "Done" }).focus()
+    await userEvent.tab()
+    expect(screen.getByRole("button", { name: "Snooze" })).toHaveFocus()
+    await userEvent.tab()
+    expect(more).toHaveFocus()
+    expect(
+      await screen.findByText(INBOX_MORE_REASON, {
+        selector: "[data-slot='tooltip-content']",
+      })
+    ).toBeInTheDocument()
+    expect(
+      screen.getAllByText(INBOX_MORE_REASON, {
+        selector: "[data-slot='tooltip-content']",
+      })
+    ).toHaveLength(1)
+    const gmail = screen.getByRole("button", { name: "Open in Gmail" })
+    expect(gmail).toHaveAttribute("aria-disabled", "true")
+    expect(gmail).not.toBeDisabled()
+    expect(gmail.className).toContain(UNAVAILABLE_ACTION)
+    expect(gmail).toHaveAccessibleDescription(NO_GMAIL_LINK)
+    await userEvent.hover(gmail)
+    expect(
+      await screen.findByText(NO_GMAIL_LINK, {
+        selector: "[data-slot='tooltip-content']",
+      })
+    ).toBeInTheDocument()
     expect(
       screen.getByRole("button", { name: "More actions" })
     ).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Back to inbox" })).toBeNull()
+  })
+
+  it("keeps one More control and one reason when the phone overflow opens", async () => {
+    const posts = postsOf()
+    renderReader(LOCAL_DETAIL)
+    await userEvent.click(screen.getByRole("button", { name: "More actions" }))
+    expect(await screen.findByRole("menu")).toBeInTheDocument()
+    expect(screen.getAllByRole("button", { name: "More" })).toHaveLength(1)
+    expect(screen.queryByRole("menuitem", { name: "More" })).toBeNull()
+    await userEvent.keyboard("{Escape}")
+    const more = screen.getByRole("button", { name: "More" })
+    const gmail = screen.getByRole("button", { name: "Open in Gmail" })
+    for (const [control, reason] of [
+      [more, INBOX_MORE_REASON],
+      [gmail, NO_GMAIL_LINK],
+    ] as const) {
+      const description = control.getAttribute("aria-describedby")
+      expect(description).not.toBeNull()
+      expect(document.getElementById(description ?? "")).toHaveClass("sr-only")
+      expect(control).toHaveAccessibleDescription(reason)
+      control.focus()
+      expect(control).toHaveFocus()
+      await userEvent.keyboard("{Enter} ")
+      await userEvent.click(control)
+    }
+    expect(posts).toHaveLength(0)
+    expect(
+      document.querySelectorAll(
+        `#${CSS.escape(more.getAttribute("aria-describedby") ?? "")}`
+      )
+    ).toHaveLength(1)
+    expect(screen.queryByRole("menuitem", { name: "More" })).toBeNull()
   })
 
   it("makes the subject the page heading and shows a back link when narrow", async () => {
@@ -234,9 +317,9 @@ describe("inbox reader", () => {
   it("does not send on first paint and shows the draft with its time chips", async () => {
     const posts = postsOf()
     renderReader(REGIONAL_DETAIL)
-    expect(screen.getByRole("textbox", { name: "Reply" })).toHaveValue(
-      REGIONAL_DETAIL.draft!.body
-    )
+    const reply = screen.getByRole("textbox", { name: "Reply" })
+    expect(reply).toHaveValue(REGIONAL_DETAIL.draft!.body)
+    expect(reply).toHaveClass("text-base", "md:text-sm")
     expect(screen.getAllByText("Hanh Tran")).toHaveLength(2)
     expect(screen.getByRole("button", { name: "Thu 14:30" })).toHaveAttribute(
       "aria-pressed",
@@ -277,6 +360,90 @@ describe("inbox reader", () => {
     })
     expect(reply).toBeEnabled()
     expect(reply).toHaveValue("")
+  })
+
+  it("does not mark a rejected draft save as saved", async () => {
+    let started = false
+    let finish: (response: Response) => void = () => {
+      throw new Error("save not started")
+    }
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (
+          pathOf(input) === "/api/commands/inbox.updateDraft" &&
+          (init?.method ?? "GET") === "POST"
+        ) {
+          started = true
+          return new Promise<Response>((resolve) => {
+            finish = resolve
+          })
+        }
+        return jsonOk({})
+      }
+    )
+    const client = createQueryClient()
+    const view = renderReader(REGIONAL_DETAIL, client)
+    const reply = screen.getByRole("textbox", { name: "Reply" })
+    await userEvent.clear(reply)
+    await userEvent.type(reply, "Unsaved reply.")
+    await userEvent.tab()
+    await waitFor(() => expect(started).toBe(true))
+    await act(async () => {
+      finish(
+        Response.json(
+          {
+            ok: false,
+            error: { code: "INTERNAL_ERROR", message: "Could not save." },
+          },
+          { status: 500 }
+        )
+      )
+    })
+    view.rerender(
+      <QueryClientProvider client={client}>
+        <InboxReader
+          detail={{
+            ...REGIONAL_DETAIL,
+            draft: { ...REGIONAL_DETAIL.draft!, body: "Server copy." },
+          }}
+          index={1}
+          count={6}
+          narrow={false}
+          now={INBOX_NOW}
+          onBack={vi.fn()}
+          onPrevious={vi.fn()}
+          onNext={vi.fn()}
+        />
+      </QueryClientProvider>
+    )
+    expect(reply).toHaveValue("Unsaved reply.")
+  })
+
+  it("says an action failed instead of asking for an inbox refresh", async () => {
+    vi.stubGlobal("fetch", async () => {
+      throw new TypeError("offline")
+    })
+    render(
+      <QueryClientProvider client={createQueryClient()}>
+        <Toaster />
+        <InboxReader
+          detail={REGIONAL_DETAIL}
+          index={1}
+          count={6}
+          narrow={false}
+          now={INBOX_NOW}
+          onBack={vi.fn()}
+          onPrevious={vi.fn()}
+          onNext={vi.fn()}
+        />
+      </QueryClientProvider>
+    )
+    await userEvent.click(screen.getByRole("button", { name: "Send" }))
+    expect(await screen.findByText(ACTION_FAILED)).toBeInTheDocument()
+    expect(
+      screen.queryByText("Could not load inbox. Refresh the page.")
+    ).toBeNull()
   })
 
   it("keeps the reply available when sending fails", async () => {
@@ -329,9 +496,11 @@ describe("inbox reader", () => {
     await userEvent.click(
       screen.getByRole("button", { name: "Suggest another time" })
     )
-    expect(
-      await screen.findByText("You've reached today's Free limit.")
-    ).toBeInTheDocument()
+    const notice = await screen.findByRole("status")
+    expect(notice).toHaveTextContent("You've reached today's Free limit.")
+    expect(notice).toHaveAttribute("data-slot", "inbox-cap-notice")
+    expect(notice.className).toContain("border")
+    expect(notice.className).toContain("bg-muted/50")
     expect(
       screen.getByText(
         "You've reached today's Free limit. Resets at 7:00. Pro has unlimited Coach chats."

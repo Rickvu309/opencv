@@ -16,11 +16,30 @@ import type { ChecklistItem } from "./apply-api.ts"
 import { railStageLabel } from "./apply-detail-labels.ts"
 import { monthDay, stageLabel } from "./apply-stages.ts"
 import { FAINT_TEXT } from "./apply-tone.ts"
+import { useChosenTimeZone } from "./apply-time-zone.ts"
 
 export const TITLE_TEXT = "text-foreground/91"
 
 export const RAIL_ROW =
   "w-full justify-start gap-[9px] rounded-[6px] px-2 text-[13px] font-normal text-foreground hover:bg-secondary aria-expanded:bg-secondary dark:hover:bg-secondary"
+
+export const RAIL_POPOVER =
+  "w-[270px] gap-0.5 rounded-[10px] p-1.5 shadow-[0_2px_4px_rgb(0_0_0/0.06),0_24px_60px_rgb(0_0_0/0.14)] ring-foreground/6"
+
+export const RAIL_PICKER_ROW =
+  "w-full justify-start gap-[9px] rounded-[6px] px-2 text-[12.5px] font-normal text-foreground hover:bg-secondary"
+
+export function RailLabel({
+  children,
+  empty,
+}: {
+  children: ReactNode
+  empty?: boolean
+}) {
+  return (
+    <span className={cn("truncate", empty && FAINT_TEXT.card)}>{children}</span>
+  )
+}
 
 export function PriorityMark({ level }: { level: JobPriority }) {
   const filled = level === "low" ? 1 : level === "high" ? 3 : 2
@@ -191,6 +210,7 @@ function ActivityIcon({ row }: { row: ActivityFeedRow }) {
 }
 
 export function ActivityItem({ row }: { row: ActivityFeedRow }) {
+  const zone = useChosenTimeZone()
   return (
     <li
       data-slot="activity-item"
@@ -199,7 +219,7 @@ export function ActivityItem({ row }: { row: ActivityFeedRow }) {
       <ActivityIcon row={row} />
       <span>{activityText(row)}</span>
       <time dateTime={row.createdAt} className={FAINT_TEXT.card}>
-        {monthDay(new Date(row.createdAt))}
+        {monthDay(new Date(row.createdAt), zone)}
       </time>
     </li>
   )

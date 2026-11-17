@@ -95,7 +95,7 @@ export function ComingSoonPage({
             {secondary ? (
               <Link
                 to={secondary.to}
-                className="inline-flex items-center gap-1.5 text-[13.5px] font-medium text-muted-foreground hover:text-foreground"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-md px-3 text-[13.5px] font-medium text-muted-foreground hover:text-foreground md:min-h-6 md:px-2"
               >
                 {secondary.label}
                 <ArrowRight className="size-[13px]" aria-hidden="true" />

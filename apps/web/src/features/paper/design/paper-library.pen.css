@@ -1,3 +1,17 @@
+[data-pen-surface="paper"]
+  [data-slot="paper-library-search"]
+  [data-slot="search-input"] {
+  height: 44px;
+}
+
+[data-pen-surface="paper"]
+  [data-slot="paper-library-search"]
+  [data-slot="search-input"]
+  button {
+  width: 44px;
+  height: 44px;
+}
+
 @media (min-width: 768px) {
   [data-pen-surface="paper"][data-slot="paper-library"] {
     gap: 28px;
@@ -18,8 +32,26 @@
   }
   [data-pen-surface="paper"]
     [data-slot="paper-library-search"]
-    [data-slot="input"] {
+    [data-slot="search-input"] {
     width: 240px;
+    height: 32px;
     border-radius: 8px;
+  }
+  [data-pen-surface="paper"]
+    [data-slot="paper-library-search"]
+    [data-slot="search-input"]
+    svg {
+    width: 14px;
+    height: 14px;
+  }
+  [data-pen-surface="paper"]
+    [data-slot="paper-library-search"]
+    [data-slot="search-input"]
+    button {
+    width: 24px;
+    height: 24px;
+  }
+  [data-pen-surface="paper"] [data-slot="paper-library-search"] input {
+    font-size: 12.5px;
   }
 }

@@ -1,4 +1,23 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+
+vi.mock("@tanstack/react-router", () => ({
+  Link: ({
+    params,
+    className,
+    children,
+  }: {
+    params?: { docId?: string }
+    className?: string
+    children?: unknown
+  }) => (
+    <a
+      href={params?.docId ? `/paper/${params.docId}` : ""}
+      className={className}
+    >
+      {children as never}
+    </a>
+  ),
+}))
 import {
   cleanup,
   fireEvent,

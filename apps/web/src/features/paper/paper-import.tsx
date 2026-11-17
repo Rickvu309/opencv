@@ -36,18 +36,29 @@ export function PaperImportRow({
       <p className="text-sm text-muted-foreground">
         Drop a PDF, Word or Google Doc, or paste a LinkedIn link.
       </p>
-      <Input
-        aria-label="Paste a link"
-        placeholder="Paste a link"
-        value={link}
-        className="mt-3"
-        onChange={(event) => onLinkChange(event.target.value)}
-        onKeyDown={(event) => {
-          if (event.key !== "Enter") return
+      <form
+        className="mt-3 flex flex-wrap items-center gap-2"
+        onSubmit={(event) => {
           event.preventDefault()
           onSubmitLink()
         }}
-      />
+      >
+        <Input
+          aria-label="Paste a link"
+          placeholder="Paste a link"
+          value={link}
+          className="h-11 min-w-0 flex-1 basis-40 text-base md:h-8 md:text-sm"
+          onChange={(event) => onLinkChange(event.target.value)}
+        />
+        <Button
+          type="submit"
+          variant="primary"
+          className="h-11 shrink-0 md:h-8"
+          disabled={link.trim().length === 0}
+        >
+          Import
+        </Button>
+      </form>
       <Button
         type="button"
         variant="outline"
@@ -92,7 +103,7 @@ export function ImportProgressDialog({
   onCancel,
 }: {
   open: boolean
-  filename: string
+  filename: string | null
   onCancel: () => void
 }) {
   return (
@@ -102,25 +113,27 @@ export function ImportProgressDialog({
         if (!next) onCancel()
       }}
     >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Importing…</DialogTitle>
-        </DialogHeader>
-        <div role="status" className="flex items-center gap-3">
-          <Spinner aria-hidden />
-          <p className="truncate text-sm text-muted-foreground">{filename}</p>
-        </div>
-        <div className="flex justify-end">
-          <Button
-            className="h-11 md:h-8"
-            type="button"
-            variant="ghost"
-            onClick={onCancel}
-          >
-            Cancel
-          </Button>
-        </div>
-      </DialogContent>
+      {filename === null ? null : (
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Importing…</DialogTitle>
+          </DialogHeader>
+          <div role="status" className="flex items-center gap-3">
+            <Spinner aria-hidden />
+            <p className="truncate text-sm text-muted-foreground">{filename}</p>
+          </div>
+          <div className="flex justify-end">
+            <Button
+              className="h-11 md:h-8"
+              type="button"
+              variant="ghost"
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      )}
     </Dialog>
   )
 }
@@ -135,7 +148,7 @@ export function CantReadDialog({
   blankPending = false,
 }: {
   open: boolean
-  sentence: string
+  sentence: string | null
   onChoose: () => void
   onBlank: () => void
   onClose: () => void
@@ -149,44 +162,46 @@ export function CantReadDialog({
         if (!next) onClose()
       }}
     >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>
-            {onRetry ? "File not imported yet" : "Can't read this file"}
-          </DialogTitle>
-          <DialogDescription role="alert">{sentence}</DialogDescription>
-        </DialogHeader>
-        <div className="flex flex-wrap justify-end gap-2">
-          {onRetry ? (
+      {sentence === null ? null : (
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {onRetry ? "File not imported yet" : "Can't read this file"}
+            </DialogTitle>
+            <DialogDescription role="alert">{sentence}</DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-wrap justify-end gap-2">
+            {onRetry ? (
+              <Button
+                className="h-11 md:h-8"
+                type="button"
+                variant="ghost"
+                onClick={onChoose}
+              >
+                Choose another file
+              </Button>
+            ) : (
+              <Button
+                className="h-11 md:h-8"
+                type="button"
+                variant="ghost"
+                onClick={onBlank}
+                disabled={blankPending}
+              >
+                Start blank
+              </Button>
+            )}
             <Button
               className="h-11 md:h-8"
               type="button"
-              variant="ghost"
-              onClick={onChoose}
+              variant="primary"
+              onClick={onRetry ?? onChoose}
             >
-              Choose another file
+              {onRetry ? "Try again" : "Choose another file"}
             </Button>
-          ) : (
-            <Button
-              className="h-11 md:h-8"
-              type="button"
-              variant="ghost"
-              onClick={onBlank}
-              disabled={blankPending}
-            >
-              Start blank
-            </Button>
-          )}
-          <Button
-            className="h-11 md:h-8"
-            type="button"
-            variant="primary"
-            onClick={onRetry ?? onChoose}
-          >
-            {onRetry ? "Try again" : "Choose another file"}
-          </Button>
-        </div>
-      </DialogContent>
+          </div>
+        </DialogContent>
+      )}
     </Dialog>
   )
 }

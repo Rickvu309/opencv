@@ -22,7 +22,12 @@ export function BillingSection() {
     )
   }
   if (billing.isError || !billing.data) {
-    return <SettingsLoadError onRetry={() => void billing.refetch()} />
+    return (
+      <>
+        <SettingsTitle title="Billing" />
+        <SettingsLoadError onRetry={() => void billing.refetch()} />
+      </>
+    )
   }
 
   const data = billing.data

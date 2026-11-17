@@ -1,4 +1,10 @@
 import { CopyButton } from "@workspace/ui/components/copy-button"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleIndicator,
+  CollapsibleTrigger,
+} from "@workspace/ui/components/collapsible"
 import { agentServerUrl } from "@/lib/connections-api.ts"
 import { agentSnippets } from "./snippets.ts"
 
@@ -29,11 +35,26 @@ export function ConnectAgent() {
           >
             <div className="min-w-0">
               <p className="font-medium">{snippet.title}</p>
-              <p className="text-sm text-muted-foreground">{snippet.detail}</p>
+              <p className="max-w-[60ch] text-sm text-muted-foreground">
+                {snippet.detail}
+              </p>
+              {snippet.more ? (
+                <Collapsible className="mt-2">
+                  <CollapsibleTrigger className="inline-flex min-h-11 items-center gap-1 rounded-md text-left text-sm font-medium outline-none focus-visible:ring-3 focus-visible:ring-ring/50 md:min-h-6">
+                    {snippet.more.title}
+                    <CollapsibleIndicator className="size-3" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <p className="max-w-[60ch] pt-3 text-sm text-muted-foreground">
+                      {snippet.more.body}
+                    </p>
+                  </CollapsibleContent>
+                </Collapsible>
+              ) : null}
             </div>
             {snippet.copies.map((copy) => (
               <div key={copy.id} className="flex flex-col gap-2">
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <p className="text-sm font-medium">{copy.label}</p>
                   <CopyButton
                     className="h-11 w-full shrink-0 md:h-9 md:w-auto"
@@ -48,6 +69,9 @@ export function ConnectAgent() {
                 <pre className="overflow-x-hidden rounded-md bg-muted px-3 py-2 text-sm break-words whitespace-pre-wrap">
                   {copy.text}
                 </pre>
+                {copy.tip ? (
+                  <p className="text-sm text-muted-foreground">{copy.tip}</p>
+                ) : null}
               </div>
             ))}
           </li>

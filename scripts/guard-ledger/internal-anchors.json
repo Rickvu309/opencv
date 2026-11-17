@@ -1,0 +1,14 @@
+{
+  "id": "internal-anchors",
+  "file": "scripts/internal-anchors.test.mjs",
+  "detector": {
+    "module": "scripts/lib/internal-anchors.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "cda2c3013a9aaac3d246604b85d305772b2df300",
+    "path": "apps/web/src/features/coach/rich-receipts.tsx"
+  },
+  "reason": "Coach document names and empty-picker links kept coming back as raw anchors and reloading the app. At cda2c301 (#1336) rich-receipts.tsx linked a created document with href={`/paper/${docId}`}. The same file at HEAD uses the router Link and stays quiet. A string or template href that starts with /, or an href that names SURFACE_PATHS, fails. Strings passed into a helper such as documentHref stay quiet. Two older anchors remain on the ratchet: writing-page.tsx href=\"/paper\" and canvas-unsaved-bar.tsx href=\"/sign-in\"."
+}

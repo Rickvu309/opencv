@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router"
 import { X } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { attachmentView } from "./coach-attachment-view.ts"
@@ -29,13 +30,20 @@ export function CoachContextAttachments({
               data-kind={view.kind}
               className="flex max-w-full min-w-0 items-center rounded-md bg-secondary text-xs text-secondary-foreground"
             >
-              {view.href ? (
-                <a
-                  href={view.href}
+              {view.target.kind === "internal" ? (
+                <Link
+                  {...view.target.route}
                   title={view.title}
-                  {...(view.external
-                    ? { target: "_blank", rel: "noopener noreferrer" }
-                    : {})}
+                  className="flex min-h-11 min-w-0 items-center truncate rounded-s-md ps-2.5 pe-1 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:min-h-7"
+                >
+                  <span className="truncate">{view.label}</span>
+                </Link>
+              ) : view.target.kind === "external" ? (
+                <a
+                  href={view.target.href}
+                  title={view.title}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="flex min-h-11 min-w-0 items-center truncate rounded-s-md ps-2.5 pe-1 underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring md:min-h-7"
                 >
                   <span className="truncate">{view.label}</span>

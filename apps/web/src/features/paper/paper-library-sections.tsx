@@ -1,4 +1,5 @@
 import { useReducer, type ReactNode } from "react"
+import { Link } from "@tanstack/react-router"
 import {
   ChevronDown,
   ChevronRight,
@@ -11,9 +12,16 @@ import {
   Trash2,
   type LucideIcon,
 } from "lucide-react"
-import type { PaperFile, PaperView } from "@workspace/domain"
+import {
+  paperPlainText,
+  type PaperFile,
+  type PaperView,
+} from "@workspace/domain"
 
-import { Button } from "@workspace/ui/components/button"
+import { Button, buttonVariants } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
+
+import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 
 import {
   PaperLibraryCard,
@@ -22,6 +30,44 @@ import {
 import { fileBadge, type LibraryEntry } from "./paper-library-entries.ts"
 import type { WordDocument } from "./paper-package-library.tsx"
 import { paperEditedLabel } from "./paper-templates.ts"
+
+const PREVIEW_LINE_LIMIT = 12
+
+export function librarySheetLines(doc: PaperView): string[] {
+  const paper = doc.paper
+  if (!paper || (paper.kind !== "cv" && paper.kind !== "letter")) return []
+  const name = doc.name.trim()
+  return paperPlainText(paper)
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && line !== name)
+    .slice(0, PREVIEW_LINE_LIMIT)
+}
+
+export function PaperProofsLink() {
+  return (
+    <section
+      aria-label="Proofs"
+      data-slot="paper-library-section"
+      className="flex flex-col gap-2 md:gap-3.5"
+    >
+      <Link
+        to={SURFACE_PATHS.proofs}
+        data-slot="paper-library-section-head"
+        className={cn(
+          buttonVariants({ variant: "ghost" }),
+          "h-11 w-full justify-start gap-2 rounded-md px-0 text-sm font-semibold text-foreground hover:bg-transparent aria-expanded:bg-transparent md:h-8"
+        )}
+      >
+        <ChevronRight
+          data-slot="paper-library-section-icon"
+          className="size-[13px] text-muted-foreground"
+        />
+        Proofs
+      </Link>
+    </section>
+  )
+}
 
 export function PaperLibrarySection({
   title,
@@ -130,6 +176,7 @@ export function LibraryEntryCard({
       <PaperLibraryCard
         name={doc.name}
         meta={edited}
+        lines={librarySheetLines(doc)}
         openLabel={`${doc.name}, ${edited}`}
         onOpen={() => on.onOpen(doc.id)}
         actions={paperActions(doc, entry.word, on)}

@@ -18,6 +18,8 @@ import {
 } from "./model-step.js"
 import { toolResultFromExecute } from "./receipt.js"
 
+export const FAKE_PROPOSED_EDIT_TEXT = "I proposed one edit."
+
 export const DEMO_COACH_SCRIPT: CoachStreamPart[] = [
   { type: "text-delta", text: "I looked at Apply. " },
   {
@@ -192,7 +194,7 @@ function paperEditScript(
   if (!focus || !execute) return replay(DEMO_COACH_SCRIPT)
   const call = fakePaperEdit(focus)
   return (async function* () {
-    yield { type: "text-delta", text: "I made one edit. " } as const
+    yield { type: "text-delta", text: `${FAKE_PROPOSED_EDIT_TEXT} ` } as const
     yield {
       type: "tool-call",
       toolCallId: "call_edit",
