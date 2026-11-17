@@ -97,6 +97,7 @@ export function installFlowView(
   let active = true,
     frame = 0
   function markTableRows(document: FlowDocument, supported: boolean) {
+    let changed = false
     for (const section of document.flow.children) {
       const dom = element.querySelector<HTMLElement>(
         `[data-paper-layout=paperFlowSection][data-paper-id="${CSS.escape(section.id)}"]`
@@ -116,6 +117,7 @@ export function installFlowView(
         if (!(content instanceof HTMLElement)) continue
         const oversized =
           supported && content.getBoundingClientRect().height > height
+        if (row.dataset.paperOversizedRow !== String(oversized)) changed = true
         row.dataset.paperOversizedRow = String(oversized)
         if (oversized) {
           row.setAttribute("tabindex", "0")
@@ -131,19 +133,26 @@ export function installFlowView(
         }
       }
     }
+    return changed
   }
   function refresh() {
     if (!active) return
     const document = read(),
       support = flowPaginationSupport(document)
     element.dataset.paperPagination = String(support.supported)
-    if (element.classList.contains("paper-rich-sheet"))
-      updateBreaks(richPageLayout(element, document, support.supported))
-    markTableRows(
-      document,
-      support.supported && element.dataset.paperReflow !== "true"
-    )
-    if (element.classList.contains("paper-rich-sheet")) return
+    if (element.classList.contains("paper-rich-sheet")) {
+      let breaks = richPageLayout(element, document, support.supported)
+      if (
+        markTableRows(
+          document,
+          support.supported && element.dataset.paperReflow !== "true"
+        )
+      )
+        breaks = richPageLayout(element, document, support.supported)
+      updateBreaks(breaks)
+      return
+    }
+    markTableRows(document, support.supported)
     const breaks = new Map<string, number>()
     for (const section of document.flow.children) {
       const dom = element.querySelector<HTMLElement>(

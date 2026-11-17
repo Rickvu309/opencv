@@ -526,3 +526,67 @@ it("keeps a tall row in normal flow while the rich sheet reflows", async () => {
     frame.remove()
   }
 })
+
+it("drops blank pages once a tall row fits on a page again", async () => {
+  vi.stubGlobal("CSS", { supports: () => true, escape: (id: string) => id })
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+      disconnect() {}
+    }
+  )
+  Object.defineProperty(document, "fonts", {
+    configurable: true,
+    value: { ready: Promise.resolve() },
+  })
+  const input = flowFixture()
+  const page = input.presentation.page
+  const section = input.flow.children[0]!.page
+  const printable = (section.height - section.top - section.bottom) / 15
+  const pitch = page.height / 15 + 24
+  const host = document.createElement("div")
+  host.classList.add("paper-rich-sheet")
+  host.innerHTML =
+    '<div class="bn-block-group"><div data-paper-layout="paperFlowSection" data-paper-id="section-1"><div data-paper-wrap-slot><div data-paper-layout="paperRow" data-paper-oversized-row="true"><div></div></div></div></div></div>'
+  const row = host.querySelector<HTMLElement>('[data-paper-layout="paperRow"]')!
+  const rowContent = vi
+    .spyOn(row.firstElementChild!, "getBoundingClientRect")
+    .mockReturnValue(new DOMRect(0, 0, 300, printable * 3))
+  vi.spyOn(
+    host.querySelector<HTMLElement>(".bn-block-group")!,
+    "getBoundingClientRect"
+  ).mockImplementation(() =>
+    row.dataset.paperOversizedRow === "true"
+      ? new DOMRect(0, 0, 300, pitch * 4)
+      : new DOMRect(0, 0, 300, pitch / 2)
+  )
+  const frame = document.createElement("div")
+  Object.defineProperty(frame, "clientWidth", { value: 1400 })
+  frame.style.padding = "0px"
+  frame.append(host)
+  document.body.append(frame)
+  const view = installFlowView(
+    host,
+    () => input,
+    () => {}
+  )
+  try {
+    await new Promise(requestAnimationFrame)
+    expect(row.dataset.paperOversizedRow).toBe("true")
+    expect(host.style.minHeight).toBe(`${5 * pitch - 24}px`)
+    rowContent.mockReturnValue(new DOMRect(0, 0, 300, printable - 10))
+    view.schedule()
+    await new Promise(requestAnimationFrame)
+    expect(row.dataset.paperOversizedRow).toBe("false")
+    expect(host.style.minHeight).toBe(`${pitch - 24}px`)
+    rowContent.mockReturnValue(new DOMRect(0, 0, 300, printable * 3))
+    view.schedule()
+    await new Promise(requestAnimationFrame)
+    expect(row.dataset.paperOversizedRow).toBe("true")
+    expect(host.style.minHeight).toBe(`${5 * pitch - 24}px`)
+  } finally {
+    view.destroy()
+    frame.remove()
+  }
+})
