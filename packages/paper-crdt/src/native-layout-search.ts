@@ -260,6 +260,7 @@ export function richEditorSearch(editor: PrivateLayoutEditor) {
   const listeners = new Set<() => void>()
   subscriptions.set(view, listeners)
   let active = true
+  let scrollFrame = 0
   const snapshot = () => (active ? (key.getState(view.state) ?? empty) : empty)
   const scroll = () =>
     view.dom
@@ -271,6 +272,12 @@ export function richEditorSearch(editor: PrivateLayoutEditor) {
       view.state.tr.setMeta(key, action).setMeta("addToHistory", false)
     )
     scroll()
+    cancelAnimationFrame(scrollFrame)
+    scrollFrame = requestAnimationFrame(() => {
+      scrollFrame = requestAnimationFrame(() => {
+        if (active) scroll()
+      })
+    })
   }
   return {
     snapshot,
@@ -315,6 +322,7 @@ export function richEditorSearch(editor: PrivateLayoutEditor) {
       return matches.length
     },
     destroy() {
+      cancelAnimationFrame(scrollFrame)
       if (!active) return
       active = false
       listeners.clear()

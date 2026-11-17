@@ -1,0 +1,30 @@
+[
+  {
+    "subject": "packages/paper-crdt/src/native-layout-flow.test.ts",
+    "because": "issue #1651 replaces experimental CSS column pagination with browser-independent pagination",
+    "replacedBy": "packages/paper-crdt/src/pagination-browser-contract.test.ts",
+    "proof": {
+      "fork": "4927fd44e886484fec59f2dcb3bf47de4d8cfb56",
+      "replacedByBlob": "8fcd68c6e1aec5a15cbb273d2c7c72fd75e03a32",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 3
+  },
+  {
+    "subject": "packages/paper-crdt/src/rich-table-pagination.test.ts",
+    "because": "issue #1651 replaces experimental CSS column pagination with browser-independent pagination",
+    "replacedBy": "packages/paper-crdt/src/pagination-browser-contract.test.ts",
+    "proof": {
+      "fork": "4927fd44e886484fec59f2dcb3bf47de4d8cfb56",
+      "replacedByBlob": "8fcd68c6e1aec5a15cbb273d2c7c72fd75e03a32",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]

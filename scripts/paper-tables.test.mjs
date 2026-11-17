@@ -15,6 +15,7 @@ const files = [
   "apps/web/src/features/paper/rich-table.css",
   "packages/paper-crdt/src/native-layout-flow-mount.ts",
   "apps/web/src/features/paper/rich-table-menu.tsx",
+  "packages/paper-crdt/src/native-layout-measured-pagination.ts",
 ]
 
 test("table availability, row pagination and borders stay connected", () => {
@@ -30,8 +31,8 @@ test("table mistakes fire and clean fixtures stay quiet", () => {
     ],
     [
       files[1],
-      'node.type === "photo"',
-      'node.type === "table" || node.type === "photo"',
+      'node.type === "pageBreak"',
+      'node.type === "table" || node.type === "pageBreak"',
     ],
     [files[1], "paperRow]{break-inside:avoid", "paperRow]{break-inside:auto"],
     [files[1], ":not(.paper-table-anchor)", ":scope > div"],
@@ -121,4 +122,25 @@ test("row replacement keeps the menu host and rejects the introducing commit", (
     encoding: "utf8",
   })
   assert.ok(detect(historic, file).includes(expected))
+})
+
+test("measured rows stay atomic and oversized rows remain focusable", () => {
+  for (const [file, before, after] of [
+    [files[8], '? "row"', '? "line"'],
+    [
+      files[1],
+      'row.setAttribute("tabindex", "0")',
+      'row.removeAttribute("tabindex")',
+    ],
+  ]) {
+    const clean = read(file)
+    assert.deepEqual(detect(clean, file), [])
+    const mistake = clean.replace(before, after)
+    assert.notEqual(mistake, clean)
+    assert.ok(
+      detect(mistake, file).includes(
+        "Table rows must stay whole and inside printable pages"
+      )
+    )
+  }
 })

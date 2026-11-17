@@ -58,12 +58,6 @@ const insert = {
 describe("private section flow on the canonical editor fragment", () => {
   it("reports unsupported browsers and unqualified section or blank-page layouts", () => {
     const document = flowFixture()
-    vi.stubGlobal("CSS", undefined)
-    expect(flowPaginationSupport(document).supported).toBe(false)
-    vi.stubGlobal("CSS", {})
-    expect(flowPaginationSupport(document).supported).toBe(false)
-    vi.stubGlobal("CSS", { supports: () => false })
-    expect(flowPaginationSupport(document).supported).toBe(false)
     vi.stubGlobal("CSS", { supports: () => true })
     const section = document.flow.children[0]
     if (!section) throw new Error("Missing section")

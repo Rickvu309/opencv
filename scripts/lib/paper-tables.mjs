@@ -45,10 +45,20 @@ export function detect(text, file) {
     for (const rule of [
       "paperRow]{break-inside:avoid",
       "paper-oversized-row=true]{height:var(--paper-column-height);overflow:auto",
-      "paper-oversized-row=true]){break-before:column;break-after:column}",
+      'row.setAttribute("tabindex", "0")',
+      'row.setAttribute("role", "region")',
+      "Scroll to read all content.",
     ])
       if (!text.includes(rule))
         problems.push("Table rows must stay whole and inside printable pages")
+  }
+  if (file.endsWith("native-layout-measured-pagination.ts")) {
+    if (
+      !text.includes('block.node.type.name === "paperRow"') ||
+      !text.includes('? "row"') ||
+      !text.includes("...measuredPageBreaks(units,")
+    )
+      problems.push("Table rows must stay whole and inside printable pages")
   }
   if (file.endsWith("native-layout-schema.ts")) {
     if (!text.includes("[data-is-empty-and-focused]"))

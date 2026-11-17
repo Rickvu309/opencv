@@ -80,9 +80,6 @@ it.each([
       expect(rules).toContain(
         "paper-oversized-row=true]{height:var(--paper-column-height);overflow:auto"
       )
-      expect(rules).toContain(
-        "paper-oversized-row=true]){break-before:column;break-after:column}"
-      )
       expect(rules).not.toContain("data-paper-reflow")
       if (sheet) expect(host.hasAttribute("data-paper-reflow")).toBe(false)
       bounds.mockReturnValue(new DOMRect(0, 0, 300, printable - 10))
