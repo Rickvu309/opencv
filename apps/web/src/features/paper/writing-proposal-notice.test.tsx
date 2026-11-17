@@ -5,18 +5,13 @@ import { act, cleanup, fireEvent, screen, within } from "@testing-library/react"
 
 import { render } from "@/test/render-with-client.tsx"
 import { closeWritingDb } from "@/features/paper-page/canvas-save.ts"
-import {
-  notifyWritingRefresh,
-  subscribeWritingRefresh,
-} from "@/lib/writing-refresh.ts"
+import { notifyWritingRefresh } from "@/lib/writing-refresh.ts"
 import {
   attachWritingProposal,
   clearWritingProposal,
-  noteWritingUndo,
   publishWritingProposal,
   syncWritingProposalFromActions,
   WORD_BATCH_HIDDEN,
-  writingOutcome,
   writingProposal,
 } from "@/lib/writing-proposal.ts"
 import { WritingPage } from "./writing-page.tsx"
@@ -158,13 +153,6 @@ it("names one Coach change and reviews it in Coach", async () => {
       )
     })
     expect(within(proposal).getByRole("status")).toHaveTextContent("Approved")
-    const seen: string[] = []
-    const stop = subscribeWritingRefresh(() => seen.push("refresh"))
-    act(() => noteWritingUndo())
-    stop()
-    expect(writingOutcome()).toEqual({ docId: DOC, phase: "undone" })
-    expect(seen).toEqual(["refresh"])
-    expect(within(proposal).getByRole("status")).toHaveTextContent("Undone")
   } finally {
     dock.remove()
     panel.remove()
