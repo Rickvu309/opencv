@@ -15,11 +15,6 @@
       "opencv-source": "./src/editor.ts",
       "types": "./dist/editor.d.ts",
       "import": "./dist/editor.js"
-    },
-    "./page-viewport": {
-      "opencv-source": "./src/page-viewport.ts",
-      "types": "./dist/page-viewport.d.ts",
-      "import": "./dist/page-viewport.js"
     }
   },
   "files": [
@@ -36,6 +31,7 @@
     "@blocknote/core": "0.57.0",
     "@tiptap/pm": "3.32.2",
     "@workspace/domain": "workspace:*",
+    "@workspace/paper-viewport": "workspace:*",
     "dompurify": "3.4.18",
     "fast-diff": "1.3.0",
     "y-prosemirror": "1.3.7",

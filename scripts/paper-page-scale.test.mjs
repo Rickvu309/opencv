@@ -73,6 +73,7 @@ test("the original reflow commit fails and current Paper sources pass", () => {
       "apps/web/src/features/paper-page",
       "apps/web/src/styles",
       "packages/paper-crdt/src",
+      "packages/paper-viewport/src",
     ],
     { encoding: "utf8" }
   )
@@ -112,4 +113,36 @@ test("older Word canvas refuses responsive page geometry", () => {
     encoding: "utf8",
   })
   assert.ok(detect(historic, canvasCss).length)
+})
+
+test("shared viewport geometry preserves the lazy editor boundary", () => {
+  const canvasViewport = "apps/web/src/features/paper-page/canvas-viewport.ts"
+  const viewport = "packages/paper-viewport/src/index.ts"
+  const message = /independent of the lazy letter editor/
+  assert.match(
+    detect(
+      'import { scalePaperPage } from "@workspace/paper-crdt/page-viewport"',
+      canvasViewport
+    ).join(),
+    message
+  )
+  for (const source of [
+    'import { openRichPaperClient } from "@workspace/paper-crdt/editor"',
+    'export { openRichPaperClient } from "@workspace/paper-crdt/editor"',
+    'const editor = import("@workspace/paper-crdt/editor")',
+  ])
+    assert.match(detect(source, viewport).join(), message)
+  assert.deepEqual(
+    detect(
+      'import { scalePaperPage } from "@workspace/paper-viewport"',
+      canvasViewport
+    ),
+    []
+  )
+  for (const file of [canvasViewport, viewport])
+    assert.deepEqual(detect(readFileSync(file, "utf8"), file), [])
+  const historic = execFileSync("git", ["show", `3f8f4170:${canvasViewport}`], {
+    encoding: "utf8",
+  })
+  assert.match(detect(historic, canvasViewport).join(), message)
 })

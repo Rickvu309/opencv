@@ -35,9 +35,9 @@ export default defineConfig(({ mode }) => {
     ],
     resolve: {
       alias: {
-        "@workspace/paper-crdt/page-viewport": path.resolve(
+        "@workspace/paper-viewport": path.resolve(
           __dirname,
-          "../../packages/paper-crdt/src/page-viewport.ts"
+          "../../packages/paper-viewport/src/index.ts"
         ),
         "@workspace/paper-crdt/editor": path.resolve(
           __dirname,

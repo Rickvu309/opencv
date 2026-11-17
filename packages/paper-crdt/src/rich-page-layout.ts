@@ -1,6 +1,6 @@
 import type { FlowDocument } from "@workspace/domain/internal/paper-presentation"
 
-import { scalePaperPage } from "./page-viewport.js"
+import { scalePaperPage } from "@workspace/paper-viewport"
 
 export function richPageLayout(
   element: HTMLElement,

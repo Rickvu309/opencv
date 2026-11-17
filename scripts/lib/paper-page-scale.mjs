@@ -52,7 +52,7 @@ function cssMistake(text, physical) {
 
 export function detect(text, path = "") {
   if (
-    !/^(?:apps\/web\/src\/(?:features\/paper(?:-page)?|styles)|packages\/paper-crdt\/src)\//.test(
+    !/^(?:apps\/web\/src\/(?:features\/paper(?:-page)?|styles)|packages\/paper-(?:crdt|viewport)\/src)\//.test(
       path
     )
   )
@@ -68,6 +68,33 @@ export function detect(text, path = "") {
     true,
     ts.ScriptKind.TSX
   )
+  const eagerCanvas =
+    path === "apps/web/src/features/paper-page/canvas-viewport.ts"
+  const sharedViewport = path === "packages/paper-viewport/src/index.ts"
+  const importsEditor = (node) => {
+    if (
+      (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&
+      !node.isTypeOnly &&
+      !(ts.isImportDeclaration(node) && node.importClause?.isTypeOnly) &&
+      node.moduleSpecifier &&
+      (sharedViewport ||
+        (eagerCanvas &&
+          /^@workspace\/paper-crdt(?:\/|$)/.test(node.moduleSpecifier.text)))
+    )
+      return true
+    if (
+      sharedViewport &&
+      ts.isCallExpression(node) &&
+      (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
+        node.expression.getText(source) === "require")
+    )
+      return true
+    return ts.forEachChild(node, importsEditor) ?? false
+  }
+  if (importsEditor(source))
+    return [
+      "Shared Paper viewport geometry must stay independent of the lazy letter editor",
+    ]
   const widths = new Set(["available", "width", "pageWidth", "innerWidth"])
   const widthDependent = (node) => {
     if (ts.isIdentifier(node) && widths.has(node.text)) return true
