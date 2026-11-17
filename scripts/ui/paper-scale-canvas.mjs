@@ -36,7 +36,7 @@ export async function proveWordCanvas({ page, state, out }) {
       const css = getComputedStyle(pane)
       return (
         Math.abs(
-          Number(sheet.style.getPropertyValue("--cv-rich-page-scale")) -
+          sheet.getBoundingClientRect().width / sheet.offsetWidth -
             Math.min(
               1,
               (pane.clientWidth -
@@ -50,7 +50,7 @@ export async function proveWordCanvas({ page, state, out }) {
     const value = await canvas.evaluate((sheet) => {
       const rect = sheet.getBoundingClientRect(),
         css = getComputedStyle(sheet)
-      const scale = Number(css.getPropertyValue("--cv-rich-page-scale"))
+      const scale = rect.width / sheet.offsetWidth
       const lines = []
       const walker = document.createTreeWalker(sheet, NodeFilter.SHOW_TEXT)
       let node

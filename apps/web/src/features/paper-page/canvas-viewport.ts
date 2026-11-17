@@ -17,7 +17,7 @@ export function useCanvasScale(
         parseFloat(style.paddingLeft) -
         parseFloat(style.paddingRight)
       const geometry = scalePaperPage(816, page.offsetHeight, available)
-      page.style.setProperty("--cv-rich-page-scale", String(geometry.scale))
+      page.style.transform = `scale(${geometry.scale})`
       const viewport = page.parentElement
       if (viewport?.hasAttribute("data-paper-page-viewport")) {
         viewport.style.width = `${geometry.width}px`

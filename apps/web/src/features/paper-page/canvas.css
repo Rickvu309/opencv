@@ -31,7 +31,6 @@
   inline-size: 8.5in;
   min-block-size: 11in;
   padding: 1in;
-  transform: scale(var(--cv-rich-page-scale, 1));
   transform-origin: top left;
   border: 1px solid var(--border);
   background: var(--card);
