@@ -48,6 +48,11 @@ function slide(element: HTMLElement, from: number, timing: MotionTiming) {
   )
 }
 
+export function settleSidebar() {
+  const main = document.querySelector<HTMLElement>(SHELL_MAIN)
+  if (main) stopFollowing([main, ...fixedRiders(main)])
+}
+
 export function followSidebar(hiding: boolean, change: () => void) {
   const main = document.querySelector<HTMLElement>(SHELL_MAIN)
   const before = main ? pageLeft(main) : null

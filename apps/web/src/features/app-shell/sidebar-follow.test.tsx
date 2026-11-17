@@ -168,6 +168,24 @@ describe("the page rides with the sidebar", () => {
     expect(frame()).toHaveAttribute("data-instant", "true")
     expect(pageSlides()).toEqual([])
   })
+
+  it("stops the page slide when [ snaps the sidebar mid-expand", async () => {
+    await renderMovingShell()
+    fireEvent.keyDown(window, { key: "[" })
+    fireEvent.click(
+      document.querySelector("#app-main [data-slot=sidebar-expand]")!
+    )
+    const running = { id: "sidebar-follow", cancel: vi.fn() }
+    vi.spyOn(Element.prototype, "getAnimations").mockImplementation(function (
+      this: Element
+    ) {
+      return this === shellMain() ? [running as unknown as Animation] : []
+    })
+    fireEvent.keyDown(window, { key: "[" })
+    expect(frame()).toHaveAttribute("data-state", "collapsed")
+    expect(frame()).toHaveAttribute("data-instant", "true")
+    expect(running.cancel).toHaveBeenCalled()
+  })
 })
 
 describe("the peek leaves the way it came", () => {

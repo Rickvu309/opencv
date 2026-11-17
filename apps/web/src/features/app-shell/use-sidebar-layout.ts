@@ -20,7 +20,10 @@ import {
   writeSidebarCollapsed,
   writeSidebarWidth,
 } from "@/features/app-shell/sidebar-width.ts"
-import { followSidebar } from "@/features/app-shell/sidebar-follow.ts"
+import {
+  followSidebar,
+  settleSidebar,
+} from "@/features/app-shell/sidebar-follow.ts"
 
 export type SidebarMode = "expanded" | "dragging" | "collapsed" | "peeking"
 
@@ -105,8 +108,10 @@ export function useSidebarLayout(enabled: boolean) {
       writeSidebarCollapsed(next)
       const request = () =>
         dispatch({ type: "collapse_requested", collapsed: next, instant })
-      if (instant) request()
-      else followSidebar(next, () => flushSync(request))
+      if (instant) {
+        settleSidebar()
+        request()
+      } else followSidebar(next, () => flushSync(request))
     },
     [closeIntent, dragging]
   )
