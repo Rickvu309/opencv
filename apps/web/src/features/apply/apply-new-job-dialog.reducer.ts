@@ -45,16 +45,16 @@ export type DialogAction =
   | { type: "duplicate_found"; preview: JobPreview }
   | { type: "company_required" }
   | { type: "save_ended" }
-  | { type: "closed" }
+  | { type: "closed"; stage: JobStage }
 
-export const DIALOG_START: DialogState = {
+export const dialogStart = (stage: JobStage): DialogState => ({
   draft: {
     url: "",
     title: "",
     company: "",
     location: "",
     description: "",
-    stage: "saved",
+    stage,
     deadline: "",
   },
   preview: null,
@@ -64,7 +64,7 @@ export const DIALOG_START: DialogState = {
   descriptionError: "",
   saveError: "",
   busy: false,
-}
+})
 
 export function dialogReducer(
   state: DialogState,
@@ -156,6 +156,6 @@ export function dialogReducer(
     case "save_ended":
       return { ...state, busy: false }
     case "closed":
-      return { ...DIALOG_START, busy: state.busy }
+      return { ...dialogStart(action.stage), busy: state.busy }
   }
 }

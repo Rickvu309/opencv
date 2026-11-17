@@ -3,7 +3,7 @@ import { useReducer } from "react"
 import { useShortcut } from "@/lib/use-shortcut.ts"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
-import type { JobView } from "@workspace/domain"
+import type { JobStage, JobView } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 
@@ -36,23 +36,25 @@ import {
 
 type ApplyState = {
   dialogOpen: boolean
+  dialogStage: JobStage
   showClosed: boolean
 }
 
 type ApplyAction =
-  | { type: "dialog_opened" }
+  | { type: "dialog_opened"; stage: JobStage }
   | { type: "dialog_toggled"; open: boolean }
   | { type: "closed_toggled"; show: boolean }
 
 const initialApplyState: ApplyState = {
   dialogOpen: false,
+  dialogStage: "saved",
   showClosed: false,
 }
 
 function applyReducer(state: ApplyState, action: ApplyAction): ApplyState {
   switch (action.type) {
     case "dialog_opened":
-      return { ...state, dialogOpen: true }
+      return { ...state, dialogOpen: true, dialogStage: action.stage }
     case "dialog_toggled":
       return { ...state, dialogOpen: action.open }
     case "closed_toggled":
@@ -108,7 +110,7 @@ export function ApplyPage() {
     queryKey: jobListKey(),
     queryFn: listJobs,
   })
-  const [{ dialogOpen, showClosed }, dispatch] = useReducer(
+  const [{ dialogOpen, dialogStage, showClosed }, dispatch] = useReducer(
     applyReducer,
     initialApplyState
   )
@@ -126,7 +128,7 @@ export function ApplyPage() {
   useShortcut({
     key: "n",
     enabled: !dialogOpen,
-    onPress: () => dispatch({ type: "dialog_opened" }),
+    onPress: () => dispatch({ type: "dialog_opened", stage: "saved" }),
   })
 
   function setFilters(next: ApplyFilters) {
@@ -148,9 +150,11 @@ export function ApplyPage() {
   return (
     <div
       data-pen-surface="apply"
-      className="relative flex h-full min-h-0 flex-col bg-card"
+      className="relative flex h-full min-h-0 flex-col bg-background"
     >
-      <ApplyHeader onNewJob={() => dispatch({ type: "dialog_opened" })} />
+      <ApplyHeader
+        onNewJob={() => dispatch({ type: "dialog_opened", stage: "saved" })}
+      />
       <ApplyToolbar
         view={view}
         onView={setView}
@@ -181,7 +185,7 @@ export function ApplyPage() {
         {empty ? (
           <ApplyEmpty
             dialogOpen={dialogOpen}
-            onAdd={() => dispatch({ type: "dialog_opened" })}
+            onAdd={() => dispatch({ type: "dialog_opened", stage: "saved" })}
           />
         ) : null}
         {noMatch ? (
@@ -194,6 +198,7 @@ export function ApplyPage() {
             jobs={filtered}
             showClosed={showClosed}
             onShowClosed={(show) => dispatch({ type: "closed_toggled", show })}
+            onNewJob={(stage) => dispatch({ type: "dialog_opened", stage })}
           />
         ) : null}
         {ready && view === "list" ? (
@@ -215,6 +220,8 @@ export function ApplyPage() {
         ) : null}
       </div>
       <NewJobDialog
+        key={dialogStage}
+        stage={dialogStage}
         open={dialogOpen}
         onOpenChange={(open) => dispatch({ type: "dialog_toggled", open })}
       />

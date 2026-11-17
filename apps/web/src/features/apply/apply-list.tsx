@@ -17,7 +17,7 @@ export function ApplyList({
   ) as JobStage[]
 
   return (
-    <div className="flex flex-col gap-3 bg-card px-3 pt-2.5 pb-5">
+    <div className="flex flex-col gap-3 bg-background px-3 pt-2.5 pb-5">
       {stages.map((stage) => {
         const inStage = jobs
           .filter((job) => job.stage === stage)

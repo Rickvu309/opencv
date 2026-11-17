@@ -170,6 +170,56 @@ describe("apply board", () => {
     ).toHaveLength(1)
   })
 
+  it("adds a job into the column whose plus was pressed", async () => {
+    setMockJobs([junior, applied, interview])
+    renderApp("/apply")
+    fireEvent.click(
+      await screen.findByRole("button", { name: "New job in Interview" })
+    )
+    await screen.findByRole("dialog", { name: "New job" })
+    fireEvent.change(screen.getByLabelText("Role title"), {
+      target: { value: "Data intern" },
+    })
+    fireEvent.change(screen.getByLabelText("Company"), {
+      target: { value: "Harbor Labs" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
+    await waitFor(() => {
+      expect(
+        getMockJobPosts().some(
+          (post) =>
+            post.name === "job.create" &&
+            post.input.title === "Data intern" &&
+            post.input.stage === "interview"
+        )
+      ).toBe(true)
+    })
+    expect(await screen.findByText("Job added to Interview")).toBeVisible()
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "New job" })
+      ).not.toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByRole("button", { name: "New job" }))
+    fireEvent.change(await screen.findByLabelText("Role title"), {
+      target: { value: "Sales intern" },
+    })
+    fireEvent.change(screen.getByLabelText("Company"), {
+      target: { value: "Harbor Labs" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
+    await waitFor(() => {
+      expect(
+        getMockJobPosts().some(
+          (post) =>
+            post.name === "job.create" &&
+            post.input.title === "Sales intern" &&
+            post.input.stage === "saved"
+        )
+      ).toBe(true)
+    })
+  })
+
   it("opens the new job dialog on N and ignores typing", async () => {
     renderApp("/apply")
     await screen.findByRole("button", { name: "Add job" })
