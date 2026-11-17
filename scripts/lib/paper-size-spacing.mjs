@@ -26,12 +26,32 @@ export function detectSizeSpacing(text, path) {
     hits.push(
       "Word line boxes must use text metrics rather than the container's 1.2em floor"
     )
+  if (path === "packages/domain/src/paper-doc/presentation-values.ts") {
+    const stored = text.slice(
+      text.indexOf("const lineSpacingSchema"),
+      text.indexOf("export function lineSpacingWordUnits")
+    )
+    if (stored.includes("exactWordUnits"))
+      hits.push(
+        "Stored paragraph line multiples must remain backwards compatible"
+      )
+    if (text.includes("const units = exactWordUnits("))
+      hits.push("Legacy export line multiples must round at the Word boundary")
+  }
   if (
-    path === "packages/domain/src/paper-doc/presentation-values.ts" &&
-    /value:\s*z\.number\(\)\.min\(0\.5\)\.max\(10\)(?!\s*\.refine)/.test(text)
+    path === "packages/paper-crdt/src/native-layout-formatting.ts" &&
+    text.includes("engineProps(paragraphSchema.parse(input))")
   )
     hits.push(
-      "Line multiples must validate exact Word units at the domain boundary"
+      "New paragraph edits must validate exact Word units before mutation"
+    )
+  if (
+    path === "packages/paper-crdt/src/native-formatting-decorations.ts" &&
+    text.includes("paragraphCss(") &&
+    !text.includes("paragraphStrut(node, presentation)")
+  )
+    hits.push(
+      "At least paragraph struts must follow actual runs instead of inherited text"
     )
   return hits
 }

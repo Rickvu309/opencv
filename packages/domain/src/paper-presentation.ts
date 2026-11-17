@@ -6,6 +6,8 @@ export {
   canonical,
   overlay,
   paragraphSchema,
+  paragraphEditSchema,
+  paragraphEditPatchSchema,
   lineSpacingWordUnits,
   inlineSchema,
   inlineOperationsSchema,

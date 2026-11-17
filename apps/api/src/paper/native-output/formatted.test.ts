@@ -380,6 +380,9 @@ describe("formatted native Word output", () => {
     [2.05, 492],
     [4.15, 996],
     [1.125, 270],
+    [1.001, 240],
+    [1.01, 242],
+    [1.23, 295],
   ])(
     "exports canonical decimal multiple %s as %s Word units",
     async (multiple, units) => {
@@ -409,14 +412,6 @@ describe("formatted native Word output", () => {
       "fractional font unit",
       letter([
         { ...paragraph("size"), content: [{ text: "size", size: 221 }] },
-      ]),
-    ],
-    [
-      "fractional line unit",
-      letter([
-        paragraph("line", "line", {
-          lineSpacing: { kind: "multiple", value: 1.001 },
-        }),
       ]),
     ],
     [

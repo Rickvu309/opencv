@@ -46,13 +46,7 @@ const lineSpacingSchema = z.discriminatedUnion("kind", [
   z
     .object({
       kind: z.literal("multiple"),
-      value: z
-        .number()
-        .min(0.5)
-        .max(10)
-        .refine((v) => exactWordUnits(v * 240) !== null, {
-          message: "Word line spacing must use exact Word units",
-        }),
+      value: z.number().min(0.5).max(10),
     })
     .strict(),
   z
@@ -71,10 +65,10 @@ const lineSpacingSchema = z.discriminatedUnion("kind", [
 export function lineSpacingWordUnits(
   line: z.input<typeof lineSpacingSchema>
 ): Result<number> {
-  const units = exactWordUnits(
+  const units = Math.round(
     line.kind === "multiple" ? line.value * 240 : line.value
   )
-  return units === null
+  return !Number.isFinite(units)
     ? refuse("Word line spacing must use exact Word units")
     : ok(units)
 }
@@ -98,6 +92,14 @@ export const paragraphSchema = z
     paragraphStyle: styleIdSchema.optional(),
   })
   .strict()
+const lineSpacingEditSchema = lineSpacingSchema.refine(
+  (line) =>
+    line.kind !== "multiple" || exactWordUnits(line.value * 240) !== null,
+  { message: "Word line spacing must use exact Word units" }
+)
+export const paragraphEditSchema = paragraphSchema.extend({
+  lineSpacing: lineSpacingEditSchema.optional(),
+})
 export type ParagraphPresentation = z.infer<typeof paragraphSchema>
 export type ParagraphPresentationInput = z.input<typeof paragraphSchema>
 export const pagePropertiesSchema = z
@@ -148,6 +150,9 @@ export const paragraphPatchSchema = z
     paragraphStyle: styleIdSchema.nullable().optional(),
   })
   .strict()
+export const paragraphEditPatchSchema = paragraphPatchSchema.extend({
+  lineSpacing: lineSpacingEditSchema.nullable().optional(),
+})
 export function canonical(value: unknown): string {
   return (
     JSON.stringify(value, (_key, v: unknown) =>

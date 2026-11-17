@@ -7,6 +7,7 @@ import {
   inlinePatchSchema,
   inlineSchema,
   paragraphSchema,
+  paragraphEditSchema,
   type InlinePresentation,
   type ParagraphPresentationInput,
 } from "@workspace/domain/internal/paper-presentation"
@@ -113,7 +114,7 @@ export function flowFormatting(binding: FlowBinding, view: EditorView) {
     "alignment" | "lineSpacing" | "before" | "after" | "start" | "indent"
   >
   const paragraphTransaction = (input: ParagraphInput, tr = view.state.tr) => {
-    const patch = engineProps(paragraphSchema.parse(input))
+    const patch = engineProps(paragraphEditSchema.parse(input))
     if (!Object.keys(patch).length) return tr
     for (const { node, pos } of selectedParagraphs(view))
       tr.setNodeMarkup(pos, undefined, { ...node.attrs, ...patch })

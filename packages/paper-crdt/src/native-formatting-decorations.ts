@@ -12,6 +12,7 @@ import {
   effectiveParagraph,
   inlineCss,
   paragraphCss,
+  naturalLineHeight,
 } from "./native-formatting-render-values.js"
 
 function listPresentation(doc: Node, pos: number, type: string) {
@@ -40,6 +41,33 @@ function listPresentation(doc: Node, pos: number, type: string) {
     role: "listitem",
     "aria-level": String(level + 1),
   }
+}
+
+function paragraphStrut(node: Node, presentation: DocumentPresentation) {
+  const style = effectiveParagraphStyle(
+    node.type.name,
+    node.attrs.paragraphStyle,
+    node.attrs.level
+  )
+  let smallest: ReturnType<typeof effectiveInline> | undefined
+  node.forEach((run) => {
+    if (!run.isText) return
+    const values = effectiveInline(
+      presentation,
+      canonicalStyles(
+        Object.fromEntries(
+          run.marks
+            .filter((mark) => mark.type.name !== "link")
+            .map((mark) => [mark.type.name, mark.attrs.stringValue])
+        )
+      ),
+      style
+    )
+    const height = (text: typeof values) =>
+      (text.size ?? 220) * naturalLineHeight(text.fontId)
+    if (!smallest || height(values) < height(smallest)) smallest = values
+  })
+  return smallest ?? effectiveInline(presentation, {}, style)
 }
 
 export function formattingDecorations(
@@ -78,21 +106,27 @@ export function formattingDecorations(
       )
     } else if (node.isTextblock) {
       const list = listPresentation(doc, pos, node.type.name)
+      const paragraph = effectiveParagraph(
+        presentation,
+        canonicalProps(node.attrs)
+      )
       decorations.push(
         Decoration.node(pos, pos + node.nodeSize, {
           ...list,
           style:
             paragraphCss(
-              effectiveParagraph(presentation, canonicalProps(node.attrs)),
-              effectiveInline(
-                presentation,
-                {},
-                effectiveParagraphStyle(
-                  node.type.name,
-                  node.attrs.paragraphStyle,
-                  node.attrs.level
-                )
-              )
+              paragraph,
+              paragraph.lineSpacing?.kind === "atleast"
+                ? paragraphStrut(node, presentation)
+                : effectiveInline(
+                    presentation,
+                    {},
+                    effectiveParagraphStyle(
+                      node.type.name,
+                      node.attrs.paragraphStyle,
+                      node.attrs.level
+                    )
+                  )
             ) +
             ";" +
             (list.style ?? ""),

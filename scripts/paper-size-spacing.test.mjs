@@ -51,10 +51,10 @@ const fixtures = [
       "return `line-height:max(${minimum}pt,${naturalLineHeight(font)}em)`",
   },
   {
-    path: "packages/domain/src/paper-doc/presentation-values.ts",
-    introduced: "4ae9a891",
-    mistake: "value: z.number().min(0.5).max(10)",
-    clean: "value: z.number().min(0.5).max(10).refine(exactWordUnits)",
+    path: "packages/paper-crdt/src/native-layout-formatting.ts",
+    introduced: "54fbdb62",
+    mistake: "engineProps(paragraphSchema.parse(input))",
+    clean: "engineProps(paragraphEditSchema.parse(input))",
   },
 ]
 
@@ -90,4 +90,57 @@ test("Paper size and spacing guards reject historical mistakes and accept curren
         )
       }
     )
+})
+
+test("Paper legacy spacing guards separate compatible reads, rounded exports and run-based struts", async (t) => {
+  for (const fixture of [
+    {
+      path: "packages/domain/src/paper-doc/presentation-values.ts",
+      expected: "backwards compatible",
+      introduced: "fc53c911",
+      mistake:
+        "const lineSpacingSchema = value.refine(exactWordUnits); export function lineSpacingWordUnits",
+      clean:
+        "const lineSpacingSchema = value; export function lineSpacingWordUnits",
+    },
+    {
+      path: "packages/domain/src/paper-doc/presentation-values.ts",
+      expected: "round at the Word boundary",
+      introduced: "fc53c911",
+      mistake: "const units = exactWordUnits(line.value * 240)",
+      clean: "const units = Math.round(line.value * 240)",
+    },
+    {
+      path: "packages/paper-crdt/src/native-formatting-decorations.ts",
+      expected: "actual runs",
+      introduced: "fc53c911",
+      mistake:
+        "paragraphCss(paragraph, effectiveInline(presentation, {}, style))",
+      clean: "paragraphCss(paragraph, paragraphStrut(node, presentation))",
+    },
+  ])
+    await t.test(fixture.expected, () => {
+      const fires = (text) =>
+        detectSizeSpacing(text, fixture.path).some((hit) =>
+          hit.includes(fixture.expected)
+        )
+      assert.ok(fires(fixture.mistake))
+      assert.deepEqual(detectSizeSpacing(fixture.clean, fixture.path), [])
+      assert.ok(
+        fires(
+          execFileSync(
+            "git",
+            ["show", `${fixture.introduced}:${fixture.path}`],
+            { encoding: "utf8" }
+          )
+        )
+      )
+      assert.deepEqual(
+        detectSizeSpacing(
+          readFileSync(new URL(`../${fixture.path}`, import.meta.url), "utf8"),
+          fixture.path
+        ),
+        []
+      )
+    })
 })

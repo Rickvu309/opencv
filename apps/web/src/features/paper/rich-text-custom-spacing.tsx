@@ -1,5 +1,5 @@
 import { useId, useReducer, useRef } from "react"
-import { lineSpacingWordUnits } from "@workspace/domain/internal/paper-presentation"
+import { paragraphEditSchema } from "@workspace/domain/internal/paper-presentation"
 import { SlidersHorizontal } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -106,8 +106,10 @@ function SpacingForm({
               ? { kind, value: line }
               : { kind, value: Math.round(line * 20) }
         if (patch.lineSpacing) {
-          const units = lineSpacingWordUnits(patch.lineSpacing)
-          if (units.kind === "refused") {
+          const result = paragraphEditSchema.safeParse({
+            lineSpacing: patch.lineSpacing,
+          })
+          if (!result.success) {
             setError(
               "Use a line spacing value that fits exact Word units, such as 1.125 or 2.05."
             )

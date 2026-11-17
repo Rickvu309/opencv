@@ -1,12 +1,100 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { TextSelection } from "@tiptap/pm/state"
 import { undo, redo } from "y-prosemirror"
 import * as Y from "yjs"
-import { nativeProvenance } from "@workspace/domain"
-import { openRichPaperClient } from "./client.js"
+import { nativeProvenance, richPaperDocumentSchema } from "@workspace/domain"
+import { openRichPaperClient, type PaperClient } from "./client.js"
+import type { RichPaperDocument } from "@workspace/domain"
+import { seedStoredYDoc } from "./stored-document.js"
 import { recoverRichPaperClient } from "./rich-recovery.js"
+import { borrowFlowDocument } from "./native-layout-flow.js"
+import { mountPrivateFlow } from "./native-layout-flow-mount.js"
 import { mountRichPaperEditor } from "./editor.js"
-import { cleanups, paragraph, setup } from "./native-layout-test-setup.js"
+import { storedFlowFixture } from "./test/flow-fixture.js"
+
+const cleanups: (() => void)[] = []
+beforeEach(() => {
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+      disconnect() {}
+    }
+  )
+  const fonts = Object.getOwnPropertyDescriptor(document, "fonts")
+  Object.defineProperty(document, "fonts", {
+    configurable: true,
+    value: { ready: Promise.resolve() },
+  })
+  cleanups.push(() => {
+    if (fonts) Object.defineProperty(document, "fonts", fonts)
+    else Reflect.deleteProperty(document, "fonts")
+  })
+})
+afterEach(() => {
+  for (const cleanup of cleanups.reverse()) cleanup()
+  cleanups.length = 0
+  vi.restoreAllMocks()
+  vi.unstubAllGlobals()
+})
+function setup(kind: "cv" | "letter") {
+  const input = storedFlowFixture(kind)
+  const document = richPaperDocumentSchema.parse({
+    ...input,
+    flow: {
+      ...input.flow,
+      children: input.flow.children.map((section) => ({
+        ...section,
+        children: section.children.filter(
+          (node) => node.type === "paragraph" || node.type === "header"
+        ),
+      })),
+    },
+  })
+  const provenance = nativeProvenance(document)
+  const client = openRichPaperClient(
+    {
+      epoch: 1,
+      revision: 0,
+      provenance,
+      server: seedStoredYDoc(document),
+      pending: Uint8Array.of(0, 0),
+    },
+    { provenance }
+  )
+  cleanups.push(() => client.destroy())
+  const host = globalThis.document.createElement("div")
+  globalThis.document.body.append(host)
+  cleanups.push(() => host.remove())
+  const lease = borrowFlowDocument(client.ydoc, kind)
+  cleanups.push(() => lease.release())
+  const mounted = mountPrivateFlow(lease.binding, host)
+  cleanups.push(() => mounted.unmount())
+  const view = mounted.editor.prosemirrorView
+  function select(from = "intro", to = from, start = 0, end?: number) {
+    mounted.editor.setTextCursorPosition(from, "start")
+    const anchor = view.state.selection.from + start
+    mounted.editor.setTextCursorPosition(to, "end")
+    view.dispatch(
+      view.state.tr.setSelection(
+        TextSelection.create(
+          view.state.doc,
+          anchor,
+          end === undefined ? view.state.selection.to : anchor + end
+        )
+      )
+    )
+  }
+  select()
+  return { client, mounted, view, select, host }
+}
+function paragraph(client: PaperClient<RichPaperDocument>, id = "intro") {
+  const result = client
+    .document()
+    ?.flow.children[0]?.children.find((node) => node.id === id)
+  if (result?.type !== "paragraph") throw new Error("Missing paragraph")
+  return result
+}
 
 describe("rich Paper selection formatting", () => {
   it.each(["cv", "letter"] as const)(
@@ -253,129 +341,4 @@ it("moves a hanging paragraph on the first increase and decrease and respects bo
   mounted.formatParagraph({ start: 2880 })
   mounted.adjustIndent(360)
   expect(paragraph(client).paragraph?.start).toBe(2880)
-})
-
-describe("exact rich Paper typography", () => {
-  it.each(["cv", "letter"] as const)(
-    "stores %s half points and paragraph spacing in one reversible edit",
-    (kind) => {
-      const { client, mounted, view, select, host } = setup(kind)
-      const before = client.document()
-      mounted.formatTypography({
-        size: 210,
-        before: 125,
-        after: 85,
-        lineSpacing: { kind: "multiple", value: 1.25 },
-      })
-      expect(paragraph(client)).toMatchObject({
-        paragraph: {
-          before: 125,
-          after: 85,
-          lineSpacing: { kind: "multiple", value: 1.25 },
-        },
-      })
-      expect(paragraph(client).content.every((run) => run.size === 210)).toBe(
-        true
-      )
-      expect(host.querySelector('[data-id="intro"]')?.textContent).toBeTruthy()
-      const text = [...host.querySelectorAll("span")].find(
-        (element) => element.style.fontSize === "10.5pt"
-      )
-      expect(text).toBeTruthy()
-      const rendered = host.querySelector<HTMLElement>(
-        '[data-id="intro"] .bn-block-content'
-      )
-      expect(rendered?.style.marginBlockStart).toBe("6.25pt")
-      expect(rendered?.style.marginBlockEnd).toBe("4.25pt")
-      expect(rendered?.style.lineHeight).toBe("1.25")
-      expect(mounted.activeFormatting()).toMatchObject({
-        size: "10.5",
-        before: "6.25",
-        after: "4.25",
-        lineValue: "1.25",
-        lineKind: "multiple",
-      })
-      const after = client.document()
-      expect(undo(view.state)).toBe(true)
-      expect(client.document()).toEqual(before)
-      expect(redo(view.state)).toBe(true)
-      expect(client.document()).toEqual(after)
-      const provenance = nativeProvenance(after!)
-      const reopened = openRichPaperClient(
-        {
-          epoch: 1,
-          revision: 1,
-          provenance,
-          server: Y.encodeStateAsUpdate(client.ydoc),
-          pending: Uint8Array.of(0, 0),
-        },
-        { provenance }
-      )
-      cleanups.push(() => reopened.destroy())
-      expect(reopened.document()).toEqual(after)
-      select("intro", "after")
-      expect(mounted.activeFormatting()).toMatchObject({
-        size: null,
-        before: null,
-        after: null,
-        lineValue: null,
-      })
-    }
-  )
-
-  it.each(["exact", "atleast"] as const)(
-    "keeps custom %s point line spacing",
-    (kind) => {
-      const { mounted, client } = setup("letter")
-      mounted.formatParagraph({
-        before: 0,
-        after: 150,
-        lineSpacing: { kind, value: 285 },
-      })
-      expect(paragraph(client).paragraph).toMatchObject({
-        before: 0,
-        after: 150,
-        lineSpacing: { kind, value: 285 },
-      })
-      expect(mounted.activeFormatting()).toMatchObject({
-        before: "0",
-        after: "7.5",
-        lineKind: kind,
-        lineValue: "14.25",
-      })
-    }
-  )
-
-  it("keeps an exact typing size while changing the current paragraph spacing", () => {
-    const { mounted, client, view } = setup("letter")
-    view.dispatch(
-      view.state.tr.setSelection(
-        TextSelection.create(view.state.doc, view.state.selection.from)
-      )
-    )
-    mounted.formatTypography({ size: 210, before: 125 })
-    expect(mounted.activeFormatting()).toMatchObject({
-      size: "10.5",
-      before: "6.25",
-    })
-    view.dispatch(view.state.tr.insertText("Typed"))
-    expect(
-      paragraph(client).content.find((run) => run.text.includes("Typed"))?.size
-    ).toBe(210)
-  })
-
-  it("refuses invalid typography atomically", () => {
-    const { mounted, client } = setup("letter")
-    const before = client.document()
-    for (const patch of [
-      { size: 70 },
-      { size: 211 },
-      { size: 210, before: -1 },
-      { size: 210, after: 31681 },
-      { size: 210, lineSpacing: { kind: "multiple" as const, value: 11 } },
-    ]) {
-      expect(() => mounted.formatTypography(patch)).toThrow()
-      expect(client.document()).toEqual(before)
-    }
-  })
 })

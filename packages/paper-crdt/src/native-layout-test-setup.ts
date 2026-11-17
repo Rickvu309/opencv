@@ -33,8 +33,7 @@ afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
 })
-export function setup(kind: "cv" | "letter") {
-  const input = storedFlowFixture(kind)
+export function setup(kind: "cv" | "letter", input = storedFlowFixture(kind)) {
   const document = richPaperDocumentSchema.parse({
     ...input,
     flow: {
