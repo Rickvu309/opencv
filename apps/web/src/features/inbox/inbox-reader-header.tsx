@@ -12,12 +12,6 @@ import {
   PageHeaderTitle,
 } from "@workspace/ui/components/page-header"
 import { toast, toastWithUndo } from "@workspace/ui/components/sonner"
-import { cn } from "@workspace/ui/lib/utils"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@workspace/ui/components/tooltip"
 
 import { reportRejected } from "@/lib/command-failure.ts"
 import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
@@ -125,29 +119,12 @@ export function InboxReaderHeader({
             })
           }
         />
-        <Tooltip>
-          <TooltipTrigger
-            render={
-              <Button
-                type="button"
-                variant="ghost"
-                aria-label="More"
-                aria-disabled="true"
-                aria-description={INBOX_MORE_REASON}
-                data-disabled=""
-                data-slot="page-header-action"
-                className={cn(
-                  "size-11 touch-manipulation rounded-[6px] select-none [-webkit-tap-highlight-color:transparent] active:scale-100 max-md:hidden md:size-7 [&_svg:not([class*='size-'])]:size-[15px]",
-                  UNAVAILABLE_ACTION
-                )}
-                onClick={(event) => event.preventDefault()}
-              />
-            }
-          >
-            <Ellipsis aria-hidden />
-          </TooltipTrigger>
-          <TooltipContent>{INBOX_MORE_REASON}</TooltipContent>
-        </Tooltip>
+        <PageHeaderAction
+          label="More"
+          icon={<Ellipsis aria-hidden />}
+          disabledReason={INBOX_MORE_REASON}
+          className={`${UNAVAILABLE_ACTION} active:scale-100 max-md:hidden`}
+        />
         <PageHeaderAction
           label="Previous"
           icon={<ChevronUp />}

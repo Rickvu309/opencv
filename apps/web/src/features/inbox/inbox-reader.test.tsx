@@ -77,12 +77,14 @@ describe("inbox reader header", () => {
     const more = screen.getByRole("button", { name: "More" })
     expect(more).not.toBeDisabled()
     expect(more).toHaveAttribute("aria-disabled", "true")
-    expect(more).toHaveAttribute("aria-description", INBOX_MORE_REASON)
+    expect(more).toHaveAccessibleDescription(INBOX_MORE_REASON)
+    expect(more).toHaveAttribute("aria-describedby")
     expect(more).toHaveAttribute("data-slot", "page-header-action")
     expect(more.className).toContain(UNAVAILABLE_ACTION)
     expect(more.className).toContain("active:scale-100")
-    expect(header?.querySelector(".sr-only")).toBeNull()
-    expect(screen.queryByText(INBOX_MORE_REASON)).toBeNull()
+    expect(header?.querySelector(".sr-only")).toHaveTextContent(
+      INBOX_MORE_REASON
+    )
     expect(
       screen.queryByText("More has no other actions for this email.")
     ).toBeNull()
@@ -119,6 +121,38 @@ describe("inbox reader header", () => {
       screen.getByRole("button", { name: "More actions" })
     ).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Back to inbox" })).toBeNull()
+  })
+
+  it("keeps one More control and one reason when the phone overflow opens", async () => {
+    const posts = postsOf()
+    renderReader(LOCAL_DETAIL)
+    await userEvent.click(screen.getByRole("button", { name: "More actions" }))
+    expect(await screen.findByRole("menu")).toBeInTheDocument()
+    expect(screen.getAllByRole("button", { name: "More" })).toHaveLength(1)
+    expect(screen.queryByRole("menuitem", { name: "More" })).toBeNull()
+    await userEvent.keyboard("{Escape}")
+    const more = screen.getByRole("button", { name: "More" })
+    const gmail = screen.getByRole("button", { name: "Open in Gmail" })
+    for (const [control, reason] of [
+      [more, INBOX_MORE_REASON],
+      [gmail, NO_GMAIL_LINK],
+    ] as const) {
+      const description = control.getAttribute("aria-describedby")
+      expect(description).not.toBeNull()
+      expect(document.getElementById(description ?? "")).toHaveClass("sr-only")
+      expect(control).toHaveAccessibleDescription(reason)
+      control.focus()
+      expect(control).toHaveFocus()
+      await userEvent.keyboard("{Enter} ")
+      await userEvent.click(control)
+    }
+    expect(posts).toHaveLength(0)
+    expect(
+      document.querySelectorAll(
+        `#${CSS.escape(more.getAttribute("aria-describedby") ?? "")}`
+      )
+    ).toHaveLength(1)
+    expect(screen.queryByRole("menuitem", { name: "More" })).toBeNull()
   })
 
   it("makes the subject the page heading and shows a back link when narrow", async () => {
