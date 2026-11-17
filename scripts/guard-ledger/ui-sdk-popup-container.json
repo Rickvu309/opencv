@@ -1,0 +1,13 @@
+{
+  "id": "ui-sdk-popup-container",
+  "file": "scripts/ui-sdk-popover.test.mjs",
+  "detector": {
+    "module": "scripts/lib/ui-sdk-popover.mjs",
+    "export": "selectPortalLeavesParent"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "9829c9f2",
+    "path": "packages/ui/src/components/select.tsx"
+  }
+}

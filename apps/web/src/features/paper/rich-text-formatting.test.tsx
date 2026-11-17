@@ -110,15 +110,6 @@ beforeEach(() => {
     ...globalThis.CSS,
     escape: (value: string) => value.replaceAll(/[^a-zA-Z0-9_-]/g, ""),
   })
-  const fonts = Object.getOwnPropertyDescriptor(document, "fonts")
-  Object.defineProperty(document, "fonts", {
-    configurable: true,
-    value: { ready: Promise.resolve() },
-  })
-  disposals.push(() => {
-    if (fonts) Object.defineProperty(document, "fonts", fonts)
-    else Reflect.deleteProperty(document, "fonts")
-  })
 })
 afterEach(() => {
   cleanup()

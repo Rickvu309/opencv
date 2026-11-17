@@ -67,17 +67,6 @@ function setup(
     spacing: { top: 0, right: 0, bottom: 0, left: 0 },
     alt: "Portrait",
   })
-  if (mounted) {
-    const fonts = Object.getOwnPropertyDescriptor(document, "fonts")
-    Object.defineProperty(document, "fonts", {
-      configurable: true,
-      value: { ready: Promise.resolve() },
-    })
-    releases.push(() => {
-      if (fonts) Object.defineProperty(document, "fonts", fonts)
-      else Reflect.deleteProperty(document, "fonts")
-    })
-  }
   const client = mounted ? photoClient(photo) : null
   const host = document.createElement("div")
   if (client) document.body.append(host)
@@ -170,15 +159,6 @@ it("explains geometry and available-space errors without schema output", () => {
 })
 
 it("retains a refused crop and applies exactly the fields shown after recovery", () => {
-  const fonts = Object.getOwnPropertyDescriptor(document, "fonts")
-  Object.defineProperty(document, "fonts", {
-    configurable: true,
-    value: { ready: Promise.resolve() },
-  })
-  releases.push(() => {
-    if (fonts) Object.defineProperty(document, "fonts", fonts)
-    else Reflect.deleteProperty(document, "fonts")
-  })
   const { field, client, host } = setup(true, true)
   for (const [name, value] of [
     ["Top", "60"],

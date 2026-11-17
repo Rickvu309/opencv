@@ -184,6 +184,14 @@ export const SCREENS = [
     route: "/paper",
     steps: OPEN_BLANK_CV,
   },
+  ...["color", "highlight", "table", "more", "table-options", "find"].map(
+    (name) => ({
+      id: `paper-popover-${name}`,
+      route: "/paper",
+      unreachable:
+        "New → CV → Start blank calls paper.canvas mint and creates a Word package. paper-doc.tsx opens LegacyPaperDocPage unless paper.document.format is rich; these six controls exist only in RichPaperPage. No current library creation flow creates a rich document.",
+    })
+  ),
   {
     id: "paper-typed",
     route: "/paper",

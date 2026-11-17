@@ -29,10 +29,6 @@ beforeEach(() => {
     getClientRects: { configurable: true, value: () => [] },
     getBoundingClientRect: { configurable: true, value: () => new DOMRect() },
   })
-  Object.defineProperty(document, "fonts", {
-    configurable: true,
-    value: { ready: Promise.resolve() },
-  })
 })
 afterEach(() => {
   cleanup()
