@@ -1,3 +1,4 @@
+import { installUiSdkTestPlatform } from "@workspace/ui/lib/ui-sdk-test-platform"
 import { act, cleanup, configure } from "@testing-library/react"
 import { toast } from "sonner"
 import { afterEach, beforeEach, vi } from "vitest"
@@ -21,6 +22,8 @@ import {
   installSonnerTimerTracker,
   cleanupSonnerTimers,
 } from "./test-resources.ts"
+
+installUiSdkTestPlatform()
 
 configure({ asyncUtilTimeout: 5000 })
 
