@@ -369,8 +369,9 @@ class Client<
       reply.revision < this.revision
     )
       return rejected
+    let candidate: Y.Doc | undefined
     try {
-      const candidate = reply.reset
+      candidate = reply.reset
         ? freshDoc(false, reply.update)
         : freshDoc(
             false,
@@ -382,31 +383,17 @@ class Client<
       const current = this.adapter.read(this.ydoc)
       if (!this.adapter.semanticRebase) {
         if (reply.reset && this.hasPending()) return rejected
-        const acknowledged = freshDoc(
-          false,
-          Y.encodeStateAsUpdate(this.server),
-          reply.stale ? null : sent.update
-        )
-        const changed = freshDoc(false, Y.encodeStateAsUpdate(candidate))
-        try {
-          const pending = aheadOf(this.ydoc, acknowledged)
-          if (pending && !sameState(stateOf(acknowledged), stateOf(changed)))
-            return rejected
-          if (!reply.reset) {
-            const merged = freshDoc(
-              false,
-              Y.encodeStateAsUpdate(this.ydoc),
-              reply.update
-            )
-            try {
-              if (!this.adapter.read(merged)) return rejected
-            } finally {
-              merged.destroy()
-            }
+        if (!reply.reset) {
+          const merged = freshDoc(
+            false,
+            Y.encodeStateAsUpdate(this.ydoc),
+            reply.update
+          )
+          try {
+            if (!this.adapter.read(merged)) return rejected
+          } finally {
+            merged.destroy()
           }
-        } finally {
-          acknowledged.destroy()
-          changed.destroy()
         }
       }
       if (current && document && current.kind !== document.kind) return rejected
@@ -420,6 +407,8 @@ class Client<
         return rejected
     } catch {
       return rejected
+    } finally {
+      candidate?.destroy()
     }
     this.revision = reply.revision
     if (reply.reset) return this.resetTo(reply)
@@ -441,7 +430,12 @@ class Client<
       settled !== null &&
       theirs !== null &&
       !sameState(before, stateOf(this.server))
-    if (!foreign || !pendingBeforeReply || ours === null) {
+    if (
+      !this.adapter.semanticRebase ||
+      !foreign ||
+      !pendingBeforeReply ||
+      ours === null
+    ) {
       this.applyHere(this.ydoc, reply.update)
       return { ...plain, failed: theirs === null && settled !== null }
     }
