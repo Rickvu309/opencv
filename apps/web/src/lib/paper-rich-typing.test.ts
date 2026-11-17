@@ -247,3 +247,136 @@ it.each(["cv", "letter"] as const)(
   },
   60_000
 )
+
+it.each(["cv", "letter"] as const)(
+  "simultaneous %s saves retry a stale receipt and keep both tabs and the server canonical",
+  async (kind) => {
+    const first = sessionHarness()
+    const second = sessionHarness()
+    const server = richServer(kind)
+    const identity = requireNativeIdentity({
+      ...first.options.identity,
+      provenance: server.provenance,
+      writer: RICH_NATIVE_WRITER,
+    })
+    const sessions = [first, second].map((h, index) => {
+      h.run.mockImplementation(async (_query, _name, input) =>
+        server.answer(input)
+      )
+      return openRichNativePaperSync({
+        ...h.options,
+        tabId: `tab-${index}`,
+        identity,
+        currentIdentity: () => identity,
+        readAdmitted: async () => server.admitted(),
+      })
+    })
+    try {
+      await Promise.all(sessions.map((session) => session.initialized))
+      for (const [index, session] of sessions.entries()) {
+        const client = session.client()
+        if (!client) throw new Error("Missing rich client")
+        typeInto(client.ydoc, kind, ` simultaneous-tab-${index} Việt 😀`)
+      }
+      await Promise.all(sessions.map((session) => session.flush()))
+      await sessions[0]!.flush()
+      const canonical = canonicalPaper(server.document())
+      for (const index of [0, 1])
+        expect(canonical).toContain(`simultaneous-tab-${index} Việt 😀`)
+      for (const session of sessions) {
+        expect(canonicalPaper(session.client()?.document())).toBe(canonical)
+        expect(session.status()).toBe("saved")
+      }
+      expect(
+        second.run.mock.calls.filter((call) => call[2].basedOn !== undefined)
+      ).toHaveLength(2)
+    } finally {
+      await Promise.all(sessions.map((session) => session.destroy()))
+      server.remote.destroy()
+    }
+  }
+)
+
+it("a recovered rich client stays unavailable until its initial local save finishes", async () => {
+  const h = sessionHarness()
+  const server = richServer("letter")
+  const identity = requireNativeIdentity({
+    ...h.options.identity,
+    provenance: server.provenance,
+    writer: RICH_NATIVE_WRITER,
+  })
+  const started = deferred()
+  const gate = deferred()
+  h.run.mockImplementation(async (_query, _name, input) => server.answer(input))
+  const save = h.store.save.bind(h.store)
+  vi.spyOn(h.store, "save").mockImplementation(async (...args) => {
+    started.release()
+    await gate.promise
+    return save(...args)
+  })
+  const session = openRichNativePaperSync({
+    ...h.options,
+    identity,
+    currentIdentity: () => identity,
+    readAdmitted: async () => server.admitted(),
+  })
+  try {
+    await started.promise
+    expect(session.client()).toBeNull()
+    expect(session.ready()).toBe(false)
+    gate.release()
+    await session.initialized
+    expect(session.client()).not.toBeNull()
+    expect(session.ready()).toBe(true)
+  } finally {
+    gate.release()
+    await session.destroy()
+    server.remote.destroy()
+  }
+})
+
+it("a refused rich save retains the mounted document, pending bytes and local recovery while blocking Saved", async () => {
+  const h = sessionHarness()
+  const server = richServer("letter")
+  const identity = requireNativeIdentity({
+    ...h.options.identity,
+    provenance: server.provenance,
+    writer: RICH_NATIVE_WRITER,
+  })
+  h.run.mockImplementation(async (_query, _name, input) => server.answer(input))
+  const session = openRichNativePaperSync({
+    ...h.options,
+    identity,
+    currentIdentity: () => identity,
+    readAdmitted: async () => server.admitted(),
+  })
+  try {
+    await session.initialized
+    const client = session.client()
+    if (!client) throw new Error("Missing rich client")
+    typeInto(client.ydoc, "letter", " keep-this-rejected-text")
+    const before = client.stored()
+    h.run.mockResolvedValue({
+      ...h.reply,
+      provenance: server.provenance,
+      epoch: 2,
+      reset: true,
+    })
+    await session.flush()
+    await session.persist()
+    expect(session.status()).toBe("stuck")
+    expect(session.ready()).toBe(false)
+    expect(session.captureSaved()).toBeNull()
+    expect(session.client()).toBe(client)
+    expect(client.stored()).toEqual(before)
+    expect(canonicalPaper(client.document())).toContain(
+      "keep-this-rejected-text"
+    )
+    expect(scanNativeJournals(h.options.journal, identity)[0]?.states).toEqual([
+      before,
+    ])
+  } finally {
+    await session.destroy()
+    server.remote.destroy()
+  }
+})

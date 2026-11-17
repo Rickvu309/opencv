@@ -14,6 +14,10 @@ import * as Y from "yjs"
 
 import { materialize, writeDocument } from "./ydoc.js"
 import { materializeStored } from "./stored-document.js"
+import {
+  preservePendingContent,
+  restorePendingContent,
+} from "./pending-content.js"
 
 export const REBASE_ORIGIN = "paper-rebase"
 export const SERVER_ORIGIN = "paper-server"
@@ -369,8 +373,10 @@ class Client<
       reply.revision < this.revision
     )
       return rejected
+    let candidate: Y.Doc | undefined
+    let restorations: ReturnType<typeof preservePendingContent> = []
     try {
-      const candidate = reply.reset
+      candidate = reply.reset
         ? freshDoc(false, reply.update)
         : freshDoc(
             false,
@@ -382,31 +388,23 @@ class Client<
       const current = this.adapter.read(this.ydoc)
       if (!this.adapter.semanticRebase) {
         if (reply.reset && this.hasPending()) return rejected
-        const acknowledged = freshDoc(
-          false,
-          Y.encodeStateAsUpdate(this.server),
-          reply.stale ? null : sent.update
-        )
-        const changed = freshDoc(false, Y.encodeStateAsUpdate(candidate))
-        try {
-          const pending = aheadOf(this.ydoc, acknowledged)
-          if (pending && !sameState(stateOf(acknowledged), stateOf(changed)))
-            return rejected
-          if (!reply.reset) {
-            const merged = freshDoc(
-              false,
-              Y.encodeStateAsUpdate(this.ydoc),
-              reply.update
+        if (!reply.reset) {
+          const merged = freshDoc(
+            false,
+            Y.encodeStateAsUpdate(this.ydoc),
+            reply.update
+          )
+          try {
+            restorations = preservePendingContent(
+              this.ydoc,
+              this.server,
+              merged
             )
-            try {
-              if (!this.adapter.read(merged)) return rejected
-            } finally {
-              merged.destroy()
-            }
+            restorePendingContent(merged, restorations)
+            if (!this.adapter.read(merged)) return rejected
+          } finally {
+            merged.destroy()
           }
-        } finally {
-          acknowledged.destroy()
-          changed.destroy()
         }
       }
       if (current && document && current.kind !== document.kind) return rejected
@@ -420,6 +418,8 @@ class Client<
         return rejected
     } catch {
       return rejected
+    } finally {
+      candidate?.destroy()
     }
     this.revision = reply.revision
     if (reply.reset) return this.resetTo(reply)
@@ -441,8 +441,14 @@ class Client<
       settled !== null &&
       theirs !== null &&
       !sameState(before, stateOf(this.server))
-    if (!foreign || !pendingBeforeReply || ours === null) {
+    if (
+      !this.adapter.semanticRebase ||
+      !foreign ||
+      !pendingBeforeReply ||
+      ours === null
+    ) {
       this.applyHere(this.ydoc, reply.update)
+      restorePendingContent(this.ydoc, restorations)
       return { ...plain, failed: theirs === null && settled !== null }
     }
     let target: { readonly document: Document; readonly failed: boolean }
