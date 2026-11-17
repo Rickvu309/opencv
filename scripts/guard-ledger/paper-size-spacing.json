@@ -1,0 +1,10 @@
+{
+  "id": "paper-size-spacing",
+  "file": "scripts/paper-size-spacing.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-size-spacing.mjs",
+    "export": "detectSizeSpacing"
+  },
+  "historic": null,
+  "reason": "Seven source patterns span the toolbar, custom spacing dialog, renderer and domain schema. Each fixture replays its introducing commit and reviewed head 29dd4410, fires on its mistake, and stays quiet on clean and current source. The per-fixture historical proofs live in the guard test rather than a single-source ledger proof; guard-proof/29dd4410f524c3642596914f0063d371e4abf19b retains their branch ancestry."
+}

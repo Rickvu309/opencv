@@ -58,28 +58,36 @@ const fixtures = [
   },
 ]
 
-for (const fixture of fixtures)
-  test(`size and spacing guard: ${fixture.name ?? fixture.path}`, () => {
-    const fires = (source) =>
-      detectSizeSpacing(source, fixture.path).some(
-        (hit) => !fixture.expected || hit.includes(fixture.expected)
-      )
-    assert.ok(fires(fixture.mistake))
-    assert.deepEqual(detectSizeSpacing(fixture.clean, fixture.path), [])
-    for (const revision of [fixture.introduced, "29dd4410"])
-      assert.ok(
-        fires(
-          execFileSync("git", ["show", `${revision}:${fixture.path}`], {
-            encoding: "utf8",
-          })
-        ),
-        revision
-      )
-    assert.deepEqual(
-      detectSizeSpacing(
-        readFileSync(new URL(`../${fixture.path}`, import.meta.url), "utf8"),
-        fixture.path
-      ),
-      []
+test("Paper size and spacing guards reject historical mistakes and accept current sources", async (t) => {
+  for (const fixture of fixtures)
+    await t.test(
+      `size and spacing guard: ${fixture.name ?? fixture.path}`,
+      () => {
+        const fires = (source) =>
+          detectSizeSpacing(source, fixture.path).some(
+            (hit) => !fixture.expected || hit.includes(fixture.expected)
+          )
+        assert.ok(fires(fixture.mistake))
+        assert.deepEqual(detectSizeSpacing(fixture.clean, fixture.path), [])
+        for (const revision of [fixture.introduced, "29dd4410"])
+          assert.ok(
+            fires(
+              execFileSync("git", ["show", `${revision}:${fixture.path}`], {
+                encoding: "utf8",
+              })
+            ),
+            revision
+          )
+        assert.deepEqual(
+          detectSizeSpacing(
+            readFileSync(
+              new URL(`../${fixture.path}`, import.meta.url),
+              "utf8"
+            ),
+            fixture.path
+          ),
+          []
+        )
+      }
     )
-  })
+})
