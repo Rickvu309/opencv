@@ -1,6 +1,6 @@
 import { StrictMode } from "react"
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
-import { blankCv } from "@workspace/domain"
+import { structuredCv } from "@/test/paper-structured-cv.ts"
 import { afterEach, beforeAll, expect, it } from "vitest"
 
 import { installEditorPolyfills } from "@/test/paper-engine-kit.tsx"
@@ -12,7 +12,7 @@ beforeAll(() => installEditorPolyfills())
 afterEach(() => cleanup())
 
 it("undoes with ctrl+z and cmd+z, and tabs from the header to the first ghost", async () => {
-  const client = seededCvClient(blankCv())
+  const client = seededCvClient(structuredCv())
   let editor: {
     document: { id: string; type: string }[]
     insertBlocks: (

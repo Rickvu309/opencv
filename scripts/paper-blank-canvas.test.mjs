@@ -1,0 +1,112 @@
+import assert from "node:assert/strict"
+import { execFileSync } from "node:child_process"
+import { readFileSync } from "node:fs"
+import test from "node:test"
+import { emptyPaper } from "../packages/domain/src/paper-doc/blank-canvas.ts"
+import { detect, detectDocument, message } from "./lib/paper-blank-canvas.mjs"
+import {
+  applyCanvasBytes,
+  mainXml,
+  mintBlankBytes,
+  paragraphsOf,
+  contentOf,
+} from "./lib/paper-canvas-bytes.mjs"
+
+const read = (path) =>
+  readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
+
+test("every blank kind contains only one empty paragraph", () => {
+  for (const kind of ["cv", "letter"]) {
+    const clean = emptyPaper(kind)
+    assert.deepEqual(detectDocument(clean), [])
+    assert.deepEqual(detectDocument({ ...clean, header: { type: "header" } }), [
+      message,
+    ])
+    assert.deepEqual(
+      detectDocument({
+        ...clean,
+        blocks: [...clean.blocks, { type: "section" }],
+      }),
+      [message]
+    )
+    assert.deepEqual(
+      detectDocument({
+        ...clean,
+        blocks: [{ ...clean.blocks[0], style: "Normal" }],
+      }),
+      [message]
+    )
+  }
+})
+
+test("blank factories delegate and the historical starter CV fails", () => {
+  assert.deepEqual(detect('function blankCv() { return blankPaper("cv") }'), [])
+  assert.deepEqual(
+    detect(
+      "function blankCv() { return { header: seed(), blocks: sections() } }"
+    ),
+    [message]
+  )
+  for (const file of [
+    "packages/domain/src/paper-doc/document.ts",
+    "scripts/lib/paper-canvas-mint.mjs",
+  ])
+    assert.deepEqual(detect(read(file), file), [])
+  const introduced = execFileSync(
+    "git",
+    ["show", "c998b453c:packages/domain/src/paper-doc/document.ts"],
+    { encoding: "utf8" }
+  )
+  assert.deepEqual(detect(introduced), [message, message])
+  const historic = execFileSync(
+    "git",
+    ["show", "38eab62e:packages/domain/src/paper-doc/document.ts"],
+    { encoding: "utf8" }
+  )
+  assert.deepEqual(detect(historic), [message, message])
+  assert.match(read("apps/api/src/paper/store.ts"), /blankPaper\(input.kind\)/)
+  assert.match(
+    read("apps/api/src/paper/package-list.ts"),
+    /blankPaper\(row.kind\)/
+  )
+  assert.match(
+    read("apps/web/src/features/paper/paper-new-dialog.tsx"),
+    /"paper.canvas"/
+  )
+  assert.match(
+    read("apps/web/src/features/paper/paper-letter-start.tsx"),
+    /"paper.canvas"/
+  )
+})
+
+test("the blank Word download has one empty paragraph, default margins and no applied style", () => {
+  const bytes = mintBlankBytes()
+  const paragraphs = paragraphsOf(bytes)
+  assert.equal(paragraphs.length, 1)
+  assert.equal(contentOf(paragraphs[0]), "")
+  assert.match(mainXml(bytes), /<w:r><w:t><\/w:t><\/w:r>/)
+  assert.doesNotMatch(
+    mainXml(bytes),
+    /<(?:w:)?(?:pStyle|rPr|jc|color|headerReference)\b/
+  )
+  assert.match(mainXml(bytes), /<w:pgSz w:w="12240" w:h="15840"/)
+  assert.match(
+    mainXml(bytes),
+    /<w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/
+  )
+})
+
+test("the unformatted blank accepts a split without a section carrier paragraph", () => {
+  const bytes = mintBlankBytes()
+  const result = applyCanvasBytes(
+    bytes,
+    { op: "split", paragraph: "blank", at: 0 },
+    {
+      version: 2,
+      paragraphs: [{ key: "blank", ordinal: 0, textIds: ["11111112"] }],
+    }
+  )
+  assert.equal(result.status, "APPLIED")
+  assert.equal(paragraphsOf(result.bytes).length, 2)
+  assert.doesNotMatch(mainXml(result.bytes), /<w:(pStyle|rPr)\b/)
+})

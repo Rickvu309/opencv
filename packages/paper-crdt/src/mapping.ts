@@ -155,7 +155,7 @@ function proseBlock(block: CvPaperBlock): PaperPartialBlock {
 
 export function toEditorBlocks(document: PaperDocument): PaperPartialBlock[] {
   const body = document.blocks.map(proseBlock)
-  if (document.kind === "letter") return body
+  if (document.kind === "letter" || !document.header) return body
   const { header } = document
   return [
     {
@@ -312,8 +312,13 @@ export function candidateOf(
         version,
         ...(version === 4 ? { schemaRevision: 1 } : {}),
         kind,
-        header: headerOf(blocks[0]),
-        blocks: blocks.slice(1).map(blockOf),
+        ...(blocks[0]?.type === "paperHeader"
+          ? { header: headerOf(blocks[0]) }
+          : {}),
+        blocks: (blocks[0]?.type === "paperHeader"
+          ? blocks.slice(1)
+          : blocks
+        ).map(blockOf),
         clashes: [],
       }
     : {

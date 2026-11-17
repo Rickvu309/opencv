@@ -132,7 +132,7 @@ export function fieldValue(
   const [id, name] = key.split(".")
   if (!id || !name || doc.kind !== "cv") return undefined
   if (id === "header") {
-    const value = doc.header[name as (typeof HEADER_KEYS)[number]]
+    const value = doc.header?.[name as (typeof HEADER_KEYS)[number]]
     return typeof value === "string" ? value : undefined
   }
   const block = flat(doc.blocks).find((item) => item.id === id) as

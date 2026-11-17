@@ -45,7 +45,7 @@ export function canonicalTarget(
       matches.push(node)
     if ("children" in node) node.children.forEach((child) => visit(child, node))
   }
-  if (doc.kind === "cv") visit(doc.header)
+  if (doc.kind === "cv" && doc.header) visit(doc.header)
   doc.blocks.forEach((n) => visit(n))
   const node = matches[0]
   if (matches.length !== 1 || !node)

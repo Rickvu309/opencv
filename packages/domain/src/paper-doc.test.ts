@@ -1,13 +1,17 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
+import { rebasePending } from "./paper-doc/rebase.ts"
 
 import {
   blankCv,
   blankLetter,
+  mergeLegacyEdit,
   paperDocumentSchema,
   nodeFieldSetSchema,
   paperNodeSpecs,
   paperPlainText,
+  paperOutline,
+  cvPrintModel,
   richTextOf,
   sectionsOf,
   type NodeId,
@@ -28,7 +32,12 @@ function section(value: string, kind = "experience") {
 }
 
 function cv(blocks: unknown[], clashes: unknown[] = []) {
-  return { ...blankCv(), blocks, clashes }
+  return {
+    ...blankCv(),
+    header: paperNodeSpecs.header.blank(),
+    blocks,
+    clashes,
+  }
 }
 
 function letter(blocks: unknown[], clashes: unknown[] = []) {
@@ -53,6 +62,25 @@ describe("paper document v3", () => {
   it("accepts the blank CV and the blank letter", () => {
     assert.equal(paperDocumentSchema.safeParse(blankCv()).success, true)
     assert.equal(paperDocumentSchema.safeParse(blankLetter()).success, true)
+  })
+
+  it("starts both kinds with one unformatted empty paragraph and no header", () => {
+    for (const paper of [blankCv(), blankLetter()]) {
+      assert.equal(paper.blocks.length, 1)
+      assert.equal("header" in paper, false)
+      assert.deepEqual(paper.blocks[0], {
+        id: "paragraph-1",
+        type: "paragraph",
+        content: [],
+      })
+      assert.equal(paperPlainText(paper), "")
+      assert.doesNotThrow(() => paperOutline(paper, { maxChars: 2000 }))
+    }
+    assert.equal(cvPrintModel(blankCv()).name, "")
+    assert.deepEqual(
+      sectionsOf(blankCv()).map((group) => group.section),
+      [null]
+    )
   })
 
   it("accepts a full CV and a full letter", () => {
@@ -352,4 +380,20 @@ describe("paper document v3", () => {
     )
     assert.equal(paperPlainText(parsed), "summary\nHello")
   })
+})
+
+it("merges a headerless CV without adding structure and accepts an explicit header", () => {
+  const blank = blankCv()
+  assert.deepEqual(mergeLegacyEdit(blank, blank), blank)
+  const structured = { ...blank, header: paperNodeSpecs.header.blank() }
+  assert.deepEqual(mergeLegacyEdit(blank, structured), structured)
+  assert.deepEqual(mergeLegacyEdit(structured, blank), blank)
+})
+
+it("rebases an unstructured CV without inventing a header", () => {
+  const blank = blankCv()
+  assert.deepEqual(
+    rebasePending({ base: blank, ours: blank, theirs: blank }).document,
+    blank
+  )
 })

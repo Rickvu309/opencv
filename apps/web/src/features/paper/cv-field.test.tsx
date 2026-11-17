@@ -1,5 +1,5 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
-import { blankCv } from "@workspace/domain"
+import { structuredCv } from "@/test/paper-structured-cv.ts"
 import { afterEach, beforeAll, expect, it } from "vitest"
 
 import { installEditorPolyfills } from "@/test/paper-engine-kit.tsx"
@@ -11,7 +11,7 @@ beforeAll(() => installEditorPolyfills())
 afterEach(() => cleanup())
 
 function jobDocument() {
-  const base = blankCv()
+  const base = structuredCv()
   return {
     ...base,
     blocks: [

@@ -66,6 +66,6 @@ export function storedPaperPhotoIds(input: unknown): string[] {
       if ("children" in node) node.children.forEach(visit)
     }
     visit(document.flow)
-  } else if (document.kind === "cv") add(document.header.photo)
+  } else if (document.kind === "cv") add(document.header?.photo)
   return [...ids]
 }

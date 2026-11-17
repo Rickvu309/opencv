@@ -15,7 +15,6 @@ import {
   mainXml,
   member,
   sectCount,
-  mintBlankBytes,
   packageFromBody,
   paragraphsOf,
   pStyleOf,
@@ -61,8 +60,12 @@ import {
   writing,
 } from "./lib/paper-canvas-checks.mjs"
 
-test("the minted blank page splits, merges, and deletes", () => {
-  const minted = mintBlankBytes()
+function paintedCanvasBytes() {
+  return packageFromBody(writing("") + carrier())
+}
+
+test("a formatted empty page splits, merges, and deletes", () => {
+  const minted = paintedCanvasBytes()
   const side = mintSide()
   assert.deepEqual(judgeMint(minted), [])
   assert.equal(sectCount(minted), 1)
@@ -364,7 +367,7 @@ test("numbering, differing styles, and a paragraph mark stay unchanged", () => {
 })
 
 test("a frozen proposal and the other session do not move the winner", () => {
-  const typed = fillPaintedText(mintBlankBytes(), FIRST)
+  const typed = fillPaintedText(paintedCanvasBytes(), FIRST)
   const splitBytes = split(typed, mintSide(), 1).bytes
   const approved = {
     error: "Basis conflict",
@@ -427,7 +430,7 @@ test("a frozen proposal and the other session do not move the winner", () => {
     ),
     "loserDraft"
   )
-  const minted = mintBlankBytes()
+  const minted = paintedCanvasBytes()
   assert.equal(
     Buffer.from(paperEdit(minted, { before: "", after: "Z" })).equals(minted),
     true
@@ -475,7 +478,7 @@ test("paper.edit does not gain Enter", () => {
 
 test("a split keeps escaped letters and leaves locked paragraphs unchanged", () => {
   const side = mintSide()
-  const ampersand = fillPaintedText(mintBlankBytes(), "R&D")
+  const ampersand = fillPaintedText(paintedCanvasBytes(), "R&D")
   const cut = applyCanvasBytes(
     ampersand,
     { op: "split", paragraph: side.paragraphs[0].key, at: 1 },
@@ -497,7 +500,7 @@ test("a split keeps escaped letters and leaves locked paragraphs unchanged", () 
   )
   assert.equal(contentOf(laterText[0]), "R&")
   assert.equal(contentOf(laterText[1]), "D")
-  const less = fillPaintedText(mintBlankBytes(), "a<b")
+  const less = fillPaintedText(paintedCanvasBytes(), "a<b")
   const angled = applyCanvasBytes(
     less,
     { op: "split", paragraph: side.paragraphs[0].key, at: 1 },
@@ -621,7 +624,7 @@ test("a numeric token, a comment, or a tracked mark stays unchanged", () => {
 })
 
 test("the first words fill only an empty paragraph", () => {
-  const minted = mintBlankBytes()
+  const minted = paintedCanvasBytes()
   const side = mintSide()
   const wrote = applyCanvasBytes(
     minted,

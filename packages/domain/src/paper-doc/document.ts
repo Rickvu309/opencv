@@ -1,3 +1,4 @@
+import { emptyPaper } from "./blank-canvas.js"
 import { z } from "zod"
 
 import {
@@ -6,7 +7,6 @@ import {
   fieldSetMisfit,
   nodeFieldSetSchema,
   nodeIdSchema,
-  paperNodeSpecs,
   proseBlockSchema,
   type CvPaperBlock,
   type CvSectionKind,
@@ -61,7 +61,7 @@ const cvPaperSchema = z
   .object({
     version: z.literal(3),
     kind: z.literal("cv"),
-    header: cvHeaderSchema,
+    header: cvHeaderSchema.optional(),
     blocks: z.array(cvBlockSchema),
     clashes: clashesSchema,
   })
@@ -130,7 +130,7 @@ function walkInvariants(document: PaperDocument, report: IssueSink): void {
     })
   }
 
-  if (document.kind === "cv")
+  if (document.kind === "cv" && document.header)
     claim(document.header.id, "header", ["header", "id"])
   let sectionSeen = false
   document.blocks.forEach((block, index) => {
@@ -260,31 +260,21 @@ export function sectionMarker(
   return { id, type: "section", kind, title: SECTION_TITLES[kind] }
 }
 
-const STARTER_KINDS: readonly CvSectionKind[] = [
-  "experience",
-  "education",
-  "skills",
-]
+export function blankPaper(kind: "cv"): CvPaper
+export function blankPaper(kind: "letter"): LetterPaper
+export function blankPaper(kind: PaperDocument["kind"]): PaperDocument
+export function blankPaper(kind: PaperDocument["kind"]): PaperDocument {
+  return kind === "cv"
+    ? cvPaperSchema.parse(emptyPaper(kind))
+    : letterPaperSchema.parse(emptyPaper(kind))
+}
 
 export function blankCv(): CvPaper {
-  return {
-    version: 3,
-    kind: "cv",
-    header: paperNodeSpecs.header.blank(),
-    blocks: STARTER_KINDS.map((kind) =>
-      sectionMarker(kind, `section-${kind}` as NodeId)
-    ),
-    clashes: [],
-  }
+  return blankPaper("cv")
 }
 
 export function blankLetter(): LetterPaper {
-  return {
-    version: 3,
-    kind: "letter",
-    blocks: [paperNodeSpecs.paragraph.blank("letter-1" as NodeId)],
-    clashes: [],
-  }
+  return blankPaper("letter")
 }
 
 export type SectionGroup = {

@@ -1,3 +1,5 @@
+import { emptyPaper } from "../../packages/domain/src/paper-doc/blank-canvas.ts"
+
 import {
   PKG,
   REL,
@@ -32,19 +34,23 @@ export function packageFromBody(body) {
   ])
 }
 
-function painted(text, pPr = PPR, paraId = "11111111", textId = "11111112") {
-  return paraXml({ paraId, textId }, pPr, [runXml(text, RPR)])
-}
-
 export function mintBlankBytes() {
   return packageFromBody(
-    painted("") + paraXml({ paraId: "22222221", textId: "22222222" }, SECT, [])
+    emptyPaper("letter")
+      .blocks.map(() =>
+        paraXml({ paraId: "11111111", textId: "11111112" }, null, [
+          runXml("", ""),
+        ])
+      )
+      .join("") + SECT
   )
 }
 
 export function fillPaintedText(bytes, text) {
   const xml = mainXml(bytes)
   const from = "<w:t></w:t>"
+  if (!xml.includes(from))
+    return repack(bytes, xml.replace("</w:p>", `${runXml(text, "")}</w:p>`))
   if (xml.split(from).length !== 2) throw new Error("empty text is not unique")
   return repack(bytes, xml.replace(from, `<w:t>${escapeText(text)}</w:t>`))
 }

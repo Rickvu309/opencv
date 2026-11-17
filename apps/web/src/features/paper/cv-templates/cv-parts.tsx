@@ -514,7 +514,7 @@ function CvPhotoUploader({
       }
       const next = await getPaper(docId)
       const restoredPhoto =
-        next.paper?.kind === "cv" ? next.paper.header.photo : undefined
+        next.paper?.kind === "cv" ? next.paper.header?.photo : undefined
       publish(restoredPhoto, next.contentVersion)
       if (fileId && paperPhotoFileId(restoredPhoto) !== fileId) {
         await ignoreRejection(

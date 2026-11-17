@@ -63,7 +63,7 @@ function attachPhotoReversal(
 ) {
   const photo =
     output.previousPaper?.kind === "cv"
-      ? output.previousPaper.header.photo
+      ? output.previousPaper.header?.photo
       : undefined
   const fileId = paperPhotoFileId(photo)
   return {

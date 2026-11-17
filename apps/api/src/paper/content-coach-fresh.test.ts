@@ -1,3 +1,4 @@
+import { paperNodeSpecs } from "@workspace/domain"
 import type { CvPaper, PaperDocument } from "@workspace/domain"
 
 import { eq } from "drizzle-orm"
@@ -32,7 +33,10 @@ describe("paper.edit freshness against a person who is typing", () => {
         return withText(
           {
             ...cv,
-            header: { ...cv.header, city: "Paris" },
+            header: {
+              ...(cv.header ?? paperNodeSpecs.header.blank()),
+              city: "Paris",
+            },
             blocks: cv.blocks.map((block) =>
               block.id === added && block.type === "experience"
                 ? { ...block, role: "Director" }

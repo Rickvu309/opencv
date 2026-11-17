@@ -1,3 +1,4 @@
+import { paperNodeSpecs } from "@workspace/domain"
 import {
   paperPhotoRef,
   parseFileId,
@@ -35,12 +36,15 @@ function oldEnough() {
 }
 
 function withPhoto(paper: PaperDocument, ref: string): PaperDocument {
-  if (paper.kind !== "cv") return paper
-  return { ...paper, header: { ...paper.header, photo: ref } }
+  if (paper.kind !== "cv" || !paper.header) return paper
+  return {
+    ...paper,
+    header: { ...(paper.header ?? paperNodeSpecs.header.blank()), photo: ref },
+  }
 }
 
 function withoutPhoto(paper: PaperDocument): PaperDocument {
-  if (paper.kind !== "cv") return paper
+  if (paper.kind !== "cv" || !paper.header) return paper
   const { photo: _removed, ...header } = paper.header
   void _removed
   return { ...paper, header }
@@ -117,7 +121,7 @@ describe("a photo released by a Coach edit", () => {
         deleteFile(h.store.actor, parseFileId(saved.id))
       ).rejects.toMatchObject({ status: 409 })
       await h.run("paper.revertEdit", { docId, editId: clearEditId })
-      expect((await h.paperOf(docId)).header.photo).toBe(
+      expect((await h.paperOf(docId)).header?.photo).toBe(
         paperPhotoRef(saved.id)
       )
       expect(await sweepUnattachedPhotos()).not.toContain(saved.id)
@@ -176,7 +180,7 @@ describe("a photo released by a Coach edit", () => {
       expect(row.contentVersion).toBe(64)
       expect(row.crdtBaseSeq).toBe(3)
       expect(seqs).not.toContain(3)
-      expect((await h.paperOf(docId)).header.photo).toBeUndefined()
+      expect((await h.paperOf(docId)).header?.photo).toBeUndefined()
       expect(await sourcesOf(saved.id)).toEqual([])
       expect(await sweepUnattachedPhotos()).toContain(saved.id)
     })
@@ -204,7 +208,7 @@ describe("a photo released by a Coach edit", () => {
         }
       )
       await h.run("paper.revertEdit", { docId, editId: "add-photo" })
-      expect((await h.paperOf(docId)).header.photo).toBeUndefined()
+      expect((await h.paperOf(docId)).header?.photo).toBeUndefined()
       expect(
         (await sourcesOf(saved.id)).some((source) =>
           source.startsWith("paper_doc_updates.released:")

@@ -558,6 +558,14 @@ export function rebasePending(
 
 function withMergedHeader(target: PaperDocument, input: RebaseInput) {
   if (target.kind !== "cv" || input.ours.kind !== "cv") return
+  if (!input.ours.header) {
+    if (input.base.kind === "cv" && input.base.header) delete target.header
+    return
+  }
+  if (input.theirs.kind !== "cv" || !input.theirs.header) {
+    target.header = input.ours.header
+    return
+  }
   const base = input.base.kind === "cv" ? input.base.header : undefined
   const header = mergedFields(
     base as unknown as Mut | undefined,

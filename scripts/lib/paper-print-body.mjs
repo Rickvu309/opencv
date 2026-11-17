@@ -1,6 +1,6 @@
 import ts from "typescript"
 
-const STAND_IN_BODIES = new Set(["blankCv", "blankLetter"])
+const STAND_IN_BODIES = new Set(["blankCv", "blankLetter", "blankPaper"])
 
 function walk(node, visit) {
   visit(node)

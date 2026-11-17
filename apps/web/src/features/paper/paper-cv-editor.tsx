@@ -228,7 +228,8 @@ export function PaperCvEditor({
     if (!cv) return
     for (const check of state.checks) {
       if (check.resolved === true || dismissed.current.has(check.id)) continue
-      const phone = check.kind === "phone" && cv.header.phone.trim() !== ""
+      const phone =
+        check.kind === "phone" && (cv.header?.phone ?? "").trim() !== ""
       const dates = check.kind === "dates" && datesFilled(cv, check.blockId)
       if (!phone && !dates) continue
       dismissed.current.add(check.id)
