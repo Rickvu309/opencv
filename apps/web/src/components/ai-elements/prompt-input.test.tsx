@@ -89,7 +89,7 @@ describe("PromptInput", () => {
     expect(page.group).toHaveAttribute("data-stacked", "true")
     expect(page.box.className).toContain("min-h-[68px]")
     expect(page.box.className).toContain("text-base")
-    expect(page.box.className).toContain("md:text-[15px]")
+    expect(page.box.className).toContain("md:text-base")
     expect(page.box.className).toContain("max-h-60")
     expect(page.start).toHaveTextContent("Add")
     expect(page.end).toHaveTextContent("Send")

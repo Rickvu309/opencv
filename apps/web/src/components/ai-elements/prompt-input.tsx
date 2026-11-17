@@ -36,7 +36,7 @@ const frameClasses: Record<
   },
   page: {
     textarea:
-      "max-h-60 min-h-[68px] pt-4 pb-3 text-base leading-6 md:text-[15px] group-data-[stacked=true]/input-group:px-[18px] group-data-[stacked=true]/input-group:pb-3",
+      "max-h-60 min-h-[68px] pt-4 pb-3 text-base leading-6 md:text-base group-data-[stacked=true]/input-group:px-[18px] group-data-[stacked=true]/input-group:pb-3",
     start: "self-end ps-3 pe-3 pt-0 pb-3",
     end: "self-end gap-1.5 pe-3 pt-0 pb-3",
     stacked: true,

@@ -2,6 +2,7 @@ import { RELATIVE } from "./compare.mjs"
 import {
   GROK_COACH_PAGE_COLUMN,
   LINEAR_COACH_PAGE_COMPOSER,
+  LINEAR_COACH_PANEL_COMPOSER,
   WORD_SIZED_WRITING_PAGE,
   ownerDecisionProblems,
 } from "./owner-decision.mjs"
@@ -97,6 +98,7 @@ export const DESIGN_MAP = [
     via: SHELL_CHAT_PANEL,
     frame: "FAcND",
     props: ["radius", ...PADDING, "gap"],
+    ownerDecision: LINEAR_COACH_PANEL_COMPOSER,
   },
   {
     screen: "paper-panel-open",

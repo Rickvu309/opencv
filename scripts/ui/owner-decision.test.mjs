@@ -7,6 +7,7 @@ import { DESIGN_MAP, validateDesignMap } from "./design-map.mjs"
 import {
   GROK_COACH_PAGE_COLUMN,
   LINEAR_COACH_PAGE_COMPOSER,
+  LINEAR_COACH_PANEL_COMPOSER,
   WORD_SIZED_WRITING_PAGE,
   ownerDecisionProblems,
 } from "./owner-decision.mjs"
@@ -125,6 +126,7 @@ test("every writing page sheet row takes the Word size by owner decision and kee
       (row) => [row.screen, row.label, row.ownerDecision]
     ),
     [
+      ["paper-panel-open", "Coach composer", LINEAR_COACH_PANEL_COMPOSER],
       [
         "coach-chat-finished",
         "Coach page message column",
@@ -140,18 +142,26 @@ test("every writing page sheet row takes the Word size by owner decision and kee
 })
 
 test("the Coach chat decisions are valid rows and change only the Coach chat geometry the owner asked for", () => {
-  const decisions = [GROK_COACH_PAGE_COLUMN, LINEAR_COACH_PAGE_COMPOSER]
+  const decisions = [
+    GROK_COACH_PAGE_COLUMN,
+    LINEAR_COACH_PAGE_COMPOSER,
+    LINEAR_COACH_PANEL_COMPOSER,
+  ]
   for (const decision of decisions) {
     const row = DESIGN_MAP.find((entry) => entry.ownerDecision === decision)
     assert.deepEqual(ownerDecisionProblems(row, row.label), [])
     assert.match(row.screen, /^(coach-chat-finished|paper-panel-open)$/)
   }
-  assert.deepEqual(LINEAR_COACH_PAGE_COMPOSER.expect, { width: 760 })
+  assert.deepEqual(LINEAR_COACH_PAGE_COMPOSER.expect, {
+    width: 760,
+    radius: 10,
+  })
+  assert.deepEqual(LINEAR_COACH_PANEL_COMPOSER.expect, { radius: 10 })
   assert.deepEqual(GROK_COACH_PAGE_COLUMN.expect, { width: 760, gap: 32 })
   const panelComposer = DESIGN_MAP.find(
     (row) => row.screen === "paper-panel-open" && row.label === "Coach composer"
   )
-  assert.equal(panelComposer.ownerDecision, undefined)
+  assert.equal(panelComposer.ownerDecision, LINEAR_COACH_PANEL_COMPOSER)
 })
 
 test("check measures a decided row against the decision and says it is a decision, not the pen", () => {
