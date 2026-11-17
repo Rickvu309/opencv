@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "packages/paper-crdt/src/rich-client.test.ts",
+    "because": "Issue #1630 explicitly approves replacing foreign-state refusal with stronger canonical convergence for both tabs while retaining malformed and reset refusals.",
+    "replacedBy": "packages/paper-crdt/src/rich-client.test.ts",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "44eef1e5c9db603fb6b130580abc97733bd2de42",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]
