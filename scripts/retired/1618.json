@@ -1,19 +1,5 @@
 [
   {
-    "subject": "apps/web/src/features/inbox/inbox-page.test.tsx",
-    "because": "The example banner names the rows, the reader keeps that notice, and explore has one start and one failure. The test checks that.",
-    "replacedBy": "apps/web/src/features/inbox/inbox-page.test.tsx",
-    "proof": {
-      "fork": "a887677ee976df2a519b5804ad24a48ed431fc11",
-      "replacedByBlob": "3dd94f154dcba172fe2c24df5a6eb4f4177d287b",
-      "failedOnBase": true,
-      "passedOnHead": true
-    },
-    "class": "self",
-    "classBecause": null,
-    "items": 2
-  },
-  {
     "subject": "apps/web/src/features/inbox/inbox-reader.test.tsx",
     "because": "More is a real disabled control, Open in Gmail says there is no Gmail link, the phone reply is 16px, and a rejected draft save is not marked saved. The test checks that.",
     "replacedBy": "apps/web/src/features/inbox/inbox-reader.test.tsx",
@@ -34,6 +20,20 @@
     "proof": {
       "fork": "a887677ee976df2a519b5804ad24a48ed431fc11",
       "replacedByBlob": "51ff162f6eca1d27dd5bb4a5edc79c5902e2bb06",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/inbox/inbox-page.test.tsx",
+    "because": "The example banner names the rows, shows once per screen (over the list on wide screens, in the reader on phones), and explore has one start and one failure. The test checks that.",
+    "replacedBy": "apps/web/src/features/inbox/inbox-page.test.tsx",
+    "proof": {
+      "fork": "a887677ee976df2a519b5804ad24a48ed431fc11",
+      "replacedByBlob": "91991413dc95e7a25c81a9a30960973d6c12fd0c",
       "failedOnBase": true,
       "passedOnHead": true
     },
