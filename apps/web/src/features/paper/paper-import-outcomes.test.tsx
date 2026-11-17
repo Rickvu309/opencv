@@ -5,6 +5,7 @@ import { render } from "@/test/render-with-client.tsx"
 import { ApiError } from "@/lib/api-error.ts"
 
 import { PaperLibrary } from "./paper-library.tsx"
+import { libraryRouter } from "./paper-library.fixtures.tsx"
 import { importPaperFile } from "./paper-api.ts"
 
 vi.mock("./paper-api.ts", async (importOriginal) => ({
@@ -179,16 +180,18 @@ function serverCalls() {
 function mount() {
   const onOpen = vi.fn()
   render(
-    <PaperLibrary
-      docs={[]}
-      files={[]}
-      loading={false}
-      error={null}
-      onRetry={() => undefined}
-      onOpen={onOpen}
-      query=""
-      onQueryChange={() => undefined}
-    />
+    libraryRouter(
+      <PaperLibrary
+        docs={[]}
+        files={[]}
+        loading={false}
+        error={null}
+        onRetry={() => undefined}
+        onOpen={onOpen}
+        query=""
+        onQueryChange={() => undefined}
+      />
+    )
   )
   return onOpen
 }
@@ -326,7 +329,7 @@ describe("importing a file on Paper home", () => {
       await vi.waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
       expect(onOpen).not.toHaveBeenCalled()
       expect(calls.filter((url) => url.includes("paper.delete"))).toEqual([])
-      expect(screen.getByText("Start a document")).toBeInTheDocument()
+      expect(screen.getByText("No CVs yet.")).toBeInTheDocument()
     }
   )
 
