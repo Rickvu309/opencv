@@ -2,6 +2,7 @@ import {
   blankCv,
   paperNodeSpecs,
   paperPlainText,
+  richTextSchema,
   type CvPaper,
 } from "@workspace/domain"
 import * as Y from "yjs"
@@ -91,7 +92,7 @@ for (const reset of [false, true]) {
       typed.blocks[0] = {
         ...typed.blocks[0]!,
         type: "paragraph",
-        content: [{ text: "Later typing" }],
+        content: richTextSchema.parse([{ text: "Later typing" }]),
       }
       const removed = withoutHeader(base)
       for (const [ours, theirs] of [

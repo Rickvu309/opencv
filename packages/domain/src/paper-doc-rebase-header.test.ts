@@ -6,6 +6,7 @@ import {
   paperDocumentSchema,
   paperEditSchema,
   paperPlainText,
+  richTextSchema,
   type CvPaper,
 } from "./paper-doc/index.ts"
 import { rebasePending } from "./paper-doc/rebase.ts"
@@ -59,7 +60,7 @@ describe("three-way CV contact presence", () => {
     typed.blocks[0] = {
       ...typed.blocks[0]!,
       type: "paragraph",
-      content: [{ text: "Later typing" }],
+      content: richTextSchema.parse([{ text: "Later typing" }]),
     }
     const removed = withoutHeader(base)
     for (const [ours, theirs] of [
