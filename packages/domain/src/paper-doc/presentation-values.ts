@@ -53,7 +53,7 @@ const lineSpacingSchema = z.discriminatedUnion("kind", [
     .strict(),
 ])
 export function lineSpacingWordUnits(
-  line: z.infer<typeof lineSpacingSchema>
+  line: z.input<typeof lineSpacingSchema>
 ): Result<number> {
   const amount = line.kind === "multiple" ? line.value * 240 : line.value
   const rounded = Math.round(amount)

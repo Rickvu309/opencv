@@ -12,6 +12,10 @@ import { mountPrivateFlow } from "./native-layout-flow-mount.js"
 import { mountRichPaperEditor } from "./editor.js"
 import { storedFlowFixture } from "./test/flow-fixture.js"
 import { inlineCss, paragraphCss } from "./native-formatting-render-values.js"
+import {
+  inlineSchema,
+  paragraphSchema,
+} from "@workspace/domain/internal/paper-presentation"
 
 const cleanups: (() => void)[] = []
 beforeEach(() => {
@@ -487,10 +491,13 @@ it.each([20, 3200])(
     ]
     expect(runs.some((run) => run.style.fontSize === "24pt")).toBe(true)
     expect(runs.some((run) => run.style.fontSize === "11pt")).toBe(true)
-    const lineSpacing = { kind: "atleast" as const, value: minimum }
+    const { lineSpacing } = paragraphSchema.parse({
+      lineSpacing: { kind: "atleast", value: minimum },
+    })
+    const sizes = [220, 480].map((size) => inlineSchema.parse({ size }).size)
     const lineHeight = `line-height:max(${minimum / 20}pt,1.2em)`
     expect(paragraphCss({ lineSpacing })).toContain(lineHeight)
-    for (const size of [220, 480])
+    for (const size of sizes)
       expect(inlineCss({ size }, lineSpacing)).toContain(lineHeight)
   }
 )
