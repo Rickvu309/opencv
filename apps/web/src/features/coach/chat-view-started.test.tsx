@@ -28,7 +28,7 @@ function renderView(
 }
 
 describe("ChatView start time", () => {
-  it("dates a page thread above its first message", () => {
+  it("dates a page Chat above its first message", () => {
     renderView("page")
     const stamp = screen.getByText(/^Today \d{1,2}:\d{2} [AP]M$/)
     expect(stamp.tagName).toBe("TIME")
@@ -38,7 +38,7 @@ describe("ChatView start time", () => {
     ).toBeTruthy()
   })
 
-  it("leaves the panel, an empty thread and an unknown start undated", () => {
+  it("leaves the panel, an empty Chat and an unknown start undated", () => {
     renderView("compact")
     expect(screen.queryByText(/^Today/)).not.toBeInTheDocument()
     cleanup()
