@@ -203,6 +203,13 @@ export function mountRichPaperEditor(
       undo: () => apply(commands.undo),
       redo: () => apply(commands.redo),
       formattingState: () => (active ? commands.formattingState() : null),
+      setTableBorders(
+        ...args: Parameters<typeof mounted.tables.setTableBorders>
+      ) {
+        if (!active || !mounted.editor.isEditable) return false
+        mounted.tables.setTableBorders(...args)
+        return true
+      },
       activeTable: () => (active ? mounted.tables.activeTable() : null),
       tableElement() {
         if (!active) return null
