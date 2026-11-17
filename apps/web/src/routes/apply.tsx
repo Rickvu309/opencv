@@ -150,7 +150,7 @@ export function ApplyPage() {
   return (
     <div
       data-pen-surface="apply"
-      className="relative flex h-full min-h-0 flex-col bg-card"
+      className="relative flex h-full min-h-0 flex-col bg-background"
     >
       <ApplyHeader
         onNewJob={() => dispatch({ type: "dialog_opened", stage: "saved" })}

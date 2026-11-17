@@ -98,7 +98,7 @@ export function ApplyNoResults({ onClear }: { onClear: () => void }) {
   return (
     <div
       data-slot="apply-no-results"
-      className="flex min-h-0 flex-1 flex-col items-center justify-center bg-card pb-[120px]"
+      className="flex min-h-0 flex-1 flex-col items-center justify-center bg-background pb-[120px]"
     >
       <FunnelX className="size-11 rounded-xl border border-border bg-card p-3 text-muted-foreground shadow-[0_2px_6px_rgb(0_0_0/0.04)]" />
       <h2 className="mt-3.5 text-[15px] font-semibold">

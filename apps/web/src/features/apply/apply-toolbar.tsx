@@ -243,7 +243,7 @@ export function ActiveFilters({
   return (
     <div
       data-slot="active-filters"
-      className="flex min-h-10 shrink-0 flex-wrap items-center gap-1.5 bg-card px-3 py-1.5"
+      className="flex min-h-10 shrink-0 flex-wrap items-center gap-1.5 bg-background px-3 py-1.5"
     >
       {company ? (
         <FilterChip

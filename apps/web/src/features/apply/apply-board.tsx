@@ -225,7 +225,7 @@ export function ApplyBoard({
   return (
     <div
       data-slot="apply-board"
-      className="flex min-h-0 flex-1 gap-2.5 overflow-x-auto bg-card p-3"
+      className="flex min-h-0 flex-1 gap-2.5 overflow-x-auto bg-background p-3"
     >
       <KanbanProvider
         columns={columns}
@@ -263,7 +263,7 @@ export function ApplyBoard({
               role="region"
               aria-label={column.name}
               data-stage={column.id}
-              className="group/lane min-h-0 w-[244px] min-w-[244px] gap-2 rounded-[6px] border-0 bg-background px-2 pt-1 pb-2 ring-0"
+              className="group/lane min-h-0 w-[244px] min-w-[244px] gap-2 rounded-[6px] border-0 bg-secondary/50 px-2 pt-1 pb-2 ring-0"
             >
               <KanbanHeader className="p-0 font-normal">
                 <BoardLane
