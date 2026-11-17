@@ -169,10 +169,7 @@ export function appendNativeJournal(
     key,
     JSON.stringify({
       next: seq,
-      entries: [
-        ...record.entries,
-        { seq, snapshot, idb: false, server: false },
-      ],
+      entries: [{ seq, snapshot, idb: false, server: false }],
     })
   )
   return { key, seq, snapshot: JSON.stringify(snapshot) }

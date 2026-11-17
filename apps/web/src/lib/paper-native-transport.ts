@@ -211,13 +211,15 @@ function openSession<Document extends StoredPaperDocument>(
       return exchange
     }
     queued = false
-    acceptedVersion = -1
     const live = client
     const sent = live.prepare()
     const sentVersion = version
     const covered = [...checkpoints]
-    state = "saving"
-    emit()
+    if (sent.basedOn !== undefined || acceptedVersion !== version) {
+      acceptedVersion = -1
+      state = "saving"
+      emit()
+    }
     exchange = (async () => {
       try {
         const raw = await command(

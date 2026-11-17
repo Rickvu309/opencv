@@ -10,6 +10,8 @@ import {
 } from "./paper-rich-word.ts"
 import { fromBase64 } from "./paper-sync-bytes.ts"
 
+export const RICH_PULL_MS = 2500
+
 export function openRichPaperSession(options: {
   readonly identity: NativeSyncIdentity
   readonly currentIdentity: () => unknown
@@ -74,6 +76,9 @@ export function openRichPaperSession(options: {
   const visibility = () => {
     if (document.visibilityState === "hidden") flush()
   }
+  const pull = setInterval(() => {
+    if (document.visibilityState === "visible" && timer === undefined) flush()
+  }, RICH_PULL_MS)
   window.addEventListener("pagehide", flush)
   window.addEventListener("online", flush)
   window.addEventListener("focus", flush)
@@ -101,6 +106,7 @@ export function openRichPaperSession(options: {
       active = false
       cancellation.abort()
       if (timer !== undefined) clearTimeout(timer)
+      clearInterval(pull)
       detach()
       window.removeEventListener("pagehide", flush)
       window.removeEventListener("online", flush)
