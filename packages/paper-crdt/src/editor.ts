@@ -18,8 +18,6 @@ import {
 
 export type RichMark = "bold" | "italic" | "underline" | "strike"
 
-export { scalePaperPage } from "./rich-page-layout.js"
-
 export function mountRichPaperEditor(
   client: PaperClient<RichPaperDocument>,
   element: HTMLElement,

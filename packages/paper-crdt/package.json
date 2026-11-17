@@ -15,6 +15,11 @@
       "opencv-source": "./src/editor.ts",
       "types": "./dist/editor.d.ts",
       "import": "./dist/editor.js"
+    },
+    "./page-viewport": {
+      "opencv-source": "./src/page-viewport.ts",
+      "types": "./dist/page-viewport.d.ts",
+      "import": "./dist/page-viewport.js"
     }
   },
   "files": [

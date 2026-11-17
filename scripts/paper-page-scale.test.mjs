@@ -108,7 +108,7 @@ test("older Word canvas refuses responsive page geometry", () => {
     ),
     []
   )
-  const historic = execFileSync("git", ["show", `ca453aae:${canvasCss}`], {
+  const historic = execFileSync("git", ["show", `646b7471:${canvasCss}`], {
     encoding: "utf8",
   })
   assert.ok(detect(historic, canvasCss).length)
