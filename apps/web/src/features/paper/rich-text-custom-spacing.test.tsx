@@ -12,6 +12,10 @@ const disposals: (() => void)[] = []
 let width = 1200
 beforeEach(() => {
   width = 1200
+  Object.defineProperties(Range.prototype, {
+    getClientRects: { configurable: true, value: () => [] },
+    getBoundingClientRect: { configurable: true, value: () => new DOMRect() },
+  })
   const computedStyle = window.getComputedStyle.bind(window)
   vi.spyOn(window, "getComputedStyle").mockImplementation((element) => {
     const style = computedStyle(element)
@@ -214,4 +218,136 @@ it("shows mixed exact fields and leaves untouched values unchanged", async () =>
   ).toHaveValue(null)
   await user.click(within(dialog).getByRole("button", { name: "Apply" }))
   expect(client.document()).toEqual(before)
+})
+
+async function fillNumber(
+  user: ReturnType<typeof userEvent.setup>,
+  name: string,
+  value: string
+) {
+  const input = screen.getByRole("spinbutton", { name, exact: true })
+  await user.clear(input)
+  await user.type(input, value)
+}
+
+it("keeps the dialog's caret size while closing, focusing and typing", async () => {
+  width = 2000
+  const user = userEvent.setup()
+  const { editor } = setup()
+  act(() => editor.focus())
+  await user.click(screen.getByRole("button", { name: "Size and spacing" }))
+  await fillNumber(user, "Text size (pt)", "10.5")
+  await user.click(screen.getByRole("button", { name: "Apply", exact: true }))
+  expect(editor.activeFormatting()?.size).toBe("10.5")
+  const content = screen.getByRole("textbox", { name: "Document content" })
+  expect(content).toHaveFocus()
+  await user.type(content, "Caret", { skipClick: true })
+  expect(editor.activeFormatting()?.size).toBe("10.5")
+  expect(content).toHaveTextContent("Caret")
+})
+
+it.each([
+  "Text size (pt)",
+  "Space before (pt)",
+  "Space after (pt)",
+  "Line spacing (lines)",
+])(
+  "allows changing only %s with existing canonical precision in every field",
+  async (name) => {
+    width = 2000
+    const user = userEvent.setup()
+    const { editor } = setup()
+    act(() => {
+      const start = editor.captureSelection()!.plain.anchor
+      editor.restoreSelection({
+        plain: { anchor: start, head: start + 4 },
+        focused: true,
+      })
+      editor.formatTypography({
+        size: 210,
+        before: 123,
+        after: 87,
+        lineSpacing: { kind: "multiple", value: 1.125 },
+      })
+    })
+    await user.click(screen.getByRole("button", { name: "Size and spacing" }))
+    await fillNumber(
+      user,
+      name,
+      name === "Text size (pt)"
+        ? "11.5"
+        : name === "Line spacing (lines)"
+          ? "2.05"
+          : "6.25"
+    )
+    await user.click(screen.getByRole("button", { name: "Apply", exact: true }))
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    expect(editor.activeFormatting()).toMatchObject({
+      size: name === "Text size (pt)" ? "11.5" : "10.5",
+      before: name === "Space before (pt)" ? "6.25" : "6.15",
+      after: name === "Space after (pt)" ? "6.25" : "4.35",
+      lineValue: name === "Line spacing (lines)" ? "2.05" : "1.125",
+    })
+  }
+)
+
+it.each(["2.05", "4.15", "1.125"])(
+  "stores the exact custom line multiple %s",
+  async (value) => {
+    width = 2000
+    const user = userEvent.setup()
+    const { editor, client } = setup()
+    await user.click(screen.getByRole("button", { name: "Size and spacing" }))
+    await fillNumber(user, "Line spacing (lines)", value)
+    await user.click(screen.getByRole("button", { name: "Apply", exact: true }))
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    expect(editor.activeFormatting()?.lineValue).toBe(value)
+    expect(JSON.stringify(client.document())).toContain(
+      `"lineSpacing":{"kind":"multiple","value":${value}}`
+    )
+  }
+)
+
+it("explains an unrepresentable multiple before changing the document", async () => {
+  width = 2000
+  const user = userEvent.setup()
+  const { client } = setup()
+  const before = client.document()
+  await user.click(screen.getByRole("button", { name: "Size and spacing" }))
+  await fillNumber(user, "Line spacing (lines)", "1.001")
+  await user.click(screen.getByRole("button", { name: "Apply", exact: true }))
+  expect(screen.getByRole("alert")).toHaveTextContent("exact Word units")
+  expect(client.document()).toEqual(before)
+})
+
+it("types and steps the toolbar size and retains the font and color pickers' typing marks", async () => {
+  width = 2000
+  const user = userEvent.setup()
+  const { editor } = setup()
+  act(() => editor.focus())
+  await fillNumber(user, "Font size (pt)", "10.5")
+  await user.keyboard("{Enter}")
+  expect(editor.activeFormatting()?.size).toBe("10.5")
+  await user.click(screen.getByRole("button", { name: "Increase font size" }))
+  expect(editor.activeFormatting()?.size).toBe("11")
+  await user.click(screen.getByRole("button", { name: "Decrease font size" }))
+  expect(editor.activeFormatting()?.size).toBe("10.5")
+  await user.click(screen.getByRole("combobox", { name: "Font", exact: true }))
+  await user.click(
+    screen.getByRole("option", { name: "Courier New", exact: true })
+  )
+  await user.click(
+    screen.getByRole("button", { name: "Text color", exact: true })
+  )
+  await user.click(screen.getByRole("button", { name: "Navy", exact: true }))
+  act(() => editor.restoreSelection(editor.captureSelection()))
+  const content = screen.getByRole("textbox", { name: "Document content" })
+  act(() => editor.focus())
+  await user.type(content, "Styled", { skipClick: true })
+  expect(content).toHaveTextContent("Styled")
+  expect(editor.activeFormatting()).toMatchObject({
+    size: "10.5",
+    fontId: "liberation-mono",
+    color: "#1E3A8A",
+  })
 })

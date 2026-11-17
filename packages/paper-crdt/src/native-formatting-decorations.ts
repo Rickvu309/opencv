@@ -67,10 +67,16 @@ export function formattingDecorations(
       )
       decorations.push(
         Decoration.inline(pos, pos + node.nodeSize, {
-          style: inlineCss({
-            ...effective,
-            ...effectiveRunDecorations(direct, isLink, effective),
-          }),
+          style: inlineCss(
+            {
+              ...effective,
+              ...effectiveRunDecorations(direct, isLink, effective),
+            },
+            effectiveParagraph(
+              presentation,
+              canonicalProps(doc.resolve(pos).parent.attrs)
+            ).lineSpacing
+          ),
           "data-paper-resolved": "",
         })
       )

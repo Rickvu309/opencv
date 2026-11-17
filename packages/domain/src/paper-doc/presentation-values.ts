@@ -52,6 +52,16 @@ const lineSpacingSchema = z.discriminatedUnion("kind", [
     })
     .strict(),
 ])
+export function lineSpacingWordUnits(
+  line: z.infer<typeof lineSpacingSchema>
+): Result<number> {
+  const amount = line.kind === "multiple" ? line.value * 240 : line.value
+  const rounded = Math.round(amount)
+  return Number.isFinite(amount) &&
+    Math.abs(amount - rounded) <= Number.EPSILON * Math.max(1, Math.abs(amount))
+    ? ok(rounded)
+    : refuse("Word line spacing must use exact Word units")
+}
 export const paragraphSchema = z
   .object({
     alignment: z.enum(["left", "center", "right", "justify"]).optional(),

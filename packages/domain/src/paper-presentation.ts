@@ -6,6 +6,7 @@ export {
   canonical,
   overlay,
   paragraphSchema,
+  lineSpacingWordUnits,
   inlineSchema,
   inlineOperationsSchema,
 } from "./paper-doc/presentation-values.js"

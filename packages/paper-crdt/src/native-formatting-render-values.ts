@@ -48,7 +48,10 @@ function fontCss(fontId: InlinePresentation["fontId"]): string {
   }
 }
 
-export function inlineCss(v: InlinePresentation): string {
+export function inlineCss(
+  v: InlinePresentation,
+  line?: ParagraphPresentation["lineSpacing"]
+): string {
   const decoration = [
     v.underline ? "underline" : "",
     v.strike ? "line-through" : "",
@@ -63,6 +66,9 @@ export function inlineCss(v: InlinePresentation): string {
     `background-color:${v.highlight ?? "transparent"}`,
     `font-family:${fontCss(v.fontId)}`,
     `font-size:${(v.size ?? 220) / 20}pt`,
+    ...(line?.kind === "atleast"
+      ? [`line-height:max(${line.value / 20}pt,1.2em)`]
+      : []),
   ].join(";")
 }
 
@@ -77,7 +83,7 @@ export function paragraphCss(v: ParagraphPresentation): string {
     `padding-inline-end:${(v.end ?? 0) / 20}pt`,
     ...(line
       ? [
-          `line-height:${line.kind === "multiple" ? line.value : `${line.value / 20}pt`}`,
+          `line-height:${line.kind === "multiple" ? line.value : line.kind === "atleast" ? `max(${line.value / 20}pt,1.2em)` : `${line.value / 20}pt`}`,
         ]
       : ["line-height:1.2"]),
     ...(indent

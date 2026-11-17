@@ -60,13 +60,11 @@ export function restoreEditorSelection(view: EditorView, selection: Selection) {
       Math.max(0, Math.min(position ?? plain, view.state.doc.content.size))
     )
   }
-  view.dispatch(
-    view.state.tr.setSelection(
-      TextSelection.between(
-        resolve(selection.relative?.anchor, selection.plain.anchor),
-        resolve(selection.relative?.head, selection.plain.head)
-      )
-    )
+  const next = TextSelection.between(
+    resolve(selection.relative?.anchor, selection.plain.anchor),
+    resolve(selection.relative?.head, selection.plain.head)
   )
+  if (!next.eq(view.state.selection))
+    view.dispatch(view.state.tr.setSelection(next))
   if (selection.focused) view.focus()
 }

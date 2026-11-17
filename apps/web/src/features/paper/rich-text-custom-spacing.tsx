@@ -1,4 +1,5 @@
 import { useId, useReducer, useRef } from "react"
+import { lineSpacingWordUnits } from "@workspace/domain/internal/paper-presentation"
 import { SlidersHorizontal } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -36,11 +37,13 @@ function SpacingForm({
   initial,
   disabled,
   close,
+  restore,
 }: {
   editor: TextEditor
   initial: TextFormatting
   disabled: boolean
   close: () => void
+  restore: () => void
 }) {
   const id = useId()
   const dirty = useRef(new Set<string>())
@@ -78,9 +81,13 @@ function SpacingForm({
   return (
     <form
       className="grid min-w-0 gap-4"
+      noValidate
       onSubmit={(event) => {
         event.preventDefault()
         if (disabled) return
+        for (const input of event.currentTarget.querySelectorAll("input")) {
+          if (dirty.current.has(input.name) && !input.reportValidity()) return
+        }
         const data = new FormData(event.currentTarget)
         const patch: Parameters<TextEditor["formatTypography"]>[0] = {}
         for (const name of ["size", "before", "after"] as const) {
@@ -103,7 +110,17 @@ function SpacingForm({
             kind === "multiple"
               ? { kind, value: Number(line) }
               : { kind, value: Math.round(Number(line) * 20) }
+        if (patch.lineSpacing) {
+          const units = lineSpacingWordUnits(patch.lineSpacing)
+          if (units.kind === "refused") {
+            setError(
+              "Use a line spacing value that fits exact Word units, such as 1.125 or 2.05."
+            )
+            return
+          }
+        }
         try {
+          restore()
           editor.formatTypography(patch)
           close()
         } catch {
@@ -179,7 +196,7 @@ function SpacingForm({
           type="number"
           min={kind === "multiple" ? 0.5 : 1}
           max={kind === "multiple" ? 10 : 1584}
-          step="0.05"
+          step={kind === "multiple" ? "any" : "0.05"}
           defaultValue={
             kind === initial.lineKind ? (initial.lineValue ?? "") : ""
           }
@@ -263,10 +280,8 @@ export function RichTextCustomSpacing({
               editor={editor}
               initial={initial}
               disabled={disabled}
-              close={() => {
-                editor.restoreSelection(selection.current)
-                close()
-              }}
+              restore={() => editor.restoreSelection(selection.current)}
+              close={close}
             />
           ) : null}
         </DialogContent>

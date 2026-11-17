@@ -11,6 +11,7 @@ import { borrowFlowDocument } from "./native-layout-flow.js"
 import { mountPrivateFlow } from "./native-layout-flow-mount.js"
 import { mountRichPaperEditor } from "./editor.js"
 import { storedFlowFixture } from "./test/flow-fixture.js"
+import { inlineCss, paragraphCss } from "./native-formatting-render-values.js"
 
 const cleanups: (() => void)[] = []
 beforeEach(() => {
@@ -467,3 +468,29 @@ describe("exact rich Paper typography", () => {
     }
   })
 })
+
+it.each([20, 3200])(
+  "renders an at-least %s twip minimum on mixed-size runs",
+  (minimum) => {
+    const { mounted, select, host } = setup("letter")
+    select("intro", "intro", 0, 4)
+    mounted.formatInline({ size: 480 })
+    select("intro", "intro", 4, 4)
+    mounted.formatInline({ size: 220 })
+    mounted.formatParagraph({
+      lineSpacing: { kind: "atleast", value: minimum },
+    })
+    const runs = [
+      ...host.querySelectorAll<HTMLElement>(
+        '[data-id="intro"] [data-paper-resolved]'
+      ),
+    ]
+    expect(runs.some((run) => run.style.fontSize === "24pt")).toBe(true)
+    expect(runs.some((run) => run.style.fontSize === "11pt")).toBe(true)
+    const lineSpacing = { kind: "atleast" as const, value: minimum }
+    const lineHeight = `line-height:max(${minimum / 20}pt,1.2em)`
+    expect(paragraphCss({ lineSpacing })).toContain(lineHeight)
+    for (const size of [220, 480])
+      expect(inlineCss({ size }, lineSpacing)).toContain(lineHeight)
+  }
+)

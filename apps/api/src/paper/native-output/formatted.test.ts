@@ -377,6 +377,28 @@ describe("formatted native Word output", () => {
   })
 
   it.each([
+    [2.05, 492],
+    [4.15, 996],
+    [1.125, 270],
+  ])(
+    "exports canonical decimal multiple %s as %s Word units",
+    async (multiple, units) => {
+      const archive = await inspect(
+        compile(
+          letter([
+            paragraph("line", "line", {
+              lineSpacing: { kind: "multiple", value: multiple! },
+            }),
+          ])
+        )
+      )
+      const spacing = one(archive.part("word/document.xml").root, "spacing")
+      expect(attribute(spacing, "line")).toBe(String(units))
+      expect(attribute(spacing, "lineRule")).toBe("auto")
+    }
+  )
+
+  it.each([
     ["unknown profile", { ...letter(), profile: "public" }],
     ["unknown structure", letter([{ id: "table", type: "table" }])],
     [
