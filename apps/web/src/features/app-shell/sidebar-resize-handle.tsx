@@ -1,8 +1,13 @@
 import { useCallback, useEffect, useRef } from "react"
+import { flushSync } from "react-dom"
 
 import { cn } from "@workspace/ui/lib/utils"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
+import {
+  followSidebar,
+  sidebarTravel,
+} from "@/features/app-shell/sidebar-follow.ts"
 import {
   clampSidebarWidth,
   COLLAPSED_FRAME_WIDTH,
@@ -32,21 +37,48 @@ type Drag = {
   raf: number
 }
 
-function showWidth(drag: Drag, width: number) {
-  const collapsing = isCollapseDrag(drag.raw)
+function previewing(drag: Drag) {
+  return drag.frame?.hasAttribute("data-collapse-preview") ?? false
+}
+
+function applyWidth(drag: Drag, width: number, collapsing: boolean) {
   const frameWidth = collapsing ? COLLAPSED_FRAME_WIDTH : width
   drag.frame?.style.setProperty("width", `${frameWidth}px`)
   drag.aside?.style.setProperty("width", `${width}px`)
   if (collapsing) drag.frame?.setAttribute("data-collapse-preview", "true")
   else drag.frame?.removeAttribute("data-collapse-preview")
+}
+
+function showWidth(drag: Drag, width: number) {
+  const collapsing = isCollapseDrag(drag.raw)
+  if (collapsing === previewing(drag)) applyWidth(drag, width, collapsing)
+  else followSidebar(collapsing, () => applyWidth(drag, width, collapsing))
   drag.handle.setAttribute("aria-valuenow", String(Math.round(width)))
 }
 
-function clearInlineWidths(drag: Drag) {
+function clearFrame(drag: Drag) {
   drag.frame?.style.removeProperty("width")
-  drag.aside?.style.removeProperty("width")
   drag.frame?.removeAttribute("data-collapse-preview")
   drag.frame?.removeAttribute("data-resizing")
+}
+
+function clearInlineWidths(drag: Drag) {
+  clearFrame(drag)
+  drag.aside?.style.removeProperty("width")
+}
+
+function releaseWidthAfterExit(aside: HTMLElement | null) {
+  if (!aside) return
+  let released = false
+  function release(event?: Event) {
+    if (released || (event && event.target !== aside)) return
+    released = true
+    aside?.style.removeProperty("width")
+    aside?.removeEventListener("transitionend", release)
+    window.clearTimeout(timer)
+  }
+  aside.addEventListener("transitionend", release)
+  const timer = window.setTimeout(release, sidebarTravel(true).duration + 40)
 }
 
 function releaseDocument() {
@@ -70,7 +102,8 @@ export function SidebarResizeHandle({
     if (!drag) return
     dragRef.current = null
     cancelAnimationFrame(drag.raf)
-    clearInlineWidths(drag)
+    if (previewing(drag)) followSidebar(false, () => clearInlineWidths(drag))
+    else clearInlineWidths(drag)
     drag.handle.setAttribute(
       "aria-valuenow",
       String(Math.round(drag.startWidth))
@@ -127,16 +160,22 @@ export function SidebarResizeHandle({
       drag.handle.releasePointerCapture(event.pointerId)
     }
     cancelAnimationFrame(drag.raf)
-    clearInlineWidths(drag)
     releaseDocument()
     if (isCollapseDrag(drag.raw)) {
       drag.handle.setAttribute(
         "aria-valuenow",
         String(Math.round(drag.startWidth))
       )
-      onCollapse()
+      const commit = () => {
+        clearFrame(drag)
+        flushSync(onCollapse)
+      }
+      if (previewing(drag)) commit()
+      else followSidebar(true, commit)
+      releaseWidthAfterExit(drag.aside)
       return
     }
+    clearInlineWidths(drag)
     const next = clampSidebarWidth(drag.raw)
     drag.handle.setAttribute("aria-valuenow", String(Math.round(next)))
     onCommit(next)
