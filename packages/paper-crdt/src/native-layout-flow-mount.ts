@@ -5,7 +5,9 @@ import { richPageCommands } from "./native-layout-page-commands.js"
 import { paperTableLimits, isSafeHref } from "@workspace/domain"
 import { BlockNoteEditor, createExtension } from "@blocknote/core"
 import { CollaborationExtension } from "@blocknote/core/yjs"
-import { Plugin } from "@tiptap/pm/state"
+import { measuredFlowPagination } from "./measured-flow-pagination.js"
+import { DecorationSet } from "@tiptap/pm/view"
+import { Plugin, PluginKey } from "@tiptap/pm/state"
 import {
   inlineSchema,
   effectiveRunDecorations,
@@ -51,11 +53,18 @@ export function mountPrivateFlow(
   readFlow(binding)
   if (mounted.has(binding)) throw new Error("Layout binding is already mounted")
   let breaks = new Map<string, number>()
+  const paginationKey = new PluginKey<DecorationSet>("paperMeasuredPages")
   const guard = createExtension({
     key: "paperFlowAdmission",
     prosemirrorPlugins: [
       paperSearchPlugin(),
       new Plugin({
+        key: paginationKey,
+        state: {
+          init: () => DecorationSet.empty,
+          apply: (tr, previous) =>
+            tr.getMeta(paginationKey) ?? previous.map(tr.mapping, tr.doc),
+        },
         filterTransaction: (tr, state) =>
           acceptsFlowTransaction(binding, tr, state),
         props: {
@@ -64,7 +73,8 @@ export function mountPrivateFlow(
               state.doc,
               readPresentationMeta(binding.doc),
               flowPaginationSupport(readFlow(binding)).supported,
-              breaks
+              breaks,
+              paginationKey.getState(state)?.find() ?? []
             ),
         },
       }),
@@ -209,6 +219,31 @@ export function mountPrivateFlow(
   }
   try {
     editor.mount(element)
+    const pagination = measuredFlowPagination(
+      editor.prosemirrorView,
+      (next) => {
+        const previous =
+          paginationKey.getState(editor.prosemirrorState)?.find() ?? []
+        const key = (decoration: (typeof next)[number]) =>
+          `${decoration.from}:${decoration.to}:${decoration.spec.key}`
+        const keys = new Set(previous.map(key))
+        if (
+          keys.size === next.length &&
+          next.every((decoration) => keys.has(key(decoration)))
+        )
+          return false
+        const decorations = DecorationSet.create(
+          editor.prosemirrorState.doc,
+          next
+        )
+        editor.prosemirrorView.dispatch(
+          editor.prosemirrorState.tr
+            .setMeta(paginationKey, decorations)
+            .setMeta("addToHistory", false)
+        )
+        return true
+      }
+    )
     flowView = installFlowView(
       element,
       () => readFlow(binding),
@@ -220,7 +255,8 @@ export function mountPrivateFlow(
           return
         breaks = next
         editor.prosemirrorView.dispatch(editor.prosemirrorState.tr)
-      }
+      },
+      pagination
     )
     editor.onChange(() => {
       selection.paint()

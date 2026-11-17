@@ -15,12 +15,14 @@
 
 .paper-rich-sheet[data-paper-pagination="true"] {
   min-block-size: var(--cv-rich-page-height, 1056px);
-  background: repeating-linear-gradient(
+  background: linear-gradient(
     to bottom,
     var(--card) 0 var(--cv-rich-page-height, 1056px),
     var(--muted) var(--cv-rich-page-height, 1056px)
       var(--cv-rich-page-pitch, 1080px)
   );
+  background-size: 100% var(--cv-rich-page-pitch, 1080px);
+  background-repeat: repeat-y;
 }
 
 .paper-rich-sheet [data-paper-layout="paperFlowSection"] {
