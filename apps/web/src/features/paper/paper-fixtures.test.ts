@@ -51,7 +51,7 @@ describe("prefixed-string retirement", () => {
       "paper-library.tsx",
       "paper-letter.tsx",
       "paper-new-dialog.tsx",
-      "paper-parts.tsx",
+      "paper-library-sections.tsx",
       "paper-template-gallery.tsx",
       "paper-templates.ts",
       "paper-share-page.tsx",

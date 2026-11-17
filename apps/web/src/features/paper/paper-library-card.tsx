@@ -61,7 +61,7 @@ function PaperSheet({
         </span>
       )}
       {badge ? (
-        <span className="absolute start-3 bottom-3 rounded bg-secondary px-1.5 py-0.5 text-[11px] font-medium text-secondary-foreground">
+        <span className="absolute start-3 bottom-3 rounded bg-secondary px-1.5 py-0.5 text-[0.6875rem] font-medium text-secondary-foreground">
           {badge}
         </span>
       ) : null}
@@ -77,7 +77,7 @@ function PaperLabel({ name, meta }: { name: string; meta: string }) {
     >
       <span
         title={name}
-        className="block truncate text-[13px] leading-[18px] font-medium text-foreground"
+        className="block truncate text-[0.8125rem] leading-[1.125rem] font-medium text-foreground"
       >
         {name}
       </span>

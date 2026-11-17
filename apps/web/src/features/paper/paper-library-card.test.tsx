@@ -28,7 +28,7 @@ it("answers hover and focus with a token-timed ring and keeps the kit press", ()
 
 it("shows the document name without its extension and exposes the full long name", () => {
   const name =
-    "Senior product designer portfolio and application for international opportunities"
+    "Senior product designer portfolio and application for international project briefs"
   render(
     <PaperLibraryCard
       name={`${name}.docx`}

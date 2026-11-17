@@ -30,7 +30,7 @@ import {
 } from "./paper-template-thumb.tsx"
 
 export const PAPER_GALLERY_DIALOG_CLASS =
-  "flex flex-col sm:max-w-3xl lg:max-w-[960px] max-h-[calc(100dvh-clamp(16px,14dvh,120px)-16px)] overscroll-contain transition-[opacity,scale,translate]"
+  "flex flex-col sm:max-w-3xl lg:max-w-[960px] max-h-[calc(100dvh-clamp(16px,14dvh,120px)-16px)] overscroll-contain transition-[opacity,scale,translate] [@media(max-height:300px)]:overflow-y-auto"
 
 type Choice = PaperTemplateId | "blank"
 
@@ -147,7 +147,7 @@ function ChoiceCard({
       <span className="flex min-w-0 flex-col gap-0.5 px-0.5">
         <span
           id={labelledBy}
-          className="truncate text-[13px] leading-5 font-medium"
+          className="text-[0.8125rem] leading-5 font-medium [overflow-wrap:anywhere]"
         >
           {label}
         </span>
@@ -240,12 +240,14 @@ export function PaperTemplateGallery({
   return (
     <div
       data-template-gallery=""
-      className="flex min-h-0 flex-1 flex-col gap-4"
+      className="flex min-h-0 flex-1 flex-col gap-4 [@media(max-height:300px)]:shrink-0 [@media(max-height:300px)]:basis-auto"
     >
       <div className="flex flex-col gap-3">
         <DialogHeader className="pe-10">
           <DialogTitle className="text-base">{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
+          <DialogDescription className="text-[0.8125rem]">
+            {description}
+          </DialogDescription>
         </DialogHeader>
         <label className="relative block sm:max-w-80">
           <span className="sr-only">Search templates</span>
@@ -280,7 +282,7 @@ export function PaperTemplateGallery({
       </div>
       <div
         data-template-scroll=""
-        className="-mx-6 min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pt-1 pb-2 sm:pb-4"
+        className="-mx-6 min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pt-1 pb-2 sm:pb-4 [@media(max-height:300px)]:overflow-visible"
       >
         <div
           ref={gridRef}
@@ -350,11 +352,11 @@ export function PaperTemplateGallery({
       ) : null}
       <div
         data-slot="paper-gallery-actions"
-        className="-mx-6 -mb-6 flex shrink-0 items-center gap-3 border-t border-border bg-popover px-6 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] max-sm:rounded-none sm:rounded-b-[12px]"
+        className="-mx-6 -mb-6 flex shrink-0 flex-wrap items-center gap-3 border-t border-border bg-popover px-6 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] max-sm:rounded-none sm:rounded-b-[12px]"
       >
         {onImport ? (
           <Button
-            className="h-11 gap-1.5 md:h-8"
+            className="h-11 gap-1.5 text-[0.8125rem] md:h-8"
             type="button"
             variant="ghost"
             onClick={onImport}
@@ -364,7 +366,7 @@ export function PaperTemplateGallery({
           </Button>
         ) : null}
         <Button
-          className="ms-auto h-11 min-w-28 gap-1.5 px-4 max-sm:flex-1 md:h-8"
+          className="ms-auto h-11 min-w-28 gap-1.5 px-4 text-[0.8125rem] max-sm:flex-1 md:h-8"
           type="button"
           variant="primary"
           aria-busy={pending || undefined}
