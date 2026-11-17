@@ -93,6 +93,8 @@ const TOOL_COPY = {
   "paper.duplicate": { label: "Duplicate this Paper" },
   "paper.document": { label: "Open your Paper", read: "Opened your Paper" },
   "paper.edit": { label: "Edit your Paper" },
+  "paper.editRich": { label: "Edit your Paper" },
+  "paper.readRich": { label: "Read your Paper", read: "Read your Paper" },
   [catalog["paper.export"].name]: { label: "Export your Paper" },
   [catalog["paper.import"].name]: { label: "Import your Paper" },
   "paper.files": {
