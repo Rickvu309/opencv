@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "packages/ui/src/components/collapsible.test.tsx > collapsible > grows on the collapse motion and keeps a caller's class",
+    "because": "The caller's class used to land on the animated panel, which squashed rows and mis-measured the open height; it now lands on the inner body, which the replacement test asserts.",
+    "replacedBy": "packages/ui/src/components/collapsible.test.tsx",
+    "proof": {
+      "fork": "7fecdb6b07762eb7494bf4e984ab14df196bcc92",
+      "replacedByBlob": "4fd34febe0f24a20bfabae48fe296cd04fa5bf64",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]
