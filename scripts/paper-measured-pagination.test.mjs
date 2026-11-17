@@ -65,7 +65,7 @@ test("the column-based fork fails and measured Paper pagination stays quiet", ()
 test("Word break properties and Find settling reject their introducing commit", () => {
   for (const [path, from, to] of [
     [
-      "packages/paper-crdt/src/measured-flow-pagination.ts",
+      "packages/paper-crdt/src/native-layout-measured-pagination.ts",
       "properties.widowOrphan !== false",
       "false",
     ],
@@ -80,7 +80,11 @@ test("Word break properties and Find settling reject their introducing commit", 
     const mistake = clean.replace(from, to)
     assert.notEqual(mistake, clean)
     assert.equal(detect(mistake, path).length, 1)
-    const historic = execFileSync("git", ["show", `68bd981a:${path}`], {
+    const historicPath = path.replace(
+      "native-layout-measured-pagination",
+      "measured-flow-pagination"
+    )
+    const historic = execFileSync("git", ["show", `68bd981a:${historicPath}`], {
       encoding: "utf8",
     })
     assert.equal(detect(historic, path).length, 1)

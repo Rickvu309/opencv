@@ -15,7 +15,7 @@ const files = [
   "apps/web/src/features/paper/rich-table.css",
   "packages/paper-crdt/src/native-layout-flow-mount.ts",
   "apps/web/src/features/paper/rich-table-menu.tsx",
-  "packages/paper-crdt/src/measured-flow-pagination.ts",
+  "packages/paper-crdt/src/native-layout-measured-pagination.ts",
 ]
 
 test("table availability, row pagination and borders stay connected", () => {

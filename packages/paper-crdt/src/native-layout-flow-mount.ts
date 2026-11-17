@@ -5,7 +5,7 @@ import { richPageCommands } from "./native-layout-page-commands.js"
 import { paperTableLimits, isSafeHref } from "@workspace/domain"
 import { BlockNoteEditor, createExtension } from "@blocknote/core"
 import { CollaborationExtension } from "@blocknote/core/yjs"
-import { measuredFlowPagination } from "./measured-flow-pagination.js"
+import { measuredFlowPagination } from "./native-layout-measured-pagination.js"
 import { DecorationSet } from "@tiptap/pm/view"
 import { Plugin, PluginKey } from "@tiptap/pm/state"
 import {

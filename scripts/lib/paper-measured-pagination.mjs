@@ -5,7 +5,7 @@ export function detect(source, file = "") {
       : []
   if (!/paper-crdt\/src\/[^/]+\.(?:ts|js)$/.test(file)) return []
   const problems = []
-  if (file.endsWith("/measured-flow-pagination.ts")) {
+  if (file.endsWith("/native-layout-measured-pagination.ts")) {
     if (
       !source.includes("effectiveParagraph(") ||
       !source.includes("canonicalProps(") ||

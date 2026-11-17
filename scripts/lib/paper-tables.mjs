@@ -52,7 +52,7 @@ export function detect(text, file) {
       if (!text.includes(rule))
         problems.push("Table rows must stay whole and inside printable pages")
   }
-  if (file.endsWith("measured-flow-pagination.ts")) {
+  if (file.endsWith("native-layout-measured-pagination.ts")) {
     if (
       !text.includes('block.node.type.name === "paperRow"') ||
       !text.includes('? "row"') ||
