@@ -1,19 +1,5 @@
 [
   {
-    "subject": "apps/web/src/features/paper/paper-letter-start-parity.test.tsx",
-    "because": "The shorter visible search prompt still exposes every supported input in its accessible name and keeps initial focus.",
-    "replacedBy": "apps/web/src/features/paper/paper-letter-start-parity.test.tsx",
-    "proof": {
-      "fork": "976628fc1f4263be91e7d6db104d75441d52966c",
-      "replacedByBlob": "e5817975d885b037930a19b91b74ab9ef5eeba13",
-      "failedOnBase": true,
-      "passedOnHead": true
-    },
-    "class": "self",
-    "classBecause": null,
-    "items": 2
-  },
-  {
     "subject": "apps/web/src/features/paper/paper-library-sections.test.tsx",
     "because": "The old fixed styles and Word block fallback were replaced by short display names, accessible section controls, and real first-page Word previews.",
     "replacedBy": "apps/web/src/features/paper/paper-library-sections.test.tsx",
@@ -68,5 +54,19 @@
     "class": "self",
     "classBecause": null,
     "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-start-parity.test.tsx",
+    "because": "The shorter visible prompt keeps every supported input in its accessible name and retains initial focus. Job labels also remain readable with larger text.",
+    "replacedBy": "apps/web/src/features/paper/paper-letter-start-parity.test.tsx",
+    "proof": {
+      "fork": "976628fc1f4263be91e7d6db104d75441d52966c",
+      "replacedByBlob": "f743d5b6de174bd9a889a7199abdf019dc41a3de",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
   }
 ]
