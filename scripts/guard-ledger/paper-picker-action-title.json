@@ -1,0 +1,13 @@
+{
+  "id": "paper-picker-action-title",
+  "file": "scripts/ui-sdk-boundaries.test.mjs",
+  "detector": {
+    "module": "scripts/lib/ui-sdk-boundaries.mjs",
+    "export": "paperPickerActionTitle"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "9ab24831",
+    "path": "apps/web/src/features/apply/apply-job-rail.tsx"
+  }
+}

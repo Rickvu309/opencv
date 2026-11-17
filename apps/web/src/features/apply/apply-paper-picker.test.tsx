@@ -12,9 +12,16 @@ import {
 
 const id = "01900000-0000-7000-8000-000000000041"
 const cases = [
-  { kind: "cv", trigger: "Add CV", noun: "CVs", name: "PM track CV" },
+  {
+    kind: "cv",
+    title: "CV",
+    trigger: "Add CV",
+    noun: "CVs",
+    name: "PM track CV",
+  },
   {
     kind: "letter",
+    title: "Cover letter",
     trigger: "Add cover letter",
     noun: "cover letters",
     name: "Cover: Associate PM intern",
@@ -29,6 +36,35 @@ async function openPicker(trigger: string) {
 
 describe("job Paper picker feedback", () => {
   afterEach(cleanup)
+
+  it.each(cases)(
+    "names the $kind picker by kind before and after linking",
+    async ({ kind, trigger, title, name }) => {
+      await openPicker(trigger)
+      expect(
+        await screen.findByRole("dialog", { name: title })
+      ).toBeInTheDocument()
+      cleanup()
+      const doc = getMockPaperDocs().find((doc) => doc.name === name)!
+      setMockJobs([
+        mockJob({
+          id,
+          title: "Picker job",
+          linked: {
+            cv: kind === "cv" ? doc : null,
+            letter: kind === "letter" ? doc : null,
+          },
+        }),
+      ])
+      renderApp(`/apply/${id}`)
+      fireEvent.click(
+        await screen.findByRole("button", { name: `${title}: ${name}` })
+      )
+      expect(
+        await screen.findByRole("dialog", { name: title })
+      ).toBeInTheDocument()
+    }
+  )
 
   it.each(cases)(
     "explains unmatched $kind searches and restores rows when cleared",

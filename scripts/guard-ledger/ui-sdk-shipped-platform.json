@@ -1,0 +1,17 @@
+{
+  "id": "ui-sdk-shipped-platform",
+  "file": "scripts/ui-sdk-boundaries.test.mjs",
+  "detector": {
+    "module": "scripts/lib/ui-sdk-boundaries.mjs",
+    "export": "shippedPlatformOverride"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "9a471eb3",
+    "path": "packages/ui/src/lib/ui-sdk-test-platform.ts",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "packages/ui/test/ui-sdk-platform.ts"
+    }
+  }
+}

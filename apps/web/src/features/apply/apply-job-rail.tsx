@@ -435,7 +435,9 @@ function PaperRow({ kind, job }: { kind: "cv" | "letter"; job: JobDetail }) {
         <Label empty={!linked}>{linked ? linked.name : addLabel}</Label>
       </PopoverTrigger>
       <PopoverContent align="start" className={POPOVER}>
-        <PopoverTitle className="sr-only">{addLabel}</PopoverTitle>
+        <PopoverTitle className="sr-only">
+          {kind === "cv" ? "CV" : "Cover letter"}
+        </PopoverTitle>
         <div className="flex h-8 items-center gap-2 border-b border-foreground/6 px-2">
           <Search aria-hidden className="size-[13px] text-muted-foreground" />
           <Input

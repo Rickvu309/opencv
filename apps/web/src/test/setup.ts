@@ -1,4 +1,4 @@
-import { installUiSdkTestPlatform } from "@workspace/ui/lib/ui-sdk-test-platform"
+import { installUiSdkTestPlatform } from "../../../../packages/ui/test/ui-sdk-platform"
 import { act, cleanup, configure } from "@testing-library/react"
 import { toast } from "sonner"
 import { afterEach, beforeEach, vi } from "vitest"

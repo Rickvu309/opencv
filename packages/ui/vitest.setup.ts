@@ -1,4 +1,4 @@
-import { installUiSdkTestPlatform } from "./src/lib/ui-sdk-test-platform"
+import { installUiSdkTestPlatform } from "./test/ui-sdk-platform"
 
 installUiSdkTestPlatform()
 
