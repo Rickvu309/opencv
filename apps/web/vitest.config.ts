@@ -17,6 +17,7 @@ const ISOLATED_FILES = [
   "src/features/coach/coach-config-states.test.tsx",
   "src/features/coach/coach-tool-presentation.test.tsx",
   "src/features/coach/coach-workspace.test.tsx",
+  "src/features/coach/coach-workspace-presentation.test.tsx",
   "src/components/ai-elements/response.test.tsx",
   "src/features/coach/coach-draft-ownership.test.tsx",
   "src/features/coach/coach-workspace-progress.test.tsx",

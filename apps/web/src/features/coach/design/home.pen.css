@@ -5,8 +5,3 @@
 [data-pen-surface="coach"][data-slot="coach-home"] [data-slot="coach-starter"] {
   -webkit-tap-highlight-color: transparent;
 }
-
-[data-slot="coach-home-composer"]
-  [data-pen-surface="coach"][data-slot="coach-composer"]:not([data-capped]) {
-  border-radius: 12px;
-}

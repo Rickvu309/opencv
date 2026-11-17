@@ -24,6 +24,7 @@ const frameClasses: Record<
     textarea: string
     start: string
     end: string
+    group?: string
     stacked?: true
   }
 > = {
@@ -35,15 +36,17 @@ const frameClasses: Record<
   },
   page: {
     textarea:
-      "max-h-60 min-h-[52px] px-1.5 py-3.5 text-base leading-6 md:min-h-12 md:py-3 md:text-[15px] md:leading-6",
-    start: "self-end ps-1.5 pb-1 md:ps-2 md:pb-2",
-    end: "self-end gap-1 pe-1.5 pb-1 md:pe-2 md:pb-2",
+      "max-h-60 min-h-[68px] pt-4 pb-3 text-base leading-6 md:text-[15px] group-data-[stacked=true]/input-group:px-[18px] group-data-[stacked=true]/input-group:pb-3",
+    start: "self-end ps-3 pe-3 pt-0 pb-3",
+    end: "self-end gap-1.5 pe-3 pt-0 pb-3",
+    stacked: true,
   },
-  home: {
+  panel: {
+    group: "gap-2.5 px-3 pt-3 pb-2.5",
     textarea:
-      "max-h-60 min-h-16 pt-3.5 text-base leading-6 md:min-h-[60px] md:text-[15px] md:leading-6",
-    start: "self-end pb-1.5 group-data-[stacked=true]/input-group:ms-auto",
-    end: "self-end gap-1 pe-1.5 pb-1.5 group-data-[stacked=true]/input-group:ms-0",
+      "max-h-48 min-h-6 p-0 text-base leading-6 md:text-[14px] group-data-[stacked=true]/input-group:p-0",
+    start: "self-end p-0",
+    end: "self-end gap-1 p-0",
     stacked: true,
   },
 }
@@ -125,13 +128,14 @@ export function PromptInput({
       data-layout="row"
       className={cn(
         "h-auto flex-row flex-wrap items-end rounded-3xl bg-background shadow-xs has-disabled:bg-background has-disabled:opacity-100",
+        frame.group,
         className
       )}
       {...props}
     >
       <InputGroupAddon
         align="inline-start"
-        className={cn(STACKED_START, frame.start)}
+        className={cn(frame.start, STACKED_START)}
       >
         {tools}
       </InputGroupAddon>
@@ -149,11 +153,11 @@ export function PromptInput({
           event.preventDefault()
           if (!submitBlocked && !disabled) onSubmit()
         }}
-        className={cn(frame.textarea, STACKED_TEXT)}
+        className={cn(STACKED_TEXT, frame.textarea)}
       />
       <InputGroupAddon
         align="inline-end"
-        className={cn(STACKED_END, frame.end)}
+        className={cn(frame.end, STACKED_END)}
       >
         {actions}
       </InputGroupAddon>

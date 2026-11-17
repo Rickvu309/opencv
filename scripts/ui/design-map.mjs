@@ -1,10 +1,7 @@
 import { RELATIVE } from "./compare.mjs"
 import {
   GROK_COACH_PAGE_COLUMN,
-  GROK_COACH_PAGE_COMPOSER,
-  GROK_COACH_PAGE_COMPOSER_CONTROLS,
-  GROK_COACH_PAGE_COMPOSER_TEXT,
-  GROK_COACH_PANEL_COMPOSER,
+  LINEAR_COACH_PAGE_COMPOSER,
   WORD_SIZED_WRITING_PAGE,
   ownerDecisionProblems,
 } from "./owner-decision.mjs"
@@ -100,7 +97,6 @@ export const DESIGN_MAP = [
     via: SHELL_CHAT_PANEL,
     frame: "FAcND",
     props: ["radius", ...PADDING, "gap"],
-    ownerDecision: GROK_COACH_PANEL_COMPOSER,
   },
   {
     screen: "paper-panel-open",
@@ -445,7 +441,7 @@ export const DESIGN_MAP = [
     composedScreen: COACH_WORKING,
     frame: "KDAaX",
     props: ["width", "height", "radius"],
-    ownerDecision: GROK_COACH_PAGE_COMPOSER,
+    ownerDecision: LINEAR_COACH_PAGE_COMPOSER,
   },
   {
     screen: "coach-chat-finished",
@@ -454,7 +450,6 @@ export const DESIGN_MAP = [
     composedScreen: COACH_WORKING,
     frame: "KDAaX",
     props: ["paddingTop", "paddingLeft"],
-    ownerDecision: GROK_COACH_PAGE_COMPOSER_TEXT,
   },
   {
     screen: "coach-chat-finished",
@@ -464,7 +459,6 @@ export const DESIGN_MAP = [
     composedScreen: COACH_WORKING,
     frame: "KDAaX",
     props: ["paddingRight", "paddingBottom"],
-    ownerDecision: GROK_COACH_PAGE_COMPOSER_CONTROLS,
   },
   {
     screen: "coach-chat-finished",

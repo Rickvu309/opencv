@@ -81,10 +81,9 @@ describe("Coach uses one full-page presentation", () => {
       container.querySelector('[data-slot="coach-panel-header"]')
     ).toBeNull()
     expect(container.querySelector('[data-presentation="page"]')).not.toBeNull()
-    expect(sizing).toContain("md:min-h-12")
-    expect(sizing).toContain("md:text-[15px]")
+    expect(sizing).toContain("md:text-[14px]")
     const pageComposer = screen.getByRole("textbox", { name: "Message Coach" })
-    expect(pageComposer.className).toContain("md:min-h-[60px]")
+    expect(pageComposer.className).toContain("min-h-[68px]")
     expect(pageComposer.className).toContain("md:text-[15px]")
     expect(pageComposer.closest("[data-stacked]")).toHaveAttribute(
       "data-stacked",

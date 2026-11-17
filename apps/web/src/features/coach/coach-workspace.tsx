@@ -388,7 +388,7 @@ export function CoachWorkspace({
           </Button>
         </p>
       ) : null}
-      <PromptInputFrame value={showWelcome ? "home" : "page"}>
+      <PromptInputFrame value={compact ? "panel" : "page"}>
         {coachDock}
       </PromptInputFrame>
     </div>
@@ -455,6 +455,9 @@ export function CoachWorkspace({
         ) : (
           <ChatView
             presentation={presentation}
+            startedAt={
+              chats.find((chat) => chat.id === activeChatId)?.createdAt ?? null
+            }
             empty={
               compact && showHome ? (
                 <CoachHome

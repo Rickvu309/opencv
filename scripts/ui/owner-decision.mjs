@@ -16,31 +16,12 @@ export const WORD_SIZED_WRITING_PAGE = {
 const GROK_CLEAN_COACH =
   "the owner asked for the Coach chat to look as clean as Grok, learning from ChatGPT and Claude, instead of the Linear-based council pass; see the chat references index of 2026-11-13"
 
-export const GROK_COACH_PAGE_COMPOSER = {
-  decided: "2026-11-13",
-  reason: `${GROK_CLEAN_COACH}: the docked page composer is Grok's one-row pill, about 48 high and fully rounded, as wide as the 760 reading column, instead of the 720 wide, 114 high, radius 18 pen frame`,
+export const LINEAR_COACH_PAGE_COMPOSER = {
+  decided: "2026-11-17",
+  reason:
+    "the owner asked for the Coach to look like Linear's agent page: the page composer is Linear's two-row card at the pen frame's 114 high and radius 18, kept as wide as the 760 reading column instead of the pen frame's 720",
   expect: {
     width: 760,
-    height: 50,
-    radius: 24,
-  },
-}
-
-export const GROK_COACH_PAGE_COMPOSER_TEXT = {
-  decided: "2026-11-13",
-  reason: `${GROK_CLEAN_COACH}: in the one-row pill the text sits between the add button and the controls, so it starts 6 after the add button and 12 from the top instead of the two-row frame's 18 and 16`,
-  expect: {
-    paddingTop: 12,
-    paddingLeft: 6,
-  },
-}
-
-export const GROK_COACH_PAGE_COMPOSER_CONTROLS = {
-  decided: "2026-11-13",
-  reason: `${GROK_CLEAN_COACH}: in the one-row pill the controls sit on the text row, 8 from the bottom edge, instead of a tool row under the text`,
-  expect: {
-    paddingRight: 0,
-    paddingBottom: 8,
   },
 }
 
@@ -50,19 +31,6 @@ export const GROK_COACH_PAGE_COLUMN = {
   expect: {
     width: 760,
     gap: 32,
-  },
-}
-
-export const GROK_COACH_PANEL_COMPOSER = {
-  decided: "2026-11-13",
-  reason: `${GROK_CLEAN_COACH}: the panel composer is the same one-row pill as the page at panel size, fully rounded with its insets on the controls, instead of the pen frame's radius 14 two-row card with 12 padding and 10 gap`,
-  expect: {
-    radius: 24,
-    paddingTop: 0,
-    paddingRight: 0,
-    paddingBottom: 0,
-    paddingLeft: 0,
-    gap: 0,
   },
 }
 

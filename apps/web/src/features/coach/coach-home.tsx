@@ -1,13 +1,13 @@
 import "./design/home.pen.css"
 
-import { useId, useState, type ReactNode } from "react"
+import { useId, type ReactNode } from "react"
 import type { ChatSummary } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { OpenCvMark } from "@/components/app-logo.tsx"
 
-import { chatAge } from "./chat-age.ts"
+import { chatAge, useMountTime } from "./chat-time.ts"
 import { COACH_STARTERS } from "./coach-starters.ts"
 
 export type CoachHomeSize = "page" | "panel"
@@ -108,7 +108,7 @@ function RecentChats({
   chats: ChatSummary[]
   onOpenChat: (chatId: string) => void
 }) {
-  const [now] = useState(() => Date.now())
+  const now = useMountTime()
   return (
     <ul
       data-slot="coach-recent-chats"

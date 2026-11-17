@@ -1,8 +1,7 @@
 import { useReducer, type ReactNode } from "react"
 import { Link } from "@tanstack/react-router"
-import { FilePlus } from "lucide-react"
+import { FileText } from "lucide-react"
 
-import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import {
@@ -150,23 +149,29 @@ function CreateDocBody({
         : "Draft"
 
   return (
-    <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground">
-      <Badge variant="outline">{PAPER_KIND_LABEL[detail.docKind]}</Badge>
-      <Badge variant="secondary">{statusLabel}</Badge>
-      <span className="inline-flex items-center gap-1">
-        <FilePlus className="size-3" aria-hidden />
+    <div
+      data-slot="coach-doc-card"
+      className="w-full max-w-[420px] min-w-0 rounded-lg border border-border bg-card text-sm"
+    >
+      <p className="flex min-w-0 items-center gap-2 px-3 py-2.5 font-medium text-foreground">
+        <FileText className="size-4 shrink-0" aria-hidden />
         {detail.docId ? (
           <Link
-            className="underline underline-offset-2"
+            className="min-w-0 truncate hover:underline hover:underline-offset-2"
             to="/paper/$docId"
             params={{ docId: detail.docId }}
           >
             {detail.name}
           </Link>
         ) : (
-          detail.name
+          <span className="min-w-0 truncate">{detail.name}</span>
         )}
-      </span>
+      </p>
+      <p className="flex items-center gap-1.5 border-t border-border px-3 py-2 text-xs text-muted-foreground">
+        <span>{PAPER_KIND_LABEL[detail.docKind]}</span>
+        <span aria-hidden>·</span>
+        <span>{statusLabel}</span>
+      </p>
     </div>
   )
 }
