@@ -26,5 +26,19 @@
     "class": "self",
     "classBecause": null,
     "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-workspace.test.tsx > Coach workspace > keeps New chat selected when the panel was opened with a saved chat",
+    "because": "The owner asked for the Coach to look like Linear's agent page on 2026-11-17: saved Chats replace the starter chips under the ask box",
+    "replacedBy": "apps/web/src/features/coach/coach-workspace.test.tsx",
+    "proof": {
+      "fork": "d0e4bf96a952f095858db11bc39a94bbe14f0137",
+      "replacedByBlob": "6f4b94f33325d8b4984382119b23fa53fe48db2a",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
