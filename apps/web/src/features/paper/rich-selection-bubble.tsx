@@ -1,4 +1,10 @@
-import { useEffect, useRef, useReducer, type RefObject } from "react"
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useReducer,
+  type RefObject,
+} from "react"
 import { createPortal } from "react-dom"
 import { useQueryClient } from "@tanstack/react-query"
 import { List, MoreHorizontal, Sparkles } from "lucide-react"
@@ -14,6 +20,7 @@ import { toast } from "sonner"
 import { createChat } from "@/features/coach/chat-api.ts"
 import { useChatStore } from "@/features/coach/use-chat-store.ts"
 import { publishCoachDraft } from "@/lib/coach-draft.ts"
+import { useShortcut } from "@/lib/use-shortcut.ts"
 import { RichTextEmphasisGroup } from "./rich-text-emphasis-group.tsx"
 import { RichStructureControls } from "./rich-structure-controls.tsx"
 import type {
@@ -48,8 +55,49 @@ export function RichSelectionBubble({
     editor?.activeFormatting() ?? null
   )
   const bubble = useRef<HTMLDivElement>(null)
+  const [position, setPosition] = useReducer(
+    (
+      previous: { left: number; top: number },
+      next: { left: number; top: number }
+    ) =>
+      previous.left === next.left && previous.top === next.top
+        ? previous
+        : next,
+    { left: 8, top: 8 }
+  )
   const queryClient = useQueryClient()
   const { openChat } = useChatStore()
+  useShortcut({
+    key: "Escape",
+    enabled: !!selection,
+    inFields: true,
+    capture: true,
+    stop: true,
+    prevent: false,
+    onPress: () => setSelection(null),
+  })
+  useLayoutEffect(() => {
+    const element = bubble.current
+    if (!selection || !element || blocked) return
+    const measure = () => {
+      const width = element.offsetWidth
+      const height = element.offsetHeight
+      setPosition({
+        left: Math.max(
+          8,
+          Math.min(selection.left - width / 2, window.innerWidth - width - 8)
+        ),
+        top: Math.max(
+          8,
+          Math.min(selection.top - height - 10, window.innerHeight - height - 8)
+        ),
+      })
+    }
+    measure()
+    const observer = new ResizeObserver(measure)
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [selection, editor, blocked])
   useEffect(() => {
     const read = () => {
       const selected = document.getSelection()
@@ -77,9 +125,6 @@ export function RichSelectionBubble({
         setSelection(null)
       setFormatting(editor?.activeFormatting() ?? null)
     }
-    const escape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setSelection(null)
-    }
     const blur = (event: FocusEvent) => {
       if (
         event.target instanceof Element &&
@@ -93,7 +138,6 @@ export function RichSelectionBubble({
     const windowBlur = () => setSelection(null)
     const unsubscribe = editor?.subscribe(read)
     document.addEventListener("selectionchange", read)
-    document.addEventListener("keydown", escape)
     document.addEventListener("focusin", blur)
     window.addEventListener("blur", windowBlur)
     window.addEventListener("resize", read)
@@ -101,7 +145,6 @@ export function RichSelectionBubble({
     return () => {
       unsubscribe?.()
       document.removeEventListener("selectionchange", read)
-      document.removeEventListener("keydown", escape)
       document.removeEventListener("focusin", blur)
       window.removeEventListener("blur", windowBlur)
       window.removeEventListener("resize", read)
@@ -109,16 +152,6 @@ export function RichSelectionBubble({
     }
   }, [editor, root])
   if (!selection || !editor || blocked) return null
-  const width = bubble.current?.offsetWidth ?? 490
-  const height = bubble.current?.offsetHeight ?? 44
-  const left = Math.max(
-    8,
-    Math.min(selection.left - width / 2, window.innerWidth - width - 8)
-  )
-  const top = Math.max(
-    8,
-    Math.min(selection.top - height - 10, window.innerHeight - height - 8)
-  )
   const ask = () => {
     void createChat(queryClient, {
       title: `About ${name}`,
@@ -142,7 +175,7 @@ export function RichSelectionBubble({
         aria-label="Selection formatting"
         data-paper-selection-control=""
         className="paper-selection-bubble motion-pop"
-        style={{ left, top }}
+        style={position}
         onMouseDown={(event) => event.preventDefault()}
       >
         <RichStructureControls editor={editor} blocked={blocked} compact>
