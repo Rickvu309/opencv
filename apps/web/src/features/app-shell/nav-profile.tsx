@@ -16,10 +16,10 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 
-import { profileInitials } from "@/features/app-shell/profile-display.ts"
+import { personInitials } from "@/lib/person-initials.ts"
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
-import { useShellProfile } from "@/features/app-shell/use-shell-profile.ts"
+import { useShellProfile } from "@/lib/use-shell-profile.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { resolveProfileImageSrc } from "@/lib/requests.ts"
 import { keepToastsClearOf } from "@/lib/toast-clearance.ts"
@@ -31,7 +31,8 @@ type Props = {
 
 export function NavProfile({ onNavigate, onMenuOpenChange }: Props) {
   const navigate = useNavigate()
-  const { name, email, image } = useShellProfile()
+  const { name, email, image, nameFromEmail } = useShellProfile()
+  const accountLabel = nameFromEmail ? email : name
   const imageSrc = resolveProfileImageSrc(image)
 
   function signOut() {
@@ -59,16 +60,26 @@ export function NavProfile({ onNavigate, onMenuOpenChange }: Props) {
           <Avatar size="sm">
             {imageSrc ? <AvatarImage src={imageSrc} alt="" /> : null}
             <AvatarFallback className="font-semibold">
-              {profileInitials(name)}
+              {personInitials(name, email)}
             </AvatarFallback>
           </Avatar>
           <span className="flex min-w-0 flex-1 flex-col text-left">
-            <span data-slot="account-name" title={name} className="truncate">
-              {name}
+            <span
+              data-slot="account-name"
+              title={accountLabel}
+              className="truncate"
+            >
+              {accountLabel}
             </span>
-            <span data-slot="account-email" title={email} className="truncate">
-              {email}
-            </span>
+            {nameFromEmail || email.length === 0 ? null : (
+              <span
+                data-slot="account-email"
+                title={email}
+                className="truncate"
+              >
+                {email}
+              </span>
+            )}
           </span>
           <ChevronsUpDown
             aria-hidden="true"

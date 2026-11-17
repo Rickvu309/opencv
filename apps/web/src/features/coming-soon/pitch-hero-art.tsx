@@ -67,9 +67,9 @@ export function PitchHeroArt() {
     <div
       aria-hidden="true"
       data-illustration
-      className="relative flex flex-col gap-6 xl:absolute xl:top-[180px] xl:left-[430px] xl:block xl:h-[420px] xl:w-[1000px]"
+      className="relative flex flex-col gap-6 xl:@min-[73em]/pitch:absolute xl:@min-[73em]/pitch:top-[180px] xl:@min-[73em]/pitch:left-[430px] xl:@min-[73em]/pitch:block xl:@min-[73em]/pitch:h-[420px] xl:@min-[73em]/pitch:w-[1000px]"
     >
-      <div className="flex w-full flex-col overflow-hidden rounded-[14px] border border-border bg-card shadow-[0_1px_3px_rgb(0_0_0/0.06),0_30px_70px_rgb(0_0_0/0.1)] xl:absolute xl:top-0 xl:left-[170px] xl:w-[780px]">
+      <div className="flex w-full flex-col overflow-hidden rounded-[14px] border border-border bg-card shadow-[0_1px_3px_rgb(0_0_0/0.06),0_30px_70px_rgb(0_0_0/0.1)] xl:@min-[73em]/pitch:absolute xl:@min-[73em]/pitch:top-0 xl:@min-[73em]/pitch:left-[170px] xl:@min-[73em]/pitch:w-[780px]">
         <div className="flex h-[38px] items-center gap-1.5 border-b border-border bg-background px-3.5">
           <span className="size-[9px] rounded-full bg-border" />
           <span className="size-[9px] rounded-full bg-border" />
@@ -82,7 +82,7 @@ export function PitchHeroArt() {
           </span>
           <span className="w-[39px] shrink-0" />
         </div>
-        <div className="flex flex-col px-5 pt-6 pb-6 xl:px-11 xl:pt-[30px] xl:pb-9">
+        <div className="flex flex-col px-5 pt-6 pb-6 xl:@min-[73em]/pitch:px-11 xl:@min-[73em]/pitch:pt-[30px] xl:@min-[73em]/pitch:pb-9">
           <div className="flex items-center gap-4">
             <span className="flex size-[60px] shrink-0 items-center justify-center rounded-full border border-border bg-gradient-to-br from-border to-muted-foreground/40 text-[20px] font-semibold text-foreground/85">
               LN
@@ -156,8 +156,13 @@ export function PitchHeroArt() {
           </div>
         </div>
       </div>
-      <div className="flex flex-wrap gap-4 xl:contents">
-        <div className={cn(TOAST, "xl:absolute xl:top-[404px] xl:left-24")}>
+      <div className="flex flex-wrap gap-4 xl:@min-[73em]/pitch:contents">
+        <div
+          className={cn(
+            TOAST,
+            "xl:@min-[73em]/pitch:absolute xl:@min-[73em]/pitch:top-[404px] xl:@min-[73em]/pitch:left-24"
+          )}
+        >
           <span className="flex size-[34px] items-center justify-center rounded-full bg-muted text-[11.5px] font-semibold text-foreground/85">
             HT
           </span>
@@ -171,7 +176,10 @@ export function PitchHeroArt() {
           </span>
         </div>
         <div
-          className={cn(TOAST, "xl:absolute xl:top-[-44px] xl:left-[118px]")}
+          className={cn(
+            TOAST,
+            "xl:@min-[73em]/pitch:absolute xl:@min-[73em]/pitch:top-[-44px] xl:@min-[73em]/pitch:left-[118px]"
+          )}
         >
           <span className="flex size-[34px] items-center justify-center rounded-full bg-foreground text-background">
             <Download className="size-[15px]" />
@@ -180,7 +188,7 @@ export function PitchHeroArt() {
             3 CV downloads
           </span>
         </div>
-        <div className="flex w-[200px] flex-col gap-2.5 rounded-2xl border border-border bg-card px-4 py-3.5 shadow-[0_1px_2px_rgb(0_0_0/0.05),0_12px_32px_rgb(0_0_0/0.08)] xl:absolute xl:top-[375px] xl:left-[520px]">
+        <div className="flex w-[200px] flex-col gap-2.5 rounded-2xl border border-border bg-card px-4 py-3.5 shadow-[0_1px_2px_rgb(0_0_0/0.05),0_12px_32px_rgb(0_0_0/0.08)] xl:@min-[73em]/pitch:absolute xl:@min-[73em]/pitch:top-[375px] xl:@min-[73em]/pitch:left-[520px]">
           <div className="flex items-end gap-2">
             <span className="text-[28px] font-semibold tracking-[-1px] text-foreground">
               24

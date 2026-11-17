@@ -17,7 +17,7 @@
 [data-pen-surface="paper"] [data-slot="letter-start-search"] {
   background: #ffffff;
   border-color: #e2e2e2;
-  color: #969799;
+  color: var(--muted-foreground);
 }
 [data-pen-surface="paper"] [data-slot="letter-start-search"] input {
   color: #1a1a1a;
@@ -25,7 +25,7 @@
 [data-pen-surface="paper"]
   [data-slot="letter-start-search"]
   input::placeholder {
-  color: #a0a0a2;
+  color: var(--muted-foreground);
 }
 [data-pen-surface="paper"] [data-slot="letter-start-job"] {
   background: transparent;
@@ -36,7 +36,7 @@
   border-color: #e2e2e2;
 }
 [data-pen-surface="paper"] [data-slot="letter-start-company"] {
-  color: #969799;
+  color: var(--muted-foreground);
 }
 @media (hover: hover) and (pointer: fine) {
   [data-pen-surface="paper"] [data-slot="letter-start-job"]:hover {
@@ -54,7 +54,7 @@
 }
 [data-pen-surface="paper"] [data-slot="letter-start-return"] {
   background: #1b1b1f0f;
-  color: #1b1b1f80;
+  color: var(--muted-foreground);
 }
 
 [data-pen-surface="paper"]

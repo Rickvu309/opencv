@@ -20,4 +20,8 @@ it("answers hover and focus with a token-timed ring and keeps the kit press", ()
     /duration-\d|(?:hover|focus)[^ ]*(?:scale|translate)/
   )
   expect(container.querySelector("button")).toHaveClass("motion-press")
+  expect(sheet?.textContent).toBe("")
+  expect(
+    container.querySelector("[data-slot=paper-library-preview-name]")
+  ).toBeNull()
 })

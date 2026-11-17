@@ -17,6 +17,7 @@ import { undoActivity, runContractCommand } from "@/lib/contract-client.ts"
 import {
   attachWritingProposal,
   clearWritingProposal,
+  noteWritingUndo,
   publishWordBatch,
   publishWritingProposal,
 } from "@/lib/writing-proposal.ts"
@@ -581,6 +582,7 @@ export function useCoachTurn({
       if (!id || phase !== "idle") return
 
       await undoActivity(queryClient, activityId)
+      noteWritingUndo(activityId)
       await hydrateChat(id)
       dispatch({ type: "reset" })
       onAfterUndo?.()

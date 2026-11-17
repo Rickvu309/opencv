@@ -1,4 +1,5 @@
 import { useReducer, type ReactNode } from "react"
+import { Link } from "@tanstack/react-router"
 import { FilePlus } from "lucide-react"
 
 import { Badge } from "@workspace/ui/components/badge"
@@ -155,12 +156,13 @@ function CreateDocBody({
       <span className="inline-flex items-center gap-1">
         <FilePlus className="size-3" aria-hidden />
         {detail.docId ? (
-          <a
+          <Link
             className="underline underline-offset-2"
-            href={`/paper/${detail.docId}`}
+            to="/paper/$docId"
+            params={{ docId: detail.docId }}
           >
             {detail.name}
-          </a>
+          </Link>
         ) : (
           detail.name
         )}

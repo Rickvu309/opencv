@@ -11,11 +11,11 @@
 }
 
 [data-pen-surface="coach"] [data-slot="history-search"]::placeholder {
-  color: #a0a0a2;
+  color: color-mix(in srgb, var(--muted-foreground) 87%, transparent);
 }
 
 [data-pen-surface="coach"] [data-slot="history-section-label"] {
-  color: #8a8a8e;
+  color: color-mix(in srgb, var(--muted-foreground) 87%, transparent);
 }
 
 [data-pen-surface="coach"] [data-slot="history-item"] {
@@ -27,7 +27,7 @@
 }
 
 [data-pen-surface="coach"] [data-slot="history-item-time"] {
-  color: #a0a0a2;
+  color: color-mix(in srgb, var(--muted-foreground) 87%, transparent);
 }
 
 [data-pen-surface="coach"] [data-slot="history-new-chat"] {
@@ -35,7 +35,7 @@
 }
 
 [data-pen-surface="coach"] [data-slot="history-shortcut"] {
-  color: #a0a0a2;
+  color: color-mix(in srgb, var(--muted-foreground) 87%, transparent);
 }
 
 [data-pen-surface="coach"] [data-slot="history-item-icon"] {

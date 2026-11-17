@@ -48,6 +48,8 @@ let lastUpdate: Record<string, unknown> | null = null
 let lastDelete: unknown = null
 let emailChangeOverride:
   null | { sent: false; message: string } | { error: string } = null
+let profileGate: Promise<void> | null = null
+let openProfileGate: (() => void) | null = null
 const paths: string[] = []
 
 export function setMockWelcomedAt(value: string | null) {
@@ -146,7 +148,23 @@ export function setMockEmailChange(
   emailChangeOverride = value
 }
 
+export function holdProfileFetch() {
+  if (profileGate) return
+  profileGate = new Promise((resolve) => {
+    openProfileGate = () => {
+      profileGate = null
+      openProfileGate = null
+      resolve()
+    }
+  })
+}
+
+export function releaseProfileFetch() {
+  openProfileGate?.()
+}
+
 export function resetProfileApiMock() {
+  releaseProfileFetch()
   store.profile = defaultProfile()
   extras = defaultExtras()
   welcomedAt = undefined
@@ -160,6 +178,10 @@ export function resetProfileApiMock() {
 
 export function setMockProfile(patch: Partial<BaseProfile>) {
   store.profile = { ...store.profile, ...patch }
+}
+
+export function setMockTimeZone(timeZone: string) {
+  extras.timeZone = timeZone
 }
 
 export function getMockCoachMode() {
@@ -326,6 +348,7 @@ export async function profileApiFetch(
   const method = (init?.method ?? "GET").toUpperCase()
 
   if (method === "GET" && path === "/api/profile") {
+    if (profileGate) await profileGate
     return jsonOk(profilePayload())
   }
 

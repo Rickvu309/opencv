@@ -62,7 +62,8 @@ export const SURFACES = [
     shown: true,
     canBeStartPage: false,
     nav: null,
-    inSearch: false,
+    navParent: "paper",
+    inSearch: true,
   },
   {
     id: "proof",
@@ -71,6 +72,7 @@ export const SURFACES = [
     shown: true,
     canBeStartPage: false,
     nav: null,
+    navParent: "paper",
     inSearch: false,
   },
   {

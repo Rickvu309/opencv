@@ -181,7 +181,11 @@ function WritingSheet({
   docId: string
   seed: WritingDraft | null
   seedRevision: string | null
-  renderHeader?: (note: string, revision: string | null) => ReactNode
+  renderHeader?: (
+    note: string,
+    revision: string | null,
+    text: string
+  ) => ReactNode
 }) {
   const pageRef = useRef<HTMLElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -457,7 +461,8 @@ function WritingSheet({
           conflicted ? WRITING_CONFLICT_NOTE : state.note,
           pageWords(state.present.blocks),
           state.basis
-        )
+        ),
+        pageWords(state.present.blocks)
       )}
       <RecoveryBar key={state.redraw} docId={docId} onRecover={recover} />
       <UnsavedBar
@@ -628,7 +633,11 @@ export function WritingCanvas({
   docId: string
   seed?: WritingDraft | null
   seedRevision?: string | null
-  renderHeader?: (note: string, revision: string | null) => ReactNode
+  renderHeader?: (
+    note: string,
+    revision: string | null,
+    text: string
+  ) => ReactNode
 }) {
   return (
     <WritingSheet

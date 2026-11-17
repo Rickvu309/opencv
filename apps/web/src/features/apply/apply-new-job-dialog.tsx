@@ -1,4 +1,4 @@
-import { useReducer, useRef } from "react"
+import { useId, useReducer, useRef } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import {
   jobCreateInputSchema,
@@ -30,6 +30,7 @@ import { ApiError } from "@/lib/api-error.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
 
 import { previewJob, useApplyPickerCards } from "./apply-api.ts"
+import { ApplyColumnAnchor } from "./apply-column-anchor.tsx"
 import { ALL_STAGES } from "./apply-stages.ts"
 import {
   AlreadyTracked,
@@ -72,6 +73,7 @@ export function NewJobDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
+  const dateErrorId = useId()
   const navigate = useNavigate()
   const run = useRunCommand()
   const { cards } = useApplyPickerCards()
@@ -230,230 +232,239 @@ export function NewJobDialog({
     : undefined
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) reset()
-        onOpenChange(next)
-      }}
-    >
-      <DialogContent
-        data-slot="new-job-dialog"
-        showCloseButton={false}
-        initialFocus={linkRef}
-        className="gap-0 bg-card p-0 shadow-lg ring-foreground/6 max-md:top-0 max-md:left-0 max-md:h-dvh max-md:max-h-none max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:overflow-y-auto max-md:rounded-none sm:max-w-[620px] lg:left-[calc(50%+122px)]"
-        aria-describedby={undefined}
+    <>
+      <ApplyColumnAnchor />
+      <Dialog
+        open={open}
+        onOpenChange={(next) => {
+          if (!next) reset()
+          onOpenChange(next)
+        }}
       >
-        <DialogDescription className="sr-only">
-          Paste the job link
-        </DialogDescription>
-        <form
-          className="flex flex-col pt-3 pr-3.5 pb-3.5 pl-5"
-          onSubmit={(event) => {
-            event.preventDefault()
-            void save(duplicate != null)
-          }}
+        <DialogContent
+          data-slot="new-job-dialog"
+          showCloseButton={false}
+          initialFocus={linkRef}
+          className="gap-0 bg-card p-0 shadow-lg ring-foreground/6 max-md:top-0 max-md:left-0 max-md:h-dvh max-md:max-h-none max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0 max-md:overflow-y-auto max-md:rounded-none sm:max-w-[620px]"
+          aria-describedby={undefined}
         >
-          <div className="flex h-7 items-center gap-1.5 text-xs text-muted-foreground">
-            <Kanban className="size-[13px]" aria-hidden />
-            <span className="font-medium">Apply</span>
-            <ChevronRight className="size-3" aria-hidden />
-            <DialogTitle className="text-xs leading-normal font-normal text-muted-foreground">
-              New job
-            </DialogTitle>
-            <DialogClose
-              render={
+          <DialogDescription className="sr-only">
+            Paste the job link
+          </DialogDescription>
+          <form
+            className="flex flex-col pt-3 pr-3.5 pb-3.5 pl-5"
+            onSubmit={(event) => {
+              event.preventDefault()
+              void save(duplicate != null)
+            }}
+          >
+            <div className="flex h-7 items-center gap-1.5 text-xs text-muted-foreground">
+              <Kanban className="size-[13px]" aria-hidden />
+              <span className="font-medium">Apply</span>
+              <ChevronRight className="size-3" aria-hidden />
+              <DialogTitle className="text-xs leading-normal font-normal text-muted-foreground">
+                New job
+              </DialogTitle>
+              <DialogClose
+                render={
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    className="ml-auto size-11 rounded-md text-muted-foreground md:size-7"
+                  />
+                }
+              >
+                <X className="size-7 p-1.5" aria-hidden />
+                <span className="sr-only">Close</span>
+              </DialogClose>
+            </div>
+            <div className="mt-3.5 flex h-10 items-center gap-2 rounded-[11px] bg-secondary pr-[5px] pl-3 focus-within:ring-3 focus-within:ring-ring/50">
+              <LinkIcon
+                className="size-3.5 shrink-0 text-muted-foreground"
+                aria-hidden
+              />
+              <Input
+                ref={linkRef}
+                aria-label="Paste the job link"
+                placeholder="Paste the job link"
+                value={draft.url}
+                className={`${INLINE_FIELD} h-full flex-1 text-base text-foreground md:text-[13px] ${PLACEHOLDER_SECONDARY}`}
+                onChange={(event) => patch({ url: event.target.value })}
+                onBlur={(event) => {
+                  const url = event.currentTarget.value.trim()
+                  if (!url) return
+                  patch({ url: shownUrl(url) })
+                  void runPreview({ url: fullUrl(url) })
+                }}
+              />
+              {duplicate ? null : draft.url ? (
                 <Button
                   type="button"
                   variant="ghost"
-                  size="icon-sm"
-                  className="ml-auto size-11 rounded-md text-muted-foreground md:size-7"
+                  size="icon-xs"
+                  aria-label="Clear link"
+                  className="size-11 rounded-md text-muted-foreground md:size-6"
+                  onClick={() => {
+                    dispatch({ type: "link_cleared" })
+                    linkRef.current?.focus()
+                  }}
+                >
+                  <X className="size-6 p-[5.5px]" aria-hidden />
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  className="h-11 gap-1.5 rounded-md px-2.5 text-xs shadow-[0_1px_2px_rgb(0_0_0/0.04)] ring-foreground/6 md:h-[30px]"
+                  onClick={() => void onPaste()}
+                >
+                  <ClipboardPaste
+                    className="size-[13px] text-muted-foreground"
+                    aria-hidden
+                  />
+                  Paste
+                </Button>
+              )}
+            </div>
+            {preview?.status === "filled" ? (
+              <p role="status" className="sr-only">
+                Filled
+              </p>
+            ) : null}
+            {preview?.status === "unreadable" ? (
+              <Hint>{preview.message || UNREADABLE}</Hint>
+            ) : null}
+            {duplicate ? (
+              <div className="mt-5">
+                <AlreadyTracked
+                  title={onBoard?.title ?? duplicate.fields.title}
+                  company={onBoard?.company ?? duplicate.fields.company}
+                  stage={onBoard?.stage ?? duplicate.stage}
+                  onOpen={() => {
+                    onOpenChange(false)
+                    void navigate({
+                      to: "/apply/$jobId",
+                      params: { jobId: duplicate.jobId },
+                    })
+                  }}
                 />
-              }
-            >
-              <X className="size-7 p-1.5" aria-hidden />
-              <span className="sr-only">Close</span>
-            </DialogClose>
-          </div>
-          <div className="mt-3.5 flex h-10 items-center gap-2 rounded-[11px] bg-secondary pr-[5px] pl-3 focus-within:ring-3 focus-within:ring-ring/50">
-            <LinkIcon
-              className="size-3.5 shrink-0 text-muted-foreground"
-              aria-hidden
-            />
-            <Input
-              ref={linkRef}
-              aria-label="Paste the job link"
-              placeholder="Paste the job link"
-              value={draft.url}
-              className={`${INLINE_FIELD} h-full flex-1 text-[13px] text-foreground md:text-[13px] ${PLACEHOLDER_SECONDARY}`}
-              onChange={(event) => patch({ url: event.target.value })}
-              onBlur={(event) => {
-                const url = event.currentTarget.value.trim()
-                if (!url) return
-                patch({ url: shownUrl(url) })
-                void runPreview({ url: fullUrl(url) })
-              }}
-            />
-            {duplicate ? null : draft.url ? (
+              </div>
+            ) : (
+              <>
+                <Input
+                  ref={titleRef}
+                  aria-label="Role title"
+                  placeholder="Role title"
+                  value={draft.title}
+                  aria-invalid={titleError ? true : undefined}
+                  aria-describedby={titleError ? "job-title-error" : undefined}
+                  className={`${INLINE_FIELD} mt-5 text-xl leading-6 font-semibold tracking-[-0.3px] text-foreground md:text-xl ${PLACEHOLDER_CARD}`}
+                  onChange={(event) => {
+                    dispatch({ type: "title_typed", value: event.target.value })
+                  }}
+                />
+                {titleError ? (
+                  <Hint id="job-title-error">{titleError}</Hint>
+                ) : null}
+                <Input
+                  ref={companyRef}
+                  aria-label="Company"
+                  placeholder="Company"
+                  value={draft.company}
+                  aria-invalid={companyError ? true : undefined}
+                  aria-describedby={
+                    companyError ? "job-company-error" : undefined
+                  }
+                  className={`${INLINE_FIELD} mt-1.5 text-base leading-6 text-muted-foreground md:text-[15px] md:leading-[18px] ${PLACEHOLDER_CARD}`}
+                  onChange={(event) => {
+                    dispatch({
+                      type: "company_typed",
+                      value: event.target.value,
+                    })
+                  }}
+                />
+                {companyError ? (
+                  <Hint id="job-company-error">{companyError}</Hint>
+                ) : null}
+                <Textarea
+                  aria-label="Add the job description"
+                  placeholder="Add the job description…"
+                  value={draft.description}
+                  aria-invalid={descriptionError ? true : undefined}
+                  aria-describedby={
+                    descriptionError ? "job-description-error" : undefined
+                  }
+                  className={`mt-4 field-sizing-fixed h-[120px] resize-none rounded-none border-0 bg-transparent p-0 text-base leading-[1.55] text-muted-foreground shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-sm dark:bg-transparent ${PLACEHOLDER_CARD}`}
+                  onChange={(event) =>
+                    patch({ description: event.target.value })
+                  }
+                  onBlur={() => {
+                    if (
+                      preview?.status === "unreadable" &&
+                      draft.description.trim()
+                    ) {
+                      void runPreview({ text: draft.description })
+                    }
+                  }}
+                />
+                {descriptionError ? (
+                  <Hint id="job-description-error">{descriptionError}</Hint>
+                ) : null}
+                <div className="mt-2">
+                  <NewJobProperties
+                    stage={draft.stage}
+                    deadline={draft.deadline}
+                    location={draft.location}
+                    dateError={dateError !== ""}
+                    dateErrorId={dateError ? dateErrorId : undefined}
+                    onStage={(stage) => patch({ stage })}
+                    onDeadline={(deadline) => patch({ deadline })}
+                    onLocation={(location) => patch({ location })}
+                  />
+                  {dateError ? <Hint id={dateErrorId}>{dateError}</Hint> : null}
+                </div>
+              </>
+            )}
+            {saveError ? <Hint id="job-save-error">{saveError}</Hint> : null}
+            <div className="mt-3.5 h-px bg-border" />
+            <div className="mt-3 flex items-center justify-end gap-2">
               <Button
                 type="button"
                 variant="ghost"
-                size="icon-xs"
-                aria-label="Clear link"
-                className="size-11 rounded-md text-muted-foreground md:size-6"
+                className="h-11 rounded-md px-3 text-[13px] font-normal text-muted-foreground md:h-[30px]"
                 onClick={() => {
-                  dispatch({ type: "link_cleared" })
-                  linkRef.current?.focus()
-                }}
-              >
-                <X className="size-6 p-[5.5px]" aria-hidden />
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                className="h-11 gap-1.5 rounded-md px-2.5 text-xs shadow-[0_1px_2px_rgb(0_0_0/0.04)] ring-foreground/6 md:h-[30px]"
-                onClick={() => void onPaste()}
-              >
-                <ClipboardPaste
-                  className="size-[13px] text-muted-foreground"
-                  aria-hidden
-                />
-                Paste
-              </Button>
-            )}
-          </div>
-          {preview?.status === "filled" ? (
-            <p role="status" className="sr-only">
-              Filled
-            </p>
-          ) : null}
-          {preview?.status === "unreadable" ? (
-            <Hint>{preview.message || UNREADABLE}</Hint>
-          ) : null}
-          {duplicate ? (
-            <div className="mt-5">
-              <AlreadyTracked
-                title={onBoard?.title ?? duplicate.fields.title}
-                company={onBoard?.company ?? duplicate.fields.company}
-                stage={onBoard?.stage ?? duplicate.stage}
-                onOpen={() => {
+                  reset()
                   onOpenChange(false)
-                  void navigate({
-                    to: "/apply/$jobId",
-                    params: { jobId: duplicate.jobId },
-                  })
                 }}
-              />
+              >
+                Cancel
+              </Button>
+              {duplicate ? (
+                <Button
+                  type="submit"
+                  disabled={busy}
+                  className="h-11 px-3 text-[13px] font-semibold md:h-7"
+                >
+                  Add anyway
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  variant="primary"
+                  disabled={busy}
+                  aria-label="Add job"
+                  className="h-11 gap-2 pr-2 pl-3 md:h-7"
+                >
+                  <span>Add job</span>
+                  <Kbd className="h-[18px] min-w-0 rounded-[4px] bg-primary-foreground/15 px-[5px] text-[11px] font-normal text-primary-foreground/75">
+                    ↵
+                  </Kbd>
+                </Button>
+              )}
             </div>
-          ) : (
-            <>
-              <Input
-                ref={titleRef}
-                aria-label="Role title"
-                placeholder="Role title"
-                value={draft.title}
-                aria-invalid={titleError ? true : undefined}
-                aria-describedby={titleError ? "job-title-error" : undefined}
-                className={`${INLINE_FIELD} mt-5 text-xl leading-6 font-semibold tracking-[-0.3px] text-foreground md:text-xl ${PLACEHOLDER_CARD}`}
-                onChange={(event) => {
-                  dispatch({ type: "title_typed", value: event.target.value })
-                }}
-              />
-              {titleError ? (
-                <Hint id="job-title-error">{titleError}</Hint>
-              ) : null}
-              <Input
-                ref={companyRef}
-                aria-label="Company"
-                placeholder="Company"
-                value={draft.company}
-                aria-invalid={companyError ? true : undefined}
-                aria-describedby={
-                  companyError ? "job-company-error" : undefined
-                }
-                className={`${INLINE_FIELD} mt-1.5 text-[15px] leading-[18px] text-muted-foreground md:text-[15px] ${PLACEHOLDER_CARD}`}
-                onChange={(event) => {
-                  dispatch({ type: "company_typed", value: event.target.value })
-                }}
-              />
-              {companyError ? (
-                <Hint id="job-company-error">{companyError}</Hint>
-              ) : null}
-              <Textarea
-                aria-label="Add the job description"
-                placeholder="Add the job description…"
-                value={draft.description}
-                aria-invalid={descriptionError ? true : undefined}
-                aria-describedby={
-                  descriptionError ? "job-description-error" : undefined
-                }
-                className={`mt-4 field-sizing-fixed h-[120px] resize-none rounded-none border-0 bg-transparent p-0 text-sm leading-[1.55] text-muted-foreground shadow-none focus-visible:border-0 focus-visible:ring-0 dark:bg-transparent ${PLACEHOLDER_CARD}`}
-                onChange={(event) => patch({ description: event.target.value })}
-                onBlur={() => {
-                  if (
-                    preview?.status === "unreadable" &&
-                    draft.description.trim()
-                  ) {
-                    void runPreview({ text: draft.description })
-                  }
-                }}
-              />
-              {descriptionError ? (
-                <Hint id="job-description-error">{descriptionError}</Hint>
-              ) : null}
-              <div className="mt-2">
-                <NewJobProperties
-                  stage={draft.stage}
-                  deadline={draft.deadline}
-                  location={draft.location}
-                  dateError={dateError !== ""}
-                  onStage={(stage) => patch({ stage })}
-                  onDeadline={(deadline) => patch({ deadline })}
-                  onLocation={(location) => patch({ location })}
-                />
-                {dateError ? <Hint>{dateError}</Hint> : null}
-              </div>
-            </>
-          )}
-          {saveError ? <Hint id="job-save-error">{saveError}</Hint> : null}
-          <div className="mt-3.5 h-px bg-border" />
-          <div className="mt-3 flex items-center justify-end gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              className="h-11 rounded-md px-3 text-[13px] font-normal text-muted-foreground md:h-[30px]"
-              onClick={() => {
-                reset()
-                onOpenChange(false)
-              }}
-            >
-              Cancel
-            </Button>
-            {duplicate ? (
-              <Button
-                type="submit"
-                disabled={busy}
-                className="h-11 px-3 text-[13px] font-semibold md:h-7"
-              >
-                Add anyway
-              </Button>
-            ) : (
-              <Button
-                type="submit"
-                variant="primary"
-                disabled={busy}
-                aria-label="Add job"
-                className="h-11 gap-2 pr-2 pl-3 md:h-7"
-              >
-                <span>Add job</span>
-                <Kbd className="h-[18px] min-w-0 rounded-[4px] bg-primary-foreground/15 px-[5px] text-[11px] font-normal text-primary-foreground/75">
-                  ↵
-                </Kbd>
-              </Button>
-            )}
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

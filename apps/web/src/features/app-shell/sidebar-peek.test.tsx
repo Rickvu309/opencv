@@ -57,6 +57,16 @@ function openPeek() {
 }
 
 describe("peek hover intent", () => {
+  it("opens the full height of the frame", async () => {
+    await collapsedShell()
+    expect(
+      document.querySelector("#app-main [data-slot=sidebar-expand]")
+    ).toBeTruthy()
+    openPeek()
+    expect(aside().className).not.toContain("top-14")
+    expect(aside().className).toContain("inset-y-0")
+  })
+
   it("opens only after the pointer rests on the edge for 150 ms", async () => {
     await collapsedShell()
     enterEdge()

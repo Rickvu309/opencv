@@ -12,6 +12,7 @@ import {
   rangeFor,
   weekDays,
 } from "./apply-calendar-model.ts"
+import { PROFILE_ZONE } from "./apply-stages.ts"
 
 const HO_CHI_MINH_MS = 7 * 3_600_000
 const DAY_MS = 86_400_000
@@ -32,7 +33,7 @@ describe("calendar time in the profile zone", () => {
   it("puts an interview on the day and minute it has in Ho Chi Minh", () => {
     fc.assert(
       fc.property(instant, (ms) => {
-        const [event] = calendarEvents([interviewAt(ms)])
+        const [event] = calendarEvents([interviewAt(ms)], PROFILE_ZONE)
         expect(event?.day).toBe(localDate(ms))
         expect(event?.startMinutes).toBe(localMinutes(ms))
         expect(event?.endMinutes).toBe(localMinutes(ms) + 60)
@@ -67,7 +68,10 @@ describe("calendar time in the profile zone", () => {
     fc.assert(
       fc.property(instant, instant, (at, anchorMs) => {
         const days = weekDays(localDate(anchorMs))
-        const shown = eventsInDays(calendarEvents([interviewAt(at)]), days)
+        const shown = eventsInDays(
+          calendarEvents([interviewAt(at)], PROFILE_ZONE),
+          days
+        )
         expect(shown.length === 1).toBe(days.includes(localDate(at)))
       }),
       { numRuns: 3000 }
@@ -75,7 +79,7 @@ describe("calendar time in the profile zone", () => {
     const mondayEarly = Date.parse("2026-10-25T23:30:00.000Z")
     expect(
       eventsInDays(
-        calendarEvents([interviewAt(mondayEarly)]),
+        calendarEvents([interviewAt(mondayEarly)], PROFILE_ZONE),
         weekDays("2026-10-26")
       )
     ).toHaveLength(1)
@@ -85,7 +89,7 @@ describe("calendar time in the profile zone", () => {
     fc.assert(
       fc.property(instant, instant, (at, anchorMs) => {
         const days = weekDays(localDate(anchorMs))
-        const { from, to } = rangeFor(days)
+        const { from, to } = rangeFor(days, PROFILE_ZONE)
         const inRange = iso(at) >= from && iso(at) < to
         expect(inRange).toBe(days.includes(localDate(at)))
         expect(localMinutes(Date.parse(from))).toBe(0)
@@ -101,12 +105,12 @@ describe("calendar time in the profile zone", () => {
       fc.property(instant, instant, (deadlineMs, anchorMs) => {
         const days = weekDays(localDate(anchorMs))
         const deadline = localDate(deadlineMs)
-        const { from, to } = rangeFor(days)
+        const { from, to } = rangeFor(days, PROFILE_ZONE)
         const read = `${deadline}T00:00:00.000Z`
         if (days.includes(deadline)) {
           expect(read >= from && read <= to).toBe(true)
         }
-        const [event] = calendarEvents([mockJob({ deadline })])
+        const [event] = calendarEvents([mockJob({ deadline })], PROFILE_ZONE)
         expect(eventsInDays([event!], days).length === 1).toBe(
           days.includes(deadline)
         )
@@ -129,7 +133,7 @@ describe("calendar time in the profile zone", () => {
             Date.UTC(Number(anchor.slice(0, 4)), Number(anchor.slice(5, 7)), 0)
           ).getUTCDate()
         )
-        const { from, to } = rangeFor(flat)
+        const { from, to } = rangeFor(flat, PROFILE_ZONE)
         const at =
           Date.parse(`${anchor}T00:00:00.000Z`) - HO_CHI_MINH_MS + DAY_MS / 2
         expect(iso(at) >= from && iso(at) < to).toBe(true)
@@ -151,7 +155,8 @@ describe("calendar time in the profile zone", () => {
               interviewAt(
                 Date.UTC(2026, 9, 28) - HO_CHI_MINH_MS + minute * 60_000
               )
-            )
+            ),
+            PROFILE_ZONE
           )
           const hours = hoursFor(events)
           for (const event of events) {

@@ -198,7 +198,6 @@ function bounded(haystack: string, needle: string, at: number): boolean {
 
 function hidden(element: Element): boolean {
   if (SKIP_TAGS.has(element.tagName)) return true
-  if (element.getAttribute("aria-hidden") === "true") return true
   if (element.hasAttribute("hidden")) return true
   if (element.classList.contains("sr-only")) return true
   if (element.classList.contains("hidden")) return true

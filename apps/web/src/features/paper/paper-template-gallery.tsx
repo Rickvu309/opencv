@@ -153,7 +153,7 @@ function ChoiceCard({
         </span>
         <span
           id={describedBy}
-          className="truncate text-xs leading-4 text-muted-foreground"
+          className="text-xs leading-4 break-words whitespace-normal text-muted-foreground"
         >
           {use}
         </span>

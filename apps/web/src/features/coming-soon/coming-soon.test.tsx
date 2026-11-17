@@ -32,14 +32,23 @@ describe("coming soon and the calm 404", () => {
     expect(
       screen.getByRole("button", { name: "Notify me" })
     ).toBeInTheDocument()
-    expect(
-      screen.getByRole("link", { name: "Track a job in Apply" })
-    ).toHaveAttribute("href", "/apply")
+    const track = screen.getByRole("link", { name: "Track a job in Apply" })
+    expect(track).toHaveAttribute("href", "/apply")
+    expect(track.className).toMatch(/\bmin-h-11\b/)
+    expect(track.className).toMatch(/\bmd:min-h-6\b/)
     expect(primaryCount()).toBe(1)
     const previewTitle = screen.getByText("Marketing Executive", {
       hidden: true,
     })
     expect(previewTitle.closest("[aria-hidden='true']")).not.toBeNull()
+    expect(previewTitle.className).toMatch(/\bbreak-words\b/)
+    expect(previewTitle.className).not.toMatch(/\btruncate\b/)
+    expect(previewTitle.closest("[data-slot='jobs-preview']")).not.toBeNull()
+    const fit = screen.getByText("82% fit", { hidden: true })
+    expect(fit.parentElement).toBe(previewTitle.parentElement)
+    expect(fit.compareDocumentPosition(previewTitle)).toBe(
+      Node.DOCUMENT_POSITION_PRECEDING
+    )
     expect(
       screen.queryByRole("button", { name: "Marketing Executive" })
     ).not.toBeInTheDocument()
@@ -87,7 +96,10 @@ describe("coming soon and the calm 404", () => {
     await waitFor(() => {
       expect(notifyCalls()).toEqual([{ topic: "proof" }])
     })
-    expect(primaryCount()).toBe(0)
+    expect(primaryCount()).toBe(1)
+    expect(
+      screen.getByRole("button", { name: "Get early access" })
+    ).toHaveAttribute("data-variant", "primary")
   })
 
   it("shows Pitch and posts pitch without an editor", async () => {

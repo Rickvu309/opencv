@@ -329,7 +329,7 @@ describe("settings", () => {
       expect(getLastDelete()).toEqual({ confirm: "DELETE" })
     })
     expect(
-      await screen.findByRole("heading", { name: "Log in to opencv" })
+      await screen.findByRole("heading", { name: "Log in to OpenCV" })
     ).toBeInTheDocument()
   })
 
@@ -337,7 +337,7 @@ describe("settings", () => {
     renderApp("/settings/account")
     fireEvent.click(await screen.findByRole("button", { name: "Sign out" }))
     expect(
-      await screen.findByRole("heading", { name: "Log in to opencv" })
+      await screen.findByRole("heading", { name: "Log in to OpenCV" })
     ).toBeInTheDocument()
     expect(authClient.signOut).toHaveBeenCalled()
   })

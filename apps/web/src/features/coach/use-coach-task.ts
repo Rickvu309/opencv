@@ -23,7 +23,10 @@ import { observeCoachStop } from "@/lib/coach-stop-registry.ts"
 import { startCoachTask, subscribeCoachTask } from "@/lib/coach-task-client.ts"
 import { taskIsTerminal, taskParts } from "@/lib/coach-task-state.ts"
 import { notifyWritingRefresh } from "@/lib/writing-refresh.ts"
-import { syncWritingProposalFromActions } from "@/lib/writing-proposal.ts"
+import {
+  noteWritingUndo,
+  syncWritingProposalFromActions,
+} from "@/lib/writing-proposal.ts"
 import { undoActivity } from "@/lib/contract-client.ts"
 import {
   requestCoachStop,
@@ -416,6 +419,7 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
     stop: () => stop(),
     undo: async (activityId: string) => {
       await undoActivity(queryClient, activityId)
+      noteWritingUndo(activityId)
       options.onAfterUndo?.()
     },
     cancelInFlight: () => {

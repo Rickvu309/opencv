@@ -24,7 +24,7 @@ import { draftFromPage } from "@/features/paper-page/canvas-edit.ts"
 import { readWordPage } from "@/features/paper-page/package-read.ts"
 import { WritingPage } from "@/features/paper/writing-page.tsx"
 import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
-import { useShellProfile } from "@/features/app-shell/use-shell-profile.ts"
+import { useShellProfile } from "@/lib/use-shell-profile.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { catalogClient, queryKey } from "@/lib/contract-client.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
@@ -256,7 +256,9 @@ function LegacyPaperDocPage() {
   ) {
     return (
       <section aria-label="Paper" className="p-4">
-        <p>Loading documents</p>
+        <p role="status" className="text-sm text-muted-foreground">
+          Loading documents
+        </p>
       </section>
     )
   }

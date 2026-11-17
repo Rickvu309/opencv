@@ -8,6 +8,7 @@ import {
   PAPER_GALLERY_DIALOG_CLASS,
   PaperTemplateGallery,
 } from "./paper-template-gallery.tsx"
+import { TEMPLATE_CHOICES } from "./paper-template-pages.ts"
 
 afterEach(() => {
   cleanup()
@@ -66,6 +67,12 @@ describe("Paper template chooser layout", () => {
       "aria-checked",
       "true"
     )
+    for (const choice of TEMPLATE_CHOICES) {
+      const description = screen.getByText(choice.use)
+      expect(description.textContent).toBe(choice.use)
+      expect(description.className).toMatch(/whitespace-normal/)
+      expect(description.className).not.toMatch(/truncate|line-clamp/)
+    }
   })
 
   it("keeps the actions in a row of their own below the scrolling grid, so they stay in view however far the grid scrolls", () => {

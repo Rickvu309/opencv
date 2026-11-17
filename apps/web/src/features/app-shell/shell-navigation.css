@@ -1,0 +1,4 @@
+[data-pen-surface="app-shell"]
+  :is([data-slot="nav-item-badge"], [data-slot="sidebar-group-label"]) {
+  color: color-mix(in oklab, var(--muted-foreground) 92%, transparent);
+}

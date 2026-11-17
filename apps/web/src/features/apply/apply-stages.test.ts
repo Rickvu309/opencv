@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import type { JobView } from "@workspace/domain"
 import {
+  PROFILE_ZONE,
   companyInitials,
   interviewInputValue,
   interviewInstant,
@@ -39,14 +40,21 @@ function job(patch: Partial<JobView>): JobView {
 
 describe("apply stages", () => {
   it("derives list phrases and the normal priority label", () => {
-    expect(listPhrase(job({ stage: "saved" }), now)).toBe("Saved today")
+    expect(listPhrase(job({ stage: "saved" }), now, PROFILE_ZONE)).toBe(
+      "Saved today"
+    )
     expect(
-      listPhrase(job({ stage: "saved", deadline: "2026-11-08" }), now)
+      listPhrase(
+        job({ stage: "saved", deadline: "2026-11-08" }),
+        now,
+        PROFILE_ZONE
+      )
     ).toBe("Apply by Nov 8")
     expect(
       listPhrase(
         job({ stage: "applied", updatedAt: "2026-10-14T04:00:00.000Z" }),
-        now
+        now,
+        PROFILE_ZONE
       )
     ).toBe("Applied Oct 14")
     expect(
@@ -55,11 +63,14 @@ describe("apply stages", () => {
           stage: "interview",
           interviewAt: "2026-11-03T03:00:00.000Z",
         }),
-        now
+        now,
+        PROFILE_ZONE
       )
     ).toBe("Interview Tue, 10:00")
-    expect(listPhrase(job({ stage: "offer" }), now)).toBe("Offer")
-    expect(listPhrase(job({ stage: "closed" }), now)).toBe("Closed")
+    expect(listPhrase(job({ stage: "offer" }), now, PROFILE_ZONE)).toBe("Offer")
+    expect(listPhrase(job({ stage: "closed" }), now, PROFILE_ZONE)).toBe(
+      "Closed"
+    )
     expect(priorityLabel("normal")).toBe("Normal")
     expect(priorityLabel("low")).toBe("Low priority")
     expect(priorityLabel("high")).toBe("High priority")
@@ -69,7 +80,20 @@ describe("apply stages", () => {
 
   it("keeps the interview hour in the profile zone", () => {
     const iso = "2026-10-27T03:00:00.000Z"
-    expect(interviewInputValue(iso)).toBe("2026-10-27T10:00")
-    expect(interviewInstant("2026-10-27T10:00")).toBe(iso)
+    expect(interviewInputValue(iso, PROFILE_ZONE)).toBe("2026-10-27T10:00")
+    expect(interviewInstant("2026-10-27T10:00", PROFILE_ZONE)).toBe(iso)
+  })
+
+  it("keeps the interview hour in a chosen zone", () => {
+    const iso = "2026-10-27T03:00:00.000Z"
+    expect(interviewInputValue(iso, "Asia/Singapore")).toBe("2026-10-27T11:00")
+    expect(interviewInstant("2026-10-27T11:00", "Asia/Singapore")).toBe(iso)
+    expect(
+      listPhrase(
+        job({ stage: "interview", interviewAt: iso }),
+        now,
+        "Asia/Singapore"
+      )
+    ).toBe("Interview Tue, 11:00")
   })
 })

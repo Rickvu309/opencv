@@ -12,6 +12,7 @@ export type PaletteState = {
   recent: PaletteChat[]
   failed: boolean
   wasOpen: boolean
+  searchAttempt: number
 }
 
 export type PaletteAction =
@@ -23,6 +24,7 @@ export type PaletteAction =
   | { type: "recent_loaded"; chats: PaletteChat[] }
   | { type: "search_succeeded"; hits: SearchHits }
   | { type: "search_failed" }
+  | { type: "search_retried" }
 
 export function initialPaletteState(open: boolean): PaletteState {
   return {
@@ -33,6 +35,7 @@ export function initialPaletteState(open: boolean): PaletteState {
     recent: [],
     failed: false,
     wasOpen: open,
+    searchAttempt: 0,
   }
 }
 
@@ -50,6 +53,7 @@ export function paletteReducer(
         activeId: null,
         hits: null,
         failed: false,
+        searchAttempt: 0,
       }
     case "closed":
       return { ...state, wasOpen: false }
@@ -67,5 +71,12 @@ export function paletteReducer(
       return { ...state, hits: action.hits, failed: false }
     case "search_failed":
       return { ...state, failed: true }
+    case "search_retried":
+      return {
+        ...state,
+        failed: false,
+        hits: null,
+        searchAttempt: state.searchAttempt + 1,
+      }
   }
 }

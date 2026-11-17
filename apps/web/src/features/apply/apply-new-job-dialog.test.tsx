@@ -29,6 +29,22 @@ describe("new job dialog", () => {
   afterEach(() => {
     cleanup()
   })
+  it("centres on the page column and keeps phone fields at 16px", async () => {
+    const dialog = await openDialog()
+    expect(dialog.className).not.toContain("122px")
+    expect(dialog.className).not.toContain("118px")
+    expect(dialog).toHaveAttribute("data-slot", "new-job-dialog")
+    expect(
+      document.querySelector("[data-slot='apply-column-anchor']")
+    ).not.toBeNull()
+    expect(screen.getByLabelText("Paste the job link").className).toMatch(
+      /\btext-base\b/
+    )
+    expect(screen.getByLabelText("Company").className).toMatch(/\btext-base\b/)
+    expect(screen.getByLabelText("Add the job description").className).toMatch(
+      /\btext-base\b/
+    )
+  })
   it("fills a readable link", async () => {
     const dialog = await openDialog()
     fireEvent.change(screen.getByLabelText("Paste the job link"), {
@@ -111,6 +127,29 @@ describe("new job dialog", () => {
         )
       ).toBe(true)
     })
+  })
+
+  it("points the deadline error at the deadline control", async () => {
+    await openDialog()
+    fireEvent.change(screen.getByLabelText("Role title"), {
+      target: { value: "Junior Marketing" },
+    })
+    fireEvent.change(screen.getByLabelText("Company"), {
+      target: { value: "Lumière Cosmetics" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Deadline" }))
+    fireEvent.change(await screen.findByLabelText("Deadline"), {
+      target: { value: "10000-01-01" },
+    })
+    fireEvent.click(screen.getByRole("button", { name: "Add job" }))
+    const alert = await screen.findByRole("alert")
+    expect(alert).toHaveTextContent("Use a real date.")
+    const deadline = screen.getByRole("button", { name: "Deadline" })
+    expect(deadline).toHaveAttribute("aria-invalid", "true")
+    expect(deadline.getAttribute("aria-describedby")).toBe(alert.id)
+    expect(getMockJobPosts().some((post) => post.name === "job.create")).toBe(
+      false
+    )
   })
 
   it("adds a location to a job typed by hand", async () => {

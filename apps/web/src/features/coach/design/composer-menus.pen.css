@@ -73,13 +73,13 @@
   padding: 2px 12px 4px;
   font-size: 12px;
   font-weight: 500;
-  color: #a0a0a2;
+  color: color-mix(in srgb, var(--muted-foreground) 87%, transparent);
 }
 
 [data-pen-surface="coach"][data-slot="coach-add-menu"] [data-add-status] {
   padding: 4px 12px 8px;
   font-size: 12px;
-  color: #a0a0a2;
+  color: color-mix(in srgb, var(--muted-foreground) 87%, transparent);
 }
 
 [data-pen-surface="coach"][data-slot="coach-add-menu"] [data-add-note-row] {

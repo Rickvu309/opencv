@@ -23,11 +23,15 @@ describe("detail recovery", () => {
       const { router } = renderApp(`/${path}/${missingId}`)
 
       expect(await screen.findByText(message)).toBeInTheDocument()
+      if (path === "apply") {
+        expect(screen.getByText(message).parentElement).toHaveClass("p-6")
+      }
       expect(screen.queryByText(/Refresh the page/)).not.toBeInTheDocument()
       expect(
         screen.queryByRole("button", { name: "Refresh" })
       ).not.toBeInTheDocument()
-      fireEvent.click(screen.getByRole("button", { name: back, exact: true }))
+      const label = path === "apply" ? "Back to Apply" : back
+      fireEvent.click(screen.getByRole("button", { name: label, exact: true }))
 
       await waitFor(() =>
         expect(router.state.location.pathname).toBe(`/${path}`)
@@ -60,7 +64,7 @@ describe("detail recovery", () => {
     renderApp(`/apply/${missingId}`)
 
     expect(
-      await screen.findByText("Could not load jobs. Refresh the page.")
+      await screen.findByText("Couldn't load this job.")
     ).toBeInTheDocument()
     expect(screen.queryByText("Job not found.")).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Refresh" }))

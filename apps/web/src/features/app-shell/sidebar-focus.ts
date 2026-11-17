@@ -22,6 +22,6 @@ export function focusIsInExpandButton() {
   const active = document.activeElement
   return (
     active instanceof HTMLElement &&
-    active.matches('[data-slot="sidebar-expand"]')
+    active.matches('#app-main [data-slot="sidebar-expand"]')
   )
 }

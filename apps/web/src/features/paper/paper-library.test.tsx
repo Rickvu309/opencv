@@ -1,6 +1,6 @@
 import { StrictMode } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { act, cleanup, fireEvent, screen } from "@testing-library/react"
+import { act, cleanup, fireEvent, screen, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { render } from "@/test/render-with-client.tsx"
 import {
@@ -12,10 +12,15 @@ import {
 import { ApiError } from "@/lib/api-error.ts"
 
 import { PaperLibrary } from "./paper-library.tsx"
+
+vi.mock("@/features/apply/apply-api.ts", () => ({
+  listJobs: vi.fn(() => Promise.resolve([])),
+}))
 import {
   cv,
   letter,
   letterPaper,
+  libraryRouter,
   renderLibrary,
 } from "./paper-library.fixtures.tsx"
 import { importPaperFile, importPaperLink } from "./paper-api.ts"
@@ -221,6 +226,10 @@ describe("Paper library", () => {
     expect(
       screen.getByRole("button", { name: "Start blank" })
     ).toBeInTheDocument()
+    expect(screen.getAllByRole("dialog")).toHaveLength(1)
+    expect(
+      document.querySelectorAll("[data-slot='dialog-content']")
+    ).toHaveLength(1)
     const retryInput = document.querySelector('input[type="file"]')
     if (!retryInput) throw new Error("Missing retry input")
     const picker = vi.spyOn(retryInput, "click")
@@ -260,14 +269,25 @@ describe("Paper library", () => {
       screen.getAllByRole("button", { name: "Import", exact: true }).at(0) ??
         missingImport()
     )
-    const field = screen.getByRole("textbox", { name: "Paste a link" })
+    const dialog = screen.getByRole("dialog", { name: "Import", exact: true })
+    const field = within(dialog).getByRole("textbox", {
+      name: "Paste a link",
+    })
+    const submit = within(dialog).getByRole("button", { name: "Import" })
+    expect(submit).toBeDisabled()
+    fireEvent.click(submit)
+    expect(vi.mocked(importPaperLink)).not.toHaveBeenCalled()
     fireEvent.change(field, {
       target: { value: "https://docs.google.com/document/d/abc" },
     })
-    fireEvent.keyDown(field, { key: "Enter" })
+    fireEvent.click(submit)
     expect(
       await screen.findByRole("heading", { name: "Can't read this file" })
     ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("dialog", { name: "Import", exact: true })
+    ).not.toBeInTheDocument()
+    expect(screen.queryByRole("textbox", { name: "Paste a link" })).toBeNull()
     expect(screen.getByRole("alert")).toHaveTextContent(
       "Google Docs aren't supported. Download a PDF or Word file."
     )
@@ -373,18 +393,20 @@ describe("Paper library", () => {
   it("prints once in strict mode and unmounts the library sheet", async () => {
     const print = vi.spyOn(window, "print").mockImplementation(() => undefined)
     render(
-      <StrictMode>
-        <PaperLibrary
-          docs={[cv("PM track CV")]}
-          files={[]}
-          loading={false}
-          error={null}
-          onRetry={() => undefined}
-          onOpen={() => undefined}
-          query=""
-          onQueryChange={() => undefined}
-        />
-      </StrictMode>
+      libraryRouter(
+        <StrictMode>
+          <PaperLibrary
+            docs={[cv("PM track CV")]}
+            files={[]}
+            loading={false}
+            error={null}
+            onRetry={() => undefined}
+            onOpen={() => undefined}
+            query=""
+            onQueryChange={() => undefined}
+          />
+        </StrictMode>
+      )
     )
     fireEvent.click(screen.getByRole("button", { name: "PM track CV menu" }))
     fireEvent.click(
@@ -457,6 +479,9 @@ describe("Paper library", () => {
         if (value !== "") await user.type(field, value)
         await user.keyboard("{Enter}")
         expect(await screen.findByText(error)).toBeInTheDocument()
+        expect(screen.getByRole("alert")).toHaveTextContent(error)
+        expect(field).toHaveAttribute("aria-invalid", "true")
+        expect(field).toHaveAttribute("aria-describedby", "paper-rename-error")
         expect(field).toHaveValue(value)
         expect(
           screen.getByRole("textbox", { name: "Name" })
