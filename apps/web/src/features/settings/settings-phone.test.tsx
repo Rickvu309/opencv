@@ -89,7 +89,7 @@ describe("settings phone layout", () => {
     expect(control.className).toContain("after:content-['']")
   })
 
-  it("opens Claude with one line and hides tool names until asked", async () => {
+  it("opens plain-language capabilities and keeps setup tips beside the sign-in step", async () => {
     const user = userEvent.setup()
     renderApp("/settings/integrations")
     const summary = await screen.findByText(
@@ -98,13 +98,24 @@ describe("settings phone layout", () => {
     expect(summary).toHaveClass("max-w-[60ch]")
     expect(screen.queryByText(/paper_read/)).toBeNull()
     const card = screen.getByText("Claude Code").closest("li")
-    expect(card).not.toBeNull()
+    if (!card) throw new Error("Claude setup card is missing")
+    const signIn = within(card).getByRole("button", {
+      name: "Copy Claude login command",
+    }).parentElement
+    expect(signIn).toHaveClass("md:items-center")
+    expect(signIn?.parentElement).toHaveTextContent(
+      "You can also sign in from Claude Code with /mcp."
+    )
     await user.click(
-      within(card as HTMLElement).getByRole("button", {
+      within(card).getByRole("button", {
         name: "What the agent can do",
       })
     )
-    expect(screen.getByText(/paper_read/)).toBeVisible()
-    expect(screen.getByText(/paper_edit/)).toBeVisible()
+    expect(
+      screen.getByText(
+        /Read your CVs and Letters, and propose edits you approve in OpenCV/
+      )
+    ).toBeVisible()
+    expect(screen.queryByText(/paper_read|paper_edit/)).toBeNull()
   })
 })

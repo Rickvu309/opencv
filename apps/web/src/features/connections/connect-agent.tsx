@@ -54,7 +54,7 @@ export function ConnectAgent() {
             </div>
             {snippet.copies.map((copy) => (
               <div key={copy.id} className="flex flex-col gap-2">
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                   <p className="text-sm font-medium">{copy.label}</p>
                   <CopyButton
                     className="h-11 w-full shrink-0 md:h-9 md:w-auto"
@@ -69,6 +69,9 @@ export function ConnectAgent() {
                 <pre className="overflow-x-hidden rounded-md bg-muted px-3 py-2 text-sm break-words whitespace-pre-wrap">
                   {copy.text}
                 </pre>
+                {copy.tip ? (
+                  <p className="text-sm text-muted-foreground">{copy.tip}</p>
+                ) : null}
               </div>
             ))}
           </li>

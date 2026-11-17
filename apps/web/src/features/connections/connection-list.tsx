@@ -5,6 +5,7 @@ import {
   type ConnectionResources,
 } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
+import { profileQuery } from "@/lib/account-api.ts"
 import { connectionsKey, fetchConnections } from "@/lib/connections-api.ts"
 import { runContractCommand } from "@/lib/contract-client.ts"
 import { ConnectAgent } from "./connect-agent.tsx"
@@ -19,6 +20,8 @@ function connectionGrantLines(connection: {
 
 export function ConnectionList() {
   const queryClient = useQueryClient()
+  const profile = useQuery(profileQuery())
+  const timeZone = profile.data?.timeZone
   const connections = useQuery({
     queryKey: connectionsKey(),
     queryFn: fetchConnections,
@@ -85,14 +88,21 @@ export function ConnectionList() {
                 <dt>Connected</dt>
                 <dd>
                   <time dateTime={connection.createdAt}>
-                    {new Date(connection.createdAt).toLocaleString()}
+                    {new Date(connection.createdAt).toLocaleString(undefined, {
+                      timeZone,
+                    })}
                   </time>
                 </dd>
                 <dt>Last used</dt>
                 <dd>
                   {connection.lastUsedAt ? (
                     <time dateTime={connection.lastUsedAt}>
-                      {new Date(connection.lastUsedAt).toLocaleString()}
+                      {new Date(connection.lastUsedAt).toLocaleString(
+                        undefined,
+                        {
+                          timeZone,
+                        }
+                      )}
                     </time>
                   ) : (
                     "Never"
@@ -101,7 +111,9 @@ export function ConnectionList() {
                 <dt>Expires</dt>
                 <dd>
                   <time dateTime={connection.expiresAt}>
-                    {new Date(connection.expiresAt).toLocaleString()}
+                    {new Date(connection.expiresAt).toLocaleString(undefined, {
+                      timeZone,
+                    })}
                   </time>
                 </dd>
               </dl>
