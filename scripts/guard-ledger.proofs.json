@@ -31,6 +31,10 @@
     "passed": true,
     "fingerprint": "0f5ff3a2ceb1"
   },
+  "save-checks": {
+    "passed": true,
+    "fingerprint": "b10ec3332824"
+  },
   "scanner-ancestor-roots": {
     "passed": true,
     "fingerprint": "758b50f2567f"
