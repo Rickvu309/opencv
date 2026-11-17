@@ -1,19 +1,5 @@
 [
   {
-    "subject": "packages/paper-crdt/src/rich-editor.test.ts",
-    "because": "owner correction 2026-11-17: Paper must keep the same physical page and uniformly scale at every width; reflow and scale=1 assertions describe rejected behavior",
-    "replacedBy": "scripts/paper-page-scale.test.mjs",
-    "proof": {
-      "fork": "1f15240557337b86a6f3f7436f6467d243160c1f",
-      "replacedByBlob": "97e719b5a1de605c4942bd381d370341e432d9e1",
-      "failedOnBase": true,
-      "passedOnHead": true
-    },
-    "class": "owner",
-    "classBecause": "scripts/paper-page-scale.test.mjs shares no module, command or route with packages/paper-crdt/src/rich-editor.test.ts",
-    "items": 7
-  },
-  {
     "subject": "packages/paper-crdt/src/rich-tables.test.ts",
     "because": "owner correction 2026-11-17: oversized table rows use physical page geometry at every scale; the reflow exemption is rejected",
     "replacedBy": "scripts/paper-page-scale.test.mjs",
@@ -40,5 +26,19 @@
     "class": "owner",
     "classBecause": "scripts/paper-page-scale.test.mjs shares no module, command or route with scripts/paper-page-layout.test.mjs; a guard case-removed",
     "items": 2
+  },
+  {
+    "subject": "packages/paper-crdt/src/rich-editor.test.ts",
+    "because": "owner correction 2026-11-17: Paper must keep the same physical page and uniformly scale at every width; reflow and scale=1 assertions describe rejected behavior",
+    "replacedBy": "scripts/paper-page-scale.test.mjs",
+    "proof": {
+      "fork": "1f15240557337b86a6f3f7436f6467d243160c1f",
+      "replacedByBlob": "0374d0156cd3b19056adcc6f89459170dbc4f9ba",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "owner",
+    "classBecause": "scripts/paper-page-scale.test.mjs shares no module, command or route with packages/paper-crdt/src/rich-editor.test.ts",
+    "items": 7
   }
 ]
