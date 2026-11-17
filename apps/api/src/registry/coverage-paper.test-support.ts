@@ -30,7 +30,7 @@ import {
   text,
   type CoverageCase,
   type CoverageTools,
-} from "./coverage-helpers.js"
+} from "./coverage-helpers.test-support.js"
 
 export function paperCases(tools: CoverageTools): CoverageCase[] {
   const { ctx, db, registry, run, undo, paperOf, gone, shares, userId } = tools

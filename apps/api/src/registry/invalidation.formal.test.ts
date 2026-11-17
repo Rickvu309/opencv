@@ -25,7 +25,7 @@ import {
   user,
 } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
-import { coverageCases } from "./coverage-setup.js"
+import { coverageCases } from "./coverage-setup.test-support.js"
 import type { Registry } from "./registry.js"
 import type { Actor } from "@workspace/domain"
 

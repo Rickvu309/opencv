@@ -25,7 +25,7 @@ import { openWordPage, applyWordOps } from "../paper/index.js"
 import { twoParagraphCv } from "../test/paper-content.js"
 import { resolveTurnGrounding } from "./context.js"
 import { createTaskRuntime } from "./task-runtime.js"
-import { final, fixture, settings } from "./worker-fixture.js"
+import { final, fixture, settings } from "./worker-fixture.test-support.js"
 
 it.each(["approve", "deny", "expire", "undo"] as const)(
   "pauses without a lease, resolves %s and resumes the checkpoint",

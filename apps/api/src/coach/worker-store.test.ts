@@ -8,7 +8,7 @@ import { getChat, readChatViewParts } from "../chat/index.js"
 import { createScriptedWorkerRuntime } from "./fake.js"
 import { requestCancel } from "./task-store.js"
 import { runCoachWorker } from "./worker.js"
-import { final, fixture, settings } from "./worker-fixture.js"
+import { final, fixture, settings } from "./worker-fixture.test-support.js"
 
 it.each([
   {

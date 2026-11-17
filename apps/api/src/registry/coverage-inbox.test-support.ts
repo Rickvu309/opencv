@@ -8,7 +8,7 @@ import {
   text,
   type CoverageCase,
   type CoverageTools,
-} from "./coverage-helpers.js"
+} from "./coverage-helpers.test-support.js"
 
 type ScannedThread = {
   id?: string

@@ -1,3 +1,3 @@
-import { registerRaces } from "./client-sync-races.js"
+import { registerRaces } from "./client-sync-races.test-support.js"
 
 registerRaces(false, 0)

@@ -22,7 +22,7 @@ import {
 } from "../db/schema.js"
 import type { Registry } from "../registry/registry.js"
 import { createTaskRuntime } from "./task-runtime.js"
-import { fixture, settings } from "./worker-fixture.js"
+import { fixture, settings } from "./worker-fixture.test-support.js"
 import { runCoachWorker } from "./worker.js"
 
 const startedSchema = z.object({

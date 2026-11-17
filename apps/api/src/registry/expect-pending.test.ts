@@ -6,7 +6,7 @@ import {
   backend,
   registerBackendHooks,
 } from "../test/registry-formal-support.js"
-import { coverageCases } from "./coverage-setup.js"
+import { coverageCases } from "./coverage-setup.test-support.js"
 import {
   REVERSAL_EXPECT_PENDING,
   reversalExpectPendingExpired,

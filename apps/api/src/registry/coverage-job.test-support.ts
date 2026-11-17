@@ -7,7 +7,7 @@ import {
   text,
   type CoverageCase,
   type CoverageTools,
-} from "./coverage-helpers.js"
+} from "./coverage-helpers.test-support.js"
 
 export function jobCases(tools: CoverageTools): CoverageCase[] {
   const { ctx, run, undo, jobOf, gone, checklist } = tools
