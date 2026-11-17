@@ -6,7 +6,10 @@ import {
   type StoredPaperDocument,
 } from "@workspace/domain"
 import * as Y from "yjs"
-import { flowReceiptSchema } from "@workspace/domain/internal/paper-presentation"
+import {
+  flowDocumentSchema,
+  flowReceiptSchema,
+} from "@workspace/domain/internal/paper-presentation"
 import {
   createPrivateFlow,
   borrowFlowDocument,
@@ -34,12 +37,14 @@ export function writeStoredYDoc(
     throw new Error("The target belongs to a different document schema")
   const lease = borrowFlowDocument(doc, document.kind)
   try {
-    const {
-      version: _version,
-      schemaRevision: _schemaRevision,
-      ...flow
-    } = document
-    return lease.write(flow)
+    return lease.write(
+      flowDocumentSchema.parse({
+        profile: document.profile,
+        kind: document.kind,
+        presentation: document.presentation,
+        flow: document.flow,
+      })
+    )
   } finally {
     lease.release()
   }
