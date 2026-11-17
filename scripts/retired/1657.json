@@ -40,5 +40,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-workspace.test.tsx > Coach uses one full-page presentation > uses the page header and composer when the compact panel expands",
+    "because": "The owner asked on 2026-11-17 for the Coach to look like Linear's agent page and for light annotation pictures: the Coach composers follow the pen frames instead of the Grok decisions, and the annotation canvas is light grey",
+    "replacedBy": "apps/web/src/features/coach/coach-workspace-presentation.test.tsx",
+    "proof": {
+      "fork": "d0e4bf96a952f095858db11bc39a94bbe14f0137",
+      "replacedByBlob": "954dde851f939623dc70241a696fe05f5873a68a",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 3
   }
 ]
