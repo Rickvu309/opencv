@@ -4,7 +4,7 @@ import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
-import { SidebarExpandContext } from "@/lib/sidebar-expand.tsx"
+import { SidebarExpandContext } from "@workspace/ui/components/page-header"
 
 afterEach(cleanup)
 

@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { CvEditorBar } from "@/features/paper/paper-cv-bar.tsx"
 import { PaperLetterDraftingPage } from "@/features/paper/paper-letter-drafting-page.tsx"
 import { PaperLetterStartPage } from "@/features/paper/paper-letter-start-page.tsx"
-import { SidebarExpandContext } from "@/lib/sidebar-expand.tsx"
+import { SidebarExpandContext } from "@workspace/ui/components/page-header"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { stubDesktopViewport } from "@/test/app-shell-fixtures.ts"
 import { render } from "@/test/render-with-client.tsx"
@@ -172,5 +172,37 @@ describe("collapsed expand control stays in the header", () => {
     expect(writing).toContain("<PageHeader")
     expect(writing).toContain('data-slot="writing-document-header"')
     expect(writing).not.toContain("SidebarExpandButton")
+  })
+
+  it("imports the expand context from the kit and drops the unused collapsed attribute", () => {
+    const here = dirname(fileURLToPath(import.meta.url))
+    const shell = readFileSync(join(here, "app-shell.tsx"), "utf8")
+    expect(shell).toContain(
+      'import { SidebarExpandContext } from "@workspace/ui/components/page-header"'
+    )
+    expect(shell).not.toContain("sidebar-expand.tsx")
+    expect(shell).not.toContain("data-sidebar-collapsed")
+    expect(existsSync(join(here, "../../lib/sidebar-expand.tsx"))).toBe(false)
+  })
+
+  it("bleeds the sticky paper header to the column edge below 768px", () => {
+    const here = dirname(fileURLToPath(import.meta.url))
+    const css = readFileSync(
+      join(here, "../paper/design/paper-library.pen.css"),
+      "utf8"
+    )
+    const desktopAt = css.indexOf("@media (min-width: 768px)")
+    const phone = css.slice(0, desktopAt)
+    expect(phone).toMatch(/\[data-slot="paper-library-header"\]/)
+    expect(phone).toMatch(/width:\s*calc\(100% \+ 32px\)/)
+    expect(phone).toMatch(/margin:\s*-16px -16px 0/)
+    expect(phone).toMatch(/border-bottom:\s*1px solid #ededef/)
+    expect(phone).toMatch(/@media \(min-width: 640px\)/)
+    expect(phone).toMatch(/width:\s*calc\(100% \+ 48px\)/)
+    expect(phone).toMatch(/margin:\s*-24px -24px 0/)
+    const desktop = css.slice(desktopAt)
+    expect(desktop).toMatch(/width:\s*auto/)
+    expect(desktop).toMatch(/margin:\s*-28px -32px 0/)
+    expect(desktop).toMatch(/border-bottom:\s*1px solid #ededef/)
   })
 })

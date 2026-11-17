@@ -25,7 +25,7 @@ import { useSidebarLayout } from "@/features/app-shell/use-sidebar-layout.ts"
 import { chatDisplayTitle } from "@workspace/domain"
 import { shellCopy } from "@/features/app-shell/shell-copy.ts"
 import { DESKTOP_MEDIA_QUERY, useMediaQuery } from "@/lib/use-media-query.ts"
-import { SidebarExpandContext } from "@/lib/sidebar-expand.tsx"
+import { SidebarExpandContext } from "@workspace/ui/components/page-header"
 import { useShellChats } from "@/features/app-shell/use-shell-chats.ts"
 import {
   CoachPanel,
@@ -467,7 +467,6 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
         >
           <div
             ref={keepToastsBelowPageHeaderOf}
-            data-sidebar-collapsed={collapsedRail ? "" : undefined}
             className="relative flex min-h-0 min-w-0 flex-1 bg-background md:rounded-[8px] md:border-[0.5px] md:border-border"
           >
             <SidebarExpandContext value={sidebarExpand}>

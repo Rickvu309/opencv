@@ -11,15 +11,18 @@ afterEach(() => {
 })
 
 describe("command palette search", () => {
-  it("keeps a visible focus ring on the search field", async () => {
+  it("keeps a visible focus cue on the search row, not a ring on the text", async () => {
     vi.stubGlobal("scrollTo", vi.fn())
     renderApp(SURFACE_PATHS.jobs)
     await screen.findByRole("heading", { name: "Jobs" })
     fireEvent.keyDown(window, { key: "k", ctrlKey: true })
     const dialog = await screen.findByRole("dialog", { name: "Search" })
     const box = within(dialog).getByRole("textbox", { name: "Search" })
-    expect(box.className).not.toMatch(/focus-visible:ring-0/)
-    expect(box.className).toMatch(/focus-visible:ring-/)
+    const row = box.closest("[data-slot='palette-search']")
+    expect(row).not.toBeNull()
+    expect(row?.className).toMatch(/has-\[input:focus-visible\]:border-ring/)
+    expect(box.className).toMatch(/focus-visible:ring-0/)
+    expect(box.className).not.toMatch(/focus-visible:ring-3/)
   })
 
   it("announces a failed search and retries it", async () => {

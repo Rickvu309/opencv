@@ -189,7 +189,10 @@ export function CommandPalette({
         className="top-0 left-0 flex h-dvh max-h-none w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden overscroll-contain rounded-none bg-background p-0 text-foreground ring-1 ring-border sm:top-[12vh] sm:left-1/2 sm:h-[min(32rem,70vh)] sm:max-w-3xl sm:-translate-x-1/2 sm:translate-y-0 sm:rounded-xl"
       >
         <DialogTitle className="sr-only">Search</DialogTitle>
-        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+        <div
+          data-slot="palette-search"
+          className="flex items-center gap-3 border-b border-border px-4 py-3 has-[input:focus-visible]:border-b-2 has-[input:focus-visible]:border-ring"
+        >
           <Input
             ref={inputRef}
             value={query}
@@ -212,7 +215,7 @@ export function CommandPalette({
             aria-activedescendant={
               active ? `palette-row-${active.id}` : undefined
             }
-            className="h-auto min-w-0 flex-1 border-0 bg-transparent px-0 text-base shadow-none md:text-sm"
+            className="h-auto min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 text-base shadow-none ring-0 outline-none focus-visible:border-0 focus-visible:ring-0 md:text-sm"
           />
           <Button
             className="h-11 md:h-7"

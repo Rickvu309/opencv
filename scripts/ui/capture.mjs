@@ -2,6 +2,7 @@ import { fileURLToPath } from "node:url"
 
 import { SHOWN_EMAIL } from "./account-pool.mjs"
 import { contextOptions, signInFresh } from "./fresh-account.mjs"
+import { restPoint } from "./screens.mjs"
 
 const FIXTURES = new URL("./fixtures/", import.meta.url)
 
@@ -109,8 +110,8 @@ function showFixedEmail({ email, shown }) {
   }).observe(document, { subtree: true, childList: true, characterData: true })
 }
 
-export async function settle(page) {
-  await page.mouse.move(0, 0)
+export async function settle(page, point = { x: 0, y: 0 }) {
+  await page.mouse.move(point.x, point.y)
   await page.waitForLoadState("networkidle", { timeout: 5_000 }).catch(() => {})
   await page.addStyleTag({ content: STILL })
   await page.evaluate(async (limit) => {
@@ -151,7 +152,7 @@ export async function openScreen(browser, state, screen, { width, scale = 1 }) {
     screen.steps,
     context
   )
-  await settle(page)
+  await settle(page, restPoint(screen, page.viewportSize()))
   const close = async () => {
     await runSteps(
       page,

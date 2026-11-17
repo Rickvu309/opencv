@@ -11,6 +11,7 @@ import {
 import {
   SCREENS,
   pickScreens,
+  restPoint,
   shotName,
   validateScreens,
   viewportFor,
@@ -73,6 +74,19 @@ test("shell recipes reach a menu at both widths and a collapsed control at both 
     ),
     true
   )
+  assert.equal(collapsed.restPointer, "center")
+  assert.deepEqual(restPoint(collapsed, { width: 1440, height: 900 }), {
+    x: 720,
+    y: 450,
+  })
+  assert.deepEqual(restPoint(collapsed, { width: 390, height: 844 }), {
+    x: 195,
+    y: 422,
+  })
+  assert.deepEqual(restPoint({ id: "jobs" }, { width: 1440, height: 900 }), {
+    x: 0,
+    y: 0,
+  })
   assert.match(JSON.stringify(collapsed.steps), /sidebar-expand/)
   assert.match(JSON.stringify(collapsed.steps), /Close menu/)
   assert.match(JSON.stringify(menu.steps), /Close menu/)

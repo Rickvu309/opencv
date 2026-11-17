@@ -87,7 +87,7 @@ export function SettingsNav() {
           )
         })}
       </nav>
-      {identity.email || identity.name ? (
+      {!profile.isPending && (identity.email || identity.name) ? (
         <div
           data-slot="settings-nav-footer"
           className="mt-auto flex h-8 shrink-0 items-center gap-2 px-2"

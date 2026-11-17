@@ -1,8 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, screen, within } from "@testing-library/react"
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
 
+import { SettingsNav } from "@/features/settings/settings-nav.tsx"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
-import { renderApp } from "@/test/render-app.tsx"
+import { renderApp, renderPage } from "@/test/render-app.tsx"
+import {
+  holdProfileFetch,
+  releaseProfileFetch,
+} from "@/test/profile-api-mock.ts"
 import {
   TEST_SESSION,
   TEST_SESSION_USER,
@@ -11,6 +22,7 @@ import {
 } from "@/test/auth-client-mock.ts"
 
 afterEach(() => {
+  releaseProfileFetch()
   cleanup()
   resetMockSession()
   vi.unstubAllGlobals()
@@ -45,6 +57,27 @@ describe("shell identity and Proofs", () => {
     ).toHaveAttribute("title", "you@opencv.me")
     expect(identity?.querySelector("[data-slot='avatar']")).toHaveTextContent(
       "Y"
+    )
+  })
+
+  it("hides the settings footer until the profile resolves", async () => {
+    vi.stubGlobal("scrollTo", vi.fn())
+    setMockSession({
+      user: { ...TEST_SESSION_USER, name: "", email: "" },
+      session: TEST_SESSION,
+    })
+    holdProfileFetch()
+    renderPage(() => <SettingsNav />)
+    const nav = await screen.findByRole("complementary", { name: "Settings" })
+    expect(nav.querySelector("[data-slot='settings-nav-footer']")).toBeNull()
+    releaseProfileFetch()
+    await waitFor(() => {
+      expect(
+        nav.querySelector("[data-slot='settings-nav-footer']")
+      ).not.toBeNull()
+    })
+    expect(nav.querySelector("[data-slot='account-name']")).toHaveTextContent(
+      "Account"
     )
   })
 
