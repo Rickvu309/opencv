@@ -136,17 +136,7 @@ export async function redraftStoppedLetter(input: {
   })
   if (!parsed.success || parsed.data.op !== "write")
     throw new Error(DRAFT_FAILED)
-  const startedDraft = JSON.stringify(
-    loadDraft(input.record.docId, localStorage)
-  )
   await input.run("paper.canvas", parsed.data, { signal: input.signal })
-  assertBlank()
-  if (
-    JSON.stringify(loadDraft(input.record.docId, localStorage)) !== startedDraft
-  ) {
-    clearStoppedLetter(input.record.docId)
-    throw new Error(PAGE_EDITED)
-  }
   clearStoppedLetter(input.record.docId)
   notifyWritingRefresh()
 }

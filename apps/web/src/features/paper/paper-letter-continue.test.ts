@@ -185,9 +185,9 @@ it.each(["My words typed while save is pending", ""])(
         localStorage
       )
       command.resolve({})
-      await expect(pending).rejects.toThrow("Coach's draft was not applied")
+      await expect(pending).resolves.toBeUndefined()
       expect(loadDraft(DOC, localStorage)?.blocks[0].text).toBe(words)
-      expect(refreshed).not.toHaveBeenCalled()
+      expect(refreshed).toHaveBeenCalledTimes(1)
     } finally {
       unsubscribe()
     }

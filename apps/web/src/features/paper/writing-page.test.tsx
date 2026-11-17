@@ -1,5 +1,6 @@
 import "fake-indexeddb/auto"
 
+import { QueryClient } from "@tanstack/react-query"
 import { afterEach, expect, it, vi } from "vitest"
 import {
   act,
@@ -30,6 +31,7 @@ import {
   stoppedLetter,
 } from "./paper-letter-resume.ts"
 import { DOWNLOAD_WAITS_FOR_SAVE, WritingPage } from "./writing-page.tsx"
+import { redraftStoppedLetter } from "./paper-letter-continue.ts"
 
 const DOC = "11111111-1111-4111-8111-111111111111"
 const PARAGRAPH = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
@@ -440,6 +442,52 @@ function enterWords(text: string) {
   )
 }
 
+it("keeps newer local words and reports the saved Coach draft as a page conflict", async () => {
+  vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {
+    if (String(url).endsWith("/turns"))
+      return new Response(
+        `event: text-delta\ndata: ${JSON.stringify({ text: "Generated letter" })}\n\n`
+      )
+    return Response.json({ ok: true, data: readPage("") })
+  })
+  render(<WritingPage docId={DOC} seed={draft("")} seedRevision={REVISION} />)
+  await waitFor(() => expect(words()).toEqual([""]))
+  const command = Promise.withResolvers<object>()
+  const started = Promise.withResolvers<void>()
+  const run = vi.fn(() => {
+    started.resolve()
+    return command.promise
+  })
+  const queryClient = new QueryClient()
+  try {
+    const pending = redraftStoppedLetter({
+      record: {
+        docId: DOC,
+        chatId: "stopped-chat",
+        prompt: "Draft a letter",
+        jobId: null,
+      },
+      owner: "person-1",
+      queryClient,
+      run,
+      signal: new AbortController().signal,
+      isBlank: () => words().join("") === "",
+    })
+    await started.promise
+    enterWords("My newer opening")
+    await act(async () => {
+      command.resolve({})
+      await pending
+    })
+    expect(words()).toEqual(["My newer opening"])
+    expect(screen.getByRole("status")).toHaveTextContent(WRITING_CONFLICT_NOTE)
+    expect(screen.queryByText(/Coach's draft was not applied/)).toBeNull()
+    expect(run).toHaveBeenCalledOnce()
+  } finally {
+    queryClient.clear()
+  }
+})
+
 it("clears a stopped notice from document edits even without an input event", async () => {
   vi.stubGlobal("fetch", async () =>
     Response.json({ ok: true, data: readPage("") })
@@ -460,7 +508,7 @@ it("clears a stopped notice from document edits even without an input event", as
   expect(screen.queryByRole("button", { name: "Continue drafting" })).toBeNull()
 })
 
-it("clears a settled receipt on the next document edit", async () => {
+it("keeps a settled receipt row on the next document edit", async () => {
   vi.stubGlobal("fetch", async () =>
     Response.json({ ok: true, data: readPage("After") })
   )
@@ -491,8 +539,9 @@ it("clears a settled receipt on the next document edit", async () => {
     )
   })
   expect(screen.getByText("Coach's change approved")).toBeVisible()
+  const row = screen.getByRole("region", { name: "Coach proposal" })
   enterWords("Extra ")
-  await waitFor(() =>
-    expect(screen.queryByText("Coach's change approved")).toBeNull()
-  )
+  await waitFor(() => expect(words()).toEqual(["Extra After"]))
+  expect(screen.getByText("Coach's change approved")).toBeVisible()
+  expect(screen.getByRole("region", { name: "Coach proposal" })).toBe(row)
 })

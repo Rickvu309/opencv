@@ -19,6 +19,7 @@ import {
   publishWritingProposal,
   syncWritingProposalFromActions,
   WORD_BATCH_HIDDEN,
+  noteWritingUndo,
   writingProposal,
 } from "@/lib/writing-proposal.ts"
 import { storeDraft } from "@/features/paper-page/canvas-edit.ts"
@@ -325,6 +326,53 @@ it("reserves no notice row when this document has no Coach state", () => {
     container.querySelector('[data-slot="writing-proposal-notice"]')
   ).toBeNull()
 })
+
+it.each(["approved", "undone"])(
+  "keeps the %s notice row while the person types",
+  async (phase) => {
+    publishWritingProposal("call-1", {
+      docId: DOC,
+      edits: [{ op: "replaceText", before: "Before", after: "After" }],
+    })
+    attachWritingProposal("call-1", PENDING)
+    syncWritingProposalFromActions(
+      [
+        {
+          toolCallId: "call-1",
+          operation: "paper.edit",
+          state: "committed",
+          activityId: "activity-1",
+          proposalId: PENDING,
+          input: { docId: DOC },
+        },
+      ],
+      []
+    )
+    if (phase === "undone") noteWritingUndo("activity-1")
+    const text = phase === "undone" ? "Before" : "After"
+    storeDraft(DOC, draft(text), localStorage, {
+      revision: REVISION,
+      words: text,
+    })
+    const onText = vi.fn()
+    const view = (words: string) => (
+      <>
+        <WritingProposalCard docId={DOC} />
+        <WritingDocumentNoticeSync docId={DOC} text={words} onText={onText} />
+      </>
+    )
+    const { rerender } = render(view(text))
+    const row = screen.getByRole("region", { name: "Coach proposal" })
+    await waitFor(() => expect(onText).toHaveBeenLastCalledWith(text))
+    rerender(view(`${text} M`))
+    await waitFor(() => expect(onText).toHaveBeenLastCalledWith(`${text} M`))
+    expect(screen.getByRole("region", { name: "Coach proposal" })).toBe(row)
+    expect(row).toHaveClass("min-h-24", "md:min-h-16")
+    expect(within(row).getByRole("status")).toHaveTextContent(
+      `Coach's change ${phase}`
+    )
+  }
+)
 
 it("reads explicit document text for notices instead of the stored draft", async () => {
   storeDraft(DOC, draft(""), localStorage)

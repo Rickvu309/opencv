@@ -47,8 +47,40 @@ it("hides that note once the letter has words", () => {
 })
 
 it("stays hidden when this page was not stopped", () => {
-  render(<LetterStoppedNotice docId={DOC} pageText="" />)
+  const { container } = render(<LetterStoppedNotice docId={DOC} pageText="" />)
   expect(screen.queryByRole("button", { name: "Continue drafting" })).toBeNull()
+  expect(
+    container.querySelector('[data-slot="letter-stopped-notice"]')
+  ).toBeNull()
+})
+
+it("keeps the stopped notice row during typing and releases it on another document", () => {
+  rememberStoppedLetter({
+    docId: DOC,
+    chatId: "stopped-chat",
+    prompt: "Draft a cover letter",
+    jobId: null,
+  })
+  const view = render(<LetterStoppedNotice docId={DOC} pageText="" />)
+  const row = view.container.querySelector(
+    '[data-slot="letter-stopped-notice"]'
+  )
+  expect(row).toHaveClass("min-h-24", "md:min-h-16")
+  view.rerender(<LetterStoppedNotice docId={DOC} pageText="M" />)
+  expect(
+    view.container.querySelector('[data-slot="letter-stopped-notice"]')
+  ).toBe(row)
+  expect(row).toHaveAttribute("aria-hidden", "true")
+  expect(row).toHaveClass("min-h-24", "md:min-h-16")
+  expect(screen.queryByRole("button", { name: "Continue drafting" })).toBeNull()
+  view.rerender(<LetterStoppedNotice docId={DOC} pageText="My opening" />)
+  expect(
+    view.container.querySelector('[data-slot="letter-stopped-notice"]')
+  ).toBe(row)
+  view.rerender(<LetterStoppedNotice docId="another-document" pageText="" />)
+  expect(
+    view.container.querySelector('[data-slot="letter-stopped-notice"]')
+  ).toBeNull()
 })
 
 it("restores the stopped notice from session state after a reload", async () => {

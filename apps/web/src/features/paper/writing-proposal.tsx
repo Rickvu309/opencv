@@ -4,12 +4,10 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react"
-import { loadDraftBasis } from "@/features/paper-page/canvas-edit.ts"
 import { clearStoppedLetter } from "./paper-letter-resume.ts"
 import { Button } from "@workspace/ui/components/button"
 
 import {
-  dropWritingOutcome,
   subscribeWritingOutcome,
   subscribeWritingProposal,
   writingOutcome,
@@ -61,8 +59,6 @@ export function WritingDocumentNoticeSync({
       if (!active) return
       onText(text)
       if (text.trim().length > 0) clearStoppedLetter(docId)
-      const basis = loadDraftBasis(docId, localStorage)
-      if (basis && text !== basis.words) dropWritingOutcome(docId)
     })
     return () => {
       active = false
