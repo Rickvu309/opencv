@@ -16,10 +16,10 @@ import {
 } from "@workspace/ui/components/popover"
 import {
   PaperDocumentHeader,
-  PaperDocumentShare,
   PaperDocumentCanvas,
   PaperDocumentTitle,
-} from "./document-chrome.tsx"
+} from "@/features/paper-page/document-chrome.tsx"
+import { PaperDocumentShare } from "./document-share.tsx"
 import { RichSelectionBubble } from "./rich-selection-bubble.tsx"
 import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import { RichTableControls } from "./rich-table-controls.tsx"

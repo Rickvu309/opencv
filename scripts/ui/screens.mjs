@@ -224,7 +224,7 @@ export const SCREENS = [
   ].map(([id, steps]) => ({
     id,
     route: "/paper",
-    steps: [{ richDocument: true }, ...steps],
+    steps: [{ respond: { fixture: "rich-document" } }, ...steps],
   })),
   {
     id: "paper-typed",
@@ -684,7 +684,6 @@ const STEP_KINDS = new Set([
   "upload",
   "waitFor",
   "respond",
-  "richDocument",
 ])
 const ID = /^[a-z][a-z0-9-]*$/
 

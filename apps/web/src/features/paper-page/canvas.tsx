@@ -1,4 +1,4 @@
-import { PaperDocumentCanvas } from "@/features/paper/document-chrome.tsx"
+import { PaperDocumentCanvas } from "./document-chrome.tsx"
 import { revealCaret, useCanvasScale } from "./canvas-viewport.ts"
 import { writingStorage } from "./canvas-branch.ts"
 import { WritingBlocks } from "./canvas-blocks.tsx"

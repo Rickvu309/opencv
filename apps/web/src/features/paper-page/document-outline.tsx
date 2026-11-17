@@ -101,7 +101,7 @@ export function PaperDocumentOutline({
             <Button
               variant="ghost"
               aria-label="Document outline"
-              className="paper-outline-ticks"
+              className="paper-outline-ticks size-11 md:size-8"
             >
               {headings.map((heading, index) => (
                 <span
@@ -126,11 +126,11 @@ export function PaperDocumentOutline({
             On this page
           </p>
           {headings.map((heading, index) => (
-            <button
+            <Button
+              variant="ghost"
               key={index}
-              type="button"
               aria-current={index === active ? "location" : undefined}
-              className="paper-outline-heading"
+              className="paper-outline-heading h-11 w-full justify-start whitespace-normal md:h-8"
               onClick={() => {
                 heading.element.scrollIntoView({
                   block: "start",
@@ -141,7 +141,7 @@ export function PaperDocumentOutline({
               }}
             >
               {heading.text}
-            </button>
+            </Button>
           ))}
         </PopoverContent>
       </Popover>
