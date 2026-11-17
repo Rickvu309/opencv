@@ -9,14 +9,15 @@ function isVisible(element: Element): boolean {
 }
 
 export function installUiSdkTestPlatform() {
+  if (typeof HTMLElement === "undefined") return
   globalThis.__UI_SDK_STRICT__ = true
   HTMLElement.prototype.showPopover = function () {
+    this.getAnimations = () => []
     this.setAttribute("data-test-popover-open", "")
   }
   HTMLElement.prototype.hidePopover = function () {
     this.removeAttribute("data-test-popover-open")
   }
-  Element.prototype.getAnimations = () => []
   Element.prototype.checkVisibility = function () {
     return isVisible(this)
   }
