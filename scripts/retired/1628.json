@@ -1,19 +1,5 @@
 [
   {
-    "subject": "apps/web/src/features/auth/auth-welcome-parity.test.tsx",
-    "because": "The pen specifies Welcome to OpenCV. The previous test rewrote OpenCV to lowercase and protected incorrect sentence casing. The replacement compares the rendered text directly with the pen.",
-    "replacedBy": "apps/web/src/features/auth/auth-welcome-parity.test.tsx",
-    "proof": {
-      "fork": "e794a7bc0281ba32d6eff4a4ecd59b4f346e1475",
-      "replacedByBlob": "8cb64d1fceafb08a7341c7072ec09f0b8d593a02",
-      "failedOnBase": true,
-      "passedOnHead": true
-    },
-    "class": "self",
-    "classBecause": null,
-    "items": 1
-  },
-  {
     "subject": "apps/web/src/features/auth/sign-in-look.test.tsx",
     "because": "The pen specifies Log in to OpenCV and only malformed email may be aria-invalid. The previous tests protected lowercase sentence casing and marked a valid email invalid during the form-level cooldown. Replacements assert the pen casing, format-error description, and neutral cooldown field.",
     "replacedBy": "apps/web/src/features/auth/sign-in-look.test.tsx",
@@ -68,5 +54,19 @@
     "class": "self",
     "classBecause": null,
     "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/auth/auth-welcome-parity.test.tsx",
+    "because": "Compare the Welcome heading directly with the pen OpenCV casing and verify the main landmark",
+    "replacedBy": "apps/web/src/features/auth/auth-welcome-parity.test.tsx",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "13c9e15ab7cbe1c6a1b4433a588d4d77ed8564ae",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
