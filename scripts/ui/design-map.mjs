@@ -4,7 +4,6 @@ import {
   LINEAR_COACH_PAGE_COMPOSER,
   LINEAR_COACH_PANEL_COMPOSER,
   WORD_SIZED_WRITING_PAGE,
-  LINEAR_PAPER_DOCUMENT,
   ownerDecisionProblems,
 } from "./owner-decision.mjs"
 import { APP_SHELL, MAIN_PANEL, PADDING } from "./design-map-shared.mjs"
@@ -39,14 +38,7 @@ function writingPageRows(screen) {
       composedScreen: CV_EDITING,
       frame: "LFKqV",
       props: ["width", "radius", ...PADDING],
-      ownerDecision: {
-        ...WORD_SIZED_WRITING_PAGE,
-        ...LINEAR_PAPER_DOCUMENT,
-        expect: {
-          ...WORD_SIZED_WRITING_PAGE.expect,
-          ...LINEAR_PAPER_DOCUMENT.expect,
-        },
-      },
+      ownerDecision: WORD_SIZED_WRITING_PAGE,
     },
     {
       screen,

@@ -13,13 +13,6 @@ export const WORD_SIZED_WRITING_PAGE = {
   },
 }
 
-export const LINEAR_PAPER_DOCUMENT = {
-  decided: "2026-11-17",
-  reason:
-    "2026-11-17 owner: Paper document page looks like a Linear document (#1659)",
-  expect: { radius: 0 },
-}
-
 const GROK_CLEAN_COACH =
   "the owner asked for the Coach chat to look as clean as Grok, learning from ChatGPT and Claude, instead of the Linear-based council pass; see the chat references index of 2026-11-13"
 

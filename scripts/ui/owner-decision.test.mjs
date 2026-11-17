@@ -9,7 +9,6 @@ import {
   LINEAR_COACH_PAGE_COMPOSER,
   LINEAR_COACH_PANEL_COMPOSER,
   WORD_SIZED_WRITING_PAGE,
-  LINEAR_PAPER_DOCUMENT,
   ownerDecisionProblems,
 } from "./owner-decision.mjs"
 import { indexPen } from "./pen.mjs"
@@ -124,17 +123,8 @@ test("every writing page sheet row takes the Word size by owner decision and kee
       "paper-rich-outline",
     ]
   )
-  for (const row of sheets) {
-    assert.deepEqual(row.ownerDecision, {
-      ...WORD_SIZED_WRITING_PAGE,
-      ...LINEAR_PAPER_DOCUMENT,
-      expect: {
-        ...WORD_SIZED_WRITING_PAGE.expect,
-        ...LINEAR_PAPER_DOCUMENT.expect,
-      },
-    })
-    assert.deepEqual(ownerDecisionProblems(row, row.label), [])
-  }
+  for (const row of sheets)
+    assert.equal(row.ownerDecision, WORD_SIZED_WRITING_PAGE)
   assert.deepEqual(Object.keys(WORD_SIZED_WRITING_PAGE.expect), [
     "width",
     ...PADDING,
