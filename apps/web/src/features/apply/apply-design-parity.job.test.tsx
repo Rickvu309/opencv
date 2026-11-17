@@ -1,4 +1,10 @@
-import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
@@ -105,9 +111,14 @@ describe("New job and job detail match W9.2 and W10 of opencv.pen at the frame c
     renderApp("/apply")
     const dialog = await pasteLink(await openNewJob(), LUMIERE)
     await setDeadline("2026-11-15")
-    fireEvent.keyDown(screen.getByLabelText("Deadline"), { key: "Escape" })
+    const deadline = screen.getByRole("dialog", { name: "Deadline" })
+    fireEvent.keyDown(within(deadline).getByLabelText("Deadline"), {
+      key: "Escape",
+    })
     await waitFor(() => {
-      expect(screen.queryByLabelText("Deadline")).not.toBeInTheDocument()
+      expect(
+        screen.queryByRole("dialog", { name: "Deadline" })
+      ).not.toBeInTheDocument()
     })
     fill("Company", "")
     fill(

@@ -9,6 +9,8 @@ import {
   popoverInheritsCallerStyles,
   sdkLayerOverridesKit,
   fractionalPopoverPosition,
+  popoverEscapeBubbles,
+  popoverRestoresPriorField,
 } from "./lib/ui-sdk-popover.mjs"
 
 const read = (path) =>
@@ -123,5 +125,41 @@ test("a Select portal stays in its parent popup container", () => {
   assert.match(
     read("packages/ui/src/components/popover.tsx"),
     /<PopupContainerContext value=\{container\}>/
+  )
+})
+
+test("SDK popover Escape dismissal does not reach the parent dialog", () => {
+  const sdk = 'import { Popover } from "@ui-sdk/react/popover"'
+  assert.equal(
+    popoverEscapeBubbles(`${sdk}onOpenChange?.(open, details)`),
+    true
+  )
+  assert.equal(
+    popoverEscapeBubbles(
+      `${sdk}event.stopPropagation(); controller.close({ reason: "escape-key", event })`
+    ),
+    false
+  )
+  assert.equal(
+    popoverEscapeBubbles(read("packages/ui/src/components/popover.tsx")),
+    false
+  )
+})
+
+test("SDK popovers return default focus to their own trigger", () => {
+  const sdk = 'import { Popover } from "@ui-sdk/react/popover"'
+  assert.equal(
+    popoverRestoresPriorField(`${sdk}return closing ? "trigger" : "auto"`),
+    true
+  )
+  assert.equal(
+    popoverRestoresPriorField(
+      `${sdk}return closing ? () => focus?.trigger.current : "auto"`
+    ),
+    false
+  )
+  assert.equal(
+    popoverRestoresPriorField(read("packages/ui/src/components/popover.tsx")),
+    false
   )
 })

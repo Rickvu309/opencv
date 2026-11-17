@@ -10,6 +10,7 @@ import { Input } from "@workspace/ui/components/input"
 import {
   Popover,
   PopoverContent,
+  PopoverTitle,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 
@@ -116,6 +117,7 @@ export function CoachHistory({
         sideOffset={4}
         className="w-[min(340px,calc(100dvw-16px))] rounded-[10px] bg-transparent p-0 shadow-none ring-0"
       >
+        <PopoverTitle className="sr-only">History</PopoverTitle>
         <div
           data-pen-surface="coach"
           data-slot="history-panel"

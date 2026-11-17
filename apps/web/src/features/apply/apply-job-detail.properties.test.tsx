@@ -4,6 +4,7 @@ import {
   fireEvent,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it } from "vitest"
@@ -242,13 +243,14 @@ describe("job property drafts", () => {
           name: `Add ${label.toLowerCase()}`,
         })
       )
-      const input = await screen.findByLabelText(label)
+      const editor = await screen.findByRole("dialog", { name: label })
+      const input = within(editor).getByLabelText(label)
       fireEvent.change(input, { target: { value } })
       submitForm(input)
 
       await waitFor(() => {
         expect(getMockJobs()[0]).toMatchObject({ [field]: saved })
-        expect(screen.queryByLabelText(label)).toBeNull()
+        expect(screen.queryByRole("dialog", { name: label })).toBeNull()
       })
       expect(
         getMockJobPosts().filter((post) => post.name === "job.update")

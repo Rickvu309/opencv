@@ -6,6 +6,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react"
 import { checkPattern } from "@ui-sdk/core/testing"
 import { afterEach, describe, expect, it, vi } from "vitest"
@@ -25,6 +26,12 @@ import {
   SelectValue,
 } from "./components/select"
 import { Button } from "./components/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogTrigger,
+} from "./components/dialog"
 
 afterEach(cleanup)
 
@@ -76,6 +83,117 @@ describe("the kit popover behavior adapter", () => {
     expect(document.activeElement).toBe(
       screen.getByRole("button", { name: "Edit" })
     )
+  })
+
+  it("dismisses a nested popover before its dialog on successive Escape presses", async () => {
+    const user = (await import("@testing-library/user-event")).default.setup()
+    render(
+      <Dialog>
+        <DialogTrigger>New job</DialogTrigger>
+        <DialogContent>
+          <DialogTitle>New job</DialogTitle>
+          <Editor />
+        </DialogContent>
+      </Dialog>
+    )
+    await user.click(screen.getByRole("button", { name: "New job" }))
+    await user.click(screen.getByRole("button", { name: "Edit" }))
+    await screen.findByRole("dialog", { name: "Edit Job" })
+    await waitFor(() =>
+      expect(document.activeElement).toBe(screen.getByLabelText("Location"))
+    )
+    await user.keyboard("{Escape}")
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Edit Job" })).toBeNull()
+    )
+    expect(screen.getByRole("dialog", { name: "New job" })).toBeTruthy()
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Edit" })
+    )
+    await user.keyboard("{Escape}")
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "New job" })).toBeNull()
+    )
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "New job" })
+    )
+  })
+
+  it("restores the trigger after its value changes inside a dialog", async () => {
+    function DateEditor() {
+      const [value, setValue] = React.useState("")
+      return (
+        <Popover>
+          <PopoverTrigger>{value || "Deadline"}</PopoverTrigger>
+          <PopoverContent>
+            <PopoverTitle>Deadline</PopoverTitle>
+            <input
+              aria-label="Deadline"
+              value={value}
+              onChange={(event) => setValue(event.target.value)}
+            />
+          </PopoverContent>
+        </Popover>
+      )
+    }
+    render(
+      <Dialog defaultOpen>
+        <DialogContent>
+          <DialogTitle>New job</DialogTitle>
+          <input aria-label="Company" />
+          <DateEditor />
+        </DialogContent>
+      </Dialog>
+    )
+    const company = screen.getByLabelText("Company")
+    await waitFor(() => expect(document.activeElement).toBe(company))
+    fireEvent.click(screen.getByRole("button", { name: "Deadline" }))
+    const editor = await screen.findByRole("dialog", { name: "Deadline" })
+    const input = within(editor).getByLabelText("Deadline")
+    await waitFor(() => expect(document.activeElement).toBe(input))
+    fireEvent.change(input, { target: { value: "Nov 15" } })
+    fireEvent.keyDown(input, { key: "Escape" })
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: "Deadline" })).toBeNull()
+    )
+    expect(document.activeElement).toBe(
+      screen.getByRole("button", { name: "Nov 15" })
+    )
+  })
+
+  it("keeps a canceled Escape dismissal inside the parent dialog", async () => {
+    const onOpenChange = vi.fn((open, details) => {
+      if (!open) details.cancel()
+    })
+    render(
+      <Dialog defaultOpen>
+        <DialogContent>
+          <DialogTitle>New job</DialogTitle>
+          <Editor onOpenChange={onOpenChange} />
+        </DialogContent>
+      </Dialog>
+    )
+    await open()
+    fireEvent.keyDown(screen.getByLabelText("Location"), { key: "Escape" })
+    expect(onOpenChange).toHaveBeenCalledWith(
+      false,
+      expect.objectContaining({ reason: "escape-key" })
+    )
+    expect(screen.getByRole("dialog", { name: "Edit Job" })).toBeTruthy()
+    expect(screen.getByRole("dialog", { name: "New job" })).toBeTruthy()
+  })
+
+  it("leaves composing Escape to the input", async () => {
+    const onOpenChange = vi.fn()
+    render(<Editor onOpenChange={onOpenChange} />)
+    await open()
+    onOpenChange.mockClear()
+    fireEvent.keyDown(screen.getByLabelText("Location"), {
+      key: "Escape",
+      isComposing: true,
+    })
+    expect(onOpenChange).not.toHaveBeenCalled()
+    expect(screen.getByRole("dialog", { name: "Edit Job" })).toBeTruthy()
   })
 
   it("preserves the editor callback and reports the closing interaction", async () => {

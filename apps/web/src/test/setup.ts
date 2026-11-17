@@ -93,8 +93,8 @@ if (typeof window !== "undefined" && typeof window.matchMedia !== "function") {
 installSonnerTimerTracker()
 
 beforeEach(() => {
-  if (typeof document !== "undefined") installTestFonts()
   pinTestClock()
+  if (typeof document !== "undefined") installTestFonts()
   toast.dismiss()
   resetMockSession()
   resetUnauthorizedHandler()

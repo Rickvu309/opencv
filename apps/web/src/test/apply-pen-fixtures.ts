@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react"
+import { fireEvent, screen, within } from "@testing-library/react"
 
 import type { JobView } from "@workspace/domain"
 
@@ -107,7 +107,8 @@ export function fill(label: string, value: string) {
 
 export async function setDeadline(ymd: string) {
   fireEvent.click(screen.getByRole("button", { name: "Deadline" }))
-  fireEvent.change(await screen.findByLabelText("Deadline"), {
+  const deadline = await screen.findByRole("dialog", { name: "Deadline" })
+  fireEvent.change(within(deadline).getByLabelText("Deadline"), {
     target: { value: ymd },
   })
 }

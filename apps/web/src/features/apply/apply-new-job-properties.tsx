@@ -14,6 +14,7 @@ import { Input } from "@workspace/ui/components/input"
 import {
   Popover,
   PopoverContent,
+  PopoverTitle,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 import { StageIcon } from "@workspace/ui/components/stage-icon"
@@ -102,6 +103,7 @@ export function NewJobProperties({
           {deadlineText}
         </PopoverTrigger>
         <PopoverContent align="start" className="w-48">
+          <PopoverTitle className="sr-only">Deadline</PopoverTitle>
           <Input
             type="date"
             aria-label="Deadline"
@@ -132,6 +134,7 @@ export function NewJobProperties({
             )}
           </PopoverTrigger>
           <PopoverContent align="start" className="w-56">
+            <PopoverTitle className="sr-only">Location</PopoverTitle>
             <Input
               aria-label="Location"
               value={location}

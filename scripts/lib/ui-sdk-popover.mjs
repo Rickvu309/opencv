@@ -42,3 +42,19 @@ export function fractionalPopoverPosition(source) {
     !source.includes("popoverCoordinate(coordinate, view.devicePixelRatio")
   )
 }
+
+export function popoverEscapeBubbles(source) {
+  return (
+    source.includes("@ui-sdk/react/popover") &&
+    !/event\.stopPropagation\(\)[\s\S]*?controller\.close\(\{\s*reason: "escape-key"/.test(
+      source
+    )
+  )
+}
+
+export function popoverRestoresPriorField(source) {
+  return (
+    source.includes("@ui-sdk/react/popover") &&
+    /return closing \? "trigger" : "auto"/.test(source)
+  )
+}

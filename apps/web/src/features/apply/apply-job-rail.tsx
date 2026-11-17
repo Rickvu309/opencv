@@ -32,6 +32,7 @@ import { Input } from "@workspace/ui/components/input"
 import {
   Popover,
   PopoverContent,
+  PopoverTitle,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 import { Separator } from "@workspace/ui/components/separator"
@@ -180,6 +181,7 @@ function EditRow({
         <Label empty={empty}>{label}</Label>
       </PopoverTrigger>
       <PopoverContent align="start" className={POPOVER}>
+        <PopoverTitle className="sr-only">{ariaLabel}</PopoverTitle>
         <form
           onSubmit={(event) => {
             event.preventDefault()
@@ -433,6 +435,7 @@ function PaperRow({ kind, job }: { kind: "cv" | "letter"; job: JobDetail }) {
         <Label empty={!linked}>{linked ? linked.name : addLabel}</Label>
       </PopoverTrigger>
       <PopoverContent align="start" className={POPOVER}>
+        <PopoverTitle className="sr-only">{addLabel}</PopoverTitle>
         <div className="flex h-8 items-center gap-2 border-b border-foreground/6 px-2">
           <Search aria-hidden className="size-[13px] text-muted-foreground" />
           <Input

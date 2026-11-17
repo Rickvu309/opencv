@@ -9,6 +9,7 @@ import {
   PopoverDescription as PopoverText,
   PopoverTitle as PopoverHeading,
   PopoverTrigger as PopoverButton,
+  createPopoverController,
 } from "@ui-sdk/react/popover"
 import { cn } from "cn"
 import { PopupContainerContext } from "../lib/popup-container"
@@ -21,12 +22,18 @@ const FocusContext = React.createContext<{
   trigger: React.RefObject<HTMLButtonElement | null>
   setTrigger: React.RefCallback<HTMLButtonElement>
   interaction: React.RefObject<Interaction>
+  controller: NonNullable<
+    React.ComponentProps<typeof PopoverRoot>["controller"]
+  >
 } | null>(null)
 
 function Popover({
+  controller: suppliedController,
   onOpenChange,
   ...props
 }: React.ComponentProps<typeof PopoverRoot>) {
+  const [ownController] = React.useState(() => createPopoverController())
+  const controller = suppliedController ?? ownController
   const triggerRef = React.useRef<HTMLButtonElement>(null)
   const interactionRef = React.useRef<Interaction>("keyboard")
   const setTrigger = React.useCallback((element: HTMLButtonElement | null) => {
@@ -34,10 +41,16 @@ function Popover({
   }, [])
   return (
     <FocusContext
-      value={{ trigger: triggerRef, setTrigger, interaction: interactionRef }}
+      value={{
+        trigger: triggerRef,
+        setTrigger,
+        interaction: interactionRef,
+        controller,
+      }}
     >
       <PopoverRoot
         {...props}
+        controller={controller}
         onOpenChange={(open, details) => {
           interactionRef.current =
             details.source === "mouse" ||
@@ -105,6 +118,7 @@ function PopoverContent({
   collisionPadding = 8,
   initialFocus,
   finalFocus,
+  onKeyDown,
   ...props
 }: Omit<
   React.ComponentProps<typeof PopoverPopup>,
@@ -207,7 +221,7 @@ function PopoverContent({
     }
     if (target === false) return "none"
     if (target === true || target === undefined)
-      return closing ? "trigger" : "auto"
+      return closing ? () => focus?.trigger.current : "auto"
     return () => target.current
   }
   return (
@@ -223,6 +237,21 @@ function PopoverContent({
         collisionPadding={collisionPadding}
         initialFocus={resolveFocus(initialFocus, false)}
         finalFocus={resolveFocus(finalFocus, true)}
+        onKeyDown={(event) => {
+          onKeyDown?.(event)
+          if (
+            event.key !== "Escape" ||
+            event.defaultPrevented ||
+            event.nativeEvent.isComposing
+          )
+            return
+          event.stopPropagation()
+          event.preventDefault()
+          focus?.controller.close({
+            reason: "escape-key",
+            event: event.nativeEvent,
+          })
+        }}
         className={cn(
           "isolate z-50 flex w-72 motion-pop flex-col gap-2.5 rounded-lg bg-popover p-2.5 text-sm text-popover-foreground shadow-md ring-1 ring-foreground/10 outline-hidden data-closed:pointer-events-none",
           className

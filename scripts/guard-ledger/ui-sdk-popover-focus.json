@@ -1,0 +1,13 @@
+{
+  "id": "ui-sdk-popover-focus",
+  "file": "scripts/ui-sdk-popover.test.mjs",
+  "detector": {
+    "module": "scripts/lib/ui-sdk-popover.mjs",
+    "export": "popoverRestoresPriorField"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "9829c9f2",
+    "path": "packages/ui/src/components/popover.tsx"
+  }
+}
