@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/api/src/paper/native-output/formatted.test.ts",
+    "because": "Stored decimal line multiples remain valid and Word export now rounds their values at the canonical conversion boundary, so replace the obsolete 1.001 export refusal with successful rounded XML assertions.",
+    "replacedBy": "apps/api/src/paper/native-output/formatted.test.ts",
+    "proof": {
+      "fork": "4927fd44e886484fec59f2dcb3bf47de4d8cfb56",
+      "replacedByBlob": "6afe5fb390ce8a7ca4b941ab1e6e242020015184",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]
