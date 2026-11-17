@@ -38,7 +38,7 @@ try {
       "exec",
       "tsx",
       "--conditions=opencv-source",
-      "src/test/page-scale.fixture.ts",
+      "src/paper/page-scale.fixture.ts",
       join(state.dir, "pglite"),
       email,
       fixture,

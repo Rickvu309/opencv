@@ -4,8 +4,8 @@ import { drizzle } from "drizzle-orm/pglite"
 import { eq } from "drizzle-orm"
 import { createId } from "../id.js"
 import * as schema from "../db/schema.js"
-import { seedColumns } from "../paper/content-document.js"
-import { richPaper } from "./rich-paper.js"
+import { seedColumns } from "./content-document.js"
+import { richPaper } from "../test/rich-paper.js"
 import { paperPhotoRef, richPaperDocumentSchema } from "@workspace/domain"
 
 const [dataDir, email, out] = process.argv.slice(2)
