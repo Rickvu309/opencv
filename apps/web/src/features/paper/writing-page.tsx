@@ -22,6 +22,7 @@ import {
 import { pageWords } from "@/features/paper-page/canvas-save.ts"
 import { WritingCanvas } from "@/features/paper-page/canvas.tsx"
 import { readWordPage } from "@/features/paper-page/package-read.ts"
+import { LetterStoppedNotice } from "@/features/paper/paper-letter-stopped.tsx"
 import { WritingProposalCard } from "@/features/paper/writing-proposal.tsx"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 import { authClient } from "@/lib/auth-client.ts"
@@ -301,10 +302,16 @@ export function WritingPage({
     [docId]
   )
 
+  const visibleSeed = shown.seed === undefined ? seed : shown.seed
+  const pageText = visibleSeed
+    ? visibleSeed.blocks.map((block) => block.text).join("\n")
+    : null
+
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div ref={setHeader} />
-      <WritingProposalCard docId={docId} onApplied={applied} />
+      <WritingProposalCard docId={docId} />
+      <LetterStoppedNotice docId={docId} pageText={pageText} />
       <div className="min-h-0 flex-1">
         <WritingCanvas
           key={`${docId}:${shown.generation}`}
@@ -324,7 +331,7 @@ export function WritingPage({
                 )
               : null
           }
-          seed={shown.seed === undefined ? seed : shown.seed}
+          seed={visibleSeed}
           seedRevision={
             shown.revision === undefined ? seedRevision : shown.revision
           }

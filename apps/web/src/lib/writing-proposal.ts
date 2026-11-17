@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from "react"
 import { wordConfirmedOpsSchema, wordReviewSchema } from "@workspace/domain"
 
+import { notifyWritingRefresh } from "@/lib/writing-refresh.ts"
+
 export const WORD_BATCH_HIDDEN =
   "Approve is unavailable because this change cannot be shown in full."
 
@@ -17,6 +19,57 @@ export type WritingProposal = {
   changes: WritingChange[]
   pendingActionId: string | null
   withheld: string | null
+}
+
+export type WritingOutcome = {
+  docId: string
+  phase: "approved" | "undone"
+}
+
+let outcome: WritingOutcome | null = null
+const outcomeListeners = new Set<() => void>()
+
+function emitOutcome() {
+  for (const listener of outcomeListeners) listener()
+}
+
+export function writingOutcome() {
+  return outcome
+}
+
+export function subscribeWritingOutcome(listener: () => void) {
+  outcomeListeners.add(listener)
+  return () => {
+    outcomeListeners.delete(listener)
+  }
+}
+
+function dropOutcome(docId: string) {
+  if (!outcome || outcome.docId !== docId) return
+  outcome = null
+  emitOutcome()
+}
+
+export function noteWritingProposalOutcome(
+  docId: string,
+  phase: WritingOutcome["phase"]
+) {
+  if (outcome?.docId === docId && outcome.phase === phase) return
+  outcome = { docId, phase }
+  emitOutcome()
+}
+
+export function noteWritingUndo() {
+  if (!outcome || outcome.phase !== "approved") return
+  outcome = { docId: outcome.docId, phase: "undone" }
+  emitOutcome()
+  notifyWritingRefresh()
+}
+
+export function clearWritingOutcome() {
+  if (!outcome) return
+  outcome = null
+  emitOutcome()
 }
 
 export type WordBatchView =
@@ -221,6 +274,7 @@ function publish(
   const pendingActionId =
     current?.toolCallId === toolCallId ? current.pendingActionId : null
   current = { toolCallId, pendingActionId, ...parsed }
+  dropOutcome(current.docId)
   emit()
 }
 
@@ -250,10 +304,11 @@ export function attachWritingProposal(
 }
 
 export function clearWritingProposal(toolCallId?: string) {
-  if (!current) return
-  if (toolCallId && current.toolCallId !== toolCallId) return
-  current = null
-  emit()
+  if (current && (!toolCallId || current.toolCallId === toolCallId)) {
+    current = null
+    emit()
+  }
+  if (!toolCallId) clearWritingOutcome()
 }
 
 type TaskAction = {
@@ -306,6 +361,7 @@ export function syncWritingProposalFromActions(
       }
       if (!sameProposal(next)) {
         current = next
+        dropOutcome(next.docId)
         emit()
       }
       return

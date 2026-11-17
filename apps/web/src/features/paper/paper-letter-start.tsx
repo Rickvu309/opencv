@@ -38,6 +38,10 @@ import {
 
 import { openBlankPage } from "./paper-new-dialog.tsx"
 import { letterDraftText } from "./paper-letter-context.ts"
+import {
+  clearStoppedLetter,
+  rememberStoppedLetter,
+} from "./paper-letter-resume.ts"
 
 const LETTER_LINE = 2000
 
@@ -265,7 +269,18 @@ export function PaperLetterStart({
         ...(selected ? { jobId: selected.id } : {}),
         ...(lines.length > 0 ? { lines } : {}),
       })
-      if (activeDraft.current === operation) onCreated(created.docId)
+      if (activeDraft.current === operation) {
+        if (operation.stopped && lines.length === 0) {
+          rememberStoppedLetter({
+            docId: created.docId,
+            prompt: turnText,
+            jobId: selected?.id ?? null,
+          })
+        } else {
+          clearStoppedLetter(created.docId)
+        }
+        onCreated(created.docId)
+      }
     } catch (err) {
       if (activeDraft.current !== operation || isAbortError(err)) return
       if (err instanceof PaperLimitError) {

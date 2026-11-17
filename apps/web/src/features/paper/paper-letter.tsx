@@ -24,6 +24,8 @@ import {
 } from "@workspace/ui/components/dropdown-menu"
 import { CopyButton } from "@workspace/ui/components/copy-button"
 
+import { LetterStoppedNotice } from "@/features/paper/paper-letter-stopped.tsx"
+
 import {
   Ellipsis,
   Link as LinkIcon,
@@ -185,7 +187,7 @@ export function PaperLetterEditor({
                 ? error.message
                 : "Could not copy the link. Try again."
             }
-            className="h-7 w-[30px] shrink-0 rounded-[7px] p-0"
+            className="size-11 shrink-0 rounded-[7px] p-0 md:h-7 md:w-[30px]"
             aria-label="Copy share link"
           >
             <LinkIcon className="size-4" aria-hidden="true" />
@@ -193,6 +195,11 @@ export function PaperLetterEditor({
         </div>
       </header>
       {printing && letter ? <LetterPrint document={letter} /> : null}
+      <LetterStoppedNotice
+        docId={doc.id}
+        pageText={letter ? paperPlainText(letter) : null}
+        onWritten={(text) => editorRef.current?.insertText(text)}
+      />
       <div
         data-slot="letter-editor-desk"
         tabIndex={-1}

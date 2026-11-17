@@ -69,7 +69,7 @@ export function PaperLetterDraftingPage({
         </Breadcrumb>
         <span
           aria-hidden="true"
-          className="hidden shrink-0 items-center gap-2 md:flex"
+          className="pointer-events-none hidden shrink-0 items-center gap-2 md:flex"
         >
           <Star className="size-[15px]" />
           <Ellipsis className="size-4" />
@@ -91,7 +91,7 @@ export function PaperLetterDraftingPage({
         <span
           aria-hidden="true"
           data-slot="letter-drafting-header-actions"
-          className="hidden shrink-0 items-center gap-[18px] px-[7px] md:flex"
+          className="pointer-events-none hidden shrink-0 items-center gap-[18px] px-[7px] md:flex"
         >
           <Link className="size-4" />
           <Bell className="size-4" />
