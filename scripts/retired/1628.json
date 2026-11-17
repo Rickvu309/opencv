@@ -40,5 +40,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/app-shell/app-shell.test.tsx",
+    "because": "Keep the signed-out redirect heading assertion and match the pen OpenCV casing",
+    "replacedBy": "apps/web/src/features/app-shell/app-shell.test.tsx",
+    "proof": {
+      "fork": "38eab62e8e13c40c7c1f6592ce923b3c62e396bf",
+      "replacedByBlob": "e41ea9631ba0eed3783440672d0cb1a537e385c2",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
