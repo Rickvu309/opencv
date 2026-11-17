@@ -137,7 +137,7 @@ export function InboxReaderHeader({
                 data-disabled=""
                 data-slot="page-header-action"
                 className={cn(
-                  "size-7 touch-manipulation rounded-[6px] select-none [-webkit-tap-highlight-color:transparent] active:scale-100 max-md:hidden [&_svg:not([class*='size-'])]:size-[15px]",
+                  "size-11 touch-manipulation rounded-[6px] select-none [-webkit-tap-highlight-color:transparent] active:scale-100 max-md:hidden md:size-7 [&_svg:not([class*='size-'])]:size-[15px]",
                   UNAVAILABLE_ACTION
                 )}
                 onClick={(event) => event.preventDefault()}
