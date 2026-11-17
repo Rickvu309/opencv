@@ -134,9 +134,9 @@ export function AppSidebar({
     >
       <div
         data-slot="sidebar-top"
-        className="flex h-12 shrink-0 items-center px-3 md:h-9 md:ps-1.5 md:pe-0.5"
+        className="flex h-12 shrink-0 items-center px-3 md:h-9 md:ps-2 md:pe-[3px]"
       >
-        <Brand size={14} markSize={20} gap={6} letterSpacing={0} />
+        <Brand size={14} markSize={20} gap={4} letterSpacing={0} />
         <div className="ml-auto flex gap-1 md:gap-0.5">
           <Button
             type="button"
@@ -155,7 +155,7 @@ export function AppSidebar({
             variant="ghost"
             size="icon-sm"
             aria-label={shellCopy.newChat}
-            className="size-11 md:size-7 md:rounded-full md:border md:[&_svg]:size-[15px]"
+            className="size-11 md:size-7 md:border md:[&_svg]:size-[15px]"
             onClick={onNewChat}
           >
             <SquarePen />
