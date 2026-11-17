@@ -20,7 +20,7 @@ import {
   PaperDocumentTitle,
 } from "@/features/paper-page/document-chrome.tsx"
 import { PaperDocumentShare } from "./document-share.tsx"
-import { RichLinkDialog } from "./rich-link-dialog.tsx"
+import { RichLinkDialog } from "./rich-structure-controls.tsx"
 import { RichSelectionBubble } from "./rich-selection-bubble.tsx"
 import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import { RichTableControls } from "./rich-table-controls.tsx"

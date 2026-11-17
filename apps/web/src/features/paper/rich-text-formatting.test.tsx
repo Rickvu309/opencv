@@ -16,6 +16,7 @@ import { storedFlowFixture } from "../../../../../packages/paper-crdt/src/test/f
 import { shortcutLabel } from "./rich-text-toolbar-control.tsx"
 import { RichPaperTextFormatting } from "./rich-text-formatting.tsx"
 import { RichPhotoControls } from "./rich-photo-controls.tsx"
+import { RichLinkDialog } from "./rich-structure-controls.tsx"
 
 const disposals: (() => void)[] = []
 let width = 1200
@@ -158,19 +159,22 @@ function setup(nonText = false, photos = false) {
   const editor = mountRichPaperEditor(client, host)
   disposals.push(() => editor.destroy())
   const rendered = render(
-    photos ? (
-      <RichPhotoControls editor={editor} disabled={false}>
-        {(photoControls) => (
-          <RichPaperTextFormatting
-            editor={editor}
-            blocked={false}
-            photoControls={photoControls}
-          />
-        )}
-      </RichPhotoControls>
-    ) : (
-      <RichPaperTextFormatting editor={editor} blocked={false} />
-    )
+    <>
+      {photos ? (
+        <RichPhotoControls editor={editor} disabled={false}>
+          {(photoControls) => (
+            <RichPaperTextFormatting
+              editor={editor}
+              blocked={false}
+              photoControls={photoControls}
+            />
+          )}
+        </RichPhotoControls>
+      ) : (
+        <RichPaperTextFormatting editor={editor} blocked={false} />
+      )}
+      <RichLinkDialog editor={editor} blocked={false} />
+    </>
   )
   return { editor, client, ...rendered }
 }
