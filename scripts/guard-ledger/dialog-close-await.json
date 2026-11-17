@@ -1,0 +1,13 @@
+{
+  "id": "dialog-close-await",
+  "file": "scripts/dialog-close-await.test.mjs",
+  "detector": {
+    "module": "scripts/lib/dialog-close-await.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "b58217df8a92a778516641084605bf20cad2d1c0",
+    "path": "apps/web/src/features/app-shell/app-shell-search.test.tsx"
+  }
+}

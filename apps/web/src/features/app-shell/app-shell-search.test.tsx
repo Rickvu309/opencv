@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { cleanup, fireEvent, screen, within } from "@testing-library/react"
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
 
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { expectCoachIdle } from "@/test/coach-chat-helpers.ts"
@@ -28,8 +34,11 @@ describe("App shell sidebar", () => {
     expect(
       within(dialog).getByRole("textbox", { name: "Search" })
     ).toBeInTheDocument()
+    Object.defineProperty(dialog, "getAnimations", { value: () => [] })
     fireEvent.keyDown(window, { key: "k", ctrlKey: true })
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    })
 
     fireEvent.keyDown(window, { key: "k", ctrlKey: true })
     expect(await screen.findByRole("dialog")).toBeInTheDocument()
