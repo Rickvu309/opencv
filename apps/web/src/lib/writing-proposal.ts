@@ -1,6 +1,8 @@
 import { useSyncExternalStore } from "react"
 import { wordConfirmedOpsSchema, wordReviewSchema } from "@workspace/domain"
 
+import { notifyWritingRefresh } from "@/lib/writing-refresh.ts"
+
 export const WORD_BATCH_HIDDEN =
   "Approve is unavailable because this change cannot be shown in full."
 
@@ -17,6 +19,55 @@ export type WritingProposal = {
   changes: WritingChange[]
   pendingActionId: string | null
   withheld: string | null
+}
+
+export type WritingOutcome = {
+  docId: string
+  pendingActionId: string
+  activityId: string
+  phase: "approved" | "undone"
+}
+
+let outcome: WritingOutcome | null = null
+const outcomeListeners = new Set<() => void>()
+
+function emitOutcome() {
+  for (const listener of outcomeListeners) listener()
+}
+
+export function writingOutcome() {
+  return outcome
+}
+
+export function subscribeWritingOutcome(listener: () => void) {
+  outcomeListeners.add(listener)
+  return () => {
+    outcomeListeners.delete(listener)
+  }
+}
+
+export function dropWritingOutcome(docId: string) {
+  if (!outcome || outcome.docId !== docId) return
+  outcome = null
+  emitOutcome()
+}
+
+export function noteWritingUndo(activityId: string) {
+  if (
+    !outcome ||
+    outcome.activityId !== activityId ||
+    outcome.phase !== "approved"
+  )
+    return
+  outcome = { ...outcome, phase: "undone" }
+  emitOutcome()
+  notifyWritingRefresh()
+}
+
+export function clearWritingOutcome() {
+  if (!outcome) return
+  outcome = null
+  emitOutcome()
 }
 
 export type WordBatchView =
@@ -239,6 +290,7 @@ function publish(
   const pendingActionId =
     current?.toolCallId === toolCallId ? current.pendingActionId : null
   current = { toolCallId, pendingActionId, ...parsed }
+  dropWritingOutcome(current.docId)
   emit()
 }
 
@@ -268,10 +320,11 @@ export function attachWritingProposal(
 }
 
 export function clearWritingProposal(toolCallId?: string) {
-  if (!current) return
-  if (toolCallId && current.toolCallId !== toolCallId) return
-  current = null
-  emit()
+  if (current && (!toolCallId || current.toolCallId === toolCallId)) {
+    current = null
+    emit()
+  }
+  if (!toolCallId) clearWritingOutcome()
 }
 
 type TaskAction = {
@@ -280,6 +333,7 @@ type TaskAction = {
   input: unknown
   state: string
   proposalId: string | null
+  activityId?: string | null
 }
 
 type TaskConfirmation = {
@@ -305,7 +359,12 @@ export function syncWritingProposalFromActions(
   confirmations: readonly TaskConfirmation[]
 ) {
   const pending = actions.find(
-    (action) => action.operation === "paper.edit" && action.state === "proposed"
+    (action) =>
+      action.operation === "paper.edit" &&
+      action.state === "proposed" &&
+      !confirmations.some(
+        (item) => item.id === action.proposalId && item.status === "denied"
+      )
   )
   if (pending) {
     const confirmation = confirmations.find(
@@ -324,6 +383,7 @@ export function syncWritingProposalFromActions(
       }
       if (!sameProposal(next)) {
         current = next
+        dropWritingOutcome(next.docId)
         emit()
       }
       return
@@ -331,10 +391,34 @@ export function syncWritingProposalFromActions(
   }
   if (!current) return
   const owner = actions.find(
-    (action) => action.toolCallId === current?.toolCallId
+    (action) =>
+      action.toolCallId === current?.toolCallId &&
+      action.proposalId === current.pendingActionId
   )
-  if (owner && (owner.state === "proposed" || owner.state === "planned")) {
+  const confirmation = confirmations.find(
+    (item) => item.id === current?.pendingActionId
+  )
+  if (
+    owner?.state === "committed" &&
+    owner.activityId &&
+    current.pendingActionId &&
+    confirmation?.status !== "denied"
+  ) {
+    outcome = {
+      docId: current.docId,
+      pendingActionId: current.pendingActionId,
+      activityId: owner.activityId,
+      phase: "approved",
+    }
+    emitOutcome()
+  } else if (
+    confirmation?.status !== "denied" &&
+    owner &&
+    (owner.state === "proposed" || owner.state === "planned")
+  ) {
     return
+  } else {
+    dropWritingOutcome(current.docId)
   }
   current = null
   emit()

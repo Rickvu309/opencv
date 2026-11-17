@@ -12,7 +12,7 @@
   color: #111111;
 }
 [data-pen-surface="paper"] [data-slot="letter-drafting-status"] {
-  color: #6b6b70;
+  color: var(--muted-foreground);
 }
 [data-pen-surface="paper"] [data-slot="letter-drafting-desk"] {
   background: #f7f7f8;
@@ -37,7 +37,7 @@
   color: #1a1a1a;
 }
 [data-pen-surface="paper"] [data-slot="letter-drafting-attribution"] {
-  color: #969799;
+  color: var(--muted-foreground);
 }
 [data-pen-surface="paper"] [data-slot="letter-drafting-stop"] {
   color: #59595b;
@@ -52,5 +52,5 @@
   background: #efeff1;
 }
 [data-pen-surface="paper"] [data-slot="letter-drafting-header-actions"] {
-  color: #6b6b70;
+  color: var(--muted-foreground);
 }

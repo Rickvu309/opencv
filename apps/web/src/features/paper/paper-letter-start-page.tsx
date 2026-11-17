@@ -109,10 +109,10 @@ export function PaperLetterStartPage({
       >
         <header
           data-slot="letter-start-header"
-          className="flex h-12 shrink-0 items-center gap-2 border-b px-4 pl-5 text-[13.5px]"
+          className="flex min-h-12 min-w-0 shrink-0 flex-wrap items-center gap-2 border-b px-4 py-2 pl-5 text-[13.5px] md:py-0"
         >
-          <Breadcrumb>
-            <BreadcrumbList className="text-[13.5px] leading-[inherit] text-inherit">
+          <Breadcrumb className="min-w-0">
+            <BreadcrumbList className="flex-wrap text-[13.5px] leading-[inherit] text-inherit">
               <BreadcrumbItem>
                 <Button
                   variant="ghost"
@@ -127,9 +127,9 @@ export function PaperLetterStartPage({
                 Cover letters
               </BreadcrumbItem>
               <BreadcrumbSeparator className="[&>svg]:size-3.5" />
-              <BreadcrumbItem className="shrink-0 gap-1.5">
+              <BreadcrumbItem className="min-w-0 gap-1.5">
                 <Mail aria-hidden="true" className="size-[15px] shrink-0" />
-                <BreadcrumbPage className="shrink-0 font-normal max-md:min-w-0">
+                <BreadcrumbPage className="min-w-0 font-normal [overflow-wrap:anywhere]">
                   New cover letter
                 </BreadcrumbPage>
               </BreadcrumbItem>

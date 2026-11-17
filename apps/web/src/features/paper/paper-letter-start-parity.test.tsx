@@ -36,6 +36,10 @@ it("shows the job picker from its pen frame and lets Paper return to the library
 
   expect(screen.getByRole("heading", { name: texts[3] })).toBeInTheDocument()
   expect(screen.getByPlaceholderText(texts[4])).toHaveFocus()
+  expect(screen.getByPlaceholderText(texts[4])).toHaveClass(
+    "text-base",
+    "md:text-[13px]"
+  )
   for (const job of jobs) {
     expect(
       await screen.findByRole("button", {
