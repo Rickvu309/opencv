@@ -50,6 +50,30 @@ function cssMistake(text, physical) {
   return visit(text)
 }
 
+const pictureFile =
+  /^apps\/web\/src\/features\/paper\/(?:design\/)?paper-(?:library|picture|template|word-preview)[\w.-]*\.(?:css|tsx?)$/
+const pictureRatioSource =
+  "apps/web/src/features/paper/design/paper-picture.css"
+const pictureRatio = "var(--paper-picture-ratio)"
+const pictureRatioError = "Use the shared A4 ratio from paper-picture.css"
+
+function hasPictureRatioMistake(text, path) {
+  if (!pictureFile.test(path)) return false
+  if (path !== pictureRatioSource && /--paper-picture-ratio\s*:/.test(text))
+    return true
+  if (
+    /(?:^|[:"'`\s])(?:aspect-(?!auto\b|ratio\b)(?:\w|\[)|\[aspect-ratio:)/m.test(
+      text
+    )
+  )
+    return true
+  if (/\*\s*[\d.]+\s*\/\s*[\d.]+/.test(text)) return true
+  if (/\b[\d.]+cq[wh]\s*\*\s*[\d.]+/.test(text)) return true
+  return [...text.matchAll(/\baspect(?:-ratio|Ratio)\s*:\s*([^;\n,}]+)/g)].some(
+    ([, value]) => value.trim().replace(/^["']|["']$/g, "") !== pictureRatio
+  )
+}
+
 export function detect(text, path = "") {
   if (
     !/^(?:apps\/web\/src\/(?:features\/paper(?:-page)?|styles)|packages\/(?:paper-crdt\/src|domain\/src))\//.test(
@@ -67,6 +91,7 @@ export function detect(text, path = "") {
     return [
       "Keep the Word page's 1px border space so its text width and wrapping stay unchanged",
     ]
+  if (hasPictureRatioMistake(text, path)) return [pictureRatioError]
   if (/data-paper-reflow|dataset\.paperReflow/.test(text)) return [message]
   if (cssMistake(text, /\.css$/.test(path))) return [message]
   if (!/\.[cm]?[jt]sx?$/.test(path)) return []

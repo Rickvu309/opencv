@@ -7,13 +7,11 @@ import { catalogClient } from "@/lib/contract-client.ts"
 import { syncParagraphs } from "../paper-page/canvas-draw.ts"
 import { pageBlocks } from "../paper-page/canvas-edit.ts"
 import { collectLooks } from "../paper-page/canvas-look.ts"
-import { useCanvasScale } from "../paper-page/canvas-viewport.ts"
 import "../paper-page/canvas.css"
+import "./design/paper-picture.css"
 
 function FirstPage({ page }: { page: WordPage }) {
-  const host = useRef<HTMLDivElement>(null)
   const root = useRef<HTMLDivElement>(null)
-  useCanvasScale(root, host, 0)
   useLayoutEffect(() => {
     if (!root.current) return
     const blocks = pageBlocks(page)
@@ -32,17 +30,16 @@ function FirstPage({ page }: { page: WordPage }) {
   }, [page])
   return (
     <div
-      ref={host}
       inert
       data-slot="paper-word-first-page"
       className="pointer-events-none absolute inset-0 overflow-hidden"
     >
       <div
         ref={root}
-        className="writing-page"
+        className="writing-page paper-picture-text"
         style={{
           backgroundColor: "transparent",
-          borderColor: "transparent",
+          borderWidth: 0,
           boxShadow: "none",
           color: "inherit",
         }}

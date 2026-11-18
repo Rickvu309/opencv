@@ -49,6 +49,10 @@ describe("Paper home sections", () => {
     expect(
       within(letters).getByRole("button", { name: /^Design letter,/ })
     ).toBeInTheDocument()
+    expect(within(cvs).getByText("CV")).toHaveClass("text-muted-foreground")
+    expect(within(letters).getByText("Letter")).toHaveClass(
+      "text-muted-foreground"
+    )
     expect(
       within(screen.getByRole("region", { name: "Files" })).getAllByRole(
         "button",
@@ -154,7 +158,9 @@ describe("Paper home sections", () => {
       hero.getByRole("heading", { name: "Latest letter" })
     ).toBeInTheDocument()
     expect(hero.getByRole("button", { name: "Open" })).toBeInTheDocument()
-    expect(hero.getByText(/^Letter · Edited/)).toBeInTheDocument()
+    expect(hero.getByText("Letter")).toBeInTheDocument()
+    expect(hero.getByText(/^Edited /)).toBeInTheDocument()
+    expect(hero.getByRole("button", { name: "Download" })).toBeInTheDocument()
     fireEvent.click(
       within(screen.getByRole("region", { name: "Start new" })).getByRole(
         "button",

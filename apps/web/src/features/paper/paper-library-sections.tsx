@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Copy,
   Download,
+  File,
   FileText,
   Link2,
   Pencil,
@@ -217,6 +218,7 @@ export function LibraryEntryCard({
       <PaperLibraryCard
         name={doc.name}
         meta={edited}
+        badge={doc.kind === "cv" ? "CV" : "Letter"}
         lines={librarySheetLines(doc)}
         preview={
           doc.format === "word" ? (
@@ -236,6 +238,7 @@ export function LibraryEntryCard({
       <PaperLibraryCard
         name={word.name}
         meta="Word file"
+        badge={word.kind === "cv" ? "CV" : "Letter"}
         preview={<PaperWordPreview docId={word.docId} />}
         openLabel={`Open ${word.name}`}
         onOpen={() => on.onOpen(word.docId)}
@@ -270,6 +273,12 @@ export function LibraryEntryCard({
       name={file.name}
       meta={paperEditedLabel(file.createdAt)}
       badge={fileBadge(file)}
+      preview={
+        <File
+          className="absolute top-1/2 left-1/2 size-8 -translate-1/2 text-muted-foreground"
+          strokeWidth={1.5}
+        />
+      }
       actions={
         onDeleteFile
           ? [

@@ -1,6 +1,6 @@
 .paper-picker[data-slot="dialog-content"] {
   padding: 0;
-  height: min(710px, calc(100dvh - clamp(16px, 14dvh, 120px) - 16px));
+  height: min(630px, calc(100dvh - clamp(16px, 14dvh, 120px) - 16px));
 }
 
 .paper-picker [data-slot="dialog-close-pin"] {
@@ -68,6 +68,7 @@
   text-align: center;
   overflow-wrap: anywhere;
   border: 0;
+  background: transparent;
 }
 
 .paper-picker-choice:focus-visible {
@@ -75,23 +76,8 @@
   outline-offset: 2px;
 }
 
-.paper-picker-page {
-  box-shadow:
-    0 0 0 1px color-mix(in oklch, var(--foreground) 18%, transparent),
-    0 1px 3px rgb(0 0 0 / 10%),
-    0 1px 2px -1px rgb(0 0 0 / 10%);
-  transition:
-    translate var(--duration-micro) var(--ease-micro),
-    box-shadow var(--duration-micro) var(--ease-micro);
-}
-
 .paper-picker-choice[aria-checked="true"] .paper-picker-page {
-  translate: 0 -2px;
-  box-shadow:
-    0 0 0 2px var(--popover),
-    0 0 0 4px var(--foreground),
-    0 4px 6px -1px rgb(0 0 0 / 10%),
-    0 2px 4px -2px rgb(0 0 0 / 10%);
+  outline: 1.5px solid var(--muted-foreground);
 }
 
 .paper-picker-stage {
@@ -99,7 +85,7 @@
   container-type: size;
   min-width: 0;
   min-height: 0;
-  background: color-mix(in oklch, var(--background) 40%, var(--secondary));
+  background: color-mix(in oklch, var(--background) 65%, var(--secondary));
   overflow: hidden;
 }
 
@@ -118,11 +104,7 @@
 }
 
 .paper-picker-preview .paper-picker-page {
-  width: min(100%, calc((100cqh - 44px) * 17 / 22));
-  box-shadow:
-    0 0 0 1px color-mix(in oklch, var(--foreground) 16%, transparent),
-    0 10px 15px -3px rgb(0 0 0 / 10%),
-    0 4px 6px -4px rgb(0 0 0 / 10%);
+  width: min(100%, calc((100cqh - 44px) * var(--paper-picture-ratio)));
 }
 
 .paper-picker-footer {
@@ -171,7 +153,7 @@
   .paper-picker-body {
     display: flex;
     flex-direction: column;
-    background: color-mix(in oklch, var(--background) 40%, var(--secondary));
+    background: color-mix(in oklch, var(--background) 65%, var(--secondary));
   }
 
   .paper-picker-rail {
@@ -202,7 +184,13 @@
       max(
         12px,
         calc(
-          (100cqw - min(100cqw - 64px, max(70px, (100cqh - 62px) * 17 / 22))) /
+          (
+              100cqw -
+                min(
+                  100cqw - 64px,
+                  max(70px, (100cqh - 62px) * var(--paper-picture-ratio))
+                )
+            ) /
             2
         )
       );
@@ -214,7 +202,10 @@
 
   .paper-picker-choice[data-slot="button"] {
     flex: 0 0
-      min(calc(100cqw - 64px), max(70px, calc((100cqh - 62px) * 17 / 22)));
+      min(
+        calc(100cqw - 64px),
+        max(70px, calc((100cqh - 62px) * var(--paper-picture-ratio)))
+      );
     padding: 4px;
     scroll-snap-align: center;
   }
@@ -265,7 +256,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .paper-picker-page,
   .paper-picker-preview {
     transition: none;
   }

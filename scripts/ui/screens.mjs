@@ -1,3 +1,5 @@
+import { paperPickerScreens } from "./screens-paper.mjs"
+
 const COMPOSER = '[data-slot="coach-workspace-composer"] textarea'
 const PAGE = '[contenteditable="true"]'
 const SAVED = 'p.writing-note[title="Saved"], p.writing-note:text-is("Saved")'
@@ -8,14 +10,6 @@ const OPEN_BLANK_CV = [
   { click: { role: "button", name: "CV" } },
   { click: { role: "button", name: "Start blank" } },
   { waitFor: { selector: PAGE } },
-]
-
-const SEARCH_TEMPLATES = '[role="dialog"] input[aria-label="Search templates"]'
-
-const OPEN_NEW_CV = [
-  { click: { role: "button", name: "New" } },
-  { click: { role: "button", name: "CV" } },
-  { waitFor: { role: "dialog", name: "New CV" } },
 ]
 
 const OPEN_PANEL = [
@@ -41,7 +35,7 @@ const ASK_FOR_AN_EDIT = [
 
 const DENY_THE_WAITING_EDIT = [
   { click: { role: "button", name: "Deny" } },
-  { waitFor: { text: "Denied · nothing changed" } },
+  { waitFor: { text: "nothing changed" } },
 ]
 
 const APPROVE_THE_EDIT = [
@@ -148,81 +142,11 @@ export const SCREENS = [
       { waitFor: { text: "Prep the starred" } },
     ],
   },
-  {
-    id: "paper-home",
-    route: "/paper",
-    steps: [
-      ...OPEN_NEW_CV,
-      { click: { role: "radio", name: "Modern" } },
-      { click: { role: "button", name: "Use Modern" } },
-      { waitFor: { selector: PAGE } },
-      { goto: "/paper" },
-      ...OPEN_NEW_CV,
-      { click: { role: "radio", name: "Simple" } },
-      { click: { role: "button", name: "Use Simple" } },
-      { waitFor: { selector: PAGE } },
-      { goto: "/paper" },
-      { waitFor: { text: "Simple CV" } },
-      { waitFor: { text: "Modern CV" } },
-    ],
-  },
-  {
-    id: "paper-home-empty",
-    route: "/paper",
-    steps: [{ waitFor: { text: "No CVs yet." } }],
-  },
-  {
-    id: "paper-home-panel-open",
-    route: "/paper",
-    steps: [{ waitFor: { role: "heading", name: "Paper" } }, ...OPEN_PANEL],
-  },
-  {
-    id: "paper-home-new-cv",
-    route: "/paper",
-    steps: OPEN_NEW_CV,
-  },
-  {
-    id: "paper-home-new-letter",
-    route: "/apply",
-    steps: [
-      ...ADD_A_JOB,
-      { goto: "/paper" },
-      { click: { role: "button", name: "New" } },
-      { click: { role: "button", name: "Cover letter" } },
-      {
-        waitFor: {
-          selector: '[data-slot="letter-start-page"], [data-template-gallery]',
-        },
-      },
-    ],
-  },
-  {
-    id: "paper-new-cv-searching",
-    route: "/paper",
-    steps: [
-      ...OPEN_NEW_CV,
-      { fill: { selector: SEARCH_TEMPLATES, text: "mod" } },
-      { waitFor: { text: "Modern" } },
-    ],
-  },
-  {
-    id: "paper-new-cv-no-match",
-    route: "/paper",
-    steps: [
-      ...OPEN_NEW_CV,
-      { fill: { selector: SEARCH_TEMPLATES, text: "zzzz" } },
-      { waitFor: { role: "dialog", name: "New CV" } },
-    ],
-  },
-  {
-    id: "paper-new-cv-selected",
-    route: "/paper",
-    steps: [
-      ...OPEN_NEW_CV,
-      { click: { text: "Academic" } },
-      { waitFor: { role: "dialog", name: "New CV" } },
-    ],
-  },
+  ...paperPickerScreens({
+    page: PAGE,
+    openPanel: OPEN_PANEL,
+    addJob: ADD_A_JOB,
+  }),
   {
     id: "paper-blank",
     route: "/paper",
@@ -506,7 +430,7 @@ export const SCREENS = [
       ...ASK_FOR_AN_EDIT,
       ...DENY_THE_WAITING_EDIT,
       ...REOPEN_LATEST_CHAT,
-      { waitFor: { text: "Denied · nothing changed" } },
+      { waitFor: { text: "nothing changed" } },
     ],
   },
   {
@@ -531,7 +455,7 @@ export const SCREENS = [
     id: "coach-stopped-reloaded",
     route: "/paper",
     unreachable:
-      "Stop is hidden while an approval waits, and the line Stopped · ask Coach again is stored only when that waiting approval is cancelled. Stopping while the turn streams ends the turn before a proposal exists, and that stop is not written into the reopened chat.",
+      "Stop is hidden while an approval waits. The stopped message asks the person to ask Coach again and is stored only when that waiting approval is cancelled. Stopping while the turn streams ends the turn before a proposal exists, and that stop is not written into the reopened chat.",
   },
   {
     id: "coach-expired-reloaded",

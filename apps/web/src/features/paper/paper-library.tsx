@@ -152,7 +152,6 @@ export function PaperLibrary({
   )
   const linkDoc = useShownWhileClosing(mode?.type === "link" ? mode.doc : null)
   const retryFile = importError?.retry ?? null
-  const dialogOpen = mode !== null || importState.type !== "idle"
   const wordLibrary = useWordLibrary()
   const entries = libraryEntries({ docs, files, words: wordLibrary.items })
   const deletingWordPage =
@@ -430,7 +429,7 @@ export function PaperLibrary({
           className="h-11 gap-1.5 text-[0.8125rem] md:h-7"
           type="button"
           size="sm"
-          variant={dialogOpen ? "outline" : "primary"}
+          variant="outline"
           data-primary-action
           ref={newButtonRef}
           onClick={() => dispatch({ type: "new_dialog_opened", step: "kind" })}

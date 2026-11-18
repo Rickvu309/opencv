@@ -23,7 +23,3 @@
     border-bottom: 1px solid #ededef;
   }
 }
-
-[data-pen-surface="paper"]:is(.dark *) [data-slot="paper-library-header"] {
-  border-color: var(--border);
-}

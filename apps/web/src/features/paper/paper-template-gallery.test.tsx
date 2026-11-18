@@ -183,40 +183,38 @@ describe("Paper template gallery", () => {
         ),
       ].map((line) => line.textContent)
     expect(page("simple")).toEqual([
-      "Your name",
+      "[Your name]",
       "Summary",
       "Experience",
       "Education",
       "Skills",
     ])
     expect(page("modern")).toEqual([
-      "Your name",
+      "[Your name]",
       "Profile",
       "Experience",
       "Selected work",
     ])
     expect(page("compact")).toEqual([
-      "Your name",
+      "[Your name]",
       "Work experience",
       "About",
       "Education",
       "Skills",
     ])
     expect(page("academic")).toEqual([
-      "Your name",
+      "[Your name]",
       "Education",
       "Projects & campus",
       "Experience",
       "Skills & languages",
     ])
-    expect(
-      document.querySelectorAll(
-        '[data-template-grid] [data-template-page="simple"] [data-page-line]'
-      )
-    ).toHaveLength(8)
-    const heading = document.querySelector<HTMLElement>("[data-page-heading]")
-    expect(heading?.className).toMatch(/text-\[4\.6cqw\]/)
-    expect(heading?.className).toContain("font-semibold")
+    const lines = document.querySelectorAll(
+      '[data-template-grid] [data-template-page="simple"] [data-page-line]'
+    )
+    expect([...lines].map((line) => line.textContent)).toEqual(
+      templatePageLines("simple").map((line) => line.text)
+    )
     expect(
       document.querySelector('[data-template-page="blank"] [data-page-name]')
     ).toBeNull()

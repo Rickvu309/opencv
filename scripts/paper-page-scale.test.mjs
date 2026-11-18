@@ -83,6 +83,56 @@ test("the original reflow commit fails and current Paper sources pass", () => {
     assert.deepEqual(detect(readFileSync(file, "utf8"), file), [], file)
 })
 
+const picture = "apps/web/src/features/paper/"
+const pictureCss = picture + "design/paper-picture.css"
+const galleryCss = picture + "design/paper-template-gallery.css"
+const card = picture + "paper-library-card.tsx"
+
+test("Paper pictures and carousel sizing use the shared A4 ratio", () => {
+  for (const [file, source] of [
+    [card, '<span className="aspect-[17/22]" />'],
+    [card, '<span className="sm:aspect-video" />'],
+    [card, '<span className="[aspect-ratio:3/4]" />'],
+    [card, "<span style={{ aspectRatio: 0.707 }} />"],
+    [galleryCss, ".paper-picker-page { aspect-ratio: 210 / 297; }"],
+    [galleryCss, ".paper-picker-page { width: calc(100cqh * 17 / 22); }"],
+    [galleryCss, ".paper-picker-page { width: calc(100cqh * 0.707); }"],
+    [galleryCss, ".paper-picker-page { --paper-picture-ratio: 3 / 4; }"],
+  ])
+    assert.match(detect(source, file).join(), /shared A4 ratio/, source)
+
+  for (const [file, source] of [
+    [
+      pictureCss,
+      ".paper-picture { aspect-ratio: var(--paper-picture-ratio); }",
+    ],
+    [
+      galleryCss,
+      ".paper-picker-page { width: calc(100cqh * var(--paper-picture-ratio)); }",
+    ],
+    [card, '<span className="paper-picture" />'],
+  ])
+    assert.deepEqual(detect(source, file), [], source)
+
+  const shared = readFileSync(pictureCss, "utf8")
+  assert.deepEqual(detect(shared, pictureCss), [])
+  assert.deepEqual(
+    [...shared.matchAll(/--paper-picture-ratio:\s*([^;]+);/g)].map(
+      (match) => match[1]
+    ),
+    ["calc(210 / 297)"]
+  )
+})
+
+test("the earlier US Letter thumbnails fail the A4 picture guard", () => {
+  for (const file of [card, galleryCss]) {
+    const historic = execFileSync("git", ["show", `71fb28da5:${file}`], {
+      encoding: "utf8",
+    })
+    assert.match(detect(historic, file).join(), /shared A4 ratio/, file)
+  }
+})
+
 const canvasCss = "apps/web/src/features/paper-page/canvas.css"
 const canvas = "apps/web/src/features/paper-page/canvas.tsx"
 

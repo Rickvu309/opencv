@@ -1,95 +1,36 @@
 import type { PaperTemplateId } from "@workspace/domain"
 
-import {
-  templatePageLines,
-  type TemplatePageLine,
-} from "./paper-template-pages.ts"
-
-export const TEMPLATE_PAGE_CLASS =
-  "@container relative block aspect-[17/22] w-full overflow-hidden rounded-[6px] border border-transparent bg-white text-black/85 [word-spacing:0.15em]"
-
-const plain = (text: string) => text.replace(/[[\]]/g, "")
-
-const barWidth = (text: string) =>
-  `${Math.min(94, 28 + plain(text).length * 1.25)}%`
-
-function PageLine({
-  line,
-  readable,
-}: {
-  line: TemplatePageLine
-  readable: boolean
-}) {
-  if (line.style === "Title")
-    return (
-      <span
-        data-page-name=""
-        className="mb-[2.4cqw] block truncate text-center text-[7.2cqw] leading-[1.15] font-semibold tracking-[-0.01em]"
-      >
-        {plain(line.text)}
-      </span>
-    )
-  if (line.style === "Heading1")
-    return (
-      <span
-        data-page-heading=""
-        className="mt-[3.6cqw] mb-[1.8cqw] block truncate border-b-[0.5cqw] border-black/70 pb-[0.6cqw] text-[4.6cqw] leading-[1.2] font-semibold"
-      >
-        {line.text}
-      </span>
-    )
-  if (readable)
-    return (
-      <span
-        data-page-line={line.style}
-        className={`mb-[1cqw] block text-[3.1cqw] leading-[1.35] ${line.center ? "text-center" : ""}`}
-      >
-        {line.style === "ListBullet" ? "• " : ""}
-        {plain(line.text)}
-      </span>
-    )
-  return (
-    <span
-      data-page-line={line.style}
-      className={`mb-[1.6cqw] flex items-center gap-[1.4cqw] ${line.center ? "justify-center" : ""}`}
-    >
-      {line.style === "ListBullet" ? (
-        <span className="size-[1.4cqw] shrink-0 rounded-full bg-black/45" />
-      ) : null}
-      <span
-        className="block h-[1.9cqw] rounded-full bg-black/18"
-        style={{ width: barWidth(line.text) }}
-      />
-    </span>
-  )
-}
+import { templatePageLines } from "./paper-template-pages.ts"
+import "./design/paper-picture.css"
 
 export function TemplatePage({
   templateId,
-  readable = false,
+  className,
 }: {
-  templateId: PaperTemplateId
-  readable?: boolean
+  templateId: PaperTemplateId | "blank"
+  className: string
 }) {
   return (
     <span
+      className={`paper-picture rounded-[4px] ${className}`}
       aria-hidden="true"
       data-template-page={templateId}
-      className="absolute inset-0 overflow-hidden px-[9cqw] py-[9cqw]"
     >
-      {templatePageLines(templateId).map((line, index) => (
-        <PageLine key={index} line={line} readable={readable} />
-      ))}
+      {templateId === "blank" ? null : (
+        <span className="paper-picture-text paper-template-text">
+          {templatePageLines(templateId).map((line, index) => (
+            <span
+              key={index}
+              data-page-name={line.style === "Title" ? "" : undefined}
+              data-page-heading={line.style === "Heading1" ? "" : undefined}
+              data-page-line={line.style}
+              className={line.center ? "text-center" : undefined}
+            >
+              {line.text}
+            </span>
+          ))}
+        </span>
+      )}
     </span>
-  )
-}
-
-export function BlankPage() {
-  return (
-    <span
-      aria-hidden="true"
-      data-template-page="blank"
-      className="absolute inset-0"
-    />
   )
 }

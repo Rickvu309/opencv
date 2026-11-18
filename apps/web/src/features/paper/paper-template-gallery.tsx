@@ -12,11 +12,7 @@ import { Input } from "@workspace/ui/components/input"
 import { Spinner } from "@workspace/ui/components/spinner"
 
 import { findTemplates } from "./paper-template-pages.ts"
-import {
-  BlankPage,
-  TEMPLATE_PAGE_CLASS,
-  TemplatePage,
-} from "./paper-template-thumb.tsx"
+import { TemplatePage } from "./paper-template-thumb.tsx"
 import "./design/paper-template-gallery.css"
 
 export const PAPER_GALLERY_DIALOG_CLASS =
@@ -56,15 +52,7 @@ export function focusChosenTemplate() {
 }
 
 function Specimen({ id }: { id: PickerChoice }) {
-  return (
-    <span className={`paper-picker-page ${TEMPLATE_PAGE_CLASS}`}>
-      {id === "blank" ? (
-        <BlankPage />
-      ) : (
-        <TemplatePage templateId={id} readable />
-      )}
-    </span>
-  )
+  return <TemplatePage templateId={id} className="paper-picker-page" />
 }
 
 function centerCard(track: HTMLDivElement | null, card: HTMLElement) {

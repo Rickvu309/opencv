@@ -10,11 +10,7 @@ import {
 import { LibraryDocumentSheet } from "./paper-library-sections.tsx"
 import { paperEditedLabel } from "./paper-templates.ts"
 import { TEMPLATE_CHOICES } from "./paper-template-pages.ts"
-import {
-  BlankPage,
-  TemplatePage,
-  TEMPLATE_PAGE_CLASS,
-} from "./paper-template-thumb.tsx"
+import { TemplatePage } from "./paper-template-thumb.tsx"
 import type { PaperTemplateId } from "@workspace/domain"
 
 export function PaperContinue({
@@ -47,38 +43,44 @@ export function PaperContinue({
         <h2 className="paper-continue-title">
           {entry ? libraryDisplayName(entryName(entry)) : "Start with a page"}
         </h2>
-        <p className="text-sm text-muted-foreground">
-          {entry
-            ? [
-                entrySection(entry) === "cv" ? "CV" : "Letter",
-                entry.type === "paper"
-                  ? `Edited ${paperEditedLabel(entry.doc.updatedAt)}`
-                  : null,
-              ]
-                .filter(Boolean)
-                .join(" · ")
-            : "Create a CV or Letter, or import a document you already have."}
-        </p>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
+        {entry ? (
+          <p className="flex flex-wrap gap-x-3 text-sm text-muted-foreground">
+            <span>{entrySection(entry) === "cv" ? "CV" : "Letter"}</span>
+            {entry.type === "paper" ? (
+              <span>Edited {paperEditedLabel(entry.doc.updatedAt)}</span>
+            ) : null}
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Create a CV or Letter, or import a document you already have.
+          </p>
+        )}
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 md:gap-2">
           {entry ? (
             <>
               <Button
                 variant="primary"
-                className="min-h-11 text-sm"
+                className="min-h-11 px-2 text-sm md:px-3"
                 onClick={onOpen}
               >
                 Open <ArrowRight aria-hidden="true" />
               </Button>
-              <Button variant="outline" className="min-h-11" onClick={onCoach}>
+              <Button
+                variant="outline"
+                className="min-h-11 px-2 md:px-3"
+                onClick={onCoach}
+              >
                 <Sparkles aria-hidden="true" /> Ask Coach
               </Button>
               {onDownload ? (
                 <Button
                   variant="ghost"
-                  className="min-h-11"
+                  className="size-11 md:w-auto"
+                  aria-label="Download"
                   onClick={onDownload}
                 >
-                  <ArrowDownToLine aria-hidden="true" /> Download
+                  <ArrowDownToLine aria-hidden="true" />
+                  <span className="hidden md:inline">Download</span>
                 </Button>
               ) : null}
             </>
@@ -98,9 +100,7 @@ export function PaperContinue({
           {entry ? (
             <LibraryDocumentSheet entry={entry} />
           ) : (
-            <span className={`paper-sheet ${TEMPLATE_PAGE_CLASS}`}>
-              <TemplatePage templateId="simple" readable />
-            </span>
+            <TemplatePage templateId="simple" className="paper-sheet" />
           )}
         </div>
       </div>
@@ -133,13 +133,7 @@ export function PaperStartStrip({
               className="paper-start-tile h-11"
               onClick={() => onCV(id)}
             >
-              <span className={`paper-sheet ${TEMPLATE_PAGE_CLASS}`}>
-                {id === "blank" ? (
-                  <BlankPage />
-                ) : (
-                  <TemplatePage templateId={id} />
-                )}
-              </span>
+              <TemplatePage templateId={id} className="paper-sheet" />
               <span>{label}</span>
             </Button>
           )
@@ -149,9 +143,7 @@ export function PaperStartStrip({
           className="paper-start-tile h-11"
           onClick={onLetter}
         >
-          <span className={`paper-sheet ${TEMPLATE_PAGE_CLASS}`}>
-            <BlankPage />
-          </span>
+          <TemplatePage templateId="blank" className="paper-sheet" />
           <span>Blank Letter</span>
         </Button>
       </div>

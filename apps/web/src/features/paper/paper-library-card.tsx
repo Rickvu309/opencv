@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode } from "react"
-import { File, MoreHorizontal, type LucideIcon } from "lucide-react"
+import { MoreHorizontal, type LucideIcon } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -11,6 +11,7 @@ import {
 } from "@workspace/ui/components/dropdown-menu"
 
 import { libraryDisplayName } from "./paper-library-entries.ts"
+import "./design/paper-picture.css"
 
 export type PaperCardAction = {
   label: string
@@ -32,15 +33,15 @@ export function PaperSheet({
   return (
     <div
       data-slot="paper-library-sheet"
-      className="paper-sheet @container relative block aspect-[17/22] w-full overflow-hidden rounded-[3px] bg-white text-left text-black/85"
+      className="paper-picture paper-sheet rounded-[3px]"
       aria-hidden="true"
     >
       {preview ?? (
-        <span className="flex h-full flex-col gap-[3cqw] px-[9cqw] py-[10cqw]">
+        <span className="paper-picture-text flex flex-col gap-4 font-serif text-[12pt] leading-[1.6]">
           {lead ? (
             <span
               data-slot="paper-library-preview-name"
-              className="line-clamp-2 font-serif text-[6cqw] leading-[1.2] font-bold break-words"
+              className="text-[20pt] leading-[1.2] font-bold wrap-anywhere"
             >
               {lead}
             </span>
@@ -48,21 +49,15 @@ export function PaperSheet({
           {rest.length > 0 ? (
             <span
               data-slot="paper-library-preview"
-              className="line-clamp-8 font-serif text-[3.3cqw] leading-[1.6] break-words whitespace-pre-line text-black/70"
+              className="wrap-anywhere whitespace-pre-line"
             >
               {rest.join("\n")}
             </span>
           ) : null}
-          {badge ? (
-            <File
-              className="m-auto size-8 text-muted-foreground"
-              strokeWidth={1.5}
-            />
-          ) : null}
         </span>
       )}
       {badge ? (
-        <span className="absolute start-3 bottom-3 rounded bg-secondary px-1.5 py-0.5 text-[0.6875rem] font-medium text-secondary-foreground">
+        <span className="absolute start-3 bottom-3 rounded bg-secondary px-1.5 py-0.5 text-[0.6875rem] font-medium text-muted-foreground">
           {badge}
         </span>
       ) : null}
@@ -126,7 +121,7 @@ export function PaperLibraryCard({
           type="button"
           variant="ghost"
           aria-label={displayLabel ?? displayName}
-          className="group/card h-auto min-h-11 w-full min-w-0 flex-col items-start gap-3 rounded-[3px] border-0 p-0 font-normal whitespace-normal hover:bg-transparent aria-expanded:bg-transparent dark:hover:bg-transparent"
+          className="group/card h-auto min-h-11 w-full min-w-0 flex-col items-start gap-3 rounded-[3px] border-0 p-0 font-normal whitespace-normal hover:bg-transparent aria-expanded:bg-transparent"
           onClick={onOpen}
         >
           {body}
