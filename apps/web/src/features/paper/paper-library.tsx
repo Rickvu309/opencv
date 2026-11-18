@@ -1,10 +1,4 @@
-import {
-  useContext,
-  useEffect,
-  useReducer,
-  useRef,
-  type DragEvent,
-} from "react"
+import { useEffect, useReducer, useRef, type DragEvent } from "react"
 import { Plus } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
@@ -31,8 +25,6 @@ import {
   useRunCommand,
 } from "@/lib/contract-client.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
-import { createChat } from "@/features/coach/chat-api.ts"
-import { ChatStoreContext } from "@/features/coach/chat-store-context.ts"
 import { listJobs } from "@/features/apply/apply-api.ts"
 
 import {
@@ -67,13 +59,9 @@ import {
   useWordLibrary,
   type WordDocument,
 } from "./paper-package-library.tsx"
-import { PaperLibraryCollection } from "./paper-library-collection.tsx"
-import {
-  libraryDisplayName,
-  entryName,
-  latestLibraryDocument,
-  libraryEntries,
-} from "./paper-library-entries.ts"
+import { libraryDisplayName, libraryEntries } from "./paper-library-entries.ts"
+import { PaperFind, PaperViewChips } from "./paper-hand-controls.tsx"
+import { PaperHand } from "./paper-hand.tsx"
 import { type LibraryEntryHandlers } from "./paper-library-sections.tsx"
 import { PaperLinkDialog } from "./paper-library-link.tsx"
 import { useShownWhileClosing } from "./paper-library-closing.ts"
@@ -81,9 +69,7 @@ import {
   PaperDeleteDialog,
   PaperRenameDialog,
 } from "./paper-library-dialogs.tsx"
-import { PaperContinue, PaperStartStrip } from "./paper-library-desk.tsx"
 import "./design/paper-library.pen.css"
-import "./design/paper-library-desk.css"
 
 export function PaperLibrary({
   docs,
@@ -106,7 +92,6 @@ export function PaperLibrary({
 }) {
   const run = useRunCommand()
   const queryClient = useQueryClient()
-  const chats = useContext(ChatStoreContext)
   const importRef = useRef<HTMLInputElement>(null)
   const newButtonRef = useRef<HTMLButtonElement>(null)
   const returnFromLetter = useRef(false)
@@ -153,30 +138,10 @@ export function PaperLibrary({
   const entries = libraryEntries({ docs, files, words: wordLibrary.items })
   const deletingWordPage =
     deleting?.type === "delete" && deleting.doc.format === "word"
-  const latest = latestLibraryDocument(entries)
-  const latestDoc = latest?.type === "paper" ? latest.doc : undefined
-  const latestWord = latest?.word
-  const latestId = latestDoc?.id ?? latestWord?.docId
   const ready = !loading && !error
 
   function openPicker(kind: "cv" | "letter", initial?: PickerChoice) {
     dispatch({ type: "new_dialog_opened", step: "gallery", kind, initial })
-  }
-
-  async function askCoach() {
-    if (!latest || !latestId || !chats) return
-    try {
-      const chat = await createChat(queryClient, {
-        title: `About ${libraryDisplayName(entryName(latest))}`,
-        focusDocId: latestId,
-      })
-      chats.openChat(chat.id)
-      const dock =
-        document.querySelector<HTMLButtonElement>("[data-dock-coach]")
-      if (dock?.getAttribute("aria-expanded") !== "true") dock?.click()
-    } catch (err) {
-      toast(messageOf(err, "Could not open Coach. Try again."))
-    }
   }
 
   async function downloadWord(word: WordDocument) {
@@ -421,6 +386,17 @@ export function PaperLibrary({
       >
         <SidebarExpandButton />
         <h1 className="text-lg font-medium">Paper</h1>
+        {ready ? (
+          <PaperViewChips
+            view={view ?? "all"}
+            onViewChange={(next) =>
+              dispatch({ type: "view_changed", view: next })
+            }
+          />
+        ) : null}
+        {ready ? (
+          <PaperFind query={query} onQueryChange={onQueryChange} />
+        ) : null}
         <div data-slot="paper-library-spacer" className="flex-1" />
         <Button
           className="h-11 gap-1.5 text-[0.8125rem] md:h-7"
@@ -435,51 +411,36 @@ export function PaperLibrary({
           New
         </Button>
       </div>
-      <div className="paper-desk" data-slot="paper-desk">
-        {loading ? (
-          <p role="status" className="py-6 text-sm text-muted-foreground">
-            Loading documents…
+      {loading ? (
+        <p role="status" className="py-6 text-sm text-muted-foreground">
+          Loading documents…
+        </p>
+      ) : null}
+      {error ? (
+        <div className="flex flex-col items-start gap-3 py-6">
+          <p role="alert" className="text-sm text-destructive">
+            {error}
           </p>
-        ) : null}
-        {error ? (
-          <div className="flex flex-col items-start gap-3 py-6">
-            <p role="alert" className="text-sm text-destructive">
-              {error}
-            </p>
-            <Button className="min-h-11" variant="outline" onClick={onRetry}>
-              Refresh
-            </Button>
-          </div>
-        ) : null}
-        {ready ? (
-          <>
-            <PaperContinue
-              entry={latest}
-              onOpen={() => {
-                if (latestId) onOpen(latestId)
-              }}
-              onCoach={() => void askCoach()}
-              onStart={() => openPicker("cv")}
-            />
-            <PaperStartStrip
-              onCV={(initial) => openPicker("cv", initial)}
-              onLetter={() => openPicker("letter", "blank")}
-            />
-            <PaperLibraryCollection
-              entries={entries}
-              hasDocuments={Boolean(latest)}
-              query={query}
-              selectedView={view}
-              handlers={handlers}
-              onQueryChange={onQueryChange}
-              onViewChange={(view) => dispatch({ type: "view_changed", view })}
-              onNewCV={() => openPicker("cv")}
-              onNewLetter={() => openPicker("letter")}
-              onImport={() => dispatch({ type: "import_dialog_opened" })}
-            />
-          </>
-        ) : null}
-      </div>
+          <Button className="min-h-11" variant="outline" onClick={onRetry}>
+            Refresh
+          </Button>
+        </div>
+      ) : null}
+      {ready ? (
+        <PaperHand
+          entries={entries}
+          view={view ?? "all"}
+          query={query}
+          importName={
+            importState.type === "importing" ? importState.name : null
+          }
+          handlers={handlers}
+          onNewCV={() => openPicker("cv")}
+          onNewLetter={() => openPicker("letter", "blank")}
+          onImport={(file) => void onImport(file)}
+          onOpenImport={() => dispatch({ type: "import_dialog_opened" })}
+        />
+      ) : null}
 
       <PaperPackageLibrary library={wordLibrary} />
 

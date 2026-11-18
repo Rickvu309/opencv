@@ -9,9 +9,9 @@ export async function expectPaperDrive() {
     await screen.findByRole("searchbox", { name: "Search Paper" })
   ).toBeInTheDocument()
   expect(
-    await screen.findByRole("button", { name: /^PM track CV,/ })
+    await screen.findByRole("button", { name: /^Open PM track CV,/ })
   ).toBeInTheDocument()
   expect(
-    screen.getByRole("button", { name: /^Cover: Associate PM intern,/ })
+    screen.getByRole("button", { name: /^Open Cover: Associate PM intern,/ })
   ).toBeInTheDocument()
 }

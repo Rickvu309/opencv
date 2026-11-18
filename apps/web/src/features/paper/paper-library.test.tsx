@@ -57,10 +57,6 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-function missingImport(): never {
-  throw new Error("Missing Import button")
-}
-
 describe("Paper library", () => {
   it("opens the Letter picker and can move into the Coach draft flow and back to Paper", async () => {
     vi.stubGlobal(
@@ -72,7 +68,7 @@ describe("Paper library", () => {
         )
     )
     renderLibrary([])
-    fireEvent.click(screen.getAllByRole("button", { name: "New letter" })[0]!)
+    fireEvent.click(screen.getByRole("button", { name: "New Letter" }))
     const chooser = within(screen.getByRole("dialog", { name: "New Letter" }))
     expect(chooser.getByRole("radio", { name: "Blank" })).toHaveAttribute(
       "aria-checked",
@@ -92,7 +88,7 @@ describe("Paper library", () => {
     ).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Draft letter" })).toBeDisabled()
     fireEvent.click(screen.getByRole("button", { name: "Paper", exact: true }))
-    expect(screen.queryByText("No CVs yet.")).toBeInTheDocument()
+    expect(screen.queryByText("No documents yet")).toBeInTheDocument()
     expect(
       screen.getByRole("button", { name: "New", exact: true })
     ).toHaveFocus()
@@ -166,7 +162,7 @@ describe("Paper library", () => {
     ).toContain(created.docId)
     expect(screen.queryByText(created.notice)).toBeNull()
     expect(onOpen).not.toHaveBeenCalled()
-    expect(screen.queryByText("No CVs yet.")).toBeInTheDocument()
+    expect(screen.queryByText("No documents yet")).toBeInTheDocument()
   })
 
   it("opens a Word import on the writing page", async () => {
@@ -258,11 +254,7 @@ describe("Paper library", () => {
     )
     renderLibrary([])
     const file = new File(["CV"], "Dropped.pdf", { type: "application/pdf" })
-    fireEvent.click(
-      screen
-        .getAllByRole("button", { name: "Import a file", exact: true })
-        .at(0) ?? missingImport()
-    )
+    fireEvent.click(screen.getByRole("button", { name: "Import", exact: true }))
     fireEvent.drop(screen.getByRole("region", { name: "Import a file" }), {
       dataTransfer: { files: [file] },
     })
@@ -270,6 +262,7 @@ describe("Paper library", () => {
     expect(
       screen.getByRole("heading", { name: "Importing…" })
     ).toBeInTheDocument()
+    expect(vi.mocked(importPaperFile)).toHaveBeenCalledTimes(1)
     expect(vi.mocked(importPaperFile)).toHaveBeenCalledWith(
       file,
       expect.any(AbortSignal)
@@ -281,11 +274,7 @@ describe("Paper library", () => {
       new Error("Google Docs aren't supported. Download a PDF or Word file.")
     )
     renderLibrary([])
-    fireEvent.click(
-      screen
-        .getAllByRole("button", { name: "Import a file", exact: true })
-        .at(0) ?? missingImport()
-    )
+    fireEvent.click(screen.getByRole("button", { name: "Import", exact: true }))
     const dialog = screen.getByRole("dialog", { name: "Import", exact: true })
     const field = within(dialog).getByRole("textbox", {
       name: "Paste a link",
@@ -315,21 +304,15 @@ describe("Paper library", () => {
 
   it("offers section actions and opens import when there are no documents", () => {
     renderLibrary([])
-    expect(screen.queryByText("No CVs yet.")).toBeInTheDocument()
+    expect(screen.queryByText("No documents yet")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "New CV" })).toBeInTheDocument()
     expect(
-      screen.getAllByRole("button", { name: "New CV" })[0]!
-    ).toBeInTheDocument()
-    expect(
-      screen.getAllByRole("button", { name: "New letter" })[0]!
+      screen.getByRole("button", { name: "New Letter" })
     ).toBeInTheDocument()
     expect(
       screen.queryByRole("textbox", { name: "Search Paper" })
     ).not.toBeInTheDocument()
-    fireEvent.click(
-      screen
-        .getAllByRole("button", { name: "Import a file", exact: true })
-        .at(0) ?? missingImport()
-    )
+    fireEvent.click(screen.getByRole("button", { name: "Import", exact: true }))
     expect(
       screen.getByRole("dialog", { name: "Import", exact: true })
     ).toBeInTheDocument()
@@ -402,6 +385,9 @@ describe("Paper library", () => {
     ).not.toBeInTheDocument()
     fireEvent.keyDown(document.activeElement ?? document.body, {
       key: "Escape",
+    })
+    fireEvent.keyDown(screen.getByRole("group", { name: "Your documents" }), {
+      key: "ArrowRight",
     })
     fireEvent.click(screen.getByRole("button", { name: "Block CV menu" }))
     expect(

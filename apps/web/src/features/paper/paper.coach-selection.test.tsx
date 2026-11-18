@@ -14,7 +14,10 @@ describe("Paper selection chrome", () => {
   it("keeps Coach and Undo and drops the unsaved marks", async () => {
     renderApp(SURFACE_PATHS.paper)
     await expectPaperDrive()
-    fireEvent.click(screen.getByRole("button", { name: /^PM track CV,/ }))
+    const card = () =>
+      screen.getByRole("button", { name: /^Open PM track CV,/ })
+    fireEvent.click(card())
+    fireEvent.click(card())
     const editor = await screen.findByRole("region", {
       name: "Editing PM track CV",
     })

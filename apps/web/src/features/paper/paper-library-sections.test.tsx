@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   cleanup,
   fireEvent,
@@ -13,10 +13,16 @@ import {
   createRouter,
   RouterContextProvider,
 } from "@tanstack/react-router"
+import { parsePaperId } from "@workspace/domain"
 
 import { render } from "@/test/render-with-client.tsx"
 import { PaperLibrary } from "./paper-library.tsx"
-import { cv, letter, renderLibrary } from "./paper-library.fixtures.tsx"
+import {
+  cv,
+  letter,
+  libraryRouter,
+  renderLibrary,
+} from "./paper-library.fixtures.tsx"
 
 function proofsRouter() {
   const root = createRootRoute()
@@ -31,119 +37,136 @@ function proofsRouter() {
   })
 }
 
+function dated(name: string, n: number) {
+  const stamp = `2026-01-${String(n + 1).padStart(2, "0")}T00:00:00.000Z`
+  return {
+    ...cv(name),
+    id: parsePaperId(
+      `11111111-1111-4111-8111-${n.toString(16).padStart(12, "0")}`
+    ),
+    createdAt: stamp,
+    updatedAt: stamp,
+  }
+}
+
 afterEach(() => {
   cleanup()
 })
 
 describe("Paper home sections", () => {
-  it("groups documents into sections and searches across every section", () => {
+  it("filters the hand from the header chips and the search field", () => {
     renderLibrary([cv("My CV"), letter("Design letter")])
-    expect(
-      screen.queryByRole("group", { name: "Document type" })
-    ).not.toBeInTheDocument()
-    const cvs = screen.getByRole("region", { name: "CVs" })
-    const letters = screen.getByRole("region", { name: "Letters" })
-    expect(
-      within(cvs).getByRole("button", { name: /^My CV,/ })
-    ).toBeInTheDocument()
-    expect(
-      within(letters).getByRole("button", { name: /^Design letter,/ })
-    ).toBeInTheDocument()
-    expect(within(cvs).getByText("CV")).toHaveClass("text-muted-foreground")
-    expect(within(letters).getByText("Letter")).toHaveClass(
-      "text-muted-foreground"
-    )
-    expect(
-      within(screen.getByRole("region", { name: "Files" })).getAllByRole(
-        "button",
-        { name: "Import a file" }
-      )[0]!
-    ).toBeInTheDocument()
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search Paper" }), {
-      target: { value: "design" },
-    })
     expect(
       screen.queryByRole("region", { name: "CVs" })
     ).not.toBeInTheDocument()
     expect(
-      screen.getByRole("button", { name: /^Design letter,/ })
+      screen.queryByRole("region", { name: "Letters" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("region", { name: "Files" })
+    ).not.toBeInTheDocument()
+    const views = within(screen.getByRole("group", { name: "Library views" }))
+    expect(views.getByRole("button", { name: "All" })).toHaveAttribute(
+      "aria-pressed",
+      "true"
+    )
+    expect(views.getByRole("button", { name: "CVs" })).toBeInTheDocument()
+    expect(views.getByRole("button", { name: "Letters" })).toBeInTheDocument()
+    expect(views.getByRole("button", { name: "Proofs" })).toBeInTheDocument()
+    expect(views.getByRole("button", { name: "Files" })).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /^Open My CV,/ })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /^Open Design letter,/ })
+    ).toBeInTheDocument()
+    const search = screen.getByRole("searchbox", { name: "Search Paper" })
+    expect(search).toHaveAttribute("placeholder", "Type to find a document")
+    fireEvent.change(search, { target: { value: "design" } })
+    expect(
+      screen.queryByRole("button", { name: /^Open My CV,/ })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /^Open Design letter,/ })
     ).toBeInTheDocument()
     expect(
       screen.queryByRole("link", { name: "Open Proofs" })
     ).not.toBeInTheDocument()
     expect(
-      screen.queryByRole("button", { name: "New letter" })
+      screen.getByRole("button", { name: "New Letter" })
+    ).toBeInTheDocument()
+    fireEvent.change(search, { target: { value: "nothing" } })
+    expect(screen.getByText("Nothing matches")).toBeInTheDocument()
+    expect(screen.getByText("nothing")).toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: /^Open Design letter,/ })
     ).not.toBeInTheDocument()
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search Paper" }), {
-      target: { value: "nothing" },
-    })
-    expect(screen.getByText('No results for "nothing"')).toBeInTheDocument()
-    const empty = screen.getByRole("status")
-    expect(empty).toHaveTextContent("Try another word, or clear the search.")
-    fireEvent.keyDown(screen.getByRole("searchbox", { name: "Search Paper" }), {
-      key: "Escape",
-    })
-    expect(screen.getByRole("searchbox", { name: "Search Paper" })).toHaveValue(
-      ""
-    )
-    expect(screen.getByRole("region", { name: "CVs" })).toBeInTheDocument()
-    fireEvent.change(screen.getByRole("searchbox", { name: "Search Paper" }), {
-      target: { value: "nothing" },
-    })
-    fireEvent.click(
-      within(screen.getByRole("status")).getByRole("button", {
-        name: "Clear search",
-      })
-    )
-    expect(screen.getByRole("searchbox", { name: "Search Paper" })).toHaveValue(
-      ""
-    )
-    expect(screen.getByRole("region", { name: "CVs" })).toBeInTheDocument()
+    fireEvent.keyDown(search, { key: "Escape" })
+    expect(search).toHaveValue("")
+    expect(search).not.toHaveFocus()
+    expect(
+      screen.getByRole("button", { name: /^Open My CV,/ })
+    ).toBeInTheDocument()
+    fireEvent.change(search, { target: { value: "nothing" } })
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }))
+    expect(search).toHaveValue("")
+    expect(
+      screen.getByRole("button", { name: /^Open My CV,/ })
+    ).toBeInTheDocument()
   })
 
-  it("keeps the header to the title, search and New", () => {
+  it("keeps the header to the title, chips, search and New", () => {
     renderLibrary([cv("My CV")])
     expect(screen.getByRole("heading", { name: "Paper" })).toHaveTextContent(
       /^Paper$/
     )
     expect(
-      screen.queryByRole("button", { name: "Import", exact: true })
-    ).not.toBeInTheDocument()
-    fireEvent.click(
-      screen.getAllByRole("button", { name: "Import a file" })[0]!
-    )
+      screen.getByRole("group", { name: "Library views" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("searchbox", { name: "Search Paper" })
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: "New", exact: true })
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Import", exact: true }))
     expect(
       screen.getByRole("dialog", { name: "Import", exact: true })
     ).toBeInTheDocument()
   })
 
-  it("filters the library by view and keeps counts for the other kinds", () => {
+  it("filters the library by view without counts", () => {
     renderLibrary([cv("My CV"), letter("Design letter")])
     const views = within(screen.getByRole("group", { name: "Library views" }))
-    const letters = views.getByRole("button", { name: /Letters ?1/ })
+    const letters = views.getByRole("button", { name: "Letters" })
     fireEvent.click(letters)
     expect(letters).toHaveAttribute("aria-pressed", "true")
     expect(
-      screen.queryByRole("region", { name: "CVs" })
+      screen.queryByRole("button", { name: /^Open My CV,/ })
     ).not.toBeInTheDocument()
     expect(
-      screen.getByRole("button", { name: /^Design letter,/ })
+      screen.getByRole("button", { name: /^Open Design letter,/ })
     ).toBeInTheDocument()
-    expect(views.getByRole("button", { name: /CVs ?1/ })).toBeInTheDocument()
-    fireEvent.click(views.getByRole("button", { name: /Proofs ?0/ }))
+    fireEvent.click(views.getByRole("button", { name: "Proofs" }))
     expect(screen.getByRole("link", { name: "Open Proofs" })).toHaveAttribute(
       "href",
       "/proofs"
     )
-    fireEvent.click(views.getByRole("button", { name: /Files ?0/ }))
+    fireEvent.click(views.getByRole("button", { name: "Files" }))
+    expect(screen.getByText("No files yet")).toBeInTheDocument()
     expect(
-      screen.getByRole("button", { name: "Import a file" })
+      screen.getByRole("button", { name: "Import", exact: true })
     ).toBeInTheDocument()
-    fireEvent.click(views.getByRole("button", { name: /All ?2/ }))
-    expect(screen.getByRole("region", { name: "CVs" })).toBeInTheDocument()
+    fireEvent.click(views.getByRole("button", { name: "All" }))
+    expect(
+      screen.getByRole("button", { name: /^Open My CV,/ })
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole("link", { name: "Open Proofs" })
+    ).not.toBeInTheDocument()
   })
 
-  it("continues the most recently edited page and preselects the template clicked in Start new", () => {
+  it("centres the newest document and opens the CV picker from New CV", () => {
     renderLibrary([
       cv("An earlier CV"),
       {
@@ -151,34 +174,80 @@ describe("Paper home sections", () => {
         updatedAt: "2027-01-02T12:00:00.000Z",
       },
     ])
-    const hero = within(
-      screen.getByRole("region", { name: "Continue editing" })
-    )
+    const latest = screen.getByRole("button", { name: /^Open Latest letter,/ })
+    expect(latest).toHaveAttribute("tabindex", "0")
+    expect(screen.getByText("1 of 2")).toBeInTheDocument()
+    expect(screen.getByText("Latest letter")).toBeInTheDocument()
     expect(
-      hero.getByRole("heading", { name: "Latest letter" })
-    ).toBeInTheDocument()
-    expect(hero.getByRole("button", { name: "Open" })).toBeInTheDocument()
-    expect(hero.getByText("Letter")).toBeInTheDocument()
-    expect(hero.getByText(/^Edited /)).toBeInTheDocument()
-    expect(hero.getByRole("button", { name: "Ask Coach" })).toBeInTheDocument()
-    expect(hero.getAllByRole("button")).toHaveLength(2)
-    fireEvent.click(
-      within(screen.getByRole("region", { name: "Start new" })).getByRole(
-        "button",
-        { name: "Modern" }
-      )
-    )
-    const chooser = within(screen.getByRole("dialog", { name: "New CV" }))
-    expect(chooser.getByRole("radio", { name: "Modern" })).toHaveAttribute(
-      "aria-checked",
-      "true"
-    )
+      screen.queryByRole("button", { name: "Ask Coach" })
+    ).not.toBeInTheDocument()
     expect(
-      chooser.getByRole("button", { name: "Use Modern" })
-    ).toBeInTheDocument()
+      screen.queryByRole("region", { name: "Continue editing" })
+    ).not.toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "New CV" }))
+    expect(screen.getByRole("dialog", { name: "New CV" })).toBeInTheDocument()
   })
 
-  it("shows imported files without documents and keeps their delete action", async () => {
+  it("opens the centred page and rolls a side card in first", () => {
+    const onOpen = vi.fn()
+    render(
+      libraryRouter(
+        <PaperLibrary
+          docs={[
+            cv("My CV"),
+            {
+              ...letter("Design letter"),
+              updatedAt: "2027-01-02T12:00:00.000Z",
+            },
+          ]}
+          files={[]}
+          loading={false}
+          error={null}
+          onRetry={() => undefined}
+          onOpen={onOpen}
+          query=""
+          onQueryChange={() => undefined}
+        />
+      )
+    )
+    const side = screen.getByRole("button", { name: /^Open My CV,/ })
+    fireEvent.click(side)
+    expect(onOpen).not.toHaveBeenCalled()
+    expect(
+      screen.getByRole("button", { name: /^Open My CV,/ })
+    ).toHaveAttribute("tabindex", "0")
+    fireEvent.click(screen.getByRole("button", { name: /^Open My CV,/ }))
+    expect(onOpen).toHaveBeenCalledWith(cv("My CV").id)
+  })
+
+  it("starts a long hand on the fourth card and rolls with the arrow keys", () => {
+    renderLibrary(Array.from({ length: 8 }, (_, n) => dated(`Doc ${n + 1}`, n)))
+    expect(screen.getByText("4 of 8")).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /^Open Doc 5,/ })
+    ).toHaveAttribute("tabindex", "0")
+    fireEvent.keyDown(screen.getByRole("group", { name: "Your documents" }), {
+      key: "ArrowRight",
+    })
+    expect(screen.getByText("5 of 8")).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /^Open Doc 4,/ })
+    ).toHaveAttribute("tabindex", "0")
+    expect(screen.getByRole("button", { name: /^Open Doc 4,/ })).toHaveFocus()
+  })
+
+  it("focuses search from slash and from a printable key", () => {
+    renderLibrary([cv("My CV")])
+    const search = screen.getByRole("searchbox", { name: "Search Paper" })
+    search.blur()
+    fireEvent.keyDown(document, { key: "/" })
+    expect(search).toHaveFocus()
+    search.blur()
+    fireEvent.keyDown(document, { key: "q" })
+    expect(search).toHaveFocus()
+  })
+
+  it("shows imported files in the hand and keeps their delete action", async () => {
     renderLibrary(
       [],
       [
@@ -192,26 +261,30 @@ describe("Paper home sections", () => {
       ]
     )
     expect(screen.queryByText("Start a document")).not.toBeInTheDocument()
-    const filesSection = screen.getByRole("region", { name: "Files" })
-    expect(within(filesSection).getAllByText("Original CV")).not.toHaveLength(0)
-    expect(within(filesSection).getByText("PDF")).toBeInTheDocument()
+    expect(screen.getAllByText("Original CV").length).toBeGreaterThan(0)
+    expect(screen.getByText("PDF")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "New CV" })).toBeInTheDocument()
     expect(
-      within(screen.getByRole("region", { name: "CVs" })).getAllByRole(
-        "button",
-        {
-          name: "New CV",
-        }
-      )[0]!
+      screen.getByRole("button", { name: "New Letter" })
     ).toBeInTheDocument()
     expect(
-      within(screen.getByRole("region", { name: "Letters" })).getAllByRole(
+      screen.queryByRole("link", { name: "Open Proofs" })
+    ).not.toBeInTheDocument()
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Library views" })).getByRole(
         "button",
-        { name: "New letter" }
-      )[0]!
-    ).toBeInTheDocument()
+        { name: "Proofs" }
+      )
+    )
     expect(screen.getByRole("link", { name: "Open Proofs" })).toHaveAttribute(
       "href",
       "/proofs"
+    )
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Library views" })).getByRole(
+        "button",
+        { name: "All" }
+      )
     )
     fireEvent.click(screen.getByRole("button", { name: "Original CV menu" }))
     fireEvent.click(
@@ -254,36 +327,32 @@ describe("Paper home sections", () => {
   it("names a CV card from the document and hides it when search misses", async () => {
     renderLibrary([cv("PM track CV")])
     expect(
-      screen.getByRole("button", { name: /^PM track CV,/ })
+      screen.getByRole("button", { name: /^Open PM track CV,/ })
     ).toBeInTheDocument()
 
     fireEvent.change(screen.getByRole("searchbox", { name: "Search Paper" }), {
       target: { value: "portfolio" },
     })
 
-    expect(screen.getByText('No results for "portfolio"')).toBeInTheDocument()
+    expect(screen.getByText("Nothing matches")).toBeInTheDocument()
+    expect(screen.getByText("portfolio")).toBeInTheDocument()
     expect(
-      screen.queryByRole("button", { name: /^PM track CV,/ })
+      screen.queryByRole("button", { name: /^Open PM track CV,/ })
     ).not.toBeInTheDocument()
-    expect(
-      screen.getByText("Try another word, or clear the search.")
-    ).toBeInTheDocument()
     expect(
       screen.queryByRole("link", { name: "Open Proofs" })
     ).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "New CV" })).toBeInTheDocument()
     expect(
-      screen.queryByRole("button", { name: "New letter" })
-    ).not.toBeInTheDocument()
+      screen.getByRole("button", { name: "New Letter" })
+    ).toBeInTheDocument()
   })
 
   it("keeps Letters and Proofs reachable, and shows the page's first lines", () => {
     renderLibrary([letter("Design letter")])
-    expect(screen.getByRole("region", { name: "Letters" })).toBeInTheDocument()
     expect(
-      screen.getByRole("button", { name: "Blank Letter" })
-    ).toBeInTheDocument()
-    const proofs = screen.getByRole("link", { name: "Open Proofs" })
-    expect(proofs).toHaveAttribute("href", "/proofs")
+      screen.queryByRole("button", { name: "Blank Letter" })
+    ).not.toBeInTheDocument()
     const lead = document.querySelector(
       "[data-slot=paper-library-preview-name]"
     )
@@ -292,6 +361,14 @@ describe("Paper home sections", () => {
     expect(
       document.querySelector("[data-slot=paper-library-preview]")
     ).toBeNull()
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Library views" })).getByRole(
+        "button",
+        { name: "Proofs" }
+      )
+    )
+    const proofs = screen.getByRole("link", { name: "Open Proofs" })
+    expect(proofs).toHaveAttribute("href", "/proofs")
   })
 
   it("routes Word cards to the page preview even when no block body exists", () => {
@@ -299,7 +376,7 @@ describe("Paper home sections", () => {
       { ...letter("Word letter.docx"), format: "word", paper: undefined },
     ])
     expect(
-      screen.getByRole("button", { name: /^Word letter,/ })
+      screen.getByRole("button", { name: /^Open Word letter,/ })
     ).toBeInTheDocument()
     expect(
       document.querySelector("[data-slot=paper-word-preview]")
@@ -324,6 +401,12 @@ describe("Paper home sections", () => {
           onQueryChange={() => undefined}
         />
       </RouterContextProvider>
+    )
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Library views" })).getByRole(
+        "button",
+        { name: "Proofs" }
+      )
     )
     const proofs = screen.getByRole("link", { name: "Open Proofs" })
     fireEvent.click(proofs, { metaKey: true })

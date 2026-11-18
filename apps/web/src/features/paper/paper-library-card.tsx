@@ -2,6 +2,7 @@ import { Fragment, type ReactNode } from "react"
 import { MoreHorizontal, type LucideIcon } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -84,6 +85,51 @@ function PaperLabel({ name, meta }: { name: string; meta: string }) {
   )
 }
 
+export function PaperActionMenu({
+  label,
+  actions,
+  className,
+}: {
+  label: string
+  actions: PaperCardAction[]
+  className?: string
+}) {
+  if (actions.length === 0) return null
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className={cn("size-11 md:size-7", className)}
+            aria-label={label}
+          >
+            <MoreHorizontal />
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="end">
+        {actions.map(
+          ({ label: action, icon: Icon, onSelect, destructive }, index) => (
+            <Fragment key={action}>
+              {destructive && index > 0 ? <DropdownMenuSeparator /> : null}
+              <DropdownMenuItem
+                variant={destructive ? "destructive" : "default"}
+                onClick={onSelect}
+              >
+                <Icon aria-hidden="true" />
+                {action}
+              </DropdownMenuItem>
+            </Fragment>
+          )
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 export function PaperLibraryCard({
   name,
   meta,
@@ -131,39 +177,11 @@ export function PaperLibraryCard({
           {body}
         </div>
       )}
-      {actions.length > 0 ? (
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon-sm"
-                className="absolute top-1.5 right-1.5 size-11 bg-card/90 [@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:group-focus-within/card:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:group-hover/card:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:aria-expanded:opacity-100 md:[@media(pointer:fine)]:size-7"
-                aria-label={`${displayName} menu`}
-              >
-                <MoreHorizontal />
-              </Button>
-            }
-          />
-          <DropdownMenuContent align="end">
-            {actions.map(
-              ({ label, icon: Icon, onSelect, destructive }, index) => (
-                <Fragment key={label}>
-                  {destructive && index > 0 ? <DropdownMenuSeparator /> : null}
-                  <DropdownMenuItem
-                    variant={destructive ? "destructive" : "default"}
-                    onClick={onSelect}
-                  >
-                    <Icon aria-hidden="true" />
-                    {label}
-                  </DropdownMenuItem>
-                </Fragment>
-              )
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ) : null}
+      <PaperActionMenu
+        label={`${displayName} menu`}
+        actions={actions}
+        className="absolute top-1.5 right-1.5 size-11 bg-card/90 [@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:group-focus-within/card:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:group-hover/card:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:aria-expanded:opacity-100 md:[@media(pointer:fine)]:size-7"
+      />
     </div>
   )
 }

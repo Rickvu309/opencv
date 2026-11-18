@@ -21,7 +21,6 @@ export function paperPickerScreens({ page, openPanel, addJob }) {
         { waitFor: { selector: page } },
         { goto: "/paper" },
         { waitFor: { text: "Simple CV" } },
-        { waitFor: { text: "Modern CV" } },
         {
           waitFor: {
             selector: '[data-slot="app-dock"]:not(:has([data-chat-id]))',
@@ -32,7 +31,7 @@ export function paperPickerScreens({ page, openPanel, addJob }) {
     {
       id: "paper-home-empty",
       route: "/paper",
-      steps: [{ waitFor: { text: "No CVs yet." } }],
+      steps: [{ waitFor: { text: "No documents yet" } }],
     },
     {
       id: "paper-home-panel-open",
