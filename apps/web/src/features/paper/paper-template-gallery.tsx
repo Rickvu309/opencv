@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react"
+import { useLayoutEffect, useReducer, useRef, type KeyboardEvent } from "react"
 import { FileUp, Sparkles } from "lucide-react"
 
 import type { PaperTemplateId } from "@workspace/domain"
@@ -23,6 +23,29 @@ export const PAPER_GALLERY_DIALOG_CLASS =
   "paper-picker flex flex-col gap-0 overflow-hidden sm:max-w-3xl lg:max-w-[960px]"
 
 export type PickerChoice = PaperTemplateId | "blank"
+
+type PickerSelection = { query: string; selected: PickerChoice | undefined }
+
+type PickerAction =
+  | { type: "searched"; query: string }
+  | { type: "cleared" }
+  | { type: "selected"; choice: PickerChoice }
+
+function pickerSelection(
+  state: PickerSelection,
+  action: PickerAction
+): PickerSelection {
+  switch (action.type) {
+    case "searched":
+      return { query: action.query, selected: undefined }
+    case "cleared":
+      return { ...state, query: "" }
+    case "selected":
+      return state.selected === action.choice
+        ? state
+        : { ...state, selected: action.choice }
+  }
+}
 
 export function focusChosenTemplate() {
   return (
@@ -81,8 +104,10 @@ export function PaperTemplateGallery({
   initial?: PickerChoice
   kind?: "cv" | "letter"
 }) {
-  const [query, setQuery] = useState("")
-  const [selected, setSelected] = useState<PickerChoice | undefined>(initial)
+  const [{ query, selected }, dispatch] = useReducer(pickerSelection, {
+    query: "",
+    selected: initial,
+  })
   const grid = useRef<HTMLDivElement>(null)
   const templates = kind === "cv" ? findTemplates(query) : []
   const choices = [
@@ -159,7 +184,7 @@ export function PaperTemplateGallery({
     event.preventDefault()
     card.focus({ preventScroll: true })
     centerCard(grid.current, card)
-    setSelected(choice.id)
+    dispatch({ type: "selected", choice: choice.id })
   }
 
   function syncCarousel(track: HTMLDivElement) {
@@ -177,7 +202,7 @@ export function PaperTemplateGallery({
       return distance(card) < distance(cards[closest]!) ? candidate : closest
     }, 0)
     const choice = choices[nearest]
-    if (choice) setSelected(choice.id)
+    if (choice) dispatch({ type: "selected", choice: choice.id })
   }
 
   return (
@@ -199,10 +224,9 @@ export function PaperTemplateGallery({
               enterKeyHint="go"
               value={query}
               className="paper-picker-search h-11 text-base md:text-sm"
-              onChange={(event) => {
-                setSelected(undefined)
-                setQuery(event.target.value)
-              }}
+              onChange={(event) =>
+                dispatch({ type: "searched", query: event.target.value })
+              }
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault()
@@ -211,7 +235,7 @@ export function PaperTemplateGallery({
                 if (event.key === "Escape" && query) {
                   event.preventDefault()
                   event.stopPropagation()
-                  setQuery("")
+                  dispatch({ type: "cleared" })
                 }
               }}
             />
@@ -224,7 +248,7 @@ export function PaperTemplateGallery({
               <Button
                 variant="outline"
                 className="h-11"
-                onClick={() => setQuery("")}
+                onClick={() => dispatch({ type: "cleared" })}
               >
                 Clear search
               </Button>
@@ -264,7 +288,7 @@ export function PaperTemplateGallery({
                   onClick={(event) => {
                     if (pending) return
                     centerCard(grid.current, event.currentTarget)
-                    setSelected(id)
+                    dispatch({ type: "selected", choice: id })
                   }}
                   onDoubleClick={() => useChoice(id)}
                 >

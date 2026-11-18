@@ -4,7 +4,7 @@ import {
   LIBRARY_SECTIONS,
   librarySections,
   type LibraryEntry,
-  type LibrarySectionId,
+  type LibraryView,
 } from "./paper-library-entries.ts"
 import { PaperLibrarySearch } from "./paper-library-search.tsx"
 import {
@@ -13,8 +13,6 @@ import {
   PaperProofsLink,
   type LibraryEntryHandlers,
 } from "./paper-library-sections.tsx"
-
-export type LibraryView = "all" | "proofs" | LibrarySectionId
 
 const VIEWS: readonly { id: LibraryView; title: string }[] = [
   { id: "all", title: "All" },

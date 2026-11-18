@@ -3,7 +3,6 @@ import {
   useEffect,
   useReducer,
   useRef,
-  useState,
   type DragEvent,
 } from "react"
 import { Plus } from "lucide-react"
@@ -68,10 +67,7 @@ import {
   useWordLibrary,
   type WordDocument,
 } from "./paper-package-library.tsx"
-import {
-  PaperLibraryCollection,
-  type LibraryView,
-} from "./paper-library-collection.tsx"
+import { PaperLibraryCollection } from "./paper-library-collection.tsx"
 import {
   libraryDisplayName,
   entryName,
@@ -113,7 +109,6 @@ export function PaperLibrary({
   const run = useRunCommand()
   const queryClient = useQueryClient()
   const chats = useContext(ChatStoreContext)
-  const [view, setView] = useState<LibraryView | null>(null)
   const importRef = useRef<HTMLInputElement>(null)
   const newButtonRef = useRef<HTMLButtonElement>(null)
   const returnFromLetter = useRef(false)
@@ -123,6 +118,7 @@ export function PaperLibrary({
       importState,
       creatingBlank,
       mode,
+      view,
       rename,
       renameError,
       jobs,
@@ -486,7 +482,7 @@ export function PaperLibrary({
               selectedView={view}
               handlers={handlers}
               onQueryChange={onQueryChange}
-              onViewChange={setView}
+              onViewChange={(view) => dispatch({ type: "view_changed", view })}
               onNewCV={() => openPicker("cv")}
               onNewLetter={() => openPicker("letter")}
               onImport={() => dispatch({ type: "import_dialog_opened" })}

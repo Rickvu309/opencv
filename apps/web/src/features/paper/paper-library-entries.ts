@@ -9,6 +9,8 @@ export type LibraryEntry =
 
 export type LibrarySectionId = "cv" | "letter" | "files"
 
+export type LibraryView = "all" | "proofs" | LibrarySectionId
+
 export type LibrarySections = Record<LibrarySectionId, LibraryEntry[]>
 
 export const LIBRARY_SECTIONS: readonly {

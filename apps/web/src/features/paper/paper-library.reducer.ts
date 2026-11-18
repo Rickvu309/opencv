@@ -1,5 +1,6 @@
 import type { JobView, PaperFile, PaperView } from "@workspace/domain"
 
+import type { LibraryView } from "./paper-library-entries.ts"
 import type { PickerChoice } from "./paper-template-gallery.tsx"
 
 export type PaperImportState =
@@ -26,6 +27,7 @@ export type LibraryState = {
   importState: PaperImportState
   creatingBlank: boolean
   mode: Mode
+  view: LibraryView | null
   rename: string
   renameError: string | null
   jobs: JobView[]
@@ -38,6 +40,7 @@ export type LibraryState = {
 
 export type LibraryAction =
   | { type: "import_dialog_opened" }
+  | { type: "view_changed"; view: LibraryView }
   | {
       type: "new_dialog_opened"
       step: "kind" | "gallery"
@@ -67,6 +70,7 @@ export const initialLibrary: LibraryState = {
   importState: { type: "idle" },
   creatingBlank: false,
   mode: null,
+  view: null,
   rename: "",
   renameError: null,
   jobs: [],
@@ -84,6 +88,8 @@ export function libraryReducer(
   switch (action.type) {
     case "import_dialog_opened":
       return { ...state, mode: { type: "import" } }
+    case "view_changed":
+      return { ...state, view: action.view }
     case "new_dialog_opened":
       return {
         ...state,

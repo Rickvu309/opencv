@@ -1,59 +1,17 @@
 [
   {
-    "subject": "apps/web/src/features/paper/paper-library-sections.test.tsx",
-    "because": "The old fixed styles and Word block fallback were replaced by short display names, accessible section controls, and real first-page Word previews.",
-    "replacedBy": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "subject": "apps/web/src/features/paper/paper-import-outcomes.test.tsx",
+    "because": "Cancel returns to the CV empty state. The Paper router fixture keeps import behavior and its routes available.",
+    "replacedBy": "apps/web/src/features/paper/paper-import-outcomes.test.tsx",
     "proof": {
       "fork": "976628fc1f4263be91e7d6db104d75441d52966c",
-      "replacedByBlob": "a534caa76691a1e1f0af3949e74e4abaf89c624d",
+      "replacedByBlob": "bc55f2d156ee0b799c0bc4e9239c72f0851e80c3",
       "failedOnBase": true,
       "passedOnHead": true
     },
     "class": "self",
     "classBecause": null,
-    "items": 20
-  },
-  {
-    "subject": "apps/web/src/features/paper/paper-library.test.tsx",
-    "because": "Page-sized starters became section actions that still open the picker or import and preserve the cancel path.",
-    "replacedBy": "apps/web/src/features/paper/paper-library.test.tsx",
-    "proof": {
-      "fork": "976628fc1f4263be91e7d6db104d75441d52966c",
-      "replacedByBlob": "1754087cd7eab397dbe9eb01e922f0aa9ce30264",
-      "failedOnBase": true,
-      "passedOnHead": true
-    },
-    "class": "self",
-    "classBecause": null,
-    "items": 5
-  },
-  {
-    "subject": "apps/web/src/features/paper/paper-template-chooser-layout.test.tsx",
-    "because": "The template grid keeps each layout and description, fits three columns on a 390 px phone, and shows an empty Blank page.",
-    "replacedBy": "apps/web/src/features/paper/paper-template-chooser-layout.test.tsx",
-    "proof": {
-      "fork": "976628fc1f4263be91e7d6db104d75441d52966c",
-      "replacedByBlob": "1457914195417f710fc7be44f56f3688ae648a70",
-      "failedOnBase": true,
-      "passedOnHead": true
-    },
-    "class": "self",
-    "classBecause": null,
-    "items": 5
-  },
-  {
-    "subject": "apps/web/src/features/paper/paper-template-gallery.test.tsx",
-    "because": "The content-sized picker keeps actions by its footer and shows Blank as an empty sheet.",
-    "replacedBy": "apps/web/src/features/paper/paper-template-gallery.test.tsx",
-    "proof": {
-      "fork": "976628fc1f4263be91e7d6db104d75441d52966c",
-      "replacedByBlob": "04e24eaacb644301eabd783f4b6b658f6c22a107",
-      "failedOnBase": true,
-      "passedOnHead": true
-    },
-    "class": "self",
-    "classBecause": null,
-    "items": 3
+    "items": 1
   },
   {
     "subject": "apps/web/src/features/paper/paper-letter-start-parity.test.tsx",
@@ -70,18 +28,74 @@
     "items": 2
   },
   {
-    "subject": "apps/web/src/features/paper/paper-import-outcomes.test.tsx",
-    "because": "Cancel returns to the CV empty state. The Paper router fixture keeps import behavior and its routes available.",
-    "replacedBy": "apps/web/src/features/paper/paper-import-outcomes.test.tsx",
+    "subject": "apps/web/src/features/paper/paper-library-card.test.tsx",
+    "because": "The desk replaces the hover ring with a short token-timed lift. The replacement protects the empty sheet, click to open and the full clean document name.",
+    "replacedBy": "apps/web/src/features/paper/paper-library-card.test.tsx",
     "proof": {
-      "fork": "976628fc1f4263be91e7d6db104d75441d52966c",
-      "replacedByBlob": "bc55f2d156ee0b799c0bc4e9239c72f0851e80c3",
+      "fork": "559cf25424d1b1f0578f3bea4c7d50c95efa567a",
+      "replacedByBlob": "a2cfe5244fd2464d6b491350dc837682830ccc18",
       "failedOnBase": true,
       "passedOnHead": true
     },
     "class": "self",
     "classBecause": null,
-    "items": 1
+    "items": 8
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "because": "The desk replaces collapsible headings. The replacement checks counted views, filtered documents, the latest saved page, template shortcuts, menu actions and the path to Proofs.",
+    "replacedBy": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "proof": {
+      "fork": "559cf25424d1b1f0578f3bea4c7d50c95efa567a",
+      "replacedByBlob": "4d3c02f8fb43b966e1ec31ca3db11d61db648d87",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 20
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library.test.tsx",
+    "because": "The Letter chooser opens a blank page directly and retains the job-based draft flow. The replacement covers starting a draft and returning to the desk.",
+    "replacedBy": "apps/web/src/features/paper/paper-library.test.tsx",
+    "proof": {
+      "fork": "559cf25424d1b1f0578f3bea4c7d50c95efa567a",
+      "replacedByBlob": "df438a9cf9ad3f6a322672a15ccb7f1ef38f8d5d",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 5
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-template-chooser-layout.test.tsx",
+    "because": "The chooser pairs its template rail with a live page preview and keeps controls outside the carousel. The replacement preserves layout specimens and verifies the preview and description follow selection.",
+    "replacedBy": "apps/web/src/features/paper/paper-template-chooser-layout.test.tsx",
+    "proof": {
+      "fork": "559cf25424d1b1f0578f3bea4c7d50c95efa567a",
+      "replacedByBlob": "2937063fb65258986757535d70a9dbea4903a7fc",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 6
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-template-gallery.test.tsx",
+    "because": "The chooser presents page specimens in the rail and the large preview. The replacement checks preview behavior and footer placement.",
+    "replacedBy": "apps/web/src/features/paper/paper-template-gallery.test.tsx",
+    "proof": {
+      "fork": "559cf25424d1b1f0578f3bea4c7d50c95efa567a",
+      "replacedByBlob": "4fa6d22e259c5c4910ed7f26b1a8ccbd68b063a7",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 6
   },
   {
     "subject": "apps/web/src/test/surface-behavior.test.tsx",
