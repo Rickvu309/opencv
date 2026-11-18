@@ -1,19 +1,5 @@
 [
   {
-    "subject": "apps/web/src/test/design-vocabulary.test.ts",
-    "because": "OpenCV is light mode only; .dark tokens were removed from globals.css and banned by the light-mode-only guard.",
-    "replacedBy": "scripts/light-mode-only.test.mjs",
-    "proof": {
-      "fork": "a8b7e0caea3af7a89ec7971a82fb89d98186f649",
-      "replacedByBlob": "df5b180c942502186ea5393b4c8cffe96a7ddfec",
-      "failedOnBase": true,
-      "passedOnHead": true
-    },
-    "class": "owner",
-    "classBecause": "scripts/light-mode-only.test.mjs shares no module, command or route with apps/web/src/test/design-vocabulary.test.ts",
-    "items": 1
-  },
-  {
     "subject": "apps/web/src/test/ui-kit-contract.test.ts",
     "because": "ThemeProvider and theme-provider.tsx were removed for light mode only and banned by the light-mode-only guard.",
     "replacedBy": "scripts/light-mode-only.test.mjs",
@@ -25,6 +11,20 @@
     },
     "class": "owner",
     "classBecause": "a guard case-removed",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/test/design-vocabulary.test.ts",
+    "because": "OpenCV is light mode only; .dark tokens were removed from globals.css and banned by the light-mode-only guard.",
+    "replacedBy": "scripts/light-mode-only.test.mjs",
+    "proof": {
+      "fork": "a26fc88e75b2278c1d7f84168da9c6c4244f9da5",
+      "replacedByBlob": "c1732d19d96388f835121457f320c11d60be2ba3",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "owner",
+    "classBecause": "scripts/light-mode-only.test.mjs shares no module, command or route with apps/web/src/test/design-vocabulary.test.ts",
     "items": 1
   }
 ]
