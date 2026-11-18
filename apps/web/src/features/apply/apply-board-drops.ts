@@ -11,6 +11,7 @@ export const noDrops: Drops = new Map()
 
 export function dropOn(drops: Drops, jobId: string, stage: JobStage): Drops {
   const next = new Map(drops)
+  next.delete(jobId)
   next.set(jobId, { stage, queued: (drops.get(jobId)?.queued ?? 0) + 1 })
   return next
 }
@@ -52,10 +53,13 @@ export function stageShown(
 
 export function shownJobs(jobs: JobView[], drops: Drops): JobView[] {
   if (drops.size === 0) return jobs
-  return jobs.map((job) => {
-    const stage = stageShown(drops, job.id, job.stage)
-    return stage === job.stage ? job : { ...job, stage }
+  const byId = new Map<string, JobView>(jobs.map((job) => [job.id, job]))
+  const landingLast = [...drops].flatMap(([jobId, drop]) => {
+    const job = byId.get(jobId)
+    if (!job) return []
+    return [job.stage === drop.stage ? job : { ...job, stage: drop.stage }]
   })
+  return [...jobs.filter((job) => !drops.has(job.id)), ...landingLast]
 }
 
 export function afterMove(

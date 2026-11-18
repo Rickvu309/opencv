@@ -175,4 +175,20 @@ describe("board drops under any order of moves, results and refetches", () => {
       stageShown(clearSettled(afterMove(drops, "c1").drops), "c1", "saved")
     ).toBe("saved")
   })
+
+  it("shows a dropped job last in its new column, where the move puts it", () => {
+    const jobs = ["c1", "c2", "c3", "c4"].map((id, index) =>
+      mockJob({ id, stage: index === 0 ? "saved" : "applied" })
+    )
+    const drops = dropOn(dropOn(noDrops, "c1", "applied"), "c2", "applied")
+    const applied = (shown: JobView[]) =>
+      shown.filter((job) => job.stage === "applied").map((job) => job.id)
+    expect(applied(shownJobs(jobs, drops))).toEqual(["c3", "c4", "c1", "c2"])
+    expect(applied(shownJobs(jobs, dropOn(drops, "c1", "applied")))).toEqual([
+      "c3",
+      "c4",
+      "c2",
+      "c1",
+    ])
+  })
 })

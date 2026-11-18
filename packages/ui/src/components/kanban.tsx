@@ -7,12 +7,14 @@ import type {
   DragEndEvent,
   DragOverEvent,
   DragStartEvent,
+  DropAnimationSideEffects,
   KeyboardCoordinateGetter,
   UniqueIdentifier,
 } from "@dnd-kit/core"
 import {
   closestCenter,
   defaultDropAnimation,
+  defaultDropAnimationSideEffects,
   DndContext,
   DragOverlay,
   KeyboardCode,
@@ -96,6 +98,10 @@ const KanbanContext = createContext<KanbanContextProps>({
   micro: { duration: 0, easing: "" },
   panel: { duration: 0, easing: "" },
   reduced: false,
+})
+
+const hideCardWhileOverlayLands = defaultDropAnimationSideEffects({
+  styles: { active: { opacity: "0" } },
 })
 
 function columnIdForOver(
@@ -217,8 +223,9 @@ export const KanbanCard = ({
       {activeCardId === id && (
         <t.In>
           <Card
+            data-lifted={isDragging ? "true" : undefined}
             className={cn(
-              "scale-[1.02] cursor-grab gap-4 rounded-md p-3 shadow-md ring-2 ring-ring transition-[scale,box-shadow] duration-(--duration-micro) ease-(--ease-micro) starting:scale-100 starting:shadow-sm",
+              "cursor-grab gap-4 rounded-md p-3 shadow-sm ring-2 ring-ring transition-[scale,box-shadow] duration-(--duration-panel) ease-(--ease-panel) data-lifted:scale-[1.02] data-lifted:shadow-md starting:scale-100 starting:shadow-sm",
               isDragging && "cursor-grabbing",
               className
             )}
@@ -310,6 +317,16 @@ export const KanbanProvider = <
     []
   )
   const keyboardColumnId = useRef<UniqueIdentifier | null>(null)
+
+  const keepOverlayCardUntilLanded: DropAnimationSideEffects = (params) => {
+    const restore = hideCardWhileOverlayLands(params)
+    return () => {
+      restore?.()
+      setActiveCardId((current) =>
+        current === params.active.id ? null : current
+      )
+    }
+  }
 
   const stepOneColumnInBoardOrder: KeyboardCoordinateGetter = (
     event,
@@ -431,7 +448,7 @@ export const KanbanProvider = <
 
   const handleDragEnd = (event: DragEndEvent) => {
     keyboardColumnId.current = null
-    setActiveCardId(null)
+    if (motion.reduced) setActiveCardId(null)
 
     onDragEnd?.(event)
 
@@ -508,6 +525,7 @@ export const KanbanProvider = <
                       ...defaultDropAnimation,
                       duration: motion.panel.duration,
                       easing: motion.panel.easing,
+                      sideEffects: keepOverlayCardUntilLanded,
                     }
               }
             >
