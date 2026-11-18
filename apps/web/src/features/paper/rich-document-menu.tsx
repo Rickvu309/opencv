@@ -19,6 +19,7 @@ import type { SyncStatus } from "@/lib/paper-sync.ts"
 import { SavedRichWordChanged } from "@/lib/paper-rich-word.ts"
 import { RichPageSetup } from "./rich-page-setup.tsx"
 import type { TextEditor } from "./rich-text-toolbar-control.tsx"
+import "./design/cv-editor.pen.css"
 
 export function RichDocumentMenu({
   session,
@@ -67,7 +68,7 @@ export function RichDocumentMenu({
               </Button>
             }
           />
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" data-pen-surface="paper">
             {onFind ? (
               <>
                 <DropdownMenuItem onClick={() => onFind("find")}>

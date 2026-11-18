@@ -261,7 +261,11 @@ function SelectionFormat() {
             </Button>
           }
         />
-        <DropdownMenuContent align="start" ref={menuRef}>
+        <DropdownMenuContent
+          align="start"
+          data-pen-surface={cv ? "paper" : undefined}
+          ref={menuRef}
+        >
           {choices.map((choice) => {
             const blocked = nested && !LIST_TYPES.has(choice.type)
             return (
@@ -332,6 +336,7 @@ function SelectionFormat() {
         />
         <PopoverContent
           ref={linkRef}
+          data-pen-surface={cv ? "paper" : undefined}
           className="flex w-64 flex-wrap gap-1.5 p-2"
           finalFocus={() => {
             if (!backToText.current) return true

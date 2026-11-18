@@ -360,7 +360,7 @@ export function PaperCvEditor({
       data-paper-editor=""
       data-pen-surface="paper"
       data-slot="cv-editor-page"
-      className="flex h-full min-h-0 min-w-0 flex-1 flex-col"
+      className="flex h-full min-h-0 min-w-0 flex-1 flex-col [--border:color-mix(in_oklch,var(--foreground)_8%,transparent)] [--input:color-mix(in_oklch,var(--foreground)_8%,transparent)]"
       onKeyDownCapture={noteTyping}
     >
       <CvEditorBar

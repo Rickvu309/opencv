@@ -185,7 +185,7 @@ describe("collapsed expand control stays in the header", () => {
     expect(existsSync(join(here, "../../lib/sidebar-expand.tsx"))).toBe(false)
   })
 
-  it("bleeds the sticky paper header to the column edge below 768px", () => {
+  it("bleeds the sticky paper header to the column edge below 768px with no divider line", () => {
     const here = dirname(fileURLToPath(import.meta.url))
     const css = readFileSync(
       join(here, "../paper/design/paper-library.pen.css"),
@@ -196,13 +196,13 @@ describe("collapsed expand control stays in the header", () => {
     expect(phone).toMatch(/\[data-slot="paper-library-header"\]/)
     expect(phone).toMatch(/width:\s*calc\(100% \+ 32px\)/)
     expect(phone).toMatch(/margin:\s*-16px -16px 0/)
-    expect(phone).toMatch(/border-bottom:\s*1px solid #ededef/)
+    expect(phone).not.toMatch(/border-bottom/)
     expect(phone).toMatch(/@media \(min-width: 640px\)/)
     expect(phone).toMatch(/width:\s*calc\(100% \+ 48px\)/)
     expect(phone).toMatch(/margin:\s*-24px -24px 0/)
     const desktop = css.slice(desktopAt)
     expect(desktop).toMatch(/width:\s*auto/)
     expect(desktop).toMatch(/margin:\s*-28px -32px 0/)
-    expect(desktop).toMatch(/border-bottom:\s*1px solid #ededef/)
+    expect(desktop).not.toMatch(/border-bottom/)
   })
 })
