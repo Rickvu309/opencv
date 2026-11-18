@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/test/design-vocabulary.test.ts",
+    "because": "OpenCV is light mode only; .dark tokens were removed from globals.css and banned by the light-mode-only guard.",
+    "replacedBy": "scripts/light-mode-only.test.mjs",
+    "proof": {
+      "fork": "a8b7e0caea3af7a89ec7971a82fb89d98186f649",
+      "replacedByBlob": "df5b180c942502186ea5393b4c8cffe96a7ddfec",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "owner",
+    "classBecause": "scripts/light-mode-only.test.mjs shares no module, command or route with apps/web/src/test/design-vocabulary.test.ts",
+    "items": 1
+  }
+]
