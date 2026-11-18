@@ -122,7 +122,7 @@ export function CvBlockMenu({
       >
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>Turn into</DropdownMenuSubTrigger>
-          <DropdownMenuSubContent>
+          <DropdownMenuSubContent data-pen-surface="paper">
             {TURNS.map((choice) => (
               <DropdownMenuItem
                 key={choice.label}

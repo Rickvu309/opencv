@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/app-shell/shell-expand-clearance.test.tsx",
+    "because": "The owner asked for Paper to feel light with no divider lines; the Paper home header keeps its sticky bleed to the column edge but loses its bottom border.",
+    "replacedBy": "apps/web/src/features/app-shell/shell-expand-clearance.test.tsx",
+    "proof": {
+      "fork": "2705903e67d75fc456c37cace6ee10cc20228144",
+      "replacedByBlob": "b2384e15ea03ede0d73724eccd90d83819ccdb0a",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  }
+]

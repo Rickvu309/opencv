@@ -28,6 +28,7 @@ import {
   WritingDocumentNoticeSync,
   WritingProposalCard,
 } from "@/features/paper/writing-proposal.tsx"
+import "./design/paper-writing-page.css"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { catalogClient } from "@/lib/contract-client.ts"
@@ -298,7 +299,7 @@ export function WritingPage({
         : null
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="paper-writing-page flex h-full min-h-0 flex-col">
       <div ref={setHeader} />
       <WritingProposalCard docId={docId}>
         <LetterStoppedNotice docId={docId} pageText={pageText} />

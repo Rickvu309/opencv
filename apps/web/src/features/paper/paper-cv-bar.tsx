@@ -76,7 +76,7 @@ export function CvEditorBar({
   return (
     <header
       data-slot="cv-editor-header"
-      className="flex min-h-12 min-w-0 flex-wrap items-center gap-2 border-b py-2 ps-5 pe-4 text-[13.5px] leading-4 md:h-12 md:flex-nowrap md:py-0"
+      className="flex min-h-12 min-w-0 flex-wrap items-center gap-2 bg-background py-2 ps-5 pe-4 text-[13.5px] leading-4 md:h-12 md:flex-nowrap md:py-0"
     >
       <SidebarExpandButton />
       <Breadcrumb className="flex w-full min-w-0 flex-none items-center gap-2 md:w-auto">
@@ -112,7 +112,7 @@ export function CvEditorBar({
                 value={name}
                 onChange={(event) => onName(event.target.value)}
                 onBlur={() => onCommitName()}
-                className="col-start-1 row-start-1 h-4 w-full min-w-0 rounded-none border-0 bg-transparent px-0 py-0 text-[13.5px] leading-4 shadow-none focus-visible:border-transparent focus-visible:ring-0 max-md:h-11 md:text-[13.5px]"
+                className="col-start-1 row-start-1 h-4 w-full min-w-0 rounded-none border-0 bg-transparent px-0 py-0 text-[13.5px] leading-4 font-medium text-foreground shadow-none focus-visible:border-transparent focus-visible:ring-0 max-md:h-11 md:text-[13.5px]"
               />
             </span>
           </BreadcrumbItem>
