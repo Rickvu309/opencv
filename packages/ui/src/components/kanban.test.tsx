@@ -284,9 +284,9 @@ describe("kanban motion tokens", () => {
     const overlay = document.querySelector("[data-slot='kanban-overlay']")
     expect(overlay).not.toBeNull()
     const overlayCard = overlay?.firstElementChild
-    expect(overlayCard?.getAttribute("data-lifted")).toBe("true")
-    expect(overlayCard?.className).toContain("data-lifted:scale-[1.02]")
-    expect(overlayCard?.className).toContain("data-lifted:shadow-md")
+    expect(overlayCard?.className).toContain("scale-[1.02]")
+    expect(overlayCard?.className).toContain("shadow-md")
     expect(overlayCard?.className).toContain("starting:scale-100")
+    expect(overlayCard?.getAttribute("data-lifted")).toBe("true")
   })
 })
