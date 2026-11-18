@@ -26,5 +26,19 @@
     "class": "self",
     "classBecause": null,
     "items": 5
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-import-outcomes.test.tsx",
+    "because": "The owner redesigned the Paper home from scratch as a hand of cards (#1689): the Continue card, Start new strip and grid sections are gone, so their assertions move to the hand, chips, caption menu and start tiles.",
+    "replacedBy": "apps/web/src/features/paper/paper-import-outcomes.test.tsx",
+    "proof": {
+      "fork": "f39ab6feb6f2d3ab4297eb6db79518c6c3e23b2b",
+      "replacedByBlob": "e9a8ad8014846114c331bfbd4d48dd7a024d639a",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
