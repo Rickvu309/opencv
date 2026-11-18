@@ -24,7 +24,7 @@ import {
 
 const FIXTURES = new URL("../fixtures/", import.meta.url)
 const PAGE = '[contenteditable="true"]'
-const SAVED = 'p.writing-note:text-is("Saved")'
+const SAVED = 'p.writing-note[title="Saved"], p.writing-note:text-is("Saved")'
 const PANEL = '[data-slot="coach-panel"]'
 const COMPOSER = `${PANEL} [data-slot="coach-workspace-composer"] textarea`
 const PANEL_UNDO = `${PANEL} button[aria-label="Undo"]`

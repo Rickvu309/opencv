@@ -113,7 +113,15 @@ test("every writing page sheet row takes the Word size by owner decision and kee
   const sheets = DESIGN_MAP.filter((row) => row.frame === "LFKqV")
   assert.deepEqual(
     sheets.map((row) => row.screen),
-    ["paper-blank", "paper-typed", "paper-letter-blank"]
+    [
+      "paper-blank",
+      "paper-typed",
+      "paper-letter-blank",
+      "paper-imported-formatted",
+      "paper-rich",
+      "paper-rich-selection",
+      "paper-rich-outline",
+    ]
   )
   for (const row of sheets)
     assert.equal(row.ownerDecision, WORD_SIZED_WRITING_PAGE)

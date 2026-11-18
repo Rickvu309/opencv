@@ -41,7 +41,8 @@ export function RichTextEmphasisGroup({
   all?: boolean
   onAction?: () => void
 }) {
-  const selected = marks.filter(
+  const ordered = all ? [marks[0], marks[1], marks[3], marks[2]] : marks
+  const selected = ordered.filter(
     ({ mark }) => all || (overflow ? mark === "strike" : mark !== "strike")
   )
   const group = useToolbarGroup(selected.map(({ label }) => label))

@@ -19,6 +19,7 @@ import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import * as flowMount from "../../../../../packages/paper-crdt/src/native-layout-flow-mount.ts"
 import { storedFlowFixture } from "../../../../../packages/paper-crdt/src/test/flow-fixture.ts"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
+import { RichLinkDialog } from "./rich-structure-controls.tsx"
 import { RichStructureControls } from "./rich-structure-controls"
 
 const disposals: (() => void)[] = []
@@ -103,6 +104,7 @@ function setup() {
   view.dom.tabIndex = 0
   const controls = render(
     <TooltipProvider>
+      <RichLinkDialog editor={editor} blocked={false} />
       <RichStructureControls editor={editor} blocked={false}>
         {null}
       </RichStructureControls>
@@ -233,6 +235,7 @@ it("does not offer Open for an unsafe stored target and disables the controls wh
   })
   controls.rerender(
     <TooltipProvider>
+      <RichLinkDialog editor={editor} blocked={false} />
       <RichStructureControls editor={editor} blocked={false}>
         {null}
       </RichStructureControls>
@@ -244,6 +247,7 @@ it("does not offer Open for an unsafe stored target and disables the controls wh
   fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" })
   controls.rerender(
     <TooltipProvider>
+      <RichLinkDialog editor={editor} blocked />
       <RichStructureControls editor={editor} blocked>
         {null}
       </RichStructureControls>
@@ -302,6 +306,7 @@ it("shows custom paragraph ids and disables indentation at the persisted nesting
   expect(editor.formattingState().paragraphStyle).toBe("custom-career")
   controls.rerender(
     <TooltipProvider>
+      <RichLinkDialog editor={editor} blocked={false} />
       <RichStructureControls editor={editor} blocked={false}>
         {null}
       </RichStructureControls>

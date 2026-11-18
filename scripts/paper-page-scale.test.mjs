@@ -146,3 +146,29 @@ test("shared viewport geometry preserves the lazy editor boundary", () => {
   })
   assert.match(detect(historic, canvasViewport).join(), message)
 })
+
+test("Word page border space cannot disappear with its chrome", () => {
+  const message = /Keep the Word page's 1px border space/
+  for (const border of [
+    "border: 0",
+    "border: 0px",
+    "border: none",
+    "border-width: 0",
+    "border-style: none",
+  ])
+    assert.match(
+      detect(`.writing-page { ${border}; }`, canvasCss).join(),
+      message
+    )
+  for (const source of [
+    ".writing-page { border: 1px solid transparent; }",
+    ".writing-page { border: 1px solid var(--border); }",
+    ".writing-page p { border: 0; }",
+  ])
+    assert.deepEqual(detect(source, canvasCss), [])
+  const historic = execFileSync("git", ["show", `d04e2f15:${canvasCss}`], {
+    encoding: "utf8",
+  })
+  assert.match(detect(historic, canvasCss).join(), message)
+  assert.deepEqual(detect(readFileSync(canvasCss, "utf8"), canvasCss), [])
+})

@@ -6,12 +6,22 @@ import {
   useSyncExternalStore,
 } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { ArrowLeft } from "lucide-react"
+import { SlidersHorizontal } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import {
-  PageHeader,
-  PageHeaderTitle,
-} from "@workspace/ui/components/page-header"
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  PopoverTitle,
+} from "@workspace/ui/components/popover"
+import {
+  PaperDocumentHeader,
+  PaperDocumentCanvas,
+  PaperDocumentTitle,
+} from "@/features/paper-page/document-chrome.tsx"
+import { PaperDocumentShare } from "./document-share.tsx"
+import { RichLinkDialog } from "./rich-structure-controls.tsx"
+import { RichSelectionBubble } from "./rich-selection-bubble.tsx"
 import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import { RichTableControls } from "./rich-table-controls.tsx"
 import { RichPhotoControls } from "./rich-photo-controls.tsx"
@@ -61,14 +71,20 @@ export function RichPaperPage({
   name,
   identity,
   onBack,
+  kind = "cv",
 }: {
   name: string
+  kind?: "cv" | "letter"
   identity: NativeSyncIdentity
   onBack: () => void
 }) {
   const [findMode, setFindMode] = useReducer(
     (_: PaperFindMode, mode: PaperFindMode) => mode,
     "closed"
+  )
+  const [formattingOpen, setFormattingOpen] = useReducer(
+    (_: boolean, next: boolean) => next,
+    false
   )
   const queryClient = useQueryClient()
   const currentIdentity = useRef(identity)
@@ -135,29 +151,13 @@ export function RichPaperPage({
       data-pen-surface="paper"
       className="rich-paper-page flex h-full min-h-0 flex-1 flex-col overflow-clip"
     >
-      <PageHeader>
-        <div className="flex min-w-0 flex-1 basis-48 items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-11 shrink-0 md:size-8"
-            aria-label="Back to Paper"
-            onClick={onBack}
-          >
-            <ArrowLeft />
-          </Button>
-          <PageHeaderTitle className="text-[0.8125rem] leading-[1rem] [overflow-wrap:anywhere] whitespace-normal max-md:min-w-0">
-            {name}
-          </PageHeaderTitle>
-        </div>
-        <div className="ml-auto flex max-w-full min-w-0 items-center gap-2">
-          <span
-            role="status"
-            ref={statusRef}
-            className="min-w-0 truncate text-sm text-muted-foreground"
-          >
-            {statusLabel}
-          </span>
+      <PaperDocumentHeader
+        name={name}
+        kind={kind}
+        onBack={onBack}
+        status={statusLabel}
+        statusRef={statusRef}
+        menu={
           <RichDocumentMenu
             editorAvailable={!!editor}
             editor={editor}
@@ -166,8 +166,58 @@ export function RichPaperPage({
             status={status}
             blocked={blocked}
           />
-        </div>
-      </PageHeader>
+        }
+        actions={
+          <>
+            <PaperDocumentShare docId={identity.docId} />
+            <Popover open={formattingOpen} onOpenChange={setFormattingOpen}>
+              <PopoverTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-11 shrink-0 md:size-8"
+                    aria-label="Formatting and insert"
+                  >
+                    <SlidersHorizontal />
+                  </Button>
+                }
+              />
+              <PopoverContent
+                align="end"
+                className="max-h-[calc(100dvh-8rem)] w-[min(48rem,calc(100vw-1rem))] motion-pop overflow-y-auto"
+                finalFocus={() => {
+                  editor?.apply()
+                  return null
+                }}
+              >
+                <PopoverTitle className="px-2 text-xs text-muted-foreground">
+                  Formatting and insert
+                </PopoverTitle>
+                <RichTableControls editor={editor} disabled={blocked}>
+                  {(tableControls) => (
+                    <RichPhotoControls editor={editor} disabled={blocked}>
+                      {(photoControls) => (
+                        <RichPaperTextFormatting
+                          panel
+                          editor={editor}
+                          blocked={blocked}
+                          photoControls={(close) => (
+                            <>
+                              {photoControls(close)}
+                              {tableControls(close)}
+                            </>
+                          )}
+                        />
+                      )}
+                    </RichPhotoControls>
+                  )}
+                </RichTableControls>
+              </PopoverContent>
+            </Popover>
+          </>
+        }
+      />
       {statusDetailVisible ? (
         <p
           aria-hidden="true"
@@ -179,24 +229,15 @@ export function RichPaperPage({
           {statusLabel}
         </p>
       ) : null}
-      <RichTableControls editor={editor} disabled={blocked}>
-        {(tableControls) => (
-          <RichPhotoControls editor={editor} disabled={blocked}>
-            {(photoControls) => (
-              <RichPaperTextFormatting
-                editor={editor}
-                blocked={blocked}
-                photoControls={(close) => (
-                  <>
-                    {photoControls(close)}
-                    {tableControls(close)}
-                  </>
-                )}
-              />
-            )}
-          </RichPhotoControls>
-        )}
-      </RichTableControls>
+      <RichLinkDialog editor={editor} blocked={blocked} />
+      <RichSelectionBubble
+        editor={editor}
+        root={element}
+        blocked={blocked}
+        docId={identity.docId}
+        name={name}
+        onMore={() => setFormattingOpen(true)}
+      />
       <RichFindBar
         editor={editor}
         disabled={blocked}
@@ -211,16 +252,20 @@ export function RichPaperPage({
       ) : null}
       <div
         data-paper-document-pane=""
-        className="min-h-0 flex-1 overflow-auto overscroll-contain bg-muted/30 p-4 md:p-6"
+        className="min-h-0 flex-1 overflow-auto overscroll-contain bg-background p-4 md:p-6"
       >
-        <div data-paper-page-viewport>
-          <div
-            ref={element}
-            aria-busy={status === "loading"}
-            data-slot="paper-rich-sheet"
-            className="paper-rich-sheet mx-auto text-card-foreground shadow-sm ring-1 ring-border"
-          />
-        </div>
+        <PaperDocumentCanvas
+          title={<PaperDocumentTitle name={name} docId={identity.docId} />}
+        >
+          <div data-paper-page-viewport>
+            <div
+              ref={element}
+              aria-busy={status === "loading"}
+              data-slot="paper-rich-sheet"
+              className="paper-rich-sheet mx-auto rounded-[2px] text-card-foreground"
+            />
+          </div>
+        </PaperDocumentCanvas>
       </div>
     </section>
   )

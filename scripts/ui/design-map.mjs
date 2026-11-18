@@ -503,9 +503,15 @@ export const DESIGN_MAP = [
     frame: "w8dUCw",
     props: ["height", "radius", "paddingLeft", "paddingRight"],
   },
-  ...["paper-blank", "paper-typed", "paper-letter-blank"].flatMap(
-    writingPageRows
-  ),
+  ...[
+    "paper-blank",
+    "paper-typed",
+    "paper-letter-blank",
+    "paper-imported-formatted",
+    "paper-rich",
+    "paper-rich-selection",
+    "paper-rich-outline",
+  ].flatMap(writingPageRows),
   ...SETTINGS_ROWS,
   ...["sign-in", "sign-in-too-many-codes"].flatMap((screen) => [
     {

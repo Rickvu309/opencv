@@ -58,6 +58,15 @@ export function detect(text, path = "") {
   )
     return []
   if (/\.(?:test|browser)\./.test(path)) return []
+  if (
+    /\.css$/.test(path) &&
+    /(?:^|})\s*\.writing-page\s*{[^}]*\bborder(?:-width|-style)?:\s*(?:0(?:px)?|none)\s*;/m.test(
+      text
+    )
+  )
+    return [
+      "Keep the Word page's 1px border space so its text width and wrapping stay unchanged",
+    ]
   if (/data-paper-reflow|dataset\.paperReflow/.test(text)) return [message]
   if (cssMistake(text, /\.css$/.test(path))) return [message]
   if (!/\.[cm]?[jt]sx?$/.test(path)) return []
