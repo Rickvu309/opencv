@@ -34,11 +34,6 @@ export function bindPrintPageCount(apply: () => void) {
   }
 }
 
-function isSeparator(text: string) {
-  const trimmed = text.trim()
-  return trimmed === "·" || trimmed === "|"
-}
-
 export function quietPaperChrome(root: ParentNode) {
   const fields = root.querySelectorAll<HTMLElement>("[data-paper-canvas-field]")
   for (const field of fields) {
@@ -46,7 +41,10 @@ export function quietPaperChrome(root: ParentNode) {
     if (field.textContent?.trim()) continue
     field.setAttribute("hidden", "")
     const previous = field.previousElementSibling
-    if (previous && isSeparator(previous.textContent ?? "")) {
+    if (
+      previous?.hasAttribute("data-paper-field-separator") ||
+      previous?.textContent?.trim() === "|"
+    ) {
       previous.setAttribute("hidden", "")
     }
   }

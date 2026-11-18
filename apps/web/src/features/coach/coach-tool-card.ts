@@ -10,9 +10,9 @@ import {
 } from "./coach-receipt.ts"
 
 const REFUSED_APPROVAL_LINE = {
-  denied: "Denied · nothing changed",
-  expired: "Expired · ask Coach again",
-  stopped: "Stopped · ask Coach again",
+  denied: "Denied. Nothing changed.",
+  expired: "Expired. Ask Coach again.",
+  stopped: "Stopped. Ask Coach again.",
 } as const
 
 export function refusedApprovalLine(

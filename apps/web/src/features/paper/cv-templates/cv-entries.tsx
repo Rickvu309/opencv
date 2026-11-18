@@ -134,15 +134,7 @@ export function ExperienceBlock({
             value={item.role}
             onChange={(role) => patchExperience(index, { role })}
           />
-          <span
-            className={cn(
-              "font-normal",
-              dark ? "text-white/60" : "text-muted-foreground"
-            )}
-          >
-            {" "}
-            ·{" "}
-          </span>
+          <span data-paper-field-separator="">, </span>
           <EditableField
             aria-label="Company"
             value={item.company}

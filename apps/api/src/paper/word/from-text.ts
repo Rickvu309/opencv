@@ -64,7 +64,7 @@ const LONE_GLYPH = /^[•●○◦▪▫■□‣⁃∙➢►✓✔]$/u
 const EMAIL = /[^\s@]+@[^\s@]+\.[^\s@]+/u
 const PHONE = /(?:\+?\d[\s().+-]*){6}\d/u
 const PROFILE_LINK = /linkedin|github|https?:\/\/|www\./iu
-const CONTACT_SEPARATOR = /\s[|·•]\s/u
+const CONTACT_SEPARATOR = /\s[|\u00B7•]\s/u
 const WORD = /[\p{L}\p{N}]+/gu
 
 export function wordsOf(text: string): string[] {

@@ -132,7 +132,7 @@ export function ToolbarChoice({
           >
             {icon}
             <SelectValue
-              placeholder={disabled ? "—" : "Mixed"}
+              placeholder={disabled ? "" : "Mixed"}
               className={icon ? "sr-only" : ""}
               style={selected?.face ? { fontFamily: selected.face } : undefined}
             />

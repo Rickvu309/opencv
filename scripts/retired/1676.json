@@ -1,0 +1,134 @@
+[
+  {
+    "subject": "apps/api/src/coach/worker-store.test.ts",
+    "because": "Expect the rewritten punctuation and retain the existing test cases and assertions.",
+    "replacedBy": "apps/api/src/coach/worker-store.test.ts",
+    "proof": {
+      "fork": "a8b7e0caea3af7a89ec7971a82fb89d98186f649",
+      "replacedByBlob": "d0136c4e55d49d4193e04aa08ab20d7f649d1afd",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-chat.test.tsx",
+    "because": "Expect the rewritten punctuation and retain the existing test cases and assertions.",
+    "replacedBy": "apps/web/src/features/coach/coach-chat.test.tsx",
+    "proof": {
+      "fork": "a8b7e0caea3af7a89ec7971a82fb89d98186f649",
+      "replacedByBlob": "87e0e6d75c7941e3383ac059e2bee6adc683757f",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-mode.test.ts",
+    "because": "Update the exact punctuation in fixtures and expectations while preserving the behavior under test.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-parts.test.tsx",
+    "because": "Update the exact punctuation in fixtures and expectations while preserving the behavior under test.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-receipt.test.ts",
+    "because": "Update the exact punctuation in fixtures and expectations while preserving the behavior under test.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-receipts.test.tsx",
+    "because": "Update the exact punctuation in fixtures and expectations while preserving the behavior under test.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-tool-presentation.test.tsx",
+    "because": "Update the exact punctuation in fixtures and expectations while preserving the behavior under test.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/web/src/features/connections/connections.test.tsx",
+    "because": "Update the exact punctuation in fixtures and expectations while preserving the behavior under test.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 16
+  },
+  {
+    "subject": "apps/web/src/features/landing/help/help.test.tsx",
+    "because": "Update the exact punctuation in fixtures and expectations while preserving the behavior under test.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-walk.test.ts",
+    "because": "Update the exact punctuation in fixtures and expectations while preserving the behavior under test.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "packages/domain/src/delegate-grant.test.ts",
+    "because": "Update the exact punctuation in fixtures and expectations while preserving the behavior under test.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "packages/domain/src/paper-doc-edits.test.ts",
+    "because": "Update the exact punctuation in fixtures and expectations while preserving the behavior under test.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "packages/domain/src/paper-doc-words.test.ts",
+    "because": "Update the exact punctuation in fixtures and expectations while preserving the behavior under test.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "packages/paper-crdt/src/probes.test.ts",
+    "because": "Update the exact punctuation in fixtures and expectations while preserving the behavior under test.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/document-chrome.test.tsx > keeps Paper navigation and all unsaved status words while showing the saved date",
+    "because": "The banned em dash leaves the offline status copy; the case still asserts the full unsaved status words.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

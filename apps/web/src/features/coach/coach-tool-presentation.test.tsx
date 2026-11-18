@@ -189,7 +189,7 @@ describe("Coach approval presentation", () => {
       )
       await waitFor(() =>
         expect(container.textContent).toBe(
-          approve ? "Approved" : "Denied · nothing changed"
+          approve ? "Approved" : "Denied. Nothing changed."
         )
       )
       expect(command).toHaveBeenCalledTimes(1)
@@ -213,15 +213,15 @@ describe("Coach approval presentation", () => {
         />
       )
       expect(container.textContent).toBe(
-        approval === "approved" ? "Approved" : "Denied · nothing changed"
+        approval === "approved" ? "Approved" : "Denied. Nothing changed."
       )
     }
   )
 
   it.each([
-    ["denied", "Denied · nothing changed"],
-    ["expired", "Expired · ask Coach again"],
-    ["stopped", "Stopped · ask Coach again"],
+    ["denied", "Denied. Nothing changed."],
+    ["expired", "Expired. Ask Coach again."],
+    ["stopped", "Stopped. Ask Coach again."],
   ] as const)(
     "keeps one quiet line when the task snapshot marks a proposal %s without its pending id",
     (approval, line) => {
@@ -282,7 +282,7 @@ describe("Coach trace and receipts", () => {
     const { container } = render(
       <CoachParts parts={parts} ctx={{ canUndo: true, onUndo: vi.fn() }} />
     )
-    const title = screen.getByText("Edited Untitled CV · 1 change")
+    const title = screen.getByText("Edited Untitled CV, 1 change")
     const row = title.closest("[data-slot=coach-action-record]")
     if (!row) throw new Error("Expected receipt row")
     expect(within(row).getByRole("link", { name: "Open" })).toHaveAttribute(
@@ -318,7 +318,7 @@ describe("Coach trace and receipts", () => {
     )
     const record = container.querySelector("[data-slot=coach-action-record]")
     expect(record).toHaveAttribute("data-state", "undone")
-    expect(record).toHaveTextContent("Edited Untitled CV · 1 change")
+    expect(record).toHaveTextContent("Edited Untitled CV, 1 change")
     expect(screen.getByText("Undone")).toBeVisible()
     expect(screen.getByRole("link", { name: "Open" })).toHaveAttribute(
       "href",

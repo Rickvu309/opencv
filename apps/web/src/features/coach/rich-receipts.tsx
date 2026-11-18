@@ -167,9 +167,8 @@ function CreateDocBody({
           <span className="min-w-0 truncate">{detail.name}</span>
         )}
       </p>
-      <p className="flex items-center gap-1.5 border-t border-border px-3 py-2 text-xs text-muted-foreground">
+      <p className="flex items-center gap-2 border-t border-border px-3 py-2 text-xs text-muted-foreground">
         <span>{PAPER_KIND_LABEL[detail.docKind]}</span>
-        <span aria-hidden>·</span>
         <span>{statusLabel}</span>
       </p>
     </div>

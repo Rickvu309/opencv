@@ -18,7 +18,7 @@ const SKILLS = [
     id: "k1",
     type: "skills",
     label: "Tech",
-    items: ["Node.js, TypeScript", " React ", "C·D", "  ", "Plain"],
+    items: ["Node.js, TypeScript", " React ", "C\u00B7D", "  ", "Plain"],
   },
 ]
 
@@ -56,13 +56,13 @@ describe("skills keep one item per editor node", () => {
       SKILLS[0],
       {
         ...SKILLS[1],
-        items: ["Node.js, TypeScript", "C·D", "  ", "Plain", "Rust"],
+        items: ["Node.js, TypeScript", "C\u00B7D", "  ", "Plain", "Rust"],
       },
     ])
     merge(writeDocument(atRead, edited, "coach:1"), "coach:1")
     expect(skillItems(snapshot(live))).toEqual([
       "Node.js, TypeScript",
-      "C·D",
+      "C\u00B7D",
       "  ",
       "Plain PERSON",
       "Rust",
@@ -84,14 +84,14 @@ describe("skills keep one item per editor node", () => {
       SKILLS[0],
       {
         ...SKILLS[1],
-        items: ["Node.js, TypeScript", " React ", "C·D", "Plain"],
+        items: ["Node.js, TypeScript", " React ", "C\u00B7D", "Plain"],
       },
     ])
     writeDocument(live, emptied, "person")
     expect(skillItems(snapshot(live))).toEqual([
       "Node.js, TypeScript",
       " React ",
-      "C·D",
+      "C\u00B7D",
       "Plain",
     ])
   })

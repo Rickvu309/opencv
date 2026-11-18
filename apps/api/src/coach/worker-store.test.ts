@@ -15,13 +15,13 @@ it.each([
     ending: "stop",
     taskState: "cancelled",
     outcome: "stopped",
-    summary: "Stopped · ask Coach again",
+    summary: "Stopped. Ask Coach again.",
   },
   {
     ending: "expire",
     taskState: "succeeded",
     outcome: "expired",
-    summary: "Expired · ask Coach again",
+    summary: "Expired. Ask Coach again.",
   },
 ] as const)(
   "an approval that ends by $ending is saved as $outcome and reloads as its own line",

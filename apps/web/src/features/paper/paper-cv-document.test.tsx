@@ -254,7 +254,7 @@ describe("on-canvas Experience and Skills edits (QVE-207)", () => {
     expect(screen.getByText("QVE207SkillMarker")).toBeInTheDocument()
   })
 
-  it("edits Skills as chips — rename, add, and remove", () => {
+  it("edits Skills as chips by renaming, adding and removing them", () => {
     renderCv("product")
     const chips = screen.getAllByRole("textbox", { name: "Skill" })
     expect(chips.length).toBeGreaterThan(1)
@@ -408,7 +408,7 @@ describe("empty section next-step CTAs (QVE-209)", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("keeps sparse sections calm — one next step, no marketing wall", () => {
+  it("shows one next step in sparse sections", () => {
     renderCv("product")
 
     expect(
@@ -509,7 +509,7 @@ describe("empty section next-step CTAs (QVE-209)", () => {
 })
 
 describe("empty section next-step CSS (QVE-209)", () => {
-  it("stays visible and quiet — not hover-hidden or Coach pills", () => {
+  it("stays visible without hover or Coach pills", () => {
     expect(paperCss).toMatch(/\.paper-canvas-next-step/)
     const start = paperCss.indexOf(".paper-canvas-next-step {")
     const end = paperCss.indexOf(".cv-a4-fit {")

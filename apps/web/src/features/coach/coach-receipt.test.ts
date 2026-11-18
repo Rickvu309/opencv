@@ -67,7 +67,7 @@ describe("receiptHeadline", () => {
         docName: "PM track CV",
         hunks: [],
       })
-    ).toBe("Edited PM track CV · 0 changes")
+    ).toBe("Edited PM track CV, 0 changes")
     expect(
       namedReceiptHeadline({
         type: "paper.create",
@@ -165,7 +165,7 @@ describe("receipt reversal helpers", () => {
           description: "Undo by moving the card back.",
         },
       })
-    ).toBe("Reversible — Undo by moving the card back.")
+    ).toBe("Reversible: Undo by moving the card back.")
   })
 
   it("never says Reversible when there is no history row to undo", () => {

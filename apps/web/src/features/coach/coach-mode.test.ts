@@ -80,7 +80,7 @@ describe("Coach mode control", () => {
     fireEvent.click(
       await screen.findByRole("button", { name: "Choose Coach mode" })
     )
-    const max = await screen.findByRole("menuitemradio", { name: "Max · Pro" })
+    const max = await screen.findByRole("menuitemradio", { name: "Max (Pro)" })
     expect(max).toHaveAttribute("aria-disabled", "true")
     expect(max).toHaveAccessibleDescription(COACH_MODE_LOCKED)
     expect(max).toHaveTextContent(COACH_MODE_LOCKED)
@@ -88,7 +88,7 @@ describe("Coach mode control", () => {
     expect(free).toHaveTextContent(coachModeHelper("free"))
     fireEvent.click(max)
     expect(
-      screen.getByRole("menuitemradio", { name: "Max · Pro" })
+      screen.getByRole("menuitemradio", { name: "Max (Pro)" })
     ).toBeVisible()
     expectModeSelected("Free")
     expect(getMockCoachMode()).toBe("free")

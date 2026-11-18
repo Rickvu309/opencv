@@ -119,7 +119,7 @@ describe("Coach Command receipts", { timeout: 15_000 }, () => {
     expect(
       screen.queryByRole("button", { name: "Undo" })
     ).not.toBeInTheDocument()
-    expect(screen.queryByText(/Reversible —/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/^Reversible\b/)).not.toBeInTheDocument()
   })
 
   it("renders a failed Command receipt plainly", async () => {
@@ -145,7 +145,7 @@ describe("Coach Command receipts", { timeout: 15_000 }, () => {
       screen.getByText(/Apply card not found failed: Nothing changed\./)
     ).toBeInTheDocument()
     expect(screen.getByText("Nothing changed.")).toBeInTheDocument()
-    expect(screen.queryByText(/Reversible —/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/^Reversible\b/)).not.toBeInTheDocument()
   })
 
   it("humanizes a failed job.move Zod dump and keeps it in the column", async () => {
@@ -174,6 +174,6 @@ describe("Coach Command receipts", { timeout: 15_000 }, () => {
     expect(receipt.textContent ?? "").not.toContain("{")
     expect(receipt.textContent ?? "").not.toContain("[")
     expect(receipt.textContent).not.toMatch(/\/\^|\\d\{/)
-    expect(screen.queryByText(/Reversible —/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/^Reversible\b/)).not.toBeInTheDocument()
   })
 })

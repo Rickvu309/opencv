@@ -106,7 +106,7 @@ function TextSize({
               aria-label="Font size (pt)"
               disabled={disabled}
               value={draft ?? formatting?.size ?? ""}
-              placeholder={disabled ? "—" : "Mixed"}
+              placeholder={disabled ? "" : "Mixed"}
               className="h-11 w-16 shrink-0 px-1 text-center text-base tabular-nums md:h-8 md:w-9 md:text-sm md:placeholder:text-transparent"
               onFocus={(event) => {
                 selection.current = editor?.captureSelection()

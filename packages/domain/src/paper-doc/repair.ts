@@ -136,7 +136,7 @@ function toLetter(doc: Raw, context: Context) {
             level: 2,
             content: richTextOf(lines.join(" ")),
           }
-        : proseOf(node, lines.join(" · "))
+        : proseOf(node, lines.join(", "))
     blocks.splice(i, 1, replacement as Raw, ...kids)
   }
 }

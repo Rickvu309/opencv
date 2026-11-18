@@ -97,15 +97,15 @@ export function grantCopy(input: {
     )
     .join(" and ")
   const share = shared
-    ? `All current and future ${shared} · ${writes ? "Every change waits for your approval" : "This agent cannot change things"}`
-    : "Connection status only · No documents or Jobs shared"
+    ? `All current and future ${shared}. ${writes ? "Every change waits for your approval." : "This agent cannot make changes."}`
+    : "Connection status only. No documents or Jobs shared."
   const readCopy = reads ? "Reads allowed" : null
   const writeCopy = writes
-    ? "Writes need approval"
-    : "This agent cannot change things"
+    ? "Writes need approval."
+    : "This agent cannot make changes."
   return {
     share,
-    access: readCopy ? `${readCopy} · ${writeCopy}` : writeCopy,
+    access: readCopy ? `${readCopy}. ${writeCopy}` : writeCopy,
   }
 }
 

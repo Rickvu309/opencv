@@ -41,9 +41,9 @@ it("keeps Paper navigation and all unsaved status words while showing the saved 
   fireEvent.click(screen.getByRole("link", { name: "Back to Paper" }))
   expect(back).toHaveBeenCalledOnce()
   view.rerender(
-    <PaperDocumentHeader name="My Letter" status="Not saved — offline" />
+    <PaperDocumentHeader name="My Letter" status="Not saved (offline)" />
   )
-  expect(screen.getByRole("status")).toHaveTextContent("Not saved — offline")
+  expect(screen.getByRole("status")).toHaveTextContent("Not saved (offline)")
 })
 
 it("renames through the product command and cancels an unfinished name with Escape", async () => {

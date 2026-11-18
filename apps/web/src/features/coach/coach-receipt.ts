@@ -43,7 +43,7 @@ export function documentChangeCount(
 export function namedReceiptHeadline(detail: CoachReceiptDetail) {
   if (detail.type === documentEditReceiptType) {
     const changes = documentChangeCount(detail)
-    return `Edited ${detail.docName} · ${changes} change${changes === 1 ? "" : "s"}`
+    return `Edited ${detail.docName}, ${changes} change${changes === 1 ? "" : "s"}`
   }
   if (detail.type === "job.move") {
     return `Moved ${detail.title} at ${detail.company} from ${stageLabel(detail.from)} to ${stageLabel(detail.to)}`
@@ -61,7 +61,7 @@ export function receiptReversalNote(part: ChatToolPart) {
   if (!part.reversal) return null
   if (part.reversal.possible) {
     if (!part.activityId) return null
-    return `Reversible — ${part.reversal.description}`
+    return `Reversible: ${part.reversal.description}`
   }
   return part.reversal.description
 }

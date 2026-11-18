@@ -57,7 +57,7 @@ export const FIXTURE_CHATS: ChatRecord[] = [
       message(
         "22222222-2222-4222-8222-222222222202",
         "coach",
-        "I can't write that Proof yet — I haven't edited Paper or run a Command. Open Paper when you want to draft it; we can talk through the story here.",
+        "We can talk through the story here. Open Paper when you want me to help draft the Proof.",
         iso(19)
       ),
     ],
@@ -99,7 +99,7 @@ export const FIXTURE_CHATS: ChatRecord[] = [
       message(
         "44444444-4444-4444-8444-444444444402",
         "coach",
-        "Pick one concrete move you can finish — I won't pretend I scheduled it or updated Apply for you.",
+        "Pick one concrete move you can finish. We can plan it here, then you can update Apply when you're ready.",
         iso(17)
       ),
     ],
