@@ -53,7 +53,7 @@ export function stageShown(
 
 export function shownJobs(jobs: JobView[], drops: Drops): JobView[] {
   if (drops.size === 0) return jobs
-  const byId = new Map(jobs.map((job) => [job.id, job]))
+  const byId = new Map<string, JobView>(jobs.map((job) => [job.id, job]))
   const landingLast = [...drops].flatMap(([jobId, drop]) => {
     const job = byId.get(jobId)
     if (!job) return []
