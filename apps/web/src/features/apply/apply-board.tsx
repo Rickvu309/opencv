@@ -214,7 +214,9 @@ export function ApplyBoard({
     sendDrops({ type: "dropped", jobId, stage })
     queryClient.setQueryData<JobView[]>(jobListKey(), (current) => {
       if (!current) return current
-      return current.map((job) => (job.id === jobId ? { ...job, stage } : job))
+      const moved = current.find((job) => job.id === jobId)
+      if (!moved) return current
+      return [...current.filter((job) => job.id !== jobId), { ...moved, stage }]
     })
     persist(jobId, stage)
   }
@@ -288,7 +290,7 @@ export function ApplyBoard({
                       data-card-id={item.id}
                       data-new={isNew ? "true" : undefined}
                       wrapperClassName="data-[new=true]:motion-appear"
-                      className="gap-0 rounded-[10px] border border-foreground/6 p-3 shadow-none ring-0 not-in-data-[slot=kanban-card]:shadow-[0_2px_4px_rgb(0_0_0/0.06),0_16px_32px_rgb(0_0_0/0.12)] [&.opacity-30]:opacity-35"
+                      className="gap-0 rounded-[4px] border border-foreground/6 p-3 shadow-none ring-0 data-lifted:shadow-[0_2px_4px_rgb(0_0_0/0.06),0_16px_32px_rgb(0_0_0/0.12)] [&.opacity-30]:opacity-35"
                       onClick={() => openJob(item.id)}
                       onKeyDown={(event) => {
                         if (event.key === "Enter") {
@@ -330,7 +332,7 @@ function LaneAdd({ name, onAdd }: { name: string; onAdd: () => void }) {
       tabIndex={-1}
       data-slot="lane-add"
       title={`New job in ${name}`}
-      className="h-11 w-full shrink-0 rounded-[10px] border border-foreground/6 bg-card text-muted-foreground opacity-0 group-hover/lane:opacity-100 hover:bg-card hover:text-foreground max-md:hidden md:h-8"
+      className="h-11 w-full shrink-0 rounded-[4px] border border-foreground/6 bg-card text-muted-foreground opacity-0 group-hover/lane:opacity-100 hover:bg-card hover:text-foreground max-md:hidden md:h-8"
       onClick={onAdd}
     >
       <Plus />

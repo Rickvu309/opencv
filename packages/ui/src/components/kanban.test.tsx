@@ -133,6 +133,82 @@ describe("kanban keyboard move", () => {
   })
 })
 
+describe("kanban drop landing", () => {
+  afterEach(() => {
+    cleanup()
+    vi.restoreAllMocks()
+    Reflect.deleteProperty(HTMLElement.prototype, "animate")
+  })
+
+  it("keeps the card in the overlay until the drop animation lands", async () => {
+    vi.spyOn(motionModule, "motionToken").mockReturnValue({
+      duration: 280,
+      easing: "ease-out",
+    })
+    vi.spyOn(motionModule, "prefersReducedMotion").mockReturnValue(false)
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+      function (this: HTMLElement) {
+        const board = this.closest("[data-slot='kanban-board']")
+        const index = columns.findIndex(
+          (column) => column.id === board?.getAttribute("data-column")
+        )
+        const card = this.closest("[data-slot='kanban-card']")
+        if (index < 0) return new DOMRect(0, 0, 800, 600)
+        if (card) return new DOMRect(index * 300 + 16, 48, 200, 64)
+        return new DOMRect(index * 300, 0, 260, 1200)
+      }
+    )
+    const computed = window.getComputedStyle.bind(window)
+    vi.spyOn(window, "getComputedStyle").mockImplementation((element) => {
+      const style = computed(element)
+      return new Proxy(style, {
+        get(target, property) {
+          if (property === "transform") return "matrix(1, 0, 0, 1, 300, 0)"
+          const value = Reflect.get(target, property)
+          return typeof value === "function" ? value.bind(target) : value
+        },
+      })
+    })
+    const landing: { onfinish: (() => void) | null } = { onfinish: null }
+    Object.defineProperty(HTMLElement.prototype, "animate", {
+      configurable: true,
+      value: () => landing,
+    })
+
+    render(<Board onDataChange={() => {}} />)
+    const card = screen.getByRole("button", { name: "Northwind role" })
+    async function key(target: EventTarget, code: string) {
+      await act(async () => {
+        fireEvent.keyDown(target, {
+          code,
+          key: code === "Space" ? " " : code,
+        })
+        await new Promise((resolve) => setTimeout(resolve, 0))
+      })
+    }
+    card.focus()
+    await key(card, "Space")
+    await key(document, "ArrowRight")
+    await key(document, "Space")
+
+    await waitFor(() => expect(landing.onfinish).not.toBeNull())
+    const overlay = document.querySelector("[data-slot='kanban-overlay']")
+    expect(overlay).toHaveTextContent("Northwind role")
+    expect(overlay?.firstElementChild).not.toHaveAttribute("data-lifted")
+
+    await act(async () => {
+      landing.onfinish?.()
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    await waitFor(() =>
+      expect(
+        document.querySelector("[data-slot='kanban-overlay']")?.textContent ??
+          ""
+      ).not.toContain("Northwind role")
+    )
+  })
+})
+
 describe("kanban motion tokens", () => {
   afterEach(() => {
     cleanup()
@@ -208,8 +284,9 @@ describe("kanban motion tokens", () => {
     const overlay = document.querySelector("[data-slot='kanban-overlay']")
     expect(overlay).not.toBeNull()
     const overlayCard = overlay?.firstElementChild
-    expect(overlayCard?.className).toContain("scale-[1.02]")
-    expect(overlayCard?.className).toContain("shadow-md")
+    expect(overlayCard?.getAttribute("data-lifted")).toBe("true")
+    expect(overlayCard?.className).toContain("data-lifted:scale-[1.02]")
+    expect(overlayCard?.className).toContain("data-lifted:shadow-md")
     expect(overlayCard?.className).toContain("starting:scale-100")
   })
 })

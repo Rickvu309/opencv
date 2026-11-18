@@ -45,13 +45,13 @@ export function JobCard({ job }: { job: JobView }) {
       {interview || job.location ? (
         <span className="mt-2.5 flex flex-wrap items-center gap-1">
           {interview ? (
-            <span className="inline-flex h-[22px] items-center gap-1 rounded-[6px] border border-border px-[7px] text-[11.5px] font-medium">
+            <span className="inline-flex h-[22px] items-center gap-1 rounded-[4px] border border-border px-[7px] text-[11.5px] font-medium">
               <Calendar className="size-[11px] text-chart-3" aria-hidden />
               {interview}
             </span>
           ) : null}
           {job.location ? (
-            <span className="inline-flex h-[22px] min-w-0 items-center gap-1 rounded-[6px] border border-border px-[7px] text-[11.5px] text-muted-foreground">
+            <span className="inline-flex h-[22px] min-w-0 items-center gap-1 rounded-[4px] border border-border px-[7px] text-[11.5px] text-muted-foreground">
               <MapPin
                 className="size-[11px] shrink-0 text-chart-1"
                 aria-hidden
