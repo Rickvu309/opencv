@@ -42,20 +42,6 @@
     "items": 8
   },
   {
-    "subject": "apps/web/src/features/paper/paper-library-sections.test.tsx",
-    "because": "The desk replaces collapsible headings. The replacement checks counted views, filtered documents, the latest saved page, template shortcuts, menu actions and the path to Proofs.",
-    "replacedBy": "apps/web/src/features/paper/paper-library-sections.test.tsx",
-    "proof": {
-      "fork": "559cf25424d1b1f0578f3bea4c7d50c95efa567a",
-      "replacedByBlob": "4d3c02f8fb43b966e1ec31ca3db11d61db648d87",
-      "failedOnBase": true,
-      "passedOnHead": true
-    },
-    "class": "self",
-    "classBecause": null,
-    "items": 20
-  },
-  {
     "subject": "apps/web/src/features/paper/paper-library.test.tsx",
     "because": "The Letter chooser opens a blank page directly and retains the job-based draft flow. The replacement covers starting a draft and returning to the desk.",
     "replacedBy": "apps/web/src/features/paper/paper-library.test.tsx",
@@ -84,20 +70,6 @@
     "items": 6
   },
   {
-    "subject": "apps/web/src/features/paper/paper-template-gallery.test.tsx",
-    "because": "The chooser presents page specimens in the rail and the large preview. The replacement checks preview behavior and footer placement.",
-    "replacedBy": "apps/web/src/features/paper/paper-template-gallery.test.tsx",
-    "proof": {
-      "fork": "559cf25424d1b1f0578f3bea4c7d50c95efa567a",
-      "replacedByBlob": "4fa6d22e259c5c4910ed7f26b1a8ccbd68b063a7",
-      "failedOnBase": true,
-      "passedOnHead": true
-    },
-    "class": "self",
-    "classBecause": null,
-    "items": 6
-  },
-  {
     "subject": "apps/web/src/test/surface-behavior.test.tsx",
     "because": "The Paper section controls offer CV creation, Letter creation and import in their own empty states.",
     "replacedBy": "apps/web/src/test/surface-behavior.test.tsx",
@@ -110,5 +82,33 @@
     "class": "self",
     "classBecause": null,
     "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-template-gallery.test.tsx",
+    "because": "The chooser presents A4 page specimens in the rail and the large preview. The replacement checks preview behavior, selection and footer placement.",
+    "replacedBy": "apps/web/src/features/paper/paper-template-gallery.test.tsx",
+    "proof": {
+      "fork": "a8b7e0caea3af7a89ec7971a82fb89d98186f649",
+      "replacedByBlob": "1869fb910b0dbe90177fe4b266316590b2924af1",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 12
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "because": "Checks the counted desk, selected view and latest page with separate document type and edit time. It also checks the named phone download action and quiet document labels.",
+    "replacedBy": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "proof": {
+      "fork": "a8b7e0caea3af7a89ec7971a82fb89d98186f649",
+      "replacedByBlob": "21ed6db025aeb76544cb26917d46e8a8da921af4",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 20
   }
 ]
