@@ -34,6 +34,7 @@ import { InputGroupButton } from "@workspace/ui/components/input-group"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { PromptInput } from "@/components/ai-elements/prompt-input.tsx"
+import { signatureIconButton } from "@/components/signature-button.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import {
   COACH_MODE_LOCKED,
@@ -67,6 +68,8 @@ export type DockRecentList = {
   state: "loading" | "error" | "ready"
   items: readonly DockRecent[]
 }
+
+const SEND_FACE = "flex size-8 items-center justify-center rounded-full"
 
 const MODE_ICONS = { free: Leaf, light: Zap, max: Rocket }
 
@@ -154,7 +157,7 @@ export function CoachDock({
         render={
           <InputGroupButton
             size="icon-sm"
-            className="size-11 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground md:size-8"
+            className="-m-1.5 size-11 rounded-full text-muted-foreground hover:bg-muted hover:text-foreground md:m-0 md:size-8"
           />
         }
         disabled={disabled}
@@ -278,7 +281,7 @@ export function CoachDock({
             variant="ghost"
             size="sm"
             data-slot="coach-mode"
-            className="h-11 gap-1.25 rounded-full px-2 text-muted-foreground disabled:font-semibold disabled:text-muted-foreground/70 md:h-7.5"
+            className="-my-1.5 h-11 gap-1.25 rounded-full px-2 text-muted-foreground disabled:font-semibold disabled:text-muted-foreground/70 md:my-0 md:h-7.5"
           />
         }
         aria-label="Choose Coach mode"
@@ -369,28 +372,40 @@ export function CoachDock({
       {turnActive ? (
         <Button
           type="button"
-          variant="signature"
+          variant="ghost"
           size="icon"
           onClick={(event) => {
             if (!repeatedClickOfSend(event)) onStop?.()
           }}
           aria-label="Stop"
-          className="size-11 rounded-full md:size-8"
+          className="-m-1.5 size-11 rounded-full hover:bg-transparent md:m-0 md:size-8"
         >
-          <Square className="size-3 fill-current" />
+          <span className={cn(signatureIconButton, SEND_FACE)}>
+            <Square className="size-3 fill-current" />
+          </span>
         </Button>
       ) : (
         <Button
           type="button"
-          variant={canSend ? "signature" : "secondary"}
+          variant="ghost"
           size="icon"
           onClick={onSend}
           disabled={!canSend}
           aria-label="Send"
           aria-describedby={held ? sendHoldId : undefined}
-          className="size-11 rounded-full md:size-8"
+          className="-m-1.5 size-11 rounded-full hover:bg-transparent md:m-0 md:size-8"
         >
-          <ArrowUp className="size-4" />
+          <span
+            data-slot="coach-send-face"
+            className={cn(
+              canSend
+                ? signatureIconButton
+                : "bg-secondary text-secondary-foreground",
+              SEND_FACE
+            )}
+          >
+            <ArrowUp className="size-4" />
+          </span>
         </Button>
       )}
     </>

@@ -60,7 +60,7 @@ export function CoachHome({
         "flex w-full min-w-0 flex-col items-center",
         panel
           ? "my-auto py-6 [@media(max-height:20rem)]:hidden"
-          : "min-h-full justify-center px-4 py-16"
+          : "min-h-full justify-center px-6 py-16 md:px-4"
       )}
     >
       <h2
@@ -81,7 +81,7 @@ export function CoachHome({
           <span
             data-slot="coach-home-mark"
             aria-hidden="true"
-            className="pointer-events-none absolute -top-48 left-1/2 -z-10 size-96 -translate-x-1/2 [mask-image:linear-gradient(to_bottom,black_30%,transparent_80%)] max-md:hidden [@media(max-height:45rem)]:hidden"
+            className="pointer-events-none absolute -top-36 left-1/2 -z-10 size-72 -translate-x-1/2 [mask-image:linear-gradient(to_bottom,black_30%,transparent_80%)] md:-top-48 md:size-96 [@media(max-height:45rem)]:hidden"
           >
             <OpenCvMark className="size-full text-foreground/[0.04]" />
           </span>

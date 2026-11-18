@@ -10,6 +10,11 @@ import { glowButtons } from "./lib/button-glow.mjs"
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 
 const MARKETING_SITE = "apps/web/src/features/landing/"
+const SIGNATURE_BUTTON = "apps/web/src/components/signature-button.ts"
+const SIGNATURE_USERS = [
+  "apps/web/src/features/coach/coach-dock.tsx",
+  "apps/web/src/features/landing/landing-button.ts",
+]
 
 const scannedFiles = () =>
   execFileSync(
@@ -33,6 +38,7 @@ const scannedFiles = () =>
     )
     .filter((file) => !/\.test\.tsx?$/.test(file))
     .filter((file) => !file.startsWith(MARKETING_SITE))
+    .filter((file) => file !== SIGNATURE_BUTTON)
     .filter((file) => existsSync(path.join(root, file)))
 
 const OLD_KIT_BUTTON = `const glowButton =
@@ -92,4 +98,26 @@ test("no button in the app features, shared components or the kit uses a glow, r
     glowButtons(readFileSync(path.join(root, file), "utf8"), file)
   )
   assert.deepEqual(problems, [])
+})
+
+test("only the landing calls to action and the Coach send button wear the signature button", () => {
+  const users = execFileSync(
+    "git",
+    [
+      "grep",
+      "-l",
+      "--untracked",
+      "-e",
+      "components/signature-button",
+      "--",
+      "apps/web/src",
+      "packages/ui/src",
+    ],
+    { cwd: root, encoding: "utf8" }
+  )
+    .split("\n")
+    .filter(Boolean)
+    .filter((file) => !/\.test\.tsx?$/.test(file))
+    .sort()
+  assert.deepEqual(users, SIGNATURE_USERS)
 })

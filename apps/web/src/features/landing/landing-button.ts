@@ -1,12 +1,12 @@
 import { buttonVariants } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { signatureButton } from "@/components/signature-button.ts"
+
 const TONE = {
-  primary: buttonVariants({ variant: "signature" }),
-  quiet: cn(
-    buttonVariants({ variant: "ghost" }),
-    "border-0 bg-[color-mix(in_oklch,var(--foreground)_4%,transparent)] text-foreground shadow-none ring-0 hover:bg-[color-mix(in_oklch,var(--foreground)_7%,transparent)]"
-  ),
+  primary: signatureButton,
+  quiet:
+    "border-0 text-foreground ring-0 shadow-none bg-[color-mix(in_oklch,var(--foreground)_4%,transparent)] hover:bg-[color-mix(in_oklch,var(--foreground)_7%,transparent)]",
 } as const
 
 const SIZE = {
@@ -18,7 +18,11 @@ export function landingButton(options: {
   tone: keyof typeof TONE
   size: keyof typeof SIZE
 }) {
-  return cn(TONE[options.tone], SIZE[options.size])
+  return cn(
+    buttonVariants({ variant: "ghost" }),
+    TONE[options.tone],
+    SIZE[options.size]
+  )
 }
 
 const PILL =
