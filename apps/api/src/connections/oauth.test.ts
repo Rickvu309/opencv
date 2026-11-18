@@ -474,7 +474,7 @@ it("completes SDK discovery, PKCE consent, opaque issuance, refresh and immediat
     })
     .parse(await approved.json())
   expect(receipt.data.summary).toContain(
-    "an agent connection (Claude Code test, unverified)"
+    "(unverified agent connection: Claude Code test)"
   )
   const changed = await sdk.callTool({ name: "job_get", arguments: { jobId } })
   expect(
