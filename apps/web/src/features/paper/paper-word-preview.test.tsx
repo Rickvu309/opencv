@@ -58,6 +58,11 @@ it("draws the saved Word first page with its formatting and no editing surface",
     ).toHaveTextContent("Ada Nguyen")
   )
   expect(container.querySelector("[contenteditable]")).toBeNull()
+  const face = screen
+    .getByText("Ada Nguyen")
+    .closest<HTMLElement>(".writing-page")
+  expect(face?.style.backgroundColor).toBe("transparent")
+  expect(face?.style.color).toBe("inherit")
   expect(
     container.querySelector("[data-slot=paper-word-first-page]")
   ).toHaveAttribute("inert")

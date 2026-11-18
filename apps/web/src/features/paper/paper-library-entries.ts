@@ -16,7 +16,7 @@ export const LIBRARY_SECTIONS: readonly {
   title: string
 }[] = [
   { id: "cv", title: "CVs" },
-  { id: "letter", title: "Cover letters" },
+  { id: "letter", title: "Letters" },
   { id: "files", title: "Files" },
 ]
 
@@ -93,4 +93,20 @@ export function fileBadge(file: PaperFile) {
 
 export function libraryDisplayName(name: string) {
   return name.replace(/\.(docx?|pdf|rtf|txt|odt)$/i, "")
+}
+
+export function latestLibraryDocument(entries: readonly LibraryEntry[]) {
+  let latest: Exclude<LibraryEntry, { type: "file" }> | undefined
+  for (const entry of entries) {
+    if (entry.type === "file") continue
+    if (
+      !latest ||
+      (entry.type === "paper" &&
+        (latest.type === "word" ||
+          Date.parse(entry.doc.updatedAt) > Date.parse(latest.doc.updatedAt)))
+    ) {
+      latest = entry
+    }
+  }
+  return latest
 }

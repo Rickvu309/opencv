@@ -189,7 +189,11 @@ export const SCREENS = [
       { goto: "/paper" },
       { click: { role: "button", name: "New" } },
       { click: { role: "button", name: "Cover letter" } },
-      { waitFor: { role: "button", name: "Product designer, Lumiere" } },
+      {
+        waitFor: {
+          selector: '[data-slot="letter-start-page"], [data-template-gallery]',
+        },
+      },
     ],
   },
   {
@@ -525,7 +529,12 @@ export const SCREENS = [
       { goto: "/paper" },
       { click: { role: "button", name: "New" } },
       { click: { role: "button", name: "Cover letter" } },
-      { click: { selector: '[data-slot="letter-start-blank"]' } },
+      {
+        click: {
+          selector:
+            '[data-slot="letter-start-blank"], [data-slot="paper-gallery-actions"] [data-variant="primary"]',
+        },
+      },
       { waitFor: { selector: PAGE } },
       { waitFor: DOWNLOAD_READY },
     ],
@@ -538,6 +547,12 @@ export const SCREENS = [
       { goto: "/paper" },
       { click: { role: "button", name: "New" } },
       { click: { role: "button", name: "Cover letter" } },
+      {
+        clickIfShown: {
+          role: "button",
+          name: "Draft with Coach",
+        },
+      },
       { click: { role: "button", name: "Product designer, Lumiere" } },
       { click: { role: "button", name: "Draft letter" } },
       { waitFor: { text: "Coach is writing" } },

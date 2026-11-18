@@ -37,7 +37,16 @@ function FirstPage({ page }: { page: WordPage }) {
       data-slot="paper-word-first-page"
       className="pointer-events-none absolute inset-0 overflow-hidden"
     >
-      <div ref={root} className="writing-page" />
+      <div
+        ref={root}
+        className="writing-page"
+        style={{
+          backgroundColor: "transparent",
+          borderColor: "transparent",
+          boxShadow: "none",
+          color: "inherit",
+        }}
+      />
     </div>
   )
 }
@@ -81,7 +90,7 @@ export function PaperWordPreview({ docId }: { docId: string }) {
       {parsed.success ? (
         <FirstPage page={parsed.data} />
       ) : query.isError || query.isSuccess ? (
-        <span className="flex h-full items-center justify-center px-4 text-center text-xs text-muted-foreground">
+        <span className="flex h-full items-center justify-center px-4 text-center text-xs text-black/65">
           Preview unavailable
         </span>
       ) : (
@@ -89,9 +98,9 @@ export function PaperWordPreview({ docId }: { docId: string }) {
           data-slot="paper-preview-loading"
           className="flex flex-col gap-2 p-[12%]"
         >
-          <span className="mb-2 h-2 w-2/3 rounded-sm bg-muted" />
+          <span className="mb-2 h-2 w-2/3 rounded-sm bg-black/10" />
           {Array.from({ length: 7 }, (_, index) => (
-            <span key={index} className="h-1 rounded-sm bg-muted" />
+            <span key={index} className="h-1 rounded-sm bg-black/10" />
           ))}
         </span>
       )}

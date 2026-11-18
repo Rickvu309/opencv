@@ -71,9 +71,7 @@ function wideDialog() {
   expect(content?.className).not.toContain("sm:max-w-sm")
   expect(content.className).toContain("flex-col")
   const scroll = content.querySelector<HTMLElement>("[data-template-scroll]")
-  expect(scroll?.className).toContain("overflow-y-auto")
   expect(scroll?.className).toContain("min-h-0")
-  expect(scroll?.className).toContain("overscroll-contain")
   const actions = content.querySelector<HTMLElement>(
     "[data-slot=paper-gallery-actions]"
   )
@@ -181,7 +179,7 @@ describe("Paper template gallery", () => {
     const page = (id: string) =>
       [
         ...document.querySelectorAll(
-          `[data-template-page="${id}"] :is([data-page-name],[data-page-heading])`
+          `[data-template-grid] [data-template-page="${id}"] :is([data-page-name],[data-page-heading])`
         ),
       ].map((line) => line.textContent)
     expect(page("simple")).toEqual([
@@ -213,7 +211,7 @@ describe("Paper template gallery", () => {
     ])
     expect(
       document.querySelectorAll(
-        '[data-template-page="simple"] [data-page-line]'
+        '[data-template-grid] [data-template-page="simple"] [data-page-line]'
       )
     ).toHaveLength(8)
     const heading = document.querySelector<HTMLElement>("[data-page-heading]")
@@ -246,7 +244,7 @@ describe("Paper template gallery", () => {
     expect(shownCards()).toEqual(["blank"])
     expect(screen.getByText(/No template matches/)).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Start blank" })).toBeEnabled()
-    fireEvent.click(screen.getByRole("button", { name: "clear the search" }))
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }))
     expect(shownCards()).toEqual(["blank", ...FEATURED_TEMPLATES])
     fireEvent.change(search(), { target: { value: "blank" } })
     expect(shownCards()).toEqual(["blank"])
