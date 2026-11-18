@@ -73,7 +73,7 @@ test("a quiet screen is measured at every grid size and passes every rule", asyn
   assert.equal(session.seen.closed, true)
   assert.match(
     summaryLine("paper-home", cases),
-    /^paper-home: opens · 10\/10 sizes fit · no layer to close · 1 requests, idle 0 in 3 s · ok · 0 s$/
+    /^paper-home: opens, 10\/10 sizes fit, no layer to close, 1 requests, idle 0 in 3 s, ok, 0 s$/
   )
 })
 
@@ -86,7 +86,7 @@ test("a recipe step that fails stops the sweep with the step and a screenshot", 
   assert.equal(cases.length, 1)
   assert.equal(
     failureLine(cases[0]),
-    'FAIL paper-home at 1440x900: does not open: step 3 {"waitFor":{"text":"Exchange term, Lyon"}} failed: Timeout 20000ms exceeded. · screenshot /shots/paper-home-open.png · repro: node scripts/ui.mjs sweep screen paper-home'
+    'FAIL paper-home at 1440x900: does not open: step 3 {"waitFor":{"text":"Exchange term, Lyon"}} failed: Timeout 20000ms exceeded., screenshot /shots/paper-home-open.png, repro: node scripts/ui.mjs sweep screen paper-home'
   )
   assert.equal(session.seen.closed, true)
 })
@@ -115,7 +115,7 @@ test("a box that does not fit at one size names the size, the rule, the measure 
   const bad = cases.find((item) => item.rule === "fits")
   assert.equal(
     failureLine(bad),
-    'FAIL paper-home at 390x844: does not fit: dialog "New CV" runs off the window and cannot be scrolled into view: bottom 878 > 844 · screenshot /shots/paper-home-390x844.png · repro: node scripts/ui.mjs sweep screen paper-home --size 390x844'
+    'FAIL paper-home at 390x844: does not fit: dialog "New CV" runs off the window and cannot be scrolled into view: bottom 878 > 844, screenshot /shots/paper-home-390x844.png, repro: node scripts/ui.mjs sweep screen paper-home --size 390x844'
   )
 })
 
@@ -235,8 +235,5 @@ test("guideline findings are reported with their source and screenshot but never
   const ring = cases.find((item) => item.rule === "hig-focus-ring")
   assert.equal(ring.size, "1440x900")
   assert.equal(ring.findings.length, 1)
-  assert.match(
-    summaryLine("paper-home", cases),
-    / · ok · 3 HIG findings · 0 s$/
-  )
+  assert.match(summaryLine("paper-home", cases), /, ok, 3 HIG findings, 0 s$/)
 })

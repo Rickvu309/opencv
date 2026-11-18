@@ -17,10 +17,12 @@ const shorten = (text) =>
   text.length > SHOWN ? `${text.slice(0, SHOWN - 1)}…` : text
 
 export function caseLine(line) {
-  const at = line.indexOf(" — ")
-  if (at === -1) return shorten(line)
-  const name = line.slice(0, at).split(" > ").at(-1).trim()
-  return shorten(`${line.slice(at + 3)} (${name})`)
+  const separator = / \| | \u2014 /.exec(line)
+  if (!separator) return shorten(line)
+  const name = line.slice(0, separator.index).split(" > ").at(-1).trim()
+  return shorten(
+    `${line.slice(separator.index + separator[0].length)} (${name})`
+  )
 }
 
 export function ciRunOf(ctx, repo, head) {

@@ -69,7 +69,7 @@ export async function proveScaledEditing({ page, editor, out }) {
     await page.keyboard.press("Control+f")
     await page
       .getByRole("textbox", { name: "Find in document", exact: true })
-      .fill("— Product designer")
+      .fill(": Product designer")
     await page.getByRole("button", { name: "Next match", exact: true }).click()
     await page.waitForFunction(() => {
       const match = document.querySelector("[data-paper-search-active]")
@@ -96,8 +96,8 @@ export async function proveScaledEditing({ page, editor, out }) {
           .getBoundingClientRect()
           .toJSON(),
       }))
-    assert.equal(match.text, "— Product designer")
-    assert.equal(match.paragraph, "Experience 2 — Product designer")
+    assert.equal(match.text, ": Product designer")
+    assert.equal(match.paragraph, "Experience 2: Product designer")
     await page.screenshot({ path: join(out, `find-${width}.png`) })
     await page.getByRole("button", { name: "Close find", exact: true }).click()
     await first.click()

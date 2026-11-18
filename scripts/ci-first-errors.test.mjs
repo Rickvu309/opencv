@@ -20,9 +20,9 @@ const policy = fixture("policy-41578367264-125727105647.txt")
 const billing = fixture("billing-41545890442-125621292107.txt").trim()
 
 const VITEST_LINE =
-  "FAIL  src/health.test.ts > GET /health/deep > reports mail:false and 503 when sign-in mail is not configured (incident I4) — AssertionError: expected { ok: false, sha: 'abc1234', …(3) } to deeply equal { ok: false, sha: 'abc1234', …(3) }"
+  "FAIL  src/health.test.ts > GET /health/deep > reports mail:false and 503 when sign-in mail is not configured (incident I4) | AssertionError: expected { ok: false, sha: 'abc1234', …(3) } to deeply equal { ok: false, sha: 'abc1234', …(3) }"
 const NODE_LINE =
-  "scripts/local-port-range.test.mjs: ✖ every pending entry is unexpired and pins its exact hit count (3.476151ms) — AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:"
+  "scripts/local-port-range.test.mjs: ✖ every pending entry is unexpired and pins its exact hit count (3.476151ms) | AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:"
 const POLICY_LINE =
   "an expected failure (it.fails) must cite an issue that stays open after this merge: apps/api/src/registry/registry.formal.test.ts:257 names no issue; apps/api/src/registry/registry.formal.test.ts:351 cites #758, which is closed fix: Fix the bug and turn the it.fails back into it, or cite the open issue that still tracks it and drop that issue from Closes"
 
@@ -66,7 +66,7 @@ test("a bare Error line is used only when no test line or annotation matched", (
       "guards",
       "not ok 2 - waits\n  AssertionError: expected 1 to equal 2\n"
     ),
-    "guards: not ok 2 - waits — AssertionError: expected 1 to equal 2"
+    "guards: not ok 2 - waits | AssertionError: expected 1 to equal 2"
   )
 })
 

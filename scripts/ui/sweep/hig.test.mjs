@@ -55,7 +55,7 @@ test("a guideline line names the screen, size, rule, source, measure, screenshot
   )
   assert.equal(
     line,
-    "HIG settings at 390x844: hig-contrast (Accessibility: https://developer.apple.com/design/human-interface-guidelines/accessibility): 1 findings · screenshot /shots/settings-390x844-hig.png · annotate: node scripts/ui.mjs annotate --spec /state/sweep/hig/settings-390x844-hig-contrast.spec.json --out /state/sweep/hig/settings-390x844-hig-contrast.png · repro: node scripts/ui.mjs sweep screen settings --size 390x844"
+    "HIG settings at 390x844: hig-contrast (Accessibility: https://developer.apple.com/design/human-interface-guidelines/accessibility): 1 findings, screenshot /shots/settings-390x844-hig.png, annotate: node scripts/ui.mjs annotate --spec /state/sweep/hig/settings-390x844-hig-contrast.spec.json --out /state/sweep/hig/settings-390x844-hig-contrast.png, repro: node scripts/ui.mjs sweep screen settings --size 390x844"
   )
 })
 

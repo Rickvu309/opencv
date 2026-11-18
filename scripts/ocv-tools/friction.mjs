@@ -289,8 +289,8 @@ export function renderFriction(report) {
     "Metric | Count | Total | Value | Target | Met",
     ...report.rows.map((row) =>
       row.reason
-        ? `${row.label} | not measured: ${row.reason} | — | — | ${row.target} | —`
-        : `${row.label} | ${row.count} | ${row.total} | ${row.value ?? "not measured (empty denominator)"} | ${row.target} | ${row.met == null ? "—" : row.met ? "yes" : "no"}`
+        ? `${row.label} | not measured: ${row.reason} | N/A | N/A | ${row.target} | N/A`
+        : `${row.label} | ${row.count} | ${row.total} | ${row.value ?? "not measured (empty denominator)"} | ${row.target} | ${row.met == null ? "N/A" : row.met ? "yes" : "no"}`
     ),
   ].join("\n")
 }

@@ -1,0 +1,13 @@
+{
+  "id": "no-middle-dot-or-em-dash",
+  "file": "scripts/no-middle-dot-or-em-dash.test.mjs",
+  "detector": {
+    "module": "scripts/lib/no-middle-dot-or-em-dash.mjs",
+    "export": "bannedPunctuationLines"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "6e5b6a4458029831ac667d19a74d396389b62455",
+    "path": "apps/web/src/features/connections/consent.tsx"
+  }
+}

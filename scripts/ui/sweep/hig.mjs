@@ -114,7 +114,7 @@ export function higSpec(item) {
 }
 
 export function higLine(item, specPath) {
-  return `HIG ${item.screen} at ${item.size}: ${item.rule} (${item.source.page}: ${item.source.url}): ${item.problem}${item.shot ? ` · screenshot ${item.shot}` : ""}${specPath ? ` · annotate: node scripts/ui.mjs annotate --spec ${specPath} --out ${specPath.replace(/\.spec\.json$/, ".png")}` : ""} · repro: ${item.repro}`
+  return `HIG ${item.screen} at ${item.size}: ${item.rule} (${item.source.page}: ${item.source.url}): ${item.problem}${item.shot ? `, screenshot ${item.shot}` : ""}${specPath ? `, annotate: node scripts/ui.mjs annotate --spec ${specPath} --out ${specPath.replace(/\.spec\.json$/, ".png")}` : ""}, repro: ${item.repro}`
 }
 
 export const higFound = (cases) =>

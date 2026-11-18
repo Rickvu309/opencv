@@ -80,7 +80,7 @@ export function firstError(log) {
   if (index === undefined || index === -1) return null
   const main = body(lines[index])
   const extra = paired === -1 ? "" : body(lines[paired])
-  const line = clip(extra ? `${main} — ${extra}` : main)
+  const line = clip(extra ? `${main} | ${extra}` : main)
   const from = Math.max(0, index - 8)
   const to = Math.min(lines.length, index + 40)
   let file = null
