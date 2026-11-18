@@ -1,0 +1,26 @@
+[
+  {
+    "subject": "scripts/ci-first-errors.test.mjs",
+    "because": "Update the exact punctuation in fixtures and expectations while preserving the behavior under test.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ui/sweep/hig.test.mjs",
+    "because": "Update the exact punctuation in fixtures and expectations while preserving the behavior under test.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ui/sweep/runner.test.mjs",
+    "because": "Update the exact punctuation in fixtures and expectations while preserving the behavior under test.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  }
+]

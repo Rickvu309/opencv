@@ -131,7 +131,7 @@ export const SWEEP_COMMAND = {
         const result = await coreLoop(world, file)
         cases.push(result)
         const line = result.ok
-          ? `loop ${file}: every step passed · ${Math.round(result.ms / 100) / 10} s`
+          ? `loop ${file}: every step passed, ${Math.round(result.ms / 100) / 10} s`
           : failureLine(result)
         say(line)
         lines.push(line)

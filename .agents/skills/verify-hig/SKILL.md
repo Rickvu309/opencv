@@ -7,7 +7,7 @@ description: Check an OpenCV screen against Apple's Human Interface Guidelines, 
 
 Last confirmed on 2026-11-13 against `origin/main` at `33cdfab1` plus the sweep rules added with this skill (issue #1482): every command below was run on Paper home, the Coach page and Settings and printed what this file says.
 
-OpenCV is a web app, not a native Apple app. The rules here are the guideline rules that are about people and screens, carried over as they are or with a named web equivalent. Each one keeps its source page, URL and quoted sentence in `references/`. iOS-only rules are in `references/left-out.md` with the reason.
+OpenCV is a web app, not a native Apple app. The rules here are the guideline rules that are about people and screens, carried over as they are or with a named web equivalent. Each one keeps its source page, URL and source wording in `references/`. iOS-only rules are in `references/left-out.md` with the reason.
 
 ## When this file is stale
 
@@ -22,7 +22,7 @@ Run in your worktree, in order. One `up` per machine where you can; `down` when 
 | Step | Command                                                                                                     | Takes                | Expect                                                                                                                           |
 | ---- | ----------------------------------------------------------------------------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | 1    | `node scripts/ui.mjs up`                                                                                    | 1 to 2 min           | one JSON line with `web`, `api`, `email`                                                                                         |
-| 2    | `node scripts/ui.mjs sweep screen <id...>`                                                                  | 7 to 11 s per screen | per screen a summary ending `· N HIG findings` when any, then `FAIL` lines and `HIG` lines, then a JSON total with `higFindings` |
+| 2    | `node scripts/ui.mjs sweep screen <id...>`                                                                  | 7 to 11 s per screen | per screen a summary ending `, N HIG findings` when any, then `FAIL` lines and `HIG` lines, then a JSON total with `higFindings` |
 | 3    | `node scripts/ui.mjs annotate --spec <spec> --out <png>` for each `HIG` line (the line prints this command) | about 1 s            | `{"out":...}`: the screenshot with red numbered arrows and one legend line per finding                                           |
 | 4    | open each PNG from step 3 and the sweep shots, then walk the checklist below                                |                      | your own findings, annotated as in `.agents/skills/verify-ui/SKILL.md` (single image)                                            |
 | 5    | `node scripts/ui.mjs down`                                                                                  | a few s              | the app and its throwaway database are gone                                                                                      |

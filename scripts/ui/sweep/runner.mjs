@@ -104,7 +104,7 @@ export function summaryLine(screenId, cases) {
   const ms = cases[0]?.ms ?? 0
   const seconds = `${Math.round(ms / 100) / 10} s`
   const opened = cases.find((item) => item.rule === "opens")
-  if (opened) return `${screenId}: does not open · ${seconds}`
+  if (opened) return `${screenId}: does not open, ${seconds}`
   const fits = cases.filter((item) => item.rule === "fits")
   const requests = cases.find((item) => item.rule === "requests")
   const focus = cases.find((item) => item.rule === "focus")
@@ -120,9 +120,9 @@ export function summaryLine(screenId, cases) {
     `${failed.length ? `${failed.length} failing` : "ok"}`,
     ...(hig ? [`${hig} HIG findings`] : []),
     seconds,
-  ].join(" · ")
+  ].join(", ")
 }
 
 export function failureLine(item) {
-  return `FAIL ${item.screen} at ${item.size}: ${item.problem}${item.shot ? ` · screenshot ${item.shot}` : ""} · repro: ${item.repro}`
+  return `FAIL ${item.screen} at ${item.size}: ${item.problem}${item.shot ? `, screenshot ${item.shot}` : ""}, repro: ${item.repro}`
 }

@@ -60,8 +60,8 @@ const fixture = () => ({
     commit("f", "fixture: no fix"),
   ],
   pullRequests: [
-    pr(1, "fix: a", "Caught by: owner — found it", window.since),
-    pr(2, "hotfix: b", "**Caught by:** CI — failed check", window.until),
+    pr(1, "fix: a", "Caught by: owner \u2014 found it", window.since),
+    pr(2, "hotfix: b", "**Caught by:** CI \u2014 failed check", window.until),
     pr(3, "fix: c", "No attribution", during, files(26)),
     pr(4, "feat: d", "", during, [
       ...files(25),
@@ -203,7 +203,10 @@ test("friction attribution recognizes taxonomy labels and retains missing or unr
   ])
     assert.equal(caughtBy(`Caught by: ${line}`), expected, line)
   assert.equal(caughtBy("Review saw the owner fix something"), "unknown")
-  assert.equal(caughtBy("- **Caught by:** review — title says owner"), "review")
+  assert.equal(
+    caughtBy("- **Caught by:** review \u2014 title says owner"),
+    "review"
+  )
 })
 
 test("friction validates timezone-qualified windows before reading sources", () => {
