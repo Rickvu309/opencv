@@ -35,6 +35,7 @@ import { mountRichEditorLifecycle } from "./rich-editor-lifecycle.ts"
 import { RichFindBar, type PaperFindMode } from "./rich-find-bar.tsx"
 import { RichDocumentMenu } from "./rich-document-menu.tsx"
 import "./design/rich-page-header.pen.css"
+import "./design/paper-writing-page.css"
 import "./rich-page-geometry.css"
 
 type Session = ReturnType<typeof openRichPaperSession>

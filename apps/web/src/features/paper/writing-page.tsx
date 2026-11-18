@@ -28,7 +28,7 @@ import {
   WritingDocumentNoticeSync,
   WritingProposalCard,
 } from "@/features/paper/writing-proposal.tsx"
-import "./design/rich-page-header.pen.css"
+import "./design/paper-writing-page.css"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { catalogClient } from "@/lib/contract-client.ts"
