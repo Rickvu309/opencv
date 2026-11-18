@@ -162,7 +162,7 @@ test("the Coach chat decisions are valid rows and change only the Coach chat geo
   }
   assert.deepEqual(LINEAR_COACH_PAGE_COMPOSER.expect, {
     width: 760,
-    radius: 10,
+    radius: 8,
   })
   assert.deepEqual(LINEAR_COACH_PANEL_COMPOSER.expect, { radius: 10 })
   assert.deepEqual(GROK_COACH_PAGE_COLUMN.expect, { width: 760, gap: 32 })

@@ -369,7 +369,7 @@ export function CoachDock({
       {turnActive ? (
         <Button
           type="button"
-          variant="primary"
+          variant="signature"
           size="icon"
           onClick={(event) => {
             if (!repeatedClickOfSend(event)) onStop?.()
@@ -382,7 +382,7 @@ export function CoachDock({
       ) : (
         <Button
           type="button"
-          variant={canSend ? "primary" : "secondary"}
+          variant={canSend ? "signature" : "secondary"}
           size="icon"
           onClick={onSend}
           disabled={!canSend}

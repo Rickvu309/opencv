@@ -1,17 +1,12 @@
 import { buttonVariants } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
-const MESH =
-  "[background-image:radial-gradient(ellipse_90%_85%_at_55%_60%,color-mix(in_oklch,var(--ring)_40%,var(--background)),transparent_72%),linear-gradient(160deg,color-mix(in_oklch,var(--ring)_10%,var(--background)),color-mix(in_oklch,var(--ring)_18%,var(--background))_48%,color-mix(in_oklch,var(--ring)_13%,var(--background)))]"
-
 const TONE = {
-  primary: cn(
-    "border-0 text-foreground ring-0 hover:brightness-[0.98]",
-    MESH,
-    "shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--background)_70%,transparent),0_2px_10px_color-mix(in_oklch,var(--ring)_30%,transparent)]"
+  primary: buttonVariants({ variant: "signature" }),
+  quiet: cn(
+    buttonVariants({ variant: "ghost" }),
+    "border-0 bg-[color-mix(in_oklch,var(--foreground)_4%,transparent)] text-foreground shadow-none ring-0 hover:bg-[color-mix(in_oklch,var(--foreground)_7%,transparent)]"
   ),
-  quiet:
-    "border-0 text-foreground ring-0 shadow-none bg-[color-mix(in_oklch,var(--foreground)_4%,transparent)] hover:bg-[color-mix(in_oklch,var(--foreground)_7%,transparent)]",
 } as const
 
 const SIZE = {
@@ -23,11 +18,7 @@ export function landingButton(options: {
   tone: keyof typeof TONE
   size: keyof typeof SIZE
 }) {
-  return cn(
-    buttonVariants({ variant: "ghost" }),
-    TONE[options.tone],
-    SIZE[options.size]
-  )
+  return cn(TONE[options.tone], SIZE[options.size])
 }
 
 const PILL =

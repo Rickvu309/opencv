@@ -19,10 +19,10 @@ const GROK_CLEAN_COACH =
 export const LINEAR_COACH_PAGE_COMPOSER = {
   decided: "2026-11-18",
   reason:
-    "the owner asked for the Coach to look like Linear's agent page: the page composer is Linear's two-row card at the pen frame's 114 high with Linear's 10px corners instead of the pen frame's 18, kept as wide as the 760 reading column instead of the pen frame's 720",
+    "the owner asked for the Coach to look like Linear's agent page: the page composer is Linear's two-row card at the pen frame's 114 high with Linear's 8px corners instead of the pen frame's 18, kept as wide as the 760 reading column instead of the pen frame's 720",
   expect: {
     width: 760,
-    radius: 10,
+    radius: 8,
   },
 }
 

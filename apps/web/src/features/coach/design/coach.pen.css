@@ -22,7 +22,7 @@
 }
 
 [data-pen-surface="coach"][data-slot="coach-composer"]:not([data-capped]) {
-  border-radius: 10px;
+  border-radius: 8px;
   border-color: color-mix(in oklab, var(--foreground) 8%, transparent);
   background-color: var(--card);
   box-shadow:

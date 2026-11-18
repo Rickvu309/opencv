@@ -11,6 +11,9 @@ const primaryButton =
 const destructiveButton =
   "rounded-md bg-destructive text-[13px] font-semibold text-white hover:bg-[color-mix(in_oklch,var(--destructive),var(--foreground)_10%)] active:bg-[color-mix(in_oklch,var(--destructive),var(--foreground)_20%)] focus-visible:border-destructive focus-visible:ring-destructive/30 disabled:opacity-40"
 
+const signatureButton =
+  "border-0 text-foreground ring-0 hover:brightness-[0.98] [background-image:radial-gradient(ellipse_90%_85%_at_55%_60%,color-mix(in_oklch,var(--ring)_40%,var(--background)),transparent_72%),linear-gradient(160deg,color-mix(in_oklch,var(--ring)_10%,var(--background)),color-mix(in_oklch,var(--ring)_18%,var(--background))_48%,color-mix(in_oklch,var(--ring)_13%,var(--background)))] shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--background)_70%,transparent),0_2px_10px_color-mix(in_oklch,var(--ring)_30%,transparent)]"
+
 const buttonVariants = cva(
   "group/button inline-flex shrink-0 motion-press items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
@@ -18,6 +21,7 @@ const buttonVariants = cva(
       variant: {
         default: secondaryButton,
         primary: primaryButton,
+        signature: signatureButton,
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:

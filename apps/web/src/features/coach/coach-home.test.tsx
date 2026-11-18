@@ -23,7 +23,7 @@ function renderHome(disabled = false, size?: "page" | "panel") {
 }
 
 describe("Coach home pane", () => {
-  it("names the empty page for screen readers only, then shows the composer and three quiet starter chips", () => {
+  it("names the empty page for screen readers only, then centres the composer over three quiet starter rows", () => {
     renderHome()
     const heading = screen.getByRole("heading", { level: 2 })
     expect(heading).toHaveTextContent("How can I help?")
@@ -35,19 +35,24 @@ describe("Coach home pane", () => {
       composer.compareDocumentPosition(ideas) & Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy()
     expect(within(ideas).getAllByRole("listitem")).toHaveLength(3)
-    expect(ideas.className).toContain("flex-wrap")
-    expect(ideas.className).toContain("justify-center")
+    expect(ideas).toHaveAttribute("data-layout", "rows")
+    expect(ideas.className).toContain("flex-col")
+    expect(ideas.className).toContain("max-w-[680px]")
+    const home = heading.parentElement
+    expect(home?.className).toContain("justify-center")
+    expect(home?.className).not.toMatch(/pt-\[\d+dvh\]/)
   })
 
-  it("draws each starter as a plain pill with a label, not a card with a description", () => {
+  it("draws each page starter as a full-width row like a recent Chat, not a pill or a card", () => {
     renderHome()
     for (const { title, description } of COACH_STARTERS) {
       const chip = screen.getByRole("button", { name: title })
-      expect(chip.className).toContain("rounded-full")
+      expect(chip).toHaveAttribute("data-variant", "ghost")
+      expect(chip.className).toContain("w-full")
+      expect(chip.className).toContain("justify-start")
       expect(chip.className).toContain("h-11")
-      expect(chip.className).toContain("md:h-9")
-      expect(chip.className).toContain("text-muted-foreground")
-      expect(chip.className).not.toMatch(/min-h-\[124px\]|bg-card/)
+      expect(chip.className).toContain("md:h-8")
+      expect(chip.className).not.toMatch(/rounded-full|min-h-\[124px\]|bg-card/)
       const shown = [...chip.querySelectorAll("span:not(.sr-only)")]
       expect(shown.map((node) => node.textContent)).toEqual([title])
       expect(chip).toHaveAccessibleDescription(description)
@@ -98,6 +103,10 @@ describe("Coach home pane", () => {
     )
     expect(screen.queryByText("Composer")).not.toBeInTheDocument()
     const ideas = screen.getByRole("list", { name: "Ideas for Coach" })
+    expect(ideas).toHaveAttribute("data-layout", "chips")
+    expect(ideas.className).toContain("flex-wrap")
+    for (const chip of within(ideas).getAllByRole("button"))
+      expect(chip.className).toContain("rounded-full")
     expect(within(ideas).getAllByRole("button")).toHaveLength(3)
     fireEvent.click(screen.getByRole("button", { name: "Prep an interview" }))
     expect(choose).toHaveBeenLastCalledWith("Prep an interview")
