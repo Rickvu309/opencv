@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest"
-import { cleanup, screen } from "@testing-library/react"
+import { cleanup, fireEvent, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
 
 import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
@@ -42,17 +42,24 @@ const LAYOUT_HEADINGS: Record<string, string[]> = {
   ],
 }
 
+function contentPreview() {
+  return document.querySelector(
+    '[data-slot="paper-picker-preview"][data-visible="true"]'
+  )
+}
+
 describe("Paper template chooser layout", () => {
-  it("shows each distinct page as its own card with that layout's headings, in a grid of two columns on phones and more on wider sheets", () => {
+  it("shows a distinct page and its headings for every template", () => {
     openChooser()
     const grid = screen.getByRole("radiogroup", { name: "Templates" })
-    expect(grid.className).toMatch(/(^|\s)grid-cols-2(\s|$)/)
-    expect(grid.className).toContain("sm:grid-cols-3")
     expect(
       [...grid.querySelectorAll<HTMLElement>("[data-template-card]")].map(
         (card) => card.dataset.templateCard
       )
     ).toEqual(["blank", "simple", "modern", "compact", "academic"])
+    expect(
+      grid.querySelector('[data-template-page="blank"]')
+    ).toBeEmptyDOMElement()
     for (const [id, headings] of Object.entries(LAYOUT_HEADINGS)) {
       const page = grid.querySelector(`[data-template-page="${id}"]`)
       expect(page, id).toBeTruthy()
@@ -68,10 +75,12 @@ describe("Paper template chooser layout", () => {
       "true"
     )
     for (const choice of TEMPLATE_CHOICES) {
-      const description = screen.getByText(choice.use)
-      expect(description.textContent).toBe(choice.use)
-      expect(description.className).toMatch(/whitespace-normal/)
-      expect(description.className).not.toMatch(/truncate|line-clamp/)
+      fireEvent.click(screen.getByRole("radio", { name: choice.label }))
+      expect(screen.getByText(choice.use)).toBeInTheDocument()
+      expect(contentPreview()).toHaveAttribute("data-preview", choice.id)
+      expect(
+        screen.getByRole("button", { name: `Use ${choice.label}` })
+      ).toBeEnabled()
     }
   })
 
@@ -84,7 +93,6 @@ describe("Paper template chooser layout", () => {
     const actions = content.querySelector<HTMLElement>(
       "[data-slot=paper-gallery-actions]"
     )
-    expect(scroll?.className).toContain("overflow-y-auto")
     expect(scroll?.className).toContain("min-h-0")
     expect(actions?.className).toContain("shrink-0")
     expect(scroll?.contains(actions)).toBe(false)

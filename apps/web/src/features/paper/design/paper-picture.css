@@ -1,0 +1,81 @@
+.paper-library,
+.paper-picker,
+.paper-picture {
+  --cv-paper-picture-ratio: calc(210 / 297);
+  --cv-paper-picture-width: 794px;
+  --cv-paper-picture-height: 1123px;
+}
+
+.paper-picture {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: var(--cv-paper-picture-ratio);
+  container-type: inline-size;
+  overflow: hidden;
+  background: white;
+  color: rgb(0 0 0 / 85%);
+  text-align: start;
+}
+
+.paper-picture,
+.paper-continue-stack::before {
+  box-shadow:
+    0 0 0 1px var(--border),
+    0 1px 2px rgb(0 0 0 / 6%),
+    0 6px 16px rgb(0 0 0 / 4%);
+}
+
+.paper-picture .paper-picture-text {
+  position: absolute;
+  inset: 0 auto auto 0;
+  box-sizing: border-box;
+  inline-size: var(--cv-paper-picture-width);
+  block-size: var(--cv-paper-picture-height);
+  min-block-size: 0;
+  padding: 1in;
+  transform: scale(tan(atan2(100cqw, var(--cv-paper-picture-width))));
+  transform-origin: top left;
+  white-space: normal;
+  overflow-wrap: break-word;
+  overflow: hidden;
+}
+
+.paper-template-text {
+  font:
+    11pt/normal Calibri,
+    Carlito,
+    "Segoe UI",
+    Arial,
+    sans-serif;
+  color: black;
+}
+
+.paper-template-text > span {
+  display: block;
+  margin-block-end: 6pt;
+}
+
+.paper-template-text > [data-page-name] {
+  margin-block-end: 3pt;
+  font-size: 20pt;
+  font-weight: 700;
+}
+
+.paper-template-text > [data-page-heading] {
+  margin-block: 12pt 4pt;
+  padding-block-end: 1pt;
+  border-block-end: 0.5pt solid currentColor;
+  font-size: 13pt;
+  font-weight: 700;
+}
+
+.paper-template-text > [data-page-line="ListBullet"] {
+  padding-inline-start: 18pt;
+}
+
+.paper-template-text > [data-page-line="ListBullet"]::before {
+  position: absolute;
+  margin-inline-start: -18pt;
+  content: "•";
+}

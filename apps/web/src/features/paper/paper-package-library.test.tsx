@@ -70,7 +70,11 @@ function Harness({
 }
 
 async function preview(name: string) {
-  fireEvent.click(await screen.findByRole("button", { name: `${name} menu` }))
+  fireEvent.click(
+    await screen.findByRole("button", {
+      name: `${name.replace(/\.docx$/i, "")} menu`,
+    })
+  )
   fireEvent.click(await screen.findByRole("menuitem", { name: "Preview text" }))
 }
 
@@ -136,7 +140,14 @@ it("keeps unavailable pinned content unavailable instead of loading a newer head
     "fetch",
     vi.fn<typeof fetch>(async (_url, init) => {
       const input: unknown = JSON.parse(String(init?.body))
-      inputs.push(input)
+      if (!(
+        input &&
+        typeof input === "object" &&
+        "view" in input &&
+        input.view === "page"
+      )) {
+        inputs.push(input)
+      }
       return input && typeof input === "object" && "view" in input
         ? Response.json({ ok: true, data: { items: [document], next: null } })
         : Response.json(
@@ -149,6 +160,10 @@ it("keeps unavailable pinned content unavailable instead of loading a newer head
     })
   )
   render(<Harness />)
+  await screen.findByRole("button", { name: /Open / })
+  expect(
+    screen.queryByRole("button", { name: `Open ${document.name}` })
+  ).not.toBeInTheDocument()
   await preview(document.name)
   expect(
     await screen.findByText(
@@ -191,7 +206,9 @@ it("opens the saved page without leaving the preview", async () => {
     />
   )
   fireEvent.click(
-    await screen.findByRole("button", { name: `Open ${document.name}` })
+    await screen.findByRole("button", {
+      name: `Open ${document.name.replace(/\.docx$/i, "")}`,
+    })
   )
   expect(opened).toEqual([document.docId])
   expect(screen.queryByText("First saved paragraph")).not.toBeInTheDocument()
@@ -268,19 +285,27 @@ it("requests the next library page and returns to the first page", async () => {
   )
   render(<Harness />)
   expect(
-    await screen.findByRole("button", { name: `Open ${document.name}` })
+    await screen.findByRole("button", {
+      name: `Open ${document.name.replace(/\.docx$/i, "")}`,
+    })
   ).toBeVisible()
   fireEvent.click(screen.getByRole("button", { name: "More documents" }))
   expect(
-    await screen.findByRole("button", { name: `Open ${second.name}` })
+    await screen.findByRole("button", {
+      name: `Open ${second.name.replace(/\.docx$/i, "")}`,
+    })
   ).toBeVisible()
   expect(
-    screen.queryByRole("button", { name: `Open ${document.name}` })
+    screen.queryByRole("button", {
+      name: `Open ${document.name.replace(/\.docx$/i, "")}`,
+    })
   ).not.toBeInTheDocument()
   expect(inputs).toContainEqual({ view: "library", after: document.docId })
   fireEvent.click(screen.getByRole("button", { name: "First documents" }))
   expect(
-    await screen.findByRole("button", { name: `Open ${document.name}` })
+    await screen.findByRole("button", {
+      name: `Open ${document.name.replace(/\.docx$/i, "")}`,
+    })
   ).toBeVisible()
   await waitFor(() =>
     expect(

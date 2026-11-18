@@ -69,13 +69,9 @@ function wideDialog() {
     ).toEqual([])
   expect(content?.className).toContain("sm:max-w-3xl")
   expect(content?.className).not.toContain("sm:max-w-sm")
-  expect(content.className).toContain("max-sm:h-dvh")
-  expect(content.className).toContain("max-sm:top-0")
   expect(content.className).toContain("flex-col")
   const scroll = content.querySelector<HTMLElement>("[data-template-scroll]")
-  expect(scroll?.className).toContain("overflow-y-auto")
   expect(scroll?.className).toContain("min-h-0")
-  expect(scroll?.className).toContain("overscroll-contain")
   const actions = content.querySelector<HTMLElement>(
     "[data-slot=paper-gallery-actions]"
   )
@@ -183,50 +179,48 @@ describe("Paper template gallery", () => {
     const page = (id: string) =>
       [
         ...document.querySelectorAll(
-          `[data-template-page="${id}"] :is([data-page-name],[data-page-heading])`
+          `[data-template-grid] [data-template-page="${id}"] :is([data-page-name],[data-page-heading])`
         ),
       ].map((line) => line.textContent)
     expect(page("simple")).toEqual([
-      "Your name",
+      "[Your name]",
       "Summary",
       "Experience",
       "Education",
       "Skills",
     ])
     expect(page("modern")).toEqual([
-      "Your name",
+      "[Your name]",
       "Profile",
       "Experience",
       "Selected work",
     ])
     expect(page("compact")).toEqual([
-      "Your name",
+      "[Your name]",
       "Work experience",
       "About",
       "Education",
       "Skills",
     ])
     expect(page("academic")).toEqual([
-      "Your name",
+      "[Your name]",
       "Education",
       "Projects & campus",
       "Experience",
       "Skills & languages",
     ])
-    expect(
-      document.querySelectorAll(
-        '[data-template-page="simple"] [data-page-line]'
-      )
-    ).toHaveLength(8)
-    const heading = document.querySelector<HTMLElement>("[data-page-heading]")
-    expect(heading?.className).toMatch(/text-\[4\.6cqw\]/)
-    expect(heading?.className).toContain("font-semibold")
+    const lines = document.querySelectorAll(
+      '[data-template-grid] [data-template-page="simple"] [data-page-line]'
+    )
+    expect([...lines].map((line) => line.textContent)).toEqual(
+      templatePageLines("simple").map((line) => line.text)
+    )
     expect(
       document.querySelector('[data-template-page="blank"] [data-page-name]')
     ).toBeNull()
     expect(
-      document.querySelector('[data-template-page="blank"] svg')
-    ).toBeTruthy()
+      document.querySelector('[data-template-page="blank"]')
+    ).toBeEmptyDOMElement()
   })
 
   it("searches forgivingly, picks the top match, and says when nothing matches", () => {
@@ -248,7 +242,7 @@ describe("Paper template gallery", () => {
     expect(shownCards()).toEqual(["blank"])
     expect(screen.getByText(/No template matches/)).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Start blank" })).toBeEnabled()
-    fireEvent.click(screen.getByRole("button", { name: "clear the search" }))
+    fireEvent.click(screen.getByRole("button", { name: "Clear search" }))
     expect(shownCards()).toEqual(["blank", ...FEATURED_TEMPLATES])
     fireEvent.change(search(), { target: { value: "blank" } })
     expect(shownCards()).toEqual(["blank"])

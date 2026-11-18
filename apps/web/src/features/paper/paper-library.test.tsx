@@ -34,7 +34,11 @@ vi.mock("./paper-api.ts", async (importOriginal) => ({
 async function openRename(doc: PaperView) {
   const user = userEvent.setup()
   renderLibrary([doc])
-  await user.click(screen.getByRole("button", { name: `${doc.name} menu` }))
+  await user.click(
+    screen.getByRole("button", {
+      name: `${doc.name.replace(/\.(docx?|pdf)$/i, "")} menu`,
+    })
+  )
   await user.click(await screen.findByRole("menuitem", { name: "Rename" }))
   return user
 }
@@ -58,7 +62,7 @@ function missingImport(): never {
 }
 
 describe("Paper library", () => {
-  it("opens the full-page letter picker and returns to Paper", async () => {
+  it("opens the Letter picker and can move into the Coach draft flow and back to Paper", async () => {
     vi.stubGlobal(
       "fetch",
       vi
@@ -68,7 +72,14 @@ describe("Paper library", () => {
         )
     )
     renderLibrary([])
-    fireEvent.click(screen.getByRole("button", { name: "Cover letter" }))
+    fireEvent.click(screen.getAllByRole("button", { name: "New letter" })[0]!)
+    const chooser = within(screen.getByRole("dialog", { name: "New Letter" }))
+    expect(chooser.getByRole("radio", { name: "Blank" })).toHaveAttribute(
+      "aria-checked",
+      "true"
+    )
+    expect(chooser.getByRole("button", { name: "Start blank" })).toBeEnabled()
+    fireEvent.click(chooser.getByRole("button", { name: "Draft with Coach" }))
     expect(
       screen.getByRole("region", { name: "New cover letter" })
     ).toBeInTheDocument()
@@ -81,7 +92,7 @@ describe("Paper library", () => {
     ).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Draft letter" })).toBeDisabled()
     fireEvent.click(screen.getByRole("button", { name: "Paper", exact: true }))
-    expect(screen.getByText("Start a document")).toBeInTheDocument()
+    expect(screen.queryByText("No CVs yet.")).toBeInTheDocument()
     expect(
       screen.getByRole("button", { name: "New", exact: true })
     ).toHaveFocus()
@@ -115,16 +126,18 @@ describe("Paper library", () => {
     })
     const onOpen = vi.fn()
     render(
-      <PaperLibrary
-        docs={[]}
-        files={[]}
-        loading={false}
-        error={null}
-        onRetry={() => undefined}
-        onOpen={onOpen}
-        query=""
-        onQueryChange={() => undefined}
-      />
+      libraryRouter(
+        <PaperLibrary
+          docs={[]}
+          files={[]}
+          loading={false}
+          error={null}
+          onRetry={() => undefined}
+          onOpen={onOpen}
+          query=""
+          onQueryChange={() => undefined}
+        />
+      )
     )
     const input = document.querySelector('input[type="file"]')
     if (!input) throw new Error("Missing import input")
@@ -153,7 +166,7 @@ describe("Paper library", () => {
     ).toContain(created.docId)
     expect(screen.queryByText(created.notice)).toBeNull()
     expect(onOpen).not.toHaveBeenCalled()
-    expect(screen.getByText("Start a document")).toBeInTheDocument()
+    expect(screen.queryByText("No CVs yet.")).toBeInTheDocument()
   })
 
   it("opens a Word import on the writing page", async () => {
@@ -181,16 +194,18 @@ describe("Paper library", () => {
       )
     )
     render(
-      <PaperLibrary
-        docs={[]}
-        files={[]}
-        loading={false}
-        error={null}
-        onRetry={() => undefined}
-        onOpen={onOpen}
-        query=""
-        onQueryChange={() => undefined}
-      />
+      libraryRouter(
+        <PaperLibrary
+          docs={[]}
+          files={[]}
+          loading={false}
+          error={null}
+          onRetry={() => undefined}
+          onOpen={onOpen}
+          query=""
+          onQueryChange={() => undefined}
+        />
+      )
     )
     const input = document.querySelector('input[type="file"]')
     if (!input) throw new Error("Missing import input")
@@ -244,8 +259,9 @@ describe("Paper library", () => {
     renderLibrary([])
     const file = new File(["CV"], "Dropped.pdf", { type: "application/pdf" })
     fireEvent.click(
-      screen.getAllByRole("button", { name: "Import", exact: true }).at(0) ??
-        missingImport()
+      screen
+        .getAllByRole("button", { name: "Import a file", exact: true })
+        .at(0) ?? missingImport()
     )
     fireEvent.drop(screen.getByRole("region", { name: "Import a file" }), {
       dataTransfer: { files: [file] },
@@ -266,8 +282,9 @@ describe("Paper library", () => {
     )
     renderLibrary([])
     fireEvent.click(
-      screen.getAllByRole("button", { name: "Import", exact: true }).at(0) ??
-        missingImport()
+      screen
+        .getAllByRole("button", { name: "Import a file", exact: true })
+        .at(0) ?? missingImport()
     )
     const dialog = screen.getByRole("dialog", { name: "Import", exact: true })
     const field = within(dialog).getByRole("textbox", {
@@ -296,19 +313,22 @@ describe("Paper library", () => {
     )
   })
 
-  it("offers three starter cards and opens import when there are no documents", () => {
+  it("offers section actions and opens import when there are no documents", () => {
     renderLibrary([])
-    expect(screen.getByText("Start a document")).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "CV" })).toBeInTheDocument()
+    expect(screen.queryByText("No CVs yet.")).toBeInTheDocument()
     expect(
-      screen.getByRole("button", { name: "Cover letter" })
+      screen.getAllByRole("button", { name: "New CV" })[0]!
+    ).toBeInTheDocument()
+    expect(
+      screen.getAllByRole("button", { name: "New letter" })[0]!
     ).toBeInTheDocument()
     expect(
       screen.queryByRole("textbox", { name: "Search Paper" })
     ).not.toBeInTheDocument()
     fireEvent.click(
-      screen.getAllByRole("button", { name: "Import", exact: true }).at(0) ??
-        missingImport()
+      screen
+        .getAllByRole("button", { name: "Import a file", exact: true })
+        .at(0) ?? missingImport()
     )
     expect(
       screen.getByRole("dialog", { name: "Import", exact: true })
@@ -373,7 +393,7 @@ describe("Paper library", () => {
       format: "word",
     }
     renderLibrary([wordPage, cv("Block CV")])
-    fireEvent.click(screen.getByRole("button", { name: "CV.docx menu" }))
+    fireEvent.click(screen.getByRole("button", { name: "CV menu" }))
     expect(
       await screen.findByRole("menuitem", { name: "Open" })
     ).toBeInTheDocument()
@@ -516,7 +536,11 @@ describe("Paper library", () => {
       vi.stubGlobal("fetch", fetchMock)
       const user = userEvent.setup()
       renderLibrary([doc])
-      await user.click(screen.getByRole("button", { name: `${doc.name} menu` }))
+      await user.click(
+        screen.getByRole("button", {
+          name: `${doc.name.replace(/\.(docx?|pdf)$/i, "")} menu`,
+        })
+      )
       await user.click(await screen.findByRole("menuitem", { name: "Delete" }))
       expect(
         await screen.findByText(

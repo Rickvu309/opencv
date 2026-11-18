@@ -1,5 +1,11 @@
-import { Fragment, useEffect, useReducer, useRef, type DragEvent } from "react"
-import { FileUp, Plus } from "lucide-react"
+import {
+  useContext,
+  useEffect,
+  useReducer,
+  useRef,
+  type DragEvent,
+} from "react"
+import { Plus } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
   paperDocNameSchema,
@@ -19,7 +25,14 @@ import {
   DialogTitle,
 } from "@workspace/ui/components/dialog"
 
-import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
+import {
+  catalogClient,
+  undoActivity,
+  useRunCommand,
+} from "@/lib/contract-client.ts"
+import { apiBaseUrl } from "@/lib/api-url.ts"
+import { createChat } from "@/features/coach/chat-api.ts"
+import { ChatStoreContext } from "@/features/coach/chat-store-context.ts"
 import { listJobs } from "@/features/apply/apply-api.ts"
 
 import {
@@ -36,10 +49,10 @@ import { openBlankPage, PaperNewDialog } from "./paper-new-dialog.tsx"
 import {
   PAPER_GALLERY_DIALOG_CLASS,
   focusChosenTemplate,
+  type PickerChoice,
 } from "./paper-template-gallery.tsx"
 import { PaperLetterStartPage } from "./paper-letter-start-page.tsx"
 import { PaperImportInput } from "./paper-import-input.tsx"
-import { PaperLibraryStarters } from "./paper-parts.tsx"
 import { PaperPrintSheet } from "./paper-print-sheet.tsx"
 import { printPaper } from "./paper-print.ts"
 import { initialLibrary, libraryReducer } from "./paper-library.reducer.ts"
@@ -52,18 +65,17 @@ import {
 import {
   PaperPackageLibrary,
   useWordLibrary,
+  type WordDocument,
 } from "./paper-package-library.tsx"
-import { PaperLibrarySearch } from "./paper-library-search.tsx"
-import { PaperLibraryTile } from "./paper-library-card.tsx"
+import { PaperLibraryCollection } from "./paper-library-collection.tsx"
 import {
-  LIBRARY_SECTIONS,
+  libraryDisplayName,
+  entryName,
+  latestLibraryDocument,
   libraryEntries,
-  librarySections,
 } from "./paper-library-entries.ts"
 import {
-  LibraryEntryCard,
-  PaperLibrarySection,
-  PaperProofsLink,
+  hasPrintBody,
   type LibraryEntryHandlers,
 } from "./paper-library-sections.tsx"
 import { PaperLinkDialog } from "./paper-library-link.tsx"
@@ -72,7 +84,9 @@ import {
   PaperDeleteDialog,
   PaperRenameDialog,
 } from "./paper-library-dialogs.tsx"
+import { PaperContinue, PaperStartStrip } from "./paper-library-desk.tsx"
 import "./design/paper-library.pen.css"
+import "./design/paper-library-desk.css"
 
 export function PaperLibrary({
   docs,
@@ -95,6 +109,7 @@ export function PaperLibrary({
 }) {
   const run = useRunCommand()
   const queryClient = useQueryClient()
+  const chats = useContext(ChatStoreContext)
   const importRef = useRef<HTMLInputElement>(null)
   const newButtonRef = useRef<HTMLButtonElement>(null)
   const returnFromLetter = useRef(false)
@@ -104,6 +119,7 @@ export function PaperLibrary({
       importState,
       creatingBlank,
       mode,
+      view,
       rename,
       renameError,
       jobs,
@@ -122,7 +138,8 @@ export function PaperLibrary({
     }
   }, [mode])
   const closeDialog = () => dispatch({ type: "dialog_closed" })
-  const newStep = useShownWhileClosing(mode?.type === "new" ? mode.step : null)
+  const newMode = useShownWhileClosing(mode?.type === "new" ? mode : null)
+  const newStep = newMode?.step
   const newGallery = newStep === "gallery"
   const deleting = useShownWhileClosing(
     mode?.type === "delete" || mode?.type === "delete-file" ? mode : null
@@ -135,19 +152,51 @@ export function PaperLibrary({
   )
   const linkDoc = useShownWhileClosing(mode?.type === "link" ? mode.doc : null)
   const retryFile = importError?.retry ?? null
-  const dialogOpen = mode !== null || importState.type !== "idle"
-  const needle = query.trim().toLowerCase()
   const wordLibrary = useWordLibrary()
   const entries = libraryEntries({ docs, files, words: wordLibrary.items })
   const deletingWordPage =
     deleting?.type === "delete" && deleting.doc.format === "word"
-  const sections = librarySections(entries, needle)
-  const searching = needle !== ""
-  const noResults = LIBRARY_SECTIONS.every(
-    ({ id }) => sections[id].length === 0
-  )
-  const firstRun = !loading && !error && entries.length === 0 && !searching
-  const ready = !loading && !error && !firstRun
+  const latest = latestLibraryDocument(entries)
+  const latestDoc = latest?.type === "paper" ? latest.doc : undefined
+  const latestWord = latest?.word
+  const latestId = latestDoc?.id ?? latestWord?.docId
+  const ready = !loading && !error
+
+  function openPicker(kind: "cv" | "letter", initial?: PickerChoice) {
+    dispatch({ type: "new_dialog_opened", step: "gallery", kind, initial })
+  }
+
+  async function askCoach() {
+    if (!latest || !latestId || !chats) return
+    try {
+      const chat = await createChat(queryClient, {
+        title: `About ${libraryDisplayName(entryName(latest))}`,
+        focusDocId: latestId,
+      })
+      chats.openChat(chat.id)
+      const dock =
+        document.querySelector<HTMLButtonElement>("[data-dock-coach]")
+      if (dock?.getAttribute("aria-expanded") !== "true") dock?.click()
+    } catch (err) {
+      toast(messageOf(err, "Could not open Coach. Try again."))
+    }
+  }
+
+  async function downloadWord(word: WordDocument) {
+    try {
+      const exported = await queryClient.fetchQuery(
+        catalogClient.options(wordLibrary.owner, "paper.export", {
+          docId: word.docId,
+          at: word.revision,
+        })
+      )
+      const link = document.createElement("a")
+      link.href = `${apiBaseUrl}${exported.downloadPath}`
+      link.click()
+    } catch (err) {
+      toast(messageOf(err, "Could not download this Word document. Try again."))
+    }
+  }
 
   useEffect(() => () => importRequest.current?.abort(), [])
 
@@ -285,7 +334,7 @@ export function PaperLibrary({
 
   async function confirmDelete() {
     if (!mode || mode.type !== "delete") return
-    const name = mode.doc.name
+    const name = libraryDisplayName(mode.doc.name)
     try {
       const deleted = await run("paper.delete", { docId: mode.doc.id })
       closeDialog()
@@ -301,7 +350,7 @@ export function PaperLibrary({
     if (!mode || mode.type !== "delete-file") return
     try {
       await run("paper.deleteFile", { fileId: mode.file.id })
-      toast(`Deleted ${mode.file.name}`)
+      toast(`Deleted ${libraryDisplayName(mode.file.name)}`)
       closeDialog()
     } catch (err) {
       toast(messageOf(err, "Could not delete that file. Try again."))
@@ -311,7 +360,7 @@ export function PaperLibrary({
   async function duplicate(doc: PaperView) {
     try {
       const copy = await run("paper.duplicate", { docId: doc.id })
-      await rememberUndo(copy.id, `Duplicated ${doc.name}`)
+      await rememberUndo(copy.id, `Duplicated ${libraryDisplayName(doc.name)}`)
     } catch (err) {
       toast(messageOf(err, "Could not duplicate. Try again."))
     }
@@ -328,38 +377,9 @@ export function PaperLibrary({
     onDuplicate: (doc) => void duplicate(doc),
     onLink: (doc) => void openLink(doc),
     onDownload: download,
+    onDownloadWord: (word) => void downloadWord(word),
     onDelete: (doc) => dispatch({ type: "delete_requested", doc }),
     onDeleteFile: (file) => dispatch({ type: "delete_file_requested", file }),
-  }
-
-  const tiles = {
-    cv: (
-      <PaperLibraryTile
-        key="new-cv"
-        label="New CV"
-        icon={Plus}
-        slot="paper-library-new-cv"
-        onClick={() => dispatch({ type: "new_dialog_opened", step: "gallery" })}
-      />
-    ),
-    letter: (
-      <PaperLibraryTile
-        key="letter"
-        label="New letter"
-        icon={Plus}
-        slot="paper-library-new-letter"
-        onClick={() => dispatch({ type: "letter_dialog_opened" })}
-      />
-    ),
-    files: (
-      <PaperLibraryTile
-        key="import"
-        label="Import a file"
-        icon={FileUp}
-        slot="paper-library-import"
-        onClick={() => dispatch({ type: "import_dialog_opened" })}
-      />
-    ),
   }
 
   if (mode?.type === "letter") {
@@ -382,7 +402,7 @@ export function PaperLibrary({
       aria-label="Paper"
       data-pen-surface="paper"
       data-slot="paper-library"
-      className="flex min-w-0 flex-col gap-6 p-4 sm:p-6"
+      className="paper-library min-w-0"
     >
       <PaperImportInput
         inputRef={importRef}
@@ -400,19 +420,16 @@ export function PaperLibrary({
       ) : null}
       <div
         data-slot="paper-library-header"
-        className="sticky top-0 z-20 flex flex-wrap items-center gap-2 bg-background"
+        className="paper-library-header sticky top-0 z-20 flex flex-wrap items-center gap-2 bg-background"
       >
         <SidebarExpandButton />
         <h1 className="text-lg font-medium">Paper</h1>
         <div data-slot="paper-library-spacer" className="flex-1" />
-        {ready ? (
-          <PaperLibrarySearch query={query} onQueryChange={onQueryChange} />
-        ) : null}
         <Button
-          className="h-11 gap-1.5 md:h-7"
+          className="h-11 gap-1.5 text-[0.8125rem] md:h-7"
           type="button"
           size="sm"
-          variant={dialogOpen ? "outline" : "primary"}
+          variant="outline"
           data-primary-action
           ref={newButtonRef}
           onClick={() => dispatch({ type: "new_dialog_opened", step: "kind" })}
@@ -421,71 +438,58 @@ export function PaperLibrary({
           New
         </Button>
       </div>
-      {loading ? (
-        <p role="status" className="py-6 text-sm text-muted-foreground">
-          Loading documents…
-        </p>
-      ) : null}
-      {error ? (
-        <div className="flex flex-col items-start gap-3 py-6">
-          <p role="alert" className="text-sm text-destructive">
-            {error}
+      <div className="paper-desk" data-slot="paper-desk">
+        {loading ? (
+          <p role="status" className="py-6 text-sm text-muted-foreground">
+            Loading documents…
           </p>
-          <Button
-            className="h-11 md:h-8"
-            type="button"
-            variant="outline"
-            onClick={onRetry}
-          >
-            Refresh
-          </Button>
-        </div>
-      ) : null}
-      {firstRun ? (
-        <PaperLibraryStarters
-          onCv={() => dispatch({ type: "new_dialog_opened", step: "gallery" })}
-          onLetter={() => dispatch({ type: "letter_dialog_opened" })}
-          onImport={() => dispatch({ type: "import_dialog_opened" })}
-        />
-      ) : null}
-      {ready && searching && noResults ? (
-        <div role="status" className="flex flex-col items-start gap-2">
-          <p>No results for &quot;{query.trim()}&quot;</p>
-          <p className="text-sm text-muted-foreground">
-            Try another word, or clear the search.
-          </p>
-          <Button
-            type="button"
-            variant="link"
-            className="h-11 px-0 text-sm md:h-8"
-            onClick={() => onQueryChange("")}
-          >
-            Clear search
-          </Button>
-        </div>
-      ) : null}
-      {ready
-        ? LIBRARY_SECTIONS.map(({ id, title }) => {
-            const items = sections[id]
-            const tile = searching ? null : tiles[id]
-            if (items.length === 0 && searching) return null
-            return (
-              <Fragment key={id}>
-                {id === "files" && !searching ? <PaperProofsLink /> : null}
-                <PaperLibrarySection title={title}>
-                  {items.map((entry) => (
-                    <LibraryEntryCard
-                      key={entry.key}
-                      entry={entry}
-                      on={handlers}
-                    />
-                  ))}
-                  {tile}
-                </PaperLibrarySection>
-              </Fragment>
-            )
-          })
-        : null}
+        ) : null}
+        {error ? (
+          <div className="flex flex-col items-start gap-3 py-6">
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+            <Button className="min-h-11" variant="outline" onClick={onRetry}>
+              Refresh
+            </Button>
+          </div>
+        ) : null}
+        {ready ? (
+          <>
+            <PaperContinue
+              entry={latest}
+              onOpen={() => {
+                if (latestId) onOpen(latestId)
+              }}
+              onCoach={() => void askCoach()}
+              onDownload={
+                latestWord
+                  ? () => void downloadWord(latestWord)
+                  : latestDoc && hasPrintBody(latestDoc)
+                    ? () => download(latestDoc)
+                    : undefined
+              }
+              onStart={() => openPicker("cv")}
+            />
+            <PaperStartStrip
+              onCV={(initial) => openPicker("cv", initial)}
+              onLetter={() => openPicker("letter", "blank")}
+            />
+            <PaperLibraryCollection
+              entries={entries}
+              hasDocuments={Boolean(latest)}
+              query={query}
+              selectedView={view}
+              handlers={handlers}
+              onQueryChange={onQueryChange}
+              onViewChange={(view) => dispatch({ type: "view_changed", view })}
+              onNewCV={() => openPicker("cv")}
+              onNewLetter={() => openPicker("letter")}
+              onImport={() => dispatch({ type: "import_dialog_opened" })}
+            />
+          </>
+        ) : null}
+      </div>
 
       <PaperPackageLibrary library={wordLibrary} />
 
@@ -505,7 +509,7 @@ export function PaperLibrary({
           if (!open) closeDialog()
         }}
       >
-        {newStep !== null ? (
+        {newStep ? (
           <DialogContent
             className={newGallery ? PAPER_GALLERY_DIALOG_CLASS : undefined}
             initialFocus={newGallery ? focusChosenTemplate : undefined}
@@ -520,6 +524,13 @@ export function PaperLibrary({
             )}
             <PaperNewDialog
               step={newStep}
+              initial={newMode?.initial}
+              kind={newMode?.kind}
+              onCoach={
+                newMode?.kind === "letter"
+                  ? () => dispatch({ type: "letter_dialog_opened" })
+                  : undefined
+              }
               onStepChange={(step) =>
                 dispatch({ type: "new_dialog_opened", step })
               }
@@ -527,7 +538,7 @@ export function PaperLibrary({
                 closeDialog()
                 onOpen(id)
               }}
-              onChooseLetter={() => dispatch({ type: "letter_dialog_opened" })}
+              onChooseLetter={() => openPicker("letter")}
               onImport={chooseFile}
             />
           </DialogContent>
@@ -547,8 +558,10 @@ export function PaperLibrary({
         open={mode?.type === "delete" || mode?.type === "delete-file"}
         name={
           deleting?.type === "delete-file"
-            ? deleting.file.name
-            : (deleting?.doc.name ?? null)
+            ? libraryDisplayName(deleting.file.name)
+            : deleting
+              ? libraryDisplayName(deleting.doc.name)
+              : null
         }
         undoable={deletingWordPage}
         onDelete={() =>

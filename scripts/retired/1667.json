@@ -1,0 +1,114 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/paper-import-outcomes.test.tsx",
+    "because": "Cancel returns to the CV empty state. The Paper router fixture keeps import behavior and its routes available.",
+    "replacedBy": "apps/web/src/features/paper/paper-import-outcomes.test.tsx",
+    "proof": {
+      "fork": "976628fc1f4263be91e7d6db104d75441d52966c",
+      "replacedByBlob": "bc55f2d156ee0b799c0bc4e9239c72f0851e80c3",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-start-parity.test.tsx",
+    "because": "The shorter visible prompt keeps every supported input in its accessible name and retains initial focus. Job labels also remain readable with larger text.",
+    "replacedBy": "apps/web/src/features/paper/paper-letter-start-parity.test.tsx",
+    "proof": {
+      "fork": "976628fc1f4263be91e7d6db104d75441d52966c",
+      "replacedByBlob": "f743d5b6de174bd9a889a7199abdf019dc41a3de",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library-card.test.tsx",
+    "because": "The desk replaces the hover ring with a short token-timed lift. The replacement protects the empty sheet, click to open and the full clean document name.",
+    "replacedBy": "apps/web/src/features/paper/paper-library-card.test.tsx",
+    "proof": {
+      "fork": "559cf25424d1b1f0578f3bea4c7d50c95efa567a",
+      "replacedByBlob": "a2cfe5244fd2464d6b491350dc837682830ccc18",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 8
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library.test.tsx",
+    "because": "The Letter chooser opens a blank page directly and retains the job-based draft flow. The replacement covers starting a draft and returning to the desk.",
+    "replacedBy": "apps/web/src/features/paper/paper-library.test.tsx",
+    "proof": {
+      "fork": "559cf25424d1b1f0578f3bea4c7d50c95efa567a",
+      "replacedByBlob": "df438a9cf9ad3f6a322672a15ccb7f1ef38f8d5d",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 5
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-template-chooser-layout.test.tsx",
+    "because": "The chooser pairs its template rail with a live page preview and keeps controls outside the carousel. The replacement preserves layout specimens and verifies the preview and description follow selection.",
+    "replacedBy": "apps/web/src/features/paper/paper-template-chooser-layout.test.tsx",
+    "proof": {
+      "fork": "559cf25424d1b1f0578f3bea4c7d50c95efa567a",
+      "replacedByBlob": "2937063fb65258986757535d70a9dbea4903a7fc",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 6
+  },
+  {
+    "subject": "apps/web/src/test/surface-behavior.test.tsx",
+    "because": "The Paper section controls offer CV creation, Letter creation and import in their own empty states.",
+    "replacedBy": "apps/web/src/test/surface-behavior.test.tsx",
+    "proof": {
+      "fork": "976628fc1f4263be91e7d6db104d75441d52966c",
+      "replacedByBlob": "2fb30388a26c40f53a9628dfeb90a6ff56cdcf4f",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-template-gallery.test.tsx",
+    "because": "The chooser presents A4 page specimens in the rail and the large preview. The replacement checks preview behavior, selection and footer placement.",
+    "replacedBy": "apps/web/src/features/paper/paper-template-gallery.test.tsx",
+    "proof": {
+      "fork": "a8b7e0caea3af7a89ec7971a82fb89d98186f649",
+      "replacedByBlob": "1869fb910b0dbe90177fe4b266316590b2924af1",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 12
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "because": "Checks the counted desk, selected view and latest page with separate document type and edit time. It also checks the named phone download action and quiet document labels.",
+    "replacedBy": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "proof": {
+      "fork": "a8b7e0caea3af7a89ec7971a82fb89d98186f649",
+      "replacedByBlob": "21ed6db025aeb76544cb26917d46e8a8da921af4",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 20
+  }
+]

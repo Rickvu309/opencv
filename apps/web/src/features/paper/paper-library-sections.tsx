@@ -1,13 +1,15 @@
-import { useReducer, type ReactNode } from "react"
+import type { ReactNode } from "react"
 import { Link } from "@tanstack/react-router"
 import {
-  ChevronDown,
-  ChevronRight,
+  ArrowRight,
   Copy,
   Download,
+  File,
   FileText,
   Link2,
   Pencil,
+  FolderOpen,
+  Image,
   SquareArrowOutUpRight,
   Trash2,
   type LucideIcon,
@@ -25,10 +27,12 @@ import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 
 import {
   PaperLibraryCard,
+  PaperSheet,
   type PaperCardAction,
 } from "./paper-library-card.tsx"
 import { fileBadge, type LibraryEntry } from "./paper-library-entries.ts"
 import type { WordDocument } from "./paper-package-library.tsx"
+import { PaperWordPreview } from "./paper-word-preview.tsx"
 import { paperEditedLabel } from "./paper-templates.ts"
 
 const PREVIEW_LINE_LIMIT = 12
@@ -46,68 +50,95 @@ export function librarySheetLines(doc: PaperView): string[] {
 
 export function PaperProofsLink() {
   return (
-    <section
-      aria-label="Proofs"
-      data-slot="paper-library-section"
-      className="flex flex-col gap-2 md:gap-3.5"
-    >
-      <Link
-        to={SURFACE_PATHS.proofs}
-        data-slot="paper-library-section-head"
-        className={cn(
-          buttonVariants({ variant: "ghost" }),
-          "h-11 w-full justify-start gap-2 rounded-md px-0 text-sm font-semibold text-foreground hover:bg-transparent aria-expanded:bg-transparent md:h-8"
-        )}
-      >
-        <ChevronRight
-          data-slot="paper-library-section-icon"
-          className="size-[13px] text-muted-foreground"
-        />
-        Proofs
-      </Link>
+    <section aria-label="Proofs" data-slot="paper-library-section">
+      <div className="paper-library-empty">
+        <Image aria-hidden="true" />
+        <h3>No Proofs yet</h3>
+        <p>Keep examples of your work together.</p>
+        <Link
+          to={SURFACE_PATHS.proofs}
+          className={cn(buttonVariants({ variant: "outline" }), "min-h-11")}
+        >
+          Open Proofs <ArrowRight aria-hidden="true" />
+        </Link>
+      </div>
     </section>
   )
 }
 
+type SectionAction = {
+  label: string
+  empty: string
+  detail: string
+  onCreate: () => void
+}
+
 export function PaperLibrarySection({
   title,
+  count = 0,
+  action,
   children,
 }: {
   title: string
+  count?: number
+  action?: SectionAction
   children: ReactNode
 }) {
-  const [open, toggle] = useReducer((value: boolean) => !value, true)
-  const Chevron = open ? ChevronDown : ChevronRight
   return (
     <section
       aria-label={title}
       data-slot="paper-library-section"
-      className="flex flex-col gap-2 md:gap-3.5"
+      className="grid min-w-0 gap-3"
     >
-      <Button
-        type="button"
-        variant="ghost"
+      <h3
         data-slot="paper-library-section-head"
-        aria-expanded={open}
-        className="h-11 w-full justify-start gap-2 rounded-md px-0 text-sm font-semibold text-foreground hover:bg-transparent aria-expanded:bg-transparent md:h-8"
-        onClick={toggle}
+        className="text-sm font-semibold"
       >
-        <Chevron
-          data-slot="paper-library-section-icon"
-          className="size-[13px] text-muted-foreground"
-          aria-hidden="true"
-        />
         {title}
-      </Button>
-      {open ? (
-        <div
-          data-slot="paper-library-row"
-          className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:flex md:flex-wrap md:gap-7"
-        >
+      </h3>
+      {count === 0 && action ? (
+        <div className="paper-library-empty">
+          {title === "Files" ? (
+            <FolderOpen aria-hidden="true" />
+          ) : (
+            <FileText aria-hidden="true" />
+          )}
+          <p className="font-medium text-foreground">{action.empty}</p>
+          <p>{action.detail}</p>
+          <Button
+            variant="outline"
+            className="min-h-11"
+            onClick={action.onCreate}
+          >
+            {action.label}
+          </Button>
+        </div>
+      ) : (
+        <div data-slot="paper-library-row" className="paper-library-row">
           {children}
         </div>
-      ) : null}
+      )}
     </section>
+  )
+}
+
+export function LibraryDocumentSheet({
+  entry,
+}: {
+  entry: Exclude<LibraryEntry, { type: "file" }>
+}) {
+  if (entry.type === "word")
+    return (
+      <PaperSheet preview={<PaperWordPreview docId={entry.word.docId} />} />
+    )
+  const { doc } = entry
+  return (
+    <PaperSheet
+      lines={librarySheetLines(doc)}
+      preview={
+        doc.format === "word" ? <PaperWordPreview docId={doc.id} /> : undefined
+      }
+    />
   )
 }
 
@@ -118,6 +149,7 @@ export type LibraryEntryHandlers = {
   onDuplicate?: (doc: PaperView) => void
   onLink?: (doc: PaperView) => void
   onDownload?: (doc: PaperView) => void
+  onDownloadWord?: (word: WordDocument) => void
   onDelete?: (doc: PaperView) => void
   onDeleteFile?: (file: PaperFile) => void
 }
@@ -136,6 +168,7 @@ function paperActions(
     icon: LucideIcon,
     handler: ((doc: PaperView) => void) | undefined
   ) => (handler ? [{ label, icon, onSelect: () => handler(doc) }] : [])
+  const downloadWord = on.onDownloadWord
   return [
     {
       label: "Open",
@@ -146,6 +179,15 @@ function paperActions(
     ...each("Duplicate", Copy, on.onDuplicate),
     ...each("Link to application", Link2, on.onLink),
     ...(hasPrintBody(doc) ? each("Download PDF", Download, on.onDownload) : []),
+    ...(word && downloadWord
+      ? [
+          {
+            label: "Download Word",
+            icon: Download,
+            onSelect: () => downloadWord(word),
+          },
+        ]
+      : []),
     ...(word
       ? [
           {
@@ -176,7 +218,13 @@ export function LibraryEntryCard({
       <PaperLibraryCard
         name={doc.name}
         meta={edited}
+        badge={doc.kind === "cv" ? "CV" : "Letter"}
         lines={librarySheetLines(doc)}
+        preview={
+          doc.format === "word" ? (
+            <PaperWordPreview docId={doc.id} />
+          ) : undefined
+        }
         openLabel={`${doc.name}, ${edited}`}
         onOpen={() => on.onOpen(doc.id)}
         actions={paperActions(doc, entry.word, on)}
@@ -185,10 +233,13 @@ export function LibraryEntryCard({
   }
   if (entry.type === "word") {
     const { word } = entry
+    const downloadWord = on.onDownloadWord
     return (
       <PaperLibraryCard
         name={word.name}
         meta="Word file"
+        badge={word.kind === "cv" ? "CV" : "Letter"}
+        preview={<PaperWordPreview docId={word.docId} />}
         openLabel={`Open ${word.name}`}
         onOpen={() => on.onOpen(word.docId)}
         actions={[
@@ -202,6 +253,15 @@ export function LibraryEntryCard({
             icon: FileText,
             onSelect: () => on.onPreview(word),
           },
+          ...(downloadWord
+            ? [
+                {
+                  label: "Download Word",
+                  icon: Download,
+                  onSelect: () => downloadWord(word),
+                },
+              ]
+            : []),
         ]}
       />
     )
@@ -213,6 +273,12 @@ export function LibraryEntryCard({
       name={file.name}
       meta={paperEditedLabel(file.createdAt)}
       badge={fileBadge(file)}
+      preview={
+        <File
+          className="absolute top-1/2 left-1/2 size-8 -translate-1/2 text-muted-foreground"
+          strokeWidth={1.5}
+        />
+      }
       actions={
         onDeleteFile
           ? [

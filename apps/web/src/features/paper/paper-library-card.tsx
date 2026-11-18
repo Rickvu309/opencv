@@ -10,6 +10,9 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 
+import { libraryDisplayName } from "./paper-library-entries.ts"
+import "./design/paper-picture.css"
+
 export type PaperCardAction = {
   label: string
   icon: LucideIcon
@@ -17,35 +20,48 @@ export type PaperCardAction = {
   destructive?: boolean
 }
 
-const SHEET =
-  "relative flex aspect-[150/212] w-full flex-col gap-[3.5px] overflow-hidden rounded-[3px] bg-card px-[13px] py-[14px] text-left shadow-sm ring-1 ring-foreground/5 transition-[box-shadow] duration-(--duration-micro) ease-(--ease-micro) group-hover/card:ring-foreground/15 group-focus-visible/card:ring-foreground/15 md:h-[212px] md:w-[150px]"
-
-function PaperSheet({ lines, badge }: { lines: string[]; badge?: string }) {
+export function PaperSheet({
+  lines = [],
+  badge,
+  preview,
+}: {
+  lines?: string[]
+  badge?: string
+  preview?: ReactNode
+}) {
   const [lead, ...rest] = lines
   return (
-    <span data-slot="paper-library-sheet" className={SHEET} aria-hidden="true">
-      {lead ? (
-        <span
-          data-slot="paper-library-preview-name"
-          className="line-clamp-2 text-[9px] leading-[11px] font-bold break-words text-foreground"
-        >
-          {lead}
+    <div
+      data-slot="paper-library-sheet"
+      className="paper-picture paper-sheet rounded-[3px]"
+      aria-hidden="true"
+    >
+      {preview ?? (
+        <span className="paper-picture-text flex flex-col gap-4 font-serif text-[12pt] leading-[1.6]">
+          {lead ? (
+            <span
+              data-slot="paper-library-preview-name"
+              className="text-[20pt] leading-[1.2] font-bold wrap-anywhere"
+            >
+              {lead}
+            </span>
+          ) : null}
+          {rest.length > 0 ? (
+            <span
+              data-slot="paper-library-preview"
+              className="wrap-anywhere whitespace-pre-line"
+            >
+              {rest.join("\n")}
+            </span>
+          ) : null}
         </span>
-      ) : null}
-      {rest.length > 0 ? (
-        <span
-          data-slot="paper-library-preview"
-          className="line-clamp-8 text-[3.8px] leading-[1.45] font-normal break-words whitespace-pre-line text-muted-foreground"
-        >
-          {rest.join("\n")}
-        </span>
-      ) : null}
+      )}
       {badge ? (
-        <span className="absolute bottom-2.5 left-2.5 flex h-5 items-center rounded-[5px] bg-foreground px-[7px] text-[10px] font-bold text-card">
+        <span className="absolute start-3 bottom-3 rounded bg-secondary px-1.5 py-0.5 text-[0.6875rem] font-medium text-muted-foreground">
           {badge}
         </span>
       ) : null}
-    </span>
+    </div>
   )
 }
 
@@ -55,7 +71,10 @@ function PaperLabel({ name, meta }: { name: string; meta: string }) {
       data-slot="paper-library-label"
       className="flex w-full min-w-0 flex-col gap-1 text-left"
     >
-      <span className="block h-[18px] truncate text-[13px] leading-[18px] font-medium text-foreground">
+      <span
+        title={name}
+        className="block truncate text-[0.8125rem] leading-[1.125rem] font-medium text-foreground"
+      >
         {name}
       </span>
       <span className="truncate text-xs font-normal text-muted-foreground">
@@ -70,6 +89,7 @@ export function PaperLibraryCard({
   meta,
   badge,
   lines = [],
+  preview,
   openLabel,
   onOpen,
   actions,
@@ -78,27 +98,30 @@ export function PaperLibraryCard({
   meta: string
   badge?: string
   lines?: string[]
+  preview?: ReactNode
   openLabel?: string
   onOpen?: () => void
   actions: PaperCardAction[]
 }) {
+  const displayName = libraryDisplayName(name)
+  const displayLabel = openLabel?.replace(name, displayName)
   const body: ReactNode = (
     <>
-      <PaperSheet lines={lines} badge={badge} />
-      <PaperLabel name={name} meta={meta} />
+      <PaperSheet lines={lines} badge={badge} preview={preview} />
+      <PaperLabel name={displayName} meta={meta} />
     </>
   )
   return (
     <div
       data-slot="paper-library-card"
-      className="group/card relative min-w-0 md:w-[150px]"
+      className="paper-desk-card group/card relative min-w-0"
     >
       {onOpen ? (
         <Button
           type="button"
           variant="ghost"
-          aria-label={openLabel}
-          className="group/card h-auto min-h-11 w-full min-w-0 flex-col items-start gap-3 rounded-[3px] border-0 p-0 font-normal whitespace-normal hover:bg-transparent aria-expanded:bg-transparent dark:hover:bg-transparent"
+          aria-label={displayLabel ?? displayName}
+          className="group/card h-auto min-h-11 w-full min-w-0 flex-col items-start gap-3 rounded-[3px] border-0 p-0 font-normal whitespace-normal hover:bg-transparent aria-expanded:bg-transparent"
           onClick={onOpen}
         >
           {body}
@@ -116,8 +139,8 @@ export function PaperLibraryCard({
                 type="button"
                 variant="ghost"
                 size="icon-sm"
-                className="absolute top-1.5 right-1.5 size-11 bg-card/90 group-focus-within/card:opacity-100 group-hover/card:opacity-100 aria-expanded:opacity-100 md:size-7 [@media(hover:hover)_and_(pointer:fine)]:opacity-0"
-                aria-label={`${name} menu`}
+                className="absolute top-1.5 right-1.5 size-11 bg-card/90 [@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:group-focus-within/card:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:group-hover/card:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:aria-expanded:opacity-100 md:[@media(pointer:fine)]:size-7"
+                aria-label={`${displayName} menu`}
               >
                 <MoreHorizontal />
               </Button>
@@ -142,32 +165,5 @@ export function PaperLibraryCard({
         </DropdownMenu>
       ) : null}
     </div>
-  )
-}
-
-export function PaperLibraryTile({
-  label,
-  icon: Icon,
-  slot,
-  onClick,
-}: {
-  label: string
-  icon: LucideIcon
-  slot: string
-  onClick: () => void
-}) {
-  return (
-    <Button
-      type="button"
-      variant="ghost"
-      data-slot={slot}
-      className="aspect-[150/212] h-auto min-h-11 w-full min-w-0 flex-col gap-2 rounded-[3px] border border-input p-0 text-[12.5px] font-medium whitespace-normal text-muted-foreground md:h-[212px] md:w-[150px]"
-      onClick={onClick}
-    >
-      <span className="flex size-8 items-center justify-center rounded-full border border-border bg-card">
-        <Icon className="size-[15px]" aria-hidden="true" />
-      </span>
-      {label}
-    </Button>
   )
 }

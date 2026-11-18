@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs"
 import type { JobView } from "@workspace/domain"
 import { cleanup, fireEvent, screen } from "@testing-library/react"
 import { afterEach, expect, it, vi } from "vitest"
@@ -35,11 +36,10 @@ it("shows the job picker from its pen frame and lets Paper return to the library
   render(<PaperLetterStartPage onBack={onBack} onCreated={vi.fn()} />)
 
   expect(screen.getByRole("heading", { name: texts[3] })).toBeInTheDocument()
-  expect(screen.getByPlaceholderText(texts[4])).toHaveFocus()
-  expect(screen.getByPlaceholderText(texts[4])).toHaveClass(
-    "text-base",
-    "md:text-[13px]"
-  )
+  const search = screen.getByRole("textbox")
+  expect(search).toHaveAttribute("placeholder", "Search or paste a link")
+  expect(search).toHaveAccessibleName(texts[4])
+  expect(search).toHaveFocus()
   for (const job of jobs) {
     expect(
       await screen.findByRole("button", {
@@ -59,6 +59,39 @@ it("returns to Paper on Escape", () => {
   render(<PaperLetterStartPage onBack={onBack} onCreated={vi.fn()} />)
   fireEvent.keyDown(screen.getByRole("textbox"), { key: "Escape" })
   expect(onBack).toHaveBeenCalledOnce()
+})
+
+it("keeps the Job title and company available when the text grows", async () => {
+  listJobs.mockResolvedValue([
+    {
+      id: "job",
+      title: "Product designer",
+      company: "Lumiere",
+      posting: {},
+      cvDocId: null,
+      letterDocId: null,
+      updatedAt: "2026-08-25T12:00:00.000Z",
+    } satisfies JobView,
+  ])
+  const style = document.createElement("style")
+  style.textContent = readFileSync(
+    "src/features/paper/design/letter-start.pen.css",
+    "utf8"
+  )
+  document.head.append(style)
+  try {
+    render(<PaperLetterStartPage onBack={vi.fn()} onCreated={vi.fn()} />)
+    const job = await screen.findByRole("button", {
+      name: "Product designer, Lumiere",
+    })
+    const labels = screen.getByText("Product designer").parentElement!
+    expect(labels).toContainElement(screen.getByText("Lumiere"))
+    expect(getComputedStyle(labels).flexWrap).toBe("wrap")
+    expect(getComputedStyle(labels).whiteSpace).toBe("normal")
+    expect(getComputedStyle(job).height).toBe("auto")
+  } finally {
+    style.remove()
+  }
 })
 
 it("shows the unreadable-link copy from its own pen frame", async () => {

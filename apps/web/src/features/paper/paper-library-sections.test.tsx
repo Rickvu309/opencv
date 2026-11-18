@@ -16,12 +16,7 @@ import {
 
 import { render } from "@/test/render-with-client.tsx"
 import { PaperLibrary } from "./paper-library.tsx"
-import {
-  cv,
-  letter,
-  letterPaper,
-  renderLibrary,
-} from "./paper-library.fixtures.tsx"
+import { cv, letter, renderLibrary } from "./paper-library.fixtures.tsx"
 
 function proofsRouter() {
   const root = createRootRoute()
@@ -47,18 +42,22 @@ describe("Paper home sections", () => {
       screen.queryByRole("group", { name: "Document type" })
     ).not.toBeInTheDocument()
     const cvs = screen.getByRole("region", { name: "CVs" })
-    const letters = screen.getByRole("region", { name: "Cover letters" })
+    const letters = screen.getByRole("region", { name: "Letters" })
     expect(
       within(cvs).getByRole("button", { name: /^My CV,/ })
     ).toBeInTheDocument()
     expect(
       within(letters).getByRole("button", { name: /^Design letter,/ })
     ).toBeInTheDocument()
+    expect(within(cvs).getByText("CV")).toHaveClass("text-muted-foreground")
+    expect(within(letters).getByText("Letter")).toHaveClass(
+      "text-muted-foreground"
+    )
     expect(
-      within(screen.getByRole("region", { name: "Files" })).getByRole(
+      within(screen.getByRole("region", { name: "Files" })).getAllByRole(
         "button",
         { name: "Import a file" }
-      )
+      )[0]!
     ).toBeInTheDocument()
     fireEvent.change(screen.getByRole("searchbox", { name: "Search Paper" }), {
       target: { value: "design" },
@@ -70,7 +69,7 @@ describe("Paper home sections", () => {
       screen.getByRole("button", { name: /^Design letter,/ })
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole("link", { name: "Proofs" })
+      screen.queryByRole("link", { name: "Open Proofs" })
     ).not.toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: "New letter" })
@@ -110,29 +109,72 @@ describe("Paper home sections", () => {
     expect(
       screen.queryByRole("button", { name: "Import", exact: true })
     ).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: "Import a file" }))
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Import a file" })[0]!
+    )
     expect(
       screen.getByRole("dialog", { name: "Import", exact: true })
     ).toBeInTheDocument()
   })
 
-  it("collapses a section from its head and opens it again", () => {
-    renderLibrary([cv("My CV")])
-    const head = screen.getByRole("button", { name: "CVs" })
-    expect(head).toHaveAttribute("aria-expanded", "true")
-    fireEvent.click(head)
-    expect(head).toHaveAttribute("aria-expanded", "false")
+  it("filters the library by view and keeps counts for the other kinds", () => {
+    renderLibrary([cv("My CV"), letter("Design letter")])
+    const views = within(screen.getByRole("group", { name: "Library views" }))
+    const letters = views.getByRole("button", { name: /Letters ?1/ })
+    fireEvent.click(letters)
+    expect(letters).toHaveAttribute("aria-pressed", "true")
     expect(
-      screen.queryByRole("button", { name: /^My CV,/ })
+      screen.queryByRole("region", { name: "CVs" })
     ).not.toBeInTheDocument()
-    fireEvent.click(head)
-    expect(screen.getByRole("button", { name: /^My CV,/ })).toBeInTheDocument()
+    expect(
+      screen.getByRole("button", { name: /^Design letter,/ })
+    ).toBeInTheDocument()
+    expect(views.getByRole("button", { name: /CVs ?1/ })).toBeInTheDocument()
+    fireEvent.click(views.getByRole("button", { name: /Proofs ?0/ }))
+    expect(screen.getByRole("link", { name: "Open Proofs" })).toHaveAttribute(
+      "href",
+      "/proofs"
+    )
+    fireEvent.click(views.getByRole("button", { name: /Files ?0/ }))
+    expect(
+      screen.getByRole("button", { name: "Import a file" })
+    ).toBeInTheDocument()
+    fireEvent.click(views.getByRole("button", { name: /All ?2/ }))
+    expect(screen.getByRole("region", { name: "CVs" })).toBeInTheDocument()
   })
 
-  it("starts a CV from the New CV tile", () => {
-    renderLibrary([cv("My CV")])
-    fireEvent.click(screen.getByRole("button", { name: "New CV" }))
-    expect(screen.getByRole("dialog", { name: "New CV" })).toBeInTheDocument()
+  it("continues the most recently edited page and preselects the template clicked in Start new", () => {
+    renderLibrary([
+      cv("An earlier CV"),
+      {
+        ...letter("Latest letter.docx"),
+        updatedAt: "2027-01-02T12:00:00.000Z",
+      },
+    ])
+    const hero = within(
+      screen.getByRole("region", { name: "Continue editing" })
+    )
+    expect(
+      hero.getByRole("heading", { name: "Latest letter" })
+    ).toBeInTheDocument()
+    expect(hero.getByRole("button", { name: "Open" })).toBeInTheDocument()
+    expect(hero.getByText("Letter")).toBeInTheDocument()
+    expect(hero.getByText(/^Edited /)).toBeInTheDocument()
+    expect(hero.getByRole("button", { name: "Download" })).toBeInTheDocument()
+    fireEvent.click(
+      within(screen.getByRole("region", { name: "Start new" })).getByRole(
+        "button",
+        { name: "Modern" }
+      )
+    )
+    const chooser = within(screen.getByRole("dialog", { name: "New CV" }))
+    expect(chooser.getByRole("radio", { name: "Modern" })).toHaveAttribute(
+      "aria-checked",
+      "true"
+    )
+    expect(
+      chooser.getByRole("button", { name: "Use Modern" })
+    ).toBeInTheDocument()
   })
 
   it("shows imported files without documents and keeps their delete action", async () => {
@@ -150,33 +192,32 @@ describe("Paper home sections", () => {
     )
     expect(screen.queryByText("Start a document")).not.toBeInTheDocument()
     const filesSection = screen.getByRole("region", { name: "Files" })
-    expect(
-      within(filesSection).getAllByText("Original CV.pdf")
-    ).not.toHaveLength(0)
+    expect(within(filesSection).getAllByText("Original CV")).not.toHaveLength(0)
     expect(within(filesSection).getByText("PDF")).toBeInTheDocument()
     expect(
-      within(screen.getByRole("region", { name: "CVs" })).getByRole("button", {
-        name: "New CV",
-      })
+      within(screen.getByRole("region", { name: "CVs" })).getAllByRole(
+        "button",
+        {
+          name: "New CV",
+        }
+      )[0]!
     ).toBeInTheDocument()
     expect(
-      within(screen.getByRole("region", { name: "Cover letters" })).getByRole(
+      within(screen.getByRole("region", { name: "Letters" })).getAllByRole(
         "button",
         { name: "New letter" }
-      )
+      )[0]!
     ).toBeInTheDocument()
-    expect(screen.getByRole("link", { name: "Proofs" })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "Open Proofs" })).toHaveAttribute(
       "href",
       "/proofs"
     )
-    fireEvent.click(
-      screen.getByRole("button", { name: "Original CV.pdf menu" })
-    )
+    fireEvent.click(screen.getByRole("button", { name: "Original CV menu" }))
     fireEvent.click(
       await screen.findByRole("menuitem", { name: "Delete", exact: true })
     )
     expect(
-      screen.getByRole("dialog", { name: 'Delete "Original CV.pdf"?' })
+      screen.getByRole("dialog", { name: 'Delete "Original CV"?' })
     ).toBeInTheDocument()
   })
 
@@ -227,90 +268,44 @@ describe("Paper home sections", () => {
       screen.getByText("Try another word, or clear the search.")
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole("link", { name: "Proofs" })
+      screen.queryByRole("link", { name: "Open Proofs" })
     ).not.toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: "New letter" })
     ).not.toBeInTheDocument()
   })
 
-  it("keeps Cover letters and Proofs beside a CV, and shows the page's first lines", () => {
+  it("keeps Letters and Proofs reachable, and shows the page's first lines", () => {
     renderLibrary([letter("Design letter")])
+    expect(screen.getByRole("region", { name: "Letters" })).toBeInTheDocument()
     expect(
-      within(screen.getByRole("region", { name: "Cover letters" })).getByRole(
-        "button",
-        { name: "New letter" }
-      )
+      screen.getByRole("button", { name: "Blank Letter" })
     ).toBeInTheDocument()
-    const proofs = screen.getByRole("link", { name: "Proofs" })
+    const proofs = screen.getByRole("link", { name: "Open Proofs" })
     expect(proofs).toHaveAttribute("href", "/proofs")
-    const classes = (element: Element) =>
-      element.className.split(" ").filter(Boolean).sort()
-    const cvHead = within(
-      screen.getByRole("region", { name: "CVs" })
-    ).getByRole("button", { name: "CVs" })
-    expect(classes(proofs)).toEqual(classes(cvHead))
-    expect(classes(proofs)).not.toContain("px-2.5")
-    expect(classes(proofs)).not.toContain("h-8")
-    expect(classes(proofs)).not.toContain("hover:bg-muted")
-    expect(proofs.querySelector("span[aria-hidden]")).toBeNull()
-    expect(proofs.querySelector("svg")).toHaveAttribute("aria-hidden", "true")
     const lead = document.querySelector(
       "[data-slot=paper-library-preview-name]"
     )
     expect(lead).toHaveTextContent("A cover letter.")
     expect(lead).not.toHaveTextContent("Design letter")
-    expect(lead?.className).toMatch(/text-\[9px\]/)
-    expect(lead?.className).toMatch(/font-bold/)
     expect(
       document.querySelector("[data-slot=paper-library-preview]")
     ).toBeNull()
-    const sheet = document.querySelector("[data-slot=paper-library-sheet]")
-    const tile = screen.getByRole("button", { name: "New CV" })
-    expect(sheet?.className).toMatch(/md:h-\[212px\] md:w-\[150px\]/)
-    expect(tile.className).toMatch(/md:h-\[212px\] md:w-\[150px\]/)
-    expect(
-      screen.getByRole("button", { name: /^Design letter,/ }).className
-    ).toMatch(/\bborder-0\b/)
   })
 
-  it("shows stored Word lines and leaves a title-only sheet empty", () => {
+  it("routes Word cards to the page preview even when no block body exists", () => {
     renderLibrary([
-      {
-        ...letter("Word letter"),
-        format: "word",
-        paper: letterPaper(["A cover letter.", "The second line."]),
-      },
+      { ...letter("Word letter.docx"), format: "word", paper: undefined },
     ])
-    const lead = document.querySelector(
-      "[data-slot=paper-library-preview-name]"
-    )
-    expect(lead).toHaveTextContent("A cover letter.")
-    expect(lead).not.toHaveTextContent("Word letter")
-    const body = document.querySelector("[data-slot=paper-library-preview]")
-    expect(body).toHaveTextContent("The second line.")
-    expect(body?.className).toMatch(/text-\[3\.8px\]/)
-    expect(body?.className).toMatch(/text-muted-foreground/)
-    cleanup()
-    renderLibrary([
-      {
-        ...letter("Only title"),
-        format: "word",
-        paper: letterPaper(["Only title"]),
-      },
-    ])
+    expect(
+      screen.getByRole("button", { name: /^Word letter,/ })
+    ).toBeInTheDocument()
+    expect(
+      document.querySelector("[data-slot=paper-word-preview]")
+    ).toBeInTheDocument()
     expect(
       document.querySelector("[data-slot=paper-library-preview-name]")
     ).toBeNull()
-    expect(
-      document.querySelector("[data-slot=paper-library-preview]")
-    ).toBeNull()
-    expect(
-      document.querySelector("[data-slot=paper-library-sheet]")?.textContent
-    ).toBe("")
-    expect(
-      screen.getByRole("button", { name: /^Only title,/ })
-    ).toBeInTheDocument()
   })
 
   it("follows Proofs inside the app and keeps a modified click on this page", async () => {
@@ -329,7 +324,7 @@ describe("Paper home sections", () => {
         />
       </RouterContextProvider>
     )
-    const proofs = screen.getByRole("link", { name: "Proofs" })
+    const proofs = screen.getByRole("link", { name: "Open Proofs" })
     fireEvent.click(proofs, { metaKey: true })
     expect(router.state.location.pathname).toBe("/")
     fireEvent.click(proofs)

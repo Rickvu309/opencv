@@ -21,6 +21,18 @@ test("the screen registry is valid", () => {
   assert.deepEqual(validateScreens(SCREENS), [])
 })
 
+test("the seeded Paper home captures a clean dock before any Coach action", () => {
+  const paper = SCREENS.find((screen) => screen.id === "paper-home")
+  assert.ok(paper)
+  assert.equal(
+    paper.steps.some((step) => step.click?.name === "Ask Coach"),
+    false
+  )
+  assert.deepEqual(paper.steps.at(-1), {
+    waitFor: { selector: '[data-slot="app-dock"]:not(:has([data-chat-id]))' },
+  })
+})
+
 test("a screen with neither steps nor a reason, a duplicate, a bad route or an unknown step is refused", () => {
   const problems = validateScreens([
     { id: "a", route: "/a" },

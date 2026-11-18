@@ -1,12 +1,20 @@
 import type { JobView, PaperFile, PaperView } from "@workspace/domain"
 
+import type { LibraryView } from "./paper-library-entries.ts"
+import type { PickerChoice } from "./paper-template-gallery.tsx"
+
 export type PaperImportState =
   | { type: "idle" }
   | { type: "importing"; name: string }
   | { type: "error"; message: string; retry: File | null }
 
 export type Mode =
-  | { type: "new"; step: "kind" | "gallery" }
+  | {
+      type: "new"
+      step: "kind" | "gallery"
+      kind?: "cv" | "letter"
+      initial?: PickerChoice
+    }
   | { type: "letter" }
   | { type: "import" }
   | { type: "rename"; doc: PaperView }
@@ -19,6 +27,7 @@ export type LibraryState = {
   importState: PaperImportState
   creatingBlank: boolean
   mode: Mode
+  view: LibraryView | null
   rename: string
   renameError: string | null
   jobs: JobView[]
@@ -31,7 +40,13 @@ export type LibraryState = {
 
 export type LibraryAction =
   | { type: "import_dialog_opened" }
-  | { type: "new_dialog_opened"; step: "kind" | "gallery" }
+  | { type: "view_changed"; view: LibraryView }
+  | {
+      type: "new_dialog_opened"
+      step: "kind" | "gallery"
+      kind?: "cv" | "letter"
+      initial?: PickerChoice
+    }
   | { type: "letter_dialog_opened" }
   | { type: "delete_requested"; doc: PaperView }
   | { type: "delete_file_requested"; file: PaperFile }
@@ -55,6 +70,7 @@ export const initialLibrary: LibraryState = {
   importState: { type: "idle" },
   creatingBlank: false,
   mode: null,
+  view: null,
   rename: "",
   renameError: null,
   jobs: [],
@@ -72,8 +88,18 @@ export function libraryReducer(
   switch (action.type) {
     case "import_dialog_opened":
       return { ...state, mode: { type: "import" } }
+    case "view_changed":
+      return { ...state, view: action.view }
     case "new_dialog_opened":
-      return { ...state, mode: { type: "new", step: action.step } }
+      return {
+        ...state,
+        mode: {
+          type: "new",
+          step: action.step,
+          kind: action.kind,
+          initial: action.initial,
+        },
+      }
     case "letter_dialog_opened":
       return { ...state, mode: { type: "letter" } }
     case "delete_requested":
