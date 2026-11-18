@@ -137,15 +137,8 @@ export async function settle(page, point = { x: 0, y: 0 }) {
   }, ANIMATION_WAIT_MS)
 }
 
-export async function openScreen(
-  browser,
-  state,
-  screen,
-  { width, scale = 1, colorScheme }
-) {
-  const context = await browser.newContext(
-    contextOptions({ width, scale, colorScheme })
-  )
+export async function openScreen(browser, state, screen, { width, scale = 1 }) {
+  const context = await browser.newContext(contextOptions({ width, scale }))
   if (screen.signedIn !== false) {
     const email = await signInFresh(context, state, screen.id)
     await context.addInitScript(showFixedEmail, { email, shown: SHOWN_EMAIL })

@@ -35,12 +35,6 @@ export const EXIT = Object.freeze({ ok: 0, failed: 1, usage: 2 })
 export const json = (value) => JSON.stringify(value)
 const FRAME_MATCH_LIMIT = 5
 
-function parseColorScheme(value) {
-  if (value === undefined) return undefined
-  if (value === "light" || value === "dark") return value
-  throw new UsageError("--color-scheme must be light or dark")
-}
-
 export async function withBrowser(ctx, work) {
   const browser = await ctx.browser.launch()
   try {
@@ -165,16 +159,14 @@ export const COMMANDS = {
     }),
   },
   shot: {
-    usage:
-      "shot <screen...> [--width 1440,390] [--scale 1|2] [--color-scheme light|dark] [--out dir]",
+    usage: "shot <screen...> [--width 1440,390] [--scale 1|2] [--out dir]",
     about:
       "Capture PNGs with fonts loaded and motion stopped. One JSON line per file.",
-    options: { valued: ["out", "scale", "color-scheme"], repeated: ["width"] },
+    options: { valued: ["out", "scale"], repeated: ["width"] },
     run: async (ctx, { positional, flags }) => {
       const screens = requireScreens(positional)
       const widths = positiveIntegers(flags.width ?? ["1440"], "--width")
       const scale = positiveIntegers([flags.scale ?? "1"], "--scale")[0]
-      const colorScheme = parseColorScheme(flags["color-scheme"])
       const state = await requireStack(ctx)
       const out = resolve(flags.out ?? join(state.dir, "shots"))
       ctx.fs.mkdir(out)
@@ -191,7 +183,6 @@ export const COMMANDS = {
             const { page, close } = await openScreen(browser, state, screen, {
               width,
               scale,
-              colorScheme,
             })
             const file = join(out, shotName(screen.id, width, scale))
             await page.screenshot({ path: file, fullPage: false })
@@ -364,18 +355,17 @@ export const COMMANDS = {
   },
   compare: {
     usage:
-      "compare <screen...> [--base main] [--width 1440,390] [--color-scheme light|dark] [--out dir] [--selector css...] [--pen file]",
+      "compare <screen...> [--base main] [--width 1440,390] [--out dir] [--selector css...] [--pen file]",
     about:
       "Capture each screen from a throwaway checkout of the base and from this worktree, same viewport and steps. Writes <screen>-<width>.before.png, .after.png and manifest.json with every data-slot box and style, and the check result of every mapped screen on the base for check --known.",
     options: {
-      valued: ["base", "out", "pen", "color-scheme"],
+      valued: ["base", "out", "pen"],
       repeated: ["width", "selector"],
     },
     run: async (ctx, { positional, flags }) => {
       const screens = requireScreens(positional)
       const widths = positiveIntegers(flags.width ?? ["1440"], "--width")
       const out = resolve(flags.out ?? compareDir(ctx.scratchRoot, ctx.repo))
-      const colorScheme = parseColorScheme(flags["color-scheme"])
       const { manifest, file } = await runCompare(ctx, {
         screens,
         widths,
@@ -383,7 +373,6 @@ export const COMMANDS = {
         out,
         selectors: flags.selector ?? [],
         checkBase: baseChecker(penOrNull(ctx, flags.pen)),
-        colorScheme,
       })
       const problems = manifestProblems(manifest)
       return {

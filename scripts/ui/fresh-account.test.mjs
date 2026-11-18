@@ -16,11 +16,3 @@ test("a recipe's browser context never loads the shared account the stack signed
     2
   )
 })
-
-test("contextOptions sets colorScheme only when requested", () => {
-  assert.equal("colorScheme" in contextOptions({ width: 1440 }), false)
-  assert.equal(
-    contextOptions({ width: 1440, colorScheme: "dark" }).colorScheme,
-    "dark"
-  )
-})
