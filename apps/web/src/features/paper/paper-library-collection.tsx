@@ -80,10 +80,7 @@ export function PaperLibraryCollection({
       aria-labelledby="paper-library-title"
       className="paper-library-collection"
     >
-      <h2
-        id="paper-library-title"
-        className="text-xl font-semibold tracking-tight"
-      >
+      <h2 id="paper-library-title" className="text-sm font-semibold">
         Library
       </h2>
       <div

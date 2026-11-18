@@ -92,7 +92,7 @@ export function PaperLibrarySection({
     >
       <h3
         data-slot="paper-library-section-head"
-        className="text-sm font-semibold"
+        className="text-xs font-medium text-muted-foreground"
       >
         {title}
       </h3>
