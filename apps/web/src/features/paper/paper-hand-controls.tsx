@@ -1,9 +1,13 @@
-import { useEffect, useRef } from "react"
+import { useRef } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 import { SearchInput } from "@workspace/ui/components/search-input"
 
+import { useShortcut } from "@/lib/use-shortcut.ts"
+
 import type { LibraryView } from "./paper-library-entries.ts"
+
+const TYPE_TO_FIND = [..."abcdefghijklmnopqrstuvwxyz0123456789"]
 
 const VIEWS: readonly { id: LibraryView; title: string }[] = [
   { id: "all", title: "All" },
@@ -53,26 +57,26 @@ export function PaperFind({
   onQueryChange: (query: string) => void
 }) {
   const inputRef = useRef<HTMLInputElement>(null)
-  useEffect(() => {
-    function onKey(event: KeyboardEvent) {
-      if (event.metaKey || event.ctrlKey || event.altKey) return
-      const printable =
-        event.key === "/" || (event.key.length === 1 && /\S/.test(event.key))
-      if (!printable) return
-      if (document.activeElement === inputRef.current) return
-      if (!focusIsIdle()) return
-      if (
-        document.querySelector(
-          "[data-slot='dialog-content'], [data-slot='dropdown-menu-content']"
-        )
-      )
-        return
-      if (event.key === "/") event.preventDefault()
-      inputRef.current?.focus()
-    }
-    document.addEventListener("keydown", onKey)
-    return () => document.removeEventListener("keydown", onKey)
-  }, [])
+  function canTakeOver() {
+    if (document.activeElement === inputRef.current) return false
+    if (!focusIsIdle()) return false
+    return !document.querySelector(
+      "[data-slot='dialog-content'], [data-slot='dropdown-menu-content']"
+    )
+  }
+  useShortcut({
+    key: "/",
+    onPress: () => {
+      if (canTakeOver()) inputRef.current?.focus()
+    },
+  })
+  useShortcut({
+    key: TYPE_TO_FIND,
+    prevent: false,
+    onPress: () => {
+      if (canTakeOver()) inputRef.current?.focus()
+    },
+  })
   return (
     <div className="paper-hand-find">
       <SearchInput

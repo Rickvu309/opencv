@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useLayoutEffect,
   useReducer,
   useRef,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -58,6 +59,7 @@ type PaperHandState = {
   wheeling: boolean
   phase: Phase
   viewport: number
+  absorb: boolean
 }
 
 type PaperHandAction =
@@ -72,6 +74,7 @@ type PaperHandAction =
   | { type: "drop"; dropping: boolean }
   | { type: "settle" }
   | { type: "still" }
+  | { type: "absorbed" }
   | { type: "viewport"; viewport: number }
 
 function readViewport() {
@@ -98,6 +101,7 @@ function initialPaperHand(
     wheeling: false,
     phase: reduced ? "still" : "enter",
     viewport,
+    absorb: false,
   }
 }
 
@@ -121,9 +125,13 @@ function paperHandReducer(
       return { ...state, dragging: true, wheeling: false, hovered: -1 }
     case "drag_move":
       return { ...state, pos: action.pos, dragging: true }
+    case "absorbed":
+      if (!state.absorb) return state
+      return { ...state, absorb: false }
     case "drag_end":
       return {
         ...state,
+        absorb: true,
         pos: action.pos,
         dragging: false,
         wheeling: false,
@@ -247,13 +255,16 @@ export function PaperHand({
   )
   const handRef = useRef<HTMLDivElement>(null)
   const posRef = useRef(hand.pos)
-  const movedRef = useRef(false)
   const onImportRef = useRef(onImport)
   const seenKey = useRef(listKey)
   const wheelTimer = useRef(0)
   const stopGesture = useRef<(() => void) | null>(null)
-  onImportRef.current = onImport
-  if (!hand.dragging && !hand.wheeling) posRef.current = hand.pos
+  const releaseTimer = useRef(0)
+  useLayoutEffect(() => {
+    onImportRef.current = onImport
+    if (!hand.dragging && !hand.wheeling) posRef.current = hand.pos
+  })
+  useEffect(() => () => window.clearTimeout(releaseTimer.current), [])
   const reduced = prefersReduced()
   const step = handStep(handCardWidth(hand.viewport))
   const spread = handSpread(hand.viewport)
@@ -387,11 +398,12 @@ export function PaperHand({
       if (!moved) return
       const released = handRelease(posRef.current, velocity, count)
       posRef.current = released
-      movedRef.current = true
       dispatch({ type: "drag_end", pos: released })
-      window.setTimeout(() => {
-        movedRef.current = false
-      }, 0)
+      window.clearTimeout(releaseTimer.current)
+      releaseTimer.current = window.setTimeout(
+        () => dispatch({ type: "absorbed" }),
+        0
+      )
     }
     function move(ev: PointerEvent) {
       if (ev.pointerId !== pointerId) return
@@ -399,7 +411,6 @@ export function PaperHand({
       if (!moved) {
         if (Math.abs(dx) <= DRAG_START_PX) return
         moved = true
-        movedRef.current = true
         node.setPointerCapture(pointerId)
         node.addEventListener("lostpointercapture", lost)
         window.clearTimeout(wheelTimer.current)
@@ -437,12 +448,11 @@ export function PaperHand({
   }
 
   function onCardClick(index: number, entry: LibraryEntry) {
-    if (movedRef.current) {
-      movedRef.current = false
+    if (hand.absorb) {
+      dispatch({ type: "absorbed" })
       return
     }
-    if (index !== handCentre(posRef.current, count)) {
-      posRef.current = index
+    if (index !== centre) {
       dispatch({ type: "jump", pos: index })
       return
     }
@@ -494,7 +504,9 @@ export function PaperHand({
           }
           style={poseStyle(pose, entering)}
           onClick={() => onCardClick(index, entry)}
-          onPointerEnter={() => dispatch({ type: "hover", index })}
+          onPointerMove={() => {
+            if (hand.hovered !== index) dispatch({ type: "hover", index })
+          }}
           onPointerLeave={() => dispatch({ type: "hover", index: -1 })}
         >
           <HandPicture entry={entry} />
