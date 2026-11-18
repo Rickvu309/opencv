@@ -43,7 +43,7 @@
 
 .paper-template-text {
   font:
-    11pt/normal Calibri,
+    11pt/1.3 Calibri,
     Carlito,
     "Segoe UI",
     Arial,
@@ -70,12 +70,19 @@
   font-weight: 700;
 }
 
-.paper-template-text > [data-page-line="ListBullet"] {
-  padding-inline-start: 18pt;
+.paper-template-text > [data-page-line="Entry"] {
+  display: flex;
+  justify-content: space-between;
+  gap: 12pt;
+  margin-block-end: 0;
+  font-weight: 700;
 }
 
-.paper-template-text > [data-page-line="ListBullet"]::before {
-  position: absolute;
-  margin-inline-start: -18pt;
-  content: "•";
+.paper-template-text > [data-page-line="Entry"] > :last-child {
+  flex: none;
+  font-weight: 400;
+}
+
+.paper-template-text > [data-page-line="Normal"] + [data-page-line="Entry"] {
+  margin-block-start: 10pt;
 }

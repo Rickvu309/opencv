@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/paper-template-gallery.test.tsx > Paper template gallery > starts each template from the API's lines and draws its name, headings and line blocks large enough to tell apart",
+    "because": "Template previews now show a filled example CV instead of the API's bracketed placeholder lines; the replacement asserts the example and that no preview carries bracketed text.",
+    "replacedBy": "apps/web/src/features/paper/paper-template-gallery.test.tsx",
+    "proof": {
+      "fork": "a26fc88e75b2278c1d7f84168da9c6c4244f9da5",
+      "replacedByBlob": "57aa511ed56c1fda8b95a98f922b942b36d2c016",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 5
+  }
+]

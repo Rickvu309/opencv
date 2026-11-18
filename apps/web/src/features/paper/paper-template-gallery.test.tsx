@@ -146,35 +146,28 @@ describe("Paper template gallery", () => {
     ])
   })
 
-  it("starts each template from the API's lines and draws its name, headings and line blocks large enough to tell apart", () => {
-    expect(templatePageLines("simple")).toEqual([
-      { style: "Title", text: "[Your name]", center: true },
-      { style: "Normal", text: "[Headline]", center: true },
-      {
-        style: "Normal",
-        text: "[Email] | [Phone] | [City] | [LinkedIn]",
+  it("previews each template as a filled example CV with no bracketed placeholders", () => {
+    for (const id of FEATURED_TEMPLATES) {
+      const lines = templatePageLines(id)
+      expect(lines[0]).toEqual({
+        style: "Title",
+        text: "Linh Nguyen",
         center: true,
-      },
-      { style: "Heading1", text: "Summary" },
-      {
-        style: "Normal",
-        text: "[Two or three lines on who you are and the work you want]",
-      },
-      { style: "Heading1", text: "Experience" },
-      { style: "Normal", text: "[Role, company] | [Dates]" },
-      {
-        style: "ListBullet",
-        text: "[What you did, and what changed because of it]",
-      },
-      { style: "Heading1", text: "Education" },
-      { style: "Normal", text: "[School, degree] | [Dates]" },
-      {
-        style: "ListBullet",
-        text: "[A course, result or project worth naming]",
-      },
-      { style: "Heading1", text: "Skills" },
-      { style: "Normal", text: "[Tools, software and languages]" },
-    ])
+      })
+      expect(
+        lines.filter((line) => /[[\]]/.test(`${line.text}${line.aside ?? ""}`))
+      ).toEqual([])
+      expect(
+        lines.filter((line) => line.style === "Entry" && !line.aside)
+      ).toEqual([])
+    }
+    expect(
+      templatePageLines("simple").filter((line) => line.style === "Entry")
+    ).toContainEqual({
+      style: "Entry",
+      text: "Marketing Analyst Intern",
+      aside: "May - August 2026",
+    })
     render(<Chooser onBlank={() => undefined} />)
     const page = (id: string) =>
       [
@@ -183,27 +176,27 @@ describe("Paper template gallery", () => {
         ),
       ].map((line) => line.textContent)
     expect(page("simple")).toEqual([
-      "[Your name]",
+      "Linh Nguyen",
       "Summary",
       "Experience",
       "Education",
       "Skills",
     ])
     expect(page("modern")).toEqual([
-      "[Your name]",
+      "Linh Nguyen",
       "Profile",
       "Experience",
       "Selected work",
     ])
     expect(page("compact")).toEqual([
-      "[Your name]",
+      "Linh Nguyen",
       "Work experience",
       "About",
       "Education",
       "Skills",
     ])
     expect(page("academic")).toEqual([
-      "[Your name]",
+      "Linh Nguyen",
       "Education",
       "Projects & campus",
       "Experience",
@@ -213,7 +206,10 @@ describe("Paper template gallery", () => {
       '[data-template-grid] [data-template-page="simple"] [data-page-line]'
     )
     expect([...lines].map((line) => line.textContent)).toEqual(
-      templatePageLines("simple").map((line) => line.text)
+      templatePageLines("simple").map(
+        (line) =>
+          `${line.label ? `${line.label} ` : ""}${line.text}${line.aside ?? ""}`
+      )
     )
     expect(
       document.querySelector('[data-template-page="blank"] [data-page-name]')
