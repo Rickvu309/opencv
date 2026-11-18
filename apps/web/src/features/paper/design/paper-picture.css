@@ -18,8 +18,7 @@
   text-align: start;
 }
 
-.paper-picture,
-.paper-continue-stack::before {
+.paper-picture {
   box-shadow:
     0 0 0 1px rgb(0 0 0 / 5%),
     0 1px 3px rgb(0 0 0 / 6%);

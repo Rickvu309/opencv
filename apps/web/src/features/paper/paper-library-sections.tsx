@@ -1,4 +1,3 @@
-import type { ReactNode } from "react"
 import { Link } from "@tanstack/react-router"
 import {
   ArrowRight,
@@ -8,7 +7,6 @@ import {
   FileText,
   Link2,
   Pencil,
-  FolderOpen,
   Image,
   SquareArrowOutUpRight,
   Trash2,
@@ -20,7 +18,7 @@ import {
   type PaperView,
 } from "@workspace/domain"
 
-import { Button, buttonVariants } from "@workspace/ui/components/button"
+import { buttonVariants } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
@@ -62,62 +60,6 @@ export function PaperProofsLink() {
           Open Proofs <ArrowRight aria-hidden="true" />
         </Link>
       </div>
-    </section>
-  )
-}
-
-type SectionAction = {
-  label: string
-  empty: string
-  detail: string
-  onCreate: () => void
-}
-
-export function PaperLibrarySection({
-  title,
-  count = 0,
-  action,
-  children,
-}: {
-  title: string
-  count?: number
-  action?: SectionAction
-  children: ReactNode
-}) {
-  return (
-    <section
-      aria-label={title}
-      data-slot="paper-library-section"
-      className="grid min-w-0 gap-3"
-    >
-      <h3
-        data-slot="paper-library-section-head"
-        className="text-xs font-medium text-muted-foreground"
-      >
-        {title}
-      </h3>
-      {count === 0 && action ? (
-        <div className="paper-library-empty">
-          {title === "Files" ? (
-            <FolderOpen aria-hidden="true" />
-          ) : (
-            <FileText aria-hidden="true" />
-          )}
-          <p className="font-medium text-foreground">{action.empty}</p>
-          <p>{action.detail}</p>
-          <Button
-            variant="outline"
-            className="min-h-11"
-            onClick={action.onCreate}
-          >
-            {action.label}
-          </Button>
-        </div>
-      ) : (
-        <div data-slot="paper-library-row" className="paper-library-row">
-          {children}
-        </div>
-      )}
     </section>
   )
 }
@@ -204,6 +146,48 @@ function paperActions(
   ]
 }
 
+export function libraryEntryActions(
+  entry: LibraryEntry,
+  on: LibraryEntryHandlers
+): PaperCardAction[] {
+  if (entry.type === "paper") return paperActions(entry.doc, entry.word, on)
+  if (entry.type === "word") {
+    const { word } = entry
+    const downloadWord = on.onDownloadWord
+    return [
+      {
+        label: "Open",
+        icon: SquareArrowOutUpRight,
+        onSelect: () => on.onOpen(word.docId),
+      },
+      {
+        label: "Preview text",
+        icon: FileText,
+        onSelect: () => on.onPreview(word),
+      },
+      ...(downloadWord
+        ? [
+            {
+              label: "Download Word",
+              icon: Download,
+              onSelect: () => downloadWord(word),
+            },
+          ]
+        : []),
+    ]
+  }
+  const onDeleteFile = on.onDeleteFile
+  if (!onDeleteFile) return []
+  return [
+    {
+      label: "Delete",
+      icon: Trash2,
+      onSelect: () => onDeleteFile(entry.file),
+      destructive: true,
+    },
+  ]
+}
+
 export function LibraryEntryCard({
   entry,
   on,
@@ -227,13 +211,12 @@ export function LibraryEntryCard({
         }
         openLabel={`${doc.name}, ${edited}`}
         onOpen={() => on.onOpen(doc.id)}
-        actions={paperActions(doc, entry.word, on)}
+        actions={libraryEntryActions(entry, on)}
       />
     )
   }
   if (entry.type === "word") {
     const { word } = entry
-    const downloadWord = on.onDownloadWord
     return (
       <PaperLibraryCard
         name={word.name}
@@ -242,32 +225,11 @@ export function LibraryEntryCard({
         preview={<PaperWordPreview docId={word.docId} />}
         openLabel={`Open ${word.name}`}
         onOpen={() => on.onOpen(word.docId)}
-        actions={[
-          {
-            label: "Open",
-            icon: SquareArrowOutUpRight,
-            onSelect: () => on.onOpen(word.docId),
-          },
-          {
-            label: "Preview text",
-            icon: FileText,
-            onSelect: () => on.onPreview(word),
-          },
-          ...(downloadWord
-            ? [
-                {
-                  label: "Download Word",
-                  icon: Download,
-                  onSelect: () => downloadWord(word),
-                },
-              ]
-            : []),
-        ]}
+        actions={libraryEntryActions(entry, on)}
       />
     )
   }
   const { file } = entry
-  const onDeleteFile = on.onDeleteFile
   return (
     <PaperLibraryCard
       name={file.name}
@@ -279,18 +241,7 @@ export function LibraryEntryCard({
           strokeWidth={1.5}
         />
       }
-      actions={
-        onDeleteFile
-          ? [
-              {
-                label: "Delete",
-                icon: Trash2,
-                onSelect: () => onDeleteFile(file),
-                destructive: true,
-              },
-            ]
-          : []
-      }
+      actions={libraryEntryActions(entry, on)}
     />
   )
 }
