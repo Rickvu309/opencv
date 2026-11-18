@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react"
+import { useLayoutEffect, useReducer, useRef, type KeyboardEvent } from "react"
 import { FileUp, Sparkles } from "lucide-react"
 
 import type { PaperTemplateId } from "@workspace/domain"
@@ -18,6 +18,18 @@ export const PAPER_GALLERY_DIALOG_CLASS =
   "paper-picker flex flex-col gap-0 overflow-hidden sm:max-w-3xl lg:max-w-[960px]"
 
 export type PickerChoice = PaperTemplateId | "blank"
+
+type PickerAction = { type: "selected"; choice: PickerChoice }
+
+function pickerSelection(
+  selected: PickerChoice | undefined,
+  action: PickerAction
+): PickerChoice | undefined {
+  switch (action.type) {
+    case "selected":
+      return selected === action.choice ? selected : action.choice
+  }
+}
 
 export function focusChosenTemplate() {
   return (
@@ -68,7 +80,7 @@ export function PaperTemplateGallery({
   initial?: PickerChoice
   kind?: "cv" | "letter"
 }) {
-  const [selected, setSelected] = useState<PickerChoice | undefined>(initial)
+  const [selected, dispatch] = useReducer(pickerSelection, initial)
   const grid = useRef<HTMLDivElement>(null)
   const templates = kind === "cv" ? TEMPLATE_CHOICES : []
   const choices = [
@@ -142,7 +154,7 @@ export function PaperTemplateGallery({
     event.preventDefault()
     card.focus({ preventScroll: true })
     centerCard(grid.current, card)
-    setSelected(choice.id)
+    dispatch({ type: "selected", choice: choice.id })
   }
 
   function syncCarousel(track: HTMLDivElement) {
@@ -160,7 +172,7 @@ export function PaperTemplateGallery({
       return distance(card) < distance(cards[closest]!) ? candidate : closest
     }, 0)
     const choice = choices[nearest]
-    if (choice) setSelected(choice.id)
+    if (choice) dispatch({ type: "selected", choice: choice.id })
   }
 
   return (
@@ -200,7 +212,7 @@ export function PaperTemplateGallery({
                   onClick={(event) => {
                     if (pending) return
                     centerCard(grid.current, event.currentTarget)
-                    setSelected(id)
+                    dispatch({ type: "selected", choice: id })
                   }}
                   onDoubleClick={() => confirmChoice(id)}
                 >
