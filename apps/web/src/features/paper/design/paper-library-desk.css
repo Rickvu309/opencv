@@ -80,7 +80,6 @@
   transform: translate(9px, 4px) rotate(3deg);
   border-radius: 4px;
   background: var(--background);
-  box-shadow: var(--paper-picture-shadow);
 }
 
 .paper-start-strip {

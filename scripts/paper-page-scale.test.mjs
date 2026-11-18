@@ -97,18 +97,18 @@ test("Paper pictures and carousel sizing use the shared A4 ratio", () => {
     [galleryCss, ".paper-picker-page { aspect-ratio: 210 / 297; }"],
     [galleryCss, ".paper-picker-page { width: calc(100cqh * 17 / 22); }"],
     [galleryCss, ".paper-picker-page { width: calc(100cqh * 0.707); }"],
-    [galleryCss, ".paper-picker-page { --paper-picture-ratio: 3 / 4; }"],
+    [galleryCss, ".paper-picker-page { --cv-paper-picture-ratio: 3 / 4; }"],
   ])
     assert.match(detect(source, file).join(), /shared A4 ratio/, source)
 
   for (const [file, source] of [
     [
       pictureCss,
-      ".paper-picture { aspect-ratio: var(--paper-picture-ratio); }",
+      ".paper-picture { aspect-ratio: var(--cv-paper-picture-ratio); }",
     ],
     [
       galleryCss,
-      ".paper-picker-page { width: calc(100cqh * var(--paper-picture-ratio)); }",
+      ".paper-picker-page { width: calc(100cqh * var(--cv-paper-picture-ratio)); }",
     ],
     [card, '<span className="paper-picture" />'],
   ])
@@ -117,7 +117,7 @@ test("Paper pictures and carousel sizing use the shared A4 ratio", () => {
   const shared = readFileSync(pictureCss, "utf8")
   assert.deepEqual(detect(shared, pictureCss), [])
   assert.deepEqual(
-    [...shared.matchAll(/--paper-picture-ratio:\s*([^;]+);/g)].map(
+    [...shared.matchAll(/--cv-paper-picture-ratio:\s*([^;]+);/g)].map(
       (match) => match[1]
     ),
     ["calc(210 / 297)"]

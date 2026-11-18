@@ -1,36 +1,40 @@
 .paper-library,
 .paper-picker,
 .paper-picture {
-  --paper-picture-ratio: calc(210 / 297);
-  --paper-picture-width: 794px;
-  --paper-picture-height: 1123px;
-  --paper-picture-shadow:
-    0 0 0 1px var(--border), 0 1px 2px rgb(0 0 0 / 6%),
-    0 6px 16px rgb(0 0 0 / 4%);
+  --cv-paper-picture-ratio: calc(210 / 297);
+  --cv-paper-picture-width: 794px;
+  --cv-paper-picture-height: 1123px;
 }
 
 .paper-picture {
   position: relative;
   display: block;
   width: 100%;
-  aspect-ratio: var(--paper-picture-ratio);
+  aspect-ratio: var(--cv-paper-picture-ratio);
   container-type: inline-size;
   overflow: hidden;
   background: white;
   color: rgb(0 0 0 / 85%);
   text-align: start;
-  box-shadow: var(--paper-picture-shadow);
+}
+
+.paper-picture,
+.paper-continue-stack::before {
+  box-shadow:
+    0 0 0 1px var(--border),
+    0 1px 2px rgb(0 0 0 / 6%),
+    0 6px 16px rgb(0 0 0 / 4%);
 }
 
 .paper-picture .paper-picture-text {
   position: absolute;
   inset: 0 auto auto 0;
   box-sizing: border-box;
-  inline-size: var(--paper-picture-width);
-  block-size: var(--paper-picture-height);
+  inline-size: var(--cv-paper-picture-width);
+  block-size: var(--cv-paper-picture-height);
   min-block-size: 0;
   padding: 1in;
-  transform: scale(tan(atan2(100cqw, var(--paper-picture-width))));
+  transform: scale(tan(atan2(100cqw, var(--cv-paper-picture-width))));
   transform-origin: top left;
   white-space: normal;
   overflow-wrap: break-word;

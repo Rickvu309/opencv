@@ -54,12 +54,12 @@ const pictureFile =
   /^apps\/web\/src\/features\/paper\/(?:design\/)?paper-(?:library|picture|template|word-preview)[\w.-]*\.(?:css|tsx?)$/
 const pictureRatioSource =
   "apps/web/src/features/paper/design/paper-picture.css"
-const pictureRatio = "var(--paper-picture-ratio)"
+const pictureRatio = "var(--cv-paper-picture-ratio)"
 const pictureRatioError = "Use the shared A4 ratio from paper-picture.css"
 
 function hasPictureRatioMistake(text, path) {
   if (!pictureFile.test(path)) return false
-  if (path !== pictureRatioSource && /--paper-picture-ratio\s*:/.test(text))
+  if (path !== pictureRatioSource && /--cv-paper-picture-ratio\s*:/.test(text))
     return true
   if (
     /(?:^|[:"'`\s])(?:aspect-(?!auto\b|ratio\b)(?:\w|\[)|\[aspect-ratio:)/m.test(

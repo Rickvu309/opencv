@@ -104,7 +104,7 @@
 }
 
 .paper-picker-preview .paper-picker-page {
-  width: min(100%, calc((100cqh - 44px) * var(--paper-picture-ratio)));
+  width: min(100%, calc((100cqh - 44px) * var(--cv-paper-picture-ratio)));
 }
 
 .paper-picker-footer {
@@ -188,7 +188,7 @@
               100cqw -
                 min(
                   100cqw - 64px,
-                  max(70px, (100cqh - 62px) * var(--paper-picture-ratio))
+                  max(70px, (100cqh - 62px) * var(--cv-paper-picture-ratio))
                 )
             ) /
             2
@@ -204,7 +204,7 @@
     flex: 0 0
       min(
         calc(100cqw - 64px),
-        max(70px, calc((100cqh - 62px) * var(--paper-picture-ratio)))
+        max(70px, calc((100cqh - 62px) * var(--cv-paper-picture-ratio)))
       );
     padding: 4px;
     scroll-snap-align: center;
