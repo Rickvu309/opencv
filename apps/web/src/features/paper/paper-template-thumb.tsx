@@ -26,7 +26,9 @@ export function TemplatePage({
               data-page-line={line.style}
               className={line.center ? "text-center" : undefined}
             >
-              {line.text}
+              {line.label ? <b>{line.label} </b> : null}
+              {line.aside ? <span>{line.text}</span> : line.text}
+              {line.aside ? <span>{line.aside}</span> : null}
             </span>
           ))}
         </span>

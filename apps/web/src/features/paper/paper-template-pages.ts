@@ -3,8 +3,10 @@ import type { PaperTemplateId } from "@workspace/domain"
 import { PAPER_TEMPLATE_LABELS, previewTemplate } from "./paper-templates.ts"
 
 export type TemplatePageLine = {
-  readonly style: "Title" | "Heading1" | "ListBullet" | "Normal"
+  readonly style: "Title" | "Heading1" | "Entry" | "Label" | "Normal"
   readonly text: string
+  readonly aside?: string
+  readonly label?: string
   readonly center?: true
 }
 
@@ -48,40 +50,97 @@ const LAYOUT_SECTIONS: Record<
   ],
 }
 
-const SECTION_LINES: Record<SectionKind, readonly TemplatePageLine[]> = {
+const entry = (
+  place: string,
+  where: string,
+  role: string,
+  when: string,
+  detail: string
+): TemplatePageLine[] => [
+  { style: "Entry", text: place, aside: where },
+  { style: "Entry", text: role, aside: when },
+  { style: "Normal", text: detail },
+]
+
+const EXAMPLE_SECTIONS: Record<SectionKind, readonly TemplatePageLine[]> = {
   summary: [
     {
       style: "Normal",
-      text: "[Two or three lines on who you are and the work you want]",
+      text: "Marketing student who turns customer research into campaigns people remember. Ran surveys and focus groups with over 500 responses and presented the findings to senior managers. Looking for a first full-time role in brand marketing.",
     },
   ],
   experience: [
-    { style: "Normal", text: "[Role, company] | [Dates]" },
-    {
-      style: "ListBullet",
-      text: "[What you did, and what changed because of it]",
-    },
+    ...entry(
+      "Lumiere Beverages Vietnam",
+      "Ho Chi Minh City",
+      "Marketing Analyst Intern",
+      "May - August 2026",
+      "Examined demand for a new fruit drink by comparing similar brands. Managed focus groups and surveys that gathered over 500 responses. Presented the findings to senior managers with clear charts and a launch plan."
+    ),
+    ...entry(
+      "Saigon Bright Communications",
+      "Remote",
+      "Assistant Account Executive",
+      "June - August 2025",
+      "Researched and assembled proposals for public relations clients. Drafted client letters and joined weekly planning sessions with the account team."
+    ),
   ],
   education: [
-    { style: "Normal", text: "[School, degree] | [Dates]" },
-    { style: "ListBullet", text: "[A course, result or project worth naming]" },
+    ...entry(
+      "RMIT University Vietnam",
+      "Ho Chi Minh City",
+      "Bachelor of Business in Marketing, GPA 3.7",
+      "May 2027",
+      "Relevant coursework: Consumer Behaviour, Market Research and Digital Marketing."
+    ),
+    ...entry(
+      "University of Melbourne",
+      "Melbourne, Australia",
+      "Exchange semester in Marketing Analytics",
+      "February - June 2025",
+      "Studied customer data analysis and brand strategy with students from 20 countries."
+    ),
   ],
-  skills: [{ style: "Normal", text: "[Tools, software and languages]" }],
   projects: [
-    { style: "Normal", text: "[Project or role] | [Dates]" },
+    ...entry(
+      "RMIT Women in Business",
+      "Ho Chi Minh City",
+      "Executive Committee Member",
+      "February 2024 - Present",
+      "Organized a membership campaign and a business conference for 50 professionals and 500 students."
+    ),
+    ...entry(
+      "Campus Charity Run",
+      "Ho Chi Minh City",
+      "Training Program Director",
+      "January - May 2024",
+      "Built a training plan for 25 runners and raised over 25,000 USD for a local food bank."
+    ),
+  ],
+  skills: [
     {
-      style: "ListBullet",
-      text: "[What you made, and what changed because of it]",
+      style: "Label",
+      label: "Technical:",
+      text: "Excel, SQL, Google Analytics, Canva.",
+    },
+    {
+      style: "Label",
+      label: "Languages:",
+      text: "Vietnamese (native), English (fluent), French (conversational).",
+    },
+    {
+      style: "Label",
+      label: "Interests:",
+      text: "Street photography, badminton and Vietnamese cinema.",
     },
   ],
 }
 
-const HEADER_LINES: readonly TemplatePageLine[] = [
-  { style: "Title", text: "[Your name]", center: true },
-  { style: "Normal", text: "[Headline]", center: true },
+const EXAMPLE_HEADER: readonly TemplatePageLine[] = [
+  { style: "Title", text: "Linh Nguyen", center: true },
   {
     style: "Normal",
-    text: "[Email] | [Phone] | [City] | [LinkedIn]",
+    text: "Ho Chi Minh City \u2022 linh.nguyen@example.com \u2022 +84 912 345 678",
     center: true,
   },
 ]
@@ -90,10 +149,10 @@ export function templatePageLines(
   templateId: PaperTemplateId
 ): TemplatePageLine[] {
   return [
-    ...HEADER_LINES,
+    ...EXAMPLE_HEADER,
     ...LAYOUT_SECTIONS[previewTemplate(templateId)].flatMap(([kind, title]) => [
       { style: "Heading1" as const, text: title },
-      ...SECTION_LINES[kind],
+      ...EXAMPLE_SECTIONS[kind],
     ]),
   ]
 }
