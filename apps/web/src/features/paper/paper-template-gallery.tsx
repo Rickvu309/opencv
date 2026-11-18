@@ -138,7 +138,7 @@ export function PaperTemplateGallery({
     if (card) centerCard(grid.current, card)
   }, [query])
 
-  function useChoice(id: PickerChoice | undefined) {
+  function confirmChoice(id: PickerChoice | undefined) {
     if (pending || id === undefined) return
     if (id === "blank") onBlank?.()
     else onUse(id)
@@ -148,7 +148,7 @@ export function PaperTemplateGallery({
     if (pending) return
     if (event.key === "Enter") {
       event.preventDefault()
-      useChoice(chosen?.id)
+      confirmChoice(chosen?.id)
       return
     }
     const cards = [
@@ -230,7 +230,7 @@ export function PaperTemplateGallery({
               onKeyDown={(event) => {
                 if (event.key === "Enter") {
                   event.preventDefault()
-                  useChoice(chosen?.id)
+                  confirmChoice(chosen?.id)
                 }
                 if (event.key === "Escape" && query) {
                   event.preventDefault()
@@ -290,7 +290,7 @@ export function PaperTemplateGallery({
                     centerCard(grid.current, event.currentTarget)
                     dispatch({ type: "selected", choice: id })
                   }}
-                  onDoubleClick={() => useChoice(id)}
+                  onDoubleClick={() => confirmChoice(id)}
                 >
                   <Specimen id={id} />
                   <span>{label}</span>
@@ -335,7 +335,7 @@ export function PaperTemplateGallery({
             variant="primary"
             className="h-auto min-h-11 py-2 text-sm whitespace-normal"
             disabled={!chosen || pending}
-            onClick={() => useChoice(chosen?.id)}
+            onClick={() => confirmChoice(chosen?.id)}
           >
             {pending ? (
               <>
