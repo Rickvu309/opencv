@@ -9,10 +9,6 @@ import { darkStyleProblems } from "./lib/light-mode-only.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 
-const FENCED_BY_1671 = new Set([
-  "apps/web/src/features/paper/paper-library-card.tsx",
-])
-
 const scannedFiles = () =>
   execFileSync(
     "git",
@@ -108,10 +104,6 @@ test("apps and packages keep no dark mode styles, theme provider or dark media r
       readFileSync(path.join(root, file), "utf8"),
       file
     )
-    if (FENCED_BY_1671.has(file)) {
-      if (found.length > 1) problems.push(...found)
-      continue
-    }
     problems.push(...found)
   }
   assert.deepEqual(problems, [])
