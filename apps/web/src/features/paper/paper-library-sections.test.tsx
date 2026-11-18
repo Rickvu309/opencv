@@ -160,7 +160,8 @@ describe("Paper home sections", () => {
     expect(hero.getByRole("button", { name: "Open" })).toBeInTheDocument()
     expect(hero.getByText("Letter")).toBeInTheDocument()
     expect(hero.getByText(/^Edited /)).toBeInTheDocument()
-    expect(hero.getByRole("button", { name: "Download" })).toBeInTheDocument()
+    expect(hero.getByRole("button", { name: "Ask Coach" })).toBeInTheDocument()
+    expect(hero.getAllByRole("button")).toHaveLength(2)
     fireEvent.click(
       within(screen.getByRole("region", { name: "Start new" })).getByRole(
         "button",

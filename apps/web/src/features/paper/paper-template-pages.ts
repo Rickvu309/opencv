@@ -183,28 +183,3 @@ export const TEMPLATE_CHOICES: readonly TemplateChoice[] =
     label: PAPER_TEMPLATE_LABELS.find((item) => item.id === id)?.label ?? id,
     use: TEMPLATE_USES[id] ?? "",
   }))
-
-const words = (text: string) =>
-  text
-    .toLowerCase()
-    .split(/[^a-z0-9]+/)
-    .filter(Boolean)
-
-const headingsOf = (id: PaperTemplateId) =>
-  templatePageLines(id)
-    .filter((line) => line.style === "Heading1")
-    .map((line) => line.text)
-    .join(" ")
-
-export function findTemplates(query: string): readonly TemplateChoice[] {
-  const needles = words(query)
-  if (needles.length === 0) return TEMPLATE_CHOICES
-  return TEMPLATE_CHOICES.filter((choice) => {
-    const haystack = words(
-      `${choice.label} ${choice.use} ${headingsOf(choice.id)}`
-    )
-    return needles.every((needle) =>
-      haystack.some((word) => word.startsWith(needle))
-    )
-  })
-}

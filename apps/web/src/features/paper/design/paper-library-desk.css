@@ -1,4 +1,5 @@
 .paper-library {
+  --radius: 0.375rem;
   min-height: 100%;
   padding: 16px 16px 0;
   background: color-mix(in oklch, var(--secondary) 35%, var(--background));
@@ -22,11 +23,12 @@
 .paper-continue {
   display: grid;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-  min-height: 268px;
+  min-height: 264px;
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 8px;
   background: var(--background);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
 }
 
 .paper-continue-copy {
@@ -34,8 +36,8 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  gap: 10px;
-  padding: clamp(20px, 4vw, 52px);
+  gap: 8px;
+  padding: clamp(20px, 4vw, 48px);
   min-width: 0;
 }
 
@@ -59,17 +61,16 @@
   align-items: start;
   justify-items: center;
   min-height: 100%;
-  max-height: 268px;
+  max-height: 264px;
   overflow: hidden;
   isolation: isolate;
-  background: color-mix(in oklch, var(--secondary) 35%, var(--background));
 }
 
 .paper-continue-stack {
   position: relative;
-  width: min(59%, 274px);
-  margin-block-start: 24px;
-  transform: rotate(-1deg);
+  width: min(56%, 256px);
+  margin-block-start: 36px;
+  rotate: -1.5deg;
 }
 
 .paper-continue-stack::before {
@@ -77,17 +78,19 @@
   z-index: -1;
   inset: 0;
   content: "";
-  transform: translate(9px, 4px) rotate(3deg);
-  border-radius: 4px;
-  background: var(--background);
+  transform: translate(10px, 2px) rotate(4deg);
+  border-radius: 3px;
+  background: color-mix(in oklch, var(--secondary) 70%, var(--background));
 }
 
 .paper-start-strip {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: clamp(86px, 10vw, 100px);
-  gap: clamp(6px, 1.5vw, 20px);
-  padding: 5px 4px 8px;
+  grid-auto-columns: 88px;
+  gap: clamp(12px, 1.5vw, 20px);
+  margin-inline: -4px;
+  padding: 4px 4px 8px;
+  scroll-padding-inline: 4px;
   overflow-x: auto;
   overscroll-behavior-inline: contain;
   scroll-snap-type: inline proximity;
@@ -100,8 +103,12 @@
   grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: 8px;
-  padding: 6px 9px;
+  padding: 0;
   border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  font-weight: 450;
   white-space: normal;
   text-align: center;
   overflow-wrap: anywhere;
@@ -123,41 +130,49 @@
   gap: 10px;
 }
 
-.paper-library-results {
-  border-top: 1px solid var(--border);
-  padding-block-start: 14px;
-}
-
 .paper-library-views {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 3px;
-  border-radius: 8px;
-  padding: 3px;
+  gap: 2px;
+  isolation: isolate;
+  border-radius: 6px;
+  padding: 2px;
   background: var(--secondary);
+}
+
+.paper-library-view-indicator {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  clip-path: inset(0 100% 100% 0);
+  background: var(--background);
+  pointer-events: none;
 }
 
 .paper-library-view[data-slot="button"] {
   min-height: 36px;
   gap: 5px;
-  padding-inline: 9px;
+  border-radius: 4px;
+  padding-inline: 10px;
+  color: var(--muted-foreground);
   font-size: 0.8125rem;
 }
 
-.paper-library-view[aria-pressed="true"] {
-  border-color: var(--border);
-  background: var(--background);
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 5%);
+.paper-library-view[data-slot="button"]:hover,
+.paper-library-view[data-slot="button"][aria-pressed="true"] {
+  background: transparent;
+  color: var(--foreground);
 }
 
 .paper-library-controls [data-slot="search-input"] {
-  min-height: 44px;
+  min-height: 36px;
 }
 
 .paper-library-controls [data-slot="search-input"] button {
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
 }
 
 .paper-library-row {
@@ -173,7 +188,7 @@
   gap: 7px;
   padding: 20px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--background);
   color: var(--muted-foreground);
   font-size: 0.875rem;
@@ -229,11 +244,29 @@
   }
 
   :is(.paper-desk-card, .paper-start-tile) .paper-sheet {
-    transition: translate var(--duration-micro) var(--ease-micro);
+    transition:
+      translate var(--duration-micro) var(--ease-micro),
+      scale var(--duration-micro) var(--ease-micro);
+  }
+
+  :is(.paper-desk-card, .paper-start-tile):active .paper-sheet {
+    scale: 0.97;
+  }
+
+  .paper-library-views[data-placed] .paper-library-view-indicator {
+    transition: clip-path var(--duration-micro) var(--ease-micro);
+  }
+
+  .paper-library-view[data-slot="button"] {
+    transition: color var(--duration-micro) var(--ease-micro);
   }
 }
 
 @media (hover: hover) and (pointer: fine) {
+  .paper-start-tile:hover {
+    color: var(--foreground);
+  }
+
   :is(.paper-desk-card, .paper-start-tile):hover .paper-sheet {
     box-shadow:
       0 0 0 1px var(--border),
@@ -248,19 +281,29 @@
     transition: translate var(--duration-panel) var(--ease-panel);
   }
 
-  .paper-continue:hover .paper-continue-stack,
-  :is(.paper-desk-card, .paper-start-tile):hover .paper-sheet {
-    translate: 0 -2px;
+  .paper-continue:hover .paper-continue-stack {
+    translate: 0 -4px;
   }
 
   .paper-continue:hover .paper-continue-stack::before {
+    translate: 3px 1px;
+  }
+
+  .paper-continue [data-variant="primary"] svg {
+    transition: translate var(--duration-micro) var(--ease-micro);
+  }
+
+  .paper-continue [data-variant="primary"]:hover svg {
     translate: 2px 0;
+  }
+
+  :is(.paper-desk-card, .paper-start-tile):hover .paper-sheet {
+    translate: 0 -2px;
   }
 }
 
 @media (forced-colors: active) {
   .paper-continue-stack::before,
-  .paper-continue-stack::after,
   .paper-sheet {
     outline: 1px solid CanvasText;
   }
@@ -293,16 +336,16 @@
   }
 
   .paper-continue-stage {
-    height: 150px;
+    height: 156px;
   }
 
   .paper-continue-stack {
-    width: min(57%, 194px);
-    margin-block-start: 17px;
+    width: min(56%, 192px);
+    margin-block-start: 22px;
   }
 
   .paper-start-strip {
-    grid-auto-columns: 91px;
+    grid-auto-columns: 80px;
     scroll-snap-type: inline mandatory;
   }
 
@@ -312,6 +355,15 @@
 
   .paper-library-controls [data-slot="paper-library-search"] {
     width: 100%;
+  }
+
+  .paper-library-controls [data-slot="search-input"] {
+    min-height: 44px;
+  }
+
+  .paper-library-controls [data-slot="search-input"] button {
+    width: 44px;
+    height: 44px;
   }
 
   .paper-library-row {

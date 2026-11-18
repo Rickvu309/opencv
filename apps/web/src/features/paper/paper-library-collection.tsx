@@ -1,3 +1,5 @@
+import { useLayoutEffect, useRef } from "react"
+
 import { Button } from "@workspace/ui/components/button"
 
 import {
@@ -53,6 +55,36 @@ export function PaperLibraryCollection({
   )
   const noResults = shownSections.every(({ id }) => sections[id].length === 0)
   const counts = librarySections(entries, "")
+  const viewGroup = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    const group = viewGroup.current
+    if (!group) return
+    const place = () => {
+      const active = group.querySelector<HTMLElement>('[aria-pressed="true"]')
+      const pill = group.querySelector<HTMLElement>(
+        '[data-slot="paper-library-view-indicator"]'
+      )
+      if (!active || !pill) return
+      const top = active.offsetTop
+      const left = active.offsetLeft
+      const right = group.clientWidth - left - active.offsetWidth
+      const bottom = group.clientHeight - top - active.offsetHeight
+      pill.style.clipPath = `inset(${top}px ${right}px ${bottom}px ${left}px round 4px)`
+    }
+    place()
+    const settle = requestAnimationFrame(() => {
+      group.dataset.placed = "true"
+    })
+    if (typeof ResizeObserver === "undefined")
+      return () => cancelAnimationFrame(settle)
+    const observer = new ResizeObserver(place)
+    observer.observe(group)
+    return () => {
+      cancelAnimationFrame(settle)
+      observer.disconnect()
+    }
+  }, [view])
 
   const sectionActions = {
     cv: {
@@ -80,10 +112,7 @@ export function PaperLibraryCollection({
       aria-labelledby="paper-library-title"
       className="paper-library-collection"
     >
-      <h2
-        id="paper-library-title"
-        className="text-xl font-semibold tracking-tight"
-      >
+      <h2 id="paper-library-title" className="text-sm font-semibold">
         Library
       </h2>
       <div
@@ -91,10 +120,16 @@ export function PaperLibraryCollection({
         data-slot="paper-library-controls"
       >
         <div
+          ref={viewGroup}
           role="group"
           aria-label="Library views"
           className="paper-library-views"
         >
+          <span
+            aria-hidden="true"
+            data-slot="paper-library-view-indicator"
+            className="paper-library-view-indicator"
+          />
           {VIEWS.map(({ id, title }) => (
             <Button
               key={id}

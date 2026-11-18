@@ -8,10 +8,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@workspace/ui/components/dialog"
-import { Input } from "@workspace/ui/components/input"
 import { Spinner } from "@workspace/ui/components/spinner"
 
-import { findTemplates } from "./paper-template-pages.ts"
+import { TEMPLATE_CHOICES } from "./paper-template-pages.ts"
 import { TemplatePage } from "./paper-template-thumb.tsx"
 import "./design/paper-template-gallery.css"
 
@@ -20,26 +19,15 @@ export const PAPER_GALLERY_DIALOG_CLASS =
 
 export type PickerChoice = PaperTemplateId | "blank"
 
-type PickerSelection = { query: string; selected: PickerChoice | undefined }
-
-type PickerAction =
-  | { type: "searched"; query: string }
-  | { type: "cleared" }
-  | { type: "selected"; choice: PickerChoice }
+type PickerAction = { type: "selected"; choice: PickerChoice }
 
 function pickerSelection(
-  state: PickerSelection,
+  selected: PickerChoice | undefined,
   action: PickerAction
-): PickerSelection {
+): PickerChoice | undefined {
   switch (action.type) {
-    case "searched":
-      return { query: action.query, selected: undefined }
-    case "cleared":
-      return { ...state, query: "" }
     case "selected":
-      return state.selected === action.choice
-        ? state
-        : { ...state, selected: action.choice }
+      return selected === action.choice ? selected : action.choice
   }
 }
 
@@ -92,12 +80,9 @@ export function PaperTemplateGallery({
   initial?: PickerChoice
   kind?: "cv" | "letter"
 }) {
-  const [{ query, selected }, dispatch] = useReducer(pickerSelection, {
-    query: "",
-    selected: initial,
-  })
+  const [selected, dispatch] = useReducer(pickerSelection, initial)
   const grid = useRef<HTMLDivElement>(null)
-  const templates = kind === "cv" ? findTemplates(query) : []
+  const templates = kind === "cv" ? TEMPLATE_CHOICES : []
   const choices = [
     ...(onBlank
       ? [
@@ -110,12 +95,9 @@ export function PaperTemplateGallery({
       : []),
     ...templates,
   ]
-  const preferred =
-    choices.find(({ id }) => id === selected)?.id ??
-    (query.trim() ? templates[0]?.id : undefined)
   const index = Math.max(
     0,
-    choices.findIndex(({ id }) => id === preferred)
+    choices.findIndex(({ id }) => id === selected)
   )
   const chosen = choices[index]
 
@@ -124,7 +106,7 @@ export function PaperTemplateGallery({
       '[aria-checked="true"]'
     )
     if (card) centerCard(grid.current, card)
-  }, [query])
+  }, [])
 
   function confirmChoice(id: PickerChoice | undefined) {
     if (pending || id === undefined) return
@@ -203,52 +185,6 @@ export function PaperTemplateGallery({
       </DialogHeader>
       <div className="paper-picker-body" data-slot="paper-picker-body">
         <div className="paper-picker-rail">
-          {kind === "cv" ? (
-            <Input
-              type="search"
-              aria-label="Search templates"
-              placeholder="Search templates"
-              autoComplete="off"
-              enterKeyHint="go"
-              value={query}
-              className="paper-picker-search h-11 text-base md:text-sm"
-              onChange={(event) =>
-                dispatch({ type: "searched", query: event.target.value })
-              }
-              onKeyDown={(event) => {
-                if (event.key === "Enter") {
-                  event.preventDefault()
-                  confirmChoice(chosen?.id)
-                }
-                if (event.key === "Escape" && query) {
-                  event.preventDefault()
-                  event.stopPropagation()
-                  dispatch({ type: "cleared" })
-                }
-              }}
-            />
-          ) : null}
-          {query.trim() &&
-          templates.length === 0 &&
-          query.trim().toLowerCase() !== "blank" ? (
-            <div role="status" className="grid justify-items-start gap-2 p-4">
-              <p>No template matches “{query.trim()}”.</p>
-              <Button
-                variant="outline"
-                className="h-11"
-                onClick={() => dispatch({ type: "cleared" })}
-              >
-                Clear search
-              </Button>
-            </div>
-          ) : null}
-          {query.trim() && templates.length > 0 ? (
-            <p className="sr-only" role="status">
-              {templates.length === 1
-                ? "1 template"
-                : `${templates.length} templates`}
-            </p>
-          ) : null}
           <div data-template-scroll="" className="paper-picker-scroll min-h-0">
             <div
               ref={grid}
@@ -281,7 +217,7 @@ export function PaperTemplateGallery({
                   onDoubleClick={() => confirmChoice(id)}
                 >
                   <Specimen id={id} />
-                  <span>{label}</span>
+                  <span className="paper-picker-label">{label}</span>
                 </Button>
               ))}
             </div>

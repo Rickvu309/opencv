@@ -89,9 +89,6 @@ function wideDialog() {
   expect(primary).toBeTruthy()
   for (const control of actions!.querySelectorAll("button"))
     expect(control.className, control.textContent ?? "").toMatch(/\bh-11\b/)
-  expect(
-    content.querySelector("input[aria-label='Search templates']")?.className
-  ).toMatch(/\bh-11\b.*\btext-base\b/)
   expect(content.querySelector("[data-slot=dialog-close]")).toBeTruthy()
   return primary!
 }
@@ -121,7 +118,6 @@ function Chooser(props: {
 }
 
 const card = (name: string) => screen.getByRole("radio", { name })
-const search = () => screen.getByRole("searchbox", { name: "Search templates" })
 const shownCards = () =>
   [...document.querySelectorAll<HTMLElement>("[data-template-card]")].map(
     (element) => element.dataset.templateCard
@@ -133,13 +129,14 @@ afterEach(() => {
 })
 
 describe("Paper template gallery", () => {
-  it("leads with Blank and the four distinct pages, and keeps the other names behind search", () => {
+  it("leads with Blank and the four distinct pages, with no search field to scan past", () => {
     render(<Chooser onBlank={() => undefined} onImport={() => undefined} />)
     expect(shownCards()).toEqual(["blank", ...FEATURED_TEMPLATES])
     expect(card("Blank")).toHaveAttribute("aria-checked", "true")
     expect(screen.getByRole("button", { name: "Start blank" })).toBeEnabled()
     expect(screen.getByRole("button", { name: "Import a file" })).toBeEnabled()
     expect(screen.queryByText(/more names/)).toBeNull()
+    expect(screen.queryByRole("searchbox")).toBeNull()
     expect(PAPER_TEMPLATE_LABELS).toHaveLength(16)
     expect(TEMPLATE_CHOICES.map((choice) => choice.id)).toEqual([
       ...FEATURED_TEMPLATES,
@@ -219,35 +216,6 @@ describe("Paper template gallery", () => {
     ).toBeEmptyDOMElement()
   })
 
-  it("searches forgivingly, picks the top match, and says when nothing matches", () => {
-    const onUse = vi.fn()
-    const onBlank = vi.fn()
-    render(<Chooser onUse={onUse} onBlank={onBlank} />)
-    fireEvent.change(search(), { target: { value: "proj" } })
-    expect(shownCards()).toEqual(["blank", "academic"])
-    expect(card("Academic")).toHaveAttribute("aria-checked", "true")
-    fireEvent.change(search(), { target: { value: "EDUC" } })
-    expect(shownCards()).toEqual(["blank", "simple", "compact", "academic"])
-    fireEvent.change(search(), { target: { value: "classic" } })
-    expect(shownCards()).toEqual(["blank"])
-    fireEvent.change(search(), { target: { value: "mod" } })
-    expect(screen.getByText("1 template")).toHaveClass("sr-only")
-    fireEvent.keyDown(search(), { key: "Enter" })
-    expect(onUse).toHaveBeenCalledWith("modern")
-    fireEvent.change(search(), { target: { value: "zzzz" } })
-    expect(shownCards()).toEqual(["blank"])
-    expect(screen.getByText(/No template matches/)).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "Start blank" })).toBeEnabled()
-    fireEvent.click(screen.getByRole("button", { name: "Clear search" }))
-    expect(shownCards()).toEqual(["blank", ...FEATURED_TEMPLATES])
-    fireEvent.change(search(), { target: { value: "blank" } })
-    expect(shownCards()).toEqual(["blank"])
-    fireEvent.keyDown(search(), { key: "Escape" })
-    expect(search()).toHaveValue("")
-    expect(chooserDialog()).toBeInTheDocument()
-    expect(onBlank).not.toHaveBeenCalled()
-  })
-
   it("moves through the grid with the arrow keys, Home and End, and Enter uses the focused choice", () => {
     const onUse = vi.fn()
     render(<Chooser onUse={onUse} onBlank={() => undefined} />)
@@ -305,14 +273,6 @@ describe("Paper template gallery", () => {
   it.each([
     ["opened", () => undefined],
     ["selected", () => fireEvent.click(card("Compact"))],
-    [
-      "searching with results",
-      () => fireEvent.change(search(), { target: { value: "c" } }),
-    ],
-    [
-      "searching with none",
-      () => fireEvent.change(search(), { target: { value: "zzzz" } }),
-    ],
   ])(
     "keeps the sheet inside every window size, scrolls the grid inside it and pins the actions when %s",
     (_state, act_) => {

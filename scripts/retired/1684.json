@@ -1,0 +1,30 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/paper-template-gallery.test.tsx",
+    "because": "The picker no longer has a template search: it only filtered the same five pages. The gallery test now checks that no search field is shown, that Blank and the four templates lead, and the window size cases without search.",
+    "replacedBy": "apps/web/src/features/paper/paper-template-gallery.test.tsx",
+    "proof": {
+      "fork": "7c38fb8cceb006b3e5f71ea38201f944b575d93a",
+      "replacedByBlob": "2dc80929847a644524a48edd446332f4d2c0c135",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "because": "The Continue card now holds only Open and Ask Coach; Download stays in each document's menu. The same case now checks Ask Coach and that the card has exactly two buttons.",
+    "replacedBy": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "proof": {
+      "fork": "7c38fb8cceb006b3e5f71ea38201f944b575d93a",
+      "replacedByBlob": "f097c4b3171aee339e254cf301e5f5c44b19571b",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]

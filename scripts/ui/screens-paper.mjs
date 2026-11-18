@@ -1,5 +1,3 @@
-const SEARCH_TEMPLATES = '[role="dialog"] input[aria-label="Search templates"]'
-
 const OPEN_NEW_CV = [
   { click: { role: "button", name: "New" } },
   { click: { role: "button", name: "CV" } },
@@ -60,24 +58,6 @@ export function paperPickerScreens({ page, openPanel, addJob }) {
               '[data-slot="letter-start-page"], [data-template-gallery]',
           },
         },
-      ],
-    },
-    {
-      id: "paper-new-cv-searching",
-      route: "/paper",
-      steps: [
-        ...OPEN_NEW_CV,
-        { fill: { selector: SEARCH_TEMPLATES, text: "mod" } },
-        { waitFor: { text: "Modern" } },
-      ],
-    },
-    {
-      id: "paper-new-cv-no-match",
-      route: "/paper",
-      steps: [
-        ...OPEN_NEW_CV,
-        { fill: { selector: SEARCH_TEMPLATES, text: "zzzz" } },
-        { waitFor: { role: "dialog", name: "New CV" } },
       ],
     },
     {
