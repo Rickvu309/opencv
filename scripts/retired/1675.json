@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 3
+  },
+  {
+    "subject": "scripts/ui/owner-decision.test.mjs",
+    "because": "the owner asked on 2026-11-18 for the Coach page composer to be squarer like Linear; the decided radius moves from 10px to 8px, measured from Linear's agent page at the same scale, and the test pins the new value",
+    "replacedBy": "scripts/ui/owner-decision.test.mjs",
+    "proof": {
+      "fork": "a8b7e0caea3af7a89ec7971a82fb89d98186f649",
+      "replacedByBlob": "5236a405d9389eb33f25328bdde4b7234d6bfd2c",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
