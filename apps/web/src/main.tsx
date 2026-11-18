@@ -6,7 +6,6 @@ import { RouterProvider } from "@tanstack/react-router"
 import "@workspace/ui/globals.css"
 import "@/styles/paper.css"
 import "@/styles/coach.css"
-import { ThemeProvider } from "@/components/theme-provider.tsx"
 import { createQueryClient } from "@/lib/query-client.ts"
 import { placeToastsAsTheyShow } from "@/lib/toast-clearance.ts"
 import { createAppRouter } from "@/router.tsx"
@@ -23,19 +22,17 @@ const router = createAppRouter()
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <ThemeProvider>
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
-        <div
-          data-slot="toast-host"
-          className="contents"
-          ref={placeToastsAsTheyShow}
-        >
-          <Suspense fallback={null}>
-            <Toaster />
-          </Suspense>
-        </div>
-      </QueryClientProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+      <div
+        data-slot="toast-host"
+        className="contents"
+        ref={placeToastsAsTheyShow}
+      >
+        <Suspense fallback={null}>
+          <Toaster />
+        </Suspense>
+      </div>
+    </QueryClientProvider>
   </StrictMode>
 )

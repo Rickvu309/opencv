@@ -203,7 +203,17 @@ export function baseContext(ctx, dir) {
 
 async function captureSide(
   ctx,
-  { state, screens, widths, side, out, manifest, selectors, checkBase }
+  {
+    state,
+    screens,
+    widths,
+    side,
+    out,
+    manifest,
+    selectors,
+    checkBase,
+    colorScheme,
+  }
 ) {
   const browser = await ctx.browser.launch()
   try {
@@ -222,6 +232,7 @@ async function captureSide(
         try {
           const { page, close } = await openScreen(browser, state, screen, {
             width,
+            colorScheme,
           })
           const file = sideFile(screen.id, width, side)
           await page.screenshot({ path: join(out, file), fullPage: false })
@@ -242,7 +253,7 @@ async function captureSide(
 
 export async function runCompare(
   ctx,
-  { screens, widths, base, out, selectors, checkBase }
+  { screens, widths, base, out, selectors, checkBase, colorScheme }
 ) {
   ctx.fs.mkdir(out)
   const head = ctx.git(["rev-parse", "HEAD"], ctx.repo)
@@ -268,6 +279,7 @@ export async function runCompare(
       manifest,
       selectors,
       checkBase,
+      colorScheme,
     })
     await down(baseCtx)
     started.pop()
@@ -282,6 +294,7 @@ export async function runCompare(
       out,
       manifest,
       selectors,
+      colorScheme,
     })
     const file = join(out, "manifest.json")
     ctx.fs.write(file, JSON.stringify(manifest, null, 2))

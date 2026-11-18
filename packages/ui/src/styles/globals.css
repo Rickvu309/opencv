@@ -3,7 +3,6 @@
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/inter";
 
-@custom-variant dark (&:is(.dark *));
 @source "../../../apps/**/*.{ts,tsx}";
 @source "../**/*.{ts,tsx}";
 
@@ -70,6 +69,7 @@
 }
 
 :root {
+  color-scheme: light;
   --background: oklch(0.982 0.001 286.376);
   --foreground: oklch(0.218 0 0);
   --card: oklch(1 0 0);
@@ -101,40 +101,6 @@
   --sidebar-accent: oklch(0.931 0.001 286.374);
   --sidebar-accent-foreground: oklch(0.218 0 0);
   --sidebar-border: oklch(0.913 0 0);
-  --sidebar-ring: oklch(0.607 0.141 276.281);
-}
-
-.dark {
-  --background: oklch(0.155 0.009 274.276);
-  --foreground: oklch(0.968 0.003 286.35);
-  --card: oklch(0.206 0.014 272.582);
-  --card-foreground: oklch(0.968 0.003 286.35);
-  --popover: oklch(0.228 0.016 274.073);
-  --popover-foreground: oklch(0.968 0.003 286.35);
-  --primary: oklch(0.968 0.003 286.35);
-  --primary-foreground: oklch(0.155 0.009 274.276);
-  --secondary: oklch(0.228 0.016 274.073);
-  --secondary-foreground: oklch(0.968 0.003 286.35);
-  --muted: oklch(0.206 0.014 272.582);
-  --muted-foreground: oklch(0.709 0.013 286.065);
-  --accent: oklch(0.228 0.016 274.073);
-  --accent-foreground: oklch(0.968 0.003 286.35);
-  --destructive: oklch(0.653 0.183 23.679);
-  --border: oklch(0.968 0.003 286.35 / 12%);
-  --input: oklch(0.968 0.003 286.35 / 16%);
-  --ring: oklch(0.607 0.141 276.281);
-  --chart-1: oklch(0.649 0.186 267.396);
-  --chart-2: oklch(0.65 0.13 154.934);
-  --chart-3: oklch(0.567 0.159 275.206);
-  --chart-4: oklch(0.758 0.156 81.298);
-  --chart-5: oklch(0.706 0.003 286.326);
-  --sidebar: oklch(0.206 0.014 272.582);
-  --sidebar-foreground: oklch(0.968 0.003 286.35);
-  --sidebar-primary: oklch(0.968 0.003 286.35);
-  --sidebar-primary-foreground: oklch(0.155 0.009 274.276);
-  --sidebar-accent: oklch(0.228 0.016 274.073);
-  --sidebar-accent-foreground: oklch(0.968 0.003 286.35);
-  --sidebar-border: oklch(0.968 0.003 286.35 / 12%);
   --sidebar-ring: oklch(0.607 0.141 276.281);
 }
 

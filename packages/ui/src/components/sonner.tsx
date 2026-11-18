@@ -49,6 +49,7 @@ function Toaster({
   return (
     <Sonner
       data-slot="toaster"
+      theme="light"
       className={cn("toaster group", glidesWithPanels, className)}
       style={{ ...narrowsToTheRoomItIsGiven, ...style }}
       offset={clearOfBottomChrome}

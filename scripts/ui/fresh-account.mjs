@@ -10,11 +10,12 @@ import {
 } from "./account-pool.mjs"
 import { viewportFor } from "./screens.mjs"
 
-export function contextOptions({ width, scale = 1 }) {
+export function contextOptions({ width, scale = 1, colorScheme }) {
   return {
     viewport: viewportFor(width),
     deviceScaleFactor: scale,
     reducedMotion: "reduce",
+    ...(colorScheme ? { colorScheme } : {}),
   }
 }
 

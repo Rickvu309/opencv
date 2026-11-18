@@ -69,19 +69,11 @@ const LIGHT = {
   hover: oklchToLinear(0.931, 0.001, 286.374),
   active: ACTIVE,
 }
-const DARK = {
-  fg: oklchToLinear(0.709, 0.013, 286.065),
-  bg: oklchToLinear(0.206, 0.014, 272.582),
-  hover: oklchToLinear(0.228, 0.016, 274.073),
-}
-
 function passes(alpha: number) {
   return (
-    [LIGHT, DARK].every(
-      (theme) =>
-        contrast(theme.fg, theme.bg, alpha) >= 4.5 &&
-        contrast(theme.fg, theme.hover, alpha) >= 4.5
-    ) && contrast(LIGHT.fg, LIGHT.active, alpha) >= 4.5
+    contrast(LIGHT.fg, LIGHT.bg, alpha) >= 4.5 &&
+    contrast(LIGHT.fg, LIGHT.hover, alpha) >= 4.5 &&
+    contrast(LIGHT.fg, LIGHT.active, alpha) >= 4.5
   )
 }
 
