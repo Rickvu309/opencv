@@ -284,7 +284,7 @@ export function PaperTemplateGallery({
                   aria-disabled={pending || undefined}
                   data-template-card={id}
                   tabIndex={id === chosen?.id ? 0 : -1}
-                  className="paper-picker-choice h-auto whitespace-normal"
+                  className="paper-picker-choice h-11 whitespace-normal"
                   onClick={(event) => {
                     if (pending) return
                     centerCard(grid.current, event.currentTarget)

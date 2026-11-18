@@ -56,6 +56,8 @@
 
 .paper-picker-choice[data-slot="button"] {
   display: grid;
+  min-height: 44px;
+  height: auto;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(1.25rem, auto);
   align-items: start;
@@ -76,7 +78,8 @@
 .paper-picker-page {
   box-shadow:
     0 0 0 1px color-mix(in oklch, var(--foreground) 18%, transparent),
-    var(--shadow-sm);
+    0 1px 3px rgb(0 0 0 / 10%),
+    0 1px 2px -1px rgb(0 0 0 / 10%);
   transition:
     translate var(--duration-micro) var(--ease-micro),
     box-shadow var(--duration-micro) var(--ease-micro);
@@ -87,7 +90,8 @@
   box-shadow:
     0 0 0 2px var(--popover),
     0 0 0 4px var(--foreground),
-    var(--shadow-md);
+    0 4px 6px -1px rgb(0 0 0 / 10%),
+    0 2px 4px -2px rgb(0 0 0 / 10%);
 }
 
 .paper-picker-stage {
@@ -117,7 +121,8 @@
   width: min(100%, calc((100cqh - 44px) * 17 / 22));
   box-shadow:
     0 0 0 1px color-mix(in oklch, var(--foreground) 16%, transparent),
-    var(--shadow-lg);
+    0 10px 15px -3px rgb(0 0 0 / 10%),
+    0 4px 6px -4px rgb(0 0 0 / 10%);
 }
 
 .paper-picker-footer {
@@ -189,15 +194,18 @@
   }
 
   .paper-picker-grid {
-    --choice-width: min(
-      calc(100cqw - 64px),
-      max(70px, calc((100cqh - 62px) * 17 / 22))
-    );
     display: flex;
     height: 100%;
     align-items: center;
     gap: 12px;
-    padding: 8px max(12px, calc((100cqw - var(--choice-width)) / 2));
+    padding: 8px
+      max(
+        12px,
+        calc(
+          (100cqw - min(100cqw - 64px, max(70px, (100cqh - 62px) * 17 / 22))) /
+            2
+        )
+      );
     overflow: auto hidden;
     overscroll-behavior-inline: contain;
     scroll-snap-type: inline mandatory;
@@ -205,7 +213,8 @@
   }
 
   .paper-picker-choice[data-slot="button"] {
-    flex: 0 0 var(--choice-width);
+    flex: 0 0
+      min(calc(100cqw - 64px), max(70px, calc((100cqh - 62px) * 17 / 22)));
     padding: 4px;
     scroll-snap-align: center;
   }

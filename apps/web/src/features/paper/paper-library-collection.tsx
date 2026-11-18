@@ -100,7 +100,7 @@ export function PaperLibraryCollection({
               key={id}
               variant="ghost"
               aria-pressed={view === id}
-              className="paper-library-view"
+              className="paper-library-view h-11 md:h-8"
               onClick={() => {
                 if (view !== id) onViewChange(id)
               }}

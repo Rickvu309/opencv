@@ -86,6 +86,7 @@ import {
 } from "./paper-library-dialogs.tsx"
 import { PaperContinue, PaperStartStrip } from "./paper-library-desk.tsx"
 import "./design/paper-library.pen.css"
+import "./design/paper-library-desk.css"
 
 export function PaperLibrary({
   docs,

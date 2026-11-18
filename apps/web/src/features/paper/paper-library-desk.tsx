@@ -130,7 +130,7 @@ export function PaperStartStrip({
             <Button
               key={id}
               variant="ghost"
-              className="paper-start-tile"
+              className="paper-start-tile h-11"
               onClick={() => onCV(id)}
             >
               <span className={`paper-sheet ${TEMPLATE_PAGE_CLASS}`}>
@@ -144,7 +144,11 @@ export function PaperStartStrip({
             </Button>
           )
         )}
-        <Button variant="ghost" className="paper-start-tile" onClick={onLetter}>
+        <Button
+          variant="ghost"
+          className="paper-start-tile h-11"
+          onClick={onLetter}
+        >
           <span className={`paper-sheet ${TEMPLATE_PAGE_CLASS}`}>
             <BlankPage />
           </span>
