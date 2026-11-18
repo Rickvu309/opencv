@@ -130,5 +130,19 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/api/src/connections/oauth.test.ts > completes SDK discovery, PKCE consent, opaque issuance, refresh and immediate revoke with Job tools, person approval and Undo",
+    "because": "The delegate receipt now reads (unverified agent connection: name) instead of a middle dot separator; the same case checks the new wording",
+    "replacedBy": "apps/api/src/connections/oauth.test.ts",
+    "proof": {
+      "fork": "606c4fa6ce8621321785a623cfd2dc2dc8b2fdc7",
+      "replacedByBlob": "cac06d068fc34c6d92f6e901ca99794e51226029",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
