@@ -402,7 +402,7 @@ export function InboxReader({
                 <Textarea
                   aria-label="Reply"
                   disabled={busy}
-                  className="min-h-11 resize-none rounded-none border-0 bg-transparent p-0 text-base leading-relaxed shadow-none focus-visible:ring-0 md:min-h-0 md:text-sm dark:bg-transparent"
+                  className="min-h-11 resize-none rounded-none border-0 bg-transparent p-0 text-base leading-relaxed shadow-none focus-visible:ring-0 md:min-h-0 md:text-sm"
                   value={body}
                   onChange={(event) =>
                     dispatch({ type: "reply_typed", value: event.target.value })

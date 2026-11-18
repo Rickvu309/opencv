@@ -21,7 +21,7 @@ import { useChosenTimeZone } from "./apply-time-zone.ts"
 export const TITLE_TEXT = "text-foreground/91"
 
 export const RAIL_ROW =
-  "w-full justify-start gap-[9px] rounded-[6px] px-2 text-[13px] font-normal text-foreground hover:bg-secondary aria-expanded:bg-secondary dark:hover:bg-secondary"
+  "w-full justify-start gap-[9px] rounded-[6px] px-2 text-[13px] font-normal text-foreground hover:bg-secondary aria-expanded:bg-secondary"
 
 export const RAIL_POPOVER =
   "w-[270px] gap-0.5 rounded-[10px] p-1.5 shadow-[0_2px_4px_rgb(0_0_0/0.06),0_24px_60px_rgb(0_0_0/0.14)] ring-foreground/6"

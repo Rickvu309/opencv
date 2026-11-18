@@ -270,7 +270,7 @@ function InterviewPrep({ job }: { job: JobDetail }) {
                 autoFocus
                 value={step}
                 placeholder="Add a step"
-                className="h-11 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0 md:h-7 md:text-[13.5px] dark:bg-transparent"
+                className="h-11 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0 md:h-7 md:text-[13.5px]"
                 onChange={(event) =>
                   dispatch({ type: "step_typed", value: event.target.value })
                 }
@@ -417,14 +417,14 @@ function NoteComposer({ jobId }: { jobId: JobId }) {
               state.message ? messageId : null,
             ]
               .filter(Boolean)
-              .join(" ") || undefined
+              .join("") || undefined
           }
           aria-invalid={state.message?.invalid || undefined}
           value={state.note}
           rows={1}
           placeholder="Leave a note…"
           className={cn(
-            "min-h-11 flex-1 resize-none border-0 bg-transparent p-0 text-base shadow-none focus-visible:ring-0 md:min-h-0 md:text-[13px] dark:bg-transparent",
+            "min-h-11 flex-1 resize-none border-0 bg-transparent p-0 text-base shadow-none focus-visible:ring-0 md:min-h-0 md:text-[13px]",
             NOTE_PLACEHOLDER
           )}
           onChange={(event) =>

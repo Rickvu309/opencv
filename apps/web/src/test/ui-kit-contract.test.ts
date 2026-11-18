@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { readdirSync, readFileSync } from "node:fs"
+import { existsSync, readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
@@ -232,10 +232,14 @@ describe("web consumes the kit through package exports", () => {
     expect(main).toMatch(/@workspace\/ui\/globals\.css/)
   })
 
-  it("does not expose a dark-mode d hotkey", () => {
-    const provider = read("apps/web/src/components/theme-provider.tsx")
-    expect(provider).not.toMatch(/event\.key\.toLowerCase\(\) !== ["']d["']/)
-    expect(provider).not.toMatch(/keydown/)
+  it("ships without a theme provider or dark-mode toggle", () => {
+    expect(
+      existsSync(
+        path.join(repoRoot, "apps/web/src/components/theme-provider.tsx")
+      )
+    ).toBe(false)
+    const main = read("apps/web/src/main.tsx")
+    expect(main).not.toMatch(/ThemeProvider/)
   })
 
   it("does not import frozen prototype modules", () => {

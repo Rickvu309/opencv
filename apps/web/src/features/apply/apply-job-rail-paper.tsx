@@ -155,7 +155,7 @@ export function PaperRow({
             aria-label="Find in Paper"
             value={search}
             placeholder="Find in Paper"
-            className="h-11 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0 md:h-8 md:text-[12.5px] dark:bg-transparent"
+            className="h-11 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0 md:h-8 md:text-[12.5px]"
             onChange={(event) =>
               dispatch({ type: "search_typed", value: event.target.value })
             }

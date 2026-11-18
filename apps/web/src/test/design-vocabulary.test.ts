@@ -416,9 +416,8 @@ describe("app code uses shadcn variables and stock Tailwind, with no raw hex or 
     expect(declared(firstTopLevelCssBlockBody(css, ":root")).sort()).toEqual(
       [...STOCK_ROOT].sort()
     )
-    expect(declared(firstTopLevelCssBlockBody(css, "\\.dark")).sort()).toEqual(
-      [...STOCK_COLORS].sort()
-    )
+    expect(css).toContain("color-scheme: light")
+    expect(css).not.toMatch(/\.dark\b/)
 
     const theme = firstTopLevelCssBlockBody(css, "@theme inline")
     const themeColors = declared(theme)

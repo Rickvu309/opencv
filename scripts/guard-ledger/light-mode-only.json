@@ -1,0 +1,13 @@
+{
+  "id": "light-mode-only",
+  "file": "scripts/light-mode-only.test.mjs",
+  "detector": {
+    "module": "scripts/lib/light-mode-only.mjs",
+    "export": "darkStyleProblems"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "a8b7e0cae",
+    "path": "packages/ui/src/styles/globals.css"
+  }
+}

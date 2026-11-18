@@ -64,7 +64,7 @@ function shownUrl(value: string) {
 }
 
 const INLINE_FIELD =
-  "h-auto rounded-none border-0 bg-transparent p-0 shadow-none focus-visible:border-0 focus-visible:ring-0 aria-invalid:border-0 aria-invalid:ring-0 dark:bg-transparent"
+  "h-auto rounded-none border-0 bg-transparent p-0 shadow-none focus-visible:border-0 focus-visible:ring-0 aria-invalid:border-0 aria-invalid:ring-0"
 
 export function NewJobDialog({
   stage,
@@ -396,7 +396,7 @@ export function NewJobDialog({
                   aria-describedby={
                     descriptionError ? "job-description-error" : undefined
                   }
-                  className={`mt-4 field-sizing-fixed h-[120px] resize-none rounded-none border-0 bg-transparent p-0 text-base leading-[1.55] text-muted-foreground shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-sm dark:bg-transparent ${PLACEHOLDER_CARD}`}
+                  className={`mt-4 field-sizing-fixed h-[120px] resize-none rounded-none border-0 bg-transparent p-0 text-base leading-[1.55] text-muted-foreground shadow-none focus-visible:border-0 focus-visible:ring-0 md:text-sm ${PLACEHOLDER_CARD}`}
                   onChange={(event) =>
                     patch({ description: event.target.value })
                   }

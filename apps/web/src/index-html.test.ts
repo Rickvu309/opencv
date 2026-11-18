@@ -14,6 +14,7 @@ describe("the document paints the shell before the app loads", () => {
       /<meta name="theme-color" content="(#[0-9a-fA-F]{6})" \/>/
     )
     expect(theme?.[1]).toBe("#f9f9fa")
+    expect(html).toContain('<meta name="color-scheme" content="light" />')
     const schemeAt = html.indexOf('<meta name="color-scheme"')
     const styleAt = html.indexOf("<style>")
     const ruleAt = html.indexOf("html {")
