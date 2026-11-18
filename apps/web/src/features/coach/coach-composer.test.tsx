@@ -65,6 +65,22 @@ describe("Coach composer", () => {
     expect(composer()).toHaveValue("Prep an interview")
   })
 
+  it("draws Send as a white signature circle that cannot be squeezed into an oval", async () => {
+    renderApp(SURFACE_PATHS.coach)
+    await expectCoachIdle()
+
+    fireEvent.change(composer(), { target: { value: "Review my CV" } })
+    const send = screen.getByRole("button", { name: "Send" })
+    const face = send.querySelector('[data-slot="coach-send-face"]')
+    expect(face).not.toBeNull()
+    expect(send.className).toMatch(/(?:^|\s)border-0(?:\s|$)/)
+    expect(send.className).toMatch(/(?:^|\s)size-11(?:\s|$)/)
+    expect(face?.className).toMatch(/(?:^|\s)size-8(?:\s|$)/)
+    expect(face?.className).toMatch(/(?:^|\s)shrink-0(?:\s|$)/)
+    expect(face?.className).toMatch(/(?:^|\s)rounded-full(?:\s|$)/)
+    expect(face?.className).toContain("bg-card")
+  })
+
   it("keeps the reply going when a double click on Send lands on Stop", async () => {
     const stream = scriptCoachStream({ gated: true, texts: ["Got it."] })
     renderApp(SURFACE_PATHS.coach)

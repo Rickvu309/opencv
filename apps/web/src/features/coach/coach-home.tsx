@@ -60,7 +60,7 @@ export function CoachHome({
         "flex w-full min-w-0 flex-col items-center",
         panel
           ? "my-auto py-6 [@media(max-height:20rem)]:hidden"
-          : "min-h-full justify-start px-4 pt-[14dvh] pb-16 md:pt-[26dvh]"
+          : "min-h-full justify-center px-6 py-16 md:px-4"
       )}
     >
       <h2
@@ -81,7 +81,7 @@ export function CoachHome({
           <span
             data-slot="coach-home-mark"
             aria-hidden="true"
-            className="pointer-events-none absolute -top-48 left-1/2 -z-10 size-96 -translate-x-1/2 [mask-image:linear-gradient(to_bottom,black_30%,transparent_80%)] max-md:hidden [@media(max-height:45rem)]:hidden"
+            className="pointer-events-none absolute -top-36 left-1/2 -z-10 size-72 -translate-x-1/2 [mask-image:linear-gradient(to_bottom,black_30%,transparent_80%)] md:-top-48 md:size-96 [@media(max-height:45rem)]:hidden"
           >
             <OpenCvMark className="size-full text-foreground/[0.04]" />
           </span>
@@ -95,6 +95,7 @@ export function CoachHome({
           onChooseStarter={onChooseStarter}
           disabled={disabled}
           spaced={Boolean(children)}
+          layout={panel ? "chips" : "rows"}
         />
       ) : null}
     </div>
@@ -147,28 +148,39 @@ function CoachIdeas({
   onChooseStarter,
   disabled,
   spaced,
+  layout,
 }: {
   onChooseStarter: (text: string) => void
   disabled: boolean
   spaced: boolean
+  layout: "chips" | "rows"
 }) {
   const describedBy = useId()
+  const rows = layout === "rows"
   return (
     <ul
       data-slot="coach-ideas"
+      data-layout={layout}
       aria-label="Ideas for Coach"
       className={cn(
-        "flex w-full max-w-[760px] min-w-0 flex-wrap justify-center gap-2",
-        spaced ? "mt-4" : null
+        "flex w-full min-w-0",
+        rows
+          ? "max-w-[680px] flex-col"
+          : "max-w-[760px] flex-wrap justify-center gap-2",
+        spaced ? (rows ? "mt-3" : "mt-4") : null
       )}
     >
       {COACH_STARTERS.map(({ title, description, icon: Icon }, index) => (
         <li key={title} className="min-w-0">
           <Button
-            variant="outline"
+            variant={rows ? "ghost" : "outline"}
             data-slot="coach-starter"
             aria-label={title}
-            className="h-11 max-w-full min-w-0 gap-2 rounded-full border-border bg-transparent px-3.5 text-[14px] leading-5 font-normal text-muted-foreground shadow-none hover:bg-muted hover:text-foreground md:h-9"
+            className={
+              rows
+                ? "h-11 w-full min-w-0 justify-start gap-3 rounded-md px-4 text-left text-[14px] leading-5 font-normal text-foreground md:h-8 [&_svg]:text-muted-foreground"
+                : "h-11 max-w-full min-w-0 gap-2 rounded-full border-border bg-transparent px-3.5 text-[14px] leading-5 font-normal text-muted-foreground shadow-none hover:bg-muted hover:text-foreground md:h-9"
+            }
             aria-describedby={`${describedBy}-${index}`}
             disabled={disabled}
             onClick={() => onChooseStarter(title)}
