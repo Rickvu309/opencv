@@ -21,7 +21,6 @@ export function paperPickerScreens({ page, openPanel, addJob }) {
         { waitFor: { selector: page } },
         { goto: "/paper" },
         { waitFor: { text: "Simple CV" } },
-        { waitFor: { text: "1 of 2" } },
         {
           waitFor: {
             selector: '[data-slot="app-dock"]:not(:has([data-chat-id]))',
