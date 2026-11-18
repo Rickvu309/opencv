@@ -1,4 +1,4 @@
-import { ArrowDownToLine, ArrowRight, FilePlus2, Sparkles } from "lucide-react"
+import { ArrowRight, FilePlus2, Sparkles } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 
 import {
@@ -17,13 +17,11 @@ export function PaperContinue({
   entry,
   onOpen,
   onCoach,
-  onDownload,
   onStart,
 }: {
   entry?: Exclude<LibraryEntry, { type: "file" }>
   onOpen: () => void
   onCoach: () => void
-  onDownload?: () => void
   onStart: () => void
 }) {
   return (
@@ -33,11 +31,7 @@ export function PaperContinue({
       className="paper-continue"
     >
       <div className="paper-continue-copy">
-        <p className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-          <span
-            className="size-1.5 rounded-full bg-current"
-            aria-hidden="true"
-          />
+        <p className="text-xs font-medium text-muted-foreground">
           {entry ? "Continue editing" : "Your Paper desk"}
         </p>
         <h2 className="paper-continue-title">
@@ -66,23 +60,12 @@ export function PaperContinue({
                 Open <ArrowRight aria-hidden="true" />
               </Button>
               <Button
-                variant="outline"
-                className="min-h-11 px-2 md:px-3"
+                variant="ghost"
+                className="min-h-11 px-2 text-muted-foreground hover:text-foreground md:px-3"
                 onClick={onCoach}
               >
                 <Sparkles aria-hidden="true" /> Ask Coach
               </Button>
-              {onDownload ? (
-                <Button
-                  variant="ghost"
-                  className="size-11 md:w-auto"
-                  aria-label="Download"
-                  onClick={onDownload}
-                >
-                  <ArrowDownToLine aria-hidden="true" />
-                  <span className="hidden md:inline">Download</span>
-                </Button>
-              ) : null}
             </>
           ) : (
             <Button

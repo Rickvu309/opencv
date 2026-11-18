@@ -145,12 +145,9 @@
 .paper-library-view-indicator {
   position: absolute;
   z-index: -1;
-  inset: 0 auto auto 0;
-  border-radius: 4px;
+  inset: 0;
+  clip-path: inset(0 100% 100% 0);
   background: var(--background);
-  box-shadow:
-    0 0 0 1px var(--border),
-    0 1px 2px rgb(0 0 0 / 5%);
   pointer-events: none;
 }
 
@@ -257,9 +254,7 @@
   }
 
   .paper-library-views[data-placed] .paper-library-view-indicator {
-    transition:
-      translate var(--duration-micro) var(--ease-micro),
-      width var(--duration-micro) var(--ease-micro);
+    transition: clip-path var(--duration-micro) var(--ease-micro);
   }
 
   .paper-library-view[data-slot="button"] {

@@ -74,10 +74,7 @@ import {
   latestLibraryDocument,
   libraryEntries,
 } from "./paper-library-entries.ts"
-import {
-  hasPrintBody,
-  type LibraryEntryHandlers,
-} from "./paper-library-sections.tsx"
+import { type LibraryEntryHandlers } from "./paper-library-sections.tsx"
 import { PaperLinkDialog } from "./paper-library-link.tsx"
 import { useShownWhileClosing } from "./paper-library-closing.ts"
 import {
@@ -462,13 +459,6 @@ export function PaperLibrary({
                 if (latestId) onOpen(latestId)
               }}
               onCoach={() => void askCoach()}
-              onDownload={
-                latestWord
-                  ? () => void downloadWord(latestWord)
-                  : latestDoc && hasPrintBody(latestDoc)
-                    ? () => download(latestDoc)
-                    : undefined
-              }
               onStart={() => openPicker("cv")}
             />
             <PaperStartStrip

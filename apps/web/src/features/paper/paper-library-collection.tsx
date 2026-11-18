@@ -66,9 +66,11 @@ export function PaperLibraryCollection({
         '[data-slot="paper-library-view-indicator"]'
       )
       if (!active || !pill) return
-      pill.style.width = `${active.offsetWidth}px`
-      pill.style.height = `${active.offsetHeight}px`
-      pill.style.translate = `${active.offsetLeft}px ${active.offsetTop}px`
+      const top = active.offsetTop
+      const left = active.offsetLeft
+      const right = group.clientWidth - left - active.offsetWidth
+      const bottom = group.clientHeight - top - active.offsetHeight
+      pill.style.clipPath = `inset(${top}px ${right}px ${bottom}px ${left}px round 4px)`
     }
     place()
     const settle = requestAnimationFrame(() => {

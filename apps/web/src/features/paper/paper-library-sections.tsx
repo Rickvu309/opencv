@@ -154,7 +154,7 @@ export type LibraryEntryHandlers = {
   onDeleteFile?: (file: PaperFile) => void
 }
 
-export function hasPrintBody(doc: PaperView) {
+function hasPrintBody(doc: PaperView) {
   return doc.format !== "word"
 }
 
