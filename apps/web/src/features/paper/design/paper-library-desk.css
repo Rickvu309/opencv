@@ -1,4 +1,5 @@
 .paper-library {
+  --radius: 0.375rem;
   min-height: 100%;
   padding: 16px 16px 0;
   background: color-mix(in oklch, var(--secondary) 35%, var(--background));
@@ -25,7 +26,7 @@
   min-height: 264px;
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 8px;
   background: var(--background);
   box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
 }
@@ -130,26 +131,42 @@
 }
 
 .paper-library-views {
+  position: relative;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 3px;
-  border-radius: 8px;
-  padding: 3px;
+  gap: 2px;
+  isolation: isolate;
+  border-radius: 6px;
+  padding: 2px;
   background: var(--secondary);
+}
+
+.paper-library-view-indicator {
+  position: absolute;
+  z-index: -1;
+  inset: 0 auto auto 0;
+  border-radius: 4px;
+  background: var(--background);
+  box-shadow:
+    0 0 0 1px var(--border),
+    0 1px 2px rgb(0 0 0 / 5%);
+  pointer-events: none;
 }
 
 .paper-library-view[data-slot="button"] {
   min-height: 36px;
   gap: 5px;
-  padding-inline: 9px;
+  border-radius: 4px;
+  padding-inline: 10px;
+  color: var(--muted-foreground);
   font-size: 0.8125rem;
 }
 
-.paper-library-view[aria-pressed="true"] {
-  border-color: var(--border);
-  background: var(--background);
-  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 5%);
+.paper-library-view[data-slot="button"]:hover,
+.paper-library-view[data-slot="button"][aria-pressed="true"] {
+  background: transparent;
+  color: var(--foreground);
 }
 
 .paper-library-controls [data-slot="search-input"] {
@@ -174,7 +191,7 @@
   gap: 7px;
   padding: 20px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--background);
   color: var(--muted-foreground);
   font-size: 0.875rem;
@@ -238,6 +255,16 @@
   :is(.paper-desk-card, .paper-start-tile):active .paper-sheet {
     scale: 0.97;
   }
+
+  .paper-library-views[data-placed] .paper-library-view-indicator {
+    transition:
+      translate var(--duration-micro) var(--ease-micro),
+      width var(--duration-micro) var(--ease-micro);
+  }
+
+  .paper-library-view[data-slot="button"] {
+    transition: color var(--duration-micro) var(--ease-micro);
+  }
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -265,6 +292,14 @@
 
   .paper-continue:hover .paper-continue-stack::before {
     translate: 3px 1px;
+  }
+
+  .paper-continue [data-variant="primary"] svg {
+    transition: translate var(--duration-micro) var(--ease-micro);
+  }
+
+  .paper-continue [data-variant="primary"]:hover svg {
+    translate: 2px 0;
   }
 
   :is(.paper-desk-card, .paper-start-tile):hover .paper-sheet {
