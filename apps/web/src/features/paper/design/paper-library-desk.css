@@ -4,6 +4,10 @@
   background: color-mix(in oklch, var(--secondary) 58%, var(--background));
 }
 
+.dark .paper-library {
+  background: color-mix(in oklch, var(--background) 90%, black);
+}
+
 .paper-library > .paper-library-header {
   height: auto;
   min-height: 52px;
@@ -99,6 +103,15 @@
     0 2px 4px -2px rgb(0 0 0 / 18%),
     0 8px 19px -9px rgb(0 0 0 / 25%),
     0 18px 44px -20px rgb(0 0 0 / 34%);
+}
+
+.dark .paper-continue-stack::before,
+.dark .paper-continue-stack::after,
+.dark .paper-sheet {
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--border) 78%, white),
+    0 3px 5px -2px rgb(0 0 0 / 43%),
+    0 12px 24px -8px rgb(0 0 0 / 55%);
 }
 
 .paper-start-strip {
@@ -231,16 +244,16 @@
   }
 
   .paper-library-results[data-motion="enter"] .paper-desk-card:nth-child(2) {
-    animation-delay: 22ms;
+    animation-delay: calc(var(--duration-micro) * 0.15);
   }
 
   .paper-library-results[data-motion="enter"] .paper-desk-card:nth-child(3) {
-    animation-delay: 38ms;
+    animation-delay: calc(var(--duration-micro) * 0.25);
   }
 
   .paper-library-results[data-motion="enter"]
     .paper-desk-card:nth-child(n + 4) {
-    animation-delay: 50ms;
+    animation-delay: calc(var(--duration-micro) / 3);
   }
 
   .paper-library-results[data-motion="fade"] {
@@ -248,9 +261,7 @@
   }
 
   :is(.paper-desk-card, .paper-start-tile) .paper-sheet {
-    transition:
-      translate var(--duration-micro) var(--ease-micro),
-      box-shadow var(--duration-micro) var(--ease-micro);
+    transition: translate var(--duration-micro) var(--ease-micro);
   }
 }
 
@@ -262,11 +273,41 @@
       0 8px 19px -9px rgb(0 0 0 / 25%),
       0 12px 20px -10px rgb(0 0 0 / 34%);
   }
+
+  .dark :is(.paper-desk-card, .paper-start-tile):hover .paper-sheet {
+    box-shadow:
+      0 0 0 1px color-mix(in oklch, var(--border) 78%, white),
+      0 3px 5px -2px rgb(0 0 0 / 43%),
+      0 14px 26px -8px rgb(0 0 0 / 65%);
+  }
 }
 
 @media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .paper-continue-stack,
+  .paper-continue-stack::before,
+  .paper-continue-stack::after {
+    transition: translate var(--duration-panel) var(--ease-panel);
+  }
+
+  .paper-continue:hover .paper-continue-stack,
   :is(.paper-desk-card, .paper-start-tile):hover .paper-sheet {
     translate: 0 -3px;
+  }
+
+  .paper-continue:hover .paper-continue-stack::before {
+    translate: 6px 1px;
+  }
+
+  .paper-continue:hover .paper-continue-stack::after {
+    translate: 3px 0;
+  }
+}
+
+@media (forced-colors: active) {
+  .paper-continue-stack::before,
+  .paper-continue-stack::after,
+  .paper-sheet {
+    outline: 1px solid CanvasText;
   }
 }
 

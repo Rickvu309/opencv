@@ -219,6 +219,10 @@
     scroll-snap-align: center;
   }
 
+  .paper-picker-choice[aria-checked="false"] .paper-picker-page {
+    opacity: 0.8;
+  }
+
   .paper-picker-footer {
     padding: 8px 16px max(10px, env(safe-area-inset-bottom));
   }
@@ -235,6 +239,18 @@
 
   .paper-picker-buttons > [data-variant="primary"] {
     flex: 1 0 100%;
+  }
+}
+
+@media (forced-colors: active) {
+  .paper-picker-page,
+  .paper-picker-choice[aria-checked="false"] .paper-picker-page {
+    opacity: 1;
+    outline: 1px solid CanvasText;
+  }
+
+  .paper-picker-choice[aria-checked="true"] .paper-picker-page {
+    outline: 2px solid Highlight;
   }
 }
 
