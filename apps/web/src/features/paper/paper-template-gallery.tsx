@@ -1,14 +1,7 @@
-import {
-  useId,
-  useReducer,
-  useRef,
-  type KeyboardEvent,
-  type ReactNode,
-} from "react"
-import { Check, FileUp, Search } from "lucide-react"
+import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react"
+import { FileUp, Sparkles } from "lucide-react"
 
 import type { PaperTemplateId } from "@workspace/domain"
-
 import { Button } from "@workspace/ui/components/button"
 import {
   DialogDescription,
@@ -18,148 +11,51 @@ import {
 import { Input } from "@workspace/ui/components/input"
 import { Spinner } from "@workspace/ui/components/spinner"
 
-import {
-  findTemplates,
-  TEMPLATE_CHOICES,
-  type TemplateChoice,
-} from "./paper-template-pages.ts"
+import { findTemplates } from "./paper-template-pages.ts"
 import {
   BlankPage,
   TEMPLATE_PAGE_CLASS,
   TemplatePage,
 } from "./paper-template-thumb.tsx"
+import "./design/paper-template-gallery.css"
 
 export const PAPER_GALLERY_DIALOG_CLASS =
-  "flex flex-col sm:max-w-3xl lg:max-w-[960px] max-h-[calc(100dvh-clamp(16px,14dvh,120px)-16px)] overscroll-contain transition-[opacity,scale,translate] [@media(max-height:300px)]:overflow-y-auto"
+  "paper-picker flex flex-col gap-0 overflow-hidden sm:max-w-3xl lg:max-w-[960px]"
 
-type Choice = PaperTemplateId | "blank"
-
-type GalleryState = { query: string; selected: Choice | "top-match" }
-
-type GalleryAction =
-  | { type: "query_typed"; query: string }
-  | { type: "query_cleared" }
-  | { type: "choice_picked"; id: Choice }
-
-function galleryReducer(
-  state: GalleryState,
-  action: GalleryAction
-): GalleryState {
-  switch (action.type) {
-    case "query_typed":
-      return { query: action.query, selected: "top-match" }
-    case "query_cleared":
-      return { ...state, query: "" }
-    case "choice_picked":
-      return { ...state, selected: action.id }
-  }
-}
-
-function shownChoice(
-  selected: Choice | "top-match",
-  found: readonly TemplateChoice[],
-  hasBlank: boolean
-): Choice | null {
-  if (selected === "blank" && hasBlank) return "blank"
-  if (selected !== "top-match" && found.some((item) => item.id === selected))
-    return selected
-  return found[0]?.id ?? (hasBlank ? "blank" : null)
-}
-
-function columnsOf(cards: HTMLElement[]) {
-  const top = cards[0]?.getBoundingClientRect().top
-  const sameRow = cards.filter(
-    (card) => Math.abs(card.getBoundingClientRect().top - (top ?? 0)) < 2
-  ).length
-  return Math.max(1, sameRow)
-}
-
-const CHOSEN_CARD = '[data-template-grid] [data-template-card][tabindex="0"]'
+export type PickerChoice = PaperTemplateId | "blank"
 
 export function focusChosenTemplate() {
-  return document.querySelector<HTMLElement>(CHOSEN_CARD) ?? true
-}
-
-const STEP: Record<string, (columns: number) => number> = {
-  ArrowRight: () => 1,
-  ArrowLeft: () => -1,
-  ArrowDown: (columns) => columns,
-  ArrowUp: (columns) => -columns,
-}
-
-const CARD_CLASS =
-  "group/card h-auto min-w-0 flex-col items-stretch justify-start gap-2 rounded-[10px] p-1.5 font-normal whitespace-normal text-start outline-none [-webkit-tap-highlight-color:transparent] focus-visible:ring-3 focus-visible:ring-ring/50 aria-disabled:cursor-wait aria-disabled:opacity-60 hover:bg-muted/60"
-
-const PAGE_STATE_CLASS =
-  "shadow-[0_0_0_1px_oklch(0_0_0/0.14),0_1px_3px_oklch(0_0_0/0.08)] group-hover/card:shadow-[0_0_0_1px_oklch(0_0_0/0.45),0_2px_6px_oklch(0_0_0/0.1)]"
-
-function ChoiceCard({
-  id,
-  label,
-  use,
-  checked,
-  disabled,
-  onPick,
-  onUse,
-  children,
-}: {
-  id: Choice
-  label: string
-  use: string
-  checked: boolean
-  disabled: boolean
-  onPick: () => void
-  onUse: () => void
-  children: ReactNode
-}) {
-  const describedBy = useId()
-  const labelledBy = useId()
   return (
-    <Button
-      variant="ghost"
-      type="button"
-      role="radio"
-      aria-checked={checked}
-      aria-labelledby={labelledBy}
-      aria-describedby={describedBy}
-      aria-disabled={disabled || undefined}
-      data-template-card={id}
-      tabIndex={checked ? 0 : -1}
-      className={`${CARD_CLASS} min-h-11`}
-      onClick={() => {
-        if (!disabled) onPick()
-      }}
-      onDoubleClick={() => {
-        if (!disabled) onUse()
-      }}
-    >
-      <span className={`${TEMPLATE_PAGE_CLASS} ${PAGE_STATE_CLASS}`}>
-        {children}
-        {checked ? (
-          <span
-            aria-hidden="true"
-            className="absolute end-2 top-2 grid size-6 place-items-center rounded-full bg-primary text-primary-foreground shadow-[0_0_0_2px_var(--popover)]"
-          >
-            <Check className="size-3.5" strokeWidth={3} />
-          </span>
-        ) : null}
-      </span>
-      <span className="flex min-w-0 flex-col gap-0.5 px-0.5">
-        <span
-          id={labelledBy}
-          className="text-[0.8125rem] leading-5 font-medium [overflow-wrap:anywhere]"
-        >
-          {label}
-        </span>
-        <span
-          id={describedBy}
-          className="text-xs leading-4 break-words whitespace-normal text-muted-foreground"
-        >
-          {use}
-        </span>
-      </span>
-    </Button>
+    document.querySelector<HTMLElement>(
+      '[data-template-gallery] [data-template-card][aria-checked="true"]'
+    ) ?? true
   )
+}
+
+function Specimen({ id }: { id: PickerChoice }) {
+  return (
+    <span className={`paper-picker-page ${TEMPLATE_PAGE_CLASS}`}>
+      {id === "blank" ? (
+        <BlankPage />
+      ) : (
+        <TemplatePage templateId={id} readable />
+      )}
+    </span>
+  )
+}
+
+function centerCard(track: HTMLDivElement | null, card: HTMLElement) {
+  if (!track || track.scrollWidth <= track.clientWidth) return
+  const trackBounds = track.getBoundingClientRect()
+  const cardBounds = card.getBoundingClientRect()
+  track.scrollTo({
+    left:
+      track.scrollLeft +
+      cardBounds.left -
+      trackBounds.left +
+      (cardBounds.width - trackBounds.width) / 2,
+    behavior: "instant",
+  })
 }
 
 export function PaperTemplateGallery({
@@ -168,215 +64,294 @@ export function PaperTemplateGallery({
   onUse,
   onImport,
   onBlank,
+  onCoach,
   pending = false,
   error = null,
-  initial = "simple",
+  initial,
+  kind = "cv",
 }: {
   title: string
   description: string
   onUse: (templateId: PaperTemplateId) => void
   onImport?: () => void
   onBlank?: () => void
+  onCoach?: () => void
   pending?: boolean
   error?: string | null
-  initial?: PaperTemplateId
+  initial?: PickerChoice
+  kind?: "cv" | "letter"
 }) {
-  const hasBlank = Boolean(onBlank)
-  const [{ query, selected }, dispatch] = useReducer(galleryReducer, {
-    query: "",
-    selected: hasBlank ? "blank" : initial,
-  })
-  const gridRef = useRef<HTMLDivElement>(null)
-  const found = findTemplates(query)
-  const chosen = shownChoice(selected, found, hasBlank)
-  const chosenLabel =
-    TEMPLATE_CHOICES.find((item) => item.id === chosen)?.label ?? null
-  const searching = query.trim() !== ""
+  const [query, setQuery] = useState("")
+  const [selected, setSelected] = useState<PickerChoice | undefined>(initial)
+  const grid = useRef<HTMLDivElement>(null)
+  const templates = kind === "cv" ? findTemplates(query) : []
+  const choices = [
+    ...(onBlank
+      ? [
+          {
+            id: "blank" as const,
+            label: "Blank",
+            use: "An empty page with no formatting.",
+          },
+        ]
+      : []),
+    ...templates,
+  ]
+  const preferred =
+    choices.find(({ id }) => id === selected)?.id ??
+    (query.trim() ? templates[0]?.id : undefined)
+  const index = Math.max(
+    0,
+    choices.findIndex(({ id }) => id === preferred)
+  )
+  const chosen = choices[index]
 
-  function startWith(choice: Choice | null) {
-    if (pending || choice === null) return
-    if (choice === "blank") onBlank?.()
-    else onUse(choice)
+  useLayoutEffect(() => {
+    const card = grid.current?.querySelector<HTMLElement>(
+      '[aria-checked="true"]'
+    )
+    if (card) centerCard(grid.current, card)
+  }, [query])
+
+  function useChoice(id: PickerChoice | undefined) {
+    if (pending || id === undefined) return
+    if (id === "blank") onBlank?.()
+    else onUse(id)
   }
 
   function moveFocus(event: KeyboardEvent<HTMLDivElement>) {
-    const cards = [
-      ...(gridRef.current?.querySelectorAll<HTMLElement>(
-        "[data-template-card]"
-      ) ?? []),
-    ]
-    if (cards.length === 0) return
+    if (pending) return
     if (event.key === "Enter") {
       event.preventDefault()
-      startWith(chosen)
+      useChoice(chosen?.id)
       return
     }
-    const current = cards.findIndex(
-      (card) => card === event.currentTarget.ownerDocument.activeElement
-    )
-    const step = STEP[event.key]
-    let next: number | null = null
-    if (step) next = current + step(columnsOf(cards))
-    if (event.key === "Home") next = 0
-    if (event.key === "End") next = cards.length - 1
-    if (next === null) return
+    const cards = [
+      ...event.currentTarget.querySelectorAll<HTMLElement>(
+        "[data-template-card]"
+      ),
+    ]
+    const firstTop = cards[0]?.offsetTop
+    const columns = cards.filter((card) => card.offsetTop === firstTop).length
+    const columnStep =
+      event.currentTarget.scrollWidth > event.currentTarget.clientWidth
+        ? 1
+        : columns
+    const offsets: Record<string, number> = {
+      ArrowLeft: -1,
+      ArrowRight: 1,
+      ArrowUp: -columnStep,
+      ArrowDown: columnStep,
+    }
+    const offset = offsets[event.key]
+    const next =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? cards.length - 1
+          : index + (offset ?? 0)
+    if (event.key !== "Home" && event.key !== "End" && offset === undefined)
+      return
+    const nextIndex = Math.min(cards.length - 1, Math.max(0, next))
+    const card = cards[nextIndex]
+    const choice = choices[nextIndex]
+    if (!card || !choice) return
     event.preventDefault()
-    const target = cards[Math.min(cards.length - 1, Math.max(0, next))]!
-    target.focus()
-    dispatch({
-      type: "choice_picked",
-      id: target.dataset.templateCard as Choice,
-    })
+    card.focus({ preventScroll: true })
+    centerCard(grid.current, card)
+    setSelected(choice.id)
   }
 
-  const primaryLabel = pending
-    ? "Creating…"
-    : chosen === "blank"
-      ? "Start blank"
-      : chosenLabel
-        ? `Use ${chosenLabel}`
-        : "Use template"
+  function syncCarousel(track: HTMLDivElement) {
+    if (pending || track.scrollWidth <= track.clientWidth) return
+    const trackCenter =
+      track.getBoundingClientRect().left + track.clientWidth / 2
+    const cards = [
+      ...track.querySelectorAll<HTMLElement>("[data-template-card]"),
+    ]
+    const nearest = cards.reduce((closest, card, candidate) => {
+      const distance = (element: HTMLElement) => {
+        const bounds = element.getBoundingClientRect()
+        return Math.abs(bounds.left + bounds.width / 2 - trackCenter)
+      }
+      return distance(card) < distance(cards[closest]!) ? candidate : closest
+    }, 0)
+    const choice = choices[nearest]
+    if (choice) setSelected(choice.id)
+  }
 
   return (
-    <div
-      data-template-gallery=""
-      className="flex min-h-0 flex-1 flex-col gap-4 [@media(max-height:300px)]:shrink-0 [@media(max-height:300px)]:basis-auto"
-    >
-      <div className="flex flex-col gap-3">
-        <DialogHeader className="pe-10">
-          <DialogTitle className="text-base">{title}</DialogTitle>
-          <DialogDescription className="text-[0.8125rem]">
-            {description}
-          </DialogDescription>
-        </DialogHeader>
-        <label className="relative block sm:max-w-80">
-          <span className="sr-only">Search templates</span>
-          <Search
-            aria-hidden="true"
-            className="pointer-events-none absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
-          />
-          <Input
-            type="search"
-            aria-label="Search templates"
-            placeholder="Search templates"
-            autoComplete="off"
-            enterKeyHint="go"
-            value={query}
-            className="h-11 ps-9 text-base md:h-8 md:text-sm [&::-webkit-search-cancel-button]:appearance-none"
-            onChange={(event) =>
-              dispatch({ type: "query_typed", query: event.target.value })
-            }
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault()
-                startWith(chosen)
-              }
-              if (event.key === "Escape" && query !== "") {
-                event.preventDefault()
-                event.stopPropagation()
-                dispatch({ type: "query_cleared" })
-              }
-            }}
-          />
-        </label>
-      </div>
-      <div
-        data-template-scroll=""
-        className="-mx-6 min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pt-1 pb-2 sm:pb-4 [@media(max-height:300px)]:overflow-visible"
-      >
-        <div
-          ref={gridRef}
-          role="radiogroup"
-          aria-label="Templates"
-          aria-busy={pending || undefined}
-          data-template-grid=""
-          className="grid grid-cols-2 gap-x-2 gap-y-3 min-[375px]:grid-cols-3 sm:gap-x-5 sm:gap-y-6 lg:grid-cols-5"
-          onKeyDown={moveFocus}
-        >
-          {hasBlank ? (
-            <ChoiceCard
-              id="blank"
-              label="Blank"
-              use="An empty page"
-              checked={chosen === "blank"}
-              disabled={pending}
-              onPick={() => dispatch({ type: "choice_picked", id: "blank" })}
-              onUse={() => startWith("blank")}
-            >
-              <BlankPage />
-            </ChoiceCard>
+    <div data-template-gallery="" className="paper-picker-content">
+      <DialogHeader className="paper-picker-header pe-12">
+        <DialogTitle className="text-xl font-semibold tracking-tight">
+          {title}
+        </DialogTitle>
+        <DialogDescription className="text-sm">{description}</DialogDescription>
+      </DialogHeader>
+      <div className="paper-picker-body" data-slot="paper-picker-body">
+        <div className="paper-picker-rail">
+          {kind === "cv" ? (
+            <Input
+              type="search"
+              aria-label="Search templates"
+              placeholder="Search templates"
+              autoComplete="off"
+              enterKeyHint="go"
+              value={query}
+              className="paper-picker-search h-11 text-base md:text-sm"
+              onChange={(event) => {
+                setSelected(undefined)
+                setQuery(event.target.value)
+              }}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault()
+                  useChoice(chosen?.id)
+                }
+                if (event.key === "Escape" && query) {
+                  event.preventDefault()
+                  event.stopPropagation()
+                  setQuery("")
+                }
+              }}
+            />
           ) : null}
-          {found.map((item) => (
-            <ChoiceCard
-              key={item.id}
-              id={item.id}
-              label={item.label}
-              use={item.use}
-              checked={chosen === item.id}
-              disabled={pending}
-              onPick={() => dispatch({ type: "choice_picked", id: item.id })}
-              onUse={() => startWith(item.id)}
+          {query.trim() &&
+          templates.length === 0 &&
+          query.trim().toLowerCase() !== "blank" ? (
+            <div role="status" className="grid justify-items-start gap-2 p-4">
+              <p>No template matches “{query.trim()}”.</p>
+              <Button
+                variant="outline"
+                className="h-11"
+                onClick={() => setQuery("")}
+              >
+                Clear search
+              </Button>
+            </div>
+          ) : null}
+          {query.trim() && templates.length > 0 ? (
+            <p className="sr-only" role="status">
+              {templates.length === 1
+                ? "1 template"
+                : `${templates.length} templates`}
+            </p>
+          ) : null}
+          <div data-template-scroll="" className="paper-picker-scroll min-h-0">
+            <div
+              ref={grid}
+              role="radiogroup"
+              aria-label="Templates"
+              aria-busy={pending || undefined}
+              data-template-grid=""
+              className="paper-picker-grid"
+              onKeyDown={moveFocus}
+              onScrollEnd={(event) => syncCarousel(event.currentTarget)}
             >
-              <TemplatePage templateId={item.id} />
-            </ChoiceCard>
+              {choices.map(({ id, label, use }) => (
+                <Button
+                  key={id}
+                  type="button"
+                  variant="ghost"
+                  role="radio"
+                  aria-checked={id === chosen?.id}
+                  aria-label={label}
+                  aria-description={use}
+                  aria-disabled={pending || undefined}
+                  data-template-card={id}
+                  tabIndex={id === chosen?.id ? 0 : -1}
+                  className="paper-picker-choice h-auto whitespace-normal"
+                  onClick={(event) => {
+                    if (pending) return
+                    centerCard(grid.current, event.currentTarget)
+                    setSelected(id)
+                  }}
+                  onDoubleClick={() => useChoice(id)}
+                >
+                  <Specimen id={id} />
+                  <span>{label}</span>
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="paper-picker-stage">
+          {choices.map(({ id }) => (
+            <div
+              key={id}
+              data-slot="paper-picker-preview"
+              data-preview={id}
+              data-visible={id === chosen?.id}
+              className="paper-picker-preview"
+              aria-hidden="true"
+            >
+              <Specimen id={id} />
+            </div>
           ))}
         </div>
-        {searching && found.length === 0 ? (
-          <p
-            data-template-note=""
-            className="mt-4 text-sm [overflow-wrap:anywhere] text-muted-foreground"
+      </div>
+      <footer
+        data-slot="paper-gallery-actions"
+        className="paper-picker-footer shrink-0"
+      >
+        {chosen ? (
+          <div className="paper-picker-caption" aria-live="polite">
+            <span className="font-semibold">{chosen.label}</span>
+            {choices.length > 1 ? (
+              <span className="paper-picker-counter text-muted-foreground tabular-nums">
+                {index + 1} / {choices.length}
+              </span>
+            ) : null}
+            <p className="text-xs text-muted-foreground">{chosen.use}</p>
+          </div>
+        ) : null}
+        <div className="paper-picker-buttons">
+          <Button
+            type="button"
+            variant="primary"
+            className="h-auto min-h-11 py-2 text-sm whitespace-normal"
+            disabled={!chosen || pending}
+            onClick={() => useChoice(chosen?.id)}
           >
-            No template matches “{query.trim()}”.{" "}
-            {hasBlank ? "Start blank, or" : "Try another term, or"}{" "}
+            {pending ? (
+              <>
+                <Spinner /> Creating…
+              </>
+            ) : chosen?.id === "blank" ? (
+              "Start blank"
+            ) : chosen ? (
+              `Use ${chosen.label}`
+            ) : (
+              "Use template"
+            )}
+          </Button>
+          {onCoach ? (
             <Button
-              type="button"
-              variant="link"
-              className="h-11 px-0 text-sm font-medium text-foreground underline md:h-auto"
-              onClick={() => dispatch({ type: "query_cleared" })}
+              variant="ghost"
+              className="h-11"
+              onClick={onCoach}
+              disabled={pending}
             >
-              clear the search
+              <Sparkles aria-hidden="true" /> Draft with Coach
             </Button>
-            .
+          ) : null}
+          {onImport ? (
+            <Button
+              variant="ghost"
+              className="h-11"
+              onClick={onImport}
+              disabled={pending}
+            >
+              <FileUp aria-hidden="true" /> Import a file
+            </Button>
+          ) : null}
+        </div>
+        {error ? (
+          <p role="alert" className="text-sm text-destructive">
+            {error}
           </p>
         ) : null}
-        <p aria-live="polite" className="sr-only">
-          {searching
-            ? `${found.length} ${found.length === 1 ? "template" : "templates"}`
-            : ""}
-        </p>
-      </div>
-      {error ? (
-        <p role="alert" className="text-sm text-destructive">
-          {error}
-        </p>
-      ) : null}
-      <div
-        data-slot="paper-gallery-actions"
-        className="-mx-6 -mb-6 flex shrink-0 flex-wrap items-center gap-3 border-t border-border bg-popover px-6 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] max-sm:rounded-none sm:rounded-b-[12px]"
-      >
-        {onImport ? (
-          <Button
-            className="h-11 gap-1.5 text-[0.8125rem] md:h-8"
-            type="button"
-            variant="ghost"
-            onClick={onImport}
-          >
-            <FileUp aria-hidden="true" />
-            Import a file
-          </Button>
-        ) : null}
-        <Button
-          className="ms-auto h-11 min-w-28 gap-1.5 px-4 text-[0.8125rem] max-sm:flex-1 md:h-8"
-          type="button"
-          variant="primary"
-          aria-busy={pending || undefined}
-          onClick={() => startWith(chosen)}
-          disabled={pending || chosen === null}
-        >
-          {pending ? <Spinner aria-hidden="true" /> : null}
-          {primaryLabel}
-        </Button>
-      </div>
+      </footer>
     </div>
   )
 }

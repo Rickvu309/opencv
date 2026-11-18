@@ -19,27 +19,28 @@ export type PaperCardAction = {
   destructive?: boolean
 }
 
-const SHEET =
-  "relative flex aspect-[17/22] w-full flex-col gap-[3.5px] overflow-hidden rounded-[3px] bg-card text-left shadow-sm ring-1 ring-foreground/5 transition-[box-shadow] duration-(--duration-micro) ease-(--ease-micro) group-hover/card:ring-foreground/15 group-focus-visible/card:ring-foreground/15 md:h-[220px] md:w-[170px]"
-
-function PaperSheet({
-  lines,
+export function PaperSheet({
+  lines = [],
   badge,
   preview,
 }: {
-  lines: string[]
+  lines?: string[]
   badge?: string
   preview?: ReactNode
 }) {
   const [lead, ...rest] = lines
   return (
-    <div data-slot="paper-library-sheet" className={SHEET} aria-hidden="true">
+    <div
+      data-slot="paper-library-sheet"
+      className="paper-sheet @container relative block aspect-[17/22] w-full overflow-hidden rounded-[3px] bg-white text-left text-black/85"
+      aria-hidden="true"
+    >
       {preview ?? (
-        <span className="flex h-full flex-col gap-2 px-[15px] py-[18px]">
+        <span className="flex h-full flex-col gap-[3cqw] px-[9cqw] py-[10cqw]">
           {lead ? (
             <span
               data-slot="paper-library-preview-name"
-              className="line-clamp-2 font-serif text-[10px] leading-[13px] font-bold break-words text-foreground"
+              className="line-clamp-2 font-serif text-[6cqw] leading-[1.2] font-bold break-words"
             >
               {lead}
             </span>
@@ -47,7 +48,7 @@ function PaperSheet({
           {rest.length > 0 ? (
             <span
               data-slot="paper-library-preview"
-              className="line-clamp-8 font-serif text-[5px] leading-[1.6] break-words whitespace-pre-line text-muted-foreground"
+              className="line-clamp-8 font-serif text-[3.3cqw] leading-[1.6] break-words whitespace-pre-line text-black/70"
             >
               {rest.join("\n")}
             </span>
@@ -118,7 +119,7 @@ export function PaperLibraryCard({
   return (
     <div
       data-slot="paper-library-card"
-      className="group/card relative min-w-0 md:w-[170px]"
+      className="paper-desk-card group/card relative min-w-0"
     >
       {onOpen ? (
         <Button

@@ -13,7 +13,13 @@ const plain = (text: string) => text.replace(/[[\]]/g, "")
 const barWidth = (text: string) =>
   `${Math.min(94, 28 + plain(text).length * 1.25)}%`
 
-function PageLine({ line }: { line: TemplatePageLine }) {
+function PageLine({
+  line,
+  readable,
+}: {
+  line: TemplatePageLine
+  readable: boolean
+}) {
   if (line.style === "Title")
     return (
       <span
@@ -32,6 +38,16 @@ function PageLine({ line }: { line: TemplatePageLine }) {
         {line.text}
       </span>
     )
+  if (readable)
+    return (
+      <span
+        data-page-line={line.style}
+        className={`mb-[1cqw] block text-[3.1cqw] leading-[1.35] ${line.center ? "text-center" : ""}`}
+      >
+        {line.style === "ListBullet" ? "• " : ""}
+        {plain(line.text)}
+      </span>
+    )
   return (
     <span
       data-page-line={line.style}
@@ -48,7 +64,13 @@ function PageLine({ line }: { line: TemplatePageLine }) {
   )
 }
 
-export function TemplatePage({ templateId }: { templateId: PaperTemplateId }) {
+export function TemplatePage({
+  templateId,
+  readable = false,
+}: {
+  templateId: PaperTemplateId
+  readable?: boolean
+}) {
   return (
     <span
       aria-hidden="true"
@@ -56,7 +78,7 @@ export function TemplatePage({ templateId }: { templateId: PaperTemplateId }) {
       className="absolute inset-0 overflow-hidden px-[9cqw] py-[9cqw]"
     >
       {templatePageLines(templateId).map((line, index) => (
-        <PageLine key={index} line={line} />
+        <PageLine key={index} line={line} readable={readable} />
       ))}
     </span>
   )

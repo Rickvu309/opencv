@@ -6,7 +6,10 @@ import { type PaperTemplateId, type WordPageLabel } from "@workspace/domain"
 
 import { useRunCommand } from "@/lib/contract-client.ts"
 
-import { PaperTemplateGallery } from "./paper-template-gallery.tsx"
+import {
+  PaperTemplateGallery,
+  type PickerChoice,
+} from "./paper-template-gallery.tsx"
 
 export async function openBlankPage(
   run: ReturnType<typeof useRunCommand>,
@@ -49,11 +52,17 @@ function createReducer(state: CreateState, action: CreateAction): CreateState {
 export function PaperNewDialog({
   step,
   onStepChange,
+  initial,
+  kind = "cv",
+  onCoach,
   onMinted,
   onChooseLetter,
   onImport,
 }: {
   step: "kind" | "gallery"
+  initial?: PickerChoice
+  kind?: "cv" | "letter"
+  onCoach?: () => void
   onStepChange: (step: "kind" | "gallery") => void
   onMinted: (docId: string) => void
   onChooseLetter: () => void
@@ -85,7 +94,7 @@ export function PaperNewDialog({
   async function startBlank() {
     dispatch({ type: "create_started" })
     try {
-      onMinted(await openBlankPage(run, "cv"))
+      onMinted(await openBlankPage(run, kind))
     } catch (cause) {
       dispatch({
         type: "create_failed",
@@ -102,8 +111,15 @@ export function PaperNewDialog({
   if (step === "gallery") {
     return (
       <PaperTemplateGallery
-        title="New CV"
-        description="Choose a starting point for your CV."
+        title={kind === "cv" ? "New CV" : "New Letter"}
+        description={
+          kind === "cv"
+            ? "Choose a starting point for your CV."
+            : "Start with a blank page or draft with Coach."
+        }
+        kind={kind}
+        initial={initial}
+        onCoach={onCoach}
         onUse={(templateId) => void applyTemplate(templateId)}
         onImport={onImport}
         onBlank={() => void startBlank()}

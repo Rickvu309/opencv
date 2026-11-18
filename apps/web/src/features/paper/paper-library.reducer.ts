@@ -1,12 +1,19 @@
 import type { JobView, PaperFile, PaperView } from "@workspace/domain"
 
+import type { PickerChoice } from "./paper-template-gallery.tsx"
+
 export type PaperImportState =
   | { type: "idle" }
   | { type: "importing"; name: string }
   | { type: "error"; message: string; retry: File | null }
 
 export type Mode =
-  | { type: "new"; step: "kind" | "gallery" }
+  | {
+      type: "new"
+      step: "kind" | "gallery"
+      kind?: "cv" | "letter"
+      initial?: PickerChoice
+    }
   | { type: "letter" }
   | { type: "import" }
   | { type: "rename"; doc: PaperView }
@@ -31,7 +38,12 @@ export type LibraryState = {
 
 export type LibraryAction =
   | { type: "import_dialog_opened" }
-  | { type: "new_dialog_opened"; step: "kind" | "gallery" }
+  | {
+      type: "new_dialog_opened"
+      step: "kind" | "gallery"
+      kind?: "cv" | "letter"
+      initial?: PickerChoice
+    }
   | { type: "letter_dialog_opened" }
   | { type: "delete_requested"; doc: PaperView }
   | { type: "delete_file_requested"; file: PaperFile }
@@ -73,7 +85,15 @@ export function libraryReducer(
     case "import_dialog_opened":
       return { ...state, mode: { type: "import" } }
     case "new_dialog_opened":
-      return { ...state, mode: { type: "new", step: action.step } }
+      return {
+        ...state,
+        mode: {
+          type: "new",
+          step: action.step,
+          kind: action.kind,
+          initial: action.initial,
+        },
+      }
     case "letter_dialog_opened":
       return { ...state, mode: { type: "letter" } }
     case "delete_requested":
