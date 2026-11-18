@@ -69,7 +69,8 @@ export type DockRecentList = {
   items: readonly DockRecent[]
 }
 
-const SEND_FACE = "flex size-8 items-center justify-center rounded-full"
+const SEND_FACE =
+  "flex size-8 shrink-0 items-center justify-center rounded-full"
 
 const MODE_ICONS = { free: Leaf, light: Zap, max: Rocket }
 
@@ -378,7 +379,7 @@ export function CoachDock({
             if (!repeatedClickOfSend(event)) onStop?.()
           }}
           aria-label="Stop"
-          className="-m-1.5 size-11 rounded-full hover:bg-transparent md:m-0 md:size-8"
+          className="-m-1.5 size-11 rounded-full border-0 hover:bg-transparent md:m-0 md:size-8"
         >
           <span className={cn(signatureIconButton, SEND_FACE)}>
             <Square className="size-3 fill-current" />
@@ -393,7 +394,7 @@ export function CoachDock({
           disabled={!canSend}
           aria-label="Send"
           aria-describedby={held ? sendHoldId : undefined}
-          className="-m-1.5 size-11 rounded-full hover:bg-transparent md:m-0 md:size-8"
+          className="-m-1.5 size-11 rounded-full border-0 hover:bg-transparent md:m-0 md:size-8"
         >
           <span
             data-slot="coach-send-face"

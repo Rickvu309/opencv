@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/coach/coach-home.test.tsx",
+    "because": "the owner asked for the Coach page to match Linear's agent page: page starters are now full-width rows like recent Chats and the block is centred; the panel keeps pill chips, and the rewritten cases assert rows, centring and panel chips",
+    "replacedBy": "apps/web/src/features/coach/coach-home.test.tsx",
+    "proof": {
+      "fork": "a8b7e0caea3af7a89ec7971a82fb89d98186f649",
+      "replacedByBlob": "181696b8c4c58fba18dffa3510a0c1422637287b",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 3
+  }
+]
