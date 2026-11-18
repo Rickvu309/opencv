@@ -84,7 +84,7 @@ it("labels the app-supplied name as unverified and sends cancellation through th
     "30 days"
   )
   expect(
-    screen.getByText("Connection status only · No documents or Jobs shared")
+    screen.getByText("Connection status only. No documents or Jobs shared.")
   ).toBeInTheDocument()
   expect(
     screen.queryByText(/Every change waits for your approval/)
@@ -217,18 +217,18 @@ it.each(["none", "jobs"] as const)(
       "Never",
       "Expires",
       kind === "jobs"
-        ? "All current and future Jobs · This agent cannot change things"
-        : "Connection status only · No documents or Jobs shared",
-      "This agent cannot change things",
+        ? "All current and future Jobs. This agent cannot make changes."
+        : "Connection status only. No documents or Jobs shared.",
+      "This agent cannot make changes.",
     ]) {
       expect(screen.getByText(label)).toBeInTheDocument()
     }
     expect(
-      screen.queryByText("Reads allowed · Writes need approval")
+      screen.queryByText("Reads allowed. Writes need approval.")
     ).not.toBeInTheDocument()
     expect(
       screen.queryByText(
-        "All current and future Jobs · Every change waits for your approval"
+        "All current and future Jobs. Every change waits for your approval."
       )
     ).not.toBeInTheDocument()
     expect(document.querySelectorAll("time")).toHaveLength(2)
@@ -266,18 +266,18 @@ it("says a read-only Jobs connection cannot change things", async () => {
   show(<ConnectionList />)
   expect(
     await screen.findByText(
-      "All current and future Jobs · This agent cannot change things"
+      "All current and future Jobs. This agent cannot make changes."
     )
   ).toBeInTheDocument()
   expect(
-    screen.getByText("Reads allowed · This agent cannot change things")
+    screen.getByText("Reads allowed. This agent cannot make changes.")
   ).toBeInTheDocument()
   expect(
-    screen.queryByText("Reads allowed · Writes need approval")
+    screen.queryByText("Reads allowed. Writes need approval.")
   ).not.toBeInTheDocument()
   expect(
     screen.queryByText(
-      "All current and future Jobs · Every change waits for your approval"
+      "All current and future Jobs. Every change waits for your approval."
     )
   ).not.toBeInTheDocument()
 })
@@ -287,32 +287,32 @@ it.each([
     name: "none",
     id: "11070000-0000-4000-8000-000000000010",
     scopes: ["connection.status", "offline_access"],
-    share: "All current and future Jobs · This agent cannot change things",
-    access: "This agent cannot change things",
+    share: "All current and future Jobs. This agent cannot make changes.",
+    access: "This agent cannot make changes.",
     reads: false,
   },
   {
     name: "read only",
     id: "11070000-0000-4000-8000-000000000011",
     scopes: ["connection.status", "job.read", "offline_access"],
-    share: "All current and future Jobs · This agent cannot change things",
-    access: "Reads allowed · This agent cannot change things",
+    share: "All current and future Jobs. This agent cannot make changes.",
+    access: "Reads allowed. This agent cannot make changes.",
     reads: true,
   },
   {
     name: "write only",
     id: "11070000-0000-4000-8000-000000000012",
     scopes: ["connection.status", "job.write", "offline_access"],
-    share: "All current and future Jobs · Every change waits for your approval",
-    access: "Writes need approval",
+    share: "All current and future Jobs. Every change waits for your approval.",
+    access: "Writes need approval.",
     reads: false,
   },
   {
     name: "read plus write",
     id: "11070000-0000-4000-8000-000000000013",
     scopes: ["connection.status", "job.read", "job.write", "offline_access"],
-    share: "All current and future Jobs · Every change waits for your approval",
-    access: "Reads allowed · Writes need approval",
+    share: "All current and future Jobs. Every change waits for your approval.",
+    access: "Reads allowed. Writes need approval.",
     reads: true,
   },
 ])(
@@ -365,11 +365,11 @@ it("keeps approval copy when the connection was granted a write scope", async ()
   show(<ConnectionList />)
   expect(
     await screen.findByText(
-      "All current and future Jobs · Every change waits for your approval"
+      "All current and future Jobs. Every change waits for your approval."
     )
   ).toBeInTheDocument()
   expect(
-    screen.getByText("Reads allowed · Writes need approval")
+    screen.getByText("Reads allowed. Writes need approval.")
   ).toBeInTheDocument()
 })
 
@@ -403,7 +403,7 @@ it("names only the job read the agent asked for", async () => {
   show(<ConnectionConsent />)
   expect(
     await screen.findByText(
-      "All current and future Jobs · This agent cannot change things"
+      "All current and future Jobs. This agent cannot make changes."
     )
   ).toBeInTheDocument()
   expect(
@@ -427,7 +427,7 @@ it("says plainly that documents are shared and every change waits for approval",
   show(<ConnectionConsent />)
   expect(
     await screen.findByText(
-      "All current and future Jobs and documents (CVs and Letters) · Every change waits for your approval"
+      "All current and future Jobs and documents (CVs and Letters). Every change waits for your approval."
     )
   ).toBeInTheDocument()
   expect(
@@ -479,7 +479,7 @@ it("offers only documents when that is all the agent asked for", async () => {
   show(<ConnectionConsent />)
   expect(
     await screen.findByText(
-      "All current and future documents (CVs and Letters) · Every change waits for your approval"
+      "All current and future documents (CVs and Letters). Every change waits for your approval."
     )
   ).toBeInTheDocument()
   expect(screen.queryByText(/Jobs/)).not.toBeInTheDocument()

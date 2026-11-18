@@ -47,7 +47,7 @@ describe("GET /health", () => {
     }
   })
 
-  it("never reads env — ANTHROPIC_API_KEY set on the process does not affect the factory", async () => {
+  it("never reads env when ANTHROPIC_API_KEY is set on the process", async () => {
     const previous = {
       ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     }

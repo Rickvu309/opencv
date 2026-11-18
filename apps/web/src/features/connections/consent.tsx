@@ -52,7 +52,7 @@ export function ConnectionConsent() {
         aria-labelledby="consent-title"
       >
         <p className="text-sm font-medium text-muted-foreground">
-          OpenCV · Agent connection
+          OpenCV agent connection
         </p>
         <h1 id="consent-title" className="text-2xl font-semibold break-words">
           Connect this agent?

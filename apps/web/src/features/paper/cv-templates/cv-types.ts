@@ -45,26 +45,26 @@ export const CV_TEMPLATES: CvTemplateMeta[] = [
   {
     id: "product",
     name: "Product & design",
-    useCase: "UX · product · startup",
+    useCase: "UX, product, and startups",
     description: "Sidebar for skills and contact; story-led main column.",
   },
   {
     id: "service",
     name: "Project-led",
-    useCase: "Side projects · clubs",
+    useCase: "Side projects and clubs",
     description:
       "Leads with shipped work when full-time experience is still thin.",
   },
   {
     id: "academic",
     name: "Campus & projects",
-    useCase: "Clubs · coursework · hackathons",
+    useCase: "Clubs, coursework, and hackathons",
     description: "Education and projects up front for early-career roles.",
   },
   {
     id: "photo",
     name: "With photo",
-    useCase: "Formal · corporate · office",
+    useCase: "Corporate and office roles",
     description: "Passport-size headshot beside your name and contact details.",
   },
 ]
@@ -73,7 +73,7 @@ export function defaultCvData(profile: SampleAuthor = SAMPLE_AUTHOR): CvData {
   return {
     templateId: "product",
     name: profile.name,
-    headline: "Aspiring Product Manager · Year 4",
+    headline: "Aspiring Product Manager, Year 4",
     contact: {
       email: profile.email,
       phone: "+84 90 123 4567",
@@ -81,7 +81,7 @@ export function defaultCvData(profile: SampleAuthor = SAMPLE_AUTHOR): CvData {
       linkedin: "linkedin.com/in/opencv-dev",
     },
     summary:
-      "Year-4 Information Systems student targeting associate product manager roles. I learn by shipping small product experiments: teardowns, UI refinements, and specs backed by user notes—not slide decks alone.",
+      "Year-4 Information Systems student targeting associate product manager roles. I learn by shipping small product experiments: teardowns, UI refinements, and specs backed by user notes.",
     experience: [
       {
         role: "Product discovery lead",
@@ -94,7 +94,7 @@ export function defaultCvData(profile: SampleAuthor = SAMPLE_AUTHOR): CvData {
         ],
       },
       {
-        role: "Side project · Checkout UX",
+        role: "Checkout UX side project",
         company: "Personal",
         period: "2025",
         location: "Remote",

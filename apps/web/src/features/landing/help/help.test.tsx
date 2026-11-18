@@ -43,7 +43,7 @@ describe("filterHelpTopics", () => {
       topic.blurb,
       ...topic.questions.flatMap((item) => [item.question, item.answer]),
     ]).join("\n")
-    expect(text).not.toMatch(/[—–!]/)
+    expect(text).not.toMatch(/[\u2014–!]/)
     for (const topic of HELP_TOPICS) {
       expect(topic.questions.length).toBeGreaterThanOrEqual(3)
       expect(topic.questions.length).toBeLessThanOrEqual(6)

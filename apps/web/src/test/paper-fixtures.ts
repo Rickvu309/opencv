@@ -8,7 +8,7 @@ import { defaultCvData } from "@/features/paper/cv-templates/cv-types.ts"
 const DEFAULT_CHECKOUT_PROOF: ProofDocument = {
   viewMode: "chain",
   title: "Product card resize study",
-  subtitle: "E-commerce checkout · Side project",
+  subtitle: "E-commerce checkout side project",
   steps: [
     {
       id: "s1",
@@ -69,7 +69,7 @@ const DEFAULT_CHECKOUT_PROOF: ProofDocument = {
 const DEFAULT_ONBOARDING_PROOF: ProofDocument = {
   viewMode: "timeline",
   title: "Mobile wallet onboarding audit",
-  subtitle: "Fintech competitor teardown · Side project",
+  subtitle: "Fintech competitor teardown side project",
   steps: [
     {
       id: "s1",
@@ -144,7 +144,7 @@ export function samplePaperDocs(
           profile,
           `Dear hiring team,
 
-I am applying for the associate product manager intern role at Local startup. I am in my final year at UIT studying Information Systems and spend most of my free time on small product experiments—not coursework summaries.
+I am applying for the associate product manager intern role at Local startup. I am in my final year at UIT studying Information Systems and spend most of my free time on small product experiments.
 
 Last month I ran a checkout card resize study on a major e-commerce app. I tested two layouts with 12 users and documented an 18% lift in add-to-cart taps. I linked that work as a Proof card on my CV.
 

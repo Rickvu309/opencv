@@ -69,7 +69,7 @@ const N1: Step[] = [
 
 const N2: Step[] = [
   { kind: "network", online: false },
-  { kind: "type", line: 1, at: 99, text: " — I led a five-person team" },
+  { kind: "type", line: 1, at: 99, text: " \u2014 I led a five-person team" },
   { kind: "type", line: 2, at: 0, text: "Also §" },
   { kind: "drain" },
   { kind: "network", online: true },

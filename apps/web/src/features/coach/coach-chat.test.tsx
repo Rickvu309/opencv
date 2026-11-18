@@ -113,7 +113,7 @@ describe("Coach chat and history", { timeout: 15_000 }, () => {
     ).toBeInTheDocument()
     expect(
       screen.getByText(
-        "Reversible — Undo by moving the card back to its previous Stage and order."
+        "Reversible: Undo by moving the card back to its previous Stage and order."
       )
     ).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled()
@@ -131,7 +131,7 @@ describe("Coach chat and history", { timeout: 15_000 }, () => {
     ).toBeInTheDocument()
     expect(
       screen.getAllByText(
-        "Reversible — Undo by moving the card back to its previous Stage and order."
+        "Reversible: Undo by moving the card back to its previous Stage and order."
       ).length
     ).toBeGreaterThan(0)
     await waitFor(() => {
@@ -210,9 +210,7 @@ describe("Coach chat and history", { timeout: 15_000 }, () => {
     await sendMessage("Update my CV, move the card, and start a new CV")
     await expectSendSettled("Update my CV, move the card, and start a new CV")
 
-    expect(
-      screen.getByText("Edited PM track CV · 1 change")
-    ).toBeInTheDocument()
+    expect(screen.getByText("Edited PM track CV, 1 change")).toBeInTheDocument()
     expect(screen.getByText("New summary")).toBeInTheDocument()
     expect(
       screen.getByText(
@@ -339,7 +337,7 @@ describe("Coach chat and history", { timeout: 15_000 }, () => {
     ).toBeInTheDocument()
     expect(
       screen.getByText(
-        "Reversible — Undo by moving the card back to its previous Stage and order."
+        "Reversible: Undo by moving the card back to its previous Stage and order."
       )
     ).toBeInTheDocument()
     expect(

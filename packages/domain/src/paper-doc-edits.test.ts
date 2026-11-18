@@ -424,7 +424,7 @@ describe("paperOutline", () => {
     assert.equal(truncated, false)
     assert.match(text, /\[header\] name: Ada/)
     assert.match(text, /\[s1\] # Profile \(section summary\)/)
-    assert.match(text, /\[e1\] Experience: role: Analyst · company: Babbage/)
+    assert.match(text, /\[e1\] Experience: role: Analyst, company: Babbage/)
     assert.match(text, /^>> {3}\[b1\] - \*\*Wrote \*\*code$/m)
     assert.match(text, /\[h1\] ### \[Site\]\(https:\/\/example.com\)/)
   })

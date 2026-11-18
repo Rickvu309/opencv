@@ -347,7 +347,7 @@ it("accepts the names and redirect URIs real agents send", () => {
       client_name: "Visual Studio Code",
       redirect_uris: ["http://127.0.0.1:33418", "https://vscode.dev/redirect"],
     },
-    { client_name: "Cursör — agent 日本", redirect_uris: [redirectUri] },
+    { client_name: "Cursör \u2014 agent 日本", redirect_uris: [redirectUri] },
   ])
     expect(registrationProblem(JSON.stringify(body))).toBeNull()
 })

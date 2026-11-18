@@ -34,7 +34,7 @@ function headerLine(header: CvHeader): string {
     .filter(([, value]) => value.length > 0)
     .map(([label, value]) => `${label}: ${value}`)
   if (header.photo) parts.push("photo: yes")
-  return parts.join(" · ") || "(empty)"
+  return parts.join(", ") || "(empty)"
 }
 
 function itemMarker(item: ListItem, position: number): string {
@@ -67,9 +67,9 @@ export function nodeSummary(node: PaperNode, position: number): string {
     case "divider":
       return "---"
     case "experience":
-      return `Experience: role: ${node.role} · company: ${node.company} · period: ${node.period} · location: ${node.location}`
+      return `Experience: role: ${node.role}, company: ${node.company}, period: ${node.period}, location: ${node.location}`
     case "education":
-      return `Education: school: ${node.school} · degree: ${node.degree} · period: ${node.period} · detail: ${node.detail}`
+      return `Education: school: ${node.school}, degree: ${node.degree}, period: ${node.period}, detail: ${node.detail}`
     case "skills":
       return `Skills ${node.label}: ${node.items.join(", ")}`
   }

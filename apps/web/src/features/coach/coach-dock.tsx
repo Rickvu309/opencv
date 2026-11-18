@@ -322,7 +322,7 @@ export function CoachDock({
                 data-available={available ? "" : undefined}
                 className="h-auto min-h-11 items-start gap-3.5 rounded-lg px-3 py-2 data-checked:pe-8 data-disabled:opacity-100"
                 aria-label={
-                  option.id === "free" ? option.label : `${option.label} · Pro`
+                  option.id === "free" ? option.label : `${option.label} (Pro)`
                 }
                 aria-describedby={noteId}
               >

@@ -80,7 +80,7 @@ it.each([
 it("keeps an old saved expired step reading as expired", () => {
   expect(
     readChatViewParts([
-      { ...old, summary: "Expired · ask Coach again", approval: "expired" },
+      { ...old, summary: "Expired. Ask Coach again.", approval: "expired" },
     ])
   ).toMatchObject([{ outcome: "expired", approval: "expired" }])
 })

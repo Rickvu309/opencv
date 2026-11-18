@@ -90,7 +90,7 @@ const runs = fc.array(
   { maxLength: 4 }
 )
 const plain = fc.stringMatching(/^[a-zA-Z0-9 ]{0,10}$/)
-const item = fc.stringMatching(/^[a-zA-Z0-9 ,·]{1,8}$/)
+const item = fc.stringMatching(/^[a-zA-Z0-9 ,\u00B7]{1,8}$/)
 
 function listItems(depth: number): fc.Arbitrary<unknown[]> {
   if (depth === 0) return fc.constant([])

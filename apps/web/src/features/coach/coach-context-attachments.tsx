@@ -76,7 +76,7 @@ export function CoachContextAttachments({
       >
         {contextFull
           ? `${attachments.length} of ${ATTACHMENT_LIMIT} added. Remove one to add another.`
-          : `${attachments.length} of ${ATTACHMENT_LIMIT} · Included with each message until you remove them.`}
+          : `${attachments.length} of ${ATTACHMENT_LIMIT}. Included with each message until you remove them.`}
       </p>
     </div>
   )

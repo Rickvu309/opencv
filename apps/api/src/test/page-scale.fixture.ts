@@ -33,7 +33,7 @@ try {
     "I design clear, accessible tools for people starting their careers.",
     ...Array.from({ length: 18 }, (_, i) =>
       [
-        `Experience ${i + 1} — Product designer`,
+        `Experience ${i + 1}: Product designer`,
         "Career Studio | 2021–2026",
         "Led research and prototyping for a career workspace. Collaborated with engineers to ship accessible workflows, measure outcomes and improve the experience for new graduates.",
       ].join("\n")

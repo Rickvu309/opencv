@@ -11,7 +11,7 @@ export function starterCvDocument(): CvDocument {
       location: "Ho Chi Minh City, Vietnam",
     },
     summary:
-      "Year-4 Information Systems student targeting associate product manager internships. I learn by shipping small experiments: teardowns, UI refinements, and specs backed by user notes — not slide decks alone. Replace this sample with your own story.",
+      "Year-4 Information Systems student targeting associate product manager internships. I learn by shipping small experiments: teardowns, UI refinements, and specs backed by user notes. Replace this sample with your own story.",
     experience: [
       {
         role: "Product discovery lead",
@@ -24,7 +24,7 @@ export function starterCvDocument(): CvDocument {
         ],
       },
       {
-        role: "Side project · Checkout UX",
+        role: "Checkout UX side project",
         company: "Personal",
         period: "2025",
         location: "Remote",

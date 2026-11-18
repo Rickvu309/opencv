@@ -44,7 +44,7 @@ export async function recordCommandResult({
         subjectId: ran.draft.subjectId,
         summary:
           actor.type === "delegate"
-            ? `${ran.draft.summary} · an agent connection (${actor.name}, unverified)`
+            ? `${ran.draft.summary} (unverified agent connection: ${actor.name})`
             : ran.draft.summary,
         detail: ran.draft.detail ?? null,
         result: ran.output ?? null,

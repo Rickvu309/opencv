@@ -238,10 +238,8 @@ describe("print paper", () => {
     )
     expect(sheet?.textContent).toContain("Product intern")
     expect(sheet?.textContent).toContain("Shipped the checklist")
-    const dot = [...(sheet?.querySelectorAll("span") ?? [])].find(
-      (node) => node.textContent?.trim() === "·"
-    )
-    expect(dot).toHaveAttribute("hidden")
+    const separator = sheet?.querySelector("[data-paper-field-separator]")
+    expect(separator).toHaveAttribute("hidden")
   })
 
   it("prints a letter through the shared sheet, parts and paragraphs only", () => {

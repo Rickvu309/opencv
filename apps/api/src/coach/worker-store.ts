@@ -252,9 +252,9 @@ function settledIntentOutcome(
 }
 
 const REFUSAL_SUMMARY = {
-  denied: "Denied · nothing changed",
-  expired: "Expired · ask Coach again",
-  stopped: "Stopped · ask Coach again",
+  denied: "Denied. Nothing changed.",
+  expired: "Expired. Ask Coach again.",
+  stopped: "Stopped. Ask Coach again.",
 } as const
 
 function refusalSummary(outcome: keyof typeof REFUSAL_SUMMARY) {

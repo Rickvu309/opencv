@@ -119,8 +119,8 @@ it("describes a job grant without treating a document scope as permission to cha
     grantCopy({ resources: { kind: "jobs" }, scopes: jobs.scopes }),
     {
       share:
-        "All current and future Jobs · Every change waits for your approval",
-      access: "Reads allowed · Writes need approval",
+        "All current and future Jobs. Every change waits for your approval.",
+      access: "Reads allowed. Writes need approval.",
     }
   )
   assert.deepEqual(
@@ -129,8 +129,8 @@ it("describes a job grant without treating a document scope as permission to cha
       scopes: ["connection.status", "job.read", paperProposal],
     }),
     {
-      share: "All current and future Jobs · This agent cannot change things",
-      access: "Reads allowed · This agent cannot change things",
+      share: "All current and future Jobs. This agent cannot make changes.",
+      access: "Reads allowed. This agent cannot make changes.",
     }
   )
   assert.equal(
@@ -138,7 +138,7 @@ it("describes a job grant without treating a document scope as permission to cha
       resources: resourcesForScopes(["paper.read"]),
       scopes: ["paper.read"],
     }).share,
-    "All current and future documents (CVs and Letters) · This agent cannot change things"
+    "All current and future documents (CVs and Letters). This agent cannot make changes."
   )
 })
 

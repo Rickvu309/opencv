@@ -216,14 +216,14 @@ describe("a partial resend, an edit elsewhere and a reload, as in review N2", ()
   it("never offers old text as the person's version and counts only the person's lines", async () => {
     await opened()
     server.state.offline = true
-    await type(L.job, " — I led a five-person team")
+    await type(L.job, " \u2014 I led a five-person team")
     refuseAvailable(MIXED)
     await type(L.available, "Also ", 0)
     await type(L.available, "!")
     await settle()
     await goOnline()
     expect(server.textOf(L.job)).toBe(
-      `${START[L.job]} — I led a five-person team`
+      `${START[L.job]} \u2014 I led a five-person team`
     )
     expect(line(L.available)).toHaveAttribute("data-unsaved")
     server.otherTab(L.education, "Education ELSEWHERE")

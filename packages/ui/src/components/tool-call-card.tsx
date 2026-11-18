@@ -297,12 +297,10 @@ export function ToolCallGroup({
             {title}
           </span>
           {!running && failed > 0 && (
-            <span className="ui-tcc-group__failed">· {failed} failed</span>
+            <span className="ui-tcc-group__failed">{failed} failed</span>
           )}
           {ms != null && (
-            <span className="ui-tcc-group__time">
-              · {formatMs(ms, running)}
-            </span>
+            <span className="ui-tcc-group__time">{formatMs(ms, running)}</span>
           )}
         </span>
         <Chevron />

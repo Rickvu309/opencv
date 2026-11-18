@@ -22,7 +22,7 @@ function textOfProps(block: Block): string {
     .filter(
       (value): value is string => typeof value === "string" && value !== ""
     )
-    .join(" · ")
+    .join(", ")
 }
 
 function asParagraph(block: Block): Block {

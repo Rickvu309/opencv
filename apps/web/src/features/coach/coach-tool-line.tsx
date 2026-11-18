@@ -411,9 +411,8 @@ function CoachApproval({
             <h3 className="text-[0.78125rem] leading-[1.25] font-semibold [overflow-wrap:anywhere] text-foreground">
               {subject}
             </h3>
-            <p className="text-xs leading-4 text-muted-foreground">
+            <p className="flex flex-wrap gap-x-2 text-xs leading-4 text-muted-foreground">
               <span>{action}</span>
-              <span aria-hidden="true"> · </span>
               <span>Needs your approval</span>
             </p>
           </div>

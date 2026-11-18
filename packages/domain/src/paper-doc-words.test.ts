@@ -65,7 +65,7 @@ const LETTER_INPUTS = [
   "> quote\n\n| a | b |\n|---|---|",
   "line one\nline two\n\n\n\nline three\r\n\r\nline four",
   "Tab\there, form\ffeed, vt\u000bx",
-  "Ünïcödé — “quotes” 日本語 😀",
+  "Ünïcödé \u2014 “quotes” 日本語 😀",
 ]
 
 const LETTER_PARTS = {

@@ -15,7 +15,7 @@ export const BLANK_EXPERIENCE: CvExperience = {
 
 export const BLANK_EDUCATION: CvEducation = {
   school: "School name",
-  degree: "Degree · major",
+  degree: "Degree and major",
   period: "2022 – 2026",
 }
 

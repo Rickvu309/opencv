@@ -31,7 +31,7 @@ export const START = {
   [L.education]: "Education",
 }
 export const SENTENCE =
-  " — I led a five-person team and planned the spring launch"
+  " \u2014 I led a five-person team and planned the spring launch"
 
 export const MIXED =
   "This line mixes formatting, such as bold or a different font. Paper will not rewrite words across that formatting. No document was changed."

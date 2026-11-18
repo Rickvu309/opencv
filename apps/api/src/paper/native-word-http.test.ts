@@ -214,7 +214,7 @@ it("downloads real saved CV and Letter HTTP edits, refuses stale requests and pr
         await sync()
         richText(
           richElement(richFragment(documentClient.ydoc), "cell-text")
-        ).insert(0, "Saved over HTTP — ")
+        ).insert(0, "Saved over HTTP \u2014 ")
         const basis = await sync()
         const before = await db
           .select()
@@ -243,7 +243,7 @@ it("downloads real saved CV and Letter HTTP edits, refuses stale requests and pr
         const xml = archive.files.get("word/document.xml")
         if (!xml) throw new Error("Missing Word body")
         const part = parsePackageXml(xml)
-        expect(textOf(part, part.root)).toContain("Saved over HTTP — Việt")
+        expect(textOf(part, part.root)).toContain("Saved over HTTP \u2014 Việt")
         const paragraphs = elements(part.root, "p")
         for (const [id, wordId] of [
           ["normal", "Normal"],
