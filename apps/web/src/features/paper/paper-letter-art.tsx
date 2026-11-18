@@ -1,5 +1,3 @@
-import { SAMPLE_AUTHOR } from "@/features/seed/sample-author.ts"
-
 import "./design/paper-picture.css"
 
 const LINES = [4, 5, 3]
@@ -12,8 +10,8 @@ export function PaperLetterArt({ className }: { className?: string }) {
     >
       <span className="paper-picture-text paper-letter-art-text">
         <span className="paper-letter-from">
-          <b>{SAMPLE_AUTHOR.name}</b>
-          <span>{SAMPLE_AUTHOR.email}</span>
+          <b>Linh Nguyen</b>
+          <span>linh.nguyen@example.com</span>
           <span>Ho Chi Minh City</span>
         </span>
         <span className="paper-letter-date">18 November 2026</span>
@@ -34,8 +32,8 @@ export function PaperLetterArt({ className }: { className?: string }) {
           </span>
         ))}
         <span className="paper-letter-close">Sincerely,</span>
-        <span className="paper-letter-sign">{SAMPLE_AUTHOR.name}</span>
-        <span className="paper-letter-who">{SAMPLE_AUTHOR.name}</span>
+        <span className="paper-letter-sign">Linh Nguyen</span>
+        <span className="paper-letter-who">Linh Nguyen</span>
       </span>
     </span>
   )

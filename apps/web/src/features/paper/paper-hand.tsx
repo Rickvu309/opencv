@@ -176,7 +176,7 @@ function openEntry(entry: LibraryEntry, on: LibraryEntryHandlers) {
 function insideDialog(target: EventTarget | null) {
   return (
     target instanceof Element &&
-    target.closest("[role='dialog'], [data-slot='dialog-content']") !== null
+    target.closest("[data-slot='dialog-content']") !== null
   )
 }
 
@@ -374,11 +374,15 @@ export function PaperHand({
     let lastT = event.timeStamp
     let velocity = 0
     let moved = false
+    function lost(ev: PointerEvent) {
+      finish(ev)
+    }
     function finish(ev: PointerEvent) {
       if (ev.pointerId !== pointerId) return
       window.removeEventListener("pointermove", move)
       window.removeEventListener("pointerup", finish)
       window.removeEventListener("pointercancel", finish)
+      node.removeEventListener("lostpointercapture", lost)
       stopGesture.current = null
       if (!moved) return
       const released = handRelease(posRef.current, velocity, count)
@@ -397,6 +401,7 @@ export function PaperHand({
         moved = true
         movedRef.current = true
         node.setPointerCapture(pointerId)
+        node.addEventListener("lostpointercapture", lost)
         window.clearTimeout(wheelTimer.current)
         dispatch({ type: "drag_on" })
       }
@@ -412,6 +417,7 @@ export function PaperHand({
       window.removeEventListener("pointermove", move)
       window.removeEventListener("pointerup", finish)
       window.removeEventListener("pointercancel", finish)
+      node.removeEventListener("lostpointercapture", lost)
     }
     window.addEventListener("pointermove", move)
     window.addEventListener("pointerup", finish)
@@ -473,7 +479,7 @@ export function PaperHand({
           type="button"
           variant="ghost"
           className={cn(
-            "paper-hand-card hover:bg-transparent focus-visible:border-transparent focus-visible:ring-0",
+            "paper-hand-card h-11 hover:bg-transparent focus-visible:border-transparent focus-visible:ring-0",
             hand.hovered === index && "is-up"
           )}
           aria-label={`Open ${name}, ${edited}`}

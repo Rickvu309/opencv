@@ -34,7 +34,7 @@ export function PaperViewChips({
           key={item.id}
           type="button"
           variant="ghost"
-          className="paper-hand-chip hover:bg-transparent"
+          className="paper-hand-chip h-11 hover:bg-transparent md:h-7"
           aria-pressed={view === item.id}
           onClick={() => onViewChange(item.id)}
         >
@@ -61,7 +61,12 @@ export function PaperFind({
       if (!printable) return
       if (document.activeElement === inputRef.current) return
       if (!focusIsIdle()) return
-      if (document.querySelector("[role='dialog'], [role='menu']")) return
+      if (
+        document.querySelector(
+          "[data-slot='dialog-content'], [data-slot='dropdown-menu-content']"
+        )
+      )
+        return
       if (event.key === "/") event.preventDefault()
       inputRef.current?.focus()
     }

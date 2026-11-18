@@ -20,7 +20,7 @@ export function PaperStarts({
       <Button
         type="button"
         variant="ghost"
-        className="paper-hand-start hover:bg-transparent"
+        className="paper-hand-start h-11 hover:bg-transparent"
         onClick={onNewCV}
       >
         <span className="paper-hand-start-label">New CV</span>
@@ -33,7 +33,7 @@ export function PaperStarts({
       <Button
         type="button"
         variant="ghost"
-        className="paper-hand-start hover:bg-transparent"
+        className="paper-hand-start h-11 hover:bg-transparent"
         onClick={onNewLetter}
       >
         <span className="paper-hand-start-label">New Letter</span>
@@ -47,7 +47,7 @@ export function PaperStarts({
         type="button"
         variant="ghost"
         className={cn(
-          "paper-hand-start hover:bg-transparent",
+          "paper-hand-start h-11 hover:bg-transparent",
           dropping && "is-target"
         )}
         onClick={onOpenImport}

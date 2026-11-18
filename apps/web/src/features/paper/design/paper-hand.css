@@ -547,6 +547,10 @@
 }
 
 @media (max-width: 767px) {
+  .paper-hand-chip[data-slot="button"] {
+    min-height: 44px;
+  }
+
   .paper-hand {
     height: 420px;
     margin-block-end: -72px;

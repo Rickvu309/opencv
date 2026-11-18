@@ -2,6 +2,7 @@ import { Fragment, type ReactNode } from "react"
 import { MoreHorizontal, type LucideIcon } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -102,7 +103,7 @@ export function PaperActionMenu({
             type="button"
             variant="ghost"
             size="icon-sm"
-            className={className}
+            className={cn("size-11 md:size-7", className)}
             aria-label={label}
           >
             <MoreHorizontal />
