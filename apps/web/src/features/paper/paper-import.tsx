@@ -1,4 +1,4 @@
-import type { ComponentProps, DragEvent } from "react"
+import { useReducer, type ComponentProps, type DragEvent } from "react"
 import { Spinner } from "@workspace/ui/components/spinner"
 
 import { Button } from "@workspace/ui/components/button"
@@ -24,20 +24,48 @@ export function PaperImportRow({
   onChooseFile: () => void
   onDropFile: (event: DragEvent<HTMLDivElement>) => void
 }) {
+  const [dragging, setDragging] = useReducer(
+    (_: boolean, next: boolean) => next,
+    false
+  )
   return (
     <div
       role="region"
       aria-label="Import a file"
-      className="rounded-lg border border-border p-4"
-      onDragOver={(event) => event.preventDefault()}
-      onDrop={onDropFile}
+      data-dragging={dragging || undefined}
+      className="-m-2 flex flex-col gap-3 rounded-lg border border-transparent p-2 data-dragging:border-dashed data-dragging:border-border data-dragging:bg-muted/40"
+      onDragOver={(event) => {
+        event.preventDefault()
+        setDragging(true)
+      }}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null))
+          setDragging(false)
+      }}
+      onDrop={(event) => {
+        setDragging(false)
+        onDropFile(event)
+      }}
     >
-      <p className="text-sm font-medium">Import a file</p>
-      <p className="text-sm text-muted-foreground">
-        Drop a PDF, Word or Google Doc, or paste a LinkedIn link.
-      </p>
+      <Button
+        size="touch"
+        type="button"
+        variant="primary"
+        className="w-full"
+        onClick={onChooseFile}
+      >
+        Choose file
+      </Button>
+      <div
+        className="flex items-center gap-3 text-xs text-muted-foreground"
+        aria-hidden="true"
+      >
+        <span className="h-px flex-1 bg-border" />
+        or
+        <span className="h-px flex-1 bg-border" />
+      </div>
       <form
-        className="mt-3 flex flex-wrap items-center gap-2"
+        className="flex flex-wrap items-center gap-2"
         onSubmit={(event) => {
           event.preventDefault()
           onSubmitLink()
@@ -45,7 +73,7 @@ export function PaperImportRow({
       >
         <Input
           aria-label="Paste a link"
-          placeholder="Paste a link"
+          placeholder="Paste a LinkedIn link"
           value={link}
           className="h-11 min-w-0 flex-1 basis-40 text-base md:h-8 md:text-sm"
           onChange={(event) => onLinkChange(event.target.value)}
@@ -53,22 +81,13 @@ export function PaperImportRow({
         <Button
           size="touch"
           type="submit"
-          variant="primary"
+          variant="outline"
           className="shrink-0"
           disabled={link.trim().length === 0}
         >
           Import
         </Button>
       </form>
-      <Button
-        size="touch"
-        type="button"
-        variant="outline"
-        className="mt-3"
-        onClick={onChooseFile}
-      >
-        Choose file
-      </Button>
     </div>
   )
 }
@@ -91,7 +110,9 @@ export function PaperImportDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Import</DialogTitle>
-          <DialogDescription>Bring a file you already have.</DialogDescription>
+          <DialogDescription>
+            A PDF, Word or Google Doc file, or a LinkedIn link.
+          </DialogDescription>
         </DialogHeader>
         <PaperImportRow {...props} />
       </DialogContent>

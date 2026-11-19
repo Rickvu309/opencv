@@ -42,7 +42,11 @@ export async function readPaperDocumentInfo(
     name: row.name,
     kind: row.kind,
     ...(document.version === 4 && document.schemaRevision === 2
-      ? { format: "rich", provenance: nativeProvenance(document) }
+      ? {
+          format: "rich",
+          provenance: nativeProvenance(document),
+          updatedAt: row.updatedAt.toISOString(),
+        }
       : { format: "prose" }),
   })
 }

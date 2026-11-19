@@ -37,8 +37,8 @@ describe("empty hand copy", () => {
 
   it("names the search that missed and offers the way out", () => {
     expect(copy("all", " zzz ")).toMatchObject({
-      title: "Nothing matches “zzz”",
-      action: { label: "Show all documents", primary: false },
+      title: "No documents match “zzz”",
+      action: { label: "Clear search", primary: false },
     })
     expect(copy("letter", "simple", 1)).toMatchObject({
       title: "No letters match “simple”",

@@ -8,6 +8,7 @@ import { Download } from "lucide-react"
 import { Button, buttonVariants } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import {
+  PaperDocumentColumn,
   PaperDocumentHeader as PageHeader,
   PaperDocumentTitle,
 } from "@/features/paper-page/document-chrome.tsx"
@@ -64,6 +65,8 @@ function unsent(docId: string) {
   if (!draft || !basis) return false
   return pageWords(draft.blocks) !== basis.words
 }
+
+export const LETTER_PLACEHOLDER = "Write your letter, or ask Coach to draft it."
 
 export const DOWNLOAD_WAITS_FOR_SAVE =
   "Download Word is ready once your words are saved."
@@ -179,6 +182,7 @@ function DocumentHeader({
   note,
   revision,
   kind,
+  editedAt,
 }: {
   docId: string
   owner: string
@@ -187,6 +191,7 @@ function DocumentHeader({
   onBack?: () => void
   note: string
   revision: string | null
+  editedAt: string | null
 }) {
   return (
     <PageHeader
@@ -195,6 +200,7 @@ function DocumentHeader({
       kind={kind}
       onBack={onBack}
       status={note || "Checking saved words."}
+      editedAt={editedAt}
       actions={
         <>
           <PaperDocumentShare docId={docId} />
@@ -212,6 +218,7 @@ export function WritingPage({
   onBack,
   seed = null,
   seedRevision = null,
+  editedAt = null,
 }: {
   docId: string
   title?: string
@@ -219,6 +226,7 @@ export function WritingPage({
   onBack?: () => void
   seed?: WritingDraft | null
   seedRevision?: string | null
+  editedAt?: string | null
 }) {
   const session = authClient.useSession()
   const owner = session.data?.user.id ?? ""
@@ -301,14 +309,21 @@ export function WritingPage({
   return (
     <div className="paper-writing-page flex h-full min-h-0 flex-col">
       <div ref={setHeader} />
-      <WritingProposalCard docId={docId}>
-        <LetterStoppedNotice docId={docId} pageText={pageText} />
-      </WritingProposalCard>
       <div className="min-h-0 flex-1">
         <WritingCanvas
           key={`${docId}:${shown.generation}`}
           docId={docId}
-          title={<PaperDocumentTitle name={title} docId={docId} />}
+          title={
+            <>
+              <PaperDocumentColumn>
+                <WritingProposalCard docId={docId}>
+                  <LetterStoppedNotice docId={docId} pageText={pageText} />
+                </WritingProposalCard>
+              </PaperDocumentColumn>
+              <PaperDocumentTitle name={title} docId={docId} />
+            </>
+          }
+          placeholder={kind === "letter" ? LETTER_PLACEHOLDER : undefined}
           renderHeader={(note, revision, text) => (
             <>
               <WritingDocumentNoticeSync
@@ -326,6 +341,7 @@ export function WritingPage({
                       onBack={onBack}
                       note={note}
                       revision={revision}
+                      editedAt={editedAt}
                     />,
                     header
                   )

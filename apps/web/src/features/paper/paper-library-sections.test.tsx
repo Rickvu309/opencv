@@ -105,7 +105,7 @@ describe("Paper home sections", () => {
     ).toBeInTheDocument()
     fireEvent.change(search, { target: { value: "nothing" } })
     expect(
-      screen.getByText("Nothing matches \u201cnothing\u201d")
+      screen.getByText("No documents match \u201cnothing\u201d")
     ).toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: /^Open Design letter,/ })
@@ -117,7 +117,9 @@ describe("Paper home sections", () => {
       screen.getByRole("button", { name: /^Open My CV,/ })
     ).toBeInTheDocument()
     fireEvent.change(search, { target: { value: "nothing" } })
-    fireEvent.click(screen.getByRole("button", { name: "Clear search" }))
+    const clears = screen.getAllByRole("button", { name: "Clear search" })
+    expect(clears).toHaveLength(2)
+    fireEvent.click(clears[1]!)
     expect(search).toHaveValue("")
     expect(
       screen.getByRole("button", { name: /^Open My CV,/ })
@@ -353,7 +355,7 @@ describe("Paper home sections", () => {
     })
 
     expect(
-      screen.getByText("Nothing matches \u201cportfolio\u201d")
+      screen.getByText("No documents match \u201cportfolio\u201d")
     ).toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: /^Open PM track CV,/ })
@@ -361,10 +363,12 @@ describe("Paper home sections", () => {
     expect(
       screen.queryByRole("link", { name: "Open Proofs" })
     ).not.toBeInTheDocument()
-    expect(screen.getByRole("button", { name: "New CV" })).toBeInTheDocument()
     expect(
-      screen.getByRole("button", { name: "New Letter" })
-    ).toBeInTheDocument()
+      screen.queryByRole("button", { name: "New CV" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "New Letter" })
+    ).not.toBeInTheDocument()
   })
 
   it("keeps Letters and Proofs reachable, and shows the page's first lines", async () => {

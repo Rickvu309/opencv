@@ -73,9 +73,11 @@ export function RichPaperPage({
   identity,
   onBack,
   kind = "cv",
+  editedAt,
 }: {
   name: string
   kind?: "cv" | "letter"
+  editedAt: string
   identity: NativeSyncIdentity
   onBack: () => void
 }) {
@@ -157,6 +159,7 @@ export function RichPaperPage({
         kind={kind}
         onBack={onBack}
         status={statusLabel}
+        editedAt={editedAt}
         statusRef={statusRef}
         menu={
           <RichDocumentMenu

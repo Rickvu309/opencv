@@ -55,6 +55,15 @@
   white-space: pre-wrap;
 }
 
+.writing-page p[data-placeholder]::before {
+  content: attr(data-placeholder);
+  float: inline-start;
+  block-size: 0;
+  color: var(--muted-foreground);
+  pointer-events: none;
+  user-select: none;
+}
+
 .writing-page p[contenteditable="false"] {
   color: var(--muted-foreground);
 }
