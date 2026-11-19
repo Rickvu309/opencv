@@ -1,0 +1,11 @@
+{
+  "id": "coach-panel-scoped-recipes",
+  "file": "scripts/coach-honest-controls.test.mjs",
+  "historic": {
+    "mode": "restore",
+    "sha": "7fccb95daeada42ec57608493f870d5c10b38f79",
+    "paths": ["scripts/ui/screens.mjs"],
+    "command": ["node", "--test", "scripts/coach-honest-controls.test.mjs"]
+  },
+  "reason": "Caught by the 2026-11-19 Coach screen review. 7fccb95daeada42ec57608493f870d5c10b38f79 added coach-undone, which waits for the bare text Undone after Expand; the first match is the Paper notice in the hidden page, so the shot timed out while the product was right. The test fails on that recipe file and passes once every open-panel target is a selector inside the Coach panel. It generalises the one-instance Approve regex from ae31f30cce57990a8e2172d5a0174e890ae25f73."
+}

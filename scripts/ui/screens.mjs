@@ -19,6 +19,12 @@ const OPEN_PANEL = [
 
 const PANEL = '[data-slot="coach-panel"]'
 const PANEL_UNDO = `${PANEL} button[aria-label="Undo"]`
+const PANEL_APPROVE = `${PANEL} button:text-is("Approve")`
+const PANEL_DENY = `${PANEL} button:text-is("Deny")`
+const PANEL_EXPAND = `${PANEL} button[aria-label="Expand"]`
+const PANEL_UNDONE = `${PANEL} [data-slot="coach-action-record"][data-state="undone"]`
+const PANEL_DENIED = `${PANEL} :text("nothing changed")`
+const PANEL_IDLE = `${PANEL} button[aria-label="Send"]:not([aria-describedby])`
 
 const ASK_FOR_AN_EDIT = [
   ...OPEN_BLANK_CV,
@@ -30,24 +36,25 @@ const ASK_FOR_AN_EDIT = [
     },
   },
   { press: "Enter" },
-  { waitFor: { role: "button", name: "Deny" } },
+  { waitFor: { selector: PANEL_DENY } },
 ]
 
 const DENY_THE_WAITING_EDIT = [
-  { click: { role: "button", name: "Deny" } },
-  { waitFor: { text: "nothing changed" } },
+  { click: { selector: PANEL_DENY } },
+  { waitFor: { selector: PANEL_DENIED } },
+  { waitFor: { selector: PANEL_IDLE } },
 ]
 
 const APPROVE_THE_EDIT = [
   ...ASK_FOR_AN_EDIT,
-  { click: { selector: `${PANEL} button:text-is("Approve")` } },
+  { click: { selector: PANEL_APPROVE } },
   { waitFor: { selector: PANEL_UNDO } },
 ]
 
 const UNDO_THE_EDIT = [
   ...APPROVE_THE_EDIT,
   { click: { selector: PANEL_UNDO } },
-  { waitFor: { text: "Undone" } },
+  { waitFor: { selector: PANEL_UNDONE } },
 ]
 
 const REOPEN_LATEST_CHAT = [
@@ -247,7 +254,7 @@ export const SCREENS = [
         },
       },
       { press: "Enter" },
-      { waitFor: { text: "Prep the starred" } },
+      { waitFor: { selector: `${PANEL} :text("Prep the starred")` } },
     ],
   },
   {
@@ -282,8 +289,8 @@ export const SCREENS = [
     route: "/paper",
     steps: [
       ...ASK_FOR_AN_EDIT,
-      { clickIfShown: { role: "button", name: "Expand" } },
-      { waitFor: { role: "button", name: "Deny" } },
+      { clickIfShown: { selector: PANEL_EXPAND } },
+      { waitFor: { selector: PANEL_DENY } },
     ],
     after: DENY_THE_WAITING_EDIT,
   },
@@ -292,14 +299,14 @@ export const SCREENS = [
     route: "/paper",
     steps: [
       ...ASK_FOR_AN_EDIT,
-      { clickIfShown: { role: "button", name: "Expand" } },
+      { clickIfShown: { selector: PANEL_EXPAND } },
       {
         fill: {
           selector: `${PANEL} ${COMPOSER}`,
           text: "Why this wording?",
         },
       },
-      { waitFor: { role: "button", name: "Deny" } },
+      { waitFor: { selector: PANEL_DENY } },
     ],
     after: DENY_THE_WAITING_EDIT,
   },
@@ -308,7 +315,7 @@ export const SCREENS = [
     route: "/paper",
     steps: [
       ...APPROVE_THE_EDIT,
-      { clickIfShown: { role: "button", name: "Expand" } },
+      { clickIfShown: { selector: PANEL_EXPAND } },
       { waitFor: { selector: PANEL_UNDO } },
     ],
   },
@@ -317,8 +324,8 @@ export const SCREENS = [
     route: "/paper",
     steps: [
       ...UNDO_THE_EDIT,
-      { clickIfShown: { role: "button", name: "Expand" } },
-      { waitFor: { text: "Undone" } },
+      { clickIfShown: { selector: PANEL_EXPAND } },
+      { waitFor: { selector: PANEL_UNDONE } },
     ],
   },
   {
@@ -326,8 +333,8 @@ export const SCREENS = [
     route: "/paper",
     steps: [
       ...ASK_FOR_AN_EDIT,
-      { clickIfShown: { role: "button", name: "Expand" } },
-      { waitFor: { role: "button", name: "Deny" } },
+      { clickIfShown: { selector: PANEL_EXPAND } },
+      { waitFor: { selector: PANEL_DENY } },
       ...DENY_THE_WAITING_EDIT,
     ],
   },
@@ -344,7 +351,7 @@ export const SCREENS = [
         },
       },
       { press: "Enter" },
-      { waitFor: { role: "button", name: "Approve", exact: true } },
+      { waitFor: { selector: PANEL_APPROVE } },
       { waitFor: { selector: 'section[aria-label="Coach proposal"]' } },
     ],
     after: DENY_THE_WAITING_EDIT,
@@ -462,7 +469,7 @@ export const SCREENS = [
       ...ASK_FOR_AN_EDIT,
       ...DENY_THE_WAITING_EDIT,
       ...REOPEN_LATEST_CHAT,
-      { waitFor: { text: "nothing changed" } },
+      { waitFor: { selector: PANEL_DENIED } },
     ],
   },
   {
@@ -480,7 +487,7 @@ export const SCREENS = [
     steps: [
       ...UNDO_THE_EDIT,
       ...REOPEN_LATEST_CHAT,
-      { waitFor: { text: "Undone" } },
+      { waitFor: { selector: PANEL_UNDONE } },
     ],
   },
   {

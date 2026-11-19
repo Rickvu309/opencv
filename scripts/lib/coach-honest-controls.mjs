@@ -4,7 +4,6 @@ export const COACH_HONEST_CONTROL_FILES = Object.freeze([
   "apps/web/src/features/coach/coach-context-attachments.tsx",
   "apps/web/src/features/coach/coach-workspace.reducer.ts",
   "apps/web/src/features/coach/coach-tool-line.tsx",
-  "scripts/ui/screens.mjs",
 ])
 
 const RULES = [
@@ -13,11 +12,6 @@ const RULES = [
     pattern:
       /max-md:\[&_\[data-slot=switch-thumb\]\]:data-checked:translate-x-\[26px\]/,
     advice: "Keep the switch track distinct from its 44px tap area.",
-  },
-  {
-    name: "Coach approval capture can hit the background Paper action",
-    pattern: /click:\s*\{\s*role:\s*"button",\s*name:\s*"Approve"\s*\}/,
-    advice: "Scope the Coach approval action to its panel.",
   },
   {
     name: "undone record loses its artifact",
@@ -60,4 +54,26 @@ export function detect(source, file = "a Coach control file") {
   return RULES.filter((rule) => rule.pattern.test(source)).map(
     (rule) => `${file}: ${rule.name}: ${rule.advice}`
   )
+}
+
+const COACH_PANEL = '[data-slot="coach-panel"]'
+const TARGETED_STEPS = ["click", "clickIfShown", "waitFor", "fill", "upload"]
+
+export function unscopedPanelTargets(screens) {
+  const found = []
+  for (const screen of screens) {
+    let panelOpen = false
+    const steps = [...(screen.steps ?? []), ...(screen.after ?? [])]
+    for (const [at, step] of steps.entries()) {
+      if (step.goto) panelOpen = false
+      const target = TARGETED_STEPS.map((kind) => step[kind]).find(Boolean)
+      if (!target) continue
+      if (panelOpen && !target.selector)
+        found.push(
+          `${screen.id} step ${at + 1} ${JSON.stringify(step)}: a bare text or role target while the Coach panel is open can match the page behind it. Use a selector inside ${COACH_PANEL}.`
+        )
+      if (target.selector === COACH_PANEL) panelOpen = true
+    }
+  }
+  return found
 }

@@ -1,13 +1,16 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { readFileSync } from "node:fs"
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
 import path from "node:path"
 import test from "node:test"
-import { fileURLToPath } from "node:url"
+import { fileURLToPath, pathToFileURL } from "node:url"
 import {
   COACH_HONEST_CONTROL_FILES,
   detect,
+  unscopedPanelTargets,
 } from "./lib/coach-honest-controls.mjs"
+import { SCREENS } from "./ui/screens.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 
@@ -25,37 +28,25 @@ const LIMIT_INTRODUCED = "2218357d1f6a25f693d0b933fe4e9b1aad219d1e"
 const UNDONE_INTRODUCED = "47367e71fa6ac307e6b6cf23e12d55341789a028"
 const SWITCH_TARGET_INTRODUCED = "e803472ce13d38d1f154eaf6e0629c14611e5350"
 const APPROVAL_CAPTURE_INTRODUCED = "ae31f30cce57990a8e2172d5a0174e890ae25f73"
+const UNDONE_WAIT_INTRODUCED = "7fccb95daeada42ec57608493f870d5c10b38f79"
 
-test("a circular mobile track and an unscoped approval capture fire", () => {
+test("a circular mobile track fires", () => {
   const found = detect(`
     max-md:[&_[data-slot=switch-thumb]]:data-checked:translate-x-[26px]!
-    { click: { role: "button", name: "Approve" } }
   `).join("\n")
   assert.match(found, /mobile switch paints its whole tap area/)
-  assert.match(found, /Coach approval capture can hit/)
 })
 
-test("a separate mobile track and panel-scoped approval stay quiet", () => {
-  assert.deepEqual(
-    detect(`
-    max-md:before:h-[18px] max-md:before:w-8
-    { click: { selector: 'coach-panel button:text-is("Approve")' } }
-  `),
-    []
-  )
+test("a separate mobile track stays quiet", () => {
+  assert.deepEqual(detect(`max-md:before:h-[18px] max-md:before:w-8`), [])
 })
 
-test("the commits introducing the mobile switch and approval capture mistakes fire", () => {
+test("the commit introducing the mobile switch mistake fires", () => {
   const cases = [
     [
       SWITCH_TARGET_INTRODUCED,
       "apps/web/src/features/settings/coach-section.tsx",
       /mobile switch paints its whole tap area/,
-    ],
-    [
-      APPROVAL_CAPTURE_INTRODUCED,
-      "scripts/ui/screens.mjs",
-      /Coach approval capture can hit/,
     ],
   ]
   for (const [sha, file, message] of cases) {
@@ -199,4 +190,87 @@ test("the owning Coach control files stay quiet", () => {
       detect(readFileSync(path.join(root, file), "utf8"), file),
       []
     )
+})
+
+const PANEL = '[data-slot="coach-panel"]'
+
+const OPEN_PANEL = [
+  { click: { selector: "[data-dock-coach]" } },
+  { waitFor: { selector: PANEL } },
+]
+
+const UNDONE_IN_HIDDEN_PAPER = {
+  id: "coach-undone",
+  route: "/paper",
+  steps: [
+    { click: { role: "button", name: "New" } },
+    ...OPEN_PANEL,
+    { click: { selector: `${PANEL} button[aria-label="Undo"]` } },
+    { clickIfShown: { role: "button", name: "Expand" } },
+    { waitFor: { text: "Undone" } },
+  ],
+  after: [{ click: { role: "button", name: "Deny" } }],
+}
+
+const UNDONE_IN_THE_PANEL = {
+  id: "coach-undone",
+  route: "/paper",
+  steps: [
+    { click: { role: "button", name: "New" } },
+    ...OPEN_PANEL,
+    { click: { selector: `${PANEL} button[aria-label="Undo"]` } },
+    { clickIfShown: { selector: `${PANEL} button[aria-label="Expand"]` } },
+    {
+      waitFor: {
+        selector: `${PANEL} [data-slot="coach-action-record"][data-state="undone"]`,
+      },
+    },
+    { goto: "/paper" },
+    { waitFor: { role: "heading", name: "Paper" } },
+  ],
+}
+
+test("an open-panel recipe that waits or clicks on bare text or a role fires, after steps included", () => {
+  assert.deepEqual(
+    unscopedPanelTargets([UNDONE_IN_HIDDEN_PAPER]).map(
+      (line) => line.split(":")[0]
+    ),
+    [
+      'coach-undone step 5 {"clickIfShown"',
+      'coach-undone step 6 {"waitFor"',
+      'coach-undone step 7 {"click"',
+    ]
+  )
+})
+
+test("panel-scoped targets, targets before the panel opens and targets after a new page load stay quiet", () => {
+  assert.deepEqual(unscopedPanelTargets([UNDONE_IN_THE_PANEL]), [])
+})
+
+test("every screen recipe scopes its open-panel targets to the Coach panel", () => {
+  assert.deepEqual(unscopedPanelTargets(SCREENS), [])
+})
+
+async function screensAt(sha) {
+  const dir = mkdtempSync(path.join(tmpdir(), "ocv-screens-"))
+  const file = path.join(dir, "screens.mjs")
+  writeFileSync(file, git("show", `${sha}:scripts/ui/screens.mjs`))
+  return (await import(pathToFileURL(file).href)).SCREENS
+}
+
+test("the commits introducing the unscoped Approve click and the unscoped Undone wait fire", async () => {
+  const approve = unscopedPanelTargets(
+    await screensAt(APPROVAL_CAPTURE_INTRODUCED)
+  ).join("\n")
+  assert.match(
+    approve,
+    /paper-panel-receipt step \d+ \{"click":\{"role":"button","name":"Approve"\}\}/
+  )
+  const undone = unscopedPanelTargets(
+    await screensAt(UNDONE_WAIT_INTRODUCED)
+  ).join("\n")
+  assert.match(
+    undone,
+    /coach-undone step \d+ \{"waitFor":\{"text":"Undone"\}\}/
+  )
 })
