@@ -20,7 +20,7 @@ import {
   expectChatText,
   idleHeading,
   sendMessage,
-  stepButton,
+  stepName,
 } from "@/test/coach-chat-helpers.ts"
 
 beforeEach(() => {
@@ -104,13 +104,11 @@ describe("Coach chat and history", { timeout: 15_000 }, () => {
     await sendMessage("Move the intern card to Prep")
     await expectSendSettled("Move the intern card to Prep")
     expect(
-      await screen.findByRole("button", {
-        name: stepButton("Moved 'Backend Intern' to Prep"),
+      await screen.findByRole("heading", {
+        name: stepName("Moved 'Backend Intern' to Prep"),
       })
     ).toBeInTheDocument()
-    expect(
-      screen.getByText(/^Moved 'Backend Intern' to Prep finished/)
-    ).toBeInTheDocument()
+    expect(screen.getAllByText("Done")[0]).toBeVisible()
     expect(
       screen.getByText(
         "Reversible: Undo by moving the card back to its previous Stage and order."
@@ -124,8 +122,8 @@ describe("Coach chat and history", { timeout: 15_000 }, () => {
     await openStoredChat(/Move the intern card to Prep/)
     expect(
       (
-        await screen.findAllByRole("button", {
-          name: stepButton("Moved 'Backend Intern' to Prep"),
+        await screen.findAllByRole("heading", {
+          name: stepName("Moved 'Backend Intern' to Prep"),
         })
       )[0]
     ).toBeInTheDocument()
@@ -319,8 +317,8 @@ describe("Coach chat and history", { timeout: 15_000 }, () => {
     await expectCoachIdle()
     await sendMessage("Move the intern card to Prep")
     expect(
-      await screen.findByRole("button", {
-        name: stepButton("Moved 'Backend Intern' to Prep"),
+      await screen.findByRole("heading", {
+        name: stepName("Moved 'Backend Intern' to Prep"),
       })
     ).toBeInTheDocument()
     await waitFor(() => {
@@ -333,8 +331,8 @@ describe("Coach chat and history", { timeout: 15_000 }, () => {
       await screen.findByText("Here is another way to look at it.")
     ).toBeInTheDocument()
     expect(
-      screen.getByRole("button", {
-        name: stepButton("Moved 'Backend Intern' to Prep"),
+      screen.getByRole("heading", {
+        name: stepName("Moved 'Backend Intern' to Prep"),
       })
     ).toBeInTheDocument()
     expect(

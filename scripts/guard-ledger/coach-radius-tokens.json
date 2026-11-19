@@ -1,0 +1,13 @@
+{
+  "id": "coach-radius-tokens",
+  "file": "scripts/coach-radius-tokens.test.mjs",
+  "detector": {
+    "module": "scripts/lib/coach-radius-tokens.mjs",
+    "export": "coachRadiusLiterals"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "b1fe529de",
+    "path": "apps/web/src/features/coach/coach-history.tsx"
+  }
+}

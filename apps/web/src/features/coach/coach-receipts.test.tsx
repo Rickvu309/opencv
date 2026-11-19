@@ -8,7 +8,7 @@ import {
   expectCoachIdle,
   expectSendSettled,
   sendMessage,
-  stepButton,
+  stepName,
 } from "@/test/coach-chat-helpers.ts"
 
 beforeEach(() => {
@@ -137,14 +137,13 @@ describe("Coach Command receipts", { timeout: 15_000 }, () => {
     await expectCoachIdle()
     await sendMessage("Move a missing card")
     expect(
-      await screen.findByRole("button", {
-        name: stepButton("Apply card not found"),
+      await screen.findByRole("heading", {
+        name: stepName("Apply card not found"),
       })
     ).toBeInTheDocument()
-    expect(
-      screen.getByText(/Apply card not found failed: Nothing changed\./)
-    ).toBeInTheDocument()
-    expect(screen.getByText("Nothing changed.")).toBeInTheDocument()
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Failed. Nothing changed."
+    )
     expect(screen.queryByText(/^Reversible\b/)).not.toBeInTheDocument()
   })
 
@@ -164,7 +163,7 @@ describe("Coach Command receipts", { timeout: 15_000 }, () => {
     await expectCoachIdle()
     await sendMessage("Move card 00000000-0000-0000-0000-000000000002 to Prep")
 
-    const receipt = await screen.findByRole("button", {
+    const receipt = await screen.findByRole("heading", {
       name: /That card id isn't valid/,
     })
     expect(receipt).toHaveTextContent("That card id isn't valid")

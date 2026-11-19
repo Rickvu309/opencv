@@ -44,7 +44,7 @@ export function CoachPanel({
             type="button"
             variant="ghost"
             size="icon-sm"
-            className="size-11 shrink-0 rounded-[6px] max-md:hidden md:size-7"
+            className="size-11 shrink-0 rounded-sm max-md:hidden md:size-7"
             aria-label="Minimize"
             onClick={onMinimize}
           >
@@ -54,7 +54,7 @@ export function CoachPanel({
             type="button"
             variant="ghost"
             size="icon-sm"
-            className="size-11 shrink-0 rounded-[6px] max-md:hidden md:size-7"
+            className="size-11 shrink-0 rounded-sm max-md:hidden md:size-7"
             aria-label="Expand"
             aria-pressed={mode === "full"}
             onClick={onExpand}
@@ -65,7 +65,7 @@ export function CoachPanel({
             type="button"
             variant="ghost"
             size="icon-sm"
-            className="size-11 shrink-0 rounded-[6px] md:size-7"
+            className="size-11 shrink-0 rounded-sm md:size-7"
             aria-label="Close"
             onClick={onClose}
           >
