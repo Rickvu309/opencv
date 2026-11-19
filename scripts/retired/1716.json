@@ -40,5 +40,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/settings/settings-phone.test.tsx",
+    "because": "It locked in the truncated email reachable only by a hover title, unusable on a phone; the Email row now shows the full address.",
+    "replacedBy": "apps/web/src/features/settings/settings.test.tsx",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "4c8e9b8867762ead50a7d0b49c5594e741e062d4",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
