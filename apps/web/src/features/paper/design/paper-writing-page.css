@@ -1,11 +1,10 @@
-[data-pen-surface="paper"].rich-paper-page,
+[data-surface="paper"].rich-paper-page,
 .paper-writing-page {
   --border: color-mix(in oklch, var(--foreground) 8%, transparent);
   --input: color-mix(in oklch, var(--foreground) 8%, transparent);
 }
 
-[data-pen-surface="paper"].rich-paper-page
-  > [data-slot="writing-document-header"],
+[data-surface="paper"].rich-paper-page > [data-slot="writing-document-header"],
 .paper-writing-page [data-slot="writing-document-header"] {
   border-block-end: 0;
 }

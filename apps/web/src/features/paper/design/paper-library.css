@@ -1,22 +1,22 @@
-[data-pen-surface="paper"] [data-slot="paper-library-header"] {
+[data-surface="paper"] [data-slot="paper-library-header"] {
   box-sizing: border-box;
   width: calc(100% + 32px);
   margin: -16px -16px 0;
 }
 
 @media (min-width: 640px) {
-  [data-pen-surface="paper"] [data-slot="paper-library-header"] {
+  [data-surface="paper"] [data-slot="paper-library-header"] {
     width: calc(100% + 48px);
     margin: -24px -24px 0;
   }
 }
 
 @media (min-width: 768px) {
-  [data-pen-surface="paper"][data-slot="paper-library"] {
+  [data-surface="paper"][data-slot="paper-library"] {
     padding: 28px 32px;
   }
 
-  [data-pen-surface="paper"] [data-slot="paper-library-header"] {
+  [data-surface="paper"] [data-slot="paper-library-header"] {
     width: auto;
     margin: -28px -32px 0;
   }

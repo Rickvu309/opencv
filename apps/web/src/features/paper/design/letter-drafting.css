@@ -1,56 +1,56 @@
-[data-pen-surface="paper"][data-slot="letter-drafting-page"] {
+[data-surface="paper"][data-slot="letter-drafting-page"] {
   color: #111111;
 }
-[data-pen-surface="paper"] [data-slot="letter-drafting-header"] {
+[data-surface="paper"] [data-slot="letter-drafting-header"] {
   background: #fafafa;
   border-color: #ededef;
   color: #3c3c40;
 }
-[data-pen-surface="paper"]
+[data-surface="paper"]
   [data-slot="letter-drafting-header"]
   [aria-current="page"] {
   color: #111111;
 }
-[data-pen-surface="paper"] [data-slot="letter-drafting-status"] {
+[data-surface="paper"] [data-slot="letter-drafting-status"] {
   color: var(--muted-foreground);
 }
-[data-pen-surface="paper"] [data-slot="letter-drafting-desk"] {
+[data-surface="paper"] [data-slot="letter-drafting-desk"] {
   background: #f7f7f8;
 }
-[data-pen-surface="paper"] [data-slot="letter-drafting-card"] {
+[data-surface="paper"] [data-slot="letter-drafting-card"] {
   background: #ffffff;
   box-shadow:
     0 1px 2px #0000000f,
     0 12px 32px #0000000f;
 }
-[data-pen-surface="paper"] [data-slot="letter-drafting-text"] {
+[data-surface="paper"] [data-slot="letter-drafting-text"] {
   color: #2f2f31;
 }
-[data-pen-surface="paper"] [data-slot="letter-drafting-cursor"] {
+[data-surface="paper"] [data-slot="letter-drafting-cursor"] {
   background: #111111;
 }
-[data-pen-surface="paper"] [data-slot="letter-drafting-bar"] {
+[data-surface="paper"] [data-slot="letter-drafting-bar"] {
   background: #ffffff;
   box-shadow: 0 4px 14px #0000000f;
 }
-[data-pen-surface="paper"] [data-slot="letter-drafting-label"] {
+[data-surface="paper"] [data-slot="letter-drafting-label"] {
   color: #1a1a1a;
 }
-[data-pen-surface="paper"] [data-slot="letter-drafting-attribution"] {
+[data-surface="paper"] [data-slot="letter-drafting-attribution"] {
   color: var(--muted-foreground);
 }
-[data-pen-surface="paper"] [data-slot="letter-drafting-stop"] {
+[data-surface="paper"] [data-slot="letter-drafting-stop"] {
   color: #59595b;
 }
-[data-pen-surface="paper"]
+[data-surface="paper"]
   [data-slot="letter-drafting-header"]
   .lucide-chevron-right {
   color: #8a8a8e;
 }
 
-[data-pen-surface="paper"] [data-slot="letter-drafting-placeholder"] > span {
+[data-surface="paper"] [data-slot="letter-drafting-placeholder"] > span {
   background: #efeff1;
 }
-[data-pen-surface="paper"] [data-slot="letter-drafting-header-actions"] {
+[data-surface="paper"] [data-slot="letter-drafting-header-actions"] {
   color: var(--muted-foreground);
 }

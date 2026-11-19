@@ -210,7 +210,7 @@
 
   body[data-print="paper"]
     [data-paper-letter]
-    [data-pen-surface="paper"][data-slot="letter-sheet"] {
+    [data-surface="paper"][data-slot="letter-sheet"] {
     zoom: 1.4173;
     min-height: 0;
     -webkit-box-decoration-break: clone;

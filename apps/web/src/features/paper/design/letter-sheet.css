@@ -1,4 +1,4 @@
-[data-pen-surface="paper"][data-slot="letter-sheet"] {
+[data-surface="paper"][data-slot="letter-sheet"] {
   box-sizing: border-box;
   width: 560px;
   max-width: 100%;
@@ -9,7 +9,7 @@
   font-family: inherit;
 }
 
-[data-pen-surface="paper"][data-slot="letter-sheet"] > * {
+[data-surface="paper"][data-slot="letter-sheet"] > * {
   display: block;
   box-sizing: border-box;
   width: 100%;
@@ -28,8 +28,7 @@
   outline: none;
 }
 
-[data-pen-surface="paper"][data-slot="letter-sheet"]
-  > [data-slot="letter-sender"] {
+[data-surface="paper"][data-slot="letter-sheet"] > [data-slot="letter-sender"] {
   margin-top: 0px;
   color: #111111;
   font-size: 15px;
@@ -37,7 +36,7 @@
   line-height: 1.2;
 }
 
-[data-pen-surface="paper"][data-slot="letter-sheet"]
+[data-surface="paper"][data-slot="letter-sheet"]
   > [data-slot="letter-contact"] {
   margin-top: 4px;
   color: color-mix(in srgb, #8a8a8e 80%, #111111);
@@ -46,8 +45,7 @@
   line-height: 1.2;
 }
 
-[data-pen-surface="paper"][data-slot="letter-sheet"]
-  > [data-slot="letter-date"] {
+[data-surface="paper"][data-slot="letter-sheet"] > [data-slot="letter-date"] {
   margin-top: 26px;
   color: #3c3c40;
   font-size: 10.5px;
@@ -55,7 +53,7 @@
   line-height: 1.2;
 }
 
-[data-pen-surface="paper"][data-slot="letter-sheet"]
+[data-surface="paper"][data-slot="letter-sheet"]
   > [data-slot="letter-recipient"] {
   margin-top: 14px;
   color: #3c3c40;
@@ -64,7 +62,7 @@
   line-height: 1.5;
 }
 
-[data-pen-surface="paper"][data-slot="letter-sheet"]
+[data-surface="paper"][data-slot="letter-sheet"]
   > [data-slot="letter-salutation"] {
   margin-top: 18px;
   color: #111111;
@@ -73,7 +71,7 @@
   line-height: 1.2;
 }
 
-[data-pen-surface="paper"][data-slot="letter-sheet"]
+[data-surface="paper"][data-slot="letter-sheet"]
   > [data-slot="letter-paragraph"] {
   margin-top: 12px;
   color: #2f2f31;
@@ -82,7 +80,7 @@
   line-height: 1.6;
 }
 
-[data-pen-surface="paper"][data-slot="letter-sheet"]
+[data-surface="paper"][data-slot="letter-sheet"]
   > [data-slot="letter-closing"] {
   margin-top: 18px;
   color: #2f2f31;
@@ -91,7 +89,7 @@
   line-height: 1.2;
 }
 
-[data-pen-surface="paper"][data-slot="letter-sheet"]
+[data-surface="paper"][data-slot="letter-sheet"]
   > [data-slot="letter-signature"] {
   margin-top: 4px;
   color: #2f2f31;
@@ -100,65 +98,65 @@
   line-height: 1.2;
 }
 
-[data-pen-surface="paper"][data-slot="letter-sheet"]
+[data-surface="paper"][data-slot="letter-sheet"]
   > h2[data-slot="letter-paragraph"],
-[data-pen-surface="paper"][data-slot="letter-sheet"]
+[data-surface="paper"][data-slot="letter-sheet"]
   > h3[data-slot="letter-paragraph"] {
   color: #111111;
   font-weight: 700;
 }
 
-[data-pen-surface="paper"][data-slot="letter-sheet"]
+[data-surface="paper"][data-slot="letter-sheet"]
   > h2[data-slot="letter-paragraph"] {
   font-size: 15px;
   line-height: 18px;
 }
 
-[data-pen-surface="paper"][data-slot="letter-sheet"]
+[data-surface="paper"][data-slot="letter-sheet"]
   > h3[data-slot="letter-paragraph"] {
   font-size: 13px;
   line-height: 16px;
 }
 
-[data-pen-surface="paper"][data-slot="letter-sheet"] ul {
+[data-surface="paper"][data-slot="letter-sheet"] ul {
   list-style: disc;
   padding-inline-start: 1.25em;
 }
 
-[data-pen-surface="paper"][data-slot="letter-sheet"] ol {
+[data-surface="paper"][data-slot="letter-sheet"] ol {
   list-style: decimal;
   padding-inline-start: 1.25em;
 }
 
-[data-pen-surface="paper"][data-slot="letter-sheet"] a {
+[data-surface="paper"][data-slot="letter-sheet"] a {
   color: #111111;
   text-decoration: underline;
   text-decoration-line: underline;
 }
 
-[data-pen-surface="paper"][data-slot="letter-sheet"] > :first-child {
+[data-surface="paper"][data-slot="letter-sheet"] > :first-child {
   margin-top: 0;
 }
 
-[data-pen-surface="paper"][data-slot="letter-sheet"] > textarea::placeholder {
+[data-surface="paper"][data-slot="letter-sheet"] > textarea::placeholder {
   color: #8a8a8e;
   opacity: 0.55;
   font-style: italic;
 }
 
-[data-pen-surface="paper"][data-slot="letter-sheet"] > textarea:focus-visible {
+[data-surface="paper"][data-slot="letter-sheet"] > textarea:focus-visible {
   outline: 1px solid #8a8a8e;
   outline-offset: 2px;
 }
 
-[data-pen-surface="paper"][data-slot="letter-sheet"]
+[data-surface="paper"][data-slot="letter-sheet"]
   > :not([data-slot="letter-closing"])
   + [data-slot="letter-signature"] {
   margin-top: 18px;
 }
 
 @media (max-width: 480px) {
-  [data-pen-surface="paper"][data-slot="letter-sheet"] {
+  [data-surface="paper"][data-slot="letter-sheet"] {
     min-height: 0;
     padding-left: 24px;
     padding-right: 24px;
