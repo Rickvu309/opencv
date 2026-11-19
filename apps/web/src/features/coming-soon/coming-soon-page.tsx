@@ -37,7 +37,7 @@ export function ComingSoonPage({
         <div className="flex w-[min(560px,calc(100%-3rem))] flex-col items-center gap-4 text-center">
           <Badge
             variant="outline"
-            className="h-7 gap-1.5 rounded-[14px] px-3 text-[12.5px] text-foreground/90"
+            className="h-7 gap-1.5 rounded-xl px-3 text-xs text-foreground/90"
           >
             <span
               aria-hidden="true"
@@ -55,7 +55,7 @@ export function ComingSoonPage({
             <Button
               type="button"
               variant="primary"
-              className="h-11 gap-2 rounded-[10px] px-[18px] font-semibold md:h-[42px]"
+              className="h-11 gap-2 rounded-lg px-[18px] font-semibold md:h-[42px]"
               disabled={pending}
               aria-busy={pending}
               onClick={() => void notify()}

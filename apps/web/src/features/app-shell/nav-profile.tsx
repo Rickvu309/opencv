@@ -89,7 +89,7 @@ export function NavProfile({ onNavigate, onMenuOpenChange }: Props) {
         >
           <DropdownMenuGroup>
             <DropdownMenuItem
-              className="h-8 gap-2 ps-2 text-[13px]"
+              className="h-8 gap-2 ps-2 text-ui"
               render={<Link to={SURFACE_PATHS.settings} onClick={onNavigate} />}
             >
               <Settings aria-hidden="true" className="text-muted-foreground" />
@@ -99,7 +99,7 @@ export function NavProfile({ onNavigate, onMenuOpenChange }: Props) {
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
             <DropdownMenuItem
-              className="h-8 gap-2 ps-2 text-[13px]"
+              className="h-8 gap-2 ps-2 text-ui"
               onClick={signOut}
             >
               <LogOut aria-hidden="true" className="text-muted-foreground" />

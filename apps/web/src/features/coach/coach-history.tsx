@@ -101,7 +101,7 @@ export function CoachHistory({
             data-slot="coach-history-trigger"
             aria-label={`History, ${headerTitle}`}
             className={cn(
-              "min-w-0 shrink gap-1.5 border-0 px-2 text-[13px] leading-[15.5px] max-md:h-11",
+              "min-w-0 shrink gap-1.5 border-0 px-2 text-ui leading-[15.5px] max-md:h-11",
               triggerClassName
             )}
           />
@@ -151,7 +151,7 @@ export function CoachHistory({
                 event.stopPropagation()
                 onSearchChange("")
               }}
-              className="h-auto flex-1 border-0 bg-transparent p-0 text-base leading-[1.2] shadow-none ring-0 outline-none focus-visible:ring-0 md:text-[13px]"
+              className="h-auto flex-1 border-0 bg-transparent p-0 text-base leading-[1.2] shadow-none ring-0 outline-none focus-visible:ring-0 md:text-ui"
             />
           </div>
 
@@ -160,7 +160,7 @@ export function CoachHistory({
             type="button"
             variant="ghost"
             data-slot="history-new-chat"
-            className="flex w-full items-center gap-2.5 rounded-sm px-2.5 text-left text-[13px] leading-[1.2]"
+            className="flex w-full items-center gap-2.5 rounded-sm px-2.5 text-left text-ui leading-[1.2]"
             onClick={() => {
               onNewChat()
               onOpenChange(false)
@@ -217,7 +217,7 @@ export function CoachHistory({
                       data-active={
                         chat.id === activeChatId ? "true" : undefined
                       }
-                      className="flex w-full items-center gap-2.5 rounded-sm px-2.5 text-left text-[13px] leading-[1.2]"
+                      className="flex w-full items-center gap-2.5 rounded-sm px-2.5 text-left text-ui leading-[1.2]"
                       onClick={() => {
                         onSelect(chat.id)
                         onOpenChange(false)
@@ -241,7 +241,7 @@ export function CoachHistory({
             {chats.length === 0 ? (
               <p
                 data-slot="history-empty"
-                className="px-2.5 py-2 text-[13px] text-muted-foreground"
+                className="px-2.5 py-2 text-ui text-muted-foreground"
               >
                 No chats yet. Your Chats with Coach appear here.
               </p>
@@ -249,7 +249,7 @@ export function CoachHistory({
               <div
                 role="status"
                 data-slot="history-no-match"
-                className="flex flex-wrap items-center gap-x-2 px-2.5 py-1 text-[13px] text-muted-foreground"
+                className="flex flex-wrap items-center gap-x-2 px-2.5 py-1 text-ui text-muted-foreground"
               >
                 <p className="min-w-0 [overflow-wrap:anywhere]">
                   No chats match “{search.trim()}”.
@@ -258,7 +258,7 @@ export function CoachHistory({
                   type="button"
                   variant="link"
                   size="sm"
-                  className="h-11 px-0 text-[13px] md:h-8"
+                  className="h-11 px-0 text-ui md:h-8"
                   onClick={() => {
                     onSearchChange("")
                     searchRef.current?.focus()

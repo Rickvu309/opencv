@@ -111,7 +111,7 @@ export function WeekGrid({
                   key={key}
                   aria-label={`Deadline: ${job.title}`}
                   onClick={() => onOpenJob(job.id)}
-                  className="flex h-11 min-w-0 items-center gap-[5px] rounded-[5px] bg-secondary px-[7px] md:h-[22px]"
+                  className="flex h-11 min-w-0 items-center gap-[5px] rounded-sm bg-secondary px-[7px] md:h-[22px]"
                 >
                   <Flag className="size-[11px] text-muted-foreground" />
                   <span className="truncate text-[11.5px] font-medium text-foreground">

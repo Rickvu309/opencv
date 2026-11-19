@@ -36,7 +36,7 @@ describe("Coach history", () => {
       name: "Search chat history",
     })
     expect(search.className).toContain("text-base")
-    expect(search.className).toContain("md:text-[13px]")
+    expect(search.className).toContain("md:text-ui")
   })
 
   it("shows New chat and shortcut in the history popover", async () => {

@@ -69,7 +69,7 @@ export function ApplyEmpty({
       <div className="flex flex-col items-start">
         <StageCoins />
         <h2 className="mt-6 text-[15px] font-semibold">Track your first job</h2>
-        <p className="mt-2 max-w-[300px] text-[13px] leading-[1.55] text-muted-foreground">
+        <p className="mt-2 max-w-[300px] text-ui leading-[1.55] text-muted-foreground">
           Paste a posting link and the role, company and location fill in for
           you.
         </p>
@@ -79,7 +79,7 @@ export function ApplyEmpty({
           variant={dialogOpen ? "ghost" : "primary"}
           aria-label="New job"
           aria-keyshortcuts="N"
-          className="mt-5 gap-2 rounded-md pr-2 pl-3 text-[13px] font-semibold"
+          className="mt-5 gap-2 rounded-md pr-2 pl-3 text-ui font-semibold"
           onClick={onAdd}
         >
           <span>New job</span>
@@ -102,13 +102,11 @@ export function ApplyNoResults({ onClear }: { onClear: () => void }) {
       <h2 className="mt-3.5 text-[15px] font-semibold">
         No jobs match these filters
       </h2>
-      <p className="mt-1 text-[13px] text-muted-foreground">
-        Try removing one.
-      </p>
+      <p className="mt-1 text-ui text-muted-foreground">Try removing one.</p>
       <Button
         type="button"
         variant="ghost"
-        className="mt-4 h-11 gap-1.5 rounded-md border border-border bg-card px-3 text-[13px] font-normal md:h-[30px]"
+        className="mt-4 h-11 gap-1.5 rounded-md border border-border bg-card px-3 text-ui font-normal md:h-[30px]"
         onClick={onClear}
       >
         <X className="size-[13px] text-muted-foreground" />

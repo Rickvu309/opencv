@@ -109,7 +109,7 @@ function RecentChats({
               {age ? (
                 <time
                   dateTime={chat.updatedAt}
-                  className="shrink-0 text-[13px] text-muted-foreground tabular-nums"
+                  className="shrink-0 text-ui text-muted-foreground tabular-nums"
                 >
                   <span aria-hidden="true">{age.short}</span>
                   <span className="sr-only">, {age.long}</span>

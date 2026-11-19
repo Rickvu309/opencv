@@ -62,8 +62,8 @@ describe("sign-in look", () => {
     expect(button.className).toContain("text-primary-foreground")
     expect(button.className).toMatch(/(^|\s)hover:bg-/)
     expect(button.className).toMatch(/(^|\s)active:bg-/)
-    expect(button.className).toContain("rounded-[10px]")
-    expect(emailBox().className).toContain("rounded-[10px]")
+    expect(button.className).toContain("rounded-lg")
+    expect(emailBox().className).toContain("rounded-lg")
     expect(button).toBeEnabled()
   })
 

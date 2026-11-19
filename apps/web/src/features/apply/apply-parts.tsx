@@ -89,7 +89,7 @@ export function BoardLane({
       className="flex h-11 items-center gap-2 px-1 md:h-8"
     >
       <StageIcon stage={stage} decorative />
-      <h2 className="text-[13px] font-normal" tabIndex={0}>
+      <h2 className="text-ui font-normal" tabIndex={0}>
         {name}
       </h2>
       <span className={cn("flex-1 text-xs font-normal", FAINT_TEXT.background)}>
