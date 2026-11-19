@@ -140,7 +140,7 @@ export const SCREENS = [
       { waitFor: { text: "Prep the starred" } },
       {
         click: {
-          selector: '[data-pen-surface="coach"] button[aria-label="New chat"]',
+          selector: '[data-surface="coach"] button[aria-label="New chat"]',
         },
       },
       { waitFor: { selector: '[data-slot="coach-recent-chats"]' } },

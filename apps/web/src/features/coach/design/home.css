@@ -1,0 +1,7 @@
+[data-surface="coach"][data-slot="coach-home"] {
+  color: var(--foreground);
+}
+
+[data-surface="coach"][data-slot="coach-home"] [data-slot="coach-starter"] {
+  -webkit-tap-highlight-color: transparent;
+}

@@ -7,7 +7,7 @@ import {
 } from "@workspace/ui/components/page-header"
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 
-import "@/features/coach/design/page-header.pen.css"
+import "@/features/coach/design/page-header.css"
 
 export function CoachPageHeader({
   history,
@@ -21,7 +21,7 @@ export function CoachPageHeader({
   children?: ReactNode
 }) {
   return (
-    <WorkspaceHeader data-pen-surface="coach">
+    <WorkspaceHeader data-surface="coach">
       <h1 className="sr-only">Coach</h1>
       {history}
       <PageHeaderActions>

@@ -2,7 +2,7 @@ import { Shimmer } from "@/components/ai-elements/shimmer.tsx"
 import { humanToolText } from "./coach-tool-labels.ts"
 import { CircleCheck, Circle, Clock, Lightbulb, X } from "lucide-react"
 import { Spinner } from "@workspace/ui/components/spinner"
-import "./design/working.pen.css"
+import "./design/working.css"
 
 import type { CoachProgressRow, CoachProgressStatus } from "./coach-progress.ts"
 
@@ -45,7 +45,7 @@ export function CoachWorking({
   showHeader?: boolean
 }) {
   return (
-    <div data-pen-surface="coach" data-slot="coach-working">
+    <div data-surface="coach" data-slot="coach-working">
       {showHeader ? (
         <>
           <span role="status" className="sr-only">

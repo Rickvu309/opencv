@@ -3,7 +3,7 @@ import { Maximize2, Minus, X } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 
-import "./design/coach-panel.pen.css"
+import "./design/coach-panel.css"
 import "./coach-panel-sheet.css"
 
 export type CoachPanelMode = "dock" | "side" | "full"
@@ -33,7 +33,7 @@ export function CoachPanel({
   return (
     <section
       data-slot="coach-panel"
-      data-pen-surface="coach"
+      data-surface="coach"
       data-panel-mode={mode}
       aria-label={title}
       className="flex h-full min-h-0 w-full flex-1 flex-col bg-background duration-(--duration-panel) ease-(--ease-panel)"

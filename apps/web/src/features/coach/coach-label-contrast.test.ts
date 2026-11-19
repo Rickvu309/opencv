@@ -5,13 +5,10 @@ import { describe, expect, it } from "vitest"
 
 const here = path.dirname(fileURLToPath(import.meta.url))
 const history = readFileSync(
-  path.join(here, "design/coach-history.pen.css"),
+  path.join(here, "design/coach-history.css"),
   "utf8"
 )
-const menus = readFileSync(
-  path.join(here, "design/composer-menus.pen.css"),
-  "utf8"
-)
+const menus = readFileSync(path.join(here, "design/composer-menus.css"), "utf8")
 const token = "color-mix(in srgb, var(--muted-foreground) 87%, transparent)"
 
 describe("Coach label contrast", () => {

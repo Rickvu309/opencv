@@ -1,6 +1,6 @@
 import { Hourglass } from "lucide-react"
 
-import "./design/cap-notice.pen.css"
+import "./design/cap-notice.css"
 
 type Props = {
   modeLabel: string
@@ -12,7 +12,7 @@ export function CoachCapNotice({ modeLabel, resetTime }: Props) {
     <div
       role="status"
       data-slot="coach-cap-notice"
-      data-pen-surface="coach"
+      data-surface="coach"
       className="flex items-center gap-3"
     >
       <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-background">

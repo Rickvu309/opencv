@@ -13,7 +13,7 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 
-import "@/features/coach/design/coach-history.pen.css"
+import "@/features/coach/design/coach-history.css"
 
 function historyGroup(
   date: string
@@ -117,7 +117,7 @@ export function CoachHistory({
         className="w-[min(340px,calc(100dvw-16px))] rounded-[10px] bg-transparent p-0 shadow-none ring-0"
       >
         <div
-          data-pen-surface="coach"
+          data-surface="coach"
           data-slot="history-panel"
           className="flex max-h-[min(30rem,calc(var(--available-height,100dvh)-8px))] w-full flex-col gap-px rounded-[10px] p-1.5"
         >

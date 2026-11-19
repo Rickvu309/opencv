@@ -27,7 +27,7 @@ const scannedFiles = () =>
     .filter((file) => !/\.test\.tsx?$/.test(file))
     .filter((file) => existsSync(path.join(root, file)))
 
-const COACH_COMPOSER_GLOW = `[data-pen-surface="coach"][data-slot="coach-composer"]:not(
+const COACH_COMPOSER_GLOW = `[data-surface="coach"][data-slot="coach-composer"]:not(
     [data-capped]
   ):focus-within {
   border-color: var(--ring);
@@ -60,7 +60,7 @@ test("a coloured glow that shows when a text field is clicked fires in CSS, the 
   assert.equal(
     clickFocusGlows(
       COACH_COMPOSER_GLOW,
-      "apps/web/src/features/coach/design/coach.pen.css"
+      "apps/web/src/features/coach/design/coach.css"
     ).length,
     1
   )

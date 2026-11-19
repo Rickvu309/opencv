@@ -41,8 +41,8 @@ const MISTAKES = [
     "packages/ui/src/styles/globals.css",
   ],
   [
-    `[data-pen-surface="coach"]:is(.dark *)[data-slot="history-panel"] { color: var(--popover-foreground); }`,
-    "apps/web/src/features/coach/design/coach-history.pen.css",
+    `[data-surface="coach"]:is(.dark *)[data-slot="history-panel"] { color: var(--popover-foreground); }`,
+    "apps/web/src/features/coach/design/coach-history.css",
   ],
   [
     `@media (prefers-color-scheme: dark) { html { background: #111; } }`,
