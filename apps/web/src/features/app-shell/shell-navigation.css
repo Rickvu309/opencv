@@ -9,16 +9,6 @@
   color: var(--sidebar-foreground);
 }
 
-[data-surface="app-shell"] button[aria-label="New chat"] {
-  border-radius: 7px;
-}
-
-[data-surface="app-shell"] button[aria-label="New chat"]:not(:focus-visible) {
-  box-shadow:
-    0 1px 3px rgb(0 0 0 / 0.08),
-    0 0 0 0.5px rgb(0 0 0 / 0.04);
-}
-
 [data-surface="app-shell"] [data-slot="nav-item-badge"] {
   display: inline-flex;
   min-width: 18px;

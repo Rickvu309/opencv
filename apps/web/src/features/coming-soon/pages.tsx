@@ -1,3 +1,5 @@
+import { PageHeaderTitle } from "@workspace/ui/components/page-header"
+
 import { ComingSoonPage } from "@/features/coming-soon/coming-soon-page.tsx"
 import { soonCopy } from "@/features/coming-soon/copy.ts"
 import { JobsPreview } from "@/features/coming-soon/jobs-preview.tsx"
@@ -5,10 +7,10 @@ import { JobsPreview } from "@/features/coming-soon/jobs-preview.tsx"
 export function JobsPage() {
   return (
     <ComingSoonPage
-      pageTitle={soonCopy.jobsPage}
+      header={<PageHeaderTitle>{soonCopy.jobsPage}</PageHeaderTitle>}
       title={soonCopy.jobsTitle}
       body={soonCopy.jobsBody}
-      primary={{ label: soonCopy.notify, topic: "jobs" }}
+      topic="jobs"
       secondary={{ label: soonCopy.track, to: "/apply" }}
       preview={<JobsPreview />}
     />

@@ -22,10 +22,12 @@ function StageIcon({
   stage,
   size = 14,
   className,
+  decorative = false,
 }: {
   stage: Stage
   size?: number
   className?: string
+  decorative?: boolean
 }) {
   return (
     <svg
@@ -33,8 +35,9 @@ function StageIcon({
       height={size}
       viewBox="0 0 14 14"
       fill="none"
-      role="img"
-      aria-label={STAGE_LABEL[stage]}
+      role={decorative ? undefined : "img"}
+      aria-label={decorative ? undefined : STAGE_LABEL[stage]}
+      aria-hidden={decorative ? true : undefined}
       data-slot="stage-icon"
       className={cn("shrink-0", STAGE_CLASS[stage], className)}
     >

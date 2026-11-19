@@ -289,7 +289,7 @@ describe("Coach sheet keyboard access", () => {
     expect(screen.queryByRole("dialog", { name: "Coach" })).toBeNull()
   })
 
-  it("keeps history and recent chats on the Coach page and hides the Coach toggle", async () => {
+  it("keeps history on the Coach page but leaves recent chats to the page and hides the Coach toggle", async () => {
     setMockChats([
       {
         id: "11111111-1111-4111-8111-111111111111",
@@ -309,10 +309,15 @@ describe("Coach sheet keyboard access", () => {
       within(dock()).getByRole("button", { name: "History" })
     ).toBeInTheDocument()
     expect(
-      within(dock()).getByRole("button", { name: "CV vs internship first" })
-    ).toBeInTheDocument()
+      within(dock()).queryByRole("button", { name: "CV vs internship first" })
+    ).toBeNull()
     expect(within(dock()).queryByRole("button", { name: "Coach" })).toBeNull()
     await act(() => router.navigate({ to: SURFACE_PATHS.paper }))
+    expect(
+      await within(dock()).findByRole("button", {
+        name: "CV vs internship first",
+      })
+    ).toBeInTheDocument()
     fireEvent.click(
       await within(dock()).findByRole("button", { name: "Coach" })
     )

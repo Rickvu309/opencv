@@ -88,7 +88,7 @@ export function BoardLane({
       data-stage={stage}
       className="flex h-11 items-center gap-2 px-1 md:h-8"
     >
-      <StageIcon stage={stage} />
+      <StageIcon stage={stage} decorative />
       <h2 className="text-[13px] font-normal" tabIndex={0}>
         {name}
       </h2>

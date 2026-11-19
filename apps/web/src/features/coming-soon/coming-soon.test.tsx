@@ -92,14 +92,15 @@ describe("coming soon and the calm 404", () => {
     expect(
       screen.queryByRole("link", { name: "Track a job in Apply" })
     ).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: "Get early access" }))
+    fireEvent.click(screen.getByRole("button", { name: "Notify me" }))
     await waitFor(() => {
       expect(notifyCalls()).toEqual([{ topic: "proof" }])
     })
     expect(primaryCount()).toBe(1)
-    expect(
-      screen.getByRole("button", { name: "Get early access" })
-    ).toHaveAttribute("data-variant", "primary")
+    expect(screen.getByRole("button", { name: "Notify me" })).toHaveAttribute(
+      "data-variant",
+      "primary"
+    )
   })
 
   it("shows Pitch and posts pitch without an editor", async () => {
@@ -111,7 +112,7 @@ describe("coming soon and the calm 404", () => {
     expect(
       screen.getByRole("heading", { level: 2, name: "One link that sells you" })
     ).toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: "Get early access" }))
+    fireEvent.click(screen.getByRole("button", { name: "Notify me" }))
     await waitFor(() => {
       expect(notifyCalls()).toEqual([{ topic: "pitch" }])
     })

@@ -30,18 +30,19 @@ export function ApplyNextUp({
     <section
       aria-label="Next up"
       data-slot="next-up"
-      className="flex shrink-0 items-center gap-2 overflow-x-auto bg-background px-3 pt-2.5 motion-fade-in"
+      className="flex min-w-0 items-center gap-1 overflow-x-auto motion-fade-in max-md:order-last max-md:w-full md:flex-1"
     >
-      <span className="shrink-0 pr-0.5 pl-1 text-xs text-muted-foreground">
+      <span className="shrink-0 px-1 text-xs text-muted-foreground">
         Next up
       </span>
       {items.map((item) => (
         <Button
           key={`${item.kind}-${item.jobId}`}
           type="button"
-          variant="outline"
+          variant="ghost"
+          size="sm"
           data-slot="next-up-item"
-          className="h-11 shrink-0 gap-1.5 rounded-[6px] border-foreground/8 bg-card px-2.5 text-[12.5px] font-normal whitespace-nowrap hover:border-foreground/16 hover:bg-card md:h-7"
+          className="h-11 shrink-0 gap-1.5 px-2 text-xs font-normal whitespace-nowrap md:h-7"
           onClick={() => onOpen(item.jobId)}
         >
           <KindIcon kind={item.kind} />

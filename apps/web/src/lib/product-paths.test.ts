@@ -123,7 +123,7 @@ describe.each(SURFACES.map((surface) => [surface.id, surface] as const))(
 )
 
 describe("surface list contract", () => {
-  it("orders the sidebar rows inbox, coach, jobs, then paper, apply", () => {
+  it("orders the sidebar rows inbox, coach, jobs, then paper, apply, pitch, proofs", () => {
     expect(SHELL_PRIMARY.map((item) => item.id)).toEqual([
       "inbox",
       "coach",
@@ -133,6 +133,7 @@ describe("surface list contract", () => {
       "paper",
       "apply",
       "pitch",
+      "proofs",
     ])
   })
 

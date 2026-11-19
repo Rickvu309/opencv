@@ -24,14 +24,13 @@ import {
 import { Input } from "@workspace/ui/components/input"
 import { Kbd } from "@workspace/ui/components/kbd"
 import { Textarea } from "@workspace/ui/components/textarea"
-import { toast } from "@workspace/ui/components/sonner"
 
 import { ApiError } from "@/lib/api-error.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
 
 import { previewJob, useApplyPickerCards } from "./apply-api.ts"
 import { ApplyColumnAnchor } from "./apply-column-anchor.tsx"
-import { ALL_STAGES, stageLabel } from "./apply-stages.ts"
+import { ALL_STAGES } from "./apply-stages.ts"
 import {
   AlreadyTracked,
   Hint,
@@ -191,7 +190,6 @@ export function NewJobDialog({
     dispatch({ type: "save_started" })
     try {
       const created = await run("job.create", parsed.data)
-      toast(`Job added to ${stageLabel(created.stage)}`)
       if (typeof window !== "undefined") {
         window.dispatchEvent(
           new CustomEvent("opencv:job-created", { detail: { id: created.id } })

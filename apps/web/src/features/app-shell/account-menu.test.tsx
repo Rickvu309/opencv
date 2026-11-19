@@ -60,12 +60,11 @@ describe("account row", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("opens upward with the header, Settings and Sign out, and nothing invented", async () => {
+  it("opens upward with Settings and Sign out, and nothing invented", async () => {
     await renderShell()
     const menu = await openAccountMenu()
     expect(menu.closest("[data-side]")).toHaveAttribute("data-side", "top")
     expect(within(menu).queryByText("Minh Le")).not.toBeInTheDocument()
-    expect(within(menu).getByText("minh@example.com")).toBeInTheDocument()
     expect(
       within(menu)
         .getAllByRole("menuitem")
@@ -74,6 +73,13 @@ describe("account row", () => {
     expect(within(menu).getAllByRole("separator")).toHaveLength(1)
     expect(within(menu).queryByText(/theme/i)).not.toBeInTheDocument()
     expect(within(menu).queryByText(/shortcuts/i)).not.toBeInTheDocument()
+  })
+
+  it("shows the email once, on the row, while the menu is open", async () => {
+    await renderShell()
+    const menu = await openAccountMenu()
+    expect(within(menu).queryByText("minh@example.com")).not.toBeInTheDocument()
+    expect(screen.getAllByText("minh@example.com")).toHaveLength(1)
   })
 
   it("styles both items alike, with muted icons and a neutral Sign out", async () => {
@@ -85,10 +91,6 @@ describe("account row", () => {
     expect(settings.className).toBe(signOut.className)
     expect(settings.querySelector("svg")).toHaveClass("text-muted-foreground")
     expect(signOut.querySelector("svg")).toHaveClass("text-muted-foreground")
-    expect(within(menu).getByText("minh@example.com")).toHaveClass(
-      "text-muted-foreground",
-      "text-xs"
-    )
   })
 
   it("opens Settings from the menu", async () => {

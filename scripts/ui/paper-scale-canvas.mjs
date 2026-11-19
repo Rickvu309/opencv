@@ -6,6 +6,7 @@ export async function proveWordCanvas({ page, state, out }) {
   await page.goto(`${state.webOrigin}/paper`)
   await page.getByRole("button", { name: "New", exact: true }).click()
   await page.getByRole("button", { name: "CV", exact: true }).click()
+  await page.getByRole("radio", { name: "Blank", exact: true }).click()
   await page.getByRole("button", { name: "Start blank", exact: true }).click()
   const canvas = page.locator('.writing-page[contenteditable="true"]')
   await canvas.waitFor()

@@ -13,6 +13,7 @@ import {
 import { render } from "@/test/render-with-client.tsx"
 import { closeWritingDb } from "@/features/paper-page/canvas-save.ts"
 import { notifyWritingRefresh } from "@/lib/writing-refresh.ts"
+import { setCoachPanelOpen } from "@/lib/coach-panel-presence.ts"
 import {
   attachWritingProposal,
   clearWritingProposal,
@@ -66,6 +67,7 @@ function readPage(text: string, revision = REVISION, before: unknown[] = []) {
 }
 
 afterEach(async () => {
+  setCoachPanelOpen(false)
   clearWritingProposal()
   localStorage.clear()
   cleanup()
@@ -179,6 +181,28 @@ it("names one Coach change and reviews it in Coach", async () => {
     dock.remove()
     panel.remove()
   }
+})
+
+it("drops Review in Coach while the Coach panel is open and already shows the card", async () => {
+  vi.stubGlobal("fetch", async () =>
+    Response.json({ ok: true, data: readPage("Before line") })
+  )
+  publishWritingProposal("call-1", {
+    docId: DOC,
+    edits: [{ op: "replaceText", before: "Before line", after: "After line" }],
+  })
+  render(<WritingPage docId={DOC} seed={draft("Before line")} />)
+  const proposal = await screen.findByRole("region", { name: "Coach proposal" })
+  expect(
+    within(proposal).getByRole("button", { name: "Review in Coach" })
+  ).toBeInTheDocument()
+  act(() => setCoachPanelOpen(true))
+  expect(proposal).toHaveTextContent("Coach suggested 1 change")
+  expect(within(proposal).queryByRole("button")).toBeNull()
+  act(() => setCoachPanelOpen(false))
+  expect(
+    within(proposal).getByRole("button", { name: "Review in Coach" })
+  ).toBeInTheDocument()
 })
 
 it("says when Coach cannot be opened from the page", async () => {

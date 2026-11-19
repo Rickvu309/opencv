@@ -4,7 +4,15 @@ import { expect, vi } from "vitest"
 
 import { DESKTOP_MEDIA_QUERY } from "@/lib/use-media-query.ts"
 
-export const NAV = ["Inbox", "Coach", "Jobs", "Paper", "Apply", "Pitch"]
+export const NAV = [
+  "Inbox",
+  "Coach",
+  "Jobs",
+  "Paper",
+  "Apply",
+  "Pitch",
+  "Proofs",
+]
 
 export function stubDesktopViewport(isDesktop: boolean) {
   vi.stubGlobal("matchMedia", (query: string) => ({
@@ -40,8 +48,8 @@ export async function expectPitch() {
 
 export async function expectApplyLive() {
   await expectHeading("Apply")
-  expect(screen.getByRole("button", { name: "Board" })).toBeInTheDocument()
-  expect(screen.getByRole("button", { name: "Calendar" })).toBeInTheDocument()
+  expect(screen.getByRole("radio", { name: "Board" })).toBeInTheDocument()
+  expect(screen.getByRole("radio", { name: "Calendar" })).toBeInTheDocument()
   expect(
     await screen.findByRole("heading", { name: "Track your first job" })
   ).toBeInTheDocument()

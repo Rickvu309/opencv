@@ -11,11 +11,6 @@ import {
 } from "lucide-react"
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
 import { toast, toastWithUndo } from "@workspace/ui/components/sonner"
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@workspace/ui/components/tooltip"
 
 import { reportRejected } from "@/lib/command-failure.ts"
 import { Button } from "@workspace/ui/components/button"
@@ -32,18 +27,9 @@ import {
 import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
 
 import { inboxLimitFrom, isCoachLimit } from "./inbox-api.ts"
-import { InboxExampleBanner } from "./inbox-list.tsx"
 import { InboxReaderHeader } from "./inbox-reader-header.tsx"
 import { initialReaderState, readerReducer } from "./inbox-reader.reducer.ts"
-import {
-  ACTION_FAILED,
-  FAINT_TEXT,
-  GmailMark,
-  INBOX_NOTICE,
-  NO_GMAIL_LINK,
-  SOFT_TEXT,
-  UNAVAILABLE_ACTION,
-} from "./inbox-parts.tsx"
+import { ACTION_FAILED, GmailMark, INBOX_NOTICE } from "./inbox-parts.tsx"
 import { chipClock, inboxChip, inboxStamp, inboxWhen } from "./inbox-time.ts"
 
 function resetClock(iso: string | null, zone: string) {
@@ -68,7 +54,6 @@ export function InboxReader({
   onReturnedToInbox,
   onPrevious,
   onNext,
-  exampleNotice,
 }: {
   detail: InboxDetail
   index: number
@@ -80,7 +65,6 @@ export function InboxReader({
   onReturnedToInbox: () => void
   onPrevious: () => void
   onNext: () => void
-  exampleNotice?: string
 }) {
   const draft =
     detail.draft && (detail.draft.body !== "" || detail.draft.times.length > 0)
@@ -148,49 +132,19 @@ export function InboxReader({
         onPrevious={onPrevious}
         onNext={onNext}
       />
-      {exampleNotice ? (
-        <InboxExampleBanner text={exampleNotice} className="mx-5 md:mx-12" />
-      ) : null}
       <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-12 pt-7 pb-6 max-md:px-5">
-        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-          <h2 className="text-xl font-semibold tracking-tight text-foreground">
-            {detail.subject}
-          </h2>
-          {detail.messages.length > 0 ? (
-            <span className={cn("text-[13px]", FAINT_TEXT)}>
-              {`${detail.messages.length} ${detail.messages.length === 1 ? "message" : "messages"}`}
-            </span>
-          ) : null}
-          <span className="flex-1" />
-          <Tooltip>
-            <TooltipTrigger
-              render={
-                <Button
-                  type="button"
-                  variant="ghost"
-                  aria-disabled="true"
-                  data-disabled=""
-                  aria-describedby="inbox-gmail-link"
-                  className={cn(
-                    "h-11 gap-1.5 rounded-[7px] px-2.5 text-[12.5px] active:scale-100 md:h-7",
-                    SOFT_TEXT,
-                    UNAVAILABLE_ACTION,
-                    "aria-disabled:hover:text-muted-foreground"
-                  )}
-                  onClick={(event) => event.preventDefault()}
-                />
-              }
-            >
-              <GmailMark className="h-3.75 w-5" />
-              Open in Gmail
-              <ArrowUpRight className="size-3" />
-            </TooltipTrigger>
-            <TooltipContent>{NO_GMAIL_LINK}</TooltipContent>
-          </Tooltip>
-          <span id="inbox-gmail-link" className="sr-only">
-            {NO_GMAIL_LINK}
-          </span>
-        </div>
+        {detail.openUrl ? (
+          <a
+            href={detail.openUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-11 items-center gap-1.5 self-end rounded-md px-2.5 text-xs text-muted-foreground hover:bg-muted hover:text-foreground md:h-7"
+          >
+            <GmailMark className="h-3.75 w-5" />
+            Open in Gmail
+            <ArrowUpRight aria-hidden className="size-3" />
+          </a>
+        ) : null}
         {prompt ? (
           <div className="flex min-h-11 items-center gap-x-2 gap-y-1 rounded-[10px] border border-border py-1.5 ps-3 pe-1.5 max-md:flex-wrap">
             <CalendarCheck className="size-4 text-foreground" aria-hidden />
@@ -225,10 +179,7 @@ export function InboxReader({
             </Button>
             <Button
               variant="ghost"
-              className={cn(
-                "h-11 rounded-[7px] px-2.5 text-[12.5px] md:h-7",
-                SOFT_TEXT
-              )}
+              className="h-11 rounded-[7px] px-2.5 text-[12.5px] text-muted-foreground md:h-7"
               disabled={busy}
               onClick={() =>
                 run(async () => {
@@ -270,15 +221,10 @@ export function InboxReader({
                       <span className="shrink-0 text-[13px] font-medium text-muted-foreground">
                         {message.fromName}
                       </span>
-                      <span
-                        className={cn(
-                          "min-w-0 flex-1 truncate text-[13px]",
-                          FAINT_TEXT
-                        )}
-                      >
+                      <span className="min-w-0 flex-1 truncate text-[13px] text-muted-foreground">
                         {open ? "" : message.bodyText}
                       </span>
-                      <span className={cn("shrink-0 text-xs", FAINT_TEXT)}>
+                      <span className="shrink-0 text-xs text-muted-foreground">
                         {inboxWhen(message.sentAt, now, zone)}
                       </span>
                     </Button>
@@ -297,24 +243,22 @@ export function InboxReader({
                     <span className="text-[13.5px] font-semibold text-foreground">
                       {current.fromName}
                     </span>
-                    <span className={cn("text-[12.5px]", SOFT_TEXT)}>
+                    <span className="text-[12.5px] text-muted-foreground">
                       {`<${current.fromEmail}>`}
                     </span>
                   </p>
-                  <p
-                    className={cn("flex items-center gap-1 text-xs", SOFT_TEXT)}
-                  >
+                  <p className="flex items-center gap-1 text-xs text-muted-foreground">
                     {current.direction === "in"
                       ? "to me"
                       : `to ${current.toEmail}`}
                     <ChevronDown
-                      className={cn("size-2.5", FAINT_TEXT)}
+                      className="size-2.5 text-muted-foreground"
                       aria-hidden
                     />
                   </p>
                 </div>
                 <span className="flex-1" />
-                <span className={cn("text-xs", SOFT_TEXT)}>
+                <span className="text-xs text-muted-foreground">
                   {inboxStamp(current.sentAt, now, zone)}
                 </span>
               </div>
@@ -336,11 +280,14 @@ export function InboxReader({
             <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-border bg-card shadow-xs">
               {inbound ? (
                 <p className="flex h-9 min-w-0 items-center gap-2 px-4 pt-1 text-[12.5px]">
-                  <Reply className={cn("size-3.25", SOFT_TEXT)} aria-hidden />
+                  <Reply
+                    className="size-3.25 text-muted-foreground"
+                    aria-hidden
+                  />
                   <span className="shrink-0 font-medium whitespace-nowrap text-foreground">
                     {inbound.fromName}
                   </span>
-                  <span className={cn("min-w-0 truncate", SOFT_TEXT)}>
+                  <span className="min-w-0 truncate text-muted-foreground">
                     {`<${inbound.fromEmail}>`}
                   </span>
                 </p>

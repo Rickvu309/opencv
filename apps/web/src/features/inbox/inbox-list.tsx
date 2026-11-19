@@ -1,6 +1,6 @@
 import type { ReactNode } from "react"
 import type { InboxThread } from "@workspace/domain"
-import { Clock3, Ellipsis, Inbox as InboxIcon } from "lucide-react"
+import { Clock3, Ellipsis } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import {
   DropdownMenu,
@@ -25,7 +25,7 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 import { InboxRow, VIEW_EXAMPLE_LABEL } from "./inbox-parts.tsx"
-import { inboxWhen, unreadCount } from "./inbox-time.ts"
+import { inboxWhen } from "./inbox-time.ts"
 
 export function InboxListPane({
   narrow,
@@ -54,43 +54,47 @@ export function InboxListHeader({
   scanLabel = "Scan",
   view,
   onViewChange,
+  hasMail = true,
 }: {
   scanning: boolean
   onScan: () => void
   scanLabel?: string
   view: "inbox" | "snoozed"
   onViewChange: (view: "inbox" | "snoozed") => void
+  hasMail?: boolean
 }) {
   return (
     <WorkspaceHeader>
       <PageHeaderTitle className="max-md:min-w-0">
         {view === "snoozed" ? "Snoozed" : "Inbox"}
       </PageHeaderTitle>
-      <PageHeaderTitleActions>
-        <DropdownMenu>
-          <PageHeaderAction
-            label="More"
-            icon={<Ellipsis />}
-            render={
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    className="h-11 md:h-8"
-                    type="button"
-                    variant="ghost"
-                    data-slot="page-header-action"
-                  />
-                }
-              />
-            }
-          />
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem disabled={scanning} onClick={onScan}>
-              {scanLabel}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </PageHeaderTitleActions>
+      {hasMail ? (
+        <PageHeaderTitleActions>
+          <DropdownMenu>
+            <PageHeaderAction
+              label="More"
+              icon={<Ellipsis />}
+              render={
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      className="h-11 md:h-8"
+                      type="button"
+                      variant="ghost"
+                      data-slot="page-header-action"
+                    />
+                  }
+                />
+              }
+            />
+            <DropdownMenuContent align="start">
+              <DropdownMenuItem disabled={scanning} onClick={onScan}>
+                {scanLabel}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </PageHeaderTitleActions>
+      ) : null}
       <PageHeaderActions>
         <PageHeaderAction
           label={view === "snoozed" ? "Back to inbox" : "Snoozed"}
@@ -165,21 +169,14 @@ export function InboxList({
   )
 }
 
-export function InboxOverview({ threads }: { threads: InboxThread[] }) {
+export function InboxOverview() {
   return (
     <section
       aria-label="Overview"
       data-layout-section="Detail pane"
-      className="flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-5.5 pb-10"
+      className="flex min-h-0 min-w-0 flex-1 items-center justify-center pb-10"
     >
-      <div className="flex flex-col items-center gap-3">
-        <span className="flex size-12 items-center justify-center rounded-[14px] border border-border bg-card text-foreground/80 shadow-xs">
-          <InboxIcon className="size-5.5" aria-hidden />
-        </span>
-        <p className="text-sm font-medium text-muted-foreground tabular-nums">
-          {unreadCount(threads)} unread
-        </p>
-      </div>
+      <p className="text-sm text-muted-foreground">Select an email</p>
     </section>
   )
 }
@@ -206,6 +203,7 @@ export function InboxEmpty({
         scanLabel={example ? VIEW_EXAMPLE_LABEL : "Scan"}
         view={view}
         onViewChange={onViewChange}
+        hasMail={false}
       />
       <section
         aria-label="Messages"
@@ -217,7 +215,7 @@ export function InboxEmpty({
           </EmptyHeader>
           <EmptyContent>
             {note ? (
-              <p className="max-w-sm text-center text-sm leading-normal text-pretty text-foreground">
+              <p className="max-w-sm text-center text-sm leading-normal text-pretty text-muted-foreground">
                 {note}
               </p>
             ) : null}
@@ -248,7 +246,7 @@ export function InboxExampleBanner({
       role="status"
       data-slot="inbox-example-banner"
       className={cn(
-        "mx-3 mt-2 rounded-md border border-border bg-muted/50 px-3 py-2 text-[13px] leading-normal text-pretty text-foreground",
+        "px-5 pt-2 pb-1 text-[13px] leading-normal text-pretty text-muted-foreground",
         className
       )}
     >

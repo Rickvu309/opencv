@@ -533,7 +533,7 @@ function StageMenu({
             disabled={stage === current}
             onClick={() => onChoose(stage)}
           >
-            <StageIcon stage={stage} />
+            <StageIcon stage={stage} decorative />
             {stageLabel(stage)}
             <Kbd className="ml-auto">{index + 1}</Kbd>
           </DropdownMenuItem>
@@ -608,7 +608,7 @@ function HiddenColumns({
           )}
           onClick={() => onShowClosed(!showClosed)}
         >
-          <StageIcon stage="closed" />
+          <StageIcon stage="closed" decorative />
           <span>Closed</span>
           <span className={FAINT_TEXT.card}>{count}</span>
         </Button>

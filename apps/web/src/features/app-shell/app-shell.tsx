@@ -33,6 +33,11 @@ import {
 } from "@/features/coach/coach-panel.tsx"
 import { COACH_PANEL_ROOM_QUERY } from "./coach-panel-placement.ts"
 import { CoachWorkspace } from "@/features/coach/coach-workspace.tsx"
+import { CoachPanelChatReport } from "@/features/coach/coach-panel-chat-report.tsx"
+import {
+  setCoachPanelOpen,
+  useCoachPanelChat,
+} from "@/lib/coach-panel-presence.ts"
 import { registerShellChatOpener } from "@/features/command-palette/shell-chat.ts"
 import { runContractCommand } from "@/lib/contract-client.ts"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
@@ -139,6 +144,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
   const panelDesktop = isDesktop && panelRoom
   const panelSheet = !panelDesktop
   const chats = useShellChats()
+  const panelChatId = useCoachPanelChat()
   const layout = useSidebarLayout(isDesktop)
   const [{ panel, drawerOpen }, dispatch] = useReducer(
     shellReducer,
@@ -149,6 +155,11 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
   })
   const panelOpen = panel.open && !onCoachPage
   const panelShown = (panel.open || panel.closing) && !onCoachPage
+  useEffect(() => {
+    setCoachPanelOpen(panelOpen)
+    return () => setCoachPanelOpen(false)
+  }, [panelOpen])
+  const dockChats = onCoachPage ? [] : (chats.data ?? [])
   const openPanelRef = useRef<
     (next: { title: string; chatId: string | null }) => void
   >(() => {})
@@ -383,11 +394,14 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
           onClose={closePanel}
         >
           {(controls, presentation) => (
-            <CoachWorkspace
-              chatId={panel.chatId}
-              presentation={presentation}
-              headerActions={controls}
-            />
+            <>
+              <CoachPanelChatReport />
+              <CoachWorkspace
+                chatId={panel.chatId}
+                presentation={presentation}
+                headerActions={controls}
+              />
+            </>
           )}
         </CoachPanel>
       ) : null}
@@ -490,9 +504,10 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
           <ShellDock
             dockRef={dockRef}
             onCoachPage={onCoachPage}
-            titles={(chats.data ?? []).map((chat) => ({
+            titles={dockChats.map((chat) => ({
               id: chat.id,
               title: chatDisplayTitle(chat.title),
+              shownInPanel: chat.id === panelChatId,
             }))}
             onOpenChat={(chat) => openPanel(chat)}
             coachOpen={panelOpen}
@@ -521,7 +536,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
             <div className="absolute top-2 -right-11 z-10">
               <Button
                 type="button"
-                variant="secondary"
+                variant="ghost"
                 size="icon-sm"
                 className="size-11"
                 aria-label={shellCopy.closeMenu}
@@ -553,7 +568,7 @@ function ShellDock({
 }: {
   dockRef: { current: HTMLDivElement | null }
   onCoachPage: boolean
-  titles: { id: string; title: string }[]
+  titles: { id: string; title: string; shownInPanel: boolean }[]
   onOpenChat: (chat: { title: string; chatId: string }) => void
   coachOpen: boolean
   onCoach: () => void
@@ -576,6 +591,7 @@ function ShellDock({
             size="sm"
             className="h-11 max-w-36 min-w-11 shrink md:h-7 md:min-w-0 md:shrink-0"
             data-chat-id={chat.id}
+            hidden={chat.shownInPanel}
             title={chat.title}
             onClick={() => onOpenChat({ title: chat.title, chatId: chat.id })}
           >

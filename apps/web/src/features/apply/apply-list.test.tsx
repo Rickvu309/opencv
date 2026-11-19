@@ -194,6 +194,9 @@ describe("apply list", () => {
     })
     const peek = await screen.findByRole("complementary", { name: "Job" })
     await within(peek).findByRole("heading", { name: "Northwind Hanoi role" })
+    expect(
+      peek.querySelectorAll(`a[href="/apply/${matching.id}"]`)
+    ).toHaveLength(1)
     await userEvent.click(
       within(peek).getByRole("button", { name: "Open full page" })
     )

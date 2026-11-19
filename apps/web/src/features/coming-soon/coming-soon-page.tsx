@@ -1,67 +1,38 @@
-import { useReducer, type ReactNode } from "react"
-import { useQueryClient } from "@tanstack/react-query"
+import type { ReactNode } from "react"
 import { Link } from "@tanstack/react-router"
 import { ArrowRight, Bell } from "lucide-react"
 import type { NotifyTopic } from "@workspace/domain"
-import { toast } from "sonner"
 
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
-import { PageHeaderTitle } from "@workspace/ui/components/page-header"
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 
 import "@/features/coming-soon/design/page-header.css"
 import { soonCopy } from "@/features/coming-soon/copy.ts"
-import { requestNotify } from "@/features/coming-soon/notify.ts"
-import {
-  initialNotifyState,
-  notifyReducer,
-} from "@/features/coming-soon/notify.reducer.ts"
+import { useNotify } from "@/features/coming-soon/notify.ts"
 
 type ComingSoonPageProps = {
-  pageTitle: string
+  header: ReactNode
   title: string
   body: string
-  primary: { label: string; topic: NotifyTopic }
+  topic: NotifyTopic
   secondary?: { label: string; to: string }
   preview: ReactNode
 }
 
 export function ComingSoonPage({
-  pageTitle,
+  header,
   title,
   body,
-  primary,
+  topic,
   secondary,
   preview,
 }: ComingSoonPageProps) {
-  const queryClient = useQueryClient()
-  const [{ pending, error }, dispatch] = useReducer(
-    notifyReducer,
-    initialNotifyState
-  )
-
-  async function onNotify() {
-    dispatch({ type: "requested" })
-    try {
-      const result = await requestNotify(queryClient, primary.topic)
-      toast(result.already ? soonCopy.already : soonCopy.onList)
-    } catch (caught) {
-      const message = caught instanceof Error ? caught.message.trim() : ""
-      dispatch({
-        type: "failed",
-        message: message || "Could not save that. Try again.",
-      })
-    } finally {
-      dispatch({ type: "settled" })
-    }
-  }
+  const { pending, error, notify } = useNotify(topic)
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-x-hidden bg-background">
-      <WorkspaceHeader data-surface="coming-soon">
-        <PageHeaderTitle>{pageTitle}</PageHeaderTitle>
-      </WorkspaceHeader>
+      <WorkspaceHeader data-surface="coming-soon">{header}</WorkspaceHeader>
       <div className="flex min-h-0 flex-1 flex-col items-center gap-10 overflow-y-auto pt-18">
         <div className="flex w-[min(560px,calc(100%-3rem))] flex-col items-center gap-4 text-center">
           <Badge
@@ -87,10 +58,10 @@ export function ComingSoonPage({
               className="h-11 gap-2 rounded-[10px] px-[18px] font-semibold md:h-[42px]"
               disabled={pending}
               aria-busy={pending}
-              onClick={() => void onNotify()}
+              onClick={() => void notify()}
             >
               <Bell />
-              {primary.label}
+              {soonCopy.notify}
             </Button>
             {secondary ? (
               <Link
@@ -109,9 +80,7 @@ export function ComingSoonPage({
           ) : null}
         </div>
         <div className="relative min-h-80 w-[min(760px,calc(100%-3rem))] flex-1 overflow-hidden">
-          <div className="min-h-[520px] overflow-hidden rounded-[18px] border border-border bg-card">
-            {preview}
-          </div>
+          {preview}
           <div
             aria-hidden="true"
             className="pointer-events-none absolute inset-x-0 bottom-0 h-[420px] max-h-[80%] bg-gradient-to-t from-background to-transparent"

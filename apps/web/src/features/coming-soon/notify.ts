@@ -14,10 +14,7 @@ function storageKey(topic: NotifyTopic) {
   return `opencv.notify.${topic}`
 }
 
-export async function requestNotify(
-  queryClient: QueryClient,
-  topic: NotifyTopic
-) {
+async function requestNotify(queryClient: QueryClient, topic: NotifyTopic) {
   const row = await runContractCommand(queryClient, "notify.request", {
     topic,
   })

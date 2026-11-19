@@ -95,8 +95,9 @@ describe("coachProgressRows", () => {
 
   it.each([
     ["pending", "approval"],
-    ["denied", "failed"],
-    ["expired", "failed"],
+    ["denied", "declined"],
+    ["expired", "declined"],
+    ["stopped", "declined"],
   ] as const)("reports %s approval as %s", (approval, status) => {
     expect(coachProgressRows(calls, [tool("a", { approval })])[0]?.status).toBe(
       status
