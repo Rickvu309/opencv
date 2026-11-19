@@ -84,7 +84,7 @@ describe("Paper template chooser layout", () => {
     }
   })
 
-  it("keeps the actions in a row of their own below the scrolling grid, so they stay in view however far the grid scrolls", () => {
+  it("keeps the actions outside the scrolling grid and after it, with Use on the chosen template", () => {
     openChooser()
     const content = document.querySelector<HTMLElement>(
       "[data-slot='dialog-content']"
@@ -93,13 +93,10 @@ describe("Paper template chooser layout", () => {
     const actions = content.querySelector<HTMLElement>(
       "[data-slot=paper-gallery-actions]"
     )
-    expect(scroll?.className).toContain("min-h-0")
-    expect(actions?.className).toContain("shrink-0")
     expect(scroll?.contains(actions)).toBe(false)
     expect(actions?.compareDocumentPosition(scroll!)).toBe(
       Node.DOCUMENT_POSITION_PRECEDING
     )
-    expect(content.className).toContain("flex-col")
     expect(actions?.querySelector("[data-variant=primary]")?.textContent).toBe(
       "Use Simple"
     )

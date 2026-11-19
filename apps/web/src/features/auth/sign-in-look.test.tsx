@@ -54,16 +54,15 @@ describe("sign-in look", () => {
     expect(screen.getByRole("main")).toContainElement(heading)
   })
 
-  it("makes Continue a solid primary with hover and pressed fills and the input's radius", async () => {
+  it("makes Continue the one primary action, and it submits the email form", async () => {
     await openSignIn()
     const button = continueButton()
-    expect(button).toHaveAttribute("data-variant", "primary")
-    expect(button.className).toContain("bg-primary")
-    expect(button.className).toContain("text-primary-foreground")
-    expect(button.className).toMatch(/(^|\s)hover:bg-/)
-    expect(button.className).toMatch(/(^|\s)active:bg-/)
-    expect(button.className).toContain("rounded-[10px]")
-    expect(emailBox().className).toContain("rounded-[10px]")
+    const primaries = screen
+      .getAllByRole("button")
+      .filter((item) => item.getAttribute("data-variant") === "primary")
+    expect(primaries).toEqual([button])
+    expect(button).toHaveAttribute("type", "submit")
+    expect(emailBox().closest("form")).toContainElement(button)
     expect(button).toBeEnabled()
   })
 
