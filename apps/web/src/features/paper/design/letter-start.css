@@ -1,24 +1,22 @@
-[data-pen-surface="paper"][data-slot="letter-start-page"] {
+[data-surface="paper"][data-slot="letter-start-page"] {
   color: var(--foreground);
 }
-[data-pen-surface="paper"] [data-slot="letter-start-header"] {
+[data-surface="paper"] [data-slot="letter-start-header"] {
   background: var(--background);
   border-color: var(--border);
   color: var(--muted-foreground);
 }
-[data-pen-surface="paper"]
-  [data-slot="letter-start-header"]
-  [aria-current="page"] {
+[data-surface="paper"] [data-slot="letter-start-header"] [aria-current="page"] {
   color: var(--foreground);
 }
-[data-pen-surface="paper"] [data-slot="letter-start-desk"] {
+[data-surface="paper"] [data-slot="letter-start-desk"] {
   background: color-mix(in oklab, var(--secondary) 50%, var(--background));
 }
-[data-pen-surface="paper"] [data-slot="letter-start-job"] {
+[data-surface="paper"] [data-slot="letter-start-job"] {
   height: auto;
   padding-block: 0.5rem;
 }
-[data-pen-surface="paper"] [data-slot="letter-start-job-labels"] {
+[data-surface="paper"] [data-slot="letter-start-job-labels"] {
   display: flex;
   flex-wrap: wrap;
   column-gap: 0.5rem;
@@ -27,6 +25,6 @@
   text-align: start;
   white-space: normal;
 }
-[data-pen-surface="paper"] [data-slot="letter-start-return"] {
+[data-surface="paper"] [data-slot="letter-start-return"] {
   background: color-mix(in oklab, currentColor 12%, transparent);
 }

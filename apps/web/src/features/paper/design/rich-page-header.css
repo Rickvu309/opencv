@@ -1,4 +1,4 @@
-[data-pen-surface="paper"].rich-paper-page > [data-slot="page-header"] {
+[data-surface="paper"].rich-paper-page > [data-slot="page-header"] {
   height: auto;
   min-height: 52px;
   padding-block: 0.5rem;
@@ -6,14 +6,14 @@
 }
 
 @media (width < 48rem) {
-  [data-pen-surface="paper"].rich-paper-page
+  [data-surface="paper"].rich-paper-page
     > [data-slot="page-header"]
     > :first-child {
     flex-basis: calc(3.25rem + 4ch);
     min-width: calc(3.25rem + 4ch);
   }
 
-  [data-pen-surface="paper"].rich-paper-page
+  [data-surface="paper"].rich-paper-page
     > [data-slot="page-header"]
     [data-slot="page-header-title"] {
     min-width: 4ch;

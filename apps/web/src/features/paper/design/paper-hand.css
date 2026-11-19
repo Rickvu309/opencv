@@ -491,7 +491,7 @@
 }
 
 @media (min-width: 768px) {
-  .paper-library[data-pen-surface="paper"] {
+  .paper-library[data-surface="paper"] {
     padding-block-end: 0;
   }
 }
