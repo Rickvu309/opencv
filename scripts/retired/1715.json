@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-template-gallery.test.tsx",
+    "because": "The CV picker opens on the first template with Blank still the first card, issue 1715",
+    "replacedBy": "apps/web/src/features/paper/paper-template-gallery.test.tsx",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "63eb017139866891ace7f7ac9108f2dd046ea708",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
   }
 ]
