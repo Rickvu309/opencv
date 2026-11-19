@@ -48,9 +48,10 @@ describe("settings phone layout", () => {
     expect(screen.queryByText(/paper_read/)).toBeNull()
     const card = screen.getByText("Claude Code").closest("li")
     if (!card) throw new Error("Claude setup card is missing")
-    const signIn = within(card).getByRole("button", {
-      name: "Copy Claude login command",
-    }).parentElement
+    const signIn = within(card)
+      .getByRole("button", { name: "Copy Claude login command" })
+      .closest("[data-slot=code-block]")
+    expect(signIn).toHaveTextContent("claude mcp login opencv")
     expect(signIn?.parentElement).toHaveTextContent(
       "You can also sign in from Claude Code with /mcp."
     )

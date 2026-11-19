@@ -10,6 +10,7 @@ import { flushSync } from "react-dom"
 import { File } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
+import { motionToken } from "@workspace/ui/lib/motion"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { PaperSheet } from "./paper-library-card.tsx"
@@ -48,8 +49,6 @@ import { PaperStarts } from "./paper-hand-starts.tsx"
 import { PaperStartHand } from "./paper-start-hand.tsx"
 import "./design/paper-hand.css"
 
-const DEAL_MS = 480
-const WHEEL_SNAP_MS = 140
 const DRAG_START_PX = 4
 
 type Phase = "enter" | "settle" | "still"
@@ -296,7 +295,10 @@ export function PaperHand({
 
   useEffect(() => {
     if (hand.phase !== "settle") return
-    const timer = window.setTimeout(() => dispatch({ type: "still" }), DEAL_MS)
+    const timer = window.setTimeout(
+      () => dispatch({ type: "still" }),
+      motionToken("panel").duration
+    )
     return () => window.clearTimeout(timer)
   }, [hand.phase, listKey])
 
@@ -320,7 +322,7 @@ export function PaperHand({
         const snapped = handCentre(posRef.current, count)
         posRef.current = snapped
         dispatch({ type: "wheel_end", pos: snapped })
-      }, WHEEL_SNAP_MS)
+      }, motionToken("micro").duration)
     }
     node.addEventListener("wheel", onWheel, { passive: false })
     return () => {
