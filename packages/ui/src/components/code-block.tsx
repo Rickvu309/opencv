@@ -109,7 +109,7 @@ function CodeBlockCopyButton({
         variant={variant}
         size={size}
         aria-label={copied ? "Copied" : "Copy"}
-        className={cn(className)}
+        className={cn("relative after:absolute after:-inset-2.5", className)}
         onClick={(event) => {
           onClick?.(event)
           void copyText(value).then((ok) => {

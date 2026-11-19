@@ -134,7 +134,7 @@ it("copies a ready command for each agent", async () => {
       "claude mcp add --transport http opencv http://localhost:4107/mcp"
     )
   )
-  expect(claude).toHaveAttribute("data-state", "copied")
+  expect(await screen.findByText("Copied")).toBeInTheDocument()
   fireEvent.click(
     screen.getByRole("button", { name: "Copy Claude login command" })
   )

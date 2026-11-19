@@ -1,0 +1,14 @@
+{
+  "id": "motion-ms-constants",
+  "file": "scripts/motion-tokens.test.mjs",
+  "detector": {
+    "module": "scripts/lib/motion-tokens.mjs",
+    "export": "motionTokenProblems"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "30fb5dc8a",
+    "path": "apps/web/src/features/paper/paper-hand.tsx"
+  },
+  "reason": "Commit 30fb5dc8a (PR 1690) timed the Paper hand deal and wheel snap with DEAL_MS = 480 and WHEEL_SNAP_MS = 140, numbers outside the panel and micro motion tokens. The hand now reads motionToken for both."
+}

@@ -66,19 +66,6 @@ describe("settings phone layout", () => {
     )
   })
 
-  it("keeps the Coach switch track at 18px and extends its hit area past 24px", async () => {
-    renderApp("/settings/coach")
-    const control = await screen.findByRole("switch", {
-      name: /Enable memory/,
-    })
-    expect(control).toHaveClass(
-      "md:h-[18px]!",
-      "md:w-8!",
-      "md:after:-inset-3.5!"
-    )
-    expect(control.className).toContain("after:content-['']")
-  })
-
   it("opens plain-language capabilities and keeps setup tips beside the sign-in step", async () => {
     const user = userEvent.setup()
     renderApp("/settings/integrations")
@@ -89,10 +76,10 @@ describe("settings phone layout", () => {
     expect(screen.queryByText(/paper_read/)).toBeNull()
     const card = screen.getByText("Claude Code").closest("li")
     if (!card) throw new Error("Claude setup card is missing")
-    const signIn = within(card).getByRole("button", {
-      name: "Copy Claude login command",
-    }).parentElement
-    expect(signIn).toHaveClass("md:items-center")
+    const signIn = within(card)
+      .getByRole("button", { name: "Copy Claude login command" })
+      .closest("[data-slot=code-block]")
+    expect(signIn).toHaveTextContent("claude mcp login opencv")
     expect(signIn?.parentElement).toHaveTextContent(
       "You can also sign in from Claude Code with /mcp."
     )

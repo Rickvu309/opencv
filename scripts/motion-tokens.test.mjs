@@ -125,6 +125,11 @@ const MISTAKES = [
     'export const go = (el: Element) => el.animate([{ opacity: 0 }], { duration: 200, easing: "ease-out" })',
     "packages/ui/src/lib/motion.ts",
   ],
+  ["const DEAL_MS = 480", "apps/web/src/features/paper/paper-hand.tsx"],
+  [
+    "export const WHEEL_SNAP_MS = 140",
+    "apps/web/src/features/paper/paper-hand.tsx",
+  ],
 ]
 
 test("each hand-written timing, curve, transition-all, library keyframe and layout transition fires once", () => {
@@ -200,6 +205,16 @@ test("tokens, motion utilities, loops, instant changes and the reduced-motion ru
       "apps/web/src/styles/paper.css",
     ],
     [".x:hover { color: red; }", "apps/web/src/styles/paper.css"],
+    [
+      'const DEAL_MS = motionToken("panel").duration',
+      "apps/web/src/features/paper/paper-hand.tsx",
+    ],
+    [
+      "const PRINT_WAIT_MS = 2000",
+      "apps/web/src/features/paper/paper-print.ts",
+    ],
+    ["const DAY_MS = 86400000", "apps/web/src/features/coach/chat-time.ts"],
+    ["const SNAPSHOT_MS = 0", "apps/web/src/features/paper/paper-hand.tsx"],
   ]
   for (const [source, file] of clean)
     assert.deepEqual(
