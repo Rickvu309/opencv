@@ -5,12 +5,8 @@ import {
   higSizes,
   ringFindings,
 } from "../../../packages/ui/src/lib/hig-rules.ts"
-import {
-  parseSize,
-  sizeLabel,
-} from "../../../packages/ui/src/lib/viewport-grid.ts"
+import { sizeLabel } from "../../../packages/ui/src/lib/viewport-grid.ts"
 
-export const HIG_CALLOUTS = 10
 const SAMPLE_RULES = ["hig-contrast", "hig-text-size", "hig-reduced-motion"]
 
 const count = (findings) =>
@@ -76,49 +72,9 @@ export async function higRingCase(session, screen, size, base) {
   )
 }
 
-const inside = (rect, viewport) =>
-  rect &&
-  rect.x + rect.width > 0 &&
-  rect.y + rect.height > 0 &&
-  rect.x < viewport.width &&
-  rect.y < viewport.height
-
-export function higSpec(item) {
-  const viewport = parseSize(item.size)
-  const source = item.source
-  const placed = item.findings.filter((finding) =>
-    inside(finding.rect, viewport)
-  )
-  const shown = placed.slice(0, HIG_CALLOUTS)
-  const rest = item.findings.filter((finding) => !shown.includes(finding))
-  return {
-    sections: [
-      {
-        title: `${item.screen} at ${item.size}: ${item.rule}, ${source.page} (${source.url})`,
-        image: item.shot,
-        callouts: shown.map((finding, at) => ({
-          n: at + 1,
-          note: `${finding.name}: ${finding.measured}`,
-          target: finding.rect,
-        })),
-        ...(rest.length
-          ? {
-              also: rest.map(
-                (finding) => `${finding.name}: ${finding.measured}`
-              ),
-            }
-          : {}),
-      },
-    ],
-  }
-}
-
-export function higLine(item, specPath) {
-  return `HIG ${item.screen} at ${item.size}: ${item.rule} (${item.source.page}: ${item.source.url}): ${item.problem}${item.shot ? `, screenshot ${item.shot}` : ""}${specPath ? `, annotate: node scripts/ui.mjs annotate --spec ${specPath} --out ${specPath.replace(/\.spec\.json$/, ".png")}` : ""}, repro: ${item.repro}`
+export function higLine(item) {
+  return `HIG ${item.screen} at ${item.size}: ${item.rule} (${item.source.page}: ${item.source.url}): ${item.problem}${item.shot ? `, screenshot ${item.shot}` : ""}, repro: ${item.repro}`
 }
 
 export const higFound = (cases) =>
   cases.filter((item) => item.advisory && item.findings?.length)
-
-export const hasShot = (item) =>
-  typeof item.shot === "string" && item.shot.endsWith(".png")

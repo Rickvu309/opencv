@@ -267,10 +267,6 @@ What shows that a change works: the output of the checks that ran on its head, a
 _Not_: a builder's own account of what it did.
 _Avoid_: proof, self-review, claims
 
-**Before / after**:
-The pictures of each changed screen on main and on the change, taken from the same recipes, with every visible difference marked.
-_Avoid_: screenshots, compare, diff images
-
 **Merge Danger**:
 The part of a pull request that says what merging risks in production: each migration and whether it only adds, each limit touched, each retirement, and the change class.
 _Avoid_: risk section, deploy notes

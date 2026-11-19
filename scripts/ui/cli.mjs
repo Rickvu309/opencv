@@ -1,39 +1,12 @@
 import { SWEEP_COMMAND } from "./sweep/command.mjs"
 import { join, resolve } from "node:path"
 import { UsageError, parseArgs, positiveIntegers } from "./args.mjs"
-import {
-  compareDir,
-  manifestProblems,
-  pruneBases,
-  runCompare,
-} from "./before-after.mjs"
 import { measure, openScreen, slotSelectors } from "./capture.mjs"
-import { baseChecker, checkScreen } from "./check-screen.mjs"
-import { baseCheckFor, staleBaseLine } from "./known-drift.mjs"
-import { mergeBaseWithMain, readManifest } from "./manifest-file.mjs"
-import {
-  screensToCheck,
-  summarize,
-  allScreenLines,
-  totalLine,
-} from "./check-all.mjs"
-import { DESIGN_MAP, rowsForScreen } from "./design-map.mjs"
-import { unmappedMessage } from "./shot-only.mjs"
-import { REVIEW_COMMANDS } from "./cli-review.mjs"
-import { checkShotFile, writeFailureImages } from "./check-annotate.mjs"
-import {
-  findFrames,
-  framePath,
-  frameGeometry,
-  indexPen,
-  penPath,
-} from "./pen.mjs"
 import { SCREENS, pickScreens, shotName } from "./screens.mjs"
 import { down, liveState, up } from "./stack.mjs"
 
 export const EXIT = Object.freeze({ ok: 0, failed: 1, usage: 2 })
 export const json = (value) => JSON.stringify(value)
-const FRAME_MATCH_LIMIT = 5
 
 export async function withBrowser(ctx, work) {
   const browser = await ctx.browser.launch()
@@ -64,28 +37,6 @@ function requireScreens(ids) {
       `unknown screen ${missing.join(", ")}; see node scripts/ui.mjs screens`
     )
   return found
-}
-
-function loadPen(ctx, flag) {
-  const found = penPath({
-    flag,
-    env: ctx.env,
-    fallback: ctx.defaultPen,
-    exists: ctx.fs.exists,
-  })
-  if (!found.path)
-    throw new UsageError(
-      `no pen file at ${found.missing.join(" or ")}. Fetch it with: ${found.fetch}`
-    )
-  return indexPen(JSON.parse(ctx.fs.read(found.path)))
-}
-
-function penOrNull(ctx, flag) {
-  try {
-    return loadPen(ctx, flag)
-  } catch {
-    return null
-  }
 }
 
 const unreachableLine = (screen) =>
@@ -134,16 +85,10 @@ export const COMMANDS = {
       }
     },
   },
-  "prune-bases": {
-    usage: "prune-bases",
-    about:
-      "Delete base copies left by compare runs whose process has ended. Copies of a running compare stay.",
-    run: async (ctx) => ({ code: EXIT.ok, lines: [json(pruneBases(ctx))] }),
-  },
   screens: {
     usage: "screens",
     about:
-      "List the named screens, their route, whether they can be reached, and designRows: how many design-map rows check compares (0 means check cannot judge the screen).",
+      "List the named screens, their route and whether they can be reached.",
     run: async () => ({
       code: EXIT.ok,
       lines: SCREENS.map((screen) =>
@@ -153,7 +98,6 @@ export const COMMANDS = {
           ...(screen.unreachable
             ? { unreachable: screen.unreachable }
             : { steps: screen.steps.length }),
-          designRows: rowsForScreen(DESIGN_MAP, screen.id).length,
         })
       ),
     }),
@@ -226,178 +170,12 @@ export const COMMANDS = {
       }
     },
   },
-  frame: {
-    usage: "frame <id-or-name> [--pen file]",
-    about:
-      "Print a pen frame's geometry and its children. Never prints the whole file.",
-    options: { valued: ["pen"] },
-    run: async (ctx, { positional, flags }) => {
-      const [query] = positional
-      if (!query) throw new UsageError("name a frame id or name")
-      const index = loadPen(ctx, flags.pen)
-      const ids = findFrames(index, query)
-      if (ids.length === 0)
-        return { code: EXIT.failed, lines: [json({ frame: query, found: 0 })] }
-      return {
-        code: EXIT.ok,
-        lines: [
-          ...ids.slice(0, FRAME_MATCH_LIMIT).map((id) =>
-            json({
-              path: framePath(index, id),
-              ...frameGeometry(index, id),
-            })
-          ),
-          ...(ids.length > FRAME_MATCH_LIMIT
-            ? [
-                json({
-                  frame: query,
-                  found: ids.length,
-                  shown: FRAME_MATCH_LIMIT,
-                }),
-              ]
-            : []),
-        ],
-      }
-    },
-  },
-  check: {
-    usage:
-      "check <screen...> | --all [--json] [--tolerance 1] [--pen file] [--known manifest] [--annotate dir]",
-    about:
-      "Compare rendered elements with their composed-screen pen frames, and same-box rows with another screen, through scripts/ui/design-map.mjs. --all checks every reachable mapped screen and prints one line per screen and a total; --json prints one JSON result. --known reads the base results compare stored in its manifest and marks each failure new since main or already failing on main. --annotate <dir> also writes <screen>-check.png: the screen at 1440 with a red numbered arrow at each failing element and a legend line expected, measured and the pen frame it comes from. Exit 1 on any mismatch.",
-    options: {
-      valued: ["tolerance", "pen", "known", "annotate"],
-      switches: ["all", "json"],
-    },
-    run: async (ctx, { positional, flags }) => {
-      const started = ctx.clock.now()
-      const mapped = screensToCheck(DESIGN_MAP, SCREENS)
-      const screens = flags.all
-        ? [...mapped.reachable, ...mapped.unreachable]
-        : requireScreens(positional)
-      const tolerance = Number(flags.tolerance ?? "1")
-      if (!Number.isFinite(tolerance) || tolerance < 0)
-        throw new UsageError("--tolerance takes a number of pixels")
-      const plans = screens.map((screen) => ({
-        screen,
-        rows: rowsForScreen(DESIGN_MAP, screen.id),
-      }))
-      const unmapped = plans
-        .filter((plan) => plan.rows.length === 0)
-        .map((plan) => plan.screen.id)
-      if (unmapped.length) throw new UsageError(unmappedMessage(unmapped))
-      const index = loadPen(ctx, flags.pen)
-      const known = flags.known ? readManifest(ctx, flags.known).manifest : null
-      const baseNotice = known
-        ? staleBaseLine(known, mergeBaseWithMain(ctx))
-        : null
-      const notices = baseNotice ? [baseNotice] : []
-      const state = await requireStack(ctx)
-      const detail = [...notices]
-      const annotateDir = flags.annotate ? resolve(flags.annotate) : null
-      if (annotateDir) ctx.fs.mkdir(annotateDir)
-      const outcomes = []
-      await withBrowser(ctx, async (browser) => {
-        for (const { screen, rows } of plans) {
-          if (screen.unreachable) {
-            detail.push(unreachableLine(screen))
-            outcomes.push({
-              result: { screen: screen.id, error: "unreachable" },
-            })
-            continue
-          }
-          try {
-            const outcome = await checkScreen({
-              browser,
-              state,
-              index,
-              screen,
-              rows,
-              tolerance,
-              onMain: known ? baseCheckFor(known, screen.id) : undefined,
-              shot: annotateDir ? checkShotFile(annotateDir, screen.id) : null,
-            })
-            detail.push(...outcome.lines)
-            outcomes.push({ ...outcome, rows })
-          } catch (error) {
-            const message = error.message.split("\n")[0]
-            detail.push(json({ screen: screen.id, error: message }))
-            outcomes.push({ result: { screen: screen.id, error: message } })
-          }
-        }
-      })
-      if (annotateDir)
-        for (const image of await writeFailureImages(
-          ctx,
-          annotateDir,
-          outcomes
-        ))
-          detail.push(json(image))
-      const results = outcomes.map((outcome) => outcome.result)
-      const total = summarize(
-        results,
-        Math.round((ctx.clock.now() - started) / 1000)
-      )
-      const code = total.ok ? EXIT.ok : EXIT.failed
-      if (flags.json)
-        return {
-          code,
-          lines: [
-            json({ ...total, results, ...(baseNotice ? { baseNotice } : {}) }),
-          ],
-        }
-      if (!flags.all) return { code, lines: detail }
-      return {
-        code,
-        lines: [...notices, ...allScreenLines(outcomes), totalLine(total)],
-      }
-    },
-  },
-  compare: {
-    usage:
-      "compare <screen...> [--base main] [--width 1440,390] [--out dir] [--selector css...] [--pen file]",
-    about:
-      "Capture each screen from a throwaway checkout of the base and from this worktree, same viewport and steps. Writes <screen>-<width>.before.png, .after.png and manifest.json with every data-slot box and style, and the check result of every mapped screen on the base for check --known.",
-    options: {
-      valued: ["base", "out", "pen"],
-      repeated: ["width", "selector"],
-    },
-    run: async (ctx, { positional, flags }) => {
-      const screens = requireScreens(positional)
-      const widths = positiveIntegers(flags.width ?? ["1440"], "--width")
-      const out = resolve(flags.out ?? compareDir(ctx.scratchRoot, ctx.repo))
-      const { manifest, file } = await runCompare(ctx, {
-        screens,
-        widths,
-        base: flags.base ?? "origin/main",
-        out,
-        selectors: flags.selector ?? [],
-        checkBase: baseChecker(penOrNull(ctx, flags.pen)),
-      })
-      const problems = manifestProblems(manifest)
-      return {
-        code: problems.length ? EXIT.failed : EXIT.ok,
-        lines: [
-          ...manifest.captures.map((capture) =>
-            json({
-              screen: capture.screen,
-              width: capture.width,
-              before: capture.before.file ?? capture.before.error,
-              after: capture.after.file ?? capture.after.error,
-            })
-          ),
-          json({ manifest: file, base: manifest.baseSha, problems }),
-        ],
-      }
-    },
-  },
-  ...REVIEW_COMMANDS,
   sweep: SWEEP_COMMAND,
 }
 
 export function renderHelp() {
   return [
-    "ui: see any app screen in a known state and check it against the pen design.",
+    "ui: see any app screen in a known state, measure it and sweep it for fit and guideline problems.",
     "",
     "Usage: node scripts/ui.mjs <command>",
     "",

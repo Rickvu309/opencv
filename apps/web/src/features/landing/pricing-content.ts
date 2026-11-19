@@ -1,11 +1,4 @@
-export const pricingSnapshot = {
-  source: {
-    file: "design/opencv.pen",
-    branch: "chore/350-design-kit-cli-skills",
-    frameId: "q720Ng",
-    frameName: "Pricing (Linear layout)",
-    width: 1440,
-  },
+export const pricingContent = {
   sections: [
     { id: "Jqxuh", name: "Nav", padTop: 0 },
     { id: "ZuXF5", name: "Header", padTop: 96 },

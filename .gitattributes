@@ -1,5 +1,5 @@
 # Machine-written files. The pre-commit size limit skips them (see .githooks/pre-commit).
 pnpm-lock.yaml linguist-generated
 apps/api/drizzle/** linguist-generated
-apps/web/src/features/landing/design/landing.styles.json linguist-generated
+scripts/retired/*.json linguist-generated
 packages/stageshow/src/kit/** linguist-generated

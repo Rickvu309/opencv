@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event"
 import { setMockSession } from "@/test/auth-client-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
-import snapshot from "./design/stories.snapshot.json"
+import snapshot from "./landing-stories-content.json"
 
 afterEach(() => {
   cleanup()
@@ -23,7 +23,7 @@ async function renderStories() {
 }
 
 describe("stories page", () => {
-  it("renders the page heading and description from the snapshot", async () => {
+  it("renders the page heading and description from the stories content", async () => {
     const { router, heading } = await renderStories()
 
     expect(heading).toBeInTheDocument()

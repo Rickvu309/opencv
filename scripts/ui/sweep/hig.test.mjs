@@ -1,8 +1,7 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 
-import { validateSpec } from "../annotate.mjs"
-import { HIG_CALLOUTS, hasShot, higFound, higLine, higSpec } from "./hig.mjs"
+import { higFound, higLine } from "./hig.mjs"
 
 const finding = (at, rect = { x: 10, y: 20 + at, width: 40, height: 16 }) => ({
   rule: "hig-contrast",
@@ -28,34 +27,11 @@ const item = (findings) => ({
   repro: "node scripts/ui.mjs sweep screen settings --size 390x844",
 })
 
-test("a finding spec is a valid single-image annotate spec with numbered arrows, the rest as text", () => {
-  const findings = [
-    ...Array.from({ length: 12 }, (_, at) => finding(at)),
-    finding(99, { x: 10, y: 2000, width: 40, height: 16 }),
-    finding(100, null),
-  ]
-  const spec = higSpec(item(findings))
-  assert.deepEqual(validateSpec(spec), [])
-  const [section] = spec.sections
-  assert.equal(section.image, "/shots/settings-390x844-hig.png")
-  assert.equal(section.callouts.length, HIG_CALLOUTS)
-  assert.deepEqual(
-    section.callouts.map((callout) => callout.n),
-    Array.from({ length: HIG_CALLOUTS }, (_, at) => at + 1)
-  )
-  assert.equal(section.also.length, 4)
-  assert.match(section.also.at(-1), /^"Item 100": /)
-  assert.match(section.title, /Accessibility \(https:\/\/developer\.apple\.com/)
-})
-
-test("a guideline line names the screen, size, rule, source, measure, screenshot, annotate command and repro", () => {
-  const line = higLine(
-    item([finding(0)]),
-    "/state/sweep/hig/settings-390x844-hig-contrast.spec.json"
-  )
+test("a guideline line names the screen, size, rule, source, measure, screenshot and repro", () => {
+  const line = higLine(item([finding(0)]))
   assert.equal(
     line,
-    "HIG settings at 390x844: hig-contrast (Accessibility: https://developer.apple.com/design/human-interface-guidelines/accessibility): 1 findings, screenshot /shots/settings-390x844-hig.png, annotate: node scripts/ui.mjs annotate --spec /state/sweep/hig/settings-390x844-hig-contrast.spec.json --out /state/sweep/hig/settings-390x844-hig-contrast.png, repro: node scripts/ui.mjs sweep screen settings --size 390x844"
+    "HIG settings at 390x844: hig-contrast (Accessibility: https://developer.apple.com/design/human-interface-guidelines/accessibility): 1 findings, screenshot /shots/settings-390x844-hig.png, repro: node scripts/ui.mjs sweep screen settings --size 390x844"
   )
 })
 
@@ -70,14 +46,9 @@ test("only guideline cases with findings are listed", () => {
   )
 })
 
-test("a case whose screenshot failed gets no annotate spec", () => {
-  assert.equal(hasShot(item([finding(0)])), true)
-  assert.equal(
-    hasShot({ ...item([finding(0)]), shot: "no screenshot (page closed)" }),
-    false
-  )
+test("a case without a screenshot names none", () => {
   assert.doesNotMatch(
-    higLine({ ...item([finding(0)]), shot: undefined }, null),
-    /annotate|screenshot/
+    higLine({ ...item([finding(0)]), shot: undefined }),
+    /screenshot/
   )
 })

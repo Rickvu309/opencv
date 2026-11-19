@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 
 import { SHELL_PRIMARY, SHELL_WORK } from "@/features/app-shell/sidebar-nav.ts"
 import { PALETTE_PAGES } from "@/features/command-palette/palette-search.ts"
-import sidebarSnapshot from "@/features/app-shell/design/app-sidebar.snapshot.json"
 import { createAppRouter } from "@/router.tsx"
 import {
   setMockSession,
@@ -124,22 +123,7 @@ describe.each(SURFACES.map((surface) => [surface.id, surface] as const))(
 )
 
 describe("surface list contract", () => {
-  it("orders the sidebar rows as the pen sidebar frame does", () => {
-    const penRows = sidebarSnapshot.sections
-      .map((section) => section.name)
-      .filter((name) => name.startsWith("Nav "))
-      .map((name) => name.slice("Nav ".length))
-    const shownPenRows = penRows.filter((label) =>
-      SURFACES.some((surface) => surface.label === label)
-    )
-    expect(navItems.map((item) => item.label)).toEqual(
-      shownPenRows.filter((label) =>
-        SURFACES.some(
-          (surface) =>
-            surface.label === label && surface.shown && surface.nav !== null
-        )
-      )
-    )
+  it("orders the sidebar rows inbox, coach, jobs, then paper, apply", () => {
     expect(SHELL_PRIMARY.map((item) => item.id)).toEqual([
       "inbox",
       "coach",

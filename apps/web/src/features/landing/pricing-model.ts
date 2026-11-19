@@ -1,4 +1,4 @@
-import { pricingSnapshot } from "./design/pricing.snapshot.ts"
+import { pricingContent } from "./pricing-content.ts"
 
 export const COMPARE_LABEL = {
   check: "Included",
@@ -30,7 +30,7 @@ export type PricingPlan = {
   features: readonly string[]
 }
 
-type PricingModel = Omit<typeof pricingSnapshot, "plans" | "compare"> & {
+type PricingModel = Omit<typeof pricingContent, "plans" | "compare"> & {
   plans: { free: PricingPlan; pro: PricingPlan }
   compare: {
     title: string
@@ -47,10 +47,10 @@ function withoutPurchase(plan: PricingPlan): PricingPlan {
 }
 
 export const pricingModel: PricingModel = {
-  ...pricingSnapshot,
+  ...pricingContent,
   plans: {
-    free: pricingSnapshot.plans.free,
-    pro: withoutPurchase(pricingSnapshot.plans.pro),
+    free: pricingContent.plans.free,
+    pro: withoutPurchase(pricingContent.plans.pro),
   },
 }
 

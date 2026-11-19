@@ -168,10 +168,8 @@ test("B1 invariant: every test file this repository's index lists is read whole,
   )
   assert.ok(
     select([
-      "apps/web/src/features/app-shell/design/dock.styles.json",
-    ]).includes(
-      "apps/web/src/features/app-shell/app-shell-dock-parity.test.tsx"
-    ),
+      "apps/web/src/features/landing/landing-stories-content.json",
+    ]).includes("apps/web/src/features/landing/landing-stories.test.tsx"),
     "N1: the test that imports a JSON fixture is selected"
   )
 })

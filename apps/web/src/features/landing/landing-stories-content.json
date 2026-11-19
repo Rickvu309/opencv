@@ -1,10 +1,4 @@
 {
-  "source": {
-    "file": "design/opencv.pen",
-    "branch": "chore/350-design-kit-cli-skills",
-    "frameId": "qIdzL",
-    "frameName": "Stories (Linear layout)"
-  },
   "title": "Stories",
   "description": "How people use opencv to land the job they wanted.",
   "featured": {
@@ -19,9 +13,18 @@
       "alt": "Portrait of Nguyễn Thảo Vy, Brand Marketing Associate."
     },
     "stats": [
-      { "value": "5", "label": "applications" },
-      { "value": "3", "label": "interviews" },
-      { "value": "2 weeks", "label": "to an offer" }
+      {
+        "value": "5",
+        "label": "applications"
+      },
+      {
+        "value": "3",
+        "label": "interviews"
+      },
+      {
+        "value": "2 weeks",
+        "label": "to an offer"
+      }
     ],
     "readLabel": "Read her story"
   },

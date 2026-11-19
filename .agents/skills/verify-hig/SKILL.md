@@ -19,17 +19,16 @@ The guidelines change too. To reread a page, fetch its Markdown copy with TinyFi
 
 Run in your worktree, in order. One `up` per machine where you can; `down` when done.
 
-| Step | Command                                                                                                     | Takes                | Expect                                                                                                                           |
-| ---- | ----------------------------------------------------------------------------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| 1    | `node scripts/ui.mjs up`                                                                                    | 1 to 2 min           | one JSON line with `web`, `api`, `email`                                                                                         |
-| 2    | `node scripts/ui.mjs sweep screen <id...>`                                                                  | 7 to 11 s per screen | per screen a summary ending `, N HIG findings` when any, then `FAIL` lines and `HIG` lines, then a JSON total with `higFindings` |
-| 3    | `node scripts/ui.mjs annotate --spec <spec> --out <png>` for each `HIG` line (the line prints this command) | about 1 s            | `{"out":...}`: the screenshot with red numbered arrows and one legend line per finding                                           |
-| 4    | open each PNG from step 3 and the sweep shots, then walk the checklist below                                |                      | your own findings, annotated as in `.agents/skills/verify-ui/SKILL.md` (single image)                                            |
-| 5    | `node scripts/ui.mjs down`                                                                                  | a few s              | the app and its throwaway database are gone                                                                                      |
+| Step | Command                                             | Takes                | Expect                                                                                                                           |
+| ---- | --------------------------------------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | `node scripts/ui.mjs up`                            | 1 to 2 min           | one JSON line with `web`, `api`, `email`                                                                                         |
+| 2    | `node scripts/ui.mjs sweep screen <id...>`          | 7 to 11 s per screen | per screen a summary ending `, N HIG findings` when any, then `FAIL` lines and `HIG` lines, then a JSON total with `higFindings` |
+| 3    | open the sweep shots, then walk the checklist below |                      | your own findings, each with its screenshot                                                                                      |
+| 4    | `node scripts/ui.mjs down`                          | a few s              | the app and its throwaway database are gone                                                                                      |
 
 Pick the screens from `node scripts/ui.mjs screens`: every screen and state your change reaches. `--size 390x844` checks one size. `sweep all` checks every recipe and route.
 
-A `HIG` line reads: screen, size, rule, source page and URL, the count and the first finding with what was measured, the screenshot, the annotate command and the repro. The full list is in `sweep/report.json` under the case's `findings`, and each case has `checked` (how many things it measured).
+A `HIG` line reads: screen, size, rule, source page and URL, the count and the first finding with what was measured, the screenshot and the repro. The full list is in `sweep/report.json` under the case's `findings`, and each case has `checked` (how many things it measured).
 
 `HIG` lines do not fail the sweep: the product breaks some of these rules on `main` today (see `references/known-on-main.md`). Report the ones your change adds or touches. A finding on a line you did not touch goes under Findings in your report, not into your diff.
 
@@ -72,8 +71,8 @@ Judgement rules (reasoned in the PR, not measured) are marked `judgement` in `re
 
 ## Rule
 
-The pen frame wins for size, look and placement (`.agents/skills/verify-ui/SKILL.md`). When a guideline and a pen frame disagree, follow the frame and report the disagreement with the guideline's quote. The guideline wins only where no frame decides, and for people's access: contrast, text size, focus, motion and targets.
+The design the owner approved wins for size, look and placement (`.agents/skills/verify-ui/SKILL.md`). When a guideline and that design disagree, follow the design and report the disagreement with the guideline's quote. The guideline wins only where the design does not decide, and for people's access: contrast, text size, focus, motion and targets.
 
 ## Change a rule
 
-The pure rules and their sources are `packages/ui/src/lib/hig-rules.ts` (tests: `hig-rules.test.tsx`). The in-page probes are `scripts/ui/sweep/hig-probes.mjs`; the cases, lines and specs are `scripts/ui/sweep/hig.mjs` (tests: `hig.test.mjs`, `runner.test.mjs`). Run those tests one file at a time. Add a rule with its quoted source in `HIG_SOURCES` and a row in `references/`.
+The pure rules and their sources are `packages/ui/src/lib/hig-rules.ts` (tests: `hig-rules.test.tsx`). The in-page probes are `scripts/ui/sweep/hig-probes.mjs`; the cases and lines are `scripts/ui/sweep/hig.mjs` (tests: `hig.test.mjs`, `runner.test.mjs`). Run those tests one file at a time. Add a rule with its quoted source in `HIG_SOURCES` and a row in `references/`.

@@ -349,20 +349,6 @@ test("every checked rule has a failing and a passing fact", () => {
     { shot: { count: 20 } },
     "shot takes at most 20 pictures per run (21 given)"
   )
-  check(
-    "NO_BEFORE_AFTER",
-    {
-      pull: { body: "## Summary\n\nx" },
-      diff: { files: ["packages/ui/src/components/button.tsx"] },
-    },
-    {
-      pull: {
-        body: "## Before / after\n\n![after](https://x/a.png)\n\n| main | this PR |\n| --- | --- |",
-      },
-      diff: { files: ["packages/ui/src/components/button.tsx"] },
-    },
-    "the change edits 1 screen file(s) (packages/ui/src/components/button.tsx) but the PR body has no ## Before / after section"
-  )
   for (const row of jobRows) seen.add(row.id)
   check(
     "CHANGE_TOO_BIG",

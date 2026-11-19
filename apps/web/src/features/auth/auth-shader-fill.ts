@@ -1,5 +1,3 @@
-import snapshot from "./design/auth.snapshot.json"
-
 type ShaderUniformMap = Record<string, number>
 
 export type AuthShaderFill = {
@@ -7,28 +5,7 @@ export type AuthShaderFill = {
   uniforms: ShaderUniformMap
 }
 
-type SnapshotFill = {
-  type?: string
-  url?: string
-  uniforms?: ShaderUniformMap
+export const authShaderFill: AuthShaderFill = {
+  url: "shaders/auth-quadrant-v2.glsl",
+  uniforms: { u_size: 0.74, u_beam: 1, u_rim: 1.2, u_grain: 0.05 },
 }
-
-const sections = snapshot.sections as readonly {
-  fills?: readonly SnapshotFill[]
-}[]
-
-function readShaderFillFromPenSnapshot(): AuthShaderFill {
-  for (const section of sections) {
-    for (const fill of section.fills ?? []) {
-      if (fill.type !== "shader" || typeof fill.url !== "string") continue
-      const uniforms: ShaderUniformMap = {}
-      for (const [name, value] of Object.entries(fill.uniforms ?? {})) {
-        if (typeof value === "number") uniforms[name] = value
-      }
-      return { url: fill.url, uniforms }
-    }
-  }
-  return { url: "", uniforms: {} }
-}
-
-export const authShaderFill = readShaderFillFromPenSnapshot()

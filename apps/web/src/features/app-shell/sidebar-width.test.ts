@@ -1,6 +1,3 @@
-import { readFileSync } from "node:fs"
-import path from "node:path"
-
 import { afterEach, describe, expect, it } from "vitest"
 
 import {
@@ -18,17 +15,7 @@ import {
 afterEach(() => localStorage.clear())
 
 describe("sidebar width", () => {
-  it("starts at the pen width", () => {
-    const layout = JSON.parse(
-      readFileSync(
-        path.resolve(
-          process.cwd(),
-          "src/features/app-shell/design/app-sidebar.layout.json"
-        ),
-        "utf8"
-      )
-    ) as { pane: { width: number } }
-    expect(layout.pane.width).toBe(DEFAULT_SIDEBAR_WIDTH)
+  it("starts at the default width", () => {
     expect(readSidebarWidth()).toBe(DEFAULT_SIDEBAR_WIDTH)
   })
 
