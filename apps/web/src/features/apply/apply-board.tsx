@@ -1,8 +1,17 @@
-import { useEffect, useReducer, useRef } from "react"
+import {
+  useEffect,
+  useReducer,
+  useRef,
+  type KeyboardEvent as ReactKeyboardEvent,
+} from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
-import { useNavigate } from "@tanstack/react-router"
-import { parseJobId, type JobStage, type JobView } from "@workspace/domain"
+import {
+  parseJobId,
+  type JobId,
+  type JobStage,
+  type JobView,
+} from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -11,6 +20,12 @@ import {
   CollapsibleIndicator,
   CollapsibleTrigger,
 } from "@workspace/ui/components/collapsible"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@workspace/ui/components/dropdown-menu"
+import { Kbd } from "@workspace/ui/components/kbd"
 
 import {
   KanbanBoard,
@@ -19,23 +34,26 @@ import {
   KanbanHeader,
   KanbanProvider,
 } from "@workspace/ui/components/kanban"
-import { toastWithUndo } from "@workspace/ui/components/sonner"
+import { toast, toastWithUndo } from "@workspace/ui/components/sonner"
 import { StageIcon } from "@workspace/ui/components/stage-icon"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
 import { reportRejected } from "@/lib/command-failure.ts"
+import { useShortcut } from "@/lib/use-shortcut.ts"
 
-import { jobListKey } from "./apply-api.ts"
+import { jobListKey, prefetchJob } from "./apply-api.ts"
 import {
   allSettled,
   dropsReducer,
   noDrops,
+  previewMove,
   refetchBoard,
   shownJobs,
   type Drops,
   type DropsAction,
 } from "./apply-board-drops.ts"
+import { isFocusKey, stepFocus } from "./apply-board-focus.ts"
 import { BoardLane, JobCard } from "./apply-parts.tsx"
 import {
   ALL_STAGES,
@@ -66,23 +84,46 @@ function justAddedReducer(
   }
 }
 
-type Drag = { id: string; over: JobStage | null } | null
+type Drag = { id: string; over: JobStage | null; keyboard: boolean } | null
 
 type DragAction =
-  | { type: "started"; id: string }
+  | { type: "started"; id: string; keyboard: boolean }
   | { type: "moved_over"; id: string; over: JobStage | null }
   | { type: "ended" }
 
 function dragReducer(_drag: Drag, action: DragAction): Drag {
   switch (action.type) {
     case "started":
-      return { id: action.id, over: null }
+      return { id: action.id, over: null, keyboard: action.keyboard }
     case "moved_over":
-      return { id: action.id, over: action.over }
+      return {
+        id: action.id,
+        over: action.over ?? _drag?.over ?? null,
+        keyboard: _drag?.keyboard ?? false,
+      }
     case "ended":
       return null
   }
 }
+
+type StageMenu = { jobId: string; anchor: HTMLElement } | null
+
+type StageMenuAction =
+  { type: "opened"; jobId: string; anchor: HTMLElement } | { type: "closed" }
+
+function stageMenuReducer(
+  _menu: StageMenu,
+  action: StageMenuAction
+): StageMenu {
+  switch (action.type) {
+    case "opened":
+      return { jobId: action.jobId, anchor: action.anchor }
+    case "closed":
+      return null
+  }
+}
+
+type LastMove = { undo: () => void; toastId: string | number }
 
 function toCards(jobs: JobView[], stages: readonly JobStage[]): Card[] {
   return jobs
@@ -100,13 +141,16 @@ export function ApplyBoard({
   showClosed,
   onShowClosed,
   onNewJob,
+  onOpenJob,
+  openJobId,
 }: {
   jobs: JobView[]
   showClosed: boolean
   onShowClosed: (show: boolean) => void
   onNewJob: (stage: JobStage) => void
+  onOpenJob: (jobId: JobId) => void
+  openJobId: string | null
 }) {
-  const navigate = useNavigate()
   const queryClient = useQueryClient()
   const run = useRunCommand()
   const tails = useRef(new Map<string, Promise<unknown>>())
@@ -119,6 +163,10 @@ export function ApplyBoard({
   const lastOver = useRef<JobStage | null>(null)
   const [drag, dispatchDrag] = useReducer(dragReducer, null)
   const [justAdded, dispatchJustAdded] = useReducer(justAddedReducer, null)
+  const [menu, dispatchMenu] = useReducer(stageMenuReducer, null)
+  const boardRef = useRef<HTMLDivElement>(null)
+  const refocus = useRef<string | null>(null)
+  const lastMove = useRef<LastMove | null>(null)
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -140,7 +188,11 @@ export function ApplyBoard({
     name: stageLabel(stage),
   }))
   const shown = shownJobs(jobs, drops)
-  const data = toCards(shown, stages)
+  const settled = toCards(shown, stages)
+  const data =
+    drag?.over && !drag.keyboard
+      ? previewMove(settled, drag.id, drag.over)
+      : settled
 
   useEffect(() => {
     if (!justAdded) return
@@ -148,11 +200,36 @@ export function ApplyBoard({
     dispatchJustAdded({ type: "cleared" })
   }, [justAdded, shown])
 
+  useEffect(() => {
+    const jobId = refocus.current
+    if (!jobId) return
+    refocus.current = null
+    focusCard(jobId)
+  })
+
+  function cardElement(jobId: string) {
+    return boardRef.current?.querySelector<HTMLElement>(
+      `[data-card-id="${CSS.escape(jobId)}"]`
+    )
+  }
+
+  function focusCard(jobId: string) {
+    const element = cardElement(jobId)
+    if (!element) return
+    element.focus({ preventScroll: true })
+    element.scrollIntoView({ block: "nearest", inline: "nearest" })
+  }
+
   function openJob(jobId: string) {
-    void navigate({
-      to: "/apply/$jobId",
-      params: { jobId },
-    })
+    onOpenJob(parseJobId(jobId))
+  }
+
+  function undoLastMove() {
+    const move = lastMove.current
+    if (!move) return
+    lastMove.current = null
+    toast.dismiss(move.toastId)
+    move.undo()
   }
 
   function refreshBoard() {
@@ -166,18 +243,21 @@ export function ApplyBoard({
     })
   }
 
-  function persist(jobId: string, stage: JobStage) {
+  function persist(jobId: string, stage: JobStage, announce: boolean) {
     const input = { jobId: parseJobId(jobId), stage }
     const move = async () => {
       const result = await run("job.move", input, { refresh: false })
-      if (stage === "closed" && result.activityId) {
+      if ((stage === "closed" || announce) && result.activityId) {
         const activityId = result.activityId
-        toastWithUndo("Moved to Closed", () => {
+        const undo = () => {
+          if (lastMove.current?.undo === undo) lastMove.current = null
           sendDrops({ type: "undone", jobId })
           void undoActivity(queryClient, activityId).catch(
             reportRejected("undo the move")
           )
-        })
+        }
+        const toastId = toastWithUndo(`Moved to ${stageLabel(stage)}`, undo)
+        lastMove.current = { undo, toastId }
       }
     }
     const prev = tails.current.get(jobId) ?? Promise.resolve()
@@ -209,8 +289,12 @@ export function ApplyBoard({
   ) {
     const jobId = String(event.active.id)
     const stage = event.over ? stageOf(String(event.over.id)) : hovered
-    const before = data.find((card) => card.id === jobId)
-    if (!before || !stage || before.column === stage) return
+    if (stage) moveJob(jobId, stage, false)
+  }
+
+  function moveJob(jobId: string, stage: JobStage, announce: boolean) {
+    const before = settled.find((card) => card.id === jobId)
+    if (!before || before.column === stage) return
     sendDrops({ type: "dropped", jobId, stage })
     queryClient.setQueryData<JobView[]>(jobListKey(), (current) => {
       if (!current) return current
@@ -218,14 +302,78 @@ export function ApplyBoard({
       if (!moved) return current
       return [...current.filter((job) => job.id !== jobId), { ...moved, stage }]
     })
-    persist(jobId, stage)
+    persist(jobId, stage, announce)
   }
 
+  function onCardKey(event: ReactKeyboardEvent<HTMLDivElement>, card: Card) {
+    if (drag || event.defaultPrevented) return
+    if (event.metaKey || event.ctrlKey || event.altKey) return
+    const key = event.key
+    if (key === "Enter") {
+      event.preventDefault()
+      openJob(card.id)
+      return
+    }
+    if (isFocusKey(key)) {
+      event.preventDefault()
+      const target = stepFocus(columnIdsOf(data), card.id, key)
+      if (!target || target === card.id) return
+      focusCard(target)
+      if (openJobId) openJob(target)
+      return
+    }
+    const letter = key.toLowerCase()
+    if (letter === "s") {
+      event.preventDefault()
+      dispatchMenu({
+        type: "opened",
+        jobId: card.id,
+        anchor: event.currentTarget,
+      })
+      return
+    }
+    if (letter === "c") {
+      event.preventDefault()
+      onNewJob(card.column as JobStage)
+    }
+  }
+
+  function columnIdsOf(cards: readonly Card[]) {
+    return stages.map((stage) =>
+      cards.filter((item) => item.column === stage).map((item) => item.id)
+    )
+  }
+
+  function chooseStage(stage: JobStage) {
+    if (!menu) return
+    refocus.current = menu.jobId
+    dispatchMenu({ type: "closed" })
+    moveJob(menu.jobId, stage, true)
+  }
+
+  useShortcut({
+    key: ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"],
+    enabled: !openJobId && !menu,
+    prevent: false,
+    onPress: (event) => {
+      if (document.activeElement && document.activeElement !== document.body) {
+        return
+      }
+      if (!isFocusKey(event.key)) return
+      const first = stepFocus(columnIdsOf(data), null, event.key)
+      if (!first) return
+      event.preventDefault()
+      focusCard(first)
+    },
+  })
+
+  useShortcut({ key: "z", enabled: !menu, onPress: undoLastMove })
+
   const closedCount = shown.filter((job) => job.stage === "closed").length
-  const activeStage = drag ? stageOf(drag.id) : null
 
   return (
     <div
+      ref={boardRef}
       data-slot="apply-board"
       className="flex min-h-0 flex-1 gap-2.5 overflow-x-auto bg-background p-3"
     >
@@ -234,7 +382,11 @@ export function ApplyBoard({
         data={data}
         onDragStart={(event) => {
           lastOver.current = null
-          dispatchDrag({ type: "started", id: String(event.active.id) })
+          dispatchDrag({
+            type: "started",
+            id: String(event.active.id),
+            keyboard: event.activatorEvent instanceof KeyboardEvent,
+          })
         }}
         onDragOver={(event) => {
           const over = event.over ? stageOf(String(event.over.id)) : null
@@ -281,30 +433,39 @@ export function ApplyBoard({
               >
                 {(item: Card) => {
                   const isNew = item.id === justAdded
+                  const isOpen = item.id === openJobId
                   return (
                     <KanbanCard
                       key={item.id}
                       id={item.id}
                       name={item.name}
                       aria-label={item.name}
+                      aria-current={isOpen ? "true" : undefined}
                       data-card-id={item.id}
                       data-new={isNew ? "true" : undefined}
-                      wrapperClassName="data-[new=true]:motion-appear"
-                      className="gap-0 rounded-[4px] border border-foreground/6 p-3 shadow-none ring-0 data-lifted:shadow-[0_2px_4px_rgb(0_0_0/0.06),0_16px_32px_rgb(0_0_0/0.12)] [&.opacity-30]:opacity-35"
+                      wrapperClassName="rounded-[4px] outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-chart-1/60 data-[new=true]:motion-appear"
+                      className={cn(
+                        "gap-0 rounded-[4px] border border-foreground/6 p-3 shadow-none ring-0 transition-colors hover:border-foreground/12 data-lifted:shadow-[0_2px_4px_rgb(0_0_0/0.06),0_16px_32px_rgb(0_0_0/0.12)] [&.opacity-30]:opacity-35",
+                        isOpen &&
+                          "border-foreground/14 bg-accent/50 hover:border-foreground/18"
+                      )}
                       onClick={() => openJob(item.id)}
-                      onKeyDown={(event) => {
-                        if (event.key === "Enter") {
-                          event.preventDefault()
-                          openJob(item.id)
-                        }
-                      }}
+                      onPointerDown={() =>
+                        prefetchJob(queryClient, parseJobId(item.id))
+                      }
+                      onFocus={() =>
+                        prefetchJob(queryClient, parseJobId(item.id))
+                      }
+                      onKeyDown={(event) => onCardKey(event, item)}
                     >
                       <JobCard job={item.job} />
                     </KanbanCard>
                   )
                 }}
               </KanbanCards>
-              {drag?.over === stage && activeStage !== stage ? (
+              {drag?.keyboard &&
+              drag.over === stage &&
+              settled.find((card) => card.id === drag.id)?.column !== stage ? (
                 <DropLine />
               ) : null}
               {drag ? null : (
@@ -319,7 +480,66 @@ export function ApplyBoard({
         showClosed={showClosed}
         onShowClosed={onShowClosed}
       />
+      <StageMenu
+        menu={menu}
+        current={
+          menu
+            ? (settled.find((card) => card.id === menu.jobId)?.column ?? null)
+            : null
+        }
+        onChoose={chooseStage}
+        onClose={() => {
+          if (menu) refocus.current = menu.jobId
+          dispatchMenu({ type: "closed" })
+        }}
+      />
     </div>
+  )
+}
+
+function StageMenu({
+  menu,
+  current,
+  onChoose,
+  onClose,
+}: {
+  menu: StageMenu
+  current: string | null
+  onChoose: (stage: JobStage) => void
+  onClose: () => void
+}) {
+  return (
+    <DropdownMenu
+      open={menu !== null}
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+    >
+      <DropdownMenuContent
+        anchor={menu?.anchor ?? null}
+        aria-label="Move to stage"
+        data-slot="stage-menu"
+        className="min-w-48"
+        onKeyDown={(event) => {
+          const stage = ALL_STAGES[Number(event.key) - 1]
+          if (!stage || stage === current) return
+          event.preventDefault()
+          onChoose(stage)
+        }}
+      >
+        {ALL_STAGES.map((stage, index) => (
+          <DropdownMenuItem
+            key={stage}
+            disabled={stage === current}
+            onClick={() => onChoose(stage)}
+          >
+            <StageIcon stage={stage} />
+            {stageLabel(stage)}
+            <Kbd className="ml-auto">{index + 1}</Kbd>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
   )
 }
 

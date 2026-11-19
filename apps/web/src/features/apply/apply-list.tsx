@@ -1,17 +1,18 @@
-import { useNavigate } from "@tanstack/react-router"
-
-import type { JobStage, JobView } from "@workspace/domain"
+import type { JobId, JobStage, JobView } from "@workspace/domain"
 import { JobRow, ListGroup } from "./apply-list-parts.tsx"
 import { ALL_STAGES, compareJobs } from "./apply-stages.ts"
 
 export function ApplyList({
   jobs,
   showClosed,
+  onOpenJob,
+  openJobId,
 }: {
   jobs: JobView[]
   showClosed: boolean
+  onOpenJob: (jobId: JobId) => void
+  openJobId: string | null
 }) {
-  const navigate = useNavigate()
   const stages = (
     showClosed ? ALL_STAGES : ALL_STAGES.filter((stage) => stage !== "closed")
   ) as JobStage[]
@@ -28,12 +29,8 @@ export function ApplyList({
               <JobRow
                 key={job.id}
                 job={job}
-                onOpen={() =>
-                  void navigate({
-                    to: "/apply/$jobId",
-                    params: { jobId: job.id },
-                  })
-                }
+                current={job.id === openJobId}
+                onOpen={() => onOpenJob(job.id)}
               />
             ))}
           </ListGroup>

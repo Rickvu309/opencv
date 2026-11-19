@@ -79,6 +79,19 @@ const ADD_A_JOB = [
   { waitFor: { text: "Product designer" } },
 ]
 
+const OPEN_THE_JOB = [
+  ...ADD_A_JOB,
+  { click: { role: "button", name: "Product designer, Lumiere" } },
+  { waitFor: { selector: '[data-slot="apply-peek-body"]' } },
+]
+
+const OPEN_THE_STAGE_MENU = [
+  ...OPEN_THE_JOB,
+  { press: "Escape" },
+  { press: "s" },
+  { waitFor: { selector: '[data-slot="stage-menu"]' } },
+]
+
 export const SCREENS = [
   {
     id: "sign-in",
@@ -422,6 +435,25 @@ export const SCREENS = [
     id: "apply-board",
     route: "/apply",
     steps: ADD_A_JOB,
+  },
+  {
+    id: "apply-peek",
+    route: "/apply",
+    steps: OPEN_THE_JOB,
+  },
+  {
+    id: "apply-stage-menu",
+    route: "/apply",
+    steps: OPEN_THE_STAGE_MENU,
+  },
+  {
+    id: "apply-next-up",
+    route: "/apply",
+    steps: [
+      ...OPEN_THE_STAGE_MENU,
+      { press: "4" },
+      { waitFor: { text: "Answer the offer" } },
+    ],
   },
   {
     id: "coach-denied-reloaded",

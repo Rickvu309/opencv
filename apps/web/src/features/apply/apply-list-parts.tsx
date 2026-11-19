@@ -1,4 +1,5 @@
 import { useReducer, type ReactNode } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { Calendar } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
@@ -19,6 +20,7 @@ import {
   monthDay,
   stageLabel,
 } from "./apply-stages.ts"
+import { prefetchJob } from "./apply-api.ts"
 import { FAINT_TEXT } from "./apply-tone.ts"
 import { useChosenTimeZone } from "./apply-time-zone.ts"
 
@@ -84,16 +86,31 @@ export function ListGroup({
   )
 }
 
-export function JobRow({ job, onOpen }: { job: JobView; onOpen: () => void }) {
+export function JobRow({
+  job,
+  current = false,
+  onOpen,
+}: {
+  job: JobView
+  current?: boolean
+  onOpen: () => void
+}) {
   const zone = useChosenTimeZone()
+  const queryClient = useQueryClient()
   const phrase = rowPhrase(job, zone)
   return (
     <Button
       type="button"
       variant="ghost"
       data-slot="job-row"
-      className="h-11 w-full justify-start gap-2.5 rounded-[6px] px-3 text-[13px] font-normal md:h-10"
+      className={cn(
+        "h-11 w-full justify-start gap-2.5 rounded-[6px] px-3 text-[13px] font-normal md:h-10",
+        current && "bg-accent hover:bg-accent"
+      )}
       aria-label={`${job.title}, ${job.company}`}
+      aria-current={current ? "true" : undefined}
+      onPointerDown={() => prefetchJob(queryClient, job.id)}
+      onFocus={() => prefetchJob(queryClient, job.id)}
       onClick={onOpen}
     >
       <span

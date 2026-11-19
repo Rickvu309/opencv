@@ -52,4 +52,12 @@ describe("Apply URL search", () => {
       })
     }
   )
+
+  it("keeps the job open in the side panel", () => {
+    expect(
+      validateApplySearch({ job: "01900000-0000-7000-8000-000000000010" })
+    ).toEqual({ job: "01900000-0000-7000-8000-000000000010" })
+    expect(validateApplySearch({ job: "" })).toEqual({})
+    expect(validateApplySearch({ job: 7 })).toEqual({})
+  })
 })

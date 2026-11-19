@@ -50,7 +50,7 @@ describe("apply board", () => {
     ).not.toBeInTheDocument()
   })
 
-  it("names the four lanes and opens a card", async () => {
+  it("names the four lanes and opens a card in the side panel", async () => {
     setMockJobs([junior, applied, interview])
     const { router } = renderApp("/apply")
     expect(
@@ -76,8 +76,14 @@ describe("apply board", () => {
       })
     )
     await waitFor(() => {
-      expect(router.state.location.pathname).toBe(`/apply/${junior.id}`)
+      expect(router.state.location.search).toMatchObject({ job: junior.id })
     })
+    expect(router.state.location.pathname).toBe("/apply")
+    const peek = await screen.findByRole("complementary", { name: "Job" })
+    expect(
+      await within(peek).findByRole("heading", { name: "Junior Marketing" })
+    ).toBeInTheDocument()
+    expect(screen.getByRole("region", { name: "Saved" })).toBeInTheDocument()
   })
 
   it("shows one clear-filters empty state", async () => {

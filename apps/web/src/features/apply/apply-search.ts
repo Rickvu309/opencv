@@ -15,6 +15,7 @@ export type ApplySearch = {
   span?: ApplySpan
   company?: string
   location?: string
+  job?: string
 }
 
 function viewOf(value: unknown): ApplyView | undefined {
@@ -46,6 +47,9 @@ export function validateApplySearch(search: object): ApplySearch {
     search.location !== ""
   ) {
     next.location = search.location
+  }
+  if ("job" in search && typeof search.job === "string" && search.job !== "") {
+    next.job = search.job
   }
   return next
 }
