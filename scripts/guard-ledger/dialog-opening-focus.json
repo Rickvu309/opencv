@@ -1,0 +1,22 @@
+{
+  "id": "dialog-opening-focus",
+  "file": "packages/ui/src/components/dialog.test.tsx",
+  "historic": {
+    "mode": "restore",
+    "sha": "862c5d19e",
+    "paths": [
+      "packages/ui/src/components/dialog.tsx",
+      "packages/ui/src/lib/dialog-tab-stops.ts"
+    ],
+    "command": [
+      "pnpm",
+      "--filter",
+      "@workspace/ui",
+      "exec",
+      "vitest",
+      "run",
+      "src/components/dialog.test.tsx"
+    ]
+  },
+  "reason": "Caught by review. Before this fix every kit dialog opened with focus on its first button, which drew the accent focus ring on Start blank in the scanned PDF dialog. The test fails on the old kit and passes once a dialog opens on itself or its first text field."
+}
