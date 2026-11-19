@@ -1,4 +1,4 @@
-import "./design/dock.pen.css"
+import "./design/dock.css"
 
 import {
   useEffect,
@@ -563,7 +563,7 @@ function ShellDock({
     <div
       ref={dockRef}
       data-slot="app-dock"
-      data-pen-surface="app-shell"
+      data-surface="app-shell"
       data-coach-page={onCoachPage ? "" : undefined}
       className="flex h-12 shrink-0 items-center justify-end md:h-10"
     >

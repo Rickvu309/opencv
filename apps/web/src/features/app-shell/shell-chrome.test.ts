@@ -84,7 +84,7 @@ describe("coach card geometry", () => {
     expect(
       coachCardMistakes(
         readFileSync(path.join(here, "app-shell.tsx"), "utf8"),
-        readFileSync(path.join(here, "design/dock.pen.css"), "utf8")
+        readFileSync(path.join(here, "design/dock.css"), "utf8")
       )
     ).toEqual([])
   })

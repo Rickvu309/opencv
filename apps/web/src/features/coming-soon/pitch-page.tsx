@@ -4,7 +4,7 @@ import { Button } from "@workspace/ui/components/button"
 import { PageHeaderTitle } from "@workspace/ui/components/page-header"
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 
-import "@/features/coming-soon/design/page-header.pen.css"
+import "@/features/coming-soon/design/page-header.css"
 import { soonCopy } from "@/features/coming-soon/copy.ts"
 import { useNotify } from "@/features/coming-soon/notify.ts"
 import { PitchHeroArt } from "@/features/coming-soon/pitch-hero-art.tsx"
@@ -14,7 +14,7 @@ export function PitchPage() {
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-background">
-      <WorkspaceHeader data-pen-surface="coming-soon">
+      <WorkspaceHeader data-surface="coming-soon">
         <PageHeaderTitle>{soonCopy.pitchPage}</PageHeaderTitle>
       </WorkspaceHeader>
       <div className="@container/pitch flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto">

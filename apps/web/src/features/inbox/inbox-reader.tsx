@@ -131,7 +131,7 @@ export function InboxReader({
   return (
     <section
       aria-label="Reading pane"
-      data-pen-section="Detail pane"
+      data-layout-section="Detail pane"
       className="flex min-h-0 min-w-0 flex-1 flex-col"
     >
       <InboxReaderHeader

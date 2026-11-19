@@ -8,7 +8,7 @@ import { ApiError } from "@/lib/api.ts"
 import { queryKey, useRunCommand } from "@/lib/contract-client.ts"
 import { PROFILE_ZONE } from "@/features/apply/apply-stages.ts"
 
-import "./design/page-header.pen.css"
+import "./design/page-header.css"
 import { InboxConnect, InboxTitleBar } from "./inbox-connect.tsx"
 import {
   fetchGmailConnectTargetNotAContractRead,
@@ -148,7 +148,7 @@ export function InboxPage() {
 
   return (
     <div
-      data-pen-surface="inbox"
+      data-surface="inbox"
       className="flex h-full min-h-0 min-w-0 flex-col overflow-x-hidden"
     >
       {titled ? <InboxTitleBar /> : null}
@@ -306,7 +306,7 @@ function Scanning({
   return (
     <section
       aria-label="Scanning"
-      data-pen-section="Detail pane"
+      data-layout-section="Detail pane"
       className="flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-4 pb-10"
     >
       <span className="flex size-12 items-center justify-center rounded-xl border border-border bg-card shadow-xs">

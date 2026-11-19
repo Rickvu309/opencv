@@ -16,7 +16,7 @@ import {
 } from "@workspace/ui/components/page-header"
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 
-import "@/features/coming-soon/design/page-header.pen.css"
+import "@/features/coming-soon/design/page-header.css"
 import { soonCopy } from "@/features/coming-soon/copy.ts"
 import { useNotify } from "@/features/coming-soon/notify.ts"
 import { ProofHeroArt } from "@/features/coming-soon/proof-hero-art.tsx"
@@ -26,7 +26,7 @@ export function ProofsPage() {
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden bg-card leading-[1.21]">
-      <WorkspaceHeader data-pen-surface="coming-soon">
+      <WorkspaceHeader data-surface="coming-soon">
         <PageHeaderLeading>
           <PageHeaderBack render={<Link to="/paper" />}>Paper</PageHeaderBack>
         </PageHeaderLeading>

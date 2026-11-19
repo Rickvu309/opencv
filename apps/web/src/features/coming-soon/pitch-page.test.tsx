@@ -36,7 +36,7 @@ describe("Pitch coming soon", () => {
       name: "Pitch",
     })
     const header = title.closest('[data-slot="page-header"]')!
-    expect(header).toHaveAttribute("data-pen-surface", "coming-soon")
+    expect(header).toHaveAttribute("data-surface", "coming-soon")
     expect(header.className).not.toMatch(/\bh-12\b|bg-background/)
     expect(header.nextElementSibling).toHaveClass("overflow-y-auto")
     expect(header.closest(".overflow-y-auto")).toBeNull()

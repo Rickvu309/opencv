@@ -1,26 +1,25 @@
-[data-pen-surface="app-shell"]
+[data-surface="app-shell"]
   :is([data-slot="nav-item-badge"], [data-slot="sidebar-group-label"]) {
   color: color-mix(in oklab, var(--muted-foreground) 92%, transparent);
 }
 
-[data-pen-surface="app-shell"]
+[data-surface="app-shell"]
   [data-slot="nav-item"]
   > span:not([data-slot="nav-item-badge"]) {
   color: var(--sidebar-foreground);
 }
 
-[data-pen-surface="app-shell"] button[aria-label="New chat"] {
+[data-surface="app-shell"] button[aria-label="New chat"] {
   border-radius: 7px;
 }
 
-[data-pen-surface="app-shell"]
-  button[aria-label="New chat"]:not(:focus-visible) {
+[data-surface="app-shell"] button[aria-label="New chat"]:not(:focus-visible) {
   box-shadow:
     0 1px 3px rgb(0 0 0 / 0.08),
     0 0 0 0.5px rgb(0 0 0 / 0.04);
 }
 
-[data-pen-surface="app-shell"] [data-slot="nav-item-badge"] {
+[data-surface="app-shell"] [data-slot="nav-item-badge"] {
   display: inline-flex;
   min-width: 18px;
   height: 18px;

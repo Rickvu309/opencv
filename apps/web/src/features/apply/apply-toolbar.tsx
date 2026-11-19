@@ -31,7 +31,7 @@ import {
   type ApplyView,
 } from "./apply-search.ts"
 import { FAINT_TEXT } from "./apply-tone.ts"
-import "./design/page-header.pen.css"
+import "./design/page-header.css"
 
 export function ApplyHeader({ onNewJob }: { onNewJob: () => void }) {
   return (

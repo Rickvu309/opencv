@@ -137,7 +137,7 @@ describe("inbox page", () => {
     const banner = await screen.findByRole("status")
     expect(banner).toHaveTextContent(EXAMPLE_MAIL_BANNER)
     expect(screen.queryByText(GMAIL_UNAVAILABLE_COPY)).toBeNull()
-    const pane = document.querySelector('[data-pen-section="List pane"]')
+    const pane = document.querySelector('[data-layout-section="List pane"]')
     expect(pane?.contains(banner)).toBe(true)
     const header = pane?.querySelector("header")
     expect(
@@ -187,7 +187,7 @@ describe("inbox page", () => {
     expect(screen.getAllByRole("status")).toHaveLength(1)
     expect(
       document.querySelector(
-        '[data-pen-section="List pane"] [data-slot="inbox-example-banner"]'
+        '[data-layout-section="List pane"] [data-slot="inbox-example-banner"]'
       )
     ).toHaveTextContent(EXAMPLE_MAIL_BANNER)
   })
