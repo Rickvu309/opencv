@@ -3,6 +3,7 @@ import { revealCaret, useCanvasScale } from "./canvas-viewport.ts"
 import { writingStorage } from "./canvas-branch.ts"
 import { WritingBlocks } from "./canvas-blocks.tsx"
 import {
+  type ComponentProps,
   type ReactNode,
   useCallback,
   useEffect,
@@ -178,11 +179,13 @@ function WritingSheet({
   seedRevision,
   renderHeader,
   title,
+  placeholder,
 }: {
   docId: string
   seed: WritingDraft | null
   seedRevision: string | null
   title?: ReactNode
+  placeholder?: string
   renderHeader?: (
     note: string,
     revision: string | null,
@@ -590,7 +593,10 @@ function WritingSheet({
                 applyPaste(event.clipboardData.getData("text/plain"))
               }}
             >
-              <WritingBlocks blocks={state.present.blocks} />
+              <WritingBlocks
+                blocks={state.present.blocks}
+                placeholder={placeholder}
+              />
             </article>
           </div>
         </PaperDocumentCanvas>
@@ -616,30 +622,19 @@ function WritingSheet({
 }
 
 export function WritingCanvas({
-  docId,
   seed = null,
   seedRevision = null,
-  renderHeader,
-  title,
-}: {
-  docId: string
+  ...sheet
+}: Omit<ComponentProps<typeof WritingSheet>, "seed" | "seedRevision"> & {
   seed?: WritingDraft | null
   seedRevision?: string | null
-  title?: ReactNode
-  renderHeader?: (
-    note: string,
-    revision: string | null,
-    text: string
-  ) => ReactNode
 }) {
   return (
     <WritingSheet
-      key={docId}
-      docId={docId}
+      key={sheet.docId}
+      {...sheet}
       seed={seed}
       seedRevision={seedRevision}
-      renderHeader={renderHeader}
-      title={title}
     />
   )
 }

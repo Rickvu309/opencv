@@ -109,7 +109,7 @@ export function WritingProposalCard({
     <section
       aria-label={reviewError || mine || settled ? "Coach proposal" : undefined}
       data-slot="writing-proposal-notice"
-      className="mx-auto flex min-h-24 w-[min(100%-3rem,816px)] shrink-0 flex-wrap items-center justify-between gap-3 py-3 md:min-h-16"
+      className="flex min-h-24 w-full shrink-0 flex-wrap items-center justify-between gap-3 py-3 md:min-h-16"
     >
       {reviewError ? (
         <p

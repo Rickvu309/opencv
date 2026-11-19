@@ -29,10 +29,12 @@ it("keeps Paper navigation and all unsaved status words while showing the saved 
       name="My Letter"
       kind="letter"
       status="Saved"
+      editedAt={new Date(Date.now() - 3 * 86_400_000).toISOString()}
       onBack={back}
     />
   )
-  expect(screen.getByRole("status")).toHaveTextContent("Edited just now")
+  expect(screen.getByRole("status")).toHaveTextContent("Edited 3 days ago")
+  expect(screen.getByRole("status")).not.toHaveTextContent("just now")
   expect(screen.getByRole("status")).toHaveAttribute("title", "Saved")
   expect(screen.getByRole("link", { name: "Letters" })).toHaveAttribute(
     "href",
@@ -41,9 +43,37 @@ it("keeps Paper navigation and all unsaved status words while showing the saved 
   fireEvent.click(screen.getByRole("link", { name: "Back to Paper" }))
   expect(back).toHaveBeenCalledOnce()
   view.rerender(
-    <PaperDocumentHeader name="My Letter" status="Not saved (offline)" />
+    <PaperDocumentHeader
+      name="My Letter"
+      status="Not saved (offline)"
+      editedAt={null}
+    />
   )
   expect(screen.getByRole("status")).toHaveTextContent("Not saved (offline)")
+})
+
+it("says the real edited time on open and just now only after this page saves", () => {
+  const editedAt = new Date(Date.now() - 2 * 3_600_000).toISOString()
+  const view = render(
+    <PaperDocumentHeader name="My CV" status="Loading" editedAt={editedAt} />
+  )
+  view.rerender(
+    <PaperDocumentHeader name="My CV" status="Saved" editedAt={editedAt} />
+  )
+  expect(screen.getByRole("status")).toHaveTextContent("Edited 2 hours ago")
+  view.rerender(
+    <PaperDocumentHeader name="My CV" status="Saving" editedAt={editedAt} />
+  )
+  expect(screen.getByRole("status")).toHaveTextContent("Saving")
+  view.rerender(
+    <PaperDocumentHeader name="My CV" status="Saved" editedAt={editedAt} />
+  )
+  expect(screen.getByRole("status")).toHaveTextContent("Edited just now")
+})
+
+it("says Saved without a time when the edited time is unknown", () => {
+  render(<PaperDocumentHeader name="My CV" status="Saved" editedAt={null} />)
+  expect(screen.getByRole("status")).toHaveTextContent(/^Saved$/)
 })
 
 it("renames through the product command and cancels an unfinished name with Escape", async () => {

@@ -598,12 +598,14 @@ export function PaperHand({
           )}
         </>
       )}
-      <PaperStarts
-        dropping={hand.dropping}
-        onNewCV={onNewCV}
-        onNewLetter={onNewLetter}
-        onOpenImport={onOpenImport}
-      />
+      {!shown && query.trim() !== "" ? null : (
+        <PaperStarts
+          dropping={hand.dropping}
+          onNewCV={onNewCV}
+          onNewLetter={onNewLetter}
+          onOpenImport={onOpenImport}
+        />
+      )}
     </div>
   )
 }
