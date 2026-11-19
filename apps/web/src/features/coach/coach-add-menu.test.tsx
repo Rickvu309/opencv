@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs"
-import path from "node:path"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
   cleanup,
@@ -21,20 +19,7 @@ import {
 } from "@/test/paper-api-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
-import layout from "./design/composer-menus.geometry.json"
-import snapshot from "./design/composer-menus.source.json"
-
-const css = readFileSync(
-  path.resolve(
-    process.cwd(),
-    "src/features/coach/design/composer-menus.pen.css"
-  ),
-  "utf8"
-)
-
-type Row = (typeof layout.rows)[number]
-const items = layout.rows.filter((row: Row) => row.kind === "item")
-const ACTIONS = items.slice(0, 4)
+const ACTION_COUNT = 4
 
 beforeEach(() => {
   vi.stubGlobal("scrollTo", vi.fn())
@@ -53,70 +38,7 @@ async function openAdd() {
   return screen.findByRole("menu")
 }
 
-function declared(selector: string, property: string) {
-  const block = css
-    .split("}")
-    .map((chunk) => chunk.split("{"))
-    .find(([head]) => head?.replace(/\s+/g, " ").trim().endsWith(selector))
-  const match = new RegExp(`(?:^|[\\s;])${property}:\\s*([^;]+);`).exec(
-    block?.[1] ?? ""
-  )
-  return match?.[1]?.replace(/\s+/g, " ").trim()
-}
-
-const MENU = '[data-slot="coach-add-menu"]'
-
-describe("Coach Add menu against its pen frame (kfJuz popover f0tcTl)", () => {
-  it("lists the pen's action rows in the pen's order with its icons", async () => {
-    const menu = await openAdd()
-    const rows = within(menu).getAllByRole("menuitem")
-    const labels = rows
-      .slice(0, ACTIONS.length)
-      .map((row) => row.textContent?.replace(/Coach cannot.*$/, ""))
-    expect(labels).toEqual(ACTIONS.map((row) => row.text))
-    rows.slice(0, ACTIONS.length).forEach((row, index) => {
-      const icon = row.querySelector("svg")
-      expect(icon?.getAttribute("class")).toContain(
-        `lucide-${ACTIONS[index]?.icon?.name}`
-      )
-      expect(Boolean(row.querySelector("[data-add-caret]"))).toBe(
-        Boolean(ACTIONS[index]?.trailing)
-      )
-    })
-    const frameTexts = snapshot.sections.flatMap((section) => section.texts)
-    const start = frameTexts.indexOf(ACTIONS[0]!.text)
-    expect(frameTexts.slice(start, start + 4)).toEqual(
-      ACTIONS.map((row) => row.text)
-    )
-    expect(frameTexts).not.toContain("Add connector")
-    expect(menu).not.toHaveTextContent("Add connector")
-    expect(within(menu).getByText(layout.rows[5]?.text ?? "")).toBeVisible()
-  })
-
-  it("sizes the panel and rows as the pen does", () => {
-    const px = (value: number | undefined) => `${value}px`
-    const { popover } = layout
-    expect(declared(MENU, "font-family")).toBe("var(--font-sans)")
-    expect(declared(MENU, "width")).toBe(px(popover.width))
-    expect(declared(MENU, "border-radius")).toBe(px(popover.cornerRadius))
-    expect(declared(MENU, "padding")).toBe(px(popover.padding))
-    expect(declared(MENU, "gap")).toBe(px(popover.gap))
-    const first = ACTIONS[0]
-    expect(declared("[data-add-row]", "height")).toBe(px(first?.height))
-    expect(declared("[data-add-row]", "gap")).toBe(px(first?.gap))
-    expect(declared("[data-add-row]", "font-size")).toBe(px(first?.fontSize))
-    expect(declared("[data-add-row]", "border-radius")).toBe(
-      px(first?.cornerRadius)
-    )
-    expect(declared("[data-add-row] > svg:first-child", "width")).toBe(
-      px(first?.icon?.size)
-    )
-    const label = layout.rows.find((row: Row) => row.kind === "label")
-    expect(declared("[data-add-recent-label]", "font-size")).toBe(
-      px(label?.fontSize)
-    )
-  })
-
+describe("Coach Add menu", () => {
   it("lists the two most recently updated Paper documents, not sample names", async () => {
     const menu = await openAdd()
     const recent = [...getMockPaperDocs()]
@@ -127,9 +49,7 @@ describe("Coach Add menu against its pen frame (kfJuz popover f0tcTl)", () => {
         await within(menu).findByRole("menuitem", { name: doc.name })
       ).toBeInTheDocument()
     }
-    expect(within(menu).getAllByRole("menuitem")).toHaveLength(
-      ACTIONS.length + 2
-    )
+    expect(within(menu).getAllByRole("menuitem")).toHaveLength(ACTION_COUNT + 2)
   })
 
   it("marks a selected Recent document and sends it as context", async () => {

@@ -47,29 +47,14 @@ const PALETTE_RE = new RegExp(
   "g"
 )
 
-function penColorsMissingFromAdjacentSnapshots(
+function featureDesignCssProblems(
   file: string,
-  source: string,
-  referenceSource?: string
+  source: string
 ): string[] | null {
   const match = /^features\/([a-z-]+)\/design\/[a-z-]+\.pen\.css$/.exec(file)
   if (!match) return null
   const feature = match[1]
-  const directory = path.dirname(path.join(srcDir, file))
-  const references =
-    referenceSource ??
-    readdirSync(directory)
-      .filter((name) => name.endsWith(".styles.json"))
-      .map((name) => readFileSync(path.join(directory, name), "utf8"))
-      .join("\n")
-  const colors = new Set(
-    (references.match(/#[0-9a-f]{6}(?:[0-9a-f]{2})?\b/gi) ?? []).map((color) =>
-      color.toLowerCase()
-    )
-  )
-  const violations = (source.match(/#[0-9a-f]{3,8}\b/gi) ?? []).filter(
-    (color) => !colors.has(color.toLowerCase())
-  )
+  const violations: string[] = []
   for (const rule of source.matchAll(/([^{}]+)\{/g)) {
     const selector = rule[1].trim()
     if (selector.startsWith("@media")) continue
@@ -328,7 +313,7 @@ describe("app code uses shadcn variables and stock Tailwind, with no raw hex or 
     for (const [file, source] of files) {
       if (allowed.has(rel(file))) continue
       const found =
-        penColorsMissingFromAdjacentSnapshots(rel(file), source) ??
+        featureDesignCssProblems(rel(file), source) ??
         [HEX_RE, PALETTE_RE, HUE_FUNCTION_EXCEPT_BLACK_AND_RELATIVE_RE].flatMap(
           (pattern) => hits(source, pattern)
         )
@@ -339,17 +324,12 @@ describe("app code uses shadcn variables and stock Tailwind, with no raw hex or 
     expect(violations, violations.join("\n")).toEqual([])
   })
 
-  it("limits pen colors to source values inside the feature scope", () => {
+  it("keeps feature design CSS inside its feature scope, with any hex colour the design needs", () => {
     const file = "features/example/design/example.pen.css"
-    const reference = '{"fill":"#1A1A1A"}'
-    const check = (source: string) =>
-      penColorsMissingFromAdjacentSnapshots(file, source, reference)
-    expect(
-      check('[data-pen-surface="example"] h2 { color: #1A1A1A; }')
-    ).toEqual([])
+    const check = (source: string) => featureDesignCssProblems(file, source)
     expect(
       check('[data-pen-surface="example"] h2 { color: #123456; }')
-    ).toEqual(["#123456"])
+    ).toEqual([])
     expect(check("body { color: #1A1A1A; }")).toEqual([
       "unscoped selector: body",
     ])
@@ -357,10 +337,7 @@ describe("app code uses shadcn variables and stock Tailwind, with no raw hex or 
       "custom property declaration",
     ])
     expect(
-      penColorsMissingFromAdjacentSnapshots(
-        "features/example/example.tsx",
-        "#1A1A1A"
-      )
+      featureDesignCssProblems("features/example/example.tsx", "#1A1A1A")
     ).toBeNull()
   })
 

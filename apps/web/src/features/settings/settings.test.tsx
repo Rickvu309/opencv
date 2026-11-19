@@ -456,7 +456,7 @@ function glowButtons() {
     .filter((button) => button.classList.contains("glow"))
 }
 
-describe("Settings sections follow their design frames", () => {
+describe("Settings sections", () => {
   it("groups Export with Sign out under Data and keeps Delete account alone after it", async () => {
     renderApp("/settings/account")
     const data = await screen.findByRole("region", { name: "Data" })

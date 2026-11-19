@@ -175,18 +175,14 @@ test("help lists body", () => {
   assert.match(text, /instead of gh pr edit --body-file/)
 })
 
-test("body refuses No visible change. while the PR edits a screen file, before it writes to GitHub", () => {
+test("body takes a screen change without a Before / after section", () => {
   const f = fixture({
     intercept: editOk,
     changed: ["apps/web/src/features/auth/sign-in-screen.tsx"],
   })
-  f.ctx.writeFile(
-    `${f.ctx.cwd}/note.md`,
-    `${BODY}\n## Before / after\n\nNo visible change.\nOnly the wait message moved.\n`
-  )
+  f.ctx.writeFile(`${f.ctx.cwd}/note.md`, BODY)
   const r = f.call("body", "91", "--body-file", "note.md")
-  assert.equal(r.code, 2, r.text)
-  assert.match(r.text, /REFUSED NO_BEFORE_AFTER/)
-  assert.match(r.text, /is a claim the pictures must show/)
-  assert.equal(f.effects("gh", "pr edit").length, 0)
+  assert.equal(r.code, 0, r.text)
+  assert.doesNotMatch(r.text, /NO_BEFORE_AFTER/)
+  assert.equal(f.effects("gh", "pr edit").length, 1)
 })

@@ -3,13 +3,12 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 
 import { CoachPanel } from "./coach-panel"
-import snapshot from "./design/coach-panel.snapshot.json"
 
 afterEach(cleanup)
 
 describe("Coach panel", () => {
   it("shows the source title and preserves the conversation on expansion", () => {
-    const title = snapshot.sections[0].texts[0]
+    const title = "New chat"
     const props = {
       title,
       open: true,

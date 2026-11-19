@@ -14,12 +14,12 @@ import "./stories.css"
 import { LandingClose } from "./landing-sections.tsx"
 import { LandingFooter } from "./landing-footer.tsx"
 import { LandingNav } from "./landing-nav.tsx"
-import snapshot from "./design/stories.snapshot.json"
+import stories from "./landing-stories-content.json"
 
 const STORIES_TITLE = "opencv. Stories"
-const STORIES_DESCRIPTION = snapshot.description
+const STORIES_DESCRIPTION = stories.description
 
-type Story = (typeof snapshot.stories)[number]
+type Story = (typeof stories.stories)[number]
 
 function StoryDialog({
   story,
@@ -30,7 +30,7 @@ function StoryDialog({
   open: boolean
   onOpenChange: (open: boolean) => void
 }) {
-  const featured = snapshot.featured
+  const featured = stories.featured
   const subject = story ?? {
     name: featured.name,
     role: featured.role,
@@ -89,7 +89,7 @@ function storyDialogReducer(
 }
 
 export function StoriesPage() {
-  const featured = snapshot.featured
+  const featured = stories.featured
   const [{ open: dialogOpen, story: activeStory }, dispatch] = useReducer(
     storyDialogReducer,
     { open: false, story: null }
@@ -111,10 +111,10 @@ export function StoriesPage() {
       <main className="landing-grid" aria-label="Stories">
         <div className="landing-section landing-inset landing-stack stories-header">
           <h1 className="text-[3rem] leading-none font-medium tracking-tight">
-            {snapshot.title}
+            {stories.title}
           </h1>
           <p className="text-[1.5rem] leading-snug text-muted-foreground">
-            {snapshot.description}
+            {stories.description}
           </p>
         </div>
 
@@ -181,7 +181,7 @@ export function StoriesPage() {
             More stories
           </h2>
           <ul className="stories-grid" role="list">
-            {snapshot.stories.map((story) => (
+            {stories.stories.map((story) => (
               <li key={story.name}>
                 <article className="stories-card">
                   <img

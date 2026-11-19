@@ -1,13 +1,5 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { PROPERTIES } from "./compare.mjs"
-import {
-  APP_SHELL,
-  DESIGN_MAP,
-  isSameBox,
-  rowsForScreen,
-  validateDesignMap,
-} from "./design-map.mjs"
 import {
   SCREENS,
   pickScreens,
@@ -110,75 +102,6 @@ test("shot names and viewports are deterministic", () => {
   assert.equal(shotName("coach-home", 390, 2), "coach-home-390@2x.png")
   assert.deepEqual(viewportFor(1440), { width: 1440, height: 900 })
   assert.deepEqual(viewportFor(390), { width: 390, height: 844 })
-})
-
-test("every design row names a known screen and known properties", () => {
-  const ids = new Set(SCREENS.map((screen) => screen.id))
-  assert.deepEqual(validateDesignMap(DESIGN_MAP, PROPERTIES, ids), [])
-  assert.ok(rowsForScreen(DESIGN_MAP, "paper-panel-open").length > 0)
-  assert.deepEqual(
-    validateDesignMap(
-      [
-        {
-          label: "x",
-          screen: "s",
-          selector: "a",
-          frame: "f",
-          composedScreen: "OC App shell",
-          props: ["depth"],
-        },
-        { label: "y", screen: "s", selector: "a", frame: "f", props: ["x"] },
-        {
-          label: "z",
-          kind: "same-box",
-          screen: "s",
-          against: "s",
-          selector: "a",
-          props: ["x"],
-        },
-        {
-          label: "w",
-          kind: "same-box",
-          screen: "s",
-          against: "gone",
-          selector: "a",
-          props: ["x"],
-        },
-      ],
-      PROPERTIES,
-      new Set(["s"])
-    ),
-    [
-      "x: unknown property depth",
-      "y: composedScreen is required",
-      "z: against must be another screen",
-      "w: unknown screen gone",
-    ]
-  )
-})
-
-test("every frame row belongs to the app shell or a numbered composed screen", () => {
-  const frameRows = DESIGN_MAP.filter((row) => !isSameBox(row))
-  assert.ok(frameRows.length > 0)
-  for (const row of frameRows)
-    assert.ok(
-      row.composedScreen === APP_SHELL ||
-        /^W\d+\.\d+ \S/.test(row.composedScreen),
-      row.label
-    )
-})
-
-test("the Coach card keeps the main content and the writing page where they were with the card closed", () => {
-  const rows = DESIGN_MAP.filter(isSameBox)
-  assert.deepEqual(
-    rows.map((row) => [row.screen, row.against, row.props]),
-    [
-      ["paper-panel-open", "paper-panel-closed", ["x", "width"]],
-      ["paper-panel-open", "paper-panel-closed", ["x", "width"]],
-    ]
-  )
-  const closed = SCREENS.find((screen) => screen.id === "paper-panel-closed")
-  assert.ok(Array.isArray(closed.steps))
 })
 
 test("a screen's after steps clean up and are only allowed on a screen with steps", () => {

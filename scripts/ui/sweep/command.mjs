@@ -6,7 +6,7 @@ import { SCREENS, pickScreens } from "../screens.mjs"
 import { liveState } from "../stack.mjs"
 import { ACCOUNT_SOURCES, accountSource } from "./accounts.mjs"
 import { browserWorld } from "./browser-world.mjs"
-import { hasShot, higFound, higLine, higSpec } from "./hig.mjs"
+import { higFound, higLine } from "./hig.mjs"
 import { LOOP_FILES, coreLoop } from "./loop.mjs"
 import { routeScreens, staticRoutes } from "./routes.mjs"
 import { failureLine, summaryLine, sweepScreen } from "./runner.mjs"
@@ -108,17 +108,7 @@ export const SWEEP_COMMAND = {
           },
         ])
         cases.push(...found)
-        const higLines = higFound(found).map((item) => {
-          if (!hasShot(item)) return higLine(item, null)
-          const spec = join(
-            state.dir,
-            "sweep",
-            "hig",
-            `${item.screen}-${item.size}-${item.rule}.spec.json`
-          )
-          ctx.fs.write(spec, JSON.stringify(higSpec(item), null, 2))
-          return higLine(item, spec)
-        })
+        const higLines = higFound(found).map(higLine)
         const block = [
           summaryLine(screen.id, found),
           ...found.filter((item) => !item.ok).map(failureLine),
