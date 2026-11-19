@@ -59,7 +59,8 @@ describe("each router route is current under exactly one nav item, with its coun
       const path = route.replace(/\$\w+/g, SAMPLE_ID)
       renderApp(path)
       const problem = await failure(async () => {
-        const link = await screen.findByRole("link", { name: item.label })
+        const nav = await screen.findByRole("navigation", { name: "Main" })
+        const link = await within(nav).findByRole("link", { name: item.label })
         await waitFor(() =>
           expect(
             link,
@@ -67,7 +68,7 @@ describe("each router route is current under exactly one nav item, with its coun
           ).toHaveAttribute("aria-current", "page")
         )
         const others = ITEMS.filter((other) => other.id !== item.id).map(
-          (other) => screen.queryByRole("link", { name: other.label })
+          (other) => within(nav).queryByRole("link", { name: other.label })
         )
         for (const other of others)
           expect(other?.getAttribute("aria-current") ?? null).toBeNull()
