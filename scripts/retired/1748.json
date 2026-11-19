@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/settings/settings-phone.test.tsx",
+    "because": "The cases pinned container-query, text-size, switch-track and max-width class strings, so every lighter Settings change failed them with no behaviour change. The kept cases check what a person sees: the bad-name alert tied to the field, the full time zone name and its title, the setup tip beside the sign-in step, and the capabilities that open; changing that copy fails them (mutation runs in the PR evidence). Stacking at 390 is shown with ui.mjs shots.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
   }
 ]
