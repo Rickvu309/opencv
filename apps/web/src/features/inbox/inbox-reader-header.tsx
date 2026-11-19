@@ -67,9 +67,18 @@ export function InboxReaderHeader({
           </PageHeaderBack>
         </PageHeaderLeading>
       ) : null}
-      <PageHeaderTitle as={narrow ? "h1" : "div"}>
+      <PageHeaderTitle
+        as={narrow ? "h1" : "div"}
+        role={narrow ? undefined : "heading"}
+        aria-level={narrow ? undefined : 2}
+      >
         {detail.subject}
       </PageHeaderTitle>
+      {detail.messages.length > 0 ? (
+        <PageHeaderMeta className="tabular-nums">
+          {`${detail.messages.length} ${detail.messages.length === 1 ? "message" : "messages"}`}
+        </PageHeaderMeta>
+      ) : null}
       <PageHeaderMeta showOnPhone className="tabular-nums">
         {`${index} of ${count}`}
       </PageHeaderMeta>

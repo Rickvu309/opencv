@@ -1,0 +1,13 @@
+{
+  "id": "stage-name-read-twice",
+  "file": "scripts/stage-name-read-twice.test.mjs",
+  "detector": {
+    "module": "scripts/lib/stage-name-read-twice.mjs",
+    "export": "stageNamesReadTwice"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "57a87c5cc",
+    "path": "apps/web/src/features/apply/apply-board.tsx"
+  }
+}

@@ -243,9 +243,7 @@ export function InboxPage() {
               />
             </InboxListPane>
           )}
-          {!narrow && !shownId && view === "inbox" ? (
-            <InboxOverview threads={threads} />
-          ) : null}
+          {!narrow && !shownId && view === "inbox" ? <InboxOverview /> : null}
           {shownId && detail.data ? (
             <InboxReader
               key={detail.data.id}
@@ -268,11 +266,6 @@ export function InboxPage() {
                 const next = threads[index + 1]
                 if (next) dispatch({ type: "thread_opened", id: next.id })
               }}
-              exampleNotice={
-                narrow && list.data?.connected === false
-                  ? EXAMPLE_MAIL_BANNER
-                  : undefined
-              }
             />
           ) : null}
           {shownId && (detail.isLoading || detail.isError) ? (

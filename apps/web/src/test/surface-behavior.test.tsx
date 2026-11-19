@@ -60,7 +60,7 @@ describe("empty api data shows empty states, never sample content", () => {
     ).toBeInTheDocument()
     expect(await screen.findByText("Track your first job")).toBeInTheDocument()
     expect(
-      screen.getAllByRole("button", { name: "Add job" }).length
+      screen.getAllByRole("button", { name: "New job" }).length
     ).toBeGreaterThan(0)
     expect(screen.queryByText(/^Nothing in /)).not.toBeInTheDocument()
     expectNone(sampleApplyCards().map((card) => card.title))
@@ -105,9 +105,9 @@ describe("Apply shows no Fit label", () => {
     expect(within(screen.getByRole("main")).queryAllByText(FIT_LABEL)).toEqual(
       []
     )
-    fireEvent.click(screen.getByRole("button", { name: "Calendar" }))
+    fireEvent.click(screen.getByRole("radio", { name: "Calendar" }))
     expect(
-      await screen.findByRole("button", { name: "Board" })
+      await screen.findByRole("radio", { name: "Calendar", checked: true })
     ).toBeInTheDocument()
     expect(within(screen.getByRole("main")).queryAllByText(FIT_LABEL)).toEqual(
       []

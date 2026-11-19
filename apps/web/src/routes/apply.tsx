@@ -198,12 +198,15 @@ export function ApplyPage() {
         onFilters={setFilters}
         priorityCounts={counts.data}
         priorityCountsFailed={Boolean(ownerId && counts.isError)}
+        showFilter={!empty}
+        nextUp={
+          ready && view !== "calendar" ? (
+            <ApplyNextUp jobs={filtered} onOpen={openJob} />
+          ) : null
+        }
       />
       <ActiveFilters filters={filters} onFilters={setFilters} />
       <div className="relative flex min-h-0 flex-1 flex-col">
-        {ready && view !== "calendar" ? (
-          <ApplyNextUp jobs={filtered} onOpen={openJob} />
-        ) : null}
         <div
           key={view}
           className="flex min-h-0 flex-1 flex-col overflow-auto motion-fade-in"

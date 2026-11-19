@@ -19,10 +19,8 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import {
   EXPLORE_EXAMPLE_HINT,
-  FAINT_TEXT,
   GMAIL_UNAVAILABLE_LEAD,
   GmailMark,
-  SOFT_TEXT,
   VIEW_EXAMPLE_LABEL,
 } from "./inbox-parts.tsx"
 
@@ -146,10 +144,7 @@ export function InboxConnect({
               {closed ? null : (
                 <Button
                   variant="ghost"
-                  className={cn(
-                    "-ms-2 h-11 px-2 text-[13.5px] md:h-8",
-                    SOFT_TEXT
-                  )}
+                  className="-ms-2 h-11 px-2 text-[13.5px] text-muted-foreground md:h-8"
                   disabled={pending}
                   onClick={onSkip}
                 >
@@ -158,7 +153,7 @@ export function InboxConnect({
               )}
             </div>
             {closed ? (
-              <div className="flex items-baseline justify-between gap-3 md:flex-col md:items-start md:gap-3.5">
+              <div className="flex flex-col items-start gap-3.5">
                 <p
                   id="inbox-gmail-hint"
                   className="max-w-105 min-w-0 text-sm leading-normal text-pretty text-foreground"
@@ -168,10 +163,7 @@ export function InboxConnect({
                 </p>
                 <Button
                   variant="ghost"
-                  className={cn(
-                    "-ms-2 h-11 w-fit shrink-0 px-2 text-[13.5px] md:h-8",
-                    SOFT_TEXT
-                  )}
+                  className="-ms-2 h-11 w-fit shrink-0 px-2 text-[13.5px] text-muted-foreground md:h-8"
                   disabled={pending}
                   onClick={onSkip}
                 >
@@ -181,7 +173,7 @@ export function InboxConnect({
             ) : null}
             <p
               data-user-content
-              className={cn("flex items-center gap-1.75 text-xs", FAINT_TEXT)}
+              className="flex items-center gap-1.75 text-xs text-muted-foreground"
             >
               <Lock className="size-3.25 shrink-0" aria-hidden />
               Reads job emails only. Nothing is sent without you.
@@ -257,7 +249,7 @@ export function InboxConnect({
                 </span>
                 <span className="flex-1" />
                 <span className="text-[11.5px] text-muted-foreground">
-                  Moved automatically
+                  Moved, with Undo
                 </span>
               </div>
             </div>

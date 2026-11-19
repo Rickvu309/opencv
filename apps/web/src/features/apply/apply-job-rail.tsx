@@ -208,7 +208,7 @@ function StageRow({
           />
         }
       >
-        <StageIcon stage={job.stage} />
+        <StageIcon stage={job.stage} decorative />
         <RailLabel>{railStageLabel(job.stage)}</RailLabel>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-[200px]">
@@ -218,9 +218,7 @@ function StageRow({
             className={MENU_ITEM}
             onClick={() => onStage(stage)}
           >
-            <span aria-hidden className="flex">
-              <StageIcon stage={stage} />
-            </span>
+            <StageIcon stage={stage} decorative />
             {stageLabel(stage)}
           </DropdownMenuItem>
         ))}
@@ -336,7 +334,9 @@ export function JobRail({
         <PriorityRow job={job} onPriority={onPriority} />
         <EditRow
           key={`location-${location}`}
-          icon={<MapPin aria-hidden className="size-3.5 text-chart-1" />}
+          icon={
+            <MapPin aria-hidden className="size-3.5 text-muted-foreground" />
+          }
           label={location || "Add location"}
           empty={!location}
           ariaLabel="Location"
@@ -346,7 +346,9 @@ export function JobRail({
         />
         <EditRow
           key={`interview-${job.interviewAt ?? ""}`}
-          icon={<Calendar aria-hidden className="size-3.5 text-chart-3" />}
+          icon={
+            <Calendar aria-hidden className="size-3.5 text-muted-foreground" />
+          }
           label={
             job.interviewAt
               ? interviewLabel(job.interviewAt, zone)

@@ -33,6 +33,7 @@ describe("inbox list", () => {
     )
     const rows = screen.getAllByRole("button", { name: /, / })
     expect(rows).toHaveLength(6)
+    expect(screen.getAllByRole("button", { name: /^Unread, / })).toHaveLength(4)
     expect(
       screen.getByRole("button", {
         name: /Associate PM, Local startup, Interview invite, Thu 10:00/,
@@ -49,10 +50,10 @@ describe("inbox list", () => {
     ).toHaveAttribute("data-slot", "inbox-row")
   })
 
-  it("counts unread threads in the overview", () => {
-    render(<InboxOverview threads={INBOX_THREADS} />)
-    expect(screen.getByText("4 unread")).toBeInTheDocument()
-    expect(screen.getByText("4 unread")).toHaveClass("tabular-nums")
+  it("asks for a pick in the overview without repeating the unread badge", () => {
+    render(<InboxOverview />)
+    expect(screen.getByText("Select an email")).toBeInTheDocument()
+    expect(screen.queryByText(/unread/)).toBeNull()
   })
 
   it("formats list times in a non-default zone", () => {

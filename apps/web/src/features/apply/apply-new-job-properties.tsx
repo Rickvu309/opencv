@@ -73,7 +73,7 @@ export function NewJobProperties({
             />
           }
         >
-          <StageIcon stage={stage} />
+          <StageIcon stage={stage} decorative />
           {stageLabel(stage)}
         </DropdownMenuTrigger>
         <DropdownMenuContent className="min-w-36">
@@ -129,7 +129,7 @@ export function NewJobProperties({
               />
             }
           >
-            <MapPin className="text-chart-1" aria-hidden />
+            <MapPin className="text-muted-foreground" aria-hidden />
             {location || (
               <span className="text-muted-foreground">Location</span>
             )}
