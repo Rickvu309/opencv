@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, screen, waitFor, within } from "@testing-library/react"
+import {
+  cleanup,
+  fireEvent,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react"
 
 import { setMockSession } from "@/test/auth-client-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
@@ -123,28 +129,45 @@ describe("landing page", () => {
     }
   })
 
-  it("shows four features under each product", async () => {
-    const { container } = await renderLanding()
+  it("ends each product section without a Features list", async () => {
+    await renderLanding()
 
-    for (const [id, items] of [
-      [
-        "paper",
-        ["Tailored CVs", "Import a CV", "Cover letters", "One-page check"],
-      ],
-      [
-        "apply",
-        ["Board and list", "Job details", "Calendar", "Interview prep"],
-      ],
-      [
-        "coach",
-        ["Tailor a CV", "Prep an interview", "Write a letter", "Role guidance"],
-      ],
-    ] as const) {
-      const listed = [
-        ...(container.querySelectorAll(`#${id} .landing-features li`) ?? []),
-      ].map((li) => li.textContent)
-      expect(listed).toEqual([...items])
+    for (const id of ["paper", "apply", "coach"]) {
+      const section = document.getElementById(id)
+      expect(section).not.toBeNull()
+      expect(within(section!).queryByText("Features")).toBeNull()
+      expect(within(section!).queryByRole("list")).toBeNull()
     }
+  })
+
+  it("opens the five nav links from the Menu button and closes after a pick", async () => {
+    const { router } = await renderLanding()
+
+    fireEvent.click(screen.getByRole("button", { name: "Menu" }))
+    const sheet = await screen.findByRole("dialog", { name: "Menu" })
+    const menu = within(sheet).getByRole("navigation", { name: "Menu" })
+    expect(
+      within(menu)
+        .getAllByRole("link")
+        .map((link) => link.textContent)
+    ).toEqual(["Product", "Stories", "Pricing", "Blog", "Help"])
+
+    fireEvent.click(within(menu).getByRole("link", { name: "Pricing" }))
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Menu" })).toBeNull()
+    })
+    expect(router.state.location.pathname).toBe("/pricing")
+  })
+
+  it("writes landing copy in sentence case, leaving capitals to styles", async () => {
+    const copy = await import("./landing-copy.ts")
+    const strings = Object.values(copy).flatMap(
+      (value) => JSON.stringify(value).match(/"[^"]*"/g) ?? []
+    )
+    const shouting = strings.filter((text) =>
+      /\b[A-Z]{2,}(?:\s+[A-Z]{2,}){2,}\b/.test(text)
+    )
+    expect(shouting).toEqual([])
   })
 
   it("sends every section link to a target that exists", async () => {
@@ -228,7 +251,7 @@ describe("landing page", () => {
 
     const logos = container.querySelector("#logos")
     expect(logos?.querySelector("h2")).toHaveTextContent(
-      "PEOPLE USING OPENCV HAVE INTERVIEWED AT"
+      "People using opencv have interviewed at"
     )
 
     for (const image of container.querySelectorAll("img")) {

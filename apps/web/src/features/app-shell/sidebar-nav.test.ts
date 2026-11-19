@@ -15,26 +15,27 @@ const targets = [
   SURFACE_PATHS.paper,
   SURFACE_PATHS.apply,
   SURFACE_PATHS.pitch,
+  SURFACE_PATHS.proofs,
 ]
 
-describe("Proofs stays under Paper", () => {
-  it("does not add a Proofs sidebar row", () => {
+describe("Proofs is a sidebar row in Your work", () => {
+  it("lists Proofs after Pitch and keeps it in search", () => {
     expect(SHELL_WORK.map((item) => item.id)).toEqual([
       "paper",
       "apply",
       "pitch",
+      "proofs",
     ])
-    expect(SURFACES.find((surface) => surface.id === "proofs")?.nav).toBeNull()
     expect(SURFACES.find((surface) => surface.id === "proofs")?.inSearch).toBe(
       true
     )
   })
 
-  it("highlights Paper on /proofs and /proof", () => {
-    expect(currentNavPath("/proofs", targets)).toBe(SURFACE_PATHS.paper)
-    expect(currentNavPath("/proof", targets)).toBe(SURFACE_PATHS.paper)
-    expect(currentNavPath("/proofs/later", targets)).toBe(SURFACE_PATHS.paper)
-    expect(currentNavPath("/proof/later", targets)).toBe(SURFACE_PATHS.paper)
+  it("highlights Proofs on /proofs and on one proof", () => {
+    expect(currentNavPath("/proofs", targets)).toBe(SURFACE_PATHS.proofs)
+    expect(currentNavPath("/proof", targets)).toBe(SURFACE_PATHS.proofs)
+    expect(currentNavPath("/proofs/later", targets)).toBe(SURFACE_PATHS.proofs)
+    expect(currentNavPath("/proof/later", targets)).toBe(SURFACE_PATHS.proofs)
     expect(currentNavPath("/proofing", targets)).toBeNull()
     expect(currentNavPath("/apply", targets)).toBe(SURFACE_PATHS.apply)
     expect(currentNavPath("/paper/doc", targets)).toBe(SURFACE_PATHS.paper)
@@ -46,9 +47,7 @@ describe("Proofs stays under Paper", () => {
       "utf8"
     )
     expect(source).not.toMatch(/\\\/proofs\?/)
-    const proofs = SURFACES.find((surface) => surface.id === "proofs")
     const proof = SURFACES.find((surface) => surface.id === "proof")
-    expect(proofs && "navParent" in proofs && proofs.navParent).toBe("paper")
-    expect(proof && "navParent" in proof && proof.navParent).toBe("paper")
+    expect(proof && "navParent" in proof && proof.navParent).toBe("proofs")
   })
 })

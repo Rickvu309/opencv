@@ -35,25 +35,10 @@
   font-size: 10px;
 }
 
-[data-surface="app-shell"] button[aria-label="New chat"] {
-  color: #1a1a1a;
-  background: #ffffff;
-}
-
-[data-surface="app-shell"] button[aria-label="New chat"]:not(:focus-visible) {
-  border-color: #e2e2e2;
-  box-shadow: 0 1px 2px #0000000a;
-}
-
-@media (hover: hover) {
-  [data-surface="app-shell"] button[aria-label="New chat"]:hover {
-    background: var(--sidebar-accent);
-  }
-}
-
 [data-surface="app-shell"] [data-slot="nav-item"],
 [data-surface="app-shell"] [data-slot="sidebar-group-label"],
 [data-surface="app-shell"] button[aria-label="Search"],
+[data-surface="app-shell"] button[aria-label="New chat"],
 [data-surface="app-shell"] [data-slot="account-trigger"] {
   border-radius: 6px;
 }

@@ -91,6 +91,26 @@ describe("command palette", () => {
     }
   })
 
+  it("does not echo a highlighted page in a footer", async () => {
+    const dialog = await openSearch()
+    const inbox = within(dialog).getByRole("button", { name: "Inbox" })
+    expect(inbox).toHaveAttribute("aria-current", "true")
+    expect(within(dialog).getAllByText("Inbox")).toHaveLength(1)
+  })
+
+  it("closes from a button that shows the Esc key", async () => {
+    const dialog = await openSearch()
+    const close = within(dialog).getByRole("button", { name: "Close search" })
+    expect(within(close).getByText("Esc")).toBeInTheDocument()
+    expect(within(close).queryByText("Close")).toBeNull()
+    fireEvent.click(close)
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "Search" })
+      ).not.toBeInTheDocument()
+    })
+  })
+
   it("lists pages for an empty query and does not call search", async () => {
     const dialog = await openSearch()
     expect(

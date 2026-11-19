@@ -17,13 +17,17 @@ export const LANDING_PRIMARY_LABEL = "Get started"
 
 export const LANDING_LOGIN_LABEL = "Log in"
 
+export const LANDING_MENU_LABEL = "Menu"
+
+export const LANDING_CLOSE_MENU_LABEL = "Close menu"
+
 export const LANDING_SAMPLE_LABEL = "See a sample"
 
 export const LANDING_TITLE = "opencv. Get your butt in your dream seat."
 
 export const LANDING_DESCRIPTION = `${LANDING_SUBHEAD} ${LANDING_STATEMENT_BRAND} ${LANDING_STATEMENT_REST}`
 
-export const LANDING_LOGO_LABEL = "PEOPLE USING OPENCV HAVE INTERVIEWED AT"
+export const LANDING_LOGO_LABEL = "People using opencv have interviewed at"
 
 export const LANDING_LOGOS = [
   "Stripe",
@@ -113,7 +117,6 @@ export type LandingProduct = {
   title: string
   body: string
   figure: LandingFigureId
-  features: readonly [string, string, string, string]
 }
 
 export const LANDING_PRODUCTS: readonly LandingProduct[] = [
@@ -122,31 +125,18 @@ export const LANDING_PRODUCTS: readonly LandingProduct[] = [
     title: "Paper",
     body: "Write your CV and letters in a clean editor. Coach tailors them to each job and keeps it to one page.",
     figure: "paper",
-    features: [
-      "Tailored CVs",
-      "Import a CV",
-      "Cover letters",
-      "One-page check",
-    ],
   },
   {
     id: "apply",
     title: "Apply",
     body: "Save any job from a link, move it from Saved to Offer, and never miss an interview or a deadline.",
     figure: "apply",
-    features: ["Board and list", "Job details", "Calendar", "Interview prep"],
   },
   {
     id: "coach",
     title: "Coach",
     body: "Ask in plain words. Coach reads your CV and the job, then does the work while you watch.",
     figure: "coach",
-    features: [
-      "Tailor a CV",
-      "Prep an interview",
-      "Write a letter",
-      "Role guidance",
-    ],
   },
 ]
 

@@ -1,6 +1,13 @@
 import { useEffect, useReducer, useRef } from "react"
 import { useShortcut } from "@/lib/use-shortcut.ts"
 import { useNavigate } from "@tanstack/react-router"
+import {
+  Briefcase,
+  FileText,
+  type LucideIcon,
+  MessageCircle,
+  X,
+} from "lucide-react"
 
 import { focusSearchButton } from "./focus-search-button.ts"
 
@@ -18,6 +25,7 @@ import {
   type PaletteRow,
 } from "@/features/command-palette/palette-search.ts"
 import type { SurfaceId } from "@/lib/product-paths.ts"
+import { SURFACE_ICONS } from "@/lib/surface-icons.ts"
 import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,
@@ -25,6 +33,7 @@ import {
   DialogTitle,
 } from "@workspace/ui/components/dialog"
 import { Input } from "@workspace/ui/components/input"
+import { Kbd } from "@workspace/ui/components/kbd"
 import { cn } from "@workspace/ui/lib/utils"
 
 const copy = {
@@ -48,6 +57,13 @@ function rowLabel(row: PaletteRow) {
   if (row.kind === "job") return row.title
   if (row.kind === "paper") return row.name
   return row.title
+}
+
+function rowIcon(row: PaletteRow): LucideIcon {
+  if (row.kind === "page") return SURFACE_ICONS[row.surface]
+  if (row.kind === "job") return Briefcase
+  if (row.kind === "paper") return FileText
+  return MessageCircle
 }
 
 function RowDetail({ title, detail }: { title: string; detail: string }) {
@@ -186,7 +202,7 @@ export function CommandPalette({
         instant
         showCloseButton={false}
         aria-describedby={undefined}
-        className="top-0 left-0 flex h-dvh max-h-none w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden overscroll-contain rounded-none bg-background p-0 text-foreground ring-1 ring-border sm:top-[12vh] sm:left-1/2 sm:h-[min(32rem,70vh)] sm:max-w-3xl sm:-translate-x-1/2 sm:translate-y-0 sm:rounded-xl"
+        className="top-0 left-0 flex h-dvh max-h-none w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden overscroll-contain rounded-none bg-background p-0 text-foreground ring-1 ring-border sm:top-[12vh] sm:left-1/2 sm:h-[min(32rem,70vh)] sm:max-w-2xl sm:-translate-x-1/2 sm:translate-y-0 sm:rounded-xl"
       >
         <DialogTitle className="sr-only">Search</DialogTitle>
         <div
@@ -218,14 +234,17 @@ export function CommandPalette({
             className="h-auto min-w-0 flex-1 rounded-none border-0 bg-transparent px-0 text-base shadow-none ring-0 outline-none focus-visible:border-0 focus-visible:ring-0 md:text-sm"
           />
           <Button
-            className="h-11 md:h-7"
+            className="size-11 md:size-auto md:p-0.5"
             type="button"
             variant="ghost"
-            size="sm"
+            size="icon-sm"
             aria-label="Close search"
             onClick={() => onOpenChange(false)}
           >
-            Close
+            <X aria-hidden="true" className="md:hidden" />
+            <Kbd aria-hidden="true" className="max-md:hidden">
+              Esc
+            </Kbd>
           </Button>
         </div>
         <div className="flex flex-wrap gap-2 border-b border-border px-4 py-2">
@@ -291,6 +310,7 @@ export function CommandPalette({
                 </p>
                 {items.map((row) => {
                   const current = active?.id === row.id
+                  const Icon = rowIcon(row)
                   return (
                     <Button
                       key={row.id}
@@ -308,10 +328,14 @@ export function CommandPalette({
                       }
                       onClick={() => activate(row)}
                       className={cn(
-                        "h-auto min-h-11 w-full justify-start px-3 py-2 text-left whitespace-normal md:min-h-0",
+                        "h-auto min-h-11 w-full justify-start gap-3 px-3 py-2 text-left whitespace-normal md:min-h-0",
                         current && "bg-muted"
                       )}
                     >
+                      <Icon
+                        aria-hidden="true"
+                        className="shrink-0 text-muted-foreground"
+                      />
                       {row.kind === "job" ? (
                         <RowDetail title={row.title} detail={row.company} />
                       ) : row.kind === "paper" ? (
@@ -328,7 +352,7 @@ export function CommandPalette({
             )
           })}
         </div>
-        {active ? (
+        {active && rowProperties(active) !== rowLabel(active) ? (
           <p
             data-slot="palette-properties"
             className="border-t border-border px-4 py-3 text-sm text-muted-foreground"

@@ -1,7 +1,15 @@
 import { documentHref } from "@/lib/web-origins-env.ts"
-import { useEffect, useReducer } from "react"
+import { useEffect, useReducer, useState } from "react"
 import { Link } from "@tanstack/react-router"
+import { Menu, X } from "lucide-react"
 
+import { Button } from "@workspace/ui/components/button"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTitle,
+} from "@workspace/ui/components/dialog"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -9,7 +17,9 @@ import { OpenCvLogo } from "@/components/app-logo.tsx"
 
 import { landingButton } from "./landing-button.ts"
 import {
+  LANDING_CLOSE_MENU_LABEL,
   LANDING_LOGIN_LABEL,
+  LANDING_MENU_LABEL,
   LANDING_NAV_LINKS,
   LANDING_PRIMARY_LABEL,
   type LandingNavLink,
@@ -21,6 +31,82 @@ function pageHref(href: NavHref): Exclude<NavHref, `/#${string}`> | null {
   return href.startsWith("/#")
     ? null
     : (href as Exclude<NavHref, `/#${string}`>)
+}
+
+function NavLinks({
+  label,
+  className,
+  onNavigate,
+}: {
+  label: string
+  className: string
+  onNavigate?: () => void
+}) {
+  return (
+    <nav aria-label={label} className={className}>
+      {LANDING_NAV_LINKS.map((link) => {
+        const page = pageHref(link.href)
+        return (
+          <Link
+            key={link.href}
+            {...(page ? { to: page } : { to: "/", hash: link.href.slice(2) })}
+            onClick={onNavigate}
+            className={cn("landing-link", FOCUS_RING)}
+          >
+            {link.label}
+          </Link>
+        )
+      })}
+    </nav>
+  )
+}
+
+function LandingMenu() {
+  const [open, setOpen] = useState(false)
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon-sm"
+        aria-label={LANDING_MENU_LABEL}
+        className="landing-menu-button size-11"
+        onClick={() => setOpen(true)}
+      >
+        <Menu aria-hidden="true" />
+      </Button>
+      <DialogContent
+        layout="sheet"
+        side="end"
+        showCloseButton={false}
+        className="top-0 right-0 flex h-svh w-[280px] max-w-[80vw] flex-col gap-2 p-2 pt-[calc(env(safe-area-inset-top,0px)+0.5rem)]"
+      >
+        <div className="flex items-center justify-between ps-3">
+          <DialogTitle className="text-sm font-medium">
+            {LANDING_MENU_LABEL}
+          </DialogTitle>
+          <DialogClose
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="size-11"
+                aria-label={LANDING_CLOSE_MENU_LABEL}
+              />
+            }
+          >
+            <X aria-hidden="true" />
+          </DialogClose>
+        </div>
+        <NavLinks
+          label={LANDING_MENU_LABEL}
+          className="landing-menu-links"
+          onNavigate={() => setOpen(false)}
+        />
+      </DialogContent>
+    </Dialog>
+  )
 }
 
 export function LandingNav() {
@@ -47,32 +133,7 @@ export function LandingNav() {
               wordmarkClassName="text-[16px] tracking-[-0.5px]"
             />
           </Link>
-          <nav aria-label="Primary" className="landing-nav-links">
-            {LANDING_NAV_LINKS.map((link) => {
-              const page = pageHref(link.href)
-              if (page) {
-                return (
-                  <Link
-                    key={link.href}
-                    to={page}
-                    className={cn("landing-link", FOCUS_RING)}
-                  >
-                    {link.label}
-                  </Link>
-                )
-              }
-              return (
-                <Link
-                  key={link.href}
-                  to="/"
-                  hash={link.href.slice(2)}
-                  className={cn("landing-link", FOCUS_RING)}
-                >
-                  {link.label}
-                </Link>
-              )
-            })}
-          </nav>
+          <NavLinks label="Primary" className="landing-nav-links" />
           <div className="landing-nav-actions">
             <a
               href={documentHref("/sign-in")}
@@ -86,6 +147,7 @@ export function LandingNav() {
             >
               {LANDING_PRIMARY_LABEL}
             </a>
+            <LandingMenu />
           </div>
         </div>
       </div>
