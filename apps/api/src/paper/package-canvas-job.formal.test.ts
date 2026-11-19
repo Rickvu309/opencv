@@ -68,7 +68,7 @@ describe("a Letter drafted from a Job", () => {
       const revision = String(field(minted.output, "revision"))
       expect(field(minted.output, "generation")).toBe("package")
       expect(field(minted.output, "kind")).toBe("letter")
-      expect(field(minted.output, "name")).toBe("Cover letter, Northwind.docx")
+      expect(field(minted.output, "name")).toBe("Cover letter, Northwind")
 
       const page = (await open(owner, {
         kind: "read",
@@ -82,7 +82,7 @@ describe("a Letter drafted from a Job", () => {
       const linked = await registry.read("job.get", { jobId }, actor)
       expect(field(linked, "letterDocId")).toBe(docId)
       expect(field(linked, "linked")).toMatchObject({
-        letter: { id: docId, name: "Cover letter, Northwind.docx" },
+        letter: { id: docId, name: "Cover letter, Northwind" },
       })
       const listed = (await registry.read("job.list", {}, actor)) as unknown[]
       expect(listed.map((row) => field(row, "letterDocId"))).toEqual([docId])
@@ -94,7 +94,7 @@ describe("a Letter drafted from a Job", () => {
       expect(receipts.map((row) => row.summary)).toEqual(
         expect.arrayContaining([
           "Wrote on the page",
-          "You linked Cover letter, Northwind.docx",
+          "You linked Cover letter, Northwind",
         ])
       )
 
@@ -149,7 +149,7 @@ describe("a Letter drafted from a Job", () => {
       const read = async () => registry.read("job.get", { jobId }, actor)
       expect(field(await read(), "letterDocId")).toBe(docId)
       expect(field(await read(), "linked")).toMatchObject({
-        letter: { id: docId, name: "Cover letter.docx" },
+        letter: { id: docId, name: "Cover letter" },
       })
       await registry.execute({
         name: "job.linkPaper",

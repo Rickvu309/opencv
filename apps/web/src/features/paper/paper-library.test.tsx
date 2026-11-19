@@ -170,7 +170,7 @@ describe("Paper library", () => {
       generation: "package",
       docId: "33333333-3333-4333-8333-333333333333",
       revision: "44444444-4444-4444-8444-444444444444",
-      name: "Original.docx",
+      name: "Original",
       kind: "cv",
       packageHash: "b".repeat(64),
       byteSize: 1200,
@@ -374,7 +374,7 @@ describe("Paper library", () => {
   it("offers no Download PDF for a Word page, which has no print body", async () => {
     const print = vi.spyOn(window, "print").mockImplementation(() => undefined)
     const wordPage: PaperView = {
-      ...cv("CV.docx"),
+      ...cv("CV"),
       id: parsePaperId("33333333-3333-4333-8333-333333333333"),
       format: "word",
     }
@@ -501,14 +501,14 @@ describe("Paper library", () => {
   )
 
   it.each([
-    ["a Word page", { format: "word", name: "Word CV.docx" }, true],
+    ["a Word page", { format: "word", name: "Word CV" }, true],
     ["an older document", {}, false],
   ] as const)(
     "deletes %s from the card menu and offers Undo only when it can be undone",
     async (_kind, extra, undoable) => {
       const doc = undoable
-        ? { ...cv("Word CV.docx"), format: "word" as const }
-        : cv("Word CV.docx")
+        ? { ...cv("Word CV"), format: "word" as const }
+        : cv("Word CV")
       const activityId = "55555555-5555-4555-8555-555555555555"
       const fetchMock = vi.fn<typeof fetch>().mockImplementation((url) => {
         const path = String(url).split("?")[0] ?? ""

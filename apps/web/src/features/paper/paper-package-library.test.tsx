@@ -17,7 +17,7 @@ const document = paperPackageMetadataSchema.parse({
   generation: "package",
   docId: "11111111-1111-4111-8111-111111111111",
   revision: "22222222-2222-4222-8222-222222222222",
-  name: "Original Letter.docx",
+  name: "Original Letter",
   kind: "letter",
   packageHash: "a".repeat(64),
   byteSize: 1200,
@@ -72,7 +72,7 @@ function Harness({
 async function preview(name: string) {
   fireEvent.click(
     await screen.findByRole("button", {
-      name: `${name.replace(/\.docx$/i, "")} menu`,
+      name: `${name} menu`,
     })
   )
   fireEvent.click(await screen.findByRole("menuitem", { name: "Preview text" }))
@@ -161,9 +161,6 @@ it("keeps unavailable pinned content unavailable instead of loading a newer head
   )
   render(<Harness />)
   await screen.findByRole("button", { name: /Open / })
-  expect(
-    screen.queryByRole("button", { name: `Open ${document.name}` })
-  ).not.toBeInTheDocument()
   await preview(document.name)
   expect(
     await screen.findByText(
@@ -265,7 +262,7 @@ it("requests the next library page and returns to the first page", async () => {
   const second = paperPackageMetadataSchema.parse({
     ...document,
     docId: "33333333-3333-4333-8333-333333333333",
-    name: "Second Letter.docx",
+    name: "Second Letter",
   })
   const inputs: unknown[] = []
   vi.stubGlobal(

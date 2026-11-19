@@ -130,7 +130,7 @@ describe("paper import", () => {
       .from(activity)
       .where(eq(activity.command, "paper.import"))
     expect(receipts.map((row) => row.summary).sort()).toEqual([
-      "Imported notes.docx",
+      "Imported notes",
       "Imported sample",
       "Imported sample",
     ])

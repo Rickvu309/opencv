@@ -51,19 +51,13 @@ function startedBytes(input: PaperStartInput) {
 }
 
 export function startedName(input: PaperStartInput, company: string | null) {
-  if (input.name)
-    return /\.docx$/i.test(input.name) ? input.name : `${input.name}.docx`
+  if (input.name) return input.name
   const base =
     input.kind === "cv"
-      ? templatePageName(input.templateId ?? PAPER_START_TEMPLATE).replace(
-          /\.docx$/i,
-          ""
-        )
+      ? templatePageName(input.templateId ?? PAPER_START_TEMPLATE)
       : "Cover letter"
-  const named = company?.trim() ? `${base}, ${company.trim()}.docx` : null
-  return named && paperDocNameSchema.safeParse(named).success
-    ? named
-    : `${base}.docx`
+  const named = company?.trim() ? `${base}, ${company.trim()}` : null
+  return named && paperDocNameSchema.safeParse(named).success ? named : base
 }
 
 const candidateSchema = z

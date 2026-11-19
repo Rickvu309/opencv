@@ -18,7 +18,6 @@ import { emptyHandCopy, PaperHandEmpty } from "./paper-hand-empty.tsx"
 import {
   entryName,
   fileBadge,
-  libraryDisplayName,
   type LibraryEntry,
   type LibraryView,
 } from "./paper-library-entries.ts"
@@ -170,10 +169,6 @@ function entryEdited(entry: LibraryEntry) {
   if (entry.type === "paper") return paperEditedLabel(entry.doc.updatedAt)
   if (entry.type === "file") return paperEditedLabel(entry.file.createdAt)
   return "Word file"
-}
-
-function entryLabel(entry: LibraryEntry) {
-  return libraryDisplayName(entryName(entry))
 }
 
 function openEntry(entry: LibraryEntry, on: LibraryEntryHandlers) {
@@ -487,7 +482,7 @@ export function PaperHand({
         shift,
         reduced,
       })
-      const name = entryLabel(entry)
+      const name = entryName(entry)
       const edited = entryEdited(entry)
       const atCentre = index === centre && !pose.hidden
       return (
@@ -522,7 +517,7 @@ export function PaperHand({
     })
   }
 
-  const shownName = shown ? entryLabel(shown) : ""
+  const shownName = shown ? entryName(shown) : ""
   const shownEdited = shown ? entryEdited(shown) : ""
 
   if (showBlanks)

@@ -534,7 +534,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       act: () => run("paper.start", { kind: "cv" }),
       assert: async (result) => {
         expect(text(result.output, "generation")).toBe("package")
-        expect(text(result.output, "name")).toBe("Simple CV.docx")
+        expect(text(result.output, "name")).toBe("Simple CV")
         expect(result.reversal).toBeNull()
         const docId = text(result.output, "docId")
         if (!docId) throw new Error("missing started page")

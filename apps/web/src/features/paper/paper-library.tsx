@@ -59,7 +59,7 @@ import {
   useWordLibrary,
   type WordDocument,
 } from "./paper-package-library.tsx"
-import { libraryDisplayName, libraryEntries } from "./paper-library-entries.ts"
+import { libraryEntries } from "./paper-library-entries.ts"
 import { PaperCommandBar } from "./paper-hand-controls.tsx"
 import { handCounts } from "./paper-hand-layout.ts"
 import { PaperHand } from "./paper-hand.tsx"
@@ -326,7 +326,7 @@ export function PaperLibrary({
 
   async function confirmDelete() {
     if (!mode || mode.type !== "delete") return
-    const name = libraryDisplayName(mode.doc.name)
+    const name = mode.doc.name
     try {
       const deleted = await run("paper.delete", { docId: mode.doc.id })
       closeDialog()
@@ -342,7 +342,7 @@ export function PaperLibrary({
     if (!mode || mode.type !== "delete-file") return
     try {
       await run("paper.deleteFile", { fileId: mode.file.id })
-      toast(`Deleted ${libraryDisplayName(mode.file.name)}`)
+      toast(`Deleted ${mode.file.name}`)
       closeDialog()
     } catch (err) {
       toast(messageOf(err, "Could not delete that file. Try again."))
@@ -352,7 +352,7 @@ export function PaperLibrary({
   async function duplicate(doc: PaperView) {
     try {
       const copy = await run("paper.duplicate", { docId: doc.id })
-      await rememberUndo(copy.id, `Duplicated ${libraryDisplayName(doc.name)}`)
+      await rememberUndo(copy.id, `Duplicated ${doc.name}`)
     } catch (err) {
       toast(messageOf(err, "Could not duplicate. Try again."))
     }
@@ -532,9 +532,9 @@ export function PaperLibrary({
         open={mode?.type === "delete" || mode?.type === "delete-file"}
         name={
           deleting?.type === "delete-file"
-            ? libraryDisplayName(deleting.file.name)
+            ? deleting.file.name
             : deleting
-              ? libraryDisplayName(deleting.doc.name)
+              ? deleting.doc.name
               : null
         }
         undoable={deletingWordPage}

@@ -1,0 +1,126 @@
+[
+  {
+    "subject": "apps/api/src/coach/coach-creates-word.test.ts",
+    "because": "Paper names no longer carry .docx (#1717): minted, started, imported and renamed names are plain, so expectations pinned to X.docx move to X; the removed Open-name assert only passed because the display helper stripped .docx. Pinned by package-start.test.ts and scripts/paper-mint-names.test.mjs",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/api/src/paper/package-canvas-job.formal.test.ts",
+    "because": "Paper names no longer carry .docx (#1717): minted, started, imported and renamed names are plain, so expectations pinned to X.docx move to X; the removed Open-name assert only passed because the display helper stripped .docx. Pinned by package-start.test.ts and scripts/paper-mint-names.test.mjs",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/api/src/paper/package-start.test.ts",
+    "because": "Paper names no longer carry .docx (#1717): minted, started, imported and renamed names are plain, so expectations pinned to X.docx move to X; the removed Open-name assert only passed because the display helper stripped .docx. Pinned by package-start.test.ts and scripts/paper-mint-names.test.mjs",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/api/src/paper/word-card-actions.test.ts",
+    "because": "Paper names no longer carry .docx (#1717): minted, started, imported and renamed names are plain, so expectations pinned to X.docx move to X; the removed Open-name assert only passed because the display helper stripped .docx. Pinned by package-start.test.ts and scripts/paper-mint-names.test.mjs",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/api/src/paper/word-page-trash-proposals.test.ts",
+    "because": "Paper names no longer carry .docx (#1717): minted, started, imported and renamed names are plain, so expectations pinned to X.docx move to X; the removed Open-name assert only passed because the display helper stripped .docx. Pinned by package-start.test.ts and scripts/paper-mint-names.test.mjs",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/word/template.formal.test.ts",
+    "because": "Paper names no longer carry .docx (#1717): minted, started, imported and renamed names are plain, so expectations pinned to X.docx move to X; the removed Open-name assert only passed because the display helper stripped .docx. Pinned by package-start.test.ts and scripts/paper-mint-names.test.mjs",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/page-writing.formal.test.ts",
+    "because": "Paper names no longer carry .docx (#1717): minted, started, imported and renamed names are plain, so expectations pinned to X.docx move to X; the removed Open-name assert only passed because the display helper stripped .docx. Pinned by package-start.test.ts and scripts/paper-mint-names.test.mjs",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/package-http.test.ts",
+    "because": "Paper names no longer carry .docx (#1717): minted, started, imported and renamed names are plain, so expectations pinned to X.docx move to X; the removed Open-name assert only passed because the display helper stripped .docx. Pinned by package-start.test.ts and scripts/paper-mint-names.test.mjs",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library-card.test.tsx",
+    "because": "Paper names no longer carry .docx (#1717): minted, started, imported and renamed names are plain, so expectations pinned to X.docx move to X; the removed Open-name assert only passed because the display helper stripped .docx. Pinned by package-start.test.ts and scripts/paper-mint-names.test.mjs",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-package-library.test.tsx",
+    "because": "Paper names no longer carry .docx (#1717): minted, started, imported and renamed names are plain, so expectations pinned to X.docx move to X; the removed Open-name assert only passed because the display helper stripped .docx. Pinned by package-start.test.ts and scripts/paper-mint-names.test.mjs",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "because": "Paper names no longer carry .docx (#1717): minted, started, imported and renamed names are plain, so expectations pinned to X.docx move to X; the removed Open-name assert only passed because the display helper stripped .docx. Pinned by package-start.test.ts and scripts/paper-mint-names.test.mjs",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library.test.tsx",
+    "because": "Paper names no longer carry .docx (#1717): minted, started, imported and renamed names are plain, so expectations pinned to X.docx move to X; the removed Open-name assert only passed because the display helper stripped .docx. Pinned by package-start.test.ts and scripts/paper-mint-names.test.mjs",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/coach/package-grounding.test.ts",
+    "because": "New Paper documents are named without a file extension (#1717), so the Coach note and the import receipt name the document as the person sees it, without .docx.",
+    "replacedBy": "apps/api/src/coach/package-grounding.test.ts",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "b50bcd6a3e23d9be4df06b723b3dce297876c4ce",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/import-parse.test.ts",
+    "because": "New Paper documents are named without a file extension (#1717), so a text import's receipt names the document as the person sees it, without .docx.",
+    "replacedBy": "apps/api/src/paper/import-parse.test.ts",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "e0c071d4bcfdae035a48b28cb5b44b0e3b556f99",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]
