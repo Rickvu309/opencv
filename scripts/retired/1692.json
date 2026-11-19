@@ -26,5 +26,13 @@
     "class": "self",
     "classBecause": null,
     "items": 2
+  },
+  {
+    "subject": "apps/web/src/test/design-vocabulary.test.ts",
+    "because": "The Coach Working shimmer and its stylesheet are deleted in #1692 (Working now breathes inside the fold), so the raw-colour allowlist row for components/ai-elements/shimmer.css allows a file that no longer exists; dropping it makes the check stricter.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
