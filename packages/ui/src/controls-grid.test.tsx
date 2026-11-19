@@ -128,7 +128,7 @@ describe("primary and destructive buttons: states by sizes in the shipped light 
           expect.arrayContaining([
             FILL[variant],
             HEIGHT[size],
-            "text-[13px]",
+            "text-ui",
             "rounded-md",
             "px-3",
           ])
@@ -232,7 +232,7 @@ describe("dialog: one veil, one corner, one padding, anchored near the top", () 
     expect(classesOf(veil)).toContain("bg-foreground/10")
     expect(classesOf(card)).toEqual(
       expect.arrayContaining([
-        "rounded-[12px]",
+        "rounded-lg",
         "p-6",
         "top-[clamp(16px,14dvh,120px)]",
         "max-h-[calc(100dvh-clamp(16px,14dvh,120px)-16px)]",
@@ -313,7 +313,7 @@ describe("menu rows", () => {
     for (const item of screen.getAllByRole("menuitem"))
       expect(classesOf(item)).toEqual(
         expect.arrayContaining([
-          "text-[13px]",
+          "text-ui",
           "min-h-8",
           "max-md:min-h-11",
           "whitespace-nowrap",
@@ -350,7 +350,7 @@ describe("select", () => {
     expect(popup).toHaveAttribute("data-align-trigger", "false")
     for (const item of document.querySelectorAll("[data-slot=select-item]"))
       expect(classesOf(item)).toEqual(
-        expect.arrayContaining(["text-[13px]", "min-h-8", "max-md:min-h-11"])
+        expect.arrayContaining(["text-ui", "min-h-8", "max-md:min-h-11"])
       )
   })
 })
@@ -369,7 +369,7 @@ describe("toast", () => {
         "bg-popover",
         "text-popover-foreground",
         "border-border",
-        "text-[13px]",
+        "text-ui",
         "min-h-11",
       ])
     )

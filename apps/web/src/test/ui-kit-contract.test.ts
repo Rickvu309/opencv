@@ -118,11 +118,13 @@ describe("UI package kit surface", () => {
       "--duration-panel: 280ms",
       "--ease-panel: cubic-bezier(0.32, 0.72, 0, 1)",
       "prefers-reduced-motion",
+      "--text-ui: 0.8125rem",
+      "--text-ui--line-height: 1.25rem",
     ]) {
       expect(css, token).toContain(token)
     }
     for (const retired of [
-      /--text-/,
+      /--text-(?!ui:|ui--line-height:)/,
       /--(?:info|success|warning)\b/,
       /--duration-(?:base|fast|slow)/,
       /--ease-(?:standard|emphasized)/,
@@ -145,7 +147,7 @@ describe("UI package kit surface", () => {
       "globals.css",
     ])
     expect(read("packages/ui/src/lib/utils.ts")).toMatch(
-      /export \{ cn \} from "cn"/
+      /import \{ createCn \} from "cn\/config"/
     )
   })
 

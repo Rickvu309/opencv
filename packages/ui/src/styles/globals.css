@@ -42,6 +42,8 @@
   --color-surface-sunken: var(--surface-sunken);
   --color-hairline: var(--hairline);
   --color-subtle-foreground: var(--subtle-foreground);
+  --text-ui: 0.8125rem;
+  --text-ui--line-height: 1.25rem;
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);

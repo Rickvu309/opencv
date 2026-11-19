@@ -1,6 +1,6 @@
 import * as React from "react"
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
-import { cn } from "cn"
+import { cn } from "@workspace/ui/lib/utils"
 
 import { Button } from "@workspace/ui/components/button"
 import { XIcon } from "lucide-react"
@@ -52,7 +52,7 @@ type DialogLayout = "dialog" | "sheet"
 
 const DIALOG_LAYOUT_CLASS: Record<DialogLayout, string> = {
   dialog:
-    "fixed top-[clamp(16px,14dvh,120px)] left-1/2 z-50 grid max-h-[calc(100dvh-clamp(16px,14dvh,120px)-16px)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 gap-4 overflow-y-auto rounded-[12px] bg-popover p-6 text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none sm:max-w-sm",
+    "fixed top-[clamp(16px,14dvh,120px)] left-1/2 z-50 grid max-h-[calc(100dvh-clamp(16px,14dvh,120px)-16px)] w-full max-w-[calc(100%-2rem)] -translate-x-1/2 gap-4 overflow-y-auto rounded-lg bg-popover p-6 text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none sm:max-w-sm",
   sheet:
     "fixed z-50 bg-popover text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none",
 }
@@ -200,7 +200,7 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "-mx-6 -mb-6 flex flex-col-reverse gap-2 rounded-b-[12px] border-t bg-muted/50 px-6 py-4 sm:flex-row sm:justify-end",
+        "-mx-6 -mb-6 flex flex-col-reverse gap-2 rounded-b-lg border-t bg-muted/50 px-6 py-4 sm:flex-row sm:justify-end",
         className
       )}
       {...props}
@@ -233,7 +233,7 @@ function DialogDescription({
     <DialogPrimitive.Description
       data-slot="dialog-description"
       className={cn(
-        "text-[13px] text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
+        "text-ui text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
         className
       )}
       {...props}

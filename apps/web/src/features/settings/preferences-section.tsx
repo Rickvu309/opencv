@@ -108,7 +108,7 @@ export function PreferencesSection({
                       : undefined
                   }
                   disabled={pending}
-                  className="touch-manipulation gap-2 rounded-[7px] px-2.5 data-[size=default]:max-md:h-11 md:text-[13px] @max-[479px]/settings:w-full @max-[479px]/settings:min-w-0"
+                  className="touch-manipulation gap-2 rounded-md px-2.5 data-[size=default]:max-md:h-11 md:text-ui @max-[479px]/settings:w-full @max-[479px]/settings:min-w-0"
                 >
                   <SelectValue className="min-w-0 truncate" title={zoneLabel}>
                     {zoneLabel}
@@ -149,7 +149,7 @@ export function PreferencesSection({
                       : undefined
                   }
                   disabled={pending}
-                  className="touch-manipulation gap-2 rounded-[7px] px-2.5 data-[size=default]:max-md:h-11 md:text-[13px]"
+                  className="touch-manipulation gap-2 rounded-md px-2.5 data-[size=default]:max-md:h-11 md:text-ui"
                 >
                   <SelectValue>{startLabel}</SelectValue>
                 </SelectTrigger>
