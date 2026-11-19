@@ -37,8 +37,8 @@ import {
   X,
 } from "lucide-react"
 
-import "./design/letter-editor.pen.css"
-import "./design/letter-block-editor.pen.css"
+import "./design/letter-editor.css"
+import "./design/letter-block-editor.css"
 
 import type { ClientChange } from "@workspace/paper-crdt"
 
@@ -123,6 +123,7 @@ export function PaperLetterEditor({
   return (
     <section
       aria-label={`Editing ${doc.name}`}
+      data-surface="paper"
       data-pen-surface="paper"
       data-slot="letter-editor-page"
       className="flex h-full min-h-0 min-w-0 flex-1 flex-col"

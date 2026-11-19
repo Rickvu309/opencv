@@ -188,7 +188,7 @@ describe("collapsed expand control stays in the header", () => {
   it("bleeds the sticky paper header to the column edge below 768px with no divider line", () => {
     const here = dirname(fileURLToPath(import.meta.url))
     const css = readFileSync(
-      join(here, "../paper/design/paper-library.pen.css"),
+      join(here, "../paper/design/paper-library.css"),
       "utf8"
     )
     const desktopAt = css.indexOf("@media (min-width: 768px)")

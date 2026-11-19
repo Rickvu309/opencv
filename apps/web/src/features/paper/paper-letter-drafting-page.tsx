@@ -10,7 +10,7 @@ import {
 } from "@workspace/ui/components/breadcrumb"
 import { Button } from "@workspace/ui/components/button"
 import { SidebarExpandButton } from "@workspace/ui/components/page-header"
-import "./design/letter-drafting.pen.css"
+import "./design/letter-drafting.css"
 
 export function PaperLetterDraftingPage({
   draftName,
@@ -35,6 +35,7 @@ export function PaperLetterDraftingPage({
   }, [])
   return (
     <section
+      data-surface="paper"
       data-pen-surface="paper"
       data-slot="letter-drafting-page"
       aria-label="Drafting cover letter"

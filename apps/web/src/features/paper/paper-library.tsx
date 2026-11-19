@@ -71,7 +71,7 @@ import {
   PaperDeleteDialog,
   PaperRenameDialog,
 } from "./paper-library-dialogs.tsx"
-import "./design/paper-library.pen.css"
+import "./design/paper-library.css"
 import "./design/paper-library-header.css"
 
 export function PaperLibrary({
@@ -392,6 +392,7 @@ export function PaperLibrary({
   return (
     <section
       aria-label="Paper"
+      data-surface="paper"
       data-pen-surface="paper"
       data-slot="paper-library"
       className="paper-library min-w-0"

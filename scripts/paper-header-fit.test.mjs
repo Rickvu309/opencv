@@ -4,12 +4,24 @@ import { readFileSync } from "node:fs"
 import test from "node:test"
 import { detect } from "./lib/paper-header-fit.mjs"
 
-const cssPath = "apps/web/src/features/paper/design/rich-page-header.pen.css"
+const cssPath = "apps/web/src/features/paper/design/rich-page-header.css"
 const pagePath = "apps/web/src/features/paper/rich-page.tsx"
 const read = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
-const past = (rev, path) =>
-  execFileSync("git", ["show", `${rev}:${path}`], { encoding: "utf8" })
+const git = (...args) => execFileSync("git", args, { encoding: "utf8" })
+const pathAt = (rev, path) => {
+  const dir = path.slice(0, path.lastIndexOf("/") + 1)
+  const stem = path.slice(dir.length).replace(/\.css$/, ".")
+  const names = git("ls-tree", "--name-only", rev, dir).split("\n")
+  return (
+    names.find((name) => name === path) ??
+    names.find(
+      (name) => name.startsWith(`${dir}${stem}`) && name.endsWith(".css")
+    ) ??
+    path
+  )
+}
+const past = (rev, path) => git("show", `${rev}:${pathAt(rev, path)}`)
 
 test("Paper header detector rejects mixed title units and an unshrinkable status without a browser", () => {
   const clean = [

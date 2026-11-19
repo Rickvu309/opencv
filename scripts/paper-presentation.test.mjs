@@ -10,7 +10,7 @@ import { clean, mistakes, roundTwo } from "./fixtures/paper-presentation.mjs"
 
 const root = path.resolve(fileURLToPath(new URL("..", import.meta.url)))
 test("rich document headers allow enlarged titles and actions to wrap", () => {
-  const path = "apps/web/src/features/paper/design/rich-page-header.pen.css"
+  const path = "apps/web/src/features/paper/design/rich-page-header.css"
   const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
   const mistake = clean.replace("flex-wrap: wrap;", "flex-wrap: nowrap;")
   assert.notEqual(mistake, clean)

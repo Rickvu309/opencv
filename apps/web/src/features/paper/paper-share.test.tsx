@@ -48,7 +48,7 @@ function mountLetterStyles() {
   const css = readFileSync(
     path.join(
       path.dirname(fileURLToPath(import.meta.url)),
-      "design/letter-sheet.pen.css"
+      "design/letter-sheet.css"
     ),
     "utf8"
   )

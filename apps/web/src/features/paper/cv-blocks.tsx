@@ -22,7 +22,7 @@ import { Input } from "@workspace/ui/components/input"
 import { CvPhoto } from "./cv-templates/cv-parts.tsx"
 import { CvField } from "./cv-field.tsx"
 import "./cv-editor.css"
-import "./design/cv-editor.pen.css"
+import "./design/cv-editor.css"
 import "./design/paper-floating-menus.css"
 
 type CvChrome = {
