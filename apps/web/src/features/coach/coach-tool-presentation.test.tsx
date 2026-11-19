@@ -26,16 +26,11 @@ import {
   within,
 } from "@testing-library/react"
 import type { ChatToolPart } from "@workspace/domain"
-import {
-  ToolCallCard,
-  ToolCallGroup,
-} from "@workspace/ui/components/tool-call-card"
 import * as contractClient from "@/lib/contract-client.ts"
 import { runContractCommand } from "@/lib/contract-client.ts"
 import type { ReactElement } from "react"
 import { ChatStoreContext } from "./chat-store-context.ts"
 import { render as renderWithClient } from "@/test/render-with-client.tsx"
-import { toolCardProps } from "./coach-tool-card.ts"
 import { CoachToolLine } from "./coach-tool-line.tsx"
 import { CoachParts } from "./coach-part-renderers.tsx"
 import { toCoachParts, type CoachToolPart } from "./coach-parts.ts"
@@ -147,9 +142,7 @@ describe("Coach approval presentation", () => {
     expect(insertion.compareDocumentPosition(approve)).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     )
-    expect(
-      container.querySelector("[data-running], .ui-tcc__spinner, code, pre")
-    ).toBeNull()
+    expect(container.querySelector("[data-running], code, pre")).toBeNull()
     expect(container.textContent).not.toMatch(
       /paper\.edit|Working|\d+s|Edited Untitled/
     )
@@ -282,7 +275,7 @@ describe("Coach trace and receipts", () => {
       <CoachParts parts={parts} ctx={{ canUndo: true, onUndo: vi.fn() }} />
     )
     const title = screen.getByText("Untitled CV")
-    const row = title.closest("[data-slot=coach-action-record]")
+    const row = title.closest("[data-slot=action-card]")
     if (!row) throw new Error("Expected receipt row")
     expect(within(row).getByRole("link", { name: "Open" })).toHaveAttribute(
       "href",
@@ -315,7 +308,7 @@ describe("Coach trace and receipts", () => {
     const { container } = render(
       <CoachParts parts={parts} ctx={{ canUndo: true }} />
     )
-    const record = container.querySelector("[data-slot=coach-action-record]")
+    const record = container.querySelector("[data-slot=action-card]")
     expect(record).toHaveAttribute("data-state", "undone")
     expect(within(record as HTMLElement).getByText("Untitled CV")).toBeVisible()
     expect(screen.getByText("1 change undone")).toBeVisible()
@@ -372,29 +365,59 @@ describe("Coach trace and receipts", () => {
     expect(container.textContent).not.toMatch(/not available in this Chat/)
   })
 
-  it("maps a pending tool to awaiting and gives the kit no running timer", () => {
-    expect(toolCardProps(toolOf(pending)).status).toBe("awaiting")
-    const { container } = render(
-      <ToolCallCard name="Edit your Paper" status="awaiting" />
+  it("says a step still waits on the person when it has no decision yet", () => {
+    render(
+      <CoachToolLine
+        tool={toolOf({
+          type: "tool",
+          name: "job.move",
+          summary: "Move this Job",
+          ok: true,
+          approval: "pending",
+        })}
+        canUndo
+      />
     )
+    expect(screen.getByRole("heading", { name: "Move this Job" })).toBeVisible()
     expect(screen.getByText("Needs your approval")).toBeVisible()
-    expect(
-      container.querySelector(".ui-tcc__spinner, .ui-tcc__time")
-    ).toBeNull()
+    expect(screen.queryByRole("button", { name: "Undo" })).toBeNull()
   })
 
-  it("excludes compact traces from a mixed tool group's count", () => {
+  it("names every Undo by its step when a reply holds more than one step", async () => {
+    const onUndo = vi.fn().mockResolvedValue(undefined)
+    const move: ChatToolPart = {
+      type: "tool",
+      name: "job.move",
+      summary: "Moved this Job to Prep",
+      ok: true,
+      toolCallId: "call-move",
+      activityId: "activity-move",
+      reversal: { possible: true, description: "Move it back." },
+    }
+    const failed: ChatToolPart = {
+      type: "tool",
+      name: "job.move",
+      summary: "Card not found",
+      ok: false,
+      toolCallId: "call-failed",
+    }
     render(
-      <ToolCallGroup>
-        <ToolCallCard
-          name="Look at your Jobs"
-          status="success"
-          className="hidden"
-        />
-        <ToolCallCard name="Move this Job" status="success" />
-      </ToolCallGroup>
+      <CoachParts
+        parts={toCoachParts({
+          id: "coach",
+          role: "coach",
+          text: "",
+          parts: [move, failed],
+        })}
+        ctx={{ canUndo: true, onUndo }}
+      />
     )
-    expect(screen.getByRole("button", { name: /Used 1 tool/ })).toBeVisible()
+    expect(screen.getByText("Failed. Nothing changed.")).toBeVisible()
+    fireEvent.click(
+      screen.getByRole("button", { name: "Undo: Moved this Job to Prep" })
+    )
+    await waitFor(() => expect(onUndo).toHaveBeenCalledWith("activity-move"))
+    expect(screen.getAllByRole("button", { name: /^Undo/ })).toHaveLength(1)
   })
 
   it("keeps an applied Word edit as one record that names the document and keeps Open after Undo", () => {
@@ -426,9 +449,7 @@ describe("Coach trace and receipts", () => {
         ctx={{ canUndo: true, onUndo: vi.fn() }}
       />
     )
-    const record = applied.container.querySelector(
-      "[data-slot=coach-action-record]"
-    )
+    const record = applied.container.querySelector("[data-slot=action-card]")
     expect(record).toHaveAttribute("data-state", "applied")
     expect(within(record as HTMLElement).getByText("CV.docx")).toBeVisible()
     expect(

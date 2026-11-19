@@ -218,7 +218,7 @@ describe("UI package kit surface", () => {
     const files = readdirSync(componentsDir, {
       recursive: true,
       encoding: "utf8",
-    }).filter((name) => name.endsWith(".tsx"))
+    }).filter((name) => name.endsWith(".tsx") && !name.endsWith(".test.tsx"))
     expect(files.length).toBeGreaterThan(0)
 
     for (const file of files) {

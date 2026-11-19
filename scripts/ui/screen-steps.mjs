@@ -27,7 +27,7 @@ export const PANEL_UNDO = `${PANEL} button[aria-label="Undo"]`
 export const PANEL_APPROVE = `${PANEL} button:text-is("Approve")`
 export const PANEL_DENY = `${PANEL} button:text-is("Deny")`
 export const PANEL_EXPAND = `${PANEL} button[aria-label="Expand"]`
-export const PANEL_UNDONE = `${PANEL} [data-slot="coach-action-record"][data-state="undone"]`
+export const PANEL_UNDONE = `${PANEL} [data-slot="action-card"][data-state="undone"]`
 export const PANEL_DENIED = `${PANEL} :text("nothing changed")`
 const PANEL_IDLE = `${PANEL} button[aria-label="Send"]:not([aria-describedby])`
 

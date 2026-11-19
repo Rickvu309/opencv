@@ -24,7 +24,7 @@ export async function expectSendSettled(text: string) {
   })
 }
 
-export function stepButton(text: string) {
+export function stepName(text: string) {
   const escaped = text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
   return new RegExp(escaped)
 }

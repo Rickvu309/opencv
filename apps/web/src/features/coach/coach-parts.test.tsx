@@ -5,11 +5,7 @@ import {
   CoachParts,
   partRenderers,
 } from "@/features/coach/coach-part-renderers.tsx"
-import {
-  groupAdjacentToolSteps,
-  toCoachParts,
-  type CoachPart,
-} from "@/features/coach/coach-parts.ts"
+import { toCoachParts, type CoachPart } from "@/features/coach/coach-parts.ts"
 
 afterEach(() => {
   cleanup()
@@ -62,24 +58,6 @@ describe("toCoachParts", () => {
 
     expect(parts).toHaveLength(1)
     expect(parts[0]).toMatchObject({ kind: "tool", status: "error" })
-  })
-
-  it("groups only adjacent tool steps", () => {
-    const parts = toCoachParts({
-      id: "c1",
-      role: "coach",
-      text: "",
-      parts: [
-        { ...updated, detail: undefined },
-        { ...updated, toolCallId: "call-2", detail: undefined },
-        { type: "text", text: "Then I wrote." },
-      ],
-    })
-
-    expect(groupAdjacentToolSteps(parts).map((block) => block.type)).toEqual([
-      "tools",
-      "part",
-    ])
   })
 })
 

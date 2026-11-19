@@ -66,57 +66,42 @@ describe("CoachToolLine", () => {
   it("names the object the step changed and what undoes it", () => {
     render(<CoachToolLine tool={toolOf(moved)} canUndo={false} />)
 
-    const header = screen.getByRole("button", {
-      name: /Moved Backend Intern at Acme from inbox to prep/,
-    })
-    expect(header).toHaveAttribute("aria-expanded", "false")
     expect(
-      screen.getByText(
-        /^Moved Backend Intern at Acme from inbox to prep finished/
-      )
-    ).toBeInTheDocument()
+      screen.getByRole("heading", {
+        name: "Moved Backend Intern at Acme from inbox to prep",
+      })
+    ).toBeVisible()
+    expect(screen.getByText("Done")).toBeVisible()
     expect(screen.getByText(/Undo by moving the card back\./)).toBeVisible()
-  })
-
-  it("opens the result when the header is activated", () => {
-    render(<CoachToolLine tool={toolOf(moved)} canUndo={false} />)
-
-    const header = screen.getByRole("button", { name: /Moved Backend Intern/ })
-    fireEvent.click(header)
-
-    expect(header).toHaveAttribute("aria-expanded", "true")
-    expect(screen.getByText("Result")).toBeInTheDocument()
-    expect(screen.getByText("Moved a card")).toBeInTheDocument()
+    expect(screen.queryByRole("button")).toBeNull()
   })
 
   it("says nothing changed and announces the error when a step failed", () => {
     render(
       <CoachToolLine
         tool={toolOf({ ...moved, ok: false, summary: "Card not found" })}
-        canUndo={false}
+        canUndo
+        onUndo={vi.fn()}
       />
     )
 
     expect(
-      screen.getByText(/Card not found failed: Nothing changed\./)
-    ).toHaveAttribute("aria-live", "polite")
-    expect(screen.getByRole("button", { name: /Failed/ })).toHaveAttribute(
-      "aria-expanded",
-      "true"
+      screen.getByRole("heading", { name: /Card not found/ })
+    ).toBeVisible()
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Failed. Nothing changed."
     )
-    expect(screen.getByText("Nothing changed.")).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Undo" })).toBeNull()
   })
 
   it("shows no running timer on a finished step", () => {
     vi.useFakeTimers()
-    render(<CoachToolLine tool={toolOf(moved)} canUndo={false} />)
-    const before = screen.getByRole("button", {
-      name: /Moved Backend Intern/,
-    }).textContent
+    const { container } = render(
+      <CoachToolLine tool={toolOf(moved)} canUndo={false} />
+    )
+    const before = container.textContent
     vi.advanceTimersByTime(5000)
-    expect(
-      screen.getByRole("button", { name: /Moved Backend Intern/ }).textContent
-    ).toBe(before)
+    expect(container.textContent).toBe(before)
     vi.useRealTimers()
   })
 

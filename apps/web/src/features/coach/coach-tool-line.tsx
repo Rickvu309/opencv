@@ -1,20 +1,11 @@
-import {
-  Confirmation,
-  ConfirmationRequest,
-  ConfirmationAccepted,
-  ConfirmationRejected,
-  ConfirmationActions,
-  ConfirmationAction,
-} from "@/components/ai-elements/confirmation.tsx"
-import { FileText } from "lucide-react"
+import { FileText, Wrench } from "lucide-react"
 import { coachToolLabel, humanToolText } from "./coach-tool-labels.ts"
 import {
-  isCompactCoachTool,
   coachActionView,
   type CoachActionView,
   documentRecordStateLine,
+  receiptStateLine,
   refusedApprovalLine,
-  toolCardProps,
 } from "./coach-tool-card.ts"
 import { documentChangeCount, documentEditDetail } from "./coach-receipt.ts"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
@@ -29,8 +20,9 @@ import {
 import { useReducer, useRef } from "react"
 import { Link } from "@tanstack/react-router"
 
-import { Button } from "@workspace/ui/components/button"
-import { ToolCallCard } from "@workspace/ui/components/tool-call-card"
+import { ActionCard } from "@workspace/ui/components/action-card"
+import { Button, buttonVariants } from "@workspace/ui/components/button"
+import { cn } from "@workspace/ui/lib/utils"
 
 import { ErrorBanner } from "@/components/error-banner.tsx"
 import { ApiError } from "@/lib/api-error.ts"
@@ -80,23 +72,22 @@ function actionReducer(state: ActionState, event: ActionEvent): ActionState {
   }
 }
 
-export function CoachToolCard({ tool }: { tool: CoachToolPart }) {
-  return isCompactCoachTool(tool) ? null : (
-    <ToolCallCard {...toolCardProps(tool)} />
-  )
-}
-
-type ExtrasProps = {
+type LineProps = {
   tool: CoachToolPart
   undoLabel?: string
   canUndo: boolean
   onUndo?: () => Promise<void>
 }
 
-const RECEIPT_HIT =
+const TOUCH_HIT =
   "relative after:absolute after:inset-[min(0px,calc((100%-44px)/2))] after:content-['']"
 
-const RECORD_ACTION = `inline-flex h-11 shrink-0 items-center rounded-[7px] px-2.5 text-xs font-medium text-foreground no-underline transition-colors duration-(--duration-micro) ease-(--ease-micro) hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:bg-accent active:opacity-80 md:h-[26px] ${RECEIPT_HIT}`
+const RECORD_ACTION = cn(
+  "rounded-sm px-2.5 text-xs text-foreground no-underline md:h-[26px]",
+  TOUCH_HIT
+)
+
+const DECISION = cn("rounded-md px-3 text-[13px]", TOUCH_HIT)
 
 function useUndoAction(onUndo?: () => Promise<void>) {
   const [{ busy, error }, dispatch] = useReducer(actionReducer, IDLE_ACTION)
@@ -114,14 +105,27 @@ function useUndoAction(onUndo?: () => Promise<void>) {
   return { busy, error, undo }
 }
 
-function DocumentTile() {
+function UndoButton({
+  label,
+  busy,
+  onUndo,
+}: {
+  label: string
+  busy: boolean
+  onUndo: () => void
+}) {
   return (
-    <span
-      aria-hidden="true"
-      className="grid size-[26px] shrink-0 place-items-center rounded-[7px] bg-muted text-muted-foreground"
+    <Button
+      className={RECORD_ACTION}
+      type="button"
+      variant="ghost"
+      size="touch"
+      aria-label={label}
+      disabled={busy}
+      onClick={onUndo}
     >
-      <FileText className="size-[13px]" />
-    </span>
+      {busy ? "Undoing…" : "Undo"}
+    </Button>
   )
 }
 
@@ -137,61 +141,96 @@ function DocumentActionRecord({
   onUndo?: () => Promise<void>
 }) {
   const { busy, error, undo } = useUndoAction(onUndo)
-  const undone = view.state === "undone"
+  const showUndo = view.state !== "undone" && canUndo && view.canUndo
+  const open = view.docId ? (
+    <Link
+      to="/paper/$docId"
+      params={{ docId: view.docId }}
+      className={cn(
+        buttonVariants({ variant: "ghost", size: "touch" }),
+        RECORD_ACTION
+      )}
+    >
+      Open
+    </Link>
+  ) : null
   return (
-    <div className="min-w-0 space-y-2">
-      <div
-        data-slot="coach-action-record"
-        data-state={view.state}
-        className="flex w-full min-w-0 flex-wrap items-center gap-2.5 rounded-[12px] border border-border px-3 py-2.5"
-      >
-        <div className="flex min-w-[min(100%,10rem)] flex-1 items-center gap-2.5">
-          <DocumentTile />
-          <div className="min-w-0 flex-1">
-            <p className="text-[0.78125rem] leading-[1.25] font-semibold [overflow-wrap:anywhere] text-foreground">
-              {view.name}
-            </p>
-            <p className="text-xs leading-4 text-muted-foreground">
-              {documentRecordStateLine(view)}
-            </p>
-          </div>
-        </div>
-        {view.docId ? (
-          <Link
-            to="/paper/$docId"
-            params={{ docId: view.docId }}
-            className={RECORD_ACTION}
-          >
-            Open
-          </Link>
-        ) : null}
-        {!undone && canUndo && view.canUndo ? (
-          <Button
-            className={`h-11 rounded-[7px] px-2.5 text-xs md:h-[26px] ${RECEIPT_HIT}`}
-            type="button"
-            variant="ghost"
-            size="xs"
-            aria-label={undoLabel}
-            disabled={busy}
-            onClick={() => void undo()}
-          >
-            {busy ? "Undoing…" : "Undo"}
-          </Button>
-        ) : null}
-      </div>
+    <ActionCard
+      data-state={view.state}
+      icon={<FileText />}
+      title={view.name}
+      state={documentRecordStateLine(view)}
+      actions={
+        open || showUndo ? (
+          <>
+            {open}
+            {showUndo ? (
+              <UndoButton
+                label={undoLabel}
+                busy={busy}
+                onUndo={() => void undo()}
+              />
+            ) : null}
+          </>
+        ) : null
+      }
+    >
       {error ? (
         <ErrorBanner variant="inline">{humanToolText(error)}</ErrorBanner>
       ) : null}
-    </div>
+    </ActionCard>
   )
 }
 
-export function CoachToolExtras({
+function ToolReceipt({ tool, undoLabel, canUndo, onUndo }: LineProps) {
+  const { part } = tool
+  const note = receiptReversalNote(part)
+  const { busy, error, undo } = useUndoAction(onUndo)
+  const detail = part.ok && part.detail ? part.detail : null
+  return (
+    <ActionCard
+      icon={<Wrench />}
+      title={humanToolText(tool.label)}
+      state={
+        tool.status === "error" ? (
+          <span role="status">{receiptStateLine(tool)}</span>
+        ) : (
+          receiptStateLine(tool)
+        )
+      }
+      actions={
+        canUndo && receiptShowsUndo(part) ? (
+          <UndoButton
+            label={undoLabel ?? "Undo"}
+            busy={busy}
+            onUndo={() => void undo()}
+          />
+        ) : null
+      }
+    >
+      {detail || note || error ? (
+        <>
+          {detail ? <ReceiptDetail detail={detail} /> : null}
+          {note ? (
+            <p className="min-w-0 [overflow-wrap:anywhere] break-words">
+              {humanToolText(note)}
+            </p>
+          ) : null}
+          {error ? (
+            <ErrorBanner variant="inline">{humanToolText(error)}</ErrorBanner>
+          ) : null}
+        </>
+      ) : null}
+    </ActionCard>
+  )
+}
+
+export function CoachToolLine({
   tool,
   undoLabel = "Undo",
   canUndo,
   onUndo,
-}: ExtrasProps) {
+}: LineProps) {
   const view = coachActionView(tool.part)
   switch (view.kind) {
     case "read":
@@ -206,15 +245,13 @@ export function CoachToolExtras({
       )
     case "proposed":
       return (
-        <div className="min-w-0 text-xs text-muted-foreground">
-          <CoachApproval
-            id={tool.part.pendingActionId ?? ""}
-            status={tool.part.approval ?? "pending"}
-            command={tool.name}
-            tool={tool}
-            review={tool.part.review}
-          />
-        </div>
+        <CoachApproval
+          id={tool.part.pendingActionId ?? ""}
+          status={tool.part.approval ?? "pending"}
+          command={tool.name}
+          tool={tool}
+          review={tool.part.review}
+        />
       )
     case "document":
       return (
@@ -227,7 +264,7 @@ export function CoachToolExtras({
       )
     case "receipt":
       return (
-        <ReceiptExtras
+        <ToolReceipt
           tool={tool}
           undoLabel={undoLabel}
           canUndo={canUndo}
@@ -235,54 +272,6 @@ export function CoachToolExtras({
         />
       )
   }
-}
-
-function ReceiptExtras({
-  tool,
-  undoLabel = "Undo",
-  canUndo,
-  onUndo,
-}: ExtrasProps) {
-  const { part } = tool
-  const note = receiptReversalNote(part)
-  const { busy, error, undo } = useUndoAction(onUndo)
-  return (
-    <div className="min-w-0 space-y-2 text-xs text-muted-foreground">
-      {part.ok && part.detail ? <ReceiptDetail detail={part.detail} /> : null}
-      {note ? (
-        <p className="min-w-0 [overflow-wrap:anywhere] break-words">
-          {humanToolText(note)}
-        </p>
-      ) : null}
-      {canUndo && receiptShowsUndo(part) ? (
-        <div className="flex min-w-0 items-center gap-1.5">
-          <Button
-            className={`h-11 md:h-6 ${RECEIPT_HIT}`}
-            type="button"
-            variant="ghost"
-            size="xs"
-            aria-label={undoLabel}
-            disabled={busy}
-            onClick={() => void undo()}
-          >
-            {busy ? "Undoing…" : "Undo"}
-          </Button>
-        </div>
-      ) : null}
-      {error ? (
-        <ErrorBanner variant="inline">{humanToolText(error)}</ErrorBanner>
-      ) : null}
-    </div>
-  )
-}
-
-export function CoachToolLine(props: ExtrasProps) {
-  return (
-    <div className="min-w-0 space-y-2">
-      <CoachToolCard tool={props.tool} />
-      <CoachToolExtras {...props} />
-    </div>
-  )
 }
 
 function reviewDocId(review: unknown) {
@@ -381,79 +370,64 @@ function CoachApproval({
       ? `${changeCount} change${changeCount === 1 ? "" : "s"} to approve`
       : "Edit to approve"
     : "Action to approve"
-  const state =
-    effectiveStatus === "pending" ? "approval-requested" : "approval-responded"
-  const approved = effectiveStatus === "approved"
+  if (effectiveStatus !== "pending")
+    return (
+      <p role="status" className="text-[13px] text-muted-foreground">
+        {effectiveStatus === "approved"
+          ? "Approved"
+          : refusedApprovalLine(effectiveStatus)}
+      </p>
+    )
   return (
-    <Confirmation
-      state={state}
-      approval={effectiveStatus === "pending" ? { id } : { id, approved }}
-      role={effectiveStatus === "pending" ? "region" : "status"}
-      aria-label={
-        effectiveStatus === "pending" ? "Review Coach action" : undefined
-      }
-      className={
-        effectiveStatus === "pending"
-          ? "gap-3 rounded-[12px] border border-border px-3 py-3 text-foreground"
-          : "border-0 bg-transparent p-0 text-[13px] text-muted-foreground"
+    <ActionCard
+      role="region"
+      aria-label="Review Coach action"
+      icon={isDocument ? <FileText /> : <Wrench />}
+      title={subject}
+      state={waiting}
+      actions={
+        <>
+          {batch.state === "withheld" ? null : (
+            <Button
+              className={DECISION}
+              size="touch"
+              type="button"
+              variant="primary"
+              disabled={working}
+              onClick={() => void decide(true)}
+            >
+              Approve
+            </Button>
+          )}
+          <Button
+            className={DECISION}
+            size="touch"
+            type="button"
+            variant="default"
+            disabled={working}
+            onClick={() => void decide(false)}
+          >
+            Deny
+          </Button>
+        </>
       }
     >
-      <ConfirmationRequest>
-        <div
-          data-slot="coach-approval-header"
-          className="flex min-w-0 items-center gap-2.5"
-        >
-          {isDocument ? <DocumentTile /> : null}
-          <div className="min-w-0 flex-1">
-            <h3 className="text-[0.78125rem] leading-[1.25] font-semibold [overflow-wrap:anywhere] text-foreground">
-              {subject}
-            </h3>
-            <p className="text-xs leading-4 text-muted-foreground">{waiting}</p>
-          </div>
+      {detail?.hunks.length ? (
+        <DiffBlock detail={detail} />
+      ) : batch.state !== "none" ? null : (
+        <div className="space-y-1 text-sm leading-relaxed text-muted-foreground">
+          <p>{humanToolText(tool.part.summary)}</p>
+          <p>
+            {isDocument
+              ? "Coach will change the text in your Paper. The proposed words are not available in this Chat. Open the document in Paper to review the current text before deciding."
+              : "Review this change before allowing Coach to apply it."}
+          </p>
         </div>
-        {detail?.hunks.length ? (
-          <DiffBlock detail={detail} />
-        ) : batch.state !== "none" ? null : (
-          <div className="space-y-1 text-sm leading-relaxed text-muted-foreground">
-            <p>{humanToolText(tool.part.summary)}</p>
-            <p>
-              {isDocument
-                ? "Coach will change the text in your Paper. The proposed words are not available in this Chat. Open the document in Paper to review the current text before deciding."
-                : "Review this change before allowing Coach to apply it."}
-            </p>
-          </div>
-        )}
-        <WordBatchPreview batch={batch} />
-      </ConfirmationRequest>
-      <ConfirmationAccepted>Approved</ConfirmationAccepted>
-      <ConfirmationRejected>
-        {refusedApprovalLine(
-          effectiveStatus === "expired" || effectiveStatus === "stopped"
-            ? effectiveStatus
-            : "denied"
-        )}
-      </ConfirmationRejected>
-      <ConfirmationActions className="justify-start self-start">
-        {batch.state === "withheld" ? null : (
-          <ConfirmationAction
-            variant="primary"
-            disabled={working}
-            onClick={() => void decide(true)}
-          >
-            Approve
-          </ConfirmationAction>
-        )}
-        <ConfirmationAction
-          variant="default"
-          disabled={working}
-          onClick={() => void decide(false)}
-        >
-          Deny
-        </ConfirmationAction>
-      </ConfirmationActions>
+      )}
+      <WordBatchPreview batch={batch} />
       {error ? (
         <ErrorBanner variant="inline">{humanToolText(error)}</ErrorBanner>
       ) : null}
-    </Confirmation>
+    </ActionCard>
   )
 }
