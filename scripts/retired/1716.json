@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/settings/person-initials.test.ts",
+    "because": "It locked in a footer name made from the email local part, the bug this issue removes; the saved name is now the only name.",
+    "replacedBy": "apps/web/src/features/settings/settings-nav.test.tsx",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "f82697ab8fd358733423ca9bf6fc9f77df60f858",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "owner",
+    "classBecause": "apps/web/src/features/settings/settings-nav.test.tsx shares no module, command or route with apps/web/src/features/settings/person-initials.test.ts",
+    "items": 3
+  }
+]
