@@ -4,14 +4,12 @@ import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { css as segmentedControlCss } from "./components/segmented-control-styles"
-import { css as toolCallCardCss } from "./components/tool-call-card-styles"
 import { CommentThread } from "./components/comment-thread"
 import { FilterMenu } from "./components/filter-menu"
 import { NumberTicker } from "./components/number-ticker"
 import { SegmentedControl } from "./components/segmented-control"
 import { ShimmerText } from "./components/shimmer-loader"
 import { ThinkingLoader } from "./components/thinking-loader"
-import { ToolCallCard } from "./components/tool-call-card"
 
 afterEach(() => {
   cleanup()
@@ -200,11 +198,6 @@ describe("units in prop names", () => {
       animationDuration: "3s",
     })
   })
-
-  it("takes the tool call duration in milliseconds", () => {
-    render(<ToolCallCard name="search" status="success" durationMs={2500} />)
-    expect(screen.getByText(/2\.5\s*s/)).toBeInTheDocument()
-  })
 })
 
 describe("thinking loader", () => {
@@ -221,15 +214,6 @@ describe("thinking loader", () => {
 })
 
 describe("kit styles", () => {
-  it("draws tool call card strokes as half-pixel inset shadows", () => {
-    expect(toolCallCardCss).toContain("inset 0 0 0 0.5px var(--ui-tcc-line)")
-  })
-
-  it("grows a tool call body from zero to one fraction so the height animates without measuring", () => {
-    expect(toolCallCardCss).toContain("grid-template-rows: 0fr;")
-    expect(toolCallCardCss).toContain("grid-template-rows: 1fr;")
-  })
-
   it("keeps the comment thread's buttons at margin zero and its text fields free of a focus box", () => {
     stubResizeObserver()
     Element.prototype.scrollTo = vi.fn()

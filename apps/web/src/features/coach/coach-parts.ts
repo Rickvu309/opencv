@@ -8,7 +8,7 @@ export type UpdateContentDetail = Extract<
   { type: "paper.replace" }
 >
 
-export type CoachToolStatus = "running" | "done" | "error"
+export type CoachToolStatus = "done" | "error"
 
 export type CoachPart =
   | { kind: "text"; key: string; markdown: string }
@@ -60,24 +60,4 @@ export function toCoachParts(message: ChatViewMessage): CoachPart[] {
       ? [tool, { kind: "diff", key: `${key}-diff`, detail: diff }]
       : [tool]
   })
-}
-
-export type CoachBlock =
-  { type: "part"; part: CoachPart } | { type: "tools"; parts: CoachToolPart[] }
-
-export function groupAdjacentToolSteps(
-  parts: readonly CoachPart[]
-): CoachBlock[] {
-  const blocks: CoachBlock[] = []
-  for (const part of parts) {
-    const last = blocks.at(-1)
-    if (part.kind !== "tool") {
-      blocks.push({ type: "part", part })
-    } else if (last?.type === "tools") {
-      last.parts.push(part)
-    } else {
-      blocks.push({ type: "tools", parts: [part] })
-    }
-  }
-  return blocks
 }

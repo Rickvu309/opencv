@@ -114,12 +114,12 @@ export function CoachHistory({
         align="start"
         side="bottom"
         sideOffset={4}
-        className="w-[min(340px,calc(100dvw-16px))] rounded-[10px] bg-transparent p-0 shadow-none ring-0"
+        className="w-[min(340px,calc(100dvw-16px))] rounded-lg bg-transparent p-0 shadow-none ring-0"
       >
         <div
           data-surface="coach"
           data-slot="history-panel"
-          className="flex max-h-[min(30rem,calc(var(--available-height,100dvh)-8px))] w-full flex-col gap-px rounded-[10px] p-1.5"
+          className="flex max-h-[min(30rem,calc(var(--available-height,100dvh)-8px))] w-full flex-col gap-px rounded-lg p-1.5"
         >
           <div className="flex h-[34px] items-center gap-2 px-2.5">
             <svg
@@ -160,7 +160,7 @@ export function CoachHistory({
             type="button"
             variant="ghost"
             data-slot="history-new-chat"
-            className="flex w-full items-center gap-2.5 rounded-[6px] px-2.5 text-left text-[13px] leading-[1.2]"
+            className="flex w-full items-center gap-2.5 rounded-sm px-2.5 text-left text-[13px] leading-[1.2]"
             onClick={() => {
               onNewChat()
               onOpenChange(false)
@@ -217,7 +217,7 @@ export function CoachHistory({
                       data-active={
                         chat.id === activeChatId ? "true" : undefined
                       }
-                      className="flex w-full items-center gap-2.5 rounded-[6px] px-2.5 text-left text-[13px] leading-[1.2]"
+                      className="flex w-full items-center gap-2.5 rounded-sm px-2.5 text-left text-[13px] leading-[1.2]"
                       onClick={() => {
                         onSelect(chat.id)
                         onOpenChange(false)

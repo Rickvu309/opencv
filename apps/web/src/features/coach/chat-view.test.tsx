@@ -85,11 +85,9 @@ describe("ChatView thinking state", () => {
     expect(screen.getByText("Moved it and started a CV.")).toBeInTheDocument()
     expect(screen.queryByText("Thinking")).not.toBeInTheDocument()
     expect(
-      screen.getByRole("button", { name: /Moved 'Backend Intern' to Prep/ })
-    ).toHaveAttribute("aria-expanded", "false")
-    expect(
-      screen.getByText(/^Moved 'Backend Intern' to Prep finished/)
-    ).toBeInTheDocument()
+      screen.getByRole("heading", { name: /Moved 'Backend Intern' to Prep/ })
+    ).toBeVisible()
+    expect(screen.getAllByText("Done")[0]).toBeVisible()
   })
 
   it("renders no reply actions on the live turn", () => {
@@ -113,7 +111,7 @@ describe("ChatView thinking state", () => {
 })
 
 describe("ChatView steps", () => {
-  it("folds two adjacent steps into one group and keeps Undo reachable", () => {
+  it("shows two adjacent steps as two records, each with its own named Undo", () => {
     render(
       createElement(ChatView, {
         messages: [coachTurn([moveReceipt, createReceipt])],
@@ -121,26 +119,29 @@ describe("ChatView steps", () => {
       })
     )
 
-    const group = screen.getByRole("button", { name: /Used 2 tools/ })
-    expect(group).toHaveAttribute("aria-expanded", "false")
+    expect(
+      screen.queryByRole("button", { name: /Used 2 tools/ })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByRole("heading", { name: /Moved 'Backend Intern' to Prep/ })
+    ).toBeVisible()
     expect(
       screen.getByRole("button", { name: /^Undo: Moved 'Backend Intern'/ })
     ).toBeEnabled()
   })
 
-  it("leaves a single step as its own card", () => {
+  it("leaves a single step as its own record with a plain Undo", () => {
     render(
       createElement(ChatView, {
         messages: [coachTurn([moveReceipt])],
+        onUndo: async () => {},
       })
     )
 
     expect(
-      screen.queryByRole("button", { name: /Used 1 tool/ })
-    ).not.toBeInTheDocument()
-    expect(
-      screen.getByRole("button", { name: /Moved 'Backend Intern' to Prep/ })
+      screen.getByRole("heading", { name: /Moved 'Backend Intern' to Prep/ })
     ).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled()
   })
 
   it("shows Undone and the replacement step after an undo", async () => {
@@ -171,7 +172,7 @@ describe("ChatView steps", () => {
     fireEvent.click(screen.getByRole("button", { name: "Undo" }))
 
     expect(
-      await screen.findByRole("button", { name: /Undid the previous action/ })
+      await screen.findByRole("heading", { name: /Undid the previous action/ })
     ).toBeInTheDocument()
     expect(screen.getAllByText("Undone")).toHaveLength(1)
     expect(

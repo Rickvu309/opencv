@@ -1,0 +1,58 @@
+[
+  {
+    "subject": "apps/web/src/features/coach/chat-view.test.tsx",
+    "because": "The kit ToolCallCard and ToolCallGroup are deleted for one ActionCard (#1738), so checks on its expand button, timer, sr-only finished line and Used N tools group have no subject; the new cards are checked by heading, state line and named Undo in the same files",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-chat.test.tsx",
+    "because": "The kit ToolCallCard and ToolCallGroup are deleted for one ActionCard (#1738), so checks on its expand button, timer, sr-only finished line and Used N tools group have no subject; the new cards are checked by heading, state line and named Undo in the same files",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-tool-line.test.tsx",
+    "because": "The kit ToolCallCard and ToolCallGroup are deleted for one ActionCard (#1738), so checks on its expand button, timer, sr-only finished line and Used N tools group have no subject; the new cards are checked by heading, state line and named Undo in the same files",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-tool-presentation.test.tsx",
+    "because": "The kit ToolCallCard and ToolCallGroup are deleted for one ActionCard (#1738), so checks on its expand button, timer, sr-only finished line and Used N tools group have no subject; the new cards are checked by heading, state line and named Undo in the same files",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-receipts.test.tsx",
+    "because": "The kit ToolCallCard and ToolCallGroup are deleted for one ActionCard (#1738), so checks on its expand button, timer, sr-only finished line and Used N tools group have no subject; the new cards are checked by heading, state line and named Undo in the same files",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-parts.test.tsx",
+    "because": "The kit ToolCallCard and ToolCallGroup are deleted for one ActionCard (#1738), so checks on its expand button, timer, sr-only finished line and Used N tools group have no subject; the new cards are checked by heading, state line and named Undo in the same files",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "packages/ui/src/kit-contracts.test.tsx",
+    "because": "The kit ToolCallCard and ToolCallGroup are deleted for one ActionCard (#1738), so checks on its expand button, timer, sr-only finished line and Used N tools group have no subject; the new cards are checked by heading, state line and named Undo in the same files",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  }
+]

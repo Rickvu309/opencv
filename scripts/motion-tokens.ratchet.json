@@ -13,6 +13,5 @@
   "packages/ui/src/components/segmented-control-styles.ts": 1,
   "packages/ui/src/components/shimmer-loader.tsx": 1,
   "packages/ui/src/components/thinking-loader-styles.ts": 1,
-  "packages/ui/src/components/thinking-loader.tsx": 1,
-  "packages/ui/src/components/tool-call-card-styles.ts": 2
+  "packages/ui/src/components/thinking-loader.tsx": 1
 }
