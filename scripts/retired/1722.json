@@ -82,5 +82,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-chat.test.tsx",
+    "because": "Coach receipts now show the document name as the headline and the state on its own line, 1 change applied (#1722 C4); the old case pinned the combined line.",
+    "replacedBy": "apps/web/src/features/coach/coach-chat.test.tsx",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "8ee926a7095e27fd7ecf3fa893199f711eae8c92",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
