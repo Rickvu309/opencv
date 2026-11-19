@@ -174,7 +174,7 @@ describe("inbox page", () => {
       return jsonOk(REGIONAL_DETAIL)
     })
     renderPage()
-    expect(await screen.findByText("4 unread")).toBeInTheDocument()
+    expect(await screen.findByText("Select an email")).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Snooze" })).toBeNull()
     expect(paths.filter((path) => path.startsWith("/api/inbox/"))).toEqual([])
     await userEvent.click(
@@ -226,11 +226,7 @@ describe("inbox page", () => {
     expect(
       await screen.findByRole("button", { name: "Back to inbox" })
     ).toBeInTheDocument()
-    const reader = screen.getByRole("region", { name: "Reading pane" })
-    expect(within(reader).getByRole("status")).toHaveTextContent(
-      EXAMPLE_MAIL_BANNER
-    )
-    expect(screen.getAllByRole("status")).toHaveLength(1)
+    expect(screen.queryAllByRole("status")).toHaveLength(0)
     await waitFor(() => {
       expect(
         screen.queryByRole("button", { name: /Associate PM, Local startup/ })

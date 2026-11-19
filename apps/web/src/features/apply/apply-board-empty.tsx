@@ -69,22 +69,19 @@ export function ApplyEmpty({
       <div className="flex flex-col items-start">
         <StageCoins />
         <h2 className="mt-6 text-[15px] font-semibold">Track your first job</h2>
-        <p className="mt-2 text-[13px] text-muted-foreground">
-          Add the jobs you're applying to.
-        </p>
-        <p className="mt-3 max-w-[300px] text-[13px] leading-[1.55] text-muted-foreground">
+        <p className="mt-2 max-w-[300px] text-[13px] leading-[1.55] text-muted-foreground">
           Paste a posting link and the role, company and location fill in for
           you.
         </p>
         <Button
           type="button"
           variant={dialogOpen ? "ghost" : "primary"}
-          aria-label="Add job"
+          aria-label="New job"
           aria-keyshortcuts="N"
           className="mt-5 h-11 gap-2 rounded-md pr-2 pl-3 text-[13px] font-semibold md:h-8"
           onClick={onAdd}
         >
-          <span>Add job</span>
+          <span>New job</span>
           <Kbd className="h-[18px] min-w-0 rounded-[4px] bg-foreground/6 px-[5px] text-[11px] font-normal text-foreground/62 group-data-[variant=primary]/button:bg-primary-foreground/15 group-data-[variant=primary]/button:text-primary-foreground/75">
             N
           </Kbd>

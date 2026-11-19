@@ -72,9 +72,7 @@ export function ListGroup({
           }
         >
           <CollapsibleIndicator className="size-3 text-muted-foreground" />
-          <span aria-hidden className="flex">
-            <StageIcon stage={stage} />
-          </span>
+          <StageIcon stage={stage} decorative />
           <span>{name}</span>
           <span className={FAINT_TEXT.secondary}>{count}</span>
         </CollapsibleTrigger>

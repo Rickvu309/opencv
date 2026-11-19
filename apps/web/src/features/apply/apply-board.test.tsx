@@ -28,6 +28,15 @@ const interview = mockJob({
   position: "a0",
 })
 
+async function emptyAction() {
+  const heading = await screen.findByRole("heading", {
+    name: "Track your first job",
+  })
+  const empty = heading.closest<HTMLElement>("[data-slot=empty]")
+  if (!empty) throw new Error("empty state is missing")
+  return within(empty).getByRole("button", { name: "New job" })
+}
+
 describe("apply board", () => {
   beforeEach(() => {
     setMockJobs([])
@@ -36,12 +45,18 @@ describe("apply board", () => {
     cleanup()
   })
 
-  it("shows one empty action and hides Closed", async () => {
+  it("names the empty action like the header and hides Filter and Closed", async () => {
     renderApp("/apply")
     expect(
       await screen.findByRole("heading", { name: "Track your first job" })
     ).toBeInTheDocument()
-    expect(screen.getAllByRole("button", { name: "Add job" })).toHaveLength(1)
+    expect(screen.getAllByRole("button", { name: "New job" })).toHaveLength(2)
+    expect(
+      screen.queryByRole("button", { name: "Add job" })
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole("button", { name: "Filter" })
+    ).not.toBeInTheDocument()
     expect(
       screen.queryByRole("region", { name: "Closed" })
     ).not.toBeInTheDocument()
@@ -57,6 +72,10 @@ describe("apply board", () => {
       await screen.findByRole("region", { name: "Saved" })
     ).toBeInTheDocument()
     expect(screen.getByRole("region", { name: "Applied" })).toBeInTheDocument()
+    for (const lane of document.querySelectorAll("[data-slot=board-lane]")) {
+      expect(within(lane as HTMLElement).queryAllByRole("img")).toEqual([])
+    }
+    expect(screen.getByRole("button", { name: "Filter" })).toBeInTheDocument()
     expect(
       screen.getByRole("region", { name: "Interview" })
     ).toBeInTheDocument()
@@ -200,12 +219,12 @@ describe("apply board", () => {
         )
       ).toBe(true)
     })
-    expect(await screen.findByText("Job added to Interview")).toBeVisible()
     await waitFor(() => {
       expect(
         screen.queryByRole("dialog", { name: "New job" })
       ).not.toBeInTheDocument()
     })
+    expect(screen.queryByText(/^Job added/)).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "New job" }))
     fireEvent.change(await screen.findByLabelText("Role title"), {
       target: { value: "Sales intern" },
@@ -228,7 +247,7 @@ describe("apply board", () => {
 
   it("opens the new job dialog on N and ignores typing", async () => {
     renderApp("/apply")
-    await screen.findByRole("button", { name: "Add job" })
+    await emptyAction()
     fireEvent.keyDown(document.body, { key: "n" })
     expect(
       await screen.findByRole("dialog", { name: "New job" })
@@ -237,7 +256,7 @@ describe("apply board", () => {
 
   it("keeps one solid primary while the new job dialog is open", async () => {
     renderApp("/apply")
-    const add = await screen.findByRole("button", { name: "Add job" })
+    const add = await emptyAction()
     expect(add).toHaveAttribute("data-variant", "primary")
     fireEvent.click(add)
     const dialog = await screen.findByRole("dialog", { name: "New job" })

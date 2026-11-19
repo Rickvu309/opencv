@@ -126,8 +126,3 @@ export function nextMorningIso(now = new Date(), zone = PROFILE_ZONE) {
     ) ?? now.toISOString()
   )
 }
-
-export function unreadCount(threads: { unread: boolean; status: string }[]) {
-  return threads.filter((thread) => thread.unread && thread.status === "open")
-    .length
-}

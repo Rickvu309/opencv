@@ -18,7 +18,6 @@ import { InboxReader } from "./inbox-reader.tsx"
 import {
   ACTION_FAILED,
   INBOX_MORE_REASON,
-  NO_GMAIL_LINK,
   UNAVAILABLE_ACTION,
 } from "./inbox-parts.tsx"
 
@@ -106,21 +105,24 @@ describe("inbox reader header", () => {
         selector: "[data-slot='tooltip-content']",
       })
     ).toHaveLength(1)
-    const gmail = screen.getByRole("button", { name: "Open in Gmail" })
-    expect(gmail).toHaveAttribute("aria-disabled", "true")
-    expect(gmail).not.toBeDisabled()
-    expect(gmail.className).toContain(UNAVAILABLE_ACTION)
-    expect(gmail).toHaveAccessibleDescription(NO_GMAIL_LINK)
-    await userEvent.hover(gmail)
+    expect(screen.getAllByText(LOCAL_DETAIL.subject)).toHaveLength(1)
     expect(
-      await screen.findByText(NO_GMAIL_LINK, {
-        selector: "[data-slot='tooltip-content']",
-      })
+      screen.getByRole("heading", { level: 2, name: LOCAL_DETAIL.subject })
     ).toBeInTheDocument()
+    expect(screen.queryByText("Open in Gmail")).toBeNull()
     expect(
       screen.getByRole("button", { name: "More actions" })
     ).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Back to inbox" })).toBeNull()
+  })
+
+  it("opens the email in Gmail when the email has a Gmail link", () => {
+    const openUrl = "https://mail.google.com/mail/u/0/#inbox/abc"
+    renderReader({ ...LOCAL_DETAIL, openUrl })
+    expect(screen.getByRole("link", { name: "Open in Gmail" })).toHaveAttribute(
+      "href",
+      openUrl
+    )
   })
 
   it("keeps one More control and one reason when the phone overflow opens", async () => {
@@ -132,11 +134,7 @@ describe("inbox reader header", () => {
     expect(screen.queryByRole("menuitem", { name: "More" })).toBeNull()
     await userEvent.keyboard("{Escape}")
     const more = screen.getByRole("button", { name: "More" })
-    const gmail = screen.getByRole("button", { name: "Open in Gmail" })
-    for (const [control, reason] of [
-      [more, INBOX_MORE_REASON],
-      [gmail, NO_GMAIL_LINK],
-    ] as const) {
+    for (const [control, reason] of [[more, INBOX_MORE_REASON]] as const) {
       const description = control.getAttribute("aria-describedby")
       expect(description).not.toBeNull()
       expect(document.getElementById(description ?? "")).toHaveClass("sr-only")

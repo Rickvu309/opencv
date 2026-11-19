@@ -1,7 +1,5 @@
 import { useEffect, useRef } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { Link } from "@tanstack/react-router"
-import { Maximize2 } from "lucide-react"
 import { ERROR_CODES, jobIdSchema, type JobId } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
@@ -151,18 +149,6 @@ function PeekBody({ jobId, onClose }: { jobId: JobId; onClose: () => void }) {
         onPriority={actions.onPriority}
         className="border-t-0 px-3 pt-1 pb-5 lg:w-full lg:overflow-visible lg:border-l-0"
       />
-      <div className="border-t border-foreground/6 px-5 py-4">
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-11 md:h-7"
-          nativeButton={false}
-          render={<Link to="/apply/$jobId" params={{ jobId }} />}
-        >
-          <Maximize2 />
-          See the posting and activity
-        </Button>
-      </div>
     </div>
   )
 }

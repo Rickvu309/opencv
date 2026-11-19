@@ -10,10 +10,8 @@ export const soonCopy = {
   proofTitle: "Back your CV with proof",
   proofBody: "Turn a CV line into evidence.",
   pitchPage: "Pitch",
-  pitchLineOne: "One link",
-  pitchLineTwo: "that sells you",
+  pitchTitle: "One link that sells you",
   pitchBody: "Your CV and Proofs on one page.",
-  earlyAccess: "Get early access",
   onList: "You're on the list",
   already: "You're already on the list",
 } as const

@@ -1,13 +1,5 @@
-import { useId } from "react"
-import {
-  Calendar,
-  Funnel,
-  Kanban,
-  List,
-  Plus,
-  X,
-  type LucideIcon,
-} from "lucide-react"
+import { useId, type ReactNode } from "react"
+import { Calendar, Funnel, Kanban, List, Plus, X } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
@@ -23,6 +15,10 @@ import {
   PageHeaderPrimary,
   PageHeaderTitle,
 } from "@workspace/ui/components/page-header"
+import {
+  SegmentedControl,
+  type SegmentOption,
+} from "@workspace/ui/components/segmented-control"
 import { cn } from "@workspace/ui/lib/utils"
 
 import {
@@ -68,10 +64,10 @@ function priorityCountRows(
   }))
 }
 
-const VIEWS: { view: ApplyView; label: string; icon: LucideIcon }[] = [
-  { view: "board", label: "Board", icon: Kanban },
-  { view: "list", label: "List", icon: List },
-  { view: "calendar", label: "Calendar", icon: Calendar },
+const VIEWS: SegmentOption<ApplyView>[] = [
+  { value: "board", label: "Board", icon: <Kanban aria-hidden /> },
+  { value: "list", label: "List", icon: <List aria-hidden /> },
+  { value: "calendar", label: "Calendar", icon: <Calendar aria-hidden /> },
 ]
 
 export function ApplyToolbar({
@@ -81,6 +77,8 @@ export function ApplyToolbar({
   onFilters,
   priorityCounts,
   priorityCountsFailed = false,
+  showFilter = true,
+  nextUp,
 }: {
   view: ApplyView
   onView: (view: ApplyView) => void
@@ -88,113 +86,101 @@ export function ApplyToolbar({
   onFilters: (filters: ApplyFilters) => void
   priorityCounts?: readonly { priority: string; count: number }[]
   priorityCountsFailed?: boolean
+  showFilter?: boolean
+  nextUp?: ReactNode
 }) {
   const count = activeFilterCount(filters)
   const priorityHeadingId = useId()
   return (
     <div
       data-slot="apply-toolbar"
-      className="flex min-h-11 shrink-0 flex-wrap items-center gap-1.5 px-3 md:h-11 md:flex-nowrap"
+      className="flex min-h-11 shrink-0 flex-wrap items-center gap-2 py-1.5 pr-4 pl-5 md:h-11 md:flex-nowrap md:py-0"
     >
-      {VIEWS.map(({ view: id, label, icon: Icon }) => {
-        const active = view === id
-        return (
-          <Button
-            key={id}
-            type="button"
-            variant="ghost"
-            aria-pressed={active}
-            className={cn(
-              "h-11 gap-1.5 rounded-full border px-2.5 text-xs md:h-7",
-              active
-                ? "border-transparent bg-accent font-medium text-foreground hover:bg-accent"
-                : "border-border font-normal text-muted-foreground"
-            )}
-            onClick={() => onView(id)}
+      <SegmentedControl
+        aria-label="View"
+        size="sm"
+        options={VIEWS}
+        value={view}
+        onChange={onView}
+      />
+      {nextUp}
+      {showFilter ? (
+        <Popover>
+          <PopoverTrigger
+            render={
+              <Button
+                type="button"
+                variant="ghost"
+                aria-label="Filter"
+                className={cn(
+                  "ml-auto h-11 min-w-11 rounded-full border border-border text-xs text-muted-foreground md:h-7 md:min-w-0",
+                  count > 0
+                    ? "gap-[5px] bg-accent px-2.5 hover:bg-accent"
+                    : "w-11 bg-card md:w-7"
+                )}
+              />
+            }
           >
-            <Icon
-              className={cn(
-                "size-[13px]",
-                active ? "text-foreground" : "text-muted-foreground"
-              )}
-            />
-            {label}
-          </Button>
-        )
-      })}
-      <Popover>
-        <PopoverTrigger
-          render={
-            <Button
-              type="button"
-              variant="ghost"
-              aria-label="Filter"
-              className={cn(
-                "mr-[34px] ml-auto h-11 min-w-11 rounded-full border border-border text-xs text-muted-foreground md:h-7 md:min-w-0",
-                count > 0
-                  ? "gap-[5px] bg-accent px-2.5 hover:bg-accent"
-                  : "w-11 bg-card md:w-7"
-              )}
-            />
-          }
-        >
-          <Funnel className="size-3.5" />
-          {count > 0 ? (
-            <span className="font-semibold text-foreground">{count}</span>
-          ) : null}
-        </PopoverTrigger>
-        <PopoverContent align="end" className="flex flex-col gap-2">
-          {priorityCounts || priorityCountsFailed ? (
-            <div className="flex flex-col gap-1.5 border-b border-border pb-2">
-              <p
-                id={priorityHeadingId}
-                className="text-sm font-medium text-foreground"
-              >
-                Jobs by priority
-              </p>
-              <div
-                role="group"
-                aria-labelledby={priorityHeadingId}
-                className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground"
-              >
-                {priorityCounts
-                  ? priorityCountRows(priorityCounts).map(
-                      ({ priority, label, count: priorityCount }) => (
-                        <span key={priority}>
-                          {label}{" "}
-                          <span className="tabular-nums">{priorityCount}</span>
-                        </span>
+            <Funnel className="size-3.5" />
+            {count > 0 ? (
+              <span className="font-semibold text-foreground">{count}</span>
+            ) : null}
+          </PopoverTrigger>
+          <PopoverContent align="end" className="flex flex-col gap-2">
+            {priorityCounts || priorityCountsFailed ? (
+              <div className="flex flex-col gap-1.5 border-b border-border pb-2">
+                <p
+                  id={priorityHeadingId}
+                  className="text-sm font-medium text-foreground"
+                >
+                  Jobs by priority
+                </p>
+                <div
+                  role="group"
+                  aria-labelledby={priorityHeadingId}
+                  className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground"
+                >
+                  {priorityCounts
+                    ? priorityCountRows(priorityCounts).map(
+                        ({ priority, label, count: priorityCount }) => (
+                          <span key={priority}>
+                            {label}{" "}
+                            <span className="tabular-nums">
+                              {priorityCount}
+                            </span>
+                          </span>
+                        )
                       )
-                    )
-                  : null}
-                {priorityCountsFailed ? (
-                  <span>Couldn't load priority counts.</span>
-                ) : null}
+                    : null}
+                  {priorityCountsFailed ? (
+                    <span>Couldn't load priority counts.</span>
+                  ) : null}
+                </div>
               </div>
+            ) : null}
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="filter-company">Company</Label>
+              <Input
+                id="filter-company"
+                value={filters.company}
+                onChange={(event) =>
+                  onFilters({ ...filters, company: event.target.value })
+                }
+              />
             </div>
-          ) : null}
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="filter-company">Company</Label>
-            <Input
-              id="filter-company"
-              value={filters.company}
-              onChange={(event) =>
-                onFilters({ ...filters, company: event.target.value })
-              }
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <Label htmlFor="filter-location">Location</Label>
-            <Input
-              id="filter-location"
-              value={filters.location}
-              onChange={(event) =>
-                onFilters({ ...filters, location: event.target.value })
-              }
-            />
-          </div>
-        </PopoverContent>
-      </Popover>
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="filter-location">Location</Label>
+              <Input
+                id="filter-location"
+                value={filters.location}
+                onChange={(event) =>
+                  onFilters({ ...filters, location: event.target.value })
+                }
+              />
+            </div>
+          </PopoverContent>
+        </Popover>
+      ) : null}
     </div>
   )
 }

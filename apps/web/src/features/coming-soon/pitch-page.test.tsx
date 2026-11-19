@@ -45,14 +45,12 @@ describe("Pitch coming soon", () => {
   it("asks to be notified about Pitch", async () => {
     renderPage(PitchPage)
     const action = await screen.findByRole("button", {
-      name: "Get early access",
+      name: "Notify me",
     })
     expect(action.querySelector("svg")).toHaveAttribute("aria-hidden", "true")
     const before = notifyCalls().length
 
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Get early access" })
-    )
+    fireEvent.click(await screen.findByRole("button", { name: "Notify me" }))
 
     await waitFor(() =>
       expect(notifyCalls().slice(before)).toEqual([{ topic: "pitch" }])
@@ -65,9 +63,7 @@ describe("Pitch coming soon", () => {
         throw new Error("offline")
     })
 
-    fireEvent.click(
-      await screen.findByRole("button", { name: "Get early access" })
-    )
+    fireEvent.click(await screen.findByRole("button", { name: "Notify me" }))
 
     expect(await screen.findByRole("alert")).toBeInTheDocument()
   })

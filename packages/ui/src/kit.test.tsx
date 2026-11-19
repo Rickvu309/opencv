@@ -106,6 +106,17 @@ describe("kit parts", () => {
     expect(screen.getByRole("img", { name: "Interview" })).toBeInTheDocument()
   })
 
+  it("hides a decorative stage icon so the written stage name is heard once", () => {
+    render(
+      <p>
+        <StageIcon stage="applied" decorative />
+        Applied
+      </p>
+    )
+    expect(screen.queryByRole("img")).not.toBeInTheDocument()
+    expect(screen.getByText("Applied")).toHaveTextContent(/^Applied$/)
+  })
+
   it("offers no glow variant: the main action is the solid primary and the default stays the kit secondary", () => {
     const { rerender } = render(<Button variant="primary">Add job</Button>)
     const primary = screen.getByRole("button", { name: "Add job" })
