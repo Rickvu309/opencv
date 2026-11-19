@@ -48,5 +48,19 @@
     "class": "self",
     "classBecause": null,
     "items": 5
+  },
+  {
+    "subject": "apps/web/src/test/surface-behavior.test.tsx",
+    "because": "Apply review fixes (#1724): the empty board's one action is New job, matching the header, and the Board and Calendar switch is a radio group in the kit SegmentedControl; the old cases pinned the old button names.",
+    "replacedBy": "apps/web/src/test/surface-behavior.test.tsx",
+    "proof": {
+      "fork": "429a6e0484ff2a912bb08656a5ade04fb43775f8",
+      "replacedByBlob": "1ff99224cc01cf08d52c3ff69779a9fe55aa7411",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
   }
 ]
