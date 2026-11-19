@@ -124,7 +124,6 @@ export function PaperLetterEditor({
     <section
       aria-label={`Editing ${doc.name}`}
       data-surface="paper"
-      data-pen-surface="paper"
       data-slot="letter-editor-page"
       className="flex h-full min-h-0 min-w-0 flex-1 flex-col"
     >

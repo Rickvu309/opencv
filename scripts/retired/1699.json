@@ -1,0 +1,18 @@
+[
+  {
+    "subject": "scripts/guard-ledger/click-focus-glow.json",
+    "because": "The owner retired the old design tool on 2026-11-19 and asked to remove its name from all code and docs; the ledger now follows the file through renames in git history, so the row names the current file and replays the same past mistake.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-header-fit.json",
+    "because": "The owner retired the old design tool on 2026-11-19 and asked to remove its name from all code and docs; the ledger now follows the file through renames in git history, so the row names the current file and replays the same past mistake.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

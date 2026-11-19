@@ -228,7 +228,6 @@ function SelectionFormat() {
       role="toolbar"
       aria-label="Format"
       data-surface={cv ? "paper" : undefined}
-      data-pen-surface={cv ? "paper" : undefined}
       data-slot="paper-format-toolbar"
       className="flex items-center gap-0.5 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md"
     >
@@ -265,7 +264,6 @@ function SelectionFormat() {
         <DropdownMenuContent
           align="start"
           data-surface={cv ? "paper" : undefined}
-          data-pen-surface={cv ? "paper" : undefined}
           ref={menuRef}
         >
           {choices.map((choice) => {
@@ -339,7 +337,6 @@ function SelectionFormat() {
         <PopoverContent
           ref={linkRef}
           data-surface={cv ? "paper" : undefined}
-          data-pen-surface={cv ? "paper" : undefined}
           className="flex w-64 flex-wrap gap-1.5 p-2"
           finalFocus={() => {
             if (!backToText.current) return true

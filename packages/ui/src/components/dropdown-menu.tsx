@@ -30,10 +30,7 @@ function DropdownMenuContent({
     MenuPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset" | "anchor"
   >) {
-  const surfaces = props as {
-    "data-surface"?: string
-    "data-pen-surface"?: string
-  }
+  const surface = (props as { "data-surface"?: string })["data-surface"]
   return (
     <MenuPrimitive.Portal>
       <MenuPrimitive.Positioner
@@ -43,8 +40,7 @@ function DropdownMenuContent({
         side={side}
         sideOffset={sideOffset}
         anchor={anchor}
-        data-surface={surfaces["data-surface"]}
-        data-pen-surface={surfaces["data-pen-surface"]}
+        data-surface={surface}
       >
         <MenuPrimitive.Popup
           data-slot="dropdown-menu-content"

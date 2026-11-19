@@ -259,22 +259,40 @@ const nodeModuleDirs = () => {
   return dirs.filter((dir) => existsSync(path.join(root, dir, "node_modules")))
 }
 
+function formerNames(file) {
+  try {
+    const names = execFileSync(
+      "git",
+      ["log", "--follow", "--name-only", "--format=", "--", file],
+      { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }
+    )
+    return [...new Set(names.split("\n").filter(Boolean))].filter(
+      (name) => name !== file
+    )
+  } catch {
+    return []
+  }
+}
+
 export const realIo = {
   async detector({ module, export: name }) {
     const loaded = await import(pathToFileURL(path.join(root, module)).href)
     return loaded[name]
   },
   show(rev, file) {
-    try {
-      return execFileSync("git", ["show", `${rev}:${file}`], {
-        cwd: root,
-        encoding: "utf8",
-        maxBuffer: 64 * 1024 * 1024,
-        stdio: ["ignore", "pipe", "ignore"],
-      })
-    } catch {
-      return null
+    for (const name of [file, ...formerNames(file)]) {
+      try {
+        return execFileSync("git", ["show", `${rev}:${name}`], {
+          cwd: root,
+          encoding: "utf8",
+          maxBuffer: 64 * 1024 * 1024,
+          stdio: ["ignore", "pipe", "ignore"],
+        })
+      } catch {
+        continue
+      }
     }
+    return null
   },
   changedFiles(fix) {
     return git("diff", "--name-only", "--diff-filter=MD", `${fix}^`, fix)

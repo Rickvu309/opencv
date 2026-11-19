@@ -393,7 +393,6 @@ export function PaperLibrary({
     <section
       aria-label="Paper"
       data-surface="paper"
-      data-pen-surface="paper"
       data-slot="paper-library"
       className="paper-library min-w-0"
     >

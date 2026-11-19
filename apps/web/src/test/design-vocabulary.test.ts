@@ -51,7 +51,7 @@ function featureDesignCssProblems(
   file: string,
   source: string
 ): string[] | null {
-  const match = /^features\/([a-z-]+)\/design\/[a-z.-]+\.css$/.exec(file)
+  const match = /^features\/([a-z-]+)\/design\/[a-z-]+\.css$/.exec(file)
   if (!match || hits(source, HEX_RE).length === 0) return null
   const feature = match[1]
   const violations: string[] = []
@@ -61,12 +61,7 @@ function featureDesignCssProblems(
     if (
       !selector
         .split(",")
-        .every((part) =>
-          [
-            `[data-surface="${feature}"]`,
-            `[data-pen-surface="${feature}"]`,
-          ].some((scope) => part.trim().startsWith(scope))
-        )
+        .every((part) => part.trim().startsWith(`[data-surface="${feature}"]`))
     )
       violations.push(`unscoped selector: ${selector}`)
   }

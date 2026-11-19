@@ -100,7 +100,6 @@ export function PaperLetterStartPage({
         }
       }}
       data-surface="paper"
-      data-pen-surface="paper"
       data-slot="letter-start-page"
       aria-label={draftingState ? "Drafting cover letter" : "New cover letter"}
       className="relative flex h-full min-h-0 flex-col"

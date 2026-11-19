@@ -150,7 +150,6 @@ export function RichPaperPage({
     <section
       aria-label="Paper"
       data-surface="paper"
-      data-pen-surface="paper"
       className="rich-paper-page flex h-full min-h-0 flex-1 flex-col overflow-clip"
     >
       <PaperDocumentHeader
