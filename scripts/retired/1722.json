@@ -26,5 +26,19 @@
     "class": "self",
     "classBecause": null,
     "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-tool-presentation.test.tsx",
+    "because": "The receipt headline is now the document name and the state line says what happened, and the approval meta is one phrase (issue 1722); the replacement checks the new visible words and that Edited and Applied are gone",
+    "replacedBy": "apps/web/src/features/coach/coach-tool-presentation.test.tsx",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "9e758c27153a6aee013281a79fbce9a4cb34fe56",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 10
   }
 ]
