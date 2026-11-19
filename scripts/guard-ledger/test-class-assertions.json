@@ -1,0 +1,14 @@
+{
+  "id": "test-class-assertions",
+  "file": "scripts/test-class-assertions.test.mjs",
+  "detector": {
+    "module": "scripts/lib/test-class-assertions.mjs",
+    "export": "testClassAssertions"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "1b1f2ab0d",
+    "path": "apps/web/src/features/paper/paper-template-gallery.test.tsx"
+  },
+  "reason": "Commit 1b1f2ab0d (PR 1488) made the Paper template gallery test pin min-h-0, shrink-0, flex-col, sm:max-w-3xl and h-11 class strings, so later lighter design changes failed it with no behaviour change. The test now checks fit, order and labels, so it is the fixed file."
+}

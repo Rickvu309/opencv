@@ -1,0 +1,14 @@
+{
+  "id": "icon-colour-selector",
+  "file": "scripts/icon-colour-selector.test.mjs",
+  "detector": {
+    "module": "scripts/lib/icon-colour-selector.mjs",
+    "export": "iconRecolourKeyedOnSize"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "9510b0ecf",
+    "path": "packages/ui/src/components/dropdown-menu.tsx"
+  },
+  "reason": "Commit 9510b0ecf (PR 1447) greyed every dropdown menu icon that had no size class, so the coloured Apply stage icons turned grey in the stage menu. The kit menu now greys only icons that set no colour of their own."
+}

@@ -54,9 +54,7 @@ export function PaperStarts({
       >
         <span className="paper-hand-start-label">Import</span>
         <span className="paper-hand-import" aria-hidden="true">
-          <span className="paper-picture paper-hand-import-file">
-            <span className="paper-hand-import-badge">DOCX</span>
-          </span>
+          <span className="paper-picture paper-hand-import-file" />
           <span className="paper-hand-import-tray" />
         </span>
       </Button>

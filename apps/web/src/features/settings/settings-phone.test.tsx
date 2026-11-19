@@ -7,12 +7,10 @@ import { renderApp } from "@/test/render-app.tsx"
 afterEach(cleanup)
 
 describe("settings phone layout", () => {
-  it("keeps the name box at 16px on a phone and ties a bad name to the field", async () => {
+  it("ties a bad name to the Name field", async () => {
     const user = userEvent.setup()
     renderApp("/settings/account")
     const field = await screen.findByRole("textbox", { name: "Name" })
-    expect(field).toHaveClass("text-base", "md:text-ui")
-    expect(field.className).not.toMatch(/(?:^|\s)text-\[13px\](?:\s|$)/)
     expect(field).not.toHaveAttribute("aria-invalid")
     expect(field).not.toHaveAttribute("aria-describedby")
     await user.clear(field)
@@ -24,59 +22,20 @@ describe("settings phone layout", () => {
     expect(field).toHaveAttribute("aria-describedby", "account-name-error")
   })
 
-  it("stacks every preference when the settings column is under 480px", async () => {
+  it("shows the full time zone name on its value", async () => {
     renderApp("/settings")
     expect(
       await screen.findByText("Language, time zone and where you start.")
     ).toBeInTheDocument()
-    expect(document.querySelector('[data-slot="settings-column"]')).toHaveClass(
-      "@container/settings"
-    )
-    const language = document.querySelector(
-      '[data-row="language"] [data-slot="settings-row-body"]'
-    )
-    expect(language).toHaveClass(
-      "@max-[479px]/settings:flex-col",
-      "@max-[479px]/settings:gap-3"
-    )
     expect(
-      document.querySelector(
-        '[data-row="language"] [data-slot="settings-row-desc"]'
+      within(screen.getByRole("combobox", { name: "Time zone" })).getByText(
+        "Ho Chi Minh City (UTC+7)"
       )
-    ).toHaveClass("@max-[479px]/settings:leading-[18px]")
-    expect(
-      document.querySelector(
-        '[data-row="time-zone"] [data-slot="select-trigger"]'
-      )
-    ).toHaveClass(
-      "@max-[479px]/settings:w-full",
-      "@max-[479px]/settings:min-w-0"
-    )
-    expect(
-      document.querySelector(
-        '[data-row="start-page"] [data-slot="settings-row-body"]'
-      )
-    ).toHaveClass(
-      "@max-[479px]/settings:flex-col",
-      "@max-[479px]/settings:gap-3"
-    )
+    ).toBeInTheDocument()
     expect(screen.getByText("Ho Chi Minh City (UTC+7)")).toHaveAttribute(
       "title",
       "Ho Chi Minh City (UTC+7)"
     )
-  })
-
-  it("keeps the Coach switch track at 18px and extends its hit area past 24px", async () => {
-    renderApp("/settings/coach")
-    const control = await screen.findByRole("switch", {
-      name: /Enable memory/,
-    })
-    expect(control).toHaveClass(
-      "md:h-[18px]!",
-      "md:w-8!",
-      "md:after:-inset-3.5!"
-    )
-    expect(control.className).toContain("after:content-['']")
   })
 
   it("opens plain-language capabilities and keeps setup tips beside the sign-in step", async () => {
@@ -85,14 +44,14 @@ describe("settings phone layout", () => {
     const summary = await screen.findByText(
       "Add the server, then sign in. Nothing changes until you approve it in OpenCV."
     )
-    expect(summary).toHaveClass("max-w-[60ch]")
+    expect(summary).toBeVisible()
     expect(screen.queryByText(/paper_read/)).toBeNull()
     const card = screen.getByText("Claude Code").closest("li")
     if (!card) throw new Error("Claude setup card is missing")
-    const signIn = within(card).getByRole("button", {
-      name: "Copy Claude login command",
-    }).parentElement
-    expect(signIn).toHaveClass("md:items-center")
+    const signIn = within(card)
+      .getByRole("button", { name: "Copy Claude login command" })
+      .closest("[data-slot=code-block]")
+    expect(signIn).toHaveTextContent("claude mcp login opencv")
     expect(signIn?.parentElement).toHaveTextContent(
       "You can also sign in from Claude Code with /mcp."
     )

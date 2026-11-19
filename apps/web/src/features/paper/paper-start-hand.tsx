@@ -42,9 +42,7 @@ export function PaperStartHand({
             className="paper-start-page paper-start-word"
             aria-hidden="true"
           >
-            <span className="paper-picture paper-start-word-file">
-              <span className="paper-hand-import-badge">DOCX</span>
-            </span>
+            <span className="paper-picture paper-start-word-file" />
             <span className="paper-hand-import-tray" />
           </span>
           <span className="paper-start-label">Import</span>

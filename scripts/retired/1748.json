@@ -1,0 +1,42 @@
+[
+  {
+    "subject": "apps/web/src/features/auth/sign-in-look.test.tsx",
+    "because": "The case pinned Tailwind classes for fill, hover, pressed and radius, so every lighter design change failed it with no behaviour change. It now checks that Continue is the only primary button and submits the email form; switching Continue to outline or to type button fails it (mutation run in the PR evidence). The flip proof cannot run because this change touches only tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "apps/web/src/features/settings/settings.test.tsx",
+    "because": "The cases pinned h-11, touch-manipulation and max-md:h-11 class strings on the Back link, the Time zone and Start page selects and the Name box, so any kit or token change failed them with no behaviour change. jsdom cannot measure a height. The Back link height is owned by the kit page header and its test; the 390 measurement of the selects and the Name box is in the PR evidence; a follow-up issue moves the phone height rule for selects and inputs into the touch-targets guard.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/settings/settings-phone.test.tsx",
+    "because": "The cases pinned container-query, text-size, switch-track and max-width class strings, so every lighter Settings change failed them with no behaviour change. The kept cases check what a person sees: the bad-name alert tied to the field, the full time zone name and its title, the setup tip beside the sign-in step, and the capabilities that open; changing that copy fails them (mutation runs in the PR evidence). Stacking at 390 is shown with ui.mjs shots.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-template-gallery.test.tsx",
+    "because": "The helper pinned width, flex, min-h-0, shrink-0 and h-11 class strings on the chooser and the kind picker, so every lighter design change failed it with no behaviour change. It keeps the fit model for every window size, the actions outside and after the scroll, and the close control; a dialog with no height cap fails it (mutation run in the PR evidence). The 44px action height is enforced on every kit Button in features by touch-targets.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-template-chooser-layout.test.tsx",
+    "because": "The case pinned min-h-0, shrink-0 and flex-col class strings, so renaming a class failed it while a footer that a real browser pushes out of view passed it. It keeps the checks a person can see: the actions sit outside the scrolling grid and after it, and Use names the chosen template; renaming Use fails it (mutation run in the PR evidence). In-view proof is the ui.mjs sweep of the chooser screen.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  }
+]

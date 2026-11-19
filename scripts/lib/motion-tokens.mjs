@@ -49,6 +49,22 @@ const REASON = {
   variable:
     "keeps a motion value in its own CSS variable; read --duration-* and --ease-* directly",
   built: "builds a duration from a number; read motionToken() instead",
+  constant:
+    "keeps a motion duration in a numeric _MS constant; read motionToken() instead",
+}
+
+const MOTION_CONSTANT =
+  /^(?:[A-Z0-9]+_)*(?:DEAL|SNAP|SLIDE|FADE|ANIM|ANIMATION|TRANSITION|MOTION|ENTER|EXIT|LEAVE|SETTLE|GLIDE|SPRING|FLIP|MORPH|COLLAPSE|EXPAND|SWIPE|BOUNCE|REVEAL|SHAKE|DURATION|TWEEN)(?:_[A-Z0-9]+)*_MS$/
+
+function isMotionConstant(node) {
+  return (
+    ts.isVariableDeclaration(node) &&
+    ts.isIdentifier(node.name) &&
+    MOTION_CONSTANT.test(node.name.text) &&
+    node.initializer !== undefined &&
+    ts.isNumericLiteral(node.initializer) &&
+    Number(node.initializer.text) !== 0
+  )
 }
 
 const layoutReason = (props) =>
@@ -267,6 +283,7 @@ function scriptProblems(source, file) {
     return []
   }
   const visit = (node) => {
+    if (isMotionConstant(node)) report(node, [REASON.constant])
     if (ts.isPropertyAssignment(node)) {
       const name = propertyName(node.name)
       if (name && STYLE_KEYS.has(name))

@@ -447,24 +447,13 @@ describe("settings", () => {
     ).not.toBeInTheDocument()
     const back = screen.getByRole("link", { name: "Back to app" })
     expect(back).toHaveAttribute("data-slot", "page-header-back")
-    expect(back).toHaveClass("h-11", "shrink-0", "touch-manipulation")
     const header = back.closest('[data-slot="page-header"]')!
     expect(header).toContainElement(
       screen.getByRole("combobox", { name: /Section/ })
     )
     for (const name of ["Time zone", "Start page"]) {
-      expect(screen.getByRole("combobox", { name })).toHaveClass(
-        "data-[size=default]:max-md:h-11",
-        "touch-manipulation"
-      )
+      expect(screen.getByRole("combobox", { name })).toBeVisible()
     }
-  })
-
-  it("gives the Account name box a 44px phone height", async () => {
-    renderApp("/settings/account")
-    expect(await screen.findByRole("textbox", { name: "Name" })).toHaveClass(
-      "max-md:h-11"
-    )
   })
 
   it("has no header bar on desktop", async () => {
