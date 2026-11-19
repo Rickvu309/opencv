@@ -7,7 +7,6 @@ import {
   CollapsibleIndicator,
   CollapsibleTrigger,
 } from "@workspace/ui/components/collapsible"
-import { Spinner } from "@workspace/ui/components/spinner"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { OpenCvMark } from "@/components/app-logo.tsx"
@@ -30,15 +29,17 @@ const STATUS_NOTE: Record<CoachProgressStatus, string> = {
   approval: "awaiting confirmation",
 }
 
-const ICON = "size-3.5 shrink-0"
-
 function workedForText(workedMs: number) {
   return `Worked for ${Math.max(1, Math.round(workedMs / 1000))}s`
 }
 
 function StepIcon({ status }: { status: CoachProgressStatus }) {
   if (status === "running")
-    return <Spinner aria-hidden="true" className={ICON} />
+    return (
+      <span data-slot="coach-step-icon" aria-hidden="true">
+        <span data-slot="coach-step-spinner" />
+      </span>
+    )
   const Icon =
     status === "completed"
       ? Check
@@ -47,7 +48,11 @@ function StepIcon({ status }: { status: CoachProgressStatus }) {
         : status === "approval"
           ? Clock
           : Circle
-  return <Icon aria-hidden="true" className={cn(ICON, "motion-appear")} />
+  return (
+    <span data-slot="coach-step-icon" aria-hidden="true">
+      <Icon className="size-3.5 motion-appear" />
+    </span>
+  )
 }
 
 function WorkSteps({
@@ -148,10 +153,10 @@ export function CoachWorkFold({
         {steps.length > 0 ? (
           <CollapsibleTrigger
             data-slot="coach-work-toggle"
-            className="-mx-1 inline-flex min-h-11 motion-press-soft items-center gap-1.5 rounded-md px-1 outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 md:min-h-7"
+            className="-mx-1.5 inline-flex min-h-11 motion-press items-center gap-1.5 rounded-md px-1.5 outline-none focus-visible:ring-3 focus-visible:ring-ring/50 md:min-h-7"
           >
             <WorkLabel text={label} live={live} />
-            <CollapsibleIndicator className="size-3.5" />
+            <CollapsibleIndicator className="size-3" />
           </CollapsibleTrigger>
         ) : (
           <WorkLabel text={label} live={live} />

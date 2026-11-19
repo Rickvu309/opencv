@@ -159,6 +159,13 @@ describe("Coach turn motion", () => {
       })
     )
     expect(quarter(view.container)).toBe("rotate(180deg)")
+    const spinners = view.container.querySelectorAll(
+      "[data-slot='coach-step-spinner']"
+    )
+    expect(spinners).toHaveLength(1)
+    expect(
+      spinners[0]?.closest("[data-slot='coach-progress-row']")
+    ).toHaveAttribute("data-status", "running")
   })
 
   it("writes a streaming reply in word by word, each word fading in, and shows a saved reply whole", () => {
