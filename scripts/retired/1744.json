@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/settings/settings-phone.test.tsx > settings phone layout > opens plain-language capabilities and keeps setup tips beside the sign-in step :: expect(signIn).toHaveClass(\"md:items-center\")",
+    "because": "The sign-in step is a kit CodeBlock now, so the hand-built row class it checked is gone; the case still checks that the setup tip sits beside the sign-in command",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
