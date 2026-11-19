@@ -40,5 +40,19 @@
     "class": "self",
     "classBecause": null,
     "items": 10
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-workspace-progress.test.tsx",
+    "because": "The approval meta now reads Action to approve instead of two run-on phrases (issue 1722); the replacement checks the new single phrase",
+    "replacedBy": "apps/web/src/features/coach/coach-workspace-progress.test.tsx",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "f4b0e001297758a0b6a3e66f2dae62bf1037d4a1",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
