@@ -1,5 +1,4 @@
 {
-  "apps/web/src/components/ai-elements/confirmation.tsx": 1,
   "apps/web/src/components/ai-elements/message.tsx": 1,
   "apps/web/src/components/ai-elements/prompt-input.tsx": 2,
   "apps/web/src/components/ai-elements/response-block.tsx": 4,
@@ -30,10 +29,9 @@
   "apps/web/src/features/auth/welcome-screen.tsx": 2,
   "apps/web/src/features/coach/chat-view.tsx": 2,
   "apps/web/src/features/coach/coach-cap-notice.tsx": 2,
-  "apps/web/src/features/coach/coach-history.tsx": 14,
+  "apps/web/src/features/coach/coach-history.tsx": 10,
   "apps/web/src/features/coach/coach-home.tsx": 3,
-  "apps/web/src/features/coach/coach-panel.tsx": 3,
-  "apps/web/src/features/coach/coach-tool-line.tsx": 10,
+  "apps/web/src/features/coach/coach-tool-line.tsx": 4,
   "apps/web/src/features/coming-soon/coming-soon-page.tsx": 6,
   "apps/web/src/features/coming-soon/jobs-preview.tsx": 8,
   "apps/web/src/features/coming-soon/pitch-hero-art.tsx": 20,

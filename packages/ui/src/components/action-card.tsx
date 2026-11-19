@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from "react"
-import { cn } from "cn"
+import { cn } from "@workspace/ui/lib/utils"
 
 type ActionCardProps = Omit<ComponentProps<"section">, "title"> & {
   icon: ReactNode
