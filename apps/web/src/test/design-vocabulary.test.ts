@@ -4,6 +4,11 @@ import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { describe, expect, it } from "vitest"
 
+import {
+  SURFACE_TOKENS,
+  detect as designCssTokenProblems,
+} from "../../../../scripts/lib/design-css-tokens.mjs"
+
 const webRoot = fileURLToPath(new URL("../..", import.meta.url))
 const srcDir = path.join(webRoot, "src")
 const uiDir = path.resolve(webRoot, "../../packages/ui/src")
@@ -51,27 +56,12 @@ function featureDesignCssProblems(
   file: string,
   source: string
 ): string[] | null {
-  const match = /^features\/([a-z-]+)\/design\/[a-z-]+\.css$/.exec(file)
-  if (!match || hits(source, HEX_RE).length === 0) return null
-  const feature = match[1]
-  const violations: string[] = []
-  for (const rule of source.matchAll(/([^{}]+)\{/g)) {
-    const selector = rule[1].trim()
-    if (selector.startsWith("@media")) continue
-    if (
-      !selector
-        .split(",")
-        .every((part) => part.trim().startsWith(`[data-surface="${feature}"]`))
-    )
-      violations.push(`unscoped selector: ${selector}`)
-  }
-  if (/--[\w-]+\s*:/.test(source))
-    violations.push("custom property declaration")
-  violations.push(
+  if (!/^features\/[a-z-]+\/design\/[a-z-]+\.css$/.test(file)) return null
+  return [
+    ...designCssTokenProblems(source, file),
     ...hits(source, PALETTE_RE),
-    ...hits(source, HUE_FUNCTION_EXCEPT_BLACK_AND_RELATIVE_RE)
-  )
-  return violations
+    ...hits(source, HUE_FUNCTION_EXCEPT_BLACK_AND_RELATIVE_RE),
+  ]
 }
 
 const RAW_INTERACTIVE_RE = /<(button|input|textarea|select)\b/g
@@ -103,6 +93,7 @@ const STOCK_COLORS = [
   "chart-5",
   "sidebar-border",
   "sidebar-ring",
+  ...SURFACE_TOKENS,
 ]
 
 const STOCK_ROOT = [...STOCK_COLORS, "radius"]
@@ -119,7 +110,7 @@ type ReadableVariableGroup = { reason: string; names: readonly string[] }
 const READABLE_VARIABLE_GROUPS: readonly ReadableVariableGroup[] = [
   {
     reason:
-      "shadcn colour tokens declared in globals.css and read as Tailwind colour utilities",
+      "shadcn colour tokens and the surface, hairline and subtle text tokens declared in globals.css and read as Tailwind colour utilities",
     names: STOCK_COLORS,
   },
   {
@@ -317,20 +308,30 @@ describe("app code uses shadcn variables and stock Tailwind, with no raw hex or 
     expect(violations, violations.join("\n")).toEqual([])
   })
 
-  it("keeps feature design CSS with hex colours inside its feature scope, with any hex colour the design needs", () => {
+  it("fails a hex colour in a feature design file and names the token to use", () => {
+    const check = (file: string, source: string) =>
+      featureDesignCssProblems(file, source)
     const file = "features/example/design/example.css"
-    const check = (source: string) => featureDesignCssProblems(file, source)
-    expect(check('[data-surface="example"] h2 { color: #123456; }')).toEqual([])
-    expect(check("body { color: #1A1A1A; }")).toEqual([
-      "unscoped selector: body",
-    ])
     expect(
-      check('[data-surface="example"] { --custom: 1px; color: #123456; }')
-    ).toEqual(["custom property declaration"])
+      check(file, '[data-surface="example"] h2 { border-color: #ededef; }')
+    ).toEqual([`${file}:1: #ededef; use var(--hairline)`])
     expect(
-      featureDesignCssProblems("features/example/example.tsx", "#1A1A1A")
-    ).toBeNull()
-    expect(check("body { color: var(--foreground); }")).toBeNull()
+      check(file, '[data-surface="example"] h2 { color: #123456; }')?.[0]
+    ).toMatch(
+      /#123456; use a token from packages\/ui\/src\/styles\/globals\.css/
+    )
+    expect(
+      check(file, '[data-surface="example"] h2 { color: var(--foreground); }')
+    ).toEqual([])
+    expect(check("features/example/example.tsx", "#1A1A1A")).toBeNull()
+  })
+
+  it("fails a screen that redeclares a globals.css token", () => {
+    const found = featureDesignCssProblems(
+      "features/example/design/example.css",
+      ".example { --border: color-mix(in oklch, var(--foreground) 8%, transparent); }"
+    )
+    expect(found?.[0]).toMatch(/--border redeclared/)
   })
 
   it("forbids the retired class roots in app and kit code", () => {

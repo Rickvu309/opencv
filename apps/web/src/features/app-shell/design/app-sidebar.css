@@ -1,21 +1,21 @@
 [data-surface="app-shell"] [data-slot="nav-item"],
 [data-surface="app-shell"] [data-slot="nav-item"] svg,
 [data-surface="app-shell"] button[aria-label="Search"] {
-  color: #59595b;
+  color: var(--muted-foreground);
 }
 
 [data-surface="app-shell"] [data-slot="nav-item"][aria-current="page"] {
-  background: #e1e1e2;
+  background: var(--sidebar-accent);
 }
 
 [data-surface="app-shell"] [data-slot="nav-item-badge"],
 [data-surface="app-shell"] [data-slot="sidebar-group-label"] {
-  color: #969799;
+  color: var(--subtle-foreground);
 }
 
 [data-surface="app-shell"] [data-slot="brand"],
 [data-surface="app-shell"] [data-slot="account-name"] {
-  color: #1a1a1a;
+  color: var(--foreground);
 }
 
 [data-surface="app-shell"] [data-slot="account-name"] {
@@ -48,11 +48,11 @@
 }
 
 [data-surface="app-shell"] [data-slot="account-trigger"] svg {
-  color: #59595b;
+  color: var(--muted-foreground);
 }
 
 [data-surface="app-shell"] [data-slot="avatar-fallback"] {
-  background: #e1e1e2;
-  color: #1a1a1a;
+  background: var(--sidebar-accent);
+  color: var(--foreground);
   font-weight: 600;
 }

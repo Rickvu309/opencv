@@ -1,10 +1,7 @@
 .paper-library {
-  --radius: 0.375rem;
-  --border: color-mix(in oklch, var(--foreground) 8%, transparent);
-  --input: color-mix(in oklch, var(--foreground) 8%, transparent);
   min-height: 100%;
   padding: 16px 16px 0;
-  background: color-mix(in oklch, var(--secondary) 35%, var(--background));
+  background: var(--surface-sunken);
 }
 
 .paper-hand-stage {
