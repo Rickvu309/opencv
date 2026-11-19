@@ -54,16 +54,14 @@ describe("Coach grounding on a minted page", () => {
       })
       expect(grounding.focusDoc).toMatchObject({
         id: minted.docId,
-        name: "Cover letter.docx",
+        name: "Cover letter",
         kind: "letter",
         revision: minted.revision,
       })
       expect(grounding.focusDoc?.outline).toContain(
         `Saved revision ${minted.revision}`
       )
-      expect(grounding.note).toContain(
-        "Open document: Cover letter.docx (letter)."
-      )
+      expect(grounding.note).toContain("Open document: Cover letter (letter).")
       await expect(
         registry.read("paper.get", { docId: minted.docId }, personActor(owner))
       ).rejects.toMatchObject({ code: "NOT_FOUND" })
