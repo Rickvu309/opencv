@@ -3,10 +3,16 @@ export const PAGE = '[contenteditable="true"]'
 export const SAVED =
   'p.writing-note[title="Saved"], p.writing-note:text-is("Saved")'
 
-export const OPEN_BLANK_CV = [
-  { goto: "/paper" },
+export const OPEN_NEW_CV = [
   { click: { role: "button", name: "New" } },
   { click: { role: "button", name: "CV" } },
+  { waitFor: { role: "dialog", name: "New CV" } },
+]
+
+export const OPEN_BLANK_CV = [
+  { goto: "/paper" },
+  ...OPEN_NEW_CV,
+  { click: { role: "radio", name: "Blank" } },
   { click: { role: "button", name: "Start blank" } },
   { waitFor: { selector: PAGE } },
 ]

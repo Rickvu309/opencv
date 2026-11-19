@@ -31,6 +31,10 @@
     "passed": true,
     "fingerprint": "0d3110284e79"
   },
+  "picker-card-chosen": {
+    "passed": true,
+    "fingerprint": "1a37f05cdb90"
+  },
   "pinned-history": {
     "passed": true,
     "fingerprint": "843512bd276e"

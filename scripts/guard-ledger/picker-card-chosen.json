@@ -1,0 +1,11 @@
+{
+  "id": "picker-card-chosen",
+  "file": "scripts/ui/picker-choice.test.mjs",
+  "historic": {
+    "mode": "restore",
+    "sha": "f9aff81d77413617cc9233d20500a2c3d126bf11",
+    "paths": ["scripts/ui/screens.mjs", "scripts/ui/screens-paper.mjs"],
+    "command": ["node", "--test", "scripts/ui/picker-choice.test.mjs"]
+  },
+  "reason": "PR 1725 made the New CV picker open on the first template instead of Blank. The blank CV recipe pressed Start blank without choosing Blank, so paper-blank, paper-typed, paper-home-no-match and 14 Coach panel recipes opened a template CV or timed out. The test fails on the recipes as they stood at f9aff81d7 and passes once every recipe chooses the card it confirms."
+}

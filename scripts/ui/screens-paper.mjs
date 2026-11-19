@@ -2,16 +2,11 @@ import {
   ADD_A_JOB,
   DOWNLOAD_READY,
   OPEN_BLANK_CV,
+  OPEN_NEW_CV,
   OPEN_PANEL,
   PAGE,
   SAVED,
 } from "./screen-steps.mjs"
-
-const OPEN_NEW_CV = [
-  { click: { role: "button", name: "New" } },
-  { click: { role: "button", name: "CV" } },
-  { waitFor: { role: "dialog", name: "New CV" } },
-]
 
 const HARD_NAMES = [
   "Senior Product Designer CV for the Atlassian Ho Chi Minh City design systems team, final version",
