@@ -26,5 +26,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/settings/settings-nav.test.tsx",
+    "because": "It expected the made-up label Account for a person with no name and no email, a state sign-in never creates; it now expects the email.",
+    "replacedBy": "apps/web/src/features/settings/settings-nav.test.tsx",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "f82697ab8fd358733423ca9bf6fc9f77df60f858",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
