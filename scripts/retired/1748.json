@@ -22,5 +22,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 10
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-template-gallery.test.tsx",
+    "because": "The helper pinned width, flex, min-h-0, shrink-0 and h-11 class strings on the chooser and the kind picker, so every lighter design change failed it with no behaviour change. It keeps the fit model for every window size, the actions outside and after the scroll, and the close control; a dialog with no height cap fails it (mutation run in the PR evidence). The 44px action height is enforced on every kit Button in features by touch-targets.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
   }
 ]
