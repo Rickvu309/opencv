@@ -12,5 +12,19 @@
     "class": "owner",
     "classBecause": "apps/web/src/features/settings/settings-nav.test.tsx shares no module, command or route with apps/web/src/features/settings/person-initials.test.ts",
     "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/app-shell/shell-surfaces.test.tsx",
+    "because": "It required the Settings footer to show a name made from the email, the bug this issue removes; the footer now shows the email.",
+    "replacedBy": "apps/web/src/features/app-shell/shell-surfaces.test.tsx",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "985a33dc13699c036983a03874d262decb858036",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
