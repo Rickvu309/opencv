@@ -30,7 +30,7 @@ import {
   importReadStop,
   parseImportLink,
 } from "./import-parse.js"
-import { importedWordPage } from "./import-word.js"
+import { importedPageName, importedWordPage } from "./import-word.js"
 import { createNativeWordRoutes } from "./native-word-http.js"
 import { createPaperPackageRoutes } from "./package-http.js"
 import {
@@ -327,7 +327,7 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
       const word =
         file.name.toLowerCase().endsWith(".docx") ||
         classifyImport(upload) === "docx"
-          ? { name: file.name, bytes, notice: null }
+          ? { name: importedPageName(file.name), bytes, notice: null }
           : await importedWordPage(upload, {
               owner: c.var.userId,
               signal: c.req.raw.signal,

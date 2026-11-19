@@ -284,11 +284,11 @@ describe("a blank page keeps the kind the person started", () => {
       }
       expect(await page(owner, cv.docId)).toMatchObject({
         label: "cv",
-        name: "CV.docx",
+        name: "CV",
       })
       expect(await page(owner, letter.docId)).toMatchObject({
         label: "letter",
-        name: "Cover letter.docx",
+        name: "Cover letter",
       })
       const file = await exportWord(owner, letter.docId, letter.revision)
       expect("bytes" in file && file.bytes.byteLength > 0).toBe(true)

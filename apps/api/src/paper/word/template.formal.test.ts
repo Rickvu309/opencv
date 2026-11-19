@@ -227,7 +227,7 @@ describe("a CV made from a template", () => {
         idempotencyKey: randomUUID(),
       })
       const minted = paperPackageEditResultSchema.parse(result.output)
-      expect(minted.name).toBe("Academic CV.docx")
+      expect(minted.name).toBe("Academic CV")
       expect(minted.kind).toBe("cv")
       const page = pageOf(
         await open(owner, { kind: "read", doc: minted.docId })

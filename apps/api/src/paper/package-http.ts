@@ -122,10 +122,9 @@ export function createPaperPackageRoutes(auth?: Auth, db?: AppDatabase) {
       c.req.param("docId"),
       c.req.query("at") ?? ""
     )
-    const filename = encodeURIComponent(exported.metadata.name).replaceAll(
-      "'",
-      "%27"
-    )
+    const filename = encodeURIComponent(
+      `${exported.metadata.name}.docx`
+    ).replaceAll("'", "%27")
     return new Response(new Uint8Array(exported.bytes), {
       headers: {
         "content-type": WORD_PACKAGE_MEDIA_TYPE,

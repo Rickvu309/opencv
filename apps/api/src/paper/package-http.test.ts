@@ -42,7 +42,7 @@ it("authenticates staging, reads pinned snapshots, and exports exact DOCX bytes 
     headers.set("content-type", WORD_PACKAGE_MEDIA_TYPE)
     const bytes = fixturePackage(paragraph("HTTP original words"))
     const stagedResponse = await app.request(
-      "/api/paper/packages/stage?name=Letter.docx&kind=letter",
+      "/api/paper/packages/stage?name=Letter&kind=letter",
       { method: "POST", headers, body: new Uint8Array(bytes) }
     )
     expect(stagedResponse.status, await stagedResponse.clone().text()).toBe(201)
@@ -127,6 +127,9 @@ it("authenticates staging, reads pinned snapshots, and exports exact DOCX bytes 
     )
     expect(downloaded.status).toBe(200)
     expect(downloaded.headers.get("content-type")).toBe(WORD_PACKAGE_MEDIA_TYPE)
+    expect(downloaded.headers.get("content-disposition")).toContain(
+      "filename*=UTF-8''Letter.docx"
+    )
     expect(Buffer.from(await downloaded.arrayBuffer())).toEqual(bytes)
     expect(
       (
@@ -206,7 +209,7 @@ it("moves Word uploads into the immutable library without a legacy document or f
       .parse(await response.json()).data
     expect(receipt).toMatchObject({
       generation: "package",
-      name: "My Letter.docx",
+      name: "My Letter",
       kind: "letter",
     })
     expect(

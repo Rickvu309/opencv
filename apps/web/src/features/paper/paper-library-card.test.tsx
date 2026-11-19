@@ -17,12 +17,12 @@ it("opens an empty page from the card without adding placeholder content", () =>
   expect(open).toHaveBeenCalledOnce()
 })
 
-it("shows the document name without its extension and exposes the full long name", () => {
+it("shows the full long document name", () => {
   const name =
     "Senior product designer portfolio and application for international project briefs"
   render(
     <PaperLibraryCard
-      name={`${name}.docx`}
+      name={name}
       meta="Edited today"
       onOpen={() => undefined}
       actions={[]}
@@ -30,5 +30,4 @@ it("shows the document name without its extension and exposes the full long name
   )
   expect(screen.getByRole("button", { name })).toBeInTheDocument()
   expect(screen.getByTitle(name)).toHaveTextContent(name)
-  expect(screen.queryByText(`${name}.docx`)).not.toBeInTheDocument()
 })

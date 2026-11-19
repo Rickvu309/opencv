@@ -1,0 +1,14 @@
+{
+  "id": "paper-mint-names",
+  "file": "scripts/paper-mint-names.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-mint-names.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "f8167a134",
+    "path": "apps/api/src/paper/package-canvas.ts"
+  },
+  "reason": "f8167a134 (#1352) minted blank pages as CV.docx and Cover letter.docx and appended .docx to a given name, so the editor title read CV.docx and the library hid the extension with a display helper. The pure AST detect fires on a string ending in a document extension inside a function named for a name or a NAMES table, and stays quiet on download file names and the fixed modules."
+}

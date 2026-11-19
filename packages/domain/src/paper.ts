@@ -35,11 +35,17 @@ export const paperDocStatusSchema = z.enum(["draft", "ready", "published"])
 
 export const paperDocIdSchema = paperIdSchema
 
+export const PAPER_DOC_NAME_FILE_EXTENSION = /\.(docx?|pdf|rtf|txt|odt)$/i
+
 export const paperDocNameSchema = z
   .string()
   .trim()
   .min(1, "Name is required")
   .max(PAPER_DOC_NAME_MAX, "Name is too long")
+  .refine(
+    (name) => !PAPER_DOC_NAME_FILE_EXTENSION.test(name),
+    "Leave out the file extension"
+  )
 
 const paperRenameDocInputSchema = z
   .object({

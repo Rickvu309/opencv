@@ -35,8 +35,8 @@ const loaded = createRequire(import.meta.url)(
 }
 
 const BLANK_PAGE_NAMES: Record<WordPageLabel, string> = {
-  cv: "CV.docx",
-  letter: "Cover letter.docx",
+  cv: "CV",
+  letter: "Cover letter",
 }
 
 type CanvasResult = ReturnType<typeof paperPackageEditResultSchema.parse>
@@ -44,8 +44,7 @@ type CanvasResult = ReturnType<typeof paperPackageEditResultSchema.parse>
 type CanvasMint = Extract<PaperCanvasCommit, { op: "mint" }>
 
 function mintedName(input: CanvasMint) {
-  if (input.name)
-    return /\.docx$/i.test(input.name) ? input.name : `${input.name}.docx`
+  if (input.name) return input.name
   if (input.templateId) return templatePageName(input.templateId)
   return BLANK_PAGE_NAMES[input.label]
 }

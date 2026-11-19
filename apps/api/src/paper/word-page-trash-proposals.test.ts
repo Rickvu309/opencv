@@ -340,7 +340,7 @@ describe("a proposal made before a Word page was deleted and brought back", () =
       expect(await registry.approve(owner, proposal)).toBeTruthy()
       const after = await readWordPackage(owner, { docId: page.docId })
       expect(pageText(after)).toContain("Harbor lamp")
-      expect(after.name).toBe("After rename.docx")
+      expect(after.name).toBe("After rename")
       await expect(
         getDb()
           .update(paperPackageVersions)

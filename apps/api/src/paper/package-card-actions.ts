@@ -24,11 +24,6 @@ const NAME_MAX = 200
 
 export type WordPageCopy = { stageId: string; canvasProfile: string | null }
 
-export function wordPageName(name: string) {
-  if (/\.docx$/i.test(name)) return name
-  return `${name.slice(0, NAME_MAX - 5)}.docx`
-}
-
 function headQuery(owner: string, docId: string) {
   return getDb()
     .select()
@@ -63,7 +58,7 @@ export async function renameWordPage(
   if (!current) return null
   await getDb()
     .update(paperPackageVersions)
-    .set({ name: wordPageName(name) })
+    .set({ name })
     .where(
       and(
         eq(paperPackageVersions.userId, owner),

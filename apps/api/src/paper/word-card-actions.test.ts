@@ -109,23 +109,23 @@ describe("card menu actions on a Word page", () => {
       })
       expect(renamed.output).toMatchObject({
         id: page.docId,
-        name: "Harbor CV.docx",
+        name: "Harbor CV",
         previousName: "Rename.docx",
       })
       expect(
         (await listed()).find((item) => item.id === page.docId)?.name
-      ).toBe("Harbor CV.docx")
+      ).toBe("Harbor CV")
       const read = await readWordPackage(owner, { docId: page.docId })
-      expect(read.name).toBe("Harbor CV.docx")
+      expect(read.name).toBe("Harbor CV")
       expect(read.revision).toBe(page.revision)
       await registry.execute({
         name: "paper.rename",
-        input: { docId: page.docId, name: "Rename.docx" },
+        input: { docId: page.docId, name: "Rename" },
         actor: person,
       })
       expect(
         (await listed()).find((item) => item.id === page.docId)?.name
-      ).toBe("Rename.docx")
+      ).toBe("Rename")
     }))
 
   it("duplicates a Word page with the same content, its own history and no Job link", () =>

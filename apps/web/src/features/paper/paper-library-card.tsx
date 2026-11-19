@@ -11,7 +11,6 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 
-import { libraryDisplayName } from "./paper-library-entries.ts"
 import "./design/paper-picture.css"
 
 export type PaperCardAction = {
@@ -149,12 +148,10 @@ export function PaperLibraryCard({
   onOpen?: () => void
   actions: PaperCardAction[]
 }) {
-  const displayName = libraryDisplayName(name)
-  const displayLabel = openLabel?.replace(name, displayName)
   const body: ReactNode = (
     <>
       <PaperSheet lines={lines} badge={badge} preview={preview} />
-      <PaperLabel name={displayName} meta={meta} />
+      <PaperLabel name={name} meta={meta} />
     </>
   )
   return (
@@ -166,7 +163,7 @@ export function PaperLibraryCard({
         <Button
           type="button"
           variant="ghost"
-          aria-label={displayLabel ?? displayName}
+          aria-label={openLabel ?? name}
           className="group/card h-auto min-h-11 w-full min-w-0 flex-col items-start gap-3 rounded-[3px] border-0 p-0 font-normal whitespace-normal hover:bg-transparent aria-expanded:bg-transparent"
           onClick={onOpen}
         >
@@ -178,7 +175,7 @@ export function PaperLibraryCard({
         </div>
       )}
       <PaperActionMenu
-        label={`${displayName} menu`}
+        label={`${name} menu`}
         actions={actions}
         className="absolute top-1.5 right-1.5 size-11 bg-card/90 [@media(hover:hover)_and_(pointer:fine)]:opacity-0 [@media(hover:hover)_and_(pointer:fine)]:group-focus-within/card:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:group-hover/card:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:aria-expanded:opacity-100 md:[@media(pointer:fine)]:size-7"
       />

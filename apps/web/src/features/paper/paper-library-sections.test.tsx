@@ -191,7 +191,7 @@ describe("Paper home sections", () => {
     renderLibrary([
       cv("An earlier CV"),
       {
-        ...letter("Latest letter.docx"),
+        ...letter("Latest letter"),
         updatedAt: "2027-01-02T12:00:00.000Z",
       },
     ])
@@ -286,7 +286,7 @@ describe("Paper home sections", () => {
       ]
     )
     expect(screen.queryByText("Start a document")).not.toBeInTheDocument()
-    expect(screen.getAllByText("Original CV").length).toBeGreaterThan(0)
+    expect(screen.getAllByText("Original CV.pdf").length).toBeGreaterThan(0)
     expect(screen.getByText("PDF")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "New CV" })).toBeInTheDocument()
     expect(
@@ -301,12 +301,14 @@ describe("Paper home sections", () => {
       "/proofs"
     )
     await pickView("All")
-    fireEvent.click(screen.getByRole("button", { name: "Original CV menu" }))
+    fireEvent.click(
+      screen.getByRole("button", { name: "Original CV.pdf menu" })
+    )
     fireEvent.click(
       await screen.findByRole("menuitem", { name: "Delete", exact: true })
     )
     expect(
-      screen.getByRole("dialog", { name: 'Delete "Original CV"?' })
+      screen.getByRole("dialog", { name: 'Delete "Original CV.pdf"?' })
     ).toBeInTheDocument()
   })
 
@@ -384,7 +386,7 @@ describe("Paper home sections", () => {
 
   it("routes Word cards to the page preview even when no block body exists", () => {
     renderLibrary([
-      { ...letter("Word letter.docx"), format: "word", paper: undefined },
+      { ...letter("Word letter"), format: "word", paper: undefined },
     ])
     expect(
       screen.getByRole("button", { name: /^Open Word letter,/ })

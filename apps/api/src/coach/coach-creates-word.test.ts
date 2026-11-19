@@ -144,7 +144,7 @@ it("a CV the Coach starts is a Word page it reads, edits with approval and Undo"
     const { started, before } = await createTurn(registry, ownerId, taskId, {
       messages: [{ role: "user", content: "Make me a CV" }],
     })
-    expect(started).toMatchObject({ kind: "cv", name: "Simple CV.docx" })
+    expect(started).toMatchObject({ kind: "cv", name: "Simple CV" })
     expect(before.outline).toContain("[Your name]")
     expect(before.outline).toContain("[Role, company] | [Dates]")
     const papers = z
@@ -164,7 +164,7 @@ it("a Letter the Coach starts for a Job is a blank Word page named for the Job",
     })
     expect(started).toMatchObject({
       kind: "letter",
-      name: "Cover letter, Lumiere.docx",
+      name: "Cover letter, Lumiere",
     })
     expect(before.outline).toContain("(empty line)")
     expect(before.outline).not.toContain("[Your name]")
@@ -194,7 +194,7 @@ it("a page started for a Job links to it, and the same key twice makes one page 
     const first = startedSchema.parse(await start()).output
     const again = startedSchema.parse(await start()).output
     expect(again.docId).toBe(first.docId)
-    expect(first.name).toBe("Simple CV, Northwind.docx")
+    expect(first.name).toBe("Simple CV, Northwind")
     expect(await headsOf(ownerId)).toEqual([{ docId: first.docId }])
     expect(await linksOf(registry, ownerId, jobId)).toMatchObject({
       cvDocId: first.docId,

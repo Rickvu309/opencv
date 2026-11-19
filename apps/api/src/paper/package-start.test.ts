@@ -2,6 +2,7 @@ import {
   PAPER_START_BOUNDS,
   PAPER_TEMPLATE_IDS,
   paperContract,
+  paperDocNameSchema,
   paperStartInputSchema,
   type PaperStartInput,
 } from "@workspace/domain"
@@ -34,16 +35,43 @@ describe("a page the Coach starts", () => {
   it("names the page from its template, a Job or the person's name", () => {
     const cv: PaperStartInput = { kind: "cv" }
     const letter: PaperStartInput = { kind: "letter" }
-    expect(startedName(cv, null)).toBe("Simple CV.docx")
+    expect(startedName(cv, null)).toBe("Simple CV")
     expect(startedName({ kind: "cv", templateId: "modern" }, null)).toBe(
-      "Modern CV.docx"
+      "Modern CV"
     )
-    expect(startedName(letter, "Lumiere")).toBe("Cover letter, Lumiere.docx")
-    expect(startedName(letter, " ")).toBe("Cover letter.docx")
-    expect(startedName(letter, "L".repeat(400))).toBe("Cover letter.docx")
+    expect(startedName(letter, "Lumiere")).toBe("Cover letter, Lumiere")
+    expect(startedName(letter, " ")).toBe("Cover letter")
+    expect(startedName(letter, "L".repeat(400))).toBe("Cover letter")
     expect(startedName({ kind: "letter", name: "For Lumiere" }, "X")).toBe(
-      "For Lumiere.docx"
+      "For Lumiere"
     )
+  })
+
+  it.each(PAPER_TEMPLATE_IDS)(
+    "mints the %s CV and its Letter with a name a person could type back",
+    (templateId) => {
+      for (const name of [
+        startedName({ kind: "cv", templateId }, null),
+        startedName({ kind: "cv", templateId }, "Northwind"),
+        startedName({ kind: "letter" }, null),
+        startedName({ kind: "letter" }, "Northwind"),
+      ]) {
+        expect(name).not.toMatch(/\.docx$/i)
+        expect(paperDocNameSchema.safeParse(name).success).toBe(true)
+      }
+    }
+  )
+
+  it("refuses a name that ends in a file extension", () => {
+    for (const name of ["CV.docx", "Letter.DOC", "Old CV.pdf", "Notes.txt "])
+      expect(paperDocNameSchema.safeParse(name).success).toBe(false)
+    for (const name of [
+      "CV",
+      "Notes on .NET",
+      "CV v2.5",
+      "Simple CV, Northwind",
+    ])
+      expect(paperDocNameSchema.safeParse(name).success).toBe(true)
   })
 })
 
