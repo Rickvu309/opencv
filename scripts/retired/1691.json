@@ -40,5 +40,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/test/surface-behavior.test.tsx",
+    "because": "With no documents Paper now deals the start hand, whose caption reads 'Start your first document'; the same case now asserts that caption and the same three actions.",
+    "replacedBy": "apps/web/src/test/surface-behavior.test.tsx",
+    "proof": {
+      "fork": "91af9d9283b96628d2e4dd6afa4694dc5bb655fe",
+      "replacedByBlob": "b54dcc25460e065fed2423bf690db744ec9d2b7e",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
