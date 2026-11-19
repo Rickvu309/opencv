@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/command-palette/command-palette.alert.test.tsx",
+    "because": "The owner rule is caret plus a neutral border on a focused text field; the old case asserted the indigo underline itself (#1718 G1).",
+    "replacedBy": "apps/web/src/features/command-palette/command-palette.alert.test.tsx",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "6b48ed237fda4b63e1ab14640cd9eb367c6f2c53",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]
