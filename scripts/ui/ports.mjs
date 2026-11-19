@@ -13,7 +13,6 @@ import { homedir } from "node:os"
 import { dirname, join } from "node:path"
 
 export const SCRATCH_ROOT = join(homedir(), "tmp", "ocv-ui")
-export const DEFAULT_PEN = join(homedir(), "tmp", "opencv-ui", "opencv.pen")
 
 const repoRoot = () =>
   execFileSync("git", ["rev-parse", "--show-toplevel"], {
@@ -101,7 +100,6 @@ export function realPorts() {
     pid: process.pid,
     repo: repoRoot(),
     scratchRoot: SCRATCH_ROOT,
-    defaultPen: DEFAULT_PEN,
     fs: {
       exists: (path) => existsSync(path),
       read: (path) => readFileSync(path, "utf8"),

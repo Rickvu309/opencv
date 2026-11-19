@@ -5,7 +5,7 @@ description: Verify your own OpenCV screen change with no reviewer. See any scre
 
 # Verify UI
 
-Last confirmed on 2026-11-19 against a worktree of `e22a63892` with the pen frames and the compare commands removed: every command below printed what this file says.
+Last confirmed on 2026-11-19 against a worktree of `e22a63892` with the design frames and the compare commands removed: every command below printed what this file says.
 
 ## When this file is stale
 
