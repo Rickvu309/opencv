@@ -5,7 +5,7 @@
   },
   "coach-panel-scoped-recipes": {
     "passed": true,
-    "fingerprint": "5169d1d9bd39"
+    "fingerprint": "377f399cf48e"
   },
   "delegate-reach": {
     "passed": true,
@@ -49,7 +49,7 @@
   },
   "screen-tool-module-failure": {
     "passed": true,
-    "fingerprint": "0ab30d26c75d"
+    "fingerprint": "b69c247c297a"
   },
   "screen-tool-stale-install": {
     "passed": true,
