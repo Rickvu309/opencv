@@ -1,5 +1,5 @@
 import { documentHref } from "@/lib/web-origins-env.ts"
-import { useEffect, useReducer, useState } from "react"
+import { useEffect, useReducer } from "react"
 import { Link } from "@tanstack/react-router"
 import { Menu, X } from "lucide-react"
 
@@ -61,8 +61,16 @@ function NavLinks({
   )
 }
 
+type MenuAction = { type: "opened" } | { type: "closed" }
+
+function menuReducer(_: boolean, action: MenuAction) {
+  return action.type === "opened"
+}
+
 function LandingMenu() {
-  const [open, setOpen] = useState(false)
+  const [open, dispatch] = useReducer(menuReducer, false)
+  const setOpen = (next: boolean) =>
+    dispatch({ type: next ? "opened" : "closed" })
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <Button
