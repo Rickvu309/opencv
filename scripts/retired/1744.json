@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/settings/settings-phone.test.tsx > settings phone layout > keeps the Coach switch track at 18px and extends its hit area past 24px",
+    "because": "The Settings Coach phone override of the switch is deleted; the kit Switch gives every switch its hit area, and packages/ui/src/components/switch.test.tsx checks that tap box is at least 44px each way for both sizes",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
