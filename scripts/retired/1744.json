@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/web/src/features/connections/connections.test.tsx > copies a ready command for each agent",
+    "because": "Integrations steps now use the kit CodeBlock copy icon, which has no data-state attribute; the same case now checks the Copied announcement a person hears after the click",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
