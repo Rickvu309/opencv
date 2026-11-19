@@ -13,7 +13,7 @@ import {
 import { authClient } from "@/lib/auth-client.ts"
 import { safeRedirectPath, SIGNED_OUT_EMAIL_KEY } from "@/lib/auth-redirect.ts"
 
-import "./design/session-expired.pen.css"
+import "./design/session-expired.css"
 import {
   AUTH_COPY,
   continueAsLabel,
@@ -88,7 +88,7 @@ export function SessionExpiredDialog({
     >
       <DialogContent
         showCloseButton={false}
-        data-pen-surface="auth"
+        data-surface="auth"
         overlayClassName="bg-foreground/35 backdrop-blur-[4px]"
       >
         <div data-slot="session-badge" aria-hidden="true">
