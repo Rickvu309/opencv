@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/web/src/features/apply/apply-board.test.tsx",
+    "because": "Issue 1724 changed this behavior on purpose: one New job name, no Job added toast, Select an email overview, one example banner in the list, subject once, Open in Gmail only with a real link, Notify me on every placeholder. The same tests now assert the new behavior.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  }
+]
