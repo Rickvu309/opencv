@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/app-shell/account-menu.test.tsx",
+    "because": "The account menu no longer repeats the email; the row shows it once",
+    "replacedBy": "apps/web/src/features/app-shell/account-menu.test.tsx",
+    "proof": {
+      "fork": "429a6e0484ff2a912bb08656a5ade04fb43775f8",
+      "replacedByBlob": "19bdf07a03e76c760f7e68cc3339894f4a11c6b7",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
   }
 ]
