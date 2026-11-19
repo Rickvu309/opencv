@@ -40,5 +40,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-hand-layout.test.ts",
+    "because": "The hand now opens on the newest card, so the start position helper is gone; the sections test pins the newest card",
+    "replacedBy": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "b481a6a02f51ed3ff005f194f88039d0c9fa3e15",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "owner",
+    "classBecause": "apps/web/src/features/paper/paper-library-sections.test.tsx shares no module, command or route with apps/web/src/features/paper/paper-hand-layout.test.ts",
+    "items": 6
   }
 ]
