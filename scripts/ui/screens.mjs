@@ -1,103 +1,13 @@
-import { paperPickerScreens } from "./screens-paper.mjs"
-
-const COMPOSER = '[data-slot="coach-workspace-composer"] textarea'
-const PAGE = '[contenteditable="true"]'
-const SAVED = 'p.writing-note[title="Saved"], p.writing-note:text-is("Saved")'
-
-const OPEN_BLANK_CV = [
-  { goto: "/paper" },
-  { click: { role: "button", name: "New" } },
-  { click: { role: "button", name: "CV" } },
-  { click: { role: "button", name: "Start blank" } },
-  { waitFor: { selector: PAGE } },
-]
-
-const OPEN_PANEL = [
-  { click: { selector: "[data-dock-coach]" } },
-  { waitFor: { selector: '[data-slot="coach-panel"]' } },
-]
-
-const PANEL = '[data-slot="coach-panel"]'
-const PANEL_UNDO = `${PANEL} button[aria-label="Undo"]`
-const PANEL_APPROVE = `${PANEL} button:text-is("Approve")`
-const PANEL_DENY = `${PANEL} button:text-is("Deny")`
-const PANEL_EXPAND = `${PANEL} button[aria-label="Expand"]`
-const PANEL_UNDONE = `${PANEL} [data-slot="coach-action-record"][data-state="undone"]`
-const PANEL_DENIED = `${PANEL} :text("nothing changed")`
-const PANEL_IDLE = `${PANEL} button[aria-label="Send"]:not([aria-describedby])`
-
-const ASK_FOR_AN_EDIT = [
-  ...OPEN_BLANK_CV,
-  ...OPEN_PANEL,
-  {
-    fill: {
-      selector: `${PANEL} ${COMPOSER}`,
-      text: "Please improve the summary",
-    },
-  },
-  { press: "Enter" },
-  { waitFor: { selector: PANEL_DENY } },
-]
-
-const DENY_THE_WAITING_EDIT = [
-  { click: { selector: PANEL_DENY } },
-  { waitFor: { selector: PANEL_DENIED } },
-  { waitFor: { selector: PANEL_IDLE } },
-]
-
-const APPROVE_THE_EDIT = [
-  ...ASK_FOR_AN_EDIT,
-  { click: { selector: PANEL_APPROVE } },
-  { waitFor: { selector: PANEL_UNDO } },
-]
-
-const UNDO_THE_EDIT = [
-  ...APPROVE_THE_EDIT,
-  { click: { selector: PANEL_UNDO } },
-  { waitFor: { selector: PANEL_UNDONE } },
-]
-
-const REOPEN_LATEST_CHAT = [
-  { goto: "/paper" },
-  { waitFor: { role: "heading", name: "Paper" } },
-  { click: { selector: '[data-slot="dock-recent"] button' } },
-  { waitFor: { selector: PANEL } },
-]
-
-const DOWNLOAD_READY = { role: "link", name: "Download Word" }
-
-const JOB_DIALOG = '[role="dialog"]'
-
-const ADD_A_JOB = [
-  { click: { role: "button", name: "New job" } },
-  {
-    fill: {
-      selector: `${JOB_DIALOG} input[aria-label="Role title"]`,
-      text: "Product designer",
-    },
-  },
-  {
-    fill: {
-      selector: `${JOB_DIALOG} input[aria-label="Company"]`,
-      text: "Lumiere",
-    },
-  },
-  { click: { selector: `${JOB_DIALOG} button[aria-label="Add job"]` } },
-  { waitFor: { text: "Product designer" } },
-]
-
-const OPEN_THE_JOB = [
-  ...ADD_A_JOB,
-  { click: { role: "button", name: "Product designer, Lumiere" } },
-  { waitFor: { selector: '[data-slot="apply-peek-body"]' } },
-]
-
-const OPEN_THE_STAGE_MENU = [
-  ...OPEN_THE_JOB,
-  { press: "Escape" },
-  { press: "s" },
-  { waitFor: { selector: '[data-slot="stage-menu"]' } },
-]
+import {
+  ADD_A_JOB,
+  COMPOSER,
+  OPEN_PANEL,
+  OPEN_THE_JOB,
+  OPEN_THE_STAGE_MENU,
+  PANEL,
+} from "./screen-steps.mjs"
+import { COACH_SCREENS } from "./screens-coach.mjs"
+import { PAPER_SCREENS } from "./screens-paper.mjs"
 
 export const SCREENS = [
   {
@@ -136,97 +46,36 @@ export const SCREENS = [
       { waitFor: { selector: '[role="alert"]' } },
     ],
   },
-  {
-    id: "coach-home",
-    route: "/coach",
-    steps: [{ waitFor: { selector: COMPOSER } }],
-  },
-  {
-    id: "coach-home-focused",
-    route: "/coach",
-    steps: [
-      { click: { selector: COMPOSER } },
-      { fill: { selector: COMPOSER, text: "Help me prep for Friday" } },
-    ],
-  },
-  {
-    id: "coach-home-recent",
-    route: "/coach",
-    steps: [
-      { fill: { selector: COMPOSER, text: "What should I do next?" } },
-      { press: "Enter" },
-      { waitFor: { text: "Prep the starred" } },
-      {
-        click: {
-          selector: '[data-surface="coach"] button[aria-label="New chat"]',
-        },
-      },
-      { waitFor: { selector: '[data-slot="coach-recent-chats"]' } },
-    ],
-  },
-  {
-    id: "coach-chat-finished",
-    route: "/coach",
-    steps: [
-      { fill: { selector: COMPOSER, text: "What should I do next?" } },
-      { press: "Enter" },
-      { waitFor: { text: "Prep the starred" } },
-    ],
-  },
-  ...paperPickerScreens({
-    page: PAGE,
-    openPanel: OPEN_PANEL,
-    addJob: ADD_A_JOB,
-  }),
-  {
-    id: "paper-blank",
-    route: "/paper",
-    steps: OPEN_BLANK_CV,
-  },
-  ...[
-    ["paper-rich", []],
-    [
-      "paper-rich-selection",
-      [
-        {
-          click: {
-            selector: '.paper-rich-sheet [data-content-type="paragraph"]',
-          },
-        },
-        { press: "Home" },
-        { press: "Control+Shift+ArrowRight" },
-      ],
-    ],
-    [
-      "paper-rich-outline",
-      [{ clickIfShown: { role: "button", name: "Document outline" } }],
-    ],
-  ].map(([id, steps]) => ({
-    id,
-    route: "/paper",
-    steps: [{ respond: { fixture: "rich-document" } }, ...steps],
-  })),
-  {
-    id: "paper-typed",
-    route: "/paper",
-    steps: [
-      ...OPEN_BLANK_CV,
-      { click: { selector: PAGE } },
-      {
-        type: "Ada Nguyen\nProduct designer in Hanoi. Five years of shipping.",
-      },
-      { waitFor: { selector: SAVED } },
-    ],
-  },
-  {
-    id: "paper-panel-open",
-    route: "/paper",
-    steps: [...OPEN_BLANK_CV, ...OPEN_PANEL],
-  },
+  ...COACH_SCREENS,
+  ...PAPER_SCREENS,
   {
     id: "apply-empty",
     route: "/apply",
     steps: [{ waitFor: { role: "heading", name: "Track your first job" } }],
+  },
+  {
+    id: "apply-board",
+    route: "/apply",
+    steps: ADD_A_JOB,
+  },
+  {
+    id: "apply-peek",
+    route: "/apply",
+    steps: OPEN_THE_JOB,
+  },
+  {
+    id: "apply-stage-menu",
+    route: "/apply",
+    steps: OPEN_THE_STAGE_MENU,
+  },
+  {
+    id: "apply-next-up",
+    route: "/apply",
+    steps: [
+      ...OPEN_THE_STAGE_MENU,
+      { press: "4" },
+      { waitFor: { text: "Answer the offer" } },
+    ],
   },
   {
     id: "settings",
@@ -266,316 +115,6 @@ export const SCREENS = [
       },
       { press: "Enter" },
       { waitFor: { selector: `${PANEL} :text("Prep the starred")` } },
-    ],
-  },
-  {
-    id: "coach-chat-streaming",
-    route: "/coach",
-    unreachable:
-      "The fake Coach replays its script with no delay, so the turn finishes before a frame can be captured; it needs a paced fake script",
-  },
-  {
-    id: "paper-panel-closed",
-    route: "/paper",
-    steps: [...OPEN_BLANK_CV, { waitFor: { selector: "[data-dock-coach]" } }],
-  },
-  {
-    id: "paper-panel-approval",
-    route: "/paper",
-    steps: ASK_FOR_AN_EDIT,
-    after: DENY_THE_WAITING_EDIT,
-  },
-  {
-    id: "paper-panel-receipt",
-    route: "/paper",
-    steps: APPROVE_THE_EDIT,
-  },
-  {
-    id: "paper-panel-undone",
-    route: "/paper",
-    steps: UNDO_THE_EDIT,
-  },
-  {
-    id: "coach-approval",
-    route: "/paper",
-    steps: [
-      ...ASK_FOR_AN_EDIT,
-      { clickIfShown: { selector: PANEL_EXPAND } },
-      { waitFor: { selector: PANEL_DENY } },
-    ],
-    after: DENY_THE_WAITING_EDIT,
-  },
-  {
-    id: "coach-approval-draft",
-    route: "/paper",
-    steps: [
-      ...ASK_FOR_AN_EDIT,
-      { clickIfShown: { selector: PANEL_EXPAND } },
-      {
-        fill: {
-          selector: `${PANEL} ${COMPOSER}`,
-          text: "Why this wording?",
-        },
-      },
-      { waitFor: { selector: PANEL_DENY } },
-    ],
-    after: DENY_THE_WAITING_EDIT,
-  },
-  {
-    id: "coach-receipt",
-    route: "/paper",
-    steps: [
-      ...APPROVE_THE_EDIT,
-      { clickIfShown: { selector: PANEL_EXPAND } },
-      { waitFor: { selector: PANEL_UNDO } },
-    ],
-  },
-  {
-    id: "coach-undone",
-    route: "/paper",
-    steps: [
-      ...UNDO_THE_EDIT,
-      { clickIfShown: { selector: PANEL_EXPAND } },
-      { waitFor: { selector: PANEL_UNDONE } },
-    ],
-  },
-  {
-    id: "coach-denied",
-    route: "/paper",
-    steps: [
-      ...ASK_FOR_AN_EDIT,
-      { clickIfShown: { selector: PANEL_EXPAND } },
-      { waitFor: { selector: PANEL_DENY } },
-      ...DENY_THE_WAITING_EDIT,
-    ],
-  },
-  {
-    id: "paper-proposal-card",
-    route: "/paper",
-    steps: [
-      ...OPEN_BLANK_CV,
-      ...OPEN_PANEL,
-      {
-        fill: {
-          selector: `${PANEL} ${COMPOSER}`,
-          text: "Please improve the summary",
-        },
-      },
-      { press: "Enter" },
-      { waitFor: { selector: PANEL_APPROVE } },
-      { waitFor: { selector: 'section[aria-label="Coach proposal"]' } },
-    ],
-    after: DENY_THE_WAITING_EDIT,
-  },
-  {
-    id: "paper-imported",
-    route: "/paper",
-    steps: [
-      { goto: "/paper" },
-      {
-        upload: {
-          selector: 'input[type="file"]',
-          file: "cv-bold-bullets.docx",
-        },
-      },
-      { waitFor: { text: "Ran weekly design critiques" } },
-      { waitFor: { selector: PAGE } },
-    ],
-  },
-  {
-    id: "paper-imported-formatted",
-    route: "/paper",
-    steps: [
-      { goto: "/paper" },
-      {
-        upload: {
-          selector: 'input[type="file"]',
-          file: "cv-formatted.docx",
-        },
-      },
-      { waitFor: { text: "Exchange term, Lyon" } },
-      { waitFor: { selector: PAGE } },
-    ],
-  },
-  {
-    id: "paper-imported-pdf",
-    route: "/paper",
-    steps: [
-      { goto: "/paper" },
-      {
-        upload: {
-          selector: 'input[type="file"]',
-          file: "cv-text.pdf",
-        },
-      },
-      { waitFor: { text: "Student Assistant, Example University" } },
-      { waitFor: { selector: PAGE } },
-    ],
-  },
-  {
-    id: "paper-import-scanned",
-    route: "/paper",
-    steps: [
-      { goto: "/paper" },
-      {
-        upload: {
-          selector: 'input[type="file"]',
-          file: "cv-scanned.pdf",
-        },
-      },
-      { waitFor: { role: "heading", name: "Can't read this file" } },
-    ],
-  },
-  {
-    id: "paper-home-no-match",
-    route: "/paper",
-    steps: [
-      ...OPEN_BLANK_CV,
-      { goto: "/paper" },
-      {
-        fill: {
-          selector: 'main input[aria-label="Search Paper"]',
-          text: "zzzz-no-match",
-        },
-      },
-      { waitFor: { role: "button", name: "Clear search" } },
-    ],
-  },
-  {
-    id: "paper-import-link",
-    route: "/paper",
-    steps: [
-      { click: { role: "button", name: "Import" } },
-      { waitFor: { role: "textbox", name: "Paste a link" } },
-    ],
-  },
-  {
-    id: "apply-board",
-    route: "/apply",
-    steps: ADD_A_JOB,
-  },
-  {
-    id: "apply-peek",
-    route: "/apply",
-    steps: OPEN_THE_JOB,
-  },
-  {
-    id: "apply-stage-menu",
-    route: "/apply",
-    steps: OPEN_THE_STAGE_MENU,
-  },
-  {
-    id: "apply-next-up",
-    route: "/apply",
-    steps: [
-      ...OPEN_THE_STAGE_MENU,
-      { press: "4" },
-      { waitFor: { text: "Answer the offer" } },
-    ],
-  },
-  {
-    id: "coach-denied-reloaded",
-    route: "/paper",
-    steps: [
-      ...ASK_FOR_AN_EDIT,
-      ...DENY_THE_WAITING_EDIT,
-      ...REOPEN_LATEST_CHAT,
-      { waitFor: { selector: PANEL_DENIED } },
-    ],
-  },
-  {
-    id: "coach-receipt-reloaded",
-    route: "/paper",
-    steps: [
-      ...APPROVE_THE_EDIT,
-      ...REOPEN_LATEST_CHAT,
-      { waitFor: { selector: PANEL_UNDO } },
-    ],
-  },
-  {
-    id: "coach-undone-reloaded",
-    route: "/paper",
-    steps: [
-      ...UNDO_THE_EDIT,
-      ...REOPEN_LATEST_CHAT,
-      { waitFor: { selector: PANEL_UNDONE } },
-    ],
-  },
-  {
-    id: "coach-stopped-reloaded",
-    route: "/paper",
-    unreachable:
-      "Stop is hidden while an approval waits. The stopped message asks the person to ask Coach again and is stored only when that waiting approval is cancelled. Stopping while the turn streams ends the turn before a proposal exists, and that stop is not written into the reopened chat.",
-  },
-  {
-    id: "coach-expired-reloaded",
-    route: "/paper",
-    unreachable:
-      "An approval reads as Expired only after it waits 24 hours unanswered, and the scripted runtime has no clock to move past that wait",
-  },
-  {
-    id: "coach-unreadable-step",
-    route: "/paper",
-    unreachable:
-      "A saved step reads as This step could not be read only when its stored part fails the part schema, and every writer checks the schema first, so it needs a direct edit of chat_messages.parts in the database",
-  },
-  {
-    id: "paper-letter-blank",
-    route: "/paper",
-    steps: [
-      { goto: "/paper" },
-      { click: { role: "button", name: "New" } },
-      { click: { role: "button", name: "Cover letter" } },
-      {
-        click: {
-          selector:
-            '[data-slot="letter-start-blank"], [data-slot="paper-gallery-actions"] [data-variant="primary"]',
-        },
-      },
-      { waitFor: { selector: PAGE } },
-      { waitFor: DOWNLOAD_READY },
-    ],
-  },
-  {
-    id: "paper-letter-drafted",
-    route: "/apply",
-    steps: [
-      ...ADD_A_JOB,
-      { goto: "/paper" },
-      { click: { role: "button", name: "New" } },
-      { click: { role: "button", name: "Cover letter" } },
-      {
-        clickIfShown: {
-          role: "button",
-          name: "Draft with Coach",
-        },
-      },
-      { click: { role: "button", name: "Product designer, Lumiere" } },
-      { click: { role: "button", name: "Draft letter" } },
-      { waitFor: { text: "Coach is writing" } },
-      { click: { role: "button", name: "Stop" } },
-      { waitFor: { selector: PAGE } },
-    ],
-  },
-  {
-    id: "paper-download-held",
-    route: "/paper",
-    unreachable:
-      "Download Word is held only between a keystroke and its save; the page saves within a second and shot waits for the network to settle, so every capture shows the ready link",
-  },
-  {
-    id: "paper-download-ready",
-    route: "/paper",
-    steps: [
-      { goto: "/paper" },
-      {
-        upload: {
-          selector: 'input[type="file"]',
-          file: "cv-formatted.docx",
-        },
-      },
-      { waitFor: { selector: PAGE } },
-      { waitFor: DOWNLOAD_READY },
     ],
   },
   {
