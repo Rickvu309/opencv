@@ -124,27 +124,26 @@ function classTokens(line) {
 }
 
 function classGlows(source, fileName) {
-  const problems = []
-  const lines = source.split("\n")
-  lines.forEach((text, index) => {
-    for (const token of classTokens(text)) {
-      if (!token.includes(":")) continue
+  return source.split("\n").flatMap((text, index) => {
+    const glows = classTokens(text).filter((token) => {
+      if (!token.includes(":")) return false
       const { variant, utility } = splitUtility(token)
-      const focusGlow =
-        FOCUS_GLOW_UTILITY.test(utility) && clickFocusVariant(variant, fileName)
-      const invalidGlow =
-        INVALID_GLOW_UTILITY.test(utility) &&
-        invalidVariant(variant, fileName, text)
-      if (!focusGlow && !invalidGlow) continue
-      problems.push(
-        `${fileName}:${index + 1}: ${token} draws a coloured glow when clicked or refused; ${QUIET_FOCUS_HINT}`
+      return (
+        (FOCUS_GLOW_UTILITY.test(utility) &&
+          clickFocusVariant(variant, fileName)) ||
+        (INVALID_GLOW_UTILITY.test(utility) &&
+          invalidVariant(variant, fileName, text))
       )
-    }
+    })
+    return glows.length === 0
+      ? []
+      : [
+          `${fileName}:${index + 1}: ${[...new Set(glows)].join(" ")} draws a coloured glow when clicked or refused; ${QUIET_FOCUS_HINT}`,
+        ]
   })
-  return problems
 }
 
 export function clickFocusGlows(source, fileName = "file.tsx") {
   if (fileName.endsWith(".css")) return cssGlows(source, fileName)
-  return [...new Set(classGlows(source, fileName))]
+  return classGlows(source, fileName)
 }

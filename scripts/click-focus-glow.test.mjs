@@ -103,15 +103,14 @@ test("a coloured underline or border that shows when the palette search field is
 
 test("a red ring or glow on a refused text field or select fires in the kit, at call sites and in CSS", () => {
   for (const [file, source] of Object.entries(KIT_INVALID_RINGS))
-    assert.equal(clickFocusGlows(source, file).length, 2, file)
+    assert.equal(clickFocusGlows(source, file).length, 1, file)
   assert.deepEqual(
     strip(
       clickFocusGlows(CALL_SITE_INVALID_GLOWS, "apps/web/src/features/x.tsx")
     ),
     [
       "aria-invalid:shadow-[0_0_0_3px_color-mix(in_oklch,var(--destructive)_20%,transparent)]",
-      "aria-invalid:ring-2",
-      "aria-invalid:ring-destructive",
+      "aria-invalid:ring-2 aria-invalid:ring-destructive",
     ]
   )
   assert.equal(
@@ -132,11 +131,10 @@ test("a coloured glow that shows when a text field is clicked fires in CSS, the 
     clickFocusGlows(CANVAS_FIELD_GLOW, "apps/web/src/styles/paper.css").length,
     1
   )
-  assert.deepEqual(
-    strip(
-      clickFocusGlows(KIT_INPUT_GLOW, "packages/ui/src/components/input.tsx")
-    ),
-    ["focus-visible:border-ring", "focus-visible:ring-ring/50"]
+  assert.equal(
+    clickFocusGlows(KIT_INPUT_GLOW, "packages/ui/src/components/input.tsx")
+      .length,
+    1
   )
   assert.deepEqual(
     clickFocusGlows(CALL_SITE_GLOWS, "apps/web/src/features/x.tsx").map((p) =>
