@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom/vitest"
+import * as React from "react"
 import { Dialog as DialogPrimitive } from "@base-ui/react/dialog"
 import { cleanup, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
@@ -99,5 +100,43 @@ describe("a kit dialog keeps Tab inside", () => {
   it("lets Tab escape a dialog that skips the kit, which is the mistake this guards", async () => {
     render(<PrimitiveConfirm />)
     expect(escaped(await tabCycle(false))).not.toEqual([])
+  })
+})
+
+function KitRename({ chooseDelete }: { chooseDelete?: boolean }) {
+  const deleteRef = React.useRef<HTMLButtonElement>(null)
+  return (
+    <Dialog open>
+      <DialogContent initialFocus={chooseDelete ? deleteRef : undefined}>
+        <DialogTitle>Rename this CV</DialogTitle>
+        <button type="button">Cancel</button>
+        <input aria-label="Name" />
+        <button type="button" ref={deleteRef}>
+          Delete
+        </button>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+describe("a kit dialog opens without lighting up a button", () => {
+  it("rests focus on the dialog itself when it has no text field", async () => {
+    render(<KitConfirm />)
+    const dialog = await screen.findByRole("dialog")
+    await waitFor(() => expect(document.activeElement).toBe(dialog))
+    await userEvent.setup().tab()
+    expect(document.activeElement).toHaveTextContent("Cancel")
+  })
+
+  it("puts the caret in the first text field", async () => {
+    render(<KitRename />)
+    const name = await screen.findByRole("textbox", { name: "Name" })
+    await waitFor(() => expect(document.activeElement).toBe(name))
+  })
+
+  it("still honours the element a caller picks", async () => {
+    render(<KitRename chooseDelete />)
+    const remove = await screen.findByRole("button", { name: "Delete" })
+    await waitFor(() => expect(document.activeElement).toBe(remove))
   })
 })

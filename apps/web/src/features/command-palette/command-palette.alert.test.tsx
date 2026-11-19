@@ -11,7 +11,7 @@ afterEach(() => {
 })
 
 describe("command palette search", () => {
-  it("keeps a visible focus cue on the search row, not a ring on the text", async () => {
+  it("draws no coloured ring or underline on the search field when it takes focus", async () => {
     vi.stubGlobal("scrollTo", vi.fn())
     renderApp(SURFACE_PATHS.jobs)
     await screen.findByRole("heading", { name: "Jobs" })
@@ -20,7 +20,7 @@ describe("command palette search", () => {
     const box = within(dialog).getByRole("textbox", { name: "Search" })
     const row = box.closest("[data-slot='palette-search']")
     expect(row).not.toBeNull()
-    expect(row?.className).toMatch(/has-\[input:focus-visible\]:border-ring/)
+    expect(row?.className).not.toMatch(/border-ring|border-b-2/)
     expect(box.className).toMatch(/focus-visible:ring-0/)
     expect(box.className).not.toMatch(/focus-visible:ring-3/)
   })

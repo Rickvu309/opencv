@@ -47,3 +47,16 @@ export function wrappedTabStop(
   if (backwards) return active === first || active === root ? last : null
   return active === last ? first : null
 }
+
+const TEXT_ENTRY_SELECTOR = [
+  "textarea",
+  "[contenteditable]:not([contenteditable='false'])",
+  "input:not([type='button'],[type='submit'],[type='reset'],[type='checkbox'],[type='radio'],[type='file'],[type='range'],[type='color'],[type='image'])",
+].join(",")
+
+export function openingFocusTarget(root: HTMLElement): HTMLElement {
+  return (
+    dialogTabStops(root).find((stop) => stop.matches(TEXT_ENTRY_SELECTOR)) ??
+    root
+  )
+}

@@ -2,14 +2,43 @@ import ts from "typescript"
 
 const GLOW_TOKEN = /(?:^|[\s:"'`])glow(?=$|[\s"'`])/
 const RADIAL = /radial-gradient/
-const GLOW_SHADOW = /shadow-\[[^\]]*(?:--ring|--chart-\d|--primary)[^\]]*\]/
+const SHADOW_CLASS = /shadow-\[([^\]]*)\]/g
+const ACCENT_COLOUR = /--(?:ring|primary|chart-\d)\b/
+export const GLOW_SHADOW_KIND = "a coloured glow shadow"
+
+function shadowLayers(value) {
+  const layers = []
+  let depth = 0
+  let layer = ""
+  for (const char of value) {
+    if (char === "(") depth++
+    else if (char === ")") depth--
+    if (char === "," && depth === 0) {
+      layers.push(layer)
+      layer = ""
+    } else layer += char
+  }
+  return [...layers, layer]
+}
+
+function hasGlowShadow(text) {
+  for (const [, value] of text.matchAll(SHADOW_CLASS))
+    if (
+      shadowLayers(value).some(
+        (layer) => !layer.startsWith("inset_") && ACCENT_COLOUR.test(layer)
+      )
+    )
+      return true
+  return false
+}
+const BUTTON_MODULE = /(?:^|\/)[\w-]*button[\w-]*\.tsx?$/
 const BUTTON_TAGS = new Set(["Button", "button", "a", "ButtonPrimitive"])
 
 function glowIn(text) {
   const found = []
   if (GLOW_TOKEN.test(text)) found.push("the glow style")
   if (RADIAL.test(text)) found.push("a radial gradient")
-  if (GLOW_SHADOW.test(text)) found.push("a coloured glow shadow")
+  if (hasGlowShadow(text)) found.push(GLOW_SHADOW_KIND)
   return found
 }
 
@@ -76,6 +105,12 @@ export function glowButtons(source, fileName = "file.tsx") {
       for (const kind of glowIn(text))
         problems.push(`${fileName}:${line}: ${where} uses ${kind}`)
   }
+  const shadowOnly = (node, where, pieces) => {
+    const line = file.getLineAndCharacterOfPosition(node.getStart()).line + 1
+    for (const text of pieces)
+      if (typeof text === "string" && hasGlowShadow(text))
+        problems.push(`${fileName}:${line}: ${where} uses ${GLOW_SHADOW_KIND}`)
+  }
   const resolve = (pieces) =>
     pieces.flatMap((piece) =>
       typeof piece === "string"
@@ -106,6 +141,13 @@ export function glowButtons(source, fileName = "file.tsx") {
       /button/i.test(fileName)
     )
       report(node, "a button variant", resolve(stringsIn(node)))
+    if (
+      BUTTON_MODULE.test(fileName) &&
+      (ts.isStringLiteral(node) ||
+        ts.isNoSubstitutionTemplateLiteral(node) ||
+        ts.isTemplateExpression(node))
+    )
+      shadowOnly(node, "a button style", stringsIn(node))
     ts.forEachChild(node, visit)
   }
   visit(file)

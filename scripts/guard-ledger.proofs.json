@@ -11,6 +11,10 @@
     "passed": true,
     "fingerprint": "ff451b533174"
   },
+  "dialog-opening-focus": {
+    "passed": true,
+    "fingerprint": "b18cd137d230"
+  },
   "dialogs-fit-window": {
     "passed": true,
     "fingerprint": "6d2ff6d03c44"

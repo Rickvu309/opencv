@@ -4,7 +4,10 @@ import { cn } from "cn"
 
 import { Button } from "@workspace/ui/components/button"
 import { XIcon } from "lucide-react"
-import { wrappedTabStop } from "@workspace/ui/lib/dialog-tab-stops"
+import {
+  openingFocusTarget,
+  wrappedTabStop,
+} from "@workspace/ui/lib/dialog-tab-stops"
 
 function Dialog({ ...props }: DialogPrimitive.Root.Props) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />
@@ -98,8 +101,11 @@ function DialogContent({
   side = "start",
   instant = false,
   onKeyDown,
+  ref,
+  initialFocus,
   ...props
 }: DialogPrimitive.Popup.Props & {
+  ref?: React.Ref<HTMLDivElement>
   showCloseButton?: boolean
   overlayClassName?: string
   layout?: DialogLayout
@@ -107,6 +113,15 @@ function DialogContent({
   instant?: boolean
 }) {
   const enterOnMount = useEnterOnMount(layout === "sheet" && !instant)
+  const popupRef = React.useRef<HTMLDivElement | null>(null)
+  const attachPopup = React.useCallback(
+    (node: HTMLDivElement | null) => {
+      popupRef.current = node
+      if (typeof ref === "function") ref(node)
+      else if (ref) ref.current = node
+    },
+    [ref]
+  )
   return (
     <DialogPortal>
       <DialogOverlay
@@ -115,6 +130,11 @@ function DialogContent({
         enterOnMount={enterOnMount}
       />
       <DialogPrimitive.Popup
+        ref={attachPopup}
+        initialFocus={
+          initialFocus ??
+          (() => popupRef.current && openingFocusTarget(popupRef.current))
+        }
         data-slot="dialog-content"
         data-layout={layout}
         data-side={layout === "sheet" ? side : undefined}
