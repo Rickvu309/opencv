@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { execFileSync } from "node:child_process"
 import test from "node:test"
 import { WORKTREE_PORTS } from "../../packages/domain/src/local-ports.ts"
 import { fakePorts } from "./fake-ports.mjs"
@@ -216,5 +217,57 @@ test("seeded accounts are made before the api opens the database, and an up whos
   assert.deepEqual(
     [...ctx.store.keys()].filter((key) => key.includes("/seeded/")),
     []
+  )
+})
+
+const LOCKFILE = "pnpm-lock.yaml"
+const INSTALLED_LOCKFILE = "node_modules/.pnpm/lock.yaml"
+
+const STAGESHOW_JOINED = "bed65ced10e911037a5053239fc1ca700ac40beb"
+
+const lockfileAt = (rev) =>
+  execFileSync("git", ["show", `${rev}:${LOCKFILE}`], {
+    cwd: new URL("../..", import.meta.url),
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+  })
+
+const REPO = "/work/opencv.worktrees/1-demo"
+
+function installedFrom({ lockfile, installed }) {
+  const files = { [`${REPO}/${LOCKFILE}`]: lockfile }
+  if (installed !== null) files[`${REPO}/${INSTALLED_LOCKFILE}`] = installed
+  return fakePorts({ files, env: { PORT: "4333" } })
+}
+
+test("a checkout installed before stageshow joined refuses to start and names the install command", async () => {
+  const lockfile = lockfileAt(STAGESHOW_JOINED)
+  const installed = lockfileAt(`${STAGESHOW_JOINED}^`)
+  assert.match(lockfile, /@workspace\/stageshow/)
+  assert.doesNotMatch(installed, /@workspace\/stageshow/)
+  const ctx = installedFrom({ lockfile, installed })
+  await assert.rejects(
+    up(ctx),
+    /the installed packages come from an older pnpm-lock\.yaml.*Run: pnpm --dir \/work\/opencv\.worktrees\/1-demo install --frozen-lockfile/
+  )
+  assert.deepEqual(ctx.started, [])
+})
+
+test("a checkout with no installed packages refuses to start", async () => {
+  const ctx = installedFrom({
+    lockfile: "lockfileVersion: '9.0'",
+    installed: null,
+  })
+  await assert.rejects(up(ctx), /the packages are not installed/)
+  assert.deepEqual(ctx.started, [])
+})
+
+test("a checkout installed from its own lockfile starts the app", async () => {
+  const lockfile = lockfileAt(STAGESHOW_JOINED)
+  const ctx = installedFrom({ lockfile, installed: lockfile })
+  await assert.rejects(up(ctx), /api \(log .*api\.log\) did not become ready/)
+  assert.equal(
+    ctx.started.some((entry) => entry.args.includes("src/index.ts")),
+    true
   )
 })

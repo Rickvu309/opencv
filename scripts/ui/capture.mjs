@@ -14,6 +14,38 @@ const ANIMATION_WAIT_MS = 2_000
 const STILL =
   "*,*::before,*::after{animation-duration:0s!important;animation-delay:0s!important;transition-duration:0s!important;transition-delay:0s!important;caret-color:transparent!important;scroll-behavior:auto!important}"
 
+const MODULE_PATH = /^\/(?:src|@fs|@id|node_modules)\//
+
+export function pageFault(event, { webOrigin, logs }) {
+  if (event.pageError) return `the page threw ${event.pageError.split("\n")[0]}`
+  const url = new URL(event.url)
+  if (
+    event.status < 500 ||
+    url.origin !== webOrigin ||
+    !MODULE_PATH.test(url.pathname)
+  )
+    return null
+  return `the web server answered ${event.status} for ${url.pathname}, so the screen cannot load (web log ${logs?.web}). An unresolved import there means stale packages: run pnpm install`
+}
+
+export function watchFaults(page, state) {
+  let fail
+  const faulted = new Promise((_, reject) => {
+    fail = (event) => {
+      const fault = pageFault(event, state)
+      if (fault) reject(new Error(fault))
+    }
+  })
+  faulted.catch(() => {})
+  page.on("pageerror", (error) =>
+    fail({ pageError: String(error?.message ?? error) })
+  )
+  page.on("response", (response) =>
+    fail({ url: response.url(), status: response.status() })
+  )
+  return faulted
+}
+
 const locate = (page, target) => {
   if (target.selector) return page.locator(target.selector).first()
   if (target.role)
@@ -147,49 +179,32 @@ export async function openScreen(browser, state, screen, { width, scale = 1 }) {
     await context.addInitScript(showFixedEmail, { email, shown: SHOWN_EMAIL })
   }
   const page = await context.newPage()
+  const run = { page, context, state, screenId: screen.id }
+  const faulted = watchFaults(page, state)
   await page.goto(`${state.webOrigin}${screen.route}`, {
     waitUntil: "domcontentloaded",
   })
-  await runSteps(
-    page,
-    state.webOrigin,
-    screen.id,
-    "step",
-    screen.steps,
-    context,
-    state.repo,
-    state.apiOrigin
-  )
+  await runSteps(run, "step", screen.steps, faulted)
   await settle(page, restPoint(screen, page.viewportSize()))
   const close = async () => {
-    await runSteps(
-      page,
-      state.webOrigin,
-      screen.id,
-      "after step",
-      screen.after ?? [],
-      context,
-      state.repo,
-      state.apiOrigin
-    )
+    await runSteps(run, "after step", screen.after ?? [], faulted)
     await context.close()
   }
   return { page, close }
 }
 
 async function runSteps(
-  page,
-  origin,
-  screenId,
+  { page, context, state, screenId },
   kind,
   steps,
-  context,
-  repo,
-  apiOrigin
+  faulted
 ) {
   for (const [at, step] of steps.entries()) {
     try {
-      await runStep(page, origin, step, repo, apiOrigin)
+      await Promise.race([
+        runStep(page, state.webOrigin, step, state.repo, state.apiOrigin),
+        faulted,
+      ])
     } catch (error) {
       await context.close()
       throw new Error(

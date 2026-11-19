@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "scripts/coach-honest-controls.test.mjs",
+    "because": "The one-instance Approve regex became unscopedPanelTargets, a structural check over every screen recipe; the ae31f30 Approve click still fires in the new history test",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  }
+]

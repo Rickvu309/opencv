@@ -1,0 +1,11 @@
+{
+  "id": "screen-tool-stale-install",
+  "file": "scripts/ui/stack.test.mjs",
+  "historic": {
+    "mode": "restore",
+    "sha": "57a87c5cc38fdb535d8185be638bc873df41cc84",
+    "paths": ["scripts/ui/stack.mjs"],
+    "command": ["node", "--test", "scripts/ui/stack.test.mjs"]
+  },
+  "reason": "Caught by the 2026-11-19 screen review. The main checkout was installed before bed65ced10e911037a5053239fc1ca700ac40beb added the stageshow package, and the screen tool started anyway, so landing and the rich Paper screens timed out with no hint. The test fails with the stack starter as of 57a87c5cc38fdb535d8185be638bc873df41cc84 and passes once up compares the lockfile with the installed copy and names the install command."
+}

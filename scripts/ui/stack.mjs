@@ -45,6 +45,27 @@ async function seedAccounts(ctx, { dir, env, count }) {
   return { count, dir: paths.root }
 }
 
+export const LOCKFILE = "pnpm-lock.yaml"
+export const INSTALLED_LOCKFILE = join("node_modules", ".pnpm", "lock.yaml")
+
+export function installDrift({ lockfile, installed }) {
+  if (installed === lockfile) return null
+  return installed
+    ? "the installed packages come from an older pnpm-lock.yaml"
+    : "the packages are not installed"
+}
+
+function refuseStaleInstall(ctx) {
+  const drift = installDrift({
+    lockfile: ctx.fs.readOptional(join(ctx.repo, LOCKFILE)),
+    installed: ctx.fs.readOptional(join(ctx.repo, INSTALLED_LOCKFILE)),
+  })
+  if (drift)
+    throw new Error(
+      `${drift}, so the web server cannot load new packages and screens fail for the wrong reason. Run: pnpm --dir ${ctx.repo} install --frozen-lockfile, then node scripts/ui.mjs down and up`
+    )
+}
+
 export function stateDir(scratchRoot, repo) {
   return join(scratchRoot, basename(repo))
 }
@@ -255,6 +276,7 @@ function startFiller(ctx, state) {
 }
 
 export async function up(ctx, { port } = {}) {
+  refuseStaleInstall(ctx)
   const running = await liveState(ctx)
   if (running) {
     const filling = running.pool && ctx.proc.alive(running.pool.pid)

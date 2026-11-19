@@ -1,0 +1,11 @@
+{
+  "id": "screen-tool-module-failure",
+  "file": "scripts/ui/capture.test.mjs",
+  "historic": {
+    "mode": "restore",
+    "sha": "57a87c5cc38fdb535d8185be638bc873df41cc84",
+    "paths": ["scripts/ui/capture.mjs"],
+    "command": ["node", "--test", "scripts/ui/capture.test.mjs"]
+  },
+  "reason": "Caught by the 2026-11-19 screen review. The dev server answered 500 for the stageshow scenes and the rich Paper editor, and the capture waited out a 20 second step timeout that named only a selector. The test fails with the capture as of 57a87c5cc38fdb535d8185be638bc873df41cc84 and passes once a module 500 or an uncaught page error ends the step at once and names its cause."
+}
