@@ -6,7 +6,7 @@
   height: auto;
   min-height: 64px;
   padding: 18px clamp(16px, 3vw, 32px) 10px;
-  background: color-mix(in oklch, var(--secondary) 35%, var(--background));
+  background: var(--surface-sunken);
 }
 
 .paper-library-header > [data-slot="sidebar-expand"] {
@@ -39,7 +39,7 @@
   width: 360px;
   height: 32px;
   margin-inline-end: 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--hairline);
   border-radius: 8px;
   background: var(--background);
   box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
@@ -59,7 +59,7 @@
   min-height: 0;
   padding: 0 8px 0 11px;
   border-radius: 7px 0 0 7px;
-  border-inline-end: 1px solid var(--border);
+  border-inline-end: 1px solid var(--hairline);
   color: var(--foreground);
   font-size: 13px;
   font-weight: 500;

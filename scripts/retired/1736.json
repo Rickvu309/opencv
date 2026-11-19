@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/test/design-vocabulary.test.ts",
+    "because": "A feature design file may no longer hold hex colours at all; the shared detect now fails any hex and names the globals.css token to use, so the old pass for scoped hex is replaced",
+    "replacedBy": "scripts/design-css-tokens.test.mjs",
+    "proof": {
+      "fork": "950f727722ff3ea2caf5e9763659fa15440a111b",
+      "replacedByBlob": "3012431538e3a03d7e78df4791d647a2bcf712d1",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "owner",
+    "classBecause": "scripts/design-css-tokens.test.mjs shares no module, command or route with apps/web/src/test/design-vocabulary.test.ts; a guard case-removed",
+    "items": 5
+  }
+]

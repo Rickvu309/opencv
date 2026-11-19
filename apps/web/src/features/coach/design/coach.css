@@ -1,24 +1,24 @@
 [data-surface="coach"] [data-slot="coach-mode"] {
   font-size: 13px;
-  color: #59595b;
+  color: var(--muted-foreground);
 }
 
 [data-surface="coach"] [data-slot="coach-mode"]:disabled {
   font-size: 13.5px;
-  color: #c4c4c8;
-  opacity: 1;
+  color: var(--muted-foreground);
+  opacity: 0.5;
 }
 
 [data-surface="coach"][data-slot="coach-mode-menu"] [role="menuitemradio"] {
   font-size: 14.5px;
   font-weight: 400;
-  color: #1a1a1a;
+  color: var(--foreground);
 }
 
 [data-surface="coach"][data-slot="coach-mode-menu"]
   [data-slot="coach-pro-badge"] {
   font-size: 11px;
-  color: #5c5c5e;
+  color: var(--muted-foreground);
 }
 
 [data-surface="coach"][data-slot="coach-composer"]:not([data-capped]) {

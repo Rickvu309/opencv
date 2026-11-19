@@ -1,12 +1,12 @@
 [data-surface="coming-soon"][data-slot="page-header"] {
-  border-bottom-color: #ededef;
+  border-bottom-color: var(--hairline);
 }
 [data-surface="coming-soon"] [data-slot="page-header-title"],
 [data-surface="coming-soon"] [data-slot="breadcrumb-page"] {
-  color: #2f2f31;
+  color: var(--foreground);
 }
 [data-surface="coming-soon"] [data-slot="breadcrumb-link"],
 [data-surface="coming-soon"] [data-slot="breadcrumb-separator"],
 [data-surface="coming-soon"] [data-slot="page-header-back"] {
-  color: #59595b;
+  color: var(--muted-foreground);
 }
