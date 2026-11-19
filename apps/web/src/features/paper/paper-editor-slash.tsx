@@ -117,6 +117,7 @@ function SlashList({
     <div
       role="listbox"
       aria-label={cv ? "Insert" : "Blocks"}
+      data-surface={cv ? "paper" : undefined}
       data-pen-surface={cv ? "paper" : undefined}
       data-slot="paper-slash-menu"
       className={cn(

@@ -12,8 +12,8 @@ import { SidebarExpandButton } from "@workspace/ui/components/page-header"
 import { PaperLetterStart } from "./paper-letter-start.tsx"
 import { PaperLetterDraftingPage } from "./paper-letter-drafting-page.tsx"
 import { ChatStoreContext } from "@/features/coach/chat-store-context.ts"
-import "./design/letter-start.pen.css"
-import "./design/letter-unreadable.pen.css"
+import "./design/letter-start.css"
+import "./design/letter-unreadable.css"
 
 type DraftingState = {
   draftName: string
@@ -99,6 +99,7 @@ export function PaperLetterStartPage({
           onBack()
         }
       }}
+      data-surface="paper"
       data-pen-surface="paper"
       data-slot="letter-start-page"
       aria-label={draftingState ? "Drafting cover letter" : "New cover letter"}

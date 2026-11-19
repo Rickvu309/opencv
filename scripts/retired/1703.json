@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "scripts/guard-ledger/paper-header-fit.json",
+    "because": "The owner retired the old design tool on 2026-11-19 and asked to remove its name from all code and docs; this check now names the renamed files and attributes, and checks the same thing.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

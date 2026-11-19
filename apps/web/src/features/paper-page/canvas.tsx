@@ -49,7 +49,7 @@ import {
   writingConflictDoc,
 } from "@/lib/writing-refresh.ts"
 import "./canvas.css"
-import "./design/writing-page.pen.css"
+import "./design/writing-page.css"
 
 function blockElement(node: Node | null) {
   const element =
@@ -455,6 +455,7 @@ function WritingSheet({
     <section
       aria-label="Writing"
       className="writing-sheet"
+      data-surface="paper-page"
       data-pen-surface="paper-page"
     >
       {renderHeader?.(

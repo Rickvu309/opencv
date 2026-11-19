@@ -7,7 +7,7 @@ import {
   type RichText,
 } from "@workspace/domain"
 
-import "./design/letter-sheet.pen.css"
+import "./design/letter-sheet.css"
 
 function Runs({ text }: { text: RichText }) {
   return (
@@ -42,7 +42,7 @@ function ListView({ list }: { list: LetterPrintList }) {
 export function LetterPrintView({ document }: { document: LetterPaper }) {
   const model = letterPrintModel(document)
   return (
-    <div data-pen-surface="paper" data-slot="letter-sheet">
+    <div data-surface="paper" data-pen-surface="paper" data-slot="letter-sheet">
       {model.fragments.map((fragment, index) => {
         if (fragment.kind === "divider") return <hr key={index} />
         if (fragment.kind === "list") {

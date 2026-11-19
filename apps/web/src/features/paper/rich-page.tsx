@@ -34,7 +34,7 @@ import { useRichStatusDetail } from "./rich-status-detail.ts"
 import { mountRichEditorLifecycle } from "./rich-editor-lifecycle.ts"
 import { RichFindBar, type PaperFindMode } from "./rich-find-bar.tsx"
 import { RichDocumentMenu } from "./rich-document-menu.tsx"
-import "./design/rich-page-header.pen.css"
+import "./design/rich-page-header.css"
 import "./design/paper-writing-page.css"
 import "./rich-page-geometry.css"
 
@@ -149,6 +149,7 @@ export function RichPaperPage({
   return (
     <section
       aria-label="Paper"
+      data-surface="paper"
       data-pen-surface="paper"
       className="rich-paper-page flex h-full min-h-0 flex-1 flex-col overflow-clip"
     >
