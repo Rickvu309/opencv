@@ -26,5 +26,19 @@
     "class": "owner",
     "classBecause": "scripts/type-radius-tokens.test.mjs shares no module, command or route with packages/ui/src/controls-grid.test.tsx",
     "items": 5
+  },
+  {
+    "subject": "apps/web/src/test/ui-kit-contract.test.ts",
+    "because": "Kit and Settings classes now name the text-ui type token and the radius tokens instead of pixel literals, so the class expectations follow the token; the type-radius guard fails any new pixel type size or radius",
+    "replacedBy": "scripts/type-radius-tokens.test.mjs",
+    "proof": {
+      "fork": "c234134b8d01d16b68653a82b7da8a7e3871d217",
+      "replacedByBlob": "7ee90aea37999d33adb49dca92e44f3baf1a1ed4",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "owner",
+    "classBecause": "scripts/type-radius-tokens.test.mjs shares no module, command or route with apps/web/src/test/ui-kit-contract.test.ts",
+    "items": 1
   }
 ]
