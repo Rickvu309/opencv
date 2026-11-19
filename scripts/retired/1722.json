@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 21
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-progress.test.ts",
+    "because": "A denied, expired or stopped approval is now its own declined status instead of failed, so the fold can show it is not an error (issue 1722); the replacement maps each to declined",
+    "replacedBy": "apps/web/src/features/coach/coach-progress.test.ts",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "d25192ff949c463775fe8cc86a67674af076dc8b",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
   }
 ]
