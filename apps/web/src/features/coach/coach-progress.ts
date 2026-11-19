@@ -6,7 +6,7 @@ export type CoachProgressCall =
   | { kind: "call"; id: string; label: string; name: ChatToolName }
 
 export type CoachProgressStatus =
-  "reported" | "running" | "completed" | "failed" | "approval"
+  "reported" | "running" | "completed" | "failed" | "declined" | "approval"
 
 export type CoachProgressRow = {
   id: string
@@ -70,12 +70,13 @@ export function coachProgressRows(
         ? "running"
         : result.approval === "pending" || result.pendingActionId
           ? "approval"
-          : !result.ok ||
-              result.approval === "denied" ||
+          : result.approval === "denied" ||
               result.approval === "expired" ||
               result.approval === "stopped"
-            ? "failed"
-            : "completed"
+            ? "declined"
+            : !result.ok
+              ? "failed"
+              : "completed"
     return { id: call.id, label: call.label, status }
   })
 }

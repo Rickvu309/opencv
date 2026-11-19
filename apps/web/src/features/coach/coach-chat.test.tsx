@@ -210,7 +210,9 @@ describe("Coach chat and history", { timeout: 15_000 }, () => {
     await sendMessage("Update my CV, move the card, and start a new CV")
     await expectSendSettled("Update my CV, move the card, and start a new CV")
 
-    expect(screen.getByText("Edited PM track CV, 1 change")).toBeInTheDocument()
+    expect(screen.getByText("PM track CV")).toBeInTheDocument()
+
+    expect(screen.getByText("1 change applied")).toBeInTheDocument()
     expect(screen.getByText("New summary")).toBeInTheDocument()
     expect(
       screen.getByText(

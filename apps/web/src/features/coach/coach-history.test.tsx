@@ -26,7 +26,7 @@ describe("Coach history", () => {
   it("opens the history popover when the trigger is clicked", async () => {
     renderApp(SURFACE_PATHS.coach)
     await expectCoachIdle()
-    const trigger = screen.getByRole("button", { name: "History, New chat" })
+    const trigger = screen.getByRole("button", { name: "History, Chats" })
     expect(trigger).toHaveAttribute("data-slot", "coach-history-trigger")
     fireEvent.click(trigger)
     expect(
@@ -42,7 +42,7 @@ describe("Coach history", () => {
   it("shows New chat and shortcut in the history popover", async () => {
     renderApp(SURFACE_PATHS.coach)
     await expectCoachIdle()
-    fireEvent.click(screen.getByRole("button", { name: "History, New chat" }))
+    fireEvent.click(screen.getByRole("button", { name: "History, Chats" }))
     await screen.findByRole("textbox", { name: "Search chat history" })
     expect(screen.getAllByText("New chat").length).toBeGreaterThanOrEqual(1)
     expect(screen.getByText("⌘ N")).toBeInTheDocument()

@@ -1,5 +1,5 @@
 import { useReducer } from "react"
-import { Check, Circle, Clock, X } from "lucide-react"
+import { Ban, Check, Circle, Clock, X } from "lucide-react"
 
 import {
   Collapsible,
@@ -26,6 +26,7 @@ const STATUS_NOTE: Record<CoachProgressStatus, string> = {
   running: "running",
   completed: "completed",
   failed: "failed",
+  declined: "not approved, nothing changed",
   approval: "awaiting confirmation",
 }
 
@@ -45,9 +46,11 @@ function StepIcon({ status }: { status: CoachProgressStatus }) {
       ? Check
       : status === "failed"
         ? X
-        : status === "approval"
-          ? Clock
-          : Circle
+        : status === "declined"
+          ? Ban
+          : status === "approval"
+            ? Clock
+            : Circle
   return (
     <span data-slot="coach-step-icon" aria-hidden="true">
       <Icon className="size-3.5 motion-appear" />
@@ -149,7 +152,10 @@ export function CoachWorkFold({
         </span>
       ) : null}
       <div data-slot="coach-work-head">
-        <OpenCvMark quarterTurns={steps.length} className="size-3.5" />
+        <OpenCvMark
+          quarterTurns={live ? steps.length : 0}
+          className="size-3.5"
+        />
         {steps.length > 0 ? (
           <CollapsibleTrigger
             data-slot="coach-work-toggle"

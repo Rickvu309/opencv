@@ -128,8 +128,7 @@ describe("Coach approval presentation", () => {
       <CoachToolLine tool={toolOf(pending)} canUndo />
     )
     expect(screen.getByRole("heading", { name: "Untitled CV" })).toBeVisible()
-    expect(screen.getByText("1 proposed change")).toBeVisible()
-    expect(screen.getByText("Needs your approval")).toBeVisible()
+    expect(screen.getByText("1 change to approve")).toBeVisible()
     expect(screen.getByText("Before")).toBeVisible()
     expect(screen.getByText("After")).toBeVisible()
     expect(screen.getByText("I worked on support.").tagName).toBe("DEL")
@@ -282,7 +281,7 @@ describe("Coach trace and receipts", () => {
     const { container } = render(
       <CoachParts parts={parts} ctx={{ canUndo: true, onUndo: vi.fn() }} />
     )
-    const title = screen.getByText("Edited Untitled CV, 1 change")
+    const title = screen.getByText("Untitled CV")
     const row = title.closest("[data-slot=coach-action-record]")
     if (!row) throw new Error("Expected receipt row")
     expect(within(row).getByRole("link", { name: "Open" })).toHaveAttribute(
@@ -318,8 +317,9 @@ describe("Coach trace and receipts", () => {
     )
     const record = container.querySelector("[data-slot=coach-action-record]")
     expect(record).toHaveAttribute("data-state", "undone")
-    expect(record).toHaveTextContent("Edited Untitled CV, 1 change")
-    expect(screen.getByText("Undone")).toBeVisible()
+    expect(within(record as HTMLElement).getByText("Untitled CV")).toBeVisible()
+    expect(screen.getByText("1 change undone")).toBeVisible()
+    expect(record?.textContent).not.toMatch(/Edited|Applied/)
     expect(screen.getByRole("link", { name: "Open" })).toHaveAttribute(
       "href",
       "/paper/cccccccc-cccc-4ccc-8ccc-cccccccccccc"
@@ -365,8 +365,7 @@ describe("Coach trace and receipts", () => {
       Node.DOCUMENT_POSITION_FOLLOWING
     )
     expect(screen.getByText("Changes to approve")).toHaveClass("sr-only")
-    expect(screen.getByText("2 proposed changes")).toBeVisible()
-    expect(screen.getAllByText("Needs your approval")).toHaveLength(1)
+    expect(screen.getAllByText("2 changes to approve")).toHaveLength(1)
     const rows = container.querySelector("[data-slot=word-change-rows]")
     expect(rows).toHaveTextContent("BeforeDear Ada,AfterDear Grace,")
     expect(container.textContent).toContain("RemoveOld line")
@@ -431,8 +430,10 @@ describe("Coach trace and receipts", () => {
       "[data-slot=coach-action-record]"
     )
     expect(record).toHaveAttribute("data-state", "applied")
-    expect(record).toHaveTextContent("Edited CV.docx")
-    expect(record).toHaveTextContent("Applied")
+    expect(within(record as HTMLElement).getByText("CV.docx")).toBeVisible()
+    expect(
+      within(record as HTMLElement).getByText("Edit applied")
+    ).toBeVisible()
     expect(applied.container.textContent).not.toMatch(/Reversible/)
     expect(screen.getByRole("button", { name: "Undo" })).toBeEnabled()
     applied.unmount()
@@ -447,8 +448,9 @@ describe("Coach trace and receipts", () => {
         ctx={{ canUndo: true, onUndo: vi.fn() }}
       />
     )
-    expect(screen.getByText("Edited CV.docx")).toBeVisible()
-    expect(screen.getByText("Undone")).toBeVisible()
+    expect(screen.getByText("CV.docx")).toBeVisible()
+    expect(screen.getByText("Edit undone")).toBeVisible()
+    expect(screen.queryByText(/Edited/)).toBeNull()
     expect(screen.getByRole("link", { name: "Open" })).toHaveAttribute(
       "href",
       "/paper/dddddddd-dddd-4ddd-8ddd-dddddddddddd"

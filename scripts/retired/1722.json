@@ -1,0 +1,100 @@
+[
+  {
+    "subject": "apps/web/src/features/coach/coach-home.test.tsx",
+    "because": "The home tests checked class strings (max-w, h-11, rounded-full, flex-col) that the lighter one-design empty state removes (issue 1722); the replacement checks what a person sees: no decorative mark behind the composer and the same heading and starters in page and panel",
+    "replacedBy": "apps/web/src/features/coach/coach-home.test.tsx",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "7d04b8afefaac5f2dc578878c91f0efaa9c601b7",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 21
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-progress.test.ts",
+    "because": "A denied, expired or stopped approval is now its own declined status instead of failed, so the fold can show it is not an error (issue 1722); the replacement maps each to declined",
+    "replacedBy": "apps/web/src/features/coach/coach-progress.test.ts",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "d25192ff949c463775fe8cc86a67674af076dc8b",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-tool-presentation.test.tsx",
+    "because": "The receipt headline is now the document name and the state line says what happened, and the approval meta is one phrase (issue 1722); the replacement checks the new visible words and that Edited and Applied are gone",
+    "replacedBy": "apps/web/src/features/coach/coach-tool-presentation.test.tsx",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "9e758c27153a6aee013281a79fbce9a4cb34fe56",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 10
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-workspace-progress.test.tsx",
+    "because": "The approval meta now reads Action to approve instead of two run-on phrases (issue 1722); the replacement checks the new single phrase",
+    "replacedBy": "apps/web/src/features/coach/coach-workspace-progress.test.tsx",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "f4b0e001297758a0b6a3e66f2dae62bf1037d4a1",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-workspace.test.tsx",
+    "because": "An empty Coach home header now shows only a Chats history trigger instead of a New chat title (issue 1722); the replacement checks Chats and that no New chat text shows",
+    "replacedBy": "apps/web/src/features/coach/coach-workspace.test.tsx",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "611a0503f18dc36e33507457eda30af0989d0989",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-parts.test.tsx",
+    "because": "Coach receipts now show the document name as the headline and the state on its own line, 1 change applied (#1722 C4); the old case pinned the combined line.",
+    "replacedBy": "apps/web/src/features/coach/coach-parts.test.tsx",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "d392f4fc0fc2e9decf3a5aa837e3fe7f5fb36181",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-chat.test.tsx",
+    "because": "Coach receipts now show the document name as the headline and the state on its own line, 1 change applied (#1722 C4); the old case pinned the combined line.",
+    "replacedBy": "apps/web/src/features/coach/coach-chat.test.tsx",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "8ee926a7095e27fd7ecf3fa893199f711eae8c92",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]

@@ -5,8 +5,6 @@ import type { ChatSummary } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { OpenCvMark } from "@/components/app-logo.tsx"
-
 import { chatAge, useMountTime } from "./chat-time.ts"
 import { COACH_STARTERS } from "./coach-starters.ts"
 
@@ -63,28 +61,9 @@ export function CoachHome({
           : "min-h-full justify-center px-6 py-16 md:px-4"
       )}
     >
-      <h2
-        className={cn(
-          "text-center font-medium text-balance text-foreground",
-          panel
-            ? "mb-4 text-[20px] leading-[26px] tracking-[-0.01em]"
-            : "sr-only"
-        )}
-      >
-        How can I help?
-      </h2>
+      <h2 className="sr-only">How can I help?</h2>
       {children ? (
-        <div
-          data-slot="coach-home-composer"
-          className="relative isolate w-full max-w-[680px]"
-        >
-          <span
-            data-slot="coach-home-mark"
-            aria-hidden="true"
-            className="pointer-events-none absolute -top-36 left-1/2 -z-10 size-72 -translate-x-1/2 [mask-image:linear-gradient(to_bottom,black_30%,transparent_80%)] md:-top-48 md:size-96 [@media(max-height:45rem)]:hidden"
-          >
-            <OpenCvMark className="size-full text-foreground/[0.04]" />
-          </span>
+        <div data-slot="coach-home-composer" className="w-full max-w-[680px]">
           {children}
         </div>
       ) : null}
@@ -95,7 +74,6 @@ export function CoachHome({
           onChooseStarter={onChooseStarter}
           disabled={disabled}
           spaced={Boolean(children)}
-          layout={panel ? "chips" : "rows"}
         />
       ) : null}
     </div>
@@ -148,39 +126,28 @@ function CoachIdeas({
   onChooseStarter,
   disabled,
   spaced,
-  layout,
 }: {
   onChooseStarter: (text: string) => void
   disabled: boolean
   spaced: boolean
-  layout: "chips" | "rows"
 }) {
   const describedBy = useId()
-  const rows = layout === "rows"
   return (
     <ul
       data-slot="coach-ideas"
-      data-layout={layout}
       aria-label="Ideas for Coach"
       className={cn(
-        "flex w-full min-w-0",
-        rows
-          ? "max-w-[680px] flex-col"
-          : "max-w-[760px] flex-wrap justify-center gap-2",
-        spaced ? (rows ? "mt-3" : "mt-4") : null
+        "flex w-full max-w-[680px] min-w-0 flex-col",
+        spaced ? "mt-3" : null
       )}
     >
       {COACH_STARTERS.map(({ title, description, icon: Icon }, index) => (
         <li key={title} className="min-w-0">
           <Button
-            variant={rows ? "ghost" : "outline"}
+            variant="ghost"
             data-slot="coach-starter"
             aria-label={title}
-            className={
-              rows
-                ? "h-11 w-full min-w-0 justify-start gap-3 rounded-md px-4 text-left text-[14px] leading-5 font-normal text-foreground md:h-8 [&_svg]:text-muted-foreground"
-                : "h-11 max-w-full min-w-0 gap-2 rounded-full border-border bg-transparent px-3.5 text-[14px] leading-5 font-normal text-muted-foreground shadow-none hover:bg-muted hover:text-foreground md:h-9"
-            }
+            className="h-11 w-full min-w-0 justify-start gap-3 rounded-md px-4 text-left text-[14px] leading-5 font-normal text-foreground md:h-8 [&_svg]:text-muted-foreground"
             aria-describedby={`${describedBy}-${index}`}
             disabled={disabled}
             onClick={() => onChooseStarter(title)}

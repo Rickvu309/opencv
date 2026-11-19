@@ -90,6 +90,55 @@ describe("Coach Working block", () => {
     ])
   })
 
+  it("tells a declined step apart from a failed one, in words and icon", () => {
+    const { container } = render(
+      <CoachWorkFold
+        live
+        steps={[
+          { id: "x", label: "Edit your Paper", status: "declined" },
+          { id: "y", label: "List jobs", status: "failed" },
+        ]}
+      />
+    )
+    expect(
+      within(screen.getByRole("list", { name: "Coach progress" }))
+        .getAllByRole("listitem")
+        .map((item) => item.textContent)
+    ).toEqual([
+      "Edit your Paper, not approved, nothing changed",
+      "List jobs, failed",
+    ])
+    const icons = [
+      ...container.querySelectorAll("[data-slot='coach-step-icon'] svg"),
+    ].map((icon) => icon.outerHTML)
+    expect(icons[0]).not.toBe(icons[1])
+  })
+
+  it("draws the same Coach mark on every finished fold, whatever the step count", () => {
+    const step = (id: string) => ({
+      id,
+      label: "Read document",
+      status: "completed" as const,
+    })
+    const mark = (count: number) => {
+      const { container, unmount } = render(
+        <CoachWorkFold
+          live={false}
+          workedMs={2000}
+          steps={Array.from({ length: count }, (_, index) => step(`s${index}`))}
+        />
+      )
+      const html = container.querySelector(
+        "[data-slot='coach-work-head'] > svg"
+      )?.outerHTML
+      unmount()
+      return html
+    }
+    expect(mark(1)).toBeDefined()
+    expect(mark(1)).toBe(mark(2))
+    expect(mark(2)).toBe(mark(3))
+  })
+
   it("folds Working shut above the reply once the Coach has written text and nothing is running", () => {
     const settled = rows.filter((row) => row.status === "completed")
     const { container } = renderTurns(
