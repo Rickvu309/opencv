@@ -39,6 +39,13 @@ export const RULES = [
     allowed: ["packages/ui/src/components/breadcrumb.tsx"],
     use: "Breadcrumb from @workspace/ui/components/breadcrumb instead of a hand-built nav with aria-label Breadcrumb or a crumb trail with aria-current page.",
   },
+  {
+    name: "code block",
+    scope: /^apps\//,
+    hit: (source) => /<pre\b/.test(source),
+    allowed: [],
+    use: "CodeBlock with CodeBlockContent and CodeBlockCopyButton from @workspace/ui/components/code-block instead of a hand-styled pre.",
+  },
 ]
 
 export function offenders(rule, files, read) {
@@ -117,6 +124,24 @@ test("breadcrumb: a nav link that marks the current page is allowed", () => {
   )
   assert.ok(!byName.breadcrumb.hit('<a aria-current="page">Account</a>'))
   assert.ok(!byName.breadcrumb.hit('<nav aria-label="Settings">'))
+})
+
+test("code block: the hand-styled command box Integrations used is caught", () => {
+  assert.ok(
+    byName["code block"].hit(
+      '<pre className="overflow-x-hidden rounded-md bg-muted px-3 py-2 text-sm">{copy.text}</pre>'
+    )
+  )
+})
+
+test("code block: the kit code block and a preview word are allowed", () => {
+  assert.ok(
+    !byName["code block"].hit(
+      "<CodeBlockContent wrap>{copy.text}</CodeBlockContent>"
+    )
+  )
+  assert.ok(!byName["code block"].hit("<Preview />"))
+  assert.ok(!byName["code block"].hit('const label = "pre-filled"'))
 })
 
 test("the scan sees the kit file that is allowed", () => {

@@ -1,4 +1,11 @@
-import { CopyButton } from "@workspace/ui/components/copy-button"
+import {
+  CodeBlock,
+  CodeBlockActions,
+  CodeBlockContent,
+  CodeBlockCopyButton,
+  CodeBlockHeader,
+  CodeBlockTitle,
+} from "@workspace/ui/components/code-block"
 import {
   Collapsible,
   CollapsibleContent,
@@ -54,21 +61,18 @@ export function ConnectAgent() {
             </div>
             {snippet.copies.map((copy) => (
               <div key={copy.id} className="flex flex-col gap-2">
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                  <p className="text-sm font-medium">{copy.label}</p>
-                  <CopyButton
-                    className="h-11 w-full shrink-0 md:h-9 md:w-auto"
-                    variant="outline"
-                    size="default"
-                    aria-label={copy.button}
-                    value={copy.text}
-                  >
-                    {copy.button}
-                  </CopyButton>
-                </div>
-                <pre className="overflow-x-hidden rounded-md bg-muted px-3 py-2 text-sm break-words whitespace-pre-wrap">
-                  {copy.text}
-                </pre>
+                <CodeBlock size="sm">
+                  <CodeBlockHeader>
+                    <CodeBlockTitle>{copy.label}</CodeBlockTitle>
+                    <CodeBlockActions>
+                      <CodeBlockCopyButton
+                        aria-label={copy.button}
+                        value={copy.text}
+                      />
+                    </CodeBlockActions>
+                  </CodeBlockHeader>
+                  <CodeBlockContent wrap>{copy.text}</CodeBlockContent>
+                </CodeBlock>
                 {copy.tip ? (
                   <p className="text-sm text-muted-foreground">{copy.tip}</p>
                 ) : null}

@@ -15,7 +15,7 @@ function UsageBar({
   return (
     <div
       data-slot="usage-bar"
-      className={cn("h-1.5 rounded-full bg-muted", className)}
+      className={cn("h-1.5 rounded-full bg-border", className)}
       role="meter"
       aria-valuenow={pct}
       aria-valuemin={0}
