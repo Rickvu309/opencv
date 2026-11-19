@@ -114,7 +114,7 @@ function PeekBody({ jobId, onClose }: { jobId: JobId; onClose: () => void }) {
     return (
       <div className={PEEK_NOTICE}>
         <p>Job not found.</p>
-        <Button type="button" className="h-11 md:h-8" onClick={onClose}>
+        <Button size="touch" type="button" onClick={onClose}>
           Close
         </Button>
       </div>
@@ -125,8 +125,8 @@ function PeekBody({ jobId, onClose }: { jobId: JobId; onClose: () => void }) {
       <div className={PEEK_NOTICE}>
         <p>Couldn't load this job.</p>
         <Button
+          size="touch"
           type="button"
-          className="h-11 md:h-8"
           onClick={() => void detail.refetch()}
         >
           Refresh

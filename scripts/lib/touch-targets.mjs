@@ -80,15 +80,90 @@ function stringsIn(node) {
 }
 
 const BUTTON_TAGS = new Set(["Button"])
+const KIT_TOUCH_SIZES = { "md:h-8": "touch", "md:h-9": "touch-lg" }
+const SIZES_WITH_TOUCH_PADDING = new Set(["default", "lg"])
 
-export function smallTargets(source, fileName = "file.tsx") {
-  const file = ts.createSourceFile(
+function attributeOf(opening, name) {
+  return opening.attributes.properties.find(
+    (attribute) => ts.isJsxAttribute(attribute) && attribute.name.text === name
+  )
+}
+
+function sizeOf(opening) {
+  const size = attributeOf(opening, "size")
+  if (!size) return { value: "default", node: null }
+  if (size.initializer && ts.isStringLiteral(size.initializer))
+    return { value: size.initializer.text, node: size }
+  return { value: null, node: size }
+}
+
+function desktopPairOf(text) {
+  const tokens = new Set(text.split(/\s+/))
+  if (!tokens.has("h-11")) return null
+  return Object.keys(KIT_TOUCH_SIZES).find((token) => tokens.has(token)) ?? null
+}
+
+function jsxOpenings(file) {
+  const out = []
+  const visit = (node) => {
+    const opening = ts.isJsxSelfClosingElement(node)
+      ? node
+      : ts.isJsxElement(node)
+        ? node.openingElement
+        : null
+    if (opening && BUTTON_TAGS.has(opening.tagName.getText(file)))
+      out.push(opening)
+    ts.forEachChild(node, visit)
+  }
+  visit(file)
+  return out
+}
+
+function parse(source, fileName) {
+  return ts.createSourceFile(
     fileName,
     source,
     ts.ScriptTarget.Latest,
     true,
     ts.ScriptKind.TSX
   )
+}
+
+export function handTouchPairs(source, fileName = "file.tsx") {
+  const file = parse(source, fileName)
+  const found = []
+  for (const opening of jsxOpenings(file)) {
+    const className = attributeOf(opening, "className")
+    if (!className) continue
+    const literals = stringsIn(className)
+    const desktop = desktopPairOf(literals.map((entry) => entry.text).join(" "))
+    if (!desktop) continue
+    const size = sizeOf(opening)
+    const literal = literals.find(
+      (entry) => desktopPairOf(entry.text) === desktop
+    )
+    found.push({
+      line: file.getLineAndCharacterOfPosition(opening.getStart(file)).line + 1,
+      desktop,
+      kitSize: KIT_TOUCH_SIZES[desktop],
+      size: size.value,
+      sizeNode: size.node,
+      literal: literal?.node ?? null,
+      classAttribute: className,
+      movable:
+        SIZES_WITH_TOUCH_PADDING.has(size.value) &&
+        literal !== undefined &&
+        ts.isStringLiteral(literal.node),
+      why: `a Button hand-writes h-11 ${desktop}; use the kit size instead (\`size="${KIT_TOUCH_SIZES[desktop]}"\`)`,
+    })
+  }
+  return found
+}
+
+const KIT_PHONE_SIZES = new Set(Object.values(KIT_TOUCH_SIZES))
+
+export function smallTargets(source, fileName = "file.tsx") {
+  const file = parse(source, fileName)
   const lineOf = (node) =>
     file.getLineAndCharacterOfPosition(node.getStart(file)).line + 1
   const found = []
@@ -111,10 +186,11 @@ export function smallTargets(source, fileName = "file.tsx") {
         : ""
       for (const entry of className ? stringsIn(className) : [])
         inButtonClass.add(entry.node)
-      if (!hasPhoneTarget(text))
+      const kitPhoneSize = KIT_PHONE_SIZES.has(sizeOf(opening).value)
+      if (!kitPhoneSize && !hasPhoneTarget(text))
         found.push({
           line: lineOf(opening),
-          why: "a Button needs a phone height of h-11 or size-11 (for example `size-11 md:size-7`)",
+          why: 'a Button needs a phone height: `size="touch"` for a text button, or `size-11 md:size-7` for an icon',
         })
       const narrow = smallPhoneWidths(text)
       if (narrow.length > 0 && !hasPhoneWidth(text))

@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from "react"
+import type { ReactNode } from "react"
 import { ChevronRight, type LucideIcon } from "lucide-react"
 import { useNavigate } from "@tanstack/react-router"
 import type { Profile } from "@workspace/domain"
@@ -111,23 +111,6 @@ function SectionSelect({ current }: { current: SettingsSectionId }) {
         ))}
       </SelectContent>
     </Select>
-  )
-}
-
-export function SettingsRowButton({
-  className,
-  ...props
-}: ComponentProps<typeof Button>) {
-  return (
-    <Button
-      type="button"
-      variant="outline"
-      {...props}
-      className={cn(
-        "h-11 rounded-[7px] px-3 text-[13px] md:h-[30px]",
-        className
-      )}
-    />
   )
 }
 
@@ -394,12 +377,7 @@ export function SettingsLoadError({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="flex flex-col items-start gap-3">
       <p>{LOAD_ERROR}</p>
-      <Button
-        className="h-11 md:h-8"
-        type="button"
-        variant="outline"
-        onClick={onRetry}
-      >
+      <Button size="touch" type="button" variant="outline" onClick={onRetry}>
         Try again
       </Button>
     </div>

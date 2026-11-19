@@ -1,0 +1,9 @@
+{
+  "apps/web/src/features/coach/coach-history.tsx": 1,
+  "apps/web/src/features/coach/coach-turns.tsx": 1,
+  "apps/web/src/features/coach/coach-workspace.tsx": 1,
+  "apps/web/src/features/coach/rich-receipts.tsx": 1,
+  "apps/web/src/features/paper-page/canvas-recovery.tsx": 1,
+  "apps/web/src/features/paper/paper-editor-slash.tsx": 1,
+  "apps/web/src/features/paper/paper-hand-empty.tsx": 2
+}

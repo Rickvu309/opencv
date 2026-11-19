@@ -156,9 +156,10 @@ export function StoriesPage() {
                     <p className="text-sm text-foreground">{featured.role}</p>
                   </div>
                   <Button
+                    size="touch"
                     variant="ghost"
                     onClick={openFeatured}
-                    className="landing-link h-11 md:h-8"
+                    className="landing-link"
                     data-strong
                   >
                     {featured.readLabel}

@@ -99,10 +99,11 @@ function RecentChats({
         return (
           <li key={chat.id} className="min-w-0">
             <Button
+              size="touch"
               variant="ghost"
               data-slot="coach-recent-chat"
               onClick={() => onOpenChat(chat.id)}
-              className="h-11 w-full min-w-0 justify-start gap-4 rounded-md px-4 text-left text-[14px] leading-5 font-normal text-foreground md:h-8"
+              className="w-full min-w-0 justify-start gap-4 rounded-md px-4 text-left text-[14px] leading-5 font-normal text-foreground"
             >
               <span className="min-w-0 flex-1 truncate">{chat.title}</span>
               {age ? (
@@ -144,10 +145,11 @@ function CoachIdeas({
       {COACH_STARTERS.map(({ title, description, icon: Icon }, index) => (
         <li key={title} className="min-w-0">
           <Button
+            size="touch"
             variant="ghost"
             data-slot="coach-starter"
             aria-label={title}
-            className="h-11 w-full min-w-0 justify-start gap-3 rounded-md px-4 text-left text-[14px] leading-5 font-normal text-foreground md:h-8 [&_svg]:text-muted-foreground"
+            className="w-full min-w-0 justify-start gap-3 rounded-md px-4 text-left text-[14px] leading-5 font-normal text-foreground [&_svg]:text-muted-foreground"
             aria-describedby={`${describedBy}-${index}`}
             disabled={disabled}
             onClick={() => onChooseStarter(title)}

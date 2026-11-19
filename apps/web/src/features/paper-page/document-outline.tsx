@@ -125,10 +125,11 @@ export function PaperDocumentOutline({
         >
           {headings.map((heading, index) => (
             <Button
+              size="touch"
               variant="ghost"
               key={index}
               aria-current={index === active ? "location" : undefined}
-              className="paper-outline-heading h-11 w-full justify-start whitespace-normal md:h-8"
+              className="paper-outline-heading w-full justify-start whitespace-normal"
               onClick={() => {
                 heading.element.scrollIntoView({
                   block: "start",

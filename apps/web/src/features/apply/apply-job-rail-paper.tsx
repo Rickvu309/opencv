@@ -11,7 +11,6 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 import { Separator } from "@workspace/ui/components/separator"
-import { cn } from "@workspace/ui/lib/utils"
 
 import { reportRejected } from "@/lib/command-failure.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
@@ -130,6 +129,7 @@ export function PaperRow({
       <PopoverTrigger
         render={
           <Button
+            size="touch"
             type="button"
             variant="ghost"
             aria-label={
@@ -137,7 +137,7 @@ export function PaperRow({
                 ? `${kind === "cv" ? "CV" : "Cover letter"}: ${linked.name}`
                 : addLabel
             }
-            className={cn("h-11 md:h-8", RAIL_ROW)}
+            className={RAIL_ROW}
           />
         }
       >
@@ -178,9 +178,10 @@ export function PaperRow({
                 Could not load Paper. Try again.
               </p>
               <Button
+                size="touch-lg"
                 type="button"
                 variant="ghost"
-                className={cn("h-11 md:h-9", RAIL_PICKER_ROW)}
+                className={RAIL_PICKER_ROW}
                 onClick={() => dispatch({ type: "opened", kind })}
               >
                 Try again
@@ -198,9 +199,10 @@ export function PaperRow({
               </p>
               {search.trim() ? (
                 <Button
+                  size="touch-lg"
                   type="button"
                   variant="ghost"
-                  className={cn("h-11 md:h-9", RAIL_PICKER_ROW)}
+                  className={RAIL_PICKER_ROW}
                   onClick={() => dispatch({ type: "search_typed", value: "" })}
                 >
                   Clear search
@@ -218,10 +220,11 @@ export function PaperRow({
           ) : null}
           {shown.map((doc) => (
             <Button
+              size="touch-lg"
               key={doc.id}
               type="button"
               variant="ghost"
-              className={cn("h-11 md:h-9", RAIL_PICKER_ROW)}
+              className={RAIL_PICKER_ROW}
               onClick={() => {
                 void run("job.linkPaper", {
                   jobId: job.id,
@@ -248,9 +251,10 @@ export function PaperRow({
         ) : null}
         {linked ? (
           <Button
+            size="touch"
             type="button"
             variant="ghost"
-            className={cn(RAIL_PICKER_ROW, "h-11 md:h-8")}
+            className={RAIL_PICKER_ROW}
             onClick={() => {
               void run("job.unlinkPaper", { jobId: job.id, kind }).catch(
                 reportRejected("remove this paper")

@@ -114,7 +114,7 @@ export function PaperPackageLibrary({
                 Could not load Word documents.
               </p>
               <Button
-                className="h-11 md:h-9"
+                size="touch-lg"
                 variant="outline"
                 onClick={() => void library.query.refetch()}
               >
@@ -126,7 +126,7 @@ export function PaperPackageLibrary({
             <div className="flex gap-2">
               {library.after ? (
                 <Button
-                  className="h-11 md:h-9"
+                  size="touch-lg"
                   variant="outline"
                   onClick={() => library.setAfter(undefined)}
                 >
@@ -135,7 +135,7 @@ export function PaperPackageLibrary({
               ) : null}
               {library.next ? (
                 <Button
-                  className="h-11 md:h-9"
+                  size="touch-lg"
                   variant="outline"
                   onClick={() => library.setAfter(library.next ?? undefined)}
                 >
@@ -217,7 +217,7 @@ function WordSnapshot({
         <div>
           <p>Could not load this saved version. Your file has not changed.</p>
           <Button
-            className="h-11 md:h-9"
+            size="touch-lg"
             variant="outline"
             onClick={() => void page.refetch()}
           >
@@ -246,7 +246,7 @@ function WordSnapshot({
             <div className="flex gap-2">
               {cursor ? (
                 <Button
-                  className="h-11 md:h-9"
+                  size="touch-lg"
                   variant="outline"
                   onClick={() => setCursor(undefined)}
                 >
@@ -255,7 +255,7 @@ function WordSnapshot({
               ) : null}
               {snapshot.nextCursor ? (
                 <Button
-                  className="h-11 md:h-9"
+                  size="touch-lg"
                   variant="outline"
                   onClick={() => setCursor(snapshot.nextCursor ?? undefined)}
                 >

@@ -456,7 +456,7 @@ export function PaperLetterStart({
             {attached.truncated ? " Longer text was shortened." : ""}
           </p>
           <Button
-            className="h-11 md:h-8"
+            size="touch"
             type="button"
             variant="ghost"
             disabled={drafting}
@@ -479,7 +479,7 @@ export function PaperLetterStart({
         </Button>
         {drafting ? (
           onDraftingStart ? null : (
-            <Button className="h-11 md:h-8" type="button" onClick={stop}>
+            <Button size="touch" type="button" onClick={stop}>
               Stop
             </Button>
           )

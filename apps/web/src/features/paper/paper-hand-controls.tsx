@@ -48,9 +48,10 @@ export function PaperViewMenu({
       <DropdownMenuTrigger
         render={
           <Button
+            size="touch"
             type="button"
             variant="ghost"
-            className="paper-command-view h-11 hover:bg-transparent md:h-8"
+            className="paper-command-view hover:bg-transparent"
             aria-label={`Show ${current.title}`}
           >
             {current.title}
