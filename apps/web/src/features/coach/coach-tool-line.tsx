@@ -83,8 +83,7 @@ const TOUCH_HIT =
   "relative after:absolute after:inset-[min(0px,calc((100%-44px)/2))] after:content-['']"
 
 const RECORD_ACTION = cn(
-  buttonVariants({ variant: "ghost", size: "xs" }),
-  "h-11 rounded-sm px-2.5 text-foreground no-underline md:h-[26px]",
+  "rounded-sm px-2.5 text-xs text-foreground no-underline md:h-[26px]",
   TOUCH_HIT
 )
 
@@ -120,7 +119,7 @@ function UndoButton({
       className={RECORD_ACTION}
       type="button"
       variant="ghost"
-      size="xs"
+      size="touch"
       aria-label={label}
       disabled={busy}
       onClick={onUndo}
@@ -147,7 +146,10 @@ function DocumentActionRecord({
     <Link
       to="/paper/$docId"
       params={{ docId: view.docId }}
-      className={RECORD_ACTION}
+      className={cn(
+        buttonVariants({ variant: "ghost", size: "touch" }),
+        RECORD_ACTION
+      )}
     >
       Open
     </Link>
