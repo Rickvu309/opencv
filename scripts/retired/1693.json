@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/apply/apply-board.test.tsx > apply board > names the four lanes and opens a card",
+    "because": "Clicking a card now opens the job in a side panel over the board instead of leaving for the job page; the replacement checks the panel opens with the job and the URL keeps the job",
+    "replacedBy": "apps/web/src/features/apply/apply-board.test.tsx",
+    "proof": {
+      "fork": "30fb5dc8ab873206b15b4a780de4ff458d4c0a24",
+      "replacedByBlob": "a28a3e5a8b1d2db1df04818664acdfc307ae565c",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]
