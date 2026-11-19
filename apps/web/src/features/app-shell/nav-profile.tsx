@@ -31,8 +31,7 @@ type Props = {
 
 export function NavProfile({ onNavigate, onMenuOpenChange }: Props) {
   const navigate = useNavigate()
-  const { name, email, image, nameFromEmail } = useShellProfile()
-  const accountLabel = nameFromEmail ? email : name
+  const { name, email, image, label } = useShellProfile()
   const imageSrc = resolveProfileImageSrc(image)
 
   function signOut() {
@@ -64,14 +63,10 @@ export function NavProfile({ onNavigate, onMenuOpenChange }: Props) {
             </AvatarFallback>
           </Avatar>
           <span className="flex min-w-0 flex-1 flex-col text-left">
-            <span
-              data-slot="account-name"
-              title={accountLabel}
-              className="truncate"
-            >
-              {accountLabel}
+            <span data-slot="account-name" title={label} className="truncate">
+              {label}
             </span>
-            {nameFromEmail || email.length === 0 ? null : (
+            {name.length === 0 || email.length === 0 ? null : (
               <span
                 data-slot="account-email"
                 title={email}

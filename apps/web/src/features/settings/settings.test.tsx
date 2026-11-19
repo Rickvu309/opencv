@@ -23,6 +23,7 @@ import {
   setMockWeekUncapped,
 } from "@/test/profile-api-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
+import { SAMPLE_AUTHOR } from "@/features/seed/sample-author.ts"
 
 afterEach(() => {
   cleanup()
@@ -261,6 +262,8 @@ describe("settings", () => {
     expect(
       await screen.findByText("You're on the Pro plan.")
     ).toBeInTheDocument()
+    expect(screen.getByRole("heading", { name: "Pro plan" })).toBeVisible()
+    expect(screen.getByText("$9 a month. Cancel anytime.")).toBeVisible()
     expect(
       screen.queryByRole("button", { name: "Upgrade now" })
     ).not.toBeInTheDocument()
@@ -399,6 +402,30 @@ describe("settings", () => {
       await within(dialog).findByText("We could not send the code. Try again.")
     ).toBeInTheDocument()
     expect(screen.getByRole("dialog")).toBeInTheDocument()
+  })
+
+  it("sends the change-email code when Enter is pressed in the address field", async () => {
+    const user = userEvent.setup()
+    renderApp("/settings/account")
+    await user.click(
+      await screen.findByRole("button", { name: "Change email" })
+    )
+    const dialog = await screen.findByRole("dialog")
+    const field = within(dialog).getByRole("textbox", { name: "Email" })
+    await user.clear(field)
+    await user.type(field, "ada-next@example.com{Enter}")
+    await waitFor(() => {
+      expect(getProfileMockPaths()).toContain(
+        "/api/commands/account.requestEmailChange"
+      )
+    })
+    expect(await within(dialog).findByLabelText("Digit 1")).toBeVisible()
+  })
+
+  it("shows the full address on the Email row", async () => {
+    renderApp("/settings/account")
+    const row = await screen.findByRole("group", { name: "Email" })
+    expect(within(row).getByText(SAMPLE_AUTHOR.email)).toBeVisible()
   })
 
   it("uses a Section select at 390", async () => {

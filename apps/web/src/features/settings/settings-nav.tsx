@@ -87,7 +87,7 @@ export function SettingsNav() {
           )
         })}
       </nav>
-      {!profile.isPending && (identity.email || identity.name) ? (
+      {!profile.isPending && identity.label ? (
         <div
           data-slot="settings-nav-footer"
           className="mt-auto flex h-8 shrink-0 items-center gap-2 px-2"
@@ -100,10 +100,10 @@ export function SettingsNav() {
           </Avatar>
           <span
             data-slot="account-name"
-            title={identity.email || identity.name}
+            title={identity.label}
             className="min-w-0 flex-1 truncate text-[13px] font-medium"
           >
-            {identity.name}
+            {identity.label}
           </span>
         </div>
       ) : null}

@@ -17,7 +17,7 @@ afterEach(() => {
 })
 
 describe("shell identity and Proofs", () => {
-  it("shows the email local part, not Account, in both footers", async () => {
+  it("shows the email, never a name made from it or Account, in both footers", async () => {
     vi.stubGlobal("scrollTo", vi.fn())
     setMockSession({
       user: { ...TEST_SESSION_USER, name: "" },
@@ -38,7 +38,10 @@ describe("shell identity and Proofs", () => {
     })
     const identity = footer.querySelector("[data-slot='settings-nav-footer']")
     expect(identity).not.toBeNull()
-    expect(within(identity as HTMLElement).getByText("you")).toBeInTheDocument()
+    expect(
+      within(identity as HTMLElement).getByText("you@opencv.me")
+    ).toBeInTheDocument()
+    expect(within(identity as HTMLElement).queryByText("you")).toBeNull()
     expect(within(identity as HTMLElement).queryByText("Account")).toBeNull()
     expect(
       identity?.querySelector("[data-slot='account-name']")
