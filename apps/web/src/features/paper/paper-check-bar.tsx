@@ -90,12 +90,7 @@ export function PaperCheckBar({
             {open.length} to check
           </p>
         ) : (
-          <Button
-            className="h-11 md:h-8"
-            type="button"
-            variant="ghost"
-            onClick={onDone}
-          >
+          <Button size="touch" type="button" variant="ghost" onClick={onDone}>
             Done
           </Button>
         )}
@@ -107,7 +102,7 @@ export function PaperCheckBar({
             <p className="text-sm text-muted-foreground">{check.message}</p>
           </div>
           <Button
-            className="h-11 md:h-8"
+            size="touch"
             type="button"
             variant="ghost"
             onClick={() => {
@@ -118,7 +113,7 @@ export function PaperCheckBar({
             {actionOf(check)}
           </Button>
           <Button
-            className="h-11 md:h-8"
+            size="touch"
             type="button"
             variant="ghost"
             onClick={() => onSkip(check.id)}

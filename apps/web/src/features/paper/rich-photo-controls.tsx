@@ -483,7 +483,7 @@ export function RichPhotoControls({
                   </p>
                   <div className="flex flex-wrap gap-3">
                     <Button
-                      className="h-11 md:h-8"
+                      size="touch"
                       type="button"
                       variant="outline"
                       onClick={() => pick(selected.id)}
@@ -491,7 +491,7 @@ export function RichPhotoControls({
                       Replace photo
                     </Button>
                     <Button
-                      className="h-11 md:h-8"
+                      size="touch"
                       type="button"
                       variant="outline"
                       onClick={() => {
@@ -517,7 +517,7 @@ export function RichPhotoControls({
                   ) : null}
                   <div className="flex justify-end gap-2">
                     <Button
-                      className="h-11 md:h-8"
+                      size="touch"
                       type="button"
                       variant="outline"
                       disabled={state.busy}
@@ -526,7 +526,7 @@ export function RichPhotoControls({
                       Cancel
                     </Button>
                     <Button
-                      className="h-11 md:h-8"
+                      size="touch"
                       variant="primary"
                       type="submit"
                       disabled={held}

@@ -1,0 +1,13 @@
+{
+  "id": "touch-targets-hand-pair",
+  "file": "scripts/touch-targets.test.mjs",
+  "detector": {
+    "module": "scripts/lib/touch-targets.mjs",
+    "export": "handTouchPairs"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "f288af3c9",
+    "path": "apps/web/src/features/paper/paper-library.tsx"
+  }
+}

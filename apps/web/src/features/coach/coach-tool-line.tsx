@@ -88,7 +88,7 @@ const RECORD_ACTION = cn(
   TOUCH_HIT
 )
 
-const DECISION = cn("h-11 rounded-md px-3 text-[13px] md:h-8", TOUCH_HIT)
+const DECISION = cn("rounded-md px-3 text-[13px]", TOUCH_HIT)
 
 function useUndoAction(onUndo?: () => Promise<void>) {
   const [{ busy, error }, dispatch] = useReducer(actionReducer, IDLE_ACTION)
@@ -388,6 +388,7 @@ function CoachApproval({
           {batch.state === "withheld" ? null : (
             <Button
               className={DECISION}
+              size="touch"
               type="button"
               variant="primary"
               disabled={working}
@@ -398,6 +399,7 @@ function CoachApproval({
           )}
           <Button
             className={DECISION}
+            size="touch"
             type="button"
             variant="default"
             disabled={working}

@@ -1,13 +1,13 @@
 [data-surface="coach"][data-slot="history-panel"] {
-  background: #ffffff;
-  border: 1px solid #e6e6e8;
+  background: var(--card);
+  border: 1px solid var(--border);
   box-shadow:
-    0px 2px 6px 0px #0000000d,
-    0px 16px 40px 0px #0000001a;
+    0px 2px 6px 0px rgb(0 0 0 / 5%),
+    0px 16px 40px 0px rgb(0 0 0 / 10%);
 }
 
 [data-surface="coach"] [data-slot="history-search-icon"] {
-  color: #8a8a8e;
+  color: var(--subtle-foreground);
 }
 
 [data-surface="coach"] [data-slot="history-search"]::placeholder {
@@ -19,11 +19,11 @@
 }
 
 [data-surface="coach"] [data-slot="history-item"] {
-  color: #111111;
+  color: var(--foreground);
 }
 
 [data-surface="coach"] [data-slot="history-item"][data-active="true"] {
-  background: #f0f0f1;
+  background: var(--muted);
 }
 
 [data-surface="coach"] [data-slot="history-item-time"] {
@@ -31,7 +31,7 @@
 }
 
 [data-surface="coach"] [data-slot="history-new-chat"] {
-  color: #1a1a1a;
+  color: var(--foreground);
 }
 
 [data-surface="coach"] [data-slot="history-shortcut"] {
@@ -39,5 +39,5 @@
 }
 
 [data-surface="coach"] [data-slot="history-item-icon"] {
-  color: #3c3c40;
+  color: var(--muted-foreground);
 }

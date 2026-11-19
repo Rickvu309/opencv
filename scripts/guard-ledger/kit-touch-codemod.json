@@ -1,0 +1,6 @@
+{
+  "id": "kit-touch-codemod",
+  "file": "scripts/kit-touch-codemod.test.mjs",
+  "historic": null,
+  "reason": "tests the codemod that moved hand-written Button height pairs to the kit touch size in #1735; the pair guard is the touch-targets-hand-pair row"
+}

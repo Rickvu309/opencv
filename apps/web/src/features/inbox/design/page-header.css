@@ -1,16 +1,16 @@
 [data-surface="inbox"] [data-slot="page-header"] {
-  border-bottom-color: #ededef;
+  border-bottom-color: var(--hairline);
 }
 [data-surface="inbox"] [data-slot="page-header-title"] {
-  color: #2f2f31;
+  color: var(--foreground);
 }
 [data-surface="inbox"] [data-slot="page-header-back"] {
-  color: #59595b;
+  color: var(--muted-foreground);
 }
 [data-surface="inbox"] [data-slot="page-header-meta"] {
-  color: #969799;
+  color: var(--subtle-foreground);
 }
 [data-surface="inbox"] [data-slot="page-header-action"],
 [data-surface="inbox"] [data-slot="page-header-overflow"] {
-  color: #59595b;
+  color: var(--muted-foreground);
 }

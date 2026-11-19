@@ -428,9 +428,9 @@ export function PaperLibrary({
           />
         ) : null}
         <Button
-          className="paper-library-new h-11 gap-1.5 text-[0.8125rem] md:h-8"
+          className="paper-library-new gap-1.5 text-[0.8125rem]"
           type="button"
-          size="sm"
+          size="touch"
           variant="primary"
           aria-label="New"
           data-primary-action

@@ -118,7 +118,7 @@ export function SessionExpiredDialog({
         ) : null}
         <div data-slot="session-footer">
           <Button
-            className="h-11 md:h-8"
+            size="touch"
             type="button"
             variant="ghost"
             autoFocus={!email}
@@ -129,7 +129,7 @@ export function SessionExpiredDialog({
             {AUTH_COPY.emailMe}
           </Button>
           <Button
-            className="h-11 md:h-8"
+            size="touch"
             type="button"
             variant="ghost"
             onClick={() => void logOut()}

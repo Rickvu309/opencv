@@ -88,6 +88,9 @@ describe("UI package kit surface", () => {
       "sidebar-accent-foreground",
       "sidebar-border",
       "sidebar-ring",
+      "surface-sunken",
+      "hairline",
+      "subtle-foreground",
     ]
     const root = /^:root \{\n([\s\S]*?)^\}/m.exec(css)?.[1] ?? ""
     const names = [...root.matchAll(/^\s*--([\w-]+):/gm)].map((m) => m[1])

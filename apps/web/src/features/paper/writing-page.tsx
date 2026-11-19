@@ -122,11 +122,11 @@ function HeldDownload({
         </span>
       ) : null}
       <Button
+        size="touch"
         type="button"
         variant="ghost"
         disabled
         aria-describedby={reason ? described : undefined}
-        className="h-11 md:h-8"
         aria-label="Download Word"
       >
         <Download aria-hidden="true" />

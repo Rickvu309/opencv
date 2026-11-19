@@ -61,7 +61,7 @@ export function PaperRenameDialog({
           ) : null}
           <div className="flex justify-end gap-2">
             <Button
-              className="h-11 md:h-8"
+              size="touch"
               type="button"
               variant="ghost"
               onClick={onClose}
