@@ -1,16 +1,29 @@
-const ACCENT_TOKEN = /var\(--(?:ring|primary)\)/
-const CSS_GLOW =
-  /(?:^|[;\s])(?:box-shadow|outline)\s*:[^;]*var\(--(?:ring|primary)\)/
+const ACCENT = "(?:ring|primary)"
+const ALARM = "(?:ring|primary|destructive)"
+const CSS_FOCUS_GLOW = new RegExp(
+  `(?:^|[;\\s])(?:box-shadow|outline|border(?:-[a-z-]+)?)\\s*:[^;]*var\\(--${ACCENT}\\)`
+)
+const CSS_INVALID_GLOW = new RegExp(
+  `(?:^|[;\\s])(?:box-shadow|outline)\\s*:[^;]*var\\(--${ALARM}\\)`
+)
 const TEXT_ENTRY =
   /\b(?:input|textarea)\b|contenteditable|role="?textbox|paper-canvas-field/
 const TEXT_ENTRY_SLOT = /\b(?:input|textarea)\b|input-group-control/
+const TOKEN_EDGE = /[\s"'`{}(),]/
+const TEXT_ENTRY_TAG = /<(?:input|textarea|Input|Textarea|InputGroup\w*)\b/
 const KIT_TEXT_FIELDS =
   /^packages\/ui\/src\/components\/(?:input|textarea|input-group)\.tsx$/
-const ACCENT_UTILITY =
-  /^(?:ring-(?:ring|primary)(?:\/|$)|shadow-\[[^\]]*--(?:ring|primary))/
+const KIT_FORM_FIELDS =
+  /^packages\/ui\/src\/components\/(?:input|textarea|input-group|select)\.tsx$/
+const FOCUS_GLOW_UTILITY = new RegExp(
+  `^(?:(?:ring|outline|border(?:-[xytrbse])?)-${ACCENT}(?:\\/|$)|shadow-\\[[^\\]]*--${ACCENT})`
+)
+const INVALID_GLOW_UTILITY = new RegExp(
+  `^(?:ring(?:-(?!0$|transparent$|inset$|offset)\\S+)?$|shadow-\\[[^\\]]*--${ALARM}|outline-${ALARM}(?:\\/|$))`
+)
 
 export const QUIET_FOCUS_HINT =
-  "show focus on a text field with the caret and a neutral border (focus-visible:border-muted-foreground/50, as in the kit Input), never a coloured ring or shadow"
+  "show focus on a text field with the caret and a neutral border (focus-visible:border-muted-foreground/50, as in the kit Input) and a refused value with a red border only (aria-invalid:border-destructive), never a coloured border, underline, ring or shadow"
 
 function withoutNot(selector) {
   let out = ""
@@ -38,15 +51,23 @@ function clickFocusSelector(selector) {
   return /:focus-visible\b/.test(plain) && TEXT_ENTRY.test(plain)
 }
 
+function invalidFieldSelector(selector) {
+  const plain = withoutNot(selector)
+  return /aria-invalid/.test(plain) && TEXT_ENTRY.test(plain)
+}
+
 function cssGlows(source, fileName) {
   const problems = []
   for (const match of source.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
     const selector = match[1].replace(/\s+/g, " ").trim()
-    if (!clickFocusSelector(selector)) continue
-    if (!CSS_GLOW.test(match[2])) continue
+    const focusGlow =
+      clickFocusSelector(selector) && CSS_FOCUS_GLOW.test(match[2])
+    const invalidGlow =
+      invalidFieldSelector(selector) && CSS_INVALID_GLOW.test(match[2])
+    if (!focusGlow && !invalidGlow) continue
     const line = source.slice(0, match.index).split("\n").length
     problems.push(
-      `${fileName}:${line}: ${selector} draws a coloured glow when clicked; ${QUIET_FOCUS_HINT}`
+      `${fileName}:${line}: ${selector} draws a coloured glow when clicked or refused; ${QUIET_FOCUS_HINT}`
     )
   }
   return problems
@@ -78,17 +99,45 @@ function clickFocusVariant(variant, fileName) {
   )
 }
 
+function invalidVariant(variant, fileName, line) {
+  if (!/(?:^|:|\[)aria-invalid\b|has-\[[^\]]*aria-invalid/.test(variant))
+    return false
+  return KIT_FORM_FIELDS.test(fileName) || TEXT_ENTRY_TAG.test(line)
+}
+
+function classTokens(line) {
+  const tokens = []
+  let token = ""
+  let depth = 0
+  for (const char of line) {
+    if (depth === 0 && TOKEN_EDGE.test(char)) {
+      if (token) tokens.push(token)
+      token = ""
+      continue
+    }
+    if (char === "[") depth++
+    else if (char === "]") depth = Math.max(0, depth - 1)
+    token += char
+  }
+  if (token) tokens.push(token)
+  return tokens
+}
+
 function classGlows(source, fileName) {
   const problems = []
   const lines = source.split("\n")
   lines.forEach((text, index) => {
-    for (const token of text.split(/[\s"'`{}(),]+/)) {
+    for (const token of classTokens(text)) {
       if (!token.includes(":")) continue
       const { variant, utility } = splitUtility(token)
-      if (!ACCENT_UTILITY.test(utility)) continue
-      if (!clickFocusVariant(variant, fileName)) continue
+      const focusGlow =
+        FOCUS_GLOW_UTILITY.test(utility) && clickFocusVariant(variant, fileName)
+      const invalidGlow =
+        INVALID_GLOW_UTILITY.test(utility) &&
+        invalidVariant(variant, fileName, text)
+      if (!focusGlow && !invalidGlow) continue
       problems.push(
-        `${fileName}:${index + 1}: ${token} draws a coloured glow when clicked; ${QUIET_FOCUS_HINT}`
+        `${fileName}:${index + 1}: ${token} draws a coloured glow when clicked or refused; ${QUIET_FOCUS_HINT}`
       )
     }
   })
@@ -97,7 +146,5 @@ function classGlows(source, fileName) {
 
 export function clickFocusGlows(source, fileName = "file.tsx") {
   if (fileName.endsWith(".css")) return cssGlows(source, fileName)
-  if (!ACCENT_TOKEN.test(source) && !/ring-(?:ring|primary)/.test(source))
-    return []
   return [...new Set(classGlows(source, fileName))]
 }

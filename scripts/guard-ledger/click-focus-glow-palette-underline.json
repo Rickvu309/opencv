@@ -1,0 +1,13 @@
+{
+  "id": "click-focus-glow-palette-underline",
+  "file": "scripts/click-focus-glow.test.mjs",
+  "detector": {
+    "module": "scripts/lib/click-focus-glow.mjs",
+    "export": "clickFocusGlows"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "dbb058d01",
+    "path": "apps/web/src/features/command-palette/command-palette.tsx"
+  }
+}

@@ -191,7 +191,7 @@ export function CommandPalette({
         <DialogTitle className="sr-only">Search</DialogTitle>
         <div
           data-slot="palette-search"
-          className="flex items-center gap-3 border-b border-border px-4 py-3 has-[input:focus-visible]:border-b-2 has-[input:focus-visible]:border-ring"
+          className="flex items-center gap-3 border-b border-border px-4 py-3"
         >
           <Input
             ref={inputRef}

@@ -1,0 +1,13 @@
+{
+  "id": "click-focus-glow-invalid-ring",
+  "file": "scripts/click-focus-glow.test.mjs",
+  "detector": {
+    "module": "scripts/lib/click-focus-glow.mjs",
+    "export": "clickFocusGlows"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "86f16e92a",
+    "path": "packages/ui/src/components/input.tsx"
+  }
+}

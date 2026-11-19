@@ -37,7 +37,7 @@ const PLAN = {
   white: cn(
     buttonVariants({ variant: "ghost" }),
     PILL,
-    "bg-card shadow-[0_2px_10px_color-mix(in_oklch,var(--ring)_30%,transparent)] ring-1 ring-[color-mix(in_oklch,var(--card)_70%,transparent)] ring-inset hover:brightness-[0.98]"
+    "bg-card shadow-none ring-1 ring-[color-mix(in_oklch,var(--card)_70%,transparent)] ring-inset hover:brightness-[0.98]"
   ),
 } as const
 

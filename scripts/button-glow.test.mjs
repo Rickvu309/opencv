@@ -5,7 +5,7 @@ import path from "node:path"
 import { test } from "node:test"
 import { fileURLToPath } from "node:url"
 
-import { glowButtons } from "./lib/button-glow.mjs"
+import { GLOW_SHADOW_KIND, glowButtons } from "./lib/button-glow.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 
@@ -37,9 +37,22 @@ const scannedFiles = () =>
         (file.startsWith("packages/ui/src/styles/") && file.endsWith(".css"))
     )
     .filter((file) => !/\.test\.tsx?$/.test(file))
-    .filter((file) => !file.startsWith(MARKETING_SITE))
-    .filter((file) => file !== SIGNATURE_BUTTON)
     .filter((file) => existsSync(path.join(root, file)))
+
+const wearsSignatureMesh = (file) =>
+  file.startsWith(MARKETING_SITE) || file === SIGNATURE_BUTTON
+
+const OLD_SIGNATURE_BUTTON = `const signatureMesh = "border-0 [background-image:radial-gradient(ellipse_90%_85%_at_55%_60%,var(--ring),transparent_72%)]"
+export const signatureButton = \`\${signatureMesh} ring-0 shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--background)_70%,transparent),0_2px_10px_color-mix(in_oklch,var(--ring)_30%,transparent)]\`
+export const signatureIconButton =
+  "border-0 bg-card ring-1 ring-inset ring-[color-mix(in_oklch,var(--ring)_32%,transparent)] shadow-[0_1px_2px_color-mix(in_oklch,var(--ring)_28%,transparent),0_2px_6px_color-mix(in_oklch,var(--ring)_16%,transparent)]"`
+
+const OLD_LANDING_PLAN = `const PLAN = {
+  white: cn(
+    buttonVariants({ variant: "ghost" }),
+    "bg-card shadow-[0_2px_10px_color-mix(in_oklch,var(--ring)_30%,transparent)] ring-1 ring-inset"
+  ),
+} as const`
 
 const OLD_KIT_BUTTON = `const glowButton =
   "glow text-foreground hover:brightness-[0.97] active:brightness-[0.94]"
@@ -81,6 +94,32 @@ test("the old glow button style fires in the kit, at call sites and in kit CSS",
   )
 })
 
+test("a lavender glow shadow on the landing Get started and plan buttons and the Coach send button fires", () => {
+  assert.deepEqual(
+    glowButtons(OLD_SIGNATURE_BUTTON, SIGNATURE_BUTTON).map((p) =>
+      p.replace(/^[^:]+:/, "")
+    ),
+    [
+      `2: a button style uses ${GLOW_SHADOW_KIND}`,
+      `4: a button style uses ${GLOW_SHADOW_KIND}`,
+    ]
+  )
+  assert.deepEqual(
+    glowButtons(
+      OLD_LANDING_PLAN,
+      "apps/web/src/features/landing/landing-button.ts"
+    ).map((p) => p.replace(/^[^:]+:/, "")),
+    [`4: a button style uses ${GLOW_SHADOW_KIND}`]
+  )
+})
+
+test("an inset hairline in the accent and a neutral soft shadow on a button stay quiet", () => {
+  const quiet = `export const signatureButton = "ring-0 shadow-[inset_0_0_0_1px_color-mix(in_oklch,var(--ring)_40%,transparent)]"
+export const signatureIconButton = "ring-1 ring-inset shadow-[0_1px_2px_color-mix(in_oklch,var(--foreground)_8%,transparent)]"
+export const plan = "bg-card shadow-none ring-1 ring-inset"`
+  assert.deepEqual(glowButtons(quiet, SIGNATURE_BUTTON), [])
+})
+
 test("the solid primary, the quiet receipt link and a gradient on a page surface stay quiet", () => {
   const clean = `const primaryButton = "rounded-md bg-primary text-primary-foreground hover:bg-[color-mix(in_oklch,var(--primary),var(--primary-foreground)_12%)]"
 const buttonVariants = cva("inline-flex", { variants: { variant: { primary: primaryButton } } })
@@ -93,9 +132,12 @@ export const Hero = () => <div className="bg-[radial-gradient(ellipse_55%_65%_at
   )
 })
 
-test("no button in the app features, shared components or the kit uses a glow, radial gradient or glow shadow", () => {
+test("no button in the app features, shared components or the kit uses a glow, radial gradient or glow shadow, and the signature buttons wear no glow shadow", () => {
   const problems = scannedFiles().flatMap((file) =>
-    glowButtons(readFileSync(path.join(root, file), "utf8"), file)
+    glowButtons(readFileSync(path.join(root, file), "utf8"), file).filter(
+      (problem) =>
+        !wearsSignatureMesh(file) || problem.endsWith(GLOW_SHADOW_KIND)
+    )
   )
   assert.deepEqual(problems, [])
 })
