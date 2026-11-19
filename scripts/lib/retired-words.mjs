@@ -143,6 +143,24 @@ export const RETIRED = [
       },
     ],
   },
+  {
+    id: "pen",
+    word: /\bpen(?:[- _]?dev)?\b/gi,
+    scope: (file) => !file.startsWith("scripts/retired/"),
+    content: () => true,
+    hint: "The owner retired the old design tool and its frames on 2026-11-19. Build from the approved prototype and the packages/ui kit instead, and name styles after what they style. scripts/retired keeps the old name as history. Otherwise add the path and the exact word to the allowed list in scripts/lib/retired-words.mjs with a reason.",
+    allowed: [
+      {
+        path: GUARD_FILES,
+        why: "the guard names the word it bars",
+      },
+      {
+        path: /^apps\/web\/src\/features\/app-shell\/sidebar-peek\.test\.tsx$/,
+        line: /touch and pen pointers/,
+        why: "a stylus is a pointer type the sidebar peek ignores",
+      },
+    ],
+  },
   checkingWord(
     "known-list",
     /(?<![a-z-])[Kk]nown[- _]?[Ll]ists?(?![a-z])|(?<=[a-z])Known_?Lists?(?![a-z])|KNOWN[- _]?LISTS?/g,

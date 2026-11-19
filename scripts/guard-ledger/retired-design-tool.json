@@ -1,0 +1,13 @@
+{
+  "id": "retired-design-tool",
+  "file": "scripts/retired-words.test.mjs",
+  "detector": {
+    "module": "scripts/lib/retired-words.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "c17562550^",
+    "path": "apps/web/src/features/paper/rich-document-menu.tsx"
+  }
+}
