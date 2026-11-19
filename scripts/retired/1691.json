@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 15
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library.test.tsx",
+    "because": "With no documents the page now deals the start hand, whose caption reads 'Start your first document' instead of 'No documents yet'; the same cases now assert the new caption.",
+    "replacedBy": "apps/web/src/features/paper/paper-library.test.tsx",
+    "proof": {
+      "fork": "30fb5dc8ab873206b15b4a780de4ff458d4c0a24",
+      "replacedByBlob": "e08f14b5303b16cafd8860c694be9765a31e7a1d",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 3
   }
 ]
