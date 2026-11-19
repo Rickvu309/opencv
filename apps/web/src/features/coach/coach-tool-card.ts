@@ -4,8 +4,8 @@ import { coachReadLabel, humanToolText } from "./coach-tool-labels.ts"
 
 import type { CoachToolPart } from "./coach-parts.ts"
 import {
+  documentChangeCount,
   documentEditDetail,
-  receiptHeadline,
   receiptShowsUndo,
 } from "./coach-receipt.ts"
 
@@ -55,7 +55,8 @@ export type CoachActionView =
   | {
       kind: "document"
       state: "applied" | "undone"
-      headline: string
+      name: string
+      changes: number | null
       docId: string | null
       canUndo: boolean
     }
@@ -84,6 +85,31 @@ function documentIdOf(part: ChatToolPart): string | null {
   return "doc" in input && typeof input.doc === "string" ? input.doc : null
 }
 
+const EDIT_SUMMARY_VERB = /^Edited\s+/
+
+function documentNameOf(part: ChatToolPart) {
+  const detail = documentEditDetail(part.detail)
+  if (detail) return detail.docName
+  return humanToolText(part.summary).replace(EDIT_SUMMARY_VERB, "")
+}
+
+function documentChangesOf(part: ChatToolPart) {
+  const detail = documentEditDetail(part.detail)
+  return detail ? documentChangeCount(detail) : null
+}
+
+export function documentRecordStateLine(
+  view: Extract<CoachActionView, { kind: "document" }>
+) {
+  const what =
+    view.changes === null
+      ? "Edit"
+      : view.changes === 1
+        ? "1 change"
+        : `${view.changes} changes`
+  return `${what} ${view.state === "undone" ? "undone" : "applied"}`
+}
+
 function isDocumentRecord(part: ChatToolPart) {
   return (
     part.ok &&
@@ -99,7 +125,8 @@ export function coachActionView(part: ChatToolPart): CoachActionView {
     return {
       kind: "document",
       state: part.undone ? "undone" : "applied",
-      headline: receiptHeadline(part),
+      name: documentNameOf(part),
+      changes: documentChangesOf(part),
       docId: documentIdOf(part),
       canUndo: receiptShowsUndo(part),
     }

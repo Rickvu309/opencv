@@ -7,6 +7,7 @@ import {
 import { clearStoppedLetter } from "./paper-letter-resume.ts"
 import { Button } from "@workspace/ui/components/button"
 
+import { useCoachPanelOpen } from "@/lib/coach-panel-presence.ts"
 import {
   subscribeWritingOutcome,
   subscribeWritingProposal,
@@ -84,6 +85,7 @@ export function WritingProposalCard({
     writingOutcome,
     () => null
   )
+  const coachPanelOpen = useCoachPanelOpen()
   const [reviewError, dispatchReviewError] = useReducer(
     reviewErrorReducer,
     null
@@ -104,55 +106,57 @@ export function WritingProposalCard({
 
   if (!reviewError && !mine && !settled) return children
 
-  const showReview = Boolean(reviewError || mine)
+  const showReview = Boolean(reviewError || (mine && !coachPanelOpen))
   return (
     <section
       aria-label={reviewError || mine || settled ? "Coach proposal" : undefined}
       data-slot="writing-proposal-notice"
-      className="mx-auto flex min-h-24 w-[min(100%-3rem,816px)] shrink-0 flex-wrap items-center justify-between gap-3 py-3 md:min-h-16"
+      className="@container mx-auto flex min-h-24 w-[min(100%-3rem,816px)] shrink-0 md:min-h-16"
     >
-      {reviewError ? (
-        <p
-          role="alert"
-          className="min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-destructive"
-        >
-          {reviewError}
-        </p>
-      ) : mine?.withheld ? (
-        <p
-          role="status"
-          className="min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-muted-foreground"
-        >
-          {mine.withheld}
-        </p>
-      ) : mine ? (
-        <p
-          key={mine.pendingActionId ?? mine.toolCallId}
-          role="status"
-          className="min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-foreground"
-        >
-          {suggestionLine(mine.changes.length)}
-        </p>
-      ) : settled ? (
-        <p
-          role="status"
-          className="min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-muted-foreground"
-        >
-          {settled.phase === "approved"
-            ? "Coach's change approved"
-            : "Coach's change undone"}
-        </p>
-      ) : null}
-      {showReview ? (
-        <Button
-          type="button"
-          variant="outline"
-          className="ms-auto h-auto min-h-11 max-w-full whitespace-normal md:min-h-8"
-          onClick={review}
-        >
-          Review in Coach
-        </Button>
-      ) : null}
+      <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-3 px-[calc(100cqi*96/816)] py-3">
+        {reviewError ? (
+          <p
+            role="alert"
+            className="min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-destructive"
+          >
+            {reviewError}
+          </p>
+        ) : mine?.withheld ? (
+          <p
+            role="status"
+            className="min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-muted-foreground"
+          >
+            {mine.withheld}
+          </p>
+        ) : mine ? (
+          <p
+            key={mine.pendingActionId ?? mine.toolCallId}
+            role="status"
+            className="min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-foreground"
+          >
+            {suggestionLine(mine.changes.length)}
+          </p>
+        ) : settled ? (
+          <p
+            role="status"
+            className="min-w-0 flex-1 basis-40 text-sm wrap-anywhere text-muted-foreground"
+          >
+            {settled.phase === "approved"
+              ? "Coach's change approved"
+              : "Coach's change undone"}
+          </p>
+        ) : null}
+        {showReview ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="ms-auto h-auto min-h-11 max-w-full whitespace-normal md:min-h-8"
+            onClick={review}
+          >
+            Review in Coach
+          </Button>
+        ) : null}
+      </div>
     </section>
   )
 }

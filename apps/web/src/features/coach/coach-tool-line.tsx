@@ -12,6 +12,7 @@ import {
   isCompactCoachTool,
   coachActionView,
   type CoachActionView,
+  documentRecordStateLine,
   refusedApprovalLine,
   toolCardProps,
 } from "./coach-tool-card.ts"
@@ -113,15 +114,11 @@ function useUndoAction(onUndo?: () => Promise<void>) {
   return { busy, error, undo }
 }
 
-function DocumentTile({ quiet = false }: { quiet?: boolean }) {
+function DocumentTile() {
   return (
     <span
       aria-hidden="true"
-      className={
-        quiet
-          ? "grid size-[26px] shrink-0 place-items-center rounded-[7px] bg-muted text-muted-foreground"
-          : "grid size-[26px] shrink-0 place-items-center rounded-[7px] bg-foreground text-background"
-      }
+      className="grid size-[26px] shrink-0 place-items-center rounded-[7px] bg-muted text-muted-foreground"
     >
       <FileText className="size-[13px]" />
     </span>
@@ -149,13 +146,13 @@ function DocumentActionRecord({
         className="flex w-full min-w-0 flex-wrap items-center gap-2.5 rounded-[12px] border border-border px-3 py-2.5"
       >
         <div className="flex min-w-[min(100%,10rem)] flex-1 items-center gap-2.5">
-          <DocumentTile quiet={undone} />
+          <DocumentTile />
           <div className="min-w-0 flex-1">
             <p className="text-[0.78125rem] leading-[1.25] font-semibold [overflow-wrap:anywhere] text-foreground">
-              {view.headline}
+              {view.name}
             </p>
             <p className="text-xs leading-4 text-muted-foreground">
-              {undone ? "Undone" : "Applied"}
+              {documentRecordStateLine(view)}
             </p>
           </div>
         </div>
@@ -379,11 +376,11 @@ function CoachApproval({
     : batch.state === "ready"
       ? batch.changes.length
       : 0
-  const action = isDocument
+  const waiting = isDocument
     ? changeCount > 0
-      ? `${changeCount} proposed change${changeCount === 1 ? "" : "s"}`
-      : "Proposed edit"
-    : "Proposed action"
+      ? `${changeCount} change${changeCount === 1 ? "" : "s"} to approve`
+      : "Edit to approve"
+    : "Action to approve"
   const state =
     effectiveStatus === "pending" ? "approval-requested" : "approval-responded"
   const approved = effectiveStatus === "approved"
@@ -411,10 +408,7 @@ function CoachApproval({
             <h3 className="text-[0.78125rem] leading-[1.25] font-semibold [overflow-wrap:anywhere] text-foreground">
               {subject}
             </h3>
-            <p className="flex flex-wrap gap-x-2 text-xs leading-4 text-muted-foreground">
-              <span>{action}</span>
-              <span>Needs your approval</span>
-            </p>
+            <p className="text-xs leading-4 text-muted-foreground">{waiting}</p>
           </div>
         </div>
         {detail?.hunks.length ? (

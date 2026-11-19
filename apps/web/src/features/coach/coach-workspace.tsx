@@ -394,7 +394,7 @@ export function CoachWorkspace({
     </div>
   )
   const headerTitle = showHome
-    ? "New chat"
+    ? "Chats"
     : (chats.find((chat) => chat.id === activeChatId)?.title ?? "New chat")
 
   const history = (

@@ -226,10 +226,10 @@ describe("Coach workspace", () => {
       })
     ).toHaveLength(3)
     expect(
-      screen.getAllByRole("button", { name: "History, New chat" })
+      screen.getAllByRole("button", { name: "History, Chats" })
     ).toHaveLength(1)
     expect(screen.getByText("Panel controls")).toBeVisible()
-    fireEvent.click(screen.getByRole("button", { name: "History, New chat" }))
+    fireEvent.click(screen.getByRole("button", { name: "History, Chats" }))
     expect(
       await screen.findByRole("textbox", { name: "Search chat history" })
     ).toBeVisible()
@@ -404,17 +404,17 @@ describe("Coach workspace", () => {
     expect(card).toContainElement(screen.getByRole("button", { name: "Send" }))
   })
 
-  it("names the History trigger with the visible chat title", async () => {
+  it("shows only a Chats history trigger on an empty home, with no chat title or New chat button", async () => {
     render(
       <ChatStoreProvider>
         <CoachWorkspace />
       </ChatStoreProvider>
     )
     const trigger = await screen.findByRole("button", {
-      name: "History, New chat",
+      name: "History, Chats",
     })
-    expect(trigger).toHaveAttribute("data-slot", "coach-history-trigger")
-    expect(trigger).toHaveTextContent("New chat")
+    expect(trigger).toHaveTextContent("Chats")
+    expect(screen.queryByText("New chat")).not.toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: "New chat", exact: true })
     ).not.toBeInTheDocument()

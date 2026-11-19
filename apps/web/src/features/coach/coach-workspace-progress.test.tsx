@@ -124,7 +124,7 @@ describe("Coach workspace shows streamed progress", () => {
 
     expect(screen.getByRole("button", { name: "Approve" })).toBeEnabled()
     expect(screen.getByRole("button", { name: "Deny" })).toBeEnabled()
-    expect(screen.getAllByText("Needs your approval")).toHaveLength(1)
+    expect(screen.getAllByText("Action to approve")).toHaveLength(1)
     expect(
       screen.queryByRole("button", { name: "Stop" })
     ).not.toBeInTheDocument()
