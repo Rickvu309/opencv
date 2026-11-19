@@ -145,10 +145,11 @@ function EditRow({
       <PopoverTrigger
         render={
           <Button
+            size="touch"
             type="button"
             variant="ghost"
             aria-label={empty ? label : `${ariaLabel}: ${label}`}
-            className={cn("h-11 md:h-8", RAIL_ROW)}
+            className={RAIL_ROW}
           />
         }
       >
@@ -201,10 +202,11 @@ function StageRow({
       <DropdownMenuTrigger
         render={
           <Button
+            size="touch"
             type="button"
             variant="ghost"
             aria-label={`Stage: ${railStageLabel(job.stage)}`}
-            className={cn("h-11 md:h-8", RAIL_ROW)}
+            className={RAIL_ROW}
           />
         }
       >
@@ -239,10 +241,11 @@ function PriorityRow({
       <DropdownMenuTrigger
         render={
           <Button
+            size="touch"
             type="button"
             variant="ghost"
             aria-label={`Priority: ${priorityLabel(job.priority)}`}
-            className={cn("h-11 md:h-8", RAIL_ROW)}
+            className={RAIL_ROW}
           />
         }
       >

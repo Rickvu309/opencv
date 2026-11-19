@@ -118,7 +118,7 @@ export function ConnectionConsent() {
         ) : null}
         <div className="flex flex-wrap justify-end gap-3">
           <Button
-            className="h-11 md:h-9"
+            size="touch-lg"
             variant="outline"
             disabled={oauthQuery === null || !client.data || answer.isPending}
             onClick={() => answer.mutate(false)}
@@ -126,7 +126,7 @@ export function ConnectionConsent() {
             Cancel
           </Button>
           <Button
-            className="h-11 md:h-9"
+            size="touch-lg"
             disabled={oauthQuery === null || !client.data || answer.isPending}
             onClick={() => answer.mutate(true)}
           >
