@@ -143,7 +143,7 @@ export function LetterStoppedNotice({
       data-slot="letter-stopped-notice"
       aria-hidden={!visible || undefined}
       className={cn(
-        "mx-auto flex min-h-24 w-[min(100%-3rem,816px)] shrink-0 flex-wrap items-center justify-between gap-3 py-3 md:min-h-16",
+        "flex min-h-24 w-full shrink-0 flex-wrap items-center justify-between gap-3 py-3 md:min-h-16",
         !visible && "invisible"
       )}
     >
@@ -178,6 +178,8 @@ export function LetterStoppedNotice({
       ) : record?.docId === docId || (!visible && reservedDocId === docId) ? (
         <Button
           type="button"
+          variant="ghost"
+          size="sm"
           className="ms-auto h-auto min-h-11 max-w-full whitespace-normal md:min-h-8"
           onClick={() => void go()}
         >

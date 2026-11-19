@@ -101,7 +101,11 @@ const paperIdentitySchema = paperViewSchema.pick({
 export const paperDocumentInfoSchema = z.discriminatedUnion("format", [
   paperIdentitySchema.extend({ format: z.enum(["word", "prose"]) }).strict(),
   paperIdentitySchema
-    .extend({ format: z.literal("rich"), provenance: nativeProvenanceSchema })
+    .extend({
+      format: z.literal("rich"),
+      provenance: nativeProvenanceSchema,
+      updatedAt: z.string().datetime(),
+    })
     .strict(),
 ])
 

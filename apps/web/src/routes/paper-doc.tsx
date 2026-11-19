@@ -147,6 +147,7 @@ export function PaperDocPage() {
         key={`${ownerId}:${sessionId}:${docId}`}
         name={document.data.name}
         kind={document.data.kind}
+        editedAt={document.data.updatedAt}
         identity={{
           kind: "native",
           ownerId,
@@ -271,6 +272,7 @@ function LegacyPaperDocPage() {
           docId={validId}
           title={listed?.name ?? packagePage.name}
           kind={listed?.kind ?? packagePage.label}
+          editedAt={listed?.updatedAt ?? null}
           onBack={back}
           seed={seeded}
           seedRevision={packagePage.revision}

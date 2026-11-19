@@ -24,6 +24,7 @@ import {
   BreadcrumbSeparator,
 } from "@workspace/ui/components/breadcrumb"
 import { PaperDocumentOutline } from "./document-outline.tsx"
+import { useDocumentEdited } from "./document-edited.ts"
 import "./document-chrome.css"
 
 export function PaperDocumentHeader({
@@ -31,6 +32,7 @@ export function PaperDocumentHeader({
   kind = "cv",
   onBack,
   status,
+  editedAt,
   menu,
   actions,
   statusRef,
@@ -39,10 +41,12 @@ export function PaperDocumentHeader({
   kind?: "cv" | "letter"
   onBack?: () => void
   status: string
+  editedAt: string | null
   menu?: ReactNode
   actions?: ReactNode
   statusRef?: Ref<HTMLParagraphElement>
 }) {
+  const edited = useDocumentEdited(status, editedAt)
   const back = (event: MouseEvent<HTMLAnchorElement>) => {
     if (onBack) {
       event.preventDefault()
@@ -87,9 +91,9 @@ export function PaperDocumentHeader({
           role="status"
           title={status}
         >
-          {status === "Saved" ? (
+          {status === "Saved" && edited ? (
             <>
-              <span>Edited just now</span>
+              <span>{edited}</span>
               <span className="sr-only"> Saved</span>
             </>
           ) : (
@@ -103,6 +107,19 @@ export function PaperDocumentHeader({
 }
 
 const TitleLayout = createContext<CSSProperties>({})
+
+export function PaperDocumentColumn({ children }: { children: ReactNode }) {
+  const { width, paddingInlineStart, paddingInlineEnd } =
+    useContext(TitleLayout)
+  return (
+    <div
+      className="paper-document-column"
+      style={{ width, paddingInlineStart, paddingInlineEnd }}
+    >
+      {children}
+    </div>
+  )
+}
 
 export function PaperDocumentTitle({
   name,

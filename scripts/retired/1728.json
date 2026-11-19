@@ -1,0 +1,44 @@
+[
+  {
+    "subject": "apps/web/src/features/paper-page/document-chrome.test.tsx > keeps Paper navigation and all unsaved status words while showing the saved date",
+    "because": "The header said Edited just now whatever the real time; it now shows the document's real edited time",
+    "replacedBy": "apps/web/src/features/paper-page/document-chrome.test.tsx",
+    "proof": {
+      "fork": "ae154ed5f2a3a36fb209c094ef0fbaffcf4504f4",
+      "replacedByBlob": "b2d0cb2146473954b0c35e284e2f5921b5051531",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-hand-empty.test.tsx > empty hand copy > names the search that missed and offers the way out",
+    "because": "A search miss now says No documents match and offers Clear search, the action it takes",
+    "replacedBy": "apps/web/src/features/paper/paper-hand-empty.test.tsx",
+    "proof": {
+      "fork": "ae154ed5f2a3a36fb209c094ef0fbaffcf4504f4",
+      "replacedByBlob": "b7cd05b60cc3b8e5f158ced8c447dae60bc6ecd9",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "because": "A search miss now shows one quiet line with Clear search and no creation cards",
+    "replacedBy": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "proof": {
+      "fork": "ae154ed5f2a3a36fb209c094ef0fbaffcf4504f4",
+      "replacedByBlob": "4ffb9c76d93162c9793b804336957c57f4fcc529",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 4
+  }
+]

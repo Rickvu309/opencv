@@ -1,6 +1,13 @@
 import { CircleAlert, File, Search } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@workspace/ui/components/empty"
 
 import type { LibraryView } from "./paper-library-entries.ts"
 import { PaperLetterArt } from "./paper-letter-art.tsx"
@@ -61,10 +68,10 @@ export function emptyHandCopy({
   if (trimmed !== "")
     return {
       art: "search",
-      title: `Nothing matches “${trimmed}”`,
+      title: `No documents match “${trimmed}”`,
       why: "Check the spelling, or try fewer letters.",
       action: {
-        label: "Show all documents",
+        label: "Clear search",
         primary: false,
         onSelect: onClearSearch,
       },
@@ -94,15 +101,37 @@ export function emptyHandCopy({
 function EmptyArt({ art }: { art: EmptyCopy["art"] }) {
   if (art === "cv") return <TemplatePage templateId="modern" className="" />
   if (art === "letter") return <PaperLetterArt />
-  const Icon = art === "search" ? Search : File
   return (
     <span className="paper-picture paper-hand-slot-blank">
-      <Icon strokeWidth={1.4} />
+      <File strokeWidth={1.4} />
     </span>
   )
 }
 
 export function PaperHandEmpty({ copy }: { copy: EmptyCopy }) {
+  if (copy.art === "search")
+    return (
+      <Empty className="paper-hand-search-miss" aria-live="polite">
+        <EmptyHeader>
+          <EmptyMedia>
+            <Search className="size-5 text-muted-foreground" aria-hidden />
+          </EmptyMedia>
+          <EmptyTitle>{copy.title}</EmptyTitle>
+          <EmptyDescription>{copy.why}</EmptyDescription>
+        </EmptyHeader>
+        {copy.action ? (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            className="h-11 md:h-8"
+            onClick={copy.action.onSelect}
+          >
+            {copy.action.label}
+          </Button>
+        ) : null}
+      </Empty>
+    )
   return (
     <>
       <div className="paper-hand-slot-box" aria-hidden="true">

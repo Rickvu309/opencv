@@ -1,0 +1,14 @@
+{
+  "id": "fixed-relative-time",
+  "file": "scripts/fixed-relative-time.test.mjs",
+  "detector": {
+    "module": "scripts/lib/fixed-relative-time.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "a8b7e0cae",
+    "path": "apps/web/src/features/paper-page/document-chrome.tsx"
+  },
+  "reason": "PR 1668 wrote Edited just now as fixed text in the Paper document header, so every document said it was edited just now whatever its real edited time."
+}

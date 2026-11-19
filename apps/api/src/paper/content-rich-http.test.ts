@@ -176,6 +176,7 @@ it("saves and reopens rich CVs and Letters over authenticated HTTP without legac
             kind,
             format: "rich",
             provenance: nativeProvenance(document),
+            updatedAt: expect.any(String),
           }
         )
         expect(
