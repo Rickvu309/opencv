@@ -359,7 +359,6 @@ export function PaperCvEditor({
       aria-label={`Editing ${initial.name}`}
       data-paper-editor=""
       data-surface="paper"
-      data-pen-surface="paper"
       data-slot="cv-editor-page"
       className="flex h-full min-h-0 min-w-0 flex-1 flex-col [--border:color-mix(in_oklch,var(--foreground)_8%,transparent)] [--input:color-mix(in_oklch,var(--foreground)_8%,transparent)]"
       onKeyDownCapture={noteTyping}

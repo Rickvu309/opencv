@@ -456,7 +456,6 @@ function WritingSheet({
       aria-label="Writing"
       className="writing-sheet"
       data-surface="paper-page"
-      data-pen-surface="paper-page"
     >
       {renderHeader?.(
         conflicted ? WRITING_CONFLICT_NOTE : state.note,

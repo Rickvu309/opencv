@@ -36,7 +36,6 @@ export function PaperLetterDraftingPage({
   return (
     <section
       data-surface="paper"
-      data-pen-surface="paper"
       data-slot="letter-drafting-page"
       aria-label="Drafting cover letter"
       className="relative flex min-h-0 flex-1 flex-col"

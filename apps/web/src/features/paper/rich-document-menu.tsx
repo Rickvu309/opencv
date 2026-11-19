@@ -69,11 +69,7 @@ export function RichDocumentMenu({
               </Button>
             }
           />
-          <DropdownMenuContent
-            align="end"
-            data-surface="paper"
-            data-pen-surface="paper"
-          >
+          <DropdownMenuContent align="end" data-surface="paper">
             {onFind ? (
               <>
                 <DropdownMenuItem onClick={() => onFind("find")}>

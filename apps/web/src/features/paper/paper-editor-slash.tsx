@@ -74,7 +74,7 @@ function SlashList({
       }
       const outer = slash?.closest<HTMLElement>(".bn-block-outer")
       const surface = document.querySelector<HTMLElement>(
-        "[data-pen-surface='paper']"
+        "[data-surface='paper']"
       )
       if (!slash || !outer || !surface) return
       outer.dataset.cvSlashBlock = ""
@@ -118,7 +118,6 @@ function SlashList({
       role="listbox"
       aria-label={cv ? "Insert" : "Blocks"}
       data-surface={cv ? "paper" : undefined}
-      data-pen-surface={cv ? "paper" : undefined}
       data-slot="paper-slash-menu"
       className={cn(
         "flex flex-col gap-0.5 rounded-lg border bg-popover p-1 text-popover-foreground shadow-md",
