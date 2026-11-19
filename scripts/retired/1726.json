@@ -40,5 +40,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/app-shell/shell-surfaces.test.tsx",
+    "because": "Proofs is a sidebar row now and is highlighted on its own page",
+    "replacedBy": "apps/web/src/features/app-shell/shell-surfaces.test.tsx",
+    "proof": {
+      "fork": "429a6e0484ff2a912bb08656a5ade04fb43775f8",
+      "replacedByBlob": "26abd38308e4f6cce61fa44ab6cd5f75399db16d",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
