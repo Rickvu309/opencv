@@ -13,7 +13,7 @@ import { OpenCvMark } from "@/components/app-logo.tsx"
 
 import type { CoachProgressStatus } from "./coach-progress.ts"
 import { humanToolText } from "./coach-tool-labels.ts"
-import "./design/working.pen.css"
+import "./design/working.css"
 
 export type CoachWorkStep = {
   id: string
@@ -138,7 +138,7 @@ export function CoachWorkFold({
   return (
     <Collapsible
       data-slot={live ? "coach-working" : "coach-worked-for"}
-      data-pen-surface="coach"
+      data-surface="coach"
       open={open}
       onOpenChange={choose}
       className={cn(live && "motion-rise delay-(--duration-micro)")}
