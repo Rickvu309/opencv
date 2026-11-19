@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-hand-empty.test.tsx > empty hand copy > names the search that missed and offers the way out",
+    "because": "A search miss now says No documents match and offers Clear search, the action it takes",
+    "replacedBy": "apps/web/src/features/paper/paper-hand-empty.test.tsx",
+    "proof": {
+      "fork": "ae154ed5f2a3a36fb209c094ef0fbaffcf4504f4",
+      "replacedByBlob": "b7cd05b60cc3b8e5f158ced8c447dae60bc6ecd9",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
