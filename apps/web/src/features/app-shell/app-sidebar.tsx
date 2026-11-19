@@ -1,4 +1,4 @@
-import "./design/app-sidebar.pen.css"
+import "./design/app-sidebar.css"
 import "./shell-navigation.css"
 
 import type { ReactNode } from "react"
@@ -128,7 +128,7 @@ export function AppSidebar({
 
   return (
     <div
-      data-pen-surface="app-shell"
+      data-surface="app-shell"
       data-slot="shell-nav"
       className="flex h-full min-h-0 w-full min-w-0 flex-col bg-sidebar text-sidebar-foreground md:gap-px md:px-2.5 md:pt-2.5 md:pb-3"
     >

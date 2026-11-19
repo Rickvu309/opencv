@@ -40,7 +40,7 @@ import { toast } from "@workspace/ui/components/sonner"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { FAINT_TEXT } from "./apply-tone.ts"
-import "./design/page-header.pen.css"
+import "./design/page-header.css"
 
 async function copyLink() {
   const copied = await copyText(window.location.href).catch(() => false)

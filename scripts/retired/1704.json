@@ -1,0 +1,42 @@
+[
+  {
+    "subject": "apps/web/src/features/app-shell/shell-chrome.test.ts",
+    "because": "The owner retired the old design tool on 2026-11-19 and asked to remove its name from all code and docs; this check now names the renamed files and attributes, and checks the same thing.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coming-soon/coming-soon.test.tsx",
+    "because": "The owner retired the old design tool on 2026-11-19 and asked to remove its name from all code and docs; this check now names the renamed files and attributes, and checks the same thing.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coming-soon/pitch-page.test.tsx",
+    "because": "The owner retired the old design tool on 2026-11-19 and asked to remove its name from all code and docs; this check now names the renamed files and attributes, and checks the same thing.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coming-soon/proof-page.test.tsx",
+    "because": "The owner retired the old design tool on 2026-11-19 and asked to remove its name from all code and docs; this check now names the renamed files and attributes, and checks the same thing.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/inbox/inbox-page.test.tsx",
+    "because": "The owner retired the old design tool on 2026-11-19 and asked to remove its name from all code and docs; this check now names the renamed files and attributes, and checks the same thing.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

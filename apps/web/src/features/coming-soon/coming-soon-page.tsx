@@ -10,7 +10,7 @@ import { Button } from "@workspace/ui/components/button"
 import { PageHeaderTitle } from "@workspace/ui/components/page-header"
 import { WorkspaceHeader } from "@/components/workspace-header.tsx"
 
-import "@/features/coming-soon/design/page-header.pen.css"
+import "@/features/coming-soon/design/page-header.css"
 import { soonCopy } from "@/features/coming-soon/copy.ts"
 import { requestNotify } from "@/features/coming-soon/notify.ts"
 import {
@@ -59,7 +59,7 @@ export function ComingSoonPage({
 
   return (
     <div className="flex h-full min-h-0 min-w-0 flex-col overflow-x-hidden bg-background">
-      <WorkspaceHeader data-pen-surface="coming-soon">
+      <WorkspaceHeader data-surface="coming-soon">
         <PageHeaderTitle>{pageTitle}</PageHeaderTitle>
       </WorkspaceHeader>
       <div className="flex min-h-0 flex-1 flex-col items-center gap-10 overflow-y-auto pt-18">

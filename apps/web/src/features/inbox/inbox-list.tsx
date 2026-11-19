@@ -36,7 +36,7 @@ export function InboxListPane({
 }) {
   return (
     <div
-      data-pen-section="List pane"
+      data-layout-section="List pane"
       className={
         narrow
           ? "flex min-h-0 min-w-0 flex-1 flex-col"
@@ -169,7 +169,7 @@ export function InboxOverview({ threads }: { threads: InboxThread[] }) {
   return (
     <section
       aria-label="Overview"
-      data-pen-section="Detail pane"
+      data-layout-section="Detail pane"
       className="flex min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-5.5 pb-10"
     >
       <div className="flex flex-col items-center gap-3">

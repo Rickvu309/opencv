@@ -51,7 +51,7 @@ const BENEFITS = [
 
 export function InboxTitleBar() {
   return (
-    <WorkspaceHeader data-pen-section="Header">
+    <WorkspaceHeader data-layout-section="Header">
       <PageHeaderTitle>Inbox</PageHeaderTitle>
     </WorkspaceHeader>
   )
@@ -70,7 +70,7 @@ export function InboxConnect({
 }) {
   const closed = url == null
   return (
-    <div data-pen-section="Split" className="flex min-h-0 flex-1 gap-4 p-4">
+    <div data-layout-section="Split" className="flex min-h-0 flex-1 gap-4 p-4">
       <section className="flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto ps-16 pe-14 max-md:p-4">
         <div className="my-auto flex min-w-0 flex-col gap-8 max-md:gap-4">
           <div className="flex max-w-full flex-wrap items-center">

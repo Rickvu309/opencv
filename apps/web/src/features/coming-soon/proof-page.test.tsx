@@ -41,7 +41,7 @@ describe("Proofs coming soon", () => {
 
     const title = await screen.findByRole("heading", { level: 1 })
     const header = title.closest('[data-slot="page-header"]')!
-    expect(header).toHaveAttribute("data-pen-surface", "coming-soon")
+    expect(header).toHaveAttribute("data-surface", "coming-soon")
     expect(header.nextElementSibling).toHaveClass("overflow-y-auto")
     expect(header.closest(".overflow-y-auto")).toBeNull()
   })
