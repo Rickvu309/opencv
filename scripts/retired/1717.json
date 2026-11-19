@@ -108,5 +108,19 @@
     "class": "self",
     "classBecause": null,
     "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/import-parse.test.ts",
+    "because": "New Paper documents are named without a file extension (#1717), so a text import's receipt names the document as the person sees it, without .docx.",
+    "replacedBy": "apps/api/src/paper/import-parse.test.ts",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "e0c071d4bcfdae035a48b28cb5b44b0e3b556f99",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
