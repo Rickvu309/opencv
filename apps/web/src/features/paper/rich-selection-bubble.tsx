@@ -218,8 +218,9 @@ export function RichSelectionBubble({
         </RichStructureControls>
         <span className="mx-1 h-5 w-px shrink-0 bg-border" />
         <Button
+          size="touch"
           variant="ghost"
-          className="h-11 shrink-0 gap-1.5 px-2 text-xs md:h-8"
+          className="shrink-0 gap-1.5 px-2 text-xs"
           onClick={ask}
         >
           <Sparkles className="size-3.5" />

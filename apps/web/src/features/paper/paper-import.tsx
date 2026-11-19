@@ -48,9 +48,10 @@ export function PaperImportRow({
       }}
     >
       <Button
+        size="touch"
         type="button"
         variant="primary"
-        className="h-11 w-full md:h-8"
+        className="w-full"
         onClick={onChooseFile}
       >
         Choose file
@@ -78,9 +79,10 @@ export function PaperImportRow({
           onChange={(event) => onLinkChange(event.target.value)}
         />
         <Button
+          size="touch"
           type="submit"
           variant="outline"
-          className="h-11 shrink-0 md:h-8"
+          className="shrink-0"
           disabled={link.trim().length === 0}
         >
           Import
@@ -145,7 +147,7 @@ export function ImportProgressDialog({
           </div>
           <div className="flex justify-end">
             <Button
-              className="h-11 md:h-8"
+              size="touch"
               type="button"
               variant="ghost"
               onClick={onCancel}
@@ -194,7 +196,7 @@ export function CantReadDialog({
           <div className="flex flex-wrap justify-end gap-2">
             {onRetry ? (
               <Button
-                className="h-11 md:h-8"
+                size="touch"
                 type="button"
                 variant="ghost"
                 onClick={onChoose}
@@ -203,7 +205,7 @@ export function CantReadDialog({
               </Button>
             ) : (
               <Button
-                className="h-11 md:h-8"
+                size="touch"
                 type="button"
                 variant="ghost"
                 onClick={onBlank}
@@ -213,7 +215,7 @@ export function CantReadDialog({
               </Button>
             )}
             <Button
-              className="h-11 md:h-8"
+              size="touch"
               type="button"
               variant="primary"
               onClick={onRetry ?? onChoose}

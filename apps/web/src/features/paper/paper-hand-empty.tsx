@@ -122,9 +122,8 @@ export function PaperHandEmpty({ copy }: { copy: EmptyCopy }) {
         {copy.action ? (
           <Button
             type="button"
-            size="sm"
+            size="touch"
             variant="ghost"
-            className="h-11 md:h-8"
             onClick={copy.action.onSelect}
           >
             {copy.action.label}
