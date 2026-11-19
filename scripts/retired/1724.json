@@ -6,5 +6,19 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/inbox/inbox-list.test.tsx",
+    "because": "Inbox review fixes (#1724): unread rows are announced, the open email shows its subject once, and Open in Gmail is a real link only when the mail carries one; the old cases pinned the previous markup and copy.",
+    "replacedBy": "apps/web/src/features/inbox/inbox-list.test.tsx",
+    "proof": {
+      "fork": "429a6e0484ff2a912bb08656a5ade04fb43775f8",
+      "replacedByBlob": "cfc01a763fe7ebf616b1fe45e17be02e21bb2e03",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
