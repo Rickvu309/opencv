@@ -46,5 +46,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/page-writing.formal.test.ts",
+    "because": "Paper names no longer carry .docx (#1717): minted, started, imported and renamed names are plain, so expectations pinned to X.docx move to X; the removed Open-name assert only passed because the display helper stripped .docx. Pinned by package-start.test.ts and scripts/paper-mint-names.test.mjs",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
   }
 ]
