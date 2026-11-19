@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/coach/coach-home.test.tsx",
+    "because": "The home tests checked class strings (max-w, h-11, rounded-full, flex-col) that the lighter one-design empty state removes (issue 1722); the replacement checks what a person sees: no decorative mark behind the composer and the same heading and starters in page and panel",
+    "replacedBy": "apps/web/src/features/coach/coach-home.test.tsx",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "7d04b8afefaac5f2dc578878c91f0efaa9c601b7",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 21
+  }
+]
