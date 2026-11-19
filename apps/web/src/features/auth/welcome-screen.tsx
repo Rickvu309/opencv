@@ -8,7 +8,7 @@ import { useRunCommand } from "@/lib/contract-client.ts"
 import { ignoreRejection } from "@/lib/quiet-rejection.ts"
 
 import { AUTH_COPY, LANGUAGE_STORAGE_KEY, readLanguage } from "./auth-copy.ts"
-import "./design/welcome.pen.css"
+import "./design/welcome.css"
 
 const HOLD_MS = 400
 
@@ -61,7 +61,7 @@ export function WelcomeScreen({ onDone }: { onDone: () => void }) {
 
   return (
     <main
-      data-pen-surface="auth"
+      data-surface="auth"
       data-slot="welcome"
       className="flex min-h-dvh flex-col items-center justify-center px-4 pb-10"
     >

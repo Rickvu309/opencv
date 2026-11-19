@@ -16,28 +16,28 @@ export function AuthFrame({
 }) {
   return (
     <main
-      data-pen-frame
+      data-auth-frame
       className="grid min-h-dvh bg-background text-foreground lg:grid-cols-2"
     >
       <div
-        data-pen-section="Left"
+        data-layout-section="Left"
         className="grid min-h-dvh grid-cols-[minmax(0,1fr)_auto] grid-rows-[auto_1fr_auto] items-center px-8 py-7"
       >
         <div
-          data-pen-region="brand"
+          data-region="brand"
           className="col-start-1 row-start-1 inline-flex items-center gap-2 justify-self-start text-[15px] font-semibold tracking-[-0.5px]"
         >
           <Mark size={15} />
           <span>opencv</span>
         </div>
         <div
-          data-pen-region="form"
+          data-region="form"
           className="col-span-2 row-start-2 w-full max-w-[340px] justify-self-center"
         >
           {children}
         </div>
         <p
-          data-pen-region="terms"
+          data-region="terms"
           className="col-span-2 row-start-3 text-center text-xs text-muted-foreground"
         >
           {AUTH_COPY.terms}

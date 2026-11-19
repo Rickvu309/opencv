@@ -196,14 +196,14 @@ export function AuthShaderPanel() {
 
   return (
     <div
-      data-pen-section="Right"
+      data-layout-section="Right"
       className="grid min-h-dvh overflow-clip bg-foreground max-lg:hidden"
     >
       <canvas
         ref={canvasRef}
         aria-hidden
-        data-pen-fill={fill.url ? `shader:${fill.url}` : undefined}
-        data-pen-uniforms={JSON.stringify(fill.uniforms)}
+        data-shader-fill={fill.url ? `shader:${fill.url}` : undefined}
+        data-shader-uniforms={JSON.stringify(fill.uniforms)}
         className="col-start-1 row-start-1 h-full w-full"
       />
       <p className="mbs-[72px] col-start-1 row-start-1 ms-[72px] w-[min(520px,calc(100%-144px))] self-start justify-self-start text-[34px] leading-[1.15] font-semibold tracking-[-1.2px] text-white">

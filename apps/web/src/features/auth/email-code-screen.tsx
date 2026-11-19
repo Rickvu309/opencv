@@ -4,7 +4,7 @@ import { Button } from "@workspace/ui/components/button"
 
 import { AUTH_COPY, resendLabel } from "./auth-copy.ts"
 import { CodeInput } from "./code-input.tsx"
-import "./design/email-code.pen.css"
+import "./design/email-code.css"
 
 export function EmailCodeScreen({
   email,
@@ -41,7 +41,7 @@ export function EmailCodeScreen({
 }) {
   return (
     <section
-      data-pen-surface="auth"
+      data-surface="auth"
       data-slot="email-code-screen"
       className="flex min-h-[360px] w-full flex-col items-center gap-6"
     >
