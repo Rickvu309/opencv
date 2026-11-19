@@ -26,5 +26,19 @@
     "class": "self",
     "classBecause": null,
     "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/landing/landing-page.test.tsx",
+    "because": "Landing copy is sentence case and CSS sets the capitals; the Features lists are removed",
+    "replacedBy": "apps/web/src/features/landing/landing-page.test.tsx",
+    "proof": {
+      "fork": "429a6e0484ff2a912bb08656a5ade04fb43775f8",
+      "replacedByBlob": "d5d13bb0c6c3e5f94d331a025b68a14f89e3808e",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
