@@ -35,7 +35,7 @@ export const paperDocStatusSchema = z.enum(["draft", "ready", "published"])
 
 export const paperDocIdSchema = paperIdSchema
 
-export const PAPER_DOC_NAME_FILE_EXTENSION = /\.(docx?|pdf|rtf|txt|odt)$/i
+const PAPER_DOC_NAME_FILE_EXTENSION = /\.(docx?|pdf|rtf|txt|odt)$/i
 
 export const paperDocNameSchema = z
   .string()
