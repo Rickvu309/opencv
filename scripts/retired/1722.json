@@ -54,5 +54,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-workspace.test.tsx",
+    "because": "An empty Coach home header now shows only a Chats history trigger instead of a New chat title (issue 1722); the replacement checks Chats and that no New chat text shows",
+    "replacedBy": "apps/web/src/features/coach/coach-workspace.test.tsx",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "611a0503f18dc36e33507457eda30af0989d0989",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 3
   }
 ]
