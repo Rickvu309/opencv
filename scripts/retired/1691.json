@@ -54,5 +54,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "scripts/ui/screens.test.mjs",
+    "because": "The ui tool gained a paperDocs step that creates named Paper documents through the app's commands, so the refusal message for an unknown step now lists it; the same two cases assert the longer list.",
+    "replacedBy": "scripts/ui/screens.test.mjs",
+    "proof": {
+      "fork": "91af9d9283b96628d2e4dd6afa4694dc5bb655fe",
+      "replacedByBlob": "3801167cb7e677e1414e4f1f7c0aaf46c854377e",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
   }
 ]
