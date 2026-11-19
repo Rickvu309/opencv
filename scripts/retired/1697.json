@@ -1,0 +1,722 @@
+[
+  {
+    "subject": "apps/web/src/features/app-shell/app-shell-dock-parity.test.tsx",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "apps/web/src/features/app-shell/app-sidebar-parity.test.tsx",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 18
+  },
+  {
+    "subject": "apps/web/src/features/app-shell/design/app-sidebar.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/app-shell/sidebar-width.test.ts",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/apply-design-parity.board.test.tsx",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "apps/web/src/features/apply/apply-design-parity.job.test.tsx",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 9
+  },
+  {
+    "subject": "apps/web/src/features/apply/design/w10-1-filled-in.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/design/w10-2-company-missing.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/design/w10-3-already-on-board.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/design/w10-4-job-detail.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/design/w10-5-link-from-paper.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/design/w10-6-closed-job.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/design/w10-7-delete-job.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/design/w9-1-board-empty.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/design/w9-2-new-job.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/design/w9-3-board.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/design/w9-4-list.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/design/w9-5-filters-no-results.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/design/w9-6-drag-to-stage.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/design/w9-7-calendar-month.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/design/w9-8-calendar-week.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/auth/auth-design-parity.test.tsx",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "apps/web/src/features/auth/auth-welcome-parity.test.tsx",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/auth/design/auth.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/auth/design/email-code-error.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/auth/design/email-code-verifying.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/auth/design/email-code.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/auth/design/session-expired.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/auth/design/w1-5-welcome.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/auth/email-code-parity.test.tsx",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/auth/session-expired-parity.test.tsx",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "apps/web/src/features/coach/cap-notice-mesh.test.ts",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-add-menu.test.tsx",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/coach/design/coach-panel.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/design/ideas.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/design/new-chat.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/design/working.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coming-soon/coming-soon-design-parity.test.tsx",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/inbox/design/w2-1-connect.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/inbox/design/w2-2-scanning.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/inbox/design/w2-3-inbox.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/inbox/design/w2-4-reply.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/inbox/inbox-design-parity.test.tsx",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "apps/web/src/features/landing/design/landing.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/landing/landing-design-parity.test.tsx",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/landing/landing-stories.test.tsx",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/landing/pricing-parity.test.tsx",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 15
+  },
+  {
+    "subject": "apps/web/src/features/paper/design/letter-editor.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/design/letter-sheet.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/design/letter-start.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/design/letter-unreadable.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-drafting-parity.test.tsx",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 23
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-editor-parity.test.tsx",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-start-parity.test.tsx",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/settings/settings.test.tsx",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/lib/product-paths.test.ts",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/test/design-vocabulary.test.ts",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "packages/ui/src/design/search.snapshot.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ocv-tools/jobs/body.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "scripts/ocv-tools/jobs/git-reads.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ocv-tools/rules.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ocv-tools/rules/before-after.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 16
+  },
+  {
+    "subject": "scripts/ocv-tools/rules/pr-body-fixtures/ui-with-before-after.txt",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ocv-tools/rules/pr-body-fixtures/ui-without-before-after.txt",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ui/annotate-marks.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "scripts/ui/annotate-place.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 15
+  },
+  {
+    "subject": "scripts/ui/annotate.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 12
+  },
+  {
+    "subject": "scripts/ui/before-after.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "scripts/ui/changes.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 13
+  },
+  {
+    "subject": "scripts/ui/check-all.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 12
+  },
+  {
+    "subject": "scripts/ui/check-annotate.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "scripts/ui/cli.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "scripts/ui/compare.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "scripts/ui/fixtures/annotate/annotate.expected.png",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ui/fixtures/annotate/annotate.marks.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ui/fixtures/annotate/annotate.spec.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ui/fixtures/annotate/dark-phone.png",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ui/fixtures/annotate/light-after.png",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ui/fixtures/annotate/light-before.png",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ui/fixtures/composed.pen.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ui/fixtures/small.pen.json",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ui/known-drift.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  },
+  {
+    "subject": "scripts/ui/owner-decision.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 9
+  },
+  {
+    "subject": "scripts/ui/pen.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 11
+  },
+  {
+    "subject": "scripts/ui/pr-section.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "scripts/ui/screens.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "scripts/ui/shot-only.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "scripts/ui/sweep/hig.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "scripts/ui/zoom.test.mjs",
+    "because": "The owner asked on 2026-11-19 to remove the pen frames and every check that compares screens against them; the frames were exported once and never updated, so approved designs failed them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/web/src/features/landing/design/stories.snapshot.json",
+    "because": "The stories page content moved out of the pen frame snapshot into landing-stories-content.json when the owner had the pen frames removed on 2026-11-19; the page and its test read the same content from there.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
