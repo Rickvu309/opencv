@@ -79,6 +79,9 @@ export function PaperHandRuler({
       onPointerUp={() => {
         scrubbing.current = false
       }}
+      onPointerCancel={() => {
+        scrubbing.current = false
+      }}
       onLostPointerCapture={() => {
         scrubbing.current = false
       }}
