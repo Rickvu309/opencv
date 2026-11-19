@@ -54,6 +54,8 @@
   --default-transition-duration: var(--duration-micro);
   --default-transition-timing-function: var(--ease-micro);
   --motion-enter-scale: 0.97;
+  --motion-enter-rise: 4px;
+  --motion-send-rise: 12px;
   --motion-press-scale: 0.97;
   --motion-press-scale-soft: 0.98;
   --animate-in: enter
@@ -296,6 +298,55 @@
     @starting-style {
       translate: 0 0;
     }
+  }
+}
+
+@utility motion-rise {
+  transition-property: opacity, translate;
+  transition-duration: var(--duration-micro);
+  transition-timing-function: var(--ease-micro);
+  @starting-style {
+    opacity: 0;
+    translate: 0 var(--motion-enter-rise);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    @starting-style {
+      translate: 0 0;
+    }
+  }
+}
+
+@utility motion-send {
+  transition-property: opacity, translate;
+  transition-duration: var(--duration-panel);
+  transition-timing-function: var(--ease-panel);
+  @starting-style {
+    opacity: 0;
+    translate: 0 var(--motion-send-rise);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    @starting-style {
+      translate: 0 0;
+    }
+  }
+}
+
+@utility motion-word {
+  transition-property: opacity;
+  transition-duration: var(--duration-panel);
+  transition-timing-function: var(--ease-micro);
+  @starting-style {
+    opacity: 0;
+  }
+}
+
+@utility motion-swap {
+  transition-property: opacity, filter;
+  transition-duration: var(--duration-micro);
+  transition-timing-function: var(--ease-micro);
+  @starting-style {
+    opacity: 0;
+    filter: blur(2px);
   }
 }
 

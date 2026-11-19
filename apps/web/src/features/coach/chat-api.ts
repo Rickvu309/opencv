@@ -137,12 +137,14 @@ export async function getChat(id: string): Promise<CoachChatRecord> {
   return {
     ...asChat(chat),
     activeTaskId: chat.activeTaskId,
-    messages: chat.messages.map((message, index) => ({
-      ...asMessage(message),
-      ...(attachments[index]?.length
-        ? { attachments: attachments[index] }
-        : {}),
-    })),
+    messages: chat.messages
+      .map((message, index) => ({
+        ...asMessage(message),
+        ...(attachments[index]?.length
+          ? { attachments: attachments[index] }
+          : {}),
+      }))
+      .filter((message) => message.id !== chat.activeTaskId),
   }
 }
 

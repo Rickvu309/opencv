@@ -36,4 +36,14 @@ describe("Response", () => {
       rendered.filter((source) => source.includes("still writing"))
     ).toHaveLength(1)
   })
+
+  it("keeps the growing paragraph on the page instead of rebuilding it", () => {
+    const view = render(createElement(Response, { text: "Lead with" }))
+    const growing = view.container.querySelector("[data-block]")
+
+    view.rerender(createElement(Response, { text: "Lead with the outcome" }))
+
+    expect(view.container.querySelector("[data-block]")).toBe(growing)
+    expect(growing?.textContent).toContain("the outcome")
+  })
 })

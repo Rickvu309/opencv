@@ -24,3 +24,11 @@ export function splitReadTraces(parts: readonly CoachPart[]): {
   }
   return { traces, answer }
 }
+
+export function traceSteps(traces: readonly CoachReadTrace[]) {
+  return traces.map((trace) => ({
+    id: trace.key,
+    label: trace.label,
+    status: "completed" as const,
+  }))
+}

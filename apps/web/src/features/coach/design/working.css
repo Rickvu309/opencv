@@ -1,11 +1,11 @@
-[data-surface="coach"][data-slot="coach-working"] {
+[data-surface="coach"][data-slot="coach-working"],
+[data-surface="coach"][data-slot="coach-worked-for"] {
   display: flex;
   flex-direction: column;
-  gap: 20px;
   min-inline-size: 0;
 }
 
-[data-surface="coach"] [data-slot="coach-working-heading"] {
+[data-surface="coach"] [data-slot="coach-work-head"] {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -15,18 +15,34 @@
   line-height: 1.2;
 }
 
-[data-surface="coach"] [data-slot="coach-progress"] {
+[data-surface="coach"] [data-slot="coach-work-head"] > svg {
+  color: #1a1a1a;
+}
+
+[data-surface="coach"] [data-slot="coach-work-label"] {
+  display: inline-grid;
+}
+
+[data-surface="coach"] [data-slot="coach-work-label"] > span {
+  grid-area: 1 / 1;
+}
+
+[data-surface="coach"] [data-slot="coach-progress"],
+[data-surface="coach"] [data-slot="coach-read-traces"] {
   display: flex;
   flex-direction: column;
   gap: 12px;
   margin: 0;
+  margin-block-start: 12px;
+  margin-inline-start: 6px;
   border-inline-start: 1px solid #ececee;
   padding-block: 4px;
-  padding-inline: 22px 0;
+  padding-inline: 16px 0;
   list-style: none;
 }
 
-[data-surface="coach"] [data-slot="coach-progress-row"] {
+[data-surface="coach"] [data-slot="coach-progress-row"],
+[data-surface="coach"] [data-slot="coach-read-trace"] {
   display: flex;
   align-items: flex-start;
   gap: 10px;
@@ -36,23 +52,21 @@
   line-height: 1.2;
 }
 
-[data-surface="coach"] [data-slot="coach-progress-row"] > svg {
+[data-surface="coach"] [data-slot="coach-progress-row"] > svg,
+[data-surface="coach"] [data-slot="coach-read-trace"] > svg {
   margin-block-start: 0.4px;
+  color: #a0a0a2;
 }
 
-[data-surface="coach"] [data-slot="coach-progress-row"] > span {
+[data-surface="coach"] [data-slot="coach-progress-row"] > span,
+[data-surface="coach"] [data-slot="coach-read-trace"] > span {
   min-inline-size: 0;
   overflow-wrap: anywhere;
 }
 
-[data-surface="coach"] [data-slot="coach-progress-row"][data-status="running"] {
-  font-weight: 500;
-}
-
 [data-surface="coach"]
-  [data-slot="coach-progress-row"][data-status="running"]
-  > svg {
-  color: #e8542a;
+  [data-slot="coach-progress-row"][data-status="running"] {
+  font-weight: 500;
 }
 
 [data-surface="coach"]

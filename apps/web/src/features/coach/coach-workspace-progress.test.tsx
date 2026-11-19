@@ -89,7 +89,7 @@ describe("Coach workspace shows streamed progress", () => {
     ).toHaveLength(1)
   })
 
-  it("keeps a running call visible when the Coach wrote text first, with no Working header or timer, then follows its result", async () => {
+  it("keeps a running call visible when the Coach wrote text first, with no Working timer, then folds it shut after its result", async () => {
     const { feed, rowStatuses, working } = await openTurn()
     await feed("text-delta", { text: "Let me check your jobs." })
     const s = step("List jobs")
@@ -107,7 +107,9 @@ describe("Coach workspace shows streamed progress", () => {
     await feed(done.event, done.data)
     await flush()
     expect(rowStatuses()).toEqual([])
-    expect(working()).toBeNull()
+    expect(
+      within(working() as HTMLElement).getByRole("button", { name: "Working" })
+    ).toHaveAttribute("aria-expanded", "false")
   })
 
   it("shows a pending action once, on its card with Approve and Deny, without a Working timer", async () => {

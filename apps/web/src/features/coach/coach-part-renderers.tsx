@@ -15,15 +15,21 @@ import {
 } from "./coach-parts.ts"
 import { toolCardProps } from "./coach-tool-card.ts"
 import { CoachToolExtras, CoachToolLine } from "./coach-tool-line.tsx"
+import { useSmoothText } from "./use-smooth-text.ts"
 
 export type PartContext = {
   canUndo: boolean
   onUndo?: (activityId: string) => Promise<void>
+  streamingTextKey?: string
 }
 
 type PartProps<K extends CoachPart["kind"]> = {
   part: Extract<CoachPart, { kind: K }>
   ctx: PartContext
+}
+
+function StreamingMarkdown({ text }: { text: string }) {
+  return <CoachMarkdown text={useSmoothText(text)} writing />
 }
 
 function undoFor(tool: CoachToolPart, ctx: PartContext) {
@@ -36,7 +42,12 @@ function undoFor(tool: CoachToolPart, ctx: PartContext) {
 export const partRenderers: {
   [K in CoachPart["kind"]]: (props: PartProps<K>) => ReactNode
 } = {
-  text: ({ part }) => <CoachMarkdown text={part.markdown} />,
+  text: ({ part, ctx }) =>
+    part.key === ctx.streamingTextKey ? (
+      <StreamingMarkdown text={part.markdown} />
+    ) : (
+      <CoachMarkdown text={part.markdown} />
+    ),
   tool: ({ part, ctx }) => (
     <CoachToolLine
       tool={part}

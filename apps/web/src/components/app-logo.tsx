@@ -3,9 +3,10 @@ import { cn } from "@workspace/ui/lib/utils"
 
 type MarkProps = {
   className?: string
+  quarterTurns?: number
 }
 
-export function OpenCvMark({ className }: MarkProps) {
+export function OpenCvMark({ className, quarterTurns }: MarkProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -22,7 +23,21 @@ export function OpenCvMark({ className }: MarkProps) {
         stroke="currentColor"
         strokeWidth="2.4"
       />
-      <path d="M2 8A14 14 0 0 1 16 22H2Z" fill="currentColor" />
+      <path
+        d="M2 8A14 14 0 0 1 16 22H2Z"
+        fill="currentColor"
+        data-slot="opencv-mark-quarter"
+        className={
+          quarterTurns === undefined
+            ? undefined
+            : "origin-center transition-transform duration-(--duration-panel) ease-(--ease-panel) [transform-box:view-box] motion-reduce:transition-none"
+        }
+        style={
+          quarterTurns === undefined
+            ? undefined
+            : { transform: `rotate(${quarterTurns * 90}deg)` }
+        }
+      />
     </svg>
   )
 }
