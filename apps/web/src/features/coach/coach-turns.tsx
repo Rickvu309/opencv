@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import { useEffect, useReducer, type ReactNode } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
@@ -11,17 +11,17 @@ import {
 } from "@/components/ai-elements/message.tsx"
 import {
   STREAMING_COACH_ID,
+  isLocalMessage,
   latestCoachMessageId,
   type ChatViewMessage,
 } from "@/features/coach/chat-messages.ts"
 
 import { CoachMessageActions } from "./coach-message-actions.tsx"
 import { CoachParts } from "./coach-part-renderers.tsx"
-import { toCoachParts } from "./coach-parts.ts"
+import { toCoachParts, type CoachPart } from "./coach-parts.ts"
 import type { CoachTurnProgress } from "./coach-progress.ts"
-import { splitReadTraces } from "./coach-read-trace.ts"
-import { CoachWorkedFor } from "./coach-worked-for.tsx"
-import { CoachWorking } from "./coach-working.tsx"
+import { CoachWorkFold } from "./coach-work-fold.tsx"
+import { splitReadTraces, traceSteps } from "./coach-read-trace.ts"
 
 export type CoachTurnsProps = {
   messages: readonly ChatViewMessage[]
@@ -52,6 +52,14 @@ function messagesWithPending(
   if (count > seenUserCount) return messages
   if (messages.some((message) => message.id === pending.id)) return messages
   return [...messages, { ...pending, text }]
+}
+
+function turnKey(message: ChatViewMessage, index: number) {
+  return `${index}:${message.role}`
+}
+
+function lastTextKey(parts: readonly CoachPart[]) {
+  return parts.findLast((part) => part.kind === "text")?.key
 }
 
 function replyActionsVisible(message: ChatViewMessage, streaming: boolean) {
@@ -98,6 +106,33 @@ function TurnAlert({
   )
 }
 
+function CoachReply({
+  live,
+  fold,
+  body = null,
+  cite = null,
+  footer,
+}: {
+  live: boolean
+  fold: ReactNode
+  body?: ReactNode
+  cite?: ReactNode
+  footer?: (wasLive: boolean) => ReactNode
+}) {
+  const [wasLive, latch] = useReducer(() => true, live)
+  useEffect(() => {
+    if (live) latch()
+  }, [live])
+  return (
+    <CoachMessage className="group/reply">
+      {fold}
+      {body}
+      {cite}
+      {footer?.(wasLive) ?? null}
+    </CoachMessage>
+  )
+}
+
 export function CoachTurns({
   messages,
   pendingUser = null,
@@ -131,95 +166,129 @@ export function CoachTurns({
   const progressRows = progress?.active ? progress.rows : []
   const awaitingApproval = progressRows.some((row) => row.status === "approval")
   const rows = progressRows.filter((row) => row.status !== "approval")
-  const showRows =
-    rows.length > 0 &&
-    (!coachWroteText || rows.some((row) => row.status === "running"))
-  const showHeader = working && !awaitingApproval
+  const announce = working && !awaitingApproval
+  const streamingShown = turns.some(
+    ({ message }) => message.id === STREAMING_COACH_ID
+  )
+  const liveFold =
+    announce ||
+    rows.length > 0 ||
+    (streamingShown && coachWroteText && !awaitingApproval)
+  const fold = (
+    <CoachWorkFold
+      steps={rows}
+      live
+      announce={announce}
+      writing={coachWroteText}
+    />
+  )
+
+  const items = turns.map(({ message, parts }, index) => {
+    const live = isLocalMessage(message.id) || message.id === pendingUser?.id
+    if (message.role === "user") {
+      return (
+        <ChatItem
+          key={turnKey(message, index)}
+          messageId={message.id}
+          className={live ? "motion-send" : undefined}
+          scrollAnchor
+        >
+          <PersonMessage failed={message.failed}>
+            {message.text}
+            {message.attachments?.length ? (
+              <div className="mt-2 flex max-w-full flex-wrap gap-1">
+                {message.attachments.map((attachment, at) => (
+                  <span
+                    key={`${attachment.kind}:${attachment.id}:${at}`}
+                    className="max-w-full rounded-md border border-current/20 px-2 py-1 text-xs [overflow-wrap:anywhere]"
+                  >
+                    {attachment.label}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+          </PersonMessage>
+          {message.failed && message.error ? (
+            <TurnAlert message={message.error} onRetry={onRetry} align="end" />
+          ) : null}
+        </ChatItem>
+      )
+    }
+    const streaming = message.id === STREAMING_COACH_ID
+    if (streaming && parts.length === 0 && !liveFold) return null
+    const { traces, answer } =
+      message.workedMs && !streaming
+        ? splitReadTraces(parts)
+        : { traces: [], answer: parts }
+    return (
+      <ChatItem key={turnKey(message, index)} messageId={message.id}>
+        <CoachReply
+          live={streaming}
+          footer={(wasLive) =>
+            replyActionsVisible(message, streaming) ? (
+              <MessageFooter
+                data-reveal={
+                  message.id === latestCoachId ? "always" : "on-hover"
+                }
+                className={cn(
+                  "px-0",
+                  message.id !== latestCoachId && REVEAL_ON_HOVER,
+                  wasLive && "motion-rise"
+                )}
+              >
+                <CoachMessageActions
+                  message={message}
+                  canRegenerate={
+                    !waiting &&
+                    Boolean(onRegenerate) &&
+                    message.id === latestCoachId
+                  }
+                  onRegenerate={onRegenerate}
+                />
+              </MessageFooter>
+            ) : null
+          }
+          fold={
+            streaming ? (
+              liveFold ? (
+                fold
+              ) : null
+            ) : message.workedMs ? (
+              <CoachWorkFold
+                steps={traceSteps(traces)}
+                live={false}
+                workedMs={message.workedMs}
+              />
+            ) : null
+          }
+          body={
+            <CoachParts
+              parts={answer}
+              ctx={{
+                canUndo: !waiting && !streaming && Boolean(onUndo),
+                onUndo,
+                streamingTextKey: streaming ? lastTextKey(answer) : undefined,
+              }}
+            />
+          }
+          cite={streaming ? null : messageCite?.(message)}
+        />
+      </ChatItem>
+    )
+  })
+  if (liveFold && !streamingShown)
+    items.push(
+      <ChatItem key={`${shown.length}:coach`} messageId="coach-working">
+        <CoachReply live fold={fold} />
+      </ChatItem>
+    )
 
   return (
     <>
-      {turns.map(({ message, parts }) => {
-        if (message.role === "user") {
-          return (
-            <ChatItem key={message.id} messageId={message.id} scrollAnchor>
-              <PersonMessage failed={message.failed}>
-                {message.text}
-                {message.attachments?.length ? (
-                  <div className="mt-2 flex max-w-full flex-wrap gap-1">
-                    {message.attachments.map((attachment, index) => (
-                      <span
-                        key={`${attachment.kind}:${attachment.id}:${index}`}
-                        className="max-w-full rounded-md border border-current/20 px-2 py-1 text-xs [overflow-wrap:anywhere]"
-                      >
-                        {attachment.label}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-              </PersonMessage>
-              {message.failed && message.error ? (
-                <TurnAlert
-                  message={message.error}
-                  onRetry={onRetry}
-                  align="end"
-                />
-              ) : null}
-            </ChatItem>
-          )
-        }
-        const streaming = message.id === STREAMING_COACH_ID
-        if (streaming && parts.length === 0) return null
-        const { traces, answer } =
-          message.workedMs && !streaming
-            ? splitReadTraces(parts)
-            : { traces: [], answer: parts }
-        return (
-          <ChatItem key={message.id} messageId={message.id}>
-            <CoachMessage className="group/reply">
-              {message.workedMs ? (
-                <CoachWorkedFor workedMs={message.workedMs} traces={traces} />
-              ) : null}
-              <CoachParts
-                parts={answer}
-                ctx={{
-                  canUndo: !waiting && !streaming && Boolean(onUndo),
-                  onUndo,
-                }}
-              />
-              {streaming ? null : messageCite?.(message)}
-              {replyActionsVisible(message, streaming) ? (
-                <MessageFooter
-                  data-reveal={
-                    message.id === latestCoachId ? "always" : "on-hover"
-                  }
-                  className={cn(
-                    "px-0",
-                    message.id !== latestCoachId && REVEAL_ON_HOVER
-                  )}
-                >
-                  <CoachMessageActions
-                    message={message}
-                    canRegenerate={
-                      !waiting &&
-                      Boolean(onRegenerate) &&
-                      message.id === latestCoachId
-                    }
-                    onRegenerate={onRegenerate}
-                  />
-                </MessageFooter>
-              ) : null}
-            </CoachMessage>
-          </ChatItem>
-        )
-      })}
+      {items}
       {error ? (
-        <ChatItem messageId="coach-error">
+        <ChatItem messageId="coach-error" className="motion-rise">
           <TurnAlert message={error} onRetry={onRetry} />
-        </ChatItem>
-      ) : null}
-      {showHeader || showRows ? (
-        <ChatItem messageId="coach-working">
-          <CoachWorking rows={showRows ? rows : []} showHeader={showHeader} />
         </ChatItem>
       ) : null}
     </>

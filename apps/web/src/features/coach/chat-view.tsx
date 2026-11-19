@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import { useRef, type ReactNode } from "react"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { Chat, ChatLog, chatColumn } from "@/components/ai-elements/chat.tsx"
@@ -7,7 +7,9 @@ import {
   type CoachTurnsProps,
 } from "@/features/coach/coach-turns.tsx"
 
+import { liveSendKey } from "./chat-messages.ts"
 import { chatStartedLabel, useMountTime } from "./chat-time.ts"
+import { useSendGlide } from "./use-send-glide.ts"
 
 export function ChatView({
   presentation = "page",
@@ -20,9 +22,12 @@ export function ChatView({
   startedAt?: string | null
 }) {
   const page = presentation !== "compact"
+  const content = useRef<HTMLDivElement>(null)
+  useSendGlide(content, liveSendKey(props.messages, props.pendingUser))
   return (
     <Chat>
       <ChatLog
+        ref={content}
         className={cn(
           chatColumn,
           "[&_[data-slot=message-content]]:text-[15px] [&_[data-slot=message-content]]:leading-[1.5] [&_[data-slot=response]]:max-w-[75ch]",

@@ -8,7 +8,13 @@ import {
 
 export { titleFrom }
 
-export const STREAMING_COACH_ID = "local-coach"
+export const LOCAL_MESSAGE_PREFIX = "local-"
+
+export const STREAMING_COACH_ID = `${LOCAL_MESSAGE_PREFIX}coach`
+
+export function isLocalMessage(id: string) {
+  return id.startsWith(LOCAL_MESSAGE_PREFIX)
+}
 
 export type MessageRole = "coach" | "user"
 
@@ -71,4 +77,16 @@ export function toChatViewMessages(
     ...(message.parts ? { parts: message.parts } : {}),
     ...(message.attachments ? { attachments: message.attachments } : {}),
   }))
+}
+
+export function liveSendKey(
+  messages: readonly ChatViewMessage[],
+  pendingUser: ChatViewMessage | null | undefined
+) {
+  const users = messages.filter((message) => message.role === "user")
+  const last = users.at(-1)
+  const pending = pendingUser?.text.trim() ?? ""
+  if (last && isLocalMessage(last.id)) return `send-${users.length}`
+  if (pending && last?.text !== pending) return `send-${users.length + 1}`
+  return null
 }

@@ -6,7 +6,7 @@ import { STREAMING_COACH_ID } from "@/features/coach/chat-messages.ts"
 import type { ChatViewMessage } from "@/features/coach/chat-messages.ts"
 import { CoachTurns } from "@/features/coach/coach-turns.tsx"
 import type { CoachTurnProgress } from "@/features/coach/coach-progress.ts"
-import { CoachWorking } from "@/features/coach/coach-working.tsx"
+import { CoachWorkFold } from "@/features/coach/coach-work-fold.tsx"
 
 afterEach(() => {
   cleanup()
@@ -48,12 +48,15 @@ function renderTurns(
 }
 
 describe("Coach Working block", () => {
-  it("shows a quiet shimmer without a running timer", () => {
-    const { container } = render(<CoachWorking />)
+  it("shows a calm breathing Working label without a running timer", () => {
+    const { container } = render(<CoachWorkFold steps={[]} live announce />)
     expect(screen.getByRole("status")).toHaveTextContent("Working")
-    expect(container.querySelector(".coach-shimmer")).toHaveTextContent(
-      "Working"
+    const label = container.querySelector(
+      "[data-slot='coach-work-label'] > span"
     )
+    expect(label).toHaveTextContent("Working")
+    expect(label?.className).toContain("motion-safe:animate-pulse")
+    expect(container.querySelector(".coach-shimmer")).toBeNull()
     expect(screen.queryByText(/Working, \ds/)).not.toBeInTheDocument()
   })
 
@@ -87,7 +90,7 @@ describe("Coach Working block", () => {
     ])
   })
 
-  it("drops the Working header once the Coach has written text and nothing is running", () => {
+  it("folds Working shut above the reply once the Coach has written text and nothing is running", () => {
     const settled = rows.filter((row) => row.status === "completed")
     const { container } = renderTurns(
       [
@@ -99,10 +102,18 @@ describe("Coach Working block", () => {
       ],
       { active: true, rows: settled }
     )
-    expect(container.querySelector("[data-slot='coach-working']")).toBeNull()
+    const fold = container.querySelector("[data-slot='coach-working']")
+    expect(fold).not.toBeNull()
+    expect(
+      within(fold as HTMLElement).getByRole("button", { name: "Working" })
+    ).toHaveAttribute("aria-expanded", "false")
+    expect(
+      container.querySelectorAll("[data-slot='coach-progress-row']")
+    ).toHaveLength(0)
+    expect(screen.queryByRole("status")).not.toBeInTheDocument()
   })
 
-  it("keeps rows, without the header, for calls still running after text", () => {
+  it("opens the fold for calls still running after text, without announcing Working", () => {
     const { container } = renderTurns(
       [
         {
@@ -117,7 +128,11 @@ describe("Coach Working block", () => {
       }
     )
     expect(screen.queryByText(/Working, \d+s/)).toBeNull()
-    expect(screen.queryByText("Working")).toBeNull()
+    expect(screen.queryByRole("status")).not.toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Working" })).toHaveAttribute(
+      "aria-expanded",
+      "true"
+    )
     expect(
       [...container.querySelectorAll("[data-slot='coach-progress-row']")].map(
         (row) => row.getAttribute("data-status")

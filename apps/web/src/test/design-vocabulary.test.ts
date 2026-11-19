@@ -216,11 +216,6 @@ const RAW_COLOR_ALLOWLIST: readonly AllowlistEntry[] = [
     reason:
       "CV print paper, the documented exception in docs/agents/design-parity.md: a print layout on white paper",
   },
-  {
-    file: "components/ai-elements/shimmer.css",
-    reason:
-      "Coach working shimmer stops use the heading ink. currentColor becomes transparent once the text is clipped to the gradient, and the working fixture already paints that ink on the heading.",
-  },
 ]
 
 const RAW_INTERACTIVE_ALLOWLIST: readonly AllowlistEntry[] = []

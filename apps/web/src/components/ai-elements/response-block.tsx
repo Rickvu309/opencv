@@ -1,4 +1,6 @@
-import type { ReactNode } from "react"
+import { use, type ReactNode } from "react"
+
+import { prefersReducedMotion } from "@workspace/ui/lib/motion"
 
 import {
   CodeBlock,
@@ -12,11 +14,27 @@ import {
   type CoachMarkdownBlock,
 } from "@/features/coach/coach-markdown.ts"
 
+import { ResponseWriting, writtenWords } from "./response-writing.ts"
+
+function InlineText({ text }: { text: string }) {
+  const writing = use(ResponseWriting)
+  if (!writing || prefersReducedMotion()) return <span>{text}</span>
+  return (
+    <span>
+      {writtenWords(text).map((word, index) => (
+        <span key={index} className="motion-word">
+          {word}
+        </span>
+      ))}
+    </span>
+  )
+}
+
 function renderInline(nodes: CoachInline[]): ReactNode {
   return nodes.map((node, index) => {
     switch (node.type) {
       case "text":
-        return <span key={index}>{node.text}</span>
+        return <InlineText key={index} text={node.text} />
       case "strong":
         return <strong key={index}>{renderInline(node.children)}</strong>
       case "em":

@@ -32,6 +32,7 @@ import {
   type CoachStreamHandlers,
 } from "@/features/coach/chat-api.ts"
 import {
+  LOCAL_MESSAGE_PREFIX,
   STREAMING_COACH_ID,
   latestCoachMessageId,
   toChatViewMessages,
@@ -469,7 +470,7 @@ export function useCoachTurn({
       const droppedId =
         retrying && sendError?.local ? sendError.userMessageId : null
       const userMessage: ChatViewMessage = {
-        id: `local-${crypto.randomUUID()}`,
+        id: `${LOCAL_MESSAGE_PREFIX}${crypto.randomUUID()}`,
         role: "user",
         text: trimmed,
         ...(attachments?.length ? { attachments } : {}),

@@ -48,6 +48,10 @@ const UTILITIES = [
   "motion-press-soft",
   "motion-collapse",
   "motion-appear",
+  "motion-rise",
+  "motion-send",
+  "motion-word",
+  "motion-swap",
 ] as const
 
 const MOVES = new Set([
@@ -58,6 +62,8 @@ const MOVES = new Set([
   "motion-press",
   "motion-press-soft",
   "motion-appear",
+  "motion-rise",
+  "motion-send",
 ])
 
 const LAYOUT =
@@ -204,6 +210,61 @@ describe("motion utilities", () => {
       "scale: var(--motion-enter-scale)"
     )
     expect(blocksOf(block, "&[data-ending-style]")).toContain("opacity: 0")
+  })
+})
+
+describe("message entrance", () => {
+  it("rises a new chat message a few pixels on the enter token and keeps only the fade when motion is reduced", () => {
+    const css = build(["motion-rise"])
+    const block = blocksOf(css, ".motion-rise")
+    expect(
+      declarations(blocksOf(css, ":root, :host"), "--motion-enter-rise")
+    ).toEqual(["4px"])
+    expect(blocksOf(block, "@starting-style")).toContain(
+      "translate: 0 var(--motion-enter-rise)"
+    )
+    expect(
+      blocksOf(
+        blocksOf(block, "@media (prefers-reduced-motion: reduce)"),
+        "@starting-style"
+      )
+    ).toContain("translate: 0 0")
+  })
+})
+
+describe("chat writing", () => {
+  it("lifts a sent message further and on the panel timing, keeping only the fade when motion is reduced", () => {
+    const css = build(["motion-send"])
+    const block = blocksOf(css, ".motion-send")
+    expect(
+      declarations(blocksOf(css, ":root, :host"), "--motion-send-rise")
+    ).toEqual(["12px"])
+    expect(declarations(block, "transition-duration")).toEqual([
+      "var(--duration-panel)",
+    ])
+    expect(blocksOf(block, "@starting-style")).toContain(
+      "translate: 0 var(--motion-send-rise)"
+    )
+    expect(
+      blocksOf(
+        blocksOf(block, "@media (prefers-reduced-motion: reduce)"),
+        "@starting-style"
+      )
+    ).toContain("translate: 0 0")
+  })
+
+  it("fades a written word in without moving it", () => {
+    const block = blocksOf(build(["motion-word"]), ".motion-word")
+    expect(declarations(block, "transition-property")).toEqual(["opacity"])
+    expect(blocksOf(block, "@starting-style")).toContain("opacity: 0")
+  })
+
+  it("swaps a label through a short blur", () => {
+    const block = blocksOf(build(["motion-swap"]), ".motion-swap")
+    expect(blocksOf(block, "@starting-style")).toContain("filter: blur(2px)")
+    expect(declarations(block, "transition-duration")).toEqual([
+      "var(--duration-micro)",
+    ])
   })
 })
 
