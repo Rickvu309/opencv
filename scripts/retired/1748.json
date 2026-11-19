@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/web/src/features/auth/sign-in-look.test.tsx",
+    "because": "The case pinned Tailwind classes for fill, hover, pressed and radius, so every lighter design change failed it with no behaviour change. It now checks that Continue is the only primary button and submits the email form; switching Continue to outline or to type button fails it (mutation run in the PR evidence). The flip proof cannot run because this change touches only tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  }
+]
