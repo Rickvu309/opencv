@@ -43,7 +43,7 @@ export function BillingSection() {
         className="flex flex-col gap-1 rounded-lg border border-border bg-card p-5"
       >
         <h2 className="text-[15px] font-medium">{plan}</h2>
-        <p className="text-[13px] text-muted-foreground">
+        <p className="text-ui text-muted-foreground">
           {current.price}. {current.line}
         </p>
       </article>

@@ -100,14 +100,11 @@ function UsageReadout({
         data-slot="settings-usage-text"
         className="flex w-full min-w-0 flex-col gap-0.5 md:w-45"
       >
-        <span
-          data-slot="settings-row-label"
-          className="text-[13px] font-medium"
-        >
+        <span data-slot="settings-row-label" className="text-ui font-medium">
           {label}
         </span>
         {desc ? (
-          <span className="text-[12.5px] text-muted-foreground">{desc}</span>
+          <span className="text-xs text-muted-foreground">{desc}</span>
         ) : null}
       </span>
       {usageWindow.capped ? (
@@ -119,13 +116,13 @@ function UsageReadout({
           />
           <span
             data-slot="settings-usage-percent"
-            className="w-16 shrink-0 text-[13px] text-muted-foreground"
+            className="w-16 shrink-0 text-ui text-muted-foreground"
           >
             {percentLabel(usageWindow.percent)}
           </span>
         </>
       ) : (
-        <span className="text-[13px] text-muted-foreground">{uncapped}</span>
+        <span className="text-ui text-muted-foreground">{uncapped}</span>
       )}
     </div>
   )

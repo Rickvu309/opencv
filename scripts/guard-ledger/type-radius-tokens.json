@@ -1,0 +1,14 @@
+{
+  "id": "type-radius-tokens",
+  "file": "scripts/type-radius-tokens.test.mjs",
+  "detector": {
+    "module": "scripts/type-radius-tokens.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "8532d2b3a",
+    "path": "apps/web/src/features/settings/preferences-section.tsx"
+  },
+  "reason": "PR 1417 drew the Settings preferences controls with 7px corners and 13px and 12.5px type typed by hand, off the radius and type scale every other screen draws from."
+}

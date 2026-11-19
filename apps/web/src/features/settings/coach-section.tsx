@@ -115,7 +115,7 @@ export function CoachSection({
           >
             Coach agent
           </h2>
-          <p className="text-[13px] text-muted-foreground">
+          <p className="text-ui text-muted-foreground">
             Works for you inside Paper and Apply.
           </p>
         </div>
