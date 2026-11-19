@@ -51,8 +51,8 @@ function featureDesignCssProblems(
   file: string,
   source: string
 ): string[] | null {
-  const match = /^features\/([a-z-]+)\/design\/[a-z.-]+\.css$/.exec(file)
-  if (!match || hits(source, HEX_RE).length === 0) return null
+  const match = /^features\/([a-z-]+)\/design\/[a-z-]+\.pen\.css$/.exec(file)
+  if (!match) return null
   const feature = match[1]
   const violations: string[] = []
   for (const rule of source.matchAll(/([^{}]+)\{/g)) {
@@ -62,10 +62,7 @@ function featureDesignCssProblems(
       !selector
         .split(",")
         .every((part) =>
-          [
-            `[data-surface="${feature}"]`,
-            `[data-pen-surface="${feature}"]`,
-          ].some((scope) => part.trim().startsWith(scope))
+          part.trim().startsWith(`[data-surface="${feature}"]`)
         )
     )
       violations.push(`unscoped selector: ${selector}`)
@@ -221,11 +218,6 @@ const RAW_COLOR_ALLOWLIST: readonly AllowlistEntry[] = [
     reason:
       "CV print paper, the documented exception in docs/agents/design-parity.md: a print layout on white paper",
   },
-  {
-    file: "components/ai-elements/shimmer.css",
-    reason:
-      "Coach working shimmer stops use the heading ink. currentColor becomes transparent once the text is clipped to the gradient, and the working fixture already paints that ink on the heading.",
-  },
 ]
 
 const RAW_INTERACTIVE_ALLOWLIST: readonly AllowlistEntry[] = []
@@ -327,20 +319,21 @@ describe("app code uses shadcn variables and stock Tailwind, with no raw hex or 
     expect(violations, violations.join("\n")).toEqual([])
   })
 
-  it("keeps feature design CSS with hex colours inside its feature scope, with any hex colour the design needs", () => {
+  it("keeps feature design CSS inside its feature scope, with any hex colour the design needs", () => {
     const file = "features/example/design/example.css"
     const check = (source: string) => featureDesignCssProblems(file, source)
-    expect(check('[data-surface="example"] h2 { color: #123456; }')).toEqual([])
+    expect(
+      check('[data-surface="example"] h2 { color: #123456; }')
+    ).toEqual([])
     expect(check("body { color: #1A1A1A; }")).toEqual([
       "unscoped selector: body",
     ])
-    expect(
-      check('[data-surface="example"] { --custom: 1px; color: #123456; }')
-    ).toEqual(["custom property declaration"])
+    expect(check('[data-surface="example"] { --custom: 1px; }')).toEqual([
+      "custom property declaration",
+    ])
     expect(
       featureDesignCssProblems("features/example/example.tsx", "#1A1A1A")
     ).toBeNull()
-    expect(check("body { color: var(--foreground); }")).toBeNull()
   })
 
   it("forbids the retired class roots in app and kit code", () => {

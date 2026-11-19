@@ -2,8 +2,8 @@ import { fireEvent, render, screen } from "@testing-library/react"
 import { describe, expect, it } from "vitest"
 
 import type { CoachPart } from "./coach-parts.ts"
-import { splitReadTraces } from "./coach-read-trace.ts"
-import { CoachWorkedFor } from "./coach-worked-for.tsx"
+import { splitReadTraces, traceSteps } from "./coach-read-trace.ts"
+import { CoachWorkFold } from "./coach-work-fold.tsx"
 
 function tool(
   key: string,
@@ -43,16 +43,17 @@ describe("Coach worked-for disclosure", () => {
   })
 
   it("shows a plain line when there is nothing to disclose", () => {
-    render(<CoachWorkedFor workedMs={1800} traces={[]} />)
+    render(<CoachWorkFold steps={[]} live={false} workedMs={1800} />)
     expect(screen.getByText("Worked for 2s")).toBeInTheDocument()
     expect(screen.queryByRole("button")).not.toBeInTheDocument()
   })
 
   it("opens the trace from the Worked for button", () => {
     render(
-      <CoachWorkedFor
+      <CoachWorkFold
+        steps={traceSteps([{ key: "a", label: "Looked at your Jobs" }])}
+        live={false}
         workedMs={2000}
-        traces={[{ key: "a", label: "Looked at your Jobs" }]}
       />
     )
     const trigger = screen.getByRole("button", { name: "Worked for 2s" })

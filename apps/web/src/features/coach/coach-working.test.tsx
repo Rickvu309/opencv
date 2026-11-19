@@ -6,7 +6,7 @@ import { STREAMING_COACH_ID } from "@/features/coach/chat-messages.ts"
 import type { ChatViewMessage } from "@/features/coach/chat-messages.ts"
 import { CoachTurns } from "@/features/coach/coach-turns.tsx"
 import type { CoachTurnProgress } from "@/features/coach/coach-progress.ts"
-import { CoachWorking } from "@/features/coach/coach-working.tsx"
+import { CoachWorkFold } from "@/features/coach/coach-work-fold.tsx"
 
 afterEach(() => {
   cleanup()
@@ -49,7 +49,7 @@ function renderTurns(
 
 describe("Coach Working block", () => {
   it("shows a calm breathing Working label without a running timer", () => {
-    const { container } = render(<CoachWorking />)
+    const { container } = render(<CoachWorkFold steps={[]} live announce />)
     expect(screen.getByRole("status")).toHaveTextContent("Working")
     const label = container.querySelector(
       "[data-slot='coach-work-label'] > span"
