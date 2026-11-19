@@ -1,0 +1,43 @@
+[data-surface="coach"][data-slot="history-panel"] {
+  background: #ffffff;
+  border: 1px solid #e6e6e8;
+  box-shadow:
+    0px 2px 6px 0px #0000000d,
+    0px 16px 40px 0px #0000001a;
+}
+
+[data-surface="coach"] [data-slot="history-search-icon"] {
+  color: #8a8a8e;
+}
+
+[data-surface="coach"] [data-slot="history-search"]::placeholder {
+  color: color-mix(in srgb, var(--muted-foreground) 87%, transparent);
+}
+
+[data-surface="coach"] [data-slot="history-section-label"] {
+  color: color-mix(in srgb, var(--muted-foreground) 87%, transparent);
+}
+
+[data-surface="coach"] [data-slot="history-item"] {
+  color: #111111;
+}
+
+[data-surface="coach"] [data-slot="history-item"][data-active="true"] {
+  background: #f0f0f1;
+}
+
+[data-surface="coach"] [data-slot="history-item-time"] {
+  color: color-mix(in srgb, var(--muted-foreground) 87%, transparent);
+}
+
+[data-surface="coach"] [data-slot="history-new-chat"] {
+  color: #1a1a1a;
+}
+
+[data-surface="coach"] [data-slot="history-shortcut"] {
+  color: color-mix(in srgb, var(--muted-foreground) 87%, transparent);
+}
+
+[data-surface="coach"] [data-slot="history-item-icon"] {
+  color: #3c3c40;
+}

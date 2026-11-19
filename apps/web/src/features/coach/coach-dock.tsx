@@ -1,5 +1,5 @@
-import "./design/coach.pen.css"
-import "./design/composer-menus.pen.css"
+import "./design/coach.css"
+import "./design/composer-menus.css"
 
 import { useId, useReducer, type ReactNode } from "react"
 import { useNavigate } from "@tanstack/react-router"
@@ -173,7 +173,7 @@ export function CoachDock({
         sideOffset={8}
         className="flex flex-col"
         aria-label="Add to Coach"
-        data-pen-surface="coach"
+        data-surface="coach"
         data-slot="coach-add-menu"
       >
         {DOCK_MENU.filter((item) => item.id !== "link" || onAttachLink).map(
@@ -296,7 +296,7 @@ export function CoachDock({
         align="end"
         className="w-[268px] rounded-2xl p-2"
         aria-label="Coach mode"
-        data-pen-surface="coach"
+        data-surface="coach"
         data-slot="coach-mode-menu"
       >
         <DropdownMenuRadioGroup
@@ -415,7 +415,7 @@ export function CoachDock({
   const field = (
     <PromptInput
       data-slot="coach-composer"
-      data-pen-surface="coach"
+      data-surface="coach"
       data-capped={disabled && Boolean(notice) ? "" : undefined}
       className={cn(
         notice &&

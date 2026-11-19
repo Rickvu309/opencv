@@ -8,6 +8,10 @@
   "historic": {
     "mode": "detect",
     "sha": "03280500",
-    "path": "apps/web/src/features/coach/design/coach.pen.css"
+    "path": "apps/web/src/features/coach/design/coach.pen.css",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/web/src/features/coach/design/coach.css"
+    }
   }
 }

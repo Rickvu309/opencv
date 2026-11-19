@@ -1,4 +1,4 @@
-import "./design/home.pen.css"
+import "./design/home.css"
 
 import { useId, type ReactNode } from "react"
 import type { ChatSummary } from "@workspace/domain"
@@ -54,7 +54,7 @@ export function CoachHome({
   return (
     <div
       data-slot="coach-home"
-      data-pen-surface="coach"
+      data-surface="coach"
       data-size={size}
       className={cn(
         "flex w-full min-w-0 flex-col items-center",

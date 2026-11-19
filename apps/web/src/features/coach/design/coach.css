@@ -1,27 +1,27 @@
-[data-pen-surface="coach"] [data-slot="coach-mode"] {
+[data-surface="coach"] [data-slot="coach-mode"] {
   font-size: 13px;
   color: #59595b;
 }
 
-[data-pen-surface="coach"] [data-slot="coach-mode"]:disabled {
+[data-surface="coach"] [data-slot="coach-mode"]:disabled {
   font-size: 13.5px;
   color: #c4c4c8;
   opacity: 1;
 }
 
-[data-pen-surface="coach"][data-slot="coach-mode-menu"] [role="menuitemradio"] {
+[data-surface="coach"][data-slot="coach-mode-menu"] [role="menuitemradio"] {
   font-size: 14.5px;
   font-weight: 400;
   color: #1a1a1a;
 }
 
-[data-pen-surface="coach"][data-slot="coach-mode-menu"]
+[data-surface="coach"][data-slot="coach-mode-menu"]
   [data-slot="coach-pro-badge"] {
   font-size: 11px;
   color: #5c5c5e;
 }
 
-[data-pen-surface="coach"][data-slot="coach-composer"]:not([data-capped]) {
+[data-surface="coach"][data-slot="coach-composer"]:not([data-capped]) {
   border-radius: 8px;
   border-color: color-mix(in oklab, var(--foreground) 8%, transparent);
   background-color: var(--card);
@@ -30,19 +30,19 @@
     0 2px 8px color-mix(in oklab, var(--foreground) 4%, transparent);
 }
 
-[data-pen-surface="coach"][data-slot="coach-composer"]:not([data-capped]):has(
+[data-surface="coach"][data-slot="coach-composer"]:not([data-capped]):has(
     textarea:disabled
   ) {
   box-shadow: none;
 }
 
-[data-pen-surface="coach"][data-slot="coach-composer"] textarea::placeholder {
+[data-surface="coach"][data-slot="coach-composer"] textarea::placeholder {
   color: var(--muted-foreground);
   opacity: 1;
 }
 
 @media (max-width: 47.99rem) {
-  [data-pen-surface="coach"][data-slot="coach-composer"] textarea {
+  [data-surface="coach"][data-slot="coach-composer"] textarea {
     font-size: 16px;
     line-height: 1.5;
   }

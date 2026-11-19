@@ -1,0 +1,26 @@
+[
+  {
+    "subject": "scripts/click-focus-glow.test.mjs",
+    "because": "The owner retired the old design tool on 2026-11-19 and asked to remove its name from all code and docs; this check now names the renamed files and attributes, and checks the same thing.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/click-focus-glow.json",
+    "because": "The owner retired the old design tool on 2026-11-19 and asked to remove its name from all code and docs; this check now names the renamed files and attributes, and checks the same thing.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/light-mode-only.test.mjs",
+    "because": "The owner retired the old design tool on 2026-11-19 and asked to remove its name from all code and docs; this check now names the renamed files and attributes, and checks the same thing.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
