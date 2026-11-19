@@ -26,5 +26,19 @@
     "class": "self",
     "classBecause": null,
     "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-template-chooser-layout.test.tsx",
+    "because": "The CV picker opens on the first template, so the primary button reads Use Simple, issue 1715",
+    "replacedBy": "apps/web/src/features/paper/paper-template-chooser-layout.test.tsx",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "a4f96613239c26384fb4a7b7756cdc840927b5a3",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
