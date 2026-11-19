@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/apply-calendar.test.tsx > apply calendar > opens a month event's full job detail with its keyboard button",
+    "because": "Opening a calendar event now shows the job in the side panel over the calendar instead of the job page; the replacement checks the URL keeps the job and the panel shows its title",
+    "replacedBy": "apps/web/src/features/apply/apply-calendar.test.tsx",
+    "proof": {
+      "fork": "30fb5dc8ab873206b15b4a780de4ff458d4c0a24",
+      "replacedByBlob": "f5a182825641f7936ecb07bd0b37050908794f3e",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
   }
 ]
