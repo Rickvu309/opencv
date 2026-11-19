@@ -1,7 +1,6 @@
 import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs"
-import { tmpdir } from "node:os"
+import { readFileSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import test from "node:test"
 import { fileURLToPath, pathToFileURL } from "node:url"
@@ -10,6 +9,7 @@ import {
   detect,
   unscopedPanelTargets,
 } from "./lib/coach-honest-controls.mjs"
+import { tempDir } from "./lib/temp-dir.mjs"
 import { SCREENS } from "./ui/screens.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
@@ -251,23 +251,23 @@ test("every screen recipe scopes its open-panel targets to the Coach panel", () 
   assert.deepEqual(unscopedPanelTargets(SCREENS), [])
 })
 
-async function screensAt(sha) {
-  const dir = mkdtempSync(path.join(tmpdir(), "ocv-screens-"))
+async function screensAt(t, sha) {
+  const dir = tempDir(t, "ocv-screens-")
   const file = path.join(dir, "screens.mjs")
   writeFileSync(file, git("show", `${sha}:scripts/ui/screens.mjs`))
   return (await import(pathToFileURL(file).href)).SCREENS
 }
 
-test("the commits introducing the unscoped Approve click and the unscoped Undone wait fire", async () => {
+test("the commits introducing the unscoped Approve click and the unscoped Undone wait fire", async (t) => {
   const approve = unscopedPanelTargets(
-    await screensAt(APPROVAL_CAPTURE_INTRODUCED)
+    await screensAt(t, APPROVAL_CAPTURE_INTRODUCED)
   ).join("\n")
   assert.match(
     approve,
     /paper-panel-receipt step \d+ \{"click":\{"role":"button","name":"Approve"\}\}/
   )
   const undone = unscopedPanelTargets(
-    await screensAt(UNDONE_WAIT_INTRODUCED)
+    await screensAt(t, UNDONE_WAIT_INTRODUCED)
   ).join("\n")
   assert.match(
     undone,

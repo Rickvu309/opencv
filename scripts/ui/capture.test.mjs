@@ -27,10 +27,10 @@ function pageThatFails(fault) {
   }
   page.locator = () => ({
     first: () => ({
-      waitFor: () =>
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(STEP_TIMEOUT)), 200)
-        ),
+      waitFor: async () => {
+        for (let hop = 0; hop < 10; hop += 1) await null
+        throw new Error(STEP_TIMEOUT)
+      },
     }),
   })
   return page
