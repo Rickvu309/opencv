@@ -11,7 +11,6 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 import { Separator } from "@workspace/ui/components/separator"
-import { cn } from "@workspace/ui/lib/utils"
 
 import { reportRejected } from "@/lib/command-failure.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
