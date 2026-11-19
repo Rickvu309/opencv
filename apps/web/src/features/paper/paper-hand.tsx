@@ -39,7 +39,6 @@ import {
   HAND_NARROW_WIDTH,
   handRelease,
   handSpread,
-  handStart,
   handStep,
   handTransform,
   handWheel,
@@ -68,7 +67,7 @@ type PaperHandState = {
 }
 
 type PaperHandAction =
-  | { type: "reset"; count: number }
+  | { type: "reset" }
   | { type: "hover"; index: number }
   | { type: "drag_on" }
   | { type: "drag_move"; pos: number }
@@ -93,13 +92,9 @@ function prefersReduced() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches
 }
 
-function initialPaperHand(
-  viewport: number,
-  reduced: boolean,
-  count: number
-): PaperHandState {
+function initialPaperHand(viewport: number, reduced: boolean): PaperHandState {
   return {
-    pos: handStart(count),
+    pos: 0,
     hovered: -1,
     dragging: false,
     dropping: false,
@@ -118,7 +113,7 @@ function paperHandReducer(
     case "reset":
       return {
         ...state,
-        pos: handStart(action.count),
+        pos: 0,
         hovered: -1,
         dragging: false,
         wheeling: false,
@@ -252,8 +247,8 @@ export function PaperHand({
   const listKey = list.map((entry) => entry.key).join("\n")
   const [hand, dispatch] = useReducer(
     paperHandReducer,
-    { count: list.length, viewport: readViewport(), reduced: prefersReduced() },
-    (seed) => initialPaperHand(seed.viewport, seed.reduced, seed.count)
+    { viewport: readViewport(), reduced: prefersReduced() },
+    (seed) => initialPaperHand(seed.viewport, seed.reduced)
   )
   const handRef = useRef<HTMLDivElement>(null)
   const posRef = useRef(hand.pos)
@@ -294,10 +289,9 @@ export function PaperHand({
   useEffect(() => {
     if (seenKey.current === listKey) return
     seenKey.current = listKey
-    const next = handStart(list.length)
-    posRef.current = next
-    dispatch({ type: "reset", count: list.length })
-  }, [listKey, list.length])
+    posRef.current = 0
+    dispatch({ type: "reset" })
+  }, [listKey])
 
   useEffect(() => {
     if (hand.phase !== "enter") return

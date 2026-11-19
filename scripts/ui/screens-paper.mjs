@@ -45,7 +45,7 @@ export function paperPickerScreens({ page, openPanel, addJob }) {
       steps: [
         { paperDocs: { count: 40, names: HARD_NAMES } },
         { goto: "/paper" },
-        { waitFor: { text: "Company 37" } },
+        { waitFor: { text: "Senior Product Designer CV" } },
       ],
     },
     {
@@ -56,10 +56,10 @@ export function paperPickerScreens({ page, openPanel, addJob }) {
           paperDocs: {
             count: 12,
             names: [
+              ...HARD_NAMES,
               "CV for Grab",
               "CV for Shopee",
               "Letter to MoMo",
-              ...HARD_NAMES,
             ],
           },
         },
@@ -122,8 +122,8 @@ export function paperPickerScreens({ page, openPanel, addJob }) {
       route: "/paper",
       steps: [
         ...OPEN_NEW_CV,
-        { click: { text: "Academic" } },
-        { waitFor: { role: "dialog", name: "New CV" } },
+        { click: { role: "radio", name: "Academic" } },
+        { waitFor: { text: "Education leads, for students" } },
       ],
     },
   ]

@@ -232,3 +232,25 @@ describe("fit rule 4 leaves a growing text field to its own box", () => {
     ).toEqual([])
   })
 })
+
+describe("fit rule 3 also covers a control past the side of the window", () => {
+  const menu = (sideways: "stuck" | "scrolls") =>
+    control({
+      name: 'button "Senior Product Designer CV for the Atlas"',
+      x: 468,
+      y: 548,
+      pinned: false,
+      hit: false,
+      coveredBy: "outside the window",
+      sideways,
+      inModal: false,
+    })
+  it("fires on the Paper caption menu that the hand stage pushed to x 490 at 390 wide", () => {
+    expect(fitProblems(phone, [page(), menu("stuck")], false)).toEqual([
+      'button "Senior Product Designer CV for the Atlas" is past the right edge of the 390px window at (490, 570) and nothing scrolls sideways to reach it',
+    ])
+  })
+  it("stays quiet for the same control inside a row that scrolls sideways", () => {
+    expect(fitProblems(phone, [page(), menu("scrolls")], false)).toEqual([])
+  })
+})

@@ -241,24 +241,25 @@ describe("Paper home sections", () => {
     expect(onOpen).toHaveBeenCalledWith(cv("My CV").id)
   })
 
-  it("starts a long hand on the fourth card and rolls with the arrow keys", () => {
+  it("starts a long hand on the newest card and rolls with the arrow keys", () => {
     renderLibrary(Array.from({ length: 8 }, (_, n) => dated(`Doc ${n + 1}`, n)))
     const ruler = screen.getByRole("slider", {
       name: "Move through your documents",
     })
-    expect(ruler).toHaveAttribute("aria-valuenow", "4")
+    expect(ruler).toHaveAttribute("aria-valuenow", "1")
     expect(ruler).toHaveAttribute("aria-valuemax", "8")
     expect(
-      screen.getByRole("button", { name: /^Open Doc 5,/ })
+      screen.getByRole("button", { name: /^Open Doc 8,/ })
     ).toHaveAttribute("tabindex", "0")
+    expect(screen.getByRole("button", { name: "Doc 8 menu" })).toBeVisible()
     fireEvent.keyDown(screen.getByRole("group", { name: "Your documents" }), {
       key: "ArrowRight",
     })
-    expect(ruler).toHaveAttribute("aria-valuenow", "5")
+    expect(ruler).toHaveAttribute("aria-valuenow", "2")
     expect(
-      screen.getByRole("button", { name: /^Open Doc 4,/ })
+      screen.getByRole("button", { name: /^Open Doc 7,/ })
     ).toHaveAttribute("tabindex", "0")
-    expect(screen.getByRole("button", { name: /^Open Doc 4,/ })).toHaveFocus()
+    expect(screen.getByRole("button", { name: /^Open Doc 7,/ })).toHaveFocus()
   })
 
   it("focuses search from slash and from a printable key", () => {

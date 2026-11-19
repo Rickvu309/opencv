@@ -61,7 +61,7 @@ function answerInThisBrowser(page, answer) {
   )
 }
 
-export async function runStep(page, origin, step, repo, apiOrigin = origin) {
+export async function runStep(page, origin, step, repo, apiOrigin) {
   if (step.goto)
     return page.goto(`${origin}${step.goto}`, { waitUntil: "domcontentloaded" })
   if (step.click)

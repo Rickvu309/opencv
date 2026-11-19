@@ -4,6 +4,7 @@
 
 .paper-hand-caption {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   justify-items: center;
   min-height: 0;
   max-width: 100%;
@@ -11,6 +12,7 @@
 
 .paper-hand-caption > [aria-live] {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   justify-items: center;
   max-width: 100%;
 }

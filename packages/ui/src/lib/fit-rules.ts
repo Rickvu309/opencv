@@ -17,6 +17,7 @@ export type MeasuredBox =
       hit: boolean
       coveredBy?: string
       clippedBy?: string
+      sideways?: "scrolls" | "stuck"
       inModal: boolean
       inline: boolean
       textEntry?: boolean
@@ -68,15 +69,18 @@ export function fitProblems(
         )
       continue
     }
+    if (box.sideways === "scrolls") continue
     if (box.clippedBy && !(modalOpen && !box.inModal))
       problems.push(
         `${box.name} cannot be reached: ${box.clippedBy} cuts it off at its centre ${centre(box)} and does not scroll`
       )
     else if (!box.hit && !(modalOpen && !box.inModal))
       problems.push(
-        box.coveredBy === "outside the window"
-          ? `${box.name} is off screen: its centre ${centre(box)} is outside the ${viewport.width}x${viewport.height} window`
-          : `${box.name} cannot be clicked: ${box.coveredBy ?? "something else"} covers its centre ${centre(box)}`
+        box.sideways === "stuck"
+          ? `${box.name} is past the ${box.x < 0 ? "left" : "right"} edge of the ${viewport.width}px window at ${centre(box)} and nothing scrolls sideways to reach it`
+          : box.coveredBy === "outside the window"
+            ? `${box.name} is off screen: its centre ${centre(box)} is outside the ${viewport.width}x${viewport.height} window`
+            : `${box.name} cannot be clicked: ${box.coveredBy ?? "something else"} covers its centre ${centre(box)}`
       )
     if (
       viewport.width <= PHONE_WIDTH &&

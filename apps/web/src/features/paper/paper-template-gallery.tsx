@@ -80,9 +80,12 @@ export function PaperTemplateGallery({
   initial?: PickerChoice
   kind?: "cv" | "letter"
 }) {
-  const [selected, dispatch] = useReducer(pickerSelection, initial)
-  const grid = useRef<HTMLDivElement>(null)
   const templates = kind === "cv" ? TEMPLATE_CHOICES : []
+  const [selected, dispatch] = useReducer(
+    pickerSelection,
+    initial ?? templates[0]?.id
+  )
+  const grid = useRef<HTMLDivElement>(null)
   const choices = [
     ...(onBlank
       ? [

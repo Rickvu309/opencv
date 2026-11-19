@@ -416,7 +416,7 @@ export function PaperLibrary({
       >
         <SidebarExpandButton />
         <h1 className="text-lg font-medium">Paper</h1>
-        {ready ? (
+        {ready && entries.length > 0 ? (
           <PaperCommandBar
             view={view ?? "all"}
             counts={handCounts(entries)}

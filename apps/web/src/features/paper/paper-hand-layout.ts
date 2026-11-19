@@ -20,12 +20,6 @@ export const HAND_WHEEL_DIVISOR = 110
 export const HAND_MOMENTUM = 2.2
 export const HAND_NARROW_WIDTH = 768
 
-export function handStart(count: number) {
-  if (count <= 0) return 0
-  if (count > 7) return 3
-  return (count - 1) / 2
-}
-
 export function handLimit(count: number) {
   return Math.max(0, count - 1)
 }
