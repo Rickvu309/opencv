@@ -536,7 +536,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
             <div className="absolute top-2 -right-11 z-10">
               <Button
                 type="button"
-                variant="secondary"
+                variant="ghost"
                 size="icon-sm"
                 className="size-11"
                 aria-label={shellCopy.closeMenu}

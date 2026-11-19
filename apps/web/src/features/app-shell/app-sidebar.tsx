@@ -3,17 +3,7 @@ import "./shell-navigation.css"
 
 import type { ReactNode } from "react"
 import { Link, useLocation } from "@tanstack/react-router"
-import {
-  Briefcase,
-  FileText,
-  Inbox,
-  type LucideIcon,
-  MessageCircle,
-  Presentation,
-  Search,
-  SquareKanban,
-  SquarePen,
-} from "lucide-react"
+import { Briefcase, FileText, Search, SquarePen } from "lucide-react"
 
 import { NavProfile } from "@/features/app-shell/nav-profile.tsx"
 import { searchShortcutLabel } from "@/features/app-shell/search-shortcut.ts"
@@ -32,6 +22,7 @@ import {
   useShellFavorites,
 } from "@/features/app-shell/use-shell-chats.ts"
 import { useSidebarGroup } from "@/features/app-shell/use-sidebar-groups.ts"
+import { SURFACE_ICONS } from "@/lib/surface-icons.ts"
 import { Brand } from "@workspace/ui/components/brand"
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -54,15 +45,6 @@ type AppSidebarProps = {
 
 const NAV_ITEM_CLASS =
   "h-11 font-normal md:h-7 md:text-[13px] md:leading-[15.6px] md:font-medium"
-
-const navigationIcons: Record<string, LucideIcon> = {
-  inbox: Inbox,
-  coach: MessageCircle,
-  jobs: Briefcase,
-  paper: FileText,
-  apply: SquareKanban,
-  pitch: Presentation,
-}
 
 function NavGroup({
   id,
@@ -155,7 +137,7 @@ export function AppSidebar({
             variant="ghost"
             size="icon-sm"
             aria-label={shellCopy.newChat}
-            className="size-11 md:size-7 md:border md:[&_svg]:size-[15px]"
+            className="size-11 hover:bg-sidebar-accent md:size-7"
             onClick={onNewChat}
           >
             <SquarePen />
@@ -168,7 +150,7 @@ export function AppSidebar({
           className="mt-2 flex flex-col gap-0.5 md:mt-[7px] md:gap-px"
         >
           {SHELL_PRIMARY.map((item) => {
-            const Icon = navigationIcons[item.id] ?? FileText
+            const Icon = SURFACE_ICONS[item.id]
             return (
               <NavItem
                 key={item.id}
@@ -199,7 +181,7 @@ export function AppSidebar({
             className="mt-3 md:mt-[11px]"
           >
             {SHELL_WORK.map((item) => {
-              const Icon = navigationIcons[item.id]
+              const Icon = SURFACE_ICONS[item.id]
               return (
                 <NavItem
                   key={item.id}

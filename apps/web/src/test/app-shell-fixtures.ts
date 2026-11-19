@@ -4,7 +4,15 @@ import { expect, vi } from "vitest"
 
 import { DESKTOP_MEDIA_QUERY } from "@/lib/use-media-query.ts"
 
-export const NAV = ["Inbox", "Coach", "Jobs", "Paper", "Apply", "Pitch"]
+export const NAV = [
+  "Inbox",
+  "Coach",
+  "Jobs",
+  "Paper",
+  "Apply",
+  "Pitch",
+  "Proofs",
+]
 
 export function stubDesktopViewport(isDesktop: boolean) {
   vi.stubGlobal("matchMedia", (query: string) => ({

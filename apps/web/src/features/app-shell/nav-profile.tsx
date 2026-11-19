@@ -11,7 +11,6 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
@@ -89,13 +88,6 @@ export function NavProfile({ onNavigate, onMenuOpenChange }: Props) {
           className="max-md:-translate-x-2"
         >
           <DropdownMenuGroup>
-            <DropdownMenuLabel
-              data-slot="account-menu-email"
-              title={email}
-              className="truncate px-2 pt-1.5 pb-1 text-xs font-normal"
-            >
-              {email}
-            </DropdownMenuLabel>
             <DropdownMenuItem
               className="h-8 gap-2 ps-2 text-[13px]"
               render={<Link to={SURFACE_PATHS.settings} onClick={onNavigate} />}

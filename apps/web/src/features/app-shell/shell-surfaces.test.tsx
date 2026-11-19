@@ -51,15 +51,17 @@ describe("shell identity and Proofs", () => {
     )
   })
 
-  it("highlights Paper on Proofs and offers Proofs in search", async () => {
+  it("highlights the Proofs row on Proofs and offers Proofs in search", async () => {
     vi.stubGlobal("scrollTo", vi.fn())
     renderApp(SURFACE_PATHS.proofs)
     const nav = await screen.findByRole("navigation", { name: "Main" })
-    expect(within(nav).getByRole("link", { name: "Paper" })).toHaveAttribute(
+    expect(within(nav).getByRole("link", { name: "Proofs" })).toHaveAttribute(
       "aria-current",
       "page"
     )
-    expect(within(nav).queryByRole("link", { name: "Proofs" })).toBeNull()
+    expect(
+      within(nav).getByRole("link", { name: "Paper" })
+    ).not.toHaveAttribute("aria-current")
 
     fireEvent.keyDown(window, { key: "k", ctrlKey: true })
     const dialog = await screen.findByRole("dialog", { name: "Search" })
