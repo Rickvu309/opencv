@@ -3,6 +3,10 @@
     "passed": true,
     "fingerprint": "4b28ace05beb"
   },
+  "coach-panel-scoped-recipes": {
+    "passed": true,
+    "fingerprint": "5169d1d9bd39"
+  },
   "delegate-reach": {
     "passed": true,
     "fingerprint": "ff451b533174"
@@ -42,6 +46,14 @@
   "scanner-ancestor-roots": {
     "passed": true,
     "fingerprint": "758b50f2567f"
+  },
+  "screen-tool-module-failure": {
+    "passed": true,
+    "fingerprint": "0ab30d26c75d"
+  },
+  "screen-tool-stale-install": {
+    "passed": true,
+    "fingerprint": "205bd8290e3b"
   },
   "tla-sync-anchors": {
     "passed": true,
