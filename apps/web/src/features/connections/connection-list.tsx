@@ -51,7 +51,7 @@ export function ConnectionList() {
           <div role="alert">
             Could not load connections.{" "}
             <Button
-              size="touch-lg"
+              className="h-11 md:h-9"
               variant="outline"
               onClick={() => void connections.refetch()}
             >
@@ -121,7 +121,7 @@ export function ConnectionList() {
             {!connection.revokedAt &&
             new Date(connection.expiresAt) > new Date() ? (
               <Button
-                size="touch-lg"
+                className="h-11 md:h-9"
                 variant="outline"
                 disabled={revoke.isPending}
                 onClick={() => revoke.mutate(connection.id)}

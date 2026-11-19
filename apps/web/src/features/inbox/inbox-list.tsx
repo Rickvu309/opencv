@@ -78,7 +78,7 @@ export function InboxListHeader({
                 <DropdownMenuTrigger
                   render={
                     <Button
-                      size="touch"
+                      className="h-11 md:h-8"
                       type="button"
                       variant="ghost"
                       data-slot="page-header-action"
@@ -220,8 +220,7 @@ export function InboxEmpty({
               </p>
             ) : null}
             <Button
-              size="touch"
-              className="max-w-full"
+              className="h-11 max-w-full md:h-8"
               variant={example ? "outline" : "ghost"}
               disabled={scanning}
               onClick={onScan}

@@ -104,7 +104,7 @@ export function JobHeader({
               <DropdownMenuTrigger
                 render={
                   <Button
-                    size="touch"
+                    className="h-11 md:h-8"
                     type="button"
                     variant="ghost"
                     data-slot="page-header-action"

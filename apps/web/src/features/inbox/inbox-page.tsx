@@ -356,7 +356,7 @@ function InboxRefresh({
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <p>{text}</p>
-      <Button size="touch" variant="outline" onClick={onRefresh}>
+      <Button variant="outline" className="h-11 md:h-8" onClick={onRefresh}>
         Refresh
       </Button>
     </div>

@@ -366,8 +366,7 @@ export function InboxReader({
               </div>
               <div className="flex h-12 items-center gap-1.5 ps-4 pe-3">
                 <Button
-                  size="touch"
-                  className="gap-1.5 rounded-lg border-transparent bg-foreground px-3 text-[12.5px] font-semibold text-background ring-0 hover:bg-foreground/90"
+                  className="h-11 gap-1.5 rounded-lg border-transparent bg-foreground px-3 text-[12.5px] font-semibold text-background ring-0 hover:bg-foreground/90 md:h-8"
                   disabled={busy || body.trim() === ""}
                   onClick={() =>
                     run(async () => {

@@ -143,9 +143,8 @@ export function InboxConnect({
               </Button>
               {closed ? null : (
                 <Button
-                  size="touch"
                   variant="ghost"
-                  className="-ms-2 px-2 text-[13.5px] text-muted-foreground"
+                  className="-ms-2 h-11 px-2 text-[13.5px] text-muted-foreground md:h-8"
                   disabled={pending}
                   onClick={onSkip}
                 >
@@ -163,9 +162,8 @@ export function InboxConnect({
                   <span className="max-md:hidden">{EXPLORE_EXAMPLE_HINT}</span>
                 </p>
                 <Button
-                  size="touch"
                   variant="ghost"
-                  className="-ms-2 w-fit shrink-0 px-2 text-[13.5px] text-muted-foreground"
+                  className="-ms-2 h-11 w-fit shrink-0 px-2 text-[13.5px] text-muted-foreground md:h-8"
                   disabled={pending}
                   onClick={onSkip}
                 >

@@ -187,7 +187,7 @@ export function ApplyCalendar({
         <div className="px-6">
           <p>Couldn't load jobs.</p>
           <Button
-            size="touch"
+            className="h-11 md:h-8"
             type="button"
             onClick={() => void query.refetch()}
           >

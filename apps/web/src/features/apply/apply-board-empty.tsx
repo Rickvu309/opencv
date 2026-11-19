@@ -74,12 +74,11 @@ export function ApplyEmpty({
           you.
         </p>
         <Button
-          size="touch"
           type="button"
           variant={dialogOpen ? "ghost" : "primary"}
           aria-label="New job"
           aria-keyshortcuts="N"
-          className="mt-5 gap-2 rounded-md pr-2 pl-3 text-[13px] font-semibold"
+          className="mt-5 h-11 gap-2 rounded-md pr-2 pl-3 text-[13px] font-semibold md:h-8"
           onClick={onAdd}
         >
           <span>New job</span>

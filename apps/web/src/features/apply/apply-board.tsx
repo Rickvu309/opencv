@@ -546,14 +546,13 @@ function StageMenu({
 function LaneAdd({ name, onAdd }: { name: string; onAdd: () => void }) {
   return (
     <Button
-      size="touch"
       type="button"
       variant="ghost"
       aria-hidden
       tabIndex={-1}
       data-slot="lane-add"
       title={`New job in ${name}`}
-      className="w-full shrink-0 rounded-[4px] border border-foreground/6 bg-card text-muted-foreground opacity-0 group-hover/lane:opacity-100 hover:bg-card hover:text-foreground max-md:hidden"
+      className="h-11 w-full shrink-0 rounded-[4px] border border-foreground/6 bg-card text-muted-foreground opacity-0 group-hover/lane:opacity-100 hover:bg-card hover:text-foreground max-md:hidden md:h-8"
       onClick={onAdd}
     >
       <Plus />

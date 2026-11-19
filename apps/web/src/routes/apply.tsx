@@ -220,8 +220,8 @@ export function ApplyPage() {
             <div className="px-5">
               <p>Couldn't load jobs.</p>
               <Button
-                size="touch"
                 type="button"
+                className="h-11 md:h-8"
                 onClick={() => void jobs.refetch()}
               >
                 Refresh

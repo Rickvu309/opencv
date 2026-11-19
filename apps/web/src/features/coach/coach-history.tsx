@@ -156,11 +156,10 @@ export function CoachHistory({
           </div>
 
           <Button
-            size="touch"
             type="button"
             variant="ghost"
             data-slot="history-new-chat"
-            className="flex w-full items-center gap-2.5 rounded-[6px] px-2.5 text-left text-[13px] leading-[1.2]"
+            className="flex h-11 w-full items-center gap-2.5 rounded-[6px] px-2.5 text-left text-[13px] leading-[1.2] md:h-8"
             onClick={() => {
               onNewChat()
               onOpenChange(false)
@@ -209,7 +208,6 @@ export function CoachHistory({
                   </div>
                   {items.map((chat) => (
                     <Button
-                      size="touch"
                       key={chat.id}
                       type="button"
                       variant="ghost"
@@ -217,7 +215,7 @@ export function CoachHistory({
                       data-active={
                         chat.id === activeChatId ? "true" : undefined
                       }
-                      className="flex w-full items-center gap-2.5 rounded-[6px] px-2.5 text-left text-[13px] leading-[1.2]"
+                      className="flex h-11 w-full items-center gap-2.5 rounded-[6px] px-2.5 text-left text-[13px] leading-[1.2] md:h-8"
                       onClick={() => {
                         onSelect(chat.id)
                         onOpenChange(false)

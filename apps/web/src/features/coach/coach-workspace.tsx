@@ -540,7 +540,7 @@ export function CoachWorkspace({
                   {linkError}
                 </p>
               ) : null}
-              <Button size="touch" type="submit">
+              <Button className="h-11 md:h-8" type="submit">
                 Attach link
               </Button>
             </form>
@@ -555,7 +555,7 @@ export function CoachWorkspace({
                 <p role="alert">
                   Could not load attachments.{" "}
                   <Button
-                    size="touch"
+                    className="h-11 md:h-8"
                     variant="ghost"
                     onClick={() =>
                       void (picker === "paper"
