@@ -4,6 +4,9 @@ import type { LibraryEntry } from "./paper-library-entries.ts"
 import {
   handBand,
   handCardWidth,
+  handCounts,
+  handFold,
+  handNear,
   handDrag,
   handList,
   handPose,
@@ -169,5 +172,37 @@ describe("paper hand layout", () => {
     ])
     expect(handList(entries, "all", "old")).toHaveLength(1)
     expect(handList(entries, "proofs", "")).toEqual([])
+  })
+  it("counts each view for the view menu without counting Proofs", () => {
+    const entries = [
+      paper("Older", "2026-01-01T00:00:00.000Z", 0),
+      paper("Newer", "2026-02-01T00:00:00.000Z", 1),
+    ]
+    const counts = handCounts(entries)
+    expect(counts.all).toBe(2)
+    expect(counts.files).toBe(0)
+    expect(counts.proofs).toBeUndefined()
+    expect(handCounts([]).all).toBe(0)
+  })
+  it("finds Vietnamese names without their accents", () => {
+    const entries = [
+      paper(
+        "Th\u01b0 xin vi\u1ec7c g\u1eedi Tiki",
+        "2026-02-01T00:00:00.000Z",
+        0
+      ),
+      paper("\u0110\u01a1n \u1ee9ng tuy\u1ec3n", "2026-01-01T00:00:00.000Z", 1),
+    ]
+    expect(handFold("Th\u01b0 Vi\u1ec7c")).toBe("thu viec")
+    expect(handList(entries, "all", "thu xin viec")).toHaveLength(1)
+    expect(handList(entries, "all", "don ung")).toHaveLength(1)
+    expect(handList(entries, "all", "  TIKI ")).toHaveLength(1)
+  })
+
+  it("renders only the cards near the centre of a long hand", () => {
+    expect(handNear(3, 3)).toBe(true)
+    expect(handNear(8, 3)).toBe(true)
+    expect(handNear(9, 3)).toBe(false)
+    expect(handNear(59, 3)).toBe(false)
   })
 })

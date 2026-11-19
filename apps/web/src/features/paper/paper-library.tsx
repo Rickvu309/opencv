@@ -60,8 +60,10 @@ import {
   type WordDocument,
 } from "./paper-package-library.tsx"
 import { libraryDisplayName, libraryEntries } from "./paper-library-entries.ts"
-import { PaperFind, PaperViewChips } from "./paper-hand-controls.tsx"
+import { PaperCommandBar } from "./paper-hand-controls.tsx"
+import { handCounts } from "./paper-hand-layout.ts"
 import { PaperHand } from "./paper-hand.tsx"
+import { PaperHandError, PaperHandLoading } from "./paper-hand-empty.tsx"
 import { type LibraryEntryHandlers } from "./paper-library-sections.tsx"
 import { PaperLinkDialog } from "./paper-library-link.tsx"
 import { useShownWhileClosing } from "./paper-library-closing.ts"
@@ -70,6 +72,7 @@ import {
   PaperRenameDialog,
 } from "./paper-library-dialogs.tsx"
 import "./design/paper-library.pen.css"
+import "./design/paper-library-header.css"
 
 export function PaperLibrary({
   docs,
@@ -213,6 +216,33 @@ export function PaperLibrary({
     } finally {
       if (importRequest.current === request) importRequest.current = null
     }
+  }
+
+  async function onImportMany(dropped: File[]) {
+    importRequest.current?.abort()
+    const request = new AbortController()
+    importRequest.current = request
+    let added = 0
+    let refused: string | null = null
+    for (const file of dropped) {
+      dispatch({ type: "import_started", name: file.name })
+      try {
+        const created = await importPaperFile(file, request.signal)
+        if (request.signal.aborted) {
+          await discardCancelledImport(run, created.docId)
+          return
+        }
+        added += 1
+      } catch (err) {
+        if (request.signal.aborted) return
+        refused ??= `${file.name}: ${importRefusal(err).message}`
+      }
+    }
+    if (importRequest.current === request) importRequest.current = null
+    dispatch({ type: "import_ended" })
+    onRetry()
+    if (added > 0) toast(added === 1 ? "Added 1 file" : `Added ${added} files`)
+    if (refused) dispatch({ type: "import_failed", message: refused })
   }
 
   function cancelImport() {
@@ -382,50 +412,37 @@ export function PaperLibrary({
       ) : null}
       <div
         data-slot="paper-library-header"
-        className="paper-library-header sticky top-0 z-20 flex flex-wrap items-center gap-2 bg-background"
+        className="paper-library-header sticky top-0 z-20 bg-background"
       >
         <SidebarExpandButton />
         <h1 className="text-lg font-medium">Paper</h1>
         {ready ? (
-          <PaperViewChips
+          <PaperCommandBar
             view={view ?? "all"}
+            counts={handCounts(entries)}
+            query={query}
             onViewChange={(next) =>
               dispatch({ type: "view_changed", view: next })
             }
+            onQueryChange={onQueryChange}
           />
         ) : null}
-        {ready ? (
-          <PaperFind query={query} onQueryChange={onQueryChange} />
-        ) : null}
-        <div data-slot="paper-library-spacer" className="flex-1" />
         <Button
-          className="h-11 gap-1.5 text-[0.8125rem] md:h-7"
+          className="paper-library-new h-11 gap-1.5 text-[0.8125rem] md:h-8"
           type="button"
           size="sm"
-          variant="outline"
+          variant="primary"
+          aria-label="New"
           data-primary-action
           ref={newButtonRef}
           onClick={() => dispatch({ type: "new_dialog_opened", step: "kind" })}
         >
-          <Plus className="size-[13px]" aria-hidden="true" />
-          New
+          <Plus className="size-[14px]" aria-hidden="true" />
+          <span className="max-md:hidden">New</span>
         </Button>
       </div>
-      {loading ? (
-        <p role="status" className="py-6 text-sm text-muted-foreground">
-          Loading documents…
-        </p>
-      ) : null}
-      {error ? (
-        <div className="flex flex-col items-start gap-3 py-6">
-          <p role="alert" className="text-sm text-destructive">
-            {error}
-          </p>
-          <Button className="min-h-11" variant="outline" onClick={onRetry}>
-            Refresh
-          </Button>
-        </div>
-      ) : null}
+      {loading ? <PaperHandLoading /> : null}
+      {error ? <PaperHandError message={error} onRetry={onRetry} /> : null}
       {ready ? (
         <PaperHand
           entries={entries}
@@ -437,8 +454,14 @@ export function PaperLibrary({
           handlers={handlers}
           onNewCV={() => openPicker("cv")}
           onNewLetter={() => openPicker("letter", "blank")}
-          onImport={(file) => void onImport(file)}
+          onImport={(dropped) =>
+            void (dropped.length === 1
+              ? onImport(dropped[0])
+              : onImportMany(dropped))
+          }
           onOpenImport={() => dispatch({ type: "import_dialog_opened" })}
+          onClearSearch={() => onQueryChange("")}
+          onSearchAll={() => dispatch({ type: "view_changed", view: "all" })}
         />
       ) : null}
 

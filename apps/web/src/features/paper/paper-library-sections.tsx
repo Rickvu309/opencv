@@ -51,8 +51,11 @@ export function PaperProofsLink() {
     <section aria-label="Proofs" data-slot="paper-library-section">
       <div className="paper-library-empty">
         <Image aria-hidden="true" />
-        <h3>No Proofs yet</h3>
-        <p>Keep examples of your work together.</p>
+        <h3>Proofs have their own page</h3>
+        <p>
+          Paper keeps your CVs and letters. Proofs keep the work that backs them
+          up.
+        </p>
         <Link
           to={SURFACE_PATHS.proofs}
           className={cn(buttonVariants({ variant: "outline" }), "min-h-11")}

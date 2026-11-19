@@ -12,7 +12,9 @@ import { File } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { PaperActionMenu, PaperSheet } from "./paper-library-card.tsx"
+import { PaperSheet } from "./paper-library-card.tsx"
+import { PaperHandCaption } from "./paper-hand-caption.tsx"
+import { emptyHandCopy, PaperHandEmpty } from "./paper-hand-empty.tsx"
 import {
   entryName,
   fileBadge,
@@ -32,7 +34,9 @@ import {
   handClamp,
   handDrag,
   handList,
+  handNear,
   handPose,
+  HAND_NARROW_WIDTH,
   handRelease,
   handSpread,
   handStart,
@@ -43,6 +47,7 @@ import {
 } from "./paper-hand-layout.ts"
 import { paperEditedLabel } from "./paper-templates.ts"
 import { PaperStarts } from "./paper-hand-starts.tsx"
+import { PaperStartHand } from "./paper-start-hand.tsx"
 import "./design/paper-hand.css"
 
 const DEAL_MS = 480
@@ -193,13 +198,6 @@ function isFileDrag(event: DragEvent) {
   return types ? Array.from(types).includes("Files") : false
 }
 
-function emptyCaption(view: LibraryView) {
-  if (view === "cv") return "No CVs yet"
-  if (view === "letter") return "No letters yet"
-  if (view === "files") return "No files yet"
-  return "No documents yet"
-}
-
 function HandPicture({ entry }: { entry: LibraryEntry }) {
   if (entry.type === "file") {
     return (
@@ -235,6 +233,8 @@ export function PaperHand({
   onNewLetter,
   onImport,
   onOpenImport,
+  onClearSearch,
+  onSearchAll,
 }: {
   entries: LibraryEntry[]
   view: LibraryView
@@ -243,8 +243,10 @@ export function PaperHand({
   handlers: LibraryEntryHandlers
   onNewCV: () => void
   onNewLetter: () => void
-  onImport: (file: File) => void
+  onImport: (files: File[]) => void
   onOpenImport: () => void
+  onClearSearch: () => void
+  onSearchAll: () => void
 }) {
   const list = handList(entries, view, query)
   const listKey = list.map((entry) => entry.key).join("\n")
@@ -357,8 +359,8 @@ export function PaperHand({
       dispatch({ type: "drop", dropping: false })
       if (insideDialog(event.target)) return
       event.preventDefault()
-      const file = event.dataTransfer?.files[0]
-      if (file) onImportRef.current(file)
+      const files = Array.from(event.dataTransfer?.files ?? [])
+      if (files.length > 0) onImportRef.current(files)
     }
     function onEnd() {
       dispatch({ type: "drop", dropping: false })
@@ -436,15 +438,25 @@ export function PaperHand({
   }
 
   function onHandKey(event: ReactKeyboardEvent<HTMLDivElement>) {
-    if (event.key !== "ArrowRight" && event.key !== "ArrowLeft") return
+    const moves: Record<string, number> = {
+      ArrowRight: 1,
+      ArrowLeft: -1,
+      Home: -count,
+      End: count,
+    }
+    const move = moves[event.key]
+    if (move === undefined) return
     event.preventDefault()
-    const next = handClamp(
-      handCentre(posRef.current, count) + (event.key === "ArrowRight" ? 1 : -1),
-      count
-    )
+    const next = handClamp(handCentre(posRef.current, count) + move, count)
     posRef.current = next
     flushSync(() => dispatch({ type: "jump", pos: next }))
     handRef.current?.querySelector<HTMLElement>("[data-centre]")?.focus()
+  }
+
+  function seek(index: number) {
+    const next = handClamp(index, count)
+    posRef.current = next
+    dispatch({ type: "jump", pos: next })
   }
 
   function onCardClick(index: number, entry: LibraryEntry) {
@@ -471,6 +483,7 @@ export function PaperHand({
 
   function cardNodes(items: LibraryEntry[]) {
     return items.map((entry, index) => {
+      if (!handNear(index, hand.pos)) return null
       const pose = handPose({
         index,
         pos: hand.pos,
@@ -515,37 +528,21 @@ export function PaperHand({
     })
   }
 
-  function blankNodes() {
-    return [0, 1, 2].map((index) => {
-      const pose = handPose({
-        index,
-        pos: 1,
-        step,
-        spread,
-        hovered: -1,
-        shift,
-        reduced,
-      })
-      return (
-        <div
-          key={index}
-          className="paper-hand-card"
-          aria-hidden="true"
-          data-deal={
-            hand.phase === "still"
-              ? undefined
-              : Math.min(3, Math.abs(index - 1))
-          }
-          style={poseStyle(pose, entering)}
-        >
-          <span className="paper-picture" />
-        </div>
-      )
-    })
-  }
-
   const shownName = shown ? entryLabel(shown) : ""
   const shownEdited = shown ? entryEdited(shown) : ""
+
+  if (showBlanks)
+    return (
+      <div className="paper-hand-stage">
+        <PaperStartHand
+          dropping={hand.dropping}
+          importName={importName}
+          onNewCV={onNewCV}
+          onNewLetter={onNewLetter}
+          onOpenImport={onOpenImport}
+        />
+      </div>
+    )
 
   return (
     <div className="paper-hand-stage">
@@ -571,7 +568,7 @@ export function PaperHand({
               onPointerDown={onPointerDown}
               onKeyDown={onHandKey}
             >
-              {showCards ? cardNodes(list) : blankNodes()}
+              {cardNodes(list)}
               {hand.dropping || importName !== null ? (
                 <div
                   className="paper-hand-ghost"
@@ -584,46 +581,32 @@ export function PaperHand({
               ) : null}
             </div>
           ) : null}
-          <div className="paper-hand-caption" aria-live="polite">
-            {shown ? (
-              <>
-                <div className="paper-hand-caption-line">
-                  <span className="paper-hand-caption-name" title={shownName}>
-                    {shownName}
-                  </span>
-                  <PaperActionMenu
-                    className="paper-hand-more"
-                    label={`${shownName} menu`}
-                    actions={libraryEntryActions(shown, handlers)}
-                  />
-                </div>
-                <span className="paper-hand-caption-meta">{shownEdited}</span>
-                {count > 1 ? (
-                  <span className="paper-hand-caption-pos">
-                    {`${shownIndex + 1} of ${count}`}
-                  </span>
-                ) : null}
-              </>
-            ) : searching ? (
-              <>
-                <span className="paper-hand-caption-name">Nothing matches</span>
-                <span className="paper-hand-caption-meta">{trimmed}</span>
-              </>
-            ) : entries.length === 0 ? (
-              <>
-                <span className="paper-hand-caption-name">
-                  No documents yet
-                </span>
-                <span className="paper-hand-caption-meta">
-                  Start a CV, a letter or import a file
-                </span>
-              </>
-            ) : (
-              <span className="paper-hand-caption-name">
-                {emptyCaption(view)}
-              </span>
-            )}
-          </div>
+          {shown ? (
+            <PaperHandCaption
+              key={view}
+              name={shownName}
+              edited={shownEdited}
+              number={centre + 1}
+              total={count}
+              narrow={hand.viewport < HAND_NARROW_WIDTH}
+              actions={libraryEntryActions(shown, handlers)}
+              onSeek={seek}
+            />
+          ) : (
+            <PaperHandEmpty
+              copy={emptyHandCopy({
+                view,
+                query,
+                elsewhere:
+                  view === "all" ? 0 : handList(entries, "all", query).length,
+                onClearSearch,
+                onSearchAll,
+                onNewCV,
+                onNewLetter,
+                onOpenImport,
+              })}
+            />
+          )}
         </>
       )}
       <PaperStarts

@@ -88,7 +88,7 @@ describe("Paper library", () => {
     ).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Draft letter" })).toBeDisabled()
     fireEvent.click(screen.getByRole("button", { name: "Paper", exact: true }))
-    expect(screen.queryByText("No documents yet")).toBeInTheDocument()
+    expect(screen.queryByText("Start your first document")).toBeInTheDocument()
     expect(
       screen.getByRole("button", { name: "New", exact: true })
     ).toHaveFocus()
@@ -162,7 +162,7 @@ describe("Paper library", () => {
     ).toContain(created.docId)
     expect(screen.queryByText(created.notice)).toBeNull()
     expect(onOpen).not.toHaveBeenCalled()
-    expect(screen.queryByText("No documents yet")).toBeInTheDocument()
+    expect(screen.queryByText("Start your first document")).toBeInTheDocument()
   })
 
   it("opens a Word import on the writing page", async () => {
@@ -304,7 +304,7 @@ describe("Paper library", () => {
 
   it("offers section actions and opens import when there are no documents", () => {
     renderLibrary([])
-    expect(screen.queryByText("No documents yet")).toBeInTheDocument()
+    expect(screen.queryByText("Start your first document")).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "New CV" })).toBeInTheDocument()
     expect(
       screen.getByRole("button", { name: "New Letter" })

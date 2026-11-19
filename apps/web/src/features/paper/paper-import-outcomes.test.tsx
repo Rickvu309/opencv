@@ -329,7 +329,7 @@ describe("importing a file on Paper home", () => {
       await vi.waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
       expect(onOpen).not.toHaveBeenCalled()
       expect(calls.filter((url) => url.includes("paper.delete"))).toEqual([])
-      expect(screen.getByText("No documents yet")).toBeInTheDocument()
+      expect(screen.getByText("Start your first document")).toBeInTheDocument()
     }
   )
 

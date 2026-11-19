@@ -40,4 +40,22 @@ describe("Paper library drop", () => {
       expect.any(AbortSignal)
     )
   })
+  it("adds every dropped file without opening any of them", async () => {
+    vi.mocked(importPaperFile).mockResolvedValue({
+      docId: "11111111-1111-4111-8111-000000000001",
+      notice: null,
+    } as Awaited<ReturnType<typeof importPaperFile>>)
+    renderLibrary([cv("My CV")])
+    const first = new File(["A"], "CV_Grab.docx")
+    const second = new File(["B"], "Letter_to_MoMo.pdf")
+    const dataTransfer = { types: ["Files"], files: [first, second] }
+    fireEvent.dragOver(document.body, { dataTransfer })
+    fireEvent.drop(document.body, { dataTransfer })
+    await waitFor(() =>
+      expect(vi.mocked(importPaperFile)).toHaveBeenCalledTimes(2)
+    )
+    expect(vi.mocked(importPaperFile).mock.calls.map(([file]) => file)).toEqual(
+      [first, second]
+    )
+  })
 })

@@ -1,0 +1,72 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "because": "The header chips became a view menu at the front of the search bar, the 'x of N' line became a number ruler, and the no-match caption now names the query; the rewritten cases test the menu, the counts, the ruler value and the new copy.",
+    "replacedBy": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "proof": {
+      "fork": "30fb5dc8ab873206b15b4a780de4ff458d4c0a24",
+      "replacedByBlob": "ea2103a59aca2e3abfe37b08fca93c15fd72257b",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 15
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library.test.tsx",
+    "because": "With no documents the page now deals the start hand, whose caption reads 'Start your first document' instead of 'No documents yet'; the same cases now assert the new caption.",
+    "replacedBy": "apps/web/src/features/paper/paper-library.test.tsx",
+    "proof": {
+      "fork": "30fb5dc8ab873206b15b4a780de4ff458d4c0a24",
+      "replacedByBlob": "e08f14b5303b16cafd8860c694be9765a31e7a1d",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-import-outcomes.test.tsx",
+    "because": "With no documents the page now deals the start hand, whose caption reads 'Start your first document' instead of 'No documents yet'; the same cases now assert the new caption.",
+    "replacedBy": "apps/web/src/features/paper/paper-import-outcomes.test.tsx",
+    "proof": {
+      "fork": "30fb5dc8ab873206b15b4a780de4ff458d4c0a24",
+      "replacedByBlob": "a23f5c4e2e39e00e48e5b22d899e1aeb9b8642da",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/test/surface-behavior.test.tsx",
+    "because": "With no documents Paper now deals the start hand, whose caption reads 'Start your first document'; the same case now asserts that caption and the same three actions.",
+    "replacedBy": "apps/web/src/test/surface-behavior.test.tsx",
+    "proof": {
+      "fork": "91af9d9283b96628d2e4dd6afa4694dc5bb655fe",
+      "replacedByBlob": "b54dcc25460e065fed2423bf690db744ec9d2b7e",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "scripts/ui/screens.test.mjs",
+    "because": "The ui tool gained a paperDocs step that creates named Paper documents through the app's commands, so the refusal message for an unknown step now lists it; the same two cases assert the longer list.",
+    "replacedBy": "scripts/ui/screens.test.mjs",
+    "proof": {
+      "fork": "91af9d9283b96628d2e4dd6afa4694dc5bb655fe",
+      "replacedByBlob": "3801167cb7e677e1414e4f1f7c0aaf46c854377e",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  }
+]
