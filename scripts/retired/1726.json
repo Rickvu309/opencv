@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/app-shell/sidebar-nav.test.ts",
+    "because": "Owner rule: never hide product surfaces. Proofs is a Your work row now, and /proof highlights Proofs",
+    "replacedBy": "apps/web/src/features/app-shell/sidebar-nav.test.ts",
+    "proof": {
+      "fork": "429a6e0484ff2a912bb08656a5ade04fb43775f8",
+      "replacedByBlob": "b984ba8331b36a507532524b18b7e686ead9ac65",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 3
+  }
+]
