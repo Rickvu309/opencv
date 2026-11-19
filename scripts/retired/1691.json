@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "because": "The header chips became a view menu at the front of the search bar, the 'x of N' line became a number ruler, and the no-match caption now names the query; the rewritten cases test the menu, the counts, the ruler value and the new copy.",
+    "replacedBy": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "proof": {
+      "fork": "30fb5dc8ab873206b15b4a780de4ff458d4c0a24",
+      "replacedByBlob": "ea2103a59aca2e3abfe37b08fca93c15fd72257b",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 15
+  }
+]
