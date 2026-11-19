@@ -31,24 +31,27 @@ export function BillingSection() {
   }
 
   const data = billing.data
-  const planLine =
-    data.plan === "pro" ? "You're on the Pro plan." : "You're on the Free plan."
+  const plan = PLAN_NAMES[data.plan]
+  const current = data[data.plan]
 
   return (
     <>
-      <SettingsTitle title="Billing">{planLine}</SettingsTitle>
-      {data.plan === "free" ? (
-        <article
-          data-slot="settings-plan-card"
-          data-card="current-plan"
-          className="flex flex-col gap-1 rounded-lg border border-border bg-card p-5"
-        >
-          <h2 className="text-[15px] font-medium">Free plan</h2>
-          <p className="text-[13px] text-muted-foreground">
-            {data.free.price}. {data.free.line}
-          </p>
-        </article>
-      ) : null}
+      <SettingsTitle title="Billing">You're on the {plan}.</SettingsTitle>
+      <article
+        data-slot="settings-plan-card"
+        data-card="current-plan"
+        className="flex flex-col gap-1 rounded-lg border border-border bg-card p-5"
+      >
+        <h2 className="text-[15px] font-medium">{plan}</h2>
+        <p className="text-[13px] text-muted-foreground">
+          {current.price}. {current.line}
+        </p>
+      </article>
     </>
   )
 }
+
+const PLAN_NAMES = {
+  free: "Free plan",
+  pro: "Pro plan",
+} as const

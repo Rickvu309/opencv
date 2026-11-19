@@ -520,7 +520,13 @@ export function CoachWorkspace({
             </DialogDescription>
           </DialogHeader>
           {picker === "link" ? (
-            <>
+            <form
+              className="contents"
+              onSubmit={(event) => {
+                event.preventDefault()
+                attachLink()
+              }}
+            >
               <Input
                 aria-label="Link URL"
                 placeholder="https://…"
@@ -534,10 +540,10 @@ export function CoachWorkspace({
                   {linkError}
                 </p>
               ) : null}
-              <Button className="h-11 md:h-8" onClick={attachLink}>
+              <Button className="h-11 md:h-8" type="submit">
                 Attach link
               </Button>
-            </>
+            </form>
           ) : (
             <div className="max-h-96 space-y-1 overflow-auto">
               {(picker === "paper" && papers.isPending) ||

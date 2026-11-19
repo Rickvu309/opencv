@@ -1,0 +1,13 @@
+{
+  "id": "dialog-enter-submits",
+  "file": "scripts/dialog-enter-submits.test.mjs",
+  "detector": {
+    "module": "scripts/lib/dialog-enter-submits.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "506377b7d",
+    "path": "apps/web/src/features/settings/account-section.tsx"
+  }
+}

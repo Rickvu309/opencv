@@ -98,21 +98,7 @@ export function AccountSection({
           <SettingsRow
             id="profile"
             gap="avatar"
-            label={
-              <span
-                className="block truncate"
-                title={profile.name || profile.email}
-              >
-                {profile.name || profile.email}
-              </span>
-            }
-            desc={
-              profile.name ? (
-                <span className="block truncate" title={profile.email}>
-                  {profile.email}
-                </span>
-              ) : undefined
-            }
+            label="Photo"
             error={photoError}
             leading={
               <Avatar
@@ -180,7 +166,7 @@ export function AccountSection({
           <SettingsRow
             id="email"
             label="Email"
-            desc="We send sign-in codes here"
+            desc={profile.email}
             control={
               <SettingsRowButton
                 onClick={() =>
@@ -343,62 +329,67 @@ function ChangeEmailDialog({
           <DialogTitle>Change email</DialogTitle>
           <DialogDescription>We send sign-in codes here</DialogDescription>
         </DialogHeader>
-        {pendingEmail ? (
-          <fieldset
-            className="min-w-0"
-            aria-label="Verification code"
-            aria-invalid={error ? true : undefined}
-            aria-describedby={error ? "account-email-code-error" : undefined}
-          >
-            <CodeInput
-              value={code}
-              disabled={false}
-              invalid={Boolean(error)}
-              focusNonce={focusNonce}
-              onChange={(value) => dispatch({ type: "code_typed", value })}
-              onComplete={(otp) => void onCode(otp)}
-            />
-          </fieldset>
-        ) : (
-          <Field label="Email" error={error}>
-            <Input
-              type="email"
-              autoFocus
-              value={email}
-              onChange={(event) =>
-                dispatch({ type: "email_typed", value: event.target.value })
-              }
-            />
-          </Field>
-        )}
-        {pendingEmail && error ? (
-          <p
-            id="account-email-code-error"
-            role="alert"
-            className="text-sm text-destructive"
-          >
-            {error}
-          </p>
-        ) : null}
-        <div className="flex justify-end gap-2">
-          <Button
-            className="h-11 md:h-8"
-            type="button"
-            variant="outline"
-            onClick={() => close(false)}
-          >
-            Cancel
-          </Button>
-          {pendingEmail ? null : (
+        <form
+          className="contents"
+          noValidate
+          onSubmit={(event) => {
+            event.preventDefault()
+            if (!pendingEmail) void submit()
+          }}
+        >
+          {pendingEmail ? (
+            <fieldset
+              className="min-w-0"
+              aria-label="Verification code"
+              aria-invalid={error ? true : undefined}
+              aria-describedby={error ? "account-email-code-error" : undefined}
+            >
+              <CodeInput
+                value={code}
+                disabled={false}
+                invalid={Boolean(error)}
+                focusNonce={focusNonce}
+                onChange={(value) => dispatch({ type: "code_typed", value })}
+                onComplete={(otp) => void onCode(otp)}
+              />
+            </fieldset>
+          ) : (
+            <Field label="Email" error={error}>
+              <Input
+                type="email"
+                autoFocus
+                value={email}
+                onChange={(event) =>
+                  dispatch({ type: "email_typed", value: event.target.value })
+                }
+              />
+            </Field>
+          )}
+          {pendingEmail && error ? (
+            <p
+              id="account-email-code-error"
+              role="alert"
+              className="text-sm text-destructive"
+            >
+              {error}
+            </p>
+          ) : null}
+          <div className="flex justify-end gap-2">
             <Button
               className="h-11 md:h-8"
               type="button"
-              onClick={() => void submit()}
+              variant="outline"
+              onClick={() => close(false)}
             >
-              Change email
+              Cancel
             </Button>
-          )}
-        </div>
+            {pendingEmail ? null : (
+              <Button className="h-11 md:h-8" type="submit">
+                Change email
+              </Button>
+            )}
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   )

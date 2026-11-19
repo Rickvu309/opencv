@@ -139,4 +139,18 @@ describe("Coach Add menu", () => {
       "Paste a job link"
     )
   })
+
+  it("attaches a pasted job link when Enter is pressed", async () => {
+    const user = userEvent.setup()
+    const menu = await openAdd()
+    await user.click(
+      within(menu).getByRole("menuitem", { name: "Paste a job link" })
+    )
+    const dialog = await screen.findByRole("dialog")
+    await user.type(
+      within(dialog).getByRole("textbox", { name: "Link URL" }),
+      "https://jobs.example.com/designer{Enter}"
+    )
+    await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull())
+  })
 })

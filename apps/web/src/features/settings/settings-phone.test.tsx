@@ -66,16 +66,6 @@ describe("settings phone layout", () => {
     )
   })
 
-  it("keeps the account identity on one line with its full value available", async () => {
-    renderApp("/settings/account")
-    await screen.findByRole("button", { name: "Change photo" })
-    const identity = document.querySelector(
-      '[data-row="profile"] [data-slot="settings-row-label"] [title]'
-    )
-    expect(identity).toHaveClass("truncate")
-    expect(identity).toHaveAttribute("title", identity?.textContent)
-  })
-
   it("keeps the Coach switch track at 18px and extends its hit area past 24px", async () => {
     renderApp("/settings/coach")
     const control = await screen.findByRole("switch", {
