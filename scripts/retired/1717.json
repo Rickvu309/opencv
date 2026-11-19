@@ -94,5 +94,19 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/api/src/coach/package-grounding.test.ts",
+    "because": "New Paper documents are named without a file extension (#1717), so the Coach note and the import receipt name the document as the person sees it, without .docx.",
+    "replacedBy": "apps/api/src/coach/package-grounding.test.ts",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "b50bcd6a3e23d9be4df06b723b3dce297876c4ce",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
   }
 ]
