@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/settings/settings-phone.test.tsx",
+    "because": "K4 (#1744): the Settings Coach switch no longer carries a phone class override; the kit Switch test checks the 44px hit area once, and the layout case no longer pins a utility class.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
   }
 ]
