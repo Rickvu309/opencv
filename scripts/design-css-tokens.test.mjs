@@ -107,7 +107,7 @@ test("the codemod has nothing left to rewrite", () => {
   const out = execFileSync(
     process.execPath,
     [path.join(root, "scripts/design-css-tokens.mjs"), "--check"],
-    { encoding: "utf8" }
+    { encoding: "utf8", timeout: 30_000 }
   )
   assert.equal(out, "")
 })
