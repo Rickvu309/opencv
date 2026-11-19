@@ -54,5 +54,19 @@
     "class": "owner",
     "classBecause": "apps/web/src/features/paper/paper-library-sections.test.tsx shares no module, command or route with apps/web/src/features/paper/paper-hand-layout.test.ts",
     "items": 6
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library.test.tsx",
+    "because": "The search field is a searchbox, so the textbox query never matched; the replacement asks for the searchbox and the filter, issue 1715",
+    "replacedBy": "apps/web/src/features/paper/paper-library.test.tsx",
+    "proof": {
+      "fork": "862c5d19e011de4e882a4f78020fc1beec99aa3c",
+      "replacedByBlob": "8e3149f89ed9f3a6cbd6f7c0adcf5f730ce877ea",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
