@@ -101,6 +101,49 @@ test("every allowed retired-word use still matches something", () => {
   )
 })
 
+test("no file outside scripts/retired names the old design tool", () => {
+  assert.deepEqual(violations("pen"), [])
+})
+
+test("the old design tool name fires in code, styles, file names and agent docs", () => {
+  assert.equal(
+    detect(
+      `data-pen-surface="paper"`,
+      "apps/web/src/features/paper/rich-page.tsx"
+    ).length,
+    1
+  )
+  assert.equal(
+    detect("", "apps/web/src/features/coach/coach-panel.pen.css").length,
+    1
+  )
+  assert.equal(
+    detect("Match the Pen frame first", ".agents/skills/verify-ui/SKILL.md")
+      .length,
+    1
+  )
+  assert.equal(detect("open it in PenDev", "AGENTS.md").length, 1)
+  assert.equal(detect("export the opencv.pen file", "docs/design.md").length, 1)
+})
+
+test("the old design tool name stays in scripts/retired, and open, pencil and stylus pointers pass", () => {
+  assert.deepEqual(
+    detect(`"because": "match the pen frame"`, "scripts/retired/1697.json"),
+    []
+  )
+  assert.deepEqual(
+    detect("open the Pencil menu, then happen to append", "apps/web/src/x.tsx"),
+    []
+  )
+  assert.deepEqual(
+    detect(
+      `  it("ignores touch and pen pointers", async () => {`,
+      "apps/web/src/features/app-shell/sidebar-peek.test.tsx"
+    ),
+    []
+  )
+})
+
 test("a source file that names the old project fires, in any case", () => {
   assert.equal(
     detect(
