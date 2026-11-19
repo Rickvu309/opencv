@@ -98,6 +98,19 @@ export function measureInPage(limit) {
     }
     return null
   }
+  const scrollsSideways = (element) => {
+    for (
+      let at = element.parentElement;
+      at && at !== document.body;
+      at = at.parentElement
+    ) {
+      const style = getComputedStyle(at)
+      if (/\bpan-y\b/.test(style.touchAction)) return true
+      if (scrolls(style.overflowX) && at.scrollWidth > at.clientWidth + 1)
+        return true
+    }
+    return false
+  }
   const rect = (element) => {
     const box = element.getBoundingClientRect()
     return { x: box.x, y: box.y, width: box.width, height: box.height }
@@ -134,7 +147,8 @@ export function measureInPage(limit) {
     const y = box.y + box.height / 2
     const isPinned = pinned(element)
     const inside = x >= 0 && x <= width && y >= 0 && y <= height
-    if (!inside && !isPinned) continue
+    const offSide = x < 0 || x > width
+    if (!inside && !isPinned && !offSide) continue
     counted += 1
     const clip = inside ? clipOf(element, x, y) : null
     if (clip === "scroll") continue
@@ -162,6 +176,9 @@ export function measureInPage(limit) {
       hit,
       ...(coveredBy ? { coveredBy } : {}),
       ...(clip ? { clippedBy: clip } : {}),
+      ...(offSide
+        ? { sideways: scrollsSideways(element) ? "scrolls" : "stuck" }
+        : {}),
       inModal: Boolean(
         element.closest('[role="dialog"],[role="alertdialog"],dialog')
       ),

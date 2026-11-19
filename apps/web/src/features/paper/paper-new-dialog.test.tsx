@@ -81,6 +81,7 @@ describe("Paper new dialog", () => {
     })
     render(<Harness onMinted={onMinted} />)
     fireEvent.click(screen.getByRole("button", { name: "CV" }))
+    fireEvent.click(screen.getByRole("radio", { name: "Blank" }))
     fireEvent.click(screen.getByRole("button", { name: "Start blank" }))
     await vi.waitFor(() => expect(onMinted).toHaveBeenCalledWith(minted))
     expect(

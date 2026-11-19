@@ -709,6 +709,10 @@ export function validateScreens(screens) {
         problems.push(
           `${label}: step ${JSON.stringify(step)} must be one of ${[...STEP_KINDS].join(", ")}`
         )
+      if (step.click?.text !== undefined)
+        problems.push(
+          `${label}: step ${JSON.stringify(step)} clicks by text, which takes the first match even where a layout hides it; click by role and name`
+        )
     }
   }
   return problems

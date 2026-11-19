@@ -9,6 +9,7 @@
 
 .paper-hand-stage {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   justify-items: center;
   padding: 28px 36px 0;
 }
@@ -84,6 +85,7 @@
   inset-inline-start: 50%;
   inset-block-end: 150px;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-content: center;
   justify-items: center;
   gap: 4px;
@@ -125,7 +127,7 @@
   align-items: center;
   justify-content: center;
   gap: 2px;
-  max-width: 480px;
+  max-width: min(100%, 480px);
   margin-inline: auto;
 }
 
@@ -368,6 +370,7 @@
 
 .paper-hand-proofs {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   justify-items: center;
   padding: 48px 24px 0;
 }

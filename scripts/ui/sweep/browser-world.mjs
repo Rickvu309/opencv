@@ -91,7 +91,13 @@ export function browserWorld({ browser, state, accounts, shotsDir, now }) {
         }
         for (const [at, step] of (screen.steps ?? []).entries()) {
           try {
-            await runStep(page, state.webOrigin, step)
+            await runStep(
+              page,
+              state.webOrigin,
+              step,
+              undefined,
+              state.apiOrigin
+            )
           } catch (error) {
             return `step ${at + 1} ${JSON.stringify(step)} failed: ${firstLine(error)}`
           }

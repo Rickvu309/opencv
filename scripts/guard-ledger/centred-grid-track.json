@@ -1,0 +1,14 @@
+{
+  "id": "centred-grid-track",
+  "file": "scripts/centred-grid-track.test.mjs",
+  "detector": {
+    "module": "scripts/lib/centred-grid-track.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "30fb5dc8a",
+    "path": "apps/web/src/features/paper/design/paper-hand.css"
+  },
+  "reason": "PR 1690 centred the Paper hand stage, caption and start screen in grids with an implicit auto column. At 390 wide the column grew to 480px inside a 358px stage, so long names lost their ellipsis, the caption menu sat at x 490 and the Import card was cut off."
+}

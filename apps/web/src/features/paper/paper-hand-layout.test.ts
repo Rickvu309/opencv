@@ -12,7 +12,6 @@ import {
   handPose,
   handRelease,
   handCentre,
-  handStart,
   handWheel,
 } from "./paper-hand-layout.ts"
 
@@ -30,10 +29,7 @@ function paper(name: string, updatedAt: string, index: number): LibraryEntry {
 }
 
 describe("paper hand layout", () => {
-  it("starts on the newest card until the fan is wider than seven", () => {
-    expect(handStart(0)).toBe(0)
-    expect(handStart(1)).toBe(0)
-    expect(handStart(2)).toBe(0.5)
+  it("centres the nearer card and stacks it on top between two cards", () => {
     expect(handCentre(0.5, 2)).toBe(0)
     expect(handCentre(1.5, 4)).toBe(1)
     expect(
@@ -57,9 +53,6 @@ describe("paper hand layout", () => {
         reduced: false,
       }).z
     )
-    expect(handStart(5)).toBe(2)
-    expect(handStart(7)).toBe(3)
-    expect(handStart(8)).toBe(3)
   })
 
   it("rubber-bands past the first and last card", () => {

@@ -1,5 +1,6 @@
 .paper-start {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   justify-items: center;
   gap: 28px;
   padding: clamp(40px, 9vh, 96px) 16px 64px;

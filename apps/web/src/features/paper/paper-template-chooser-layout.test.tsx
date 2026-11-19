@@ -70,7 +70,7 @@ describe("Paper template chooser layout", () => {
         id
       ).toEqual(headings)
     }
-    expect(screen.getByRole("radio", { name: "Blank" })).toHaveAttribute(
+    expect(screen.getByRole("radio", { name: "Simple" })).toHaveAttribute(
       "aria-checked",
       "true"
     )
@@ -101,7 +101,7 @@ describe("Paper template chooser layout", () => {
     )
     expect(content.className).toContain("flex-col")
     expect(actions?.querySelector("[data-variant=primary]")?.textContent).toBe(
-      "Start blank"
+      "Use Simple"
     )
   })
 })

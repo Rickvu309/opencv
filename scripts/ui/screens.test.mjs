@@ -97,6 +97,34 @@ test("shell recipes reach a menu at both widths and a collapsed control at both 
   assert.match(JSON.stringify(menu.steps), /role=\\"menu\\"/)
 })
 
+test("MISTAKE: a recipe that clicks a template by its text label fires", () => {
+  assert.deepEqual(
+    validateScreens([
+      {
+        id: "paper-new-cv-selected",
+        route: "/paper",
+        steps: [{ click: { text: "Academic" } }],
+      },
+    ]),
+    [
+      'paper-new-cv-selected: step {"click":{"text":"Academic"}} clicks by text, which takes the first match even where a layout hides it; click by role and name',
+    ]
+  )
+})
+
+test("the same recipe clicking the template by role and name stays quiet", () => {
+  assert.deepEqual(
+    validateScreens([
+      {
+        id: "paper-new-cv-selected",
+        route: "/paper",
+        steps: [{ click: { role: "radio", name: "Academic" } }],
+      },
+    ]),
+    []
+  )
+})
+
 test("shot names and viewports are deterministic", () => {
   assert.equal(shotName("coach-home", 1440, 1), "coach-home-1440.png")
   assert.equal(shotName("coach-home", 390, 2), "coach-home-390@2x.png")
@@ -107,7 +135,12 @@ test("shot names and viewports are deterministic", () => {
 test("a screen's after steps clean up and are only allowed on a screen with steps", () => {
   assert.deepEqual(
     validateScreens([
-      { id: "a", route: "/a", steps: [], after: [{ click: { text: "x" } }] },
+      {
+        id: "a",
+        route: "/a",
+        steps: [],
+        after: [{ click: { role: "button", name: "x" } }],
+      },
       { id: "b", route: "/b", unreachable: "why", after: [] },
       { id: "c", route: "/c", steps: [], after: [{ hover: "x" }] },
     ]),
