@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-workspace-progress.test.tsx",
+    "because": "The owner approved a new Coach Working design (#1692, prototype round 4c): Working is a fold that stays above the reply, folds shut while Coach writes, breathes instead of shimmering, and turns the OpenCV mark once per step, so the old assertions that Working disappears at first text and shimmers move to the fold.",
+    "replacedBy": "apps/web/src/features/coach/coach-workspace-progress.test.tsx",
+    "proof": {
+      "fork": "30fb5dc8ab873206b15b4a780de4ff458d4c0a24",
+      "replacedByBlob": "8b639f841b9597c9a0830120e3e098d6a3520693",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
