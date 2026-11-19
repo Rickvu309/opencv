@@ -1,12 +1,11 @@
 import { useMemo, useReducer } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { useNavigate } from "@tanstack/react-router"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import { SegmentedControl } from "@workspace/ui/components/segmented-control"
 
-import type { JobView } from "@workspace/domain"
+import { parseJobId, type JobId, type JobView } from "@workspace/domain"
 
 import { calendarJobs, jobCalendarKey } from "./apply-api.ts"
 import {
@@ -68,14 +67,15 @@ export function ApplyCalendar({
   company,
   location,
   showClosed,
+  onOpenJob,
 }: {
   span: "month" | "week"
   onSpan: (span: "month" | "week") => void
   company: string
   location: string
   showClosed: boolean
+  onOpenJob: (jobId: JobId) => void
 }) {
-  const navigate = useNavigate()
   const zone = useChosenTimeZone()
   const today = zonedYmd(new Date(), zone)
   const [anchorState, dispatchAnchor] = useReducer(anchorReducer, {
@@ -117,7 +117,7 @@ export function ApplyCalendar({
     [query.data, company, location, showClosed, days, zone]
   )
   const openJob = (jobId: string) => {
-    void navigate({ to: "/apply/$jobId", params: { jobId } })
+    onOpenJob(parseJobId(jobId))
   }
   const unit = span === "week" ? "week" : "month"
   const step = (direction: 1 | -1) =>

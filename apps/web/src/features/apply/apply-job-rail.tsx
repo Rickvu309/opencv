@@ -303,10 +303,12 @@ export function JobRail({
   job,
   onStage,
   onPriority,
+  className,
 }: {
   job: JobDetail
   onStage: (stage: JobStage) => void
   onPriority: (priority: JobPriority) => void
+  className?: string
 }) {
   const run = useRunCommand()
   const zone = useChosenTimeZone()
@@ -324,7 +326,10 @@ export function JobRail({
   return (
     <aside
       aria-label="Properties"
-      className="flex w-full shrink-0 flex-col gap-0.5 border-t border-foreground/6 px-3.5 py-4 lg:w-72 lg:overflow-y-auto lg:border-t-0 lg:border-l"
+      className={cn(
+        "flex w-full shrink-0 flex-col gap-0.5 border-t border-foreground/6 px-3.5 py-4 lg:w-72 lg:overflow-y-auto lg:border-t-0 lg:border-l",
+        className
+      )}
     >
       <RailSection title="Properties">
         <StageRow job={job} onStage={onStage} />

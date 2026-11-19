@@ -92,9 +92,9 @@ describe("apply list", () => {
     )
     await screen.findByRole("button", { name: "Priority: High priority" })
     await userEvent.click(
-      within(screen.getByRole("navigation", { name: "Breadcrumb" })).getByRole(
-        "link",
-        { name: "Apply" }
+      within(screen.getByRole("complementary", { name: "Job" })).getByRole(
+        "button",
+        { name: "Close" }
       )
     )
     const raised = await openPriorityCounts()
@@ -131,7 +131,11 @@ describe("apply list", () => {
     ])
     renderApp("/apply?view=list")
     expect(await screen.findByText("Saved today")).toBeInTheDocument()
-    expect(screen.getByText("Apply by Nov 8")).toBeInTheDocument()
+    expect(
+      within(screen.getByRole("region", { name: "Saved" })).getByText(
+        "Apply by Nov 8"
+      )
+    ).toBeInTheDocument()
     expect(screen.getByText("Applied Oct 14")).toBeInTheDocument()
   })
 
@@ -180,6 +184,18 @@ describe("apply list", () => {
     await userEvent.keyboard("{Escape}")
     await userEvent.click(
       screen.getByRole("button", { name: /Northwind Hanoi role/ })
+    )
+    await waitFor(() => {
+      expect(router.state.location.search).toMatchObject({
+        job: matching.id,
+        company: "NORTHWIND",
+        location: "hAnOi",
+      })
+    })
+    const peek = await screen.findByRole("complementary", { name: "Job" })
+    await within(peek).findByRole("heading", { name: "Northwind Hanoi role" })
+    await userEvent.click(
+      within(peek).getByRole("button", { name: "Open full page" })
     )
     await waitFor(() => {
       expect(router.state.location.pathname).toBe(`/apply/${matching.id}`)

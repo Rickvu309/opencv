@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, type QueryClient } from "@tanstack/react-query"
 import type {
   JobDetail,
   JobId,
@@ -50,6 +50,14 @@ export function getJob(jobId: JobId): Promise<QueryOutput<"job.get">> {
   return apiFetch<SuccessBody<QueryOutput<"job.get">>>(
     endpoints.job(jobId)
   ).then(unwrapData)
+}
+
+export function prefetchJob(queryClient: QueryClient, jobId: JobId) {
+  void queryClient.prefetchQuery({
+    queryKey: jobGetKey(jobId),
+    queryFn: () => getJob(jobId),
+    staleTime: 30_000,
+  })
 }
 
 export function calendarJobs(

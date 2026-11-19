@@ -101,7 +101,10 @@ function sourceFiles(dir: string): string[] {
   })
 }
 
-export const PANEL_CHROME = ["features/coach/coach-panel-header.tsx"]
+export const PANEL_CHROME = [
+  "features/coach/coach-panel-header.tsx",
+  "features/apply/apply-peek-header.tsx",
+]
 
 const toolFiles = SCANNED.flatMap((dir) => sourceFiles(path.join(srcDir, dir)))
   .map((file) => path.relative(srcDir, file).split(path.sep).join("/"))

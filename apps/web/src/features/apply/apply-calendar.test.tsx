@@ -229,7 +229,7 @@ describe("apply calendar", () => {
     expect(placed.every((item) => item.lanes === 2)).toBe(true)
   })
 
-  it("opens a month event's full job detail with its keyboard button", async () => {
+  it("opens a month event's job in the side panel with its keyboard button", async () => {
     const job = mockJob({
       id: "01900000-0000-7000-8000-000000000044",
       title: "A very long product role title that cannot fit in the month cell",
@@ -245,12 +245,12 @@ describe("apply calendar", () => {
     expect(event).toHaveFocus()
     await user.keyboard("{Enter}")
     await waitFor(() =>
-      expect(router.state.location.pathname).toBe(`/apply/${job.id}`)
+      expect(router.state.location.search).toMatchObject({ job: job.id })
     )
     expect(
       await within(
-        await screen.findByRole("navigation", { name: "Breadcrumb" })
-      ).findByText(job.title)
+        await screen.findByRole("complementary", { name: "Job" })
+      ).findByRole("heading", { name: job.title })
     ).toBeInTheDocument()
   })
 

@@ -1,17 +1,10 @@
 import { useReducer } from "react"
 import { useShortcut } from "@/lib/use-shortcut.ts"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import {
-  commands,
-  ERROR_CODES,
-  type JobId,
-  type JobStage,
-  type JobPriority,
-} from "@workspace/domain"
+import { commands, ERROR_CODES, type JobId } from "@workspace/domain"
 import { useNavigate } from "@tanstack/react-router"
 
 import { Button } from "@workspace/ui/components/button"
-import { toastWithUndo } from "@workspace/ui/components/sonner"
 
 import { reportRejected } from "@/lib/command-failure.ts"
 
@@ -20,10 +13,8 @@ import { ApiError } from "@/lib/api-error.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import {
   activityKey,
-  catalogClient,
   refreshQueries,
   useRunCommand,
-  undoActivity,
 } from "@/lib/contract-client.ts"
 
 import {
@@ -34,6 +25,7 @@ import {
   listJobs,
 } from "./apply-api.ts"
 import { JobDocument } from "./apply-detail-document.tsx"
+import { useJobActions } from "./apply-job-actions.ts"
 import { DeleteJobDialog } from "./apply-job-delete-dialog.tsx"
 import { JobHeader } from "./apply-job-header.tsx"
 import { JobRail } from "./apply-job-rail.tsx"
@@ -94,18 +86,7 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
   const previous = index > 0 ? ordered[index - 1] : undefined
   const next = index >= 0 ? ordered[index + 1] : undefined
   const job = detail.data
-
-  async function changeStage(stage: JobStage) {
-    const result = await run("job.move", { jobId: id, stage })
-    if (stage === "closed" && result.activityId) {
-      const activityId = result.activityId
-      toastWithUndo("Moved to Closed", () => {
-        void undoActivity(queryClient, activityId).catch(
-          reportRejected("undo the move")
-        )
-      })
-    }
-  }
+  const actions = useJobActions(id)
 
   if (detail.isLoading)
     return (
@@ -157,21 +138,6 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
       : null
   }
 
-  async function changePriority(priority: JobPriority) {
-    const result = await catalogClient.run(queryClient, "job.setPriority", {
-      jobId: id,
-      priority,
-    })
-    if ("activityId" in result && result.activityId) {
-      const activityId = result.activityId
-      toastWithUndo(`Priority set to ${priority}`, () => {
-        void undoActivity(queryClient, activityId).catch(
-          reportRejected("undo the priority change")
-        )
-      })
-    }
-  }
-
   return (
     <div
       data-pen-surface="apply"
@@ -203,14 +169,8 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
         {railOpen ? (
           <JobRail
             job={job}
-            onPriority={(priority) =>
-              void changePriority(priority).catch(
-                reportRejected("set priority")
-              )
-            }
-            onStage={(stage) =>
-              void changeStage(stage).catch(reportRejected("move this job"))
-            }
+            onPriority={actions.onPriority}
+            onStage={actions.onStage}
           />
         ) : null}
       </div>

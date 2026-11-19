@@ -3,7 +3,7 @@ import { useReducer } from "react"
 import { useShortcut } from "@/lib/use-shortcut.ts"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
-import type { JobStage, JobView } from "@workspace/domain"
+import type { JobId, JobStage, JobView } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
 
@@ -20,6 +20,9 @@ import {
   ownerIdFromRouteMatches,
 } from "@/features/apply/apply-api.ts"
 import { NewJobDialog } from "@/features/apply/apply-new-job-dialog.tsx"
+import { ApplyNextUp } from "@/features/apply/apply-next-up-strip.tsx"
+import { ApplyPeek } from "@/features/apply/apply-peek.tsx"
+import { compareJobs } from "@/features/apply/apply-stages.ts"
 import {
   activeFilterCount,
   validateApplySearch,
@@ -80,14 +83,28 @@ function matches(job: JobView, { company, location }: ApplyFilters) {
 function applySearch(
   filters: ApplyFilters,
   view: ApplyView,
-  span: ApplySpan
+  span: ApplySpan,
+  job?: string
 ): ApplySearch {
   return {
     ...(view === "board" ? {} : { view }),
     ...(view === "calendar" ? { span } : {}),
     ...(filters.company ? { company: filters.company } : {}),
     ...(filters.location ? { location: filters.location } : {}),
+    ...(job ? { job } : {}),
   }
+}
+
+function peekOrder(
+  jobs: readonly JobView[],
+  view: ApplyView,
+  showClosed: boolean
+): JobId[] {
+  const hideClosed = view === "board" && !showClosed
+  return jobs
+    .filter((job) => !(hideClosed && job.stage === "closed"))
+    .sort(compareJobs)
+    .map((job) => job.id)
 }
 
 export function ApplyPage() {
@@ -124,6 +141,7 @@ export function ApplyPage() {
   const noMatch =
     !jobs.isLoading && !jobs.isError && filtering && filtered.length === 0
   const ready = !jobs.isLoading && !jobs.isError && !empty && !noMatch
+  const openJobId = search.job ?? null
 
   useShortcut({
     key: "n",
@@ -136,14 +154,32 @@ export function ApplyPage() {
       to: "/apply",
       replace: true,
       resetScroll: false,
-      search: applySearch(next, view, span),
+      search: applySearch(next, view, span, search.job),
     })
   }
 
   function setView(next: ApplyView) {
     void navigate({
       to: "/apply",
-      search: applySearch(filters, next, span),
+      search: applySearch(filters, next, span, search.job),
+    })
+  }
+
+  function openJob(jobId: JobId) {
+    void navigate({
+      to: "/apply",
+      replace: Boolean(search.job),
+      resetScroll: false,
+      search: applySearch(filters, view, span, jobId),
+    })
+  }
+
+  function closeJob() {
+    void navigate({
+      to: "/apply",
+      replace: true,
+      resetScroll: false,
+      search: applySearch(filters, view, span),
     })
   }
 
@@ -164,58 +200,84 @@ export function ApplyPage() {
         priorityCountsFailed={Boolean(ownerId && counts.isError)}
       />
       <ActiveFilters filters={filters} onFilters={setFilters} />
-      <div className="flex min-h-0 flex-1 flex-col overflow-auto">
-        {jobs.isLoading ? (
-          <p role="status" className="px-5 text-sm">
-            Loading jobs
-          </p>
+      <div className="relative flex min-h-0 flex-1 flex-col">
+        {ready && view !== "calendar" ? (
+          <ApplyNextUp jobs={filtered} onOpen={openJob} />
         ) : null}
-        {jobs.isError ? (
-          <div className="px-5">
-            <p>Couldn't load jobs.</p>
-            <Button
-              type="button"
-              className="h-11 md:h-8"
-              onClick={() => void jobs.refetch()}
-            >
-              Refresh
-            </Button>
-          </div>
-        ) : null}
-        {empty ? (
-          <ApplyEmpty
-            dialogOpen={dialogOpen}
-            onAdd={() => dispatch({ type: "dialog_opened", stage: "saved" })}
-          />
-        ) : null}
-        {noMatch ? (
-          <ApplyNoResults
-            onClear={() => setFilters({ company: "", location: "" })}
-          />
-        ) : null}
-        {ready && view === "board" ? (
-          <ApplyBoard
-            jobs={filtered}
-            showClosed={showClosed}
-            onShowClosed={(show) => dispatch({ type: "closed_toggled", show })}
-            onNewJob={(stage) => dispatch({ type: "dialog_opened", stage })}
-          />
-        ) : null}
-        {ready && view === "list" ? (
-          <ApplyList jobs={filtered} showClosed />
-        ) : null}
-        {ready && view === "calendar" ? (
-          <ApplyCalendar
-            span={span}
-            company={filters.company}
-            location={filters.location}
-            showClosed={showClosed}
-            onSpan={(next) =>
-              void navigate({
-                to: "/apply",
-                search: applySearch(filters, "calendar", next),
-              })
-            }
+        <div
+          key={view}
+          className="flex min-h-0 flex-1 flex-col overflow-auto motion-fade-in"
+        >
+          {jobs.isLoading ? (
+            <p role="status" className="px-5 text-sm">
+              Loading jobs
+            </p>
+          ) : null}
+          {jobs.isError ? (
+            <div className="px-5">
+              <p>Couldn't load jobs.</p>
+              <Button
+                type="button"
+                className="h-11 md:h-8"
+                onClick={() => void jobs.refetch()}
+              >
+                Refresh
+              </Button>
+            </div>
+          ) : null}
+          {empty ? (
+            <ApplyEmpty
+              dialogOpen={dialogOpen}
+              onAdd={() => dispatch({ type: "dialog_opened", stage: "saved" })}
+            />
+          ) : null}
+          {noMatch ? (
+            <ApplyNoResults
+              onClear={() => setFilters({ company: "", location: "" })}
+            />
+          ) : null}
+          {ready && view === "board" ? (
+            <ApplyBoard
+              jobs={filtered}
+              showClosed={showClosed}
+              onShowClosed={(show) =>
+                dispatch({ type: "closed_toggled", show })
+              }
+              onNewJob={(stage) => dispatch({ type: "dialog_opened", stage })}
+              onOpenJob={openJob}
+              openJobId={openJobId}
+            />
+          ) : null}
+          {ready && view === "list" ? (
+            <ApplyList
+              jobs={filtered}
+              showClosed
+              onOpenJob={openJob}
+              openJobId={openJobId}
+            />
+          ) : null}
+          {ready && view === "calendar" ? (
+            <ApplyCalendar
+              span={span}
+              company={filters.company}
+              location={filters.location}
+              showClosed={showClosed}
+              onOpenJob={openJob}
+              onSpan={(next) =>
+                void navigate({
+                  to: "/apply",
+                  search: applySearch(filters, "calendar", next, search.job),
+                })
+              }
+            />
+          ) : null}
+        </div>
+        {openJobId ? (
+          <ApplyPeek
+            jobId={openJobId}
+            order={peekOrder(filtered, view, showClosed)}
+            onOpen={openJob}
+            onClose={closeJob}
           />
         ) : null}
       </div>

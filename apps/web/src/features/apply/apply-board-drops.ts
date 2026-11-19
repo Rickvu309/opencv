@@ -62,6 +62,16 @@ export function shownJobs(jobs: JobView[], drops: Drops): JobView[] {
   return [...jobs.filter((job) => !drops.has(job.id)), ...landingLast]
 }
 
+export function previewMove<T extends { id: string; column: string }>(
+  cards: readonly T[],
+  id: string,
+  column: string
+): T[] {
+  const card = cards.find((item) => item.id === id)
+  if (!card || card.column === column) return [...cards]
+  return [...cards.filter((item) => item.id !== id), { ...card, column }]
+}
+
 export function afterMove(
   drops: Drops,
   jobId: string
