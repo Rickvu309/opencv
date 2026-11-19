@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
-import { ChevronDown, ChevronUp, Maximize2, X } from "lucide-react"
+import { Maximize2 } from "lucide-react"
 import { ERROR_CODES, jobIdSchema, type JobId } from "@workspace/domain"
 
 import { Button } from "@workspace/ui/components/button"
@@ -13,6 +13,7 @@ import { useShortcut } from "@/lib/use-shortcut.ts"
 import { getJob, jobGetKey, prefetchJob } from "./apply-api.ts"
 import { useJobActions } from "./apply-job-actions.ts"
 import { JobRail } from "./apply-job-rail.tsx"
+import { ApplyPeekHeader } from "./apply-peek-header.tsx"
 
 const PEEK_NOTICE = "flex flex-col items-start gap-3 px-5 py-5 text-sm"
 
@@ -75,59 +76,13 @@ export function ApplyPeek({
       data-slot="apply-peek"
       className="absolute inset-y-0 right-0 z-20 flex w-full motion-peek flex-col border-l border-foreground/6 bg-card shadow-[-12px_0_32px_rgb(0_0_0/0.05)] sm:w-[420px]"
     >
-      <div className="flex h-11 shrink-0 items-center gap-1 border-b border-foreground/6 pr-2 pl-4">
-        <span className="mr-auto text-xs text-muted-foreground tabular-nums">
-          {index >= 0 ? `${index + 1} / ${order.length}` : null}
-        </span>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          className="max-md:size-11"
-          aria-label="Previous job"
-          title="Previous job (K)"
-          disabled={!previous}
-          onClick={() => step(previous)}
-        >
-          <ChevronUp />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          className="max-md:size-11"
-          aria-label="Next job"
-          title="Next job (J)"
-          disabled={!next}
-          onClick={() => step(next)}
-        >
-          <ChevronDown />
-        </Button>
-        {id ? (
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            className="max-md:size-11"
-            aria-label="Open full page"
-            title="Open full page"
-            nativeButton={false}
-            render={<Link to="/apply/$jobId" params={{ jobId: id }} />}
-          >
-            <Maximize2 />
-          </Button>
-        ) : null}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          className="max-md:size-11"
-          aria-label="Close"
-          title="Close (Esc)"
-          onClick={close}
-        >
-          <X />
-        </Button>
-      </div>
+      <ApplyPeekHeader
+        position={index >= 0 ? `${index + 1} / ${order.length}` : null}
+        jobId={id}
+        onPrevious={previous ? () => step(previous) : null}
+        onNext={next ? () => step(next) : null}
+        onClose={close}
+      />
       <div className="min-h-0 flex-1 overflow-y-auto">
         {id ? (
           <PeekBody key={id} jobId={id} onClose={close} />
@@ -200,6 +155,7 @@ function PeekBody({ jobId, onClose }: { jobId: JobId; onClose: () => void }) {
         <Button
           variant="outline"
           size="sm"
+          className="h-11 md:h-7"
           nativeButton={false}
           render={<Link to="/apply/$jobId" params={{ jobId }} />}
         >

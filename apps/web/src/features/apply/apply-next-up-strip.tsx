@@ -1,6 +1,7 @@
 import { Calendar, Flag, Reply } from "lucide-react"
 import type { JobId, JobView } from "@workspace/domain"
 
+import { Button } from "@workspace/ui/components/button"
 import { StageIcon } from "@workspace/ui/components/stage-icon"
 
 import { nextUp, type NextUpKind } from "./apply-next-up.ts"
@@ -35,17 +36,18 @@ export function ApplyNextUp({
         Next up
       </span>
       {items.map((item) => (
-        <button
+        <Button
           key={`${item.kind}-${item.jobId}`}
           type="button"
+          variant="outline"
           data-slot="next-up-item"
-          className="flex h-11 shrink-0 items-center gap-1.5 rounded-[6px] border border-foreground/8 bg-card px-2.5 text-[12.5px] whitespace-nowrap transition-colors hover:border-foreground/16 md:h-7"
+          className="h-11 shrink-0 gap-1.5 rounded-[6px] border-foreground/8 bg-card px-2.5 text-[12.5px] font-normal whitespace-nowrap hover:border-foreground/16 hover:bg-card md:h-7"
           onClick={() => onOpen(item.jobId)}
         >
           <KindIcon kind={item.kind} />
           <span className="font-medium">{item.company}</span>
           <span className="text-muted-foreground">{item.label}</span>
-        </button>
+        </Button>
       ))}
     </section>
   )
