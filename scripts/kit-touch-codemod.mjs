@@ -168,6 +168,7 @@ function main(argv) {
     execFileSync("pnpm", ["exec", "prettier", "--write", ...changed], {
       cwd: repoRoot,
       stdio: "ignore",
+      timeout: 120_000,
     })
 }
 
