@@ -18,7 +18,6 @@ export function fakePorts({
     pid: 1,
     repo: "/work/opencv.worktrees/1-demo",
     scratchRoot: "/scratch/ocv-ui",
-    defaultPen: "/scratch/opencv.pen",
     fs: {
       exists: (path) => store.has(path),
       read: (path) => {

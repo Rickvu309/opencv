@@ -131,7 +131,7 @@ describe("tool headers are built on the kit PageHeader", () => {
       .flatMap((file) => problems(read(file)).map((name) => `${file}: ${name}`))
     expect(
       strays,
-      "Build the header from PageHeader, PageHeaderTitle and Breadcrumb in @workspace/ui. Put pen colours in the feature's design/page-header.pen.css."
+      "Build the header from PageHeader, PageHeaderTitle and Breadcrumb in @workspace/ui. Put the header colours in the feature's design page-header stylesheet."
     ).toEqual([])
   })
 

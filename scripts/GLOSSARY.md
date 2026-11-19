@@ -76,7 +76,7 @@ _Avoid_: safe migration, additive migration, harmless migration
 
 **Check**:
 Any machine judgment of a change that ends in pass or fail. Every other term in this section is a kind of check; name the one you mean.
-_Not_: a CI job, the required check, or the design check, which each have their own name.
+_Not_: a CI job or the required check, which each have their own name.
 _Avoid_: verification, review
 
 **Guard**:
@@ -152,11 +152,6 @@ _Avoid_: outdated model, old model
 A test that runs against a real Postgres database instead of the in-memory test database.
 _Not_: a formal model.
 _Avoid_: formal test, integration test
-
-**Design check**:
-A comparison of rendered elements with their frames in the pen design, run by the builder on a local app.
-_Not_: part of the gate.
-_Avoid_: check (bare), visual test, pixel test
 
 **Quick checks**:
 The fast checks run at push on the changed files: formatting, ESLint, typecheck and the comment ban.

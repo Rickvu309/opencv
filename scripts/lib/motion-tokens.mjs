@@ -337,7 +337,6 @@ export function scannedFile(file) {
     SCANNED_ROOTS.some((rootDir) => file.startsWith(`${rootDir}/`)) &&
     /\.(?:css|tsx?)$/.test(file) &&
     !/\.test\.tsx?$/.test(file) &&
-    !/\.pen\.css$/.test(file) &&
     !/\.d\.ts$/.test(file)
   )
 }

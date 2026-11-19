@@ -15,7 +15,7 @@
 
 Each word below meant several things across or inside the contexts; use the terms named after it, as the checking glossary defines them.
 
-- check: check, CI job, required check, design check, pre-check.
+- check: check, CI job, required check, pre-check.
 - policy: policy job, rule. An approval policy is a product word.
 - proof: guard proof, flip proof. Proof is a kind of Paper.
 - run: CI run, test run, walk. A Coach run is a product word.

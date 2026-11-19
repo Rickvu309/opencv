@@ -1,6 +1,6 @@
 export function detect(text, path) {
   const failures = []
-  if (path.endsWith("rich-page-header.pen.css")) {
+  if (/rich-page-header\.(?:\w+\.)?css$/.test(path)) {
     for (const rule of text.matchAll(/(?:min-width|flex-basis)\s*:\s*([^;]+)/g))
       if (/\dpx\b/.test(rule[1]) && /\d(?:ch|rem|em)\b/.test(rule[1]))
         failures.push(

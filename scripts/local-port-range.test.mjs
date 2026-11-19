@@ -56,7 +56,7 @@ const MISTAKES = [
   ["worktree.mjs", 'if (port >= 65535) throw new Error("no free port")'],
   ["launch.sh", '[ "$PORT" -ge 4450 ] || exit 2'],
   ["verify.mjs", 'throw new Error("PORT must be 4450 to 4458")'],
-  ["SKILL.md", "Run `PORT=4450 pnpm --filter web verify:pen-layout`."],
+  ["SKILL.md", "Run `PORT=4450 pnpm --filter web verify:layout`."],
   ["deploy.md", "PORT=5450 node ./scripts/verify-host-routing.mjs"],
   ["verify.mjs", "const API_PORT = env()\nif (API_PORT >= 4450) exit()"],
   ["verify.mjs", "const WEB_PORTS = []\nif (count > 2000) x"],
@@ -72,7 +72,7 @@ const CLEAN = [
   ["verify.mjs", "const retryLimit = 30000\nawait listen(port)"],
   [
     "SKILL.md",
-    "Run `PORT=$(sed -n 's/^PORT=//p' .env) pnpm --filter web verify:pen-layout`.",
+    "Run `PORT=$(sed -n 's/^PORT=//p' .env) pnpm --filter web verify:layout`.",
   ],
   ["deploy.md", "node ./scripts/verify-host-routing.mjs"],
   [PORT_SOURCE, "const valid = parsed > 0 && parsed <= 65535 && port"],

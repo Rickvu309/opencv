@@ -313,7 +313,7 @@ describe("BreadcrumbPage as the page heading", () => {
 })
 
 describe("PageHeader frame", () => {
-  it("is a 52px bar with the pen padding and no fill", () => {
+  it("is a 52px bar with the designed padding and no fill", () => {
     render(<PageHeader />)
     const header = document.querySelector('[data-slot="page-header"]')!
     expect(header).toHaveClass(
