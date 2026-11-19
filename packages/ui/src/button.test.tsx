@@ -17,7 +17,7 @@ describe("button", () => {
       expect.arrayContaining([
         "bg-primary",
         "text-primary-foreground",
-        "text-[13px]",
+        "text-ui",
         "font-semibold",
         "h-8",
         "px-3",

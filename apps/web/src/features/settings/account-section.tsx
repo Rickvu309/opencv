@@ -146,7 +146,7 @@ export function AccountSection({
                   nameMessage ? "account-name-error" : undefined
                 }
                 data-slot="settings-name-input"
-                className="rounded-[7px] text-base max-md:h-11 md:w-60 md:text-[13px]"
+                className="rounded-md text-base max-md:h-11 md:w-60 md:text-ui"
                 value={name}
                 readOnly={pending}
                 onChange={(event) =>

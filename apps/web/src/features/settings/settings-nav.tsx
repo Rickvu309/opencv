@@ -33,7 +33,7 @@ import { useShellProfile } from "@/lib/use-shell-profile.ts"
 import { personInitials } from "@/lib/person-initials.ts"
 
 const SETTINGS_NAV_ITEM =
-  "h-11 rounded-sm text-[13px] font-normal hover:bg-sidebar-accent aria-[current=page]:bg-sidebar-accent aria-[current=page]:font-medium aria-[current=page]:text-foreground md:h-7"
+  "h-11 rounded-sm text-ui font-normal hover:bg-sidebar-accent aria-[current=page]:bg-sidebar-accent aria-[current=page]:font-medium aria-[current=page]:text-foreground md:h-7"
 
 const SECTION_ICONS: Record<SettingsSectionId, LucideIcon> = {
   preferences: SlidersHorizontal,
@@ -101,7 +101,7 @@ export function SettingsNav() {
           <span
             data-slot="account-name"
             title={identity.label}
-            className="min-w-0 flex-1 truncate text-[13px] font-medium"
+            className="min-w-0 flex-1 truncate text-ui font-medium"
           >
             {identity.label}
           </span>
