@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 7
+  },
+  {
+    "subject": "apps/web/src/features/settings/settings.test.tsx",
+    "because": "The cases pinned h-11, touch-manipulation and max-md:h-11 class strings on the Back link, the Time zone and Start page selects and the Name box, so any kit or token change failed them with no behaviour change. jsdom cannot measure a height. The Back link height is owned by the kit page header and its test; the 390 measurement of the selects and the Name box is in the PR evidence; a follow-up issue moves the phone height rule for selects and inputs into the touch-targets guard.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
   }
 ]
