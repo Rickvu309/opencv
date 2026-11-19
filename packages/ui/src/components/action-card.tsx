@@ -1,5 +1,5 @@
 import type { ComponentProps, ReactNode } from "react"
-import { cn } from "cn"
+import { cn } from "@workspace/ui/lib/utils"
 
 type ActionCardProps = Omit<ComponentProps<"section">, "title"> & {
   icon: ReactNode
@@ -37,7 +37,7 @@ function ActionCard({
           {icon}
         </span>
         <div className="min-w-0 flex-1">
-          <h3 className="text-[13px] leading-[1.25] font-medium [overflow-wrap:anywhere] text-foreground">
+          <h3 className="text-ui leading-[1.25] font-medium [overflow-wrap:anywhere] text-foreground">
             {title}
           </h3>
           <p className="text-xs leading-4 text-muted-foreground">{state}</p>

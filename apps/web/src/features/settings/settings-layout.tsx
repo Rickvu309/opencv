@@ -139,7 +139,7 @@ export function SettingsTitle({
       {children ? (
         <p
           data-slot="settings-title-sub"
-          className="text-[13px] text-muted-foreground"
+          className="text-ui text-muted-foreground"
         >
           {children}
         </p>
@@ -178,12 +178,12 @@ export function SettingsSection({
         <h2
           id={`settings-section-${id}`}
           data-slot="settings-section-head"
-          className="text-[13px] font-medium text-muted-foreground"
+          className="text-ui font-medium text-muted-foreground"
         >
           {label}
         </h2>
         {note ? (
-          <span className="text-[13px] text-muted-foreground">{note}</span>
+          <span className="text-ui text-muted-foreground">{note}</span>
         ) : null}
       </div>
       {children}
@@ -219,7 +219,7 @@ export function SettingsTile({ icon: Icon }: { icon: LucideIcon }) {
     <span
       aria-hidden
       data-slot="settings-tile"
-      className="flex size-8 shrink-0 items-center justify-center rounded-[8px] bg-muted text-muted-foreground"
+      className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground"
     >
       <Icon className="size-4" />
     </span>
@@ -268,7 +268,7 @@ export function SettingsRow({
         <span
           id={labelId}
           data-slot="settings-row-label"
-          className="text-[13px] leading-4 font-medium break-words"
+          className="text-ui leading-4 font-medium break-words"
         >
           {label}
         </span>
@@ -276,7 +276,7 @@ export function SettingsRow({
           <span
             data-slot="settings-row-desc"
             className={cn(
-              "text-[12.5px] leading-4 break-words text-muted-foreground",
+              "text-xs leading-4 break-words text-muted-foreground",
               stack && "@max-[479px]/settings:leading-[18px]"
             )}
           >
@@ -356,8 +356,8 @@ export function SettingsUsageLink({ desc }: { desc: string }) {
       className="flex min-h-11 items-center gap-3 rounded-lg border border-border bg-card px-5 py-3.5 outline-none hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50"
     >
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-[13px] font-medium">Usage</span>
-        <span className="text-[12.5px] text-muted-foreground">{desc}</span>
+        <span className="text-ui font-medium">Usage</span>
+        <span className="text-xs text-muted-foreground">{desc}</span>
       </span>
       <ChevronRight className="size-3.5 text-muted-foreground" />
     </a>

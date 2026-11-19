@@ -1,15 +1,15 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
-import { cn } from "cn"
+import { cn } from "@workspace/ui/lib/utils"
 
 const secondaryButton =
   "bg-card text-foreground ring-1 ring-inset ring-border hover:bg-secondary active:bg-muted"
 
 const primaryButton =
-  "rounded-md bg-primary text-[13px] font-semibold text-primary-foreground hover:bg-[color-mix(in_oklch,var(--primary),var(--primary-foreground)_12%)] active:bg-[color-mix(in_oklch,var(--primary),var(--primary-foreground)_22%)] disabled:opacity-40"
+  "rounded-md bg-primary text-ui font-semibold text-primary-foreground hover:bg-[color-mix(in_oklch,var(--primary),var(--primary-foreground)_12%)] active:bg-[color-mix(in_oklch,var(--primary),var(--primary-foreground)_22%)] disabled:opacity-40"
 
 const destructiveButton =
-  "rounded-md bg-destructive text-[13px] font-semibold text-white hover:bg-[color-mix(in_oklch,var(--destructive),var(--foreground)_10%)] active:bg-[color-mix(in_oklch,var(--destructive),var(--foreground)_20%)] focus-visible:border-destructive focus-visible:ring-destructive/30 disabled:opacity-40"
+  "rounded-md bg-destructive text-ui font-semibold text-white hover:bg-[color-mix(in_oklch,var(--destructive),var(--foreground)_10%)] active:bg-[color-mix(in_oklch,var(--destructive),var(--foreground)_20%)] focus-visible:border-destructive focus-visible:ring-destructive/30 disabled:opacity-40"
 
 const buttonVariants = cva(
   "group/button inline-flex shrink-0 motion-press items-center justify-center rounded-lg border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
@@ -49,7 +49,7 @@ const buttonVariants = cva(
       {
         variant: ["primary", "destructive"],
         size: ["default", "sm", "touch"],
-        class: "rounded-md px-3 text-[13px]",
+        class: "rounded-md px-3 text-ui",
       },
     ],
     defaultVariants: {

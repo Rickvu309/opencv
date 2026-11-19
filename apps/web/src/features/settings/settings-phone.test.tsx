@@ -11,7 +11,7 @@ describe("settings phone layout", () => {
     const user = userEvent.setup()
     renderApp("/settings/account")
     const field = await screen.findByRole("textbox", { name: "Name" })
-    expect(field).toHaveClass("text-base", "md:text-[13px]")
+    expect(field).toHaveClass("text-base", "md:text-ui")
     expect(field.className).not.toMatch(/(?:^|\s)text-\[13px\](?:\s|$)/)
     expect(field).not.toHaveAttribute("aria-invalid")
     expect(field).not.toHaveAttribute("aria-describedby")

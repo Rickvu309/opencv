@@ -1,7 +1,7 @@
 import * as React from "react"
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
-import { cn } from "cn"
+import { cn } from "@workspace/ui/lib/utils"
 import { ChevronRightIcon, MoreHorizontalIcon } from "lucide-react"
 
 function Breadcrumb({ className, ...props }: React.ComponentProps<"nav">) {
@@ -20,7 +20,7 @@ function BreadcrumbList({ className, ...props }: React.ComponentProps<"ol">) {
     <ol
       data-slot="breadcrumb-list"
       className={cn(
-        "flex min-w-0 flex-nowrap items-center gap-2 text-[13px] leading-4 text-muted-foreground",
+        "flex min-w-0 flex-nowrap items-center gap-2 text-ui leading-4 text-muted-foreground",
         className
       )}
       {...props}

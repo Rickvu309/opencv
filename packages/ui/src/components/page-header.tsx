@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from "react"
 import { useRender } from "@base-ui/react/use-render"
-import { cn } from "cn"
+import { cn } from "@workspace/ui/lib/utils"
 import { ChevronLeftIcon, EllipsisIcon, PanelLeft } from "lucide-react"
 
 import { Button } from "./button"
@@ -80,7 +80,7 @@ function PageHeaderTitle({
       data-slot="page-header-title"
       title={title ?? (typeof children === "string" ? children : undefined)}
       className={cn(
-        "min-w-0 truncate text-[13px] leading-4 font-medium text-foreground max-md:min-w-24",
+        "min-w-0 truncate text-ui leading-4 font-medium text-foreground max-md:min-w-24",
         className
       )}
       {...props}
@@ -110,7 +110,7 @@ function PageHeaderBack({
     defaultTagName: "a",
     props: {
       className: cn(
-        "inline-flex h-11 shrink-0 items-center gap-1 rounded-[6px] px-2 text-[13px] font-normal whitespace-nowrap text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 active:text-foreground",
+        "inline-flex h-11 shrink-0 items-center gap-1 rounded-sm px-2 text-ui font-normal whitespace-nowrap text-muted-foreground outline-none hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/50 active:text-foreground",
         TOUCH,
         className
       ),
@@ -153,7 +153,7 @@ function PageHeaderMeta({
     <span
       data-slot="page-header-meta"
       className={cn(
-        "mr-1.5 ml-auto inline-flex items-center gap-1.5 text-[12.5px] leading-[15px] whitespace-nowrap text-muted-foreground [&_svg]:size-[15px]",
+        "mr-1.5 ml-auto inline-flex items-center gap-1.5 text-xs leading-[15px] whitespace-nowrap text-muted-foreground [&_svg]:size-[15px]",
         !showOnPhone && "max-md:hidden",
         className
       )}
@@ -194,7 +194,7 @@ function PageHeaderActions({
                       data-slot="page-header-overflow"
                       aria-label={overflowLabel}
                       className={cn(
-                        "size-7 rounded-[6px] max-md:size-11 md:hidden [&_svg:not([class*='size-'])]:size-[15px]",
+                        "size-7 rounded-sm max-md:size-11 md:hidden [&_svg:not([class*='size-'])]:size-[15px]",
                         TOUCH
                       )}
                     />
@@ -269,10 +269,10 @@ function PageHeaderAction({
   }
 
   const classes = cn(
-    "rounded-[6px] [&_svg:not([class*='size-'])]:size-[15px]",
+    "rounded-sm [&_svg:not([class*='size-'])]:size-[15px]",
     TOUCH,
     showLabel
-      ? "h-7 gap-1.5 px-2 text-[13px] font-normal max-md:h-11"
+      ? "h-7 gap-1.5 px-2 text-ui font-normal max-md:h-11"
       : cn("max-md:size-11", inTitle ? "size-[26px]" : "size-7"),
     collapse && "max-md:hidden",
     className
@@ -374,7 +374,7 @@ function PageHeaderPrimary({
       data-slot="page-header-primary"
       data-primary-action
       className={cn(
-        "h-7 gap-1.5 rounded-[6px] px-2 text-[13px] font-normal max-md:h-11",
+        "h-7 gap-1.5 rounded-sm px-2 text-ui font-normal max-md:h-11",
         TOUCH,
         className
       )}
