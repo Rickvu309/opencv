@@ -39,7 +39,9 @@ describe("empty api data shows empty states, never sample content", () => {
     getMockPaperDocs().splice(0)
     renderApp(SURFACE_PATHS.paper)
 
-    expect(await screen.findByText("No documents yet")).toBeInTheDocument()
+    expect(
+      await screen.findByText("Start your first document")
+    ).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "New CV" })).toBeEnabled()
     expect(screen.getByRole("button", { name: "New Letter" })).toBeEnabled()
     expect(

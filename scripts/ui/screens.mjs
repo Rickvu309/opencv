@@ -676,6 +676,7 @@ const STEP_KINDS = new Set([
   "upload",
   "waitFor",
   "respond",
+  "paperDocs",
 ])
 const ID = /^[a-z][a-z0-9-]*$/
 

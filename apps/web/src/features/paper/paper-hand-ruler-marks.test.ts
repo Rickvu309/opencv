@@ -19,6 +19,7 @@ describe("paper hand number ruler", () => {
     expect(rulerMarks(21, 440)).toEqual([1, 5, 10, 15, 21])
     expect(rulerMarks(39, 280)).toEqual([1, 10, 20, 30, 39])
     expect(rulerMarks(500, 440)).toEqual([1, 100, 200, 300, 400, 500])
+    expect(rulerMarks(12, 440)).toEqual([1, 4, 6, 8, 10, 12])
   })
 
   it("places numbers from the first to the last end", () => {

@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url"
 import { SHOWN_EMAIL } from "./account-pool.mjs"
 import { contextOptions, signInFresh } from "./fresh-account.mjs"
 import { restPoint } from "./screens.mjs"
+import { seedPaperDocs } from "./paper-docs.mjs"
 
 const FIXTURES = new URL("./fixtures/", import.meta.url)
 
@@ -60,7 +61,7 @@ function answerInThisBrowser(page, answer) {
   )
 }
 
-export async function runStep(page, origin, step, repo) {
+export async function runStep(page, origin, step, repo, apiOrigin = origin) {
   if (step.goto)
     return page.goto(`${origin}${step.goto}`, { waitUntil: "domcontentloaded" })
   if (step.click)
@@ -83,6 +84,8 @@ export async function runStep(page, origin, step, repo) {
   if (step.respond?.fixture === "rich-document")
     return openRichDocument(page, origin, cannedAnswer, repo)
   if (step.respond) return answerInThisBrowser(page, step.respond)
+  if (step.paperDocs)
+    return seedPaperDocs(page, apiOrigin, origin, step.paperDocs)
   if (step.press) return page.keyboard.press(step.press)
   if (step.type) return page.keyboard.type(step.type)
   if (step.waitFor)
@@ -154,7 +157,8 @@ export async function openScreen(browser, state, screen, { width, scale = 1 }) {
     "step",
     screen.steps,
     context,
-    state.repo
+    state.repo,
+    state.apiOrigin
   )
   await settle(page, restPoint(screen, page.viewportSize()))
   const close = async () => {
@@ -165,17 +169,27 @@ export async function openScreen(browser, state, screen, { width, scale = 1 }) {
       "after step",
       screen.after ?? [],
       context,
-      state.repo
+      state.repo,
+      state.apiOrigin
     )
     await context.close()
   }
   return { page, close }
 }
 
-async function runSteps(page, origin, screenId, kind, steps, context, repo) {
+async function runSteps(
+  page,
+  origin,
+  screenId,
+  kind,
+  steps,
+  context,
+  repo,
+  apiOrigin
+) {
   for (const [at, step] of steps.entries()) {
     try {
-      await runStep(page, origin, step, repo)
+      await runStep(page, origin, step, repo, apiOrigin)
     } catch (error) {
       await context.close()
       throw new Error(

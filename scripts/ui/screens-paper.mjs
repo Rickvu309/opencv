@@ -4,6 +4,12 @@ const OPEN_NEW_CV = [
   { waitFor: { role: "dialog", name: "New CV" } },
 ]
 
+const HARD_NAMES = [
+  "Senior Product Designer CV for the Atlassian Ho Chi Minh City design systems team, final version",
+  "Nguyen_Van_A_CV_final_final_v12_2026_updated_for_Grab_and_Shopee",
+  "Th\u01b0 xin vi\u1ec7c g\u1eedi C\u00f4ng ty C\u1ed5 ph\u1ea7n Th\u01b0\u01a1ng m\u1ea1i \u0110i\u1ec7n t\u1eed Tiki",
+]
+
 export function paperPickerScreens({ page, openPanel, addJob }) {
   return [
     {
@@ -32,6 +38,58 @@ export function paperPickerScreens({ page, openPanel, addJob }) {
       id: "paper-home-empty",
       route: "/paper",
       steps: [{ waitFor: { text: "New Letter" } }],
+    },
+    {
+      id: "paper-home-many",
+      route: "/paper",
+      steps: [
+        { paperDocs: { count: 40, names: HARD_NAMES } },
+        { goto: "/paper" },
+        { waitFor: { text: "Company 37" } },
+      ],
+    },
+    {
+      id: "paper-home-long-name",
+      route: "/paper",
+      steps: [
+        {
+          paperDocs: {
+            count: 12,
+            names: [
+              "CV for Grab",
+              "CV for Shopee",
+              "Letter to MoMo",
+              ...HARD_NAMES,
+            ],
+          },
+        },
+        { goto: "/paper" },
+        { waitFor: { text: "Senior Product Designer CV" } },
+      ],
+    },
+    {
+      id: "paper-home-search-miss",
+      route: "/paper",
+      steps: [
+        { paperDocs: { count: 2 } },
+        { goto: "/paper" },
+        { waitFor: { text: "Company 2" } },
+        { fill: { role: "searchbox", name: "Search Paper", text: "zzz" } },
+        { waitFor: { text: "Nothing matches" } },
+      ],
+    },
+    {
+      id: "paper-home-letters-empty",
+      route: "/paper",
+      steps: [
+        { paperDocs: { count: 2 } },
+        { goto: "/paper" },
+        { waitFor: { text: "Company 2" } },
+        { clickIfShown: { role: "button", name: "Letters" } },
+        { clickIfShown: { role: "button", name: "Show All" } },
+        { clickIfShown: { role: "menuitemradio", name: "Letters" } },
+        { waitFor: { text: "No letters yet" } },
+      ],
     },
     {
       id: "paper-home-panel-open",

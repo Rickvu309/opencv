@@ -17,14 +17,15 @@ export function rulerOffset(number: number, total: number) {
 export function rulerMarks(total: number, width: number) {
   if (total <= 1) return [1]
   const span = total - 1
+  const px = (mark: number) => (width * (mark - 1)) / span
   const step =
     STEPS.find((k) => (width * k) / span >= LABEL_GAP_PX) ??
     STEPS[STEPS.length - 1]
   const marks = [1]
-  for (let k = step; k < total; k += step) marks.push(k)
+  for (let k = step; k < total; k += step)
+    if (px(k) - px(marks[marks.length - 1]) >= LABEL_GAP_PX) marks.push(k)
   const last = marks[marks.length - 1]
-  if (marks.length > 1 && (width * (total - last)) / span < END_GAP_PX)
-    marks.pop()
+  if (marks.length > 1 && px(total) - px(last) < END_GAP_PX) marks.pop()
   marks.push(total)
   return marks
 }
