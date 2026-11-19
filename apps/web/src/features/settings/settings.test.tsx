@@ -23,7 +23,6 @@ import {
   setMockWeekUncapped,
 } from "@/test/profile-api-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
-import { SAMPLE_AUTHOR } from "@/features/seed/sample-author.ts"
 
 afterEach(() => {
   cleanup()
@@ -425,7 +424,7 @@ describe("settings", () => {
   it("shows the full address on the Email row", async () => {
     renderApp("/settings/account")
     const row = await screen.findByRole("group", { name: "Email" })
-    expect(within(row).getByText(SAMPLE_AUTHOR.email)).toBeVisible()
+    expect(within(row).getByText("you@opencv.me")).toBeVisible()
   })
 
   it("uses a Section select at 390", async () => {
