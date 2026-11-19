@@ -1,0 +1,273 @@
+.paper-library {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.paper-hand-caption {
+  display: grid;
+  justify-items: center;
+  min-height: 0;
+  max-width: 100%;
+}
+
+.paper-hand-caption > [aria-live] {
+  display: grid;
+  justify-items: center;
+  max-width: 100%;
+}
+
+.paper-hand-caption-line {
+  position: relative;
+  max-width: min(100%, 460px);
+  padding-inline-start: 28px;
+}
+
+.paper-hand-caption .paper-hand-caption-name {
+  line-height: 22px;
+}
+
+.paper-hand-caption .paper-hand-caption-meta {
+  max-width: min(100%, 400px);
+  overflow: hidden;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.paper-hand-caption-full {
+  position: absolute;
+  z-index: 10;
+  inset-block-end: calc(100% + 8px);
+  inset-inline-start: 50%;
+  width: max-content;
+  max-width: min(340px, 90vw);
+  padding: 7px 10px;
+  border-radius: 8px;
+  background: var(--foreground);
+  box-shadow: 0 6px 20px rgb(0 0 0 / 16%);
+  color: var(--background);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  text-align: center;
+  text-wrap: balance;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 3px) scale(0.97);
+  transform-origin: 50% 100%;
+  transition-property: opacity, transform;
+  transition-duration: var(--duration-micro);
+  transition-timing-function: var(--ease-micro);
+}
+
+.paper-hand-caption-line[data-shown] .paper-hand-caption-full,
+.paper-hand-caption-line:focus-within .paper-hand-caption-full {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+.paper-hand-caption-why {
+  max-width: min(100%, 340px);
+  margin: 2px 0 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  text-wrap: balance;
+}
+
+.paper-hand-empty-action[data-slot="button"] {
+  margin-block-start: 12px;
+}
+
+.paper-hand-ruler {
+  position: relative;
+  width: 468px;
+  max-width: calc(100% - 16px);
+  height: 52px;
+  margin-block-start: 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.paper-hand-ruler-track {
+  position: absolute;
+  inset-block: 0;
+  inset-inline: 14px;
+}
+
+.paper-hand-ruler:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 4px;
+}
+
+.paper-hand-ruler-window {
+  position: absolute;
+  inset-block: 14px 18px;
+  border-radius: 5px;
+  background: color-mix(in oklch, var(--foreground) 5%, transparent);
+}
+
+.paper-hand-ruler-ticks i {
+  position: absolute;
+  inset-block-start: 22px;
+  width: 1px;
+  height: 5px;
+  background: color-mix(in oklch, var(--foreground) 18%, transparent);
+}
+
+.paper-hand-ruler-ticks i[data-major] {
+  inset-block-start: 19px;
+  height: 11px;
+  background: color-mix(in oklch, var(--foreground) 32%, transparent);
+}
+
+.paper-hand-ruler-mark {
+  position: absolute;
+  inset-block-start: 15px;
+  width: 2px;
+  height: 18px;
+  margin-inline-start: -1px;
+  border-radius: 1px;
+  background: var(--foreground);
+}
+
+.paper-hand-ruler-mark b {
+  position: absolute;
+  inset-block-end: calc(100% + 1px);
+  inset-inline-start: 50%;
+  color: var(--foreground);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1;
+  transform: translateX(-50%);
+}
+
+.paper-hand-ruler-labels span {
+  position: absolute;
+  inset-block-end: 0;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+
+.paper-hand-ruler-labels span[data-under] {
+  opacity: 0;
+}
+
+.paper-hand-slot-box {
+  position: relative;
+  width: min(100%, 980px);
+  height: 540px;
+  margin-block-end: -112px;
+  pointer-events: none;
+}
+
+.paper-hand-slot {
+  position: absolute;
+  inset-inline-start: 50%;
+  inset-block-end: 150px;
+  width: clamp(150px, 22vw, 220px);
+  margin-inline-start: calc(clamp(150px, 22vw, 220px) / -2);
+  opacity: 0.5;
+  filter: grayscale(1);
+  transform: rotate(-3deg);
+}
+
+.paper-hand-slot .paper-picture {
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 5%);
+}
+
+.paper-picture.paper-hand-slot-blank {
+  display: grid;
+  place-items: center;
+  background: color-mix(in oklch, var(--foreground) 4%, var(--background));
+  color: var(--muted-foreground);
+}
+
+.paper-hand-slot-blank svg {
+  width: 36px;
+  height: 36px;
+}
+
+.paper-hand-slot-box.is-loading .paper-hand-slot {
+  opacity: 0.45;
+  filter: none;
+}
+
+.paper-hand-slot-box.is-loading .paper-hand-slot[data-at="0"] {
+  transform: translateX(-58%) rotate(-7deg);
+}
+
+.paper-hand-slot-box.is-loading .paper-hand-slot[data-at="1"] {
+  z-index: 1;
+  transform: none;
+}
+
+.paper-hand-slot-box.is-loading .paper-hand-slot[data-at="2"] {
+  transform: translateX(58%) rotate(7deg);
+}
+
+.paper-hand-more[data-slot="button"],
+.paper-command-view[data-slot="button"] {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+  transition-property: background-color, color, scale;
+  transition-duration: var(--duration-micro);
+  transition-timing-function: var(--ease-micro);
+}
+
+.paper-hand-card[data-slot="button"] {
+  -webkit-touch-callout: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .paper-hand-caption-line[data-cut]:hover .paper-hand-caption-full {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+    transition-delay: calc(var(--duration-micro) * 8 / 3);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .paper-hand-more[data-slot="button"]:active,
+  .paper-command-view[data-slot="button"]:active {
+    scale: 0.97;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .paper-hand-caption-full {
+    transform: translate(-50%, 0);
+    transition-property: opacity;
+  }
+}
+
+@media (max-width: 767px) {
+  .paper-hand-caption-line {
+    max-width: min(100%, 320px);
+    padding-inline-start: 44px;
+  }
+
+  .paper-hand-caption .paper-hand-caption-meta {
+    max-width: min(100%, 280px);
+  }
+
+  .paper-hand-ruler {
+    width: 308px;
+  }
+
+  .paper-hand-slot-box {
+    height: 420px;
+    margin-block-end: -72px;
+  }
+
+  .paper-hand-slot {
+    inset-block-end: 96px;
+  }
+}

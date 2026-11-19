@@ -146,21 +146,41 @@ function entryTime(entry: LibraryEntry) {
   return Number.isNaN(time) ? 0 : time
 }
 
+export function handFold(text: string) {
+  return text
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/\u0111/g, "d")
+    .replace(/\u0110/g, "D")
+    .toLowerCase()
+}
+
+export function handNear(index: number, pos: number) {
+  return Math.abs(index - pos) <= HAND_SPREAD + 2
+}
+
 export function handList(
   entries: readonly LibraryEntry[],
   view: LibraryView,
   query: string
 ) {
   if (view === "proofs") return []
-  const needle = query.trim().toLowerCase()
+  const needle = handFold(query.trim())
   return entries
     .map((entry, index) => ({ entry, index }))
     .filter(({ entry }) => {
       if (view !== "all" && entrySection(entry) !== view) return false
-      return needle === "" || entryName(entry).toLowerCase().includes(needle)
+      return needle === "" || handFold(entryName(entry)).includes(needle)
     })
     .sort(
       (a, b) => entryTime(b.entry) - entryTime(a.entry) || a.index - b.index
     )
     .map(({ entry }) => entry)
+}
+
+export function handCounts(entries: readonly LibraryEntry[]) {
+  const counts: Partial<Record<LibraryView, number>> = {}
+  for (const view of ["all", "cv", "letter", "files"] as const)
+    counts[view] = handList(entries, view, "").length
+  return counts
 }

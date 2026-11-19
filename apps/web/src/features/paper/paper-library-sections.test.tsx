@@ -49,12 +49,22 @@ function dated(name: string, n: number) {
   }
 }
 
+async function pickView(name: string) {
+  fireEvent.click(screen.getByRole("button", { name: /^Show / }))
+  fireEvent.click(
+    await screen.findByRole("menuitemradio", { name: new RegExp(`^${name}`) })
+  )
+  await waitFor(() =>
+    expect(screen.queryByRole("menu")).not.toBeInTheDocument()
+  )
+}
+
 afterEach(() => {
   cleanup()
 })
 
 describe("Paper home sections", () => {
-  it("filters the hand from the header chips and the search field", () => {
+  it("filters the hand from the view menu and the search field", async () => {
     renderLibrary([cv("My CV"), letter("Design letter")])
     expect(
       screen.queryByRole("region", { name: "CVs" })
@@ -65,15 +75,13 @@ describe("Paper home sections", () => {
     expect(
       screen.queryByRole("region", { name: "Files" })
     ).not.toBeInTheDocument()
-    const views = within(screen.getByRole("group", { name: "Library views" }))
-    expect(views.getByRole("button", { name: "All" })).toHaveAttribute(
-      "aria-pressed",
-      "true"
-    )
-    expect(views.getByRole("button", { name: "CVs" })).toBeInTheDocument()
-    expect(views.getByRole("button", { name: "Letters" })).toBeInTheDocument()
-    expect(views.getByRole("button", { name: "Proofs" })).toBeInTheDocument()
-    expect(views.getByRole("button", { name: "Files" })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Show All" }))
+    expect(
+      await screen.findByRole("menuitemradio", { name: /^All/ })
+    ).toHaveAttribute("aria-checked", "true")
+    for (const name of [/^CVs/, /^Letters/, /^Proofs/, /^Files/])
+      expect(screen.getByRole("menuitemradio", { name })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("menuitemradio", { name: /^All/ }))
     expect(
       screen.getByRole("button", { name: /^Open My CV,/ })
     ).toBeInTheDocument()
@@ -96,8 +104,9 @@ describe("Paper home sections", () => {
       screen.getByRole("button", { name: "New Letter" })
     ).toBeInTheDocument()
     fireEvent.change(search, { target: { value: "nothing" } })
-    expect(screen.getByText("Nothing matches")).toBeInTheDocument()
-    expect(screen.getByText("nothing")).toBeInTheDocument()
+    expect(
+      screen.getByText("Nothing matches \u201cnothing\u201d")
+    ).toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: /^Open Design letter,/ })
     ).not.toBeInTheDocument()
@@ -115,14 +124,15 @@ describe("Paper home sections", () => {
     ).toBeInTheDocument()
   })
 
-  it("keeps the header to the title, chips, search and New", () => {
+  it("keeps the header to the title, the view menu with search, and New", () => {
     renderLibrary([cv("My CV")])
     expect(screen.getByRole("heading", { name: "Paper" })).toHaveTextContent(
       /^Paper$/
     )
-    expect(
-      screen.getByRole("group", { name: "Library views" })
-    ).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Show All" })).toHaveAttribute(
+      "aria-haspopup",
+      "menu"
+    )
     expect(
       screen.getByRole("searchbox", { name: "Search Paper" })
     ).toBeInTheDocument()
@@ -135,29 +145,40 @@ describe("Paper home sections", () => {
     ).toBeInTheDocument()
   })
 
-  it("filters the library by view without counts", () => {
+  it("filters the library from the view menu and counts each view", async () => {
     renderLibrary([cv("My CV"), letter("Design letter")])
-    const views = within(screen.getByRole("group", { name: "Library views" }))
-    const letters = views.getByRole("button", { name: "Letters" })
-    fireEvent.click(letters)
-    expect(letters).toHaveAttribute("aria-pressed", "true")
+    fireEvent.click(screen.getByRole("button", { name: "Show All" }))
+    expect(
+      await screen.findByRole("menuitemradio", { name: /^CVs\s*1$/ })
+    ).toBeInTheDocument()
+    fireEvent.click(
+      screen.getByRole("menuitemradio", { name: /^Letters\s*1$/ })
+    )
+    expect(
+      screen.getByRole("button", { name: "Show Letters" })
+    ).toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: /^Open My CV,/ })
     ).not.toBeInTheDocument()
     expect(
       screen.getByRole("button", { name: /^Open Design letter,/ })
     ).toBeInTheDocument()
-    fireEvent.click(views.getByRole("button", { name: "Proofs" }))
+    await pickView("Proofs")
     expect(screen.getByRole("link", { name: "Open Proofs" })).toHaveAttribute(
       "href",
       "/proofs"
     )
-    fireEvent.click(views.getByRole("button", { name: "Files" }))
+    expect(screen.getByText("Proofs have their own page")).toBeInTheDocument()
+    await pickView("Files")
     expect(screen.getByText("No files yet")).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Import a file" }))
     expect(
-      screen.getByRole("button", { name: "Import", exact: true })
+      screen.getByRole("dialog", { name: "Import", exact: true })
     ).toBeInTheDocument()
-    fireEvent.click(views.getByRole("button", { name: "All" }))
+    fireEvent.keyDown(document.activeElement ?? document.body, {
+      key: "Escape",
+    })
+    await pickView("All")
     expect(
       screen.getByRole("button", { name: /^Open My CV,/ })
     ).toBeInTheDocument()
@@ -176,7 +197,7 @@ describe("Paper home sections", () => {
     ])
     const latest = screen.getByRole("button", { name: /^Open Latest letter,/ })
     expect(latest).toHaveAttribute("tabindex", "0")
-    expect(screen.getByText("1 of 2")).toBeInTheDocument()
+    expect(screen.queryByRole("slider")).not.toBeInTheDocument()
     expect(screen.getByText("Latest letter")).toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: "Ask Coach" })
@@ -222,14 +243,18 @@ describe("Paper home sections", () => {
 
   it("starts a long hand on the fourth card and rolls with the arrow keys", () => {
     renderLibrary(Array.from({ length: 8 }, (_, n) => dated(`Doc ${n + 1}`, n)))
-    expect(screen.getByText("4 of 8")).toBeInTheDocument()
+    const ruler = screen.getByRole("slider", {
+      name: "Move through your documents",
+    })
+    expect(ruler).toHaveAttribute("aria-valuenow", "4")
+    expect(ruler).toHaveAttribute("aria-valuemax", "8")
     expect(
       screen.getByRole("button", { name: /^Open Doc 5,/ })
     ).toHaveAttribute("tabindex", "0")
     fireEvent.keyDown(screen.getByRole("group", { name: "Your documents" }), {
       key: "ArrowRight",
     })
-    expect(screen.getByText("5 of 8")).toBeInTheDocument()
+    expect(ruler).toHaveAttribute("aria-valuenow", "5")
     expect(
       screen.getByRole("button", { name: /^Open Doc 4,/ })
     ).toHaveAttribute("tabindex", "0")
@@ -270,22 +295,12 @@ describe("Paper home sections", () => {
     expect(
       screen.queryByRole("link", { name: "Open Proofs" })
     ).not.toBeInTheDocument()
-    fireEvent.click(
-      within(screen.getByRole("group", { name: "Library views" })).getByRole(
-        "button",
-        { name: "Proofs" }
-      )
-    )
+    await pickView("Proofs")
     expect(screen.getByRole("link", { name: "Open Proofs" })).toHaveAttribute(
       "href",
       "/proofs"
     )
-    fireEvent.click(
-      within(screen.getByRole("group", { name: "Library views" })).getByRole(
-        "button",
-        { name: "All" }
-      )
-    )
+    await pickView("All")
     fireEvent.click(screen.getByRole("button", { name: "Original CV menu" }))
     fireEvent.click(
       await screen.findByRole("menuitem", { name: "Delete", exact: true })
@@ -334,8 +349,9 @@ describe("Paper home sections", () => {
       target: { value: "portfolio" },
     })
 
-    expect(screen.getByText("Nothing matches")).toBeInTheDocument()
-    expect(screen.getByText("portfolio")).toBeInTheDocument()
+    expect(
+      screen.getByText("Nothing matches \u201cportfolio\u201d")
+    ).toBeInTheDocument()
     expect(
       screen.queryByRole("button", { name: /^Open PM track CV,/ })
     ).not.toBeInTheDocument()
@@ -348,7 +364,7 @@ describe("Paper home sections", () => {
     ).toBeInTheDocument()
   })
 
-  it("keeps Letters and Proofs reachable, and shows the page's first lines", () => {
+  it("keeps Letters and Proofs reachable, and shows the page's first lines", async () => {
     renderLibrary([letter("Design letter")])
     expect(
       screen.queryByRole("button", { name: "Blank Letter" })
@@ -361,12 +377,7 @@ describe("Paper home sections", () => {
     expect(
       document.querySelector("[data-slot=paper-library-preview]")
     ).toBeNull()
-    fireEvent.click(
-      within(screen.getByRole("group", { name: "Library views" })).getByRole(
-        "button",
-        { name: "Proofs" }
-      )
-    )
+    await pickView("Proofs")
     const proofs = screen.getByRole("link", { name: "Open Proofs" })
     expect(proofs).toHaveAttribute("href", "/proofs")
   })
@@ -402,12 +413,7 @@ describe("Paper home sections", () => {
         />
       </RouterContextProvider>
     )
-    fireEvent.click(
-      within(screen.getByRole("group", { name: "Library views" })).getByRole(
-        "button",
-        { name: "Proofs" }
-      )
-    )
+    await pickView("Proofs")
     const proofs = screen.getByRole("link", { name: "Open Proofs" })
     fireEvent.click(proofs, { metaKey: true })
     expect(router.state.location.pathname).toBe("/")

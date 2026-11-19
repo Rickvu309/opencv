@@ -31,7 +31,7 @@ export function paperPickerScreens({ page, openPanel, addJob }) {
     {
       id: "paper-home-empty",
       route: "/paper",
-      steps: [{ waitFor: { text: "No documents yet" } }],
+      steps: [{ waitFor: { text: "New Letter" } }],
     },
     {
       id: "paper-home-panel-open",

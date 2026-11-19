@@ -1,6 +1,15 @@
 import { useRef } from "react"
 
+import { ChevronDown } from "lucide-react"
+
 import { Button } from "@workspace/ui/components/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@workspace/ui/components/dropdown-menu"
 import { SearchInput } from "@workspace/ui/components/search-input"
 
 import { useShortcut } from "@/lib/use-shortcut.ts"
@@ -24,32 +33,72 @@ function focusIsIdle() {
   return false
 }
 
-export function PaperViewChips({
+export function PaperViewMenu({
   view,
+  counts,
   onViewChange,
 }: {
   view: LibraryView
+  counts: Partial<Record<LibraryView, number>>
   onViewChange: (view: LibraryView) => void
 }) {
+  const current = VIEWS.find((item) => item.id === view) ?? VIEWS[0]
   return (
-    <div role="group" aria-label="Library views" className="paper-hand-chips">
-      {VIEWS.map((item) => (
-        <Button
-          key={item.id}
-          type="button"
-          variant="ghost"
-          className="paper-hand-chip h-11 hover:bg-transparent md:h-7"
-          aria-pressed={view === item.id}
-          onClick={() => onViewChange(item.id)}
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        render={
+          <Button
+            type="button"
+            variant="ghost"
+            className="paper-command-view h-11 hover:bg-transparent md:h-8"
+            aria-label={`Show ${current.title}`}
+          >
+            {current.title}
+            <ChevronDown aria-hidden="true" />
+          </Button>
+        }
+      />
+      <DropdownMenuContent align="start" className="paper-command-menu">
+        <DropdownMenuRadioGroup
+          value={view}
+          onValueChange={(next: LibraryView) => onViewChange(next)}
         >
-          {item.title}
-        </Button>
-      ))}
+          {VIEWS.map((item) => (
+            <DropdownMenuRadioItem key={item.id} value={item.id} closeOnClick>
+              {item.title}
+              {counts[item.id] ? (
+                <span className="paper-command-count">{counts[item.id]}</span>
+              ) : null}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
+export function PaperCommandBar({
+  view,
+  counts,
+  query,
+  onViewChange,
+  onQueryChange,
+}: {
+  view: LibraryView
+  counts: Partial<Record<LibraryView, number>>
+  query: string
+  onViewChange: (view: LibraryView) => void
+  onQueryChange: (query: string) => void
+}) {
+  return (
+    <div data-slot="paper-command" className="paper-command">
+      <PaperViewMenu view={view} counts={counts} onViewChange={onViewChange} />
+      <PaperFind query={query} onQueryChange={onQueryChange} />
     </div>
   )
 }
 
-export function PaperFind({
+function PaperFind({
   query,
   onQueryChange,
 }: {
@@ -78,7 +127,7 @@ export function PaperFind({
     },
   })
   return (
-    <div className="paper-hand-find">
+    <div className="paper-command-find">
       <SearchInput
         ref={inputRef}
         aria-label="Search Paper"
@@ -93,7 +142,7 @@ export function PaperFind({
         }}
       />
       {query.length === 0 ? (
-        <span className="paper-hand-kbd" aria-hidden="true">
+        <span className="paper-command-kbd" aria-hidden="true">
           /
         </span>
       ) : null}
