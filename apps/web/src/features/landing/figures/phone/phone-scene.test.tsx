@@ -45,10 +45,13 @@ function fontsLoadingUntil() {
   return { finish, load }
 }
 
+const liveFonts = Object.getOwnPropertyDescriptor(document, "fonts")
+
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
-  Reflect.deleteProperty(document, "fonts")
+  if (liveFonts) Object.defineProperty(document, "fonts", liveFonts)
+  else Reflect.deleteProperty(document, "fonts")
 })
 
 describe("landing phone scenes", () => {

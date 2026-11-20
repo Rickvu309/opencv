@@ -1,5 +1,9 @@
 import { createRequire } from "node:module"
 import { fileURLToPath } from "node:url"
+import {
+  RICH_DOCUMENT_ID,
+  richDocumentAnswer,
+} from "./rich-document-answer.mjs"
 
 const root = fileURLToPath(new URL("../../", import.meta.url)).replace(
   /\/$/,
@@ -9,7 +13,7 @@ const require = createRequire(
   new URL("../../apps/web/package.json", import.meta.url)
 )
 const Y = require("yjs")
-const ID = "16590000-0000-4000-8000-000000000001"
+const ID = RICH_DOCUMENT_ID
 
 export async function openRichDocument(page, origin, answer, repo = root) {
   const fixture = await page.evaluate(async (root) => {
@@ -96,16 +100,7 @@ export async function openRichDocument(page, origin, answer, repo = root) {
       route.fulfill(
         answer(route.request(), {
           status: 200,
-          json: {
-            ok: true,
-            data: {
-              id: ID,
-              name: "Product designer CV",
-              kind: "cv",
-              format: "rich",
-              provenance: fixture.provenance,
-            },
-          },
+          json: richDocumentAnswer(fixture.provenance),
         })
       )
   )

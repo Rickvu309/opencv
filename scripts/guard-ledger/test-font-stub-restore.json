@@ -1,0 +1,6 @@
+{
+  "id": "test-font-stub-restore",
+  "file": "scripts/test-font-stub-restore.test.mjs",
+  "historic": null,
+  "reason": "the shared vitest pool keeps one document between test files; the landing phone scenes lost document.fonts.load after a fonts stub leaked across files when a new test file shifted the shard split"
+}

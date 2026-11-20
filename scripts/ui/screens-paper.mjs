@@ -151,6 +151,7 @@ export const PAPER_SCREENS = [
       "paper-rich-outline",
       [{ clickIfShown: { role: "button", name: "Document outline" } }],
     ],
+    ["paper-rich-menu", [{ clickIfShown: { role: "button", name: "Edit" } }]],
   ].map(([id, steps]) => ({
     id,
     route: "/paper",

@@ -10,6 +10,7 @@ import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import { storedFlowFixture } from "../../../../packages/paper-crdt/src/test/flow-fixture.ts"
 
 const cleanups = new Set<() => void>()
+const liveFonts = Object.getOwnPropertyDescriptor(document, "fonts")
 beforeEach(() => {
   vi.stubGlobal("ClipboardEvent", class extends Event {})
   Object.defineProperties(Range.prototype, {
@@ -26,6 +27,8 @@ afterEach(() => {
   cleanups.clear()
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
+  if (liveFonts) Object.defineProperty(document, "fonts", liveFonts)
+  else Reflect.deleteProperty(document, "fonts")
 })
 
 it.each(["cv", "letter"] as const)(

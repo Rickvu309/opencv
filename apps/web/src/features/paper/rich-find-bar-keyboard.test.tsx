@@ -9,9 +9,12 @@ import { RichFindBar, type PaperFindMode } from "./rich-find-bar"
 import { mountRichEditorLifecycle } from "./rich-editor-lifecycle"
 
 const releases: (() => void)[] = []
+const liveFonts = Object.getOwnPropertyDescriptor(document, "fonts")
 afterEach(() => {
   cleanup()
   for (const release of releases.splice(0)) release()
+  if (liveFonts) Object.defineProperty(document, "fonts", liveFonts)
+  else Reflect.deleteProperty(document, "fonts")
   vi.restoreAllMocks()
 })
 

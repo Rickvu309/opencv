@@ -201,6 +201,7 @@ function DocumentHeader({
       onBack={onBack}
       status={note || "Checking saved words."}
       editedAt={editedAt}
+      editableName={<PaperDocumentTitle name={title} docId={docId} />}
       actions={
         <>
           <PaperDocumentShare docId={docId} />
@@ -314,14 +315,11 @@ export function WritingPage({
           key={`${docId}:${shown.generation}`}
           docId={docId}
           title={
-            <>
-              <PaperDocumentColumn>
-                <WritingProposalCard docId={docId}>
-                  <LetterStoppedNotice docId={docId} pageText={pageText} />
-                </WritingProposalCard>
-              </PaperDocumentColumn>
-              <PaperDocumentTitle name={title} docId={docId} />
-            </>
+            <PaperDocumentColumn>
+              <WritingProposalCard docId={docId}>
+                <LetterStoppedNotice docId={docId} pageText={pageText} />
+              </WritingProposalCard>
+            </PaperDocumentColumn>
           }
           placeholder={kind === "letter" ? LETTER_PLACEHOLDER : undefined}
           renderHeader={(note, revision, text) => (

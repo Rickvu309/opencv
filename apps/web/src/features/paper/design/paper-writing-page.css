@@ -39,7 +39,3 @@
     );
   }
 }
-
-.paper-writing-page .writing-scroll {
-  mask-image: linear-gradient(to bottom, transparent, rgb(0 0 0) 24px);
-}
