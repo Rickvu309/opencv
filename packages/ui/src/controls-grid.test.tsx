@@ -44,7 +44,7 @@ function shippedTokenValues() {
   const body = /^:root \{\n([\s\S]*?)^\}/m.exec(css)?.[1] ?? ""
   const values = new Map<string, string>()
   for (const [, name, value] of body.matchAll(
-    /^  --([a-z0-9-]+): ([^;]+);/gm
+    /^ {2}--([a-z0-9-]+): ([^;]+);/gm
   )) {
     values.set(name, value)
   }
