@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/web/src/features/coach/coach-history.test.tsx",
+    "because": "The desktop type size moved to the text-ui token (#1745); the case keeps the phone 16px field check and drops the desktop class string, per the behavior-test rule from #1748.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

@@ -105,7 +105,7 @@ export function PaperLetterDraftingPage({
       >
         <div
           data-slot="letter-drafting-card"
-          className="mx-auto min-h-[792px] w-full max-w-[560px] shrink-0 rounded-[2px] px-6 py-8 md:px-[60px] md:py-14"
+          className="mx-auto min-h-[792px] w-full max-w-[560px] shrink-0 rounded-xs px-6 py-8 md:px-[60px] md:py-14"
           aria-label="Letter content being drafted"
         >
           <div
@@ -146,7 +146,7 @@ export function PaperLetterDraftingPage({
         <Spinner aria-hidden="true" className="size-[15px] shrink-0" />
         <span
           data-slot="letter-drafting-label"
-          className="shrink-0 text-[13px] leading-[15.5px] font-medium"
+          className="shrink-0 text-ui leading-[15.5px] font-medium"
         >
           Drafting
         </span>

@@ -319,7 +319,7 @@ function Scanning({
         <div className="h-full w-5/8 rounded-full bg-foreground motion-safe:animate-pulse motion-reduce:animate-none" />
       </div>
       {progress.emails != null && progress.companies != null ? (
-        <p data-user-content className="text-[12.5px] text-muted-foreground">
+        <p data-user-content className="text-xs text-muted-foreground">
           {`${progress.emails} emails from ${progress.companies} companies so far`}
         </p>
       ) : null}

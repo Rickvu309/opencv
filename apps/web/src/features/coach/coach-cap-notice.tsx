@@ -19,10 +19,10 @@ export function CoachCapNotice({ modeLabel, resetTime }: Props) {
         <Hourglass className="size-[15px] text-foreground" />
       </span>
       <div className="min-w-0 flex-1 space-y-0.5">
-        <p className="text-[13px] leading-tight font-semibold">
+        <p className="text-ui leading-tight font-semibold">
           You’ve reached today’s {modeLabel} limit
         </p>
-        <p className="text-[12.5px] leading-tight text-muted-foreground">
+        <p className="text-xs leading-tight text-muted-foreground">
           Resets {resetTime}.
         </p>
       </div>

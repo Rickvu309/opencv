@@ -51,7 +51,7 @@ function ChatStarted({ iso }: { iso: string }) {
   return (
     <p
       data-slot="chat-started"
-      className="-mb-4 text-center text-[13px] leading-5 text-muted-foreground"
+      className="-mb-4 text-center text-ui leading-5 text-muted-foreground"
     >
       <time dateTime={iso}>{label}</time>
     </p>

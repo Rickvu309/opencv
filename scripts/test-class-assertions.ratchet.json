@@ -20,7 +20,7 @@
   "apps/web/src/features/coach/chat-view.test.tsx": 24,
   "apps/web/src/features/coach/coach-composer.test.tsx": 6,
   "apps/web/src/features/coach/coach-config-states.test.tsx": 4,
-  "apps/web/src/features/coach/coach-history.test.tsx": 2,
+  "apps/web/src/features/coach/coach-history.test.tsx": 1,
   "apps/web/src/features/coach/coach-home.test.tsx": 1,
   "apps/web/src/features/coach/coach-tool-presentation.test.tsx": 10,
   "apps/web/src/features/coach/coach-turns-motion.test.tsx": 6,

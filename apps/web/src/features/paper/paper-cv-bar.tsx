@@ -124,7 +124,7 @@ export function CvEditorBar({
           aria-label="Favorite"
           aria-pressed={favorite}
           disabled={favoritePending}
-          className="size-[26px] shrink-0 rounded-[6px] p-0 max-md:size-11"
+          className="size-[26px] shrink-0 rounded-sm p-0 max-md:size-11"
           onClick={onFavorite}
         >
           <Star
@@ -140,7 +140,7 @@ export function CvEditorBar({
                 variant="ghost"
                 size="icon"
                 aria-label="More"
-                className="size-[26px] shrink-0 rounded-[6px] p-0 max-md:size-11"
+                className="size-[26px] shrink-0 rounded-sm p-0 max-md:size-11"
               >
                 <Ellipsis className="size-4" aria-hidden="true" />
               </Button>
@@ -212,7 +212,7 @@ export function CvEditorBar({
               : "Could not copy the link. Try again."
           }
           aria-label="Copy link"
-          className="size-[26px] shrink-0 rounded-[6px] p-0 max-md:size-11"
+          className="size-[26px] shrink-0 rounded-sm p-0 max-md:size-11"
         >
           <Link2 className="size-4" aria-hidden="true" />
         </CopyButton>
@@ -221,7 +221,7 @@ export function CvEditorBar({
           variant="ghost"
           size="icon"
           aria-label="Notifications"
-          className="size-[26px] shrink-0 rounded-[6px] p-0 max-md:size-11"
+          className="size-[26px] shrink-0 rounded-sm p-0 max-md:size-11"
           onClick={() => toast("Notifications are not on yet.")}
         >
           <Bell className="size-4" aria-hidden="true" />

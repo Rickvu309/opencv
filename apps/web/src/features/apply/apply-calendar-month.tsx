@@ -34,7 +34,7 @@ function MonthChip({
           : `Deadline: ${job.title}, ${job.company}`
       }
       onClick={() => onOpenJob(job.id)}
-      className="flex h-11 min-w-0 items-center justify-start gap-1.5 rounded-[5px] bg-secondary px-[7px] text-start md:h-[22px]"
+      className="flex h-11 min-w-0 items-center justify-start gap-1.5 rounded-sm bg-secondary px-[7px] text-start md:h-[22px]"
     >
       <StageIcon stage={job.stage} size={14} />
       <span

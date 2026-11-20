@@ -27,7 +27,7 @@ import {
 const TILE =
   "flex size-14 shrink-0 items-center justify-center rounded-2xl border border-border bg-linear-to-b from-card to-secondary shadow-md"
 const CARD =
-  "flex w-100 max-w-[400px] flex-col gap-3 rounded-[14px] border border-border bg-card p-4.5 shadow-lg"
+  "flex w-100 max-w-[400px] flex-col gap-3 rounded-xl border border-border bg-card p-4.5 shadow-lg"
 
 const BENEFITS = [
   {
@@ -102,14 +102,14 @@ export function InboxConnect({
                 key={benefit.title}
                 className="flex min-w-0 items-center gap-3.5"
               >
-                <span className="flex size-9 shrink-0 items-center justify-center rounded-[10px] border border-border bg-card text-foreground shadow-xs">
+                <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border bg-card text-foreground shadow-xs">
                   <benefit.icon className="size-4.25" aria-hidden />
                 </span>
                 <div className="flex min-w-0 flex-col gap-0.75">
                   <p className="text-sm font-semibold text-foreground">
                     {benefit.title}
                   </p>
-                  <p className="text-[13px] text-muted-foreground">
+                  <p className="text-ui text-muted-foreground">
                     {benefit.text}
                   </p>
                 </div>
@@ -121,7 +121,7 @@ export function InboxConnect({
               {closed ? (
                 <Button
                   variant="primary"
-                  className="h-11 gap-2.5 rounded-[10px] ps-3.5 pe-4.5 text-[14.5px] shadow-xs"
+                  className="h-11 gap-2.5 rounded-lg ps-3.5 pe-4.5 text-[14.5px] shadow-xs"
                   disabled={pending}
                   aria-describedby="inbox-gmail-hint"
                   onClick={onExplore}
@@ -131,7 +131,7 @@ export function InboxConnect({
               ) : null}
               <Button
                 variant={closed ? "outline" : "default"}
-                className="h-11 gap-2.5 rounded-[10px] ps-3.5 pe-4.5 text-[14.5px] shadow-xs"
+                className="h-11 gap-2.5 rounded-lg ps-3.5 pe-4.5 text-[14.5px] shadow-xs"
                 disabled={closed}
                 aria-describedby={closed ? "inbox-gmail-hint" : undefined}
                 onClick={() => {
@@ -200,7 +200,7 @@ export function InboxConnect({
                   HT
                 </span>
                 <div className="flex flex-col gap-px">
-                  <p className="text-[13px] font-semibold text-foreground">
+                  <p className="text-ui font-semibold text-foreground">
                     Hanh Tran
                   </p>
                   <p className="text-[11.5px] text-muted-foreground">
@@ -227,7 +227,7 @@ export function InboxConnect({
                   RB
                 </span>
                 <div className="flex flex-col gap-px">
-                  <p className="text-[13px] font-semibold text-foreground">
+                  <p className="text-ui font-semibold text-foreground">
                     Business Analyst
                   </p>
                   <p className="text-[11.5px] text-muted-foreground">
@@ -268,10 +268,10 @@ export function InboxConnect({
                   To Hanh Tran
                 </span>
                 <span className="flex-1" />
-                <span className="flex h-7 items-center rounded-[7px] px-2.5 text-xs font-medium text-foreground">
+                <span className="flex h-7 items-center rounded-md px-2.5 text-xs font-medium text-foreground">
                   Edit
                 </span>
-                <span className="flex h-7 items-center gap-1.25 rounded-[7px] bg-foreground px-2.75 text-xs font-medium text-background">
+                <span className="flex h-7 items-center gap-1.25 rounded-md bg-foreground px-2.75 text-xs font-medium text-background">
                   <Send className="size-3" />
                   Send
                 </span>

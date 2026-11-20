@@ -146,9 +146,9 @@ export function InboxReader({
           </a>
         ) : null}
         {prompt ? (
-          <div className="flex min-h-11 items-center gap-x-2 gap-y-1 rounded-[10px] border border-border py-1.5 ps-3 pe-1.5 max-md:flex-wrap">
+          <div className="flex min-h-11 items-center gap-x-2 gap-y-1 rounded-lg border border-border py-1.5 ps-3 pe-1.5 max-md:flex-wrap">
             <CalendarCheck className="size-4 text-foreground" aria-hidden />
-            <p className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 text-[13px]">
+            <p className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 text-ui">
               <span className="font-medium text-foreground">
                 Interview request
               </span>
@@ -159,7 +159,7 @@ export function InboxReader({
               </span>
             </p>
             <Button
-              className="h-11 shrink-0 rounded-[7px] px-2.5 text-[12.5px] md:h-7"
+              className="h-11 shrink-0 rounded-md px-2.5 text-xs md:h-7"
               disabled={busy}
               onClick={() =>
                 run(async () => {
@@ -179,7 +179,7 @@ export function InboxReader({
             </Button>
             <Button
               variant="ghost"
-              className="h-11 rounded-[7px] px-2.5 text-[12.5px] text-muted-foreground md:h-7"
+              className="h-11 rounded-md px-2.5 text-xs text-muted-foreground md:h-7"
               disabled={busy}
               onClick={() =>
                 run(async () => {
@@ -193,7 +193,7 @@ export function InboxReader({
             </Button>
           </div>
         ) : detail.job ? (
-          <p className="flex items-center gap-2 text-[13px] text-muted-foreground">
+          <p className="flex items-center gap-2 text-ui text-muted-foreground">
             <StageIcon stage={detail.job.stage} />
             {`Linked to ${detail.job.title} in Apply`}
           </p>
@@ -218,10 +218,10 @@ export function InboxReader({
                       }
                     >
                       <PersonAvatar name={message.fromName} />
-                      <span className="shrink-0 text-[13px] font-medium text-muted-foreground">
+                      <span className="shrink-0 text-ui font-medium text-muted-foreground">
                         {message.fromName}
                       </span>
-                      <span className="min-w-0 flex-1 truncate text-[13px] text-muted-foreground">
+                      <span className="min-w-0 flex-1 truncate text-ui text-muted-foreground">
                         {open ? "" : message.bodyText}
                       </span>
                       <span className="shrink-0 text-xs text-muted-foreground">
@@ -243,7 +243,7 @@ export function InboxReader({
                     <span className="text-[13.5px] font-semibold text-foreground">
                       {current.fromName}
                     </span>
-                    <span className="text-[12.5px] text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       {`<${current.fromEmail}>`}
                     </span>
                   </p>
@@ -279,7 +279,7 @@ export function InboxReader({
             )}
             <div className="min-w-0 flex-1 overflow-hidden rounded-xl border border-border bg-card shadow-xs">
               {inbound ? (
-                <p className="flex h-9 min-w-0 items-center gap-2 px-4 pt-1 text-[12.5px]">
+                <p className="flex h-9 min-w-0 items-center gap-2 px-4 pt-1 text-xs">
                   <Reply
                     className="size-3.25 text-muted-foreground"
                     aria-hidden
@@ -367,7 +367,7 @@ export function InboxReader({
               <div className="flex h-12 items-center gap-1.5 ps-4 pe-3">
                 <Button
                   size="touch"
-                  className="gap-1.5 rounded-lg border-transparent bg-foreground px-3 text-[12.5px] font-semibold text-background ring-0 hover:bg-foreground/90"
+                  className="gap-1.5 rounded-lg border-transparent bg-foreground px-3 text-xs font-semibold text-background ring-0 hover:bg-foreground/90"
                   disabled={busy || body.trim() === ""}
                   onClick={() =>
                     run(async () => {
@@ -387,7 +387,7 @@ export function InboxReader({
                 {times.length > 0 ? (
                   <Button
                     variant="ghost"
-                    className="h-11 gap-1.75 rounded-md px-2 text-[12.5px] font-normal text-muted-foreground md:h-7"
+                    className="h-11 gap-1.75 rounded-md px-2 text-xs font-normal text-muted-foreground md:h-7"
                     disabled={busy}
                     onClick={() =>
                       run(async () => {

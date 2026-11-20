@@ -279,7 +279,7 @@ export function NewJobDialog({
                 <span className="sr-only">Close</span>
               </DialogClose>
             </div>
-            <div className="mt-3.5 flex h-10 items-center gap-2 rounded-[11px] bg-secondary pr-[5px] pl-3 focus-within:ring-1 focus-within:ring-muted-foreground/50">
+            <div className="mt-3.5 flex h-10 items-center gap-2 rounded-lg bg-secondary pr-[5px] pl-3 focus-within:ring-1 focus-within:ring-muted-foreground/50">
               <LinkIcon
                 className="size-3.5 shrink-0 text-muted-foreground"
                 aria-hidden
@@ -289,7 +289,7 @@ export function NewJobDialog({
                 aria-label="Paste the job link"
                 placeholder="Paste the job link"
                 value={draft.url}
-                className={`${INLINE_FIELD} h-full flex-1 text-base text-foreground md:text-[13px] ${PLACEHOLDER_SECONDARY}`}
+                className={`${INLINE_FIELD} h-full flex-1 text-base text-foreground md:text-ui ${PLACEHOLDER_SECONDARY}`}
                 onChange={(event) => patch({ url: event.target.value })}
                 onBlur={(event) => {
                   const url = event.currentTarget.value.trim()
@@ -431,7 +431,7 @@ export function NewJobDialog({
               <Button
                 type="button"
                 variant="ghost"
-                className="h-11 rounded-md px-3 text-[13px] font-normal text-muted-foreground md:h-[30px]"
+                className="h-11 rounded-md px-3 text-ui font-normal text-muted-foreground md:h-[30px]"
                 onClick={() => {
                   reset()
                   onOpenChange(false)
@@ -443,7 +443,7 @@ export function NewJobDialog({
                 <Button
                   type="submit"
                   disabled={busy}
-                  className="h-11 px-3 text-[13px] font-semibold md:h-7"
+                  className="h-11 px-3 text-ui font-semibold md:h-7"
                 >
                   Add anyway
                 </Button>

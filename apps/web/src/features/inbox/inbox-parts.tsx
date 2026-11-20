@@ -46,7 +46,7 @@ export function InboxRow({
     <Button
       variant="ghost"
       className={cn(
-        "h-11 w-full justify-start gap-2.5 rounded-lg py-0 ps-2.5 pe-3.5 text-left text-[13px] font-normal hover:bg-muted/60 max-md:grid max-md:h-auto max-md:grid-cols-[auto_auto_minmax(0,1fr)_auto] max-md:gap-y-0.5 max-md:py-2",
+        "h-11 w-full justify-start gap-2.5 rounded-lg py-0 ps-2.5 pe-3.5 text-left text-ui font-normal hover:bg-muted/60 max-md:grid max-md:h-auto max-md:grid-cols-[auto_auto_minmax(0,1fr)_auto] max-md:gap-y-0.5 max-md:py-2",
         active && "bg-muted hover:bg-muted"
       )}
       data-slot="inbox-row"
