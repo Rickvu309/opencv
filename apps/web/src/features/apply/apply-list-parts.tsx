@@ -67,7 +67,7 @@ export function ListGroup({
             <Button
               type="button"
               variant="ghost"
-              className="h-11 w-full justify-start gap-2 rounded-[6px] bg-secondary px-2.5 text-[13px] font-normal hover:bg-accent aria-expanded:bg-secondary aria-expanded:hover:bg-accent md:h-[34px]"
+              className="h-11 w-full justify-start gap-2 rounded-sm bg-secondary px-2.5 text-ui font-normal hover:bg-accent aria-expanded:bg-secondary aria-expanded:hover:bg-accent md:h-[34px]"
             />
           }
         >
@@ -102,7 +102,7 @@ export function JobRow({
       variant="ghost"
       data-slot="job-row"
       className={cn(
-        "h-11 w-full justify-start gap-2.5 rounded-[6px] px-3 text-[13px] font-normal md:h-10",
+        "h-11 w-full justify-start gap-2.5 rounded-sm px-3 text-ui font-normal md:h-10",
         current && "bg-accent hover:bg-accent"
       )}
       aria-label={`${job.title}, ${job.company}`}
@@ -114,7 +114,7 @@ export function JobRow({
       <span
         data-slot="company-tile"
         aria-hidden
-        className="flex size-5 shrink-0 items-center justify-center rounded-[6px] border border-foreground/8 bg-card text-[8px] font-semibold text-muted-foreground"
+        className="flex size-5 shrink-0 items-center justify-center rounded-sm border border-foreground/8 bg-card text-[8px] font-semibold text-muted-foreground"
       >
         {companyInitials(job.company)}
       </span>
