@@ -48,7 +48,7 @@ import {
 import { PostingSource } from "./apply-posting-source.tsx"
 import { useChosenTimeZone } from "./apply-time-zone.ts"
 
-const MENU_ITEM = "h-8 gap-[9px] px-2 text-[13px]"
+const MENU_ITEM = "h-8 gap-[9px] px-2 text-ui"
 const PRIORITIES: readonly JobPriority[] = ["high", "normal", "low"]
 
 function interviewLabel(iso: string, zone: string) {
@@ -173,7 +173,7 @@ function EditRow({
             onChange={(event) =>
               dispatch({ type: "typed", value: event.target.value })
             }
-            className="h-11 rounded-[6px] text-base md:h-8 md:text-[13px]"
+            className="h-11 rounded-sm text-base md:h-8 md:text-ui"
           />
           {error ? (
             <p
