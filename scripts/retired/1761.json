@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-start-blank.test.tsx",
+    "because": "Start blank Letter now creates a rich document through paper.create, so the test asserts the new command and that no Word mint happens",
+    "replacedBy": "apps/web/src/features/paper/paper-letter-start-blank.test.tsx",
+    "proof": {
+      "fork": "23df15048ec548240934cd7070fb171f76a9725a",
+      "replacedByBlob": "a6572c80efb52a29e8333133f1854390f33ed576",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
   }
 ]
