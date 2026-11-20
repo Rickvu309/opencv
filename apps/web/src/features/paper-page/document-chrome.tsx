@@ -33,6 +33,7 @@ export function PaperDocumentHeader({
   onBack,
   status,
   editedAt,
+  editableName,
   menu,
   actions,
   statusRef,
@@ -42,6 +43,7 @@ export function PaperDocumentHeader({
   onBack?: () => void
   status: string
   editedAt: string | null
+  editableName?: ReactNode
   menu?: ReactNode
   actions?: ReactNode
   statusRef?: Ref<HTMLParagraphElement>
@@ -76,10 +78,15 @@ export function PaperDocumentHeader({
             </BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage icon={<FileText />} title={name}>
-              {name}
-            </BreadcrumbPage>
+          <BreadcrumbItem
+            aria-current="page"
+            className="flex min-w-0 items-center gap-1.5"
+          >
+            {editableName ?? (
+              <BreadcrumbPage icon={<FileText />} title={name}>
+                {name}
+              </BreadcrumbPage>
+            )}
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -231,11 +238,53 @@ export function PaperDocumentTitle({
   )
 }
 
+const RULER_CM = 21.59
+
+export function PaperDocumentRuler() {
+  const { width } = useContext(TitleLayout)
+  if (!width) return null
+  const marks: ReactNode[] = []
+  for (let halfCm = 1; halfCm <= Math.round(RULER_CM * 2); halfCm++) {
+    const place = `${(halfCm / 2 / RULER_CM) * 100}%`
+    const whole = halfCm % 2 === 0
+    marks.push(
+      <span
+        key={`t${halfCm}`}
+        data-paper-ruler-tick={whole ? "major" : "minor"}
+        style={{ insetInlineStart: place }}
+      />
+    )
+    if (whole) {
+      marks.push(
+        <span
+          key={`n${halfCm}`}
+          data-paper-ruler-number=""
+          style={{ insetInlineStart: place }}
+        >
+          {halfCm / 2}
+        </span>
+      )
+    }
+  }
+  return (
+    <div
+      aria-hidden="true"
+      data-slot="paper-ruler"
+      className="paper-document-ruler"
+      style={{ width }}
+    >
+      {marks}
+    </div>
+  )
+}
+
 export function PaperDocumentCanvas({
   title,
+  ruler,
   children,
 }: {
   title?: ReactNode
+  ruler?: ReactNode
   children: ReactNode
 }) {
   const host = useRef<HTMLDivElement>(null)
@@ -285,7 +334,10 @@ export function PaperDocumentCanvas({
   }, [])
   return (
     <div ref={host} className="paper-document-canvas">
-      <TitleLayout value={layout}>{title}</TitleLayout>
+      <TitleLayout value={layout}>
+        {title}
+        {ruler}
+      </TitleLayout>
       {children}
       <PaperDocumentOutline host={host} />
     </div>

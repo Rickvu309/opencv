@@ -11,6 +11,20 @@ const require = createRequire(
 const Y = require("yjs")
 const ID = "16590000-0000-4000-8000-000000000001"
 
+export function richDocumentAnswer(provenance) {
+  return {
+    ok: true,
+    data: {
+      id: ID,
+      name: "Product designer CV",
+      kind: "cv",
+      format: "rich",
+      provenance,
+      updatedAt: new Date().toISOString(),
+    },
+  }
+}
+
 export async function openRichDocument(page, origin, answer, repo = root) {
   const fixture = await page.evaluate(async (root) => {
     const { storedFlowFixture } = await import(
@@ -96,16 +110,7 @@ export async function openRichDocument(page, origin, answer, repo = root) {
       route.fulfill(
         answer(route.request(), {
           status: 200,
-          json: {
-            ok: true,
-            data: {
-              id: ID,
-              name: "Product designer CV",
-              kind: "cv",
-              format: "rich",
-              provenance: fixture.provenance,
-            },
-          },
+          json: richDocumentAnswer(fixture.provenance),
         })
       )
   )

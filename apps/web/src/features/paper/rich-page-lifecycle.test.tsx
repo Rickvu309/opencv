@@ -147,8 +147,8 @@ it.each([
         screen.queryByRole("toolbar", { name: "Selection formatting" })
       ).toBeNull()
       expect(
-        screen.getByRole("button", { name: "Formatting and insert" })
-      ).toHaveAttribute("aria-expanded", "false")
+        screen.getByRole("toolbar", { name: "Text formatting" })
+      ).toBeInTheDocument()
       fireEvent.keyDown(host, { key: "k", ctrlKey: true })
       expect(
         await screen.findByRole("dialog", { name: "Add link" })
@@ -181,9 +181,6 @@ it.each([
         screen.queryByRole("toolbar", { name: "Selection formatting" })
       ).not.toBeInTheDocument()
     }
-    fireEvent.click(
-      screen.getByRole("button", { name: "Formatting and insert" })
-    )
     await waitFor(() =>
       expect(
         screen.getByRole("button", { name: "Bold", exact: true })
@@ -274,11 +271,7 @@ it.each([
         )
       )
       if (kind === "cv") {
-        const more = screen.getByRole("button", {
-          name: "Formatting and insert",
-          exact: true,
-        })
-        if (more.getAttribute("aria-expanded") !== "true") fireEvent.click(more)
+        await openToolbarOverflow()
         fireEvent.click(
           await screen.findByRole("button", {
             name: "Insert table",
@@ -345,9 +338,6 @@ it.each([
       client: () => replacement,
     })
     view.rerender(page("remounted"))
-    fireEvent.click(
-      screen.getByRole("button", { name: "Formatting and insert" })
-    )
     await waitFor(() =>
       expect(
         screen.getByRole("button", { name: "Bold", exact: true })
@@ -364,6 +354,11 @@ it.each([
   60_000
 )
 
+async function openToolbarOverflow() {
+  const more = screen.getByRole("button", { name: "More formatting" })
+  if (more.getAttribute("aria-expanded") !== "true") fireEvent.click(more)
+}
+
 async function exerciseToolbar(
   host: HTMLElement,
   client: ReturnType<typeof openRichPaperClient>
@@ -376,7 +371,7 @@ async function exerciseToolbar(
   const button = (name: string | RegExp) =>
     screen.getByRole("button", { name, exact: true })
   const more = async () => {
-    const trigger = button("Formatting and insert")
+    const trigger = button("More formatting")
     if (trigger.getAttribute("aria-expanded") !== "true")
       await user.click(trigger)
   }

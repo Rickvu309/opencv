@@ -6,18 +6,13 @@ import {
   useSyncExternalStore,
 } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import { SlidersHorizontal } from "lucide-react"
+import { Search } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  PopoverTitle,
-} from "@workspace/ui/components/popover"
 import {
   PaperDocumentHeader,
   PaperDocumentCanvas,
   PaperDocumentTitle,
+  PaperDocumentRuler,
 } from "@/features/paper-page/document-chrome.tsx"
 import { PaperDocumentShare } from "./document-share.tsx"
 import { RichLinkDialog } from "./rich-structure-controls.tsx"
@@ -26,6 +21,7 @@ import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import { RichTableControls } from "./rich-table-controls.tsx"
 import { RichPhotoControls } from "./rich-photo-controls.tsx"
 import { RichPaperTextFormatting } from "./rich-text-formatting.tsx"
+import { RichDocumentMenuBar } from "./rich-document-menubar.tsx"
 import { openRichPaperSession } from "@/lib/paper-rich.ts"
 import { resolvePhotoSrc } from "@/lib/requests.ts"
 import type { NativeSyncIdentity } from "@/lib/paper-sync-identity.ts"
@@ -36,6 +32,7 @@ import { RichFindBar, type PaperFindMode } from "./rich-find-bar.tsx"
 import { RichDocumentMenu } from "./rich-document-menu.tsx"
 import "./design/rich-page-header.css"
 import "./design/paper-writing-page.css"
+import "./design/rich-desk.css"
 import "./rich-page-geometry.css"
 
 type Session = ReturnType<typeof openRichPaperSession>
@@ -84,10 +81,6 @@ export function RichPaperPage({
   const [findMode, setFindMode] = useReducer(
     (_: PaperFindMode, mode: PaperFindMode) => mode,
     "closed"
-  )
-  const [formattingOpen, setFormattingOpen] = useReducer(
-    (_: boolean, next: boolean) => next,
-    false
   )
   const queryClient = useQueryClient()
   const currentIdentity = useRef(identity)
@@ -161,6 +154,7 @@ export function RichPaperPage({
         status={statusLabel}
         editedAt={editedAt}
         statusRef={statusRef}
+        editableName={<PaperDocumentTitle name={name} docId={identity.docId} />}
         menu={
           <RichDocumentMenu
             editorAvailable={!!editor}
@@ -171,56 +165,14 @@ export function RichPaperPage({
             blocked={blocked}
           />
         }
-        actions={
-          <>
-            <PaperDocumentShare docId={identity.docId} />
-            <Popover open={formattingOpen} onOpenChange={setFormattingOpen}>
-              <PopoverTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-11 shrink-0 md:size-8"
-                    aria-label="Formatting and insert"
-                  >
-                    <SlidersHorizontal />
-                  </Button>
-                }
-              />
-              <PopoverContent
-                align="end"
-                className="max-h-[calc(100dvh-8rem)] w-[min(48rem,calc(100vw-1rem))] motion-pop overflow-y-auto"
-                finalFocus={() => {
-                  editor?.apply()
-                  return null
-                }}
-              >
-                <PopoverTitle className="px-2 text-xs text-muted-foreground">
-                  Formatting and insert
-                </PopoverTitle>
-                <RichTableControls editor={editor} disabled={blocked}>
-                  {(tableControls) => (
-                    <RichPhotoControls editor={editor} disabled={blocked}>
-                      {(photoControls) => (
-                        <RichPaperTextFormatting
-                          panel
-                          editor={editor}
-                          blocked={blocked}
-                          photoControls={(close) => (
-                            <>
-                              {photoControls(close)}
-                              {tableControls(close)}
-                            </>
-                          )}
-                        />
-                      )}
-                    </RichPhotoControls>
-                  )}
-                </RichTableControls>
-              </PopoverContent>
-            </Popover>
-          </>
-        }
+        actions={<PaperDocumentShare docId={identity.docId} />}
+      />
+      <RichDocumentMenuBar
+        editor={editor}
+        session={session}
+        status={status}
+        blocked={blocked}
+        onFind={setFindMode}
       />
       {statusDetailVisible ? (
         <p
@@ -240,8 +192,43 @@ export function RichPaperPage({
         blocked={blocked}
         docId={identity.docId}
         name={name}
-        onMore={() => setFormattingOpen(true)}
       />
+      <div
+        data-paper-toolbar-band=""
+        className="shrink-0 bg-surface-sunken px-4 pt-1.5 pb-2 md:px-6"
+      >
+        <div className="paper-doc-toolbar min-w-0">
+          <RichTableControls editor={editor} disabled={blocked}>
+            {(tableControls) => (
+              <RichPhotoControls editor={editor} disabled={blocked}>
+                {(photoControls) => (
+                  <RichPaperTextFormatting
+                    editor={editor}
+                    blocked={blocked}
+                    photoControls={(close) => (
+                      <>
+                        {photoControls(close)}
+                        {tableControls(close)}
+                      </>
+                    )}
+                  />
+                )}
+              </RichPhotoControls>
+            )}
+          </RichTableControls>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="paper-doc-find-button size-11 shrink-0 md:size-8"
+            aria-label="Find and replace"
+            title="Find and replace"
+            disabled={!editor || blocked}
+            onClick={() => setFindMode("replace")}
+          >
+            <Search />
+          </Button>
+        </div>
+      </div>
       <RichFindBar
         editor={editor}
         disabled={blocked}
@@ -256,11 +243,9 @@ export function RichPaperPage({
       ) : null}
       <div
         data-paper-document-pane=""
-        className="min-h-0 flex-1 overflow-auto overscroll-contain bg-background p-4 md:p-6"
+        className="min-h-0 flex-1 overflow-auto overscroll-contain bg-surface-sunken p-4 md:p-6"
       >
-        <PaperDocumentCanvas
-          title={<PaperDocumentTitle name={name} docId={identity.docId} />}
-        >
+        <PaperDocumentCanvas ruler={<PaperDocumentRuler />}>
           <div data-paper-page-viewport>
             <div
               ref={element}

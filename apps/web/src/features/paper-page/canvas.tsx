@@ -1,4 +1,4 @@
-import { PaperDocumentCanvas } from "./document-chrome.tsx"
+import { PaperDocumentCanvas, PaperDocumentRuler } from "./document-chrome.tsx"
 import { revealCaret, useCanvasScale } from "./canvas-viewport.ts"
 import { writingStorage } from "./canvas-branch.ts"
 import { WritingBlocks } from "./canvas-blocks.tsx"
@@ -477,7 +477,7 @@ function WritingSheet({
         onRestore={restoreLine}
       />
       <div className="writing-scroll" ref={scrollRef}>
-        <PaperDocumentCanvas title={title}>
+        <PaperDocumentCanvas title={title} ruler={<PaperDocumentRuler />}>
           <div className="writing-page-viewport" data-paper-page-viewport>
             <article
               key={state.redraw}

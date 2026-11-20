@@ -44,7 +44,7 @@ export function RichSelectionBubble({
   blocked: boolean
   docId: string
   name: string
-  onMore: () => void
+  onMore?: () => void
 }) {
   const [selection, setSelection] = useReducer(
     (_: SelectionBox | null, next: SelectionBox | null) => next,
@@ -226,15 +226,17 @@ export function RichSelectionBubble({
           <Sparkles className="size-3.5" />
           Ask Coach
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="size-11 shrink-0 md:size-8"
-          aria-label="More formatting"
-          onClick={onMore}
-        >
-          <MoreHorizontal />
-        </Button>
+        {onMore ? (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-11 shrink-0 md:size-8"
+            aria-label="More formatting"
+            onClick={onMore}
+          >
+            <MoreHorizontal />
+          </Button>
+        ) : null}
       </div>
     </TooltipProvider>,
     document.body
