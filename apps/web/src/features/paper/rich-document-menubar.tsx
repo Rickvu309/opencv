@@ -42,7 +42,7 @@ export function RichDocumentMenuBar({
     editorAvailable: !!editor,
   })
   const menuButton = (label: string) => (
-    <Button variant="ghost" className="h-8 px-2">
+    <Button variant="ghost" size="touch" className="px-2">
       {label}
     </Button>
   )
