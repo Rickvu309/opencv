@@ -247,7 +247,7 @@ export function InboxExampleBanner({
       role="status"
       data-slot="inbox-example-banner"
       className={cn(
-        "px-5 pt-2 pb-1 text-[13px] leading-normal text-pretty text-muted-foreground",
+        "px-5 pt-2 pb-1 text-ui leading-normal text-pretty text-muted-foreground",
         className
       )}
     >

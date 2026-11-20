@@ -163,7 +163,7 @@ export function PaperLetterEditor({
                   data-slot="letter-editor-more"
                   variant="ghost"
                   size="icon"
-                  className="size-11 shrink-0 rounded-[6px] md:size-[26px]"
+                  className="size-11 shrink-0 rounded-sm md:size-[26px]"
                   aria-label="More"
                 >
                   <Ellipsis className="size-4" aria-hidden="true" />
@@ -180,7 +180,7 @@ export function PaperLetterEditor({
         <div className="flex flex-1 items-center gap-1 md:flex-none">
           <p
             data-slot="letter-editor-edited"
-            className="flex h-7 flex-1 items-center rounded-[7px] px-2 text-[13.5px] leading-4 md:flex-none"
+            className="flex h-7 flex-1 items-center rounded-md px-2 text-[13.5px] leading-4 md:flex-none"
           >
             {status === "saved" || status === "loading"
               ? editorEditedLabel(editedAt)
@@ -195,7 +195,7 @@ export function PaperLetterEditor({
                 ? error.message
                 : "Could not copy the link. Try again."
             }
-            className="size-11 shrink-0 rounded-[7px] p-0 md:h-7 md:w-[30px]"
+            className="size-11 shrink-0 rounded-md p-0 md:h-7 md:w-[30px]"
             aria-label="Copy share link"
           >
             <LinkIcon className="size-4" aria-hidden="true" />
@@ -217,18 +217,18 @@ export function PaperLetterEditor({
           <aside
             data-slot="letter-editor-suggestion"
             aria-label="Letter suggestion"
-            className="flex w-full max-w-[560px] flex-col gap-1.5 rounded-[12px] border pt-2.5 pr-2.5 pb-3 pl-3.5 @min-[876px]:absolute @min-[876px]:[inset-inline-start:calc(50%+162px)] @min-[876px]:max-w-[260px] @min-[876px]:[inset-block-start:368px] @min-[1128px]:[inset-inline-start:calc(50%+304px)]"
+            className="flex w-full max-w-[560px] flex-col gap-1.5 rounded-lg border pt-2.5 pr-2.5 pb-3 pl-3.5 @min-[876px]:absolute @min-[876px]:[inset-inline-start:calc(50%+162px)] @min-[876px]:max-w-[260px] @min-[876px]:[inset-block-start:368px] @min-[1128px]:[inset-inline-start:calc(50%+304px)]"
           >
             <div className="flex items-center gap-2">
               <MessageCircle className="size-3.5 shrink-0" aria-hidden="true" />
-              <p className="flex-1 text-[13px] leading-[15.5px] font-semibold">
+              <p className="flex-1 text-ui leading-[15.5px] font-semibold">
                 Missing keyword
               </p>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="size-11 shrink-0 rounded-[6px] md:size-6"
+                className="size-11 shrink-0 rounded-sm md:size-6"
                 aria-label="Dismiss suggestion"
                 onClick={() => patch({ gapHidden: true })}
               >
@@ -244,7 +244,7 @@ export function PaperLetterEditor({
             <div className="flex gap-1 pt-1.5 pl-[22px]">
               <Button
                 type="button"
-                className="h-11 rounded-[7px] px-2.5 text-[12px] font-semibold md:h-7"
+                className="h-11 rounded-md px-2.5 text-[12px] font-semibold md:h-7"
                 onClick={addKeyword}
               >
                 Add to letter
@@ -253,7 +253,7 @@ export function PaperLetterEditor({
                 type="button"
                 data-slot="letter-editor-skip"
                 variant="ghost"
-                className="h-11 rounded-[7px] px-2.5 text-[12px] font-medium md:h-7"
+                className="h-11 rounded-md px-2.5 text-[12px] font-medium md:h-7"
                 onClick={() => patch({ gapHidden: true })}
               >
                 Skip
@@ -278,7 +278,7 @@ export function PaperLetterEditor({
         <article
           aria-label={doc.name}
           data-slot="letter-editor-sheet"
-          className="w-full max-w-[560px] shrink-0 rounded-[2px] @min-[876px]:-translate-x-[142px] @min-[1128px]:translate-x-0"
+          className="w-full max-w-[560px] shrink-0 rounded-xs @min-[876px]:-translate-x-[142px] @min-[1128px]:translate-x-0"
         >
           <div data-paper-section="letter">
             {client ? (

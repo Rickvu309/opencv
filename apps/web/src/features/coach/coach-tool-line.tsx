@@ -87,7 +87,7 @@ const RECORD_ACTION = cn(
   TOUCH_HIT
 )
 
-const DECISION = cn("rounded-md px-3 text-[13px]", TOUCH_HIT)
+const DECISION = cn("rounded-md px-3 text-ui", TOUCH_HIT)
 
 function useUndoAction(onUndo?: () => Promise<void>) {
   const [{ busy, error }, dispatch] = useReducer(actionReducer, IDLE_ACTION)
@@ -234,12 +234,12 @@ export function CoachToolLine({
   const view = coachActionView(tool.part)
   switch (view.kind) {
     case "read":
-      return <p className="text-[13px] text-muted-foreground">{view.label}</p>
+      return <p className="text-ui text-muted-foreground">{view.label}</p>
     case "undone":
       return <p className="text-xs text-muted-foreground">Undone</p>
     case "refused":
       return (
-        <p role="status" className="text-[13px] text-muted-foreground">
+        <p role="status" className="text-ui text-muted-foreground">
           {refusedApprovalLine(view.status)}
         </p>
       )
@@ -372,7 +372,7 @@ function CoachApproval({
     : "Action to approve"
   if (effectiveStatus !== "pending")
     return (
-      <p role="status" className="text-[13px] text-muted-foreground">
+      <p role="status" className="text-ui text-muted-foreground">
         {effectiveStatus === "approved"
           ? "Approved"
           : refusedApprovalLine(effectiveStatus)}

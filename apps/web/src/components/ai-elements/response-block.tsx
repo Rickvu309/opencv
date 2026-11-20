@@ -86,7 +86,7 @@ export function ResponseBlock({ source }: { source: string }) {
           aria-label="Table"
           tabIndex={0}
           data-slot="response-table"
-          className="max-w-full overflow-x-auto rounded-[10px] border border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          className="max-w-full overflow-x-auto rounded-lg border border-border focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
         >
           <table className="w-full border-collapse text-left text-[0.875rem] leading-5">
             <thead className="bg-muted/50">
