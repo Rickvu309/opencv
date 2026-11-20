@@ -7,6 +7,7 @@ export {
   createDemoCoachRuntime,
   createScriptedCoachRuntime,
   createScriptedWorkerRuntime,
+  fakePaperIntent,
   withScanJobPosting,
 } from "./fake.js"
 

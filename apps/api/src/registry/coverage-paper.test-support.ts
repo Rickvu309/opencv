@@ -33,6 +33,8 @@ import {
   type CoverageTools,
 } from "./coverage-helpers.test-support.js"
 
+import { richPaperCases } from "./coverage-paper-rich.test-support.js"
+
 export function paperCases(tools: CoverageTools): CoverageCase[] {
   const { ctx, db, registry, run, undo, paperOf, gone, shares, userId } = tools
   const paperImport = registry
@@ -83,6 +85,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       : null
   }
   return [
+    ...richPaperCases(tools),
     {
       name: "paper.create",
       arrange: async () => {},

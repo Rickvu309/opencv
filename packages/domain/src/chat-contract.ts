@@ -128,6 +128,7 @@ const readsAnUndoOrApprovalCanChange = (): QueryRef[] => [
   { query: "paper.list" },
   { query: "paper.get" },
   { query: "paper.document" },
+  { query: "paper.readRich" },
   { query: "paper.pageCount" },
   { query: "paper.outline" },
   { query: "paper.keywordGap" },

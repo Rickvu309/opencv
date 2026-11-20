@@ -2,12 +2,17 @@ import {
   canonicalPaper,
   richPaperDocumentSchema,
   storedPaperDocumentSchema,
+  type RichPaperDocument,
   type StoredPaperDocument,
 } from "@workspace/domain"
 import * as Y from "yjs"
-import { flowReceiptSchema } from "@workspace/domain/internal/paper-presentation"
+import {
+  flowDocumentSchema,
+  flowReceiptSchema,
+} from "@workspace/domain/internal/paper-presentation"
 import {
   createPrivateFlow,
+  borrowFlowDocument,
   openFlowBinary,
   readFlow,
 } from "./native-layout-flow.js"
@@ -16,6 +21,34 @@ import { materialize, seedYDoc } from "./ydoc.js"
 export type StoredDocumentResult =
   | { readonly ok: true; readonly document: StoredPaperDocument }
   | { readonly ok: false; readonly reason: string }
+
+export function writeStoredYDoc(
+  doc: Y.Doc,
+  input: RichPaperDocument
+): Uint8Array {
+  const document = richPaperDocumentSchema.parse(input)
+  const current = materializeStored(doc)
+  if (
+    !current.ok ||
+    current.document.version !== 4 ||
+    current.document.schemaRevision !== 2 ||
+    current.document.kind !== document.kind
+  )
+    throw new Error("The target belongs to a different document schema")
+  const lease = borrowFlowDocument(doc, document.kind)
+  try {
+    return lease.write(
+      flowDocumentSchema.parse({
+        profile: document.profile,
+        kind: document.kind,
+        presentation: document.presentation,
+        flow: document.flow,
+      })
+    )
+  } finally {
+    lease.release()
+  }
+}
 
 export function seedStoredYDoc(input: StoredPaperDocument): Uint8Array {
   const document = storedPaperDocumentSchema.parse(input)

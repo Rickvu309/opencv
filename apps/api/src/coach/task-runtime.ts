@@ -5,6 +5,7 @@ import {
   coachModeSchema,
   planSchema,
   nativeBasisSchema,
+  chatAttachmentSchema,
 } from "@workspace/domain"
 import { operation as setJobPriority } from "@workspace/domain/operations/job/set-priority"
 import { coachModelEnv } from "../config.js"
@@ -15,7 +16,7 @@ import { streamAnthropicSteps } from "./anthropic-runtime.js"
 import {
   createScriptedWorkerRuntime,
   FAKE_PROPOSED_EDIT_TEXT,
-  fakePaperEdit,
+  fakePaperIntent,
 } from "./fake.js"
 import { paperStartAsk, paperStartRuntime } from "./fake-paper-start.js"
 import { modelMessageSchema, type WorkerRuntime } from "./model-step.js"
@@ -33,7 +34,15 @@ const contextSchema = z.object({
       nativeBasis: nativeBasisSchema.optional(),
     })
     .optional(),
-  context: z.array(z.object({ kind: z.string(), id: z.string() })).optional(),
+  context: z
+    .array(
+      z.object({
+        kind: z.string(),
+        id: z.string(),
+        blockIds: chatAttachmentSchema.shape.blockIds,
+      })
+    )
+    .optional(),
 })
 
 export function createTaskRuntime(
@@ -80,8 +89,14 @@ function demoTaskRuntime(task: Task): WorkerRuntime {
       ? [
           {
             id: "call_edit",
-            name: "paper.edit" as const,
-            input: fakePaperEdit(focus),
+            ...fakePaperIntent(
+              focus,
+              context.context
+                ?.filter(
+                  (item) => item.kind === "paper" && item.id === focus.id
+                )
+                .flatMap((item) => item.blockIds ?? [])
+            ),
           },
         ]
       : jobId

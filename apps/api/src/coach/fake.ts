@@ -1,6 +1,8 @@
 import {
   DEFAULT_COACH_MODELS,
   NATIVE_WRITER,
+  RICH_NATIVE_WRITER,
+  richOutlineSchema,
   nativeBasisSchema,
   paperContract,
   type CoachFocusDoc,
@@ -186,25 +188,77 @@ export function fakePaperEdit(
   })
 }
 
+export function fakePaperIntent(
+  focus: Pick<CoachFocusDoc, "id" | "revision" | "outline" | "nativeBasis">,
+  blockIds?: readonly string[]
+) {
+  const rich = focus.nativeBasis?.provenance.schemaRevision === 2
+  const richRows = rich
+    ? richOutlineSchema.parse(JSON.parse(focus.outline))
+    : []
+  const selected = blockIds?.length
+    ? blockIds
+    : richRows.filter((node) => node.selected).map((node) => node.id)
+  const rows = selected.length
+    ? selected.map((id) => richRows.find((node) => node.id === id))
+    : [
+        richRows.find(
+          (node) =>
+            node.type === "paragraph" &&
+            node.content.some((run) => run.text.length)
+        ),
+      ]
+  if (
+    rich &&
+    rows.some((row) => !row || !row.content.some((run) => run.text.length))
+  )
+    throw new Error(
+      selected.length
+        ? "The selected passage is unavailable. Select text again before requesting an edit."
+        : "Write a passage before requesting an edit"
+    )
+  const input = rich
+    ? paperContract["paper.editRich"].input.parse({
+        docId: focus.id,
+        writer: RICH_NATIVE_WRITER,
+        basis: focus.nativeBasis,
+        edits: rows.map((row) => {
+          if (!row) throw new Error("The selected passage is unavailable")
+          const words = row.content.map((run) => run.text).join("")
+          return {
+            op: "formatText",
+            blockId: row.id,
+            from: 0,
+            to: words.length,
+            before: words,
+            marks: { bold: true, underline: true },
+          }
+        }),
+      })
+    : fakePaperEdit(focus)
+  const name = rich ? ("paper.editRich" as const) : ("paper.edit" as const)
+  return { name, input }
+}
+
 function paperEditScript(
   input: CoachTurnInput
 ): AsyncIterable<CoachStreamPart> {
   const focus = input.focusDoc
   const execute = input.execute
   if (!focus || !execute) return replay(DEMO_COACH_SCRIPT)
-  const call = fakePaperEdit(focus)
+  const { name, input: call } = fakePaperIntent(focus)
   return (async function* () {
     yield { type: "text-delta", text: `${FAKE_PROPOSED_EDIT_TEXT} ` } as const
     yield {
       type: "tool-call",
       toolCallId: "call_edit",
-      name: "paper.edit",
+      name,
       input: call,
     } as const
-    const result = await execute({ name: "paper.edit", input: call })
+    const result = await execute({ name, input: call })
     yield toolResultFromExecute({
       toolCallId: "call_edit",
-      name: "paper.edit",
+      name,
       summary: "Edit the document",
       result,
     })

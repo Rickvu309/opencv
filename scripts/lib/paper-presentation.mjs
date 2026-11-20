@@ -6,9 +6,12 @@ import { detectTextFormatting } from "./paper-text-formatting.mjs"
 import { detectRichStructure } from "./paper-rich-structure.mjs"
 import { detectPageLayout } from "./paper-page-layout.mjs"
 import { detect as detectPageScale } from "./paper-page-scale.mjs"
+import { detectStorageExports } from "./paper-storage-boundary.mjs"
+import { detectCoachSelection } from "./paper-coach-selection.mjs"
 
 export function detect(text, path) {
   const hits = [
+    ...detectCoachSelection(text, path),
     ...detectTextFormatting(text, path),
     ...detectDocumentHistory(text, path),
     ...detectPageLayout(text, path),
@@ -189,9 +192,12 @@ export function detect(text, path) {
       declaration.importClause.namedBindings.elements.every(
         (element) =>
           !element.propertyName &&
-          ["createPrivateFlow", "openFlowBinary", "readFlow"].includes(
-            element.name.text
-          )
+          [
+            "createPrivateFlow",
+            "openFlowBinary",
+            "readFlow",
+            "borrowFlowDocument",
+          ].includes(element.name.text)
       )
     const editorImport =
       editorEntry &&
@@ -290,22 +296,7 @@ export function detect(text, path) {
           )))
     )
       hits.push("The Paper editor entry exposes mounted controls only")
-    if (
-      storage &&
-      node.modifiers?.some(
-        (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword
-      ) &&
-      !(
-        ts.isFunctionDeclaration(node) &&
-        node.name &&
-        ["seedStoredYDoc", "materializeStored"].includes(node.name.text)
-      ) &&
-      !(
-        ts.isTypeAliasDeclaration(node) &&
-        node.name.text === "StoredDocumentResult"
-      )
-    )
-      hits.push("Rich storage exposes only validated bytes and document values")
+    if (storage) hits.push(...detectStorageExports(node, source))
     if (
       path === "packages/paper-crdt/src/native-layout-flow-view.ts" &&
       ts.isBinaryExpression(node) &&

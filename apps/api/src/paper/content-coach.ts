@@ -32,6 +32,8 @@ import {
 } from "@workspace/paper-crdt"
 
 import { CommandError } from "../registry/errors.js"
+import { revertRichCoachEdit } from "./rich-coach.js"
+import { readPaperDocumentInfo } from "./document-info.js"
 import { blockingEdit, NEWER_FIRST, revertedIds } from "./undo-rules.js"
 import {
   coachBasisOk,
@@ -260,6 +262,9 @@ export async function revertCoachEdit(
   editId: string,
   writer?: NativeWriter
 ): Promise<{ revision: number; reverted: boolean }> {
+  const identity = await readPaperDocumentInfo(userId, docId, writer)
+  if (identity.format === "rich" && writer)
+    return revertRichCoachEdit(userId, docId, editId, writer)
   return withContent(
     userId,
     docId,

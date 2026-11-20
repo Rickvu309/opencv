@@ -15,7 +15,11 @@ export {
   writeRepair,
 } from "./ydoc.js"
 export type { Candidate } from "./ydoc.js"
-export { materializeStored, seedStoredYDoc } from "./stored-document.js"
+export {
+  materializeStored,
+  seedStoredYDoc,
+  writeStoredYDoc,
+} from "./stored-document.js"
 export { recoverRichPaperClient } from "./rich-recovery.js"
 export {
   absorbUpdate,

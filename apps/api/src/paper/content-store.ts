@@ -53,6 +53,11 @@ import {
 } from "./content-document.js"
 import { admitBasis, admitDocument } from "./native-admission.js"
 import {
+  richContent,
+  type RichContent,
+  type RichContentChange,
+} from "./content-rich.js"
+import {
   qualifyRichDocument,
   qualifyRichSnapshot,
   type RichSnapshot,
@@ -656,6 +661,52 @@ export async function withRichSnapshot<T>(
     const entry = await hydrate(row)
     try {
       return await run(qualifyRichSnapshot({ row, entry, input, document }))
+    } finally {
+      entry.yDoc.destroy()
+    }
+  })
+}
+
+export async function withRichContent<T>(
+  userId: UserId,
+  docId: PaperId,
+  writer: NativeWriter,
+  run: (
+    content: RichContent & {
+      row: PaperRow
+      history(): Promise<{ base: Uint8Array; baseSeq: number; rows: LogRow[] }>
+      edit(
+        target: RichContent["document"],
+        change: RichContentChange
+      ): Promise<PaperRow>
+    }
+  ) => Promise<T>
+): Promise<T> {
+  return withLiveTransaction(async (retain) => {
+    const row = await lockedRow(userId, docId)
+    const entry = await hydrate(row)
+    try {
+      const content = richContent(row, entry, writer)
+      return await run({
+        ...content,
+        row,
+        history: async () => ({
+          base: entry.base,
+          baseSeq: entry.baseSeq,
+          rows: await loggedRows(docId, entry.baseSeq),
+        }),
+        edit: async (target, change) => {
+          const written = await commit(row, entry, content.write(target), {
+            ...change,
+            basedOn: content.basis.revision,
+          })
+          retain(docId, detached(entry))
+          return written
+        },
+      })
+    } catch (error) {
+      live.delete(docId)
+      throw error
     } finally {
       entry.yDoc.destroy()
     }
