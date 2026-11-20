@@ -98,6 +98,7 @@ export function ApplyToolbar({
     >
       <SegmentedControl
         aria-label="View"
+        variant="buttons"
         size="sm"
         options={VIEWS}
         value={view}

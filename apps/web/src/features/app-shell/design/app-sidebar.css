@@ -8,9 +8,13 @@
   background: var(--sidebar-accent);
 }
 
+[data-surface="app-shell"] [data-slot="nav-item"][aria-current="page"] svg {
+  color: var(--sidebar-accent-foreground);
+}
+
 [data-surface="app-shell"] [data-slot="nav-item-badge"],
 [data-surface="app-shell"] [data-slot="sidebar-group-label"] {
-  color: var(--subtle-foreground);
+  color: var(--muted-foreground);
 }
 
 [data-surface="app-shell"] [data-slot="brand"],

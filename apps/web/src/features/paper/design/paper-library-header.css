@@ -6,7 +6,7 @@
   height: auto;
   min-height: 64px;
   padding: 18px clamp(16px, 3vw, 32px) 10px;
-  background: var(--surface-sunken);
+  background: var(--background);
 }
 
 .paper-library-header > [data-slot="sidebar-expand"] {
@@ -28,7 +28,7 @@
 .paper-library-header > .paper-library-new {
   grid-area: new;
   padding-inline: 10px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   box-shadow: 0 1px 2px rgb(0 0 0 / 12%);
 }
 
@@ -39,8 +39,8 @@
   width: 360px;
   height: 32px;
   margin-inline-end: 8px;
-  border: 1px solid var(--hairline);
-  border-radius: 8px;
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-md);
   background: var(--background);
   box-shadow: 0 1px 2px rgb(0 0 0 / 4%);
   transition-property: border-color;
@@ -49,7 +49,7 @@
 }
 
 .paper-command:has([data-slot="input-group-control"]:focus-visible) {
-  border-color: color-mix(in oklch, var(--muted-foreground) 50%, transparent);
+  border-color: var(--input);
 }
 
 .paper-command-view[data-slot="button"] {
@@ -58,8 +58,9 @@
   height: 100%;
   min-height: 0;
   padding: 0 8px 0 11px;
-  border-radius: 7px 0 0 7px;
-  border-inline-end: 1px solid var(--hairline);
+  border-start-start-radius: calc(var(--radius-md) - 1px);
+  border-end-start-radius: calc(var(--radius-md) - 1px);
+  border-inline-end: 1px solid var(--border);
   color: var(--foreground);
   font-size: 13px;
   font-weight: 500;

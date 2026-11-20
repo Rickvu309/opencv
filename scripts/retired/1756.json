@@ -1,0 +1,30 @@
+[
+  {
+    "subject": "apps/web/src/features/app-shell/shell-navigation.test.ts",
+    "because": "The approved palette uses the full muted foreground token. The replacement verifies 4.5:1 against the shipped sidebar and accent fills.",
+    "replacedBy": "apps/web/src/features/app-shell/shell-navigation.test.ts",
+    "proof": {
+      "fork": "e448cfdebc0366a480bbe92f000f739a8eb50a99",
+      "replacedByBlob": "66f2e67d69877dd424140757ab6a539db5daf41b",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/apply-tone.test.ts",
+    "because": "The approved muted foreground requires higher opacity for AA contrast. The replacement pins the new opacity for each surface.",
+    "replacedBy": "apps/web/src/features/apply/apply-tone.test.ts",
+    "proof": {
+      "fork": "e448cfdebc0366a480bbe92f000f739a8eb50a99",
+      "replacedByBlob": "42afbd102833074c06d6299efded384930c96892",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]

@@ -1,5 +1,6 @@
 export const SURFACE_TOKENS = [
   "surface-sunken",
+  "input-border",
   "hairline",
   "subtle-foreground",
 ]
@@ -50,6 +51,7 @@ const TOKEN_GREYS = [
   ["muted", ["#f0f0f1", "#f1f1f3"]],
   ["sidebar-accent", ["#e1e1e2"]],
   ["border", ["#e2e2e2", "#e4e4e7", "#e6e6e8"]],
+  ["input-border", ["#d8dee7"]],
   ["hairline", ["#ededef", "#ececee"]],
 ]
 
