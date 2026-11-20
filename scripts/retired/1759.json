@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/rich-page-lifecycle.test.tsx",
+    "because": "The Formatting and insert popover is gone; the formatting controls it held are now an always-visible toolbar checked directly in the same test",
+    "replacedBy": "apps/web/src/features/paper/rich-page-lifecycle.test.tsx",
+    "proof": {
+      "fork": "e0f0a24d663de5d55ddbd826550abcf10489af1b",
+      "replacedByBlob": "46143900b4751c1a87062f003add20362f7925fc",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]
