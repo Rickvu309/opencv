@@ -41,11 +41,6 @@ export function RichDocumentMenuBar({
     blocked,
     editorAvailable: !!editor,
   })
-  const menuButton = (label: string) => (
-    <Button variant="ghost" size="touch" className="px-2">
-      {label}
-    </Button>
-  )
   return (
     <div
       data-paper-menu-row=""
@@ -56,7 +51,13 @@ export function RichDocumentMenuBar({
       <RichPageSetup editor={editor} blocked={blocked}>
         {(openSetup) => (
           <DropdownMenu>
-            <DropdownMenuTrigger render={menuButton("File")} />
+            <DropdownMenuTrigger
+              render={
+                <Button variant="ghost" size="touch" className="px-2">
+                  File
+                </Button>
+              }
+            />
             <DropdownMenuContent align="start" data-surface="paper">
               <RichPageSetupMenuEntry
                 openSetup={openSetup}
@@ -69,7 +70,13 @@ export function RichDocumentMenuBar({
         )}
       </RichPageSetup>
       <DropdownMenu>
-        <DropdownMenuTrigger render={menuButton("Edit")} />
+        <DropdownMenuTrigger
+          render={
+            <Button variant="ghost" size="touch" className="px-2">
+              Edit
+            </Button>
+          }
+        />
         <DropdownMenuContent align="start" data-surface="paper">
           <DropdownMenuItem
             disabled={editDisabled || !history?.undo}
@@ -95,7 +102,13 @@ export function RichDocumentMenuBar({
         </DropdownMenuContent>
       </DropdownMenu>
       <DropdownMenu>
-        <DropdownMenuTrigger render={menuButton("Insert")} />
+        <DropdownMenuTrigger
+          render={
+            <Button variant="ghost" size="touch" className="px-2">
+              Insert
+            </Button>
+          }
+        />
         <DropdownMenuContent align="start" data-surface="paper">
           <DropdownMenuItem
             disabled={editDisabled || !canLink}
