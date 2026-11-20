@@ -14,3 +14,20 @@
 [data-surface="apply"] [data-slot="page-header-primary"] {
   color: var(--foreground);
 }
+
+[data-slot="apply-toolbar"] [data-slot="segmented-control"] {
+  --ui-segc-fill: var(--accent);
+  --ui-segc-text: var(--muted-foreground);
+  --ui-segc-focus: var(--ring);
+  --ui-segc-h: 28px;
+}
+
+[data-slot="apply-toolbar"] :is(.ui-segc__opt, .ui-segc__pill) {
+  border-radius: 999px;
+}
+
+@media (width < 48rem), (pointer: coarse) {
+  [data-slot="apply-toolbar"] [data-slot="segmented-control"] {
+    --ui-segc-h: 44px;
+  }
+}

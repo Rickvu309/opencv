@@ -1,9 +1,4 @@
 [data-surface="app-shell"]
-  :is([data-slot="nav-item-badge"], [data-slot="sidebar-group-label"]) {
-  color: color-mix(in oklab, var(--muted-foreground) 92%, transparent);
-}
-
-[data-surface="app-shell"]
   [data-slot="nav-item"]
   > span:not([data-slot="nav-item-badge"]) {
   color: var(--sidebar-foreground);

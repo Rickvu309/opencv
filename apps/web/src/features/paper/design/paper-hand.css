@@ -1,7 +1,7 @@
 .paper-library {
   min-height: 100%;
   padding: 16px 16px 0;
-  background: var(--surface-sunken);
+  background: var(--background);
 }
 
 .paper-hand-stage {
@@ -57,6 +57,13 @@
   transition-property: transform, opacity, box-shadow;
   transition-duration: var(--duration-panel);
   transition-timing-function: var(--ease-panel);
+}
+
+.paper-hand-card .paper-picture {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--foreground) 9%, transparent),
+    0 2px 5px color-mix(in srgb, var(--foreground) 7%, transparent),
+    0 12px 24px -10px color-mix(in srgb, var(--foreground) 18%, transparent);
 }
 
 .paper-hand.is-entering .paper-hand-card {
