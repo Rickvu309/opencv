@@ -155,7 +155,7 @@ export function PaperRow({
             aria-label="Find in Paper"
             value={search}
             placeholder="Find in Paper"
-            className="h-11 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0 md:h-8 md:text-xs"
+            className="h-11 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0 md:h-8 md:text-[12.5px]"
             onChange={(event) =>
               dispatch({ type: "search_typed", value: event.target.value })
             }
@@ -269,7 +269,7 @@ export function PaperRow({
         {kind === "letter" ? (
           <Link
             to="/paper"
-            className="flex h-11 items-center gap-[9px] rounded-sm px-2 text-xs text-foreground hover:bg-secondary md:h-8"
+            className="flex h-11 items-center gap-[9px] rounded-[6px] px-2 text-[12.5px] text-foreground hover:bg-secondary md:h-8"
           >
             <PenLine aria-hidden className="size-3.5 text-muted-foreground" />
             Write a new cover letter

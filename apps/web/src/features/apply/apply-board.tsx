@@ -417,7 +417,7 @@ export function ApplyBoard({
               role="region"
               aria-label={column.name}
               data-stage={column.id}
-              className="group/lane min-h-0 w-[244px] min-w-[244px] gap-2 rounded-sm border-0 bg-secondary/50 px-2 pt-1 pb-2 ring-0"
+              className="group/lane min-h-0 w-[244px] min-w-[244px] gap-2 rounded-[6px] border-0 bg-secondary/50 px-2 pt-1 pb-2 ring-0"
             >
               <KanbanHeader className="p-0 font-normal">
                 <BoardLane
@@ -590,7 +590,7 @@ function HiddenColumns({
           <Button
             type="button"
             variant="ghost"
-            className="h-11 justify-start gap-1.5 rounded-sm px-1 text-xs font-medium text-muted-foreground aria-expanded:bg-transparent aria-expanded:text-muted-foreground aria-expanded:hover:bg-muted md:h-6"
+            className="h-11 justify-start gap-1.5 rounded-[6px] px-1 text-xs font-medium text-muted-foreground aria-expanded:bg-transparent aria-expanded:text-muted-foreground aria-expanded:hover:bg-muted md:h-6"
           />
         }
       >
@@ -604,7 +604,7 @@ function HiddenColumns({
           aria-pressed={showClosed}
           aria-label="Closed"
           className={cn(
-            "h-11 w-full justify-start gap-2 rounded-md border border-border px-2.5 text-ui font-normal md:h-[34px]",
+            "h-11 w-full justify-start gap-2 rounded-md border border-border px-2.5 text-[13px] font-normal md:h-[34px]",
             showClosed ? "bg-accent hover:bg-accent" : "bg-card"
           )}
           onClick={() => onShowClosed(!showClosed)}

@@ -481,7 +481,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
         >
           <div
             ref={keepToastsBelowPageHeaderOf}
-            className="relative flex min-h-0 min-w-0 flex-1 bg-background md:rounded-md md:border-[0.5px] md:border-border"
+            className="relative flex min-h-0 min-w-0 flex-1 bg-background md:rounded-[8px] md:border-[0.5px] md:border-border"
           >
             <SidebarExpandContext value={sidebarExpand}>
               <FocusSafeRegion

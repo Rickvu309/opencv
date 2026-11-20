@@ -21,13 +21,13 @@ import { useChosenTimeZone } from "./apply-time-zone.ts"
 export const TITLE_TEXT = "text-foreground/91"
 
 export const RAIL_ROW =
-  "w-full justify-start gap-[9px] rounded-sm px-2 text-ui font-normal text-foreground hover:bg-secondary aria-expanded:bg-secondary"
+  "w-full justify-start gap-[9px] rounded-[6px] px-2 text-[13px] font-normal text-foreground hover:bg-secondary aria-expanded:bg-secondary"
 
 export const RAIL_POPOVER =
-  "w-[270px] gap-0.5 rounded-lg p-1.5 shadow-[0_2px_4px_rgb(0_0_0/0.06),0_24px_60px_rgb(0_0_0/0.14)] ring-foreground/6"
+  "w-[270px] gap-0.5 rounded-[10px] p-1.5 shadow-[0_2px_4px_rgb(0_0_0/0.06),0_24px_60px_rgb(0_0_0/0.14)] ring-foreground/6"
 
 export const RAIL_PICKER_ROW =
-  "w-full justify-start gap-[9px] rounded-sm px-2 text-xs font-normal text-foreground hover:bg-secondary"
+  "w-full justify-start gap-[9px] rounded-[6px] px-2 text-[12.5px] font-normal text-foreground hover:bg-secondary"
 
 export function RailLabel({
   children,
@@ -126,7 +126,7 @@ export function RailSection({
         aria-expanded={open}
         onClick={toggleOpen}
         className={cn(
-          "h-11 w-full justify-start gap-1.5 rounded-sm px-2 text-xs font-medium hover:bg-secondary aria-expanded:bg-transparent md:h-7",
+          "h-11 w-full justify-start gap-1.5 rounded-[6px] px-2 text-xs font-medium hover:bg-secondary aria-expanded:bg-transparent md:h-7",
           FAINT_TEXT.card,
           "aria-expanded:text-muted-foreground/84"
         )}
@@ -160,7 +160,7 @@ export function ChecklistItemRow({
       role="checkbox"
       aria-checked={item.done}
       aria-label={item.label}
-      className="h-auto min-h-[44px] w-full items-start justify-start gap-2.5 rounded-sm border-0 border-b border-foreground/6 px-2 py-1.5 text-[13.5px] font-normal hover:bg-secondary md:min-h-[34px]"
+      className="h-auto min-h-[44px] w-full items-start justify-start gap-2.5 rounded-[6px] border-0 border-b border-foreground/6 px-2 py-1.5 text-[13.5px] font-normal hover:bg-secondary md:min-h-[34px]"
       onClick={onToggle}
     >
       {item.done ? (
@@ -214,7 +214,7 @@ export function ActivityItem({ row }: { row: ActivityFeedRow }) {
   return (
     <li
       data-slot="activity-item"
-      className="flex h-7 items-center gap-2.5 px-1 text-xs text-muted-foreground"
+      className="flex h-7 items-center gap-2.5 px-1 text-[12.5px] text-muted-foreground"
     >
       <ActivityIcon row={row} />
       <span>{activityText(row)}</span>

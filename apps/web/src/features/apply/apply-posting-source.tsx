@@ -26,14 +26,14 @@ export function PostingSource({
       href={sourceUrl}
       target="_blank"
       rel="noopener noreferrer"
-      className="flex h-11 items-center gap-[9px] rounded-md px-2 text-ui text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:bg-muted md:h-8"
+      className="flex h-11 items-center gap-[9px] rounded-md px-2 text-[13px] text-foreground hover:bg-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring active:bg-muted md:h-8"
     >
       {label}
     </a>
   ) : (
     <div
       data-slot="property"
-      className="flex h-8 items-center gap-[9px] px-2 text-ui text-foreground"
+      className="flex h-8 items-center gap-[9px] px-2 text-[13px] text-foreground"
     >
       {label}
     </div>

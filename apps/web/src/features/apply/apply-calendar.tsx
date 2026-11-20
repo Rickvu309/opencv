@@ -160,7 +160,7 @@ export function ApplyCalendar({
           <Button
             type="button"
             variant="outline"
-            className="h-11 rounded-md bg-card px-2.5 text-xs md:h-7"
+            className="h-11 rounded-md bg-card px-2.5 text-[12.5px] md:h-7"
             onClick={() => dispatchAnchor({ type: "today_chosen", today })}
           >
             Today

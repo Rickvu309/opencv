@@ -44,7 +44,7 @@ type AppSidebarProps = {
 }
 
 const NAV_ITEM_CLASS =
-  "h-11 font-normal md:h-7 md:text-ui md:leading-[15.6px] md:font-medium"
+  "h-11 font-normal md:h-7 md:text-[13px] md:leading-[15.6px] md:font-medium"
 
 function NavGroup({
   id,

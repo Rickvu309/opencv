@@ -181,7 +181,7 @@ function InterviewPrep({ job }: { job: JobDetail }) {
             <Button
               type="button"
               variant="ghost"
-              className="h-11 flex-1 justify-start gap-2 px-0 text-ui font-medium text-muted-foreground hover:bg-transparent aria-expanded:bg-transparent aria-expanded:text-muted-foreground md:h-6"
+              className="h-11 flex-1 justify-start gap-2 px-0 text-[13px] font-medium text-muted-foreground hover:bg-transparent aria-expanded:bg-transparent aria-expanded:text-muted-foreground md:h-6"
             />
           }
         >
@@ -190,7 +190,7 @@ function InterviewPrep({ job }: { job: JobDetail }) {
           {total > 0 ? (
             <span
               className={cn(
-                "text-xs leading-[15px] font-normal",
+                "text-[12.5px] leading-[15px] font-normal",
                 FAINT_TEXT.card
               )}
             >
@@ -310,7 +310,7 @@ function Comment({ row, author }: { row: ActivityFeedRow; author: string }) {
   return (
     <li
       data-slot="comment"
-      className="my-2.5 flex flex-col gap-1.5 rounded-lg border border-border px-3.5 py-3"
+      className="my-2.5 flex flex-col gap-1.5 rounded-[10px] border border-border px-3.5 py-3"
     >
       <div className="flex items-center gap-2">
         <InitialsAvatar
@@ -318,10 +318,12 @@ function Comment({ row, author }: { row: ActivityFeedRow; author: string }) {
           size={20}
           fontSize={8}
         />
-        <span className="text-xs font-medium text-foreground">{author}</span>
+        <span className="text-[12.5px] font-medium text-foreground">
+          {author}
+        </span>
         <time
           dateTime={row.createdAt}
-          className={cn("text-xs", FAINT_TEXT.card)}
+          className={cn("text-[12.5px]", FAINT_TEXT.card)}
         >
           {monthDay(new Date(row.createdAt), zone)}
         </time>
@@ -401,7 +403,7 @@ function NoteComposer({ jobId }: { jobId: JobId }) {
   return (
     <div className="flex flex-col gap-1.5">
       <form
-        className="flex min-h-11 items-center gap-2 rounded-lg border border-border py-1.5 pr-2 pl-3.5 focus-within:border-muted-foreground/50"
+        className="flex min-h-11 items-center gap-2 rounded-[10px] border border-border py-1.5 pr-2 pl-3.5 focus-within:border-muted-foreground/50"
         onSubmit={(event) => {
           event.preventDefault()
           void submit()
@@ -422,7 +424,7 @@ function NoteComposer({ jobId }: { jobId: JobId }) {
           rows={1}
           placeholder="Leave a note…"
           className={cn(
-            "min-h-11 flex-1 resize-none border-0 bg-transparent p-0 text-base shadow-none focus-visible:ring-0 md:min-h-0 md:text-ui",
+            "min-h-11 flex-1 resize-none border-0 bg-transparent p-0 text-base shadow-none focus-visible:ring-0 md:min-h-0 md:text-[13px]",
             NOTE_PLACEHOLDER
           )}
           onChange={(event) =>
@@ -488,7 +490,7 @@ export function JobDocument({
       <div className="mt-1.5 flex items-center gap-2">
         <Briefcase
           aria-hidden
-          className="size-[22px] shrink-0 rounded-sm border border-foreground/8 bg-card p-1 text-foreground"
+          className="size-[22px] shrink-0 rounded-[6px] border border-foreground/8 bg-card p-1 text-foreground"
         />
         <span className="text-[14.5px] text-muted-foreground">
           {job.company}

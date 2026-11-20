@@ -101,7 +101,7 @@ export function CodeInput({
             aria-describedby={describedBy}
             data-filled={digit !== ""}
             value={digit}
-            className="h-[52px] min-w-0 flex-1 rounded-lg px-0 text-center text-[26px] font-semibold md:text-[26px]"
+            className="h-[52px] min-w-0 flex-1 rounded-[10px] px-0 text-center text-[26px] font-semibold md:text-[26px]"
             onFocus={(event) => event.currentTarget.select()}
             onPaste={(event) => {
               event.preventDefault()

@@ -138,7 +138,7 @@ function PeekBody({ jobId, onClose }: { jobId: JobId; onClose: () => void }) {
   return (
     <div data-slot="apply-peek-body" className="flex flex-col motion-fade-in">
       <div className="px-5 pt-5 pb-2">
-        <p className="text-xs text-muted-foreground">{job.company}</p>
+        <p className="text-[12.5px] text-muted-foreground">{job.company}</p>
         <h2 className="mt-1 text-lg leading-snug font-semibold tracking-[-0.3px] text-foreground">
           {job.title}
         </h2>

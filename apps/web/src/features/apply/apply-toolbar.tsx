@@ -207,7 +207,7 @@ function FilterChip({
         type="button"
         variant="ghost"
         aria-label={`Remove ${name.toLowerCase()} filter`}
-        className="size-11 shrink-0 rounded-sm p-0 text-muted-foreground hover:text-foreground md:size-[18px]"
+        className="size-11 shrink-0 rounded-[5px] p-0 text-muted-foreground hover:text-foreground md:size-[18px]"
         onClick={onRemove}
       >
         <X className="size-[18px] p-[3px]" />
