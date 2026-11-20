@@ -50,7 +50,7 @@ function ProfileButton({
   return (
     <span
       className={cn(
-        "flex h-[30px] items-center gap-1.5 rounded-lg pr-3 pl-2.5 text-[12.5px]",
+        "flex h-[30px] items-center gap-1.5 rounded-lg pr-3 pl-2.5 text-xs",
         primary
           ? "bg-foreground font-medium text-background"
           : "border border-border text-foreground/90"
@@ -69,7 +69,7 @@ export function PitchHeroArt() {
       data-illustration
       className="relative flex flex-col gap-6 xl:@min-[73em]/pitch:absolute xl:@min-[73em]/pitch:top-[180px] xl:@min-[73em]/pitch:left-[430px] xl:@min-[73em]/pitch:block xl:@min-[73em]/pitch:h-[420px] xl:@min-[73em]/pitch:w-[1000px]"
     >
-      <div className="flex w-full flex-col overflow-hidden rounded-[14px] border border-border bg-card shadow-[0_1px_3px_rgb(0_0_0/0.06),0_30px_70px_rgb(0_0_0/0.1)] xl:@min-[73em]/pitch:absolute xl:@min-[73em]/pitch:top-0 xl:@min-[73em]/pitch:left-[170px] xl:@min-[73em]/pitch:w-[780px]">
+      <div className="flex w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_3px_rgb(0_0_0/0.06),0_30px_70px_rgb(0_0_0/0.1)] xl:@min-[73em]/pitch:absolute xl:@min-[73em]/pitch:top-0 xl:@min-[73em]/pitch:left-[170px] xl:@min-[73em]/pitch:w-[780px]">
         <div className="flex h-[38px] items-center gap-1.5 border-b border-border bg-background px-3.5">
           <span className="size-[9px] rounded-full bg-border" />
           <span className="size-[9px] rounded-full bg-border" />
@@ -91,7 +91,7 @@ export function PitchHeroArt() {
               <span className="text-[30px] font-semibold tracking-[-1px] text-foreground">
                 Linh Nguyen
               </span>
-              <span className="text-[13px] text-muted-foreground/85">
+              <span className="text-ui text-muted-foreground/85">
                 Marketing, Ho Chi Minh City
               </span>
             </span>
@@ -121,7 +121,7 @@ export function PitchHeroArt() {
           </p>
           <div className="mt-2.5 flex gap-3">
             <div className="flex min-w-0 flex-1 flex-col gap-2">
-              <div className="flex h-[86px] items-center justify-center rounded-[10px] border border-border/50 bg-muted/60">
+              <div className="flex h-[86px] items-center justify-center rounded-lg border border-border/50 bg-muted/60">
                 <svg
                   viewBox="0 0 230 52"
                   fill="none"
@@ -137,19 +137,19 @@ export function PitchHeroArt() {
                   <circle cx="225" cy="6" r="4" fill="currentColor" />
                 </svg>
               </div>
-              <span className="text-[13px] font-semibold text-foreground">
+              <span className="text-ui font-semibold text-foreground">
                 Followers +38%
               </span>
             </div>
             <div className="flex min-w-0 flex-1 flex-col gap-2">
-              <div className="flex h-[86px] items-center justify-center rounded-[10px] border border-border/50 bg-muted/60">
+              <div className="flex h-[86px] items-center justify-center rounded-lg border border-border/50 bg-muted/60">
                 <Bars
                   heights={NEWSLETTER_BARS}
                   className="h-[52px] w-[200px] max-w-full gap-1.5"
                   barClassName="rounded-[3px] bg-muted-foreground/20"
                 />
               </div>
-              <span className="text-[13px] font-semibold text-foreground">
+              <span className="text-ui font-semibold text-foreground">
                 52% open rate
               </span>
             </div>
@@ -167,7 +167,7 @@ export function PitchHeroArt() {
             HT
           </span>
           <span className="flex flex-col gap-0.5">
-            <span className="text-[13px] font-semibold text-foreground">
+            <span className="text-ui font-semibold text-foreground">
               Hanh Tran opened your Pitch
             </span>
             <span className="text-[12px] text-muted-foreground/85">
@@ -184,7 +184,7 @@ export function PitchHeroArt() {
           <span className="flex size-[34px] items-center justify-center rounded-full bg-foreground text-background">
             <Download className="size-[15px]" />
           </span>
-          <span className="text-[13px] font-semibold text-foreground">
+          <span className="text-ui font-semibold text-foreground">
             3 CV downloads
           </span>
         </div>
@@ -200,7 +200,7 @@ export function PitchHeroArt() {
           <Bars
             heights={VIEW_BARS}
             className="h-[34px] gap-[5px]"
-            barClassName="rounded-[2px] bg-border"
+            barClassName="rounded-xs bg-border"
           />
         </div>
       </div>
