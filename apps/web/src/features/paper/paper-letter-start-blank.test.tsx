@@ -6,7 +6,7 @@ import { job } from "@/test/paper-letter-kit.tsx"
 
 import { PaperLetterStart } from "./paper-letter.tsx"
 
-const MINTED = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+const CREATED = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
 
 afterEach(() => {
   cleanup()
@@ -14,7 +14,7 @@ afterEach(() => {
 })
 
 describe("Start blank Letter", () => {
-  it("mints a Word page labelled letter and opens it", async () => {
+  it("creates a blank rich letter and opens it", async () => {
     const calls: { url: string; body: unknown }[] = []
     vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
       calls.push({
@@ -25,15 +25,18 @@ describe("Start blank Letter", () => {
         Response.json({
           ok: true,
           data: {
-            generation: "package",
-            docId: MINTED,
-            revision: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-            name: "Cover letter.docx",
+            id: CREATED,
+            name: "Untitled Letter",
             kind: "letter",
-            packageHash: "ab".repeat(32),
-            byteSize: 128,
-            incarnation: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
-            restore: null,
+            format: "rich",
+            provenance: {
+              documentVersion: 4,
+              schemaRevision: 2,
+              writerProtocol: 1,
+              profile: "private-layout-3",
+              requiredCapabilities: [],
+            },
+            updatedAt: new Date().toISOString(),
           },
         })
       )
@@ -41,13 +44,13 @@ describe("Start blank Letter", () => {
     const onCreated = vi.fn()
     render(<PaperLetterStart jobs={[job]} onCreated={onCreated} />)
     fireEvent.click(screen.getByRole("button", { name: "Start blank" }))
-    await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith(MINTED))
+    await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith(CREATED))
     expect(
-      calls.find((call) => call.url.includes("/api/commands/paper.canvas"))
+      calls.find((call) => call.url.includes("/api/commands/paper.create"))
         ?.body
-    ).toMatchObject({ input: { op: "mint", label: "letter" } })
+    ).toMatchObject({ input: { kind: "letter", format: "rich" } })
     expect(
-      calls.some((call) => call.url.includes("/api/commands/paper.create"))
+      calls.some((call) => call.url.includes("/api/commands/paper.canvas"))
     ).toBe(false)
   })
 })

@@ -2,13 +2,18 @@ import assert from "node:assert/strict"
 import { execFileSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { emptyPaper } from "../packages/domain/src/paper-doc/blank-canvas.ts"
+import {
+  emptyPaper,
+  emptyRichPaper,
+} from "../packages/domain/src/paper-doc/blank-canvas.ts"
 import {
   detect,
   detectDocument,
   detectHeaderEdit,
   detectHeaderUndo,
+  detectRichDocument,
   message,
+  richMessage,
 } from "./lib/paper-blank-canvas.mjs"
 import {
   applyCanvasBytes,
@@ -139,6 +144,111 @@ test("blank factories delegate and the historical starter CV fails", () => {
   assert.match(
     read("apps/web/src/features/paper/paper-letter-start.tsx"),
     /"paper.canvas"/
+  )
+})
+
+test("the rich blank is one empty paragraph with no header, photo, table or formatting", () => {
+  for (const kind of ["cv", "letter"]) {
+    const clean = emptyRichPaper(kind)
+    assert.deepEqual(detectRichDocument(clean), [])
+    const section = clean.flow.children[0]
+    assert.deepEqual(
+      detectRichDocument({
+        ...clean,
+        flow: {
+          ...clean.flow,
+          children: [
+            {
+              ...section,
+              children: [
+                ...section.children,
+                { ...section.children.at(-1), id: "paragraph-2" },
+              ],
+            },
+          ],
+        },
+      }),
+      [richMessage]
+    )
+    assert.deepEqual(
+      detectRichDocument({
+        ...clean,
+        flow: {
+          ...clean.flow,
+          children: [
+            {
+              ...section,
+              children: [
+                {
+                  ...section.children.at(-1),
+                  paragraph: { alignment: "center" },
+                },
+              ],
+            },
+          ],
+        },
+      }),
+      [richMessage]
+    )
+  }
+  const cv = emptyRichPaper("cv")
+  const header = cv.flow.children[0].children[0]
+  assert.deepEqual(
+    detectRichDocument({
+      ...cv,
+      flow: {
+        ...cv.flow,
+        children: [
+          {
+            ...cv.flow.children[0],
+            children: [
+              {
+                ...header,
+                children: [
+                  {
+                    ...header.children[0],
+                    content: [{ text: "Pretend name" }],
+                  },
+                  ...header.children.slice(1),
+                ],
+              },
+              ...cv.flow.children[0].children.slice(1),
+            ],
+          },
+        ],
+      },
+    }),
+    [richMessage]
+  )
+  assert.deepEqual(
+    detectRichDocument({
+      ...cv,
+      flow: {
+        ...cv.flow,
+        children: [
+          {
+            ...cv.flow.children[0],
+            children: cv.flow.children[0].children.slice(1),
+          },
+        ],
+      },
+    }),
+    [richMessage]
+  )
+})
+
+test("the rich blank creation path uses the factory and the full editor command", () => {
+  assert.match(
+    read("apps/api/src/paper/commands.ts"),
+    /emptyRichPaper\(input.kind\)/
+  )
+  assert.match(
+    read("apps/api/src/paper/commands.ts"),
+    /RICH_NATIVE_WRITER : undefined/
+  )
+  assert.match(
+    read("apps/web/src/features/paper/paper-new-dialog.tsx"),
+    /"paper.create", \{ kind, format: "rich" \}/
   )
 })
 

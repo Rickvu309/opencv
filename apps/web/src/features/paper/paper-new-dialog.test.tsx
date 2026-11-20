@@ -56,8 +56,8 @@ describe("Paper new dialog", () => {
     ).toBe(false)
   })
 
-  it("mints a blank CV page and opens that document", async () => {
-    const minted = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+  it("creates a blank rich CV and opens that document", async () => {
+    const created = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
     const calls: { url: string; body: unknown }[] = []
     const onMinted = vi.fn()
     vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
@@ -67,15 +67,18 @@ describe("Paper new dialog", () => {
       })
       return Promise.resolve(
         ok({
-          generation: "package",
-          docId: minted,
-          revision: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-          name: "CV.docx",
+          id: created,
+          name: "Untitled CV",
           kind: "cv",
-          packageHash: "ab".repeat(32),
-          byteSize: 128,
-          incarnation: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
-          restore: null,
+          format: "rich",
+          provenance: {
+            documentVersion: 4,
+            schemaRevision: 2,
+            writerProtocol: 1,
+            profile: "private-layout-3",
+            requiredCapabilities: [],
+          },
+          updatedAt: new Date().toISOString(),
         })
       )
     })
@@ -83,13 +86,13 @@ describe("Paper new dialog", () => {
     fireEvent.click(screen.getByRole("button", { name: "CV" }))
     fireEvent.click(screen.getByRole("radio", { name: "Blank" }))
     fireEvent.click(screen.getByRole("button", { name: "Start blank" }))
-    await vi.waitFor(() => expect(onMinted).toHaveBeenCalledWith(minted))
+    await vi.waitFor(() => expect(onMinted).toHaveBeenCalledWith(created))
     expect(
-      calls.find((call) => call.url.includes("/api/commands/paper.canvas"))
+      calls.find((call) => call.url.includes("/api/commands/paper.create"))
         ?.body
-    ).toMatchObject({ input: { op: "mint", label: "cv" } })
+    ).toMatchObject({ input: { kind: "cv", format: "rich" } })
     expect(
-      calls.some((call) => call.url.includes("/api/commands/paper.create"))
+      calls.some((call) => call.url.includes("/api/commands/paper.canvas"))
     ).toBe(false)
   })
 

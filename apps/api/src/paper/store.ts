@@ -14,6 +14,7 @@ import {
   parseFileId,
   parsePaperId,
   parseUserId,
+  storedPaperDocumentSchema,
   type PaperDocument,
   type NativeWriter,
   type Actor,
@@ -57,6 +58,7 @@ import {
   toSharedPaper,
   tryReadStoredPaper,
 } from "./read-paper.js"
+import { readPaperDocumentInfo } from "./document-info.js"
 
 export const IMPORT_FILE_CAP = 8_000_000
 export const IMPORT_SIZE_MESSAGE = "File must be 8 MB or smaller."
@@ -149,18 +151,22 @@ export async function createPaper(
     name?: string
     templateId?: string
     document?: unknown
-    paper?: PaperDocument
+    paper?: unknown
   },
   writer?: NativeWriter
 ) {
   const now = new Date()
   const id = createId(now.getTime())
+  const stored = input.paper
+    ? storedPaperDocumentSchema.parse(input.paper)
+    : null
+  if (stored && stored.kind !== input.kind)
+    throw new CommandError(
+      ERROR_CODES.CONFLICT,
+      "The document kind does not match."
+    )
   const paper =
-    (input.paper?.version === 4
-      ? paperDocumentSchema.parse(input.paper)
-      : v3Of(input.kind, input.paper)) ??
-    v3Of(input.kind, input.document) ??
-    blankPaper(input.kind)
+    stored ?? v3Of(input.kind, input.document) ?? blankPaper(input.kind)
   admitDocument(paper, writer)
   await getDb()
     .insert(paperDocs)
@@ -177,11 +183,11 @@ export async function createPaper(
       updatedAt: now,
     })
   importParsers.onInsert?.()
-  return toPaper(
-    await ownedPaper(actor.userId, parsePaperId(id), writer),
-    undefined,
-    writer
-  )
+  const row = (await ownedPaperOrNull(actor.userId, parsePaperId(id))) ?? null
+  if (!row) return documentNotFound()
+  return paper.version === 4 && paper.schemaRevision === 2
+    ? readPaperDocumentInfo(actor.userId, parsePaperId(id), writer)
+    : toPaper(row, undefined, writer)
 }
 
 export async function renamePaper(

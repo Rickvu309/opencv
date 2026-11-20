@@ -18,6 +18,7 @@ export {
   nativePaperFromLegacy,
   sectionsOf,
 } from "./document.js"
+export { emptyPaper, emptyRichPaper } from "./blank-canvas.js"
 
 export type {
   Bullet,
