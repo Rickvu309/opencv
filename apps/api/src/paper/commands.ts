@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto"
 
 import {
   ERROR_CODES,
+  emptyRichPaper,
   keywordGap,
   PAPER_RECEIPT_CHANGE_LIMIT,
   paperContract,
@@ -9,6 +10,7 @@ import {
   paperPhotoFileId,
   paperPlainText,
   parseFileId,
+  RICH_NATIVE_WRITER,
   type PaperDocument,
   type PaperId,
 } from "@workspace/domain"
@@ -110,7 +112,17 @@ export function registerPaper(registry: Registry) {
   bindCommands(registry, paperCommands, {
     "paper.create": {
       handler: async (input, actor) => {
-        const created = await createPaper(actor, input)
+        const created = await createPaper(
+          actor,
+          input.format === "rich"
+            ? {
+                kind: input.kind,
+                name: input.name,
+                paper: emptyRichPaper(input.kind),
+              }
+            : input,
+          input.format === "rich" ? RICH_NATIVE_WRITER : undefined
+        )
         if (input.jobId) {
           await registry.execute({
             name: "job.linkPaper",

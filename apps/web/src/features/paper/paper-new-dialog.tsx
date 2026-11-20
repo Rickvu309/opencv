@@ -2,7 +2,7 @@ import { useReducer } from "react"
 
 import { Button } from "@workspace/ui/components/button"
 
-import { type PaperTemplateId, type WordPageLabel } from "@workspace/domain"
+import { type PaperTemplateId } from "@workspace/domain"
 
 import { useRunCommand } from "@/lib/contract-client.ts"
 
@@ -13,10 +13,10 @@ import {
 
 export async function openBlankPage(
   run: ReturnType<typeof useRunCommand>,
-  label: WordPageLabel
+  kind: "cv" | "letter"
 ) {
-  const created = await run("paper.canvas", { op: "mint", label })
-  return created.docId
+  const created = await run("paper.create", { kind, format: "rich" })
+  return created.id
 }
 
 export async function openTemplatePage(

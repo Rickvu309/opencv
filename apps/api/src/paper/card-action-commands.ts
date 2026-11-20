@@ -1,6 +1,7 @@
 import {
   ERROR_CODES,
   type Actor,
+  type PaperId,
   type PaperView,
   type paperContract,
 } from "@workspace/domain"
@@ -66,12 +67,12 @@ export function registerDuplicate(
       destructive: entry.destructive,
       idempotency: "keyed",
       prepare: (input, actor) => planDuplicate(actor, input.docId),
-      reversal: (_input, output: PaperView) => ({
+      reversal: (_input, output: { id: PaperId; name: string }) => ({
         command: "paper.delete",
         input: { docId: output.id },
       }),
       step: entry.step,
-      activity: (_input, output: PaperView) => ({
+      activity: (_input, output: { id: PaperId; name: string }) => ({
         subjectKind: "paper",
         subjectId: output.id,
         summary: `Duplicated ${output.name}`,
