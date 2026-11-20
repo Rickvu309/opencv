@@ -23,6 +23,7 @@ import { RichLinkDialog } from "./rich-structure-controls.tsx"
 import { RichStructureControls } from "./rich-structure-controls"
 
 const disposals: (() => void)[] = []
+const liveFonts = Object.getOwnPropertyDescriptor(document, "fonts")
 beforeEach(() => {
   vi.useRealTimers()
   vi.stubGlobal("ClipboardEvent", class extends Event {})
@@ -40,6 +41,8 @@ afterEach(() => {
   for (const dispose of disposals.splice(0)) dispose()
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
+  if (liveFonts) Object.defineProperty(document, "fonts", liveFonts)
+  else Reflect.deleteProperty(document, "fonts")
 })
 
 function setup() {
