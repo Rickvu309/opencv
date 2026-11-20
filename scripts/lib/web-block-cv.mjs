@@ -66,6 +66,17 @@ function propertyKey(property) {
   return null
 }
 
+function carriesRichBlank(argument) {
+  const value = unwrap(argument)
+  if (!value || !ts.isObjectLiteralExpression(value)) return false
+  return value.properties.some(
+    (property) =>
+      ts.isPropertyAssignment(property) &&
+      propertyKey(property) === "format" &&
+      literalText(property.initializer) === "rich"
+  )
+}
+
 function blockCreateNames(source) {
   const initializers = new Map()
   const collect = (node) => {
@@ -113,12 +124,16 @@ export function detectWebBlockCv(text, path = "source.tsx") {
   const startsBlock = (argument) => namesBlockCreateValue(argument, aliases)
   const hits = []
   const visit = (node) => {
-    if (ts.isCallExpression(node) && node.arguments.some(startsBlock)) {
+    if (
+      ts.isCallExpression(node) &&
+      node.arguments.some(startsBlock) &&
+      !node.arguments.some(carriesRichBlank)
+    ) {
       hits.push({
         path,
         line: source.getLineAndCharacterOfPosition(node.getStart()).line + 1,
         message:
-          "The web starts a CV or Letter on the Word writing page with paper.canvas mint, never an older block document through paper.create",
+          "The web starts a CV or Letter on the Word writing page with paper.canvas mint, or a rich blank through paper.create with format rich, never an older block document",
       })
     }
     ts.forEachChild(node, visit)

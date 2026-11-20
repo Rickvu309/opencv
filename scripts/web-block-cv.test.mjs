@@ -16,6 +16,10 @@ const clean = `async function applyTemplate(templateId) {
 }
 async function draftLetter(jobId, lines) {
   return run("paper.canvas", { op: "mint", label: "letter", jobId, lines })
+}
+async function startBlank(kind) {
+  const created = await run("paper.create", { kind, format: "rich" })
+  onMinted(created.id)
 }`
 
 test("the web never creates an older block CV or Letter", () => {
@@ -84,6 +88,14 @@ await run(C.mint, input)
 await fetch(\`\${API}/commands/paper.canvas\`, { method: "POST" })
 const label = labels[\`\${kind}.create\`]`).length,
     0
+  )
+  assert.equal(
+    detect(`await run("paper.create", { kind: "cv", format: "prose" })`).length,
+    1
+  )
+  assert.equal(
+    detect(`await run("paper.create", { kind: "cv", name: "CV" })`).length,
+    1
   )
   const historic = execFileSync(
     "git",
