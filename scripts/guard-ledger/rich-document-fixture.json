@@ -1,0 +1,6 @@
+{
+  "id": "rich-document-fixture",
+  "file": "apps/web/src/test/rich-document-fixture.test.ts",
+  "historic": null,
+  "reason": "the ui fixture answered the paper document read without the updatedAt field the contract began to require in #1732; the second case checks the same schema rejects a fixture that drops the field"
+}
