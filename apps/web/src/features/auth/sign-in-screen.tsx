@@ -271,7 +271,7 @@ export function SignInScreen() {
             <>
               <Button
                 type="button"
-                className="h-[46px] w-full rounded-[10px]"
+                className="h-[46px] w-full rounded-lg"
                 onClick={() => void onGoogle()}
               >
                 <img src={googleG} alt="" className="size-4" />
@@ -287,7 +287,7 @@ export function SignInScreen() {
             </>
           ) : null}
           <div className="flex w-full flex-col gap-1.5">
-            <Label htmlFor="sign-in-email" className="text-[13px] font-medium">
+            <Label htmlFor="sign-in-email" className="text-ui font-medium">
               {AUTH_COPY.email}
             </Label>
             <Input
@@ -306,7 +306,7 @@ export function SignInScreen() {
               }
               aria-invalid={fieldRefused || undefined}
               aria-describedby={fieldRefused ? "sign-in-notice" : undefined}
-              className="h-[46px] rounded-[10px] px-3.5 text-base md:text-[15px]"
+              className="h-[46px] rounded-lg px-3.5 text-base md:text-[15px]"
             />
           </div>
           {noticeText ? (
@@ -322,7 +322,7 @@ export function SignInScreen() {
             type="submit"
             variant="primary"
             data-slot="sign-in-continue"
-            className="h-[46px] w-full rounded-[10px] text-sm font-medium"
+            className="h-[46px] w-full rounded-lg text-sm font-medium"
             disabled={sending || codeLimitHeld}
           >
             {AUTH_COPY.continue}

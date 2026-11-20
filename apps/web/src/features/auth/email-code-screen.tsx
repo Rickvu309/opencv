@@ -100,7 +100,7 @@ export function EmailCodeScreen({
               id="email-code-notice"
               role="alert"
               data-slot="email-code-error"
-              className="flex items-center gap-1.5 text-[13px] leading-[15.5px]"
+              className="flex items-center gap-1.5 text-ui leading-[15.5px]"
             >
               <CircleAlert aria-hidden className="size-[15px] shrink-0" />
               {notice}
@@ -113,7 +113,7 @@ export function EmailCodeScreen({
               render={<a href={inbox} target="_blank" rel="noreferrer" />}
               variant="outline"
               data-slot="email-code-open"
-              className="h-11 w-full gap-2 rounded-[10px] text-[13.5px] leading-4 font-medium md:h-[42px]"
+              className="h-11 w-full gap-2 rounded-lg text-[13.5px] leading-4 font-medium md:h-[42px]"
             >
               <Mail aria-hidden className="size-4" />
               {AUTH_COPY.openEmail}
@@ -121,7 +121,7 @@ export function EmailCodeScreen({
           ) : null}
           <div
             data-slot="email-code-resend"
-            className="flex flex-wrap items-center justify-center gap-1 text-[13px] leading-[15.5px]"
+            className="flex flex-wrap items-center justify-center gap-1 text-ui leading-[15.5px]"
           >
             <span>{AUTH_COPY.didntGet}</span>
             {showResend ? (
@@ -129,7 +129,7 @@ export function EmailCodeScreen({
                 type="button"
                 variant="ghost"
                 data-slot="email-code-send"
-                className="h-auto min-h-11 rounded px-0 py-0 text-[13px] leading-[15.5px] font-semibold md:min-h-6"
+                className="h-auto min-h-11 rounded px-0 py-0 text-ui leading-[15.5px] font-semibold md:min-h-6"
                 disabled={sending}
                 onClick={onResend}
               >
@@ -145,7 +145,7 @@ export function EmailCodeScreen({
             type="button"
             variant="ghost"
             data-slot="email-code-back"
-            className="h-auto min-h-11 rounded px-1 py-0 text-[13px] leading-[15.5px] font-medium hover:bg-transparent hover:underline md:min-h-6"
+            className="h-auto min-h-11 rounded px-1 py-0 text-ui leading-[15.5px] font-medium hover:bg-transparent hover:underline md:min-h-6"
             onClick={onBack}
           >
             {AUTH_COPY.backToLogin}

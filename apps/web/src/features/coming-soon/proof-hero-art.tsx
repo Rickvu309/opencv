@@ -32,7 +32,7 @@ export function ProofHeroArt() {
   return (
     <div
       aria-hidden="true"
-      className="relative flex flex-col overflow-hidden rounded-[18px] bg-linear-to-b from-background to-muted ring-1 ring-border/60 ring-inset lg:block lg:h-[560px]"
+      className="relative flex flex-col overflow-hidden rounded-2xl bg-linear-to-b from-background to-muted ring-1 ring-border/60 ring-inset lg:block lg:h-[560px]"
     >
       <div className="[container-type:inline-size] relative aspect-[1059/560] lg:absolute lg:inset-0 lg:aspect-auto">
         <svg
@@ -125,7 +125,7 @@ export function ProofHeroArt() {
         <span
           key={label}
           style={at(x - 28, y - 42)}
-          className={`absolute hidden h-7 items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] leading-[1.21] font-medium text-foreground lg:flex ${FLOATING}`}
+          className={`absolute hidden h-7 items-center gap-1.5 rounded-lg px-2.5 text-xs leading-[1.21] font-medium text-foreground lg:flex ${FLOATING}`}
         >
           <Play className="size-[11px]" />
           {label}
@@ -142,7 +142,7 @@ export function ProofHeroArt() {
       <div className="flex flex-wrap items-center gap-3 p-4 lg:contents">
         <span
           style={at(96, 492)}
-          className={`flex h-10 w-fit items-center gap-2 rounded-[10px] px-3.5 text-[13.5px] leading-[1.21] whitespace-nowrap text-foreground/90 lg:absolute ${FLOATING}`}
+          className={`flex h-10 w-fit items-center gap-2 rounded-lg px-3.5 text-[13.5px] leading-[1.21] whitespace-nowrap text-foreground/90 lg:absolute ${FLOATING}`}
         >
           <FileText className="size-3.5 text-muted-foreground/70" />
           Grew followers by
@@ -161,7 +161,7 @@ export function ProofHeroArt() {
           <span className="flex size-[34px] items-center justify-center rounded-full bg-muted text-[11.5px] font-semibold text-foreground/85">
             NA
           </span>
-          <span className="text-[13px] font-semibold text-foreground">
+          <span className="text-ui font-semibold text-foreground">
             Manager confirmed
           </span>
           <BadgeCheck className="size-[18px] text-foreground" />
