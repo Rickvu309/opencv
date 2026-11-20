@@ -34,23 +34,55 @@ afterEach(cleanup)
 
 const classesOf = (element: Element) => element.className.split(/\s+/)
 
-const SHIPPED_THEME = ":root"
+type Oklch = [number, number, number]
 
-function tokensOf(block: string) {
+function shippedTokenValues() {
   const css = readFileSync(
     path.join(import.meta.dirname, "styles/globals.css"),
     "utf8"
   )
-  const start = css.indexOf(`${block} {`)
-  const body = css.slice(start, css.indexOf("}", start))
-  return Object.fromEntries(
-    [...body.matchAll(/--([a-z0-9-]+):\s*oklch\(([^)]+)\)/g)].map(
-      ([, name, value]) => [name, value.split(/[\s/]+/).map(Number)]
-    )
-  ) as Record<string, number[]>
+  const body = /^:root \{\n([\s\S]*?)^\}/m.exec(css)?.[1] ?? ""
+  const values = new Map<string, string>()
+  for (const [, name, value] of body.matchAll(
+    /^  --([a-z0-9-]+): ([^;]+);/gm
+  )) {
+    values.set(name, value)
+  }
+  return values
 }
 
-type Oklch = [number, number, number]
+function tokenColor(values: Map<string, string>, name: string): Oklch {
+  const value = values.get(name)
+  const alias = value?.match(/^var\(--([a-z0-9-]+)\)$/)
+  if (alias) return tokenColor(values, alias[1])
+  if (value?.match(/^#[0-9a-f]{6}$/)) return hexToOklch(value)
+  const oklch = value?.match(/^oklch\(([^)]+)\)$/)
+  if (!oklch) throw new Error(`Expected a color for --${name}`)
+  const [lightness, chroma, hue] = oklch[1].split(/\s+/).map(Number)
+  return [lightness, chroma, hue]
+}
+
+function hexToOklch(hex: string): Oklch {
+  const [red, green, blue] = [1, 3, 5].map((offset) =>
+    decode(Number.parseInt(hex.slice(offset, offset + 2), 16) / 255)
+  )
+  const l = Math.cbrt(
+    0.4122214708 * red + 0.5363325363 * green + 0.0514459929 * blue
+  )
+  const m = Math.cbrt(
+    0.2119034982 * red + 0.6806995451 * green + 0.1073969566 * blue
+  )
+  const s = Math.cbrt(
+    0.0883024619 * red + 0.2817188376 * green + 0.6299787005 * blue
+  )
+  const a = 1.9779984951 * l - 2.428592205 * m + 0.4505937099 * s
+  const b = 0.0259040371 * l + 0.7827717662 * m - 0.808675766 * s
+  return [
+    0.2104542553 * l + 0.793617785 * m - 0.0040720468 * s,
+    Math.hypot(a, b),
+    (Math.atan2(b, a) * 180) / Math.PI,
+  ]
+}
 
 function linearRgb([l, c, h]: Oklch) {
   const a = c * Math.cos((h * Math.PI) / 180)
@@ -76,15 +108,15 @@ function contrast(one: Oklch, two: Oklch) {
 }
 
 function mix(base: Oklch, other: Oklch, share: number): Oklch {
-  const hue = base[1] === 0 ? other[2] : base[2]
+  const fromHue = base[1] === 0 ? other[2] : base[2]
+  const toHue = other[1] === 0 ? fromHue : other[2]
+  const hueDistance = ((((toHue - fromHue + 180) % 360) + 360) % 360) - 180
   return [
     base[0] + (other[0] - base[0]) * share,
     base[1] + (other[1] - base[1]) * share,
-    hue,
+    fromHue + hueDistance * share,
   ]
 }
-
-const solid = (token: number[]): Oklch => [token[0], token[1], token[2] ?? 0]
 
 const encode = (channel: number) =>
   channel <= 0.0031308 ? 12.92 * channel : 1.055 * channel ** (1 / 2.4) - 0.055
@@ -158,14 +190,15 @@ describe("primary and destructive buttons: states by sizes in the shipped light 
 })
 
 describe("contrast computed from the shipped tokens", () => {
-  const t = tokensOf(SHIPPED_THEME)
-  const card = solid(t.card)
-  const popover = solid(t.popover)
-  const primary = solid(t.primary)
-  const onPrimary = solid(t["primary-foreground"])
-  const destructive = solid(t.destructive)
+  const values = shippedTokenValues()
+  const color = (name: string) => tokenColor(values, name)
+  const card = color("card")
+  const popover = color("popover")
+  const primary = color("primary")
+  const onPrimary = color("primary-foreground")
+  const destructive = color("destructive")
   const onDestructive: Oklch = [1, 0, 0]
-  const foreground = solid(t.foreground)
+  const foreground = color("foreground")
 
   const TEXT = [
     ["primary label at rest", onPrimary, primary],
@@ -183,8 +216,8 @@ describe("contrast computed from the shipped tokens", () => {
       mix(destructive, foreground, 0.2),
     ],
     ["red menu item on the popover", destructive, popover],
-    ["menu and toast text", solid(t["popover-foreground"]), popover],
-    ["muted menu label", solid(t["muted-foreground"]), popover],
+    ["menu and toast text", color("popover-foreground"), popover],
+    ["muted menu label", color("muted-foreground"), popover],
   ] as const
 
   for (const [name, text, fill] of TEXT)
@@ -207,8 +240,8 @@ describe("contrast computed from the shipped tokens", () => {
   const CONTROLS = [
     ["primary fill on the card", primary, card],
     ["destructive fill on the card", destructive, card],
-    ["focus ring on the card", solid(t.ring), card],
-    ["muted icon on the popover", solid(t["muted-foreground"]), popover],
+    ["focus ring on the card", color("ring"), card],
+    ["muted icon on the popover", color("muted-foreground"), popover],
   ] as const
 
   for (const [name, mark, fill] of CONTROLS)
