@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/apply-tone.test.ts",
+    "because": "The approved muted foreground requires higher opacity for AA contrast. The replacement pins the new opacity for each surface.",
+    "replacedBy": "apps/web/src/features/apply/apply-tone.test.ts",
+    "proof": {
+      "fork": "e448cfdebc0366a480bbe92f000f739a8eb50a99",
+      "replacedByBlob": "42afbd102833074c06d6299efded384930c96892",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
