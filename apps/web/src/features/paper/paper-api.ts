@@ -1,4 +1,5 @@
 import {
+  LIBRARY_WRITER,
   paperImportResponseSchema,
   letterAttachmentContextSchema,
 } from "@workspace/domain"
@@ -35,9 +36,9 @@ export const paperSharedKey = (token: string) =>
   queryKey({ query: "paper.shared", input: { token } })
 
 export function listPaper() {
-  return apiFetch<SuccessBody<QueryOutput<"paper.list">>>(endpoints.paper).then(
-    unwrapData
-  )
+  return apiFetch<SuccessBody<QueryOutput<"paper.list">>>(endpoints.paper, {
+    headers: { "x-paper-writer": JSON.stringify(LIBRARY_WRITER) },
+  }).then(unwrapData)
 }
 
 export function getPaper(docId: string) {

@@ -56,6 +56,13 @@ export const RICH_NATIVE_WRITER: NativeWriter = {
   capabilities: [...richCapabilities],
 }
 
+export const LIBRARY_WRITER: NativeWriter = {
+  documentVersion: 4,
+  writerProtocol: 1,
+  supportedSchemaRevisions: [1, 2],
+  capabilities: [...NATIVE_WRITER.capabilities, ...richCapabilities],
+}
+
 const richProvenanceSchema = z
   .object({
     documentVersion: z.literal(4),
