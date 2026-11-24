@@ -2,7 +2,7 @@ import { ERROR_CODES, parseUserId } from "@workspace/domain"
 import { operation } from "@workspace/domain/operations/paper/native-word"
 import { Hono } from "hono"
 import type { SignedInVariables } from "../platform/signed-in.js"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import { downloadNativeWord } from "./native-word.js"
 import { WORD_PACKAGE_MEDIA_TYPE } from "./package-store.js"
 

@@ -12,7 +12,7 @@ import { ZodError } from "zod"
 import { handleApiError } from "../middleware.js"
 import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"
 import { registry } from "../registry/registry.js"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import { PaperPackageRefusal } from "./package-errors.js"
 import {
   WORD_PACKAGE_MEDIA_TYPE,

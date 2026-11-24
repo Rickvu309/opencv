@@ -14,7 +14,7 @@ import {
 } from "@workspace/domain"
 
 import { paperDocs } from "../db/schema.js"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import { admitDocument, basisOf } from "./native-admission.js"
 
 type PaperRow = typeof paperDocs.$inferSelect

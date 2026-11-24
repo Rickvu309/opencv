@@ -14,7 +14,7 @@ import {
   pendingActions,
   user,
 } from "../db/schema.js"
-import { CommandError, isMissingPhoto } from "../registry/errors.js"
+import { CommandError, isMissingPhoto } from "../platform/errors.js"
 import { REAL } from "../test/registry-formal-support.js"
 import {
   age,

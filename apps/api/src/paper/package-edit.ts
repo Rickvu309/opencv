@@ -12,7 +12,7 @@ import { z } from "zod"
 
 import { getDb } from "../db/context.js"
 import { paperPackageCandidates, paperPackageHeads } from "../db/schema.js"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import {
   type LockedBasis,
   type ReviewedCommand,

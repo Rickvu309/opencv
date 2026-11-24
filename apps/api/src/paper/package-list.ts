@@ -11,7 +11,7 @@ import { z } from "zod"
 
 import { getDb } from "../db/context.js"
 import { paperPackageHeads, paperPackageVersions } from "../db/schema.js"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import { readWordOutline } from "./word-reading.js"
 
 const docIdSchema = z.string().uuid()

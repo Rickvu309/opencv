@@ -29,7 +29,7 @@ import { and, desc, eq, ne } from "drizzle-orm"
 import { getDb, insideTransaction } from "../db/context.js"
 import { files, paperDocs, paperShares } from "../db/schema.js"
 import { createId } from "../platform/id.js"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import { admitDocument } from "./native-admission.js"
 import { listPackagePapers } from "./package-list.js"
 import {
