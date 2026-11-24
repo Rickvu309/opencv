@@ -1,6 +1,6 @@
 import { ERROR_CODES } from "@workspace/domain"
 
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import {
   IMPORT_FAILED_MESSAGE,
   type ImportReader,

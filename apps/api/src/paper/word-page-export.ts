@@ -8,7 +8,7 @@ import {
   paperPackageTrash,
   paperPackageVersions,
 } from "../db/schema.js"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import { completeVersion } from "./package-store.js"
 
 export const WORD_PAGE_EXPORT_BYTES = 64 * 1024 * 1024

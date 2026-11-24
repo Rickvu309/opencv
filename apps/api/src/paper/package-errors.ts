@@ -1,4 +1,4 @@
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 
 export type PackageRefusalReason = { code: string; message: string }
 

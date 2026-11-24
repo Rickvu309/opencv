@@ -2,7 +2,7 @@ import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
 
 import { handleApiError } from "../middleware.js"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import { PaperPackage } from "./package-engine.js"
 import { PaperPackageRefusal } from "./package-errors.js"
 import { fixturePackage, packageMember, run } from "./package-fixtures.js"

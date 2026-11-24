@@ -12,7 +12,7 @@ import {
   type StoredPaperDocument,
 } from "@workspace/domain"
 
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 
 export function admitDocument(
   document: StoredPaperDocument,
