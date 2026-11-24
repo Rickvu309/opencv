@@ -1,7 +1,6 @@
 import {
   accountContract,
   chatContract,
-  coachTaskContract,
   inboxContract,
   jobContract,
   paperContract,
@@ -22,7 +21,6 @@ import { coachActivityWithoutTurn, seedCoachActor } from "../test/coach-turn.js"
 const surfaces = {
   account: accountContract,
   chat: chatContract,
-  coach: coachTaskContract,
   inbox: inboxContract,
   job: jobContract,
   paper: paperContract,

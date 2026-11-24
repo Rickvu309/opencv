@@ -159,9 +159,9 @@ export function PaperLetterStart({
       const draft = activeDraft.current
       activeDraft.current = null
       draft?.controller.abort()
-      if (draft?.chatId) void stopPaperChat(draft.chatId)
+      if (draft?.chatId) void stopPaperChat(queryClient, draft.chatId)
     },
-    []
+    [queryClient]
   )
 
   async function attach(file: File) {
@@ -214,7 +214,7 @@ export function PaperLetterStart({
       })
       operation.chatId = chat.id
       if (activeDraft.current !== operation) {
-        void stopPaperChat(chat.id)
+        void stopPaperChat(queryClient, chat.id)
         return
       }
       try {
@@ -312,7 +312,7 @@ export function PaperLetterStart({
     if (!operation || operation.stopped) return
     operation.stopped = true
     operation.controller.abort()
-    if (operation.chatId) void stopPaperChat(operation.chatId)
+    if (operation.chatId) void stopPaperChat(queryClient, operation.chatId)
   }
 
   async function startBlank() {

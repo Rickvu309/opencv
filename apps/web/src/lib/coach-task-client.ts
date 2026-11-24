@@ -2,7 +2,7 @@ import type { QueryClient } from "@tanstack/react-query"
 import {
   coachConfigSchema,
   coachTaskEventSchema,
-  coachTaskQueries,
+  coachTaskReplaySchema,
   coachTaskSnapshotSchema,
   chatToolNameSchema,
   type CoachStartInput,
@@ -11,7 +11,7 @@ import {
 import { completeCoachStop } from "@/lib/coach-stop-registry.ts"
 import { apiRequest, apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
-import { refreshReads, runContractCommand } from "@/lib/contract-client.ts"
+import { catalogClient, refreshReads } from "@/lib/contract-client.ts"
 import { endpoints } from "@/lib/requests.ts"
 import { createToolRefresher } from "@/lib/coach-stream.ts"
 import { readSseStream } from "@/lib/sse.ts"
@@ -54,7 +54,7 @@ export async function startCoachTask(
   startKey: string = crypto.randomUUID(),
   signal?: AbortSignal
 ) {
-  return runContractCommand(
+  const started = await catalogClient.run(
     queryClient,
     "coach.start",
     {
@@ -63,6 +63,8 @@ export async function startCoachTask(
     },
     { signal }
   )
+  if ("pending" in started) throw new Error("Coach did not start")
+  return started
 }
 
 async function getSnapshot(taskId: string, signal: AbortSignal) {
@@ -136,7 +138,7 @@ export async function tailCoachTask(input: {
         signal: input.signal,
       })) {
         if (wire.event === "reset") {
-          const reset = coachTaskQueries["coach.events"].output.parse(wire.data)
+          const reset = coachTaskReplaySchema.parse(wire.data)
           if (reset.type === "reset") ingest(reset.snapshot)
         } else if (wire.event === "task") {
           state = coachTaskReducer(state, {

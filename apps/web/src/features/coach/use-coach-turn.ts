@@ -13,7 +13,7 @@ import {
 
 import { coachSendErrorMessage } from "@/features/coach/coach-error.ts"
 import { useCoachMode } from "@/features/coach/use-coach-mode.ts"
-import { undoActivity, runContractCommand } from "@/lib/contract-client.ts"
+import { catalogClient, undoActivity } from "@/lib/contract-client.ts"
 import {
   attachWritingProposal,
   clearWritingProposal,
@@ -212,7 +212,7 @@ export function useCoachTurn({
     const controller = abortRef.current
     if (chatId && controller) {
       void ignoreRejection(
-        runContractCommand(queryClient, "coach.stop", {
+        catalogClient.run(queryClient, "coach.stop", {
           chatId: parseChatId(chatId),
         }),
         "stopAfterAbortIsHarmless"

@@ -2,7 +2,6 @@ import {
   DEFAULT_CHAT_TITLE,
   catalog,
   chatContract as chatCommands,
-  coachTaskContract,
   personActor,
   queries,
 } from "@workspace/domain"
@@ -113,9 +112,9 @@ describe("a chat binding that drifts from the chat contract is rejected", () => 
       ])
 
       trackChatTurn(chatId, new AbortController())
-      const stopContract = (
-        coachTaskContract as Record<string, { output: z.ZodType } | undefined>
-      )["coach.stop"]
+      const stopContract: { output: z.ZodType } | undefined = {
+        output: catalog["coach.stop"].publicResult,
+      }
       expect(stopContract, "the Coach contract owns coach.stop").toBeDefined()
       const stopped = await registry.execute({
         name: "coach.stop",

@@ -211,7 +211,7 @@ describe("Cover letter drafting", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Stop" }))
     await vi.waitFor(() => {
       expect(
-        calls.some((call) => call.url.includes("/api/chats/chat-1/stop"))
+        calls.some((call) => call.url.includes("/api/commands/coach.stop"))
       ).toBe(true)
     })
   })

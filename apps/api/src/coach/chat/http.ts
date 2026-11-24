@@ -43,22 +43,5 @@ export function createChatRoutes(signedIn: SignedIn) {
     return c.json(successEnvelope(data))
   })
 
-  routes.post("/:id/stop", async (c) => {
-    const parsed = chatIdSchema.safeParse(c.req.param("id"))
-    if (!parsed.success) {
-      return jsonWithStatus(
-        c,
-        errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid chat id"),
-        httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
-      )
-    }
-    const result = await registry.execute({
-      name: "coach.stop",
-      input: { chatId: parsed.data },
-      actor: personActor(c.var.userId),
-    })
-    return c.json(successEnvelope(result.output))
-  })
-
   return routes
 }

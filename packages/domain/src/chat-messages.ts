@@ -7,7 +7,7 @@ export {
   COACH_SELECTION_SECTION_ID_MAX,
   coachSelectionSchema,
 } from "./chat.js"
-import { coachModeSchema } from "./coach.js"
+import { coachModeSchema } from "./coach-mode.js"
 import {
   paperContentKindSchema,
   paperDocIdSchema,

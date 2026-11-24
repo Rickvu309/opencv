@@ -25,13 +25,16 @@ const TOOL_COPY = {
   "chat.open": { label: "Open this Chat" },
   "chat.rename": { label: "Rename this Chat" },
   "chat.setFocus": { label: "Focus this Chat" },
-  "coach.events": { label: "Read Coach updates", read: "Read Coach updates" },
-  "coach.start": { label: "Start Coach" },
-  "coach.status": {
+  [catalog["coach.events"].name]: {
+    label: "Read Coach updates",
+    read: "Read Coach updates",
+  },
+  [catalog["coach.start"].name]: { label: "Start Coach" },
+  [catalog["coach.status"].name]: {
     label: "Check Coach progress",
     read: "Checked Coach progress",
   },
-  "coach.stop": { label: "Stop Coach" },
+  [catalog["coach.stop"].name]: { label: "Stop Coach" },
   "coach.usage": { label: "Check Coach usage", read: "Checked Coach usage" },
   [catalog["connections.list"].name]: {
     label: "Look at your connections",

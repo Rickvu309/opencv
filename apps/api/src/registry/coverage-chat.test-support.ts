@@ -11,6 +11,7 @@ import {
   type CoverageTools,
 } from "./coverage-helpers.test-support.js"
 import { seedCoachActor } from "../test/coach-turn.js"
+import { implementation as stopReply } from "../coach/operations/stop/server.js"
 import { implementation as approve } from "./operations/actions/approve/server.js"
 import { implementation as deny } from "./operations/actions/deny/server.js"
 import { implementation as undoOperation } from "./operations/activity/undo/server.js"
@@ -106,7 +107,7 @@ export function chatCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "coach.stop",
+      name: stopReply.operation.name,
       arrange: async () => {
         const chat = await run("chat.create", { title: "Stop" })
         ctx.chatId = idOf(chat.output)

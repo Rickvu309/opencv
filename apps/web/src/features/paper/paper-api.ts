@@ -14,7 +14,7 @@ import type {
 
 import { ApiError, apiFetch, isErrorEnvelope } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
-import { queryKey } from "@/lib/contract-client.ts"
+import { catalogClient, queryKey } from "@/lib/contract-client.ts"
 import { streamChatTurn } from "@/lib/coach-stream.ts"
 import { tailCoachTask } from "@/lib/coach-task-client.ts"
 import type { CoachTaskState } from "@/lib/coach-task-state.ts"
@@ -230,8 +230,13 @@ export async function importPaperLink(
   )
 }
 
-export function stopPaperChat(chatId: string): Promise<void> {
-  return apiFetch(endpoints.chatStop(chatId), { method: "POST" })
+export function stopPaperChat(queryClient: QueryClient, chatId: string) {
+  return catalogClient.run(
+    queryClient,
+    "coach.stop",
+    { chatId },
+    { refresh: false }
+  )
 }
 
 export async function streamPaperTurn(input: {

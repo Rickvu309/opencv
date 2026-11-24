@@ -1,7 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query"
 import { parseChatId } from "@workspace/domain"
 import { startCoachTask } from "@/lib/coach-task-client.ts"
-import { runContractCommand } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 import {
   fulfillCoachStop,
   type CoachStopTarget,
@@ -23,7 +23,7 @@ export function requestCoachStop(
       start: (input, startKey, signal) =>
         startCoachTask(queryClient, input, startKey, signal),
       stop: (chatId, taskId, signal) =>
-        runContractCommand(
+        catalogClient.run(
           queryClient,
           "coach.stop",
           {

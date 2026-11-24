@@ -9,7 +9,12 @@ import {
   chatCreateCalls,
   setMockChats,
 } from "@/test/chat-api-mock.ts"
-import { CHAT, TASK, taskSnapshot } from "@/test/coach-task-fixture.ts"
+import {
+  CHAT,
+  TASK,
+  taskSnapshot,
+  taskStarted,
+} from "@/test/coach-task-fixture.ts"
 import { useCoachTask } from "./use-coach-task.ts"
 
 afterEach(() => vi.unstubAllGlobals())
@@ -59,7 +64,7 @@ it("retries an interrupted start with the same chat, invocation key and attachme
         }
         inputs.push(body.input)
         if (inputs.length === 1) throw new Error("connection lost")
-        return Response.json({ ok: true, data: { taskId: TASK } })
+        return Response.json({ ok: true, data: taskStarted(TASK) })
       }
       if (url.pathname.includes("/coach/tasks/"))
         return Response.json({
@@ -103,7 +108,7 @@ it("regenerates a persisted failed reply without appending its person message ag
           (JSON.parse(String(init?.body)) as { input: Record<string, unknown> })
             .input
         )
-        return Response.json({ ok: true, data: { taskId: TASK } })
+        return Response.json({ ok: true, data: taskStarted(TASK) })
       }
       if (url.pathname.includes("/coach/tasks/"))
         return Response.json({
@@ -145,7 +150,7 @@ it("tells the truth when a turn hits its limit and does not send it again", asyn
       const url = new URL(String(input))
       if (url.pathname.endsWith("coach.start")) {
         starts()
-        return Response.json({ ok: true, data: { taskId: TASK } })
+        return Response.json({ ok: true, data: taskStarted(TASK) })
       }
       if (url.pathname.includes("/coach/tasks/"))
         return Response.json({
@@ -194,7 +199,7 @@ it("keeps Stop during Chat creation and never sends the pending start", async ()
   const creation = deferred<void>()
   const creating = vi.fn()
   const starts = vi.fn(() =>
-    Response.json({ ok: true, data: { taskId: TASK } })
+    Response.json({ ok: true, data: taskStarted(TASK) })
   )
   vi.stubGlobal(
     "fetch",
@@ -247,7 +252,7 @@ it.each([false, true])(
             await acceptance.promise
             if (lostResponse) throw new Error("accepted response lost")
           }
-          return Response.json({ ok: true, data: { taskId: TASK } })
+          return Response.json({ ok: true, data: taskStarted(TASK) })
         }
         if (path.endsWith("coach.stop")) {
           stops.push(commandInput())
@@ -297,7 +302,7 @@ it("releases a detached start without letting stale completion clear the newer l
         ).input
         inputs.push(body)
         await (body.chatId === CHAT ? oldStart.promise : newStart.promise)
-        return Response.json({ ok: true, data: { taskId: TASK } })
+        return Response.json({ ok: true, data: taskStarted(TASK) })
       }
       if (path.includes("/coach/tasks/"))
         return Response.json({
@@ -353,7 +358,7 @@ it.each([false, true])(
         if (path.endsWith("coach.start")) {
           inputs.push(body())
           if (inputs.length === 1) throw new Error("accepted response lost")
-          return Response.json({ ok: true, data: { taskId: TASK } })
+          return Response.json({ ok: true, data: taskStarted(TASK) })
         }
         if (path.endsWith("coach.stop")) {
           stops.push(body())
@@ -410,7 +415,7 @@ it("fulfills the original Stop after detach without stopping the newer turn", as
         if (attempt === 2) await recovery.promise
         return Response.json({
           ok: true,
-          data: { taskId: attempt === 2 ? TASK : NEW_TASK },
+          data: taskStarted(attempt === 2 ? TASK : NEW_TASK),
         })
       }
       if (path.endsWith("coach.stop")) {
@@ -459,7 +464,7 @@ it.each([false, true])(
       async (input: RequestInfo | URL, init?: RequestInit) => {
         const path = new URL(String(input)).pathname
         if (path.endsWith("coach.start"))
-          return Response.json({ ok: true, data: { taskId: TASK } })
+          return Response.json({ ok: true, data: taskStarted(TASK) })
         if (path.endsWith("coach.stop")) {
           stops.push(
             (
@@ -506,7 +511,7 @@ it.each([false, true])(
   async (strict) => {
     setMockChats([{ id: CHAT, title: "Immediate Stop" }])
     const starts = vi.fn(() =>
-      Response.json({ ok: true, data: { taskId: TASK } })
+      Response.json({ ok: true, data: taskStarted(TASK) })
     )
     vi.stubGlobal(
       "fetch",
