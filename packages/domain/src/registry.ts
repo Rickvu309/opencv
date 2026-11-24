@@ -127,6 +127,7 @@ export type QuerySpec<TInput, TOutput = unknown> = {
   delegate?: DelegateMarker
   step: (input: TInput) => string
   read: (input: TInput, actor: Actor) => Promise<TOutput>
+  visitor?: (input: TInput) => Promise<TOutput>
 }
 
 export function defineQuery<TInput, TOutput>(

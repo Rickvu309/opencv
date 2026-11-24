@@ -176,6 +176,7 @@ type TableQuerySpec<N extends QueryName> = {
   delegate?: DelegateMarker
   step: (input: QueryInput<N>) => string
   read: (input: QueryInput<N>, actor: Actor) => Promise<QueryOutput<N>>
+  visitor?: (input: QueryInput<N>) => Promise<QueryOutput<N>>
 }
 
 export function tableQuery<N extends QueryName>(

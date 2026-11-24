@@ -1,0 +1,13 @@
+{
+  "id": "made-up-person",
+  "file": "scripts/made-up-person.test.mjs",
+  "detector": {
+    "module": "scripts/lib/made-up-person.mjs",
+    "export": "madeUpPeople"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "63944da86",
+    "path": "apps/api/src/paper/http.ts"
+  }
+}
