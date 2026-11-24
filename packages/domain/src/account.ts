@@ -5,7 +5,7 @@ import { fileIdSchema } from "./ids.js"
 import type { ResourceRef } from "./resources.js"
 
 export const planSchema = z.enum(["free", "pro"])
-export const languageSchema = z.enum(["en", "vi"])
+const languageSchema = z.enum(["en", "vi"])
 export const startPageSchema = z.enum(["apply", "paper", "inbox", "coach"])
 export type StartPage = z.infer<typeof startPageSchema>
 
