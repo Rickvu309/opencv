@@ -24,7 +24,7 @@ import {
   ownedJob,
   refuseLinkAlreadySaved,
   toJob,
-} from "./job-row.js"
+} from "./store.js"
 import { latestNote } from "./latest-note.js"
 import { linkedPapers } from "./linked-papers.js"
 

@@ -1,7 +1,7 @@
 import { parseJobId, type Actor, type JobPreview } from "@workspace/domain"
 
 import type { FetchJobPosting } from "./fetch-posting.js"
-import { jobWithLink } from "./job-row.js"
+import { jobWithLink } from "./store.js"
 
 type PostingFields = { title: string; company: string; location: string }
 

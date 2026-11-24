@@ -10,7 +10,7 @@ import { getDb } from "../db/context.js"
 import { jobChecklist } from "../db/schema.js"
 import { createId } from "../id.js"
 import { CommandError } from "../registry/errors.js"
-import { ownedJob } from "./job-row.js"
+import { ownedJob } from "./store.js"
 
 export async function checklistOf(jobId: JobId) {
   const rows = await getDb()

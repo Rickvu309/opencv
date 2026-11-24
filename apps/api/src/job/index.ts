@@ -1,5 +1,4 @@
 export type { FetchJobPosting } from "./fetch-posting.js"
 export { registerJob, type JobPreviewOptions } from "./commands.js"
 export { createJobRoutes } from "./http.js"
-export { toJob } from "./job-row.js"
-export { priorityRevisionFor, writePriority } from "./priority.js"
+export { priorityRevisionFor, toJob, writePriority } from "./store.js"

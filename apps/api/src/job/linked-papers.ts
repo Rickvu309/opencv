@@ -15,7 +15,7 @@ import {
   paperPackageVersions,
 } from "../db/schema.js"
 import { CommandError } from "../registry/errors.js"
-import { changeJob, ownedJob, toJob, type JobRow } from "./job-row.js"
+import { changeJob, ownedJob, toJob, type JobRow } from "./store.js"
 
 type PaperKind = "cv" | "letter"
 

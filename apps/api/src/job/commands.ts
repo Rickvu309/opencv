@@ -19,10 +19,9 @@ import {
   setChecklistItem,
 } from "./checklist.js"
 import { fetchJobPosting, type FetchJobPosting } from "./fetch-posting.js"
-import { ownedJob } from "./job-row.js"
 import { linkPaper, unlinkPaper } from "./linked-papers.js"
 import { previewJob } from "./preview.js"
-import { writePriority } from "./priority.js"
+import { ownedJob, writePriority } from "./store.js"
 
 type ReadPostingOnPlan = (input: {
   plan: Plan

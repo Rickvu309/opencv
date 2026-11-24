@@ -2,7 +2,7 @@ import { operation } from "@workspace/domain/operations/job/set-priority"
 import { jobPrioritySchema } from "@workspace/domain"
 import type { OperationBinding } from "../../../registry/bind.js"
 import { takePriorityGrant } from "../../../registry/write-grant.js"
-import { writePriority } from "../../priority.js"
+import { writePriority } from "../../store.js"
 
 const privateResult = operation.publicResult
   .extend({ previousPriority: jobPrioritySchema })
