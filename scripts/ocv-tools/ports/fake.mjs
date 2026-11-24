@@ -98,7 +98,6 @@ export function fakePorts(world = {}) {
     head: world.head ?? "abc1234",
     nextIssue: world.nextIssue ?? 77,
     nextCommentId: world.nextCommentId ?? 1000,
-    commentUpdatedAt: world.commentUpdatedAt ?? "2026-10-29T12:00:05.000Z",
     releases: new Set(world.releases ?? []),
     releaseAssets: structuredClone(world.releaseAssets ?? {}),
     uploadErr: world.uploadErr ?? null,
@@ -110,7 +109,6 @@ export function fakePorts(world = {}) {
     onComment: world.onComment ?? null,
     onCommit: world.onCommit ?? null,
     onPush: world.onPush ?? null,
-    onEditComment: world.onEditComment ?? null,
     gitDirs: {},
   }
   const effect = (op, extra = {}) => {
@@ -259,27 +257,6 @@ export function fakePorts(world = {}) {
       effect("comment", { n: Number(n), body })
       state.onComment?.(n, body, item)
       return { id: row.databaseId }
-    },
-    editComment(id, body) {
-      effect("editComment", { id, body })
-      if (state.commentEditError) throw new Error(state.commentEditError)
-      const stamp = state.commentUpdatedAt
-      let found = false
-      for (const item of state.issues.values()) {
-        const row = item.comments.find((c) => c.databaseId === id)
-        if (!row) continue
-        found = true
-        row.body = body
-        row.lastEditedAt = stamp
-        row.updatedAt = stamp
-      }
-      if (!found)
-        throw new Error(`gh api --include failed: comment ${id} was not found`)
-      state.onEditComment?.(
-        id,
-        effects.filter((e) => e.op === "editComment").length
-      )
-      return stamp
     },
     assignMe(n) {
       effect("assign", { n: Number(n) })

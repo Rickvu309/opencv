@@ -1,0 +1,66 @@
+[
+  {
+    "subject": "scripts/ocv-tools/adapters.test.mjs",
+    "because": "The owner decided on 2026-11-24 to delete the claim lease first and add it back only if needed. In the last 500 issues one claim was taken over and three were given back, and a second take of the same issue on this machine is refused because its task folder exists.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "scripts/ocv-tools/claim.test.mjs",
+    "because": "The owner decided on 2026-11-24 to delete the claim lease first and add it back only if needed. In the last 500 issues one claim was taken over and three were given back, and a second take of the same issue on this machine is refused because its task folder exists.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 14
+  },
+  {
+    "subject": "scripts/ocv-tools/delivery-trace.test.mjs",
+    "because": "The owner decided on 2026-11-24 to delete the claim lease first and add it back only if needed. In the last 500 issues one claim was taken over and three were given back, and a second take of the same issue on this machine is refused because its task folder exists.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ocv-tools/ports/gh.test.mjs",
+    "because": "The owner decided on 2026-11-24 to delete the claim lease first and add it back only if needed. In the last 500 issues one claim was taken over and three were given back, and a second take of the same issue on this machine is refused because its task folder exists.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/ocv-tools/rules.test.mjs",
+    "because": "The owner decided on 2026-11-24 to delete the claim lease first and add it back only if needed. In the last 500 issues one claim was taken over and three were given back, and a second take of the same issue on this machine is refused because its task folder exists.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "scripts/ocv-tools/rules/completeness.test.mjs",
+    "because": "The owner decided on 2026-11-24 to delete the claim lease first and add it back only if needed. In the last 500 issues one claim was taken over and three were given back, and a second take of the same issue on this machine is refused because its task folder exists.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "scripts/ocv-tools/take.test.mjs",
+    "because": "The owner decided on 2026-11-24 to delete the claim lease first and add it back only if needed. In the last 500 issues one claim was taken over and three were given back, and a second take of the same issue on this machine is refused because its task folder exists.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "scripts/ocv-tools/work.test.mjs",
+    "because": "The owner decided on 2026-11-24 to delete the claim lease first and add it back only if needed. In the last 500 issues one claim was taken over and three were given back, and a second take of the same issue on this machine is refused because its task folder exists.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 16
+  }
+]

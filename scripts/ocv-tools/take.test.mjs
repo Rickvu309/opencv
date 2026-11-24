@@ -48,7 +48,7 @@ test("slugify keeps the first five words", () => {
   assert.equal(slugify("!!!"), "")
 })
 
-test("take builds the branch, worktree, .env, port record, claim and result", () => {
+test("take builds the branch, worktree, .env, port record, owner note and result", () => {
   const { ports, ctx } = run({
     dirs: [`${WT}/.githooks`],
     hooksPath: "/dev/null",
@@ -76,7 +76,7 @@ test("take builds the branch, worktree, .env, port record, claim and result", ()
         e.value === ".githooks"
     )
   )
-  assert.equal(ports.counts.issue, 3)
+  assert.equal(ports.counts.issue, 1)
   assert.equal(
     ports.counts.worktrees,
     2,
@@ -284,7 +284,7 @@ test("a title on low disk makes zero gh calls", () => {
   assert.equal(ports.state.worktrees.length, 0)
 })
 
-test("take --resume checks out a branch an idle holder already pushed", () => {
+test("take --resume checks out a branch that was already pushed", () => {
   const world = {
     issues: [issue(90, { comments: [claim("old", 400)] })],
     remoteBranches: [BRANCH],
@@ -293,7 +293,7 @@ test("take --resume checks out a branch an idle holder already pushed", () => {
   const no = runCli(["take", "90", "--no-install"], refused.ctx)
   assert.match(
     no.text,
-    /the idle holder old already pushed branch feat\/90-keep-my-search/
+    /branch feat\/90-keep-my-search already exists on origin/
   )
   assert.match(no.text, /Fix: scripts\/ocv-tools\.mjs take 90 --resume/)
   const ok = run({ ...world, env: { OCV_TOOLS_AGENT: "next" } })
@@ -335,44 +335,6 @@ test("take --resume refuses a local branch that diverged from origin", () => {
   assert.match(r.text, /git log --oneline --left-right/)
   assert.ok(!ports.effects.some((e) => e.op === "addWorktree"))
   assert.ok(!ports.effects.some((e) => e.op === "fast-forward"))
-})
-
-test("after install, a live claim from someone else is HELD and the worktree is removed", () => {
-  const { ports, ctx } = run({
-    env: { OCV_TOOLS_AGENT: "me" },
-    onIssue(_n, count, found) {
-      if (count >= 2 && found) found.comments.push(claim("other", 1, 2))
-    },
-  })
-  const r = runCli(["take", "90", "--no-install"], ctx)
-  assert.equal(r.code, 2, r.text)
-  assert.match(r.text, /REFUSED HELD: #90 is held by other/)
-  assert.match(r.text, /\nFix: /)
-  assert.ok(!ports.effects.some((e) => e.op === "comment"))
-  assert.equal(ports.state.worktrees.length, 0)
-  assert.equal(ports.counts.issue, 2)
-})
-
-test("two clients: the later claim wins and the loser removes its worktree", () => {
-  let armed = true
-  const ports = fakePorts({
-    env: { OCV_TOOLS_AGENT: "alpha" },
-    onComment(_n, body, item) {
-      if (!armed || !String(body).includes("agent=alpha")) return
-      armed = false
-      item.comments.push(claim("beta", 0, 50))
-    },
-  })
-  const loser = runCli(["take", "90", "--no-install"], ctxFor(ports))
-  assert.equal(loser.code, 3, loser.text)
-  assert.match(loser.text, /LOST #90: beta holds the claim now/)
-  assert.match(loser.text, /\nFix: /)
-  assert.equal(ports.state.worktrees.length, 0)
-  ports.env.OCV_TOOLS_AGENT = "beta"
-  const winner = runCli(["take", "90", "--no-install"], ctxFor(ports))
-  assert.equal(winner.code, 0, winner.text)
-  assert.match(winner.text, /Agent: beta/)
-  assert.equal(ports.state.worktrees.length, 1)
 })
 
 test("take refuses a malformed issue title before creating a worktree", () => {

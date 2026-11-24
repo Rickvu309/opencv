@@ -144,7 +144,7 @@ export const workspaceRows = [
     kind: "precondition",
     section: "2",
     says: "This folder must be a linked task worktree on a type and issue branch.",
-    at: ["save", "release", "cleanup", "shot", "finish"],
+    at: ["save", "cleanup", "shot", "finish"],
     needs: ["here"],
     stop: true,
     check: notATask,

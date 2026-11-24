@@ -125,7 +125,7 @@ function fastForward(git, main, branch, remote) {
 
 export function createWorktree(
   ctx,
-  { type, issue, desc, install = true, resume = false, held = null }
+  { type, issue, desc, install = true, resume = false }
 ) {
   if (!TYPES.includes(type))
     throw new Error(`type must be one of: ${TYPES.join(", ")}`)
@@ -170,7 +170,6 @@ export function createWorktree(
       resume,
       local: Boolean(local),
       remote: Boolean(remote),
-      held,
       relation,
     },
     issue: { n: issue },
@@ -227,18 +226,4 @@ export function createWorktree(
     }
   }
   return { main, worktree, branch, port, gitDir, warnings }
-}
-
-export function discardWorktree(ctx, { main, worktree, branch }) {
-  const status = ctx.ports.git.status(worktree)
-  if (!status.ok) return false
-  const tracked = status.out
-    .split("\n")
-    .filter((line) => line && !line.startsWith("??"))
-  const ahead = ctx.ports.git.ahead(worktree, "origin/main..HEAD")
-  if (tracked.length || !ahead.ok || ahead.n > 0) return false
-  const removed = ctx.ports.git.removeWorktree(main, worktree, true)
-  if (!removed.ok) return false
-  ctx.ports.git.deleteBranch(main, branch)
-  return true
 }

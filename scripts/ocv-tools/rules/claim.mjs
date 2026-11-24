@@ -1,4 +1,3 @@
-import { CLAIM_IDLE_MINUTES } from "../claim-marker.mjs"
 import { FIXES } from "../result.mjs"
 
 function rule(spec) {
@@ -9,15 +8,6 @@ function rule(spec) {
     fix: () => FIXES[spec.id],
     ...spec,
   }
-}
-
-function holds(claim, me) {
-  return (
-    Boolean(me) &&
-    claim?.agent === me &&
-    claim.state !== "none" &&
-    claim.state !== "released"
-  )
 }
 
 function notAnIssue(facts) {
@@ -83,12 +73,6 @@ function closed(facts) {
   return `#${issue.n} is closed${facts.report ? `\n${facts.report}` : ""}`
 }
 
-function held(facts) {
-  const claim = facts.claim
-  if (!claim || claim.state !== "live" || claim.agent === facts.me) return null
-  return `#${facts.issue.n} is held by ${claim.agent} (last saved ${claim.idleMinutes} min ago; free after ${CLAIM_IDLE_MINUTES})`
-}
-
 function assigned(facts) {
   const issue = facts.issue
   if (!issue || facts.flags?.["--take"]) return null
@@ -107,20 +91,7 @@ function notOwner(facts) {
     if (author.toLowerCase() === me.toLowerCase()) return null
     return `PR #${facts.pull.n} is by ${author}, not ${me}.`
   }
-  if (!("claim" in facts && "issue" in facts))
-    throw new Error("NOT_OWNER needs a claim and an issue, or a pull request")
-  if (!facts.claim || !facts.issue) return null
-  if (holds(facts.claim, facts.me)) return null
-  const who = facts.claim.agent ? `; ${facts.claim.agent} does` : ""
-  return `you (${facts.me ?? "no agent id"}) do not hold #${facts.issue.n}${who}`
-}
-
-function lost(facts) {
-  if (!facts.claim || !facts.issue) return null
-  if (holds(facts.claim, facts.me)) return null
-  return facts.claim.agent
-    ? `${facts.claim.agent} holds the claim now`
-    : "you no longer hold the claim"
+  return null
 }
 
 function branchExists(facts) {
@@ -130,9 +101,7 @@ function branchExists(facts) {
   if (!branch.resume && branch.local)
     return `branch ${name} already exists locally (git worktree list)`
   if (!branch.resume && branch.remote)
-    return branch.held?.state === "idle"
-      ? `the idle holder ${branch.held.agent} already pushed branch ${name}`
-      : `branch ${name} already exists on origin; someone is already working on it`
+    return `branch ${name} already exists on origin; someone is already working on it`
   if (branch.resume && !branch.local && !branch.remote)
     return `branch ${name} is not on origin, so there is nothing to resume`
   return null
@@ -177,7 +146,7 @@ export const issueRows = [
     id: "UNKNOWN",
     kind: "precondition",
     section: "1",
-    says: "Claim history and board pages must be complete before a holder is decided.",
+    says: "Issue comments and board pages must be read completely before an owner is named.",
     at: ["issue-load", "history", "shot-target"],
     needs: ["history"],
     stop: true,
@@ -197,14 +166,6 @@ export const issueRows = [
 
 export const claimRows = [
   rule({
-    id: "HELD",
-    section: "2",
-    says: "Never take an issue another agent saved within the last 180 minutes.",
-    at: ["take", "take-raced"],
-    needs: ["issue", "claim", "me"],
-    check: held,
-  }),
-  rule({
     id: "ASSIGNED",
     section: "1",
     says: "Do not take an issue assigned to someone else unless --take was agreed.",
@@ -216,20 +177,10 @@ export const claimRows = [
     id: "NOT_OWNER",
     kind: "precondition",
     section: "2",
-    says: "Only the holding agent can release an issue.",
-    at: ["release", "merge"],
+    says: "Only the author of a pull request merges it.",
+    at: ["merge"],
     needs: ["me"],
     check: notOwner,
-  }),
-  rule({
-    id: "LOST",
-    kind: "precondition",
-    section: "2",
-    says: "Stop when another agent holds the claim, and keep the work as a patch.",
-    at: ["save"],
-    needs: ["claim", "me", "issue"],
-    exit: "LOST",
-    check: lost,
   }),
   rule({
     id: "BRANCH_EXISTS",

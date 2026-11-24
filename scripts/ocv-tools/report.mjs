@@ -55,17 +55,12 @@ export const COMMANDS = [
     name: "take",
     usage:
       "take <n | title> [-d <words>] [--type <t>] [--resume] [--no-install] [--no-assign] [--take]",
-    when: "Take an issue: makes its worktree itself (branch, port, .env, hooks, install), assigns the issue, records your claim on the issue, prints the path, branch and port. Given a title it files the issue first (same flags as `file`, including --body-file). -d sets the branch words, --type sets the type, --resume checks out a branch an idle holder already pushed (fast-forwards a local branch that is behind origin, refuses one that diverged), --take overrides another assignee. Refused when the issue is closed, ready-for-human, assigned to someone else, held by a live claim (saved in the last 180 minutes), or already has a worktree.",
+    when: "Take an issue: makes its worktree itself (branch, port, .env, hooks, install), assigns the issue, writes one owner note on the issue, prints the path, branch and port. Given a title it files the issue first (same flags as `file`, including --body-file). -d sets the branch words, --type sets the type, --resume checks out a branch that was already pushed (fast-forwards a local branch that is behind origin, refuses one that diverged), --take overrides another assignee. Refused when the issue is closed, ready-for-human, assigned to someone else, or already has a worktree.",
   },
   {
     name: "save",
     usage: "save -m <message>",
-    when: "From inside the task worktree: commit everything, refresh the claim, push through the pre-push checks and refresh again. Save at least every 180 minutes or someone else can take the issue. Exit 3 LOST if someone did: uncommitted work goes to a patch under ~/tmp/ocv-tools/lost. A push that already reached origin is reported as lost and the old claim comment is left alone.",
-  },
-  {
-    name: "release",
-    usage: "release --reason <why> [<n>]",
-    when: "Give the issue back so others can take it. Only the holder can.",
+    when: "From inside the task worktree: commit everything and push through the pre-push checks.",
   },
   {
     name: "cleanup",

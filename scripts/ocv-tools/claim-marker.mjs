@@ -1,6 +1,3 @@
-export const CLAIM_IDLE_MINUTES = 180
-export const CLAIM_SKEW_MS = 2 * 60 * 1000
-
 const MARKER =
   /<!-- ocv-tools (claim|release) agent=(\S+) at=(\S+)(?: branch=(\S+))?(?: reason=(.*?))? -->/
 
@@ -14,24 +11,13 @@ export const oneLine = (text) =>
 export const claimMarker = ({ agent, at, branch }) =>
   `<!-- ocv-tools claim agent=${agent} at=${at} branch=${branch} -->`
 
-export const releaseMarker = ({ agent, at, reason }) =>
-  `<!-- ocv-tools release agent=${agent} at=${at} reason=${oneLine(reason)} -->`
-
 export function parseMarker(body) {
   const m = MARKER.exec(String(body ?? ""))
   if (!m) return null
   return { kind: m[1], agent: m[2], at: m[3], branch: m[4], reason: m[5] }
 }
 
-export function leaseAt(comment, serverNow) {
-  const raw = Date.parse(comment?.updatedAt || comment?.createdAt || "")
-  if (Number.isNaN(raw)) return null
-  if (typeof serverNow !== "number" || raw > serverNow + CLAIM_SKEW_MS)
-    return null
-  return raw
-}
-
-export function holderOf(comments, now) {
+export function holderOf(comments) {
   let last = null
   for (const c of comments ?? []) {
     const m = parseMarker(c.body)
@@ -44,13 +30,5 @@ export function holderOf(comments, now) {
       }
   }
   if (!last) return { state: "none" }
-  if (last.kind === "release") return { ...last, state: "released" }
-  const at = leaseAt(last, now)
-  const idleMinutes =
-    at == null ? Infinity : Math.max(0, Math.floor((now - at) / 60000))
-  return {
-    ...last,
-    idleMinutes,
-    state: idleMinutes < CLAIM_IDLE_MINUTES ? "live" : "idle",
-  }
+  return { ...last, state: last.kind === "release" ? "released" : "live" }
 }

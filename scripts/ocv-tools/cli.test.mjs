@@ -54,7 +54,7 @@ test("take refuses bad arguments before any git or gh call", () => {
 test("help lists the jobs and ends with Next", () => {
   const { code, text } = runCli(["help"], run().ctx)
   assert.equal(code, 0)
-  for (const word of ["file", "take", "doctor", "UNKNOWN_COMMAND", "LOST"])
+  for (const word of ["file", "take", "doctor", "UNKNOWN_COMMAND"])
     assert.ok(text.includes(word), word)
   assert.match(text, /\nNext: /)
 })

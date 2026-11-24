@@ -1,5 +1,4 @@
-import { EXIT, FIXES } from "./result.mjs"
-import { agentIdFor, heartbeat, nowOf, readClaim, taskHere } from "./claim.mjs"
+import { taskHere } from "./claim.mjs"
 import { throwPushFailure } from "./push-failure.mjs"
 import { decide, refusalError } from "./rules/index.mjs"
 import { validateAuthoring } from "./authoring.mjs"
@@ -8,85 +7,13 @@ import { locate } from "./worktree.mjs"
 const withIssueSuffix = (message, n) =>
   /\(#\d+\)\s*$/.test(message) ? message : `${message} (#${n})`
 
-function lostNow(here, facts) {
-  return !decide("save", { here, ...facts }).ok
-}
-
-function savedPatch(ctx, n) {
-  const git = ctx.ports.git
-  const add = git.add(ctx.cwd)
-  if (!add.ok)
-    throw new Error(
-      `could not save the lost work: git add failed: ${add.err || add.out}`.slice(
-        0,
-        800
-      )
-    )
-  const againstMain = git.diffCached(ctx.cwd, "origin/main")
-  const diff = againstMain.ok ? againstMain : git.diffCached(ctx.cwd, "HEAD")
-  if (!diff.ok)
-    throw new Error(
-      `could not save the lost work: git diff failed: ${diff.err || diff.out}`.slice(
-        0,
-        800
-      )
-    )
-  const stamp = new Date(nowOf(ctx)).toISOString().replace(/[:.]/g, "-")
-  const patch = diff.out.endsWith("\n") ? diff.out : `${diff.out}\n`
-  return ctx.writeScratch(`lost/${n}-${stamp}.patch`, patch)
-}
-
-function lost(ctx, { n }, holder) {
-  const path = savedPatch(ctx, n)
-  return {
-    exit: EXIT.lost,
-    lines: [
-      `LOST #${n}: ${holder.agent ? `${holder.agent} holds the claim now` : "you no longer hold the claim"}.`,
-      `Your work is saved as a patch: ${path}`,
-      "Stop working on this issue.",
-    ],
-    fix: FIXES.LOST,
-  }
-}
-
-function lostPushed(ctx, t, holder) {
-  const who = holder.agent || "another agent"
-  const lines = [
-    `LOST #${t.n}: your push already reached origin/${t.branch}; ${who} now holds #${t.n}.`,
-  ]
-  if (ctx.ports.git.status(ctx.cwd).out) {
-    const path = savedPatch(ctx, t.n)
-    lines.push(`Your uncommitted work is saved as a patch: ${path}`)
-  }
-  lines.push("Stop working on this issue.")
-  return {
-    exit: EXIT.lost,
-    lines,
-    fix: `The commits are already on origin/${t.branch}. ${who} holds #${t.n}. Stop working in this worktree and do not edit the claim. Run: gh issue view ${t.n} --comments`,
-  }
-}
-
 export function save(ctx, { message }) {
   const t = taskHere(ctx, "save")
   if (!message) throw new Error("usage: ocv-tools save -m <message>")
-  const me = agentIdFor(ctx, t.gitDir)
   const git = ctx.ports.git
-  const read = readClaim(ctx, t.n)
-  const h = read.holder
-  const verdict = decide("save", {
-    here: t,
-    issue: read.issue,
-    claim: h,
-    me,
-  })
-  if (!verdict.ok) {
-    if (verdict.refusals[0].id === "LOST") return lost(ctx, t, h)
-    throw refusalError(verdict.refusals[0])
-  }
-
   validateAuthoring({
     n: t.n,
-    issue: read.issue,
+    issue: ctx.facts.load(t.n, ["issue"]).issue,
     pull: ctx.ports.gh.prs({ state: "open", head: t.branch })[0],
   })
 
@@ -96,19 +23,13 @@ export function save(ctx, { message }) {
     ctx.cwd,
     `${upstream.ok ? `origin/${t.branch}` : "origin/main"}..HEAD`
   ).out
-  if (!dirty && !Number(ahead)) {
-    const stillRead = readClaim(ctx, t.n, true)
-    const still = stillRead.holder
-    if (lostNow(t, { claim: still, me, issue: stillRead.issue }))
-      return lost(ctx, t, still)
-    heartbeat(ctx, t.n, still, me)
+  if (!dirty && !Number(ahead))
     return {
       lines: [
-        `Nothing to save in #${t.n}: no changes and nothing waiting to upload. The claim is refreshed.`,
+        `Nothing to save in #${t.n}: no changes and nothing waiting to upload.`,
       ],
       next: "Keep working, or run scripts/ocv-tools.mjs finish --body-file <file> when it is done",
     }
-  }
   if (dirty) {
     const add = git.add(ctx.cwd)
     const commit = add.ok
@@ -119,25 +40,14 @@ export function save(ctx, { message }) {
         `commit failed: ${commit.err || commit.out}`.slice(0, 800)
       )
   }
-  const beforePushRead = readClaim(ctx, t.n, true)
-  const beforePush = beforePushRead.holder
-  if (lostNow(t, { claim: beforePush, me, issue: beforePushRead.issue }))
-    return lost(ctx, t, beforePush)
-  heartbeat(ctx, t.n, beforePush, me)
   const pushStarted = ctx.now()
   const pushed = git.push(ctx.cwd)
   const pushSeconds = ((ctx.now() - pushStarted) / 1000).toFixed(3)
   if (!pushed.ok) throwPushFailure(ctx, pushed)
-  const afterPushRead = readClaim(ctx, t.n, true)
-  const afterPush = afterPushRead.holder
-  if (lostNow(t, { claim: afterPush, me, issue: afterPushRead.issue }))
-    return lostPushed(ctx, t, afterPush)
-  heartbeat(ctx, t.n, afterPush, me)
   return {
     lines: [
       `Saved #${t.n} on ${t.branch} at ${git.shortHead(ctx.cwd)}.`,
       `git push connection window: ${pushSeconds}s (includes hook and transfer).`,
-      "Pushed, and the claim is refreshed.",
     ],
     next: "Keep working and save again, or run scripts/ocv-tools.mjs finish --body-file <file> when it is done",
   }

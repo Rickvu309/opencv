@@ -5,7 +5,6 @@ import { createFacts } from "./facts.mjs"
 import { realPorts } from "./ports/index.mjs"
 import { TEMPLATE_FIELDS, TYPES } from "./fields.mjs"
 import { slugify } from "./worktree.mjs"
-import { release } from "./claim.mjs"
 import { take } from "./take.mjs"
 import { TAKE_SWITCHES, file } from "./issue.mjs"
 import { COMMANDS, doctor, renderHelp } from "./report.mjs"
@@ -231,11 +230,6 @@ function command(ctx, cmd, rest) {
     }
     case "save":
       return save(ctx, { message: flags["-m"] })
-    case "release":
-      return release(ctx, {
-        n: pos[0] ? issueNumber(pos[0], "release --reason <why> [<n>]") : null,
-        reason: flags["--reason"],
-      })
     case "cleanup":
       return cleanup(ctx, {
         n: pos[0] ? issueNumber(pos[0], "cleanup [<n> | --all]") : null,
