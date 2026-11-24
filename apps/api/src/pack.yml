@@ -1,0 +1,16 @@
+layer: app
+enforce_privacy: false
+dependencies:
+  [
+    apps/api/src/account,
+    apps/api/src/chat,
+    apps/api/src/coach,
+    apps/api/src/connections,
+    apps/api/src/inbox,
+    apps/api/src/job,
+    apps/api/src/paper,
+    apps/api/src/registry,
+    apps/api/src/db,
+    apps/api/src/mail,
+    apps/api/src/limits,
+  ]

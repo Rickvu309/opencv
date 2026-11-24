@@ -1,0 +1,124 @@
+apps/api/src:
+  apps/api/src/auth.ts:
+    violations:
+      - dependency
+      - layer
+    files:
+      - apps/api/src/registry/http.ts
+      - apps/api/src/registry/read.ts
+  apps/api/src/http-json.ts:
+    violations:
+      - dependency
+      - layer
+    files:
+      - apps/api/src/registry/http.ts
+  apps/api/src/id.ts:
+    violations:
+      - dependency
+      - layer
+    files:
+      - apps/api/src/registry/command-execution.ts
+      - apps/api/src/registry/frozen-review.ts
+      - apps/api/src/registry/proposals.ts
+  apps/api/src/middleware.ts:
+    violations:
+      - dependency
+      - layer
+    files:
+      - apps/api/src/registry/http.ts
+      - apps/api/src/registry/read.ts
+apps/api/src/account:
+  apps/api/src/account/index.ts:
+    violations:
+      - dependency
+      - layer
+    files:
+      - apps/api/src/registry/install.ts
+apps/api/src/chat:
+  apps/api/src/chat/index.ts:
+    violations:
+      - dependency
+      - layer
+    files:
+      - apps/api/src/registry/install.ts
+      - apps/api/src/registry/proposals.ts
+apps/api/src/coach:
+  apps/api/src/coach/index.ts:
+    violations:
+      - dependency
+      - layer
+    files:
+      - apps/api/src/registry/commands.ts
+      - apps/api/src/registry/proposals.ts
+      - apps/api/src/registry/registry.ts
+apps/api/src/connections:
+  apps/api/src/connections/index.ts:
+    violations:
+      - dependency
+      - layer
+    files:
+      - apps/api/src/registry/install.ts
+apps/api/src/inbox:
+  apps/api/src/inbox/index.ts:
+    violations:
+      - dependency
+      - layer
+    files:
+      - apps/api/src/registry/install.ts
+apps/api/src/job:
+  apps/api/src/job/index.ts:
+    violations:
+      - dependency
+      - layer
+    files:
+      - apps/api/src/registry/install.ts
+      - apps/api/src/registry/registry.ts
+  apps/api/src/job/operations/priority-counts/server.ts:
+    violations:
+      - dependency
+      - layer
+      - privacy
+    files:
+      - apps/api/src/registry/generated/catalog.ts
+  apps/api/src/job/operations/set-priority/server.ts:
+    violations:
+      - dependency
+      - layer
+      - privacy
+    files:
+      - apps/api/src/registry/generated/catalog.ts
+apps/api/src/paper:
+  apps/api/src/paper/index.ts:
+    violations:
+      - dependency
+      - layer
+    files:
+      - apps/api/src/registry/install.ts
+  apps/api/src/paper/operations/export/server.ts:
+    violations:
+      - dependency
+      - layer
+      - privacy
+    files:
+      - apps/api/src/registry/generated/catalog.ts
+  apps/api/src/paper/operations/import/server.ts:
+    violations:
+      - dependency
+      - layer
+      - privacy
+    files:
+      - apps/api/src/registry/generated/catalog.ts
+  apps/api/src/paper/operations/native-word/server.ts:
+    violations:
+      - dependency
+      - layer
+      - privacy
+    files:
+      - apps/api/src/registry/generated/catalog.ts
+  apps/api/src/paper/operations/read/server.ts:
+    violations:
+      - dependency
+      - layer
+      - privacy
+    files:
+      - apps/api/src/registry/generated/catalog.ts

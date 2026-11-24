@@ -1,0 +1,20 @@
+include:
+  - "apps/*/src/**/*.{ts,tsx}"
+  - "packages/*/src/**/*.{ts,tsx}"
+exclude:
+  - "**/*.test.{ts,tsx}"
+  - "**/*.test-support.ts"
+  - "**/*.type-test.ts"
+  - "**/*.fixtures.{ts,tsx}"
+  - "**/*.support.ts"
+  - "**/*-test-setup.ts"
+  - "**/test/**"
+  - "**/eval/**"
+  - "apps/api/src/index.ts"
+  - "apps/api/src/paper/page-writes.ts"
+layers:
+  - app
+  - shell
+  - feature
+  - kernel
+  - platform

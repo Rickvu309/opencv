@@ -1,0 +1,61 @@
+apps/web/src/features/apply:
+  apps/web/src/features/apply/apply-api.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/app-shell/use-shell-chats.ts
+apps/web/src/features/auth:
+  apps/web/src/features/auth/shell-overlays.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/app-shell/app-shell-layout.tsx
+apps/web/src/features/coach:
+  apps/web/src/features/coach/chat-api.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/app-shell/use-shell-chats.ts
+  apps/web/src/features/coach/chat-store.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/app-shell/app-shell-layout.tsx
+  apps/web/src/features/coach/coach-panel-chat-report.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/app-shell/app-shell.tsx
+  apps/web/src/features/coach/coach-panel.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/app-shell/app-shell.tsx
+  apps/web/src/features/coach/coach-workspace.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/app-shell/app-shell.tsx
+apps/web/src/features/command-palette:
+  apps/web/src/features/command-palette/command-palette.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/app-shell/app-shell-layout.tsx
+  apps/web/src/features/command-palette/shell-chat.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/app-shell/app-shell.tsx
+apps/web/src/features/inbox:
+  apps/web/src/features/inbox/inbox-api.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/app-shell/use-shell-chats.ts
+apps/web/src/features/paper:
+  apps/web/src/features/paper/paper-api.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/app-shell/use-shell-chats.ts

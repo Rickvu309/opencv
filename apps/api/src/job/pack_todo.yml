@@ -1,0 +1,25 @@
+apps/api/src:
+  apps/api/src/auth.ts:
+    violations:
+      - dependency
+      - layer
+    files:
+      - apps/api/src/job/http.ts
+  apps/api/src/http-json.ts:
+    violations:
+      - dependency
+      - layer
+    files:
+      - apps/api/src/job/http.ts
+  apps/api/src/id.ts:
+    violations:
+      - dependency
+      - layer
+    files:
+      - apps/api/src/job/store.ts
+  apps/api/src/middleware.ts:
+    violations:
+      - dependency
+      - layer
+    files:
+      - apps/api/src/job/http.ts

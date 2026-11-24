@@ -1,0 +1,10 @@
+layer: feature
+dependencies:
+  [
+    apps/web/src/features/apply,
+    apps/web/src/features/coach,
+    apps/web/src/features/paper-page,
+    apps/web/src/features/seed,
+    apps/web/src/lib,
+    apps/web/src/components,
+  ]
