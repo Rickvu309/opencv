@@ -1,6 +1,6 @@
 import { FIXES } from "../result.mjs"
 import { closesIssue, issueInTitle } from "./pull-ref.mjs"
-import { LABELS, openProductionRed } from "./merge-gate.mjs"
+import { LABELS, RED_PLACES, openRedIssues } from "./merge-gate.mjs"
 
 function unallowedMigrations(facts) {
   const allowed = facts.migrations?.allowed ?? []
@@ -15,12 +15,21 @@ function migrationChanges(facts) {
   return `the merge runs ${hits.map((item) => `${item.tag} (${item.changes.join(", ")})`).join("; ")} on production data, and it changes existing things`
 }
 
+const numbered = (issues) =>
+  issues.map((issue) => `#${issue.number}`).join(", ")
+
 function queueClosed(facts) {
-  const red = openProductionRed(facts.issues)
+  const red = openRedIssues(facts.issues)
   if (!red.length) return null
   if ((facts.pull?.labels ?? []).includes(LABELS.productionRedRevert))
     return null
-  return `production is red (${red.map((issue) => `#${issue.number}`).join(", ")} open), so only a pull request labeled ${LABELS.productionRedRevert} merges`
+  const places = RED_PLACES.map(([label, place]) => [
+    place,
+    red.filter((issue) => issue.labels.includes(label)),
+  ])
+    .filter(([, issues]) => issues.length)
+    .map(([place, issues]) => `${place} is red (${numbered(issues)} open)`)
+  return `${places.join(" and ")}, so only a pull request labeled ${LABELS.productionRedRevert} merges`
 }
 
 function rule(spec) {
@@ -113,16 +122,12 @@ export const pullRows = [
   rule({
     id: "QUEUE_CLOSED",
     section: "6",
-    says: "While an issue labeled production-red is open, only a pull request labeled production-red-revert merges.",
+    says: "While an issue labeled production-red or main-red is open, only a pull request labeled production-red-revert merges.",
     at: ["pr"],
     needs: ["pull", "issues"],
     check: queueClosed,
     fix: (facts) =>
-      `Wait until ${openProductionRed(facts.issues)
-        .map((issue) => `#${issue.number}`)
-        .join(
-          ", "
-        )} is closed, then run: gh run rerun --failed for the policy job of this pull request`,
+      `Wait until ${numbered(openRedIssues(facts.issues))} is closed, then run: gh run rerun --failed for the policy job of this pull request`,
   }),
   rule({
     id: "MIGRATION_CHANGES",

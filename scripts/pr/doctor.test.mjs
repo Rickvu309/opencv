@@ -79,6 +79,7 @@ test("labels.yml keeps only the labels something reads", () => {
       "risk:high",
       "production-red",
       "production-red-revert",
+      "main-red",
       "allow-migration",
     ]
   )

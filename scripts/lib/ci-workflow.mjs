@@ -18,6 +18,15 @@ const PR_EVENTS = new Set([
 ])
 
 const REQUIRED = [
+  [/^ {2}push:\n {4}branches: \[main\]$/m, "push to main trigger"],
+  [
+    /"\$GITHUB_EVENT_NAME" == merge_group \|\| "\$GITHUB_EVENT_NAME" == push/,
+    "every model on the merge queue and on main",
+  ],
+  [
+    /^ {2}TURBO_SCOPE: \$\{\{ github\.event_name == 'pull_request' && '--affected' \|\| '' \}\}$/m,
+    "a full run outside pull requests",
+  ],
   [/^ {2}formal-tla:\s*$/m, "formal-tla job"],
   [/actions\/setup-java@v4/, "setup-java"],
   [/distribution: temurin/, "temurin 21"],

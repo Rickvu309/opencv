@@ -61,7 +61,7 @@ test("approves only merge queue releases of main in this repo", () => {
 
 test("approval job can check out the private repository without write access", () => {
   const workflow = readFileSync(
-    new URL("../.github/workflows/nightly.yml", import.meta.url),
+    new URL("../.github/workflows/ci.yml", import.meta.url),
     "utf8"
   )
   const job = workflow
