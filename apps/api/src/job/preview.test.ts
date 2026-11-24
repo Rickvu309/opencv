@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest"
 import { withDatabase } from "../db/context.js"
 import { coachUsage, user } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 
 describe("job.preview with the Coach interpreter on", () => {
   it("keeps the parsed fields when the interpreter throws, and opens no coach_usage row", async () => {

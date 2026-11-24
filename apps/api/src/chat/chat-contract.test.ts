@@ -11,7 +11,7 @@ import { insertCoachMessage } from "./store.js"
 import { withDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import { seedCoachActor } from "../test/coach-turn.js"
 
 describe("a chat binding that drifts from the chat contract is rejected", () => {

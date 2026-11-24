@@ -18,7 +18,7 @@ import {
 } from "../coach/index.js"
 import { getDb, withDatabase } from "../db/context.js"
 import { chats, coachUsage, user } from "../db/schema.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import { registry } from "../registry/registry.js"
 import { openBackend, type Backend } from "../test/registry-formal-support.js"
 import { fixturePackage, paragraph } from "./package-fixtures.js"

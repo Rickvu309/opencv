@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import { startEmbeddedCoachWorker } from "./embedded-worker.js"
 import { runCoachWorker } from "./worker.js"
 

@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest"
 import { coachModelEnv, setCoachModelEnv } from "../config.js"
 import { withDatabase } from "../db/context.js"
 import { coachUsage, user } from "../db/schema.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { anthropicFixtureResponse } from "./anthropic-fixture.js"
 

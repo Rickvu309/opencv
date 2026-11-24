@@ -8,7 +8,7 @@ import {
   coachUsage,
   jobs,
 } from "../db/schema.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import { seedTask } from "../test/coach-task-support.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { createScriptedWorkerRuntime } from "./fake.js"

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
 import { activity } from "../db/schema.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import {
   authHeaders,
   createMigratedTestDb,

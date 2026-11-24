@@ -13,7 +13,7 @@ import {
   taskCheckpoints,
   toolIntents,
 } from "../db/schema.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { seedTask } from "../test/coach-task-support.js"
 import { createScriptedWorkerRuntime } from "./fake.js"

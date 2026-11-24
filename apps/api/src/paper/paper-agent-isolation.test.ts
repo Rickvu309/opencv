@@ -19,7 +19,7 @@ import {
   pendingActions,
   user,
 } from "../db/schema.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import { registry as installedRegistry } from "../registry/registry.js"
 import {
   createProposalClient,

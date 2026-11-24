@@ -21,7 +21,7 @@ import {
 } from "../db/schema.js"
 import { createMigratedTestDb } from "./harness.js"
 import { CommandError } from "../registry/errors.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import {} from "../registry/registry.js"
 
 export const SEED = Number(process.env.FORMAL_SEED ?? 241)

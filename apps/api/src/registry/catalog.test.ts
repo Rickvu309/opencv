@@ -35,7 +35,7 @@ import {
 } from "../test/harness.js"
 import { bindCatalog, bindOperation } from "./bind.js"
 import { createCommandRoutes } from "./http.js"
-import { installRegistry } from "./install.js"
+import { installRegistry } from "../install.js"
 import { createReadRoutes } from "./read.js"
 import { inputHash } from "./receipt.js"
 import { Registry } from "./registry.js"

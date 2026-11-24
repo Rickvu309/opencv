@@ -5,7 +5,7 @@ import { eq, sql } from "drizzle-orm"
 import { createApp } from "../app.js"
 import { withDatabase } from "../db/context.js"
 import { chatMessages, coachTasks, pendingActions } from "../db/schema.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import {
   authHeaders,
   createMigratedTestDb,

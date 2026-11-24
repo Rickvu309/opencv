@@ -48,7 +48,7 @@ import { isAllowedOrigin } from "./origin.js"
 import { createPaperRoutes } from "./paper/index.js"
 import { createReadRoutes } from "./registry/read.js"
 import { createCommandRoutes } from "./registry/http.js"
-import { installRegistry } from "./registry/install.js"
+import { installRegistry } from "./install.js"
 
 export type AppConfig = {
   webOrigins: string[]

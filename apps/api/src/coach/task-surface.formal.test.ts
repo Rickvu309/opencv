@@ -15,7 +15,7 @@ import {
   coachUsage,
   user,
 } from "../db/schema.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import { openBackend, REAL } from "../test/registry-formal-support.js"
 import { append, claim } from "./task-store.js"
 import { readTaskEvents, taskSnapshot } from "./task-reader.js"

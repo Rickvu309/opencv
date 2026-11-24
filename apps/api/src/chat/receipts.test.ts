@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest"
 import { withDatabase } from "../db/context.js"
 import { activity, user } from "../db/schema.js"
 import { createId } from "../id.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { createChat, getChat, insertCoachMessage } from "./store.js"
 

@@ -8,7 +8,7 @@ import { activity, pendingActions, user } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { CommandError } from "./errors.js"
 import { idOf } from "./coverage-helpers.test-support.js"
-import { installRegistry } from "./install.js"
+import { installRegistry } from "../install.js"
 import { Registry } from "./registry.js"
 import { seedCoachActor } from "../test/coach-turn.js"
 

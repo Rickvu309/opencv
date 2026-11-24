@@ -20,7 +20,7 @@ import {
   resolveTurnGrounding,
 } from "../coach/index.js"
 import { registry } from "../registry/registry.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import {
   authHeaders,
   createMigratedTestDb,

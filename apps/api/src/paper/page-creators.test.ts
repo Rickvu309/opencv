@@ -10,7 +10,7 @@ import { z } from "zod"
 
 import { withDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import { registry } from "../registry/registry.js"
 import { expectListIsLivePages } from "../test/paper-live-pages.js"
 import {

@@ -16,7 +16,7 @@ import {
   runIntent,
   renew,
 } from "./task-store.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import { seedTask } from "../test/coach-task-support.js"
 
 it.skipIf(!REAL)(

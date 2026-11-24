@@ -11,7 +11,7 @@ import { afterEach, expect, it, vi } from "vitest"
 import { z } from "zod"
 import { withDatabase } from "../db/context.js"
 import { coachTasks, jobs, paperDocs, user } from "../db/schema.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import {
   authHeaders,
   createMigratedTestDb,

@@ -6,7 +6,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { getDb, withDatabase } from "../db/context.js"
 import { activity, paperPackageHeads, user } from "../db/schema.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import { openBackend, type Backend } from "../test/registry-formal-support.js"
 import { publishWordPackage, stageWordPackage } from "./package-store.js"
 import { exportWord, open } from "./word/document.js"

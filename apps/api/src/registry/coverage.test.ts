@@ -16,7 +16,7 @@ import { idempotency, user } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { idOf } from "./coverage-helpers.test-support.js"
 import { coverageCases } from "./coverage-setup.test-support.js"
-import { installRegistry } from "./install.js"
+import { installRegistry } from "../install.js"
 import type { ExecuteResult, Registry } from "./registry.js"
 import { coachActivityWithoutTurn, seedCoachActor } from "../test/coach-turn.js"
 

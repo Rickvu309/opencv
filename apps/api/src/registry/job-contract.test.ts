@@ -19,7 +19,7 @@ import { seedTask } from "../test/coach-task-support.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { implementations } from "./catalog.js"
 import { idOf } from "./coverage-helpers.test-support.js"
-import { installRegistry } from "./install.js"
+import { installRegistry } from "../install.js"
 import { inputHash } from "./receipt.js"
 
 describe("a job binding that drifts from the job contract is rejected", () => {

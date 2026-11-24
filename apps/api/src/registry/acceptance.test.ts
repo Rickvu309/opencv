@@ -8,7 +8,7 @@ import { assertDayCap } from "../account/index.js"
 import { withDatabase } from "../db/context.js"
 import { coachUsage, user } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
-import { installRegistry } from "./install.js"
+import { installRegistry } from "../install.js"
 
 describe("release-one commands honor company, duplicates, paper versions, plan, delete and the day cap", () => {
   it("checks company, duplicates, paper versions, plan, delete, and the day cap", async () => {
