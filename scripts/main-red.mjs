@@ -23,7 +23,26 @@ export function rerunCommand({ runUrl }) {
   return run ? `gh run rerun ${run} --failed` : null
 }
 
-export function redReport({ sha, parent, runUrl }) {
+export const RED_LIMIT = Object.freeze({ runs: 30, red: 3 })
+
+export function wentRed(run) {
+  return run.conclusion === "failure" || Number(run.attempt) > 1
+}
+
+export function redRateLine(runs, limit = RED_LIMIT) {
+  const seen = runs.slice(0, limit.runs)
+  const red = seen.filter(wentRed).length
+  const over = red > limit.red
+  return `Main went red in ${red} of its last ${seen.length} runs. The limit is ${limit.red} in ${limit.runs}.${over ? " That is over the limit: fix what makes main red before adding work, or bring back a second check before the merge (docs/adr/0003-merge-is-a-production-deploy.md)." : ""}`
+}
+
+export function attemptLine(attempt) {
+  return Number(attempt) > 1
+    ? `This is attempt ${attempt}: the run already ran again and failed again, so it is not a chance failure.`
+    : "The failed jobs run again once by themselves. A green second attempt closes this issue."
+}
+
+export function redReport({ sha, parent, runUrl, attempt = 1, runs = null }) {
   const rerun = rerunCommand({ runUrl })
   return [
     `The full ci run on main failed after ${sha}. Until main is green again, only a pull request labeled ${LABELS.productionRedRevert} merges, and production keeps the last green commit.`,
@@ -32,6 +51,9 @@ export function redReport({ sha, parent, runUrl }) {
     "",
     `Run: ${runUrl}`,
     "",
+    attemptLine(attempt),
+    "",
+    ...(runs ? [redRateLine(runs), ""] : []),
     "Revert it from the main checkout:",
     "",
     "```",
@@ -59,9 +81,11 @@ export function mainRedActions({
   runUrl,
   open,
   contains,
+  attempt = 1,
+  runs = null,
 }) {
   if (result === "failure") {
-    const body = redReport({ sha, parent, runUrl })
+    const body = redReport({ sha, parent, runUrl, attempt, runs })
     const oldest = [...open].sort((a, b) => a.number - b.number)[0]
     return oldest
       ? [{ do: "comment", number: oldest.number, body }]
@@ -132,6 +156,31 @@ export function main(env, io) {
   }))
   const parent =
     result === "failure" ? io.git(["rev-parse", `${sha}^`]).trim() : null
+  const attempt = Number(env.RUN_ATTEMPT ?? 1) || 1
+  const runs =
+    result === "failure"
+      ? [
+          { conclusion: "failure", attempt },
+          ...JSON.parse(
+            io.gh([
+              "run",
+              "list",
+              "--workflow",
+              "ci.yml",
+              "--event",
+              "push",
+              "--branch",
+              "main",
+              "--status",
+              "completed",
+              "--limit",
+              String(RED_LIMIT.runs),
+              "--json",
+              "conclusion,attempt",
+            ])
+          ),
+        ]
+      : null
   const contains = (red) => {
     try {
       io.git(["merge-base", "--is-ancestor", red, sha])
@@ -147,6 +196,8 @@ export function main(env, io) {
     runUrl,
     open,
     contains,
+    attempt,
+    runs,
   })
   if (!actions.length)
     io.out(`ci is ${result || "unknown"} on ${sha}; no main-red change`)
