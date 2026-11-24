@@ -1,4 +1,3 @@
-import { z } from "zod"
 import type { NativeBasis } from "./paper-doc/native.js"
 
 import type { ChatToolName } from "./chat-turn.js"
@@ -10,9 +9,9 @@ import type {
 } from "./chat-messages.js"
 import type { ChatEntry, ChatEntryPart } from "./chat-messages.js"
 import type { ReversalPlan } from "./registry.js"
+import type { CoachMode } from "./coach-mode.js"
 
-export const coachModeSchema = z.enum(["free", "light", "max"])
-export type CoachMode = z.infer<typeof coachModeSchema>
+export { coachModeSchema, type CoachMode } from "./coach-mode.js"
 export const DEFAULT_COACH_MODE: CoachMode = "free"
 
 export const COACH_MODEL = "claude-opus-5-5"

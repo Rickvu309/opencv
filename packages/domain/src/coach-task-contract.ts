@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { coachTurnRequestSchema } from "./chat-messages.js"
 import { chatStopInputSchema } from "./chat.js"
-import { chatDetailSchema } from "./chat-contract.js"
+import { chatDetailSchema } from "./chat-views.js"
 import { chatIdSchema } from "./ids.js"
 import {
   commandContract,
