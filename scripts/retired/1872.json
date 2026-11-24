@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 4
+  },
+  {
+    "subject": "apps/api/src/registry/boundaries.test.ts",
+    "because": "The import scan in this file repeated the pack check's privacy rule: another module is imported only through its public index.ts. The pack check in scripts/packs.test.mjs enforces it with no recorded breaks. The command input test in this file stays.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
   }
 ]
