@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/api/src/auth.test.ts",
+    "because": "Asking for an email change code is a pair command that declares it writes nothing, so the reply reports no touched resource where the older path reported the whole workspace by default.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
