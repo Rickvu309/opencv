@@ -1,0 +1,13 @@
+{
+  "id": "property-seed",
+  "file": "scripts/property-seed.test.mjs",
+  "detector": {
+    "module": "scripts/lib/property-seed.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "31ba5d27959ee47f761b621658fdc6820f18703b",
+    "path": "packages/paper-crdt/src/interleave.test.ts"
+  }
+}

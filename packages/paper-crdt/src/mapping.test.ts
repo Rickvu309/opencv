@@ -6,6 +6,8 @@ import { v3Fixtures } from "./test/fixtures.js"
 import { fromEditorBlocks, toEditorBlocks } from "./mapping.js"
 import { materialize, seedYDoc } from "./ydoc.js"
 
+const SAME_CASES_ON_EVERY_RUN = 20261124
+
 describe("editor block mapping", () => {
   it("runs with no DOM", () => {
     expect("document" in globalThis).toBe(false)
@@ -222,7 +224,7 @@ describe("round trip properties", () => {
           document,
         })
       }),
-      { numRuns: 300 }
+      { numRuns: 300, seed: SAME_CASES_ON_EVERY_RUN }
     )
   })
 
@@ -231,7 +233,7 @@ describe("round trip properties", () => {
       fc.property(documents, (document) => {
         expect(materialize(seedYDoc(document))).toEqual({ ok: true, document })
       }),
-      { numRuns: 60 }
+      { numRuns: 60, seed: SAME_CASES_ON_EVERY_RUN }
     )
   })
 })

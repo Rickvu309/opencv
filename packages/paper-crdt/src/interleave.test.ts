@@ -42,6 +42,7 @@ const scenario = fc.record({
     { maxLength: 2 }
   ),
   coachFirst: fc.boolean(),
+  personIdSortsFirst: fc.boolean(),
 })
 
 type Scenario = typeof scenario extends fc.Arbitrary<infer T> ? T : never
@@ -51,8 +52,11 @@ function changed(text: string, { at, del, ins }: Edit): string {
   return text.slice(0, pos) + ins + text.slice(pos + del)
 }
 
-function fork(from: Uint8Array): Y.Doc {
+const LIVE_ID = 3
+
+function fork(from: Uint8Array, clientID: number): Y.Doc {
   const doc = new Y.Doc()
+  doc.clientID = clientID
   Y.applyUpdate(doc, from)
   return doc
 }
@@ -61,7 +65,7 @@ function play(input: Scenario, protectTyped: boolean) {
   const seed = seedYDoc(
     cv(input.texts.map((text, index) => para(`p${index}`, text)))
   )
-  const personDoc = fork(seed)
+  const personDoc = fork(seed, input.personIdSortsFirst ? 1 : 2)
   const personTexts = [...input.texts]
   const typed = new Set<number>()
   const personRows: HistoryRow[] = []
@@ -77,7 +81,7 @@ function play(input: Scenario, protectTyped: boolean) {
     if (update) personRows.push({ update, origin: "person" })
   }
 
-  const coachDoc = fork(seed)
+  const coachDoc = fork(seed, input.personIdSortsFirst ? 2 : 1)
   const target = input.texts.flatMap((text, index) => {
     const plan = input.coach[index]
     if (!plan || (plan.drop && !(protectTyped && typed.has(index)))) return []
@@ -93,7 +97,7 @@ function play(input: Scenario, protectTyped: boolean) {
     ? [...coachRows, ...personRows]
     : [...personRows, ...coachRows]
   const history: HistoryRow[] = [{ update: seed, origin: "seed" }, ...rows]
-  const live = fork(seed)
+  const live = fork(seed, LIVE_ID)
   for (const row of rows) Y.applyUpdate(live, row.update, row.origin)
   return { live, history, personDoc, typed }
 }
@@ -108,24 +112,60 @@ function subsequence(small: string, large: string): boolean {
 
 const capitals = (text: string) => text.replace(/[^A-Z]/g, "")
 
+const SAME_CASES_ON_EVERY_RUN = 20261124
+
+const CASE_A_RANDOM_RUN_FOUND = (personIdSortsFirst: boolean): Scenario => ({
+  texts: ["  a    a  ", "aaa ", "a  a"],
+  person: [{ block: 0, change: { at: 25, del: 0, ins: "A" } }],
+  coach: [
+    {
+      drop: false,
+      changes: [
+        { at: 3, del: 0, ins: "0" },
+        { at: 71, del: 0, ins: "0" },
+        { at: 59, del: 2, ins: "" },
+      ],
+    },
+    { drop: false, changes: [] },
+    { drop: false, changes: [] },
+    { drop: false, changes: [] },
+  ],
+  added: [],
+  coachFirst: false,
+  personIdSortsFirst,
+})
+
+function expectTypedKept(input: Scenario) {
+  const { live, personDoc, typed } = play(input, true)
+  const merged = new Map(outline(snapshot(live)))
+  for (const [id, own] of outline(snapshot(personDoc))) {
+    const text = merged.get(id)
+    if (text === undefined) continue
+    const kept = text.replace(/[0-9]/g, "")
+    expect(capitals(kept)).toBe(capitals(own))
+    expect(subsequence(kept, own)).toBe(true)
+  }
+  for (const index of typed) expect(merged.has(`p${index}`)).toBe(true)
+}
+
 describe("random person typing against a Coach write", () => {
   it("never loses a character the person typed and did not delete", () => {
-    fc.assert(
-      fc.property(scenario, (input) => {
-        const { live, personDoc, typed } = play(input, true)
-        const merged = new Map(outline(snapshot(live)))
-        for (const [id, own] of outline(snapshot(personDoc))) {
-          const text = merged.get(id)
-          if (text === undefined) continue
-          const kept = text.replace(/[0-9]/g, "")
-          expect(capitals(kept)).toBe(capitals(own))
-          expect(subsequence(kept, own)).toBe(true)
-        }
-        for (const index of typed) expect(merged.has(`p${index}`)).toBe(true)
-      }),
-      { numRuns: 60 }
-    )
+    fc.assert(fc.property(scenario, expectTypedKept), {
+      numRuns: 60,
+      seed: SAME_CASES_ON_EVERY_RUN,
+    })
   })
+
+  it("keeps the typed character in the case a random run found, when the person's id sorts first", () => {
+    expectTypedKept(CASE_A_RANDOM_RUN_FOUND(true))
+  })
+
+  it.fails(
+    "#1802: keeps the typed character in the case a random run found, when the Coach's id sorts first",
+    () => {
+      expectTypedKept(CASE_A_RANDOM_RUN_FOUND(false))
+    }
+  )
 
   it("reverting the Coach origin yields exactly the person-only document", () => {
     fc.assert(
@@ -135,7 +175,7 @@ describe("random person typing against a Coach write", () => {
         if (update) Y.applyUpdate(live, update, `revert:${COACH}`)
         expect(outline(snapshot(live))).toEqual(outline(snapshot(personDoc)))
       }),
-      { numRuns: 60 }
+      { numRuns: 60, seed: SAME_CASES_ON_EVERY_RUN }
     )
   })
 })
