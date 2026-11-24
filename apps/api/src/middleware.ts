@@ -10,7 +10,7 @@ import { HTTPException } from "hono/http-exception"
 
 import type { Auth } from "./auth.js"
 import { withDatabase, type AppDatabase } from "./db/context.js"
-import { jsonWithStatus } from "./http-json.js"
+import { jsonWithStatus } from "./platform/http-json.js"
 import { CommandError } from "./registry/errors.js"
 import { readSession } from "./session.js"
 

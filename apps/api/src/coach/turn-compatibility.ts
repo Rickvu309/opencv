@@ -9,7 +9,7 @@ import {
 import type { Context } from "hono"
 import { streamSSE } from "hono/streaming"
 import { z } from "zod"
-import { readJsonBody } from "../http-json.js"
+import { readJsonBody } from "../platform/http-json.js"
 import type { SessionVariables } from "../middleware.js"
 import { CommandError } from "../registry/errors.js"
 import { registry } from "../registry/registry.js"

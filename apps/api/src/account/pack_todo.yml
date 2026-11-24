@@ -12,12 +12,6 @@ apps/api/src:
       - layer
     files:
       - apps/api/src/account/usage.ts
-  apps/api/src/http-json.ts:
-    violations:
-      - dependency
-      - layer
-    files:
-      - apps/api/src/account/http.ts
   apps/api/src/middleware.ts:
     violations:
       - dependency

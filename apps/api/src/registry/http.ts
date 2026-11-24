@@ -9,7 +9,7 @@ import { Hono } from "hono"
 
 import { withRequestHeaders, type Auth } from "../auth.js"
 import type { AppDatabase } from "../db/context.js"
-import { jsonWithStatus } from "../http-json.js"
+import { jsonWithStatus } from "../platform/http-json.js"
 import { requireSession, type SessionVariables } from "../middleware.js"
 import { CommandError } from "./errors.js"
 import type { Registry } from "./registry.js"
