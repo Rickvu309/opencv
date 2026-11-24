@@ -82,8 +82,8 @@ export const protectedRows = [
     kind: "rule",
     id: "PROTECTED_WEAKENED",
     section: "5",
-    says: "Judged at push, at finish and in the guards job of ci (scripts/ocv-tools/jobs/protected-branch.test.mjs), where the TypeScript parser is installed; the policy job reads only the recorded retirements. A change may not remove or weaken a test case, an assertion, a fixture, a corpus file, a ledger row, a ratchet or known-failures list, a limit bound or a checker setting that is on main, unless a retirement in scripts/retired names it; moved and renamed cases with the same assertions, added cases and tighter bounds are free.",
-    at: ["push", "finish"],
+    says: "Judged once, in the guards job of ci (scripts/ocv-tools/jobs/protected-branch.test.mjs), where the TypeScript parser is installed; the policy job reads only the recorded retirements. A change may not remove or weaken a test case, an assertion, a fixture, a corpus file, a ledger row, a ratchet or known-failures list, a limit bound or a checker setting that is on main, unless a retirement in scripts/retired names it; moved and renamed cases with the same assertions, added cases and tighter bounds are free.",
+    at: ["guards"],
     needs: ["protected"],
     check: protectedWeakened,
     fix: () =>
@@ -94,7 +94,7 @@ export const protectedRows = [
     id: "RETIRE_UNPROVEN",
     section: "5",
     says: "Each retirement names a replacement test this change adds or edits, carries a flip proof for that test's current text (fails on the fork point, passes on the head), and retires something the change weakens.",
-    at: ["push", "finish", "retire"],
+    at: ["guards", "retire"],
     needs: ["protected"],
     check: retireUnproven,
     fix: (facts) =>

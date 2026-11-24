@@ -3,7 +3,7 @@ import { run, git, json, diffFacts } from "./common.mjs"
 import { pinFacts } from "./pin-facts.mjs"
 import { migrationFacts } from "./migration-facts.mjs"
 import { LABELS, allowedMigrationTags } from "../rules/merge-gate.mjs"
-import { branchVerdict, recordedProtectedFacts } from "./protected-facts.mjs"
+import { recordedProtectedFacts } from "./protected-facts.mjs"
 
 export const PR_FIELDS =
   "number,url,state,title,body,author,isDraft,labels,headRefOid,headRefName,baseRefName,mergeCommit,closingIssuesReferences,autoMergeRequest"
@@ -221,25 +221,5 @@ export function pullFacts(ctx, n) {
     ),
     issues: redIssues(ctx),
     protected: recordedProtectedFacts(ctx, "origin/main", head),
-  }
-}
-
-export function planPull(ctx, { n, title, body, issue }) {
-  const files = git(ctx, "diff", "--name-only", "origin/main...HEAD").split(
-    "\n"
-  )
-  const facts = diffFacts(ctx, files, "HEAD", issue.labels ?? [])
-  const base = git(ctx, "merge-base", "origin/main", "HEAD")
-  facts.diff.deleted = deletedFacts(ctx, base, "HEAD")
-  facts.diff.changes = changeFacts(ctx, base, "HEAD")
-  return {
-    pull: { issue: n, title, body, issueState: issue.state },
-    issue: { n, state: issue.state, labels: issue.labels ?? [] },
-    diff: facts.diff,
-    commits: {
-      ...commitFacts(ctx, "origin/main", "HEAD"),
-      count: Number(git(ctx, "rev-list", "--count", "origin/main..HEAD")),
-    },
-    protected: branchVerdict(ctx, "origin/main", "HEAD"),
   }
 }

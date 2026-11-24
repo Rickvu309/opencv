@@ -27,7 +27,7 @@ test("PR_METADATA wants the title number, the closing line and an open issue", (
     rule.check({ pull: { ...ok, issueState: "CLOSED" } }),
     /issue #9 is closed/
   )
-  assert.deepEqual(rule.at, ["authoring", "finish", "body", "pr"])
+  assert.deepEqual(rule.at, ["authoring", "body", "pr"])
 })
 
 const changesOf = (number) =>
@@ -52,7 +52,7 @@ const sized = (changes) => ({ diff: { changes } })
 
 test("CHANGE_TOO_BIG refuses the three biggest past changes and passes a normal one", () => {
   const rule = row("CHANGE_TOO_BIG")
-  assert.deepEqual(rule.at, ["finish", "pr"])
+  assert.deepEqual(rule.at, ["pr"])
   assert.match(
     rule.check(sized(changesOf(509))),
     /54 authored source files \(limit 25\).*split it into sub-issues/

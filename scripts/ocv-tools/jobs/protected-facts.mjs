@@ -1,3 +1,4 @@
+import { decide } from "../rules/index.mjs"
 import { run } from "./common.mjs"
 import { guardFilesOf, judge, kindOf, RETIRED_FILE } from "./protected.mjs"
 
@@ -167,22 +168,6 @@ export function unreadableProtected(error) {
   }
 }
 
-export function pushedProtectedFacts(ctx, shas, cwd) {
-  const merged = { weakened: [], retired: [], retirements: [], changed: [] }
-  for (const sha of shas) {
-    if (!run(ctx, "git", ["merge-base", "origin/main", sha], { cwd }).ok)
-      continue
-    let facts
-    try {
-      facts = protectedFacts(ctx, "origin/main", sha, { cwd })
-    } catch (error) {
-      facts = unreadableProtected(error)
-    }
-    for (const key of Object.keys(merged)) merged[key].push(...facts[key])
-  }
-  return merged
-}
-
 export function recordedProtectedFacts(ctx, base, head, { cwd } = {}) {
   const fork = gitOut(ctx, ["merge-base", base, head], cwd).trim()
   const changes = rawChanges(ctx, fork, head, cwd)
@@ -218,4 +203,10 @@ export function branchVerdict(ctx, base, head, { cwd } = {}) {
     facts = unreadableProtected(error)
   }
   return facts
+}
+
+export function guardsRefusals(facts) {
+  return decide("guards", { protected: facts }).refusals.map(
+    (hit) => `${hit.id}: ${hit.message}`
+  )
 }

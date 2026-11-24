@@ -47,6 +47,8 @@ export const MOMENTS = Object.freeze({
   retire:
     "The retire verb, once it has read what the branch weakens and run the replacement test's flip proof.",
   pr: "The live pull request, read by the policy check in ci and by the merge verb.",
+  guards:
+    "The guards job in ci, which reads the whole branch with the TypeScript parser installed.",
   merge: "The merge verb, before it merges the pull request.",
 })
 
@@ -73,6 +75,7 @@ export const RUNNERS = Object.freeze({
   body: ["scripts/ocv-tools/jobs/body.mjs"],
   retire: ["scripts/ocv-tools/jobs/retire.mjs"],
   pr: ["scripts/ocv-tools/jobs/policy.mjs", "scripts/ocv-tools/jobs/merge.mjs"],
+  guards: ["scripts/ocv-tools/jobs/protected-facts.mjs"],
   merge: ["scripts/ocv-tools/jobs/merge.mjs"],
 })
 
