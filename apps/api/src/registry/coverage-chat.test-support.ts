@@ -11,6 +11,9 @@ import {
   type CoverageTools,
 } from "./coverage-helpers.test-support.js"
 import { seedCoachActor } from "../test/coach-turn.js"
+import { implementation as approve } from "./operations/actions/approve/server.js"
+import { implementation as deny } from "./operations/actions/deny/server.js"
+import { implementation as undoOperation } from "./operations/activity/undo/server.js"
 
 export function chatCases(tools: CoverageTools): CoverageCase[] {
   const { ctx, run, undo, chatOf, jobOf, gone, registry, userId } = tools
@@ -116,7 +119,7 @@ export function chatCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "actions.approve",
+      name: approve.operation.name,
       arrange: async () => {
         const chat = await run("chat.create", { title: "Approve" })
         const job = await run("job.create", {
@@ -140,7 +143,7 @@ export function chatCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "actions.deny",
+      name: deny.operation.name,
       arrange: async () => {
         const chat = await run("chat.create", { title: "Deny" })
         const job = await run("job.create", {
@@ -164,7 +167,7 @@ export function chatCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "activity.undo",
+      name: undoOperation.operation.name,
       arrange: async () => {
         const job = await run("job.create", {
           title: "Undo",

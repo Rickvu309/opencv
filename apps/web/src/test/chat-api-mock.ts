@@ -1,3 +1,4 @@
+import { undoneActivityRow } from "@/test/control-fixtures.ts"
 import {
   appendCoachPart,
   deterministicChatTitle,
@@ -583,7 +584,7 @@ export async function chatApiFetch(
           return jsonError(409, "CONFLICT", failure.summary)
         }
         part.undone = true
-        return jsonOk({ activityId })
+        return jsonOk(undoneActivityRow(activityId))
       }
     }
   }

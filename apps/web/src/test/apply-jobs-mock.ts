@@ -5,6 +5,7 @@ import type {
   JobView,
 } from "@workspace/domain"
 
+import { undoneActivityRow } from "@/test/control-fixtures.ts"
 import type { ActivityFeedRow } from "@workspace/domain"
 
 import type { ChecklistItem } from "@/features/apply/apply-api.ts"
@@ -358,7 +359,7 @@ export async function jobApiFetch(
         if (job && more.previousStage) job.stage = more.previousStage
       }
       record(name, payload)
-      return jsonOk({ activityId })
+      return jsonOk(undoneActivityRow(activityId))
     }
     if (!name.startsWith("job.")) return null
     const activityId = record(name, payload)

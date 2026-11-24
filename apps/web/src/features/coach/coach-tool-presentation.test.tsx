@@ -27,7 +27,6 @@ import {
 } from "@testing-library/react"
 import type { ChatToolPart } from "@workspace/domain"
 import * as contractClient from "@/lib/contract-client.ts"
-import { runContractCommand } from "@/lib/contract-client.ts"
 import type { ReactElement } from "react"
 import { ChatStoreContext } from "./chat-store-context.ts"
 import { render as renderWithClient } from "@/test/render-with-client.tsx"
@@ -37,7 +36,7 @@ import { toCoachParts, type CoachToolPart } from "./coach-parts.ts"
 import { documentEditDetail, documentEditReceiptType } from "./coach-receipt.ts"
 
 beforeEach(() => {
-  vi.spyOn(contractClient, "runContractCommand").mockResolvedValue(undefined)
+  vi.spyOn(contractClient.catalogClient, "run").mockResolvedValue(null)
   vi.spyOn(contractClient, "refreshReads").mockResolvedValue(undefined)
 })
 
@@ -164,7 +163,7 @@ describe("Coach approval presentation", () => {
   it.each([true, false])(
     "locks both decisions and leaves only the %s decision after success",
     async (approve) => {
-      const command = vi.mocked(runContractCommand)
+      const command = vi.mocked(contractClient.catalogClient.run)
       const complete = command.getMockImplementation()
       if (!complete) throw new Error("Expected command mock")
       command.mockImplementationOnce((...args) => {

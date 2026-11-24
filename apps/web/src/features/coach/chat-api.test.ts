@@ -1,3 +1,4 @@
+import { undoneActivityRow } from "@/test/control-fixtures.ts"
 import {
   CHAT_TITLE_MAX,
   DEFAULT_CHAT_TITLE,
@@ -538,7 +539,7 @@ describe("chat API client", () => {
   })
 
   it("undoes a receipt with activity.undo", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(envelope({ activityId: "a1" }))
+    const fetchMock = vi.fn().mockResolvedValue(envelope(undoneActivityRow()))
     vi.stubGlobal("fetch", fetchMock)
 
     await undoActivity(new QueryClient(), ACTIVITY_ID)

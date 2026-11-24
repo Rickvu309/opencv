@@ -1,3 +1,4 @@
+import { undoneActivityRow } from "@/test/control-fixtures.ts"
 import { readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -43,7 +44,12 @@ function installFetch() {
         method: (init?.method ?? "GET").toUpperCase(),
         body,
       })
-      return Response.json({ ok: true, data: { id: JOB } })
+      return Response.json({
+        ok: true,
+        data: url.endsWith("/api/commands/activity.undo")
+          ? undoneActivityRow()
+          : { id: JOB },
+      })
     }
   )
   return calls
