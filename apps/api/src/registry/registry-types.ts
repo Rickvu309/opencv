@@ -11,6 +11,11 @@ import type {
 import type { ZodType } from "zod"
 import type { StoredReviewedCommand } from "./frozen-review.js"
 
+export type ProposalBasis<I> = (
+  input: I,
+  actor: Actor
+) => Promise<number | null>
+
 export type RanCommand = {
   output: unknown
   draft: ActivityDraft | null
@@ -33,6 +38,7 @@ export type StoredCommand = {
   transaction?: "none"
   idempotency: "keyed" | "none"
   prepare?: (input: unknown, actor: Actor) => Promise<unknown>
+  basis?: ProposalBasis<unknown>
   run: (input: unknown, actor: Actor, prepared?: unknown) => Promise<RanCommand>
 }
 

@@ -165,14 +165,7 @@ export async function writePriority(
   return { ...toJob(changed), previousPriority: current.priority }
 }
 
-export async function priorityRevisionFor(
-  ownerId: string,
-  writes: readonly { name: string; entityId?: string }[]
-) {
-  const jobId = writes.find(
-    (write) => write.name === "job.priority" && write.entityId
-  )?.entityId
-  if (!jobId) return null
+export async function priorityRevision(ownerId: string, jobId: string) {
   const [row] = await getDb()
     .select({ priorityRevision: jobs.priorityRevision })
     .from(jobs)

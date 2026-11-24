@@ -25,6 +25,7 @@ import { brandedActor, parseInput } from "./parse-input.js"
 import { agentGates } from "./registry-reads.js"
 import type {
   ExecuteOptions,
+  ProposalBasis,
   StoredCommand,
   StoredQuery,
   ToolEntry,
@@ -82,10 +83,11 @@ export class RegistryEntries extends CatalogPublication {
   addCommand<I, O>(
     spec: CommandSpec<I, O> & {
       prepare?: (input: I, actor: Actor) => Promise<unknown>
+      basis?: ProposalBasis<I>
     },
     handler: (input: I, actor: Actor, prepared?: unknown) => Promise<O>
   ) {
-    const { prepare, ...rest } = spec
+    const { prepare, basis, ...rest } = spec
     const checked = defineCommand(rest as CommandSpec<I, O>)
     if (this.commands.has(checked.name) || this.queries.has(checked.name)) {
       throw new Error(`Duplicate registry entry ${checked.name}`)
@@ -104,6 +106,12 @@ export class RegistryEntries extends CatalogPublication {
         ? {
             prepare: async (raw: unknown, actor: Actor) =>
               prepare(parseInput(checked.input, raw), actor),
+          }
+        : {}),
+      ...(basis
+        ? {
+            basis: async (raw: unknown, actor: Actor) =>
+              basis(parseInput(checked.input, raw), actor),
           }
         : {}),
       step: (raw) => {

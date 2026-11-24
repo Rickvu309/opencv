@@ -1,0 +1,6 @@
+{
+  "id": "proposal-hosts",
+  "file": "apps/api/src/registry/proposal-hosts.test.ts",
+  "historic": null,
+  "reason": "behaviour test of what Control does with a task proposal or an agent proposal before and after Coach and Chat register; the import rule itself is held by the pack check, which has no recorded break from Control into Apply, Chat or Coach"
+}

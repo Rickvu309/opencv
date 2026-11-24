@@ -26,6 +26,7 @@ import {
   type ReversalExpectPending,
 } from "./expect-pending.js"
 import type { Registry } from "./registry.js"
+import type { ProposalBasis } from "./registry-types.js"
 import {
   isUnchanged,
   type LockedBasis,
@@ -98,6 +99,13 @@ function boundReversal<I, R>(
   }
 }
 
+function withBasis<S extends object, I>(
+  spec: S,
+  basis: ProposalBasis<I> | undefined
+) {
+  return basis ? { ...spec, basis } : spec
+}
+
 function boundActivity<I, R>(
   activity: ActivityBinding<I, R> | undefined
 ): (input: I, result: R, actor: Actor) => ActivityDraft | null {
@@ -127,6 +135,7 @@ type Binding<C extends CommandContract, N extends keyof C & string> = {
     actor: Actor
   ) => ActivityDraft | null
   writes?: (input: CommandInput<C, N>) => ResourceRef[]
+  basis?: ProposalBasis<CommandInput<C, N>>
   transaction?: "none"
 }
 
@@ -139,6 +148,7 @@ type LooseBinding = {
   reversal: CommandSpec<unknown, unknown>["reversal"]
   activity: CommandSpec<unknown, unknown>["activity"]
   writes?: (input: unknown) => ResourceRef[]
+  basis?: ProposalBasis<unknown>
   transaction?: "none"
 }
 
@@ -164,6 +174,7 @@ export function bindCommands<C extends CommandContract>(
         reversal: bound.reversal,
         activity: bound.activity,
         ...(bound.transaction ? { transaction: bound.transaction } : {}),
+        ...(bound.basis ? { basis: bound.basis } : {}),
       },
       bound.handler
     )
@@ -203,8 +214,9 @@ export type OperationBinding<
   ? {
       reversal: ReversalBinding<import("zod").output<T["input"]>, R>
       activity: ActivityBinding<import("zod").output<T["input"]>, R>
+      basis?: ProposalBasis<import("zod").output<T["input"]>>
     }
-  : { reversal?: never; activity?: never }) &
+  : { reversal?: never; activity?: never; basis?: never }) &
   (
     | {
         execute: (
@@ -338,14 +350,17 @@ export function bindOperation<T extends Operation, R, C, V, S = never>(
         })
       else registry.addReviewedCommand(spec, checkedReview)
     } else
-      registry.addCommand(spec, async (input, actor) => {
-        const result = await binding.execute!(input, actor)
-        const checked = binding.privateResult
-          ? binding.privateResult.parse(result)
-          : result
-        operation.publicResult.parse(checked)
-        return checked
-      })
+      registry.addCommand(
+        withBasis(spec, binding.basis),
+        async (input, actor) => {
+          const result = await binding.execute!(input, actor)
+          const checked = binding.privateResult
+            ? binding.privateResult.parse(result)
+            : result
+          operation.publicResult.parse(checked)
+          return checked
+        }
+      )
   }
   registry.adopt(operation)
 }

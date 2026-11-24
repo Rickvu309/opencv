@@ -10,7 +10,8 @@ Control knows who is asking and what the command's own definition says about it.
 
 ## Considered options
 
-- Ports from Control to each context: one adapter each, so they would add indirection and no choice.
+- A port for everything Control needs from a context: most of it is a fact about one command, and that belongs in the command's definition.
+- Passing a context's part as an argument to approve and deny: every direct caller would have to know which part to pass.
 - An event bus between contexts: not needed for five references.
 
 ## Consequences
@@ -18,3 +19,5 @@ Control knows who is asking and what the command's own definition says about it.
 - A context registers its commands with Control when the app is wired.
 - No code invents a person to pass a permission check.
 - Showing a proposal in a Chat belongs to Coach, not Control.
+- A command that needs a version check on approval states its own basis. Apply does this for a Job's priority.
+- Two steps run inside Control's approval in a fixed order and belong to Coach: locking and resolving a Coach task, and opening the Chat that holds a connected agent's proposal. Coach hands both to Control when it registers. Control refuses such a proposal when nothing is registered.

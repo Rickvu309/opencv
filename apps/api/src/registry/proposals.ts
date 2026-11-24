@@ -4,16 +4,13 @@ import {
   type CoachActor,
   type DelegateActor,
 } from "@workspace/domain"
-import {
-  createAgentProposalChat,
-  appendAgentProposalApproval,
-} from "../chat/index.js"
 import { getDb, savepoint, transaction } from "../db/context.js"
 import { activity, idempotency, pendingActions, user } from "../db/schema.js"
 import { createId } from "../platform/id.js"
 
 import { requireLiveDelegate } from "./delegate-policy.js"
 import { CommandError } from "./errors.js"
+import { chatForDelegateProposals, lockTaskApproval } from "./proposal-hosts.js"
 import { inputHash } from "./receipt.js"
 import type { FrozenReview } from "./frozen-review.js"
 
@@ -66,7 +63,7 @@ async function insertProposal(options: {
       throw new Error(
         "This connection has 20 pending proposals. Approve or deny existing proposals in OpenCV before proposing more."
       )
-    await createAgentProposalChat({
+    await chatForDelegateProposals().open({
       chatId,
       userId: actor.userId,
       connectedAt: grant.createdAt,
@@ -89,7 +86,7 @@ async function insertProposal(options: {
       status: "pending",
     })
   if (actor.type === "delegate")
-    await appendAgentProposalApproval(
+    await chatForDelegateProposals().show(
       id,
       actor.userId,
       options.frozenReview?.review
@@ -132,9 +129,7 @@ export async function lockProposal(userId: string, id: string) {
     .select()
     .from(pendingActions)
     .where(and(eq(pendingActions.id, id), eq(pendingActions.userId, userId)))
-  const task = proposal?.coachTaskId
-    ? await (await import("../coach/index.js")).lockTaskApproval(proposal)
-    : null
+  const task = proposal ? await lockTaskApproval(proposal) : null
   const row = await lockPending(userId, id)
   const [expired] = await getDb()
     .select({ id: pendingActions.id })
@@ -163,8 +158,6 @@ export async function expireTaskApprovals() {
     )
   for (const proposal of rows)
     await transaction(async () => {
-      const { lockTaskApproval, resolveTaskApproval } =
-        await import("../coach/index.js")
       const task = await lockTaskApproval(proposal, true)
       if (!task) return
       const row = await lockPending(proposal.userId, proposal.id)
@@ -173,7 +166,7 @@ export async function expireTaskApprovals() {
         .update(pendingActions)
         .set({ status: "expired" })
         .where(eq(pendingActions.id, row.id))
-      await resolveTaskApproval(task, "expired", { expired: true })
+      await task.resolve("expired", { expired: true })
     })
 }
 
