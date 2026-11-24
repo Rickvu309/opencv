@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/lib/contract-client.test.tsx",
+    "because": "account.delete is a pair command now, so the older command runner test names the two older commands that remain: one without an idempotency key and one with.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
