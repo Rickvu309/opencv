@@ -76,14 +76,14 @@ describe("a Paper started blank", () => {
     expect(failureOf(await opened(ada, cv.id)).code).toBe("NOT_FOUND")
   })
 
-  it.fails("is on the person's list of Papers (#1815)", async () => {
+  it("is on the person's list of Papers", async () => {
     const ada = await world.person("Ada")
     const cv = await blank(ada, "cv", "Marketing CV")
     const listed = dataOf<Paper[]>(await ada.get("/api/paper", asEditor))
     expect(listed.map((paper) => paper.id)).toContain(cv.id)
   })
 
-  it.fails("can be renamed (#1815)", async () => {
+  it("can be renamed", async () => {
     const ada = await world.person("Ada")
     const cv = await blank(ada, "cv", "Marketing CV")
     const renamed = await ada.run("paper.rename", {
@@ -92,16 +92,29 @@ describe("a Paper started blank", () => {
       writer,
     })
     expect(renamed.status).toBe(200)
+    expect(dataOf<Paper>(await opened(ada, cv.id)).name).toBe("Product CV")
+    const listed = dataOf<Paper[]>(await ada.get("/api/paper", asEditor))
+    expect(listed.map((paper) => paper.name)).toEqual(["Product CV"])
   })
 
-  it.fails("can be copied (#1815)", async () => {
+  it("is left off the list for an editor that cannot open it", async () => {
+    const ada = await world.person("Ada")
+    await blank(ada, "cv", "Marketing CV")
+    const older = dataOf<Paper>(
+      await ada.run("paper.create", { kind: "letter", name: "Older letter" })
+    )
+    const listed = dataOf<Paper[]>(await ada.get("/api/paper"))
+    expect(listed.map((paper) => paper.id)).toEqual([older.id])
+  })
+
+  it.fails("can be copied (#1819)", async () => {
     const ada = await world.person("Ada")
     const cv = await blank(ada, "cv", "Marketing CV")
     const copy = await ada.run("paper.duplicate", { docId: cv.id, writer })
     expect(copy.status).toBe(200)
   })
 
-  it.fails("can be marked ready (#1815)", async () => {
+  it("can be marked ready", async () => {
     const ada = await world.person("Ada")
     const cv = await blank(ada, "cv", "Marketing CV")
     const ready = await ada.run("paper.setStatus", {
@@ -110,9 +123,10 @@ describe("a Paper started blank", () => {
       writer,
     })
     expect(ready.status).toBe(200)
+    expect(dataOf<{ status: string }>(ready).status).toBe("ready")
   })
 
-  it.fails("can be restored after it is deleted (#1815)", async () => {
+  it.fails("can be restored after it is deleted (#1819)", async () => {
     const ada = await world.person("Ada")
     const cv = await blank(ada, "cv", "Marketing CV")
     await ada.run("paper.delete", { docId: cv.id })

@@ -41,7 +41,7 @@ export const paperViewSchema = z
     pageChoice: paperPageChoiceSchema,
     isFavorite: z.boolean(),
     sourceFileId: fileIdSchema.nullable(),
-    format: z.literal("word").optional(),
+    format: z.enum(["word", "rich"]).optional(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
   })
