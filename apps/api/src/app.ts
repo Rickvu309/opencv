@@ -13,8 +13,13 @@ import {
   createProfileRoutes,
   createSearchRoutes,
   createUsageRoutes,
+  hostEmailChangeCode,
 } from "./account/index.js"
-import { bindAuth, createAuth, type AuthDatabase } from "./auth.js"
+import {
+  createAuth,
+  emailChangeCodeFromRequest,
+  type AuthDatabase,
+} from "./auth.js"
 import { authEmailLimit } from "./auth-email-limit.js"
 import { isServedAuthPath } from "./auth-routes.js"
 import { createChatRoutes } from "./chat/index.js"
@@ -192,7 +197,7 @@ export function createApp({
         })
       : undefined
 
-  bindAuth(auth)
+  hostEmailChangeCode(emailChangeCodeFromRequest)
   const signedIn = requireSession(auth, database)
   app.use("*", async (_c, next) => {
     if (auth) await auth.$context
