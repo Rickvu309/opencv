@@ -16,7 +16,7 @@
     "apps/api/src/registry/coach-policy.ts",
     "packages/domain/src/paper-contract.ts",
     "apps/api/src/registry/delegate-policy.ts",
-    "apps/api/src/job/store.ts",
+    "apps/api/src/job/priority.ts",
     "apps/api/src/paper/commands.ts",
     "apps/api/src/connections/http.ts"
   ],

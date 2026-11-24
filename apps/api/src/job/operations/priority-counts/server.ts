@@ -1,6 +1,6 @@
 import { operation } from "@workspace/domain/operations/job/priority-counts"
 import type { OperationBinding } from "../../../registry/bind.js"
-import { priorityCounts } from "../../store.js"
+import { priorityCounts } from "../../priority.js"
 
 export const implementation = {
   operation,

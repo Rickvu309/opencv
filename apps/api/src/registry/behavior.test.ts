@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs"
+import { readdirSync, readFileSync } from "node:fs"
 import {
   defineCommand,
   delegateActorSchema,
@@ -463,11 +463,19 @@ it("detects an inverse that discards null instead of restoring the stored value"
   ).toEqual([])
 })
 
+function jobSources() {
+  const folder = new URL("../job/", import.meta.url)
+  return readdirSync(folder)
+    .filter((name) => name.endsWith(".ts") && !name.includes(".test."))
+    .map((name) => ({
+      name,
+      text: readFileSync(new URL(name, folder), "utf8"),
+    }))
+}
+
 it("keeps nullable Job values in every stored inverse patch", () => {
   expect(
-    droppedInverseNulls(
-      readFileSync(new URL("../job/store.ts", import.meta.url), "utf8")
-    )
+    jobSources().flatMap((source) => droppedInverseNulls(source.text))
   ).toEqual([])
 })
 

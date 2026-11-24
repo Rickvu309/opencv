@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs"
+import { readdirSync, readFileSync } from "node:fs"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import {
@@ -146,14 +146,20 @@ function kinds(problems: { kind: string }[]) {
   return problems.map((problem) => problem.kind)
 }
 
+function jobSources() {
+  const folder = new URL("../job/", import.meta.url)
+  return readdirSync(folder)
+    .filter((name) => name.endsWith(".ts") && !name.includes(".test."))
+    .map((name) => ({
+      name,
+      text: readFileSync(new URL(name, folder), "utf8"),
+    }))
+}
+
 describe("priority writes require a one-time permission and a matching version", () => {
   it("flags an actor-only writer, a missing version bump, a missing permission check, and a null version", () => {
     const source = readFileSync(
       new URL("./write-grant.test.ts", import.meta.url),
-      "utf8"
-    )
-    const store = readFileSync(
-      new URL("../job/store.ts", import.meta.url),
       "utf8"
     )
     const registry = readFileSync(
@@ -163,7 +169,8 @@ describe("priority writes require a one-time permission and a matching version",
     expect(kinds(detect(source, "write-grant.test.ts"))).toEqual(
       expect.arrayContaining(["actor-only", "missing-bump", "missing-assert"])
     )
-    expect(detect(store, "store.ts")).toEqual([])
+    for (const job of jobSources())
+      expect(detect(job.text, job.name)).toEqual([])
     expect(kinds(detectBasis(source, "write-grant.test.ts"))).toEqual(
       expect.arrayContaining([
         "missing-basis",

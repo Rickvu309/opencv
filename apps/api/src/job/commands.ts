@@ -1,63 +1,58 @@
 import { jobContract, jobPriorityResource, type Plan } from "@workspace/domain"
-import type { FetchJobPosting } from "./fetch-posting.js"
-import { fetchJobPosting } from "./fetch-posting.js"
+
 import { bindCommands, tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
 import { takePriorityGrant } from "../registry/write-grant.js"
 import {
-  addChecklistItem,
   calendarJobs,
   createJob,
   deleteJob,
   getJob,
-  linkPaper,
   listJobs,
   moveJob,
-  ownedJob,
-  previewJob,
+  starJob,
+  updateJob,
+} from "./board.js"
+import {
+  addChecklistItem,
   removeChecklistItem,
   setChecklistItem,
-  starJob,
-  unlinkPaper,
-  updateJob,
-  writePriority,
-} from "./store.js"
+} from "./checklist.js"
+import { fetchJobPosting, type FetchJobPosting } from "./fetch-posting.js"
+import { ownedJob } from "./job-row.js"
+import { linkPaper, unlinkPaper } from "./linked-papers.js"
+import { previewJob } from "./preview.js"
+import { writePriority } from "./priority.js"
 
-type PostingFields = { title: string; company: string; location: string }
-
-type PostingInterpret = (input: {
+type ReadPostingOnPlan = (input: {
   plan: Plan
   text: string
-}) => Promise<PostingFields | null>
+}) => Promise<{ title: string; company: string; location: string } | null>
 
 export type JobPreviewOptions = {
   fetch?: FetchJobPosting
-  interpret?: PostingInterpret | null
+  interpret?: ReadPostingOnPlan | null
 }
 
-const previewOptions: {
+const posting: {
   fetch: FetchJobPosting
-  interpret: PostingInterpret | null
-} = {
-  fetch: fetchJobPosting,
-  interpret: null,
-}
+  read: ReadPostingOnPlan | null
+} = { fetch: fetchJobPosting, read: null }
 
-let commandsAdded = false
+let registered = false
 
-function planFrom(value: unknown): Plan | null {
-  if (!value || typeof value !== "object" || !("plan" in value)) return null
-  const plan = (value as { plan?: unknown }).plan
-  return plan === "free" || plan === "pro" ? plan : null
+function planOf(profile: unknown): Plan | null {
+  if (!profile || typeof profile !== "object" || !("plan" in profile))
+    return null
+  return profile.plan === "free" || profile.plan === "pro" ? profile.plan : null
 }
 
 export function registerJob(registry: Registry, options?: JobPreviewOptions) {
-  if (options?.fetch) previewOptions.fetch = options.fetch
-  if (options && "interpret" in options) {
-    previewOptions.interpret = options.interpret ?? null
-  }
-  if (commandsAdded) return
-  commandsAdded = true
+  if (options?.fetch) posting.fetch = options.fetch
+  if (options && "interpret" in options)
+    posting.read = options.interpret ?? null
+  if (registered) return
+  registered = true
 
   bindCommands(registry, jobContract, {
     "job.create": {
@@ -258,14 +253,15 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
         previewJob(
           actor,
           input,
-          previewOptions.fetch,
-          previewOptions.interpret
+          posting.fetch,
+          posting.read
             ? async (text) => {
-                const plan = planFrom(
+                const plan = planOf(
                   await registry.read("profile.get", {}, actor)
                 )
-                if (!plan || !previewOptions.interpret) return null
-                return previewOptions.interpret({ plan, text })
+                return plan && posting.read
+                  ? posting.read({ plan, text })
+                  : null
               }
             : undefined
         ),
