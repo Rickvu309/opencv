@@ -16,7 +16,7 @@ import {
   taskCheckpoints,
   toolIntents,
 } from "../db/schema.js"
-import { insertCoachMessage } from "../chat/index.js"
+import { insertCoachMessage } from "./chat/index.js"
 import { closeTaskApprovals, lockTask } from "../registry/task-fence.js"
 import type { Registry } from "../registry/registry.js"
 import { withMissingReceipts } from "./receipt.js"

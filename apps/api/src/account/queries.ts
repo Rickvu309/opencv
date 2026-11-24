@@ -13,7 +13,7 @@ import {
   jobs,
   paperDocs,
 } from "../db/schema.js"
-import { readExportedParts } from "../chat/index.js"
+import { readExportedParts } from "../coach/chat/index.js"
 import { tableQuery } from "../registry/bind.js"
 import { isUndoRow } from "../registry/expectation.js"
 import type { Registry } from "../registry/registry.js"

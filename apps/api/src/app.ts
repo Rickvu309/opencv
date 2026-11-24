@@ -22,7 +22,7 @@ import {
 } from "./auth.js"
 import { authEmailLimit } from "./auth-email-limit.js"
 import { isServedAuthPath } from "./auth-routes.js"
-import { createChatRoutes } from "./chat/index.js"
+import { createChatRoutes } from "./coach/chat/index.js"
 import {
   createCoachRoutes,
   createCoachTaskRoutes,

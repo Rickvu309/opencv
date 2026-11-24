@@ -1,0 +1,6 @@
+{
+  "id": "chat-contract",
+  "file": "apps/api/src/coach/chat/chat-contract.test.ts",
+  "historic": null,
+  "reason": "behaviour test of the Chat commands through the registry; it had a baseline entry at apps/api/src/chat and takes a row now that the file lives inside Coach, because the baseline only shrinks"
+}

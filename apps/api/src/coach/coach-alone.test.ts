@@ -1,7 +1,7 @@
 import { personActor } from "@workspace/domain"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import { registerChat } from "../chat/index.js"
+import { registerChat } from "./chat/index.js"
 import { withDatabase, type TestDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
 import { Registry } from "../registry/registry.js"

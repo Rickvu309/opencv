@@ -8,9 +8,9 @@ import {
 } from "@workspace/domain"
 import { Hono } from "hono"
 
-import { jsonWithStatus } from "../platform/http-json.js"
-import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"
-import { registry } from "../registry/registry.js"
+import { jsonWithStatus } from "../../platform/http-json.js"
+import type { SignedIn, SignedInVariables } from "../../platform/signed-in.js"
+import { registry } from "../../registry/registry.js"
 
 export function createChatRoutes(signedIn: SignedIn) {
   const routes = new Hono<{ Variables: SignedInVariables }>()

@@ -13,8 +13,8 @@ flowchart TD
   end
   subgraph p_layer_feature["feature"]
     p_apps_api_src_account["apps/api/src/account"]
-    p_apps_api_src_chat["apps/api/src/chat"]
     p_apps_api_src_coach["apps/api/src/coach"]
+    p_apps_api_src_coach_chat["apps/api/src/coach/chat"]
     p_apps_api_src_connections["apps/api/src/connections"]
     p_apps_api_src_inbox["apps/api/src/inbox"]
     p_apps_api_src_job["apps/api/src/job"]
@@ -44,7 +44,7 @@ flowchart TD
     p_apps_web_src_lib["apps/web/src/lib"]
   end
   p_apps_api_src --> p_apps_api_src_account
-  p_apps_api_src --> p_apps_api_src_chat
+  p_apps_api_src --> p_apps_api_src_coach_chat
   p_apps_api_src --> p_apps_api_src_coach
   p_apps_api_src --> p_apps_api_src_connections
   p_apps_api_src --> p_apps_api_src_inbox
@@ -55,7 +55,7 @@ flowchart TD
   p_apps_api_src --> p_apps_api_src_mail
   p_apps_api_src --> p_apps_api_src_limits
   p_apps_api_src --> p_apps_api_src_platform
-  p_apps_api_src_account --> p_apps_api_src_chat
+  p_apps_api_src_account --> p_apps_api_src_coach_chat
   p_apps_api_src_account --> p_apps_api_src_paper
   p_apps_api_src_account --> p_apps_api_src_connections
   p_apps_api_src_account --> p_apps_api_src_registry
@@ -63,17 +63,17 @@ flowchart TD
   p_apps_api_src_account --> p_apps_api_src_limits
   p_apps_api_src_account --> p_apps_api_src_mail
   p_apps_api_src_account --> p_apps_api_src_platform
-  p_apps_api_src_chat --> p_apps_api_src_job
-  p_apps_api_src_chat --> p_apps_api_src_registry
-  p_apps_api_src_chat --> p_apps_api_src_db
-  p_apps_api_src_chat --> p_apps_api_src_limits
-  p_apps_api_src_chat --> p_apps_api_src_platform
-  p_apps_api_src_coach --> p_apps_api_src_chat
+  p_apps_api_src_coach --> p_apps_api_src_coach_chat
   p_apps_api_src_coach --> p_apps_api_src_account
   p_apps_api_src_coach --> p_apps_api_src_registry
   p_apps_api_src_coach --> p_apps_api_src_db
   p_apps_api_src_coach --> p_apps_api_src_limits
   p_apps_api_src_coach --> p_apps_api_src_platform
+  p_apps_api_src_coach_chat --> p_apps_api_src_job
+  p_apps_api_src_coach_chat --> p_apps_api_src_registry
+  p_apps_api_src_coach_chat --> p_apps_api_src_db
+  p_apps_api_src_coach_chat --> p_apps_api_src_limits
+  p_apps_api_src_coach_chat --> p_apps_api_src_platform
   p_apps_api_src_connections --> p_apps_api_src_registry
   p_apps_api_src_connections --> p_apps_api_src_db
   p_apps_api_src_connections --> p_apps_api_src_limits
@@ -157,10 +157,10 @@ flowchart TD
 
 | Pack | Layer | Public | Dependencies | Tables |
 | --- | --- | --- | --- | --- |
-| `apps/api/src` | app | index.ts | apps/api/src/account, apps/api/src/chat, apps/api/src/coach, apps/api/src/connections, apps/api/src/inbox, apps/api/src/job, apps/api/src/paper, apps/api/src/registry, apps/api/src/db, apps/api/src/mail, apps/api/src/limits, apps/api/src/platform | none |
-| `apps/api/src/account` | feature | index.ts | apps/api/src/chat, apps/api/src/paper, apps/api/src/connections, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/mail, apps/api/src/platform | none |
-| `apps/api/src/chat` | feature | index.ts | apps/api/src/job, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
-| `apps/api/src/coach` | feature | index.ts | apps/api/src/chat, apps/api/src/account, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
+| `apps/api/src` | app | index.ts | apps/api/src/account, apps/api/src/coach/chat, apps/api/src/coach, apps/api/src/connections, apps/api/src/inbox, apps/api/src/job, apps/api/src/paper, apps/api/src/registry, apps/api/src/db, apps/api/src/mail, apps/api/src/limits, apps/api/src/platform | none |
+| `apps/api/src/account` | feature | index.ts | apps/api/src/coach/chat, apps/api/src/paper, apps/api/src/connections, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/mail, apps/api/src/platform | none |
+| `apps/api/src/coach` | feature | index.ts | apps/api/src/coach/chat, apps/api/src/account, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
+| `apps/api/src/coach/chat` | feature | index.ts | apps/api/src/job, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/connections` | feature | index.ts | apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/db` | platform | none | apps/api/src/platform | none |
 | `apps/api/src/inbox` | feature | index.ts | apps/api/src/account, apps/api/src/coach, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/mail, apps/api/src/platform | none |

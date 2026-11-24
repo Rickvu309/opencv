@@ -2,7 +2,7 @@ import { parseChatId, parseUserId } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import { getChat, insertCoachMessage } from "../chat/index.js"
+import { getChat, insertCoachMessage } from "../coach/chat/index.js"
 import { activity, paperDocUpdates } from "../db/schema.js"
 import { createId } from "../platform/id.js"
 import { seedCoachActor } from "../test/coach-turn.js"

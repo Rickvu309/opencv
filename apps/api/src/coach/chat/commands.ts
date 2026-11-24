@@ -1,8 +1,8 @@
 import { chatContract, parseChatId } from "@workspace/domain"
 
-import { bindCommands, tableQuery } from "../registry/bind.js"
-import { hostDelegateProposals } from "../registry/proposal-hosts.js"
-import type { Registry } from "../registry/registry.js"
+import { bindCommands, tableQuery } from "../../registry/bind.js"
+import { hostDelegateProposals } from "../../registry/proposal-hosts.js"
+import type { Registry } from "../../registry/registry.js"
 import {
   appendAgentProposalApproval,
   createAgentProposalChat,

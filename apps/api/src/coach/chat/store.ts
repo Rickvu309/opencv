@@ -15,11 +15,11 @@ import {
 } from "@workspace/domain"
 import { and, asc, desc, eq, gt, inArray, isNotNull } from "drizzle-orm"
 
-import { getDb, transaction } from "../db/context.js"
-import { activity, chatMessages, chats, coachTasks } from "../db/schema.js"
-import { createId } from "../platform/id.js"
-import { CommandError } from "../platform/errors.js"
-import { registry } from "../registry/registry.js"
+import { getDb, transaction } from "../../db/context.js"
+import { activity, chatMessages, chats, coachTasks } from "../../db/schema.js"
+import { createId } from "../../platform/id.js"
+import { CommandError } from "../../platform/errors.js"
+import { registry } from "../../registry/registry.js"
 import {
   chatViewPart,
   readChatViewParts,

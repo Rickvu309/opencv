@@ -1,7 +1,7 @@
 import { parseUserId } from "@workspace/domain"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import { openCoachStore, type CoachStore } from "../test/paper-coach.js"
+import { openCoachStore, type CoachStore } from "../../test/paper-coach.js"
 import { createChat, getChat, insertCoachMessage } from "./store.js"
 
 const userId = "user-chat-receipt-guard"

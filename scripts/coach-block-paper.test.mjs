@@ -5,6 +5,8 @@ import test from "node:test"
 
 import { detectCoachBlockPaper as detect } from "./lib/coach-block-paper.mjs"
 
+const NAMES_OLD_RECEIPTS_FOR_READING = "chat/stored-parts.ts"
+
 const mistake = `export const paperContract = commandContract({
   "paper.create": commandEntry({
     description: "Create a CV or letter.",
@@ -49,6 +51,7 @@ test("no Coach path creates an older block document", () => {
   const coach = new URL("../apps/api/src/coach/", import.meta.url)
   for (const path of readdirSync(coach, { recursive: true })) {
     if (!/\.ts$/.test(path) || /\.test\.ts$/.test(path)) continue
+    if (path === NAMES_OLD_RECEIPTS_FOR_READING) continue
     assert.deepEqual(
       detect(readFileSync(new URL(path, coach), "utf8"), path),
       [],

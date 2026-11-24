@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest"
 import { chatMessages, coachUsage, user } from "../db/schema.js"
 import { coachModelEnv, setCoachModelEnv } from "../platform/config.js"
 import { createDemoCoachRuntime, createScriptedCoachRuntime } from "./fake.js"
-import { trackChatTurn } from "../chat/index.js"
+import { trackChatTurn } from "./chat/index.js"
 import {
   authHeaders,
   createMigratedTestDb,

@@ -10,7 +10,7 @@ import { asc, eq } from "drizzle-orm"
 import { expect, it } from "vitest"
 import { z } from "zod"
 
-import { getChat } from "../chat/index.js"
+import { getChat } from "./chat/index.js"
 import { getDb } from "../db/context.js"
 import {
   activity,
