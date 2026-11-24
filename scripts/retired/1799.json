@@ -46,5 +46,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 4
+  },
+  {
+    "subject": "scripts/ocv-tools/jobs/merge-inspection-failure.test.mjs",
+    "because": "there is no merge queue any more (owner decision, live since 2026-11-24): the wait on the queue, the second check of the merged tree and their model are removed; main gets a full run after each merge instead",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
