@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "packages/domain/src/connections.test.ts",
+    "because": "Revoke is declared as an operation now. The test asserts the same two facts on the operation: the Coach may never run it, and it writes the resource the connection list depends on.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
