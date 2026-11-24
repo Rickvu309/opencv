@@ -16,7 +16,7 @@ import { inboxCases } from "./coverage-inbox.test-support.js"
 import { jobCases } from "./coverage-job.test-support.js"
 import { paperCases } from "./coverage-paper.test-support.js"
 import { nativePaperCases } from "./coverage-paper-native.test-support.js"
-import { installRegistry } from "./install.js"
+import { installRegistry } from "../install.js"
 import type { ExecuteResult, Registry } from "./registry.js"
 
 type Run = CoverageTools["run"]

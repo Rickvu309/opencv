@@ -12,7 +12,7 @@ import { describe, expect, it, vi } from "vitest"
 import { withDatabase } from "../db/context.js"
 import { insertCoachMessage } from "../chat/index.js"
 import { activity, chatMessages, coachUsage, user } from "../db/schema.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import { openBackend } from "../test/registry-formal-support.js"
 import { runCoachTurn, toolResultFromExecute } from "./turn.js"
 

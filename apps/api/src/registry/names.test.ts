@@ -6,7 +6,7 @@ import { chatToolNameSchema, jobPriorityResource } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
 import { registeredAgentScopes } from "../connections/index.js"
-import { installRegistry } from "./install.js"
+import { installRegistry } from "../install.js"
 
 const retiredCommandNames = ["paper.replace", "paper.restore"]
 

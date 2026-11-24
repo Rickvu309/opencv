@@ -8,7 +8,7 @@ import { operation as paperRead } from "@workspace/domain/operations/paper/read"
 import { describe, expect, it } from "vitest"
 
 import { delegateAllowed } from "./delegate-policy.js"
-import { installRegistry } from "./install.js"
+import { installRegistry } from "../install.js"
 
 function delegate(
   resources: DelegateActor["resources"],

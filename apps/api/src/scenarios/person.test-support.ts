@@ -1,7 +1,7 @@
 import { personActor } from "@workspace/domain"
 
 import { withDatabase } from "../db/context.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import {
   authHeaders,
   createMigratedTestDb,

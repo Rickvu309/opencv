@@ -22,7 +22,7 @@ import {
   pendingActions,
   user,
 } from "../db/schema.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import { paperEditBasisMessage } from "../registry/paper-agent.js"
 import { PENDING_TTL_MS } from "../registry/proposals.js"
 import { createMigratedTestDb } from "../test/harness.js"

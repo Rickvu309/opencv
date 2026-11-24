@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest"
 import { withDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
-import { installRegistry } from "./install.js"
+import { installRegistry } from "../install.js"
 
 describe("an inbox binding that drifts from the inbox contract is rejected", () => {
   it("parses every inbox command output and inbox read", async () => {

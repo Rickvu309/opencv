@@ -6,7 +6,7 @@ import {
 } from "@workspace/domain"
 import { describe, expect, it, vi } from "vitest"
 import { z } from "zod"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import type { ToolEntry } from "../registry/registry.js"
 import { anthropicFixtureResponse } from "./anthropic-fixture.js"
 import {

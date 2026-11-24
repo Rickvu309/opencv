@@ -13,7 +13,7 @@ import {
 import { eq } from "drizzle-orm"
 
 import { paperDocs, user } from "../db/schema.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import { createMigratedTestDb } from "./harness.js"
 
 export async function openStore(userId: string) {

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
-import { installRegistry } from "../registry/install.js"
+import { installRegistry } from "../install.js"
 import { createMigratedTestDb } from "../test/harness.js"
 
 describe("paper.create format rich", () => {
