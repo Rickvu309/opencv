@@ -308,12 +308,6 @@ test("every checked rule has a failing and a passing fact", () => {
   for (const [id, bad, good, message] of PROTECTED_CASES)
     check(id, bad, good, message)
   check(
-    "AFFECTED_TESTS",
-    { affected: { failed: ["tests apps/api"] }, env: {} },
-    { affected: { failed: [] }, env: {} },
-    "the tests this change reaches failed: tests apps/api"
-  )
-  check(
     "CATALOG_STALE",
     { catalog: { stale: ["packages/domain/src/generated/catalog.ts"] } },
     { catalog: { stale: [] } },

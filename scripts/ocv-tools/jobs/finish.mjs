@@ -3,7 +3,6 @@ import { validateAuthoring } from "../authoring.mjs"
 import { diskProblem } from "../disk.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
 import { planPull } from "./pull-facts.mjs"
-import { hasReceipt, passLines, receiptPath } from "./affected-tests.mjs"
 import { throwPushFailure } from "../push-failure.mjs"
 import { Refused } from "../result.mjs"
 import { retiredLines } from "../rules/protected.mjs"
@@ -26,27 +25,6 @@ export function bodyOf(ctx, flag) {
   } catch {
     return { file, text: "", unreadable: true }
   }
-}
-
-function receiptOf(ctx, t) {
-  const head = git(ctx, "rev-parse", "HEAD")
-  const tree = git(ctx, "rev-parse", "HEAD^{tree}")
-  try {
-    const receipt = JSON.parse(ctx.readFile(receiptPath(t.gitDir, head, tree)))
-    return {
-      partial: Array.isArray(receipt.partial) ? receipt.partial : [],
-      deferred: Array.isArray(receipt.deferred) ? receipt.deferred : [],
-      ran: Number(receipt.ran) || 0,
-    }
-  } catch {
-    return {}
-  }
-}
-
-function affectedReceipt(ctx, t) {
-  const head = git(ctx, "rev-parse", "HEAD")
-  const tree = git(ctx, "rev-parse", "HEAD^{tree}")
-  return { head, receipt: hasReceipt(ctx, t.gitDir, head, tree) }
 }
 
 function autoMerge(ctx, n) {
@@ -186,7 +164,6 @@ export function finish(ctx, { flags }) {
       main,
       port,
       env: ctx.env,
-      affected: affectedReceipt(ctx, t),
     }
     const verdict = decide("finish", facts)
     if (!verdict.ok) throw refusalError(verdict.refusals[0])
@@ -216,11 +193,7 @@ export function finish(ctx, { flags }) {
       ...(flags["--draft"] ? ["--draft"] : [])
     )
     const n = Number(url.split("/").at(-1))
-    const opened = [
-      ...passLines(receiptOf(ctx, t)),
-      ...retiredNote,
-      `Opened ${url}`,
-    ]
+    const opened = [...retiredNote, `Opened ${url}`]
     if (flags["--draft"])
       return {
         lines: [...opened, "A draft is not put on auto-merge."],

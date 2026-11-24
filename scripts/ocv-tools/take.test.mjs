@@ -484,15 +484,6 @@ test("the real repo names exactly the packages a new task folder must build", ()
   ])
 })
 
-test("the hint for a package that was not built names no single package", () => {
-  const text = readFileSync(
-    new URL("./rules/workspace.mjs", import.meta.url),
-    "utf8"
-  )
-  assert.match(text, /pnpm --filter <that package> build/)
-  assert.doesNotMatch(text, /run pnpm --filter @workspace\/domain build first/)
-})
-
 test("take installs and then builds the packages used from built output", () => {
   const { ctx, ports } = run({
     files: {

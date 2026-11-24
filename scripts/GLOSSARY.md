@@ -158,11 +158,6 @@ The fast checks run at push on the changed files: formatting, ESLint, typecheck 
 _Not_: quick guards, the older local run of guard tests on a merged tree.
 _Avoid_: pre-push checks, lint step
 
-**Pre-check**:
-The local run at push of the tests a change reaches: its changed tests, the scanners of its folders, and its nearest importers, one run at a time per machine.
-_Not_: a gate verdict; it only saves a wasted CI run.
-_Avoid_: check (bare), local CI, affected-tests run
-
 ### Cases and inputs
 
 **Case**:
@@ -199,7 +194,7 @@ _Avoid_: stage, phase, hook, step
 
 **Hook**:
 A git hook: the trigger that makes the commit and push moments run. It decides nothing by itself.
-_Avoid_: gate, pre-check (for the hook)
+_Avoid_: gate
 
 **CI run**:
 One run of the CI workflow for one tree and one trigger: a pull request head, or a push to main.
@@ -221,12 +216,12 @@ _Avoid_: ci (bare, in prose), status, the check
 
 **Gate**:
 Everything that must hold for a change to reach main: the required check green on its head. What must hold for a change to reach production is the main run: the full CI run on main after the merge.
-_Not_: the quick checks or the pre-check, which save time but never decide.
+_Not_: the quick checks, which save time but never decide.
 _Avoid_: policy, hook, review, approval
 
 **Green**:
 The required check succeeded on a named tree. Always say which tree: green on the head (the pull request run) or green on main (the main run). Red is the opposite.
-_Not_: a pre-check pass.
+_Not_: the quick checks passing at push.
 _Avoid_: passing, all tests pass, CI green (without the tree), done
 
 **Main run**:
@@ -250,14 +245,9 @@ The pass or refusal that one check or rule gives for one tree.
 _Avoid_: result (bare), proof
 
 **Receipt**:
-A machine-written record of one check's run, bound to the tree it judged and to who produced it (CI or a local machine), with its cases, failures, repros and measured numbers. Only a check writes one, and a local receipt never satisfies the gate.
+A machine-written record of one check's run, bound to the tree it judged, with its cases, failures, repros and measured numbers. Only a check in CI writes one.
 _Not_: the product's activity receipt for a command, and not anything a builder types.
 _Avoid_: proof, evidence (for the record), log, report
-
-**Pre-check pass**:
-A local receipt that the pre-check passed for one head and tree. It is full, partial when a capped subset ran and CI runs the rest, or broad when the change reaches a whole suite that only CI runs.
-_Not_: green.
-_Avoid_: green, all tests pass, local pass
 
 **Evidence**:
 What shows that a change works: the output of the checks that ran on its head, and the section of a pull request that presents it. Any measured number in it comes from a receipt.
@@ -355,7 +345,7 @@ _Avoid_: rollback
 ## Relationships
 
 - A guard reads files, a test runs code, a harness runs every instance of one kind, a sweep runs every member of a derived list, a walk runs random steps through one module, and a probe reads production.
-- Every check gives a verdict. A check in CI writes a receipt, and evidence and Merge Danger take numbers only from receipts. A pre-check pass is a local receipt that never decides.
+- Every check gives a verdict. A check in CI writes a receipt, and evidence and Merge Danger take numbers only from receipts.
 - Rules are decided at moments. Hooks trigger the commit and push moments, the policy job decides the pull request moment, the required check needs every CI job, and the gate is the required check green on the head and on the merged tree.
 - The machine computes the change class from the diff: a gate file or a migration that does more than add makes it owner class, a strict area or a retirement makes it strict, and anything else is ordinary. The risk label is the filer's prediction and never overrides it.
 - Protected checks only grow. A weakening needs a retirement with a flip proof, a ratchet only shrinks, an expected failure flips when its issue is fixed, a quarantine expires, and an allowed entry must keep matching.

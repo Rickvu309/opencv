@@ -12,24 +12,16 @@ const SELF = "scripts/ocv-tools/jobs/ref-safety.test.mjs"
 const SPAWNS = /child_process|realRunner|realPorts/
 
 const PROC = new URL("../ports/proc.mjs", import.meta.url).href
-const PLAN = new URL("./affected-tests.mjs", import.meta.url).href
-const RUNNERS = new URL("./test-runners.mjs", import.meta.url).href
 const TOOL_PROCESS = `import { realRunner } from ${JSON.stringify(PROC)}
-import { affectedPlan } from ${JSON.stringify(PLAN)}
-import { SCRIPTS_RUNNER } from ${JSON.stringify(RUNNERS)}
 const { top, files } = JSON.parse(process.env.REF_SAFETY_PLAN)
-const run = realRunner()
-const group = { runner: "scripts", files: files.map((file) => ({ file })), dropped: [] }
-let failed = 0
-for (const step of affectedPlan({ groups: [group], runners: [SCRIPTS_RUNNER] }, top)) {
-  const r = run(step.cmd, step.args, { cwd: step.cwd, timeout: 240000 })
-  process.stdout.write(r.out + "\\n")
-  if (!r.ok) {
-    failed += 1
-    process.stderr.write(r.out.slice(-1500) + "\\n" + r.err.slice(-1500))
-  }
-}
-process.exit(failed ? 1 : 0)
+const r = realRunner()(
+  "node",
+  ["--test", "--test-reporter=dot", "--test-concurrency=2", ...files],
+  { cwd: top, timeout: 240000 }
+)
+process.stdout.write(r.out + "\\n")
+if (!r.ok) process.stderr.write(r.out.slice(-1500) + "\\n" + r.err.slice(-1500))
+process.exit(r.ok ? 0 : 1)
 `
 
 function spawningToolTests() {

@@ -55,7 +55,6 @@ test("every protected kind is read from its path", () => {
     "apps/api/src/registry/owned-known-reds.json": "ratchet",
     "packages/domain/src/limits/export.ts": "bound",
     "apps/web/vitest.quarantine.ts": "checker-config",
-    "scripts/ocv-tools/jobs/test-selection.mjs": "checker-config",
     "packages/guards/run-tests.mjs": "checker-config",
   }
   const guards = new Set([
@@ -392,7 +391,7 @@ test("limit bounds: looser is refused in each direction, tighter is free", () =>
     )
 })
 
-test("checker config: a quarantine entry added, a scanner dropped or a cap lowered is refused", () => {
+test("checker config: a quarantine entry added or a frozen runner changed is refused", () => {
   const quarantine = `export const quarantine: { file: string }[] = []
 `
   assert.deepEqual(
@@ -403,40 +402,6 @@ test("checker config: a quarantine entry added, a scanner dropped or a cap lower
       "checker-config"
     ).map((w) => w.what),
     ["ratchet-raised"]
-  )
-  const selection = `export const MAX_PER_RUNNER = 40
-export const LOCAL_CAP = 25
-export const TREE_SCANS = Object.freeze({
-  "apps/api/src/registry/names.test.ts": [WEB_SRC, /^apps\\/api\\//],
-})
-`
-  const path = "scripts/ocv-tools/jobs/test-selection.mjs"
-  assert.deepEqual(
-    weakenings(
-      selection,
-      selection.replace(", /^apps\\/api\\//", ""),
-      path,
-      "checker-config"
-    ).map((w) => w.what),
-    ["scanner-dropped"]
-  )
-  assert.deepEqual(
-    weakenings(
-      selection,
-      selection.replace("LOCAL_CAP = 25", "LOCAL_CAP = 10"),
-      path,
-      "checker-config"
-    ).map((w) => w.what),
-    ["bound-loosened"]
-  )
-  assert.deepEqual(
-    weakenings(
-      selection,
-      selection.replace("LOCAL_CAP = 25", "LOCAL_CAP = 30"),
-      path,
-      "checker-config"
-    ),
-    []
   )
   assert.deepEqual(
     weakenings("a", "b", "packages/guards/run-tests.mjs", "checker-config").map(

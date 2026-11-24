@@ -1,42 +1,13 @@
-import { existsSync, readFileSync, readdirSync } from "node:fs"
-import { join } from "node:path"
-import { fileURLToPath } from "node:url"
 import { runCli } from "../cli.mjs"
 import { ctxFor, fakePorts } from "../ports/fake.mjs"
-import { blobId } from "./git-reads.mjs"
-
-const REPO = fileURLToPath(new URL("../../../", import.meta.url))
-
-export function realWorkspace() {
-  const files = {
-    "pnpm-workspace.yaml": readFileSync(
-      join(REPO, "pnpm-workspace.yaml"),
-      "utf8"
-    ),
-  }
-  for (const parent of ["apps", "packages"])
-    for (const name of readdirSync(join(REPO, parent))) {
-      const path = `${parent}/${name}/package.json`
-      if (existsSync(join(REPO, path)))
-        files[path] = readFileSync(join(REPO, path), "utf8")
-    }
-  return files
-}
-
-export const workspaceInput = (files = realWorkspace()) => ({
-  workspaceYaml: files["pnpm-workspace.yaml"] ?? "",
-  packageJsons: new Map(
-    Object.entries(files).filter(([path]) => path !== "pnpm-workspace.yaml")
-  ),
-})
 
 export const TRAILER = `${["Co", "Authored", "By"].join("-")}: Someone <a@b.c>`
 export const PRETTIER = "/repo/node_modules/.bin/prettier"
 export const ZERO = "0".repeat(40)
 const OLD_ID = "1".repeat(40)
 const NEW_ID = "2".repeat(40)
-export const RAW_CHANGED = `:100644 100644 ${OLD_ID} ${NEW_ID} M`
-export const RAW_DELETED = `:100644 000000 ${OLD_ID} ${ZERO} D`
+const RAW_CHANGED = `:100644 100644 ${OLD_ID} ${NEW_ID} M`
+const RAW_DELETED = `:100644 000000 ${OLD_ID} ${ZERO} D`
 
 export function world(over = {}) {
   const s = {
@@ -48,18 +19,14 @@ export function world(over = {}) {
     dirty: [],
     pnpmOk: true,
     changed: [],
-    toolTests: [],
     failing: [],
     noBase: false,
     gitFails: [],
     calls: [],
     ...over,
   }
-  const workspace = s.workspace ?? realWorkspace()
   const ok = (out = "") => ({ ok: true, out, err: "" })
   const blobOf = (path) => s.blobs[path] ?? { content: "x\n" }
-  const textAt = (path) =>
-    workspace[path] ?? s.testText?.[path] ?? `test(${JSON.stringify(path)})\n`
   const bySha = (sha) => blobOf(sha.replace("sha-", ""))
   const ports = fakePorts({
     cwd: "/repo",
@@ -82,7 +49,6 @@ export function world(over = {}) {
           )),
     },
     env: s.env ?? {},
-    affectedReceipts: s.receipt ?? false,
     run(cmd, args, options = {}) {
       s.calls.push({ cmd, args, options })
       if (cmd === "pnpm")
@@ -124,33 +90,6 @@ export function world(over = {}) {
         args[1].endsWith("^{tree}")
       )
         return ok(`tree-${args[1].slice(0, -7)}`)
-      if (args[0] === "ls-tree") {
-        if (s.lsTree !== undefined) return ok(s.lsTree)
-        return ok(
-          [...Object.keys(workspace), ...(s.tests ?? [])]
-            .map((path) => `100644 blob ${blobId(textAt(path))}\t${path}\0`)
-            .join("")
-        )
-      }
-      if (line === "cat-file --batch") {
-        if (s.batch !== undefined) return ok(s.batch)
-        const byId = new Map(
-          [...Object.keys(workspace), ...(s.tests ?? [])].map((path) => [
-            blobId(textAt(path)),
-            textAt(path),
-          ])
-        )
-        return ok(
-          options.input
-            .split("\n")
-            .filter(Boolean)
-            .map((oid) => {
-              const text = byId.get(oid)
-              return `${oid} blob ${Buffer.byteLength(text)}\n${text}\n`
-            })
-            .join("")
-        )
-      }
       if (line.startsWith("diff --raw -z --no-renames --no-abbrev")) {
         if (s.rawDiff !== undefined) return ok(s.rawDiff)
         return ok(
@@ -174,13 +113,11 @@ export function world(over = {}) {
         return ok(s.changed.join("\0"))
       if (line.includes("--diff-filter=ACMRD -z base1 HEAD"))
         return ok([...s.changed, ...(s.deleted ?? [])].join("\0"))
-      if (line === "ls-files -v -z") return ok(s.indexFlags ?? "")
       if (args[0] === "ls-files" && args.includes("--others"))
         return ok((s.untracked ?? []).join("\0"))
       if (args[0] === "ls-files" && args[2] === "--")
         return ok("package.json\0")
       if (args[0] === "checkout-index") return ok("")
-      if (args[0] === "ls-files") return ok(s.toolTests.join("\0"))
       if (line.startsWith("rev-parse --show-toplevel")) return ok("/repo")
       if (line.startsWith("rev-parse --absolute-git-dir"))
         return ok("/repo/.git")
@@ -216,18 +153,13 @@ export function world(over = {}) {
       throw new Error(`unscripted git ${line}`)
     },
   })
-  if (s.lock) ports.lock = s.lock
   const call = (argv, extra = {}) =>
     runCli(["hook", ...argv], ctxFor(ports, { cwd: "/repo", ...extra }))
   const git = (verb) =>
     s.calls.filter((c) => c.cmd === "git" && c.args[0] === verb)
   const cli = (argv, extra = {}) =>
     runCli(argv, ctxFor(ports, { cwd: "/repo", ...extra }))
-  const receipts = () =>
-    Object.keys(ports.written).filter((path) =>
-      path.includes("/ocv-tools-affected-tests-")
-    )
-  return { s, call, cli, git, receipts }
+  return { s, call, cli, git }
 }
 
 export const push = (...refs) =>

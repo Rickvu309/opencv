@@ -1,7 +1,7 @@
 import { fsAdapter } from "./fs.mjs"
 import { ghAdapter } from "./gh.mjs"
 import { gitAdapter } from "./git.mjs"
-import { machineLock, procAdapter, realRunner } from "./proc.mjs"
+import { procAdapter, realRunner } from "./proc.mjs"
 import { activityAdapter } from "./activity.mjs"
 
 export function realPorts() {
@@ -23,6 +23,5 @@ export function realPorts() {
         ),
     },
     env: process.env,
-    lock: (fn) => machineLock(fn),
   }
 }

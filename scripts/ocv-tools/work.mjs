@@ -1,6 +1,3 @@
-import { fileURLToPath } from "node:url"
-import { hasReceipt } from "./jobs/affected-tests.mjs"
-import { git as readGit, run } from "./jobs/common.mjs"
 import { EXIT, FIXES } from "./result.mjs"
 import { agentIdFor, heartbeat, nowOf, readClaim, taskHere } from "./claim.mjs"
 import { throwPushFailure } from "./push-failure.mjs"
@@ -122,20 +119,6 @@ export function save(ctx, { message }) {
         `commit failed: ${commit.err || commit.out}`.slice(0, 800)
       )
   }
-  const checked = run(
-    ctx,
-    "node",
-    [fileURLToPath(new URL("../ocv-tools.mjs", import.meta.url)), "check"],
-    { cwd: ctx.cwd, inherit: true }
-  )
-  if (!checked.ok)
-    throw new Error(`Checks failed before push: ${checked.err || checked.out}`)
-  const head = readGit(ctx, "rev-parse", "HEAD")
-  const tree = readGit(ctx, "rev-parse", "HEAD^{tree}")
-  if (!hasReceipt(ctx, t.gitDir, head, tree))
-    throw new Error(
-      "No recorded pass for HEAD; run scripts/ocv-tools.mjs check before pushing."
-    )
   const beforePushRead = readClaim(ctx, t.n, true)
   const beforePush = beforePushRead.holder
   if (lostNow(t, { claim: beforePush, me, issue: beforePushRead.issue }))
