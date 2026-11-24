@@ -76,6 +76,7 @@ export function NotFoundPage() {
       <Button
         type="button"
         variant="primary"
+        size="touch"
         className="mt-6"
         onClick={() => void navigate({ href: destination })}
       >

@@ -78,6 +78,11 @@ export const SCREENS = [
     ],
   },
   {
+    id: "not-found",
+    route: "/no-such-page",
+    steps: [{ waitFor: { selector: '[aria-label="Page not found"]' } }],
+  },
+  {
     id: "settings",
     route: "/settings",
     steps: [{ waitFor: { selector: '[data-slot="settings-card"]' } }],
