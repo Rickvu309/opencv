@@ -10,7 +10,7 @@ import {
   chats,
 } from "../db/schema.js"
 import { createId } from "../platform/id.js"
-import { CommandError } from "./errors.js"
+import { CommandError } from "../platform/errors.js"
 import { inputHash } from "./receipt.js"
 import { createProposal, lockProposalOwner } from "./proposals.js"
 import { requireLiveDelegate } from "./delegate-policy.js"

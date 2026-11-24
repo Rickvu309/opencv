@@ -8,7 +8,7 @@ import {
 } from "@workspace/domain"
 import type { ZodType } from "zod"
 
-import { CommandError } from "./errors.js"
+import { CommandError } from "../platform/errors.js"
 
 function zodMessage(error: { issues: { message: string }[] }) {
   return error.issues[0]?.message ?? "Invalid input"

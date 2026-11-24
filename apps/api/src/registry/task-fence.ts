@@ -1,5 +1,5 @@
 import { ERROR_CODES, type Actor } from "@workspace/domain"
-import { CommandError } from "./errors.js"
+import { CommandError } from "../platform/errors.js"
 import { inputHash } from "./receipt.js"
 import type { ExecuteResult, StoredCommand } from "./registry-types.js"
 import { and, eq, sql } from "drizzle-orm"

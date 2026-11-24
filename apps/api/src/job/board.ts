@@ -15,7 +15,7 @@ import { eq } from "drizzle-orm"
 import { getDb } from "../db/context.js"
 import { jobs } from "../db/schema.js"
 import { createId } from "../platform/id.js"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import { checklistOf } from "./checklist.js"
 import {
   changeJob,

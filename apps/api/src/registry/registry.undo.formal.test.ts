@@ -7,7 +7,7 @@ import { z } from "zod"
 
 import { withDatabase } from "../db/context.js"
 import { activity, jobs } from "../db/schema.js"
-import {} from "./errors.js"
+import {} from "../platform/errors.js"
 import { Registry } from "./registry.js"
 import {
   NS,

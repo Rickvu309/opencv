@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest"
 import { withDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
-import { CommandError } from "./errors.js"
+import { CommandError } from "../platform/errors.js"
 import { installRegistry } from "../install.js"
 
 const UUID = "00000000-0000-4000-8000-000000000001"

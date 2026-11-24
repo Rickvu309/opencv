@@ -7,13 +7,16 @@ import {
 } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 
-import { getBoundAuth, getRequestHeaders } from "../auth.js"
 import { getDb } from "../db/context.js"
 import { files, notifyRequests } from "../db/schema.js"
 import { createId } from "../platform/id.js"
 import { bindCommands } from "../registry/bind.js"
 import { CommandError, isUniqueViolation } from "../registry/errors.js"
 import type { Registry } from "../registry/registry.js"
+import {
+  sendEmailChangeCode,
+  type EmailChangeCodeOutcome,
+} from "./email-change-code.js"
 import {
   deleteAccount,
   markWelcomed,
@@ -99,23 +102,9 @@ function authFailure(error: unknown) {
 }
 
 async function requestEmailChange(email: string) {
-  const headers = getRequestHeaders()
-  if (!headers) {
-    return { email, sent: false, message: SEND_FAILED }
-  }
-  const cookie = headers.get("cookie")
-  if (!cookie) {
-    throw new CommandError(ERROR_CODES.VALIDATION_ERROR, SEND_FAILED)
-  }
-  const auth = getBoundAuth()
-  if (!auth) {
-    throw new CommandError(ERROR_CODES.VALIDATION_ERROR, SEND_FAILED)
-  }
+  let outcome: EmailChangeCodeOutcome
   try {
-    await auth.api.requestEmailChangeEmailOTP({
-      body: { newEmail: email },
-      headers,
-    })
+    outcome = await sendEmailChangeCode(email)
   } catch (error) {
     const failure = authFailure(error)
     const sameOrInvalid =
@@ -127,6 +116,10 @@ async function requestEmailChange(email: string) {
       sameOrInvalid ? EMAIL_DIFFERENT : SEND_FAILED
     )
   }
+  if (outcome === "outside a request")
+    return { email, sent: false, message: SEND_FAILED }
+  if (outcome === "refused")
+    throw new CommandError(ERROR_CODES.VALIDATION_ERROR, SEND_FAILED)
   return { email, sent: true }
 }
 

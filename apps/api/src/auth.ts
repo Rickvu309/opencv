@@ -224,15 +224,9 @@ export function createAuth({
 
 export type Auth = ReturnType<typeof createAuth>
 
-let boundAuth: Auth | undefined
-
-export function bindAuth(auth: Auth | undefined) {
-  boundAuth = auth
-}
-
 type RequestStore = {
   headers: Headers
-  auth?: Auth
+  auth: Auth
 }
 
 const requestStore = new AsyncLocalStorage<RequestStore>()
@@ -240,15 +234,18 @@ const requestStore = new AsyncLocalStorage<RequestStore>()
 export function withRequestHeaders<T>(
   headers: Headers,
   run: () => T,
-  auth?: Auth
+  auth: Auth
 ): T {
   return requestStore.run({ headers, auth }, run)
 }
 
-export function getRequestHeaders() {
-  return requestStore.getStore()?.headers
-}
-
-export function getBoundAuth() {
-  return requestStore.getStore()?.auth ?? boundAuth
+export async function emailChangeCodeFromRequest(email: string) {
+  const request = requestStore.getStore()
+  if (!request) return "outside a request" as const
+  if (!request.headers.get("cookie")) return "refused" as const
+  await request.auth.api.requestEmailChangeEmailOTP({
+    body: { newEmail: email },
+    headers: request.headers,
+  })
+  return "sent" as const
 }
