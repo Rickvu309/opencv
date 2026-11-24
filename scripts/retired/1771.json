@@ -30,5 +30,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 4
+  },
+  {
+    "subject": "scripts/ocv-tools/ports/gh.test.mjs",
+    "because": "the command is removed; board ran 3 times in 183 sessions, and its check run read went with it",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
   }
 ]
