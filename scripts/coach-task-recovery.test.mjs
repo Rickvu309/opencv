@@ -310,16 +310,18 @@ for (const [name, path, historicPath, required] of [
   })
 }
 
-for (const [path, mistake, clean] of [
+for (const [path, mistake, clean, historicPath] of [
   [
-    "apps/api/src/config.ts",
+    "apps/api/src/platform/config.ts",
     'return env.COACH_TASK_WORKER === "internal"',
     'return env.COACH_DURABLE?.trim().toLowerCase() !== "off"',
+    "apps/api/src/config.ts",
   ],
   [
     "apps/web/src/features/coach/use-coach-turn.ts",
     'const durableEnabled = import.meta.env.VITE_COACH_TASK_WORKER === "internal"',
     'queryFn: getCoachConfig; const configuration = configuration === "ready"',
+    "apps/web/src/features/coach/use-coach-turn.ts",
   ],
 ]) {
   test(`durable default deployment: ${path}`, () => {
@@ -332,7 +334,7 @@ for (const [path, mistake, clean] of [
       ),
       []
     )
-    const historic = execFileSync("git", ["show", `67ef657:${path}`], {
+    const historic = execFileSync("git", ["show", `67ef657:${historicPath}`], {
       encoding: "utf8",
     })
     assert.equal(detect(historic, path).length, 1)

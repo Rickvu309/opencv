@@ -198,7 +198,7 @@ describe("Coach deployment mode", () => {
     expect(env).not.toContain("VITE_COACH_TASK_WORKER")
     expect(env).not.toContain("COACH_TASK_WORKER=")
     expect(env).not.toContain("COACH_EMBEDDED_WORKER=")
-    expect(read("apps/api/src/config.ts")).toContain(
+    expect(read("apps/api/src/platform/config.ts")).toContain(
       'return env.COACH_DURABLE?.trim().toLowerCase() !== "off"'
     )
     expect(read("apps/api/src/app.ts")).toContain(

@@ -12,7 +12,7 @@ import { coachUsage, user } from "../db/schema.js"
 import { installRegistry } from "../install.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { runCoachTurn } from "./turn.js"
-import { coachModelEnv, setCoachModelEnv } from "../config.js"
+import { coachModelEnv, setCoachModelEnv } from "../platform/config.js"
 
 const rename = vi.hoisted(() => ({ fails: false }))
 
