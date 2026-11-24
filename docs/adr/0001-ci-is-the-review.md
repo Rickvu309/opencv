@@ -4,7 +4,7 @@ status: accepted
 
 # CI is the review, and a green change merges itself
 
-From 2026-11-13 no agent reviews a pull request: a change merges by itself once the required check is green on its head and on its merged tree, and the merge deploys. We chose this because review by agents was slow and still leaky. Of 43 reviewer verdicts in the record, 26 found a blocking defect after the builder had said done, and one passing verdict let an imported-CV outage reach production. About 35 to 55 percent of the 74 defects in that record were within reach of a check the builder already had or a sweep that needs no insight, so the money goes into checks that run on every change rather than into a reader of each diff.
+From 2026-11-13 no agent reviews a pull request: a change merges by itself once the required check is green on its head, and main deploys once its own full run is green (ADR 0003). We chose this because review by agents was slow and still leaky. Of 43 reviewer verdicts in the record, 26 found a blocking defect after the builder had said done, and one passing verdict let an imported-CV outage reach production. About 35 to 55 percent of the 74 defects in that record were within reach of a check the builder already had or a sweep that needs no insight, so the money goes into checks that run on every change rather than into a reader of each diff.
 
 ## Considered options
 
