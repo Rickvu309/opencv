@@ -1,10 +1,4 @@
 apps/api/src:
-  apps/api/src/auth.ts:
-    violations:
-      - dependency
-      - layer
-    files:
-      - apps/api/src/account/commands.ts
   apps/api/src/config.ts:
     violations:
       - dependency

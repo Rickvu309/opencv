@@ -1,4 +1,5 @@
 export { registerAccount } from "./commands.js"
+export { hostEmailChangeCode } from "./email-change-code.js"
 export {
   registerAccountQueries,
   exportAccount,
