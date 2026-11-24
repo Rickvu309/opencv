@@ -121,7 +121,7 @@ function paperActions(
       onSelect: () => on.onOpen(doc.id),
     },
     ...each("Rename", Pencil, on.onRename),
-    ...(doc.format === "rich" ? [] : each("Duplicate", Copy, on.onDuplicate)),
+    ...each("Duplicate", Copy, on.onDuplicate),
     ...each("Link to application", Link2, on.onLink),
     ...(hasPrintBody(doc) ? each("Download PDF", Download, on.onDownload) : []),
     ...(word && downloadWord
