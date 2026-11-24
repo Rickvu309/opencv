@@ -1,0 +1,105 @@
+import { describe, expect, it } from "vitest"
+
+import { createMigratedTestDb, createTestApp } from "./test/harness.js"
+
+const doors = ["POST /api/commands/:name", "POST /api/reads/:name"]
+
+const transportExceptions = {
+  signIn: [
+    "ALL /api/auth/*",
+    "GET /api/session",
+    "GET /api/public-config",
+    "GET /.well-known/oauth-authorization-server",
+    "GET /.well-known/oauth-authorization-server/api/auth",
+  ],
+  agentProtocol: ["ALL /mcp", "GET /.well-known/oauth-protected-resource/mcp"],
+  mailProviderRedirect: ["GET /api/inbox/connect", "GET /api/inbox/callback"],
+  stream: ["POST /api/chats/:id/turns", "GET /api/coach/tasks/:id/events"],
+  upload: [
+    "POST /api/account/photo",
+    "POST /api/paper/files",
+    "POST /api/paper/import",
+    "POST /api/paper/letter-attachment",
+    "POST /api/paper/packages/stage",
+  ],
+  download: [
+    "GET /api/account/export",
+    "GET /api/paper/:id/native-word",
+    "GET /api/paper/files/:id/bytes",
+    "GET /api/paper/packages/:docId/export",
+  ],
+  visitor: [
+    "GET /api/paper/shared/:token",
+    "GET /api/paper/shared/:token/photo",
+  ],
+  health: ["GET /health", "GET /health/deep"],
+}
+
+const waitingToBecomeOperations = [
+  "GET /api/activity",
+  "GET /api/agent-connections",
+  "GET /api/billing",
+  "GET /api/chats",
+  "GET /api/chats/:id",
+  "GET /api/coach/tasks/:id",
+  "GET /api/coach/usage",
+  "GET /api/inbox",
+  "GET /api/inbox/:id",
+  "GET /api/inbox/snoozed",
+  "GET /api/integrations",
+  "GET /api/jobs",
+  "GET /api/jobs/:id",
+  "GET /api/jobs/calendar",
+  "GET /api/paper",
+  "GET /api/paper/:id",
+  "GET /api/paper/:id/document",
+  "GET /api/paper/:id/pages",
+  "GET /api/paper/files",
+  "GET /api/paper/packages",
+  "GET /api/paper/packages/:docId/read",
+  "GET /api/profile",
+  "GET /api/search",
+  "POST /api/chats/:id/stop",
+  "POST /api/jobs/preview",
+]
+
+async function servedRoutes() {
+  const { db, client } = await createMigratedTestDb()
+  try {
+    const app = createTestApp(db)
+    await app.request("/api/session")
+    const fewestArguments = new Map<string, number>()
+    for (const route of app.routes) {
+      const key = `${route.method} ${route.path}`
+      fewestArguments.set(
+        key,
+        Math.min(fewestArguments.get(key) ?? 2, route.handler.length)
+      )
+    }
+    return [...fewestArguments]
+      .filter(([key, count]) => !key.endsWith("*") || count < 2)
+      .map(([key]) => key)
+      .sort()
+  } finally {
+    await client.close()
+  }
+}
+
+describe("every change and read of product data goes through an operation", () => {
+  it("serves only the two doors, the transport exceptions and the routes waiting to become operations", async () => {
+    const known = [
+      ...doors,
+      ...Object.values(transportExceptions).flat(),
+      ...waitingToBecomeOperations,
+    ].sort()
+    expect(new Set(known).size).toBe(known.length)
+    expect(
+      await servedRoutes(),
+      "A new api route must be an operation in the contract, reached through /api/commands or /api/reads. Only sign-in, an agent protocol, a provider redirect, a stream, an upload, a download, a visitor page or a health check may be a route of its own."
+    ).toEqual(known)
+  })
+
+  it("has no more routes waiting to become operations than it had", () => {
+    expect(waitingToBecomeOperations.length).toBeLessThanOrEqual(25)
+  })
+})
