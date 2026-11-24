@@ -54,7 +54,7 @@ export async function openWorld(options?: TestAppOptions) {
     const headers = authHeaders(cookie)
 
     async function call(path: string, init: RequestInit): Promise<Reply> {
-      const res = await app.request(path, { ...init, headers })
+      const res = await app.request(path, { headers, ...init })
       const body = (await res.json()) as {
         ok: boolean
         data?: unknown
@@ -88,7 +88,8 @@ export async function openWorld(options?: TestAppOptions) {
         post("/api/commands/activity.undo", { input: { activityId } }),
       ask: <T>(name: string, input: unknown) =>
         withDatabase(db, () => registry.read(name, input, actor)) as Promise<T>,
-      get: (path: string) => call(path, { method: "GET" }),
+      get: (path: string, extra: Record<string, string> = {}) =>
+        call(path, { method: "GET", headers: { ...headers, ...extra } }),
       post,
       stream: async (path: string, body: unknown) =>
         (
