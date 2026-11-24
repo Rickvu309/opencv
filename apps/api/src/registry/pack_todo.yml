@@ -12,14 +12,6 @@ apps/api/src:
       - layer
     files:
       - apps/api/src/registry/http.ts
-  apps/api/src/id.ts:
-    violations:
-      - dependency
-      - layer
-    files:
-      - apps/api/src/registry/command-execution.ts
-      - apps/api/src/registry/frozen-review.ts
-      - apps/api/src/registry/proposals.ts
   apps/api/src/middleware.ts:
     violations:
       - dependency

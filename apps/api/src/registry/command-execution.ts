@@ -1,7 +1,7 @@
 import { ERROR_CODES, isCoachActor, type Actor } from "@workspace/domain"
 import { getDb, savepoint } from "../db/context.js"
 import { activity, idempotency } from "../db/schema.js"
-import { createId } from "../id.js"
+import { createId } from "../platform/id.js"
 import { CommandError, isUniqueViolation } from "./errors.js"
 import {
   replayFrozenProposal,

@@ -14,7 +14,7 @@ import {
 } from "@workspace/domain"
 import { type Context, Hono } from "hono"
 
-import { createId } from "../id.js"
+import { createId } from "../platform/id.js"
 import { PaperPackageRefusal } from "./package-errors.js"
 import { stageWordPackage } from "./package-store.js"
 import type { Auth } from "../auth.js"

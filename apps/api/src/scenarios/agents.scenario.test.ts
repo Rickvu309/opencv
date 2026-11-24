@@ -2,7 +2,7 @@ import { delegateActorSchema } from "@workspace/domain"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { agentConnections, oauthClient } from "../db/schema.js"
-import { createId } from "../id.js"
+import { createId } from "../platform/id.js"
 import {
   dataOf,
   openWorld,

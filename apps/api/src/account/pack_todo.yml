@@ -18,12 +18,6 @@ apps/api/src:
       - layer
     files:
       - apps/api/src/account/http.ts
-  apps/api/src/id.ts:
-    violations:
-      - dependency
-      - layer
-    files:
-      - apps/api/src/account/commands.ts
   apps/api/src/middleware.ts:
     violations:
       - dependency

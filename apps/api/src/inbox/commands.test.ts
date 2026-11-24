@@ -20,7 +20,7 @@ import {
   createTestApp,
   signUp,
 } from "../test/harness.js"
-import { createId } from "../id.js"
+import { createId } from "../platform/id.js"
 
 describe("inbox commands", () => {
   it("scans once and does not duplicate threads or messages", async () => {

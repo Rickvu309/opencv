@@ -10,7 +10,7 @@ import {
 } from "../chat/index.js"
 import { getDb, savepoint, transaction } from "../db/context.js"
 import { activity, idempotency, pendingActions, user } from "../db/schema.js"
-import { createId } from "../id.js"
+import { createId } from "../platform/id.js"
 
 import { requireLiveDelegate } from "./delegate-policy.js"
 import { CommandError } from "./errors.js"

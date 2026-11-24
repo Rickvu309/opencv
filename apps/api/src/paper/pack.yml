@@ -1,2 +1,8 @@
 layer: feature
-dependencies: [apps/api/src/registry, apps/api/src/db, apps/api/src/limits]
+dependencies:
+  [
+    apps/api/src/registry,
+    apps/api/src/db,
+    apps/api/src/limits,
+    apps/api/src/platform,
+  ]

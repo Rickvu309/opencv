@@ -9,7 +9,7 @@ import {
   user,
   chats,
 } from "../db/schema.js"
-import { createId } from "../id.js"
+import { createId } from "../platform/id.js"
 import { CommandError } from "./errors.js"
 import { inputHash } from "./receipt.js"
 import { createProposal, lockProposalOwner } from "./proposals.js"

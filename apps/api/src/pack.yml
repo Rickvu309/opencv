@@ -13,4 +13,5 @@ dependencies:
     apps/api/src/db,
     apps/api/src/mail,
     apps/api/src/limits,
+    apps/api/src/platform,
   ]

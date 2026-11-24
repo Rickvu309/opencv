@@ -4,7 +4,7 @@ import { and, eq, isNull, sql } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
 import { activity, coachUsage } from "../db/schema.js"
-import { createId } from "../id.js"
+import { createId } from "../platform/id.js"
 
 export async function seedCoachActor(
   userId: string,

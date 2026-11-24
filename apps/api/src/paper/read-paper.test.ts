@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { exportAccount } from "../account/index.js"
 import { withDatabase } from "../db/context.js"
 import { paperDocs, paperShares } from "../db/schema.js"
-import { createId } from "../id.js"
+import { createId } from "../platform/id.js"
 import { openStore, twoParagraphCv } from "../test/paper-content.js"
 import { readSharedPhoto } from "./store.js"
 

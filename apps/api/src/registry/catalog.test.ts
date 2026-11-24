@@ -8,7 +8,7 @@ import {
 import { eq } from "drizzle-orm"
 import { describe, expect, it, vi } from "vitest"
 import { z } from "zod"
-import { createId } from "../id.js"
+import { createId } from "../platform/id.js"
 import { createAuth } from "../auth.js"
 import * as databaseContext from "../db/context.js"
 import { type AppDatabase, getDb, withDatabase } from "../db/context.js"

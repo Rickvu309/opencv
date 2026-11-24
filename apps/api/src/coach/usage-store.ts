@@ -14,7 +14,7 @@ import { assertDayCap } from "../account/index.js"
 import { insertCoachMessage } from "../chat/index.js"
 import { CommandError } from "../registry/errors.js"
 import { registry } from "../registry/registry.js"
-import { createId } from "../id.js"
+import { createId } from "../platform/id.js"
 import { withMissingReceipts } from "./receipt.js"
 
 export async function saveRepliesForUnsavedTurns(input: {
