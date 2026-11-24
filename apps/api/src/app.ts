@@ -44,7 +44,7 @@ import {
   oauthClientLimit,
   type OAuthClientLimits,
 } from "./oauth-client-limit.js"
-import { isAllowedOrigin } from "./platform/origin.js"
+import { isAllowedOrigin } from "./origin.js"
 import { createPaperRoutes } from "./paper/index.js"
 import { createReadRoutes } from "./registry/read.js"
 import { createCommandRoutes } from "./registry/http.js"

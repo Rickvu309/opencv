@@ -11,3 +11,9 @@ apps/api/src:
       - layer
     files:
       - apps/api/src/connections/http.ts
+  apps/api/src/origin.ts:
+    violations:
+      - dependency
+      - layer
+    files:
+      - apps/api/src/connections/http.ts
