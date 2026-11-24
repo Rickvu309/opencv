@@ -51,6 +51,7 @@ let emailChangeOverride:
 let profileGate: Promise<void> | null = null
 let openProfileGate: (() => void) | null = null
 const paths: string[] = []
+const WELCOMED_LONG_AGO = "2026-01-01T00:00:00.000Z"
 
 export function setMockWelcomedAt(value: string | null) {
   welcomedAt = value
@@ -89,7 +90,7 @@ function profilePayload() {
   return {
     ...store.profile,
     ...extras,
-    ...(welcomedAt !== undefined ? { welcomedAt } : {}),
+    welcomedAt: welcomedAt === undefined ? WELCOMED_LONG_AGO : welcomedAt,
   }
 }
 
