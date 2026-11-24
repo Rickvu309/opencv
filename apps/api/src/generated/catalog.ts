@@ -15,6 +15,9 @@ import { implementation as paper$export } from "../paper/operations/export/serve
 import { implementation as paper$import } from "../paper/operations/import/server.js"
 import { implementation as paper$nativeWord } from "../paper/operations/native-word/server.js"
 import { implementation as paper$read } from "../paper/operations/read/server.js"
+import { implementation as profile$markWelcomed } from "../account/operations/profile/mark-welcomed/server.js"
+import { implementation as profile$setPhoto } from "../account/operations/profile/set-photo/server.js"
+import { implementation as profile$update } from "../account/operations/profile/update/server.js"
 
 export const implementations = {
   "actions.approve": actions$approve,
@@ -32,4 +35,7 @@ export const implementations = {
   "paper.import": paper$import,
   "paper.nativeWord": paper$nativeWord,
   "paper.read": paper$read,
+  "profile.markWelcomed": profile$markWelcomed,
+  "profile.setPhoto": profile$setPhoto,
+  "profile.update": profile$update,
 } satisfies Implementations<typeof catalog>

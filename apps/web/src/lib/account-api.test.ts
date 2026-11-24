@@ -7,7 +7,32 @@ import {
   profileKey,
   usageKey,
 } from "./account-api.ts"
-import { runContractCommand } from "./contract-client.ts"
+import { catalogClient, runContractCommand } from "./contract-client.ts"
+
+const savedProfile = {
+  id: "u1",
+  name: "Ada",
+  email: "ada@example.com",
+  emailVerified: true,
+  image: null,
+  plan: "pro",
+  coachMode: "light",
+  language: "en",
+  timeZone: "UTC",
+  startPage: "apply",
+  notifyEmail: true,
+  notifyBrowser: false,
+  memoryEnabled: true,
+  agentChat: true,
+  agentCvs: true,
+  agentInterview: true,
+  agentEmail: true,
+  agentWeekly: false,
+  welcomedAt: null,
+  inboxSkippedAt: null,
+  createdAt: "2026-01-01T00:00:00.000Z",
+  updatedAt: "2026-01-01T00:00:00.000Z",
+}
 
 const isStale = (queryClient: QueryClient, key: readonly unknown[]) =>
   queryClient.getQueryState(key)?.isInvalidated
@@ -15,22 +40,19 @@ const isStale = (queryClient: QueryClient, key: readonly unknown[]) =>
 describe("account reads", () => {
   afterEach(() => vi.unstubAllGlobals())
 
-  it("refreshes the one profile key, billing and usage after a profile write", async () => {
+  it("refreshes the profile, billing, usage and every other older read after a profile write", async () => {
     const queryClient = new QueryClient()
     const keys = [profileKey(), billingKey(), usageKey(), integrationsKey()]
     for (const key of keys) queryClient.setQueryData(key, { seeded: true })
     vi.stubGlobal("fetch", async () =>
-      Response.json({ ok: true, data: { id: "u1" } })
+      Response.json({ ok: true, data: savedProfile })
     )
 
-    await runContractCommand(queryClient, "profile.update", {
+    await catalogClient.run(queryClient, "profile.update", {
       coachMode: "light",
     })
 
-    expect(isStale(queryClient, profileKey())).toBe(true)
-    expect(isStale(queryClient, billingKey())).toBe(true)
-    expect(isStale(queryClient, usageKey())).toBe(true)
-    expect(isStale(queryClient, integrationsKey())).toBe(false)
+    for (const key of keys) expect(isStale(queryClient, key)).toBe(true)
   })
 
   it("leaves the profile alone after a notify request", async () => {

@@ -30,7 +30,7 @@ type PaperEditBinding = Bindings<PaperContract>["paper.edit"]
 type Undo = OperationInput<(typeof catalog)["activity.undo"]>
 type ChatDelete = Bindings<ChatContract>["chat.delete"]
 type ChatRename = Bindings<ChatContract>["chat.rename"]
-type SetPhoto = CommandInput<AccountContract, "profile.setPhoto">
+type SetPhoto = z.output<(typeof catalog)["profile.setPhoto"]["input"]>
 type AccountDelete = Bindings<AccountContract>["account.delete"]
 type MarkDone = Bindings<InboxContract>["inbox.markDone"]
 

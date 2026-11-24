@@ -10,7 +10,7 @@ import {
 import userEvent from "@testing-library/user-event"
 
 import { DESKTOP_MEDIA_QUERY } from "@/lib/use-media-query.ts"
-import { runContractCommand } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import {
   getLastDelete,
@@ -356,7 +356,7 @@ describe("settings", () => {
       screen.queryByText("Free is included. Light and Max need Pro.")
     ).not.toBeInTheDocument()
     await expect(
-      runContractCommand(new QueryClient(), "profile.update", {
+      catalogClient.run(new QueryClient(), "profile.update", {
         coachMode: "light",
       })
     ).rejects.toMatchObject({

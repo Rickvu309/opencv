@@ -1,6 +1,7 @@
 import {
   queries,
   accountContract,
+  catalog,
   accountQueries,
   personActor,
 } from "@workspace/domain"
@@ -12,6 +13,15 @@ import { idempotency, user } from "../db/schema.js"
 import { saveFile } from "../paper/index.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "../install.js"
+
+const accountCommands = {
+  ...accountContract,
+  "profile.update": { output: catalog["profile.update"].publicResult },
+  "profile.markWelcomed": {
+    output: catalog["profile.markWelcomed"].publicResult,
+  },
+  "profile.setPhoto": { output: catalog["profile.setPhoto"].publicResult },
+}
 
 describe("an account binding that drifts from the account contract is rejected", () => {
   it("parses every account command output and every account read", async () => {
@@ -28,11 +38,11 @@ describe("an account binding that drifts from the account contract is rejected",
     await withDatabase(db, async () => {
       const seen = new Set<string>()
       const run = async (
-        name: keyof typeof accountContract,
+        name: keyof typeof accountCommands,
         input: unknown
       ) => {
         const result = await registry.execute({ name, input, actor: person })
-        const parsed = accountContract[name].output.safeParse(result.output)
+        const parsed = accountCommands[name].output.safeParse(result.output)
         expect(
           parsed.success,
           `${name}: ${JSON.stringify(parsed.error?.issues)}`
@@ -85,7 +95,7 @@ describe("an account binding that drifts from the account contract is rejected",
       await run("account.delete", { confirm: "DELETE" })
 
       expect([...seen].sort()).toEqual(
-        [...Object.keys(accountContract), ...Object.keys(accountQueries)].sort()
+        [...Object.keys(accountCommands), ...Object.keys(accountQueries)].sort()
       )
     })
     await client.close()
@@ -109,7 +119,7 @@ describe("an account binding that drifts from the account contract is rejected",
   it("lets the Coach run only notify.request without asking", () => {
     const registered = installRegistry().list().commands
     const coachOnly = registered
-      .filter((command) => command.name in accountContract)
+      .filter((command) => command.name in accountCommands)
       .filter((command) => command.coach !== "never")
       .map((command) => command.name)
     expect(coachOnly).toEqual(["notify.request"])

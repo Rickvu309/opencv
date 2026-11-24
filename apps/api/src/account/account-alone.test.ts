@@ -3,7 +3,11 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { withDatabase, type TestDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
+import { bindOperation } from "../registry/bind.js"
 import { Registry } from "../registry/registry.js"
+import { implementation as markWelcomed } from "./operations/profile/mark-welcomed/server.js"
+import { implementation as setPhoto } from "./operations/profile/set-photo/server.js"
+import { implementation as update } from "./operations/profile/update/server.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import {
   hostEmailChangeCode,
@@ -29,6 +33,9 @@ beforeAll(async () => {
   registry = new Registry()
   registerAccount(registry)
   registerAccountQueries(registry)
+  bindOperation(registry, update)
+  bindOperation(registry, markWelcomed)
+  bindOperation(registry, setPhoto)
 })
 
 afterAll(async () => {
@@ -98,9 +105,11 @@ describe("Account with nothing else registered", () => {
   })
 
   it("registers again on a second registry", () => {
-    const second = new Registry()
-    registerAccount(second)
-    registerAccount(second)
-    expect(second.list().commands.length).toBe(registry.list().commands.length)
+    const once = new Registry()
+    registerAccount(once)
+    const twice = new Registry()
+    registerAccount(twice)
+    registerAccount(twice)
+    expect(twice.list().commands.length).toBe(once.list().commands.length)
   })
 })

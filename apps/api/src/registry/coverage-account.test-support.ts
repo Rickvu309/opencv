@@ -2,6 +2,9 @@ import { parseUserId } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 
+import { implementation as markWelcomed } from "../account/operations/profile/mark-welcomed/server.js"
+import { implementation as setPhoto } from "../account/operations/profile/set-photo/server.js"
+import { implementation as update } from "../account/operations/profile/update/server.js"
 import { notifyRequests, user } from "../db/schema.js"
 import { saveFile } from "../paper/index.js"
 import {
@@ -15,7 +18,7 @@ export function accountCases(tools: CoverageTools): CoverageCase[] {
   const { ctx, db, run, profileOf, userId } = tools
   return [
     {
-      name: "profile.update",
+      name: update.operation.name,
       arrange: async () => {},
       act: () => run("profile.update", { agentCvs: false }),
       assert: async () => {
@@ -23,7 +26,7 @@ export function accountCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "profile.setPhoto",
+      name: setPhoto.operation.name,
       arrange: async () => {
         const file = await saveFile({
           userId: parseUserId(userId),
@@ -40,7 +43,7 @@ export function accountCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "profile.markWelcomed",
+      name: markWelcomed.operation.name,
       arrange: async () => {},
       act: () => run("profile.markWelcomed", {}),
       assert: async (result) => {

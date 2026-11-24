@@ -3,14 +3,10 @@ import { z } from "zod"
 import {
   accountDeleteInputSchema,
   accountRequestEmailChangeInputSchema,
-  languageSchema,
   notifyRequestInputSchema,
   notifyTopicSchema,
   planSchema,
-  profileMarkWelcomedInputSchema,
-  profileSetPhotoInputSchema,
-  profileUpdateInputSchema,
-  startPageSchema,
+  profileSchema,
 } from "./account.js"
 import { coachModeSchema } from "./coach.js"
 import {
@@ -22,35 +18,6 @@ import {
 import type { QueryRef } from "./queries.js"
 
 const emptyInput = z.object({}).strict()
-
-const profileSchema = z
-  .object({
-    id: z.string(),
-    name: z.string(),
-    email: z.string(),
-    emailVerified: z.boolean(),
-    image: z.string().nullable(),
-    plan: planSchema,
-    coachMode: coachModeSchema,
-    language: languageSchema,
-    timeZone: z.string(),
-    startPage: startPageSchema,
-    notifyEmail: z.boolean(),
-    notifyBrowser: z.boolean(),
-    memoryEnabled: z.boolean(),
-    agentChat: z.boolean(),
-    agentCvs: z.boolean(),
-    agentInterview: z.boolean(),
-    agentEmail: z.boolean(),
-    agentWeekly: z.boolean(),
-    welcomedAt: z.string().datetime().nullable(),
-    inboxSkippedAt: z.string().datetime().nullable(),
-    createdAt: z.string().datetime(),
-    updatedAt: z.string().datetime(),
-  })
-  .strict()
-
-export type Profile = z.output<typeof profileSchema>
 
 const cappedWindowSchema = z.discriminatedUnion("capped", [
   z
@@ -165,45 +132,9 @@ export const accountQueries = queryContract({
   }),
 })
 
-const profileChanged = (): QueryRef[] => [
-  { query: "profile.get" },
-  { query: "billing.get" },
-  { query: "coach.usage" },
-]
-
 const nothingChanged = (): QueryRef[] => []
 
 export const accountContract = commandContract({
-  "profile.update": commandEntry({
-    description: "Update profile, plan mode, and agent settings.",
-    input: profileUpdateInputSchema,
-    output: profileSchema,
-    idempotency: "none",
-    coach: "never",
-    destructive: false,
-    step: () => "Update profile",
-    invalidates: profileChanged,
-  }),
-  "profile.markWelcomed": commandEntry({
-    description: "Record that the welcome screen finished.",
-    input: profileMarkWelcomedInputSchema,
-    output: profileSchema,
-    idempotency: "none",
-    coach: "never",
-    destructive: false,
-    step: () => "Mark welcomed",
-    invalidates: profileChanged,
-  }),
-  "profile.setPhoto": commandEntry({
-    description: "Set the profile photo from an uploaded file.",
-    input: profileSetPhotoInputSchema,
-    output: profileSchema,
-    idempotency: "none",
-    coach: "never",
-    destructive: false,
-    step: () => "Set photo",
-    invalidates: profileChanged,
-  }),
   "account.requestEmailChange": commandEntry({
     description: "Ask for a code to change the sign-in email.",
     input: accountRequestEmailChangeInputSchema,

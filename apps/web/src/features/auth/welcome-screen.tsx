@@ -4,7 +4,8 @@ import { Spinner } from "@workspace/ui/components/spinner"
 
 import { Mark } from "@workspace/ui/components/brand"
 
-import { useRunCommand } from "@/lib/contract-client.ts"
+import { useQueryClient } from "@tanstack/react-query"
+import { catalogClient } from "@/lib/contract-client.ts"
 import { ignoreRejection } from "@/lib/quiet-rejection.ts"
 
 import { AUTH_COPY, LANGUAGE_STORAGE_KEY, readLanguage } from "./auth-copy.ts"
@@ -17,7 +18,7 @@ function prefersReducedMotion() {
 }
 
 export function WelcomeScreen({ onDone }: { onDone: () => void }) {
-  const runCommand = useRunCommand()
+  const queryClient = useQueryClient()
   const [coachReady, markCoachReady] = useReducer(() => true, false)
 
   useEffect(() => {
@@ -29,7 +30,7 @@ export function WelcomeScreen({ onDone }: { onDone: () => void }) {
       const language = readLanguage()
       if (language === "vi") {
         await ignoreRejection(
-          runCommand("profile.update", { language: "vi" }),
+          catalogClient.run(queryClient, "profile.update", { language: "vi" }),
           "welcomeLanguagePostMayFail"
         )
         sessionStorage.removeItem(LANGUAGE_STORAGE_KEY)
@@ -46,7 +47,7 @@ export function WelcomeScreen({ onDone }: { onDone: () => void }) {
       if (cancelled) return
       markCoachReady()
       await ignoreRejection(
-        runCommand("profile.markWelcomed", {}),
+        catalogClient.run(queryClient, "profile.markWelcomed", {}),
         "welcomeRetriesOnNextLoad"
       )
       if (!cancelled) onDone()
@@ -57,7 +58,7 @@ export function WelcomeScreen({ onDone }: { onDone: () => void }) {
       cancelled = true
       window.clearTimeout(holdTimer)
     }
-  }, [onDone, runCommand])
+  }, [onDone, queryClient])
 
   return (
     <main
