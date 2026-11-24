@@ -22,7 +22,7 @@ import {
   user,
 } from "../db/schema.js"
 import { createId } from "../platform/id.js"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import type { Registry } from "../registry/registry.js"
 import { inputHash } from "./task-store.js"
 import { resolveTurnGrounding } from "./context.js"

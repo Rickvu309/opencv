@@ -39,12 +39,11 @@ import { authUnavailableEnvelope } from "./platform/envelope.js"
 import { createHealthRoutes } from "./health.js"
 import { createInboxRoutes } from "./inbox/index.js"
 import { createJobRoutes, type FetchJobPosting } from "./job/index.js"
+import { currentSession, requireSession } from "./middleware.js"
 import {
   handleApiError,
   notFoundEnvelopeResponse,
-  currentSession,
-  requireSession,
-} from "./middleware.js"
+} from "./platform/error-reply.js"
 import { authMailConfigured } from "./mail/auth-code.js"
 import {
   oauthClientLimit,

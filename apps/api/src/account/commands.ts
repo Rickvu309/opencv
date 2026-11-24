@@ -11,7 +11,7 @@ import { getDb } from "../db/context.js"
 import { files, notifyRequests } from "../db/schema.js"
 import { createId } from "../platform/id.js"
 import { bindCommands } from "../registry/bind.js"
-import { CommandError, isUniqueViolation } from "../registry/errors.js"
+import { CommandError, isUniqueViolation } from "../platform/errors.js"
 import type { Registry } from "../registry/registry.js"
 import {
   sendEmailChangeCode,

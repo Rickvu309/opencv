@@ -223,7 +223,7 @@ const DOOR_IMPORTS = new Set([
   "../middleware.js",
   "../platform/origin.js",
   "../registry/delegate-policy.js",
-  "../registry/errors.js",
+  "../platform/errors.js",
   "./agent-tool-error.js",
   "./oauth.js",
   "./call-store.js",

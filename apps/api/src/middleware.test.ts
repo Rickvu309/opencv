@@ -5,11 +5,11 @@ import { describe, expect, it, vi } from "vitest"
 import type { Auth } from "./auth.js"
 import type { AppDatabase } from "./db/context.js"
 import { CommandError } from "./platform/errors.js"
+import { requireSession } from "./middleware.js"
 import {
   handleApiError,
   notFoundEnvelopeResponse,
-  requireSession,
-} from "./middleware.js"
+} from "./platform/error-reply.js"
 import type { SignedInVariables } from "./platform/signed-in.js"
 
 const db = {} as AppDatabase

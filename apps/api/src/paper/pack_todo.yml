@@ -1,7 +1,0 @@
-apps/api/src:
-  apps/api/src/middleware.ts:
-    violations:
-      - dependency
-      - layer
-    files:
-      - apps/api/src/paper/package-http.ts

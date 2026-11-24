@@ -6,7 +6,7 @@ import {
   nativePaperDocumentSchema,
 } from "@workspace/domain"
 import { expect, it, vi } from "vitest"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import { Registry } from "../registry/registry.js"
 import { resolveTurnGrounding } from "./context.js"
 import { coachTurnContext } from "./instructions.js"

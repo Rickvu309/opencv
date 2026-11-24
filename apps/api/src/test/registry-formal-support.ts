@@ -20,7 +20,7 @@ import {
   user,
 } from "../db/schema.js"
 import { createMigratedTestDb } from "./harness.js"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import { installRegistry } from "../install.js"
 import {} from "../registry/registry.js"
 

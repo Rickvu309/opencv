@@ -7,7 +7,7 @@ import {
   type CoachFocusDoc,
 } from "@workspace/domain"
 
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import type { Registry } from "../registry/registry.js"
 
 type ContextItem = {

@@ -1,7 +1,7 @@
 import { ERROR_CODES } from "@workspace/domain"
 
 import { paperEditBasisMessage } from "../registry/paper-agent.js"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 
 export const AGENT_RATE_LIMIT_MESSAGE =
   "Agent tool call rate limit reached. Try again in 60 seconds."
