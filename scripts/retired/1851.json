@@ -38,5 +38,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 7
+  },
+  {
+    "subject": "scripts/ocv-tools/rules/completeness.test.mjs",
+    "because": "The owner decided on 2026-11-24 to delete the claim lease first and add it back only if needed. In the last 500 issues one claim was taken over and three were given back, and a second take of the same issue on this machine is refused because its task folder exists.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
   }
 ]
