@@ -1,7 +1,8 @@
 import { readFileSync, readdirSync, statSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
-import { isTable } from "drizzle-orm"
+import { getTableName, isTable } from "drizzle-orm"
+import { getTableConfig, type PgTable } from "drizzle-orm/pg-core"
 import { describe, expect, it } from "vitest"
 
 import config from "../../vitest.config.js"
@@ -125,5 +126,93 @@ describe("a table write from outside the owning module's directory is rejected",
     expect(
       filesUnder(srcRoot).some((file) => file.endsWith("contract.type-test.ts"))
     ).toBe(true)
+  })
+})
+
+const contextOfWriter: Record<string, string> = {
+  account: "Account",
+  "auth-email-limit.ts": "Account",
+  registry: "Control",
+  paper: "Paper",
+  job: "Apply",
+  inbox: "Inbox",
+  chat: "Coach",
+  coach: "Coach",
+  connections: "Agents",
+}
+
+const linksBetweenContexts: Record<string, string[]> = {
+  "Agents to Account": [
+    "oauthRefreshToken.session_id -> session",
+    "oauthAccessToken.session_id -> session",
+  ],
+  "Apply to Paper": [
+    "jobs.cv_doc_id -> paperDocs",
+    "jobs.letter_doc_id -> paperDocs",
+    "jobs.cv_package_id -> paperPackageHeads",
+    "jobs.letter_package_id -> paperPackageHeads",
+  ],
+  "Inbox to Apply": ["inboxThreads.job_id -> jobs"],
+  "Control to Coach": [
+    "pendingActions.chat_id -> chats",
+    "pendingActions.coach_task_id -> coachTasks",
+    "pendingActions.turn_id -> coachUsage",
+    "activity.turn_id -> coachUsage",
+  ],
+  "Control to Agents": [
+    "pendingActions.delegate_connection_id -> agentConnections",
+  ],
+  "Coach to Control": [
+    "toolIntents.proposal_id -> pendingActions",
+    "toolIntents.activity_id -> activity",
+  ],
+}
+
+function contextOf(table: string) {
+  const writer = writersOfTable[table]?.[0]
+  return writer ? contextOfWriter[writer] : undefined
+}
+
+describe("a database link from one context's table to another context's table is named", () => {
+  const tables = Object.entries(schema).filter(([, value]) => isTable(value))
+  const schemaNameOf = new Map(
+    tables.map(([name, value]) => [getTableName(value as PgTable), name])
+  )
+
+  it("gives every table a context", () => {
+    expect(
+      tables.map(([name]) => name).filter((name) => !contextOf(name)),
+      "A table's first writer in `writersOfTable` has no row in `contextOfWriter` in ownership.test.ts. Add the writer with its context."
+    ).toEqual([])
+  })
+
+  it("lists every link that crosses two contexts, and the list cannot grow", () => {
+    const found: Record<string, string[]> = {}
+    for (const [name, value] of tables) {
+      for (const key of getTableConfig(value as PgTable).foreignKeys) {
+        const reference = key.reference()
+        const target = schemaNameOf.get(getTableName(reference.foreignTable))
+        if (!target || target === "user") continue
+        const from = contextOf(name)
+        const to = contextOf(target)
+        if (from === to) continue
+        const columns = reference.columns.map((column) => column.name).join("+")
+        ;(found[`${from} to ${to}`] ??= []).push(
+          `${name}.${columns} -> ${target}`
+        )
+      }
+    }
+    const sorted = (links: Record<string, string[]>) =>
+      Object.entries(links)
+        .flatMap(([between, each]) => each.map((link) => `${between}: ${link}`))
+        .sort()
+    expect(
+      sorted(found),
+      "A table points at a table another context owns. A context owns its tables: keep the other context's id as a plain column and reach its data through its operations. If the link must exist, name it in `linksBetweenContexts` in ownership.test.ts. Links to the person are allowed."
+    ).toEqual(sorted(linksBetweenContexts))
+    expect(
+      sorted(linksBetweenContexts).length,
+      "`linksBetweenContexts` in ownership.test.ts only shrinks. Remove a link before adding one."
+    ).toBeLessThanOrEqual(14)
   })
 })
