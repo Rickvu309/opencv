@@ -107,7 +107,7 @@ describe("a Paper started blank", () => {
     expect(listed.map((paper) => paper.id)).toEqual([older.id])
   })
 
-  it.fails("can be copied (#1815)", async () => {
+  it.fails("can be copied (#1819)", async () => {
     const ada = await world.person("Ada")
     const cv = await blank(ada, "cv", "Marketing CV")
     const copy = await ada.run("paper.duplicate", { docId: cv.id, writer })
@@ -126,7 +126,7 @@ describe("a Paper started blank", () => {
     expect(dataOf<{ status: string }>(ready).status).toBe("ready")
   })
 
-  it.fails("can be restored after it is deleted (#1815)", async () => {
+  it.fails("can be restored after it is deleted (#1819)", async () => {
     const ada = await world.person("Ada")
     const cv = await blank(ada, "cv", "Marketing CV")
     await ada.run("paper.delete", { docId: cv.id })
