@@ -175,7 +175,7 @@ function migrationWorld(tag, fixtureName, over = {}) {
 const autoAsks = (f) =>
   f.effects("gh", "pr merge").filter((e) => e.args.includes("--auto"))
 
-test("an ordinary PR is queued with auto-merge", () => {
+test("an ordinary PR gets auto-merge", () => {
   const f = fixture({ autoOn: true, changed: ["apps/web/src/lib/jobs.ts"] })
   const r = finish(f)
   assert.equal(r.code, 0, r.text)
@@ -192,7 +192,7 @@ test("an ordinary PR is queued with auto-merge", () => {
   ])
   assert.match(
     r.text,
-    /Auto-merge is on: GitHub queues base-1 when ci is green/
+    /Auto-merge is on: GitHub merges base-1 when ci is green/
   )
   assert.match(r.text, /why 91/)
 })

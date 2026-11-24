@@ -47,10 +47,7 @@ export const MOMENTS = Object.freeze({
   retire:
     "The retire verb, once it has read what the branch weakens and run the replacement test's flip proof.",
   pr: "The live pull request, read by the policy check in ci and by the merge verb.",
-  merge: "The merge verb, before it enqueues the pull request.",
-  "merge-result":
-    "The merge verb, once it knows whether the branch merges with main and the merged tree passes.",
-  queue: "The merge verb, while it waits on the merge queue.",
+  merge: "The merge verb, before it merges the pull request.",
 })
 
 export const RUNNERS = Object.freeze({
@@ -77,8 +74,6 @@ export const RUNNERS = Object.freeze({
   retire: ["scripts/ocv-tools/jobs/retire.mjs"],
   pr: ["scripts/ocv-tools/jobs/policy.mjs", "scripts/ocv-tools/jobs/merge.mjs"],
   merge: ["scripts/ocv-tools/jobs/merge.mjs"],
-  "merge-result": ["scripts/ocv-tools/jobs/merge.mjs"],
-  queue: ["scripts/ocv-tools/jobs/merge.mjs"],
 })
 
 const [notATask, ...workspaceRest] = workspaceRows

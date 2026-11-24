@@ -7,7 +7,7 @@ import { hasReceipt, passLines, receiptPath } from "./affected-tests.mjs"
 import { throwPushFailure } from "../push-failure.mjs"
 import { Refused } from "../result.mjs"
 import { retiredLines } from "../rules/protected.mjs"
-import { enqueue } from "./merge.mjs"
+import { autoMergeWhenGreen } from "./merge.mjs"
 import {
   recorded,
   task,
@@ -53,7 +53,7 @@ function autoMerge(ctx, n) {
   const head = git(ctx, "rev-parse", "HEAD")
   let asked
   try {
-    asked = enqueue(ctx, n, head, { allowMigrations: [] })
+    asked = autoMergeWhenGreen(ctx, n, head, { allowMigrations: [] })
   } catch (error) {
     if (!(error instanceof Refused)) throw error
     return {
@@ -62,10 +62,10 @@ function autoMerge(ctx, n) {
       next: error.fix ?? `scripts/ocv-tools.mjs policy ${n}`,
     }
   }
-  if (asked.queued === "auto")
+  if (asked.auto)
     return {
       lines: [
-        `Auto-merge is on: GitHub queues ${head} when ci is green here and merges it when ci is green on the merged tree. Hand back now; do not wait for ci.`,
+        `Auto-merge is on: GitHub merges ${head} when ci is green. Hand back now; do not wait for ci.`,
       ],
       next: `If ci turns red: scripts/ocv-tools.mjs why ${n}`,
     }

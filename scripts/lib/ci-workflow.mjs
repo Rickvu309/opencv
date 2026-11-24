@@ -11,18 +11,11 @@ const OWN = new Set([
   "scripts/lib/ci-workflow.mjs",
 ])
 
-const PR_EVENTS = new Set([
-  "pull_request",
-  "pull_request_target",
-  "merge_group",
-])
+const PR_EVENTS = new Set(["pull_request", "pull_request_target"])
 
 const REQUIRED = [
   [/^ {2}push:\n {4}branches: \[main\]$/m, "push to main trigger"],
-  [
-    /"\$GITHUB_EVENT_NAME" == merge_group \|\| "\$GITHUB_EVENT_NAME" == push/,
-    "every model on the merge queue and on main",
-  ],
+  [/"\$GITHUB_EVENT_NAME" == push/, "every model on main"],
   [
     /^ {2}TURBO_SCOPE: \$\{\{ github\.event_name == 'pull_request' && '--affected' \|\| '' \}\}$/m,
     "a full run outside pull requests",
@@ -97,12 +90,8 @@ export function modelChanges(changed, mapTexts) {
   return hits
 }
 
-export function policyChoice({ event, prNumber, queueRef }) {
-  let number = String(prNumber ?? "")
-  if (!number) {
-    const found = /\/pr-([0-9]+)-/.exec(String(queueRef ?? ""))
-    if (found) number = found[1]
-  }
+export function policyChoice({ event, prNumber }) {
+  const number = String(prNumber ?? "")
   if (number) return { kind: "run", number }
   if (PR_EVENTS.has(event)) return { kind: "fail", event }
   return { kind: "skip", event }
@@ -164,7 +153,6 @@ function policyCli() {
   const choice = policyChoice({
     event: process.env.GITHUB_EVENT_NAME ?? "",
     prNumber: process.env.PR_NUMBER ?? "",
-    queueRef: process.env.QUEUE_REF ?? "",
   })
   process.stdout.write(
     choice.kind === "run" ? `run:${choice.number}\n` : `${choice.kind}\n`

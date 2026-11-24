@@ -211,7 +211,7 @@ export const workspaceRows = [
   rule({
     id: "NO_PUSH_MAIN",
     section: "5",
-    says: "Nothing is pushed to main or deletes it; main changes only through the merge queue.",
+    says: "Nothing is pushed to main or deletes it; main changes only through a merged pull request.",
     at: ["push"],
     needs: ["push"],
     check: noPushMain,
@@ -287,7 +287,7 @@ export const workspaceRows = [
   rule({
     id: "NOT_MERGED",
     section: "6",
-    says: "Cleanup waits for the queue to merge.",
+    says: "Cleanup waits for the pull request to merge.",
     at: ["cleanup"],
     needs: ["work"],
     check: notMerged,

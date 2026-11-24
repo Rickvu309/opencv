@@ -40,7 +40,7 @@ export function fixture(over = {}) {
         head_sha: "head-1",
       },
     ],
-    queue: false,
+    mergeLater: false,
     closeWorks: true,
     ...over,
   }
@@ -68,16 +68,7 @@ export function fixture(over = {}) {
         if (a[0] === "status") return ok(s.dirty)
         if (a[0] === "rev-parse")
           return ok(a[1] === "HEAD^{tree}" ? s.tree : s.base)
-        if (a[0] === "rev-list" && a.at(-1).endsWith("..origin/main"))
-          return ok(String(s.behind ?? 0))
         if (a[0] === "rev-list") return ok("1")
-        if (a[0] === "merge-tree") {
-          const oid = "a".repeat(40)
-          return s.conflicts?.length
-            ? { ok: false, out: `${oid}\n${s.conflicts.join("\n")}`, err: "" }
-            : ok(oid)
-        }
-        if (a[0] === "commit-tree") return ok("c".repeat(40))
         if (a[0] === "worktree") return ok()
         if (a[0] === "ls-tree" && a.includes("--name-only"))
           return ok(
@@ -140,10 +131,6 @@ export function fixture(over = {}) {
       }
       if (cmd === "ln" || cmd === "rm") return ok()
       if (cmd === "stat") return ok("0")
-      if (cmd === "timeout")
-        return s.guardOutput
-          ? { ok: false, out: s.guardOutput, err: "" }
-          : ok("1 passed")
       if (cmd === "gh") {
         const pair = a.slice(0, 2).join(" ")
         if (pair === "pr list") return ok(s.existing)
@@ -161,57 +148,6 @@ export function fixture(over = {}) {
         if (pair === "pr diff") return ok(s.changed.join("\n"))
         if (pair === "repo view") return ok("Rickvu309/opencv")
         if (pair === "api user") return ok("owner")
-        if (pair === "api graphql") {
-          const p = s.pull
-          const inQueue =
-            s.inQueue ?? (Boolean(s.enqueued) && s.queue && p.state === "OPEN")
-          return ok({
-            data: {
-              repository: {
-                pullRequest: {
-                  state: p.state,
-                  headRefOid: p.headRefOid,
-                  mergeCommit: p.mergeCommit,
-                  isInMergeQueue: Boolean(inQueue),
-                  mergeQueueEntry: inQueue
-                    ? {
-                        state: s.queueState ?? "QUEUED",
-                        position: 1,
-                        headCommit: { oid: s.queuedHead ?? p.headRefOid },
-                      }
-                    : null,
-                  headRef: {
-                    target: {
-                      statusCheckRollup: {
-                        contexts: { nodes: s.rollup ?? [] },
-                      },
-                    },
-                  },
-                  timelineItems: {
-                    nodes: s.queueEvents
-                      ? s.queueEvents.map((e) =>
-                          e.kind === "added"
-                            ? {
-                                __typename: "AddedToMergeQueueEvent",
-                                createdAt: e.at,
-                              }
-                            : {
-                                __typename: "RemovedFromMergeQueueEvent",
-                                reason: e.reason,
-                                createdAt: e.at,
-                              }
-                        )
-                      : (s.removedEvents ?? []).map((e) => ({
-                          __typename: "RemovedFromMergeQueueEvent",
-                          reason: e.reason,
-                          createdAt: e.at,
-                        })),
-                  },
-                },
-              },
-            },
-          })
-        }
         if (a[0] === "api" && /check-runs\/\d+\/annotations/.test(a[1]))
           return ok(s.annotations ?? [])
         if (a[0] === "api" && /actions\/runs\/\d+\/jobs/.test(a[1]))
@@ -230,13 +166,11 @@ export function fixture(over = {}) {
         if (pair === "pr merge" && a.includes("--auto") && s.autoRefused)
           return { ok: false, out: "", err: s.autoRefused }
         if (pair === "pr merge" && a.includes("--auto") && s.autoOn) {
-          s.enqueued = true
           s.pull.autoMergeRequest = { mergeMethod: "SQUASH" }
           return ok()
         }
         if (pair === "pr merge") {
-          s.enqueued = true
-          if (!s.queue) {
+          if (!s.mergeLater) {
             s.pull.state = "MERGED"
             s.pull.mergeCommit = { oid: "merged-1" }
           }

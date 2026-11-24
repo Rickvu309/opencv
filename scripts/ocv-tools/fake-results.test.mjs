@@ -27,7 +27,7 @@ test("a shared literal result directory fires and a unique directory stays quiet
 })
 
 test("a completed merge cannot replace another fixture's pending receipt", () => {
-  const queued = fixture({ queue: true })
+  const queued = fixture({ mergeLater: true })
   assert.equal(queued.call("merge", "91").code, 0)
   const completed = fixture()
   assert.equal(completed.call("merge", "91").code, 0)

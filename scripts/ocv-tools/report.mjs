@@ -23,8 +23,8 @@ export const COMMANDS = [
   },
   {
     name: "merge",
-    usage: "merge <pr#> [--wait] [--allow-migration <tag,...>]",
-    when: "Require ci success on the head and enqueue a squash merge; --allow-migration adds the allow-migration:<tag> label. On a PR already on auto-merge it queues nothing: --wait only waits. With --wait it stays until the PR merges (or leaves the queue, or 45 minutes pass), then closes linked issues and removes the worktree and branch. If the PR is already queued or already merged, --wait skips the merged-tree check and reports what the queue did. Run it in the background after queuing. Run again later to confirm closure. Before it queues it says the merge deploys to production and names each migration, and it refuses a migration that does more than add unless --allow-migration names it. After the merge it prints the command that shows the live commit and schema version.",
+    usage: "merge <pr#> [--allow-migration <tag,...>]",
+    when: "Require ci success on the head and squash merge the PR, then close linked issues and remove the worktree and branch; --allow-migration adds the allow-migration:<tag> label. There is no merge queue: a PR on auto-merge merges by itself when ci is green, and on such a PR merge only says so until ci finishes. Run it again after an auto-merge to close the issue and clean up. Before it merges it says the merge deploys to production and names each migration, and it refuses a migration that does more than add unless --allow-migration names it. After the merge it prints the command that shows the live commit and schema version.",
   },
   {
     name: "why",

@@ -6,7 +6,6 @@ import test from "node:test"
 import { detect, canJudgeFolders } from "./lib/temp-run.mjs"
 import { failedGuards } from "./lib/test-failures.mjs"
 import { tempDir } from "./lib/temp-dir.mjs"
-import { fixture } from "./ocv-tools/jobs/fixture.mjs"
 
 const name = "protected branch rejects removed assertions"
 const message =
@@ -21,7 +20,7 @@ const cleanInner =
   innerHead +
   'test("protected branch rejects removed assertions", () => { assert.ok(true) })\n'
 
-test("an inner failure is named in the folder skip and merge refusal, while a clean run stays quiet", (t) => {
+test("an inner failure is named in the folder skip, while a clean run stays quiet", (t) => {
   const dir = tempDir(t, "temp-failure-")
   const file = join(dir, "inner.test.mjs")
   const { NODE_TEST_CONTEXT: _outer, ...env } = process.env
@@ -55,14 +54,6 @@ test("an inner failure is named in the folder skip and merge refusal, while a cl
       failures[0].startsWith(`${name}: AssertionError [ERR_ASSERTION]:`)
     )
     assert.ok(failures[0].includes(message), failures[0])
-    const f = fixture({ behind: 1, guardOutput: run.stdout })
-    const refusal = f.call("merge", "91")
-    assert.equal(refusal.code, 2, refusal.text)
-    assert.match(refusal.text, /MERGED_TREE_FAILS/)
-    assert.ok(refusal.text.includes(failures[0]), refusal.text)
-    assert.doesNotMatch(refusal.text, /leave no temporary folder behind/)
-    assert.equal(f.effects("gh", "pr merge").length, 0)
-    t.diagnostic(refusal.text)
   }
 })
 
