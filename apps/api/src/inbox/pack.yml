@@ -1,0 +1,10 @@
+layer: feature
+dependencies:
+  [
+    apps/api/src/account,
+    apps/api/src/coach,
+    apps/api/src/registry,
+    apps/api/src/db,
+    apps/api/src/limits,
+    apps/api/src/mail,
+  ]

@@ -72,6 +72,21 @@ test("an open production-red issue holds every PR but the revert; a closed one d
   assert.equal(merging.effects("gh", "pr merge").length, 0)
 })
 
+test("an open main-red issue holds every PR but the revert", () => {
+  const open = [{ number: 1700, state: "OPEN", labels: [{ name: "main-red" }] }]
+  const plain = fixture({ redIssues: open })
+  const refused = plain.call("policy", "91")
+  assert.equal(refused.code, 2)
+  assert.match(refused.text, /QUEUE_CLOSED: main is red \(#1700 open\)/)
+  const revert = fixture({ redIssues: open })
+  revert.s.pull.labels = [{ name: "production-red-revert" }]
+  assert.equal(revert.call("policy", "91").code, 0)
+  const asked = plain
+    .effects("gh", "issue list")
+    .map((e) => e.args[e.args.indexOf("--label") + 1])
+  assert.deepEqual(asked, ["production-red", "main-red"])
+})
+
 test("merge adds only requested migration allow labels, including for high-risk PRs", () => {
   const owner = fixture({ changed: [CI_FILE], issueLabels: ["risk:high"] })
   const r = owner.call("merge", "91")

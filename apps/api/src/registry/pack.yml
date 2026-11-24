@@ -1,0 +1,3 @@
+layer: kernel
+enforce_privacy: false
+dependencies: [apps/api/src/db, apps/api/src/limits]

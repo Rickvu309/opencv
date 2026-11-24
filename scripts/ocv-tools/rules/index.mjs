@@ -13,7 +13,7 @@ export {
   LABELS,
   allowMigrationLabel,
   allowedMigrationTags,
-  openProductionRed,
+  openRedIssues,
   mergeGateFiles,
   ownerBecause,
 } from "./merge-gate.mjs"

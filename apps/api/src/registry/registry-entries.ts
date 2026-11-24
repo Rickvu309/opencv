@@ -263,7 +263,20 @@ export class RegistryEntries extends CatalogPublication {
         return parsed.success ? spec.step(parsed.data) : spec.name
       },
       read: async (raw, actor) => spec.read(parseInput(spec.input, raw), actor),
+      ...(spec.visitor
+        ? {
+            visitor: async (raw: unknown) =>
+              spec.visitor?.(parseInput(spec.input, raw)),
+          }
+        : {}),
     })
+  }
+
+  async readAsVisitor(name: string, input: unknown) {
+    const query = this.queries.get(name)
+    if (!query?.visitor)
+      throw new CommandError(ERROR_CODES.FORBIDDEN, "Sign in to read this")
+    return query.visitor(input)
   }
 
   list() {

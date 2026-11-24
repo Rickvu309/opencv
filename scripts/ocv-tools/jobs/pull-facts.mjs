@@ -8,24 +8,28 @@ import { branchVerdict, recordedProtectedFacts } from "./protected-facts.mjs"
 export const PR_FIELDS =
   "number,url,state,title,body,author,isDraft,labels,headRefOid,headRefName,baseRefName,mergeCommit,closingIssuesReferences,autoMergeRequest"
 
-export function productionRedIssues(ctx) {
-  return json(
-    ctx,
-    "issue",
-    "list",
-    "--label",
-    LABELS.productionRed,
-    "--state",
-    "open",
-    "--json",
-    "number,state,labels",
-    "--limit",
-    "20"
-  ).map((issue) => ({
-    number: issue.number,
-    state: issue.state,
-    labels: (issue.labels ?? []).map((label) => label.name),
-  }))
+export function redIssues(ctx) {
+  const found = new Map()
+  for (const label of [LABELS.productionRed, LABELS.mainRed])
+    for (const issue of json(
+      ctx,
+      "issue",
+      "list",
+      "--label",
+      label,
+      "--state",
+      "open",
+      "--json",
+      "number,state,labels",
+      "--limit",
+      "20"
+    ))
+      found.set(issue.number, {
+        number: issue.number,
+        state: issue.state,
+        labels: (issue.labels ?? []).map((item) => item.name),
+      })
+  return [...found.values()]
 }
 
 const generated = (out) =>
@@ -215,7 +219,7 @@ export function pullFacts(ctx, n) {
       head,
       allowedMigrationTags(shaped.labels)
     ),
-    issues: productionRedIssues(ctx),
+    issues: redIssues(ctx),
     protected: recordedProtectedFacts(ctx, "origin/main", head),
   }
 }

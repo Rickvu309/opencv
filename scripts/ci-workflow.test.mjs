@@ -36,6 +36,27 @@ test("ci.yml runs for the merge queue", () => {
   assert.match(text.slice(0, jobsAt), /^ {2}pull_request:/m)
 })
 
+test("ci.yml runs in full on every push to main", () => {
+  assert.match(text.slice(0, jobsAt), /^ {2}push:\n {4}branches: \[main\]$/m)
+  assert.match(
+    text.slice(0, jobsAt),
+    /^ {2}TURBO_SCOPE: \$\{\{ github\.event_name == 'pull_request' && '--affected' \|\| '' \}\}$/m
+  )
+  assert.match(
+    text.slice(0, jobsAt),
+    /cancel-in-progress: \$\{\{ github\.event_name == 'pull_request' \}\}/
+  )
+})
+
+const afterCi = (name) => /^ {4}needs: ci$/m.test(section(name))
+
+test("only the approval and the main-red report run after ci", () => {
+  assert.deepEqual(jobNames.filter(afterCi).sort(), [
+    "approve-railway",
+    "main-red",
+  ])
+})
+
 test("ci waits on every other job and always runs", () => {
   const ci = section("ci")
   const needs = /^ {4}needs:\s*\[([^\]]*)\]/m.exec(ci)
@@ -44,7 +65,7 @@ test("ci waits on every other job and always runs", () => {
     .split(",")
     .map((name) => name.trim())
     .filter(Boolean)
-  const others = jobNames.filter((name) => name !== "ci")
+  const others = jobNames.filter((name) => name !== "ci" && !afterCi(name))
   assert.deepEqual([...listed].sort(), [...others].sort())
   assert.match(ci, /^ {4}if:\s*\$\{\{\s*always\(\)\s*\}\}/m)
 })
@@ -225,6 +246,32 @@ test("the merge queue always runs the model check", (t) => {
   })
   assert.equal(run.status, 0, run.stderr)
   assert.equal(readFileSync(out, "utf8").trim(), "run=true")
+})
+
+test("a push to main always runs the model check", (t) => {
+  const out = join(tempDir(t, "formal-gate-"), "output")
+  const run = bash(runBody(section("formal-tla")), {
+    GITHUB_EVENT_NAME: "push",
+    GITHUB_OUTPUT: out,
+  })
+  assert.equal(run.status, 0, run.stderr)
+  assert.equal(readFileSync(out, "utf8").trim(), "run=true")
+})
+
+test("a workflow that skips models or narrows the run on main fires", () => {
+  const narrowed = text
+    .replace(/^ {2}push:\n {4}branches: \[main\]\n/m, "")
+    .replace(' || "$GITHUB_EVENT_NAME" == push', "")
+    .replace(
+      "github.event_name == 'pull_request' && '--affected'",
+      "'--affected'"
+    )
+  const hits = formalDetect(narrowed, ".github/workflows/ci.yml")
+  assert.deepEqual(hits, [
+    "push to main trigger is missing",
+    "every model on the merge queue and on main is missing",
+    "a full run outside pull requests is missing",
+  ])
 })
 
 test("policy skips an event with no pull request and fails a pull request event with no number", () => {

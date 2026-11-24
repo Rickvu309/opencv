@@ -7,6 +7,7 @@ import {
   createMigratedTestDb,
   createTestApp,
   signUp,
+  testWebOrigin,
 } from "../test/harness.js"
 
 type TestAppOptions = Parameters<typeof createTestApp>[1]
@@ -91,5 +92,37 @@ export async function openWorld(options?: TestAppOptions) {
     }
   }
 
-  return { person, close: () => client.close() }
+  function visitor() {
+    return {
+      get: async (path: string): Promise<Reply> => {
+        const res = await app.request(path, {
+          headers: { Origin: testWebOrigin },
+        })
+        const body = (await res.json()) as {
+          ok: boolean
+          data?: unknown
+          error?: Failure
+        }
+        return {
+          status: res.status,
+          ok: body.ok,
+          data: body.data,
+          error: body.error ?? null,
+        }
+      },
+      post: (path: string, body: unknown) =>
+        app.request(path, {
+          method: "POST",
+          headers: {
+            Origin: testWebOrigin,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(body),
+        }),
+      ask: (name: string, input: unknown) =>
+        withDatabase(db, () => registry.readAsVisitor(name, input)),
+    }
+  }
+
+  return { person, visitor, close: () => client.close() }
 }

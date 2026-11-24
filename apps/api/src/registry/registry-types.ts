@@ -44,6 +44,7 @@ export type StoredQuery = {
   input: ZodType
   step: (input: unknown) => string
   read: (input: unknown, actor: Actor) => Promise<unknown>
+  visitor?: (input: unknown) => Promise<unknown>
 }
 
 export type ToolEntry = {

@@ -4,6 +4,8 @@ on:
   pull_request:
   merge_group:
     types: [checks_requested]
+  push:
+    branches: [main]
 
 concurrency:
   group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || github.sha }}
@@ -133,7 +135,7 @@ jobs:
       - name: Does this change touch a formal model
         id: gate
         run: |
-          if [[ "$GITHUB_EVENT_NAME" == merge_group ]]; then
+          if [[ "$GITHUB_EVENT_NAME" == merge_group || "$GITHUB_EVENT_NAME" == push ]]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -238,3 +240,47 @@ jobs:
           NEEDS: ${{ toJSON(needs) }}
         run: |
           node -e 'const needs = JSON.parse(process.env.NEEDS); const failures = Object.entries(needs).filter(([, job]) => job.result !== "success"); if (failures.length) { console.error(failures.map(([name, job]) => `${name}: ${job.result}`).join("\n")); process.exit(1); }'
+
+  approve-railway:
+    needs: ci
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.ci.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      GITHUB_TOKEN: ${{ github.token }}
+      GITHUB_REPOSITORY: ${{ github.repository }}
+      GITHUB_SHA: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/approve-railway-deploys.mjs
+
+  main-red:
+    needs: ci
+    if: ${{ always() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      CI_RESULT: ${{ needs.ci.result }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node scripts/main-red.mjs
