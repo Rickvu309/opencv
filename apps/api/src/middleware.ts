@@ -12,7 +12,7 @@ import { withRequestHeaders, type Auth } from "./auth.js"
 import { withDatabase, type AppDatabase } from "./db/context.js"
 import { jsonWithStatus } from "./platform/http-json.js"
 import type { SignedIn } from "./platform/signed-in.js"
-import { CommandError } from "./registry/errors.js"
+import { CommandError } from "./platform/errors.js"
 import { readSession } from "./session.js"
 
 async function sessionOrRefusal(

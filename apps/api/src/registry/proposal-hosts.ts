@@ -1,7 +1,7 @@
 import { ERROR_CODES, type CoachActor } from "@workspace/domain"
 
 import type { pendingActions } from "../db/schema.js"
-import { CommandError } from "./errors.js"
+import { CommandError } from "../platform/errors.js"
 
 type Proposal = typeof pendingActions.$inferSelect
 

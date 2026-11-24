@@ -10,7 +10,7 @@ import {
 import { CatalogPublication } from "./catalog-publication.js"
 import { coachRefusal, REFUSAL_MESSAGES } from "./coach-policy.js"
 import { delegateAllowed } from "./delegate-policy.js"
-import { CommandError } from "./errors.js"
+import { CommandError } from "../platform/errors.js"
 import {
   paperAgentRefusal,
   paperEditBasisMessage,

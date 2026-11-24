@@ -3,7 +3,7 @@ import { and, eq } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
 import { activity } from "../db/schema.js"
-import { CommandError } from "./errors.js"
+import { CommandError } from "../platform/errors.js"
 
 export async function lockActivity(userId: string, id: string) {
   const rows = await getDb()
