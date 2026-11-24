@@ -1,0 +1,13 @@
+{
+  "id": "ci-setup-on-main",
+  "file": "scripts/ci-setup-on-main.test.mjs",
+  "detector": {
+    "module": "scripts/lib/ci-setup-on-main.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "f27b8d9a2c2b7a66d143273af20ff338c1e5ed01",
+    "path": ".github/actions/setup/action.yml"
+  }
+}
