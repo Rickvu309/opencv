@@ -1,17 +1,11 @@
-import { holderLine } from "./claim-marker.mjs"
 import { riskOf } from "./facts.mjs"
 import { RISK_LABELS, TYPES } from "./fields.mjs"
 import { EXIT, exitText } from "./result.mjs"
-import { decide, refusalError, RULES } from "./rules/index.mjs"
+import { RULES } from "./rules/index.mjs"
 
 export { riskOf }
 
 export const COMMANDS = [
-  {
-    name: "friction",
-    usage: "friction --since <iso> [--until <iso>] [--json]",
-    when: "Measure weekly friction from origin/main committer dates, merged PRs and ci.yml runs in an inclusive window. Fetches origin/main and reads GitHub; never changes product state. With --until the report uses no wall clock; without it the end is now. JSON has metric rows, targets, evidence and explicit reasons for metrics that cannot be measured from these sources. Requires git and authenticated gh; use smaller windows if a GitHub search reaches 1000 results.",
-  },
   {
     name: "finish",
     usage: "finish --body-file <file> [-d <description>] [--draft] [--dry-run]",
@@ -63,11 +57,6 @@ export const COMMANDS = [
     when: 'Write a new issue from answers and label it risk:*. The only place plain words are checked. Optional: --type, --could-go-wrong (required when risk is high), --questions, --out-of-scope, --details. --dry-run shows the writing guide and model issues and creates nothing. --body-file <f> replaces the field flags. Refused if a required part is missing or the plain sections use backticks, file names, more than 6 "Done when" lines or vague "Done when" lines. Every missing flag is named in one message with a command to copy. Jargon, sentences over 20 words and a reading grade above 8 print a warning and the issue is still filed. A title may use CI, PR and API.',
   },
   {
-    name: "status",
-    usage: "status <n>",
-    when: "See where one issue stands: state, risk, branch, worktree, pull request, and the next step.",
-  },
-  {
     name: "take",
     usage:
       "take <n | title> [-d <words>] [--type <t>] [--resume] [--no-install] [--no-assign] [--take]",
@@ -87,11 +76,6 @@ export const COMMANDS = [
     name: "cleanup",
     usage: "cleanup [<n>] [--all] [--dry-run] [--force]",
     when: "After the merge: remove the worktree and branch and list what was removed. Refused while there is unsaved work or the pull request is not merged. Without <n> it uses the current worktree; --all handles every finished worktree, --dry-run only lists, --force also removes unsaved work.",
-  },
-  {
-    name: "board",
-    usage: "board [--json]",
-    when: "List every open issue with its risk, claim holder, idle minutes, pull request and checks. Groups: open and free, taken (live), idle (past 180 minutes) and in review (pull request open). Checks are the latest ci run on the open pull request. --json prints those groups.",
   },
   {
     name: "shot",
@@ -162,32 +146,6 @@ export function worktreeFor(ctx, n) {
     worktree: hit?.path ?? null,
     branch: hit?.branch ?? null,
     prefix,
-  }
-}
-
-export function status(ctx, n) {
-  const loaded = ctx.facts.load(Number(n), ["issue", "claim", "local", "pr"])
-  const { issue, claim } = loaded
-  const { worktree, branch } = loaded.local
-  const pr = loaded.pr.current
-  const { risk } = issue
-  const lines = [
-    `#${n} ${issue.title}`,
-    `State: ${issue.state.toLowerCase()}`,
-    `Risk: ${risk ?? "none (no risk label)"}`,
-    `Branch: ${branch ?? "none"}${worktree ? ` (worktree ${worktree})` : ""}`,
-    holderLine(claim),
-    `Pull request: ${pr ? `#${pr.number} ${pr.state.toLowerCase()}${pr.isDraft ? " (draft)" : ""}` : "none"}`,
-  ]
-  const verdict = decide("status", {
-    issue,
-    pr: loaded.pr,
-    report: lines.join("\n"),
-  })
-  if (!verdict.ok) throw refusalError(verdict.refusals[0])
-  return {
-    lines,
-    next: nextStep({ n, worktree, branch, pr }),
   }
 }
 

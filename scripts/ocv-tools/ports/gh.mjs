@@ -176,22 +176,6 @@ export function ghAdapter(run) {
     }
   }
 
-  function checkRuns(sha) {
-    const out = gh(
-      "api",
-      "--method",
-      "GET",
-      `repos/{owner}/{repo}/commits/${sha}/check-runs`,
-      "-f",
-      "check_name=ci",
-      "-f",
-      "filter=latest",
-      "-f",
-      "per_page=10"
-    )
-    return JSON.parse(out).check_runs ?? []
-  }
-
   function issue(n) {
     const view = JSON.parse(gh("repo", "view", "--json", "owner,name"))
     const serverNow = readServerNow({ run })
@@ -376,7 +360,6 @@ export function ghAdapter(run) {
       return run("gh", ["auth", "status"]).ok
     },
     openBoard,
-    checkRuns,
     releaseView(tag) {
       return run("gh", ["release", "view", tag]).ok
     },

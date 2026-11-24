@@ -8,11 +8,10 @@ import { slugify } from "./worktree.mjs"
 import { release } from "./claim.mjs"
 import { take } from "./take.mjs"
 import { TAKE_SWITCHES, file } from "./issue.mjs"
-import { COMMANDS, doctor, renderHelp, status } from "./report.mjs"
+import { COMMANDS, doctor, renderHelp } from "./report.mjs"
 import { rulesJob } from "./rules/command.mjs"
 import { cleanup, save } from "./work.mjs"
 import { shot } from "./shot.mjs"
-import { board } from "./board.mjs"
 import { brief } from "./brief.mjs"
 import { block, done } from "./done.mjs"
 import { replaceBody } from "./jobs/body.mjs"
@@ -25,7 +24,6 @@ import { policyReport } from "./jobs/policy.mjs"
 import { why } from "./jobs/why.mjs"
 import { retire } from "./jobs/retire.mjs"
 import { pullFacts } from "./jobs/pull-facts.mjs"
-import { friction } from "./jobs/friction.mjs"
 
 export function realCtx() {
   const ports = realPorts()
@@ -65,8 +63,6 @@ const VALUED = new Set([
   "--replaced-by",
   "--base",
   "--head",
-  "--since",
-  "--until",
   ...TEMPLATE_FIELDS.map((f) => f.flag),
 ])
 
@@ -206,8 +202,6 @@ function command(ctx, cmd, rest) {
     }
   const { flags, pos } = parseArgs(rest)
   switch (cmd) {
-    case "friction":
-      return friction(ctx, { flags, pos })
     case undefined:
     case "--help":
     case "-h":
@@ -215,8 +209,6 @@ function command(ctx, cmd, rest) {
       return { lines: [renderHelp()], next: "scripts/ocv-tools.mjs doctor" }
     case "file":
       return file(ctx, { flags })
-    case "status":
-      return status(ctx, issueNumber(pos[0], "status <n>"))
     case "take": {
       const parsed = parseTakeArgs(rest)
       guardTake(parsed.flags, parsed.pos)
@@ -327,12 +319,6 @@ function command(ctx, cmd, rest) {
           "usage: ocv-tools hook <commit-msg|pre-commit|pre-push>"
         )
       return hook(ctx, pos[0], pos.slice(1))
-    }
-    case "board": {
-      const unknown = Object.keys(flags).find((key) => key !== "--json")
-      if (unknown) unknownOption(unknown)
-      if (pos.length) throw new Error("usage: ocv-tools board [--json]")
-      return board(ctx, { json: Boolean(flags["--json"]) })
     }
     case "brief":
       return brief(ctx, issueNumber(pos[0], "brief <issue> --role <role>"), {

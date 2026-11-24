@@ -212,6 +212,6 @@ export function shot(ctx, { files = [], flags = {} } = {}) {
     next:
       target.kind === "pr"
         ? `Pictures are on pull request #${target.n}. Run: scripts/review-pr.sh ${target.n}`
-        : `Pictures are on #${target.n}. Run: scripts/ocv-tools.mjs status ${target.n}`,
+        : `Pictures are on #${target.n}. Run: gh issue view ${target.n}`,
   }
 }

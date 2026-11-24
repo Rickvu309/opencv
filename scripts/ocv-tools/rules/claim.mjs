@@ -188,7 +188,7 @@ export const issueRows = [
     id: "CLOSED",
     section: "1",
     says: "A closed issue is not a task, unless its pull request is already merged.",
-    at: ["take", "status", "finish"],
+    at: ["take", "finish"],
     needs: ["issue"],
     stop: true,
     check: closed,

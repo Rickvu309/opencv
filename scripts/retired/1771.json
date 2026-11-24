@@ -1,0 +1,50 @@
+[
+  {
+    "subject": "scripts/ocv-tools/board.test.mjs",
+    "because": "the command is removed; board ran 3 times in 183 sessions",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 22
+  },
+  {
+    "subject": "scripts/ocv-tools/friction.test.mjs",
+    "because": "the command is removed; friction ran 2 times in 183 sessions",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 12
+  },
+  {
+    "subject": "scripts/ocv-tools/cli.test.mjs",
+    "because": "the command is removed; status ran 3 times in 183 sessions",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "scripts/ocv-tools/claim.test.mjs",
+    "because": "the command is removed; status ran 3 times in 183 sessions, and its claim line helper went with it",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "scripts/ocv-tools/ports/gh.test.mjs",
+    "because": "the command is removed; board ran 3 times in 183 sessions, and its check run read went with it",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "scripts/ocv-tools/rules.test.mjs",
+    "because": "the command is removed; status ran 3 times in 183 sessions, so the fix line now points at gh issue view",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
