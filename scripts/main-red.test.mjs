@@ -68,7 +68,7 @@ test("a red run on main opens one main-red issue with the commit, the run and th
       `node scripts/production-revert\\.mjs ${RED} --good ${PARENT} --apply`
     )
   )
-  assert.doesNotMatch(body, /[·—]/)
+  assert.doesNotMatch(body, /[\u00b7\u2014]/)
 })
 
 test("a second red run comments on the open issue instead of opening another", () => {

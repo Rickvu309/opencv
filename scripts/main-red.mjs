@@ -68,6 +68,7 @@ function liveIo() {
   const run = (command, args) =>
     execFileSync(command, args, {
       encoding: "utf8",
+      timeout: 60_000,
       stdio: ["ignore", "pipe", "pipe"],
     })
   return {

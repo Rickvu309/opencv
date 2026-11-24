@@ -1,0 +1,6 @@
+{
+  "id": "main-red",
+  "file": "scripts/main-red.test.mjs",
+  "historic": null,
+  "reason": "a new report: main had no full run after the merge before this change, so no red main was ever reported or missed; the test drives the report through fake gh and git calls and pins its ci job"
+}
