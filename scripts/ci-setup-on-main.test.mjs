@@ -57,7 +57,7 @@ function checkout(t) {
   writeFileSync(join(remote, "a.txt"), "a\n")
   git(remote, "add", "-A")
   git(remote, "commit", "--quiet", "-m", "a")
-  git(dir, "clone", "--quiet", remote, "work")
+  git(dir, "clone", "--quiet", "--no-hardlinks", remote, "work")
   const work = join(dir, "work")
   return {
     work,
