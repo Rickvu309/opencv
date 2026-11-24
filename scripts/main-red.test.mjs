@@ -1,7 +1,13 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
-import { main, mainRedActions, redCommits, redReport } from "./main-red.mjs"
+import {
+  main,
+  mainRedActions,
+  redCommits,
+  redReport,
+  rerunCommand,
+} from "./main-red.mjs"
 
 const RED = "a".repeat(40)
 const PARENT = "b".repeat(40)
@@ -138,6 +144,17 @@ test("a cancelled run and a green run with nothing open change nothing", () => {
   assert.deepEqual(
     calls.map((call) => call.slice(0, 3).join(" ")),
     ["gh issue list"]
+  )
+})
+
+test("the report names the command that runs the failed jobs again", () => {
+  assert.equal(rerunCommand({ runUrl: RUN }), "gh run rerun 7 --failed")
+  assert.equal(rerunCommand({ runUrl: "" }), null)
+  const text = redReport({ sha: RED, parent: PARENT, runUrl: RUN })
+  assert.match(text, /^gh run rerun 7 --failed$/m)
+  assert.doesNotMatch(
+    redReport({ sha: RED, parent: PARENT, runUrl: "" }),
+    /gh run rerun/
   )
 })
 

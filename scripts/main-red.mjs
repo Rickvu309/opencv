@@ -18,7 +18,13 @@ export function revertCommand({ sha, parent }) {
   return `node scripts/production-revert.mjs ${sha} --good ${parent} --apply`
 }
 
+export function rerunCommand({ runUrl }) {
+  const run = /\/actions\/runs\/(\d+)/.exec(String(runUrl ?? ""))?.[1]
+  return run ? `gh run rerun ${run} --failed` : null
+}
+
 export function redReport({ sha, parent, runUrl }) {
+  const rerun = rerunCommand({ runUrl })
   return [
     `The full ci run on main failed after ${sha}. Until main is green again, only a pull request labeled ${LABELS.productionRedRevert} merges, and production keeps the last green commit.`,
     "",
@@ -32,6 +38,16 @@ export function redReport({ sha, parent, runUrl }) {
     revertCommand({ sha, parent }),
     "```",
     "",
+    ...(rerun
+      ? [
+          "If the failure does not come from this commit, run the failed jobs again. A green second attempt closes this issue and approves the deploy:",
+          "",
+          "```",
+          rerun,
+          "```",
+          "",
+        ]
+      : []),
     "The next green run on main that contains every red commit named here closes this issue.",
   ].join("\n")
 }
