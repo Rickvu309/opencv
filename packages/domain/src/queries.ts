@@ -4,7 +4,7 @@ import { catalog } from "./catalog.js"
 
 import { queryContract, queryEntry } from "./contract.js"
 import { accountQueries } from "./account-contract.js"
-import { chatDetailSchema, chatListSchema } from "./chat-contract.js"
+import { chatDetailSchema, chatListSchema } from "./chat-views.js"
 import { chatIdSchema } from "./ids.js"
 import { inboxQueries } from "./inbox-contract.js"
 import { jobQueries } from "./job-contract.js"
