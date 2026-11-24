@@ -486,7 +486,7 @@ test("variant messages stay the ones the jobs print", () => {
   )
   assert.equal(
     evaluate("BRANCH_EXISTS", { branch: bothTips, issue: { n: 90 } }).fix,
-    "Someone is already working on it. Run: scripts/ocv-tools.mjs status <n>"
+    "Someone is already working on it. Run: gh issue view <n> --comments"
   )
   assert.equal(
     evaluate("BRANCH_EXISTS", {

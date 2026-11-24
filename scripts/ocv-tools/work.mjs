@@ -65,7 +65,7 @@ function lostPushed(ctx, t, holder) {
   return {
     exit: EXIT.lost,
     lines,
-    fix: `The commits are already on origin/${t.branch}. ${who} holds #${t.n}. Stop working in this worktree and do not edit the claim. Run: scripts/ocv-tools.mjs status ${t.n}`,
+    fix: `The commits are already on origin/${t.branch}. ${who} holds #${t.n}. Stop working in this worktree and do not edit the claim. Run: gh issue view ${t.n} --comments`,
   }
 }
 

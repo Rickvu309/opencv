@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import { claimMarker, releaseMarker } from "./claim-marker.mjs"
 import { runCli } from "./cli.mjs"
-import { blockerMarker, blockerOf } from "./done.mjs"
+import { blockerMarker, blockerOf, prFor } from "./done.mjs"
 import { NOW, ctxFor, fakePorts, issue, minutesAgo, pr } from "./ports/fake.mjs"
 
 const ROOT = "/tmp/opencv.worktrees"
@@ -43,6 +43,23 @@ function runner(over) {
   const call = (...args) => runCli(args, ctxFor(ports))
   return { ports, call }
 }
+
+test("prFor picks the open pull request of the issue's own branch", () => {
+  assert.equal(
+    prFor([{ number: 1, state: "OPEN", headRefName: "feat/900-x" }], 90),
+    null
+  )
+  assert.equal(
+    prFor(
+      [
+        { number: 3, state: "CLOSED", headRefName: "feat/90-x" },
+        { number: 2, state: "OPEN", headRefName: "feat/90-x" },
+      ],
+      90
+    ).number,
+    2
+  )
+})
 
 test("done exits 1 while this agent has an open pull request", () => {
   const { code, text } = runner().call("done")

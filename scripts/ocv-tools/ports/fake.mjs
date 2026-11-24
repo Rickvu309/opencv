@@ -103,7 +103,6 @@ export function fakePorts(world = {}) {
     releaseAssets: structuredClone(world.releaseAssets ?? {}),
     uploadErr: world.uploadErr ?? null,
     nameWithOwner: world.nameWithOwner ?? null,
-    checks: { ...(world.checks ?? {}) },
     listening: new Set(world.listening ?? []),
     assignOk: world.assignOk !== false,
     notRepo: Boolean(world.notRepo),
@@ -354,9 +353,6 @@ export function fakePorts(world = {}) {
         issues,
         pulls,
       }
-    },
-    checkRuns(sha) {
-      return state.checks[sha] ?? []
     },
     releaseView(tag) {
       effect("releaseView", { tag })

@@ -4,7 +4,6 @@ import { runCli } from "./cli.mjs"
 import { heartbeat } from "./claim.mjs"
 import {
   claimMarker,
-  holderLine,
   holderOf,
   parseMarker,
   releaseMarker,
@@ -49,8 +48,7 @@ test("markers round trip and the newest marker decides the holder", () => {
     Date.parse(minutesAgo(0))
   )
   assert.equal(taken.agent, "a2")
-  assert.match(holderLine(taken), /held by a2, last saved 10 min ago/)
-  assert.match(holderLine({ state: "none" }), /none/)
+  assert.equal(taken.idleMinutes, 10)
 })
 
 test("take refuses a pull request number, a closed issue and a live claim by another agent", () => {
@@ -234,22 +232,10 @@ test("a cut-off claim history is refused instead of looking unclaimed", () => {
     ["stuck", /cursor/],
   ]) {
     const { ctx } = run({ history })
-    const r = runCli(["status", "90"], ctx)
+    const r = runCli(["take", "90"], ctx)
     assert.equal(r.code, 2, r.text)
     assert.match(r.text, /REFUSED UNKNOWN/)
     assert.match(r.text, pattern)
     assert.match(r.text, /\nFix: /)
-    assert.doesNotMatch(r.text, /Claim: none/)
   }
-})
-
-test("status shows the claim holder and its idle minutes", () => {
-  const { ports, ctx } = run({
-    issues: [issue(90, { comments: [claim("a1", 42)] })],
-  })
-  assert.match(
-    runCli(["status", "90"], ctx).text,
-    /Claim: held by a1, last saved 42 min ago/
-  )
-  assert.equal(ports.counts.issue, 1)
 })

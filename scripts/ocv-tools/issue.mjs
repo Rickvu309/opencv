@@ -158,7 +158,7 @@ export function file(ctx, { flags, verb = "file" }) {
   if (open)
     return {
       lines: [`ALREADY FILED: #${open.number} has this title and is open.`],
-      next: `scripts/ocv-tools.mjs status ${open.number}`,
+      next: `scripts/ocv-tools.mjs take ${open.number}`,
     }
 
   const bodyPath = ctx.writeScratch(`issue-body-${process.pid}.md`, body)

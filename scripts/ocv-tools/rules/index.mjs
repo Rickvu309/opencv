@@ -9,7 +9,6 @@ import { commitRows } from "./commits.mjs"
 import { protectedRows } from "./protected.mjs"
 
 export { issueKind, jobRows }
-export { countedSourceFiles } from "./diff.mjs"
 export {
   LABELS,
   allowMigrationLabel,
@@ -37,7 +36,6 @@ export const MOMENTS = Object.freeze({
   save: "Saving work in a task worktree.",
   release: "Giving back a claim on an issue.",
   cleanup: "Removing a task worktree and its branch after the merge.",
-  status: "Reporting a task's state.",
   shot: "Attaching pictures as evidence, once the files are read.",
   "shot-target":
     "Attaching pictures, once the issue or pull request they go to is read.",
@@ -70,7 +68,6 @@ export const RUNNERS = Object.freeze({
   save: ["scripts/ocv-tools/work.mjs"],
   release: ["scripts/ocv-tools/claim.mjs"],
   cleanup: ["scripts/ocv-tools/work.mjs"],
-  status: ["scripts/ocv-tools/report.mjs"],
   shot: ["scripts/ocv-tools/shot.mjs"],
   "shot-target": ["scripts/ocv-tools/shot.mjs"],
   authoring: ["scripts/ocv-tools/authoring.mjs"],

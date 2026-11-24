@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import test from "node:test"
 import { isMissingFlagValue, runCli } from "./cli.mjs"
 import { nextStep } from "./report.mjs"
-import { ctxFor, fakePorts, issue, pr } from "./ports/fake.mjs"
+import { ctxFor, fakePorts, issue } from "./ports/fake.mjs"
 
 function run(over = {}, extra = {}) {
   const ports = fakePorts({ ...over, ...extra })
@@ -54,7 +54,7 @@ test("take refuses bad arguments before any git or gh call", () => {
 test("help lists the jobs and ends with Next", () => {
   const { code, text } = runCli(["help"], run().ctx)
   assert.equal(code, 0)
-  for (const word of ["file", "status", "doctor", "UNKNOWN_COMMAND", "LOST"])
+  for (const word of ["file", "take", "doctor", "UNKNOWN_COMMAND", "LOST"])
     assert.ok(text.includes(word), word)
   assert.match(text, /\nNext: /)
 })
@@ -251,79 +251,6 @@ test("file lints a --body-file too", () => {
   )
   assert.equal(code, 2)
   assert.match(text, /UNREADABLE/)
-})
-
-test("status of a high-risk issue does not ask for approval", () => {
-  const { code, text } = runCli(
-    ["status", "90"],
-    run({
-      owner: "quanvu309",
-      issues: [
-        issue(90, {
-          title: "fix: Stop two emails",
-          labels: ["fix", "risk:high"],
-          createdAt: "2026-10-29T10:00:00Z",
-        }),
-      ],
-    }).ctx
-  )
-  assert.equal(code, 0)
-  assert.match(text, /Risk: high/)
-  assert.doesNotMatch(text, /Approval:/)
-  assert.match(text, /Next: scripts\/ocv-tools\.mjs take 90/)
-})
-
-test("status shows branch, worktree and an open draft PR", () => {
-  const { ports, ctx } = run({
-    issues: [
-      issue(90, {
-        title: "fix: Stop two emails",
-        labels: ["fix", "risk:low"],
-      }),
-    ],
-    worktrees: [
-      {
-        path: "/home/quan/projects/opencv.worktrees/90-two-emails",
-        branch: "fix/90-two-emails",
-      },
-    ],
-    prs: [
-      pr(95, { isDraft: true, head: "fix/90-two-emails" }),
-      pr(12, { head: "fix/900-other" }),
-    ],
-  })
-  const { text } = runCli(["status", "90"], ctx)
-  assert.match(text, /Risk: low/)
-  assert.doesNotMatch(text, /Approval:/)
-  assert.match(
-    text,
-    /Branch: fix\/90-two-emails \(worktree \/home\/quan\/projects\/opencv\.worktrees\/90-two-emails\)/
-  )
-  assert.match(text, /Pull request: #95 open \(draft\)/)
-  assert.match(
-    text,
-    /Next: gh pr ready 95, then scripts\/ocv-tools\.mjs merge 95 once ci is green/
-  )
-  assert.equal(ports.counts.issue, 1)
-  assert.equal(ports.counts.worktrees, 1)
-  assert.equal(ports.counts.prs, 1)
-  assert.equal(ports.counts.remoteHeads, 0)
-})
-
-test("status refuses a pull request number and a closed issue", () => {
-  const a = runCli(["status", "91"], run().ctx)
-  assert.equal(a.code, 2)
-  assert.match(a.text, /REFUSED NOT_AN_ISSUE/)
-  const closed = runCli(
-    ["status", "90"],
-    run({
-      issues: [issue(90, { title: "fix: Stop two emails", state: "CLOSED" })],
-    }).ctx
-  )
-  assert.equal(closed.code, 2)
-  assert.match(closed.text, /REFUSED CLOSED/)
-  assert.match(closed.text, /\nFix: /)
-  assert.equal(runCli(["status"], run().ctx).code, 1)
 })
 
 test("nextStep covers merged, branch-only and nothing started", () => {

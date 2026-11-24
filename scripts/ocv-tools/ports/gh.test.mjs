@@ -185,12 +185,10 @@ test("every GraphQL query with comments requests lastEditedAt", () => {
   for (const query of commentQueries) assert.match(query, /lastEditedAt/)
 })
 
-test("shot releases and check runs use the flags GitHub requires", () => {
+test("shot releases use the flags GitHub requires", () => {
   const calls = []
   const run = (cmd, args) => {
     calls.push(`${cmd} ${args.join(" ")}`)
-    if (args.some((arg) => String(arg).includes("check-runs")))
-      return { ok: true, out: '{"check_runs":[]}', err: "" }
     return { ok: true, out: "", err: "" }
   }
   const gh = ghAdapter(run)
@@ -202,7 +200,6 @@ test("shot releases and check runs use the flags GitHub requires", () => {
   })
   gh.releaseUpload("screenshots", ["/tmp/a.png"])
   gh.releaseUpload("screenshots-2", ["/tmp/b.png"], { clobber: false })
-  gh.checkRuns("abc")
   assert.equal(gh.viewIssue(90), true)
   assert.equal(gh.viewPr(12), true)
   const create = calls.find((c) => c.includes("release create"))
@@ -217,11 +214,6 @@ test("shot releases and check runs use the flags GitHub requires", () => {
       .includes("--clobber"),
     false
   )
-  const checks = calls.find((c) => c.includes("check-runs"))
-  assert.match(checks, /--method GET/)
-  assert.match(checks, /check_name=ci/)
-  assert.match(checks, /filter=latest/)
-  assert.match(checks, /commits\/abc\/check-runs/)
 })
 
 test("editComment returns the PATCH updated_at", () => {

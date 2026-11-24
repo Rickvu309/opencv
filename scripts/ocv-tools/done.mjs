@@ -1,7 +1,6 @@
 import { join } from "node:path"
 import { holderOf, oneLine } from "./claim-marker.mjs"
 import { agentIdFor, envOf, nowOf } from "./claim.mjs"
-import { prFor } from "./board.mjs"
 import { TYPES } from "./fields.mjs"
 import { EXIT } from "./result.mjs"
 import { nextStep } from "./report.mjs"
@@ -40,6 +39,18 @@ export function blockerOf(comments, { me, serverNow }) {
 }
 
 const TASK_BRANCH = new RegExp(`^(?:${TYPES.join("|")})/(\\d+)-`)
+
+export function prFor(prs, n) {
+  const prefix = new RegExp(`^(?:${TYPES.join("|")})/${n}-`)
+  const mine = (prs ?? []).filter((pr) =>
+    prefix.test(String(pr.headRefName ?? ""))
+  )
+  return (
+    mine.find((pr) => String(pr.state).toUpperCase() === "OPEN") ??
+    mine[0] ??
+    null
+  )
+}
 
 function whoAmI(ctx) {
   let gitDir = null

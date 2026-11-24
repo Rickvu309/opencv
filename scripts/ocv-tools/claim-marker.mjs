@@ -54,13 +54,3 @@ export function holderOf(comments, now) {
     state: idleMinutes < CLAIM_IDLE_MINUTES ? "live" : "idle",
   }
 }
-
-export function holderLine(h) {
-  if (h.state === "none") return "Claim: none"
-  if (h.state === "released")
-    return `Claim: released by ${h.agent}${h.reason ? ` (${h.reason})` : ""}`
-  const idle = Number.isFinite(h.idleMinutes) ? h.idleMinutes : "?"
-  return h.state === "live"
-    ? `Claim: held by ${h.agent}, last saved ${idle} min ago (taken over after ${CLAIM_IDLE_MINUTES})`
-    : `Claim: ${h.agent}, idle ${idle} min, can be taken over`
-}

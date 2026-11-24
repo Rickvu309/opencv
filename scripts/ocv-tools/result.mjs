@@ -70,25 +70,25 @@ export const FIXES = {
     "That number is not an issue (it may be a pull request). Run: gh issue list",
   CLOSED: "The issue is closed. Run: gh issue list, and pick another.",
   MISSING_FIELDS: "Pass the missing flags. Run: scripts/ocv-tools.mjs help",
-  HELD: "Pick another issue, or wait until the holder has been idle for 180 minutes. Run: scripts/ocv-tools.mjs status <n>",
+  HELD: "Pick another issue, or wait until the holder has been idle for 180 minutes. Run: gh issue view <n> --comments",
   WORKTREE_EXISTS:
-    "Work in that worktree, or finish it. Run: scripts/ocv-tools.mjs status <n>",
+    "Work in that worktree, or finish it. Run: gh issue view <n> --comments",
   READY_FOR_HUMAN:
     "Pick another issue: gh issue list --search 'no:assignee -label:ready-for-human'",
   ASSIGNED: "Pick another issue, or pass --take if the owner agreed.",
   BRANCH_EXISTS:
-    "Someone is already working on it. Run: scripts/ocv-tools.mjs status <n>",
+    "Someone is already working on it. Run: gh issue view <n> --comments",
   DISK: "Free space: scripts/ocv-tools.mjs cleanup --all --dry-run lists finished worktrees to remove.",
   NOT_A_REPO: "Run this inside the opencv repository.",
   NOT_A_TASK:
     "Run this from inside a task worktree (../opencv.worktrees/<n>-...), or pass the issue number.",
   NO_WORKTREE: "Nothing to remove. Run: git worktree list",
   NOT_OWNER:
-    "Only the agent that holds the issue can release it. Run: scripts/ocv-tools.mjs status <n>",
+    "Only the agent that holds the issue can release it. Run: gh issue view <n> --comments",
   DIRTY:
     'Save first: scripts/ocv-tools.mjs save -m "<what you did>", then run cleanup again.',
   NOT_MERGED:
-    "Cleanup waits for the queue to merge; the issue closes then. Run: scripts/ocv-tools.mjs status <n>",
+    "Cleanup waits for the queue to merge; the issue closes then. Run: gh issue view <n> --comments",
   UNKNOWN_FLAG: "That flag is not supported. Run: scripts/ocv-tools.mjs help",
   BAD_ARGS:
     "Pass one target: an issue number or a title, not both. Run: scripts/ocv-tools.mjs help",
