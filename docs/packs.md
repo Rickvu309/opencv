@@ -101,6 +101,7 @@ flowchart TD
   p_apps_web_src --> p_apps_web_src_features_settings
   p_apps_web_src --> p_apps_web_src_lib
   p_apps_web_src --> p_apps_web_src_components
+  p_apps_web_src_components --> p_apps_web_src_lib
   p_apps_web_src_features_app_shell --> p_apps_web_src_features_apply
   p_apps_web_src_features_app_shell --> p_apps_web_src_features_auth
   p_apps_web_src_features_app_shell --> p_apps_web_src_features_coach
@@ -158,18 +159,18 @@ flowchart TD
 | `apps/api/src/paper` | feature | index.ts | apps/api/src/registry, apps/api/src/db, apps/api/src/limits | none |
 | `apps/api/src/registry` | kernel | none | apps/api/src/db, apps/api/src/limits | none |
 | `apps/web/src` | app | none | apps/web/src/features/app-shell, apps/web/src/features/apply, apps/web/src/features/auth, apps/web/src/features/coach, apps/web/src/features/coming-soon, apps/web/src/features/command-palette, apps/web/src/features/connections, apps/web/src/features/inbox, apps/web/src/features/landing, apps/web/src/features/paper, apps/web/src/features/paper-page, apps/web/src/features/seed, apps/web/src/features/settings, apps/web/src/lib, apps/web/src/components | none |
-| `apps/web/src/components` | platform | none | none | none |
-| `apps/web/src/features/app-shell` | shell | none | apps/web/src/features/apply, apps/web/src/features/auth, apps/web/src/features/coach, apps/web/src/features/command-palette, apps/web/src/features/inbox, apps/web/src/features/paper, apps/web/src/features/seed, apps/web/src/lib, apps/web/src/components | none |
-| `apps/web/src/features/apply` | feature | none | apps/web/src/lib, apps/web/src/components | none |
-| `apps/web/src/features/auth` | feature | none | apps/web/src/lib, apps/web/src/components | none |
-| `apps/web/src/features/coach` | feature | none | apps/web/src/lib, apps/web/src/components | none |
-| `apps/web/src/features/coming-soon` | feature | none | apps/web/src/lib, apps/web/src/components | none |
-| `apps/web/src/features/command-palette` | feature | none | apps/web/src/lib, apps/web/src/components | none |
+| `apps/web/src/components` | platform | none | apps/web/src/lib | none |
+| `apps/web/src/features/app-shell` | shell | app-shell-layout.tsx | apps/web/src/features/apply, apps/web/src/features/auth, apps/web/src/features/coach, apps/web/src/features/command-palette, apps/web/src/features/inbox, apps/web/src/features/paper, apps/web/src/features/seed, apps/web/src/lib, apps/web/src/components | none |
+| `apps/web/src/features/apply` | feature | apply-api.ts, apply-board-empty.tsx, apply-board.tsx, apply-calendar.tsx, apply-job-detail.tsx, apply-list.tsx, apply-new-job-dialog.tsx, apply-next-up-strip.tsx, apply-peek.tsx, apply-search.ts, apply-stages.ts, apply-toolbar.tsx | apps/web/src/lib, apps/web/src/components | none |
+| `apps/web/src/features/auth` | feature | code-input.tsx, session-check-notice.tsx, shell-overlays.tsx, sign-in-screen.tsx | apps/web/src/lib, apps/web/src/components | none |
+| `apps/web/src/features/coach` | feature | chat-api.ts, chat-store-context.ts, chat-store.tsx, coach-markdown.ts, coach-panel-chat-report.tsx, coach-panel.tsx, coach-workspace.tsx, use-chat-store.ts | apps/web/src/lib, apps/web/src/components | none |
+| `apps/web/src/features/coming-soon` | feature | pages.tsx | apps/web/src/lib, apps/web/src/components | none |
+| `apps/web/src/features/command-palette` | feature | command-palette.tsx, shell-chat.ts | apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/features/connections` | feature | index.ts | apps/web/src/lib, apps/web/src/components | none |
-| `apps/web/src/features/inbox` | feature | none | apps/web/src/features/apply, apps/web/src/lib, apps/web/src/components | none |
-| `apps/web/src/features/landing` | feature | none | apps/web/src/lib, apps/web/src/components | none |
-| `apps/web/src/features/paper` | feature | none | apps/web/src/features/apply, apps/web/src/features/coach, apps/web/src/features/paper-page, apps/web/src/features/seed, apps/web/src/lib, apps/web/src/components | none |
-| `apps/web/src/features/paper-page` | feature | none | apps/web/src/lib, apps/web/src/components | none |
-| `apps/web/src/features/seed` | feature | none | apps/web/src/lib, apps/web/src/components | none |
-| `apps/web/src/features/settings` | feature | none | apps/web/src/features/auth, apps/web/src/features/connections, apps/web/src/lib, apps/web/src/components | none |
+| `apps/web/src/features/inbox` | feature | inbox-api.ts, inbox-page.tsx | apps/web/src/features/apply, apps/web/src/lib, apps/web/src/components | none |
+| `apps/web/src/features/landing` | feature | about/about-page.tsx, blog/blog-copy.ts, blog/blog-index.tsx, blog/blog-post.tsx, help/help-page.tsx, landing-page.tsx, landing-pricing.tsx, landing-stories-page.tsx | apps/web/src/lib, apps/web/src/components | none |
+| `apps/web/src/features/paper` | feature | paper-api.ts, paper-cv-editor.tsx, paper-letter.tsx, paper-library.tsx, paper-share-page.tsx, paper-templates.ts, rich-page.tsx, writing-page.tsx | apps/web/src/features/apply, apps/web/src/features/coach, apps/web/src/features/paper-page, apps/web/src/features/seed, apps/web/src/lib, apps/web/src/components | none |
+| `apps/web/src/features/paper-page` | feature | canvas-draw.ts, canvas-edit.ts, canvas-look.ts, canvas-save.ts, canvas.css, canvas.tsx, document-chrome.tsx, package-read.ts, page-diff.ts | apps/web/src/lib, apps/web/src/components | none |
+| `apps/web/src/features/seed` | feature | sample-author.ts | apps/web/src/lib, apps/web/src/components | none |
+| `apps/web/src/features/settings` | feature | account-section.tsx, billing-section.tsx, coach-section.tsx, integrations-section.tsx, preferences-section.tsx, sections.ts, settings-api.ts, settings-layout.tsx, settings-nav.tsx, usage-section.tsx | apps/web/src/features/auth, apps/web/src/features/connections, apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/lib` | platform | none | none | none |

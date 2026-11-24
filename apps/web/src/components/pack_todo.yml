@@ -3,7 +3,6 @@ apps/web/src/features/app-shell:
     violations:
       - dependency
       - layer
-      - privacy
     files:
       - apps/web/src/components/not-found-page.tsx
 apps/web/src/features/coach:
@@ -11,23 +10,6 @@ apps/web/src/features/coach:
     violations:
       - dependency
       - layer
-      - privacy
     files:
       - apps/web/src/components/ai-elements/response-block.tsx
       - apps/web/src/components/ai-elements/response.tsx
-apps/web/src/lib:
-  apps/web/src/lib/account-api.ts:
-    violations:
-      - dependency
-    files:
-      - apps/web/src/components/not-found-page.tsx
-  apps/web/src/lib/auth-client.ts:
-    violations:
-      - dependency
-    files:
-      - apps/web/src/components/not-found-page.tsx
-  apps/web/src/lib/product-paths.ts:
-    violations:
-      - dependency
-    files:
-      - apps/web/src/components/not-found-page.tsx

@@ -1,2 +1,11 @@
 layer: feature
 dependencies: [apps/web/src/lib, apps/web/src/components]
+public:
+  - about/about-page.tsx
+  - blog/blog-copy.ts
+  - blog/blog-index.tsx
+  - blog/blog-post.tsx
+  - help/help-page.tsx
+  - landing-page.tsx
+  - landing-pricing.tsx
+  - landing-stories-page.tsx

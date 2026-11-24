@@ -1,2 +1,5 @@
 layer: feature
 dependencies: [apps/web/src/lib, apps/web/src/components]
+public:
+  - command-palette.tsx
+  - shell-chat.ts

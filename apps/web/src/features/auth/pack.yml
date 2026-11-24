@@ -1,2 +1,7 @@
 layer: feature
 dependencies: [apps/web/src/lib, apps/web/src/components]
+public:
+  - code-input.tsx
+  - session-check-notice.tsx
+  - shell-overlays.tsx
+  - sign-in-screen.tsx
