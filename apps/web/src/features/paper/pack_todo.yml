@@ -1,0 +1,82 @@
+apps/web/src/features/apply:
+  apps/web/src/features/apply/apply-api.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/paper/paper-letter-start.tsx
+      - apps/web/src/features/paper/paper-library.tsx
+apps/web/src/features/coach:
+  apps/web/src/features/coach/chat-api.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/paper/paper-cv-editor.tsx
+      - apps/web/src/features/paper/rich-selection-bubble.tsx
+  apps/web/src/features/coach/chat-store-context.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/paper/paper-letter-start-page.tsx
+  apps/web/src/features/coach/use-chat-store.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/paper/paper-cv-editor.tsx
+      - apps/web/src/features/paper/rich-selection-bubble.tsx
+apps/web/src/features/paper-page:
+  apps/web/src/features/paper-page/canvas-draw.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/paper/paper-word-preview.tsx
+  apps/web/src/features/paper-page/canvas-edit.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/paper/paper-letter-continue.ts
+      - apps/web/src/features/paper/paper-word-preview.tsx
+      - apps/web/src/features/paper/writing-page.tsx
+  apps/web/src/features/paper-page/canvas-look.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/paper/paper-word-preview.tsx
+  apps/web/src/features/paper-page/canvas-save.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/paper/paper-letter-continue.ts
+      - apps/web/src/features/paper/writing-page.tsx
+  apps/web/src/features/paper-page/canvas.css:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/paper/paper-word-preview.tsx
+  apps/web/src/features/paper-page/canvas.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/paper/writing-page.tsx
+  apps/web/src/features/paper-page/document-chrome.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/paper/rich-page.tsx
+      - apps/web/src/features/paper/writing-page.tsx
+  apps/web/src/features/paper-page/package-read.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/paper/paper-letter-continue.ts
+      - apps/web/src/features/paper/writing-page.tsx
+  apps/web/src/features/paper-page/page-diff.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/paper/paper-letter-continue.ts
+apps/web/src/features/seed:
+  apps/web/src/features/seed/sample-author.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/features/paper/cv-templates/cv-types.ts
