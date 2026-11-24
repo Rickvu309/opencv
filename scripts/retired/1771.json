@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 22
+  },
+  {
+    "subject": "scripts/ocv-tools/friction.test.mjs",
+    "because": "the command is removed; friction ran 2 times in 183 sessions",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 12
   }
 ]
