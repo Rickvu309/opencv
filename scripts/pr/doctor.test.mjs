@@ -271,17 +271,35 @@ test("--json prints the drift list", async () => {
   assert.equal(JSON.parse(logged[0]).drift[0].subject, "vulnerability alerts")
 })
 
-test("doctor detects a missing queue rule and queue parameter drift", async () => {
+test("main asks for a green ci check and no merge queue", () => {
+  const declared = JSON.parse(read(".github/rulesets/main.json"))
+  const types = declared.rules.map((rule) => rule.type)
+  assert.ok(!types.includes("merge_queue"))
+  assert.deepEqual(
+    declared.rules
+      .find((rule) => rule.type === "required_status_checks")
+      .parameters.required_status_checks.map((check) => check.context),
+    ["ci"]
+  )
+  assert.deepEqual(
+    declared.rules.find((rule) => rule.type === "pull_request").parameters
+      .allowed_merge_methods,
+    ["squash"]
+  )
+})
+
+test("doctor detects a live merge queue rule and required check drift", async () => {
   for (const change of [
     (ruleset) => {
-      ruleset.rules = ruleset.rules.filter(
-        (rule) => rule.type !== "merge_queue"
-      )
+      ruleset.rules.push({
+        type: "merge_queue",
+        parameters: { merge_method: "SQUASH" },
+      })
     },
     (ruleset) => {
       ruleset.rules.find(
-        (rule) => rule.type === "merge_queue"
-      ).parameters.max_entries_to_build = 2
+        (rule) => rule.type === "required_status_checks"
+      ).parameters.strict_required_status_checks_policy = true
     },
   ]) {
     const ruleset = liveRulesetWithIdsTimestampsAndDefaults()
