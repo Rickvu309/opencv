@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/connections/oauth.test.ts",
+    "because": "Listing agent connections moved from its own route to the read door. The same refusal of an agent's bearer token is asserted at the new address, /api/reads/connections.list.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
