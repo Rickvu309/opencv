@@ -9,13 +9,8 @@ import {
 import { Hono } from "hono"
 import { ZodError } from "zod"
 
-import type { Auth } from "../auth.js"
-import type { AppDatabase } from "../db/context.js"
-import {
-  handleApiError,
-  requireSession,
-  type SessionVariables,
-} from "../middleware.js"
+import { handleApiError } from "../middleware.js"
+import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"
 import { registry } from "../registry/registry.js"
 import { CommandError } from "../registry/errors.js"
 import { PaperPackageRefusal } from "./package-errors.js"
@@ -55,8 +50,8 @@ async function uploadBytes(request: Request) {
   return Buffer.concat(chunks)
 }
 
-export function createPaperPackageRoutes(auth?: Auth, db?: AppDatabase) {
-  const routes = new Hono<{ Variables: SessionVariables }>()
+export function createPaperPackageRoutes(signedIn: SignedIn) {
+  const routes = new Hono<{ Variables: SignedInVariables }>()
   routes.onError((error, c) => {
     if (error instanceof ZodError || error instanceof PaperPackageRefusal)
       return c.json(
@@ -72,7 +67,7 @@ export function createPaperPackageRoutes(auth?: Auth, db?: AppDatabase) {
   })
   routes.use("*", async (c, next) => {
     c.header("cache-control", "private, no-store")
-    return requireSession(auth, db)(c, next)
+    return signedIn(c, next)
   })
   routes.post("/stage", async (c) => {
     if (c.req.header("content-type") !== WORD_PACKAGE_MEDIA_TYPE)

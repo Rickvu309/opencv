@@ -16,10 +16,8 @@ import {
   successEnvelope,
   type DelegateActor,
 } from "@workspace/domain"
-import type { Auth } from "../auth.js"
-import type { AppDatabase } from "../db/context.js"
 import { insideTransaction, savepoint, transaction } from "../db/context.js"
-import { requireSession, type SessionVariables } from "../middleware.js"
+import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"
 import type { Registry } from "../registry/registry.js"
 import { isAllowedOrigin } from "../platform/origin.js"
 import { requireLiveDelegate } from "../registry/delegate-policy.js"
@@ -121,14 +119,16 @@ async function proposeOutsideTransaction(
   return proposed
 }
 
+type AuthServer = Parameters<typeof oauthProviderAuthServerMetadata>[0]
+
 export function connectionRoutes(
-  auth: Auth,
-  db: AppDatabase,
+  auth: AuthServer,
+  signedIn: SignedIn,
   registry: Registry,
   authUrl: string,
   webOrigins: string[]
 ) {
-  const routes = new Hono<{ Variables: SessionVariables }>()
+  const routes = new Hono<{ Variables: SignedInVariables }>()
   const checkNativeOrigin = originValidation(NATIVE_CLIENT_ORIGINS)
   const audience = new URL("/mcp", authUrl).href
   const metadata = new URL("/.well-known/oauth-protected-resource/mcp", authUrl)
@@ -305,7 +305,7 @@ export function connectionRoutes(
       )
     return handler.fetch(c.req.raw)
   })
-  routes.get("/api/agent-connections", requireSession(auth, db), async (c) =>
+  routes.get("/api/agent-connections", signedIn, async (c) =>
     c.json(
       successEnvelope(
         await registry.read("connections.list", {}, personActor(c.var.userId))

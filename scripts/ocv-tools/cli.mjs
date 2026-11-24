@@ -7,7 +7,7 @@ import { TEMPLATE_FIELDS, TYPES } from "./fields.mjs"
 import { slugify } from "./worktree.mjs"
 import { take } from "./take.mjs"
 import { TAKE_SWITCHES, file } from "./issue.mjs"
-import { COMMANDS, doctor, renderHelp } from "./report.mjs"
+import { COMMANDS, renderHelp } from "./report.mjs"
 import { rulesJob } from "./rules/command.mjs"
 import { cleanup, save } from "./work.mjs"
 import { shot } from "./shot.mjs"
@@ -29,7 +29,6 @@ export function realCtx() {
     env: ports.env,
     now: () => ports.clock.now(),
     pause: (seconds) => ports.clock.pause(seconds),
-    nodeVersion: process.version,
     cwd: process.cwd(),
     readStdin: () => {
       try {
@@ -178,7 +177,10 @@ function command(ctx, cmd, rest) {
     case "--help":
     case "-h":
     case "help":
-      return { lines: [renderHelp()], next: "scripts/ocv-tools.mjs doctor" }
+      return {
+        lines: [renderHelp()],
+        next: "scripts/ocv-tools.mjs rules --list",
+      }
     case "file":
       return file(ctx, { flags })
     case "take": {
@@ -285,8 +287,6 @@ function command(ctx, cmd, rest) {
       return block(ctx, issueNumber(pos[0], "block <n> <reason>"), pos[1])
     case "shot":
       return shot(ctx, { files: pos, flags })
-    case "doctor":
-      return doctor(ctx)
     case "rules":
       return rulesJob(ctx, { flags })
     default:

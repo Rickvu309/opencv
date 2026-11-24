@@ -9,8 +9,8 @@ import {
   handleApiError,
   notFoundEnvelopeResponse,
   requireSession,
-  type SessionVariables,
 } from "./middleware.js"
+import type { SignedInVariables } from "./platform/signed-in.js"
 
 const db = {} as AppDatabase
 
@@ -21,7 +21,7 @@ function authWith(session: unknown) {
 }
 
 function guardedApp(auth: Auth | undefined, database: AppDatabase | undefined) {
-  const app = new Hono<{ Variables: SessionVariables }>()
+  const app = new Hono<{ Variables: SignedInVariables }>()
   app.get("/me", requireSession(auth, database), (c) =>
     c.json({ userId: c.var.userId })
   )

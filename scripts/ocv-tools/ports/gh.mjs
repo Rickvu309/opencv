@@ -329,24 +329,6 @@ export function ghAdapter(run) {
       )
       return JSON.parse(gh(...args) || "[]")
     },
-    labels() {
-      const names = run("gh", [
-        "label",
-        "list",
-        "--json",
-        "name",
-        "--limit",
-        "200",
-      ])
-      if (!names.ok) return { ok: false, names: [] }
-      return {
-        ok: true,
-        names: JSON.parse(names.out || "[]").map((l) => l.name),
-      }
-    },
-    authed() {
-      return run("gh", ["auth", "status"]).ok
-    },
     openBoard,
     releaseView(tag) {
       return run("gh", ["release", "view", tag]).ok
