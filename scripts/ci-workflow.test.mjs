@@ -31,9 +31,9 @@ const section = (name) => {
   return next === -1 ? rest : rest.slice(0, next)
 }
 
-test("ci.yml runs for the merge queue", () => {
-  assert.match(text.slice(0, jobsAt), /^ {2}merge_group:/m)
+test("ci.yml runs for pull requests and never for a merge queue", () => {
   assert.match(text.slice(0, jobsAt), /^ {2}pull_request:/m)
+  assert.doesNotMatch(text, /merge_group|QUEUE_REF/)
 })
 
 test("ci.yml runs in full on every push to main", () => {
@@ -238,16 +238,6 @@ test("a model file or a file named in a spec map runs the models", () => {
   )
 })
 
-test("the merge queue always runs the model check", (t) => {
-  const out = join(tempDir(t, "formal-gate-"), "output")
-  const run = bash(runBody(section("formal-tla")), {
-    GITHUB_EVENT_NAME: "merge_group",
-    GITHUB_OUTPUT: out,
-  })
-  assert.equal(run.status, 0, run.stderr)
-  assert.equal(readFileSync(out, "utf8").trim(), "run=true")
-})
-
 test("a push to main always runs the model check", (t) => {
   const out = join(tempDir(t, "formal-gate-"), "output")
   const run = bash(runBody(section("formal-tla")), {
@@ -261,7 +251,7 @@ test("a push to main always runs the model check", (t) => {
 test("a workflow that skips models or narrows the run on main fires", () => {
   const narrowed = text
     .replace(/^ {2}push:\n {4}branches: \[main\]\n/m, "")
-    .replace(' || "$GITHUB_EVENT_NAME" == push', "")
+    .replace('"$GITHUB_EVENT_NAME" == push', '"$GITHUB_EVENT_NAME" == never')
     .replace(
       "github.event_name == 'pull_request' && '--affected'",
       "'--affected'"
@@ -269,61 +259,44 @@ test("a workflow that skips models or narrows the run on main fires", () => {
   const hits = formalDetect(narrowed, ".github/workflows/ci.yml")
   assert.deepEqual(hits, [
     "push to main trigger is missing",
-    "every model on the merge queue and on main is missing",
+    "every model on main is missing",
     "a full run outside pull requests is missing",
   ])
 })
 
 test("policy skips an event with no pull request and fails a pull request event with no number", () => {
-  assert.deepEqual(
-    policyChoice({ event: "push", prNumber: "", queueRef: "" }),
-    {
-      kind: "skip",
-      event: "push",
-    }
-  )
-  assert.deepEqual(
-    policyChoice({ event: "workflow_dispatch", prNumber: "", queueRef: "" }),
-    { kind: "skip", event: "workflow_dispatch" }
-  )
-  assert.deepEqual(
-    policyChoice({ event: "pull_request", prNumber: "", queueRef: "" }),
-    { kind: "fail", event: "pull_request" }
-  )
+  assert.deepEqual(policyChoice({ event: "push", prNumber: "" }), {
+    kind: "skip",
+    event: "push",
+  })
+  assert.deepEqual(policyChoice({ event: "workflow_dispatch", prNumber: "" }), {
+    kind: "skip",
+    event: "workflow_dispatch",
+  })
+  assert.deepEqual(policyChoice({ event: "pull_request", prNumber: "" }), {
+    kind: "fail",
+    event: "pull_request",
+  })
   assert.deepEqual(
     policyChoice({
       event: "pull_request_target",
       prNumber: "",
-      queueRef: "",
     }),
     { kind: "fail", event: "pull_request_target" }
   )
-  assert.deepEqual(
-    policyChoice({
-      event: "merge_group",
-      prNumber: "",
-      queueRef: "refs/heads/gh-readonly-queue/main/deadbeef",
-    }),
-    { kind: "fail", event: "merge_group" }
-  )
-  assert.deepEqual(
-    policyChoice({
-      event: "merge_group",
-      prNumber: "",
-      queueRef: "refs/heads/gh-readonly-queue/main/pr-15-abcdef",
-    }),
-    { kind: "run", number: "15" }
-  )
-  assert.deepEqual(
-    policyChoice({ event: "pull_request", prNumber: "1030", queueRef: "" }),
-    { kind: "run", number: "1030" }
-  )
+  assert.deepEqual(policyChoice({ event: "merge_group", prNumber: "" }), {
+    kind: "skip",
+    event: "merge_group",
+  })
+  assert.deepEqual(policyChoice({ event: "pull_request", prNumber: "1030" }), {
+    kind: "run",
+    number: "1030",
+  })
   const script = runBody(section("policy"))
   assert.match(script, /node scripts\/ocv-tools\.mjs policy/)
   const skip = bash(script, {
     GITHUB_EVENT_NAME: "push",
     PR_NUMBER: "",
-    QUEUE_REF: "",
   })
   assert.equal(skip.status, 0, skip.stderr)
   assert.match(
@@ -333,22 +306,11 @@ test("policy skips an event with no pull request and fails a pull request event 
   const missing = bash(script, {
     GITHUB_EVENT_NAME: "pull_request",
     PR_NUMBER: "",
-    QUEUE_REF: "",
   })
   assert.equal(missing.status, 1)
   assert.match(
     missing.stdout,
     /::error title=POLICY::no pull request number in the pull_request event/
-  )
-  const queue = bash(script, {
-    GITHUB_EVENT_NAME: "merge_group",
-    PR_NUMBER: "",
-    QUEUE_REF: "refs/heads/gh-readonly-queue/main/deadbeef",
-  })
-  assert.equal(queue.status, 1)
-  assert.match(
-    queue.stdout,
-    /::error title=POLICY::no pull request number in the merge_group event/
   )
 })
 test("the Paper walk keeps all 200 seeds while the other web shards exclude only its file", () => {

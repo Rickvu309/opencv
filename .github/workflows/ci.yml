@@ -2,8 +2,6 @@ name: Checks
 
 on:
   pull_request:
-  merge_group:
-    types: [checks_requested]
   push:
     branches: [main]
 
@@ -135,7 +133,7 @@ jobs:
       - name: Does this change touch a formal model
         id: gate
         run: |
-          if [[ "$GITHUB_EVENT_NAME" == merge_group || "$GITHUB_EVENT_NAME" == push ]]; then
+          if [[ "$GITHUB_EVENT_NAME" == push ]]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -187,7 +185,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
-          QUEUE_REF: ${{ github.event.merge_group.head_ref }}
         run: |
           choice=$(node scripts/lib/ci-workflow.mjs policy)
           case "$choice" in
