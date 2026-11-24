@@ -154,6 +154,6 @@ export type CoachStartInput = z.infer<typeof coachStartInputSchema>
 export type CoachTaskReplay = z.infer<typeof coachTaskReplaySchema>
 
 export const coachTaskResource: ResourceRef = {
-  name: "coach.task",
+  name: "coachTask",
   coachFloor: "never",
 }
