@@ -1,12 +1,18 @@
 import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
+import { readFileSync, readdirSync } from "node:fs"
 import { join } from "node:path"
 import test from "node:test"
 import { WORKTREE_PORTS } from "../../packages/domain/src/local-ports.ts"
 import { runCli } from "./cli.mjs"
 import { claimMarker } from "./claim-marker.mjs"
 import { ctxFor, fakePorts, issue, minutesAgo, pr } from "./ports/fake.mjs"
-import { RESERVED_WEB_PORTS, pickPort, slugify } from "./worktree.mjs"
+import {
+  RESERVED_WEB_PORTS,
+  buildCommand,
+  packagesUsedFromBuiltOutput,
+  pickPort,
+  slugify,
+} from "./worktree.mjs"
 
 const WT = "/tmp/opencv.worktrees/90-keep-my-search"
 const BRANCH = "feat/90-keep-my-search"
@@ -402,4 +408,110 @@ test("take --resume checks the existing PR closing link before creating a worktr
   assert.equal(result.code, 2, result.text)
   assert.match(result.text, /PR_METADATA/)
   assert.ok(!ports.effects.some((e) => e.op === "addWorktree"))
+})
+
+const manifests = (entries) => {
+  const files = new Map(
+    Object.entries(entries).map(([dir, manifest]) => [
+      `/wt/packages/${dir}/package.json`,
+      typeof manifest === "string" ? manifest : JSON.stringify(manifest),
+    ])
+  )
+  return {
+    exists: (path) => path === "/wt/packages" || files.has(path),
+    list: () => Object.keys(entries),
+    read: (path) => files.get(path),
+  }
+}
+
+test("only packages that are used from their built output and can build are built after install", () => {
+  const fs = manifests({
+    domain: {
+      name: "@workspace/domain",
+      main: "./dist/index.js",
+      scripts: { build: "tsc" },
+    },
+    "paper-crdt": {
+      name: "@workspace/paper-crdt",
+      exports: { ".": { import: "./dist/index.js" } },
+      scripts: { build: "tsc" },
+    },
+    ui: {
+      name: "@workspace/ui",
+      exports: { ".": "./src/index.ts" },
+      scripts: { build: "tsc" },
+    },
+    types: { name: "@workspace/types", main: "./dist/index.js", scripts: {} },
+    broken: "{",
+  })
+  const names = packagesUsedFromBuiltOutput(fs, "/wt")
+  assert.deepEqual(names, ["@workspace/domain", "@workspace/paper-crdt"])
+  assert.deepEqual(buildCommand(names), [
+    "pnpm",
+    [
+      "--filter",
+      "@workspace/domain",
+      "--filter",
+      "@workspace/paper-crdt",
+      "build",
+    ],
+  ])
+  const missing = {
+    list: () => {
+      throw new Error("ENOENT")
+    },
+  }
+  assert.deepEqual(packagesUsedFromBuiltOutput(missing, "/wt"), [])
+})
+
+test("the real repo names exactly the packages a new task folder must build", () => {
+  const root = new URL("../../", import.meta.url).pathname.replace(/\/$/, "")
+  const fs = {
+    exists: (path) => {
+      try {
+        readFileSync(path)
+        return true
+      } catch (error) {
+        return error.code === "EISDIR"
+      }
+    },
+    list: (dir) => readdirSync(dir),
+    read: (path) => readFileSync(path, "utf8"),
+  }
+  assert.deepEqual(packagesUsedFromBuiltOutput(fs, root), [
+    "@workspace/domain",
+    "@workspace/paper-crdt",
+  ])
+})
+
+test("the hint for a package that was not built names no single package", () => {
+  const text = readFileSync(
+    new URL("./rules/workspace.mjs", import.meta.url),
+    "utf8"
+  )
+  assert.match(text, /pnpm --filter <that package> build/)
+  assert.doesNotMatch(text, /run pnpm --filter @workspace\/domain build first/)
+})
+
+test("take installs and then builds the packages used from built output", () => {
+  const { ctx, ports } = run({
+    files: {
+      [`${WT}/package.json`]: "{}",
+      [`${WT}/pnpm-lock.yaml`]: "",
+      [`${WT}/packages/domain/package.json`]: JSON.stringify({
+        name: "@workspace/domain",
+        main: "./dist/index.js",
+        scripts: { build: "tsc" },
+      }),
+    },
+  })
+  const r = runCli(["take", "90"], ctx)
+  assert.equal(r.code, 0, r.text)
+  const ran = ports.effects
+    .filter((e) => e.op === "proc" && e.cmd === "pnpm")
+    .map((e) => e.args.join(" "))
+  assert.deepEqual(ran, [
+    "install --frozen-lockfile",
+    "--filter @workspace/domain build",
+  ])
 })
