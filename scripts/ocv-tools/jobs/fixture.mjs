@@ -68,16 +68,7 @@ export function fixture(over = {}) {
         if (a[0] === "status") return ok(s.dirty)
         if (a[0] === "rev-parse")
           return ok(a[1] === "HEAD^{tree}" ? s.tree : s.base)
-        if (a[0] === "rev-list" && a.at(-1).endsWith("..origin/main"))
-          return ok(String(s.behind ?? 0))
         if (a[0] === "rev-list") return ok("1")
-        if (a[0] === "merge-tree") {
-          const oid = "a".repeat(40)
-          return s.conflicts?.length
-            ? { ok: false, out: `${oid}\n${s.conflicts.join("\n")}`, err: "" }
-            : ok(oid)
-        }
-        if (a[0] === "commit-tree") return ok("c".repeat(40))
         if (a[0] === "worktree") return ok()
         if (a[0] === "ls-tree" && a.includes("--name-only"))
           return ok(
@@ -140,10 +131,6 @@ export function fixture(over = {}) {
       }
       if (cmd === "ln" || cmd === "rm") return ok()
       if (cmd === "stat") return ok("0")
-      if (cmd === "timeout")
-        return s.guardOutput
-          ? { ok: false, out: s.guardOutput, err: "" }
-          : ok("1 passed")
       if (cmd === "gh") {
         const pair = a.slice(0, 2).join(" ")
         if (pair === "pr list") return ok(s.existing)
