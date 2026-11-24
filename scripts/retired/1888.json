@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/account/account-alone.test.ts",
+    "because": "registerAccount is deleted: Account's commands are installed by the generated catalog, so there is no second registration to guard. The test binds the six operations and still runs them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
