@@ -38,7 +38,7 @@ const posting: {
   read: ReadPostingOnPlan | null
 } = { fetch: fetchJobPosting, read: null }
 
-let registered = false
+const registeredOn = new WeakSet<Registry>()
 
 function planOf(profile: unknown): Plan | null {
   if (!profile || typeof profile !== "object" || !("plan" in profile))
@@ -50,8 +50,8 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
   if (options?.fetch) posting.fetch = options.fetch
   if (options && "interpret" in options)
     posting.read = options.interpret ?? null
-  if (registered) return
-  registered = true
+  if (registeredOn.has(registry)) return
+  registeredOn.add(registry)
 
   bindCommands(registry, jobContract, {
     "job.create": {
