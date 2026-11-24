@@ -1,14 +1,13 @@
 import {
   accountContract,
   ERROR_CODES,
-  parseFileId,
   type Actor,
   type NotifyTopic,
 } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
-import { files, notifyRequests } from "../db/schema.js"
+import { notifyRequests } from "../db/schema.js"
 import { createId } from "../platform/id.js"
 import { bindCommands } from "../registry/bind.js"
 import { CommandError, isUniqueViolation } from "../platform/errors.js"
@@ -17,13 +16,7 @@ import {
   sendEmailChangeCode,
   type EmailChangeCodeOutcome,
 } from "./email-change-code.js"
-import {
-  deleteAccount,
-  markWelcomed,
-  setProfilePhoto,
-  toProfile,
-  updateProfile,
-} from "./store.js"
+import { deleteAccount, toProfile } from "./store.js"
 
 const registeredOn = new WeakSet<Registry>()
 
@@ -32,34 +25,6 @@ export function registerAccount(registry: Registry) {
   registeredOn.add(registry)
 
   bindCommands(registry, accountContract, {
-    "profile.update": {
-      handler: (input, actor) => updateProfile(actor, input),
-      reversal: () => null,
-      activity: () => null,
-    },
-    "profile.markWelcomed": {
-      handler: (_input, actor) => markWelcomed(actor),
-      reversal: () => null,
-      activity: () => null,
-    },
-    "profile.setPhoto": {
-      handler: async (input, actor) => {
-        const rows = await getDb()
-          .select({ id: files.id, purpose: files.purpose })
-          .from(files)
-          .where(
-            and(eq(files.id, input.fileId), eq(files.userId, actor.userId))
-          )
-          .limit(1)
-        const file = rows[0]
-        if (!file || file.purpose !== "avatar") {
-          throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo file not found")
-        }
-        return setProfilePhoto(actor.userId, parseFileId(file.id))
-      },
-      reversal: () => null,
-      activity: () => null,
-    },
     "account.requestEmailChange": {
       handler: (input) => requestEmailChange(input.email),
       reversal: () => null,

@@ -1,5 +1,5 @@
 import { useReducer } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouterState } from "@tanstack/react-router"
 import type { ProfileUpdateInput } from "@workspace/domain"
 
@@ -20,7 +20,7 @@ import {
 } from "@/features/settings/settings-api.ts"
 import { UsageSection } from "@/features/settings/usage-section.tsx"
 import { fetchProfile, profileKey } from "@/lib/account-api.ts"
-import { useRunCommand } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 
 export function SettingsPage() {
   const pathname = useRouterState({
@@ -77,7 +77,7 @@ function saveReducer(state: SaveState, action: SaveAction): SaveState {
 }
 
 function useSettingsSave() {
-  const runCommand = useRunCommand()
+  const queryClient = useQueryClient()
   const [{ pending, errorKey, error }, dispatch] = useReducer(saveReducer, {
     pending: false,
   })
@@ -86,7 +86,7 @@ function useSettingsSave() {
     const key = Object.keys(patch)[0]
     dispatch({ type: "save_started" })
     try {
-      await runCommand("profile.update", patch)
+      await catalogClient.run(queryClient, "profile.update", patch)
     } catch (caught) {
       if (isPlanRequired(caught)) {
         dispatch({

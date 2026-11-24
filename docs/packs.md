@@ -158,7 +158,7 @@ flowchart TD
 | Pack | Layer | Public | Dependencies | Tables |
 | --- | --- | --- | --- | --- |
 | `apps/api/src` | app | index.ts | apps/api/src/account, apps/api/src/coach/chat, apps/api/src/coach, apps/api/src/connections, apps/api/src/inbox, apps/api/src/job, apps/api/src/paper, apps/api/src/registry, apps/api/src/db, apps/api/src/mail, apps/api/src/limits, apps/api/src/platform | none |
-| `apps/api/src/account` | feature | index.ts | apps/api/src/coach/chat, apps/api/src/paper, apps/api/src/connections, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/mail, apps/api/src/platform | none |
+| `apps/api/src/account` | feature | index.ts, operations | apps/api/src/coach/chat, apps/api/src/paper, apps/api/src/connections, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/mail, apps/api/src/platform | none |
 | `apps/api/src/coach` | feature | index.ts, operations | apps/api/src/coach/chat, apps/api/src/account, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/coach/chat` | feature | index.ts | apps/api/src/job, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/connections` | feature | index.ts, operations | apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |

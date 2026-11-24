@@ -142,9 +142,9 @@ const TOOL_COPY = {
   "paper.sync": { label: "Save your Paper" },
   "paper.unshare": { label: "Stop sharing your Paper" },
   "profile.get": { label: "Read your Profile", read: "Read your Profile" },
-  "profile.markWelcomed": { label: "Finish your welcome" },
-  "profile.setPhoto": { label: "Update your Profile photo" },
-  "profile.update": { label: "Update your Profile" },
+  [catalog["profile.markWelcomed"].name]: { label: "Finish your welcome" },
+  [catalog["profile.setPhoto"].name]: { label: "Update your Profile photo" },
+  [catalog["profile.update"].name]: { label: "Update your Profile" },
   "workspace.search": {
     label: "Search your workspace",
     read: "Searched your workspace",

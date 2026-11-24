@@ -6,7 +6,7 @@ import {
 } from "@workspace/domain"
 
 import { fetchProfile, profileKey } from "@/lib/account-api.ts"
-import { refreshReads, runContractCommand } from "@/lib/contract-client.ts"
+import { catalogClient, refreshReads } from "@/lib/contract-client.ts"
 
 export function useCoachMode() {
   const queryClient = useQueryClient()
@@ -18,7 +18,7 @@ export function useCoachMode() {
 
   const mutation = useMutation({
     mutationFn: (next: CoachMode) =>
-      runContractCommand(
+      catalogClient.run(
         queryClient,
         "profile.update",
         { coachMode: next },

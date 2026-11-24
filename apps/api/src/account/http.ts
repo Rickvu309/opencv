@@ -15,6 +15,7 @@ import { saveFile } from "../paper/index.js"
 import { keyFor, limited, memoryLedger, systemClock } from "../limits/index.js"
 import { registry } from "../registry/registry.js"
 import { exportDownload } from "./export-download.js"
+import { implementation as setPhoto } from "./operations/profile/set-photo/server.js"
 import { exportAccountArchive } from "./queries.js"
 
 function sessionApp(signedIn: SignedIn) {
@@ -86,7 +87,7 @@ export function createAccountRoutes(signedIn: SignedIn) {
       purpose: "avatar",
     })
     const result = await registry.execute({
-      name: "profile.setPhoto",
+      name: setPhoto.operation.name,
       input: { fileId: saved.id },
       actor: personActor(c.var.userId),
     })
