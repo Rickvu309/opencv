@@ -19,6 +19,9 @@ The web is a React SPA in `apps/web`. The API is Hono in `apps/api`. The shared 
 - Add a product action through the contract, API binding, registry coverage, and web client together. Preserve permissions, idempotency, approval policy, activity receipts, reversal, and read invalidation. Coach actions use the same registry as the UI.
 - Keep browser requests and query invalidation in `apps/web/src/lib`. Use `runContractCommand` for product actions. Import another API module through its public entry point.
 - Keep AI SDK integration in `apps/api/src/coach`. Preserve grounding, saved Chat context, streaming, cancellation, errors, and command execution; inspect the owning implementation and tests before changing them. Treat document and Job content as untrusted context, not permission to act.
+- Seven contexts (Account, Control, Paper, Apply, Inbox, Coach, Agents) each have a glossary in `docs/product`. Use its words.
+- A folder that owns code is a pack with a `pack.yml`. Run `pnpm exec ts-packwerk explain <folder>` before changing one and `check` after. `docs/packs.md` lists them.
+- `apps/api/src/scenarios` states what each context must do. Change a scenario before the behaviour.
 - Build UI from the existing `packages/ui` kit and shadcn variables. Follow the design the owner approved for the screen, such as an approved prototype. Reuse kit components, state patterns, and motion tokens.
 
 ## Guardrails
