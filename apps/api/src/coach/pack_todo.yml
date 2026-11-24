@@ -6,14 +6,6 @@ apps/api/src:
     files:
       - apps/api/src/coach/http.ts
       - apps/api/src/coach/task-http.ts
-  apps/api/src/config.ts:
-    violations:
-      - dependency
-      - layer
-    files:
-      - apps/api/src/coach/http.ts
-      - apps/api/src/coach/task-runtime.ts
-      - apps/api/src/coach/task-start.ts
   apps/api/src/middleware.ts:
     violations:
       - dependency

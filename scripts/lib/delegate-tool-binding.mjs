@@ -221,7 +221,7 @@ const DOOR_DATABASE = new Set(["transaction", "savepoint", "insideTransaction"])
 const DOOR_IMPORTS = new Set([
   "../db/context.js",
   "../middleware.js",
-  "../origin.js",
+  "../platform/origin.js",
   "../registry/delegate-policy.js",
   "../registry/errors.js",
   "./agent-tool-error.js",

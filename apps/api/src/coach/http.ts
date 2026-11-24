@@ -19,7 +19,7 @@ import { Hono, type Context } from "hono"
 import { streamSSE } from "hono/streaming"
 
 import { assertDayCap, getProfileRow } from "../account/index.js"
-import { coachModelEnv } from "../config.js"
+import { coachModelEnv } from "../platform/config.js"
 import type { Auth } from "../auth.js"
 import { transaction, type AppDatabase } from "../db/context.js"
 import { openCoachUsage } from "./usage-store.js"

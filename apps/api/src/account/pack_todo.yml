@@ -6,12 +6,6 @@ apps/api/src:
     files:
       - apps/api/src/account/commands.ts
       - apps/api/src/account/http.ts
-  apps/api/src/config.ts:
-    violations:
-      - dependency
-      - layer
-    files:
-      - apps/api/src/account/usage.ts
   apps/api/src/middleware.ts:
     violations:
       - dependency

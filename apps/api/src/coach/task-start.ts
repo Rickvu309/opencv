@@ -12,7 +12,7 @@ import { getProfileRow } from "../account/index.js"
 import {
   coachRuntimeModeFromEnv,
   coachWorkerEnabledFromEnv,
-} from "../config.js"
+} from "../platform/config.js"
 import { getDb, transaction } from "../db/context.js"
 import {
   chats,

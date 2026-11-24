@@ -2,7 +2,7 @@ import { chatDetailSchema, type CoachTurnInput } from "@workspace/domain"
 import { asc, eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { chatMessages, coachUsage, user } from "../db/schema.js"
-import { coachModelEnv, setCoachModelEnv } from "../config.js"
+import { coachModelEnv, setCoachModelEnv } from "../platform/config.js"
 import { createDemoCoachRuntime, createScriptedCoachRuntime } from "./fake.js"
 import { trackChatTurn } from "../chat/index.js"
 import {

@@ -7,7 +7,7 @@ import {
   nativeBasisSchema,
 } from "@workspace/domain"
 import { operation as setJobPriority } from "@workspace/domain/operations/job/set-priority"
-import { coachModelEnv } from "../config.js"
+import { coachModelEnv } from "../platform/config.js"
 import { getDb } from "../db/context.js"
 import { coachUsage } from "../db/schema.js"
 import type { Registry } from "../registry/registry.js"

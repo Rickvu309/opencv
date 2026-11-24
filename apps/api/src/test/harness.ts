@@ -16,7 +16,7 @@ import {
   googleClientSecretFromEnv,
   googleEnabledFromEnv,
   resendApiKeyFromEnv,
-} from "../config.js"
+} from "../platform/config.js"
 import type { AppDatabase, TestDatabase } from "../db/context.js"
 import { runMigrations } from "../db/migrate.js"
 import * as schema from "../db/schema.js"

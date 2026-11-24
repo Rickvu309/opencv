@@ -1,4 +1,4 @@
-import { databaseUrlFromEnv } from "./config.js"
+import { databaseUrlFromEnv } from "./platform/config.js"
 import { applyMigrations } from "./db/migrate.js"
 
 const databaseUrl = databaseUrlFromEnv(process.env)

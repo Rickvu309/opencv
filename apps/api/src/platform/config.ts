@@ -32,7 +32,7 @@ export function pgliteDataDirFromEnv(env: NodeJS.ProcessEnv): string {
   const configured = env.PGLITE_DATA_DIR?.trim()
   return configured
     ? configured
-    : fileURLToPath(new URL("../.data/default", import.meta.url))
+    : fileURLToPath(new URL("../../.data/default", import.meta.url))
 }
 
 export function sessionSecretFromEnv(

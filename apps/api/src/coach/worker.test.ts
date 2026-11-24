@@ -15,7 +15,7 @@ import {
   taskEvents,
   toolIntents,
 } from "../db/schema.js"
-import { coachWorkerEnabledFromEnv } from "../config.js"
+import { coachWorkerEnabledFromEnv } from "../platform/config.js"
 import { createScriptedWorkerRuntime } from "./fake.js"
 import { claim, persistStep, requestCancel, runIntent } from "./task-store.js"
 import { runCoachWorker } from "./worker.js"

@@ -14,7 +14,7 @@ import {
   authUrlFromEnv,
   gmailEnabledFromEnv,
   googleClientIdFromEnv,
-} from "../config.js"
+} from "../platform/config.js"
 import { markInboxSkipped } from "../account/index.js"
 import { getDb } from "../db/context.js"
 import {
