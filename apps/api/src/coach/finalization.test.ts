@@ -16,8 +16,8 @@ import { coachModelEnv, setCoachModelEnv } from "../platform/config.js"
 
 const rename = vi.hoisted(() => ({ fails: false }))
 
-vi.mock("../chat/index.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../chat/index.js")>()
+vi.mock("./chat/index.js", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./chat/index.js")>()
   return {
     ...actual,
     renameChat: (...args: Parameters<typeof actual.renameChat>) => {

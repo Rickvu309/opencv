@@ -1,9 +1,9 @@
 import { and, eq } from "drizzle-orm"
 import { z } from "zod"
-import { toJob } from "../job/index.js"
-import { getDb } from "../db/context.js"
-import { chats, chatMessages, pendingActions, jobs } from "../db/schema.js"
-import { createId } from "../platform/id.js"
+import { toJob } from "../../job/index.js"
+import { getDb } from "../../db/context.js"
+import { chats, chatMessages, pendingActions, jobs } from "../../db/schema.js"
+import { createId } from "../../platform/id.js"
 
 export function agentProposalChatTitle(connectedAt: Date) {
   return `Proposal from your connected agent (connected ${connectedAt.toISOString().slice(0, 10)})`

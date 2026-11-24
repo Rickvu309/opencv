@@ -59,7 +59,7 @@ async function snapshot(task: Task) {
       and(eq(taskEvents.taskId, task.id), lte(taskEvents.seq, task.nextSeq - 1))
     )
     .orderBy(taskEvents.seq)
-  const { getChat } = await import("../chat/index.js")
+  const { getChat } = await import("./chat/index.js")
   const detail = chatDetailSchema.parse(
     await getChat(parseUserId(task.ownerId), parseChatId(task.chatId))
   )

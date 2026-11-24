@@ -37,7 +37,7 @@ export function detect(source, path = "") {
     ["embedded-worker.ts", "worker.ts", "task-reader.ts"].some(
       (file) => path === `apps/api/src/coach/${file}`
     ) ||
-    path === "apps/api/src/chat/store.ts"
+    path === "apps/api/src/coach/chat/store.ts"
   ) {
     if (/coachWorkerEnabledFromEnv|requireTaskRollout/.test(source))
       return [
@@ -48,7 +48,7 @@ export function detect(source, path = "") {
       ]
   }
   if (
-    path === "apps/api/src/chat/store.ts" &&
+    path === "apps/api/src/coach/chat/store.ts" &&
     !source.includes("Reload this Chat to follow or stop it.")
   )
     return [
@@ -187,10 +187,14 @@ export function detect(source, path = "") {
       message: "Legacy reply recovery must exclude task-backed usage",
     })
   if (
-    (path.includes("/registry/") || path.endsWith("/chat/commands.ts")) &&
-    /import\s+(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+["']\.\.\/coach\/index\.js["']/.test(
-      source
-    )
+    (path.includes("/registry/") &&
+      /import\s+(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+["']\.\.\/coach\/index\.js["']/.test(
+        source
+      )) ||
+    (path.endsWith("/coach/chat/commands.ts") &&
+      /import\s+(?:\{[^}]*\}|\*\s+as\s+\w+|\w+)\s+from\s+["']\.\.\/index\.js["']/.test(
+        source
+      ))
   )
     problems.push({
       message:

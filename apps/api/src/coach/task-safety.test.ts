@@ -293,18 +293,12 @@ function detectTaskSafetyMistakes(sources: {
 
 it("task safety guards reject each mistake fixture and accept the clean sources", () => {
   const clean = {
-    effect: readFileSync(
-      new URL("../coach/task-effects.ts", import.meta.url),
-      "utf8"
-    ),
+    effect: readFileSync(new URL("./task-effects.ts", import.meta.url), "utf8"),
     fence: readFileSync(
       new URL("../registry/task-fence.ts", import.meta.url),
       "utf8"
     ),
-    store: readFileSync(
-      new URL("../coach/task-store.ts", import.meta.url),
-      "utf8"
-    ),
+    store: readFileSync(new URL("./task-store.ts", import.meta.url), "utf8"),
     registry: readFileSync(
       new URL("../registry/registry.ts", import.meta.url),
       "utf8"

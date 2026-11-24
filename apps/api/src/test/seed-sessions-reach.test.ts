@@ -9,10 +9,7 @@ import { detect } from "./seed-sessions-reach.js"
 const apiRoot = fileURLToPath(new URL("../..", import.meta.url))
 
 const MISTAKES: [string, string][] = [
-  [
-    "src/paper/store.ts",
-    `import { seedSessions } from "../test/seed-sessions.js"\n`,
-  ],
+  ["src/paper/store.ts", `import { seedSessions } from "./seed-sessions.js"\n`],
   [
     "src/index.ts",
     `const { seedSessions } = await import("./test/seed-sessions.js")\n`,

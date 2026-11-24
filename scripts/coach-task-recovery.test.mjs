@@ -97,9 +97,9 @@ const unknownToolClean =
 for (const [name, path, mistake, clean] of [
   [
     "Chat stop avoids eagerly loading Coach during Chat initialization",
-    "apps/api/src/chat/commands.ts",
-    approvalImportMistake.replace("resolveTaskApproval", "cancelChatTask"),
-    approvalImportClean.replaceAll("resolveTaskApproval", "cancelChatTask"),
+    "apps/api/src/coach/chat/commands.ts",
+    'import { cancelChatTask } from "../index.js"',
+    'const { cancelChatTask } = await import("../index.js")',
   ],
   [
     "approval resolution avoids eagerly loading Coach during Chat initialization",
@@ -341,21 +341,31 @@ for (const [path, mistake, clean, historicPath] of [
   })
 }
 
+function pathAt92b6581a(path) {
+  return path === "apps/api/src/coach/chat/store.ts"
+    ? "apps/api/src/chat/store.ts"
+    : path
+}
+
 for (const path of [
   "apps/api/src/coach/embedded-worker.ts",
   "apps/api/src/coach/worker.ts",
   "apps/api/src/coach/task-reader.ts",
   "apps/api/src/coach/task-start.ts",
-  "apps/api/src/chat/store.ts",
+  "apps/api/src/coach/chat/store.ts",
   "apps/api/src/coach/turn-compatibility.ts",
   "apps/web/src/lib/coach-task-client.ts",
   "apps/web/src/features/coach/use-coach-turn.ts",
   "apps/web/src/features/coach/coach-workspace.tsx",
 ]) {
   test(`rollback and compatibility guards reject 92b6581a: ${path}`, () => {
-    const historic = execFileSync("git", ["show", `92b6581a:${path}`], {
-      encoding: "utf8",
-    })
+    const historic = execFileSync(
+      "git",
+      ["show", `92b6581a:${pathAt92b6581a(path)}`],
+      {
+        encoding: "utf8",
+      }
+    )
     const current = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
     assert.ok(detect(historic, path).length > 0)
     assert.deepEqual(detect(current, path), [])
@@ -363,7 +373,10 @@ for (const path of [
 }
 
 for (const [path, required] of [
-  ["apps/api/src/chat/store.ts", "Reload this Chat to follow or stop it."],
+  [
+    "apps/api/src/coach/chat/store.ts",
+    "Reload this Chat to follow or stop it.",
+  ],
   [
     "apps/api/src/coach/turn-compatibility.ts",
     "Reload this Chat to follow or stop it.",
@@ -373,9 +386,13 @@ for (const [path, required] of [
     const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
     assert.deepEqual(detect(clean, path), [])
     assert.ok(detect(clean.replaceAll(required, "missing"), path).length > 0)
-    const historic = execFileSync("git", ["show", `92b6581a:${path}`], {
-      encoding: "utf8",
-    })
+    const historic = execFileSync(
+      "git",
+      ["show", `92b6581a:${pathAt92b6581a(path)}`],
+      {
+        encoding: "utf8",
+      }
+    )
     assert.ok(detect(historic, path).length > 0)
   })
 }

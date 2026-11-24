@@ -1,12 +1,12 @@
 import { parseChatId, parseUserId } from "@workspace/domain"
 import { expect, it } from "vitest"
 
-import { exportAccount } from "../account/index.js"
-import { withDatabase } from "../db/context.js"
-import { chatMessages, chats, user } from "../db/schema.js"
-import { createId } from "../platform/id.js"
-import { installRegistry } from "../install.js"
-import { createMigratedTestDb } from "../test/harness.js"
+import { exportAccount } from "../../account/index.js"
+import { withDatabase } from "../../db/context.js"
+import { chatMessages, chats, user } from "../../db/schema.js"
+import { createId } from "../../platform/id.js"
+import { installRegistry } from "../../install.js"
+import { createMigratedTestDb } from "../../test/harness.js"
 import { getChat } from "./store.js"
 import { UNREADABLE_STEP_LINE } from "./stored-parts.js"
 

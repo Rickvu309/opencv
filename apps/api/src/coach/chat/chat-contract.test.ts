@@ -11,11 +11,11 @@ import type { z } from "zod"
 
 import { stopChat, trackChatTurn } from "./commands.js"
 import { insertCoachMessage } from "./store.js"
-import { withDatabase } from "../db/context.js"
-import { user } from "../db/schema.js"
-import { createMigratedTestDb } from "../test/harness.js"
-import { installRegistry } from "../install.js"
-import { seedCoachActor } from "../test/coach-turn.js"
+import { withDatabase } from "../../db/context.js"
+import { user } from "../../db/schema.js"
+import { createMigratedTestDb } from "../../test/harness.js"
+import { installRegistry } from "../../install.js"
+import { seedCoachActor } from "../../test/coach-turn.js"
 
 const chatContract = { ...chatCommands, ...controlContract }
 

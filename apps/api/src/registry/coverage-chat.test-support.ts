@@ -1,7 +1,7 @@
 import { DEFAULT_CHAT_TITLE } from "@workspace/domain"
 import { expect } from "vitest"
 
-import { stopChat, trackChatTurn } from "../chat/index.js"
+import { stopChat, trackChatTurn } from "../coach/chat/index.js"
 import {
   flag,
   idOf,

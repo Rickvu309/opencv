@@ -3,7 +3,7 @@ enforce_privacy: false
 dependencies:
   [
     apps/api/src/account,
-    apps/api/src/chat,
+    apps/api/src/coach/chat,
     apps/api/src/coach,
     apps/api/src/connections,
     apps/api/src/inbox,

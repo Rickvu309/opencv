@@ -3,7 +3,7 @@ import type { ChatEntryPart } from "@workspace/domain"
 import type { Registry } from "../registry/registry.js"
 import { withMissingReceipts } from "./receipt.js"
 
-export { insertCoachMessage, trackChatTurn } from "../chat/index.js"
+export { insertCoachMessage, trackChatTurn } from "./chat/index.js"
 export {
   finishCoachUsage,
   openCoachUsage,

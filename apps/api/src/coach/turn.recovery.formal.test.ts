@@ -12,7 +12,7 @@ import type { SSEStreamingApi } from "hono/streaming"
 import { describe, expect, it, vi } from "vitest"
 
 import { withDatabase } from "../db/context.js"
-import { insertCoachMessage } from "../chat/index.js"
+import { insertCoachMessage } from "./chat/index.js"
 import { activity, chatMessages, coachUsage, user } from "../db/schema.js"
 import { installRegistry } from "../install.js"
 import { coachActivityWithoutTurn } from "../test/coach-turn.js"
@@ -20,8 +20,8 @@ import { openBackend } from "../test/registry-formal-support.js"
 import { runCoachTurn, toolResultFromExecute } from "./turn.js"
 import { openCoachUsage } from "./usage-store.js"
 
-vi.mock("../chat/index.js", async (importOriginal) => {
-  const original = await importOriginal<typeof import("../chat/index.js")>()
+vi.mock("./chat/index.js", async (importOriginal) => {
+  const original = await importOriginal<typeof import("./chat/index.js")>()
   return { ...original, insertCoachMessage: vi.fn(original.insertCoachMessage) }
 })
 

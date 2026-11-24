@@ -26,7 +26,7 @@ import { streamAnthropicSteps, type CoachModel } from "./anthropic-runtime.js"
 import type { SSEStreamingApi } from "hono/streaming"
 
 import { readUsage } from "../account/index.js"
-import { getChat, renameChat } from "../chat/index.js"
+import { getChat, renameChat } from "./chat/index.js"
 import { registry as defaultRegistry } from "../registry/registry.js"
 import type { Registry, ToolEntry } from "../registry/registry.js"
 import {
