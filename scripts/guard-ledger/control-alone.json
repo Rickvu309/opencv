@@ -1,0 +1,6 @@
+{
+  "id": "control-alone",
+  "file": "apps/api/src/registry/control-alone.test.ts",
+  "historic": null,
+  "reason": "module test: Control registers approve, deny and Undo and runs them with no context registered; it replaces the line in the Coach alone test that recorded them as registered by Chat"
+}

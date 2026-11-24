@@ -61,10 +61,14 @@ describe("the Coach and its Chats with nothing else registered", () => {
     })
   })
 
-  it("is where approving, denying and Undo are registered today", () => {
-    const names = registry.list().commands.map((command) => command.name)
-    expect(names).toEqual(
-      expect.arrayContaining(["actions.approve", "actions.deny"])
+  it("registers only Coach, Chat and link preview operations", () => {
+    const listed = registry.list()
+    const names = [...listed.commands, ...listed.queries].map(
+      (entry) => entry.name
+    )
+    expect(names.length).toBeGreaterThan(0)
+    expect(names.filter((name) => !/^(chat|coach|link)\./.test(name))).toEqual(
+      []
     )
   })
 })

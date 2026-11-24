@@ -27,6 +27,7 @@ export * from "./inbox-contract.js"
 export * from "./paper-contract.js"
 export * from "./paper-start.js"
 export * from "./chat-contract.js"
+export * from "./control-contract.js"
 export * from "./contract-commands.js"
 export * from "./account-contract.js"
 
