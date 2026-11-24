@@ -54,7 +54,7 @@ test("take refuses bad arguments before any git or gh call", () => {
 test("help lists the jobs and ends with Next", () => {
   const { code, text } = runCli(["help"], run().ctx)
   assert.equal(code, 0)
-  for (const word of ["file", "take", "doctor", "UNKNOWN_COMMAND"])
+  for (const word of ["file", "take", "rules", "UNKNOWN_COMMAND"])
     assert.ok(text.includes(word), word)
   assert.match(text, /\nNext: /)
 })
@@ -266,32 +266,6 @@ test("nextStep covers merged, branch-only and nothing started", () => {
     nextStep({ n: 5, type: "feat", risk: "low" }),
     /ocv-tools\.mjs take 5/
   )
-})
-
-test("doctor passes on a healthy machine", () => {
-  const { code, text } = runCli(["doctor"], run().ctx)
-  assert.equal(code, 0)
-  assert.match(text, /All checks pass/)
-  assert.match(text, /\nNext: /)
-})
-
-test("doctor gives one Fix line per problem", () => {
-  const { ctx } = run(
-    {
-      authed: false,
-      hooksPath: "",
-      labels: ["risk:low"],
-    },
-    { nodeVersion: "v18.0.0" }
-  )
-  const { code, text } = runCli(["doctor"], ctx)
-  assert.equal(code, 1)
-  const fixes = text.split("\n").filter((l) => l.startsWith("Fix: "))
-  assert.equal(fixes.length, 5)
-  assert.match(text, /Fix: Run: gh auth login/)
-  assert.match(text, /Fix: Run: git config core\.hooksPath \.githooks/)
-  assert.match(text, /risk:normal/)
-  assert.match(text, /Fix: Install node 20/)
 })
 
 test("riskOf never fails open", async () => {

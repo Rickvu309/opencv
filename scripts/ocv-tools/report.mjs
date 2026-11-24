@@ -1,7 +1,6 @@
 import { riskOf } from "./facts.mjs"
-import { RISK_LABELS, TYPES } from "./fields.mjs"
-import { EXIT, exitText } from "./result.mjs"
-import { RULES } from "./rules/index.mjs"
+import { TYPES } from "./fields.mjs"
+import { exitText } from "./result.mjs"
 
 export { riskOf }
 
@@ -89,11 +88,6 @@ export const COMMANDS = [
     when: "Record on issue <n> why you cannot continue. Blocked work stays listed and incomplete; it never makes done succeed. Continue independent authorized work. A new take of the issue clears the blocker.",
   },
   {
-    name: "doctor",
-    usage: "doctor",
-    when: "Check this machine is set up: node, gh sign-in, the hooks path and the risk labels. One Fix line per problem.",
-  },
-  {
     name: "rules",
     usage: "rules [--list]",
     when: "Show each current workflow rule. The retired --check and --write flags fail with replacement commands; generated workflow guides are no longer maintained.",
@@ -136,53 +130,5 @@ export function worktreeFor(ctx, n) {
     worktree: hit?.path ?? null,
     branch: hit?.branch ?? null,
     prefix,
-  }
-}
-
-export function doctor(ctx) {
-  const problems = []
-  const lines = []
-  const check = (name, ok, fix) => {
-    lines.push(`${ok ? "ok  " : "FAIL"} ${name}`)
-    if (!ok) problems.push(fix)
-  }
-  const major = Number(String(ctx.nodeVersion).replace(/^v/, "").split(".")[0])
-  check(`node ${ctx.nodeVersion}`, major >= 20, "Install node 20 or newer.")
-  check("gh signed in", ctx.ports.gh.authed(), "Run: gh auth login")
-  const hooks = ctx.ports.git.config(ctx.cwd, "core.hooksPath")
-  check(
-    "git hooks path is .githooks",
-    hooks === ".githooks",
-    "Run: git config core.hooksPath .githooks"
-  )
-  const names = ctx.ports.gh.labels()
-  const have = new Set(names.names)
-  for (const label of RISK_LABELS)
-    check(
-      `label ${label} exists`,
-      have.has(label),
-      names.ok
-        ? `Run: node scripts/pr.mjs doctor, then run the gh label create line it prints for ${label}`
-        : "Fix gh sign-in first, then run: node scripts/pr.mjs doctor"
-    )
-  const listed = [
-    "",
-    "Rules:",
-    ...RULES.map((row) => `  ${row.id}: ${row.says}`),
-  ]
-  if (problems.length)
-    return {
-      exit: EXIT.error,
-      lines: [
-        ...lines,
-        "",
-        `${problems.length} problem(s).`,
-        ...problems.map((p) => `Fix: ${p}`),
-        ...listed,
-      ],
-    }
-  return {
-    lines: [...lines, "", "All checks pass.", ...listed],
-    next: "scripts/ocv-tools.mjs help",
   }
 }
