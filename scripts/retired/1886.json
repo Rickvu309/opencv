@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/web/src/lib/account-api.test.ts",
+    "because": "A profile write is a pair command now. The web refreshes every read that no pair declares yet after a pair command, so billing and usage are still refreshed and the integrations list is refreshed too. The test asserts all four.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  }
+]
