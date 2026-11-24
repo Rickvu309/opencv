@@ -1,0 +1,8 @@
+layer: feature
+dependencies:
+  [
+    apps/api/src/job,
+    apps/api/src/registry,
+    apps/api/src/db,
+    apps/api/src/limits,
+  ]
