@@ -4,19 +4,14 @@ import {
 } from "@workspace/domain"
 import { Hono } from "hono"
 import { streamSSE } from "hono/streaming"
-import type { Auth } from "../auth.js"
-import type { AppDatabase } from "../db/context.js"
-import { requireSession, type SessionVariables } from "../middleware.js"
+import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"
 import { CommandError } from "../registry/errors.js"
 import { readTaskEvents, taskSnapshot } from "./task-reader.js"
 import { idleUntilAbort, waitForAbort } from "./sse.js"
 
-export function createCoachTaskRoutes(options: {
-  auth?: Auth
-  db?: AppDatabase
-}) {
-  const routes = new Hono<{ Variables: SessionVariables }>()
-  routes.use("*", requireSession(options.auth, options.db))
+export function createCoachTaskRoutes(options: { signedIn: SignedIn }) {
+  const routes = new Hono<{ Variables: SignedInVariables }>()
+  routes.use("*", options.signedIn)
   routes.get("/:id", async (c) => {
     const input = coachTaskStatusInputSchema.safeParse({
       taskId: c.req.param("id"),

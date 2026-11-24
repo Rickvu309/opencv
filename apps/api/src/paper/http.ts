@@ -17,11 +17,9 @@ import { type Context, Hono } from "hono"
 import { createId } from "../platform/id.js"
 import { PaperPackageRefusal } from "./package-errors.js"
 import { stageWordPackage } from "./package-store.js"
-import type { Auth } from "../auth.js"
-import type { AppDatabase } from "../db/context.js"
 import { jsonWithStatus } from "../platform/http-json.js"
 import { readJsonBody } from "../platform/http-json.js"
-import { requireSession, type SessionVariables } from "../middleware.js"
+import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"
 import { CommandError } from "../registry/errors.js"
 import { registry } from "../registry/registry.js"
 import {
@@ -178,9 +176,9 @@ function refuseImportLink(
   )
 }
 
-export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
-  const routes = new Hono<{ Variables: SessionVariables }>()
-  routes.route("/packages", createPaperPackageRoutes(auth, db))
+export function createPaperRoutes(signedIn: SignedIn) {
+  const routes = new Hono<{ Variables: SignedInVariables }>()
+  routes.route("/packages", createPaperPackageRoutes(signedIn))
 
   routes.use("/shared/*", async (c, next) => {
     c.header("cache-control", "no-store")
@@ -201,7 +199,7 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
 
   routes.use("*", async (c, next) => {
     if (c.req.path.includes("/shared/")) return next()
-    return requireSession(auth, db)(c, next)
+    return signedIn(c, next)
   })
 
   routes.route("/", createNativeWordRoutes())

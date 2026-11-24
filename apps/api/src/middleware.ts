@@ -5,23 +5,15 @@ import {
   httpStatusForError,
   unauthorizedEnvelope,
 } from "@workspace/domain"
-import type { Context, MiddlewareHandler } from "hono"
+import type { Context } from "hono"
 import { HTTPException } from "hono/http-exception"
 
 import { withRequestHeaders, type Auth } from "./auth.js"
 import { withDatabase, type AppDatabase } from "./db/context.js"
 import { jsonWithStatus } from "./platform/http-json.js"
+import type { SignedIn } from "./platform/signed-in.js"
 import { CommandError } from "./registry/errors.js"
-import type { SignedInGate } from "./registry/signed-in.js"
 import { readSession } from "./session.js"
-
-type Session = NonNullable<Awaited<ReturnType<typeof readSession>>>
-
-export type SessionVariables = {
-  session: Session
-  userId: string
-  db: AppDatabase
-}
 
 async function sessionOrRefusal(
   auth: Auth | undefined,
@@ -55,29 +47,31 @@ async function sessionOrRefusal(
 export function requireSession(
   auth: Auth | undefined,
   db: AppDatabase | undefined
-): MiddlewareHandler<{ Variables: SessionVariables }> {
+): SignedIn {
   return async (c, next) => {
     const found = await sessionOrRefusal(auth, db, c)
     if (!found.signedIn) return found.refusal
-    c.set("session", found.session)
     c.set("userId", found.session.user.id)
-    c.set("db", found.db)
-    return withDatabase(found.db, () => next())
+    return withRequestHeaders(
+      c.req.raw.headers,
+      () => withDatabase(found.db, () => next()),
+      found.auth
+    )
   }
 }
 
-export function signedInGate(
+export function currentSession(
   auth: Auth | undefined,
   db: AppDatabase | undefined
-): SignedInGate {
-  return async (c, run) => {
+) {
+  return async (c: Context) => {
     const found = await sessionOrRefusal(auth, db, c)
     if (!found.signedIn) return found.refusal
-    return withRequestHeaders(
-      c.req.raw.headers,
-      () => withDatabase(found.db, () => run(found.session.user.id)),
-      found.auth
-    )
+    return c.json({
+      ok: true,
+      user: found.session.user,
+      session: found.session.session,
+    })
   }
 }
 

@@ -9,24 +9,22 @@ import {
 } from "@workspace/domain"
 import { Hono } from "hono"
 
-import type { Auth } from "../auth.js"
-import type { AppDatabase } from "../db/context.js"
 import { jsonWithStatus } from "../platform/http-json.js"
-import { requireSession, type SessionVariables } from "../middleware.js"
+import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"
 import { saveFile } from "../paper/index.js"
 import { keyFor, limited, memoryLedger, systemClock } from "../limits/index.js"
 import { registry } from "../registry/registry.js"
 import { exportDownload } from "./export-download.js"
 import { exportAccountArchive } from "./queries.js"
 
-function sessionApp(auth?: Auth, db?: AppDatabase) {
-  const routes = new Hono<{ Variables: SessionVariables }>()
-  routes.use("*", requireSession(auth, db))
+function sessionApp(signedIn: SignedIn) {
+  const routes = new Hono<{ Variables: SignedInVariables }>()
+  routes.use("*", signedIn)
   return routes
 }
 
-export function createProfileRoutes(auth?: Auth, db?: AppDatabase) {
-  const routes = sessionApp(auth, db)
+export function createProfileRoutes(signedIn: SignedIn) {
+  const routes = sessionApp(signedIn)
   routes.get("/", async (c) => {
     const data = await registry.read(
       "profile.get",
@@ -38,8 +36,8 @@ export function createProfileRoutes(auth?: Auth, db?: AppDatabase) {
   return routes
 }
 
-export function createIntegrationsRoutes(auth?: Auth, db?: AppDatabase) {
-  const routes = sessionApp(auth, db)
+export function createIntegrationsRoutes(signedIn: SignedIn) {
+  const routes = sessionApp(signedIn)
   routes.get("/", async (c) => {
     const data = await registry.read(
       "integrations.list",
@@ -51,8 +49,8 @@ export function createIntegrationsRoutes(auth?: Auth, db?: AppDatabase) {
   return routes
 }
 
-export function createBillingRoutes(auth?: Auth, db?: AppDatabase) {
-  const routes = sessionApp(auth, db)
+export function createBillingRoutes(signedIn: SignedIn) {
+  const routes = sessionApp(signedIn)
   routes.get("/", async (c) => {
     const data = await registry.read(
       "billing.get",
@@ -64,8 +62,8 @@ export function createBillingRoutes(auth?: Auth, db?: AppDatabase) {
   return routes
 }
 
-export function createAccountRoutes(auth?: Auth, db?: AppDatabase) {
-  const routes = sessionApp(auth, db)
+export function createAccountRoutes(signedIn: SignedIn) {
+  const routes = sessionApp(signedIn)
 
   routes.post("/photo", async (c) => {
     const body = await c.req.parseBody()
@@ -114,8 +112,8 @@ export function createAccountRoutes(auth?: Auth, db?: AppDatabase) {
   return routes
 }
 
-export function createSearchRoutes(auth?: Auth, db?: AppDatabase) {
-  const routes = sessionApp(auth, db)
+export function createSearchRoutes(signedIn: SignedIn) {
+  const routes = sessionApp(signedIn)
   routes.get("/", async (c) => {
     const query = (c.req.query("q") ?? c.req.query("query") ?? "").trim()
     if (!query) return c.json(successEnvelope([]))
@@ -129,8 +127,8 @@ export function createSearchRoutes(auth?: Auth, db?: AppDatabase) {
   return routes
 }
 
-export function createActivityRoutes(auth?: Auth, db?: AppDatabase) {
-  const routes = sessionApp(auth, db)
+export function createActivityRoutes(signedIn: SignedIn) {
+  const routes = sessionApp(signedIn)
   routes.get("/", async (c) => {
     const subjectKind = c.req.query("subjectKind")
     const subjectId = c.req.query("subjectId")
@@ -147,8 +145,8 @@ export function createActivityRoutes(auth?: Auth, db?: AppDatabase) {
   return routes
 }
 
-export function createUsageRoutes(auth?: Auth, db?: AppDatabase) {
-  const routes = sessionApp(auth, db)
+export function createUsageRoutes(signedIn: SignedIn) {
+  const routes = sessionApp(signedIn)
   routes.get("/usage", async (c) => {
     const data = await registry.read(
       "coach.usage",

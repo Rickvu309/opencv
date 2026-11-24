@@ -1,16 +1,7 @@
 apps/api/src:
-  apps/api/src/auth.ts:
-    violations:
-      - dependency
-      - layer
-    files:
-      - apps/api/src/paper/http.ts
-      - apps/api/src/paper/package-http.ts
   apps/api/src/middleware.ts:
     violations:
       - dependency
       - layer
     files:
-      - apps/api/src/paper/http.ts
-      - apps/api/src/paper/native-word-http.ts
       - apps/api/src/paper/package-http.ts

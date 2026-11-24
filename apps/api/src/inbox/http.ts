@@ -1,19 +1,13 @@
 import { personActor, successEnvelope } from "@workspace/domain"
 import { Hono } from "hono"
 
-import type { Auth } from "../auth.js"
-import type { AppDatabase } from "../db/context.js"
-import { requireSession, type SessionVariables } from "../middleware.js"
+import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"
 import { registry } from "../registry/registry.js"
 import { connectUrl } from "./store.js"
 
-export function createInboxRoutes(
-  auth?: Auth,
-  db?: AppDatabase,
-  gmailEnabled = false
-) {
-  const routes = new Hono<{ Variables: SessionVariables }>()
-  routes.use("*", requireSession(auth, db))
+export function createInboxRoutes(signedIn: SignedIn, gmailEnabled = false) {
+  const routes = new Hono<{ Variables: SignedInVariables }>()
+  routes.use("*", signedIn)
 
   routes.get("/", async (c) => {
     const data = await registry.read(
