@@ -50,13 +50,20 @@ test("a newer untested release blocks an older tested release of the same servic
   assert.deepEqual(ids(list), [])
 })
 
-test("approves only merge queue releases of main in this repo", () => {
+test("approves only releases of main in this repo", () => {
   const list = [
-    make("human", "web", "NEEDS_APPROVAL", { commitAuthor: "someone" }),
     make("branch", "api", "NEEDS_APPROVAL", { branch: "feature" }),
     make("fork", "docs", "NEEDS_APPROVAL", { repo: "other/opencv" }),
   ]
   assert.deepEqual(ids(list), [])
+})
+
+test("approves the tested commit of main whoever its author is, since a change now merges under its own author", () => {
+  const list = [
+    make("owner", "web", "NEEDS_APPROVAL", { commitAuthor: "quanvu309" }),
+    make("queue", "api", "NEEDS_APPROVAL"),
+  ]
+  assert.deepEqual(ids(list).sort(), ["owner", "queue"])
 })
 
 test("approval job can check out the private repository without write access", () => {

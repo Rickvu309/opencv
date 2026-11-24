@@ -1,5 +1,4 @@
 const API = "https://backboard.railway.com/graphql/v2"
-const QUEUE_BOT = "github-merge-queue[bot]"
 const IDLE = new Set(["SKIPPED", "REMOVED"])
 
 export function pickApprovals(deployments, { repo, sha }) {
@@ -18,7 +17,6 @@ export function pickApprovals(deployments, { repo, sha }) {
       meta?.commitHash === sha &&
       deployment.status === "NEEDS_APPROVAL" &&
       meta?.branch === "main" &&
-      meta?.commitAuthor === QUEUE_BOT &&
       meta?.repo?.toLowerCase() === repo.toLowerCase()
     )
       picks.push(deployment)
