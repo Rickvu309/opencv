@@ -77,6 +77,7 @@ export async function openWorld(options?: TestAppOptions) {
     const actor = personActor(session.user.id)
 
     return {
+      id: session.user.id,
       run: (name: string, input: unknown, idempotencyKey?: string) =>
         post(`/api/commands/${name}`, {
           input,
@@ -124,5 +125,12 @@ export async function openWorld(options?: TestAppOptions) {
     }
   }
 
-  return { person, visitor, close: () => client.close() }
+  return {
+    person,
+    visitor,
+    db,
+    registry,
+    inside: <T>(work: () => Promise<T>) => withDatabase(db, work),
+    close: () => client.close(),
+  }
 }
