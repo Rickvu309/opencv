@@ -12,11 +12,6 @@ export const COMMANDS = [
     when: "Run the pull request rules early, push through the hooks and open the PR (--draft opens a draft). Every problem in the body is named in one message. Unless the PR is a draft or blocked by the migration allow-label or production-red rules, it turns on auto-merge, so the PR merges by itself when ci is green; if GitHub refuses auto-merge, it says so in one line and the coordinator merges with merge <pr#>. --dry-run checks only the body, not the title, pushes nothing and opens nothing, so it works with unsaved changes.",
   },
   {
-    name: "check",
-    usage: "check [--all] [--list [--base <rev>] [--head <rev>]]",
-    when: "Run the tests this branch's change reaches: changed tests, tests that scan a changed folder (the covers-every-X tests), tests that name a changed command, and tests that import a changed file directly or through other files. Over 40 in a package it runs only the changed tests, the scanners and the 25 nearest, records a partial pass that says how many ran, and leaves the rest to CI; a broad change (config, setup, package file) records a broad pass naming the suite CI runs. Only --all runs a whole suite. Tests run one local check at a time per machine (a lock under ~/.local/state/ocv-tools). A pass is recorded for the head commit; pre-push runs the same set and finish refuses a head with no recorded pass. --list prints the selection and why, and runs nothing.",
-  },
-  {
     name: "body",
     usage: "body <pr> --body-file <file>",
     when: "Replace a pull request body and keep its Closes #<issue> line. The issue comes from the branch name, type/<issue>-words, the same way the policy rule reads it. The same body rules as finish run first, including Caught by and Introduced by on a fix. Use this instead of gh pr edit --body-file.",
@@ -34,7 +29,7 @@ export const COMMANDS = [
   {
     name: "retire",
     usage: 'retire "<subject>" --because "<why>" [--replaced-by <test file>]',
-    when: 'The one way to remove or weaken a protected check on purpose; the subject is what PROTECTED_WEAKENED printed, its file, or a case title prefix. With --replaced-by, retire runs that test under the machine lock with the changed source files put back to the fork point (it must fail on an assertion) and on the head (it must pass), and records the proof in scripts/retired/<issue>.json. Such a retirement is self-serve: the pull request still merges itself when the replacement covers the same module, command or route, and finish and the body say "Retired N checks with replacements". Without a replacement, or for a ratchet or known-failures entry, a limit bound, a guard or ledger row, a checker setting or a skip mark, the retirement is recorded without self-serve replacement proof and the pull request still merges on green ci. An expected-failure mark is PIN_ISSUE_OPEN\'s rule, not this one.',
+    when: 'The one way to remove or weaken a protected check on purpose; the subject is what PROTECTED_WEAKENED printed, its file, or a case title prefix. With --replaced-by, retire runs that test with the changed source files put back to the fork point (it must fail on an assertion) and on the head (it must pass), and records the proof in scripts/retired/<issue>.json. Such a retirement is self-serve: the pull request still merges itself when the replacement covers the same module, command or route, and finish and the body say "Retired N checks with replacements". Without a replacement, or for a ratchet or known-failures entry, a limit bound, a guard or ledger row, a checker setting or a skip mark, the retirement is recorded without self-serve replacement proof and the pull request still merges on green ci. An expected-failure mark is PIN_ISSUE_OPEN\'s rule, not this one.',
   },
   {
     name: "policy",

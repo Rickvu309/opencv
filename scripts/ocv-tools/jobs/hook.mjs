@@ -4,7 +4,6 @@ import { badInput } from "../input.mjs"
 import { decide } from "../rules/index.mjs"
 import { run } from "./common.mjs"
 import { runQuickChecks } from "./push-checks.mjs"
-import { testsForPush } from "./affected-tests.mjs"
 import { catalogFacts } from "./catalog-fresh.mjs"
 import { pushedProtectedFacts } from "./protected-facts.mjs"
 
@@ -247,11 +246,7 @@ function prePush(ctx) {
       top
     ),
   }
-  const early = decide("push", {
-    ...facts,
-    quick: { failed: [] },
-    affected: { failed: [] },
-  })
+  const early = decide("push", { ...facts, quick: { failed: [] } })
   if (!early.ok) return report(early)
   if (!pushing) return { lines: [] }
   if (ctx.env.SKIP_CHECKS === "1")
@@ -262,21 +257,13 @@ function prePush(ctx) {
     }
   const started = ctx.now()
   const quick = runQuickChecks(ctx, top)
-  const affected = quick.failed.length
-    ? { failed: [], lines: [] }
-    : testsForPush(
-        ctx,
-        top,
-        refs.filter((ref) => !ref.deleting).map((ref) => ref.sha)
-      )
   const seconds = Math.round((ctx.now() - started) / 1000)
-  const verdict = decide("push", { ...facts, quick, affected })
+  const verdict = decide("push", { ...facts, quick })
   return report(verdict, [
     ...quick.lines,
-    ...affected.lines,
     ...(verdict.ok
       ? [
-          `pre-push: quick checks passed in ${seconds}s, with the tests the change reaches.`,
+          `pre-push: quick checks passed in ${seconds}s. No tests ran here; ci runs them.`,
         ]
       : []),
   ])

@@ -231,7 +231,6 @@ test("finish refuses a body with no Evidence before it pushes", () => {
     main: { path: "/m", branch: "main", dirty: "" },
     port: null,
     env: {},
-    affected: { head: "h", receipt: true },
     diff: { files: "", labels: [], ciYmlAtHead: true, deleted: {} },
     protected: { weakened: [], retired: [], retirements: [] },
   })

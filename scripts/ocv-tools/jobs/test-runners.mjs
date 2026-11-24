@@ -1,9 +1,6 @@
-import { createRequire } from "node:module"
 import { posix } from "node:path"
-import { UnreadableGitOutput } from "./git-reads.mjs"
 
 const TEST_FILE = /\.(?:test|spec)\.(?:[cm]?[jt]sx?)$/
-const NEVER_RUN = /\.type-test\.ts$/
 const PACKAGE_JSON = /^((?:[^/]+\/)+?)package\.json$/
 
 export const SCRIPTS_RUNNER = Object.freeze({
@@ -28,7 +25,7 @@ export function workspaceGlobs(yamlText) {
     if (!inPackages || /^\s*(?:#.*)?$/.test(line)) continue
     const item = line.match(/^\s+-\s+(["']?)([^"'#\s!]+)\1\s*(?:#.*)?$/)
     if (!item)
-      throw new UnreadableGitOutput(
+      throw new Error(
         `pnpm-workspace.yaml has a packages line the tool does not read: ${JSON.stringify(line.trim())}; list each package glob as - "dir/*"`
       )
     globs.push(item[2])
@@ -116,7 +113,7 @@ export function runnerFor(dir, testScript) {
 export function workspaceRunners({ workspaceYaml, packageJsons }) {
   const globs = workspaceGlobs(workspaceYaml)
   if (!globs.length)
-    throw new UnreadableGitOutput(
+    throw new Error(
       "pnpm-workspace.yaml lists no packages the tool can read, so no test runner can be found; restore its packages list"
     )
   const dirs = workspacePackageDirs(globs, [...packageJsons.keys()])
@@ -125,12 +122,12 @@ export function workspaceRunners({ workspaceYaml, packageJsons }) {
     try {
       json = JSON.parse(packageJsons.get(`${dir}/package.json`))
     } catch (error) {
-      throw new UnreadableGitOutput(
+      throw new Error(
         `${dir}/package.json is not valid JSON (${error.message}), so its test runner cannot be read; fix it and run pnpm install`
       )
     }
     if (!json || typeof json !== "object" || Array.isArray(json))
-      throw new UnreadableGitOutput(
+      throw new Error(
         `${dir}/package.json is not a JSON object, so its test runner cannot be read; fix it`
       )
     const testScript = json.scripts?.test ?? null
@@ -158,76 +155,4 @@ export function runnerOf(file, runners) {
     return runner
   }
   return null
-}
-
-export const isTestFile = (file) =>
-  TEST_FILE.test(file) && !NEVER_RUN.test(file)
-
-export const isRunnableTest = (file, runners) =>
-  isTestFile(file) && !!runnerOf(file, runners)
-
-export function packageOf(file, packages) {
-  return (
-    packages
-      .filter((pkg) => file.startsWith(`${pkg.dir}/`))
-      .sort((a, b) => b.dir.length - a.dir.length)[0] ?? null
-  )
-}
-
-const FOCUS_APIS = new Set(["test", "it", "describe", "suite", "bench"])
-
-function loadTypeScript() {
-  try {
-    return createRequire(import.meta.url)("typescript")
-  } catch (error) {
-    throw new UnreadableGitOutput(
-      `the TypeScript parser could not be loaded (${error.message}), so changed tests cannot be read for .only; run pnpm install`
-    )
-  }
-}
-
-function rootName(ts, node) {
-  let at = node
-  while (
-    ts.isPropertyAccessExpression(at) ||
-    ts.isCallExpression(at) ||
-    ts.isElementAccessExpression(at)
-  )
-    at = at.expression
-  return ts.isIdentifier(at) ? at.text : null
-}
-
-export function focusedCalls(file, text) {
-  const ts = loadTypeScript()
-  const kind = /\.tsx$/.test(file)
-    ? ts.ScriptKind.TSX
-    : /\.[cm]?ts$/.test(file)
-      ? ts.ScriptKind.TS
-      : /\.jsx$/.test(file)
-        ? ts.ScriptKind.JSX
-        : ts.ScriptKind.JS
-  const source = ts.createSourceFile(
-    file,
-    String(text),
-    ts.ScriptTarget.Latest,
-    true,
-    kind
-  )
-  const found = []
-  const visit = (node) => {
-    if (
-      ts.isPropertyAccessExpression(node) &&
-      node.name.text === "only" &&
-      FOCUS_APIS.has(rootName(ts, node.expression))
-    ) {
-      const { line } = source.getLineAndCharacterOfPosition(node.getStart())
-      found.push({
-        line: line + 1,
-        call: node.getText(source).replace(/\s+/g, ""),
-      })
-    }
-    ts.forEachChild(node, visit)
-  }
-  visit(source)
-  return found
 }

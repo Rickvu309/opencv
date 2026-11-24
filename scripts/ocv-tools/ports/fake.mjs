@@ -153,11 +153,6 @@ export function fakePorts(world = {}) {
       remember(path, text)
     },
     exists(path) {
-      if (
-        world.affectedReceipts !== false &&
-        /\/ocv-tools-affected-tests-[^/]+$/.test(path)
-      )
-        return true
       return files.has(path) || dirs.has(path)
     },
     list(dir) {

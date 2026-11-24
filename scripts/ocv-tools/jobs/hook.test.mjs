@@ -142,7 +142,6 @@ const nodeCalls = (w) =>
 test("pre-push runs only the quick checks and never the full suite", () => {
   const w = world({
     changed: ["apps/web/src/a.tsx", "packages/ui/src/b.ts", "README.md"],
-    receipt: true,
   })
   const r = w.call(["pre-push"], { stdin: pushOk })
   assert.equal(r.code, 0, r.text)
@@ -189,7 +188,7 @@ test("pre-push runs only the quick checks and never the full suite", () => {
 
 test("pre-push still refuses a comment, bad formatting, a lint error and a failing guard", () => {
   const refused = (failing) => {
-    const w = world({ changed: ["apps/web/src/a.tsx"], failing, receipt: true })
+    const w = world({ changed: ["apps/web/src/a.tsx"], failing })
     return w.call(["pre-push"], { stdin: pushOk })
   }
   const comment = refused(["no-comments"])
@@ -210,7 +209,7 @@ test("pre-push still refuses a comment, bad formatting, a lint error and a faili
 
 test("pre-push typechecks after a deleted file and for a package file change", () => {
   const dirs = (over) => {
-    const w = world({ ...over, receipt: true })
+    const w = world(over)
     const r = w.call(["pre-push"], { stdin: pushOk })
     assert.equal(r.code, 0, r.text)
     return w.s.calls
@@ -225,10 +224,7 @@ test("pre-push typechecks after a deleted file and for a package file change", (
   assert.deepEqual(dirs({ changed: ["apps/api/package.json"] }), [
     "/repo/apps/api",
   ])
-  const deleting = world({
-    deleted: ["packages/ui/src/gone.tsx"],
-    receipt: true,
-  })
+  const deleting = world({ deleted: ["packages/ui/src/gone.tsx"] })
   deleting.call(["pre-push"], { stdin: pushOk })
   assert.equal(
     deleting.s.calls.filter((c) => c.cmd.endsWith("/eslint")).length,
@@ -255,33 +251,43 @@ test("pre-push refuses a bad branch name before it runs any check", () => {
   assert.equal(w.s.calls.filter((c) => c.cmd !== "git").length, 0)
 })
 
-test("pre-push does not run the guard or tool suite when scripts/ocv-tools changed, and names the tool suite CI runs", () => {
-  const tools = world({
-    changed: ["scripts/ocv-tools/jobs/hook.mjs"],
-    toolTests: ["scripts/ocv-tools/jobs/hook.test.mjs"],
-  })
+test("pre-push runs no test when scripts/ocv-tools changed, and says ci runs them", () => {
+  const tools = world({ changed: ["scripts/ocv-tools/jobs/hook.mjs"] })
   const r = tools.call(["pre-push"], { stdin: pushOk })
   assert.equal(r.code, 0, r.text)
-  assert.match(r.text, /it is broad, so CI runs the rest: /)
-  assert.match(r.text, /scripts\/ocv-tools\/\*\*\/\*\.test\.mjs/)
+  assert.match(r.text, /No tests ran here; ci runs them\./)
   assert.ok(!nodeCalls(tools).some((call) => call.args.includes("--test")))
-  assert.deepEqual(
-    tools.git("ls-files").map((call) => call.args.join(" ")),
-    ["ls-files -v -z"]
-  )
+  assert.equal(tools.git("ls-files").length, 0)
 })
 
-test("pre-push without origin/main skips prettier and eslint, still checks comments, and refuses to call the unread change passed", () => {
+test("pre-push without origin/main skips prettier and eslint, says so, and still checks comments", () => {
   const w = world({ noBase: true })
   const r = w.call(["pre-push"], { stdin: pushOk })
-  assert.equal(r.code, 2, r.text)
+  assert.equal(r.code, 0, r.text)
   assert.match(r.text, /origin\/main is missing/)
-  assert.match(
-    r.text,
-    /REFUSED AFFECTED_TESTS: the tool could not read what this change is.*run git fetch origin main/
-  )
   assert.equal(nodeCalls(w).length, 1)
   assert.equal(w.s.calls.filter((c) => c.cmd.endsWith("prettier")).length, 0)
+})
+
+test("the commit and push quick checks refuse when git cannot list the staged or changed files, instead of checking none", () => {
+  for (const prefix of [
+    "diff --cached --name-only",
+    "diff --name-only --no-renames -z",
+    "diff --cached --no-renames --raw",
+    "cat-file -s",
+  ]) {
+    const w = world({ staged: ["apps/web/src/a.ts"], gitFails: [prefix] })
+    const r = w.call(["pre-commit"])
+    assert.notEqual(r.code, 0, `${prefix}: ${r.text}`)
+    assert.match(r.text, /could not be read|cannot be checked/, prefix)
+  }
+  const w = world({
+    changed: ["apps/web/src/a.ts"],
+    gitFails: ["diff --name-only --no-renames --diff-filter=ACMR"],
+  })
+  const r = w.call(["pre-push"], { stdin: push(["refs/heads/feat/1-x"]) })
+  assert.notEqual(r.code, 0, r.text)
+  assert.match(r.text, /git diff of the changed files failed/)
 })
 
 test("pre-push on a delete runs no check", () => {

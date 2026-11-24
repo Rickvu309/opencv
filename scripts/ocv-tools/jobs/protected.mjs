@@ -31,10 +31,6 @@ const BOUND = /^packages\/domain\/src\/limits\/(?!.*\.test\.)[^]*\.ts$/
 export const CHECKER_CONFIG = Object.freeze({
   "apps/web/vitest.quarantine.ts": { shrinks: ["quarantine"] },
   "apps/web/vitest.config.ts": { keeps: [] },
-  "scripts/ocv-tools/jobs/test-selection.mjs": {
-    grows: ["TREE_SCANS"],
-    floors: ["LOCAL_CAP", "MAX_PER_RUNNER"],
-  },
   "packages/guards/run-tests.mjs": { frozen: true },
 })
 
@@ -289,11 +285,6 @@ function elementsIn(entry) {
   return literalsIn(entry)
 }
 
-function numberIn(entry) {
-  if (!entry || !ts.isNumericLiteral(entry.node)) return null
-  return Number(entry.node.text.replace(/_/g, ""))
-}
-
 function checkerWeakenings(baseText, headText, path, kind) {
   const spec = CHECKER_CONFIG[path] ?? { frozen: true }
   if (headText === null) return [weak(path, kind, "scanner-dropped", path)]
@@ -304,12 +295,6 @@ function checkerWeakenings(baseText, headText, path, kind) {
   const base = declarations(path, baseText)
   const head = declarations(path, headText)
   const out = []
-  for (const name of spec.grows ?? [])
-    for (const gone of minus(
-      literalsIn(base.get(name)),
-      literalsIn(head.get(name))
-    ))
-      out.push(weak(path, kind, "scanner-dropped", `${path} ${name} ${gone}`))
   for (const name of spec.shrinks ?? [])
     for (const fresh of minus(
       elementsIn(head.get(name)),
@@ -318,14 +303,6 @@ function checkerWeakenings(baseText, headText, path, kind) {
       out.push(
         weak(path, kind, "ratchet-raised", `${path} ${name} gains ${fresh}`)
       )
-  for (const name of spec.floors ?? []) {
-    const was = numberIn(base.get(name))
-    const now = numberIn(head.get(name))
-    if (was !== null && (now === null || now < was))
-      out.push(
-        weak(path, kind, "bound-loosened", `${path} ${name} ${was} -> ${now}`)
-      )
-  }
   return out
 }
 

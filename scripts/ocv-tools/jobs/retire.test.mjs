@@ -14,6 +14,7 @@ import { evaluate, ownerBecause } from "../rules/index.mjs"
 import { retiredLines } from "../rules/protected.mjs"
 import { protectedFacts } from "./protected-facts.mjs"
 import { retireIn } from "./retire.mjs"
+import { workspaceRunners } from "./test-runners.mjs"
 
 const cleanEnv = () =>
   Object.fromEntries(
@@ -58,7 +59,6 @@ function world(t) {
         exists: (path) => existsSync(path),
         mkdir: (path) => mkdirSync(path, { recursive: true }),
       },
-      lock: (fn) => ({ ok: true, value: fn() }),
     },
   }
   git("init", "-q", "-b", "main")
@@ -227,4 +227,36 @@ test("retire refuses a dirty worktree and a subject the branch does not weaken",
     (error) => /uncommitted changes/.test(error.message)
   )
   rmSync(join(w.dir, "lib/note.txt"))
+})
+
+test("a workspace the tool cannot parse refuses and names the file", () => {
+  const ok = {
+    workspaceYaml: 'packages:\n  - "apps/*"\n',
+    packageJsons: new Map([["apps/web/package.json", '{"name":"web"}']]),
+  }
+  assert.equal(workspaceRunners(ok).packages.length, 1)
+  assert.throws(
+    () =>
+      workspaceRunners({
+        ...ok,
+        packageJsons: new Map([["apps/web/package.json", "{nope"]]),
+      }),
+    /apps\/web\/package\.json is not valid JSON/
+  )
+  assert.throws(
+    () => workspaceRunners({ ...ok, workspaceYaml: undefined }),
+    /lists no packages/
+  )
+  assert.throws(
+    () => workspaceRunners({ ...ok, workspaceYaml: 'packages: ["apps/*"]\n' }),
+    /lists no packages/
+  )
+  assert.throws(
+    () =>
+      workspaceRunners({
+        ...ok,
+        workspaceYaml: 'packages:\n  - "apps/*"\n  - "!apps/old"\n',
+      }),
+    /packages line the tool does not read: "- \\"!apps\/old\\""/
+  )
 })

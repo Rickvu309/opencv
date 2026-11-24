@@ -177,13 +177,12 @@ export function retireIn(
       "Put the test in a package with a test runner."
     )
   const changed = facts.changed
-  const prove = () =>
-    flipProof(ctx, top, { fork: facts.base, changed, replacedBy, command })
-  const locked = ctx.ports.lock
-    ? ctx.ports.lock(prove)
-    : { ok: true, value: prove() }
-  if (!locked.ok) throw retireRefusal(facts, locked.reason, "Run retire again.")
-  const proof = locked.value
+  const proof = flipProof(ctx, top, {
+    fork: facts.base,
+    changed,
+    replacedBy,
+    command,
+  })
   if (!proof.failedOnBase || !proof.passedOnHead)
     throw retireRefusal(
       facts,
