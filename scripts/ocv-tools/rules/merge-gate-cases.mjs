@@ -30,6 +30,36 @@ export const MERGE_GATE_CASES = [
     "production is red (#1600 open), so only a pull request labeled production-red-revert merges",
   ],
   [
+    "QUEUE_CLOSED",
+    {
+      pull: { n: 1500, labels: [] },
+      issues: [{ number: 1700, state: "OPEN", labels: ["main-red"] }],
+    },
+    {
+      pull: { n: 1500, labels: ["production-red-revert"] },
+      issues: [{ number: 1700, state: "OPEN", labels: ["main-red"] }],
+    },
+    "main is red (#1700 open), so only a pull request labeled production-red-revert merges",
+  ],
+  [
+    "QUEUE_CLOSED",
+    {
+      pull: { n: 1500, labels: [] },
+      issues: [
+        { number: 1600, state: "OPEN", labels: ["production-red"] },
+        { number: 1700, state: "OPEN", labels: ["main-red"] },
+      ],
+    },
+    {
+      pull: { n: 1500, labels: [] },
+      issues: [
+        { number: 1600, state: "CLOSED", labels: ["production-red"] },
+        { number: 1700, state: "CLOSED", labels: ["main-red"] },
+      ],
+    },
+    "production is red (#1600 open) and main is red (#1700 open), so only a pull request labeled production-red-revert merges",
+  ],
+  [
     "MIGRATION_CHANGES",
     {
       pull: { n: 7 },

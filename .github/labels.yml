@@ -36,6 +36,9 @@
 - name: production-red-revert
   color: "fbca04"
   description: Reverts production to the last good commit. It merges while production is red
+- name: main-red
+  color: "b60205"
+  description: The full ci run failed on main. While one is open only a production-red-revert pull request merges
 - name: allow-migration
   color: "b60205"
   description: The owner allowed a migration that changes existing things. ocv-tools merge adds allow-migration:<tag>

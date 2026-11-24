@@ -1,8 +1,6 @@
 name: Full run on main
 
 on:
-  push:
-    branches: [main]
   schedule:
     - cron: "17 19 * * *"
   workflow_dispatch:
@@ -28,26 +26,6 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup
       - run: pnpm check:full lint typecheck test build
-
-  approve-railway:
-    if: ${{ github.event_name == 'push' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-    env:
-      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-      GITHUB_TOKEN: ${{ github.token }}
-      GITHUB_REPOSITORY: ${{ github.repository }}
-      GITHUB_SHA: ${{ github.sha }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.sha }}
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - run: node scripts/approve-railway-deploys.mjs
 
   failure:
     needs: full

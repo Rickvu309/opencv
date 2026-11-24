@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "scripts/railway-approval-gate.test.mjs",
+    "because": "production now deploys only after a green ci run on main, so the old rule that approval must not wait for a full run and must run on every push is reversed on purpose",
+    "replacedBy": "scripts/railway-approval-gate.test.mjs",
+    "proof": {
+      "fork": "e1121622b2c49a42c071e56752180e71acba8363",
+      "replacedByBlob": "ae8d9803c786af3ae7e813eeb7bbe5c3d52f9fdf",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "owner",
+    "classBecause": "a guard case-removed",
+    "items": 3
+  }
+]

@@ -1,6 +1,7 @@
 export const LABELS = Object.freeze({
   productionRed: "production-red",
   productionRedRevert: "production-red-revert",
+  mainRed: "main-red",
   allowMigration: "allow-migration",
 })
 
@@ -82,10 +83,15 @@ export function ownerBecause(facts) {
   return because
 }
 
-export function openProductionRed(issues) {
+export const RED_PLACES = Object.freeze([
+  [LABELS.productionRed, "production"],
+  [LABELS.mainRed, "main"],
+])
+
+export function openRedIssues(issues) {
   return (issues ?? []).filter(
     (issue) =>
       issue.state === "OPEN" &&
-      (issue.labels ?? []).includes(LABELS.productionRed)
+      RED_PLACES.some(([label]) => (issue.labels ?? []).includes(label))
   )
 }
