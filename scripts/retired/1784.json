@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/api/src/chat/chat-contract.test.ts",
+    "because": "coach.stop moved from the Chat contract to the Coach contract, so the Chat test's helper can no longer name it; the same test now checks the Stop output through the Coach contract",
+    "replacedBy": "apps/api/src/chat/chat-contract.test.ts",
+    "proof": {
+      "fork": "bf8cb2f255f5291e943b07102d7bcff85b257c7c",
+      "replacedByBlob": "6aca3ab825095843eda74ca0e924aa42afce6ef5",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]

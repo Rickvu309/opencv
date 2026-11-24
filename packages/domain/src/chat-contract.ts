@@ -12,7 +12,6 @@ import {
   chatOpenInputSchema,
   chatRenameInputSchema,
   chatSetFocusInputSchema,
-  chatStopInputSchema,
   focusKindSchema,
 } from "./chat.js"
 import { commandContract, commandEntry } from "./contract.js"
@@ -196,15 +195,6 @@ export const chatContract = commandContract({
     destructive: true,
     step: () => "Delete this chat",
     invalidates: chatChanged,
-  }),
-  "coach.stop": commandEntry({
-    description: "Stop the chat that is running.",
-    input: chatStopInputSchema,
-    output: z.object({ stopped: z.boolean() }).strict(),
-    coach: "never",
-    destructive: false,
-    step: () => "Stop",
-    invalidates: () => [],
   }),
   "actions.approve": commandEntry({
     description: "Run a pending Coach action.",
