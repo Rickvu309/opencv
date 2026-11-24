@@ -1,5 +1,6 @@
 import { z } from "zod"
 import { coachTurnRequestSchema } from "./chat-messages.js"
+import { chatStopInputSchema } from "./chat.js"
 import { chatDetailSchema } from "./chat-contract.js"
 import { chatIdSchema } from "./ids.js"
 import {
@@ -159,6 +160,15 @@ export type CoachStartInput = z.infer<typeof coachStartInputSchema>
 export type CoachTaskReplay = z.infer<typeof coachTaskReplaySchema>
 
 export const coachTaskContract = commandContract({
+  "coach.stop": commandEntry({
+    description: "Stop the chat that is running.",
+    input: chatStopInputSchema,
+    output: z.object({ stopped: z.boolean() }).strict(),
+    coach: "never",
+    destructive: false,
+    step: () => "Stop",
+    invalidates: () => [],
+  }),
   "coach.start": commandEntry({
     description: "Queue a durable Coach task.",
     input: coachStartInputSchema,

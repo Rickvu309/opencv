@@ -24,9 +24,3 @@ apps/api/src:
       - layer
     files:
       - apps/api/src/chat/http.ts
-apps/api/src/coach:
-  apps/api/src/coach/index.ts:
-    violations:
-      - dependency
-    files:
-      - apps/api/src/chat/commands.ts

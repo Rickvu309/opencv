@@ -103,7 +103,11 @@ describe("a chat binding that drifts from the chat contract is rejected", () => 
       ])
 
       trackChatTurn(chatId, new AbortController())
-      await run("coach.stop", { chatId })
+      await registry.execute({
+        name: "coach.stop",
+        input: { chatId },
+        actor: person,
+      })
       expect(stopChat(chatId)).toBe(false)
 
       const approveChat = (await run("chat.create", { title: "Approve" }))
