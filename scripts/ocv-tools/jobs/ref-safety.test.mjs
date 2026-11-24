@@ -9,7 +9,6 @@ import { isolatedEnv } from "../ports/proc.mjs"
 
 const root = fileURLToPath(new URL("../../../", import.meta.url))
 const SELF = "scripts/ocv-tools/jobs/ref-safety.test.mjs"
-const WHOLE_SUITE = "scripts/ocv-tools/jobs/sweep-home.test.mjs"
 const SPAWNS = /child_process|realRunner|realPorts/
 
 const PROC = new URL("../ports/proc.mjs", import.meta.url).href
@@ -45,7 +44,7 @@ function spawningToolTests() {
   )
     .split("\n")
     .filter(Boolean)
-    .filter((file) => file !== SELF && file !== WHOLE_SUITE)
+    .filter((file) => file !== SELF)
     .filter((file) => SPAWNS.test(readFileSync(join(root, file), "utf8")))
 }
 
@@ -102,8 +101,7 @@ test("the delivery tool's own process-spawning tests, run by the tool inside a h
   const files = spawningToolTests()
   assert.ok(
     files.includes("scripts/ocv-tools/ports/git.test.mjs") &&
-      files.includes("scripts/ocv-tools/ports/git-cleanup.test.mjs") &&
-      files.includes("scripts/ocv-tools/jobs/merged-tree-git.test.mjs"),
+      files.includes("scripts/ocv-tools/ports/git-cleanup.test.mjs"),
     files.join("\n")
   )
   const { repo, state } = throwawayRepo(t)

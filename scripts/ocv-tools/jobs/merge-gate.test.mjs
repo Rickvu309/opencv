@@ -135,42 +135,37 @@ test("a migration allow label reruns failed jobs and turns on auto-merge", () =>
   assert.ok(f.effects("gh", "pr merge")[0].args.includes("--auto"))
 })
 
-test("merge --wait on an auto-merge PR only waits, then closes the issue", () => {
-  const f = fixture({ queue: true })
+test("after GitHub auto-merged a PR, merge closes the issue and merges nothing itself", () => {
+  const f = fixture()
   f.s.pull.autoMergeRequest = { mergeMethod: "SQUASH" }
-  f.s.onPause = (total, s) => {
-    s.pull.state = "MERGED"
-    s.pull.mergeCommit = { oid: "merged-auto" }
-  }
-  const r = f.call("merge", "91", "--wait")
-  assert.match(r.text, /PR #91 is on auto-merge/)
+  f.s.pull.state = "MERGED"
+  f.s.pull.mergeCommit = { oid: "merged-auto" }
+  const r = f.call("merge", "91")
+  assert.equal(r.code, 0, r.text)
   assert.match(r.text, /Merged PR #91 as merged-auto/)
   assert.equal(f.effects("gh", "pr merge").length, 0)
   assert.equal(f.effects("git", "merge-tree").length, 0)
   assert.equal(f.effects("gh", "issue close").length, 1)
-  const quick = fixture({ queue: true })
-  quick.s.pull.autoMergeRequest = { mergeMethod: "SQUASH" }
-  const pending = quick.call("merge", "91")
-  assert.equal(pending.code, 0, pending.text)
-  assert.match(pending.text, /merge 91 --wait/)
-  assert.equal(quick.effects("gh", "pr merge").length, 0)
 })
 
-test("merge --wait reads the ci rollup in the capitals GitHub GraphQL returns, so a red auto-merge PR fails at once instead of after 45 minutes", () => {
-  const f = fixture({ queue: true })
+test("a red auto-merge PR is refused at once", () => {
+  const f = fixture()
   f.s.pull.autoMergeRequest = { mergeMethod: "SQUASH" }
-  f.s.rollup = [
+  f.s.checks = [
     {
+      id: 2,
       name: "ci",
-      status: "COMPLETED",
-      conclusion: "FAILURE",
-      completedAt: "2026-11-13T00:00:00Z",
+      status: "completed",
+      conclusion: "failure",
+      head_sha: "head-1",
     },
   ]
-  const r = f.call("merge", "91", "--wait")
+  const r = f.call("merge", "91")
   assert.equal(r.code, 2, r.text)
-  assert.match(r.text, /REFUSED CI_FAILED: The ci check on head-1 is failure/)
-  assert.doesNotMatch(r.text, /QUEUE_TIMEOUT/)
+  assert.match(
+    r.text,
+    /REFUSED CI_REQUIRED: The ci check on head head-1 is failure, not success/
+  )
   assert.equal(f.effects("gh", "pr merge").length, 0)
 })
 

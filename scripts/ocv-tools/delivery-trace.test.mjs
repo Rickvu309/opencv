@@ -12,7 +12,6 @@ import {
   releaseMarker,
 } from "./claim-marker.mjs"
 import { fixture } from "./jobs/fixture.mjs"
-import { classify } from "./jobs/merge.mjs"
 
 const here = fileURLToPath(new URL(".", import.meta.url))
 const TOOLCHAIN = Boolean(resolveJava() && resolveJar())
@@ -20,7 +19,6 @@ const NO_TOOLCHAIN =
   "Java or the TLA+ tools are missing, so the model traces were not checked. Install them as scripts/tlc.mjs explains."
 const BASE = Date.UTC(2026, 10, 3)
 const HOUR_MS = 60 * 60 * 1000
-const WAIT_LIMIT_SECONDS = 45 * 60
 const CLAIM_READS = new Set(["TakeRead", "TakeRaced", "ConfirmRead"])
 
 if (!TOOLCHAIN) process.stderr.write(`SKIP delivery traces: ${NO_TOOLCHAIN}\n`)
@@ -162,41 +160,6 @@ export function claimDisagreements(states) {
   return found
 }
 
-function codeSnapshot(snap) {
-  const ci =
-    snap.ci === "pending"
-      ? { status: "in_progress", conclusion: null }
-      : {
-          status: "completed",
-          conclusion: snap.ci === "success" ? "success" : "failure",
-        }
-  return {
-    state: snap.state,
-    head: snap.head,
-    inQueue: snap.inQueue,
-    queueState: null,
-    ci,
-    removed:
-      snap.removed === "none"
-        ? null
-        : { reason: snap.removed.toUpperCase(), at: iso(0) },
-    waited: snap.waited,
-  }
-}
-
-export function queueDisagreements(states, limitSteps) {
-  const found = []
-  for (const s of states) {
-    if (s.snap.state === "none") continue
-    const snapshot = codeSnapshot(s.snap)
-    snapshot.waited = (s.snap.waited * WAIT_LIMIT_SECONDS) / limitSteps
-    const code = classify(snapshot, true, s.start)?.kind ?? "none"
-    if (code !== s.verdict)
-      found.push({ snap: s.snap, start: s.start, model: s.verdict, code })
-  }
-  return found
-}
-
 const claimCfg = ({ agents, maxTime, maxComments, trustAt = false }) =>
   [
     "SPECIFICATION Spec",
@@ -212,13 +175,6 @@ const claimCfg = ({ agents, maxTime, maxComments, trustAt = false }) =>
     "CHECK_DEADLOCK FALSE",
     "",
   ].join("\n")
-
-const mergeCfg = (headCheck) =>
-  readFileSync(join(here, "jobs/MergeWait.cfg"), "utf8")
-    .replace("HeadCheck = TRUE", `HeadCheck = ${headCheck ? "TRUE" : "FALSE"}`)
-    .replace(/INVARIANTS[\s\S]*?(?=CHECK_DEADLOCK)/, headCheck ? "$&" : "")
-
-const limitOf = (cfgText) => Number(/LimitSteps = (\d+)/.exec(cfgText)[1])
 
 test("the TLA value reader reads records, sequences, strings and numbers", () => {
   assert.deepEqual(
@@ -288,42 +244,8 @@ test(
   }
 )
 
-test(
-  "classify agrees with every queue snapshot the model reads",
-  { skip: !TOOLCHAIN && NO_TOOLCHAIN },
-  (t) => {
-    const cfg = mergeCfg(true)
-    const states = statesOf(t, "jobs/MergeWait.tla", cfg)
-    const verdicts = new Set(
-      states.filter((s) => s.snap.state !== "none").map((s) => s.verdict)
-    )
-    for (const kind of [
-      "none",
-      "MERGED",
-      "HEAD_MOVED",
-      "LEFT_QUEUE",
-      "CI_FAILED",
-    ])
-      assert.ok(verdicts.has(kind), `no snapshot reached ${kind}`)
-    assert.deepEqual(queueDisagreements(states, limitOf(cfg)).slice(0, 3), [])
-  }
-)
-
-test(
-  "a model with no HEAD_MOVED branch disagrees with classify",
-  { skip: !TOOLCHAIN && NO_TOOLCHAIN },
-  (t) => {
-    const cfg = mergeCfg(false)
-    const states = statesOf(t, "jobs/MergeWait.tla", cfg)
-    const drift = queueDisagreements(states, limitOf(cfg))
-    assert.ok(
-      drift.some((d) => d.model === "MERGED" && d.code === "HEAD_MOVED")
-    )
-  }
-)
-
-test("a merge that lands at a foreign head right after enqueue is not reported merged", () => {
-  const f = fixture({ queue: true })
+test("a merge that lands at a foreign head right after the merge request is not reported merged", () => {
+  const f = fixture({ mergeLater: true })
   const queued = () => f.effects("gh", "pr merge").length > 0
   Object.defineProperties(f.s.pull, {
     state: { get: () => (queued() ? "MERGED" : "OPEN") },

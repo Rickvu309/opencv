@@ -40,7 +40,7 @@ export function fixture(over = {}) {
         head_sha: "head-1",
       },
     ],
-    queue: false,
+    mergeLater: false,
     closeWorks: true,
     ...over,
   }
@@ -161,57 +161,6 @@ export function fixture(over = {}) {
         if (pair === "pr diff") return ok(s.changed.join("\n"))
         if (pair === "repo view") return ok("Rickvu309/opencv")
         if (pair === "api user") return ok("owner")
-        if (pair === "api graphql") {
-          const p = s.pull
-          const inQueue =
-            s.inQueue ?? (Boolean(s.enqueued) && s.queue && p.state === "OPEN")
-          return ok({
-            data: {
-              repository: {
-                pullRequest: {
-                  state: p.state,
-                  headRefOid: p.headRefOid,
-                  mergeCommit: p.mergeCommit,
-                  isInMergeQueue: Boolean(inQueue),
-                  mergeQueueEntry: inQueue
-                    ? {
-                        state: s.queueState ?? "QUEUED",
-                        position: 1,
-                        headCommit: { oid: s.queuedHead ?? p.headRefOid },
-                      }
-                    : null,
-                  headRef: {
-                    target: {
-                      statusCheckRollup: {
-                        contexts: { nodes: s.rollup ?? [] },
-                      },
-                    },
-                  },
-                  timelineItems: {
-                    nodes: s.queueEvents
-                      ? s.queueEvents.map((e) =>
-                          e.kind === "added"
-                            ? {
-                                __typename: "AddedToMergeQueueEvent",
-                                createdAt: e.at,
-                              }
-                            : {
-                                __typename: "RemovedFromMergeQueueEvent",
-                                reason: e.reason,
-                                createdAt: e.at,
-                              }
-                        )
-                      : (s.removedEvents ?? []).map((e) => ({
-                          __typename: "RemovedFromMergeQueueEvent",
-                          reason: e.reason,
-                          createdAt: e.at,
-                        })),
-                  },
-                },
-              },
-            },
-          })
-        }
         if (a[0] === "api" && /check-runs\/\d+\/annotations/.test(a[1]))
           return ok(s.annotations ?? [])
         if (a[0] === "api" && /actions\/runs\/\d+\/jobs/.test(a[1]))
@@ -230,13 +179,11 @@ export function fixture(over = {}) {
         if (pair === "pr merge" && a.includes("--auto") && s.autoRefused)
           return { ok: false, out: "", err: s.autoRefused }
         if (pair === "pr merge" && a.includes("--auto") && s.autoOn) {
-          s.enqueued = true
           s.pull.autoMergeRequest = { mergeMethod: "SQUASH" }
           return ok()
         }
         if (pair === "pr merge") {
-          s.enqueued = true
-          if (!s.queue) {
+          if (!s.mergeLater) {
             s.pull.state = "MERGED"
             s.pull.mergeCommit = { oid: "merged-1" }
           }

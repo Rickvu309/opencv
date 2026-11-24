@@ -234,7 +234,7 @@ function command(ctx, cmd, rest) {
         cmd === "finish"
           ? ["--body-file", "-d", "--desc", "--draft", "--dry-run"]
           : cmd === "merge"
-            ? ["--wait", "--allow-migration"]
+            ? ["--allow-migration"]
             : []
       for (const flag of Object.keys(flags)) {
         if (!allowed.includes(flag)) unknownOption(flag)
@@ -250,7 +250,6 @@ function command(ctx, cmd, rest) {
         )
       if (cmd === "finish") return finish(ctx, { flags })
       return merge(ctx, issueNumber(pos[0], "merge <pr#>"), {
-        wait: Boolean(flags["--wait"]),
         allowMigrations: String(flags["--allow-migration"] ?? "")
           .split(",")
           .map((tag) => tag.trim())
