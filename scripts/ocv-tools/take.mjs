@@ -1,6 +1,5 @@
 import { basename, join } from "node:path"
-import { EXIT, FIXES, writeResult } from "./result.mjs"
-import { CLAIM_IDLE_MINUTES } from "./claim-marker.mjs"
+import { writeResult } from "./result.mjs"
 import {
   claimBody,
   envAgent,
@@ -19,7 +18,6 @@ import { decide, issueKind, refusalError } from "./rules/index.mjs"
 import {
   createWorktree,
   descFromTitle,
-  discardWorktree,
   locate,
   takenPath,
 } from "./worktree.mjs"
@@ -60,11 +58,6 @@ export function take(ctx, target, flags = {}) {
   try {
     const r = takeInner(ctx, target, flags, (v) => (id = v))
     if (r.noResult) return r
-    if (r.exit === EXIT.lost)
-      return {
-        ...r,
-        tail: done("fail", { cause: "other", detail: r.lines[0] }),
-      }
     return { ...r, tail: done("ok", { detail: r.lines[0], next: r.next }) }
   } catch (error) {
     error.tail = done("fail", {
@@ -85,10 +78,10 @@ function checkDiskFirst(ctx) {
   if (!verdict.ok) throw refusalError(verdict.refusals[0])
 }
 
-function decideTake(ctx, n, { issue, held, me, flags, kind }) {
+function decideTake(ctx, n, { issue, flags, kind }) {
   const desc = flags["-d"] ?? descFromTitle(issue.title)
   const facts = lazyFacts(
-    { issue, claim: held, me, flags, requireKind: true, desc, type: kind },
+    { issue, flags, requireKind: true, desc, type: kind },
     {
       login: () => ctx.ports.gh.login(),
       local: () => {
@@ -101,21 +94,6 @@ function decideTake(ctx, n, { issue, held, me, flags, kind }) {
   )
   const verdict = decide("take", facts)
   if (!verdict.ok) throw refusalError(verdict.refusals[0])
-}
-
-function lostTake(ctx, made, n, h) {
-  const removed = discardWorktree(ctx, made)
-  return {
-    exit: EXIT.lost,
-    lines: [
-      `LOST #${n}: ${h.agent ? `${h.agent} holds the claim now` : "you no longer hold the claim"}.`,
-      removed
-        ? "The new worktree had no changes, so it was removed."
-        : `The worktree was kept: ${made.worktree}`,
-      "Stop working on this issue.",
-    ],
-    fix: FIXES.LOST,
-  }
 }
 
 function takeInner(ctx, target, flags, setId) {
@@ -134,7 +112,7 @@ function takeInner(ctx, target, flags, setId) {
   const kind = issueKind(issue, flags)
   setId(`${kind ?? "task"}-${n}`)
   const me = envAgent(ctx) ?? newAgent()
-  decideTake(ctx, n, { issue, held, me, flags, kind })
+  decideTake(ctx, n, { issue, flags, kind })
   validateAuthoring({
     n,
     issue,
@@ -148,26 +126,15 @@ function takeInner(ctx, target, flags, setId) {
     desc: flags["-d"] ?? descFromTitle(issue.title),
     install: !flags["--no-install"],
     resume: Boolean(flags["--resume"]),
-    held,
   })
-  const observed = readClaim(ctx, n, true)
-  const mid = observed.holder
-  const raced = decide("take-raced", { issue, claim: mid, me })
-  if (!raced.ok) {
-    discardWorktree(ctx, made)
-    throw refusalError(raced.refusals[0])
-  }
-  const at = new Date(observed.serverNow).toISOString()
+  const at = new Date(nowOf(ctx)).toISOString()
   try {
     ctx.ports.gh.comment(n, claimBody({ agent: me, at, branch: made.branch }))
   } catch (e) {
     throw new Error(
-      `worktree ${made.worktree} is ready but the claim could not be recorded: ${e.message}`
+      `worktree ${made.worktree} is ready but the owner note could not be written on the issue: ${e.message}`
     )
   }
-  const won = readClaim(ctx, n, true).holder
-  if (!(won.state === "live" && won.agent === me))
-    return lostTake(ctx, made, n, won)
   if (!flags["--no-assign"]) {
     if (!ctx.ports.gh.assignMe(n))
       made.warnings.push(`could not assign #${n} to you`)
@@ -178,7 +145,7 @@ function takeInner(ctx, target, flags, setId) {
   const reconciled = reconcileFinished(ctx, [ctx.cwd, made.worktree])
   return {
     lines: [
-      `Took #${n} ${issue.title}${held.state === "idle" ? ` (took over idle claim of ${held.agent})` : ""}`,
+      `Took #${n} ${issue.title}`,
       `Worktree: ${made.worktree}`,
       `Branch: ${made.branch}`,
       `Port: ${made.port} (api on ${made.port}, web on ${made.port + 1000})`,
@@ -187,6 +154,6 @@ function takeInner(ctx, target, flags, setId) {
       ...made.warnings.map((w) => `Warning: ${w}`),
       ...reconciled,
     ],
-    next: `cd ${made.worktree}, do the work, run scripts/ocv-tools.mjs save -m "<what you did>" at least every ${CLAIM_IDLE_MINUTES} minutes, then scripts/ocv-tools.mjs finish --body-file <file>`,
+    next: `cd ${made.worktree}, do the work, run scripts/ocv-tools.mjs save -m "<what you did>", then scripts/ocv-tools.mjs finish --body-file <file>`,
   }
 }

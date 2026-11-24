@@ -55,20 +55,6 @@ test("every checked rule has a failing and a passing fact", () => {
     "#90 is labeled ready-for-human: it is a decision for a human, never an agent task"
   )
   check(
-    "HELD",
-    {
-      issue: { n: 90 },
-      claim: { state: "live", agent: "a1", idleMinutes: 30 },
-      me: "me",
-    },
-    {
-      issue: { n: 90 },
-      claim: { state: "live", agent: "me", idleMinutes: 1 },
-      me: "me",
-    },
-    "#90 is held by a1 (last saved 30 min ago; free after 180)"
-  )
-  check(
     "ASSIGNED",
     { issue: { n: 90, assignees: ["someone"] }, login: "me", flags: {} },
     { issue: { n: 90, assignees: ["Me"] }, login: "me", flags: {} },
@@ -76,15 +62,9 @@ test("every checked rule has a failing and a passing fact", () => {
   )
   check(
     "NOT_OWNER",
-    { issue: { n: 90 }, claim: { state: "live", agent: "a1" }, me: "me" },
-    { issue: { n: 90 }, claim: { state: "idle", agent: "me" }, me: "me" },
-    "you (me) do not hold #90; a1 does"
-  )
-  check(
-    "LOST",
-    { issue: { n: 90 }, claim: { state: "live", agent: "a1" }, me: "me" },
-    { issue: { n: 90 }, claim: { state: "live", agent: "me" }, me: "me" },
-    "a1 holds the claim now"
+    { pull: { n: 7, author: "Owner" }, me: "someone" },
+    { pull: { n: 7, author: "Owner" }, me: "owner" },
+    "PR #7 is by Owner, not someone."
   )
   check(
     "WORKTREE_EXISTS",
@@ -457,11 +437,10 @@ test("variant messages stay the ones the jobs print", () => {
     stage: "create",
     name: "feat/90-keep-my-search",
     remote: true,
-    held: { state: "idle", agent: "a1" },
   }
   assert.match(
     at("BRANCH_EXISTS", { branch: remote, issue: { n: 90 } }),
-    /idle holder a1 already pushed/
+    /already exists on origin; someone is already working on it/
   )
   assert.equal(
     evaluate("BRANCH_EXISTS", { branch: remote, issue: { n: 90 } }).fix,
@@ -509,10 +488,6 @@ test("variant messages stay the ones the jobs print", () => {
     "expected one target, got 2"
   )
   assert.match(
-    at("LOST", { issue: { n: 1 }, claim: { state: "none" }, me: null }),
-    /you no longer hold/
-  )
-  assert.match(
     at("MAIN_CLEAN", { main: { path: "/repo", branch: "" } }),
     /detached HEAD/
   )
@@ -553,7 +528,7 @@ test("decide keeps table order, stops, and refuses a missing fact", () => {
   }
   assert.deepEqual(
     decide("take", facts).refusals.map((row) => row.id),
-    ["READY_FOR_HUMAN", "HELD", "ASSIGNED"]
+    ["READY_FOR_HUMAN", "ASSIGNED"]
   )
   const closed = decide("take", {
     ...facts,
@@ -570,18 +545,9 @@ test("decide keeps table order, stops, and refuses a missing fact", () => {
   )
   assert.throws(
     () => decide("take", { issue: { n: 1, state: "OPEN", labels: [] } }),
-    /take did not gather claim for HELD/
+    /take did not gather login for ASSIGNED/
   )
-  for (const kind of [
-    "issue",
-    "claim",
-    "me",
-    "login",
-    "flags",
-    "local",
-    "disk",
-    "path",
-  ])
+  for (const kind of ["issue", "login", "flags", "local", "disk", "path"])
     assert.ok(needsOf("take").includes(kind), kind)
   assert.ok(needsOf("take-branch").includes("branch"))
   assert.equal(

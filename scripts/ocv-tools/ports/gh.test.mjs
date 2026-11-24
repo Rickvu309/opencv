@@ -216,18 +216,6 @@ test("shot releases use the flags GitHub requires", () => {
   )
 })
 
-test("editComment returns the PATCH updated_at", () => {
-  const run = () => ({
-    ok: true,
-    out: 'Date: Thu, 29 Oct 2026 12:00:05 GMT\r\n\r\n{"updated_at":"2026-10-29T12:00:05Z"}',
-    err: "",
-  })
-  assert.equal(
-    ghAdapter(run).editComment(7, "body"),
-    "2026-10-29T12:00:05.000Z"
-  )
-})
-
 test("release assets preserve count, names and hashes and distinguish absence from failure", () => {
   const calls = []
   const gh = ghAdapter((cmd, args) => {

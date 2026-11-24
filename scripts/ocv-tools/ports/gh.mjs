@@ -1,4 +1,4 @@
-import { readServerNow, parseUpdatedAt } from "../clock.mjs"
+import { readServerNow } from "../clock.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
 
 function editStamp(c) {
@@ -286,18 +286,6 @@ export function ghAdapter(run) {
     comment(n, body) {
       gh("issue", "comment", String(n), "--body", body)
       return { id: null }
-    },
-    editComment(id, body) {
-      const out = gh(
-        "api",
-        "--include",
-        "-X",
-        "PATCH",
-        `repos/{owner}/{repo}/issues/comments/${id}`,
-        "-f",
-        `body=${body}`
-      )
-      return parseUpdatedAt(out)
     },
     assignMe(n) {
       return run("gh", ["issue", "edit", String(n), "--add-assignee", "@me"]).ok

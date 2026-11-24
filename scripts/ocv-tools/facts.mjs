@@ -81,7 +81,7 @@ export function createFacts(ports, cwdOf = () => undefined) {
     })
     if (!verdict.ok) throw refusalError(verdict.refusals[0])
     const issue = issueFact(loaded.record, loaded.owner)
-    const claim = Object.freeze(holderOf(issue.comments, loaded.serverNow))
+    const claim = Object.freeze(holderOf(issue.comments))
     cache.set(key, issue)
     cache.set(`claim:${n}`, claim)
     cache.set(`server:${n}`, loaded.serverNow)

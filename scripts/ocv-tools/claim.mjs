@@ -1,10 +1,6 @@
 import { randomBytes } from "node:crypto"
 import { join, resolve, sep } from "node:path"
-import {
-  CLAIM_IDLE_MINUTES,
-  claimMarker,
-  releaseMarker,
-} from "./claim-marker.mjs"
+import { claimMarker } from "./claim-marker.mjs"
 import { TYPES } from "./fields.mjs"
 import { decide, refusalError } from "./rules/index.mjs"
 import { locate } from "./worktree.mjs"
@@ -76,44 +72,4 @@ export function readClaim(ctx, n, fresh = false) {
 }
 
 export const claimBody = ({ agent, at, branch }) =>
-  `${claimMarker({ agent, at, branch })}\nocv-tools: ${agent} holds this issue on branch ${branch}. Last saved ${at}. The claim can be taken over after ${CLAIM_IDLE_MINUTES} idle minutes.`
-
-export function heartbeat(ctx, n, h, agent) {
-  const body = claimBody({
-    agent,
-    at: h.updatedAt || h.createdAt || "server",
-    branch: h.branch,
-  })
-  if (!h.id) return ctx.ports.gh.comment(n, body)
-  const stamp = ctx.ports.gh.editComment(h.id, body)
-  if (!stamp)
-    throw new Error("claim refresh did not return updatedAt from GitHub")
-  return stamp
-}
-
-export function release(ctx, { n: given, reason }) {
-  if (!reason) throw new Error("usage: ocv-tools release --reason <why> [<n>]")
-  const here = given ? { ok: true } : taskHere(ctx, "release")
-  const n = given ?? here.n
-  const gitDir = given ? ctx.ports.git.here(ctx.cwd).gitDir : here.gitDir
-  const me = agentIdFor(ctx, gitDir)
-  const read = readClaim(ctx, n, true)
-  const h = read.holder
-  const verdict = decide("release", {
-    here,
-    issue: read.issue,
-    claim: h,
-    me,
-  })
-  if (!verdict.ok) throw refusalError(verdict.refusals[0])
-  const { serverNow } = read
-  const at = new Date(serverNow).toISOString()
-  ctx.ports.gh.comment(
-    n,
-    `${releaseMarker({ agent: me, at, reason })}\nocv-tools: ${me} gave this issue back. Reason: ${reason}`
-  )
-  return {
-    lines: [`Released #${n}: ${reason}`],
-    next: `Another agent can run: scripts/ocv-tools.mjs take ${n}`,
-  }
-}
+  `${claimMarker({ agent, at, branch })}\nocv-tools: ${agent} works on this issue on branch ${branch} since ${at}.`

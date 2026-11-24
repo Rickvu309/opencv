@@ -226,3 +226,17 @@ test("a renamed-away ci.yml is seen through the diff without renames", () => {
   assert.equal(r.code, 2)
   assert.match(r.text, /CI_WORKFLOW_KEPT/)
 })
+
+test("a merge that lands at a foreign head right after the merge request is not reported merged", () => {
+  const f = fixture({ mergeLater: true })
+  const queued = () => f.effects("gh", "pr merge").length > 0
+  Object.defineProperties(f.s.pull, {
+    state: { get: () => (queued() ? "MERGED" : "OPEN") },
+    headRefOid: { get: () => (queued() ? "head-2" : "head-1") },
+    mergeCommit: { get: () => (queued() ? { oid: "merged-2" } : null) },
+  })
+  const r = f.call("merge", "91")
+  assert.doesNotMatch(r.text, /Merged PR #91/)
+  assert.equal(f.s.issueState, "OPEN")
+  assert.equal(f.effects("gh", "issue close").length, 0)
+})

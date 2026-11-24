@@ -94,25 +94,3 @@ test("file --dry-run reads the model issues from the filesystem port", () => {
   assert.match(text, /Custom model title/)
   assert.equal(ports.effects.length, 0)
 })
-
-test("a fake comment edit fails like GitHub when the id is gone", () => {
-  const ports = fakePorts({ issues: [issue(1)] })
-  assert.throws(
-    () => ports.gh.editComment(999, "body"),
-    /gh api --include failed: comment 999 was not found/
-  )
-  const row = {
-    databaseId: 5,
-    body: "old",
-    author: { login: "o" },
-    createdAt: "",
-    updatedAt: "",
-  }
-  ports.state.issues.get(1).comments.push(row)
-  ports.state.commentEditError = "gh api --include failed: HTTP 500"
-  assert.throws(() => ports.gh.editComment(5, "new"), /HTTP 500/)
-  assert.equal(row.body, "old")
-  ports.state.commentEditError = null
-  ports.gh.editComment(5, "new")
-  assert.equal(row.lastEditedAt, ports.state.commentUpdatedAt)
-})

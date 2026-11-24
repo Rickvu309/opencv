@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { claimMarker, releaseMarker } from "./claim-marker.mjs"
+import { claimMarker } from "./claim-marker.mjs"
 import { runCli } from "./cli.mjs"
 import { blockerMarker, blockerOf, prFor } from "./done.mjs"
 import { NOW, ctxFor, fakePorts, issue, minutesAgo, pr } from "./ports/fake.mjs"
@@ -241,7 +241,7 @@ test("done ignores an issue another agent holds", () => {
 test("done ignores an issue this agent released", () => {
   const released = comment(
     2,
-    releaseMarker({ agent: "agent-a", at: "x", reason: "gave it back" })
+    "<!-- ocv-tools release agent=agent-a at=x reason=gave it back -->"
   )
   const { code } = runner({
     issues: [

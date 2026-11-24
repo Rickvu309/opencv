@@ -5,20 +5,6 @@ export function parseHttpDate(text) {
   return Number.isNaN(t) ? null : t
 }
 
-export function parseUpdatedAt(text) {
-  const raw = String(text ?? "")
-  const start = raw.search(/[{[]/)
-  if (start < 0) return null
-  try {
-    const data = JSON.parse(raw.slice(start))
-    const iso = data.updated_at || data.updatedAt
-    const t = Date.parse(iso ?? "")
-    return Number.isNaN(t) ? null : new Date(t).toISOString()
-  } catch {
-    return null
-  }
-}
-
 export function readServerNow(ctx) {
   const r = ctx.run("gh", ["api", "--include", "/rate_limit"])
   if (!r.ok)

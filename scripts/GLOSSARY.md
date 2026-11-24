@@ -27,8 +27,8 @@ _Not_: a reviewer; it never reads a diff.
 _Avoid_: tester, QA agent, spec writer
 
 **Holder**:
-The agent whose claim on an issue is live, and so the only one that may save to its branch or release it.
-_Avoid_: owner (of an issue or claim), assignee (a separate GitHub field)
+The agent named by the newest owner note on an issue, written once when it took the issue. The done and block commands read it.
+_Avoid_: assignee (a separate GitHub field)
 
 **Person**:
 Someone who uses the product, and in checking the account a check acts as.

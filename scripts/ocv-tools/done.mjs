@@ -19,12 +19,8 @@ export function parseBlocker(body) {
 
 export function blockerOf(comments, { me, serverNow }) {
   if (!me) return null
-  const holder = holderOf(comments, serverNow)
-  if (
-    (holder.state === "live" || holder.state === "idle") &&
-    holder.agent !== me
-  )
-    return null
+  const holder = holderOf(comments)
+  if (holder.state === "live" && holder.agent !== me) return null
   const since = Date.parse(holder.updatedAt || holder.createdAt || "")
   let found = null
   for (const c of comments ?? []) {
@@ -66,12 +62,8 @@ const NO_AGENT_ID =
   "done and block need to know which agent you are, and no agent id is known here. Run them from the worktree that scripts/ocv-tools.mjs take printed, or set OCV_AGENT_ID to the agent id in the claim on your issue."
 
 export function isMine(issue, { me, serverNow }) {
-  const holder = holderOf(issue.comments, serverNow)
-  return (
-    Boolean(me) &&
-    (holder.state === "live" || holder.state === "idle") &&
-    holder.agent === me
-  )
+  const holder = holderOf(issue.comments)
+  return Boolean(me) && holder.state === "live" && holder.agent === me
 }
 
 function taskWorktrees(ctx) {
@@ -125,7 +117,7 @@ export function openWork(ctx) {
     if (!isMine(issue, { me, serverNow: snap.serverNow })) continue
     const pr = prFor(snap.pulls, issue.number)
     const tree = trees.find((w) => w.n === issue.number)
-    const holder = holderOf(issue.comments, snap.serverNow)
+    const holder = holderOf(issue.comments)
     rows.set(issue.number, {
       n: issue.number,
       title: issue.title,
@@ -208,11 +200,8 @@ export function block(ctx, n, reason) {
   if (!me) throw new Error(NO_AGENT_ID)
   if (!ctx.ports.gh.viewIssue(n))
     throw new Error(`#${n} is not an issue. Give the issue number.`)
-  const holder = holderOf(ctx.ports.gh.comments(n), ctx.ports.gh.serverNow())
-  if (
-    (holder.state === "live" || holder.state === "idle") &&
-    holder.agent !== me
-  )
+  const holder = holderOf(ctx.ports.gh.comments(n))
+  if (holder.state === "live" && holder.agent !== me)
     throw new Error(
       `#${n} is held by ${holder.agent}, not by you (${me}). Only the agent that holds an issue can record a blocker on it.`
     )

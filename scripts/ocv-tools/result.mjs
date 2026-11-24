@@ -7,19 +7,12 @@ export const EXIT = Object.freeze({
   ok: 0,
   error: 1,
   refused: 2,
-  lost: 3,
   human: 4,
 })
 
 export const SCHEMA = Object.freeze({
   version: 1,
-  scripts: Object.freeze([
-    "new-task",
-    "open-pr",
-    "merge-pr",
-    "check",
-    "release",
-  ]),
+  scripts: Object.freeze(["new-task", "open-pr", "merge-pr", "check"]),
   status: Object.freeze(["ok", "pending", "fail", "human", "error"]),
   causes: Object.freeze([
     "none",
@@ -70,7 +63,6 @@ export const FIXES = {
     "That number is not an issue (it may be a pull request). Run: gh issue list",
   CLOSED: "The issue is closed. Run: gh issue list, and pick another.",
   MISSING_FIELDS: "Pass the missing flags. Run: scripts/ocv-tools.mjs help",
-  HELD: "Pick another issue, or wait until the holder has been idle for 180 minutes. Run: gh issue view <n> --comments",
   WORKTREE_EXISTS:
     "Work in that worktree, or finish it. Run: gh issue view <n> --comments",
   READY_FOR_HUMAN:
@@ -84,7 +76,7 @@ export const FIXES = {
     "Run this from inside a task worktree (../opencv.worktrees/<n>-...), or pass the issue number.",
   NO_WORKTREE: "Nothing to remove. Run: git worktree list",
   NOT_OWNER:
-    "Only the agent that holds the issue can release it. Run: gh issue view <n> --comments",
+    "Only the author of the pull request merges it. Run: gh pr view <n>",
   DIRTY:
     'Save first: scripts/ocv-tools.mjs save -m "<what you did>", then run cleanup again.',
   NOT_MERGED:
@@ -97,12 +89,11 @@ export const FIXES = {
   DIVERGED:
     "The local branch and origin have diverged. Reconcile both tips, then run take --resume again.",
   UNKNOWN:
-    "The claim history is incomplete, so no holder was decided. Run the command again.",
+    "The issue comments could not be read completely, so no owner was named. Run the command again.",
   BAD_PICTURE: "Pass a picture file (.png, .jpg, .gif or .webp).",
   MISSING_FILE: "Check the path and pass a picture that exists.",
   TOO_BIG: "Pass a picture under 10 MB.",
   TOO_MANY: "Pass at most 20 pictures in one run.",
-  LOST: "Another agent took the claim. Your work is saved as a patch under ~/tmp/ocv-tools/lost. Stop and pick another issue.",
   ERROR: "Read the message, fix the cause, and run the command again.",
 }
 

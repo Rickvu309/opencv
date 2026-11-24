@@ -28,13 +28,10 @@ export const MOMENTS = Object.freeze({
   history: "Reading a branch's past pull requests from GitHub.",
   "take-title":
     "Taking a new title, before the issue exists; only the disk is known, so a full disk makes no GitHub call.",
-  take: "Taking an issue, once the issue, its claim and the disk are read, before anything changes.",
+  take: "Taking an issue, once the issue and the disk are read, before anything changes.",
   "take-branch":
     "Taking an issue, once the local and remote branch are compared.",
-  "take-raced":
-    "Taking an issue, after the claim is written and read back, to catch a second taker.",
   save: "Saving work in a task worktree.",
-  release: "Giving back a claim on an issue.",
   cleanup: "Removing a task worktree and its branch after the merge.",
   shot: "Attaching pictures as evidence, once the files are read.",
   "shot-target":
@@ -61,9 +58,7 @@ export const RUNNERS = Object.freeze({
   "take-title": ["scripts/ocv-tools/take.mjs"],
   take: ["scripts/ocv-tools/take.mjs"],
   "take-branch": ["scripts/ocv-tools/worktree.mjs"],
-  "take-raced": ["scripts/ocv-tools/take.mjs"],
   save: ["scripts/ocv-tools/work.mjs"],
-  release: ["scripts/ocv-tools/claim.mjs"],
   cleanup: ["scripts/ocv-tools/work.mjs"],
   shot: ["scripts/ocv-tools/shot.mjs"],
   "shot-target": ["scripts/ocv-tools/shot.mjs"],
