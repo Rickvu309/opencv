@@ -19,7 +19,6 @@
   "apps/web/src/test/deploy-config.test.ts",
   "apps/web/src/test/design-vocabulary.test.ts",
   "apps/web/src/test/disclosure-buttons.test.ts",
-  "apps/web/src/test/feature-imports.test.ts",
   "apps/web/src/test/landing-art-rotation.test.ts",
   "apps/web/src/test/landing-button.test.ts",
   "apps/web/src/test/module-isolation.test.ts",
