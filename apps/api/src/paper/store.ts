@@ -53,7 +53,9 @@ import {
   referencedPhotoFileIds,
 } from "./photo-references.js"
 import {
+  isRichPaper,
   readStoredPaper,
+  toListedPaper,
   toPaper,
   toSharedPaper,
   tryReadStoredPaper,
@@ -109,6 +111,19 @@ function sharedPhotoRef(document: unknown): string | null {
   return parsed.data.header?.photo ?? null
 }
 
+function listedForEditor(
+  row: typeof paperDocs.$inferSelect,
+  writer?: NativeWriter
+) {
+  if (!writer) return []
+  try {
+    return [toListedPaper(row, writer)]
+  } catch (error) {
+    if (error instanceof CommandError) return []
+    throw error
+  }
+}
+
 export async function listPapers(
   userId: UserId,
   query?: string,
@@ -125,6 +140,7 @@ export async function listPapers(
     .filter((row) => (kind ? row.kind === kind : true))
     .filter((row) => !needle || row.name.toLowerCase().includes(needle))
     .flatMap((row) => {
+      if (isRichPaper(row)) return listedForEditor(row, writer)
       const paper = tryReadStoredPaper(row)
       return paper ? [toPaper(row, paper, writer)] : []
     })
@@ -201,14 +217,14 @@ export async function renamePaper(
     return (
       (await renameWordPage(actor.userId, docId, name)) ?? documentNotFound()
     )
-  admitDocument(readStoredPaper(current), writer)
+  toListedPaper(current, writer)
   const updatedAt = new Date()
   await getDb()
     .update(paperDocs)
     .set({ name, updatedAt })
     .where(eq(paperDocs.id, current.id))
   return {
-    ...toPaper({ ...current, name, updatedAt }, undefined, writer),
+    ...toListedPaper({ ...current, name, updatedAt }, writer),
     previousName: current.name,
   }
 }
@@ -298,16 +314,15 @@ export async function setPaperStatus(
   status: "draft" | "ready" | "published",
   writer?: NativeWriter
 ) {
-  await ownedPaper(actor.userId, docId, writer)
+  const current =
+    (await ownedPaperOrNull(actor.userId, docId)) ?? documentNotFound()
+  toListedPaper(current, writer)
+  const updatedAt = new Date()
   await getDb()
     .update(paperDocs)
-    .set({ status, updatedAt: new Date() })
+    .set({ status, updatedAt })
     .where(eq(paperDocs.id, docId))
-  return toPaper(
-    await ownedPaper(actor.userId, docId, writer),
-    undefined,
-    writer
-  )
+  return toListedPaper({ ...current, status, updatedAt }, writer)
 }
 
 export async function sharePaper(

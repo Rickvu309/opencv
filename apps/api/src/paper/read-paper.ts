@@ -1,5 +1,7 @@
 import {
   ERROR_CODES,
+  blankCv,
+  blankLetter,
   paperDocumentSchema,
   storedPaperDocumentSchema,
   paperSharedViewSchema,
@@ -67,6 +69,41 @@ export function toPaper(
     checks: row.checks ?? [],
     pageChoice: row.pageChoice,
     sourceFileId: row.sourceFileId ? parseFileId(row.sourceFileId) : null,
+    createdAt: iso(row.createdAt),
+    updatedAt: iso(row.updatedAt),
+    isFavorite: row.isFavorite,
+  }
+}
+
+function richDocumentOf(row: PaperRow) {
+  const stored = storedPaperDocumentSchema.safeParse(row.crdtDocument)
+  return stored.success &&
+    stored.data.version === 4 &&
+    stored.data.schemaRevision === 2
+    ? stored.data
+    : null
+}
+
+export function isRichPaper(row: PaperRow) {
+  return richDocumentOf(row) !== null
+}
+
+export function toListedPaper(row: PaperRow, writer?: NativeWriter): PaperView {
+  const rich = richDocumentOf(row)
+  if (!rich) return toPaper(row, undefined, writer)
+  admitDocument(rich, writer)
+  return {
+    id: parsePaperId(row.id),
+    name: row.name,
+    kind: row.kind,
+    templateId: row.templateId as PaperView["templateId"],
+    status: row.status,
+    paper: row.kind === "cv" ? blankCv() : blankLetter(),
+    contentVersion: row.contentVersion,
+    checks: row.checks ?? [],
+    pageChoice: row.pageChoice,
+    sourceFileId: row.sourceFileId ? parseFileId(row.sourceFileId) : null,
+    format: "rich",
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
     isFavorite: row.isFavorite,
