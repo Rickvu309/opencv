@@ -67,7 +67,7 @@ test("a red run on main opens one main-red issue with the commit, the run and th
   assert.equal(created[created.indexOf("--label") + 1], "main-red")
   const body = created[created.indexOf("--body") + 1]
   assert.ok(body.includes(`Red commit: ${RED}`))
-  assert.ok(body.includes(RUN))
+  assert.match(body, /^Run: https:\/\/github\.com\/o\/r\/actions\/runs\/7$/m)
   assert.ok(
     body.includes(
       `node scripts/production-revert.mjs ${RED} --good ${PARENT} --apply`
