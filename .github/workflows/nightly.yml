@@ -4,6 +4,10 @@ on:
   schedule:
     - cron: "17 19 * * *"
   workflow_dispatch:
+  workflow_run:
+    workflows: [Checks]
+    types: [completed]
+    branches: [main]
 
 permissions: {}
 
@@ -56,3 +60,17 @@ jobs:
               }
               await github.rest.issues.create({ owner, repo, title, body, labels: ['ci-full'] });
             }
+
+  rerun-main-once:
+    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.run_attempt == 1 }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true
+    permissions:
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      RUN_ID: ${{ github.event.workflow_run.id }}
+    steps:
+      - run: gh run rerun "$RUN_ID" --failed
