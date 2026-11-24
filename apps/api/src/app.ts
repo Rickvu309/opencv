@@ -30,7 +30,7 @@ import {
   type CoachModelEnv,
 } from "./config.js"
 import { withDatabase, type AppDatabase } from "./db/context.js"
-import { authUnavailableEnvelope } from "./envelope.js"
+import { authUnavailableEnvelope } from "./platform/envelope.js"
 import { createHealthRoutes } from "./health.js"
 import { createInboxRoutes } from "./inbox/index.js"
 import { createJobRoutes, type FetchJobPosting } from "./job/index.js"
@@ -44,7 +44,7 @@ import {
   oauthClientLimit,
   type OAuthClientLimits,
 } from "./oauth-client-limit.js"
-import { isAllowedOrigin } from "./origin.js"
+import { isAllowedOrigin } from "./platform/origin.js"
 import { createPaperRoutes } from "./paper/index.js"
 import { createReadRoutes } from "./registry/read.js"
 import { createCommandRoutes } from "./registry/http.js"

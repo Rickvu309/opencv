@@ -6,12 +6,6 @@ apps/api/src:
     files:
       - apps/api/src/registry/http.ts
       - apps/api/src/registry/read.ts
-  apps/api/src/http-json.ts:
-    violations:
-      - dependency
-      - layer
-    files:
-      - apps/api/src/registry/http.ts
   apps/api/src/middleware.ts:
     violations:
       - dependency

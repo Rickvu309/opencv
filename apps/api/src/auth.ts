@@ -26,7 +26,7 @@ import {
   authMailId,
   createAuthCodeSender,
 } from "./mail/auth-code.js"
-import { isAllowedOrigin } from "./origin.js"
+import { isAllowedOrigin } from "./platform/origin.js"
 
 export type AuthDatabase = Parameters<typeof drizzleAdapter>[0]
 
