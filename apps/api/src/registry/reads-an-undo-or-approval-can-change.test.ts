@@ -330,7 +330,7 @@ describe("reads an undo or an approval can change", () => {
 
   it("keeps the name on both call sites", () => {
     const source = readFileSync(
-      path.join(domainSrc, "chat-contract.ts"),
+      path.join(domainSrc, "control-contract.ts"),
       "utf8"
     )
     expect(source).not.toContain(

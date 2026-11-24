@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { activityIdSchema, chatIdSchema, pendingActionIdSchema } from "./ids.js"
+import { chatIdSchema } from "./ids.js"
 
 export const COACH_SELECTION_TEXT_MAX = 2000
 export const COACH_SELECTION_SECTION_ID_MAX = 80
@@ -103,20 +103,6 @@ export type ChatSetFocusInput = z.infer<typeof chatSetFocusInputSchema>
 export type ChatAppendMessageInput = z.infer<
   typeof chatAppendMessageInputSchema
 >
-
-export const actionsApproveInputSchema = z
-  .object({
-    pendingActionId: pendingActionIdSchema,
-  })
-  .strict()
-
-export const actionsDenyInputSchema = actionsApproveInputSchema
-
-export const activityUndoInputSchema = z
-  .object({
-    activityId: activityIdSchema,
-  })
-  .strict()
 
 export function focusedEditNeedsPaperEdit(input: {
   mode: string
