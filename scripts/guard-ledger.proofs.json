@@ -9,7 +9,7 @@
   },
   "delegate-reach": {
     "passed": true,
-    "fingerprint": "ff451b533174"
+    "fingerprint": "f246f20ddd2b"
   },
   "dialog-opening-focus": {
     "passed": true,
@@ -29,7 +29,7 @@
   },
   "owned-rows": {
     "passed": true,
-    "fingerprint": "0d3110284e79"
+    "fingerprint": "b608a03b1c04"
   },
   "picker-card-chosen": {
     "passed": true,
@@ -85,10 +85,10 @@
   },
   "write-grant": {
     "passed": true,
-    "fingerprint": "1bbc12333d55"
+    "fingerprint": "08e39dc2ddac"
   },
   "write-grant-formal": {
     "passed": true,
-    "fingerprint": "90a6cd54f4e3"
+    "fingerprint": "3ad025c17ba7"
   }
 }
