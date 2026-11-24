@@ -122,6 +122,7 @@ describe("a Paper started blank", () => {
       status: "ready",
       writer,
     })
+    expect(ready.status).toBe(200)
     expect(dataOf<{ status: string }>(ready).status).toBe("ready")
   })
 
