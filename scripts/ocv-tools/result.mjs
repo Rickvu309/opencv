@@ -12,7 +12,13 @@ export const EXIT = Object.freeze({
 
 export const SCHEMA = Object.freeze({
   version: 1,
-  scripts: Object.freeze(["new-task", "open-pr", "merge-pr", "check"]),
+  scripts: Object.freeze([
+    "new-task",
+    "open-pr",
+    "merge-pr",
+    "check",
+    "release",
+  ]),
   status: Object.freeze(["ok", "pending", "fail", "human", "error"]),
   causes: Object.freeze([
     "none",
