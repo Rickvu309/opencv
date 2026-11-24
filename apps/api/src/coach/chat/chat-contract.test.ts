@@ -1,7 +1,7 @@
 import {
   DEFAULT_CHAT_TITLE,
+  catalog,
   chatContract as chatCommands,
-  controlContract,
   coachTaskContract,
   personActor,
   queries,
@@ -17,7 +17,12 @@ import { createMigratedTestDb } from "../../test/harness.js"
 import { installRegistry } from "../../install.js"
 import { seedCoachActor } from "../../test/coach-turn.js"
 
-const chatContract = { ...chatCommands, ...controlContract }
+const chatContract = {
+  ...chatCommands,
+  "actions.approve": { output: catalog["actions.approve"].publicResult },
+  "actions.deny": { output: catalog["actions.deny"].publicResult },
+  "activity.undo": { output: catalog["activity.undo"].publicResult },
+}
 
 describe("a chat binding that drifts from the chat contract is rejected", () => {
   it("parses every chat, actions and activity command output and both chat reads", async () => {

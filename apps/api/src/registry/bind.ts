@@ -221,7 +221,8 @@ export type OperationBinding<
     | {
         execute: (
           input: import("zod").output<T["input"]>,
-          actor: Actor
+          actor: Actor,
+          registry: Registry
         ) => Promise<R> | R
         reviewed?: never
         selected?: never
@@ -285,7 +286,9 @@ export function bindOperation<T extends Operation, R, C, V, S = never>(
         : {}),
       step: () => operation.description,
       read: async (input, actor) =>
-        operation.publicResult.parse(await binding.execute(input, actor)),
+        operation.publicResult.parse(
+          await binding.execute(input, actor, registry)
+        ),
     })
   } else {
     const binding = suppliedBinding
@@ -353,7 +356,7 @@ export function bindOperation<T extends Operation, R, C, V, S = never>(
       registry.addCommand(
         withBasis(spec, binding.basis),
         async (input, actor) => {
-          const result = await binding.execute!(input, actor)
+          const result = await binding.execute!(input, actor, registry)
           const checked = binding.privateResult
             ? binding.privateResult.parse(result)
             : result
@@ -400,7 +403,8 @@ type CatalogImplementations<C extends Record<string, Operation>> = {
 
 type CatalogImplementation<T extends Operation> = (
   input: import("zod").output<T["input"]>,
-  context: never
+  context: never,
+  registry: never
 ) =>
   | import("zod").input<T["publicResult"]>
   | Promise<import("zod").input<T["publicResult"]>>

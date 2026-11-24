@@ -6,14 +6,12 @@ import { registerChat } from "./coach/chat/index.js"
 import { registerInbox } from "./inbox/index.js"
 import { registerJob, type JobPreviewOptions } from "./job/index.js"
 import { registerPaper } from "./paper/index.js"
-import { registerControl } from "./registry/commands.js"
 import { registry } from "./registry/registry.js"
 
 let installed = false
 
 export function installRegistry(preview?: JobPreviewOptions) {
   if (!installed) {
-    registerControl(registry)
     registerAccount(registry)
     registerAccountQueries(registry)
     registerChat(registry)

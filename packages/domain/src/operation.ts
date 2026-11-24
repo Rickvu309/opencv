@@ -115,7 +115,8 @@ export type Implementations<C extends Record<string, Operation>> = {
     operation: C[N]
     execute: (
       input: z.output<C[N]["input"]>,
-      context: never
+      context: never,
+      registry: never
     ) => z.input<C[N]["publicResult"]> | Promise<z.input<C[N]["publicResult"]>>
   }
 }
