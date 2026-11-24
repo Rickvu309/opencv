@@ -12,7 +12,7 @@ import {
 import {
   type CoachInline,
   type CoachMarkdownBlock,
-} from "@/features/coach/coach-markdown.ts"
+} from "@/components/ai-elements/coach-markdown.ts"
 
 import { ResponseWriting, writtenWords } from "./response-writing.ts"
 

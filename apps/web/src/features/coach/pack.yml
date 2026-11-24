@@ -4,7 +4,6 @@ public:
   - chat-api.ts
   - chat-store-context.ts
   - chat-store.tsx
-  - coach-markdown.ts
   - coach-panel-chat-report.tsx
   - coach-panel.tsx
   - coach-workspace.tsx
