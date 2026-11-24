@@ -1,4 +1,4 @@
-import { implementations } from "./registry/generated/catalog.js"
+import { implementations } from "./generated/catalog.js"
 import { bindCatalog } from "./registry/bind.js"
 import { registerCoachTasks } from "./coach/index.js"
 import { registerConnections } from "./connections/index.js"

@@ -190,7 +190,7 @@ export function renderCatalog(snapshot) {
       (entry) => entry.operation === operation.file
     )
     server.push(
-      `import { implementation as ${aliasOf(operation.name)} } from ${JSON.stringify(`../../${implementation.file.replace("apps/api/src/", "").replace(/\.ts$/, ".js")}`)}`
+      `import { implementation as ${aliasOf(operation.name)} } from ${JSON.stringify(`../${implementation.file.replace("apps/api/src/", "").replace(/\.ts$/, ".js")}`)}`
     )
   }
   const entries = operations.map(
@@ -199,6 +199,6 @@ export function renderCatalog(snapshot) {
   )
   return {
     "packages/domain/src/generated/catalog.ts": `${browser.join("\n")}${browser.length ? "\n\n" : ""}export const catalog = {\n${entries.join("\n")}\n} as const\n`,
-    "apps/api/src/registry/generated/catalog.ts": `${server.join("\n")}\n\nexport const implementations = {\n${entries.join("\n")}\n} satisfies Implementations<typeof catalog>\n`,
+    "apps/api/src/generated/catalog.ts": `${server.join("\n")}\n\nexport const implementations = {\n${entries.join("\n")}\n} satisfies Implementations<typeof catalog>\n`,
   }
 }

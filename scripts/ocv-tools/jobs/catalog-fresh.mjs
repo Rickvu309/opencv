@@ -3,10 +3,10 @@ import { fileURLToPath } from "node:url"
 import { run } from "./common.mjs"
 
 export const CATALOG_INPUTS =
-  /^packages\/domain\/src\/(?:operations\/|generated\/|operation\.ts$)|^apps\/api\/src\/[^/]+\/operations\/|^apps\/api\/src\/registry\/generated\//
+  /^packages\/domain\/src\/(?:operations\/|generated\/|operation\.ts$)|^apps\/api\/src\/[^/]+\/operations\/|^apps\/api\/src\/generated\//
 
 const GENERATED =
-  /^packages\/domain\/src\/generated\/|^apps\/api\/src\/registry\/generated\//
+  /^packages\/domain\/src\/generated\/|^apps\/api\/src\/generated\//
 
 export const CONTRACT_SOURCES = Object.freeze([
   "packages/domain/src/operations",
@@ -20,7 +20,7 @@ export const STAGED_TREE = Object.freeze([
   "packages/domain",
   "apps/api/package.json",
   ":(glob)apps/api/src/*/operations/**",
-  "apps/api/src/registry/generated",
+  "apps/api/src/generated",
   "scripts/catalog.mjs",
   "scripts/lib",
 ])
