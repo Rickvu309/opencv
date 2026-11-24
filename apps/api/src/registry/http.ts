@@ -9,7 +9,7 @@ import { Hono } from "hono"
 
 import { jsonWithStatus } from "../platform/http-json.js"
 import type { Registry } from "./registry.js"
-import type { SignedInGate } from "./signed-in.js"
+import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"
 
 export const PRIVATE_OUTPUT_KEYS = new Set([
   "previousDocument",
@@ -61,63 +61,61 @@ export function createCommandRoutes({
   signedIn,
   registry,
 }: {
-  signedIn: SignedInGate
+  signedIn: SignedIn
   registry: Registry
 }) {
-  const routes = new Hono()
+  const routes = new Hono<{ Variables: SignedInVariables }>()
 
-  routes.post("/:name", (c) =>
-    signedIn(c, async (userId) => {
-      let body: unknown
-      try {
-        const text = await c.req.text()
-        body = text.trim() === "" ? {} : JSON.parse(text)
-      } catch {
-        return jsonWithStatus(
-          c,
-          errorEnvelope(
-            ERROR_CODES.VALIDATION_ERROR,
-            "Request body must be JSON"
-          ),
-          httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
-        )
-      }
-
-      const wrapped =
-        body !== null &&
-        typeof body === "object" &&
-        !Array.isArray(body) &&
-        "input" in body
-      const record = wrapped
-        ? (body as { input?: unknown; idempotencyKey?: unknown })
-        : null
-      const input = record ? record.input : body
-      const idempotencyKey =
-        record && typeof record.idempotencyKey === "string"
-          ? record.idempotencyKey
-          : undefined
-      const name = c.req.param("name")
-      const actor = personActor(userId)
-
-      const result = await registry.execute({
-        name,
-        input,
-        actor,
-        idempotencyKey,
-      })
-      if (result.pending) return c.json(successEnvelope(result))
-      return c.json({
-        ...successEnvelope(
-          withActivityId(
-            result.output,
-            result.activityId,
-            registry.isCatalogOperation(name)
-          )
+  routes.post("/:name", signedIn, async (c) => {
+    let body: unknown
+    try {
+      const text = await c.req.text()
+      body = text.trim() === "" ? {} : JSON.parse(text)
+    } catch {
+      return jsonWithStatus(
+        c,
+        errorEnvelope(
+          ERROR_CODES.VALIDATION_ERROR,
+          "Request body must be JSON"
         ),
-        meta: { touches: result.touches ?? [] },
-      })
+        httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
+      )
+    }
+
+    const wrapped =
+      body !== null &&
+      typeof body === "object" &&
+      !Array.isArray(body) &&
+      "input" in body
+    const record = wrapped
+      ? (body as { input?: unknown; idempotencyKey?: unknown })
+      : null
+    const input = record ? record.input : body
+    const idempotencyKey =
+      record && typeof record.idempotencyKey === "string"
+        ? record.idempotencyKey
+        : undefined
+    const name = c.req.param("name")
+    const actor = personActor(c.var.userId)
+
+    const result = await registry.execute({
+      name,
+      input,
+      actor,
+      idempotencyKey,
     })
-  )
+    if (result.pending) return c.json(successEnvelope(result))
+    return c.json({
+      ...successEnvelope(
+        withActivityId(
+          result.output,
+          result.activityId,
+          registry.isCatalogOperation(name)
+        )
+      ),
+      meta: { touches: result.touches ?? [] },
+    })
+  })
 
   return routes
 }

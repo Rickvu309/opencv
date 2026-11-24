@@ -4,6 +4,7 @@ import { expect } from "vitest"
 import { z } from "zod"
 import { createAuth } from "../../auth.js"
 import { withDatabase, type AppDatabase } from "../../db/context.js"
+import { requireSession } from "../../middleware.js"
 import { bindOperation } from "../../registry/bind.js"
 import { Registry } from "../../registry/registry.js"
 import {
@@ -18,16 +19,17 @@ export function createProjectionFixture(
   origin: string
 ) {
   let mounted: ReturnType<typeof connectionRoutes> | undefined
+  const auth = createAuth({
+    db: database.db,
+    authUrl: origin,
+    sessionSecret: testSessionSecret,
+    webOrigins: [testWebOrigin],
+    rateLimitEnabled: false,
+  })
   const connection = (registry: Registry) =>
     connectionRoutes(
-      createAuth({
-        db: database.db,
-        authUrl: origin,
-        sessionSecret: testSessionSecret,
-        webOrigins: [testWebOrigin],
-        rateLimitEnabled: false,
-      }),
-      database.db as unknown as AppDatabase,
+      auth,
+      requireSession(auth, database.db as unknown as AppDatabase),
       registry,
       origin,
       [testWebOrigin]

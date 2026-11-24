@@ -20,12 +20,11 @@ import { streamSSE } from "hono/streaming"
 
 import { assertDayCap, getProfileRow } from "../account/index.js"
 import { coachModelEnv } from "../config.js"
-import type { Auth } from "../auth.js"
-import { transaction, type AppDatabase } from "../db/context.js"
+import { transaction } from "../db/context.js"
 import { openCoachUsage } from "./usage-store.js"
 import { readJsonBody } from "../platform/http-json.js"
 import { jsonWithStatus } from "../platform/http-json.js"
-import { requireSession, type SessionVariables } from "../middleware.js"
+import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"
 import { registry } from "../registry/registry.js"
 import { resolveTurnGrounding } from "./context.js"
 import { startCompatibilityTurn } from "./turn-compatibility.js"
@@ -33,15 +32,14 @@ import { runCoachTurn } from "./turn.js"
 import { routeCoachModel } from "./router.js"
 
 export function createCoachRoutes(options: {
-  auth?: Auth
-  db?: AppDatabase
+  signedIn: SignedIn
   coach?: CoachRuntime
   coachDurable: boolean
   coachCompatibilityMs?: number
   coachSseHeartbeatMs?: number
 }) {
-  const routes = new Hono<{ Variables: SessionVariables }>()
-  routes.use("*", requireSession(options.auth, options.db))
+  const routes = new Hono<{ Variables: SignedInVariables }>()
+  routes.use("*", options.signedIn)
   routes.post("/:id/turns", (c) =>
     options.coachDurable
       ? startCompatibilityTurn(c, options.coachCompatibilityMs)
@@ -51,7 +49,7 @@ export function createCoachRoutes(options: {
 }
 
 async function startTurn(
-  c: Context<{ Variables: SessionVariables }>,
+  c: Context<{ Variables: SignedInVariables }>,
   coach: CoachRuntime | undefined,
   heartbeatMs = COACH_SSE_HEARTBEAT_MS
 ) {

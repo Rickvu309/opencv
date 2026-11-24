@@ -10,7 +10,7 @@ import type { Context } from "hono"
 import { streamSSE } from "hono/streaming"
 import { z } from "zod"
 import { readJsonBody } from "../platform/http-json.js"
-import type { SessionVariables } from "../middleware.js"
+import type { SignedInVariables } from "../platform/signed-in.js"
 import { CommandError } from "../registry/errors.js"
 import { registry } from "../registry/registry.js"
 import { startTask } from "./task-start.js"
@@ -28,7 +28,7 @@ const draftSchema = z.object({ text: z.string() })
 const resultSchema = z.object({ output: z.unknown().optional() })
 
 export async function startCompatibilityTurn(
-  c: Context<{ Variables: SessionVariables }>,
+  c: Context<{ Variables: SignedInVariables }>,
   durationMs = COACH_COMPATIBILITY_MS
 ) {
   const chatId = chatIdSchema.safeParse(c.req.param("id"))

@@ -37,8 +37,8 @@ import { createJobRoutes, type FetchJobPosting } from "./job/index.js"
 import {
   handleApiError,
   notFoundEnvelopeResponse,
+  currentSession,
   requireSession,
-  signedInGate,
 } from "./middleware.js"
 import { authMailConfigured } from "./mail/auth-code.js"
 import {
@@ -193,6 +193,7 @@ export function createApp({
       : undefined
 
   bindAuth(auth)
+  const signedIn = requireSession(auth, database)
   app.use("*", async (_c, next) => {
     if (auth) await auth.$context
     await next()
@@ -200,7 +201,7 @@ export function createApp({
   if (auth && database && authUrl)
     app.route(
       "/",
-      connectionRoutes(auth, database, registry, authUrl, webOrigins)
+      connectionRoutes(auth, signedIn, registry, authUrl, webOrigins)
     )
 
   app.use("/api/auth/*", async (c, next) => {
@@ -238,39 +239,31 @@ export function createApp({
     c.header("Cache-Control", "no-store")
     return c.json({ google: googleEnabled, coachDurable })
   })
-  app.get("/api/session", requireSession(auth, database), (c) =>
-    c.json({
-      ok: true,
-      user: c.var.session.user,
-      session: c.var.session.session,
-    })
-  )
+  app.get("/api/session", currentSession(auth, database))
 
   const coachRoutes = createCoachRoutes({
-    auth,
-    db: database,
+    signedIn,
     coach,
     coachDurable,
     coachCompatibilityMs,
     coachSseHeartbeatMs,
   })
 
-  const signedIn = signedInGate(auth, database)
   app.route("/api/commands", createCommandRoutes({ signedIn, registry }))
   app.route("/api/reads", createReadRoutes({ signedIn, registry }))
-  app.route("/api/coach/tasks", createCoachTaskRoutes({ auth, db: database }))
-  app.route("/api/chats", createChatRoutes(auth, database))
+  app.route("/api/coach/tasks", createCoachTaskRoutes({ signedIn }))
+  app.route("/api/chats", createChatRoutes(signedIn))
   app.route("/api/chats", coachRoutes)
-  app.route("/api/coach", createUsageRoutes(auth, database))
-  app.route("/api/paper", createPaperRoutes(auth, database))
-  app.route("/api/jobs", createJobRoutes(auth, database))
-  app.route("/api/inbox", createInboxRoutes(auth, database, gmailEnabled))
-  app.route("/api/profile", createProfileRoutes(auth, database))
-  app.route("/api/integrations", createIntegrationsRoutes(auth, database))
-  app.route("/api/billing", createBillingRoutes(auth, database))
-  app.route("/api/account", createAccountRoutes(auth, database))
-  app.route("/api/search", createSearchRoutes(auth, database))
-  app.route("/api/activity", createActivityRoutes(auth, database))
+  app.route("/api/coach", createUsageRoutes(signedIn))
+  app.route("/api/paper", createPaperRoutes(signedIn))
+  app.route("/api/jobs", createJobRoutes(signedIn))
+  app.route("/api/inbox", createInboxRoutes(signedIn, gmailEnabled))
+  app.route("/api/profile", createProfileRoutes(signedIn))
+  app.route("/api/integrations", createIntegrationsRoutes(signedIn))
+  app.route("/api/billing", createBillingRoutes(signedIn))
+  app.route("/api/account", createAccountRoutes(signedIn))
+  app.route("/api/search", createSearchRoutes(signedIn))
+  app.route("/api/activity", createActivityRoutes(signedIn))
 
   return app
 }
