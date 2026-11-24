@@ -236,7 +236,7 @@ test("the conflict-prone layout fires on the digest commit and stays quiet on th
     )
   assert.equal(details(digestLayoutCommit).size, 1)
   assert.equal(details(lastDigestLayoutCommit).size, 2)
-  for (const generated of [file, "apps/api/src/registry/generated/catalog.ts"])
+  for (const generated of [file, "apps/api/src/generated/catalog.ts"])
     assert.deepEqual(
       detectConflictProneLayout(
         readFileSync(path.join(root, generated), "utf8"),

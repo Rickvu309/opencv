@@ -162,10 +162,10 @@ flowchart TD
 | `apps/api/src/connections` | feature | index.ts | apps/api/src/registry, apps/api/src/db, apps/api/src/limits | none |
 | `apps/api/src/db` | platform | none | none | none |
 | `apps/api/src/inbox` | feature | index.ts | apps/api/src/account, apps/api/src/coach, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/mail, apps/api/src/platform | none |
-| `apps/api/src/job` | feature | index.ts | apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
+| `apps/api/src/job` | feature | index.ts, operations | apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/limits` | platform | index.ts | none | none |
 | `apps/api/src/mail` | platform | none | none | none |
-| `apps/api/src/paper` | feature | index.ts | apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
+| `apps/api/src/paper` | feature | index.ts, operations | apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/platform` | platform | none | none | none |
 | `apps/api/src/registry` | kernel | none | apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/web/src` | app | none | apps/web/src/features/app-shell, apps/web/src/features/apply, apps/web/src/features/auth, apps/web/src/features/coach, apps/web/src/features/coming-soon, apps/web/src/features/command-palette, apps/web/src/features/connections, apps/web/src/features/inbox, apps/web/src/features/landing, apps/web/src/features/paper, apps/web/src/features/paper-page, apps/web/src/features/seed, apps/web/src/features/settings, apps/web/src/lib, apps/web/src/components | none |

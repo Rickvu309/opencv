@@ -109,7 +109,7 @@ test("Turbo catalog hashes ignore unrelated API tests and include each catalog i
     implementation,
     "packages/domain/src/operation.ts",
     "packages/domain/src/generated/catalog.ts",
-    "apps/api/src/registry/generated/catalog.ts",
+    "apps/api/src/generated/catalog.ts",
     "scripts/catalog.mjs",
     ...tracked.filter(
       (file) => file.startsWith("scripts/lib/catalog-") && file.endsWith(".mjs")
