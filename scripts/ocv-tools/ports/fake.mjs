@@ -78,7 +78,6 @@ export function fakePorts(world = {}) {
     now: world.now ?? NOW,
     hooks: world.hooksPath ?? ".githooks",
     labels: world.labels ?? ["risk:low", "risk:normal", "risk:high"],
-    authed: world.authed !== false,
     labelsOk: world.labelsOk !== false,
     history: world.history ?? "complete",
     diskFreeMb: world.diskFreeMb ?? 100000,
@@ -292,11 +291,6 @@ export function fakePorts(world = {}) {
       if (head) list = list.filter((item) => item.headRefName === head)
       return list.slice(0, limit).map((item) => ({ ...item }))
     },
-    labels() {
-      if (!state.labelsOk) return { ok: false, names: [] }
-      return { ok: true, names: [...state.labels] }
-    },
-    authed: () => state.authed,
     openBoard() {
       const issues = [...state.issues.values()]
         .filter((item) => String(item.state).toUpperCase() === "OPEN")
@@ -578,7 +572,6 @@ export function ctxFor(ports, extra = {}) {
     env: ports.env,
     now: () => ports.clock.now(),
     pause: (seconds) => ports.clock.pause(seconds),
-    nodeVersion: extra.nodeVersion ?? "v22.1.0",
     cwd: extra.cwd ?? ports.state.cwd,
     readStdin: () => extra.stdin ?? "",
     readFile: (path) => ports.fs.read(path),

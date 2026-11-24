@@ -8,10 +8,10 @@ export function rulesJob(ctx, { flags = {} } = {}) {
       lines: [
         "rules --check and --write are retired because the generated workflow guides were removed.",
       ],
-      fix: "Run: scripts/ocv-tools.mjs rules --list to inspect the current workflow rules. Run scripts/ocv-tools.mjs doctor to check machine setup.",
+      fix: "Run: scripts/ocv-tools.mjs rules --list to inspect the current workflow rules.",
     }
   return {
     lines: RULES.map((row) => `${row.id}: ${row.says}`),
-    next: "scripts/ocv-tools.mjs doctor",
+    next: "scripts/ocv-tools.mjs help",
   }
 }

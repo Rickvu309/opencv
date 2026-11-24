@@ -4,12 +4,6 @@ import { runCli } from "./cli.mjs"
 import { ctxFor, fakePorts } from "./ports/fake.mjs"
 import { RULES } from "./rules/index.mjs"
 
-test("doctor lists every rule from the table", () => {
-  const { text } = runCli(["doctor"], ctxFor(fakePorts()))
-  assert.match(text, /Rules:/)
-  for (const row of RULES) assert.match(text, new RegExp(`  ${row.id}:`))
-})
-
 test("rules lists the current rules without reading or writing guides", () => {
   for (const args of [["rules"], ["rules", "--list"]]) {
     const ports = fakePorts()
@@ -18,7 +12,7 @@ test("rules lists the current rules without reading or writing guides", () => {
     const { code, text } = runCli(args, ctxFor(ports))
     assert.equal(code, 0)
     for (const row of RULES) assert.ok(text.includes(`${row.id}: ${row.says}`))
-    assert.match(text, /Next: scripts\/ocv-tools\.mjs doctor/)
+    assert.match(text, /Next: scripts\/ocv-tools\.mjs help/)
   }
 })
 
@@ -35,7 +29,6 @@ test("retired guide flags fail with current replacement commands", () => {
       /are retired because the generated workflow guides were removed/
     )
     assert.match(text, /rules --list/)
-    assert.match(text, /doctor/)
     assert.doesNotMatch(text, /ENOENT|Rules doc matches/)
   }
 })

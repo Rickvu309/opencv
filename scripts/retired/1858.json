@@ -1,0 +1,18 @@
+[
+  {
+    "subject": "scripts/ocv-tools/cli.test.mjs",
+    "because": "The owner decided on 2026-11-24 to delete first and add back only if needed. The setup command was run zero times in 371 agent session logs from two weeks.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "scripts/ocv-tools/rules-doc.test.mjs",
+    "because": "The owner decided on 2026-11-24 to delete first and add back only if needed. The setup command was run zero times in 371 agent session logs from two weeks.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  }
+]
