@@ -5,15 +5,14 @@ import { withDatabase, type TestDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
 import { bindOperation } from "../registry/bind.js"
 import { Registry } from "../registry/registry.js"
+import { implementation as deleteAccount } from "./operations/account/delete/server.js"
+import { implementation as requestEmailChange } from "./operations/account/request-email-change/server.js"
+import { implementation as notify } from "./operations/notify/request/server.js"
 import { implementation as markWelcomed } from "./operations/profile/mark-welcomed/server.js"
 import { implementation as setPhoto } from "./operations/profile/set-photo/server.js"
 import { implementation as update } from "./operations/profile/update/server.js"
 import { createMigratedTestDb } from "../test/harness.js"
-import {
-  hostEmailChangeCode,
-  registerAccount,
-  registerAccountQueries,
-} from "./index.js"
+import { hostEmailChangeCode, registerAccountQueries } from "./index.js"
 
 const person = personActor("account-alone")
 
@@ -31,7 +30,9 @@ beforeAll(async () => {
     email: "account-alone@example.com",
   })
   registry = new Registry()
-  registerAccount(registry)
+  bindOperation(registry, requestEmailChange)
+  bindOperation(registry, deleteAccount)
+  bindOperation(registry, notify)
   registerAccountQueries(registry)
   bindOperation(registry, update)
   bindOperation(registry, markWelcomed)
@@ -102,14 +103,5 @@ describe("Account with nothing else registered", () => {
         code: "VALIDATION_ERROR",
       })
     })
-  })
-
-  it("registers again on a second registry", () => {
-    const once = new Registry()
-    registerAccount(once)
-    const twice = new Registry()
-    registerAccount(twice)
-    registerAccount(twice)
-    expect(twice.list().commands.length).toBe(once.list().commands.length)
   })
 })

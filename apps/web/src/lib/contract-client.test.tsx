@@ -81,9 +81,6 @@ describe("runContractCommand", () => {
     const queryClient = new QueryClient()
     const bodies = stubFetch({}) as Record<string, unknown>[]
 
-    await runContractCommand(queryClient, "account.delete", {
-      confirm: "DELETE",
-    })
     await runContractCommand(queryClient, "paper.sync", {
       docId: parsePaperId("01900000-0000-7000-8000-000000000020"),
       epoch: 0,
@@ -96,8 +93,7 @@ describe("runContractCommand", () => {
     })
 
     expect(bodies[0]).not.toHaveProperty("idempotencyKey")
-    expect(bodies[1]).not.toHaveProperty("idempotencyKey")
-    expect(bodies[2]).toHaveProperty("idempotencyKey")
+    expect(bodies[1]).toHaveProperty("idempotencyKey")
   })
 
   it("leaves reads alone when the command fails", async () => {

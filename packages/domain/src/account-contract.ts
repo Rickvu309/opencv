@@ -1,21 +1,8 @@
 import { z } from "zod"
 
-import {
-  accountDeleteInputSchema,
-  accountRequestEmailChangeInputSchema,
-  notifyRequestInputSchema,
-  notifyTopicSchema,
-  planSchema,
-  profileSchema,
-} from "./account.js"
+import { planSchema, profileSchema } from "./account.js"
 import { coachModeSchema } from "./coach.js"
-import {
-  commandContract,
-  commandEntry,
-  queryContract,
-  queryEntry,
-} from "./contract.js"
-import type { QueryRef } from "./queries.js"
+import { queryContract, queryEntry } from "./contract.js"
 
 const emptyInput = z.object({}).strict()
 
@@ -131,51 +118,3 @@ export const accountQueries = queryContract({
     output: z.array(activityFeedRowSchema),
   }),
 })
-
-const nothingChanged = (): QueryRef[] => []
-
-export const accountContract = commandContract({
-  "account.requestEmailChange": commandEntry({
-    description: "Ask for a code to change the sign-in email.",
-    input: accountRequestEmailChangeInputSchema,
-    output: z
-      .object({
-        email: z.string(),
-        sent: z.boolean(),
-        message: z.string().optional(),
-      })
-      .strict(),
-    idempotency: "none",
-    coach: "never",
-    destructive: false,
-    step: () => "Request email change",
-    invalidates: nothingChanged,
-  }),
-  "account.delete": commandEntry({
-    description: "Delete the account and every row it owns.",
-    input: accountDeleteInputSchema,
-    output: z.object({ deleted: z.literal(true) }).strict(),
-    idempotency: "none",
-    coach: "never",
-    destructive: true,
-    step: () => "Delete account",
-    invalidates: nothingChanged,
-  }),
-  "notify.request": commandEntry({
-    description: "Ask to hear when a topic is ready.",
-    input: notifyRequestInputSchema,
-    output: z
-      .object({
-        id: z.string(),
-        topic: notifyTopicSchema,
-        createdAt: z.string().datetime(),
-      })
-      .strict(),
-    coach: "auto",
-    destructive: false,
-    step: (input) => `Notify me about ${input.topic}`,
-    invalidates: nothingChanged,
-  }),
-})
-
-export type AccountContract = typeof accountContract

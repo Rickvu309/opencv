@@ -7,7 +7,6 @@ import {
   jobContract,
   parseJobId,
   parsePaperId,
-  type AccountContract,
   type ChatContract,
   type CommandInput,
   type OperationInput,
@@ -16,7 +15,7 @@ import {
 } from "@workspace/domain"
 import { z } from "zod"
 
-import { bindCommands, type Bindings } from "./bind.js"
+import { bindCommands, type Bindings, type OperationBinding } from "./bind.js"
 import type { Registry } from "./registry.js"
 
 type MoveInput = CommandInput<JobContract, "job.move">
@@ -31,7 +30,10 @@ type Undo = OperationInput<(typeof catalog)["activity.undo"]>
 type ChatDelete = Bindings<ChatContract>["chat.delete"]
 type ChatRename = Bindings<ChatContract>["chat.rename"]
 type SetPhoto = z.output<(typeof catalog)["profile.setPhoto"]["input"]>
-type AccountDelete = Bindings<AccountContract>["account.delete"]
+type AccountDelete = OperationBinding<
+  (typeof catalog)["account.delete"],
+  { deleted: true }
+>["execute"]
 type MarkDone = Bindings<InboxContract>["inbox.markDone"]
 
 export function typeProbes(registry: Registry) {
@@ -134,7 +136,7 @@ export function typeProbes(registry: Registry) {
 
   // prettier-ignore
   // @ts-expect-error an account delete handler returns the deleted flag, not the profile
-  const wrongDelete: AccountDelete["handler"] = async () => ({ id: "x" })
+  const wrongDelete: AccountDelete = async () => ({ id: "x" })
 
   return [
     wrongPhoto,

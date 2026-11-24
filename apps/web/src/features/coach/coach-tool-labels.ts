@@ -7,8 +7,8 @@ import {
 type ToolCopy = { label: string; read?: string }
 
 const TOOL_COPY = {
-  "account.delete": { label: "Delete your account" },
-  "account.requestEmailChange": { label: "Change your email" },
+  [catalog["account.delete"].name]: { label: "Delete your account" },
+  [catalog["account.requestEmailChange"].name]: { label: "Change your email" },
   [catalog["actions.approve"].name]: { label: "Approve this change" },
   [catalog["actions.deny"].name]: { label: "Deny this change" },
   "activity.list": {
@@ -86,7 +86,7 @@ const TOOL_COPY = {
   },
   [catalog["job.setPriority"].name]: { label: "Update this Job's priority" },
   "link.get": { label: "Read this link", read: "Read this link" },
-  "notify.request": { label: "Set a reminder" },
+  [catalog["notify.request"].name]: { label: "Set a reminder" },
   "paper.attachPhoto": { label: "Add a photo to your Paper" },
   "paper.canvas": { label: "Update your Paper layout" },
   "paper.create": { label: "Create a Paper" },

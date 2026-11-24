@@ -1,7 +1,7 @@
 import { implementations } from "./generated/catalog.js"
 import { bindCatalog } from "./registry/bind.js"
 import { registerCoachTasks } from "./coach/index.js"
-import { registerAccount, registerAccountQueries } from "./account/index.js"
+import { registerAccountQueries } from "./account/index.js"
 import { registerChat } from "./coach/chat/index.js"
 import { registerInbox } from "./inbox/index.js"
 import { registerJob, type JobPreviewOptions } from "./job/index.js"
@@ -12,7 +12,6 @@ let installed = false
 
 export function installRegistry(preview?: JobPreviewOptions) {
   if (!installed) {
-    registerAccount(registry)
     registerAccountQueries(registry)
     registerChat(registry)
     registerCoachTasks()

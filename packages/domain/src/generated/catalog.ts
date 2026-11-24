@@ -1,3 +1,5 @@
+import { operation as account$delete } from "../operations/account/delete/operation.js"
+import { operation as account$requestEmailChange } from "../operations/account/request-email-change/operation.js"
 import { operation as actions$approve } from "../operations/actions/approve/operation.js"
 import { operation as actions$deny } from "../operations/actions/deny/operation.js"
 import { operation as activity$undo } from "../operations/activity/undo/operation.js"
@@ -9,6 +11,7 @@ import { operation as connections$list } from "../operations/connections/list/op
 import { operation as connections$revoke } from "../operations/connections/revoke/operation.js"
 import { operation as job$priorityCounts } from "../operations/job/priority-counts/operation.js"
 import { operation as job$setPriority } from "../operations/job/set-priority/operation.js"
+import { operation as notify$request } from "../operations/notify/request/operation.js"
 import { operation as paper$export } from "../operations/paper/export/operation.js"
 import { operation as paper$import } from "../operations/paper/import/operation.js"
 import { operation as paper$nativeWord } from "../operations/paper/native-word/operation.js"
@@ -18,6 +21,8 @@ import { operation as profile$setPhoto } from "../operations/profile/set-photo/o
 import { operation as profile$update } from "../operations/profile/update/operation.js"
 
 export const catalog = {
+  "account.delete": account$delete,
+  "account.requestEmailChange": account$requestEmailChange,
   "actions.approve": actions$approve,
   "actions.deny": actions$deny,
   "activity.undo": activity$undo,
@@ -29,6 +34,7 @@ export const catalog = {
   "connections.revoke": connections$revoke,
   "job.priorityCounts": job$priorityCounts,
   "job.setPriority": job$setPriority,
+  "notify.request": notify$request,
   "paper.export": paper$export,
   "paper.import": paper$import,
   "paper.nativeWord": paper$nativeWord,

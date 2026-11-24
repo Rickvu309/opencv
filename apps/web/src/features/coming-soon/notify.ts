@@ -8,16 +8,17 @@ import {
   initialNotifyState,
   notifyReducer,
 } from "@/features/coming-soon/notify.reducer.ts"
-import { runContractCommand } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 
 function storageKey(topic: NotifyTopic) {
   return `opencv.notify.${topic}`
 }
 
 async function requestNotify(queryClient: QueryClient, topic: NotifyTopic) {
-  const row = await runContractCommand(queryClient, "notify.request", {
+  const row = await catalogClient.run(queryClient, "notify.request", {
     topic,
   })
+  if ("pending" in row) throw new Error("The request is waiting")
   const key = storageKey(topic)
   const already = sessionStorage.getItem(key) === row.id
   sessionStorage.setItem(key, row.id)

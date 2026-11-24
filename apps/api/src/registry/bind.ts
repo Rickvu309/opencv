@@ -215,8 +215,14 @@ export type OperationBinding<
       reversal: ReversalBinding<import("zod").output<T["input"]>, R>
       activity: ActivityBinding<import("zod").output<T["input"]>, R>
       basis?: ProposalBasis<import("zod").output<T["input"]>>
+      transaction?: "none"
     }
-  : { reversal?: never; activity?: never; basis?: never }) &
+  : {
+      reversal?: never
+      activity?: never
+      basis?: never
+      transaction?: never
+    }) &
   (
     | {
         execute: T["kind"] extends "read"
@@ -315,6 +321,7 @@ export function bindOperation<T extends Operation, R, C, V, S = never>(
         ? { delegate: operation.delegate }
         : {}),
       writes: (input) => [...operation.writes(input as never)],
+      ...(binding.transaction ? { transaction: binding.transaction } : {}),
       step: () => operation.description,
       reversal: boundReversal(
         binding.reversal as
