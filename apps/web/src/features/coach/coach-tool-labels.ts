@@ -33,11 +33,11 @@ const TOOL_COPY = {
   },
   "coach.stop": { label: "Stop Coach" },
   "coach.usage": { label: "Check Coach usage", read: "Checked Coach usage" },
-  "connections.list": {
+  [catalog["connections.list"].name]: {
     label: "Look at your connections",
     read: "Looked at your connections",
   },
-  "connections.revoke": { label: "Disconnect your account" },
+  [catalog["connections.revoke"].name]: { label: "Disconnect your account" },
   "file.get": { label: "Read your file", read: "Read your file" },
   "inbox.acceptSuggestion": { label: "Accept this suggestion" },
   "inbox.addToCalendar": { label: "Add this event to your calendar" },

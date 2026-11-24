@@ -1,17 +1,10 @@
 import { apiBaseUrl, apiFetch } from "@/lib/api.ts"
-import { queryKey, readOperation } from "@/lib/contract-client.ts"
 
 export const agentServerUrl = new URL("/mcp", apiBaseUrl).href
 export const consentKey = (query: string) =>
   ["connection-consent", query] as const
 export const continuationKey = (query: string) =>
   ["connection-continue", query] as const
-
-export const connectionsKey = () => queryKey({ query: "connections.list" })
-
-export function fetchConnections() {
-  return readOperation("connections.list", {})
-}
 
 export function consentClient(oauthQuery: string) {
   return apiFetch<{
