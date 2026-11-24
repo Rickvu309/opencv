@@ -28,10 +28,10 @@ export const connectionSchema = z
   })
   .strict()
 
-export const connectionResource = {
+export const connectionResource: ResourceRef = {
   name: "connection",
   coachFloor: "never",
-} as const satisfies ResourceRef
+}
 
 export const CONNECTION_TOKEN_SECONDS = {
   access: 3600,
