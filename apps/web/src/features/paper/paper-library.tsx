@@ -356,7 +356,10 @@ export function PaperLibrary({
 
   async function duplicate(doc: PaperView) {
     try {
-      const copy = await run("paper.duplicate", { docId: doc.id })
+      const copy = await run("paper.duplicate", {
+        docId: doc.id,
+        ...(doc.format === "rich" ? { writer: RICH_NATIVE_WRITER } : {}),
+      })
       await rememberUndo(copy.id, `Duplicated ${doc.name}`)
     } catch (err) {
       toast(messageOf(err, "Could not duplicate. Try again."))

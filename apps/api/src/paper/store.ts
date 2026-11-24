@@ -256,6 +256,28 @@ export async function planDuplicate(
   return copy ? { kind: "word", copy } : { kind: "missing" }
 }
 
+async function copyOfRichPaper(
+  actor: Actor,
+  source: typeof paperDocs.$inferSelect,
+  writer?: NativeWriter
+) {
+  toListedPaper(source, writer)
+  const created = await createPaper(
+    actor,
+    {
+      kind: source.kind,
+      name: `Copy of ${source.name}`.slice(0, 200),
+      templateId: source.templateId ?? undefined,
+      paper: source.crdtDocument,
+    },
+    writer
+  )
+  const copy =
+    (await ownedPaperOrNull(actor.userId, parsePaperId(created.id))) ??
+    documentNotFound()
+  return toListedPaper(copy, writer)
+}
+
 export async function duplicatePaper(
   actor: Actor,
   docId: PaperId,
@@ -267,6 +289,9 @@ export async function duplicatePaper(
     return (
       (await publishWordPageCopy(actor.userId, plan.copy)) ?? documentNotFound()
     )
+  const source =
+    (await ownedPaperOrNull(actor.userId, docId)) ?? documentNotFound()
+  if (isRichPaper(source)) return copyOfRichPaper(actor, source, writer)
   const current = await ownedPaper(actor.userId, docId, writer)
   return createPaper(
     actor,
