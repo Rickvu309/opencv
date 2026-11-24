@@ -1,0 +1,13 @@
+{
+  "id": "setup-main-branch",
+  "file": "scripts/setup-main-branch.test.mjs",
+  "detector": {
+    "module": "scripts/lib/setup-main-branch.mjs",
+    "export": "forcedCheckedOutMain"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "f27b8d9a2",
+    "path": ".github/actions/setup/action.yml"
+  }
+}

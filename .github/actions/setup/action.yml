@@ -16,7 +16,9 @@ runs:
       shell: bash
     - run: |
         git show-ref --verify --quiet refs/remotes/origin/main || git fetch origin main:refs/remotes/origin/main
-        git branch -f main origin/main
+        if [[ "$(git branch --show-current)" != "main" ]]; then
+          git branch -f main origin/main
+        fi
       shell: bash
     - run: |
         if [[ -n "$(git diff --name-only origin/main...HEAD -- .github/workflows/ci.yml .github/actions/setup)" ]]; then
