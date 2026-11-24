@@ -604,7 +604,7 @@ describe("every changed read is named by the command that changed it", () => {
   it("every exemption gives a reason and names a bound command", () => {
     for (const [command, reason] of Object.entries(EXEMPT_COMMANDS)) {
       expect(reason.length, command).toBeGreaterThan(10)
-      expect(command in commands, command).toBe(true)
+      expect(command in commands || command in catalog, command).toBe(true)
     }
   })
 })

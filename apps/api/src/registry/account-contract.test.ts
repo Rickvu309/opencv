@@ -1,6 +1,5 @@
 import {
   queries,
-  accountContract,
   catalog,
   accountQueries,
   personActor,
@@ -15,7 +14,11 @@ import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "../install.js"
 
 const accountCommands = {
-  ...accountContract,
+  "account.requestEmailChange": {
+    output: catalog["account.requestEmailChange"].publicResult,
+  },
+  "account.delete": { output: catalog["account.delete"].publicResult },
+  "notify.request": { output: catalog["notify.request"].publicResult },
   "profile.update": { output: catalog["profile.update"].publicResult },
   "profile.markWelcomed": {
     output: catalog["profile.markWelcomed"].publicResult,

@@ -12,7 +12,8 @@ import { Field } from "@workspace/ui/components/field"
 import { Input } from "@workspace/ui/components/input"
 
 import { authClient } from "@/lib/auth-client.ts"
-import { useRunCommand } from "@/lib/contract-client.ts"
+import { useQueryClient } from "@tanstack/react-query"
+import { catalogClient } from "@/lib/contract-client.ts"
 
 type DeleteState = { confirm: string; error?: string; pending: boolean }
 
@@ -48,7 +49,7 @@ export function DeleteAccountDialog({
   onOpenChange: (open: boolean) => void
 }) {
   const navigate = useNavigate()
-  const runCommand = useRunCommand()
+  const queryClient = useQueryClient()
   const [{ confirm, error, pending }, dispatch] = useReducer(
     deleteReducer,
     DELETE_START
@@ -66,7 +67,9 @@ export function DeleteAccountDialog({
     if (!ready) return
     dispatch({ type: "delete_started" })
     try {
-      await runCommand("account.delete", { confirm: "DELETE" })
+      await catalogClient.run(queryClient, "account.delete", {
+        confirm: "DELETE",
+      })
       await authClient.signOut()
       await navigate({ href: "/sign-in" })
     } catch (caught) {

@@ -23,7 +23,7 @@ import { HiddenFilePicker } from "@/components/hidden-file-picker.tsx"
 import { CodeInput } from "@/features/auth/code-input.tsx"
 import { profileKey } from "@/lib/account-api.ts"
 import { authClient } from "@/lib/auth-client.ts"
-import { useRunCommand } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 import { resolveProfileImageSrc } from "@/lib/requests.ts"
 
 import {
@@ -273,7 +273,7 @@ function ChangeEmailDialog({
   current: string
   onOpenChange: (open: boolean) => void
 }) {
-  const runCommand = useRunCommand()
+  const queryClient = useQueryClient()
   const [{ email, error, pendingEmail, code, focusNonce }, dispatch] =
     useReducer(emailReducer, current, initialEmailState)
 
@@ -292,9 +292,12 @@ function ChangeEmailDialog({
     }
     dispatch({ type: "submit_started" })
     try {
-      const result = await runCommand("account.requestEmailChange", {
-        email: email.trim(),
-      })
+      const result = await catalogClient.run(
+        queryClient,
+        "account.requestEmailChange",
+        { email: email.trim() }
+      )
+      if ("pending" in result) throw new Error("The request is waiting")
       if (!result.sent) {
         dispatch({
           type: "failed",

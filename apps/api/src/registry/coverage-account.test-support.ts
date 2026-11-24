@@ -2,6 +2,9 @@ import { parseUserId } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 
+import { implementation as deleteAccount } from "../account/operations/account/delete/server.js"
+import { implementation as requestEmailChange } from "../account/operations/account/request-email-change/server.js"
+import { implementation as notify } from "../account/operations/notify/request/server.js"
 import { implementation as markWelcomed } from "../account/operations/profile/mark-welcomed/server.js"
 import { implementation as setPhoto } from "../account/operations/profile/set-photo/server.js"
 import { implementation as update } from "../account/operations/profile/update/server.js"
@@ -54,7 +57,7 @@ export function accountCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "account.requestEmailChange",
+      name: requestEmailChange.operation.name,
       arrange: async () => {},
       act: () =>
         run("account.requestEmailChange", { email: "ada-next@example.com" }),
@@ -66,7 +69,7 @@ export function accountCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "notify.request",
+      name: notify.operation.name,
       arrange: async () => {},
       act: () => run("notify.request", { topic: "jobs" }),
       assert: async () => {
@@ -78,7 +81,7 @@ export function accountCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "account.delete",
+      name: deleteAccount.operation.name,
       arrange: async () => {},
       act: () => run("account.delete", { confirm: "DELETE" }),
       assert: async () => {

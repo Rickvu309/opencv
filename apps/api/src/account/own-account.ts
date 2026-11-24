@@ -1,48 +1,15 @@
-import {
-  accountContract,
-  ERROR_CODES,
-  type Actor,
-  type NotifyTopic,
-} from "@workspace/domain"
+import { ERROR_CODES, type Actor, type NotifyTopic } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
 import { notifyRequests } from "../db/schema.js"
 import { createId } from "../platform/id.js"
-import { bindCommands } from "../registry/bind.js"
 import { CommandError, isUniqueViolation } from "../platform/errors.js"
-import type { Registry } from "../registry/registry.js"
 import {
   sendEmailChangeCode,
   type EmailChangeCodeOutcome,
 } from "./email-change-code.js"
 import { deleteAccount, toProfile } from "./store.js"
-
-const registeredOn = new WeakSet<Registry>()
-
-export function registerAccount(registry: Registry) {
-  if (registeredOn.has(registry)) return
-  registeredOn.add(registry)
-
-  bindCommands(registry, accountContract, {
-    "account.requestEmailChange": {
-      handler: (input) => requestEmailChange(input.email),
-      reversal: () => null,
-      activity: () => null,
-      transaction: "none",
-    },
-    "account.delete": {
-      handler: (input, actor) => deleteOwnedAccount(actor, input.confirm),
-      reversal: () => null,
-      activity: () => null,
-    },
-    "notify.request": {
-      handler: (input, actor) => requestNotify(actor, input.topic),
-      reversal: () => null,
-      activity: () => null,
-    },
-  })
-}
 
 const SEND_FAILED = "We could not send the code. Try again."
 const EMAIL_DIFFERENT = "Use a different email."
@@ -66,7 +33,7 @@ function authFailure(error: unknown) {
   return { message, code }
 }
 
-async function requestEmailChange(email: string) {
+export async function requestEmailChange(email: string) {
   let outcome: EmailChangeCodeOutcome
   try {
     outcome = await sendEmailChangeCode(email)
@@ -88,7 +55,7 @@ async function requestEmailChange(email: string) {
   return { email, sent: true }
 }
 
-async function deleteOwnedAccount(actor: Actor, confirm: string) {
+export async function deleteOwnedAccount(actor: Actor, confirm: string) {
   if (confirm !== "DELETE") {
     throw new CommandError(
       ERROR_CODES.VALIDATION_ERROR,
@@ -98,7 +65,7 @@ async function deleteOwnedAccount(actor: Actor, confirm: string) {
   return deleteAccount(actor.userId)
 }
 
-async function requestNotify(actor: Actor, topic: NotifyTopic) {
+export async function requestNotify(actor: Actor, topic: NotifyTopic) {
   const db = getDb()
   const existing = await db
     .select()

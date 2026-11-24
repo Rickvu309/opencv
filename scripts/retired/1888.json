@@ -1,0 +1,42 @@
+[
+  {
+    "subject": "apps/api/src/account/account-alone.test.ts",
+    "because": "registerAccount is deleted: Account's commands are installed by the generated catalog, so there is no second registration to guard. The test binds the six operations and still runs them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/auth.test.ts",
+    "because": "Asking for an email change code is a pair command that declares it writes nothing, so the reply reports no touched resource where the older path reported the whole workspace by default.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/lib/contract-client.test.tsx",
+    "because": "account.delete is a pair command now, so the older command runner test names the two older commands that remain: one without an idempotency key and one with.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/unused-domain-exports.test.mjs",
+    "because": "The AccountContract type is deleted with the Account command contract, and the guard itself requires its kept-on-purpose entry to be removed.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/lib/account-api.test.ts",
+    "because": "notify.request is a pair command now. After a pair command the web refreshes every read that no pair declares yet, so the profile is no longer left alone and the case that asserted it is removed.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

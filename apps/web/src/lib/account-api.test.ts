@@ -7,7 +7,7 @@ import {
   profileKey,
   usageKey,
 } from "./account-api.ts"
-import { catalogClient, runContractCommand } from "./contract-client.ts"
+import { catalogClient } from "./contract-client.ts"
 
 const savedProfile = {
   id: "u1",
@@ -53,17 +53,5 @@ describe("account reads", () => {
     })
 
     for (const key of keys) expect(isStale(queryClient, key)).toBe(true)
-  })
-
-  it("leaves the profile alone after a notify request", async () => {
-    const queryClient = new QueryClient()
-    queryClient.setQueryData(profileKey(), { seeded: true })
-    vi.stubGlobal("fetch", async () =>
-      Response.json({ ok: true, data: { id: "n1" } })
-    )
-
-    await runContractCommand(queryClient, "notify.request", { topic: "jobs" })
-
-    expect(isStale(queryClient, profileKey())).toBe(false)
   })
 })

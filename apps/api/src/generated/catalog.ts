@@ -1,5 +1,7 @@
 import type { Implementations } from "@workspace/domain"
 import { catalog } from "@workspace/domain"
+import { implementation as account$delete } from "../account/operations/account/delete/server.js"
+import { implementation as account$requestEmailChange } from "../account/operations/account/request-email-change/server.js"
 import { implementation as actions$approve } from "../registry/operations/actions/approve/server.js"
 import { implementation as actions$deny } from "../registry/operations/actions/deny/server.js"
 import { implementation as activity$undo } from "../registry/operations/activity/undo/server.js"
@@ -11,6 +13,7 @@ import { implementation as connections$list } from "../connections/operations/li
 import { implementation as connections$revoke } from "../connections/operations/revoke/server.js"
 import { implementation as job$priorityCounts } from "../job/operations/priority-counts/server.js"
 import { implementation as job$setPriority } from "../job/operations/set-priority/server.js"
+import { implementation as notify$request } from "../account/operations/notify/request/server.js"
 import { implementation as paper$export } from "../paper/operations/export/server.js"
 import { implementation as paper$import } from "../paper/operations/import/server.js"
 import { implementation as paper$nativeWord } from "../paper/operations/native-word/server.js"
@@ -20,6 +23,8 @@ import { implementation as profile$setPhoto } from "../account/operations/profil
 import { implementation as profile$update } from "../account/operations/profile/update/server.js"
 
 export const implementations = {
+  "account.delete": account$delete,
+  "account.requestEmailChange": account$requestEmailChange,
   "actions.approve": actions$approve,
   "actions.deny": actions$deny,
   "activity.undo": activity$undo,
@@ -31,6 +36,7 @@ export const implementations = {
   "connections.revoke": connections$revoke,
   "job.priorityCounts": job$priorityCounts,
   "job.setPriority": job$setPriority,
+  "notify.request": notify$request,
   "paper.export": paper$export,
   "paper.import": paper$import,
   "paper.nativeWord": paper$nativeWord,

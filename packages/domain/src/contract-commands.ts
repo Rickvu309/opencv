@@ -1,5 +1,4 @@
 import { commandContract } from "./contract.js"
-import { accountContract } from "./account-contract.js"
 import { inboxContract } from "./inbox-contract.js"
 import { chatContract } from "./chat-contract.js"
 import { jobContract } from "./job-contract.js"
@@ -10,7 +9,6 @@ export const commands = commandContract({
   ...inboxContract,
   ...paperContract,
   ...chatContract,
-  ...accountContract,
 })
 
 export type Commands = typeof commands

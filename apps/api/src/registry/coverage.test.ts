@@ -1,5 +1,4 @@
 import {
-  accountContract,
   chatContract,
   inboxContract,
   jobContract,
@@ -19,7 +18,6 @@ import type { ExecuteResult, Registry } from "./registry.js"
 import { coachActivityWithoutTurn, seedCoachActor } from "../test/coach-turn.js"
 
 const surfaces = {
-  account: accountContract,
   chat: chatContract,
   inbox: inboxContract,
   job: jobContract,
