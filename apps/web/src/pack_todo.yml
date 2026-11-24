@@ -1,0 +1,249 @@
+apps/web/src/features/app-shell:
+  apps/web/src/features/app-shell/app-shell-layout.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/product-layout.tsx
+apps/web/src/features/apply:
+  apps/web/src/features/apply/apply-api.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/apply.tsx
+      - apps/web/src/routes/paper-doc.tsx
+  apps/web/src/features/apply/apply-board-empty.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/apply.tsx
+  apps/web/src/features/apply/apply-board.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/apply.tsx
+  apps/web/src/features/apply/apply-calendar.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/apply.tsx
+  apps/web/src/features/apply/apply-job-detail.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/apply-job.tsx
+  apps/web/src/features/apply/apply-list.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/apply.tsx
+  apps/web/src/features/apply/apply-new-job-dialog.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/apply.tsx
+  apps/web/src/features/apply/apply-next-up-strip.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/apply.tsx
+  apps/web/src/features/apply/apply-peek.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/apply.tsx
+  apps/web/src/features/apply/apply-search.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/router.tsx
+      - apps/web/src/routes/apply.tsx
+  apps/web/src/features/apply/apply-stages.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/apply.tsx
+  apps/web/src/features/apply/apply-toolbar.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/apply.tsx
+apps/web/src/features/auth:
+  apps/web/src/features/auth/session-check-notice.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/router.tsx
+      - apps/web/src/routes/product-layout.tsx
+  apps/web/src/features/auth/sign-in-screen.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/sign-in.tsx
+apps/web/src/features/coach:
+  apps/web/src/features/coach/coach-workspace.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/coach.tsx
+apps/web/src/features/coming-soon:
+  apps/web/src/features/coming-soon/pages.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/jobs.tsx
+      - apps/web/src/routes/pitch.tsx
+      - apps/web/src/routes/proofs.tsx
+apps/web/src/features/inbox:
+  apps/web/src/features/inbox/inbox-page.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/inbox.tsx
+apps/web/src/features/landing:
+  apps/web/src/features/landing/about/about-page.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/landing-about.tsx
+  apps/web/src/features/landing/blog/blog-copy.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/router.tsx
+  apps/web/src/features/landing/blog/blog-index.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/landing-blog.tsx
+  apps/web/src/features/landing/blog/blog-post.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/landing-blog-post.tsx
+  apps/web/src/features/landing/help/help-page.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/landing-help.tsx
+  apps/web/src/features/landing/landing-page.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/router.tsx
+  apps/web/src/features/landing/landing-pricing.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/landing-pricing.tsx
+  apps/web/src/features/landing/landing-stories-page.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/landing-stories.tsx
+apps/web/src/features/paper:
+  apps/web/src/features/paper/paper-api.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/paper-doc.tsx
+      - apps/web/src/routes/paper.tsx
+  apps/web/src/features/paper/paper-cv-editor.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/paper-doc.tsx
+  apps/web/src/features/paper/paper-letter.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/paper-doc.tsx
+  apps/web/src/features/paper/paper-library.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/paper.tsx
+  apps/web/src/features/paper/paper-share-page.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/paper-share.tsx
+  apps/web/src/features/paper/paper-templates.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/router.tsx
+      - apps/web/src/routes/paper-doc.tsx
+      - apps/web/src/routes/paper.tsx
+  apps/web/src/features/paper/rich-page.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/paper-doc.tsx
+  apps/web/src/features/paper/writing-page.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/paper-doc.tsx
+apps/web/src/features/paper-page:
+  apps/web/src/features/paper-page/canvas-edit.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/paper-doc.tsx
+  apps/web/src/features/paper-page/package-read.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/paper-doc.tsx
+apps/web/src/features/settings:
+  apps/web/src/features/settings/account-section.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/settings.tsx
+  apps/web/src/features/settings/billing-section.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/settings.tsx
+  apps/web/src/features/settings/coach-section.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/settings.tsx
+  apps/web/src/features/settings/integrations-section.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/settings.tsx
+  apps/web/src/features/settings/preferences-section.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/settings.tsx
+  apps/web/src/features/settings/sections.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/router.tsx
+      - apps/web/src/routes/settings.tsx
+  apps/web/src/features/settings/settings-api.ts:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/settings.tsx
+  apps/web/src/features/settings/settings-layout.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/settings.tsx
+  apps/web/src/features/settings/settings-nav.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/product-layout.tsx
+  apps/web/src/features/settings/usage-section.tsx:
+    violations:
+      - privacy
+    files:
+      - apps/web/src/routes/settings.tsx

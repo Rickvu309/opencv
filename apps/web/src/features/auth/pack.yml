@@ -1,0 +1,2 @@
+layer: feature
+dependencies: [apps/web/src/lib, apps/web/src/components]
