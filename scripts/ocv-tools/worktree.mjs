@@ -83,6 +83,40 @@ function installCommand(fs, wt) {
   return ["npm", ["install"]]
 }
 
+export function packagesUsedFromBuiltOutput(fs, wt) {
+  const root = join(wt, "packages")
+  let dirs
+  try {
+    dirs = fs.list(root)
+  } catch {
+    return []
+  }
+  const names = []
+  for (const dir of dirs) {
+    const path = join(root, dir, "package.json")
+    if (!fs.exists(path)) continue
+    let manifest
+    try {
+      manifest = JSON.parse(fs.read(path))
+    } catch {
+      continue
+    }
+    const served = JSON.stringify([
+      manifest.main,
+      manifest.module,
+      manifest.types,
+      manifest.exports,
+    ])
+    if (manifest.name && manifest.scripts?.build && served.includes("./dist"))
+      names.push(manifest.name)
+  }
+  return names.sort()
+}
+
+export function buildCommand(names) {
+  return ["pnpm", [...names.flatMap((name) => ["--filter", name]), "build"]]
+}
+
 function fastForward(git, main, branch, remote) {
   const moved = git.fastForward(main, branch, remote)
   if (!moved.ok)
@@ -181,6 +215,16 @@ export function createWorktree(
       warnings.push(
         `install failed; run "${cmd} ${args.join(" ")}" in ${worktree}`
       )
+    const built =
+      cmd === "pnpm" ? packagesUsedFromBuiltOutput(fs, worktree) : []
+    if (ran.ok && built.length) {
+      const [buildCmd, buildArgs] = buildCommand(built)
+      const made = ctx.ports.proc.run(buildCmd, buildArgs, { cwd: worktree })
+      if (!made.ok)
+        warnings.push(
+          `building ${built.join(", ")} failed, so tests that use them fail until it works; run "${buildCmd} ${buildArgs.join(" ")}" in ${worktree}`
+        )
+    }
   }
   return { main, worktree, branch, port, gitDir, warnings }
 }

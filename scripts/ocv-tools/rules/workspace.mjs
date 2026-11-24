@@ -115,7 +115,7 @@ function affectedTestsFix(facts) {
   if (facts.affected?.unproved?.length)
     return `Run scripts/ocv-tools.mjs check in this worktree: it runs the tests this change reaches plus ${(facts.affected.proofs ?? []).join(" and ")}, then records the pass; push again after it. ${CANNOT_RUN_HERE}`
   if (failed.length)
-    return `Fix the failing tests the output names, then run scripts/ocv-tools.mjs check: it reruns only this set and records the pass. If they fail with "Cannot find module '@workspace/...'", run pnpm --filter @workspace/domain build first. ${CANNOT_RUN_HERE}`
+    return `Fix the failing tests the output names, then run scripts/ocv-tools.mjs check: it reruns only this set and records the pass. If they fail with "Cannot find module '@workspace/...'" or "Failed to resolve import", build the package it names first: pnpm --filter <that package> build. ${CANNOT_RUN_HERE}`
   return `Run scripts/ocv-tools.mjs check in this worktree: it runs the tests this change reaches and records the pass for this commit. ${CANNOT_RUN_HERE}`
 }
 

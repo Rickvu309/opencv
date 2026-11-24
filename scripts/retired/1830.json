@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "scripts/ocv-tools/jobs/hook-affected.test.mjs",
+    "because": "the hint text changed on purpose: it named one package to build, and two are needed; the assertion now expects the new wording",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

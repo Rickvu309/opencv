@@ -96,7 +96,7 @@ test("AFFECTED_TESTS names the way forward when the tests cannot install, fail, 
     failing,
     /scripts\/ocv-tools\.mjs check: it reruns only this set/
   )
-  assert.match(failing, /pnpm --filter @workspace\/domain build/)
+  assert.match(failing, /pnpm --filter <that package> build/)
   const missing = fixOf({ receipt: false, head: "abc" })
   for (const fix of [failing, missing])
     assert.match(fix, /scripts\/ocv-tools\.mjs block <issue>/)
