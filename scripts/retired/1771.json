@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 12
+  },
+  {
+    "subject": "scripts/ocv-tools/cli.test.mjs",
+    "because": "the command is removed; status ran 3 times in 183 sessions",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
   }
 ]
