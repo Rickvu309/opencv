@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-start-draft.test.tsx",
+    "because": "Stopping a letter draft now goes through the command door as coach.stop. The test asserts the same stop request at its new address, /api/commands/coach.stop. The older route stays for tabs opened before this change.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
