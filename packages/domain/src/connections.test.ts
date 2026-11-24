@@ -1,11 +1,11 @@
 import assert from "node:assert/strict"
 import { it } from "node:test"
-import {
-  connectionPolicySchema,
-  connectionResourcesSchema,
-} from "./connections.ts"
+import { connectionResourcesSchema, connectionSchema } from "./connections.ts"
 import { connectionIdSchema } from "./ids.ts"
-import { connectionsContract } from "./connections-contract.ts"
+import { operation as list } from "./operations/connections/list/operation.ts"
+import { operation as revoke } from "./operations/connections/revoke/operation.ts"
+
+const connectionPolicySchema = connectionSchema.shape.policy
 
 it("defaults to no career resources and requires approval for every write", () => {
   assert.deepEqual(connectionResourcesSchema.parse({ kind: "none" }), {
@@ -28,13 +28,13 @@ it("defaults to no career resources and requires approval for every write", () =
 
 it("only accepts connection identifiers and keeps revoke unavailable to Coach", () => {
   assert.equal(connectionIdSchema.safeParse("other").success, false)
-  assert.equal(connectionsContract["connections.revoke"].coach, "never")
+  assert.equal(revoke.coach, "never")
   assert.deepEqual(
-    connectionsContract["connections.revoke"].invalidates({
+    revoke.writes({
       connectionId: connectionIdSchema.parse(
         "11070000-0000-4000-8000-000000000001"
       ),
     }),
-    [{ query: "connections.list" }]
+    list.dependsOn({})
   )
 })

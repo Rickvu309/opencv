@@ -93,31 +93,69 @@ function paperCommandInput(name: string, input: unknown) {
   return input
 }
 
-export async function runContractCommand<N extends ContractCommandName>(
+type PairCommandName = WriteName<typeof catalog>
+export type RunnableCommandName = ContractCommandName | PairCommandName
+type RunnableInput<N extends RunnableCommandName> =
+  N extends ContractCommandName
+    ? CommandInput<Commands, N>
+    : N extends PairCommandName
+      ? OperationInput<(typeof catalog)[N]>
+      : never
+type RunnableOutput<N extends RunnableCommandName> =
+  N extends ContractCommandName
+    ? CommandOutput<Commands, N>
+    : N extends PairCommandName
+      ? OperationOutput<(typeof catalog)[N]>
+      : never
+
+function listedCommand(name: string): AnyCommandEntry | undefined {
+  return (commands as Record<string, AnyCommandEntry>)[name]
+}
+
+function pairOperation(name: string): Operation | undefined {
+  return (catalog as Record<string, Operation>)[name]
+}
+
+function refreshReadsNoPairDeclares(queryClient: QueryClient) {
+  return queryClient.invalidateQueries({
+    predicate: (query) =>
+      query.queryKey[0] !== "catalog" &&
+      !pairOperation(String(query.queryKey[0])),
+  })
+}
+
+export async function runContractCommand<N extends RunnableCommandName>(
   queryClient: QueryClient,
   name: N,
-  input: CommandInput<Commands, N>,
+  input: RunnableInput<N>,
   options: RunOptions = {}
-): Promise<CommandResult<CommandOutput<Commands, N>>> {
-  const body = await apiFetch<
-    SuccessBody<CommandResult<CommandOutput<Commands, N>>>
-  >(`/api/commands/${name}`, {
-    method: "POST",
-    body: JSON.stringify({
-      input: paperCommandInput(name, input),
-      ...((commands[name] as AnyCommandEntry).idempotency === "none"
-        ? {}
-        : { idempotencyKey: options.idempotencyKey ?? crypto.randomUUID() }),
-    }),
-    ...(options.signal ? { signal: options.signal } : {}),
-    ...(options.keepalive ? { keepalive: true } : {}),
-  })
+): Promise<CommandResult<RunnableOutput<N>>> {
+  const listed = listedCommand(name)
+  const idempotency = listed
+    ? listed.idempotency
+    : (pairOperation(name) as { idempotency?: string }).idempotency
+  const body = await apiFetch<SuccessBody<CommandResult<RunnableOutput<N>>>>(
+    `/api/commands/${name}`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        input: paperCommandInput(name, input),
+        ...(idempotency === "none"
+          ? {}
+          : { idempotencyKey: options.idempotencyKey ?? crypto.randomUUID() }),
+      }),
+      ...(options.signal ? { signal: options.signal } : {}),
+      ...(options.keepalive ? { keepalive: true } : {}),
+    }
+  )
   if (options.refresh !== false && !isPending(unwrapData(body)).success) {
     await refreshCatalogReads(queryClient, commandTouches(body))
-    await refreshQueries(
-      queryClient,
-      commands[name].invalidates(input as never)
-    )
+    if (listed) await refreshQueries(queryClient, listed.invalidates(input))
+    else
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ACTIVITY_ROOT }),
+        refreshReadsNoPairDeclares(queryClient),
+      ])
   }
   return unwrapData(body)
 }
@@ -134,9 +172,9 @@ export async function undoActivity(
 export function useRunCommand() {
   const queryClient = useQueryClient()
   return useCallback(
-    <N extends ContractCommandName>(
+    <N extends RunnableCommandName>(
       name: N,
-      input: CommandInput<Commands, N>,
+      input: RunnableInput<N>,
       options?: RunOptions
     ) => runContractCommand(queryClient, name, input, options),
     [queryClient]
@@ -156,13 +194,35 @@ function commandTouches(body: unknown) {
   return metadataSchema.parse(body).meta?.touches
 }
 
+function touchedUnderItsOwnName(
+  queryKey: readonly unknown[],
+  touches: ResourceTouch[] | undefined
+) {
+  const operation = pairOperation(String(queryKey[0]))
+  if (!operation || operation.kind !== "read") return false
+  if (touches === undefined) return true
+  const input = operation.input.safeParse(queryKey[1] ?? {})
+  if (!input.success) return true
+  const dependencies = operation.dependsOn(input.data as never)
+  return touches.some((touch) =>
+    dependencies.some(({ name, entityId }) =>
+      resourcesOverlap(touch, {
+        ownerId: touch.ownerId,
+        name,
+        ...(entityId ? { entityId } : {}),
+      })
+    )
+  )
+}
+
 export function refreshCatalogReads(
   queryClient: QueryClient,
   touches?: ResourceTouch[]
 ) {
   return queryClient.invalidateQueries({
     predicate: (query) => {
-      if (query.queryKey[0] !== "catalog") return false
+      if (query.queryKey[0] !== "catalog")
+        return touchedUnderItsOwnName(query.queryKey, touches)
       const dependencies = z.array(touchSchema).safeParse(query.meta?.dependsOn)
       return (
         dependencies.success &&
@@ -175,6 +235,24 @@ export function refreshCatalogReads(
       )
     },
   })
+}
+
+export async function readOperation<N extends ReadName<typeof catalog>>(
+  name: N,
+  input: OperationInput<(typeof catalog)[N]>,
+  signal?: AbortSignal
+): Promise<OperationOutput<(typeof catalog)[N]>> {
+  const body = await apiFetch<SuccessBody<unknown>>(
+    endpoints.catalogRead(name),
+    {
+      method: "POST",
+      body: JSON.stringify(input),
+      ...(signal ? { signal } : {}),
+    }
+  )
+  return catalog[name].publicResult.parse(unwrapData(body)) as OperationOutput<
+    (typeof catalog)[N]
+  >
 }
 
 type ReadName<C extends Record<string, Operation>> = {
@@ -268,9 +346,7 @@ export function createCatalogClient<const C extends Record<string, Operation>>(
     if (runOptions.refresh !== false) {
       await Promise.all([
         refreshCatalogReads(queryClient, commandTouches(body)),
-        queryClient.invalidateQueries({
-          predicate: (query) => query.queryKey[0] !== "catalog",
-        }),
+        refreshReadsNoPairDeclares(queryClient),
       ])
     }
     return activity.success &&

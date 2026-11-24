@@ -203,10 +203,7 @@ export function createApp({
     await next()
   })
   if (auth && database && authUrl)
-    app.route(
-      "/",
-      connectionRoutes(auth, signedIn, registry, authUrl, webOrigins)
-    )
+    app.route("/", connectionRoutes(auth, registry, authUrl, webOrigins))
 
   app.use("/api/auth/*", async (c, next) => {
     if (!isServedAuthPath(c.req.path)) return notFoundEnvelopeResponse(c)

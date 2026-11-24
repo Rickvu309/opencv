@@ -1,4 +1,3 @@
-export { registerConnections } from "./commands.js"
 export {
   bindIssuedToken,
   assertRefreshGrant,

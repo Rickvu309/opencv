@@ -12,12 +12,10 @@ import { oauthProviderAuthServerMetadata } from "@better-auth/oauth-provider"
 import {
   delegateActorSchema,
   ERROR_CODES,
-  personActor,
-  successEnvelope,
   type DelegateActor,
 } from "@workspace/domain"
 import { insideTransaction, savepoint, transaction } from "../db/context.js"
-import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"
+import type { SignedInVariables } from "../platform/signed-in.js"
 import type { Registry } from "../registry/registry.js"
 import { isAllowedOrigin } from "../platform/origin.js"
 import { requireLiveDelegate } from "../registry/delegate-policy.js"
@@ -123,7 +121,6 @@ type AuthServer = Parameters<typeof oauthProviderAuthServerMetadata>[0]
 
 export function connectionRoutes(
   auth: AuthServer,
-  signedIn: SignedIn,
   registry: Registry,
   authUrl: string,
   webOrigins: string[]
@@ -305,12 +302,5 @@ export function connectionRoutes(
       )
     return handler.fetch(c.req.raw)
   })
-  routes.get("/api/agent-connections", signedIn, async (c) =>
-    c.json(
-      successEnvelope(
-        await registry.read("connections.list", {}, personActor(c.var.userId))
-      )
-    )
-  )
   return routes
 }

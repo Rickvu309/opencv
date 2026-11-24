@@ -8,6 +8,7 @@ import {
   queries,
   type QueryName,
   type QueryRef,
+  type ResourceRef,
 } from "@workspace/domain"
 import { and, eq, inArray } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
@@ -295,9 +296,10 @@ function invalidatesTable(): InvalidatesTable {
         (input: unknown) => [
           ...legacyReads,
           ...adoptedRefreshes(
-            (operation.name === "paper.import"
-              ? operation.writes()
-              : operation.writes(operation.input.parse(input))
+            (operation.writes as (input?: unknown) => readonly ResourceRef[])(
+              operation.name === "paper.import"
+                ? undefined
+                : operation.input.parse(input)
             ).map((resource) => ({ ...resource, ownerId: "owner" }))
           ),
         ],

@@ -1,5 +1,4 @@
 import { coachTaskQueries } from "./coach-task-contract.js"
-import { connectionsQueries } from "./connections-contract.js"
 import { z } from "zod"
 import { catalog } from "./catalog.js"
 
@@ -35,7 +34,6 @@ const catalogReads = Object.fromEntries(
 
 export const queries = queryContract({
   ...catalogReads,
-  ...connectionsQueries,
   ...coachTaskQueries,
   ...jobQueries,
   ...inboxQueries,

@@ -1,7 +1,5 @@
-import type { QueryOutput } from "@workspace/domain"
 import { apiBaseUrl, apiFetch } from "@/lib/api.ts"
-import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
-import { queryKey } from "@/lib/contract-client.ts"
+import { queryKey, readOperation } from "@/lib/contract-client.ts"
 
 export const agentServerUrl = new URL("/mcp", apiBaseUrl).href
 export const consentKey = (query: string) =>
@@ -12,9 +10,7 @@ export const continuationKey = (query: string) =>
 export const connectionsKey = () => queryKey({ query: "connections.list" })
 
 export function fetchConnections() {
-  return apiFetch<SuccessBody<QueryOutput<"connections.list">>>(
-    "/api/agent-connections"
-  ).then(unwrapData)
+  return readOperation("connections.list", {})
 }
 
 export function consentClient(oauthQuery: string) {

@@ -289,7 +289,6 @@ export const ROUTE_CASES: readonly RouteCase[] = [
   get("/.well-known/oauth-authorization-server"),
   get("/.well-known/oauth-authorization-server/api/auth"),
   get("/.well-known/oauth-protected-resource/mcp"),
-  get("/api/agent-connections"),
   get("/api/public-config"),
   get("/api/session"),
   get("/api/coach/tasks/:id", async () => ({ id: randomUUID() })),

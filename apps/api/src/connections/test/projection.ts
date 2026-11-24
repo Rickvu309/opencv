@@ -4,7 +4,6 @@ import { expect } from "vitest"
 import { z } from "zod"
 import { createAuth } from "../../auth.js"
 import { withDatabase, type AppDatabase } from "../../db/context.js"
-import { requireSession } from "../../middleware.js"
 import { bindOperation } from "../../registry/bind.js"
 import { Registry } from "../../registry/registry.js"
 import {
@@ -27,13 +26,7 @@ export function createProjectionFixture(
     rateLimitEnabled: false,
   })
   const connection = (registry: Registry) =>
-    connectionRoutes(
-      auth,
-      requireSession(auth, database.db as unknown as AppDatabase),
-      registry,
-      origin,
-      [testWebOrigin]
-    )
+    connectionRoutes(auth, registry, origin, [testWebOrigin])
   return {
     fetch(request: Request) {
       const route = mounted

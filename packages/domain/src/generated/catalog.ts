@@ -1,3 +1,5 @@
+import { operation as connections$list } from "../operations/connections/list/operation.js"
+import { operation as connections$revoke } from "../operations/connections/revoke/operation.js"
 import { operation as job$priorityCounts } from "../operations/job/priority-counts/operation.js"
 import { operation as job$setPriority } from "../operations/job/set-priority/operation.js"
 import { operation as paper$export } from "../operations/paper/export/operation.js"
@@ -6,6 +8,8 @@ import { operation as paper$nativeWord } from "../operations/paper/native-word/o
 import { operation as paper$read } from "../operations/paper/read/operation.js"
 
 export const catalog = {
+  "connections.list": connections$list,
+  "connections.revoke": connections$revoke,
   "job.priorityCounts": job$priorityCounts,
   "job.setPriority": job$setPriority,
   "paper.export": paper$export,
