@@ -83,8 +83,7 @@ export function installFetch(mode: "tool" | "stop" | "limit") {
       return Promise.resolve(ok({ id: "chat-1" }))
     }
     if (url.includes("/api/paper/letter-1")) return Promise.resolve(ok(letter))
-    if (url.includes("coach.stop"))
-      return Promise.resolve(ok({ stopped: true }))
+    if (url.includes("/stop")) return Promise.resolve(ok({}))
     if (url.includes("/api/coach/usage")) {
       return Promise.resolve(ok({ resetsAt: "2026-10-28T09:00:00.000Z" }))
     }

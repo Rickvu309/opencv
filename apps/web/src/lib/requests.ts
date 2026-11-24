@@ -34,6 +34,7 @@ export const endpoints = {
   letterAttachment: "/api/paper/letter-attachment",
   chats: "/api/chats",
   chat: (chatId: string) => `/api/chats/${chatId}`,
+  chatStop: (chatId: string) => `/api/chats/${chatId}/stop`,
   activity: (query: URLSearchParams) => `/api/activity?${query}`,
   activityOfSubject: (subjectId: string) =>
     `/api/activity?subjectId=${encodeURIComponent(subjectId)}`,

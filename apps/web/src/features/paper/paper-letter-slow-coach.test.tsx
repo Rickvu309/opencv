@@ -127,7 +127,7 @@ function installSlowCoach(ending: {
         kind: "letter",
       })
     if (url.includes("/api/commands/chat.create")) return ok({ id: CHAT })
-    if (url.endsWith("coach.stop")) return ok({ stopped: true })
+    if (url.endsWith("/stop")) return ok({})
     if (url.includes("/turns")) {
       const stream = new ReadableStream<Uint8Array>({
         start(controller) {
@@ -239,9 +239,7 @@ function mintInputs(fetch: ReturnType<typeof installSlowCoach>["fetch"]) {
 }
 
 function stopped(fetch: ReturnType<typeof installSlowCoach>["fetch"]) {
-  return fetch.mock.calls.some(([url]) =>
-    String(url).endsWith("/api/commands/coach.stop")
-  )
+  return fetch.mock.calls.some(([url]) => String(url).endsWith("/stop"))
 }
 
 async function draftUntilStillWriting(onCreated: () => void) {
