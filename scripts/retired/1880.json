@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/registry/reads-an-undo-or-approval-can-change.test.ts",
+    "because": "Approve and Undo no longer keep a hand list of reads to refresh. They write the workspace resource, which overlaps every read. control-alone.test.ts asserts that an approval and an Undo touch every read and a denial touches none.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  }
+]
