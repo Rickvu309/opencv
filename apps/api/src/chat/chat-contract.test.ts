@@ -1,10 +1,12 @@
 import {
   DEFAULT_CHAT_TITLE,
   chatContract,
+  coachTaskContract,
   personActor,
   queries,
 } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
+import type { z } from "zod"
 
 import { stopChat, trackChatTurn } from "./commands.js"
 import { insertCoachMessage } from "./store.js"
@@ -103,11 +105,16 @@ describe("a chat binding that drifts from the chat contract is rejected", () => 
       ])
 
       trackChatTurn(chatId, new AbortController())
-      await registry.execute({
+      const stopContract = (
+        coachTaskContract as Record<string, { output: z.ZodType } | undefined>
+      )["coach.stop"]
+      expect(stopContract, "the Coach contract owns coach.stop").toBeDefined()
+      const stopped = await registry.execute({
         name: "coach.stop",
         input: { chatId },
         actor: person,
       })
+      expect(stopContract?.output.safeParse(stopped.output).success).toBe(true)
       expect(stopChat(chatId)).toBe(false)
 
       const approveChat = (await run("chat.create", { title: "Approve" }))
