@@ -202,7 +202,7 @@ A git hook: the trigger that makes the commit and push moments run. It decides n
 _Avoid_: gate, pre-check (for the hook)
 
 **CI run**:
-One run of the CI workflow for one tree and one trigger: a pull request head, or a group in the merge queue.
+One run of the CI workflow for one tree and one trigger: a pull request head, or a push to main.
 _Not_: a test run, or a Coach run, which is a product word.
 _Avoid_: run (bare), build, pipeline
 
@@ -220,25 +220,27 @@ The one status that must succeed for a change to merge. It succeeds only when ev
 _Avoid_: ci (bare, in prose), status, the check
 
 **Gate**:
-Everything that must hold for a change to reach main: the required check green on its head and on its merged tree.
+Everything that must hold for a change to reach main: the required check green on its head. What must hold for a change to reach production is the main run: the full CI run on main after the merge.
 _Not_: the quick checks or the pre-check, which save time but never decide.
 _Avoid_: policy, hook, review, approval
 
 **Green**:
-The required check succeeded on a named tree. Always say which tree: green on the head (the pull request run) or green in the queue (the merged tree). Red is the opposite.
+The required check succeeded on a named tree. Always say which tree: green on the head (the pull request run) or green on main (the main run). Red is the opposite.
 _Not_: a pre-check pass.
 _Avoid_: passing, all tests pass, CI green (without the tree), done
 
-**Merged tree**:
-The tree that results from merging a change into the current main, together with any change queued ahead of it.
-_Avoid_: merge result, integration tree
+**Main run**:
+The CI run a push to main starts: every CI job at full scope on main as it stands after a merge. Production deploys a commit only after its main run is green.
+_Not_: the merge queue, which tested the merged tree before the merge and was removed on 2026-11-24.
+_Avoid_: post-merge check, full run (bare)
 
-**Merge queue**:
-The queue that runs every CI job at full scope on each merged tree and merges only what is green there.
-_Avoid_: train, merge train
+**Main red**:
+The state after a main run fails. An open main-red issue names the commit, and while it is open only the revert merges and nothing deploys. A green main run that contains the red commit closes it.
+_Not_: production red, which the probe sets.
+_Avoid_: broken main, red build
 
 **Auto-merge**:
-The setting under which a change merges by itself, with nobody reading it, once it is green on its head and in the queue.
+The setting under which a change merges by itself, with nobody reading it, once it is green on its head.
 _Avoid_: self-merge, merge on green
 
 ### What a check leaves behind
@@ -338,11 +340,12 @@ What a merge to main is: production runs the new main within minutes, with no st
 _Avoid_: release, ship, push to production
 
 **Production red**:
-The state after the probe finds production broken twice in a row. While it lasts, the merge queue takes only the revert.
-_Avoid_: outage, red main, incident (for the state)
+The state after the probe finds production broken twice in a row. While it lasts, only the revert merges.
+_Not_: main red, which a failed main run sets.
+_Avoid_: outage, incident (for the state)
 
 **Probe broken**:
-The probe's outcome when the probe itself cannot run, such as when its session has expired. It alerts but never closes the queue.
+The probe's outcome when the probe itself cannot run, such as when its session has expired. It alerts but never closes merging.
 _Avoid_: flake, red, probe failure
 
 **Revert**:
