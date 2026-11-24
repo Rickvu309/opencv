@@ -1,0 +1,6 @@
+{
+  "id": "packs",
+  "file": "scripts/packs.test.mjs",
+  "historic": null,
+  "reason": "structure rule run by ts-packwerk; its three mistake fixtures and one clean fixture build throwaway repos in the test, and the real tree must pass with the recorded todos"
+}
