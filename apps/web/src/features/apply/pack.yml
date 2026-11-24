@@ -1,2 +1,15 @@
 layer: feature
 dependencies: [apps/web/src/lib, apps/web/src/components]
+public:
+  - apply-api.ts
+  - apply-board-empty.tsx
+  - apply-board.tsx
+  - apply-calendar.tsx
+  - apply-job-detail.tsx
+  - apply-list.tsx
+  - apply-new-job-dialog.tsx
+  - apply-next-up-strip.tsx
+  - apply-peek.tsx
+  - apply-search.ts
+  - apply-stages.ts
+  - apply-toolbar.tsx

@@ -8,3 +8,12 @@ dependencies:
     apps/web/src/lib,
     apps/web/src/components,
   ]
+public:
+  - paper-api.ts
+  - paper-cv-editor.tsx
+  - paper-letter.tsx
+  - paper-library.tsx
+  - paper-share-page.tsx
+  - paper-templates.ts
+  - rich-page.tsx
+  - writing-page.tsx

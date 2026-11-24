@@ -11,3 +11,5 @@ dependencies:
     apps/web/src/lib,
     apps/web/src/components,
   ]
+public:
+  - app-shell-layout.tsx

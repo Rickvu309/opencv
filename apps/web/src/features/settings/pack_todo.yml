@@ -1,6 +1,0 @@
-apps/web/src/features/auth:
-  apps/web/src/features/auth/code-input.tsx:
-    violations:
-      - privacy
-    files:
-      - apps/web/src/features/settings/account-section.tsx

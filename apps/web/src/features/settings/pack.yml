@@ -6,3 +6,14 @@ dependencies:
     apps/web/src/lib,
     apps/web/src/components,
   ]
+public:
+  - account-section.tsx
+  - billing-section.tsx
+  - coach-section.tsx
+  - integrations-section.tsx
+  - preferences-section.tsx
+  - sections.ts
+  - settings-api.ts
+  - settings-layout.tsx
+  - settings-nav.tsx
+  - usage-section.tsx
