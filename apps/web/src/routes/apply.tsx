@@ -1,4 +1,5 @@
 import { catalogClient } from "@/lib/contract-client.ts"
+import { ownerIdFromRouteMatches } from "@/lib/owner-id.ts"
 import { useReducer } from "react"
 import { useShortcut } from "@/lib/use-shortcut.ts"
 import { useQuery } from "@tanstack/react-query"
@@ -14,11 +15,7 @@ import {
 } from "@/features/apply/apply-board-empty.tsx"
 import { ApplyCalendar } from "@/features/apply/apply-calendar.tsx"
 import { ApplyList } from "@/features/apply/apply-list.tsx"
-import {
-  jobListKey,
-  listJobs,
-  ownerIdFromRouteMatches,
-} from "@/features/apply/apply-api.ts"
+import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
 import { NewJobDialog } from "@/features/apply/apply-new-job-dialog.tsx"
 import { ApplyNextUp } from "@/features/apply/apply-next-up-strip.tsx"
 import { ApplyPeek } from "@/features/apply/apply-peek.tsx"

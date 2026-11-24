@@ -4,19 +4,11 @@ import {
   QueryObserver,
 } from "@tanstack/react-query"
 import { renderHook, waitFor } from "@testing-library/react"
-import {
-  connectionIdSchema,
-  defineOperation,
-  resourcesOverlap,
-} from "@workspace/domain"
+import { defineOperation, resourcesOverlap } from "@workspace/domain"
 import { createElement, type PropsWithChildren } from "react"
 import { afterEach, expect, expectTypeOf, it, vi } from "vitest"
 import { z } from "@workspace/domain"
-import {
-  createCatalogClient,
-  readOperation,
-  runContractCommand,
-} from "./contract-client.ts"
+import { createCatalogClient, runContractCommand } from "./contract-client.ts"
 
 const read = defineOperation({
   owner: "job",
@@ -292,52 +284,4 @@ it("omits even an explicit key for commands whose contract has idempotency none"
     input: {},
   })
   queryClient.clear()
-})
-
-it("a pair command refreshes the pair read it touches under the read's own name and every read no pair declares, and leaves an untouched pair read", async () => {
-  const queryClient = new QueryClient()
-  queryClient.setQueryData(["connections.list"], [])
-  queryClient.setQueryData(["job.priorityCounts"], [])
-  queryClient.setQueryData(["read.noPairDeclares"], [])
-  const fetch = vi.fn().mockResolvedValue(
-    Response.json({
-      ok: true,
-      data: { revoked: true },
-      meta: { touches: [{ ownerId: "owner", name: "connection" }] },
-    })
-  )
-  vi.stubGlobal("fetch", fetch)
-  const result = await runContractCommand(queryClient, "connections.revoke", {
-    connectionId: connectionIdSchema.parse(
-      "11070000-0000-4000-8000-000000000001"
-    ),
-  })
-  expectTypeOf(result.revoked).toEqualTypeOf<true>()
-  expect(String(fetch.mock.calls[0]?.[0])).toContain(
-    "/api/commands/connections.revoke"
-  )
-  expect(
-    JSON.parse(String(fetch.mock.calls[0]?.[1]?.body)).idempotencyKey
-  ).toEqual(expect.any(String))
-  const invalidated = (key: string) =>
-    queryClient.getQueryState([key])?.isInvalidated
-  expect(invalidated("connections.list")).toBe(true)
-  expect(invalidated("read.noPairDeclares")).toBe(true)
-  expect(invalidated("job.priorityCounts")).toBe(false)
-  queryClient.clear()
-})
-
-it("reads a pair through the read door and keeps only its public result", async () => {
-  const fetch = vi.fn().mockResolvedValue(Response.json({ ok: true, data: [] }))
-  vi.stubGlobal("fetch", fetch)
-  expect(await readOperation("connections.list", {})).toEqual([])
-  expect(String(fetch.mock.calls[0]?.[0])).toContain(
-    "/api/reads/connections.list"
-  )
-  expect(fetch.mock.calls[0]?.[1]).toMatchObject({ method: "POST", body: "{}" })
-  vi.stubGlobal(
-    "fetch",
-    vi.fn().mockResolvedValue(Response.json({ ok: true, data: [{ id: 1 }] }))
-  )
-  await expect(readOperation("connections.list", {})).rejects.toThrow()
 })

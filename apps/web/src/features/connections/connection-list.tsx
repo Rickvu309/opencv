@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { useRouterState } from "@tanstack/react-router"
 import {
   grantCopy,
   type ConnectionId,
@@ -6,8 +7,8 @@ import {
 } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import { profileQuery } from "@/lib/account-api.ts"
-import { connectionsKey, fetchConnections } from "@/lib/connections-api.ts"
-import { runContractCommand } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
+import { ownerIdFromRouteMatches } from "@/lib/owner-id.ts"
 import { ConnectAgent } from "./connect-agent.tsx"
 
 function connectionGrantLines(connection: {
@@ -22,13 +23,13 @@ export function ConnectionList() {
   const queryClient = useQueryClient()
   const profile = useQuery(profileQuery())
   const timeZone = profile.data?.timeZone
-  const connections = useQuery({
-    queryKey: connectionsKey(),
-    queryFn: fetchConnections,
+  const ownerId = useRouterState({
+    select: (state) => ownerIdFromRouteMatches(state.matches),
   })
+  const connections = catalogClient.useRead(ownerId, "connections.list", {})
   const revoke = useMutation({
     mutationFn: (connectionId: ConnectionId) =>
-      runContractCommand(queryClient, "connections.revoke", { connectionId }),
+      catalogClient.run(queryClient, "connections.revoke", { connectionId }),
   })
   return (
     <>
