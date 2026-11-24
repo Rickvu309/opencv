@@ -180,10 +180,11 @@ test("ci runs the main-red report after ci on every push to main, with write acc
   assert.match(report, /run: node scripts\/main-red\.mjs/)
 })
 
-const rerunText = readFileSync(
-  new URL("../.github/workflows/main-rerun.yml", import.meta.url),
+const nightlyText = readFileSync(
+  new URL("../.github/workflows/nightly.yml", import.meta.url),
   "utf8"
 )
+const rerunText = nightlyText.slice(nightlyText.indexOf("  rerun-main-once:"))
 
 test("the red rate counts a failed run and a run that needed a second attempt, and names the limit only when it is passed", () => {
   const green = { conclusion: "success", attempt: 1 }
@@ -224,13 +225,16 @@ test("a red run on main reports the attempt and the red rate from the last runs 
 })
 
 test("a failed run on main is run again once, by a job that can do nothing else and never fails", () => {
-  assert.match(rerunText, /^ {4}workflows: \[Checks\]$/m)
+  assert.match(
+    nightlyText,
+    /^ {2}workflow_run:\n {4}workflows: \[Checks\]\n {4}types: \[completed\]\n {4}branches: \[main\]$/m
+  )
   assert.match(
     rerunText,
-    /^ {4}if: \$\{\{ github\.event\.workflow_run\.event == 'push' && github\.event\.workflow_run\.head_branch == 'main' && github\.event\.workflow_run\.conclusion == 'failure' && github\.event\.workflow_run\.run_attempt == 1 \}\}$/m
+    /^ {4}if: \$\{\{ github\.event_name == 'workflow_run' && github\.event\.workflow_run\.event == 'push' && github\.event\.workflow_run\.head_branch == 'main' && github\.event\.workflow_run\.conclusion == 'failure' && github\.event\.workflow_run\.run_attempt == 1 \}\}$/m
   )
   assert.match(rerunText, /^ {4}continue-on-error: true$/m)
-  assert.match(rerunText, /^permissions: \{\}$/m)
+  assert.match(nightlyText, /^permissions: \{\}$/m)
   assert.match(rerunText, /^ {4}permissions:\n {6}actions: write\n {4}env:/m)
   assert.doesNotMatch(rerunText, /contents: write|issues: write|write-all/)
   assert.match(rerunText, /run: gh run rerun "\$RUN_ID" --failed$/m)
