@@ -90,6 +90,14 @@ export async function openWorld(options?: TestAppOptions) {
         withDatabase(db, () => registry.read(name, input, actor)) as Promise<T>,
       get: (path: string) => call(path, { method: "GET" }),
       post,
+      stream: async (path: string, body: unknown) =>
+        (
+          await app.request(path, {
+            method: "POST",
+            headers,
+            body: JSON.stringify(body),
+          })
+        ).text(),
     }
   }
 
