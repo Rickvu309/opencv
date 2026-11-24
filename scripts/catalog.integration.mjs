@@ -175,7 +175,7 @@ test("add, rename and delete pairs regenerate deterministically without running 
       "--noEmit",
       "--rootDir",
       "apps/api/src",
-      "apps/api/src/registry/generated/catalog.ts",
+      "apps/api/src/generated/catalog.ts",
     ],
     { cwd: directory, timeout: 30_000, stdio: "pipe", encoding: "utf8" }
   )
@@ -540,7 +540,7 @@ test("discovery pairs account and chat owners across public namespaces without g
     ]
   )
   const generated = readFileSync(
-    path.join(directory, "apps/api/src/registry/generated/catalog.ts"),
+    path.join(directory, "apps/api/src/generated/catalog.ts"),
     "utf8"
   )
   assert.match(generated, /account\/operations\/profile\/get\/server.js/)

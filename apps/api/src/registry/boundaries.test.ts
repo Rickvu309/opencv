@@ -69,7 +69,7 @@ describe("an import into another api module that skips its index.ts is rejected"
         const owner = path.relative(srcRoot, file).split(path.sep)[0]
         if (owner === top) continue
         if (
-          path.relative(srcRoot, file) === "registry/generated/catalog.ts" &&
+          path.relative(srcRoot, file) === "generated/catalog.ts" &&
           second === "operations" &&
           path.basename(relative) === "server.js"
         )
