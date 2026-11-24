@@ -13,7 +13,7 @@ import {
 import { and, eq } from "drizzle-orm"
 import { getDb } from "../db/context.js"
 import { agentConnections } from "../db/schema.js"
-import { CommandError } from "./errors.js"
+import { CommandError } from "../platform/errors.js"
 
 export const DELEGATE_REACHABLE: ReadonlyMap<
   string,

@@ -7,7 +7,7 @@ import { z } from "zod"
 
 import { getDb, withDatabase } from "../db/context.js"
 import { activity, chats, idempotency } from "../db/schema.js"
-import {} from "./errors.js"
+import {} from "../platform/errors.js"
 import { Registry } from "./registry.js"
 import { inputHash } from "./receipt.js"
 import {

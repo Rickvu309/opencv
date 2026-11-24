@@ -78,6 +78,7 @@ flowchart TD
   p_apps_api_src_connections --> p_apps_api_src_db
   p_apps_api_src_connections --> p_apps_api_src_limits
   p_apps_api_src_connections --> p_apps_api_src_platform
+  p_apps_api_src_db --> p_apps_api_src_platform
   p_apps_api_src_inbox --> p_apps_api_src_account
   p_apps_api_src_inbox --> p_apps_api_src_coach
   p_apps_api_src_inbox --> p_apps_api_src_registry
@@ -161,7 +162,7 @@ flowchart TD
 | `apps/api/src/chat` | feature | index.ts | apps/api/src/job, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/coach` | feature | index.ts | apps/api/src/chat, apps/api/src/account, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/connections` | feature | index.ts | apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
-| `apps/api/src/db` | platform | none | none | none |
+| `apps/api/src/db` | platform | none | apps/api/src/platform | none |
 | `apps/api/src/inbox` | feature | index.ts | apps/api/src/account, apps/api/src/coach, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/mail, apps/api/src/platform | none |
 | `apps/api/src/job` | feature | index.ts, operations | apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/limits` | platform | index.ts | none | none |

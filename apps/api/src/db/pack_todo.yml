@@ -1,7 +1,0 @@
-apps/api/src/registry:
-  apps/api/src/registry/errors.ts:
-    violations:
-      - dependency
-      - layer
-    files:
-      - apps/api/src/db/context.ts

@@ -3,7 +3,7 @@ import { AsyncLocalStorage } from "node:async_hooks"
 import { ERROR_CODES } from "@workspace/domain"
 
 import { getDb, insideTransaction } from "../db/context.js"
-import { CommandError } from "./errors.js"
+import { CommandError } from "../platform/errors.js"
 
 const grantBrand = Symbol("job-priority-grant")
 

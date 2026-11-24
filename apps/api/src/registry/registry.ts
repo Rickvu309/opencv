@@ -31,7 +31,7 @@ import {
   requireLiveProposalConnection,
 } from "./delegate-policy.js"
 import { paperAgentRefusal } from "./paper-agent.js"
-import { CommandError } from "./errors.js"
+import { CommandError } from "../platform/errors.js"
 
 import { lockActivity } from "./activity-lock.js"
 import { activityById, activityByKey, agentGates } from "./registry-reads.js"

@@ -3,7 +3,7 @@ import { AsyncLocalStorage } from "node:async_hooks"
 import { ERROR_CODES } from "@workspace/domain"
 import type { NodePgDatabase } from "drizzle-orm/node-postgres"
 
-import { CommandError, isMissingPhoto } from "../registry/errors.js"
+import { CommandError, isMissingPhoto } from "../platform/errors.js"
 import * as schema from "./schema.js"
 
 export type AppDatabase = NodePgDatabase<typeof schema>

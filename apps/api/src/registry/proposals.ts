@@ -9,7 +9,7 @@ import { activity, idempotency, pendingActions, user } from "../db/schema.js"
 import { createId } from "../platform/id.js"
 
 import { requireLiveDelegate } from "./delegate-policy.js"
-import { CommandError } from "./errors.js"
+import { CommandError } from "../platform/errors.js"
 import { chatForDelegateProposals, lockTaskApproval } from "./proposal-hosts.js"
 import { inputHash } from "./receipt.js"
 import type { FrozenReview } from "./frozen-review.js"
