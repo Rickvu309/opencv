@@ -1,8 +1,0 @@
-layer: feature
-dependencies:
-  [
-    apps/web/src/features/auth,
-    apps/web/src/features/connections,
-    apps/web/src/lib,
-    apps/web/src/components,
-  ]

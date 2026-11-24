@@ -1,9 +1,0 @@
-layer: feature
-dependencies:
-  [
-    apps/api/src/chat,
-    apps/api/src/account,
-    apps/api/src/registry,
-    apps/api/src/db,
-    apps/api/src/limits,
-  ]

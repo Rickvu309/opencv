@@ -1,9 +1,0 @@
-apps/web/src/features/apply:
-  apps/web/src/features/apply/apply-stages.ts:
-    violations:
-      - privacy
-    files:
-      - apps/web/src/features/inbox/inbox-page.tsx
-      - apps/web/src/features/inbox/inbox-parts.tsx
-      - apps/web/src/features/inbox/inbox-reader.tsx
-      - apps/web/src/features/inbox/inbox-time.ts
