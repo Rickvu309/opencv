@@ -13,28 +13,7 @@ apps/api/src:
     files:
       - apps/api/src/registry/http.ts
       - apps/api/src/registry/read.ts
-apps/api/src/chat:
-  apps/api/src/chat/index.ts:
-    violations:
-      - dependency
-      - layer
-    files:
-      - apps/api/src/registry/proposals.ts
-apps/api/src/coach:
-  apps/api/src/coach/index.ts:
-    violations:
-      - dependency
-      - layer
-    files:
-      - apps/api/src/registry/proposals.ts
-      - apps/api/src/registry/registry.ts
 apps/api/src/job:
-  apps/api/src/job/index.ts:
-    violations:
-      - dependency
-      - layer
-    files:
-      - apps/api/src/registry/registry.ts
   apps/api/src/job/operations/priority-counts/server.ts:
     violations:
       - dependency

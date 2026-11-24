@@ -6,7 +6,12 @@ import {
 } from "@workspace/domain"
 
 import { bindCommands, tableQuery } from "../registry/bind.js"
+import { hostDelegateProposals } from "../registry/proposal-hosts.js"
 import type { Registry } from "../registry/registry.js"
+import {
+  appendAgentProposalApproval,
+  createAgentProposalChat,
+} from "./agent-proposal.js"
 import {
   appendChatMessage,
   createChat,
@@ -82,6 +87,10 @@ function toPendingActionRow(
 }
 
 export function registerChat(registry: Registry) {
+  hostDelegateProposals({
+    open: createAgentProposalChat,
+    show: appendAgentProposalApproval,
+  })
   bindCommands(registry, chatContract, {
     "chat.create": {
       handler: (input, actor) => createChat(actor, input.title),

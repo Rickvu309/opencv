@@ -9,7 +9,6 @@ import { executeTaskCommand, type TaskLease } from "./task-fence.js"
 import {
   ERROR_CODES,
   approvedProposalActor,
-  coachActor,
   isCoachActor,
   personActor,
   type Actor,
@@ -52,7 +51,6 @@ import {
 } from "./command-execution.js"
 import { assertReversal } from "./bind.js"
 import { RegistryEntries } from "./registry-entries.js"
-import { priorityRevisionFor } from "../job/index.js"
 import { withGrantScope } from "./write-grant.js"
 import {
   checkPreparationTask,
@@ -370,10 +368,7 @@ export class Registry extends RegistryEntries {
           command: command.name,
           input: parsed,
           summary: command.step(parsed),
-          basisRevision: await priorityRevisionFor(
-            actor.userId,
-            command.writes?.(parsed) ?? []
-          ),
+          basisRevision: (await command.basis?.(parsed, actor)) ?? null,
         })
       }
 
@@ -527,9 +522,7 @@ export class Registry extends RegistryEntries {
         input: row.input,
         actor:
           delegate ??
-          (task
-            ? coachActor(task.task.ownerId, task.task.chatId, task.turnId)
-            : approvedProposalActor(userId, row.chatId)),
+          (task ? task.actor : approvedProposalActor(userId, row.chatId)),
         [approvedDelegate]: row.id,
         idempotencyKey: reviewReceiptKey(row),
         ...(frozen
@@ -544,9 +537,8 @@ export class Registry extends RegistryEntries {
         .set({ status: "approved" })
         .where(eq(pendingActions.id, row.id))
       if (task) {
-        const { resolveTaskApproval } = await import("../coach/index.js")
         await assertTaskReceipt(userId, row)
-        await resolveTaskApproval(task, "committed", result, result.activityId)
+        await task.resolve("committed", result, result.activityId)
       }
       if (result.activityId)
         return activityById(userId, result.activityId).then((receipt) =>
@@ -580,8 +572,7 @@ export class Registry extends RegistryEntries {
         .set({ status: "denied" })
         .where(eq(pendingActions.id, row.id))
       if (task) {
-        const { resolveTaskApproval } = await import("../coach/index.js")
-        await resolveTaskApproval(task, "denied", { denied: true })
+        await task.resolve("denied", { denied: true })
       }
       return { ...publicProposal(row), status: "denied" as const }
     })

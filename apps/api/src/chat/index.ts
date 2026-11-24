@@ -12,8 +12,3 @@ export {
   readExportedParts,
   UNREADABLE_STEP_LINE,
 } from "./stored-parts.js"
-
-export {
-  createAgentProposalChat,
-  appendAgentProposalApproval,
-} from "./agent-proposal.js"

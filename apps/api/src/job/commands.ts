@@ -21,7 +21,7 @@ import {
 import { fetchJobPosting, type FetchJobPosting } from "./fetch-posting.js"
 import { linkPaper, unlinkPaper } from "./linked-papers.js"
 import { previewJob } from "./preview.js"
-import { ownedJob, writePriority } from "./store.js"
+import { ownedJob, priorityRevision, writePriority } from "./store.js"
 
 type ReadPostingOnPlan = (input: {
   plan: Plan
@@ -71,6 +71,10 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
         input.patch.priority !== undefined
           ? [{ ...jobPriorityResource, entityId: input.jobId }]
           : [],
+      basis: async (input, actor) =>
+        input.patch.priority === undefined
+          ? null
+          : priorityRevision(actor.userId, input.jobId),
       handler: async (input, actor) => {
         const saved = await updateJob(actor, input.jobId, input.patch)
         if (input.patch.priority === undefined) return saved

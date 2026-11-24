@@ -8,7 +8,8 @@ import {
   toolIntents,
 } from "../db/schema.js"
 import { CommandError } from "../registry/errors.js"
-import { ERROR_CODES } from "@workspace/domain"
+import type { TaskApprovalLock } from "../registry/proposal-hosts.js"
+import { coachActor, ERROR_CODES } from "@workspace/domain"
 import { inputHash } from "./task-store.js"
 
 export async function lockTaskApproval(
@@ -128,4 +129,18 @@ export async function resolveTaskApproval(
         : {}),
     })
     .where(eq(coachTasks.id, task.id))
+}
+
+export const hostedTaskApproval: TaskApprovalLock = async (
+  proposal,
+  maintenance
+) => {
+  const locked = await lockTaskApproval(proposal, maintenance)
+  return (
+    locked && {
+      actor: coachActor(locked.task.ownerId, locked.task.chatId, locked.turnId),
+      resolve: (state, result, activityId) =>
+        resolveTaskApproval(locked, state, result, activityId),
+    }
+  )
 }

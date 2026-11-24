@@ -1,13 +1,16 @@
 import { coachTaskContract } from "@workspace/domain"
 
 import { bindCommands, tableQuery } from "../registry/bind.js"
+import { hostTaskApprovals } from "../registry/proposal-hosts.js"
 import type { Registry } from "../registry/registry.js"
 import { getChat, stopChat } from "../chat/index.js"
 import { readTaskEvents, taskSnapshot } from "./task-reader.js"
+import { hostedTaskApproval } from "./task-approval.js"
 import { startTask } from "./task-start.js"
 import { cancelChatTask } from "./task-store.js"
 
 export function registerCoachTasks(registry: Registry) {
+  hostTaskApprovals(hostedTaskApproval)
   bindCommands(registry, coachTaskContract, {
     "coach.start": {
       handler: (input, actor) => startTask(input, actor, registry),
