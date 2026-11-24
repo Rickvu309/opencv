@@ -2,7 +2,7 @@ import { afterEach, describe, it, vi } from "vitest"
 import { cleanup, screen } from "@testing-library/react"
 import { createMemoryHistory } from "@tanstack/react-router"
 
-import { NotFoundPage } from "@/components/not-found-page.tsx"
+import { NotFoundPage } from "@/features/app-shell/not-found-page.tsx"
 import { createAppRouter } from "@/router.tsx"
 import { setMockSession } from "@/test/auth-client-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"

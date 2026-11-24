@@ -22,7 +22,10 @@ import {
   type SurfaceId,
 } from "@/lib/product-paths.ts"
 
-import { NotFoundPage, UnknownShell } from "@/components/not-found-page.tsx"
+import {
+  NotFoundPage,
+  UnknownShell,
+} from "@/features/app-shell/not-found-page.tsx"
 import {
   isSettingsSection,
   validateSettingsSearch,

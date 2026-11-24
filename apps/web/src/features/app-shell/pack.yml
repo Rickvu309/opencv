@@ -13,3 +13,4 @@ dependencies:
   ]
 public:
   - app-shell-layout.tsx
+  - not-found-page.tsx

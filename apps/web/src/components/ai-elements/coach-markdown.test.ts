@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 import {
   parseCoachMarkdown,
   parseInline,
-} from "@/features/coach/coach-markdown.ts"
+} from "@/components/ai-elements/coach-markdown.ts"
 
 describe("parseCoachMarkdown", () => {
   it("renders lists, emphasis, and code from the allowlist", () => {

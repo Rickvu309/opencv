@@ -1,6 +1,6 @@
 import { memo } from "react"
 
-import { parseCoachMarkdown } from "@/features/coach/coach-markdown.ts"
+import { parseCoachMarkdown } from "@/components/ai-elements/coach-markdown.ts"
 
 import { ResponseBlock } from "./response-block.tsx"
 import { ResponseWriting } from "./response-writing.ts"
