@@ -16,6 +16,7 @@ runs:
       shell: bash
     - run: |
         git show-ref --verify --quiet refs/remotes/origin/main || git fetch origin main:refs/remotes/origin/main
+        git checkout --quiet --detach
         git branch -f main origin/main
       shell: bash
     - run: |
