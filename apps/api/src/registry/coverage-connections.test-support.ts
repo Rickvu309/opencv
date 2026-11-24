@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { eq } from "drizzle-orm"
 import { expect } from "vitest"
+import { implementation as revoke } from "../connections/operations/revoke/server.js"
 import { agentConnections, oauthClient } from "../db/schema.js"
 import type {
   CoverageCase,
@@ -16,7 +17,7 @@ export function connectionsCases({
   const clientId = randomUUID()
   return [
     {
-      name: "connections.revoke",
+      name: revoke.operation.name,
       arrange: async () => {
         await db
           .insert(oauthClient)
@@ -34,7 +35,7 @@ export function connectionsCases({
           expiresAt: new Date(Date.now() + 3600000),
         })
       },
-      act: () => run("connections.revoke", { connectionId: id }),
+      act: () => run(revoke.operation.name, { connectionId: id }),
       assert: async () => {
         const [row] = await db
           .select()

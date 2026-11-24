@@ -10,7 +10,7 @@ import { authClient } from "@/lib/auth-client.ts"
 import { createToolRefresher } from "@/lib/coach-stream.ts"
 import { detect } from "../../../../../scripts/lib/use-read-owner.mjs"
 
-import { ownerIdFromRouteMatches } from "./apply-api.ts"
+import { ownerIdFromRouteMatches } from "@/lib/owner-id.ts"
 import {
   calendarJobs,
   getJob,

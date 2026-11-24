@@ -69,3 +69,7 @@ function parseConnectionId(value: string): ConnectionId {
 }
 
 export const connectionIdSchema = z.string().uuid().transform(parseConnectionId)
+
+export function idResult<T extends string>() {
+  return z.string().uuid() as unknown as z.ZodType<T, string>
+}

@@ -31,12 +31,6 @@ export * from "./control-contract.js"
 export * from "./contract-commands.js"
 export * from "./account-contract.js"
 
-export {
-  connectionsContract,
-  connectionsQueries,
-  connectionSchema,
-} from "./connections-contract.js"
-
 export * from "./connections.js"
 
 export * from "./coach-task-contract.js"

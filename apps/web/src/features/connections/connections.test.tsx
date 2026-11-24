@@ -9,12 +9,11 @@ import {
   fireEvent,
 } from "@testing-library/react"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
-import {
-  answerConsent,
-  consentClient,
-  fetchConnections,
-} from "@/lib/connections-api.ts"
-const { runCommand } = vi.hoisted(() => ({ runCommand: vi.fn() }))
+import { answerConsent, consentClient } from "@/lib/connections-api.ts"
+const { runCommand, fetchConnections } = vi.hoisted(() => ({
+  runCommand: vi.fn(),
+  fetchConnections: vi.fn(),
+}))
 import { ConnectionConsent } from "./consent.tsx"
 import { ConnectionList } from "./connection-list.tsx"
 
@@ -26,13 +25,24 @@ vi.mock("@/lib/auth-client.ts", () => ({
 
 vi.mock("@/lib/connections-api.ts", () => ({
   agentServerUrl: "http://localhost:4107/mcp",
-  connectionsKey: () => ["connections.list"],
   consentKey: (value: string) => ["consent", value],
-  fetchConnections: vi.fn(),
   consentClient: vi.fn(),
   answerConsent: vi.fn(),
 }))
-vi.mock("@/lib/contract-client.ts", () => ({ runContractCommand: runCommand }))
+vi.mock("@/lib/contract-client.ts", async () => {
+  const { useQuery } = await import("@tanstack/react-query")
+  return {
+    catalogClient: {
+      run: runCommand,
+      useRead: (ownerId: string, name: string) =>
+        useQuery({
+          queryKey: ["catalog", ownerId, name],
+          queryFn: () => fetchConnections(),
+        }),
+    },
+  }
+})
+vi.mock("@tanstack/react-router", () => ({ useRouterState: () => "owner" }))
 vi.mock("@/lib/account-api.ts", () => ({
   profileQuery: () => ({
     queryKey: ["profile.get"],

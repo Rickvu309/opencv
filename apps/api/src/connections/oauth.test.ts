@@ -304,16 +304,20 @@ it("completes SDK discovery, PKCE consent, opaque issuance, refresh and immediat
   const [grant] = await database.db.select().from(agentConnections)
   expect(grant?.policy).toEqual({ reads: "allow", writes: "approval" })
   expect(grant?.resources).toEqual({ kind: "jobs" })
-  const listed = await fetch(`${origin}/api/agent-connections`, {
-    headers: { Cookie: cookie },
-  })
+  const listed = await jsonPost("/api/reads/connections.list", {})
   const listedBody = await listed.json()
   expect(listed.status).toBe(200)
   expect(JSON.stringify(listedBody)).not.toContain("authorizationCodeId")
   expect(JSON.stringify(listedBody)).not.toContain("userId")
   const bearer = { Authorization: `Bearer ${tokens.access_token}` }
   expect(
-    (await fetch(`${origin}/api/agent-connections`, { headers: bearer })).status
+    (
+      await fetch(`${origin}/api/reads/connections.list`, {
+        method: "POST",
+        headers: { ...bearer, "Content-Type": "application/json" },
+        body: "{}",
+      })
+    ).status
   ).toBe(401)
   expect(
     (
@@ -521,9 +525,11 @@ it("completes SDK discovery, PKCE consent, opaque issuance, refresh and immediat
     otherCookie
   )
   expect(denied.status).toBe(404)
-  const otherList = await fetch(`${origin}/api/agent-connections`, {
-    headers: { Cookie: otherCookie },
-  })
+  const otherList = await jsonPost(
+    "/api/reads/connections.list",
+    {},
+    otherCookie
+  )
   expect(await otherList.json()).toMatchObject({ data: [] })
   const revoke = await jsonPost("/api/commands/connections.revoke", {
     input: { connectionId: grant!.id },

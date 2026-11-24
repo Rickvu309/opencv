@@ -58,7 +58,7 @@ async function connectAgent(person: Person, name: string) {
 }
 
 async function connections(person: Person) {
-  return dataOf<Connection[]>(await person.get("/api/agent-connections"))
+  return dataOf<Connection[]>(await person.read("connections.list", {}))
 }
 
 describe("a person's own agents", () => {
