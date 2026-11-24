@@ -13,7 +13,7 @@ import {
 } from "@workspace/domain"
 import { and, eq, gte, sql } from "drizzle-orm"
 
-import { coachModelEnv, type CoachModelEnv } from "../config.js"
+import { coachModelEnv, type CoachModelEnv } from "../platform/config.js"
 import { getDb } from "../db/context.js"
 import { coachUsage } from "../db/schema.js"
 import { CommandError } from "../registry/errors.js"

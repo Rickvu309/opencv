@@ -14,7 +14,7 @@ import {
   routeCoachModel,
   runCoachTurn,
 } from "../coach/index.js"
-import { coachModelEnv, coachRuntimeModeFromEnv } from "../config.js"
+import { coachModelEnv, coachRuntimeModeFromEnv } from "../platform/config.js"
 import { CommandError } from "../registry/errors.js"
 import type { Registry } from "../registry/registry.js"
 import { openCoachUsage } from "../coach/index.js"

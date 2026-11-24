@@ -31,7 +31,7 @@ import {
   resendApiKeyFromEnv,
   sessionSecretFromEnv,
   webOriginsFromEnv,
-} from "./config.js"
+} from "./platform/config.js"
 import { bindDatabase, type AppDatabase } from "./db/context.js"
 import { runMigrations } from "./db/migrate.js"
 import * as schema from "./db/schema.js"

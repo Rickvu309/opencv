@@ -84,7 +84,7 @@ export function detect(source, path = "") {
             },
           ]),
     ]
-  if (path === "apps/api/src/config.ts")
+  if (path === "apps/api/src/platform/config.ts")
     return source.includes(
       'return env.COACH_DURABLE?.trim().toLowerCase() !== "off"'
     )

@@ -1,6 +1,6 @@
 import { COACH_MODEL, personActor, type InboxDetail } from "@workspace/domain"
 import { describe, expect, it, vi } from "vitest"
-import { coachModelEnv, setCoachModelEnv } from "../config.js"
+import { coachModelEnv, setCoachModelEnv } from "../platform/config.js"
 import { withDatabase } from "../db/context.js"
 import { coachUsage, user } from "../db/schema.js"
 import { installRegistry } from "../install.js"

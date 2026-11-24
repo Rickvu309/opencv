@@ -19,7 +19,7 @@ import {
 import { insideTransaction, savepoint, transaction } from "../db/context.js"
 import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"
 import type { Registry } from "../registry/registry.js"
-import { isAllowedOrigin } from "../origin.js"
+import { isAllowedOrigin } from "../platform/origin.js"
 import { requireLiveDelegate } from "../registry/delegate-policy.js"
 import { CommandError } from "../registry/errors.js"
 import type { ExecuteResult } from "../registry/registry-types.js"

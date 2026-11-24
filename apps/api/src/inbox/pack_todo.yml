@@ -1,8 +1,0 @@
-apps/api/src:
-  apps/api/src/config.ts:
-    violations:
-      - dependency
-      - layer
-    files:
-      - apps/api/src/inbox/draft-coach.ts
-      - apps/api/src/inbox/store.ts
