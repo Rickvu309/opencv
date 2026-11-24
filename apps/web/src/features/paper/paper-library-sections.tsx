@@ -100,7 +100,7 @@ export type LibraryEntryHandlers = {
 }
 
 function hasPrintBody(doc: PaperView) {
-  return doc.format !== "word"
+  return doc.format === undefined
 }
 
 function paperActions(
@@ -121,7 +121,7 @@ function paperActions(
       onSelect: () => on.onOpen(doc.id),
     },
     ...each("Rename", Pencil, on.onRename),
-    ...each("Duplicate", Copy, on.onDuplicate),
+    ...(doc.format === "rich" ? [] : each("Duplicate", Copy, on.onDuplicate)),
     ...each("Link to application", Link2, on.onLink),
     ...(hasPrintBody(doc) ? each("Download PDF", Download, on.onDownload) : []),
     ...(word && downloadWord

@@ -2,6 +2,7 @@ import { useEffect, useReducer, useRef, type DragEvent } from "react"
 import { Plus } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
+  RICH_NATIVE_WRITER,
   paperDocNameSchema,
   type PaperFile,
   type PaperView,
@@ -314,7 +315,11 @@ export function PaperLibrary({
       return
     }
     try {
-      await run("paper.rename", { docId: mode.doc.id, name: parsed.data })
+      await run("paper.rename", {
+        docId: mode.doc.id,
+        name: parsed.data,
+        ...(mode.doc.format === "rich" ? { writer: RICH_NATIVE_WRITER } : {}),
+      })
       closeDialog()
     } catch (err) {
       dispatch({

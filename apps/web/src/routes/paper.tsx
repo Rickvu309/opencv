@@ -2,10 +2,10 @@ import { useNavigate, useRouterState } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 
 import {
-  listPaper,
+  listLibraryPaper,
   listPaperFiles,
   paperFilesKey,
-  paperListKey,
+  paperLibraryKey,
 } from "@/features/paper/paper-api.ts"
 import { PaperLibrary } from "@/features/paper/paper-library.tsx"
 import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
@@ -25,8 +25,8 @@ export function PaperPage() {
       resetScroll: false,
     })
   const docs = useQuery({
-    queryKey: paperListKey(),
-    queryFn: listPaper,
+    queryKey: paperLibraryKey(),
+    queryFn: listLibraryPaper,
   })
   const files = useQuery({
     queryKey: paperFilesKey(),

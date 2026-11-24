@@ -1,4 +1,5 @@
 import {
+  LIBRARY_WRITER,
   paperImportResponseSchema,
   letterAttachmentContextSchema,
 } from "@workspace/domain"
@@ -38,6 +39,15 @@ export function listPaper() {
   return apiFetch<SuccessBody<QueryOutput<"paper.list">>>(endpoints.paper).then(
     unwrapData
   )
+}
+
+export const paperLibraryKey = () =>
+  queryKey({ query: "paper.list", input: { writer: LIBRARY_WRITER } })
+
+export function listLibraryPaper() {
+  return apiFetch<SuccessBody<QueryOutput<"paper.list">>>(endpoints.paper, {
+    headers: { "x-paper-writer": JSON.stringify(LIBRARY_WRITER) },
+  }).then(unwrapData)
 }
 
 export function getPaper(docId: string) {
