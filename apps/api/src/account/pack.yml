@@ -8,4 +8,5 @@ dependencies:
     apps/api/src/db,
     apps/api/src/limits,
     apps/api/src/mail,
+    apps/api/src/platform,
   ]

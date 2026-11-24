@@ -8,7 +8,7 @@ import { and, asc, eq } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
 import { jobChecklist } from "../db/schema.js"
-import { createId } from "../id.js"
+import { createId } from "../platform/id.js"
 import { CommandError } from "../registry/errors.js"
 import { ownedJob } from "./store.js"
 

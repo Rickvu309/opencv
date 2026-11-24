@@ -21,13 +21,6 @@ apps/api/src:
     files:
       - apps/api/src/coach/http.ts
       - apps/api/src/coach/turn-compatibility.ts
-  apps/api/src/id.ts:
-    violations:
-      - dependency
-      - layer
-    files:
-      - apps/api/src/coach/task-start.ts
-      - apps/api/src/coach/usage-store.ts
   apps/api/src/middleware.ts:
     violations:
       - dependency

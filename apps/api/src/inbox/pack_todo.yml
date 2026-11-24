@@ -12,12 +12,6 @@ apps/api/src:
     files:
       - apps/api/src/inbox/draft-coach.ts
       - apps/api/src/inbox/store.ts
-  apps/api/src/id.ts:
-    violations:
-      - dependency
-      - layer
-    files:
-      - apps/api/src/inbox/store.ts
   apps/api/src/middleware.ts:
     violations:
       - dependency

@@ -21,7 +21,7 @@ import {
   taskEvents,
   user,
 } from "../db/schema.js"
-import { createId } from "../id.js"
+import { createId } from "../platform/id.js"
 import { CommandError } from "../registry/errors.js"
 import type { Registry } from "../registry/registry.js"
 import { inputHash } from "./task-store.js"

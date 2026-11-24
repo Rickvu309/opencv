@@ -18,7 +18,7 @@ import {
 import { bindCommands, tableQuery } from "../registry/bind.js"
 import { CommandError } from "../registry/errors.js"
 import type { Registry } from "../registry/registry.js"
-import { createId } from "../id.js"
+import { createId } from "../platform/id.js"
 import { editAsCoach, revertCoachEdit } from "./content-coach.js"
 import { registerCanvasCommit } from "./package-canvas.js"
 import { registerPaperStart } from "./package-start.js"

@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { getChat, insertCoachMessage } from "../chat/index.js"
 import { activity, paperDocUpdates } from "../db/schema.js"
-import { createId } from "../id.js"
+import { createId } from "../platform/id.js"
 import { seedCoachActor } from "../test/coach-turn.js"
 import { openCoachStore, type CoachStore } from "../test/paper-coach.js"
 import { saveFile } from "./store.js"

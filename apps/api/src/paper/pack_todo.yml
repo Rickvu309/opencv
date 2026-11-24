@@ -12,14 +12,6 @@ apps/api/src:
       - layer
     files:
       - apps/api/src/paper/http.ts
-  apps/api/src/id.ts:
-    violations:
-      - dependency
-      - layer
-    files:
-      - apps/api/src/paper/commands.ts
-      - apps/api/src/paper/http.ts
-      - apps/api/src/paper/store.ts
   apps/api/src/middleware.ts:
     violations:
       - dependency

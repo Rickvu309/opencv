@@ -17,7 +17,7 @@ import { and, asc, desc, eq, gt, inArray, isNotNull } from "drizzle-orm"
 
 import { getDb, transaction } from "../db/context.js"
 import { activity, chatMessages, chats, coachTasks } from "../db/schema.js"
-import { createId } from "../id.js"
+import { createId } from "../platform/id.js"
 import { CommandError } from "../registry/errors.js"
 import { registry } from "../registry/registry.js"
 import {

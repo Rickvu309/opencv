@@ -3,7 +3,7 @@ import { coachActor } from "@workspace/domain"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { openCoachStore, type CoachStore } from "../test/paper-coach.js"
-import { createId } from "../id.js"
+import { createId } from "../platform/id.js"
 
 const userId = "user-coach-outline"
 let h: CoachStore
