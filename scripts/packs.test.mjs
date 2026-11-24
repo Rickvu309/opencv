@@ -11,7 +11,11 @@ const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 const tool = path.join(root, "node_modules", ".bin", "ts-packwerk")
 
 function packwerk(args, cwd = root) {
-  const run = spawnSync(tool, args, { cwd, encoding: "utf8" })
+  const run = spawnSync(tool, args, {
+    cwd,
+    encoding: "utf8",
+    timeout: 60_000,
+  })
   return { code: run.status, out: `${run.stdout}${run.stderr}` }
 }
 
