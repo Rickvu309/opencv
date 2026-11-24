@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "packages/paper-crdt/src/interleave.test.ts",
+    "because": "the same assertions moved into a helper the test still calls, so that the case a random run found can run them too; the property now also covers both orders of the writers' ids",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
