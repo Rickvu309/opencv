@@ -1,5 +1,4 @@
 [
-  "apps/api/src/coach/chat/chat-contract.test.ts",
   "apps/api/src/registry/acceptance.test.ts",
   "apps/api/src/registry/account-contract.test.ts",
   "apps/api/src/registry/behavior.test.ts",

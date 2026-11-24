@@ -33,7 +33,7 @@ const tracked = () =>
 
 const read = (file) => readFileSync(path.join(root, file), "utf8")
 
-const BASELINE_CEILING = 51
+const BASELINE_CEILING = 50
 
 const PAST = { mode: "detect", sha: "abc1234", path: "src/a.tsx" }
 const REVERT_PAST = {
