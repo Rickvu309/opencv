@@ -18,11 +18,11 @@ import {
   updateDraft,
 } from "./store.js"
 
-let commandsAdded = false
+const registeredOn = new WeakSet<Registry>()
 
 export function registerInbox(registry: Registry) {
-  if (commandsAdded) return
-  commandsAdded = true
+  if (registeredOn.has(registry)) return
+  registeredOn.add(registry)
 
   bindCommands(registry, inboxContract, {
     "inbox.skip": {

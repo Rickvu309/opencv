@@ -22,11 +22,11 @@ import {
   updateProfile,
 } from "./store.js"
 
-let commandsAdded = false
+const registeredOn = new WeakSet<Registry>()
 
 export function registerAccount(registry: Registry) {
-  if (commandsAdded) return
-  commandsAdded = true
+  if (registeredOn.has(registry)) return
+  registeredOn.add(registry)
 
   bindCommands(registry, accountContract, {
     "profile.update": {
