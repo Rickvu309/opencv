@@ -1,0 +1,13 @@
+{
+  "id": "ci-git-background",
+  "file": "scripts/ci-git-background.test.mjs",
+  "detector": {
+    "module": "scripts/lib/ci-git-background.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "7efd1215f43ecc2722674b507a7e11e8fda9f8c9",
+    "path": ".github/actions/setup/action.yml"
+  }
+}
