@@ -9,13 +9,13 @@ type ToolCopy = { label: string; read?: string }
 const TOOL_COPY = {
   "account.delete": { label: "Delete your account" },
   "account.requestEmailChange": { label: "Change your email" },
-  "actions.approve": { label: "Approve this change" },
-  "actions.deny": { label: "Deny this change" },
+  [catalog["actions.approve"].name]: { label: "Approve this change" },
+  [catalog["actions.deny"].name]: { label: "Deny this change" },
   "activity.list": {
     label: "Look at your activity",
     read: "Looked at your activity",
   },
-  "activity.undo": { label: "Undo this change" },
+  [catalog["activity.undo"].name]: { label: "Undo this change" },
   "billing.get": { label: "Look at your plan", read: "Looked at your plan" },
   "chat.appendMessage": { label: "Save this message" },
   "chat.create": { label: "Start a Chat" },

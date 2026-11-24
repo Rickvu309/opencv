@@ -1,11 +1,14 @@
-import { ERROR_CODES, personActor } from "@workspace/domain"
+import { ERROR_CODES, personActor, resourcesOverlap } from "@workspace/domain"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { z } from "zod"
 
 import { withDatabase, type TestDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
-import { registerControl } from "./commands.js"
+import { bindOperation } from "./bind.js"
+import { implementation as approve } from "./operations/actions/approve/server.js"
+import { implementation as deny } from "./operations/actions/deny/server.js"
+import { implementation as undo } from "./operations/activity/undo/server.js"
 import { Registry } from "./registry.js"
 
 const person = personActor("control-alone")
@@ -26,7 +29,9 @@ beforeAll(async () => {
     email: "control-alone@example.com",
   })
   registry = new Registry()
-  registerControl(registry)
+  bindOperation(registry, approve)
+  bindOperation(registry, deny)
+  bindOperation(registry, undo)
 })
 
 afterAll(async () => {
@@ -39,6 +44,23 @@ describe("Control with no context registered", () => {
     expect(
       [...listed.commands, ...listed.queries].map((entry) => entry.name).sort()
     ).toEqual(["actions.approve", "actions.deny", "activity.undo"])
+  })
+
+  it("an approval and an Undo touch every read, and a denial touches none", () => {
+    const anyRead = { ownerId: person.userId, name: "any.read", entityId: "x" }
+    const touchesOf = (operation: {
+      writes: (input: never) => readonly { name: string }[]
+    }) =>
+      operation
+        .writes(undefined as never)
+        .map(({ name }) => ({ ownerId: person.userId, name }))
+    for (const implementation of [approve, undo])
+      expect(
+        touchesOf(implementation.operation).some((touch) =>
+          resourcesOverlap(touch, anyRead)
+        )
+      ).toBe(true)
+    expect(touchesOf(deny.operation)).toEqual([])
   })
 
   it("undoes a command that any context could have registered", async () => {

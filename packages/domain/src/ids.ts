@@ -42,7 +42,7 @@ export function parseJobId(value: string): JobId {
   return parseUuid(value, "job id")
 }
 
-export function parseActivityId(value: string): ActivityId {
+function parseActivityId(value: string): ActivityId {
   return parseUuid(value, "activity id")
 }
 

@@ -219,10 +219,16 @@ export type OperationBinding<
   : { reversal?: never; activity?: never; basis?: never }) &
   (
     | {
-        execute: (
-          input: import("zod").output<T["input"]>,
-          actor: Actor
-        ) => Promise<R> | R
+        execute: T["kind"] extends "read"
+          ? (
+              input: import("zod").output<T["input"]>,
+              actor: Actor
+            ) => Promise<R> | R
+          : (
+              input: import("zod").output<T["input"]>,
+              actor: Actor,
+              registry: Registry
+            ) => Promise<R> | R
         reviewed?: never
         selected?: never
       }
@@ -274,7 +280,12 @@ export function bindOperation<T extends Operation, R, C, V, S = never>(
   if (operation.kind === "read") {
     const execute = suppliedBinding.execute
     if (!execute) throw new Error("Reads require an execute binding")
-    const binding = { execute }
+    const binding = {
+      execute: execute as (
+        input: import("zod").output<T["input"]>,
+        actor: Actor
+      ) => Promise<R> | R,
+    }
     registry.addQuery({
       name: operation.name,
       description: operation.description,
@@ -353,7 +364,7 @@ export function bindOperation<T extends Operation, R, C, V, S = never>(
       registry.addCommand(
         withBasis(spec, binding.basis),
         async (input, actor) => {
-          const result = await binding.execute!(input, actor)
+          const result = await binding.execute!(input, actor, registry)
           const checked = binding.privateResult
             ? binding.privateResult.parse(result)
             : result
@@ -400,7 +411,8 @@ type CatalogImplementations<C extends Record<string, Operation>> = {
 
 type CatalogImplementation<T extends Operation> = (
   input: import("zod").output<T["input"]>,
-  context: never
+  context: never,
+  registry: never
 ) =>
   | import("zod").input<T["publicResult"]>
   | Promise<import("zod").input<T["publicResult"]>>

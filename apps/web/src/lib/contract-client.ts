@@ -21,7 +21,6 @@ import {
   catalog,
   NATIVE_WRITER,
   commands,
-  parseActivityId,
   resourcesOverlap,
 } from "@workspace/domain"
 
@@ -126,8 +125,8 @@ export async function undoActivity(
   queryClient: QueryClient,
   activityId: string
 ) {
-  return runContractCommand(queryClient, "activity.undo", {
-    activityId: parseActivityId(activityId),
+  return catalogClient.run(queryClient, catalog["activity.undo"].name, {
+    activityId,
   })
 }
 

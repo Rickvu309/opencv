@@ -1,3 +1,4 @@
+import { undoneActivityRow } from "@/test/control-fixtures.ts"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   cleanup,
@@ -146,7 +147,7 @@ describe("CoachToolLine", () => {
 
   it("tells the open page to reread after a paper edit is approved", async () => {
     vi.stubGlobal("fetch", () =>
-      Promise.resolve(Response.json({ ok: true, data: {} }))
+      Promise.resolve(Response.json({ ok: true, data: undoneActivityRow() }))
     )
     let told = 0
     const stop = subscribeWritingRefresh(() => {

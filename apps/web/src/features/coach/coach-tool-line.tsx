@@ -12,11 +12,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { parseChatId, parsePendingActionId } from "@workspace/domain"
 import { coachPaperOptions } from "@/lib/coach-context.ts"
 import { useChatStore } from "./use-chat-store.ts"
-import {
-  queryKey,
-  refreshReads,
-  runContractCommand,
-} from "@/lib/contract-client.ts"
+import { queryKey, catalogClient, refreshReads } from "@/lib/contract-client.ts"
 import { useReducer, useRef } from "react"
 import { Link } from "@tanstack/react-router"
 
@@ -327,11 +323,10 @@ function CoachApproval({
     lock.current = true
     dispatch({ type: "started" })
     try {
-      await runContractCommand(
-        client,
-        approve ? "actions.approve" : "actions.deny",
-        { pendingActionId: parsePendingActionId(id) }
-      )
+      const pendingActionId = parsePendingActionId(id)
+      if (approve)
+        await catalogClient.run(client, "actions.approve", { pendingActionId })
+      else await catalogClient.run(client, "actions.deny", { pendingActionId })
       if (approve && command === "paper.edit") notifyWritingRefresh()
       await refreshReads(client, [{ query: "chat.list" }])
       if (activeChatId)

@@ -1,3 +1,4 @@
+import { undoneActivityRow } from "@/test/control-fixtures.ts"
 import { QueryClient } from "@tanstack/react-query"
 import { parseChatId, parseJobId, parsePaperId } from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
@@ -135,7 +136,7 @@ describe("runContractCommand", () => {
       activityKey("job", JOB),
     ]
     for (const key of refreshed) queryClient.setQueryData(key, { seeded: true })
-    stubFetch({ id: activityId })
+    stubFetch(undoneActivityRow(activityId))
 
     await undoActivity(queryClient, activityId)
 

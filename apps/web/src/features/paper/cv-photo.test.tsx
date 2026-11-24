@@ -1,3 +1,4 @@
+import { undoneActivityRow } from "@/test/control-fixtures.ts"
 import { useReducer } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
@@ -221,7 +222,9 @@ describe("CV photo", () => {
         )
       }
       if (url.includes("/api/commands/activity.undo")) {
-        return Promise.resolve(Response.json({ ok: true, data: {} }))
+        return Promise.resolve(
+          Response.json({ ok: true, data: undoneActivityRow() })
+        )
       }
       if (url.includes(`/api/paper/${DOC_ID}`)) {
         return Promise.resolve(
@@ -306,7 +309,9 @@ describe("CV photo", () => {
         )
       }
       if (url.includes("/api/commands/activity.undo")) {
-        return Promise.resolve(Response.json({ ok: true, data: {} }))
+        return Promise.resolve(
+          Response.json({ ok: true, data: undoneActivityRow() })
+        )
       }
       if (url.includes(`/api/paper/${DOC_ID}`)) {
         return Promise.resolve(
