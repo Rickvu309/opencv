@@ -192,11 +192,10 @@ export function createPaperRoutes(auth?: Auth, db?: AppDatabase) {
   })
 
   routes.get("/shared/:token", async (c) => {
-    const data = await registry.read(
-      "paper.shared",
-      { token: c.req.param("token"), writer: readWriter(c) },
-      personActor("public")
-    )
+    const data = await registry.readAsVisitor("paper.shared", {
+      token: c.req.param("token"),
+      writer: readWriter(c),
+    })
     return c.json(successEnvelope(data))
   })
 

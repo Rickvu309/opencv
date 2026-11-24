@@ -439,6 +439,7 @@ export function registerPaper(registry: Registry) {
       coach: false,
       step: () => "Read a shared document",
       read: (input) => readShared(input.token, input.writer),
+      visitor: (input) => readShared(input.token, input.writer),
     })
   )
   registry.addQuery(
