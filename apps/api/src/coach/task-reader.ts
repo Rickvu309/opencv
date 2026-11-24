@@ -18,7 +18,7 @@ import {
   taskEvents,
   toolIntents,
 } from "../db/schema.js"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import type { Task } from "./task-types.js"
 
 async function ownedTask(taskId: string, ownerId: string) {

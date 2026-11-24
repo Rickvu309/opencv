@@ -13,7 +13,7 @@ import { eq } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
 import { user } from "../db/schema.js"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 
 export type ProfileRow = typeof user.$inferSelect
 

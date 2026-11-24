@@ -5,7 +5,7 @@ import {
 import { Hono } from "hono"
 import { streamSSE } from "hono/streaming"
 import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import { readTaskEvents, taskSnapshot } from "./task-reader.js"
 import { idleUntilAbort, waitForAbort } from "./sse.js"
 

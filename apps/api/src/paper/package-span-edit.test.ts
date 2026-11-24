@@ -1,7 +1,7 @@
 import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
 
-import { handleApiError } from "../middleware.js"
+import { handleApiError } from "../platform/error-reply.js"
 import { CommandError } from "../platform/errors.js"
 import { PaperPackage } from "./package-engine.js"
 import { PaperPackageRefusal } from "./package-errors.js"

@@ -69,9 +69,44 @@ test("a pack that declares what it uses stays quiet", (t) => {
   assert.equal(check.code, 0, check.out)
 })
 
-test("the code uses only what each pack declares, apart from the recorded todos", () => {
+const RECORDS_INTRODUCED = "bf8cb2f25"
+
+function packRecords(files) {
+  return files.filter((file) => path.basename(file) === "pack_todo.yml")
+}
+
+function trackedFiles(ref) {
+  const args = ref ? ["ls-tree", "-r", "--name-only", ref] : ["ls-files"]
+  const run = spawnSync("git", args, {
+    cwd: root,
+    encoding: "utf8",
+    maxBuffer: 64 * 1024 * 1024,
+  })
+  return run.stdout.split("\n").filter(Boolean)
+}
+
+test("MISTAKE: a recorded break lets a pack use what it does not declare, and the record is named", (t) => {
+  const files = twoPacks("[]")
+  files["src/apply/pack_todo.yml"] =
+    "src/control:\n  src/control/index.ts:\n    violations:\n      - dependency\n    files:\n      - src/apply/index.ts\n"
+  const check = packwerk(["check"], repoWith(t, files))
+  assert.equal(check.code, 0, check.out)
+  assert.deepEqual(packRecords(Object.keys(files)), ["src/apply/pack_todo.yml"])
+  assert.deepEqual(packRecords(Object.keys(twoPacks("[src/control]"))), [])
+})
+
+test("the commit that introduced recorded breaks fires", () => {
+  assert.ok(packRecords(trackedFiles(RECORDS_INTRODUCED)).length > 0)
+})
+
+test("the code uses only what each pack declares, and no pack keeps a recorded break", () => {
   const check = packwerk(["check"])
   assert.equal(check.code, 0, check.out)
+  assert.deepEqual(
+    packRecords(trackedFiles()),
+    [],
+    "A pack_todo.yml records a break of the pack rules. Fix the import, or declare the dependency in pack.yml if it should exist. Recorded breaks are not allowed."
+  )
 })
 
 test("the packs page matches every pack.yml", () => {

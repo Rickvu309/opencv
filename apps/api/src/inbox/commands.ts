@@ -1,7 +1,7 @@
 import { ERROR_CODES, inboxContract } from "@workspace/domain"
 
 import { bindCommands, tableQuery } from "../registry/bind.js"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import type { Registry } from "../registry/registry.js"
 import { draftWithHint } from "./draft-coach.js"
 import {

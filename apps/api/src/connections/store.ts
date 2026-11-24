@@ -12,7 +12,7 @@ import {
   oauthConsent,
   oauthRefreshToken,
 } from "../db/schema.js"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 
 export async function listConnections(actor: Actor) {
   if (actor.type !== "person")

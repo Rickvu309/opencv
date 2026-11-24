@@ -2,7 +2,7 @@ import { ERROR_CODES } from "@workspace/domain"
 import { expect, it } from "vitest"
 import { z } from "zod"
 
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import { AGENT_RATE_LIMIT_MESSAGE, agentToolError } from "./agent-tool-error.js"
 
 const privateText = [

@@ -9,7 +9,7 @@ import {
 import { Hono } from "hono"
 import { ZodError } from "zod"
 
-import { handleApiError } from "../middleware.js"
+import { handleApiError } from "../platform/error-reply.js"
 import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"
 import { registry } from "../registry/registry.js"
 import { CommandError } from "../platform/errors.js"

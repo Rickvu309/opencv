@@ -11,7 +11,7 @@ import {
   type CoachModel,
 } from "./anthropic-runtime.js"
 
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 
 export type ModelEnv = { ANTHROPIC_API_KEY?: string }
 export type ModelFactories = { anthropic: (modelId: string) => CoachModel }

@@ -1,7 +1,7 @@
 import { COACH_MODEL, type CoachMode, type Plan } from "@workspace/domain"
 import { describe, expect, it, vi } from "vitest"
 import { FixtureCoachModel } from "./anthropic-fixture.js"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import { routeCoachModel, interpretPosting } from "./router.js"
 
 const model = new FixtureCoachModel({ doStream: async () => ({ stream: [] }) })

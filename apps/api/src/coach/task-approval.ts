@@ -7,7 +7,7 @@ import {
   taskEvents,
   toolIntents,
 } from "../db/schema.js"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import type { TaskApprovalLock } from "../registry/proposal-hosts.js"
 import { coachActor, ERROR_CODES } from "@workspace/domain"
 import { inputHash } from "./task-store.js"
