@@ -34,7 +34,7 @@ export * from "./account-contract.js"
 
 export * from "./connections.js"
 
-export * from "./coach-task-contract.js"
+export * from "./coach-task.js"
 export * from "./operation.js"
 export * from "./delegate-grant.js"
 export * from "./catalog.js"

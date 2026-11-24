@@ -1,14 +1,8 @@
 import { z } from "zod"
 import { coachTurnRequestSchema } from "./chat-messages.js"
-import { chatStopInputSchema } from "./chat.js"
 import { chatDetailSchema } from "./chat-views.js"
-import { chatIdSchema } from "./ids.js"
-import {
-  commandContract,
-  commandEntry,
-  queryContract,
-  queryEntry,
-} from "./contract.js"
+import { chatIdSchema, idResult, type ChatId } from "./ids.js"
+import type { ResourceRef } from "./resources.js"
 
 export const coachConfigSchema = z.object({ coachDurable: z.boolean() })
 
@@ -34,21 +28,21 @@ const coachTaskStateSchema = z.enum([
   "succeeded",
   "failed",
 ])
-const coachStartInputSchema = coachTurnRequestSchema.safeExtend({
+export const coachStartInputSchema = coachTurnRequestSchema.safeExtend({
   chatId: chatIdSchema,
   startKey: z.string().uuid(),
 })
 const coachStartReceiptSchema = z
   .object({
     taskId: coachTaskIdSchema,
-    chatId: chatIdSchema,
+    chatId: idResult<ChatId>(),
     acceptedAt: z.string().datetime(),
   })
   .strict()
 export const coachStartOutputSchema = z
   .object({
     taskId: coachTaskIdSchema,
-    chatId: chatIdSchema,
+    chatId: idResult<ChatId>(),
     receipt: coachStartReceiptSchema,
   })
   .strict()
@@ -123,7 +117,7 @@ const coachTaskUsageSchema = z
 export const coachTaskSnapshotSchema = z
   .object({
     taskId: coachTaskIdSchema,
-    chatId: chatIdSchema,
+    chatId: idResult<ChatId>(),
     state: coachTaskStateSchema,
     sourceMessageId: z.string().uuid().nullable(),
     assistantMessageId: z.string().uuid().nullable(),
@@ -145,7 +139,7 @@ const coachTaskResetSchema = z
     snapshot: coachTaskSnapshotSchema,
   })
   .strict()
-const coachTaskReplaySchema = z.discriminatedUnion("type", [
+export const coachTaskReplaySchema = z.discriminatedUnion("type", [
   z
     .object({
       type: z.literal("events"),
@@ -159,38 +153,7 @@ const coachTaskReplaySchema = z.discriminatedUnion("type", [
 export type CoachStartInput = z.infer<typeof coachStartInputSchema>
 export type CoachTaskReplay = z.infer<typeof coachTaskReplaySchema>
 
-export const coachTaskContract = commandContract({
-  "coach.stop": commandEntry({
-    description: "Stop the chat that is running.",
-    input: chatStopInputSchema,
-    output: z.object({ stopped: z.boolean() }).strict(),
-    coach: "never",
-    destructive: false,
-    step: () => "Stop",
-    invalidates: () => [],
-  }),
-  "coach.start": commandEntry({
-    description: "Queue a durable Coach task.",
-    input: coachStartInputSchema,
-    output: coachStartOutputSchema,
-    idempotency: "none",
-    coach: "never",
-    destructive: false,
-    step: () => "Start Coach",
-    invalidates: (input) => [
-      { query: "chat.get", input: { chatId: input.chatId } },
-      { query: "chat.list" },
-      { query: "coach.usage" },
-    ],
-  }),
-})
-export const coachTaskQueries = queryContract({
-  "coach.status": queryEntry({
-    input: coachTaskStatusInputSchema,
-    output: coachTaskSnapshotSchema,
-  }),
-  "coach.events": queryEntry({
-    input: coachTaskEventsInputSchema,
-    output: coachTaskReplaySchema,
-  }),
-})
+export const coachTaskResource: ResourceRef = {
+  name: "coachTask",
+  coachFloor: "never",
+}

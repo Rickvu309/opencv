@@ -6,7 +6,12 @@ import { withDatabase, type TestDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
 import { Registry } from "../registry/registry.js"
 import { createMigratedTestDb } from "../test/harness.js"
+import { bindOperation } from "../registry/bind.js"
 import { registerCoachTasks } from "./index.js"
+import { implementation as events } from "./operations/events/server.js"
+import { implementation as start } from "./operations/start/server.js"
+import { implementation as status } from "./operations/status/server.js"
+import { implementation as stop } from "./operations/stop/server.js"
 
 const person = personActor("coach-alone")
 
@@ -25,7 +30,11 @@ beforeAll(async () => {
   })
   registry = new Registry()
   registerChat(registry)
-  registerCoachTasks(registry)
+  registerCoachTasks()
+  bindOperation(registry, start)
+  bindOperation(registry, stop)
+  bindOperation(registry, status)
+  bindOperation(registry, events)
 })
 
 afterAll(async () => {

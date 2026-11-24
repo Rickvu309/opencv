@@ -4,7 +4,12 @@ import { createElement, StrictMode, useReducer, type ReactNode } from "react"
 import { afterEach, expect, it, vi } from "vitest"
 
 import { chatApiFetchOrThrow, setMockChats } from "@/test/chat-api-mock.ts"
-import { CHAT, TASK, taskSnapshot } from "@/test/coach-task-fixture.ts"
+import {
+  CHAT,
+  TASK,
+  taskSnapshot,
+  taskStarted,
+} from "@/test/coach-task-fixture.ts"
 import { useCoachTask } from "./use-coach-task.ts"
 
 afterEach(() => vi.unstubAllGlobals())
@@ -100,7 +105,7 @@ it("regression: Stop during recovery and concurrent discovery reaches only origi
         starts++
         if (starts === 1) throw new Error("lost response")
         await recovery.promise
-        return Response.json({ ok: true, data: { taskId: TASK } })
+        return Response.json({ ok: true, data: taskStarted(TASK) })
       }
       if (path.endsWith("coach.stop")) {
         stops.push(body())
@@ -154,7 +159,7 @@ it("regression: discovering a newer task during replay must be reconciled after 
         starts++
         if (starts === 1) throw new Error("lost response")
         await recovery.promise
-        return Response.json({ ok: true, data: { taskId: TASK } })
+        return Response.json({ ok: true, data: taskStarted(TASK) })
       }
       if (path.includes(`/coach/tasks/${NEW_TASK}`)) {
         newTaskReads()
@@ -207,7 +212,7 @@ it("regression: Stop followed by detach before acceptance must still stop origin
     if (path.endsWith("coach.start")) {
       starts++
       await acceptance.promise
-      return Response.json({ ok: true, data: { taskId: TASK } })
+      return Response.json({ ok: true, data: taskStarted(TASK) })
     }
     if (path.endsWith("coach.stop")) {
       stops.push(body())
@@ -240,7 +245,7 @@ it("regression: Retry shown for stopFailed must retry cancellation", async () =>
   const stops: unknown[] = []
   reviewFetch(async (path, body) => {
     if (path.endsWith("coach.start"))
-      return Response.json({ ok: true, data: { taskId: TASK } })
+      return Response.json({ ok: true, data: taskStarted(TASK) })
     if (path.endsWith("coach.stop")) {
       stops.push(body())
       if (stops.length === 1) throw new Error("stop request lost")
@@ -283,7 +288,7 @@ it("regression: detach after cancellation dispatch does not abort the sent reque
   const stops: unknown[] = []
   reviewFetch(async (path, body) => {
     if (path.endsWith("coach.start"))
-      return Response.json({ ok: true, data: { taskId: TASK } })
+      return Response.json({ ok: true, data: taskStarted(TASK) })
     if (path.endsWith("coach.stop")) {
       stops.push(body())
       await stopped.promise
@@ -371,7 +376,7 @@ it("regression: completed task observed in Chat before start acceptance still be
       if (path.endsWith("coach.start")) {
         starts++
         await acceptance.promise
-        return Response.json({ ok: true, data: { taskId: TASK } })
+        return Response.json({ ok: true, data: taskStarted(TASK) })
       }
       if (path.includes("/coach/tasks/")) {
         reads()
@@ -415,7 +420,7 @@ it("regression: second Stop after stopFailed retries the same task", async () =>
   reviewFetch(async (path, body) => {
     if (path.endsWith("coach.start")) {
       starts++
-      return Response.json({ ok: true, data: { taskId: TASK } })
+      return Response.json({ ok: true, data: taskStarted(TASK) })
     }
     if (path.endsWith("coach.stop")) {
       stops.push(body())
@@ -468,7 +473,7 @@ it("fulfills Stop after unmount when the original start response is lost", async
         await acceptance.promise
         throw new Error("lost acceptance")
       }
-      return Response.json({ ok: true, data: { taskId: TASK } })
+      return Response.json({ ok: true, data: taskStarted(TASK) })
     }
     if (path.endsWith("coach.stop")) {
       stops.push(body())
@@ -499,7 +504,7 @@ it("Retry after exhausted Stop failures retries the original terminal task witho
   reviewFetch(async (path, body) => {
     if (path.endsWith("coach.start")) {
       starts.push(body())
-      return Response.json({ ok: true, data: { taskId: TASK } })
+      return Response.json({ ok: true, data: taskStarted(TASK) })
     }
     if (path.endsWith("coach.stop")) {
       stops.push(body())
@@ -566,7 +571,7 @@ it.each(["Stop", "Retry"])(
       async (path, body) => {
         if (path.endsWith("coach.start")) {
           starts.push(body())
-          return Response.json({ ok: true, data: { taskId: TASK } })
+          return Response.json({ ok: true, data: taskStarted(TASK) })
         }
         if (path.endsWith("coach.stop")) {
           stops.push(body())

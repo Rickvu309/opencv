@@ -15,7 +15,7 @@ export function installRegistry(preview?: JobPreviewOptions) {
     registerAccount(registry)
     registerAccountQueries(registry)
     registerChat(registry)
-    registerCoachTasks(registry)
+    registerCoachTasks()
     registerPaper(registry)
     registerJob(registry, preview)
     registerInbox(registry)

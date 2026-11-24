@@ -4,7 +4,12 @@ import userEvent from "@testing-library/user-event"
 import { render } from "@/test/render-with-client.tsx"
 import { chatApiFetch } from "@/test/chat-api-mock.ts"
 import { profileApiFetch } from "@/test/profile-api-mock.ts"
-import { TASK, taskEvent, taskSnapshot } from "@/test/coach-task-fixture.ts"
+import {
+  TASK,
+  taskEvent,
+  taskSnapshot,
+  taskStarted,
+} from "@/test/coach-task-fixture.ts"
 import { ChatStoreProvider } from "./chat-store.tsx"
 import { CoachWorkspace } from "./coach-workspace.tsx"
 
@@ -231,7 +236,7 @@ describe("a failed Coach send keeps the typed line", () => {
 
     describe("partial", () => {
       installFetch({
-        onStart: () => Response.json({ ok: true, data: { taskId: TASK } }),
+        onStart: () => Response.json({ ok: true, data: taskStarted(TASK) }),
         snapshot: failedAfterDraft(TEXT),
       })
       it("keeps the line and the partial answer", async () => {
@@ -289,7 +294,7 @@ describe("a failed Coach send keeps the typed line", () => {
       onStart: () => {
         attempt += 1
         if (attempt === 1) throw new TypeError("Failed to fetch")
-        return Response.json({ ok: true, data: { taskId: TASK } })
+        return Response.json({ ok: true, data: taskStarted(TASK) })
       },
       snapshot: succeeded(TEXT),
     })
@@ -323,7 +328,7 @@ describe("a failed Coach send keeps the typed line", () => {
         creates += 1
         if (creates === 1) throw new TypeError("Failed to fetch")
       },
-      onStart: () => Response.json({ ok: true, data: { taskId: TASK } }),
+      onStart: () => Response.json({ ok: true, data: taskStarted(TASK) }),
       snapshot: succeeded(TEXT),
     })
     beforeEach(() => {

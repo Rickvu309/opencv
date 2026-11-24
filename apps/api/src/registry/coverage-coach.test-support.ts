@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { coachStartOutputSchema } from "@workspace/domain"
 import { expect } from "vitest"
+import { implementation as startTask } from "../coach/operations/start/server.js"
 import {
   idOf,
   type CoverageCase,
@@ -14,7 +15,7 @@ export function coachCases({
 }: CoverageTools): CoverageCase[] {
   return [
     {
-      name: "coach.start",
+      name: startTask.operation.name,
       arrange: async () => {
         ctx.chatId = idOf(
           (await run("chat.create", { title: "Durable Coach" })).output

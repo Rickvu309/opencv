@@ -1,6 +1,10 @@
 import { operation as actions$approve } from "../operations/actions/approve/operation.js"
 import { operation as actions$deny } from "../operations/actions/deny/operation.js"
 import { operation as activity$undo } from "../operations/activity/undo/operation.js"
+import { operation as coach$events } from "../operations/coach/events/operation.js"
+import { operation as coach$start } from "../operations/coach/start/operation.js"
+import { operation as coach$status } from "../operations/coach/status/operation.js"
+import { operation as coach$stop } from "../operations/coach/stop/operation.js"
 import { operation as connections$list } from "../operations/connections/list/operation.js"
 import { operation as connections$revoke } from "../operations/connections/revoke/operation.js"
 import { operation as job$priorityCounts } from "../operations/job/priority-counts/operation.js"
@@ -14,6 +18,10 @@ export const catalog = {
   "actions.approve": actions$approve,
   "actions.deny": actions$deny,
   "activity.undo": activity$undo,
+  "coach.events": coach$events,
+  "coach.start": coach$start,
+  "coach.status": coach$status,
+  "coach.stop": coach$stop,
   "connections.list": connections$list,
   "connections.revoke": connections$revoke,
   "job.priorityCounts": job$priorityCounts,
