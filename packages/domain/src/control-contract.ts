@@ -103,5 +103,3 @@ export const controlContract = commandContract({
     invalidates: readsAnUndoOrApprovalCanChange,
   }),
 })
-
-export type ControlContract = typeof controlContract

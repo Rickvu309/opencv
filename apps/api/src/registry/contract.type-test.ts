@@ -1,6 +1,7 @@
 import {
   commandEntry,
   commands,
+  controlContract,
   type ContractCommandName,
   type InboxContract,
   jobContract,
@@ -8,7 +9,6 @@ import {
   parsePaperId,
   type AccountContract,
   type ChatContract,
-  type ControlContract,
   type CommandInput,
   type JobContract,
   type PaperContract,
@@ -26,7 +26,7 @@ type Snooze = CommandInput<InboxContract, "inbox.snooze">
 type Edit = CommandInput<PaperContract, "paper.edit">
 type SetTemplate = CommandInput<PaperContract, "paper.setTemplate">
 type PaperEditBinding = Bindings<PaperContract>["paper.edit"]
-type Undo = CommandInput<ControlContract, "activity.undo">
+type Undo = CommandInput<typeof controlContract, "activity.undo">
 type ChatDelete = Bindings<ChatContract>["chat.delete"]
 type ChatRename = Bindings<ChatContract>["chat.rename"]
 type SetPhoto = CommandInput<AccountContract, "profile.setPhoto">
