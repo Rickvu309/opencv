@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/scanner-ancestor-roots.json",
+    "because": "The owner decided on 2026-11-24 to delete the local test gate first and add it back only if needed. In two weeks of push logs it refused 129 pushes and 1 was a real failing test, and 98 of 410 pushes waited on its lock. CI runs the tests on every pull request.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
