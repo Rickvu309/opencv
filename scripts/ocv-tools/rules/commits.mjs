@@ -79,7 +79,7 @@ export const commitRows = [
     id: "NO_AI_ATTRIBUTION",
     section: "5",
     says: "No commit carries a Co-Authored-By or Generated-With attribution trailer.",
-    at: ["commit", "finish", "pr"],
+    at: ["commit", "pr"],
     needs: ["commits"],
     check: noAiAttribution,
     fix: (facts) =>
@@ -91,7 +91,7 @@ export const commitRows = [
     id: "FILE_SIZE",
     section: "5",
     says: "No authored file in the change is over the 20000-byte pre-commit limit.",
-    at: ["commit", "finish", "pr"],
+    at: ["commit", "pr"],
     needs: ["commits"],
     check: fileSize,
     fix: () => SPLIT_GUIDE,

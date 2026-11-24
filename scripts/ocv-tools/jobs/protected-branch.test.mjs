@@ -2,8 +2,7 @@ import assert from "node:assert/strict"
 import { spawnSync } from "node:child_process"
 import test from "node:test"
 import { fileURLToPath } from "node:url"
-import { evaluate } from "../rules/index.mjs"
-import { branchVerdict } from "./protected-facts.mjs"
+import { branchVerdict, guardsRefusals } from "./protected-facts.mjs"
 
 const root = fileURLToPath(new URL("../../..", import.meta.url))
 
@@ -29,11 +28,7 @@ function run(cmd, args, options = {}) {
 
 const ctx = { cwd: root, ports: { proc: { run } } }
 
-const refusals = (facts) =>
-  ["PROTECTED_WEAKENED", "RETIRE_UNPROVEN"]
-    .map((id) => evaluate(id, { protected: facts }))
-    .filter(Boolean)
-    .map((hit) => `${hit.id}: ${hit.message}`)
+const refusals = guardsRefusals
 
 test("this branch weakens no protected check without a proved retirement, and each recorded class is the one the judge computes", () => {
   assert.deepEqual(

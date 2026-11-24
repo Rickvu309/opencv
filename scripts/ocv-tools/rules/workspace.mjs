@@ -172,7 +172,7 @@ export const workspaceRows = [
     id: "SKIP_DECLARED",
     section: "5",
     says: "SKIP_CHECKS=1 needs a human named in SKIP_CHECKS_DECLARED_BY.",
-    at: ["push", "finish"],
+    at: ["push"],
     needs: ["env"],
     check: skipDeclared,
     fix: () =>

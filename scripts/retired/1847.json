@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "scripts/ocv-tools/rules/merge.test.mjs",
+    "because": "The owner asked for each rule to be judged once and decided on 2026-11-24 to delete first. These two assertions pinned the finish moment on rules that ci judges on the pull request.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  }
+]

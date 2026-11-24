@@ -5,7 +5,6 @@ import { decide } from "../rules/index.mjs"
 import { run } from "./common.mjs"
 import { runQuickChecks } from "./push-checks.mjs"
 import { catalogFacts } from "./catalog-fresh.mjs"
-import { pushedProtectedFacts } from "./protected-facts.mjs"
 
 const LIMIT_BYTES = 20000
 const SUBMODULE_MODE = "160000"
@@ -240,11 +239,6 @@ function prePush(ctx) {
   const facts = {
     push: { refs },
     env: pushing ? ctx.env : {},
-    protected: pushedProtectedFacts(
-      ctx,
-      refs.filter((ref) => !ref.deleting).map((ref) => ref.sha),
-      top
-    ),
   }
   const early = decide("push", { ...facts, quick: { failed: [] } })
   if (!early.ok) return report(early)

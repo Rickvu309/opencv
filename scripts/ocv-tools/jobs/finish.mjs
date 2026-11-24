@@ -2,7 +2,7 @@ import { join, resolve } from "node:path"
 import { validateAuthoring } from "../authoring.mjs"
 import { diskProblem } from "../disk.mjs"
 import { decide, refusalError } from "../rules/index.mjs"
-import { planPull } from "./pull-facts.mjs"
+import { recordedProtectedFacts } from "./protected-facts.mjs"
 import { throwPushFailure } from "../push-failure.mjs"
 import { Refused } from "../result.mjs"
 import { retiredLines } from "../rules/protected.mjs"
@@ -151,23 +151,27 @@ export function finish(ctx, { flags }) {
     const current = stateHeldDuringPush(ctx, t)
     const body = `Closes #${t.n}\n\n${written.text}`
     const facts = {
-      ...planPull(ctx, {
+      pull: { issue: t.n, title, body, issueState: issue.state },
+      issue: {
         n: t.n,
-        title,
-        body,
-        issue: { state: issue.state, labels: issue.labels.map((l) => l.name) },
-      }),
+        state: issue.state,
+        labels: issue.labels.map((l) => l.name),
+      },
+      commits: {
+        count: Number(git(ctx, "rev-list", "--count", "origin/main..HEAD")),
+      },
       here: { ok: true },
       body: written,
       disk: problem ?? {},
       work: { path: t.top, dirty: current.dirty, force: false, finish: true },
       main,
       port,
-      env: ctx.env,
     }
     const verdict = decide("finish", facts)
     if (!verdict.ok) throw refusalError(verdict.refusals[0])
-    const retiredNote = retiredLines(facts.protected)
+    const retiredNote = retiredLines(
+      recordedProtectedFacts(ctx, "origin/main", "HEAD")
+    )
     const bodyFile = ctx.writeScratch(
       `finish/${t.n}-body.md`,
       retiredNote.length ? `${body}\n\n${retiredNote.join("\n\n")}\n` : body

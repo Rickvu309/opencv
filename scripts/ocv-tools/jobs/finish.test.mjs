@@ -39,12 +39,22 @@ test("finish reuses an existing PR and dry run has no push or create", () => {
   assert.equal(d.effects("git", "push").length, 0)
   assert.equal(d.effects("gh", "pr create").length, 0)
 })
-test("finish preserves issue, checkout, workflow and commit gates", () => {
+test("finish refuses a closed issue and a main checkout that is not clean main before it pushes", () => {
   for (const [over, code] of [
     [{ issueState: "CLOSED" }, "PR_METADATA"],
-    [{ issueLabels: ["ready-for-human"] }, "READY_FOR_HUMAN"],
     [{ mainDirty: " M source" }, "MAIN_CLEAN"],
     [{ mainBranch: "feat/1-other" }, "MAIN_CLEAN"],
+  ]) {
+    const f = fixture(over)
+    const r = finish(f)
+    assert.equal(r.code, 2, r.text)
+    assert.match(r.text, new RegExp(code))
+    assert.equal(f.effects("git", "push").length, 0)
+  }
+})
+test("finish does not judge the rules ci judges before it opens the pull request; it opens it and leaves auto-merge off with the rule named", () => {
+  for (const [over, code] of [
+    [{ issueLabels: ["ready-for-human"] }, "READY_FOR_HUMAN"],
     [{ changed: [".github/workflows/other.yml"] }, "NO_WORKFLOWS"],
     [
       { changed: [".github/workflows/ci.yml"], deleteCi: true },
@@ -55,9 +65,15 @@ test("finish preserves issue, checkout, workflow and commit gates", () => {
   ]) {
     const f = fixture(over)
     const r = finish(f)
-    assert.equal(r.code, 2, r.text)
-    assert.match(r.text, new RegExp(code))
-    assert.equal(f.effects("git", "push").length, 0)
+    assert.equal(r.code, 0, `${code}: ${r.text}`)
+    assert.equal(f.effects("gh", "pr create").length, 1, code)
+    assert.match(r.text, new RegExp(`Auto-merge is off: ${code}`))
+    assert.equal(
+      f.effects("gh", "pr merge").filter((e) => e.args.includes("--auto"))
+        .length,
+      0,
+      code
+    )
   }
 })
 test("push failures and changes during push never create a PR", () => {
