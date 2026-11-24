@@ -1,18 +1,3 @@
-apps/api/src:
-  apps/api/src/auth.ts:
-    violations:
-      - dependency
-      - layer
-    files:
-      - apps/api/src/registry/http.ts
-      - apps/api/src/registry/read.ts
-  apps/api/src/middleware.ts:
-    violations:
-      - dependency
-      - layer
-    files:
-      - apps/api/src/registry/http.ts
-      - apps/api/src/registry/read.ts
 apps/api/src/job:
   apps/api/src/job/operations/priority-counts/server.ts:
     violations:

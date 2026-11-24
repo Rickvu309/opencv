@@ -8,10 +8,11 @@ import {
 import type { Context, MiddlewareHandler } from "hono"
 import { HTTPException } from "hono/http-exception"
 
-import type { Auth } from "./auth.js"
+import { withRequestHeaders, type Auth } from "./auth.js"
 import { withDatabase, type AppDatabase } from "./db/context.js"
 import { jsonWithStatus } from "./platform/http-json.js"
 import { CommandError } from "./registry/errors.js"
+import type { SignedInGate } from "./registry/signed-in.js"
 import { readSession } from "./session.js"
 
 type Session = NonNullable<Awaited<ReturnType<typeof readSession>>>
@@ -22,32 +23,61 @@ export type SessionVariables = {
   db: AppDatabase
 }
 
+async function sessionOrRefusal(
+  auth: Auth | undefined,
+  db: AppDatabase | undefined,
+  c: Context
+) {
+  if (!auth || !db) {
+    return {
+      signedIn: false as const,
+      refusal: jsonWithStatus(
+        c,
+        authUnavailableEnvelope(),
+        httpStatusForError(ERROR_CODES.AUTH_UNAVAILABLE)
+      ),
+    }
+  }
+  const session = await readSession(auth, c)
+  if (!session) {
+    return {
+      signedIn: false as const,
+      refusal: jsonWithStatus(
+        c,
+        unauthorizedEnvelope(),
+        httpStatusForError(ERROR_CODES.UNAUTHORIZED)
+      ),
+    }
+  }
+  return { signedIn: true as const, session, auth, db }
+}
+
 export function requireSession(
   auth: Auth | undefined,
   db: AppDatabase | undefined
 ): MiddlewareHandler<{ Variables: SessionVariables }> {
   return async (c, next) => {
-    if (!auth || !db) {
-      return jsonWithStatus(
-        c,
-        authUnavailableEnvelope(),
-        httpStatusForError(ERROR_CODES.AUTH_UNAVAILABLE)
-      )
-    }
+    const found = await sessionOrRefusal(auth, db, c)
+    if (!found.signedIn) return found.refusal
+    c.set("session", found.session)
+    c.set("userId", found.session.user.id)
+    c.set("db", found.db)
+    return withDatabase(found.db, () => next())
+  }
+}
 
-    const session = await readSession(auth, c)
-    if (!session) {
-      return jsonWithStatus(
-        c,
-        unauthorizedEnvelope(),
-        httpStatusForError(ERROR_CODES.UNAUTHORIZED)
-      )
-    }
-
-    c.set("session", session)
-    c.set("userId", session.user.id)
-    c.set("db", db)
-    return withDatabase(db, () => next())
+export function signedInGate(
+  auth: Auth | undefined,
+  db: AppDatabase | undefined
+): SignedInGate {
+  return async (c, run) => {
+    const found = await sessionOrRefusal(auth, db, c)
+    if (!found.signedIn) return found.refusal
+    return withRequestHeaders(
+      c.req.raw.headers,
+      () => withDatabase(found.db, () => run(found.session.user.id)),
+      found.auth
+    )
   }
 }
 

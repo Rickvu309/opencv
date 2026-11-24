@@ -10,6 +10,7 @@ import { describe, expect, it, vi } from "vitest"
 import { z } from "zod"
 import { createId } from "../platform/id.js"
 import { createAuth } from "../auth.js"
+import { signedInGate } from "../middleware.js"
 import * as databaseContext from "../db/context.js"
 import { type AppDatabase, getDb, withDatabase } from "../db/context.js"
 import {
@@ -389,18 +390,12 @@ describe("catalog kernel", () => {
         rateLimitEnabled: false,
       })
       const { registry, execute, binding } = fixture()
+      const signedIn = signedInGate(auth, db as unknown as AppDatabase)
       app.route(
         "/fixture/commands",
-        createCommandRoutes({
-          auth,
-          db: db as unknown as AppDatabase,
-          registry,
-        })
+        createCommandRoutes({ signedIn, registry })
       )
-      app.route(
-        "/fixture/reads",
-        createReadRoutes({ auth, db: db as unknown as AppDatabase, registry })
-      )
+      app.route("/fixture/reads", createReadRoutes({ signedIn, registry }))
       const { cookie } = await signUp(app, {
         name: "Before",
         email: "catalog@test.local",
