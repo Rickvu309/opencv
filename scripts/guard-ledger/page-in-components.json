@@ -1,0 +1,18 @@
+{
+  "id": "page-in-components",
+  "file": "scripts/page-in-components.test.mjs",
+  "detector": {
+    "module": "scripts/lib/page-in-components.mjs",
+    "export": "pagesInComponents"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "a9bf6c023f7f632787b09d0602d9349cdabdc7c9",
+    "path": "apps/web/src/components/not-found-page.tsx",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/web/src/features/app-shell/not-found-page.tsx"
+    }
+  },
+  "reason": "Caught by the touch target check once the page moved in #1862. The page-not-found screen lived among the shared components, which that check does not read, so its button stayed under 44px on a phone. detect fires on the old file and stays quiet on the page in the app shell feature."
+}
