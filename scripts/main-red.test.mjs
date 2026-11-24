@@ -2,9 +2,12 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 import {
+  RED_LIMIT,
+  attemptLine,
   main,
   mainRedActions,
   redCommits,
+  redRateLine,
   redReport,
   rerunCommand,
 } from "./main-red.mjs"
@@ -28,13 +31,14 @@ function job(name) {
   return next === -1 ? rest : rest.slice(0, next)
 }
 
-function world({ listed = [], ancestors = {} } = {}) {
+function world({ listed = [], ancestors = {}, runs = [] } = {}) {
   const calls = []
   const io = {
     gh(args) {
       calls.push(["gh", ...args])
       if (args[0] === "issue" && args[1] === "list")
         return JSON.stringify(listed)
+      if (args[0] === "run" && args[1] === "list") return JSON.stringify(runs)
       return ""
     },
     git(args) {
@@ -174,4 +178,65 @@ test("ci runs the main-red report after ci on every push to main, with write acc
   assert.doesNotMatch(report, /contents: write|pull-requests: write|write-all/)
   assert.match(report, /fetch-depth: 0/)
   assert.match(report, /run: node scripts\/main-red\.mjs/)
+})
+
+const nightlyText = readFileSync(
+  new URL("../.github/workflows/nightly.yml", import.meta.url),
+  "utf8"
+)
+const rerunText = nightlyText.slice(nightlyText.indexOf("  rerun-main-once:"))
+
+test("the red rate counts a failed run and a run that needed a second attempt, and names the limit only when it is passed", () => {
+  const green = { conclusion: "success", attempt: 1 }
+  const red = { conclusion: "failure", attempt: 1 }
+  const healed = { conclusion: "success", attempt: 2 }
+  const within = [red, healed, red, ...Array(27).fill(green)]
+  assert.equal(
+    redRateLine(within),
+    "Main went red in 3 of its last 30 runs. The limit is 3 in 30."
+  )
+  const over = redRateLine([red, ...within])
+  assert.match(over, /^Main went red in 4 of its last 30 runs\./)
+  assert.match(over, /That is over the limit/)
+  assert.match(over, /docs\/adr\/0003-merge-is-a-production-deploy\.md/)
+  assert.deepEqual(RED_LIMIT, { runs: 30, red: 3 })
+})
+
+test("a first failure says the run goes again by itself, and a second failure says it is not chance", () => {
+  assert.match(attemptLine(1), /run again once by themselves/)
+  assert.match(attemptLine(2), /attempt 2.*not a chance failure/)
+})
+
+test("a red run on main reports the attempt and the red rate from the last runs on main", () => {
+  const green = { conclusion: "success", attempt: 1 }
+  const { io, calls } = world({ runs: Array(29).fill(green) })
+  main({ ...env("failure", RED), RUN_ATTEMPT: "2" }, io)
+  const listedRuns = calls.find(
+    (call) => call[1] === "run" && call[2] === "list"
+  )
+  assert.ok(listedRuns, "the last runs on main are read")
+  assert.ok(listedRuns.includes("push") && listedRuns.includes("main"))
+  const created = calls.find(
+    (call) => call[1] === "issue" && call[2] === "create"
+  )
+  const body = created[created.indexOf("--body") + 1]
+  assert.match(body, /^This is attempt 2:/m)
+  assert.match(body, /^Main went red in 1 of its last 30 runs\./m)
+})
+
+test("a failed run on main is run again once, by a job that can do nothing else and never fails", () => {
+  assert.match(
+    nightlyText,
+    /^ {2}workflow_run:\n {4}workflows: \[Checks\]\n {4}types: \[completed\]\n {4}branches: \[main\]$/m
+  )
+  assert.match(
+    rerunText,
+    /^ {4}if: \$\{\{ github\.event_name == 'workflow_run' && github\.event\.workflow_run\.event == 'push' && github\.event\.workflow_run\.head_branch == 'main' && github\.event\.workflow_run\.conclusion == 'failure' && github\.event\.workflow_run\.run_attempt == 1 \}\}$/m
+  )
+  assert.match(rerunText, /^ {4}continue-on-error: true$/m)
+  assert.match(nightlyText, /^permissions: \{\}$/m)
+  assert.match(rerunText, /^ {4}permissions:\n {6}actions: write\n {4}env:/m)
+  assert.doesNotMatch(rerunText, /contents: write|issues: write|write-all/)
+  assert.match(rerunText, /run: gh run rerun "\$RUN_ID" --failed$/m)
+  assert.doesNotMatch(rerunText, /actions\/checkout/)
 })
