@@ -13,6 +13,8 @@ runs:
     - run: |
         git config --global user.name ci
         git config --global user.email ci@users.noreply.github.com
+        sudo git config --system maintenance.auto false
+        sudo git config --system gc.auto 0
       shell: bash
     - run: |
         git show-ref --verify --quiet refs/remotes/origin/main || git fetch origin main:refs/remotes/origin/main
