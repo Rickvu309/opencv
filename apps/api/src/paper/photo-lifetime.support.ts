@@ -16,7 +16,7 @@ import {
   pendingActions,
   user,
 } from "../db/schema.js"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import { installRegistry } from "../install.js"
 import { twoParagraphCv } from "../test/paper-content.js"
 import {

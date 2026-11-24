@@ -31,7 +31,7 @@ import {
   type PaperYDoc,
 } from "@workspace/paper-crdt"
 
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import { blockingEdit, NEWER_FIRST, revertedIds } from "./undo-rules.js"
 import {
   coachBasisOk,

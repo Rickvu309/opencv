@@ -1,5 +1,5 @@
 import { ERROR_CODES, type UserId } from "@workspace/domain"
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 import { withRichSnapshot } from "./content-store.js"
 import { compileOwnedFlowNativeDocx } from "./native-output/formatted-owned.js"
 import type { RichSnapshotInput } from "./rich-snapshot.js"

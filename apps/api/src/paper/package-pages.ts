@@ -11,7 +11,7 @@ import {
 } from "@workspace/domain"
 import { z } from "zod"
 
-import { CommandError } from "../registry/errors.js"
+import { CommandError } from "../platform/errors.js"
 
 const positionSchema = z
   .object({
