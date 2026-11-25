@@ -6,22 +6,16 @@ import { takePriorityGrant } from "../registry/write-grant.js"
 import {
   calendarJobs,
   createJob,
-  deleteJob,
   getJob,
   listJobs,
   moveJob,
-  starJob,
   updateJob,
 } from "./board.js"
-import {
-  addChecklistItem,
-  removeChecklistItem,
-  setChecklistItem,
-} from "./checklist.js"
+import { addChecklistItem, setChecklistItem } from "./checklist.js"
 import { fetchJobPosting, type FetchJobPosting } from "./fetch-posting.js"
-import { linkPaper, unlinkPaper } from "./linked-papers.js"
+import { linkPaper } from "./linked-papers.js"
 import { previewJob } from "./preview.js"
-import { ownedJob, priorityRevision, writePriority } from "./store.js"
+import { priorityRevision, writePriority } from "./store.js"
 
 type ReadPostingOnPlan = (input: {
   plan: Plan
@@ -130,23 +124,6 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
         summary: `You moved it to ${input.stage}`,
       }),
     },
-    "job.star": {
-      handler: (input, actor) => starJob(actor, input.jobId, input.starred),
-      reversal: (input, output) => ({
-        command: "job.star",
-        input: { jobId: input.jobId, starred: output.previousStarred },
-      }),
-      activity: (input) => ({
-        subjectKind: "job",
-        subjectId: input.jobId,
-        summary: input.starred ? "You starred it" : "You unstarred it",
-      }),
-    },
-    "job.delete": {
-      handler: (input, actor) => deleteJob(actor, input.jobId),
-      reversal: () => null,
-      activity: () => null,
-    },
     "job.addChecklistItem": {
       handler: (input, actor) =>
         addChecklistItem(actor, input.jobId, input.label),
@@ -179,24 +156,6 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
           : "You unticked a checklist item",
       }),
     },
-    "job.removeChecklistItem": {
-      handler: (input, actor) =>
-        removeChecklistItem(actor, input.jobId, input.itemId),
-      reversal: () => null,
-      activity: () => null,
-    },
-    "job.addNote": {
-      handler: async (input, actor) => {
-        await ownedJob(actor.userId, input.jobId)
-        return { jobId: input.jobId, body: input.body }
-      },
-      reversal: () => null,
-      activity: (input) => ({
-        subjectKind: "job",
-        subjectId: input.jobId,
-        summary: input.body,
-      }),
-    },
     "job.linkPaper": {
       handler: (input, actor) =>
         linkPaper(actor, input.jobId, input.docId, input.kind),
@@ -219,11 +178,6 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
         subjectId: input.jobId,
         summary: `You linked ${output.docName}`,
       }),
-    },
-    "job.unlinkPaper": {
-      handler: (input, actor) => unlinkPaper(actor, input.jobId, input.kind),
-      reversal: () => null,
-      activity: () => null,
     },
   })
 

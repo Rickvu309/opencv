@@ -19,6 +19,7 @@ import {
   type ReversalExpect,
   type ResourceRef,
 } from "@workspace/domain"
+import type { catalog } from "@workspace/domain"
 import type { ZodType } from "zod"
 
 import {
@@ -46,7 +47,19 @@ export type ReversalGuard = {
   }
 }[QueryName]
 
-export type GuardedReversal<C extends CommandContract> = ReversalCall<C> & {
+type CatalogReversalCall = {
+  [N in keyof typeof catalog]: (typeof catalog)[N]["kind"] extends "command"
+    ? {
+        command: N
+        input: import("zod").input<(typeof catalog)[N]["input"]>
+      }
+    : never
+}[keyof typeof catalog]
+
+type AnyReversalCall<C extends CommandContract> =
+  ReversalCall<C> | CatalogReversalCall
+
+export type GuardedReversal<C extends CommandContract> = AnyReversalCall<C> & {
   expect: ReversalGuard
 }
 
@@ -120,7 +133,7 @@ type ReversalOf<
   C extends CommandContract,
   N extends keyof C & string,
 > = N extends ReversalExpectPending
-  ? ReversalCall<C> | null
+  ? AnyReversalCall<C> | null
   : GuardedReversal<C> | null
 
 type Binding<C extends CommandContract, N extends keyof C & string> = {

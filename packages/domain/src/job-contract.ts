@@ -9,18 +9,13 @@ import {
 import { jobIdSchema, paperIdSchema, type JobId } from "./ids.js"
 import {
   jobAddChecklistItemInputSchema,
-  jobAddNoteInputSchema,
   jobCreateInputSchema,
-  jobDeleteInputSchema,
   jobLinkPaperInputSchema,
   jobMoveInputSchema,
   jobPatchSchema,
   jobViewSchema,
-  jobRemoveChecklistItemInputSchema,
   jobSetChecklistItemInputSchema,
   jobStageSchema,
-  jobStarInputSchema,
-  jobUnlinkPaperInputSchema,
   jobUpdateInputSchema,
 } from "./job.js"
 import type { QueryRef } from "./queries.js"
@@ -169,27 +164,6 @@ export const jobContract = commandContract({
     step: (input) => `Move to ${input.stage}`,
     invalidates: jobFieldsChanged,
   }),
-  "job.star": commandEntry({
-    description: "Star or unstar a job.",
-    input: jobStarInputSchema,
-    output: jobViewSchema.extend({ previousStarred: z.boolean() }).strict(),
-    coach: "auto",
-    destructive: false,
-    step: (input) => (input.starred ? "Star the job" : "Unstar the job"),
-    invalidates: jobFieldsChanged,
-  }),
-  "job.delete": commandEntry({
-    description: "Delete a job.",
-    input: jobDeleteInputSchema,
-    output: z.object({ id: jobIdSchema }).strict(),
-    coach: "confirm",
-    destructive: true,
-    step: () => "Delete this job",
-    invalidates: (input) => [
-      ...jobFieldsChanged(input),
-      { query: "paper.keywordGap", input: { jobId: input.jobId } },
-    ],
-  }),
   "job.addChecklistItem": commandEntry({
     description: "Add an interview checklist item.",
     input: jobAddChecklistItemInputSchema,
@@ -222,24 +196,6 @@ export const jobContract = commandContract({
     step: () => "Update a checklist item",
     invalidates: jobDetailChanged,
   }),
-  "job.removeChecklistItem": commandEntry({
-    description: "Remove a checklist item.",
-    input: jobRemoveChecklistItemInputSchema,
-    output: z.object({ id: z.string(), jobId: jobIdSchema }).strict(),
-    coach: "auto",
-    destructive: false,
-    step: () => "Remove a checklist item",
-    invalidates: jobDetailChanged,
-  }),
-  "job.addNote": commandEntry({
-    description: "Add a note. The activity row is the note.",
-    input: jobAddNoteInputSchema,
-    output: z.object({ jobId: jobIdSchema, body: z.string() }).strict(),
-    coach: "auto",
-    destructive: false,
-    step: () => "Add a note",
-    invalidates: jobDetailChanged,
-  }),
   "job.linkPaper": commandEntry({
     description: "Attach a CV or letter to a job.",
     input: jobLinkPaperInputSchema,
@@ -249,15 +205,6 @@ export const jobContract = commandContract({
     coach: "auto",
     destructive: false,
     step: (input) => `Link the ${input.kind}`,
-    invalidates: jobFieldsChanged,
-  }),
-  "job.unlinkPaper": commandEntry({
-    description: "Detach a CV or letter from a job.",
-    input: jobUnlinkPaperInputSchema,
-    output: jobViewSchema,
-    coach: "auto",
-    destructive: false,
-    step: (input) => `Unlink the ${input.kind}`,
     invalidates: jobFieldsChanged,
   }),
 })

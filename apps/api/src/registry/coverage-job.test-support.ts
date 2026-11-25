@@ -11,11 +11,8 @@ import {
 
 export function jobCases(tools: CoverageTools): CoverageCase[] {
   const { ctx, run, undo, jobOf, gone, checklist } = tools
-  const catalogCases: CoverageCase[] = Object.values(catalog)
-    .filter(
-      (operation) => operation.kind === "command" && operation.owner === "job"
-    )
-    .map((operation) => ({
+  const catalogCases: CoverageCase[] = [catalog["job.setPriority"]].map(
+    (operation) => ({
       name: operation.name,
       arrange: async () => {
         const result = await run("job.create", {
@@ -40,7 +37,8 @@ export function jobCases(tools: CoverageTools): CoverageCase[] {
         await undo(result)
         expect(await jobOf(ctx.jobId)).toMatchObject({ priority: "normal" })
       },
-    }))
+    })
+  )
   return [
     ...catalogCases,
     {
@@ -114,7 +112,7 @@ export function jobCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "job.star",
+      name: catalog["job.star"].name,
       arrange: async () => {
         ctx.jobId = idOf(
           (await run("job.create", { title: "Star", company: "Northwind" }))
@@ -131,7 +129,7 @@ export function jobCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "job.delete",
+      name: catalog["job.delete"].name,
       arrange: async () => {
         ctx.jobId = idOf(
           (await run("job.create", { title: "Delete", company: "Northwind" }))
@@ -196,7 +194,7 @@ export function jobCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "job.removeChecklistItem",
+      name: catalog["job.removeChecklistItem"].name,
       arrange: async () => {
         const job = await run("job.create", {
           title: "Remove",
@@ -219,7 +217,7 @@ export function jobCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "job.addNote",
+      name: catalog["job.addNote"].name,
       arrange: async () => {
         ctx.jobId = idOf(
           (await run("job.create", { title: "Note", company: "Northwind" }))
@@ -278,7 +276,7 @@ export function jobCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "job.unlinkPaper",
+      name: catalog["job.unlinkPaper"].name,
       arrange: async () => {
         const job = await run("job.create", {
           title: "Unlink",

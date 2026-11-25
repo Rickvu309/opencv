@@ -17,9 +17,12 @@ import { bindCommands, type Bindings, type OperationBinding } from "./bind.js"
 import type { Registry } from "./registry.js"
 
 type MoveInput = CommandInput<JobContract, "job.move">
-type StarInput = CommandInput<JobContract, "job.star">
+type StarInput = z.output<(typeof catalog)["job.star"]["input"]>
 type Move = Bindings<JobContract>["job.move"]
-type Delete = Bindings<JobContract>["job.delete"]
+type Delete = OperationBinding<
+  (typeof catalog)["job.delete"],
+  { id: string }
+>["execute"]
 type Snooze = OperationInput<(typeof catalog)["inbox.snooze"]>
 type Edit = CommandInput<PaperContract, "paper.edit">
 type SetTemplate = CommandInput<PaperContract, "paper.setTemplate">
@@ -62,11 +65,11 @@ export function typeProbes(registry: Registry) {
 
   // prettier-ignore
   // @ts-expect-error every command in the contract needs a binding
-  bindCommands(registry, jobContract, { "job.star": starBinding })
+  bindCommands(registry, jobContract, { "job.move": moveBinding })
 
   // prettier-ignore
   // @ts-expect-error a handler must return the declared output
-  const wrongOutput: Delete["handler"] = async () => ({ nope: 1 })
+  const wrongOutput: Delete = async () => ({ nope: 1 })
 
   // prettier-ignore
   // @ts-expect-error a reversal must be a valid input of the command it names
@@ -88,10 +91,11 @@ export function typeProbes(registry: Registry) {
   // @ts-expect-error an expectation that matches no field would never refuse
   const emptyExpectation: Move["reversal"] = () => ({ command: "job.move", input: { jobId: someJobId, stage: "saved" }, expect: { query: "job.get", input: { jobId: someJobId }, matches: {}, skipped: "x" } })
 
-  const pendingStar: Bindings<JobContract>["job.star"]["reversal"] = () => ({
-    command: "job.star",
-    input: { jobId: someJobId, starred: true },
-  })
+  const pendingChecklist: Bindings<JobContract>["job.setChecklistItem"]["reversal"] =
+    () => ({
+      command: "job.setChecklistItem",
+      input: { jobId: someJobId, itemId: uuid, done: true },
+    })
 
   // prettier-ignore
   // @ts-expect-error unknown inbox command name
@@ -167,7 +171,7 @@ export function typeProbes(registry: Registry) {
     unguardedMove,
     wrongExpectation,
     emptyExpectation,
-    pendingStar,
+    pendingChecklist,
     unknownName,
     oldStage,
     paperAsJob,
@@ -179,7 +183,7 @@ export function typeProbes(registry: Registry) {
 
 const uuid = "00000000-0000-4000-8000-000000000000"
 const someJobId = parseJobId(uuid)
-const starBinding = {} as Bindings<JobContract>["job.star"]
+const moveBinding = {} as Bindings<JobContract>["job.move"]
 
 // @ts-expect-error destructive cannot use coach auto
 export const autoDestructive = commandEntry({

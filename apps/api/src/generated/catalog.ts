@@ -30,8 +30,13 @@ import { implementation as inbox$skip } from "../inbox/operations/skip/server.js
 import { implementation as inbox$snooze } from "../inbox/operations/snooze/server.js"
 import { implementation as inbox$snoozed } from "../inbox/operations/snoozed/server.js"
 import { implementation as inbox$updateDraft } from "../inbox/operations/update-draft/server.js"
+import { implementation as job$addNote } from "../job/operations/add-note/server.js"
+import { implementation as job$delete } from "../job/operations/delete/server.js"
 import { implementation as job$priorityCounts } from "../job/operations/priority-counts/server.js"
+import { implementation as job$removeChecklistItem } from "../job/operations/remove-checklist-item/server.js"
 import { implementation as job$setPriority } from "../job/operations/set-priority/server.js"
+import { implementation as job$star } from "../job/operations/star/server.js"
+import { implementation as job$unlinkPaper } from "../job/operations/unlink-paper/server.js"
 import { implementation as notify$request } from "../account/operations/notify/request/server.js"
 import { implementation as paper$export } from "../paper/operations/export/server.js"
 import { implementation as paper$import } from "../paper/operations/import/server.js"
@@ -72,8 +77,13 @@ export const implementations = {
   "inbox.snooze": inbox$snooze,
   "inbox.snoozed": inbox$snoozed,
   "inbox.updateDraft": inbox$updateDraft,
+  "job.addNote": job$addNote,
+  "job.delete": job$delete,
   "job.priorityCounts": job$priorityCounts,
+  "job.removeChecklistItem": job$removeChecklistItem,
   "job.setPriority": job$setPriority,
+  "job.star": job$star,
+  "job.unlinkPaper": job$unlinkPaper,
   "notify.request": notify$request,
   "paper.export": paper$export,
   "paper.import": paper$import,
