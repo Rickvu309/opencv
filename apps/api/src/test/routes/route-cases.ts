@@ -132,12 +132,6 @@ async function chat(as: Person) {
   return { id: idIn(made, "id") }
 }
 
-async function sharedToken(as: Person) {
-  const { id } = await olderDoc(as)
-  const shared = await as.command("paper.share", { docId: id })
-  return { token: idIn(shared, "token") }
-}
-
 function revisionIn(value: unknown): string | null {
   if (Array.isArray(value)) {
     for (const item of value) {
@@ -277,8 +271,6 @@ export const ROUTE_CASES: readonly RouteCase[] = [
   get("/api/paper/packages"),
   get("/api/paper/packages/:docId/read", mintedPage),
   get("/api/paper/packages/:docId/export", mintedPage),
-  get("/api/paper/shared/:token/photo", sharedToken),
-  get("/api/paper/shared/:token", sharedToken),
   get("/api/paper"),
   postForm("/api/paper/letter-attachment", () => textUpload),
   IMPORT_CASES.docx,
@@ -287,7 +279,6 @@ export const ROUTE_CASES: readonly RouteCase[] = [
   get("/api/paper/files"),
   postForm("/api/paper/files", () => pngUpload),
   get("/api/paper/files/:id/bytes", uploadedFile),
-  get("/api/paper/:id/pages", olderDoc),
   get("/api/paper/:id/document", olderDoc),
   nativeWordRouteCase,
   get("/api/paper/:id", olderDoc),

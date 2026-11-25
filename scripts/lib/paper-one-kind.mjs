@@ -3,16 +3,8 @@ import ts from "typescript"
 export const OLDER_LOOKUPS = ["ownedPaper", "ownedPaperOrNull"]
 
 export const BLOCK_DOCUMENT_ONLY = {
-  setPaperTemplate:
-    "templates style an older block document; a Word page keeps its own styles",
   setPaperStatus:
-    "draft and ready status is stored on older block documents only",
-  sharePaper: "share links render an older block document body",
-  unsharePaper: "share links render an older block document body",
-  dismissCheck: "layout checks run on older block documents only",
-  keepTwoPages: "the page fitter works on older block documents only",
-  attachPhoto: "the CV header photo belongs to an older block document",
-  pageCount: "page counting measures an older block document layout",
+    "draft and ready status is stored on rich documents only; a Word page has none",
 }
 
 function calls(node) {
@@ -33,16 +25,16 @@ function takesDocId(node) {
   )
 }
 
-export function detect(source, file = "store.ts") {
+export function detect(
+  source,
+  file = "store.ts",
+  exempt = BLOCK_DOCUMENT_ONLY
+) {
   const ast = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true)
   return ast.statements.flatMap((node) => {
     if (!ts.isFunctionDeclaration(node) || !node.name || !node.body) return []
     const name = node.name.text
-    if (
-      !takesDocId(node) ||
-      name in BLOCK_DOCUMENT_ONLY ||
-      OLDER_LOOKUPS.includes(name)
-    )
+    if (!takesDocId(node) || name in exempt || OLDER_LOOKUPS.includes(name))
       return []
     const called = [...calls(node.body)]
     const older = called.some((callee) => OLDER_LOOKUPS.includes(callee))

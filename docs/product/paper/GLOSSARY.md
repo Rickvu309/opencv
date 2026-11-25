@@ -37,8 +37,5 @@ _Avoid_: package, Word page, Word document
 **Template**:
 A starting layout for a new Paper.
 
-**Share**:
-A link that lets a stranger read one Paper.
-
 **Paper Loop**:
 Bring a Word file in, change it by chat, approve, take a Word file out.

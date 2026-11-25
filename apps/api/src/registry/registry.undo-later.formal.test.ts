@@ -1,23 +1,21 @@
-import { ERROR_CODES, parseUserId, personActor } from "@workspace/domain"
+import {
+  ERROR_CODES,
+  parseUserId,
+  personActor,
+  RICH_NATIVE_WRITER,
+} from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
 import { getDb, withDatabase } from "../db/context.js"
 import { activity, inboxThreads, jobChecklist, user } from "../db/schema.js"
-import { saveFile } from "../paper/index.js"
 import {
   backend,
   newPerson,
   registerBackendHooks,
   registry,
 } from "../test/registry-formal-support.js"
-import {
-  flag,
-  idOf,
-  list,
-  record,
-  text,
-} from "./coverage-helpers.test-support.js"
+import { flag, idOf, list, text } from "./coverage-helpers.test-support.js"
 import { coverageCases } from "./coverage-setup.test-support.js"
 import { undoKeyFor } from "./expectation.js"
 import { REVERSAL_EXPECT_PENDING } from "./expect-pending.js"
@@ -51,8 +49,8 @@ async function jobField(userId: string, a: ExecuteResult, field: string) {
 
 async function paperName(userId: string, a: ExecuteResult) {
   const paper = await registry.read(
-    "paper.get",
-    { docId: idOf(a.output) },
+    "paper.document",
+    { docId: idOf(a.output), writer: RICH_NATIVE_WRITER },
     { type: "person", userId: parseUserId(userId) }
   )
   return text(paper, "name")
@@ -151,14 +149,22 @@ const LATER: Record<string, Later> = {
   },
   "paper.create": {
     act: async (a, run) => {
-      await run("paper.rename", { docId: idOf(a.output), name: "Renamed" })
+      await run("paper.rename", {
+        docId: idOf(a.output),
+        name: "Renamed",
+        writer: RICH_NATIVE_WRITER,
+      })
     },
     survives: async (a, userId) =>
       (await paperName(userId, a).catch(() => "gone")) === "Renamed",
   },
   "paper.duplicate": {
     act: async (a, run) => {
-      await run("paper.rename", { docId: idOf(a.output), name: "Renamed" })
+      await run("paper.rename", {
+        docId: idOf(a.output),
+        name: "Renamed",
+        writer: RICH_NATIVE_WRITER,
+      })
     },
     survives: async (a, userId) =>
       (await paperName(userId, a).catch(() => "gone")) === "Renamed",
@@ -199,32 +205,6 @@ const LATER: Record<string, Later> = {
         words.includes("Harbor") &&
         words.includes("light") &&
         text(page, "revision") !== text(a.output, "revision")
-      )
-    },
-  },
-  "paper.attachPhoto": {
-    act: async (a, run, userId) => {
-      const second = await saveFile({
-        userId: parseUserId(userId),
-        name: "second.png",
-        mediaType: "image/png",
-        bytes: Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-        purpose: "avatar",
-      })
-      await run("paper.attachPhoto", {
-        docId: idOf(a.output),
-        fileId: second.id,
-      })
-    },
-    survives: async (a, userId) => {
-      const paper = await registry.read(
-        "paper.get",
-        { docId: idOf(a.output) },
-        { type: "person", userId: parseUserId(userId) }
-      )
-      const header = record(record(paper, "paper"), "header")
-      return (
-        typeof header.photo === "string" && header.photo.startsWith("file:")
       )
     },
   },

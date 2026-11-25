@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { fileIdSchema, jobIdSchema, paperIdSchema } from "./ids.js"
+import { fileIdSchema, paperIdSchema } from "./ids.js"
 
 export const LETTER_ATTACHMENT_TEXT_MAX = 6000
 
@@ -104,48 +104,11 @@ export const paperDuplicateInputSchema = z
 
 export const paperDeleteInputSchema = paperDeleteDocInputSchema
 
-export const paperSetTemplateInputSchema = z
-  .object({
-    docId: paperDocIdSchema,
-    templateId: paperTemplateIdSchema,
-  })
-  .strict()
-
-export const paperShareInputSchema = z
-  .object({
-    docId: paperDocIdSchema,
-  })
-  .strict()
-
-export const paperUnshareInputSchema = paperShareInputSchema
-export const paperDismissCheckInputSchema = z
-  .object({
-    docId: paperDocIdSchema,
-    checkId: z.string().trim().min(1).max(80),
-  })
-  .strict()
-
-export const paperKeepTwoPagesInputSchema = paperShareInputSchema
-
 export const paperSetStatusCommandInputSchema = paperSetStatusInputSchema
-
-export const paperKeywordGapInputSchema = z
-  .object({
-    docId: paperDocIdSchema,
-    jobId: jobIdSchema,
-  })
-  .strict()
 
 export const paperDeleteFileInputSchema = z
   .object({
     fileId: fileIdSchema,
-  })
-  .strict()
-
-export const paperAttachPhotoInputSchema = z
-  .object({
-    docId: paperDocIdSchema,
-    fileId: fileIdSchema.nullable(),
   })
   .strict()
 
@@ -214,32 +177,4 @@ export type ProofDocument = z.infer<typeof proofDocumentSchema>
 
 export function isProofDocument(value: unknown): value is ProofDocument {
   return proofDocumentSchema.safeParse(value).success
-}
-
-const KEYWORD_STOP = new Set(["the", "and", "for", "with", "your"])
-
-export function keywordGap(
-  letterText: string,
-  requirements: string
-): { keyword: string; sentence: string } | null {
-  const letter = letterText.toLowerCase()
-  const runs = requirements.match(/[A-Z][\w+#]*(?: [A-Z][\w+#]*)*/g) ?? []
-  for (const run of runs) {
-    const words = run.split(" ")
-    while (words.length > 0 && KEYWORD_STOP.has(words[0]!.toLowerCase()))
-      words.shift()
-    while (
-      words.length > 0 &&
-      KEYWORD_STOP.has(words[words.length - 1]!.toLowerCase())
-    )
-      words.pop()
-    const phrase = words.join(" ")
-    if (phrase.replace(/[^A-Za-z]/g, "").length < 3) continue
-    if (letter.includes(phrase.toLowerCase())) continue
-    return {
-      keyword: phrase,
-      sentence: `The job asks for ${phrase}. Add it if you've used it.`,
-    }
-  }
-  return null
 }

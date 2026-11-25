@@ -1,8 +1,8 @@
 {
   "module": "photo-sweep.ts",
   "actions": {
-    "Attach": "attachPhoto",
-    "AttachWrite": "attachPhoto",
+    "Attach": null,
+    "AttachWrite": null,
     "Sweep": "sweepUnattachedPhotos",
     "SweepDrop": "sweepUnattachedPhotos"
   },

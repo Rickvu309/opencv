@@ -193,7 +193,7 @@ describe("opencv_app migrations", () => {
           values ('00000000-0000-4000-8000-000000000659', 'favorite-upgrade',
             'Existing CV', 'cv',
             '{"version":2,"header":{"name":"Lan","photo":"file:6f1d3c1e-0a53-4b8e-9d57-2f5c4f0f7a11"}}',
-            '{"version":3,"kind":"cv"}',
+            '{"version":4,"schemaRevision":2,"kind":"cv"}',
             7, '2026-01-01T00:00:00Z');
       `)
       expect(

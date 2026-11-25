@@ -66,8 +66,20 @@ test("the store that listed Word pages without their commands fires on rename, d
     ["show", "27ed7ad8:apps/api/src/paper/store.ts"],
     { cwd: new URL("../", import.meta.url), encoding: "utf8" }
   )
+  const exemptAtThatTime = Object.fromEntries(
+    [
+      "setPaperTemplate",
+      "setPaperStatus",
+      "sharePaper",
+      "unsharePaper",
+      "dismissCheck",
+      "keepTwoPages",
+      "attachPhoto",
+      "pageCount",
+    ].map((name) => [name, "block document only at 27ed7ad8"])
+  )
   assert.deepEqual(
-    detect(past).map((finding) => finding.name),
+    detect(past, "store.ts", exemptAtThatTime).map((finding) => finding.name),
     ["renamePaper", "duplicatePaper", "deletePaper"]
   )
 })

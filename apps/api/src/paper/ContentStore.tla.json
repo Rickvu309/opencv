@@ -5,26 +5,14 @@
     "Person": "syncContent",
     "Commit": "nextContentSeq",
     "Coach": null,
-    "PersonMerge": "coachBasisOk",
-    "Replace": "sameContentVersion",
-    "Rollback": "withContent",
-    "End": "withContent",
-    "Evict": "withContent"
-  },
-  "boundaries": {
-    "Coach": [
-      "content-coach.ts:editAsCoach",
-      "content-coach.ts:stalePaperBasis"
-    ],
-    "PersonMerge": [
-      "content-coach.ts:editAsCoach",
-      "content-store.ts:coachBasisOk",
-      "../registry/http.ts:createCommandRoutes"
-    ]
+    "PersonMerge": null,
+    "Replace": null,
+    "Rollback": "syncContent",
+    "End": "syncContent",
+    "Evict": "syncContent"
   },
   "covers": [
     "apps/api/src/paper/content-store.ts",
-    "apps/api/src/paper/content-coach.ts",
     "apps/api/src/paper/commands.ts",
     "apps/api/src/registry/http.ts",
     "apps/api/src/registry/registry-entries.ts"

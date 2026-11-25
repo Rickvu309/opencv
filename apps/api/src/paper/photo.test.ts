@@ -1,10 +1,9 @@
-import { paperPhotoRef, personActor } from "@workspace/domain"
+import { paperPhotoRef } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
-import { activity } from "../db/schema.js"
-import { installRegistry } from "../install.js"
+import { paperDocs } from "../db/schema.js"
 import {
   authHeaders,
   createMigratedTestDb,
@@ -12,11 +11,13 @@ import {
   signUp,
   testWebOrigin,
 } from "../test/harness.js"
+import { richPaper } from "../test/rich-paper.js"
 
+import { seedColumns } from "./content-document.js"
 import { imageFile, png, postAvatar } from "./photo.fixtures.js"
 
 describe("CV photo bytes", () => {
-  it("stores a file id, serves the owner and a share, and rejects another user or 3 MB", async () => {
+  it("stores a file id, serves the owner, and rejects another user or 3 MB", async () => {
     const { db, client } = await createMigratedTestDb()
     const app = createTestApp(db)
     const owner = await signUp(app, {
@@ -27,16 +28,6 @@ describe("CV photo bytes", () => {
       name: "Bea",
       email: "bea-photo@example.com",
     })
-    const created = await app.request("/api/commands/paper.create", {
-      method: "POST",
-      headers: authHeaders(owner.cookie),
-      body: JSON.stringify({
-        input: { kind: "cv", templateId: "with-photo", name: "Photo CV" },
-      }),
-    })
-    expect(created.status).toBe(200)
-    const docId = ((await created.json()) as { data: { id: string } }).data.id
-
     const uploaded = await app.request("/api/paper/files", {
       method: "POST",
       headers: { Origin: testWebOrigin, Cookie: owner.cookie },
@@ -48,36 +39,6 @@ describe("CV photo bytes", () => {
     })
     expect(uploaded.status).toBe(200)
     const fileId = ((await uploaded.json()) as { data: { id: string } }).data.id
-    const attached = await app.request("/api/commands/paper.attachPhoto", {
-      method: "POST",
-      headers: authHeaders(owner.cookie),
-      body: JSON.stringify({ input: { docId, fileId } }),
-    })
-    expect(attached.status).toBe(200)
-    const attachment = (await attached.json()) as {
-      data: { activityId: string; contentVersion: number }
-    }
-    expect(attachment.data.activityId).toEqual(expect.any(String))
-
-    const refused = await app.request("/api/commands/paper.attachPhoto", {
-      method: "POST",
-      headers: authHeaders(owner.cookie),
-      body: JSON.stringify({ input: { docId, fileId: null, quiet: true } }),
-    })
-    expect(refused.status).toBe(400)
-    const kept = await app.request(`/api/paper/${docId}`, {
-      headers: authHeaders(owner.cookie),
-    })
-    expect(await kept.text()).toContain(paperPhotoRef(fileId))
-
-    const stored = await app.request(`/api/paper/${docId}`, {
-      headers: authHeaders(owner.cookie),
-    })
-    const storedText = await stored.text()
-    expect(storedText).toContain(paperPhotoRef(fileId))
-    expect(storedText).not.toContain("blob:")
-    expect(storedText).not.toContain(Buffer.from(png).toString("base64"))
-
     const bytes = await app.request(`/api/paper/files/${fileId}/bytes`, {
       headers: authHeaders(owner.cookie),
     })
@@ -89,48 +50,6 @@ describe("CV photo bytes", () => {
       headers: authHeaders(other.cookie),
     })
     expect(hidden.status).toBe(404)
-
-    const shared = await app.request("/api/commands/paper.share", {
-      method: "POST",
-      headers: authHeaders(owner.cookie),
-      body: JSON.stringify({ input: { docId } }),
-    })
-    const token = ((await shared.json()) as { data: { token: string } }).data
-      .token
-    const publicPhoto = await app.request(`/api/paper/shared/${token}/photo`)
-    expect(publicPhoto.status).toBe(200)
-    expect(publicPhoto.headers.get("cache-control")).toBe("no-store")
-    expect(new Uint8Array(await publicPhoto.arrayBuffer())).toEqual(png)
-    const missing = await app.request("/api/paper/shared/not-a-share/photo")
-    expect(missing.status).toBe(404)
-    expect(missing.headers.get("cache-control")).toBe("no-store")
-
-    const stopped = await app.request("/api/commands/paper.unshare", {
-      method: "POST",
-      headers: authHeaders(owner.cookie),
-      body: JSON.stringify({ input: { docId } }),
-    })
-    expect(stopped.status).toBe(200)
-    for (const suffix of ["", "/photo"]) {
-      const revoked = await app.request(`/api/paper/shared/${token}${suffix}`)
-      expect(revoked.status).toBe(404)
-      expect(revoked.headers.get("cache-control")).toBe("no-store")
-    }
-
-    const undone = await app.request("/api/commands/activity.undo", {
-      method: "POST",
-      headers: authHeaders(owner.cookie),
-      body: JSON.stringify({
-        input: { activityId: attachment.data.activityId },
-      }),
-    })
-    expect(undone.status).toBe(200)
-    const cleared = await app.request(`/api/paper/${docId}`, {
-      headers: authHeaders(owner.cookie),
-    })
-    const clearedText = await cleared.text()
-    expect(clearedText).not.toContain("file:")
-    expect(clearedText).not.toContain("blob:")
 
     const big = await app.request("/api/paper/files", {
       method: "POST",
@@ -166,88 +85,6 @@ describe("CV photo bytes", () => {
     await client.close()
   })
 
-  it("writes a header photo and clears it when that attach is undone", async () => {
-    const { db, client } = await createMigratedTestDb()
-    const registry = installRegistry()
-    const userId = "user-photo-v2"
-    await db.insert((await import("../db/schema.js")).user).values({
-      id: userId,
-      name: "Ada",
-      email: "ada-photo-v2@example.com",
-    })
-    const actor = personActor(userId)
-    await withDatabase(db, async () => {
-      const { saveFile } = await import("./store.js")
-      const { parseUserId } = await import("@workspace/domain")
-      const created = await registry.execute({
-        name: "paper.create",
-        input: { kind: "cv", name: "Blocks" },
-        actor,
-      })
-      const docId = (created.output as { id: string }).id
-      await expect(
-        registry.execute({
-          name: "paper.attachPhoto",
-          input: { docId, fileId: "blob:http://localhost/photo" },
-          actor,
-        })
-      ).rejects.toThrow()
-
-      const saved = await saveFile({
-        userId: parseUserId(userId),
-        name: "face.png",
-        mediaType: "image/png",
-        bytes: Buffer.from(png),
-        purpose: "avatar",
-      })
-      const attached = await registry.execute({
-        name: "paper.attachPhoto",
-        input: { docId, fileId: saved.id },
-        actor,
-      })
-      const view = attached.output as {
-        paper: { header: { photo?: string } }
-      }
-      expect(view.paper.header.photo).toBe(paperPhotoRef(saved.id))
-      const reversal = attached.reversal
-      if (!reversal) throw new Error("missing reversal")
-      expect(reversal).toMatchObject({
-        command: "paper.attachPhoto",
-        input: { docId, fileId: null },
-      })
-      expect(reversal.input).not.toHaveProperty("quiet")
-      expect(attached.activityId).toEqual(expect.any(String))
-      await registry.undo(userId, attached.activityId!)
-      const cleared = (await registry.read("paper.get", { docId }, actor)) as {
-        paper: { header: { photo?: string } }
-      }
-      expect(cleared.paper.header.photo).toBeUndefined()
-      const rows = await db
-        .select()
-        .from(activity)
-        .where(eq(activity.subjectId, docId))
-      expect(
-        rows.filter((row) => row.command === "paper.attachPhoto")
-      ).toHaveLength(1)
-      await expect(
-        registry.execute({
-          name: "paper.attachPhoto",
-          input: { docId, fileId: saved.id, quiet: true },
-          actor,
-          idempotencyKey: "undo:client-supplied",
-        })
-      ).rejects.toThrow(/quiet/i)
-      const visible = await registry.execute({
-        name: "paper.attachPhoto",
-        input: { docId, fileId: saved.id },
-        actor,
-        idempotencyKey: "undo:client-supplied",
-      })
-      expect(visible.activityId).toEqual(expect.any(String))
-    })
-    await client.close()
-  })
-
   it("stores the image type from the bytes and ignores the client Content-Type", async () => {
     const { db, client } = await createMigratedTestDb()
     const app = createTestApp(db)
@@ -255,15 +92,6 @@ describe("CV photo bytes", () => {
       name: "Ada",
       email: "ada-sniff@example.com",
     })
-    const created = await app.request("/api/commands/paper.create", {
-      method: "POST",
-      headers: authHeaders(owner.cookie),
-      body: JSON.stringify({
-        input: { kind: "cv", templateId: "with-photo", name: "Sniff CV" },
-      }),
-    })
-    const docId = ((await created.json()) as { data: { id: string } }).data.id
-
     const svg = await postAvatar(
       app,
       owner.cookie,
@@ -360,108 +188,6 @@ describe("CV photo bytes", () => {
     })
     expectPhotoHeaders(gifBytes, "image/gif", "gif", "private, no-store")
 
-    const attached = await app.request("/api/commands/paper.attachPhoto", {
-      method: "POST",
-      headers: authHeaders(owner.cookie),
-      body: JSON.stringify({ input: { docId, fileId } }),
-    })
-    expect(attached.status).toBe(200)
-    const shared = await app.request("/api/commands/paper.share", {
-      method: "POST",
-      headers: authHeaders(owner.cookie),
-      body: JSON.stringify({ input: { docId } }),
-    })
-    const token = ((await shared.json()) as { data: { token: string } }).data
-      .token
-    const publicPhoto = await app.request(`/api/paper/shared/${token}/photo`)
-    expectPhotoHeaders(publicPhoto, "image/png", "png", "no-store")
-
-    await client.close()
-  })
-
-  it("restores replaced photo bytes through Undo, including after the daily sweep", async () => {
-    const { db, client } = await createMigratedTestDb()
-    const app = createTestApp(db)
-    const owner = await signUp(app, {
-      name: "Ada",
-      email: "ada-orphan@example.com",
-    })
-    const created = await app.request("/api/commands/paper.create", {
-      method: "POST",
-      headers: authHeaders(owner.cookie),
-      body: JSON.stringify({
-        input: { kind: "cv", templateId: "with-photo", name: "Orphan CV" },
-      }),
-    })
-    const docId = ((await created.json()) as { data: { id: string } }).data.id
-    const first = await postAvatar(
-      app,
-      owner.cookie,
-      png,
-      "one.png",
-      "image/png"
-    )
-    const firstId = ((await first.json()) as { data: { id: string } }).data.id
-    const secondBytes = Uint8Array.from([...png, 0x02])
-    const second = await postAvatar(
-      app,
-      owner.cookie,
-      secondBytes,
-      "two.png",
-      "image/png"
-    )
-    const secondId = ((await second.json()) as { data: { id: string } }).data.id
-
-    const attach = (fileId: string) =>
-      app.request("/api/commands/paper.attachPhoto", {
-        method: "POST",
-        headers: authHeaders(owner.cookie),
-        body: JSON.stringify({ input: { docId, fileId } }),
-      })
-    expect((await attach(firstId)).status).toBe(200)
-    const replacement = await attach(secondId)
-    expect(replacement.status).toBe(200)
-    const replacementActivity = (await replacement.json()) as {
-      data: { activityId: string }
-    }
-
-    const bytes = (fileId: string) =>
-      app.request(`/api/paper/files/${fileId}/bytes`, {
-        headers: authHeaders(owner.cookie),
-      })
-    const oldPhoto = await bytes(firstId)
-    expect(oldPhoto.status).toBe(200)
-    expect(new Uint8Array(await oldPhoto.arrayBuffer())).toEqual(png)
-
-    const afterTwoDays = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)
-    const sweep = () =>
-      withDatabase(db, async () => {
-        const { sweepUnattachedPhotos } = await import("./photo-sweep.js")
-        return sweepUnattachedPhotos(afterTwoDays)
-      })
-    expect(await sweep()).not.toContain(firstId)
-    expect((await bytes(firstId)).status).toBe(200)
-
-    const undone = await app.request("/api/commands/activity.undo", {
-      method: "POST",
-      headers: authHeaders(owner.cookie),
-      body: JSON.stringify({
-        input: { activityId: replacementActivity.data.activityId },
-      }),
-    })
-    expect(undone.status).toBe(200)
-    const reopened = await app.request(`/api/paper/${docId}`, {
-      headers: authHeaders(owner.cookie),
-    })
-    expect(await reopened.text()).toContain(paperPhotoRef(firstId))
-    const restored = await bytes(firstId)
-    expect(restored.status).toBe(200)
-    expect(new Uint8Array(await restored.arrayBuffer())).toEqual(png)
-
-    expect(await sweep()).not.toContain(secondId)
-    expect((await bytes(firstId)).status).toBe(200)
-    expect((await bytes(secondId)).status).toBe(200)
-
     await client.close()
   })
 
@@ -476,7 +202,7 @@ describe("CV photo bytes", () => {
       method: "POST",
       headers: authHeaders(owner.cookie),
       body: JSON.stringify({
-        input: { kind: "cv", templateId: "with-photo", name: "Sweep CV" },
+        input: { kind: "cv", name: "Sweep CV" },
       }),
     })
     expect(created.status).toBe(200)
@@ -501,12 +227,10 @@ describe("CV photo bytes", () => {
       body: JSON.stringify({ input: { fileId: profileId } }),
     })
     expect(profile.status).toBe(200)
-    const attached = await app.request("/api/commands/paper.attachPhoto", {
-      method: "POST",
-      headers: authHeaders(owner.cookie),
-      body: JSON.stringify({ input: { docId, fileId: attachedId } }),
-    })
-    expect(attached.status).toBe(200)
+    await db
+      .update(paperDocs)
+      .set(seedColumns("cv", richPaper("cv", paperPhotoRef(attachedId))))
+      .where(eq(paperDocs.id, docId))
 
     const { files } = await import("../db/schema.js")
     const { inArray } = await import("drizzle-orm")

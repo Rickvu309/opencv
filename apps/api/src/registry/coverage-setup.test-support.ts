@@ -1,10 +1,10 @@
 import { connectionsCases } from "./coverage-connections.test-support.js"
-import { personActor } from "@workspace/domain"
+import { personActor, RICH_NATIVE_WRITER } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 
 import type { TestDatabase } from "../db/context.js"
-import { jobChecklist, paperShares } from "../db/schema.js"
+import { jobChecklist } from "../db/schema.js"
 import { accountCases } from "./coverage-account.test-support.js"
 import { coachCases } from "./coverage-coach.test-support.js"
 import { chatCases } from "./coverage-chat.test-support.js"
@@ -72,15 +72,22 @@ export function coverageCases(
     undo,
     jobOf: (jobId) => registry.read("job.get", { jobId }, person),
     chatOf: (chatId) => registry.read("chat.get", { chatId }, person),
-    paperOf: (docId) => registry.read("paper.get", { docId }, person),
+    paperOf: async (docId) => {
+      const listed = (await registry.read(
+        "paper.list",
+        { writer: RICH_NATIVE_WRITER },
+        person
+      )) as { id: string }[]
+      const paper = listed.find((item) => item.id === docId)
+      if (!paper) throw new Error("Document not found")
+      return paper
+    },
     profileOf: () => registry.read("profile.get", {}, person),
     gone: async (read) => {
       await expect(read).rejects.toThrow(/not found/i)
     },
     checklist: (itemId) =>
       db.select().from(jobChecklist).where(eq(jobChecklist.id, itemId)),
-    shares: (docId) =>
-      db.select().from(paperShares).where(eq(paperShares.docId, docId)),
   }
   const cases: CoverageCase[] = [
     ...chatCases(tools),

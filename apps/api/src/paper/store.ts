@@ -1,33 +1,23 @@
-import { randomBytes } from "node:crypto"
-
 import {
   DEFAULT_PAPER_DOC_NAME,
   ERROR_CODES,
   IMPORT_PAGES_MESSAGE,
-  blankCv,
-  blankLetter,
-  paperNodeSpecs,
-  paperDocumentSchema,
-  legacyPaperDocumentSchema,
-  paperPhotoFileId,
-  paperPhotoRef,
+  emptyRichPaper,
+  RICH_NATIVE_WRITER,
   parseFileId,
   parsePaperId,
-  parseUserId,
-  storedPaperDocumentSchema,
-  type PaperDocument,
+  richPaperDocumentSchema,
   type NativeWriter,
   type Actor,
   type FileId,
   type PaperId,
   type PaperStoredKind,
-  type PaperTemplateId,
   type UserId,
 } from "@workspace/domain"
 import { and, desc, eq, ne } from "drizzle-orm"
 
 import { getDb, insideTransaction } from "../db/context.js"
-import { files, paperDocs, paperShares } from "../db/schema.js"
+import { files, paperDocs } from "../db/schema.js"
 import { createId } from "../platform/id.js"
 import { CommandError } from "../platform/errors.js"
 import { admitDocument } from "./native-admission.js"
@@ -47,18 +37,16 @@ import {
   mediaTypeForImport,
 } from "./import-parse.js"
 
-import { seedColumns, withContent } from "./content-store.js"
+import { seedColumns } from "./content-store.js"
 import {
   dropServerReleasedPhoto,
   referencedPhotoFileIds,
 } from "./photo-references.js"
 import {
   isRichPaper,
-  readStoredPaper,
+  needsRichEditor,
   toListedPaper,
-  toPaper,
-  toSharedPaper,
-  tryReadStoredPaper,
+  tryReadRichPaper,
 } from "./read-paper.js"
 import { readPaperDocumentInfo } from "./document-info.js"
 
@@ -70,7 +58,7 @@ function iso(value: Date) {
   return value.toISOString()
 }
 
-export { toPaper, tryReadStoredPaper }
+export { toListedPaper, tryReadRichPaper }
 
 function documentNotFound(): never {
   throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
@@ -87,28 +75,10 @@ async function ownedPaperOrNull(userId: UserId, docId: PaperId) {
 
 export async function ownedPaper(
   userId: UserId,
-  docId: PaperId,
-  writer?: NativeWriter
-) {
-  const row = (await ownedPaperOrNull(userId, docId)) ?? documentNotFound()
-  admitDocument(readStoredPaper(row), writer)
-  return row
-}
-
-function v3Of(kind: PaperStoredKind, value: unknown): PaperDocument | null {
-  const parsed = legacyPaperDocumentSchema.safeParse(value)
-  if (!parsed.success || parsed.data.kind !== kind) return null
-  return parsed.data
-}
-
-function blankPaper(kind: PaperStoredKind): PaperDocument {
-  return kind === "cv" ? blankCv() : blankLetter()
-}
-
-function sharedPhotoRef(document: unknown): string | null {
-  const parsed = paperDocumentSchema.safeParse(document)
-  if (!parsed.success || parsed.data.kind !== "cv") return null
-  return parsed.data.header?.photo ?? null
+  docId: PaperId
+): Promise<never> {
+  if (!(await ownedPaperOrNull(userId, docId))) documentNotFound()
+  throw needsRichEditor()
 }
 
 function listedForEditor(
@@ -139,11 +109,7 @@ export async function listPapers(
   const stored = rows
     .filter((row) => (kind ? row.kind === kind : true))
     .filter((row) => !needle || row.name.toLowerCase().includes(needle))
-    .flatMap((row) => {
-      if (isRichPaper(row)) return listedForEditor(row, writer)
-      const paper = tryReadStoredPaper(row)
-      return paper ? [toPaper(row, paper, writer)] : []
-    })
+    .flatMap((row) => (isRichPaper(row) ? listedForEditor(row, writer) : []))
   const seen = new Set(stored.map((item) => item.id))
   const minted = (await listPackagePapers(userId)).filter(
     (item) =>
@@ -166,23 +132,20 @@ export async function createPaper(
     kind: PaperStoredKind
     name?: string
     templateId?: string
-    document?: unknown
     paper?: unknown
   },
-  writer?: NativeWriter
+  writer: NativeWriter = RICH_NATIVE_WRITER
 ) {
   const now = new Date()
   const id = createId(now.getTime())
-  const stored = input.paper
-    ? storedPaperDocumentSchema.parse(input.paper)
-    : null
-  if (stored && stored.kind !== input.kind)
+  const paper = richPaperDocumentSchema.parse(
+    input.paper ?? emptyRichPaper(input.kind)
+  )
+  if (paper.kind !== input.kind)
     throw new CommandError(
       ERROR_CODES.CONFLICT,
       "The document kind does not match."
     )
-  const paper =
-    stored ?? v3Of(input.kind, input.document) ?? blankPaper(input.kind)
   admitDocument(paper, writer)
   await getDb()
     .insert(paperDocs)
@@ -201,9 +164,7 @@ export async function createPaper(
   importParsers.onInsert?.()
   const row = (await ownedPaperOrNull(actor.userId, parsePaperId(id))) ?? null
   if (!row) return documentNotFound()
-  return paper.version === 4 && paper.schemaRevision === 2
-    ? readPaperDocumentInfo(actor.userId, parsePaperId(id), writer)
-    : toPaper(row, undefined, writer)
+  return readPaperDocumentInfo(actor.userId, parsePaperId(id), writer)
 }
 
 export async function renamePaper(
@@ -291,18 +252,7 @@ export async function duplicatePaper(
     )
   const source =
     (await ownedPaperOrNull(actor.userId, docId)) ?? documentNotFound()
-  if (isRichPaper(source)) return copyOfRichPaper(actor, source, writer)
-  const current = await ownedPaper(actor.userId, docId, writer)
-  return createPaper(
-    actor,
-    {
-      kind: current.kind,
-      name: `Copy of ${current.name}`.slice(0, 200),
-      templateId: current.templateId ?? undefined,
-      paper: readStoredPaper(current),
-    },
-    writer
-  )
+  return copyOfRichPaper(actor, source, writer)
 }
 
 export async function deletePaper(actor: Actor, docId: PaperId) {
@@ -314,23 +264,6 @@ export async function deletePaper(actor: Actor, docId: PaperId) {
 
 export async function restoreDeletedPaper(actor: Actor, docId: PaperId) {
   return (await restoreWordPage(actor.userId, docId)) ?? documentNotFound()
-}
-
-export async function setPaperTemplate(
-  actor: Actor,
-  docId: PaperId,
-  templateId: PaperTemplateId
-) {
-  const current = await ownedPaper(actor.userId, docId)
-  const view = toPaper(current)
-  await getDb()
-    .update(paperDocs)
-    .set({ templateId, updatedAt: new Date() })
-    .where(eq(paperDocs.id, current.id))
-  return {
-    ...toPaper(await ownedPaper(actor.userId, docId)),
-    previousTemplateId: view.templateId,
-  }
 }
 
 export async function setPaperStatus(
@@ -348,116 +281,6 @@ export async function setPaperStatus(
     .set({ status, updatedAt })
     .where(eq(paperDocs.id, docId))
   return toListedPaper({ ...current, status, updatedAt }, writer)
-}
-
-export async function sharePaper(
-  actor: Actor,
-  docId: PaperId,
-  writer?: NativeWriter
-) {
-  await ownedPaper(actor.userId, docId, writer)
-  const existing = await getDb()
-    .select()
-    .from(paperShares)
-    .where(eq(paperShares.docId, docId))
-    .limit(1)
-  if (existing[0]) return { docId, token: existing[0].token }
-  const token = randomBytes(24).toString("base64url")
-  await getDb().insert(paperShares).values({ id: createId(), docId, token })
-  return { docId, token }
-}
-
-export async function unsharePaper(
-  actor: Actor,
-  docId: PaperId,
-  writer?: NativeWriter
-) {
-  await ownedPaper(actor.userId, docId, writer)
-  await getDb().delete(paperShares).where(eq(paperShares.docId, docId))
-  return { docId }
-}
-
-export async function dismissCheck(
-  actor: Actor,
-  docId: PaperId,
-  checkId: string
-) {
-  const current = await ownedPaper(actor.userId, docId)
-  const checks = (current.checks ?? []).filter((check) => check.id !== checkId)
-  await getDb()
-    .update(paperDocs)
-    .set({ checks, updatedAt: new Date() })
-    .where(eq(paperDocs.id, docId))
-  return toPaper(await ownedPaper(actor.userId, docId))
-}
-
-export async function keepTwoPages(actor: Actor, docId: PaperId) {
-  await ownedPaper(actor.userId, docId)
-  await getDb()
-    .update(paperDocs)
-    .set({ pageChoice: "keep", updatedAt: new Date() })
-    .where(eq(paperDocs.id, docId))
-  return toPaper(await ownedPaper(actor.userId, docId))
-}
-
-export const COACH_TWO_PAGES_PAST_STORED_JSON_CHARS = 3500
-
-export function coachPagesFromStoredJson(storedJsonChars: number): 1 | 2 {
-  return storedJsonChars > COACH_TWO_PAGES_PAST_STORED_JSON_CHARS ? 2 : 1
-}
-
-export async function pageCount(
-  actor: Actor,
-  docId: PaperId,
-  writer?: NativeWriter
-) {
-  const doc = await ownedPaper(actor.userId, docId, writer)
-  return {
-    docId,
-    pages: coachPagesFromStoredJson(JSON.stringify(doc.crdtDocument).length),
-    pageChoice: doc.pageChoice,
-  }
-}
-
-function withPhotoRef(
-  document: PaperDocument,
-  ref: string | null
-): PaperDocument {
-  if (document.kind !== "cv") {
-    throw new CommandError(
-      ERROR_CODES.VALIDATION_ERROR,
-      "A photo belongs on a CV."
-    )
-  }
-  if (!ref) {
-    if (!document.header) return document
-    const { photo: _removed, ...header } = document.header
-    void _removed
-    return { ...document, header }
-  }
-  return {
-    ...document,
-    header: {
-      ...(document.header ?? paperNodeSpecs.header.blank()),
-      photo: ref,
-    },
-  }
-}
-
-async function requireAvatarFile(userId: UserId, fileId: FileId) {
-  const rows = await getDb()
-    .select({
-      purpose: files.purpose,
-      mediaType: files.mediaType,
-    })
-    .from(files)
-    .where(and(eq(files.id, fileId), eq(files.userId, userId)))
-    .limit(1)
-  const row = rows[0]
-  if (!row || row.purpose !== "avatar" || !row.mediaType.startsWith("image/")) {
-    throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo file not found")
-  }
-  return row
 }
 
 export async function readOwnedPhoto(
@@ -484,53 +307,6 @@ export async function readOwnedPhoto(
   if (!row || row.purpose !== "avatar" || !row.mediaType.startsWith("image/"))
     throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo file not found")
   return { mediaType: row.mediaType, bytes: row.bytes }
-}
-
-export async function readSharedPhoto(token: string) {
-  const rows = await getDb()
-    .select({ doc: paperDocs })
-    .from(paperShares)
-    .innerJoin(paperDocs, eq(paperDocs.id, paperShares.docId))
-    .where(eq(paperShares.token, token))
-    .limit(1)
-  const row = rows[0]
-  if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo not found")
-  const fileId = paperPhotoFileId(sharedPhotoRef(row.doc.crdtDocument))
-  if (!fileId) throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo not found")
-  return readOwnedPhoto(parseUserId(row.doc.userId), parseFileId(fileId))
-}
-
-export async function attachPhoto(
-  actor: Actor,
-  docId: PaperId,
-  fileId: FileId | null
-) {
-  await ownedPaper(actor.userId, docId)
-  if (fileId) await requireAvatarFile(actor.userId, fileId)
-  return withContent(actor.userId, docId, async (content) => {
-    const written = await content.edit({
-      origin: "server",
-      target: (current) =>
-        withPhotoRef(current, fileId ? paperPhotoRef(fileId) : null),
-    })
-    return {
-      ...toPaper(written),
-      previousPaper: content.document,
-    }
-  })
-}
-
-export async function readShared(token: string, writer?: NativeWriter) {
-  const rows = await getDb()
-    .select({ doc: paperDocs })
-    .from(paperShares)
-    .innerJoin(paperDocs, eq(paperDocs.id, paperShares.docId))
-    .where(eq(paperShares.token, token))
-    .limit(1)
-  const row = rows[0]
-  if (!row)
-    throw new CommandError(ERROR_CODES.NOT_FOUND, "Share link not found")
-  return toSharedPaper(row.doc, writer)
 }
 
 export function mediaTypeFromImageBytes(bytes: Buffer) {

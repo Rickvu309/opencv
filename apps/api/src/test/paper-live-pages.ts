@@ -1,3 +1,4 @@
+import { RICH_NATIVE_WRITER } from "@workspace/domain"
 import { and, eq } from "drizzle-orm"
 import { expect } from "vitest"
 import { z } from "zod"
@@ -9,6 +10,13 @@ import {
   paperPackageVersions,
 } from "../db/schema.js"
 import { authHeaders, createMigratedTestDb, createTestApp } from "./harness.js"
+
+export function richEditorHeaders(cookie: string) {
+  return {
+    ...authHeaders(cookie),
+    "x-paper-writer": JSON.stringify(RICH_NATIVE_WRITER),
+  }
+}
 
 type Db = Awaited<ReturnType<typeof createMigratedTestDb>>["db"]
 
@@ -60,7 +68,7 @@ export async function expectListIsLivePages(
     .object({ user: z.object({ id: z.string() }) })
     .parse(await session.json()).user.id
   const response = await app.request("/api/paper", {
-    headers: authHeaders(account.cookie),
+    headers: richEditorHeaders(account.cookie),
   })
   expect(response.status).toBe(200)
   const fromList = listed

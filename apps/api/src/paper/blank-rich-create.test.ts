@@ -50,7 +50,7 @@ describe("paper.create format rich", () => {
     })
   }
 
-  it("refuses a rich blank that also asks for a template", async () => {
+  it("refuses a template, since paper.create takes none", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()
     const userId = "user-blank-rich-refused"
@@ -67,7 +67,7 @@ describe("paper.create format rich", () => {
           input: { kind: "cv", format: "rich", templateId: "academic" },
           actor,
         })
-      ).rejects.toThrow(/rich blank document cannot start from a template/)
+      ).rejects.toThrow(/Unrecognized key: "templateId"/)
     })
     await client.close()
   })

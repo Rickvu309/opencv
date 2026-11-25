@@ -64,26 +64,3 @@ function returnsOf(node) {
   walk(node)
   return values
 }
-
-export function detectStalePaperBasis(text) {
-  const source = sourceOf(text, "content-coach.ts")
-  let refuses = false
-  let consulted = false
-  const visit = (node) => {
-    if (ts.isFunctionDeclaration(node) && node.name?.text === "stalePaperBasis")
-      refuses = returnsOf(node).includes("refuse")
-    if (
-      ts.isCallExpression(node) &&
-      ts.isIdentifier(node.expression) &&
-      node.expression.text === "stalePaperBasis"
-    )
-      consulted = true
-    ts.forEachChild(node, visit)
-  }
-  visit(source)
-  return refuses && consulted
-    ? []
-    : [
-        "A Coach Paper approval must refuse a stale basis and leave the bytes unchanged",
-      ]
-}
