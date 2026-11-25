@@ -1,10 +1,5 @@
 import type { ReactElement } from "react"
-import {
-  blankCv,
-  parsePaperId,
-  type PaperPages,
-  type PaperView,
-} from "@workspace/domain"
+import { blankCv, parsePaperId, type PaperView } from "@workspace/domain"
 import { Toaster } from "@workspace/ui/components/sonner"
 import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
 import { render as renderWithClient } from "@/test/render-with-client.tsx"
@@ -37,10 +32,6 @@ export const record: PaperView = {
   sourceFileId: null,
   createdAt: "2020-01-01T00:00:00.000Z",
   updatedAt: "2020-01-01T00:00:00.000Z",
-}
-
-export function pages(count: number): PaperPages {
-  return { docId: record.id, pages: count, pageChoice: "unset" }
 }
 
 export function inputOf<T>(init?: RequestInit) {

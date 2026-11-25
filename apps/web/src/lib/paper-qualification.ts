@@ -21,12 +21,7 @@ export type PaperQualification = {
   signal?: AbortSignal
 }
 
-type QualifiedRead =
-  | "paper.list"
-  | "paper.get"
-  | "paper.shared"
-  | "paper.pageCount"
-  | "paper.document"
+type QualifiedRead = "paper.list" | "paper.get" | "paper.document"
 
 export function paperWriter(options: PaperQualification) {
   return nativeWriterSchema.parse(options.writer ?? NATIVE_WRITER)
@@ -82,16 +77,6 @@ export function qualifiedPaperRead(
   path: string,
   options: PaperQualification
 ): Promise<QueryOutput<"paper.get">>
-export function qualifiedPaperRead(
-  name: "paper.shared",
-  path: string,
-  options: PaperQualification
-): Promise<QueryOutput<"paper.shared">>
-export function qualifiedPaperRead(
-  name: "paper.pageCount",
-  path: string,
-  options: PaperQualification
-): Promise<QueryOutput<"paper.pageCount">>
 export async function qualifiedPaperRead(
   name: "paper.document",
   path: string,
@@ -116,8 +101,6 @@ export async function qualifiedPaperRead(
     rows.forEach((row) => validateBasis(row, writer))
   } else if (name === "paper.get") {
     validateBasis(paperQueries["paper.get"].output.parse(result), writer)
-  } else if (name === "paper.shared") {
-    admitPaper(paperQueries["paper.shared"].output.parse(result).paper, writer)
   }
   options.signal?.throwIfAborted()
   return result

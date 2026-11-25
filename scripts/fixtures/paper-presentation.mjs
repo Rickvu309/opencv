@@ -35,7 +35,7 @@ export const clean = [
   },
   {
     path: "apps/web/src/lib/paper-sync-recovery.ts",
-    text: "const open = identity.provenance.schemaRevision === 2 ? openRichPaperClient : openPaperClient; open(stored, { provenance: identity.provenance }).destroy()",
+    text: 'if (identity.provenance.schemaRevision !== 2) throw new Error("x"); openRichPaperClient(stored, { provenance: identity.provenance }).destroy()',
   },
   {
     path: "packages/paper-crdt/src/native-layout-flow-mount.ts",

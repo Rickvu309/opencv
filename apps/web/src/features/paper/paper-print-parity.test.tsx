@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it } from "vitest"
 import {
   PAPER_TEMPLATE_IDS,
   cvPrintModel,
-  emptyCvDocument,
   paperDocumentSchema,
   type CvDocument,
   type CvPaper,
@@ -17,7 +16,7 @@ import { LetterPrintView } from "./paper-letter-print.tsx"
 import { printLayout } from "./paper-templates.ts"
 
 const v1: CvDocument = {
-  ...emptyCvDocument(),
+  templateId: "internship",
   name: "Lan Nguyen",
   headline: "Product intern",
   contact: {

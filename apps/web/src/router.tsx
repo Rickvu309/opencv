@@ -258,15 +258,6 @@ const paperDocRoute = createRoute({
   ),
 })
 
-const shareRoute = createRoute({
-  getParentRoute: () => rootRoute,
-  path: "/share/$token",
-  component: lazyRouteComponent(
-    () => import("@/routes/paper-share.tsx"),
-    "PaperSharePage"
-  ),
-})
-
 const applyRoute = createRoute({
   getParentRoute: () => productLayoutRoute,
   path: "/apply",
@@ -440,7 +431,6 @@ const routeTree = rootRoute.addChildren([
   signUpRoute,
   consentRoute,
   connectRoute,
-  shareRoute,
   userRoute.addChildren([userMissRoute]),
   legacyAppRoute,
   legacyAppSplatRoute,

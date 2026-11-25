@@ -4,7 +4,6 @@ await Promise.all([
   import("@/routes/paper.tsx"),
   import("@/routes/paper-doc.tsx"),
   import("@/features/paper/rich-page.tsx"),
-  import("@/routes/paper-share.tsx"),
   import("@/routes/apply.tsx"),
   import("@/routes/apply-job.tsx"),
   import("@/routes/coming-soon.tsx"),

@@ -8,25 +8,15 @@ import {
   useRef,
   useReducer,
 } from "react"
-import { useQueryClient } from "@tanstack/react-query"
-import {
-  paperPhotoFileId,
-  parsePaperId,
-  type CvPrintModel,
-  type CvSectionKind,
-  type FileId,
-} from "@workspace/domain"
+import { type CvPrintModel, type CvSectionKind } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
-import { toastWithUndo } from "@workspace/ui/components/sonner"
 import { cn } from "@workspace/ui/lib/utils"
 import { ImagePlus, Plus, User } from "lucide-react"
 
 import { HiddenFilePicker } from "@/components/hidden-file-picker.tsx"
-import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
-import { ignoreRejection } from "@/lib/quiet-rejection.ts"
 import { resolvePhotoSrc } from "@/lib/requests.ts"
 
-import { cvPhotoRejection, getPaper, uploadPaperPhoto } from "../paper-api.ts"
+import { cvPhotoRejection } from "../paper-api.ts"
 import { addEducation, EMPTY_SECTION_CTA } from "./cv-edits.ts"
 import { handleCanvasFieldKeyDown } from "./cv-keyboard.ts"
 import {
@@ -477,138 +467,7 @@ function CvPhotoDisplay({
   )
 }
 
-function CvPhotoUploader({
-  url,
-  name,
-  onChange,
-  docId,
-  shareToken,
-  beforePhoto,
-  afterPhoto,
-  notePhoto,
-}: {
-  url?: string
-  name?: string
-  onChange: (url: string | undefined) => void
-  docId: string
-  shareToken?: string
-  beforePhoto?: CvPhotoFrameValue["beforePhoto"]
-  afterPhoto?: CvPhotoFrameValue["afterPhoto"]
-  notePhoto?: CvPhotoFrameValue["notePhoto"]
-}) {
-  const run = useRunCommand()
-  const queryClient = useQueryClient()
-  const [error, dispatchError] = useReducer(photoErrorReducer, undefined)
-
-  function publish(ref: string | undefined, version: number) {
-    if (notePhoto) notePhoto(ref, version)
-    else onChange(ref)
-  }
-
-  async function undo(activityId: string, fileId?: FileId) {
-    try {
-      await undoActivity(queryClient, activityId)
-      if (afterPhoto) {
-        await afterPhoto()
-        return
-      }
-      const next = await getPaper(docId)
-      const restoredPhoto =
-        next.paper?.kind === "cv" ? next.paper.header?.photo : undefined
-      publish(restoredPhoto, next.contentVersion)
-      if (fileId && paperPhotoFileId(restoredPhoto) !== fileId) {
-        await ignoreRejection(
-          run("paper.deleteFile", { fileId }),
-          "undoAlreadyLandedSoTheSweepRemovesTheRow"
-        )
-      }
-    } catch (caught) {
-      dispatchError({
-        type: "error_shown",
-        message:
-          caught instanceof Error
-            ? caught.message
-            : "Could not undo the photo. Try again.",
-      })
-    }
-  }
-
-  async function onPick(file: File) {
-    const rejection = cvPhotoRejection(file)
-    if (rejection) {
-      dispatchError({ type: "error_shown", message: rejection })
-      return
-    }
-    dispatchError({ type: "error_cleared" })
-    let uploadedId: FileId | undefined
-    try {
-      if (!afterPhoto) await beforePhoto?.()
-      const fileId = await uploadPaperPhoto(file)
-      uploadedId = fileId
-      const saved = await run("paper.attachPhoto", {
-        docId: parsePaperId(docId),
-        fileId,
-      })
-      uploadedId = undefined
-      if (afterPhoto) await afterPhoto()
-      else publish(`file:${fileId}`, saved.contentVersion)
-      const activityId = saved.activityId
-      if (activityId) {
-        toastWithUndo("Photo added", () => {
-          void undo(activityId, fileId)
-        })
-      }
-    } catch (caught) {
-      if (uploadedId) {
-        await ignoreRejection(
-          run("paper.deleteFile", { fileId: uploadedId }),
-          "orphanPhotoDeleteShowsTheAttachError"
-        )
-      }
-      dispatchError({
-        type: "error_shown",
-        message:
-          caught instanceof Error
-            ? caught.message
-            : "Could not add the photo. Try again.",
-      })
-    }
-  }
-
-  return (
-    <PhotoSlot
-      src={resolvePhotoSrc(url, shareToken)}
-      url={url}
-      name={name}
-      error={error}
-      onPick={(file) => void onPick(file)}
-    />
-  )
-}
-
-export function CvPhoto({
-  url,
-  name,
-  onChange,
-}: {
-  url?: string
-  name?: string
-  onChange: (url: string | undefined) => void
-}) {
+export function CvPhoto({ url, name }: { url?: string; name?: string }) {
   const frame = useContext(CvPhotoFrameContext)
-  if (frame.docId) {
-    return (
-      <CvPhotoUploader
-        url={url}
-        name={name}
-        onChange={onChange}
-        docId={frame.docId}
-        shareToken={frame.shareToken}
-        beforePhoto={frame.beforePhoto}
-        afterPhoto={frame.afterPhoto}
-        notePhoto={frame.notePhoto}
-      />
-    )
-  }
   return <CvPhotoDisplay url={url} name={name} shareToken={frame.shareToken} />
 }

@@ -78,9 +78,8 @@ export function detect(text, path) {
     )
   if (
     path === "apps/web/src/lib/paper-sync-recovery.ts" &&
-    (!text.includes("identity.provenance.schemaRevision === 2") ||
-      !text.includes("? openRichPaperClient") ||
-      !text.includes(": openPaperClient") ||
+    (!text.includes("identity.provenance.schemaRevision !== 2") ||
+      !text.includes("openRichPaperClient(stored") ||
       !text.includes("}).destroy()"))
   )
     hits.push(

@@ -1,0 +1,154 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/cv-photo.isolated.test.tsx",
+    "because": "The CV photo uploader and the public share photo are removed with the old block Paper format; the photo still displays from a stored file id.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-api.test.ts",
+    "because": "The page count read is no longer called by the web; it served only the old block Paper format.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-fixtures.test.ts",
+    "because": "Fewer production Paper modules remain after the old sync and share page are deleted, so the scan's lower bound drops; the cv:v1 and proof:v1 ban still runs on every remaining module.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-print-callers.isolated.test.tsx",
+    "because": "The share page that printed once on two Download PDF requests is deleted with Paper sharing.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-share.isolated.test.tsx",
+    "because": "The public share page is deleted; only old block Papers could be shared.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/web/src/lib/contract-client.test.tsx",
+    "because": "paper.unshare is no longer called by the web; the failed-command case now uses a command the web still runs.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/lib/paper-local-replay.isolated.test.ts",
+    "because": "The old block Paper sync and its local journal are deleted; the rich sync keeps its own local recovery tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "apps/web/src/lib/paper-qualification.test.ts",
+    "because": "The qualified share read and the page count route are no longer called; the qualified owner reads keep their tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/lib/paper-sync-forget.test.ts",
+    "because": "The old block Paper sync that forgot records on NOT_FOUND is deleted with that sync.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "apps/web/src/lib/paper-sync-journal.test.ts",
+    "because": "The old block Paper sync journal is deleted with that sync.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "apps/web/src/lib/paper-sync-native.test.ts",
+    "because": "These cases drove the old block Paper sync and its shared legacy records, which are deleted; the rich native sync keeps its tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 24
+  },
+  {
+    "subject": "apps/web/src/lib/paper-sync-stuck.isolated.test.ts",
+    "because": "The Not merged fallback belonged to the old block Paper sync, which is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/lib/paper-sync-tabs.isolated.test.tsx",
+    "because": "Tab identity and orphan adoption belonged to the old block Paper sync, which is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/web/src/lib/paper-sync.test.ts",
+    "because": "openPaperSync, the old block Paper sync, is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 23
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-local-commit.json",
+    "because": "Its guard watched the old block Paper local journal, which is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-local-durable.json",
+    "because": "Its guard watched the old block Paper local durability, which is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-local-journal.json",
+    "because": "Its guard watched the old block Paper local journal, which is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-local-durable.test.mjs",
+    "because": "The old block Paper local durability code it scanned is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "scripts/paper-local-journal.test.mjs",
+    "because": "The old block Paper local journal code it scanned is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
