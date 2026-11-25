@@ -5,6 +5,7 @@ import {
   nativeProvenance,
   sameNativeProvenance,
   type PaperId,
+  type RichPaperDocument,
   type UserId,
 } from "@workspace/domain"
 import {
@@ -16,6 +17,7 @@ import {
   materializeStored,
   stateVectorOf,
   updateSince,
+  writeStoredYDoc,
 } from "@workspace/paper-crdt"
 import { and, asc, eq, gte, gt } from "drizzle-orm"
 
@@ -35,6 +37,7 @@ import {
 
 import { validatedStored, sameDocumentIdentity } from "./content-document.js"
 import { admitDocument } from "./native-admission.js"
+import { readRichPaper } from "./read-paper.js"
 import {
   qualifyRichDocument,
   qualifyRichSnapshot,
@@ -373,6 +376,38 @@ export async function withRichSnapshot<T>(
     const entry = await hydrate(row)
     try {
       return await run(qualifyRichSnapshot({ row, entry, input, document }))
+    } finally {
+      entry.yDoc.destroy()
+    }
+  })
+}
+
+export type RichRewrite<T> = {
+  target: RichPaperDocument
+  change: { origin: "coach" | "revert"; editId: string; touched: string[] }
+  result: (written: PaperRow) => T
+}
+
+export async function rewriteRichContent<T>(
+  userId: UserId,
+  docId: PaperId,
+  plan: (row: PaperRow, document: RichPaperDocument) => RichRewrite<T>
+): Promise<T> {
+  return withLiveTransaction(async (retain) => {
+    const row = await lockedRow(userId, docId)
+    const entry = await hydrate(row)
+    try {
+      const planned = plan(row, readRichPaper(row))
+      const update = writeStoredYDoc(entry.yDoc, planned.target)
+      const written = await commit(row, entry, update, {
+        ...planned.change,
+        basedOn: row.contentVersion,
+      })
+      retain(docId, detached(entry))
+      return planned.result(written)
+    } catch (error) {
+      live.delete(docId)
+      throw error
     } finally {
       entry.yDoc.destroy()
     }
