@@ -56,6 +56,16 @@ type CatalogReversalCall = {
     : never
 }[keyof typeof catalog]
 
+type PairReversal<I, R, In, N extends string> =
+  | ((
+      input: I,
+      result: R
+    ) =>
+      | GuardedPlan<In, N>
+      | (CatalogReversalCall & { expect: ReversalExpect })
+      | IrreversibleCommand)
+  | IrreversibleCommand
+
 type AnyReversalCall<C extends CommandContract> =
   ReversalCall<C> | CatalogReversalCall
 
@@ -103,7 +113,7 @@ type ReversalBinding<I, R, In = unknown, N extends string = string> =
   | IrreversibleCommand
 
 type ActivityBinding<I, R> =
-  ((input: I, result: R, actor: Actor) => ActivityDraft) | SilentCommand
+  ((input: I, result: R, actor: Actor) => ActivityDraft | null) | SilentCommand
 
 function boundReversal<I, R>(
   reversal: ReversalBinding<I, R> | undefined
@@ -228,7 +238,7 @@ export type OperationBinding<
   privateResult?: ZodType<R>
 } & (T["kind"] extends "command"
   ? {
-      reversal: ReversalBinding<
+      reversal: PairReversal<
         import("zod").output<T["input"]>,
         R,
         import("zod").input<T["input"]>,
@@ -454,7 +464,8 @@ export function bindCatalog<B extends Record<string, { operation: Operation }>>(
             reversal:
               | ((...args: never[]) => GuardedPlan | IrreversibleCommand)
               | IrreversibleCommand
-            activity: ((...args: never[]) => ActivityDraft) | SilentCommand
+            activity:
+              ((...args: never[]) => ActivityDraft | null) | SilentCommand
           }
         : { reversal?: never; activity?: never }
     }

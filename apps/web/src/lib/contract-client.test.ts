@@ -157,7 +157,7 @@ it("bridges legacy workspace touches without treating a proposal or failed reque
       )
     )
   )
-  await runContractCommand(queryClient, "job.create", { title: "Legacy" })
+  await runContractCommand(queryClient, "job.move", { stage: "Legacy" })
   expect(
     options.map(
       (option) => queryClient.getQueryState(option.queryKey)?.isInvalidated
@@ -184,7 +184,7 @@ it("bridges legacy workspace touches without treating a proposal or failed reque
   expect(
     await catalog.run(queryClient, "job.create", { value: 2 })
   ).toMatchObject({ pending: true })
-  await runContractCommand(queryClient, "job.create", { title: "Any" })
+  await runContractCommand(queryClient, "job.move", { stage: "Any" })
   expect(invalidate).not.toHaveBeenCalled()
   vi.stubGlobal(
     "fetch",
@@ -242,32 +242,32 @@ it("replays an explicit original command key and keeps generated keys fresh for 
   const idempotencyKey = crypto.randomUUID()
   const original = await runContractCommand(
     queryClient,
-    "job.create",
-    { title: "Original" },
+    "job.move",
+    { stage: "Original" },
     { refresh: false, idempotencyKey }
   )
   const replay = await runContractCommand(
     queryClient,
-    "job.create",
-    { title: "Original" },
+    "job.move",
+    { stage: "Original" },
     { refresh: false, idempotencyKey }
   )
   await runContractCommand(
     queryClient,
-    "job.create",
-    { title: "Changed" },
+    "job.move",
+    { stage: "Changed" },
     { refresh: false }
   )
   await runContractCommand(
     queryClient,
-    "job.create",
-    { title: "Changed again" },
+    "job.move",
+    { stage: "Changed again" },
     { refresh: false }
   )
   expect(replay).toEqual(original)
   expect(bodies[1]).toEqual(bodies[0])
   expect(new Set(bodies.map((body) => body.idempotencyKey)).size).toBe(3)
-  expect(bodies[2]?.input).toEqual({ title: "Changed" })
+  expect(bodies[2]?.input).toEqual({ stage: "Changed" })
   queryClient.clear()
 })
 it("omits even an explicit key for commands whose contract has idempotency none", async () => {

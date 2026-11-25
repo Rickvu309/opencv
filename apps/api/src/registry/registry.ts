@@ -627,14 +627,14 @@ export class Registry extends RegistryEntries {
     return expireTaskApprovals()
   }
 
-  private replayByKey(
+  private async replayByKey(
     userId: string,
     key: string,
     command: string,
     hash: string,
     input: unknown
   ) {
-    return replayKeyedCommand(
+    const replayed = await replayKeyedCommand(
       this.commands,
       (entry, value) => this.reviewedFor(entry, value),
       userId,
@@ -643,6 +643,16 @@ export class Registry extends RegistryEntries {
       hash,
       input
     )
+    if (
+      replayed &&
+      !replayed.pending &&
+      !this.fitsPublicShape(command, replayed.output)
+    )
+      throw new CommandError(
+        ERROR_CODES.CONFLICT,
+        "Idempotency key does not match its command and input"
+      )
+    return replayed
   }
 }
 

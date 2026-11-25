@@ -32,17 +32,22 @@ import { operation as inbox$snooze } from "../operations/inbox/snooze/operation.
 import { operation as inbox$snoozed } from "../operations/inbox/snoozed/operation.js"
 import { operation as inbox$updateDraft } from "../operations/inbox/update-draft/operation.js"
 import { operation as integrations$list } from "../operations/integrations/list/operation.js"
+import { operation as job$addChecklistItem } from "../operations/job/add-checklist-item/operation.js"
 import { operation as job$addNote } from "../operations/job/add-note/operation.js"
 import { operation as job$calendar } from "../operations/job/calendar/operation.js"
+import { operation as job$checklistItem } from "../operations/job/checklist-item/operation.js"
+import { operation as job$create } from "../operations/job/create/operation.js"
 import { operation as job$delete } from "../operations/job/delete/operation.js"
 import { operation as job$get } from "../operations/job/get/operation.js"
 import { operation as job$list } from "../operations/job/list/operation.js"
 import { operation as job$preview } from "../operations/job/preview/operation.js"
 import { operation as job$priorityCounts } from "../operations/job/priority-counts/operation.js"
 import { operation as job$removeChecklistItem } from "../operations/job/remove-checklist-item/operation.js"
+import { operation as job$setChecklistItem } from "../operations/job/set-checklist-item/operation.js"
 import { operation as job$setPriority } from "../operations/job/set-priority/operation.js"
 import { operation as job$star } from "../operations/job/star/operation.js"
 import { operation as job$unlinkPaper } from "../operations/job/unlink-paper/operation.js"
+import { operation as job$update } from "../operations/job/update/operation.js"
 import { operation as notify$request } from "../operations/notify/request/operation.js"
 import { operation as paper$export } from "../operations/paper/export/operation.js"
 import { operation as paper$import } from "../operations/paper/import/operation.js"
@@ -89,17 +94,22 @@ export const catalog = {
   "inbox.snoozed": inbox$snoozed,
   "inbox.updateDraft": inbox$updateDraft,
   "integrations.list": integrations$list,
+  "job.addChecklistItem": job$addChecklistItem,
   "job.addNote": job$addNote,
   "job.calendar": job$calendar,
+  "job.checklistItem": job$checklistItem,
+  "job.create": job$create,
   "job.delete": job$delete,
   "job.get": job$get,
   "job.list": job$list,
   "job.preview": job$preview,
   "job.priorityCounts": job$priorityCounts,
   "job.removeChecklistItem": job$removeChecklistItem,
+  "job.setChecklistItem": job$setChecklistItem,
   "job.setPriority": job$setPriority,
   "job.star": job$star,
   "job.unlinkPaper": job$unlinkPaper,
+  "job.update": job$update,
   "notify.request": notify$request,
   "paper.export": paper$export,
   "paper.import": paper$import,

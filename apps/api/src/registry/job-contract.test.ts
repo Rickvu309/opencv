@@ -31,6 +31,14 @@ const jobQueries = {
 const jobContract = {
   ...jobCommands,
   "job.star": { output: catalog["job.star"].publicResult },
+  "job.create": { output: catalog["job.create"].publicResult },
+  "job.update": { output: catalog["job.update"].publicResult },
+  "job.addChecklistItem": {
+    output: catalog["job.addChecklistItem"].publicResult,
+  },
+  "job.setChecklistItem": {
+    output: catalog["job.setChecklistItem"].publicResult,
+  },
   "job.delete": { output: catalog["job.delete"].publicResult },
   "job.removeChecklistItem": {
     output: catalog["job.removeChecklistItem"].publicResult,
@@ -208,9 +216,7 @@ describe("Job catalog", () => {
           input: { title: "Job proof", company: "Acme" },
           actor,
         })
-        expect(result.touches).toEqual([
-          { ownerId: actor.userId, name: "workspace" },
-        ])
+        expect(result.touches).toEqual([{ ownerId: actor.userId, name: "job" }])
         return z.object({ id: z.string() }).parse(result.output).id
       }
       const jobId = await create(owner)

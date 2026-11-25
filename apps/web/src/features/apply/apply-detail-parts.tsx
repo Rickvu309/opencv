@@ -8,7 +8,12 @@ import {
   Plus,
 } from "lucide-react"
 
-import type { ActivityFeedRow, JobPriority, JobStage } from "@workspace/domain"
+import {
+  catalog,
+  type ActivityFeedRow,
+  type JobPriority,
+  type JobStage,
+} from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -197,7 +202,7 @@ function activityText(row: ActivityFeedRow) {
 
 function ActivityIcon({ row }: { row: ActivityFeedRow }) {
   const className = "size-5 shrink-0 p-[3.5px] text-muted-foreground"
-  if (row.command === "job.create")
+  if (row.command === catalog["job.create"].name)
     return <Plus aria-hidden className={className} />
   if (row.command === "job.move") {
     return row.summary.endsWith("closed") ? (

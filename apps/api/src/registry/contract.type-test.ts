@@ -91,10 +91,10 @@ export function typeProbes(registry: Registry) {
   // @ts-expect-error an expectation that matches no field would never refuse
   const emptyExpectation: Move["reversal"] = () => ({ command: "job.move", input: { jobId: someJobId, stage: "saved" }, expect: { query: "job.get", input: { jobId: someJobId }, matches: {}, skipped: "x" } })
 
-  const pendingChecklist: Bindings<JobContract>["job.setChecklistItem"]["reversal"] =
+  const pendingChecklist: Bindings<JobContract>["job.linkPaper"]["reversal"] =
     () => ({
-      command: "job.setChecklistItem",
-      input: { jobId: someJobId, itemId: uuid, done: true },
+      command: "job.linkPaper",
+      input: { jobId: someJobId, docId: parsePaperId(uuid), kind: "cv" },
     })
 
   // prettier-ignore
