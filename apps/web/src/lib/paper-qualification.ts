@@ -5,6 +5,7 @@ import {
   nativeProvenance,
   nativeAdmission,
   sameNativeProvenance,
+  paperDocumentInfoSchema,
   paperQueries,
   type NativeWriter,
   type PaperView,
@@ -21,7 +22,7 @@ export type PaperQualification = {
   signal?: AbortSignal
 }
 
-type QualifiedRead = "paper.list" | "paper.get" | "paper.document"
+type QualifiedRead = "paper.list" | "paper.read"
 
 export function paperWriter(options: PaperQualification) {
   return nativeWriterSchema.parse(options.writer ?? NATIVE_WRITER)
@@ -72,16 +73,11 @@ export function qualifiedPaperRead(
   path: string,
   options: PaperQualification
 ): Promise<QueryOutput<"paper.list">>
-export function qualifiedPaperRead(
-  name: "paper.get",
-  path: string,
-  options: PaperQualification
-): Promise<QueryOutput<"paper.get">>
 export async function qualifiedPaperRead(
-  name: "paper.document",
+  name: "paper.read",
   path: string,
   options: PaperQualification
-): Promise<QueryOutput<"paper.document">>
+): Promise<ReturnType<typeof paperDocumentInfoSchema.parse>>
 export async function qualifiedPaperRead(
   name: QualifiedRead,
   path: string,
@@ -95,13 +91,13 @@ export async function qualifiedPaperRead(
     signal: options.signal,
   })
   options.signal?.throwIfAborted()
-  const result = paperQueries[name].output.parse(unwrapData(payload))
-  if (name === "paper.list") {
-    const rows = paperQueries["paper.list"].output.parse(result)
-    rows.forEach((row) => validateBasis(row, writer))
-  } else if (name === "paper.get") {
-    validateBasis(paperQueries["paper.get"].output.parse(result), writer)
+  if (name === "paper.read") {
+    const info = paperDocumentInfoSchema.parse(unwrapData(payload))
+    options.signal?.throwIfAborted()
+    return info
   }
+  const rows = paperQueries["paper.list"].output.parse(unwrapData(payload))
+  rows.forEach((row) => validateBasis(row, writer))
   options.signal?.throwIfAborted()
-  return result
+  return rows
 }

@@ -146,7 +146,7 @@ describe("runContractCommand", () => {
       queryKey({ query: "job.get", input: { jobId: JOB } }),
       queryKey({ query: "job.calendar" }),
       queryKey({ query: "paper.list" }),
-      queryKey({ query: "paper.get", input: { docId: "doc-1" } }),
+      queryKey({ query: "paper.read", input: { docId: "doc-1" } }),
       queryKey({ query: "inbox.get", input: { id: "mail-1" } }),
       queryKey({ query: "chat.get", input: { chatId } }),
       jobActivity(queryClient),

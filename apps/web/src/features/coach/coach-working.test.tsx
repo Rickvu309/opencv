@@ -28,7 +28,7 @@ const toolOnly: ChatViewMessage = {
   parts: [
     {
       type: "tool",
-      name: "paper.get",
+      name: "paper.read",
       summary: "Read",
       ok: true,
       toolCallId: "a",

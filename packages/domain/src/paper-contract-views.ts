@@ -96,12 +96,6 @@ const empty = z.object({}).strict()
 const blockIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/)
 
 export const paperQueries = queryContract({
-  "paper.document": queryEntry({
-    input: z
-      .object({ docId: paperIdSchema, writer: nativeWriterSchema.optional() })
-      .strict(),
-    output: paperDocumentInfoSchema,
-  }),
   "paper.list": queryEntry({
     input: z
       .object({
@@ -111,12 +105,6 @@ export const paperQueries = queryContract({
       })
       .strict(),
     output: z.array(paperViewSchema),
-  }),
-  "paper.get": queryEntry({
-    input: z
-      .object({ docId: paperIdSchema, writer: nativeWriterSchema.optional() })
-      .strict(),
-    output: paperViewSchema,
   }),
   "file.get": queryEntry({
     input: z.object({ fileId: fileIdSchema }).strict(),

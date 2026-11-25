@@ -6,13 +6,9 @@ import {
   parsePaperId,
 } from "@workspace/domain"
 import { afterEach, expect, it, vi } from "vitest"
-import {
-  getQualifiedPaper,
-  listPaper,
-  getPaper,
-  paperGetKey,
-  qualifiedPaperGetKey,
-} from "../features/paper/paper-api.ts"
+import { listPaper, paperListKey } from "../features/paper/paper-api.ts"
+import { endpoints } from "./requests.ts"
+import { qualifiedPaperKey, qualifiedPaperRead } from "./paper-qualification.ts"
 
 import {
   coachPaperOptions,
@@ -56,6 +52,14 @@ const view = {
   createdAt: "2026-11-01T00:00:00.000Z",
   updatedAt: "2026-11-01T00:00:00.000Z",
 }
+function listQualified(
+  qualification: Parameters<typeof qualifiedPaperRead>[2]
+) {
+  return qualifiedPaperRead("paper.list", endpoints.paper, qualification)
+}
+function listKey(qualification: Parameters<typeof qualifiedPaperKey>[1]) {
+  return qualifiedPaperKey(paperListKey(), qualification)
+}
 function response(data: unknown) {
   return Response.json({ ok: true, data })
 }
@@ -65,7 +69,6 @@ it("keeps all default reads unqualified", async () => {
   const fetch = vi.fn().mockImplementation(async () => response({}))
   vi.stubGlobal("fetch", fetch)
   await listPaper()
-  await getPaper(id)
   for (const [, init] of fetch.mock.calls)
     expect(init.headers.has("x-paper-writer")).toBe(false)
 })
@@ -78,9 +81,9 @@ it.each([
 ])("refuses missing or mismatched native basis %j", async (nativeBasis) => {
   vi.stubGlobal(
     "fetch",
-    vi.fn().mockResolvedValue(response({ ...view, nativeBasis }))
+    vi.fn().mockResolvedValue(response([{ ...view, nativeBasis }]))
   )
-  await expect(getQualifiedPaper(id, options)).rejects.toThrow()
+  await expect(listQualified(options)).rejects.toThrow()
 })
 
 it("preserves an incompatible writer and propagates refusal without retry", async () => {
@@ -95,9 +98,9 @@ it("preserves an incompatible writer and propagates refusal without retry", asyn
   )
   vi.stubGlobal("fetch", fetch)
   const writer = { ...NATIVE_WRITER, supportedSchemaRevisions: [2] }
-  await expect(
-    getQualifiedPaper(id, { ...options, writer })
-  ).rejects.toMatchObject({ code: "CONFLICT" })
+  await expect(listQualified({ ...options, writer })).rejects.toMatchObject({
+    code: "CONFLICT",
+  })
   expect(
     JSON.parse(fetch.mock.calls[0]![1].headers.get("x-paper-writer"))
   ).toEqual(writer)
@@ -106,20 +109,20 @@ it("preserves an incompatible writer and propagates refusal without retry", asyn
 
 it("scopes qualified keys without losing command invalidation prefixes", async () => {
   const client = new QueryClient()
-  const key = qualifiedPaperGetKey(id, options)
-  expect(key.slice(0, 2)).toEqual(paperGetKey(id))
+  const key = listKey(options)
+  expect(key.slice(0, 1)).toEqual(paperListKey())
   for (const other of [
     { ...options, ownerId: "other" },
     { ...options, sessionId: "new" },
     { ...options, writer: { ...NATIVE_WRITER, capabilities: [] } },
   ])
-    expect(qualifiedPaperGetKey(id, other)).not.toEqual(key)
-  expect(qualifiedPaperGetKey(id, { ...options })).toEqual(key)
-  client.setQueryData(key, view)
-  client.setQueryData(paperGetKey(id), { legacy: true })
-  await client.invalidateQueries({ queryKey: paperGetKey(id) })
+    expect(listKey(other)).not.toEqual(key)
+  expect(listKey({ ...options })).toEqual(key)
+  client.setQueryData(key, [view])
+  client.setQueryData(paperListKey(), { legacy: true })
+  await client.invalidateQueries({ queryKey: paperListKey() })
   expect(client.getQueryState(key)?.isInvalidated).toBe(true)
-  expect(client.getQueryData(paperGetKey(id))).toEqual({ legacy: true })
+  expect(client.getQueryData(paperListKey())).toEqual({ legacy: true })
   client.clear()
 })
 
@@ -133,12 +136,12 @@ it("discards cancelled late replies even when fetch ignores abort", async () => 
   )
   vi.stubGlobal("fetch", fetch)
   const controller = new AbortController()
-  const pending = getQualifiedPaper(id, {
+  const pending = listQualified({
     ...options,
     signal: controller.signal,
   })
   controller.abort()
-  complete?.(response(view))
+  complete?.(response([view]))
   await expect(pending).rejects.toMatchObject({ name: "AbortError" })
   expect(fetch.mock.calls[0]![1].signal).toBe(controller.signal)
 })
@@ -158,24 +161,24 @@ it("cancellation cannot populate the next session cache", async () => {
             complete = resolve
           })
       )
-      .mockResolvedValue(response(view))
+      .mockResolvedValue(response([view]))
   )
-  const oldKey = qualifiedPaperGetKey(id, options)
+  const oldKey = listKey(options)
   const pending = client
     .fetchQuery({
       queryKey: oldKey,
-      queryFn: ({ signal }) => getQualifiedPaper(id, { ...options, signal }),
+      queryFn: ({ signal }) => listQualified({ ...options, signal }),
     })
     .catch(() => undefined)
   await client.cancelQueries({ queryKey: oldKey })
   const next = { ...options, sessionId: "next" }
   await client.fetchQuery({
-    queryKey: qualifiedPaperGetKey(id, next),
-    queryFn: () => getQualifiedPaper(id, next),
+    queryKey: listKey(next),
+    queryFn: () => listQualified(next),
   })
-  complete?.(response({ ...view, name: "Old session" }))
+  complete?.(response([{ ...view, name: "Old session" }]))
   await pending
-  expect(client.getQueryData(qualifiedPaperGetKey(id, next))).toEqual(view)
+  expect(client.getQueryData(listKey(next))).toEqual([view])
   expect(client.getQueryData(oldKey)).toBeUndefined()
   client.clear()
 })

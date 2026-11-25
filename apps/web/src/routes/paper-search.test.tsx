@@ -9,8 +9,7 @@ import { afterEach, describe, expect, it } from "vitest"
 
 import { renderApp } from "@/test/render-app.tsx"
 
-const OLDER_FORMAT =
-  "This Paper was saved in an older format that can no longer be opened."
+const OLDER_FORMAT = "Document not found."
 
 const records = [
   { kind: "cv", name: "PM track CV", query: "PM track" },

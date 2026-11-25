@@ -1,0 +1,106 @@
+[
+  {
+    "subject": "apps/api/src/coach/native-context.test.ts",
+    "because": "The Coach finds a Paper through paper.list and the Word read instead of paper.get; the fakes now answer paper.list, and every refusal case is unchanged, including the missing native basis.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/api/src/one-door.test.ts",
+    "because": "GET /api/paper/:id is deleted with paper.get, so it leaves the waiting-route list and the list cap drops from 6 to 5.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/content-rich-http.test.ts",
+    "because": "The old GET /api/paper/:id read is deleted with paper.get; the refused sync before it still proves nothing is written.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/content-rich.test.ts",
+    "because": "paper.get is deleted; the case still proves a refused rich sync writes nothing and records no activity.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/package-list.test.ts",
+    "because": "paper.get is deleted; the owner reads a Word page's identity through paper.read with view info, and the Coach reads its text through paper.outline, which the case already checks.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/api/src/paper/package-proposal.test.ts",
+    "because": "paper.get is deleted, so its not-found check for a person reading a Word page has no subject; the Coach grounding checks stay.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/word-card-actions.test.ts",
+    "because": "paper.get is deleted; the Coach's reads of a deleted and a live Word page now go through paper.outline with the same not-found and text checks.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/registry/behavior.test.ts",
+    "because": "paper.get is no longer a Coach tool, so it leaves the expected Coach tool list.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/registry/invalidation.formal.test.ts",
+    "because": "paper.get and paper.document are gone; their snapshots move to paper.read with view info, and the Coach document read half of the page-write case has no subject left.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-progress.test.ts",
+    "because": "The progress fold examples name paper.read, which carries the same Read your Paper label, instead of the removed paper.get.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/lib/paper-qualification.test.ts",
+    "because": "The qualified paper.get read is deleted; the basis, writer, key and cancellation cases now run against the qualified paper.list read with the same expectations.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/routes/paper-doc-creators.isolated.test.tsx",
+    "because": "Older-format Papers can no longer be created after B-2, so the two older-document creator cases and the older-format page check are removed; every Word creator case stays.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/routes/paper-doc-open.isolated.test.tsx",
+    "because": "The older-format page is deleted as unreachable after B-2; the info-read refresh, Word-page and not-found cases stay.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  }
+]

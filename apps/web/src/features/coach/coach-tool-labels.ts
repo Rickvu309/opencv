@@ -128,7 +128,6 @@ const TOOL_COPY = {
   "paper.delete": { label: "Delete this Paper" },
   "paper.deleteFile": { label: "Remove this file" },
   "paper.duplicate": { label: "Duplicate this Paper" },
-  "paper.document": { label: "Open your Paper", read: "Opened your Paper" },
   "paper.edit": { label: "Edit your Paper" },
   [catalog["paper.export"].name]: { label: "Export your Paper" },
   [catalog["paper.import"].name]: { label: "Import your Paper" },
@@ -136,7 +135,6 @@ const TOOL_COPY = {
     label: "Look at your Paper files",
     read: "Looked at your Paper files",
   },
-  "paper.get": { label: "Read your Paper", read: "Read your Paper" },
   "paper.list": { label: "Look at your Paper", read: "Looked at your Paper" },
   "paper.outline": {
     label: "Read your Paper outline",

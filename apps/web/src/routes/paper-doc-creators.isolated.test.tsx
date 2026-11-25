@@ -14,9 +14,6 @@ import {
   type Stored,
 } from "@/test/paper-doc-server.ts"
 
-const OLDER_FORMAT =
-  "This Paper was saved in an older format that can no longer be opened."
-
 const route = vi.hoisted(() => ({ pathname: "/paper" }))
 
 vi.mock("@tanstack/react-router", () => ({
@@ -44,7 +41,6 @@ type Creator = {
 }
 
 const word = "word" as const
-const older = "older" as const
 
 function file(name: string, type: string) {
   return new File(["Imported words"], name, { type })
@@ -138,25 +134,6 @@ const CREATORS: Record<string, Creator> = {
         })
       ),
   },
-  "Older document": {
-    format: older,
-    make: async (_server, client) =>
-      idOf(
-        await runContractCommand(client, "paper.create", {
-          kind: "cv",
-          name: "Older CV",
-        })
-      ),
-  },
-  "Duplicate an older document": {
-    format: older,
-    make: async (server, client) =>
-      idOf(
-        await runContractCommand(client, "paper.duplicate", {
-          docId: server.add("older").id as never,
-        })
-      ),
-  },
   "The person's own agent, through the API": {
     format: word,
     make: async (server) => server.add("word").id,
@@ -198,12 +175,9 @@ const failed = (server: Server) =>
   server.exchanges.filter((exchange) => exchange.status >= 400)
 
 async function expectOpened(server: Server, format: Format, docId: string) {
-  if (format === "word") {
-    expect(await screen.findByRole("article", { name: "Page" })).toBeVisible()
-  } else {
-    expect(await screen.findByText(OLDER_FORMAT)).toBeVisible()
-    expect(docId).not.toBe("")
-  }
+  expect(format).toBe("word")
+  expect(docId).not.toBe("")
+  expect(await screen.findByRole("article", { name: "Page" })).toBeVisible()
   expect(screen.queryByText("Document not found.")).toBeNull()
   expect(screen.queryByText(/Could not load documents/)).toBeNull()
   expect(failed(server)).toEqual([])

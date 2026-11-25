@@ -3,22 +3,18 @@ import {
   canonicalPaper,
   parsePaperId,
   nativeSyncOutputSchema,
-  sameNativeProvenance,
   type CommandInput,
   type CommandOutput,
   type Commands,
   type StoredPaperDocument,
 } from "@workspace/domain"
 import {
-  emptyUpdate,
   recoverRichPaperClient,
   type PaperClient,
   type Stored,
 } from "@workspace/paper-crdt"
 import { ApiError } from "@/lib/api-error.ts"
 import { runContractCommand } from "@/lib/contract-client.ts"
-import { qualifiedPaperRead } from "@/lib/paper-qualification.ts"
-import { endpoints } from "@/lib/requests.ts"
 import type { SyncStatus } from "@/lib/paper-sync-status.ts"
 import { fromBase64, toBase64 } from "@/lib/paper-sync-bytes.ts"
 import {
@@ -53,7 +49,7 @@ export type NativeSyncTransport = (
 export type NativeSessionOptions = {
   readonly identity: NativeSyncIdentity
   readonly currentIdentity: () => unknown
-  readonly readAdmitted?: (identity: NativeSyncIdentity) => Promise<Stored>
+  readonly readAdmitted: (identity: NativeSyncIdentity) => Promise<Stored>
   readonly queryClient: QueryClient
   readonly journal: Storage
   readonly store?: SyncStore
@@ -61,11 +57,7 @@ export type NativeSessionOptions = {
   readonly run?: NativeSyncTransport
 }
 
-export function openRichNativePaperSync(
-  options: NativeSessionOptions & {
-    readonly readAdmitted: (identity: NativeSyncIdentity) => Promise<Stored>
-  }
-) {
+export function openRichNativePaperSync(options: NativeSessionOptions) {
   return openSession(options, (admitted, states, identity) =>
     recoverRichPaperClient(admitted, states, identity.provenance)
   )
@@ -316,57 +308,7 @@ function openSession<Document extends StoredPaperDocument>(
       const journals = scanNativeJournals(options.journal, identity).filter(
         (entry) => entry.tabId === tabId || candidates.has(entry.tabId)
       )
-      const readAdmitted = async () => {
-        if (options.readAdmitted) return options.readAdmitted(identity)
-        const view = await qualifiedPaperRead(
-          "paper.get",
-          endpoints.paperDoc(identity.docId),
-          {
-            ownerId: identity.ownerId,
-            sessionId: identity.sessionId,
-            writer: identity.writer,
-            signal: cancellation.signal,
-          }
-        )
-        if (!active()) throw new Error("Native read session changed")
-        if (
-          view.id !== identity.docId ||
-          view.paper.version !== 4 ||
-          !sameNativeProvenance(
-            view.nativeBasis?.provenance,
-            identity.provenance
-          )
-        )
-          throw new Error("Native recovery read does not match its identity")
-        const reply = nativeSyncOutputSchema.parse(
-          await command(
-            options.queryClient,
-            "paper.nativeSync",
-            {
-              docId: identity.docId,
-              writer: identity.writer,
-              provenance: identity.provenance,
-              epoch: 0,
-              update: "",
-              stateVector: "",
-            },
-            { refresh: false, signal: cancellation.signal }
-          )
-        )
-        if (
-          !active() ||
-          reply.stale ||
-          !sameNativeProvenance(reply.provenance, identity.provenance)
-        )
-          throw new Error("Native bootstrap refused")
-        return {
-          epoch: reply.epoch,
-          revision: reply.revision,
-          provenance: reply.provenance,
-          server: fromBase64(reply.update),
-          pending: emptyUpdate(),
-        }
-      }
+      const readAdmitted = () => options.readAdmitted(identity)
       const admitted = validateNativeStored(identity, await readAdmitted())
       if (!active()) return
       for (const stored of [

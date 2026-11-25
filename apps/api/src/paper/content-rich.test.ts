@@ -166,13 +166,6 @@ describe("rich canonical Paper database admission", () => {
           provenance: undefined,
         })
       ).rejects.toThrow()
-      await expect(
-        store.registry.read(
-          "paper.get",
-          { docId, writer: RICH_NATIVE_WRITER },
-          store.actor
-        )
-      ).rejects.toThrow("rich Paper editor")
       expect(await snapshot(docId)).toEqual(before)
       expect(await getDb().select().from(activity)).toEqual(activityBefore)
       client.ydoc.destroy()

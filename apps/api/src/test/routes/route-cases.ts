@@ -281,7 +281,6 @@ export const ROUTE_CASES: readonly RouteCase[] = [
   get("/api/paper/files/:id/bytes", uploadedFile),
   get("/api/paper/:id/document", olderDoc),
   nativeWordRouteCase,
-  get("/api/paper/:id", olderDoc),
   get("/api/inbox/connect"),
   get("/api/inbox/callback"),
   postForm("/api/account/photo", () => pngUpload),

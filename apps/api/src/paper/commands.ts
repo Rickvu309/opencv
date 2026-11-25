@@ -13,12 +13,10 @@ import { registerCanvasCommit } from "./package-canvas.js"
 import { registerPaperStart } from "./package-start.js"
 import { registerWordPackageEdit } from "./package-edit.js"
 import { registerDuplicate } from "./card-action-commands.js"
-import { missingDocument, ownedPackagePaper } from "./package-list.js"
 import { oldEditorUndoReasons } from "./undo-guard.js"
 import { syncContent } from "./content-store.js"
 import { readOutline } from "./outline.js"
-import { readPaperDocumentInfo } from "./document-info.js"
-import { coachPaperList, coachWordPageWithText } from "./coach-word-pages.js"
+import { coachPaperList } from "./coach-word-pages.js"
 import {
   createPaper,
   deleteFile,
@@ -150,15 +148,6 @@ export function registerPaper(registry: Registry) {
     return ownedPaper(actor.userId, input.docId)
   })
 
-  registry.addQuery(
-    tableQuery("paper.document", {
-      description: "Read the document identity and the editor it requires.",
-      coach: false,
-      step: () => "Read document identity",
-      read: (input, actor) =>
-        readPaperDocumentInfo(actor.userId, input.docId, input.writer),
-    })
-  )
   const paperList = tableQuery("paper.list", {
     description:
       "List documents. A Word page is listed without a document body: read its text with paper_outline.",
@@ -174,26 +163,6 @@ export function registerPaper(registry: Registry) {
       return actor.type === "coach"
         ? coachPaperList(actor.userId, views)
         : views
-    },
-  })
-  const paperGet = tableQuery("paper.get", {
-    description:
-      "Read one document. For a Word page this returns its saved text outline as content, not a document body; use paper_outline for line handles and the rest of a long page.",
-    coach: true,
-    step: (input) => `Read document ${input.docId}`,
-    read: async (input, actor) => ownedPaper(actor.userId, input.docId),
-  })
-  registry.addQuery({
-    ...paperGet,
-    read: async (input, actor) => {
-      try {
-        return await paperGet.read(input, actor)
-      } catch (error) {
-        if (actor.type !== "coach" || !missingDocument(error)) throw error
-        const page = await ownedPackagePaper(actor.userId, input.docId)
-        if (!page) throw error
-        return coachWordPageWithText(actor.userId, page)
-      }
     },
   })
   registry.addQuery(
