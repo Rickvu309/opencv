@@ -38,5 +38,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 6
+  },
+  {
+    "subject": "apps/web/src/lib/contract-client.test.tsx",
+    "because": "paper.unshare is no longer called by the web; the failed-command case now uses a command the web still runs.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
