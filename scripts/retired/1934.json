@@ -30,5 +30,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "scripts/test-class-assertions.ratchet.json",
+    "because": "eight tests are renamed *.isolated.test.tsx, so their ratchet entries move to the new names with the same counts; no count rises",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
   }
 ]
