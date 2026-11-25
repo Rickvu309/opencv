@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/paper/page-creators.test.ts",
+    "because": "paper.restoreDeleted is renamed paper.recover; the trash-restore page creators now run paper.recover with the same checks.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  }
+]
