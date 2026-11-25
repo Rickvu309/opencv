@@ -494,7 +494,7 @@ describe("catalog kernel", () => {
       expect(legacy.status).toBe(200)
       expect(await legacy.json()).toMatchObject({
         data: { title: "Legacy" },
-        meta: { touches: [{ ownerId, name: "workspace" }] },
+        meta: { touches: [{ ownerId, name: "job" }] },
       })
       expect(() => bindOperation(registry, binding)).toThrow(
         "Duplicate registry entry"

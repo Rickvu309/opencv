@@ -30,6 +30,22 @@ function onJob(jobId: JobId, itemId: string) {
   return and(eq(jobChecklist.id, itemId), eq(jobChecklist.jobId, jobId))
 }
 
+export async function checklistItemOf(
+  actor: Actor,
+  jobId: JobId,
+  itemId: string
+) {
+  await ownedJob(actor.userId, jobId)
+  const [item] = await getDb()
+    .select()
+    .from(jobChecklist)
+    .where(onJob(jobId, itemId))
+    .limit(1)
+  if (!item)
+    throw new CommandError(ERROR_CODES.NOT_FOUND, "Checklist item not found")
+  return { id: item.id, label: item.label, done: item.done }
+}
+
 export async function addChecklistItem(
   actor: Actor,
   jobId: JobId,

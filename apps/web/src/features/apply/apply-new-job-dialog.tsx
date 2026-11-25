@@ -1,4 +1,5 @@
 import { useId, useReducer, useRef } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
 import {
   jobCreateInputSchema,
@@ -26,7 +27,7 @@ import { Kbd } from "@workspace/ui/components/kbd"
 import { Textarea } from "@workspace/ui/components/textarea"
 
 import { ApiError } from "@/lib/api-error.ts"
-import { useRunCommand } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 
 import { previewJob, useApplyPickerCards } from "./apply-api.ts"
 import { ApplyColumnAnchor } from "./apply-column-anchor.tsx"
@@ -76,7 +77,7 @@ export function NewJobDialog({
 }) {
   const dateErrorId = useId()
   const navigate = useNavigate()
-  const run = useRunCommand()
+  const queryClient = useQueryClient()
   const { cards } = useApplyPickerCards()
   const titleRef = useRef<HTMLInputElement>(null)
   const companyRef = useRef<HTMLInputElement>(null)
@@ -189,7 +190,12 @@ export function NewJobDialog({
     }
     dispatch({ type: "save_started" })
     try {
-      const created = await run("job.create", parsed.data)
+      const created = await catalogClient.run(
+        queryClient,
+        "job.create",
+        parsed.data
+      )
+      if ("pending" in created) throw new Error("The Job was not saved")
       if (typeof window !== "undefined") {
         window.dispatchEvent(
           new CustomEvent("opencv:job-created", { detail: { id: created.id } })

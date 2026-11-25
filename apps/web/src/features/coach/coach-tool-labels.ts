@@ -76,13 +76,19 @@ const TOOL_COPY = {
     label: "Look at your integrations",
     read: "Looked at your integrations",
   },
-  "job.addChecklistItem": { label: "Add a Job checklist item" },
+  [catalog["job.addChecklistItem"].name]: {
+    label: "Add a Job checklist item",
+  },
+  [catalog["job.checklistItem"].name]: {
+    label: "Read a Job checklist item",
+    read: "Read a Job checklist item",
+  },
   [catalog["job.addNote"].name]: { label: "Add a Job note" },
   [catalog["job.calendar"].name]: {
     label: "Look at your Job events",
     read: "Looked at your Job events",
   },
-  "job.create": { label: "Add a Job" },
+  [catalog["job.create"].name]: { label: "Add a Job" },
   [catalog["job.delete"].name]: { label: "Delete this Job" },
   [catalog["job.get"].name]: { label: "Read this Job", read: "Read this Job" },
   "job.linkPaper": { label: "Link Paper to this Job" },
@@ -98,10 +104,12 @@ const TOOL_COPY = {
   [catalog["job.removeChecklistItem"].name]: {
     label: "Remove a Job checklist item",
   },
-  "job.setChecklistItem": { label: "Update a Job checklist item" },
+  [catalog["job.setChecklistItem"].name]: {
+    label: "Update a Job checklist item",
+  },
   [catalog["job.star"].name]: { label: "Update this Job's star" },
   [catalog["job.unlinkPaper"].name]: { label: "Unlink Paper from this Job" },
-  "job.update": { label: "Update this Job" },
+  [catalog["job.update"].name]: { label: "Update this Job" },
   [catalog["job.priorityCounts"].name]: {
     label: "Look at your Job priorities",
     read: "Looked at your Job priorities",

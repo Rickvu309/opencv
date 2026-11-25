@@ -1,9 +1,11 @@
 import { useId, useReducer, useRef, type ReactNode } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { Calendar, Flag, MapPin, UserPlus } from "lucide-react"
 
 import {
   jobPatchSchema,
   type JobDetail,
+  type JobPatch,
   type JobPriority,
   type JobStage,
 } from "@workspace/domain"
@@ -23,7 +25,7 @@ import {
 import { StageIcon } from "@workspace/ui/components/stage-icon"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { useRunCommand } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 
 import { railStageLabel } from "./apply-detail-labels.ts"
 import {
@@ -311,13 +313,13 @@ export function JobRail({
   onPriority: (priority: JobPriority) => void
   className?: string
 }) {
-  const run = useRunCommand()
+  const queryClient = useQueryClient()
   const zone = useChosenTimeZone()
 
-  function save(
-    patch: Parameters<typeof run<"job.update">>[1]["patch"]
-  ): Promise<void> {
-    return run("job.update", { jobId: job.id, patch }).then(() => undefined)
+  function save(patch: JobPatch): Promise<void> {
+    return catalogClient
+      .run(queryClient, "job.update", { jobId: job.id, patch })
+      .then(() => undefined)
   }
 
   const location = job.location ?? ""

@@ -34,17 +34,22 @@ import { implementation as inbox$snooze } from "../inbox/operations/snooze/serve
 import { implementation as inbox$snoozed } from "../inbox/operations/snoozed/server.js"
 import { implementation as inbox$updateDraft } from "../inbox/operations/update-draft/server.js"
 import { implementation as integrations$list } from "../account/operations/integrations/list/server.js"
+import { implementation as job$addChecklistItem } from "../job/operations/add-checklist-item/server.js"
 import { implementation as job$addNote } from "../job/operations/add-note/server.js"
 import { implementation as job$calendar } from "../job/operations/calendar/server.js"
+import { implementation as job$checklistItem } from "../job/operations/checklist-item/server.js"
+import { implementation as job$create } from "../job/operations/create/server.js"
 import { implementation as job$delete } from "../job/operations/delete/server.js"
 import { implementation as job$get } from "../job/operations/get/server.js"
 import { implementation as job$list } from "../job/operations/list/server.js"
 import { implementation as job$preview } from "../job/operations/preview/server.js"
 import { implementation as job$priorityCounts } from "../job/operations/priority-counts/server.js"
 import { implementation as job$removeChecklistItem } from "../job/operations/remove-checklist-item/server.js"
+import { implementation as job$setChecklistItem } from "../job/operations/set-checklist-item/server.js"
 import { implementation as job$setPriority } from "../job/operations/set-priority/server.js"
 import { implementation as job$star } from "../job/operations/star/server.js"
 import { implementation as job$unlinkPaper } from "../job/operations/unlink-paper/server.js"
+import { implementation as job$update } from "../job/operations/update/server.js"
 import { implementation as notify$request } from "../account/operations/notify/request/server.js"
 import { implementation as paper$export } from "../paper/operations/export/server.js"
 import { implementation as paper$import } from "../paper/operations/import/server.js"
@@ -91,17 +96,22 @@ export const implementations = {
   "inbox.snoozed": inbox$snoozed,
   "inbox.updateDraft": inbox$updateDraft,
   "integrations.list": integrations$list,
+  "job.addChecklistItem": job$addChecklistItem,
   "job.addNote": job$addNote,
   "job.calendar": job$calendar,
+  "job.checklistItem": job$checklistItem,
+  "job.create": job$create,
   "job.delete": job$delete,
   "job.get": job$get,
   "job.list": job$list,
   "job.preview": job$preview,
   "job.priorityCounts": job$priorityCounts,
   "job.removeChecklistItem": job$removeChecklistItem,
+  "job.setChecklistItem": job$setChecklistItem,
   "job.setPriority": job$setPriority,
   "job.star": job$star,
   "job.unlinkPaper": job$unlinkPaper,
+  "job.update": job$update,
   "notify.request": notify$request,
   "paper.export": paper$export,
   "paper.import": paper$import,

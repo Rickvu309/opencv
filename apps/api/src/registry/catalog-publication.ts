@@ -16,6 +16,11 @@ export class CatalogPublication {
     return operation ? operation.publicResult.parse(output) : output
   }
 
+  fitsPublicShape(name: string, output: unknown) {
+    const operation = this.operations.get(name)
+    return !operation || operation.publicResult.safeParse(output).success
+  }
+
   isCatalogOperation(name: string) {
     return this.operations.has(name)
   }

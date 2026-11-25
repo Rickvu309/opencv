@@ -22,7 +22,7 @@ import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { reportRejected } from "@/lib/command-failure.ts"
-import { catalogClient, useRunCommand } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 
 import {
   ActivityItem,
@@ -157,7 +157,7 @@ function prepReducer(state: PrepState, action: PrepAction): PrepState {
 }
 
 function InterviewPrep({ job }: { job: JobDetail }) {
-  const run = useRunCommand()
+  const queryClient = useQueryClient()
   const [{ open, adding, step, message }, dispatch] = useReducer(
     prepReducer,
     PREP_START
@@ -218,11 +218,13 @@ function InterviewPrep({ job }: { job: JobDetail }) {
             key={item.id}
             item={item}
             onToggle={() =>
-              void run("job.setChecklistItem", {
-                jobId: job.id,
-                itemId: item.id,
-                done: !item.done,
-              }).catch(reportRejected("update this prep step"))
+              void catalogClient
+                .run(queryClient, "job.setChecklistItem", {
+                  jobId: job.id,
+                  itemId: item.id,
+                  done: !item.done,
+                })
+                .catch(reportRejected("update this prep step"))
             }
           />
         ))}
@@ -249,7 +251,8 @@ function InterviewPrep({ job }: { job: JobDetail }) {
                 return
               }
               dispatch({ type: "message_cleared" })
-              void run("job.addChecklistItem", parsed.data)
+              void catalogClient
+                .run(queryClient, "job.addChecklistItem", parsed.data)
                 .then(() => dispatch({ type: "step_added" }))
                 .catch(() =>
                   dispatch({
@@ -464,8 +467,8 @@ function NoteComposer({ jobId }: { jobId: JobId }) {
 
 const SHOWN_ELSEWHERE: ReadonlySet<string> = new Set<string>([
   catalog["job.star"].name,
-  "job.addChecklistItem",
-  "job.setChecklistItem",
+  catalog["job.addChecklistItem"].name,
+  catalog["job.setChecklistItem"].name,
 ])
 
 export function JobDocument({
