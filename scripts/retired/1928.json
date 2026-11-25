@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 3
+  },
+  {
+    "subject": "apps/api/src/scenarios/coach.scenario.test.ts",
+    "because": "the scenario reads the Chat list and one Chat through the read door, since the older GET routes are deleted; the owner-only and not-found checks are unchanged",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
   }
 ]
