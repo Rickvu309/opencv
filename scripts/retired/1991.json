@@ -1,0 +1,18 @@
+[
+  {
+    "subject": "scripts/guard-ledger/coach-block-paper.json",
+    "because": "paper-contract.ts moved into the Paper pack folder; the historic path at the introducing commit is unchanged and the row now names the file at HEAD in historic.fixed, so the same detector still proves the same mistake.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-coach-approval.json",
+    "because": "paper-contract.ts moved into the Paper pack folder; the historic path at the introducing commit is unchanged and the row now names the file at HEAD in historic.fixed, so the same detector still proves the same mistake.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
