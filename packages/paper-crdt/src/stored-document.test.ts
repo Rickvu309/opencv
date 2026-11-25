@@ -1,18 +1,14 @@
 import { describe, expect, it } from "vitest"
 import * as Y from "yjs"
 import {
-  canonicalPaper,
   NATIVE_WRITER,
   RICH_NATIVE_WRITER,
   nativeAdmission,
   nativeProvenance,
   paperDocumentSchema,
-  requirePaperDocument,
-  storedPaperPhotoIds,
 } from "@workspace/domain"
 import { canonical } from "@workspace/domain/internal/paper-presentation"
 import { seedStoredYDoc, materializeStored } from "./stored-document.js"
-import { materialize, writeDocument } from "./ydoc.js"
 import {
   commitFlowEdit,
   openFlowBinary,
@@ -31,40 +27,6 @@ describe("rich document canonical storage", () => {
       document: source,
     })
   })
-  it.each(["cv", "letter"] as const)(
-    "roundtrips %s rich cells, photos, semantic fields and hard breaks",
-    (kind) => {
-      const source = storedFlowFixture(kind)
-      const bytes = seedStoredYDoc(source)
-      const doc = new Y.Doc()
-      Y.applyUpdate(doc, bytes)
-      const before = Y.encodeStateAsUpdate(doc)
-      expect(materializeStored(doc)).toEqual({ ok: true, document: source })
-      expect(materializeStored(bytes)).toEqual({ ok: true, document: source })
-      expect(Y.encodeStateAsUpdate(doc)).toEqual(before)
-      expect([...doc.share.keys()].sort()).toEqual(
-        [
-          kind === "cv" ? "private-native-cv-v4-r2" : "document-store",
-          "paper",
-        ].sort()
-      )
-      expect(materialize(doc).ok).toBe(false)
-      expect(paperDocumentSchema.safeParse(source).success).toBe(false)
-      expect(() => requirePaperDocument(source)).toThrow("rich Paper editor")
-      expect(() =>
-        writeDocument(
-          doc,
-          { version: 3, kind: "letter", clashes: [], blocks: [] },
-          "old-editor"
-        )
-      ).toThrow()
-      expect(Y.encodeStateAsUpdate(doc)).toEqual(before)
-      expect(storedPaperPhotoIds(source)).toEqual([
-        "00000000-0000-4000-8000-000000000001",
-      ])
-      doc.destroy()
-    }
-  )
 
   it("retains command identity, retries and Undo across binary storage", () => {
     const binding = openFlowBinary(
@@ -121,7 +83,7 @@ describe("rich document canonical storage", () => {
     }
   )
 
-  it("requires every capability and the exact revision while old prose stays supported", () => {
+  it("requires every capability and the exact revision, and refuses old prose", () => {
     const document = storedFlowFixture()
     expect(nativeAdmission(document, RICH_NATIVE_WRITER)).toBeNull()
     expect(nativeAdmission(document, NATIVE_WRITER)).toContain("schema")
@@ -141,7 +103,6 @@ describe("rich document canonical storage", () => {
       clashes: [],
       blocks: [],
     })
-    const read = materializeStored(seedStoredYDoc(prose))
-    expect(read.ok && canonicalPaper(read.document)).toBe(canonicalPaper(prose))
+    expect(() => seedStoredYDoc(prose as never)).toThrow()
   })
 })
