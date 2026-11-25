@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/registry/private-output-keys.test.ts",
+    "because": "job.move is now a pair whose public result is declared, so no older command output carries fromStage; the scan's sanity check now uses previousName, which the older Paper outputs still carry",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
