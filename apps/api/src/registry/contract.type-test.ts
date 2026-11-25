@@ -3,7 +3,6 @@ import {
   commands,
   catalog,
   type ContractCommandName,
-  type InboxContract,
   jobContract,
   parseJobId,
   parsePaperId,
