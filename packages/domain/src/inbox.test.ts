@@ -4,7 +4,7 @@ import { dirname, join } from "node:path"
 import { describe, it } from "node:test"
 import { fileURLToPath } from "node:url"
 
-import { loadInboxFixture } from "./inbox.ts"
+import { loadInboxFixture } from "./inbox/index.ts"
 
 const fixturePath = join(
   dirname(fileURLToPath(import.meta.url)),
