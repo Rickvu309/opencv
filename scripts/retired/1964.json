@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/coach/native-context.test.ts",
+    "because": "The Coach finds a Paper through paper.list and the Word read instead of paper.get; the fakes now answer paper.list, and every refusal case is unchanged, including the missing native basis.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  }
+]
