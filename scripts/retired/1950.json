@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/test/recorded-shards.test.ts",
+    "because": "the recorded-seconds shard split is reverted because it did not shorten the slowest shard; its tests go with the sequencer they tested",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  }
+]
