@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/one-door.test.ts",
+    "because": "Billing and integrations became read operations, so their two routes leave the waiting list and the cap drops from 24 to 22",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  }
+]
