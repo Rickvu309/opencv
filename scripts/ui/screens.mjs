@@ -1,14 +1,5 @@
 import { readdirSync } from "node:fs"
 
-import {
-  ADD_A_JOB,
-  COMPOSER,
-  OPEN_PANEL,
-  OPEN_THE_JOB,
-  OPEN_THE_STAGE_MENU,
-  PANEL,
-} from "./screen-steps.mjs"
-
 const SCREEN_FOLDER = new URL("./screens/", import.meta.url)
 
 async function filedScreens() {
@@ -27,91 +18,7 @@ async function filedScreens() {
   )
 }
 
-const INLINE_SCREENS = [
-  ...[
-    ["settings-coach", "/settings/coach", '[data-slot="settings-card"]'],
-    [
-      "settings-integrations",
-      "/settings/integrations",
-      "#agent-connections-title",
-    ],
-    ["settings-usage", "/settings/usage", '[data-slot="settings-card"]'],
-    [
-      "settings-billing",
-      "/settings/billing",
-      'main :is(h2, h3):has-text("Free plan")',
-    ],
-    ["settings-account", "/settings/account", '[data-slot="settings-card"]'],
-  ].map(([id, route, selector]) => ({
-    id,
-    route,
-    steps: [{ waitFor: { selector } }],
-  })),
-  {
-    id: "shell-sidebar-collapsed",
-    route: "/jobs",
-    restPointer: "center",
-    steps: [
-      { click: { role: "heading", name: "Jobs, matched to you" } },
-      { press: "[" },
-      { clickIfShown: { role: "button", name: "Menu" } },
-      {
-        waitFor: {
-          selector:
-            '[data-slot="sidebar-expand"], button[aria-label="Close menu"]',
-        },
-      },
-    ],
-  },
-  {
-    id: "shell-command-palette",
-    route: "/inbox",
-    steps: [
-      { waitFor: { role: "heading", name: "Inbox" } },
-      { press: "Control+k" },
-      {
-        waitFor: {
-          selector: '[role="dialog"] input[aria-label="Search"]',
-        },
-      },
-    ],
-  },
-  {
-    id: "shell-menu-open",
-    route: "/inbox",
-    steps: [
-      { waitFor: { role: "heading", name: "Inbox" } },
-      {
-        clickIfShown: {
-          selector: '[data-slot="sidebar-frame"] [data-slot="account-trigger"]',
-        },
-      },
-      { clickIfShown: { role: "button", name: "Menu" } },
-      {
-        waitFor: {
-          selector: 'button[aria-label="Close menu"], [role="menu"]',
-        },
-      },
-    ],
-  },
-  {
-    id: "jobs",
-    route: "/jobs",
-    steps: [{ waitFor: { role: "heading", name: "Jobs, matched to you" } }],
-  },
-  {
-    id: "pitch",
-    route: "/pitch",
-    steps: [{ waitFor: { role: "heading", name: "One link that sells you" } }],
-  },
-  {
-    id: "proofs",
-    route: "/proofs",
-    steps: [{ waitFor: { role: "heading", name: "Back your CV with proof" } }],
-  },
-]
-
-export const SCREENS = [...INLINE_SCREENS, ...(await filedScreens())]
+export const SCREENS = await filedScreens()
 
 const STEP_KINDS = new Set([
   "goto",
