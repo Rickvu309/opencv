@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/word-card-actions.test.ts",
+    "because": "The delete Undo now names paper.recover and checks paper.read with view trash instead of paper.isDeleted; the expectations are the same.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
   }
 ]
