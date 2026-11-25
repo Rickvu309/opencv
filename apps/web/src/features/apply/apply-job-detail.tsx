@@ -11,7 +11,12 @@ import { reportRejected } from "@/lib/command-failure.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { ApiError } from "@/lib/api-error.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
-import { activityKey, catalogClient } from "@/lib/contract-client.ts"
+import {
+  activityKey,
+  catalogClient,
+  refreshCatalogReads,
+  refreshQueries,
+} from "@/lib/contract-client.ts"
 
 import {
   getJob,
@@ -194,7 +199,12 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
                 void navigate({ to: "/apply" })
               }
               queryClient.removeQueries({ queryKey: jobGetKey(id) })
-              void queryClient.invalidateQueries()
+              void refreshQueries(queryClient, [
+                { query: "job.list" },
+                { query: "job.calendar" },
+                { query: "paper.keywordGap", input: { jobId: id } },
+              ])
+              void refreshCatalogReads(queryClient)
               dispatch({ type: "delete_dismissed" })
             })
             .catch(reportRejected("delete this job"))
