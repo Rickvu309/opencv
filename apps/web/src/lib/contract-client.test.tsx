@@ -67,13 +67,13 @@ const isStale = (queryClient: QueryClient, key: readonly unknown[]) =>
 describe("runContractCommand", () => {
   afterEach(() => vi.unstubAllGlobals())
 
-  it("refreshes the reads paper.unshare invalidates and nothing else", async () => {
+  it("refreshes the reads paper.deleteFile invalidates and nothing else", async () => {
     const queryClient = new QueryClient()
     const keys = seed(queryClient)
     stubFetch({ id: JOB })
 
-    await runContractCommand(queryClient, "paper.unshare", {
-      docId: DOC,
+    await runContractCommand(queryClient, "paper.deleteFile", {
+      fileId: DOC,
     })
 
     expect(isStale(queryClient, keys.list)).toBe(true)
@@ -86,10 +86,10 @@ describe("runContractCommand", () => {
   it("sends the input with a fresh idempotency key per call", async () => {
     const queryClient = new QueryClient()
     const bodies = stubFetch({ id: JOB })
-    const input = { docId: DOC } as const
+    const input = { fileId: DOC } as const
 
-    await runContractCommand(queryClient, "paper.unshare", input)
-    await runContractCommand(queryClient, "paper.unshare", input)
+    await runContractCommand(queryClient, "paper.deleteFile", input)
+    await runContractCommand(queryClient, "paper.deleteFile", input)
 
     const [first, second] = bodies as {
       input: unknown
@@ -104,14 +104,14 @@ describe("runContractCommand", () => {
     const queryClient = new QueryClient()
     const bodies = stubFetch({}) as Record<string, unknown>[]
 
-    await runContractCommand(queryClient, "paper.sync", {
+    await runContractCommand(queryClient, "paper.nativeSync", {
       docId: parsePaperId("01900000-0000-7000-8000-000000000020"),
       epoch: 0,
       update: "",
       stateVector: "",
     })
-    await runContractCommand(queryClient, "paper.unshare", {
-      docId: DOC,
+    await runContractCommand(queryClient, "paper.deleteFile", {
+      fileId: DOC,
     })
 
     expect(bodies[0]).not.toHaveProperty("idempotencyKey")
@@ -129,8 +129,8 @@ describe("runContractCommand", () => {
     )
 
     await expect(
-      runContractCommand(queryClient, "paper.unshare", {
-        docId: DOC,
+      runContractCommand(queryClient, "paper.deleteFile", {
+        fileId: DOC,
       })
     ).rejects.toThrow()
 

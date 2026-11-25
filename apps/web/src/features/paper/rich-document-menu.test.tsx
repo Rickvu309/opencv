@@ -1,7 +1,7 @@
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react"
 import { afterEach, expect, it, vi } from "vitest"
 import { Toaster } from "sonner"
-import type { SyncStatus } from "@/lib/paper-sync.ts"
+import type { SyncStatus } from "@/lib/paper-sync-status.ts"
 import { SavedRichWordChanged } from "@/lib/paper-rich-word.ts"
 import { RichDocumentMenu } from "./rich-document-menu.tsx"
 
