@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/apply/apply-api.test.ts",
+    "because": "The calendar and preview reads go through the read door; the test checks their path and body there",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
   }
 ]
