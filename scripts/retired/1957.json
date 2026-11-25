@@ -382,5 +382,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 6
+  },
+  {
+    "subject": "apps/api/src/paper/store-rules.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
   }
 ]
