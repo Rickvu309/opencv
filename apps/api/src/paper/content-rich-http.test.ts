@@ -239,15 +239,6 @@ it("saves and reopens rich CVs and Letters over authenticated HTTP without legac
         expect(stored.row?.crdtDocument).toEqual(client.document())
         expect(stored.row?.contentVersion).toBe(3)
         expect(stored.log).toHaveLength(2)
-        const oldRead = await fetch(`${origin}/api/paper/${docId}`, {
-          headers: {
-            Cookie: cookie,
-            Origin: testWebOrigin,
-            "x-paper-writer": JSON.stringify(RICH_NATIVE_WRITER),
-          },
-        })
-        expect(oldRead.status).toBe(409)
-        expect(await oldRead.text()).toContain("rich Paper editor")
       } finally {
         client.ydoc.destroy()
       }

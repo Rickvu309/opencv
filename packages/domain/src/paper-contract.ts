@@ -70,7 +70,6 @@ type DocInput = { docId: z.output<typeof paperIdSchema> }
 const listChanged = (): QueryRef[] => [{ query: "paper.list" }]
 
 const docChanged = (input: DocInput): QueryRef[] => [
-  { query: "paper.read", input: { view: "info", docId: input.docId } },
   { query: "paper.outline", input: { docId: input.docId } },
   ...listChanged(),
 ]

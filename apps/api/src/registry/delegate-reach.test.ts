@@ -156,6 +156,7 @@ describe("what a delegate can reach", () => {
     ).options.map((option) => option.shape.view?.value ?? "document")
     expect(views.sort()).toEqual([
       "document",
+      "info",
       "library",
       "lines",
       "page",

@@ -78,7 +78,7 @@ async function paperFocus(
   docId: string,
   blockIds?: string[]
 ): Promise<CoachFocusDoc | null> {
-  const row =
+  const row: Record<string, unknown> | null =
     (await listedPage(registry, actor, docId)) ??
     (await importedPackageRow(registry, actor, docId))
   if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
