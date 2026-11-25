@@ -192,8 +192,10 @@ it("keeps a snapshot and cursor together, replays strictly after it and catches 
   fixture(
     async ({ start, status, work, events, app, owner, foreign, chatId }) => {
       const { taskId } = await start()
-      const chat = await app.request(`/api/chats/${chatId}`, {
+      const chat = await app.request("/api/reads/chat.get", {
+        method: "POST",
         headers: authHeaders(owner.cookie),
+        body: JSON.stringify({ chatId: chatId }),
       })
       expect(
         chatDetailSchema.parse(envelope.parse(await chat.json()).data)
@@ -201,8 +203,10 @@ it("keeps a snapshot and cursor together, replays strictly after it and catches 
       ).toBe(taskId)
       expect(
         (
-          await app.request(`/api/chats/${chatId}`, {
+          await app.request("/api/reads/chat.get", {
+            method: "POST",
             headers: authHeaders(foreign.cookie),
+            body: JSON.stringify({ chatId: chatId }),
           })
         ).status
       ).toBe(404)
@@ -210,8 +214,10 @@ it("keeps a snapshot and cursor together, replays strictly after it and catches 
       expect(before.cursor).toBe(0)
       expect(before.events.map((event) => event.seq)).toEqual([0])
       await work()
-      const finished = await app.request(`/api/chats/${chatId}`, {
+      const finished = await app.request("/api/reads/chat.get", {
+        method: "POST",
         headers: authHeaders(owner.cookie),
+        body: JSON.stringify({ chatId: chatId }),
       })
       expect(
         chatDetailSchema.parse(envelope.parse(await finished.json()).data)

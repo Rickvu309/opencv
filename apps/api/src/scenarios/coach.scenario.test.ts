@@ -59,7 +59,7 @@ async function newChat(person: Person) {
 }
 
 async function chatOf(person: Person, chatId: string) {
-  return dataOf<Chat>(await person.get(`/api/chats/${chatId}`))
+  return dataOf<Chat>(await person.read("chat.get", { chatId: chatId }))
 }
 
 async function say(person: Person, chatId: string, text: string) {
@@ -86,12 +86,12 @@ describe("a Chat", () => {
     const chat = await newChat(ada)
     expect(chat).toMatchObject({ title: "New chat", messages: [] })
     expect(
-      dataOf<{ id: string }[]>(await ada.get("/api/chats")).map((c) => c.id)
+      dataOf<{ id: string }[]>(await ada.read("chat.list", {})).map((c) => c.id)
     ).toEqual([chat.id])
-    expect(dataOf<unknown[]>(await grace.get("/api/chats"))).toEqual([])
-    expect(failureOf(await grace.get(`/api/chats/${chat.id}`)).code).toBe(
-      "NOT_FOUND"
-    )
+    expect(dataOf<unknown[]>(await grace.read("chat.list", {}))).toEqual([])
+    expect(
+      failureOf(await grace.read("chat.get", { chatId: chat.id })).code
+    ).toBe("NOT_FOUND")
   })
 
   it("keeps the person's message and the Coach's reply, in order", async () => {
@@ -113,9 +113,9 @@ describe("a Chat", () => {
     await ada.run("chat.rename", { chatId: chat.id, title: "Interview prep" })
     expect((await chatOf(ada, chat.id)).title).toBe("Interview prep")
     await ada.run("chat.delete", { chatId: chat.id })
-    expect(failureOf(await ada.get(`/api/chats/${chat.id}`)).code).toBe(
-      "NOT_FOUND"
-    )
+    expect(
+      failureOf(await ada.read("chat.get", { chatId: chat.id })).code
+    ).toBe("NOT_FOUND")
   })
 
   it("has nothing to stop when the Coach is not working", async () => {
