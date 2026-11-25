@@ -103,3 +103,9 @@ export const OPEN_THE_STAGE_MENU = [
   { press: "s" },
   { waitFor: { selector: '[data-slot="stage-menu"]' } },
 ]
+
+export const HARD_NAMES = [
+  "Senior Product Designer CV for the Atlassian Ho Chi Minh City design systems team, final version",
+  "Nguyen_Van_A_CV_final_final_v12_2026_updated_for_Grab_and_Shopee",
+  "Th\u01b0 xin vi\u1ec7c g\u1eedi C\u00f4ng ty C\u1ed5 ph\u1ea7n Th\u01b0\u01a1ng m\u1ea1i \u0110i\u1ec7n t\u1eed Tiki",
+]
