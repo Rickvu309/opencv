@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { readFileSync } from "node:fs"
 
-import { NATIVE_WRITER, personActor } from "@workspace/domain"
+import { personActor, RICH_NATIVE_WRITER } from "@workspace/domain"
 import { sql } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"
@@ -136,7 +136,7 @@ class OwnedWatch {
   private read(name: string, input: Record<string, unknown>, userId: string) {
     const qualified =
       name === "paper.list" || name === "paper.get"
-        ? { ...input, writer: NATIVE_WRITER }
+        ? { ...input, writer: RICH_NATIVE_WRITER }
         : input
     return this.registry.read(name, qualified, personActor(userId))
   }
@@ -159,10 +159,14 @@ class OwnedWatch {
       })
     }
     const lists = new Map<string, unknown>()
-    const listed = async (name: string, userId: string) => {
-      const key = `${name}:${userId}`
+    const listed = async (
+      name: string,
+      userId: string,
+      input: Record<string, unknown> = {}
+    ) => {
+      const key = `${name}:${userId}:${JSON.stringify(input)}`
       if (!lists.has(key))
-        lists.set(key, await this.read(name, {}, userId).catch(() => null))
+        lists.set(key, await this.read(name, input, userId).catch(() => null))
       return lists.get(key)
     }
     for (const { table, id, op, visible } of latest.values()) {
@@ -175,8 +179,9 @@ class OwnedWatch {
         ownerListed = false
         strangerListed = false
         for (const name of names) {
-          if (mentions(await listed(name, this.owner), id)) ownerListed = true
-          if (mentions(await listed(name, this.stranger), id))
+          if (mentions(await listed(name, this.owner, reads.listInput), id))
+            ownerListed = true
+          if (mentions(await listed(name, this.stranger, reads.listInput), id))
             strangerListed = true
         }
       }

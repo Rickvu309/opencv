@@ -10,8 +10,8 @@ import { coachUsage, user } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "../install.js"
 
-describe("release-one commands honor company, duplicates, paper versions, plan, delete and the day cap", () => {
-  it("checks company, duplicates, paper versions, plan, delete, and the day cap", async () => {
+describe("release-one commands honor company, duplicates, plan, delete and the day cap", () => {
+  it("checks company, duplicates, plan, delete, and the day cap", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()
     const userId = "user-accept"
@@ -57,43 +57,6 @@ describe("release-one commands honor company, duplicates, paper versions, plan, 
       ).rejects.toMatchObject({
         code: ERROR_CODES.DUPLICATE_JOB,
         detail: { jobId },
-      })
-
-      const created = await registry.execute({
-        name: "paper.create",
-        input: { kind: "cv", name: "CV" },
-        actor: person,
-      })
-      const doc = created.output as { id: string; contentVersion: number }
-      expect(doc.contentVersion).toBe(1)
-      const edited = await registry.execute({
-        name: "paper.edit",
-        input: {
-          docId: doc.id,
-          basedOn: 1,
-          edits: [
-            {
-              op: "setHeader",
-              fields: { name: "Shipped a small experiment." },
-            },
-          ],
-        },
-        actor: person,
-      })
-      expect((edited.output as { revision: number }).revision).toBe(2)
-      const stale = await registry.execute({
-        name: "paper.edit",
-        input: {
-          docId: doc.id,
-          basedOn: 1,
-          edits: [{ op: "setHeader", fields: { name: "A different edit." } }],
-        },
-        actor: person,
-      })
-      expect(stale.output).toMatchObject({
-        revision: 2,
-        editId: null,
-        outcomes: [{ status: "stale" }],
       })
 
       await expect(

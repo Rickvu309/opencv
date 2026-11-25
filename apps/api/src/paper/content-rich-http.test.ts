@@ -1,13 +1,10 @@
 import {
-  blankCv,
-  blankLetter,
   nativeProvenance,
   nativeSyncOutputSchema,
   NATIVE_WRITER,
   RICH_NATIVE_WRITER,
   paperPhotoRef,
   paperDocumentInfoSchema,
-  paperViewSchema,
   parseUserId,
 } from "@workspace/domain"
 import { openRichPaperClient } from "@workspace/paper-crdt"
@@ -115,10 +112,10 @@ it("saves and reopens rich CVs and Letters over authenticated HTTP without legac
         const document = richPaper(kind, paperPhotoRef(file.id))
         const result = await store.registry.execute({
           name: "paper.create",
-          input: { kind, document: kind === "cv" ? blankCv() : blankLetter() },
+          input: { kind },
           actor: store.actor,
         })
-        const view = paperViewSchema.parse(result.output)
+        const view = paperDocumentInfoSchema.parse(result.output)
         await getDb()
           .update(paperDocs)
           .set(seedColumns(kind, document))

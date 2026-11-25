@@ -1,19 +1,33 @@
 import { readFileSync } from "node:fs"
 import path from "node:path"
 
-import { parseUserId, personActor } from "@workspace/domain"
+import {
+  paperPhotoRef,
+  parseUserId,
+  personActor,
+  RICH_NATIVE_WRITER,
+} from "@workspace/domain"
 import { eq, sql } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
 import { migrationsFolder } from "../db/paths.js"
-import { activity, paperDocUpdates, user } from "../db/schema.js"
+import {
+  activity,
+  paperDocUpdates,
+  paperDocs,
+  paperShares,
+  user,
+} from "../db/schema.js"
 import { createId } from "../platform/id.js"
 import { installRegistry } from "../install.js"
 import { seedCoachActor } from "../test/coach-turn.js"
 import { createMigratedTestDb } from "../test/harness.js"
+import { richPaper } from "../test/rich-paper.js"
 import { journalTag } from "../test/migration-journal.js"
+import { seedColumns } from "./content-document.js"
 import { saveFile } from "./store.js"
+import { OLD_EDITOR_UNDO_REASON } from "./undo-guard.js"
 
 const RESET_STATEMENT = 'DELETE FROM "opencv_app"."paper_docs";'
 const OTHER_TABLES = [
@@ -131,16 +145,13 @@ describe("reset paper rows", () => {
           actor: person,
         })
         const letterId = (letter.output as { id: string }).id
-        await registry.execute({
-          name: "paper.attachPhoto",
-          input: { docId: cvId, fileId: photo.id },
-          actor: person,
-        })
-        await registry.execute({
-          name: "paper.share",
-          input: { docId: cvId },
-          actor: person,
-        })
+        await db
+          .update(paperDocs)
+          .set(seedColumns("cv", richPaper("cv", paperPhotoRef(photo.id))))
+          .where(eq(paperDocs.id, cvId))
+        await db
+          .insert(paperShares)
+          .values({ id: createId(), docId: cvId, token: "reset-paper-share" })
         const createdJob = await registry.execute({
           name: "job.create",
           input: { title: "Intern", company: "Northwind" },
@@ -170,7 +181,11 @@ describe("reset paper rows", () => {
         })
         await registry.execute({
           name: "paper.rename",
-          input: { docId: cvId, name: "CV kept in the receipt" },
+          input: {
+            docId: cvId,
+            name: "CV kept in the receipt",
+            writer: RICH_NATIVE_WRITER,
+          },
           actor: person,
           idempotencyKey: "rename-reset-paper",
         })
@@ -271,7 +286,7 @@ describe("reset paper rows", () => {
           { cv_doc_id: cvId, letter_doc_id: letterId },
         ])
         expect(before.feed.find((row) => row.id === revertId)?.reversible).toBe(
-          true
+          false
         )
 
         await client.exec(resetMigrationText())
@@ -321,7 +336,7 @@ describe("reset paper rows", () => {
         })
         await expect(registry.undo(userId, revertId)).rejects.toMatchObject({
           code: "CONFLICT",
-          message: "This document is gone",
+          message: OLD_EDITOR_UNDO_REASON,
         })
         await expect(
           registry.undo(userId, createIdForUndo)

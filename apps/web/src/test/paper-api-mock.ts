@@ -271,32 +271,6 @@ export async function paperApiFetch(
     return jsonOk({ id: body.docId })
   }
 
-  if (method === "POST" && path === "/api/commands/paper.share") {
-    const body = (await readBody(init)) as { docId?: string }
-    return jsonOk({ docId: body.docId, token: `share-${body.docId ?? "doc"}` })
-  }
-
-  if (method === "POST" && path === "/api/commands/paper.keepTwoPages") {
-    const body = (await readBody(init)) as { docId?: string }
-    const doc = store.docs.find((item) => item.id === body.docId)
-    if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
-    ;(doc as PaperDoc & { pageChoice?: string }).pageChoice = "keep"
-    doc.updatedAt = isoNow()
-    return jsonOk(toWire(doc))
-  }
-
-  if (method === "POST" && path === "/api/commands/paper.setTemplate") {
-    const body = (await readBody(init)) as {
-      docId?: string
-      templateId?: string
-    }
-    const doc = store.docs.find((item) => item.id === body.docId)
-    if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
-    ;(doc as PaperDoc & { templateId?: string }).templateId = body.templateId
-    doc.updatedAt = isoNow()
-    return jsonOk(toWire(doc))
-  }
-
   if (method === "POST" && path === "/api/commands/job.linkPaper") {
     const body = (await readBody(init)) as { docId?: string; jobId?: string }
     const doc = store.docs.find((item) => item.id === body.docId)

@@ -4,21 +4,14 @@ import {
   nativeProvenance,
   nativePaperDocumentSchema,
   parsePaperId,
-  paperQueries,
 } from "@workspace/domain"
 import { afterEach, expect, it, vi } from "vitest"
 import {
-  listQualifiedPaper,
   getQualifiedPaper,
-  getQualifiedPaperPages,
-  getQualifiedSharedPaper,
   listPaper,
   getPaper,
-  getPaperPages,
-  getSharedPaper,
   paperGetKey,
   qualifiedPaperGetKey,
-  qualifiedPaperSharedKey,
 } from "../features/paper/paper-api.ts"
 
 import {
@@ -63,76 +56,16 @@ const view = {
   createdAt: "2026-11-01T00:00:00.000Z",
   updatedAt: "2026-11-01T00:00:00.000Z",
 }
-const shared = paperQueries["paper.shared"].output.parse(
-  Object.fromEntries(
-    Object.entries({
-      ...view,
-      nativeBasis: undefined,
-      contentVersion: 99,
-    }).filter(
-      ([key, value]) =>
-        value !== undefined && key in paperQueries["paper.shared"].output.shape
-    )
-  )
-)
 function response(data: unknown) {
   return Response.json({ ok: true, data })
 }
 afterEach(() => vi.unstubAllGlobals())
-
-it("qualifies exactly four opt-in GET routes with credentials and the declared writer", async () => {
-  const fetch = vi
-    .fn()
-    .mockResolvedValueOnce(response([view]))
-    .mockResolvedValueOnce(response(view))
-    .mockResolvedValueOnce(
-      response({ docId: id, pages: 1, pageChoice: "unset" })
-    )
-    .mockResolvedValueOnce(response(shared))
-  vi.stubGlobal("fetch", fetch)
-  expect(await listQualifiedPaper(options)).toEqual([view])
-  expect(await getQualifiedPaper(id, options)).toEqual(view)
-  await getQualifiedPaperPages(id, options)
-  expect(await getQualifiedSharedPaper("share-token", options)).toEqual(shared)
-  expect(fetch.mock.calls.map(([url]) => new URL(url).pathname)).toEqual([
-    "/api/paper",
-    `/api/paper/${id}`,
-    `/api/paper/${id}/pages`,
-    "/api/paper/shared/share-token",
-  ])
-  for (const [, init] of fetch.mock.calls) {
-    expect(init.credentials).toBe("include")
-    expect(JSON.parse(init.headers.get("x-paper-writer"))).toEqual(
-      NATIVE_WRITER
-    )
-  }
-})
-
-it("admits a read-only share without owner edit authority", async () => {
-  const fetch = vi.fn().mockImplementation(async () => response(shared))
-  vi.stubGlobal("fetch", fetch)
-  const result = await getQualifiedSharedPaper("share-token", options)
-  expect(result.paper).toEqual(paper)
-  expect(result).not.toHaveProperty("nativeBasis")
-  expect(Object.keys(result)).toEqual(Object.keys(shared))
-  await expect(
-    getQualifiedSharedPaper("share-token", {
-      ...options,
-      writer: { ...NATIVE_WRITER, capabilities: [] },
-    })
-  ).rejects.toThrow()
-  expect(fetch).toHaveBeenCalledTimes(2)
-  for (const [, init] of fetch.mock.calls)
-    expect(init.method ?? "GET").toBe("GET")
-})
 
 it("keeps all default reads unqualified", async () => {
   const fetch = vi.fn().mockImplementation(async () => response({}))
   vi.stubGlobal("fetch", fetch)
   await listPaper()
   await getPaper(id)
-  await getPaperPages(id)
-  await getSharedPaper("share-token")
   for (const [, init] of fetch.mock.calls)
     expect(init.headers.has("x-paper-writer")).toBe(false)
 })
@@ -182,9 +115,6 @@ it("scopes qualified keys without losing command invalidation prefixes", async (
   ])
     expect(qualifiedPaperGetKey(id, other)).not.toEqual(key)
   expect(qualifiedPaperGetKey(id, { ...options })).toEqual(key)
-  expect(qualifiedPaperSharedKey("share-token", options)[0]).toBe(
-    "paper.shared"
-  )
   client.setQueryData(key, view)
   client.setQueryData(paperGetKey(id), { legacy: true })
   await client.invalidateQueries({ queryKey: paperGetKey(id) })

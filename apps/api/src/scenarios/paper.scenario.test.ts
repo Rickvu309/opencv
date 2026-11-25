@@ -100,11 +100,8 @@ describe("a Paper started blank", () => {
   it("is left off the list for an editor that cannot open it", async () => {
     const ada = await world.person("Ada")
     await blank(ada, "cv", "Marketing CV")
-    const older = dataOf<Paper>(
-      await ada.run("paper.create", { kind: "letter", name: "Older letter" })
-    )
-    const listed = dataOf<Paper[]>(await ada.get("/api/paper"))
-    expect(listed.map((paper) => paper.id)).toEqual([older.id])
+    await ada.run("paper.create", { kind: "letter", name: "Plain letter" })
+    expect(dataOf<Paper[]>(await ada.get("/api/paper"))).toEqual([])
   })
 
   it("can be copied, and the copy is a Paper of its own", async () => {

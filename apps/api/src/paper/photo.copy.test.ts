@@ -1,13 +1,18 @@
-import { paperPhotoRef } from "@workspace/domain"
+import { paperPhotoRef, RICH_NATIVE_WRITER } from "@workspace/domain"
+import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
+import { paperDocs } from "../db/schema.js"
 import {
   authHeaders,
   createMigratedTestDb,
   createTestApp,
   signUp,
 } from "../test/harness.js"
+import { richEditorHeaders } from "../test/paper-live-pages.js"
+import { richPaper } from "../test/rich-paper.js"
+import { seedColumns } from "./content-document.js"
 import { png, postAvatar } from "./photo.fixtures.js"
 
 describe("Copied CV photo lifetime", () => {
@@ -28,7 +33,6 @@ describe("Copied CV photo lifetime", () => {
         })
       const created = await command("paper.create", {
         kind: "cv",
-        templateId: "with-photo",
         name: "Source CV",
       })
       expect(created.status).toBe(200)
@@ -44,10 +48,14 @@ describe("Copied CV photo lifetime", () => {
       expect(uploaded.status).toBe(200)
       const fileId = ((await uploaded.json()) as { data: { id: string } }).data
         .id
-      expect(
-        (await command("paper.attachPhoto", { docId: sourceId, fileId })).status
-      ).toBe(200)
-      const duplicated = await command("paper.duplicate", { docId: sourceId })
+      await db
+        .update(paperDocs)
+        .set(seedColumns("cv", richPaper("cv", paperPhotoRef(fileId))))
+        .where(eq(paperDocs.id, sourceId))
+      const duplicated = await command("paper.duplicate", {
+        docId: sourceId,
+        writer: RICH_NATIVE_WRITER,
+      })
       expect(duplicated.status).toBe(200)
       const duplication = (await duplicated.json()) as {
         data: { id: string; activityId: string }
@@ -55,38 +63,6 @@ describe("Copied CV photo lifetime", () => {
       const copyId = duplication.data.id
       const deletedId = deletedKind === "source" ? sourceId : copyId
       const survivingId = deletedKind === "source" ? copyId : sourceId
-      const shared = await command("paper.share", { docId: survivingId })
-      expect(shared.status).toBe(200)
-      const token = ((await shared.json()) as { data: { token: string } }).data
-        .token
-      if (deletedKind === "source") {
-        const replacement = await postAvatar(
-          app,
-          owner.cookie,
-          Uint8Array.from([...png, 0x02]),
-          "replacement.png",
-          "image/png"
-        )
-        expect(replacement.status).toBe(200)
-        const replacementId = (
-          (await replacement.json()) as {
-            data: { id: string }
-          }
-        ).data.id
-        expect(
-          (
-            await command("paper.attachPhoto", {
-              docId: sourceId,
-              fileId: replacementId,
-            })
-          ).status
-        ).toBe(200)
-        const afterReplace = await app.request(
-          `/api/paper/shared/${token}/photo`
-        )
-        expect(afterReplace.status).toBe(200)
-        expect(new Uint8Array(await afterReplace.arrayBuffer())).toEqual(png)
-      }
       const deletion =
         deletedKind === "copy-undo"
           ? await command("activity.undo", {
@@ -95,23 +71,25 @@ describe("Copied CV photo lifetime", () => {
           : await command("paper.delete", { docId: deletedId })
       expect(deletion.status).toBe(200)
 
-      const deleted = await app.request(`/api/paper/${deletedId}`, {
-        headers: authHeaders(owner.cookie),
+      const deleted = await app.request(`/api/paper/${deletedId}/document`, {
+        headers: richEditorHeaders(owner.cookie),
       })
       expect(deleted.status).toBe(404)
-      const surviving = await app.request(`/api/paper/${survivingId}`, {
-        headers: authHeaders(owner.cookie),
-      })
+      const surviving = await app.request(
+        `/api/paper/${survivingId}/document`,
+        { headers: richEditorHeaders(owner.cookie) }
+      )
       expect(surviving.status).toBe(200)
-      expect(await surviving.text()).toContain(paperPhotoRef(fileId))
+      const [kept] = await db
+        .select({ document: paperDocs.crdtDocument })
+        .from(paperDocs)
+        .where(eq(paperDocs.id, survivingId))
+      expect(JSON.stringify(kept?.document)).toContain(paperPhotoRef(fileId))
       const bytes = await app.request(`/api/paper/files/${fileId}/bytes`, {
         headers: authHeaders(owner.cookie),
       })
       expect(bytes.status).toBe(200)
       expect(new Uint8Array(await bytes.arrayBuffer())).toEqual(png)
-      const publicPhoto = await app.request(`/api/paper/shared/${token}/photo`)
-      expect(publicPhoto.status).toBe(200)
-      expect(new Uint8Array(await publicPhoto.arrayBuffer())).toEqual(png)
 
       const { sweepUnattachedPhotos } = await import("./photo-sweep.js")
       const future = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000)

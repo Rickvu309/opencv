@@ -176,7 +176,7 @@ export const paperContract = commandContract({
     coach: "never",
     destructive: false,
     step: () => "Sync the document",
-    invalidates: () => [],
+    invalidates: listChanged,
   }),
   "paper.rename": commandEntry({
     description: "Rename a document.",

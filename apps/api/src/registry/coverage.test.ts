@@ -18,7 +18,7 @@ const surfaces = {
 const REVERSAL_WITHOUT_ACTIVITY_PENDING = {
   issue: 916,
   expires: "2026-12-01",
-  commands: ["paper.rename", "paper.setTemplate", "paper.share"],
+  commands: ["paper.rename"],
 }
 
 function reversalWithoutActivity(ran: [string, ExecuteResult][]) {

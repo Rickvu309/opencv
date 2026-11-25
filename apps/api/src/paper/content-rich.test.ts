@@ -1,12 +1,10 @@
 import {
-  blankCv,
-  blankLetter,
   nativeProvenance,
   nativeSyncOutputSchema,
   NATIVE_WRITER,
   RICH_NATIVE_WRITER,
   paperPhotoRef,
-  paperViewSchema,
+  paperDocumentInfoSchema,
   parseUserId,
   parsePaperId,
   richPaperDocumentSchema,
@@ -55,13 +53,8 @@ async function seeded(kind: "cv" | "letter") {
     purpose: "avatar",
   })
   const document = richPaper(kind, paperPhotoRef(file.id))
-  const view = paperViewSchema.parse(
-    (
-      await execute("paper.create", {
-        kind,
-        document: kind === "cv" ? blankCv() : blankLetter(),
-      })
-    ).output
+  const view = paperDocumentInfoSchema.parse(
+    (await execute("paper.create", { kind })).output
   )
   await getDb()
     .update(paperDocs)

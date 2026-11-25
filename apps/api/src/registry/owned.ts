@@ -1,4 +1,4 @@
-import type { QueryName } from "@workspace/domain"
+import { RICH_NATIVE_WRITER, type QueryName } from "@workspace/domain"
 import { getTableConfig, PgTable } from "drizzle-orm/pg-core"
 
 import * as schema from "../db/schema.js"
@@ -33,8 +33,9 @@ export type OwnedRow = Record<string, unknown>
 
 export type OwnedReads = {
   list: QueryName | readonly QueryName[] | "unlisted"
+  listInput?: Record<string, unknown>
   open: QueryName | "none"
-  openInput?: (id: string) => Record<string, string>
+  openInput?: (id: string) => Record<string, unknown>
   shownWhen?: (row: OwnedRow) => boolean
   idOf: (row: OwnedRow) => string
 }
@@ -71,8 +72,9 @@ export const OWNED_READS: { [T in OwnedTable]: OwnedReads } = {
   paperPackageTrash: { ...hidden, idOf: byDoc },
   paperDocs: {
     list: "paper.list",
-    open: "paper.get",
-    openInput: (docId) => ({ docId }),
+    listInput: { writer: RICH_NATIVE_WRITER },
+    open: "paper.document",
+    openInput: (docId) => ({ docId, writer: RICH_NATIVE_WRITER }),
     idOf: byId,
   },
   jobs: {

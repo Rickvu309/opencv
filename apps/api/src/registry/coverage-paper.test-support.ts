@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 
-import { parseUserId, personActor } from "@workspace/domain"
+import { parseUserId, personActor, RICH_NATIVE_WRITER } from "@workspace/domain"
 import { expect } from "vitest"
 
 import { importedWordPage, saveFile, stageWordPackage } from "../paper/index.js"
@@ -69,7 +69,9 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       },
       undoAssert: async (result) => {
         await undo(result)
-        expect(editableText(await wordPage(editDocId))).toBe("")
+        expect(emptyWritingParagraph(await wordPage(editDocId))).toBe(
+          editParagraph
+        )
       },
     },
     {
@@ -81,7 +83,12 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         })
         ctx.docId = idOf(paper.output)
       },
-      act: () => run("paper.rename", { docId: ctx.docId, name: "Renamed CV" }),
+      act: () =>
+        run("paper.rename", {
+          docId: ctx.docId,
+          name: "Renamed CV",
+          writer: RICH_NATIVE_WRITER,
+        }),
       assert: async () => {
         expect(text(await paperOf(ctx.docId), "name")).toBe("Renamed CV")
       },
@@ -124,7 +131,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         await run("paper.setFavorite", { docId: ctx.docId, isFavorite: true })
         const listed = (await registry.read(
           "paper.list",
-          {},
+          { writer: RICH_NATIVE_WRITER },
           personActor(userId)
         )) as {
           id: string
@@ -144,7 +151,11 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         })
         ctx.docId = idOf(paper.output)
       },
-      act: () => run("paper.duplicate", { docId: ctx.docId }),
+      act: () =>
+        run("paper.duplicate", {
+          docId: ctx.docId,
+          writer: RICH_NATIVE_WRITER,
+        }),
       assert: async (result) => {
         expect(text(await paperOf(idOf(result.output)), "name")).toBe(
           "Copy of Coverage CV"
@@ -233,7 +244,12 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         const paper = await run("paper.create", { kind: "cv", name: "Status" })
         ctx.docId = idOf(paper.output)
       },
-      act: () => run("paper.setStatus", { docId: ctx.docId, status: "ready" }),
+      act: () =>
+        run("paper.setStatus", {
+          docId: ctx.docId,
+          status: "ready",
+          writer: RICH_NATIVE_WRITER,
+        }),
       assert: async () => {
         expect(text(await paperOf(ctx.docId), "status")).toBe("ready")
       },

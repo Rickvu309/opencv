@@ -1,6 +1,9 @@
+import { paperPhotoRef } from "@workspace/domain"
+import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"
 
+import { paperDocs } from "../db/schema.js"
 import {
   authHeaders,
   createMigratedTestDb,
@@ -8,15 +11,14 @@ import {
   signUp,
   testWebOrigin,
 } from "../test/harness.js"
+import { richPaper } from "../test/rich-paper.js"
+import { seedColumns } from "./content-document.js"
 
 const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const idResponse = z.object({ data: z.object({ id: z.string() }) })
-const activityResponse = z.object({
-  data: z.object({ activityId: z.string() }),
-})
 
 describe("Deleting photo files", () => {
-  it.each(["CV", "Undo", "profile"])(
+  it.each(["CV", "profile"])(
     "keeps bytes required by a %s reference and permits orphan deletion",
     async (reference) => {
       const { db, client } = await createMigratedTestDb()
@@ -66,38 +68,15 @@ describe("Deleting photo files", () => {
         } else {
           const created = await command("paper.create", {
             kind: "cv",
-            templateId: "with-photo",
             name: "Protected photo CV",
           })
           expect(created.status).toBe(200)
           const docId = idResponse.parse(await created.json()).data.id
-          const attached = await command("paper.attachPhoto", { docId, fileId })
-          expect(attached.status).toBe(200)
-          const attachmentActivityId = activityResponse.parse(
-            await attached.json()
-          ).data.activityId
-          if (reference === "Undo") {
-            const replacementId = await upload("cv-replacement.png")
-            const replaced = await command("paper.attachPhoto", {
-              docId,
-              fileId: replacementId,
-            })
-            expect(replaced.status).toBe(200)
-            const activityId = activityResponse.parse(await replaced.json())
-              .data.activityId
-            const blocked = await command("paper.deleteFile", { fileId })
-            expect(blocked.status).toBe(409)
-            expect(
-              (await command("activity.undo", { activityId })).status
-            ).toBe(200)
-            expect((await bytes(fileId)).status).toBe(200)
-            expect(
-              (await command("paper.deleteFile", { fileId: replacementId }))
-                .status
-            ).toBe(200)
-          }
-          releaseReference = () =>
-            command("activity.undo", { activityId: attachmentActivityId })
+          await db
+            .update(paperDocs)
+            .set(seedColumns("cv", richPaper("cv", paperPhotoRef(fileId))))
+            .where(eq(paperDocs.id, docId))
+          releaseReference = () => command("paper.delete", { docId })
         }
 
         const blocked = await command("paper.deleteFile", { fileId })
@@ -106,13 +85,9 @@ describe("Deleting photo files", () => {
         const retained = await bytes(fileId)
         expect(retained.status).toBe(200)
         expect(new Uint8Array(await retained.arrayBuffer())).toEqual(png)
-        if (reference !== "Undo") {
-          expect((await releaseReference()).status).toBe(200)
-          expect((await command("paper.deleteFile", { fileId })).status).toBe(
-            200
-          )
-          expect((await bytes(fileId)).status).toBe(404)
-        }
+        expect((await releaseReference()).status).toBe(200)
+        expect((await command("paper.deleteFile", { fileId })).status).toBe(200)
+        expect((await bytes(fileId)).status).toBe(404)
       } finally {
         await client.close()
       }

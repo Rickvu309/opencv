@@ -26,17 +26,6 @@ export function idOf(value: unknown) {
   return id
 }
 
-export function record(value: unknown, key: string) {
-  if (!value || typeof value !== "object" || !(key in value)) {
-    throw new Error(`missing ${key}`)
-  }
-  const field = (value as Record<string, unknown>)[key]
-  if (!field || typeof field !== "object" || Array.isArray(field)) {
-    throw new Error(`missing ${key}`)
-  }
-  return field as Record<string, unknown>
-}
-
 export function list(value: unknown, key: string) {
   if (!value || typeof value !== "object" || !(key in value)) {
     throw new Error(`missing ${key}`)

@@ -66,10 +66,6 @@ export const qualifiedPaperGetKey = (
   options: PaperQualification
 ) => qualifiedPaperKey(paperGetKey(docId), options)
 
-export function listQualifiedPaper(options: PaperQualification) {
-  return qualifiedPaperRead("paper.list", endpoints.paper, options)
-}
-
 export function getQualifiedPaper(docId: string, options: PaperQualification) {
   return qualifiedPaperRead("paper.get", endpoints.paperDoc(docId), options)
 }

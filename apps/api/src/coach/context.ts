@@ -29,6 +29,13 @@ function missingDocument(error: unknown) {
   return error instanceof CommandError && error.code === ERROR_CODES.NOT_FOUND
 }
 
+function unreadableForCoach(error: unknown) {
+  return (
+    missingDocument(error) ||
+    (error instanceof CommandError && error.code === ERROR_CODES.CONFLICT)
+  )
+}
+
 async function listedPage(registry: Registry, actor: Actor, docId: string) {
   const listed = await registry.read(
     "paper.list",
@@ -212,7 +219,7 @@ async function draftingCv(
       const doc = await paperFocus(registry, actor, docId)
       if (doc?.kind === "cv") return doc
     } catch (error) {
-      if (!missingDocument(error)) throw error
+      if (!unreadableForCoach(error)) throw error
     }
   }
   return null

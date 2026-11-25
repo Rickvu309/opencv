@@ -44,7 +44,7 @@ it("publishes declared Paper scopes and keeps Job grants isolated", () => {
     "actions.deny",
     "activity.undo",
     "paper.canvas",
-    "paper.sync",
+    "paper.nativeSync",
     "paper.restoreWord",
   ]) {
     expect(delegateAllowed({ name, coach: "never" }, paper)).toBe(false)

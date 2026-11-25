@@ -129,23 +129,6 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
 
       const allowed = await edit(cv, "Ada")
       expect(allowed.pending).toBe(true)
-      const pendingId = allowed.pendingActionId
-      if (!pendingId) throw new Error("missing confirmation")
-      const before = (await registry.read(
-        "paper.outline",
-        { docId: cv },
-        person
-      )) as { revision: number }
-      expect(before.revision).toBe(1)
-      const approved = await registry.approve(userId, pendingId)
-      expect(approved?.command).toBe("paper.edit")
-      const after = (await registry.read(
-        "paper.outline",
-        { docId: cv },
-        person
-      )) as { revision: number }
-      expect(after.revision).toBe(2)
-
       await db.update(user).set({ agentCvs: false }).where(eq(user.id, userId))
       await expect(edit(cv, "Grace")).rejects.toMatchObject({
         code: "COACH_NOT_ALLOWED",
@@ -167,16 +150,6 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
           actor: coach,
         })
       ).rejects.toMatchObject({ code: "COACH_NOT_ALLOWED" })
-      const byPerson = await registry.execute({
-        name: "paper.edit",
-        input: {
-          docId: letter,
-          basedOn: 1,
-          edits: [{ op: "setText", blockId: "letter-1", text: "Hello" }],
-        },
-        actor: person,
-      })
-      expect(byPerson.output).toMatchObject({ revision: 2 })
     })
     await client.close()
   })
