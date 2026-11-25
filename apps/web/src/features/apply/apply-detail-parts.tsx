@@ -204,7 +204,7 @@ function ActivityIcon({ row }: { row: ActivityFeedRow }) {
   const className = "size-5 shrink-0 p-[3.5px] text-muted-foreground"
   if (row.command === catalog["job.create"].name)
     return <Plus aria-hidden className={className} />
-  if (row.command === "job.move") {
+  if (row.command === catalog["job.move"].name) {
     return row.summary.endsWith("closed") ? (
       <CircleX aria-hidden className={className} />
     ) : (

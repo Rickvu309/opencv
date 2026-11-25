@@ -45,6 +45,7 @@ import { implementation as job$delete } from "../job/operations/delete/server.js
 import { implementation as job$get } from "../job/operations/get/server.js"
 import { implementation as job$linkPaper } from "../job/operations/link-paper/server.js"
 import { implementation as job$list } from "../job/operations/list/server.js"
+import { implementation as job$move } from "../job/operations/move/server.js"
 import { implementation as job$preview } from "../job/operations/preview/server.js"
 import { implementation as job$priorityCounts } from "../job/operations/priority-counts/server.js"
 import { implementation as job$removeChecklistItem } from "../job/operations/remove-checklist-item/server.js"
@@ -110,6 +111,7 @@ export const implementations = {
   "job.get": job$get,
   "job.linkPaper": job$linkPaper,
   "job.list": job$list,
+  "job.move": job$move,
   "job.preview": job$preview,
   "job.priorityCounts": job$priorityCounts,
   "job.removeChecklistItem": job$removeChecklistItem,

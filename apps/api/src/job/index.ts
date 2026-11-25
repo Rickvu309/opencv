@@ -1,3 +1,3 @@
 export type { FetchJobPosting } from "./fetch-posting.js"
-export { registerJob, type JobPreviewOptions } from "./commands.js"
+export { setPostingReader, type JobPreviewOptions } from "./posting-reader.js"
 export { toJob, writePriority } from "./store.js"

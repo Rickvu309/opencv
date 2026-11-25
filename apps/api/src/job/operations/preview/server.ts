@@ -1,6 +1,6 @@
 import { operation } from "@workspace/domain/operations/job/preview"
 import type { OperationBinding } from "../../../registry/bind.js"
-import { previewPosting } from "../../commands.js"
+import { previewPosting } from "../../posting-reader.js"
 
 export const implementation = {
   operation,

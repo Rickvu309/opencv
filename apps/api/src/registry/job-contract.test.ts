@@ -1,7 +1,6 @@
 import {
   catalog,
   commands,
-  jobContract as jobCommands,
   personActor,
   queries,
   type Actor,
@@ -29,7 +28,7 @@ const jobQueries = {
 }
 
 const jobContract = {
-  ...jobCommands,
+  "job.move": { output: catalog["job.move"].publicResult },
   "job.star": { output: catalog["job.star"].publicResult },
   "job.create": { output: catalog["job.create"].publicResult },
   "job.update": { output: catalog["job.update"].publicResult },

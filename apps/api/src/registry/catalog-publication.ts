@@ -21,6 +21,11 @@ export class CatalogPublication {
     return !operation || operation.publicResult.safeParse(output).success
   }
 
+  private receiptResult(name: string, result: unknown) {
+    const parsed = this.operations.get(name)?.publicResult.safeParse(result)
+    return parsed?.success ? parsed.data : undefined
+  }
+
   isCatalogOperation(name: string) {
     return this.operations.has(name)
   }
@@ -75,7 +80,10 @@ export class CatalogPublication {
             completed.summary
           ),
           detail: this.operations.has(completed.command)
-            ? undefined
+            ? receiptDetail(
+                completed.command,
+                this.receiptResult(completed.command, completed.result)
+              )
             : receiptDetail(completed.command, completed.result),
           undone: completed.undoneAt !== null,
         }

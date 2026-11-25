@@ -476,10 +476,11 @@ export async function jobApiFetch(
       return jsonOk({ ...job, activityId })
     }
     if (name === "job.move") {
-      extra(job.id).previousStage = job.stage
+      const fromStage = job.stage
+      extra(job.id).previousStage = fromStage
       job.stage = payload.stage as JobStage
       job.updatedAt = new Date().toISOString()
-      return jsonOk({ ...job, activityId })
+      return jsonOk({ ...job, fromStage, activityId })
     }
     if (name === "job.update") {
       const pending = nextJobUpdate

@@ -102,7 +102,7 @@ const TOOL_COPY = {
     label: "Look at your Jobs",
     read: "Looked at your Jobs",
   },
-  "job.move": { label: "Move this Job" },
+  [catalog["job.move"].name]: { label: "Move this Job" },
   [catalog["job.preview"].name]: {
     label: "Preview this Job",
     read: "Previewed this Job",
