@@ -6,7 +6,7 @@ import {
   parseUserId,
   RICH_NATIVE_WRITER,
   richPaperDocumentSchema,
-  safeHrefSchema,
+  type SafeHref,
   type NativeBasis,
   type RichPaperDocument,
 } from "@workspace/domain"
@@ -15,6 +15,8 @@ import { insertPaperFixture } from "../test/paper-row.js"
 import { richPaper } from "../test/rich-paper.js"
 import { seedColumns } from "./content-document.js"
 import { saveFile } from "./store.js"
+
+const safeHref = (href: string) => href as SafeHref
 
 export const portraitBytes = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAIAAAAlC+aJAAAA2UlEQVR4nO3XsRECMQxE0auEXiiHDkioiUquCIq4/GICQJbWXjP+M5vrv1DbfX/99TZ7AQB3AQB3AQB3AQB3AQB3wYyA43n7tNkBX9I7MZSAYL3WIAM01QsNGkCiXmUAUKiXGAAAAAAAAACjoX4aQMEgucs/kDIIL/ITuwfAPQDvu1wfkc0ICKbLGQJAIl3IKAGK6RJGHiCsrxiSAHl92pABdKrPGZoBXesThjbAgPpWw0qAYfVNhihgcH3csAbAUh80LAAw1kcMAAD0BdjrfxoAAAAAAEAJcALUXzqp4/odPAAAAABJRU5ErkJggg==",
@@ -42,7 +44,7 @@ export async function savedRichWord(
         if (node.type === "paragraph")
           node.content.push({
             text: " Link",
-            href: safeHrefSchema.parse("https://example.com/career"),
+            href: safeHref("https://example.com/career"),
             underline: true,
           })
       }
@@ -122,15 +124,15 @@ export function richFormattingPaper(document: RichPaperDocument) {
       content: [
         {
           text: "Web ",
-          href: safeHrefSchema.parse("https://example.com/career"),
+          href: safeHref("https://example.com/career"),
         },
         {
           text: "HTTP ",
-          href: safeHrefSchema.parse("http://example.com/work"),
+          href: safeHref("http://example.com/work"),
         },
         {
           text: "Email",
-          href: safeHrefSchema.parse("mailto:linh@example.com"),
+          href: safeHref("mailto:linh@example.com"),
         },
       ],
     },

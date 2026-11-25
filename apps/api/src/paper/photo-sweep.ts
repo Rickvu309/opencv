@@ -28,8 +28,6 @@ export async function sweepUnattachedPhotos(now: Date = new Date()) {
   throw last
 }
 
-export { attachPhoto } from "./store.js"
-
 const REFERENCE_APPEARED = new Set(["23001", "23503"])
 
 function gainedPhotoReference(error: unknown) {

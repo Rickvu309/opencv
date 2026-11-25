@@ -86,9 +86,7 @@ const listChanged = (): QueryRef[] => [{ query: "paper.list" }]
 const docChanged = (input: DocInput): QueryRef[] => [
   { query: "paper.document", input: { docId: input.docId } },
   { query: "paper.get", input: { docId: input.docId } },
-  { query: "paper.pageCount", input: { docId: input.docId } },
   { query: "paper.outline", input: { docId: input.docId } },
-  { query: "paper.keywordGap", input: { docId: input.docId } },
   ...listChanged(),
 ]
 
@@ -183,44 +181,11 @@ export const paperContract = commandContract({
             ...listChanged(),
           ],
   }),
-  "paper.revertEdit": commandEntry({
-    description: "Take back one Coach edit and keep later typing.",
-    input: z
-      .object({
-        docId: paperIdSchema,
-        editId: editIdSchema,
-        writer: nativeWriterSchema.optional(),
-      })
-      .strict(),
-    output: z
-      .object({
-        docId: paperIdSchema,
-        revision: z.number().int(),
-        editId: editIdSchema,
-        reverted: z.boolean(),
-      })
-      .strict(),
-    coach: "never",
-    destructive: false,
-    step: () => "Undo a Coach edit",
-    invalidates: (input) => docChanged(input),
-  }),
   "paper.nativeSync": commandEntry({
     description:
       "Exchange admitted native document changes with explicit writer and provenance.",
     input: nativeSyncInputSchema,
     output: nativeSyncOutputSchema,
-    idempotency: "none",
-    coach: "never",
-    destructive: false,
-    step: () => "Sync the document",
-    invalidates: () => [],
-  }),
-  "paper.sync": commandEntry({
-    description:
-      "Exchange document changes with the server. A push carries the revision it is based on and the caller's state vector. The server absorbs it only at that revision; otherwise it answers stale with everything the caller lacks and absorbs nothing. A pull sends no update.",
-    input: paperSyncInputSchema,
-    output: paperSyncOutputSchema,
     idempotency: "none",
     coach: "never",
     destructive: false,
@@ -294,58 +259,7 @@ export const paperContract = commandContract({
       { query: "paper.isDeleted", input: { docId: input.docId } },
     ],
   }),
-  "paper.setTemplate": commandEntry({
-    description: "Change the document template.",
-    input: paperSetTemplateInputSchema,
-    output: paperViewSchema
-      .extend({ previousTemplateId: paperTemplateIdSchema.nullable() })
-      .strict(),
-    coach: "auto",
-    destructive: false,
-    step: () => "Change the template",
-    invalidates: docChanged,
-  }),
-  "paper.share": commandEntry({
-    description: "Share a document.",
-    input: paperShareInputSchema
-      .extend({ writer: nativeWriterSchema.optional() })
-      .strict(),
-    output: z.object({ docId: paperIdSchema, token: z.string() }).strict(),
-    coach: "never",
-    destructive: false,
-    step: () => "Share the document",
-    invalidates: () => [],
-  }),
-  "paper.unshare": commandEntry({
-    description: "Stop sharing a document.",
-    input: paperUnshareInputSchema
-      .extend({ writer: nativeWriterSchema.optional() })
-      .strict(),
-    output: z.object({ docId: paperIdSchema }).strict(),
-    coach: "never",
-    destructive: false,
-    step: () => "Stop sharing",
-    invalidates: () => [{ query: "paper.shared" }],
-  }),
 
-  "paper.dismissCheck": commandEntry({
-    description: "Dismiss an import check.",
-    input: paperDismissCheckInputSchema,
-    output: paperViewSchema,
-    coach: "never",
-    destructive: false,
-    step: () => "Dismiss a check",
-    invalidates: docChanged,
-  }),
-  "paper.keepTwoPages": commandEntry({
-    description: "Keep a two-page document.",
-    input: paperKeepTwoPagesInputSchema,
-    output: paperViewSchema,
-    coach: "never",
-    destructive: false,
-    step: () => "Keep two pages",
-    invalidates: docChanged,
-  }),
   "paper.setStatus": commandEntry({
     description: "Set a document status.",
     input: paperSetStatusCommandInputSchema.extend({
@@ -355,15 +269,6 @@ export const paperContract = commandContract({
     coach: "never",
     destructive: false,
     step: () => "Set status",
-    invalidates: docChanged,
-  }),
-  "paper.attachPhoto": commandEntry({
-    description: "Attach an uploaded photo to a CV.",
-    input: paperAttachPhotoInputSchema,
-    output: paperViewSchema.extend({ previousPaper }).strict(),
-    coach: "auto",
-    destructive: false,
-    step: () => "Add a photo",
     invalidates: docChanged,
   }),
   "paper.deleteFile": commandEntry({

@@ -140,21 +140,6 @@ export const paperQueries = queryContract({
     input: z.object({ docId: paperIdSchema }).strict(),
     output: z.object({ docId: paperIdSchema, deleted: z.boolean() }).strict(),
   }),
-  "paper.pageCount": queryEntry({
-    input: z
-      .object({ docId: paperIdSchema, writer: nativeWriterSchema.optional() })
-      .strict(),
-    output: paperPagesSchema,
-  }),
-  "paper.shared": queryEntry({
-    input: z
-      .object({
-        token: z.string().min(8),
-        writer: nativeWriterSchema.optional(),
-      })
-      .strict(),
-    output: paperSharedViewSchema,
-  }),
   "file.get": queryEntry({
     input: z.object({ fileId: fileIdSchema }).strict(),
     output: paperFileSchema.omit({ createdAt: true }),
@@ -183,12 +168,5 @@ export const paperQueries = queryContract({
         omittedChars: z.number().int().nonnegative().optional(),
       })
       .strict(),
-  }),
-  "paper.keywordGap": queryEntry({
-    input: paperKeywordGapInputSchema,
-    output: z
-      .object({ keyword: z.string(), sentence: z.string() })
-      .strict()
-      .nullable(),
   }),
 })

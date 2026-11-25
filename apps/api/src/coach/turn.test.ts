@@ -1,8 +1,4 @@
-import {
-  emptyCvDocument,
-  parseChatTurnEvent,
-  titleFrom,
-} from "@workspace/domain"
+import { parseChatTurnEvent, titleFrom } from "@workspace/domain"
 import { fixtureChunks, FixtureCoachModel } from "./anthropic-fixture.js"
 import type { SSEStreamingApi } from "hono/streaming"
 import { afterAll, describe, expect, it, vi } from "vitest"
@@ -334,6 +330,17 @@ describe("coach turn receipts", () => {
   })
 })
 
+const EMPTY_CV = {
+  templateId: "internship",
+  name: "",
+  headline: "",
+  contact: { email: "", phone: "", location: "" },
+  summary: "",
+  experience: [],
+  education: [],
+  skills: [],
+}
+
 describe("toolResultFromExecute", () => {
   it("puts reversal and detail on the yielded part", () => {
     const part = toolResultFromExecute({
@@ -348,8 +355,8 @@ describe("toolResultFromExecute", () => {
         output: {
           kind: "cv",
           name: "CV",
-          document: emptyCvDocument(),
-          previousDocument: emptyCvDocument(),
+          document: EMPTY_CV,
+          previousDocument: EMPTY_CV,
         },
       },
     })

@@ -29,7 +29,7 @@ import {
   richFragment as fragment,
 } from "../test/rich-paper.js"
 import { seedColumns } from "./content-document.js"
-import { syncContent, withContent } from "./content-store.js"
+import { syncContent } from "./content-store.js"
 import { foldSettledLog } from "./content-compact.js"
 import { saveFile } from "./store.js"
 import { png } from "./photo.fixtures.js"
@@ -173,18 +173,6 @@ describe("rich canonical Paper database admission", () => {
           provenance: undefined,
         })
       ).rejects.toThrow()
-      let called = false
-      await expect(
-        withContent(
-          owner,
-          docId,
-          async () => {
-            called = true
-          },
-          { writer: RICH_NATIVE_WRITER }
-        )
-      ).rejects.toThrow("rich Paper editor")
-      expect(called).toBe(false)
       await expect(
         store.registry.read(
           "paper.get",

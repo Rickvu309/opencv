@@ -1,17 +1,29 @@
 import {
-  NATIVE_WRITER,
-  nativePaperDocumentSchema,
   nativeProvenance,
   nativeSyncOutputSchema,
-  paperViewSchema,
-  personActor,
+  paperPhotoRef,
+  parseUserId,
+  RICH_NATIVE_WRITER,
 } from "@workspace/domain"
-import { loadYDoc, seedYDoc, writeDocument } from "@workspace/paper-crdt"
+import {
+  openRichPaperClient,
+  type PaperClient,
+  type Prepared,
+} from "@workspace/paper-crdt"
 import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 
 import { paperDocs } from "../db/schema.js"
+import { seedColumns } from "../paper/content-document.js"
+import { saveFile } from "../paper/index.js"
+import { png } from "../paper/photo.fixtures.js"
 import { bytesOf, encoded } from "../test/paper-content.js"
+import {
+  richElement,
+  richFragment,
+  richPaper,
+  richText,
+} from "../test/rich-paper.js"
 import {
   idOf,
   type CoverageCase,
@@ -19,85 +31,71 @@ import {
 } from "./coverage-helpers.test-support.js"
 
 export function nativePaperCases(tools: CoverageTools): CoverageCase[] {
-  const { db, registry, run, userId } = tools
-  const document = (text: string) =>
-    nativePaperDocumentSchema.parse({
-      version: 4,
-      schemaRevision: 1,
-      kind: "letter",
-      clashes: [],
-      blocks: [
-        {
-          id: "native-sync",
-          type: "paragraph",
-          content: [{ text, underline: true }],
-        },
-      ],
-    })
-  const original = document("Dear team")
-  const edited = document("Synced Việt 😀")
-  let input: Parameters<CoverageTools["run"]>[1]
+  const { db, run, userId } = tools
+  let document: ReturnType<typeof richPaper> | null = null
+  let client: PaperClient | null = null
   let docId = ""
+  const sync = async (sent: Prepared) =>
+    run("paper.nativeSync", {
+      docId,
+      writer: RICH_NATIVE_WRITER,
+      ...sent,
+      update: encoded(sent.update),
+      stateVector: encoded(sent.stateVector),
+    })
+  const receive = (sent: Prepared, output: unknown) => {
+    const reply = nativeSyncOutputSchema.parse(output)
+    return client!.receive(sent, {
+      ...reply,
+      update: bytesOf(reply.update),
+      stateVector: bytesOf(reply.stateVector),
+    })
+  }
+  let sent: Prepared | null = null
   return [
     {
       name: "paper.nativeSync",
       arrange: async () => {
+        const photo = await saveFile({
+          userId: parseUserId(userId),
+          name: "portrait.png",
+          mediaType: "image/png",
+          bytes: Buffer.from(png),
+          purpose: "avatar",
+        })
+        document = richPaper("letter", paperPhotoRef(photo.id))
         docId = idOf((await run("paper.create", { kind: "letter" })).output)
         await db
           .update(paperDocs)
-          .set({
-            crdtEpoch: 1,
-            crdtBase: Buffer.from(seedYDoc(original)),
-            crdtDocument: original,
-          })
+          .set(seedColumns("letter", document!))
           .where(eq(paperDocs.id, docId))
-        const qualified = {
-          docId,
-          writer: NATIVE_WRITER,
-          provenance: nativeProvenance(original),
-        }
-        const pulled = nativeSyncOutputSchema.parse(
-          (
-            await run("paper.nativeSync", {
-              ...qualified,
-              epoch: 0,
-              update: "",
-              stateVector: "",
-            })
-          ).output
+        client = openRichPaperClient(null, {
+          provenance: nativeProvenance(document!),
+        })
+        const pull = client.prepare()
+        expect(receive(pull, (await sync(pull)).output).failed).toBe(false)
+        richText(richElement(richFragment(client.ydoc), "intro")).insert(
+          0,
+          "Synced "
         )
-        const client = loadYDoc(bytesOf(pulled.update), [])
-        try {
-          input = {
-            ...qualified,
-            epoch: pulled.epoch,
-            basedOn: pulled.revision,
-            stateVector: pulled.stateVector,
-            update: encoded(writeDocument(client, edited, "person")),
-          }
-        } finally {
-          client.destroy()
-        }
+        sent = client.prepare()
       },
-      act: () => run("paper.nativeSync", input),
+      act: () => sync(sent!),
       assert: async (result) => {
         expect(nativeSyncOutputSchema.parse(result.output)).toMatchObject({
-          provenance: nativeProvenance(original),
-          epoch: 1,
-          revision: 2,
+          provenance: nativeProvenance(document!),
           reset: false,
           stale: false,
         })
         expect(result.activityId).toBeNull()
         expect(result.reversal).toBeNull()
-        const saved = paperViewSchema.parse(
-          await registry.read(
-            "paper.get",
-            { docId, writer: NATIVE_WRITER },
-            personActor(userId)
-          )
-        )
-        expect(saved.paper).toEqual(edited)
+        expect(receive(sent!, result.output).failed).toBe(false)
+        const [row] = await db
+          .select()
+          .from(paperDocs)
+          .where(eq(paperDocs.id, docId))
+        expect(row?.crdtDocument).toEqual(client!.document())
+        client!.ydoc.destroy()
       },
     },
   ]

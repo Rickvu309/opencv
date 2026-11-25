@@ -17,7 +17,7 @@ import {
 import { and, desc, eq, ne } from "drizzle-orm"
 
 import { getDb, insideTransaction } from "../db/context.js"
-import { files, paperDocs, paperShares } from "../db/schema.js"
+import { files, paperDocs } from "../db/schema.js"
 import { createId } from "../platform/id.js"
 import { CommandError } from "../platform/errors.js"
 import { admitDocument } from "./native-admission.js"
@@ -266,10 +266,6 @@ export async function restoreDeletedPaper(actor: Actor, docId: PaperId) {
   return (await restoreWordPage(actor.userId, docId)) ?? documentNotFound()
 }
 
-export async function setPaperTemplate(actor: Actor, docId: PaperId) {
-  return ownedPaper(actor.userId, docId)
-}
-
 export async function setPaperStatus(
   actor: Actor,
   docId: PaperId,
@@ -287,30 +283,10 @@ export async function setPaperStatus(
   return toListedPaper({ ...current, status, updatedAt }, writer)
 }
 
-export async function sharePaper(actor: Actor, docId: PaperId) {
-  return ownedPaper(actor.userId, docId)
-}
-
-export async function unsharePaper(actor: Actor, docId: PaperId) {
-  return ownedPaper(actor.userId, docId)
-}
-
-export async function dismissCheck(actor: Actor, docId: PaperId) {
-  return ownedPaper(actor.userId, docId)
-}
-
-export async function keepTwoPages(actor: Actor, docId: PaperId) {
-  return ownedPaper(actor.userId, docId)
-}
-
 export const COACH_TWO_PAGES_PAST_STORED_JSON_CHARS = 3500
 
 export function coachPagesFromStoredJson(storedJsonChars: number): 1 | 2 {
   return storedJsonChars > COACH_TWO_PAGES_PAST_STORED_JSON_CHARS ? 2 : 1
-}
-
-export async function pageCount(actor: Actor, docId: PaperId) {
-  return ownedPaper(actor.userId, docId)
 }
 
 export async function readOwnedPhoto(
@@ -337,35 +313,6 @@ export async function readOwnedPhoto(
   if (!row || row.purpose !== "avatar" || !row.mediaType.startsWith("image/"))
     throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo file not found")
   return { mediaType: row.mediaType, bytes: row.bytes }
-}
-
-export async function readSharedPhoto(token: string): Promise<never> {
-  const rows = await getDb()
-    .select({ doc: paperDocs })
-    .from(paperShares)
-    .innerJoin(paperDocs, eq(paperDocs.id, paperShares.docId))
-    .where(eq(paperShares.token, token))
-    .limit(1)
-  const row = rows[0]
-  if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo not found")
-  throw new CommandError(ERROR_CODES.NOT_FOUND, "Photo not found")
-}
-
-export async function attachPhoto(actor: Actor, docId: PaperId) {
-  return ownedPaper(actor.userId, docId)
-}
-
-export async function readShared(token: string): Promise<never> {
-  const rows = await getDb()
-    .select({ doc: paperDocs })
-    .from(paperShares)
-    .innerJoin(paperDocs, eq(paperDocs.id, paperShares.docId))
-    .where(eq(paperShares.token, token))
-    .limit(1)
-  const row = rows[0]
-  if (!row)
-    throw new CommandError(ERROR_CODES.NOT_FOUND, "Share link not found")
-  throw needsRichEditor()
 }
 
 export function mediaTypeFromImageBytes(bytes: Buffer) {

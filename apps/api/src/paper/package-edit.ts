@@ -373,16 +373,7 @@ export function registerWordPackageEdit(
             },
           }
         }
-        return output.editId
-          ? {
-              command: "paper.revertEdit",
-              input: {
-                docId: input.docId,
-                editId: output.editId,
-                ...(input.writer ? { writer: input.writer } : {}),
-              },
-            }
-          : null
+        return null
       },
       activity: (input, output) => {
         const saved = isPackageOutput(output)

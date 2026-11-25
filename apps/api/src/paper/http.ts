@@ -35,7 +35,6 @@ import {
   IMPORT_FILE_CAP,
   IMPORT_SIZE_MESSAGE,
   readOwnedPhoto,
-  readSharedPhoto,
   saveFile,
 } from "./store.js"
 
@@ -180,27 +179,7 @@ export function createPaperRoutes(signedIn: SignedIn) {
   const routes = new Hono<{ Variables: SignedInVariables }>()
   routes.route("/packages", createPaperPackageRoutes(signedIn))
 
-  routes.use("/shared/*", async (c, next) => {
-    c.header("cache-control", "no-store")
-    await next()
-  })
-
-  routes.get("/shared/:token/photo", async (c) => {
-    return photoBytes(await readSharedPhoto(c.req.param("token")), "no-store")
-  })
-
-  routes.get("/shared/:token", async (c) => {
-    const data = await registry.readAsVisitor("paper.shared", {
-      token: c.req.param("token"),
-      writer: readWriter(c),
-    })
-    return c.json(successEnvelope(data))
-  })
-
-  routes.use("*", async (c, next) => {
-    if (c.req.path.includes("/shared/")) return next()
-    return signedIn(c, next)
-  })
+  routes.use("*", signedIn)
 
   routes.route("/", createNativeWordRoutes())
 
@@ -415,15 +394,6 @@ export function createPaperRoutes(signedIn: SignedIn) {
       person(c.var.userId)
     )
     c.header("Cache-Control", "private, no-store")
-    return c.json(successEnvelope(data))
-  })
-
-  routes.get("/:id/pages", async (c) => {
-    const data = await registry.read(
-      "paper.pageCount",
-      { docId: c.req.param("id"), writer: readWriter(c) },
-      person(c.var.userId)
-    )
     return c.json(successEnvelope(data))
   })
 

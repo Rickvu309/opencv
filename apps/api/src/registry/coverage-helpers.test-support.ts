@@ -78,5 +78,4 @@ export type CoverageTools = {
   profileOf: () => Promise<unknown>
   gone: (read: Promise<unknown>) => Promise<void>
   checklist: (itemId: string) => Promise<{ label: string; done: boolean }[]>
-  shares: (docId: string) => Promise<{ token: string }[]>
 }

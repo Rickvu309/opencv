@@ -81,18 +81,10 @@ const SNAPSHOT_QUERIES: {
   "paper.document": (ids) =>
     [...ids.docs, ...ids.minted].map((docId) => ({ docId })),
   "paper.isDeleted": (ids) => ids.minted.map((docId) => ({ docId })),
-  "paper.pageCount": (ids) => ids.docs.map((docId) => ({ docId })),
-  "paper.shared": (ids) => ids.tokens.map((token) => ({ token })),
   "file.get": (ids) => ids.files.map((fileId) => ({ fileId })),
   "paper.files": () => [{}],
   "paper.outline": (ids) =>
     [...ids.docs, ...ids.minted].map((docId) => ({ docId })),
-  "paper.keywordGap": (ids) =>
-    ids.docs.flatMap((docId) =>
-      ids.jobs
-        .filter((jobId) => ids.touchesPair(docId, jobId))
-        .map((jobId) => ({ docId, jobId }))
-    ),
   "profile.get": () => [{}],
   "integrations.list": () => [{}],
   "billing.get": () => [{}],

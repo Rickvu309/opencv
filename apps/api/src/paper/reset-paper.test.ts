@@ -13,7 +13,6 @@ import { installRegistry } from "../install.js"
 import { seedCoachActor } from "../test/coach-turn.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { journalTag } from "../test/migration-journal.js"
-import { twoParagraphCv } from "../test/paper-content.js"
 import { saveFile } from "./store.js"
 
 const RESET_STATEMENT = 'DELETE FROM "opencv_app"."paper_docs";'
@@ -122,7 +121,7 @@ describe("reset paper rows", () => {
           .where(eq(user.id, userId))
         const cv = await registry.execute({
           name: "paper.create",
-          input: { kind: "cv", name: "CV", document: twoParagraphCv },
+          input: { kind: "cv", name: "CV" },
           actor: person,
         })
         const cvId = (cv.output as { id: string }).id
