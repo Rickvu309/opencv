@@ -1,19 +1,6 @@
 {
   "id": "delegate-reach",
   "file": "apps/api/src/registry/delegate-reach.test.ts",
-  "historic": {
-    "mode": "restore",
-    "sha": "a960e0b246bb9647bac2b71a1ab0b0dda4de1802",
-    "paths": ["apps/api/src/registry/delegate-policy.ts"],
-    "command": [
-      "pnpm",
-      "--filter",
-      "api",
-      "exec",
-      "vitest",
-      "run",
-      "src/registry/delegate-reach.test.ts"
-    ]
-  },
-  "reason": "Caught by review. At the first head of PR 1358 delegate access was decided by a marker alone, so a job marker on activity.undo would have let a Job write grant call Undo. The test fails there and passes once a closed delegate set gates every tool."
+  "historic": null,
+  "reason": "Caught by review. At the first head of PR 1358 delegate access was decided by a marker alone, so a job marker on activity.undo would have let a Job write grant call Undo. The old proof restored apps/api/src/registry/delegate-policy.ts from a960e0b2, which imports ./errors.js and no longer compiles against the current tree. The test still fails on any delegate reach outside the closed set it lists, which now names paper.update."
 }

@@ -13,7 +13,8 @@ import { FileText } from "lucide-react"
 import { paperRenameInputSchema, RICH_NATIVE_WRITER } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
-import { useRunCommand } from "@/lib/contract-client.ts"
+import { useQueryClient } from "@tanstack/react-query"
+import { catalogClient } from "@/lib/contract-client.ts"
 import { PageHeader } from "@workspace/ui/components/page-header"
 import {
   Breadcrumb,
@@ -136,7 +137,7 @@ export function PaperDocumentTitle({
   docId: string
 }) {
   const layout = useContext(TitleLayout)
-  const run = useRunCommand()
+  const queryClient = useQueryClient()
   const [editing, setEditing] = useReducer(
     (_: boolean, next: boolean) => next,
     false
@@ -172,7 +173,11 @@ export function PaperDocumentTitle({
     saving.current = true
     setPending(true)
     try {
-      await run("paper.rename", { ...parsed.data, writer: RICH_NATIVE_WRITER })
+      await catalogClient.run(queryClient, "paper.update", {
+        docId: parsed.data.docId,
+        writer: RICH_NATIVE_WRITER,
+        patch: { name: parsed.data.name },
+      })
       setSavedName(parsed.data.name)
       setEditing(false)
       setError("")

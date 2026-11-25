@@ -168,7 +168,9 @@ describe("every command runs in a transaction unless it declares none", () => {
                       requiredCapabilities: ["structured-prose", "underline"],
                     },
                   }
-                : sampleInput(schema)
+                : name === "paper.update"
+                  ? { docId: UUID, patch: { name: "Renamed" } }
+                  : sampleInput(schema)
           const parsed = schema.safeParse(input)
           if (!parsed.success) {
             throw new Error(`${name} rejected the sample input`)

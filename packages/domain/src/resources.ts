@@ -27,6 +27,11 @@ export const jobPriorityResource = {
   coachFloor: "confirm",
 } as const satisfies ResourceRef
 
+export const paperLabelResource = {
+  name: "paper.label",
+  coachFloor: "never",
+} as const satisfies ResourceRef
+
 export function effectiveCoachPolicy<I>(
   entry: { coach: CoachAccess; writes?: (input: I) => ResourceRef[] },
   input: I

@@ -51,7 +51,7 @@ describe("public command output", () => {
       ])
     )
     expect(
-      Object.values(outputs).some((keys) => keys.includes("previousName"))
+      Object.values(outputs).some((keys) => keys.includes("contentVersion"))
     ).toBe(true)
     expect(publishedReversalKeys(outputs, PRIVATE_OUTPUT_KEYS)).toEqual([])
   })

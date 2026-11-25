@@ -103,7 +103,7 @@ describe("what a delegate can reach", () => {
         "activity.undo",
         "paper.canvas",
         "paper.start",
-        "paper.rename",
+        "paper.update",
         "paper.duplicate",
         "paper.delete",
         "paper.restoreDeleted",

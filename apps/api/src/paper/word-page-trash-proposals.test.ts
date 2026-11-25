@@ -333,8 +333,8 @@ describe("a proposal made before a Word page was deleted and brought back", () =
         coach
       )
       await registry.execute({
-        name: "paper.rename",
-        input: { docId: page.docId, name: "After rename" },
+        name: "paper.update",
+        input: { docId: page.docId, patch: { name: "After rename" } },
         actor: person,
       })
       expect(await registry.approve(owner, proposal)).toBeTruthy()

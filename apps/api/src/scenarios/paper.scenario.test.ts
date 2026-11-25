@@ -64,7 +64,11 @@ describe("a Paper started blank", () => {
     for (const isFavorite of [true, false])
       expect(
         dataOf<{ isFavorite: boolean }>(
-          await ada.run("paper.setFavorite", { docId: cv.id, isFavorite })
+          await ada.run("paper.update", {
+            docId: cv.id,
+            writer,
+            patch: { isFavorite },
+          })
         ).isFavorite
       ).toBe(isFavorite)
   })
@@ -86,10 +90,11 @@ describe("a Paper started blank", () => {
   it("can be renamed", async () => {
     const ada = await world.person("Ada")
     const cv = await blank(ada, "cv", "Marketing CV")
-    const renamed = await ada.run("paper.rename", {
+    const renamed = await ada.run("paper.update", {
       docId: cv.id,
-      name: "Product CV",
+
       writer,
+      patch: { name: "Product CV" },
     })
     expect(renamed.status).toBe(200)
     expect(dataOf<Paper>(await opened(ada, cv.id)).name).toBe("Product CV")
@@ -121,10 +126,11 @@ describe("a Paper started blank", () => {
   it("can be marked ready", async () => {
     const ada = await world.person("Ada")
     const cv = await blank(ada, "cv", "Marketing CV")
-    const ready = await ada.run("paper.setStatus", {
+    const ready = await ada.run("paper.update", {
       docId: cv.id,
-      status: "ready",
+
       writer,
+      patch: { status: "ready" },
     })
     expect(ready.status).toBe(200)
     expect(dataOf<{ status: string }>(ready).status).toBe("ready")

@@ -131,7 +131,7 @@ describe("receipt reversal helpers", () => {
     expect(
       receiptShowsUndo({
         type: "tool",
-        name: "paper.rename",
+        name: "paper.update",
         summary: "Renamed it",
         ok: true,
         toolCallId: "call_4",

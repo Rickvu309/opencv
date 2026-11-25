@@ -59,6 +59,7 @@ import { implementation as paper$export } from "../paper/operations/export/serve
 import { implementation as paper$import } from "../paper/operations/import/server.js"
 import { implementation as paper$nativeWord } from "../paper/operations/native-word/server.js"
 import { implementation as paper$read } from "../paper/operations/read/server.js"
+import { implementation as paper$update } from "../paper/operations/update/server.js"
 import { implementation as profile$get } from "../account/operations/profile/get/server.js"
 import { implementation as profile$markWelcomed } from "../account/operations/profile/mark-welcomed/server.js"
 import { implementation as profile$setPhoto } from "../account/operations/profile/set-photo/server.js"
@@ -125,6 +126,7 @@ export const implementations = {
   "paper.import": paper$import,
   "paper.nativeWord": paper$nativeWord,
   "paper.read": paper$read,
+  "paper.update": paper$update,
   "profile.get": profile$get,
   "profile.markWelcomed": profile$markWelcomed,
   "profile.setPhoto": profile$setPhoto,

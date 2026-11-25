@@ -74,9 +74,7 @@ function isPending(output: unknown) {
 
 function paperCommandInput(name: string, input: unknown) {
   if (
-    (name === "paper.rename" ||
-      name === "paper.duplicate" ||
-      name === "paper.setStatus") &&
+    name === "paper.duplicate" &&
     input !== null &&
     typeof input === "object" &&
     !("writer" in input)

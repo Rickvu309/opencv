@@ -2,10 +2,7 @@ import ts from "typescript"
 
 export const OLDER_LOOKUPS = ["ownedPaper", "ownedPaperOrNull"]
 
-export const BLOCK_DOCUMENT_ONLY = {
-  setPaperStatus:
-    "draft and ready status is stored on rich documents only; a Word page has none",
-}
+export const BLOCK_DOCUMENT_ONLY = {}
 
 function calls(node) {
   const names = new Set()

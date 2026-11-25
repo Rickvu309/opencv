@@ -5,7 +5,9 @@ import { withDatabase, type TestDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
 import { Registry } from "../registry/registry.js"
 import { createMigratedTestDb } from "../test/harness.js"
+import { bindOperation } from "../registry/bind.js"
 import { registerPaper } from "./index.js"
+import { implementation as updatePaper } from "./operations/update/server.js"
 
 const person = personActor("paper-alone")
 
@@ -24,6 +26,7 @@ beforeAll(async () => {
   })
   registry = new Registry()
   registerPaper(registry)
+  bindOperation(registry, updatePaper)
 })
 
 afterAll(async () => {
@@ -44,8 +47,8 @@ describe("Paper with nothing else registered", () => {
       })
       const docId = (created.output as Paper).id
       await registry.execute({
-        name: "paper.rename",
-        input: { docId, name: "Product CV", writer },
+        name: "paper.update",
+        input: { docId, writer, patch: { name: "Product CV" } },
         actor: person,
       })
       const listed = (await registry.read(

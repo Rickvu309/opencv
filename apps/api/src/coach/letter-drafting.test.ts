@@ -154,7 +154,7 @@ async function draftingMaterial(
   const cv = await run("paper.create", { kind: "cv", name: "Ada main CV" })
   if (options.cv === "linked")
     await run("job.linkPaper", { jobId: job.id, docId: cv.id, kind: "cv" })
-  else await run("paper.setFavorite", { docId: cv.id, isFavorite: true })
+  else await run("paper.update", { docId: cv.id, patch: { isFavorite: true } })
   return { jobId: job.id, cvId: cv.id }
 }
 

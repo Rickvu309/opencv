@@ -1,0 +1,82 @@
+[
+  {
+    "subject": "apps/api/src/paper/word-card-actions.test.ts",
+    "because": "paper.update's public result is the Paper itself; the previous name is kept privately for Undo, so the case now checks the new name and that no previous field is published.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/registry/behavior.test.ts",
+    "because": "paper.rename is replaced by paper.update; the Coach tool list now names paper.update in its place.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/registry/delegate-reach.test.ts",
+    "because": "paper.rename is replaced by paper.update; the closed delegate list now names paper.update in its place.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/registry/invalidation.formal.test.ts",
+    "because": "paper.update writes an activity receipt, so no command reverses without one and the reversal-without-receipt observation is empty; the setFavorite mutant now removes paper.list from paper.duplicate, which still invalidates it.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/registry/private-output-keys.test.ts",
+    "because": "paper.rename was the last legacy command whose output carried an undo-only key; the scan's sanity check now requires a real output key, and the leak check itself is unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/scenarios/paper.scenario.test.ts",
+    "because": "The favourite scenario now marks and unmarks through paper.update with the same expectations.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-receipt.test.ts",
+    "because": "The receipt example names paper.update instead of the removed paper.rename; the assertion is unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-api.test.ts",
+    "because": "paper.rename left the legacy contract; the contract-client cases now use paper.delete, which refreshes the same list and document reads.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/lib/paper-command-input.test.ts",
+    "because": "Only paper.duplicate still gets the native writer added by the legacy client; paper.update sends its writer itself.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "scripts/guard-ledger/delegate-reach.json",
+    "because": "Its proof restored delegate-policy.ts from a960e0b2, which no longer compiles against the current tree; the reason is recorded on the row.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

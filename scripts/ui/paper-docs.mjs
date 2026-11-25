@@ -32,9 +32,9 @@ export async function seedPaperDocs(page, apiOrigin, origin, spec) {
       label: doc.label,
     })
     if (!minted.docId) throw new Error("paper.canvas returned no docId")
-    await command(page, apiOrigin, origin, "paper.rename", {
+    await command(page, apiOrigin, origin, "paper.update", {
       docId: minted.docId,
-      name: doc.name,
+      patch: { name: doc.name },
     })
   }
 }

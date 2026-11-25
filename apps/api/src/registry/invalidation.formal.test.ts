@@ -486,7 +486,6 @@ describe("every changed read is named by the command that changed it", () => {
       controlDiffs = changedBetween(finalSpecs, first, second)
     })
     expect(undoSeen).toBeGreaterThan(0)
-    expect(reversals.length).toBeGreaterThan(0)
   }, 240_000)
 
   afterAll(async () => {
@@ -567,14 +566,10 @@ describe("every changed read is named by the command that changed it", () => {
     }
   })
 
-  it("mutant R1: paper.setFavorite without paper.list is caught", () => {
-    const mutant = without(
-      invalidatesTable(),
-      "paper.setFavorite",
-      "paper.list"
-    )
+  it("mutant R1: paper.duplicate without paper.list is caught", () => {
+    const mutant = without(invalidatesTable(), "paper.duplicate", "paper.list")
     const gaps = gapsIn(acts, mutant)
-    expect(gaps.join("\n")).toContain("paper.setFavorite changed paper.list")
+    expect(gaps.join("\n")).toContain("paper.duplicate changed paper.list")
   })
 
   it("mutant R2: activity.undo without paper.list is caught", () => {

@@ -29,9 +29,6 @@ import {
   listPapers,
   ownedPaper,
   readFileMeta,
-  renamePaper,
-  setPaperStatus,
-  setPaperFavorite,
 } from "./store.js"
 
 const noReversal = () => null
@@ -118,25 +115,6 @@ export function registerPaper(registry: Registry) {
       reversal: noReversal,
       activity: noActivity,
     },
-    "paper.rename": {
-      handler: (input, actor) =>
-        renamePaper(actor, input.docId, input.name, input.writer),
-      reversal: (input, output) => ({
-        command: "paper.rename",
-        input: {
-          docId: input.docId,
-          name: output.previousName,
-          ...(input.writer ? { writer: input.writer } : {}),
-        },
-      }),
-      activity: noActivity,
-    },
-    "paper.setFavorite": {
-      handler: (input, actor) =>
-        setPaperFavorite(actor.userId, input.docId, input.isFavorite),
-      reversal: noReversal,
-      activity: noActivity,
-    },
     "paper.delete": {
       handler: (input, actor) => deletePaper(actor, input.docId),
       reversal: (input, output) =>
@@ -167,12 +145,6 @@ export function registerPaper(registry: Registry) {
         await relinkJobs(registry, actor, restored)
         return restored.page
       },
-      reversal: noReversal,
-      activity: noActivity,
-    },
-    "paper.setStatus": {
-      handler: (input, actor) =>
-        setPaperStatus(actor, input.docId, input.status, input.writer),
       reversal: noReversal,
       activity: noActivity,
     },

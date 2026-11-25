@@ -315,9 +315,9 @@ export function PaperLibrary({
       return
     }
     try {
-      await run("paper.rename", {
+      await catalogClient.run(queryClient, "paper.update", {
         docId: mode.doc.id,
-        name: parsed.data,
+        patch: { name: parsed.data },
         ...(mode.doc.format === "rich" ? { writer: RICH_NATIVE_WRITER } : {}),
       })
       closeDialog()
