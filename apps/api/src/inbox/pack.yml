@@ -1,4 +1,5 @@
 layer: feature
+public: [index.ts, operations]
 dependencies:
   [
     apps/api/src/account,

@@ -1,5 +1,8 @@
 import { z } from "zod"
 
+import { jobStageSchema } from "./job.js"
+import type { ResourceRef } from "./resources.js"
+
 export type MailThread = {
   id: string
   company: string
@@ -139,5 +142,91 @@ function copyThread(thread: MailThread): MailThread {
       ? { body: thread.draft.body, times: [...thread.draft.times] }
       : null,
     messages: thread.messages.map((message) => ({ ...message })),
+  }
+}
+
+export const inboxStatusSchema = z.enum(["open", "done", "snoozed"])
+
+const suggestedStageSchema = z.enum(["interview"]).nullable()
+
+export const inboxThreadSchema = z
+  .object({
+    id: z.string(),
+    company: z.string(),
+    role: z.string(),
+    summary: z.string(),
+    lastMessageAt: z.string().datetime(),
+    unread: z.boolean(),
+    suggestedStage: suggestedStageSchema,
+    jobId: z.string().nullable(),
+    status: inboxStatusSchema,
+  })
+  .strict()
+
+export type InboxThread = z.output<typeof inboxThreadSchema>
+
+export const inboxListSchema = z
+  .object({
+    connected: z.boolean(),
+    skipped: z.boolean(),
+    timeZone: z.string(),
+    threads: z.array(inboxThreadSchema),
+  })
+  .strict()
+
+const inboxMessageSchema = z
+  .object({
+    id: z.string(),
+    direction: z.enum(["in", "out"]),
+    fromName: z.string(),
+    fromEmail: z.string(),
+    toEmail: z.string(),
+    bodyText: z.string(),
+    sentAt: z.string().datetime(),
+  })
+  .strict()
+
+const draftSchema = z
+  .object({ body: z.string(), times: z.array(z.string()) })
+  .strict()
+
+export const inboxDetailSchema = inboxThreadSchema
+  .extend({
+    subject: z.string(),
+    messages: z.array(inboxMessageSchema),
+    draft: draftSchema.nullable(),
+    job: z
+      .object({ id: z.string(), title: z.string(), stage: jobStageSchema })
+      .strict()
+      .nullable(),
+    openUrl: z.string().nullable(),
+  })
+  .strict()
+
+export type InboxDetail = z.output<typeof inboxDetailSchema>
+
+export const threadIdSchema = z.string().uuid()
+export const emptyInboxInput = z.object({}).strict()
+export const threadInput = z.object({ threadId: threadIdSchema }).strict()
+
+export const draftOutput = z
+  .object({ id: z.string(), body: z.string(), times: z.array(z.string()) })
+  .strict()
+
+export const inboxStatusChangeSchema = z
+  .object({
+    id: z.string(),
+    previousStatus: inboxStatusSchema,
+    previousSnoozeUntil: z.string().datetime().nullable(),
+  })
+  .strict()
+
+export type InboxStatusChange = z.output<typeof inboxStatusChangeSchema>
+
+export function inboxThreadResource(threadId?: string): ResourceRef {
+  return {
+    name: "inboxThread",
+    coachFloor: "auto",
+    ...(threadId ? { entityId: threadId } : {}),
   }
 }
