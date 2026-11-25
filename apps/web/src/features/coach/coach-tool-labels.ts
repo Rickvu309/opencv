@@ -129,7 +129,7 @@ const TOOL_COPY = {
   "paper.deleteFile": { label: "Remove this file" },
   "paper.duplicate": { label: "Duplicate this Paper" },
   "paper.edit": { label: "Edit your Paper" },
-  [catalog["paper.export"].name]: { label: "Export your Paper" },
+  [catalog["paper.export"].name]: { label: "Download your Paper as Word" },
   [catalog["paper.import"].name]: { label: "Import your Paper" },
   "paper.files": {
     label: "Look at your Paper files",
@@ -148,7 +148,6 @@ const TOOL_COPY = {
   [catalog["paper.update"].name]: { label: "Update your Paper" },
   "paper.start": { label: "Start a CV or Letter in Paper" },
   "paper.nativeSync": { label: "Save your Paper" },
-  [catalog["paper.nativeWord"].name]: { label: "Download your Paper as Word" },
   [catalog["profile.get"].name]: {
     label: "Read your Profile",
     read: "Read your Profile",

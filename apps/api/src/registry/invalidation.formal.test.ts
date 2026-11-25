@@ -80,7 +80,6 @@ const SNAPSHOT_QUERIES: {
     ...[...ids.docs, ...ids.minted].map((docId) => ({ view: "info", docId })),
   ],
   "paper.export": null,
-  "paper.nativeWord": null,
   "file.get": (ids) => ids.files.map((fileId) => ({ fileId })),
   "paper.files": () => [{}],
   "paper.outline": (ids) =>
@@ -101,9 +100,7 @@ const SNAPSHOT_QUERIES: {
 const NEVER_SNAPSHOT_REASON: Partial<Record<QueryName, string>> = {
   "activity.list": "every command refreshes it",
   "paper.export":
-    "pinned binary download metadata is covered by the package HTTP replay",
-  "paper.nativeWord":
-    "exact-basis Word qualification is covered by the native Word HTTP replay",
+    "pinned binary download metadata and exact-basis Word qualification are covered by the package and native Word HTTP replays",
   "coach.status":
     "task snapshots are read with a cursor, outside the query cache",
   "coach.events": "SSE replay advances its own cursor, outside the query cache",

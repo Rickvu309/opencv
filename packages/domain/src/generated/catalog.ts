@@ -55,7 +55,6 @@ import { operation as job$update } from "../operations/job/update/operation.js"
 import { operation as notify$request } from "../operations/notify/request/operation.js"
 import { operation as paper$export } from "../operations/paper/export/operation.js"
 import { operation as paper$import } from "../operations/paper/import/operation.js"
-import { operation as paper$nativeWord } from "../operations/paper/native-word/operation.js"
 import { operation as paper$read } from "../operations/paper/read/operation.js"
 import { operation as paper$recover } from "../operations/paper/recover/operation.js"
 import { operation as paper$update } from "../operations/paper/update/operation.js"
@@ -123,7 +122,6 @@ export const catalog = {
   "notify.request": notify$request,
   "paper.export": paper$export,
   "paper.import": paper$import,
-  "paper.nativeWord": paper$nativeWord,
   "paper.read": paper$read,
   "paper.recover": paper$recover,
   "paper.update": paper$update,

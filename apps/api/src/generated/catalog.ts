@@ -57,7 +57,6 @@ import { implementation as job$update } from "../job/operations/update/server.js
 import { implementation as notify$request } from "../account/operations/notify/request/server.js"
 import { implementation as paper$export } from "../paper/operations/export/server.js"
 import { implementation as paper$import } from "../paper/operations/import/server.js"
-import { implementation as paper$nativeWord } from "../paper/operations/native-word/server.js"
 import { implementation as paper$read } from "../paper/operations/read/server.js"
 import { implementation as paper$recover } from "../paper/operations/recover/server.js"
 import { implementation as paper$update } from "../paper/operations/update/server.js"
@@ -125,7 +124,6 @@ export const implementations = {
   "notify.request": notify$request,
   "paper.export": paper$export,
   "paper.import": paper$import,
-  "paper.nativeWord": paper$nativeWord,
   "paper.read": paper$read,
   "paper.recover": paper$recover,
   "paper.update": paper$update,
