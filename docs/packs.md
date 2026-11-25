@@ -40,6 +40,7 @@ flowchart TD
     p_packages_domain_src_coach["packages/domain/src/coach"]
     p_packages_domain_src_control["packages/domain/src/control"]
     p_packages_domain_src_inbox["packages/domain/src/inbox"]
+    p_packages_domain_src_paper_doc["packages/domain/src/paper-doc"]
   end
   subgraph p_layer_platform["platform"]
     p_apps_api_src_db["apps/api/src/db"]
@@ -162,6 +163,7 @@ flowchart TD
   p_packages_domain_src_account --> p_packages_domain_src_apply
   p_packages_domain_src_account --> p_packages_domain_src_coach
   p_packages_domain_src_coach --> p_packages_domain_src_apply
+  p_packages_domain_src_coach --> p_packages_domain_src_paper_doc
   p_packages_domain_src_inbox --> p_packages_domain_src_apply
 ```
 
@@ -199,6 +201,7 @@ flowchart TD
 | `packages/domain/src/account` | kernel | account.ts, usage.ts | packages/domain/src/apply, packages/domain/src/coach | none |
 | `packages/domain/src/agents` | kernel | connections.ts, delegate-grant.ts | none | none |
 | `packages/domain/src/apply` | kernel | job.ts, job-position.ts, job-posting.ts | none | none |
-| `packages/domain/src/coach` | kernel | coach.ts, coach-mode.ts, coach-task.ts, chat.ts, chat-messages.ts, chat-title.ts, chat-turn.ts, chat-views.ts | packages/domain/src/apply | none |
+| `packages/domain/src/coach` | kernel | coach.ts, coach-mode.ts, coach-task.ts, chat.ts, chat-messages.ts, chat-title.ts, chat-turn.ts, chat-views.ts | packages/domain/src/apply, packages/domain/src/paper-doc | none |
 | `packages/domain/src/control` | kernel | control.ts | none | none |
 | `packages/domain/src/inbox` | kernel | index.ts | packages/domain/src/apply | none |
+| `packages/domain/src/paper-doc` | kernel | index.ts | none | none |
