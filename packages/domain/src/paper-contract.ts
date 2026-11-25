@@ -29,8 +29,6 @@ import {
   paperDeleteInputSchema,
   paperDocNameSchema,
   paperDuplicateInputSchema,
-  paperRenameInputSchema,
-  paperSetStatusCommandInputSchema,
   paperStoredKindSchema,
 } from "./paper.js"
 import type { QueryRef } from "./queries.js"

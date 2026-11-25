@@ -54,13 +54,6 @@ const paperRenameDocInputSchema = z
   })
   .strict()
 
-const paperSetStatusInputSchema = z
-  .object({
-    docId: paperDocIdSchema,
-    status: paperDocStatusSchema,
-  })
-  .strict()
-
 const paperDeleteDocInputSchema = z
   .object({
     docId: paperDocIdSchema,
@@ -103,8 +96,6 @@ export const paperDuplicateInputSchema = z
   .strict()
 
 export const paperDeleteInputSchema = paperDeleteDocInputSchema
-
-export const paperSetStatusCommandInputSchema = paperSetStatusInputSchema
 
 export const paperDeleteFileInputSchema = z
   .object({
