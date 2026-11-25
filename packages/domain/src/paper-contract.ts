@@ -200,10 +200,7 @@ export const paperContract = commandContract({
     coach: "confirm",
     destructive: true,
     step: () => "Delete this document",
-    invalidates: (input) => [
-      ...docRemoved(input),
-      { query: "paper.read", input: { view: "trash", docId: input.docId } },
-    ],
+    invalidates: docRemoved,
   }),
   "paper.deleteFile": commandEntry({
     description: "Delete an uploaded file.",
