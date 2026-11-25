@@ -3,13 +3,37 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { withDatabase, type TestDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
+import { bindOperation } from "../registry/bind.js"
 import { Registry } from "../registry/registry.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { registerInbox } from "./index.js"
+import { implementation as addToCalendar } from "./operations/add-to-calendar/server.js"
+import { implementation as draftReply } from "./operations/draft-reply/server.js"
+import { implementation as send } from "./operations/send/server.js"
+import { implementation as updateDraft } from "./operations/update-draft/server.js"
+import { implementation as acceptSuggestion } from "./operations/accept-suggestion/server.js"
+import { implementation as clearSuggestion } from "./operations/clear-suggestion/server.js"
+import { implementation as markDone } from "./operations/mark-done/server.js"
+import { implementation as scan } from "./operations/scan/server.js"
+import { implementation as skip } from "./operations/skip/server.js"
+import { implementation as snooze } from "./operations/snooze/server.js"
 
 type Inbox = { threads: { id: string }[] }
 
 const person = personActor("inbox-alone")
+
+function bindInboxPairs(target: Registry) {
+  bindOperation(target, addToCalendar)
+  bindOperation(target, draftReply)
+  bindOperation(target, send)
+  bindOperation(target, updateDraft)
+  bindOperation(target, acceptSuggestion)
+  bindOperation(target, clearSuggestion)
+  bindOperation(target, markDone)
+  bindOperation(target, scan)
+  bindOperation(target, skip)
+  bindOperation(target, snooze)
+}
 
 let db: TestDatabase
 let close: () => Promise<void>
@@ -26,6 +50,7 @@ beforeAll(async () => {
   })
   registry = new Registry()
   registerInbox(registry)
+  bindInboxPairs(registry)
 })
 
 afterAll(async () => {
@@ -54,6 +79,7 @@ describe("Inbox with nothing else registered", () => {
     const second = new Registry()
     registerInbox(second)
     registerInbox(second)
+    bindInboxPairs(second)
     expect(second.list().commands.length).toBe(registry.list().commands.length)
   })
 })

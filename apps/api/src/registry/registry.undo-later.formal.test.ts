@@ -55,7 +55,7 @@ async function paperName(userId: string, a: ExecuteResult) {
 }
 
 async function threadStatus(a: ExecuteResult) {
-  const threadId = String(reversalInputOf(a).threadId)
+  const threadId = idOf(a.output)
   const [row] = await backend.db
     .select({ status: inboxThreads.status })
     .from(inboxThreads)
@@ -133,7 +133,7 @@ const LATER: Record<string, Later> = {
   "inbox.markDone": {
     act: async (a, run) => {
       await run("inbox.snooze", {
-        threadId: reversalInputOf(a).threadId,
+        threadId: idOf(a.output),
         until: "2026-10-30T00:00:00.000Z",
       })
     },
@@ -141,7 +141,7 @@ const LATER: Record<string, Later> = {
   },
   "inbox.snooze": {
     act: async (a, run) => {
-      await run("inbox.markDone", { threadId: reversalInputOf(a).threadId })
+      await run("inbox.markDone", { threadId: idOf(a.output) })
     },
     survives: async (a) => (await threadStatus(a)) === "done",
   },
@@ -320,8 +320,6 @@ const laterIds: { focusId?: string; docId?: string } = {}
 const OWN_UNDO_GUARD = ["paper.edit"]
 
 const KNOWN_VIOLATIONS = [
-  "inbox.markDone",
-  "inbox.snooze",
   "job.addChecklistItem",
   "job.create",
   "job.linkPaper",

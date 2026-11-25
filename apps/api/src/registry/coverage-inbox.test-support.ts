@@ -1,3 +1,4 @@
+import { catalog } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 
@@ -35,7 +36,7 @@ export function inboxCases(tools: CoverageTools): CoverageCase[] {
 
   return [
     {
-      name: "inbox.skip",
+      name: catalog["inbox.skip"].name,
       arrange: async () => {},
       act: () => run("inbox.skip", {}),
       assert: async (result) => {
@@ -43,7 +44,7 @@ export function inboxCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "inbox.scan",
+      name: catalog["inbox.scan"].name,
       arrange: async () => {},
       act: () => run("inbox.scan", {}),
       assert: async (result) => {
@@ -57,7 +58,7 @@ export function inboxCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "inbox.markDone",
+      name: catalog["inbox.markDone"].name,
       arrange: async () => {
         doneId = await threadByRole(run, "Marketing Executive")
       },
@@ -79,7 +80,7 @@ export function inboxCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "inbox.snooze",
+      name: catalog["inbox.snooze"].name,
       arrange: async () => {
         snoozeId = await threadByRole(run, "Growth Marketer")
       },
@@ -106,7 +107,7 @@ export function inboxCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "inbox.acceptSuggestion",
+      name: catalog["inbox.acceptSuggestion"].name,
       arrange: async () => {
         await run("job.create", {
           title: "Associate PM",
@@ -135,7 +136,7 @@ export function inboxCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "inbox.clearSuggestion",
+      name: catalog["inbox.clearSuggestion"].name,
       arrange: async () => {
         clearId = await threadByRole(run, "Associate PM")
       },
@@ -149,7 +150,7 @@ export function inboxCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "inbox.draftReply",
+      name: catalog["inbox.draftReply"].name,
       arrange: async () => {
         draftId = await threadByRole(run, "Business Analyst")
       },
@@ -159,7 +160,7 @@ export function inboxCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "inbox.updateDraft",
+      name: catalog["inbox.updateDraft"].name,
       arrange: async () => {
         draftId = await threadByRole(run, "Business Analyst")
       },
@@ -177,7 +178,7 @@ export function inboxCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "inbox.send",
+      name: catalog["inbox.send"].name,
       arrange: async () => {
         sendId = await threadByRole(run, "Business Analyst")
         await run("inbox.updateDraft", {
@@ -197,7 +198,7 @@ export function inboxCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "inbox.addToCalendar",
+      name: catalog["inbox.addToCalendar"].name,
       arrange: async () => {
         calendarId = await threadByRole(run, "Business Analyst")
       },

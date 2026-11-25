@@ -1,15 +1,29 @@
-import {
-  queries,
-  inboxContract,
-  inboxQueries,
-  personActor,
-} from "@workspace/domain"
+import { catalog, queries, inboxQueries, personActor } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "../install.js"
+
+const inboxContract = {
+  "inbox.draftReply": { output: catalog["inbox.draftReply"].publicResult },
+  "inbox.updateDraft": { output: catalog["inbox.updateDraft"].publicResult },
+  "inbox.send": { output: catalog["inbox.send"].publicResult },
+  "inbox.addToCalendar": {
+    output: catalog["inbox.addToCalendar"].publicResult,
+  },
+  "inbox.skip": { output: catalog["inbox.skip"].publicResult },
+  "inbox.scan": { output: catalog["inbox.scan"].publicResult },
+  "inbox.markDone": { output: catalog["inbox.markDone"].publicResult },
+  "inbox.snooze": { output: catalog["inbox.snooze"].publicResult },
+  "inbox.clearSuggestion": {
+    output: catalog["inbox.clearSuggestion"].publicResult,
+  },
+  "inbox.acceptSuggestion": {
+    output: catalog["inbox.acceptSuggestion"].publicResult,
+  },
+}
 
 describe("an inbox binding that drifts from the inbox contract is rejected", () => {
   it("parses every inbox command output and inbox read", async () => {

@@ -68,7 +68,10 @@ describe("inbox page", () => {
         const path = pathOf(input)
         const method = init?.method ?? "GET"
         if (method === "POST") posts.push(path)
-        if (path === "/api/commands/inbox.skip") skipped = true
+        if (path === "/api/commands/inbox.skip") {
+          skipped = true
+          return jsonOk({ skipped: true })
+        }
         if (path === "/api/inbox/connect") return jsonOk({ url: null })
         if (path === "/api/inbox") {
           return jsonOk({
@@ -261,7 +264,10 @@ describe("inbox page", () => {
             : INBOX_THREADS.slice(0, 2),
         })
       }
-      if (path === "/api/commands/inbox.snooze") snoozed = true
+      if (path === "/api/commands/inbox.snooze") {
+        snoozed = true
+        return jsonOk({ id: LOCAL_DETAIL.id })
+      }
       if (path.startsWith("/api/inbox/")) {
         return path.endsWith(LOCAL_DETAIL.id)
           ? jsonOk(LOCAL_DETAIL)
@@ -408,6 +414,8 @@ describe("inbox page", () => {
           })
         }
         if (path.startsWith("/api/inbox/")) return jsonOk(REGIONAL_DETAIL)
+        if (path.startsWith("/api/commands/"))
+          return jsonOk({ id: REGIONAL_DETAIL.id })
         return jsonOk({})
       }
     )
