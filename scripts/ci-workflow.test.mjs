@@ -321,14 +321,14 @@ test("the Paper walk keeps all 200 seeds while the other web shards exclude only
   assert.doesNotMatch(walk, /WALK_STEPS|WALK_SEED_LIST|WALK_SURVEY/)
   assert.match(
     walk,
-    /vitest run --config vitest.config.ts src\/features\/paper-page\/canvas-walk\.test\.ts/
+    /vitest run --config vitest.config.ts src\/features\/paper-page\/canvas-walk\.isolated\.test\.ts/
   )
   assert.match(section("test-web"), /CI_SEPARATE_PAPER_WALK: "1"/)
 })
 
 test("walk coverage rejects duplicate or lost files and accepts the partition", () => {
-  const walk = "[isolated] src/features/paper-page/canvas-walk.test.ts"
-  const other = "[isolated] src/features/app-shell/app-shell.test.tsx"
+  const walk = "[isolated] src/features/paper-page/canvas-walk.isolated.test.ts"
+  const other = "[isolated] src/features/app-shell/app-shell.isolated.test.tsx"
   const fixture = {
     complete: [walk, other],
     ordinary: [other],
@@ -372,7 +372,9 @@ test("Vitest lists every ordinary file once and the dedicated walk separately", 
     walkCoverageErrors({
       complete,
       ordinary: files("1"),
-      dedicated: files("", ["src/features/paper-page/canvas-walk.test.ts"]),
+      dedicated: files("", [
+        "src/features/paper-page/canvas-walk.isolated.test.ts",
+      ]),
     }),
     []
   )

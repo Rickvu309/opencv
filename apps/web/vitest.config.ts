@@ -8,56 +8,11 @@ import { applyLocalApiUrl } from "./local-env"
 
 applyLocalApiUrl("test")
 
-const ISOLATED_FILES = [
-  "src/lib/paper-rich-word.test.ts",
-  "src/features/landing/landing-redirect-warmup.test.ts",
-  "src/features/app-shell/app-shell-warmup.test.ts",
-  "src/router-lazy.test.tsx",
-  "src/features/connections/connections.test.tsx",
-  "src/features/coach/coach-config-states.test.tsx",
-  "src/features/coach/coach-tool-presentation.test.tsx",
-  "src/features/coach/coach-workspace.test.tsx",
-  "src/features/coach/coach-workspace-presentation.test.tsx",
-  "src/components/ai-elements/response.test.tsx",
-  "src/features/coach/coach-draft-ownership.test.tsx",
-  "src/features/coach/coach-workspace-progress.test.tsx",
-  "src/features/coach/coach-workspace-sent-line.test.tsx",
-  "src/features/coach/coach-failed-send.test.tsx",
-  "src/features/coach/coach-internal-links.test.tsx",
-  "src/features/paper/paper-letter.test.tsx",
-  "src/features/paper/rich-page-lifecycle.test.tsx",
-  "src/features/paper-page/canvas-mount.test.tsx",
-  "src/features/paper-page/canvas-package.test.tsx",
-  "src/routes/paper-doc-creators.test.tsx",
-  "src/routes/paper-doc-open.test.tsx",
-  "src/features/paper-page/canvas-recover.test.tsx",
-  "src/features/paper-page/canvas-walk.test.ts",
-  "src/features/paper/paper-letter-print.test.tsx",
-  "src/features/paper/paper-letter-start-context.test.tsx",
-  "src/features/paper/paper-letter-start-draft.test.tsx",
-  "src/features/paper/paper-letter-edited.test.tsx",
-  "src/lib/paper-sync-tabs.test.tsx",
-  "src/lib/paper-sync-stuck.test.ts",
-  "src/lib/paper-local-replay.test.ts",
-  "src/features/paper/cv-photo.test.tsx",
-  "src/features/paper/rich-photo-controls.test.tsx",
-  "src/features/paper/paper-share.test.tsx",
-  "src/features/paper/paper-print-callers.test.tsx",
-  "src/features/paper/paper-v2-preview.test.tsx",
-  "src/features/paper/paper-import-outcomes.test.tsx",
-  "src/features/paper/paper-library-drop.test.tsx",
-  "src/features/paper/paper-library.test.tsx",
-  "src/features/paper/paper-library-status.test.tsx",
-  "src/features/paper/paper-letter-slow-coach.test.tsx",
-  "src/features/app-shell/app-shell.test.tsx",
-  "src/features/apply/apply-board-drop.test.tsx",
-  "src/features/apply/apply-board-queue.test.tsx",
-  "src/local-env.test.ts",
-]
+const ISOLATED_FILES = ["**/*.isolated.test.{ts,tsx}"]
 
 const SEPARATE_WALK_FILES =
   process.env.CI_SEPARATE_PAPER_WALK === "1"
-    ? ["src/features/paper-page/canvas-walk.test.ts"]
+    ? ["src/features/paper-page/canvas-walk.isolated.test.ts"]
     : []
 
 const DROP_FETCH_STUBS_BETWEEN_FILES_THAT_SHARE_A_MODULE_GRAPH = true
