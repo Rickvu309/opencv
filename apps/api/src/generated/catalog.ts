@@ -35,7 +35,9 @@ import { implementation as inbox$snoozed } from "../inbox/operations/snoozed/ser
 import { implementation as inbox$updateDraft } from "../inbox/operations/update-draft/server.js"
 import { implementation as integrations$list } from "../account/operations/integrations/list/server.js"
 import { implementation as job$addNote } from "../job/operations/add-note/server.js"
+import { implementation as job$calendar } from "../job/operations/calendar/server.js"
 import { implementation as job$delete } from "../job/operations/delete/server.js"
+import { implementation as job$preview } from "../job/operations/preview/server.js"
 import { implementation as job$priorityCounts } from "../job/operations/priority-counts/server.js"
 import { implementation as job$removeChecklistItem } from "../job/operations/remove-checklist-item/server.js"
 import { implementation as job$setPriority } from "../job/operations/set-priority/server.js"
@@ -87,7 +89,9 @@ export const implementations = {
   "inbox.updateDraft": inbox$updateDraft,
   "integrations.list": integrations$list,
   "job.addNote": job$addNote,
+  "job.calendar": job$calendar,
   "job.delete": job$delete,
+  "job.preview": job$preview,
   "job.priorityCounts": job$priorityCounts,
   "job.removeChecklistItem": job$removeChecklistItem,
   "job.setPriority": job$setPriority,

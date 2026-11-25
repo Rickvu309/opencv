@@ -228,3 +228,39 @@ export function jobResource(jobId?: string): ResourceRef {
     ...(jobId ? { entityId: jobId } : {}),
   }
 }
+
+const previewFieldsSchema = z
+  .object({ title: z.string(), company: z.string(), location: z.string() })
+  .strict()
+
+export const jobPreviewSchema = z.discriminatedUnion("status", [
+  z
+    .object({
+      status: z.literal("unreadable"),
+      fields: z.object({}).strict(),
+      message: z.string(),
+    })
+    .strict(),
+  z
+    .object({
+      status: z.literal("duplicate"),
+      jobId: idResult<JobId>(),
+      stage: jobStageSchema,
+      fields: previewFieldsSchema,
+    })
+    .strict(),
+  z
+    .object({
+      status: z.literal("company-missing"),
+      fields: previewFieldsSchema,
+    })
+    .strict(),
+  z
+    .object({
+      status: z.literal("filled"),
+      fields: previewFieldsSchema.extend({ description: z.string() }).strict(),
+    })
+    .strict(),
+])
+
+export type JobPreview = z.output<typeof jobPreviewSchema>

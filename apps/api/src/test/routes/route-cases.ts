@@ -303,8 +303,6 @@ export const ROUTE_CASES: readonly RouteCase[] = [
   nativeWordRouteCase,
   get("/api/paper/:id", olderDoc),
   get("/api/jobs"),
-  get("/api/jobs/calendar"),
-  postJson("/api/jobs/preview", () => ({ url: "https://jobs.example.com/1" })),
   get("/api/jobs/:id", job),
   get("/api/inbox/connect"),
   get("/api/inbox/callback"),

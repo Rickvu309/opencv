@@ -1,16 +1,14 @@
-import { jobContract, jobPriorityResource, type Plan } from "@workspace/domain"
+import {
+  jobContract,
+  jobPriorityResource,
+  type Actor,
+  type Plan,
+} from "@workspace/domain"
 
 import { bindCommands, tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
 import { takePriorityGrant } from "../registry/write-grant.js"
-import {
-  calendarJobs,
-  createJob,
-  getJob,
-  listJobs,
-  moveJob,
-  updateJob,
-} from "./board.js"
+import { createJob, getJob, listJobs, moveJob, updateJob } from "./board.js"
 import { addChecklistItem, setChecklistItem } from "./checklist.js"
 import { fetchJobPosting, type FetchJobPosting } from "./fetch-posting.js"
 import { linkPaper } from "./linked-papers.js"
@@ -38,6 +36,24 @@ function planOf(profile: unknown): Plan | null {
   if (!profile || typeof profile !== "object" || !("plan" in profile))
     return null
   return profile.plan === "free" || profile.plan === "pro" ? profile.plan : null
+}
+
+export function previewPosting(
+  actor: Actor,
+  input: { url?: string; text?: string },
+  registry: Registry
+) {
+  return previewJob(
+    actor,
+    input,
+    posting.fetch,
+    posting.read
+      ? async (text) => {
+          const plan = planOf(await registry.read("profile.get", {}, actor))
+          return plan && posting.read ? posting.read({ plan, text }) : null
+        }
+      : undefined
+  )
 }
 
 export function registerJob(registry: Registry, options?: JobPreviewOptions) {
@@ -198,40 +214,6 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
       coach: true,
       step: () => "Read the job",
       read: (input, actor) => getJob(actor.userId, input.jobId),
-    })
-  )
-
-  registry.addQuery(
-    tableQuery("job.preview", {
-      description: "Preview a posting without saving it.",
-      coach: true,
-      step: () => "Preview the posting",
-      read: (input, actor) =>
-        previewJob(
-          actor,
-          input,
-          posting.fetch,
-          posting.read
-            ? async (text) => {
-                const plan = planOf(
-                  await registry.read("profile.get", {}, actor)
-                )
-                return plan && posting.read
-                  ? posting.read({ plan, text })
-                  : null
-              }
-            : undefined
-        ),
-    })
-  )
-
-  registry.addQuery(
-    tableQuery("job.calendar", {
-      delegate: "jobRead",
-      description: "List jobs with an interview or deadline in a range.",
-      coach: true,
-      step: () => "Read the calendar",
-      read: (input, actor) => calendarJobs(actor.userId, input.from, input.to),
     })
   )
 }

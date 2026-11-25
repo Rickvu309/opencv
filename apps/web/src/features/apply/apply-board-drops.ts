@@ -103,6 +103,5 @@ export function refetchBoard(queryClient: QueryClient) {
   return refreshQueries(queryClient, [
     { query: "job.list" },
     { query: "job.get" },
-    { query: "job.calendar" },
   ])
 }

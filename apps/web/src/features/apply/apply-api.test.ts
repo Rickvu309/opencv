@@ -12,13 +12,7 @@ import { createToolRefresher } from "@/lib/coach-stream.ts"
 import { detect } from "../../../../../scripts/lib/use-read-owner.mjs"
 
 import { ownerIdFromRouteMatches } from "@/lib/owner-id.ts"
-import {
-  calendarJobs,
-  getJob,
-  listJobs,
-  listPaper,
-  previewJob,
-} from "./apply-api.ts"
+import { getJob, listJobs, listPaper, previewJob } from "./apply-api.ts"
 
 const JOB = "01900000-0000-7000-8000-000000000010"
 const ACTIVITY = "01900000-0000-7000-8000-000000000020"
@@ -47,9 +41,12 @@ function installFetch() {
         ok: true,
         data: url.endsWith("/api/commands/activity.undo")
           ? undoneActivityRow()
-          : url.endsWith("/api/reads/activity.list")
+          : url.endsWith("/api/reads/activity.list") ||
+              url.endsWith("/api/reads/job.calendar")
             ? []
-            : { id: JOB },
+            : url.endsWith("/api/reads/job.preview")
+              ? { status: "unreadable", fields: {}, message: "Unreadable" }
+              : { id: JOB },
       })
     }
   )
@@ -92,15 +89,20 @@ describe("apply api", () => {
     await getJob(parseJobId(JOB))
     expect(new URL(last(calls).url).pathname).toBe(`/api/jobs/${JOB}`)
 
-    await calendarJobs("2026-11-01T00:00:00.000Z", "2026-12-01T00:00:00.000Z")
+    await catalogClient.read("job.calendar", {
+      from: "2026-11-01T00:00:00.000Z",
+      to: "2026-12-01T00:00:00.000Z",
+    })
     const calendar = new URL(last(calls).url)
-    expect(calendar.pathname).toBe("/api/jobs/calendar")
-    expect(calendar.searchParams.get("from")).toBe("2026-11-01T00:00:00.000Z")
-    expect(calendar.searchParams.get("to")).toBe("2026-12-01T00:00:00.000Z")
+    expect(calendar.pathname).toBe("/api/reads/job.calendar")
+    expect(last(calls).body).toEqual({
+      from: "2026-11-01T00:00:00.000Z",
+      to: "2026-12-01T00:00:00.000Z",
+    })
 
     await previewJob({ url: "https://careers.verify-posting.dev/role" })
     expect(last(calls).method).toBe("POST")
-    expect(new URL(last(calls).url).pathname).toBe("/api/jobs/preview")
+    expect(new URL(last(calls).url).pathname).toBe("/api/reads/job.preview")
     expect(last(calls).body).toEqual({
       url: "https://careers.verify-posting.dev/role",
     })

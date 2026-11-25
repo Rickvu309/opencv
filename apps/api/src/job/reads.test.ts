@@ -104,25 +104,37 @@ describe("job reads", () => {
       }),
     })
 
-    const calendarRes = await app.request(
-      "/api/jobs/calendar?from=2026-11-01T00:00:00.000Z&to=2026-11-30T23:59:59.000Z",
-      { headers }
-    )
+    const calendarRes = await app.request("/api/reads/job.calendar", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        from: "2026-11-01T00:00:00.000Z",
+        to: "2026-11-30T23:59:59.000Z",
+      }),
+    })
     const calendar = await jsonOf(calendarRes)
     const rows = calendar.data as unknown as { id: string }[]
     expect(rows.map((row) => row.id)).toContain(jobId)
     expect(rows.map((row) => row.id)).not.toContain(otherId)
 
     const outside = await jsonOf(
-      await app.request(
-        "/api/jobs/calendar?from=2026-01-01T00:00:00.000Z&to=2026-01-31T00:00:00.000Z",
-        { headers }
-      )
+      await app.request("/api/reads/job.calendar", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          from: "2026-01-01T00:00:00.000Z",
+          to: "2026-01-31T00:00:00.000Z",
+        }),
+      })
     )
     expect(outside.data).toEqual([])
 
     const bad = await jsonOf(
-      await app.request("/api/jobs/calendar?from=nope&to=also", { headers })
+      await app.request("/api/reads/job.calendar", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ from: "nope", to: "also" }),
+      })
     )
     expect(bad.ok).toBe(false)
     expect(bad.error?.message).toBe("Use a from and to date.")
@@ -190,7 +202,7 @@ describe("job reads", () => {
     const headers = authHeaders(cookie)
 
     const filled = await jsonOf(
-      await app.request("/api/jobs/preview", {
+      await app.request("/api/reads/job.preview", {
         method: "POST",
         headers,
         body: JSON.stringify({
@@ -208,7 +220,7 @@ describe("job reads", () => {
     })
 
     const missing = await jsonOf(
-      await app.request("/api/jobs/preview", {
+      await app.request("/api/reads/job.preview", {
         method: "POST",
         headers,
         body: JSON.stringify({ text: "A role with no company pattern." }),
@@ -217,7 +229,7 @@ describe("job reads", () => {
     expect(missing.data?.status).toBe("company-missing")
 
     const unreadable = await jsonOf(
-      await app.request("/api/jobs/preview", {
+      await app.request("/api/reads/job.preview", {
         method: "POST",
         headers,
         body: JSON.stringify({}),
@@ -241,7 +253,7 @@ describe("job reads", () => {
       })
     )
     const duplicate = await jsonOf(
-      await app.request("/api/jobs/preview", {
+      await app.request("/api/reads/job.preview", {
         method: "POST",
         headers,
         body: JSON.stringify({
