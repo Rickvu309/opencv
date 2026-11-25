@@ -251,23 +251,8 @@ function parseInline(source: string, marks: Marks): TextRun[] {
   return runs
 }
 
-export function richTextFromInlineMarkdown(source: string): RichText {
+function richTextFromInlineMarkdown(source: string): RichText {
   return normalizeRuns(parseInline(source, {}))
-}
-
-function printRun(run: TextRun): string {
-  let body = run.text.replace(/[\\*[\]]/g, "\\$&")
-  if (run.href) {
-    body = `[${body}](${run.href.replace(/[\\*()]/g, "\\$&")})`
-  }
-  if (run.bold && run.italic) return `***${body}***`
-  if (run.bold) return `**${body}**`
-  if (run.italic) return `*${body}*`
-  return body
-}
-
-export function inlineMarkdownOf(text: RichText): string {
-  return text.map(printRun).join("")
 }
 
 const textRunSchema = z
@@ -280,7 +265,7 @@ const textRunSchema = z
   })
   .strict()
 
-export const richTextSchema: z.ZodType<RichText> = z
+const richTextSchema: z.ZodType<RichText> = z
   .array(textRunSchema)
   .transform((runs) => normalizeRuns(runs))
 

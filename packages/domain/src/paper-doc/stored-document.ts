@@ -1,5 +1,4 @@
 import { z } from "zod"
-import { paperDocumentSchema, type PaperDocument } from "./document.js"
 import type { FormatNode } from "./native-formatting.js"
 import type { LayoutRow, LayoutCell } from "./native-layout.js"
 import {
@@ -26,21 +25,8 @@ export const richPaperDocumentSchema = z
   })
 
 export type RichPaperDocument = z.infer<typeof richPaperDocumentSchema>
-export const storedPaperDocumentSchema = z.union([
-  paperDocumentSchema,
-  richPaperDocumentSchema,
-])
+export const storedPaperDocumentSchema = richPaperDocumentSchema
 export type StoredPaperDocument = z.infer<typeof storedPaperDocumentSchema>
-
-export function requirePaperDocument(
-  document: StoredPaperDocument
-): PaperDocument {
-  if (document.version === 4 && document.schemaRevision === 2)
-    throw new Error(
-      "This document needs the rich Paper editor. Nothing was changed."
-    )
-  return document
-}
 
 export function storedPaperPhotoIds(input: unknown): string[] {
   const parsed = storedPaperDocumentSchema.safeParse(input)
@@ -51,21 +37,19 @@ export function storedPaperPhotoIds(input: unknown): string[] {
     const id = paperPhotoFileId(source)
     if (id) ids.add(id.toLowerCase())
   }
-  if (document.version === 4 && document.schemaRevision === 2) {
-    const visit = (
-      node:
-        | RichPaperDocument["flow"]
-        | FlowSection
-        | FlowNode
-        | FormatNode
-        | LayoutRow
-        | LayoutCell
-    ) => {
-      if (node.type === "photo") add(node.source)
-      if (node.type === "header") add(node.photo)
-      if ("children" in node) node.children.forEach(visit)
-    }
-    visit(document.flow)
-  } else if (document.kind === "cv") add(document.header?.photo)
+  const visit = (
+    node:
+      | RichPaperDocument["flow"]
+      | FlowSection
+      | FlowNode
+      | FormatNode
+      | LayoutRow
+      | LayoutCell
+  ) => {
+    if (node.type === "photo") add(node.source)
+    if (node.type === "header") add(node.photo)
+    if ("children" in node) node.children.forEach(visit)
+  }
+  visit(document.flow)
   return [...ids]
 }

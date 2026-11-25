@@ -56,8 +56,8 @@ const bodyAt = (depth: number): z.ZodType<CvBody> =>
       .strict(),
     z.object({ id: nodeIdSchema, type: z.literal("divider") }).strict(),
   ])
-export const cvBodySchema = bodyAt(3)
-export type CvOwnerType = keyof typeof cvSlots
+const cvBodySchema = bodyAt(3)
+type CvOwnerType = keyof typeof cvSlots
 export type CvOwner = {
   id: NodeId
   type: CvOwnerType
@@ -156,12 +156,3 @@ export const nativeCvDocumentSchema: z.ZodType<NativeCvDocument> = z
         })
     }
   })
-
-export function cvOwners(document: NativeCvDocument): CvOwner[] {
-  return [
-    document.header,
-    ...document.blocks.filter(
-      (block): block is CvOwner => block.type in cvSlots
-    ),
-  ]
-}

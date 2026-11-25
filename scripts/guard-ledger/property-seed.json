@@ -8,6 +8,10 @@
   "historic": {
     "mode": "detect",
     "sha": "31ba5d27959ee47f761b621658fdc6820f18703b",
-    "path": "packages/paper-crdt/src/interleave.test.ts"
+    "path": "packages/paper-crdt/src/interleave.test.ts",
+    "fixed": {
+      "rev": "697ee17fbf38eea14c3eda2d8b5368d7a85bd29e",
+      "path": "packages/paper-crdt/src/interleave.test.ts"
+    }
   }
 }

@@ -13,6 +13,7 @@ const SKIPPED_DIRS = new Set(["node_modules", "dist", ".turbo", ".git"])
 const SOURCE_FILE = /\.(?:[cm]?[jt]sx?)$/
 const NEEDED_BY_DECLARATION_BUILD_TO_NAME_BRAND_TS4023 = [
   "ActivityId",
+  "ClashId",
   "PendingActionId",
 ]
 const NAMED_IN_EXPORTED_PAPER_DIFF_SIGNATURES = ["DiffHunk"]

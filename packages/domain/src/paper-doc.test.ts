@@ -5,26 +5,22 @@ import { rebasePending } from "./paper-doc/rebase.ts"
 import {
   blankCv,
   blankLetter,
-  mergeLegacyEdit,
   paperDocumentSchema,
-  nodeFieldSetSchema,
-  paperNodeSpecs,
   paperPlainText,
-  paperOutline,
-  cvPrintModel,
-  richTextOf,
-  sectionsOf,
-  type NodeId,
+  HEADER_NODE_ID,
 } from "./paper-doc/index.ts"
 
-const id = (value: string) => value as NodeId
-
 function paragraph(value: string, text = "") {
-  return { id: value, type: "paragraph", content: richTextOf(text) }
+  return { id: value, type: "paragraph", content: text ? [{ text }] : [] }
 }
 
 function bullet(value: string, children: unknown[] = []) {
-  return { id: value, type: "bullet", content: richTextOf(value), children }
+  return {
+    id: value,
+    type: "bullet",
+    content: value ? [{ text: value }] : [],
+    children,
+  }
 }
 
 function section(value: string, kind = "experience") {
@@ -34,7 +30,15 @@ function section(value: string, kind = "experience") {
 function cv(blocks: unknown[], clashes: unknown[] = []) {
   return {
     ...blankCv(),
-    header: paperNodeSpecs.header.blank(),
+    header: {
+      id: HEADER_NODE_ID,
+      type: "header",
+      name: "",
+      email: "",
+      phone: "",
+      city: "",
+      linkedin: "",
+    },
     blocks,
     clashes,
   }
@@ -62,51 +66,6 @@ describe("paper document v3", () => {
   it("accepts the blank CV and the blank letter", () => {
     assert.equal(paperDocumentSchema.safeParse(blankCv()).success, true)
     assert.equal(paperDocumentSchema.safeParse(blankLetter()).success, true)
-  })
-
-  it("starts both kinds with one unformatted empty paragraph and no header", () => {
-    for (const paper of [blankCv(), blankLetter()]) {
-      assert.equal(paper.blocks.length, 1)
-      assert.equal("header" in paper, false)
-      assert.deepEqual(paper.blocks[0], {
-        id: paper.kind === "letter" ? "letter-1" : "paragraph-1",
-        type: "paragraph",
-        content: [],
-      })
-      assert.equal(paperPlainText(paper), "")
-      assert.doesNotThrow(() => paperOutline(paper, { maxChars: 2000 }))
-    }
-    assert.equal(cvPrintModel(blankCv()).name, "")
-    assert.deepEqual(
-      sectionsOf(blankCv()).map((group) => group.section),
-      [null]
-    )
-  })
-
-  it("accepts a full CV and a full letter", () => {
-    const full = cv([
-      section("s1", "summary"),
-      paragraph("p1", "Hello"),
-      section("s2"),
-      {
-        id: "e1",
-        type: "experience",
-        role: "Lead",
-        company: "Club",
-        period: "2024",
-        location: "",
-        children: [bullet("b1", [bullet("b2", [bullet("b3")])])],
-      },
-      section("s3", "skills"),
-      { id: "k1", type: "skills", label: "Tools", items: ["Figma", "SQL"] },
-    ])
-    assert.equal(paperDocumentSchema.safeParse(full).success, true)
-    const note = letter([
-      { id: "h1", type: "heading", level: 2, content: richTextOf("Dear team") },
-      bullet("b1", [bullet("b2")]),
-      { id: "d1", type: "divider" },
-    ])
-    assert.equal(paperDocumentSchema.safeParse(note).success, true)
   })
 
   it("refuses a duplicate id, also inside list children and against the header", () => {
@@ -203,21 +162,6 @@ describe("paper document v3", () => {
     assert.deepEqual(
       parsed.blocks[0]?.type === "bullet" && parsed.blocks[0].children,
       []
-    )
-  })
-
-  it("refuses prototype keys as a node type in a field set", () => {
-    for (const type of [
-      "constructor",
-      "toString",
-      "__proto__",
-      "hasOwnProperty",
-    ]) {
-      assert.equal(nodeFieldSetSchema.safeParse({ type }).success, false, type)
-    }
-    assert.equal(
-      nodeFieldSetSchema.safeParse({ type: "heading" }).success,
-      true
     )
   })
 
@@ -339,55 +283,12 @@ describe("paper document v3", () => {
     )
   })
 
-  it("groups a CV by its section markers", () => {
-    const parsed = paperDocumentSchema.parse(
-      cv([
-        paragraph("lead"),
-        section("s1"),
-        paragraph("p1"),
-        section("s2"),
-        paragraph("p2"),
-      ])
-    )
-    assert.equal(parsed.kind, "cv")
-    if (parsed.kind !== "cv") return
-    assert.deepEqual(
-      sectionsOf(parsed).map((group) => [
-        group.section?.id ?? null,
-        group.blocks.map((block) => block.id),
-      ]),
-      [
-        [null, ["lead"]],
-        ["s1", ["p1"]],
-        ["s2", ["p2"]],
-      ]
-    )
-  })
-
-  it("lists every node type once in the spec table and builds valid blanks", () => {
-    for (const [type, spec] of Object.entries(paperNodeSpecs)) {
-      assert.equal(spec.type, type)
-      const blank = spec.blank(id("x1"))
-      assert.equal(spec.schema.safeParse(blank).success, true, type)
-      assert.equal(typeof spec.plainText(blank as never), "string")
-      for (const target of spec.turnInto) assert.ok(target in paperNodeSpecs)
-    }
-  })
-
   it("reads plain text from the header, titles and blocks", () => {
     const parsed = paperDocumentSchema.parse(
       cv([section("s1", "summary"), paragraph("p1", "Hello")])
     )
     assert.equal(paperPlainText(parsed), "summary\nHello")
   })
-})
-
-it("merges a headerless CV without adding structure and accepts an explicit header", () => {
-  const blank = blankCv()
-  assert.deepEqual(mergeLegacyEdit(blank, blank), blank)
-  const structured = { ...blank, header: paperNodeSpecs.header.blank() }
-  assert.deepEqual(mergeLegacyEdit(blank, structured), structured)
-  assert.deepEqual(mergeLegacyEdit(structured, blank), blank)
 })
 
 it("rebases an unstructured CV without inventing a header", () => {

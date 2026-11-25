@@ -14,12 +14,12 @@ type Raw = Record<string, unknown> & {
   children?: Raw[]
 }
 
-export type RepairHints = {
+type RepairHints = {
   readonly fresh: ReadonlyMap<string, readonly boolean[]>
   readonly stale: ReadonlyMap<string, string>
 }
 
-export type PaperRepair = {
+type PaperRepair = {
   readonly document: PaperDocument
   readonly repairs: string[]
   readonly moved: Set<string>
@@ -294,9 +294,4 @@ export function repairPaper(
     moved: context.moved,
     keep: context.keep,
   }
-}
-
-export function nodeFingerprint(doc: PaperDocument, id: string): string | null {
-  const found = indexOf(doc).get(id)
-  return found ? canonical(found.node) : null
 }

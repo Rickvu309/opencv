@@ -159,12 +159,12 @@ export type Heading = z.infer<typeof headingSchema>
 export type Bullet = z.infer<typeof bulletSchema>
 export type Numbered = z.infer<typeof numberedSchema>
 export type Divider = z.infer<typeof dividerSchema>
-export type ExperienceEntry = z.infer<typeof experienceSchema>
-export type EducationEntry = z.infer<typeof educationSchema>
-export type SkillsGroup = z.infer<typeof skillsSchema>
+type ExperienceEntry = z.infer<typeof experienceSchema>
+type EducationEntry = z.infer<typeof educationSchema>
+type SkillsGroup = z.infer<typeof skillsSchema>
 
 export type ProseBlock = Paragraph | Heading | Bullet | Numbered | Divider
-export type EntryBlock = ExperienceEntry | EducationEntry | SkillsGroup
+type EntryBlock = ExperienceEntry | EducationEntry | SkillsGroup
 export type CvPaperBlock = CvSectionMarker | ProseBlock | EntryBlock
 export type PaperNode = CvHeader | CvPaperBlock | ListItem
 
@@ -190,7 +190,7 @@ export const cvBlockSchema = z.discriminatedUnion("type", [
 
 export const cvHeaderSchema = headerSchema
 
-export type NodeSpec<N extends PaperNode> = {
+type NodeSpec<N extends PaperNode> = {
   readonly type: N["type"]
   readonly schema: z.ZodType<N>
   readonly blank: (id: NodeId) => N
@@ -387,7 +387,7 @@ export const nodeFieldSetSchema = z
     photo: paperPhotoValueSchema.nullable().optional(),
   })
   .strict()
-export type NodeFieldSet = z.infer<typeof nodeFieldSetSchema>
+type NodeFieldSet = z.infer<typeof nodeFieldSetSchema>
 
 export function nodePlainText(node: PaperNode): string {
   const spec = paperNodeSpecs[node.type] as NodeSpec<PaperNode>

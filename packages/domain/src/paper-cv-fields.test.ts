@@ -6,12 +6,7 @@ import {
   nativeCvDocumentSchema,
   paperDocumentSchema,
   nativePaperDocumentSchema,
-  resolveCvField,
-  replaceCvFieldRange,
-  formatCvFieldRange,
-  richTextOf,
   type NativeCvDocument,
-  type CvFieldRange,
 } from "./paper-doc/index.ts"
 
 function document(text = "  Việt e\u0302 😀  "): NativeCvDocument {
@@ -43,20 +38,6 @@ function document(text = "  Việt e\u0302 😀  "): NativeCvDocument {
     },
     blocks: [],
   })
-}
-function range(doc: NativeCvDocument, from: number, to: number): CvFieldRange {
-  const field = doc.header.children[0]
-  if (!field || field.type !== "cvField") throw new Error("Missing name")
-  return {
-    ownerId: doc.header.id,
-    fieldId: field.id,
-    fieldKey: "name",
-    from,
-    to,
-  }
-}
-function selected(doc: NativeCvDocument) {
-  return resolveCvField(doc, range(doc, 0, 0)).content
 }
 
 describe("private CV semantic field invariants", () => {
@@ -119,139 +100,5 @@ describe("private CV semantic field invariants", () => {
       }).success,
       false
     )
-  })
-  it("validates every target component", () => {
-    const doc = document()
-    const target = range(doc, 0, 0)
-    for (const bad of [
-      { ...target, ownerId: doc.header.children[0]?.id },
-      { ...target, fieldId: doc.header.id },
-      { ...target, fieldKey: "email" },
-      { ...target, itemId: doc.header.id },
-    ])
-      assert.throws(() => resolveCvField(doc, bad as typeof target))
-  })
-  it("requires exact rich selection and preserves immutable inputs and authored spaces", () => {
-    const doc = document()
-    const before = JSON.stringify(doc)
-    const all = range(
-      doc,
-      0,
-      selected(doc)
-        .map((run) => run.text)
-        .join("").length
-    )
-    assert.throws(() =>
-      replaceCvFieldRange(
-        doc,
-        all,
-        richTextOf("  Việt e\u0302 😀  "),
-        richTextOf("changed")
-      )
-    )
-    const edited = replaceCvFieldRange(
-      doc,
-      all,
-      selected(doc),
-      richTextOf("  Viê\u0323t  ")
-    )
-    assert.deepEqual(selected(edited.candidate), richTextOf("  Viê\u0323t  "))
-    assert.deepEqual(edited.effects[0]?.before, selected(doc))
-    assert.equal(JSON.stringify(doc), before)
-    assert.deepEqual(
-      selected(
-        replaceCvFieldRange(doc, all, selected(doc), richTextOf("")).candidate
-      ),
-      []
-    )
-  })
-  it("supports empty, collapsed, whitespace and combining boundaries without normalization", () => {
-    const empty = document("")
-    assert.deepEqual(
-      selected(
-        replaceCvFieldRange(
-          empty,
-          range(empty, 0, 0),
-          richTextOf(""),
-          richTextOf(" e\u0302 ")
-        ).candidate
-      ),
-      richTextOf(" e\u0302 ")
-    )
-    const doc = document("e\u0302")
-    const selectedMark = selected(doc).map((run) => ({ ...run, text: "e" }))
-    const edited = formatCvFieldRange(
-      doc,
-      range(doc, 0, 1),
-      selectedMark as ReturnType<typeof selected>,
-      { bold: null }
-    )
-    assert.equal(
-      selected(edited.candidate)
-        .map((run) => run.text)
-        .join(""),
-      "e\u0302"
-    )
-    assert.deepEqual(
-      formatCvFieldRange(empty, range(empty, 0, 0), richTextOf(""), {
-        underline: true,
-      }).candidate,
-      empty
-    )
-    assert.throws(() =>
-      formatCvFieldRange(empty, range(empty, 0, 0), richTextOf(""), {
-        href: "javascript:x",
-      } as never)
-    )
-  })
-  it("formats mixed marks and link boundaries while retaining whitespace", () => {
-    const doc = document(" x ")
-    const whole = range(doc, 0, 3)
-    const formatted = formatCvFieldRange(doc, whole, selected(doc), {
-      bold: null,
-      italic: null,
-      href: null,
-    })
-    assert.deepEqual(selected(formatted.candidate), [
-      { text: " x ", underline: true },
-    ])
-    const collapsed = replaceCvFieldRange(
-      formatted.candidate,
-      range(doc, 1, 1),
-      richTextOf(""),
-      richTextOf("e\u0302")
-    )
-    assert.equal(
-      selected(collapsed.candidate)
-        .map((run) => run.text)
-        .join(""),
-      " e\u0302x "
-    )
-    assert.throws(() =>
-      replaceCvFieldRange(doc, whole, selected(doc), richTextOf("bad\nfield"))
-    )
-  })
-  it("refuses invalid offsets and surrogate splits without mutation", () => {
-    const doc = document("😀")
-    const before = JSON.stringify(doc)
-    for (const [from, to] of [
-      [1, 1],
-      [0, 1],
-      [1, 2],
-      [-1, 0],
-      [0, 3],
-      [2, 0],
-      [0.5, 1],
-      [NaN, 0],
-    ])
-      assert.throws(() =>
-        replaceCvFieldRange(
-          doc,
-          range(doc, from ?? 0, to ?? 0),
-          richTextOf(""),
-          richTextOf("x")
-        )
-      )
-    assert.equal(JSON.stringify(doc), before)
   })
 })

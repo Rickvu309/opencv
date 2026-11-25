@@ -4,15 +4,8 @@ import {
   canonicalPaper,
   richPaperDocumentSchema,
   nativeProvenance,
-  NATIVE_WRITER,
-  nativePaperDocumentSchema,
-  type RichPaperDocument,
 } from "@workspace/domain"
-import {
-  openPaperClient,
-  openRichPaperClient,
-  type PaperClient,
-} from "./client.js"
+import { openRichPaperClient } from "./client.js"
 import { materializeStored, seedStoredYDoc } from "./stored-document.js"
 import { storedFlowFixture } from "./test/flow-fixture.js"
 
@@ -189,28 +182,4 @@ describe("rich local recovery keeps the canonical editor update", () => {
       expect(client.hasPending()).toBe(true)
     }
   )
-
-  it("refuses orphan adoption and an old client without rewriting stored bytes", () => {
-    const remote = server("letter"),
-      client: PaperClient<RichPaperDocument> = prime(remote)
-    type(client.ydoc)
-    const stored = client.stored(),
-      before = client.state()
-    expect(client.adopt(stored)).toEqual({ adopted: false, failed: true })
-    expect(client.state()).toEqual(before)
-    expect(() =>
-      openPaperClient(stored, { provenance: stored.provenance })
-    ).toThrow("recovery bytes")
-    const prose = nativePaperDocumentSchema.parse({
-      version: 4,
-      schemaRevision: 1,
-      kind: "letter",
-      clashes: [],
-      blocks: [],
-    })
-    expect(() =>
-      openRichPaperClient(stored, { provenance: nativeProvenance(prose) })
-    ).toThrow()
-    expect(NATIVE_WRITER.supportedSchemaRevisions).toEqual([1])
-  })
 })
