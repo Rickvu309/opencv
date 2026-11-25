@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/one-door.test.ts",
+    "because": "The job list and one Job became read operations, so the Apply routes leave the waiting list",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  }
+]
