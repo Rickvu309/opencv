@@ -102,5 +102,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 32
+  },
+  {
+    "subject": "packages/domain/src/paper-native.test.ts",
+    "because": "It tested old block Paper document code (edits, merge, repair, upgrade, safety, words, projection or legacy text) that is deleted now that every stored Paper is a rich document.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
   }
 ]
