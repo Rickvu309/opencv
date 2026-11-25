@@ -135,8 +135,10 @@ describe("job reads", () => {
     expect(cvRows.every((row) => row.kind === "cv")).toBe(true)
 
     const feed = await jsonOf(
-      await app.request(`/api/activity?subjectKind=job&subjectId=${jobId}`, {
+      await app.request("/api/reads/activity.list", {
+        method: "POST",
         headers,
+        body: JSON.stringify({ subjectKind: "job", subjectId: jobId }),
       })
     )
     const feedRows = feed.data as unknown as {

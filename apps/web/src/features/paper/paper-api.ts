@@ -384,8 +384,8 @@ export async function followPaperTurn(input: {
 export async function latestActivityId(
   subjectId: string
 ): Promise<string | null> {
-  const body = await apiFetch<SuccessBody<QueryOutput<"activity.list">>>(
-    endpoints.activityOfSubject(subjectId)
-  )
-  return unwrapData(body)[0]?.id ?? null
+  const rows = await catalogClient.read(catalog["activity.list"].name, {
+    subjectId,
+  })
+  return rows[0]?.id ?? null
 }

@@ -64,16 +64,6 @@ export function previewJob(
   ).then(unwrapData)
 }
 
-export function listActivity(jobId: string) {
-  const query = new URLSearchParams({
-    subjectKind: "job",
-    subjectId: jobId,
-  })
-  return apiFetch<SuccessBody<QueryOutput<"activity.list">>>(
-    endpoints.activity(query)
-  ).then(unwrapData)
-}
-
 export function listPaper(kind: "cv" | "letter"): Promise<PaperListItem[]> {
   return apiFetch<SuccessBody<PaperListItem[]>>(
     endpoints.paperOfKind(kind)

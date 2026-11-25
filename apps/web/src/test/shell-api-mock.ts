@@ -1,4 +1,4 @@
-import { jsonError, jsonOk, pathOf, urlOf } from "./mock-http.ts"
+import { jsonError, jsonOk, pathOf } from "./mock-http.ts"
 
 export { chatCreateCalls, setMockChats } from "./chat-api-mock.ts"
 
@@ -95,11 +95,12 @@ export async function shellApiFetch(
   const method =
     init?.method ?? (input instanceof Request ? input.method : "GET")
 
-  if (method === "GET" && path === "/api/search") {
-    state.searchQueries.push(urlOf(input).searchParams.get("q") ?? "")
+  if (method === "POST" && path === "/api/reads/workspace.search") {
+    const read = JSON.parse(String(init?.body ?? "{}")) as { query?: string }
+    state.searchQueries.push(read.query ?? "")
     if (searchBlock) await searchBlock
     if (searchFails) return jsonError(500, "search_failed", "Could not search")
-    return jsonOk(state.searchHits)
+    return jsonOk(searchReplyOf(state.searchHits))
   }
   if (method === "POST" && path === "/api/commands/notify.request") {
     const raw = typeof init?.body === "string" ? JSON.parse(init.body) : {}
@@ -140,5 +141,18 @@ function fullInboxList(inbox: unknown) {
       status: "open",
       ...email,
     })),
+  }
+}
+
+function searchReplyOf(hits: MockSearchHits) {
+  return {
+    jobs: hits.jobs.map(({ id, title, company, stage }) => ({
+      id,
+      title,
+      company,
+      stage: stage ?? "saved",
+    })),
+    documents: hits.documents.map(({ id, name, kind }) => ({ id, name, kind })),
+    chats: hits.chats.map(({ id, title }) => ({ id, title })),
   }
 }

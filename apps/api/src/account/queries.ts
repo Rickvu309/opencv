@@ -107,22 +107,6 @@ export function registerAccountQueries(registry: Registry) {
       read: (_input, actor) => readProfile(actor),
     })
   )
-  registry.addQuery(
-    tableQuery("activity.list", {
-      description: "Read the newest activity, optionally for one subject.",
-      coach: false,
-      step: () => "Read activity",
-      read: (input, actor) => readActivity(actor.userId, input, registry),
-    })
-  )
-  registry.addQuery(
-    tableQuery("workspace.search", {
-      description: "Search chats, documents, and jobs.",
-      coach: true,
-      step: () => "Search",
-      read: (input, actor) => searchWorkspace(actor, input.query),
-    })
-  )
 }
 
 export async function readActivity(
@@ -380,7 +364,7 @@ function publicJob(row: typeof jobs.$inferSelect) {
   }
 }
 
-async function searchWorkspace(actor: Actor, query: string) {
+export async function searchWorkspace(actor: Actor, query: string) {
   const pattern = `%${query.replace(/[%_]/g, "")}%`
   const db = getDb()
   const [chatHits, docHits, jobHits] = await Promise.all([

@@ -283,7 +283,7 @@ export async function jobApiFetch(
   const method = (init?.method ?? "GET").toUpperCase()
   const jobPath =
     path.startsWith("/api/jobs") ||
-    path.startsWith("/api/activity") ||
+    path === "/api/reads/activity.list" ||
     path.includes("/api/commands/job.") ||
     path.endsWith("/api/commands/activity.undo") ||
     path === "/api/reads/job.priorityCounts"
@@ -331,13 +331,19 @@ export async function jobApiFetch(
     return jsonOk(previewFor(body))
   }
 
-  if (method === "GET" && path === "/api/activity") {
-    const subjectId = urlOf(input).searchParams.get("subjectId") ?? ""
-    const subjectKind = urlOf(input).searchParams.get("subjectKind") ?? ""
+  if (method === "POST" && path === "/api/reads/activity.list") {
+    const read = (readBody(init) ?? {}) as {
+      subjectId?: string
+      subjectKind?: string
+    }
+    const subjectId = read.subjectId ?? ""
+    const subjectKind = read.subjectKind ?? ""
     const rows = extra(subjectId).activity.filter(
       (row) => row.subjectKind === subjectKind && row.subjectId === subjectId
     )
-    return jsonOk(rows)
+    return jsonOk(
+      rows.map((row) => ({ ...row, reversible: Boolean(row.reversible) }))
+    )
   }
 
   if (method === "POST" && path.startsWith("/api/commands/")) {

@@ -27,14 +27,10 @@ export const endpoints = {
   letterAttachment: "/api/paper/letter-attachment",
   chats: "/api/chats",
   chat: (chatId: string) => `/api/chats/${chatId}`,
-  activity: (query: URLSearchParams) => `/api/activity?${query}`,
-  activityOfSubject: (subjectId: string) =>
-    `/api/activity?subjectId=${encodeURIComponent(subjectId)}`,
   jobs: "/api/jobs",
   job: (jobId: string) => `/api/jobs/${jobId}`,
   jobsCalendar: (query: URLSearchParams) => `/api/jobs/calendar?${query}`,
   jobsPreview: "/api/jobs/preview",
-  search: (query: string) => `/api/search?q=${encodeURIComponent(query)}`,
 } as const
 
 export const inboxConnectReadKeyOutsideContract = ["inbox-connect"] as const

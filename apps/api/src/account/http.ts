@@ -86,36 +86,3 @@ export function createAccountRoutes(signedIn: SignedIn) {
 
   return routes
 }
-
-export function createSearchRoutes(signedIn: SignedIn) {
-  const routes = sessionApp(signedIn)
-  routes.get("/", async (c) => {
-    const query = (c.req.query("q") ?? c.req.query("query") ?? "").trim()
-    if (!query) return c.json(successEnvelope([]))
-    const data = await registry.read(
-      "workspace.search",
-      { query },
-      personActor(c.var.userId)
-    )
-    return c.json(successEnvelope(data))
-  })
-  return routes
-}
-
-export function createActivityRoutes(signedIn: SignedIn) {
-  const routes = sessionApp(signedIn)
-  routes.get("/", async (c) => {
-    const subjectKind = c.req.query("subjectKind")
-    const subjectId = c.req.query("subjectId")
-    const data = await registry.read(
-      "activity.list",
-      {
-        ...(subjectKind ? { subjectKind } : {}),
-        ...(subjectId ? { subjectId } : {}),
-      },
-      personActor(c.var.userId)
-    )
-    return c.json(successEnvelope(data))
-  })
-  return routes
-}

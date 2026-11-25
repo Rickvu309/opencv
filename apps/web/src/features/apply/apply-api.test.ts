@@ -15,7 +15,6 @@ import { ownerIdFromRouteMatches } from "@/lib/owner-id.ts"
 import {
   calendarJobs,
   getJob,
-  listActivity,
   listJobs,
   listPaper,
   previewJob,
@@ -48,7 +47,9 @@ function installFetch() {
         ok: true,
         data: url.endsWith("/api/commands/activity.undo")
           ? undoneActivityRow()
-          : { id: JOB },
+          : url.endsWith("/api/reads/activity.list")
+            ? []
+            : { id: JOB },
       })
     }
   )
@@ -104,11 +105,13 @@ describe("apply api", () => {
       url: "https://careers.verify-posting.dev/role",
     })
 
-    await listActivity(JOB)
+    await catalogClient.read("activity.list", {
+      subjectKind: "job",
+      subjectId: JOB,
+    })
     const activity = new URL(last(calls).url)
-    expect(activity.pathname).toBe("/api/activity")
-    expect(activity.searchParams.get("subjectKind")).toBe("job")
-    expect(activity.searchParams.get("subjectId")).toBe(JOB)
+    expect(activity.pathname).toBe("/api/reads/activity.list")
+    expect(last(calls).body).toEqual({ subjectKind: "job", subjectId: JOB })
 
     await undoActivity(new QueryClient(), ACTIVITY)
     expect(new URL(last(calls).url).pathname).toBe(

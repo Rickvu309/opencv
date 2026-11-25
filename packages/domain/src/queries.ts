@@ -47,10 +47,6 @@ export const queries = queryContract({
     input: z.object({ url: z.string().trim().min(1).max(2000) }).strict(),
     output: untyped,
   }),
-  "workspace.search": queryEntry({
-    input: z.object({ query: z.string().trim().min(1).max(200) }).strict(),
-    output: untyped,
-  }),
 })
 
 type Queries = typeof queries

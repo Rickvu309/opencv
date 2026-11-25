@@ -4,6 +4,7 @@ import { implementation as account$delete } from "../account/operations/account/
 import { implementation as account$requestEmailChange } from "../account/operations/account/request-email-change/server.js"
 import { implementation as actions$approve } from "../registry/operations/actions/approve/server.js"
 import { implementation as actions$deny } from "../registry/operations/actions/deny/server.js"
+import { implementation as activity$list } from "../account/operations/activity/list/server.js"
 import { implementation as activity$undo } from "../registry/operations/activity/undo/server.js"
 import { implementation as billing$get } from "../account/operations/billing/get/server.js"
 import { implementation as chat$appendMessage } from "../coach/operations/chat/append-message/server.js"
@@ -48,12 +49,14 @@ import { implementation as paper$read } from "../paper/operations/read/server.js
 import { implementation as profile$markWelcomed } from "../account/operations/profile/mark-welcomed/server.js"
 import { implementation as profile$setPhoto } from "../account/operations/profile/set-photo/server.js"
 import { implementation as profile$update } from "../account/operations/profile/update/server.js"
+import { implementation as workspace$search } from "../account/operations/workspace/search/server.js"
 
 export const implementations = {
   "account.delete": account$delete,
   "account.requestEmailChange": account$requestEmailChange,
   "actions.approve": actions$approve,
   "actions.deny": actions$deny,
+  "activity.list": activity$list,
   "activity.undo": activity$undo,
   "billing.get": billing$get,
   "chat.appendMessage": chat$appendMessage,
@@ -98,4 +101,5 @@ export const implementations = {
   "profile.markWelcomed": profile$markWelcomed,
   "profile.setPhoto": profile$setPhoto,
   "profile.update": profile$update,
+  "workspace.search": workspace$search,
 } satisfies Implementations<typeof catalog>

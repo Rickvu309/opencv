@@ -34,19 +34,12 @@ export function queryKey(ref: QueryRef): readonly unknown[] {
   return ref.input ? [ref.query, ref.input] : [ref.query]
 }
 
-export function activityKey(subjectKind: string, subjectId: string) {
-  return queryKey({ query: "activity.list", input: { subjectKind, subjectId } })
-}
-
-export const ACTIVITY_ROOT = ["activity.list"] as const
-
 export function refreshQueries(queryClient: QueryClient, refs: QueryRef[]) {
-  return Promise.all([
-    queryClient.invalidateQueries({ queryKey: ACTIVITY_ROOT }),
-    ...refs.map((ref) =>
+  return Promise.all(
+    refs.map((ref) =>
       queryClient.invalidateQueries({ queryKey: queryKey(ref) })
-    ),
-  ])
+    )
+  )
 }
 
 export function refreshReads(queryClient: QueryClient, refs: QueryRef[]) {
