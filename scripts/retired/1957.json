@@ -398,5 +398,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 4
+  },
+  {
+    "subject": "apps/api/src/registry/behavior.test.ts",
+    "because": "These cases drove Paper commands and reads that are removed with the old block format.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
   }
 ]
