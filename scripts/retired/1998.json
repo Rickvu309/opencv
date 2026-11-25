@@ -22,5 +22,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 3
+  },
+  {
+    "subject": "apps/api/src/registry/private-output-keys.test.ts",
+    "because": "No remaining legacy command output contains contentVersion now that paper.create and paper.duplicate are pairs. The sanity check that the key walk reaches into union outputs now looks for editId in paper.edit's union output.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
