@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { readdirSync } from "node:fs"
+import { readFileSync, readdirSync } from "node:fs"
 import test from "node:test"
 import {
   SCREENS,
@@ -204,13 +204,15 @@ test("a respond step answers the named request in the tool's browser, preflight 
   )
 })
 
-const INLINE_SCREENS_LEFT = 11
-
-test("a new screen is its own file, and the inline screen lists only shrink", () => {
+test("every screen is its own file, and no screen is written inline", () => {
   const filed = readdirSync(new URL("./screens/", import.meta.url)).filter(
     (name) => name.endsWith(".mjs")
   )
-  assert.equal(filed.length + INLINE_SCREENS_LEFT, SCREENS.length)
+  assert.equal(filed.length, SCREENS.length)
+  assert.doesNotMatch(
+    readFileSync(new URL("./screens.mjs", import.meta.url), "utf8"),
+    /\bid: "/
+  )
   for (const name of filed)
     assert.ok(
       SCREENS.some((screen) => `${screen.id}.mjs` === name),
