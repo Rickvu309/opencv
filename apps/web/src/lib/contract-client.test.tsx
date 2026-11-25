@@ -104,7 +104,7 @@ describe("runContractCommand", () => {
     const queryClient = new QueryClient()
     const bodies = stubFetch({}) as Record<string, unknown>[]
 
-    await runContractCommand(queryClient, "paper.nativeSync", {
+    await runContractCommand(queryClient, "paper.save", {
       docId: parsePaperId("01900000-0000-7000-8000-000000000020"),
       epoch: 0,
       update: "",

@@ -148,7 +148,7 @@ describe("paper commands through the contract client", () => {
 
     await runContractCommand(
       queryClient,
-      "paper.nativeSync",
+      "paper.save",
       { docId, epoch: 0, update: "", stateVector: "" },
       { refresh: false }
     )
@@ -167,7 +167,7 @@ describe("paper commands through the contract client", () => {
     const input = { docId }
 
     await runContractCommand(queryClient, "paper.delete", input)
-    await runContractCommand(queryClient, "paper.nativeSync", {
+    await runContractCommand(queryClient, "paper.save", {
       docId,
       epoch: 0,
       update: "",

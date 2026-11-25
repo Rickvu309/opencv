@@ -168,27 +168,24 @@ it("downloads real saved CV and Letter HTTP edits, refuses stale requests and pr
       })
       const sync = async () => {
         const sent = documentClient.prepare()
-        const response = await fetch(
-          `${origin}/api/commands/paper.nativeSync`,
-          {
-            method: "POST",
-            headers: {
-              Cookie: owner.cookie,
-              Origin: testWebOrigin,
-              "content-type": "application/json",
+        const response = await fetch(`${origin}/api/commands/paper.save`, {
+          method: "POST",
+          headers: {
+            Cookie: owner.cookie,
+            Origin: testWebOrigin,
+            "content-type": "application/json",
+          },
+          body: JSON.stringify({
+            idempotencyKey: randomUUID(),
+            input: {
+              ...sent,
+              docId: saved.id,
+              writer: RICH_NATIVE_WRITER,
+              update: Buffer.from(sent.update).toString("base64"),
+              stateVector: Buffer.from(sent.stateVector).toString("base64"),
             },
-            body: JSON.stringify({
-              idempotencyKey: randomUUID(),
-              input: {
-                ...sent,
-                docId: saved.id,
-                writer: RICH_NATIVE_WRITER,
-                update: Buffer.from(sent.update).toString("base64"),
-                stateVector: Buffer.from(sent.stateVector).toString("base64"),
-              },
-            }),
-          }
-        )
+          }),
+        })
         expect(response.status).toBe(200)
         const output = nativeSyncOutputSchema.parse(
           await responseData(response)

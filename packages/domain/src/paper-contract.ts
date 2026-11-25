@@ -159,7 +159,7 @@ export const paperContract = commandContract({
             ...listChanged(),
           ],
   }),
-  "paper.nativeSync": commandEntry({
+  "paper.save": commandEntry({
     description:
       "Exchange admitted native document changes with explicit writer and provenance.",
     input: nativeSyncInputSchema,

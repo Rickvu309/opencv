@@ -105,7 +105,7 @@ export async function openRichDocument(page, origin, answer, repo = root) {
       )
   )
   await page.route(
-    (url) => url.pathname === "/api/commands/paper.nativeSync",
+    (url) => url.pathname === "/api/commands/paper.save",
     async (route) => {
       const request = route.request()
       if (request.method() === "OPTIONS")
