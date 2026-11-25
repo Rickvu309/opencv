@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { inboxThreadResource, threadIdSchema } from "../../../inbox.js"
+import { inboxThreadResource, threadIdSchema } from "../../../inbox/index.js"
 import { defineOperation } from "../../../operation.js"
 
 export const operation = defineOperation({

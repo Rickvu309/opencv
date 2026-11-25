@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { inboxThreadResource, threadInput } from "../../../inbox.js"
+import { inboxThreadResource, threadInput } from "../../../inbox/index.js"
 import { defineOperation } from "../../../operation.js"
 import type { ResourceRef } from "../../../resources.js"
 

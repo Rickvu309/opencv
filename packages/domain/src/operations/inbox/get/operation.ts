@@ -2,7 +2,7 @@ import {
   inboxDetailSchema,
   inboxThreadResource,
   threadInput,
-} from "../../../inbox.js"
+} from "../../../inbox/index.js"
 import { defineOperation } from "../../../operation.js"
 
 export const operation = defineOperation({
