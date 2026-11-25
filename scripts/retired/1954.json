@@ -230,5 +230,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "packages/paper-crdt/src/stored-document.test.ts",
+    "because": "The stored document is now only the rich document; cases about the old prose format are removed and the rich cases stay.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
   }
 ]
