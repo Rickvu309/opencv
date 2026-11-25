@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/scenarios/account.scenario.test.ts",
+    "because": "The receipts scenario reads the activity feed through the read door; another person still sees no receipts of Ada's Job",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
