@@ -62,5 +62,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 11
+  },
+  {
+    "subject": "packages/domain/src/paper-doc-rich-text.test.ts",
+    "because": "The stored document is now only the rich document; cases about the old prose format are removed and the rich cases stay.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
   }
 ]
