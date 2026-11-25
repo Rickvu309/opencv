@@ -274,3 +274,21 @@ export async function paperApiFetch(
 
   return jsonError(404, "UNKNOWN_COMMAND", "Unknown command")
 }
+
+export function paperUpdateResult(
+  id: string,
+  name: string,
+  kind: "cv" | "letter" = "cv"
+) {
+  return {
+    ok: true,
+    data: {
+      id,
+      name,
+      kind,
+      status: "draft",
+      isFavorite: false,
+      updatedAt: new Date(0).toISOString(),
+    },
+  }
+}

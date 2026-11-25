@@ -8,6 +8,7 @@ import {
 } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { createRef } from "react"
+import { paperUpdateResult } from "@/test/paper-api-mock.ts"
 import { render } from "@/test/render-with-client.tsx"
 import {
   PaperDocumentCanvas,
@@ -81,7 +82,9 @@ it("renames through the product command and cancels an unfinished name with Esca
   vi.stubGlobal("fetch", async (url: RequestInfo | URL, init?: RequestInit) => {
     if (!String(url).includes("paper.update")) throw new Error(String(url))
     requests.push(JSON.parse(String(init?.body)))
-    return Response.json({ ok: true, data: {} })
+    return Response.json(
+      paperUpdateResult("16590000-0000-4000-8000-000000000001", "Designer CV")
+    )
   })
   render(
     <PaperDocumentTitle
@@ -204,7 +207,11 @@ it("preserves the active title draft across refreshes and disables it until rena
   view.rerender(title("Designer CV"))
   expect(input).toHaveValue("Designer CV")
   expect(input).toBeDisabled()
-  respond(Response.json({ ok: true, data: {} }))
+  respond(
+    Response.json(
+      paperUpdateResult("16590000-0000-4000-8000-000000000001", "Designer CV")
+    )
+  )
   expect(
     await screen.findByRole("heading", { name: "Designer CV" })
   ).toBeVisible()
