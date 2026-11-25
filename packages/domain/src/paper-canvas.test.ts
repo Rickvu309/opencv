@@ -6,8 +6,8 @@ import { z } from "zod"
 import {
   PAPER_CANVAS_PROFILE,
   paperCanvasCommitSchema,
-} from "./paper-canvas.ts"
-import { paperPackageEditSchema } from "./paper-package.ts"
+} from "./paper-doc/paper-canvas.ts"
+import { paperPackageEditSchema } from "./paper-doc/paper-package.ts"
 
 const docId = "11111111-1111-4111-8111-111111111111"
 const basedOn = "22222222-2222-4222-8222-222222222222"

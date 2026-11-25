@@ -455,15 +455,15 @@ test("a frozen proposal and the other session do not move the winner", () => {
 test("paper.edit does not gain Enter", () => {
   const root = fileURLToPath(new URL("..", import.meta.url))
   for (const file of [
-    "packages/domain/src/paper-package.ts",
-    "packages/domain/src/paper-contract.ts",
+    "packages/domain/src/paper-doc/paper-package.ts",
+    "packages/domain/src/paper-doc/paper-contract.ts",
     "apps/api/src/paper/package-engine.ts",
   ])
     assert.deepEqual(detect(readFileSync(root + file, "utf8"), file), [])
   assert.deepEqual(
     detect(
       'const edit = { op: "split" }\n',
-      "packages/domain/src/paper-package.ts"
+      "packages/domain/src/paper-doc/paper-package.ts"
     ),
     [{ kind: "paper-canvas", detail: "edit-accepts-enter" }]
   )

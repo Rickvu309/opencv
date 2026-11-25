@@ -1,2 +1,14 @@
 layer: kernel
-public: [index.ts, paper.ts]
+public:
+  [
+    index.ts,
+    paper.ts,
+    paper-canvas.ts,
+    paper-contract.ts,
+    paper-contract-views.ts,
+    paper-diff.ts,
+    paper-package.ts,
+    paper-rich-edit.ts,
+    paper-start.ts,
+    paper-word.ts,
+  ]

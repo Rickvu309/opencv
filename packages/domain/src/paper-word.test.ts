@@ -8,7 +8,7 @@ import {
   wordConfirmedOpsSchema,
   wordSourceSchema,
   wordUndoSchema,
-} from "./paper-word.ts"
+} from "./paper-doc/paper-word.ts"
 
 const doc = "11111111-1111-4111-8111-111111111111"
 const basedOn = "22222222-2222-4222-8222-222222222222"

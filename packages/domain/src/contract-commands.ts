@@ -1,5 +1,5 @@
 import { commandContract } from "./contract.js"
-import { paperContract } from "./paper-contract.js"
+import { paperContract } from "./paper-doc/paper-contract.js"
 
 export const commands = commandContract({
   ...paperContract,

@@ -1,7 +1,7 @@
 import { z } from "zod"
 
-import { jobIdSchema } from "./ids.js"
-import { paperDocNameSchema, paperTemplateIdSchema } from "./paper-doc/paper.js"
+import { jobIdSchema } from "../ids.js"
+import { paperDocNameSchema, paperTemplateIdSchema } from "./paper.js"
 import {
   WORD_LIMITS,
   wordBatchSchema,
