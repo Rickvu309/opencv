@@ -6,7 +6,7 @@ import {
   type FlowSection,
   type FlowNode,
 } from "./native-layout-flow.js"
-import { paperPhotoFileId } from "../paper.js"
+import { paperPhotoFileId } from "./paper.js"
 
 export const richPaperDocumentSchema = z
   .object({

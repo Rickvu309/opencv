@@ -12,7 +12,7 @@ import {
   nativeProvenanceSchema,
   nativeWriterSchema,
 } from "../../../paper-doc/native.js"
-import { paperStoredKindSchema } from "../../../paper.js"
+import { paperStoredKindSchema } from "../../../paper-doc/paper.js"
 
 export const operation = defineOperation({
   owner: "paper",

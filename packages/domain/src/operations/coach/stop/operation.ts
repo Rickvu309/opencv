@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { chatStopInputSchema } from "../../../chat.js"
+import { chatStopInputSchema } from "../../../coach/chat.js"
 import { coachTaskResource } from "../../../coach/coach-task.js"
 import { defineOperation } from "../../../operation.js"
 

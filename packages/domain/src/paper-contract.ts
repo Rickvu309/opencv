@@ -27,7 +27,7 @@ import {
   paperDocNameSchema,
   paperDuplicateInputSchema,
   paperStoredKindSchema,
-} from "./paper.js"
+} from "./paper-doc/paper.js"
 import type { QueryRef } from "./queries.js"
 
 export * from "./paper-contract-views.js"
