@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/package-http.test.ts",
+    "because": "The file list check now asks the read door for paper.files instead of the deleted GET /api/paper/files route, with the same expectation that an imported Word file is not listed.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
