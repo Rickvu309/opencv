@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 6
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-api.test.ts",
+    "because": "The page count read is no longer called by the web; it served only the old block Paper format.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
   }
 ]
