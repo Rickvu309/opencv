@@ -7,10 +7,7 @@ import {
   paperIdSchema,
   parsePaperId,
 } from "./ids.js"
-import {
-  legacyPaperDocumentSchema,
-  paperDocumentSchema,
-} from "./paper-doc/document.js"
+import { paperDocumentSchema } from "./paper-doc/document.js"
 import {
   nativeBasisSchema,
   nativeWriterSchema,
@@ -81,8 +78,6 @@ const paperEditOutputSchema = z
     moreChanges: z.number().int(),
   })
   .strict()
-
-export const PAPER_RECEIPT_CHANGE_LIMIT = MAX_RECEIPT_CHANGES
 
 type DocInput = { docId: z.output<typeof paperIdSchema> }
 

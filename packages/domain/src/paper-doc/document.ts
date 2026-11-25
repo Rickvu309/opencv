@@ -43,7 +43,7 @@ const clashOfferSchema = z.discriminatedUnion("kind", [
     .strict(),
 ])
 
-export const clashSchema = z
+const clashSchema = z
   .object({
     id: clashIdSchema,
     node: nodeIdSchema,
@@ -52,8 +52,6 @@ export const clashSchema = z
     at: z.iso.datetime(),
   })
   .strict()
-
-export type Clash = z.infer<typeof clashSchema>
 
 const clashesSchema = z.array(clashSchema).max(MAX_CLASHES)
 
@@ -86,7 +84,7 @@ const nativeLetterPaperSchema = letterPaperSchema.extend({
   schemaRevision: z.literal(1),
 })
 
-export type LegacyPaperDocument =
+type LegacyPaperDocument =
   z.infer<typeof cvPaperSchema> | z.infer<typeof letterPaperSchema>
 export type NativePaperDocument =
   z.infer<typeof nativeCvPaperSchema> | z.infer<typeof nativeLetterPaperSchema>
@@ -233,15 +231,6 @@ export const paperDocumentSchema = z.discriminatedUnion("version", [
   nativePaperDocumentSchema,
 ])
 
-export function nativePaperFromLegacy(source: unknown): NativePaperDocument {
-  const document = legacyPaperDocumentSchema.parse(source)
-  return nativePaperDocumentSchema.parse({
-    ...document,
-    version: 4,
-    schemaRevision: 1,
-  })
-}
-
 const SECTION_TITLES: Record<CvSectionKind, string> = {
   summary: "Summary",
   experience: "Experience",
@@ -268,7 +257,7 @@ export function blankLetter(): LetterPaper {
   return letterPaperSchema.parse(emptyPaper("letter"))
 }
 
-export type SectionGroup = {
+type SectionGroup = {
   readonly section: CvSectionMarker | null
   readonly blocks: readonly Exclude<CvPaperBlock, CvSectionMarker>[]
 }

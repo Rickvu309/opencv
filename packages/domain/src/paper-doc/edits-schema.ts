@@ -8,7 +8,7 @@ const MAX_TEXT = 4000
 const MAX_NEW_BLOCKS = 30
 const MAX_ITEMS = 20
 
-export const EDIT_START = "@start"
+const EDIT_START = "@start"
 
 const blockRefSchema = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/)
 const anchorSchema = z.union([blockRefSchema, z.literal(EDIT_START)])
@@ -83,8 +83,6 @@ const newBlockSchema = z.discriminatedUnion("type", [
     .strict(),
 ])
 
-export type NewBlock = z.output<typeof newBlockSchema>
-
 const blocksSchema = z.array(newBlockSchema).min(1).max(MAX_NEW_BLOCKS)
 
 const blockFieldsSchema = nodeFieldSetSchema.omit({
@@ -107,7 +105,7 @@ const headerFieldsSchema = nodeFieldSetSchema.pick({
   linkedin: true,
 })
 
-export const paperEditSchema = z.discriminatedUnion("op", [
+const paperEditSchema = z.discriminatedUnion("op", [
   z
     .object({
       op: z.literal("insert"),
@@ -147,8 +145,6 @@ export const paperEditSchema = z.discriminatedUnion("op", [
   z.object({ op: z.literal("remove"), blockId: blockRefSchema }).strict(),
 ])
 
-export type PaperEdit = z.output<typeof paperEditSchema>
-
 export const paperEditsSchema = z
   .array(paperEditSchema)
   .min(1)
@@ -165,5 +161,3 @@ export const paperEditOutcomeSchema = z.discriminatedUnion("status", [
   z.object({ status: z.literal("stale"), reason: z.string() }).strict(),
   z.object({ status: z.literal("invalid"), reason: z.string() }).strict(),
 ])
-
-export type PaperEditOutcome = z.output<typeof paperEditOutcomeSchema>

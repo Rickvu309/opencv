@@ -1,7 +1,5 @@
-import type { PaperDocument } from "./document.js"
-import type { PaperNode, PaperNodeType } from "./nodes.js"
-import { nodeSummary } from "./outline.js"
-import { canonical, indexOf, type Entry, type Index } from "./tree.js"
+import type { PaperNodeType } from "./nodes.js"
+import { type Index } from "./tree.js"
 
 export type PaperChange = {
   readonly blockId: string
@@ -9,14 +7,6 @@ export type PaperChange = {
   readonly kind: PaperNodeType
   readonly before?: string
   readonly after?: string
-}
-
-function ownFields(node: PaperNode): unknown {
-  return "children" in node ? { ...node, children: [] } : node
-}
-
-function summaryOf(node: PaperNode): string {
-  return nodeSummary(ownFields(node) as PaperNode, 1)
 }
 
 function longestIncreasing(
@@ -87,68 +77,4 @@ export function movedIds(
     })
   }
   return moved
-}
-
-function changeOf(
-  id: string,
-  base: Entry | undefined,
-  target: Entry | undefined,
-  moved: ReadonlySet<string>
-): PaperChange | null {
-  if (!base && target) {
-    return {
-      blockId: id,
-      change: "added",
-      kind: target.node.type,
-      after: summaryOf(target.node),
-    }
-  }
-  if (base && !target) {
-    return {
-      blockId: id,
-      change: "removed",
-      kind: base.node.type,
-      before: summaryOf(base.node),
-    }
-  }
-  if (!base || !target) return null
-  if (canonical(ownFields(base.node)) !== canonical(ownFields(target.node))) {
-    return {
-      blockId: id,
-      change: "changed",
-      kind: target.node.type,
-      before: summaryOf(base.node),
-      after: summaryOf(target.node),
-    }
-  }
-  if (moved.has(id)) {
-    return {
-      blockId: id,
-      change: "moved",
-      kind: target.node.type,
-      after: summaryOf(target.node),
-    }
-  }
-  return null
-}
-
-export function paperChanges(
-  base: PaperDocument,
-  target: PaperDocument
-): PaperChange[] {
-  const before = indexOf(base)
-  const after = indexOf(target)
-  const moved = movedIds(before, after)
-  const changes: PaperChange[] = []
-  for (const [id, entry] of after) {
-    const change = changeOf(id, before.get(id), entry, moved)
-    if (change) changes.push(change)
-  }
-  for (const [id, entry] of before) {
-    if (!after.has(id)) {
-      const change = changeOf(id, entry, undefined, moved)
-      if (change) changes.push(change)
-    }
-  }
-  return changes
 }

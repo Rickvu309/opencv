@@ -2,8 +2,6 @@ import {
   canonicalPaper,
   sameNativeProvenance,
   type NativeProvenance,
-  rebasePending,
-  type PaperDocument,
   type StoredPaperDocument,
   type RichPaperDocument,
   richPaperDocumentSchema,
@@ -11,8 +9,6 @@ import {
   RICH_NATIVE_WRITER,
 } from "@workspace/domain"
 import * as Y from "yjs"
-
-import { materialize, writeDocument } from "./ydoc.js"
 import { materializeStored } from "./stored-document.js"
 import {
   preservePendingContent,

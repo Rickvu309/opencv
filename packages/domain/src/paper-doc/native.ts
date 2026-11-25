@@ -1,6 +1,4 @@
 import { z } from "zod"
-
-import { paperIdSchema } from "../ids.js"
 import type { NativePaperDocument } from "./document.js"
 import type { RichPaperDocument } from "./stored-document.js"
 import { paperSyncInputSchema, paperSyncOutputSchema } from "./sync.js"
@@ -150,14 +148,6 @@ export const nativeSyncInputSchema = paperSyncInputSchema
   .strict()
 export const nativeSyncOutputSchema = paperSyncOutputSchema
   .extend({ provenance: nativeProvenanceSchema })
-  .strict()
-export const nativeMigrateInputSchema = z
-  .object({
-    docId: paperIdSchema,
-    epoch: z.number().int().positive(),
-    basedOn: z.number().int().nonnegative(),
-    writer: nativeWriterSchema,
-  })
   .strict()
 export function sameNativeProvenance(
   left: NativeProvenance | undefined,
