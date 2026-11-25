@@ -374,5 +374,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/share-public.test.ts",
+    "because": "Paper sharing is removed; it served only old block Papers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
   }
 ]
