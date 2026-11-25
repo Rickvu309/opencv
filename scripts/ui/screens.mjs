@@ -8,7 +8,6 @@ import {
   OPEN_THE_STAGE_MENU,
   PANEL,
 } from "./screen-steps.mjs"
-import { PAPER_SCREENS } from "./screens-paper.mjs"
 
 const SCREEN_FOLDER = new URL("./screens/", import.meta.url)
 
@@ -29,82 +28,6 @@ async function filedScreens() {
 }
 
 const INLINE_SCREENS = [
-  {
-    id: "sign-in",
-    route: "/sign-in",
-    signedIn: false,
-    steps: [{ waitFor: { selector: 'input[type="email"]' } }],
-  },
-  {
-    id: "sign-in-invalid-email",
-    route: "/sign-in",
-    signedIn: false,
-    steps: [
-      { waitFor: { selector: 'input[type="email"]' } },
-      { fill: { selector: 'input[type="email"]', text: "ada" } },
-      { click: { role: "button", name: "Continue" } },
-      { waitFor: { selector: 'input[type="email"][aria-invalid="true"]' } },
-    ],
-  },
-  {
-    id: "sign-in-too-many-codes",
-    route: "/sign-in",
-    signedIn: false,
-    steps: [
-      { waitFor: { selector: 'input[type="email"]' } },
-      {
-        respond: {
-          path: "/api/auth/email-otp/send-verification-otp",
-          status: 429,
-          headers: { "Retry-After": "661" },
-          json: { message: "Too many requests. Please try again later." },
-        },
-      },
-      { fill: { selector: 'input[type="email"]', text: "ada@example.com" } },
-      { click: { role: "button", name: "Continue" } },
-      { waitFor: { selector: '[role="alert"]' } },
-    ],
-  },
-  ...PAPER_SCREENS,
-  {
-    id: "apply-empty",
-    route: "/apply",
-    steps: [{ waitFor: { role: "heading", name: "Track your first job" } }],
-  },
-  {
-    id: "apply-board",
-    route: "/apply",
-    steps: ADD_A_JOB,
-  },
-  {
-    id: "apply-peek",
-    route: "/apply",
-    steps: OPEN_THE_JOB,
-  },
-  {
-    id: "apply-stage-menu",
-    route: "/apply",
-    steps: OPEN_THE_STAGE_MENU,
-  },
-  {
-    id: "apply-next-up",
-    route: "/apply",
-    steps: [
-      ...OPEN_THE_STAGE_MENU,
-      { press: "4" },
-      { waitFor: { text: "Answer the offer" } },
-    ],
-  },
-  {
-    id: "not-found",
-    route: "/no-such-page",
-    steps: [{ waitFor: { selector: '[aria-label="Page not found"]' } }],
-  },
-  {
-    id: "settings",
-    route: "/settings",
-    steps: [{ waitFor: { selector: '[data-slot="settings-card"]' } }],
-  },
   ...[
     ["settings-coach", "/settings/coach", '[data-slot="settings-card"]'],
     [
@@ -124,64 +47,6 @@ const INLINE_SCREENS = [
     route,
     steps: [{ waitFor: { selector } }],
   })),
-  {
-    id: "settings-panel-open",
-    route: "/settings",
-    steps: [
-      { waitFor: { selector: '[data-slot="settings-card"]' } },
-      ...OPEN_PANEL,
-      {
-        fill: {
-          selector: `${PANEL} ${COMPOSER}`,
-          text: "What should I do next?",
-        },
-      },
-      { press: "Enter" },
-      { waitFor: { selector: `${PANEL} :text("Prep the starred")` } },
-    ],
-  },
-  {
-    id: "landing",
-    route: "/",
-    signedIn: false,
-    steps: [{ waitFor: { selector: "#landing-hero" } }],
-  },
-  {
-    id: "inbox",
-    route: "/inbox",
-    steps: [{ waitFor: { role: "heading", name: "Inbox" } }],
-  },
-  {
-    id: "inbox-skipped",
-    route: "/inbox",
-    steps: [
-      { waitFor: { role: "button", name: "Skip for now" } },
-      { click: { role: "button", name: "Skip for now" } },
-      { waitFor: { text: "No job emails yet" } },
-    ],
-  },
-  {
-    id: "inbox-scan",
-    route: "/inbox",
-    steps: [
-      { waitFor: { role: "button", name: "Skip for now" } },
-      { click: { role: "button", name: "Skip for now" } },
-      { waitFor: { role: "button", name: "View example inbox" } },
-      { click: { role: "button", name: "View example inbox" } },
-      { waitFor: { text: "Regional bank" } },
-    ],
-  },
-  {
-    id: "inbox-open",
-    route: "/inbox",
-    steps: [
-      { waitFor: { role: "button", name: "View example inbox" } },
-      { click: { role: "button", name: "View example inbox" } },
-      { waitFor: { selector: '[data-slot="inbox-row"]' } },
-      { click: { selector: '[data-slot="inbox-row"]' } },
-      { waitFor: { role: "region", name: "Reading pane" } },
-    ],
-  },
   {
     id: "shell-sidebar-collapsed",
     route: "/jobs",
