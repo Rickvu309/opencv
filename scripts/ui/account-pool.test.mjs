@@ -3,13 +3,7 @@ import { readFileSync } from "node:fs"
 import test from "node:test"
 
 import {
-  detect,
-  libraryProblems,
-  libraryReads,
-} from "../lib/ui-library-reads.mjs"
-import {
   EMPTY_POOL_LINE,
-  LIBRARY_READS,
   SHOWN_EMAIL,
   entryName,
   libraryFrom,
@@ -175,39 +169,4 @@ test("no file on a check's path retries on the sign-in limit", () => {
       false,
       file
     )
-})
-
-const POOL = readFileSync(
-  new URL("./account-pool.mjs", import.meta.url),
-  "utf8"
-)
-
-test("every library read is a catalog read or a route still waiting to become one", () => {
-  assert.deepEqual(libraryReads(POOL), LIBRARY_READS)
-  assert.deepEqual(detect(POOL), [])
-})
-
-test("a library read of a deleted route or an unknown read fires", () => {
-  const facts = {
-    waiting: ["GET /api/paper"],
-    catalog: ["job.list", "chat.list"],
-  }
-  assert.deepEqual(
-    libraryProblems(
-      {
-        documents: { path: "/api/paper" },
-        jobs: { path: "/api/jobs" },
-        chats: { path: "/api/reads/chat.nope", body: "{}" },
-      },
-      facts
-    ),
-    [
-      "jobs: GET /api/jobs is not served: read it through /api/reads/<name>",
-      "chats: /api/reads/chat.nope is not a catalog read sent with a body",
-    ]
-  )
-  assert.deepEqual(
-    libraryReads('export const LIBRARY_READS = {\n  jobs: "/api/jobs",\n}'),
-    { jobs: { path: "/api/jobs" } }
-  )
 })

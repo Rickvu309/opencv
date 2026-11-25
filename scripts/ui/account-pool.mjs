@@ -58,19 +58,9 @@ export function countOf(data) {
 }
 
 export const LIBRARY_READS = {
-  documents: { path: "/api/paper" },
-  jobs: { path: "/api/reads/job.list", body: "{}" },
-  chats: { path: "/api/reads/chat.list", body: "{}" },
-}
-
-export function libraryRequest(read, headers) {
-  return read.body === undefined
-    ? { method: "GET", headers }
-    : {
-        method: "POST",
-        headers: { ...headers, "content-type": "application/json" },
-        body: read.body,
-      }
+  documents: "/api/paper",
+  jobs: "/api/jobs",
+  chats: "/api/chats",
 }
 
 export function libraryFrom(bodies) {

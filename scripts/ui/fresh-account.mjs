@@ -1,6 +1,5 @@
 import {
   LIBRARY_READS,
-  libraryRequest,
   libraryFrom,
   markUsed,
   poolPaths,
@@ -36,16 +35,12 @@ export async function signInFresh(
   await context.addCookies(account.cookies)
   const headers = { origin: state.webOrigin }
   const bodies = {}
-  for (const [kind, library] of Object.entries(LIBRARY_READS)) {
-    const { method, headers: sent, body } = libraryRequest(library, headers)
-    const read = await context.request.fetch(
-      `${state.apiOrigin}${library.path}`,
-      { method, headers: sent, ...(body === undefined ? {} : { data: body }) }
-    )
+  for (const [kind, path] of Object.entries(LIBRARY_READS)) {
+    const read = await context.request.get(`${state.apiOrigin}${path}`, {
+      headers,
+    })
     if (read.status() !== 200)
-      throw new Error(
-        `${screenId}: ${library.path} failed with ${read.status()}`
-      )
+      throw new Error(`${screenId}: ${path} failed with ${read.status()}`)
     bodies[kind] = await read.json()
   }
   const problem = untouchedProblem(account, libraryFrom(bodies))
