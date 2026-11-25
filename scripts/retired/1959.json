@@ -30,5 +30,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "apps/api/src/registry/private-output-keys.test.ts",
+    "because": "paper.rename was the last legacy command whose output carried an undo-only key; the scan's sanity check now requires a real output key, and the leak check itself is unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
