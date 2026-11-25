@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/cv-photo.isolated.test.tsx",
+    "because": "The CV photo uploader and the public share photo are removed with the old block Paper format; the photo still displays from a stored file id.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  }
+]
