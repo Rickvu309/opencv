@@ -1,6 +1,5 @@
 import { z } from "zod"
 import { integrationsSchema, profileResource } from "../../../account.js"
-import { inboxThreadResource } from "../../../inbox.js"
 import { defineOperation } from "../../../operation.js"
 
 export const operation = defineOperation({
@@ -12,5 +11,5 @@ export const operation = defineOperation({
   input: z.object({}).strict(),
   publicResult: integrationsSchema,
   coach: "never",
-  dependsOn: () => [profileResource, inboxThreadResource()],
+  dependsOn: () => [profileResource],
 })
