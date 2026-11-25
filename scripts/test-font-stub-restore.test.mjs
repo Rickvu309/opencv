@@ -33,13 +33,13 @@ afterEach(() => {
 `
 
 const CONFIG = `const ISOLATED_FILES = [
-  "src/features/paper/rich-page-lifecycle.isolated.test.tsx",
+  "src/features/paper/rich-page-lifecycle.test.tsx",
 ]
 `
 
 test("isolated test files come from the vitest config", () => {
   assert.deepEqual(isolatedTestFiles(CONFIG), [
-    "src/features/paper/rich-page-lifecycle.isolated.test.tsx",
+    "src/features/paper/rich-page-lifecycle.test.tsx",
   ])
   assert.deepEqual(isolatedTestFiles("const other = 1"), [])
 })
