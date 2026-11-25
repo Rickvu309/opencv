@@ -38,5 +38,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 7
+  },
+  {
+    "subject": "scripts/fixtures/catalog-adapters/clean.json",
+    "because": "The clean fixture follows the simplified Undo guard: assertReversal(ran) refuses every reversal without a non-empty expectation, with no exemption list. The detector pins the new spelling and its mutation test still fires.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
   }
 ]
