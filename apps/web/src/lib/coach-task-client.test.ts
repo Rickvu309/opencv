@@ -7,6 +7,8 @@ import {
 } from "./coach-task-client.ts"
 import { taskSnapshot, taskEvent, TASK } from "@/test/coach-task-fixture.ts"
 import type { CoachTaskState } from "./coach-task-state.ts"
+import { authClient } from "./auth-client.ts"
+import { catalogClient } from "./contract-client.ts"
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -123,7 +125,13 @@ it("requests exactly after the snapshot cursor and deduplicates replay before co
 
 it("refreshes command reads from a committed snapshot without a preceding live tool call", async () => {
   const client = new QueryClient()
-  const invalidate = vi.spyOn(client, "invalidateQueries")
+  const session = authClient.$store.atoms.session
+  authClient.$store.atoms.session = {
+    get: () => ({ data: { user: { id: "owner" } } }),
+  } as never
+  const list = catalogClient.options("owner", "job.list", {})
+  const detail = catalogClient.options("owner", "job.get", { jobId: TASK })
+  for (const read of [list, detail]) client.getQueryCache().build(client, read)
   vi.stubGlobal("fetch", async () =>
     json(
       taskSnapshot({
@@ -151,10 +159,9 @@ it("refreshes command reads from a committed snapshot without a preceding live t
     signal: new AbortController().signal,
     onState() {},
   })
-  expect(invalidate.mock.calls).toContainEqual([{ queryKey: ["job.list"] }])
-  expect(invalidate.mock.calls).toContainEqual([
-    { queryKey: ["job.get", { jobId: TASK }] },
-  ])
+  authClient.$store.atoms.session = session
+  expect(client.getQueryState(list.queryKey)?.isInvalidated).toBe(true)
+  expect(client.getQueryState(detail.queryKey)?.isInvalidated).toBe(true)
 })
 
 it("reads the current server mode without a cached response or a web rebuild", async () => {

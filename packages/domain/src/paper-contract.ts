@@ -99,10 +99,7 @@ const docChanged = (input: DocInput): QueryRef[] => [
 
 const chatsChanged = (): QueryRef[] => [{ query: "chat.get" }]
 
-const jobsLinked = (): QueryRef[] => [
-  { query: "job.list" },
-  { query: "job.get" },
-]
+const jobsLinked = (): QueryRef[] => []
 
 const docRemoved = (input: DocInput): QueryRef[] => [
   ...docChanged(input),
