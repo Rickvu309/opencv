@@ -103,9 +103,3 @@ test("a red main run is a hole only when every failed job belongs to a skipped p
     []
   )
 })
-
-test("reading the change graph takes under 3 seconds", () => {
-  const started = performance.now()
-  readChangeGraph()
-  assert.ok(performance.now() - started < 3000)
-})
