@@ -1,0 +1,6 @@
+{
+  "id": "change-map",
+  "file": "scripts/change-map.test.mjs",
+  "historic": null,
+  "reason": "The change map is a measuring tool for plan unit PR-20, not a fix for a past mistake. Its tests pin each mapping rule, and its replay of 300 merged PRs found no red main run it would have missed."
+}
