@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/registry/account-contract.test.ts",
+    "because": "No Account read is in the older query table any more, so the check that each one is listed there has nothing to check; profile.get is checked against its public shape with the other Account reads",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
