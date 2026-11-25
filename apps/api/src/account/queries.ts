@@ -14,7 +14,6 @@ import {
   paperDocs,
 } from "../db/schema.js"
 import { readExportedParts } from "../coach/chat/index.js"
-import { tableQuery } from "../registry/bind.js"
 import { isUndoRow } from "../registry/expectation.js"
 import type { Registry } from "../registry/registry.js"
 import {
@@ -97,17 +96,6 @@ const BILLING_PRO = {
     "Early access to Proof",
   ],
 } as const
-
-export function registerAccountQueries(registry: Registry) {
-  registry.addQuery(
-    tableQuery("profile.get", {
-      description: "Read the signed-in profile.",
-      coach: true,
-      step: () => "Read profile",
-      read: (_input, actor) => readProfile(actor),
-    })
-  )
-}
 
 export async function readActivity(
   userId: string,

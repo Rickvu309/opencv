@@ -2,7 +2,8 @@ import { Suspense, createContext, lazy, useContext } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Outlet, useNavigate, useRouterState } from "@tanstack/react-router"
 
-import { fetchProfile, profileKey } from "@/lib/account-api.ts"
+import { profileQuery } from "@/lib/account-api.ts"
+import { useOwnerId } from "@/lib/owner-id.ts"
 import { startPagePath } from "@/lib/product-paths.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { Button } from "@workspace/ui/components/button"
@@ -57,9 +58,8 @@ export function NotFoundPage() {
   const session = authClient.useSession()
   const signedIn = inShell || Boolean(session.data)
   const profile = useQuery({
-    queryKey: profileKey(),
+    ...profileQuery(useOwnerId()),
     enabled: signedIn,
-    queryFn: fetchProfile,
   })
   const label = signedIn ? copy.start : copy.signIn
   const destination = signedIn

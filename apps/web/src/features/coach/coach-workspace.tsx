@@ -22,7 +22,7 @@ import {
   DialogDescription,
 } from "@workspace/ui/components/dialog"
 
-import { fetchProfile, profileKey } from "@/lib/account-api.ts"
+import { profileQuery } from "@/lib/account-api.ts"
 import { coachPaperOptions, coachJobOptions } from "@/lib/coach-context.ts"
 import { subscribeCoachDraft, takeCoachDraft } from "@/lib/coach-draft.ts"
 import { catalogClient, queryKey } from "@/lib/contract-client.ts"
@@ -100,7 +100,7 @@ export function CoachWorkspace({
       navigationRevision
     )
   )
-  const profile = useQuery({ queryKey: profileKey(), queryFn: fetchProfile })
+  const profile = useQuery(profileQuery(useOwnerId()))
   const usage = catalogClient.useRead(useOwnerId(), "coach.usage", {})
   const papers = useQuery({
     queryKey: queryKey({ query: "paper.list" }),

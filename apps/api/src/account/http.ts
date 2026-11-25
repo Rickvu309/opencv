@@ -1,4 +1,5 @@
 import {
+  catalog,
   ERROR_CODES,
   errorEnvelope,
   httpStatusForError,
@@ -28,7 +29,7 @@ export function createProfileRoutes(signedIn: SignedIn) {
   const routes = sessionApp(signedIn)
   routes.get("/", async (c) => {
     const data = await registry.read(
-      "profile.get",
+      catalog["profile.get"].name,
       {},
       personActor(c.var.userId)
     )

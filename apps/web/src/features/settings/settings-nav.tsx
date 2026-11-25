@@ -19,7 +19,8 @@ import {
 import { NavItem } from "@workspace/ui/components/nav-item"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { fetchProfile, profileKey } from "@/lib/account-api.ts"
+import { profileQuery } from "@/lib/account-api.ts"
+import { useOwnerId } from "@/lib/owner-id.ts"
 import { startPagePath } from "@/lib/product-paths.ts"
 import { resolveProfileImageSrc } from "@/lib/requests.ts"
 
@@ -49,7 +50,7 @@ export function SettingsNav() {
     select: (state) => state.location.pathname,
   })
   const current = settingsViewFromPath(pathname)
-  const profile = useQuery({ queryKey: profileKey(), queryFn: fetchProfile })
+  const profile = useQuery(profileQuery(useOwnerId()))
   const identity = useShellProfile()
   const photoSrc = resolveProfileImageSrc(identity.image)
   return (

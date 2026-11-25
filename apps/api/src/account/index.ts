@@ -1,6 +1,5 @@
 export { hostEmailChangeCode } from "./email-change-code.js"
 export {
-  registerAccountQueries,
   exportAccount,
   listIntegrations,
   readBilling,

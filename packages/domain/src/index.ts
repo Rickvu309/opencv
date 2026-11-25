@@ -28,7 +28,6 @@ export * from "./paper-start.js"
 export * from "./chat-views.js"
 export * from "./control.js"
 export * from "./contract-commands.js"
-export * from "./account-contract.js"
 
 export * from "./connections.js"
 

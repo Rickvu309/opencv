@@ -5,15 +5,14 @@ import {
   type Profile,
 } from "@workspace/domain"
 
-import { fetchProfile, profileKey } from "@/lib/account-api.ts"
-import { catalogClient, refreshReads } from "@/lib/contract-client.ts"
+import { profileKey, profileQuery } from "@/lib/account-api.ts"
+import { catalogClient, refreshCatalogReads } from "@/lib/contract-client.ts"
+import { useOwnerId } from "@/lib/owner-id.ts"
 
 export function useCoachMode() {
   const queryClient = useQueryClient()
-  const query = useQuery({
-    queryKey: profileKey(),
-    queryFn: fetchProfile,
-  })
+  const ownerId = useOwnerId()
+  const query = useQuery(profileQuery(ownerId))
   const mode = query.data?.coachMode ?? DEFAULT_COACH_MODE
 
   const mutation = useMutation({
@@ -25,10 +24,10 @@ export function useCoachMode() {
         { refresh: false }
       ),
     onMutate: async (next: CoachMode) => {
-      await queryClient.cancelQueries({ queryKey: profileKey() })
-      const previous = queryClient.getQueryData<Profile>(profileKey())
+      await queryClient.cancelQueries({ queryKey: profileKey(ownerId) })
+      const previous = queryClient.getQueryData<Profile>(profileKey(ownerId))
       if (previous) {
-        queryClient.setQueryData(profileKey(), {
+        queryClient.setQueryData(profileKey(ownerId), {
           ...previous,
           coachMode: next,
         })
@@ -37,14 +36,11 @@ export function useCoachMode() {
     },
     onError: (_error, _next, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(profileKey(), context.previous)
+        queryClient.setQueryData(profileKey(ownerId), context.previous)
       }
     },
     onSettled: () => {
-      void refreshReads(queryClient, [
-        { query: "profile.get" },
-        { query: "coach.usage" },
-      ])
+      void refreshCatalogReads(queryClient, [{ ownerId, name: "profile" }])
     },
   })
 
