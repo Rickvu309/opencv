@@ -182,5 +182,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 5
+  },
+  {
+    "subject": "apps/api/src/paper/content-compact-photo.test.ts",
+    "because": "It drove attaching, undoing or publicly sharing a CV photo on old block Papers, which are removed. Upload, type sniffing, retention while referenced and the sweep keep their cases on rich Papers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
   }
 ]
