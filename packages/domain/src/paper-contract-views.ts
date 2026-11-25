@@ -118,10 +118,6 @@ export const paperQueries = queryContract({
       .strict(),
     output: paperViewSchema,
   }),
-  "paper.isDeleted": queryEntry({
-    input: z.object({ docId: paperIdSchema }).strict(),
-    output: z.object({ docId: paperIdSchema, deleted: z.boolean() }).strict(),
-  }),
   "file.get": queryEntry({
     input: z.object({ fileId: fileIdSchema }).strict(),
     output: paperFileSchema.omit({ createdAt: true }),

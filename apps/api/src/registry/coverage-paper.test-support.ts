@@ -23,6 +23,10 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     .list()
     .commands.find((command) => command.name === "paper.update")
   if (!paperUpdate) throw new Error("Missing Paper update command")
+  const paperRecover = registry
+    .list()
+    .commands.find((command) => command.name === "paper.recover")
+  if (!paperRecover) throw new Error("Missing Paper recover command")
   let importStage = ""
   let mintedDocId = ""
   let mintedParagraph = ""
@@ -171,7 +175,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "paper.restoreDeleted",
+      name: paperRecover.name,
       arrange: async () => {
         const minted = await run("paper.canvas", { op: "mint", label: "cv" })
         const docId = text(minted.output, "docId")
@@ -179,7 +183,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         ctx.docId = docId
         await run("paper.delete", { docId })
       },
-      act: () => run("paper.restoreDeleted", { docId: ctx.docId }),
+      act: () => run(paperRecover.name, { docId: ctx.docId }),
       assert: async (result) => {
         expect(idOf(result.output)).toBe(ctx.docId)
         const listed = (await registry.read(

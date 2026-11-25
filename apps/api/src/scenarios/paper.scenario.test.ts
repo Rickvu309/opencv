@@ -140,7 +140,7 @@ describe("a Paper started blank", () => {
     const ada = await world.person("Ada")
     const cv = await blank(ada, "cv", "Marketing CV")
     await ada.run("paper.delete", { docId: cv.id })
-    const restored = await ada.run("paper.restoreDeleted", { docId: cv.id })
+    const restored = await ada.run("paper.recover", { docId: cv.id })
     expect(restored.status).toBe(200)
   })
 })

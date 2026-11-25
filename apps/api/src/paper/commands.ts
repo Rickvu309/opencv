@@ -12,8 +12,7 @@ import type { Registry } from "../registry/registry.js"
 import { registerCanvasCommit } from "./package-canvas.js"
 import { registerPaperStart } from "./package-start.js"
 import { registerWordPackageEdit } from "./package-edit.js"
-import { registerDuplicate, relinkJobs } from "./card-action-commands.js"
-import { isWordPageDeleted } from "./package-card-actions.js"
+import { registerDuplicate } from "./card-action-commands.js"
 import { missingDocument, ownedPackagePaper } from "./package-list.js"
 import { oldEditorUndoReasons } from "./undo-guard.js"
 import { syncContent } from "./content-store.js"
@@ -24,7 +23,6 @@ import {
   createPaper,
   deleteFile,
   deletePaper,
-  restoreDeletedPaper,
   listFiles,
   listPapers,
   ownedPaper,
@@ -120,11 +118,11 @@ export function registerPaper(registry: Registry) {
       reversal: (input, output) =>
         output.format === "word"
           ? {
-              command: "paper.restoreDeleted",
+              command: "paper.recover",
               input: { docId: input.docId },
               expect: {
-                query: "paper.isDeleted",
-                input: { docId: input.docId },
+                query: "paper.read",
+                input: { view: "trash", docId: input.docId },
                 matches: { deleted: true },
                 skipped: "This page is already back, so Undo was skipped",
               },
@@ -138,15 +136,6 @@ export function registerPaper(registry: Registry) {
               summary: `Deleted ${output.name ?? "a Word page"}`,
             }
           : null,
-    },
-    "paper.restoreDeleted": {
-      handler: async (input, actor) => {
-        const restored = await restoreDeletedPaper(actor, input.docId)
-        await relinkJobs(registry, actor, restored)
-        return restored.page
-      },
-      reversal: noReversal,
-      activity: noActivity,
     },
     "paper.deleteFile": {
       handler: (input, actor) => deleteFile(actor, input.fileId),
@@ -215,18 +204,6 @@ export function registerPaper(registry: Registry) {
       step: () => "Read the document outline",
       read: (input, actor) =>
         readOutline(actor.userId, input.docId, input.blockIds, input.cursor),
-    })
-  )
-  registry.addQuery(
-    tableQuery("paper.isDeleted", {
-      description:
-        "Say whether a Word page is deleted and can be brought back.",
-      coach: false,
-      step: () => "Check a deleted page",
-      read: async (input, actor) => ({
-        docId: input.docId,
-        deleted: await isWordPageDeleted(actor.userId, input.docId),
-      }),
     })
   )
   registry.addQuery(

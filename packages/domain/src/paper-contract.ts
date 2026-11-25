@@ -200,25 +200,8 @@ export const paperContract = commandContract({
     coach: "confirm",
     destructive: true,
     step: () => "Delete this document",
-    invalidates: (input) => [
-      ...docRemoved(input),
-      { query: "paper.isDeleted", input: { docId: input.docId } },
-    ],
+    invalidates: docRemoved,
   }),
-  "paper.restoreDeleted": commandEntry({
-    description:
-      "Bring back a deleted Word page with its content and Job link.",
-    input: paperDeleteInputSchema,
-    output: paperViewSchema,
-    coach: "never",
-    destructive: false,
-    step: () => "Bring back the deleted page",
-    invalidates: (input) => [
-      ...docRemoved(input),
-      { query: "paper.isDeleted", input: { docId: input.docId } },
-    ],
-  }),
-
   "paper.deleteFile": commandEntry({
     description: "Delete an uploaded file.",
     input: paperDeleteFileInputSchema,

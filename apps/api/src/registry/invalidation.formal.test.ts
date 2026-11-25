@@ -74,14 +74,16 @@ const SNAPSHOT_QUERIES: {
   "inbox.snoozed": () => [{}],
   "inbox.get": (ids) => ids.threads.map((threadId) => ({ threadId })),
   "paper.list": () => [{}, { writer: RICH_NATIVE_WRITER }],
-  "paper.read": () => [{ view: "library" }],
+  "paper.read": (ids) => [
+    { view: "library" },
+    ...ids.minted.map((docId) => ({ view: "trash", docId })),
+  ],
   "paper.export": null,
   "paper.nativeWord": null,
   "paper.get": (ids) =>
     [...ids.docs, ...ids.minted].map((docId) => ({ docId })),
   "paper.document": (ids) =>
     [...ids.docs, ...ids.minted].map((docId) => ({ docId })),
-  "paper.isDeleted": (ids) => ids.minted.map((docId) => ({ docId })),
   "file.get": (ids) => ids.files.map((fileId) => ({ fileId })),
   "paper.files": () => [{}],
   "paper.outline": (ids) =>

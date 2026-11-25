@@ -1,0 +1,34 @@
+[
+  {
+    "subject": "apps/api/src/paper/page-creators.test.ts",
+    "because": "paper.restoreDeleted is renamed paper.recover; the trash-restore page creators now run paper.recover with the same checks.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/word-card-actions.test.ts",
+    "because": "The delete Undo now names paper.recover and checks paper.read with view trash instead of paper.isDeleted; the expectations are the same.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/api/src/paper/word-page-trash-proposals.test.ts",
+    "because": "Bringing back a page is paper.recover and the trash check is paper.read with view trash; the same owner and unknown-id answers are asserted, and the Coach is still offered neither.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/api/src/registry/delegate-reach.test.ts",
+    "because": "paper.restoreDeleted and paper.isDeleted are gone; the closed delegate list names paper.recover, and the trash view is checked under paper.read's own view list.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

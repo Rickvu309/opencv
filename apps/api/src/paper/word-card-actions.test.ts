@@ -220,7 +220,7 @@ describe("card menu actions on a Word page", () => {
         format: "word",
         name: "Delete.docx",
       })
-      expect(deleted.reversal?.command).toBe("paper.restoreDeleted")
+      expect(deleted.reversal?.command).toBe("paper.recover")
       expect(deleted.activityId).toBeTruthy()
       expect((await listed()).some((item) => item.id === page.docId)).toBe(
         false
@@ -246,7 +246,11 @@ describe("card menu actions on a Word page", () => {
         })
       ).rejects.toThrow()
       await expect(
-        registry.read("paper.isDeleted", { docId: page.docId }, person)
+        registry.read(
+          "paper.read",
+          { view: "trash", docId: page.docId },
+          person
+        )
       ).resolves.toEqual({ docId: page.docId, deleted: true })
       await registry.execute({
         name: "activity.undo",
@@ -265,7 +269,11 @@ describe("card menu actions on a Word page", () => {
       }
       expect(relinked.linked.cv?.id).toBe(page.docId)
       await expect(
-        registry.read("paper.isDeleted", { docId: page.docId }, person)
+        registry.read(
+          "paper.read",
+          { view: "trash", docId: page.docId },
+          person
+        )
       ).resolves.toEqual({ docId: page.docId, deleted: false })
     }))
 

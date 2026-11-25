@@ -1,5 +1,6 @@
 import { operation } from "@workspace/domain/operations/paper/read"
 import type { OperationBinding } from "../../../registry/bind.js"
+import { isWordPageDeleted } from "../../package-card-actions.js"
 import { packageFailure } from "../../package-pages.js"
 import { listWordPackages, readWordPackage } from "../../package-store.js"
 import { readWordParagraphs } from "../../word-reading.js"
@@ -13,11 +14,16 @@ async function readWordLines(owner: string, doc: string, at?: string) {
   return "refused" in page ? packageFailure(page.message) : page
 }
 
+async function trashState(userId: string, docId: string) {
+  return { docId, deleted: await isWordPageDeleted(userId, docId) }
+}
+
 export const implementation = {
   operation,
   execute: (input, actor) => {
     if (!("view" in input)) return readWordPackage(actor.userId, input)
     if (input.view === "lines") return readWordParagraphs(actor.userId, input)
+    if (input.view === "trash") return trashState(actor.userId, input.docId)
     return input.view === "page"
       ? readWordLines(actor.userId, input.docId, input.at)
       : listWordPackages(actor.userId, input.after)
@@ -28,4 +34,5 @@ export const implementation = {
   | Awaited<ReturnType<typeof readWordPackage>>
   | Awaited<ReturnType<typeof readWordLines>>
   | Awaited<ReturnType<typeof readWordParagraphs>>
+  | Awaited<ReturnType<typeof trashState>>
 >

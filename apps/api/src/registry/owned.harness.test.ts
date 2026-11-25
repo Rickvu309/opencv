@@ -250,7 +250,7 @@ const COMMAND_PAGE_CREATORS = [
   "paper.create",
   "paper.canvas",
   "paper.duplicate",
-  "paper.restoreDeleted",
+  "paper.recover",
   "paper.start",
   "paper.import",
 ].map((name) => `command case ${name}`)
