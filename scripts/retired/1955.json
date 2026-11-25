@@ -22,5 +22,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-print-callers.isolated.test.tsx",
+    "because": "The share page that printed once on two Download PDF requests is deleted with Paper sharing.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
