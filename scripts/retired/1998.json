@@ -30,5 +30,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/lib/paper-command-input.test.ts",
+    "because": "The web client's shim that filled in a writer for paper.duplicate is deleted; the library now sends the writer itself through the catalog. The two cases that tested the shim go with it, and paper.create leaves the list of commands sent unchanged because it is no longer a legacy command.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
   }
 ]
