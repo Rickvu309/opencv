@@ -12,7 +12,7 @@ import {
   paperDocStatusSchema,
   paperStoredKindSchema,
   paperTemplateIdSchema,
-} from "./paper.js"
+} from "./paper-doc/paper.js"
 
 export const paperCheckSchema = z
   .object({
