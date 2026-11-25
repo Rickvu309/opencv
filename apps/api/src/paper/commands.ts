@@ -11,7 +11,7 @@ import { oldEditorUndoReasons } from "./undo-guard.js"
 import { syncContent } from "./content-store.js"
 import { readOutline } from "./outline.js"
 import { coachPaperList } from "./coach-word-pages.js"
-import { listFiles, listPapers, readFileMeta } from "./store.js"
+import { listPapers } from "./store.js"
 
 const noReversal = () => null
 const noActivity = () => null
@@ -96,22 +96,6 @@ export function registerPaper(registry: Registry) {
       step: () => "Read the document outline",
       read: (input, actor) =>
         readOutline(actor.userId, input.docId, input.blockIds, input.cursor),
-    })
-  )
-  registry.addQuery(
-    tableQuery("file.get", {
-      description: "Read a file's name and size. The bytes stay in the store.",
-      coach: true,
-      step: () => "Read the file",
-      read: (input, actor) => readFileMeta(actor.userId, input.fileId),
-    })
-  )
-  registry.addQuery(
-    tableQuery("paper.files", {
-      description: "List uploaded files. Bytes stay in the store.",
-      coach: false,
-      step: () => "List files",
-      read: (_input, actor) => listFiles(actor.userId),
     })
   )
 }

@@ -91,8 +91,6 @@ const paperFileSchema = z
 
 export type PaperFile = z.output<typeof paperFileSchema>
 
-const empty = z.object({}).strict()
-
 const blockIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/)
 
 export const paperQueries = queryContract({
@@ -105,14 +103,6 @@ export const paperQueries = queryContract({
       })
       .strict(),
     output: z.array(paperViewSchema),
-  }),
-  "file.get": queryEntry({
-    input: z.object({ fileId: fileIdSchema }).strict(),
-    output: paperFileSchema.omit({ createdAt: true }),
-  }),
-  "paper.files": queryEntry({
-    input: empty,
-    output: z.array(paperFileSchema),
   }),
   "paper.outline": queryEntry({
     input: z

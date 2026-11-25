@@ -3,10 +3,12 @@ import { useQuery } from "@tanstack/react-query"
 
 import {
   listLibraryPaper,
-  listPaperFiles,
-  paperFilesKey,
   paperLibraryKey,
 } from "@/features/paper/paper-api.ts"
+import { parseFileId } from "@workspace/domain"
+
+import { catalogClient } from "@/lib/contract-client.ts"
+import { useOwnerId } from "@/lib/owner-id.ts"
 import { PaperLibrary } from "@/features/paper/paper-library.tsx"
 import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
 
@@ -28,15 +30,15 @@ export function PaperPage() {
     queryKey: paperLibraryKey(),
     queryFn: listLibraryPaper,
   })
-  const files = useQuery({
-    queryKey: paperFilesKey(),
-    queryFn: listPaperFiles,
-  })
+  const files = catalogClient.useRead(useOwnerId(), "paper.files", {})
 
   return (
     <PaperLibrary
       docs={docs.data ?? []}
-      files={files.data ?? []}
+      files={(files.data ?? []).map((file) => ({
+        ...file,
+        id: parseFileId(file.id),
+      }))}
       loading={docs.isLoading}
       error={
         docs.isError ? "Could not load documents. Refresh the page." : null

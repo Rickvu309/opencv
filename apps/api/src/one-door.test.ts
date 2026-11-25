@@ -34,7 +34,6 @@ const transportExceptions = {
 const waitingToBecomeOperations = [
   "GET /api/paper",
   "GET /api/paper/:id/document",
-  "GET /api/paper/files",
   "GET /api/paper/packages",
   "GET /api/paper/packages/:docId/read",
 ]

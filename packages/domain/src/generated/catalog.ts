@@ -20,6 +20,7 @@ import { operation as coach$stop } from "../operations/coach/stop/operation.js"
 import { operation as coach$usage } from "../operations/coach/usage/operation.js"
 import { operation as connections$list } from "../operations/connections/list/operation.js"
 import { operation as connections$revoke } from "../operations/connections/revoke/operation.js"
+import { operation as file$get } from "../operations/file/get/operation.js"
 import { operation as inbox$acceptSuggestion } from "../operations/inbox/accept-suggestion/operation.js"
 import { operation as inbox$addToCalendar } from "../operations/inbox/add-to-calendar/operation.js"
 import { operation as inbox$clearSuggestion } from "../operations/inbox/clear-suggestion/operation.js"
@@ -58,6 +59,7 @@ import { operation as paper$delete } from "../operations/paper/delete/operation.
 import { operation as paper$deleteFile } from "../operations/paper/delete-file/operation.js"
 import { operation as paper$duplicate } from "../operations/paper/duplicate/operation.js"
 import { operation as paper$export } from "../operations/paper/export/operation.js"
+import { operation as paper$files } from "../operations/paper/files/operation.js"
 import { operation as paper$import } from "../operations/paper/import/operation.js"
 import { operation as paper$read } from "../operations/paper/read/operation.js"
 import { operation as paper$recover } from "../operations/paper/recover/operation.js"
@@ -91,6 +93,7 @@ export const catalog = {
   "coach.usage": coach$usage,
   "connections.list": connections$list,
   "connections.revoke": connections$revoke,
+  "file.get": file$get,
   "inbox.acceptSuggestion": inbox$acceptSuggestion,
   "inbox.addToCalendar": inbox$addToCalendar,
   "inbox.clearSuggestion": inbox$clearSuggestion,
@@ -129,6 +132,7 @@ export const catalog = {
   "paper.deleteFile": paper$deleteFile,
   "paper.duplicate": paper$duplicate,
   "paper.export": paper$export,
+  "paper.files": paper$files,
   "paper.import": paper$import,
   "paper.read": paper$read,
   "paper.recover": paper$recover,
