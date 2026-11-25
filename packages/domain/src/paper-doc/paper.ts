@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { fileIdSchema, paperIdSchema } from "./ids.js"
+import { fileIdSchema, paperIdSchema } from "../ids.js"
 
 export const LETTER_ATTACHMENT_TEXT_MAX = 6000
 

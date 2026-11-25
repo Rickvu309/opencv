@@ -1,2 +1,2 @@
 layer: kernel
-public: [index.ts]
+public: [index.ts, paper.ts]

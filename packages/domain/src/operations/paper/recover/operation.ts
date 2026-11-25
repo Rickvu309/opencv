@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { defineOperation } from "../../../operation.js"
 import type { ResourceRef } from "../../../resources.js"
-import { paperStoredKindSchema } from "../../../paper.js"
+import { paperStoredKindSchema } from "../../../paper-doc/paper.js"
 
 export const operation = defineOperation({
   owner: "paper",

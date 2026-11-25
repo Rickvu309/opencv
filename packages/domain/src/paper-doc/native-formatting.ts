@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { paperPhotoValueSchema } from "../paper.js"
+import { paperPhotoValueSchema } from "./paper.js"
 import { nodeIdSchema, cvSectionKindSchema } from "./nodes.js"
 import { nativeCvDocumentSchema, type CvOwner } from "./native-cv.js"
 import { type CvField } from "./cv-fields.js"

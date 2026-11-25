@@ -6,7 +6,7 @@ import {
   paperDocNameSchema,
   paperDocStatusSchema,
   paperStoredKindSchema,
-} from "../../../paper.js"
+} from "../../../paper-doc/paper.js"
 
 const paperPatchSchema = z
   .object({

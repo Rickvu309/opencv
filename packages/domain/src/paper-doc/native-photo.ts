@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { paperPhotoFileId, paperPhotoValueSchema } from "../paper.js"
+import { paperPhotoFileId, paperPhotoValueSchema } from "./paper.js"
 import { nodeIdSchema } from "./nodes.js"
 
 const edge = z.number().int().min(0).max(99999)

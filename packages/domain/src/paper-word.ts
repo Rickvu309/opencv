@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { paperTemplateIdSchema } from "./paper.js"
+import { paperTemplateIdSchema } from "./paper-doc/paper.js"
 
 declare const TextEncoder: {
   new (): { encode(value: string): Uint8Array }
