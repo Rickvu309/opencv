@@ -70,5 +70,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "scripts/guard-ledger/delegate-reach.json",
+    "because": "Its proof restored delegate-policy.ts from a960e0b2, which no longer compiles against the current tree; the reason is recorded on the row.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
