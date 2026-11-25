@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 20
+  },
+  {
+    "subject": "apps/api/src/registry/registry.undo-later.formal.test.ts",
+    "because": "paper.create and paper.duplicate no longer erase a later rename on Undo, so the known-violation list is empty and the test now requires that no command erases a later change. The check that each known violation sat on the exemption list goes with the deleted list.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
   }
 ]
