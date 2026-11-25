@@ -7,7 +7,7 @@ import {
   resolveCoachModel,
   resolveCoachDailyTurnLimit,
   type CoachStreamPart,
-} from "./coach.ts"
+} from "./coach/coach.ts"
 
 describe("resolveCoachModel", () => {
   it("uses the owner model in every mode", () => {

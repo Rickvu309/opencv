@@ -5,7 +5,7 @@ import {
   coachStartInputSchema,
   coachTaskEventsInputSchema,
   coachTaskReplaySchema,
-} from "./coach-task.ts"
+} from "./coach/coach-task.ts"
 
 const coachTaskCursorSchema = coachTaskEventsInputSchema.shape.after
 

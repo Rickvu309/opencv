@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { applyStageSchema } from "./apply/job-posting.js"
+import { applyStageSchema } from "../apply/job-posting.js"
 import { CHAT_MESSAGE_MAX, coachSelectionSchema } from "./chat.js"
 export {
   COACH_SELECTION_TEXT_MAX,
@@ -12,7 +12,7 @@ import {
   paperContentKindSchema,
   paperDocIdSchema,
   paperDocStatusSchema,
-} from "./paper.js"
+} from "../paper.js"
 
 export const reversalDescriptorSchema = z.object({
   possible: z.boolean(),

@@ -1,14 +1,14 @@
-import { catalog } from "./catalog.js"
-import type { Operation } from "./operation.js"
+import { catalog } from "../catalog.js"
+import type { Operation } from "../operation.js"
 import { z } from "zod"
 
 import {
   coachReceiptDetailSchema,
   reversalDescriptorSchema,
 } from "./chat-messages.js"
-import { commands, type ContractCommandName } from "./contract-commands.js"
-import type { CommandEnvelope } from "./envelope.js"
-import { queries, type QueryName } from "./queries.js"
+import { commands, type ContractCommandName } from "../contract-commands.js"
+import type { CommandEnvelope } from "../envelope.js"
+import { queries, type QueryName } from "../queries.js"
 
 type CatalogName = keyof typeof catalog & string
 type CatalogCommandName = {

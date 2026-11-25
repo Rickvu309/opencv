@@ -5,7 +5,7 @@ import {
   encodeChatTurnEvent,
   parseChatTurnEvent,
   type ChatTurnEvent,
-} from "./chat-turn.ts"
+} from "./coach/chat-turn.ts"
 
 describe("chat turn events", () => {
   it("round-trips a tool-call through the wire form", () => {

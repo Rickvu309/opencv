@@ -3,7 +3,7 @@ import {
   profileResource,
   usageSnapshotSchema,
 } from "../../../account/account.js"
-import { coachTaskResource } from "../../../coach-task.js"
+import { coachTaskResource } from "../../../coach/coach-task.js"
 import { defineOperation } from "../../../operation.js"
 
 export const operation = defineOperation({

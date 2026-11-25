@@ -21,7 +21,7 @@ const historicReceiptFiles = new Set([
   "apps/web/src/features/coach/coach-receipt.test.ts",
   "apps/web/src/features/coach/coach-receipt.ts",
   "apps/web/src/features/coach/rich-receipts.tsx",
-  "packages/domain/src/chat-messages.ts",
+  "packages/domain/src/coach/chat-messages.ts",
 ])
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "../../../..")

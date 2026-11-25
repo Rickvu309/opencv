@@ -1,14 +1,14 @@
-import type { NativeBasis } from "./paper-doc/native.js"
+import type { NativeBasis } from "../paper-doc/native.js"
 
 import type { ChatToolName } from "./chat-turn.js"
-import type { CommandEnvelope } from "./envelope.js"
+import type { CommandEnvelope } from "../envelope.js"
 import type {
   CoachReceiptDetail,
   CoachSelection,
   ReversalDescriptor,
 } from "./chat-messages.js"
 import type { ChatEntry, ChatEntryPart } from "./chat-messages.js"
-import type { ReversalPlan } from "./registry.js"
+import type { ReversalPlan } from "../registry.js"
 import type { CoachMode } from "./coach-mode.js"
 
 export { coachModeSchema, type CoachMode } from "./coach-mode.js"
