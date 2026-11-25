@@ -1,15 +1,14 @@
+import {
+  inboxStatusChangeSchema,
+  type InboxStatusChange,
+} from "@workspace/domain"
 import { operation } from "@workspace/domain/operations/inbox/mark-done"
 import type { OperationBinding } from "../../../registry/bind.js"
 import { setThreadStatus } from "../../store.js"
-import {
-  EMAIL_MOVED_SINCE,
-  threadStatusResult,
-  type ThreadStatusResult,
-} from "../../thread-status.js"
 
 export const implementation = {
   operation,
-  privateResult: threadStatusResult,
+  privateResult: inboxStatusChangeSchema,
   execute: (input, actor) =>
     setThreadStatus(actor, input.threadId, input.status ?? "done", null),
   reversal: (input, result) => ({
@@ -19,7 +18,7 @@ export const implementation = {
       query: "inbox.get",
       input: { threadId: input.threadId },
       matches: { status: input.status ?? "done" },
-      skipped: EMAIL_MOVED_SINCE,
+      skipped: "This email moved again, so Undo was skipped",
     },
   }),
   activity: (input) => ({
@@ -27,4 +26,4 @@ export const implementation = {
     subjectId: input.threadId,
     summary: "Marked the email done",
   }),
-} satisfies OperationBinding<typeof operation, ThreadStatusResult>
+} satisfies OperationBinding<typeof operation, InboxStatusChange>

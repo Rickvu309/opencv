@@ -213,6 +213,16 @@ export const draftOutput = z
   .object({ id: z.string(), body: z.string(), times: z.array(z.string()) })
   .strict()
 
+export const inboxStatusChangeSchema = z
+  .object({
+    id: z.string(),
+    previousStatus: inboxStatusSchema,
+    previousSnoozeUntil: z.string().datetime().nullable(),
+  })
+  .strict()
+
+export type InboxStatusChange = z.output<typeof inboxStatusChangeSchema>
+
 export function inboxThreadResource(threadId?: string): ResourceRef {
   return {
     name: "inboxThread",
