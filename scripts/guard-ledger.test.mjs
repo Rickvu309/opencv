@@ -392,3 +392,27 @@ test("every detect proof still holds on the real history", async () => {
   for (const entry of LEDGER.filter((item) => item.historic?.mode === "detect"))
     assert.equal((await prove(entry, realIo)).ok, true, entry.id)
 })
+
+test("each proof is its own file named after a ledger row, and the shared proofs file stays gone", () => {
+  assert.equal(
+    existsSync(path.join(root, "scripts/guard-ledger.proofs.json")),
+    false
+  )
+  const ids = new Set(LEDGER.map((row) => row.id))
+  const orphans = Object.keys(readProofs()).filter((id) => !ids.has(id))
+  assert.deepEqual(orphans, [])
+})
+
+test("readProofs reads one record per file in the folder", () => {
+  withTempDir("guard-proofs", (dir) => {
+    writeFileSync(
+      path.join(dir, "a.json"),
+      JSON.stringify({ passed: true, fingerprint: "f" })
+    )
+    writeFileSync(path.join(dir, "notes.txt"), "x")
+    assert.deepEqual(readProofs(dir), {
+      a: { passed: true, fingerprint: "f" },
+    })
+  })
+  assert.deepEqual(readProofs(path.join(root, "scripts/no-such-folder")), {})
+})

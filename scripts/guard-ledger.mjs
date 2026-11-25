@@ -2,6 +2,7 @@ import { execFileSync, spawnSync } from "node:child_process"
 import { createHash } from "node:crypto"
 import {
   existsSync,
+  mkdirSync,
   readFileSync,
   readdirSync,
   symlinkSync,
@@ -16,7 +17,7 @@ export const root = path.resolve(
   fileURLToPath(new URL(".", import.meta.url)),
   ".."
 )
-export const PROOFS_FILE = "scripts/guard-ledger.proofs.json"
+export const PROOFS_DIR = "scripts/guard-ledger/proofs"
 const TEST_FILE = /\.(?:test|type-test)\.[cm]?[jt]sx?$|\/test\//
 const DETECT_IMPORT = /import\s*\{[^}]*\bdetect\b[^}]*\}/
 
@@ -346,8 +347,17 @@ export const realIo = {
   },
 }
 
-export function readProofs(file = path.join(root, PROOFS_FILE)) {
-  return existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : {}
+export function readProofs(dir = path.join(root, PROOFS_DIR)) {
+  if (!existsSync(dir)) return {}
+  return Object.fromEntries(
+    readdirSync(dir)
+      .filter((name) => name.endsWith(".json"))
+      .sort()
+      .map((name) => [
+        name.slice(0, -".json".length),
+        JSON.parse(readFileSync(path.join(dir, name), "utf8")),
+      ])
+  )
 }
 
 export const readBaseline = () =>
@@ -361,7 +371,7 @@ export const hashOfFile = (file) =>
 const uncommitted = () =>
   git("status", "--porcelain")
     .split("\n")
-    .filter((line) => line && !line.endsWith(PROOFS_FILE))
+    .filter((line) => line && !line.includes(`${PROOFS_DIR}/`))
 
 async function main(argv) {
   const [command, id] = argv
@@ -396,14 +406,13 @@ async function main(argv) {
     )
     return 0
   }
-  const proofs = readProofs()
-  proofs[row.id] = { passed: true, fingerprint: fingerprint(row, hashOfFile) }
-  const sorted = Object.fromEntries(Object.entries(proofs).sort())
+  const recorded = `${PROOFS_DIR}/${row.id}.json`
+  mkdirSync(path.join(root, PROOFS_DIR), { recursive: true })
   writeFileSync(
-    path.join(root, PROOFS_FILE),
-    `${JSON.stringify(sorted, null, 2)}\n`
+    path.join(root, recorded),
+    `${JSON.stringify({ passed: true, fingerprint: fingerprint(row, hashOfFile) }, null, 2)}\n`
   )
-  console.log("PASS, recorded in", PROOFS_FILE)
+  console.log("PASS, recorded in", recorded)
   return 0
 }
 
