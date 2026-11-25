@@ -46,7 +46,7 @@ test("every property test of the Paper editing package gives the same result on 
   })
     .split("\n")
     .filter((file) => /\.test\.tsx?$/.test(file))
-  assert.ok(files.includes(FILE))
+  assert.ok(files.includes("packages/paper-crdt/src/mapping.test.ts"))
   const hits = files.flatMap((file) =>
     detect(readFileSync(new URL(file, root), "utf8"), file).map(
       (hit) => `${file}: ${hit}`

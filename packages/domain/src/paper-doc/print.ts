@@ -15,15 +15,8 @@ import {
 } from "./nodes.js"
 import { plainTextOfRuns, type RichText } from "./rich-text.js"
 
-const CV_PRINT_TEMPLATE_IDS = [
-  "internship",
-  "product",
-  "service",
-  "academic",
-  "photo",
-] as const
-
-export type CvTemplateId = (typeof CV_PRINT_TEMPLATE_IDS)[number]
+export type CvTemplateId =
+  "internship" | "product" | "service" | "academic" | "photo"
 
 export type CvContact = {
   email: string
@@ -71,19 +64,6 @@ export type CvDocument = {
   photoUrl?: string
 }
 
-export function emptyCvDocument(): CvDocument {
-  return {
-    templateId: CV_PRINT_TEMPLATE_IDS[0],
-    name: "",
-    headline: "",
-    contact: { email: "", phone: "", location: "" },
-    summary: "",
-    experience: [],
-    education: [],
-    skills: [],
-  }
-}
-
 export type CvPrintModel = Omit<CvDocument, "projects" | "languages"> & {
   projects: NonNullable<CvDocument["projects"]>
   languages: string[]
@@ -97,12 +77,12 @@ export type LetterPrintList = {
   readonly items: readonly LetterPrintItem[]
 }
 
-export type LetterPrintItem = {
+type LetterPrintItem = {
   readonly text: RichText
   readonly lists: readonly LetterPrintList[]
 }
 
-export type LetterFragment =
+type LetterFragment =
   | { readonly kind: "text"; readonly node: NodeId; readonly text: RichText }
   | {
       readonly kind: "heading"
@@ -113,7 +93,7 @@ export type LetterFragment =
   | { readonly kind: "list"; readonly list: LetterPrintList }
   | { readonly kind: "divider"; readonly node: NodeId }
 
-export type LetterPrintModel = { readonly fragments: readonly LetterFragment[] }
+type LetterPrintModel = { readonly fragments: readonly LetterFragment[] }
 
 type Fragment =
   | { kind: "text"; text: string }

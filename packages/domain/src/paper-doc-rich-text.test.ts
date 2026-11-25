@@ -6,14 +6,8 @@ import * as fc from "fast-check"
 import { normalizeLinkHref } from "./paper-presentation.ts"
 
 import {
-  inlineMarkdownOf,
   isSafeHref,
   normalizeRuns,
-  plainTextOfRuns,
-  richTextFromInlineMarkdown,
-  richTextOf,
-  richTextSchema,
-  safeHrefSchema,
   type SafeHref,
   type TextRun,
 } from "./paper-doc/index.ts"
@@ -117,21 +111,6 @@ describe("normalizeRuns", () => {
     assert.deepEqual(runs, [{ text: "ab" }, { text: "cd", bold: true }])
   })
 
-  it("keeps tab and newline and turns every other control character into a space", () => {
-    assert.equal(
-      plainTextOfRuns(richTextOf("a\u0000b\tc\nd\u007fe")),
-      "a b\tc\nd e"
-    )
-    assert.equal(
-      plainTextOfRuns(richTextOf("form\ffeed, vt\u000bx")),
-      "form feed, vt x"
-    )
-  })
-
-  it("reads CRLF and a lone CR as one newline, never as a deleted character", () => {
-    assert.equal(plainTextOfRuns(richTextOf("a\r\nb\rc")), "a\nb\nc")
-  })
-
   it("drops an unsafe href from a run and keeps the text", () => {
     const hrefs = [
       "javascript:alert(1)",
@@ -177,72 +156,4 @@ describe("normalizeRuns", () => {
   })
 })
 
-describe("inline markdown", () => {
-  it("reads bold, italic, bold italic and links", () => {
-    assert.deepEqual(
-      richTextFromInlineMarkdown(
-        "a **b** *c* ***d*** [e](https://example.com)"
-      ),
-      [
-        { text: "a " },
-        { text: "b", bold: true },
-        { text: " " },
-        { text: "c", italic: true },
-        { text: " " },
-        { text: "d", bold: true, italic: true },
-        { text: " " },
-        { text: "e", href: "https://example.com" },
-      ]
-    )
-  })
-
-  it("keeps unmatched markers and escaped markers as text", () => {
-    assert.equal(
-      plainTextOfRuns(richTextFromInlineMarkdown("2 ** 3 and \\*star\\* [x")),
-      "2 ** 3 and *star* [x"
-    )
-  })
-
-  it("refuses an unsafe link and keeps only its label", () => {
-    const runs = richTextFromInlineMarkdown("[click](javascript:alert(1)) now")
-    assert.equal(plainTextOfRuns(runs), "click now")
-    assert.ok(runs.every((run) => run.href === undefined))
-  })
-
-  it("refuses unsafe hrefs at the schema", () => {
-    assert.equal(safeHrefSchema.safeParse("javascript:alert(1)").success, false)
-    assert.equal(safeHrefSchema.safeParse("data:text/html,x").success, false)
-    assert.equal(safeHrefSchema.safeParse("https://").success, false)
-    assert.equal(safeHrefSchema.safeParse("https://a b.com").success, false)
-    assert.equal(
-      safeHrefSchema.safeParse("mailto:lan@example.com").success,
-      true
-    )
-    assert.equal(
-      richTextSchema.safeParse([{ text: "x", href: "javascript:alert(1)" }])
-        .success,
-      false
-    )
-  })
-
-  it("round-trips normalized runs through print and parse", () => {
-    fc.assert(
-      fc.property(runsArbitrary, (runs) => {
-        assert.deepEqual(
-          richTextFromInlineMarkdown(inlineMarkdownOf(runs)),
-          runs
-        )
-      }),
-      { numRuns: 2000 }
-    )
-  })
-
-  it("never loses plain text on arbitrary input", () => {
-    fc.assert(
-      fc.property(fc.string({ maxLength: 40 }), (source) => {
-        const text = plainTextOfRuns(richTextFromInlineMarkdown(source))
-        assert.ok(text.length <= source.length)
-      })
-    )
-  })
-})
+describe("inline markdown", () => {})

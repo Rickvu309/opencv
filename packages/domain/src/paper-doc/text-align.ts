@@ -1,38 +1,5 @@
 const MAX_CELLS = 4_000_000
 
-function matchIndexes(a: string, b: string): number[] | null {
-  return matchSequences([...a], [...b])
-}
-
-export function insertedRuns(before: string, after: string): string[] | null {
-  const matches = matchIndexes(after, before)
-  if (!matches) return null
-  const chars = [...after]
-  const runs: string[] = []
-  let current = ""
-  chars.forEach((char, index) => {
-    if (matches[index] === -1) {
-      current += char
-    } else if (current) {
-      runs.push(current)
-      current = ""
-    }
-  })
-  if (current) runs.push(current)
-  return runs
-}
-
-export function isSubsequence(wanted: string, text: string): boolean {
-  const chars = [...text]
-  let at = 0
-  for (const char of wanted) {
-    while (at < chars.length && chars[at] !== char) at += 1
-    if (at === chars.length) return false
-    at += 1
-  }
-  return true
-}
-
 export function matchSequences(
   left: readonly string[],
   right: readonly string[]

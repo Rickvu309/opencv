@@ -29,7 +29,7 @@ const cvFieldKeySchema = z.enum([
   "label",
   "item",
 ])
-export type CvFieldKey = z.infer<typeof cvFieldKeySchema>
+type CvFieldKey = z.infer<typeof cvFieldKeySchema>
 
 export const cvRichTextSchema: z.ZodType<RichText> = z
   .array(
@@ -81,13 +81,3 @@ export const cvFieldSchema: z.ZodType<CvField> = z
         message: "Only item fields require itemId",
       })
   })
-export type CvFieldTarget = {
-  readonly ownerId: NodeId
-  readonly fieldId: NodeId
-  readonly fieldKey: CvFieldKey
-  readonly itemId?: NodeId
-}
-export type CvFieldRange = CvFieldTarget & {
-  readonly from: number
-  readonly to: number
-}
