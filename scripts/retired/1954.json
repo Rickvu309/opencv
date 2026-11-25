@@ -238,5 +238,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 6
+  },
+  {
+    "subject": "scripts/guard-ledger/property-seed.json",
+    "because": "Its historic proof replayed packages/paper-crdt/src/interleave.test.ts, which is deleted with the prose client; the row now proves quiet on the fixed version of that file at the commit that fixed it.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
