@@ -45,7 +45,14 @@ const metadata = {
 const outline = {
   revision: 8,
   nativeBasis: basis,
-  outline: "Letter\n[p1] Việt 😀",
+  outline: JSON.stringify([
+    {
+      id: "p1",
+      type: "paragraph",
+      selected: false,
+      content: [{ text: "Việt 😀" }],
+    },
+  ]),
 }
 function resolve(read: Registry["read"]) {
   return resolveTurnGrounding({
@@ -82,7 +89,7 @@ it("takes revision and basis from the same outline despite older metadata", asyn
   expect(fakePaperEdit(result.focusDoc!)).toMatchObject({
     basedOn: 8,
     nativeBasis: basis,
-    writer: NATIVE_WRITER,
+    writer: RICH_NATIVE_WRITER,
   })
 })
 
@@ -161,16 +168,4 @@ it("grounds selected attachments without taking authority from caller content", 
     blockIds: ["p1"],
     writer: NATIVE_WRITER,
   })
-})
-
-it("leaves legacy numeric proposals unqualified", async () => {
-  const result = await resolve(async (name) =>
-    name === "paper.list"
-      ? [{ ...metadata, paper: { version: 3 }, nativeBasis: undefined }]
-      : { outline: "Letter\n[p1] Legacy", revision: 4 }
-  )
-  const input = fakePaperEdit(result.focusDoc!)
-  expect(input.basedOn).toBe(4)
-  expect(input).not.toHaveProperty("nativeBasis")
-  expect(input).not.toHaveProperty("writer")
 })

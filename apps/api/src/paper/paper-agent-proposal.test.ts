@@ -153,7 +153,16 @@ it("reads one page and keeps an edit as a proposal", async () => {
           input: {
             docId: randomUUID(),
             basedOn: 1,
-            edits: [{ op: "setText", blockId: "letter-1", text: "Hello" }],
+            edits: [
+              {
+                op: "replaceText",
+                blockId: "letter-1",
+                from: 0,
+                to: 0,
+                before: "",
+                text: "Hello",
+              },
+            ],
           },
           actor: paper,
           idempotencyKey: randomUUID(),

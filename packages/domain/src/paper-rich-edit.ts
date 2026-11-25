@@ -31,7 +31,7 @@ const richTextEditSchema = z.discriminatedUnion("op", [
     .strict(),
 ])
 export const richTextEditsSchema = z.array(richTextEditSchema).min(1).max(30)
-export type RichTextEdit = z.output<typeof richTextEditSchema>
+type RichTextEdit = z.output<typeof richTextEditSchema>
 export const richChangeSchema = z
   .object({
     blockId: z.string(),
@@ -39,7 +39,7 @@ export const richChangeSchema = z
     after: formatRunsSchema,
   })
   .strict()
-export const richReviewSchema = z
+const richReviewSchema = z
   .object({
     format: z.literal("rich"),
     docId: paperIdSchema,

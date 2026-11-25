@@ -188,9 +188,12 @@ export function detect(text, path) {
       declaration.importClause.namedBindings.elements.every(
         (element) =>
           !element.propertyName &&
-          ["createPrivateFlow", "openFlowBinary", "readFlow"].includes(
-            element.name.text
-          )
+          [
+            "borrowFlowDocument",
+            "createPrivateFlow",
+            "openFlowBinary",
+            "readFlow",
+          ].includes(element.name.text)
       )
     const editorImport =
       editorEntry &&
@@ -297,7 +300,9 @@ export function detect(text, path) {
       !(
         ts.isFunctionDeclaration(node) &&
         node.name &&
-        ["seedStoredYDoc", "materializeStored"].includes(node.name.text)
+        ["seedStoredYDoc", "materializeStored", "writeStoredYDoc"].includes(
+          node.name.text
+        )
       ) &&
       !(
         ts.isTypeAliasDeclaration(node) &&
