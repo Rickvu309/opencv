@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/registry/registry.undo-later.formal.test.ts",
+    "because": "Rename and set focus now guard their Undo with an expectation, so the test proves they no longer erase a later change and they leave the known violations list",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  }
+]
