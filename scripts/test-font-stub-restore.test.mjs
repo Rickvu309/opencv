@@ -33,13 +33,13 @@ afterEach(() => {
 `
 
 const CONFIG = `const ISOLATED_FILES = [
-  "src/features/paper/rich-page-lifecycle.test.tsx",
+  "src/features/paper/rich-page-lifecycle.isolated.test.tsx",
 ]
 `
 
 test("isolated test files come from the vitest config", () => {
   assert.deepEqual(isolatedTestFiles(CONFIG), [
-    "src/features/paper/rich-page-lifecycle.test.tsx",
+    "src/features/paper/rich-page-lifecycle.isolated.test.tsx",
   ])
   assert.deepEqual(isolatedTestFiles("const other = 1"), [])
 })
@@ -58,6 +58,10 @@ test("a saved and restored fonts stub, an untouched file and an isolated file st
   )
   assert.deepEqual(
     detectFontsStubRestore(MISTAKE, "src/lib/a.test.ts", ["src/lib/a.test.ts"]),
+    []
+  )
+  assert.deepEqual(
+    detectFontsStubRestore(MISTAKE, "src/lib/a.isolated.test.tsx", []),
     []
   )
 })

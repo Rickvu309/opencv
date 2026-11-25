@@ -83,7 +83,7 @@ export const RETIRED = [
         why: "the retired threads.* tool prefix stays in the name scan so old tool names fail",
       },
       {
-        path: /^apps\/web\/src\/(?:features\/app-shell\/shell-api|test\/shell-api-mock)\.ts$|^apps\/web\/src\/features\/app-shell\/app-shell\.test\.tsx$|^apps\/web\/src\/features\/app-shell\/app-sidebar(?:-parity)?\.test\.tsx$|^apps\/web\/src\/test\/nav-contract\.test\.tsx$/,
+        path: /^apps\/web\/src\/(?:features\/app-shell\/shell-api|test\/shell-api-mock)\.ts$|^apps\/web\/src\/features\/app-shell\/app-shell\.isolated\.test\.tsx$|^apps\/web\/src\/features\/app-shell\/app-sidebar(?:-parity)?\.test\.tsx$|^apps\/web\/src\/test\/nav-contract\.test\.tsx$/,
         match: /^threads$/,
         why: "the inbox list response field is named threads",
       },
