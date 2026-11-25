@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/content-rich-http.test.ts",
+    "because": "The old GET /api/paper/:id read is deleted with paper.get; the refused sync before it still proves nothing is written.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
   }
 ]
