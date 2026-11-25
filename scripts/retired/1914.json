@@ -30,5 +30,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "apps/web/src/lib/contract-client.test.tsx",
+    "because": "Job reads are catalog reads; an older-format job.move touches the whole workspace, so the other Job's read refreshes too until job.move declares its own writes. refreshReads is checked on a read still in the older format",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
