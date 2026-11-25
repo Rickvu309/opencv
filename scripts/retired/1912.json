@@ -1,0 +1,26 @@
+[
+  {
+    "subject": "apps/web/src/features/apply/apply-new-job-dialog.test.tsx",
+    "because": "The posting preview goes through the read door; the test checks that path instead of the older route",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/one-door.test.ts",
+    "because": "The job calendar and posting preview became read operations, so their two routes leave the waiting list",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/apply/apply-api.test.ts",
+    "because": "The calendar and preview reads go through the read door; the test checks their path and body there",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  }
+]

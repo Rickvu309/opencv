@@ -48,42 +48,6 @@ const jobDetailSchema = jobViewSchema
 
 export type JobDetail = z.output<typeof jobDetailSchema>
 
-const previewFieldsSchema = z
-  .object({ title: z.string(), company: z.string(), location: z.string() })
-  .strict()
-
-const jobPreviewSchema = z.discriminatedUnion("status", [
-  z
-    .object({
-      status: z.literal("unreadable"),
-      fields: z.object({}).strict(),
-      message: z.string(),
-    })
-    .strict(),
-  z
-    .object({
-      status: z.literal("duplicate"),
-      jobId: jobIdSchema,
-      stage: jobStageSchema,
-      fields: previewFieldsSchema,
-    })
-    .strict(),
-  z
-    .object({
-      status: z.literal("company-missing"),
-      fields: previewFieldsSchema,
-    })
-    .strict(),
-  z
-    .object({
-      status: z.literal("filled"),
-      fields: previewFieldsSchema.extend({ description: z.string() }).strict(),
-    })
-    .strict(),
-])
-
-export type JobPreview = z.output<typeof jobPreviewSchema>
-
 export const jobQueries = queryContract({
   "job.list": queryEntry({
     input: z
@@ -99,18 +63,6 @@ export const jobQueries = queryContract({
     input: z.object({ jobId: jobIdSchema }).strict(),
     output: jobDetailSchema,
   }),
-  "job.preview": queryEntry({
-    input: z
-      .object({ url: z.string().optional(), text: z.string().optional() })
-      .strict(),
-    output: jobPreviewSchema,
-  }),
-  "job.calendar": queryEntry({
-    input: z
-      .object({ from: z.string().min(1), to: z.string().min(1) })
-      .strict(),
-    output: z.array(jobViewSchema),
-  }),
 })
 
 type OnJob = { jobId: JobId }
@@ -118,7 +70,6 @@ type OnJob = { jobId: JobId }
 const jobFieldsChanged = (input: OnJob): QueryRef[] => [
   { query: "job.list" },
   { query: "job.get", input: { jobId: input.jobId } },
-  { query: "job.calendar" },
 ]
 
 const jobDetailChanged = (input: OnJob): QueryRef[] => [
@@ -133,7 +84,7 @@ export const jobContract = commandContract({
     coach: "auto",
     destructive: false,
     step: (input) => `Save ${input.title}`,
-    invalidates: () => [{ query: "job.list" }, { query: "job.calendar" }],
+    invalidates: () => [{ query: "job.list" }],
   }),
   "job.update": commandEntry({
     delegate: "reversibleJob",

@@ -29,8 +29,6 @@ export const endpoints = {
   chat: (chatId: string) => `/api/chats/${chatId}`,
   jobs: "/api/jobs",
   job: (jobId: string) => `/api/jobs/${jobId}`,
-  jobsCalendar: (query: URLSearchParams) => `/api/jobs/calendar?${query}`,
-  jobsPreview: "/api/jobs/preview",
 } as const
 
 export const inboxConnectReadKeyOutsideContract = ["inbox-connect"] as const

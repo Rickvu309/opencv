@@ -9,7 +9,7 @@ import { undoneActivityRow } from "@/test/control-fixtures.ts"
 import type { ActivityFeedRow } from "@workspace/domain"
 
 import type { ChecklistItem } from "@/features/apply/apply-api.ts"
-import { jsonError, jsonOk, pathOf, urlOf } from "./mock-http.ts"
+import { jsonError, jsonOk, pathOf } from "./mock-http.ts"
 
 type LinkedDoc = JobDetail["linked"]["cv"]
 
@@ -284,6 +284,8 @@ export async function jobApiFetch(
   const jobPath =
     path.startsWith("/api/jobs") ||
     path === "/api/reads/activity.list" ||
+    path === "/api/reads/job.calendar" ||
+    path === "/api/reads/job.preview" ||
     path.includes("/api/commands/job.") ||
     path.endsWith("/api/commands/activity.undo") ||
     path === "/api/reads/job.priorityCounts"
@@ -304,9 +306,10 @@ export async function jobApiFetch(
     )
   }
 
-  if (method === "GET" && path === "/api/jobs/calendar") {
-    const from = urlOf(input).searchParams.get("from") ?? ""
-    const to = urlOf(input).searchParams.get("to") ?? ""
+  if (method === "POST" && path === "/api/reads/job.calendar") {
+    const range = readBody(init) as { from?: string; to?: string }
+    const from = range.from ?? ""
+    const to = range.to ?? ""
     if (
       !from ||
       !to ||
@@ -325,10 +328,10 @@ export async function jobApiFetch(
     return jsonOk(detailOf(job))
   }
 
-  if (method === "POST" && path === "/api/jobs/preview") {
+  if (method === "POST" && path === "/api/reads/job.preview") {
     const body = readBody(init) as { url?: string; text?: string }
     previews.push(body)
-    return jsonOk(previewFor(body))
+    return jsonOk(fullPreview(previewFor(body)))
   }
 
   if (method === "POST" && path === "/api/reads/activity.list") {
@@ -539,4 +542,15 @@ export async function jobApiFetch(
   }
 
   return null
+}
+
+function fullPreview(preview: JobPreview) {
+  if (preview.status === "unreadable")
+    return { status: preview.status, fields: {}, message: preview.message }
+  const fields = { title: "", company: "", location: "", ...preview.fields }
+  return {
+    ...preview,
+    fields:
+      preview.status === "filled" ? { description: "", ...fields } : fields,
+  }
 }

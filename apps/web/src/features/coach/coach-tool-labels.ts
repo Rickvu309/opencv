@@ -78,7 +78,7 @@ const TOOL_COPY = {
   },
   "job.addChecklistItem": { label: "Add a Job checklist item" },
   [catalog["job.addNote"].name]: { label: "Add a Job note" },
-  "job.calendar": {
+  [catalog["job.calendar"].name]: {
     label: "Look at your Job events",
     read: "Looked at your Job events",
   },
@@ -88,7 +88,10 @@ const TOOL_COPY = {
   "job.linkPaper": { label: "Link Paper to this Job" },
   "job.list": { label: "Look at your Jobs", read: "Looked at your Jobs" },
   "job.move": { label: "Move this Job" },
-  "job.preview": { label: "Preview this Job", read: "Previewed this Job" },
+  [catalog["job.preview"].name]: {
+    label: "Preview this Job",
+    read: "Previewed this Job",
+  },
   [catalog["job.removeChecklistItem"].name]: {
     label: "Remove a Job checklist item",
   },

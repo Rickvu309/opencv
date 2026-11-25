@@ -33,7 +33,9 @@ import { operation as inbox$snoozed } from "../operations/inbox/snoozed/operatio
 import { operation as inbox$updateDraft } from "../operations/inbox/update-draft/operation.js"
 import { operation as integrations$list } from "../operations/integrations/list/operation.js"
 import { operation as job$addNote } from "../operations/job/add-note/operation.js"
+import { operation as job$calendar } from "../operations/job/calendar/operation.js"
 import { operation as job$delete } from "../operations/job/delete/operation.js"
+import { operation as job$preview } from "../operations/job/preview/operation.js"
 import { operation as job$priorityCounts } from "../operations/job/priority-counts/operation.js"
 import { operation as job$removeChecklistItem } from "../operations/job/remove-checklist-item/operation.js"
 import { operation as job$setPriority } from "../operations/job/set-priority/operation.js"
@@ -85,7 +87,9 @@ export const catalog = {
   "inbox.updateDraft": inbox$updateDraft,
   "integrations.list": integrations$list,
   "job.addNote": job$addNote,
+  "job.calendar": job$calendar,
   "job.delete": job$delete,
+  "job.preview": job$preview,
   "job.priorityCounts": job$priorityCounts,
   "job.removeChecklistItem": job$removeChecklistItem,
   "job.setPriority": job$setPriority,
