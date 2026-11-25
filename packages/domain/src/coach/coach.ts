@@ -1,4 +1,4 @@
-import type { NativeBasis } from "../paper-doc/native.js"
+import type { NativeBasis } from "../paper-doc/index.js"
 
 import type { ChatToolName } from "./chat-turn.js"
 import type { CommandEnvelope } from "../envelope.js"

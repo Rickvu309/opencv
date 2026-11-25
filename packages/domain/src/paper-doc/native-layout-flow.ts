@@ -1,6 +1,6 @@
 import { z } from "zod"
 import { nodeIdSchema } from "./nodes.js"
-import { paperPhotoFileId } from "../paper.js"
+import { paperPhotoFileId } from "./paper.js"
 import {
   formatBodySchema,
   formatOwnerSchema,

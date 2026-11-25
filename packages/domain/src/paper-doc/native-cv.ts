@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { paperPhotoValueSchema } from "../paper.js"
+import { paperPhotoValueSchema } from "./paper.js"
 import {
   cvFieldSchema,
   cvRichTextSchema,

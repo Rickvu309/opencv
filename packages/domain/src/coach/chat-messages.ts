@@ -12,7 +12,7 @@ import {
   paperContentKindSchema,
   paperDocIdSchema,
   paperDocStatusSchema,
-} from "../paper.js"
+} from "../paper-doc/paper.js"
 
 export const reversalDescriptorSchema = z.object({
   possible: z.boolean(),

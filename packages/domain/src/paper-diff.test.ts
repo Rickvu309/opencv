@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
 import { diffPaperContent } from "./paper-diff.ts"
-import { type ProofDocument } from "./paper.ts"
+import { type ProofDocument } from "./paper-doc/paper.ts"
 
 const emptyProofDocument = (): ProofDocument => ({
   viewMode: "chain",
