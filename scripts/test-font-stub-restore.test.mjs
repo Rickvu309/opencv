@@ -60,6 +60,10 @@ test("a saved and restored fonts stub, an untouched file and an isolated file st
     detectFontsStubRestore(MISTAKE, "src/lib/a.test.ts", ["src/lib/a.test.ts"]),
     []
   )
+  assert.deepEqual(
+    detectFontsStubRestore(MISTAKE, "src/lib/a.isolated.test.tsx", []),
+    []
+  )
 })
 
 test("every tracked web test that replaces document.fonts restores it", () => {

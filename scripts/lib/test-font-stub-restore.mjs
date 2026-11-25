@@ -12,8 +12,10 @@ export function isolatedTestFiles(configSource) {
   return [...body.matchAll(/"([^"]+)"/g)].map((match) => match[1])
 }
 
+const ISOLATED_BY_NAME = /\.isolated\.test\.tsx?$/
+
 export function detectFontsStubRestore(source, path, isolatedFiles) {
-  if (isolatedFiles.includes(path)) return []
+  if (isolatedFiles.includes(path) || ISOLATED_BY_NAME.test(path)) return []
   if (!FONTS_DEFINE.test(source)) return []
   const saved = FONTS_SAVE.test(source)
   const restored = FONTS_DELETE.test(source) || FONTS_REDEFINE.test(source)

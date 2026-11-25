@@ -58,7 +58,9 @@ test("the clean fixture stays quiet", () => {
 
 test("feature tests are not product anchors, and a product file is", () => {
   assert.equal(
-    isFeatureSource("apps/web/src/features/coach/coach-workspace.test.tsx"),
+    isFeatureSource(
+      "apps/web/src/features/coach/coach-workspace.isolated.test.tsx"
+    ),
     false
   )
   assert.equal(
