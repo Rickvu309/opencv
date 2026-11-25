@@ -1,7 +1,7 @@
-import { parsePaperId } from "@workspace/domain"
+import type { QueryClient } from "@tanstack/react-query"
 
 import { ApiError } from "@/lib/api-error.ts"
-import type { useRunCommand } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 import { ignoreRejection } from "@/lib/quiet-rejection.ts"
 
 export const IMPORT_ACCEPT =
@@ -33,11 +33,11 @@ export function messageOf(error: unknown, fallback: string) {
 }
 
 export async function discardCancelledImport(
-  run: ReturnType<typeof useRunCommand>,
+  queryClient: QueryClient,
   docId: string
 ) {
   await ignoreRejection(
-    run("paper.delete", { docId: parsePaperId(docId) }),
+    catalogClient.run(queryClient, "paper.delete", { docId }),
     "cancelledImportCleanupStaysQuiet"
   )
 }

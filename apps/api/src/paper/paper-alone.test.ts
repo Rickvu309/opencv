@@ -7,6 +7,7 @@ import { Registry } from "../registry/registry.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { bindOperation } from "../registry/bind.js"
 import { registerPaper } from "./index.js"
+import { implementation as deletePaper } from "./operations/delete/server.js"
 import { implementation as updatePaper } from "./operations/update/server.js"
 
 const person = personActor("paper-alone")
@@ -27,6 +28,7 @@ beforeAll(async () => {
   registry = new Registry()
   registerPaper(registry)
   bindOperation(registry, updatePaper)
+  bindOperation(registry, deletePaper)
 })
 
 afterAll(async () => {

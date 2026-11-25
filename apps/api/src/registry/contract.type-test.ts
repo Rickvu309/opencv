@@ -12,7 +12,12 @@ import {
 } from "@workspace/domain"
 import { z } from "zod"
 
-import { bindCommands, type Bindings, type OperationBinding } from "./bind.js"
+import {
+  bindCommands,
+  type Bindings,
+  type OperationBinding,
+  type ReversalGuard,
+} from "./bind.js"
 import type { Registry } from "./registry.js"
 
 type MoveInput = OperationInput<(typeof catalog)["job.move"]>
@@ -35,7 +40,6 @@ type Snooze = OperationInput<(typeof catalog)["inbox.snooze"]>
 type Edit = CommandInput<PaperContract, "paper.edit">
 type PaperUpdate = OperationInput<(typeof catalog)["paper.update"]>
 type PaperEditBinding = Bindings<PaperContract>["paper.edit"]
-type PaperDelete = Bindings<PaperContract>["paper.delete"]
 type Undo = OperationInput<(typeof catalog)["activity.undo"]>
 type ChatDelete = OperationBinding<
   (typeof catalog)["chat.delete"],
@@ -94,11 +98,11 @@ export function typeProbes(registry: Registry) {
 
   // prettier-ignore
   // @ts-expect-error an expectation can only match fields the read returns
-  const wrongExpectation: PaperDelete["reversal"] = () => ({ command: "paper.recover", input: { docId: someDocId }, expect: { query: "paper.read", input: { view: "trash", docId: someDocId }, matches: { colour: "red" }, skipped: "x" } })
+  const wrongExpectation: ReversalGuard = { query: "paper.read", input: { view: "trash", docId: someDocId }, matches: { colour: "red" }, skipped: "x" }
 
   // prettier-ignore
   // @ts-expect-error an expectation that matches no field would never refuse
-  const emptyExpectation: PaperDelete["reversal"] = () => ({ command: "paper.recover", input: { docId: someDocId }, expect: { query: "paper.read", input: { view: "trash", docId: someDocId }, matches: {}, skipped: "x" } })
+  const emptyExpectation: ReversalGuard = { query: "paper.read", input: { view: "trash", docId: someDocId }, matches: {}, skipped: "x" }
 
   const pendingRestore: Bindings<PaperContract>["paper.duplicate"]["reversal"] =
     () => ({

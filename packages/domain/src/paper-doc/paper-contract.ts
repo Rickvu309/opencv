@@ -1,12 +1,7 @@
 import { z } from "zod"
 
 import { commandContract, commandEntry } from "../contract.js"
-import {
-  fileIdSchema,
-  jobIdSchema,
-  paperIdSchema,
-  parsePaperId,
-} from "../ids.js"
+import { jobIdSchema, paperIdSchema, parsePaperId } from "../ids.js"
 import {
   nativeBasisSchema,
   nativeWriterSchema,
@@ -22,8 +17,6 @@ import {
 } from "./paper-package.js"
 import { wordConfirmedOpsSchema } from "./paper-word.js"
 import {
-  paperDeleteFileInputSchema,
-  paperDeleteInputSchema,
   paperDocNameSchema,
   paperDuplicateInputSchema,
   paperStoredKindSchema,
@@ -44,8 +37,6 @@ const docChanged = (input: DocInput): QueryRef[] => [
   { query: "paper.outline", input: { docId: input.docId } },
   ...listChanged(),
 ]
-
-const docRemoved = docChanged
 
 const paperCreateInputSchema = z
   .object({
@@ -154,33 +145,6 @@ export const paperContract = commandContract({
     destructive: false,
     step: () => "Duplicate the document",
     invalidates: listChanged,
-  }),
-  "paper.delete": commandEntry({
-    description: "Delete a document.",
-    input: paperDeleteInputSchema,
-    output: z
-      .object({
-        id: paperIdSchema,
-        format: z.literal("word").optional(),
-        name: z.string().optional(),
-      })
-      .strict(),
-    coach: "confirm",
-    destructive: true,
-    step: () => "Delete this document",
-    invalidates: docRemoved,
-  }),
-  "paper.deleteFile": commandEntry({
-    description: "Delete an uploaded file.",
-    input: paperDeleteFileInputSchema,
-    output: z.object({ fileId: fileIdSchema }).strict(),
-    coach: "never",
-    destructive: true,
-    step: () => "Delete this file",
-    invalidates: (input) => [
-      { query: "paper.files" },
-      { query: "file.get", input: { fileId: input.fileId } },
-    ],
   }),
 })
 

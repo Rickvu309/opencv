@@ -45,6 +45,7 @@ function seed(queryClient: QueryClient) {
     ),
     activity: jobActivity(queryClient),
     paper: queryKey({ query: "paper.list" }),
+    files: queryKey({ query: "paper.files" }),
   }
   for (const key of Object.values(keys)) {
     queryClient.setQueryData(key, { seeded: true })
@@ -67,29 +68,28 @@ const isStale = (queryClient: QueryClient, key: readonly unknown[]) =>
 describe("runContractCommand", () => {
   afterEach(() => vi.unstubAllGlobals())
 
-  it("refreshes the reads paper.deleteFile invalidates and nothing else", async () => {
+  it("refreshes the reads paper.create invalidates and nothing else", async () => {
     const queryClient = new QueryClient()
     const keys = seed(queryClient)
-    stubFetch({ id: JOB })
+    stubFetch({ id: DOC })
 
-    await runContractCommand(queryClient, "paper.deleteFile", {
-      fileId: DOC,
-    })
+    await runContractCommand(queryClient, "paper.create", { kind: "cv" })
 
     expect(isStale(queryClient, keys.list)).toBe(true)
     expect(isStale(queryClient, keys.mine)).toBe(true)
     expect(isStale(queryClient, keys.activity)).toBe(true)
     expect(isStale(queryClient, keys.other)).toBe(true)
-    expect(isStale(queryClient, keys.paper)).toBe(false)
+    expect(isStale(queryClient, keys.paper)).toBe(true)
+    expect(isStale(queryClient, keys.files)).toBe(false)
   })
 
   it("sends the input with a fresh idempotency key per call", async () => {
     const queryClient = new QueryClient()
     const bodies = stubFetch({ id: JOB })
-    const input = { fileId: DOC } as const
+    const input = { kind: "cv" } as const
 
-    await runContractCommand(queryClient, "paper.deleteFile", input)
-    await runContractCommand(queryClient, "paper.deleteFile", input)
+    await runContractCommand(queryClient, "paper.create", input)
+    await runContractCommand(queryClient, "paper.create", input)
 
     const [first, second] = bodies as {
       input: unknown
@@ -110,9 +110,7 @@ describe("runContractCommand", () => {
       update: "",
       stateVector: "",
     })
-    await runContractCommand(queryClient, "paper.deleteFile", {
-      fileId: DOC,
-    })
+    await runContractCommand(queryClient, "paper.create", { kind: "cv" })
 
     expect(bodies[0]).not.toHaveProperty("idempotencyKey")
     expect(bodies[1]).toHaveProperty("idempotencyKey")
@@ -129,9 +127,7 @@ describe("runContractCommand", () => {
     )
 
     await expect(
-      runContractCommand(queryClient, "paper.deleteFile", {
-        fileId: DOC,
-      })
+      runContractCommand(queryClient, "paper.create", { kind: "cv" })
     ).rejects.toThrow()
 
     expect(isStale(queryClient, keys.list)).toBe(false)
