@@ -45,11 +45,11 @@ export async function saved(
 }
 
 export async function jobOf(person: Person, jobId: string) {
-  return dataOf<Detail>(await person.read("job.get", { jobId: jobId }))
+  return dataOf<Detail>(await person.get(`/api/jobs/${jobId}`))
 }
 
 export async function board(person: Person) {
-  return dataOf<Job[]>(await person.read("job.list", {}))
+  return dataOf<Job[]>(await person.get("/api/jobs"))
 }
 
 export async function paper(

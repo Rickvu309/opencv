@@ -33,7 +33,7 @@ import { withDatabase, type AppDatabase } from "./db/context.js"
 import { authUnavailableEnvelope } from "./platform/envelope.js"
 import { createHealthRoutes } from "./health.js"
 import { createInboxRoutes } from "./inbox/index.js"
-import { type FetchJobPosting } from "./job/index.js"
+import { createJobRoutes, type FetchJobPosting } from "./job/index.js"
 import { currentSession, requireSession } from "./middleware.js"
 import {
   handleApiError,
@@ -251,6 +251,7 @@ export function createApp({
   app.route("/api/chats", createChatRoutes(signedIn))
   app.route("/api/chats", coachRoutes)
   app.route("/api/paper", createPaperRoutes(signedIn))
+  app.route("/api/jobs", createJobRoutes(signedIn))
   app.route("/api/inbox", createInboxRoutes(signedIn, gmailEnabled))
   app.route("/api/profile", createProfileRoutes(signedIn))
   app.route("/api/account", createAccountRoutes(signedIn))
