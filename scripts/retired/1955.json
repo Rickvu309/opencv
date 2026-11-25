@@ -94,5 +94,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "apps/web/src/lib/paper-sync-tabs.isolated.test.tsx",
+    "because": "Tab identity and orphan adoption belonged to the old block Paper sync, which is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
   }
 ]
