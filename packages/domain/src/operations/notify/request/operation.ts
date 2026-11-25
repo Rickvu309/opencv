@@ -2,7 +2,7 @@ import { z } from "zod"
 import {
   notifyRequestInputSchema,
   notifyTopicSchema,
-} from "../../../account.js"
+} from "../../../account/account.js"
 import { defineOperation } from "../../../operation.js"
 import type { ResourceRef } from "../../../resources.js"
 

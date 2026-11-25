@@ -2,7 +2,7 @@ import {
   profileMarkWelcomedInputSchema,
   profileResource,
   profileSchema,
-} from "../../../account.js"
+} from "../../../account/account.js"
 import { defineOperation } from "../../../operation.js"
 
 export const operation = defineOperation({
