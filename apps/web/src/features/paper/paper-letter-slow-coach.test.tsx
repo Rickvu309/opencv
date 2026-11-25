@@ -202,10 +202,12 @@ function installSlowCoach(ending: {
             )
       )
     }
-    if (url.endsWith(`/api/chats/${CHAT}`))
+    if (url.endsWith("/api/reads/chat.get"))
       return ok({
         id: CHAT,
         title: "Cover letter, Lumière",
+        focusKind: null,
+        focusId: null,
         createdAt: AT,
         updatedAt: AT,
         messages: [],

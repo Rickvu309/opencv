@@ -87,7 +87,7 @@ it("shows and stops an unfinished durable task while the server admits only lega
       const path = new URL(String(input)).pathname
       if (path.endsWith("public-config"))
         return Response.json({ coachDurable: false })
-      if (path.endsWith(`/chats/${CHAT}`)) {
+      if (path.endsWith("/api/reads/chat.get")) {
         const response = await chatApiFetchOrThrow(input, init)
         const body = await response.json()
         return Response.json({
@@ -164,7 +164,7 @@ it("renders the legacy tail completion notice without offering Retry", async () 
         )
       }
       const response = await chatApiFetchOrThrow(input, init)
-      if (capped && path.endsWith(`/chats/${CHAT}`)) {
+      if (capped && path.endsWith("/api/reads/chat.get")) {
         const body = await response.json()
         return Response.json({
           ...body,

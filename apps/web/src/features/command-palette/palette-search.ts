@@ -1,11 +1,8 @@
 import { catalog, chatDisplayTitle } from "@workspace/domain"
 import { STAGE_LABEL, type Stage } from "@workspace/ui/components/stage-icon"
 
-import { apiFetch } from "@/lib/api.ts"
-import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { catalogClient } from "@/lib/contract-client.ts"
 import { SURFACES, type SurfaceId } from "@/lib/product-paths.ts"
-import { endpoints } from "@/lib/requests.ts"
 
 export const PALETTE_PAGES: {
   id: string
@@ -142,8 +139,8 @@ export async function searchWorkspace(query: string) {
 
 export async function listPaletteChats() {
   try {
-    const body = await apiFetch<SuccessBody<unknown>>(endpoints.chats)
-    return parseChats(unwrapData(body)).slice(0, 8)
+    const chats = await catalogClient.read(catalog["chat.list"].name, {})
+    return parseChats(chats).slice(0, 8)
   } catch {
     return []
   }

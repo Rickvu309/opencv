@@ -97,14 +97,7 @@ const docChanged = (input: DocInput): QueryRef[] => [
   ...listChanged(),
 ]
 
-const chatsChanged = (): QueryRef[] => [{ query: "chat.get" }]
-
-const jobsLinked = (): QueryRef[] => []
-
-const docRemoved = (input: DocInput): QueryRef[] => [
-  ...docChanged(input),
-  ...jobsLinked(),
-]
+const docRemoved = docChanged
 
 const previousPaper = paperDocumentSchema.optional()
 
@@ -144,10 +137,7 @@ export const paperContract = commandContract({
     coach: "never",
     destructive: false,
     step: (input) => `Create a ${input.kind === "cv" ? "CV" : "letter"}`,
-    invalidates: (input) => [
-      ...listChanged(),
-      ...(input.jobId ? jobsLinked() : []),
-    ],
+    invalidates: listChanged,
   }),
   "paper.start": commandEntry({
     description:
@@ -158,10 +148,7 @@ export const paperContract = commandContract({
     destructive: false,
     step: (input) =>
       `Start a new ${input.kind === "cv" ? "CV" : "Letter"} in Paper. You approve its words next.`,
-    invalidates: (input) => [
-      ...listChanged(),
-      ...(input.jobId ? jobsLinked() : []),
-    ],
+    invalidates: listChanged,
   }),
   "paper.edit": commandEntry({
     delegate: { resource: "paper", access: "proposal" },
@@ -193,7 +180,7 @@ export const paperContract = commandContract({
     coach: "confirm",
     destructive: false,
     step: () => "Edit the document",
-    invalidates: (input) => [...docChanged(input), ...chatsChanged()],
+    invalidates: (input) => docChanged(input),
   }),
   "paper.canvas": commandEntry({
     description:
@@ -206,7 +193,7 @@ export const paperContract = commandContract({
     step: () => "Write on the page",
     invalidates: (input) =>
       input.op === "mint"
-        ? [...listChanged(), ...(input.jobId ? jobsLinked() : [])]
+        ? listChanged()
         : [
             {
               query: "paper.get",
@@ -239,7 +226,7 @@ export const paperContract = commandContract({
     coach: "never",
     destructive: false,
     step: () => "Undo a Coach edit",
-    invalidates: (input) => [...docChanged(input), ...chatsChanged()],
+    invalidates: (input) => docChanged(input),
   }),
   "paper.nativeSync": commandEntry({
     description:

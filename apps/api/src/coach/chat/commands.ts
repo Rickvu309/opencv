@@ -5,7 +5,6 @@ import {
   appendAgentProposalApproval,
   createAgentProposalChat,
 } from "./agent-proposal.js"
-import { getChat, listChats } from "./store.js"
 
 const stops = new Map<string, Set<AbortController>>()
 
@@ -32,24 +31,6 @@ export function registerChat(registry: Registry) {
     open: createAgentProposalChat,
     show: appendAgentProposalApproval,
   })
-
-  registry.addQuery(
-    tableQuery("chat.list", {
-      description: "List chats.",
-      coach: true,
-      step: () => "List chats",
-      read: (input, actor) => listChats(actor.userId, input.query),
-    })
-  )
-
-  registry.addQuery(
-    tableQuery("chat.get", {
-      description: "Read one chat.",
-      coach: true,
-      step: () => "Read the chat",
-      read: (input, actor) => getChat(actor.userId, input.chatId),
-    })
-  )
 
   registry.addQuery(
     tableQuery("link.get", {

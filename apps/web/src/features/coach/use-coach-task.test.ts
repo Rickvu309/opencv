@@ -117,7 +117,7 @@ it("regenerates a persisted failed reply without appending its person message ag
           data: taskSnapshot({ state: "failed" }),
         })
       const response = await chatApiFetchOrThrow(input, init)
-      if (url.pathname === `/api/chats/${CHAT}`) {
+      if (url.pathname === "/api/reads/chat.get") {
         const body = (await response.json()) as {
           data: Record<string, unknown>
         }
@@ -162,7 +162,7 @@ it("tells the truth when a turn hits its limit and does not send it again", asyn
           }),
         })
       const response = await chatApiFetchOrThrow(input, init)
-      if (url.pathname === `/api/chats/${CHAT}`) {
+      if (url.pathname === "/api/reads/chat.get") {
         const body = (await response.json()) as {
           data: Record<string, unknown>
         }

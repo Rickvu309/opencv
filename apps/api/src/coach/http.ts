@@ -99,7 +99,7 @@ async function startTurn(
 
   const chatId = chatIdParsed.data
   const existing = chatDetailSchema.parse(
-    await registry.read("chat.get", { chatId }, actor)
+    await registry.read(catalog["chat.get"].name, { chatId }, actor)
   )
 
   let model: CoachModel | undefined
@@ -146,7 +146,7 @@ async function startTurn(
       model: modelId,
     })
     const history = parsed.data.regenerate
-      ? await registry.read("chat.get", { chatId }, actor)
+      ? await registry.read(catalog["chat.get"].name, { chatId }, actor)
       : (
           await registry.execute({
             name: catalog["chat.appendMessage"].name,

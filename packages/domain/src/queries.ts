@@ -2,8 +2,6 @@ import { z } from "zod"
 import { catalog } from "./catalog.js"
 
 import { queryContract, queryEntry } from "./contract.js"
-import { chatDetailSchema, chatListSchema } from "./chat-views.js"
-import { chatIdSchema } from "./ids.js"
 import { paperQueries } from "./paper-contract.js"
 
 const untyped = z.unknown()
@@ -31,14 +29,6 @@ const catalogReads = Object.fromEntries(
 export const queries = queryContract({
   ...catalogReads,
   ...paperQueries,
-  "chat.list": queryEntry({
-    input: z.object({ query: z.string().optional() }).strict(),
-    output: chatListSchema,
-  }),
-  "chat.get": queryEntry({
-    input: z.object({ chatId: chatIdSchema }).strict(),
-    output: chatDetailSchema,
-  }),
   "link.get": queryEntry({
     input: z.object({ url: z.string().trim().min(1).max(2000) }).strict(),
     output: untyped,

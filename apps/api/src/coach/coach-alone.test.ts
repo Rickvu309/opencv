@@ -11,6 +11,8 @@ import { registerCoachTasks } from "./index.js"
 import { implementation as appendMessage } from "./operations/chat/append-message/server.js"
 import { implementation as createChat } from "./operations/chat/create/server.js"
 import { implementation as deleteChat } from "./operations/chat/delete/server.js"
+import { implementation as getChat } from "./operations/chat/get/server.js"
+import { implementation as listChats } from "./operations/chat/list/server.js"
 import { implementation as openChat } from "./operations/chat/open/server.js"
 import { implementation as renameChat } from "./operations/chat/rename/server.js"
 import { implementation as setChatFocus } from "./operations/chat/set-focus/server.js"
@@ -45,6 +47,8 @@ beforeAll(async () => {
   bindOperation(registry, openChat)
   bindOperation(registry, appendMessage)
   bindOperation(registry, deleteChat)
+  bindOperation(registry, listChats)
+  bindOperation(registry, getChat)
   bindOperation(registry, renameChat)
   bindOperation(registry, setChatFocus)
 })
