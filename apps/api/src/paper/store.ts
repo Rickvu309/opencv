@@ -64,7 +64,7 @@ function documentNotFound(): never {
   throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
 }
 
-async function ownedPaperOrNull(userId: UserId, docId: PaperId) {
+export async function ownedPaperOrNull(userId: UserId, docId: PaperId) {
   const rows = await getDb()
     .select()
     .from(paperDocs)

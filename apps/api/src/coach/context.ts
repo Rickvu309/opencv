@@ -1,6 +1,7 @@
 import {
   ERROR_CODES,
   NATIVE_WRITER,
+  RICH_NATIVE_WRITER,
   nativeBasisSchema,
   jobAddNoteInputSchema,
   type Actor,
@@ -39,7 +40,7 @@ function unreadableForCoach(error: unknown) {
 async function listedPage(registry: Registry, actor: Actor, docId: string) {
   const listed = await registry.read(
     "paper.list",
-    { writer: NATIVE_WRITER },
+    { writer: RICH_NATIVE_WRITER },
     actor
   )
   if (!Array.isArray(listed)) return null
