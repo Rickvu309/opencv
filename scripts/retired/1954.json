@@ -1,0 +1,250 @@
+[
+  {
+    "subject": "packages/domain/src/paper-blank-edits.test.ts",
+    "because": "It tested old block Paper document code (edits, merge, repair, upgrade, safety, words, projection or legacy text) that is deleted now that every stored Paper is a rich document.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "packages/domain/src/paper-cv-fields.test.ts",
+    "because": "It tested old block Paper document code (edits, merge, repair, upgrade, safety, words, projection or legacy text) that is deleted now that every stored Paper is a rich document.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "packages/domain/src/paper-cv-projection.test.ts",
+    "because": "It tested old block Paper document code (edits, merge, repair, upgrade, safety, words, projection or legacy text) that is deleted now that every stored Paper is a rich document.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "packages/domain/src/paper-doc-edits.test.ts",
+    "because": "It tested old block Paper document code (edits, merge, repair, upgrade, safety, words, projection or legacy text) that is deleted now that every stored Paper is a rich document.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 19
+  },
+  {
+    "subject": "packages/domain/src/paper-doc-merge.property.test.ts",
+    "because": "It tested old block Paper document code (edits, merge, repair, upgrade, safety, words, projection or legacy text) that is deleted now that every stored Paper is a rich document.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "packages/domain/src/paper-doc-merge.test.ts",
+    "because": "It tested old block Paper document code (edits, merge, repair, upgrade, safety, words, projection or legacy text) that is deleted now that every stored Paper is a rich document.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 17
+  },
+  {
+    "subject": "packages/domain/src/paper-doc-rebase-header.test.ts",
+    "because": "It tested old block Paper document code (edits, merge, repair, upgrade, safety, words, projection or legacy text) that is deleted now that every stored Paper is a rich document.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "packages/domain/src/paper-doc-repair.property.test.ts",
+    "because": "It tested old block Paper document code (edits, merge, repair, upgrade, safety, words, projection or legacy text) that is deleted now that every stored Paper is a rich document.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 11
+  },
+  {
+    "subject": "packages/domain/src/paper-doc-rich-text.test.ts",
+    "because": "The stored document is now only the rich document; cases about the old prose format are removed and the rich cases stay.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  },
+  {
+    "subject": "packages/domain/src/paper-doc-safety.test.ts",
+    "because": "It tested old block Paper document code (edits, merge, repair, upgrade, safety, words, projection or legacy text) that is deleted now that every stored Paper is a rich document.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 9
+  },
+  {
+    "subject": "packages/domain/src/paper-doc.test.ts",
+    "because": "The stored document is now only the rich document; cases about the old prose format are removed and the rich cases stay.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "packages/domain/src/paper-doc-upgrade.test.ts",
+    "because": "It tested old block Paper document code (edits, merge, repair, upgrade, safety, words, projection or legacy text) that is deleted now that every stored Paper is a rich document.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 25
+  },
+  {
+    "subject": "packages/domain/src/paper-doc-words.test.ts",
+    "because": "It tested old block Paper document code (edits, merge, repair, upgrade, safety, words, projection or legacy text) that is deleted now that every stored Paper is a rich document.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 32
+  },
+  {
+    "subject": "packages/domain/src/paper-native.test.ts",
+    "because": "It tested old block Paper document code (edits, merge, repair, upgrade, safety, words, projection or legacy text) that is deleted now that every stored Paper is a rich document.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "packages/domain/src/paper-native-text.test.ts",
+    "because": "It tested old block Paper document code (edits, merge, repair, upgrade, safety, words, projection or legacy text) that is deleted now that every stored Paper is a rich document.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  },
+  {
+    "subject": "packages/paper-crdt/src/client-fallback.test.ts",
+    "because": "It tested the old prose Paper client and its sync, merge and native formatting modules in the Paper CRDT package, which are deleted; the rich client keeps its tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "packages/paper-crdt/src/client-header.test.ts",
+    "because": "It tested the old prose Paper client and its sync, merge and native formatting modules in the Paper CRDT package, which are deleted; the rich client keeps its tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "packages/paper-crdt/src/client.test.ts",
+    "because": "It tested the old prose Paper client and its sync, merge and native formatting modules in the Paper CRDT package, which are deleted; the rich client keeps its tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "packages/paper-crdt/src/crdt.test.ts",
+    "because": "It tested the old prose Paper client and its sync, merge and native formatting modules in the Paper CRDT package, which are deleted; the rich client keeps its tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  },
+  {
+    "subject": "packages/paper-crdt/src/interleave.test.ts",
+    "because": "It tested the old prose Paper client and its sync, merge and native formatting modules in the Paper CRDT package, which are deleted; the rich client keeps its tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "packages/paper-crdt/src/merge.test.ts",
+    "because": "It tested the old prose Paper client and its sync, merge and native formatting modules in the Paper CRDT package, which are deleted; the rich client keeps its tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 12
+  },
+  {
+    "subject": "packages/paper-crdt/src/moved.test.ts",
+    "because": "It tested the old prose Paper client and its sync, merge and native formatting modules in the Paper CRDT package, which are deleted; the rich client keeps its tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "packages/paper-crdt/src/native-cv.test.ts",
+    "because": "It tested the old prose Paper client and its sync, merge and native formatting modules in the Paper CRDT package, which are deleted; the rich client keeps its tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 11
+  },
+  {
+    "subject": "packages/paper-crdt/src/native-formatting-engine.test.ts",
+    "because": "It tested the old prose Paper client and its sync, merge and native formatting modules in the Paper CRDT package, which are deleted; the rich client keeps its tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "packages/paper-crdt/src/native-formatting-mount.test.ts",
+    "because": "It tested the old prose Paper client and its sync, merge and native formatting modules in the Paper CRDT package, which are deleted; the rich client keeps its tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 11
+  },
+  {
+    "subject": "packages/paper-crdt/src/native.test.ts",
+    "because": "It tested the old prose Paper client and its sync, merge and native formatting modules in the Paper CRDT package, which are deleted; the rich client keeps its tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 30
+  },
+  {
+    "subject": "packages/paper-crdt/src/presentation-codec.test.ts",
+    "because": "It tested the old prose Paper client and its sync, merge and native formatting modules in the Paper CRDT package, which are deleted; the rich client keeps its tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 12
+  },
+  {
+    "subject": "packages/paper-crdt/src/probes.test.ts",
+    "because": "It tested the old prose Paper client and its sync, merge and native formatting modules in the Paper CRDT package, which are deleted; the rich client keeps its tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 13
+  },
+  {
+    "subject": "packages/paper-crdt/src/rich-client.test.ts",
+    "because": "The stored document is now only the rich document; cases about the old prose format are removed and the rich cases stay.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "packages/paper-crdt/src/stored-document.test.ts",
+    "because": "The stored document is now only the rich document; cases about the old prose format are removed and the rich cases stay.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "scripts/guard-ledger/property-seed.json",
+    "because": "Its historic proof replayed packages/paper-crdt/src/interleave.test.ts, which is deleted with the prose client; the row now proves quiet on the fixed version of that file at the commit that fixed it.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
