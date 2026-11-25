@@ -1,0 +1,58 @@
+[
+  {
+    "subject": "apps/api/src/registry/private-output-keys.test.ts",
+    "because": "job.move is now a pair whose public result is declared, so no older command output carries fromStage; the scan's sanity check now uses previousName, which the older Paper outputs still carry",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/lib/contract-client.test.tsx",
+    "because": "job.move left the older command table, so the older client tests run on paper.unshare, which keeps the same assertions on refresh, keys and failure",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/job/apply-alone.test.ts",
+    "because": "registerJob no longer registers commands, so the test that it registers the same commands twice has nothing to prove; the Apply-alone flow binds the move pair instead",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/lib/coach-stream.test.ts",
+    "because": "job.move is now a pair, and a Coach pair result refreshes the older reads as well, so the older Paper list is refreshed too",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/fixtures/catalog-adapters/clean.json",
+    "because": "the clean fixture copies catalog-publication.ts, whose approved receipt now builds pair detail from the public result",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/private-output-keys.json",
+    "because": "the historic proof restored a whole old http.ts that no longer compiles; the reason now records why no historic proof can run",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/unused-domain-exports.test.mjs",
+    "because": "JobContract is deleted with the Job command contract, so it leaves the kept-export list",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

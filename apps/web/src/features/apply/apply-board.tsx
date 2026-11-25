@@ -38,7 +38,7 @@ import { toast, toastWithUndo } from "@workspace/ui/components/sonner"
 import { StageIcon } from "@workspace/ui/components/stage-icon"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
+import { catalogClient, undoActivity } from "@/lib/contract-client.ts"
 import { reportRejected } from "@/lib/command-failure.ts"
 import { useShortcut } from "@/lib/use-shortcut.ts"
 
@@ -154,7 +154,6 @@ export function ApplyBoard({
 }) {
   const queryClient = useQueryClient()
   const ownerId = useOwnerId()
-  const run = useRunCommand()
   const tails = useRef(new Map<string, Promise<unknown>>())
   const dropsRef = useRef<Drops>(noDrops)
   const [drops, dispatchDrops] = useReducer(dropsReducer, noDrops)
@@ -250,8 +249,14 @@ export function ApplyBoard({
   function persist(jobId: string, stage: JobStage, announce: boolean) {
     const input = { jobId: parseJobId(jobId), stage }
     const move = async () => {
-      const result = await run("job.move", input, { refresh: false })
-      if ((stage === "closed" || announce) && result.activityId) {
+      const result = await catalogClient.run(queryClient, "job.move", input, {
+        refresh: false,
+      })
+      if (
+        (stage === "closed" || announce) &&
+        "activityId" in result &&
+        result.activityId
+      ) {
         const activityId = result.activityId
         const undo = () => {
           if (lastMove.current?.undo === undo) lastMove.current = null

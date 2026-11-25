@@ -75,7 +75,10 @@ export class CatalogPublication {
             completed.summary
           ),
           detail: this.operations.has(completed.command)
-            ? undefined
+            ? receiptDetail(
+                completed.command,
+                this.publicOutput(completed.command, completed.result)
+              )
             : receiptDetail(completed.command, completed.result),
           undone: completed.undoneAt !== null,
         }

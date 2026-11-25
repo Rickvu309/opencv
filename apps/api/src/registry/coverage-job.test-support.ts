@@ -95,7 +95,7 @@ export function jobCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "job.move",
+      name: catalog["job.move"].name,
       arrange: async () => {
         ctx.jobId = idOf(
           (await run("job.create", { title: "Move", company: "Northwind" }))

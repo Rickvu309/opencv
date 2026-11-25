@@ -230,7 +230,7 @@ function projectedReceipts(source) {
     spelling(fields(confirmation.whenTrue).get("reversal"), source) ===
       "reversalOf(completed.reversalCommand?{command:completed.reversalCommand,input:this.operations.has(completed.command)?{}:completed.reversalInput,}:null,completed.summary)" &&
     spelling(fields(confirmation.whenTrue).get("detail"), source) ===
-      "this.operations.has(completed.command)?undefined:receiptDetail(completed.command,completed.result)"
+      "this.operations.has(completed.command)?receiptDetail(completed.command,this.publicOutput(completed.command,completed.result)):receiptDetail(completed.command,completed.result)"
   if (!safeConfirmation) problems.push("raw-confirmation-receipt")
   const turn = returned(method(source, "turnReceipts"))[0]
   if (

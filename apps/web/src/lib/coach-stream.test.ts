@@ -114,7 +114,7 @@ describe("streamChatTurn", () => {
       "message-end",
     ])
     expect(isStale(queryClient, list)).toBe(true)
-    expect(isStale(queryClient, paper)).toBeFalsy()
+    expect(isStale(queryClient, paper)).toBe(true)
   })
 
   it("refreshes nothing for a read-only tool and skips events the contract does not describe", async () => {
