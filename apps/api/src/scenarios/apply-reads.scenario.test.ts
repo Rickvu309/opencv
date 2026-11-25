@@ -99,9 +99,9 @@ describe("reading the board", () => {
 
   it("refuses a Job id that is not an id", async () => {
     const ada = await world.person("Ada")
-    expect(failureOf(await ada.get("/api/jobs/not-an-id")).code).toBe(
-      "VALIDATION_ERROR"
-    )
+    expect(
+      failureOf(await ada.read("job.get", { jobId: "not-an-id" })).code
+    ).toBe("VALIDATION_ERROR")
   })
 })
 

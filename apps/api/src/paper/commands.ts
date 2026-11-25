@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto"
 
 import {
+  catalog,
   ERROR_CODES,
   emptyRichPaper,
   keywordGap,
@@ -466,7 +467,7 @@ export function registerPaper(registry: Registry) {
       read: async (input, actor) => {
         const doc = toPaper(await ownedPaper(actor.userId, input.docId))
         const job = (await registry.read(
-          "job.get",
+          catalog["job.get"].name,
           { jobId: input.jobId },
           actor
         )) as { posting?: { requirements?: string } | null }

@@ -1,9 +1,9 @@
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import * as applyApi from "@/features/apply/apply-api.ts"
 import * as paperQualification from "@/lib/paper-qualification.ts"
 import { ApiError } from "@/lib/api-error.ts"
+import { failJobRead } from "@/test/apply-jobs-mock.ts"
 import { renderApp } from "@/test/render-app.tsx"
 
 const missingId = "00000000-0000-7000-8000-000000000000"
@@ -58,9 +58,7 @@ describe("detail recovery", () => {
   )
 
   it("keeps temporary job failures retryable", async () => {
-    const getJob = vi
-      .spyOn(applyApi, "getJob")
-      .mockRejectedValue(new ApiError(500, "INTERNAL", "Request failed"))
+    const getJob = failJobRead("job.get")
     renderApp(`/apply/${missingId}`)
 
     expect(

@@ -1,4 +1,5 @@
 import {
+  catalog,
   ERROR_CODES,
   errorEnvelope,
   httpStatusForError,
@@ -18,7 +19,11 @@ export function createJobRoutes(signedIn: SignedIn) {
   routes.get("/", async (c) =>
     c.json(
       successEnvelope(
-        await registry.read("job.list", {}, personActor(c.var.userId))
+        await registry.read(
+          catalog["job.list"].name,
+          {},
+          personActor(c.var.userId)
+        )
       )
     )
   )
@@ -33,7 +38,11 @@ export function createJobRoutes(signedIn: SignedIn) {
       )
     return c.json(
       successEnvelope(
-        await registry.read("job.get", { jobId }, personActor(c.var.userId))
+        await registry.read(
+          catalog["job.get"].name,
+          { jobId },
+          personActor(c.var.userId)
+        )
       )
     )
   })

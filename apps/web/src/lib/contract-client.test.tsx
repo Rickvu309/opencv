@@ -23,11 +23,25 @@ function jobActivity(queryClient: QueryClient) {
   return read.queryKey
 }
 
+function built(
+  queryClient: QueryClient,
+  read: ReturnType<typeof catalogClient.options>
+) {
+  queryClient.getQueryCache().build(queryClient, read as never)
+  return read.queryKey
+}
+
 function seed(queryClient: QueryClient) {
   const keys = {
-    list: queryKey({ query: "job.list" }),
-    mine: queryKey({ query: "job.get", input: { jobId: JOB } }),
-    other: queryKey({ query: "job.get", input: { jobId: OTHER } }),
+    list: built(queryClient, catalogClient.options("owner", "job.list", {})),
+    mine: built(
+      queryClient,
+      catalogClient.options("owner", "job.get", { jobId: JOB })
+    ),
+    other: built(
+      queryClient,
+      catalogClient.options("owner", "job.get", { jobId: OTHER })
+    ),
     activity: jobActivity(queryClient),
     paper: queryKey({ query: "paper.list" }),
   }
@@ -65,7 +79,7 @@ describe("runContractCommand", () => {
     expect(isStale(queryClient, keys.list)).toBe(true)
     expect(isStale(queryClient, keys.mine)).toBe(true)
     expect(isStale(queryClient, keys.activity)).toBe(true)
-    expect(isStale(queryClient, keys.other)).toBe(false)
+    expect(isStale(queryClient, keys.other)).toBe(true)
     expect(isStale(queryClient, keys.paper)).toBe(false)
   })
 
@@ -156,9 +170,9 @@ describe("refreshReads", () => {
     const queryClient = new QueryClient()
     const keys = seed(queryClient)
 
-    await refreshReads(queryClient, [{ query: "job.list" }])
+    await refreshReads(queryClient, [{ query: "paper.list" }])
 
-    expect(isStale(queryClient, keys.list)).toBe(true)
+    expect(isStale(queryClient, keys.paper)).toBe(true)
     expect(isStale(queryClient, keys.activity)).toBe(false)
   })
 })

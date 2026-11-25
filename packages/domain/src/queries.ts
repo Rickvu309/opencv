@@ -4,7 +4,6 @@ import { catalog } from "./catalog.js"
 import { queryContract, queryEntry } from "./contract.js"
 import { chatDetailSchema, chatListSchema } from "./chat-views.js"
 import { chatIdSchema } from "./ids.js"
-import { jobQueries } from "./job-contract.js"
 import { paperQueries } from "./paper-contract.js"
 
 const untyped = z.unknown()
@@ -31,7 +30,6 @@ const catalogReads = Object.fromEntries(
 
 export const queries = queryContract({
   ...catalogReads,
-  ...jobQueries,
   ...paperQueries,
   "chat.list": queryEntry({
     input: z.object({ query: z.string().optional() }).strict(),

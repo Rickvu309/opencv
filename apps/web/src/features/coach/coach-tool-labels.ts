@@ -84,9 +84,12 @@ const TOOL_COPY = {
   },
   "job.create": { label: "Add a Job" },
   [catalog["job.delete"].name]: { label: "Delete this Job" },
-  "job.get": { label: "Read this Job", read: "Read this Job" },
+  [catalog["job.get"].name]: { label: "Read this Job", read: "Read this Job" },
   "job.linkPaper": { label: "Link Paper to this Job" },
-  "job.list": { label: "Look at your Jobs", read: "Looked at your Jobs" },
+  [catalog["job.list"].name]: {
+    label: "Look at your Jobs",
+    read: "Looked at your Jobs",
+  },
   "job.move": { label: "Move this Job" },
   [catalog["job.preview"].name]: {
     label: "Preview this Job",

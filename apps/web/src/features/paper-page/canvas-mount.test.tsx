@@ -101,7 +101,8 @@ function stubWordPage() {
         ],
       })
     }
-    if (url.includes("/api/chats") || url.includes("/api/jobs")) return json([])
+    if (url.includes("/api/chats") || url.includes("/api/reads/job.list"))
+      return json([])
     return new Promise<Response>(() => undefined)
   })
 }

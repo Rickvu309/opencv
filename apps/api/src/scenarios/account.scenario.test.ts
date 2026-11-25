@@ -195,6 +195,6 @@ describe("deleting an account", () => {
       (await ada.run("account.delete", { confirm: "DELETE" })).status
     ).toBe(200)
     expect((await ada.read("profile.get", {})).status).toBe(401)
-    expect((await ada.get(`/api/jobs/${job.id}`)).status).toBe(401)
+    expect((await ada.read("job.get", { jobId: job.id })).status).toBe(401)
   })
 })

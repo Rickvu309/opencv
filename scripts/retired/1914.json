@@ -1,0 +1,42 @@
+[
+  {
+    "subject": "apps/api/src/scenarios/account.scenario.test.ts",
+    "because": "The signed-out check reads a Job through the read door; it still gets 401",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/apply-api.test.ts",
+    "because": "The Job list and one Job go through the read door; the test checks those paths",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/coach/chat-api.attachments.test.ts",
+    "because": "The attachment test uses a real Job id now that Job lists are checked against the public shape; the same label mapping is checked",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/lib/contract-client.test.tsx",
+    "because": "Job reads are catalog reads; an older-format job.move touches the whole workspace, so the other Job's read refreshes too until job.move declares its own writes. refreshReads is checked on a read still in the older format",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/lib/coach-task-client.test.ts",
+    "because": "Job reads are catalog reads now; the test checks that a committed snapshot refreshes the signed-in person's catalog Job list and Job instead of the older keys",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  }
+]

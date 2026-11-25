@@ -118,7 +118,7 @@ describe("app shell layout", () => {
   it("lists the nav in order, with Your work, Favorites, Search and New chat", async () => {
     setMockJobs([
       {
-        id: "job-star",
+        id: "01900000-0000-7000-8000-0000000000b1",
         title: "Associate PM",
         company: "Northwind",
         starred: true,
@@ -350,13 +350,13 @@ describe("app shell layout", () => {
   it("renders a favorite as its title with the company in its name, and omits the section when empty", async () => {
     setMockJobs([
       {
-        id: "job-star",
+        id: "01900000-0000-7000-8000-0000000000b1",
         title: "Associate PM",
         company: "Northwind",
         starred: true,
       },
       {
-        id: "job-plain",
+        id: "01900000-0000-7000-8000-0000000000b4",
         title: "Hidden role",
         company: "Elsewhere",
         starred: false,

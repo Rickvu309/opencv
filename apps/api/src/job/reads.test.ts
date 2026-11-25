@@ -80,7 +80,11 @@ describe("job reads", () => {
       body: JSON.stringify({ input: { jobId, docId, kind: "cv" } }),
     })
 
-    const detailRes = await app.request(`/api/jobs/${jobId}`, { headers })
+    const detailRes = await app.request("/api/reads/job.get", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ jobId }),
+    })
     const detail = await jsonOf(detailRes)
     const checklist = detail.data?.checklist as { label: string }[]
     expect(checklist.map((item) => item.label)).toEqual([
@@ -185,7 +189,11 @@ describe("job reads", () => {
     })
     expect(undone.status).toBe(200)
     const after = await jsonOf(
-      await app.request(`/api/jobs/${jobId}`, { headers })
+      await app.request("/api/reads/job.get", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ jobId }),
+      })
     )
     expect(after.data?.stage).toBe("saved")
 

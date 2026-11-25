@@ -17,9 +17,3 @@ export function coachPaperOptions() {
     unwrapData
   )
 }
-
-export function coachJobOptions() {
-  return apiFetch<SuccessBody<QueryOutput<"job.list">>>(endpoints.jobs).then(
-    unwrapData
-  )
-}

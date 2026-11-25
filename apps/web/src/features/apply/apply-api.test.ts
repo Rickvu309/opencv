@@ -6,13 +6,14 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { QueryClient, QueryObserver } from "@tanstack/react-query"
 
 import { parseJobId, type ChatTurnEvent } from "@workspace/domain"
-import { undoActivity, catalogClient, queryKey } from "@/lib/contract-client.ts"
+import { undoActivity, catalogClient } from "@/lib/contract-client.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { createToolRefresher } from "@/lib/coach-stream.ts"
 import { detect } from "../../../../../scripts/lib/use-read-owner.mjs"
 
 import { ownerIdFromRouteMatches } from "@/lib/owner-id.ts"
-import { getJob, listJobs, listPaper, previewJob } from "./apply-api.ts"
+import { mockJob } from "@/test/apply-job-fixtures.ts"
+import { listJobs, listPaper, previewJob } from "./apply-api.ts"
 
 const JOB = "01900000-0000-7000-8000-000000000010"
 const ACTIVITY = "01900000-0000-7000-8000-000000000020"
@@ -42,11 +43,19 @@ function installFetch() {
         data: url.endsWith("/api/commands/activity.undo")
           ? undoneActivityRow()
           : url.endsWith("/api/reads/activity.list") ||
-              url.endsWith("/api/reads/job.calendar")
+              url.endsWith("/api/reads/job.calendar") ||
+              url.endsWith("/api/reads/job.list")
             ? []
-            : url.endsWith("/api/reads/job.preview")
-              ? { status: "unreadable", fields: {}, message: "Unreadable" }
-              : { id: JOB },
+            : url.endsWith("/api/reads/job.get")
+              ? {
+                  ...mockJob({ id: JOB }),
+                  note: "",
+                  checklist: [],
+                  linked: { cv: null, letter: null },
+                }
+              : url.endsWith("/api/reads/job.preview")
+                ? { status: "unreadable", fields: {}, message: "Unreadable" }
+                : { id: JOB },
       })
     }
   )
@@ -83,11 +92,12 @@ describe("apply api", () => {
     const calls = installFetch()
 
     await listJobs()
-    expect(last(calls).method).toBe("GET")
-    expect(new URL(last(calls).url).pathname).toBe("/api/jobs")
+    expect(last(calls).method).toBe("POST")
+    expect(new URL(last(calls).url).pathname).toBe("/api/reads/job.list")
 
-    await getJob(parseJobId(JOB))
-    expect(new URL(last(calls).url).pathname).toBe(`/api/jobs/${JOB}`)
+    await catalogClient.read("job.get", { jobId: JOB })
+    expect(new URL(last(calls).url).pathname).toBe("/api/reads/job.get")
+    expect(last(calls).body).toEqual({ jobId: JOB })
 
     await catalogClient.read("job.calendar", {
       from: "2026-11-01T00:00:00.000Z",
@@ -224,11 +234,7 @@ describe("coach catalog refresh", () => {
   })
 
   it("rejects a retired priority endpoint that nothing calls", () => {
-    const retired = [
-      "../../lib/requests.ts",
-      "./apply-api.ts",
-      "../../../../api/src/job/http.ts",
-    ]
+    const retired = ["../../lib/requests.ts", "./apply-api.ts"]
     for (const file of retired) {
       expect(
         detect(read(file), file).filter(
@@ -283,13 +289,16 @@ describe("coach catalog refresh", () => {
     })
     const owner = mountCount(queryClient, "owner-a")
     const other = mountCount(queryClient, "owner-b")
-    const list = queryKey({ query: "job.list" })
-    const detail = queryKey({
-      query: "job.get",
-      input: { jobId: parseJobId(JOB) },
+    const listRead = catalogClient.options("owner-a", "job.list", {})
+    const detailRead = catalogClient.options("owner-a", "job.get", {
+      jobId: parseJobId(JOB),
     })
+    for (const read of [listRead, detailRead])
+      queryClient.getQueryCache().build(queryClient, read)
+    const list = listRead.queryKey
+    const detail = detailRead.queryKey
     queryClient.setQueryData(list, [])
-    queryClient.setQueryData(detail, { id: JOB })
+    queryClient.setQueryData(detail, { id: JOB } as never)
     const refresh = createToolRefresher(queryClient)
     const input = { jobId: parseJobId(JOB), priority: "high" }
     const call = event("tool-call", "job.setPriority", {

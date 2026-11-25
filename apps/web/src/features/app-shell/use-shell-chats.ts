@@ -5,10 +5,11 @@ import {
   inboxUnreadCount,
   starredJobs,
 } from "@/features/app-shell/shell-api.ts"
-import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
+import { jobListQuery } from "@/features/apply/apply-api.ts"
 import { chatListKey, listChats } from "@/features/coach/chat-api.ts"
 import { listPaper, paperListKey } from "@/features/paper/paper-api.ts"
 import { catalogClient } from "@/lib/contract-client.ts"
+import { useOwnerId } from "@/lib/owner-id.ts"
 import { ownerIdFromRouteMatches } from "@/lib/owner-id.ts"
 import { isSurfaceShown } from "@/lib/product-paths.ts"
 
@@ -22,8 +23,7 @@ export function useShellChats() {
 
 export function useShellFavorites() {
   const jobs = useQuery({
-    queryKey: jobListKey(),
-    queryFn: listJobs,
+    ...jobListQuery(useOwnerId()),
     select: starredJobs,
   })
   const docs = useQuery({

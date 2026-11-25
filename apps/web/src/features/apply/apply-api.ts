@@ -8,7 +8,8 @@ import {
 
 import { apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
-import { catalogClient, queryKey } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
+import { useOwnerId } from "@/lib/owner-id.ts"
 import { endpoints } from "@/lib/requests.ts"
 
 export type ChecklistItem = JobDetail["checklist"][number]
@@ -19,26 +20,25 @@ export type PaperListItem = {
   kind: string
 }
 
-export const jobListKey = () => queryKey({ query: "job.list" })
-export const jobGetKey = (jobId: JobId) =>
-  queryKey({ query: "job.get", input: { jobId } })
-
-export function listJobs(): Promise<QueryOutput<"job.list">> {
-  return apiFetch<SuccessBody<QueryOutput<"job.list">>>(endpoints.jobs).then(
-    unwrapData
-  )
+export function jobListQuery(ownerId: string) {
+  return catalogClient.options(ownerId, "job.list", {})
 }
 
-export function getJob(jobId: JobId): Promise<QueryOutput<"job.get">> {
-  return apiFetch<SuccessBody<QueryOutput<"job.get">>>(
-    endpoints.job(jobId)
-  ).then(unwrapData)
+export function jobGetQuery(ownerId: string, jobId: JobId) {
+  return catalogClient.options(ownerId, "job.get", { jobId })
 }
 
-export function prefetchJob(queryClient: QueryClient, jobId: JobId) {
+export function listJobs() {
+  return catalogClient.read(catalog["job.list"].name, {})
+}
+
+export function prefetchJob(
+  queryClient: QueryClient,
+  ownerId: string,
+  jobId: JobId
+) {
   void queryClient.prefetchQuery({
-    queryKey: jobGetKey(jobId),
-    queryFn: () => getJob(jobId),
+    ...jobGetQuery(ownerId, jobId),
     staleTime: 30_000,
   })
 }
@@ -62,10 +62,7 @@ export type ApplyPickerCard = {
 }
 
 export function useApplyPickerCards() {
-  const listQuery = useQuery({
-    queryKey: jobListKey(),
-    queryFn: listJobs,
-  })
+  const listQuery = useQuery(jobListQuery(useOwnerId()))
   const cards: ApplyPickerCard[] = (listQuery.data ?? []).map((job) => ({
     id: job.id,
     title: job.title,

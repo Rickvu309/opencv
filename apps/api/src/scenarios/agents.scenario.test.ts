@@ -107,7 +107,7 @@ describe("a Delegate with a grant for Jobs", () => {
     )
     expect(proposed.pending).toBe(true)
     expect(
-      dataOf<{ priority: string }>(await ada.get(`/api/jobs/${job.id}`))
+      dataOf<{ priority: string }>(await ada.read("job.get", { jobId: job.id }))
         .priority
     ).toBe("normal")
     const approved = await ada.run("actions.approve", {
@@ -115,7 +115,7 @@ describe("a Delegate with a grant for Jobs", () => {
     })
     expect(approved.status).toBe(200)
     expect(
-      dataOf<{ priority: string }>(await ada.get(`/api/jobs/${job.id}`))
+      dataOf<{ priority: string }>(await ada.read("job.get", { jobId: job.id }))
         .priority
     ).toBe("high")
   })
@@ -167,7 +167,7 @@ describe("revoking an agent connection", () => {
     })
     expect(approval.ok).toBe(false)
     expect(
-      dataOf<{ priority: string }>(await ada.get(`/api/jobs/${job.id}`))
+      dataOf<{ priority: string }>(await ada.read("job.get", { jobId: job.id }))
         .priority
     ).toBe("normal")
   })

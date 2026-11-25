@@ -264,3 +264,29 @@ export const jobPreviewSchema = z.discriminatedUnion("status", [
 ])
 
 export type JobPreview = z.output<typeof jobPreviewSchema>
+
+const linkedPaperSchema = z
+  .object({ id: idResult<PaperId>(), name: z.string() })
+  .strict()
+  .nullable()
+
+const jobChecklistItemSchema = z
+  .object({
+    id: z.string(),
+    label: z.string(),
+    done: z.boolean(),
+    position: z.string(),
+  })
+  .strict()
+
+export const jobDetailSchema = jobResultSchema
+  .extend({
+    note: z.string(),
+    checklist: z.array(jobChecklistItemSchema),
+    linked: z
+      .object({ cv: linkedPaperSchema, letter: linkedPaperSchema })
+      .strict(),
+  })
+  .strict()
+
+export type JobDetail = z.output<typeof jobDetailSchema>

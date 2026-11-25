@@ -1,4 +1,5 @@
 import {
+  catalog,
   DEFAULT_COACH_MODELS,
   NATIVE_WRITER,
   nativeBasisSchema,
@@ -25,13 +26,13 @@ export const DEMO_COACH_SCRIPT: CoachStreamPart[] = [
   {
     type: "tool-call",
     toolCallId: "call_1",
-    name: "job.list",
+    name: catalog["job.list"].name,
     input: {},
   },
   {
     type: "tool-result",
     toolCallId: "call_1",
-    name: "job.list",
+    name: catalog["job.list"].name,
     summary: "Listed your Apply cards",
     ok: true,
     reversal: {

@@ -23,7 +23,7 @@ import {
 } from "@workspace/ui/components/dialog"
 
 import { profileQuery } from "@/lib/account-api.ts"
-import { coachPaperOptions, coachJobOptions } from "@/lib/coach-context.ts"
+import { coachPaperOptions } from "@/lib/coach-context.ts"
 import { subscribeCoachDraft, takeCoachDraft } from "@/lib/coach-draft.ts"
 import { catalogClient, queryKey } from "@/lib/contract-client.ts"
 import { useOwnerId } from "@/lib/owner-id.ts"
@@ -108,8 +108,7 @@ export function CoachWorkspace({
     enabled: picker === "paper" || addMenuOpened,
   })
   const jobs = useQuery({
-    queryKey: queryKey({ query: "job.list" }),
-    queryFn: coachJobOptions,
+    ...catalogClient.options(useOwnerId(), "job.list", {}),
     enabled: picker === "job",
   })
   const awaitingApproval = messages.some((message) =>

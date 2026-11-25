@@ -238,7 +238,10 @@ describe("commands without auth", () => {
     const paper = await api.request("/api/paper")
     expect(paper.status).toBe(503)
 
-    const jobs = await api.request("/api/jobs")
+    const jobs = await api.request("/api/reads/job.list", {
+      method: "POST",
+      body: "{}",
+    })
     expect(jobs.status).toBe(503)
 
     const missing = await api.request("/api/missing")

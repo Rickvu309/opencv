@@ -100,7 +100,8 @@ function answer(url: string, body: string, listFails: boolean) {
   if (path.includes("/api/paper/")) return missing()
   if (path.endsWith("/api/reads/paper.read"))
     return body.includes(WORD_PAGE) ? ok(wordRead) : missing(409)
-  if (path.includes("/api/chats") || path.includes("/api/jobs")) return ok([])
+  if (path.includes("/api/chats") || path.includes("/api/reads/job.list"))
+    return ok([])
   return null
 }
 

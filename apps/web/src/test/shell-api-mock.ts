@@ -1,3 +1,4 @@
+import { mockJob } from "./apply-job-fixtures.ts"
 import { jsonError, jsonOk, pathOf } from "./mock-http.ts"
 
 export { chatCreateCalls, setMockChats } from "./chat-api-mock.ts"
@@ -117,7 +118,8 @@ export async function shellApiFetch(
       createdAt: "2026-10-27T00:00:00.000Z",
     })
   }
-  if (method === "GET" && path === "/api/jobs") return jsonOk(state.jobs)
+  if (method === "POST" && path === "/api/reads/job.list")
+    return jsonOk(state.jobs.map((job) => mockJob(job)))
   if (method === "POST" && path === "/api/reads/inbox.list")
     return jsonOk(fullInboxList(state.inbox))
   return null
