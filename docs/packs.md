@@ -36,6 +36,7 @@ flowchart TD
     p_apps_api_src_registry["apps/api/src/registry"]
     p_packages_domain_src_account["packages/domain/src/account"]
     p_packages_domain_src_agents["packages/domain/src/agents"]
+    p_packages_domain_src_apply["packages/domain/src/apply"]
     p_packages_domain_src_control["packages/domain/src/control"]
     p_packages_domain_src_inbox["packages/domain/src/inbox"]
   end
@@ -192,5 +193,6 @@ flowchart TD
 | `apps/web/src/lib` | platform | none | none | none |
 | `packages/domain/src/account` | kernel | account.ts, usage.ts | none | none |
 | `packages/domain/src/agents` | kernel | connections.ts, delegate-grant.ts | none | none |
+| `packages/domain/src/apply` | kernel | job-position.ts, job-posting.ts | none | none |
 | `packages/domain/src/control` | kernel | control.ts | none | none |
 | `packages/domain/src/inbox` | kernel | index.ts | none | none |

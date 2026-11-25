@@ -1,8 +1,8 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { generateKeyBetween } from "./job-position.ts"
-import { openableApplyJobUrl } from "./job-posting.ts"
+import { generateKeyBetween } from "./apply/job-position.ts"
+import { openableApplyJobUrl } from "./apply/job-posting.ts"
 
 describe("openableApplyJobUrl", () => {
   it("returns a plain https url for a scheme-less paste", () => {
