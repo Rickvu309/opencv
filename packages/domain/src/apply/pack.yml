@@ -1,0 +1,2 @@
+layer: kernel
+public: [job.ts, job-position.ts, job-posting.ts]

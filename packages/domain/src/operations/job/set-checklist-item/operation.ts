@@ -1,6 +1,9 @@
 import { z } from "zod"
 import { idResult, type JobId } from "../../../ids.js"
-import { jobResource, jobSetChecklistItemInputSchema } from "../../../job.js"
+import {
+  jobResource,
+  jobSetChecklistItemInputSchema,
+} from "../../../apply/job.js"
 import { defineOperation } from "../../../operation.js"
 
 export const operation = defineOperation({

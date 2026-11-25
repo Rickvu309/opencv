@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { defineOperation } from "../../../operation.js"
 import { jobIdSchema, type JobId, type PaperId } from "../../../ids.js"
-import { jobPrioritySchema, jobViewSchema } from "../../../job.js"
+import { jobPrioritySchema, jobViewSchema } from "../../../apply/job.js"
 import { jobPriorityResource } from "../../../resources.js"
 
 const jobIdResult = z.string().uuid() as unknown as z.ZodType<JobId, string>
