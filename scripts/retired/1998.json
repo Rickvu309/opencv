@@ -54,5 +54,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/paper-blank-canvas.test.mjs",
+    "because": "The rich blank creation path moved from commands.ts into the paper.create pair and createPaper. The guard now checks that createPaper defaults to emptyRichPaper and the rich writer, that the pair passes only kind and name, and that the dialog still sends kind and format rich.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
   }
 ]
