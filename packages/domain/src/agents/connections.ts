@@ -1,6 +1,6 @@
 import { z } from "zod"
-import { idResult, type ConnectionId } from "./ids.js"
-import type { ResourceRef } from "./resources.js"
+import { idResult, type ConnectionId } from "../ids.js"
+import type { ResourceRef } from "../resources.js"
 
 export const connectionResourcesSchema = z
   .object({ kind: z.enum(["none", "jobs", "paper", "jobs-and-paper"]) })

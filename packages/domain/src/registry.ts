@@ -1,4 +1,4 @@
-import { connectionResourcesSchema } from "./connections.js"
+import { connectionResourcesSchema } from "./agents/connections.js"
 import { connectionIdSchema } from "./ids.js"
 import { z } from "zod"
 import type { ZodType } from "zod"

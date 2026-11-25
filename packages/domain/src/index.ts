@@ -29,10 +29,10 @@ export * from "./chat-views.js"
 export * from "./control.js"
 export * from "./contract-commands.js"
 
-export * from "./connections.js"
+export * from "./agents/connections.js"
 
 export * from "./coach-task.js"
 export * from "./operation.js"
-export * from "./delegate-grant.js"
+export * from "./agents/delegate-grant.js"
 export * from "./catalog.js"
 export * from "./limits/index.js"

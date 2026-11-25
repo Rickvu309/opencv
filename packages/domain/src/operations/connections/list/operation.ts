@@ -1,5 +1,8 @@
 import { z } from "zod"
-import { connectionResource, connectionSchema } from "../../../connections.js"
+import {
+  connectionResource,
+  connectionSchema,
+} from "../../../agents/connections.js"
 import { defineOperation } from "../../../operation.js"
 
 export const operation = defineOperation({

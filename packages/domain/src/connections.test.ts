@@ -1,6 +1,9 @@
 import assert from "node:assert/strict"
 import { it } from "node:test"
-import { connectionResourcesSchema, connectionSchema } from "./connections.ts"
+import {
+  connectionResourcesSchema,
+  connectionSchema,
+} from "./agents/connections.ts"
 import { connectionIdSchema } from "./ids.ts"
 import { operation as list } from "./operations/connections/list/operation.ts"
 import { operation as revoke } from "./operations/connections/revoke/operation.ts"
