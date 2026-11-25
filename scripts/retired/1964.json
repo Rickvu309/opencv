@@ -62,5 +62,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/api/src/registry/invalidation.formal.test.ts",
+    "because": "paper.get and paper.document are gone; their snapshots move to paper.read with view info, and the Coach document read half of the page-write case has no subject left.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
