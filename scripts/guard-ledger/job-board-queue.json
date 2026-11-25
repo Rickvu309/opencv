@@ -1,6 +1,6 @@
 {
   "id": "job-board-queue",
-  "file": "apps/web/src/features/apply/apply-board-queue.test.tsx",
+  "file": "apps/web/src/features/apply/apply-board-queue.isolated.test.tsx",
   "historic": {
     "mode": "restore",
     "sha": "a8bf0fd6",
@@ -12,7 +12,7 @@
       "exec",
       "vitest",
       "run",
-      "src/features/apply/apply-board-queue.test.tsx"
+      "src/features/apply/apply-board-queue.isolated.test.tsx"
     ]
   }
 }

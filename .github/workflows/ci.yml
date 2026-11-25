@@ -117,7 +117,7 @@ jobs:
           fetch-depth: 0
       - uses: ./.github/actions/setup
       - run: pnpm exec turbo run build --filter='web^...'
-      - run: pnpm --filter web exec vitest run --config vitest.config.ts src/features/paper-page/canvas-walk.test.ts
+      - run: pnpm --filter web exec vitest run --config vitest.config.ts src/features/paper-page/canvas-walk.isolated.test.ts
 
   formal-tla:
     runs-on: ubuntu-latest

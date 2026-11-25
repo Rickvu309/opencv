@@ -42,7 +42,7 @@ The native model was checked against candidate product commit `7e25b97a` on 2026
 
 Authenticated Chromium against the assigned Hono and web runtime passed for both rich CV and Letter: typing and underline survived reload, the document photo decoded, phone controls and page fit, and interrupted offline input remained pending before recovery reached Saved after reload. This is integrated browser-to-Hono evidence using seeded documents and controlled network interruption, not a live-model or physical disk proof. The 38-case screen sweep passed its behavior checks. Existing shared shell contrast and fixed-size text advisories are retained in the report.
 
-Reproduce the targeted native behavior checks and each native model configuration with the commands above. Issue 1569 adds `src/lib/paper-rich-transport.test.ts`, `src/lib/paper-rich-editor.test.ts` and `src/routes/paper-doc-open.test.tsx` to the web check. The finite clean/mutant/clean runner, real-source mutation runner, authenticated browser script and full logs are retained under `~/tmp/paper-autopilot/1569-*`. This run does not rerun the issue 1541 whole-browser kill scenarios or establish new physical durability guarantees.
+Reproduce the targeted native behavior checks and each native model configuration with the commands above. Issue 1569 adds `src/lib/paper-rich-transport.test.ts`, `src/lib/paper-rich-editor.test.ts` and `src/routes/paper-doc-open.isolated.test.tsx` to the web check. The finite clean/mutant/clean runner, real-source mutation runner, authenticated browser script and full logs are retained under `~/tmp/paper-autopilot/1569-*`. This run does not rerun the issue 1541 whole-browser kill scenarios or establish new physical durability guarantees.
 
 ## When this file is stale
 
@@ -64,7 +64,7 @@ This model covers code scheduled for deletion. `openPaperSync` serves only the o
 
 `apps/web/src/lib/PaperLocal.tla` models `openPaperSync`, its journal, and `indexedDbStore`. Its action map names the implementation entry points. The approved replacement explicitly separates ordinary pagehide from abrupt kill and names `DurabilityPointD`. It replaces the earlier immediate-kill model under the coordinator's approved rule. The earlier model and the 23 lost cases out of 120 remain prior evidence; this change does not turn them into passes.
 
-`paper-local-replay.test.ts` drives the real sync implementation with a fake server and controlled local completion. It checks fast receipt before D, older completion after newer input, transaction abort, and ordinary close recovery. `paper-sync-journal.test.ts` checks per-tab journal coverage and clearing. `scripts/paper-local-durable.test.mjs` checks the current Saved gate and old delayed-write mistakes against a main-history ancestor. These are controlled behavior checks, not physical disk proofs.
+`paper-local-replay.isolated.test.ts` drives the real sync implementation with a fake server and controlled local completion. It checks fast receipt before D, older completion after newer input, transaction abort, and ordinary close recovery. `paper-sync-journal.test.ts` checks per-tab journal coverage and clearing. `scripts/paper-local-durable.test.mjs` checks the current Saved gate and old delayed-write mistakes against a main-history ancestor. These are controlled behavior checks, not physical disk proofs.
 
 The sync commit and the covered files live in `"sync"` and `"covers"` of `apps/web/src/lib/PaperLocal.tla.json`. Run `node scripts/tlc.mjs --stale` to list every commit that touched covered files since then. Move `"sync"` forward only after you confirm the model still describes the code at the new commit, and use a commit on `main`. The historical mistake is main ancestor `a1831b78801edfac3063a7376dc46a72a08fa054`; it is not a claim that the approved model was verified at that commit.
 
@@ -74,7 +74,7 @@ Run sequentially with `TMPDIR=/home/quan/tmp` and the assigned heavy slot.
 
 ```sh
 pnpm --filter @workspace/paper-crdt build
-pnpm --filter web exec vitest run --isolate src/lib/paper-local-replay.test.ts src/lib/paper-sync-journal.test.ts
+pnpm --filter web exec vitest run --isolate src/lib/paper-local-replay.isolated.test.ts src/lib/paper-sync-journal.test.ts
 node --test scripts/paper-local-durable.test.mjs scripts/paper-local-journal.test.mjs
 node scripts/tlc.mjs apps/web/src/lib/PaperLocal.tla
 node scripts/tlc.mjs apps/web/src/lib/PaperLocal.tla --mutant

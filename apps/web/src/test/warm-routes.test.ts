@@ -11,7 +11,7 @@ const srcDir = path.join(dir, "..")
 
 const LAZY_ROUTE_RENDERER_USERS = [
   "test/render-app.tsx",
-  "router-lazy.test.tsx",
+  "router-lazy.isolated.test.tsx",
 ]
 
 function sourceFiles(folder: string): { name: string; text: string }[] {
@@ -32,7 +32,7 @@ const importsOf = (source: string) =>
 
 describe("renderApp loads the signed-in routes before a test starts", () => {
   it("the favorites test imports warm-routes.ts", () => {
-    expect(read("../features/app-shell/app-shell.test.tsx")).toMatch(
+    expect(read("../features/app-shell/app-shell.isolated.test.tsx")).toMatch(
       /import "@\/test\/warm-routes\.ts"/
     )
   })

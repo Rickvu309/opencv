@@ -1,0 +1,42 @@
+[
+  {
+    "subject": "scripts/ci-workflow.test.mjs",
+    "because": "the Paper walk test is renamed canvas-walk.isolated.test.ts, so the CI step and its checks name the new file; the checks are otherwise unchanged",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "scripts/internal-anchors.test.mjs",
+    "because": "coach-workspace.test.tsx is renamed coach-workspace.isolated.test.tsx; the check names the new file",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/test/warm-routes.test.ts",
+    "because": "app-shell and router-lazy tests are renamed *.isolated.test.tsx; the check names the new files",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/job-board-queue.json",
+    "because": "the guard file apply-board-queue.test.tsx is renamed apply-board-queue.isolated.test.tsx and re-proved",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "scripts/test-class-assertions.ratchet.json",
+    "because": "eight tests are renamed *.isolated.test.tsx, so their ratchet entries move to the new names with the same counts; no count rises",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  }
+]

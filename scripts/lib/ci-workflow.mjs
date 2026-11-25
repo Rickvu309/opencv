@@ -42,7 +42,7 @@ const REQUIRED = [
 ]
 
 export function walkCoverageErrors({ complete, ordinary, dedicated }) {
-  const walk = "[isolated] src/features/paper-page/canvas-walk.test.ts"
+  const walk = "[isolated] src/features/paper-page/canvas-walk.isolated.test.ts"
   const expected = complete.filter((file) => file !== walk).sort()
   const hits = []
   if (!complete.includes(walk)) hits.push("complete suite lacks the Paper walk")
