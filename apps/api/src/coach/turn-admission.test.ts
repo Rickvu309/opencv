@@ -52,7 +52,11 @@ describe("Coach turn admission", () => {
         body: JSON.stringify({ text: "Hello" }),
       })
       expect(blocked.status).toBe(403)
-      const detail = await app.request(`/api/chats/${data.id}`, { headers })
+      const detail = await app.request("/api/reads/chat.get", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ chatId: data.id }),
+      })
       expect(
         ((await detail.json()) as { data: { messages: unknown[] } }).data
           .messages
@@ -155,7 +159,11 @@ describe("Coach saved grounding and cancellation", () => {
           body: JSON.stringify({ regenerate: true }),
         })
       ).text()
-      const reloaded = await app.request(`/api/chats/${data.id}`, { headers })
+      const reloaded = await app.request("/api/reads/chat.get", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ chatId: data.id }),
+      })
       const detail = chatDetailSchema.parse(
         ((await reloaded.json()) as { data: unknown }).data
       )
@@ -240,7 +248,11 @@ describe("Coach saved grounding and cancellation", () => {
       release()
       await completed
       const detail = (await (
-        await app.request(`/api/chats/${data.id}`, { headers })
+        await app.request("/api/reads/chat.get", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ chatId: data.id }),
+        })
       ).json()) as {
         data: { messages: { role: string; text: string; status: string }[] }
       }
@@ -325,7 +337,11 @@ describe("Coach saved grounding and cancellation", () => {
       await replacementDone
 
       const reload = async () => {
-        const response = await app.request(`/api/chats/${data.id}`, { headers })
+        const response = await app.request("/api/reads/chat.get", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ chatId: data.id }),
+        })
         return chatDetailSchema.parse(
           ((await response.json()) as { data: unknown }).data
         )
@@ -398,7 +414,11 @@ describe("Coach quota admission", () => {
         ids.map(
           async (id) =>
             (await (
-              await app.request(`/api/chats/${id}`, { headers })
+              await app.request("/api/reads/chat.get", {
+                method: "POST",
+                headers,
+                body: JSON.stringify({ chatId: id }),
+              })
             ).json()) as { data: { messages: { role: string }[] } }
         )
       )

@@ -232,7 +232,10 @@ describe("commands without auth", () => {
       },
     })
 
-    const list = await api.request("/api/chats")
+    const list = await api.request("/api/reads/chat.list", {
+      method: "POST",
+      body: "{}",
+    })
     expect(list.status).toBe(503)
 
     const paper = await api.request("/api/paper")

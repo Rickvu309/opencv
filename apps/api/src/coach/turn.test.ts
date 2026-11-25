@@ -68,7 +68,11 @@ describe("coach turn title", () => {
     const sse = await turn.text()
     expect(sse).toContain("Prep the starred one next.")
 
-    const list = await app.request("/api/chats", { headers })
+    const list = await app.request("/api/reads/chat.list", {
+      method: "POST",
+      headers,
+      body: "{}",
+    })
     expect(list.status).toBe(200)
     const chats = (await list.json()) as {
       data: { id: string; title: string }[]
@@ -302,7 +306,11 @@ describe("coach turn receipts", () => {
 
     const read = async () =>
       (await (
-        await app.request(`/api/chats/${chatId}`, { headers })
+        await app.request("/api/reads/chat.get", {
+          method: "POST",
+          headers,
+          body: JSON.stringify({ chatId: chatId }),
+        })
       ).json()) as {
         data: {
           messages: { parts: { activityId?: string; undone?: boolean }[] }[]

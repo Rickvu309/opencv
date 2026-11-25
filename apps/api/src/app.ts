@@ -13,7 +13,6 @@ import {
 } from "./auth.js"
 import { authEmailLimit } from "./auth-email-limit.js"
 import { isServedAuthPath } from "./auth-routes.js"
-import { createChatRoutes } from "./coach/chat/index.js"
 import {
   createCoachRoutes,
   createCoachTaskRoutes,
@@ -244,7 +243,6 @@ export function createApp({
   app.route("/api/commands", createCommandRoutes({ signedIn, registry }))
   app.route("/api/reads", createReadRoutes({ signedIn, registry }))
   app.route("/api/coach/tasks", createCoachTaskRoutes({ signedIn }))
-  app.route("/api/chats", createChatRoutes(signedIn))
   app.route("/api/chats", coachRoutes)
   app.route("/api/paper", createPaperRoutes(signedIn))
   app.route("/api/inbox", createInboxRoutes(signedIn, gmailEnabled))

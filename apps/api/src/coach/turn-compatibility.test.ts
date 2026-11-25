@@ -273,9 +273,9 @@ it("bounds an old tab tail without cancelling its queued task", () =>
         )
       ).toEqual([])
       expect(wire).not.toContain("event: error")
-      const detail = await app.request(`/api/chats/${chatId}`, {
-        headers: authHeaders(owner.cookie),
-      })
+      const detail = await app.request(
+        readAs(owner.cookie, "chat.get", { chatId })
+      )
       expect(await detail.json()).toMatchObject({
         data: {
           messages: expect.arrayContaining([
@@ -371,9 +371,9 @@ for (const state of [
         readAs(owner.cookie, "coach.status", { taskId: task!.id })
       )
       expect(read.status).toBe(200)
-      const detail = await legacy.request(`/api/chats/${chatId}`, {
-        headers: authHeaders(owner.cookie),
-      })
+      const detail = await legacy.request(
+        readAs(owner.cookie, "chat.get", { chatId })
+      )
       expect(await detail.json()).toMatchObject({
         data: { activeTaskId: task!.id },
       })

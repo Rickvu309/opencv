@@ -11,7 +11,6 @@ export {
   setChatFocus,
   toChat,
 } from "./store.js"
-export { createChatRoutes } from "./http.js"
 export {
   readChatViewParts,
   readExportedParts,
