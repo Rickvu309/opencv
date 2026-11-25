@@ -7,7 +7,7 @@ import {
   type RichPaperDocument,
   type NativeBasis,
 } from "@workspace/domain"
-import type { operation } from "@workspace/domain/operations/paper/native-word"
+import type { richExportInputSchema } from "@workspace/domain/operations/paper/export"
 import { materializeStored } from "@workspace/paper-crdt"
 import type { z } from "zod"
 import { CommandError } from "../platform/errors.js"
@@ -15,7 +15,7 @@ import { validatedStored } from "./content-document.js"
 import type { Live, PaperRow } from "./content-types.js"
 import { admitDocument } from "./native-admission.js"
 
-export type RichSnapshotInput = z.output<typeof operation.input>
+export type RichSnapshotInput = z.output<typeof richExportInputSchema>
 export type RichSnapshot = {
   readonly docId: RichSnapshotInput["docId"]
   readonly name: string

@@ -203,7 +203,7 @@ function WordSnapshot({
   const snapshot = page.data && "regions" in page.data ? page.data : null
   return (
     <div className="flex flex-col gap-4">
-      {download.data ? (
+      {download.data && "downloadPath" in download.data ? (
         <a
           href={`${apiBaseUrl}${download.data.downloadPath}`}
           className="text-sm underline underline-offset-4"

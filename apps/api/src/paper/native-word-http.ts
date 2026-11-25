@@ -1,5 +1,5 @@
 import { ERROR_CODES, parseUserId } from "@workspace/domain"
-import { operation } from "@workspace/domain/operations/paper/native-word"
+import { richExportInputSchema } from "@workspace/domain/operations/paper/export"
 import { Hono } from "hono"
 import type { SignedInVariables } from "../platform/signed-in.js"
 import { CommandError } from "../platform/errors.js"
@@ -10,7 +10,7 @@ export function createNativeWordRoutes() {
   const routes = new Hono<{ Variables: SignedInVariables }>()
   routes.get("/:id/native-word", async (c) => {
     c.header("Cache-Control", "private, no-store")
-    const parsed = operation.input.safeParse({
+    const parsed = richExportInputSchema.safeParse({
       docId: c.req.param("id"),
       kind: c.req.query("kind"),
       writer: jsonHeader(c.req.header("x-paper-writer")),

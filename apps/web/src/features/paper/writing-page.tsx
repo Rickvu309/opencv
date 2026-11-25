@@ -151,7 +151,7 @@ function SavedDownload({
     enabled: owner !== "",
     retry: false,
   })
-  if (!download.data) {
+  if (!download.data || !("downloadPath" in download.data)) {
     return (
       <HeldDownload
         docId={docId}

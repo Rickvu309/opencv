@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto"
 import {
   NATIVE_WRITER,
+  catalog,
   nativeProvenanceSchema,
   parseFileId,
   parseUserId,
@@ -123,7 +124,7 @@ it.each(["cv", "letter"] as const)(
     await inDb(async () => {
       const before = await databaseState()
       const qualified = await store.registry.read(
-        "paper.nativeWord",
+        catalog["paper.export"].name,
         saved.input,
         store.actor
       )
