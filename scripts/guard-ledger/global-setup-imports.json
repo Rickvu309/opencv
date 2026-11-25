@@ -1,0 +1,6 @@
+{
+  "id": "global-setup-imports",
+  "file": "scripts/global-setup-imports.test.mjs",
+  "historic": null,
+  "reason": "Caught on PR 1958 before merge: commit 4d7c7e74e made apps/api/src/registry/owned.ts import RICH_NATIVE_WRITER from @workspace/domain, and test/write-log.ts loads owned.ts while the API test global setup starts. That loader resolves only built packages, so the revoke outcome check, which runs the API tests in a copied tree with no build, crashed at startup in the CI guards job. Replayed by hand: with that commit's owned.ts the real-tree case fails, and with the fix it passes. The commit never reached main, so no historic sha can be replayed after the squash merge."
+}
