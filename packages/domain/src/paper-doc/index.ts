@@ -45,7 +45,6 @@ export { cvPrintModel, letterPrintModel, paperPlainText } from "./print.js"
 
 export { paperSyncInputSchema, paperSyncOutputSchema } from "./sync.js"
 
-export { paperEditOutcomeSchema } from "./edits-schema.js"
 export type { PaperChange } from "./changes.js"
 
 export { canonical as canonicalPaper } from "./tree.js"

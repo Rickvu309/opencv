@@ -122,7 +122,16 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
           input: {
             docId,
             basedOn: 1,
-            edits: [{ op: "setHeader", fields: { name: text } }],
+            edits: [
+              {
+                op: "replaceText",
+                blockId: "intro",
+                from: 0,
+                to: 0,
+                before: "",
+                text: text,
+              },
+            ],
           },
           actor: coach,
         })
@@ -141,9 +150,12 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
             basedOn: 1,
             edits: [
               {
-                op: "insert",
-                after: "@start",
-                blocks: [{ type: "paragraph", text: "Hello" }],
+                op: "replaceText",
+                blockId: "intro",
+                from: 0,
+                to: 0,
+                before: "",
+                text: "Hello",
               },
             ],
           },

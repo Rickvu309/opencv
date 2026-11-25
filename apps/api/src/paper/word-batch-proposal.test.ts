@@ -435,7 +435,16 @@ describe("the Coach and own agents send Word batches through paper.edit", () => 
           input: {
             docId: page.doc,
             basedOn: page.revision,
-            edits: [{ op: "setText", blockId: "letter-1", text: "Hi" }],
+            edits: [
+              {
+                op: "replaceText",
+                blockId: "letter-1",
+                from: 0,
+                to: 0,
+                before: "",
+                text: "Hi",
+              },
+            ],
           },
           actor: await coach(),
           idempotencyKey: randomUUID(),

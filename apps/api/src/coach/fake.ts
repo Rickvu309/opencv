@@ -1,7 +1,7 @@
 import {
   catalog,
   DEFAULT_COACH_MODELS,
-  NATIVE_WRITER,
+  RICH_NATIVE_WRITER,
   nativeBasisSchema,
   paperContract,
   type CoachFocusDoc,
@@ -154,13 +154,18 @@ function fakeWordEdits(outline: string) {
   ]
 }
 
-function fakeTemplateEdits(outline: string) {
-  const first = /^\[([A-Za-z0-9_-]+)\]/m.exec(outline)
+function fakeRichEdits(outline: string) {
+  const nodes = JSON.parse(outline) as { id: string }[]
+  const first = nodes[0]
+  if (!first) throw new Error("A rich Paper proposal needs a text block")
   return [
     {
-      op: "insert",
-      after: first?.[1] ?? "@start",
-      blocks: [{ type: "paragraph", text: FAKE_COACH_WORDS }],
+      op: "replaceText",
+      blockId: first.id,
+      from: 0,
+      to: 0,
+      before: "",
+      text: `${FAKE_COACH_WORDS} `,
     },
   ]
 }
@@ -170,20 +175,19 @@ export function fakePaperEdit(
 ) {
   if (focus.nativeBasis && focus.nativeBasis.revision !== focus.revision)
     throw new Error("Native Paper proposal needs a matching outline")
-  const body = focus.outline.split("\n").slice(1).join("\n")
   return paperContract["paper.edit"].input.parse({
     docId: focus.id,
     basedOn: focus.revision,
     ...(focus.nativeBasis
       ? {
-          writer: NATIVE_WRITER,
+          writer: RICH_NATIVE_WRITER,
           nativeBasis: nativeBasisSchema.parse(focus.nativeBasis),
         }
       : {}),
     edits:
       typeof focus.revision === "string"
-        ? fakeWordEdits(body)
-        : fakeTemplateEdits(body),
+        ? fakeWordEdits(focus.outline.split("\n").slice(1).join("\n"))
+        : fakeRichEdits(focus.outline),
   })
 }
 
