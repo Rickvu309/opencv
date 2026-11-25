@@ -12,6 +12,7 @@ import type { Registry } from "../registry/registry.js"
 import { registerCanvasCommit } from "./package-canvas.js"
 import { registerPaperStart } from "./package-start.js"
 import { registerWordPackageEdit } from "./package-edit.js"
+import { editRichPaper } from "./rich-edit.js"
 import { registerDuplicate } from "./card-action-commands.js"
 import { oldEditorUndoReasons } from "./undo-guard.js"
 import { syncContent } from "./content-store.js"
@@ -23,7 +24,6 @@ import {
   deletePaper,
   listFiles,
   listPapers,
-  ownedPaper,
   readFileMeta,
 } from "./store.js"
 
@@ -144,9 +144,9 @@ export function registerPaper(registry: Registry) {
   registerCanvasCommit(registry, paperCanvas)
   registerPaperStart(registry, paperStart)
   registerDuplicate(registry, paperDuplicate)
-  registerWordPackageEdit(registry, paperEdit, async (input, actor) => {
-    return ownedPaper(actor.userId, input.docId)
-  })
+  registerWordPackageEdit(registry, paperEdit, (input, actor) =>
+    editRichPaper(actor.userId, input)
+  )
 
   const paperList = tableQuery("paper.list", {
     description:

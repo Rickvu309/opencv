@@ -2,8 +2,12 @@ import { randomUUID } from "node:crypto"
 
 import {
   ERROR_CODES,
+  RICH_NATIVE_WRITER,
+  nativeWriterSchema,
   paperContract,
+  paperIdSchema,
   paperPackageEditResultSchema,
+  richChangeSchema,
   wordUndoSchema,
   type Actor,
 } from "@workspace/domain"
@@ -31,6 +35,7 @@ import { PACKAGE_PROFILE } from "./package-profile.js"
 import { revalidateUnchangedPackage } from "./package-restore.js"
 import { readWordPackage } from "./package-store.js"
 import { undo, WORD_UNDO_MOVED } from "./word/document.js"
+import { undoRichEdit } from "./rich-edit.js"
 
 type EditInput = z.output<(typeof paperContract)["paper.edit"]["input"]>
 type EditOutput = z.output<(typeof paperContract)["paper.edit"]["output"]>
@@ -321,6 +326,18 @@ const wordPackageReview: ReviewedCommand<
   },
 }
 
+const RICH_UNDO_MOVED =
+  "This document changed after the Coach edit, so Undo was skipped to keep your writing."
+
+const richUndoSchema = z
+  .object({
+    docId: paperIdSchema,
+    writer: nativeWriterSchema,
+    editId: z.string().uuid(),
+    changes: z.array(richChangeSchema).min(1).max(30),
+  })
+  .strict()
+
 export function registerWordPackageEdit(
   registry: Registry,
   entry: (typeof paperContract)["paper.edit"],
@@ -344,6 +361,21 @@ export function registerWordPackageEdit(
         throw new CommandError(ERROR_CODES.CONFLICT, restored.message)
       return { docId: input.doc, revision: restored.page.revision }
     }
+  )
+  registry.addUndoCommand(
+    {
+      name: "paper.undoEdit",
+      description:
+        "Put back the passages a Coach edit changed on a rich Paper.",
+      input: richUndoSchema,
+      coach: "never",
+      destructive: false,
+      idempotency: "keyed",
+      reversal: () => null,
+      step: () => "Undo a Coach edit",
+      activity: () => null,
+    },
+    (input, actor) => undoRichEdit(actor.userId, input)
   )
   registry.addSelectedCommand(
     {
@@ -373,7 +405,22 @@ export function registerWordPackageEdit(
             },
           }
         }
-        return null
+        if (!output.editId) return null
+        return {
+          command: "paper.undoEdit",
+          input: {
+            docId: input.docId,
+            writer: RICH_NATIVE_WRITER,
+            editId: output.editId,
+            changes: output.changes,
+          },
+          expect: {
+            query: "paper.outline",
+            input: { docId: input.docId },
+            matches: { revision: output.revision },
+            skipped: RICH_UNDO_MOVED,
+          },
+        }
       },
       activity: (input, output) => {
         const saved = isPackageOutput(output)

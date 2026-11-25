@@ -1,0 +1,18 @@
+[
+  {
+    "subject": "apps/api/src/coach/native-context.test.ts",
+    "because": "A numeric revision now means a rich Paper, which always carries a basis, so the old numeric proposal without one cannot exist; the fake Coach proposes a rich edit against a rich outline and the basis checks are unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/paper-agent-proposal.test.ts",
+    "because": "Block edits are gone from paper.edit, so the agent's numeric proposal uses the rich edit shape and reaches the same refusal for a connected agent.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
