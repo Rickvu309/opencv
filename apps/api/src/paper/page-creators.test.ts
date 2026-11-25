@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 
-import { delegateActorSchema } from "@workspace/domain"
+import { delegateActorSchema, RICH_NATIVE_WRITER } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { z } from "zod"
@@ -12,7 +12,10 @@ import { withDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
 import { installRegistry } from "../install.js"
 import { registry } from "../registry/registry.js"
-import { expectListIsLivePages } from "../test/paper-live-pages.js"
+import {
+  expectListIsLivePages,
+  richEditorHeaders,
+} from "../test/paper-live-pages.js"
 import {
   authHeaders,
   createMigratedTestDb,
@@ -28,7 +31,7 @@ import { WORD_PACKAGE_MEDIA_TYPE } from "./package-store.js"
 
 const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 
-type Format = "word" | "older"
+type Format = "word" | "rich"
 type Made = { docId: string; kind: "cv" | "letter"; format: Format }
 type Account = { cookie: string; userId: string }
 type App = ReturnType<typeof createTestApp>
@@ -240,29 +243,30 @@ const CASES: Record<string, Maker> = {
     app,
     owner
   ) => word(await restored(app, owner, await mintWord(app, owner))),
-  "Older document (paper.create)": async (app, owner) => ({
+  "Rich document (paper.create)": async (app, owner) => ({
     docId: docIdOf(
       await command(app, owner, "paper.create", {
         kind: "cv",
-        name: "Older CV",
+        name: "Rich CV",
       })
     ),
     kind: "cv",
-    format: "older",
+    format: "rich",
   }),
-  "Duplicate an older document (paper.duplicate)": async (app, owner) => ({
+  "Duplicate a rich document (paper.duplicate)": async (app, owner) => ({
     docId: docIdOf(
       await command(app, owner, "paper.duplicate", {
         docId: docIdOf(
           await command(app, owner, "paper.create", {
             kind: "cv",
-            name: "Older CV to copy",
+            name: "Rich CV to copy",
           })
         ),
+        writer: RICH_NATIVE_WRITER,
       })
     ),
     kind: "cv",
-    format: "older",
+    format: "rich",
   }),
   "Word module open with a mint source (openWordPage)": async (_app, owner) => {
     const page = await openWordPage(owner.userId, {
@@ -276,7 +280,7 @@ const CASES: Record<string, Maker> = {
 }
 
 const WORD_CASES = Object.keys(CASES).filter(
-  (name) => !name.startsWith("Older") && !name.includes("older")
+  (name) => !name.includes("ich document")
 )
 
 const CREATOR_EXPORTS: Record<string, string[]> = {
@@ -290,8 +294,8 @@ const CREATOR_EXPORTS: Record<string, string[]> = {
     name.startsWith("Duplicate")
   ),
   "paper/store.ts#createPaper": [
-    "Older document (paper.create)",
-    "Duplicate an older document (paper.duplicate)",
+    "Rich document (paper.create)",
+    "Duplicate a rich document (paper.duplicate)",
   ],
 }
 
@@ -363,7 +367,7 @@ describe("a page made any way is listed, opens, and stays hidden from others", (
 
   async function listed(who: Account) {
     const response = await app.request("/api/paper", {
-      headers: authHeaders(who.cookie),
+      headers: richEditorHeaders(who.cookie),
     })
     expect(response.status).toBe(200)
     return listOf.parse(dataOf.parse(await response.json()).data)
@@ -419,11 +423,11 @@ describe("a page made any way is listed, opens, and stays hidden from others", (
           .parse(await read.json()).data.doc
       ).toBe(made.docId)
     } else {
-      expect(mine[0]?.format).not.toBe("word")
-      const get = await app.request(`/api/paper/${made.docId}`, {
-        headers: authHeaders(owner.cookie),
+      expect(mine[0]?.format).toBe("rich")
+      const opened = await app.request(`/api/paper/${made.docId}/document`, {
+        headers: richEditorHeaders(owner.cookie),
       })
-      expect(get.status, await get.clone().text()).toBe(200)
+      expect(opened.status, await opened.clone().text()).toBe(200)
     }
     expect(
       (await listed(stranger)).some((item) => item.id === made.docId)

@@ -33,7 +33,7 @@ type Delete = OperationBinding<
 >["execute"]
 type Snooze = OperationInput<(typeof catalog)["inbox.snooze"]>
 type Edit = CommandInput<PaperContract, "paper.edit">
-type SetTemplate = CommandInput<PaperContract, "paper.setTemplate">
+type SetStatus = CommandInput<PaperContract, "paper.setStatus">
 type PaperEditBinding = Bindings<PaperContract>["paper.edit"]
 type PaperDelete = Bindings<PaperContract>["paper.delete"]
 type Undo = OperationInput<(typeof catalog)["activity.undo"]>
@@ -131,8 +131,8 @@ export function typeProbes(registry: Registry) {
   const wrongPaperInput: Edit = { docId: parsePaperId(uuid), revision: 2, edits: [] }
 
   // prettier-ignore
-  // @ts-expect-error a template id outside the catalog is not a template
-  const wrongTemplate: SetTemplate = { docId: parsePaperId(uuid), templateId: "fancy" }
+  // @ts-expect-error a status outside the list is not a status
+  const wrongStatus: SetStatus = { docId: parsePaperId(uuid), status: "fancy" }
 
   // prettier-ignore
   // @ts-expect-error a JobId is not a PaperId
@@ -170,7 +170,7 @@ export function typeProbes(registry: Registry) {
     wrongChatReversal,
     unknownPaper,
     wrongPaperInput,
-    wrongTemplate,
+    wrongStatus,
     jobAsPaper,
     wrongPaperOutput,
     unknownInbox,

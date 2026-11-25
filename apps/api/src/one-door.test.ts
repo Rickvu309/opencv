@@ -28,10 +28,6 @@ const transportExceptions = {
     "GET /api/paper/files/:id/bytes",
     "GET /api/paper/packages/:docId/export",
   ],
-  visitor: [
-    "GET /api/paper/shared/:token",
-    "GET /api/paper/shared/:token/photo",
-  ],
   health: ["GET /health", "GET /health/deep"],
 }
 
@@ -39,7 +35,6 @@ const waitingToBecomeOperations = [
   "GET /api/paper",
   "GET /api/paper/:id",
   "GET /api/paper/:id/document",
-  "GET /api/paper/:id/pages",
   "GET /api/paper/files",
   "GET /api/paper/packages",
   "GET /api/paper/packages/:docId/read",
@@ -82,6 +77,6 @@ describe("every change and read of product data goes through an operation", () =
   })
 
   it("has no more routes waiting to become operations than it had", () => {
-    expect(waitingToBecomeOperations.length).toBeLessThanOrEqual(7)
+    expect(waitingToBecomeOperations.length).toBeLessThanOrEqual(6)
   })
 })

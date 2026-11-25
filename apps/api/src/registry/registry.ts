@@ -610,7 +610,6 @@ export class Registry extends RegistryEntries {
           actor: personActor(userId),
           idempotencyKey: undoKeyFor(row.id),
           [confirmed]: true,
-          [noReceipt]: row.reversalCommand === "paper.attachPhoto",
         },
         true
       )

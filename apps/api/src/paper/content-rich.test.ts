@@ -1,12 +1,10 @@
 import {
-  blankCv,
-  blankLetter,
   nativeProvenance,
   nativeSyncOutputSchema,
   NATIVE_WRITER,
   RICH_NATIVE_WRITER,
   paperPhotoRef,
-  paperViewSchema,
+  paperDocumentInfoSchema,
   parseUserId,
   parsePaperId,
   richPaperDocumentSchema,
@@ -29,7 +27,7 @@ import {
   richFragment as fragment,
 } from "../test/rich-paper.js"
 import { seedColumns } from "./content-document.js"
-import { syncContent, withContent } from "./content-store.js"
+import { syncContent } from "./content-store.js"
 import { foldSettledLog } from "./content-compact.js"
 import { saveFile } from "./store.js"
 import { png } from "./photo.fixtures.js"
@@ -55,13 +53,8 @@ async function seeded(kind: "cv" | "letter") {
     purpose: "avatar",
   })
   const document = richPaper(kind, paperPhotoRef(file.id))
-  const view = paperViewSchema.parse(
-    (
-      await execute("paper.create", {
-        kind,
-        document: kind === "cv" ? blankCv() : blankLetter(),
-      })
-    ).output
+  const view = paperDocumentInfoSchema.parse(
+    (await execute("paper.create", { kind })).output
   )
   await getDb()
     .update(paperDocs)
@@ -173,18 +166,6 @@ describe("rich canonical Paper database admission", () => {
           provenance: undefined,
         })
       ).rejects.toThrow()
-      let called = false
-      await expect(
-        withContent(
-          owner,
-          docId,
-          async () => {
-            called = true
-          },
-          { writer: RICH_NATIVE_WRITER }
-        )
-      ).rejects.toThrow("rich Paper editor")
-      expect(called).toBe(false)
       await expect(
         store.registry.read(
           "paper.get",

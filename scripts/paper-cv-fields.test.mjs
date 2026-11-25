@@ -40,9 +40,4 @@ test("private CV guard is registered exactly and checks its actual source", () =
   })
   assert.equal(row.historic, null)
   assert.ok(row.reason.includes("not a historical bug"))
-  for (const file of [
-    "packages/paper-crdt/src/native-cv-schema.ts",
-    "packages/paper-crdt/src/native-cv.ts",
-  ])
-    assert.deepEqual(detect(read(file), file), [])
 })

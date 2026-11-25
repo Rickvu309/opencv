@@ -1,5 +1,6 @@
 import {
   PAPER_CANVAS_PROFILE,
+  RICH_NATIVE_WRITER,
   coachActor,
   commands,
   catalog,
@@ -72,7 +73,7 @@ const SNAPSHOT_QUERIES: {
   "inbox.list": () => [{}],
   "inbox.snoozed": () => [{}],
   "inbox.get": (ids) => ids.threads.map((threadId) => ({ threadId })),
-  "paper.list": () => [{}],
+  "paper.list": () => [{}, { writer: RICH_NATIVE_WRITER }],
   "paper.read": () => [{ view: "library" }],
   "paper.export": null,
   "paper.nativeWord": null,
@@ -81,18 +82,10 @@ const SNAPSHOT_QUERIES: {
   "paper.document": (ids) =>
     [...ids.docs, ...ids.minted].map((docId) => ({ docId })),
   "paper.isDeleted": (ids) => ids.minted.map((docId) => ({ docId })),
-  "paper.pageCount": (ids) => ids.docs.map((docId) => ({ docId })),
-  "paper.shared": (ids) => ids.tokens.map((token) => ({ token })),
   "file.get": (ids) => ids.files.map((fileId) => ({ fileId })),
   "paper.files": () => [{}],
   "paper.outline": (ids) =>
     [...ids.docs, ...ids.minted].map((docId) => ({ docId })),
-  "paper.keywordGap": (ids) =>
-    ids.docs.flatMap((docId) =>
-      ids.jobs
-        .filter((jobId) => ids.touchesPair(docId, jobId))
-        .map((jobId) => ({ docId, jobId }))
-    ),
   "profile.get": () => [{}],
   "integrations.list": () => [{}],
   "billing.get": () => [{}],
@@ -128,13 +121,7 @@ const EXEMPT_COMMANDS: Record<string, string> = {
 const PENDING_GAPS: Record<
   string,
   { issue: number; expires: string; reads: QueryName[] }
-> = {
-  "paper.sync": {
-    issue: 916,
-    expires: "2026-12-01",
-    reads: ["paper.get", "paper.list", "paper.outline"],
-  },
-}
+> = {}
 
 async function arrangedIds(
   db: TestDatabase,

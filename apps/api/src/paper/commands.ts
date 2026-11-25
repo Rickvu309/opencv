@@ -1,88 +1,41 @@
-import { randomBytes } from "node:crypto"
-
 import {
   catalog,
   ERROR_CODES,
   emptyRichPaper,
-  keywordGap,
-  PAPER_RECEIPT_CHANGE_LIMIT,
   paperContract,
-  paperEditSchema,
-  paperPhotoFileId,
-  paperPlainText,
-  parseFileId,
   RICH_NATIVE_WRITER,
-  type PaperDocument,
-  type PaperId,
 } from "@workspace/domain"
 
 import { bindCommands, tableQuery } from "../registry/bind.js"
 import { CommandError } from "../platform/errors.js"
 import type { Registry } from "../registry/registry.js"
-import { createId } from "../platform/id.js"
-import { editAsCoach, revertCoachEdit } from "./content-coach.js"
 import { registerCanvasCommit } from "./package-canvas.js"
 import { registerPaperStart } from "./package-start.js"
 import { registerWordPackageEdit } from "./package-edit.js"
 import { registerDuplicate, relinkJobs } from "./card-action-commands.js"
 import { isWordPageDeleted } from "./package-card-actions.js"
 import { missingDocument, ownedPackagePaper } from "./package-list.js"
-import { oldEditorUndoReasons, undoBlockedReasons } from "./undo-guard.js"
+import { oldEditorUndoReasons } from "./undo-guard.js"
 import { syncContent } from "./content-store.js"
 import { readOutline } from "./outline.js"
 import { readPaperDocumentInfo } from "./document-info.js"
 import { coachPaperList, coachWordPageWithText } from "./coach-word-pages.js"
 import {
-  attachPhoto,
   createPaper,
   deleteFile,
   deletePaper,
-  dismissCheck,
   restoreDeletedPaper,
-  keepTwoPages,
   listFiles,
   listPapers,
   ownedPaper,
-  pageCount,
   readFileMeta,
-  readShared,
   renamePaper,
   setPaperStatus,
   setPaperFavorite,
-  setPaperTemplate,
-  sharePaper,
-  toPaper,
-  unsharePaper,
 } from "./store.js"
-
-const newBlockId = () => `c${randomBytes(6).toString("base64url")}`
 
 const noReversal = () => null
 const noActivity = () => null
-
-function attachPhotoReversal(
-  input: { docId: PaperId },
-  output: { previousPaper?: PaperDocument }
-) {
-  const photo =
-    output.previousPaper?.kind === "cv"
-      ? output.previousPaper.header?.photo
-      : undefined
-  const fileId = paperPhotoFileId(photo)
-  return {
-    command: "paper.attachPhoto" as const,
-    input: {
-      docId: input.docId,
-      fileId: fileId ? parseFileId(fileId) : null,
-    },
-    expect: {
-      query: "paper.get" as const,
-      input: { docId: input.docId },
-      matches: { kind: "cv" as const },
-      skipped: "This photo changed again, so Undo was skipped",
-    },
-  }
-}
 
 function bytesOf(encoded: string) {
   return new Uint8Array(Buffer.from(encoded, "base64"))
@@ -93,14 +46,8 @@ function encoded(bytes: Uint8Array) {
 }
 
 export function registerPaper(registry: Registry) {
-  registry.addUndoGuard("paper.revertEdit", (userId, items) =>
-    undoBlockedReasons(
-      userId,
-      items.map((item) =>
-        paperContract["paper.revertEdit"].input.parse(item.input)
-      )
-    )
-  )
+  registry.addUndoGuard("paper.revertEdit", oldEditorUndoReasons)
+  registry.addUndoGuard("paper.attachPhoto", oldEditorUndoReasons)
   registry.addUndoGuard("paper.replace", oldEditorUndoReasons)
   registry.addUndoGuard("paper.restore", oldEditorUndoReasons)
   const {
@@ -143,19 +90,6 @@ export function registerPaper(registry: Registry) {
         summary: `Created ${output.name}`,
       }),
     },
-    "paper.revertEdit": {
-      handler: async (input, actor) => {
-        const result = await revertCoachEdit(
-          actor.userId,
-          input.docId,
-          input.editId,
-          input.writer
-        )
-        return { docId: input.docId, editId: input.editId, ...result }
-      },
-      reversal: noReversal,
-      activity: noActivity,
-    },
     "paper.nativeSync": {
       handler: async (input, actor) => {
         const reply = await syncContent(actor.userId, input.docId, {
@@ -173,26 +107,6 @@ export function registerPaper(registry: Registry) {
           )
         return {
           provenance: reply.provenance,
-          epoch: reply.epoch,
-          revision: reply.revision,
-          reset: reply.reset,
-          stale: reply.stale,
-          update: encoded(reply.update),
-          stateVector: encoded(reply.stateVector),
-        }
-      },
-      reversal: noReversal,
-      activity: noActivity,
-    },
-    "paper.sync": {
-      handler: async (input, actor) => {
-        const reply = await syncContent(actor.userId, input.docId, {
-          epoch: input.epoch,
-          update: bytesOf(input.update),
-          stateVector: bytesOf(input.stateVector),
-          basedOn: input.basedOn,
-        })
-        return {
           epoch: reply.epoch,
           revision: reply.revision,
           reset: reply.reset,
@@ -256,59 +170,11 @@ export function registerPaper(registry: Registry) {
       reversal: noReversal,
       activity: noActivity,
     },
-    "paper.setTemplate": {
-      handler: (input, actor) =>
-        setPaperTemplate(actor, input.docId, input.templateId),
-      reversal: (input, output) => ({
-        command: "paper.setTemplate",
-        input: {
-          docId: input.docId,
-          templateId: output.previousTemplateId ?? "simple",
-        },
-      }),
-      activity: noActivity,
-    },
-    "paper.share": {
-      handler: (input, actor) => sharePaper(actor, input.docId, input.writer),
-      reversal: (input) => ({
-        command: "paper.unshare",
-        input: {
-          docId: input.docId,
-          ...(input.writer ? { writer: input.writer } : {}),
-        },
-      }),
-      activity: noActivity,
-    },
-    "paper.unshare": {
-      handler: (input, actor) => unsharePaper(actor, input.docId, input.writer),
-      reversal: noReversal,
-      activity: noActivity,
-    },
-    "paper.dismissCheck": {
-      handler: (input, actor) =>
-        dismissCheck(actor, input.docId, input.checkId),
-      reversal: noReversal,
-      activity: noActivity,
-    },
-    "paper.keepTwoPages": {
-      handler: (input, actor) => keepTwoPages(actor, input.docId),
-      reversal: noReversal,
-      activity: noActivity,
-    },
     "paper.setStatus": {
       handler: (input, actor) =>
         setPaperStatus(actor, input.docId, input.status, input.writer),
       reversal: noReversal,
       activity: noActivity,
-    },
-    "paper.attachPhoto": {
-      handler: (input, actor) => attachPhoto(actor, input.docId, input.fileId),
-      reversal: attachPhotoReversal,
-      activity: (input, output) => ({
-        subjectKind: "paper",
-        subjectId: output.id,
-        summary: input.fileId ? "Added a photo" : "Removed a photo",
-      }),
     },
     "paper.deleteFile": {
       handler: (input, actor) => deleteFile(actor, input.fileId),
@@ -320,31 +186,7 @@ export function registerPaper(registry: Registry) {
   registerPaperStart(registry, paperStart)
   registerDuplicate(registry, paperDuplicate)
   registerWordPackageEdit(registry, paperEdit, async (input, actor) => {
-    if (typeof input.basedOn !== "number")
-      throw new CommandError(
-        ERROR_CODES.CONFLICT,
-        "This edit does not use a document revision."
-      )
-    const edits = paperEditSchema.array().min(1).parse(input.edits)
-    const result = await editAsCoach(
-      actor.userId,
-      input.docId,
-      {
-        basedOn: input.basedOn,
-        writer: input.writer,
-        nativeBasis: input.nativeBasis,
-        edits,
-        editId: createId(),
-        newId: newBlockId,
-      },
-      actor
-    )
-    const changes = result.changes.slice(0, PAPER_RECEIPT_CHANGE_LIMIT)
-    return {
-      ...result,
-      changes,
-      moreChanges: result.changes.length - changes.length,
-    }
+    return ownedPaper(actor.userId, input.docId)
   })
 
   registry.addQuery(
@@ -378,12 +220,7 @@ export function registerPaper(registry: Registry) {
       "Read one document. For a Word page this returns its saved text outline as content, not a document body; use paper_outline for line handles and the rest of a long page.",
     coach: true,
     step: (input) => `Read document ${input.docId}`,
-    read: async (input, actor) =>
-      toPaper(
-        await ownedPaper(actor.userId, input.docId, input.writer),
-        undefined,
-        input.writer
-      ),
+    read: async (input, actor) => ownedPaper(actor.userId, input.docId),
   })
   registry.addQuery({
     ...paperGet,
@@ -405,13 +242,7 @@ export function registerPaper(registry: Registry) {
       coach: true,
       step: () => "Read the document outline",
       read: (input, actor) =>
-        readOutline(
-          actor.userId,
-          input.docId,
-          input.blockIds,
-          input.cursor,
-          input.writer
-        ),
+        readOutline(actor.userId, input.docId, input.blockIds, input.cursor),
     })
   )
   registry.addQuery(
@@ -424,23 +255,6 @@ export function registerPaper(registry: Registry) {
         docId: input.docId,
         deleted: await isWordPageDeleted(actor.userId, input.docId),
       }),
-    })
-  )
-  registry.addQuery(
-    tableQuery("paper.pageCount", {
-      description: "Count pages in a document.",
-      coach: true,
-      step: () => "Count pages",
-      read: (input, actor) => pageCount(actor, input.docId, input.writer),
-    })
-  )
-  registry.addQuery(
-    tableQuery("paper.shared", {
-      description: "Read a shared document.",
-      coach: false,
-      step: () => "Read a shared document",
-      read: (input) => readShared(input.token, input.writer),
-      visitor: (input) => readShared(input.token, input.writer),
     })
   )
   registry.addQuery(
@@ -457,24 +271,6 @@ export function registerPaper(registry: Registry) {
       coach: false,
       step: () => "List files",
       read: (_input, actor) => listFiles(actor.userId),
-    })
-  )
-  registry.addQuery(
-    tableQuery("paper.keywordGap", {
-      description: "Find one requirement the letter does not mention.",
-      coach: true,
-      step: () => "Find a missing keyword",
-      read: async (input, actor) => {
-        const doc = toPaper(await ownedPaper(actor.userId, input.docId))
-        const job = (await registry.read(
-          catalog["job.get"].name,
-          { jobId: input.jobId },
-          actor
-        )) as { posting?: { requirements?: string } | null }
-        const letterText =
-          doc.paper.kind === "letter" ? paperPlainText(doc.paper) : ""
-        return keywordGap(letterText, job.posting?.requirements ?? "")
-      },
     })
   )
 }

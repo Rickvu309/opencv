@@ -33,8 +33,6 @@ const FROZEN_PENDING = [
   "paper.rename",
   "paper.replace",
   "paper.restore",
-  "paper.setTemplate",
-  "paper.share",
 ]
 
 describe("the reversal expectation pending list", () => {

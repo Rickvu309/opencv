@@ -102,50 +102,6 @@ export function detect(text, file = "document.ts") {
   return problems
 }
 
-export function detectHeaderEdit(text) {
-  const source = ts.createSourceFile(
-    "edits.ts",
-    text,
-    ts.ScriptTarget.Latest,
-    true
-  )
-  const edit = source.statements.find(
-    (node) =>
-      ts.isFunctionDeclaration(node) && node.name?.text === "setHeaderEdit"
-  )
-  const body = edit?.body?.getText(source) ?? ""
-  const creation = body.indexOf("work.header ??=")
-  const lookup = body.indexOf("find(work, context, HEADER_NODE_ID)")
-  return creation >= 0 && creation < lookup
-    ? []
-    : [
-        "setHeaderEdit must create an explicitly requested CV header before looking it up.",
-      ]
-}
-
-export function detectHeaderUndo(text) {
-  const source = ts.createSourceFile(
-    "undo.ts",
-    text,
-    ts.ScriptTarget.Latest,
-    true
-  )
-  const undo = source.statements.find(
-    (node) =>
-      ts.isFunctionDeclaration(node) && node.name?.text === "stripCreated"
-  )
-  const body = undo?.body?.getText(source) ?? ""
-  const deletion = body.indexOf("delete work.header")
-  const splice = body.indexOf("entry.list!.splice")
-  return body.includes('entry.owner === "header"') &&
-    deletion >= 0 &&
-    deletion < splice
-    ? []
-    : [
-        "Undo must remove a newly added CV header from the document header field.",
-      ]
-}
-
 export function detectHeaderRebase(text, file = "rebase.ts") {
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true)
   const problems = []

@@ -1,14 +1,7 @@
 export const REVERSAL_EXPECT_PENDING = {
   issue: 958,
   expires: "2026-12-15",
-  commands: [
-    "paper.create",
-    "paper.duplicate",
-    "paper.edit",
-    "paper.rename",
-    "paper.setTemplate",
-    "paper.share",
-  ],
+  commands: ["paper.create", "paper.duplicate", "paper.rename"],
 } as const
 
 export type ReversalExpectPending =

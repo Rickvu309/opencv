@@ -8,10 +8,6 @@ import {
   parsePaperId,
 } from "./ids.js"
 import {
-  legacyPaperDocumentSchema,
-  paperDocumentSchema,
-} from "./paper-doc/document.js"
-import {
   nativeBasisSchema,
   nativeWriterSchema,
   nativeSyncInputSchema,
@@ -29,24 +25,13 @@ import {
 } from "./paper-package.js"
 import { wordConfirmedOpsSchema } from "./paper-word.js"
 import {
-  paperSyncInputSchema,
-  paperSyncOutputSchema,
-} from "./paper-doc/sync.js"
-import {
-  paperAttachPhotoInputSchema,
   paperDeleteFileInputSchema,
   paperDeleteInputSchema,
-  paperDismissCheckInputSchema,
   paperDocNameSchema,
   paperDuplicateInputSchema,
-  paperKeepTwoPagesInputSchema,
   paperRenameInputSchema,
   paperSetStatusCommandInputSchema,
-  paperSetTemplateInputSchema,
-  paperShareInputSchema,
   paperStoredKindSchema,
-  paperTemplateIdSchema,
-  paperUnshareInputSchema,
 } from "./paper.js"
 import type { QueryRef } from "./queries.js"
 
@@ -82,8 +67,6 @@ const paperEditOutputSchema = z
   })
   .strict()
 
-export const PAPER_RECEIPT_CHANGE_LIMIT = MAX_RECEIPT_CHANGES
-
 type DocInput = { docId: z.output<typeof paperIdSchema> }
 
 const listChanged = (): QueryRef[] => [{ query: "paper.list" }]
@@ -91,47 +74,25 @@ const listChanged = (): QueryRef[] => [{ query: "paper.list" }]
 const docChanged = (input: DocInput): QueryRef[] => [
   { query: "paper.document", input: { docId: input.docId } },
   { query: "paper.get", input: { docId: input.docId } },
-  { query: "paper.pageCount", input: { docId: input.docId } },
   { query: "paper.outline", input: { docId: input.docId } },
-  { query: "paper.keywordGap", input: { docId: input.docId } },
   ...listChanged(),
 ]
 
 const docRemoved = docChanged
 
-const previousPaper = paperDocumentSchema.optional()
-
 const paperCreateInputSchema = z
   .object({
     kind: paperStoredKindSchema,
     format: z.literal("rich").optional(),
-    document: legacyPaperDocumentSchema.optional(),
-    templateId: paperTemplateIdSchema.optional(),
     name: paperDocNameSchema.optional(),
     jobId: jobIdSchema.optional(),
   })
   .strict()
-  .superRefine((input, context) => {
-    if (input.format === "rich" && (input.document || input.templateId)) {
-      context.addIssue({
-        code: "custom",
-        message: "A rich blank document cannot start from a template.",
-        path: ["format"],
-      })
-    }
-    if (input.document && input.document.kind !== input.kind) {
-      context.addIssue({
-        code: "custom",
-        message: "The document kind does not match.",
-        path: ["document"],
-      })
-    }
-  })
 
 export const paperContract = commandContract({
   "paper.create": commandEntry({
     description:
-      "Create a CV or letter. With format rich the new document is one empty paragraph that opens the full editor.",
+      "Create a CV or letter. The new document is one empty paragraph that opens the full editor.",
     input: paperCreateInputSchema,
     output: z.union([paperViewSchema, paperDocumentInfoSchema]),
     coach: "never",
@@ -206,28 +167,6 @@ export const paperContract = commandContract({
             ...listChanged(),
           ],
   }),
-  "paper.revertEdit": commandEntry({
-    description: "Take back one Coach edit and keep later typing.",
-    input: z
-      .object({
-        docId: paperIdSchema,
-        editId: editIdSchema,
-        writer: nativeWriterSchema.optional(),
-      })
-      .strict(),
-    output: z
-      .object({
-        docId: paperIdSchema,
-        revision: z.number().int(),
-        editId: editIdSchema,
-        reverted: z.boolean(),
-      })
-      .strict(),
-    coach: "never",
-    destructive: false,
-    step: () => "Undo a Coach edit",
-    invalidates: (input) => docChanged(input),
-  }),
   "paper.nativeSync": commandEntry({
     description:
       "Exchange admitted native document changes with explicit writer and provenance.",
@@ -237,18 +176,7 @@ export const paperContract = commandContract({
     coach: "never",
     destructive: false,
     step: () => "Sync the document",
-    invalidates: () => [],
-  }),
-  "paper.sync": commandEntry({
-    description:
-      "Exchange document changes with the server. A push carries the revision it is based on and the caller's state vector. The server absorbs it only at that revision; otherwise it answers stale with everything the caller lacks and absorbs nothing. A pull sends no update.",
-    input: paperSyncInputSchema,
-    output: paperSyncOutputSchema,
-    idempotency: "none",
-    coach: "never",
-    destructive: false,
-    step: () => "Sync the document",
-    invalidates: () => [],
+    invalidates: listChanged,
   }),
   "paper.rename": commandEntry({
     description: "Rename a document.",
@@ -317,58 +245,7 @@ export const paperContract = commandContract({
       { query: "paper.isDeleted", input: { docId: input.docId } },
     ],
   }),
-  "paper.setTemplate": commandEntry({
-    description: "Change the document template.",
-    input: paperSetTemplateInputSchema,
-    output: paperViewSchema
-      .extend({ previousTemplateId: paperTemplateIdSchema.nullable() })
-      .strict(),
-    coach: "auto",
-    destructive: false,
-    step: () => "Change the template",
-    invalidates: docChanged,
-  }),
-  "paper.share": commandEntry({
-    description: "Share a document.",
-    input: paperShareInputSchema
-      .extend({ writer: nativeWriterSchema.optional() })
-      .strict(),
-    output: z.object({ docId: paperIdSchema, token: z.string() }).strict(),
-    coach: "never",
-    destructive: false,
-    step: () => "Share the document",
-    invalidates: () => [],
-  }),
-  "paper.unshare": commandEntry({
-    description: "Stop sharing a document.",
-    input: paperUnshareInputSchema
-      .extend({ writer: nativeWriterSchema.optional() })
-      .strict(),
-    output: z.object({ docId: paperIdSchema }).strict(),
-    coach: "never",
-    destructive: false,
-    step: () => "Stop sharing",
-    invalidates: () => [{ query: "paper.shared" }],
-  }),
 
-  "paper.dismissCheck": commandEntry({
-    description: "Dismiss an import check.",
-    input: paperDismissCheckInputSchema,
-    output: paperViewSchema,
-    coach: "never",
-    destructive: false,
-    step: () => "Dismiss a check",
-    invalidates: docChanged,
-  }),
-  "paper.keepTwoPages": commandEntry({
-    description: "Keep a two-page document.",
-    input: paperKeepTwoPagesInputSchema,
-    output: paperViewSchema,
-    coach: "never",
-    destructive: false,
-    step: () => "Keep two pages",
-    invalidates: docChanged,
-  }),
   "paper.setStatus": commandEntry({
     description: "Set a document status.",
     input: paperSetStatusCommandInputSchema.extend({
@@ -378,15 +255,6 @@ export const paperContract = commandContract({
     coach: "never",
     destructive: false,
     step: () => "Set status",
-    invalidates: docChanged,
-  }),
-  "paper.attachPhoto": commandEntry({
-    description: "Attach an uploaded photo to a CV.",
-    input: paperAttachPhotoInputSchema,
-    output: paperViewSchema.extend({ previousPaper }).strict(),
-    coach: "auto",
-    destructive: false,
-    step: () => "Add a photo",
     invalidates: docChanged,
   }),
   "paper.deleteFile": commandEntry({

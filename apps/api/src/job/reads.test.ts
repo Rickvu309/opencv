@@ -1,3 +1,4 @@
+import { RICH_NATIVE_WRITER } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
 import {
@@ -144,7 +145,12 @@ describe("job reads", () => {
     expect(bad.error?.message).toBe("Use a from and to date.")
 
     const cvs = await jsonOf(
-      await app.request("/api/paper?kind=cv", { headers })
+      await app.request("/api/paper?kind=cv", {
+        headers: {
+          ...headers,
+          "x-paper-writer": JSON.stringify(RICH_NATIVE_WRITER),
+        },
+      })
     )
     const cvRows = cvs.data as unknown as { name: string; kind: string }[]
     expect(cvRows.map((row) => row.name)).toEqual(["Junior Marketing CV"])

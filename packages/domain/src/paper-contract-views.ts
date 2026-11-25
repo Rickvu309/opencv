@@ -10,7 +10,6 @@ import {
 } from "./paper-doc/native.js"
 import {
   paperDocStatusSchema,
-  paperKeywordGapInputSchema,
   paperStoredKindSchema,
   paperTemplateIdSchema,
 } from "./paper.js"
@@ -66,15 +65,6 @@ export const paperDocumentInfoSchema = z.discriminatedUnion("format", [
     .strict(),
 ])
 
-export const paperSharedViewSchema = paperViewSchema
-  .pick({ id: true, name: true, kind: true, templateId: true, paper: true })
-  .extend({
-    paper: paperDocumentSchema.refine((paper) => paper.clashes.length === 0),
-  })
-  .strict()
-
-export type PaperSharedView = z.output<typeof paperSharedViewSchema>
-
 export const PAPER_COACH_WORD_PAGE_NOTE =
   "This is a Word page. It has no document body in this result. Read its text with paper_outline before describing, reviewing or changing it."
 
@@ -100,14 +90,6 @@ const paperFileSchema = z
   .strict()
 
 export type PaperFile = z.output<typeof paperFileSchema>
-
-const paperPagesSchema = z
-  .object({
-    docId: paperIdSchema,
-    pages: z.number().int().positive(),
-    pageChoice: paperPageChoiceSchema,
-  })
-  .strict()
 
 const empty = z.object({}).strict()
 
@@ -140,21 +122,6 @@ export const paperQueries = queryContract({
     input: z.object({ docId: paperIdSchema }).strict(),
     output: z.object({ docId: paperIdSchema, deleted: z.boolean() }).strict(),
   }),
-  "paper.pageCount": queryEntry({
-    input: z
-      .object({ docId: paperIdSchema, writer: nativeWriterSchema.optional() })
-      .strict(),
-    output: paperPagesSchema,
-  }),
-  "paper.shared": queryEntry({
-    input: z
-      .object({
-        token: z.string().min(8),
-        writer: nativeWriterSchema.optional(),
-      })
-      .strict(),
-    output: paperSharedViewSchema,
-  }),
   "file.get": queryEntry({
     input: z.object({ fileId: fileIdSchema }).strict(),
     output: paperFileSchema.omit({ createdAt: true }),
@@ -183,12 +150,5 @@ export const paperQueries = queryContract({
         omittedChars: z.number().int().nonnegative().optional(),
       })
       .strict(),
-  }),
-  "paper.keywordGap": queryEntry({
-    input: paperKeywordGapInputSchema,
-    output: z
-      .object({ keyword: z.string(), sentence: z.string() })
-      .strict()
-      .nullable(),
   }),
 })
