@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-fixtures.test.ts",
+    "because": "Fewer production Paper modules remain after the old sync and share page are deleted, so the scan's lower bound drops; the cv:v1 and proof:v1 ban still runs on every remaining module.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
