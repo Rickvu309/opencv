@@ -3,7 +3,7 @@ import { describe, it } from "node:test"
 
 import fc from "fast-check"
 
-import { generateKeyBetween } from "./job-position.ts"
+import { generateKeyBetween } from "./apply/job-position.ts"
 
 type Step = { at: number; side: "before" | "after" | "between" }
 
