@@ -1,5 +1,7 @@
 import { operation } from "@workspace/domain/operations/paper/read"
 import type { OperationBinding } from "../../../registry/bind.js"
+import { parsePaperId } from "@workspace/domain"
+import { readPaperDocumentInfo } from "../../document-info.js"
 import { isWordPageDeleted } from "../../package-card-actions.js"
 import { packageFailure } from "../../package-pages.js"
 import { listWordPackages, readWordPackage } from "../../package-store.js"
@@ -24,6 +26,12 @@ export const implementation = {
     if (!("view" in input)) return readWordPackage(actor.userId, input)
     if (input.view === "lines") return readWordParagraphs(actor.userId, input)
     if (input.view === "trash") return trashState(actor.userId, input.docId)
+    if (input.view === "info")
+      return readPaperDocumentInfo(
+        actor.userId,
+        parsePaperId(input.docId),
+        input.writer
+      )
     return input.view === "page"
       ? readWordLines(actor.userId, input.docId, input.at)
       : listWordPackages(actor.userId, input.after)
@@ -35,4 +43,5 @@ export const implementation = {
   | Awaited<ReturnType<typeof readWordLines>>
   | Awaited<ReturnType<typeof readWordParagraphs>>
   | Awaited<ReturnType<typeof trashState>>
+  | Awaited<ReturnType<typeof readPaperDocumentInfo>>
 >

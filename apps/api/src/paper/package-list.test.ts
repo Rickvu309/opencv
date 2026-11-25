@@ -122,15 +122,12 @@ describe("Word pages in the document list", () => {
       ).toBe(false)
       const docId = parsePaperId(head.docId)
       await expect(
-        registry.read("paper.get", { docId }, personActor(owner))
-      ).rejects.toMatchObject({ code: "NOT_FOUND" })
-      await expect(
-        registry.read(
-          "paper.get",
-          { docId },
-          coachActor(owner, randomUUID(), "turn-1")
-        )
-      ).resolves.toMatchObject({ id: head.docId, name: "Page.docx" })
+        registry.read("paper.read", { view: "info", docId }, personActor(owner))
+      ).resolves.toMatchObject({
+        id: head.docId,
+        name: "Page.docx",
+        format: "word",
+      })
       const outline = await readOutline(ownerId, docId, undefined)
       expect(outline.revision).toBe(head.revision)
       expect(outline.outline).toContain("Harbor light")
@@ -142,15 +139,16 @@ describe("Word pages in the document list", () => {
       expect(importedOutline.outline).toContain("Harbor light")
       expect(importedOutline.outline).toMatch(/\[line [a-f0-9-]{36}\]/)
       await expect(
-        registry.read("paper.get", { docId: importedId }, personActor(owner))
-      ).rejects.toMatchObject({ code: "NOT_FOUND" })
-      await expect(
         registry.read(
-          "paper.get",
-          { docId: importedId },
-          coachActor(owner, randomUUID(), "turn-import")
+          "paper.read",
+          { view: "info", docId: importedId },
+          personActor(owner)
         )
-      ).resolves.toMatchObject({ id: imported.docId, name: "Imported.docx" })
+      ).resolves.toMatchObject({
+        id: imported.docId,
+        name: "Imported.docx",
+        format: "word",
+      })
       await expect(
         readOutline(parseUserId(stranger), docId, undefined)
       ).rejects.toMatchObject({ code: "NOT_FOUND" })

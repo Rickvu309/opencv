@@ -18,7 +18,7 @@ function tool(
 ): ChatEntryPart {
   return {
     type: "tool",
-    name: "paper.get",
+    name: "paper.read",
     summary: "Read",
     ok: true,
     toolCallId,
@@ -30,30 +30,30 @@ describe("coachProgressReducer", () => {
   it("joins a call to the step label emitted right before it", () => {
     const calls = fold([
       { type: "step", id: "step-1", label: "Read CV" },
-      { type: "call", id: "call-1", name: "paper.get" },
+      { type: "call", id: "call-1", name: "paper.read" },
     ])
     expect(calls).toEqual([
-      { kind: "call", id: "call-1", name: "paper.get", label: "Read CV" },
+      { kind: "call", id: "call-1", name: "paper.read", label: "Read CV" },
     ])
   })
 
   it("keeps repeated labels as separate calls", () => {
     const calls = fold([
       { type: "step", id: "step-1", label: "Read CV" },
-      { type: "call", id: "call-1", name: "paper.get" },
+      { type: "call", id: "call-1", name: "paper.read" },
       { type: "step", id: "step-2", label: "Read CV" },
-      { type: "call", id: "call-2", name: "paper.get" },
+      { type: "call", id: "call-2", name: "paper.read" },
     ])
     expect(calls.map((call) => call.id)).toEqual(["call-1", "call-2"])
   })
 
   it("ignores a call it already holds", () => {
-    const once = fold([{ type: "call", id: "call-1", name: "paper.get" }])
+    const once = fold([{ type: "call", id: "call-1", name: "paper.read" }])
     expect(
       coachProgressReducer(once, {
         type: "call",
         id: "call-1",
-        name: "paper.get",
+        name: "paper.read",
       })
     ).toBe(once)
   })
@@ -67,7 +67,7 @@ describe("coachProgressReducer", () => {
 describe("coachProgressRows", () => {
   const calls = fold([
     { type: "step", id: "step-1", label: "List documents" },
-    { type: "call", id: "a", name: "paper.get" },
+    { type: "call", id: "a", name: "paper.read" },
     { type: "step", id: "step-2", label: "List jobs" },
     { type: "call", id: "b", name: "job.list" },
   ])

@@ -241,13 +241,6 @@ describe("Coach is told the saved page and sends setText with a line handle from
       expect(grounding.focusDoc?.outline).toContain(
         `Saved revision ${imported.revision}`
       )
-      await expect(
-        registry.read(
-          "paper.get",
-          { docId: imported.docId },
-          personActor(owner)
-        )
-      ).rejects.toMatchObject({ code: "NOT_FOUND" })
       const listed = await registry.read("paper.list", {}, personActor(owner))
       expect(
         Array.isArray(listed)

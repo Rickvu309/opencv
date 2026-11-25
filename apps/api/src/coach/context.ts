@@ -78,18 +78,10 @@ async function paperFocus(
   docId: string,
   blockIds?: string[]
 ): Promise<CoachFocusDoc | null> {
-  let row: Record<string, unknown> | null
-  try {
-    row = record(
-      await registry.read("paper.get", { docId, writer: NATIVE_WRITER }, actor)
-    )
-  } catch (error) {
-    if (!missingDocument(error)) throw error
-    row = await listedPage(registry, actor, docId)
-    if (!row) row = await importedPackageRow(registry, actor, docId)
-    if (!row) throw error
-  }
-  if (!row) return null
+  const row =
+    (await listedPage(registry, actor, docId)) ??
+    (await importedPackageRow(registry, actor, docId))
+  if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
   const kind = row.kind
   if (kind !== "cv" && kind !== "letter" && kind !== "proof") return null
   const status =

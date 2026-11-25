@@ -49,8 +49,8 @@ async function jobField(userId: string, a: ExecuteResult, field: string) {
 
 async function paperName(userId: string, a: ExecuteResult) {
   const paper = await registry.read(
-    "paper.document",
-    { docId: idOf(a.output), writer: RICH_NATIVE_WRITER },
+    "paper.read",
+    { view: "info", docId: idOf(a.output), writer: RICH_NATIVE_WRITER },
     { type: "person", userId: parseUserId(userId) }
   )
   return text(paper, "name")

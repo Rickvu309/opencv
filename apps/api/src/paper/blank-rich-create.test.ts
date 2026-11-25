@@ -33,8 +33,8 @@ describe("paper.create format rich", () => {
           kind === "cv" ? "Untitled CV" : "Untitled Letter"
         )
         const document = (await registry.read(
-          "paper.document",
-          { docId: created.id, writer: RICH_NATIVE_WRITER },
+          "paper.read",
+          { view: "info", docId: created.id, writer: RICH_NATIVE_WRITER },
           actor
         )) as {
           format: "rich"

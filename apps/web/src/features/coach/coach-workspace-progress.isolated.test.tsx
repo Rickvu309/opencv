@@ -67,7 +67,7 @@ describe("Coach workspace shows streamed progress", () => {
     const a = step("List documents")
     const b = step("List jobs")
     await feed(a.event, a.data)
-    await feed(call("a", "paper.get").event, call("a", "paper.get").data)
+    await feed(call("a", "paper.read").event, call("a", "paper.read").data)
     await feed(b.event, b.data)
     await feed(call("b", "job.list").event, call("b", "job.list").data)
     const done = result("b", "job.list")

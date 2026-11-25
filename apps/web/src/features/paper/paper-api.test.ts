@@ -3,13 +3,12 @@ import { parsePaperId } from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { apiBaseUrl } from "@/lib/api-url.ts"
-import { runContractCommand } from "@/lib/contract-client.ts"
+import { queryKey, runContractCommand } from "@/lib/contract-client.ts"
 
 import {
   importPaperFile,
   listPaper,
   listPaperFiles,
-  paperGetKey,
   paperListKey,
 } from "./paper-api.ts"
 
@@ -22,6 +21,9 @@ const docId = parsePaperId("11111111-1111-4111-8111-111111111111")
 afterEach(() => {
   vi.unstubAllGlobals()
 })
+
+const paperInfoKey = (docId: string) =>
+  queryKey({ query: "paper.read", input: { view: "info", docId } })
 
 describe("paper API client", () => {
   it("reads a PDF import's note beside the Word page, and refuses a note inside it", async () => {
@@ -123,7 +125,7 @@ describe("paper commands through the contract client", () => {
       .mockResolvedValue(envelope({ id: docId, previousName: "Old" }))
     vi.stubGlobal("fetch", fetchMock)
     const queryClient = new QueryClient()
-    for (const key of [paperListKey(), paperGetKey(docId)]) {
+    for (const key of [paperListKey(), paperInfoKey(docId)]) {
       queryClient.setQueryData(key, { stale: true })
     }
 
@@ -134,7 +136,7 @@ describe("paper commands through the contract client", () => {
     expect(JSON.parse(String((call[1] as RequestInit).body))).toMatchObject({
       input: { docId },
     })
-    for (const key of [paperListKey(), paperGetKey(docId)]) {
+    for (const key of [paperListKey(), paperInfoKey(docId)]) {
       expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true)
     }
   })
@@ -142,7 +144,7 @@ describe("paper commands through the contract client", () => {
   it("leaves the cache alone when asked not to refresh, as autosave does", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(envelope({ id: docId })))
     const queryClient = new QueryClient()
-    queryClient.setQueryData(paperGetKey(docId), { stale: true })
+    queryClient.setQueryData(paperInfoKey(docId), { stale: true })
 
     await runContractCommand(
       queryClient,
@@ -151,7 +153,7 @@ describe("paper commands through the contract client", () => {
       { refresh: false }
     )
 
-    expect(queryClient.getQueryState(paperGetKey(docId))?.isInvalidated).toBe(
+    expect(queryClient.getQueryState(paperInfoKey(docId))?.isInvalidated).toBe(
       false
     )
   })

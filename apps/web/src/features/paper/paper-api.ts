@@ -11,7 +11,6 @@ import type {
   ChatDetail,
   ChatToolName,
   FileId,
-  PaperId,
   QueryOutput,
 } from "@workspace/domain"
 
@@ -23,15 +22,7 @@ import { tailCoachTask } from "@/lib/coach-task-client.ts"
 import type { CoachTaskState } from "@/lib/coach-task-state.ts"
 import { endpoints, fetchBinary } from "@/lib/requests.ts"
 
-import {
-  qualifiedPaperRead,
-  qualifiedPaperKey,
-  type PaperQualification,
-} from "@/lib/paper-qualification.ts"
-
 export const paperListKey = () => queryKey({ query: "paper.list" })
-export const paperGetKey = (docId: PaperId) =>
-  queryKey({ query: "paper.get", input: { docId } })
 export const paperFilesKey = () => queryKey({ query: "paper.files" })
 
 export function listPaper() {
@@ -49,25 +40,10 @@ export function listLibraryPaper() {
   }).then(unwrapData)
 }
 
-export function getPaper(docId: string) {
-  return apiFetch<SuccessBody<QueryOutput<"paper.get">>>(
-    endpoints.paperDoc(docId)
-  ).then(unwrapData)
-}
-
 export function listPaperFiles() {
   return apiFetch<SuccessBody<QueryOutput<"paper.files">>>(
     endpoints.paperFiles
   ).then(unwrapData)
-}
-
-export const qualifiedPaperGetKey = (
-  docId: PaperId,
-  options: PaperQualification
-) => qualifiedPaperKey(paperGetKey(docId), options)
-
-export function getQualifiedPaper(docId: string, options: PaperQualification) {
-  return qualifiedPaperRead("paper.get", endpoints.paperDoc(docId), options)
 }
 
 export class PaperLimitError extends Error {

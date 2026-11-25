@@ -55,7 +55,6 @@ const coachToolNames = [
   "paper.delete",
   "paper.duplicate",
   "paper.edit",
-  "paper.get",
   "paper.import",
   "paper.list",
   "paper.outline",

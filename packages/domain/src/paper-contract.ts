@@ -70,8 +70,7 @@ type DocInput = { docId: z.output<typeof paperIdSchema> }
 const listChanged = (): QueryRef[] => [{ query: "paper.list" }]
 
 const docChanged = (input: DocInput): QueryRef[] => [
-  { query: "paper.document", input: { docId: input.docId } },
-  { query: "paper.get", input: { docId: input.docId } },
+  { query: "paper.read", input: { view: "info", docId: input.docId } },
   { query: "paper.outline", input: { docId: input.docId } },
   ...listChanged(),
 ]
@@ -154,10 +153,6 @@ export const paperContract = commandContract({
       input.op === "mint"
         ? listChanged()
         : [
-            {
-              query: "paper.get",
-              input: { docId: parsePaperId(input.batch.doc) },
-            },
             {
               query: "paper.outline",
               input: { docId: parsePaperId(input.batch.doc) },

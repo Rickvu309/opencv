@@ -34,8 +34,8 @@ export const implementation = {
       ...(input.writer ? { writer: input.writer } : {}),
     },
     expect: {
-      query: "paper.document",
-      input: { docId: input.docId, writer: RICH_NATIVE_WRITER },
+      query: "paper.read",
+      input: { view: "info", docId: input.docId, writer: RICH_NATIVE_WRITER },
       matches: { name: result.name },
       skipped: "This Paper was renamed again, so Undo was skipped",
     },

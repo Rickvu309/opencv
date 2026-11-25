@@ -11,12 +11,7 @@ import {
 import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 
-import {
-  getPaper,
-  listPaper,
-  paperGetKey,
-  paperListKey,
-} from "@/features/paper/paper-api.ts"
+import { listPaper, paperListKey } from "@/features/paper/paper-api.ts"
 import { draftFromPage } from "@/features/paper-page/canvas-edit.ts"
 import { readWordPage } from "@/features/paper-page/package-read.ts"
 import { WritingPage } from "@/features/paper/writing-page.tsx"
@@ -83,13 +78,13 @@ export function PaperDocPage() {
   const document = useQuery({
     queryKey: ready
       ? qualifiedPaperKey(
-          queryKey({ query: "paper.document", input: { docId } }),
+          queryKey({ query: "paper.read", input: { view: "info", docId } }),
           qualification
         )
       : ["paper-document-unavailable", docId],
     queryFn: ({ signal }) =>
       qualifiedPaperRead(
-        "paper.document",
+        "paper.read",
         endpoints.paperDocument(docId ?? NO_DOC),
         {
           ...qualification,
@@ -197,18 +192,7 @@ function LegacyPaperDocPage() {
     listQuery.isError ||
     recheck.isSuccess ||
     recheck.isError
-  const docQuery = useQuery({
-    queryKey: paperGetKey(validId ?? NO_DOC),
-    queryFn: () => getPaper(docId),
-    enabled: validId !== null && kindKnown && !wordPage,
-    placeholderData: wordPage ? undefined : listed,
-  })
-  const docMissing =
-    !docQuery.data &&
-    docQuery.error instanceof ApiError &&
-    docQuery.error.code === ERROR_CODES.NOT_FOUND
-  const askWordPage =
-    validId !== null && (wordPage || (listQuery.isError && docMissing))
+  const askWordPage = validId !== null && (wordPage || listQuery.isError)
   const packageQuery = useQuery({
     queryKey: packageRead.queryKey,
     meta: packageRead.meta,
@@ -223,12 +207,7 @@ function LegacyPaperDocPage() {
     (session.isPending || (owner !== "" && packageQuery.isLoading))
   const back = () => void navigate({ to: SURFACE_PATHS.paper, search })
 
-  if (
-    (validId !== null && !kindKnown) ||
-    rechecking ||
-    docQuery.isLoading ||
-    packagePending
-  ) {
+  if ((validId !== null && !kindKnown) || rechecking || packagePending) {
     return (
       <section aria-label="Paper" className="p-4">
         <p role="status" className="text-sm text-muted-foreground">
@@ -237,63 +216,47 @@ function LegacyPaperDocPage() {
       </section>
     )
   }
-  if (wordPage || !docQuery.data) {
-    if (seeded && validId && packagePage) {
-      return (
-        <WritingPage
-          key={validId}
-          docId={validId}
-          title={listed?.name ?? packagePage.name}
-          kind={listed?.kind ?? packagePage.label}
-          editedAt={listed?.updatedAt ?? null}
-          onBack={back}
-          seed={seeded}
-          seedRevision={packagePage.revision}
-        />
-      )
-    }
-    const missing =
-      validId === null ||
-      (docMissing && (!listQuery.isError || packageQuery.isSuccess)) ||
-      (wordPage && packageQuery.isSuccess)
-    const retry = () =>
-      void retryPaperDocReads(queryClient, [
-        paperListKey(),
-        paperListRecheckKey(validId ?? NO_DOC),
-        paperGetKey(validId ?? NO_DOC),
-        packageRead.queryKey,
-      ])
+  if (seeded && validId && packagePage) {
     return (
-      <section
-        aria-label="Paper"
-        className="flex flex-col items-start gap-3 p-4"
-      >
-        <p>
-          {missing
-            ? "Document not found."
-            : "Could not load documents. Refresh the page."}
-        </p>
-        <div className="flex gap-2">
-          {missing ? null : (
-            <Button type="button" onClick={retry}>
-              Refresh
-            </Button>
-          )}
-          <Button type="button" variant="outline" onClick={back}>
-            Paper
-          </Button>
-        </div>
-      </section>
+      <WritingPage
+        key={validId}
+        docId={validId}
+        title={listed?.name ?? packagePage.name}
+        kind={listed?.kind ?? packagePage.label}
+        editedAt={listed?.updatedAt ?? null}
+        onBack={back}
+        seed={seeded}
+        seedRevision={packagePage.revision}
+      />
     )
   }
+  const missing =
+    validId === null ||
+    (!wordPage && (!listQuery.isError || packageQuery.isSuccess)) ||
+    (wordPage && packageQuery.isSuccess)
+  const retry = () =>
+    void retryPaperDocReads(queryClient, [
+      paperListKey(),
+      paperListRecheckKey(validId ?? NO_DOC),
+      packageRead.queryKey,
+    ])
   return (
     <section aria-label="Paper" className="flex flex-col items-start gap-3 p-4">
       <p>
-        This Paper was saved in an older format that can no longer be opened.
+        {missing
+          ? "Document not found."
+          : "Could not load documents. Refresh the page."}
       </p>
-      <Button type="button" variant="outline" onClick={back}>
-        Paper
-      </Button>
+      <div className="flex gap-2">
+        {missing ? null : (
+          <Button type="button" onClick={retry}>
+            Refresh
+          </Button>
+        )}
+        <Button type="button" variant="outline" onClick={back}>
+          Paper
+        </Button>
+      </div>
     </section>
   )
 }

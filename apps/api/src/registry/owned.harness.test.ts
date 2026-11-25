@@ -135,7 +135,7 @@ class OwnedWatch {
 
   private read(name: string, input: Record<string, unknown>, userId: string) {
     const qualified =
-      name === "paper.list" || name === "paper.get" || name === "paper.document"
+      name === "paper.list" || (name === "paper.read" && input.view === "info")
         ? { ...input, writer: RICH_NATIVE_WRITER }
         : input
     return this.registry.read(name, qualified, personActor(userId))

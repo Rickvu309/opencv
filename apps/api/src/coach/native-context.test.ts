@@ -59,7 +59,7 @@ function resolve(read: Registry["read"]) {
 
 it("takes revision and basis from the same outline despite older metadata", async () => {
   const read = vi.fn<Registry["read"]>(async (name) =>
-    name === "paper.get" ? metadata : outline
+    name === "paper.list" ? [metadata] : outline
   )
   const result = await resolve(read)
   expect(result.focusDoc).toMatchObject({
@@ -68,7 +68,7 @@ it("takes revision and basis from the same outline despite older metadata", asyn
     outline: outline.outline,
   })
   expect(read.mock.calls).toEqual([
-    ["paper.get", { docId, writer: NATIVE_WRITER }, actor],
+    ["paper.list", { writer: NATIVE_WRITER }, actor],
     [
       "paper.outline",
       { docId, blockIds: undefined, writer: NATIVE_WRITER },
@@ -90,7 +90,7 @@ it.each([undefined, { ...basis, digest: "bad" }, { ...basis, revision: 7 }])(
   async (nativeBasis) => {
     await expect(
       resolve(async (name) =>
-        name === "paper.get" ? metadata : { ...outline, nativeBasis }
+        name === "paper.list" ? [metadata] : { ...outline, nativeBasis }
       )
     ).rejects.toThrow()
   }
@@ -111,8 +111,6 @@ it.each([
 it("permits only missing block storage to fall back to Word and keeps its UUID revision", async () => {
   const revision = "01990b00-0000-7000-8000-000000000002"
   const read = vi.fn<Registry["read"]>(async (name) => {
-    if (name === "paper.get")
-      throw new CommandError(ERROR_CODES.NOT_FOUND, "Missing")
     if (name === "paper.list") return []
     if (name === "paper.read")
       return {
@@ -144,7 +142,7 @@ it("keeps a missing or unowned document missing", async () => {
 
 it("grounds selected attachments without taking authority from caller content", async () => {
   const read = vi.fn<Registry["read"]>(async (name) =>
-    name === "paper.get" ? metadata : outline
+    name === "paper.list" ? [metadata] : outline
   )
   const result = await resolveTurnGrounding({
     registry: Object.assign(new Registry(), { read }),
@@ -166,8 +164,8 @@ it("grounds selected attachments without taking authority from caller content", 
 
 it("leaves legacy numeric proposals unqualified", async () => {
   const result = await resolve(async (name) =>
-    name === "paper.get"
-      ? { ...metadata, paper: { version: 3 }, nativeBasis: undefined }
+    name === "paper.list"
+      ? [{ ...metadata, paper: { version: 3 }, nativeBasis: undefined }]
       : { outline: "Letter\n[p1] Legacy", revision: 4 }
   )
   const input = fakePaperEdit(result.focusDoc!)

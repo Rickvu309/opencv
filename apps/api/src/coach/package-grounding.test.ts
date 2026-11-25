@@ -63,9 +63,6 @@ describe("Coach grounding on a minted page", () => {
       )
       expect(grounding.note).toContain("Open document: Cover letter (letter).")
       await expect(
-        registry.read("paper.get", { docId: minted.docId }, personActor(owner))
-      ).rejects.toMatchObject({ code: "NOT_FOUND" })
-      await expect(
         resolveTurnGrounding({
           registry,
           actor: personActor(stranger),

@@ -71,8 +71,8 @@ export const OWNED_READS: { [T in OwnedTable]: OwnedReads } = {
   paperPackageTrash: { ...hidden, idOf: byDoc },
   paperDocs: {
     list: "paper.list",
-    open: "paper.document",
-    openInput: (docId) => ({ docId }),
+    open: "paper.read",
+    openInput: (docId) => ({ view: "info", docId }),
     idOf: byId,
   },
   jobs: {

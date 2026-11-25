@@ -389,20 +389,11 @@ export function createPaperRoutes(signedIn: SignedIn) {
 
   routes.get("/:id/document", async (c) => {
     const data = await registry.read(
-      "paper.document",
-      { docId: c.req.param("id"), writer: readWriter(c) },
+      "paper.read",
+      { view: "info", docId: c.req.param("id"), writer: readWriter(c) },
       person(c.var.userId)
     )
     c.header("Cache-Control", "private, no-store")
-    return c.json(successEnvelope(data))
-  })
-
-  routes.get("/:id", async (c) => {
-    const data = await registry.read(
-      "paper.get",
-      { docId: c.req.param("id"), writer: readWriter(c) },
-      person(c.var.userId)
-    )
     return c.json(successEnvelope(data))
   })
 

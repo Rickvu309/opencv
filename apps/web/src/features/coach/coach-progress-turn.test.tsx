@@ -68,7 +68,7 @@ describe("Coach Working progress from real stream events", () => {
     await start()
     await feed(
       step("List documents"),
-      call("a", "paper.get"),
+      call("a", "paper.read"),
       step("List jobs"),
       call("b", "job.list")
     )
@@ -78,7 +78,7 @@ describe("Coach Working progress from real stream events", () => {
       "List documents:running",
       "List jobs:completed",
     ])
-    await feed(result("a", "paper.get"))
+    await feed(result("a", "paper.read"))
     expect(statuses()).toEqual([
       "List documents:completed",
       "List jobs:completed",
@@ -90,10 +90,10 @@ describe("Coach Working progress from real stream events", () => {
     await start()
     await feed(
       step("Read document"),
-      call("c1", "paper.get"),
+      call("c1", "paper.read"),
       step("Read document"),
-      call("c2", "paper.get"),
-      result("c2", "paper.get")
+      call("c2", "paper.read"),
+      result("c2", "paper.read")
     )
     expect(statuses()).toEqual([
       "Read document:running",
@@ -127,10 +127,10 @@ describe("Coach Working progress from real stream events", () => {
     await start()
     await feed(
       step("Read document"),
-      call("a", "paper.get"),
+      call("a", "paper.read"),
       step("List jobs"),
       call("b", "job.list"),
-      result("a", "paper.get", {
+      result("a", "paper.read", {
         ok: false,
         result: { ok: false, error: { code: "NOT_FOUND", message: "Gone" } },
       })
@@ -148,7 +148,7 @@ describe("Coach Working progress from real stream events", () => {
   it("settles inactive once the turn ends", async () => {
     const { hook, turn, feed, start } = setup()
     await start()
-    await feed(step("Read"), call("a", "paper.get"), result("a", "paper.get"))
+    await feed(step("Read"), call("a", "paper.read"), result("a", "paper.read"))
     await feed({ event: "message-end", data: { chatId: "c" } })
     await act(async () => {
       turn.close()

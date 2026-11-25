@@ -232,7 +232,7 @@ describe("card menu actions on a Word page", () => {
         registry.read("paper.read", { docId: page.docId }, person)
       ).rejects.toMatchObject({ code: "NOT_FOUND" })
       await expect(
-        registry.read("paper.get", { docId: page.docId }, coach)
+        registry.read("paper.outline", { docId: page.docId }, coach)
       ).rejects.toMatchObject({ code: "NOT_FOUND" })
       const unlinked = (await registry.read("job.get", { jobId }, person)) as {
         linked: { cv: unknown }
@@ -369,22 +369,17 @@ describe("the Coach's list and get tools on a Word page", () => {
         note: PAPER_COACH_WORD_PAGE_NOTE,
       })
       expect(item).not.toHaveProperty("paper")
-      const got = (await registry.read(
-        "paper.get",
+      const outline = (await registry.read(
+        "paper.outline",
         { docId: page.docId },
         coach
       )) as Record<string, unknown>
-      expect(got).not.toHaveProperty("paper")
-      expect(got.format).toBe("word")
-      expect(String(got.content)).toContain("Harbor light")
+      expect(String(outline.outline)).toContain("Harbor light")
       const forPerson = (await listed()).find((row) => row.id === page.docId)
       expect(forPerson).toHaveProperty("paper")
       const tools = await registry.tools(coach)
       expect(
         tools.find((tool) => tool.name === "paper.list")?.description
-      ).toContain("paper_outline")
-      expect(
-        tools.find((tool) => tool.name === "paper.get")?.description
       ).toContain("paper_outline")
     }))
 })

@@ -155,7 +155,7 @@ describe("opening a document from its link", () => {
     const client = open(`/paper/${WORD_PAGE}`)
     expect(await screen.findByRole("article", { name: "Page" })).toBeVisible()
     await refreshQueries(client, [
-      { query: "paper.document", input: { docId: WORD_PAGE } },
+      { query: "paper.read", input: { view: "info", docId: WORD_PAGE } },
     ])
     expect(
       paperRequests(exchanges).filter(

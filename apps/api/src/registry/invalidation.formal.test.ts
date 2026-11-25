@@ -77,13 +77,10 @@ const SNAPSHOT_QUERIES: {
   "paper.read": (ids) => [
     { view: "library" },
     ...ids.minted.map((docId) => ({ view: "trash", docId })),
+    ...[...ids.docs, ...ids.minted].map((docId) => ({ view: "info", docId })),
   ],
   "paper.export": null,
   "paper.nativeWord": null,
-  "paper.get": (ids) =>
-    [...ids.docs, ...ids.minted].map((docId) => ({ docId })),
-  "paper.document": (ids) =>
-    [...ids.docs, ...ids.minted].map((docId) => ({ docId })),
   "file.get": (ids) => ids.files.map((fileId) => ({ fileId })),
   "paper.files": () => [{}],
   "paper.outline": (ids) =>
@@ -196,19 +193,10 @@ function keyOf(spec: ReadSpec) {
 }
 
 function specsFor(ids: Ids): ReadSpec[] {
-  const minted = new Set(ids.minted)
   return (Object.keys(SNAPSHOT_QUERIES) as QueryName[]).flatMap((query) => {
     const inputs = SNAPSHOT_QUERIES[query]
     if (!inputs) return []
-    return inputs(ids).map((input) => ({
-      query,
-      input,
-      ...(query === "paper.get" &&
-      typeof input.docId === "string" &&
-      minted.has(input.docId)
-        ? { asCoach: true }
-        : {}),
-    }))
+    return inputs(ids).map((input) => ({ query, input }))
   })
 }
 
@@ -531,16 +519,12 @@ describe("every changed read is named by the command that changed it", () => {
     expect(gapsIn([...acts, ...reversals], invalidatesTable())).toEqual([])
   })
 
-  it("a later page write changes the minted outline and Coach document read", () => {
+  it("a later page write changes the minted outline", () => {
     const changed = acts
       .filter((entry) => entry.command === "paper.canvas")
       .flatMap((entry) => entry.changed)
     const outline = changed.find((spec) => spec.query === "paper.outline")
-    const coachGet = changed.find(
-      (spec) => spec.query === "paper.get" && spec.asCoach
-    )
     expect(typeof outline?.input.docId).toBe("string")
-    expect(coachGet?.input.docId).toBe(outline?.input.docId)
   })
 
   it("R2: an undo changes only reads that activity.undo refreshes", () => {
