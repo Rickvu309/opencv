@@ -1,7 +1,7 @@
 import { z } from "zod"
 
 import { queryContract, queryEntry } from "../contract.js"
-import { fileIdSchema, paperIdSchema } from "../ids.js"
+import { fileIdSchema, paperIdSchema, type FileId } from "../ids.js"
 import { paperDocumentSchema } from "./document.js"
 import {
   nativeBasisSchema,
@@ -79,17 +79,13 @@ export const paperCoachWordPageSchema = paperViewSchema
 
 export type PaperCoachWordPage = z.output<typeof paperCoachWordPageSchema>
 
-const paperFileSchema = z
-  .object({
-    id: fileIdSchema,
-    name: z.string(),
-    mediaType: z.string(),
-    byteSize: z.number().int(),
-    createdAt: z.string().datetime(),
-  })
-  .strict()
-
-export type PaperFile = z.output<typeof paperFileSchema>
+export type PaperFile = {
+  id: FileId
+  name: string
+  mediaType: string
+  byteSize: number
+  createdAt: string
+}
 
 const blockIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/)
 
