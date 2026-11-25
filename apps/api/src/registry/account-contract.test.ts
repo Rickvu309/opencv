@@ -19,6 +19,7 @@ const accountQueries = {
     output: catalog["integrations.list"].publicResult,
   },
   "billing.get": { output: catalog["billing.get"].publicResult },
+  "coach.usage": { output: catalog["coach.usage"].publicResult },
 }
 
 const accountCommands = {

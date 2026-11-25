@@ -9,6 +9,7 @@ import { fireEvent, screen } from "@testing-library/react"
 import { PaperLetterStart } from "@/features/paper/paper-letter.tsx"
 
 import { startedChat } from "./chat-fixtures.ts"
+import { coachUsageSnapshot } from "./coach-task-fixture.ts"
 import { render } from "./render-with-client.tsx"
 
 export const job: JobView = {
@@ -85,8 +86,8 @@ export function installFetch(mode: "tool" | "stop" | "limit") {
     }
     if (url.includes("/api/paper/letter-1")) return Promise.resolve(ok(letter))
     if (url.includes("/stop")) return Promise.resolve(ok({}))
-    if (url.includes("/api/coach/usage")) {
-      return Promise.resolve(ok({ resetsAt: "2026-10-28T09:00:00.000Z" }))
+    if (url.includes("/api/reads/coach.usage")) {
+      return Promise.resolve(ok(coachUsageSnapshot("2026-10-28T09:00:00.000Z")))
     }
     if (url.includes("/turns")) {
       if (mode === "limit") {

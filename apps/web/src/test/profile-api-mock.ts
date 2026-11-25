@@ -199,7 +199,7 @@ export function handlesProfileRequest(input: RequestInfo | URL) {
     path === "/api/commands/account.delete" ||
     path === "/api/reads/integrations.list" ||
     path === "/api/reads/billing.get" ||
-    path === "/api/coach/usage" ||
+    path === "/api/reads/coach.usage" ||
     path === "/api/account/export" ||
     path === "/api/account/photo" ||
     path === "/api/inbox/connect"
@@ -379,7 +379,7 @@ export async function profileApiFetch(
     })
   }
 
-  if (method === "GET" && path === "/api/coach/usage") {
+  if (method === "POST" && path === "/api/reads/coach.usage") {
     return jsonOk(usagePayload())
   }
 

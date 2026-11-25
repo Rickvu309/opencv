@@ -117,7 +117,7 @@ it("shows and stops an unfinished durable task while the server admits only lega
         events?.close()
         return Response.json({ ok: true, data: { stopped: true } })
       }
-      if (path.includes("/coach/tasks/")) {
+      if (path.includes("/coach/tasks/") || path.endsWith("coach.status")) {
         if (path.endsWith("events"))
           return new Response(
             new ReadableStream<Uint8Array>({

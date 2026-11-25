@@ -1,16 +1,15 @@
 import type { QueryClient } from "@tanstack/react-query"
 import {
+  catalog,
   coachConfigSchema,
   coachTaskEventSchema,
   coachTaskReplaySchema,
-  coachTaskSnapshotSchema,
   chatToolNameSchema,
   type CoachStartInput,
 } from "@workspace/domain"
 
 import { completeCoachStop } from "@/lib/coach-stop-registry.ts"
-import { apiRequest, apiFetch } from "@/lib/api.ts"
-import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
+import { apiRequest } from "@/lib/api.ts"
 import { catalogClient, refreshReads } from "@/lib/contract-client.ts"
 import { endpoints } from "@/lib/requests.ts"
 import { createToolRefresher } from "@/lib/coach-stream.ts"
@@ -67,12 +66,12 @@ export async function startCoachTask(
   return started
 }
 
-async function getSnapshot(taskId: string, signal: AbortSignal) {
-  const body = await apiFetch<SuccessBody<unknown>>(
-    endpoints.coachTask(taskId),
+function getSnapshot(taskId: string, signal: AbortSignal) {
+  return catalogClient.read(
+    catalog["coach.status"].name,
+    { taskId },
     { signal }
   )
-  return coachTaskSnapshotSchema.parse(unwrapData(body))
 }
 
 function retryAfterDisconnect(signal: AbortSignal) {

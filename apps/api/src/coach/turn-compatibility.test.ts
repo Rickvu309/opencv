@@ -8,6 +8,7 @@ import { chatMessages, coachTasks, pendingActions } from "../db/schema.js"
 import { installRegistry } from "../install.js"
 import {
   authHeaders,
+  readAs,
   createMigratedTestDb,
   createTestApp,
   signUp,
@@ -365,9 +366,9 @@ for (const state of [
           body: JSON.stringify({ text: "Legacy after rollback" }),
         })
       expect((await turn()).status).toBe(409)
-      const read = await legacy.request(`/api/coach/tasks/${task!.id}`, {
-        headers: authHeaders(owner.cookie),
-      })
+      const read = await legacy.request(
+        readAs(owner.cookie, "coach.status", { taskId: task!.id })
+      )
       expect(read.status).toBe(200)
       const detail = await legacy.request(`/api/chats/${chatId}`, {
         headers: authHeaders(owner.cookie),

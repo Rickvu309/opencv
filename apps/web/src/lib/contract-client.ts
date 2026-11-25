@@ -200,6 +200,25 @@ export function createCatalogClient<const C extends Record<string, Operation>>(
       catalog[name]!.input.parse(input) as z.output<C[N]["input"]>,
     ] as const
   }
+  async function read<N extends ReadName<C>>(
+    name: N,
+    input: OperationInput<C[N]>,
+    readOptions: { signal?: AbortSignal } = {}
+  ): Promise<OperationOutput<C[N]>> {
+    const operation = catalog[name]!
+    if (operation.kind !== "read") throw new Error("Expected catalog read")
+    const body = await apiFetch<SuccessBody<unknown>>(
+      endpoints.catalogRead(name),
+      {
+        method: "POST",
+        body: JSON.stringify(input),
+        ...(readOptions.signal ? { signal: readOptions.signal } : {}),
+      }
+    )
+    return operation.publicResult.parse(unwrapData(body)) as OperationOutput<
+      C[N]
+    >
+  }
   function options<N extends ReadName<C>>(
     ownerId: string,
     name: N,
@@ -219,15 +238,8 @@ export function createCatalogClient<const C extends Record<string, Operation>>(
             ...(entityId ? { entityId } : {}),
           })),
       },
-      queryFn: async ({ signal }): Promise<OperationOutput<C[N]>> => {
-        const body = await apiFetch<SuccessBody<unknown>>(
-          endpoints.catalogRead(name),
-          { method: "POST", body: JSON.stringify(input), signal }
-        )
-        return operation.publicResult.parse(
-          unwrapData(body)
-        ) as OperationOutput<C[N]>
-      },
+      queryFn: ({ signal }): Promise<OperationOutput<C[N]>> =>
+        read(name, input, { signal }),
     })
   }
   async function run<N extends WriteName<C>>(
@@ -287,7 +299,7 @@ export function createCatalogClient<const C extends Record<string, Operation>>(
   ) {
     return useQuery(options(ownerId, name, input))
   }
-  return { key, options, run, useRead }
+  return { key, options, read, run, useRead }
 }
 
 export const catalogClient = createCatalogClient(catalog)

@@ -1,29 +1,14 @@
-import {
-  coachTaskEventsInputSchema,
-  coachTaskStatusInputSchema,
-} from "@workspace/domain"
+import { coachTaskEventsInputSchema } from "@workspace/domain"
 import { Hono } from "hono"
 import { streamSSE } from "hono/streaming"
 import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"
 import { CommandError } from "../platform/errors.js"
-import { readTaskEvents, taskSnapshot } from "./task-reader.js"
+import { readTaskEvents } from "./task-reader.js"
 import { idleUntilAbort, waitForAbort } from "./sse.js"
 
 export function createCoachTaskRoutes(options: { signedIn: SignedIn }) {
   const routes = new Hono<{ Variables: SignedInVariables }>()
   routes.use("*", options.signedIn)
-  routes.get("/:id", async (c) => {
-    const input = coachTaskStatusInputSchema.safeParse({
-      taskId: c.req.param("id"),
-    })
-    if (!input.success)
-      throw new CommandError("VALIDATION_ERROR", "Invalid task id")
-    c.header("Cache-Control", "no-store")
-    return c.json({
-      ok: true,
-      data: await taskSnapshot(input.data.taskId, c.var.userId),
-    })
-  })
   routes.get("/:id/events", async (c) => {
     const raw = c.req.header("Last-Event-ID") ?? c.req.query("after")
     if (raw !== undefined && !/^(?:-1|0|[1-9][0-9]*)$/.test(raw))

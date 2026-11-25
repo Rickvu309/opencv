@@ -103,8 +103,10 @@ async function setup() {
     return coachStartOutputSchema.parse(envelope.parse(await res.json()).data)
   }
   const status = async (taskId: string) => {
-    const res = await app.request(`/api/coach/tasks/${taskId}`, {
+    const res = await app.request("/api/reads/coach.status", {
+      method: "POST",
       headers: authHeaders(owner.cookie),
+      body: JSON.stringify({ taskId }),
     })
     expect(res.status).toBe(200)
     return coachTaskSnapshotSchema.parse(envelope.parse(await res.json()).data)
@@ -311,8 +313,10 @@ it("checks the owner on every status, replay and Stop connection", () =>
     const { taskId } = await start()
     expect(
       (
-        await app.request(`/api/coach/tasks/${taskId}`, {
+        await app.request("/api/reads/coach.status", {
+          method: "POST",
           headers: authHeaders(foreign.cookie),
+          body: JSON.stringify({ taskId }),
         })
       ).status
     ).toBe(404)
@@ -329,7 +333,15 @@ it("checks the owner on every status, replay and Stop connection", () =>
         )
       ).status
     ).toBe(404)
-    expect((await app.request(`/api/coach/tasks/${taskId}`)).status).toBe(401)
+    expect(
+      (
+        await app.request("/api/reads/coach.status", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ taskId }),
+        })
+      ).status
+    ).toBe(401)
     expect((await status(taskId)).cancelRequestedAt).toBeNull()
   }))
 
@@ -395,8 +407,10 @@ it("rejects malformed cursors and keeps accepted tasks readable after rollback",
     ).toBe(404)
     expect(
       (
-        await app.request(`/api/coach/tasks/${taskId}`, {
+        await app.request("/api/reads/coach.status", {
+          method: "POST",
           headers: authHeaders(owner.cookie),
+          body: JSON.stringify({ taskId }),
         })
       ).status
     ).toBe(200)

@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query"
 import type { Profile, ProfileUpdateInput } from "@workspace/domain"
 import { FileText, Mail, MessageCircle, Mic } from "lucide-react"
 import { Switch } from "@workspace/ui/components/switch"
@@ -15,7 +14,8 @@ import {
   weekUsageLabel,
   type SettingsSave,
 } from "./settings-api.ts"
-import { fetchUsage, usageKey } from "@/lib/account-api.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
+import { useOwnerId } from "@/lib/owner-id.ts"
 
 const AGENTS = [
   {
@@ -51,10 +51,7 @@ export function CoachSection({
   error,
   onSave,
 }: SettingsSave & { profile: Profile }) {
-  const usage = useQuery({
-    queryKey: usageKey(),
-    queryFn: fetchUsage,
-  })
+  const usage = catalogClient.useRead(useOwnerId(), "coach.usage", {})
   const week = usage.data?.week
   return (
     <>

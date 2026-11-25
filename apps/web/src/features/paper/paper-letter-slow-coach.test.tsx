@@ -184,7 +184,7 @@ function installSlowCoach(ending: {
         })
       )
     }
-    if (url.includes(`/api/coach/tasks/${TASK}`)) {
+    if (url.includes("/api/reads/coach.status")) {
       snapshots += 1
       return ok(
         snapshots === 1

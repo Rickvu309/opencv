@@ -275,7 +275,6 @@ export const ROUTE_CASES: readonly RouteCase[] = [
   get("/.well-known/oauth-protected-resource/mcp"),
   get("/api/public-config"),
   get("/api/session"),
-  get("/api/coach/tasks/:id", async () => ({ id: randomUUID() })),
   get("/api/coach/tasks/:id/events", async () => ({ id: randomUUID() })),
   get("/api/chats"),
   get("/api/chats/:id", chat),
@@ -285,7 +284,6 @@ export const ROUTE_CASES: readonly RouteCase[] = [
     () => ({ message: "Hello", requestId: randomUUID() }),
     chat
   ),
-  get("/api/coach/usage"),
   stageCase,
   get("/api/paper/packages"),
   get("/api/paper/packages/:docId/read", mintedPage),

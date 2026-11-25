@@ -4,7 +4,12 @@ import { createElement, StrictMode, useReducer, type ReactNode } from "react"
 import { afterEach, expect, it, vi } from "vitest"
 
 import { chatApiFetchOrThrow, setMockChats } from "@/test/chat-api-mock.ts"
-import { CHAT, TASK, taskSnapshot } from "@/test/coach-task-fixture.ts"
+import {
+  taskPathOf,
+  CHAT,
+  TASK,
+  taskSnapshot,
+} from "@/test/coach-task-fixture.ts"
 import { STREAMING_COACH_ID } from "./chat-messages.ts"
 import { fulfillCoachStop as reviewFulfill } from "./coach-stop-obligations.ts"
 import { useCoachTask } from "./use-coach-task.ts"
@@ -63,7 +68,7 @@ function reviewFetch(
   vi.stubGlobal(
     "fetch",
     async (input: RequestInfo | URL, init?: RequestInit) => {
-      const path = new URL(String(input)).pathname
+      const path = taskPathOf(input, init)
       const response = await handler(
         path,
         () => JSON.parse(String(init?.body)).input

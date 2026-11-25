@@ -119,16 +119,3 @@ export function createActivityRoutes(signedIn: SignedIn) {
   })
   return routes
 }
-
-export function createUsageRoutes(signedIn: SignedIn) {
-  const routes = sessionApp(signedIn)
-  routes.get("/usage", async (c) => {
-    const data = await registry.read(
-      "coach.usage",
-      {},
-      personActor(c.var.userId)
-    )
-    return c.json(successEnvelope(data))
-  })
-  return routes
-}

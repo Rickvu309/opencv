@@ -96,8 +96,10 @@ async function setup() {
     return coachStartOutputSchema.parse(envelope.parse(await res.json()).data)
   }
   const status = async (taskId: string) => {
-    const res = await app.request(`/api/coach/tasks/${taskId}`, {
+    const res = await app.request("/api/reads/coach.status", {
+      method: "POST",
       headers: authHeaders(owner.cookie),
+      body: JSON.stringify({ taskId }),
     })
     expect(res.status).toBe(200)
     return coachTaskSnapshotSchema.parse(envelope.parse(await res.json()).data)

@@ -22,15 +22,11 @@ import {
   DialogDescription,
 } from "@workspace/ui/components/dialog"
 
-import {
-  fetchProfile,
-  fetchUsage,
-  profileKey,
-  usageKey,
-} from "@/lib/account-api.ts"
+import { fetchProfile, profileKey } from "@/lib/account-api.ts"
 import { coachPaperOptions, coachJobOptions } from "@/lib/coach-context.ts"
 import { subscribeCoachDraft, takeCoachDraft } from "@/lib/coach-draft.ts"
-import { queryKey } from "@/lib/contract-client.ts"
+import { catalogClient, queryKey } from "@/lib/contract-client.ts"
+import { useOwnerId } from "@/lib/owner-id.ts"
 import { keepToastsClearOf } from "@/lib/toast-clearance.ts"
 import { chatColumn } from "@/components/ai-elements/chat.tsx"
 import { PromptInputFrame } from "@/components/ai-elements/prompt-input-frame.ts"
@@ -105,7 +101,7 @@ export function CoachWorkspace({
     )
   )
   const profile = useQuery({ queryKey: profileKey(), queryFn: fetchProfile })
-  const usage = useQuery({ queryKey: usageKey(), queryFn: fetchUsage })
+  const usage = catalogClient.useRead(useOwnerId(), "coach.usage", {})
   const papers = useQuery({
     queryKey: queryKey({ query: "paper.list" }),
     queryFn: coachPaperOptions,

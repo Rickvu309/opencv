@@ -1,4 +1,5 @@
 import {
+  catalog,
   LIBRARY_WRITER,
   paperImportResponseSchema,
   letterAttachmentContextSchema,
@@ -14,7 +15,7 @@ import type {
 
 import { ApiError, apiFetch, isErrorEnvelope } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
-import { queryKey } from "@/lib/contract-client.ts"
+import { catalogClient, queryKey } from "@/lib/contract-client.ts"
 import { streamChatTurn } from "@/lib/coach-stream.ts"
 import { tailCoachTask } from "@/lib/coach-task-client.ts"
 import type { CoachTaskState } from "@/lib/coach-task-state.ts"
@@ -288,13 +289,10 @@ export async function streamPaperTurn(input: {
   } catch (error) {
     if (turn.end === "continuing" && !input.signal?.aborted) return turn.end
     if (error instanceof ApiError && error.status === 429) {
-      const usage = await apiFetch<SuccessBody<{ resetsAt?: string }>>(
-        endpoints.coachUsage
-      ).catch(() => null)
-      throw new PaperLimitError(
-        error.message,
-        usage ? (unwrapData(usage).resetsAt ?? null) : null
-      )
+      const usage = await catalogClient
+        .read(catalog["coach.usage"].name, {})
+        .catch(() => null)
+      throw new PaperLimitError(error.message, usage?.day.resetsAt ?? null)
     }
     throw error
   } finally {

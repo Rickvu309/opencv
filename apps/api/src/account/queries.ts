@@ -17,7 +17,6 @@ import { readExportedParts } from "../coach/chat/index.js"
 import { tableQuery } from "../registry/bind.js"
 import { isUndoRow } from "../registry/expectation.js"
 import type { Registry } from "../registry/registry.js"
-import { readUsage } from "./usage.js"
 import {
   collectWordPageExport,
   toPaper,
@@ -106,14 +105,6 @@ export function registerAccountQueries(registry: Registry) {
       coach: true,
       step: () => "Read profile",
       read: (_input, actor) => readProfile(actor),
-    })
-  )
-  registry.addQuery(
-    tableQuery("coach.usage", {
-      description: "Read Coach usage for the day, session, and week.",
-      coach: true,
-      step: () => "Read usage",
-      read: (_input, actor) => readUsage(actor.userId),
     })
   )
   registry.addQuery(
