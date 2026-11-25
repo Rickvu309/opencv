@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/coach/task-http.test.ts",
+    "because": "The task snapshot route is gone; the same owner, sign-in and rollback checks now read the snapshot through the read door",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  }
+]
