@@ -16,11 +16,7 @@ import {
 import { readExportedParts } from "../coach/chat/index.js"
 import { isUndoRow } from "../registry/expectation.js"
 import type { Registry } from "../registry/registry.js"
-import {
-  collectWordPageExport,
-  toPaper,
-  tryReadStoredPaper,
-} from "../paper/index.js"
+import { collectWordPageExport } from "../paper/index.js"
 import { zipArchive } from "./export-archive.js"
 import { getProfileRow, toProfile } from "./store.js"
 
@@ -311,35 +307,18 @@ async function collectAccountExport(userId: string) {
 }
 
 function publicDoc(row: typeof paperDocs.$inferSelect) {
-  const paper = tryReadStoredPaper(row)
-  if (!paper) {
-    return {
-      id: parsePaperId(row.id),
-      name: row.name,
-      kind: row.kind,
-      templateId: row.templateId,
-      paper: null,
-      contentVersion: row.contentVersion,
-      status: row.status,
-      checks: row.checks ?? [],
-      pageChoice: row.pageChoice,
-      createdAt: row.createdAt.toISOString(),
-      updatedAt: row.updatedAt.toISOString(),
-    }
-  }
-  const view = toPaper(row, paper)
   return {
-    id: view.id,
-    name: view.name,
-    kind: view.kind,
-    templateId: view.templateId,
-    paper: view.paper,
-    contentVersion: view.contentVersion,
-    status: view.status,
-    checks: view.checks,
-    pageChoice: view.pageChoice,
-    createdAt: view.createdAt,
-    updatedAt: view.updatedAt,
+    id: parsePaperId(row.id),
+    name: row.name,
+    kind: row.kind,
+    templateId: row.templateId,
+    paper: null,
+    contentVersion: row.contentVersion,
+    status: row.status,
+    checks: row.checks ?? [],
+    pageChoice: row.pageChoice,
+    createdAt: row.createdAt.toISOString(),
+    updatedAt: row.updatedAt.toISOString(),
   }
 }
 

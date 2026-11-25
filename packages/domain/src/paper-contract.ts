@@ -105,33 +105,15 @@ const paperCreateInputSchema = z
   .object({
     kind: paperStoredKindSchema,
     format: z.literal("rich").optional(),
-    document: legacyPaperDocumentSchema.optional(),
-    templateId: paperTemplateIdSchema.optional(),
     name: paperDocNameSchema.optional(),
     jobId: jobIdSchema.optional(),
   })
   .strict()
-  .superRefine((input, context) => {
-    if (input.format === "rich" && (input.document || input.templateId)) {
-      context.addIssue({
-        code: "custom",
-        message: "A rich blank document cannot start from a template.",
-        path: ["format"],
-      })
-    }
-    if (input.document && input.document.kind !== input.kind) {
-      context.addIssue({
-        code: "custom",
-        message: "The document kind does not match.",
-        path: ["document"],
-      })
-    }
-  })
 
 export const paperContract = commandContract({
   "paper.create": commandEntry({
     description:
-      "Create a CV or letter. With format rich the new document is one empty paragraph that opens the full editor.",
+      "Create a CV or letter. The new document is one empty paragraph that opens the full editor.",
     input: paperCreateInputSchema,
     output: z.union([paperViewSchema, paperDocumentInfoSchema]),
     coach: "never",

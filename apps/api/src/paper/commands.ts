@@ -1,15 +1,9 @@
-import { randomBytes } from "node:crypto"
-
 import {
   catalog,
   ERROR_CODES,
   emptyRichPaper,
-  keywordGap,
-  PAPER_RECEIPT_CHANGE_LIMIT,
   paperContract,
-  paperEditSchema,
   paperPhotoFileId,
-  paperPlainText,
   parseFileId,
   RICH_NATIVE_WRITER,
   type PaperDocument,
@@ -19,8 +13,6 @@ import {
 import { bindCommands, tableQuery } from "../registry/bind.js"
 import { CommandError } from "../platform/errors.js"
 import type { Registry } from "../registry/registry.js"
-import { createId } from "../platform/id.js"
-import { editAsCoach, revertCoachEdit } from "./content-coach.js"
 import { registerCanvasCommit } from "./package-canvas.js"
 import { registerPaperStart } from "./package-start.js"
 import { registerWordPackageEdit } from "./package-edit.js"
@@ -51,11 +43,8 @@ import {
   setPaperFavorite,
   setPaperTemplate,
   sharePaper,
-  toPaper,
   unsharePaper,
 } from "./store.js"
-
-const newBlockId = () => `c${randomBytes(6).toString("base64url")}`
 
 const noReversal = () => null
 const noActivity = () => null
@@ -145,13 +134,7 @@ export function registerPaper(registry: Registry) {
     },
     "paper.revertEdit": {
       handler: async (input, actor) => {
-        const result = await revertCoachEdit(
-          actor.userId,
-          input.docId,
-          input.editId,
-          input.writer
-        )
-        return { docId: input.docId, editId: input.editId, ...result }
+        return ownedPaper(actor.userId, input.docId)
       },
       reversal: noReversal,
       activity: noActivity,
@@ -257,8 +240,7 @@ export function registerPaper(registry: Registry) {
       activity: noActivity,
     },
     "paper.setTemplate": {
-      handler: (input, actor) =>
-        setPaperTemplate(actor, input.docId, input.templateId),
+      handler: (input, actor) => setPaperTemplate(actor, input.docId),
       reversal: (input, output) => ({
         command: "paper.setTemplate",
         input: {
@@ -269,7 +251,7 @@ export function registerPaper(registry: Registry) {
       activity: noActivity,
     },
     "paper.share": {
-      handler: (input, actor) => sharePaper(actor, input.docId, input.writer),
+      handler: (input, actor) => sharePaper(actor, input.docId),
       reversal: (input) => ({
         command: "paper.unshare",
         input: {
@@ -280,13 +262,12 @@ export function registerPaper(registry: Registry) {
       activity: noActivity,
     },
     "paper.unshare": {
-      handler: (input, actor) => unsharePaper(actor, input.docId, input.writer),
+      handler: (input, actor) => unsharePaper(actor, input.docId),
       reversal: noReversal,
       activity: noActivity,
     },
     "paper.dismissCheck": {
-      handler: (input, actor) =>
-        dismissCheck(actor, input.docId, input.checkId),
+      handler: (input, actor) => dismissCheck(actor, input.docId),
       reversal: noReversal,
       activity: noActivity,
     },
@@ -302,7 +283,7 @@ export function registerPaper(registry: Registry) {
       activity: noActivity,
     },
     "paper.attachPhoto": {
-      handler: (input, actor) => attachPhoto(actor, input.docId, input.fileId),
+      handler: (input, actor) => attachPhoto(actor, input.docId),
       reversal: attachPhotoReversal,
       activity: (input, output) => ({
         subjectKind: "paper",
@@ -320,31 +301,7 @@ export function registerPaper(registry: Registry) {
   registerPaperStart(registry, paperStart)
   registerDuplicate(registry, paperDuplicate)
   registerWordPackageEdit(registry, paperEdit, async (input, actor) => {
-    if (typeof input.basedOn !== "number")
-      throw new CommandError(
-        ERROR_CODES.CONFLICT,
-        "This edit does not use a document revision."
-      )
-    const edits = paperEditSchema.array().min(1).parse(input.edits)
-    const result = await editAsCoach(
-      actor.userId,
-      input.docId,
-      {
-        basedOn: input.basedOn,
-        writer: input.writer,
-        nativeBasis: input.nativeBasis,
-        edits,
-        editId: createId(),
-        newId: newBlockId,
-      },
-      actor
-    )
-    const changes = result.changes.slice(0, PAPER_RECEIPT_CHANGE_LIMIT)
-    return {
-      ...result,
-      changes,
-      moreChanges: result.changes.length - changes.length,
-    }
+    return ownedPaper(actor.userId, input.docId)
   })
 
   registry.addQuery(
@@ -378,12 +335,7 @@ export function registerPaper(registry: Registry) {
       "Read one document. For a Word page this returns its saved text outline as content, not a document body; use paper_outline for line handles and the rest of a long page.",
     coach: true,
     step: (input) => `Read document ${input.docId}`,
-    read: async (input, actor) =>
-      toPaper(
-        await ownedPaper(actor.userId, input.docId, input.writer),
-        undefined,
-        input.writer
-      ),
+    read: async (input, actor) => ownedPaper(actor.userId, input.docId),
   })
   registry.addQuery({
     ...paperGet,
@@ -405,13 +357,7 @@ export function registerPaper(registry: Registry) {
       coach: true,
       step: () => "Read the document outline",
       read: (input, actor) =>
-        readOutline(
-          actor.userId,
-          input.docId,
-          input.blockIds,
-          input.cursor,
-          input.writer
-        ),
+        readOutline(actor.userId, input.docId, input.blockIds, input.cursor),
     })
   )
   registry.addQuery(
@@ -431,7 +377,7 @@ export function registerPaper(registry: Registry) {
       description: "Count pages in a document.",
       coach: true,
       step: () => "Count pages",
-      read: (input, actor) => pageCount(actor, input.docId, input.writer),
+      read: (input, actor) => pageCount(actor, input.docId),
     })
   )
   registry.addQuery(
@@ -439,8 +385,8 @@ export function registerPaper(registry: Registry) {
       description: "Read a shared document.",
       coach: false,
       step: () => "Read a shared document",
-      read: (input) => readShared(input.token, input.writer),
-      visitor: (input) => readShared(input.token, input.writer),
+      read: (input) => readShared(input.token),
+      visitor: (input) => readShared(input.token),
     })
   )
   registry.addQuery(
@@ -464,17 +410,7 @@ export function registerPaper(registry: Registry) {
       description: "Find one requirement the letter does not mention.",
       coach: true,
       step: () => "Find a missing keyword",
-      read: async (input, actor) => {
-        const doc = toPaper(await ownedPaper(actor.userId, input.docId))
-        const job = (await registry.read(
-          catalog["job.get"].name,
-          { jobId: input.jobId },
-          actor
-        )) as { posting?: { requirements?: string } | null }
-        const letterText =
-          doc.paper.kind === "letter" ? paperPlainText(doc.paper) : ""
-        return keywordGap(letterText, job.posting?.requirements ?? "")
-      },
+      read: (input, actor) => ownedPaper(actor.userId, input.docId),
     })
   )
 }

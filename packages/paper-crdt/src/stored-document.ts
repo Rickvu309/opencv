@@ -11,7 +11,6 @@ import {
   openFlowBinary,
   readFlow,
 } from "./native-layout-flow.js"
-import { materialize, seedYDoc } from "./ydoc.js"
 
 export type StoredDocumentResult =
   | { readonly ok: true; readonly document: StoredPaperDocument }
@@ -19,8 +18,6 @@ export type StoredDocumentResult =
 
 export function seedStoredYDoc(input: StoredPaperDocument): Uint8Array {
   const document = storedPaperDocumentSchema.parse(input)
-  if (document.version !== 4 || document.schemaRevision !== 2)
-    return seedYDoc(document)
   const { version, schemaRevision, ...flow } = document
   const result = createPrivateFlow(flow)
   if (result.kind === "refused") throw new Error(result.reason)
@@ -54,7 +51,6 @@ export function materializeStored(
     const meta = doc.getMap<unknown>("paper")
     const revision = meta.get("schemaRevision")
     const profile = meta.get("formattingProfile")
-    if (revision !== 2 && profile === undefined) return materialize(doc)
     if (
       meta.get("version") !== 4 ||
       revision !== 2 ||

@@ -31,7 +31,6 @@ export {
 export type { Absorbed, PaperYDoc } from "./sync.js"
 export { writeAsEditor } from "./editor-write.js"
 export {
-  openPaperClient,
   openRichPaperClient,
   REBASE_ORIGIN,
   SERVER_ORIGIN,

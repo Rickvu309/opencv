@@ -122,7 +122,6 @@ export { retainUnderline } from "./merge-text.js"
 export {
   richPaperDocumentSchema,
   storedPaperDocumentSchema,
-  requirePaperDocument,
   storedPaperPhotoIds,
 } from "./stored-document.js"
 export type {

@@ -1,9 +1,7 @@
 import {
   ERROR_CODES,
   storedPaperDocumentSchema,
-  requirePaperDocument,
   type StoredPaperDocument,
-  type PaperDocument,
   type PaperStoredKind,
 } from "@workspace/domain"
 import { materializeStored, seedStoredYDoc } from "@workspace/paper-crdt"
@@ -26,23 +24,6 @@ export function validatedStored(
     throw invalidDocument(`A ${kind} cannot hold a ${parsed.data.kind}`)
   }
   return parsed.data
-}
-
-export function validated(
-  candidate: unknown,
-  kind: PaperStoredKind
-): PaperDocument {
-  try {
-    return requirePaperDocument(validatedStored(candidate, kind))
-  } catch (error) {
-    if (error instanceof CommandError) throw error
-    throw new CommandError(
-      ERROR_CODES.CONFLICT,
-      error instanceof Error
-        ? error.message
-        : "This document needs a newer editor"
-    )
-  }
 }
 
 export function seedColumns(kind: PaperStoredKind, paper: StoredPaperDocument) {

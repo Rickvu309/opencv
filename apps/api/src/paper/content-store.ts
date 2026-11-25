@@ -4,31 +4,18 @@ import {
   canonicalPaper,
   nativeProvenance,
   sameNativeProvenance,
-  type NativeWriter,
-  type NativeBasis,
-  nodeFingerprint,
-  repairPaper,
-  paperDocumentSchema,
   type PaperId,
   type UserId,
 } from "@workspace/domain"
 import {
   absorbUpdate,
-  aliveCharacters,
   forkOf,
   carriesChange,
   knownAfter,
-  materializeCandidate,
-  twinFlags,
-  writeRepair,
-  mergedUpdate,
-  lostCharacters,
   loadYDoc,
-  materialize,
   materializeStored,
   stateVectorOf,
   updateSince,
-  writeDocument,
 } from "@workspace/paper-crdt"
 import { and, asc, eq, gte, gt } from "drizzle-orm"
 
@@ -46,12 +33,8 @@ import {
   foldSettledLog,
 } from "./content-compact.js"
 
-import {
-  validated,
-  validatedStored,
-  sameDocumentIdentity,
-} from "./content-document.js"
-import { admitBasis, admitDocument } from "./native-admission.js"
+import { validatedStored, sameDocumentIdentity } from "./content-document.js"
+import { admitDocument } from "./native-admission.js"
 import {
   qualifyRichDocument,
   qualifyRichSnapshot,
@@ -61,17 +44,7 @@ import {
 
 export { seedColumns } from "./content-document.js"
 
-import type {
-  PaperRow,
-  Live,
-  ContentEdit,
-  LogRow,
-  Appended,
-  AppendResult,
-  LockedContent,
-  SyncRequest,
-  SyncReply,
-} from "./content-types.js"
+import type { PaperRow, Live, SyncRequest, SyncReply } from "./content-types.js"
 export type {
   ContentEdit,
   LogRow,
@@ -157,24 +130,6 @@ async function lockedRow(userId: UserId, docId: PaperId): Promise<PaperRow> {
   const row = rows[0]
   if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
   return row
-}
-
-async function loggedRows(docId: string, afterSeq: number): Promise<LogRow[]> {
-  return getDb()
-    .select({
-      seq: paperDocUpdates.seq,
-      origin: paperDocUpdates.origin,
-      editId: paperDocUpdates.editId,
-      basedOn: paperDocUpdates.basedOn,
-      touched: paperDocUpdates.touched,
-      rebuilt: paperDocUpdates.rebuilt,
-      update: paperDocUpdates.update,
-    })
-    .from(paperDocUpdates)
-    .where(
-      and(eq(paperDocUpdates.paperId, docId), gt(paperDocUpdates.seq, afterSeq))
-    )
-    .orderBy(asc(paperDocUpdates.seq))
 }
 
 async function rowsFrom(docId: string, seq: number, inclusive: boolean) {
@@ -322,245 +277,19 @@ async function commit(
   return { ...row, ...patch }
 }
 
-async function editLocked(
-  row: PaperRow,
-  entry: Live,
-  change: ContentEdit
-): Promise<PaperRow> {
-  try {
-    const current = validated(row.crdtDocument, row.kind)
-    const target = validated(
-      typeof change.target === "function"
-        ? change.target(current)
-        : change.target,
-      row.kind
-    )
-    let effective: Uint8Array | null
-    try {
-      effective = writeDocument(entry.yDoc, target, change.origin)
-    } catch (error) {
-      throw refuse(error instanceof Error ? error.message : "Cannot write")
-    }
-    if (effective) {
-      return await commit(row, entry, effective, change)
-    }
-    return row
-  } catch (error) {
-    live.delete(row.id)
-    throw error
-  }
-}
-
-async function appendLocked(
-  row: PaperRow,
-  entry: Live,
-  change: Appended
-): Promise<AppendResult> {
-  try {
-    const protectedBefore = change.protect
-      ? aliveCharacters(entry.yDoc, change.protect)
-      : null
-    const absorbed = absorbUpdate(entry.yDoc, change.update, change.origin)
-    if (!absorbed.ok) throw refuse(absorbed.reason)
-    if (
-      protectedBefore &&
-      lostCharacters(entry.yDoc, protectedBefore).length > 0
-    ) {
-      live.delete(row.id)
-      return {
-        row: null,
-        problems: ["Text you typed in this document would be lost"],
-      }
-    }
-    let touched: string[] | undefined
-    let rebuilt: string[] | undefined
-    if (
-      change.check ||
-      typeof change.touched === "function" ||
-      typeof change.rebuilt === "function"
-    ) {
-      const materialized = materialize(entry.yDoc)
-      if (!materialized.ok) {
-        live.delete(row.id)
-        return {
-          row: null,
-          problems: [
-            `The merged document would break a rule: ${materialized.reason}`,
-          ],
-        }
-      }
-      const merged = validated(materialized.document, row.kind)
-      const problems = change.check ? change.check(merged) : []
-      if (problems.length > 0) {
-        live.delete(row.id)
-        return { row: null, problems }
-      }
-      if (typeof change.touched === "function") touched = change.touched(merged)
-      if (typeof change.rebuilt === "function") rebuilt = change.rebuilt(merged)
-    }
-    if (Array.isArray(change.touched)) touched = change.touched
-    if (Array.isArray(change.rebuilt)) rebuilt = change.rebuilt
-    const effective =
-      absorbed.effective ?? (change.keepIfIneffective ? change.update : null)
-    if (!effective) return { row: null, problems: [] }
-    const written = await commit(row, entry, effective, {
-      origin: change.origin,
-      editId: change.editId,
-      basedOn: change.basedOn,
-      touched,
-      rebuilt,
-    })
-    return { row: written, problems: [] }
-  } catch (error) {
-    live.delete(row.id)
-    throw error
-  }
-}
-
-export async function withContent<T>(
-  userId: UserId,
-  docId: PaperId,
-  run: (content: LockedContent) => Promise<T>,
-  admission?: { writer?: NativeWriter; basis?: NativeBasis; proposal?: boolean }
-): Promise<T> {
-  return withLiveTransaction(async (retain) => {
-    const row = await lockedRow(userId, docId)
-    const document = validated(row.crdtDocument, row.kind)
-    admitDocument(document, admission?.writer)
-    if (admission?.proposal || admission?.basis)
-      admitBasis(
-        document,
-        row.crdtEpoch ?? FIRST_EPOCH,
-        row.contentVersion,
-        admission?.basis
-      )
-    let entry = await hydrate(row)
-    let latest = row
-    const content: LockedContent = {
-      row,
-      document: validated(row.crdtDocument, row.kind),
-      baseSeq: entry.baseSeq,
-      edit: async (change) => {
-        const candidate = detached(entry)
-        const next = await editLocked(latest, candidate, change)
-        entry = candidate
-        latest = next
-        return latest
-      },
-      fork: async (basedOn) => {
-        if (basedOn === entry.revision) return forkOf(entry.yDoc)
-        const logged = await loggedRows(row.id, entry.baseSeq)
-        return loadYDoc(
-          entry.base,
-          logged
-            .filter((logRow) => logRow.seq <= basedOn)
-            .map((logRow) => logRow.update)
-        )
-      },
-      history: async () => ({
-        base: entry.base,
-        rows: await loggedRows(row.id, entry.baseSeq),
-      }),
-      append: async (change) => {
-        const candidate = detached(entry)
-        const next = await appendLocked(latest, candidate, change)
-        if (next.row) {
-          entry = candidate
-          latest = next.row
-        }
-        return next
-      },
-    }
-    const result = await run(content)
-    retain(row.id, entry)
-    return result
-  })
-}
-
-async function staleCopies(
-  row: PaperRow,
-  entry: Live,
-  ids: readonly string[]
-): Promise<Map<string, string>> {
-  const logged = await loggedRows(row.id, entry.baseSeq)
-  const stale = new Map<string, string>()
-  for (const id of ids) {
-    const rebuilder = [...logged]
-      .reverse()
-      .find(
-        (item) =>
-          (item.origin === "coach" || item.origin === "revert") &&
-          item.rebuilt?.includes(id)
-      )
-    if (!rebuilder) continue
-    const before = materialize(
-      loadYDoc(
-        entry.base,
-        logged
-          .filter((item) => item.seq < rebuilder.seq)
-          .map((item) => item.update)
-      )
-    )
-    const fingerprint = before.ok ? nodeFingerprint(before.document, id) : null
-    if (fingerprint) stale.set(id, fingerprint)
-  }
-  return stale
-}
-
 type Mended = { effective: Uint8Array | null; rebuilt?: string[] }
 
 async function mended(
   row: PaperRow,
   entry: Live,
-  request: SyncRequest,
   effective: Uint8Array | null
 ): Promise<Mended> {
   if (!effective) return { effective }
   const previous = validatedStored(row.crdtDocument, row.kind)
-  if (previous.version === 4 && previous.schemaRevision === 2) {
-    const candidate = materializeStored(entry.yDoc)
-    if (!candidate.ok) throw refuse(candidate.reason)
-    sameDocumentIdentity(previous, candidate.document)
-    return { effective }
-  }
-  const read = materializeCandidate(entry.yDoc)
-  if (!read.ok) {
-    console.error(`[paper] cannot read ${row.id} after a sync: ${read.reason}`)
-    return { effective }
-  }
-  if (!read.repaired && paperDocumentSchema.safeParse(read.candidate).success) {
-    return { effective }
-  }
-  const fresh = twinFlags(entry.yDoc, request.update)
-  const stale = await staleCopies(row, entry, [...fresh.keys()])
-  const fixed = repairPaper(
-    validated(row.crdtDocument, row.kind),
-    read.candidate,
-    {
-      fresh,
-      stale,
-    }
-  )
-  if (!fixed) {
-    console.error(`[paper] could not repair ${row.id} after a sync`)
-    return { effective }
-  }
-  const update = writeRepair(
-    forkOf(entry.yDoc),
-    fixed.document,
-    "server",
-    fixed.moved,
-    fixed.keep
-  )
-  if (!update) return { effective }
-  const absorbed = absorbUpdate(entry.yDoc, update, "server")
-  if (!absorbed.ok) throw refuse(absorbed.reason)
-  return {
-    effective: absorbed.effective
-      ? mergedUpdate([effective, absorbed.effective])
-      : effective,
-    rebuilt: [...fixed.keep.keys(), ...fixed.moved],
-  }
+  const candidate = materializeStored(entry.yDoc)
+  if (!candidate.ok) throw refuse(candidate.reason)
+  sameDocumentIdentity(previous, candidate.document)
+  return { effective }
 }
 
 export async function syncContent(
@@ -628,7 +357,7 @@ export async function syncContent(
           ? ({ ok: true, effective: null } as const)
           : absorbUpdate(entry.yDoc, request.update, "person")
       if (!absorbed.ok) throw refuse(absorbed.reason)
-      const fixed = await mended(row, entry, request, absorbed.effective)
+      const fixed = await mended(row, entry, absorbed.effective)
       if (fixed.effective) {
         row = await commit(row, entry, fixed.effective, {
           origin: "person",

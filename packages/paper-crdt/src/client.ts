@@ -62,24 +62,25 @@ export type Adoption = {
 
 export type ClientChange = "local" | "remote" | "reset"
 
-export type PaperClient<Document extends StoredPaperDocument = PaperDocument> =
-  {
-    readonly ydoc: Y.Doc
-    readonly provenance?: NativeProvenance
-    readonly epoch: number
-    readonly revision: number
-    readonly rebuilds: number
-    hasPending(): boolean
-    prepare(options?: { readonly pullOnly?: boolean }): Prepared
-    adopt(orphan: Stored): Adoption
-    receive(sent: Prepared, reply: SyncReply): Receipt
-    stored(): Stored
-    state(): Uint8Array
-    document(): Document | null
-    subscribe(listener: (change: ClientChange) => void): () => void
-    onDocumentRelease(listener: () => void): () => void
-    destroy(): void
-  }
+export type PaperClient<
+  Document extends StoredPaperDocument = RichPaperDocument,
+> = {
+  readonly ydoc: Y.Doc
+  readonly provenance?: NativeProvenance
+  readonly epoch: number
+  readonly revision: number
+  readonly rebuilds: number
+  hasPending(): boolean
+  prepare(options?: { readonly pullOnly?: boolean }): Prepared
+  adopt(orphan: Stored): Adoption
+  receive(sent: Prepared, reply: SyncReply): Receipt
+  stored(): Stored
+  state(): Uint8Array
+  document(): Document | null
+  subscribe(listener: (change: ClientChange) => void): () => void
+  onDocumentRelease(listener: () => void): () => void
+  destroy(): void
+}
 
 function freshDoc(
   gc: boolean,
@@ -93,11 +94,6 @@ function freshDoc(
     doc.destroy()
     throw error
   }
-}
-
-function read(doc: Y.Doc): PaperDocument | null {
-  const result = materialize(doc)
-  return result.ok ? result.document : null
 }
 
 function stateOf(doc: Y.Doc) {
@@ -159,13 +155,6 @@ type DocumentAdapter<Document extends StoredPaperDocument> = {
     failed: boolean
   }
   readonly semanticRebase: boolean
-}
-
-const proseAdapter: DocumentAdapter<PaperDocument> = {
-  read,
-  write: writeDocument,
-  rebase: rebasePending,
-  semanticRebase: true,
 }
 
 const richAdapter: DocumentAdapter<RichPaperDocument> = {
@@ -521,21 +510,6 @@ class Client<
       failed: merged?.failed ?? false,
     }
   }
-}
-
-export function openPaperClient(
-  stored: Stored | null = null,
-  options: {
-    readonly gc?: boolean
-    readonly provenance?: NativeProvenance
-  } = {}
-): PaperClient {
-  return new Client(
-    stored,
-    options.gc ?? false,
-    options.provenance,
-    proseAdapter
-  )
 }
 
 export function openRichPaperClient(
