@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 3
+  },
+  {
+    "subject": "apps/api/src/paper/reset-paper.test.ts",
+    "because": "paper.create now carries a guarded Undo. After the reset deletes the Paper, its receipt shows as not undoable and Undo is refused as a conflict instead of failing on a missing document; the test checks the new answers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
   }
 ]
