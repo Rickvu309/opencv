@@ -168,7 +168,10 @@ export const paperContract = commandContract({
     coach: "never",
     destructive: false,
     step: () => "Sync the document",
-    invalidates: listChanged,
+    invalidates: (input) => [
+      { query: "paper.outline", input: { docId: input.docId } },
+      ...listChanged(),
+    ],
   }),
   "paper.duplicate": commandEntry({
     description: "Duplicate a document.",

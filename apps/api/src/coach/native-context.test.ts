@@ -1,5 +1,6 @@
 import {
   NATIVE_WRITER,
+  RICH_NATIVE_WRITER,
   ERROR_CODES,
   personActor,
   nativeProvenance,
@@ -68,7 +69,7 @@ it("takes revision and basis from the same outline despite older metadata", asyn
     outline: outline.outline,
   })
   expect(read.mock.calls).toEqual([
-    ["paper.list", { writer: NATIVE_WRITER }, actor],
+    ["paper.list", { writer: RICH_NATIVE_WRITER }, actor],
     [
       "paper.outline",
       { docId, blockIds: undefined, writer: NATIVE_WRITER },
