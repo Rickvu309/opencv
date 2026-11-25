@@ -70,5 +70,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 3
+  },
+  {
+    "subject": "apps/api/src/paper/blank-rich-create.test.ts",
+    "because": "paper.create no longer takes a starting document or a template; every new Paper is a rich blank, and the refusals of both keys are tested.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
