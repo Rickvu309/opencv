@@ -311,8 +311,6 @@ export const ROUTE_CASES: readonly RouteCase[] = [
   get("/api/inbox/connect"),
   get("/api/inbox/callback"),
   get("/api/profile"),
-  get("/api/integrations"),
-  get("/api/billing"),
   postForm("/api/account/photo", () => pngUpload),
   get("/api/account/export"),
   get("/api/search"),

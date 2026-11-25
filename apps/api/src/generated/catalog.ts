@@ -5,6 +5,7 @@ import { implementation as account$requestEmailChange } from "../account/operati
 import { implementation as actions$approve } from "../registry/operations/actions/approve/server.js"
 import { implementation as actions$deny } from "../registry/operations/actions/deny/server.js"
 import { implementation as activity$undo } from "../registry/operations/activity/undo/server.js"
+import { implementation as billing$get } from "../account/operations/billing/get/server.js"
 import { implementation as chat$appendMessage } from "../coach/operations/chat/append-message/server.js"
 import { implementation as chat$create } from "../coach/operations/chat/create/server.js"
 import { implementation as chat$delete } from "../coach/operations/chat/delete/server.js"
@@ -30,6 +31,7 @@ import { implementation as inbox$skip } from "../inbox/operations/skip/server.js
 import { implementation as inbox$snooze } from "../inbox/operations/snooze/server.js"
 import { implementation as inbox$snoozed } from "../inbox/operations/snoozed/server.js"
 import { implementation as inbox$updateDraft } from "../inbox/operations/update-draft/server.js"
+import { implementation as integrations$list } from "../account/operations/integrations/list/server.js"
 import { implementation as job$addNote } from "../job/operations/add-note/server.js"
 import { implementation as job$delete } from "../job/operations/delete/server.js"
 import { implementation as job$priorityCounts } from "../job/operations/priority-counts/server.js"
@@ -52,6 +54,7 @@ export const implementations = {
   "actions.approve": actions$approve,
   "actions.deny": actions$deny,
   "activity.undo": activity$undo,
+  "billing.get": billing$get,
   "chat.appendMessage": chat$appendMessage,
   "chat.create": chat$create,
   "chat.delete": chat$delete,
@@ -77,6 +80,7 @@ export const implementations = {
   "inbox.snooze": inbox$snooze,
   "inbox.snoozed": inbox$snoozed,
   "inbox.updateDraft": inbox$updateDraft,
+  "integrations.list": integrations$list,
   "job.addNote": job$addNote,
   "job.delete": job$delete,
   "job.priorityCounts": job$priorityCounts,

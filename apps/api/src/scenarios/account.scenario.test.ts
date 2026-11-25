@@ -115,9 +115,9 @@ describe("a person's profile", () => {
 describe("a person's plan", () => {
   it("is Free until they upgrade", async () => {
     const ada = await world.person("Ada")
-    expect(dataOf<{ plan: string }>(await ada.get("/api/billing")).plan).toBe(
-      "free"
-    )
+    expect(
+      dataOf<{ plan: string }>(await ada.read("billing.get", {})).plan
+    ).toBe("free")
   })
 })
 

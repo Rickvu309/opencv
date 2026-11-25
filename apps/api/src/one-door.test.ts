@@ -37,12 +37,10 @@ const transportExceptions = {
 
 const waitingToBecomeOperations = [
   "GET /api/activity",
-  "GET /api/billing",
   "GET /api/chats",
   "GET /api/chats/:id",
   "GET /api/coach/tasks/:id",
   "GET /api/coach/usage",
-  "GET /api/integrations",
   "GET /api/jobs",
   "GET /api/jobs/:id",
   "GET /api/jobs/calendar",
@@ -96,6 +94,6 @@ describe("every change and read of product data goes through an operation", () =
   })
 
   it("has no more routes waiting to become operations than it had", () => {
-    expect(waitingToBecomeOperations.length).toBeLessThanOrEqual(21)
+    expect(waitingToBecomeOperations.length).toBeLessThanOrEqual(19)
   })
 })

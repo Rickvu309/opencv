@@ -197,8 +197,8 @@ export function handlesProfileRequest(input: RequestInfo | URL) {
     path === "/api/commands/profile.update" ||
     path === "/api/commands/account.requestEmailChange" ||
     path === "/api/commands/account.delete" ||
-    path === "/api/integrations" ||
-    path === "/api/billing" ||
+    path === "/api/reads/integrations.list" ||
+    path === "/api/reads/billing.get" ||
     path === "/api/coach/usage" ||
     path === "/api/account/export" ||
     path === "/api/account/photo" ||
@@ -353,11 +353,11 @@ export async function profileApiFetch(
     return jsonOk(profilePayload())
   }
 
-  if (method === "GET" && path === "/api/integrations") {
+  if (method === "POST" && path === "/api/reads/integrations.list") {
     return jsonOk(integrationCatalog())
   }
 
-  if (method === "GET" && path === "/api/billing") {
+  if (method === "POST" && path === "/api/reads/billing.get") {
     return jsonOk({
       plan: extras.plan,
       free: {

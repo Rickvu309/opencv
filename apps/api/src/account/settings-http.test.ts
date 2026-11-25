@@ -15,8 +15,10 @@ describe("settings reads", () => {
       name: "Ada",
       email: "ada-integrations@example.com",
     })
-    const res = await app.request("/api/integrations", {
+    const res = await app.request("/api/reads/integrations.list", {
+      method: "POST",
       headers: authHeaders(cookie),
+      body: JSON.stringify({}),
     })
     expect(res.status).toBe(200)
     const body = (await res.json()) as {
@@ -48,8 +50,10 @@ describe("settings reads", () => {
       name: "Ada",
       email: "ada-billing@example.com",
     })
-    const res = await app.request("/api/billing", {
+    const res = await app.request("/api/reads/billing.get", {
+      method: "POST",
       headers: authHeaders(cookie),
+      body: JSON.stringify({}),
     })
     expect(res.status).toBe(200)
     const body = (await res.json()) as {

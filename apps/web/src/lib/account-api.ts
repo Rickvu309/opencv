@@ -7,8 +7,6 @@ import { endpoints } from "@/lib/requests.ts"
 
 export const profileKey = () => queryKey({ query: "profile.get" })
 export const usageKey = () => queryKey({ query: "coach.usage" })
-export const integrationsKey = () => queryKey({ query: "integrations.list" })
-export const billingKey = () => queryKey({ query: "billing.get" })
 
 export function fetchProfile() {
   return apiFetch<SuccessBody<QueryOutput<"profile.get">>>(
@@ -24,11 +22,5 @@ export const profileQuery = () => ({
 export function fetchUsage() {
   return apiFetch<SuccessBody<QueryOutput<"coach.usage">>>(
     endpoints.coachUsage
-  ).then(unwrapData)
-}
-
-export function fetchBilling() {
-  return apiFetch<SuccessBody<QueryOutput<"billing.get">>>(
-    endpoints.billing
   ).then(unwrapData)
 }
