@@ -54,5 +54,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 10
+  },
+  {
+    "subject": "apps/web/src/lib/paper-qualification.test.ts",
+    "because": "The qualified share read and the page count route are no longer called; the qualified owner reads keep their tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
   }
 ]
