@@ -38,5 +38,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 4
+  },
+  {
+    "subject": "apps/api/src/paper/package-proposal.test.ts",
+    "because": "paper.get is deleted, so its not-found check for a person reading a Word page has no subject; the Coach grounding checks stay.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
