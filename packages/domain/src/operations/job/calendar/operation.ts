@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { jobResource, jobResultSchema } from "../../../job.js"
+import { jobResource, jobResultSchema } from "../../../apply/job.js"
 import { defineOperation } from "../../../operation.js"
 
 export const operation = defineOperation({

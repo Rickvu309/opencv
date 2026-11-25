@@ -1,8 +1,8 @@
 import { z } from "zod"
 
-import { coachModeSchema } from "../coach-mode.js"
+import { coachModeSchema } from "../coach/coach-mode.js"
 import { fileIdSchema } from "../ids.js"
-import { jobStageSchema } from "../job.js"
+import { jobStageSchema } from "../apply/job.js"
 import type { ResourceRef } from "../resources.js"
 
 export const planSchema = z.enum(["free", "pro"])

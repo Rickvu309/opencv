@@ -1,4 +1,4 @@
-import { resolveCoachModel, type CoachMode } from "../coach.js"
+import { resolveCoachModel, type CoachMode } from "../coach/coach.js"
 
 const DAY_START_HOUR = 7
 const DEFAULT_SESSION_HOURS = 4

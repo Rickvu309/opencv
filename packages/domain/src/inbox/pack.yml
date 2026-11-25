@@ -1,2 +1,3 @@
 layer: kernel
 public: [index.ts]
+dependencies: [packages/domain/src/apply]

@@ -2,7 +2,7 @@ import {
   coachTaskEventsInputSchema,
   coachTaskReplaySchema,
   coachTaskResource,
-} from "../../../coach-task.js"
+} from "../../../coach/coach-task.js"
 import { defineOperation } from "../../../operation.js"
 
 export const operation = defineOperation({

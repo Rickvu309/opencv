@@ -2,7 +2,7 @@ import {
   jobResource,
   jobResultSchema,
   jobUpdateInputSchema,
-} from "../../../job.js"
+} from "../../../apply/job.js"
 import { defineOperation } from "../../../operation.js"
 import { jobPriorityResource, type ResourceRef } from "../../../resources.js"
 

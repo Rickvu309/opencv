@@ -1,8 +1,8 @@
 import { z } from "zod"
-import { coachTurnRequestSchema } from "./chat-messages.js"
-import { chatDetailSchema } from "./chat-views.js"
-import { chatIdSchema, idResult, type ChatId } from "./ids.js"
-import type { ResourceRef } from "./resources.js"
+import { coachTurnRequestSchema } from "../chat-messages.js"
+import { chatDetailSchema } from "../chat-views.js"
+import { chatIdSchema, idResult, type ChatId } from "../ids.js"
+import type { ResourceRef } from "../resources.js"
 
 export const coachConfigSchema = z.object({ coachDurable: z.boolean() })
 

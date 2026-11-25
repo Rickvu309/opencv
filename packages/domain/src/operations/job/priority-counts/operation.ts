@@ -1,6 +1,6 @@
 import { z } from "zod"
 import { defineOperation } from "../../../operation.js"
-import { jobPrioritySchema } from "../../../job.js"
+import { jobPrioritySchema } from "../../../apply/job.js"
 
 export const operation = defineOperation({
   owner: "job",

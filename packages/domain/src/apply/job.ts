@@ -6,8 +6,8 @@ import {
   paperIdSchema,
   type JobId,
   type PaperId,
-} from "./ids.js"
-import type { ResourceRef } from "./resources.js"
+} from "../ids.js"
+import type { ResourceRef } from "../resources.js"
 
 const JOB_STAGES = ["saved", "applied", "interview", "offer", "closed"] as const
 
