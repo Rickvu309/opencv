@@ -152,3 +152,11 @@ export function authHeaders(cookie: string): Record<string, string> {
     "Content-Type": "application/json",
   }
 }
+
+export function readAs(cookie: string, name: string, input: unknown) {
+  return new Request(`http://localhost/api/reads/${name}`, {
+    method: "POST",
+    headers: authHeaders(cookie),
+    body: JSON.stringify(input),
+  })
+}

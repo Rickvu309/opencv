@@ -175,3 +175,37 @@ export const billingSchema = z
     invoices: z.array(z.never()),
   })
   .strict()
+
+const cappedWindowSchema = z.discriminatedUnion("capped", [
+  z
+    .object({
+      capped: z.literal(true),
+      percent: z.number(),
+      resetsAt: z.string(),
+    })
+    .strict(),
+  z.object({ capped: z.literal(false), resetsAt: z.string() }).strict(),
+])
+
+const dayUsageSchema = z.discriminatedUnion("capped", [
+  z
+    .object({
+      capped: z.literal(true),
+      used: z.number(),
+      cap: z.number(),
+      remaining: z.number(),
+      resetsAt: z.string(),
+    })
+    .strict(),
+  z.object({ capped: z.literal(false), resetsAt: z.string() }).strict(),
+])
+
+export const usageSnapshotSchema = z
+  .object({
+    plan: planSchema,
+    mode: coachModeSchema,
+    session: cappedWindowSchema,
+    day: dayUsageSchema,
+    week: cappedWindowSchema,
+  })
+  .strict()

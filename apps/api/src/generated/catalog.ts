@@ -16,6 +16,7 @@ import { implementation as coach$events } from "../coach/operations/events/serve
 import { implementation as coach$start } from "../coach/operations/start/server.js"
 import { implementation as coach$status } from "../coach/operations/status/server.js"
 import { implementation as coach$stop } from "../coach/operations/stop/server.js"
+import { implementation as coach$usage } from "../account/operations/coach/usage/server.js"
 import { implementation as connections$list } from "../connections/operations/list/server.js"
 import { implementation as connections$revoke } from "../connections/operations/revoke/server.js"
 import { implementation as inbox$acceptSuggestion } from "../inbox/operations/accept-suggestion/server.js"
@@ -65,6 +66,7 @@ export const implementations = {
   "coach.start": coach$start,
   "coach.status": coach$status,
   "coach.stop": coach$stop,
+  "coach.usage": coach$usage,
   "connections.list": connections$list,
   "connections.revoke": connections$revoke,
   "inbox.acceptSuggestion": inbox$acceptSuggestion,

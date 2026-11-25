@@ -7,10 +7,8 @@ export const endpoints = {
   catalogCommand: (name: string) => `/api/commands/${name}`,
   publicConfig: "/api/public-config",
   profile: "/api/profile",
-  coachTask: (taskId: string) => `/api/coach/tasks/${taskId}`,
   coachTaskEvents: (taskId: string, after: number) =>
     `/api/coach/tasks/${taskId}/events?after=${after}`,
-  coachUsage: "/api/coach/usage",
   accountPhoto: "/api/account/photo",
   accountExport: "/api/account/export",
   inboxConnect: "/api/inbox/connect",

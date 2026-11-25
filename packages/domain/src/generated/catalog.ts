@@ -14,6 +14,7 @@ import { operation as coach$events } from "../operations/coach/events/operation.
 import { operation as coach$start } from "../operations/coach/start/operation.js"
 import { operation as coach$status } from "../operations/coach/status/operation.js"
 import { operation as coach$stop } from "../operations/coach/stop/operation.js"
+import { operation as coach$usage } from "../operations/coach/usage/operation.js"
 import { operation as connections$list } from "../operations/connections/list/operation.js"
 import { operation as connections$revoke } from "../operations/connections/revoke/operation.js"
 import { operation as inbox$acceptSuggestion } from "../operations/inbox/accept-suggestion/operation.js"
@@ -63,6 +64,7 @@ export const catalog = {
   "coach.start": coach$start,
   "coach.status": coach$status,
   "coach.stop": coach$stop,
+  "coach.usage": coach$usage,
   "connections.list": connections$list,
   "connections.revoke": connections$revoke,
   "inbox.acceptSuggestion": inbox$acceptSuggestion,

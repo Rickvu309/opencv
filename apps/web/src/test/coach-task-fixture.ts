@@ -57,3 +57,20 @@ export function taskEvent(
     ...patch,
   }
 }
+
+export function coachUsageSnapshot(resetsAt = "2026-10-28T09:00:00.000Z") {
+  return {
+    plan: "free" as const,
+    mode: "free" as const,
+    session: { capped: false as const, resetsAt },
+    day: { capped: false as const, resetsAt },
+    week: { capped: false as const, resetsAt },
+  }
+}
+
+export function taskPathOf(input: RequestInfo | URL, init?: RequestInit) {
+  const path = new URL(String(input), "http://localhost").pathname
+  if (!path.endsWith("/api/reads/coach.status")) return path
+  const read = JSON.parse(String(init?.body ?? "{}")) as { taskId?: string }
+  return `/api/coach/tasks/${read.taskId}`
+}

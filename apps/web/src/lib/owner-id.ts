@@ -1,3 +1,6 @@
+import { useRouter } from "@tanstack/react-router"
+import { useSyncExternalStore } from "react"
+
 export function ownerIdFromRouteMatches(
   matches: readonly { context: unknown }[]
 ) {
@@ -11,4 +14,13 @@ export function ownerIdFromRouteMatches(
     if (typeof id === "string" && id) return id
   }
   return ""
+}
+
+export function useOwnerId() {
+  const router = useRouter({ warn: false }) as
+    ReturnType<typeof useRouter> | undefined
+  return useSyncExternalStore(
+    (listener) => router?.subscribe("onResolved", listener) ?? (() => {}),
+    () => (router ? ownerIdFromRouteMatches(router.state.matches) : "")
+  )
 }

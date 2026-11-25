@@ -1,4 +1,7 @@
+import { catalog } from "@workspace/domain"
+
 import { ApiError, apiFetch } from "@/lib/api.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { endpoints } from "@/lib/requests.ts"
 
@@ -30,20 +33,10 @@ export function fetchGmailConnectTargetNotAContractRead() {
 }
 
 async function readCoachReset() {
-  try {
-    const body = await apiFetch<SuccessBody<unknown>>(endpoints.coachUsage)
-    return resetsAtOf(unwrapData(body))
-  } catch {
-    return null
-  }
-}
-
-function resetsAtOf(value: unknown) {
-  if (!value || typeof value !== "object") return null
-  const row = value as { resetsAt?: unknown; day?: { resetsAt?: unknown } }
-  if (typeof row.resetsAt === "string") return row.resetsAt
-  if (typeof row.day?.resetsAt === "string") return row.day.resetsAt
-  return null
+  const usage = await catalogClient
+    .read(catalog["coach.usage"].name, {})
+    .catch(() => null)
+  return usage?.day.resetsAt ?? null
 }
 
 function parseConnect(value: unknown) {

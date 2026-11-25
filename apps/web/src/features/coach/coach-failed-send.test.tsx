@@ -109,14 +109,18 @@ function installFetch(options: {
         const path = new URL(String(input), "http://localhost").pathname
         if (path === "/api/public-config")
           return Response.json({ google: false, coachDurable: true })
-        if (path === "/api/coach/usage") return usageResponse()
+        if (path === "/api/reads/coach.usage") return usageResponse()
         if (path.endsWith("chat.create")) options.onCreate?.()
         if (path.endsWith("coach.start") && options.onStart) {
           const body = startBody(init)
           starts.push(body)
           return options.onStart(body, init)
         }
-        if (path.startsWith("/api/coach/tasks/") && options.snapshot)
+        if (
+          (path === "/api/reads/coach.status" ||
+            path.startsWith("/api/coach/tasks/")) &&
+          options.snapshot
+        )
           return Response.json({ ok: true, data: options.snapshot })
         return (
           (await chatApiFetch(input, init)) ??

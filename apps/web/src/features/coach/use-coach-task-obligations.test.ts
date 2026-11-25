@@ -5,6 +5,7 @@ import { afterEach, expect, it, vi } from "vitest"
 
 import { chatApiFetchOrThrow, setMockChats } from "@/test/chat-api-mock.ts"
 import {
+  taskPathOf,
   CHAT,
   TASK,
   taskSnapshot,
@@ -75,7 +76,7 @@ function reviewFetch(
   vi.stubGlobal(
     "fetch",
     async (input: RequestInfo | URL, init?: RequestInit) => {
-      const path = new URL(String(input)).pathname
+      const path = taskPathOf(input, init)
       const response = await handler(
         path,
         () => JSON.parse(String(init?.body)).input

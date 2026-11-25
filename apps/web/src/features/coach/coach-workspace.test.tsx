@@ -10,12 +10,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import userEvent from "@testing-library/user-event"
 import { render } from "@/test/render-with-client.tsx"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import {
-  fetchProfile,
-  fetchUsage,
-  profileKey,
-  usageKey,
-} from "@/lib/account-api.ts"
+import { fetchProfile, profileKey } from "@/lib/account-api.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
+
+const usageKey = () => catalogClient.key("", "coach.usage", {})
+const fetchUsage = () => catalogClient.read("coach.usage", {})
 import { chatApiFetch, scriptCoachStream } from "@/test/chat-api-mock.ts"
 import { profileApiFetch } from "@/test/profile-api-mock.ts"
 import { ChatStoreProvider } from "./chat-store.tsx"
@@ -75,7 +74,7 @@ function stubUsage(
   vi.stubGlobal(
     "fetch",
     async (input: RequestInfo | URL, init?: RequestInit) => {
-      if (String(input).endsWith("/api/coach/usage"))
+      if (String(input).endsWith("/api/reads/coach.usage"))
         return Response.json({
           ok: true,
           data: {
@@ -351,7 +350,7 @@ describe("Coach workspace", () => {
     vi.stubGlobal(
       "fetch",
       async (input: RequestInfo | URL, init?: RequestInit) => {
-        if (String(input).endsWith("/api/coach/usage"))
+        if (String(input).endsWith("/api/reads/coach.usage"))
           return Response.json({
             ok: true,
             data: {

@@ -38,7 +38,10 @@ const TOOL_COPY = {
     read: "Checked Coach progress",
   },
   [catalog["coach.stop"].name]: { label: "Stop Coach" },
-  "coach.usage": { label: "Check Coach usage", read: "Checked Coach usage" },
+  [catalog["coach.usage"].name]: {
+    label: "Check Coach usage",
+    read: "Checked Coach usage",
+  },
   [catalog["connections.list"].name]: {
     label: "Look at your connections",
     read: "Looked at your connections",

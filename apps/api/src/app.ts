@@ -10,7 +10,6 @@ import {
   createActivityRoutes,
   createProfileRoutes,
   createSearchRoutes,
-  createUsageRoutes,
   hostEmailChangeCode,
 } from "./account/index.js"
 import {
@@ -253,7 +252,6 @@ export function createApp({
   app.route("/api/coach/tasks", createCoachTaskRoutes({ signedIn }))
   app.route("/api/chats", createChatRoutes(signedIn))
   app.route("/api/chats", coachRoutes)
-  app.route("/api/coach", createUsageRoutes(signedIn))
   app.route("/api/paper", createPaperRoutes(signedIn))
   app.route("/api/jobs", createJobRoutes(signedIn))
   app.route("/api/inbox", createInboxRoutes(signedIn, gmailEnabled))

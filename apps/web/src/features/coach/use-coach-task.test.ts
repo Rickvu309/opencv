@@ -10,6 +10,7 @@ import {
   setMockChats,
 } from "@/test/chat-api-mock.ts"
 import {
+  taskPathOf,
   CHAT,
   TASK,
   taskSnapshot,
@@ -66,7 +67,7 @@ it("retries an interrupted start with the same chat, invocation key and attachme
         if (inputs.length === 1) throw new Error("connection lost")
         return Response.json({ ok: true, data: taskStarted(TASK) })
       }
-      if (url.pathname.includes("/coach/tasks/"))
+      if (taskPathOf(input, init).includes("/coach/tasks/"))
         return Response.json({
           ok: true,
           data: taskSnapshot({
@@ -110,7 +111,7 @@ it("regenerates a persisted failed reply without appending its person message ag
         )
         return Response.json({ ok: true, data: taskStarted(TASK) })
       }
-      if (url.pathname.includes("/coach/tasks/"))
+      if (taskPathOf(input, init).includes("/coach/tasks/"))
         return Response.json({
           ok: true,
           data: taskSnapshot({ state: "failed" }),
@@ -152,7 +153,7 @@ it("tells the truth when a turn hits its limit and does not send it again", asyn
         starts()
         return Response.json({ ok: true, data: taskStarted(TASK) })
       }
-      if (url.pathname.includes("/coach/tasks/"))
+      if (taskPathOf(input, init).includes("/coach/tasks/"))
         return Response.json({
           ok: true,
           data: taskSnapshot({
@@ -204,7 +205,7 @@ it("keeps Stop during Chat creation and never sends the pending start", async ()
   vi.stubGlobal(
     "fetch",
     async (input: RequestInfo | URL, init?: RequestInit) => {
-      const path = new URL(String(input)).pathname
+      const path = taskPathOf(input, init)
       if (path.endsWith("chat.create")) {
         creating()
         await creation.promise
@@ -242,7 +243,7 @@ it.each([false, true])(
     vi.stubGlobal(
       "fetch",
       async (input: RequestInfo | URL, init?: RequestInit) => {
-        const path = new URL(String(input)).pathname
+        const path = taskPathOf(input, init)
         const commandInput = () =>
           (JSON.parse(String(init?.body)) as { input: Record<string, unknown> })
             .input
@@ -295,7 +296,7 @@ it("releases a detached start without letting stale completion clear the newer l
   vi.stubGlobal(
     "fetch",
     async (input: RequestInfo | URL, init?: RequestInit) => {
-      const path = new URL(String(input)).pathname
+      const path = taskPathOf(input, init)
       if (path.endsWith("coach.start")) {
         const body = (
           JSON.parse(String(init?.body)) as { input: Record<string, unknown> }
@@ -351,7 +352,7 @@ it.each([false, true])(
     vi.stubGlobal(
       "fetch",
       async (input: RequestInfo | URL, init?: RequestInit) => {
-        const path = new URL(String(input)).pathname
+        const path = taskPathOf(input, init)
         const body = () =>
           (JSON.parse(String(init?.body)) as { input: Record<string, unknown> })
             .input
@@ -404,7 +405,7 @@ it("fulfills the original Stop after detach without stopping the newer turn", as
   vi.stubGlobal(
     "fetch",
     async (input: RequestInfo | URL, init?: RequestInit) => {
-      const path = new URL(String(input)).pathname
+      const path = taskPathOf(input, init)
       const body = () =>
         (JSON.parse(String(init?.body)) as { input: Record<string, unknown> })
           .input
@@ -462,7 +463,7 @@ it.each([false, true])(
     vi.stubGlobal(
       "fetch",
       async (input: RequestInfo | URL, init?: RequestInit) => {
-        const path = new URL(String(input)).pathname
+        const path = taskPathOf(input, init)
         if (path.endsWith("coach.start"))
           return Response.json({ ok: true, data: taskStarted(TASK) })
         if (path.endsWith("coach.stop")) {

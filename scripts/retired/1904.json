@@ -1,0 +1,26 @@
+[
+  {
+    "subject": "apps/api/src/coach/task-http.test.ts",
+    "because": "The task snapshot route is gone; the same owner, sign-in and rollback checks now read the snapshot through the read door",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/one-door.test.ts",
+    "because": "Coach usage and the task snapshot became reads through the read door, so their two routes leave the waiting list and the cap drops to 17",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/settings/settings-errors.test.tsx",
+    "because": "The Usage case now finds its read by the catalog key; the same load failure is checked",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

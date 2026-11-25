@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { createQueryClient } from "@/lib/query-client.ts"
 import { Toaster } from "@workspace/ui/components/sonner"
 
+import { coachUsageSnapshot } from "@/test/coach-task-fixture.ts"
 import { jsonOk, pathOf } from "@/test/mock-http.ts"
 import {
   INBOX_NOW,
@@ -490,10 +491,8 @@ describe("inbox reader", () => {
             { status: 429 }
           )
         }
-        if (path === "/api/coach/usage") {
-          return jsonOk({
-            day: { resetsAt: "2026-10-28T00:00:00.000Z" },
-          })
+        if (path === "/api/reads/coach.usage") {
+          return jsonOk(coachUsageSnapshot("2026-10-28T00:00:00.000Z"))
         }
         return jsonOk({})
       }

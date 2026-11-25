@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query"
 import type { Profile, QueryOutput } from "@workspace/domain"
 import { UsageBar } from "@workspace/ui/components/usage-bar"
 
@@ -16,7 +15,8 @@ import {
   sessionResetLabel,
   weekResetLabel,
 } from "./settings-api.ts"
-import { fetchUsage, usageKey } from "@/lib/account-api.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
+import { useOwnerId } from "@/lib/owner-id.ts"
 
 export function UsageSection({
   plan,
@@ -25,10 +25,7 @@ export function UsageSection({
   plan: Profile["plan"]
   timeZone: string
 }) {
-  const usage = useQuery({
-    queryKey: usageKey(),
-    queryFn: fetchUsage,
-  })
+  const usage = catalogClient.useRead(useOwnerId(), "coach.usage", {})
   const planLine =
     plan === "pro" ? "You're on the Pro plan." : "You're on the Free plan."
 
