@@ -311,7 +311,6 @@ export const ROUTE_CASES: readonly RouteCase[] = [
   get("/api/profile"),
   postForm("/api/account/photo", () => pngUpload),
   get("/api/account/export"),
-  get("/api/search"),
   get("/api/activity"),
   mcpCase,
 ]

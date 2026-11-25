@@ -48,6 +48,7 @@ import { implementation as paper$read } from "../paper/operations/read/server.js
 import { implementation as profile$markWelcomed } from "../account/operations/profile/mark-welcomed/server.js"
 import { implementation as profile$setPhoto } from "../account/operations/profile/set-photo/server.js"
 import { implementation as profile$update } from "../account/operations/profile/update/server.js"
+import { implementation as workspace$search } from "../account/operations/workspace/search/server.js"
 
 export const implementations = {
   "account.delete": account$delete,
@@ -98,4 +99,5 @@ export const implementations = {
   "profile.markWelcomed": profile$markWelcomed,
   "profile.setPhoto": profile$setPhoto,
   "profile.update": profile$update,
+  "workspace.search": workspace$search,
 } satisfies Implementations<typeof catalog>

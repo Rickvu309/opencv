@@ -192,7 +192,7 @@ describe("search results integration", () => {
       vi.stubGlobal(
         "fetch",
         (request: RequestInfo | URL, init?: RequestInit) =>
-          pathOf(request) === "/api/search"
+          pathOf(request) === "/api/reads/workspace.search"
             ? response
             : originalFetch(request, init)
       )

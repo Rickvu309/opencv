@@ -2,6 +2,7 @@ import { z } from "zod"
 
 import { coachModeSchema } from "./coach-mode.js"
 import { fileIdSchema } from "./ids.js"
+import { jobStageSchema } from "./job.js"
 import type { ResourceRef } from "./resources.js"
 
 export const planSchema = z.enum(["free", "pro"])
@@ -207,5 +208,30 @@ export const usageSnapshotSchema = z
     session: cappedWindowSchema,
     day: dayUsageSchema,
     week: cappedWindowSchema,
+  })
+  .strict()
+
+export const workspaceSearchSchema = z
+  .object({
+    chats: z.array(z.object({ id: z.string(), title: z.string() }).strict()),
+    documents: z.array(
+      z
+        .object({
+          id: z.string(),
+          name: z.string(),
+          kind: z.enum(["cv", "letter"]),
+        })
+        .strict()
+    ),
+    jobs: z.array(
+      z
+        .object({
+          id: z.string(),
+          title: z.string(),
+          company: z.string(),
+          stage: jobStageSchema,
+        })
+        .strict()
+    ),
   })
   .strict()
