@@ -1,6 +1,6 @@
 import { z } from "zod"
 import { activityFeedRowSchema } from "../../../account.js"
-import { everyReadAnUndoOrApprovalCanChange } from "../../../control.js"
+import { everyReadAnUndoOrApprovalCanChange } from "../../../control/control.js"
 import { defineOperation } from "../../../operation.js"
 
 export const operation = defineOperation({

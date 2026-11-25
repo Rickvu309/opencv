@@ -26,7 +26,7 @@ export * from "./queries.js"
 export * from "./paper-contract.js"
 export * from "./paper-start.js"
 export * from "./chat-views.js"
-export * from "./control.js"
+export * from "./control/control.js"
 export * from "./contract-commands.js"
 
 export * from "./agents/connections.js"

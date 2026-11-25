@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import type { ResourceRef } from "./resources.js"
+import type { ResourceRef } from "../resources.js"
 
 export const activityRowAsTheApiReturnsIt = z
   .object({
