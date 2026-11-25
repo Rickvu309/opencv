@@ -178,31 +178,6 @@ export const paperContract = commandContract({
     step: () => "Sync the document",
     invalidates: listChanged,
   }),
-  "paper.rename": commandEntry({
-    description: "Rename a document.",
-    input: paperRenameInputSchema.extend({
-      writer: nativeWriterSchema.optional(),
-    }),
-    output: paperViewSchema.extend({ previousName: z.string() }).strict(),
-    coach: "auto",
-    destructive: false,
-    step: () => "Rename the document",
-    invalidates: docChanged,
-  }),
-  "paper.setFavorite": commandEntry({
-    description: "Set whether a document is a favorite.",
-    input: z.object({ docId: paperIdSchema, isFavorite: z.boolean() }).strict(),
-    output: z
-      .object({ docId: paperIdSchema, isFavorite: z.boolean() })
-      .strict(),
-    coach: "never",
-    destructive: false,
-    step: () => "Set favorite",
-    invalidates: (input) => [
-      { query: "paper.get", input: { docId: input.docId } },
-      { query: "paper.list" },
-    ],
-  }),
   "paper.duplicate": commandEntry({
     description: "Duplicate a document.",
     input: paperDuplicateInputSchema.extend({
@@ -246,17 +221,6 @@ export const paperContract = commandContract({
     ],
   }),
 
-  "paper.setStatus": commandEntry({
-    description: "Set a document status.",
-    input: paperSetStatusCommandInputSchema.extend({
-      writer: nativeWriterSchema.optional(),
-    }),
-    output: paperViewSchema,
-    coach: "never",
-    destructive: false,
-    step: () => "Set status",
-    invalidates: docChanged,
-  }),
   "paper.deleteFile": commandEntry({
     description: "Delete an uploaded file.",
     input: paperDeleteFileInputSchema,

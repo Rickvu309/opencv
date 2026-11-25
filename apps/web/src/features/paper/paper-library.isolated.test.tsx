@@ -46,7 +46,7 @@ async function openRename(doc: PaperView) {
 
 function renameCommands(fetchMock: ReturnType<typeof vi.fn<typeof fetch>>) {
   return fetchMock.mock.calls
-    .filter(([url]) => String(url).endsWith("/api/commands/paper.rename"))
+    .filter(([url]) => String(url).endsWith("/api/commands/paper.update"))
     .map(([, init]) => JSON.parse(String(init?.body)))
 }
 
@@ -461,7 +461,7 @@ describe("Paper library", () => {
       expect(renameCommands(fetchMock)).toHaveLength(1)
     })
     expect(renameCommands(fetchMock)[0]).toMatchObject({
-      input: { docId: doc.id, name: "Updated name" },
+      input: { docId: doc.id, patch: { name: "Updated name" } },
     })
     await vi.waitFor(() => {
       expect(

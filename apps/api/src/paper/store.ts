@@ -167,42 +167,55 @@ export async function createPaper(
   return readPaperDocumentInfo(actor.userId, parsePaperId(id), writer)
 }
 
-export async function renamePaper(
+export type PaperPatch = {
+  name?: string
+  isFavorite?: boolean
+  status?: "draft" | "ready" | "published"
+}
+
+export async function updatePaper(
   actor: Actor,
   docId: PaperId,
-  name: string,
+  patch: PaperPatch,
   writer?: NativeWriter
 ) {
   const current = await ownedPaperOrNull(actor.userId, docId)
-  if (!current)
-    return (
-      (await renameWordPage(actor.userId, docId, name)) ?? documentNotFound()
-    )
+  if (!current) {
+    if (patch.isFavorite !== undefined || patch.status !== undefined)
+      throw new CommandError(
+        ERROR_CODES.CONFLICT,
+        "A Word page has only a name. Nothing was changed."
+      )
+    const renamed =
+      patch.name === undefined
+        ? null
+        : await renameWordPage(actor.userId, docId, patch.name)
+    if (!renamed) return documentNotFound()
+    const { previousName, ...page } = renamed
+    return { ...page, previous: { name: previousName } }
+  }
   toListedPaper(current, writer)
-  const updatedAt = new Date()
+  const touchesPage = patch.name !== undefined || patch.status !== undefined
+  const next = {
+    ...current,
+    ...patch,
+    ...(touchesPage ? { updatedAt: new Date() } : {}),
+  }
   await getDb()
     .update(paperDocs)
-    .set({ name, updatedAt })
+    .set({
+      ...patch,
+      ...(touchesPage ? { updatedAt: next.updatedAt } : {}),
+    })
     .where(eq(paperDocs.id, current.id))
-  return {
-    ...toListedPaper({ ...current, name, updatedAt }, writer),
-    previousName: current.name,
+  const previous: PaperPatch = {
+    ...(patch.name !== undefined ? { name: current.name } : {}),
+    ...(patch.isFavorite !== undefined
+      ? { isFavorite: current.isFavorite }
+      : {}),
+    ...(patch.status !== undefined ? { status: current.status } : {}),
   }
-}
-
-export async function setPaperFavorite(
-  userId: UserId,
-  docId: PaperId,
-  isFavorite: boolean
-) {
-  const rows = await getDb()
-    .update(paperDocs)
-    .set({ isFavorite })
-    .where(and(eq(paperDocs.id, docId), eq(paperDocs.userId, userId)))
-    .returning({ id: paperDocs.id })
-  if (!rows[0])
-    throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
-  return { docId, isFavorite }
+  return { ...toListedPaper(next, writer), previous }
 }
 
 export type DuplicatePlan =
@@ -264,23 +277,6 @@ export async function deletePaper(actor: Actor, docId: PaperId) {
 
 export async function restoreDeletedPaper(actor: Actor, docId: PaperId) {
   return (await restoreWordPage(actor.userId, docId)) ?? documentNotFound()
-}
-
-export async function setPaperStatus(
-  actor: Actor,
-  docId: PaperId,
-  status: "draft" | "ready" | "published",
-  writer?: NativeWriter
-) {
-  const current =
-    (await ownedPaperOrNull(actor.userId, docId)) ?? documentNotFound()
-  toListedPaper(current, writer)
-  const updatedAt = new Date()
-  await getDb()
-    .update(paperDocs)
-    .set({ status, updatedAt })
-    .where(eq(paperDocs.id, docId))
-  return toListedPaper({ ...current, status, updatedAt }, writer)
 }
 
 export async function readOwnedPhoto(

@@ -75,7 +75,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "paper.rename",
+      name: "paper.update",
       arrange: async () => {
         const paper = await run("paper.create", {
           kind: "cv",
@@ -84,62 +84,47 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         ctx.docId = idOf(paper.output)
       },
       act: () =>
-        run("paper.rename", {
+        run("paper.update", {
           docId: ctx.docId,
-          name: "Renamed CV",
           writer: RICH_NATIVE_WRITER,
+          patch: { name: "Renamed CV", isFavorite: true, status: "ready" },
         }),
-      assert: async () => {
-        expect(text(await paperOf(ctx.docId), "name")).toBe("Renamed CV")
-      },
-      undoAssert: async (result) => {
-        await undo(result)
-        expect(text(await paperOf(ctx.docId), "name")).toBe("Rename CV")
-      },
-    },
-    {
-      name: "paper.setFavorite",
-      arrange: async () => {
-        const paper = await run("paper.create", {
-          kind: "cv",
-          name: "Favorite CV",
-        })
-        ctx.docId = idOf(paper.output)
-      },
-      act: () =>
-        run("paper.setFavorite", { docId: ctx.docId, isFavorite: true }),
       assert: async (result) => {
-        expect(result.output).toEqual({ docId: ctx.docId, isFavorite: true })
-        const first = await paperOf(ctx.docId)
-        expect(flag(first, "isFavorite")).toBe(true)
-        const beforeUpdatedAt = text(first, "updatedAt")
-        const beforeVersion = (first as { contentVersion: number })
-          .contentVersion
-        const repeated = await run("paper.setFavorite", {
-          docId: ctx.docId,
+        expect(result.output).toMatchObject({
+          id: ctx.docId,
+          name: "Renamed CV",
           isFavorite: true,
+          status: "ready",
         })
-        expect(repeated.output).toEqual(result.output)
-        const after = await paperOf(ctx.docId)
-        expect(flag(after, "isFavorite")).toBe(true)
-        expect(text(after, "updatedAt")).toBe(beforeUpdatedAt)
-        expect((after as { contentVersion: number }).contentVersion).toBe(
-          beforeVersion
-        )
-        await run("paper.setFavorite", { docId: ctx.docId, isFavorite: false })
-        expect(flag(await paperOf(ctx.docId), "isFavorite")).toBe(false)
-        await run("paper.setFavorite", { docId: ctx.docId, isFavorite: true })
+        const first = await paperOf(ctx.docId)
+        expect(text(first, "name")).toBe("Renamed CV")
+        expect(flag(first, "isFavorite")).toBe(true)
+        expect(text(first, "status")).toBe("ready")
+        const beforeUpdatedAt = text(first, "updatedAt")
+        const unfavorite = await run("paper.update", {
+          docId: ctx.docId,
+          writer: RICH_NATIVE_WRITER,
+          patch: { isFavorite: false },
+        })
+        const unmarked = await paperOf(ctx.docId)
+        expect(flag(unmarked, "isFavorite")).toBe(false)
+        expect(text(unmarked, "updatedAt")).toBe(beforeUpdatedAt)
+        await undo(unfavorite)
         const listed = (await registry.read(
           "paper.list",
           { writer: RICH_NATIVE_WRITER },
           personActor(userId)
-        )) as {
-          id: string
-          isFavorite: boolean
-        }[]
+        )) as { id: string; isFavorite: boolean }[]
         expect(listed.find((paper) => paper.id === ctx.docId)?.isFavorite).toBe(
           true
         )
+      },
+      undoAssert: async (result) => {
+        await undo(result)
+        const restored = await paperOf(ctx.docId)
+        expect(text(restored, "name")).toBe("Rename CV")
+        expect(flag(restored, "isFavorite")).toBe(false)
+        expect(text(restored, "status")).toBe("draft")
       },
     },
     {
@@ -236,22 +221,6 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         expect(text(outline, "outline")).toContain(
           "hello from an imported file"
         )
-      },
-    },
-    {
-      name: "paper.setStatus",
-      arrange: async () => {
-        const paper = await run("paper.create", { kind: "cv", name: "Status" })
-        ctx.docId = idOf(paper.output)
-      },
-      act: () =>
-        run("paper.setStatus", {
-          docId: ctx.docId,
-          status: "ready",
-          writer: RICH_NATIVE_WRITER,
-        }),
-      assert: async () => {
-        expect(text(await paperOf(ctx.docId), "status")).toBe("ready")
       },
     },
     {

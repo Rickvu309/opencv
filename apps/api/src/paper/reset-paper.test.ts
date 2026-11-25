@@ -178,13 +178,14 @@ describe("reset paper rows", () => {
           name: "chat.appendMessage",
           input: { chatId, text: "Keep this note." },
           actor: person,
+          idempotencyKey: "note-reset-paper",
         })
         await registry.execute({
-          name: "paper.rename",
+          name: "paper.update",
           input: {
             docId: cvId,
-            name: "CV kept in the receipt",
             writer: RICH_NATIVE_WRITER,
+            patch: { name: "CV kept in the receipt" },
           },
           actor: person,
           idempotencyKey: "rename-reset-paper",

@@ -103,15 +103,15 @@ describe("card menu actions on a Word page", () => {
     run(async () => {
       const page = await mintWordPage("Rename.docx")
       const renamed = await registry.execute({
-        name: "paper.rename",
-        input: { docId: page.docId, name: "Harbor CV" },
+        name: "paper.update",
+        input: { docId: page.docId, patch: { name: "Harbor CV" } },
         actor: person,
       })
       expect(renamed.output).toMatchObject({
         id: page.docId,
         name: "Harbor CV",
-        previousName: "Rename.docx",
       })
+      expect(renamed.output).not.toHaveProperty("previous")
       expect(
         (await listed()).find((item) => item.id === page.docId)?.name
       ).toBe("Harbor CV")
@@ -119,8 +119,8 @@ describe("card menu actions on a Word page", () => {
       expect(read.name).toBe("Harbor CV")
       expect(read.revision).toBe(page.revision)
       await registry.execute({
-        name: "paper.rename",
-        input: { docId: page.docId, name: "Rename" },
+        name: "paper.update",
+        input: { docId: page.docId, patch: { name: "Rename" } },
         actor: person,
       })
       expect(
@@ -306,10 +306,10 @@ describe("card menu actions on a Word page", () => {
       const page = await mintWordPage("Private.docx")
       const outsider = personActor(stranger)
       for (const [name, input] of [
-        ["paper.rename", { docId: page.docId, name: "Taken" }],
+        ["paper.update", { docId: page.docId, patch: { name: "Taken" } }],
         ["paper.duplicate", { docId: page.docId }],
         ["paper.delete", { docId: page.docId }],
-        ["paper.rename", { docId: randomUUID(), name: "Taken" }],
+        ["paper.update", { docId: randomUUID(), patch: { name: "Taken" } }],
         ["paper.duplicate", { docId: randomUUID() }],
         ["paper.delete", { docId: randomUUID() }],
       ] as const)

@@ -149,10 +149,11 @@ const LATER: Record<string, Later> = {
   },
   "paper.create": {
     act: async (a, run) => {
-      await run("paper.rename", {
+      await run("paper.update", {
         docId: idOf(a.output),
-        name: "Renamed",
+
         writer: RICH_NATIVE_WRITER,
+        patch: { name: "Renamed" },
       })
     },
     survives: async (a, userId) =>
@@ -160,14 +161,26 @@ const LATER: Record<string, Later> = {
   },
   "paper.duplicate": {
     act: async (a, run) => {
-      await run("paper.rename", {
+      await run("paper.update", {
         docId: idOf(a.output),
-        name: "Renamed",
+
         writer: RICH_NATIVE_WRITER,
+        patch: { name: "Renamed" },
       })
     },
     survives: async (a, userId) =>
       (await paperName(userId, a).catch(() => "gone")) === "Renamed",
+  },
+  "paper.update": {
+    act: async (a, run) => {
+      await run("paper.update", {
+        docId: idOf(a.output),
+        writer: RICH_NATIVE_WRITER,
+        patch: { name: "Renamed later" },
+      })
+    },
+    survives: async (a, userId) =>
+      (await paperName(userId, a).catch(() => "gone")) === "Renamed later",
   },
   "paper.canvas": {
     act: async (a, run, userId) => {

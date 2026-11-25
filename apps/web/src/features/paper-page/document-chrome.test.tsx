@@ -79,7 +79,7 @@ it("says Saved without a time when the edited time is unknown", () => {
 it("renames through the product command and cancels an unfinished name with Escape", async () => {
   const requests: unknown[] = []
   vi.stubGlobal("fetch", async (url: RequestInfo | URL, init?: RequestInit) => {
-    if (!String(url).includes("paper.rename")) throw new Error(String(url))
+    if (!String(url).includes("paper.update")) throw new Error(String(url))
     requests.push(JSON.parse(String(init?.body)))
     return Response.json({ ok: true, data: {} })
   })
@@ -97,7 +97,7 @@ it("renames through the product command and cancels an unfinished name with Esca
   await screen.findByRole("heading", { name: "Designer CV" })
   expect(requests).toEqual([
     expect.objectContaining({
-      input: expect.objectContaining({ name: "Designer CV" }),
+      input: expect.objectContaining({ patch: { name: "Designer CV" } }),
     }),
   ])
   fireEvent.click(screen.getByRole("button", { name: "Rename document" }))

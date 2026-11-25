@@ -8,13 +8,11 @@ import { runContractCommand } from "./contract-client.ts"
 afterEach(() => vi.unstubAllGlobals())
 
 describe("native Paper metadata requests", () => {
-  it.each(["paper.rename", "paper.duplicate", "paper.setStatus"] as const)(
+  it.each(["paper.duplicate"] as const)(
     "qualifies outgoing %s without changing its input",
     async (name) => {
       const input = {
         docId: parsePaperId("01990b00-0000-7000-8000-000000000001"),
-        name: "Letter",
-        status: "draft" as const,
       }
       const before = structuredClone(input)
       const fetch = vi
@@ -39,7 +37,6 @@ describe("native Paper metadata requests", () => {
   it("preserves an explicitly incompatible outgoing writer for server refusal", async () => {
     const input = {
       docId: parsePaperId("01990b00-0000-7000-8000-000000000001"),
-      name: "Letter",
       writer: { ...NATIVE_WRITER, supportedSchemaRevisions: [2] },
     }
     const before = structuredClone(input)
@@ -47,7 +44,7 @@ describe("native Paper metadata requests", () => {
       .fn()
       .mockImplementation(async () => Response.json({ ok: true, data: {} }))
     vi.stubGlobal("fetch", fetch)
-    await runContractCommand(new QueryClient(), "paper.rename", input, {
+    await runContractCommand(new QueryClient(), "paper.duplicate", input, {
       refresh: false,
     })
     expect(JSON.parse(fetch.mock.calls[0]?.[1].body).input).toEqual(input)

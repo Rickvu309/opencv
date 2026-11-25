@@ -127,15 +127,12 @@ describe("paper commands through the contract client", () => {
       queryClient.setQueryData(key, { stale: true })
     }
 
-    await runContractCommand(queryClient, "paper.rename", {
-      docId,
-      name: "New",
-    })
+    await runContractCommand(queryClient, "paper.delete", { docId })
 
     const call = fetchMock.mock.calls[0] ?? []
-    expect(String(call[0])).toBe(`${apiBaseUrl}/api/commands/paper.rename`)
+    expect(String(call[0])).toBe(`${apiBaseUrl}/api/commands/paper.delete`)
     expect(JSON.parse(String((call[1] as RequestInit).body))).toMatchObject({
-      input: { docId, name: "New" },
+      input: { docId },
     })
     for (const key of [paperListKey(), paperGetKey(docId)]) {
       expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true)
@@ -165,9 +162,9 @@ describe("paper commands through the contract client", () => {
       .mockImplementation(() => Promise.resolve(envelope({ id: docId })))
     vi.stubGlobal("fetch", fetchMock)
     const queryClient = new QueryClient()
-    const input = { docId, name: "New" }
+    const input = { docId }
 
-    await runContractCommand(queryClient, "paper.rename", input)
+    await runContractCommand(queryClient, "paper.delete", input)
     await runContractCommand(queryClient, "paper.nativeSync", {
       docId,
       epoch: 0,

@@ -33,7 +33,7 @@ type Delete = OperationBinding<
 >["execute"]
 type Snooze = OperationInput<(typeof catalog)["inbox.snooze"]>
 type Edit = CommandInput<PaperContract, "paper.edit">
-type SetStatus = CommandInput<PaperContract, "paper.setStatus">
+type PaperUpdate = OperationInput<(typeof catalog)["paper.update"]>
 type PaperEditBinding = Bindings<PaperContract>["paper.edit"]
 type PaperDelete = Bindings<PaperContract>["paper.delete"]
 type Undo = OperationInput<(typeof catalog)["activity.undo"]>
@@ -100,10 +100,10 @@ export function typeProbes(registry: Registry) {
   // @ts-expect-error an expectation that matches no field would never refuse
   const emptyExpectation: PaperDelete["reversal"] = () => ({ command: "paper.restoreDeleted", input: { docId: someDocId }, expect: { query: "paper.isDeleted", input: { docId: someDocId }, matches: {}, skipped: "x" } })
 
-  const pendingRename: Bindings<PaperContract>["paper.rename"]["reversal"] =
+  const pendingRestore: Bindings<PaperContract>["paper.duplicate"]["reversal"] =
     () => ({
-      command: "paper.rename",
-      input: { docId: parsePaperId(uuid), name: "Earlier" },
+      command: "paper.delete",
+      input: { docId: parsePaperId(uuid) },
     })
 
   // prettier-ignore
@@ -132,7 +132,7 @@ export function typeProbes(registry: Registry) {
 
   // prettier-ignore
   // @ts-expect-error a status outside the list is not a status
-  const wrongStatus: SetStatus = { docId: parsePaperId(uuid), status: "fancy" }
+  const wrongStatus: PaperUpdate = { docId: uuid, patch: { status: "fancy" } }
 
   // prettier-ignore
   // @ts-expect-error a JobId is not a PaperId
@@ -180,7 +180,7 @@ export function typeProbes(registry: Registry) {
     unguardedMove,
     wrongExpectation,
     emptyExpectation,
-    pendingRename,
+    pendingRestore,
     unknownName,
     oldStage,
     paperAsJob,

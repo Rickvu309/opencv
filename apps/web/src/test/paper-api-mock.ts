@@ -192,18 +192,6 @@ export async function paperApiFetch(
     return jsonOk(toWire(doc))
   }
 
-  if (method === "POST" && path === "/api/commands/paper.setStatus") {
-    const body = (await readBody(init)) as {
-      docId?: string
-      status?: string
-    }
-    const doc = store.docs.find((item) => item.id === body.docId)
-    if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
-    if (body.status) doc.status = body.status
-    doc.updatedAt = isoNow()
-    return jsonOk(toWire(doc))
-  }
-
   if (method === "POST" && path === "/api/commands/paper.create") {
     const body = (await readBody(init)) as {
       kind?: PaperContentKind
@@ -227,24 +215,20 @@ export async function paperApiFetch(
     return jsonOk(toWire(created))
   }
 
-  if (method === "POST" && path === "/api/commands/paper.rename") {
-    const body = (await readBody(init)) as { docId?: string; name?: string }
-    const doc = store.docs.find((item) => item.id === body.docId)
-    if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
-    doc.name = body.name?.trim() || doc.name
-    doc.updatedAt = isoNow()
-    return jsonOk(toWire(doc))
-  }
-
-  if (method === "POST" && path === "/api/commands/paper.setFavorite") {
+  if (method === "POST" && path === "/api/commands/paper.update") {
     const body = (await readBody(init)) as {
       docId?: string
-      isFavorite?: boolean
+      patch?: { name?: string; isFavorite?: boolean; status?: string }
     }
     const doc = store.docs.find((item) => item.id === body.docId)
     if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
-    setMockPaperFavorite(doc.id, body.isFavorite === true)
-    return jsonOk({ docId: doc.id, isFavorite: body.isFavorite === true })
+    const patch = body.patch ?? {}
+    if (patch.name !== undefined) doc.name = patch.name.trim() || doc.name
+    if (patch.status) doc.status = patch.status
+    if (patch.isFavorite !== undefined)
+      setMockPaperFavorite(doc.id, patch.isFavorite)
+    if (patch.name !== undefined || patch.status) doc.updatedAt = isoNow()
+    return jsonOk(toWire(doc))
   }
 
   if (method === "POST" && path === "/api/commands/paper.duplicate") {

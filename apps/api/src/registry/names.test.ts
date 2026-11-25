@@ -2,7 +2,11 @@ import { readdirSync, readFileSync, statSync } from "node:fs"
 import { dirname, join, relative } from "node:path"
 import { fileURLToPath } from "node:url"
 
-import { chatToolNameSchema, jobPriorityResource } from "@workspace/domain"
+import {
+  chatToolNameSchema,
+  jobPriorityResource,
+  paperLabelResource,
+} from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
 import { registeredAgentScopes } from "../connections/index.js"
@@ -73,7 +77,7 @@ function retiredReceiptName(name: string, files: Set<string>) {
 
 function declaredResourceName(name: string, files: Set<string>) {
   return (
-    name === jobPriorityResource.name &&
+    (name === jobPriorityResource.name || name === paperLabelResource.name) &&
     [...files].every((file) => file === "packages/domain/src/resources.ts")
   )
 }

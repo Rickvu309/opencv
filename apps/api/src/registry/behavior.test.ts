@@ -59,8 +59,8 @@ const coachToolNames = [
   "paper.import",
   "paper.list",
   "paper.outline",
-  "paper.rename",
   "paper.start",
+  "paper.update",
   "profile.get",
   "workspace.search",
 ]
