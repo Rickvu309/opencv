@@ -24,7 +24,6 @@ import {
   deletePaper,
   listFiles,
   listPapers,
-  ownedPaper,
   readFileMeta,
 } from "./store.js"
 
