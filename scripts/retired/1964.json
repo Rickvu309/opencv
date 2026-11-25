@@ -78,5 +78,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "apps/web/src/lib/paper-qualification.test.ts",
+    "because": "The qualified paper.get read is deleted; the basis, writer, key and cancellation cases now run against the qualified paper.list read with the same expectations.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
