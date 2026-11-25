@@ -21,7 +21,7 @@ type MoveInput = CommandInput<JobContract, "job.move">
 type StarInput = CommandInput<JobContract, "job.star">
 type Move = Bindings<JobContract>["job.move"]
 type Delete = Bindings<JobContract>["job.delete"]
-type Snooze = CommandInput<InboxContract, "inbox.snooze">
+type Snooze = OperationInput<(typeof catalog)["inbox.snooze"]>
 type Edit = CommandInput<PaperContract, "paper.edit">
 type SetTemplate = CommandInput<PaperContract, "paper.setTemplate">
 type PaperEditBinding = Bindings<PaperContract>["paper.edit"]
@@ -39,7 +39,14 @@ type AccountDelete = OperationBinding<
   (typeof catalog)["account.delete"],
   { deleted: true }
 >["execute"]
-type MarkDone = Bindings<InboxContract>["inbox.markDone"]
+type MarkDone = OperationBinding<
+  (typeof catalog)["inbox.markDone"],
+  {
+    id: string
+    previousStatus: "open" | "done" | "snoozed"
+    previousSnoozeUntil: string | null
+  }
+>["reversal"]
 
 export function typeProbes(registry: Registry) {
   // prettier-ignore
@@ -101,7 +108,7 @@ export function typeProbes(registry: Registry) {
 
   // prettier-ignore
   // @ts-expect-error an inbox reversal must be a valid input of the command it names
-  const wrongInboxReversal: MarkDone["reversal"] = () => ({ command: "inbox.markDone", input: { status: "done" } })
+  const wrongInboxReversal: MarkDone = () => ({ command: "inbox.markDone", input: { status: "done" }, expect: { query: "inbox.get", input: {}, matches: {}, skipped: "x" } })
 
   // prettier-ignore
   // @ts-expect-error unknown paper command name

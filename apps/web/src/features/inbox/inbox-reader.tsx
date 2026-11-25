@@ -24,7 +24,11 @@ import {
   companyInitials,
   stageLabel,
 } from "@/features/apply/apply-stages.ts"
-import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
+import {
+  catalogClient,
+  undoActivity,
+  useRunCommand,
+} from "@/lib/contract-client.ts"
 
 import { inboxLimitFrom, isCoachLimit } from "./inbox-api.ts"
 import { InboxReaderHeader } from "./inbox-reader-header.tsx"
@@ -163,11 +167,15 @@ export function InboxReader({
               disabled={busy}
               onClick={() =>
                 run(async () => {
-                  const result = await runCommand("inbox.acceptSuggestion", {
-                    threadId: detail.id,
-                  })
+                  const result = await catalogClient.run(
+                    queryClient,
+                    "inbox.acceptSuggestion",
+                    {
+                      threadId: detail.id,
+                    }
+                  )
                   toastWithUndo("Moved to Interview", () => {
-                    if (result.activityId)
+                    if ("activityId" in result && result.activityId)
                       void undoActivity(queryClient, result.activityId).catch(
                         reportRejected("undo this")
                       )
@@ -183,9 +191,13 @@ export function InboxReader({
               disabled={busy}
               onClick={() =>
                 run(async () => {
-                  await runCommand("inbox.clearSuggestion", {
-                    threadId: detail.id,
-                  })
+                  await catalogClient.run(
+                    queryClient,
+                    "inbox.clearSuggestion",
+                    {
+                      threadId: detail.id,
+                    }
+                  )
                 })
               }
             >

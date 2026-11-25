@@ -1,11 +1,11 @@
 import { useEffect, useReducer, useRef, type ReactNode } from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@workspace/ui/components/button"
 import { toast } from "@workspace/ui/components/sonner"
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
 
 import { ApiError } from "@/lib/api.ts"
-import { queryKey, useRunCommand } from "@/lib/contract-client.ts"
+import { catalogClient, queryKey } from "@/lib/contract-client.ts"
 import { PROFILE_ZONE } from "@/features/apply/apply-stages.ts"
 
 import "./design/page-header.css"
@@ -42,7 +42,7 @@ import { inboxConnectReadKeyOutsideContract } from "@/lib/requests.ts"
 const NARROW = "(max-width: 767px)"
 
 export function InboxPage() {
-  const runCommand = useRunCommand()
+  const queryClient = useQueryClient()
   const narrow = useMediaQuery(NARROW, false)
   const now = new Date()
   const list = useQuery({
@@ -91,7 +91,7 @@ export function InboxPage() {
   async function onSkip() {
     dispatch({ type: "skip_started" })
     try {
-      await runCommand("inbox.skip", {})
+      await catalogClient.run(queryClient, "inbox.skip", {})
     } catch (error) {
       toast(messageOf(error))
     } finally {
@@ -100,7 +100,8 @@ export function InboxPage() {
   }
 
   async function publishScan() {
-    const result = await runCommand("inbox.scan", {})
+    const result = await catalogClient.run(queryClient, "inbox.scan", {})
+    if ("pending" in result) throw new Error("The scan is waiting")
     dispatch({
       type: "scan_found",
       progress: {
@@ -126,7 +127,7 @@ export function InboxPage() {
   async function onExplore() {
     dispatch({ type: "explore_started" })
     try {
-      await runCommand("inbox.skip", {})
+      await catalogClient.run(queryClient, "inbox.skip", {})
       await publishScan()
       dispatch({ type: "scan_ended" })
     } catch (error) {

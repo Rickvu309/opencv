@@ -47,7 +47,7 @@ export const RETIRED = [
         why: "the Anthropic SDK option disables provider conversation storage for request-bound Chat history",
       },
       {
-        path: /^(?:apps\/api\/src\/inbox\/|apps\/api\/src\/registry\/(?:coverage-inbox\.test-support|inbox-contract\.test|invalidation\.formal\.test|registry\.undo-later\.formal\.test)\.ts$|packages\/domain\/src\/inbox[\w.-]*\.ts$|apps\/web\/src\/features\/inbox\/|apps\/web\/src\/test\/inbox-fixtures\.ts$|apps\/api\/src\/scenarios\/inbox\.scenario\.test\.ts$)/,
+        path: /^(?:apps\/api\/src\/inbox\/|apps\/api\/src\/registry\/(?:coverage-inbox\.test-support|inbox-contract\.test|invalidation\.formal\.test|registry\.undo-later\.formal\.test)\.ts$|packages\/domain\/src\/inbox[\w.-]*\.ts$|packages\/domain\/src\/operations\/inbox\/|apps\/web\/src\/features\/inbox\/|apps\/web\/src\/test\/inbox-fixtures\.ts$|apps\/api\/src\/scenarios\/inbox\.scenario\.test\.ts$)/,
         why: "the inbox modules own the mail thread noun (MailThread, InboxThread, threadId, listThreads, getThread)",
       },
       {

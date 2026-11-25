@@ -15,6 +15,12 @@ import { operation as coach$status } from "../operations/coach/status/operation.
 import { operation as coach$stop } from "../operations/coach/stop/operation.js"
 import { operation as connections$list } from "../operations/connections/list/operation.js"
 import { operation as connections$revoke } from "../operations/connections/revoke/operation.js"
+import { operation as inbox$acceptSuggestion } from "../operations/inbox/accept-suggestion/operation.js"
+import { operation as inbox$clearSuggestion } from "../operations/inbox/clear-suggestion/operation.js"
+import { operation as inbox$markDone } from "../operations/inbox/mark-done/operation.js"
+import { operation as inbox$scan } from "../operations/inbox/scan/operation.js"
+import { operation as inbox$skip } from "../operations/inbox/skip/operation.js"
+import { operation as inbox$snooze } from "../operations/inbox/snooze/operation.js"
 import { operation as job$priorityCounts } from "../operations/job/priority-counts/operation.js"
 import { operation as job$setPriority } from "../operations/job/set-priority/operation.js"
 import { operation as notify$request } from "../operations/notify/request/operation.js"
@@ -44,6 +50,12 @@ export const catalog = {
   "coach.stop": coach$stop,
   "connections.list": connections$list,
   "connections.revoke": connections$revoke,
+  "inbox.acceptSuggestion": inbox$acceptSuggestion,
+  "inbox.clearSuggestion": inbox$clearSuggestion,
+  "inbox.markDone": inbox$markDone,
+  "inbox.scan": inbox$scan,
+  "inbox.skip": inbox$skip,
+  "inbox.snooze": inbox$snooze,
   "job.priorityCounts": job$priorityCounts,
   "job.setPriority": job$setPriority,
   "notify.request": notify$request,

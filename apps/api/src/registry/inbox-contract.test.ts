@@ -1,6 +1,7 @@
 import {
+  catalog,
   queries,
-  inboxContract,
+  inboxContract as inboxCommands,
   inboxQueries,
   personActor,
 } from "@workspace/domain"
@@ -10,6 +11,20 @@ import { withDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "../install.js"
+
+const inboxContract = {
+  ...inboxCommands,
+  "inbox.skip": { output: catalog["inbox.skip"].publicResult },
+  "inbox.scan": { output: catalog["inbox.scan"].publicResult },
+  "inbox.markDone": { output: catalog["inbox.markDone"].publicResult },
+  "inbox.snooze": { output: catalog["inbox.snooze"].publicResult },
+  "inbox.clearSuggestion": {
+    output: catalog["inbox.clearSuggestion"].publicResult,
+  },
+  "inbox.acceptSuggestion": {
+    output: catalog["inbox.acceptSuggestion"].publicResult,
+  },
+}
 
 describe("an inbox binding that drifts from the inbox contract is rejected", () => {
   it("parses every inbox command output and inbox read", async () => {

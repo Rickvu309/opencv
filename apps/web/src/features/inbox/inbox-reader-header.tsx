@@ -14,7 +14,7 @@ import {
 import { toast, toastWithUndo } from "@workspace/ui/components/sonner"
 
 import { reportRejected } from "@/lib/command-failure.ts"
-import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
+import { catalogClient, undoActivity } from "@/lib/contract-client.ts"
 
 import { INBOX_MORE_REASON, UNAVAILABLE_ACTION } from "./inbox-parts.tsx"
 import { nextMorningIso, SNOOZED_UNTIL_WAKE_TOAST } from "./inbox-time.ts"
@@ -47,7 +47,6 @@ export function InboxReaderHeader({
   onNext: () => void
 }) {
   const queryClient = useQueryClient()
-  const runCommand = useRunCommand()
   return (
     <PageHeader>
       {narrow ? (
@@ -91,11 +90,15 @@ export function InboxReaderHeader({
           disabled={busy}
           onSelect={() =>
             run(async () => {
-              const result = await runCommand("inbox.markDone", {
-                threadId: detail.id,
-              })
+              const result = await catalogClient.run(
+                queryClient,
+                "inbox.markDone",
+                {
+                  threadId: detail.id,
+                }
+              )
               toastWithUndo("Marked done", () => {
-                if (result.activityId)
+                if ("activityId" in result && result.activityId)
                   void undoActivity(queryClient, result.activityId).catch(
                     reportRejected("undo this")
                   )
@@ -112,14 +115,14 @@ export function InboxReaderHeader({
           onSelect={() =>
             run(async () => {
               if (detail.status === "snoozed") {
-                await runCommand("inbox.snooze", {
+                await catalogClient.run(queryClient, "inbox.snooze", {
                   threadId: detail.id,
                   until: null,
                 })
                 onReturnedToInbox()
                 toast("Returned to inbox")
               } else {
-                await runCommand("inbox.snooze", {
+                await catalogClient.run(queryClient, "inbox.snooze", {
                   threadId: detail.id,
                   until: nextMorningIso(now, zone),
                 })
