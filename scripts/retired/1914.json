@@ -1,13 +1,5 @@
 [
   {
-    "subject": "apps/api/src/one-door.test.ts",
-    "because": "The job list and one Job became read operations, so the Apply routes leave the waiting list",
-    "replacedBy": null,
-    "class": "owner",
-    "classBecause": "no replacement test",
-    "items": 3
-  },
-  {
     "subject": "apps/api/src/scenarios/account.scenario.test.ts",
     "because": "The signed-out check reads a Job through the read door; it still gets 401",
     "replacedBy": null,
