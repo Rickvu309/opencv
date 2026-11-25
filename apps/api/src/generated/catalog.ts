@@ -4,6 +4,7 @@ import { implementation as account$delete } from "../account/operations/account/
 import { implementation as account$requestEmailChange } from "../account/operations/account/request-email-change/server.js"
 import { implementation as actions$approve } from "../registry/operations/actions/approve/server.js"
 import { implementation as actions$deny } from "../registry/operations/actions/deny/server.js"
+import { implementation as activity$list } from "../account/operations/activity/list/server.js"
 import { implementation as activity$undo } from "../registry/operations/activity/undo/server.js"
 import { implementation as billing$get } from "../account/operations/billing/get/server.js"
 import { implementation as chat$appendMessage } from "../coach/operations/chat/append-message/server.js"
@@ -55,6 +56,7 @@ export const implementations = {
   "account.requestEmailChange": account$requestEmailChange,
   "actions.approve": actions$approve,
   "actions.deny": actions$deny,
+  "activity.list": activity$list,
   "activity.undo": activity$undo,
   "billing.get": billing$get,
   "chat.appendMessage": chat$appendMessage,

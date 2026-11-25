@@ -4,7 +4,7 @@ import { parseChatId, parseJobId, parsePaperId } from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
-  activityKey,
+  catalogClient,
   queryKey,
   refreshReads,
   runContractCommand,
@@ -14,12 +14,21 @@ import {
 const JOB = parseJobId("01900000-0000-7000-8000-000000000010")
 const OTHER = parseJobId("01900000-0000-7000-8000-000000000011")
 
+function jobActivity(queryClient: QueryClient) {
+  const read = catalogClient.options("owner", "activity.list", {
+    subjectKind: "job",
+    subjectId: JOB,
+  })
+  queryClient.getQueryCache().build(queryClient, read)
+  return read.queryKey
+}
+
 function seed(queryClient: QueryClient) {
   const keys = {
     list: queryKey({ query: "job.list" }),
     mine: queryKey({ query: "job.get", input: { jobId: JOB } }),
     other: queryKey({ query: "job.get", input: { jobId: OTHER } }),
-    activity: activityKey("job", JOB),
+    activity: jobActivity(queryClient),
     paper: queryKey({ query: "paper.list" }),
   }
   for (const key of Object.values(keys)) {
@@ -129,7 +138,7 @@ describe("runContractCommand", () => {
       queryKey({ query: "paper.pageCount", input: { docId: "doc-1" } }),
       queryKey({ query: "inbox.get", input: { id: "mail-1" } }),
       queryKey({ query: "chat.get", input: { chatId } }),
-      activityKey("job", JOB),
+      jobActivity(queryClient),
     ]
     for (const key of refreshed) queryClient.setQueryData(key, { seeded: true })
     stubFetch(undoneActivityRow(activityId))

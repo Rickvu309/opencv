@@ -107,14 +107,6 @@ export function registerAccountQueries(registry: Registry) {
       read: (_input, actor) => readProfile(actor),
     })
   )
-  registry.addQuery(
-    tableQuery("activity.list", {
-      description: "Read the newest activity, optionally for one subject.",
-      coach: false,
-      step: () => "Read activity",
-      read: (input, actor) => readActivity(actor.userId, input, registry),
-    })
-  )
 }
 
 export async function readActivity(

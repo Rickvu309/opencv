@@ -7,7 +7,6 @@ import { cors } from "hono/cors"
 
 import {
   createAccountRoutes,
-  createActivityRoutes,
   createProfileRoutes,
   hostEmailChangeCode,
 } from "./account/index.js"
@@ -256,7 +255,6 @@ export function createApp({
   app.route("/api/inbox", createInboxRoutes(signedIn, gmailEnabled))
   app.route("/api/profile", createProfileRoutes(signedIn))
   app.route("/api/account", createAccountRoutes(signedIn))
-  app.route("/api/activity", createActivityRoutes(signedIn))
 
   return app
 }

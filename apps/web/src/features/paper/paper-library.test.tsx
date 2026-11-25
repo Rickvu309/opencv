@@ -1,3 +1,4 @@
+import { activityFeedRow } from "@/test/control-fixtures.ts"
 import { StrictMode } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen, within } from "@testing-library/react"
@@ -516,9 +517,12 @@ describe("Paper library", () => {
           return Promise.resolve(
             Response.json({ ok: true, data: { id: doc.id, ...extra } })
           )
-        if (path.endsWith("/api/activity"))
+        if (path.endsWith("/api/reads/activity.list"))
           return Promise.resolve(
-            Response.json({ ok: true, data: [{ id: activityId }] })
+            Response.json({
+              ok: true,
+              data: [activityFeedRow({ id: activityId, subjectId: doc.id })],
+            })
           )
         return Promise.resolve(Response.json({ ok: true, data: [] }))
       })
@@ -548,7 +552,7 @@ describe("Paper library", () => {
       })
       const askedForUndo = () =>
         fetchMock.mock.calls.some(([url]) =>
-          String(url).includes("/api/activity?subjectId=")
+          String(url).endsWith("/api/reads/activity.list")
         )
       if (undoable) await vi.waitFor(() => expect(askedForUndo()).toBe(true))
       else {

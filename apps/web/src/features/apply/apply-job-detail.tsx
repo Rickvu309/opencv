@@ -10,21 +10,15 @@ import { reportRejected } from "@/lib/command-failure.ts"
 
 import { authClient } from "@/lib/auth-client.ts"
 import { ApiError } from "@/lib/api-error.ts"
+import { useOwnerId } from "@/lib/owner-id.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import {
-  activityKey,
   catalogClient,
   refreshCatalogReads,
   refreshQueries,
 } from "@/lib/contract-client.ts"
 
-import {
-  getJob,
-  jobGetKey,
-  jobListKey,
-  listActivity,
-  listJobs,
-} from "./apply-api.ts"
+import { getJob, jobGetKey, jobListKey, listJobs } from "./apply-api.ts"
 import { JobDocument } from "./apply-detail-document.tsx"
 import { useJobActions } from "./apply-job-actions.ts"
 import { DeleteJobDialog } from "./apply-job-delete-dialog.tsx"
@@ -71,9 +65,9 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
     queryKey: jobListKey(),
     queryFn: listJobs,
   })
-  const activity = useQuery({
-    queryKey: activityKey("job", id),
-    queryFn: () => listActivity(id),
+  const activity = catalogClient.useRead(useOwnerId(), "activity.list", {
+    subjectKind: "job",
+    subjectId: id,
   })
 
   useShortcut({

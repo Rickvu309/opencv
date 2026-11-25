@@ -235,3 +235,19 @@ export const workspaceSearchSchema = z
     ),
   })
   .strict()
+
+export const activityFeedRowSchema = z
+  .object({
+    id: z.string(),
+    createdAt: z.string().datetime(),
+    actor: z.string(),
+    command: z.string(),
+    subjectKind: z.string(),
+    subjectId: z.string(),
+    summary: z.string(),
+    undoneAt: z.string().datetime().nullable(),
+    reversible: z.boolean(),
+  })
+  .strict()
+
+export type ActivityFeedRow = z.output<typeof activityFeedRowSchema>

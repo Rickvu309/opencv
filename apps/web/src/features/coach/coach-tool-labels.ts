@@ -11,7 +11,7 @@ const TOOL_COPY = {
   [catalog["account.requestEmailChange"].name]: { label: "Change your email" },
   [catalog["actions.approve"].name]: { label: "Approve this change" },
   [catalog["actions.deny"].name]: { label: "Deny this change" },
-  "activity.list": {
+  [catalog["activity.list"].name]: {
     label: "Look at your activity",
     read: "Looked at your activity",
   },
