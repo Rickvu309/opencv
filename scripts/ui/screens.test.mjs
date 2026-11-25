@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { readdirSync } from "node:fs"
 import test from "node:test"
 import {
   SCREENS,
@@ -201,4 +202,18 @@ test("a respond step answers the named request in the tool's browser, preflight 
     preflight.headers["Access-Control-Allow-Headers"],
     "content-type"
   )
+})
+
+const INLINE_SCREENS_LEFT = 56
+
+test("a new screen is its own file, and the inline screen lists only shrink", () => {
+  const filed = readdirSync(new URL("./screens/", import.meta.url)).filter(
+    (name) => name.endsWith(".mjs")
+  )
+  assert.equal(filed.length + INLINE_SCREENS_LEFT, SCREENS.length)
+  for (const name of filed)
+    assert.ok(
+      SCREENS.some((screen) => `${screen.id}.mjs` === name),
+      `${name} is not loaded`
+    )
 })
