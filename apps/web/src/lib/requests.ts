@@ -24,8 +24,6 @@ export const endpoints = {
   paperSharedPhoto: (token: string) => `/api/paper/shared/${token}/photo`,
   paperImport: "/api/paper/import",
   letterAttachment: "/api/paper/letter-attachment",
-  chats: "/api/chats",
-  chat: (chatId: string) => `/api/chats/${chatId}`,
   jobs: "/api/jobs",
   job: (jobId: string) => `/api/jobs/${jobId}`,
 } as const

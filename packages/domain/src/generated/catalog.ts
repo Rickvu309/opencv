@@ -8,6 +8,8 @@ import { operation as billing$get } from "../operations/billing/get/operation.js
 import { operation as chat$appendMessage } from "../operations/chat/append-message/operation.js"
 import { operation as chat$create } from "../operations/chat/create/operation.js"
 import { operation as chat$delete } from "../operations/chat/delete/operation.js"
+import { operation as chat$get } from "../operations/chat/get/operation.js"
+import { operation as chat$list } from "../operations/chat/list/operation.js"
 import { operation as chat$open } from "../operations/chat/open/operation.js"
 import { operation as chat$rename } from "../operations/chat/rename/operation.js"
 import { operation as chat$setFocus } from "../operations/chat/set-focus/operation.js"
@@ -63,6 +65,8 @@ export const catalog = {
   "chat.appendMessage": chat$appendMessage,
   "chat.create": chat$create,
   "chat.delete": chat$delete,
+  "chat.get": chat$get,
+  "chat.list": chat$list,
   "chat.open": chat$open,
   "chat.rename": chat$rename,
   "chat.setFocus": chat$setFocus,

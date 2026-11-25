@@ -57,6 +57,12 @@ function chatRow(overrides: Record<string, unknown> = {}) {
   }
 }
 
+function listRow(overrides: Record<string, unknown> = {}) {
+  const row: Record<string, unknown> = chatRow(overrides)
+  delete row.messages
+  return row
+}
+
 function inputOf(call: { init: RequestInit }) {
   return JSON.parse(String(call.init.body)).input
 }
@@ -72,8 +78,8 @@ describe("chat API client", () => {
       .fn()
       .mockResolvedValue(
         envelope([
-          chatRow(),
-          chatRow({ id: "b", focusKind: "paper", focusId: DOC_ID }),
+          listRow(),
+          listRow({ id: "b", focusKind: "paper", focusId: DOC_ID }),
         ])
       )
     vi.stubGlobal("fetch", fetchMock)
@@ -95,7 +101,7 @@ describe("chat API client", () => {
       },
     ])
     const { url, init } = callOf(fetchMock)
-    expect(url).toBe(`${apiBaseUrl}/api/chats`)
+    expect(url).toBe(`${apiBaseUrl}/api/reads/chat.list`)
     expect(init.credentials).toBe("include")
   })
 
@@ -263,8 +269,8 @@ describe("chat API client", () => {
       .fn()
       .mockResolvedValue(
         envelope([
-          chatRow({ id: "other" }),
-          chatRow({ focusKind: "paper", focusId: DOC_ID }),
+          listRow({ id: "other" }),
+          listRow({ focusKind: "paper", focusId: DOC_ID }),
         ])
       )
     vi.stubGlobal("fetch", fetchMock)
@@ -276,7 +282,7 @@ describe("chat API client", () => {
   })
 
   it("returns null when no Chat is grounded on the doc", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(envelope([chatRow()])))
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(envelope([listRow()])))
     await expect(getChatByFocusDoc(DOC_ID)).resolves.toBeNull()
   })
 

@@ -28,6 +28,7 @@ function chatRow() {
 function attachmentMessage(parts: unknown[]) {
   return {
     id: "m1",
+    chatId: CHAT_ID,
     role: "person",
     text: "Help",
     createdAt: STAMP,
@@ -66,6 +67,7 @@ describe("chat attachment mapping", () => {
             ]),
             {
               id: "m2",
+              chatId: CHAT_ID,
               role: "coach",
               text: "Done",
               createdAt: STAMP,
@@ -81,7 +83,7 @@ describe("chat attachment mapping", () => {
 
     const detail = await getChat(CHAT_ID)
     const [url] = fetchMock.mock.calls[0] as [string]
-    expect(String(url)).toBe(`${apiBaseUrl}/api/chats/${CHAT_ID}`)
+    expect(String(url)).toBe(`${apiBaseUrl}/api/reads/chat.get`)
     expect(detail.messages).toEqual([
       {
         id: "m1",

@@ -24,6 +24,7 @@ function detail(activeTaskId: string | null) {
     messages: [
       {
         id: "m1",
+        chatId: CHAT_ID,
         role: "person",
         text: "What next?",
         createdAt: STAMP,
@@ -33,6 +34,7 @@ function detail(activeTaskId: string | null) {
       },
       {
         id: TASK_ID,
+        chatId: CHAT_ID,
         role: "coach",
         text: PLACEHOLDER,
         createdAt: STAMP,

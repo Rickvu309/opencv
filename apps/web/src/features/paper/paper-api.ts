@@ -1,5 +1,6 @@
 import {
   catalog,
+  parseChatId,
   LIBRARY_WRITER,
   paperImportResponseSchema,
   letterAttachmentContextSchema,
@@ -337,10 +338,10 @@ export async function followPaperTurn(input: {
   onText: (text: string) => void
   onWaiting: (waiting: boolean) => void
 }): Promise<string> {
-  const chat = unwrapData(
-    await apiFetch<SuccessBody<ChatDetail>>(endpoints.chat(input.chatId), {
-      signal: input.signal,
-    })
+  const chat = await catalogClient.read(
+    catalog["chat.get"].name,
+    { chatId: parseChatId(input.chatId) },
+    { signal: input.signal }
   )
   const taskId = chat.activeTaskId
   if (!taskId) return savedReply(chat.messages, null)

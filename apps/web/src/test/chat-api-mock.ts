@@ -405,11 +405,14 @@ function chatDetail(chat: ChatRecord) {
   return {
     ...chatRow(chat),
     messages: chat.messages.map((message) => ({
-      ...message,
+      id: message.id,
+      chatId: chat.id,
       role: message.role === "user" ? "person" : "coach",
+      text: message.text,
       parts: message.parts ?? [],
       status: message.status ?? "final",
       workedMs: message.workedMs ?? null,
+      createdAt: message.createdAt,
     })),
   }
 }
@@ -463,7 +466,7 @@ export async function chatApiFetch(
   if (method === "GET" && path === "/api/public-config")
     return Response.json({ google: false, coachDurable: false })
 
-  if (method === "GET" && path === "/api/chats") {
+  if (method === "POST" && path === "/api/reads/chat.list") {
     return jsonOk(listItems().map((item) => chatRow(item as ChatRecord)))
   }
 
@@ -523,9 +526,9 @@ export async function chatApiFetch(
     )
   }
 
-  const detail = /^\/api\/chats\/([^/]+)$/.exec(path)
-  if (method === "GET" && detail) {
-    const chat = store.chats.find((item) => item.id === detail[1])
+  if (method === "POST" && path === "/api/reads/chat.get") {
+    const { chatId } = (await readBody(init)) as { chatId?: string }
+    const chat = store.chats.find((item) => item.id === chatId)
     if (!chat) {
       return jsonError(404, "NOT_FOUND", "Chat not found")
     }

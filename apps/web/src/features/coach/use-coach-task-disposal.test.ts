@@ -75,7 +75,7 @@ function reviewFetch(
       )
       if (response) return response
       const fallback = await chatApiFetchOrThrow(input, init)
-      if (path === `/api/chats/${CHAT}`) {
+      if (path === "/api/reads/chat.get") {
         const body = await fallback.json()
         return Response.json({
           ...body,

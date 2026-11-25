@@ -23,8 +23,14 @@ const TOOL_COPY = {
   [catalog["chat.appendMessage"].name]: { label: "Save this message" },
   [catalog["chat.create"].name]: { label: "Start a Chat" },
   [catalog["chat.delete"].name]: { label: "Delete this Chat" },
-  "chat.get": { label: "Read this Chat", read: "Read this Chat" },
-  "chat.list": { label: "Look at your Chats", read: "Looked at your Chats" },
+  [catalog["chat.get"].name]: {
+    label: "Read this Chat",
+    read: "Read this Chat",
+  },
+  [catalog["chat.list"].name]: {
+    label: "Look at your Chats",
+    read: "Looked at your Chats",
+  },
   [catalog["chat.open"].name]: { label: "Open this Chat" },
   [catalog["chat.rename"].name]: { label: "Rename this Chat" },
   [catalog["chat.setFocus"].name]: { label: "Focus this Chat" },

@@ -1,4 +1,5 @@
 import {
+  catalog,
   personActor,
   successEnvelope,
   chatIdSchema,
@@ -19,7 +20,7 @@ export function createChatRoutes(signedIn: SignedIn) {
   routes.get("/", async (c) => {
     const query = c.req.query("q")
     const data = await registry.read(
-      "chat.list",
+      catalog["chat.list"].name,
       query ? { query } : {},
       personActor(c.var.userId)
     )
@@ -36,7 +37,7 @@ export function createChatRoutes(signedIn: SignedIn) {
       )
     }
     const data = await registry.read(
-      "chat.get",
+      catalog["chat.get"].name,
       { chatId: parsed.data },
       personActor(c.var.userId)
     )

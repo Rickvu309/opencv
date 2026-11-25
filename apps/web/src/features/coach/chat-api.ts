@@ -1,9 +1,9 @@
 import {
+  catalog,
   CHAT_TITLE_MAX,
   DEFAULT_CHAT_TITLE,
   LEGACY_CHAT_TITLE,
   parseChatId,
-  type ChatDetail,
   type ChatTurnEventOf,
   type ChatId,
   type ChatListItem,
@@ -120,19 +120,20 @@ async function resolveAttachments(
   )
 }
 
-export const chatListKey = () => queryKey({ query: "chat.list" })
+export const chatListKey = () => queryKey({ query: catalog["chat.list"].name })
 
 export const chatDetailKey = (id: string) =>
-  queryKey({ query: "chat.get", input: { chatId: id as ChatId } })
+  queryKey({ query: catalog["chat.get"].name, input: { chatId: id as ChatId } })
 
 export async function listChats(): Promise<ChatSummary[]> {
-  const body = await apiFetch<SuccessBody<ChatListItem[]>>(endpoints.chats)
-  return unwrapData(body).map(asChat)
+  const chats = await catalogClient.read(catalog["chat.list"].name, {})
+  return chats.map(asChat)
 }
 
 export async function getChat(id: string): Promise<CoachChatRecord> {
-  const body = await apiFetch<SuccessBody<ChatDetail>>(endpoints.chat(id))
-  const chat = unwrapData(body)
+  const chat = await catalogClient.read(catalog["chat.get"].name, {
+    chatId: parseChatId(id),
+  })
   const attachments = await resolveAttachments(chat.messages)
   return {
     ...asChat(chat),
