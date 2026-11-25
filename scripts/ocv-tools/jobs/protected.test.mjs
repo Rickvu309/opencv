@@ -68,7 +68,7 @@ test("every protected kind is read from its path", () => {
     "apps/web/src/test/apply-fixtures.ts",
     "apps/web/vitest.config.ts",
     "apps/api/src/paper/import.ts",
-    "scripts/guard-ledger.proofs.json",
+    "scripts/guard-ledger/proofs/x.json",
     "packages/domain/src/limits/export.test.ts",
   ])
     assert.equal(kindOf(path), path.endsWith(".test.ts") ? "test" : null, path)
