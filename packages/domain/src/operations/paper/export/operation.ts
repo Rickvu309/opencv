@@ -1,7 +1,7 @@
 import { z } from "zod"
 import { defineOperation } from "../../../operation.js"
 import type { ResourceRef } from "../../../resources.js"
-import { paperPackageMetadataSchema } from "../../../paper-package.js"
+import { paperPackageMetadataSchema } from "../../../paper-doc/paper-package.js"
 import {
   nativeBasisSchema,
   nativeWriterSchema,

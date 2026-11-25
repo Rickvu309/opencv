@@ -13,7 +13,7 @@ import {
   scopesFromSearch,
 } from "./agents/delegate-grant.js"
 import { defineOperation, delegateDeclaration } from "./operation.js"
-import { paperContract } from "./paper-contract.js"
+import { paperContract } from "./paper-doc/paper-contract.js"
 import { operation as paperRead } from "./operations/paper/read/operation.js"
 
 const paperProposal = ["paper", "write"].join(".")

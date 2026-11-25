@@ -2,7 +2,7 @@ import { z } from "zod"
 import { catalog } from "./catalog.js"
 
 import { queryContract, queryEntry } from "./contract.js"
-import { paperQueries } from "./paper-contract.js"
+import { paperQueries } from "./paper-doc/paper-contract.js"
 
 const untyped = z.unknown()
 

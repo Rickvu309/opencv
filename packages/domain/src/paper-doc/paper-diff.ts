@@ -1,6 +1,6 @@
-import type { PaperChange } from "./paper-doc/changes.js"
-import type { PaperContentKind } from "./paper-doc/paper.js"
-import { isProofDocument, type ProofDocument } from "./paper-doc/paper.js"
+import type { PaperChange } from "./changes.js"
+import type { PaperContentKind } from "./paper.js"
+import { isProofDocument, type ProofDocument } from "./paper.js"
 
 type DiffLineKind = "eq" | "del" | "add"
 

@@ -41,7 +41,7 @@ test("no Coach path creates an older block document", () => {
   )
   assert.equal(detect(historic, "paper-contract.ts").length, 1)
   const contract = new URL(
-    "../packages/domain/src/paper-contract.ts",
+    "../packages/domain/src/paper-doc/paper-contract.ts",
     import.meta.url
   )
   assert.deepEqual(

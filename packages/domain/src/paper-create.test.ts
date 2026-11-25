@@ -1,7 +1,7 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { paperContract } from "./paper-contract.ts"
+import { paperContract } from "./paper-doc/paper-contract.ts"
 import { blankCv } from "./paper-doc/index.ts"
 
 const paperCreateInputSchema = paperContract["paper.create"].input

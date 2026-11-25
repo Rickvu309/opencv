@@ -1,18 +1,18 @@
 import { z } from "zod"
 
-import { commandContract, commandEntry } from "./contract.js"
+import { commandContract, commandEntry } from "../contract.js"
 import {
   fileIdSchema,
   jobIdSchema,
   paperIdSchema,
   parsePaperId,
-} from "./ids.js"
+} from "../ids.js"
 import {
   nativeBasisSchema,
   nativeWriterSchema,
   nativeSyncInputSchema,
   nativeSyncOutputSchema,
-} from "./paper-doc/native.js"
+} from "./native.js"
 import { richEditOutputSchema, richTextEditsSchema } from "./paper-rich-edit.js"
 import { paperCanvasCommitSchema } from "./paper-canvas.js"
 import { paperStartInputSchema } from "./paper-start.js"
@@ -27,8 +27,8 @@ import {
   paperDocNameSchema,
   paperDuplicateInputSchema,
   paperStoredKindSchema,
-} from "./paper-doc/paper.js"
-import type { QueryRef } from "./queries.js"
+} from "./paper.js"
+import type { QueryRef } from "../queries.js"
 
 export * from "./paper-contract-views.js"
 import {

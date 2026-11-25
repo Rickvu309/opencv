@@ -1,6 +1,6 @@
 const WATCHED = new Set([
-  "packages/domain/src/paper-package.ts",
-  "packages/domain/src/paper-contract.ts",
+  "packages/domain/src/paper-doc/paper-package.ts",
+  "packages/domain/src/paper-doc/paper-contract.ts",
   "apps/api/src/paper/package-engine.ts",
 ])
 

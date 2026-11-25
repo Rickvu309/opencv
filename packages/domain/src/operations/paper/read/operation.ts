@@ -6,8 +6,8 @@ import {
   paperPackageReadInputSchema,
   paperPackageReadSchema,
   paperWordReadSchema,
-} from "../../../paper-package.js"
-import { wordPageSchema } from "../../../paper-word.js"
+} from "../../../paper-doc/paper-package.js"
+import { wordPageSchema } from "../../../paper-doc/paper-word.js"
 import {
   nativeProvenanceSchema,
   nativeWriterSchema,

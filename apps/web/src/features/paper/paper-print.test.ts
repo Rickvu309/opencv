@@ -301,7 +301,10 @@ describe("print paper", () => {
     const registry = [
       sourceText(join(root, "apps/api/src/registry")),
       sourceText(join(root, "apps/api/src/paper")),
-      readFileSync(join(root, "packages/domain/src/paper-contract.ts"), "utf8"),
+      readFileSync(
+        join(root, "packages/domain/src/paper-doc/paper-contract.ts"),
+        "utf8"
+      ),
       readFileSync(join(root, "packages/domain/src/queries.ts"), "utf8"),
       readFileSync(
         join(root, "packages/domain/src/contract-commands.ts"),

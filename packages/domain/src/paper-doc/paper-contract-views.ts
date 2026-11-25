@@ -1,18 +1,18 @@
 import { z } from "zod"
 
-import { queryContract, queryEntry } from "./contract.js"
-import { fileIdSchema, paperIdSchema } from "./ids.js"
-import { paperDocumentSchema } from "./paper-doc/document.js"
+import { queryContract, queryEntry } from "../contract.js"
+import { fileIdSchema, paperIdSchema } from "../ids.js"
+import { paperDocumentSchema } from "./document.js"
 import {
   nativeBasisSchema,
   nativeProvenanceSchema,
   nativeWriterSchema,
-} from "./paper-doc/native.js"
+} from "./native.js"
 import {
   paperDocStatusSchema,
   paperStoredKindSchema,
   paperTemplateIdSchema,
-} from "./paper-doc/paper.js"
+} from "./paper.js"
 
 export const paperCheckSchema = z
   .object({

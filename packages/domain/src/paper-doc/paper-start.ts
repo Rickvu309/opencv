@@ -1,7 +1,7 @@
 import { z } from "zod"
 
-import { jobIdSchema } from "./ids.js"
-import { paperDocNameSchema, paperTemplateIdSchema } from "./paper-doc/paper.js"
+import { jobIdSchema } from "../ids.js"
+import { paperDocNameSchema, paperTemplateIdSchema } from "./paper.js"
 import { wordPageLabelSchema } from "./paper-word.js"
 
 export const PAPER_START_BOUNDS = { lines: 40, lineLength: 120 } as const

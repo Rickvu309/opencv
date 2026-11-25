@@ -1,17 +1,17 @@
 import { z } from "zod"
-import { paperIdSchema } from "./ids.js"
+import { paperIdSchema } from "../ids.js"
 import {
   richPaperDocumentSchema,
   type RichPaperDocument,
-} from "./paper-doc/stored-document.js"
+} from "./stored-document.js"
 import {
   formatRunSchema,
   formatRunsSchema,
   mergeFormatRuns,
   type FormatNode,
   type FormatRun,
-} from "./paper-doc/native-formatting.js"
-import { canonical } from "./paper-doc/presentation-values.js"
+} from "./native-formatting.js"
+import { canonical } from "./presentation-values.js"
 
 const range = z.object({
   blockId: z.string().regex(/^[A-Za-z0-9_-]{1,64}$/),

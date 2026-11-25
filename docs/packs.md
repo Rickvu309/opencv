@@ -204,4 +204,4 @@ flowchart TD
 | `packages/domain/src/coach` | kernel | coach.ts, coach-mode.ts, coach-task.ts, chat.ts, chat-messages.ts, chat-title.ts, chat-turn.ts, chat-views.ts | packages/domain/src/apply, packages/domain/src/paper-doc | none |
 | `packages/domain/src/control` | kernel | control.ts | none | none |
 | `packages/domain/src/inbox` | kernel | index.ts | packages/domain/src/apply | none |
-| `packages/domain/src/paper-doc` | kernel | index.ts, paper.ts | none | none |
+| `packages/domain/src/paper-doc` | kernel | index.ts, paper.ts, paper-canvas.ts, paper-contract.ts, paper-contract-views.ts, paper-diff.ts, paper-package.ts, paper-rich-edit.ts, paper-start.ts, paper-word.ts | none | none |
