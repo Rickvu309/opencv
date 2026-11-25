@@ -46,6 +46,7 @@ import { operation as paper$read } from "../operations/paper/read/operation.js"
 import { operation as profile$markWelcomed } from "../operations/profile/mark-welcomed/operation.js"
 import { operation as profile$setPhoto } from "../operations/profile/set-photo/operation.js"
 import { operation as profile$update } from "../operations/profile/update/operation.js"
+import { operation as workspace$search } from "../operations/workspace/search/operation.js"
 
 export const catalog = {
   "account.delete": account$delete,
@@ -96,4 +97,5 @@ export const catalog = {
   "profile.markWelcomed": profile$markWelcomed,
   "profile.setPhoto": profile$setPhoto,
   "profile.update": profile$update,
+  "workspace.search": workspace$search,
 } as const

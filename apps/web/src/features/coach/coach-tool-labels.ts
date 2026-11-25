@@ -161,7 +161,7 @@ const TOOL_COPY = {
   [catalog["profile.markWelcomed"].name]: { label: "Finish your welcome" },
   [catalog["profile.setPhoto"].name]: { label: "Update your Profile photo" },
   [catalog["profile.update"].name]: { label: "Update your Profile" },
-  "workspace.search": {
+  [catalog["workspace.search"].name]: {
     label: "Search your workspace",
     read: "Searched your workspace",
   },

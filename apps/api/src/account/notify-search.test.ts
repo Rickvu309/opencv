@@ -78,7 +78,11 @@ describe("notify.request and workspace search", () => {
     })
     expect(created.status).toBe(200)
 
-    const res = await app.request("/api/search?q=Marketing", { headers })
+    const res = await app.request("/api/reads/workspace.search", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ query: "Marketing" }),
+    })
     expect(res.status).toBe(200)
     const body = await jsonOf(res)
     expect(body.data?.jobs?.[0]).toMatchObject({

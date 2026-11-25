@@ -1,8 +1,9 @@
-import { chatDisplayTitle } from "@workspace/domain"
+import { catalog, chatDisplayTitle } from "@workspace/domain"
 import { STAGE_LABEL, type Stage } from "@workspace/ui/components/stage-icon"
 
 import { apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 import { SURFACES, type SurfaceId } from "@/lib/product-paths.ts"
 import { endpoints } from "@/lib/requests.ts"
 
@@ -134,8 +135,9 @@ export function parseSearchHits(data: unknown): SearchHits {
 }
 
 export async function searchWorkspace(query: string) {
-  const body = await apiFetch<SuccessBody<unknown>>(endpoints.search(query))
-  return parseSearchHits(unwrapData(body))
+  return parseSearchHits(
+    await catalogClient.read(catalog["workspace.search"].name, { query })
+  )
 }
 
 export async function listPaletteChats() {

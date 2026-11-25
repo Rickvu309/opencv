@@ -35,7 +35,6 @@ export const endpoints = {
   job: (jobId: string) => `/api/jobs/${jobId}`,
   jobsCalendar: (query: URLSearchParams) => `/api/jobs/calendar?${query}`,
   jobsPreview: "/api/jobs/preview",
-  search: (query: string) => `/api/search?q=${encodeURIComponent(query)}`,
 } as const
 
 export const inboxConnectReadKeyOutsideContract = ["inbox-connect"] as const

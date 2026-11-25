@@ -19,5 +19,4 @@ export {
   createAccountRoutes,
   createActivityRoutes,
   createProfileRoutes,
-  createSearchRoutes,
 } from "./http.js"
