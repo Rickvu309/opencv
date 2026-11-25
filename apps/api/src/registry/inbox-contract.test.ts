@@ -1,10 +1,16 @@
-import { catalog, queries, inboxQueries, personActor } from "@workspace/domain"
+import { catalog, personActor } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "../install.js"
+
+const inboxQueries = {
+  "inbox.list": { output: catalog["inbox.list"].publicResult },
+  "inbox.snoozed": { output: catalog["inbox.snoozed"].publicResult },
+  "inbox.get": { output: catalog["inbox.get"].publicResult },
+}
 
 const inboxContract = {
   "inbox.draftReply": { output: catalog["inbox.draftReply"].publicResult },
@@ -131,7 +137,7 @@ describe("an inbox binding that drifts from the inbox contract is rejected", () 
   it("registers the inbox reads for the person only", () => {
     const registered = installRegistry().list().queries
     for (const name of Object.keys(inboxQueries)) {
-      expect(Object.keys(queries)).toContain(name)
+      expect(Object.keys(catalog)).toContain(name)
       expect(registered.find((query) => query.name === name)).toMatchObject({
         coach: false,
       })

@@ -75,7 +75,7 @@ async function chatField(userId: string, a: ExecuteResult, field: string) {
 async function reversalJob(userId: string, a: ExecuteResult) {
   return registry.read(
     "job.get",
-    { jobId: String(reversalInputOf(a).jobId) },
+    { jobId: String(reversalInputOf(a).jobId ?? idOf(a.output)) },
     { type: "person", userId: parseUserId(userId) }
   )
 }
@@ -248,7 +248,7 @@ const LATER: Record<string, Later> = {
   },
   "job.star": {
     act: async (a, run) => {
-      await run("job.star", { jobId: reversalInputOf(a).jobId, starred: false })
+      await run("job.star", { jobId: idOf(a.output), starred: false })
     },
     survives: async (a, userId) =>
       !flag(await reversalJob(userId, a), "starred"),

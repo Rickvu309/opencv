@@ -1,7 +1,7 @@
 import { useReducer } from "react"
 import { useShortcut } from "@/lib/use-shortcut.ts"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { commands, ERROR_CODES, type JobId } from "@workspace/domain"
+import { ERROR_CODES, type JobId } from "@workspace/domain"
 import { useNavigate } from "@tanstack/react-router"
 
 import { Button } from "@workspace/ui/components/button"
@@ -13,8 +13,9 @@ import { ApiError } from "@/lib/api-error.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import {
   activityKey,
+  catalogClient,
+  refreshCatalogReads,
   refreshQueries,
-  useRunCommand,
 } from "@/lib/contract-client.ts"
 
 import {
@@ -57,7 +58,6 @@ const SKIP_REFRESH_FOR_DELETED_JOB = { refresh: false } as const
 export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const run = useRunCommand()
   const { data: session } = authClient.useSession()
   const [{ deleteOpen, railOpen }, dispatch] = useReducer(detailReducer, {
     deleteOpen: false,
@@ -152,9 +152,9 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
         railOpen={railOpen}
         onToggleRail={() => dispatch({ type: "rail_toggled" })}
         onToggleStar={() =>
-          void run("job.star", { jobId: id, starred: !job.starred }).catch(
-            reportRejected("update the star")
-          )
+          void catalogClient
+            .run(queryClient, "job.star", { jobId: id, starred: !job.starred })
+            .catch(reportRejected("update the star"))
         }
         onDelete={() => dispatch({ type: "delete_requested" })}
       />
@@ -181,7 +181,13 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
           dispatch({ type: open ? "delete_requested" : "delete_dismissed" })
         }
         onDelete={() => {
-          void run("job.delete", { jobId: id }, SKIP_REFRESH_FOR_DELETED_JOB)
+          void catalogClient
+            .run(
+              queryClient,
+              "job.delete",
+              { jobId: id },
+              SKIP_REFRESH_FOR_DELETED_JOB
+            )
             .then(() => {
               const destination = next ?? previous
               if (destination) {
@@ -193,10 +199,12 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
                 void navigate({ to: "/apply" })
               }
               queryClient.removeQueries({ queryKey: jobGetKey(id) })
-              void refreshQueries(
-                queryClient,
-                commands["job.delete"].invalidates({ jobId: id })
-              )
+              void refreshQueries(queryClient, [
+                { query: "job.list" },
+                { query: "job.calendar" },
+                { query: "paper.keywordGap", input: { jobId: id } },
+              ])
+              void refreshCatalogReads(queryClient)
               dispatch({ type: "delete_dismissed" })
             })
             .catch(reportRejected("delete this job"))

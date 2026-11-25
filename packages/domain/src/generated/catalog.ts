@@ -20,15 +20,23 @@ import { operation as inbox$acceptSuggestion } from "../operations/inbox/accept-
 import { operation as inbox$addToCalendar } from "../operations/inbox/add-to-calendar/operation.js"
 import { operation as inbox$clearSuggestion } from "../operations/inbox/clear-suggestion/operation.js"
 import { operation as inbox$draftReply } from "../operations/inbox/draft-reply/operation.js"
+import { operation as inbox$get } from "../operations/inbox/get/operation.js"
+import { operation as inbox$list } from "../operations/inbox/list/operation.js"
 import { operation as inbox$markDone } from "../operations/inbox/mark-done/operation.js"
 import { operation as inbox$scan } from "../operations/inbox/scan/operation.js"
 import { operation as inbox$send } from "../operations/inbox/send/operation.js"
 import { operation as inbox$skip } from "../operations/inbox/skip/operation.js"
 import { operation as inbox$snooze } from "../operations/inbox/snooze/operation.js"
+import { operation as inbox$snoozed } from "../operations/inbox/snoozed/operation.js"
 import { operation as inbox$updateDraft } from "../operations/inbox/update-draft/operation.js"
 import { operation as integrations$list } from "../operations/integrations/list/operation.js"
+import { operation as job$addNote } from "../operations/job/add-note/operation.js"
+import { operation as job$delete } from "../operations/job/delete/operation.js"
 import { operation as job$priorityCounts } from "../operations/job/priority-counts/operation.js"
+import { operation as job$removeChecklistItem } from "../operations/job/remove-checklist-item/operation.js"
 import { operation as job$setPriority } from "../operations/job/set-priority/operation.js"
+import { operation as job$star } from "../operations/job/star/operation.js"
+import { operation as job$unlinkPaper } from "../operations/job/unlink-paper/operation.js"
 import { operation as notify$request } from "../operations/notify/request/operation.js"
 import { operation as paper$export } from "../operations/paper/export/operation.js"
 import { operation as paper$import } from "../operations/paper/import/operation.js"
@@ -61,15 +69,23 @@ export const catalog = {
   "inbox.addToCalendar": inbox$addToCalendar,
   "inbox.clearSuggestion": inbox$clearSuggestion,
   "inbox.draftReply": inbox$draftReply,
+  "inbox.get": inbox$get,
+  "inbox.list": inbox$list,
   "inbox.markDone": inbox$markDone,
   "inbox.scan": inbox$scan,
   "inbox.send": inbox$send,
   "inbox.skip": inbox$skip,
   "inbox.snooze": inbox$snooze,
+  "inbox.snoozed": inbox$snoozed,
   "inbox.updateDraft": inbox$updateDraft,
   "integrations.list": integrations$list,
+  "job.addNote": job$addNote,
+  "job.delete": job$delete,
   "job.priorityCounts": job$priorityCounts,
+  "job.removeChecklistItem": job$removeChecklistItem,
   "job.setPriority": job$setPriority,
+  "job.star": job$star,
+  "job.unlinkPaper": job$unlinkPaper,
   "notify.request": notify$request,
   "paper.export": paper$export,
   "paper.import": paper$import,

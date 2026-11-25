@@ -6,7 +6,6 @@ export const REVERSAL_EXPECT_PENDING = {
     "job.create",
     "job.linkPaper",
     "job.setChecklistItem",
-    "job.star",
     "job.update",
     "paper.create",
     "paper.duplicate",

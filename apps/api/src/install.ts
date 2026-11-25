@@ -3,7 +3,6 @@ import { bindCatalog } from "./registry/bind.js"
 import { registerCoachTasks } from "./coach/index.js"
 import { registerAccountQueries } from "./account/index.js"
 import { registerChat } from "./coach/chat/index.js"
-import { registerInbox } from "./inbox/index.js"
 import { registerJob, type JobPreviewOptions } from "./job/index.js"
 import { registerPaper } from "./paper/index.js"
 import { registry } from "./registry/registry.js"
@@ -17,7 +16,6 @@ export function installRegistry(preview?: JobPreviewOptions) {
     registerCoachTasks()
     registerPaper(registry)
     registerJob(registry, preview)
-    registerInbox(registry)
     bindCatalog(registry, implementations)
     installed = true
     return registry

@@ -1,7 +1,6 @@
 import { randomUUID } from "node:crypto"
 
 import type { TestDatabase } from "../../db/context.js"
-import { inboxThreads } from "../../db/schema.js"
 import { authHeaders, testWebOrigin } from "../harness.js"
 import { textPdf } from "./route-files.js"
 import { nativeWordRouteCase } from "./native-word.js"
@@ -145,21 +144,6 @@ async function sharedToken(as: Person) {
   const { id } = await olderDoc(as)
   const shared = await as.command("paper.share", { docId: id })
   return { token: idIn(shared, "token") }
-}
-
-async function inboxEntry(as: Person) {
-  const [row] = await as.db
-    .insert(inboxThreads)
-    .values({
-      id: randomUUID(),
-      userId: as.userId,
-      providerThreadId: `route-${randomUUID()}`,
-      company: "Northwind",
-      role: "Intern",
-    })
-    .returning({ id: inboxThreads.id })
-  if (!row) throw new Error("no inbox entry")
-  return { id: row.id }
 }
 
 function revisionIn(value: unknown): string | null {
@@ -324,11 +308,8 @@ export const ROUTE_CASES: readonly RouteCase[] = [
   get("/api/jobs/calendar"),
   postJson("/api/jobs/preview", () => ({ url: "https://jobs.example.com/1" })),
   get("/api/jobs/:id", job),
-  get("/api/inbox"),
-  get("/api/inbox/snoozed"),
   get("/api/inbox/connect"),
   get("/api/inbox/callback"),
-  get("/api/inbox/:id", inboxEntry),
   get("/api/profile"),
   postForm("/api/account/photo", () => pngUpload),
   get("/api/account/export"),

@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query"
 import { Link } from "@tanstack/react-router"
 import { FileText, Mail, PenLine, Plus, Search, X } from "lucide-react"
 import { useEffectReducer, type EffectReducer } from "use-effect-reducer"
@@ -13,7 +14,7 @@ import {
 import { Separator } from "@workspace/ui/components/separator"
 
 import { reportRejected } from "@/lib/command-failure.ts"
-import { useRunCommand } from "@/lib/contract-client.ts"
+import { catalogClient, useRunCommand } from "@/lib/contract-client.ts"
 
 import { listPaper, type PaperListItem } from "./apply-api.ts"
 import {
@@ -103,6 +104,7 @@ export function PaperRow({
   job: JobDetail
 }) {
   const run = useRunCommand()
+  const queryClient = useQueryClient()
   const zone = useChosenTimeZone()
   const linked = kind === "cv" ? job.linked.cv : job.linked.letter
   const [{ open, list, search }, dispatch] = useEffectReducer(pickerReducer, {
@@ -256,9 +258,9 @@ export function PaperRow({
             variant="ghost"
             className={RAIL_PICKER_ROW}
             onClick={() => {
-              void run("job.unlinkPaper", { jobId: job.id, kind }).catch(
-                reportRejected("remove this paper")
-              )
+              void catalogClient
+                .run(queryClient, "job.unlinkPaper", { jobId: job.id, kind })
+                .catch(reportRejected("remove this paper"))
               dispatch({ type: "closed" })
             }}
           >

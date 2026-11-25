@@ -1,11 +1,12 @@
 import { useId, useReducer } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { ArrowUp, Briefcase, Plus } from "lucide-react"
 
 import {
+  catalog,
   jobAddChecklistItemInputSchema,
   jobAddNoteInputSchema,
   type ActivityFeedRow,
-  type ContractCommandName,
   type JobDetail,
   type JobId,
 } from "@workspace/domain"
@@ -21,7 +22,7 @@ import { Textarea } from "@workspace/ui/components/textarea"
 import { cn } from "@workspace/ui/lib/utils"
 
 import { reportRejected } from "@/lib/command-failure.ts"
-import { useRunCommand } from "@/lib/contract-client.ts"
+import { catalogClient, useRunCommand } from "@/lib/contract-client.ts"
 
 import {
   ActivityItem,
@@ -372,7 +373,7 @@ function noteReducer(state: NoteState, action: NoteAction): NoteState {
 }
 
 function NoteComposer({ jobId }: { jobId: JobId }) {
-  const run = useRunCommand()
+  const queryClient = useQueryClient()
   const hintId = useId()
   const messageId = useId()
   const [state, dispatch] = useReducer(noteReducer, {
@@ -391,7 +392,7 @@ function NoteComposer({ jobId }: { jobId: JobId }) {
     }
     if (!parsed.data.body) return
     try {
-      await run("job.addNote", parsed.data)
+      await catalogClient.run(queryClient, "job.addNote", parsed.data)
       dispatch({ type: "saved" })
     } catch {
       dispatch({ type: "failed" })
@@ -461,8 +462,8 @@ function NoteComposer({ jobId }: { jobId: JobId }) {
   )
 }
 
-const SHOWN_ELSEWHERE: ReadonlySet<string> = new Set<ContractCommandName>([
-  "job.star",
+const SHOWN_ELSEWHERE: ReadonlySet<string> = new Set<string>([
+  catalog["job.star"].name,
   "job.addChecklistItem",
   "job.setChecklistItem",
 ])

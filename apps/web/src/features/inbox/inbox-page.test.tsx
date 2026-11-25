@@ -1,5 +1,11 @@
 import { QueryClientProvider } from "@tanstack/react-query"
 import {
+  RouterProvider,
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+} from "@tanstack/react-router"
+import {
   cleanup,
   render,
   screen,
@@ -10,11 +16,13 @@ import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { createQueryClient } from "@/lib/query-client.ts"
-import { jsonError, jsonOk, pathOf } from "@/test/mock-http.ts"
+import { jsonError, jsonOk } from "@/test/mock-http.ts"
 import {
   INBOX_THREADS,
   LOCAL_DETAIL,
   REGIONAL_DETAIL,
+  requestOf,
+  threadOf,
 } from "@/test/inbox-fixtures.ts"
 
 import { InboxPage } from "./inbox-page.tsx"
@@ -27,9 +35,13 @@ afterEach(() => {
 })
 
 function renderPage() {
+  const router = createRouter({
+    routeTree: createRootRoute({ component: InboxPage }),
+    history: createMemoryHistory({ initialEntries: ["/"] }),
+  })
   return render(
     <QueryClientProvider client={createQueryClient()}>
-      <InboxPage />
+      <RouterProvider router={router} />
     </QueryClientProvider>
   )
 }
@@ -65,8 +77,8 @@ describe("inbox page", () => {
     vi.stubGlobal(
       "fetch",
       async (input: RequestInfo | URL, init?: RequestInit) => {
-        const path = pathOf(input)
-        const method = init?.method ?? "GET"
+        const path = requestOf(input, init).path
+        const method = requestOf(input, init).method
         if (method === "POST") posts.push(path)
         if (path === "/api/commands/inbox.skip") {
           skipped = true
@@ -75,6 +87,7 @@ describe("inbox page", () => {
         if (path === "/api/inbox/connect") return jsonOk({ url: null })
         if (path === "/api/inbox") {
           return jsonOk({
+            timeZone: "UTC",
             connected: false,
             skipped,
             threads: [],
@@ -112,7 +125,7 @@ describe("inbox page", () => {
     vi.stubGlobal(
       "fetch",
       async (input: RequestInfo | URL, init?: RequestInit) => {
-        const path = pathOf(input)
+        const path = requestOf(input, init).path
         if (path === "/api/inbox/connect") return jsonOk({ url: null })
         if (path === "/api/commands/inbox.scan") {
           scanned = true
@@ -124,12 +137,13 @@ describe("inbox page", () => {
         }
         if (path === "/api/inbox") {
           return jsonOk({
+            timeZone: "UTC",
             connected: false,
             skipped: true,
             threads: scanned ? INBOX_THREADS.slice(0, 1) : [],
           })
         }
-        if ((init?.method ?? "GET") === "POST") return jsonOk({})
+        if (requestOf(input, init).method === "POST") return jsonOk({})
         return jsonOk({})
       }
     )
@@ -163,19 +177,22 @@ describe("inbox page", () => {
 
   it("opens no thread on desktop until a row is picked", async () => {
     const paths: string[] = []
-    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
-      const path = pathOf(input)
-      paths.push(path)
-      if (path === "/api/inbox") {
-        return jsonOk({
-          connected: false,
-          skipped: true,
-          timeZone: "Asia/Ho_Chi_Minh",
-          threads: INBOX_THREADS,
-        })
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = requestOf(input, init).path
+        paths.push(path)
+        if (path === "/api/inbox") {
+          return jsonOk({
+            connected: false,
+            skipped: true,
+            timeZone: "Asia/Ho_Chi_Minh",
+            threads: INBOX_THREADS,
+          })
+        }
+        return jsonOk(REGIONAL_DETAIL)
       }
-      return jsonOk(REGIONAL_DETAIL)
-    })
+    )
     renderPage()
     expect(await screen.findByText("Select an email")).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Snooze" })).toBeNull()
@@ -208,18 +225,22 @@ describe("inbox page", () => {
         return false
       },
     }))
-    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
-      const path = pathOf(input)
-      if (path === "/api/inbox") {
-        return jsonOk({
-          connected: false,
-          skipped: true,
-          threads: INBOX_THREADS,
-        })
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = requestOf(input, init).path
+        if (path === "/api/inbox") {
+          return jsonOk({
+            timeZone: "UTC",
+            connected: false,
+            skipped: true,
+            threads: INBOX_THREADS,
+          })
+        }
+        if (path.startsWith("/api/inbox/")) return jsonOk(LOCAL_DETAIL)
+        return jsonOk({ timeZone: "Asia/Ho_Chi_Minh" })
       }
-      if (path.startsWith("/api/inbox/")) return jsonOk(LOCAL_DETAIL)
-      return jsonOk({ timeZone: "Asia/Ho_Chi_Minh" })
-    })
+    )
     renderPage()
     const row = await screen.findByRole("button", {
       name: /Associate PM, Local startup/,
@@ -251,30 +272,34 @@ describe("inbox page", () => {
       },
     }))
     let snoozed = false
-    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
-      const path = pathOf(input)
-      if (path === "/api/inbox") {
-        return jsonOk({
-          connected: false,
-          skipped: true,
-          threads: snoozed
-            ? INBOX_THREADS.slice(0, 2).filter(
-                (thread) => thread.id !== LOCAL_DETAIL.id
-              )
-            : INBOX_THREADS.slice(0, 2),
-        })
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = requestOf(input, init).path
+        if (path === "/api/inbox") {
+          return jsonOk({
+            timeZone: "UTC",
+            connected: false,
+            skipped: true,
+            threads: snoozed
+              ? INBOX_THREADS.slice(0, 2).filter(
+                  (thread) => thread.id !== LOCAL_DETAIL.id
+                )
+              : INBOX_THREADS.slice(0, 2),
+          })
+        }
+        if (path === "/api/commands/inbox.snooze") {
+          snoozed = true
+          return jsonOk({ id: LOCAL_DETAIL.id })
+        }
+        if (path.startsWith("/api/inbox/")) {
+          return path.endsWith(LOCAL_DETAIL.id)
+            ? jsonOk(LOCAL_DETAIL)
+            : jsonOk(REGIONAL_DETAIL)
+        }
+        return jsonOk({})
       }
-      if (path === "/api/commands/inbox.snooze") {
-        snoozed = true
-        return jsonOk({ id: LOCAL_DETAIL.id })
-      }
-      if (path.startsWith("/api/inbox/")) {
-        return path.endsWith(LOCAL_DETAIL.id)
-          ? jsonOk(LOCAL_DETAIL)
-          : jsonOk(REGIONAL_DETAIL)
-      }
-      return jsonOk({})
-    })
+    )
     renderPage()
     await userEvent.click(
       await screen.findByRole("button", {
@@ -305,8 +330,8 @@ describe("inbox page", () => {
     vi.stubGlobal(
       "fetch",
       async (input: RequestInfo | URL, init?: RequestInit) => {
-        const path = pathOf(input)
-        if ((init?.method ?? "GET") === "POST") {
+        const path = requestOf(input, init).path
+        if (requestOf(input, init).method === "POST") {
           const body = init?.body ? JSON.parse(String(init.body)) : null
           posts.push({ path, input: body?.input })
           if (path === "/api/commands/inbox.snooze") snoozed = false
@@ -314,16 +339,18 @@ describe("inbox page", () => {
         }
         if (path === "/api/inbox") {
           return jsonOk({
+            timeZone: "UTC",
             connected: false,
             skipped: true,
-            threads: snoozed ? [] : [LOCAL_DETAIL],
+            threads: snoozed ? [] : [threadOf(LOCAL_DETAIL)],
           })
         }
         if (path === "/api/inbox/snoozed") {
           return jsonOk({
+            timeZone: "UTC",
             connected: false,
             skipped: true,
-            threads: snoozed ? [snoozedDetail] : [],
+            threads: snoozed ? [threadOf(snoozedDetail)] : [],
           })
         }
         if (path.startsWith("/api/inbox/")) {
@@ -361,8 +388,8 @@ describe("inbox page", () => {
     vi.stubGlobal(
       "fetch",
       async (input: RequestInfo | URL, init?: RequestInit) => {
-        const path = pathOf(input)
-        const method = init?.method ?? "GET"
+        const path = requestOf(input, init).path
+        const method = requestOf(input, init).method
         if (method === "POST") {
           const body = init?.body ? JSON.parse(String(init.body)) : null
           posts.push({ path, input: body?.input })
@@ -403,8 +430,8 @@ describe("inbox page", () => {
     vi.stubGlobal(
       "fetch",
       async (input: RequestInfo | URL, init?: RequestInit) => {
-        const path = pathOf(input)
-        if ((init?.method ?? "GET") === "GET") reads.push(path)
+        const path = requestOf(input, init).path
+        if (requestOf(input, init).method === "GET") reads.push(path)
         if (path === "/api/inbox") {
           return jsonOk({
             connected: false,
@@ -438,12 +465,20 @@ describe("inbox page", () => {
   })
 
   it("keeps Scan when a connected inbox is empty", async () => {
-    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
-      if (pathOf(input) === "/api/inbox") {
-        return jsonOk({ connected: true, skipped: false, threads: [] })
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (requestOf(input, init).path === "/api/inbox") {
+          return jsonOk({
+            timeZone: "UTC",
+            connected: true,
+            skipped: false,
+            threads: [],
+          })
+        }
+        return jsonOk({})
       }
-      return jsonOk({})
-    })
+    )
     renderPage()
     const scan = await screen.findByRole("button", { name: "Scan" })
     expect(scan).toHaveAttribute("data-variant", "ghost")
@@ -452,8 +487,8 @@ describe("inbox page", () => {
 
   it("announces loading as a notice", async () => {
     let release: (value: Response) => void = () => {}
-    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
-      if (pathOf(input) === "/api/inbox") {
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
+      if (requestOf(input, init).path === "/api/inbox") {
         return new Promise<Response>((resolve) => {
           release = resolve
         })
@@ -464,22 +499,32 @@ describe("inbox page", () => {
     const status = await screen.findByRole("status")
     expect(status).toHaveTextContent("Loading inbox.")
     expect(status.className).toContain("bg-muted/50")
-    release(jsonOk({ connected: true, skipped: true, threads: [] }))
+    release(
+      jsonOk({ timeZone: "UTC", connected: true, skipped: true, threads: [] })
+    )
     expect(await screen.findByText("No job emails yet")).toBeInTheDocument()
   })
 
   it("refreshes a list that failed to load", async () => {
     let fail = true
     let reads = 0
-    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
-      const path = pathOf(input)
-      if (path === "/api/inbox") {
-        reads += 1
-        if (fail) return jsonError(500, "INTERNAL", "no")
-        return jsonOk({ connected: true, skipped: true, threads: [] })
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = requestOf(input, init).path
+        if (path === "/api/inbox") {
+          reads += 1
+          if (fail) return jsonError(500, "INTERNAL", "no")
+          return jsonOk({
+            timeZone: "UTC",
+            connected: true,
+            skipped: true,
+            threads: [],
+          })
+        }
+        return jsonOk({})
       }
-      return jsonOk({})
-    })
+    )
     renderPage()
     const alert = await screen.findByRole("alert")
     expect(alert).toHaveTextContent("Could not load inbox.")
@@ -492,21 +537,25 @@ describe("inbox page", () => {
 
   it("refreshes a message that failed to load", async () => {
     let fail = true
-    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
-      const path = pathOf(input)
-      if (path === "/api/inbox") {
-        return jsonOk({
-          connected: true,
-          skipped: true,
-          threads: [INBOX_THREADS[0]],
-        })
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = requestOf(input, init).path
+        if (path === "/api/inbox") {
+          return jsonOk({
+            timeZone: "UTC",
+            connected: true,
+            skipped: true,
+            threads: [INBOX_THREADS[0]],
+          })
+        }
+        if (path.startsWith("/api/inbox/")) {
+          if (fail) return jsonError(500, "INTERNAL", "no")
+          return jsonOk(REGIONAL_DETAIL)
+        }
+        return jsonOk({})
       }
-      if (path.startsWith("/api/inbox/")) {
-        if (fail) return jsonError(500, "INTERNAL", "no")
-        return jsonOk(REGIONAL_DETAIL)
-      }
-      return jsonOk({})
-    })
+    )
     renderPage()
     await userEvent.click(
       await screen.findByRole("button", {
@@ -525,21 +574,30 @@ describe("inbox page", () => {
 
   it("refreshes snoozed mail that failed to load", async () => {
     let fail = true
-    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
-      const path = pathOf(input)
-      if (path === "/api/inbox") {
-        return jsonOk({
-          connected: true,
-          skipped: true,
-          threads: [INBOX_THREADS[0]],
-        })
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const path = requestOf(input, init).path
+        if (path === "/api/inbox") {
+          return jsonOk({
+            timeZone: "UTC",
+            connected: true,
+            skipped: true,
+            threads: [INBOX_THREADS[0]],
+          })
+        }
+        if (path === "/api/inbox/snoozed") {
+          if (fail) return jsonError(500, "INTERNAL", "no")
+          return jsonOk({
+            timeZone: "UTC",
+            connected: true,
+            skipped: true,
+            threads: [],
+          })
+        }
+        return jsonOk({})
       }
-      if (path === "/api/inbox/snoozed") {
-        if (fail) return jsonError(500, "INTERNAL", "no")
-        return jsonOk({ connected: true, skipped: true, threads: [] })
-      }
-      return jsonOk({})
-    })
+    )
     renderPage()
     await userEvent.click(
       await screen.findByRole("button", { name: "Snoozed" })

@@ -117,6 +117,28 @@ export async function shellApiFetch(
     })
   }
   if (method === "GET" && path === "/api/jobs") return jsonOk(state.jobs)
-  if (method === "GET" && path === "/api/inbox") return jsonOk(state.inbox)
+  if (method === "POST" && path === "/api/reads/inbox.list")
+    return jsonOk(fullInboxList(state.inbox))
   return null
+}
+
+function fullInboxList(inbox: unknown) {
+  const partial = (inbox ?? {}) as { threads?: Record<string, unknown>[] }
+  return {
+    connected: false,
+    skipped: false,
+    timeZone: "UTC",
+    ...partial,
+    threads: (partial.threads ?? []).map((email) => ({
+      company: "",
+      role: "",
+      summary: "",
+      lastMessageAt: "2026-10-27T00:00:00.000Z",
+      unread: false,
+      suggestedStage: null,
+      jobId: null,
+      status: "open",
+      ...email,
+    })),
+  }
 }

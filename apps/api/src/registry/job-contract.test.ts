@@ -1,7 +1,7 @@
 import {
   catalog,
   commands,
-  jobContract,
+  jobContract as jobCommands,
   jobQueries,
   personActor,
   queries,
@@ -21,6 +21,17 @@ import { implementations } from "../generated/catalog.js"
 import { idOf } from "./coverage-helpers.test-support.js"
 import { installRegistry } from "../install.js"
 import { inputHash } from "./receipt.js"
+
+const jobContract = {
+  ...jobCommands,
+  "job.star": { output: catalog["job.star"].publicResult },
+  "job.delete": { output: catalog["job.delete"].publicResult },
+  "job.removeChecklistItem": {
+    output: catalog["job.removeChecklistItem"].publicResult,
+  },
+  "job.addNote": { output: catalog["job.addNote"].publicResult },
+  "job.unlinkPaper": { output: catalog["job.unlinkPaper"].publicResult },
+}
 
 describe("a job binding that drifts from the job contract is rejected", () => {
   it("parses every job command output and every job query read", async () => {
