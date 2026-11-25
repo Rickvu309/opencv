@@ -3,7 +3,7 @@ import {
   jobCreateInputSchema,
   jobResource,
   jobResultSchema,
-} from "../../../job.js"
+} from "../../../apply/job.js"
 import { defineOperation } from "../../../operation.js"
 
 export const operation = defineOperation({
