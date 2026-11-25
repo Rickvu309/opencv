@@ -163,7 +163,10 @@ const TOOL_COPY = {
   [catalog["paper.nativeWord"].name]: { label: "Download your Paper as Word" },
   "paper.sync": { label: "Save your Paper" },
   "paper.unshare": { label: "Stop sharing your Paper" },
-  "profile.get": { label: "Read your Profile", read: "Read your Profile" },
+  [catalog["profile.get"].name]: {
+    label: "Read your Profile",
+    read: "Read your Profile",
+  },
   [catalog["profile.markWelcomed"].name]: { label: "Finish your welcome" },
   [catalog["profile.setPhoto"].name]: { label: "Update your Profile photo" },
   [catalog["profile.update"].name]: { label: "Update your Profile" },

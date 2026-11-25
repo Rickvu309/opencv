@@ -6,7 +6,6 @@ export const endpoints = {
   catalogRead: (name: string) => `/api/reads/${name}`,
   catalogCommand: (name: string) => `/api/commands/${name}`,
   publicConfig: "/api/public-config",
-  profile: "/api/profile",
   coachTaskEvents: (taskId: string, after: number) =>
     `/api/coach/tasks/${taskId}/events?after=${after}`,
   accountPhoto: "/api/account/photo",

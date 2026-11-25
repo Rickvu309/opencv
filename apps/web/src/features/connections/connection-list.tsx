@@ -7,6 +7,7 @@ import {
 } from "@workspace/domain"
 import { Button } from "@workspace/ui/components/button"
 import { profileQuery } from "@/lib/account-api.ts"
+import { useOwnerId } from "@/lib/owner-id.ts"
 import { catalogClient } from "@/lib/contract-client.ts"
 import { ownerIdFromRouteMatches } from "@/lib/owner-id.ts"
 import { ConnectAgent } from "./connect-agent.tsx"
@@ -21,7 +22,7 @@ function connectionGrantLines(connection: {
 
 export function ConnectionList() {
   const queryClient = useQueryClient()
-  const profile = useQuery(profileQuery())
+  const profile = useQuery(profileQuery(useOwnerId()))
   const timeZone = profile.data?.timeZone
   const ownerId = useRouterState({
     select: (state) => ownerIdFromRouteMatches(state.matches),

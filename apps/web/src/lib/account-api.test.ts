@@ -1,7 +1,6 @@
 import { QueryClient } from "@tanstack/react-query"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { profileKey } from "./account-api.ts"
 import { catalogClient } from "./contract-client.ts"
 
 const savedProfile = {
@@ -40,10 +39,11 @@ describe("account reads", () => {
     const billing = catalogClient.options("owner", "billing.get", {})
     const integrations = catalogClient.options("owner", "integrations.list", {})
     const usage = catalogClient.options("owner", "coach.usage", {})
-    for (const read of [billing, integrations, usage])
+    const profile = catalogClient.options("owner", "profile.get", {})
+    for (const read of [billing, integrations, usage, profile])
       queryClient.getQueryCache().build(queryClient, read)
     const keys = [
-      profileKey(),
+      profile.queryKey,
       billing.queryKey,
       usage.queryKey,
       integrations.queryKey,

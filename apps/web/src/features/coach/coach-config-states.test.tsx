@@ -100,10 +100,12 @@ describe("Coach configuration states", () => {
   it("opens Coach settings through the router when Coach is off", async () => {
     installFetch("ok")
     const { client, view } = mount()
-    await waitFor(() => expect(client.getQueryData(profileKey())).toBeTruthy())
+    await waitFor(() =>
+      expect(client.getQueryData(profileKey(""))).toBeTruthy()
+    )
     act(() => {
-      const profile = client.getQueryData(profileKey())
-      client.setQueryData(profileKey(), { ...profile, agentChat: false })
+      const profile = client.getQueryData(profileKey(""))
+      client.setQueryData(profileKey(""), { ...profile, agentChat: false })
     })
     const link = await screen.findByRole("link", { name: "Open Settings" })
     expect(link).toHaveAttribute("href", "/settings/coach")

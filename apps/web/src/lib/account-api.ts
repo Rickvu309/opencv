@@ -1,19 +1,20 @@
-import type { QueryOutput } from "@workspace/domain"
+import { catalog } from "@workspace/domain"
 
-import { apiFetch } from "@/lib/api.ts"
-import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
-import { queryKey } from "@/lib/contract-client.ts"
-import { endpoints } from "@/lib/requests.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 
-export const profileKey = () => queryKey({ query: "profile.get" })
+export const PROFILE_FRESH_MS = 60_000
 
-export function fetchProfile() {
-  return apiFetch<SuccessBody<QueryOutput<"profile.get">>>(
-    endpoints.profile
-  ).then(unwrapData)
+export function profileKey(ownerId: string) {
+  return catalogClient.key(ownerId, "profile.get", {})
 }
 
-export const profileQuery = () => ({
-  queryKey: profileKey(),
-  queryFn: fetchProfile,
-})
+export function profileQuery(ownerId: string) {
+  return {
+    ...catalogClient.options(ownerId, "profile.get", {}),
+    staleTime: PROFILE_FRESH_MS,
+  }
+}
+
+export function fetchProfile() {
+  return catalogClient.read(catalog["profile.get"].name, {})
+}

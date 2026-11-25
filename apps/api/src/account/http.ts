@@ -24,19 +24,6 @@ function sessionApp(signedIn: SignedIn) {
   return routes
 }
 
-export function createProfileRoutes(signedIn: SignedIn) {
-  const routes = sessionApp(signedIn)
-  routes.get("/", async (c) => {
-    const data = await registry.read(
-      "profile.get",
-      {},
-      personActor(c.var.userId)
-    )
-    return c.json(successEnvelope(data))
-  })
-  return routes
-}
-
 export function createAccountRoutes(signedIn: SignedIn) {
   const routes = sessionApp(signedIn)
 

@@ -17,10 +17,17 @@ export function ownerIdFromRouteMatches(
 }
 
 export function useOwnerId() {
-  const router = useRouter({ warn: false }) as
-    ReturnType<typeof useRouter> | undefined
+  const router = useMountedRouter()
   return useSyncExternalStore(
     (listener) => router?.subscribe("onResolved", listener) ?? (() => {}),
     () => (router ? ownerIdFromRouteMatches(router.state.matches) : "")
   )
+}
+
+function useMountedRouter(): ReturnType<typeof useRouter> | undefined {
+  try {
+    return useRouter({ warn: false })
+  } catch {
+    return undefined
+  }
 }

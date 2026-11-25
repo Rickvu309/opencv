@@ -1,4 +1,5 @@
 import {
+  catalog,
   jobContract,
   jobPriorityResource,
   type Actor,
@@ -49,7 +50,9 @@ export function previewPosting(
     posting.fetch,
     posting.read
       ? async (text) => {
-          const plan = planOf(await registry.read("profile.get", {}, actor))
+          const plan = planOf(
+            await registry.read(catalog["profile.get"].name, {}, actor)
+          )
           return plan && posting.read ? posting.read({ plan, text }) : null
         }
       : undefined

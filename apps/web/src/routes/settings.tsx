@@ -19,7 +19,8 @@ import {
   TIME_ZONE_REJECTION,
 } from "@/features/settings/settings-api.ts"
 import { UsageSection } from "@/features/settings/usage-section.tsx"
-import { fetchProfile, profileKey } from "@/lib/account-api.ts"
+import { profileQuery } from "@/lib/account-api.ts"
+import { useOwnerId } from "@/lib/owner-id.ts"
 import { catalogClient } from "@/lib/contract-client.ts"
 
 export function SettingsPage() {
@@ -27,10 +28,7 @@ export function SettingsPage() {
     select: (state) => state.location.pathname,
   })
   const view = settingsViewFromPath(pathname)
-  const profile = useQuery({
-    queryKey: profileKey(),
-    queryFn: fetchProfile,
-  })
+  const profile = useQuery(profileQuery(useOwnerId()))
   const save = useSettingsSave()
 
   return (

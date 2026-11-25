@@ -20,7 +20,8 @@ import {
 } from "@/features/coach/chat-api.ts"
 import { ChatStoreContext } from "@/features/coach/chat-store-context.ts"
 import { titleFrom } from "@/features/coach/chat-messages.ts"
-import { refreshReads } from "@/lib/contract-client.ts"
+import { refreshCatalogReads } from "@/lib/contract-client.ts"
+import { useOwnerId } from "@/lib/owner-id.ts"
 import {
   subscribeWritingCoachFocus,
   writingCoachFocus,
@@ -59,6 +60,7 @@ const EMPTY_CHATS: ChatSummary[] = []
 
 export function ChatStoreProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
+  const ownerId = useOwnerId()
   const [{ activeChatId, navigationRevision, creationOwner }, dispatch] =
     useReducer(activeChatReducer, {
       activeChatId: null,
@@ -99,7 +101,7 @@ export function ChatStoreProvider({ children }: { children: ReactNode }) {
     titleForCreate: titleFrom,
     focusDocId,
     onAfterUndo: () => {
-      void refreshReads(queryClient, [{ query: "profile.get" }])
+      void refreshCatalogReads(queryClient, [{ ownerId, name: "profile" }])
     },
   })
 

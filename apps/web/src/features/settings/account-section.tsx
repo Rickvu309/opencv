@@ -22,6 +22,7 @@ import {
 import { HiddenFilePicker } from "@/components/hidden-file-picker.tsx"
 import { CodeInput } from "@/features/auth/code-input.tsx"
 import { profileKey } from "@/lib/account-api.ts"
+import { useOwnerId } from "@/lib/owner-id.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { catalogClient } from "@/lib/contract-client.ts"
 import { resolveProfileImageSrc } from "@/lib/requests.ts"
@@ -59,6 +60,7 @@ export function AccountSection({
 }: SettingsSave & { profile: Profile }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const ownerId = useOwnerId()
   const fileRef = useRef<HTMLInputElement>(null)
   const [
     { photoError, draftName, nameError, emailOpen, deleteOpen },
@@ -79,7 +81,7 @@ export function AccountSection({
     dispatch({ type: "photo_upload_started" })
     void uploadPhoto(file)
       .then((next) => {
-        queryClient.setQueryData(profileKey(), next)
+        queryClient.setQueryData(profileKey(ownerId), next)
       })
       .catch((caught: unknown) => {
         dispatch({
