@@ -1,6 +1,13 @@
 import { z } from "zod"
 
-import { jobIdSchema, paperIdSchema } from "./ids.js"
+import {
+  idResult,
+  jobIdSchema,
+  paperIdSchema,
+  type JobId,
+  type PaperId,
+} from "./ids.js"
+import type { ResourceRef } from "./resources.js"
 
 const JOB_STAGES = ["saved", "applied", "interview", "offer", "closed"] as const
 
@@ -204,4 +211,20 @@ export function normalizeJobUrl(value: string) {
 export function sourceHostFromUrl(value: string | undefined) {
   if (!value) return null
   return parseUrl(value)?.host.toLowerCase() ?? null
+}
+
+export const jobResultSchema = jobViewSchema
+  .extend({
+    id: idResult<JobId>(),
+    cvDocId: idResult<PaperId>().nullable(),
+    letterDocId: idResult<PaperId>().nullable(),
+  })
+  .strip()
+
+export function jobResource(jobId?: string): ResourceRef {
+  return {
+    name: "job",
+    coachFloor: "auto",
+    ...(jobId ? { entityId: jobId } : {}),
+  }
 }

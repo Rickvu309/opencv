@@ -15,8 +15,13 @@ import { operation as coach$status } from "../operations/coach/status/operation.
 import { operation as coach$stop } from "../operations/coach/stop/operation.js"
 import { operation as connections$list } from "../operations/connections/list/operation.js"
 import { operation as connections$revoke } from "../operations/connections/revoke/operation.js"
+import { operation as job$addNote } from "../operations/job/add-note/operation.js"
+import { operation as job$delete } from "../operations/job/delete/operation.js"
 import { operation as job$priorityCounts } from "../operations/job/priority-counts/operation.js"
+import { operation as job$removeChecklistItem } from "../operations/job/remove-checklist-item/operation.js"
 import { operation as job$setPriority } from "../operations/job/set-priority/operation.js"
+import { operation as job$star } from "../operations/job/star/operation.js"
+import { operation as job$unlinkPaper } from "../operations/job/unlink-paper/operation.js"
 import { operation as notify$request } from "../operations/notify/request/operation.js"
 import { operation as paper$export } from "../operations/paper/export/operation.js"
 import { operation as paper$import } from "../operations/paper/import/operation.js"
@@ -44,8 +49,13 @@ export const catalog = {
   "coach.stop": coach$stop,
   "connections.list": connections$list,
   "connections.revoke": connections$revoke,
+  "job.addNote": job$addNote,
+  "job.delete": job$delete,
   "job.priorityCounts": job$priorityCounts,
+  "job.removeChecklistItem": job$removeChecklistItem,
   "job.setPriority": job$setPriority,
+  "job.star": job$star,
+  "job.unlinkPaper": job$unlinkPaper,
   "notify.request": notify$request,
   "paper.export": paper$export,
   "paper.import": paper$import,

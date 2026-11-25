@@ -17,8 +17,13 @@ import { implementation as coach$status } from "../coach/operations/status/serve
 import { implementation as coach$stop } from "../coach/operations/stop/server.js"
 import { implementation as connections$list } from "../connections/operations/list/server.js"
 import { implementation as connections$revoke } from "../connections/operations/revoke/server.js"
+import { implementation as job$addNote } from "../job/operations/add-note/server.js"
+import { implementation as job$delete } from "../job/operations/delete/server.js"
 import { implementation as job$priorityCounts } from "../job/operations/priority-counts/server.js"
+import { implementation as job$removeChecklistItem } from "../job/operations/remove-checklist-item/server.js"
 import { implementation as job$setPriority } from "../job/operations/set-priority/server.js"
+import { implementation as job$star } from "../job/operations/star/server.js"
+import { implementation as job$unlinkPaper } from "../job/operations/unlink-paper/server.js"
 import { implementation as notify$request } from "../account/operations/notify/request/server.js"
 import { implementation as paper$export } from "../paper/operations/export/server.js"
 import { implementation as paper$import } from "../paper/operations/import/server.js"
@@ -46,8 +51,13 @@ export const implementations = {
   "coach.stop": coach$stop,
   "connections.list": connections$list,
   "connections.revoke": connections$revoke,
+  "job.addNote": job$addNote,
+  "job.delete": job$delete,
   "job.priorityCounts": job$priorityCounts,
+  "job.removeChecklistItem": job$removeChecklistItem,
   "job.setPriority": job$setPriority,
+  "job.star": job$star,
+  "job.unlinkPaper": job$unlinkPaper,
   "notify.request": notify$request,
   "paper.export": paper$export,
   "paper.import": paper$import,
