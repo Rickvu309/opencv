@@ -3,7 +3,7 @@ import {
   LIBRARY_WRITER,
   paperImportResponseSchema,
   letterAttachmentContextSchema,
-  parseChatId,
+  chatIdSchema,
 } from "@workspace/domain"
 import type { QueryClient } from "@tanstack/react-query"
 import type {
@@ -236,10 +236,12 @@ export async function stopPaperChat(
   queryClient: QueryClient,
   chatId: string
 ): Promise<void> {
+  const parsed = chatIdSchema.safeParse(chatId)
+  if (!parsed.success) return
   await catalogClient.run(
     queryClient,
     "coach.stop",
-    { chatId: parseChatId(chatId) },
+    { chatId: parsed.data },
     { refresh: false }
   )
 }
