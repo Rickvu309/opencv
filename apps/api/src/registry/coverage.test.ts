@@ -1,9 +1,4 @@
-import {
-  inboxContract,
-  jobContract,
-  paperContract,
-  personActor,
-} from "@workspace/domain"
+import { jobContract, paperContract, personActor } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
@@ -17,7 +12,6 @@ import type { ExecuteResult, Registry } from "./registry.js"
 import { coachActivityWithoutTurn, seedCoachActor } from "../test/coach-turn.js"
 
 const surfaces = {
-  inbox: inboxContract,
   job: jobContract,
   paper: paperContract,
 }

@@ -7,6 +7,10 @@ import { bindOperation } from "../registry/bind.js"
 import { Registry } from "../registry/registry.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { registerInbox } from "./index.js"
+import { implementation as addToCalendar } from "./operations/add-to-calendar/server.js"
+import { implementation as draftReply } from "./operations/draft-reply/server.js"
+import { implementation as send } from "./operations/send/server.js"
+import { implementation as updateDraft } from "./operations/update-draft/server.js"
 import { implementation as acceptSuggestion } from "./operations/accept-suggestion/server.js"
 import { implementation as clearSuggestion } from "./operations/clear-suggestion/server.js"
 import { implementation as markDone } from "./operations/mark-done/server.js"
@@ -19,6 +23,10 @@ type Inbox = { threads: { id: string }[] }
 const person = personActor("inbox-alone")
 
 function bindInboxPairs(target: Registry) {
+  bindOperation(target, addToCalendar)
+  bindOperation(target, draftReply)
+  bindOperation(target, send)
+  bindOperation(target, updateDraft)
   bindOperation(target, acceptSuggestion)
   bindOperation(target, clearSuggestion)
   bindOperation(target, markDone)

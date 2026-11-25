@@ -150,7 +150,7 @@ export function inboxCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "inbox.draftReply",
+      name: catalog["inbox.draftReply"].name,
       arrange: async () => {
         draftId = await threadByRole(run, "Business Analyst")
       },
@@ -160,7 +160,7 @@ export function inboxCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "inbox.updateDraft",
+      name: catalog["inbox.updateDraft"].name,
       arrange: async () => {
         draftId = await threadByRole(run, "Business Analyst")
       },
@@ -178,7 +178,7 @@ export function inboxCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "inbox.send",
+      name: catalog["inbox.send"].name,
       arrange: async () => {
         sendId = await threadByRole(run, "Business Analyst")
         await run("inbox.updateDraft", {
@@ -198,7 +198,7 @@ export function inboxCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "inbox.addToCalendar",
+      name: catalog["inbox.addToCalendar"].name,
       arrange: async () => {
         calendarId = await threadByRole(run, "Business Analyst")
       },
