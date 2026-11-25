@@ -134,5 +134,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/paper-local-durable.test.mjs",
+    "because": "The old block Paper local durability code it scanned is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
   }
 ]
