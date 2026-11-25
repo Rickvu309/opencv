@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { activityFeedRowSchema } from "../../../account.js"
+import { activityFeedRowSchema } from "../../../account/account.js"
 import { everyReadAnUndoOrApprovalCanChange } from "../../../control/control.js"
 import { defineOperation } from "../../../operation.js"
 

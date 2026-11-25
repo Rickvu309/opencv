@@ -1,5 +1,8 @@
 import { z } from "zod"
-import { profileResource, usageSnapshotSchema } from "../../../account.js"
+import {
+  profileResource,
+  usageSnapshotSchema,
+} from "../../../account/account.js"
 import { coachTaskResource } from "../../../coach-task.js"
 import { defineOperation } from "../../../operation.js"
 

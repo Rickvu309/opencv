@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { profileResource, profileSchema } from "../../../account.js"
+import { profileResource, profileSchema } from "../../../account/account.js"
 import { defineOperation } from "../../../operation.js"
 
 export const operation = defineOperation({
