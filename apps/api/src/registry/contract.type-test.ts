@@ -183,7 +183,6 @@ export function typeProbes(registry: Registry) {
 
 const uuid = "00000000-0000-4000-8000-000000000000"
 const someJobId = parseJobId(uuid)
-const moveBinding = {} as Bindings<JobContract>["job.move"]
 
 // @ts-expect-error destructive cannot use coach auto
 export const autoDestructive = commandEntry({

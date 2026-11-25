@@ -4,7 +4,6 @@ import { bindCommands } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
 import { moveJob } from "./board.js"
 import { fetchJobPosting, type FetchJobPosting } from "./fetch-posting.js"
-import { linkPaper } from "./linked-papers.js"
 import { previewJob } from "./preview.js"
 
 type ReadPostingOnPlan = (input: {
