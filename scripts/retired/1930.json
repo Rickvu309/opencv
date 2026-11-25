@@ -22,5 +22,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/lib/coach-stream.test.ts",
+    "because": "job.move is now a pair, and a Coach pair result refreshes the older reads as well, so the older Paper list is refreshed too",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
