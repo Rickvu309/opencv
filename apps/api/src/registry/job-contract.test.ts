@@ -45,6 +45,7 @@ const jobContract = {
   },
   "job.addNote": { output: catalog["job.addNote"].publicResult },
   "job.unlinkPaper": { output: catalog["job.unlinkPaper"].publicResult },
+  "job.linkPaper": { output: catalog["job.linkPaper"].publicResult },
 }
 
 describe("a job binding that drifts from the job contract is rejected", () => {

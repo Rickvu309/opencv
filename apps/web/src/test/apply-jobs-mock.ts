@@ -546,7 +546,7 @@ export async function jobApiFetch(
         job.cvDocId = doc.id
         extra(job.id).linked.cv = doc
       }
-      return jsonOk(job)
+      return jsonOk({ ...job, docName: doc.name })
     }
     if (name === "job.unlinkPaper") {
       if (payload.kind === "letter") {

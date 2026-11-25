@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/registry/registry.undo-later.formal.test.ts",
+    "because": "job.linkPaper now carries an Undo guard, so it leaves the known violation list; the formal test proves its Undo no longer erases a later link",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

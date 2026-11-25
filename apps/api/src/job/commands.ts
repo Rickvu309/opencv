@@ -4,7 +4,6 @@ import { bindCommands } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
 import { moveJob } from "./board.js"
 import { fetchJobPosting, type FetchJobPosting } from "./fetch-posting.js"
-import { linkPaper } from "./linked-papers.js"
 import { previewJob } from "./preview.js"
 
 type ReadPostingOnPlan = (input: {
@@ -82,29 +81,6 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
         subjectKind: "job",
         subjectId: input.jobId,
         summary: `You moved it to ${input.stage}`,
-      }),
-    },
-    "job.linkPaper": {
-      handler: (input, actor) =>
-        linkPaper(actor, input.jobId, input.docId, input.kind),
-      reversal: (input, output) =>
-        output.previousDocId
-          ? {
-              command: "job.linkPaper",
-              input: {
-                jobId: input.jobId,
-                docId: output.previousDocId,
-                kind: input.kind,
-              },
-            }
-          : {
-              command: "job.unlinkPaper",
-              input: { jobId: input.jobId, kind: input.kind },
-            },
-      activity: (input, output) => ({
-        subjectKind: "job",
-        subjectId: input.jobId,
-        summary: `You linked ${output.docName}`,
       }),
     },
   })

@@ -4,6 +4,7 @@ import {
   PAPER_CANVAS_PROFILE,
   PAPER_START_BOUNDS,
   PAPER_START_TEMPLATE,
+  catalog,
   paperContract,
   paperDocNameSchema,
   paperPackageEditResultSchema,
@@ -149,7 +150,7 @@ function paperStartReview(
       )
       if (input.jobId)
         await registry.execute({
-          name: "job.linkPaper",
+          name: catalog["job.linkPaper"].name,
           input: {
             jobId: input.jobId,
             docId: published.docId,

@@ -579,11 +579,12 @@ export function PaperLibrary({
         onLink={(job) => {
           if (mode?.type !== "link") return
           const kind = mode.doc.kind === "letter" ? "letter" : "cv"
-          void run("job.linkPaper", {
-            jobId: job.id,
-            docId: mode.doc.id,
-            kind,
-          })
+          void catalogClient
+            .run(queryClient, "job.linkPaper", {
+              jobId: job.id,
+              docId: mode.doc.id,
+              kind,
+            })
             .then(() => {
               toast(`Linked to ${job.title}`)
               closeDialog()

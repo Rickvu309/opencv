@@ -283,7 +283,7 @@ const LATER: Record<string, Later> = {
     act: async (a, run) => {
       const docId = await newCvId(run, "Later CV")
       await run("job.linkPaper", {
-        jobId: reversalInputOf(a).jobId,
+        jobId: idOf(a.output),
         docId,
         kind: "cv",
       })
@@ -323,7 +323,7 @@ const laterIds: { focusId?: string; docId?: string } = {}
 
 const OWN_UNDO_GUARD = ["paper.edit"]
 
-const KNOWN_VIOLATIONS = ["job.linkPaper", "paper.create", "paper.duplicate"]
+const KNOWN_VIOLATIONS = ["paper.create", "paper.duplicate"]
 
 type Verdict = "refused" | "kept" | "erased"
 
