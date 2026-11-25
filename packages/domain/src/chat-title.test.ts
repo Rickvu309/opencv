@@ -7,8 +7,8 @@ import {
   chatDisplayTitle,
   coachTurnRequestSchema,
   textFromParts,
-} from "./chat-messages.ts"
-import { shouldAutoTitleChat, titleFrom } from "./chat-title.ts"
+} from "./coach/chat-messages.ts"
+import { shouldAutoTitleChat, titleFrom } from "./coach/chat-title.ts"
 
 const FIRST_LINE_TITLE_MAX = 36
 

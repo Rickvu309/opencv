@@ -1,5 +1,5 @@
-import { chatRenameInputSchema, chatResource } from "../../../chat.js"
-import { chatDetailSchema } from "../../../chat-views.js"
+import { chatRenameInputSchema, chatResource } from "../../../coach/chat.js"
+import { chatDetailSchema } from "../../../coach/chat-views.js"
 import { defineOperation } from "../../../operation.js"
 
 export const operation = defineOperation({
