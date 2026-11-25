@@ -3,6 +3,7 @@ import { operation as account$requestEmailChange } from "../operations/account/r
 import { operation as actions$approve } from "../operations/actions/approve/operation.js"
 import { operation as actions$deny } from "../operations/actions/deny/operation.js"
 import { operation as activity$undo } from "../operations/activity/undo/operation.js"
+import { operation as billing$get } from "../operations/billing/get/operation.js"
 import { operation as chat$appendMessage } from "../operations/chat/append-message/operation.js"
 import { operation as chat$create } from "../operations/chat/create/operation.js"
 import { operation as chat$delete } from "../operations/chat/delete/operation.js"
@@ -28,6 +29,7 @@ import { operation as inbox$skip } from "../operations/inbox/skip/operation.js"
 import { operation as inbox$snooze } from "../operations/inbox/snooze/operation.js"
 import { operation as inbox$snoozed } from "../operations/inbox/snoozed/operation.js"
 import { operation as inbox$updateDraft } from "../operations/inbox/update-draft/operation.js"
+import { operation as integrations$list } from "../operations/integrations/list/operation.js"
 import { operation as job$addNote } from "../operations/job/add-note/operation.js"
 import { operation as job$delete } from "../operations/job/delete/operation.js"
 import { operation as job$priorityCounts } from "../operations/job/priority-counts/operation.js"
@@ -50,6 +52,7 @@ export const catalog = {
   "actions.approve": actions$approve,
   "actions.deny": actions$deny,
   "activity.undo": activity$undo,
+  "billing.get": billing$get,
   "chat.appendMessage": chat$appendMessage,
   "chat.create": chat$create,
   "chat.delete": chat$delete,
@@ -75,6 +78,7 @@ export const catalog = {
   "inbox.snooze": inbox$snooze,
   "inbox.snoozed": inbox$snoozed,
   "inbox.updateDraft": inbox$updateDraft,
+  "integrations.list": integrations$list,
   "job.addNote": job$addNote,
   "job.delete": job$delete,
   "job.priorityCounts": job$priorityCounts,

@@ -1,12 +1,7 @@
 import { QueryClient } from "@tanstack/react-query"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import {
-  billingKey,
-  integrationsKey,
-  profileKey,
-  usageKey,
-} from "./account-api.ts"
+import { profileKey, usageKey } from "./account-api.ts"
 import { catalogClient } from "./contract-client.ts"
 
 const savedProfile = {
@@ -42,7 +37,16 @@ describe("account reads", () => {
 
   it("refreshes the profile, billing, usage and every other older read after a profile write", async () => {
     const queryClient = new QueryClient()
-    const keys = [profileKey(), billingKey(), usageKey(), integrationsKey()]
+    const billing = catalogClient.options("owner", "billing.get", {})
+    const integrations = catalogClient.options("owner", "integrations.list", {})
+    for (const read of [billing, integrations])
+      queryClient.getQueryCache().build(queryClient, read)
+    const keys = [
+      profileKey(),
+      billing.queryKey,
+      usageKey(),
+      integrations.queryKey,
+    ]
     for (const key of keys) queryClient.setQueryData(key, { seeded: true })
     vi.stubGlobal("fetch", async () =>
       Response.json({ ok: true, data: savedProfile })

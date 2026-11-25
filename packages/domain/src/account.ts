@@ -134,3 +134,44 @@ export const profileResource: ResourceRef = {
   name: "profile",
   coachFloor: "never",
 }
+
+const integrationStatusSchema = z.enum(["enabled", "disabled", "unavailable"])
+
+export const integrationsSchema = z
+  .object({
+    groups: z.array(
+      z
+        .object({
+          id: z.string(),
+          label: z.string(),
+          items: z.array(
+            z
+              .object({
+                id: z.string(),
+                name: z.string(),
+                line: z.string(),
+                status: integrationStatusSchema,
+              })
+              .strict()
+          ),
+        })
+        .strict()
+    ),
+  })
+  .strict()
+
+export const billingSchema = z
+  .object({
+    plan: planSchema,
+    free: z.object({ price: z.string(), line: z.string() }).strict(),
+    pro: z
+      .object({
+        price: z.string(),
+        line: z.string(),
+        benefits: z.array(z.string()).readonly(),
+      })
+      .strict(),
+    payment: z.null(),
+    invoices: z.array(z.never()),
+  })
+  .strict()

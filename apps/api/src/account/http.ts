@@ -37,32 +37,6 @@ export function createProfileRoutes(signedIn: SignedIn) {
   return routes
 }
 
-export function createIntegrationsRoutes(signedIn: SignedIn) {
-  const routes = sessionApp(signedIn)
-  routes.get("/", async (c) => {
-    const data = await registry.read(
-      "integrations.list",
-      {},
-      personActor(c.var.userId)
-    )
-    return c.json(successEnvelope(data))
-  })
-  return routes
-}
-
-export function createBillingRoutes(signedIn: SignedIn) {
-  const routes = sessionApp(signedIn)
-  routes.get("/", async (c) => {
-    const data = await registry.read(
-      "billing.get",
-      {},
-      personActor(c.var.userId)
-    )
-    return c.json(successEnvelope(data))
-  })
-  return routes
-}
-
 export function createAccountRoutes(signedIn: SignedIn) {
   const routes = sessionApp(signedIn)
 

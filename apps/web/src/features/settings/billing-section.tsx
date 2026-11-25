@@ -1,17 +1,18 @@
-import { useQuery } from "@tanstack/react-query"
+import { useRouterState } from "@tanstack/react-router"
 
 import {
   SettingsLoadError,
   SettingsSkeletons,
   SettingsTitle,
 } from "./settings-layout.tsx"
-import { billingKey, fetchBilling } from "@/lib/account-api.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
+import { ownerIdFromRouteMatches } from "@/lib/owner-id.ts"
 
 export function BillingSection() {
-  const billing = useQuery({
-    queryKey: billingKey(),
-    queryFn: fetchBilling,
+  const ownerId = useRouterState({
+    select: (state) => ownerIdFromRouteMatches(state.matches),
   })
+  const billing = catalogClient.useRead(ownerId, "billing.get", {})
 
   if (billing.isPending) {
     return (

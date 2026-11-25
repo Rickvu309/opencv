@@ -8,8 +8,6 @@ import { cors } from "hono/cors"
 import {
   createAccountRoutes,
   createActivityRoutes,
-  createBillingRoutes,
-  createIntegrationsRoutes,
   createProfileRoutes,
   createSearchRoutes,
   createUsageRoutes,
@@ -260,8 +258,6 @@ export function createApp({
   app.route("/api/jobs", createJobRoutes(signedIn))
   app.route("/api/inbox", createInboxRoutes(signedIn, gmailEnabled))
   app.route("/api/profile", createProfileRoutes(signedIn))
-  app.route("/api/integrations", createIntegrationsRoutes(signedIn))
-  app.route("/api/billing", createBillingRoutes(signedIn))
   app.route("/api/account", createAccountRoutes(signedIn))
   app.route("/api/search", createSearchRoutes(signedIn))
   app.route("/api/activity", createActivityRoutes(signedIn))
