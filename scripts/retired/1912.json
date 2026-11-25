@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/web/src/features/apply/apply-new-job-dialog.test.tsx",
+    "because": "The posting preview goes through the read door; the test checks that path instead of the older route",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
