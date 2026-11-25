@@ -86,5 +86,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/routes/paper-doc-creators.isolated.test.tsx",
+    "because": "Older-format Papers can no longer be created after B-2, so the two older-document creator cases and the older-format page check are removed; every Word creator case stays.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
