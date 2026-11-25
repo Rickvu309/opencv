@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/api/src/registry/registry.undo-later.formal.test.ts",
+    "because": "job.create, job.update and the checklist commands now carry Undo guards, so they leave the known violation list; the formal test proves they no longer erase a later change",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
   }
 ]
