@@ -430,5 +430,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "packages/domain/src/keyword-gap.test.ts",
+    "because": "The keyword gap read is removed with the old block format.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
   }
 ]
