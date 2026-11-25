@@ -46,5 +46,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "scripts/guard-ledger/undo-expectation-pending-list.json",
+    "because": "The ledger row for expect-pending.test.ts goes with the deleted exemption list; the row had no historic proof.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
