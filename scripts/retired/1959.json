@@ -22,5 +22,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/api/src/registry/invalidation.formal.test.ts",
+    "because": "paper.update writes an activity receipt, so no command reverses without one and the reversal-without-receipt observation is empty; the setFavorite mutant now removes paper.list from paper.duplicate, which still invalidates it.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
   }
 ]
