@@ -14,7 +14,7 @@ import {
 import { Separator } from "@workspace/ui/components/separator"
 
 import { reportRejected } from "@/lib/command-failure.ts"
-import { catalogClient, useRunCommand } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 
 import { listPaper, type PaperListItem } from "./apply-api.ts"
 import {
@@ -103,7 +103,6 @@ export function PaperRow({
   kind: "cv" | "letter"
   job: JobDetail
 }) {
-  const run = useRunCommand()
   const queryClient = useQueryClient()
   const zone = useChosenTimeZone()
   const linked = kind === "cv" ? job.linked.cv : job.linked.letter
@@ -228,11 +227,13 @@ export function PaperRow({
               variant="ghost"
               className={RAIL_PICKER_ROW}
               onClick={() => {
-                void run("job.linkPaper", {
-                  jobId: job.id,
-                  docId: parsePaperId(doc.id),
-                  kind,
-                }).catch(reportRejected("link this paper"))
+                void catalogClient
+                  .run(queryClient, "job.linkPaper", {
+                    jobId: job.id,
+                    docId: parsePaperId(doc.id),
+                    kind,
+                  })
+                  .catch(reportRejected("link this paper"))
                 dispatch({ type: "closed" })
               }}
             >

@@ -41,6 +41,7 @@ import { operation as job$checklistItem } from "../operations/job/checklist-item
 import { operation as job$create } from "../operations/job/create/operation.js"
 import { operation as job$delete } from "../operations/job/delete/operation.js"
 import { operation as job$get } from "../operations/job/get/operation.js"
+import { operation as job$linkPaper } from "../operations/job/link-paper/operation.js"
 import { operation as job$list } from "../operations/job/list/operation.js"
 import { operation as job$preview } from "../operations/job/preview/operation.js"
 import { operation as job$priorityCounts } from "../operations/job/priority-counts/operation.js"
@@ -105,6 +106,7 @@ export const catalog = {
   "job.create": job$create,
   "job.delete": job$delete,
   "job.get": job$get,
+  "job.linkPaper": job$linkPaper,
   "job.list": job$list,
   "job.preview": job$preview,
   "job.priorityCounts": job$priorityCounts,

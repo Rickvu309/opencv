@@ -126,7 +126,7 @@ export function registerPaper(registry: Registry) {
         )
         if (input.jobId) {
           await registry.execute({
-            name: "job.linkPaper",
+            name: catalog["job.linkPaper"].name,
             input: { jobId: input.jobId, docId: created.id, kind: input.kind },
             actor,
           })

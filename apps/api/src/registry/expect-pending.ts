@@ -2,7 +2,6 @@ export const REVERSAL_EXPECT_PENDING = {
   issue: 958,
   expires: "2026-12-15",
   commands: [
-    "job.linkPaper",
     "paper.create",
     "paper.duplicate",
     "paper.edit",

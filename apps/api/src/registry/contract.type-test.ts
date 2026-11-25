@@ -65,7 +65,7 @@ export function typeProbes(registry: Registry) {
 
   // prettier-ignore
   // @ts-expect-error every command in the contract needs a binding
-  bindCommands(registry, jobContract, { "job.move": moveBinding })
+  bindCommands(registry, jobContract, {})
 
   // prettier-ignore
   // @ts-expect-error a handler must return the declared output
@@ -91,10 +91,10 @@ export function typeProbes(registry: Registry) {
   // @ts-expect-error an expectation that matches no field would never refuse
   const emptyExpectation: Move["reversal"] = () => ({ command: "job.move", input: { jobId: someJobId, stage: "saved" }, expect: { query: "job.get", input: { jobId: someJobId }, matches: {}, skipped: "x" } })
 
-  const pendingChecklist: Bindings<JobContract>["job.linkPaper"]["reversal"] =
+  const pendingRename: Bindings<PaperContract>["paper.rename"]["reversal"] =
     () => ({
-      command: "job.linkPaper",
-      input: { jobId: someJobId, docId: parsePaperId(uuid), kind: "cv" },
+      command: "paper.rename",
+      input: { docId: parsePaperId(uuid), name: "Earlier" },
     })
 
   // prettier-ignore
@@ -171,7 +171,7 @@ export function typeProbes(registry: Registry) {
     unguardedMove,
     wrongExpectation,
     emptyExpectation,
-    pendingChecklist,
+    pendingRename,
     unknownName,
     oldStage,
     paperAsJob,

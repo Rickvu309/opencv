@@ -84,28 +84,5 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
         summary: `You moved it to ${input.stage}`,
       }),
     },
-    "job.linkPaper": {
-      handler: (input, actor) =>
-        linkPaper(actor, input.jobId, input.docId, input.kind),
-      reversal: (input, output) =>
-        output.previousDocId
-          ? {
-              command: "job.linkPaper",
-              input: {
-                jobId: input.jobId,
-                docId: output.previousDocId,
-                kind: input.kind,
-              },
-            }
-          : {
-              command: "job.unlinkPaper",
-              input: { jobId: input.jobId, kind: input.kind },
-            },
-      activity: (input, output) => ({
-        subjectKind: "job",
-        subjectId: input.jobId,
-        summary: `You linked ${output.docName}`,
-      }),
-    },
   })
 }

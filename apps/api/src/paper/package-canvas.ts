@@ -3,6 +3,7 @@ import { createRequire } from "node:module"
 
 import {
   PAPER_CANVAS_PROFILE,
+  catalog,
   paperContract,
   paperPackageEditResultSchema,
   type PaperCanvasCommit,
@@ -195,7 +196,7 @@ export function registerCanvasCommit(
         )
         if (input.op === "mint" && input.jobId)
           await registry.execute({
-            name: "job.linkPaper",
+            name: catalog["job.linkPaper"].name,
             input: {
               jobId: input.jobId,
               docId: published.docId,

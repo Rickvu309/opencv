@@ -230,7 +230,7 @@ export function jobCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "job.linkPaper",
+      name: catalog["job.linkPaper"].name,
       arrange: async () => {
         const job = await run("job.create", {
           title: "Link",

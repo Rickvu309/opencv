@@ -97,7 +97,7 @@ const TOOL_COPY = {
   [catalog["job.create"].name]: { label: "Add a Job" },
   [catalog["job.delete"].name]: { label: "Delete this Job" },
   [catalog["job.get"].name]: { label: "Read this Job", read: "Read this Job" },
-  "job.linkPaper": { label: "Link Paper to this Job" },
+  [catalog["job.linkPaper"].name]: { label: "Link Paper to this Job" },
   [catalog["job.list"].name]: {
     label: "Look at your Jobs",
     read: "Looked at your Jobs",

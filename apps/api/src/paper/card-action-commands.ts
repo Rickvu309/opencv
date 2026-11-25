@@ -1,4 +1,5 @@
 import {
+  catalog,
   ERROR_CODES,
   type Actor,
   type PaperId,
@@ -31,7 +32,7 @@ export async function relinkJobs(
     }
     if (job.linked?.[restored.page.kind]) continue
     await registry.execute({
-      name: "job.linkPaper",
+      name: catalog["job.linkPaper"].name,
       input: { jobId, docId: restored.page.id, kind: restored.page.kind },
       actor,
     })
