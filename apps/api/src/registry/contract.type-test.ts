@@ -27,7 +27,10 @@ type Edit = CommandInput<PaperContract, "paper.edit">
 type SetTemplate = CommandInput<PaperContract, "paper.setTemplate">
 type PaperEditBinding = Bindings<PaperContract>["paper.edit"]
 type Undo = OperationInput<(typeof catalog)["activity.undo"]>
-type ChatDelete = Bindings<ChatContract>["chat.delete"]
+type ChatDelete = OperationBinding<
+  (typeof catalog)["chat.delete"],
+  { id: string }
+>["execute"]
 type ChatRename = Bindings<ChatContract>["chat.rename"]
 type SetPhoto = z.output<(typeof catalog)["profile.setPhoto"]["input"]>
 type AccountDelete = OperationBinding<
@@ -124,7 +127,7 @@ export function typeProbes(registry: Registry) {
 
   // prettier-ignore
   // @ts-expect-error a chat delete handler returns the id, not the chat
-  const wrongChatOutput: ChatDelete["handler"] = async () => ({ stopped: true })
+  const wrongChatOutput: ChatDelete = async () => ({ stopped: true })
 
   // prettier-ignore
   // @ts-expect-error a chat rename reversal must be a valid input of the command it names

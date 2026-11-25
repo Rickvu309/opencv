@@ -20,7 +20,7 @@ import { Button } from "@workspace/ui/components/button"
 import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
 import { toast } from "@workspace/ui/components/sonner"
 
-import { createChat } from "@/features/coach/chat-api.ts"
+import { createChat, startChat } from "@/features/coach/chat-api.ts"
 import { useChatStore } from "@/features/coach/use-chat-store.ts"
 import { reportRejected } from "@/lib/command-failure.ts"
 import { publishCoachDraft } from "@/lib/coach-draft.ts"
@@ -289,7 +289,7 @@ export function PaperCvEditor({
 
   async function fitOnePage() {
     try {
-      const chat = await run("chat.create", { title: "Fit to one page" })
+      const chat = await startChat(queryClient, "Fit to one page")
       await streamPaperTurn({
         queryClient,
         chatId: chat.id,

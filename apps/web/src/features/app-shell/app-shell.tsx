@@ -32,6 +32,7 @@ import {
   type CoachPanelMode,
 } from "@/features/coach/coach-panel.tsx"
 import { COACH_PANEL_ROOM_QUERY } from "./coach-panel-placement.ts"
+import { startChat } from "@/features/coach/chat-api.ts"
 import { CoachWorkspace } from "@/features/coach/coach-workspace.tsx"
 import { CoachPanelChatReport } from "@/features/coach/coach-panel-chat-report.tsx"
 import {
@@ -39,7 +40,6 @@ import {
   useCoachPanelChat,
 } from "@/lib/coach-panel-presence.ts"
 import { registerShellChatOpener } from "@/features/command-palette/shell-chat.ts"
-import { runContractCommand } from "@/lib/contract-client.ts"
 import { FOCUS_RING } from "@workspace/ui/lib/focus-ring"
 import { motionToken, prefersReducedMotion } from "@workspace/ui/lib/motion"
 import { Mark } from "@workspace/ui/components/brand"
@@ -314,7 +314,7 @@ export function AppShell({ onSearch, sidebar }: AppShellProps) {
   async function onNewChat() {
     rememberOpener()
     const chat = await ignoreRejection(
-      runContractCommand(queryClient, "chat.create", {}),
+      startChat(queryClient),
       "failedCreateLeavesPanelClosed"
     )
     if (!chat) return

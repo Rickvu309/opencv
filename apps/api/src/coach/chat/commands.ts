@@ -7,16 +7,7 @@ import {
   appendAgentProposalApproval,
   createAgentProposalChat,
 } from "./agent-proposal.js"
-import {
-  appendChatMessage,
-  createChat,
-  deleteChat,
-  getChat,
-  listChats,
-  openChat,
-  renameChat,
-  setChatFocus,
-} from "./store.js"
+import { getChat, listChats, renameChat, setChatFocus } from "./store.js"
 
 const stops = new Map<string, Set<AbortController>>()
 
@@ -44,11 +35,6 @@ export function registerChat(registry: Registry) {
     show: appendAgentProposalApproval,
   })
   bindCommands(registry, chatContract, {
-    "chat.create": {
-      handler: (input, actor) => createChat(actor, input.title),
-      reversal: () => null,
-      activity: () => null,
-    },
     "chat.rename": {
       handler: (input, actor) => renameChat(actor, input.chatId, input.title),
       reversal: (_input, output) => ({
@@ -60,11 +46,6 @@ export function registerChat(registry: Registry) {
         subjectId: input.chatId,
         summary: `You renamed the chat to ${input.title}`,
       }),
-    },
-    "chat.open": {
-      handler: (input, actor) => openChat(actor, input),
-      reversal: () => null,
-      activity: () => null,
     },
     "chat.setFocus": {
       handler: (input, actor) => setChatFocus(actor, input),
@@ -79,16 +60,6 @@ export function registerChat(registry: Registry) {
           ? `You pointed the chat at the ${input.focus.kind}`
           : "You cleared what the chat points at",
       }),
-    },
-    "chat.appendMessage": {
-      handler: (input, actor) => appendChatMessage(actor, input),
-      reversal: () => null,
-      activity: () => null,
-    },
-    "chat.delete": {
-      handler: (input, actor) => deleteChat(actor, input.chatId),
-      reversal: () => null,
-      activity: () => null,
     },
   })
 

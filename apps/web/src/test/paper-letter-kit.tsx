@@ -8,6 +8,7 @@ import { fireEvent, screen } from "@testing-library/react"
 
 import { PaperLetterStart } from "@/features/paper/paper-letter.tsx"
 
+import { startedChat } from "./chat-fixtures.ts"
 import { render } from "./render-with-client.tsx"
 
 export const job: JobView = {
@@ -80,7 +81,7 @@ export function installFetch(mode: "tool" | "stop" | "limit") {
         })
       )
     if (url.includes("/api/commands/chat.create")) {
-      return Promise.resolve(ok({ id: "chat-1" }))
+      return Promise.resolve(ok(startedChat("chat-1")))
     }
     if (url.includes("/api/paper/letter-1")) return Promise.resolve(ok(letter))
     if (url.includes("/stop")) return Promise.resolve(ok({}))

@@ -1,4 +1,4 @@
-import { DEFAULT_CHAT_TITLE } from "@workspace/domain"
+import { catalog, DEFAULT_CHAT_TITLE } from "@workspace/domain"
 import { expect } from "vitest"
 
 import { stopChat, trackChatTurn } from "../coach/chat/index.js"
@@ -20,7 +20,7 @@ export function chatCases(tools: CoverageTools): CoverageCase[] {
   const { ctx, run, undo, chatOf, jobOf, gone, registry, userId } = tools
   return [
     {
-      name: "chat.create",
+      name: catalog["chat.create"].name,
       arrange: async () => {},
       act: () => run("chat.create", { title: "Coverage" }),
       assert: async (result) => {
@@ -45,7 +45,7 @@ export function chatCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "chat.open",
+      name: catalog["chat.open"].name,
       arrange: async () => {},
       act: () => run("chat.open", {}),
       assert: async (result) => {
@@ -81,7 +81,7 @@ export function chatCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "chat.appendMessage",
+      name: catalog["chat.appendMessage"].name,
       arrange: async () => {
         const chat = await run("chat.create", { title: "Messages" })
         ctx.chatId = idOf(chat.output)
@@ -96,7 +96,7 @@ export function chatCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "chat.delete",
+      name: catalog["chat.delete"].name,
       arrange: async () => {
         const chat = await run("chat.create", { title: "Gone" })
         ctx.chatId = idOf(chat.output)

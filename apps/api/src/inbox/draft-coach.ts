@@ -1,5 +1,6 @@
 import {
   COACH_MODEL,
+  catalog,
   ERROR_CODES,
   personActor,
   type Actor,
@@ -52,7 +53,7 @@ export async function draftWithHint(
       model: runtime.modelId,
     })
     await registry.execute({
-      name: "chat.appendMessage",
+      name: catalog["chat.appendMessage"].name,
       input: { chatId, text: hint },
       actor: person,
     })
@@ -134,7 +135,7 @@ async function inboxChatId(registry: Registry, actor: Actor, threadId: string) {
   )
   if (existing) return existing.id
   const created = await registry.execute({
-    name: "chat.create",
+    name: catalog["chat.create"].name,
     input: { title: INBOX_CHAT_TITLE },
     actor,
   })

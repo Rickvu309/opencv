@@ -126,3 +126,15 @@ export const FIXTURE_CHATS: ChatRecord[] = [
     ],
   },
 ]
+
+export function startedChat(id: string, title = "New chat") {
+  return {
+    id,
+    title,
+    focusKind: null,
+    focusId: null,
+    createdAt: iso(25),
+    updatedAt: iso(25),
+    messages: [],
+  }
+}

@@ -8,6 +8,10 @@ import { Registry } from "../registry/registry.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { bindOperation } from "../registry/bind.js"
 import { registerCoachTasks } from "./index.js"
+import { implementation as appendMessage } from "./operations/chat/append-message/server.js"
+import { implementation as createChat } from "./operations/chat/create/server.js"
+import { implementation as deleteChat } from "./operations/chat/delete/server.js"
+import { implementation as openChat } from "./operations/chat/open/server.js"
 import { implementation as events } from "./operations/events/server.js"
 import { implementation as start } from "./operations/start/server.js"
 import { implementation as status } from "./operations/status/server.js"
@@ -35,6 +39,10 @@ beforeAll(async () => {
   bindOperation(registry, stop)
   bindOperation(registry, status)
   bindOperation(registry, events)
+  bindOperation(registry, createChat)
+  bindOperation(registry, openChat)
+  bindOperation(registry, appendMessage)
+  bindOperation(registry, deleteChat)
 })
 
 afterAll(async () => {

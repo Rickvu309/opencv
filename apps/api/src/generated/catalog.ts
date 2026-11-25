@@ -5,6 +5,10 @@ import { implementation as account$requestEmailChange } from "../account/operati
 import { implementation as actions$approve } from "../registry/operations/actions/approve/server.js"
 import { implementation as actions$deny } from "../registry/operations/actions/deny/server.js"
 import { implementation as activity$undo } from "../registry/operations/activity/undo/server.js"
+import { implementation as chat$appendMessage } from "../coach/operations/chat/append-message/server.js"
+import { implementation as chat$create } from "../coach/operations/chat/create/server.js"
+import { implementation as chat$delete } from "../coach/operations/chat/delete/server.js"
+import { implementation as chat$open } from "../coach/operations/chat/open/server.js"
 import { implementation as coach$events } from "../coach/operations/events/server.js"
 import { implementation as coach$start } from "../coach/operations/start/server.js"
 import { implementation as coach$status } from "../coach/operations/status/server.js"
@@ -28,6 +32,10 @@ export const implementations = {
   "actions.approve": actions$approve,
   "actions.deny": actions$deny,
   "activity.undo": activity$undo,
+  "chat.appendMessage": chat$appendMessage,
+  "chat.create": chat$create,
+  "chat.delete": chat$delete,
+  "chat.open": chat$open,
   "coach.events": coach$events,
   "coach.start": coach$start,
   "coach.status": coach$status,

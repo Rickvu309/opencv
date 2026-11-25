@@ -483,11 +483,11 @@ describe("catalog kernel", () => {
       expect(
         await registry.read(read.name, {}, personActor(ownerId))
       ).toMatchObject({ value: "Before" })
-      const legacy = await app.request("/api/commands/chat.create", {
+      const legacy = await app.request("/api/commands/job.create", {
         method: "POST",
         headers,
         body: JSON.stringify({
-          input: { title: "Legacy" },
+          input: { title: "Legacy", company: "Acme" },
           idempotencyKey: "legacy-key",
         }),
       })
