@@ -48,14 +48,20 @@ const TOOL_COPY = {
   },
   [catalog["inbox.clearSuggestion"].name]: { label: "Clear this suggestion" },
   [catalog["inbox.draftReply"].name]: { label: "Draft a reply" },
-  "inbox.get": { label: "Read this message", read: "Read this message" },
-  "inbox.list": { label: "Look at your Inbox", read: "Looked at your Inbox" },
+  [catalog["inbox.get"].name]: {
+    label: "Read this message",
+    read: "Read this message",
+  },
+  [catalog["inbox.list"].name]: {
+    label: "Look at your Inbox",
+    read: "Looked at your Inbox",
+  },
   [catalog["inbox.markDone"].name]: { label: "Mark this message done" },
   [catalog["inbox.scan"].name]: { label: "Check your Inbox" },
   [catalog["inbox.send"].name]: { label: "Send your reply" },
   [catalog["inbox.skip"].name]: { label: "Skip this message" },
   [catalog["inbox.snooze"].name]: { label: "Snooze this message" },
-  "inbox.snoozed": {
+  [catalog["inbox.snoozed"].name]: {
     label: "Look at snoozed messages",
     read: "Looked at snoozed messages",
   },

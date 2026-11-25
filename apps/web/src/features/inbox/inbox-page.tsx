@@ -1,23 +1,18 @@
 import { useEffect, useReducer, useRef, type ReactNode } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { useRouterState } from "@tanstack/react-router"
 import { Button } from "@workspace/ui/components/button"
 import { toast } from "@workspace/ui/components/sonner"
 import { useMediaQuery } from "@workspace/ui/hooks/use-media-query"
 
 import { ApiError } from "@/lib/api.ts"
-import { catalogClient, queryKey } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
+import { ownerIdFromRouteMatches } from "@/lib/owner-id.ts"
 import { PROFILE_ZONE } from "@/features/apply/apply-stages.ts"
 
 import "./design/page-header.css"
 import { InboxConnect, InboxTitleBar } from "./inbox-connect.tsx"
-import {
-  fetchGmailConnectTargetNotAContractRead,
-  fetchInbox,
-  fetchSnoozedInbox,
-  fetchThread,
-  inboxListKey,
-  snoozedInboxKey,
-} from "./inbox-api.ts"
+import { fetchGmailConnectTargetNotAContractRead } from "./inbox-api.ts"
 import {
   InboxEmpty,
   InboxList,
@@ -40,15 +35,16 @@ import { INBOX_START, inboxReducer, type ScanProgress } from "./inbox-state.ts"
 import { inboxConnectReadKeyOutsideContract } from "@/lib/requests.ts"
 
 const NARROW = "(max-width: 767px)"
+const NO_OPEN_EMAIL = "00000000-0000-4000-8000-000000000000"
 
 export function InboxPage() {
   const queryClient = useQueryClient()
+  const ownerId = useRouterState({
+    select: (state) => ownerIdFromRouteMatches(state.matches),
+  })
   const narrow = useMediaQuery(NARROW, false)
   const now = new Date()
-  const list = useQuery({
-    queryKey: inboxListKey(),
-    queryFn: fetchInbox,
-  })
+  const list = catalogClient.useRead(ownerId, "inbox.list", {})
   const [{ openId, scanning, skipping, view }, dispatch] = useReducer(
     inboxReducer,
     INBOX_START
@@ -56,8 +52,7 @@ export function InboxPage() {
   const holdTimer = useRef<number | undefined>(undefined)
   useEffect(() => () => window.clearTimeout(holdTimer.current), [])
   const snoozed = useQuery({
-    queryKey: snoozedInboxKey(),
-    queryFn: fetchSnoozedInbox,
+    ...catalogClient.options(ownerId, "inbox.snoozed", {}),
     enabled: view === "snoozed",
   })
   const showConnect = Boolean(
@@ -80,11 +75,9 @@ export function InboxPage() {
   const shownId =
     openId && threads.some((thread) => thread.id === openId) ? openId : null
   const detail = useQuery({
-    queryKey: queryKey({
-      query: "inbox.get",
-      input: { threadId: shownId ?? "" },
+    ...catalogClient.options(ownerId, "inbox.get", {
+      threadId: shownId ?? NO_OPEN_EMAIL,
     }),
-    queryFn: () => fetchThread(shownId ?? ""),
     enabled: Boolean(shownId) && scanning == null && !showConnect,
   })
 

@@ -34,7 +34,7 @@ afterAll(async () => {
 })
 
 async function inbox(person: Person) {
-  return dataOf<Inbox>(await person.get("/api/inbox"))
+  return dataOf<Inbox>(await person.read("inbox.list", {}))
 }
 
 async function scanned(person: Person) {
@@ -63,7 +63,9 @@ describe("reading recruiter mail", () => {
   it("shows a thread's messages in the order they were sent, with a drafted reply", async () => {
     const ada = await world.person("Ada")
     const [thread] = await scanned(ada)
-    const detail = dataOf<Detail>(await ada.get(`/api/inbox/${thread?.id}`))
+    const detail = dataOf<Detail>(
+      await ada.read("inbox.get", { threadId: thread?.id })
+    )
     expect(detail.subject.length).toBeGreaterThan(0)
     const sent = detail.messages.map((message) => message.sentAt)
     expect(sent).toEqual([...sent].sort())
@@ -75,7 +77,9 @@ describe("reading recruiter mail", () => {
     const grace = await world.person("Grace")
     const [thread] = await scanned(ada)
     expect((await inbox(grace)).threads).toEqual([])
-    expect((await grace.get(`/api/inbox/${thread?.id}`)).ok).toBe(false)
+    expect((await grace.read("inbox.get", { threadId: thread?.id })).ok).toBe(
+      false
+    )
   })
 })
 
@@ -105,7 +109,7 @@ describe("working through mail", () => {
     expect((await inbox(ada)).threads.map((open) => open.id)).not.toContain(
       thread?.id
     )
-    const snoozed = dataOf<Inbox>(await ada.get("/api/inbox/snoozed"))
+    const snoozed = dataOf<Inbox>(await ada.read("inbox.snoozed", {}))
     expect(snoozed.threads.map((later) => later.id)).toContain(thread?.id)
     await ada.run("inbox.snooze", { threadId: thread?.id, until: null })
     expect((await inbox(ada)).threads.map((open) => open.id)).toContain(
@@ -120,7 +124,9 @@ describe("working through mail", () => {
       threadId: thread?.id,
       body: "Thursday at 15:00 works for me.",
     })
-    const detail = dataOf<Detail>(await ada.get(`/api/inbox/${thread?.id}`))
+    const detail = dataOf<Detail>(
+      await ada.read("inbox.get", { threadId: thread?.id })
+    )
     expect(detail.draft?.body).toBe("Thursday at 15:00 works for me.")
   })
 

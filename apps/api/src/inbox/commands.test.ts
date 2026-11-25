@@ -304,7 +304,11 @@ describe("inbox commands", () => {
     expect(scanBody.data.emailCount).toBe(6)
     expect(scanBody.data.companyCount).toBe(6)
 
-    const list = await app.request("/api/inbox", { headers })
+    const list = await app.request("/api/reads/inbox.list", {
+      method: "POST",
+      headers,
+      body: "{}",
+    })
     const listBody = (await list.json()) as {
       data: {
         connected: boolean
@@ -319,7 +323,11 @@ describe("inbox commands", () => {
     const detailId = listBody.data.threads.find(
       (thread) => thread.role === "Business Analyst"
     )?.id
-    const detail = await app.request(`/api/inbox/${detailId}`, { headers })
+    const detail = await app.request("/api/reads/inbox.get", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ threadId: detailId }),
+    })
     const detailBody = (await detail.json()) as {
       data: { draft: { body: string } | null; openUrl: string | null }
     }
@@ -333,7 +341,11 @@ describe("inbox commands", () => {
     })
     expect(skip.status).toBe(200)
     const after = (await (
-      await app.request("/api/inbox", { headers })
+      await app.request("/api/reads/inbox.list", {
+        method: "POST",
+        headers,
+        body: "{}",
+      })
     ).json()) as {
       data: { skipped: boolean }
     }
@@ -363,7 +375,11 @@ describe("inbox commands", () => {
     })
     expect(scan.status).toBe(200)
     const listed = (await (
-      await app.request("/api/inbox", { headers })
+      await app.request("/api/reads/inbox.list", {
+        method: "POST",
+        headers,
+        body: "{}",
+      })
     ).json()) as {
       data: {
         timeZone: string
@@ -393,7 +409,11 @@ describe("inbox commands", () => {
     expect(snoozeBody.data).not.toHaveProperty("previousSnoozeUntil")
     expect(snoozeBody.data).not.toHaveProperty("previousStage")
     const hidden = (await (
-      await app.request("/api/inbox", { headers })
+      await app.request("/api/reads/inbox.list", {
+        method: "POST",
+        headers,
+        body: "{}",
+      })
     ).json()) as { data: { threads: { id: string }[] } }
     expect(hidden.data.threads.map((thread) => thread.id)).not.toContain(
       snoozeId
@@ -408,7 +428,11 @@ describe("inbox commands", () => {
     })
     expect(returned.status).toBe(200)
     const visible = (await (
-      await app.request("/api/inbox", { headers })
+      await app.request("/api/reads/inbox.list", {
+        method: "POST",
+        headers,
+        body: "{}",
+      })
     ).json()) as { data: { threads: { id: string }[] } }
     expect(visible.data.threads.map((thread) => thread.id)).toContain(snoozeId)
     const done = await app.request("/api/commands/inbox.markDone", {
@@ -425,7 +449,11 @@ describe("inbox commands", () => {
     expect(doneBody.data).not.toHaveProperty("previousStage")
     expect(doneBody.data.activityId).toEqual(expect.any(String))
     const afterDone = (await (
-      await app.request("/api/inbox", { headers })
+      await app.request("/api/reads/inbox.list", {
+        method: "POST",
+        headers,
+        body: "{}",
+      })
     ).json()) as { data: { threads: { id: string }[] } }
     expect(afterDone.data.threads.map((thread) => thread.id)).not.toContain(
       doneId

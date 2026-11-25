@@ -1,4 +1,10 @@
-import type { InboxDetail, InboxThread } from "@workspace/domain"
+import {
+  inboxThreadSchema,
+  type InboxDetail,
+  type InboxThread,
+} from "@workspace/domain"
+
+import { pathOf } from "./mock-http.ts"
 
 export const INBOX_NOW = new Date("2026-10-27T03:00:00.000Z")
 
@@ -130,4 +136,21 @@ function thread(
     jobId,
     status: "open",
   }
+}
+
+const INBOX_READS: Record<string, (body: { threadId?: string }) => string> = {
+  "/api/reads/inbox.list": () => "/api/inbox",
+  "/api/reads/inbox.snoozed": () => "/api/inbox/snoozed",
+  "/api/reads/inbox.get": (body) => `/api/inbox/${body.threadId}`,
+}
+
+export function threadOf(detail: unknown) {
+  return inboxThreadSchema.strip().parse(detail)
+}
+
+export function requestOf(input: RequestInfo | URL, init?: RequestInit) {
+  const path = pathOf(input)
+  const read = INBOX_READS[path]
+  if (!read) return { path, method: init?.method ?? "GET" }
+  return { path: read(JSON.parse(String(init?.body ?? "{}"))), method: "GET" }
 }

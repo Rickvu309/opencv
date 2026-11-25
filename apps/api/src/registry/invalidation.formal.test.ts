@@ -271,7 +271,7 @@ function invalidatesTable(): InvalidatesTable {
     adoptedReads
       .filter((operation) =>
         operation
-          .dependsOn()
+          .dependsOn({} as never)
           .some((resource) =>
             touches.some((touch) =>
               resourcesOverlap(touch, { ...resource, ownerId: "owner" })

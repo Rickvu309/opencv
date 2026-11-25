@@ -1,8 +1,5 @@
-import type { QueryOutput } from "@workspace/domain"
-
 import { ApiError, apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
-import { queryKey } from "@/lib/contract-client.ts"
 import { endpoints } from "@/lib/requests.ts"
 
 export class InboxLimitError extends Error {
@@ -24,27 +21,6 @@ export function isCoachLimit(error: unknown): error is ApiError {
 
 export async function inboxLimitFrom(error: ApiError) {
   return new InboxLimitError(error.message, await readCoachReset())
-}
-
-export const inboxListKey = () => queryKey({ query: "inbox.list" })
-export const snoozedInboxKey = () => queryKey({ query: "inbox.snoozed" })
-
-export function fetchInbox() {
-  return apiFetch<SuccessBody<QueryOutput<"inbox.list">>>(endpoints.inbox).then(
-    unwrapData
-  )
-}
-
-export function fetchSnoozedInbox() {
-  return apiFetch<SuccessBody<QueryOutput<"inbox.snoozed">>>(
-    endpoints.inboxSnoozed
-  ).then(unwrapData)
-}
-
-export function fetchThread(threadId: string) {
-  return apiFetch<SuccessBody<QueryOutput<"inbox.get">>>(
-    endpoints.inboxThread(threadId)
-  ).then(unwrapData)
 }
 
 export function fetchGmailConnectTargetNotAContractRead() {
