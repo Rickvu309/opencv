@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 import type { openRichPaperSession } from "@/lib/paper-rich.ts"
-import type { SyncStatus } from "@/lib/paper-sync.ts"
+import type { SyncStatus } from "@/lib/paper-sync-status.ts"
 import {
   RichFindMenuItems,
   RichPageSetupMenuEntry,

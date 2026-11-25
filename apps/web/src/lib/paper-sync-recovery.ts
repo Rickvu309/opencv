@@ -2,7 +2,6 @@ import { z } from "zod"
 import { nativeProvenanceSchema, sameNativeProvenance } from "@workspace/domain"
 import {
   emptyUpdate,
-  openPaperClient,
   openRichPaperClient,
   type Stored,
 } from "@workspace/paper-crdt"
@@ -73,12 +72,10 @@ export function validateNativeStored(
     stored.revision < 0
   )
     throw new Error("Incompatible native recovery retained")
-  const open =
-    identity.provenance.schemaRevision === 2
-      ? openRichPaperClient
-      : openPaperClient
-  open(stored, { provenance: identity.provenance }).destroy()
-  open(
+  if (identity.provenance.schemaRevision !== 2)
+    throw new Error("Incompatible native recovery retained")
+  openRichPaperClient(stored, { provenance: identity.provenance }).destroy()
+  openRichPaperClient(
     { ...stored, pending: emptyUpdate() },
     { provenance: identity.provenance }
   ).destroy()

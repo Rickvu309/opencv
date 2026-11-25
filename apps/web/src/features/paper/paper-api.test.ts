@@ -6,13 +6,11 @@ import { apiBaseUrl } from "@/lib/api-url.ts"
 import { runContractCommand } from "@/lib/contract-client.ts"
 
 import {
-  getPaperPages,
   importPaperFile,
   listPaper,
   listPaperFiles,
   paperGetKey,
   paperListKey,
-  paperPagesKey,
 } from "./paper-api.ts"
 
 function envelope<T>(data: T) {
@@ -107,20 +105,13 @@ describe("paper API client", () => {
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(`${apiBaseUrl}/api/paper`)
   })
 
-  it("reads files and pages before the document id route", async () => {
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(envelope([]))
-      .mockResolvedValueOnce(envelope({ docId, pages: 2, pageChoice: "unset" }))
+  it("reads files before the document id route", async () => {
+    const fetchMock = vi.fn().mockResolvedValueOnce(envelope([]))
     vi.stubGlobal("fetch", fetchMock)
 
     await expect(listPaperFiles()).resolves.toEqual([])
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
       `${apiBaseUrl}/api/paper/files`
-    )
-    await expect(getPaperPages(docId)).resolves.toMatchObject({ pages: 2 })
-    expect(String(fetchMock.mock.calls[1]?.[0])).toBe(
-      `${apiBaseUrl}/api/paper/${docId}/pages`
     )
   })
 })
@@ -132,11 +123,7 @@ describe("paper commands through the contract client", () => {
       .mockResolvedValue(envelope({ id: docId, previousName: "Old" }))
     vi.stubGlobal("fetch", fetchMock)
     const queryClient = new QueryClient()
-    for (const key of [
-      paperListKey(),
-      paperGetKey(docId),
-      paperPagesKey(docId),
-    ]) {
+    for (const key of [paperListKey(), paperGetKey(docId)]) {
       queryClient.setQueryData(key, { stale: true })
     }
 
@@ -150,11 +137,7 @@ describe("paper commands through the contract client", () => {
     expect(JSON.parse(String((call[1] as RequestInit).body))).toMatchObject({
       input: { docId, name: "New" },
     })
-    for (const key of [
-      paperListKey(),
-      paperGetKey(docId),
-      paperPagesKey(docId),
-    ]) {
+    for (const key of [paperListKey(), paperGetKey(docId)]) {
       expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true)
     }
   })
@@ -166,7 +149,7 @@ describe("paper commands through the contract client", () => {
 
     await runContractCommand(
       queryClient,
-      "paper.sync",
+      "paper.nativeSync",
       { docId, epoch: 0, update: "", stateVector: "" },
       { refresh: false }
     )
@@ -185,7 +168,7 @@ describe("paper commands through the contract client", () => {
     const input = { docId, name: "New" }
 
     await runContractCommand(queryClient, "paper.rename", input)
-    await runContractCommand(queryClient, "paper.sync", {
+    await runContractCommand(queryClient, "paper.nativeSync", {
       docId,
       epoch: 0,
       update: "",

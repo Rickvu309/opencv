@@ -11,7 +11,6 @@ import {
 } from "@workspace/domain"
 import {
   emptyUpdate,
-  openPaperClient,
   recoverRichPaperClient,
   type PaperClient,
   type Stored,
@@ -20,7 +19,7 @@ import { ApiError } from "@/lib/api-error.ts"
 import { runContractCommand } from "@/lib/contract-client.ts"
 import { qualifiedPaperRead } from "@/lib/paper-qualification.ts"
 import { endpoints } from "@/lib/requests.ts"
-import type { SyncStatus } from "@/lib/paper-sync.ts"
+import type { SyncStatus } from "@/lib/paper-sync-status.ts"
 import { fromBase64, toBase64 } from "@/lib/paper-sync-bytes.ts"
 import {
   indexedDbStore,
@@ -60,25 +59,6 @@ export type NativeSessionOptions = {
   readonly store?: SyncStore
   readonly tabId?: string
   readonly run?: NativeSyncTransport
-}
-
-export function openNativePaperSync(options: NativeSessionOptions) {
-  return openSession(options, (admitted, states, identity) => {
-    const client = openPaperClient(admitted, {
-      provenance: identity.provenance,
-    })
-    try {
-      for (const stored of states) {
-        const result = client.adopt(stored)
-        if (result.failed || !result.adopted)
-          throw new Error("Native recovery conflict retained")
-      }
-      return client
-    } catch (error) {
-      client.destroy()
-      throw error
-    }
-  })
 }
 
 export function openRichNativePaperSync(

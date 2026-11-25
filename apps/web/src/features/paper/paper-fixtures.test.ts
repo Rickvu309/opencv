@@ -53,7 +53,6 @@ describe("prefixed-string retirement", () => {
       "paper-library-sections.tsx",
       "paper-template-gallery.tsx",
       "paper-templates.ts",
-      "paper-share-page.tsx",
       "paper-api.ts",
       "paper-import-input.tsx",
       ...readdirSync(paperRoot).filter((file) =>
@@ -63,7 +62,7 @@ describe("prefixed-string retirement", () => {
         .filter((file) => file.endsWith(".tsx"))
         .map((file) => `cv-templates/${file}`),
     ]
-    expect(sources.length).toBeGreaterThan(15)
+    expect(sources.length).toBeGreaterThan(10)
     for (const file of sources) {
       expect(readFeature(file)).not.toMatch(/cv:v1:|proof:v1:/)
     }

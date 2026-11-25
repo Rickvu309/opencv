@@ -64,7 +64,7 @@ describe("native Paper metadata requests", () => {
     const inputs = [
       { name: "paper.create", input: { kind: "letter" } },
       { name: "paper.edit", input: { docId } },
-      { name: "paper.sync", input: { docId } },
+      { name: "paper.nativeSync", input: { docId } },
     ]
     for (const { name, input } of inputs) {
       const before = structuredClone(input)

@@ -15,7 +15,7 @@ import {
   DropdownMenuItem,
 } from "@workspace/ui/components/dropdown-menu"
 import type { openRichPaperSession } from "@/lib/paper-rich.ts"
-import type { SyncStatus } from "@/lib/paper-sync.ts"
+import type { SyncStatus } from "@/lib/paper-sync-status.ts"
 import { SavedRichWordChanged } from "@/lib/paper-rich-word.ts"
 import { RichPageSetup } from "./rich-page-setup.tsx"
 import type { TextEditor } from "./rich-text-toolbar-control.tsx"

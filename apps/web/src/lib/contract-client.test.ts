@@ -157,7 +157,7 @@ it("bridges legacy workspace touches without treating a proposal or failed reque
       )
     )
   )
-  await runContractCommand(queryClient, "paper.unshare", { stage: "Legacy" })
+  await runContractCommand(queryClient, "paper.deleteFile", { stage: "Legacy" })
   expect(
     options.map(
       (option) => queryClient.getQueryState(option.queryKey)?.isInvalidated
@@ -184,7 +184,7 @@ it("bridges legacy workspace touches without treating a proposal or failed reque
   expect(
     await catalog.run(queryClient, "job.create", { value: 2 })
   ).toMatchObject({ pending: true })
-  await runContractCommand(queryClient, "paper.unshare", { stage: "Any" })
+  await runContractCommand(queryClient, "paper.deleteFile", { stage: "Any" })
   expect(invalidate).not.toHaveBeenCalled()
   vi.stubGlobal(
     "fetch",
@@ -242,25 +242,25 @@ it("replays an explicit original command key and keeps generated keys fresh for 
   const idempotencyKey = crypto.randomUUID()
   const original = await runContractCommand(
     queryClient,
-    "paper.unshare",
+    "paper.deleteFile",
     { stage: "Original" },
     { refresh: false, idempotencyKey }
   )
   const replay = await runContractCommand(
     queryClient,
-    "paper.unshare",
+    "paper.deleteFile",
     { stage: "Original" },
     { refresh: false, idempotencyKey }
   )
   await runContractCommand(
     queryClient,
-    "paper.unshare",
+    "paper.deleteFile",
     { stage: "Changed" },
     { refresh: false }
   )
   await runContractCommand(
     queryClient,
-    "paper.unshare",
+    "paper.deleteFile",
     { stage: "Changed again" },
     { refresh: false }
   )
@@ -274,7 +274,7 @@ it("omits even an explicit key for commands whose contract has idempotency none"
   const queryClient = new QueryClient()
   const fetch = vi.fn().mockResolvedValue(Response.json({ ok: true, data: {} }))
   vi.stubGlobal("fetch", fetch)
-  await runContractCommand(queryClient, "paper.sync", {} as never, {
+  await runContractCommand(queryClient, "paper.nativeSync", {} as never, {
     refresh: false,
     idempotencyKey: crypto.randomUUID(),
   })

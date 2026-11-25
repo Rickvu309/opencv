@@ -190,10 +190,7 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
               queryClient.removeQueries({
                 queryKey: jobGetQuery(ownerId, id).queryKey,
               })
-              void refreshQueries(queryClient, [
-                { query: "job.list" },
-                { query: "paper.keywordGap", input: { jobId: id } },
-              ])
+              void refreshQueries(queryClient, [{ query: "job.list" }])
               void refreshCatalogReads(queryClient)
               dispatch({ type: "delete_dismissed" })
             })
