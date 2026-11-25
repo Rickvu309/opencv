@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-start-draft.test.tsx",
+    "because": "Stopping a draft now calls coach.stop; the test checks that command instead of the older route",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
