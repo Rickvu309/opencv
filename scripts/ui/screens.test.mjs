@@ -204,7 +204,7 @@ test("a respond step answers the named request in the tool's browser, preflight 
   )
 })
 
-const INLINE_SCREENS_LEFT = 56
+const INLINE_SCREENS_LEFT = 34
 
 test("a new screen is its own file, and the inline screen lists only shrink", () => {
   const filed = readdirSync(new URL("./screens/", import.meta.url)).filter(
