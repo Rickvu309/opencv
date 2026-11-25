@@ -7,13 +7,6 @@ import { toast } from "sonner"
 import { render } from "@/test/render-with-client.tsx"
 import { PaperSharePage } from "./paper-share-page.tsx"
 import { letter, renderLibrary } from "./paper-library.fixtures.tsx"
-import {
-  render as renderEditor,
-  record,
-  pages,
-} from "./paper-editor.fixtures.tsx"
-import { seededCvClient } from "@/test/paper-fixture.ts"
-import { structuredCv } from "@/test/paper-structured-cv.ts"
 import { installEditorPolyfills } from "@/test/editor-polyfills.ts"
 
 const fixture = vi.hoisted(() => ({ client: null as PaperClient | null }))

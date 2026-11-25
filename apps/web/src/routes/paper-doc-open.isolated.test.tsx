@@ -1,7 +1,7 @@
 import { blankCv, ERROR_CODES } from "@workspace/domain"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import { cleanup, render, screen } from "@testing-library/react"
 
 import { paperListKey } from "@/features/paper/paper-api.ts"
 import { refreshQueries } from "@/lib/contract-client.ts"

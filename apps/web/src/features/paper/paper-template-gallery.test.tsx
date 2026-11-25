@@ -1,8 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
-import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
-import { blankCv, type PaperPages, type PaperView } from "@workspace/domain"
+import { blankCv, type PaperView } from "@workspace/domain"
 
 import { PaperLibrary } from "./paper-library.tsx"
 import { libraryRouter } from "./paper-library.fixtures.tsx"
@@ -34,12 +33,6 @@ const record: PaperView = {
   sourceFileId: null,
   createdAt: "2026-08-25T12:00:00.000Z",
   updatedAt: "2026-08-25T12:00:00.000Z",
-}
-
-const pages: PaperPages = {
-  docId: record.id,
-  pages: 1,
-  pageChoice: "unset",
 }
 
 const GALLERY_WINDOWS = [
