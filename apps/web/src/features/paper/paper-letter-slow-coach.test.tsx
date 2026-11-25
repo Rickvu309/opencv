@@ -1,6 +1,7 @@
 import type { JobView } from "@workspace/domain"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { afterEach, expect, it, vi } from "vitest"
+import { startedChat } from "@/test/chat-fixtures.ts"
 import { render } from "@/test/render-with-client.tsx"
 
 import { ChatStoreContext } from "@/features/coach/chat-store-context.ts"
@@ -126,7 +127,7 @@ function installSlowCoach(ending: {
         name: "Cover letter, Lumière.docx",
         kind: "letter",
       })
-    if (url.includes("/api/commands/chat.create")) return ok({ id: CHAT })
+    if (url.includes("/api/commands/chat.create")) return ok(startedChat(CHAT))
     if (url.endsWith("/stop")) return ok({})
     if (url.includes("/turns")) {
       const stream = new ReadableStream<Uint8Array>({

@@ -1,8 +1,12 @@
 export { registerChat, stopChat, trackChatTurn } from "./commands.js"
 export {
+  appendChatMessage,
+  createChat,
+  deleteChat,
   getChat,
   insertCoachMessage,
   listChats,
+  openChat,
   renameChat,
   toChat,
 } from "./store.js"

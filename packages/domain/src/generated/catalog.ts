@@ -3,6 +3,10 @@ import { operation as account$requestEmailChange } from "../operations/account/r
 import { operation as actions$approve } from "../operations/actions/approve/operation.js"
 import { operation as actions$deny } from "../operations/actions/deny/operation.js"
 import { operation as activity$undo } from "../operations/activity/undo/operation.js"
+import { operation as chat$appendMessage } from "../operations/chat/append-message/operation.js"
+import { operation as chat$create } from "../operations/chat/create/operation.js"
+import { operation as chat$delete } from "../operations/chat/delete/operation.js"
+import { operation as chat$open } from "../operations/chat/open/operation.js"
 import { operation as coach$events } from "../operations/coach/events/operation.js"
 import { operation as coach$start } from "../operations/coach/start/operation.js"
 import { operation as coach$status } from "../operations/coach/status/operation.js"
@@ -26,6 +30,10 @@ export const catalog = {
   "actions.approve": actions$approve,
   "actions.deny": actions$deny,
   "activity.undo": activity$undo,
+  "chat.appendMessage": chat$appendMessage,
+  "chat.create": chat$create,
+  "chat.delete": chat$delete,
+  "chat.open": chat$open,
   "coach.events": coach$events,
   "coach.start": coach$start,
   "coach.status": coach$status,

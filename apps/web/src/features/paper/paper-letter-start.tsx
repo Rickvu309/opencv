@@ -18,6 +18,7 @@ import {
 import { Input } from "@workspace/ui/components/input"
 
 import { listJobs } from "@/features/apply/apply-api.ts"
+import { startChat } from "@/features/coach/chat-api.ts"
 import { ApiError } from "@/lib/api-error.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { useRunCommand } from "@/lib/contract-client.ts"
@@ -209,9 +210,7 @@ export function PaperLetterStart({
           : `Draft a cover letter for ${selected.title} at ${selected.company}. Reply with the letter text only; it opens as a Word page when you finish.`,
         attached
       )
-      const chat = await run("chat.create", {
-        title: draftName,
-      })
+      const chat = await startChat(queryClient, draftName)
       operation.chatId = chat.id
       if (activeDraft.current !== operation) {
         void stopPaperChat(chat.id)

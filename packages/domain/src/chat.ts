@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 import { chatIdSchema } from "./ids.js"
+import type { ResourceRef } from "./resources.js"
 
 export const COACH_SELECTION_TEXT_MAX = 2000
 export const COACH_SELECTION_SECTION_ID_MAX = 80
@@ -116,4 +117,12 @@ export function focusedEditNeedsPaperEdit(input: {
     input.askedForEdit &&
     !input.calledEdit
   )
+}
+
+export function chatResource(chatId?: string): ResourceRef {
+  return {
+    name: "chat",
+    coachFloor: "auto",
+    ...(chatId ? { entityId: chatId } : {}),
+  }
 }

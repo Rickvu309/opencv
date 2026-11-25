@@ -1,5 +1,6 @@
 import {
   COACH_MODEL,
+  catalog,
   coachModeSchema,
   chatDetailSchema,
   coachStartOutputSchema,
@@ -148,7 +149,7 @@ export function startTask(
       : chatDetailSchema.parse(
           (
             await registry.execute({
-              name: "chat.appendMessage",
+              name: catalog["chat.appendMessage"].name,
               input: {
                 chatId: input.chatId,
                 text: input.text,

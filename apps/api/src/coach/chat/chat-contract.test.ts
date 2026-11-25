@@ -18,6 +18,12 @@ import { seedCoachActor } from "../../test/coach-turn.js"
 
 const chatContract = {
   ...chatCommands,
+  "chat.create": { output: catalog["chat.create"].publicResult },
+  "chat.open": { output: catalog["chat.open"].publicResult },
+  "chat.appendMessage": {
+    output: catalog["chat.appendMessage"].publicResult,
+  },
+  "chat.delete": { output: catalog["chat.delete"].publicResult },
   "actions.approve": { output: catalog["actions.approve"].publicResult },
   "actions.deny": { output: catalog["actions.deny"].publicResult },
   "activity.undo": { output: catalog["activity.undo"].publicResult },

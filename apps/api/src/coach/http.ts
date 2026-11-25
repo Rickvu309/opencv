@@ -2,6 +2,7 @@ import {
   COACH_SSE_HEARTBEAT_MS,
   COACH_MODEL,
   ERROR_CODES,
+  catalog,
   coachTurnRequestSchema,
   errorEnvelope,
   httpStatusForError,
@@ -169,7 +170,7 @@ async function startTurn(
       ? await registry.read("chat.get", { chatId }, actor)
       : (
           await registry.execute({
-            name: "chat.appendMessage",
+            name: catalog["chat.appendMessage"].name,
             input: {
               chatId,
               text: parsed.data.text,

@@ -52,6 +52,7 @@ function chatRow(overrides: Record<string, unknown> = {}) {
     focusId: null,
     createdAt: STAMP,
     updatedAt: STAMP,
+    messages: [],
     ...overrides,
   }
 }

@@ -20,7 +20,11 @@ import type { QueryClient } from "@tanstack/react-query"
 
 import { apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
-import { queryKey, runContractCommand } from "@/lib/contract-client.ts"
+import {
+  catalogClient,
+  queryKey,
+  runContractCommand,
+} from "@/lib/contract-client.ts"
 import { streamChatTurn } from "@/lib/coach-stream.ts"
 import { withSelectedBlocks } from "@/lib/paper-selection.ts"
 import { endpoints } from "@/lib/requests.ts"
@@ -161,21 +165,26 @@ function clipTitle(title: string | undefined): string | undefined {
   return trimmed.slice(0, CHAT_TITLE_MAX).trimEnd()
 }
 
+export async function startChat(queryClient: QueryClient, title?: string) {
+  const chat = await catalogClient.run(queryClient, "chat.create", {
+    ...(title ? { title } : {}),
+  })
+  if ("pending" in chat) throw new Error("The chat did not start")
+  return chat
+}
+
 export async function createChat(
   queryClient: QueryClient,
   input: { title?: string; focusDocId?: string }
 ): Promise<ChatSummary> {
   const title = clipTitle(input.title)
   if (!input.focusDocId) {
-    return asChat(
-      await runContractCommand(queryClient, "chat.create", {
-        ...(title ? { title } : {}),
-      })
-    )
+    return asChat(await startChat(queryClient, title))
   }
-  const opened = await runContractCommand(queryClient, "chat.open", {
+  const opened = await catalogClient.run(queryClient, "chat.open", {
     focus: { kind: "paper", id: input.focusDocId },
   })
+  if ("pending" in opened) throw new Error("The chat did not open")
   const openedTitle = opened.title?.trim()
   if (
     !title ||
@@ -194,7 +203,7 @@ export async function createChat(
 }
 
 export function deleteChat(queryClient: QueryClient, chatId: string) {
-  return runContractCommand(queryClient, "chat.delete", {
+  return catalogClient.run(queryClient, "chat.delete", {
     chatId: parseChatId(chatId),
   })
 }
