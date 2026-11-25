@@ -54,5 +54,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-api.test.ts",
+    "because": "paper.rename left the legacy contract; the contract-client cases now use paper.delete, which refreshes the same list and document reads.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
   }
 ]
