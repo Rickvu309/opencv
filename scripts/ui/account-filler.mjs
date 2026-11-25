@@ -3,6 +3,7 @@ import { join } from "node:path"
 
 import {
   LIBRARY_READS,
+  libraryRequest,
   POOL_TARGET,
   SIGN_IN_GAP_MS,
   entryName,
@@ -83,13 +84,15 @@ async function createAccount(state, email) {
     const setCookie = signed.headers.getSetCookie()
     const cookie = setCookie.map((line) => line.split(";")[0]).join("; ")
     const bodies = {}
-    for (const [kind, path] of Object.entries(LIBRARY_READS)) {
-      const read = await fetch(`${state.apiOrigin}${path}`, {
-        headers: { cookie, ...headers },
+    for (const [kind, library] of Object.entries(LIBRARY_READS)) {
+      const read = await fetch(`${state.apiOrigin}${library.path}`, {
+        ...libraryRequest(library, { cookie, ...headers }),
         signal: AbortSignal.timeout(10_000),
       })
       if (read.status !== 200)
-        throw new Error(`${path} for ${email} failed with ${read.status}`)
+        throw new Error(
+          `${library.path} for ${email} failed with ${read.status}`
+        )
       bodies[kind] = await read.json()
     }
     return {
