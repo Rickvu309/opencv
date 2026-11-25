@@ -60,7 +60,7 @@ async function seeded(kind: "cv" | "letter") {
     .update(paperDocs)
     .set(seedColumns(kind, document))
     .where(eq(paperDocs.id, view.id))
-  return { docId: view.id, document, fileId: file.id }
+  return { docId: parsePaperId(view.id), document, fileId: file.id }
 }
 async function snapshot(docId: string) {
   const [row] = await getDb()
