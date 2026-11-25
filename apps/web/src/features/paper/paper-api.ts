@@ -32,11 +32,7 @@ import {
 export const paperListKey = () => queryKey({ query: "paper.list" })
 export const paperGetKey = (docId: PaperId) =>
   queryKey({ query: "paper.get", input: { docId } })
-export const paperPagesKey = (docId: PaperId) =>
-  queryKey({ query: "paper.pageCount", input: { docId } })
 export const paperFilesKey = () => queryKey({ query: "paper.files" })
-export const paperSharedKey = (token: string) =>
-  queryKey({ query: "paper.shared", input: { token } })
 
 export function listPaper() {
   return apiFetch<SuccessBody<QueryOutput<"paper.list">>>(endpoints.paper).then(
@@ -65,26 +61,10 @@ export function listPaperFiles() {
   ).then(unwrapData)
 }
 
-export function getPaperPages(docId: string) {
-  return apiFetch<SuccessBody<QueryOutput<"paper.pageCount">>>(
-    endpoints.paperPages(docId)
-  ).then(unwrapData)
-}
-
-export function getSharedPaper(token: string) {
-  return apiFetch<SuccessBody<QueryOutput<"paper.shared">>>(
-    endpoints.paperShared(token)
-  ).then(unwrapData)
-}
-
 export const qualifiedPaperGetKey = (
   docId: PaperId,
   options: PaperQualification
 ) => qualifiedPaperKey(paperGetKey(docId), options)
-export const qualifiedPaperSharedKey = (
-  token: string,
-  options: PaperQualification
-) => qualifiedPaperKey(paperSharedKey(token), options)
 
 export function listQualifiedPaper(options: PaperQualification) {
   return qualifiedPaperRead("paper.list", endpoints.paper, options)
@@ -92,28 +72,6 @@ export function listQualifiedPaper(options: PaperQualification) {
 
 export function getQualifiedPaper(docId: string, options: PaperQualification) {
   return qualifiedPaperRead("paper.get", endpoints.paperDoc(docId), options)
-}
-
-export function getQualifiedPaperPages(
-  docId: string,
-  options: PaperQualification
-) {
-  return qualifiedPaperRead(
-    "paper.pageCount",
-    endpoints.paperPages(docId),
-    options
-  )
-}
-
-export function getQualifiedSharedPaper(
-  token: string,
-  options: PaperQualification
-) {
-  return qualifiedPaperRead(
-    "paper.shared",
-    endpoints.paperShared(token),
-    options
-  )
 }
 
 export class PaperLimitError extends Error {

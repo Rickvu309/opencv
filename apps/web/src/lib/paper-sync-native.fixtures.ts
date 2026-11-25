@@ -1,29 +1,14 @@
 import { QueryClient } from "@tanstack/react-query"
-import {
-  NATIVE_WRITER,
-  nativePaperDocumentSchema,
-  nativeProvenance,
-} from "@workspace/domain"
-import { seedYDoc, emptyUpdate, type Stored } from "@workspace/paper-crdt"
+import { nativeProvenance, RICH_NATIVE_WRITER } from "@workspace/domain"
+import { emptyUpdate, seedStoredYDoc, type Stored } from "@workspace/paper-crdt"
 import { vi } from "vitest"
+import { storedFlowFixture } from "../../../../packages/paper-crdt/src/test/flow-fixture.ts"
 import { requireNativeIdentity } from "./paper-sync-identity.ts"
 import type { NativeSyncTransport } from "./paper-native-transport.ts"
 import * as stores from "./paper-sync-store.ts"
-import { toBase64 } from "./paper-sync.ts"
+import { toBase64 } from "./paper-sync-bytes.ts"
 
-export const document = nativePaperDocumentSchema.parse({
-  version: 4,
-  schemaRevision: 1,
-  kind: "letter",
-  clashes: [],
-  blocks: [
-    {
-      id: "p1",
-      type: "paragraph",
-      content: [{ text: "Việt 😀", underline: true }],
-    },
-  ],
-})
+export const document = storedFlowFixture("letter")
 export const provenance = nativeProvenance(document)
 export const identity = requireNativeIdentity({
   kind: "native",
@@ -31,13 +16,13 @@ export const identity = requireNativeIdentity({
   sessionId: "a",
   docId: "00000000-0000-4000-8000-000000000001",
   provenance,
-  writer: NATIVE_WRITER,
+  writer: RICH_NATIVE_WRITER,
 })
 export const stored: Stored = {
   epoch: 1,
   revision: 1,
   provenance,
-  server: seedYDoc(document),
+  server: seedStoredYDoc(document),
   pending: emptyUpdate(),
 }
 export function memory(): Storage {

@@ -7,7 +7,6 @@ import {
   paperIdSchema,
   parsePaperId,
 } from "./ids.js"
-import { paperDocumentSchema } from "./paper-doc/document.js"
 import {
   nativeBasisSchema,
   nativeWriterSchema,
@@ -26,24 +25,13 @@ import {
 } from "./paper-package.js"
 import { wordConfirmedOpsSchema } from "./paper-word.js"
 import {
-  paperSyncInputSchema,
-  paperSyncOutputSchema,
-} from "./paper-doc/sync.js"
-import {
-  paperAttachPhotoInputSchema,
   paperDeleteFileInputSchema,
   paperDeleteInputSchema,
-  paperDismissCheckInputSchema,
   paperDocNameSchema,
   paperDuplicateInputSchema,
-  paperKeepTwoPagesInputSchema,
   paperRenameInputSchema,
   paperSetStatusCommandInputSchema,
-  paperSetTemplateInputSchema,
-  paperShareInputSchema,
   paperStoredKindSchema,
-  paperTemplateIdSchema,
-  paperUnshareInputSchema,
 } from "./paper.js"
 import type { QueryRef } from "./queries.js"
 
@@ -91,8 +79,6 @@ const docChanged = (input: DocInput): QueryRef[] => [
 ]
 
 const docRemoved = docChanged
-
-const previousPaper = paperDocumentSchema.optional()
 
 const paperCreateInputSchema = z
   .object({

@@ -27,11 +27,7 @@ export function PhotoCv({
   return (
     <div className="cv-template-root cv-template-photo">
       <header className="mb-5 flex gap-4 border-b border-foreground/10 pb-4">
-        <CvPhoto
-          url={data.photoUrl}
-          name={data.name}
-          onChange={(photoUrl) => patch("photoUrl", photoUrl)}
-        />
+        <CvPhoto url={data.photoUrl} name={data.name} />
         <div className="min-w-0 flex-1">
           <CvType role="page-title" as="h1">
             <EditableField

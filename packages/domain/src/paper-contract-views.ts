@@ -10,7 +10,6 @@ import {
 } from "./paper-doc/native.js"
 import {
   paperDocStatusSchema,
-  paperKeywordGapInputSchema,
   paperStoredKindSchema,
   paperTemplateIdSchema,
 } from "./paper.js"
@@ -66,13 +65,6 @@ export const paperDocumentInfoSchema = z.discriminatedUnion("format", [
     .strict(),
 ])
 
-const paperSharedViewSchema = paperViewSchema
-  .pick({ id: true, name: true, kind: true, templateId: true, paper: true })
-  .extend({
-    paper: paperDocumentSchema.refine((paper) => paper.clashes.length === 0),
-  })
-  .strict()
-
 export const PAPER_COACH_WORD_PAGE_NOTE =
   "This is a Word page. It has no document body in this result. Read its text with paper_outline before describing, reviewing or changing it."
 
@@ -98,16 +90,6 @@ const paperFileSchema = z
   .strict()
 
 export type PaperFile = z.output<typeof paperFileSchema>
-
-const paperPagesSchema = z
-  .object({
-    docId: paperIdSchema,
-    pages: z.number().int().positive(),
-    pageChoice: paperPageChoiceSchema,
-  })
-  .strict()
-
-export type PaperPages = z.output<typeof paperPagesSchema>
 
 const empty = z.object({}).strict()
 
