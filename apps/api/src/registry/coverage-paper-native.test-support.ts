@@ -37,7 +37,7 @@ export function nativePaperCases(tools: CoverageTools): CoverageCase[] {
   let client: PaperClient<RichPaperDocument> | null = null
   let docId = ""
   const sync = async (sent: Prepared) =>
-    run("paper.nativeSync", {
+    run("paper.save", {
       docId,
       writer: RICH_NATIVE_WRITER,
       ...sent,
@@ -55,7 +55,7 @@ export function nativePaperCases(tools: CoverageTools): CoverageCase[] {
   let sent: Prepared | null = null
   return [
     {
-      name: "paper.nativeSync",
+      name: "paper.save",
       arrange: async () => {
         const photo = await saveFile({
           userId: parseUserId(userId),

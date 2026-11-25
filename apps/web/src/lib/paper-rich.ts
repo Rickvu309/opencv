@@ -25,7 +25,7 @@ export function openRichPaperSession(options: {
       const reply = nativeSyncOutputSchema.parse(
         await runContractCommand(
           options.queryClient,
-          "paper.nativeSync",
+          "paper.save",
           {
             docId: identity.docId,
             writer: identity.writer,

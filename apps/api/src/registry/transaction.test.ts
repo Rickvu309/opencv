@@ -154,7 +154,7 @@ describe("every command runs in a transaction unless it declares none", () => {
           const input =
             name === "coach.start"
               ? { chatId: UUID, startKey: UUID, text: "Hello Coach" }
-              : name === "paper.nativeSync"
+              : name === "paper.save"
                 ? {
                     docId: UUID,
                     epoch: 0,

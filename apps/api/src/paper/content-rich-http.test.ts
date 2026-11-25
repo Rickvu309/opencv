@@ -127,7 +127,7 @@ it("saves and reopens rich CVs and Letters over authenticated HTTP without legac
       })
       const command = (input: unknown, session = cookie) =>
         post(
-          "/api/commands/paper.nativeSync",
+          "/api/commands/paper.save",
           { input, idempotencyKey: crypto.randomUUID() },
           session
         )

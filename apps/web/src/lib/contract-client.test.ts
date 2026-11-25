@@ -274,7 +274,7 @@ it("omits even an explicit key for commands whose contract has idempotency none"
   const queryClient = new QueryClient()
   const fetch = vi.fn().mockResolvedValue(Response.json({ ok: true, data: {} }))
   vi.stubGlobal("fetch", fetch)
-  await runContractCommand(queryClient, "paper.nativeSync", {} as never, {
+  await runContractCommand(queryClient, "paper.save", {} as never, {
     refresh: false,
     idempotencyKey: crypto.randomUUID(),
   })

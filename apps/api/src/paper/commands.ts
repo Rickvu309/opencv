@@ -83,7 +83,7 @@ export function registerPaper(registry: Registry) {
         summary: `Created ${output.name}`,
       }),
     },
-    "paper.nativeSync": {
+    "paper.save": {
       handler: async (input, actor) => {
         const reply = await syncContent(actor.userId, input.docId, {
           writer: input.writer,

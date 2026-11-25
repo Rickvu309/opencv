@@ -41,10 +41,10 @@ import {
 
 export type NativeSyncTransport = (
   queryClient: QueryClient,
-  name: "paper.nativeSync",
-  input: CommandInput<Commands, "paper.nativeSync">,
+  name: "paper.save",
+  input: CommandInput<Commands, "paper.save">,
   options: { refresh: false; signal: AbortSignal }
-) => Promise<CommandOutput<Commands, "paper.nativeSync">>
+) => Promise<CommandOutput<Commands, "paper.save">>
 
 export type NativeSessionOptions = {
   readonly identity: NativeSyncIdentity
@@ -196,7 +196,7 @@ function openSession<Document extends StoredPaperDocument>(
       try {
         const raw = await command(
           options.queryClient,
-          "paper.nativeSync",
+          "paper.save",
           {
             docId: parsePaperId(identity.docId),
             writer: identity.writer,

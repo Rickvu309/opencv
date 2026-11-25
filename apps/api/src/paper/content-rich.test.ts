@@ -94,7 +94,7 @@ async function push(
   client: Awaited<ReturnType<typeof richClient>>
 ) {
   const sent = client.prepare()
-  const result = await execute("paper.nativeSync", {
+  const result = await execute("paper.save", {
     docId,
     writer: RICH_NATIVE_WRITER,
     ...sent,
