@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/coach/chat/receipts-guard.test.ts",
+    "because": "These cases had the Coach read or edit old block Papers, which the API no longer stores; the Coach now refuses them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
