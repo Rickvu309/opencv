@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/paper/word-card-actions.test.ts",
+    "because": "paper.update's public result is the Paper itself; the previous name is kept privately for Undo, so the case now checks the new name and that no previous field is published.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
