@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-api.test.ts",
+    "because": "listPaperFiles and its route are gone; the case now checks that the file list is read through the catalog read door at /api/reads/paper.files.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
