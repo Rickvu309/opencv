@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 3
+  },
+  {
+    "subject": "apps/api/src/paper/word-page-trash-proposals.test.ts",
+    "because": "Bringing back a page is paper.recover and the trash check is paper.read with view trash; the same owner and unknown-id answers are asserted, and the Coach is still offered neither.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
   }
 ]
