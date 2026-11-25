@@ -109,8 +109,6 @@ const paperPagesSchema = z
   })
   .strict()
 
-export type PaperPages = z.output<typeof paperPagesSchema>
-
 const empty = z.object({}).strict()
 
 const blockIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/)
