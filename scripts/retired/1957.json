@@ -454,5 +454,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-coach-basis.json",
+    "because": "It guarded old block Paper code paths that are deleted; the remaining paths keep their rules.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
