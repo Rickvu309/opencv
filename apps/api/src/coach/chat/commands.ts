@@ -1,13 +1,11 @@
-import { chatContract, parseChatId } from "@workspace/domain"
-
-import { bindCommands, tableQuery } from "../../registry/bind.js"
+import { tableQuery } from "../../registry/bind.js"
 import { hostDelegateProposals } from "../../registry/proposal-hosts.js"
 import type { Registry } from "../../registry/registry.js"
 import {
   appendAgentProposalApproval,
   createAgentProposalChat,
 } from "./agent-proposal.js"
-import { getChat, listChats, renameChat, setChatFocus } from "./store.js"
+import { getChat, listChats } from "./store.js"
 
 const stops = new Map<string, Set<AbortController>>()
 
@@ -33,34 +31,6 @@ export function registerChat(registry: Registry) {
   hostDelegateProposals({
     open: createAgentProposalChat,
     show: appendAgentProposalApproval,
-  })
-  bindCommands(registry, chatContract, {
-    "chat.rename": {
-      handler: (input, actor) => renameChat(actor, input.chatId, input.title),
-      reversal: (_input, output) => ({
-        command: "chat.rename",
-        input: { chatId: parseChatId(output.id), title: output.previousTitle },
-      }),
-      activity: (input) => ({
-        subjectKind: "chat",
-        subjectId: input.chatId,
-        summary: `You renamed the chat to ${input.title}`,
-      }),
-    },
-    "chat.setFocus": {
-      handler: (input, actor) => setChatFocus(actor, input),
-      reversal: (input, output) => ({
-        command: "chat.setFocus",
-        input: { chatId: input.chatId, focus: output.previousFocus },
-      }),
-      activity: (input) => ({
-        subjectKind: "chat",
-        subjectId: input.chatId,
-        summary: input.focus
-          ? `You pointed the chat at the ${input.focus.kind}`
-          : "You cleared what the chat points at",
-      }),
-    },
   })
 
   registry.addQuery(

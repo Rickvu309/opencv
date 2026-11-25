@@ -7,7 +7,6 @@ import {
   jobContract,
   parseJobId,
   parsePaperId,
-  type ChatContract,
   type CommandInput,
   type OperationInput,
   type JobContract,
@@ -31,7 +30,10 @@ type ChatDelete = OperationBinding<
   (typeof catalog)["chat.delete"],
   { id: string }
 >["execute"]
-type ChatRename = Bindings<ChatContract>["chat.rename"]
+type ChatRename = OperationBinding<
+  (typeof catalog)["chat.rename"],
+  { title: string; previousTitle: string }
+>["reversal"]
 type SetPhoto = z.output<(typeof catalog)["profile.setPhoto"]["input"]>
 type AccountDelete = OperationBinding<
   (typeof catalog)["account.delete"],
@@ -131,7 +133,7 @@ export function typeProbes(registry: Registry) {
 
   // prettier-ignore
   // @ts-expect-error a chat rename reversal must be a valid input of the command it names
-  const wrongChatReversal: ChatRename["reversal"] = () => ({ command: "chat.rename", input: { title: "x" } })
+  const wrongChatReversal: ChatRename = () => ({ command: "chat.rename", input: { title: "x" }, expect: { query: "chat.get", input: {}, matches: {}, skipped: "x" } })
 
   // prettier-ignore
   // @ts-expect-error a photo is a FileId, not a free string

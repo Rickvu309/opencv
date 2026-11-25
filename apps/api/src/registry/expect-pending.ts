@@ -2,8 +2,6 @@ export const REVERSAL_EXPECT_PENDING = {
   issue: 958,
   expires: "2026-12-15",
   commands: [
-    "chat.rename",
-    "chat.setFocus",
     "inbox.markDone",
     "inbox.snooze",
     "job.addChecklistItem",

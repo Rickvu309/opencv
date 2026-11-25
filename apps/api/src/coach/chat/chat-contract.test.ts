@@ -1,7 +1,6 @@
 import {
   DEFAULT_CHAT_TITLE,
   catalog,
-  chatContract as chatCommands,
   personActor,
   queries,
 } from "@workspace/domain"
@@ -17,7 +16,8 @@ import { installRegistry } from "../../install.js"
 import { seedCoachActor } from "../../test/coach-turn.js"
 
 const chatContract = {
-  ...chatCommands,
+  "chat.rename": { output: catalog["chat.rename"].publicResult },
+  "chat.setFocus": { output: catalog["chat.setFocus"].publicResult },
   "chat.create": { output: catalog["chat.create"].publicResult },
   "chat.open": { output: catalog["chat.open"].publicResult },
   "chat.appendMessage": {

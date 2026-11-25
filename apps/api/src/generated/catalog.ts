@@ -9,6 +9,8 @@ import { implementation as chat$appendMessage } from "../coach/operations/chat/a
 import { implementation as chat$create } from "../coach/operations/chat/create/server.js"
 import { implementation as chat$delete } from "../coach/operations/chat/delete/server.js"
 import { implementation as chat$open } from "../coach/operations/chat/open/server.js"
+import { implementation as chat$rename } from "../coach/operations/chat/rename/server.js"
+import { implementation as chat$setFocus } from "../coach/operations/chat/set-focus/server.js"
 import { implementation as coach$events } from "../coach/operations/events/server.js"
 import { implementation as coach$start } from "../coach/operations/start/server.js"
 import { implementation as coach$status } from "../coach/operations/status/server.js"
@@ -36,6 +38,8 @@ export const implementations = {
   "chat.create": chat$create,
   "chat.delete": chat$delete,
   "chat.open": chat$open,
+  "chat.rename": chat$rename,
+  "chat.setFocus": chat$setFocus,
   "coach.events": coach$events,
   "coach.start": coach$start,
   "coach.status": coach$status,

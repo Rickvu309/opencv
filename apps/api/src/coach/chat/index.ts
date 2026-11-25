@@ -8,6 +8,7 @@ export {
   listChats,
   openChat,
   renameChat,
+  setChatFocus,
   toChat,
 } from "./store.js"
 export { createChatRoutes } from "./http.js"
