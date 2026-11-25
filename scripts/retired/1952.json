@@ -134,5 +134,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 6
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-editor-link.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
   }
 ]
