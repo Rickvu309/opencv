@@ -49,7 +49,6 @@ describe("prefixed-string retirement", () => {
   it("keeps production Paper modules free of cv:v1 / proof:v1 content", () => {
     const sources = [
       "paper-library.tsx",
-      "paper-letter.tsx",
       "paper-new-dialog.tsx",
       "paper-library-sections.tsx",
       "paper-template-gallery.tsx",

@@ -1,0 +1,298 @@
+[
+  {
+    "subject": "apps/api/src/paper/store-rules.test.ts",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/app-shell/app-shell.isolated.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/app-shell/app-shell.search-results.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/app-shell/shell-expand-clearance.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper/cv-field-keys.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/paper/cv-field-tab.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/cv-field-undo.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/cv-field.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/cv-ghost.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/paper/cv-keys.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/cv-rules.test.ts",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper/cv-schema.parity.test.ts",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/keyword-placement.test.ts",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/paper/letter-rules.test.ts",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 13
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-editor-engine.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 19
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-editor-link-bar.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-editor-link-keys.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-editor-link.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-editor-lists.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 12
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-editor-reset.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-editor-type-menu.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-edited.isolated.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-print.isolated.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-start-blank.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-start-context.isolated.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-start-draft.isolated.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-letter.isolated.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-print-callers.isolated.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-template-gallery.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper.coach-selection.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper.coach-turns.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/local-env.isolated.test.ts",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/routes/paper-doc-creators.isolated.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/routes/paper-doc-open.isolated.test.tsx",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/test/page-header-guard.test.ts",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/test/paper-doc-lazy-letter.test.ts",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 12
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-doc-lazy-letter.json",
+    "because": "the legacy CV and Letter editors are deleted with B-1; this check tested them or named their files, and the current Paper page, the Word page and the older-format message keep their own tests",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

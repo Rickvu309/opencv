@@ -38,6 +38,9 @@ import {
   setMockJobs,
 } from "@/test/shell-api-mock.ts"
 
+const OLDER_FORMAT =
+  "This Paper was saved in an older format that can no longer be opened."
+
 const shellProfile = vi.hoisted(() => ({
   next: null as null | (() => Promise<unknown>),
 }))
@@ -66,31 +69,12 @@ afterEach(() => {
 describe("app shell layout", () => {
   const favoritePath = "/paper/11111111-1111-7111-8111-111111111111"
 
-  it("shows a favorite in the sidebar once the query refreshes", async () => {
+  it("restores a favorite on a fresh app mount", async () => {
+    setMockPaperFavorite("11111111-1111-7111-8111-111111111111", true)
     renderApp(favoritePath)
-    const favorite = await screen.findByRole("button", { name: "Favorite" })
-    expect(favorite).toHaveAttribute("aria-pressed", "false")
-    fireEvent.click(favorite)
-    await waitFor(() =>
-      expect(favorite).toHaveAttribute("aria-pressed", "true")
-    )
     expect(
       await screen.findByRole("link", { name: "PM track CV" })
     ).toBeInTheDocument()
-  })
-
-  it("restores a favorite on a fresh app mount and removes it again", async () => {
-    setMockPaperFavorite("11111111-1111-7111-8111-111111111111", true)
-    renderApp(favoritePath)
-    const restored = await screen.findByRole("button", { name: "Favorite" })
-    expect(restored).toHaveAttribute("aria-pressed", "true")
-    fireEvent.click(restored)
-    await waitFor(() =>
-      expect(restored).toHaveAttribute("aria-pressed", "false")
-    )
-    await waitFor(() =>
-      expect(screen.queryByRole("link", { name: "PM track CV" })).toBeNull()
-    )
   })
 
   it("filters paper favorites before showing recent CVs", async () => {
@@ -392,9 +376,7 @@ describe("app shell layout", () => {
       const path = "/paper/11111111-1111-7111-8111-111111111111"
       expect(favorite).toHaveAttribute("href", path)
       fireEvent.click(favorite)
-      expect(
-        await screen.findByRole("region", { name: "Editing PM track CV" })
-      ).toBeInTheDocument()
+      expect(await screen.findByText(OLDER_FORMAT)).toBeInTheDocument()
       expect(router.state.location.pathname).toBe(path)
       if (!desktop) expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     }

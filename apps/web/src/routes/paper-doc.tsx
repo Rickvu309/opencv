@@ -13,18 +13,14 @@ import { Skeleton } from "@workspace/ui/components/skeleton"
 
 import {
   getPaper,
-  getPaperPages,
   listPaper,
   paperGetKey,
   paperListKey,
-  paperPagesKey,
 } from "@/features/paper/paper-api.ts"
-import { jobListQuery } from "@/features/apply/apply-api.ts"
 import { draftFromPage } from "@/features/paper-page/canvas-edit.ts"
 import { readWordPage } from "@/features/paper-page/package-read.ts"
 import { WritingPage } from "@/features/paper/writing-page.tsx"
 import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
-import { useShellProfile } from "@/lib/use-shell-profile.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { catalogClient, queryKey } from "@/lib/contract-client.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
@@ -39,18 +35,6 @@ import {
   paperListRecheckKey,
   retryPaperDocReads,
 } from "@/lib/paper-list-recheck.ts"
-
-const PaperLetterEditor = lazy(() =>
-  import("@/features/paper/paper-letter.tsx").then((module) => ({
-    default: module.PaperLetterEditor,
-  }))
-)
-
-const PaperCvEditor = lazy(() =>
-  import("@/features/paper/paper-cv-editor.tsx").then((module) => ({
-    default: module.PaperCvEditor,
-  }))
-)
 
 const RichPaperPage = lazy(() =>
   import("@/features/paper/rich-page.tsx").then((module) => ({
@@ -163,7 +147,6 @@ export function PaperDocPage() {
 }
 
 function LegacyPaperDocPage() {
-  const profile = useShellProfile()
   const navigate = useNavigate()
   const pathname = useRouterState({
     select: (state) => state.location.pathname,
@@ -238,15 +221,6 @@ function LegacyPaperDocPage() {
   const packagePending =
     askWordPage &&
     (session.isPending || (owner !== "" && packageQuery.isLoading))
-  const pagesQuery = useQuery({
-    queryKey: paperPagesKey(validId ?? NO_DOC),
-    queryFn: () => getPaperPages(docId),
-    enabled: !wordPage && docQuery.data?.kind === "cv",
-  })
-  const jobsQuery = useQuery({
-    ...jobListQuery(session.data?.user.id ?? ""),
-    enabled: !wordPage && docQuery.data?.kind === "letter",
-  })
   const back = () => void navigate({ to: SURFACE_PATHS.paper, search })
 
   if (
@@ -312,31 +286,14 @@ function LegacyPaperDocPage() {
       </section>
     )
   }
-  const doc = docQuery.data
-  if (doc.kind === "letter") {
-    const job =
-      jobsQuery.data?.find((item) => item.letterDocId === doc.id) ?? null
-    return (
-      <Suspense fallback={<LetterEditorFallback />}>
-        <PaperLetterEditor key={doc.id} doc={doc} job={job} onBack={back} />
-      </Suspense>
-    )
-  }
   return (
-    <Suspense fallback={<LetterEditorFallback />}>
-      <PaperCvEditor
-        key={doc.id}
-        initial={doc}
-        seedName={profile.name}
-        pages={
-          pagesQuery.data ?? {
-            docId: doc.id,
-            pages: 1,
-            pageChoice: doc.pageChoice,
-          }
-        }
-        onBack={back}
-      />
-    </Suspense>
+    <section aria-label="Paper" className="flex flex-col items-start gap-3 p-4">
+      <p>
+        This Paper was saved in an older format that can no longer be opened.
+      </p>
+      <Button type="button" variant="outline" onClick={back}>
+        Paper
+      </Button>
+    </section>
   )
 }

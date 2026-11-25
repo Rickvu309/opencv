@@ -7,15 +7,7 @@ import { toast } from "sonner"
 import { render } from "@/test/render-with-client.tsx"
 import { PaperSharePage } from "./paper-share-page.tsx"
 import { letter, renderLibrary } from "./paper-library.fixtures.tsx"
-import { PaperCvEditor } from "./paper-cv-editor.tsx"
-import {
-  render as renderEditor,
-  record,
-  pages,
-} from "./paper-editor.fixtures.tsx"
-import { seededCvClient } from "@/test/paper-fixture.ts"
-import { structuredCv } from "@/test/paper-structured-cv.ts"
-import { installEditorPolyfills } from "@/test/paper-engine-kit.tsx"
+import { installEditorPolyfills } from "@/test/editor-polyfills.ts"
 
 const fixture = vi.hoisted(() => ({ client: null as PaperClient | null }))
 vi.mock("@/lib/paper-sync.ts", async (importOriginal) => ({
@@ -98,31 +90,4 @@ it("library prints once after two Download PDF requests during readiness", async
   expect(pending.print).toHaveBeenCalledTimes(1)
   expect(pending.error).not.toHaveBeenCalled()
   expect(document.body).not.toHaveAttribute("data-print")
-})
-
-it("CV editor name change restarts readiness without clearing the print request", async () => {
-  const base = structuredCv()
-  fixture.client = seededCvClient({
-    ...base,
-    header: { ...base.header, name: "Ada Lovelace" },
-  })
-  vi.stubGlobal(
-    "fetch",
-    vi.fn().mockResolvedValue(Response.json({ ok: true, data: {} }))
-  )
-  const pending = pendingPrint()
-  const title = document.title
-  renderEditor(
-    <PaperCvEditor initial={record} pages={pages(1)} onBack={() => undefined} />
-  )
-  fireEvent.click(screen.getByRole("button", { name: "Download PDF" }))
-  expect(pending.load).toHaveBeenCalled()
-  fireEvent.change(screen.getByRole("textbox", { name: "Document name" }), {
-    target: { value: "Renamed CV" },
-  })
-  expect(document.title).toBe("Renamed CV")
-  await act(async () => pending.release())
-  expect(pending.print).toHaveBeenCalledTimes(1)
-  expect(pending.error).not.toHaveBeenCalled()
-  expect(document.title).toBe(title)
 })

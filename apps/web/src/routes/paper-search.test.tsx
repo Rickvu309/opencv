@@ -9,6 +9,9 @@ import { afterEach, describe, expect, it } from "vitest"
 
 import { renderApp } from "@/test/render-app.tsx"
 
+const OLDER_FORMAT =
+  "This Paper was saved in an older format that can no longer be opened."
+
 const records = [
   { kind: "cv", name: "PM track CV", query: "PM track" },
   { kind: "letter", name: "Cover: Associate PM intern", query: "Associate" },
@@ -34,7 +37,7 @@ describe("Paper search route state", () => {
       fireEvent.click(
         await screen.findByRole("button", { name: new RegExp(`${name},`) })
       )
-      await screen.findByRole("region", { name: new RegExp(`Editing ${name}`) })
+      await screen.findByText(OLDER_FORMAT)
       router.history.back()
       await waitFor(() =>
         expect(
@@ -64,16 +67,11 @@ describe("Paper search route state", () => {
       fireEvent.click(
         await screen.findByRole("button", { name: new RegExp(`${name},`) })
       )
-      const editor = await screen.findByRole("region", {
-        name: new RegExp(`Editing ${name}`),
-      })
-      const paperButton = within(editor).queryByRole("button", {
-        name: "Paper",
-        exact: true,
-      })
+      const message = (await screen.findByText(OLDER_FORMAT)).closest(
+        "section"
+      )!
       fireEvent.click(
-        paperButton ??
-          within(editor).getAllByRole("link", { name: "Paper" })[0]!
+        within(message).getByRole("button", { name: "Paper", exact: true })
       )
       await waitFor(() =>
         expect(

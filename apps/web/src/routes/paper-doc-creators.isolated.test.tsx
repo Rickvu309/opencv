@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import { cleanup, render, screen } from "@testing-library/react"
 
 import { importPaperFile, paperListKey } from "@/features/paper/paper-api.ts"
 import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
@@ -13,6 +13,9 @@ import {
   type Server,
   type Stored,
 } from "@/test/paper-doc-server.ts"
+
+const OLDER_FORMAT =
+  "This Paper was saved in an older format that can no longer be opened."
 
 const route = vi.hoisted(() => ({ pathname: "/paper" }))
 
@@ -198,15 +201,8 @@ async function expectOpened(server: Server, format: Format, docId: string) {
   if (format === "word") {
     expect(await screen.findByRole("article", { name: "Page" })).toBeVisible()
   } else {
-    await waitFor(() =>
-      expect(server.exchanges.map((exchange) => exchange.url)).toContain(
-        `/api/paper/${docId}/pages`
-      )
-    )
-    await waitFor(
-      () => expect(document.querySelector('[aria-busy="true"]')).toBeNull(),
-      { timeout: 5000 }
-    )
+    expect(await screen.findByText(OLDER_FORMAT)).toBeVisible()
+    expect(docId).not.toBe("")
   }
   expect(screen.queryByText("Document not found.")).toBeNull()
   expect(screen.queryByText(/Could not load documents/)).toBeNull()

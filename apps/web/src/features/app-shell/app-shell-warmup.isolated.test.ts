@@ -12,13 +12,13 @@ const editor = vi.hoisted(() => {
   return { gate, started, release, entered }
 })
 
-vi.mock("@/features/paper/paper-cv-editor.tsx", async () => {
+vi.mock("@/features/paper/rich-page.tsx", async () => {
   editor.entered()
   await editor.gate
-  return { PaperCvEditor: () => null }
+  return { RichPaperPage: () => null }
 })
 
-it("waits for a deferred nested CV editor before the first app test starts", async () => {
+it("waits for a deferred nested Paper page before the first app test starts", async () => {
   const warming = import("@/test/warm-routes.ts")
   try {
     const first = await Promise.race([
