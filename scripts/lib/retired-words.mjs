@@ -94,7 +94,7 @@ export const RETIRED = [
         why: "a chat can point at an inbox thread",
       },
       {
-        path: /^packages\/domain\/src\/chat-messages\.ts$/,
+        path: /^packages\/domain\/src\/coach\/chat-messages\.ts$/,
         match: /^Thread$/,
         line: /"New Thread"/,
         why: 'LEGACY_CHAT_TITLE = "New Thread" allows legacy rows to display and rename as New chat (#548)',
