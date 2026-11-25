@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "scripts/ci-workflow.test.mjs",
+    "because": "the Paper walk test is renamed canvas-walk.isolated.test.ts, so the CI step and its checks name the new file; the checks are otherwise unchanged",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  }
+]
