@@ -6,10 +6,10 @@ import { user } from "../db/schema.js"
 import { bindOperation } from "../registry/bind.js"
 import { Registry } from "../registry/registry.js"
 import { createMigratedTestDb } from "../test/harness.js"
-import { registerJob } from "./index.js"
 import { implementation as createJob } from "./operations/create/server.js"
 import { implementation as getJob } from "./operations/get/server.js"
 import { implementation as listJobs } from "./operations/list/server.js"
+import { implementation as moveJob } from "./operations/move/server.js"
 
 type Job = { id: string; stage: string; starred: boolean }
 
@@ -29,10 +29,10 @@ beforeAll(async () => {
     email: "apply-alone@example.com",
   })
   registry = new Registry()
-  registerJob(registry)
   bindOperation(registry, listJobs)
   bindOperation(registry, getJob)
   bindOperation(registry, createJob)
+  bindOperation(registry, moveJob)
 })
 
 afterAll(async () => {
@@ -74,14 +74,5 @@ describe("Apply with nothing else registered", () => {
         [jobId, "saved"],
       ])
     })
-  })
-
-  it("registers again on a second registry", () => {
-    const once = new Registry()
-    registerJob(once)
-    const second = new Registry()
-    registerJob(second)
-    registerJob(second)
-    expect(second.list().commands.length).toBe(once.list().commands.length)
   })
 })

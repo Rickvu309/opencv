@@ -3,12 +3,11 @@ import {
   commands,
   catalog,
   type ContractCommandName,
-  jobContract,
+  paperContract,
   parseJobId,
   parsePaperId,
   type CommandInput,
   type OperationInput,
-  type JobContract,
   type PaperContract,
 } from "@workspace/domain"
 import { z } from "zod"
@@ -16,9 +15,18 @@ import { z } from "zod"
 import { bindCommands, type Bindings, type OperationBinding } from "./bind.js"
 import type { Registry } from "./registry.js"
 
-type MoveInput = CommandInput<JobContract, "job.move">
+type MoveInput = OperationInput<(typeof catalog)["job.move"]>
 type StarInput = z.output<(typeof catalog)["job.star"]["input"]>
-type Move = Bindings<JobContract>["job.move"]
+type Move = OperationBinding<
+  (typeof catalog)["job.move"],
+  {
+    id: string
+    stage: "applied"
+    position: string
+    fromStage: "saved"
+    fromPosition: string
+  }
+>
 type Delete = OperationBinding<
   (typeof catalog)["job.delete"],
   { id: string }
@@ -27,6 +35,7 @@ type Snooze = OperationInput<(typeof catalog)["inbox.snooze"]>
 type Edit = CommandInput<PaperContract, "paper.edit">
 type SetTemplate = CommandInput<PaperContract, "paper.setTemplate">
 type PaperEditBinding = Bindings<PaperContract>["paper.edit"]
+type PaperDelete = Bindings<PaperContract>["paper.delete"]
 type Undo = OperationInput<(typeof catalog)["activity.undo"]>
 type ChatDelete = OperationBinding<
   (typeof catalog)["chat.delete"],
@@ -53,7 +62,7 @@ type MarkDone = OperationBinding<
 export function typeProbes(registry: Registry) {
   // prettier-ignore
   // @ts-expect-error unknown command name
-  const unknownName = jobContract["job.nope"]
+  const unknownName = paperContract["paper.nope"]
 
   // prettier-ignore
   // @ts-expect-error the old stage word is not a stage
@@ -65,7 +74,7 @@ export function typeProbes(registry: Registry) {
 
   // prettier-ignore
   // @ts-expect-error every command in the contract needs a binding
-  bindCommands(registry, jobContract, {})
+  bindCommands(registry, paperContract, {})
 
   // prettier-ignore
   // @ts-expect-error a handler must return the declared output
@@ -85,11 +94,11 @@ export function typeProbes(registry: Registry) {
 
   // prettier-ignore
   // @ts-expect-error an expectation can only match fields the read returns
-  const wrongExpectation: Move["reversal"] = () => ({ command: "job.move", input: { jobId: someJobId, stage: "saved" }, expect: { query: "job.get", input: { jobId: someJobId }, matches: { colour: "red" }, skipped: "x" } })
+  const wrongExpectation: PaperDelete["reversal"] = () => ({ command: "paper.restoreDeleted", input: { docId: someDocId }, expect: { query: "paper.isDeleted", input: { docId: someDocId }, matches: { colour: "red" }, skipped: "x" } })
 
   // prettier-ignore
   // @ts-expect-error an expectation that matches no field would never refuse
-  const emptyExpectation: Move["reversal"] = () => ({ command: "job.move", input: { jobId: someJobId, stage: "saved" }, expect: { query: "job.get", input: { jobId: someJobId }, matches: {}, skipped: "x" } })
+  const emptyExpectation: PaperDelete["reversal"] = () => ({ command: "paper.restoreDeleted", input: { docId: someDocId }, expect: { query: "paper.isDeleted", input: { docId: someDocId }, matches: {}, skipped: "x" } })
 
   const pendingRename: Bindings<PaperContract>["paper.rename"]["reversal"] =
     () => ({
@@ -183,6 +192,7 @@ export function typeProbes(registry: Registry) {
 
 const uuid = "00000000-0000-4000-8000-000000000000"
 const someJobId = parseJobId(uuid)
+const someDocId = parsePaperId(uuid)
 
 // @ts-expect-error destructive cannot use coach auto
 export const autoDestructive = commandEntry({

@@ -13,6 +13,7 @@ import {
 
 const JOB = parseJobId("01900000-0000-7000-8000-000000000010")
 const OTHER = parseJobId("01900000-0000-7000-8000-000000000011")
+const DOC = parsePaperId("01900000-0000-7000-8000-000000000012")
 
 function jobActivity(queryClient: QueryClient) {
   const read = catalogClient.options("owner", "activity.list", {
@@ -66,14 +67,13 @@ const isStale = (queryClient: QueryClient, key: readonly unknown[]) =>
 describe("runContractCommand", () => {
   afterEach(() => vi.unstubAllGlobals())
 
-  it("refreshes the reads job.move invalidates and nothing else", async () => {
+  it("refreshes the reads paper.unshare invalidates and nothing else", async () => {
     const queryClient = new QueryClient()
     const keys = seed(queryClient)
     stubFetch({ id: JOB })
 
-    await runContractCommand(queryClient, "job.move", {
-      jobId: JOB,
-      stage: "applied",
+    await runContractCommand(queryClient, "paper.unshare", {
+      docId: DOC,
     })
 
     expect(isStale(queryClient, keys.list)).toBe(true)
@@ -86,10 +86,10 @@ describe("runContractCommand", () => {
   it("sends the input with a fresh idempotency key per call", async () => {
     const queryClient = new QueryClient()
     const bodies = stubFetch({ id: JOB })
-    const input = { jobId: JOB, stage: "applied" } as const
+    const input = { docId: DOC } as const
 
-    await runContractCommand(queryClient, "job.move", input)
-    await runContractCommand(queryClient, "job.move", input)
+    await runContractCommand(queryClient, "paper.unshare", input)
+    await runContractCommand(queryClient, "paper.unshare", input)
 
     const [first, second] = bodies as {
       input: unknown
@@ -110,9 +110,8 @@ describe("runContractCommand", () => {
       update: "",
       stateVector: "",
     })
-    await runContractCommand(queryClient, "job.move", {
-      jobId: JOB,
-      stage: "applied",
+    await runContractCommand(queryClient, "paper.unshare", {
+      docId: DOC,
     })
 
     expect(bodies[0]).not.toHaveProperty("idempotencyKey")
@@ -130,9 +129,8 @@ describe("runContractCommand", () => {
     )
 
     await expect(
-      runContractCommand(queryClient, "job.move", {
-        jobId: JOB,
-        stage: "applied",
+      runContractCommand(queryClient, "paper.unshare", {
+        docId: DOC,
       })
     ).rejects.toThrow()
 

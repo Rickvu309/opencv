@@ -4,19 +4,17 @@ import type { JobId, JobPriority, JobStage } from "@workspace/domain"
 import { toastWithUndo } from "@workspace/ui/components/sonner"
 
 import { reportRejected } from "@/lib/command-failure.ts"
-import {
-  catalogClient,
-  undoActivity,
-  useRunCommand,
-} from "@/lib/contract-client.ts"
+import { catalogClient, undoActivity } from "@/lib/contract-client.ts"
 
 export function useJobActions(id: JobId) {
   const queryClient = useQueryClient()
-  const run = useRunCommand()
 
   async function changeStage(stage: JobStage) {
-    const result = await run("job.move", { jobId: id, stage })
-    if (stage === "closed" && result.activityId) {
+    const result = await catalogClient.run(queryClient, "job.move", {
+      jobId: id,
+      stage,
+    })
+    if (stage === "closed" && "activityId" in result && result.activityId) {
       const activityId = result.activityId
       toastWithUndo("Moved to Closed", () => {
         void undoActivity(queryClient, activityId).catch(

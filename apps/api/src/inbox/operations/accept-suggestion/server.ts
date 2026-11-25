@@ -1,4 +1,4 @@
-import { ERROR_CODES } from "@workspace/domain"
+import { catalog, ERROR_CODES } from "@workspace/domain"
 import { operation } from "@workspace/domain/operations/inbox/accept-suggestion"
 import { CommandError } from "../../../platform/errors.js"
 import type { OperationBinding } from "../../../registry/bind.js"
@@ -21,7 +21,7 @@ export const implementation = {
       )
     }
     const moved = await registry.execute({
-      name: "job.move",
+      name: catalog["job.move"].name,
       input: { jobId: detail.jobId, stage: detail.suggestedStage },
       actor,
     })

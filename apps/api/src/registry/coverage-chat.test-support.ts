@@ -129,7 +129,7 @@ export function chatCases(tools: CoverageTools): CoverageCase[] {
         })
         ctx.jobId = idOf(job.output)
         const pending = await registry.execute({
-          name: "job.move",
+          name: catalog["job.move"].name,
           input: { jobId: ctx.jobId, stage: "interview" },
           actor: await seedCoachActor(userId, idOf(chat.output)),
         })
@@ -153,7 +153,7 @@ export function chatCases(tools: CoverageTools): CoverageCase[] {
         })
         ctx.jobId = idOf(job.output)
         const pending = await registry.execute({
-          name: "job.move",
+          name: catalog["job.move"].name,
           input: { jobId: ctx.jobId, stage: "interview" },
           actor: await seedCoachActor(userId, idOf(chat.output)),
         })

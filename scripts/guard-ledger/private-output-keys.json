@@ -1,18 +1,6 @@
 {
   "id": "private-output-keys",
   "file": "apps/api/src/registry/private-output-keys.test.ts",
-  "historic": {
-    "mode": "restore",
-    "sha": "ca910609",
-    "paths": ["apps/api/src/registry/http.ts"],
-    "command": [
-      "pnpm",
-      "--filter",
-      "api",
-      "exec",
-      "vitest",
-      "run",
-      "src/registry/private-output-keys.test.ts"
-    ]
-  }
+  "historic": null,
+  "reason": "The old proof restored apps/api/src/registry/http.ts from ca910609, which no longer compiles against the current tree. The mistake it caught, previousPriority on a Job output, cannot recur there: every Job command is now a pair whose public result is declared, and the guard scans only the older Paper outputs."
 }
