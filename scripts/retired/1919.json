@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/web/src/features/coach/chat-api.test.ts",
+    "because": "Listing Chats goes through the read door; the test checks that path",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
