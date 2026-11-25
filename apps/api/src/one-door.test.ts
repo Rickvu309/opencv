@@ -38,8 +38,6 @@ const transportExceptions = {
 const waitingToBecomeOperations = [
   "GET /api/chats",
   "GET /api/chats/:id",
-  "GET /api/jobs",
-  "GET /api/jobs/:id",
   "GET /api/paper",
   "GET /api/paper/:id",
   "GET /api/paper/:id/document",
