@@ -70,5 +70,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-progress.test.ts",
+    "because": "The progress fold examples name paper.read, which carries the same Read your Paper label, instead of the removed paper.get.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
   }
 ]
