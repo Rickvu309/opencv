@@ -15,7 +15,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description:
-    "List saved CVs and Letters with view library, or read one with docId to get its text and line handles (regions.paragraph) at a pinned revision. Follow nextCursor until it is null, keeping docId and at from the first page; a non-null nextCursor means more of the document remains. Locked regions are context only. To change lines, send paper_edit with setText, insert or delete against that revision as basedOn, then wait for the person to approve in OpenCV. Do not invent the person's experience or qualifications. view page returns the page as Word lines without a cursor. view lines returns the document as paragraphs with their handles, read in parts by following nextCursor.",
+    "List saved CVs and Letters with view library, or read one with docId to get its text and line handles (regions.paragraph) at a pinned revision. Follow nextCursor until it is null, keeping docId and at from the first page; a non-null nextCursor means more of the document remains. Locked regions are context only. To change lines, send paper_edit with setText, insert or delete against that revision as basedOn, then wait for the person to approve in OpenCV. Do not invent the person's experience or qualifications. view page returns the page as Word lines without a cursor. view lines returns the document as paragraphs with their handles, read in parts by following nextCursor. view trash says whether a deleted Word page can be brought back.",
   input: z
     .union([
       z
@@ -39,6 +39,12 @@ export const operation = defineOperation({
           cursor: z.string().min(1).max(2048).optional(),
         })
         .strict(),
+      z
+        .object({
+          view: z.literal("trash"),
+          docId: z.string().uuid(),
+        })
+        .strict(),
       paperPackageReadInputSchema,
     ])
     .meta({ type: "object" }),
@@ -52,6 +58,7 @@ export const operation = defineOperation({
     paperPackageReadSchema,
     paperWordReadSchema,
     wordPageSchema,
+    z.object({ docId: z.string().uuid(), deleted: z.boolean() }).strict(),
   ]),
   coach: "never",
   delegate: { resource: "paper", access: "read" },

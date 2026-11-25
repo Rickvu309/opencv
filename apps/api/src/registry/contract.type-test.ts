@@ -94,11 +94,11 @@ export function typeProbes(registry: Registry) {
 
   // prettier-ignore
   // @ts-expect-error an expectation can only match fields the read returns
-  const wrongExpectation: PaperDelete["reversal"] = () => ({ command: "paper.restoreDeleted", input: { docId: someDocId }, expect: { query: "paper.isDeleted", input: { docId: someDocId }, matches: { colour: "red" }, skipped: "x" } })
+  const wrongExpectation: PaperDelete["reversal"] = () => ({ command: "paper.recover", input: { docId: someDocId }, expect: { query: "paper.read", input: { view: "trash", docId: someDocId }, matches: { colour: "red" }, skipped: "x" } })
 
   // prettier-ignore
   // @ts-expect-error an expectation that matches no field would never refuse
-  const emptyExpectation: PaperDelete["reversal"] = () => ({ command: "paper.restoreDeleted", input: { docId: someDocId }, expect: { query: "paper.isDeleted", input: { docId: someDocId }, matches: {}, skipped: "x" } })
+  const emptyExpectation: PaperDelete["reversal"] = () => ({ command: "paper.recover", input: { docId: someDocId }, expect: { query: "paper.read", input: { view: "trash", docId: someDocId }, matches: {}, skipped: "x" } })
 
   const pendingRestore: Bindings<PaperContract>["paper.duplicate"]["reversal"] =
     () => ({

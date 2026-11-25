@@ -124,7 +124,7 @@ export function fakeServer(
       },
       "paper.create": () => ok(view(add("older"))),
       "paper.duplicate": (input) => copyOf(String(input.docId)),
-      "paper.restoreDeleted": (input) => {
+      "paper.recover": (input) => {
         const page = pages.get(String(input.docId))
         if (!page?.mine) return refused(404)
         page.deleted = false

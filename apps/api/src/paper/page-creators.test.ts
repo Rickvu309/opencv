@@ -106,7 +106,7 @@ async function importWord(app: App, owner: Account) {
 
 async function restored(app: App, owner: Account, docId: string) {
   await command(app, owner, "paper.delete", { docId })
-  return docIdOf(await command(app, owner, "paper.restoreDeleted", { docId }))
+  return docIdOf(await command(app, owner, "paper.recover", { docId }))
 }
 
 const word = (docId: string, kind: "cv" | "letter" = "cv"): Made => ({
@@ -235,14 +235,10 @@ const CASES: Record<string, Maker> = {
         })
       )
     ),
-  "Restore an imported page from trash (paper.restoreDeleted)": async (
-    app,
-    owner
-  ) => word(await restored(app, owner, await importWord(app, owner))),
-  "Restore a started page from trash (paper.restoreDeleted)": async (
-    app,
-    owner
-  ) => word(await restored(app, owner, await mintWord(app, owner))),
+  "Restore an imported page from trash (paper.recover)": async (app, owner) =>
+    word(await restored(app, owner, await importWord(app, owner))),
+  "Restore a started page from trash (paper.recover)": async (app, owner) =>
+    word(await restored(app, owner, await mintWord(app, owner))),
   "Rich document (paper.create)": async (app, owner) => ({
     docId: docIdOf(
       await command(app, owner, "paper.create", {
@@ -304,7 +300,7 @@ const CREATOR_COMMANDS = [
   "paper.create",
   "paper.duplicate",
   "paper.import",
-  "paper.restoreDeleted",
+  "paper.recover",
   "paper.start",
 ]
 

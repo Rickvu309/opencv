@@ -368,15 +368,23 @@ describe("bringing back a deleted Word page", () => {
       const outsider = personActor(stranger)
       const unknown = randomUUID()
       expect(
-        await registry.read("paper.isDeleted", { docId: page.docId }, outsider)
+        await registry.read(
+          "paper.read",
+          { view: "trash", docId: page.docId },
+          outsider
+        )
       ).toEqual({ docId: page.docId, deleted: false })
       expect(
-        await registry.read("paper.isDeleted", { docId: unknown }, outsider)
+        await registry.read(
+          "paper.read",
+          { view: "trash", docId: unknown },
+          outsider
+        )
       ).toEqual({ docId: unknown, deleted: false })
       for (const docId of [page.docId, unknown])
         await expect(
           registry.execute({
-            name: "paper.restoreDeleted",
+            name: "paper.recover",
             input: { docId },
             actor: outsider,
           })
@@ -385,11 +393,15 @@ describe("bringing back a deleted Word page", () => {
           message: "Document not found",
         })
       expect(
-        await registry.read("paper.isDeleted", { docId: page.docId }, person)
+        await registry.read(
+          "paper.read",
+          { view: "trash", docId: page.docId },
+          person
+        )
       ).toEqual({ docId: page.docId, deleted: true })
       for (let attempt = 0; attempt < 2; attempt++) {
         const restored = await registry.execute({
-          name: "paper.restoreDeleted",
+          name: "paper.recover",
           input: { docId: page.docId },
           actor: person,
         })
@@ -401,7 +413,11 @@ describe("bringing back a deleted Word page", () => {
       const back = await readWordPackage(owner, { docId: page.docId })
       expect(back.revision).toBe(page.revision)
       expect(
-        await registry.read("paper.isDeleted", { docId: page.docId }, person)
+        await registry.read(
+          "paper.read",
+          { view: "trash", docId: page.docId },
+          person
+        )
       ).toEqual({ docId: page.docId, deleted: false })
     }))
 
@@ -411,8 +427,8 @@ describe("bringing back a deleted Word page", () => {
         (tool) => tool.name
       )
       expect(names).toContain("paper.delete")
-      expect(names).not.toContain("paper.restoreDeleted")
-      expect(names).not.toContain("paper.isDeleted")
+      expect(names).not.toContain("paper.recover")
+      expect(names).not.toContain("paper.read")
     }))
 })
 

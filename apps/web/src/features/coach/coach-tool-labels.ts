@@ -142,15 +142,11 @@ const TOOL_COPY = {
     label: "Read your Paper outline",
     read: "Read your Paper outline",
   },
-  "paper.isDeleted": {
-    label: "Check a deleted Paper",
-    read: "Checked a deleted Paper",
-  },
   [catalog["paper.read"].name]: {
     label: "Read your Paper",
     read: "Read your Paper",
   },
-  "paper.restoreDeleted": { label: "Bring back your Paper" },
+  [catalog["paper.recover"].name]: { label: "Bring back your Paper" },
   [catalog["paper.update"].name]: { label: "Update your Paper" },
   "paper.start": { label: "Start a CV or Letter in Paper" },
   "paper.nativeSync": { label: "Save your Paper" },

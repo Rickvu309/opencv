@@ -57,6 +57,7 @@ import { operation as paper$export } from "../operations/paper/export/operation.
 import { operation as paper$import } from "../operations/paper/import/operation.js"
 import { operation as paper$nativeWord } from "../operations/paper/native-word/operation.js"
 import { operation as paper$read } from "../operations/paper/read/operation.js"
+import { operation as paper$recover } from "../operations/paper/recover/operation.js"
 import { operation as paper$update } from "../operations/paper/update/operation.js"
 import { operation as profile$get } from "../operations/profile/get/operation.js"
 import { operation as profile$markWelcomed } from "../operations/profile/mark-welcomed/operation.js"
@@ -124,6 +125,7 @@ export const catalog = {
   "paper.import": paper$import,
   "paper.nativeWord": paper$nativeWord,
   "paper.read": paper$read,
+  "paper.recover": paper$recover,
   "paper.update": paper$update,
   "profile.get": profile$get,
   "profile.markWelcomed": profile$markWelcomed,

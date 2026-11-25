@@ -34,9 +34,9 @@ import {
   type ReviewedCommand,
 } from "./frozen-review.js"
 
-type AtLeastOne<T> = {
-  [K in keyof T]-?: Required<Pick<T, K>> & Partial<T>
-}[keyof T]
+type AtLeastOne<T> = T extends unknown
+  ? { [K in keyof T]-?: Required<Pick<T, K>> & Partial<T> }[keyof T]
+  : never
 
 export type ReversalGuard = {
   [Q in QueryName]: {

@@ -4,7 +4,7 @@ import { cleanup, render, screen } from "@testing-library/react"
 
 import { importPaperFile, paperListKey } from "@/features/paper/paper-api.ts"
 import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
-import { runContractCommand } from "@/lib/contract-client.ts"
+import { catalogClient, runContractCommand } from "@/lib/contract-client.ts"
 import { PaperDocPage } from "@/routes/paper-doc.tsx"
 import {
   fakeServer,
@@ -133,8 +133,8 @@ const CREATORS: Record<string, Creator> = {
     format: word,
     make: async (server, client) =>
       idOf(
-        await runContractCommand(client, "paper.restoreDeleted", {
-          docId: server.add("word", "cv", { deleted: true }).id as never,
+        await catalogClient.run(client, "paper.recover", {
+          docId: server.add("word", "cv", { deleted: true }).id,
         })
       ),
   },

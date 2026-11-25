@@ -106,8 +106,7 @@ describe("what a delegate can reach", () => {
         "paper.update",
         "paper.duplicate",
         "paper.delete",
-        "paper.restoreDeleted",
-        "paper.isDeleted",
+        "paper.recover",
       ])
     )
     for (const entry of closed)
@@ -155,7 +154,13 @@ describe("what a delegate can reach", () => {
         options: { shape: { view?: { value: string } } }[]
       }
     ).options.map((option) => option.shape.view?.value ?? "document")
-    expect(views.sort()).toEqual(["document", "library", "lines", "page"])
+    expect(views.sort()).toEqual([
+      "document",
+      "library",
+      "lines",
+      "page",
+      "trash",
+    ])
     expect(paperRead.delegate).toEqual({ resource: "paper", access: "read" })
     for (const [grant, allowed] of [
       ["Paper read", true],
