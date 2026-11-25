@@ -104,7 +104,8 @@ export function detect(text, path = "") {
   )
   const eagerCanvas =
     path === "apps/web/src/features/paper-page/canvas-viewport.ts"
-  const sharedViewport = path === "packages/domain/src/paper-page-scale.ts"
+  const sharedViewport =
+    path === "packages/domain/src/paper-doc/paper-page-scale.ts"
   const importsEditor = (node) => {
     if (
       (ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) &&

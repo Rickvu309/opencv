@@ -3,7 +3,7 @@ import { describe, it } from "node:test"
 
 import * as fc from "fast-check"
 
-import { normalizeLinkHref } from "./paper-presentation.ts"
+import { normalizeLinkHref } from "./paper-doc/paper-presentation.ts"
 
 import {
   isSafeHref,

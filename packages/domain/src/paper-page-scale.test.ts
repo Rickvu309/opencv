@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { scalePaperPage } from "./paper-page-scale.js"
+import { scalePaperPage } from "./paper-doc/paper-page-scale.js"
 
 test("a narrow viewport scales both physical page dimensions equally", () => {
   assert.deepEqual(scalePaperPage(816, 1056, 408), {

@@ -11,4 +11,6 @@ public:
     paper-rich-edit.ts,
     paper-start.ts,
     paper-word.ts,
+    paper-page-scale.ts,
+    paper-presentation.ts,
   ]
