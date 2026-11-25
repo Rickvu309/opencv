@@ -1,3 +1,5 @@
+import { readdirSync } from "node:fs"
+
 import {
   ADD_A_JOB,
   COMPOSER,
@@ -6,10 +8,27 @@ import {
   OPEN_THE_STAGE_MENU,
   PANEL,
 } from "./screen-steps.mjs"
-import { COACH_SCREENS } from "./screens-coach.mjs"
 import { PAPER_SCREENS } from "./screens-paper.mjs"
 
-export const SCREENS = [
+const SCREEN_FOLDER = new URL("./screens/", import.meta.url)
+
+async function filedScreens() {
+  const names = readdirSync(SCREEN_FOLDER)
+    .filter((name) => name.endsWith(".mjs"))
+    .sort()
+  return Promise.all(
+    names.map(async (name) => {
+      const { screen } = await import(new URL(name, SCREEN_FOLDER).href)
+      if (screen?.id !== name.slice(0, -".mjs".length))
+        throw new Error(
+          `scripts/ui/screens/${name} must export a screen whose id is its file name`
+        )
+      return screen
+    })
+  )
+}
+
+const INLINE_SCREENS = [
   {
     id: "sign-in",
     route: "/sign-in",
@@ -46,7 +65,6 @@ export const SCREENS = [
       { waitFor: { selector: '[role="alert"]' } },
     ],
   },
-  ...COACH_SCREENS,
   ...PAPER_SCREENS,
   {
     id: "apply-empty",
@@ -227,6 +245,8 @@ export const SCREENS = [
     steps: [{ waitFor: { role: "heading", name: "Back your CV with proof" } }],
   },
 ]
+
+export const SCREENS = [...INLINE_SCREENS, ...(await filedScreens())]
 
 const STEP_KINDS = new Set([
   "goto",
