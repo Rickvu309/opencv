@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/registry/expect-pending.test.ts",
+    "because": "paper.create and paper.duplicate became operation pairs whose Undo carries a guarded expectation, so the temporary exemption list it pinned is deleted with it. Its one unrelated case, an expectation that matches no field refuses the Undo, moved to expectation.formal.test.ts unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 20
+  }
+]
