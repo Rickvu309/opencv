@@ -13,7 +13,6 @@ import {
   nativeSyncInputSchema,
   nativeSyncOutputSchema,
 } from "./paper-doc/native.js"
-import { paperEditOutcomeSchema } from "./paper-doc/edits-schema.js"
 import { richEditOutputSchema, richTextEditsSchema } from "./paper-rich-edit.js"
 import { paperCanvasCommitSchema } from "./paper-canvas.js"
 import { paperStartInputSchema } from "./paper-start.js"
@@ -36,32 +35,6 @@ import {
   paperDocumentInfoSchema,
   paperViewSchema,
 } from "./paper-contract-views.js"
-
-const editIdSchema = z.string().min(1).max(64)
-const MAX_RECEIPT_CHANGES = 30
-
-const paperChangeSchema = z
-  .object({
-    blockId: z.string(),
-    change: z.enum(["added", "changed", "moved", "removed"]),
-    kind: z.string(),
-    before: z.string().optional(),
-    after: z.string().optional(),
-  })
-  .strict()
-
-const paperEditOutputSchema = z
-  .object({
-    docId: paperIdSchema,
-    name: z.string(),
-    kind: paperStoredKindSchema,
-    revision: z.number().int(),
-    editId: editIdSchema.nullable(),
-    outcomes: z.array(paperEditOutcomeSchema),
-    changes: z.array(paperChangeSchema).max(MAX_RECEIPT_CHANGES),
-    moreChanges: z.number().int(),
-  })
-  .strict()
 
 type DocInput = { docId: z.output<typeof paperIdSchema> }
 
