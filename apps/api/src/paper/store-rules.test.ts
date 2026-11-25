@@ -16,18 +16,10 @@ describe("coach page estimate from stored JSON", () => {
     expect(coachPagesFromStoredJson(3501)).toBe(2)
   })
 
-  it("pageCount uses the stored JSON, while the editor counts the preview", () => {
+  it("pageCount uses the stored JSON", () => {
     expect(storeSource).toContain(
       "coachPagesFromStoredJson(JSON.stringify(doc.crdtDocument).length)"
     )
-    const editor = readFileSync(
-      new URL(
-        "../../../web/src/features/paper/paper-cv-editor.tsx",
-        import.meta.url
-      ),
-      "utf8"
-    )
-    expect(editor).toContain("readPreviewPageCount")
   })
 })
 

@@ -16,6 +16,9 @@ import { samplePaperDocs } from "@/test/paper-fixtures.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import { setMockChats, setMockSearch } from "@/test/shell-api-mock.ts"
 
+const OLDER_FORMAT =
+  "This Paper was saved in an older format that can no longer be opened."
+
 beforeEach(() => {
   vi.stubGlobal("scrollTo", vi.fn())
 })
@@ -122,12 +125,7 @@ describe("search results integration", () => {
           screen.queryByRole("dialog", { name: "Search" })
         ).not.toBeInTheDocument()
       })
-      const editor = await screen.findByRole("region", {
-        name: `Editing ${selected.name}`,
-      })
-      expect(within(editor).getByDisplayValue(selected.name)).toHaveValue(
-        selected.name
-      )
+      expect(await screen.findByText(OLDER_FORMAT)).toBeVisible()
     }
   )
 

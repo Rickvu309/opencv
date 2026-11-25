@@ -260,13 +260,6 @@
   },
   {
     "rule": "touch-targets",
-    "file": "apps/web/src/features/paper/paper-check-bar.tsx",
-    "count": 3,
-    "issue": "#916",
-    "expires": "2026-12-01"
-  },
-  {
-    "rule": "touch-targets",
     "file": "apps/web/src/features/paper/paper-import.tsx",
     "count": 4,
     "issue": "#916",
@@ -290,13 +283,6 @@
     "rule": "touch-targets",
     "file": "apps/web/src/features/paper/paper-letter-start.tsx",
     "count": 6,
-    "issue": "#916",
-    "expires": "2026-12-01"
-  },
-  {
-    "rule": "touch-targets",
-    "file": "apps/web/src/features/paper/paper-letter.tsx",
-    "count": 5,
     "issue": "#916",
     "expires": "2026-12-01"
   },

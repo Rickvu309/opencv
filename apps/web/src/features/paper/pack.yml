@@ -10,8 +10,6 @@ dependencies:
   ]
 public:
   - paper-api.ts
-  - paper-cv-editor.tsx
-  - paper-letter.tsx
   - paper-library.tsx
   - paper-share-page.tsx
   - paper-templates.ts

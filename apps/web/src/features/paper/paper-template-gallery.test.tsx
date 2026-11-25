@@ -4,7 +4,6 @@ import { render } from "@/test/render-with-client.tsx"
 import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
 import { blankCv, type PaperPages, type PaperView } from "@workspace/domain"
 
-import { PaperCvEditor } from "./paper-cv-editor.tsx"
 import { PaperLibrary } from "./paper-library.tsx"
 import { libraryRouter } from "./paper-library.fixtures.tsx"
 import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
@@ -298,24 +297,5 @@ describe("Paper template gallery", () => {
     expect(screen.getByRole("dialog", { name: "New CV" })).toBeInTheDocument()
     wideDialog()
     library.unmount()
-
-    vi.stubGlobal(
-      "fetch",
-      () =>
-        Promise.resolve(
-          Response.json({ ok: true, data: {} })
-        ) as Promise<Response>
-    )
-    render(
-      <ChatStoreProvider>
-        <PaperCvEditor
-          initial={record}
-          pages={pages}
-          onBack={() => undefined}
-        />
-      </ChatStoreProvider>
-    )
-    fireEvent.click(screen.getByRole("button", { name: "Change template" }))
-    wideDialog()
   })
 })
