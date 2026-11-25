@@ -62,5 +62,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 3
+  },
+  {
+    "subject": "apps/web/src/lib/contract-client.test.tsx",
+    "because": "paper.create is now an operation pair, so the generic legacy-command cases move to paper.start, which is still legacy; the expectations are the same, with paper.list refreshed and a read the command does not name left fresh.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
   }
 ]
