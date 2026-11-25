@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { profileResource } from "../../../account.js"
+import { profileResource } from "../../../account/account.js"
 import { emptyInboxInput, inboxThreadResource } from "../../../inbox/index.js"
 import { defineOperation } from "../../../operation.js"
 

@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { accountRequestEmailChangeInputSchema } from "../../../account.js"
+import { accountRequestEmailChangeInputSchema } from "../../../account/account.js"
 import { defineOperation } from "../../../operation.js"
 
 export const operation = defineOperation({

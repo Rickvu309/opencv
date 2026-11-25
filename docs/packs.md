@@ -34,7 +34,9 @@ flowchart TD
   end
   subgraph p_layer_kernel["kernel"]
     p_apps_api_src_registry["apps/api/src/registry"]
+    p_packages_domain_src_account["packages/domain/src/account"]
     p_packages_domain_src_agents["packages/domain/src/agents"]
+    p_packages_domain_src_control["packages/domain/src/control"]
     p_packages_domain_src_inbox["packages/domain/src/inbox"]
   end
   subgraph p_layer_platform["platform"]
@@ -188,5 +190,7 @@ flowchart TD
 | `apps/web/src/features/seed` | feature | sample-author.ts | apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/features/settings` | feature | account-section.tsx, billing-section.tsx, coach-section.tsx, integrations-section.tsx, preferences-section.tsx, sections.ts, settings-api.ts, settings-layout.tsx, settings-nav.tsx, usage-section.tsx | apps/web/src/features/auth, apps/web/src/features/connections, apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/lib` | platform | none | none | none |
+| `packages/domain/src/account` | kernel | account.ts, usage.ts | none | none |
 | `packages/domain/src/agents` | kernel | connections.ts, delegate-grant.ts | none | none |
+| `packages/domain/src/control` | kernel | control.ts | none | none |
 | `packages/domain/src/inbox` | kernel | index.ts | none | none |

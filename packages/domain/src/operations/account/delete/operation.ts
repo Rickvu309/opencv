@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { accountDeleteInputSchema } from "../../../account.js"
+import { accountDeleteInputSchema } from "../../../account/account.js"
 import { defineOperation } from "../../../operation.js"
 
 export const operation = defineOperation({
