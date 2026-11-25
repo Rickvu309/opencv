@@ -50,7 +50,10 @@ export type GuardedReversal<C extends CommandContract> = ReversalCall<C> & {
   expect: ReversalGuard
 }
 
-type GuardedPlan = NonNullable<ReversalPlan> & { expect: ReversalExpect }
+type GuardedPlan<In = unknown, N extends string = string> = Omit<
+  NonNullable<ReversalPlan>,
+  "command" | "input"
+> & { command: N; input: In; expect: ReversalExpect }
 
 export type IrreversibleCommand = { irreversible: string }
 export type SilentCommand = { silent: string }
@@ -82,8 +85,8 @@ export function requireStatedBinding(
     )
 }
 
-type ReversalBinding<I, R> =
-  | ((input: I, result: R) => GuardedPlan | IrreversibleCommand)
+type ReversalBinding<I, R, In = unknown, N extends string = string> =
+  | ((input: I, result: R) => GuardedPlan<In, N> | IrreversibleCommand)
   | IrreversibleCommand
 
 type ActivityBinding<I, R> =
@@ -212,7 +215,12 @@ export type OperationBinding<
   privateResult?: ZodType<R>
 } & (T["kind"] extends "command"
   ? {
-      reversal: ReversalBinding<import("zod").output<T["input"]>, R>
+      reversal: ReversalBinding<
+        import("zod").output<T["input"]>,
+        R,
+        import("zod").input<T["input"]>,
+        T["name"]
+      >
       activity: ActivityBinding<import("zod").output<T["input"]>, R>
       basis?: ProposalBasis<import("zod").output<T["input"]>>
       transaction?: "none"

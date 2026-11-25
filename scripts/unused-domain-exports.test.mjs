@@ -18,7 +18,6 @@ const NEEDED_BY_DECLARATION_BUILD_TO_NAME_BRAND_TS4023 = [
 const NAMED_IN_EXPORTED_PAPER_DIFF_SIGNATURES = ["DiffHunk"]
 const NAMED_IN_EXPORTED_COACH_RUNTIME_SIGNATURE = ["CoachTitleInput"]
 const READ_BY_REGISTRY_CONTRACT_TYPE_TEST = [
-  "ChatContract",
   "InboxContract",
   "JobContract",
   "PaperContract",

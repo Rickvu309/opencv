@@ -66,7 +66,7 @@ async function threadStatus(a: ExecuteResult) {
 async function chatField(userId: string, a: ExecuteResult, field: string) {
   const chat = await registry.read(
     "chat.get",
-    { chatId: String(reversalInputOf(a).chatId) },
+    { chatId: idOf(a.output) },
     { type: "person", userId: parseUserId(userId) }
   )
   return text(chat, field)
@@ -227,7 +227,7 @@ const LATER: Record<string, Later> = {
   "chat.rename": {
     act: async (a, run) => {
       await run("chat.rename", {
-        chatId: reversalInputOf(a).chatId,
+        chatId: idOf(a.output),
         title: "Later title",
       })
     },
@@ -238,7 +238,7 @@ const LATER: Record<string, Later> = {
     act: async (a, run) => {
       const docId = await newCvId(run, "Later focus")
       await run("chat.setFocus", {
-        chatId: reversalInputOf(a).chatId,
+        chatId: idOf(a.output),
         focus: { kind: "paper", id: docId },
       })
       laterIds.focusId = docId
@@ -320,8 +320,6 @@ const laterIds: { focusId?: string; docId?: string } = {}
 const OWN_UNDO_GUARD = ["paper.edit"]
 
 const KNOWN_VIOLATIONS = [
-  "chat.rename",
-  "chat.setFocus",
   "inbox.markDone",
   "inbox.snooze",
   "job.addChecklistItem",

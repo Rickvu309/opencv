@@ -7,6 +7,8 @@ import { operation as chat$appendMessage } from "../operations/chat/append-messa
 import { operation as chat$create } from "../operations/chat/create/operation.js"
 import { operation as chat$delete } from "../operations/chat/delete/operation.js"
 import { operation as chat$open } from "../operations/chat/open/operation.js"
+import { operation as chat$rename } from "../operations/chat/rename/operation.js"
+import { operation as chat$setFocus } from "../operations/chat/set-focus/operation.js"
 import { operation as coach$events } from "../operations/coach/events/operation.js"
 import { operation as coach$start } from "../operations/coach/start/operation.js"
 import { operation as coach$status } from "../operations/coach/status/operation.js"
@@ -34,6 +36,8 @@ export const catalog = {
   "chat.create": chat$create,
   "chat.delete": chat$delete,
   "chat.open": chat$open,
+  "chat.rename": chat$rename,
+  "chat.setFocus": chat$setFocus,
   "coach.events": coach$events,
   "coach.start": coach$start,
   "coach.status": coach$status,

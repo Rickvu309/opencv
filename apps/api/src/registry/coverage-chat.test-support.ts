@@ -29,7 +29,7 @@ export function chatCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "chat.rename",
+      name: catalog["chat.rename"].name,
       arrange: async () => {
         const chat = await run("chat.create", { title: "Coverage" })
         ctx.chatId = idOf(chat.output)
@@ -53,7 +53,7 @@ export function chatCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "chat.setFocus",
+      name: catalog["chat.setFocus"].name,
       arrange: async () => {
         const chat = await run("chat.create", { title: "Focus" })
         const paper = await run("paper.create", {

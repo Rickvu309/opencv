@@ -20,11 +20,7 @@ import type { QueryClient } from "@tanstack/react-query"
 
 import { apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
-import {
-  catalogClient,
-  queryKey,
-  runContractCommand,
-} from "@/lib/contract-client.ts"
+import { catalogClient, queryKey } from "@/lib/contract-client.ts"
 import { streamChatTurn } from "@/lib/coach-stream.ts"
 import { withSelectedBlocks } from "@/lib/paper-selection.ts"
 import { endpoints } from "@/lib/requests.ts"
@@ -194,12 +190,12 @@ export async function createChat(
   ) {
     return asChat(opened)
   }
-  return asChat(
-    await runContractCommand(queryClient, "chat.rename", {
-      chatId: parseChatId(opened.id),
-      title,
-    })
-  )
+  const renamed = await catalogClient.run(queryClient, "chat.rename", {
+    chatId: parseChatId(opened.id),
+    title,
+  })
+  if ("pending" in renamed) throw new Error("The chat was not renamed")
+  return asChat(renamed)
 }
 
 export function deleteChat(queryClient: QueryClient, chatId: string) {

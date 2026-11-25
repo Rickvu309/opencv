@@ -141,7 +141,7 @@ async function inboxChatId(registry: Registry, actor: Actor, threadId: string) {
   })
   const chatId = idOf(created.output)
   await registry.execute({
-    name: "chat.setFocus",
+    name: catalog["chat.setFocus"].name,
     input: { chatId, focus: { kind: "inbox", id: threadId } },
     actor,
   })

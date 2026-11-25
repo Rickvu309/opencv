@@ -12,6 +12,8 @@ import { implementation as appendMessage } from "./operations/chat/append-messag
 import { implementation as createChat } from "./operations/chat/create/server.js"
 import { implementation as deleteChat } from "./operations/chat/delete/server.js"
 import { implementation as openChat } from "./operations/chat/open/server.js"
+import { implementation as renameChat } from "./operations/chat/rename/server.js"
+import { implementation as setChatFocus } from "./operations/chat/set-focus/server.js"
 import { implementation as events } from "./operations/events/server.js"
 import { implementation as start } from "./operations/start/server.js"
 import { implementation as status } from "./operations/status/server.js"
@@ -43,6 +45,8 @@ beforeAll(async () => {
   bindOperation(registry, openChat)
   bindOperation(registry, appendMessage)
   bindOperation(registry, deleteChat)
+  bindOperation(registry, renameChat)
+  bindOperation(registry, setChatFocus)
 })
 
 afterAll(async () => {
