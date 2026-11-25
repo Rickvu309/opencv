@@ -30,5 +30,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/fixtures/catalog-adapters/clean.json",
+    "because": "the clean fixture copies catalog-publication.ts, whose approved receipt now builds pair detail from the public result",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
