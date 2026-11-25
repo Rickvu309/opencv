@@ -5,11 +5,7 @@ import { Hono } from "hono"
 import { bodyLimit } from "hono/body-limit"
 import { cors } from "hono/cors"
 
-import {
-  createAccountRoutes,
-  createProfileRoutes,
-  hostEmailChangeCode,
-} from "./account/index.js"
+import { createAccountRoutes, hostEmailChangeCode } from "./account/index.js"
 import {
   createAuth,
   emailChangeCodeFromRequest,
@@ -252,7 +248,6 @@ export function createApp({
   app.route("/api/chats", coachRoutes)
   app.route("/api/paper", createPaperRoutes(signedIn))
   app.route("/api/inbox", createInboxRoutes(signedIn, gmailEnabled))
-  app.route("/api/profile", createProfileRoutes(signedIn))
   app.route("/api/account", createAccountRoutes(signedIn))
 
   return app

@@ -1,6 +1,5 @@
 export { hostEmailChangeCode } from "./email-change-code.js"
 export {
-  registerAccountQueries,
   exportAccount,
   listIntegrations,
   readBilling,
@@ -15,4 +14,4 @@ export {
   writeProfileDefaults,
 } from "./store.js"
 export { exportDownload } from "./export-download.js"
-export { createAccountRoutes, createProfileRoutes } from "./http.js"
+export { createAccountRoutes } from "./http.js"

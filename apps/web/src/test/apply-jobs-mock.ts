@@ -462,7 +462,11 @@ export async function jobApiFetch(
         undoneAt: null,
         reversible: true,
       })
-      return jsonOk({ ...created, activityId })
+      return jsonOk({
+        ...created,
+        sourceLabel: created.sourceHost ?? "the board",
+        activityId,
+      })
     }
     const job = jobs.find((item) => item.id === jobId)
     if (!job) return jsonError(404, "NOT_FOUND", "Job not found")
@@ -510,7 +514,7 @@ export async function jobApiFetch(
         position: `c${extra(job.id).checklist.length}`,
       }
       extra(job.id).checklist.push(item)
-      return jsonOk(item)
+      return jsonOk({ ...item, jobId: job.id, activityId })
     }
     if (name === "job.setChecklistItem") {
       const item = extra(job.id).checklist.find(
@@ -518,7 +522,7 @@ export async function jobApiFetch(
       )
       if (!item) return jsonError(404, "NOT_FOUND", "Step not found")
       item.done = Boolean(payload.done)
-      return jsonOk(item)
+      return jsonOk({ ...item, jobId: job.id, activityId })
     }
     if (name === "job.removeChecklistItem") {
       const more = extra(job.id)

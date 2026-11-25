@@ -8,6 +8,7 @@ import { chatMessages, coachTasks, pendingActions } from "../db/schema.js"
 import { installRegistry } from "../install.js"
 import {
   authHeaders,
+  commandAs,
   readAs,
   createMigratedTestDb,
   createTestApp,
@@ -410,10 +411,9 @@ it.each([false, true])(
         )
         const wire = response.text()
         if (afterTail) await wire
-        const stop = await app.request(`/api/chats/${chatId}/stop`, {
-          method: "POST",
-          headers: authHeaders(owner.cookie),
-        })
+        const stop = await app.request(
+          commandAs(owner.cookie, "coach.stop", { chatId })
+        )
         expect(stop.status).toBe(200)
         expect(await stop.json()).toMatchObject({ data: { stopped: true } })
         expect((await db.select().from(coachTasks))[0]?.state).toBe(
@@ -508,13 +508,7 @@ it("keeps a newer client task running when a delayed old Stop arrives after roll
         headers: authHeaders(owner.cookie),
         body: JSON.stringify({ text: "Reply A from an old tab" }),
       })
-      const delayedStop = new Request(
-        `http://localhost/api/chats/${chatId}/stop`,
-        {
-          method: "POST",
-          headers: authHeaders(owner.cookie),
-        }
-      )
+      const delayedStop = commandAs(owner.cookie, "coach.stop", { chatId })
       await response.text()
       await work()
       const [a] = await db.select().from(coachTasks)
@@ -571,10 +565,9 @@ it("makes old Stop a no-op with only new-client work and reserves legacy-tab sta
       })
     expect((await start(`legacy-tab:${randomUUID()}`)).status).toBe(400)
     expect((await start(randomUUID())).status).toBe(200)
-    const stopped = await app.request(`/api/chats/${chatId}/stop`, {
-      method: "POST",
-      headers: authHeaders(owner.cookie),
-    })
+    const stopped = await app.request(
+      commandAs(owner.cookie, "coach.stop", { chatId })
+    )
     expect(stopped.status).toBe(200)
     expect(await stopped.json()).toMatchObject({ data: { stopped: false } })
     const [task] = await db.select().from(coachTasks)

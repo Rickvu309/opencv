@@ -32,6 +32,10 @@ type Later = {
   survives: (a: ExecuteResult, userId: string) => Promise<boolean>
 }
 
+function outputOf(a: ExecuteResult) {
+  return (a.output ?? {}) as Record<string, unknown>
+}
+
 function reversalInputOf(a: ExecuteResult) {
   return (a.reversal?.input ?? {}) as Record<string, unknown>
 }
@@ -256,24 +260,24 @@ const LATER: Record<string, Later> = {
   "job.addChecklistItem": {
     act: async (a, run) => {
       await run("job.setChecklistItem", {
-        jobId: reversalInputOf(a).jobId,
-        itemId: reversalInputOf(a).itemId,
+        jobId: outputOf(a).jobId,
+        itemId: outputOf(a).id,
         done: true,
       })
     },
     survives: async (a) =>
-      (await checklistDone(String(reversalInputOf(a).itemId))) === true,
+      (await checklistDone(String(outputOf(a).id))) === true,
   },
   "job.setChecklistItem": {
     act: async (a, run) => {
       await run("job.setChecklistItem", {
-        jobId: reversalInputOf(a).jobId,
-        itemId: reversalInputOf(a).itemId,
+        jobId: outputOf(a).jobId,
+        itemId: outputOf(a).id,
         done: false,
       })
     },
     survives: async (a) =>
-      (await checklistDone(String(reversalInputOf(a).itemId))) === false,
+      (await checklistDone(String(outputOf(a).id))) === false,
   },
   "job.linkPaper": {
     act: async (a, run) => {
@@ -319,14 +323,7 @@ const laterIds: { focusId?: string; docId?: string } = {}
 
 const OWN_UNDO_GUARD = ["paper.edit"]
 
-const KNOWN_VIOLATIONS = [
-  "job.addChecklistItem",
-  "job.create",
-  "job.linkPaper",
-  "job.update",
-  "paper.create",
-  "paper.duplicate",
-]
+const KNOWN_VIOLATIONS = ["job.linkPaper", "paper.create", "paper.duplicate"]
 
 type Verdict = "refused" | "kept" | "erased"
 

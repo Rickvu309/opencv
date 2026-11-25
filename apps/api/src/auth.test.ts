@@ -214,8 +214,14 @@ describe("auth cookie round-trip", () => {
     expect(again.status).toBe(400)
     await expect(again.json()).resolves.toMatchObject({ code: "INVALID_OTP" })
 
-    const profile = await app.request("/api/profile", {
-      headers: { Origin: webOrigin, Cookie: cookieHeader(signIn) },
+    const profile = await app.request("/api/reads/profile.get", {
+      method: "POST",
+      headers: {
+        Origin: webOrigin,
+        Cookie: cookieHeader(signIn),
+        "Content-Type": "application/json",
+      },
+      body: "{}",
     })
     expect(profile.status).toBe(200)
     const profileBody = (await profile.json()) as {

@@ -270,7 +270,6 @@ export const ROUTE_CASES: readonly RouteCase[] = [
   get("/api/coach/tasks/:id/events", async () => ({ id: randomUUID() })),
   get("/api/chats"),
   get("/api/chats/:id", chat),
-  postJson("/api/chats/:id/stop", () => ({}), chat),
   postJson(
     "/api/chats/:id/turns",
     () => ({ message: "Hello", requestId: randomUUID() }),
@@ -296,7 +295,6 @@ export const ROUTE_CASES: readonly RouteCase[] = [
   get("/api/paper/:id", olderDoc),
   get("/api/inbox/connect"),
   get("/api/inbox/callback"),
-  get("/api/profile"),
   postForm("/api/account/photo", () => pngUpload),
   get("/api/account/export"),
   mcpCase,

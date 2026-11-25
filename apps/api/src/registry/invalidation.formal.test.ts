@@ -19,6 +19,7 @@ import {
   chats,
   files,
   inboxThreads,
+  jobChecklist,
   jobs,
   paperDocs,
   paperPackageHeads,
@@ -52,6 +53,7 @@ type Ids = {
   files: string[]
   chats: string[]
   threads: string[]
+  items: { jobId: string; itemId: string }[]
   touchesPair: (docId: string, jobId: string) => boolean
 }
 
@@ -64,6 +66,7 @@ const SNAPSHOT_QUERIES: {
   "job.list": () => [{}],
   "job.priorityCounts": () => [{}],
   "job.get": (ids) => ids.jobs.map((jobId) => ({ jobId })),
+  "job.checklistItem": (ids) => ids.items,
   "job.preview": null,
   "job.calendar": () => [WIDE_CALENDAR],
   "inbox.list": () => [{}],
@@ -185,6 +188,13 @@ async function arrangedIds(
     files: fileIds,
     chats: await owned(chats),
     threads: await owned(inboxThreads),
+    items:
+      jobIds.length === 0
+        ? []
+        : await db
+            .select({ jobId: jobChecklist.jobId, itemId: jobChecklist.id })
+            .from(jobChecklist)
+            .where(inArray(jobChecklist.jobId, jobIds)),
     touchesPair: (docId, jobId) =>
       touched.includes(docId) ||
       touched.includes(jobId) ||

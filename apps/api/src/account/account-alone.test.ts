@@ -12,7 +12,8 @@ import { implementation as markWelcomed } from "./operations/profile/mark-welcom
 import { implementation as setPhoto } from "./operations/profile/set-photo/server.js"
 import { implementation as update } from "./operations/profile/update/server.js"
 import { createMigratedTestDb } from "../test/harness.js"
-import { hostEmailChangeCode, registerAccountQueries } from "./index.js"
+import { hostEmailChangeCode } from "./index.js"
+import { implementation as getProfile } from "./operations/profile/get/server.js"
 
 const person = personActor("account-alone")
 
@@ -33,7 +34,7 @@ beforeAll(async () => {
   bindOperation(registry, requestEmailChange)
   bindOperation(registry, deleteAccount)
   bindOperation(registry, notify)
-  registerAccountQueries(registry)
+  bindOperation(registry, getProfile)
   bindOperation(registry, update)
   bindOperation(registry, markWelcomed)
   bindOperation(registry, setPhoto)

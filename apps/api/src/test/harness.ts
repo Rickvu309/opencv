@@ -153,6 +153,14 @@ export function authHeaders(cookie: string): Record<string, string> {
   }
 }
 
+export function commandAs(cookie: string, name: string, input: unknown) {
+  return new Request(`http://localhost/api/commands/${name}`, {
+    method: "POST",
+    headers: authHeaders(cookie),
+    body: JSON.stringify({ input, idempotencyKey: crypto.randomUUID() }),
+  })
+}
+
 export function readAs(cookie: string, name: string, input: unknown) {
   return new Request(`http://localhost/api/reads/${name}`, {
     method: "POST",

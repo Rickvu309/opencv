@@ -1,19 +1,11 @@
-import {
-  jobContract,
-  jobPriorityResource,
-  type Actor,
-  type Plan,
-} from "@workspace/domain"
+import { catalog, jobContract, type Actor, type Plan } from "@workspace/domain"
 
 import { bindCommands } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
-import { takePriorityGrant } from "../registry/write-grant.js"
-import { createJob, moveJob, updateJob } from "./board.js"
-import { addChecklistItem, setChecklistItem } from "./checklist.js"
+import { moveJob } from "./board.js"
 import { fetchJobPosting, type FetchJobPosting } from "./fetch-posting.js"
 import { linkPaper } from "./linked-papers.js"
 import { previewJob } from "./preview.js"
-import { priorityRevision, writePriority } from "./store.js"
 
 type ReadPostingOnPlan = (input: {
   plan: Plan
@@ -49,7 +41,9 @@ export function previewPosting(
     posting.fetch,
     posting.read
       ? async (text) => {
-          const plan = planOf(await registry.read("profile.get", {}, actor))
+          const plan = planOf(
+            await registry.read(catalog["profile.get"].name, {}, actor)
+          )
           return plan && posting.read ? posting.read({ plan, text }) : null
         }
       : undefined
@@ -64,56 +58,6 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
   registeredOn.add(registry)
 
   bindCommands(registry, jobContract, {
-    "job.create": {
-      handler: (input, actor) => createJob(actor, input),
-      reversal: (_input, output) => ({
-        command: "job.delete",
-        input: { jobId: output.id },
-      }),
-      activity: (_input, output) => ({
-        subjectKind: "job",
-        subjectId: output.id,
-        summary: `You added this job from ${output.sourceLabel}`,
-      }),
-    },
-    "job.update": {
-      writes: (input) =>
-        input.patch.priority !== undefined
-          ? [{ ...jobPriorityResource, entityId: input.jobId }]
-          : [],
-      basis: async (input, actor) =>
-        input.patch.priority === undefined
-          ? null
-          : priorityRevision(actor.userId, input.jobId),
-      handler: async (input, actor) => {
-        const saved = await updateJob(actor, input.jobId, input.patch)
-        if (input.patch.priority === undefined) return saved
-        const written = await writePriority(
-          takePriorityGrant(input.jobId),
-          input.jobId,
-          input.patch.priority
-        )
-        const { previousPriority, ...job } = written
-        void previousPriority
-        return {
-          ...job,
-          previousPatch: saved.previousPatch,
-          watched: saved.watched,
-        }
-      },
-      reversal: (input, output) => ({
-        command: "job.update",
-        input: { jobId: input.jobId, patch: output.previousPatch },
-      }),
-      activity: (input, output, actor) =>
-        output.watched || actor.type === "delegate"
-          ? {
-              subjectKind: "job",
-              subjectId: input.jobId,
-              summary: "Updated the job",
-            }
-          : null,
-    },
     "job.move": {
       handler: (input, actor) =>
         moveJob(actor, input.jobId, input.stage, input.position),
@@ -138,38 +82,6 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
         subjectKind: "job",
         subjectId: input.jobId,
         summary: `You moved it to ${input.stage}`,
-      }),
-    },
-    "job.addChecklistItem": {
-      handler: (input, actor) =>
-        addChecklistItem(actor, input.jobId, input.label),
-      reversal: (_input, output) => ({
-        command: "job.removeChecklistItem",
-        input: { jobId: output.jobId, itemId: output.id },
-      }),
-      activity: (_input, output) => ({
-        subjectKind: "job",
-        subjectId: output.jobId,
-        summary: `You added "${output.label}" to the checklist`,
-      }),
-    },
-    "job.setChecklistItem": {
-      handler: (input, actor) =>
-        setChecklistItem(actor, input.jobId, input.itemId, input.done),
-      reversal: (input, output) => ({
-        command: "job.setChecklistItem",
-        input: {
-          jobId: input.jobId,
-          itemId: input.itemId,
-          done: output.previousDone,
-        },
-      }),
-      activity: (_input, output) => ({
-        subjectKind: "job",
-        subjectId: output.jobId,
-        summary: output.done
-          ? "You ticked a checklist item"
-          : "You unticked a checklist item",
       }),
     },
     "job.linkPaper": {

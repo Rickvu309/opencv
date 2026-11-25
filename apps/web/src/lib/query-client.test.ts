@@ -1,10 +1,10 @@
 import { QueryClient, QueryObserver } from "@tanstack/react-query"
 import { describe, expect, it } from "vitest"
 
-import { profileKey } from "@/lib/account-api.ts"
+import { profileKey, profileQuery } from "@/lib/account-api.ts"
 import { createQueryClient } from "@/lib/query-client.ts"
 
-async function profileReadsWhileOpening(client: QueryClient) {
+async function profileReadsWhileOpening(client: QueryClient, fresh = true) {
   let reads = 0
   const queryFn = async () => {
     reads += 1
@@ -13,12 +13,12 @@ async function profileReadsWhileOpening(client: QueryClient) {
   const readers = ["shell profile", "Coach mode", "settings nav", "page"]
   for (const reader of readers) {
     const observer = new QueryObserver(client, {
-      queryKey: profileKey(),
+      ...(fresh ? profileQuery("") : { queryKey: profileKey("") }),
       queryFn,
       meta: { reader },
-    })
+    } as never)
     const stop = observer.subscribe(() => undefined)
-    await client.getQueryCache().find({ queryKey: profileKey() })?.promise
+    await client.getQueryCache().find({ queryKey: profileKey("") })?.promise
     await Promise.resolve()
     stop()
   }
@@ -34,15 +34,15 @@ describe("createQueryClient", () => {
     const client = createQueryClient()
     let reads = 0
     const observer = new QueryObserver(client, {
-      queryKey: profileKey(),
+      ...profileQuery(""),
       queryFn: async () => {
         reads += 1
         return { name: "Ada" }
       },
-    })
+    } as never)
     const stop = observer.subscribe(() => undefined)
-    await client.getQueryCache().find({ queryKey: profileKey() })?.promise
-    await client.invalidateQueries({ queryKey: profileKey() })
+    await client.getQueryCache().find({ queryKey: profileKey("") })?.promise
+    await client.invalidateQueries({ queryKey: profileKey("") })
     stop()
     expect(reads).toBe(2)
   })
@@ -51,6 +51,6 @@ describe("createQueryClient", () => {
     const bare = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
-    expect((await profileReadsWhileOpening(bare)).reads).toBe(4)
+    expect((await profileReadsWhileOpening(bare, false)).reads).toBe(4)
   })
 })

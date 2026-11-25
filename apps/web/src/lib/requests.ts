@@ -6,7 +6,6 @@ export const endpoints = {
   catalogRead: (name: string) => `/api/reads/${name}`,
   catalogCommand: (name: string) => `/api/commands/${name}`,
   publicConfig: "/api/public-config",
-  profile: "/api/profile",
   coachTaskEvents: (taskId: string, after: number) =>
     `/api/coach/tasks/${taskId}/events?after=${after}`,
   accountPhoto: "/api/account/photo",
@@ -27,7 +26,6 @@ export const endpoints = {
   letterAttachment: "/api/paper/letter-attachment",
   chats: "/api/chats",
   chat: (chatId: string) => `/api/chats/${chatId}`,
-  chatStop: (chatId: string) => `/api/chats/${chatId}/stop`,
 } as const
 
 export const inboxConnectReadKeyOutsideContract = ["inbox-connect"] as const

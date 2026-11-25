@@ -42,7 +42,7 @@ export function jobCases(tools: CoverageTools): CoverageCase[] {
   return [
     ...catalogCases,
     {
-      name: "job.create",
+      name: catalog["job.create"].name,
       arrange: async () => {},
       act: () => run("job.create", { title: "Intern", company: "Northwind" }),
       assert: async (result) => {
@@ -57,7 +57,7 @@ export function jobCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "job.update",
+      name: catalog["job.update"].name,
       arrange: async () => {
         ctx.jobId = idOf(
           (await run("job.create", { title: "Intern", company: "Northwind" }))
@@ -142,7 +142,7 @@ export function jobCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "job.addChecklistItem",
+      name: catalog["job.addChecklistItem"].name,
       arrange: async () => {
         ctx.jobId = idOf(
           (await run("job.create", { title: "List", company: "Northwind" }))
@@ -166,7 +166,7 @@ export function jobCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "job.setChecklistItem",
+      name: catalog["job.setChecklistItem"].name,
       arrange: async () => {
         const job = await run("job.create", {
           title: "Check",

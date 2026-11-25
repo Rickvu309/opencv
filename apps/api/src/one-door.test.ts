@@ -45,8 +45,6 @@ const waitingToBecomeOperations = [
   "GET /api/paper/files",
   "GET /api/paper/packages",
   "GET /api/paper/packages/:docId/read",
-  "GET /api/profile",
-  "POST /api/chats/:id/stop",
 ]
 
 async function servedRoutes() {

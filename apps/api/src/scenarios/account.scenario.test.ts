@@ -41,7 +41,7 @@ afterAll(async () => {
 describe("a person's profile", () => {
   it("starts on the Free plan with the defaults", async () => {
     const ada = await world.person("Ada")
-    const profile = dataOf<Profile>(await ada.get("/api/profile"))
+    const profile = dataOf<Profile>(await ada.read("profile.get", {}))
     expect(profile).toMatchObject({
       name: "Ada",
       plan: "free",
@@ -64,7 +64,7 @@ describe("a person's profile", () => {
       })
     )
     expect(updated.activityId ?? null).toBeNull()
-    expect(dataOf<Profile>(await ada.get("/api/profile"))).toMatchObject({
+    expect(dataOf<Profile>(await ada.read("profile.get", {}))).toMatchObject({
       name: "Ada Lovelace",
       startPage: "paper",
       notifyBrowser: true,
@@ -81,7 +81,7 @@ describe("a person's profile", () => {
     expect(refused.message).toBe(
       "Light and Max need Pro. Stay on Free, or upgrade to change mode."
     )
-    expect(dataOf<Profile>(await ada.get("/api/profile")).coachMode).toBe(
+    expect(dataOf<Profile>(await ada.read("profile.get", {})).coachMode).toBe(
       "free"
     )
   })
@@ -96,19 +96,21 @@ describe("a person's profile", () => {
   it("records that the person has been welcomed", async () => {
     const ada = await world.person("Ada")
     expect(
-      dataOf<Profile>(await ada.get("/api/profile")).welcomedAt ?? null
+      dataOf<Profile>(await ada.read("profile.get", {})).welcomedAt ?? null
     ).toBeNull()
     await ada.run("profile.markWelcomed", {})
-    expect(dataOf<Profile>(await ada.get("/api/profile")).welcomedAt).toEqual(
-      expect.any(String)
-    )
+    expect(
+      dataOf<Profile>(await ada.read("profile.get", {})).welcomedAt
+    ).toEqual(expect.any(String))
   })
 
   it("belongs to one person", async () => {
     const ada = await world.person("Ada")
     const grace = await world.person("Grace")
     await ada.run("profile.update", { name: "Ada Changed" })
-    expect(dataOf<Profile>(await grace.get("/api/profile")).name).toBe("Grace")
+    expect(dataOf<Profile>(await grace.read("profile.get", {})).name).toBe(
+      "Grace"
+    )
   })
 })
 
@@ -181,7 +183,7 @@ describe("deleting an account", () => {
   it("needs the word DELETE", async () => {
     const ada = await world.person("Ada")
     expect((await ada.run("account.delete", { confirm: "yes" })).ok).toBe(false)
-    expect((await ada.get("/api/profile")).status).toBe(200)
+    expect((await ada.read("profile.get", {})).status).toBe(200)
   })
 
   it("signs the person out and removes what they made", async () => {
@@ -192,7 +194,7 @@ describe("deleting an account", () => {
     expect(
       (await ada.run("account.delete", { confirm: "DELETE" })).status
     ).toBe(200)
-    expect((await ada.get("/api/profile")).status).toBe(401)
+    expect((await ada.read("profile.get", {})).status).toBe(401)
     expect((await ada.read("job.get", { jobId: job.id })).status).toBe(401)
   })
 })
