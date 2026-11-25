@@ -213,7 +213,9 @@ describe("new job dialog", () => {
         true
       )
     })
-    expect(urls.some((url) => url.includes("/api/jobs/preview"))).toBe(true)
+    expect(urls.some((url) => url.includes("/api/reads/job.preview"))).toBe(
+      true
+    )
     expect(urls.some((url) => url.includes("careers.verify-posting.dev"))).toBe(
       false
     )

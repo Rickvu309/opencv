@@ -1,5 +1,4 @@
 import { useMemo, useReducer } from "react"
-import { useQuery } from "@tanstack/react-query"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
@@ -7,7 +6,8 @@ import { SegmentedControl } from "@workspace/ui/components/segmented-control"
 
 import { parseJobId, type JobId, type JobView } from "@workspace/domain"
 
-import { calendarJobs, jobCalendarKey } from "./apply-api.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
+import { useOwnerId } from "@/lib/owner-id.ts"
 import {
   addDays,
   addMonths,
@@ -97,9 +97,9 @@ export function ApplyCalendar({
     [span, anchor, weeks]
   )
   const range = useMemo(() => rangeFor(days, zone), [days, zone])
-  const query = useQuery({
-    queryKey: jobCalendarKey(range.from, range.to),
-    queryFn: () => calendarJobs(range.from, range.to),
+  const query = catalogClient.useRead(useOwnerId(), "job.calendar", {
+    from: range.from,
+    to: range.to,
   })
   const events = useMemo(
     () =>

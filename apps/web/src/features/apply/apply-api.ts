@@ -1,14 +1,14 @@
 import { useQuery, type QueryClient } from "@tanstack/react-query"
-import type {
-  JobDetail,
-  JobId,
-  QueryInput,
-  QueryOutput,
+import {
+  catalog,
+  type JobDetail,
+  type JobId,
+  type QueryOutput,
 } from "@workspace/domain"
 
 import { apiFetch } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
-import { queryKey } from "@/lib/contract-client.ts"
+import { catalogClient, queryKey } from "@/lib/contract-client.ts"
 import { endpoints } from "@/lib/requests.ts"
 
 export type ChecklistItem = JobDetail["checklist"][number]
@@ -22,8 +22,6 @@ export type PaperListItem = {
 export const jobListKey = () => queryKey({ query: "job.list" })
 export const jobGetKey = (jobId: JobId) =>
   queryKey({ query: "job.get", input: { jobId } })
-export const jobCalendarKey = (from: string, to: string) =>
-  queryKey({ query: "job.calendar", input: { from, to } })
 
 export function listJobs(): Promise<QueryOutput<"job.list">> {
   return apiFetch<SuccessBody<QueryOutput<"job.list">>>(endpoints.jobs).then(
@@ -45,23 +43,8 @@ export function prefetchJob(queryClient: QueryClient, jobId: JobId) {
   })
 }
 
-export function calendarJobs(
-  from: string,
-  to: string
-): Promise<QueryOutput<"job.calendar">> {
-  const query = new URLSearchParams({ from, to })
-  return apiFetch<SuccessBody<QueryOutput<"job.calendar">>>(
-    endpoints.jobsCalendar(query)
-  ).then(unwrapData)
-}
-
-export function previewJob(
-  input: QueryInput<"job.preview">
-): Promise<QueryOutput<"job.preview">> {
-  return apiFetch<SuccessBody<QueryOutput<"job.preview">>>(
-    endpoints.jobsPreview,
-    { method: "POST", body: JSON.stringify(input) }
-  ).then(unwrapData)
+export function previewJob(input: { url?: string; text?: string }) {
+  return catalogClient.read(catalog["job.preview"].name, input)
 }
 
 export function listPaper(kind: "cv" | "letter"): Promise<PaperListItem[]> {

@@ -195,7 +195,6 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
               queryClient.removeQueries({ queryKey: jobGetKey(id) })
               void refreshQueries(queryClient, [
                 { query: "job.list" },
-                { query: "job.calendar" },
                 { query: "paper.keywordGap", input: { jobId: id } },
               ])
               void refreshCatalogReads(queryClient)

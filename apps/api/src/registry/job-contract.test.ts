@@ -2,7 +2,7 @@ import {
   catalog,
   commands,
   jobContract as jobCommands,
-  jobQueries,
+  jobQueries as jobQueryContract,
   personActor,
   queries,
   type Actor,
@@ -21,6 +21,12 @@ import { implementations } from "../generated/catalog.js"
 import { idOf } from "./coverage-helpers.test-support.js"
 import { installRegistry } from "../install.js"
 import { inputHash } from "./receipt.js"
+
+const jobQueries = {
+  ...jobQueryContract,
+  "job.calendar": { output: catalog["job.calendar"].publicResult },
+  "job.preview": { output: catalog["job.preview"].publicResult },
+}
 
 const jobContract = {
   ...jobCommands,

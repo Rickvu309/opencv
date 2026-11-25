@@ -80,7 +80,7 @@ describe("reading the board", () => {
     await saved(ada, { title: "Later", deadline: "2027-06-01" })
     await saved(ada, { title: "Undated" })
     const inRange = dataOf<Job[]>(
-      await ada.get("/api/jobs/calendar?from=2027-02-01&to=2027-02-28")
+      await ada.read("job.calendar", { from: "2027-02-01", to: "2027-02-28" })
     )
     expect(inRange.map((job) => job.title).sort()).toEqual([
       "Deadline",
@@ -91,7 +91,7 @@ describe("reading the board", () => {
   it("refuses a calendar range that is not two dates", async () => {
     const ada = await world.person("Ada")
     const refused = failureOf(
-      await ada.get("/api/jobs/calendar?from=nope&to=also")
+      await ada.read("job.calendar", { from: "nope", to: "also" })
     )
     expect(refused.code).toBe("VALIDATION_ERROR")
     expect(refused.message).toBe("Use a from and to date.")
@@ -107,7 +107,7 @@ describe("reading the board", () => {
 
 describe("previewing a posting before saving", () => {
   const preview = async (person: Person, input: Record<string, string>) =>
-    dataOf<Preview>(await person.post("/api/jobs/preview", input))
+    dataOf<Preview>(await person.read("job.preview", input))
 
   it("fills title, company and place from pasted text", async () => {
     const ada = await world.person("Ada")
