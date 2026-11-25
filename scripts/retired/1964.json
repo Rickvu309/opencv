@@ -94,5 +94,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/routes/paper-doc-open.isolated.test.tsx",
+    "because": "The older-format page is deleted as unreachable after B-2; the info-read refresh, Word-page and not-found cases stay.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
   }
 ]
