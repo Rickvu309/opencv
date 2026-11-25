@@ -38,7 +38,11 @@ import { toast, toastWithUndo } from "@workspace/ui/components/sonner"
 import { StageIcon } from "@workspace/ui/components/stage-icon"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
+import {
+  refreshCatalogReads,
+  undoActivity,
+  useRunCommand,
+} from "@/lib/contract-client.ts"
 import { reportRejected } from "@/lib/command-failure.ts"
 import { useShortcut } from "@/lib/use-shortcut.ts"
 
@@ -49,7 +53,6 @@ import {
   dropsReducer,
   noDrops,
   previewMove,
-  refetchBoard,
   shownJobs,
   type Drops,
   type DropsAction,
@@ -235,16 +238,19 @@ export function ApplyBoard({
   }
 
   function refreshBoard() {
-    void refetchBoard(queryClient, ownerId).finally(() => {
-      if (!allSettled(dropsRef.current)) return
-      if (
-        queryClient.isFetching({ queryKey: jobListQuery(ownerId).queryKey }) > 0
-      ) {
-        refreshBoard()
-        return
+    void refreshCatalogReads(queryClient, [{ ownerId, name: "job" }]).finally(
+      () => {
+        if (!allSettled(dropsRef.current)) return
+        if (
+          queryClient.isFetching({ queryKey: jobListQuery(ownerId).queryKey }) >
+          0
+        ) {
+          refreshBoard()
+          return
+        }
+        sendDrops({ type: "landed" })
       }
-      sendDrops({ type: "landed" })
-    })
+    )
   }
 
   function persist(jobId: string, stage: JobStage, announce: boolean) {
