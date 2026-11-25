@@ -59,8 +59,16 @@ describe("app sidebar active row", () => {
   })
 
   it("keeps Apply active on a job route", async () => {
-    setMockJobs([{ id: "job-1", title: "Designer", company: "Acme" }])
-    const sidebar = await renderSidebar(`${SURFACE_PATHS.apply}/job-1`)
+    setMockJobs([
+      {
+        id: "01900000-0000-7000-8000-0000000000b2",
+        title: "Designer",
+        company: "Acme",
+      },
+    ])
+    const sidebar = await renderSidebar(
+      `${SURFACE_PATHS.apply}/01900000-0000-7000-8000-0000000000b2`
+    )
     expect(
       await within(sidebar).findByRole("link", { name: "Apply" })
     ).toHaveAttribute("aria-current", "page")
@@ -145,7 +153,12 @@ describe("app sidebar groups", () => {
 
   it("collapses Favorites from the keyboard and keeps it collapsed after a remount", async () => {
     setMockJobs([
-      { id: "job-1", title: "Designer", company: "Acme", starred: true },
+      {
+        id: "01900000-0000-7000-8000-0000000000b2",
+        title: "Designer",
+        company: "Acme",
+        starred: true,
+      },
     ])
     const user = userEvent.setup()
     const sidebar = await renderSidebar(SURFACE_PATHS.pitch)

@@ -3,9 +3,12 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { withDatabase, type TestDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
+import { bindOperation } from "../registry/bind.js"
 import { Registry } from "../registry/registry.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { registerJob } from "./index.js"
+import { implementation as getJob } from "./operations/get/server.js"
+import { implementation as listJobs } from "./operations/list/server.js"
 
 type Job = { id: string; stage: string; starred: boolean }
 
@@ -26,6 +29,8 @@ beforeAll(async () => {
   })
   registry = new Registry()
   registerJob(registry)
+  bindOperation(registry, listJobs)
+  bindOperation(registry, getJob)
 })
 
 afterAll(async () => {

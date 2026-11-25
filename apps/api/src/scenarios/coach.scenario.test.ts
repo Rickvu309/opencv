@@ -137,7 +137,8 @@ describe("the Coach acting for the person", () => {
     const proposal = proposalIn(chat)
     expect(proposal).toMatchObject({ name: "job.move", approval: "pending" })
     const stage = async () =>
-      dataOf<{ stage: string }>(await ada.get(`/api/jobs/${job.id}`)).stage
+      dataOf<{ stage: string }>(await ada.read("job.get", { jobId: job.id }))
+        .stage
     expect(await stage()).toBe("saved")
     const approve = () =>
       ada.run("actions.approve", {
@@ -158,13 +159,15 @@ describe("the Coach acting for the person", () => {
     })
     expect(denied.status).toBe(200)
     expect(
-      dataOf<{ stage: string }>(await ada.get(`/api/jobs/${job.id}`)).stage
+      dataOf<{ stage: string }>(await ada.read("job.get", { jobId: job.id }))
+        .stage
     ).toBe("saved")
     const approval = await ada.run("actions.approve", {
       pendingActionId: proposalIn(chat)?.pendingActionId,
     })
     expect(
-      dataOf<{ stage: string }>(await ada.get(`/api/jobs/${job.id}`)).stage
+      dataOf<{ stage: string }>(await ada.read("job.get", { jobId: job.id }))
+        .stage
     ).toBe("saved")
     expect(approval.ok && approval.data !== null).toBe(false)
   })

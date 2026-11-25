@@ -3,7 +3,8 @@ import { parseJobId } from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { streamChatTurn } from "./coach-stream.ts"
-import { queryKey } from "./contract-client.ts"
+import { authClient } from "./auth-client.ts"
+import { catalogClient, queryKey } from "./contract-client.ts"
 
 const JOB = parseJobId("01900000-0000-7000-8000-000000000010")
 
@@ -62,7 +63,13 @@ describe("streamChatTurn", () => {
 
   it("refreshes the Apply reads when the Coach moves a job", async () => {
     const queryClient = new QueryClient()
-    const list = queryKey({ query: "job.list" })
+    const session = authClient.$store.atoms.session
+    authClient.$store.atoms.session = {
+      get: () => ({ data: { user: { id: "owner" } } }),
+    } as never
+    const listRead = catalogClient.options("owner", "job.list", {})
+    queryClient.getQueryCache().build(queryClient, listRead)
+    const list = listRead.queryKey
     const paper = queryKey({ query: "paper.list" })
     queryClient.setQueryData(list, [])
     queryClient.setQueryData(paper, [])
@@ -98,6 +105,7 @@ describe("streamChatTurn", () => {
       body: { text: "move it" },
       onEvent: (event) => seen.push(event.type),
     })
+    authClient.$store.atoms.session = session
 
     expect(seen).toEqual([
       "message-start",

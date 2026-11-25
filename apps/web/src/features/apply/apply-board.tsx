@@ -42,7 +42,8 @@ import { undoActivity, useRunCommand } from "@/lib/contract-client.ts"
 import { reportRejected } from "@/lib/command-failure.ts"
 import { useShortcut } from "@/lib/use-shortcut.ts"
 
-import { jobListKey, prefetchJob } from "./apply-api.ts"
+import { jobListQuery, prefetchJob } from "./apply-api.ts"
+import { useOwnerId } from "@/lib/owner-id.ts"
 import {
   allSettled,
   dropsReducer,
@@ -152,6 +153,7 @@ export function ApplyBoard({
   openJobId: string | null
 }) {
   const queryClient = useQueryClient()
+  const ownerId = useOwnerId()
   const run = useRunCommand()
   const tails = useRef(new Map<string, Promise<unknown>>())
   const dropsRef = useRef<Drops>(noDrops)
@@ -233,9 +235,11 @@ export function ApplyBoard({
   }
 
   function refreshBoard() {
-    void refetchBoard(queryClient).finally(() => {
+    void refetchBoard(queryClient, ownerId).finally(() => {
       if (!allSettled(dropsRef.current)) return
-      if (queryClient.isFetching({ queryKey: jobListKey() }) > 0) {
+      if (
+        queryClient.isFetching({ queryKey: jobListQuery(ownerId).queryKey }) > 0
+      ) {
         refreshBoard()
         return
       }
@@ -296,7 +300,7 @@ export function ApplyBoard({
     const before = settled.find((card) => card.id === jobId)
     if (!before || before.column === stage) return
     sendDrops({ type: "dropped", jobId, stage })
-    queryClient.setQueryData<JobView[]>(jobListKey(), (current) => {
+    queryClient.setQueryData(jobListQuery(ownerId).queryKey, (current) => {
       if (!current) return current
       const moved = current.find((job) => job.id === jobId)
       if (!moved) return current
@@ -451,10 +455,10 @@ export function ApplyBoard({
                       )}
                       onClick={() => openJob(item.id)}
                       onPointerDown={() =>
-                        prefetchJob(queryClient, parseJobId(item.id))
+                        prefetchJob(queryClient, ownerId, parseJobId(item.id))
                       }
                       onFocus={() =>
-                        prefetchJob(queryClient, parseJobId(item.id))
+                        prefetchJob(queryClient, ownerId, parseJobId(item.id))
                       }
                       onKeyDown={(event) => onCardKey(event, item)}
                     >

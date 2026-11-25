@@ -86,9 +86,7 @@ async function resolveAttachments(
   )
   const [jobs, papers] = await Promise.all([
     jobIds.size
-      ? apiFetch<SuccessBody<QueryOutput<"job.list">>>(endpoints.jobs)
-          .then(unwrapData)
-          .catch(() => [])
+      ? catalogClient.read(catalog["job.list"].name, {}).catch(() => [])
       : [],
     paperIds.size
       ? apiFetch<SuccessBody<QueryOutput<"paper.list">>>(endpoints.paper)

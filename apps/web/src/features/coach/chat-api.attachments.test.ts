@@ -1,3 +1,4 @@
+import { mockJob } from "@/test/apply-job-fixtures.ts"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { apiBaseUrl } from "@/lib/api-url.ts"
@@ -38,13 +39,19 @@ function attachmentMessage(parts: unknown[]) {
   }
 }
 
+const JOB_ONE = "01900000-0000-7000-8000-0000000000b3"
+
 describe("chat attachment mapping", () => {
   it("keeps saved attachments through detail mapping and resolves their labels", async () => {
     const fetchMock = vi.fn((input: string) => {
-      if (String(input).endsWith("/api/jobs"))
+      if (String(input).endsWith("/api/reads/job.list"))
         return Promise.resolve(
           envelope([
-            { id: "job-1", title: "Product role", company: "Northwind" },
+            mockJob({
+              id: JOB_ONE,
+              title: "Product role",
+              company: "Northwind",
+            }),
           ])
         )
       if (String(input).endsWith("/api/paper"))
@@ -57,7 +64,7 @@ describe("chat attachment mapping", () => {
           messages: [
             attachmentMessage([
               { type: "text", text: "Help" },
-              { type: "attachment", kind: "job", id: "job-1" },
+              { type: "attachment", kind: "job", id: JOB_ONE },
               { type: "attachment", kind: "paper", id: "paper-1" },
               {
                 type: "attachment",
@@ -92,7 +99,7 @@ describe("chat attachment mapping", () => {
         createdAt: STAMP,
         parts: [{ type: "text", text: "Help" }],
         attachments: [
-          { kind: "job", id: "job-1", label: "Product role at Northwind" },
+          { kind: "job", id: JOB_ONE, label: "Product role at Northwind" },
           { kind: "paper", id: "paper-1", label: "Journey CV" },
           {
             kind: "link",
@@ -116,7 +123,7 @@ describe("chat attachment mapping", () => {
 
   it("keeps stable attachment labels when job and paper lookups fail", async () => {
     const fetchMock = vi.fn((input: string) => {
-      if (String(input).endsWith("/api/jobs"))
+      if (String(input).endsWith("/api/reads/job.list"))
         return Promise.reject(new Error("jobs temporarily unavailable"))
       if (String(input).endsWith("/api/paper"))
         return Promise.reject(new Error("paper temporarily unavailable"))
@@ -126,7 +133,7 @@ describe("chat attachment mapping", () => {
           messages: [
             attachmentMessage([
               { type: "text", text: "Help" },
-              { type: "attachment", kind: "job", id: "job-1" },
+              { type: "attachment", kind: "job", id: JOB_ONE },
               { type: "attachment", kind: "paper", id: "paper-1" },
             ]),
           ],
@@ -139,7 +146,7 @@ describe("chat attachment mapping", () => {
       messages: [
         {
           attachments: [
-            { kind: "job", id: "job-1", label: "Saved job" },
+            { kind: "job", id: JOB_ONE, label: "Saved job" },
             { kind: "paper", id: "paper-1", label: "Saved document" },
           ],
         },

@@ -19,7 +19,7 @@ import {
   paperListKey,
   paperPagesKey,
 } from "@/features/paper/paper-api.ts"
-import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
+import { jobListQuery } from "@/features/apply/apply-api.ts"
 import { draftFromPage } from "@/features/paper-page/canvas-edit.ts"
 import { readWordPage } from "@/features/paper-page/package-read.ts"
 import { WritingPage } from "@/features/paper/writing-page.tsx"
@@ -244,8 +244,7 @@ function LegacyPaperDocPage() {
     enabled: !wordPage && docQuery.data?.kind === "cv",
   })
   const jobsQuery = useQuery({
-    queryKey: jobListKey(),
-    queryFn: listJobs,
+    ...jobListQuery(session.data?.user.id ?? ""),
     enabled: !wordPage && docQuery.data?.kind === "letter",
   })
   const back = () => void navigate({ to: SURFACE_PATHS.paper, search })

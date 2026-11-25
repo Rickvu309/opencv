@@ -197,7 +197,8 @@ export function fakeServer(
       }
       return run ? run(parsed.input ?? {}) : ok({})
     }
-    if (path.includes("/api/chats") || path.includes("/api/jobs")) return ok([])
+    if (path.includes("/api/chats") || path.includes("/api/reads/job.list"))
+      return ok([])
     return null
   }
   vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {

@@ -1,12 +1,7 @@
 import { z } from "zod"
 
-import {
-  commandContract,
-  commandEntry,
-  queryContract,
-  queryEntry,
-} from "./contract.js"
-import { jobIdSchema, paperIdSchema, type JobId } from "./ids.js"
+import { commandContract, commandEntry } from "./contract.js"
+import { jobIdSchema, paperIdSchema } from "./ids.js"
 import {
   jobAddChecklistItemInputSchema,
   jobCreateInputSchema,
@@ -18,63 +13,8 @@ import {
   jobStageSchema,
   jobUpdateInputSchema,
 } from "./job.js"
-import type { QueryRef } from "./queries.js"
 
 import { jobPriorityResource } from "./resources.js"
-
-const linkedPaperSchema = z
-  .object({ id: paperIdSchema, name: z.string() })
-  .strict()
-  .nullable()
-
-const jobChecklistItemSchema = z
-  .object({
-    id: z.string(),
-    label: z.string(),
-    done: z.boolean(),
-    position: z.string(),
-  })
-  .strict()
-
-const jobDetailSchema = jobViewSchema
-  .extend({
-    note: z.string(),
-    checklist: z.array(jobChecklistItemSchema),
-    linked: z
-      .object({ cv: linkedPaperSchema, letter: linkedPaperSchema })
-      .strict(),
-  })
-  .strict()
-
-export type JobDetail = z.output<typeof jobDetailSchema>
-
-export const jobQueries = queryContract({
-  "job.list": queryEntry({
-    input: z
-      .object({
-        stage: jobStageSchema.optional(),
-        company: z.string().optional(),
-        location: z.string().optional(),
-      })
-      .strict(),
-    output: z.array(jobViewSchema),
-  }),
-  "job.get": queryEntry({
-    input: z.object({ jobId: jobIdSchema }).strict(),
-    output: jobDetailSchema,
-  }),
-})
-
-type OnJob = { jobId: JobId }
-
-const jobFieldsChanged = (input: OnJob): QueryRef[] => [
-  { query: "job.list" },
-  { query: "job.get", input: { jobId: input.jobId } },
-]
-
-const jobDetailChanged = (input: OnJob): QueryRef[] => [
-  { query: "job.get", input: { jobId: input.jobId } },
-]
 
 export const jobContract = commandContract({
   "job.create": commandEntry({
@@ -84,7 +24,7 @@ export const jobContract = commandContract({
     coach: "auto",
     destructive: false,
     step: (input) => `Save ${input.title}`,
-    invalidates: () => [{ query: "job.list" }],
+    invalidates: () => [],
   }),
   "job.update": commandEntry({
     delegate: "reversibleJob",
@@ -99,7 +39,6 @@ export const jobContract = commandContract({
     destructive: false,
     step: () => "Update the job",
     invalidates: (input) => [
-      ...jobFieldsChanged(input),
       { query: "paper.keywordGap", input: { jobId: input.jobId } },
     ],
   }),
@@ -113,7 +52,7 @@ export const jobContract = commandContract({
     coach: "confirm",
     destructive: false,
     step: (input) => `Move to ${input.stage}`,
-    invalidates: jobFieldsChanged,
+    invalidates: () => [],
   }),
   "job.addChecklistItem": commandEntry({
     description: "Add an interview checklist item.",
@@ -129,7 +68,7 @@ export const jobContract = commandContract({
     coach: "auto",
     destructive: false,
     step: () => "Add a checklist item",
-    invalidates: jobDetailChanged,
+    invalidates: () => [],
   }),
   "job.setChecklistItem": commandEntry({
     description: "Mark a checklist item done or not done.",
@@ -145,7 +84,7 @@ export const jobContract = commandContract({
     coach: "auto",
     destructive: false,
     step: () => "Update a checklist item",
-    invalidates: jobDetailChanged,
+    invalidates: () => [],
   }),
   "job.linkPaper": commandEntry({
     description: "Attach a CV or letter to a job.",
@@ -156,7 +95,7 @@ export const jobContract = commandContract({
     coach: "auto",
     destructive: false,
     step: (input) => `Link the ${input.kind}`,
-    invalidates: jobFieldsChanged,
+    invalidates: () => [],
   }),
 })
 

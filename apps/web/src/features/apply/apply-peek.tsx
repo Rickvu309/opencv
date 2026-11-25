@@ -8,7 +8,8 @@ import { travelToken } from "@workspace/ui/lib/motion"
 import { ApiError } from "@/lib/api-error.ts"
 import { useShortcut } from "@/lib/use-shortcut.ts"
 
-import { getJob, jobGetKey, prefetchJob } from "./apply-api.ts"
+import { jobGetQuery, prefetchJob } from "./apply-api.ts"
+import { useOwnerId } from "@/lib/owner-id.ts"
 import { useJobActions } from "./apply-job-actions.ts"
 import { JobRail } from "./apply-job-rail.tsx"
 import { ApplyPeekHeader } from "./apply-peek-header.tsx"
@@ -27,6 +28,7 @@ export function ApplyPeek({
   onClose: () => void
 }) {
   const queryClient = useQueryClient()
+  const ownerId = useOwnerId()
   const panel = useRef<HTMLElement>(null)
   const parsed = jobIdSchema.safeParse(jobId)
   const id = parsed.success ? parsed.data : null
@@ -35,9 +37,9 @@ export function ApplyPeek({
   const next = index >= 0 ? order[index + 1] : undefined
 
   useEffect(() => {
-    if (previous) prefetchJob(queryClient, previous)
-    if (next) prefetchJob(queryClient, next)
-  }, [queryClient, previous, next])
+    if (previous) prefetchJob(queryClient, ownerId, previous)
+    if (next) prefetchJob(queryClient, ownerId, next)
+  }, [queryClient, ownerId, previous, next])
 
   function close() {
     const element = panel.current
@@ -94,10 +96,7 @@ export function ApplyPeek({
 
 function PeekBody({ jobId, onClose }: { jobId: JobId; onClose: () => void }) {
   const actions = useJobActions(jobId)
-  const detail = useQuery({
-    queryKey: jobGetKey(jobId),
-    queryFn: () => getJob(jobId),
-  })
+  const detail = useQuery(jobGetQuery(useOwnerId(), jobId))
   const job = detail.data
 
   if (detail.isLoading) {

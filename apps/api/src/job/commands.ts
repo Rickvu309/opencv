@@ -6,10 +6,10 @@ import {
   type Plan,
 } from "@workspace/domain"
 
-import { bindCommands, tableQuery } from "../registry/bind.js"
+import { bindCommands } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
 import { takePriorityGrant } from "../registry/write-grant.js"
-import { createJob, getJob, listJobs, moveJob, updateJob } from "./board.js"
+import { createJob, moveJob, updateJob } from "./board.js"
 import { addChecklistItem, setChecklistItem } from "./checklist.js"
 import { fetchJobPosting, type FetchJobPosting } from "./fetch-posting.js"
 import { linkPaper } from "./linked-papers.js"
@@ -199,24 +199,4 @@ export function registerJob(registry: Registry, options?: JobPreviewOptions) {
       }),
     },
   })
-
-  registry.addQuery(
-    tableQuery("job.list", {
-      delegate: "jobRead",
-      description: "List jobs.",
-      coach: true,
-      step: () => "List jobs",
-      read: (input, actor) => listJobs(actor.userId, input),
-    })
-  )
-
-  registry.addQuery(
-    tableQuery("job.get", {
-      delegate: "jobRead",
-      description: "Read one job.",
-      coach: true,
-      step: () => "Read the job",
-      read: (input, actor) => getJob(actor.userId, input.jobId),
-    })
-  )
 }

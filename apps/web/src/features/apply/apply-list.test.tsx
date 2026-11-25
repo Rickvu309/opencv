@@ -9,9 +9,8 @@ import userEvent from "@testing-library/user-event"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { renderApp } from "@/test/render-app.tsx"
-import * as applyApi from "./apply-api.ts"
 import { mockJob } from "@/test/apply-job-fixtures.ts"
-import { setMockJobs } from "@/test/apply-jobs-mock.ts"
+import { failJobRead, setMockJobs } from "@/test/apply-jobs-mock.ts"
 
 async function openPriorityCounts() {
   const open = screen.queryByRole("group", { name: "Jobs by priority" })
@@ -37,7 +36,7 @@ describe("apply list", () => {
     vi.restoreAllMocks()
   })
   it("says the jobs could not load and gives Refresh a phone-sized target", async () => {
-    vi.spyOn(applyApi, "listJobs").mockRejectedValue(new Error("down"))
+    failJobRead("job.list")
     renderApp("/apply")
     expect(await screen.findByText("Couldn't load jobs.")).toBeInTheDocument()
     expect(screen.queryByText(/Refresh the page/)).not.toBeInTheDocument()

@@ -2,7 +2,6 @@ import {
   catalog,
   commands,
   jobContract as jobCommands,
-  jobQueries as jobQueryContract,
   personActor,
   queries,
   type Actor,
@@ -23,7 +22,8 @@ import { installRegistry } from "../install.js"
 import { inputHash } from "./receipt.js"
 
 const jobQueries = {
-  ...jobQueryContract,
+  "job.list": { output: catalog["job.list"].publicResult },
+  "job.get": { output: catalog["job.get"].publicResult },
   "job.calendar": { output: catalog["job.calendar"].publicResult },
   "job.preview": { output: catalog["job.preview"].publicResult },
 }

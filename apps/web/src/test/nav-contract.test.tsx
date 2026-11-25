@@ -115,9 +115,14 @@ describe("each router route is current under exactly one nav item, with its coun
 
   it("marks only the favorite current on a favorite job's route", async () => {
     setMockJobs([
-      { id: "job-1", title: "Designer", company: "Acme", starred: true },
+      {
+        id: "01900000-0000-7000-8000-0000000000a1",
+        title: "Designer",
+        company: "Acme",
+        starred: true,
+      },
     ])
-    renderApp("/apply/job-1")
+    renderApp("/apply/01900000-0000-7000-8000-0000000000a1")
     const sidebar = await screen.findByRole("complementary", {
       name: "Sidebar",
     })

@@ -18,7 +18,7 @@ import {
   refreshQueries,
 } from "@/lib/contract-client.ts"
 
-import { getJob, jobGetKey, jobListKey, listJobs } from "./apply-api.ts"
+import { jobGetQuery, jobListQuery } from "./apply-api.ts"
 import { JobDocument } from "./apply-detail-document.tsx"
 import { useJobActions } from "./apply-job-actions.ts"
 import { DeleteJobDialog } from "./apply-job-delete-dialog.tsx"
@@ -57,15 +57,10 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
     deleteOpen: false,
     railOpen: true,
   })
-  const detail = useQuery({
-    queryKey: jobGetKey(id),
-    queryFn: () => getJob(id),
-  })
-  const jobs = useQuery({
-    queryKey: jobListKey(),
-    queryFn: listJobs,
-  })
-  const activity = catalogClient.useRead(useOwnerId(), "activity.list", {
+  const ownerId = useOwnerId()
+  const detail = useQuery(jobGetQuery(ownerId, id))
+  const jobs = useQuery(jobListQuery(ownerId))
+  const activity = catalogClient.useRead(ownerId, "activity.list", {
     subjectKind: "job",
     subjectId: id,
   })
@@ -192,7 +187,9 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
               } else {
                 void navigate({ to: "/apply" })
               }
-              queryClient.removeQueries({ queryKey: jobGetKey(id) })
+              queryClient.removeQueries({
+                queryKey: jobGetQuery(ownerId, id).queryKey,
+              })
               void refreshQueries(queryClient, [
                 { query: "job.list" },
                 { query: "paper.keywordGap", input: { jobId: id } },

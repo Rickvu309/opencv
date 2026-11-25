@@ -2,7 +2,6 @@ import { z } from "zod"
 import { catalog } from "./catalog.js"
 
 import { queryContract, queryEntry } from "./contract.js"
-import { jobQueries } from "./job-contract.js"
 import { paperQueries } from "./paper-contract.js"
 
 const untyped = z.unknown()
@@ -29,7 +28,6 @@ const catalogReads = Object.fromEntries(
 
 export const queries = queryContract({
   ...catalogReads,
-  ...jobQueries,
   ...paperQueries,
   "link.get": queryEntry({
     input: z.object({ url: z.string().trim().min(1).max(2000) }).strict(),
