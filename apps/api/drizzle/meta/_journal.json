@@ -183,6 +183,13 @@
       "when": 1794509034376,
       "tag": "0025_word_rename_retained",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1795612536365,
+      "tag": "0026_paper_rich_only",
+      "breakpoints": true
     }
   ]
 }

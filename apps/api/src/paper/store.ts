@@ -283,12 +283,6 @@ export async function setPaperStatus(
   return toListedPaper({ ...current, status, updatedAt }, writer)
 }
 
-export const COACH_TWO_PAGES_PAST_STORED_JSON_CHARS = 3500
-
-export function coachPagesFromStoredJson(storedJsonChars: number): 1 | 2 {
-  return storedJsonChars > COACH_TWO_PAGES_PAST_STORED_JSON_CHARS ? 2 : 1
-}
-
 export async function readOwnedPhoto(
   userId: UserId,
   fileId: FileId,

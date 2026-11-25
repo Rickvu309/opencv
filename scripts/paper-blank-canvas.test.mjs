@@ -9,8 +9,6 @@ import {
 import {
   detect,
   detectDocument,
-  detectHeaderEdit,
-  detectHeaderUndo,
   detectRichDocument,
   message,
   richMessage,
@@ -50,7 +48,7 @@ test("every blank kind contains only one empty paragraph", () => {
   }
 })
 
-test("blank edits retain the Letter anchor and allow an explicitly requested CV header", () => {
+test("a blank Letter keeps its one anchor paragraph", () => {
   assert.deepEqual(detectDocument(emptyPaper("letter")), [])
   assert.deepEqual(
     detectDocument({
@@ -59,38 +57,6 @@ test("blank edits retain the Letter anchor and allow an explicitly requested CV 
     }),
     [message]
   )
-  const clean = read("packages/domain/src/paper-doc/edits.ts")
-  assert.deepEqual(detectHeaderEdit(clean), [])
-  assert.equal(
-    detectHeaderEdit(clean.replace("work.header ??=", "work.header =")).length,
-    1
-  )
-  const historic = execFileSync(
-    "git",
-    ["show", "999443f9:packages/domain/src/paper-doc/edits.ts"],
-    { encoding: "utf8" }
-  )
-  assert.equal(detectHeaderEdit(historic).length, 1)
-  const undo = read("packages/domain/src/paper-doc/undo.ts")
-  assert.deepEqual(detectHeaderUndo(undo), [])
-  assert.equal(
-    detectHeaderUndo(undo.replace("delete work.header", "delete work.missing"))
-      .length,
-    1
-  )
-  const oldUndo = execFileSync(
-    "git",
-    ["show", "999443f9:packages/domain/src/paper-doc/undo.ts"],
-    { encoding: "utf8" }
-  )
-  assert.equal(detectHeaderUndo(oldUndo).length, 1)
-  const oldBlank = execFileSync(
-    "git",
-    ["show", "999443f9:packages/domain/src/paper-doc/blank-canvas.ts"],
-    { encoding: "utf8" }
-  )
-  assert.match(oldBlank, /id: "paragraph-1"/)
-  assert.doesNotMatch(oldBlank, /letter-1/)
 })
 
 test("blank factories delegate and the historical starter CV fails", () => {
@@ -132,7 +98,10 @@ test("blank factories delegate and the historical starter CV fails", () => {
     { encoding: "utf8" }
   )
   assert.deepEqual(detect(historic), [message, message])
-  assert.match(read("apps/api/src/paper/store.ts"), /blankPaper\(input.kind\)/)
+  assert.match(
+    read("apps/api/src/paper/store.ts"),
+    /emptyRichPaper\(input.kind\)/
+  )
   assert.match(
     read("apps/api/src/paper/package-list.ts"),
     /row\.kind === "cv"\s*\?\s*blankCv\(\)\s*:\s*blankLetter\(\)/

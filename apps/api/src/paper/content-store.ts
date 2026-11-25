@@ -108,18 +108,6 @@ export function nextContentSeq(entryRevision: number) {
   return entryRevision + 1
 }
 
-export function sameContentVersion(current: number, sent: number) {
-  return current === sent
-}
-
-export function coachBasisOk(
-  basedOn: number,
-  revision: number,
-  baseSeq: number
-) {
-  return basedOn <= revision && basedOn >= baseSeq
-}
-
 async function lockedRow(userId: UserId, docId: PaperId): Promise<PaperRow> {
   const rows = await getDb()
     .select()
