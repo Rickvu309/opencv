@@ -26,6 +26,12 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+const SENT_REPLY = {
+  id: "00000000-0000-4000-8000-000000000098",
+  threadId: "00000000-0000-4000-8000-000000000097",
+  body: "Sent",
+}
+
 function postsOf() {
   const posts: { path: string; input: unknown }[] = []
   vi.stubGlobal(
@@ -35,6 +41,8 @@ function postsOf() {
         const body = init?.body ? JSON.parse(String(init.body)) : null
         posts.push({ path: pathOf(input), input: body?.input })
       }
+      if (pathOf(input) === "/api/commands/inbox.send")
+        return jsonOk(SENT_REPLY)
       return jsonOk({ activityId: "00000000-0000-4000-8000-000000000099" })
     }
   )
@@ -354,7 +362,7 @@ describe("inbox reader", () => {
     await userEvent.type(reply, "unsent newer text")
     expect(reply).toHaveValue(REGIONAL_DETAIL.draft!.body)
     await act(async () => {
-      complete(jsonOk({ activityId: "00000000-0000-4000-8000-000000000099" }))
+      complete(jsonOk(SENT_REPLY))
     })
     expect(reply).toBeEnabled()
     expect(reply).toHaveValue("")

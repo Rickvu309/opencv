@@ -1,10 +1,4 @@
-import {
-  catalog,
-  queries,
-  inboxContract as inboxCommands,
-  inboxQueries,
-  personActor,
-} from "@workspace/domain"
+import { catalog, queries, inboxQueries, personActor } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"
@@ -13,7 +7,12 @@ import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "../install.js"
 
 const inboxContract = {
-  ...inboxCommands,
+  "inbox.draftReply": { output: catalog["inbox.draftReply"].publicResult },
+  "inbox.updateDraft": { output: catalog["inbox.updateDraft"].publicResult },
+  "inbox.send": { output: catalog["inbox.send"].publicResult },
+  "inbox.addToCalendar": {
+    output: catalog["inbox.addToCalendar"].publicResult,
+  },
   "inbox.skip": { output: catalog["inbox.skip"].publicResult },
   "inbox.scan": { output: catalog["inbox.scan"].publicResult },
   "inbox.markDone": { output: catalog["inbox.markDone"].publicResult },

@@ -18,11 +18,15 @@ import { implementation as coach$stop } from "../coach/operations/stop/server.js
 import { implementation as connections$list } from "../connections/operations/list/server.js"
 import { implementation as connections$revoke } from "../connections/operations/revoke/server.js"
 import { implementation as inbox$acceptSuggestion } from "../inbox/operations/accept-suggestion/server.js"
+import { implementation as inbox$addToCalendar } from "../inbox/operations/add-to-calendar/server.js"
 import { implementation as inbox$clearSuggestion } from "../inbox/operations/clear-suggestion/server.js"
+import { implementation as inbox$draftReply } from "../inbox/operations/draft-reply/server.js"
 import { implementation as inbox$markDone } from "../inbox/operations/mark-done/server.js"
 import { implementation as inbox$scan } from "../inbox/operations/scan/server.js"
+import { implementation as inbox$send } from "../inbox/operations/send/server.js"
 import { implementation as inbox$skip } from "../inbox/operations/skip/server.js"
 import { implementation as inbox$snooze } from "../inbox/operations/snooze/server.js"
+import { implementation as inbox$updateDraft } from "../inbox/operations/update-draft/server.js"
 import { implementation as job$priorityCounts } from "../job/operations/priority-counts/server.js"
 import { implementation as job$setPriority } from "../job/operations/set-priority/server.js"
 import { implementation as notify$request } from "../account/operations/notify/request/server.js"
@@ -53,11 +57,15 @@ export const implementations = {
   "connections.list": connections$list,
   "connections.revoke": connections$revoke,
   "inbox.acceptSuggestion": inbox$acceptSuggestion,
+  "inbox.addToCalendar": inbox$addToCalendar,
   "inbox.clearSuggestion": inbox$clearSuggestion,
+  "inbox.draftReply": inbox$draftReply,
   "inbox.markDone": inbox$markDone,
   "inbox.scan": inbox$scan,
+  "inbox.send": inbox$send,
   "inbox.skip": inbox$skip,
   "inbox.snooze": inbox$snooze,
+  "inbox.updateDraft": inbox$updateDraft,
   "job.priorityCounts": job$priorityCounts,
   "job.setPriority": job$setPriority,
   "notify.request": notify$request,

@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "scripts/unused-domain-exports.test.mjs",
+    "because": "The Inbox command contract is deleted, so its kept-export entry goes with it",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  }
+]
