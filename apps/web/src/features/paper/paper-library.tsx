@@ -156,6 +156,8 @@ export function PaperLibrary({
           at: word.revision,
         })
       )
+      if (!("downloadPath" in exported))
+        throw new Error("This Word document has no download yet.")
       const link = document.createElement("a")
       link.href = `${apiBaseUrl}${exported.downloadPath}`
       link.click()
