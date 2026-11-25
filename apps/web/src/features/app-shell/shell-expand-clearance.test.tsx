@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url"
 import { cleanup, screen } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { CvEditorBar } from "@/features/paper/paper-cv-bar.tsx"
 import { PaperLetterDraftingPage } from "@/features/paper/paper-letter-drafting-page.tsx"
 import { PaperLetterStartPage } from "@/features/paper/paper-letter-start-page.tsx"
 import { SidebarExpandContext } from "@workspace/ui/components/page-header"
@@ -94,7 +93,7 @@ describe("collapsed expand control stays in the header", () => {
     await collapsedPage(path)
   })
 
-  it("stays clear of the letter start, drafting, and CV headers", () => {
+  it("stays clear of the letter start and drafting headers", () => {
     const expand = { collapsed: true, expand: () => {} }
     render(
       <SidebarExpandContext value={expand}>
@@ -124,54 +123,6 @@ describe("collapsed expand control stays in the header", () => {
         "[data-slot='letter-drafting-header']"
       )!
     )
-    cleanup()
-
-    render(
-      <SidebarExpandContext value={expand}>
-        <div className="flex h-full min-h-0 flex-col">
-          <CvEditorBar
-            name="CV"
-            favorite={false}
-            favoritePending={false}
-            shareLink="https://opencv.example/cv"
-            statusLabel="Saved"
-            onBack={() => {}}
-            onName={() => {}}
-            onCommitName={() => {}}
-            onFavorite={() => {}}
-            onGallery={() => {}}
-            onPrint={() => {}}
-            onCoach={() => {}}
-            onUndo={() => {}}
-          />
-          <div className="min-h-0 flex-1 overflow-auto" />
-        </div>
-      </SidebarExpandContext>
-    )
-    expectClear(
-      document.querySelector<HTMLElement>("[data-slot='cv-editor-header']")!
-    )
-  })
-
-  it("puts the control first in the letter editor header without editing the writing header", () => {
-    const here = dirname(fileURLToPath(import.meta.url))
-    const letter = readFileSync(join(here, "../paper/paper-letter.tsx"), "utf8")
-    const header = letter.slice(
-      letter.indexOf('data-slot="letter-editor-header"'),
-      letter.indexOf('data-slot="letter-editor-desk"')
-    )
-    expect(header.indexOf("<SidebarExpandButton")).toBeGreaterThan(-1)
-    expect(header.indexOf("<SidebarExpandButton")).toBeLessThan(
-      header.indexOf("<Breadcrumb")
-    )
-
-    const writing = readFileSync(
-      join(here, "../paper/writing-page.tsx"),
-      "utf8"
-    )
-    expect(writing).toContain("<PageHeader")
-    expect(writing).toContain('data-slot="writing-document-header"')
-    expect(writing).not.toContain("SidebarExpandButton")
   })
 
   it("imports the expand context from the kit and drops the unused collapsed attribute", () => {

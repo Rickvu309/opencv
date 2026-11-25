@@ -3,8 +3,6 @@ await Promise.all([
   import("@/routes/product-layout.tsx"),
   import("@/routes/paper.tsx"),
   import("@/routes/paper-doc.tsx"),
-  import("@/features/paper/paper-cv-editor.tsx"),
-  import("@/features/paper/paper-letter.tsx"),
   import("@/features/paper/rich-page.tsx"),
   import("@/routes/paper-share.tsx"),
   import("@/routes/apply.tsx"),

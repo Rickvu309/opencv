@@ -1,11 +1,14 @@
 import { blankCv, ERROR_CODES } from "@workspace/domain"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import { cleanup, render, screen, waitFor } from "@testing-library/react"
+import { cleanup, render, screen } from "@testing-library/react"
 
 import { paperListKey } from "@/features/paper/paper-api.ts"
 import { refreshQueries } from "@/lib/contract-client.ts"
 import { PaperDocPage } from "@/routes/paper-doc.tsx"
+
+const OLDER_FORMAT =
+  "This Paper was saved in an older format that can no longer be opened."
 
 const WORD_PAGE = "22222222-2222-4222-8222-222222222222"
 const OLDER_DOC = "33333333-3333-4333-8333-333333333333"
@@ -186,13 +189,11 @@ describe("opening a document from its link", () => {
     ["a direct link", undefined],
     ["the library", [wordView, olderView]],
   ])(
-    "opens an older document from %s on its own editor",
+    "shows the older-format message for an older document from %s",
     async (_from, listed) => {
       const exchanges = stubServer()
       open(`/paper/${OLDER_DOC}`, listed)
-      await waitFor(() =>
-        expect(paperRequests(exchanges)).toContain(`paper/${OLDER_DOC}/pages`)
-      )
+      expect(await screen.findByText(OLDER_FORMAT)).toBeVisible()
       expect(failed(exchanges)).toEqual([])
       expect(paperRequests(exchanges)).not.toContain("reads/paper.read")
       expect(screen.queryByText("Document not found.")).toBeNull()

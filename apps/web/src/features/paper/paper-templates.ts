@@ -74,11 +74,6 @@ export function paperEditedLabel(iso: string, now = Date.now()) {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric" })
 }
 
-export function editorEditedLabel(iso: string, now = Date.now()) {
-  if (paperEditedLabel(iso, now) === "just now") return "Edited just now"
-  return paperEditedLabel(iso, now)
-}
-
 export type PaperSearch = { q?: string }
 
 export function validatePaperSearch(search: object): PaperSearch {

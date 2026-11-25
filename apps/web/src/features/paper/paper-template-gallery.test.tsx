@@ -1,10 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
-import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
-import { blankCv, type PaperPages, type PaperView } from "@workspace/domain"
+import { blankCv, type PaperView } from "@workspace/domain"
 
-import { PaperCvEditor } from "./paper-cv-editor.tsx"
 import { PaperLibrary } from "./paper-library.tsx"
 import { libraryRouter } from "./paper-library.fixtures.tsx"
 import { Dialog, DialogContent } from "@workspace/ui/components/dialog"
@@ -35,12 +33,6 @@ const record: PaperView = {
   sourceFileId: null,
   createdAt: "2026-08-25T12:00:00.000Z",
   updatedAt: "2026-08-25T12:00:00.000Z",
-}
-
-const pages: PaperPages = {
-  docId: record.id,
-  pages: 1,
-  pageChoice: "unset",
 }
 
 const GALLERY_WINDOWS = [
@@ -298,24 +290,5 @@ describe("Paper template gallery", () => {
     expect(screen.getByRole("dialog", { name: "New CV" })).toBeInTheDocument()
     wideDialog()
     library.unmount()
-
-    vi.stubGlobal(
-      "fetch",
-      () =>
-        Promise.resolve(
-          Response.json({ ok: true, data: {} })
-        ) as Promise<Response>
-    )
-    render(
-      <ChatStoreProvider>
-        <PaperCvEditor
-          initial={record}
-          pages={pages}
-          onBack={() => undefined}
-        />
-      </ChatStoreProvider>
-    )
-    fireEvent.click(screen.getByRole("button", { name: "Change template" }))
-    wideDialog()
   })
 })
