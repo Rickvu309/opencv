@@ -30,5 +30,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-share.isolated.test.tsx",
+    "because": "The public share page is deleted; only old block Papers could be shared.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
   }
 ]
