@@ -28,9 +28,6 @@ export const endpoints = {
   chats: "/api/chats",
   chat: (chatId: string) => `/api/chats/${chatId}`,
   chatStop: (chatId: string) => `/api/chats/${chatId}/stop`,
-  activity: (query: URLSearchParams) => `/api/activity?${query}`,
-  activityOfSubject: (subjectId: string) =>
-    `/api/activity?subjectId=${encodeURIComponent(subjectId)}`,
   jobs: "/api/jobs",
   job: (jobId: string) => `/api/jobs/${jobId}`,
   jobsCalendar: (query: URLSearchParams) => `/api/jobs/calendar?${query}`,

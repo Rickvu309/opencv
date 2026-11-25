@@ -1,0 +1,26 @@
+[
+  {
+    "subject": "apps/api/src/scenarios/account.scenario.test.ts",
+    "because": "The receipts scenario reads the activity feed through the read door; another person still sees no receipts of Ada's Job",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/apply-api.test.ts",
+    "because": "The activity read goes through the read door; the test checks its path and body there",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/one-door.test.ts",
+    "because": "The activity feed became a read operation, so its route leaves the waiting list and the cap drops to 15",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  }
+]

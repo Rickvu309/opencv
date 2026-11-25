@@ -150,7 +150,7 @@ describe("a person's activity", () => {
     )
     await ada.undo(starred.activityId)
     const receipts = dataOf<Receipt[]>(
-      await ada.get(`/api/activity?subjectKind=job&subjectId=${job.id}`)
+      await ada.read("activity.list", { subjectKind: "job", subjectId: job.id })
     )
     const summaries = receipts.map((receipt) => receipt.summary)
     expect(summaries).toContain("You added this job from the board")
@@ -168,7 +168,10 @@ describe("a person's activity", () => {
     )
     expect(
       dataOf<Receipt[]>(
-        await grace.get(`/api/activity?subjectKind=job&subjectId=${job.id}`)
+        await grace.read("activity.list", {
+          subjectKind: "job",
+          subjectId: job.id,
+        })
       )
     ).toEqual([])
   })

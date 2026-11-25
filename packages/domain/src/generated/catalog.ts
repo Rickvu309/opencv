@@ -2,6 +2,7 @@ import { operation as account$delete } from "../operations/account/delete/operat
 import { operation as account$requestEmailChange } from "../operations/account/request-email-change/operation.js"
 import { operation as actions$approve } from "../operations/actions/approve/operation.js"
 import { operation as actions$deny } from "../operations/actions/deny/operation.js"
+import { operation as activity$list } from "../operations/activity/list/operation.js"
 import { operation as activity$undo } from "../operations/activity/undo/operation.js"
 import { operation as billing$get } from "../operations/billing/get/operation.js"
 import { operation as chat$appendMessage } from "../operations/chat/append-message/operation.js"
@@ -53,6 +54,7 @@ export const catalog = {
   "account.requestEmailChange": account$requestEmailChange,
   "actions.approve": actions$approve,
   "actions.deny": actions$deny,
+  "activity.list": activity$list,
   "activity.undo": activity$undo,
   "billing.get": billing$get,
   "chat.appendMessage": chat$appendMessage,

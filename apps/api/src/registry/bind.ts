@@ -246,16 +246,11 @@ export type OperationBinding<
     }) &
   (
     | {
-        execute: T["kind"] extends "read"
-          ? (
-              input: import("zod").output<T["input"]>,
-              actor: Actor
-            ) => Promise<R> | R
-          : (
-              input: import("zod").output<T["input"]>,
-              actor: Actor,
-              registry: Registry
-            ) => Promise<R> | R
+        execute: (
+          input: import("zod").output<T["input"]>,
+          actor: Actor,
+          registry: Registry
+        ) => Promise<R> | R
         reviewed?: never
         selected?: never
       }
@@ -307,11 +302,14 @@ export function bindOperation<T extends Operation, R, C, V, S = never>(
   if (operation.kind === "read") {
     const execute = suppliedBinding.execute
     if (!execute) throw new Error("Reads require an execute binding")
+    const run = execute as (
+      input: import("zod").output<T["input"]>,
+      actor: Actor,
+      registry: Registry
+    ) => Promise<R> | R
     const binding = {
-      execute: execute as (
-        input: import("zod").output<T["input"]>,
-        actor: Actor
-      ) => Promise<R> | R,
+      execute: (input: import("zod").output<T["input"]>, actor: Actor) =>
+        run(input, actor, registry),
     }
     registry.addQuery({
       name: operation.name,
