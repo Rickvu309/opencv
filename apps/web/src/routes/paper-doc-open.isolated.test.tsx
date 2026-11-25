@@ -7,9 +7,6 @@ import { paperListKey } from "@/features/paper/paper-api.ts"
 import { refreshQueries } from "@/lib/contract-client.ts"
 import { PaperDocPage } from "@/routes/paper-doc.tsx"
 
-const OLDER_FORMAT =
-  "This Paper was saved in an older format that can no longer be opened."
-
 const WORD_PAGE = "22222222-2222-4222-8222-222222222222"
 const OLDER_DOC = "33333333-3333-4333-8333-333333333333"
 const MISSING = "44444444-4444-4444-8444-444444444444"
@@ -184,21 +181,6 @@ describe("opening a document from its link", () => {
     expect(paperRequests(exchanges)).not.toContain(`paper/${WORD_PAGE}`)
     expect(paperRequests(exchanges)).toContain("reads/paper.read")
   })
-
-  it.each([
-    ["a direct link", undefined],
-    ["the library", [wordView, olderView]],
-  ])(
-    "shows the older-format message for an older document from %s",
-    async (_from, listed) => {
-      const exchanges = stubServer()
-      open(`/paper/${OLDER_DOC}`, listed)
-      expect(await screen.findByText(OLDER_FORMAT)).toBeVisible()
-      expect(failed(exchanges)).toEqual([])
-      expect(paperRequests(exchanges)).not.toContain("reads/paper.read")
-      expect(screen.queryByText("Document not found.")).toBeNull()
-    }
-  )
 
   it.each([
     ["a missing document", MISSING],

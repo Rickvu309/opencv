@@ -105,7 +105,7 @@ it("retries a qualified edit with its exact intent key and input, then invalidat
     .mockImplementation(async () => Response.json({ ok: true, data: {} }))
   vi.stubGlobal("fetch", fetch)
   const client = new QueryClient()
-  const key = qualifiedPaperKey(["paper.read", { view: "info", docId }], {
+  const key = qualifiedPaperKey(["paper.outline", { docId }], {
     ownerId: "owner",
     sessionId: "session",
   })

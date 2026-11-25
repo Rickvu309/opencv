@@ -23,7 +23,7 @@ afterEach(() => {
 })
 
 const paperInfoKey = (docId: string) =>
-  queryKey({ query: "paper.read", input: { view: "info", docId } })
+  queryKey({ query: "paper.outline", input: { docId } })
 
 describe("paper API client", () => {
   it("reads a PDF import's note beside the Word page, and refuses a note inside it", async () => {

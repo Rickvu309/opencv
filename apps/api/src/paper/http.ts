@@ -389,7 +389,7 @@ export function createPaperRoutes(signedIn: SignedIn) {
 
   routes.get("/:id/document", async (c) => {
     const data = await registry.read(
-      "paper.read",
+      catalog["paper.read"].name,
       { view: "info", docId: c.req.param("id"), writer: readWriter(c) },
       person(c.var.userId)
     )

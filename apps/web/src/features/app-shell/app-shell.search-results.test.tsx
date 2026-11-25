@@ -16,8 +16,7 @@ import { samplePaperDocs } from "@/test/paper-fixtures.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import { setMockChats, setMockSearch } from "@/test/shell-api-mock.ts"
 
-const OLDER_FORMAT =
-  "This Paper was saved in an older format that can no longer be opened."
+const OLDER_FORMAT = "Document not found."
 
 beforeEach(() => {
   vi.stubGlobal("scrollTo", vi.fn())

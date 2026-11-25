@@ -3,6 +3,7 @@ import { useNavigate, useRouterState } from "@tanstack/react-router"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   ERROR_CODES,
+  catalog,
   RICH_NATIVE_WRITER,
   paperIdSchema,
   parsePaperId,
@@ -78,13 +79,16 @@ export function PaperDocPage() {
   const document = useQuery({
     queryKey: ready
       ? qualifiedPaperKey(
-          queryKey({ query: "paper.read", input: { view: "info", docId } }),
+          queryKey({
+            query: catalog["paper.read"].name,
+            input: { view: "info", docId },
+          }),
           qualification
         )
       : ["paper-document-unavailable", docId],
     queryFn: ({ signal }) =>
       qualifiedPaperRead(
-        "paper.read",
+        catalog["paper.read"].name,
         endpoints.paperDocument(docId ?? NO_DOC),
         {
           ...qualification,
