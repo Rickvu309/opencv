@@ -10,4 +10,4 @@ public:
     chat-turn.ts,
     chat-views.ts,
   ]
-dependencies: [packages/domain/src/apply]
+dependencies: [packages/domain/src/apply, packages/domain/src/paper-doc]
