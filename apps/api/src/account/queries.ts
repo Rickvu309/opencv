@@ -109,22 +109,6 @@ export function registerAccountQueries(registry: Registry) {
     })
   )
   registry.addQuery(
-    tableQuery("integrations.list", {
-      description: "Read the integrations catalog.",
-      coach: false,
-      step: () => "Read integrations",
-      read: (_input, actor) => listIntegrations(actor.userId),
-    })
-  )
-  registry.addQuery(
-    tableQuery("billing.get", {
-      description: "Read the plan and billing placeholder.",
-      coach: false,
-      step: () => "Read billing",
-      read: (_input, actor) => readBilling(actor.userId),
-    })
-  )
-  registry.addQuery(
     tableQuery("coach.usage", {
       description: "Read Coach usage for the day, session, and week.",
       coach: true,

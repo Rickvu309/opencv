@@ -11,7 +11,8 @@ import {
 } from "@testing-library/react"
 
 import { authClient } from "@/lib/auth-client.ts"
-import { billingKey, profileKey, usageKey } from "@/lib/account-api.ts"
+import { profileKey, usageKey } from "@/lib/account-api.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 import { renderApp, renderPage } from "@/test/render-app.tsx"
 import { AccountSection } from "./account-section.tsx"
 import { SettingsRow } from "./settings-layout.tsx"
@@ -54,7 +55,11 @@ it.each(["language", "time-zone", "start-page", "memory", "profile"])(
 
 it.each([
   { route: "/settings/usage", title: "Usage & limits", key: usageKey() },
-  { route: "/settings/billing", title: "Billing", key: billingKey() },
+  {
+    route: "/settings/billing",
+    title: "Billing",
+    key: catalogClient.key("user_test", "billing.get", {}),
+  },
 ])(
   "keeps $title and Try again on a load failure",
   async ({ route, title, key }) => {

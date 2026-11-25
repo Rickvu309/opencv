@@ -16,7 +16,10 @@ const TOOL_COPY = {
     read: "Looked at your activity",
   },
   [catalog["activity.undo"].name]: { label: "Undo this change" },
-  "billing.get": { label: "Look at your plan", read: "Looked at your plan" },
+  [catalog["billing.get"].name]: {
+    label: "Look at your plan",
+    read: "Looked at your plan",
+  },
   [catalog["chat.appendMessage"].name]: { label: "Save this message" },
   [catalog["chat.create"].name]: { label: "Start a Chat" },
   [catalog["chat.delete"].name]: { label: "Delete this Chat" },
@@ -58,7 +61,7 @@ const TOOL_COPY = {
     read: "Looked at snoozed messages",
   },
   "inbox.updateDraft": { label: "Update your draft" },
-  "integrations.list": {
+  [catalog["integrations.list"].name]: {
     label: "Look at your integrations",
     read: "Looked at your integrations",
   },

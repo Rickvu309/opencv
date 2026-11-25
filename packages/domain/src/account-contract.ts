@@ -40,47 +40,6 @@ const usageSnapshotSchema = z
   })
   .strict()
 
-const integrationStatusSchema = z.enum(["enabled", "disabled", "unavailable"])
-
-const integrationsSchema = z
-  .object({
-    groups: z.array(
-      z
-        .object({
-          id: z.string(),
-          label: z.string(),
-          items: z.array(
-            z
-              .object({
-                id: z.string(),
-                name: z.string(),
-                line: z.string(),
-                status: integrationStatusSchema,
-              })
-              .strict()
-          ),
-        })
-        .strict()
-    ),
-  })
-  .strict()
-
-const billingSchema = z
-  .object({
-    plan: planSchema,
-    free: z.object({ price: z.string(), line: z.string() }).strict(),
-    pro: z
-      .object({
-        price: z.string(),
-        line: z.string(),
-        benefits: z.array(z.string()).readonly(),
-      })
-      .strict(),
-    payment: z.null(),
-    invoices: z.array(z.never()),
-  })
-  .strict()
-
 const activityFeedRowSchema = z
   .object({
     id: z.string(),
@@ -99,11 +58,6 @@ export type ActivityFeedRow = z.output<typeof activityFeedRowSchema>
 
 export const accountQueries = queryContract({
   "profile.get": queryEntry({ input: emptyInput, output: profileSchema }),
-  "integrations.list": queryEntry({
-    input: emptyInput,
-    output: integrationsSchema,
-  }),
-  "billing.get": queryEntry({ input: emptyInput, output: billingSchema }),
   "coach.usage": queryEntry({
     input: emptyInput,
     output: usageSnapshotSchema,

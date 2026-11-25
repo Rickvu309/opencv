@@ -5,6 +5,7 @@ import { implementation as account$requestEmailChange } from "../account/operati
 import { implementation as actions$approve } from "../registry/operations/actions/approve/server.js"
 import { implementation as actions$deny } from "../registry/operations/actions/deny/server.js"
 import { implementation as activity$undo } from "../registry/operations/activity/undo/server.js"
+import { implementation as billing$get } from "../account/operations/billing/get/server.js"
 import { implementation as chat$appendMessage } from "../coach/operations/chat/append-message/server.js"
 import { implementation as chat$create } from "../coach/operations/chat/create/server.js"
 import { implementation as chat$delete } from "../coach/operations/chat/delete/server.js"
@@ -23,6 +24,7 @@ import { implementation as inbox$markDone } from "../inbox/operations/mark-done/
 import { implementation as inbox$scan } from "../inbox/operations/scan/server.js"
 import { implementation as inbox$skip } from "../inbox/operations/skip/server.js"
 import { implementation as inbox$snooze } from "../inbox/operations/snooze/server.js"
+import { implementation as integrations$list } from "../account/operations/integrations/list/server.js"
 import { implementation as job$priorityCounts } from "../job/operations/priority-counts/server.js"
 import { implementation as job$setPriority } from "../job/operations/set-priority/server.js"
 import { implementation as notify$request } from "../account/operations/notify/request/server.js"
@@ -40,6 +42,7 @@ export const implementations = {
   "actions.approve": actions$approve,
   "actions.deny": actions$deny,
   "activity.undo": activity$undo,
+  "billing.get": billing$get,
   "chat.appendMessage": chat$appendMessage,
   "chat.create": chat$create,
   "chat.delete": chat$delete,
@@ -58,6 +61,7 @@ export const implementations = {
   "inbox.scan": inbox$scan,
   "inbox.skip": inbox$skip,
   "inbox.snooze": inbox$snooze,
+  "integrations.list": integrations$list,
   "job.priorityCounts": job$priorityCounts,
   "job.setPriority": job$setPriority,
   "notify.request": notify$request,

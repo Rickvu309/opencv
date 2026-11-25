@@ -1,7 +1,7 @@
 import {
   queries,
   catalog,
-  accountQueries,
+  accountQueries as accountQueryContract,
   personActor,
 } from "@workspace/domain"
 import { eq } from "drizzle-orm"
@@ -12,6 +12,14 @@ import { idempotency, user } from "../db/schema.js"
 import { saveFile } from "../paper/index.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "../install.js"
+
+const accountQueries = {
+  ...accountQueryContract,
+  "integrations.list": {
+    output: catalog["integrations.list"].publicResult,
+  },
+  "billing.get": { output: catalog["billing.get"].publicResult },
+}
 
 const accountCommands = {
   "account.requestEmailChange": {
@@ -109,7 +117,7 @@ describe("an account binding that drifts from the account contract is rejected",
     const coachReads = registered
       .filter((query) => query.coach)
       .map((query) => query.name)
-    for (const name of Object.keys(accountQueries)) {
+    for (const name of Object.keys(accountQueryContract)) {
       expect(Object.keys(queries)).toContain(name)
     }
     expect(coachReads).toContain("profile.get")
