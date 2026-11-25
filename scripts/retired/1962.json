@@ -22,5 +22,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 6
+  },
+  {
+    "subject": "apps/api/src/registry/delegate-reach.test.ts",
+    "because": "paper.restoreDeleted and paper.isDeleted are gone; the closed delegate list names paper.recover, and the trash view is checked under paper.read's own view list.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
