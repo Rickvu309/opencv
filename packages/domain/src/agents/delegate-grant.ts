@@ -3,7 +3,7 @@ import {
   type DelegateDeclaration,
   type DelegateMarker,
   type DelegateResource,
-} from "./operation.js"
+} from "../operation.js"
 import type { ConnectionResources } from "./connections.js"
 
 function delegateScope(declaration: DelegateDeclaration) {
