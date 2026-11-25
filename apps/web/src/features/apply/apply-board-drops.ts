@@ -1,7 +1,4 @@
-import type { QueryClient } from "@tanstack/react-query"
 import type { JobStage, JobView } from "@workspace/domain"
-
-import { refreshQueries } from "@/lib/contract-client.ts"
 
 type Drop = { stage: JobStage; queued: number }
 
@@ -97,11 +94,4 @@ export function dropsReducer(drops: Drops, action: DropsAction): Drops {
     case "landed":
       return clearSettled(drops)
   }
-}
-
-export function refetchBoard(queryClient: QueryClient) {
-  return refreshQueries(queryClient, [
-    { query: "job.list" },
-    { query: "job.get" },
-  ])
 }
