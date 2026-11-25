@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/test/warm-routes.test.ts",
+    "because": "app-shell and router-lazy tests are renamed *.isolated.test.tsx; the check names the new files",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
