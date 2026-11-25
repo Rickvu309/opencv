@@ -6,7 +6,7 @@ import {
   RICH_NATIVE_WRITER,
   parseFileId,
   parsePaperId,
-  storedPaperDocumentSchema,
+  richPaperDocumentSchema,
   type NativeWriter,
   type Actor,
   type FileId,
@@ -138,7 +138,7 @@ export async function createPaper(
 ) {
   const now = new Date()
   const id = createId(now.getTime())
-  const paper = storedPaperDocumentSchema.parse(
+  const paper = richPaperDocumentSchema.parse(
     input.paper ?? emptyRichPaper(input.kind)
   )
   if (paper.kind !== input.kind)

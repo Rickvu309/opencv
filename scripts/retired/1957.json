@@ -1,0 +1,498 @@
+[
+  {
+    "subject": "apps/api/src/coach/chat/receipts-guard.test.ts",
+    "because": "These cases had the Coach read or edit old block Papers, which the API no longer stores; the Coach now refuses them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/coach/context-paper.test.ts",
+    "because": "These cases had the Coach read or edit old block Papers, which the API no longer stores; the Coach now refuses them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/coach/fake-paper-edit.test.ts",
+    "because": "These cases had the Coach read or edit old block Papers, which the API no longer stores; the Coach now refuses them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/api/src/coach/letter-drafting.test.ts",
+    "because": "These cases had the Coach read or edit old block Papers, which the API no longer stores; the Coach now refuses them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  },
+  {
+    "subject": "apps/api/src/coach/native-task.test.ts",
+    "because": "These cases had the Coach read or edit old block Papers, which the API no longer stores; the Coach now refuses them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 27
+  },
+  {
+    "subject": "apps/api/src/coach/worker-approval.test.ts",
+    "because": "These cases had the Coach read or edit old block Papers, which the API no longer stores; the Coach now refuses them.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/api/src/one-door.test.ts",
+    "because": "The /shared and /pages Paper routes are removed with the old block format.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/activity-guard.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 17
+  },
+  {
+    "subject": "apps/api/src/paper/additions.test.ts",
+    "because": "These cases created or read old block Papers; they now seed rich Papers or assert the rich-only behaviour.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/api/src/paper/blank-rich-create.test.ts",
+    "because": "paper.create no longer takes a starting document or a template; every new Paper is a rich blank, and the refusals of both keys are tested.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/client-sync.property-cv.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/client-sync.property-cv-two.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  },
+  {
+    "subject": "apps/api/src/paper/client-sync.review3.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/api/src/paper/client-sync.review5.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/client-sync.review7.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/coach-paper-replay.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "apps/api/src/paper/content-coach-fresh.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "apps/api/src/paper/content-coach-outline.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "apps/api/src/paper/content-coach-probes.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  },
+  {
+    "subject": "apps/api/src/paper/content-coach.property.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/api/src/paper/content-coach-round2.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  },
+  {
+    "subject": "apps/api/src/paper/content-coach-round3.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "apps/api/src/paper/content-coach-undo.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "apps/api/src/paper/content-compact-photo.test.ts",
+    "because": "It drove attaching, undoing or publicly sharing a CV photo on old block Papers, which are removed. Upload, type sniffing, retention while referenced and the sweep keep their cases on rich Papers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/api/src/paper/content-compact.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 33
+  },
+  {
+    "subject": "apps/api/src/paper/content-compact-window.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/api/src/paper/content-isolation.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "apps/api/src/paper/content-merge.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/content-parts.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/content-rich.test.ts",
+    "because": "These cases created or read old block Papers; they now seed rich Papers or assert the rich-only behaviour.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/content-seed.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/content-store.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/api/src/paper/content-sync-dead.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 12
+  },
+  {
+    "subject": "apps/api/src/paper/content-sync.formal.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/api/src/paper/content-sync-guard.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/api/src/paper/content-sync-native-http.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/content-sync-repair.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 16
+  },
+  {
+    "subject": "apps/api/src/paper/letter-start-save.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "apps/api/src/paper/native-admission.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "apps/api/src/paper/page-creators.test.ts",
+    "because": "These cases created or read old block Papers; they now seed rich Papers or assert the rich-only behaviour.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/api/src/paper/photo.copy.test.ts",
+    "because": "It drove attaching, undoing or publicly sharing a CV photo on old block Papers, which are removed. Upload, type sniffing, retention while referenced and the sweep keep their cases on rich Papers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/api/src/paper/photo.delete.test.ts",
+    "because": "It drove attaching, undoing or publicly sharing a CV photo on old block Papers, which are removed. Upload, type sniffing, retention while referenced and the sweep keep their cases on rich Papers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  },
+  {
+    "subject": "apps/api/src/paper/photo-lifetime.formal.test.ts",
+    "because": "It drove attaching, undoing or publicly sharing a CV photo on old block Papers, which are removed. Upload, type sniffing, retention while referenced and the sweep keep their cases on rich Papers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 11
+  },
+  {
+    "subject": "apps/api/src/paper/photo-lifetime.model.formal.test.ts",
+    "because": "It drove attaching, undoing or publicly sharing a CV photo on old block Papers, which are removed. Upload, type sniffing, retention while referenced and the sweep keep their cases on rich Papers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/photo.test.ts",
+    "because": "It drove attaching, undoing or publicly sharing a CV photo on old block Papers, which are removed. Upload, type sniffing, retention while referenced and the sweep keep their cases on rich Papers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 27
+  },
+  {
+    "subject": "apps/api/src/paper/read-paper.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/api/src/paper/reset-paper.test.ts",
+    "because": "These cases created or read old block Papers; they now seed rich Papers or assert the rich-only behaviour.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/share-public.test.ts",
+    "because": "Paper sharing is removed; it served only old block Papers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/api/src/paper/store-rules.test.ts",
+    "because": "It drove the old block Paper storage, sync, Coach edits or compaction, which the API no longer serves. Rich Papers sync through paper.nativeSync, covered by content-rich and the command coverage cases.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/registry/acceptance.test.ts",
+    "because": "These cases drove Paper commands and reads that are removed with the old block format.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/api/src/registry/behavior.test.ts",
+    "because": "These cases drove Paper commands and reads that are removed with the old block format.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/api/src/registry/expect-pending.test.ts",
+    "because": "These cases drove Paper commands and reads that are removed with the old block format.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/registry/paper-contract.test.ts",
+    "because": "These cases drove Paper commands and reads that are removed with the old block format.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/api/src/scenarios/visitor.scenario.test.ts",
+    "because": "Paper sharing is removed; it served only old block Papers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "packages/domain/src/keyword-gap.test.ts",
+    "because": "The keyword gap read is removed with the old block format.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "packages/domain/src/paper-create.test.ts",
+    "because": "paper.create no longer takes a starting document or a template; every new Paper is a rich blank, and the refusals of both keys are tested.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "scripts/guard-ledger/owned-rows.json",
+    "because": "Its proof restored an old store.ts that no longer compiles against the current tree; the reason is recorded on the row.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-coach-basis.json",
+    "because": "It guarded old block Paper code paths that are deleted; the remaining paths keep their rules.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-blank-canvas.test.mjs",
+    "because": "It guarded old block Paper code paths that are deleted; the remaining paths keep their rules.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 9
+  },
+  {
+    "subject": "scripts/paper-coach-proposal.test.mjs",
+    "because": "It guarded old block Paper code paths that are deleted; the remaining paths keep their rules.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-content-isolation.test.mjs",
+    "because": "It guarded old block Paper code paths that are deleted; the remaining paths keep their rules.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 13
+  },
+  {
+    "subject": "scripts/paper-cv-fields.test.mjs",
+    "because": "It guarded old block Paper code paths that are deleted; the remaining paths keep their rules.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

@@ -2,7 +2,7 @@ import {
   ERROR_CODES,
   blankCv,
   blankLetter,
-  storedPaperDocumentSchema,
+  richPaperDocumentSchema,
   parseFileId,
   parsePaperId,
   type PaperView,
@@ -27,7 +27,7 @@ export function needsRichEditor() {
 }
 
 export function tryReadRichPaper(row: PaperRow) {
-  const stored = storedPaperDocumentSchema.safeParse(row.crdtDocument)
+  const stored = richPaperDocumentSchema.safeParse(row.crdtDocument)
   return stored.success && stored.data.kind === row.kind ? stored.data : null
 }
 

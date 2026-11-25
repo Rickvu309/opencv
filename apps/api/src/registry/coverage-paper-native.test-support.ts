@@ -4,6 +4,7 @@ import {
   paperPhotoRef,
   parseUserId,
   RICH_NATIVE_WRITER,
+  type RichPaperDocument,
 } from "@workspace/domain"
 import {
   openRichPaperClient,
@@ -33,7 +34,7 @@ import {
 export function nativePaperCases(tools: CoverageTools): CoverageCase[] {
   const { db, run, userId } = tools
   let document: ReturnType<typeof richPaper> | null = null
-  let client: PaperClient | null = null
+  let client: PaperClient<RichPaperDocument> | null = null
   let docId = ""
   const sync = async (sent: Prepared) =>
     run("paper.nativeSync", {
