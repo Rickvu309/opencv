@@ -57,6 +57,8 @@ export function fail(status: number, code: string, message: string) {
   return Response.json({ ok: false, error: { code, message } }, { status })
 }
 
+export const LETTER_CHAT = "01900000-0000-7000-8000-0000000000c1"
+
 export function installFetch(mode: "tool" | "stop" | "limit") {
   const calls: Call[] = []
   vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
@@ -82,10 +84,11 @@ export function installFetch(mode: "tool" | "stop" | "limit") {
         })
       )
     if (url.includes("/api/commands/chat.create")) {
-      return Promise.resolve(ok(startedChat("chat-1")))
+      return Promise.resolve(ok(startedChat(LETTER_CHAT)))
     }
     if (url.includes("/api/paper/letter-1")) return Promise.resolve(ok(letter))
-    if (url.includes("/stop")) return Promise.resolve(ok({}))
+    if (url.endsWith("/api/commands/coach.stop"))
+      return Promise.resolve(ok({ stopped: true }))
     if (url.includes("/api/reads/coach.usage")) {
       return Promise.resolve(ok(coachUsageSnapshot("2026-10-28T09:00:00.000Z")))
     }

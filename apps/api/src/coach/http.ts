@@ -14,7 +14,6 @@ import {
   type CoachMode,
   type CoachRuntime,
   type Plan,
-  successEnvelope,
 } from "@workspace/domain"
 import type { CoachModel } from "./anthropic-runtime.js"
 import { Hono, type Context } from "hono"
@@ -29,7 +28,6 @@ import { jsonWithStatus } from "../platform/http-json.js"
 import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"
 import { registry } from "../registry/registry.js"
 import { resolveTurnGrounding } from "./context.js"
-import { implementation as stop } from "./operations/stop/server.js"
 import { startCompatibilityTurn } from "./turn-compatibility.js"
 import { runCoachTurn } from "./turn.js"
 import { routeCoachModel } from "./router.js"
@@ -48,26 +46,7 @@ export function createCoachRoutes(options: {
       ? startCompatibilityTurn(c, options.coachCompatibilityMs)
       : startTurn(c, options.coach, options.coachSseHeartbeatMs)
   )
-  routes.post("/:id/stop", stopFromATabOpenedBeforeTheCommandDoor)
   return routes
-}
-
-async function stopFromATabOpenedBeforeTheCommandDoor(
-  c: Context<{ Variables: SignedInVariables }>
-) {
-  const parsed = chatIdSchema.safeParse(c.req.param("id"))
-  if (!parsed.success)
-    return jsonWithStatus(
-      c,
-      errorEnvelope(ERROR_CODES.VALIDATION_ERROR, "Invalid chat id"),
-      httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
-    )
-  const result = await registry.execute({
-    name: stop.operation.name,
-    input: { chatId: parsed.data },
-    actor: personActor(c.var.userId),
-  })
-  return c.json(successEnvelope(result.output))
 }
 
 async function startTurn(
