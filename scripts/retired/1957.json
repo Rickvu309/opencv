@@ -230,5 +230,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/content-rich.test.ts",
+    "because": "These cases created or read old block Papers; they now seed rich Papers or assert the rich-only behaviour.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
   }
 ]
