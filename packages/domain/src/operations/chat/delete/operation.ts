@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { chatDeleteInputSchema, chatResource } from "../../../chat.js"
+import { chatDeleteInputSchema, chatResource } from "../../../coach/chat.js"
 import { defineOperation } from "../../../operation.js"
 
 export const operation = defineOperation({

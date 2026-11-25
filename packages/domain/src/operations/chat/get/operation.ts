@@ -1,6 +1,6 @@
 import { z } from "zod"
-import { chatResource } from "../../../chat.js"
-import { chatDetailSchema } from "../../../chat-views.js"
+import { chatResource } from "../../../coach/chat.js"
+import { chatDetailSchema } from "../../../coach/chat-views.js"
 import { defineOperation } from "../../../operation.js"
 import { chatIdSchema } from "../../../ids.js"
 
