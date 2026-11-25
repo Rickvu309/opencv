@@ -28,8 +28,6 @@ export const endpoints = {
   chats: "/api/chats",
   chat: (chatId: string) => `/api/chats/${chatId}`,
   chatStop: (chatId: string) => `/api/chats/${chatId}/stop`,
-  jobs: "/api/jobs",
-  job: (jobId: string) => `/api/jobs/${jobId}`,
 } as const
 
 export const inboxConnectReadKeyOutsideContract = ["inbox-connect"] as const

@@ -54,7 +54,7 @@ function emptyLists() {
     "fetch",
     async (input: RequestInfo | URL, init?: RequestInit) => {
       const path = new URL(String(input), "http://localhost").pathname
-      if (path === "/api/paper" || path === "/api/jobs")
+      if (path === "/api/paper" || path === "/api/reads/job.list")
         return Response.json({ ok: true, data: [] })
       return (
         (await chatApiFetch(input, init)) ??

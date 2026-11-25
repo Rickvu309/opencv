@@ -1,3 +1,4 @@
+import { vi } from "vitest"
 import type {
   JobDetail,
   JobPreview,
@@ -37,6 +38,7 @@ let failNextNote = false
 let failNextJobUpdate = false
 let refuseNextUndo: string | null = null
 let nextJobUpdate: Promise<void> | null = null
+let failingRead: { name: string; seen: () => void } | null = null
 
 function blankExtra(): Extra {
   return {
@@ -99,6 +101,7 @@ function record(name: string, input: Record<string, unknown>) {
 }
 
 export function resetMockJobs() {
+  failingRead = null
   jobs.splice(0)
   extras.clear()
   posts.splice(0)
@@ -134,6 +137,13 @@ export function deferNextJobUpdate() {
   return () => release()
 }
 
+function jobFieldsOf(job: Record<string, unknown>) {
+  const copy = { ...job }
+  for (const extra of ["note", "checklist", "linked", "activity"])
+    delete copy[extra]
+  return copy as Job
+}
+
 export function setMockJobs(
   next: Array<
     Job & {
@@ -144,7 +154,7 @@ export function setMockJobs(
     }
   >
 ) {
-  jobs.splice(0, jobs.length, ...next.map((job) => ({ ...job })))
+  jobs.splice(0, jobs.length, ...next.map(jobFieldsOf))
   extras.clear()
   for (const job of next) {
     extras.set(job.id, {
@@ -284,14 +294,20 @@ export async function jobApiFetch(
   const jobPath =
     path.startsWith("/api/jobs") ||
     path === "/api/reads/activity.list" ||
+    path === "/api/reads/job.list" ||
+    path === "/api/reads/job.get" ||
     path === "/api/reads/job.calendar" ||
     path === "/api/reads/job.preview" ||
     path.includes("/api/commands/job.") ||
     path.endsWith("/api/commands/activity.undo") ||
     path === "/api/reads/job.priorityCounts"
   if (!jobPath) return null
+  if (failingRead && path === `/api/reads/${failingRead.name}`) {
+    failingRead.seen()
+    return jsonError(500, "INTERNAL", "Request failed")
+  }
 
-  if (method === "GET" && path === "/api/jobs") {
+  if (method === "POST" && path === "/api/reads/job.list") {
     const emptyStoreLeavesShellFavoritesVisible = jobs.length === 0
     if (emptyStoreLeavesShellFavoritesVisible) return null
     return jsonOk(jobs)
@@ -321,9 +337,9 @@ export async function jobApiFetch(
     return jsonOk(jobs.filter((job) => inRange(job, from, to)))
   }
 
-  const one = /^\/api\/jobs\/([^/]+)$/.exec(path)
-  if (method === "GET" && one) {
-    const job = jobs.find((item) => item.id === one[1])
+  if (method === "POST" && path === "/api/reads/job.get") {
+    const { jobId } = readBody(init) as { jobId?: string }
+    const job = jobs.find((item) => item.id === jobId)
     if (!job) return jsonError(404, "NOT_FOUND", "Job not found")
     return jsonOk(detailOf(job))
   }
@@ -553,4 +569,10 @@ function fullPreview(preview: JobPreview) {
     fields:
       preview.status === "filled" ? { description: "", ...fields } : fields,
   }
+}
+
+export function failJobRead(name: "job.list" | "job.get") {
+  const seen = vi.fn()
+  failingRead = { name, seen }
+  return seen
 }

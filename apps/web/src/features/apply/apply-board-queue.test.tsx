@@ -12,7 +12,7 @@ import {
 } from "@/test/apply-jobs-mock.ts"
 import { pathOf } from "@/test/mock-http.ts"
 
-import { jobListKey, listJobs } from "./apply-api.ts"
+import { jobListQuery } from "./apply-api.ts"
 import { ApplyBoard } from "./apply-board.tsx"
 
 type Handlers = {
@@ -90,7 +90,7 @@ function holdMoves() {
 }
 
 function Board({ showClosed = false }: { showClosed?: boolean }) {
-  const query = useQuery({ queryKey: jobListKey(), queryFn: listJobs })
+  const query = useQuery(jobListQuery(""))
   return (
     <ApplyBoard
       jobs={query.data ?? []}
@@ -142,7 +142,9 @@ describe("apply board move queue", () => {
     await drop(junior.id, "applied")
     await waitFor(() => expect(columnOf(container, junior.id)).toBe("applied"))
     await act(async () => {
-      await queryClient.invalidateQueries({ queryKey: jobListKey() })
+      await queryClient.invalidateQueries({
+        queryKey: jobListQuery("").queryKey,
+      })
       await new Promise((resolve) => setTimeout(resolve, 30))
     })
     expect(columnOf(container, junior.id)).toBe("applied")
@@ -163,7 +165,9 @@ describe("apply board move queue", () => {
     await drop(junior.id, "applied")
     await waitFor(() => expect(columnOf(container, junior.id)).toBe("applied"))
     await act(async () => {
-      await queryClient.invalidateQueries({ queryKey: jobListKey() })
+      await queryClient.invalidateQueries({
+        queryKey: jobListQuery("").queryKey,
+      })
       await new Promise((resolve) => setTimeout(resolve, 30))
     })
     await drop(junior.id, "saved")

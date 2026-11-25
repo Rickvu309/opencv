@@ -15,7 +15,8 @@ import {
 } from "@/features/apply/apply-board-empty.tsx"
 import { ApplyCalendar } from "@/features/apply/apply-calendar.tsx"
 import { ApplyList } from "@/features/apply/apply-list.tsx"
-import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
+import { jobListQuery } from "@/features/apply/apply-api.ts"
+import { useOwnerId } from "@/lib/owner-id.ts"
 import { NewJobDialog } from "@/features/apply/apply-new-job-dialog.tsx"
 import { ApplyNextUp } from "@/features/apply/apply-next-up-strip.tsx"
 import { ApplyPeek } from "@/features/apply/apply-peek.tsx"
@@ -120,10 +121,7 @@ export function ApplyPage() {
     company: search.company ?? "",
     location: search.location ?? "",
   }
-  const jobs = useQuery({
-    queryKey: jobListKey(),
-    queryFn: listJobs,
-  })
+  const jobs = useQuery(jobListQuery(useOwnerId()))
   const [{ dialogOpen, dialogStage, showClosed }, dispatch] = useReducer(
     applyReducer,
     initialApplyState

@@ -5,7 +5,6 @@ import { queryContract, queryEntry } from "./contract.js"
 import { accountQueries } from "./account-contract.js"
 import { chatDetailSchema, chatListSchema } from "./chat-views.js"
 import { chatIdSchema } from "./ids.js"
-import { jobQueries } from "./job-contract.js"
 import { paperQueries } from "./paper-contract.js"
 
 const untyped = z.unknown()
@@ -32,7 +31,6 @@ const catalogReads = Object.fromEntries(
 
 export const queries = queryContract({
   ...catalogReads,
-  ...jobQueries,
   ...paperQueries,
   ...accountQueries,
   "chat.list": queryEntry({

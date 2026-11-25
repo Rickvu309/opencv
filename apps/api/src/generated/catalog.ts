@@ -37,6 +37,8 @@ import { implementation as integrations$list } from "../account/operations/integ
 import { implementation as job$addNote } from "../job/operations/add-note/server.js"
 import { implementation as job$calendar } from "../job/operations/calendar/server.js"
 import { implementation as job$delete } from "../job/operations/delete/server.js"
+import { implementation as job$get } from "../job/operations/get/server.js"
+import { implementation as job$list } from "../job/operations/list/server.js"
 import { implementation as job$preview } from "../job/operations/preview/server.js"
 import { implementation as job$priorityCounts } from "../job/operations/priority-counts/server.js"
 import { implementation as job$removeChecklistItem } from "../job/operations/remove-checklist-item/server.js"
@@ -91,6 +93,8 @@ export const implementations = {
   "job.addNote": job$addNote,
   "job.calendar": job$calendar,
   "job.delete": job$delete,
+  "job.get": job$get,
+  "job.list": job$list,
   "job.preview": job$preview,
   "job.priorityCounts": job$priorityCounts,
   "job.removeChecklistItem": job$removeChecklistItem,

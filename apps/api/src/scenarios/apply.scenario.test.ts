@@ -95,7 +95,7 @@ describe("saving a Job", () => {
     const job = await saved(ada)
     expect(job.activityId).toEqual(expect.any(String))
     expect((await ada.undo(String(job.activityId))).status).toBe(200)
-    expect(failureOf(await ada.get(`/api/jobs/${job.id}`)).code).toBe(
+    expect(failureOf(await ada.read("job.get", { jobId: job.id })).code).toBe(
       "NOT_FOUND"
     )
   })
@@ -115,7 +115,7 @@ describe("a Job belongs to one person", () => {
     const ada = await world.person("Ada")
     const grace = await world.person("Grace")
     const job = await saved(ada)
-    expect(failureOf(await grace.get(`/api/jobs/${job.id}`)).code).toBe(
+    expect(failureOf(await grace.read("job.get", { jobId: job.id })).code).toBe(
       "NOT_FOUND"
     )
     expect(
@@ -285,7 +285,7 @@ describe("starring and deleting", () => {
     )
     expect(deleted.id).toBe(job.id)
     expect(deleted.activityId ?? null).toBeNull()
-    expect(failureOf(await ada.get(`/api/jobs/${job.id}`)).code).toBe(
+    expect(failureOf(await ada.read("job.get", { jobId: job.id })).code).toBe(
       "NOT_FOUND"
     )
     expect(await board(ada)).toHaveLength(0)

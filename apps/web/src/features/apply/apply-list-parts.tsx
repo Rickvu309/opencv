@@ -21,6 +21,7 @@ import {
   stageLabel,
 } from "./apply-stages.ts"
 import { prefetchJob } from "./apply-api.ts"
+import { useOwnerId } from "@/lib/owner-id.ts"
 import { FAINT_TEXT } from "./apply-tone.ts"
 import { useChosenTimeZone } from "./apply-time-zone.ts"
 
@@ -95,6 +96,7 @@ export function JobRow({
 }) {
   const zone = useChosenTimeZone()
   const queryClient = useQueryClient()
+  const ownerId = useOwnerId()
   const phrase = rowPhrase(job, zone)
   return (
     <Button
@@ -107,8 +109,8 @@ export function JobRow({
       )}
       aria-label={`${job.title}, ${job.company}`}
       aria-current={current ? "true" : undefined}
-      onPointerDown={() => prefetchJob(queryClient, job.id)}
-      onFocus={() => prefetchJob(queryClient, job.id)}
+      onPointerDown={() => prefetchJob(queryClient, ownerId, job.id)}
+      onFocus={() => prefetchJob(queryClient, ownerId, job.id)}
       onClick={onOpen}
     >
       <span
