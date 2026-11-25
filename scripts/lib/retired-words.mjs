@@ -93,7 +93,7 @@ export const RETIRED = [
         why: "the inbox list response field is named threads",
       },
       {
-        path: /^packages\/domain\/src\/chat-contract\.ts$/,
+        path: /^packages\/domain\/src\/operations\/chat\/set-focus\/operation\.ts$/,
         match: /^thread$/,
         line: /inbox thread/,
         why: "a chat can point at an inbox thread",
