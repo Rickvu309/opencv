@@ -24,11 +24,7 @@ import {
   companyInitials,
   stageLabel,
 } from "@/features/apply/apply-stages.ts"
-import {
-  catalogClient,
-  undoActivity,
-  useRunCommand,
-} from "@/lib/contract-client.ts"
+import { catalogClient, undoActivity } from "@/lib/contract-client.ts"
 
 import { inboxLimitFrom, isCoachLimit } from "./inbox-api.ts"
 import { InboxReaderHeader } from "./inbox-reader-header.tsx"
@@ -75,7 +71,6 @@ export function InboxReader({
       ? detail.draft
       : null
   const queryClient = useQueryClient()
-  const runCommand = useRunCommand()
   const saved = draft?.body ?? ""
   const times = draft?.times ?? []
   const [
@@ -95,7 +90,7 @@ export function InboxReader({
   const me = detail.messages.find((message) => message.direction === "out")
 
   function saveDraft(draftBody: string) {
-    return runCommand("inbox.updateDraft", {
+    return catalogClient.run(queryClient, "inbox.updateDraft", {
       threadId: detail.id,
       body: draftBody,
     })
@@ -334,10 +329,15 @@ export function InboxReader({
                   disabled={busy || limit != null}
                   onClick={() =>
                     run(async () => {
-                      const next = await runCommand("inbox.draftReply", {
-                        threadId: detail.id,
-                        hint: "another time",
-                      })
+                      const next = await catalogClient.run(
+                        queryClient,
+                        "inbox.draftReply",
+                        {
+                          threadId: detail.id,
+                          hint: "another time",
+                        }
+                      )
+                      if ("pending" in next) return
                       dispatch({ type: "reply_suggested", body: next.body })
                     })
                   }
@@ -387,7 +387,9 @@ export function InboxReader({
                         await saveDraft(body)
                         dispatch({ type: "draft_saved", body, receivedBody })
                       }
-                      await runCommand("inbox.send", { threadId: detail.id })
+                      await catalogClient.run(queryClient, "inbox.send", {
+                        threadId: detail.id,
+                      })
                       dispatch({ type: "reply_sent", body })
                       toast("Reply sent")
                     })
@@ -405,10 +407,14 @@ export function InboxReader({
                       run(async () => {
                         const start = times[selected]
                         if (!start) return
-                        await runCommand("inbox.addToCalendar", {
-                          threadId: detail.id,
-                          start,
-                        })
+                        await catalogClient.run(
+                          queryClient,
+                          "inbox.addToCalendar",
+                          {
+                            threadId: detail.id,
+                            start,
+                          }
+                        )
                         toast("Added to calendar")
                       })
                     }

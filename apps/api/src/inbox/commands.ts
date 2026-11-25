@@ -1,50 +1,12 @@
-import { inboxContract } from "@workspace/domain"
-
-import { bindCommands, tableQuery } from "../registry/bind.js"
+import { tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
-import { draftWithHint } from "./draft-coach.js"
-import {
-  addToCalendar,
-  fixtureDraft,
-  readInbox,
-  readSnoozedInbox,
-  readInboxThread,
-  sendReply,
-  updateDraft,
-} from "./store.js"
+import { readInbox, readSnoozedInbox, readInboxThread } from "./store.js"
 
 const registeredOn = new WeakSet<Registry>()
 
 export function registerInbox(registry: Registry) {
   if (registeredOn.has(registry)) return
   registeredOn.add(registry)
-
-  bindCommands(registry, inboxContract, {
-    "inbox.draftReply": {
-      handler: (input, actor) =>
-        input.hint
-          ? draftWithHint(registry, actor, input.threadId, input.hint)
-          : fixtureDraft(actor, input.threadId),
-      reversal: () => null,
-      activity: () => null,
-    },
-    "inbox.updateDraft": {
-      handler: (input, actor) => updateDraft(actor, input.threadId, input.body),
-      reversal: () => null,
-      activity: () => null,
-    },
-    "inbox.send": {
-      handler: (input, actor) => sendReply(actor, input.threadId),
-      reversal: () => null,
-      activity: () => null,
-    },
-    "inbox.addToCalendar": {
-      handler: (input, actor) =>
-        addToCalendar(actor, input.threadId, input.start),
-      reversal: () => null,
-      activity: () => null,
-    },
-  })
 
   registry.addQuery(
     tableQuery("inbox.list", {
