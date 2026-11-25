@@ -1,5 +1,4 @@
 import {
-  catalog,
   ERROR_CODES,
   errorEnvelope,
   httpStatusForError,
@@ -22,19 +21,6 @@ import { exportAccountArchive } from "./queries.js"
 function sessionApp(signedIn: SignedIn) {
   const routes = new Hono<{ Variables: SignedInVariables }>()
   routes.use("*", signedIn)
-  return routes
-}
-
-export function createProfileRoutes(signedIn: SignedIn) {
-  const routes = sessionApp(signedIn)
-  routes.get("/", async (c) => {
-    const data = await registry.read(
-      catalog["profile.get"].name,
-      {},
-      personActor(c.var.userId)
-    )
-    return c.json(successEnvelope(data))
-  })
   return routes
 }
 

@@ -14,4 +14,4 @@ export {
   writeProfileDefaults,
 } from "./store.js"
 export { exportDownload } from "./export-download.js"
-export { createAccountRoutes, createProfileRoutes } from "./http.js"
+export { createAccountRoutes } from "./http.js"

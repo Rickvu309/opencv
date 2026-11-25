@@ -305,7 +305,6 @@ export const ROUTE_CASES: readonly RouteCase[] = [
   get("/api/jobs/:id", job),
   get("/api/inbox/connect"),
   get("/api/inbox/callback"),
-  get("/api/profile"),
   postForm("/api/account/photo", () => pngUpload),
   get("/api/account/export"),
   mcpCase,
