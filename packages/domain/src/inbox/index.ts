@@ -1,7 +1,7 @@
 import { z } from "zod"
 
-import { jobStageSchema } from "./job.js"
-import type { ResourceRef } from "./resources.js"
+import { jobStageSchema } from "../job.js"
+import type { ResourceRef } from "../resources.js"
 
 export type MailThread = {
   id: string

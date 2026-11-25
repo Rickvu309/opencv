@@ -1,6 +1,6 @@
 import { z } from "zod"
 import { profileResource } from "../../../account.js"
-import { emptyInboxInput, inboxThreadResource } from "../../../inbox.js"
+import { emptyInboxInput, inboxThreadResource } from "../../../inbox/index.js"
 import { defineOperation } from "../../../operation.js"
 
 export const operation = defineOperation({
