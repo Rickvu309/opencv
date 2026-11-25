@@ -41,11 +41,11 @@ export default defineConfig(({ mode }) => {
         ),
         "@workspace/domain/internal/paper-page-scale": path.resolve(
           __dirname,
-          "../../packages/domain/src/paper-page-scale.ts"
+          "../../packages/domain/src/paper-doc/paper-page-scale.ts"
         ),
         "@workspace/domain/internal/paper-presentation": path.resolve(
           __dirname,
-          "../../packages/domain/src/paper-presentation.ts"
+          "../../packages/domain/src/paper-doc/paper-presentation.ts"
         ),
         "@": path.resolve(__dirname, "./src"),
         "@workspace/domain": path.resolve(

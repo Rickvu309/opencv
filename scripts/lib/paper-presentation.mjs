@@ -116,7 +116,9 @@ export function detect(text, path) {
     const internal = aliases.findIndex(
       (alias) =>
         alias.name === "@workspace/domain/internal/paper-presentation" &&
-        alias.value.includes("packages/domain/src/paper-presentation.ts")
+        alias.value.includes(
+          "packages/domain/src/paper-doc/paper-presentation.ts"
+        )
     )
     if (root >= 0 && (internal < 0 || internal > root))
       hits.push(

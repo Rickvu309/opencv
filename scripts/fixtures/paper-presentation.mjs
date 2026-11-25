@@ -55,7 +55,7 @@ export const clean = [
   },
   {
     path: "apps/web/vite.config.ts",
-    text: 'const alias = { "@workspace/domain/internal/paper-presentation": path.resolve("packages/domain/src/paper-presentation.ts"), "@workspace/domain": path.resolve("packages/domain/src/index.ts") }',
+    text: 'const alias = { "@workspace/domain/internal/paper-presentation": path.resolve("packages/domain/src/paper-doc/paper-presentation.ts"), "@workspace/domain": path.resolve("packages/domain/src/index.ts") }',
   },
   {
     path: "packages/paper-crdt/src/stored-document.ts",
@@ -134,7 +134,7 @@ export const clean = [
     text: 'import { validatePresentationPatch } from "@workspace/domain/internal/paper-presentation"',
   },
   {
-    path: "packages/domain/src/paper-presentation.ts",
+    path: "packages/domain/src/paper-doc/paper-presentation.ts",
     text: 'export { ok } from "./paper-doc/presentation-values.js"',
   },
   {
@@ -259,7 +259,7 @@ export const mistakes = [
   },
   {
     path: "apps/web/vite.config.ts",
-    text: 'const alias = { "@workspace/domain": path.resolve("packages/domain/src/index.ts"), "@workspace/domain/internal/paper-presentation": path.resolve("packages/domain/src/paper-presentation.ts") }',
+    text: 'const alias = { "@workspace/domain": path.resolve("packages/domain/src/index.ts"), "@workspace/domain/internal/paper-presentation": path.resolve("packages/domain/src/paper-doc/paper-presentation.ts") }',
   },
   {
     path: "packages/paper-crdt/src/stored-document.ts",
