@@ -19,6 +19,10 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     .list()
     .commands.find((command) => command.name === "paper.import")
   if (!paperImport) throw new Error("Missing Paper import command")
+  const paperUpdate = registry
+    .list()
+    .commands.find((command) => command.name === "paper.update")
+  if (!paperUpdate) throw new Error("Missing Paper update command")
   let importStage = ""
   let mintedDocId = ""
   let mintedParagraph = ""
@@ -75,7 +79,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "paper.update",
+      name: paperUpdate.name,
       arrange: async () => {
         const paper = await run("paper.create", {
           kind: "cv",
@@ -84,7 +88,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         ctx.docId = idOf(paper.output)
       },
       act: () =>
-        run("paper.update", {
+        run(paperUpdate.name, {
           docId: ctx.docId,
           writer: RICH_NATIVE_WRITER,
           patch: { name: "Renamed CV", isFavorite: true, status: "ready" },
@@ -101,7 +105,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         expect(flag(first, "isFavorite")).toBe(true)
         expect(text(first, "status")).toBe("ready")
         const beforeUpdatedAt = text(first, "updatedAt")
-        const unfavorite = await run("paper.update", {
+        const unfavorite = await run(paperUpdate.name, {
           docId: ctx.docId,
           writer: RICH_NATIVE_WRITER,
           patch: { isFavorite: false },
