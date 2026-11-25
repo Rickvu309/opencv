@@ -27,7 +27,6 @@ export const endpoints = {
   letterAttachment: "/api/paper/letter-attachment",
   chats: "/api/chats",
   chat: (chatId: string) => `/api/chats/${chatId}`,
-  chatStop: (chatId: string) => `/api/chats/${chatId}/stop`,
 } as const
 
 export const inboxConnectReadKeyOutsideContract = ["inbox-connect"] as const

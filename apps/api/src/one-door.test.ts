@@ -48,7 +48,6 @@ const waitingToBecomeOperations = [
   "GET /api/paper/packages",
   "GET /api/paper/packages/:docId/read",
   "GET /api/profile",
-  "POST /api/chats/:id/stop",
 ]
 
 async function servedRoutes() {
@@ -88,6 +87,6 @@ describe("every change and read of product data goes through an operation", () =
   })
 
   it("has no more routes waiting to become operations than it had", () => {
-    expect(waitingToBecomeOperations.length).toBeLessThanOrEqual(13)
+    expect(waitingToBecomeOperations.length).toBeLessThanOrEqual(12)
   })
 })
