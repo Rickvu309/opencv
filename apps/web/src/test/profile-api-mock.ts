@@ -192,7 +192,7 @@ export function getMockCoachMode() {
 export function handlesProfileRequest(input: RequestInfo | URL) {
   const path = pathOf(input)
   return (
-    path === "/api/profile" ||
+    path === "/api/reads/profile.get" ||
     path === "/api/commands/profile.markWelcomed" ||
     path === "/api/commands/profile.update" ||
     path === "/api/commands/account.requestEmailChange" ||
@@ -348,7 +348,7 @@ export async function profileApiFetch(
   paths.push(path)
   const method = (init?.method ?? "GET").toUpperCase()
 
-  if (method === "GET" && path === "/api/profile") {
+  if (method === "POST" && path === "/api/reads/profile.get") {
     if (profileGate) await profileGate
     return jsonOk(profilePayload())
   }

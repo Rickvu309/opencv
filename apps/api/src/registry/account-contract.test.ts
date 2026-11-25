@@ -1,9 +1,4 @@
-import {
-  queries,
-  catalog,
-  accountQueries as accountQueryContract,
-  personActor,
-} from "@workspace/domain"
+import { catalog, personActor } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
@@ -14,7 +9,7 @@ import { createMigratedTestDb } from "../test/harness.js"
 import { installRegistry } from "../install.js"
 
 const accountQueries = {
-  ...accountQueryContract,
+  "profile.get": { output: catalog["profile.get"].publicResult },
   "integrations.list": {
     output: catalog["integrations.list"].publicResult,
   },
@@ -119,9 +114,6 @@ describe("an account binding that drifts from the account contract is rejected",
     const coachReads = registered
       .filter((query) => query.coach)
       .map((query) => query.name)
-    for (const name of Object.keys(accountQueryContract)) {
-      expect(Object.keys(queries)).toContain(name)
-    }
     expect(coachReads).toContain("profile.get")
     expect(coachReads).toContain("coach.usage")
     for (const name of ["integrations.list", "billing.get", "activity.list"]) {

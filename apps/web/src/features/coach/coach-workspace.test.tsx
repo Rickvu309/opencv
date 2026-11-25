@@ -536,7 +536,10 @@ describe("Coach workspace", () => {
               },
             })
           else
-            client.setQueryData(profileKey(), { ...profile, agentChat: false })
+            client.setQueryData(profileKey(""), {
+              ...profile,
+              agentChat: false,
+            })
         })
         await waitFor(() => {
           expect(

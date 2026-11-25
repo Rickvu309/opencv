@@ -85,7 +85,7 @@ it.each([
 it("keeps Name focusable during a save without submitting another change", async () => {
   const { queryClient } = renderApp("/settings/account")
   await screen.findByRole("textbox", { name: "Name" })
-  const profile = queryClient.getQueryData<Profile>(profileKey())
+  const profile = queryClient.getQueryData<Profile>(profileKey("user_test"))
   if (!profile) throw new Error("Account must have a profile")
   const savedProfile = profile
   cleanup()
