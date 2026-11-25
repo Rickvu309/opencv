@@ -27,6 +27,14 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     .list()
     .commands.find((command) => command.name === "paper.recover")
   if (!paperRecover) throw new Error("Missing Paper recover command")
+  const paperDelete = registry
+    .list()
+    .commands.find((command) => command.name === "paper.delete")
+  if (!paperDelete) throw new Error("Missing Paper delete command")
+  const paperDeleteFile = registry
+    .list()
+    .commands.find((command) => command.name === "paper.deleteFile")
+  if (!paperDeleteFile) throw new Error("Missing Paper file delete command")
   let importStage = ""
   let mintedDocId = ""
   let mintedParagraph = ""
@@ -161,7 +169,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "paper.delete",
+      name: paperDelete.name,
       arrange: async () => {
         const paper = await run("paper.create", {
           kind: "cv",
@@ -169,7 +177,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         })
         ctx.docId = idOf(paper.output)
       },
-      act: () => run("paper.delete", { docId: ctx.docId }),
+      act: () => run(paperDelete.name, { docId: ctx.docId }),
       assert: async () => {
         await gone(paperOf(ctx.docId))
       },
@@ -181,7 +189,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         const docId = text(minted.output, "docId")
         if (!docId) throw new Error("missing minted page")
         ctx.docId = docId
-        await run("paper.delete", { docId })
+        await run(paperDelete.name, { docId })
       },
       act: () => run(paperRecover.name, { docId: ctx.docId }),
       assert: async (result) => {
@@ -232,7 +240,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "paper.deleteFile",
+      name: paperDeleteFile.name,
       arrange: async () => {
         const file = await saveFile({
           userId: parseUserId(userId),
@@ -243,7 +251,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         })
         ctx.fileId = file.id
       },
-      act: () => run("paper.deleteFile", { fileId: ctx.fileId }),
+      act: () => run(paperDeleteFile.name, { fileId: ctx.fileId }),
       assert: async () => {
         await expect(
           registry.read("file.get", { fileId: ctx.fileId }, personActor(userId))

@@ -3,7 +3,11 @@ import { parsePaperId } from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { apiBaseUrl } from "@/lib/api-url.ts"
-import { queryKey, runContractCommand } from "@/lib/contract-client.ts"
+import {
+  catalogClient,
+  queryKey,
+  runContractCommand,
+} from "@/lib/contract-client.ts"
 
 import {
   importPaperFile,
@@ -129,7 +133,7 @@ describe("paper commands through the contract client", () => {
       queryClient.setQueryData(key, { stale: true })
     }
 
-    await runContractCommand(queryClient, "paper.delete", { docId })
+    await catalogClient.run(queryClient, "paper.delete", { docId })
 
     const call = fetchMock.mock.calls[0] ?? []
     expect(String(call[0])).toBe(`${apiBaseUrl}/api/commands/paper.delete`)
@@ -166,7 +170,7 @@ describe("paper commands through the contract client", () => {
     const queryClient = new QueryClient()
     const input = { docId }
 
-    await runContractCommand(queryClient, "paper.delete", input)
+    await catalogClient.run(queryClient, "paper.delete", input)
     await runContractCommand(queryClient, "paper.save", {
       docId,
       epoch: 0,

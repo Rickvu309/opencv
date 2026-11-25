@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { fileIdSchema, paperIdSchema } from "../ids.js"
+import { paperIdSchema } from "../ids.js"
 
 export const LETTER_ATTACHMENT_TEXT_MAX = 6000
 
@@ -54,12 +54,6 @@ const paperRenameDocInputSchema = z
   })
   .strict()
 
-const paperDeleteDocInputSchema = z
-  .object({
-    docId: paperDocIdSchema,
-  })
-  .strict()
-
 export type PaperContentKind = z.infer<typeof paperContentKindSchema>
 
 export const PAPER_TEMPLATE_IDS = [
@@ -92,14 +86,6 @@ export const paperRenameInputSchema = paperRenameDocInputSchema
 export const paperDuplicateInputSchema = z
   .object({
     docId: paperDocIdSchema,
-  })
-  .strict()
-
-export const paperDeleteInputSchema = paperDeleteDocInputSchema
-
-export const paperDeleteFileInputSchema = z
-  .object({
-    fileId: fileIdSchema,
   })
   .strict()
 

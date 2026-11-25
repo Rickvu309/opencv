@@ -18,14 +18,7 @@ import { oldEditorUndoReasons } from "./undo-guard.js"
 import { syncContent } from "./content-store.js"
 import { readOutline } from "./outline.js"
 import { coachPaperList } from "./coach-word-pages.js"
-import {
-  createPaper,
-  deleteFile,
-  deletePaper,
-  listFiles,
-  listPapers,
-  readFileMeta,
-} from "./store.js"
+import { createPaper, listFiles, listPapers, readFileMeta } from "./store.js"
 
 const noReversal = () => null
 const noActivity = () => null
@@ -74,7 +67,7 @@ export function registerPaper(registry: Registry) {
         return created
       },
       reversal: (_input, output) => ({
-        command: "paper.delete",
+        command: catalog["paper.delete"].name,
         input: { docId: output.id },
       }),
       activity: (_input, output) => ({
@@ -108,35 +101,6 @@ export function registerPaper(registry: Registry) {
           stateVector: encoded(reply.stateVector),
         }
       },
-      reversal: noReversal,
-      activity: noActivity,
-    },
-    "paper.delete": {
-      handler: (input, actor) => deletePaper(actor, input.docId),
-      reversal: (input, output) =>
-        output.format === "word"
-          ? {
-              command: "paper.recover",
-              input: { docId: input.docId },
-              expect: {
-                query: "paper.read",
-                input: { view: "trash", docId: input.docId },
-                matches: { deleted: true },
-                skipped: "This page is already back, so Undo was skipped",
-              },
-            }
-          : null,
-      activity: (_input, output) =>
-        output.format === "word"
-          ? {
-              subjectKind: "paper",
-              subjectId: output.id,
-              summary: `Deleted ${output.name ?? "a Word page"}`,
-            }
-          : null,
-    },
-    "paper.deleteFile": {
-      handler: (input, actor) => deleteFile(actor, input.fileId),
       reversal: noReversal,
       activity: noActivity,
     },

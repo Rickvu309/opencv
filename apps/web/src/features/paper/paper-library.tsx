@@ -202,7 +202,7 @@ export function PaperLibrary({
     try {
       const created = await importPaperFile(file, request.signal)
       if (request.signal.aborted) {
-        await discardCancelledImport(run, created.docId)
+        await discardCancelledImport(queryClient, created.docId)
         return
       }
       dispatch({ type: "import_ended" })
@@ -232,7 +232,7 @@ export function PaperLibrary({
       try {
         const created = await importPaperFile(file, request.signal)
         if (request.signal.aborted) {
-          await discardCancelledImport(run, created.docId)
+          await discardCancelledImport(queryClient, created.docId)
           return
         }
         added += 1
@@ -335,9 +335,11 @@ export function PaperLibrary({
     if (!mode || mode.type !== "delete") return
     const name = mode.doc.name
     try {
-      const deleted = await run("paper.delete", { docId: mode.doc.id })
+      const deleted = await catalogClient.run(queryClient, "paper.delete", {
+        docId: mode.doc.id,
+      })
       closeDialog()
-      if (deleted.format === "word")
+      if (!("pending" in deleted) && deleted.format === "word")
         await rememberUndo(deleted.id, `Deleted ${name}`)
       else toast(`Deleted ${name}`)
     } catch (err) {
@@ -348,7 +350,9 @@ export function PaperLibrary({
   async function confirmDeleteFile() {
     if (!mode || mode.type !== "delete-file") return
     try {
-      await run("paper.deleteFile", { fileId: mode.file.id })
+      await catalogClient.run(queryClient, "paper.deleteFile", {
+        fileId: mode.file.id,
+      })
       toast(`Deleted ${mode.file.name}`)
       closeDialog()
     } catch (err) {

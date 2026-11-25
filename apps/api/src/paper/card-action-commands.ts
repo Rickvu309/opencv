@@ -69,7 +69,7 @@ export function registerDuplicate(
       idempotency: "keyed",
       prepare: (input, actor) => planDuplicate(actor, input.docId),
       reversal: (_input, output: { id: PaperId; name: string }) => ({
-        command: "paper.delete",
+        command: catalog["paper.delete"].name,
         input: { docId: output.id },
       }),
       step: entry.step,
