@@ -1,0 +1,18 @@
+[
+  {
+    "subject": "apps/api/src/one-door.test.ts",
+    "because": "The three Inbox reads became read operations, so their routes leave the waiting list and the cap drops from 24 to 21",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/api/src/scenarios/inbox.scenario.test.ts",
+    "because": "The scenarios read Inbox through the read door; another person still cannot open Ada's email, checked on the read door's reply",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

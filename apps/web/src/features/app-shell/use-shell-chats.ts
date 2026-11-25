@@ -1,13 +1,15 @@
 import { useQuery } from "@tanstack/react-query"
+import { useRouterState } from "@tanstack/react-router"
 
 import {
   inboxUnreadCount,
   starredJobs,
 } from "@/features/app-shell/shell-api.ts"
-import { inboxListKey, fetchInbox } from "@/features/inbox/inbox-api.ts"
 import { jobListKey, listJobs } from "@/features/apply/apply-api.ts"
 import { chatListKey, listChats } from "@/features/coach/chat-api.ts"
 import { listPaper, paperListKey } from "@/features/paper/paper-api.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
+import { ownerIdFromRouteMatches } from "@/lib/owner-id.ts"
 import { isSurfaceShown } from "@/lib/product-paths.ts"
 
 export function useShellChats() {
@@ -42,9 +44,11 @@ export function useShellFavorites() {
 }
 
 export function useInboxUnread() {
+  const ownerId = useRouterState({
+    select: (state) => ownerIdFromRouteMatches(state.matches),
+  })
   return useQuery({
-    queryKey: inboxListKey(),
-    queryFn: fetchInbox,
+    ...catalogClient.options(ownerId, "inbox.list", {}),
     select: inboxUnreadCount,
     enabled: isSurfaceShown("inbox"),
   })
