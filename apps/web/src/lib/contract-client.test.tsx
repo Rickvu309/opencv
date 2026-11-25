@@ -68,12 +68,12 @@ const isStale = (queryClient: QueryClient, key: readonly unknown[]) =>
 describe("runContractCommand", () => {
   afterEach(() => vi.unstubAllGlobals())
 
-  it("refreshes the reads paper.create invalidates and nothing else", async () => {
+  it("refreshes the reads paper.start invalidates and nothing else", async () => {
     const queryClient = new QueryClient()
     const keys = seed(queryClient)
     stubFetch({ id: DOC })
 
-    await runContractCommand(queryClient, "paper.create", { kind: "cv" })
+    await runContractCommand(queryClient, "paper.start", { kind: "cv" })
 
     expect(isStale(queryClient, keys.list)).toBe(true)
     expect(isStale(queryClient, keys.mine)).toBe(true)
@@ -88,8 +88,8 @@ describe("runContractCommand", () => {
     const bodies = stubFetch({ id: JOB })
     const input = { kind: "cv" } as const
 
-    await runContractCommand(queryClient, "paper.create", input)
-    await runContractCommand(queryClient, "paper.create", input)
+    await runContractCommand(queryClient, "paper.start", input)
+    await runContractCommand(queryClient, "paper.start", input)
 
     const [first, second] = bodies as {
       input: unknown
@@ -110,7 +110,7 @@ describe("runContractCommand", () => {
       update: "",
       stateVector: "",
     })
-    await runContractCommand(queryClient, "paper.create", { kind: "cv" })
+    await runContractCommand(queryClient, "paper.start", { kind: "cv" })
 
     expect(bodies[0]).not.toHaveProperty("idempotencyKey")
     expect(bodies[1]).toHaveProperty("idempotencyKey")
@@ -127,7 +127,7 @@ describe("runContractCommand", () => {
     )
 
     await expect(
-      runContractCommand(queryClient, "paper.create", { kind: "cv" })
+      runContractCommand(queryClient, "paper.start", { kind: "cv" })
     ).rejects.toThrow()
 
     expect(isStale(queryClient, keys.list)).toBe(false)

@@ -13,6 +13,9 @@ import { createMigratedTestDb } from "../test/harness.js"
 import { richPaper } from "../test/rich-paper.js"
 import { seedColumns } from "./content-document.js"
 import { png } from "./photo.fixtures.js"
+import { bindOperation } from "../registry/bind.js"
+import { implementation as createPaper } from "./operations/create/server.js"
+import { implementation as duplicatePaper } from "./operations/duplicate/server.js"
 import { registerPaper } from "./index.js"
 import { saveFile } from "./store.js"
 
@@ -34,6 +37,8 @@ beforeAll(async () => {
   })
   registry = new Registry()
   registerPaper(registry)
+  bindOperation(registry, createPaper)
+  bindOperation(registry, duplicatePaper)
 })
 
 afterAll(async () => {

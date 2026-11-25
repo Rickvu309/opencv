@@ -8,7 +8,6 @@
     "apps/api/src/registry/registry.ts",
     "apps/api/src/registry/activity-lock.ts",
     "apps/api/src/registry/expectation.ts",
-    "apps/api/src/registry/expect-pending.ts",
     "apps/api/src/registry/replay.ts"
   ],
   "sync": "f8167a13418e8167eedde62be48f1d01cbee16d5"

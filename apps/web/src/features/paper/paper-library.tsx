@@ -2,6 +2,7 @@ import { useEffect, useReducer, useRef, type DragEvent } from "react"
 import { Plus } from "lucide-react"
 import { useQueryClient } from "@tanstack/react-query"
 import {
+  NATIVE_WRITER,
   RICH_NATIVE_WRITER,
   paperDocNameSchema,
   type PaperFile,
@@ -20,11 +21,7 @@ import {
   DialogTitle,
 } from "@workspace/ui/components/dialog"
 
-import {
-  catalogClient,
-  undoActivity,
-  useRunCommand,
-} from "@/lib/contract-client.ts"
+import { catalogClient, undoActivity } from "@/lib/contract-client.ts"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 import { listJobs } from "@/features/apply/apply-api.ts"
 
@@ -94,7 +91,6 @@ export function PaperLibrary({
   query: string
   onQueryChange: (query: string) => void
 }) {
-  const run = useRunCommand()
   const queryClient = useQueryClient()
   const importRef = useRef<HTMLInputElement>(null)
   const newButtonRef = useRef<HTMLButtonElement>(null)
@@ -258,7 +254,7 @@ export function PaperLibrary({
     if (creatingBlank) return
     dispatch({ type: "blank_started" })
     try {
-      const id = await openBlankPage(run, "cv")
+      const id = await openBlankPage(queryClient, "cv")
       dispatch({ type: "import_ended" })
       onOpen(id)
     } catch (err) {
@@ -362,11 +358,12 @@ export function PaperLibrary({
 
   async function duplicate(doc: PaperView) {
     try {
-      const copy = await run("paper.duplicate", {
+      const copy = await catalogClient.run(queryClient, "paper.duplicate", {
         docId: doc.id,
-        ...(doc.format === "rich" ? { writer: RICH_NATIVE_WRITER } : {}),
+        writer: doc.format === "rich" ? RICH_NATIVE_WRITER : NATIVE_WRITER,
       })
-      await rememberUndo(copy.id, `Duplicated ${doc.name}`)
+      if (!("pending" in copy))
+        await rememberUndo(copy.id, `Duplicated ${doc.name}`)
     } catch (err) {
       toast(messageOf(err, "Could not duplicate. Try again."))
     }

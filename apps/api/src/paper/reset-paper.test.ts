@@ -332,7 +332,7 @@ describe("reset paper rows", () => {
         expect(revert).toMatchObject({ reversible: false, undoneAt: null })
         expect(created).toMatchObject({
           command: "paper.create",
-          reversible: true,
+          reversible: false,
           undoneAt: null,
         })
         await expect(registry.undo(userId, revertId)).rejects.toMatchObject({
@@ -342,8 +342,9 @@ describe("reset paper rows", () => {
         await expect(
           registry.undo(userId, createIdForUndo)
         ).rejects.toMatchObject({
-          code: "NOT_FOUND",
-          message: "Document not found",
+          code: "CONFLICT",
+          message:
+            "This Paper was renamed or deleted after it was made, so Undo was skipped",
         })
         const afterUndo = await readCounts()
         expect(afterUndo).toEqual(after.counts)
@@ -351,7 +352,7 @@ describe("reset paper rows", () => {
         const stillThere = (await readFeed()).find(
           (row) => row.id === createIdForUndo
         )
-        expect(stillThere).toMatchObject({ undoneAt: null, reversible: true })
+        expect(stillThere).toMatchObject({ undoneAt: null, reversible: false })
         console.log(
           JSON.stringify({
             before,

@@ -83,12 +83,6 @@ export type PaperStoredKind = z.infer<typeof paperStoredKindSchema>
 
 export const paperRenameInputSchema = paperRenameDocInputSchema
 
-export const paperDuplicateInputSchema = z
-  .object({
-    docId: paperDocIdSchema,
-  })
-  .strict()
-
 export const paperPhotoValueSchema = z
   .string()
   .refine(

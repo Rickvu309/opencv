@@ -22,10 +22,6 @@ import {
 import type { catalog } from "@workspace/domain"
 import type { ZodType } from "zod"
 
-import {
-  REVERSAL_EXPECT_PENDING,
-  type ReversalExpectPending,
-} from "./expect-pending.js"
 import type { Registry } from "./registry.js"
 import type { ProposalBasis } from "./registry-types.js"
 import {
@@ -139,12 +135,7 @@ function boundActivity<I, R>(
   return activity
 }
 
-type ReversalOf<
-  C extends CommandContract,
-  N extends keyof C & string,
-> = N extends ReversalExpectPending
-  ? AnyReversalCall<C> | null
-  : GuardedReversal<C> | null
+type ReversalOf<C extends CommandContract> = GuardedReversal<C> | null
 
 type Binding<C extends CommandContract, N extends keyof C & string> = {
   handler: (
@@ -154,7 +145,7 @@ type Binding<C extends CommandContract, N extends keyof C & string> = {
   reversal: (
     input: CommandInput<C, N>,
     output: CommandOutput<C, N>
-  ) => ReversalOf<C, N>
+  ) => ReversalOf<C>
   activity: (
     input: CommandInput<C, N>,
     output: CommandOutput<C, N>,
@@ -247,19 +238,25 @@ export type OperationBinding<
       activity: ActivityBinding<import("zod").output<T["input"]>, R>
       basis?: ProposalBasis<import("zod").output<T["input"]>>
       transaction?: "none"
+      prepare?: (
+        input: import("zod").output<T["input"]>,
+        actor: Actor
+      ) => Promise<unknown>
     }
   : {
       reversal?: never
       activity?: never
       basis?: never
       transaction?: never
+      prepare?: never
     }) &
   (
     | {
         execute: (
           input: import("zod").output<T["input"]>,
           actor: Actor,
-          registry: Registry
+          registry: Registry,
+          ahead?: unknown
         ) => Promise<R> | R
         reviewed?: never
         selected?: never
@@ -398,9 +395,12 @@ export function bindOperation<T extends Operation, R, C, V, S = never>(
       else registry.addReviewedCommand(spec, checkedReview)
     } else
       registry.addCommand(
-        withBasis(spec, binding.basis),
-        async (input, actor) => {
-          const result = await binding.execute!(input, actor, registry)
+        withBasis(
+          binding.prepare ? { ...spec, prepare: binding.prepare } : spec,
+          binding.basis
+        ),
+        async (input, actor, ahead) => {
+          const result = await binding.execute!(input, actor, registry, ahead)
           const checked = binding.privateResult
             ? binding.privateResult.parse(result)
             : result
@@ -477,17 +477,14 @@ export function bindCatalog<B extends Record<string, { operation: Operation }>>(
   }
 }
 
-export function assertReversal(
-  command: string,
-  catalog: boolean,
-  result: { reversal: ReversalPlan; draft: ActivityDraft | null }
-) {
+export function assertReversal(result: {
+  reversal: ReversalPlan
+  draft: ActivityDraft | null
+}) {
   if (
     result.reversal &&
     (!result.reversal.expect ||
-      !Object.keys(result.reversal.expect.matches).length) &&
-    (catalog ||
-      !REVERSAL_EXPECT_PENDING.commands.some((name) => name === command))
+      !Object.keys(result.reversal.expect.matches).length)
   )
     throw new Error("Reversals require a guarded expectation")
 }

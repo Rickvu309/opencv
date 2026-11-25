@@ -1,4 +1,5 @@
 import {
+  catalog,
   PAPER_START_BOUNDS,
   PAPER_TEMPLATE_IDS,
   paperContract,
@@ -102,7 +103,7 @@ describe("paper.start takes no words of the Coach's", () => {
   it("waits for the person, and the older block create is closed to the Coach", () => {
     expect(paperContract["paper.start"].coach).toBe("confirm")
     expect(paperContract["paper.start"].delegate).toBeUndefined()
-    expect(paperContract["paper.create"].coach).toBe("never")
+    expect(catalog["paper.create"].coach).toBe("never")
     expect(paperContract["paper.canvas"].coach).toBe("never")
   })
 })

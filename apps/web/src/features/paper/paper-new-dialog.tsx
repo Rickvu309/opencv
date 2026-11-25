@@ -1,10 +1,11 @@
 import { useReducer } from "react"
+import { useQueryClient, type QueryClient } from "@tanstack/react-query"
 
 import { Button } from "@workspace/ui/components/button"
 
 import { type PaperTemplateId } from "@workspace/domain"
 
-import { useRunCommand } from "@/lib/contract-client.ts"
+import { catalogClient, useRunCommand } from "@/lib/contract-client.ts"
 
 import {
   PaperTemplateGallery,
@@ -12,10 +13,15 @@ import {
 } from "./paper-template-gallery.tsx"
 
 export async function openBlankPage(
-  run: ReturnType<typeof useRunCommand>,
+  queryClient: QueryClient,
   kind: "cv" | "letter"
 ) {
-  const created = await run("paper.create", { kind, format: "rich" })
+  const created = await catalogClient.run(queryClient, "paper.create", {
+    kind,
+    format: "rich",
+  })
+  if ("pending" in created)
+    throw new Error("Could not create this Paper. Try again.")
   return created.id
 }
 
@@ -69,6 +75,7 @@ export function PaperNewDialog({
   onImport: () => void
 }) {
   const run = useRunCommand()
+  const queryClient = useQueryClient()
   const [{ pending, error }, dispatch] = useReducer(createReducer, {
     pending: false,
     error: null,
@@ -94,7 +101,7 @@ export function PaperNewDialog({
   async function startBlank() {
     dispatch({ type: "create_started" })
     try {
-      onMinted(await openBlankPage(run, kind))
+      onMinted(await openBlankPage(queryClient, kind))
     } catch (cause) {
       dispatch({
         type: "create_failed",

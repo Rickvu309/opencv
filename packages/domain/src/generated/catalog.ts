@@ -53,8 +53,10 @@ import { operation as job$star } from "../operations/job/star/operation.js"
 import { operation as job$unlinkPaper } from "../operations/job/unlink-paper/operation.js"
 import { operation as job$update } from "../operations/job/update/operation.js"
 import { operation as notify$request } from "../operations/notify/request/operation.js"
+import { operation as paper$create } from "../operations/paper/create/operation.js"
 import { operation as paper$delete } from "../operations/paper/delete/operation.js"
 import { operation as paper$deleteFile } from "../operations/paper/delete-file/operation.js"
+import { operation as paper$duplicate } from "../operations/paper/duplicate/operation.js"
 import { operation as paper$export } from "../operations/paper/export/operation.js"
 import { operation as paper$import } from "../operations/paper/import/operation.js"
 import { operation as paper$read } from "../operations/paper/read/operation.js"
@@ -122,8 +124,10 @@ export const catalog = {
   "job.unlinkPaper": job$unlinkPaper,
   "job.update": job$update,
   "notify.request": notify$request,
+  "paper.create": paper$create,
   "paper.delete": paper$delete,
   "paper.deleteFile": paper$deleteFile,
+  "paper.duplicate": paper$duplicate,
   "paper.export": paper$export,
   "paper.import": paper$import,
   "paper.read": paper$read,

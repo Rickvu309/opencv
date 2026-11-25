@@ -8,50 +8,7 @@ import { runContractCommand } from "./contract-client.ts"
 afterEach(() => vi.unstubAllGlobals())
 
 describe("native Paper metadata requests", () => {
-  it.each(["paper.duplicate"] as const)(
-    "qualifies outgoing %s without changing its input",
-    async (name) => {
-      const input = {
-        docId: parsePaperId("01990b00-0000-7000-8000-000000000001"),
-      }
-      const before = structuredClone(input)
-      const fetch = vi
-        .fn()
-        .mockImplementation(async () => Response.json({ ok: true, data: {} }))
-      vi.stubGlobal("fetch", fetch)
-      await runContractCommand(new QueryClient(), name, input, {
-        refresh: false,
-      })
-      expect(String(fetch.mock.calls[0]?.[0])).toContain(
-        `/api/commands/${name}`
-      )
-      expect(JSON.parse(fetch.mock.calls[0]?.[1].body).input).toEqual({
-        ...input,
-        writer: NATIVE_WRITER,
-      })
-      expect(input).toEqual(before)
-      expect(input).not.toHaveProperty("writer")
-    }
-  )
-
-  it("preserves an explicitly incompatible outgoing writer for server refusal", async () => {
-    const input = {
-      docId: parsePaperId("01990b00-0000-7000-8000-000000000001"),
-      writer: { ...NATIVE_WRITER, supportedSchemaRevisions: [2] },
-    }
-    const before = structuredClone(input)
-    const fetch = vi
-      .fn()
-      .mockImplementation(async () => Response.json({ ok: true, data: {} }))
-    vi.stubGlobal("fetch", fetch)
-    await runContractCommand(new QueryClient(), "paper.duplicate", input, {
-      refresh: false,
-    })
-    expect(JSON.parse(fetch.mock.calls[0]?.[1].body).input).toEqual(input)
-    expect(input).toEqual(before)
-  })
-
-  it("leaves creation, edit and sync requests unqualified", async () => {
+  it("leaves edit and sync requests unqualified", async () => {
     const fetch = vi
       .fn()
       .mockImplementation(async () => Response.json({ ok: true, data: {} }))
@@ -59,7 +16,6 @@ describe("native Paper metadata requests", () => {
     const client = new QueryClient()
     const docId = parsePaperId("01990b00-0000-7000-8000-000000000001")
     const inputs = [
-      { name: "paper.create", input: { kind: "letter" } },
       { name: "paper.edit", input: { docId } },
       { name: "paper.save", input: { docId } },
     ]

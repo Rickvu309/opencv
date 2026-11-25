@@ -35,6 +35,14 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     .list()
     .commands.find((command) => command.name === "paper.deleteFile")
   if (!paperDeleteFile) throw new Error("Missing Paper file delete command")
+  const paperCreate = registry
+    .list()
+    .commands.find((command) => command.name === "paper.create")
+  if (!paperCreate) throw new Error("Missing Paper create command")
+  const paperDuplicate = registry
+    .list()
+    .commands.find((command) => command.name === "paper.duplicate")
+  if (!paperDuplicate) throw new Error("Missing Paper duplicate command")
   let importStage = ""
   let mintedDocId = ""
   let mintedParagraph = ""
@@ -46,9 +54,9 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
   }
   return [
     {
-      name: "paper.create",
+      name: paperCreate.name,
       arrange: async () => {},
-      act: () => run("paper.create", { kind: "cv", name: "Coverage CV" }),
+      act: () => run(paperCreate.name, { kind: "cv", name: "Coverage CV" }),
       assert: async (result) => {
         expect(text(await paperOf(idOf(result.output)), "name")).toBe(
           "Coverage CV"
@@ -93,7 +101,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     {
       name: paperUpdate.name,
       arrange: async () => {
-        const paper = await run("paper.create", {
+        const paper = await run(paperCreate.name, {
           kind: "cv",
           name: "Rename CV",
         })
@@ -144,16 +152,16 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "paper.duplicate",
+      name: paperDuplicate.name,
       arrange: async () => {
-        const paper = await run("paper.create", {
+        const paper = await run(paperCreate.name, {
           kind: "cv",
           name: "Coverage CV",
         })
         ctx.docId = idOf(paper.output)
       },
       act: () =>
-        run("paper.duplicate", {
+        run(paperDuplicate.name, {
           docId: ctx.docId,
           writer: RICH_NATIVE_WRITER,
         }),
@@ -171,7 +179,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     {
       name: paperDelete.name,
       arrange: async () => {
-        const paper = await run("paper.create", {
+        const paper = await run(paperCreate.name, {
           kind: "cv",
           name: "Delete CV",
         })

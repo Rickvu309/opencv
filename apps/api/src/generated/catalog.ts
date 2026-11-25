@@ -55,8 +55,10 @@ import { implementation as job$star } from "../job/operations/star/server.js"
 import { implementation as job$unlinkPaper } from "../job/operations/unlink-paper/server.js"
 import { implementation as job$update } from "../job/operations/update/server.js"
 import { implementation as notify$request } from "../account/operations/notify/request/server.js"
+import { implementation as paper$create } from "../paper/operations/create/server.js"
 import { implementation as paper$delete } from "../paper/operations/delete/server.js"
 import { implementation as paper$deleteFile } from "../paper/operations/delete-file/server.js"
+import { implementation as paper$duplicate } from "../paper/operations/duplicate/server.js"
 import { implementation as paper$export } from "../paper/operations/export/server.js"
 import { implementation as paper$import } from "../paper/operations/import/server.js"
 import { implementation as paper$read } from "../paper/operations/read/server.js"
@@ -124,8 +126,10 @@ export const implementations = {
   "job.unlinkPaper": job$unlinkPaper,
   "job.update": job$update,
   "notify.request": notify$request,
+  "paper.create": paper$create,
   "paper.delete": paper$delete,
   "paper.deleteFile": paper$deleteFile,
+  "paper.duplicate": paper$duplicate,
   "paper.export": paper$export,
   "paper.import": paper$import,
   "paper.read": paper$read,

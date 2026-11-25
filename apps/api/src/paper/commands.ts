@@ -1,10 +1,4 @@
-import {
-  catalog,
-  ERROR_CODES,
-  emptyRichPaper,
-  paperContract,
-  RICH_NATIVE_WRITER,
-} from "@workspace/domain"
+import { ERROR_CODES, paperContract } from "@workspace/domain"
 
 import { bindCommands, tableQuery } from "../registry/bind.js"
 import { CommandError } from "../platform/errors.js"
@@ -13,12 +7,11 @@ import { registerCanvasCommit } from "./package-canvas.js"
 import { registerPaperStart } from "./package-start.js"
 import { registerWordPackageEdit } from "./package-edit.js"
 import { editRichPaper } from "./rich-edit.js"
-import { registerDuplicate } from "./card-action-commands.js"
 import { oldEditorUndoReasons } from "./undo-guard.js"
 import { syncContent } from "./content-store.js"
 import { readOutline } from "./outline.js"
 import { coachPaperList } from "./coach-word-pages.js"
-import { createPaper, listFiles, listPapers, readFileMeta } from "./store.js"
+import { listFiles, listPapers, readFileMeta } from "./store.js"
 
 const noReversal = () => null
 const noActivity = () => null
@@ -40,42 +33,9 @@ export function registerPaper(registry: Registry) {
     "paper.edit": paperEdit,
     "paper.canvas": paperCanvas,
     "paper.start": paperStart,
-    "paper.duplicate": paperDuplicate,
     ...paperCommands
   } = paperContract
   bindCommands(registry, paperCommands, {
-    "paper.create": {
-      handler: async (input, actor) => {
-        const created = await createPaper(
-          actor,
-          input.format === "rich"
-            ? {
-                kind: input.kind,
-                name: input.name,
-                paper: emptyRichPaper(input.kind),
-              }
-            : input,
-          input.format === "rich" ? RICH_NATIVE_WRITER : undefined
-        )
-        if (input.jobId) {
-          await registry.execute({
-            name: catalog["job.linkPaper"].name,
-            input: { jobId: input.jobId, docId: created.id, kind: input.kind },
-            actor,
-          })
-        }
-        return created
-      },
-      reversal: (_input, output) => ({
-        command: catalog["paper.delete"].name,
-        input: { docId: output.id },
-      }),
-      activity: (_input, output) => ({
-        subjectKind: "paper",
-        subjectId: output.id,
-        summary: `Created ${output.name}`,
-      }),
-    },
     "paper.save": {
       handler: async (input, actor) => {
         const reply = await syncContent(actor.userId, input.docId, {
@@ -107,7 +67,6 @@ export function registerPaper(registry: Registry) {
   })
   registerCanvasCommit(registry, paperCanvas)
   registerPaperStart(registry, paperStart)
-  registerDuplicate(registry, paperDuplicate)
   registerWordPackageEdit(registry, paperEdit, (input, actor) =>
     editRichPaper(actor.userId, input)
   )

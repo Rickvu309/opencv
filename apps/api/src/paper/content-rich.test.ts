@@ -4,7 +4,7 @@ import {
   NATIVE_WRITER,
   RICH_NATIVE_WRITER,
   paperPhotoRef,
-  paperDocumentInfoSchema,
+  catalog,
   parseUserId,
   parsePaperId,
   richPaperDocumentSchema,
@@ -53,7 +53,7 @@ async function seeded(kind: "cv" | "letter") {
     purpose: "avatar",
   })
   const document = richPaper(kind, paperPhotoRef(file.id))
-  const view = paperDocumentInfoSchema.parse(
+  const view = catalog["paper.create"].publicResult.parse(
     (await execute("paper.create", { kind })).output
   )
   await getDb()

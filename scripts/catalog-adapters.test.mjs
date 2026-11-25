@@ -267,12 +267,8 @@ test("G3 rejects raw results and reversal inputs in activity, confirmation and t
 
 test("G3 requires the kernel call and bounded reversal guard", () => {
   for (const [file, from, to] of [
-    [
-      "apps/api/src/registry/registry.ts",
-      "assertReversal(command.name, this.isCatalogOperation(command.name), ran)",
-      "undefined",
-    ],
-    ["apps/api/src/registry/bind.ts", "catalog ||", "false ||"],
+    ["apps/api/src/registry/registry.ts", "assertReversal(ran)", "undefined"],
+    ["apps/api/src/registry/bind.ts", "!result.reversal.expect ||", "false ||"],
   ]) {
     const now = readFileSync(new URL(`../${file}`, import.meta.url), "utf8")
     const mutant = now.replace(from, to)
