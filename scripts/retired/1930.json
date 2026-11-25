@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/api/src/job/apply-alone.test.ts",
+    "because": "registerJob no longer registers commands, so the test that it registers the same commands twice has nothing to prove; the Apply-alone flow binds the move pair instead",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
