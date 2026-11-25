@@ -166,5 +166,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 12
+  },
+  {
+    "subject": "packages/paper-crdt/src/moved.test.ts",
+    "because": "It tested the old prose Paper client and its sync, merge and native formatting modules in the Paper CRDT package, which are deleted; the rich client keeps its tests.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
   }
 ]
