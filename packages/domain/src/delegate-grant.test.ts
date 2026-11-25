@@ -11,7 +11,7 @@ import {
   resourcesForScopes,
   consentQueryFromSearch,
   scopesFromSearch,
-} from "./delegate-grant.js"
+} from "./agents/delegate-grant.js"
 import { defineOperation, delegateDeclaration } from "./operation.js"
 import { paperContract } from "./paper-contract.js"
 import { operation as paperRead } from "./operations/paper/read/operation.js"

@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { connectionResource } from "../../../connections.js"
+import { connectionResource } from "../../../agents/connections.js"
 import { connectionIdSchema } from "../../../ids.js"
 import { defineOperation } from "../../../operation.js"
 

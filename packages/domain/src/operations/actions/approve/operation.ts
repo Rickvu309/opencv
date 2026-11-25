@@ -2,7 +2,7 @@ import { z } from "zod"
 import {
   activityRowAsTheApiReturnsIt,
   everyReadAnUndoOrApprovalCanChange,
-} from "../../../control.js"
+} from "../../../control/control.js"
 import { pendingActionIdSchema } from "../../../ids.js"
 import { defineOperation } from "../../../operation.js"
 

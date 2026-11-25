@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { pendingActionRowSchema } from "../../../control.js"
+import { pendingActionRowSchema } from "../../../control/control.js"
 import { pendingActionIdSchema } from "../../../ids.js"
 import { defineOperation } from "../../../operation.js"
 
