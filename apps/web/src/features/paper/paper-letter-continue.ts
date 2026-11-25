@@ -83,7 +83,7 @@ export async function redraftStoppedLetter(input: {
       },
     })
     if (input.signal.aborted) {
-      void stopPaperChat(chat.id)
+      void stopPaperChat(input.queryClient, chat.id)
       return
     }
     if (end === "continuing") {
@@ -99,14 +99,14 @@ export async function redraftStoppedLetter(input: {
     }
   } catch (error) {
     if (isAbortError(error) || input.signal.aborted) {
-      void stopPaperChat(chat.id)
+      void stopPaperChat(input.queryClient, chat.id)
       return
     }
-    void stopPaperChat(chat.id)
+    void stopPaperChat(input.queryClient, chat.id)
     throw error
   }
   if (input.signal.aborted) {
-    void stopPaperChat(chat.id)
+    void stopPaperChat(input.queryClient, chat.id)
     return
   }
   const lines = letterLines(text, input.email)

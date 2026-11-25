@@ -51,7 +51,6 @@ const waitingToBecomeOperations = [
   "GET /api/paper/packages/:docId/read",
   "GET /api/profile",
   "GET /api/search",
-  "POST /api/chats/:id/stop",
   "POST /api/jobs/preview",
 ]
 
@@ -92,6 +91,6 @@ describe("every change and read of product data goes through an operation", () =
   })
 
   it("has no more routes waiting to become operations than it had", () => {
-    expect(waitingToBecomeOperations.length).toBeLessThanOrEqual(17)
+    expect(waitingToBecomeOperations.length).toBeLessThanOrEqual(16)
   })
 })

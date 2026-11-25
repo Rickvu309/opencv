@@ -3,6 +3,7 @@ import {
   LIBRARY_WRITER,
   paperImportResponseSchema,
   letterAttachmentContextSchema,
+  parseChatId,
 } from "@workspace/domain"
 import type { QueryClient } from "@tanstack/react-query"
 import type {
@@ -231,8 +232,16 @@ export async function importPaperLink(
   )
 }
 
-export function stopPaperChat(chatId: string): Promise<void> {
-  return apiFetch(endpoints.chatStop(chatId), { method: "POST" })
+export async function stopPaperChat(
+  queryClient: QueryClient,
+  chatId: string
+): Promise<void> {
+  await catalogClient.run(
+    queryClient,
+    "coach.stop",
+    { chatId: parseChatId(chatId) },
+    { refresh: false }
+  )
 }
 
 export async function streamPaperTurn(input: {
