@@ -478,5 +478,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/paper-content-isolation.test.mjs",
+    "because": "It guarded old block Paper code paths that are deleted; the remaining paths keep their rules.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 13
   }
 ]
