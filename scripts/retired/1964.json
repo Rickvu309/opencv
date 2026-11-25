@@ -46,5 +46,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/word-card-actions.test.ts",
+    "because": "paper.get is deleted; the Coach's reads of a deleted and a live Word page now go through paper.outline with the same not-found and text checks.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
   }
 ]
