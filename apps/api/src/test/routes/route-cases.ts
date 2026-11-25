@@ -127,14 +127,6 @@ async function olderDoc(as: Person) {
   return { id: idIn(made, "id") }
 }
 
-async function job(as: Person) {
-  const made = await as.command("job.create", {
-    title: "Route",
-    company: "Northwind",
-  })
-  return { id: idIn(made, "id") }
-}
-
 async function chat(as: Person) {
   const made = await as.command("chat.create", { title: "Route" })
   return { id: idIn(made, "id") }
@@ -302,8 +294,6 @@ export const ROUTE_CASES: readonly RouteCase[] = [
   get("/api/paper/:id/document", olderDoc),
   nativeWordRouteCase,
   get("/api/paper/:id", olderDoc),
-  get("/api/jobs"),
-  get("/api/jobs/:id", job),
   get("/api/inbox/connect"),
   get("/api/inbox/callback"),
   get("/api/profile"),
