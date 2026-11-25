@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/apply-api.test.ts",
+    "because": "The Job list and one Job go through the read door; the test checks those paths",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
   }
 ]
