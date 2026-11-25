@@ -22,5 +22,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/coach/chat-api.attachments.test.ts",
+    "because": "The attachment test uses a real Job id now that Job lists are checked against the public shape; the same label mapping is checked",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
   }
 ]
