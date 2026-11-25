@@ -1,0 +1,2 @@
+layer: kernel
+public: [coach.ts, coach-mode.ts, coach-task.ts]
