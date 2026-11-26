@@ -4,6 +4,7 @@ export { importedPaper } from "./import/import-word.js"
 export { importReaderReady } from "./import/import-text-pool.js"
 export { stageWordPackage } from "./word-package/package-store.js"
 export { sweepUnattachedPhotos } from "./photo-sweep.js"
+export { convertWordPages } from "./word-pages-to-papers.js"
 export { saveFile, tryReadRichPaper } from "./store.js"
 export {
   open as openWordPage,
