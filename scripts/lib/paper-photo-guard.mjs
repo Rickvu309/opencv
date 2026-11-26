@@ -16,8 +16,7 @@ export function detectPhotoApplyRounding(text, path) {
     visit(source)
     return hits
   }
-  if (path !== "apps/web/src/features/paper/rich-editor/rich-photo-form.ts")
-    return []
+  if (!path.endsWith("/rich-photo-form.ts")) return []
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
   const hits = []
   const visit = (node) => {
