@@ -1,3 +1,4 @@
+import { catalog } from "@workspace/domain/kernel"
 import { eq } from "drizzle-orm"
 
 import { jobChecklist } from "../db/schema.js"
@@ -35,7 +36,7 @@ async function checklistDone(world: LaterWorld, itemId: string) {
 const linked: { docId?: string } = {}
 
 export const jobUndoLater: LaterCases = {
-  "job.create": {
+  [catalog["job.create"].name]: {
     act: async (a, { run }) => {
       await run("job.update", {
         jobId: idOf(a.output),
@@ -45,7 +46,7 @@ export const jobUndoLater: LaterCases = {
     survives: async (a, world) =>
       (await jobField(world, a, "location").catch(() => "gone")) === "Osaka",
   },
-  "job.update": {
+  [catalog["job.update"].name]: {
     act: async (a, { run }) => {
       await run("job.update", {
         jobId: idOf(a.output),
@@ -55,7 +56,7 @@ export const jobUndoLater: LaterCases = {
     survives: async (a, world) =>
       (await jobField(world, a, "location")) === "Osaka",
   },
-  "job.setPriority": {
+  [catalog["job.setPriority"].name]: {
     act: async (a, { run }) => {
       await run("job.update", {
         jobId: idOf(a.output),
@@ -65,20 +66,20 @@ export const jobUndoLater: LaterCases = {
     survives: async (a, world) =>
       (await jobField(world, a, "priority")) === "low",
   },
-  "job.move": {
+  [catalog["job.move"].name]: {
     act: async (a, { run }) => {
       await run("job.move", { jobId: idOf(a.output), stage: "interview" })
     },
     survives: async (a, world) =>
       (await jobField(world, a, "stage")) === "interview",
   },
-  "job.star": {
+  [catalog["job.star"].name]: {
     act: async (a, { run }) => {
       await run("job.star", { jobId: idOf(a.output), starred: false })
     },
     survives: async (a, world) => !flag(await reversalJob(world, a), "starred"),
   },
-  "job.addChecklistItem": {
+  [catalog["job.addChecklistItem"].name]: {
     act: async (a, { run }) => {
       await run("job.setChecklistItem", {
         jobId: outputOf(a).jobId,
@@ -89,7 +90,7 @@ export const jobUndoLater: LaterCases = {
     survives: async (a, world) =>
       (await checklistDone(world, String(outputOf(a).id))) === true,
   },
-  "job.setChecklistItem": {
+  [catalog["job.setChecklistItem"].name]: {
     act: async (a, { run }) => {
       await run("job.setChecklistItem", {
         jobId: outputOf(a).jobId,
@@ -100,11 +101,9 @@ export const jobUndoLater: LaterCases = {
     survives: async (a, world) =>
       (await checklistDone(world, String(outputOf(a).id))) === false,
   },
-  "job.linkPaper": {
-    act: async (a, { run }) => {
-      const docId = idOf(
-        (await run("paper.create", { kind: "cv", name: "Later CV" })).output
-      )
+  [catalog["job.linkPaper"].name]: {
+    act: async (a, { run, newCv }) => {
+      const docId = await newCv("Later CV")
       await run("job.linkPaper", { jobId: idOf(a.output), docId, kind: "cv" })
       linked.docId = docId
     },

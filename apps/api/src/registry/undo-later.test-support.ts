@@ -6,6 +6,7 @@ export type LaterWorld = {
   db: TestDatabase
   run: (name: string, input: unknown) => Promise<ExecuteResult>
   read: (name: string, input: unknown) => Promise<unknown>
+  newCv: (name: string) => Promise<string>
 }
 
 export type LaterCase = {

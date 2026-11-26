@@ -1,3 +1,4 @@
+import { catalog } from "@workspace/domain/kernel"
 import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 
 import { idOf, list, text } from "../registry/coverage-helpers.test-support.js"
@@ -56,10 +57,10 @@ function renamedTo(name: string) {
 }
 
 export const paperUndoLater: LaterCases = {
-  "paper.create": renamedTo("Renamed"),
-  "paper.duplicate": renamedTo("Renamed"),
-  "paper.update": renamedTo("Renamed later"),
-  "paper.canvas": {
+  [catalog["paper.create"].name]: renamedTo("Renamed"),
+  [catalog["paper.duplicate"].name]: renamedTo("Renamed"),
+  [catalog["paper.update"].name]: renamedTo("Renamed later"),
+  [catalog["paper.canvas"].name]: {
     act: async (a, { run, read }) => {
       const docId = text(a.output, "docId")
       const basedOn = text(a.output, "revision")

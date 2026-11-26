@@ -1,3 +1,4 @@
+import { catalog } from "@workspace/domain/kernel"
 import { eq } from "drizzle-orm"
 
 import { inboxThreads } from "../db/schema.js"
@@ -17,7 +18,7 @@ async function threadStatus(world: LaterWorld, a: ExecuteResult) {
 }
 
 export const inboxUndoLater: LaterCases = {
-  "inbox.markDone": {
+  [catalog["inbox.markDone"].name]: {
     act: async (a, { run }) => {
       await run("inbox.snooze", {
         threadId: idOf(a.output),
@@ -26,7 +27,7 @@ export const inboxUndoLater: LaterCases = {
     },
     survives: async (a, world) => (await threadStatus(world, a)) === "snoozed",
   },
-  "inbox.snooze": {
+  [catalog["inbox.snooze"].name]: {
     act: async (a, { run }) => {
       await run("inbox.markDone", { threadId: idOf(a.output) })
     },

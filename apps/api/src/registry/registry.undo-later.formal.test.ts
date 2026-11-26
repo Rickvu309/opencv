@@ -41,6 +41,8 @@ function worldFor(userId: string, run: Run): LaterWorld {
         type: "person",
         userId: parseUserId(userId),
       }),
+    newCv: async (name) =>
+      idOf((await run("paper.create", { kind: "cv", name })).output),
   }
 }
 
