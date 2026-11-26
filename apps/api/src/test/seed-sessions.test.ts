@@ -67,14 +67,20 @@ describe("seedSessions", () => {
           Origin: stack.webOrigin,
           Cookie: cookieOf(account.setCookie),
         }
-        const paper = await app.request("/api/paper", { headers })
+        const paper = await app.request("/api/reads/paper.list", {
+          method: "POST",
+          headers,
+          body: "{}",
+        })
         expect(paper.status).toBe(200)
         const session = await app.request("/api/auth/get-session", { headers })
         const body = (await session.json()) as { user: { email: string } }
         expect(body.user.email).toBe(account.email)
       }
-      const stranger = await app.request("/api/paper", {
+      const stranger = await app.request("/api/reads/paper.list", {
+        method: "POST",
         headers: { Origin: stack.webOrigin },
+        body: "{}",
       })
       expect(stranger.status).toBe(401)
     } finally {

@@ -83,7 +83,7 @@ describe("a Paper started blank", () => {
   it("is on the person's list of Papers", async () => {
     const ada = await world.person("Ada")
     const cv = await blank(ada, "cv", "Marketing CV")
-    const listed = dataOf<Paper[]>(await ada.get("/api/paper", asEditor))
+    const listed = dataOf<Paper[]>(await ada.read("paper.list", { writer }))
     expect(listed.map((paper) => paper.id)).toContain(cv.id)
   })
 
@@ -98,7 +98,7 @@ describe("a Paper started blank", () => {
     })
     expect(renamed.status).toBe(200)
     expect(dataOf<Paper>(await opened(ada, cv.id)).name).toBe("Product CV")
-    const listed = dataOf<Paper[]>(await ada.get("/api/paper", asEditor))
+    const listed = dataOf<Paper[]>(await ada.read("paper.list", { writer }))
     expect(listed.map((paper) => paper.name)).toEqual(["Product CV"])
   })
 
@@ -106,7 +106,7 @@ describe("a Paper started blank", () => {
     const ada = await world.person("Ada")
     await blank(ada, "cv", "Marketing CV")
     await ada.run("paper.create", { kind: "letter", name: "Plain letter" })
-    expect(dataOf<Paper[]>(await ada.get("/api/paper"))).toEqual([])
+    expect(dataOf<Paper[]>(await ada.read("paper.list", {}))).toEqual([])
   })
 
   it("can be copied, and the copy is a Paper of its own", async () => {

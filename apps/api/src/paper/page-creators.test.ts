@@ -362,8 +362,10 @@ describe("a page made any way is listed, opens, and stays hidden from others", (
   }
 
   async function listed(who: Account) {
-    const response = await app.request("/api/paper", {
-      headers: richEditorHeaders(who.cookie),
+    const response = await app.request("/api/reads/paper.list", {
+      method: "POST",
+      headers: authHeaders(who.cookie),
+      body: JSON.stringify({ writer: RICH_NATIVE_WRITER }),
     })
     expect(response.status).toBe(200)
     return listOf.parse(dataOf.parse(await response.json()).data)
