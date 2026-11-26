@@ -30,5 +30,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/page-table-writes.json",
+    "because": "The guarded package file moved into apps/api/src/paper/word-package/. The historic path is unchanged; historic.fixed names the file at HEAD, so the detector still proves it stays quiet on the moved file.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
