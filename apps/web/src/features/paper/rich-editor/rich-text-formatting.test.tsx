@@ -15,8 +15,8 @@ import { seedStoredYDoc } from "../../../../../../packages/paper-crdt/src/stored
 import { storedFlowFixture } from "../../../../../../packages/paper-crdt/src/test/flow-fixture.js"
 import { shortcutLabel } from "./rich-text-toolbar-control.tsx"
 import { RichPaperTextFormatting } from "./rich-text-formatting.tsx"
-import { RichPhotoControls } from "./rich-photo-controls.tsx"
-import { RichLinkDialog } from "./rich-structure-controls.tsx"
+import { RichPhotoControls } from "./rich-editor/rich-photo-controls.tsx"
+import { RichLinkDialog } from "./rich-editor/rich-structure-controls.tsx"
 
 const disposals: (() => void)[] = []
 let width = 1200

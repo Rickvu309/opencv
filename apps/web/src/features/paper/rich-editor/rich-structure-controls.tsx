@@ -20,9 +20,9 @@ import {
 } from "@workspace/ui/components/select"
 import { List, ListOrdered, Link, RemoveFormatting } from "lucide-react"
 
-import { ToolbarHint } from "./rich-text-toolbar-control.tsx"
+import { ToolbarHint } from "../rich-text-toolbar-control.tsx"
 
-import { ToolbarItem } from "./rich-text-toolbar-item.tsx"
+import { ToolbarItem } from "../rich-text-toolbar-item.tsx"
 
 type Editor = ReturnType<typeof mountRichPaperEditor>
 export function RichStructureControls({
