@@ -1,0 +1,3 @@
+layer: feature
+public: [formatted.ts, formatted-photos.ts]
+dependencies: []
