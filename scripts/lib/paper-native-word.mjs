@@ -45,7 +45,7 @@ export function qualifiedNativeWord(text, path) {
     source.statements.some(
       (node) =>
         ts.isImportDeclaration(node) &&
-        node.moduleSpecifier.text === "./content-store.js" &&
+        node.moduleSpecifier.text === "./content/content-store.js" &&
         node.importClause?.namedBindings &&
         ts.isNamedImports(node.importClause.namedBindings) &&
         node.importClause.namedBindings.elements.some(
