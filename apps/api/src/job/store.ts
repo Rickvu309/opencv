@@ -9,6 +9,7 @@ import {
   ERROR_CODES,
   parseJobId,
   parsePaperId,
+  jobPriorityResource,
   parseUserId,
   type JobId,
   type QueryOutput,
@@ -20,8 +21,8 @@ import { getDb } from "../db/context.js"
 import { jobs } from "../db/schema.js"
 import { CommandError } from "../platform/errors.js"
 import {
-  assertPriorityGrant,
-  priorityBasisOk,
+  assertWriteGrant,
+  basisRevisionOk,
   type WriteGrant,
 } from "../registry/write-grant.js"
 
@@ -144,11 +145,11 @@ export async function writePriority(
   priority: JobPriority,
   actorId: string = grant.ownerId
 ) {
-  const authority = assertPriorityGrant(grant, actorId, jobId)
+  const authority = assertWriteGrant(grant, jobPriorityResource, actorId, jobId)
   const ownerId = parseUserId(authority.ownerId)
   const current = await ownedJob(ownerId, jobId)
   const expected = authority.expectedRevision
-  if (expected !== null && !priorityBasisOk(expected, current.priorityRevision))
+  if (expected !== null && !basisRevisionOk(expected, current.priorityRevision))
     throw alreadyChanged()
   authority.assertOpen()
   const mine = and(eq(jobs.id, current.id), eq(jobs.userId, current.userId))

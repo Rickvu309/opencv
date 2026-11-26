@@ -256,6 +256,7 @@ function approvalValues(commits) {
     delegateConnectionId: null,
   }
   return {
+    versionedWrite: () => null,
     parseInput: (_schema, input) => input,
     expireIfStale: async () => {},
     transaction: (effect) => effect(),

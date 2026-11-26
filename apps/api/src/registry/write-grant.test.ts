@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import {
   delegateActorSchema,
+  jobPriorityResource,
   parseJobId,
   personActor,
   type JobId,
@@ -22,8 +23,8 @@ import { writePriority } from "../job/index.js"
 import { idOf } from "./coverage-helpers.test-support.js"
 import { installRegistry } from "../install.js"
 import {
-  assertPriorityGrant,
-  takePriorityGrant,
+  assertWriteGrant,
+  takeWriteGrant,
   withGrantScope,
   type WriteGrant,
 } from "./write-grant.js"
@@ -138,9 +139,7 @@ function approveNull(row: { input: unknown }) {
   })
 }
 
-const admitted = (entityId: string) => [
-  { name: "job.priority", entityId, coachFloor: "confirm" as const },
-]
+const admitted = (entityId: string) => [{ ...jobPriorityResource, entityId }]
 
 function kinds(problems: { kind: string }[]) {
   return problems.map((problem) => problem.kind)
@@ -322,8 +321,10 @@ describe("priority writes require a one-time permission and a matching version",
         await expect(
           withGrantScope({ ownerId: userId, writes: admitted(jobId) }, () =>
             transaction(async () => {
-              const grant = takePriorityGrant(jobId)
-              expect(() => takePriorityGrant(jobId)).toThrow(/permission/)
+              const grant = takeWriteGrant(jobPriorityResource, jobId)
+              expect(() => takeWriteGrant(jobPriorityResource, jobId)).toThrow(
+                /permission/
+              )
               await expect(
                 writePriority(grant, parseJobId(otherId), "high")
               ).rejects.toMatchObject({ code: "FORBIDDEN" })
@@ -512,7 +513,7 @@ describe("priority writes require a one-time permission and a matching version",
         }
         const spent = async (grant: WriteGrant) => {
           try {
-            assertPriorityGrant(grant, userId, jobId)
+            assertWriteGrant(grant, jobPriorityResource, userId, jobId)
             return false
           } catch (error) {
             return /already used/.test(
@@ -525,7 +526,7 @@ describe("priority writes require a one-time permission and a matching version",
           () =>
             transaction(async () => {
               const before = await read()
-              const grant = takePriorityGrant(jobId)
+              const grant = takeWriteGrant(jobPriorityResource, jobId)
               await writePriority(grant, parseJobId(jobId), "high")
               const after = await read()
               expect(
@@ -551,7 +552,7 @@ describe("priority writes require a one-time permission and a matching version",
             () =>
               transaction(async () => {
                 await writePriority(
-                  takePriorityGrant(jobId),
+                  takeWriteGrant(jobPriorityResource, jobId),
                   parseJobId(jobId),
                   "low"
                 )
@@ -574,7 +575,7 @@ describe("priority writes require a one-time permission and a matching version",
           () =>
             transaction(async () => {
               const before = await read()
-              const grant = takePriorityGrant(jobId)
+              const grant = takeWriteGrant(jobPriorityResource, jobId)
               await getDb()
                 .update(jobs)
                 .set({ priority: "low", updatedAt: new Date() })

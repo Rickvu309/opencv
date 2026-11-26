@@ -50,7 +50,7 @@ function callsAssert(fn) {
   let found = false
   const visit = (node) => {
     if (node !== fn && ts.isFunctionLike(node)) return
-    if (callee(node) === "assertPriorityGrant") found = true
+    if (callee(node) === "assertWriteGrant") found = true
     ts.forEachChild(node, visit)
   }
   if (fn.body) visit(fn.body)

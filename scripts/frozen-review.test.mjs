@@ -298,6 +298,7 @@ async function approvalReplay(text) {
       consumed++
     },
     refuseFrozenReview: kernel.refuseFrozenReview,
+    versionedWrite: () => null,
     ERROR_CODES: { CONFLICT: "CONFLICT" },
     CommandError: Error,
     approvedProposalActor: () => ({

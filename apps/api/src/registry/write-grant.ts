@@ -1,24 +1,27 @@
 import { AsyncLocalStorage } from "node:async_hooks"
 
-import { ERROR_CODES } from "@workspace/domain/kernel"
+import { ERROR_CODES, type VersionedResource } from "@workspace/domain/kernel"
 
 import { getDb, insideTransaction } from "../db/context.js"
 import { CommandError } from "../platform/errors.js"
 
-const grantBrand = Symbol("job-priority-grant")
+const grantBrand = Symbol("versioned-write-grant")
 
 export type WriteGrant = {
   readonly ownerId: string
-  readonly resource: "job.priority"
+  readonly resource: string
   readonly entityId: string
   readonly transaction: object
   readonly expectedRevision: number | null
   readonly [grantBrand]: true
 }
 
+export type GrantedResource = { name: string; versioned: VersionedResource }
+
 type AdmittedWrite = {
   name: string
   entityId?: string
+  versioned?: VersionedResource
 }
 
 type OpenScope = {
@@ -35,6 +38,10 @@ const authorities = new WeakMap<
 >()
 const spent = new WeakSet<object>()
 
+function grantKey(resource: string, entityId: string) {
+  return JSON.stringify([resource, entityId])
+}
+
 function assertScope(authority: Readonly<WriteGrant & { scope: OpenScope }>) {
   if (scopes.getStore() !== authority.scope || authority.scope.sealed)
     throw refused("This permission has ended")
@@ -46,8 +53,12 @@ function refused(message: string) {
   return new CommandError(ERROR_CODES.FORBIDDEN, message)
 }
 
-export function priorityBasisOk(captured: number | null, current: number) {
+export function basisRevisionOk(captured: number | null, current: number) {
   return captured !== null && captured === current
+}
+
+export function versionedWrite<W extends AdmittedWrite>(writes: readonly W[]) {
+  return writes.find((write) => write.versioned)?.versioned ?? null
 }
 
 export async function withGrantScope<T>(
@@ -65,8 +76,8 @@ export async function withGrantScope<T>(
     available: new Set(),
   }
   for (const write of scope.writes) {
-    if (write.name !== "job.priority" || !write.entityId) continue
-    open.available.add(write.entityId)
+    if (!write.versioned || !write.entityId) continue
+    open.available.add(grantKey(write.name, write.entityId))
   }
   return scopes.run(open, async () => {
     try {
@@ -77,18 +88,24 @@ export async function withGrantScope<T>(
   })
 }
 
-export function takePriorityGrant(entityId: string): WriteGrant {
+export function takeWriteGrant(
+  resource: GrantedResource,
+  entityId: string
+): WriteGrant {
   const open = scopes.getStore()
   if (!open || open.sealed) throw refused("This permission has ended")
   if (!insideTransaction())
     throw refused("This permission is for a different save")
-  if (!open.available.has(entityId))
-    throw refused("This save has no permission for that job")
-  open.available.delete(entityId)
+  const key = grantKey(resource.name, entityId)
+  if (!open.available.has(key))
+    throw refused(
+      `This save has no permission for that ${resource.versioned.holder}`
+    )
+  open.available.delete(key)
   const grant: WriteGrant = {
     [grantBrand]: true,
     ownerId: open.ownerId,
-    resource: "job.priority",
+    resource: resource.name,
     entityId,
     transaction: getDb(),
     expectedRevision: open.expectedRevision,
@@ -97,8 +114,9 @@ export function takePriorityGrant(entityId: string): WriteGrant {
   return grant
 }
 
-export function assertPriorityGrant(
+export function assertWriteGrant(
   grant: WriteGrant,
+  resource: GrantedResource,
   ownerId: string,
   entityId: string
 ) {
@@ -117,7 +135,7 @@ export function assertPriorityGrant(
   )
     throw refused("This permission is not valid")
   if (spent.has(grant)) throw refused("This permission was already used")
-  if (authority.resource !== "job.priority")
+  if (authority.resource !== resource.name)
     throw refused("This permission is for a different change")
   if (
     !open ||
@@ -126,7 +144,9 @@ export function assertPriorityGrant(
   )
     throw refused("This permission is for someone else")
   if (authority.entityId !== entityId)
-    throw refused("This permission is for a different job")
+    throw refused(
+      `This permission is for a different ${resource.versioned.holder}`
+    )
   spent.add(grant)
   return {
     ownerId: authority.ownerId,
