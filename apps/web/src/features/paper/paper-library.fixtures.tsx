@@ -81,6 +81,7 @@ export function letter(name: string): PaperView {
     kind: "letter",
     templateId: null,
     paper: letterPaper(["A cover letter."]),
+    preview: ["A cover letter."],
   }
 }
 

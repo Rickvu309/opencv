@@ -36,6 +36,7 @@ export const paperViewSchema = z
     isFavorite: z.boolean(),
     sourceFileId: fileIdSchema.nullable(),
     format: z.enum(["word", "rich"]).optional(),
+    preview: z.array(z.string()).optional(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
   })

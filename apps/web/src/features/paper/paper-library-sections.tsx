@@ -10,11 +10,7 @@ import {
   Trash2,
   type LucideIcon,
 } from "lucide-react"
-import {
-  paperPlainText,
-  type PaperFile,
-  type PaperView,
-} from "@workspace/domain/paper-doc"
+import { type PaperFile, type PaperView } from "@workspace/domain/paper-doc"
 
 import { buttonVariants } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
@@ -27,11 +23,8 @@ import { type LibraryEntry } from "./paper-library-entries.ts"
 const PREVIEW_LINE_LIMIT = 12
 
 export function librarySheetLines(doc: PaperView): string[] {
-  const paper = doc.paper
-  if (!paper || (paper.kind !== "cv" && paper.kind !== "letter")) return []
   const name = doc.name.trim()
-  return paperPlainText(paper)
-    .split("\n")
+  return (doc.preview ?? [])
     .map((line) => line.trim())
     .filter((line) => line.length > 0 && line !== name)
     .slice(0, PREVIEW_LINE_LIMIT)

@@ -1,0 +1,18 @@
+{
+  "id": "library-card-lines",
+  "file": "scripts/library-card-lines.test.mjs",
+  "detector": {
+    "module": "scripts/lib/library-card-lines.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "0c2b400bb27f6d51b88e7d470f6b7a8c950b255e",
+    "path": "apps/web/src/features/paper/paper-library-sections.tsx",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/web/src/features/paper/paper-library-sections.tsx"
+    }
+  },
+  "reason": "Caught by the ADR-0008 browser walk. Introduced by 0c2b400bb, which listed every Paper with a blank placeholder body while librarySheetLines in paper-library-sections.tsx still built each card's lines from that body, so every Paper card showed an empty sheet. detect fires when librarySheetLines reads the listed body and stays quiet once it reads the preview the list returns."
+}
