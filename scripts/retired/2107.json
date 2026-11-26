@@ -78,5 +78,29 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-header-rebase.json",
+    "because": "Its guard watched packages/domain/src/paper-doc/rebase.ts, which is deleted because nothing outside its tests used it.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-text-marks.json .historic",
+    "because": "merge-text.ts was an empty file and is deleted; the row now names the live rich-text module as the fixed file.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-text-marks.test.mjs > rich text preserves UTF-16 positions around emoji :: assert.deepEqual(detectMixedTextUnits(readFileSync(new URL(\"../packages/domain/src/paper-doc/merge-text.ts\", import.meta.url), \"utf8\")), [])",
+    "because": "It read an empty file that is now deleted; the same assertion now reads the live rich-text module.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
