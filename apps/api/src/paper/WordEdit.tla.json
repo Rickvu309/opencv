@@ -38,7 +38,7 @@
     ]
   },
   "covers": [
-    "apps/api/src/paper/word/document.ts",
+    "apps/api/src/paper/word-package/word/document.ts",
     "apps/api/src/paper/package-edit.ts",
     "apps/api/src/paper/package-candidates.ts",
     "apps/api/src/paper/package-restore.ts",

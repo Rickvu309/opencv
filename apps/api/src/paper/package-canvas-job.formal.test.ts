@@ -10,7 +10,7 @@ import { activity, paperPackageHeads, user } from "../db/schema.js"
 import { installRegistry } from "../install.js"
 import { openBackend, type Backend } from "../test/registry-formal-support.js"
 import { publishWordPackage, stageWordPackage } from "./package-store.js"
-import { exportWord, open } from "./word/document.js"
+import { exportWord, open } from "./word-package/word/document.js"
 
 let backend: Backend
 const run = <T>(fn: () => Promise<T>) => withDatabase(backend.db, fn)

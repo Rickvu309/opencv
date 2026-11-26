@@ -13,14 +13,14 @@ import {
 import { and, eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import { getDb, withDatabase } from "../../db/context.js"
-import { activity, user } from "../../db/schema.js"
+import { getDb, withDatabase } from "../../../db/context.js"
+import { activity, user } from "../../../db/schema.js"
 import {
   openBackend,
   type Backend,
-} from "../../test/registry-formal-support.js"
-import { paperRegistry } from "../paper-registry.test-support.js"
-import { publishWordPackage, stageWordPackage } from "../package-store.js"
+} from "../../../test/registry-formal-support.js"
+import { paperRegistry } from "../../paper-registry.test-support.js"
+import { publishWordPackage, stageWordPackage } from "../../package-store.js"
 import { apply, exportWord, open, undo } from "./document.js"
 import { templateLines, templatePageName } from "./template.js"
 

@@ -28,8 +28,8 @@ import { PaperPackage } from "./package-engine.js"
 import { deleteWordPage } from "./package-card-actions.js"
 import { publishWordPackage, stageWordPackage } from "./package-store.js"
 import { readPackageZip } from "./package-zip.js"
-import { open, apply } from "./word/document.js"
-import { writtenPageBytes } from "./word/template.js"
+import { open, apply } from "./word-package/word/document.js"
+import { writtenPageBytes } from "./word-package/word/template.js"
 import { collectWordPageExport } from "./word-page-export.js"
 
 type Database = Awaited<ReturnType<typeof createMigratedTestDb>>

@@ -30,7 +30,7 @@ import {
   run as wordRun,
 } from "./package-fixtures.js"
 import { publishWordPackage, stageWordPackage } from "./package-store.js"
-import { apply, open, WORD_UNDO_MOVED } from "./word/document.js"
+import { apply, open, WORD_UNDO_MOVED } from "./word-package/word/document.js"
 
 let backend: Backend
 const owner = randomUUID()

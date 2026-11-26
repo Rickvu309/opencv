@@ -11,12 +11,12 @@ import { getDb, insideTransaction } from "../db/context.js"
 import { paperPackageHeads } from "../db/schema.js"
 import { packageFailure } from "./package-pages.js"
 import { readWordPackage, wordPackageBasis } from "./package-store.js"
-import { prepareBatch } from "./word/document.js"
+import { prepareBatch } from "./word-package/word/document.js"
 import {
   templatePageBytes,
   templatePageName,
   writtenPageBytes,
-} from "./word/template.js"
+} from "./word-package/word/template.js"
 
 const loaded = createRequire(import.meta.url)(
   "../../../../scripts/lib/paper-canvas-bytes.mjs"

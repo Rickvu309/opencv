@@ -9,7 +9,7 @@ import { getDb, withDatabase } from "../db/context.js"
 import { chats, coachUsage, paperPackageHeads, user } from "../db/schema.js"
 import { openBackend, type Backend } from "../test/registry-formal-support.js"
 import { paperRegistry } from "./paper-registry.test-support.js"
-import { undo } from "./word/document.js"
+import { undo } from "./word-package/word/document.js"
 import {
   publishWordPackage,
   readWordPackage,

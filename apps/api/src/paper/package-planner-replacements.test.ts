@@ -18,7 +18,7 @@ import {
   stageWordPackage,
 } from "./package-store.js"
 import { readPackageZip } from "./package-zip.js"
-import { apply, open } from "./word/document.js"
+import { apply, open } from "./word-package/word/document.js"
 
 let backend: Backend
 const owner = randomUUID()

@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto"
 
 import { describe, expect, it } from "vitest"
 
-import { cvPackage, run } from "../package-fixtures.js"
+import { cvPackage, run } from "../../package-fixtures.js"
 import { paragraphsOf, projectParagraphs } from "./classify.js"
 import { mutateWord, type WordDraft, type WordSide } from "./mutate.js"
 

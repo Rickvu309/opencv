@@ -1,4 +1,4 @@
-import { IMPORT_TEXT_LIMITS } from "../import-limits.js"
+import { IMPORT_TEXT_LIMITS } from "../../import-limits.js"
 import type { TemplateLine } from "./template.js"
 
 export const IMPORT_LINE_CAP = 2000

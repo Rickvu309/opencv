@@ -10,14 +10,14 @@ import {
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import { getDb, withDatabase } from "../../db/context.js"
-import { paperPackageHeads, user } from "../../db/schema.js"
+import { getDb, withDatabase } from "../../../db/context.js"
+import { paperPackageHeads, user } from "../../../db/schema.js"
 import {
   openBackend,
   type Backend,
-} from "../../test/registry-formal-support.js"
-import { cvPackage } from "../package-fixtures.js"
-import { publishWordPackage, stageWordPackage } from "../package-store.js"
+} from "../../../test/registry-formal-support.js"
+import { cvPackage } from "../../package-fixtures.js"
+import { publishWordPackage, stageWordPackage } from "../../package-store.js"
 import { apply, exportWord, open, undo } from "./document.js"
 
 const loaded = createRequire(import.meta.url)(

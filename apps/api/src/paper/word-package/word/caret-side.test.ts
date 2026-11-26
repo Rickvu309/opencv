@@ -7,7 +7,7 @@ import type {
 } from "@workspace/domain/paper-doc"
 import { describe, expect, it } from "vitest"
 
-import { cvPackage, run } from "../package-fixtures.js"
+import { cvPackage, run } from "../../package-fixtures.js"
 import { paragraphsOf, projectParagraphs } from "./classify.js"
 import { draftBatch } from "./document.js"
 import { mutateWord } from "./mutate.js"

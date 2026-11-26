@@ -35,7 +35,7 @@ import { isWordBatch, prepareWordBatch } from "./package-planner.js"
 import { PACKAGE_PROFILE } from "./package-profile.js"
 import { revalidateUnchangedPackage } from "./package-restore.js"
 import { readWordPackage } from "./package-store.js"
-import { undo } from "./word/document.js"
+import { undo } from "./word-package/word/document.js"
 import { undoRichEdit } from "./rich-edit.js"
 
 export type EditInput = z.output<(typeof catalog)["paper.edit"]["input"]>
