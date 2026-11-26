@@ -25,13 +25,11 @@ import {
   testWebOrigin,
 } from "../test/harness.js"
 import { textDocx, textPdf } from "./import/import-fixtures.test.js"
-import { openWordPage } from "./index.js"
 import { PAGE_STORE_FILES, pageInsertingExports } from "./page-writes.js"
 
 const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 
-type Format = "word" | "rich"
-type Made = { docId: string; kind: "cv" | "letter"; format: Format }
+type Made = { docId: string; kind: "cv" | "letter" }
 type Account = { cookie: string; userId: string }
 type App = ReturnType<typeof createTestApp>
 type Maker = (app: App, owner: Account) => Promise<Made>
@@ -87,12 +85,6 @@ async function importFile(
   return docIdOf(dataOf.parse(await response.json()).data)
 }
 
-async function mintWord(app: App, owner: Account) {
-  return docIdOf(
-    await command(app, owner, "paper.canvas", { op: "mint", label: "cv" })
-  )
-}
-
 async function importWord(app: App, owner: Account) {
   return importFile(
     app,
@@ -103,60 +95,12 @@ async function importWord(app: App, owner: Account) {
   )
 }
 
-async function restored(app: App, owner: Account, docId: string) {
-  await command(app, owner, "paper.delete", { docId })
-  return docIdOf(await command(app, owner, "paper.recover", { docId }))
-}
-
-const word = (docId: string, kind: "cv" | "letter" = "cv"): Made => ({
-  docId,
-  kind,
-  format: "word",
-})
 const rich = (docId: string, kind: "cv" | "letter" = "cv"): Made => ({
   docId,
   kind,
-  format: "rich",
 })
 
 const CASES: Record<string, Maker> = {
-  "Start blank (paper.canvas mint)": async (app, owner) =>
-    word(await mintWord(app, owner)),
-  "Start from a template (paper.canvas mint with a template)": async (
-    app,
-    owner
-  ) =>
-    word(
-      docIdOf(
-        await command(app, owner, "paper.canvas", {
-          op: "mint",
-          label: "cv",
-          templateId: "modern",
-        })
-      )
-    ),
-  "Start a letter for a Job (paper.canvas mint with a Job)": async (
-    app,
-    owner
-  ) => {
-    const job = docIdOf(
-      await command(app, owner, "job.create", {
-        title: "Analyst",
-        company: "Northwind",
-        location: "Hanoi",
-      })
-    )
-    return word(
-      docIdOf(
-        await command(app, owner, "paper.canvas", {
-          op: "mint",
-          label: "letter",
-          jobId: job,
-        })
-      ),
-      "letter"
-    )
-  },
   "Coach start (paper.start)": async (app, owner) =>
     rich(
       docIdOf(
@@ -205,16 +149,6 @@ const CASES: Record<string, Maker> = {
         })
       )
     ),
-  "Duplicate a started page (paper.duplicate)": async (app, owner) =>
-    word(
-      docIdOf(
-        await command(app, owner, "paper.duplicate", {
-          docId: await mintWord(app, owner),
-        })
-      )
-    ),
-  "Restore a started page from trash (paper.recover)": async (app, owner) =>
-    word(await restored(app, owner, await mintWord(app, owner))),
   "Rich document (paper.create)": async (app, owner) => ({
     docId: docIdOf(
       await command(app, owner, "paper.create", {
@@ -223,7 +157,6 @@ const CASES: Record<string, Maker> = {
       })
     ),
     kind: "cv",
-    format: "rich",
   }),
   "Duplicate a rich document (paper.duplicate)": async (app, owner) => ({
     docId: docIdOf(
@@ -238,39 +171,10 @@ const CASES: Record<string, Maker> = {
       })
     ),
     kind: "cv",
-    format: "rich",
   }),
-  "Word module open with a mint source (openWordPage)": async (_app, owner) => {
-    const page = await openWordPage(owner.userId, {
-      kind: "mint",
-      name: "Opened page",
-      label: "cv",
-    })
-    if ("refused" in page) throw new Error(page.message)
-    return word(page.doc)
-  },
 }
 
-const RICH_CASES = [
-  "Coach start (paper.start)",
-  "Rich document (paper.create)",
-  "Duplicate a rich document (paper.duplicate)",
-  "Import a Word file",
-  "Import a PDF",
-  "Import a text file",
-  "Duplicate an imported page (paper.duplicate)",
-]
-const WORD_CASES = Object.keys(CASES).filter(
-  (name) => !RICH_CASES.includes(name)
-)
-
 const CREATOR_EXPORTS: Record<string, string[]> = {
-  "paper/word-package/package-store.ts#publishWordPackage": WORD_CASES.filter(
-    (name) => !name.startsWith("Restore")
-  ),
-  "paper/word-package/package-store.ts#restoreWordHead": WORD_CASES.filter(
-    (name) => name.startsWith("Restore")
-  ),
   "paper/store.ts#duplicatePaper": Object.keys(CASES).filter((name) =>
     name.startsWith("Duplicate")
   ),
@@ -285,11 +189,9 @@ const CREATOR_EXPORTS: Record<string, string[]> = {
 }
 
 const CREATOR_COMMANDS = [
-  "paper.canvas",
   "paper.create",
   "paper.duplicate",
   "paper.import",
-  "paper.recover",
   "paper.start",
 ]
 
@@ -367,7 +269,7 @@ describe("a page made any way is listed, opens, and stays hidden from others", (
     const read = await app.request("/api/reads/paper.read", {
       method: "POST",
       headers: authHeaders(who.cookie),
-      body: JSON.stringify({ view: "page", docId }),
+      body: JSON.stringify({ docId }),
     })
     const shape = async (response: Response) => ({
       status: response.status,
@@ -396,27 +298,12 @@ describe("a page made any way is listed, opens, and stays hidden from others", (
     const mine = (await listed(owner)).filter((item) => item.id === made.docId)
     expect(mine).toHaveLength(1)
     expect(mine[0]?.kind).toBe(made.kind)
-    if (made.format === "word") {
-      expect(mine[0]?.format).toBe("word")
-      const read = await app.request("/api/reads/paper.read", {
-        method: "POST",
-        headers: authHeaders(owner.cookie),
-        body: JSON.stringify({ view: "page", docId: made.docId }),
-      })
-      expect(read.status, await read.clone().text()).toBe(200)
-      expect(
-        z
-          .object({ data: z.object({ doc: z.string() }).passthrough() })
-          .parse(await read.json()).data.doc
-      ).toBe(made.docId)
-    } else {
-      expect(mine[0]?.format).toBe("rich")
-      const opened = await app.request(
-        "/api/reads/paper.read",
-        richInfoRequest(made.docId, owner.cookie)
-      )
-      expect(opened.status, await opened.clone().text()).toBe(200)
-    }
+    expect(mine[0]?.format).toBe("rich")
+    const opened = await app.request(
+      "/api/reads/paper.read",
+      richInfoRequest(made.docId, owner.cookie)
+    )
+    expect(opened.status, await opened.clone().text()).toBe(200)
     expect(
       (await listed(stranger)).some((item) => item.id === made.docId)
     ).toBe(false)

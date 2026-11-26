@@ -7,10 +7,7 @@ export const PAGE_TABLES: Record<string, string> = {
   paperPackageHeads: "paper_package_heads",
 }
 
-export const PAGE_STORE_FILES = [
-  "paper/store.ts",
-  "paper/word-package/package-store.ts",
-]
+export const PAGE_STORE_FILES = ["paper/store.ts"]
 
 const READ_CALLS = new Set([
   "from",
@@ -28,7 +25,6 @@ const SQL_TARGET =
   /\b(?:insert\s+into|update(?:\s+only)?|delete\s+from(?:\s+only)?|merge\s+into|truncate(?:\s+table)?(?:\s+only)?|copy)\s+(?:"?\w+"?\s*\.\s*)?"?(\w+)"?/gi
 
 export const PAGE_TABLE_VALUE_USES: Record<string, number> = {
-  "paper/word-package/package-edit.ts": 2,
   "paper/word-page-export.ts": 1,
 }
 

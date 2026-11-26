@@ -11,7 +11,6 @@ import { CatalogPublication } from "./catalog-publication.js"
 import { coachRefusal, REFUSAL_MESSAGES } from "./coach-policy.js"
 import { delegateAllowed } from "./delegate-policy.js"
 import { CommandError } from "../platform/errors.js"
-import { paperEditBasisMessage, paperEditBasisRefused } from "./paper-agent.js"
 import {
   isUnchanged,
   refuseFrozenReview,
@@ -48,14 +47,6 @@ export class RegistryEntries extends CatalogPublication {
           "This connection cannot use this command"
       )
     const parsed = parseInput(command.input, options.input)
-    if (
-      actor.type === "delegate" &&
-      paperEditBasisRefused(command.name, parsed)
-    )
-      throw new CommandError(
-        ERROR_CODES.VALIDATION_ERROR,
-        paperEditBasisMessage
-      )
     const policy = effectiveCoachPolicy(command, parsed)
     if (actor.type === "delegate" && policy === "never")
       throw new CommandError(

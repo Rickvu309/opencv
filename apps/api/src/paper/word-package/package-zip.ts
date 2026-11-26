@@ -1,4 +1,4 @@
-import { createInflateRaw, deflateRawSync } from "node:zlib"
+import { createInflateRaw } from "node:zlib"
 
 import { refuse } from "./package-errors.js"
 import { PACKAGE_LIMITS } from "./package-limits.js"
@@ -30,8 +30,6 @@ type ZipEntry = {
   checksum: number
   offset: number
 }
-
-export type PackageZip = Awaited<ReturnType<typeof readPackageZip>>
 
 function within(bytes: Buffer, start: number, length: number) {
   if (start < 0 || length < 0 || start + length > bytes.length) {
@@ -247,70 +245,4 @@ export async function readPackageZip(input: Uint8Array) {
     files.set(entry.name, bytes)
   }
   return { ...archive, files }
-}
-
-export function replaceZipMember(
-  archive: PackageZip,
-  name: string,
-  bytes: Buffer
-) {
-  const original = archive.entries.find((entry) => entry.name === name)
-  if (!original) refuse("MISSING_ZIP_MEMBER", name)
-  if (bytes.length > PACKAGE_LIMITS.memberBytes) refuse("ZIP_EXPANSION_LIMIT")
-  const compressed =
-    original.method === 0 ? bytes : deflateRawSync(bytes, { level: 6 })
-  const header = Buffer.from(original.local.subarray(0, original.headerSize))
-  const descriptor = Buffer.from(original.descriptor)
-  const changedCentral = Buffer.from(original.central)
-  const checksum = crc32(bytes)
-  for (const [field, value] of [
-    [14, checksum],
-    [18, compressed.length],
-    [22, bytes.length],
-  ]) {
-    if (!descriptor.length || header.readUInt32LE(field) !== 0)
-      header.writeUInt32LE(value, field)
-  }
-  if (descriptor.length) {
-    const prefix = descriptor.length - 12
-    descriptor.writeUInt32LE(checksum, prefix)
-    descriptor.writeUInt32LE(compressed.length, prefix + 4)
-    descriptor.writeUInt32LE(bytes.length, prefix + 8)
-  }
-  changedCentral.writeUInt32LE(checksum, 16)
-  changedCentral.writeUInt32LE(compressed.length, 20)
-  changedCentral.writeUInt32LE(bytes.length, 24)
-  const offsets = new Map<string, number>()
-  let offset = 0
-  const records = archive.ordered.map((entry) => {
-    offsets.set(entry.name, offset)
-    const record =
-      entry === original
-        ? Buffer.concat([header, compressed, descriptor])
-        : entry.local
-    offset += record.length
-    return record
-  })
-  const central = archive.entries.map((entry) => {
-    const record = Buffer.from(
-      entry === original ? changedCentral : entry.central
-    )
-    record.writeUInt32LE(
-      offsets.get(entry.name) ?? refuse("MISSING_ZIP_OFFSET"),
-      42
-    )
-    return record
-  })
-  const footer = Buffer.from(archive.footer)
-  footer.writeUInt32LE(
-    central.reduce((sum, record) => sum + record.length, 0),
-    12
-  )
-  footer.writeUInt32LE(offset, 16)
-  const length =
-    offset +
-    central.reduce((sum, record) => sum + record.length, 0) +
-    footer.length
-  if (length > PACKAGE_LIMITS.compressedBytes) refuse("ZIP_INPUT_LIMIT")
-  return Buffer.concat([...records, ...central, footer], length)
 }

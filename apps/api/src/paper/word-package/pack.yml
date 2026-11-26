@@ -1,20 +1,3 @@
 layer: feature
-public:
-  [
-    package-candidates.ts,
-    package-canvas.ts,
-    package-card-actions.ts,
-    package-edit.ts,
-    package-errors.ts,
-    package-http.ts,
-    package-list.ts,
-    package-pages.ts,
-    package-xml.ts,
-    package-zip.ts,
-    package-start.ts,
-    package-store.ts,
-    word-reading.ts,
-    word/document.ts,
-    word/template.ts,
-  ]
-dependencies: [apps/api/src/registry, apps/api/src/db, apps/api/src/platform]
+public: [package-errors.ts, package-xml.ts, package-zip.ts]
+dependencies: [apps/api/src/platform]

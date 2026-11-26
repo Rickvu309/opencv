@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto"
 
 import type { TestDatabase } from "../../db/context.js"
+import {
+  fixturePackage,
+  paragraph,
+} from "../../paper/word-package/package-fixtures.js"
 import { authHeaders, testWebOrigin } from "../harness.js"
 import { textPdf } from "./route-files.js"
 import { nativeWordRouteCase } from "./native-word.js"
@@ -114,68 +118,18 @@ function idIn(value: Record<string, unknown>, key: string) {
   return id
 }
 
-async function mintedPage(as: Person) {
-  const minted = await as.command("paper.canvas", { op: "mint", label: "cv" })
-  return { docId: idIn(minted, "docId") }
-}
-
 async function chat(as: Person) {
   const made = await as.command("chat.create", { title: "Route" })
   return { id: idIn(made, "id") }
 }
 
-function revisionIn(value: unknown): string | null {
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const found = revisionIn(item)
-      if (found) return found
-    }
-    return null
-  }
-  if (!value || typeof value !== "object") return null
-  const record = value as Record<string, unknown>
-  if (typeof record.revision === "string") return record.revision
-  return revisionIn(Object.values(record))
-}
-
-async function sent(as: Person, path: string) {
-  const response = await as.fetch(
-    new Request(ORIGIN + path, { headers: authHeaders(as.cookie) })
-  )
-  if (response.status !== 200)
-    throw new Error(`${path} answered ${response.status}`)
-  return response
-}
-
-async function exportedWord(as: Person) {
-  const { docId } = await mintedPage(as)
-  const page = await (
-    await as.fetch(
-      new Request(ORIGIN + "/api/reads/paper.read", {
-        method: "POST",
-        headers: authHeaders(as.cookie),
-        body: JSON.stringify({ view: "lines", docId }),
-      })
-    )
-  ).json()
-  const at = revisionIn(page)
-  if (!at) throw new Error(`no revision in ${JSON.stringify(page)}`)
-  const response = await sent(
-    as,
-    `/api/paper/packages/${docId}/export?at=${encodeURIComponent(at)}`
-  )
-  return { word: Buffer.from(await response.arrayBuffer()).toString("base64") }
-}
-
 const WORD_TYPE =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
-function wordUpload(ids: Record<string, string>): Upload {
-  return {
-    bytes: Uint8Array.from(Buffer.from(ids.word ?? "", "base64")),
-    name: "Imported CV.docx",
-    type: WORD_TYPE,
-  }
+const wordUpload: Upload = {
+  bytes: fixturePackage(paragraph("Ada Lovelace Analyst at Northwind")),
+  name: "Imported CV.docx",
+  type: WORD_TYPE,
 }
 
 async function uploadedFile(as: Person) {
@@ -212,27 +166,9 @@ const pdfUpload: Upload = {
 }
 
 export const IMPORT_CASES = {
-  docx: postForm("/api/paper/import", wordUpload, exportedWord),
+  docx: postForm("/api/paper/import", () => wordUpload),
   pdf: postForm("/api/paper/import", () => pdfUpload),
   txt: postForm("/api/paper/import", () => textUpload),
-}
-
-const stageCase: RouteCase = {
-  method: "POST",
-  path: "/api/paper/packages/stage",
-  arrange: exportedWord,
-  request: (as, ids, signal) =>
-    new Request(`${ORIGIN}/api/paper/packages/stage?name=Staged&kind=cv`, {
-      method: "POST",
-      headers: {
-        Origin: testWebOrigin,
-        Cookie: as.cookie,
-        "content-type": WORD_TYPE,
-        "idempotency-key": randomUUID(),
-      },
-      body: wordUpload(ids).bytes,
-      signal,
-    }),
 }
 
 const mcpCase: RouteCase = {
@@ -265,8 +201,6 @@ export const ROUTE_CASES: readonly RouteCase[] = [
     () => ({ message: "Hello", requestId: randomUUID() }),
     chat
   ),
-  stageCase,
-  get("/api/paper/packages/:docId/export", mintedPage),
   postForm("/api/paper/letter-attachment", () => textUpload),
   IMPORT_CASES.docx,
   IMPORT_CASES.pdf,

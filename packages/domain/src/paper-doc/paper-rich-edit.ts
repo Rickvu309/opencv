@@ -1,5 +1,4 @@
 import { z } from "zod"
-import { paperIdSchema } from "../ids.js"
 import {
   richPaperDocumentSchema,
   type RichPaperDocument,
@@ -37,20 +36,6 @@ export const richChangeSchema = z
     blockId: z.string(),
     before: formatRunsSchema,
     after: formatRunsSchema,
-  })
-  .strict()
-const richReviewSchema = z
-  .object({
-    format: z.literal("rich"),
-    docId: paperIdSchema,
-    name: z.string(),
-    changes: z.array(richChangeSchema).min(1).max(30),
-  })
-  .strict()
-export const richEditOutputSchema = richReviewSchema
-  .extend({
-    revision: z.number().int().nonnegative(),
-    editId: z.string().uuid(),
   })
   .strict()
 export type RichChange = z.output<typeof richChangeSchema>

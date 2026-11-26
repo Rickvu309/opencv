@@ -55,7 +55,6 @@ import { operation as job$unlinkPaper } from "../operations/job/unlink-paper/ope
 import { operation as job$update } from "../operations/job/update/operation.js"
 import { operation as link$get } from "../operations/link/get/operation.js"
 import { operation as notify$request } from "../operations/notify/request/operation.js"
-import { operation as paper$canvas } from "../operations/paper/canvas/operation.js"
 import { operation as paper$create } from "../operations/paper/create/operation.js"
 import { operation as paper$delete } from "../operations/paper/delete/operation.js"
 import { operation as paper$deleteFile } from "../operations/paper/delete-file/operation.js"
@@ -67,7 +66,6 @@ import { operation as paper$import } from "../operations/paper/import/operation.
 import { operation as paper$list } from "../operations/paper/list/operation.js"
 import { operation as paper$outline } from "../operations/paper/outline/operation.js"
 import { operation as paper$read } from "../operations/paper/read/operation.js"
-import { operation as paper$recover } from "../operations/paper/recover/operation.js"
 import { operation as paper$save } from "../operations/paper/save/operation.js"
 import { operation as paper$start } from "../operations/paper/start/operation.js"
 import { operation as paper$update } from "../operations/paper/update/operation.js"
@@ -135,7 +133,6 @@ export const catalog = {
   "job.update": job$update,
   "link.get": link$get,
   "notify.request": notify$request,
-  "paper.canvas": paper$canvas,
   "paper.create": paper$create,
   "paper.delete": paper$delete,
   "paper.deleteFile": paper$deleteFile,
@@ -147,7 +144,6 @@ export const catalog = {
   "paper.list": paper$list,
   "paper.outline": paper$outline,
   "paper.read": paper$read,
-  "paper.recover": paper$recover,
   "paper.save": paper$save,
   "paper.start": paper$start,
   "paper.update": paper$update,

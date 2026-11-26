@@ -311,7 +311,7 @@ it("saves the step after a tool when the model reports a large prompt", () =>
       "templateId",
     ])
     expect(JSON.stringify(start?.input_schema).length).toBeLessThan(1000)
-    expect(edit?.description).toContain("setText")
+    expect(edit?.description).toContain("replaceText")
     expect(first.tools.some((tool) => tool.name === "job_list")).toBe(true)
     expect(first.tools.some((tool) => tool.name === "profile_get")).toBe(true)
   }))

@@ -57,7 +57,6 @@ import { implementation as job$unlinkPaper } from "../job/operations/unlink-pape
 import { implementation as job$update } from "../job/operations/update/server.js"
 import { implementation as link$get } from "../coach/operations/link/get/server.js"
 import { implementation as notify$request } from "../account/operations/notify/request/server.js"
-import { implementation as paper$canvas } from "../paper/operations/canvas/server.js"
 import { implementation as paper$create } from "../paper/operations/create/server.js"
 import { implementation as paper$delete } from "../paper/operations/delete/server.js"
 import { implementation as paper$deleteFile } from "../paper/operations/delete-file/server.js"
@@ -69,7 +68,6 @@ import { implementation as paper$import } from "../paper/operations/import/serve
 import { implementation as paper$list } from "../paper/operations/list/server.js"
 import { implementation as paper$outline } from "../paper/operations/outline/server.js"
 import { implementation as paper$read } from "../paper/operations/read/server.js"
-import { implementation as paper$recover } from "../paper/operations/recover/server.js"
 import { implementation as paper$save } from "../paper/operations/save/server.js"
 import { implementation as paper$start } from "../paper/operations/start/server.js"
 import { implementation as paper$update } from "../paper/operations/update/server.js"
@@ -137,7 +135,6 @@ export const implementations = {
   "job.update": job$update,
   "link.get": link$get,
   "notify.request": notify$request,
-  "paper.canvas": paper$canvas,
   "paper.create": paper$create,
   "paper.delete": paper$delete,
   "paper.deleteFile": paper$deleteFile,
@@ -149,7 +146,6 @@ export const implementations = {
   "paper.list": paper$list,
   "paper.outline": paper$outline,
   "paper.read": paper$read,
-  "paper.recover": paper$recover,
   "paper.save": paper$save,
   "paper.start": paper$start,
   "paper.update": paper$update,

@@ -1,6 +1,0 @@
-{
-  "id": "paper-agent",
-  "file": "apps/api/src/registry/paper-agent.test.ts",
-  "historic": null,
-  "reason": "Document tools for an agent are new and stay off unless a test turns them on. Main has no ancestor that listed paper.read or paper.edit for a delegate, so a historic pass would be fabricated."
-}

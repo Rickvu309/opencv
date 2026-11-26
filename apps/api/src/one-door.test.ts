@@ -20,13 +20,11 @@ const transportExceptions = {
     "POST /api/paper/files",
     "POST /api/paper/import",
     "POST /api/paper/letter-attachment",
-    "POST /api/paper/packages/stage",
   ],
   download: [
     "GET /api/account/export",
     "GET /api/paper/:id/native-word",
     "GET /api/paper/files/:id/bytes",
-    "GET /api/paper/packages/:docId/export",
   ],
   health: ["GET /health", "GET /health/deep"],
 }

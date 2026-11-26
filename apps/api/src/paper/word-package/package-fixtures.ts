@@ -1,10 +1,11 @@
 import { deflateRawSync } from "node:zlib"
 
-import {
-  CONTENT_TYPE_NS,
-  OFFICE_RELATIONSHIP_NS,
-  RELATIONSHIP_NS,
-} from "./package-profile.js"
+const OFFICE_RELATIONSHIP_NS =
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
+const RELATIONSHIP_NS =
+  "http://schemas.openxmlformats.org/package/2006/relationships"
+const CONTENT_TYPE_NS =
+  "http://schemas.openxmlformats.org/package/2006/content-types"
 import { WORD_NS } from "./package-xml.js"
 import { crc32, readPackageZip } from "./package-zip.js"
 
@@ -136,45 +137,6 @@ export function fixtureFiles(body: string, extra: FixtureOptions = {}) {
 
 export function fixturePackage(body: string, options: FixtureOptions = {}) {
   return fixtureZip(fixtureFiles(body, options))
-}
-
-export function cvPackage(body: string) {
-  const files = fixtureFiles(body, {
-    parts: {
-      "word/numbering.xml": story(
-        "numbering",
-        '<w:abstractNum w:abstractNumId="1"><w:lvl w:ilvl="0"/></w:abstractNum><w:num w:numId="1"><w:abstractNumId w:val="1"/></w:num>'
-      ),
-    },
-    relationships: [
-      relationship("numbering", "numbering", "numbering.xml"),
-      relationship("link", "hyperlink", "https://example.invalid/cv", true),
-    ],
-  })
-  files["[Content_Types].xml"] = files["[Content_Types].xml"]
-    .toString()
-    .replace(
-      "</Types>",
-      '<Override PartName="/word/numbering.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml"/></Types>'
-    )
-  return fixtureZip(files)
-}
-
-export const rangeFixtures = {
-  fieldStart: `<w:p><w:r><w:fldChar w:fldCharType="begin"/></w:r><w:r><w:instrText> PAGE </w:instrText></w:r><w:r><w:fldChar w:fldCharType="separate"/></w:r></w:p>`,
-  fieldEnd: '<w:p><w:r><w:fldChar w:fldCharType="end"/></w:r></w:p>',
-  bookmarkStart: `<w:p><w:bookmarkStart w:id="7" w:name="CareerMark"/>${run("begin")}</w:p>`,
-  bookmarkEnd: `<w:p>${run("end")}<w:bookmarkEnd w:id="7"/></w:p>`,
-  commentStart: `<w:p><w:commentRangeStart w:id="3"/>${run("begin")}</w:p>`,
-  commentEnd: `<w:p>${run("end")}<w:commentRangeEnd w:id="3"/><w:r><w:commentReference w:id="3"/></w:r></w:p>`,
-  commentPart: story(
-    "comments",
-    `<w:comment w:id="3" w:author="Person">${paragraph("review this")}</w:comment>`
-  ),
-  bookmarkHeader: story(
-    "hdr",
-    `<w:p><w:hyperlink w:anchor="CareerMark">${run("jump")}</w:hyperlink></w:p>`
-  ),
 }
 
 export function packageMember(

@@ -1,6 +1,4 @@
 export * from "./paper.js"
-export * from "./paper-package.js"
-export * from "./paper-word.js"
 export * from "./index.js"
 export * from "./paper-rich-edit.js"
 export * from "./paper-diff.js"

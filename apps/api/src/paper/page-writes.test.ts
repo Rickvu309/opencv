@@ -78,7 +78,7 @@ describe("only the paper store files insert page rows", () => {
     )
     expect(
       found,
-      "Insert a page only through an exported function of paper/store.ts or paper/word-package/package-store.ts, and add its case to page-creators.test.ts"
+      "Insert a page only through an exported function of paper/store.ts, and add its case to page-creators.test.ts"
     ).toEqual([])
   })
 

@@ -3,10 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen, within } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
 import { parsePaperId } from "@workspace/domain/kernel"
-import {
-  paperPackageMetadataSchema,
-  type PaperView,
-} from "@workspace/domain/paper-doc"
+import { type PaperView } from "@workspace/domain/paper-doc"
 
 import { ApiError } from "@/lib/api-error.ts"
 
@@ -143,55 +140,6 @@ describe("Paper library", () => {
     expect(screen.queryByText(created.notice)).toBeNull()
     expect(onOpen).not.toHaveBeenCalled()
     expect(screen.queryByText("Start your first document")).toBeInTheDocument()
-  })
-
-  it("opens a Word import on the writing page", async () => {
-    const word = paperPackageMetadataSchema.parse({
-      generation: "package",
-      docId: "33333333-3333-4333-8333-333333333333",
-      revision: "44444444-4444-4444-8444-444444444444",
-      name: "Original",
-      kind: "cv",
-      packageHash: "b".repeat(64),
-      byteSize: 1200,
-    })
-    vi.mocked(importPaperFile).mockResolvedValueOnce(word)
-    const onOpen = vi.fn()
-    vi.stubGlobal(
-      "fetch",
-      vi.fn<typeof fetch>().mockResolvedValue(
-        Response.json(
-          {
-            ok: false,
-            error: { code: "NOT_FOUND", message: "Snapshot unavailable" },
-          },
-          { status: 404 }
-        )
-      )
-    )
-    render(
-      libraryRouter(
-        <PaperLibrary
-          docs={[]}
-          files={[]}
-          loading={false}
-          error={null}
-          onRetry={() => undefined}
-          onOpen={onOpen}
-          query=""
-          onQueryChange={() => undefined}
-        />
-      )
-    )
-    const input = document.querySelector('input[type="file"]')
-    if (!input) throw new Error("Missing import input")
-    fireEvent.change(input, {
-      target: { files: [new File(["Word"], word.name)] },
-    })
-    await vi.waitFor(() => {
-      expect(onOpen).toHaveBeenCalledWith(word.docId)
-    })
-    expect(screen.queryByRole("dialog", { name: word.name })).toBeNull()
   })
 
   it("shows a failed import and lets the user retry with another file", async () => {

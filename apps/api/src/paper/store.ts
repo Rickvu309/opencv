@@ -20,18 +20,10 @@ import { and, desc, eq, ne } from "drizzle-orm"
 
 import { getDb, insideTransaction } from "../db/context.js"
 import { files, paperDocs } from "../db/schema.js"
+import { trashStoredWordPage } from "./word-page-trash.js"
 import { createId } from "../platform/id.js"
 import { CommandError } from "../platform/errors.js"
 import { admitDocument } from "./content/native-admission.js"
-import { listPackagePapers } from "./word-package/package-list.js"
-import {
-  deleteWordPage,
-  publishWordPageCopy,
-  renameWordPage,
-  restoreWordPage,
-  stageWordPageCopy,
-  type WordPageCopy,
-} from "./word-package/package-card-actions.js"
 import {
   IMPORT_GENERIC_MESSAGE,
   classifyImport,
@@ -103,14 +95,7 @@ export async function listPapers(
     .filter((row) => (kind ? row.kind === kind : true))
     .filter((row) => !needle || row.name.toLowerCase().includes(needle))
     .flatMap((row) => (isRichPaper(row) ? listedForEditor(row, writer) : []))
-  const seen = new Set(stored.map((item) => item.id))
-  const minted = (await listPackagePapers(userId)).filter(
-    (item) =>
-      !seen.has(item.id) &&
-      (!kind || item.kind === kind) &&
-      (!needle || item.name.toLowerCase().includes(needle))
-  )
-  return [...stored, ...minted].sort((left, right) =>
+  return [...stored].sort((left, right) =>
     left.updatedAt < right.updatedAt
       ? 1
       : left.updatedAt > right.updatedAt
@@ -176,20 +161,7 @@ export async function updatePaper(
   writer?: NativeWriter
 ) {
   const current = await ownedPaperOrNull(actor.userId, docId)
-  if (!current) {
-    if (patch.isFavorite !== undefined || patch.status !== undefined)
-      throw new CommandError(
-        ERROR_CODES.CONFLICT,
-        "A Word page has only a name. Nothing was changed."
-      )
-    const renamed =
-      patch.name === undefined
-        ? null
-        : await renameWordPage(actor.userId, docId, patch.name)
-    if (!renamed) return documentNotFound()
-    const { previousName, ...page } = renamed
-    return { ...page, previous: { name: previousName } }
-  }
+  if (!current) return documentNotFound()
   toListedPaper(current, writer)
   const touchesPage = patch.name !== undefined || patch.status !== undefined
   const next = {
@@ -214,16 +186,15 @@ export async function updatePaper(
   return { ...toListedPaper(next, writer), previous }
 }
 
-export type DuplicatePlan =
-  { kind: "block" } | { kind: "word"; copy: WordPageCopy } | { kind: "missing" }
+export type DuplicatePlan = { kind: "block" } | { kind: "missing" }
 
 export async function planDuplicate(
   actor: Actor,
   docId: PaperId
 ): Promise<DuplicatePlan> {
-  if (await ownedPaperOrNull(actor.userId, docId)) return { kind: "block" }
-  const copy = await stageWordPageCopy(actor.userId, docId)
-  return copy ? { kind: "word", copy } : { kind: "missing" }
+  return (await ownedPaperOrNull(actor.userId, docId))
+    ? { kind: "block" }
+    : { kind: "missing" }
 }
 
 async function copyOfRichPaper(
@@ -255,25 +226,16 @@ export async function duplicatePaper(
   writer?: NativeWriter
 ) {
   if (plan.kind === "missing") return documentNotFound()
-  if (plan.kind === "word")
-    return (
-      (await publishWordPageCopy(actor.userId, plan.copy)) ?? documentNotFound()
-    )
   const source =
     (await ownedPaperOrNull(actor.userId, docId)) ?? documentNotFound()
   return copyOfRichPaper(actor, source, writer)
 }
 
 export async function deletePaper(actor: Actor, docId: PaperId) {
-  if (!(await ownedPaperOrNull(actor.userId, docId)))
-    return (await deleteWordPage(actor.userId, docId)) ?? documentNotFound()
+  if (!(await ownedPaperOrNull(actor.userId, docId))) return documentNotFound()
+  await trashStoredWordPage(actor.userId, docId)
   await getDb().delete(paperDocs).where(eq(paperDocs.id, docId))
-  await deleteWordPage(actor.userId, docId)
   return { id: docId }
-}
-
-export async function restoreDeletedPaper(actor: Actor, docId: PaperId) {
-  return (await restoreWordPage(actor.userId, docId)) ?? documentNotFound()
 }
 
 export async function readOwnedPhoto(

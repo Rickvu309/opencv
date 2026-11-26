@@ -41,9 +41,6 @@ describe("Paper new dialog", () => {
     ).toMatchObject({
       input: { kind: "cv", format: "rich", templateId: "modern" },
     })
-    expect(
-      calls.some((call) => call.url.includes("/api/commands/paper.canvas"))
-    ).toBe(false)
   })
 
   it("creates a blank rich CV and opens that document", async () => {
@@ -81,9 +78,6 @@ describe("Paper new dialog", () => {
       calls.find((call) => call.url.includes("/api/commands/paper.create"))
         ?.body
     ).toMatchObject({ input: { kind: "cv", format: "rich" } })
-    expect(
-      calls.some((call) => call.url.includes("/api/commands/paper.canvas"))
-    ).toBe(false)
   })
 
   it("opens the file picker from Import a file without making a page", () => {

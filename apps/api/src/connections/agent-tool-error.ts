@@ -1,6 +1,5 @@
 import { ERROR_CODES } from "@workspace/domain/kernel"
 
-import { paperEditBasisMessage } from "../registry/paper-agent.js"
 import { CommandError } from "../platform/errors.js"
 
 export const AGENT_RATE_LIMIT_MESSAGE =
@@ -37,7 +36,6 @@ const AUTHORED: Record<AgentErrorCode, readonly string[]> = {
     "This connection has 20 pending proposals. Approve or deny existing proposals in OpenCV before proposing more.",
   ],
   reread: [
-    paperEditBasisMessage,
     "This page link is invalid. Read the document again.",
     "This page belongs to another document or version.",
     "This Word document has changed. Read it again before editing.",

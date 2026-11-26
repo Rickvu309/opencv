@@ -80,14 +80,6 @@ export function decodeXml(text: string, attribute = false) {
   return output
 }
 
-export function xmlText(text: string) {
-  if (!xmlCharacters(text)) refuse("INVALID_XML_CHARACTERS")
-  return text
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-}
-
 function qualified(name: string) {
   if (!/^[A-Za-z_][A-Za-z_0-9.-]*(?::[A-Za-z_][A-Za-z_0-9.-]*)?$/.test(name))
     refuse("UNSUPPORTED_XML_NAME")

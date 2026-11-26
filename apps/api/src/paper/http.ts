@@ -26,7 +26,6 @@ import {
 } from "./import/import-parse.js"
 import { importedPaper } from "./import/import-word.js"
 import { createNativeWordRoutes } from "./native-word-http.js"
-import { createPaperPackageRoutes } from "./word-package/package-http.js"
 import {
   IMPORT_FILE_CAP,
   IMPORT_SIZE_MESSAGE,
@@ -169,7 +168,6 @@ function refuseImportLink(
 
 export function createPaperRoutes(signedIn: SignedIn) {
   const routes = new Hono<{ Variables: SignedInVariables }>()
-  routes.route("/packages", createPaperPackageRoutes(signedIn))
 
   routes.use("*", signedIn)
 

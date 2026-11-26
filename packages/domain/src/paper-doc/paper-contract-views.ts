@@ -35,7 +35,7 @@ export const paperViewSchema = z
     pageChoice: paperPageChoiceSchema,
     isFavorite: z.boolean(),
     sourceFileId: fileIdSchema.nullable(),
-    format: z.enum(["word", "rich"]).optional(),
+    format: z.literal("rich").optional(),
     preview: z.array(z.string()).optional(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
@@ -51,7 +51,7 @@ const paperIdentitySchema = paperViewSchema.pick({
 })
 
 export const paperDocumentInfoSchema = z.discriminatedUnion("format", [
-  paperIdentitySchema.extend({ format: z.enum(["word", "prose"]) }).strict(),
+  paperIdentitySchema.extend({ format: z.literal("prose") }).strict(),
   paperIdentitySchema
     .extend({
       format: z.literal("rich"),
@@ -61,19 +61,19 @@ export const paperDocumentInfoSchema = z.discriminatedUnion("format", [
     .strict(),
 ])
 
-export const PAPER_COACH_WORD_PAGE_NOTE =
-  "This is a Word page. It has no document body in this result. Read its text with paper_outline before describing, reviewing or changing it."
-
-export const paperCoachWordPageSchema = paperViewSchema
-  .omit({ paper: true })
-  .extend({
-    format: z.literal("word"),
-    content: z.string().nullable(),
-    note: z.literal(PAPER_COACH_WORD_PAGE_NOTE),
+export const paperImportResponseSchema = z
+  .object({
+    ok: z.literal(true),
+    data: z
+      .object({
+        docId: z.string().uuid(),
+        name: z.string().min(1).max(200),
+        kind: z.enum(["cv", "letter"]),
+        notice: z.string().min(1).optional(),
+      })
+      .strict(),
   })
   .strict()
-
-export type PaperCoachWordPage = z.output<typeof paperCoachWordPageSchema>
 
 export type PaperFile = {
   id: FileId

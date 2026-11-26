@@ -5,7 +5,6 @@ import {
   paperDocNameSchema,
   paperTemplateIdSchema,
 } from "../../../paper-doc/paper.js"
-import { wordPageLabelSchema } from "../../../paper-doc/paper-word.js"
 
 export const operation = defineOperation({
   owner: "paper",
@@ -17,7 +16,7 @@ export const operation = defineOperation({
   label: "Start a CV or Letter in Paper",
   input: z
     .object({
-      kind: wordPageLabelSchema,
+      kind: z.enum(["cv", "letter"]),
       templateId: paperTemplateIdSchema.optional(),
       name: paperDocNameSchema.optional(),
       jobId: z.string().uuid().optional(),

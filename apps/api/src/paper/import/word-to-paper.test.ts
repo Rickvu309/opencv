@@ -4,13 +4,7 @@ import {
 } from "@workspace/domain/paper-doc"
 import { describe, expect, it } from "vitest"
 
-import { PAPER_TEMPLATE_IDS } from "@workspace/domain/paper-doc"
-
 import { compileFlowNativeDocx } from "../native-output/formatted.js"
-import {
-  templateLines,
-  templatePageBytes,
-} from "../word-package/word/template.js"
 import { fixturePackage, paragraph } from "../word-package/package-fixtures.js"
 import {
   PHOTOS_DROPPED,
@@ -285,19 +279,5 @@ describe("a Word file brought in becomes a Paper", () => {
       },
       { type: "paragraph", paragraph: {}, content: [{ text: "London" }] },
     ])
-  })
-
-  it("brings every CV template's Word page in as the same Paper its lines make", async () => {
-    for (const templateId of PAPER_TEMPLATE_IDS) {
-      const brought = await paperFromWord(templatePageBytes(templateId), "cv")
-      expect(brought.dropped, templateId).toEqual([])
-      const fromLines = paperFromLines("cv", templateLines(templateId))
-      expect(brought.paper.presentation, templateId).toEqual(
-        fromLines.presentation
-      )
-      expect(outline(bodyOf(brought.paper)), templateId).toEqual(
-        outline(bodyOf(fromLines))
-      )
-    }
   })
 })
