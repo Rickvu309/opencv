@@ -9,6 +9,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Skip Gmail for now.",
+  label: "Skip this message",
   input: emptyInboxInput,
   publicResult: z.object({ skipped: z.literal(true) }).strict(),
   coach: "never",

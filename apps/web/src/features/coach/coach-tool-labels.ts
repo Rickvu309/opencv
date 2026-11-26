@@ -4,43 +4,6 @@ import { catalog } from "@workspace/domain/kernel"
 type ToolCopy = { label: string; read?: string }
 
 const TOOL_COPY = {
-  [catalog["connections.list"].name]: {
-    label: "Look at your connections",
-    read: "Looked at your connections",
-  },
-  [catalog["connections.revoke"].name]: { label: "Disconnect your account" },
-  [catalog["file.get"].name]: {
-    label: "Read your file",
-    read: "Read your file",
-  },
-  [catalog["inbox.acceptSuggestion"].name]: { label: "Accept this suggestion" },
-  [catalog["inbox.addToCalendar"].name]: {
-    label: "Add this event to your calendar",
-  },
-  [catalog["inbox.clearSuggestion"].name]: { label: "Clear this suggestion" },
-  [catalog["inbox.draftReply"].name]: { label: "Draft a reply" },
-  [catalog["inbox.get"].name]: {
-    label: "Read this message",
-    read: "Read this message",
-  },
-  [catalog["inbox.list"].name]: {
-    label: "Look at your Inbox",
-    read: "Looked at your Inbox",
-  },
-  [catalog["inbox.markDone"].name]: { label: "Mark this message done" },
-  [catalog["inbox.scan"].name]: { label: "Check your Inbox" },
-  [catalog["inbox.send"].name]: { label: "Send your reply" },
-  [catalog["inbox.skip"].name]: { label: "Skip this message" },
-  [catalog["inbox.snooze"].name]: { label: "Snooze this message" },
-  [catalog["inbox.snoozed"].name]: {
-    label: "Look at snoozed messages",
-    read: "Looked at snoozed messages",
-  },
-  [catalog["inbox.updateDraft"].name]: { label: "Update your draft" },
-  [catalog["integrations.list"].name]: {
-    label: "Look at your integrations",
-    read: "Looked at your integrations",
-  },
   [catalog["job.addChecklistItem"].name]: {
     label: "Add a Job checklist item",
   },
@@ -80,11 +43,6 @@ const TOOL_COPY = {
     read: "Looked at your Job priorities",
   },
   [catalog["job.setPriority"].name]: { label: "Update this Job's priority" },
-  [catalog["link.get"].name]: {
-    label: "Read this link",
-    read: "Read this link",
-  },
-  [catalog["notify.request"].name]: { label: "Set a reminder" },
   [catalog["paper.canvas"].name]: { label: "Update your Paper layout" },
   [catalog["paper.create"].name]: { label: "Create a Paper" },
   [catalog["paper.delete"].name]: { label: "Delete this Paper" },

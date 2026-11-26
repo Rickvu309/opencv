@@ -8,6 +8,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Add the selected time to the calendar.",
+  label: "Add this event to your calendar",
   input: z
     .object({ threadId: threadIdSchema, start: z.string().datetime() })
     .strict(),

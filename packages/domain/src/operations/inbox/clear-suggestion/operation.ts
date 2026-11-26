@@ -8,6 +8,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Dismiss a stage suggestion.",
+  label: "Clear this suggestion",
   input: threadInput,
   publicResult: z.object({ id: z.string() }).strip(),
   coach: "never",

@@ -8,6 +8,8 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description: "Read a file's name and size. The bytes stay in the store.",
+  label: "Read your file",
+  readLabel: "Read your file",
   input: z.object({ fileId: z.string().uuid() }).strict(),
   publicResult: z
     .object({

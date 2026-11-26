@@ -8,6 +8,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Send the drafted reply.",
+  label: "Send your reply",
   input: threadInput,
   publicResult: z
     .object({ id: z.string(), threadId: z.string(), body: z.string() })

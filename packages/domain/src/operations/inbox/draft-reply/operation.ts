@@ -12,6 +12,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Draft a reply. A hint asks the Coach for another one.",
+  label: "Draft a reply",
   input: z
     .object({
       threadId: threadIdSchema,

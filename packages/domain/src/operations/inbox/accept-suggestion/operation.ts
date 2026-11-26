@@ -9,6 +9,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Move the linked job to the suggested stage.",
+  label: "Accept this suggestion",
   input: threadInput,
   publicResult: z
     .object({
