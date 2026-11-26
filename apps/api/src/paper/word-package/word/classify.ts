@@ -27,7 +27,7 @@ export type WordParagraphView = { node: WordNode; xml: string; slice: string }
 export type WordParagraphSlot = WordParagraphView & { nested: boolean }
 
 const canvas = createRequire(import.meta.url)(
-  "../../../../../scripts/lib/paper-canvas-bytes.mjs"
+  "../../../../../../scripts/lib/paper-canvas-bytes.mjs"
 ) as {
   paragraphsOf: (bytes: Uint8Array) => WordParagraphView[]
   contentOf: (paragraph: WordParagraphView) => string

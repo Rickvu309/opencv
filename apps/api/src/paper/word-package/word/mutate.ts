@@ -39,7 +39,7 @@ export type WordDraft = {
 }
 
 const canvas = createRequire(import.meta.url)(
-  "../../../../../scripts/lib/paper-canvas-bytes.mjs"
+  "../../../../../../scripts/lib/paper-canvas-bytes.mjs"
 ) as {
   mintBlankBytes: () => Uint8Array
   repack: (bytes: Uint8Array, xml: string) => Uint8Array

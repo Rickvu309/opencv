@@ -21,7 +21,7 @@ import { publishWordPackage, stageWordPackage } from "../../package-store.js"
 import { apply, exportWord, open, undo } from "./document.js"
 
 const loaded = createRequire(import.meta.url)(
-  "../../../../../scripts/lib/paper-canvas-bytes.mjs"
+  "../../../../../../scripts/lib/paper-canvas-bytes.mjs"
 ) as {
   packageFromBody: (body: string) => Uint8Array
   mainXml: (bytes: Uint8Array) => string
