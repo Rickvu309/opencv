@@ -1,21 +1,13 @@
 import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
 
-import { handleApiError } from "../platform/error-reply.js"
-import { CommandError } from "../platform/errors.js"
-import { PaperPackage } from "./word-package/package-engine.js"
-import { PaperPackageRefusal } from "./word-package/package-errors.js"
-import {
-  fixturePackage,
-  packageMember,
-  run,
-} from "./word-package/package-fixtures.js"
-import {
-  parsePackageXml,
-  descendants,
-  isWord,
-} from "./word-package/package-xml.js"
-import { readPackageZip } from "./word-package/package-zip.js"
+import { handleApiError } from "../../platform/error-reply.js"
+import { CommandError } from "../../platform/errors.js"
+import { PaperPackage } from "./package-engine.js"
+import { PaperPackageRefusal } from "./package-errors.js"
+import { fixturePackage, packageMember, run } from "./package-fixtures.js"
+import { parsePackageXml, descendants, isWord } from "./package-xml.js"
+import { readPackageZip } from "./package-zip.js"
 
 const context = {
   docId: "cv",

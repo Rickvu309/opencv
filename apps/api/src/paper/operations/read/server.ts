@@ -4,7 +4,10 @@ import { parsePaperId } from "@workspace/domain/kernel"
 import { readPaperDocumentInfo } from "../../document-info.js"
 import { isWordPageDeleted } from "../../word-package/package-card-actions.js"
 import { packageFailure } from "../../package-pages.js"
-import { listWordPackages, readWordPackage } from "../../package-store.js"
+import {
+  listWordPackages,
+  readWordPackage,
+} from "../../word-package/package-store.js"
 import { readWordParagraphs } from "../../word-reading.js"
 import { open } from "../../word-package/word/document.js"
 

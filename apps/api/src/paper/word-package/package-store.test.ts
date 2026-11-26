@@ -4,16 +4,19 @@ import { parseFileId, parseUserId, personActor } from "@workspace/domain/kernel"
 import { and, count, eq, sql } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import { transaction, withDatabase } from "../db/context.js"
+import { transaction, withDatabase } from "../../db/context.js"
 import {
   files,
   paperPackageHeads,
   paperPackageVersions,
   user,
-} from "../db/schema.js"
-import { openBackend, type Backend } from "../test/registry-formal-support.js"
-import { fixturePackage, paragraph } from "./word-package/package-fixtures.js"
-import { archiveDigest, decodePackageCursor } from "./package-pages.js"
+} from "../../db/schema.js"
+import {
+  openBackend,
+  type Backend,
+} from "../../test/registry-formal-support.js"
+import { fixturePackage, paragraph } from "./package-fixtures.js"
+import { archiveDigest, decodePackageCursor } from "../package-pages.js"
 import {
   exportWordPackage,
   listWordPackages,
@@ -21,7 +24,7 @@ import {
   readWordPackage,
   stageWordPackage,
 } from "./package-store.js"
-import { deleteFile, listFiles } from "./store.js"
+import { deleteFile, listFiles } from "../store.js"
 
 let backend: Backend
 const owner = randomUUID()

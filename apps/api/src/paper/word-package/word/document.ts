@@ -38,7 +38,7 @@ import {
   publishWordPackage,
   stageWordPackage,
   wordPackageBasis,
-} from "../../package-store.js"
+} from "../package-store.js"
 import { projectParagraphs } from "./classify.js"
 import { blankPageBytes, mutateWord, refuse, type WordSpans } from "./mutate.js"
 import { templatePageBytes } from "./template.js"

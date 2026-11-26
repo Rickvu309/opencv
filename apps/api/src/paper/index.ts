@@ -2,7 +2,7 @@ export { registerPaper } from "./commands.js"
 export { createPaperRoutes } from "./http.js"
 export { importedWordPage } from "./import-word.js"
 export { importReaderReady } from "./import-text-pool.js"
-export { stageWordPackage } from "./package-store.js"
+export { stageWordPackage } from "./word-package/package-store.js"
 export { sweepUnattachedPhotos } from "./photo-sweep.js"
 export { saveFile, tryReadRichPaper } from "./store.js"
 export {

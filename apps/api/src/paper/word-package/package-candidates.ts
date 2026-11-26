@@ -32,7 +32,7 @@ import {
 } from "../package-pages.js"
 import { prepareWordPackage, wordPackageEditSchema } from "./package-planner.js"
 import { compareAndRestorePackage, readPackageHead } from "./package-restore.js"
-import { wordPackageBasis } from "../package-store.js"
+import { wordPackageBasis } from "./package-store.js"
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/)
 export const wordCandidateSchema = z

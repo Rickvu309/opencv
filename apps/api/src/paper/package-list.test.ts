@@ -19,7 +19,10 @@ import { installRegistry } from "../install.js"
 import { openBackend, type Backend } from "../test/registry-formal-support.js"
 import { readOutline } from "./outline.js"
 import { fixturePackage, paragraph } from "./word-package/package-fixtures.js"
-import { publishWordPackage, stageWordPackage } from "./package-store.js"
+import {
+  publishWordPackage,
+  stageWordPackage,
+} from "./word-package/package-store.js"
 import { listPapers } from "./store.js"
 
 let backend: Backend

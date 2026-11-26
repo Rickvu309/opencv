@@ -17,7 +17,7 @@ import {
   publishWordPackage,
   restoreWordHead,
   stageWordPackage,
-} from "../package-store.js"
+} from "./package-store.js"
 
 const docIdSchema = z.string().uuid()
 const NAME_MAX = 200

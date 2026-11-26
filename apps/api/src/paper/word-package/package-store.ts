@@ -15,17 +15,21 @@ import { and, asc, eq, gt, sql } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import { z } from "zod"
 
-import { getDb, insideTransaction, transaction } from "../db/context.js"
-import { files, paperPackageHeads, paperPackageVersions } from "../db/schema.js"
-import { CommandError } from "../platform/errors.js"
-import { PaperPackage } from "./word-package/package-engine.js"
+import { getDb, insideTransaction, transaction } from "../../db/context.js"
+import {
+  files,
+  paperPackageHeads,
+  paperPackageVersions,
+} from "../../db/schema.js"
+import { CommandError } from "../../platform/errors.js"
+import { PaperPackage } from "./package-engine.js"
 import {
   archiveDigest,
   decodePackageCursor,
   packageDigest,
   packageFailure,
   packagePage,
-} from "./package-pages.js"
+} from "../package-pages.js"
 
 export const WORD_PACKAGE_MEDIA_TYPE =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document"

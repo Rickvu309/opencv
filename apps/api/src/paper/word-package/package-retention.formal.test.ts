@@ -4,24 +4,24 @@ import { count, eq, sql } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 
-import { getDb, transaction, withDatabase } from "../db/context.js"
+import { getDb, transaction, withDatabase } from "../../db/context.js"
 import {
   files,
   paperPackageCandidates,
   paperPackageVersions,
   user,
-} from "../db/schema.js"
+} from "../../db/schema.js"
 import {
   openBackend,
   REAL,
   type Backend,
-} from "../test/registry-formal-support.js"
+} from "../../test/registry-formal-support.js"
 import {
   commitWordCandidate,
   prepareStoredWordPackage,
   restoreWordCandidate,
-} from "./word-package/package-candidates.js"
-import { fixturePackage } from "./word-package/package-fixtures.js"
+} from "./package-candidates.js"
+import { fixturePackage } from "./package-fixtures.js"
 import * as packageStore from "./package-store.js"
 import {
   exportWordPackage,

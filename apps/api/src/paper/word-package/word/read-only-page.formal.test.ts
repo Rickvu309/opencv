@@ -17,7 +17,7 @@ import {
   publishWordPackage,
   readWordPackage,
   stageWordPackage,
-} from "../../package-store.js"
+} from "../package-store.js"
 import { apply, open } from "./document.js"
 
 let backend: Backend

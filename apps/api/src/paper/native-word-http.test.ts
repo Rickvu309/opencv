@@ -35,7 +35,7 @@ import {
   one,
   textOf,
 } from "./native-output/inspect.test-support.js"
-import { WORD_PACKAGE_MEDIA_TYPE } from "./package-store.js"
+import { WORD_PACKAGE_MEDIA_TYPE } from "./word-package/package-store.js"
 
 async function responseData(response: Response): Promise<unknown> {
   const body: unknown = await response.json()

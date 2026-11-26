@@ -18,7 +18,7 @@ import {
   type Backend,
 } from "../../test/registry-formal-support.js"
 import { paperRegistry } from "../paper-registry.test-support.js"
-import { publishWordPackage, stageWordPackage } from "../package-store.js"
+import { publishWordPackage, stageWordPackage } from "./package-store.js"
 import { open } from "./word/document.js"
 
 const loaded = createRequire(import.meta.url)(

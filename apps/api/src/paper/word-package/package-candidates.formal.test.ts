@@ -24,13 +24,13 @@ import {
 import { PaperPackage } from "./package-engine.js"
 import { fixturePackage } from "./package-fixtures.js"
 import { packageDigest } from "../package-pages.js"
-import * as packageStore from "../package-store.js"
+import * as packageStore from "./package-store.js"
 import {
   exportWordPackage,
   publishWordPackage,
   readWordPackage,
   stageWordPackage,
-} from "../package-store.js"
+} from "./package-store.js"
 
 let backend: Backend
 const owner = randomUUID()

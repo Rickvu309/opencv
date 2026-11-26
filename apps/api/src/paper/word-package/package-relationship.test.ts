@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { PaperPackage } from "./word-package/package-engine.js"
+import { PaperPackage } from "./package-engine.js"
 import {
   fixtureFiles,
   fixturePackage,
@@ -8,7 +8,7 @@ import {
   paragraph,
   relationship,
   run,
-} from "./word-package/package-fixtures.js"
+} from "./package-fixtures.js"
 
 const context = {
   docId: "cv",
