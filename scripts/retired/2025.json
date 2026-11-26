@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "scripts/guard-ledger/write-grant.json",
+    "because": "Its restore proof no longer runs: the historic apps/api/src/job/store.ts imports ../id.js, which moved to platform/id.js, so the old mistake crashes on import instead of failing an assertion. The guard test still runs on every change.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
