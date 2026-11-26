@@ -31,7 +31,7 @@ describe("detail recovery", () => {
         screen.queryByRole("button", { name: "Refresh" })
       ).not.toBeInTheDocument()
       const label = path === "apply" ? "Back to Apply" : back
-      fireEvent.click(screen.getByRole("button", { name: label, exact: true }))
+      fireEvent.click(screen.getByRole("button", { name: label }))
 
       await waitFor(() =>
         expect(router.state.location.pathname).toBe(`/${path}`)

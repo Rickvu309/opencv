@@ -232,8 +232,6 @@ describe("search results integration", () => {
       {
         id: fixture.id,
         title: fixture.title,
-        focusKind: null,
-        focusId: null,
         createdAt: fixture.createdAt,
         updatedAt: fixture.updatedAt,
       },

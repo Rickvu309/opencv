@@ -64,6 +64,7 @@ describe("app sidebar active row", () => {
         id: "01900000-0000-7000-8000-0000000000b2",
         title: "Designer",
         company: "Acme",
+        starred: false,
       },
     ])
     const sidebar = await renderSidebar(

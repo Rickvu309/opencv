@@ -197,8 +197,6 @@ describe("the Coach button in the dock", () => {
       {
         id: "11111111-1111-4111-8111-111111111111",
         title: "CV vs internship first",
-        focusKind: null,
-        focusId: null,
         createdAt: "2026-02-01T00:00:00.000Z",
         updatedAt: "2026-02-02T00:00:00.000Z",
       },
@@ -294,8 +292,6 @@ describe("Coach sheet keyboard access", () => {
       {
         id: "11111111-1111-4111-8111-111111111111",
         title: "CV vs internship first",
-        focusKind: null,
-        focusId: null,
         createdAt: "2026-02-01T00:00:00.000Z",
         updatedAt: "2026-02-02T00:00:00.000Z",
       },

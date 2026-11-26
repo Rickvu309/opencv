@@ -25,7 +25,6 @@ const moved: ChatToolPart = {
   activityId: "act-1",
   detail: {
     type: "job.move",
-    cardId: "c1",
     title: "Backend Intern",
     company: "Acme",
     from: "inbox",

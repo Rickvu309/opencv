@@ -87,12 +87,9 @@ function setup(
   const editor = client
     ? mountRichPaperEditor(client, host, { photoUrl: (id) => `/owned/${id}` })
     : ({
-        focus: vi.fn(() => false),
+        focus: vi.fn((): false | HTMLElement => false),
         photos: () => [photo],
         subscribe: () => () => {},
-        documentHistory: () => ({ undo: false, redo: false }),
-        undoDocument: vi.fn(),
-        redoDocument: vi.fn(),
         insertPhoto: vi.fn(),
         replacePhoto: vi.fn(),
         selectedPhoto: () => photo.id,
@@ -137,7 +134,7 @@ it("keeps crop keystrokes until commit and permits each edge to return to zero",
     fireEvent.blur(field(edge))
     expect(field(edge)).toHaveValue("0")
   }
-  fireEvent.click(screen.getByRole("button", { name: "Apply", exact: true }))
+  fireEvent.click(screen.getByRole("button", { name: "Apply" }))
   expect(editor.updatePhoto).toHaveBeenCalledOnce()
 })
 
@@ -201,7 +198,7 @@ it("retains a refused crop and applies exactly the fields shown after recovery",
   expect(field("Top")).toHaveValue("10")
   expect(field("Bottom")).toHaveValue("50")
   expect(screen.queryByRole("alert")).not.toBeInTheDocument()
-  fireEvent.click(screen.getByRole("button", { name: "Apply", exact: true }))
+  fireEvent.click(screen.getByRole("button", { name: "Apply" }))
   const saved = client!.document()
   const section = saved!.flow.children[0]!
   expect(section.children.find((node) => node.type === "photo")).toMatchObject({
@@ -239,7 +236,7 @@ it.each([
     fireEvent.blur(field("Top"))
     fireEvent.change(field("Bottom"), { target: { value: "50" } })
     if (blur) fireEvent.blur(field("Bottom"))
-    fireEvent.click(screen.getByRole("button", { name: "Apply", exact: true }))
+    fireEvent.click(screen.getByRole("button", { name: "Apply" }))
     expect(screen.getByRole("dialog")).toBeInTheDocument()
     expect(field("Bottom")).toHaveValue("50")
     expect(field("Bottom")).toHaveAttribute("aria-invalid", "true")
@@ -252,7 +249,7 @@ it.each([
     expect(client!.document()).toEqual(before)
     fireEvent.change(field("Width"), { target: { value: "5" } })
     if (blur) fireEvent.blur(field("Width"))
-    fireEvent.click(screen.getByRole("button", { name: "Apply", exact: true }))
+    fireEvent.click(screen.getByRole("button", { name: "Apply" }))
     expect(field("Width")).toHaveValue("5")
     expect(field("Width")).toHaveAttribute("aria-invalid", "true")
     expect(field("Width")).toHaveAccessibleDescription("Use 16 to 2112 pixels.")
@@ -266,7 +263,7 @@ it.each([true, false])(
   (rectangle) => {
     const { field, editor } = setup(rectangle)
     fireEvent.change(field("Width"), { target: { value: "2113" } })
-    fireEvent.click(screen.getByRole("button", { name: "Apply", exact: true }))
+    fireEvent.click(screen.getByRole("button", { name: "Apply" }))
     expect(screen.getByRole("dialog")).toBeInTheDocument()
     expect(field("Width")).toHaveValue("2113")
     expect(field("Width")).toHaveFocus()
@@ -279,7 +276,7 @@ it("validates every field together and preserves text on Enter", () => {
   for (const name of ["Width", "Height", "Top", "Right", "Bottom", "Left"])
     fireEvent.change(field(name), { target: { value: "refused" } })
   fireEvent.keyDown(field("Width"), { key: "Enter" })
-  fireEvent.click(screen.getByRole("button", { name: "Apply", exact: true }))
+  fireEvent.click(screen.getByRole("button", { name: "Apply" }))
   for (const name of ["Width", "Height", "Top", "Right", "Bottom", "Left"]) {
     expect(field(name)).toHaveValue("refused")
     expect(field(name)).toHaveAttribute("aria-invalid", "true")
@@ -301,7 +298,7 @@ it.each([true, false])(
     expect(field("Width")).toHaveValue("")
     fireEvent.change(field("Width"), { target: { value: "120" } })
     if (blur) fireEvent.blur(field("Width"))
-    fireEvent.click(screen.getByRole("button", { name: "Apply", exact: true }))
+    fireEvent.click(screen.getByRole("button", { name: "Apply" }))
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     const photo = client!
       .document()!
@@ -319,7 +316,7 @@ it("keeps wrap placement and all untouched properties when applying", () => {
   fireEvent.change(field("Alternative text"), {
     target: { value: "Updated portrait" },
   })
-  fireEvent.click(screen.getByRole("button", { name: "Apply", exact: true }))
+  fireEvent.click(screen.getByRole("button", { name: "Apply" }))
   expect(editor.updatePhoto).toHaveBeenCalledExactlyOnceWith({
     ...original,
     alt: "Updated portrait",
@@ -345,7 +342,7 @@ it.each([
   fireEvent.blur(field(first))
   fireEvent.change(field(second), { target: { value: "50" } })
   fireEvent.blur(field(second))
-  fireEvent.click(screen.getByRole("button", { name: "Apply", exact: true }))
+  fireEvent.click(screen.getByRole("button", { name: "Apply" }))
   expect(field(second)).toHaveAttribute("aria-invalid", "true")
   expect(field(first)).toHaveAttribute("aria-invalid", "false")
   expect(field(second)).toHaveFocus()
@@ -466,7 +463,7 @@ it.each([
   [100, 20000],
 ])("refuses %s by %s photos before uploading bytes", async (width, height) => {
   setup()
-  fireEvent.click(screen.getByRole("button", { name: "Cancel", exact: true }))
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }))
   const close = vi.fn()
   vi.stubGlobal(
     "createImageBitmap",
@@ -579,12 +576,10 @@ it.each([
     fireEvent.blur(field(name))
     fireEvent.focus(field("Top"))
     fireEvent.blur(field("Top"))
-    fireEvent.click(screen.getByRole("button", { name: "Apply", exact: true }))
+    fireEvent.click(screen.getByRole("button", { name: "Apply" }))
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     expect(editor.photos()).toHaveLength(1)
-    fireEvent.click(
-      screen.getByRole("button", { name: "Edit photo", exact: true })
-    )
+    fireEvent.click(screen.getByRole("button", { name: "Edit photo" }))
     for (const [index, key] of photoNumbers.entries())
       expect(field(key)).toHaveValue(shown[index])
   }

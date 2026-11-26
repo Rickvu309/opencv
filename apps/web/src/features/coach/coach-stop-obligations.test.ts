@@ -58,7 +58,7 @@ it("recovers a lost response with the identical start key and full input", async
     )
   ).toEqual({ ok: true, taskId: TASK })
   expect(
-    io.start.mock.calls.map(([input, startKey]) => [input, startKey])
+    io.start.mock.calls.map((call: unknown[]) => [call[0], call[1]])
   ).toEqual([[input, TASK]])
   expect(
     io.stop.mock.calls.map(([chatId, taskId]) => [chatId, taskId])

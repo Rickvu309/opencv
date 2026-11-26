@@ -37,14 +37,12 @@ describe("coming soon and the calm 404", () => {
     expect(track.className).toMatch(/\bmin-h-11\b/)
     expect(track.className).toMatch(/\bmd:min-h-6\b/)
     expect(primaryCount()).toBe(1)
-    const previewTitle = screen.getByText("Marketing Executive", {
-      hidden: true,
-    })
+    const previewTitle = screen.getByText("Marketing Executive")
     expect(previewTitle.closest("[aria-hidden='true']")).not.toBeNull()
     expect(previewTitle.className).toMatch(/\bbreak-words\b/)
     expect(previewTitle.className).not.toMatch(/\btruncate\b/)
     expect(previewTitle.closest("[data-slot='jobs-preview']")).not.toBeNull()
-    const fit = screen.getByText("82% fit", { hidden: true })
+    const fit = screen.getByText("82% fit")
     expect(fit.parentElement).toBe(previewTitle.parentElement)
     expect(fit.compareDocumentPosition(previewTitle)).toBe(
       Node.DOCUMENT_POSITION_PRECEDING

@@ -41,7 +41,7 @@ describe("preview page count", () => {
     vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout", "Date"] })
     vi.setSystemTime(TEST_NOW)
     const fontsDescriptor = Object.getOwnPropertyDescriptor(document, "fonts")
-    let releaseFonts = () => undefined
+    let releaseFonts: () => void = () => {}
     const fontsReady = new Promise<void>((resolve) => {
       releaseFonts = resolve
     })
@@ -149,7 +149,7 @@ describe("print paper", () => {
   })
 
   it("waits to print until the photo decode resolves", async () => {
-    let release = () => undefined
+    let release: () => void = () => {}
     Object.defineProperty(HTMLImageElement.prototype, "decode", {
       configurable: true,
       value: () =>
@@ -355,8 +355,10 @@ describe("print model of a stored CV", () => {
   it("keeps the summary, activities and awards", () => {
     const preview = previewOf(sectionsCv, "internship")
     expect(preview?.summary).toBe("Shipped a small tool")
-    expect(preview?.activities).toEqual(["Debate club"])
-    expect(preview?.awards).toEqual(["Dean list"])
+    expect(preview).toMatchObject({
+      activities: ["Debate club"],
+      awards: ["Dean list"],
+    })
   })
 })
 
@@ -366,7 +368,7 @@ describe("constructed stylesheet copies", () => {
       get cssRules() {
         throw new Error("Cannot access rules")
       },
-    } as CSSStyleSheet
+    } as unknown as CSSStyleSheet
     expect(copySheetOrSkipCrossOriginAndJsdom(sheet)).toBeNull()
   })
 
@@ -383,7 +385,7 @@ describe("constructed stylesheet copies", () => {
     try {
       const sheet = {
         cssRules: [{ cssText: "p { color: black }" }],
-      } as CSSStyleSheet
+      } as unknown as CSSStyleSheet
       const copy = copySheetOrSkipCrossOriginAndJsdom(sheet)
       expect(written).toEqual(["p { color: black }"])
       expect(copy).toBeInstanceOf(FakeSheet)

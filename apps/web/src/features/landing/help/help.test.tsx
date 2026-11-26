@@ -22,7 +22,7 @@ describe("filterHelpTopics", () => {
     expect(
       matched.find((topic) => topic.id === "paper")?.questions
     ).toHaveLength(paper?.questions.length ?? 0)
-    expect(matched.some((topic) => topic.id === "inbox")).toBe(false)
+    expect(matched.map((topic) => String(topic.id))).not.toContain("inbox")
   })
 
   it("keeps only the questions that match", () => {
@@ -82,23 +82,14 @@ describe("help page", () => {
       topics.queryByRole("link", { name: "Inbox" })
     ).not.toBeInTheDocument()
 
-    const hidden = { hidden: true }
     expect(screen.getByText("How do I sign in?")).toBeVisible()
+    expect(screen.getByText(/There is no password\./)).toBeInTheDocument()
+    expect(screen.getByText(/Light and Max need Pro/)).toBeInTheDocument()
+    expect(screen.queryByText(/Inbox/)).not.toBeInTheDocument()
+    expect(screen.getByText(/The Jobs page is coming soon/)).toBeInTheDocument()
+    expect(screen.getByText(/Proof is coming soon\./)).toBeInTheDocument()
     expect(
-      screen.getByText(/There is no password\./, hidden)
-    ).toBeInTheDocument()
-    expect(
-      screen.getByText(/Light and Max need Pro/, hidden)
-    ).toBeInTheDocument()
-    expect(screen.queryByText(/Inbox/, hidden)).not.toBeInTheDocument()
-    expect(
-      screen.getByText(/The Jobs page is coming soon/, hidden)
-    ).toBeInTheDocument()
-    expect(
-      screen.getByText(/Proof is coming soon\./, hidden)
-    ).toBeInTheDocument()
-    expect(
-      screen.getByText("Free is $0 a month. Pro is $9 a month.", hidden)
+      screen.getByText("Free is $0 a month. Pro is $9 a month.")
     ).toBeInTheDocument()
 
     await userEvent.click(screen.getByText("How do I sign in?"))

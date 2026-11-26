@@ -37,7 +37,7 @@ beforeEach(() => {
     return style
   })
   vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(
-    function () {
+    function (this: Element) {
       const label = this.getAttribute("data-toolbar-item")
       const phone = width < 768
       if (this.tagName.toLowerCase() === "svg") return new DOMRect(0, 0, 16, 16)
@@ -79,7 +79,10 @@ beforeEach(() => {
   disposals.push(() => vi.restoreAllMocks())
   const observer = globalThis.ResizeObserver
   globalThis.ResizeObserver = class implements ResizeObserver {
-    constructor(private callback: ResizeObserverCallback) {}
+    private callback: ResizeObserverCallback
+    constructor(callback: ResizeObserverCallback) {
+      this.callback = callback
+    }
     observe(target: Element) {
       const contentRect = new DOMRect(0, 0, width, 50)
       this.callback(
@@ -225,7 +228,7 @@ async function fillNumber(
   name: string,
   value: string
 ) {
-  const input = screen.getByRole("textbox", { name, exact: true })
+  const input = screen.getByRole("textbox", { name })
   await user.clear(input)
   await user.type(input, value)
 }
@@ -237,7 +240,7 @@ it("keeps the dialog's caret size while closing, focusing and typing", async () 
   act(() => editor.focus())
   await user.click(screen.getByRole("button", { name: "Size and spacing" }))
   await fillNumber(user, "Text size (pt)", "10.5")
-  await user.click(screen.getByRole("button", { name: "Apply", exact: true }))
+  await user.click(screen.getByRole("button", { name: "Apply" }))
   expect(editor.activeFormatting()?.size).toBe("10.5")
   const content = screen.getByRole("textbox", { name: "Document content" })
   expect(content).toHaveFocus()
@@ -280,7 +283,7 @@ it.each([
           ? "2.05"
           : "6.25"
     )
-    await user.click(screen.getByRole("button", { name: "Apply", exact: true }))
+    await user.click(screen.getByRole("button", { name: "Apply" }))
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     expect(editor.activeFormatting()).toMatchObject({
       size: name === "Text size (pt)" ? "11.5" : "10.5",
@@ -299,7 +302,7 @@ it.each(["2.05", "4.15", "1.125"])(
     const { editor, client } = setup()
     await user.click(screen.getByRole("button", { name: "Size and spacing" }))
     await fillNumber(user, "Line spacing (lines)", value)
-    await user.click(screen.getByRole("button", { name: "Apply", exact: true }))
+    await user.click(screen.getByRole("button", { name: "Apply" }))
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     expect(editor.activeFormatting()?.lineValue).toBe(value)
     expect(JSON.stringify(client.document())).toContain(
@@ -315,7 +318,7 @@ it("explains an unrepresentable multiple before changing the document", async ()
   const before = client.document()
   await user.click(screen.getByRole("button", { name: "Size and spacing" }))
   await fillNumber(user, "Line spacing (lines)", "1.001")
-  await user.click(screen.getByRole("button", { name: "Apply", exact: true }))
+  await user.click(screen.getByRole("button", { name: "Apply" }))
   expect(screen.getByRole("alert")).toHaveTextContent("exact Word units")
   expect(client.document()).toEqual(before)
 })
@@ -332,14 +335,10 @@ it("types and steps the toolbar size and retains the font and color pickers' typ
   expect(editor.activeFormatting()?.size).toBe("11")
   await user.click(screen.getByRole("button", { name: "Decrease font size" }))
   expect(editor.activeFormatting()?.size).toBe("10.5")
-  await user.click(screen.getByRole("combobox", { name: "Font", exact: true }))
-  await user.click(
-    screen.getByRole("option", { name: "Courier New", exact: true })
-  )
-  await user.click(
-    screen.getByRole("button", { name: "Text color", exact: true })
-  )
-  await user.click(screen.getByRole("button", { name: "Navy", exact: true }))
+  await user.click(screen.getByRole("combobox", { name: "Font" }))
+  await user.click(screen.getByRole("option", { name: "Courier New" }))
+  await user.click(screen.getByRole("button", { name: "Text color" }))
+  await user.click(screen.getByRole("button", { name: "Navy" }))
   const content = screen.getByRole("textbox", { name: "Document content" })
   act(() => editor.focus())
   await user.type(content, "Styled", { skipClick: true })
@@ -438,7 +437,7 @@ it("reads decimal commas in the dialog as decimals", async () => {
   await fillNumber(user, "Text size (pt)", "10,5")
   await fillNumber(user, "Space before (pt)", "6,15")
   await fillNumber(user, "Line spacing (lines)", "2,05")
-  await user.click(screen.getByRole("button", { name: "Apply", exact: true }))
+  await user.click(screen.getByRole("button", { name: "Apply" }))
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
   expect(editor.activeFormatting()).toMatchObject({
     size: "10.5",

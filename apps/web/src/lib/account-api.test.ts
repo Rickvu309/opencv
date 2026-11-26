@@ -1,5 +1,9 @@
+import type { QueryKey } from "@tanstack/react-query"
+import type { QueryCache } from "@tanstack/react-query"
 import { QueryClient } from "@tanstack/react-query"
 import { afterEach, describe, expect, it, vi } from "vitest"
+
+type BuiltQuery = Parameters<QueryCache["build"]>[1]
 
 import { catalogClient } from "./contract-client.ts"
 
@@ -41,14 +45,15 @@ describe("account reads", () => {
     const usage = catalogClient.options("owner", "coach.usage", {})
     const profile = catalogClient.options("owner", "profile.get", {})
     for (const read of [billing, integrations, usage, profile])
-      queryClient.getQueryCache().build(queryClient, read)
+      queryClient.getQueryCache().build(queryClient, read as BuiltQuery)
     const keys = [
       profile.queryKey,
       billing.queryKey,
       usage.queryKey,
       integrations.queryKey,
     ]
-    for (const key of keys) queryClient.setQueryData(key, { seeded: true })
+    for (const key of keys)
+      queryClient.setQueryData<unknown>(key as QueryKey, { seeded: true })
     vi.stubGlobal("fetch", async () =>
       Response.json({ ok: true, data: savedProfile })
     )

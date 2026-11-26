@@ -105,7 +105,10 @@ describe("Coach configuration states", () => {
     )
     act(() => {
       const profile = client.getQueryData(profileKey(""))
-      client.setQueryData(profileKey(""), { ...profile, agentChat: false })
+      client.setQueryData(profileKey(""), {
+        ...(profile as Record<string, unknown>),
+        agentChat: false,
+      })
     })
     const link = await screen.findByRole("link", { name: "Open Settings" })
     expect(link).toHaveAttribute("href", "/settings/coach")

@@ -24,6 +24,12 @@
     "noFallthroughCasesInSwitch": true,
     "paths": {
       "@/*": ["./src/*"],
+      "@workspace/domain/internal/paper-page-scale": [
+        "../../packages/domain/src/paper-doc/paper-page-scale.ts"
+      ],
+      "@workspace/domain/internal/paper-presentation": [
+        "../../packages/domain/src/paper-doc/paper-presentation.ts"
+      ],
       "@workspace/domain/*": ["../../packages/domain/src/*/public.ts"],
       "@workspace/paper-crdt": ["../../packages/paper-crdt/src/index.ts"],
       "@workspace/ui/*": ["../../packages/ui/src/*"],

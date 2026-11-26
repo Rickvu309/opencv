@@ -217,7 +217,8 @@ describe("Coach workspace", () => {
     expect(home).toHaveAttribute("data-size", "panel")
     expect(home?.contains(composer)).toBe(false)
     expect(
-      home?.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING
+      (home?.compareDocumentPosition(composer) ?? 0) &
+        Node.DOCUMENT_POSITION_FOLLOWING
     ).toBeTruthy()
     expect(
       screen.getAllByRole("button", {
@@ -290,7 +291,7 @@ describe("Coach workspace", () => {
     const header = document.querySelector('[data-slot="page-header"]')
     expect(header).toBeInTheDocument()
     expect(
-      screen.queryByRole("button", { name: "New chat", exact: true })
+      screen.queryByRole("button", { name: "New chat" })
     ).not.toBeInTheDocument()
   })
 
@@ -316,9 +317,7 @@ describe("Coach workspace", () => {
     await screen.findByText(
       "I don't know if I should chase internships or finish my CV first."
     )
-    fireEvent.click(
-      screen.getByRole("button", { name: "New chat", exact: true })
-    )
+    fireEvent.click(screen.getByRole("button", { name: "New chat" }))
     await screen.findByText("How can I help?")
     await waitFor(() =>
       expect(
@@ -415,7 +414,7 @@ describe("Coach workspace", () => {
     expect(trigger).toHaveTextContent("Chats")
     expect(screen.queryByText("New chat")).not.toBeInTheDocument()
     expect(
-      screen.queryByRole("button", { name: "New chat", exact: true })
+      screen.queryByRole("button", { name: "New chat" })
     ).not.toBeInTheDocument()
     fireEvent.click(trigger)
     expect(

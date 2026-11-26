@@ -2,7 +2,7 @@ const UNREAD_DRAFT_LIFETIME_MS = 500
 
 let unreadDraft: string | null = null
 let draftForStrictModeReread: string | null = null
-let expiry: ReturnType<typeof setTimeout> | undefined
+let expiry: number | undefined
 const listeners = new Set<(text: string) => void>()
 
 export function publishCoachDraft(text: string) {

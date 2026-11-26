@@ -97,6 +97,8 @@ function Board({ showClosed = false }: { showClosed?: boolean }) {
       showClosed={showClosed}
       onShowClosed={() => {}}
       onNewJob={() => {}}
+      onOpenJob={() => {}}
+      openJobId={null}
     />
   )
 }

@@ -43,7 +43,7 @@ beforeEach(() => {
     return style
   })
   vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(
-    function () {
+    function (this: Element) {
       const label = this.getAttribute("data-toolbar-item")
       const phone = width < 768
       if (this.tagName.toLowerCase() === "svg") return new DOMRect(0, 0, 16, 16)
@@ -85,7 +85,10 @@ beforeEach(() => {
   disposals.push(() => vi.restoreAllMocks())
   const observer = globalThis.ResizeObserver
   globalThis.ResizeObserver = class implements ResizeObserver {
-    constructor(private callback: ResizeObserverCallback) {}
+    private callback: ResizeObserverCallback
+    constructor(callback: ResizeObserverCallback) {
+      this.callback = callback
+    }
     observe(target: Element) {
       const contentRect = new DOMRect(0, 0, width, 50)
       this.callback(
@@ -192,7 +195,7 @@ it("renders effective caret values, updates a choice immediately and returns foc
     "12 pt"
   )
   await user.click(screen.getByRole("combobox", { name: "Text size" }))
-  await user.click(screen.getByRole("option", { name: "14 pt", exact: true }))
+  await user.click(screen.getByRole("option", { name: "14 pt" }))
   await waitFor(() => expect(content).toHaveFocus())
   expect(screen.getByRole("combobox", { name: "Text size" })).toHaveTextContent(
     "14 pt"
@@ -200,26 +203,20 @@ it("renders effective caret values, updates a choice immediately and returns foc
   expect(getSelection()?.isCollapsed).toBe(true)
   expect(getSelection()?.anchorOffset).toBe(anchor)
   expect(client.document()).toEqual(before)
-  await user.click(
-    screen.getByRole("button", { name: "Text color", exact: true })
-  )
-  await user.click(screen.getByRole("button", { name: "Navy", exact: true }))
+  await user.click(screen.getByRole("button", { name: "Text color" }))
+  await user.click(screen.getByRole("button", { name: "Navy" }))
   await waitFor(() => expect(content).toHaveFocus())
   expect(
     screen
-      .getByRole("button", { name: "Text color", exact: true })
+      .getByRole("button", { name: "Text color" })
       .querySelector('[data-slot="current-color"]')
   ).toHaveStyle({ backgroundColor: "rgb(30, 58, 138)" })
   expect(editor.activeFormatting()).toMatchObject({
     size: "14",
     color: "#1E3A8A",
   })
-  await user.click(
-    screen.getByRole("button", { name: "Text color", exact: true })
-  )
-  await user.click(
-    screen.getByRole("button", { name: "Automatic", exact: true })
-  )
+  await user.click(screen.getByRole("button", { name: "Text color" }))
+  await user.click(screen.getByRole("button", { name: "Automatic" }))
   await waitFor(() => expect(content).toHaveFocus())
   expect(editor.activeFormatting()?.color).toBe("#000000")
 })
@@ -231,19 +228,19 @@ it("puts the remaining groups in a visible More control and returns focus after 
     screen.getByRole("button", { name: "More formatting" })
   ).toHaveTextContent("More")
   for (const name of ["Bold", "Italic", "Underline"])
-    expect(screen.getByRole("button", { name, exact: true })).toBeVisible()
+    expect(screen.getByRole("button", { name })).toBeVisible()
   expect(
-    screen.queryByRole("button", { name: "Strikethrough", exact: true })
+    screen.queryByRole("button", { name: "Strikethrough" })
   ).not.toBeInTheDocument()
   expect(
-    screen.queryByRole("button", { name: "Text color", exact: true })
+    screen.queryByRole("button", { name: "Text color" })
   ).not.toBeInTheDocument()
   await user.click(screen.getByRole("button", { name: "More formatting" }))
   expect(
     screen.getByRole("group", { name: "Paragraph formatting" })
   ).toBeVisible()
   await user.click(screen.getByRole("combobox", { name: "Line spacing" }))
-  await user.click(screen.getByRole("option", { name: "Double", exact: true }))
+  await user.click(screen.getByRole("option", { name: "Double" }))
   await waitFor(() =>
     expect(
       screen.getByRole("textbox", { name: "Document content" })
@@ -260,7 +257,7 @@ it("disables controls without showing Mixed while loading or blocked", () => {
     <RichPaperTextFormatting editor={null} blocked={false} />
   )
   for (const name of ["Bold", "Italic", "Underline"])
-    expect(screen.getByRole("button", { name, exact: true })).toBeDisabled()
+    expect(screen.getByRole("button", { name })).toBeDisabled()
   expect(screen.queryByText("Mixed")).not.toBeInTheDocument()
   expect(screen.getByRole("button", { name: "More formatting" })).toBeDisabled()
   rerender(<RichPaperTextFormatting editor={null} blocked />)
@@ -271,7 +268,7 @@ it("disables controls for a document containing only a non-text object", () => {
   const { editor } = setup(true)
   expect(editor.activeFormatting()?.hasText).toBe(false)
   for (const name of ["Bold", "Italic", "Underline"])
-    expect(screen.getByRole("button", { name, exact: true })).toBeDisabled()
+    expect(screen.getByRole("button", { name })).toBeDisabled()
   expect(screen.queryByText("Mixed")).not.toBeInTheDocument()
 })
 
@@ -287,10 +284,7 @@ it("keeps photo icons in the single desktop formatting toolbar", () => {
   setup(false, true)
   const toolbar = screen.getByRole("toolbar", { name: "Text formatting" })
   expect(screen.getAllByRole("toolbar")).toHaveLength(1)
-  const insert = screen.getByRole("button", {
-    name: "Insert photo",
-    exact: true,
-  })
+  const insert = screen.getByRole("button", { name: "Insert photo" })
   expect(toolbar).toContainElement(insert)
   expect(insert.closest("fieldset")).toHaveAccessibleName("Photos")
   expect(insert).toBeEnabled()
@@ -303,17 +297,13 @@ it("keeps photo editing available in More on a phone with no text selection", as
   const user = userEvent.setup()
   setup(true, true)
   expect(
-    screen.queryByRole("button", { name: "Insert photo", exact: true })
+    screen.queryByRole("button", { name: "Insert photo" })
   ).not.toBeInTheDocument()
   const more = screen.getByRole("button", { name: "More formatting" })
   expect(more).toBeEnabled()
   await user.click(more)
-  expect(
-    screen.getByRole("button", { name: "Insert photo", exact: true })
-  ).toBeEnabled()
-  await user.click(
-    screen.getByRole("button", { name: "Edit photo", exact: true })
-  )
+  expect(screen.getByRole("button", { name: "Insert photo" })).toBeEnabled()
+  await user.click(screen.getByRole("button", { name: "Edit photo" }))
   expect(screen.getByRole("dialog", { name: "Edit photo" })).toBeVisible()
   await user.keyboard("{Escape}")
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
@@ -409,15 +399,9 @@ it.each([390, 768, 820, 859])(
     expect(
       screen.queryByRole("combobox", { name: "Paragraph style" })
     ).toBeNull()
-    expect(
-      screen.queryByRole("button", { name: "Link", exact: true })
-    ).toBeNull()
-    expect(
-      screen.queryByRole("button", { name: "Undo", exact: true })
-    ).toBeNull()
-    expect(
-      screen.queryByRole("button", { name: "Redo", exact: true })
-    ).toBeNull()
+    expect(screen.queryByRole("button", { name: "Link" })).toBeNull()
+    expect(screen.queryByRole("button", { name: "Undo" })).toBeNull()
+    expect(screen.queryByRole("button", { name: "Redo" })).toBeNull()
     await user.click(screen.getByRole("button", { name: "More formatting" }))
     expect(
       screen.getByRole("combobox", { name: "Paragraph style" })
@@ -428,14 +412,14 @@ it.each([390, 768, 820, 859])(
       "Numbered list",
       "Remove formatting",
     ])
-      expect(screen.getByRole("button", { name, exact: true })).toBeVisible()
+      expect(screen.getByRole("button", { name })).toBeVisible()
     expect(
       screen.getAllByRole("button", { name: /Increase indent/ })
     ).toHaveLength(1)
     expect(
       screen.getAllByRole("button", { name: /Decrease indent/ })
     ).toHaveLength(1)
-    await user.click(screen.getByRole("button", { name: "Link", exact: true }))
+    await user.click(screen.getByRole("button", { name: "Link" }))
     expect(
       await screen.findByRole("dialog", { name: "Add link" })
     ).toBeVisible()
@@ -502,11 +486,9 @@ it("uses main's inline controls and More contents before width is known", async 
     "Numbered list",
     "Remove formatting",
   ])
-    expect(
-      within(menu).getByRole("button", { name, exact: true })
-    ).toBeVisible()
+    expect(within(menu).getByRole("button", { name })).toBeVisible()
   for (const name of ["Bold", "Italic", "Underline"])
-    expect(within(menu).queryByRole("button", { name, exact: true })).toBeNull()
+    expect(within(menu).queryByRole("button", { name })).toBeNull()
 })
 
 it("restores main's fallback and measures again when the editor returns", () => {
@@ -516,15 +498,13 @@ it("restores main's fallback and measures again when the editor returns", () => 
   width = 0
   rerender(<RichPaperTextFormatting editor={null} blocked={false} />)
   for (const name of ["Bold", "Italic", "Underline", "More formatting"])
-    expect(screen.getByRole("button", { name, exact: true })).toBeVisible()
-  expect(screen.queryByRole("button", { name: "Link", exact: true })).toBeNull()
+    expect(screen.getByRole("button", { name })).toBeVisible()
+  expect(screen.queryByRole("button", { name: "Link" })).toBeNull()
   expect(screen.queryByRole("combobox", { name: "Font" })).toBeNull()
   width = 240
   rerender(<RichPaperTextFormatting editor={editor} blocked={false} />)
   expect(screen.getByRole("button", { name: "More formatting" })).toBeVisible()
-  expect(
-    screen.queryByRole("button", { name: "Underline", exact: true })
-  ).toBeNull()
+  expect(screen.queryByRole("button", { name: "Underline" })).toBeNull()
 })
 
 it("closes More when widening and keeps empty groups out of its accessible contents", async () => {

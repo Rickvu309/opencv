@@ -86,7 +86,7 @@ describe("shell motion", () => {
     } finally {
       animations.mockRestore()
       if (!hadGetAnimations) {
-        delete prototype.getAnimations
+        Reflect.deleteProperty(prototype, "getAnimations")
       }
     }
   })

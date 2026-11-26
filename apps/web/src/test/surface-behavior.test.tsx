@@ -44,9 +44,7 @@ describe("empty api data shows empty states, never sample content", () => {
     ).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "New CV" })).toBeEnabled()
     expect(screen.getByRole("button", { name: "New Letter" })).toBeEnabled()
-    expect(
-      screen.getByRole("button", { name: "Import", exact: true })
-    ).toBeEnabled()
+    expect(screen.getByRole("button", { name: "Import" })).toBeEnabled()
     expectNone(samplePaperDocs().map((doc) => doc.name))
   })
 

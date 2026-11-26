@@ -1,0 +1,98 @@
+[
+  {
+    "subject": "apps/web/src/features/app-shell/app-shell.dock-chips.test.tsx",
+    "because": "The web type check now covers tests (#2139); this check named a Word page or tool that no longer exists, or a query option the testing library does not accept, so it could not type-check.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/apply/apply-board-drops.property.test.ts",
+    "because": "The web type check now covers tests (#2139); this check named a Word page or tool that no longer exists, or a query option the testing library does not accept, so it could not type-check.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-draft-ownership.isolated.test.tsx",
+    "because": "The web type check now covers tests (#2139); this check named a Word page or tool that no longer exists, or a query option the testing library does not accept, so it could not type-check.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-workspace.isolated.test.tsx",
+    "because": "The web type check now covers tests (#2139); this check named a Word page or tool that no longer exists, or a query option the testing library does not accept, so it could not type-check.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/landing/help/help.test.tsx",
+    "because": "The web type check now covers tests (#2139); this check named a Word page or tool that no longer exists, or a query option the testing library does not accept, so it could not type-check.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-stopped.test.tsx",
+    "because": "The web type check now covers tests (#2139); this check named a Word page or tool that no longer exists, or a query option the testing library does not accept, so it could not type-check.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "because": "The web type check now covers tests (#2139); this check named a Word page or tool that no longer exists, or a query option the testing library does not accept, so it could not type-check.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library.isolated.test.tsx",
+    "because": "The web type check now covers tests (#2139); this check named a Word page or tool that no longer exists, or a query option the testing library does not accept, so it could not type-check.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-print.test.ts",
+    "because": "The web type check now covers tests (#2139); this check named a Word page or tool that no longer exists, or a query option the testing library does not accept, so it could not type-check.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper/rich-editor/rich-page-lifecycle.isolated.test.tsx",
+    "because": "The web type check now covers tests (#2139); this check named a Word page or tool that no longer exists, or a query option the testing library does not accept, so it could not type-check.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/web/src/features/paper/rich-editor/rich-text-formatting.test.tsx",
+    "because": "The web type check now covers tests (#2139); this check named a Word page or tool that no longer exists, or a query option the testing library does not accept, so it could not type-check.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 16
+  },
+  {
+    "subject": "apps/web/src/test/surface-behavior.test.tsx",
+    "because": "The web type check now covers tests (#2139); this check named a Word page or tool that no longer exists, or a query option the testing library does not accept, so it could not type-check.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

@@ -454,7 +454,7 @@ describe("empty section next-step CTAs (QVE-209)", () => {
   it("omits edit affordances from the print document", () => {
     render(
       createElement(CvDocument, {
-        data: applyCvTemplate(defaultCvData(), "simple"),
+        data: applyCvTemplate(defaultCvData(), "internship"),
         onChange: () => undefined,
       })
     )

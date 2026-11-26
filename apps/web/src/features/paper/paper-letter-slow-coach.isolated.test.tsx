@@ -1,6 +1,7 @@
 import type { JobView } from "@workspace/domain/apply"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { afterEach, expect, it, vi } from "vitest"
+import { mockJob } from "@/test/apply-job-fixtures.ts"
 import { startedChat } from "@/test/chat-fixtures.ts"
 import { render } from "@/test/render-with-client.tsx"
 
@@ -19,15 +20,11 @@ const OPENING = "Dear hiring team,\n\n"
 const MIDDLE = "I ran the spring campaign."
 const CLOSING = "\n\nI would love to talk.\n\nAna"
 
-const job: JobView = {
-  id: "job-1",
+const job: JobView = mockJob({
   title: "Junior Marketing",
   company: "Lumière",
-  posting: {},
-  cvDocId: null,
-  letterDocId: null,
   updatedAt: "2026-08-25T12:00:00.000Z",
-}
+})
 
 const { listJobs } = vi.hoisted(() => ({ listJobs: vi.fn() }))
 vi.mock("@/features/apply/apply-api.ts", () => ({ listJobs }))

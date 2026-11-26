@@ -2,6 +2,7 @@ import { QueryClient } from "@tanstack/react-query"
 import { parsePaperId } from "@workspace/domain/kernel"
 import {
   emptyRichPaper,
+  richPaperDocumentSchema,
   nativeProvenance,
   RICH_NATIVE_WRITER,
 } from "@workspace/domain/paper-doc"
@@ -20,7 +21,9 @@ function envelope<T>(data: T) {
 
 const docId = parsePaperId("11111111-1111-4111-8111-111111111111")
 
-const provenance = nativeProvenance(emptyRichPaper("cv"))
+const provenance = nativeProvenance(
+  richPaperDocumentSchema.parse(emptyRichPaper("cv"))
+)
 
 const saved = {
   provenance,

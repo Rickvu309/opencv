@@ -7,7 +7,7 @@ import { PaperLibrary } from "./paper-library.tsx"
 import { cv, renderLibrary } from "./paper-library.fixtures.tsx"
 
 const { listJobs } = vi.hoisted(() => ({
-  listJobs: vi.fn(() => Promise.resolve([])),
+  listJobs: vi.fn((): Promise<unknown[]> => Promise.resolve([])),
 }))
 vi.mock("@/features/apply/apply-api.ts", () => ({ listJobs }))
 

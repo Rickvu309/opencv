@@ -3,10 +3,18 @@ import { execFileSync } from "node:child_process"
 import { readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
-import { createRailwayContext } from "railway/iac"
+import { createRailwayContext, project } from "railway/iac"
 import { describe, expect, it } from "vitest"
 
 import railwayConfig, { partial } from "../../../../.railway/railway"
+
+async function railwayResources(environment: string) {
+  const definition = await railwayConfig(
+    createRailwayContext({ environment }),
+    project
+  )
+  return definition.resources?.flat() ?? []
+}
 
 const webRoot = fileURLToPath(new URL("../..", import.meta.url))
 const repoRoot = path.resolve(webRoot, "../..")
@@ -104,10 +112,8 @@ describe(".railway/railway.ts", () => {
 
   it.each(["staging", "production"])(
     "scopes %s ownership to application services and retains API source and variables",
-    (environment) => {
-      const resources = railwayConfig(
-        createRailwayContext({ environment })
-      ).resources?.flat()
+    async (environment) => {
+      const resources = await railwayResources(environment)
       const api = resources
         ?.filter((resource) => resource.type === "service")
         .find((resource) => resource.name === "api")
@@ -139,10 +145,10 @@ describe(".railway/railway.ts", () => {
   it.each([
     ["staging", "https://api-staging.opencv.me"],
     ["production", "https://api.opencv.me"],
-  ])("points %s's web build at its own api", (environment, apiUrl) => {
-    const web = railwayConfig(createRailwayContext({ environment }))
-      .resources?.flat()
-      .find((resource) => resource.address === "service.web")
+  ])("points %s's web build at its own api", async (environment, apiUrl) => {
+    const web = (await railwayResources(environment)).find(
+      (resource) => resource.address === "service.web"
+    )
 
     expect(web).toMatchObject({
       source: { type: "github", repo: "Rickvu309/opencv", branch: "main" },
@@ -176,14 +182,10 @@ describe(".env.example", () => {
     expect(used.size).toBeGreaterThan(0)
   })
 
-  it("builds both services from the repository that hosts this code", () => {
-    const sources = railwayConfig(
-      createRailwayContext({ environment: "production" })
+  it("builds both services from the repository that hosts this code", async () => {
+    const sources = (await railwayResources("production")).map(
+      (resource) => (resource as { source?: { repo?: string } }).source?.repo
     )
-      .resources?.flat()
-      .map(
-        (resource) => (resource as { source?: { repo?: string } }).source?.repo
-      )
 
     expect(sources).toHaveLength(2)
     for (const repo of sources ?? [])

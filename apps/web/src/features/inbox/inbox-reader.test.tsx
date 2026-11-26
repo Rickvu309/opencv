@@ -57,6 +57,7 @@ function renderReader(
   return render(
     <QueryClientProvider client={client}>
       <InboxReader
+        onReturnedToInbox={vi.fn()}
         detail={detail}
         index={1}
         count={6}
@@ -200,6 +201,7 @@ describe("inbox reader", () => {
     view.rerender(
       <QueryClientProvider client={client}>
         <InboxReader
+          onReturnedToInbox={vi.fn()}
           detail={refreshed}
           index={1}
           count={6}
@@ -233,6 +235,7 @@ describe("inbox reader", () => {
     view.rerender(
       <QueryClientProvider client={client}>
         <InboxReader
+          onReturnedToInbox={vi.fn()}
           detail={refreshed}
           index={1}
           count={6}
@@ -410,6 +413,7 @@ describe("inbox reader", () => {
     view.rerender(
       <QueryClientProvider client={client}>
         <InboxReader
+          onReturnedToInbox={vi.fn()}
           detail={{
             ...REGIONAL_DETAIL,
             draft: { ...REGIONAL_DETAIL.draft!, body: "Server copy." },
@@ -435,6 +439,7 @@ describe("inbox reader", () => {
       <QueryClientProvider client={createQueryClient()}>
         <Toaster />
         <InboxReader
+          onReturnedToInbox={vi.fn()}
           detail={REGIONAL_DETAIL}
           index={1}
           count={6}

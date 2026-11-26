@@ -116,9 +116,7 @@ describe("Paper library card menu", () => {
   it.each([["a Paper", {}, false]] as const)(
     "deletes %s from the card menu and offers Undo only when it can be undone",
     async (_kind, extra, undoable) => {
-      const doc = undoable
-        ? { ...cv("Word CV"), format: "word" as const }
-        : cv("Word CV")
+      const doc = cv("Word CV")
       const activityId = "55555555-5555-4555-8555-555555555555"
       const fetchMock = vi.fn<typeof fetch>().mockImplementation((url) => {
         const path = String(url).split("?")[0] ?? ""

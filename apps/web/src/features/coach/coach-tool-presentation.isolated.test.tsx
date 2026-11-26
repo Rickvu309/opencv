@@ -37,7 +37,7 @@ import { documentEditDetail, documentEditReceiptType } from "./coach-receipt.ts"
 
 beforeEach(() => {
   vi.spyOn(contractClient.catalogClient, "run").mockResolvedValue(null)
-  vi.spyOn(contractClient, "refreshReads").mockResolvedValue(undefined)
+  vi.spyOn(contractClient, "refreshReads").mockResolvedValue([])
 })
 
 function render(ui: ReactElement) {
@@ -274,7 +274,7 @@ describe("Coach trace and receipts", () => {
       <CoachParts parts={parts} ctx={{ canUndo: true, onUndo: vi.fn() }} />
     )
     const title = screen.getByText("Untitled CV")
-    const row = title.closest("[data-slot=action-card]")
+    const row = title.closest<HTMLElement>("[data-slot=action-card]")
     if (!row) throw new Error("Expected receipt row")
     expect(within(row).getByRole("link", { name: "Open" })).toHaveAttribute(
       "href",

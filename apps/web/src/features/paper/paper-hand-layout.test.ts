@@ -1,3 +1,4 @@
+import { parsePaperId } from "@workspace/domain/kernel"
 import { describe, expect, it } from "vitest"
 
 import type { LibraryEntry } from "./paper-library-entries.ts"
@@ -14,18 +15,20 @@ import {
   handCentre,
   handWheel,
 } from "./paper-hand-layout.ts"
+import { cv } from "./paper-library.fixtures.tsx"
 
 function paper(name: string, updatedAt: string, index: number): LibraryEntry {
   return {
     type: "paper",
     key: `paper:${index}`,
-    word: null,
     doc: {
-      id: `id-${index}`,
-      name,
+      ...cv(name),
+      id: parsePaperId(
+        `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`
+      ),
       updatedAt,
     },
-  } as LibraryEntry
+  }
 }
 
 describe("paper hand layout", () => {

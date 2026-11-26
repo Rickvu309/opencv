@@ -61,9 +61,7 @@ describe("pending send in the workspace", () => {
     expect(await screen.findByText("Noted.")).toBeVisible()
     await turnSettled()
     expect(within(log()).getAllByText("Remember the old line")).toHaveLength(1)
-    fireEvent.click(
-      screen.getByRole("button", { name: "New chat", exact: true })
-    )
+    fireEvent.click(screen.getByRole("button", { name: "New chat" }))
     await waitFor(() =>
       expect(
         screen.queryByText("Remember the old line")
@@ -108,9 +106,7 @@ describe("pending send in the workspace", () => {
     expect(await screen.findByRole("alert")).toBeVisible()
     await turnSettled()
     expect(within(log()).getAllByText("This turn failed")).toHaveLength(1)
-    fireEvent.click(
-      screen.getByRole("button", { name: "New chat", exact: true })
-    )
+    fireEvent.click(screen.getByRole("button", { name: "New chat" }))
     await waitFor(() =>
       expect(screen.queryByText("This turn failed")).not.toBeInTheDocument()
     )
@@ -128,9 +124,7 @@ describe("pending send in the workspace", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Stop" }))
     await turnSettled()
     expect(within(log()).getAllByText("Stop this line")).toHaveLength(1)
-    fireEvent.click(
-      screen.getByRole("button", { name: "New chat", exact: true })
-    )
+    fireEvent.click(screen.getByRole("button", { name: "New chat" }))
     await waitFor(() =>
       expect(screen.queryByText("Stop this line")).not.toBeInTheDocument()
     )
