@@ -4,6 +4,7 @@ import { execFileSync } from "node:child_process"
 import test from "node:test"
 
 import { detect } from "./lib/paper-print-body.mjs"
+import { pathAtRevision } from "./lib/path-at-revision.mjs"
 
 const read = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
@@ -14,9 +15,13 @@ test("Word cards cannot fall back to a missing block body", () => {
   assert.equal(detect(mistake)[0]?.kind, "word-card-without-first-page-preview")
   assert.deepEqual(detect(clean), [])
   const path = "apps/web/src/features/paper/paper-library-sections.tsx"
-  const historic = execFileSync("git", ["show", `92613ff1:${path}`], {
-    encoding: "utf8",
-  })
+  const historic = execFileSync(
+    "git",
+    ["show", `92613ff1:${pathAtRevision("92613ff1", path)}`],
+    {
+      encoding: "utf8",
+    }
+  )
   assert.ok(
     detect(historic, path).some(
       ({ kind }) => kind === "word-card-without-first-page-preview"
@@ -56,7 +61,7 @@ test("a Word page is never offered Download PDF over a stand-in body", () => {
     []
   )
 
-  const list = read("apps/api/src/paper/package-list.ts")
+  const list = read("apps/api/src/paper/word-package/package-list.ts")
   const sections = read(
     "apps/web/src/features/paper/paper-library-sections.tsx"
   )
