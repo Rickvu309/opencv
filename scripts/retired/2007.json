@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 4
+  },
+  {
+    "subject": "scripts/paper-package-edit.test.mjs",
+    "because": "paper.edit is bound by its operation pair, not registerWordPackageEdit in commands.ts. The guard now requires the pair to bind reviewed: wordPackageReview and refuses any paper.edit binding in commands.ts; the historic mistake, a direct paper.edit binding in commands.ts, still fires.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
