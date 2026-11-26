@@ -9,15 +9,26 @@ const read = (path) =>
 
 test("word binding keeps the registry basis and the restore compare", () => {
   const commands = read("apps/api/src/paper/commands.ts")
+  const server = read("apps/api/src/paper/operations/edit/server.ts")
   const edit = read("apps/api/src/paper/package-edit.ts")
   const restore = read("apps/api/src/paper/package-restore.ts")
   assert.deepEqual(detect(commands, "apps/api/src/paper/commands.ts"), [])
+  assert.deepEqual(
+    detect(server, "apps/api/src/paper/operations/edit/server.ts"),
+    []
+  )
   assert.deepEqual(detect(edit, "apps/api/src/paper/package-edit.ts"), [])
   assert.deepEqual(detect(restore, "apps/api/src/paper/package-restore.ts"), [])
   assert.deepEqual(detect("export const unrelated = true", "other.ts"), [])
   assert.ok(
     detect(
-      commands.replaceAll("registerWordPackageEdit", "registerSomethingElse"),
+      server.replace("reviewed: wordPackageReview", "reviewed: anyReview"),
+      "apps/api/src/paper/operations/edit/server.ts"
+    ).some((item) => item.kind === "package-basis-lock")
+  )
+  assert.ok(
+    detect(
+      `${commands}\nregistry.addCommand({ name: "paper.edit" })\n`,
       "commands.ts"
     ).some((item) => item.kind === "package-basis-lock")
   )

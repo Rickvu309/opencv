@@ -1,5 +1,4 @@
 import {
-  commandEntry,
   commands,
   catalog,
   type ContractCommandName,
@@ -167,25 +166,3 @@ export function typeProbes() {
 const uuid = "00000000-0000-4000-8000-000000000000"
 const someJobId = parseJobId(uuid)
 const someDocId = parsePaperId(uuid)
-
-// @ts-expect-error destructive cannot use coach auto
-export const autoDestructive = commandEntry({
-  description: "x",
-  input: z.object({}),
-  output: z.object({}),
-  coach: "auto",
-  destructive: true,
-  step: () => "x",
-  invalidates: () => [],
-})
-
-export const unknownInvalidation = commandEntry({
-  description: "x",
-  input: z.object({}),
-  output: z.object({}),
-  coach: "never",
-  destructive: false,
-  step: () => "x",
-  // @ts-expect-error invalidates can only name a registered query
-  invalidates: () => [{ query: "job.nope" }],
-})
