@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/one-door.test.ts",
+    "because": "The last three waiting routes became reads through the read door, so the waiting list is empty and its cap drops from 5 to 0; the served-route check is unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  }
+]
