@@ -8,12 +8,9 @@ import {
   Plus,
 } from "lucide-react"
 
-import {
-  catalog,
-  type ActivityFeedRow,
-  type JobPriority,
-  type JobStage,
-} from "@workspace/domain"
+import { type ActivityFeedRow } from "@workspace/domain/account"
+import { type JobPriority, type JobStage } from "@workspace/domain/apply"
+import { catalog } from "@workspace/domain/kernel"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 

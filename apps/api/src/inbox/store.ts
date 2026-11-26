@@ -1,13 +1,12 @@
 import {
-  ERROR_CODES,
   createFakeMailProvider,
-  type Actor,
   type InboxDetail,
   type InboxThread,
   type MailMessage,
   type MailProvider,
   type MailThread,
-} from "@workspace/domain"
+} from "@workspace/domain/inbox"
+import { ERROR_CODES, type Actor } from "@workspace/domain/kernel"
 import { and, asc, desc, eq } from "drizzle-orm"
 
 import {

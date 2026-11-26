@@ -1,4 +1,5 @@
-import type { JobView, PaperFile, PaperView } from "@workspace/domain"
+import type { JobView } from "@workspace/domain/apply"
+import type { PaperFile, PaperView } from "@workspace/domain/paper-doc"
 
 import type { LibraryView } from "./paper-library-entries.ts"
 import type { PickerChoice } from "./paper-template-gallery.tsx"

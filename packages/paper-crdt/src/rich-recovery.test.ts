@@ -1,6 +1,6 @@
 import { afterEach, expect, it } from "vitest"
 import * as Y from "yjs"
-import { nativeProvenance } from "@workspace/domain"
+import { nativeProvenance } from "@workspace/domain/paper-doc"
 import { openRichPaperClient, type Stored } from "./client.js"
 import { emptyUpdate } from "./sync.js"
 import { recoverRichPaperClient } from "./rich-recovery.js"

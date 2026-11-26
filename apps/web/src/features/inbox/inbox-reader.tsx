@@ -1,6 +1,6 @@
 import { useReducer } from "react"
 import { useQueryClient } from "@tanstack/react-query"
-import type { InboxDetail } from "@workspace/domain"
+import type { InboxDetail } from "@workspace/domain/inbox"
 import {
   ArrowUpRight,
   CalendarCheck,

@@ -1,4 +1,4 @@
-import type { JobId } from "@workspace/domain"
+import type { JobId } from "@workspace/domain/kernel"
 import { operation } from "@workspace/domain/operations/job/add-note"
 import type { OperationBinding } from "../../../registry/bind.js"
 import { ownedJob } from "../../store.js"

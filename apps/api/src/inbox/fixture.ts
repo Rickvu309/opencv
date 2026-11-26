@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
-import { loadInboxFixture, type MailThread } from "@workspace/domain"
+import { loadInboxFixture, type MailThread } from "@workspace/domain/inbox"
 
 const defaultFixturePath = join(
   dirname(fileURLToPath(import.meta.url)),

@@ -1,7 +1,7 @@
 import {
   inboxStatusChangeSchema,
   type InboxStatusChange,
-} from "@workspace/domain"
+} from "@workspace/domain/inbox"
 import { operation } from "@workspace/domain/operations/inbox/mark-done"
 import type { OperationBinding } from "../../../registry/bind.js"
 import { setThreadStatus } from "../../store.js"

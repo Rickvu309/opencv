@@ -7,7 +7,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react"
-import type { ChatToolPart } from "@workspace/domain"
+import type { ChatToolPart } from "@workspace/domain/coach"
 
 import { ApiError } from "@/lib/api-error.ts"
 import { subscribeWritingRefresh } from "@/lib/writing-refresh.ts"

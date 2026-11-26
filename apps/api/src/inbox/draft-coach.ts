@@ -1,12 +1,11 @@
+import { type Plan } from "@workspace/domain/account"
+import { COACH_MODEL, type ChatEntry } from "@workspace/domain/coach"
 import {
-  COACH_MODEL,
   catalog,
   ERROR_CODES,
   personActor,
   type Actor,
-  type Plan,
-  type ChatEntry,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import type { SSEStreamingApi } from "hono/streaming"
 
 import { assertDayCap } from "../account/index.js"

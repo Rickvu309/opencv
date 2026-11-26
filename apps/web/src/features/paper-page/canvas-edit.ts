@@ -1,4 +1,4 @@
-import type { WordPage } from "@workspace/domain"
+import type { WordPage } from "@workspace/domain/paper-doc"
 
 import { branchKey, readBranch, writeBranch } from "./canvas-branch.ts"
 

@@ -1,5 +1,5 @@
 import { afterEach, expect, it, vi } from "vitest"
-import type { WordPage, WordParagraph } from "@workspace/domain"
+import type { WordPage, WordParagraph } from "@workspace/domain/paper-doc"
 
 import { diffParagraphs } from "@/features/paper-page/page-diff.ts"
 import { QueryClient } from "@tanstack/react-query"

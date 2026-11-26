@@ -1,4 +1,4 @@
-import type { JobStage } from "@workspace/domain"
+import type { JobStage } from "@workspace/domain/apply"
 
 import { stageLabel } from "./apply-stages.ts"
 

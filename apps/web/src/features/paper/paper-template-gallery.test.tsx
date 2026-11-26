@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
-import { blankCv, type PaperView } from "@workspace/domain"
+import { blankCv, type PaperView } from "@workspace/domain/paper-doc"
 
 import { PaperLibrary } from "./paper-library.tsx"
 import { libraryRouter } from "./paper-library.fixtures.tsx"

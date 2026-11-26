@@ -4,7 +4,7 @@ import {
   storedPaperDocumentSchema,
   type RichPaperDocument,
   type StoredPaperDocument,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import * as Y from "yjs"
 import {
   flowDocumentSchema,

@@ -1,5 +1,5 @@
 import { Component, type ReactNode } from "react"
-import { blankLetter } from "@workspace/domain"
+import { blankLetter } from "@workspace/domain/paper-doc"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, screen } from "@testing-library/react"
 

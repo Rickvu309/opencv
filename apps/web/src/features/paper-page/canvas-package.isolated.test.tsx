@@ -1,4 +1,4 @@
-import { ERROR_CODES } from "@workspace/domain"
+import { ERROR_CODES } from "@workspace/domain/kernel"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, screen } from "@testing-library/react"
 

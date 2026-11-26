@@ -2,9 +2,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { TextSelection } from "@tiptap/pm/state"
 import { undo, redo } from "y-prosemirror"
 import * as Y from "yjs"
-import { nativeProvenance, richPaperDocumentSchema } from "@workspace/domain"
+import {
+  nativeProvenance,
+  richPaperDocumentSchema,
+} from "@workspace/domain/paper-doc"
 import { openRichPaperClient, type PaperClient } from "./client.js"
-import type { RichPaperDocument } from "@workspace/domain"
+import type { RichPaperDocument } from "@workspace/domain/paper-doc"
 import { seedStoredYDoc } from "./stored-document.js"
 import { recoverRichPaperClient } from "./rich-recovery.js"
 import { borrowFlowDocument } from "./native-layout-flow.js"

@@ -4,7 +4,7 @@ import { ArrowUpRight, CircleAlert, Rocket } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 
 import { stageLabel } from "./apply-stages.ts"
-import type { JobStage } from "@workspace/domain"
+import type { JobStage } from "@workspace/domain/apply"
 
 export const PLACEHOLDER_CARD = "placeholder:text-muted-foreground/84"
 export const PLACEHOLDER_SECONDARY = "placeholder:text-muted-foreground/88"

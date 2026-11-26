@@ -1,4 +1,4 @@
-import type { JobId, UserId } from "@workspace/domain"
+import type { JobId, UserId } from "@workspace/domain/kernel"
 import { and, desc, eq, isNull } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"

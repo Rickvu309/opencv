@@ -1,4 +1,4 @@
-import { isSafeHref } from "@workspace/domain"
+import { isSafeHref } from "@workspace/domain/paper-doc"
 import * as Y from "yjs"
 import { isWellFormed } from "@workspace/domain/internal/paper-presentation"
 import type { HeadlessFormattingEditor as PrivateFormattingEditor } from "./native-formatting-headless.js"

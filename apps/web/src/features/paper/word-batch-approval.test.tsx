@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest"
 import { cleanup, screen, within } from "@testing-library/react"
-import type { ChatToolPart } from "@workspace/domain"
+import type { ChatToolPart } from "@workspace/domain/coach"
 
 import { CoachToolLine } from "@/features/coach/coach-tool-line.tsx"
 import {

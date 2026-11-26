@@ -1,5 +1,5 @@
 import { operation } from "@workspace/domain/operations/job/set-priority"
-import { jobPrioritySchema } from "@workspace/domain"
+import { jobPrioritySchema } from "@workspace/domain/apply"
 import type { OperationBinding } from "../../../registry/bind.js"
 import { takePriorityGrant } from "../../../registry/write-grant.js"
 import { priorityRevision, writePriority } from "../../store.js"

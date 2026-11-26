@@ -2,11 +2,11 @@ import {
   commands,
   catalog,
   type ContractCommandName,
-  paperContract,
   parseJobId,
   parsePaperId,
   type OperationInput,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
+import { paperContract } from "@workspace/domain/paper-doc"
 import { z } from "zod"
 
 import { type OperationBinding, type ReversalGuard } from "./bind.js"

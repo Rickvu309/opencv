@@ -1,4 +1,4 @@
-import { paperTableLimits } from "@workspace/domain"
+import { paperTableLimits } from "@workspace/domain/limits"
 import { useReducer, useRef } from "react"
 import { Ellipsis } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"

@@ -1,6 +1,9 @@
 import fc from "fast-check"
 import { describe, expect, it } from "vitest"
-import { paperDocumentSchema, type PaperDocument } from "@workspace/domain"
+import {
+  paperDocumentSchema,
+  type PaperDocument,
+} from "@workspace/domain/paper-doc"
 
 import { v3Fixtures } from "./test/fixtures.js"
 import { fromEditorBlocks, toEditorBlocks } from "./mapping.js"

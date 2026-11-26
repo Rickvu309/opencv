@@ -3,7 +3,10 @@ import {
   _blocksToProsemirrorNode,
   yXmlFragmentToBlocks,
 } from "@blocknote/core/yjs"
-import { paperDocumentSchema, type PaperDocument } from "@workspace/domain"
+import {
+  paperDocumentSchema,
+  type PaperDocument,
+} from "@workspace/domain/paper-doc"
 import * as Y from "yjs"
 
 import {

@@ -1,4 +1,5 @@
-import type { JobId, JobStage, JobView } from "@workspace/domain"
+import type { JobStage, JobView } from "@workspace/domain/apply"
+import type { JobId } from "@workspace/domain/kernel"
 import { JobRow, ListGroup } from "./apply-list-parts.tsx"
 import { ALL_STAGES, compareJobs } from "./apply-stages.ts"
 

@@ -1,4 +1,4 @@
-import { z } from "@workspace/domain"
+import { z } from "@workspace/domain/kernel"
 
 const stoppedLetterSchema = z.object({
   docId: z.string(),

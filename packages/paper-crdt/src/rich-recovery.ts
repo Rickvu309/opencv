@@ -1,4 +1,7 @@
-import { sameNativeProvenance, type NativeProvenance } from "@workspace/domain"
+import {
+  sameNativeProvenance,
+  type NativeProvenance,
+} from "@workspace/domain/paper-doc"
 import * as Y from "yjs"
 import { openRichPaperClient, storedHasPending, type Stored } from "./client.js"
 

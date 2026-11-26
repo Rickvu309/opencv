@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router"
-import type { JobView, PaperView } from "@workspace/domain"
+import type { JobView } from "@workspace/domain/apply"
+import type { PaperView } from "@workspace/domain/paper-doc"
 
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { Button, buttonVariants } from "@workspace/ui/components/button"

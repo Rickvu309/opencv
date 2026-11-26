@@ -3,7 +3,8 @@ import { Link } from "@tanstack/react-router"
 import { FileText, Mail, PenLine, Plus, Search, X } from "lucide-react"
 import { useEffectReducer, type EffectReducer } from "use-effect-reducer"
 
-import { parsePaperId, type JobDetail } from "@workspace/domain"
+import { type JobDetail } from "@workspace/domain/apply"
+import { parsePaperId } from "@workspace/domain/kernel"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import {
