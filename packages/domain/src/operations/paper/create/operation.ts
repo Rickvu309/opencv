@@ -6,7 +6,7 @@ import {
   paperStoredKindSchema,
   paperTemplateIdSchema,
 } from "../../../paper-doc/paper.js"
-import { startingLinesSchema } from "../../../paper-doc/paper-canvas.js"
+import { startingLinesSchema } from "../../../paper-doc/starting-lines.js"
 
 export const operation = defineOperation({
   owner: "paper",

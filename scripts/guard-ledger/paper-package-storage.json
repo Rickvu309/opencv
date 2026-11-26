@@ -10,7 +10,7 @@
     "sha": "30003d8e14f511c1ac4a061a25b06f304a6c7af2",
     "path": "apps/api/src/paper/package-store.ts",
     "fixed": {
-      "rev": "HEAD",
+      "rev": "90f364f85",
       "path": "apps/api/src/paper/word-package/package-store.ts"
     }
   }

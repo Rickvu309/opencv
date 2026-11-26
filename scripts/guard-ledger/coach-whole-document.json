@@ -10,7 +10,7 @@
     "sha": "27ed7ad8ca19effe20c8745dd6acda094901b62b",
     "path": "apps/api/src/paper/package-list.ts",
     "fixed": {
-      "rev": "HEAD",
+      "rev": "90f364f85",
       "path": "apps/api/src/paper/word-package/package-list.ts"
     }
   },

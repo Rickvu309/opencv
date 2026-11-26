@@ -1,15 +1,13 @@
-import { PAPER_CANVAS_PROFILE } from "@workspace/domain/paper-doc"
 import { and, eq } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"
 import {
+  files,
   jobs,
   paperPackageHeads,
   paperPackageTrash,
   paperPackageVersions,
 } from "../db/schema.js"
-import { CommandError } from "../platform/errors.js"
-import { completeVersion } from "./word-package/package-store.js"
 
 export const WORD_PAGE_EXPORT_BYTES = 64 * 1024 * 1024
 
@@ -132,13 +130,18 @@ async function pageBytes(owner: string, page: ListedPage) {
       .limit(1)
   )[0]
   if (!version) return null
-  try {
-    const { artifact } = await completeVersion(version)
-    return Buffer.from(artifact.bytes)
-  } catch (error) {
-    if (error instanceof CommandError) return null
-    throw error
-  }
+  const [artifact] = await getDb()
+    .select({ bytes: files.bytes })
+    .from(files)
+    .where(
+      and(
+        eq(files.id, version.fileId),
+        eq(files.userId, owner),
+        eq(files.purpose, "package")
+      )
+    )
+    .limit(1)
+  return artifact ? Buffer.from(artifact.bytes) : null
 }
 
 const UNSAFE_FILE_CHARACTERS = new Set('/\\:*?"<>|')
@@ -205,7 +208,7 @@ export async function collectWordPageExport(
       id: page.docId,
       name: page.name,
       kind: page.kind,
-      imported: page.canvasProfile !== PAPER_CANVAS_PROFILE,
+      imported: page.canvasProfile !== "paper-canvas-1",
       file: path,
       byteSize: page.byteSize,
       linkedJobs,
