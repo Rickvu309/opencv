@@ -10,7 +10,7 @@
     "sha": "f8167a134",
     "path": "apps/api/src/paper/package-canvas.ts",
     "fixed": {
-      "rev": "HEAD",
+      "rev": "90f364f85",
       "path": "apps/api/src/paper/word-package/package-canvas.ts"
     }
   },

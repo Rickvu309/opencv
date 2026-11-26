@@ -4,9 +4,8 @@ import { operation } from "@workspace/domain/operations/paper/start"
 import { z } from "zod"
 
 import type { OperationBinding } from "../../../registry/bind.js"
-import { startingPaper } from "../../new-paper.js"
+import { startedName, startingPaper } from "../../new-paper.js"
 import { createPaper } from "../../store.js"
-import { startedName } from "../../word-package/package-start.js"
 
 type Started = { docId: string; name: string; kind: "cv" | "letter" }
 

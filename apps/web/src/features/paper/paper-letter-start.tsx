@@ -7,7 +7,7 @@ import {
   type MutableRefObject,
 } from "react"
 import { type JobView } from "@workspace/domain/apply"
-import { WORD_LIMITS } from "@workspace/domain/paper-doc"
+import { STARTING_LINE_LIMITS } from "@workspace/domain/paper-doc"
 
 import { Button } from "@workspace/ui/components/button"
 import {
@@ -257,7 +257,7 @@ export function PaperLetterStart({
       }
       if (activeDraft.current !== operation) return
       const lines = letterLines(operation.text, signedInEmail)
-      if (lines.length > WORD_LIMITS.maxOpsPerApply)
+      if (lines.length > STARTING_LINE_LIMITS.lines)
         throw new Error(
           "This letter is too long to save. Shorten it and try again."
         )

@@ -1,0 +1,56 @@
+[
+  {
+    "subject": "scripts/guard-ledger/coach-whole-document.json .historic",
+    "because": "The Word package code is deleted next (#2123), so this row's fixed path is pinned to 90f364f85, the last main commit that holds it; the detector and its historic proof are unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/env-switch.json .historic",
+    "because": "The Word package code is deleted next (#2123), so this row's fixed path is pinned to 90f364f85, the last main commit that holds it; the detector and its historic proof are unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/page-table-writes.json .historic",
+    "because": "The Word package code is deleted next (#2123), so this row's fixed path is pinned to 90f364f85, the last main commit that holds it; the detector and its historic proof are unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-mint-names.json .historic",
+    "because": "The Word package code is deleted next (#2123), so this row's fixed path is pinned to 90f364f85, the last main commit that holds it; the detector and its historic proof are unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-package-storage.json .historic",
+    "because": "The Word package code is deleted next (#2123), so this row's fixed path is pinned to 90f364f85, the last main commit that holds it; the detector and its historic proof are unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-blank-canvas.test.mjs > the rich blank creation path uses the factory and the full editor command",
+    "because": "startedName moved next to startingPaper in new-paper.ts, so the check now pins that the blank branch ends startingPaper rather than the file.",
+    "replacedBy": "scripts/paper-blank-canvas.test.mjs",
+    "proof": {
+      "fork": "b94df4705901c6026c0762c28c30dd444a25d3b7",
+      "replacedByBlob": "2cc0510669e1bc83599716fdce5f90b05017d2c4",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]

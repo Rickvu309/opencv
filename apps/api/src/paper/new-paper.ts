@@ -1,7 +1,12 @@
-import type { PaperTemplateId } from "@workspace/domain/paper-doc"
+import {
+  PAPER_START_TEMPLATE,
+  paperDocNameSchema,
+  templateLines,
+  templatePageName,
+  type PaperTemplateId,
+} from "@workspace/domain/paper-doc"
 
 import { paperFromLines } from "./import/word-to-paper.js"
-import { templateLines } from "./word-package/word/template.js"
 
 export function startingPaper(input: {
   kind: "cv" | "letter"
@@ -16,4 +21,17 @@ export function startingPaper(input: {
       input.lines.map((text) => ({ style: "Normal" as const, text }))
     )
   return undefined
+}
+
+export function startedName(
+  input: { kind: "cv" | "letter"; templateId?: PaperTemplateId; name?: string },
+  company: string | null
+) {
+  if (input.name) return input.name
+  const base =
+    input.kind === "cv"
+      ? templatePageName(input.templateId ?? PAPER_START_TEMPLATE)
+      : "Cover letter"
+  const named = company?.trim() ? `${base}, ${company.trim()}` : null
+  return named && paperDocNameSchema.safeParse(named).success ? named : base
 }

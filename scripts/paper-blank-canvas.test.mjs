@@ -221,7 +221,7 @@ test("the rich blank creation path uses the factory and the full editor command"
   )
   assert.match(
     read("apps/api/src/paper/new-paper.ts"),
-    /return undefined\n\}\n$/
+    /\n  return undefined\n\}\n\nexport function startedName\(/
   )
   assert.match(
     read("apps/web/src/features/paper/paper-new-dialog.tsx"),
