@@ -1,4 +1,4 @@
-import { CHAT_MESSAGE_MAX } from "@workspace/domain"
+import { CHAT_MESSAGE_MAX } from "@workspace/domain/coach"
 import { describe, expect, it } from "vitest"
 import { letterDraftText } from "./paper-letter-context.ts"
 

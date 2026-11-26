@@ -1,4 +1,4 @@
-import type { WordMark } from "@workspace/domain"
+import type { WordMark } from "@workspace/domain/paper-doc"
 
 import type { TextPoint, WritingBlock } from "./canvas-edit.ts"
 import {

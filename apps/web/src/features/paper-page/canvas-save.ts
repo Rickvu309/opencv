@@ -1,4 +1,7 @@
-import { paperCanvasCommitSchema, type WordPage } from "@workspace/domain"
+import {
+  paperCanvasCommitSchema,
+  type WordPage,
+} from "@workspace/domain/paper-doc"
 
 import { ApiError } from "@/lib/api-error.ts"
 import {

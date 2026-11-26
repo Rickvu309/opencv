@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useReducer } from "react"
 import { createPortal } from "react-dom"
 import { useQuery } from "@tanstack/react-query"
-import { paperIdSchema } from "@workspace/domain"
+import { paperIdSchema } from "@workspace/domain/kernel"
 
 import { Download } from "lucide-react"
 

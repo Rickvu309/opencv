@@ -9,7 +9,7 @@ import {
   type CvSectionKind,
   type CvTemplateId,
   type LetterPaper,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import { CvDocument as CvTemplate } from "./cv-print-document.tsx"
 import { LetterPrintView } from "./paper-letter-print.tsx"

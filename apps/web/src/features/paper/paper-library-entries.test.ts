@@ -5,7 +5,7 @@ import {
   paperPackageMetadataSchema,
   type PaperFile,
   type PaperView,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import {
   LIBRARY_SECTIONS,

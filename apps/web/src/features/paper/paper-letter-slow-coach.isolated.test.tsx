@@ -1,4 +1,4 @@
-import type { JobView } from "@workspace/domain"
+import type { JobView } from "@workspace/domain/apply"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { afterEach, expect, it, vi } from "vitest"
 import { wordPageReceipt } from "@/test/word-page-receipt.ts"

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import type { WordPage, WordParagraph } from "@workspace/domain"
+import type { WordPage, WordParagraph } from "@workspace/domain/paper-doc"
 
 import {
   deleteBackward,

@@ -1,4 +1,9 @@
-import type { WordHandle, WordLean, WordOp, WordPage } from "@workspace/domain"
+import type {
+  WordHandle,
+  WordLean,
+  WordOp,
+  WordPage,
+} from "@workspace/domain/paper-doc"
 
 import { pageBlocks, type TextPoint, type WritingBlock } from "./canvas-edit.ts"
 import { typedReach } from "./canvas-look.ts"

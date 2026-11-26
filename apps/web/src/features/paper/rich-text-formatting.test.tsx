@@ -9,7 +9,7 @@ import {
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
-import { nativeProvenance } from "@workspace/domain"
+import { nativeProvenance } from "@workspace/domain/paper-doc"
 import { openRichPaperClient } from "../../../../../packages/paper-crdt/src/client.js"
 import { seedStoredYDoc } from "../../../../../packages/paper-crdt/src/stored-document.js"
 import { storedFlowFixture } from "../../../../../packages/paper-crdt/src/test/flow-fixture.js"
