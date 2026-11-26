@@ -23,6 +23,7 @@ export const operation = defineOperation({
     })
     .strip(),
   coach: "auto",
+  coachPermission: "agentInterview",
   destructive: false,
   idempotency: "keyed",
   writes: (input) => [jobResource(input.jobId)],

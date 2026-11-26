@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/registry/paper-agent.test.ts > publishes declared Paper scopes and keeps Job grants isolated :: expect(paperAgentRefusal(\"job.get\")).toBeNull()",
+    "because": "paperAgentRefusal is deleted; the same test now asserts that job.get declares no delegateRefusal.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

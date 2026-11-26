@@ -1,0 +1,18 @@
+{
+  "id": "control-product-names",
+  "file": "scripts/control-product-names.test.mjs",
+  "detector": {
+    "module": "scripts/lib/control-product-names.mjs",
+    "export": "detectProductNames"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "6891dd351",
+    "path": "apps/api/src/registry/coach-policy.ts",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/api/src/registry/coach-policy.ts"
+    }
+  },
+  "reason": "Caught by architecture review. Introduced by 6891dd351, where Control's Coach policy gated paper.edit, three Job checklist commands and every inbox command by name instead of reading a field on the operation, against ADR-0007. detect fires on that file and stays quiet once each gated operation declares coachPermission."
+}

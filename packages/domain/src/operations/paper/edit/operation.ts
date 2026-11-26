@@ -72,6 +72,9 @@ export const operation = defineOperation({
     }),
   publicResult: z.union([publicRichEdit, paperPackageEditResultSchema.strip()]),
   coach: "confirm",
+  delegateRefusal:
+    "This connection cannot propose document edits. Stop and ask the person to reconnect.",
+  coachPermission: "agentCvs",
   delegate: { resource: "paper", access: "proposal" },
   destructive: false,
   idempotency: "keyed",

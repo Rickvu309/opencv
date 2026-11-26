@@ -18,6 +18,7 @@ export const operation = defineOperation({
     .strict(),
   publicResult: draftOutput,
   coach: "never",
+  coachPermission: "agentEmail",
   destructive: false,
   idempotency: "keyed",
   writes: (input) => [inboxThreadResource(input.threadId)],

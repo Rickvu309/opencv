@@ -13,6 +13,7 @@ export const operation = defineOperation({
   input: emptyInboxInput,
   publicResult: z.object({ skipped: z.literal(true) }).strict(),
   coach: "never",
+  coachPermission: "agentEmail",
   destructive: false,
   idempotency: "keyed",
   writes: () => [inboxThreadResource(), profileResource],

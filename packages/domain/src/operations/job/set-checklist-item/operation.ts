@@ -18,6 +18,7 @@ export const operation = defineOperation({
     .object({ id: z.string(), jobId: idResult<JobId>(), done: z.boolean() })
     .strip(),
   coach: "auto",
+  coachPermission: "agentInterview",
   destructive: false,
   idempotency: "keyed",
   writes: (input) => [jobResource(input.jobId)],

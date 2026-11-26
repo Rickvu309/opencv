@@ -12,6 +12,7 @@ export const operation = defineOperation({
   input: threadInput,
   publicResult: z.object({ id: z.string() }).strip(),
   coach: "never",
+  coachPermission: "agentEmail",
   destructive: false,
   idempotency: "keyed",
   writes: (input) => [inboxThreadResource(input.threadId)],

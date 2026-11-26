@@ -1,35 +1,21 @@
-import type { CoachAccess } from "@workspace/domain/kernel"
-export type AgentGates = {
-  agentCvs: boolean
-  agentInterview: boolean
-  agentEmail: boolean
-}
+import type { CoachAccess, CoachPermission } from "@workspace/domain/kernel"
+export type AgentGates = Record<CoachPermission, boolean>
 
-const CHECKLIST_COMMANDS = new Set([
-  "job.addChecklistItem",
-  "job.setChecklistItem",
-  "job.removeChecklistItem",
-])
-
-type CoachRefusal = "never" | "cvs" | "interview" | "email"
+type CoachRefusal = "never" | CoachPermission
 
 export const REFUSAL_MESSAGES: Record<CoachRefusal, string> = {
   never: "The Coach cannot do this",
-  cvs: "Turn on Tailored CVs for the Coach in Settings",
-  interview: "Turn on Interview prep for the Coach in Settings",
-  email: "Turn on Email updates for the Coach in Settings",
+  agentCvs: "Turn on Tailored CVs for the Coach in Settings",
+  agentInterview: "Turn on Interview prep for the Coach in Settings",
+  agentEmail: "Turn on Email updates for the Coach in Settings",
 }
 
 export function coachRefusal(
-  entry: { name: string; coach: CoachAccess | boolean },
+  entry: { coach: CoachAccess | boolean; permission?: CoachPermission },
   gates: AgentGates
 ): CoachRefusal | null {
   if (entry.coach === "never" || entry.coach === false) return "never"
-  if (entry.name === "paper.edit" && !gates.agentCvs) return "cvs"
-  if (CHECKLIST_COMMANDS.has(entry.name) && !gates.agentInterview) {
-    return "interview"
-  }
-  if (entry.name.startsWith("inbox.") && !gates.agentEmail) return "email"
+  if (entry.permission && !gates[entry.permission]) return entry.permission
   return null
 }
 

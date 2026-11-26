@@ -1,4 +1,4 @@
-import { personActor } from "@workspace/domain/kernel"
+import { defineOperation, personActor } from "@workspace/domain/kernel"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"
@@ -9,6 +9,7 @@ import { createMigratedTestDb } from "../test/harness.js"
 import { CommandError } from "../platform/errors.js"
 import { idOf } from "./coverage-helpers.test-support.js"
 import { installRegistry } from "../install.js"
+import { bindOperation } from "./bind.js"
 import { Registry } from "./registry.js"
 import { seedCoachActor } from "../test/coach-turn.js"
 
@@ -89,26 +90,32 @@ describe("execute refuses a gated command the Coach was not offered", () => {
     const { db, client } = await createMigratedTestDb()
     const registry = new Registry()
     let ran = 0
-    registry.addCommand(
-      {
+    bindOperation(registry, {
+      operation: defineOperation({
+        owner: "inbox",
         name: "inbox.archiveAll",
+        version: 1,
+        kind: "command",
         description: "Archive everything.",
         input: z.object({}).strict(),
+        publicResult: z.object({}).strict(),
         coach: "confirm",
+        coachPermission: "agentEmail",
         destructive: false,
-        reversal: () => null,
-        step: () => "Archive everything",
-        activity: () => ({
-          subjectKind: "inbox",
-          subjectId: "all",
-          summary: "Archived",
-        }),
-      },
-      async () => {
+        idempotency: "keyed",
+        writes: () => [],
+      }),
+      execute: async () => {
         ran += 1
         return {}
-      }
-    )
+      },
+      reversal: { irreversible: "The test command has no Undo." },
+      activity: () => ({
+        subjectKind: "inbox" as const,
+        subjectId: "all",
+        summary: "Archived",
+      }),
+    })
     await seed("gate-approve", db)
     await withDatabase(db, async () => {
       const chat = await installRegistry().execute({
