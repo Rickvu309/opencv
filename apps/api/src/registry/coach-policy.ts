@@ -1,4 +1,4 @@
-import type { CoachAccess } from "@workspace/domain"
+import type { CoachAccess } from "@workspace/domain/kernel"
 export type AgentGates = {
   agentCvs: boolean
   agentInterview: boolean

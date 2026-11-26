@@ -8,8 +8,8 @@ import {
   type QueryOutput,
   type ReversalPlan,
   type ReversalExpect,
-} from "@workspace/domain"
-import type { catalog } from "@workspace/domain"
+} from "@workspace/domain/kernel"
+import type { catalog } from "@workspace/domain/kernel"
 import type { ZodType } from "zod"
 
 import type { Registry } from "./registry.js"
@@ -251,7 +251,7 @@ export function bindOperation<T extends Operation, R, C, V, S = never>(
   } else {
     const binding = suppliedBinding
     requireStatedBinding(operation.name, binding)
-    const spec: import("@workspace/domain").CommandSpec<
+    const spec: import("@workspace/domain/kernel").CommandSpec<
       import("zod").output<T["input"]>,
       R
     > = {

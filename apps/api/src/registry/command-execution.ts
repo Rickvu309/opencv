@@ -1,4 +1,4 @@
-import { ERROR_CODES, isCoachActor, type Actor } from "@workspace/domain"
+import { ERROR_CODES, isCoachActor, type Actor } from "@workspace/domain/kernel"
 import { getDb, savepoint } from "../db/context.js"
 import { activity, idempotency } from "../db/schema.js"
 import { createId } from "../platform/id.js"
