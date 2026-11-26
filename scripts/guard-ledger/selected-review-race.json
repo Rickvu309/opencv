@@ -1,6 +1,0 @@
-{
-  "id": "selected-review-race",
-  "file": "apps/api/src/registry/selected-review-race.formal.test.ts",
-  "historic": null,
-  "reason": "The overlapping unchanged receipt and private restore races are new with this protocol. Historical main has no ancestor that committed a no-effect receipt after a moved basis, so a historic PASS would be fabricated. The file proves a second session waits between the Registry lock and the receipt, and that a decoy where clause, a projected select list, and a reassigned compared value do not typecheck."
-}

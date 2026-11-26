@@ -1,7 +1,7 @@
 import { coachActor } from "@workspace/domain/kernel"
 import { and, eq, sql } from "drizzle-orm"
 import { getDb } from "../db/context.js"
-import { coachTasks, coachUsage, toolIntents } from "../db/schema.js"
+import { coachUsage, toolIntents } from "../db/schema.js"
 import { withOwnedTaskFence } from "../registry/task-fence.js"
 import type { Registry } from "../registry/registry.js"
 import { append, inputHash, intentKey } from "./task-store.js"
@@ -46,58 +46,23 @@ async function taskActor(task: Pick<Task, "id" | "ownerId" | "chatId">) {
   return coachActor(task.ownerId, task.chatId, usage.id)
 }
 
-async function prepareIntent(
-  lease: TaskLease,
-  intent: Intent,
-  registry: Registry
-) {
-  if (intent.kind !== "command" || !registry.taskCanPrepare(intent.operation))
-    return null
-  const [task] = await getDb()
-    .select()
-    .from(coachTasks)
-    .where(eq(coachTasks.id, lease.taskId))
-  if (!task) throw new Error("Task lease lost")
-  const stored = await storedIntent(task.id, intent)
-  if (stored.state !== "planned") return null
-  if (!registry.taskNeedsPreparation(stored.operation, stored.input))
-    return null
-  const actor = await taskActor(task)
-  const publish = await registry.prepareTask(lease, {
-    name: stored.operation,
-    input: stored.input,
-    actor,
-    idempotencyKey: stored.intentKey,
-  })
-  return { actor, publish }
-}
-
 export async function runIntent(
   lease: TaskLease,
   intent: Intent,
   registry: Registry
 ) {
-  if (intent.kind === "command" && registry.taskCanPrepare(intent.operation)) {
-    intent = structuredClone(intent)
-    lease = { ...lease }
-  }
-  const prepared = await prepareIntent(lease, intent, registry)
   return withOwnedTaskFence(lease, async (task) => {
     const stored = await storedIntent(task.id, intent)
     if (stored.state !== "planned") return stored.publicResult
     const actor = await taskActor(task)
-    if (prepared && inputHash(prepared.actor) !== inputHash(actor))
-      throw new Error("Intent actor changed during preparation")
     const executed =
       intent.kind === "command"
-        ? prepared
-          ? await prepared.publish()
-          : await registry.executeTask(lease, {
-              name: stored.operation,
-              input: stored.input,
-              actor,
-              idempotencyKey: stored.intentKey,
-            })
+        ? await registry.executeTask(lease, {
+            name: stored.operation,
+            input: stored.input,
+            actor,
+            idempotencyKey: stored.intentKey,
+          })
         : null
     const result = executed
       ? {

@@ -28,7 +28,6 @@ export type DelegateProposalChat = {
   show: (
     proposalId: string,
     userId: string,
-    review?: unknown,
     read?: ProposalRead
   ) => Promise<void>
 }

@@ -19,7 +19,9 @@ import { activity, pendingActions } from "../db/schema.js"
 import { getDb, transaction } from "../db/context.js"
 import {
   PENDING_TTL_MS,
+  approvalReceiptKey,
   createProposal,
+  publicProposal,
   lockProposal,
   expireIfStale,
   expireTaskApprovals,
@@ -27,7 +29,6 @@ import {
 } from "./proposals.js"
 import {
   delegateAllowed,
-  requireLiveDelegate,
   requireLiveProposalConnection,
 } from "./delegate-policy.js"
 import { CommandError } from "../platform/errors.js"
@@ -51,25 +52,6 @@ import {
 import { assertReversal } from "./bind.js"
 import { RegistryEntries } from "./registry-entries.js"
 import { versionedWrite, withGrantScope } from "./write-grant.js"
-import {
-  checkPreparationTask,
-  checkReviewActor,
-  consumeFrozenReservation,
-  prepareOrReplay,
-  publishFrozenReview,
-  publicProposal,
-  readFrozenReview,
-  refuseFrozenReview,
-  requirePreparationBoundary,
-  requirePublicationBoundary,
-  reviewSnapshot,
-  reviewReceiptKey,
-  isUnchanged,
-  readPreparedExecution,
-  publishUnchanged,
-  type LockedBasis,
-  type PreparedExecution,
-} from "./frozen-review.js"
 
 import type {
   ExecuteResult,
@@ -87,8 +69,6 @@ function jsonInput(input: unknown): unknown {
 
 const taskExecution = Symbol("taskExecution")
 const approvedDelegate = Symbol("approvedDelegate")
-const frozenExecution = Symbol("frozenExecution")
-const approvingReview = Symbol("approvingReview")
 const confirmed = Symbol("confirmed")
 const noReceipt = Symbol("noReceipt")
 
@@ -96,8 +76,6 @@ type RunnerOptions = ExecuteOptions & {
   expectedRevision?: number | null
   [taskExecution]?: boolean
   [approvedDelegate]?: string
-  [frozenExecution]?: PreparedExecution
-  [approvingReview]?: boolean
   [confirmed]?: boolean
   [noReceipt]?: boolean
 }
@@ -158,67 +136,8 @@ export class Registry extends RegistryEntries {
     return (await this.undoBlockedReasons(userId, [{ command, input }]))[0]!
   }
 
-  async prepareTask(lease: TaskLease, options: TaskOptions) {
-    requirePreparationBoundary()
-    const ownedLease = reviewSnapshot(lease)
-    const captured = reviewSnapshot(options)
-    const { command, actor, parsed } = await this.admitCommand(captured)
-    const reviewed = this.reviewedFor(command, parsed)
-    if (!reviewed) return refuseFrozenReview()
-    const bindingVersion = reviewed.version
-    const normalized = reviewSnapshot({ ...captured, actor, input: parsed })
-    await checkReviewActor(actor)
-    await checkPreparationTask(ownedLease, actor, normalized.idempotencyKey)
-    const { frozen } = await prepareOrReplay(
-      reviewed,
-      normalized.input,
-      actor,
-      command.name,
-      normalized.idempotencyKey,
-      this.replayByKey.bind(this)
-    )
-    return async () => {
-      requirePublicationBoundary()
-      return executeTaskCommand(ownedLease, normalized, command, async () => {
-        const current = await this.admitCommand(normalized)
-        if (
-          this.reviewedFor(current.command, current.parsed)?.version !==
-          bindingVersion
-        )
-          return refuseFrozenReview()
-        await checkReviewActor(actor)
-        const earlier = await this.replayByKey(
-          actor.userId,
-          normalized.idempotencyKey,
-          command.name,
-          inputHash(normalized.input),
-          normalized.input
-        )
-        if (earlier)
-          return earlier.pending
-            ? earlier
-            : this.committedResult(
-                command.name,
-                normalized.input as never,
-                actor.userId,
-                earlier
-              )
-        if (!frozen) return refuseFrozenReview()
-        return this.execute({
-          ...normalized,
-          [frozenExecution]: frozen,
-          [taskExecution]: true,
-        })
-      })
-    }
-  }
-
   async executeTask(lease: TaskLease, options: TaskOptions) {
     const command = this.commands.get(options.name)
-    if (command && this.taskNeedsPreparation(options.name, options.input)) {
-      const publish = await this.prepareTask(lease, options)
-      return transaction(publish)
-    }
     return executeTaskCommand(lease, { ...options }, command, (input) => {
       if (command)
         input.input = jsonInput(parseInput(command.input, input.input))
@@ -246,68 +165,16 @@ export class Registry extends RegistryEntries {
     )
 
     const hash = idempotencyKey ? inputHash(jsonInput(parsed)) : null
-    const reviewed = this.reviewedFor(command, parsed)
-    if (options[frozenExecution] && !reviewed) return refuseFrozenReview()
-    if (reviewed && !options[frozenExecution]) {
-      requirePreparationBoundary()
-      await checkReviewActor(actor)
-      if (actor.type === "delegate") await requireLiveDelegate(actor)
-      const { earlier, frozen } = await prepareOrReplay(
-        reviewed,
-        jsonInput(parsed),
-        actor,
-        command.name,
-        idempotencyKey,
-        this.replayByKey.bind(this)
-      )
-      const result =
-        earlier ??
-        (await this.execute({
-          ...options,
-          [frozenExecution]: frozen!,
-        }))
-      return result.pending
-        ? result
-        : this.committedResult(
-            command.name,
-            parsed as never,
-            actor.userId,
-            result
-          )
-    }
-    const frozen = reviewed
-      ? readPreparedExecution(
-          options[frozenExecution],
-          reviewed,
-          actor.userId,
-          command.name,
-          parsed
-        )
-      : null
     let ahead: unknown
-    const effect = async (locked?: LockedBasis): Promise<ExecuteResult> => {
-      const ran =
-        frozen && isUnchanged(frozen)
-          ? {
-              output: frozen.output,
-              draft: null,
-              reversal: null,
-              step: command.step(parsed),
-            }
-          : await withGrantScope(
-              {
-                ownerId: actor.userId,
-                writes: command.writes?.(parsed) ?? [],
-                expectedRevision: options.expectedRevision ?? null,
-              },
-              async () => {
-                if (!reviewed || !frozen)
-                  return command.run(parsed, actor, ahead)
-                if (isUnchanged(frozen)) return refuseFrozenReview()
-                if (!locked) return refuseFrozenReview()
-                return reviewed.run(parsed, frozen, actor, locked)
-              }
-            )
+    const effect = async (): Promise<ExecuteResult> => {
+      const ran = await withGrantScope(
+        {
+          ownerId: actor.userId,
+          writes: command.writes?.(parsed) ?? [],
+          expectedRevision: options.expectedRevision ?? null,
+        },
+        () => command.run(parsed, actor, ahead)
+      )
       assertReversal(ran)
       return recordCommandResult({
         command,
@@ -325,38 +192,12 @@ export class Registry extends RegistryEntries {
           actor.userId,
           idempotencyKey,
           command.name,
-          hash!,
-          parsed
+          hash!
         )
         if (earlier) return earlier
       }
 
-      let publish = effect
       if (
-        reviewed &&
-        frozen &&
-        this.reviewedFor(command, parsed)?.version !== frozen.bindingVersion
-      )
-        return refuseFrozenReview()
-      if (reviewed && frozen && isUnchanged(frozen)) {
-        await checkReviewActor(actor)
-        if (actor.type === "delegate") await requireLiveDelegate(actor)
-        if (!reviewed.unchanged) return refuseFrozenReview()
-        await publishUnchanged(reviewed, frozen, parsed, actor)
-      } else if (reviewed && frozen && !isUnchanged(frozen)) {
-        publish = () =>
-          publishFrozenReview({
-            binding: reviewed,
-            frozen,
-            input: parsed,
-            actor,
-            key: idempotencyKey,
-            hash,
-            summary: command.step(parsed),
-            approved: !!options[approvingReview],
-            effect,
-          })
-      } else if (
         (actor.type === "delegate" &&
           (!options[approvedDelegate] ||
             options[approvedDelegate] !== options.idempotencyKey)) ||
@@ -373,14 +214,8 @@ export class Registry extends RegistryEntries {
         })
       }
 
-      return finishIdempotent(idempotencyKey, publish, () =>
-        this.replayByKey(
-          actor.userId,
-          idempotencyKey!,
-          command.name,
-          hash!,
-          parsed
-        )
+      return finishIdempotent(idempotencyKey, effect, () =>
+        this.replayByKey(actor.userId, idempotencyKey!, command.name, hash!)
       )
     }
     const hit = command.prepare
@@ -450,7 +285,7 @@ export class Registry extends RegistryEntries {
       rows.map(async (row) => {
         const completed =
           row.status === "approved"
-            ? await activityByKey(userId, reviewReceiptKey(row))
+            ? await activityByKey(userId, approvalReceiptKey(row))
             : null
         return {
           id: row.id,
@@ -471,7 +306,7 @@ export class Registry extends RegistryEntries {
       const { row, task } = await lockProposal(userId, pendingActionId)
       if (row.status === "approved") {
         if (task) await assertTaskReceipt(userId, row)
-        return activityByKey(userId, reviewReceiptKey(row)).then((receipt) =>
+        return activityByKey(userId, approvalReceiptKey(row)).then((receipt) =>
           receipt ? this.publicActivity(receipt) : null
         )
       }
@@ -495,25 +330,11 @@ export class Registry extends RegistryEntries {
             stored?.delegate
           )
         : null
-      if (stored?.undoOnly) return refuseFrozenReview()
-      const reviewed = stored
-        ? this.reviewedFor(stored, parseInput(stored.input, row.input))
-        : undefined
-      const frozen = reviewed
-        ? readFrozenReview(
-            row.frozenReview,
-            reviewed,
-            userId,
-            row.command,
-            row.input
-          )
-        : null
-      if (
-        (row.frozenReview != null && !frozen) ||
-        (frozen && frozen.proposalId !== row.id)
-      )
-        return refuseFrozenReview()
-      if (frozen) await consumeFrozenReservation(frozen)
+      if (stored?.undoOnly)
+        throw new CommandError(
+          ERROR_CODES.CONFLICT,
+          "An Undo cannot be approved as a proposal"
+        )
       const versioned = versionedWrite(stored?.writes?.(row.input) ?? [])
       if (versioned && row.basisRevision === null)
         throw new CommandError(
@@ -527,10 +348,7 @@ export class Registry extends RegistryEntries {
           delegate ??
           (task ? task.actor : approvedProposalActor(userId, row.chatId)),
         [approvedDelegate]: row.id,
-        idempotencyKey: reviewReceiptKey(row),
-        ...(frozen
-          ? { [frozenExecution]: frozen, [approvingReview]: true }
-          : {}),
+        idempotencyKey: approvalReceiptKey(row),
         [taskExecution]: !!task,
         [confirmed]: true,
         expectedRevision: versioned ? row.basisRevision : null,
@@ -547,7 +365,7 @@ export class Registry extends RegistryEntries {
         return activityById(userId, result.activityId).then((receipt) =>
           receipt ? this.publicActivity(receipt) : null
         )
-      return activityByKey(userId, reviewReceiptKey(row)).then((receipt) =>
+      return activityByKey(userId, approvalReceiptKey(row)).then((receipt) =>
         receipt ? this.publicActivity(receipt) : null
       )
     })
@@ -633,18 +451,9 @@ export class Registry extends RegistryEntries {
     userId: string,
     key: string,
     command: string,
-    hash: string,
-    input: unknown
+    hash: string
   ) {
-    const replayed = await replayKeyedCommand(
-      this.commands,
-      (entry, value) => this.reviewedFor(entry, value),
-      userId,
-      key,
-      command,
-      hash,
-      input
-    )
+    const replayed = await replayKeyedCommand(userId, key, command, hash)
     if (
       replayed &&
       !replayed.pending &&

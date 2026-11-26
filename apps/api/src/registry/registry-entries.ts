@@ -11,11 +11,6 @@ import { CatalogPublication } from "./catalog-publication.js"
 import { coachRefusal, REFUSAL_MESSAGES } from "./coach-policy.js"
 import { delegateAllowed } from "./delegate-policy.js"
 import { CommandError } from "../platform/errors.js"
-import {
-  isUnchanged,
-  refuseFrozenReview,
-  type ReviewedCommand,
-} from "./frozen-review.js"
 import { brandedActor, parseInput } from "./parse-input.js"
 import { agentGates } from "./registry-reads.js"
 import type {
@@ -140,109 +135,6 @@ export class RegistryEntries extends CatalogPublication {
     this.commands.get(spec.name)!.undoOnly = true
   }
 
-  protected reviewedFor(command: StoredCommand, input: unknown) {
-    return !command.select || command.select(input) === "reviewed"
-      ? command.reviewed
-      : undefined
-  }
-
-  addSelectedCommand<I, O, C, V, S = never>(
-    spec: CommandSpec<I, O>,
-    binding: {
-      select: (input: Readonly<I>) => "execute" | "reviewed"
-      execute: (input: I, actor: Actor) => Promise<O>
-      reviewed: ReviewedCommand<I, O, C, V, S>
-    }
-  ) {
-    this.addReviewedCommand(spec, binding.reviewed)
-    const command = this.commands.get(spec.name)!
-    command.run = this.commandRunner(spec, binding.execute)
-    command.select = (input) => {
-      const selected = binding.select(parseInput(spec.input, input))
-      if (selected !== "execute" && selected !== "reviewed")
-        return refuseFrozenReview()
-      return selected
-    }
-  }
-
-  addReviewedCommand<I, O, C, V, S = never>(
-    spec: CommandSpec<I, O>,
-    binding: ReviewedCommand<I, O, C, V, S>
-  ) {
-    if (
-      spec.transaction === "none" ||
-      spec.idempotency === "none" ||
-      !binding.version
-    )
-      throw new Error(
-        "Reviewed commands must be transactional, keyed and versioned"
-      )
-    this.addCommand(spec, async () => refuseFrozenReview())
-    const command = this.commands.get(spec.name)!
-    command.reviewed = {
-      version: binding.version,
-      ...(binding.unchanged
-        ? {
-            unchanged: {
-              parse: (snapshot: unknown) =>
-                binding.unchanged!.snapshot.parse(snapshot),
-              basis: binding.unchanged!.basis,
-              revalidate: (input: unknown, snapshot: unknown, actor: Actor) =>
-                binding.unchanged!.revalidate(
-                  parseInput(spec.input, input),
-                  binding.unchanged!.snapshot.parse(snapshot),
-                  actor
-                ),
-            },
-          }
-        : {}),
-      parse: (prepared) => {
-        if (isUnchanged(prepared)) {
-          if (!binding.unchanged) return refuseFrozenReview()
-          return {
-            kind: "unchanged" as const,
-            snapshot: binding.unchanged.snapshot.parse(prepared.snapshot),
-            output: prepared.output,
-          }
-        }
-        return {
-          candidate: binding.candidate.parse(prepared.candidate),
-          review: binding.review.parse(prepared.review),
-        }
-      },
-      prepare: (input, actor) =>
-        binding.prepare(parseInput(spec.input, input), actor),
-      basis: binding.basis,
-      revalidate: (input, prepared, actor) =>
-        binding.revalidate(
-          parseInput(spec.input, input),
-          {
-            candidate: binding.candidate.parse(prepared.candidate),
-            review: binding.review.parse(prepared.review),
-          },
-          actor
-        ),
-      run: async (input, prepared, actor, locked) => {
-        const parsed = parseInput(spec.input, input)
-        const output = await binding.commit(
-          parsed,
-          {
-            candidate: binding.candidate.parse(prepared.candidate),
-            review: binding.review.parse(prepared.review),
-          },
-          actor,
-          locked
-        )
-        return {
-          output,
-          draft: spec.activity(parsed, output, actor),
-          reversal: spec.reversal(parsed, output),
-          step: spec.step(parsed),
-        }
-      },
-    }
-  }
-
   addQuery<I, O>(spec: QuerySpec<I, O>) {
     if (this.commands.has(spec.name) || this.queries.has(spec.name)) {
       throw new Error(`Duplicate registry entry ${spec.name}`)
@@ -296,23 +188,6 @@ export class RegistryEntries extends CatalogPublication {
       ? effectiveCoachPolicy(command, parseInput(command.input, input)) ===
           "confirm"
       : false
-  }
-
-  taskCanPrepare(name: string) {
-    const command = this.commands.get(name)
-    return Boolean(command?.reviewed && !command.undoOnly)
-  }
-
-  taskNeedsPreparation(name: string, input?: unknown) {
-    const command = this.commands.get(name)
-    return Boolean(
-      command &&
-      !command.undoOnly &&
-      this.reviewedFor(
-        command,
-        command.select ? parseInput(command.input, input) : input
-      )
-    )
   }
 
   commandNames() {

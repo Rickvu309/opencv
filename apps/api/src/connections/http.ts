@@ -9,11 +9,7 @@ import {
   localhostAllowedOrigins,
 } from "@modelcontextprotocol/server"
 import { oauthProviderAuthServerMetadata } from "@better-auth/oauth-provider"
-import {
-  delegateActorSchema,
-  ERROR_CODES,
-  type DelegateActor,
-} from "@workspace/domain/kernel"
+import { delegateActorSchema, ERROR_CODES } from "@workspace/domain/kernel"
 import { insideTransaction, savepoint, transaction } from "../db/context.js"
 import type { SignedInVariables } from "../platform/signed-in.js"
 import type { Registry } from "../registry/registry.js"
@@ -23,11 +19,7 @@ import { CommandError } from "../platform/errors.js"
 import type { ExecuteResult } from "../registry/registry-types.js"
 import { AGENT_RATE_LIMIT_MESSAGE, agentToolError } from "./agent-tool-error.js"
 import { authenticateAgent, registeredAgentScopes } from "./oauth.js"
-import {
-  appendDelegateCall,
-  completeDelegateCall,
-  delegateCallWindow,
-} from "./call-store.js"
+import { appendDelegateCall, delegateCallWindow } from "./call-store.js"
 
 const NATIVE_CLIENT_ORIGINS = [
   "vscode-webview://*",
@@ -89,32 +81,6 @@ function untrustedResult(value: Record<string, unknown>) {
       },
     ],
   }
-}
-
-async function proposeOutsideTransaction(
-  registry: Registry,
-  call: {
-    callId: string | null
-    name: string
-    input: unknown
-    actor: DelegateActor
-  }
-) {
-  if (!call.callId) throw new Error("Agent call was not reserved")
-  const callId = call.callId
-  const proposed = await registry.execute({
-    name: call.name,
-    input: call.input,
-    actor: call.actor,
-  })
-  await transaction(() =>
-    completeDelegateCall(
-      callId,
-      proposed.pending ? "pending" : "success",
-      proposed.pendingActionId
-    )
-  )
-  return proposed
 }
 
 type AuthServer = Parameters<typeof oauthProviderAuthServerMetadata>[0]
@@ -206,11 +172,7 @@ export function connectionRoutes(
                 const outcome = await (async () => {
                   try {
                     const result = await savepoint(
-                      async (): Promise<
-                        | ExecuteResult
-                        | { data: unknown }
-                        | { prepareOutside: true }
-                      > => {
+                      async (): Promise<ExecuteResult | { data: unknown }> => {
                         await requireLiveDelegate(actor)
                         checked = true
                         if (!window.allowed)
@@ -219,8 +181,6 @@ export function connectionRoutes(
                           return {
                             data: await registry.read(entry.name, input, actor),
                           }
-                        if (registry.taskNeedsPreparation(entry.name, input))
-                          return { prepareOutside: true }
                         return registry.execute({
                           name: entry.name,
                           input,
@@ -234,9 +194,6 @@ export function connectionRoutes(
                   }
                 })()
                 if (!checked) return { ...outcome, callId: null }
-                const prepareOutside =
-                  outcome.kind === "success" &&
-                  "prepareOutside" in outcome.result
                 const proposalId =
                   outcome.kind === "success" &&
                   "pendingActionId" in outcome.result &&
@@ -250,7 +207,7 @@ export function connectionRoutes(
                   window,
                   outcome: !window.allowed
                     ? "limited"
-                    : outcome.kind === "error" || prepareOutside
+                    : outcome.kind === "error"
                       ? "error"
                       : proposalId
                         ? "pending"
@@ -260,15 +217,7 @@ export function connectionRoutes(
                 return { ...outcome, callId }
               })
               if (result.kind === "error") throw result.error
-              const value =
-                "prepareOutside" in result.result
-                  ? await proposeOutsideTransaction(registry, {
-                      callId: result.callId,
-                      name: entry.name,
-                      input,
-                      actor,
-                    })
-                  : result.result
+              const value = result.result
               const link =
                 "chatId" in value && typeof value.chatId === "string"
                   ? new URL(`/coach?chat=${value.chatId}`, webOrigins[0]).href

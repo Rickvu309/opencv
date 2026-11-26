@@ -1,0 +1,122 @@
+[
+  {
+    "subject": "apps/api/src/coach/frozen-review-task.formal.test.ts",
+    "because": "Only the deleted Word page edits used Control's frozen and selected review (ADR-0008, #2126), so every command now runs through one execute path; these checks covered that deleted path.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  },
+  {
+    "subject": "apps/api/src/registry/coach-one-decision.test.ts",
+    "because": "Only the deleted Word page edits used Control's frozen and selected review (ADR-0008, #2126), so every command now runs through one execute path; these checks covered that deleted path.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/registry/frozen-review.formal.test.ts",
+    "because": "Only the deleted Word page edits used Control's frozen and selected review (ADR-0008, #2126), so every command now runs through one execute path; these checks covered that deleted path.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 14
+  },
+  {
+    "subject": "apps/api/src/registry/ownership.test.ts",
+    "because": "Only the deleted Word page edits used Control's frozen and selected review (ADR-0008, #2126), so every command now runs through one execute path; these checks covered that deleted path.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/api/src/registry/selected-review-race.formal.test.ts",
+    "because": "Only the deleted Word page edits used Control's frozen and selected review (ADR-0008, #2126), so every command now runs through one execute path; these checks covered that deleted path.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/api/src/registry/selected-review.formal.test.ts",
+    "because": "Only the deleted Word page edits used Control's frozen and selected review (ADR-0008, #2126), so every command now runs through one execute path; these checks covered that deleted path.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 16
+  },
+  {
+    "subject": "scripts/frozen-review.test.mjs",
+    "because": "Only the deleted Word page edits used Control's frozen and selected review (ADR-0008, #2126), so every command now runs through one execute path; these checks covered that deleted path.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  },
+  {
+    "subject": "scripts/guard-ledger/frozen-review-runtime.json",
+    "because": "Only the deleted Word page edits used Control's frozen and selected review (ADR-0008, #2126), so every command now runs through one execute path; these checks covered that deleted path.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/frozen-review-task-runtime.json",
+    "because": "Only the deleted Word page edits used Control's frozen and selected review (ADR-0008, #2126), so every command now runs through one execute path; these checks covered that deleted path.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/frozen-review.json",
+    "because": "Only the deleted Word page edits used Control's frozen and selected review (ADR-0008, #2126), so every command now runs through one execute path; these checks covered that deleted path.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/selected-review-race.json",
+    "because": "Only the deleted Word page edits used Control's frozen and selected review (ADR-0008, #2126), so every command now runs through one execute path; these checks covered that deleted path.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/selected-review-runtime.json",
+    "because": "Only the deleted Word page edits used Control's frozen and selected review (ADR-0008, #2126), so every command now runs through one execute path; these checks covered that deleted path.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/selected-review.json",
+    "because": "Only the deleted Word page edits used Control's frozen and selected review (ADR-0008, #2126), so every command now runs through one execute path; these checks covered that deleted path.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/selected-review.test.mjs",
+    "because": "Only the deleted Word page edits used Control's frozen and selected review (ADR-0008, #2126), so every command now runs through one execute path; these checks covered that deleted path.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "scripts/mcp-limit.test.mjs",
+    "because": "Only the deleted Word page edits used Control's frozen and selected review (ADR-0008, #2126), so every command now runs through one execute path; these checks covered that deleted path.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

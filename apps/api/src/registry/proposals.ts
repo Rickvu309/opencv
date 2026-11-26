@@ -16,7 +16,6 @@ import {
   type ProposalRead,
 } from "./proposal-hosts.js"
 import { inputHash } from "./receipt.js"
-import type { FrozenReview } from "./frozen-review.js"
 
 export const PENDING_TTL_MS = 24 * 60 * 60 * 1000
 
@@ -34,7 +33,6 @@ export function createProposal(options: {
   input: unknown
   summary: string
   basisRevision: number | null
-  frozenReview?: FrozenReview
   read?: ProposalRead
 }) {
   return transaction(() => savepoint(() => insertProposal(options)))
@@ -46,11 +44,10 @@ async function insertProposal(options: {
   input: unknown
   summary: string
   basisRevision: number | null
-  frozenReview?: FrozenReview
   read?: ProposalRead
 }) {
   const { actor, command, input, summary, basisRevision } = options
-  const id = options.frozenReview?.proposalId ?? createId()
+  const id = createId()
   const chatId = actor.type === "coach" ? actor.chatId : createId()
   if (actor.type === "delegate") {
     const grant = await requireLiveDelegate(actor)
@@ -88,16 +85,10 @@ async function insertProposal(options: {
       input,
       summary,
       basisRevision,
-      frozenReview: options.frozenReview ?? null,
       status: "pending",
     })
   if (actor.type === "delegate")
-    await chatForDelegateProposals().show(
-      id,
-      actor.userId,
-      options.frozenReview?.review,
-      options.read
-    )
+    await chatForDelegateProposals().show(id, actor.userId, options.read)
   return {
     pending: true as const,
     pendingActionId: id,
@@ -106,8 +97,17 @@ async function insertProposal(options: {
     command,
     activityId: null,
     reversal: null,
-    ...(options.frozenReview ? { review: options.frozenReview.review } : {}),
   }
+}
+
+export function approvalReceiptKey(row: typeof pendingActions.$inferSelect) {
+  return row.coachIntentKey ?? row.id
+}
+
+export function publicProposal(row: typeof pendingActions.$inferSelect) {
+  const { frozenReview: privateReview, ...publicRow } = row
+  void privateReview
+  return publicRow
 }
 
 export async function expireIfStale(userId: string, id: string) {

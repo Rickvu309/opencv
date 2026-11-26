@@ -157,17 +157,8 @@ test("the reviewer's helper bypass in the live binding is rejected", () => {
   assert.ok(detect(mutant).length > 0)
 })
 
-test("the live outside proposal runs only after a refused-on-error checked reservation that marked preparation", () => {
+test("the live door marks a call checked only after it re-checks the connection", () => {
   for (const [from, to] of [
-    ['              if (result.kind === "error") throw result.error\n', ""],
-    [
-      '"prepareOutside" in result.result\n                  ?',
-      "true\n                  ?",
-    ],
-    [
-      "if (registry.taskNeedsPreparation(entry.name, input))",
-      'if (entry.kind === "command")',
-    ],
     [
       "await requireLiveDelegate(actor)\n                        checked = true",
       "checked = true",

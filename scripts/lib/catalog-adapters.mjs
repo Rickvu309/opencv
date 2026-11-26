@@ -272,10 +272,9 @@ export function detectReplayIdentity(text) {
     if (
       ts.isCallExpression(node) &&
       spelling(node.expression, source) === "this.replayByKey" &&
-      node.arguments.length === 5 &&
+      node.arguments.length === 4 &&
       spelling(node.arguments[2], source) === "command.name" &&
-      spelling(node.arguments[3], source) === "hash!" &&
-      spelling(node.arguments[4], source) === "parsed"
+      spelling(node.arguments[3], source) === "hash!"
     )
       lookups++
   })

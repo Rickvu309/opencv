@@ -1,6 +1,0 @@
-{
-  "id": "frozen-review-task-runtime",
-  "file": "apps/api/src/coach/frozen-review-task.formal.test.ts",
-  "historic": null,
-  "reason": "Actual runIntent regression for the new opt-in frozen-review protocol. It stages before SQL and rechecks stored intent, usage identity, task fencing and keyed replay during atomic publication. The protocol is absent from introducing ancestors on main; pure source mutants and real PostgreSQL regressions provide evidence without a fabricated historical proof."
-}

@@ -1,6 +1,0 @@
-{
-  "id": "selected-review-runtime",
-  "file": "apps/api/src/registry/selected-review.formal.test.ts",
-  "historic": null,
-  "reason": "Selected dispatch, unchanged publication and private Undo admission are new in this change. This file covers the synthetic operation on Postgres: input-selected execute and review, SQL revalidation of an unchanged result, worker preparation, and the refusal of direct Undo and approval by a person, Coach and delegate. Historical main has no ancestor that introduced this protocol, so a historic PASS would be fabricated."
-}
