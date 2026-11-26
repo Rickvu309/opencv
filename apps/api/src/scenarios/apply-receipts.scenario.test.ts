@@ -209,6 +209,11 @@ describe("a Word page links to a Job like any Paper", () => {
       docId: alone.docId,
       kind: "letter",
     })
-    expect((await jobOf(ada, job.id)).letterDocId).toBe(alone.docId)
+    const detail = await jobOf(ada, job.id)
+    expect(detail.letterDocId).toBe(alone.docId)
+    expect(detail.linked).toEqual({
+      cv: { id: forJob.docId, name: "Word CV" },
+      letter: { id: alone.docId, name: "Word Letter" },
+    })
   })
 })
