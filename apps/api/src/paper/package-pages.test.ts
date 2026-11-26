@@ -8,8 +8,8 @@ import {
 } from "@workspace/domain/paper-doc"
 import { expect, it } from "vitest"
 
-import { PaperPackage } from "./package-engine.js"
-import { fixturePackage, paragraph } from "./package-fixtures.js"
+import { PaperPackage } from "./word-package/package-engine.js"
+import { fixturePackage, paragraph } from "./word-package/package-fixtures.js"
 import { packageDigest, packagePage } from "./package-pages.js"
 
 it("hashes JSON values independently of PostgreSQL JSONB property order", () => {

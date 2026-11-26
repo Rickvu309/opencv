@@ -32,7 +32,7 @@ import {
 import { seedCoachActor } from "../test/coach-turn.js"
 import { openBackend, type Backend } from "../test/registry-formal-support.js"
 import { readOutline, OUTLINE_MAX_CHARS } from "./outline.js"
-import { fixturePackage, paragraph } from "./package-fixtures.js"
+import { fixturePackage, paragraph } from "./word-package/package-fixtures.js"
 import { publishWordPackage, stageWordPackage } from "./package-store.js"
 import { apply, open } from "./word-package/word/document.js"
 import { readWordOutline, readWordParagraphs } from "./word-reading.js"

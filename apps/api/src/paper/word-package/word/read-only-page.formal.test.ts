@@ -11,12 +11,8 @@ import {
   type Backend,
 } from "../../../test/registry-formal-support.js"
 import { paperRegistry } from "../../paper-registry.test-support.js"
-import {
-  fixturePackage,
-  paragraph,
-  relationship,
-} from "../../package-fixtures.js"
-import { prepareWordPackage } from "../../package-planner.js"
+import { fixturePackage, paragraph, relationship } from "../package-fixtures.js"
+import { prepareWordPackage } from "../package-planner.js"
 import {
   publishWordPackage,
   readWordPackage,

@@ -21,7 +21,7 @@ import {
   prepareStoredWordPackage,
   restoreWordCandidate,
 } from "./word-package/package-candidates.js"
-import { fixturePackage } from "./package-fixtures.js"
+import { fixturePackage } from "./word-package/package-fixtures.js"
 import * as packageStore from "./package-store.js"
 import {
   exportWordPackage,

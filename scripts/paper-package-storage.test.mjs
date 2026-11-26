@@ -176,7 +176,10 @@ test("immutable Word storage rejects unfinished heads, projection shadows and fl
     ).length > 0
   )
   const planner = readFileSync(
-    new URL("../apps/api/src/paper/package-planner.ts", import.meta.url),
+    new URL(
+      "../apps/api/src/paper/word-package/package-planner.ts",
+      import.meta.url
+    ),
     "utf8"
   )
   assert.deepEqual(detect(planner), [])
@@ -221,7 +224,10 @@ test("immutable Word storage rejects unfinished heads, projection shadows and fl
 
 test("Word preparation detects writes inside the complete planner", () => {
   const planner = readFileSync(
-    new URL("../apps/api/src/paper/package-planner.ts", import.meta.url),
+    new URL(
+      "../apps/api/src/paper/word-package/package-planner.ts",
+      import.meta.url
+    ),
     "utf8"
   )
   const mutation = planner.replace(
@@ -238,7 +244,10 @@ test("Word preparation detects writes inside the complete planner", () => {
 
 test("Word preparation detects transactions inside the complete planner", () => {
   const planner = readFileSync(
-    new URL("../apps/api/src/paper/package-planner.ts", import.meta.url),
+    new URL(
+      "../apps/api/src/paper/word-package/package-planner.ts",
+      import.meta.url
+    ),
     "utf8"
   )
   const mutation = planner.replace(

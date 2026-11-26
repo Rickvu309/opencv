@@ -48,9 +48,12 @@ test("Word content excludes property tabs and bounds expansion before retaining 
     "policy",
     "references",
   ]) {
-    const path = `apps/api/src/paper/package-${name}.ts`
+    const path = `apps/api/src/paper/word-package/package-${name}.ts`
     const source = readFileSync(
-      new URL(`../apps/api/src/paper/package-${name}.ts`, import.meta.url),
+      new URL(
+        `../apps/api/src/paper/word-package/package-${name}.ts`,
+        import.meta.url
+      ),
       "utf8"
     )
     assert.deepEqual(detect(source, path), [], name)

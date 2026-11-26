@@ -23,17 +23,14 @@ import {
   candidatePageInTrash,
   pruneUnreachableCandidates,
 } from "./package-candidate-prune.js"
-import { PaperPackage } from "../package-engine.js"
-import { PACKAGE_PROFILE } from "../package-profile.js"
+import { PaperPackage } from "./package-engine.js"
+import { PACKAGE_PROFILE } from "./package-profile.js"
 import {
   archiveDigest,
   packageDigest,
   packageFailure,
 } from "../package-pages.js"
-import {
-  prepareWordPackage,
-  wordPackageEditSchema,
-} from "../package-planner.js"
+import { prepareWordPackage, wordPackageEditSchema } from "./package-planner.js"
 import { compareAndRestorePackage, readPackageHead } from "./package-restore.js"
 import { wordPackageBasis } from "../package-store.js"
 

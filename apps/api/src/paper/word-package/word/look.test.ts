@@ -9,7 +9,7 @@ import {
   paragraph,
   run,
   story,
-} from "../../package-fixtures.js"
+} from "../package-fixtures.js"
 import { paragraphsOf, projectParagraphs } from "./classify.js"
 
 const styles = story(

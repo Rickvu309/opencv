@@ -18,7 +18,7 @@ import { z } from "zod"
 import { getDb, insideTransaction, transaction } from "../db/context.js"
 import { files, paperPackageHeads, paperPackageVersions } from "../db/schema.js"
 import { CommandError } from "../platform/errors.js"
-import { PaperPackage } from "./package-engine.js"
+import { PaperPackage } from "./word-package/package-engine.js"
 import {
   archiveDigest,
   decodePackageCursor,

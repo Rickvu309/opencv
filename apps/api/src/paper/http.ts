@@ -17,7 +17,7 @@ import {
 import { type Context, Hono } from "hono"
 
 import { createId } from "../platform/id.js"
-import { PaperPackageRefusal } from "./package-errors.js"
+import { PaperPackageRefusal } from "./word-package/package-errors.js"
 import { stageWordPackage } from "./package-store.js"
 import { jsonWithStatus } from "../platform/http-json.js"
 import { readJsonBody } from "../platform/http-json.js"

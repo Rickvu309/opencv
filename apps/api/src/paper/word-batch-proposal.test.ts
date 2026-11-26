@@ -28,7 +28,7 @@ import {
   fixturePackage,
   paragraph,
   run as wordRun,
-} from "./package-fixtures.js"
+} from "./word-package/package-fixtures.js"
 import { publishWordPackage, stageWordPackage } from "./package-store.js"
 import { apply, open, WORD_UNDO_MOVED } from "./word-package/word/document.js"
 

@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest"
 
-import { PaperPackage } from "../../package-engine.js"
-import { PaperPackageRefusal } from "../../package-errors.js"
-import { cvPackage, paragraph, run } from "../../package-fixtures.js"
-import { plannedReplacements } from "../../package-planner.js"
-import { readPackageZip } from "../../package-zip.js"
+import { PaperPackage } from "../package-engine.js"
+import { PaperPackageRefusal } from "../package-errors.js"
+import { cvPackage, paragraph, run } from "../package-fixtures.js"
+import { plannedReplacements } from "../package-planner.js"
+import { readPackageZip } from "../package-zip.js"
 import { projectParagraphs } from "./classify.js"
 import { mutateWord } from "./mutate.js"
 

@@ -12,7 +12,7 @@ import {
   user,
 } from "../db/schema.js"
 import { openBackend, type Backend } from "../test/registry-formal-support.js"
-import { fixturePackage, paragraph } from "./package-fixtures.js"
+import { fixturePackage, paragraph } from "./word-package/package-fixtures.js"
 import { archiveDigest, decodePackageCursor } from "./package-pages.js"
 import {
   exportWordPackage,

@@ -27,7 +27,7 @@ import {
 import { textDocx, textPdf } from "./import-fixtures.test.js"
 import { openWordPage } from "./index.js"
 import { PAGE_STORE_FILES, pageInsertingExports } from "./page-writes.js"
-import { fixturePackage, paragraph } from "./package-fixtures.js"
+import { fixturePackage, paragraph } from "./word-package/package-fixtures.js"
 import { WORD_PACKAGE_MEDIA_TYPE } from "./package-store.js"
 
 const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
