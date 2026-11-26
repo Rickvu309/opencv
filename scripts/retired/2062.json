@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "scripts/env-switch.test.mjs",
+    "because": "The Word package http file moved into paper/word-package/, so the guard names the new path in its fixtures; every expectation is unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  }
+]
