@@ -101,8 +101,8 @@ describe("paper.start takes no words of the Coach's", () => {
   })
 
   it("waits for the person, and the older block create is closed to the Coach", () => {
-    expect(paperContract["paper.start"].coach).toBe("confirm")
-    expect(paperContract["paper.start"].delegate).toBeUndefined()
+    expect(catalog["paper.start"].coach).toBe("confirm")
+    expect("delegate" in catalog["paper.start"]).toBe(false)
     expect(catalog["paper.create"].coach).toBe("never")
     expect(paperContract["paper.canvas"].coach).toBe("never")
   })

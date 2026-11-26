@@ -3,7 +3,6 @@ import { paperContract } from "@workspace/domain"
 import { tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
 import { registerCanvasCommit } from "./package-canvas.js"
-import { registerPaperStart } from "./package-start.js"
 import { registerWordPackageEdit } from "./package-edit.js"
 import { editRichPaper } from "./rich-edit.js"
 import { oldEditorUndoReasons } from "./undo-guard.js"
@@ -16,13 +15,8 @@ export function registerPaper(registry: Registry) {
   registry.addUndoGuard("paper.attachPhoto", oldEditorUndoReasons)
   registry.addUndoGuard("paper.replace", oldEditorUndoReasons)
   registry.addUndoGuard("paper.restore", oldEditorUndoReasons)
-  const {
-    "paper.edit": paperEdit,
-    "paper.canvas": paperCanvas,
-    "paper.start": paperStart,
-  } = paperContract
+  const { "paper.edit": paperEdit, "paper.canvas": paperCanvas } = paperContract
   registerCanvasCommit(registry, paperCanvas)
-  registerPaperStart(registry, paperStart)
   registerWordPackageEdit(registry, paperEdit, (input, actor) =>
     editRichPaper(actor.userId, input)
   )
