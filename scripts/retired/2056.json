@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "scripts/paper-tables.test.mjs",
+    "because": "The table controls, menu and stylesheet moved into features/paper/rich-editor/, so the guard's file map names the new paths; its history reads find the old names through pathAtRevision, and every expectation is unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  }
+]
