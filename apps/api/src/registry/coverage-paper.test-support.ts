@@ -1,10 +1,8 @@
-import { randomUUID } from "node:crypto"
-
 import { parseUserId, personActor } from "@workspace/domain/kernel"
 import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { expect } from "vitest"
 
-import { importedWordPage, saveFile, stageWordPackage } from "../paper/index.js"
+import { importedPaper, saveFile } from "../paper/index.js"
 import {
   idOf,
   list,
@@ -56,7 +54,8 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     .list()
     .commands.find((command) => command.name === "paper.edit")
   if (!paperEdit) throw new Error("Missing Paper edit command")
-  let importStage = ""
+  let importFile = ""
+  let importPaper: unknown = null
   let mintedDocId = ""
   let mintedParagraph = ""
   let editDocId = ""
@@ -226,38 +225,37 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     {
       name: paperImport.name,
       arrange: async () => {
-        const page = await importedWordPage(
-          {
-            name: "cv.txt",
-            mediaType: "text/plain",
-            bytes: Buffer.from("hello from an imported file"),
-          },
-          { owner: userId }
-        )
-        importStage = (
-          await stageWordPackage(
-            userId,
-            { requestId: randomUUID(), name: page.name, kind: "cv" },
-            page.bytes
-          )
-        ).stageId
+        const upload = {
+          name: "cv.txt",
+          mediaType: "text/plain",
+          bytes: Buffer.from("hello from an imported file"),
+        }
+        importFile = (
+          await saveFile({
+            userId: parseUserId(userId),
+            ...upload,
+            purpose: "import",
+          })
+        ).id
+        importPaper = (await importedPaper(upload, { owner: userId })).paper
       },
       act: () =>
-        run(paperImport.name, { generation: "package", stageId: importStage }),
+        run(paperImport.name, {
+          fileId: importFile,
+          kind: "cv",
+          name: "cv",
+          paper: importPaper,
+        }),
       assert: async (result) => {
-        expect(text(result.output, "generation")).toBe("package")
         expect(text(result.output, "name")).toBe("cv")
-        expect(result.reversal).toBeNull()
         const docId = text(result.output, "docId")
-        if (!docId) throw new Error("missing imported page")
+        if (!docId) throw new Error("missing imported Paper")
         const outline = await registry.read(
           "paper.outline",
           { docId },
           personActor(userId)
         )
-        expect(text(outline, "outline")).toContain(
-          "hello from an imported file"
-        )
+        expect(JSON.stringify(outline)).toContain("hello from an imported file")
       },
     },
     {

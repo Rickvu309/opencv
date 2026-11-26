@@ -8,27 +8,23 @@ import {
   personActor,
   successEnvelope,
 } from "@workspace/domain/kernel"
-import {
-  paperImportResponseSchema,
-  paperPackageStageInputSchema,
-} from "@workspace/domain/paper-doc"
+import { paperImportResponseSchema } from "@workspace/domain/paper-doc"
+import { createHash } from "node:crypto"
 import { type Context, Hono } from "hono"
+import { z } from "zod"
 
 import { createId } from "../platform/id.js"
-import { PaperPackageRefusal } from "./word-package/package-errors.js"
-import { stageWordPackage } from "./word-package/package-store.js"
 import { jsonWithStatus } from "../platform/http-json.js"
 import { readJsonBody } from "../platform/http-json.js"
 import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"
 import { CommandError } from "../platform/errors.js"
 import { registry } from "../registry/registry.js"
 import {
-  classifyImport,
   extractLetterAttachment,
   importReadStop,
   parseImportLink,
 } from "./import/import-parse.js"
-import { importedPageName, importedWordPage } from "./import/import-word.js"
+import { importedPaper } from "./import/import-word.js"
 import { createNativeWordRoutes } from "./native-word-http.js"
 import { createPaperPackageRoutes } from "./word-package/package-http.js"
 import {
@@ -37,6 +33,15 @@ import {
   readOwnedPhoto,
   saveFile,
 } from "./store.js"
+
+const paperImportKindSchema = z.enum(["cv", "letter"])
+
+function importFileId(userId: string, requestKey: string) {
+  const hex = createHash("sha256")
+    .update(`paper-import:${userId}:${requestKey}`)
+    .digest("hex")
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-${((parseInt(hex.slice(16, 18), 16) & 0x3f) | 0x80).toString(16)}${hex.slice(18, 20)}-${hex.slice(20, 32)}`
+}
 
 function person(userId: string) {
   return personActor(userId)
@@ -256,60 +261,61 @@ export function createPaperRoutes(signedIn: SignedIn) {
         413
       )
     }
+    const kind = paperImportKindSchema.safeParse(c.req.query("kind") ?? "cv")
+    if (!kind.success)
+      throw new CommandError(
+        ERROR_CODES.VALIDATION_ERROR,
+        "Choose a valid document kind."
+      )
+    const requestKey = c.req.header("idempotency-key") ?? createId()
     let bytes: Buffer | undefined = Buffer.from(await file.arrayBuffer())
     try {
       const upload = {
         name: file.name,
         mediaType: file.type || "application/octet-stream",
         bytes,
+        kind: kind.data,
       }
-      const word =
-        file.name.toLowerCase().endsWith(".docx") ||
-        classifyImport(upload) === "docx"
-          ? { name: importedPageName(file.name), bytes, notice: null }
-          : await importedWordPage(upload, {
-              owner: c.var.userId,
-              signal: c.req.raw.signal,
-            })
+      const imported = await importedPaper(upload, {
+        owner: c.var.userId,
+        signal: c.req.raw.signal,
+      })
+      refuseCancelledImport(c.req.raw.signal)
+      const saved = await saveFile({
+        userId: parseUserId(c.var.userId),
+        name: file.name,
+        mediaType: upload.mediaType,
+        bytes,
+        purpose: "import",
+        id: importFileId(c.var.userId, requestKey),
+      })
       bytes = undefined
       void bytes
       refuseCancelledImport(c.req.raw.signal)
-      const input = paperPackageStageInputSchema.safeParse({
-        requestId: c.req.header("idempotency-key") ?? createId(),
-        name: word.name,
-        kind: c.req.query("kind") ?? "cv",
-      })
-      if (!input.success)
-        throw new CommandError(
-          ERROR_CODES.VALIDATION_ERROR,
-          "Choose a valid document name, kind, and upload key."
-        )
-      const staged = await stageWordPackage(
-        c.var.userId,
-        input.data,
-        word.bytes
-      )
-      refuseCancelledImport(c.req.raw.signal)
-      const imported = await registry.execute({
+      const created = await registry.execute({
         name: catalog["paper.import"].name,
-        input: { generation: "package", stageId: staged.stageId },
+        input: {
+          fileId: saved.id,
+          kind: kind.data,
+          name: imported.name,
+          paper: imported.paper,
+        },
         actor: person(c.var.userId),
+        idempotencyKey: `import:${requestKey}`,
       })
       return c.json(
-        paperImportResponseSchema.parse({
-          ...successEnvelope(
-            catalog["paper.import"].publicResult.parse(imported.output)
-          ),
-          ...(word.notice ? { notice: word.notice } : {}),
-        })
+        paperImportResponseSchema.parse(
+          successEnvelope({
+            ...catalog["paper.import"].publicResult.parse(created.output),
+            ...(imported.notice ? { notice: imported.notice } : {}),
+          })
+        )
       )
     } catch (error) {
       bytes = undefined
       void bytes
       const stopped = stoppedRead(c, error, "import")
       if (stopped) return stopped
-      if (error instanceof PaperPackageRefusal)
-        throw new CommandError(ERROR_CODES.VALIDATION_ERROR, error.message)
       throw error
     }
   })

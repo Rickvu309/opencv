@@ -23,6 +23,7 @@ import { RichPhotoControls } from "./rich-photo-controls.tsx"
 import { RichPaperTextFormatting } from "./rich-text-formatting.tsx"
 import { RichDocumentMenuBar } from "./rich-document-menubar.tsx"
 import { openRichPaperSession } from "@/lib/paper-rich.ts"
+import { holdWritingCoachFocus } from "@/lib/writing-coach-focus.ts"
 import { resolvePhotoSrc } from "@/lib/requests.ts"
 import type { NativeSyncIdentity } from "@/lib/paper-sync-identity.ts"
 import { SYNC_LABEL } from "@/lib/paper-sync-status.ts"
@@ -83,6 +84,7 @@ export function RichPaperPage({
     "closed"
   )
   const queryClient = useQueryClient()
+  useEffect(() => holdWritingCoachFocus(identity.docId), [identity.docId])
   const currentIdentity = useRef(identity)
   useLayoutEffect(() => {
     currentIdentity.current = identity

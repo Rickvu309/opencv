@@ -1,23 +1,31 @@
 import { z } from "zod"
 import { defineOperation } from "../../../operation.js"
 import type { ResourceRef } from "../../../resources.js"
-import { paperPackageMetadataSchema } from "../../../paper-doc/paper-package.js"
 
 export const operation = defineOperation({
   owner: "paper",
   name: "paper.import",
-  version: 1,
+  version: 2,
   kind: "command",
-  description: "Publish an uploaded file as a Word document.",
+  description:
+    "Make a Paper from a file the person brought in. The file is read and converted before this runs, and the uploaded file stays stored beside the Paper.",
   label: "Import your Paper",
   input: z
     .object({
-      generation: z.literal("package"),
-      stageId: z.string().uuid(),
+      fileId: z.string().uuid(),
+      kind: z.enum(["cv", "letter"]),
+      name: z.string().trim().min(1).max(200),
+      paper: z.unknown(),
     })
     .strict(),
-  publicResult: paperPackageMetadataSchema.strip(),
-  coach: "auto",
+  publicResult: z
+    .object({
+      docId: z.string().uuid(),
+      name: z.string().min(1).max(200),
+      kind: z.enum(["cv", "letter"]),
+    })
+    .strip(),
+  coach: "never",
   destructive: false,
   idempotency: "keyed",
   writes: (): readonly ResourceRef[] => [{ name: "paper", coachFloor: "auto" }],

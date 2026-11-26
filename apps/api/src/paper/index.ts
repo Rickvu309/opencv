@@ -1,6 +1,6 @@
 export { registerPaper } from "./commands.js"
 export { createPaperRoutes } from "./http.js"
-export { importedWordPage } from "./import/import-word.js"
+export { importedPaper } from "./import/import-word.js"
 export { importReaderReady } from "./import/import-text-pool.js"
 export { stageWordPackage } from "./word-package/package-store.js"
 export { sweepUnattachedPhotos } from "./photo-sweep.js"

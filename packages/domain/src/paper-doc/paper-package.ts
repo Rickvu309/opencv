@@ -101,8 +101,14 @@ export const paperPackageMetadataSchema = z
 export const paperImportResponseSchema = z
   .object({
     ok: z.literal(true),
-    data: paperPackageMetadataSchema,
-    notice: z.string().min(1).optional(),
+    data: z
+      .object({
+        docId: z.string().uuid(),
+        name: z.string().min(1).max(200),
+        kind: z.enum(["cv", "letter"]),
+        notice: z.string().min(1).optional(),
+      })
+      .strict(),
   })
   .strict()
 

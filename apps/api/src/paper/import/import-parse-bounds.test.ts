@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest"
 
-import { files, paperDocs, paperPackageHeads } from "../../db/schema.js"
+import { files, paperDocs } from "../../db/schema.js"
 import {
   createMigratedTestDb,
   createTestApp,
@@ -21,7 +21,7 @@ import {
 } from "./import-parse.js"
 import { IMPORT_FILE_CAP, IMPORT_SIZE_MESSAGE } from "../store.js"
 
-type Published = { generation: string; docId: string }
+type Published = { docId: string }
 
 function formFile(bytes: Buffer, name: string, type: string) {
   const form = new FormData()
@@ -72,7 +72,7 @@ describe("paper import bounds", () => {
     expect(await long.json()).toMatchObject({
       error: { code: "FILE_UNSUPPORTED", message: IMPORT_PDF_PAGES_MESSAGE },
     })
-    expect(await db.select().from(paperPackageHeads)).toEqual([])
+    expect(await db.select().from(paperDocs)).toEqual([])
     expect(await db.select().from(files)).toEqual([])
     const pages = Array.from({ length: 20 }, (_, index) => {
       if (index === 0) return "FIRST-PAGE"
@@ -114,7 +114,6 @@ describe("paper import bounds", () => {
       error: { message: IMPORT_PDF_HEAVY_MESSAGE },
     })
     expect(await db.select().from(paperDocs)).toEqual([])
-    expect(await db.select().from(paperPackageHeads)).toEqual([])
     expect(await db.select().from(files)).toEqual([])
     await client.close()
   })
@@ -185,7 +184,6 @@ describe("paper import bounds", () => {
     release("Campus newsletter")
     await pending.catch(() => undefined)
     expect(await db.select().from(paperDocs)).toEqual([])
-    expect(await db.select().from(paperPackageHeads)).toEqual([])
     expect(await db.select().from(files)).toEqual([])
     await client.close()
   })
@@ -217,11 +215,9 @@ describe("paper import bounds", () => {
       const response = await postFile(app, owner.cookie, bytes, name, type)
       expect(response.status).toBe(200)
       const body = (await response.json()) as { data: Published }
-      expect(body.data.generation).toBe("package")
       expect(await publishedText(db, body.data.docId)).toContain(words)
     }
-    expect(await db.select().from(paperDocs)).toEqual([])
-    expect(await db.select().from(paperPackageHeads)).toHaveLength(4)
+    expect(await db.select().from(paperDocs)).toHaveLength(4)
     await client.close()
   })
 
@@ -251,7 +247,6 @@ describe("paper import bounds", () => {
     ).catch(() => undefined)
     if (response) expect(response.status).not.toBe(200)
     expect(await db.select().from(paperDocs)).toEqual([])
-    expect(await db.select().from(paperPackageHeads)).toEqual([])
     expect(await db.select().from(files)).toEqual([])
     await client.close()
   })
@@ -343,8 +338,7 @@ describe("paper import bounds", () => {
     expect(text.status).toBe(200)
     const body = (await text.json()) as { data: Published }
     expect(await publishedText(db, body.data.docId)).toContain("Café résumé")
-    expect(await db.select().from(paperDocs)).toEqual([])
-    expect(await db.select().from(paperPackageHeads)).toHaveLength(1)
+    expect(await db.select().from(paperDocs)).toHaveLength(1)
     await client.close()
   })
 })

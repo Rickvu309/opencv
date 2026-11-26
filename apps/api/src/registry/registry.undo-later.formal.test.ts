@@ -70,7 +70,7 @@ async function undoAfterLater(
 }
 
 describe("P4: undoing an action after a later change never erases the later change", () => {
-  it("offers no Undo for an import, so later typing on the imported Word page cannot be erased by it", async () => {
+  it("offers no Undo for an import, so later typing on the imported Paper cannot be erased by it", async () => {
     await withDatabase(backend.db, async () => {
       const userId = "formal-import-later-typing"
       await backend.db.insert(user).values({

@@ -345,6 +345,7 @@ export async function saveFile(input: {
   mediaType: string
   bytes: Buffer
   purpose: "import" | "avatar"
+  id?: string
 }) {
   const cap = input.purpose === "avatar" ? AVATAR_CAP : IMPORT_FILE_CAP
   if (input.bytes.byteLength > cap) {
@@ -374,7 +375,7 @@ export async function saveFile(input: {
     input.purpose === "avatar"
       ? mediaTypeFromImageBytes(input.bytes)
       : mediaType
-  const id = createId()
+  const id = input.id ?? createId()
   await getDb()
     .insert(files)
     .values({
@@ -386,6 +387,7 @@ export async function saveFile(input: {
       purpose: input.purpose,
       bytes: input.bytes,
     })
+    .onConflictDoNothing()
   return { id }
 }
 
