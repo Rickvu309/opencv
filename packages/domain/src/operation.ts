@@ -130,6 +130,20 @@ export type Implementations<C extends Record<string, Operation>> = {
           ) => PublicReply<C[N]>
         }
       }
+    | {
+        selected: {
+          execute: (
+            input: z.output<C[N]["input"]>,
+            ...rest: never[]
+          ) => PublicReply<C[N]>
+          reviewed: {
+            commit: (
+              input: z.output<C[N]["input"]>,
+              ...rest: never[]
+            ) => PublicReply<C[N]>
+          }
+        }
+      }
   )
 }
 

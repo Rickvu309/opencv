@@ -93,7 +93,7 @@ function decide(
       intents: [
         {
           id: "call_edit",
-          name: "paper.edit",
+          name: catalog["paper.edit"].name,
           input: fakePaperEdit({
             id: docId,
             revision: outlined.revision,

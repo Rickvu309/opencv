@@ -1,9 +1,6 @@
-import { paperContract } from "@workspace/domain"
-
 import { tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
-import { registerWordPackageEdit } from "./package-edit.js"
-import { editRichPaper } from "./rich-edit.js"
+import { registerPaperUndo } from "./package-edit.js"
 import { oldEditorUndoReasons } from "./undo-guard.js"
 import { readOutline } from "./outline.js"
 import { coachPaperList } from "./coach-word-pages.js"
@@ -14,10 +11,7 @@ export function registerPaper(registry: Registry) {
   registry.addUndoGuard("paper.attachPhoto", oldEditorUndoReasons)
   registry.addUndoGuard("paper.replace", oldEditorUndoReasons)
   registry.addUndoGuard("paper.restore", oldEditorUndoReasons)
-  const { "paper.edit": paperEdit } = paperContract
-  registerWordPackageEdit(registry, paperEdit, (input, actor) =>
-    editRichPaper(actor.userId, input)
-  )
+  registerPaperUndo(registry)
 
   const paperList = tableQuery("paper.list", {
     description:

@@ -51,6 +51,10 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     .list()
     .commands.find((command) => command.name === "paper.canvas")
   if (!paperCanvas) throw new Error("Missing Paper canvas command")
+  const paperEdit = registry
+    .list()
+    .commands.find((command) => command.name === "paper.edit")
+  if (!paperEdit) throw new Error("Missing Paper edit command")
   let importStage = ""
   let mintedDocId = ""
   let mintedParagraph = ""
@@ -77,7 +81,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "paper.edit",
+      name: paperEdit.name,
       arrange: async () => {
         const minted = await run(paperCanvas.name, {
           op: "mint",
@@ -88,7 +92,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         editParagraph = emptyWritingParagraph(await wordPage(editDocId))
       },
       act: () =>
-        run("paper.edit", {
+        run(paperEdit.name, {
           docId: editDocId,
           basedOn: editRevision,
           edits: [

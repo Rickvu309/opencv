@@ -2,14 +2,13 @@ import { randomUUID } from "node:crypto"
 
 import {
   ERROR_CODES,
-  RICH_NATIVE_WRITER,
   nativeWriterSchema,
-  paperContract,
+  richEditOutputSchema,
+  type catalog,
   paperIdSchema,
   paperPackageEditResultSchema,
   richChangeSchema,
   wordUndoSchema,
-  type Actor,
 } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { z } from "zod"
@@ -34,11 +33,13 @@ import { isWordBatch, prepareWordBatch } from "./package-planner.js"
 import { PACKAGE_PROFILE } from "./package-profile.js"
 import { revalidateUnchangedPackage } from "./package-restore.js"
 import { readWordPackage } from "./package-store.js"
-import { undo, WORD_UNDO_MOVED } from "./word/document.js"
+import { undo } from "./word/document.js"
 import { undoRichEdit } from "./rich-edit.js"
 
-type EditInput = z.output<(typeof paperContract)["paper.edit"]["input"]>
-type EditOutput = z.output<(typeof paperContract)["paper.edit"]["output"]>
+export type EditInput = z.output<(typeof catalog)["paper.edit"]["input"]>
+export type EditOutput =
+  | z.output<typeof richEditOutputSchema>
+  | z.output<typeof paperPackageEditResultSchema>
 
 const snapshotSchema = z
   .object({
@@ -59,8 +60,8 @@ const candidateSchema = z
     noop: z.literal(true).optional(),
   })
   .strict()
-type Snapshot = z.output<typeof snapshotSchema>
-type PackageCandidate = z.output<typeof candidateSchema>
+export type Snapshot = z.output<typeof snapshotSchema>
+export type PackageCandidate = z.output<typeof candidateSchema>
 
 const unchangedBasis = {
   table: paperPackageHeads,
@@ -166,7 +167,7 @@ function basisOf(candidate: PackageCandidate) {
   }
 }
 
-function isPackageOutput(
+export function isPackageOutput(
   output: EditOutput
 ): output is z.output<typeof paperPackageEditResultSchema> {
   return "generation" in output && output.generation === "package"
@@ -202,7 +203,7 @@ async function prepareStoredWordBatch(owner: string, input: EditInput) {
   return persistWordPackage(owner, plan, PACKAGE_PROFILE.version, false)
 }
 
-const wordPackageReview: ReviewedCommand<
+export const wordPackageReview: ReviewedCommand<
   EditInput,
   EditOutput,
   PackageCandidate,
@@ -326,7 +327,7 @@ const wordPackageReview: ReviewedCommand<
   },
 }
 
-const RICH_UNDO_MOVED =
+export const RICH_UNDO_MOVED =
   "This document changed after the Coach edit, so Undo was skipped to keep your writing."
 
 const richUndoSchema = z
@@ -338,11 +339,7 @@ const richUndoSchema = z
   })
   .strict()
 
-export function registerWordPackageEdit(
-  registry: Registry,
-  entry: (typeof paperContract)["paper.edit"],
-  execute: (input: EditInput, actor: Actor) => Promise<EditOutput>
-) {
+export function registerPaperUndo(registry: Registry) {
   registry.addUndoCommand(
     {
       name: "paper.undoWord",
@@ -376,75 +373,5 @@ export function registerWordPackageEdit(
       activity: () => null,
     },
     (input, actor) => undoRichEdit(actor.userId, input)
-  )
-  registry.addSelectedCommand(
-    {
-      name: "paper.edit",
-      description: entry.description,
-      delegate: entry.delegate,
-      input: entry.input,
-      coach: entry.coach,
-      destructive: entry.destructive,
-      idempotency: "keyed",
-      step: entry.step,
-      reversal: (input, output) => {
-        if (isPackageOutput(output)) {
-          if (!output.restore || typeof input.basedOn !== "string") return null
-          return {
-            command: "paper.undoWord",
-            input: {
-              doc: output.docId,
-              revision: output.revision,
-              restore: input.basedOn,
-            },
-            expect: {
-              query: "paper.read",
-              input: { docId: output.docId },
-              matches: { revision: output.revision },
-              skipped: WORD_UNDO_MOVED,
-            },
-          }
-        }
-        if (!output.editId) return null
-        return {
-          command: "paper.undoEdit",
-          input: {
-            docId: input.docId,
-            writer: RICH_NATIVE_WRITER,
-            editId: output.editId,
-            changes: output.changes,
-          },
-          expect: {
-            query: "paper.outline",
-            input: { docId: input.docId },
-            matches: { revision: output.revision },
-            skipped: RICH_UNDO_MOVED,
-          },
-        }
-      },
-      activity: (input, output) => {
-        const saved = isPackageOutput(output)
-          ? output.restore
-            ? output
-            : null
-          : output.editId
-            ? output
-            : null
-        return saved
-          ? {
-              subjectKind: "paper",
-              subjectId: input.docId,
-              summary: `Edited ${saved.name}`,
-              detail: { docId: input.docId, name: saved.name },
-            }
-          : null
-      },
-    },
-    {
-      select: (input) =>
-        typeof input.basedOn === "number" ? "execute" : "reviewed",
-      execute,
-      reviewed: wordPackageReview,
-    }
   )
 }

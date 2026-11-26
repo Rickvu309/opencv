@@ -1,4 +1,4 @@
-import { commands } from "@workspace/domain"
+import { catalog } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 import { PRIVATE_OUTPUT_KEYS } from "./http.js"
 
@@ -45,10 +45,12 @@ describe("public command output", () => {
 
   it("keeps every undo-only field of every command off the wire", () => {
     const outputs = Object.fromEntries(
-      Object.entries(commands).map(([name, entry]) => [
-        name,
-        outputKeys(entry.output),
-      ])
+      Object.values(catalog)
+        .filter((operation) => operation.kind === "command")
+        .map((operation) => [
+          operation.name,
+          outputKeys(operation.publicResult),
+        ])
     )
     expect(Object.values(outputs).some((keys) => keys.includes("editId"))).toBe(
       true

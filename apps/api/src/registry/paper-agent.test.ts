@@ -1,4 +1,4 @@
-import { delegateActorSchema, paperContract, catalog } from "@workspace/domain"
+import { delegateActorSchema, catalog } from "@workspace/domain"
 import { expect, it } from "vitest"
 
 import { registeredAgentScopes } from "../connections/index.js"
@@ -30,7 +30,7 @@ it("publishes declared Paper scopes and keeps Job grants isolated", () => {
     "offline_access",
   ])
   const read = { ...catalog["paper.read"], coach: false }
-  const edit = { ...paperContract["paper.edit"], name: "paper.edit" }
+  const edit = catalog["paper.edit"]
   const paper = agent(["paper.read", "paper.write"])
   const jobs = agent(["job.read", "job.write"])
   expect(delegateAllowed(read, paper)).toBe(true)
