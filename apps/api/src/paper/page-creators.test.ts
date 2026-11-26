@@ -15,7 +15,7 @@ import { installRegistry } from "../install.js"
 import { registry } from "../registry/registry.js"
 import {
   expectListIsLivePages,
-  richEditorHeaders,
+  richInfoRequest,
 } from "../test/paper-live-pages.js"
 import {
   authHeaders,
@@ -423,9 +423,10 @@ describe("a page made any way is listed, opens, and stays hidden from others", (
       ).toBe(made.docId)
     } else {
       expect(mine[0]?.format).toBe("rich")
-      const opened = await app.request(`/api/paper/${made.docId}/document`, {
-        headers: richEditorHeaders(owner.cookie),
-      })
+      const opened = await app.request(
+        "/api/reads/paper.read",
+        richInfoRequest(made.docId, owner.cookie)
+      )
       expect(opened.status, await opened.clone().text()).toBe(200)
     }
     expect(

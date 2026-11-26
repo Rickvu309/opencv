@@ -24,7 +24,6 @@ import {
 import { registry } from "../../registry/registry.js"
 import { installRegistry } from "../../install.js"
 import {
-  authHeaders,
   createMigratedTestDb,
   createTestApp,
   signUp,
@@ -39,6 +38,7 @@ import { fixturePackage, paragraph } from "./package-fixtures.js"
 import { publishWordPackage, stageWordPackage } from "./package-store.js"
 import { apply, open } from "./word/document.js"
 import { readWordOutline, readWordParagraphs } from "./word-reading.js"
+import { paperReadRequest } from "../../test/paper-live-pages.js"
 
 let backend: Backend
 const owner = randomUUID()
@@ -388,7 +388,6 @@ it("serves the same complete paragraphs over authenticated HTTP as the Coach out
     const identity = z
       .object({ user: z.object({ id: z.string() }) })
       .parse(await signed.res.json())
-    const headers = authHeaders(signed.cookie)
     const staged = await withDatabase(db, () =>
       stageWordPackage(
         identity.user.id,
@@ -415,8 +414,16 @@ it("serves the same complete paragraphs over authenticated HTTP as the Coach out
     let cursor: string | null = null
     for (let count = 0; count < 4; count++) {
       const response = await app.request(
-        `/api/paper/packages/${head.docId}/read?at=${head.revision}${cursor ? `&cursor=${cursor}` : ""}`,
-        { headers }
+        "/api/reads/paper.read",
+        paperReadRequest(
+          {
+            view: "lines",
+            docId: head.docId,
+            at: head.revision,
+            ...(cursor ? { cursor } : {}),
+          },
+          signed.cookie
+        )
       )
       expect(response.status, await response.clone().text()).toBe(200)
       const page = z

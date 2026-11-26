@@ -25,7 +25,6 @@ import {
   qualifiedPaperKey,
   qualifiedPaperRead,
 } from "@/lib/paper-qualification.ts"
-import { endpoints } from "@/lib/requests.ts"
 import {
   paperListRecheck,
   paperListRecheckKey,
@@ -87,14 +86,10 @@ export function PaperDocPage() {
         )
       : ["paper-document-unavailable", docId],
     queryFn: ({ signal }) =>
-      qualifiedPaperRead(
-        catalog["paper.read"].name,
-        endpoints.paperDocument(docId ?? NO_DOC),
-        {
-          ...qualification,
-          signal,
-        }
-      ),
+      qualifiedPaperRead(catalog["paper.read"].name, docId ?? NO_DOC, {
+        ...qualification,
+        signal,
+      }),
     enabled: ready,
     retry: false,
   })

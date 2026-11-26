@@ -10,7 +10,7 @@ import {
   createTestApp,
   signUp,
 } from "../test/harness.js"
-import { richEditorHeaders } from "../test/paper-live-pages.js"
+import { richInfoRequest } from "../test/paper-live-pages.js"
 import { richPaper } from "../test/rich-paper.js"
 import { seedColumns } from "./content/content-document.js"
 import { png, postAvatar } from "./photo.fixtures.js"
@@ -71,13 +71,14 @@ describe("Copied CV photo lifetime", () => {
           : await command("paper.delete", { docId: deletedId })
       expect(deletion.status).toBe(200)
 
-      const deleted = await app.request(`/api/paper/${deletedId}/document`, {
-        headers: richEditorHeaders(owner.cookie),
-      })
+      const deleted = await app.request(
+        "/api/reads/paper.read",
+        richInfoRequest(deletedId, owner.cookie)
+      )
       expect(deleted.status).toBe(404)
       const surviving = await app.request(
-        `/api/paper/${survivingId}/document`,
-        { headers: richEditorHeaders(owner.cookie) }
+        "/api/reads/paper.read",
+        richInfoRequest(survivingId, owner.cookie)
       )
       expect(surviving.status).toBe(200)
       const [kept] = await db

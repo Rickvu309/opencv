@@ -335,9 +335,9 @@ describe("the route decides once and stops", () => {
       outcome.server.exchanges.filter((exchange) => exchange.status >= 400)
     ).toEqual([
       {
-        url: `/api/paper/${idNumber(999)}/document`,
+        url: "/api/reads/paper.read",
         status: 404,
-        method: "GET",
+        method: "POST",
       },
     ])
   })

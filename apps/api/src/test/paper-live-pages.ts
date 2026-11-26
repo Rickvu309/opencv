@@ -11,6 +11,24 @@ import {
 } from "../db/schema.js"
 import { authHeaders, createMigratedTestDb, createTestApp } from "./harness.js"
 
+export function paperReadRequest(
+  input: Record<string, unknown>,
+  cookie: string
+) {
+  return {
+    method: "POST",
+    headers: authHeaders(cookie),
+    body: JSON.stringify(input),
+  }
+}
+
+export function richInfoRequest(docId: string, cookie: string) {
+  return paperReadRequest(
+    { view: "info", docId, writer: RICH_NATIVE_WRITER },
+    cookie
+  )
+}
+
 export function richEditorHeaders(cookie: string) {
   return {
     ...authHeaders(cookie),

@@ -119,14 +119,6 @@ async function mintedPage(as: Person) {
   return { docId: idIn(minted, "docId") }
 }
 
-async function olderDoc(as: Person) {
-  const made = await as.command("paper.create", {
-    kind: "cv",
-    name: "Route CV",
-  })
-  return { id: idIn(made, "id") }
-}
-
 async function chat(as: Person) {
   const made = await as.command("chat.create", { title: "Route" })
   return { id: idIn(made, "id") }
@@ -158,7 +150,13 @@ async function sent(as: Person, path: string) {
 async function exportedWord(as: Person) {
   const { docId } = await mintedPage(as)
   const page = await (
-    await sent(as, `/api/paper/packages/${docId}/read`)
+    await as.fetch(
+      new Request(ORIGIN + "/api/reads/paper.read", {
+        method: "POST",
+        headers: authHeaders(as.cookie),
+        body: JSON.stringify({ view: "lines", docId }),
+      })
+    )
   ).json()
   const at = revisionIn(page)
   if (!at) throw new Error(`no revision in ${JSON.stringify(page)}`)
@@ -268,8 +266,6 @@ export const ROUTE_CASES: readonly RouteCase[] = [
     chat
   ),
   stageCase,
-  get("/api/paper/packages"),
-  get("/api/paper/packages/:docId/read", mintedPage),
   get("/api/paper/packages/:docId/export", mintedPage),
   postForm("/api/paper/letter-attachment", () => textUpload),
   IMPORT_CASES.docx,
@@ -277,7 +273,6 @@ export const ROUTE_CASES: readonly RouteCase[] = [
   IMPORT_CASES.txt,
   postForm("/api/paper/files", () => pngUpload),
   get("/api/paper/files/:id/bytes", uploadedFile),
-  get("/api/paper/:id/document", olderDoc),
   nativeWordRouteCase,
   get("/api/inbox/connect"),
   get("/api/inbox/callback"),

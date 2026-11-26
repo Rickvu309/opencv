@@ -31,11 +31,7 @@ const transportExceptions = {
   health: ["GET /health", "GET /health/deep"],
 }
 
-const waitingToBecomeOperations = [
-  "GET /api/paper/:id/document",
-  "GET /api/paper/packages",
-  "GET /api/paper/packages/:docId/read",
-]
+const waitingToBecomeOperations: string[] = []
 
 async function servedRoutes() {
   const { db, client } = await createMigratedTestDb()
@@ -74,6 +70,6 @@ describe("every change and read of product data goes through an operation", () =
   })
 
   it("has no more routes waiting to become operations than it had", () => {
-    expect(waitingToBecomeOperations.length).toBeLessThanOrEqual(5)
+    expect(waitingToBecomeOperations.length).toBeLessThanOrEqual(0)
   })
 })

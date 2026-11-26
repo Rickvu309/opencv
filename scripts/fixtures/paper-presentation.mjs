@@ -27,7 +27,7 @@ export const clean = [
   },
   {
     path: "apps/web/src/test/paper-api-mock.ts",
-    text: "const identity = /^\\/api\\/paper\\/([^/]+)\\/document$/.exec(path); paperDocumentInfoSchema.parse(identity)",
+    text: 'const info = await readBody(init); if (info?.view === "info") paperDocumentInfoSchema.parse(info)',
   },
   {
     path: "apps/web/src/features/paper/rich-editor/rich-page.tsx",

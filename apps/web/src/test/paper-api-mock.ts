@@ -124,7 +124,11 @@ export async function paperApiFetch(
   const path = pathOf(input)
   const method = (init?.method ?? "GET").toUpperCase()
 
-  if (!handlesPaperRequest(input)) return null
+  const info =
+    method === "POST" && path === "/api/reads/paper.read"
+      ? ((await readBody(init)) as { view?: string; docId?: string })
+      : null
+  if (!handlesPaperRequest(input) && info?.view !== "info") return null
 
   if (
     store.failNext &&
@@ -146,9 +150,8 @@ export async function paperApiFetch(
     return jsonOk([])
   }
 
-  const identity = /^\/api\/paper\/([^/]+)\/document$/.exec(path)
-  if (method === "GET" && identity) {
-    const doc = store.docs.find((item) => item.id === identity[1])
+  if (info?.view === "info") {
+    const doc = store.docs.find((item) => item.id === info.docId)
     if (!doc) return jsonError(404, "NOT_FOUND", "Paper doc not found")
     return jsonOk(
       paperDocumentInfoSchema.parse({

@@ -164,10 +164,12 @@ export function fakeServer(
         },
       })
     }
-    const metadata = path.match(/\/api\/paper\/([0-9a-f-]{36})\/document$/)
-    if (metadata?.[1]) {
+    const infoOf = path.endsWith("/api/reads/paper.read")
+      ? (JSON.parse(body || "{}") as { view?: string; docId?: string })
+      : null
+    if (infoOf?.view === "info" && infoOf.docId) {
       if (options.documentFails) return refused(500)
-      const page = live(metadata[1])
+      const page = live(infoOf.docId)
       return page
         ? ok({
             id: page.id,

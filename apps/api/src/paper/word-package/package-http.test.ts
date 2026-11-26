@@ -25,6 +25,7 @@ import {
   stageWordPackage,
   publishWordPackage,
 } from "./package-store.js"
+import { paperReadRequest } from "../../test/paper-live-pages.js"
 
 it("authenticates staging, reads pinned snapshots, and exports exact DOCX bytes over HTTP", async () => {
   const { db, client } = await createMigratedTestDb()
@@ -51,9 +52,13 @@ it("authenticates staging, reads pinned snapshots, and exports exact DOCX bytes 
       .parse(await stagedResponse.json()).data
     expect(
       (
-        await app.request(`/api/paper/packages/${staged.docId}/read`, {
-          headers,
-        })
+        await app.request(
+          "/api/reads/paper.read",
+          paperReadRequest(
+            { view: "lines", docId: staged.docId },
+            signed.cookie
+          )
+        )
       ).status
     ).toBe(404)
     const commandHeaders = {
@@ -112,8 +117,11 @@ it("authenticates staging, reads pinned snapshots, and exports exact DOCX bytes 
       downloadPath: `/api/paper/packages/${staged.docId}/export?at=${staged.revision}`,
     })
     const read = await app.request(
-      `/api/paper/packages/${staged.docId}/read?at=${staged.revision}`,
-      { headers }
+      "/api/reads/paper.read",
+      paperReadRequest(
+        { view: "lines", docId: staged.docId, at: staged.revision },
+        signed.cookie
+      )
     )
     expect(read.status).toBe(200)
     expect(read.headers.get("cache-control")).toBe("private, no-store")
@@ -246,8 +254,11 @@ it("moves Word uploads into the immutable library without a legacy document or f
       email: `${randomUUID()}@test.invalid`,
     })
     const denied = await app.request(
-      `/api/paper/packages/${receipt.docId}/read?at=${receipt.revision}`,
-      { headers: authHeaders(other.cookie) }
+      "/api/reads/paper.read",
+      paperReadRequest(
+        { view: "lines", docId: receipt.docId, at: receipt.revision },
+        other.cookie
+      )
     )
     expect(denied.status).toBe(404)
     const otherLibrary = await app.request("/api/reads/paper.read", {

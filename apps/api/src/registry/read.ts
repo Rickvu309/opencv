@@ -35,11 +35,9 @@ export function createReadRoutes({
         400
       )
     }
-    return c.json(
-      successEnvelope(
-        await registry.read(name, input, personActor(c.var.userId))
-      )
-    )
+    const data = await registry.read(name, input, personActor(c.var.userId))
+    c.header("Cache-Control", "private, no-store")
+    return c.json(successEnvelope(data))
   })
   return routes
 }

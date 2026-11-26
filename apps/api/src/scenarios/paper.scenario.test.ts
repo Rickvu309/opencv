@@ -12,8 +12,6 @@ import {
 type Paper = { id: string; name: string; kind: string; format: string }
 
 const writer = RICH_NATIVE_WRITER
-const asEditor = { "x-paper-writer": JSON.stringify(writer) }
-
 let world: World
 
 beforeAll(async () => {
@@ -31,7 +29,7 @@ async function blank(person: Person, kind: "cv" | "letter", name: string) {
 }
 
 function opened(person: Person, docId: string) {
-  return person.get(`/api/paper/${docId}/document`, asEditor)
+  return person.read("paper.read", { view: "info", docId, writer })
 }
 
 describe("a Paper started blank", () => {
