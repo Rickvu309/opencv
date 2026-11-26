@@ -28,7 +28,7 @@ import {
   restoreWordCandidate,
 } from "./package-candidates.js"
 import * as packageCandidates from "./package-candidates.js"
-import { fixturePackage } from "./package-fixtures.js"
+import { fixturePackage } from "../package-fixtures.js"
 import * as packageRestore from "./package-restore.js"
 import {
   exportWordPackage,
