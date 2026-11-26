@@ -1,9 +1,6 @@
 import {
-  defineQuery,
   delegateDeclaration,
-  type DelegateMarker,
   type Operation,
-  queries,
   type ActivityDraft,
   type Actor,
   type QueryInput,
@@ -128,26 +125,6 @@ function boundActivity<I, R>(
 ): (input: I, result: R, actor: Actor) => ActivityDraft | null {
   if (typeof activity !== "function") return () => null
   return activity
-}
-
-type TableQuerySpec<N extends QueryName> = {
-  description: string
-  coach: boolean
-  delegate?: DelegateMarker
-  step: (input: QueryInput<N>) => string
-  read: (input: QueryInput<N>, actor: Actor) => Promise<QueryOutput<N>>
-  visitor?: (input: QueryInput<N>) => Promise<QueryOutput<N>>
-}
-
-export function tableQuery<N extends QueryName>(
-  name: N,
-  spec: TableQuerySpec<N>
-) {
-  return defineQuery({
-    name,
-    ...spec,
-    input: queries[name].input as unknown as ZodType<QueryInput<N>>,
-  })
 }
 
 type WithRegistry<F> = F extends (...args: infer A) => infer O

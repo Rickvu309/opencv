@@ -10,8 +10,6 @@ import { readPaperList } from "./paper-list.ts"
 import { endpoints } from "./requests.ts"
 import { qualifiedPaperKey, qualifiedPaperRead } from "./paper-qualification.ts"
 
-import { qualifiedCoachPaperOptions } from "./coach-context.ts"
-
 const id = parsePaperId("01990b00-0000-7000-8000-000000000001")
 const options = { ownerId: "owner", sessionId: "session" }
 const paper = nativePaperDocumentSchema.parse({
@@ -186,7 +184,7 @@ it("keeps the default Coach query separate from explicit qualified context", asy
   expect(JSON.parse(fetcher.mock.calls[0]?.[1].body)).not.toHaveProperty(
     "writer"
   )
-  await qualifiedCoachPaperOptions(options)
+  await qualifiedPaperRead("paper.list", endpoints.paper, options)
   expect(JSON.parse(fetcher.mock.calls[1]?.[1].body).writer).toEqual(
     NATIVE_WRITER
   )

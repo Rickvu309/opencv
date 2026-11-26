@@ -130,12 +130,6 @@ export type QuerySpec<TInput, TOutput = unknown> = {
   visitor?: (input: TInput) => Promise<TOutput>
 }
 
-export function defineQuery<TInput, TOutput>(
-  spec: QuerySpec<TInput, TOutput>
-): QuerySpec<TInput, TOutput> {
-  return spec
-}
-
 export function isCoachActor(actor: Actor): actor is CoachActor {
   return actor.type === "coach"
 }

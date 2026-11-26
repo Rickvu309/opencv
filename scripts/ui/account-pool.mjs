@@ -58,7 +58,7 @@ export function countOf(data) {
 }
 
 export const LIBRARY_READS = {
-  documents: { path: "/api/paper" },
+  documents: { path: "/api/reads/paper.list", body: "{}" },
   jobs: { path: "/api/reads/job.list", body: "{}" },
   chats: { path: "/api/reads/chat.list", body: "{}" },
 }
