@@ -90,22 +90,6 @@ export function detect(text, file = "source.tsx") {
       line: source.getLineAndCharacterOfPosition(node.getStart()).line + 1,
     })
   walk(source, (node) => {
-    if (
-      (ts.isJsxSelfClosingElement(node) || ts.isJsxOpeningElement(node)) &&
-      node.tagName.getText(source) === "PaperLibraryCard"
-    ) {
-      const props = node.attributes.properties
-      const lines = props.find(
-        (prop) => ts.isJsxAttribute(prop) && prop.name.text === "lines"
-      )
-      if (lines?.getText(source).includes("librarySheetLines")) {
-        const preview = props.find(
-          (prop) => ts.isJsxAttribute(prop) && prop.name.text === "preview"
-        )
-        if (!preview?.getText(source).includes("PaperWordPreview"))
-          add(node, "word-card-without-first-page-preview")
-      }
-    }
     if (parsesView(node)) {
       const [view] = node.arguments
       if (!view || !ts.isObjectLiteralExpression(view)) return

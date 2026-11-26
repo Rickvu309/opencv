@@ -38,7 +38,7 @@ import {
   setMockJobs,
 } from "@/test/shell-api-mock.ts"
 
-const OLDER_FORMAT = "Document not found."
+const OLDER_FORMAT = "This document cannot be opened in Paper."
 
 const shellProfile = vi.hoisted(() => ({
   next: null as null | (() => Promise<unknown>),

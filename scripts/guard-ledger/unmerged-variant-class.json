@@ -8,6 +8,10 @@
   "historic": {
     "mode": "detect",
     "sha": "0bbef4fe",
-    "path": "apps/web/src/features/paper-page/canvas-unsaved-bar.tsx"
+    "path": "apps/web/src/features/paper-page/canvas-unsaved-bar.tsx",
+    "fixed": {
+      "rev": "90f364f85",
+      "path": "apps/web/src/features/paper-page/canvas-unsaved-bar.tsx"
+    }
   }
 }

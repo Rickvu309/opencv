@@ -52,45 +52,6 @@ test("committed imports release upload cleanup before reading the response", () 
   assert.deepEqual(detect(source, "http.ts"), [])
 })
 
-test("Word library stays absent until the feature read has completed", () => {
-  const mistake =
-    'function Library() { return !unavailable && owner ? <section aria-label="Word documents">Library</section> : null }'
-  const clean = mistake.replace(
-    "!unavailable",
-    "!unavailable && !library.query.isLoading"
-  )
-  assert.deepEqual(
-    detect(mistake, "library.tsx").map(({ kind }) => kind),
-    ["unannounced-word-library"]
-  )
-  assert.deepEqual(detect(clean, "library.tsx"), [])
-  const source = readFileSync(
-    new URL(
-      "../apps/web/src/features/paper/paper-package-library.tsx",
-      import.meta.url
-    ),
-    "utf8"
-  )
-  assert.deepEqual(detect(source, "library.tsx"), [])
-  const loadingMutation = source.replace("!library.query.isLoading", "true")
-  const unavailableMutation = source.replace("!unavailable", "true")
-  assert.notEqual(source, loadingMutation)
-  assert.notEqual(source, unavailableMutation)
-  const unavailableMistake = clean.replace("!unavailable", "true")
-  assert.deepEqual(
-    detect(loadingMutation, "library.tsx").map(({ kind }) => kind),
-    ["unannounced-word-library"]
-  )
-  assert.deepEqual(
-    detect(unavailableMistake, "library.tsx").map(({ kind }) => kind),
-    ["unannounced-word-library"]
-  )
-  assert.deepEqual(
-    detect(unavailableMutation, "library.tsx").map(({ kind }) => kind),
-    ["unannounced-word-library"]
-  )
-})
-
 test("immutable Word storage rejects unfinished heads, projection shadows and flattening", () => {
   const mistake = `
     async function stageWordPackage() { return parseImportFile(bytes) }

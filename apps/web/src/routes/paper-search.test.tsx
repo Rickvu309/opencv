@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it } from "vitest"
 
 import { renderApp } from "@/test/render-app.tsx"
 
-const OLDER_FORMAT = "Document not found."
+const OLDER_FORMAT = "This document cannot be opened in Paper."
 
 const records = [
   { kind: "cv", name: "PM track CV", query: "PM track" },

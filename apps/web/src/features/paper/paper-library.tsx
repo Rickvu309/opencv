@@ -22,7 +22,6 @@ import {
 } from "@workspace/ui/components/dialog"
 
 import { catalogClient, undoActivity } from "@/lib/contract-client.ts"
-import { apiBaseUrl } from "@/lib/api-url.ts"
 import { listJobs } from "@/features/apply/apply-api.ts"
 
 import {
@@ -52,11 +51,6 @@ import {
   importRefusal,
   messageOf,
 } from "./paper-library-support.ts"
-import {
-  PaperPackageLibrary,
-  useWordLibrary,
-  type WordDocument,
-} from "./paper-package-library.tsx"
 import { libraryEntries } from "./paper-library-entries.ts"
 import { PaperCommandBar } from "./paper-hand-controls.tsx"
 import { handCounts } from "./paper-hand-layout.ts"
@@ -134,32 +128,11 @@ export function PaperLibrary({
   )
   const linkDoc = useShownWhileClosing(mode?.type === "link" ? mode.doc : null)
   const retryFile = importError?.retry ?? null
-  const wordLibrary = useWordLibrary()
-  const entries = libraryEntries({ docs, files, words: wordLibrary.items })
-  const deletingWordPage =
-    deleting?.type === "delete" && deleting.doc.format === "word"
+  const entries = libraryEntries({ docs, files })
   const ready = !loading && !error
 
   function openPicker(kind: "cv" | "letter", initial?: PickerChoice) {
     dispatch({ type: "new_dialog_opened", step: "gallery", kind, initial })
-  }
-
-  async function downloadWord(word: WordDocument) {
-    try {
-      const exported = await queryClient.fetchQuery(
-        catalogClient.options(wordLibrary.owner, "paper.export", {
-          docId: word.docId,
-          at: word.revision,
-        })
-      )
-      if (!("downloadPath" in exported))
-        throw new Error("This Word document has no download yet.")
-      const link = document.createElement("a")
-      link.href = `${apiBaseUrl}${exported.downloadPath}`
-      link.click()
-    } catch (err) {
-      toast(messageOf(err, "Could not download this Word document. Try again."))
-    }
   }
 
   useEffect(() => () => importRequest.current?.abort(), [])
@@ -335,9 +308,7 @@ export function PaperLibrary({
         docId: mode.doc.id,
       })
       closeDialog()
-      if (!("pending" in deleted) && deleted.format === "word")
-        await rememberUndo(deleted.id, `Deleted ${name}`)
-      else toast(`Deleted ${name}`)
+      if (!("pending" in deleted)) toast(`Deleted ${name}`)
     } catch (err) {
       toast(messageOf(err, "Could not delete. Try again."))
     }
@@ -375,12 +346,10 @@ export function PaperLibrary({
 
   const handlers: LibraryEntryHandlers = {
     onOpen,
-    onPreview: wordLibrary.onSelect,
     onRename: (doc) => dispatch({ type: "rename_requested", doc }),
     onDuplicate: (doc) => void duplicate(doc),
     onLink: (doc) => void openLink(doc),
     onDownload: download,
-    onDownloadWord: (word) => void downloadWord(word),
     onDelete: (doc) => dispatch({ type: "delete_requested", doc }),
     onDeleteFile: (file) => dispatch({ type: "delete_file_requested", file }),
   }
@@ -476,8 +445,6 @@ export function PaperLibrary({
         />
       ) : null}
 
-      <PaperPackageLibrary library={wordLibrary} />
-
       <PaperImportDialog
         open={mode?.type === "import"}
         onClose={closeDialog}
@@ -548,7 +515,7 @@ export function PaperLibrary({
               ? deleting.doc.name
               : null
         }
-        undoable={deletingWordPage}
+        undoable={false}
         onDelete={() =>
           void (deleting?.type === "delete-file"
             ? confirmDeleteFile()

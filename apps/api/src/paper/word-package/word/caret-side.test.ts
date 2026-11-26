@@ -1,10 +1,6 @@
 import { randomUUID } from "node:crypto"
 
-import type {
-  WordBatch,
-  WordLean,
-  WordParagraph,
-} from "@workspace/domain/paper-doc"
+import type { WordBatch, WordParagraph } from "@workspace/domain/paper-doc"
 import { describe, expect, it } from "vitest"
 
 import { cvPackage, run } from "../package-fixtures.js"
@@ -32,7 +28,7 @@ function typed(
   body: string,
   text: string,
   caret: number | null,
-  lean?: WordLean,
+  lean?: "before" | "after",
   keptBefore?: number
 ): WordParagraph["pieces"] | string {
   const page = opened(body)

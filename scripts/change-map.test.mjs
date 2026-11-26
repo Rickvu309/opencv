@@ -70,7 +70,7 @@ test("a glob matches across folders with ** and within one with *", () => {
 
 test("a job belongs to the part named by its base name", () => {
   assert.equal(jobPart("test-api (2)"), "api")
-  assert.equal(jobPart("test-web-walk (101)"), "web")
+  assert.equal(jobPart("test-web (3)"), "web")
   assert.equal(jobPart("formal-postgres"), "formal")
   assert.equal(jobPart("guards (ordinary)"), null)
 })

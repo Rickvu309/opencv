@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest"
 import {
   blankCv,
   blankLetter,
-  paperPackageMetadataSchema,
   type PaperFile,
   type PaperView,
 } from "@workspace/domain/paper-doc"
@@ -38,18 +37,6 @@ function paper(
   }
 }
 
-function word(docId: string, name: string, kind: "cv" | "letter") {
-  return paperPackageMetadataSchema.parse({
-    generation: "package",
-    docId,
-    revision: "99999999-9999-4999-8999-999999999999",
-    name,
-    kind,
-    packageHash: "b".repeat(64),
-    byteSize: 2048,
-  })
-}
-
 const file: PaperFile = {
   id: "77777777-7777-4777-8777-777777777777" as PaperFile["id"],
   name: "Portfolio.pdf",
@@ -67,84 +54,42 @@ const BLOCK_CV = "66666666-6666-4666-8666-666666666666"
 const BLOCK_LETTER = "88888888-8888-4888-8888-888888888888"
 
 const docs = [
-  paper(BLANK_PAGE, "Blank Word CV", "cv"),
-  paper(TEMPLATE_PAGE, "Template Word CV", "cv"),
-  paper(LETTER_PAGE, "Word Letter", "letter", null),
+  paper(BLANK_PAGE, "Blank CV", "cv"),
+  paper(TEMPLATE_PAGE, "Template CV", "cv"),
+  paper(LETTER_PAGE, "Letter", "letter", null),
   paper(BLOCK_CV, "Older block CV", "cv"),
   paper(BLOCK_LETTER, "Older block letter", "letter", null),
-]
-
-const words = [
-  word(BLANK_PAGE, "Blank Word CV", "cv"),
-  word(TEMPLATE_PAGE, "Template Word CV", "cv"),
-  word(LETTER_PAGE, "Word Letter", "letter"),
-  word(IMPORTED_CV, "Imported CV.docx", "cv"),
-  word(IMPORTED_LETTER, "Imported letter.docx", "letter"),
+  paper(IMPORTED_CV, "Imported CV", "cv"),
+  paper(IMPORTED_LETTER, "Imported letter", "letter", null),
 ]
 
 describe("Paper home sections", () => {
   it("shows every kind of document exactly once, in the section of its kind", () => {
     const sections = librarySections(
-      libraryEntries({ docs, files: [file], words }),
+      libraryEntries({ docs, files: [file] }),
       ""
     )
     const names = (id: "cv" | "letter" | "files") => sections[id].map(entryName)
     expect(names("cv")).toEqual([
-      "Blank Word CV",
-      "Template Word CV",
+      "Blank CV",
+      "Template CV",
       "Older block CV",
-      "Imported CV.docx",
+      "Imported CV",
     ])
     expect(names("letter")).toEqual([
-      "Word Letter",
+      "Letter",
       "Older block letter",
-      "Imported letter.docx",
+      "Imported letter",
     ])
     expect(names("files")).toEqual(["Portfolio.pdf"])
     const all = LIBRARY_SECTIONS.flatMap(({ id }) => names(id))
     expect(new Set(all).size).toBe(all.length)
-    expect(all).toHaveLength(docs.length + 2 + 1)
-  })
-
-  it("draws a Word CV made from a template once, though both lists return it", () => {
-    const fromTemplate = paper(TEMPLATE_PAGE, "Template Word CV", "cv")
-    const sameInWordList = word(TEMPLATE_PAGE, "Template Word CV", "cv")
-    const entries = libraryEntries({
-      docs: [fromTemplate],
-      files: [],
-      words: [sameInWordList],
-    })
-    const ids = entries.map((entry) =>
-      entry.type === "paper"
-        ? entry.doc.id
-        : entry.type === "word"
-          ? entry.word.docId
-          : entry.file.id
-    )
-    expect(ids).toEqual([TEMPLATE_PAGE])
-    expect(librarySections(entries, "").cv).toHaveLength(1)
-  })
-
-  it("keeps a Word page's text preview on its one card", () => {
-    const entries = libraryEntries({ docs, files: [], words })
-    const blank = entries.find(
-      (entry) => entry.type === "paper" && entry.doc.id === BLANK_PAGE
-    )
-    expect(blank?.type === "paper" ? blank.word?.docId : null).toBe(BLANK_PAGE)
-    const older = entries.find(
-      (entry) => entry.type === "paper" && entry.doc.id === BLOCK_CV
-    )
-    expect(older?.type === "paper" ? older.word : "missing").toBeNull()
+    expect(all).toHaveLength(docs.length + 1)
   })
 
   it("leaves out a record that is neither a CV nor a Letter instead of failing", () => {
     const odd = { ...paper(BLOCK_CV, "Odd", "cv"), kind: "proof" } as never
-    const oddWord = { ...word(IMPORTED_CV, "Odd word", "cv"), kind: undefined }
-    const entries = libraryEntries({
-      docs: [odd],
-      files: [],
-      words: [oddWord as never],
-    })
+    const entries = libraryEntries({ docs: [odd], files: [] })
     expect(entries).toEqual([])
     expect(librarySections(entries, "")).toEqual({
       cv: [],
@@ -155,11 +100,11 @@ describe("Paper home sections", () => {
 
   it("filters every section by the search words", () => {
     const sections = librarySections(
-      libraryEntries({ docs, files: [file], words }),
+      libraryEntries({ docs, files: [file] }),
       "imported"
     )
-    expect(sections.cv.map(entryName)).toEqual(["Imported CV.docx"])
-    expect(sections.letter.map(entryName)).toEqual(["Imported letter.docx"])
+    expect(sections.cv.map(entryName)).toEqual(["Imported CV"])
+    expect(sections.letter.map(entryName)).toEqual(["Imported letter"])
     expect(sections.files).toEqual([])
   })
 

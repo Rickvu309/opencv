@@ -113,10 +113,7 @@ describe("Paper library card menu", () => {
     }
   )
 
-  it.each([
-    ["a Word page", { format: "word", name: "Word CV" }, true],
-    ["an older document", {}, false],
-  ] as const)(
+  it.each([["a Paper", {}, false]] as const)(
     "deletes %s from the card menu and offers Undo only when it can be undone",
     async (_kind, extra, undoable) => {
       const doc = undoable

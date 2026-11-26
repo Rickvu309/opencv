@@ -13,13 +13,6 @@ import { parsePaperId, parseChatId } from "@workspace/domain/kernel"
 import { coachSendErrorMessage } from "@/features/coach/coach-error.ts"
 import { useCoachMode } from "@/features/coach/use-coach-mode.ts"
 import { catalogClient, undoActivity } from "@/lib/contract-client.ts"
-import {
-  attachWritingProposal,
-  clearWritingProposal,
-  noteWritingUndo,
-  publishWordBatch,
-  publishWritingProposal,
-} from "@/lib/writing-proposal.ts"
 import { ignoreRejection } from "@/lib/quiet-rejection.ts"
 import {
   createChat,
@@ -231,7 +224,6 @@ export function useCoachTurn({
       dispatch({ type: "start", kind, messages: prefix })
 
       let parts: ChatEntryPart[] = []
-      const calls = new Map<string, unknown>()
       let painted = prefix
       let ended = false
       let streamError: string | undefined
@@ -314,10 +306,6 @@ export function useCoachTurn({
             id: event.toolCallId,
             name: event.name,
           })
-          if (event.name === "paper.edit") {
-            calls.set(event.toolCallId, event.input)
-            publishWritingProposal(event.toolCallId, event.input)
-          }
         },
         onTextDelta({ text }) {
           if (stale()) return
@@ -325,26 +313,10 @@ export function useCoachTurn({
         },
         onToolResult(data) {
           if (stale()) return
-          if (data.name === "paper.edit") {
-            if (!data.ok) clearWritingProposal(data.toolCallId)
-            else {
-              publishWordBatch(
-                data.toolCallId,
-                calls.get(data.toolCallId),
-                data.review
-              )
-              if (data.pendingActionId) {
-                attachWritingProposal(data.toolCallId, data.pendingActionId)
-              }
-            }
-          }
           paint(appendCoachPart(parts, data))
         },
         onConfirm(data) {
           if (stale()) return
-          if (data.command === "paper.edit") {
-            attachWritingProposal(null, data.pendingActionId)
-          }
           paint(
             parts.map((part) =>
               part.type === "tool" &&
@@ -582,7 +554,6 @@ export function useCoachTurn({
       if (!id || phase !== "idle") return
 
       await undoActivity(queryClient, activityId)
-      noteWritingUndo(activityId)
       await hydrateChat(id)
       dispatch({ type: "reset" })
       onAfterUndo?.()

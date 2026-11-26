@@ -16,7 +16,7 @@ import { samplePaperDocs } from "@/test/paper-fixtures.ts"
 import { renderApp } from "@/test/render-app.tsx"
 import { setMockChats, setMockSearch } from "@/test/shell-api-mock.ts"
 
-const OLDER_FORMAT = "Document not found."
+const OLDER_FORMAT = "This document cannot be opened in Paper."
 
 beforeEach(() => {
   vi.stubGlobal("scrollTo", vi.fn())

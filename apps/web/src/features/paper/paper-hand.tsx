@@ -166,13 +166,11 @@ function paperHandReducer(
 
 function entryEdited(entry: LibraryEntry) {
   if (entry.type === "paper") return paperEditedLabel(entry.doc.updatedAt)
-  if (entry.type === "file") return paperEditedLabel(entry.file.createdAt)
-  return "Word file"
+  return paperEditedLabel(entry.file.createdAt)
 }
 
 function openEntry(entry: LibraryEntry, on: LibraryEntryHandlers) {
   if (entry.type === "paper") on.onOpen(entry.doc.id)
-  else if (entry.type === "word") on.onOpen(entry.word.docId)
 }
 
 function insideDialog(target: EventTarget | null) {

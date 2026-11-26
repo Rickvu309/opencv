@@ -119,19 +119,6 @@ export function PaperDocumentHeader({
 
 const TitleLayout = createContext<CSSProperties>({})
 
-export function PaperDocumentColumn({ children }: { children: ReactNode }) {
-  const { width, paddingInlineStart, paddingInlineEnd } =
-    useContext(TitleLayout)
-  return (
-    <div
-      className="paper-document-column"
-      style={{ width, paddingInlineStart, paddingInlineEnd }}
-    >
-      {children}
-    </div>
-  )
-}
-
 export function PaperDocumentTitle({
   name,
   docId,

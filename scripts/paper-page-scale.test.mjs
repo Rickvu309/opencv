@@ -202,8 +202,7 @@ test("shared viewport geometry preserves the lazy editor boundary", () => {
     ),
     []
   )
-  for (const file of [canvasViewport, viewport])
-    assert.deepEqual(detect(readFileSync(file, "utf8"), file), [])
+  assert.deepEqual(detect(readFileSync(viewport, "utf8"), viewport), [])
   const historic = execFileSync(
     "git",
     ["show", `3f8f4170:${pathAtRevision("3f8f4170", canvasViewport)}`],
@@ -241,5 +240,4 @@ test("Word page border space cannot disappear with its chrome", () => {
     }
   )
   assert.match(detect(historic, canvasCss).join(), message)
-  assert.deepEqual(detect(readFileSync(canvasCss, "utf8"), canvasCss), [])
 })

@@ -389,21 +389,6 @@ describe("Paper home sections", () => {
     expect(proofs).toHaveAttribute("href", "/proofs")
   })
 
-  it("routes Word cards to the page preview even when no block body exists", () => {
-    renderLibrary([
-      { ...letter("Word letter"), format: "word", paper: undefined },
-    ])
-    expect(
-      screen.getByRole("button", { name: /^Open Word letter,/ })
-    ).toBeInTheDocument()
-    expect(
-      document.querySelector("[data-slot=paper-word-preview]")
-    ).toBeInTheDocument()
-    expect(
-      document.querySelector("[data-slot=paper-library-preview-name]")
-    ).toBeNull()
-  })
-
   it("follows Proofs inside the app and keeps a modified click on this page", async () => {
     const router = proofsRouter()
     render(

@@ -1,10 +1,7 @@
 import type { PaperFile, PaperView } from "@workspace/domain/paper-doc"
 
-import type { WordDocument } from "./paper-package-library.tsx"
-
 export type LibraryEntry =
-  | { type: "paper"; key: string; doc: PaperView; word: WordDocument | null }
-  | { type: "word"; key: string; word: WordDocument }
+  | { type: "paper"; key: string; doc: PaperView }
   | { type: "file"; key: string; file: PaperFile }
 
 export type LibrarySectionId = "cv" | "letter" | "files"
@@ -30,29 +27,17 @@ const matches = (name: string, needle: string) =>
 export function libraryEntries({
   docs,
   files,
-  words,
 }: {
   docs: PaperView[]
   files: PaperFile[]
-  words: WordDocument[]
 }): LibraryEntry[] {
-  const papers = docs.filter((doc) => documentKind(doc.kind))
-  const wordPages = words.filter((word) => documentKind(word.kind))
-  const wordById = new Map(wordPages.map((word) => [word.docId, word]))
-  const paperIds = new Set(papers.map((doc) => doc.id as string))
   return [
-    ...papers.map((doc): LibraryEntry => ({
-      type: "paper",
-      key: `paper:${doc.id}`,
-      doc,
-      word: wordById.get(doc.id) ?? null,
-    })),
-    ...wordPages
-      .filter((word) => !paperIds.has(word.docId))
-      .map((word): LibraryEntry => ({
-        type: "word",
-        key: `word:${word.docId}`,
-        word,
+    ...docs
+      .filter((doc) => documentKind(doc.kind))
+      .map((doc): LibraryEntry => ({
+        type: "paper",
+        key: `paper:${doc.id}`,
+        doc,
       })),
     ...files.map((file): LibraryEntry => ({
       type: "file",
@@ -64,13 +49,11 @@ export function libraryEntries({
 
 export function entryName(entry: LibraryEntry) {
   if (entry.type === "paper") return entry.doc.name
-  if (entry.type === "word") return entry.word.name
   return entry.file.name
 }
 
 export function entrySection(entry: LibraryEntry): LibrarySectionId {
   if (entry.type === "paper") return entry.doc.kind
-  if (entry.type === "word") return entry.word.kind
   return "files"
 }
 
