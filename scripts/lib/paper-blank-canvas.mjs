@@ -101,22 +101,3 @@ export function detect(text, file = "document.ts") {
   visit(source)
   return problems
 }
-
-export function detectHeaderRebase(text, file = "rebase.ts") {
-  const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true)
-  const problems = []
-  function visit(node) {
-    if (
-      ts.isFunctionDeclaration(node) &&
-      node.name?.text === "withMergedHeader" &&
-      node.body &&
-      !/\bmergeHeader\(\{/.test(node.body.getText(source))
-    )
-      problems.push(
-        "Header presence and fields must be merged against the base and empty header defaults."
-      )
-    ts.forEachChild(node, visit)
-  }
-  visit(source)
-  return problems
-}

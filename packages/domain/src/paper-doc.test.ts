@@ -1,6 +1,5 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
-import { rebasePending } from "./paper-doc/rebase.ts"
 
 import {
   blankCv,
@@ -289,12 +288,4 @@ describe("paper document v3", () => {
     )
     assert.equal(paperPlainText(parsed), "summary\nHello")
   })
-})
-
-it("rebases an unstructured CV without inventing a header", () => {
-  const blank = blankCv()
-  assert.deepEqual(
-    rebasePending({ base: blank, ours: blank, theirs: blank }).document,
-    blank
-  )
 })

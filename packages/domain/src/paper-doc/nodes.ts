@@ -152,7 +152,7 @@ const skillsSchema = z
   })
   .strict()
 
-export type CvHeader = z.infer<typeof headerSchema>
+type CvHeader = z.infer<typeof headerSchema>
 export type CvSectionMarker = z.infer<typeof sectionSchema>
 export type Paragraph = z.infer<typeof paragraphSchema>
 export type Heading = z.infer<typeof headingSchema>
@@ -224,7 +224,7 @@ function turnIntoOthers(type: (typeof PROSE_TURN_INTO)[number]) {
   return PROSE_TURN_INTO.filter((other) => other !== type)
 }
 
-export const paperNodeSpecs = {
+const paperNodeSpecs = {
   header: {
     type: "header",
     schema: headerSchema,

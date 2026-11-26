@@ -40,7 +40,6 @@
     "@eslint/js": "^10",
     "@types/node": "^24",
     "eslint": "^10",
-    "fast-check": "^4.10.2",
     "globals": "^17",
     "typescript": "~6",
     "typescript-eslint": "^8",
