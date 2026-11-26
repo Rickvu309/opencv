@@ -105,7 +105,6 @@ flowchart TD
   p_apps_api_src_paper --> p_apps_api_src_paper_import
   p_apps_api_src_paper --> p_apps_api_src_paper_native_output
   p_apps_api_src_paper --> p_apps_api_src_paper_content
-  p_apps_api_src_paper --> p_apps_api_src_paper_word_package
   p_apps_api_src_paper --> p_apps_api_src_registry
   p_apps_api_src_paper --> p_apps_api_src_db
   p_apps_api_src_paper --> p_apps_api_src_limits
@@ -114,8 +113,6 @@ flowchart TD
   p_apps_api_src_paper_content --> p_apps_api_src_platform
   p_apps_api_src_paper_import --> p_apps_api_src_paper_word_package
   p_apps_api_src_paper_import --> p_apps_api_src_platform
-  p_apps_api_src_paper_word_package --> p_apps_api_src_registry
-  p_apps_api_src_paper_word_package --> p_apps_api_src_db
   p_apps_api_src_paper_word_package --> p_apps_api_src_platform
   p_apps_api_src_registry --> p_apps_api_src_db
   p_apps_api_src_registry --> p_apps_api_src_limits
@@ -201,11 +198,11 @@ flowchart TD
 | `apps/api/src/job` | feature | index.ts, operations | apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/limits` | platform | index.ts | none | none |
 | `apps/api/src/mail` | platform | none | none | none |
-| `apps/api/src/paper` | feature | index.ts, operations | apps/api/src/paper/import, apps/api/src/paper/native-output, apps/api/src/paper/content, apps/api/src/paper/word-package, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
+| `apps/api/src/paper` | feature | index.ts, operations | apps/api/src/paper/import, apps/api/src/paper/native-output, apps/api/src/paper/content, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/paper/content` | feature | content-store.ts, native-admission.ts, read-paper.ts, rich-snapshot.ts | apps/api/src/db, apps/api/src/platform | none |
 | `apps/api/src/paper/import` | feature | import-parse.ts, import-text-pool.ts, import-word.ts, word-to-paper.ts | apps/api/src/paper/word-package, apps/api/src/platform | none |
 | `apps/api/src/paper/native-output` | feature | formatted.ts, formatted-photos.ts | none | none |
-| `apps/api/src/paper/word-package` | feature | package-candidates.ts, package-canvas.ts, package-card-actions.ts, package-edit.ts, package-errors.ts, package-http.ts, package-list.ts, package-pages.ts, package-xml.ts, package-zip.ts, package-start.ts, package-store.ts, word-reading.ts, word/document.ts, word/template.ts | apps/api/src/registry, apps/api/src/db, apps/api/src/platform | none |
+| `apps/api/src/paper/word-package` | feature | package-errors.ts, package-xml.ts, package-zip.ts | apps/api/src/platform | none |
 | `apps/api/src/platform` | platform | none | none | none |
 | `apps/api/src/registry` | kernel | none | apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/web/src` | app | none | apps/web/src/features/app-shell, apps/web/src/features/apply, apps/web/src/features/auth, apps/web/src/features/coach, apps/web/src/features/coming-soon, apps/web/src/features/command-palette, apps/web/src/features/connections, apps/web/src/features/inbox, apps/web/src/features/landing, apps/web/src/features/paper, apps/web/src/features/paper/rich-editor, apps/web/src/features/paper-page, apps/web/src/features/seed, apps/web/src/features/settings, apps/web/src/lib, apps/web/src/components | none |
@@ -231,4 +228,4 @@ flowchart TD
 | `packages/domain/src/coach` | platform | public.ts, coach.ts, coach-mode.ts, coach-task.ts, chat.ts, chat-messages.ts, chat-title.ts, chat-turn.ts, chat-views.ts | packages/domain/src/apply, packages/domain/src/paper-doc | none |
 | `packages/domain/src/control` | platform | public.ts, control.ts | none | none |
 | `packages/domain/src/inbox` | platform | public.ts, index.ts | packages/domain/src/apply | none |
-| `packages/domain/src/paper-doc` | platform | public.ts, index.ts, paper.ts, paper-canvas.ts, paper-contract.ts, paper-contract-views.ts, paper-diff.ts, paper-package.ts, paper-rich-edit.ts, paper-start.ts, paper-word.ts, paper-page-scale.ts, paper-presentation.ts | none | none |
+| `packages/domain/src/paper-doc` | platform | public.ts, index.ts, paper.ts, paper-contract.ts, paper-contract-views.ts, paper-diff.ts, paper-rich-edit.ts, paper-start.ts, paper-page-scale.ts, paper-presentation.ts | none | none |

@@ -249,9 +249,7 @@ const PAGE_TABLES: readonly OwnedTable[] = ["paperDocs", "paperPackageHeads"]
 
 const COMMAND_PAGE_CREATORS = [
   "paper.create",
-  "paper.canvas",
   "paper.duplicate",
-  "paper.recover",
   "paper.start",
   "paper.import",
 ].map((name) => `command case ${name}`)

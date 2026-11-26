@@ -1,50 +1,47 @@
+import { parsePaperId } from "@workspace/domain/kernel"
+import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { operation } from "@workspace/domain/operations/paper/read"
 import type { OperationBinding } from "../../../registry/bind.js"
-import { parsePaperId } from "@workspace/domain/kernel"
 import { readPaperDocumentInfo } from "../../document-info.js"
-import { isWordPageDeleted } from "../../word-package/package-card-actions.js"
-import { packageFailure } from "../../word-package/package-pages.js"
-import {
-  listWordPackages,
-  readWordPackage,
-} from "../../word-package/package-store.js"
-import { readWordParagraphs } from "../../word-package/word-reading.js"
-import { open } from "../../word-package/word/document.js"
-
-async function readWordLines(owner: string, doc: string, at?: string) {
-  const page = await open(
-    owner,
-    at ? { kind: "read", doc, at } : { kind: "read", doc }
-  )
-  return "refused" in page ? packageFailure(page.message) : page
-}
-
-async function trashState(userId: string, docId: string) {
-  return { docId, deleted: await isWordPageDeleted(userId, docId) }
-}
+import { readOutline } from "../../outline.js"
+import { listPapers } from "../../store.js"
 
 export const implementation = {
   operation,
-  execute: (input, actor) => {
-    if (!("view" in input)) return readWordPackage(actor.userId, input)
-    if (input.view === "lines") return readWordParagraphs(actor.userId, input)
-    if (input.view === "trash") return trashState(actor.userId, input.docId)
-    if (input.view === "info")
-      return readPaperDocumentInfo(
+  execute: async (input, actor) => {
+    if (!("docId" in input)) {
+      const papers = await listPapers(
         actor.userId,
-        parsePaperId(input.docId),
-        input.writer
+        undefined,
+        undefined,
+        RICH_NATIVE_WRITER
       )
-    return input.view === "page"
-      ? readWordLines(actor.userId, input.docId, input.at)
-      : listWordPackages(actor.userId, input.after)
+      return {
+        items: papers.map((paper) => ({
+          docId: paper.id,
+          name: paper.name,
+          kind: paper.kind,
+        })),
+        next: null,
+      }
+    }
+    const docId = parsePaperId(input.docId)
+    if ("view" in input)
+      return readPaperDocumentInfo(actor.userId, docId, input.writer)
+    const info = await readPaperDocumentInfo(
+      actor.userId,
+      docId,
+      RICH_NATIVE_WRITER
+    )
+    const outline = await readOutline(actor.userId, docId, undefined)
+    return {
+      docId: input.docId,
+      name: info.name,
+      kind: info.kind,
+      revision: outline.revision,
+      nativeBasis: outline.nativeBasis,
+      outline: outline.outline,
+      truncated: outline.truncated,
+    }
   },
-} satisfies OperationBinding<
-  typeof operation,
-  | Awaited<ReturnType<typeof listWordPackages>>
-  | Awaited<ReturnType<typeof readWordPackage>>
-  | Awaited<ReturnType<typeof readWordLines>>
-  | Awaited<ReturnType<typeof readWordParagraphs>>
-  | Awaited<ReturnType<typeof trashState>>
-  | Awaited<ReturnType<typeof readPaperDocumentInfo>>
->
+} satisfies OperationBinding<typeof operation>

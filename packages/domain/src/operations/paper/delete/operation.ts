@@ -14,7 +14,6 @@ export const operation = defineOperation({
   publicResult: z
     .object({
       id: z.string().uuid(),
-      format: z.literal("word").optional(),
       name: z.string().optional(),
     })
     .strip(),

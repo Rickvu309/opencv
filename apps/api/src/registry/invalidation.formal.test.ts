@@ -7,11 +7,8 @@ import {
   type QueryRef,
   type ResourceRef,
 } from "@workspace/domain/kernel"
-import {
-  PAPER_CANVAS_PROFILE,
-  RICH_NATIVE_WRITER,
-} from "@workspace/domain/paper-doc"
-import { and, eq, inArray } from "drizzle-orm"
+import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
+import { eq, inArray } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 
 import { withDatabase, type TestDatabase } from "../db/context.js"
@@ -23,7 +20,6 @@ import {
   jobChecklist,
   jobs,
   paperDocs,
-  paperPackageHeads,
   paperShares,
   user,
 } from "../db/schema.js"
@@ -49,7 +45,6 @@ type InvalidatesTable = Record<string, (input: unknown) => QueryRef[]>
 type Ids = {
   jobs: string[]
   docs: string[]
-  minted: string[]
   tokens: string[]
   files: string[]
   chats: string[]
@@ -76,14 +71,13 @@ const SNAPSHOT_QUERIES: {
   "paper.list": () => [{}, { writer: RICH_NATIVE_WRITER }],
   "paper.read": (ids) => [
     { view: "library" },
-    ...ids.minted.map((docId) => ({ view: "trash", docId })),
-    ...[...ids.docs, ...ids.minted].map((docId) => ({ view: "info", docId })),
+    ...ids.docs.map((docId) => ({ view: "info", docId })),
+    ...ids.docs.map((docId) => ({ docId })),
   ],
   "paper.export": null,
   "file.get": (ids) => ids.files.map((fileId) => ({ fileId })),
   "paper.files": () => [{}],
-  "paper.outline": (ids) =>
-    [...ids.docs, ...ids.minted].map((docId) => ({ docId })),
+  "paper.outline": (ids) => ids.docs.map((docId) => ({ docId })),
   "profile.get": () => [{}],
   "integrations.list": () => [{}],
   "billing.get": () => [{}],
@@ -152,21 +146,9 @@ async function arrangedIds(
       .from(files)
       .where(eq(files.userId, userId))
   ).map((row) => row.id)
-  const minted = (
-    await db
-      .select({ id: paperPackageHeads.docId })
-      .from(paperPackageHeads)
-      .where(
-        and(
-          eq(paperPackageHeads.userId, userId),
-          eq(paperPackageHeads.canvasProfile, PAPER_CANVAS_PROFILE)
-        )
-      )
-  ).map((row) => row.id)
   return {
     jobs: jobIds,
     docs: docIds,
-    minted,
     tokens,
     files: fileIds,
     chats: await owned(chats),

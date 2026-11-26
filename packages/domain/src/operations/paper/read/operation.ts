@@ -2,13 +2,7 @@ import { z } from "zod"
 import { defineOperation } from "../../../operation.js"
 import type { ResourceRef } from "../../../resources.js"
 import {
-  paperPackageMetadataSchema,
-  paperPackageReadInputSchema,
-  paperPackageReadSchema,
-  paperWordReadSchema,
-} from "../../../paper-doc/paper-package.js"
-import { wordPageSchema } from "../../../paper-doc/paper-word.js"
-import {
+  nativeBasisSchema,
   nativeProvenanceSchema,
   nativeWriterSchema,
 } from "../../../paper-doc/native.js"
@@ -17,41 +11,15 @@ import { paperStoredKindSchema } from "../../../paper-doc/paper.js"
 export const operation = defineOperation({
   owner: "paper",
   name: "paper.read",
-  version: 1,
+  version: 2,
   kind: "read",
   description:
-    "List saved CVs and Letters with view library, or read one with docId to get its text and line handles (regions.paragraph) at a pinned revision. Follow nextCursor until it is null, keeping docId and at from the first page; a non-null nextCursor means more of the document remains. Locked regions are context only. To change lines, send paper_edit with setText, insert or delete against that revision as basedOn, then wait for the person to approve in OpenCV. Do not invent the person's experience or qualifications. view page returns the page as Word lines without a cursor. view lines returns the document as paragraphs with their handles, read in parts by following nextCursor. view trash says whether a deleted Word page can be brought back. view info gives a document's name, kind, format and, for a rich document, its provenance.",
+    "List saved CVs and Letters with view library, or read one with docId to get its text: an outline of text blocks with their ids, the revision to pass as basedOn and the nativeBasis to copy unchanged into paper_edit. Do not invent the person's experience or qualifications. view info gives a document's name, kind, format and provenance.",
   label: "Read your Paper",
   readLabel: "Read your Paper",
   input: z
     .union([
-      z
-        .object({
-          view: z.literal("library"),
-          after: z.string().uuid().optional(),
-        })
-        .strict(),
-      z
-        .object({
-          view: z.literal("page"),
-          docId: z.string().uuid(),
-          at: z.string().uuid().optional(),
-        })
-        .strict(),
-      z
-        .object({
-          view: z.literal("lines"),
-          docId: z.string().uuid(),
-          at: z.string().uuid().optional(),
-          cursor: z.string().min(1).max(2048).optional(),
-        })
-        .strict(),
-      z
-        .object({
-          view: z.literal("trash"),
-          docId: z.string().uuid(),
-        })
-        .strict(),
+      z.object({ view: z.literal("library") }).strict(),
       z
         .object({
           view: z.literal("info"),
@@ -59,28 +27,45 @@ export const operation = defineOperation({
           writer: nativeWriterSchema.optional(),
         })
         .strict(),
-      paperPackageReadInputSchema,
+      z.object({ docId: z.string().uuid() }).strict(),
     ])
     .meta({ type: "object" }),
   publicResult: z.union([
     z
       .object({
-        items: z.array(paperPackageMetadataSchema).max(50),
-        next: z.string().uuid().nullable(),
+        items: z
+          .array(
+            z
+              .object({
+                docId: z.string().uuid(),
+                name: z.string(),
+                kind: paperStoredKindSchema,
+              })
+              .strict()
+          )
+          .max(200),
+        next: z.null(),
       })
       .strict(),
-    paperPackageReadSchema,
-    paperWordReadSchema,
-    wordPageSchema,
-    z.object({ docId: z.string().uuid(), deleted: z.boolean() }).strict(),
     z
       .object({
         id: z.string().uuid(),
         name: z.string(),
         kind: paperStoredKindSchema,
-        format: z.enum(["word", "prose", "rich"]),
+        format: z.enum(["prose", "rich"]),
         provenance: nativeProvenanceSchema.optional(),
         updatedAt: z.string().datetime().optional(),
+      })
+      .strict(),
+    z
+      .object({
+        docId: z.string().uuid(),
+        name: z.string(),
+        kind: paperStoredKindSchema,
+        revision: z.number().int(),
+        nativeBasis: nativeBasisSchema,
+        outline: z.string(),
+        truncated: z.boolean(),
       })
       .strict(),
   ]),

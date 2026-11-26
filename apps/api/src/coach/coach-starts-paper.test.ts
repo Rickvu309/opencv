@@ -294,7 +294,6 @@ it("offers the Coach paper_start and never the older block create or typing", ()
     expect(names).toContain("paper.start")
     expect(names).toContain("paper.edit")
     expect(names).not.toContain("paper.create")
-    expect(names).not.toContain("paper.canvas")
   }))
 
 it("never starts a page in a text-only turn, even when the words ask for one", () =>

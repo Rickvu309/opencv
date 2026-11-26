@@ -1,0 +1,554 @@
+[
+  {
+    "subject": "apps/api/src/paper/page-creators.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 21
+  },
+  {
+    "subject": "apps/api/src/paper/page-writing.formal.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "apps/api/src/paper/paper-agent-isolation.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 32
+  },
+  {
+    "subject": "apps/api/src/paper/paper-agent-proposal.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 59
+  },
+  {
+    "subject": "apps/api/src/paper/word-edit-replay.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-candidate-prune.formal.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-candidates.formal.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 12
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-canvas-admission.formal.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-canvas-job.formal.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-canvas-receipt.formal.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-canvas-write.formal.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-canvas.formal.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-canvas.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-edit-recheck.formal.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-edit.formal.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-engine.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 42
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-http.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-list.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-neighbors.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 18
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-pages.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 12
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-planner-replacements.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-planner.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-policy.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 48
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-prologue.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-relationship.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-retention.formal.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-span-edit.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-start.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-store.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 9
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-zip.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 31
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/word/caret-side.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 36
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/word/coach-parity.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/word/document.formal.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/word/imported-page.formal.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 11
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/word/insert-formatting.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/word/look.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 9
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/word/read-only-page.formal.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/word/template.formal.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "apps/api/src/paper/word-page-export.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/api/src/registry/delegate-reach.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/registry/ownership.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/api/src/registry/paper-agent.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-new-dialog.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "scripts/control-product-names.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-agent.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-canvas.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-insert-formatting.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-package-candidate.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-package-edit.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-package-publication.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-package-retention.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-package.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-print-body.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/word-read-only.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-canvas.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "scripts/paper-insert-formatting.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-package-candidate.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-package-edit.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-package-publication.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-package-retention.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 12
+  },
+  {
+    "subject": "scripts/paper-package-storage.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "scripts/paper-package.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "scripts/paper-print-body.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/word-read-only.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/coach/coach-starts-paper.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "packages/domain/src/paper-canvas.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "packages/domain/src/paper-word.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 9
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library.isolated.test.tsx > Paper library > opens a Word import on the writing page",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/coach/task-budget.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the API Word package path, the canvas and recover commands, Word page reads and agent Word edits are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

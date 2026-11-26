@@ -103,7 +103,7 @@ test("blank factories delegate and the historical starter CV fails", () => {
     /emptyRichPaper\(input.kind\)/
   )
   assert.match(
-    read("apps/api/src/paper/word-package/package-list.ts"),
+    read("apps/api/src/paper/content/read-paper.ts"),
     /row\.kind === "cv"\s*\?\s*blankCv\(\)\s*:\s*blankLetter\(\)/
   )
   assert.match(

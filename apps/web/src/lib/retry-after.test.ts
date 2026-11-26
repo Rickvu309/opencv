@@ -102,7 +102,7 @@ describe("apiFetch with Retry-After", () => {
             )
           )
       )
-      const error = await apiFetch("/api/commands/paper.canvas").catch(
+      const error = await apiFetch("/api/commands/paper.create").catch(
         (err: unknown) => err
       )
       expect(error).toBeInstanceOf(ApiError)
@@ -122,7 +122,7 @@ describe("apiFetch with Retry-After", () => {
           )
         )
     )
-    const error = await apiFetch("/api/commands/paper.canvas").catch(
+    const error = await apiFetch("/api/commands/paper.create").catch(
       (err: unknown) => err
     )
     expect(error).toBeInstanceOf(ApiError)
@@ -143,7 +143,7 @@ describe("apiFetch with Retry-After", () => {
             )
           )
       )
-      const error = await apiFetch("/api/commands/paper.canvas").catch(
+      const error = await apiFetch("/api/commands/paper.create").catch(
         (err: unknown) => err
       )
       expect(error).toBeInstanceOf(ApiError)

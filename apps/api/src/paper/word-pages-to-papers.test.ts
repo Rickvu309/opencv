@@ -10,16 +10,14 @@ import {
   files,
   paperDocs,
   paperPackageHeads,
+  paperPackageTrash,
   paperPackageVersions,
   user,
 } from "../db/schema.js"
 import { installRegistry } from "../install.js"
 import { createMigratedTestDb } from "../test/harness.js"
+import { insertWordPage } from "../test/word-page-rows.js"
 import { fixturePackage, paragraph } from "./word-package/package-fixtures.js"
-import {
-  publishWordPackage,
-  stageWordPackage,
-} from "./word-package/package-store.js"
 import { convertWordPages } from "./word-pages-to-papers.js"
 
 const idOf = z.object({ id: z.string() })
@@ -34,12 +32,12 @@ it("turns a Word page into a Paper at the same address, keeps its Job link and o
   const person = personActor(userId)
   try {
     await withDatabase(db, async () => {
-      const staged = await stageWordPackage(
+      const { docId } = await insertWordPage(db, {
         userId,
-        { requestId: randomUUID(), name: "Ada CV", kind: "cv" },
-        fixturePackage(paragraph("Kept words from the Word page"))
-      )
-      const { docId } = await publishWordPackage(userId, staged.stageId)
+        name: "Ada CV",
+        kind: "cv",
+        bytes: fixturePackage(paragraph("Kept words from the Word page")),
+      })
       const job = idOf.parse(
         (
           await registry.execute({
@@ -96,6 +94,16 @@ it("turns a Word page into a Paper at the same address, keeps its Job link and o
       })
       expect(await db.select().from(paperDocs)).toEqual([])
       expect(await db.select().from(paperPackageHeads)).toEqual([])
+      expect(
+        (await db.select().from(paperPackageTrash)).map((row) => [
+          row.docId,
+          row.linkedJobs,
+        ])
+      ).toEqual([[docId, [job]]])
+      expect(await convertWordPages()).toEqual({
+        converted: [],
+        unreadable: [],
+      })
       expect(
         await registry.read(
           "paper.list",

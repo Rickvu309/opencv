@@ -24,15 +24,10 @@ import {
   createTestApp,
   signUp,
 } from "../test/harness.js"
-import { PaperPackage } from "./word-package/package-engine.js"
-import { deleteWordPage } from "./word-package/package-card-actions.js"
-import {
-  publishWordPackage,
-  stageWordPackage,
-} from "./word-package/package-store.js"
+import { insertWordPage } from "../test/word-page-rows.js"
+import { fixturePackage, paragraph } from "./word-package/package-fixtures.js"
 import { readPackageZip } from "./word-package/package-zip.js"
-import { open, apply } from "./word-package/word/document.js"
-import { writtenPageBytes } from "./word-package/word/template.js"
+import { trashStoredWordPage } from "./word-page-trash.js"
 import { collectWordPageExport } from "./word-page-export.js"
 
 type Database = Awaited<ReturnType<typeof createMigratedTestDb>>
@@ -69,41 +64,35 @@ function inDb<T>(work: () => Promise<T>) {
   return withDatabase(database.db, work)
 }
 
-async function typedPage(
+const written = new Map<string, Buffer>()
+
+async function storedPage(
   owner: string,
   name: string,
-  label: "cv" | "letter",
   text: string,
-  templateId?: "simple"
+  options: { kind?: "cv" | "letter"; written?: boolean } = {}
 ) {
-  return inDb(async () => {
-    const page = await open(owner, {
-      kind: "mint",
-      name,
-      label,
-      ...(templateId ? { templateId } : {}),
-    })
-    if (!("paragraphs" in page)) throw new Error(page.message)
-    const typed = await apply(owner, {
-      doc: page.doc,
-      basedOn: page.revision,
-      ops: [{ op: "setText", handle: page.paragraphs[0]!.handle, text }],
-    })
-    if (typed.refused) throw new Error(typed.message)
-    return page.doc
+  const bytes = fixturePackage(paragraph(text))
+  const { docId } = await insertWordPage(database.db, {
+    userId: owner,
+    name,
+    kind: options.kind ?? "cv",
+    bytes,
+    ...(options.written ? { canvasProfile: "paper-canvas-1" } : {}),
   })
+  written.set(docId, Buffer.from(bytes))
+  return docId
 }
 
-async function importedPage(owner: string, name: string, text: string) {
-  return inDb(async () => {
-    const staged = await stageWordPackage(
-      owner,
-      { requestId: randomUUID(), name, kind: "cv" },
-      writtenPageBytes([text])
-    )
-    return (await publishWordPackage(owner, staged.stageId)).docId
-  })
-}
+const typedPage = (
+  owner: string,
+  name: string,
+  kind: "cv" | "letter",
+  text: string
+) => storedPage(owner, name, text, { kind, written: true })
+
+const importedPage = (owner: string, name: string, text: string) =>
+  storedPage(owner, name, text)
 
 async function job(owner: string, title: string, links: object) {
   const id = randomUUID()
@@ -132,22 +121,9 @@ async function exportOf(cookie: string, query = "") {
   return { index, members: archive.files }
 }
 
-async function wordText(docId: string, bytes: Buffer) {
-  const [live] = await database.db
-    .select()
-    .from(paperPackageHeads)
-    .where(eq(paperPackageHeads.docId, docId))
-  const [trashed] = await database.db
-    .select()
-    .from(paperPackageTrash)
-    .where(eq(paperPackageTrash.docId, docId))
-  const at = live ?? trashed!
-  const page = await PaperPackage.open(new Uint8Array(bytes), {
-    docId,
-    incarnation: at.incarnation,
-    revision: at.revision,
-  })
-  return JSON.stringify(page.read())
+async function wordText(bytes: Buffer) {
+  const archive = await readPackageZip(new Uint8Array(bytes))
+  return archive.files.get("word/document.xml")!.toString("utf8")
 }
 
 let pages: Record<string, string>
@@ -164,8 +140,7 @@ beforeAll(async () => {
       ada.id,
       "Templated CV",
       "cv",
-      "Ada templated typed line",
-      "simple"
+      "Ada templated typed line"
     ),
     imported: await importedPage(ada.id, "Imported CV", "Ada imported line"),
     letter: await typedPage(ada.id, "Acme letter", "letter", "Ada letter line"),
@@ -183,7 +158,7 @@ beforeAll(async () => {
       cvPackageId: pages.beaPage,
     }),
   }
-  await inDb(() => deleteWordPage(ada.id, pages.trashed!))
+  await inDb(() => trashStoredWordPage(ada.id, pages.trashed!))
 }, 60_000)
 
 afterAll(async () => {
@@ -191,7 +166,7 @@ afterAll(async () => {
 })
 
 describe("account export of Word pages", () => {
-  it("holds every page the person owns as the bytes Download Word gives, with its index entry", async () => {
+  it("holds every page the person owns as its stored bytes, with its index entry", async () => {
     const { index, members } = await exportOf(ada.cookie)
     const byId = new Map(index.wordPages.map((page) => [page.id, page]))
     expect([...byId.keys()].sort()).toEqual(
@@ -232,18 +207,8 @@ describe("account export of Word pages", () => {
         Date.parse(entry.updatedAt)
       )
       const bytes = members.get(entry.file!)!
-      expect(await inDb(() => wordText(entry.id, bytes))).toContain(text)
-      if (entry.deleted) continue
-      const [head] = await database.db
-        .select({ revision: paperPackageHeads.revision })
-        .from(paperPackageHeads)
-        .where(eq(paperPackageHeads.docId, entry.id))
-      const download = await app.request(
-        `/api/paper/packages/${entry.id}/export?at=${head!.revision}`,
-        { headers: authHeaders(ada.cookie) }
-      )
-      expect(download.status).toBe(200)
-      expect(Buffer.from(await download.arrayBuffer()).equals(bytes)).toBe(true)
+      expect(await wordText(bytes)).toContain(text)
+      expect(bytes.equals(written.get(entry.id)!)).toBe(true)
     }
   })
 
@@ -271,14 +236,7 @@ describe("account export of Word pages", () => {
       }
       for (const [path, bytes] of members) {
         if (path.endsWith(".docx"))
-          expect(
-            await inDb(() =>
-              wordText(
-                index.wordPages.find((page) => page.file === path)!.id,
-                bytes
-              )
-            )
-          ).not.toContain(otherText)
+          expect(await wordText(bytes)).not.toContain(otherText)
       }
     }
     const { index } = await exportOf(ada.cookie)

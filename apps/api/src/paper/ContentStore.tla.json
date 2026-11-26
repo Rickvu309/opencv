@@ -18,7 +18,6 @@
     "apps/api/src/registry/registry-entries.ts"
   ],
   "sync": "f84f0e8f783a63488962725b4234190df4e8dad8",
-  "retiring": "The Yjs Paper log. Every page the web creates now uses the Word package path (apps/api/src/paper/word-package/word/document.ts, apps/api/src/paper/word-package/package-candidates.ts). Old Yjs rows, a Coach paper.create, and a signed-in person who posts paper.edit with a numeric basedOn to apps/api/src/registry/http.ts still reach this code.",
   "mutants": {
     "coach": 13
   }

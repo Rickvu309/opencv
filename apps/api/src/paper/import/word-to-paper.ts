@@ -25,7 +25,7 @@ import {
   type Styles,
 } from "./word-looks.js"
 import { readPackageZip } from "../word-package/package-zip.js"
-import type { TemplateLine } from "../word-package/word/template.js"
+import type { TemplateLine } from "@workspace/domain/paper-doc"
 
 type Kind = "cv" | "letter"
 type Body = {

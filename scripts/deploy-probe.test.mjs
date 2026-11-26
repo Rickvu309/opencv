@@ -402,7 +402,7 @@ test("only reads leave the probe", () => {
   assert.ok(readOnlyRequest("GET", `${api}/api/paper`))
   assert.ok(readOnlyRequest("POST", `${api}/api/reads/paper.read`))
   for (const [method, path] of [
-    ["POST", "/api/commands/paper.canvas"],
+    ["POST", "/api/commands/paper.create"],
     ["POST", "/api/paper/import"],
     ["PUT", "/api/paper/x"],
     ["DELETE", "/api/paper/x"],

@@ -13,15 +13,12 @@ const CONTROL_OWN_OPERATIONS = "apps/api/src/registry/operations/"
 const DELEGATE_REACH_IS_A_SECOND_LOCK =
   "apps/api/src/registry/delegate-policy.ts"
 const OWNERSHIP_MAP_FOR_THE_HARNESS = "apps/api/src/registry/owned.ts"
-const WORD_REVISION_RULE_UNTIL_ONE_PAPER =
-  "apps/api/src/registry/paper-agent.ts"
 const RECEIPT_DETAILS_BEFORE_BINDINGS_OWN_THEM =
   "apps/api/src/registry/receipt.ts"
 const NAMES_A_PRODUCT_COMMAND_TODAY = [
   RECEIPT_DETAILS_BEFORE_BINDINGS_OWN_THEM,
   DELEGATE_REACH_IS_A_SECOND_LOCK,
   OWNERSHIP_MAP_FOR_THE_HARNESS,
-  WORD_REVISION_RULE_UNTIL_ONE_PAPER,
 ]
 
 const read = (file) => readFileSync(path.join(root, file), "utf8")

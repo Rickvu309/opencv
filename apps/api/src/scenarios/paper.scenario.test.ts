@@ -100,11 +100,15 @@ describe("a Paper started blank", () => {
     expect(listed.map((paper) => paper.name)).toEqual(["Product CV"])
   })
 
-  it("is left off the list for an editor that cannot open it", async () => {
+  it("is listed when the reader names no editor, since every Paper opens in Paper", async () => {
     const ada = await world.person("Ada")
     await blank(ada, "cv", "Marketing CV")
     await ada.run("paper.create", { kind: "letter", name: "Plain letter" })
-    expect(dataOf<Paper[]>(await ada.read("paper.list", {}))).toEqual([])
+    expect(
+      dataOf<Paper[]>(await ada.read("paper.list", {}))
+        .map((paper) => paper.name)
+        .sort()
+    ).toEqual(["Marketing CV", "Plain letter"])
   })
 
   it("can be copied, and the copy is a Paper of its own", async () => {

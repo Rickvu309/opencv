@@ -5,7 +5,6 @@ import { expect } from "vitest"
 import { importedPaper, saveFile } from "../paper/index.js"
 import {
   idOf,
-  list,
   flag,
   text,
   type CoverageCase,
@@ -22,10 +21,6 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     .list()
     .commands.find((command) => command.name === "paper.update")
   if (!paperUpdate) throw new Error("Missing Paper update command")
-  const paperRecover = registry
-    .list()
-    .commands.find((command) => command.name === "paper.recover")
-  if (!paperRecover) throw new Error("Missing Paper recover command")
   const paperDelete = registry
     .list()
     .commands.find((command) => command.name === "paper.delete")
@@ -46,23 +41,17 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     .list()
     .commands.find((command) => command.name === "paper.start")
   if (!paperStart) throw new Error("Missing Paper start command")
-  const paperCanvas = registry
-    .list()
-    .commands.find((command) => command.name === "paper.canvas")
-  if (!paperCanvas) throw new Error("Missing Paper canvas command")
   const paperEdit = registry
     .list()
     .commands.find((command) => command.name === "paper.edit")
   if (!paperEdit) throw new Error("Missing Paper edit command")
   let importFile = ""
   let importPaper: unknown = null
-  let mintedDocId = ""
-  let mintedParagraph = ""
   let editDocId = ""
-  let editRevision = ""
-  let editParagraph = ""
-  async function wordPage(docId: string) {
-    return registry.read("paper.read", { docId }, personActor(userId))
+  async function outlineText(docId: string) {
+    return JSON.stringify(
+      await registry.read("paper.outline", { docId }, personActor(userId))
+    )
   }
   return [
     {
@@ -83,31 +72,45 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     {
       name: paperEdit.name,
       arrange: async () => {
-        const minted = await run(paperCanvas.name, {
-          op: "mint",
-          label: "letter",
+        const made = await run(paperCreate.name, {
+          kind: "letter",
+          name: "Coverage Letter",
+          lines: ["Harbor"],
         })
-        editDocId = text(minted.output, "docId") ?? ""
-        editRevision = text(minted.output, "revision") ?? ""
-        editParagraph = emptyWritingParagraph(await wordPage(editDocId))
+        editDocId = idOf(made.output)
       },
-      act: () =>
-        run(paperEdit.name, {
+      act: async () => {
+        const read = await registry.read(
+          "paper.read",
+          { docId: editDocId },
+          personActor(userId)
+        )
+        const block = firstBlockWith(read, "Harbor")
+        return run(paperEdit.name, {
           docId: editDocId,
-          basedOn: editRevision,
+          basedOn: block.revision,
+          nativeBasis: block.nativeBasis,
           edits: [
-            { op: "setText", handle: editParagraph, text: "Harbor light" },
+            {
+              op: "replaceText",
+              blockId: block.id,
+              from: 6,
+              to: 6,
+              before: "",
+              text: " light",
+            },
           ],
-        }),
+        })
+      },
       assert: async (result) => {
-        expect(result.reversal?.command).toBe("paper.undoWord")
-        expect(editableText(await wordPage(editDocId))).toBe("Harbor light")
+        expect(result.reversal?.command).toBe("paper.undoEdit")
+        expect(await outlineText(editDocId)).toContain("Harbor light")
       },
       undoAssert: async (result) => {
         await undo(result)
-        expect(emptyWritingParagraph(await wordPage(editDocId))).toBe(
-          editParagraph
-        )
+        const words = await outlineText(editDocId)
+        expect(words).toContain("Harbor")
+        expect(words).not.toContain("Harbor light")
       },
     },
     {
@@ -203,26 +206,6 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: paperRecover.name,
-      arrange: async () => {
-        const minted = await run(paperCanvas.name, { op: "mint", label: "cv" })
-        const docId = text(minted.output, "docId")
-        if (!docId) throw new Error("missing minted page")
-        ctx.docId = docId
-        await run(paperDelete.name, { docId })
-      },
-      act: () => run(paperRecover.name, { docId: ctx.docId }),
-      assert: async (result) => {
-        expect(idOf(result.output)).toBe(ctx.docId)
-        const listed = (await registry.read(
-          "paper.list",
-          {},
-          personActor(userId)
-        )) as { id: string }[]
-        expect(listed.some((paper) => paper.id === ctx.docId)).toBe(true)
-      },
-    },
-    {
       name: paperImport.name,
       arrange: async () => {
         const upload = {
@@ -295,85 +278,22 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         expect(JSON.stringify(outline)).toContain("[Your name]")
       },
     },
-    {
-      name: paperCanvas.name,
-      arrange: async () => {},
-      act: async () => {
-        const minted = await run(paperCanvas.name, {
-          op: "mint",
-          label: "letter",
-        })
-        const docId = text(minted.output, "docId")
-        const revision = text(minted.output, "revision")
-        if (!docId || !revision) throw new Error("missing minted page")
-        const page = await registry.read(
-          "paper.read",
-          { docId },
-          personActor(userId)
-        )
-        mintedDocId = docId
-        mintedParagraph = emptyWritingParagraph(page)
-        return run(paperCanvas.name, {
-          op: "write",
-          batch: {
-            doc: docId,
-            basedOn: revision,
-            ops: [
-              { op: "setText", handle: mintedParagraph, text: "Harbor light" },
-            ],
-          },
-        })
-      },
-      assert: async (result) => {
-        expect(text(result.output, "generation")).toBe("package")
-        expect(text(result.output, "docId")).toBe(mintedDocId)
-        expect(result.reversal?.command).toBe("paper.undoWord")
-        const page = await registry.read(
-          "paper.read",
-          { docId: mintedDocId },
-          personActor(userId)
-        )
-        expect(editableText(page)).toBe("Harbor light")
-      },
-      undoAssert: async (result) => {
-        await undo(result)
-        const page = await registry.read(
-          "paper.read",
-          { docId: mintedDocId },
-          personActor(userId)
-        )
-        expect(emptyWritingParagraph(page)).toMatch(
-          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
-        )
-      },
-    },
   ]
 }
 
-function emptyWritingParagraph(page: unknown) {
-  for (const region of list(page, "regions")) {
-    if (!region || typeof region !== "object") continue
-    const row = region as Record<string, unknown>
-    const reason = row.reason
-    if (
-      row.kind === "locked" &&
-      reason &&
-      typeof reason === "object" &&
-      "code" in reason &&
-      reason.code === "EMPTY_TARGET" &&
-      typeof row.paragraph === "string"
-    ) {
-      return row.paragraph
-    }
+function firstBlockWith(read: unknown, words: string) {
+  const page = read as {
+    revision: number
+    nativeBasis: unknown
+    outline: string
   }
-  throw new Error("missing empty paragraph")
-}
-
-function editableText(page: unknown) {
-  for (const region of list(page, "regions")) {
-    if (!region || typeof region !== "object") continue
-    const row = region as Record<string, unknown>
-    if (row.kind === "editable" && typeof row.text === "string") return row.text
+  const block = (
+    JSON.parse(page.outline) as { id: string; content: { text: string }[] }[]
+  ).find((node) => node.content.some((run) => run.text.includes(words)))
+  if (!block) throw new Error(`missing block with ${words}`)
+  return {
+    id: block.id,
+    revision: page.revision,
+    nativeBasis: page.nativeBasis,
   }
-  throw new Error("missing written text")
 }

@@ -19,7 +19,6 @@
         "$TURBO_DEFAULT$",
         "$TURBO_ROOT$/scripts/lib/approval-expiry.mjs",
         "$TURBO_ROOT$/scripts/lib/paper-canvas-bytes.mjs",
-        "$TURBO_ROOT$/scripts/lib/paper-canvas-checks.mjs",
         "$TURBO_ROOT$/scripts/lib/paper-canvas-mint.mjs",
         "$TURBO_ROOT$/scripts/lib/write-grant.mjs"
       ]

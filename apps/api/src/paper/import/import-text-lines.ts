@@ -1,5 +1,5 @@
 import { IMPORT_TEXT_LIMITS } from "./import-limits.js"
-import type { TemplateLine } from "../word-package/word/template.js"
+import type { TemplateLine } from "@workspace/domain/paper-doc"
 
 export const IMPORT_LINE_CAP = 2000
 export const IMPORT_LINE_BYTES = 6000
