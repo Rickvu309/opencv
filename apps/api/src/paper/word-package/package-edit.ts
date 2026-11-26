@@ -1,12 +1,7 @@
 import { randomUUID } from "node:crypto"
 
+import { ERROR_CODES, type catalog } from "@workspace/domain/kernel"
 import {
-  ERROR_CODES,
-  type catalog,
-  paperIdSchema,
-} from "@workspace/domain/kernel"
-import {
-  nativeWriterSchema,
   richEditOutputSchema,
   paperPackageEditResultSchema,
   wordUndoSchema,
