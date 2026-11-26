@@ -6,7 +6,7 @@ import {
 export const clean = [
   ...photoClean,
   {
-    path: "apps/web/src/features/paper/rich-text-emphasis-group.tsx",
+    path: "apps/web/src/features/paper/rich-editor/rich-text-emphasis-group.tsx",
     text: '<Button className="size-[44px] md:size-8" />',
   },
   {
@@ -174,7 +174,7 @@ export const clean = [
 export const mistakes = [
   ...photoMistakes,
   {
-    path: "apps/web/src/features/paper/rich-text-emphasis-group.tsx",
+    path: "apps/web/src/features/paper/rich-editor/rich-text-emphasis-group.tsx",
     text: '<Button className="size-11 md:size-8" />',
   },
   {
@@ -469,22 +469,22 @@ export const roundTwo = [
     clean: "mounted.adjustIndent(360)",
   },
   {
-    path: "apps/web/src/features/paper/rich-text-paragraph-group.tsx",
+    path: "apps/web/src/features/paper/rich-editor/rich-text-paragraph-group.tsx",
     mistake: "const start = formatting?.start",
     clean: "editor.adjustIndent(360)",
   },
   {
-    path: "apps/web/src/features/paper/rich-text-paragraph-group.tsx",
+    path: "apps/web/src/features/paper/rich-editor/rich-text-paragraph-group.tsx",
     mistake: 'label="Increase indent (Ctrl+])"',
     clean: 'label={shortcutLabel("Increase indent (Ctrl+])")}',
   },
   {
-    path: "apps/web/src/features/paper/rich-text-formatting.tsx",
+    path: "apps/web/src/features/paper/rich-editor/rich-text-formatting.tsx",
     mistake: "const controls = (<fieldset>{children}</fieldset>)",
     clean: "const controls = <RichTextColorGroup />",
   },
   {
-    path: "apps/web/src/features/paper/rich-text-color-group.tsx",
+    path: "apps/web/src/features/paper/rich-editor/rich-text-color-group.tsx",
     mistake: 'color: "var(--background)"',
     clean: 'color: "white"',
   },

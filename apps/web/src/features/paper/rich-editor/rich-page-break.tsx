@@ -3,8 +3,8 @@ import {
   ToolbarButton,
   shortcutLabel,
   type TextEditor,
-} from "../rich-text-toolbar-control.tsx"
-import { useToolbarGroup } from "../rich-text-toolbar-item.tsx"
+} from "./rich-text-toolbar-control.tsx"
+import { useToolbarGroup } from "./rich-text-toolbar-item.tsx"
 
 export function RichPageBreak({
   editor,

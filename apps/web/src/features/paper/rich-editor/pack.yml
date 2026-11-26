@@ -1,0 +1,10 @@
+layer: feature
+public: [rich-page.tsx]
+dependencies:
+  [
+    apps/web/src/features/paper,
+    apps/web/src/features/paper-page,
+    apps/web/src/features/coach,
+    apps/web/src/lib,
+    apps/web/src/components,
+  ]

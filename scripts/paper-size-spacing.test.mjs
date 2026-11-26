@@ -3,10 +3,11 @@ import { execFileSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 import { detectSizeSpacing } from "./lib/paper-size-spacing.mjs"
+import { pathAtRevision } from "./lib/path-at-revision.mjs"
 
 const fixtures = [
   {
-    path: "apps/web/src/features/paper/rich-text-font-group.tsx",
+    path: "apps/web/src/features/paper/rich-editor/rich-text-font-group.tsx",
     name: "mixed runs",
     expected: "own size",
     introduced: "cc5cd029",
@@ -14,7 +15,7 @@ const fixtures = [
     clean: "editor.stepTextSize(delta)",
   },
   {
-    path: "apps/web/src/features/paper/rich-text-font-group.tsx",
+    path: "apps/web/src/features/paper/rich-editor/rich-text-font-group.tsx",
     name: "IME Enter",
     expected: "composition",
     introduced: "cc5cd029",
@@ -22,7 +23,7 @@ const fixtures = [
     clean: "<Input onKeyDown={event.nativeEvent.isComposing} />",
   },
   {
-    path: "apps/web/src/features/paper/rich-text-font-group.tsx",
+    path: "apps/web/src/features/paper/rich-editor/rich-text-font-group.tsx",
     name: "More dismissal",
     expected: "More popover",
     introduced: "cc5cd029",
@@ -30,7 +31,7 @@ const fixtures = [
     clean: "editor.focus(); onAction()",
   },
   {
-    path: "apps/web/src/features/paper/rich-text-font-group.tsx",
+    path: "apps/web/src/features/paper/rich-editor/rich-text-font-group.tsx",
     name: "decimal commas",
     expected: "decimal commas",
     introduced: "cc5cd029",
@@ -38,7 +39,7 @@ const fixtures = [
     clean: '<Input type="text" inputMode="decimal" />',
   },
   {
-    path: "apps/web/src/features/paper/rich-text-custom-spacing.tsx",
+    path: "apps/web/src/features/paper/rich-editor/rich-text-custom-spacing.tsx",
     introduced: "ae962071",
     mistake: '<Input type="number" />',
     clean: '<Input type="text" inputMode="decimal" />',
@@ -72,9 +73,16 @@ test("Paper size and spacing guards reject historical mistakes and accept curren
         for (const revision of [fixture.introduced, "29dd4410"])
           assert.ok(
             fires(
-              execFileSync("git", ["show", `${revision}:${fixture.path}`], {
-                encoding: "utf8",
-              })
+              execFileSync(
+                "git",
+                [
+                  "show",
+                  `${revision}:${pathAtRevision(revision, fixture.path)}`,
+                ],
+                {
+                  encoding: "utf8",
+                }
+              )
             ),
             revision
           )

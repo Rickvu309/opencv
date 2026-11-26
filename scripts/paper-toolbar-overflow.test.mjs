@@ -94,7 +94,7 @@ test("unmeasured and remounted toolbars retain their controls", () => {
     detectMeasurement(
       readFileSync(
         new URL(
-          "../apps/web/src/features/paper/rich-text-toolbar-overflow.ts",
+          "../apps/web/src/features/paper/rich-editor/rich-text-toolbar-overflow.ts",
           import.meta.url
         ),
         "utf8"

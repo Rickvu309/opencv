@@ -56,7 +56,8 @@ function featureDesignCssProblems(
   file: string,
   source: string
 ): string[] | null {
-  if (!/^features\/[a-z-]+\/design\/[a-z-]+\.css$/.test(file)) return null
+  if (!/^features\/[a-z-]+(?:\/[a-z-]+)*\/design\/[a-z-]+\.css$/.test(file))
+    return null
   return [
     ...designCssTokenProblems(source, file),
     ...hits(source, PALETTE_RE),

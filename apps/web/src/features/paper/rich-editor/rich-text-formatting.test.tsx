@@ -10,13 +10,13 @@ import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import { nativeProvenance } from "@workspace/domain/paper-doc"
-import { openRichPaperClient } from "../../../../../packages/paper-crdt/src/client.js"
-import { seedStoredYDoc } from "../../../../../packages/paper-crdt/src/stored-document.js"
-import { storedFlowFixture } from "../../../../../packages/paper-crdt/src/test/flow-fixture.js"
+import { openRichPaperClient } from "../../../../../../packages/paper-crdt/src/client.js"
+import { seedStoredYDoc } from "../../../../../../packages/paper-crdt/src/stored-document.js"
+import { storedFlowFixture } from "../../../../../../packages/paper-crdt/src/test/flow-fixture.js"
 import { shortcutLabel } from "./rich-text-toolbar-control.tsx"
 import { RichPaperTextFormatting } from "./rich-text-formatting.tsx"
-import { RichPhotoControls } from "./rich-editor/rich-photo-controls.tsx"
-import { RichLinkDialog } from "./rich-editor/rich-structure-controls.tsx"
+import { RichPhotoControls } from "./rich-photo-controls.tsx"
+import { RichLinkDialog } from "./rich-structure-controls.tsx"
 
 const disposals: (() => void)[] = []
 let width = 1200

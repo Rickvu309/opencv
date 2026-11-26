@@ -1,7 +1,7 @@
 import { resolveTableBorders } from "@workspace/domain/internal/paper-presentation"
 import { Button } from "@workspace/ui/components/button"
 import { Check } from "lucide-react"
-import type { TextEditor } from "../rich-text-toolbar-control.tsx"
+import type { TextEditor } from "./rich-text-toolbar-control.tsx"
 
 type Borders = Parameters<TextEditor["setTableBorders"]>[0]
 const modes = [

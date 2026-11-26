@@ -11,7 +11,8 @@ import { pathAtRevision } from "./lib/path-at-revision.mjs"
 
 const root = path.resolve(fileURLToPath(new URL("..", import.meta.url)))
 test("rich document headers allow enlarged titles and actions to wrap", () => {
-  const path = "apps/web/src/features/paper/design/rich-page-header.css"
+  const path =
+    "apps/web/src/features/paper/rich-editor/design/rich-page-header.css"
   const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
   const mistake = clean.replace("flex-wrap: wrap;", "flex-wrap: nowrap;")
   assert.notEqual(mistake, clean)
@@ -398,7 +399,8 @@ test("round-five photo Apply rejects conditional geometry, lost placement and ra
 })
 
 test("phone overflow guard refuses empty menus and dangling photo separators", () => {
-  const formatting = "apps/web/src/features/paper/rich-text-formatting.tsx"
+  const formatting =
+    "apps/web/src/features/paper/rich-editor/rich-text-formatting.tsx"
   const photos = "apps/web/src/features/paper/rich-photo-toolbar.tsx"
   for (const [path, commit, message] of [
     [formatting, "54fbdb62", "Empty formatting overflow"],
@@ -532,7 +534,7 @@ test("round-two regressions fire on fixtures and the introducing head, while the
 
 test("document history guard rejects misplaced and photo-owned history at its introducing head", () => {
   const paths = [
-    "apps/web/src/features/paper/rich-text-formatting.tsx",
+    "apps/web/src/features/paper/rich-editor/rich-text-formatting.tsx",
     "apps/web/src/features/paper/rich-editor/rich-document-toolbar.tsx",
     "packages/paper-crdt/src/native-layout-photo-controls.ts",
   ]

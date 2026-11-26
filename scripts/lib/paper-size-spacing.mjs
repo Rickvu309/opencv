@@ -1,6 +1,6 @@
 export function detectSizeSpacing(text, path) {
   const hits = []
-  if (path === "apps/web/src/features/paper/rich-text-font-group.tsx") {
+  if (path.endsWith("/rich-text-font-group.tsx")) {
     if (/Number\(draft \?\? formatting\?\.size \?\? 11\)/.test(text))
       hits.push("Font steppers must preserve each selected run's own size")
     if (
@@ -13,8 +13,8 @@ export function detectSizeSpacing(text, path) {
   }
   if (
     [
-      "apps/web/src/features/paper/rich-text-font-group.tsx",
-      "apps/web/src/features/paper/rich-text-custom-spacing.tsx",
+      "apps/web/src/features/paper/rich-editor/rich-text-font-group.tsx",
+      "apps/web/src/features/paper/rich-editor/rich-text-custom-spacing.tsx",
     ].includes(path) &&
     /type=["']number["']/.test(text)
   )
