@@ -8,6 +8,7 @@ import {
   PARSE_WORKER_SOURCE,
   detectRequestThreadParser as detect,
 } from "./lib/parser-off-request-thread.mjs"
+import { pathAtRevision } from "./lib/path-at-revision.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 const INTRODUCED = "dbcc5d0b6b8a268f8788de55808c89e319590dbb"
@@ -23,7 +24,6 @@ import mammoth from "mammoth"
 
 const clean = `
 import { readImportText } from "./import-text-pool.js"
-import { pathAtRevision } from "./lib/path-at-revision.mjs"
 async function defaultPdfText(bytes: Buffer) {
   return readImportText({ kind: "pdf", bytes, whole: true, deadlineMs: 10_000 })
 }
