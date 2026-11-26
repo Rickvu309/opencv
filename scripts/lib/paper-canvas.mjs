@@ -1,7 +1,7 @@
 const WATCHED = new Set([
   "packages/domain/src/paper-doc/paper-package.ts",
   "packages/domain/src/paper-doc/paper-contract.ts",
-  "apps/api/src/paper/package-engine.ts",
+  "apps/api/src/paper/word-package/package-engine.ts",
 ])
 
 const OPS = [

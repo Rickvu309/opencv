@@ -457,7 +457,7 @@ test("paper.edit does not gain Enter", () => {
   for (const file of [
     "packages/domain/src/paper-doc/paper-package.ts",
     "packages/domain/src/paper-doc/paper-contract.ts",
-    "apps/api/src/paper/package-engine.ts",
+    "apps/api/src/paper/word-package/package-engine.ts",
   ])
     assert.deepEqual(detect(readFileSync(root + file, "utf8"), file), [])
   assert.deepEqual(
