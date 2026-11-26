@@ -1,2 +1,2 @@
 layer: kernel
-public: [control.ts]
+public: [public.ts, control.ts]

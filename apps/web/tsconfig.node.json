@@ -21,8 +21,9 @@
     "noFallthroughCasesInSwitch": true,
     "paths": {
       "@workspace/domain": ["../../packages/domain/src/index.ts"],
+      "@workspace/domain/*": ["../../packages/domain/src/*/public.ts"],
       "@workspace/paper-crdt": ["../../packages/paper-crdt/src/index.ts"]
     }
   },
-  "include": ["vite.config.ts", "local-env.ts"]
+  "include": ["vite.config.ts", "local-env.ts", "domain-entries.ts"]
 }

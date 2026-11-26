@@ -1,6 +1,7 @@
 layer: kernel
 public:
   [
+    public.ts,
     index.ts,
     paper.ts,
     paper-canvas.ts,

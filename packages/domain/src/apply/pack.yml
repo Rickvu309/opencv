@@ -1,2 +1,2 @@
 layer: kernel
-public: [job.ts, job-position.ts, job-posting.ts]
+public: [public.ts, job.ts, job-position.ts, job-posting.ts]

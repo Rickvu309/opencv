@@ -1,6 +1,7 @@
 layer: kernel
 public:
   [
+    public.ts,
     coach.ts,
     coach-mode.ts,
     coach-task.ts,
