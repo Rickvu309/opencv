@@ -5,7 +5,8 @@ import test from "node:test"
 import { detect } from "./lib/paper-header-fit.mjs"
 import { pathAtRevision } from "./lib/path-at-revision.mjs"
 
-const cssPath = "apps/web/src/features/paper/rich-editor/rich-page-header.css"
+const cssPath =
+  "apps/web/src/features/paper/rich-editor/design/rich-page-header.css"
 const pagePath = "apps/web/src/features/paper/rich-editor/rich-page.tsx"
 const read = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
