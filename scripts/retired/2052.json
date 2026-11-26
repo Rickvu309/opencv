@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-coach-approval.json",
+    "because": "The guard matched the legacy commandEntry shape in paper-contract.ts, which K-2 emptied; it only tested its own fixtures and protected no live code. paper.edit's approval rule now lives in operations/paper/edit/operation.ts and is held by packages/domain/src/paper-edit.test.ts, which fails when coach is set to auto (replayed locally).",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
