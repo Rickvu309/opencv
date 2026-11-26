@@ -3,7 +3,7 @@ import {
   chatToolNameSchema,
   coachTaskSnapshotSchema,
   type ChatEntryPart,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
 
 export type TaskSnapshot = ReturnType<typeof coachTaskSnapshotSchema.parse>
 export type TaskEvent = ReturnType<typeof coachTaskEventSchema.parse>

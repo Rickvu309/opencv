@@ -1,7 +1,7 @@
 import { useReducer, useRef } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
-import type { Profile } from "@workspace/domain"
+import type { Profile } from "@workspace/domain/account"
 import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,

@@ -1,4 +1,4 @@
-import type { CvSectionKind } from "@workspace/domain"
+import type { CvSectionKind } from "@workspace/domain/paper-doc"
 
 import type { CvData } from "./cv-types.ts"
 import { CvType, SectionTitle } from "./cv-parts.tsx"

@@ -1,4 +1,5 @@
-import type { Profile, QueryOutput } from "@workspace/domain"
+import type { Profile } from "@workspace/domain/account"
+import type { QueryOutput } from "@workspace/domain/kernel"
 import { UsageBar } from "@workspace/ui/components/usage-bar"
 
 import {

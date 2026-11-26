@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { ChevronRight, type LucideIcon } from "lucide-react"
 import { useNavigate } from "@tanstack/react-router"
-import type { Profile } from "@workspace/domain"
+import type { Profile } from "@workspace/domain/account"
 import { Button } from "@workspace/ui/components/button"
 import {
   Select,

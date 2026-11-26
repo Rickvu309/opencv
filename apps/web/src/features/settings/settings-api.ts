@@ -1,4 +1,4 @@
-import type { Profile, ProfileUpdateInput } from "@workspace/domain"
+import type { Profile, ProfileUpdateInput } from "@workspace/domain/account"
 
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { ApiError } from "@/lib/api.ts"

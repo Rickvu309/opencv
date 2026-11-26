@@ -1,4 +1,7 @@
-import { nativeBasisSchema, sameNativeProvenance } from "@workspace/domain"
+import {
+  nativeBasisSchema,
+  sameNativeProvenance,
+} from "@workspace/domain/paper-doc"
 import { apiRequest } from "./api.ts"
 import { endpoints } from "./requests.ts"
 import type { openRichNativePaperSync } from "./paper-native-transport.ts"

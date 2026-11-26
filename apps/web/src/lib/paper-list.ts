@@ -1,9 +1,9 @@
+import { catalog } from "@workspace/domain/kernel"
 import {
-  catalog,
   type NativeWriter,
   type PaperStoredKind,
   type PaperView,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import { catalogClient } from "./contract-client.ts"
 

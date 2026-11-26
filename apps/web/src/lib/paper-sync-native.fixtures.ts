@@ -1,5 +1,8 @@
 import { QueryClient } from "@tanstack/react-query"
-import { nativeProvenance, RICH_NATIVE_WRITER } from "@workspace/domain"
+import {
+  nativeProvenance,
+  RICH_NATIVE_WRITER,
+} from "@workspace/domain/paper-doc"
 import { emptyUpdate, seedStoredYDoc, type Stored } from "@workspace/paper-crdt"
 import { vi } from "vitest"
 import { storedFlowFixture } from "../../../../packages/paper-crdt/src/test/flow-fixture.ts"
