@@ -1,10 +1,10 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 
-import { paperContract } from "./paper-doc/paper-contract.ts"
+import { operation } from "./operations/paper/create/operation.ts"
 import { blankCv } from "./paper-doc/index.ts"
 
-const paperCreateInputSchema = paperContract["paper.create"].input
+const paperCreateInputSchema = operation.input
 
 describe("paper.create input", () => {
   it("takes a kind and an optional name for a rich blank", () => {
