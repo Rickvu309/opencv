@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 5
+  },
+  {
+    "subject": "scripts/paper-toolbar-overflow.test.mjs",
+    "because": "The text toolbar overflow file moved into features/paper/rich-editor/, so the guard names the new path; the expectation is unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
