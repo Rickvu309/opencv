@@ -21,7 +21,7 @@ import {
   type TextEditor,
   type TextFormatting,
 } from "./rich-text-toolbar-control.tsx"
-import { RichStructureControls } from "./rich-structure-controls.tsx"
+import { RichStructureControls } from "./rich-editor/rich-structure-controls.tsx"
 import { RichTextCustomSpacing } from "./rich-text-custom-spacing.tsx"
 import { RichPageBreak } from "./rich-editor/rich-page-break.tsx"
 
