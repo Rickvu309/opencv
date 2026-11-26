@@ -23,7 +23,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@workspace/ui/components/dialog"
-import { RichPhotoToolbar } from "./rich-editor/rich-document-toolbar.tsx"
+import { RichPhotoToolbar } from "./rich-document-toolbar.tsx"
 import { RichPhotoChoice } from "./rich-photo-choice.tsx"
 import { RichPhotoNumber } from "./rich-photo-number.tsx"
 import { RichPhotoPreview } from "./rich-photo-preview.tsx"
