@@ -3,7 +3,7 @@ import {
   photoBounds,
   type LayoutPhoto,
 } from "@workspace/domain/internal/paper-presentation"
-import { paperPhotoFileId } from "@workspace/domain"
+import { paperPhotoFileId } from "@workspace/domain/paper-doc"
 import { xml } from "./rich-text.js"
 
 const mediaSchema = z

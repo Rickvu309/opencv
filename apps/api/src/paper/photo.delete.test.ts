@@ -1,4 +1,4 @@
-import { paperPhotoRef } from "@workspace/domain"
+import { paperPhotoRef } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"

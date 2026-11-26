@@ -2,16 +2,18 @@ import { randomUUID } from "node:crypto"
 
 import {
   ERROR_CODES,
+  type PaperId,
+  type UserId,
+} from "@workspace/domain/kernel"
+import {
   canonicalPaper,
   prepareRichEdit,
   reverseRichChanges,
   richTextEditsSchema,
   type NativeBasis,
   type NativeWriter,
-  type PaperId,
   type RichChange,
-  type UserId,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import { CommandError } from "../platform/errors.js"
 import { rewriteRichContent } from "./content-store.js"

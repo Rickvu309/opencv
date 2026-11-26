@@ -1,4 +1,5 @@
-import { personActor, RICH_NATIVE_WRITER } from "@workspace/domain"
+import { personActor } from "@workspace/domain/kernel"
+import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"

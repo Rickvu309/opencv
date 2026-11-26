@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 
-import type { PaperView } from "@workspace/domain"
+import type { PaperView } from "@workspace/domain/paper-doc"
 import { and, eq, or } from "drizzle-orm"
 import { z } from "zod"
 

@@ -1,10 +1,9 @@
+import { parseUserId, personActor } from "@workspace/domain/kernel"
 import {
   RICH_NATIVE_WRITER,
   paperPhotoRef,
-  parseUserId,
-  personActor,
   richPaperDocumentSchema,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
