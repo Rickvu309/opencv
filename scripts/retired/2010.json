@@ -30,5 +30,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/lib/coach-stream.test.ts",
+    "because": "The Paper list is a catalog read whose cache depends on the paper resource, so a Coach job.move refreshes only the job reads. The case now checks that precise result instead of the old refresh of every legacy read.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
