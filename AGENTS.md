@@ -45,7 +45,7 @@ The web is a React SPA in `apps/web`. The API is Hono in `apps/api`. The shared 
 
 ## Verification
 
-- Run one heavy command at a time and only targeted tests. Use `pstack-run` for noisy commands, keep output bounded, and keep scratch files under `~/tmp`. Never loop, poll, or sleep to wait.
+- Run one heavy command at a time and only targeted tests. `node scripts/test-pick.mjs` lists the tests your change reaches, cheapest first, and says what only CI runs. Use `pstack-run` for noisy commands, keep output bounded, and keep scratch files under `~/tmp`. Never loop, poll, or sleep to wait.
 - Read the owning module and its checks before writing code.
 - Comments are banned in every file in the repo: source, CSS, tests, scripts, config, workflows, docs code blocks and markup. Context lives in the file path, the names and the tests. Put code in the folder and file whose name says what it is for, and rename or move it instead of explaining it.
 - Every code bug you find gets two fixes. Trace it to the first place the system went wrong and fix it there. Then add a lint or guard that fails on that mistake, so the same bug cannot return. A new guard needs a pure detect, a mistake fixture that fires, a clean fixture that stays quiet, and proof against the commit that introduced the bug.
