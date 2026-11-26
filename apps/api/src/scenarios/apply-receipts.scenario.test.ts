@@ -153,6 +153,23 @@ describe("refusals name what the person needs", () => {
   })
 })
 
+describe("Undo of a priority change never erases a later change", () => {
+  it("says why Undo was skipped after the priority changed again", async () => {
+    const ada = await world.person("Ada")
+    const job = await saved(ada)
+    const first = dataOf<Job>(
+      await ada.run("job.setPriority", { jobId: job.id, priority: "high" })
+    )
+    await ada.run("job.setPriority", { jobId: job.id, priority: "low" })
+    const undone = await ada.undo(String(first.activityId))
+    expect(failureOf(undone)).toMatchObject({
+      code: "CONFLICT",
+      message: "This priority changed again, so Undo was skipped",
+    })
+    expect((await jobOf(ada, job.id)).priority).toBe("low")
+  })
+})
+
 describe("Undo of an addition never erases a later change", () => {
   it("skips Undo of adding a Job once the Job changed", async () => {
     const ada = await world.person("Ada")
