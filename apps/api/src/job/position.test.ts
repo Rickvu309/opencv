@@ -1,4 +1,4 @@
-import { generateKeyBetween } from "@workspace/domain"
+import { generateKeyBetween } from "@workspace/domain/apply"
 import { describe, expect, it } from "vitest"
 
 describe("generateKeyBetween", () => {

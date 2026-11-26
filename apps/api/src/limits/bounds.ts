@@ -1,4 +1,8 @@
-import { LIMITS, SERVICE_MEMORY_BYTES, type LimitId } from "@workspace/domain"
+import {
+  LIMITS,
+  SERVICE_MEMORY_BYTES,
+  type LimitId,
+} from "@workspace/domain/limits"
 
 export type LimitBound = {
   oneKeyShare: number

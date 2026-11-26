@@ -1,4 +1,5 @@
-import type { JobId, JobView } from "@workspace/domain"
+import type { JobView } from "@workspace/domain/apply"
+import type { JobId } from "@workspace/domain/kernel"
 
 import { deadlineInstant, monthDay, zonedYmd } from "./apply-stages.ts"
 

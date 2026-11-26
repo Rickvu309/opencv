@@ -1,4 +1,4 @@
-import { ERROR_CODES, parseUserId } from "@workspace/domain"
+import { ERROR_CODES, parseUserId } from "@workspace/domain/kernel"
 import { richExportInputSchema } from "@workspace/domain/operations/paper/export"
 import { Hono } from "hono"
 import type { SignedInVariables } from "../platform/signed-in.js"

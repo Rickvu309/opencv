@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest"
-import { chatToolNameSchema } from "@workspace/domain"
+import { chatToolNameSchema } from "@workspace/domain/coach"
 import {
   COACH_TOOL_LABELS,
   coachToolLabel,

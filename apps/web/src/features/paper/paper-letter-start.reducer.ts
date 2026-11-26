@@ -1,4 +1,5 @@
-import type { JobView, LetterAttachmentContext } from "@workspace/domain"
+import type { JobView } from "@workspace/domain/apply"
+import type { LetterAttachmentContext } from "@workspace/domain/paper-doc"
 
 import type { PaperLimitError } from "./paper-api.ts"
 

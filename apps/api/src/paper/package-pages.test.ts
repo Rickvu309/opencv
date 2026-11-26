@@ -5,7 +5,7 @@ import {
   PAPER_PACKAGE_PROJECTOR,
   type PaperPackageMetadata,
   type PaperPackageProjection,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { expect, it } from "vitest"
 
 import { PaperPackage } from "./package-engine.js"

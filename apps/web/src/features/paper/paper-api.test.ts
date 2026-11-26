@@ -1,10 +1,10 @@
 import { QueryClient } from "@tanstack/react-query"
+import { parsePaperId } from "@workspace/domain/kernel"
 import {
   emptyRichPaper,
   nativeProvenance,
-  parsePaperId,
   RICH_NATIVE_WRITER,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { apiBaseUrl } from "@/lib/api-url.ts"

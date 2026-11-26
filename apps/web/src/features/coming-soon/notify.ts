@@ -1,6 +1,6 @@
 import { useReducer } from "react"
 import { useQueryClient, type QueryClient } from "@tanstack/react-query"
-import type { NotifyTopic } from "@workspace/domain"
+import type { NotifyTopic } from "@workspace/domain/account"
 import { toast } from "sonner"
 
 import { soonCopy } from "@/features/coming-soon/copy.ts"

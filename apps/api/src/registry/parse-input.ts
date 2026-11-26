@@ -5,7 +5,7 @@ import {
   delegateActorSchema,
   personActor,
   type Actor,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import type { ZodType } from "zod"
 
 import { CommandError } from "../platform/errors.js"

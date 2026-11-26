@@ -1,9 +1,5 @@
-import {
-  ERROR_CODES,
-  generateKeyBetween,
-  type Actor,
-  type JobId,
-} from "@workspace/domain"
+import { generateKeyBetween } from "@workspace/domain/apply"
+import { ERROR_CODES, type Actor, type JobId } from "@workspace/domain/kernel"
 import { and, asc, eq } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"

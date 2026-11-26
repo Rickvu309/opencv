@@ -2,11 +2,11 @@ import { StrictMode } from "react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen, within } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
+import { parsePaperId } from "@workspace/domain/kernel"
 import {
   paperPackageMetadataSchema,
-  parsePaperId,
   type PaperView,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import { ApiError } from "@/lib/api-error.ts"
 

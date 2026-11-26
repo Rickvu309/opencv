@@ -3,7 +3,7 @@ import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react"
 import {
   paperPackageMetadataSchema,
   paperPackageReadSchema,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import { render } from "@/test/render-with-client.tsx"
 import { ApiError } from "@/lib/api.ts"

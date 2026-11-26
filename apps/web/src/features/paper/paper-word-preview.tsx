@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useReducer, useRef } from "react"
 import { useQuery } from "@tanstack/react-query"
-import { wordPageSchema, type WordPage } from "@workspace/domain"
+import { wordPageSchema, type WordPage } from "@workspace/domain/paper-doc"
 
 import { authClient } from "@/lib/auth-client.ts"
 import { catalogClient } from "@/lib/contract-client.ts"

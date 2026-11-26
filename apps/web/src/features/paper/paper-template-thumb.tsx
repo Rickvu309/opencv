@@ -1,4 +1,4 @@
-import type { PaperTemplateId } from "@workspace/domain"
+import type { PaperTemplateId } from "@workspace/domain/paper-doc"
 
 import { templatePageLines } from "./paper-template-pages.ts"
 import "./design/paper-picture.css"

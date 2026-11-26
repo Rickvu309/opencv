@@ -1,5 +1,5 @@
 import { createContext } from "react"
-import type { ChatSummary } from "@workspace/domain"
+import type { ChatSummary } from "@workspace/domain/coach"
 
 import type { CoachTurnProgress } from "./coach-progress.ts"
 import type { CoachSendOptions } from "./use-coach-turn.ts"

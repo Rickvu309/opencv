@@ -1,4 +1,4 @@
-import type { RichPaperDocument } from "@workspace/domain"
+import type { RichPaperDocument } from "@workspace/domain/paper-doc"
 import { TextSelection } from "@tiptap/pm/state"
 import { yUndoPluginKey } from "y-prosemirror"
 import type { Transaction } from "yjs"

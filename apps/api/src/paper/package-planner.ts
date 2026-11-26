@@ -6,7 +6,7 @@ import {
   type WordOp,
   type WordParagraph,
   type WordRefusal,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { z } from "zod"
 
 import { insideTransaction } from "../db/context.js"

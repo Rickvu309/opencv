@@ -1,11 +1,7 @@
 import { randomUUID } from "node:crypto"
 
-import {
-  coachActor,
-  delegateActorSchema,
-  type WordPage,
-  type WordRefusal,
-} from "@workspace/domain"
+import { coachActor, delegateActorSchema } from "@workspace/domain/kernel"
+import { type WordPage, type WordRefusal } from "@workspace/domain/paper-doc"
 import {
   afterAll,
   afterEach,

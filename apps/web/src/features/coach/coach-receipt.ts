@@ -1,9 +1,9 @@
 import { coachReadLabel, humanToolText } from "./coach-tool-labels.ts"
 import {
-  humanizeCommandFailCopy,
   type CoachReceiptDetail,
   type ChatToolPart,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
+import { humanizeCommandFailCopy } from "@workspace/domain/kernel"
 
 const RECEIPT_STAGES: { id: string; label: string; dot: string }[] = [
   { id: "saved", label: "Saved", dot: "bg-chart-1" },

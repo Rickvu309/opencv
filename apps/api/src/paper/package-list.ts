@@ -1,11 +1,10 @@
+import { ERROR_CODES, parsePaperId } from "@workspace/domain/kernel"
 import {
-  ERROR_CODES,
   blankCv,
   blankLetter,
   paperViewSchema,
-  parsePaperId,
   type PaperView,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { and, eq } from "drizzle-orm"
 import { z } from "zod"
 

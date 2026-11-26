@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import type { JobView } from "@workspace/domain"
+import type { JobView } from "@workspace/domain/apply"
 import {
   PROFILE_ZONE,
   companyInitials,

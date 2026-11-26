@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { act, renderHook, waitFor } from "@testing-library/react"
 import { createElement, StrictMode, useReducer, type ReactNode } from "react"
 import { afterEach, expect, it, vi } from "vitest"
-import { parseChatId } from "@workspace/domain"
+import { parseChatId } from "@workspace/domain/kernel"
 
 import {
   chatApiFetchOrThrow,

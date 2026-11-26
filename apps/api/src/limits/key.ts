@@ -1,4 +1,4 @@
-import type { LimitScope } from "@workspace/domain"
+import type { LimitScope } from "@workspace/domain/limits"
 
 declare const limitKeyBrand: unique symbol
 

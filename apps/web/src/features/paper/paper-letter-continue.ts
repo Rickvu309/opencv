@@ -1,5 +1,8 @@
 import type { QueryClient } from "@tanstack/react-query"
-import { paperCanvasCommitSchema, type WordPage } from "@workspace/domain"
+import {
+  paperCanvasCommitSchema,
+  type WordPage,
+} from "@workspace/domain/paper-doc"
 
 import {
   loadDraft,

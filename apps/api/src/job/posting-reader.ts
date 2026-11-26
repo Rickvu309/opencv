@@ -1,4 +1,5 @@
-import { catalog, type Actor, type Plan } from "@workspace/domain"
+import { type Plan } from "@workspace/domain/account"
+import { catalog, type Actor } from "@workspace/domain/kernel"
 
 import type { Registry } from "../registry/registry.js"
 import { fetchJobPosting, type FetchJobPosting } from "./fetch-posting.js"

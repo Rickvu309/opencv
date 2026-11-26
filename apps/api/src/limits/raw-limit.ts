@@ -1,4 +1,4 @@
-import { LIMITS } from "@workspace/domain"
+import { LIMITS } from "@workspace/domain/limits"
 
 const QUIET_PREFIXES = [
   "/api/auth",

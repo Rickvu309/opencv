@@ -1,6 +1,6 @@
 import { useReducer } from "react"
 import { CalendarIcon, MapPin } from "lucide-react"
-import type { JobStage } from "@workspace/domain"
+import type { JobStage } from "@workspace/domain/apply"
 
 import { Button } from "@workspace/ui/components/button"
 import {

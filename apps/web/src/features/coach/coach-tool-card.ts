@@ -1,4 +1,4 @@
-import type { ChatToolPart } from "@workspace/domain"
+import type { ChatToolPart } from "@workspace/domain/coach"
 
 import { coachReadLabel, humanToolText } from "./coach-tool-labels.ts"
 

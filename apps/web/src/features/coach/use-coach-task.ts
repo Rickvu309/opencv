@@ -2,12 +2,11 @@ import { coachToolLabel } from "./coach-tool-labels.ts"
 import { useEffect, useReducer, useRef } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
-  parseChatId,
-  parsePaperId,
   textFromParts,
   chatToolNameSchema,
   type CoachStartInput,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
+import { parseChatId, parsePaperId } from "@workspace/domain/kernel"
 
 import {
   createChat,

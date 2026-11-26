@@ -1,12 +1,8 @@
 import { readFileSync } from "node:fs"
 import path from "node:path"
 
-import {
-  paperPhotoRef,
-  parseUserId,
-  personActor,
-  RICH_NATIVE_WRITER,
-} from "@workspace/domain"
+import { parseUserId, personActor } from "@workspace/domain/kernel"
+import { paperPhotoRef, RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { eq, sql } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 

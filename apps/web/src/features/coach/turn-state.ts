@@ -1,4 +1,4 @@
-import type { CoachContextItem, CoachSelection } from "@workspace/domain"
+import type { CoachContextItem, CoachSelection } from "@workspace/domain/coach"
 
 import type { TurnPhase } from "@/features/coach/chat-store-context.ts"
 import type { ChatViewMessage } from "@/features/coach/chat-messages.ts"

@@ -8,7 +8,10 @@ import {
 } from "@testing-library/react"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import userEvent from "@testing-library/user-event"
-import { nativeProvenance, richPaperDocumentSchema } from "@workspace/domain"
+import {
+  nativeProvenance,
+  richPaperDocumentSchema,
+} from "@workspace/domain/paper-doc"
 import {
   emptyUpdate,
   openRichPaperClient,

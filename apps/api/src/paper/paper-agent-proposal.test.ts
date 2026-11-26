@@ -1,11 +1,10 @@
 import { randomUUID } from "node:crypto"
 
+import { delegateActorSchema, personActor } from "@workspace/domain/kernel"
 import {
-  delegateActorSchema,
   paperPackageReadSchema,
   paperWordReadSchema,
-  personActor,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { afterEach, expect, it, vi } from "vitest"
 import { z } from "zod"

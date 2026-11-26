@@ -6,7 +6,7 @@ import {
   type WordFile,
   type WordPage,
   type WordRefusal,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { eq } from "drizzle-orm"

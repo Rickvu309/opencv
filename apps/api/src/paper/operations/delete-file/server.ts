@@ -1,4 +1,4 @@
-import { parseFileId } from "@workspace/domain"
+import { parseFileId } from "@workspace/domain/kernel"
 import { operation } from "@workspace/domain/operations/paper/delete-file"
 import type { OperationBinding } from "../../../registry/bind.js"
 import { deleteFile } from "../../store.js"

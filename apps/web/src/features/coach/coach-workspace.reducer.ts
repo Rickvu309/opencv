@@ -1,4 +1,4 @@
-import type { CoachContextItem } from "@workspace/domain"
+import type { CoachContextItem } from "@workspace/domain/coach"
 
 export type Attachment = CoachContextItem & { label: string }
 export type Picker = "paper" | "job" | "link" | null

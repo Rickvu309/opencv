@@ -1,15 +1,15 @@
+import { proposalGrantAllows } from "@workspace/domain/agents"
 import {
   ERROR_CODES,
   delegateActorSchema,
   delegateDeclaration,
-  proposalGrantAllows,
   type Actor,
   type CoachAccess,
   type DelegateActor,
   type DelegateDeclaration,
   type DelegateMarker,
   type DelegateResource,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import { and, eq } from "drizzle-orm"
 import { getDb } from "../db/context.js"
 import { agentConnections } from "../db/schema.js"

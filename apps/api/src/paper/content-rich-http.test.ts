@@ -1,13 +1,12 @@
+import { catalog, parseUserId } from "@workspace/domain/kernel"
 import {
   nativeProvenance,
   nativeSyncOutputSchema,
   NATIVE_WRITER,
   RICH_NATIVE_WRITER,
   paperPhotoRef,
-  catalog,
   paperDocumentInfoSchema,
-  parseUserId,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { openRichPaperClient } from "@workspace/paper-crdt"
 import { serve } from "@hono/node-server"
 import { eq } from "drizzle-orm"

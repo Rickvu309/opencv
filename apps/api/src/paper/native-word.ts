@@ -1,4 +1,4 @@
-import { ERROR_CODES, type UserId } from "@workspace/domain"
+import { ERROR_CODES, type UserId } from "@workspace/domain/kernel"
 import { CommandError } from "../platform/errors.js"
 import { withRichSnapshot } from "./content-store.js"
 import { compileOwnedFlowNativeDocx } from "./native-output/formatted-owned.js"
