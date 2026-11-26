@@ -1,12 +1,11 @@
+import { jobAddNoteInputSchema } from "@workspace/domain/apply"
+import { type CoachFocusDoc } from "@workspace/domain/coach"
+import { ERROR_CODES, type Actor } from "@workspace/domain/kernel"
 import {
-  ERROR_CODES,
   NATIVE_WRITER,
   RICH_NATIVE_WRITER,
   nativeBasisSchema,
-  jobAddNoteInputSchema,
-  type Actor,
-  type CoachFocusDoc,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import { CommandError } from "../platform/errors.js"
 import type { Registry } from "../registry/registry.js"

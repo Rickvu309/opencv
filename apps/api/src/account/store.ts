@@ -1,14 +1,16 @@
 import {
-  ERROR_CODES,
   PROFILE_DEFAULTS,
   PLAN_REQUIRED_MESSAGE,
   isKnownTimeZone,
   planAllowsMode,
+  type ProfileUpdateInput,
+} from "@workspace/domain/account"
+import {
+  ERROR_CODES,
   type Actor,
   type FileId,
-  type ProfileUpdateInput,
   type UserId,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import { eq } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"

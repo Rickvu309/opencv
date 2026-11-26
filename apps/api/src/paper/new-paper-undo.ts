@@ -1,4 +1,4 @@
-import { RICH_NATIVE_WRITER } from "@workspace/domain"
+import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 
 export function deleteNewPaper(paper: { id: string; name: string }) {
   return {

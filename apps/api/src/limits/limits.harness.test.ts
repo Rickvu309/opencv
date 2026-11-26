@@ -1,4 +1,4 @@
-import { LIMITS, SERVICE_MEMORY_BYTES } from "@workspace/domain"
+import { LIMITS, SERVICE_MEMORY_BYTES } from "@workspace/domain/limits"
 import { describe, expect, it } from "vitest"
 
 import { virtualClock } from "./clock.js"

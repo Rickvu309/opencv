@@ -1,4 +1,5 @@
-import { paperPhotoFileId, parseFileId, type UserId } from "@workspace/domain"
+import { parseFileId, type UserId } from "@workspace/domain/kernel"
+import { paperPhotoFileId } from "@workspace/domain/paper-doc"
 import {
   layoutDocumentSchema,
   flowDocumentSchema,

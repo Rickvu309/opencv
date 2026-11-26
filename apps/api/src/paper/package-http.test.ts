@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto"
 
+import { catalog } from "@workspace/domain/kernel"
 import {
-  catalog,
   paperPackageMetadataSchema,
   paperWordReadSchema,
   paperPackageStageSchema,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { expect, it } from "vitest"
 import { eq } from "drizzle-orm"
 import { z } from "zod"

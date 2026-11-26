@@ -1,9 +1,9 @@
+import { ERROR_CODES } from "@workspace/domain/kernel"
 import {
-  ERROR_CODES,
   nativeAdmission,
   type NativeWriter,
   type StoredPaperDocument,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import { CommandError } from "../platform/errors.js"
 

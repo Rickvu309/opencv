@@ -4,7 +4,7 @@ import {
   paperPackageEditResultSchema,
   type PaperCanvasCommit,
   type WordPageLabel,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { and, eq } from "drizzle-orm"
 
 import { getDb, insideTransaction } from "../db/context.js"

@@ -4,7 +4,7 @@ import {
   paperViewSchema,
   type PaperCoachWordPage,
   type PaperView,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import { listPackagePapers } from "./package-list.js"
 

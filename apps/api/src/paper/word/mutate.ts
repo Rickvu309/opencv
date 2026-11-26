@@ -6,7 +6,7 @@ import type {
   WordOp,
   WordReason,
   WordRefusal,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import {
   joinsAt,

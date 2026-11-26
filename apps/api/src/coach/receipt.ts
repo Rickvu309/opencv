@@ -5,7 +5,7 @@ import {
   type ChatToolName,
   type CoachStreamPart,
   type CoachToolResultPart,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
 import type { ExecuteResult } from "../registry/registry.js"
 import type { TurnReceipt } from "../registry/turn-receipts.js"
 import { receiptDetail, reversalOf } from "../registry/receipt.js"

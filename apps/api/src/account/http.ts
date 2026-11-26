@@ -2,11 +2,11 @@ import {
   ERROR_CODES,
   errorEnvelope,
   httpStatusForError,
-  LIMITS,
   parseUserId,
   personActor,
   successEnvelope,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
+import { LIMITS } from "@workspace/domain/limits"
 import { Hono } from "hono"
 
 import { jsonWithStatus } from "../platform/http-json.js"

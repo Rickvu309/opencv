@@ -1,7 +1,7 @@
 import { createRequire } from "node:module"
 import { randomUUID } from "node:crypto"
 
-import { delegateActorSchema, personActor } from "@workspace/domain"
+import { delegateActorSchema, personActor } from "@workspace/domain/kernel"
 import { describe, expect, it } from "vitest"
 
 import { paperRegistry } from "./paper-registry.test-support.js"

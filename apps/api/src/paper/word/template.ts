@@ -1,6 +1,6 @@
 import { createRequire } from "node:module"
 
-import type { PaperTemplateId } from "@workspace/domain"
+import type { PaperTemplateId } from "@workspace/domain/paper-doc"
 
 const canvas = createRequire(import.meta.url)(
   "../../../../../scripts/lib/paper-canvas-bytes.mjs"

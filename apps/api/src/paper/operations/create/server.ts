@@ -1,4 +1,4 @@
-import { catalog, parseJobId } from "@workspace/domain"
+import { catalog, parseJobId } from "@workspace/domain/kernel"
 import { operation } from "@workspace/domain/operations/paper/create"
 import type { OperationBinding } from "../../../registry/bind.js"
 import { deleteNewPaper } from "../../new-paper-undo.js"

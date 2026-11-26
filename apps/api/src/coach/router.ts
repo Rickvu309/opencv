@@ -1,10 +1,10 @@
 import {
-  ERROR_CODES,
   PLAN_REQUIRED_MESSAGE,
   resolveModelRoute,
-  type CoachMode,
   type Plan,
-} from "@workspace/domain"
+} from "@workspace/domain/account"
+import { type CoachMode } from "@workspace/domain/coach"
+import { ERROR_CODES } from "@workspace/domain/kernel"
 import {
   createAnthropicModel,
   completeAnthropic,

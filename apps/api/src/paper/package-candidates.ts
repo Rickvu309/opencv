@@ -6,7 +6,7 @@ import {
   PAPER_PACKAGE_PROJECTOR,
   paperCanvasCommitSchema,
   paperPackageProjectionSchema,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { and, count, eq, inArray, not, sql } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import { z } from "zod"

@@ -1,4 +1,5 @@
-import { catalog, type ChatToolName } from "@workspace/domain"
+import { type ChatToolName } from "@workspace/domain/coach"
+import { catalog } from "@workspace/domain/kernel"
 import { z } from "zod"
 
 import { fakePaperEdit } from "./fake.js"

@@ -1,4 +1,4 @@
-import { coachTaskEventsInputSchema } from "@workspace/domain"
+import { coachTaskEventsInputSchema } from "@workspace/domain/coach"
 import { Hono } from "hono"
 import { streamSSE } from "hono/streaming"
 import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"
