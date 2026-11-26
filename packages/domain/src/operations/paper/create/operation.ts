@@ -6,6 +6,7 @@ import {
   paperStoredKindSchema,
   paperTemplateIdSchema,
 } from "../../../paper-doc/paper.js"
+import { startingLinesSchema } from "../../../paper-doc/paper-canvas.js"
 
 export const operation = defineOperation({
   owner: "paper",
@@ -13,7 +14,7 @@ export const operation = defineOperation({
   version: 2,
   kind: "command",
   description:
-    "Create a CV or Letter. A blank Paper starts as one empty paragraph that opens the full editor. A CV can start from templateId. Pass jobId to link it to a Job.",
+    "Create a CV or Letter. A blank Paper starts as one empty paragraph that opens the full editor. A CV can start from templateId, and a Letter from drafted lines. Pass jobId to link it to a Job.",
   label: "Create a Paper",
   input: z
     .object({
@@ -22,11 +23,16 @@ export const operation = defineOperation({
       name: paperDocNameSchema.optional(),
       jobId: z.string().uuid().optional(),
       templateId: paperTemplateIdSchema.optional(),
+      lines: startingLinesSchema.optional(),
     })
     .strict()
     .refine(
       (input) => input.templateId === undefined || input.kind === "cv",
       "A template starts a CV, not a letter."
+    )
+    .refine(
+      (input) => input.templateId === undefined || input.lines === undefined,
+      "Start from a template or from lines, not both."
     ),
   publicResult: z
     .object({

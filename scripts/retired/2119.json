@@ -1,0 +1,18 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-slow-coach.isolated.test.tsx",
+    "because": "ADR-0008: a drafted Letter is created with paper.create (kind letter, drafted lines) instead of paper.canvas mint; the same assertions now check the paper.create input with the same lines and Job.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "scripts/paper-blank-canvas.test.mjs",
+    "because": "ADR-0008: drafted Letters now start with paper.create (kind letter, rich) instead of paper.canvas mint; the assertion now checks that call.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  }
+]

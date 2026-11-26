@@ -51,7 +51,7 @@ export function LetterStoppedNotice({
 }: {
   docId: string
   pageText: string | null
-  onWritten?: (text: string) => void
+  onWritten?: (text: string) => void | Promise<void>
 }) {
   const record = useSyncExternalStore(
     subscribeStoppedLetter,

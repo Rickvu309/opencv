@@ -32,5 +32,20 @@ describe("paper.create input", () => {
         .success,
       false
     )
+    assert.equal(
+      paperCreateInputSchema.safeParse({
+        kind: "letter",
+        lines: ["Dear hiring team,", "Ana"],
+      }).success,
+      true
+    )
+    assert.equal(
+      paperCreateInputSchema.safeParse({
+        kind: "cv",
+        templateId: "simple",
+        lines: ["Ana"],
+      }).success,
+      false
+    )
   })
 })

@@ -50,7 +50,7 @@ export async function redraftStoppedLetter(input: {
   email?: string
   queryClient: QueryClient
   signal: AbortSignal
-  onWritten?: (text: string) => void
+  onWritten?: (text: string) => void | Promise<void>
   isBlank: () => boolean
 }) {
   if (input.signal.aborted) return
@@ -113,7 +113,7 @@ export async function redraftStoppedLetter(input: {
   if (lines.length === 0) throw new Error(DRAFT_FAILED)
   assertBlank()
   if (input.onWritten) {
-    input.onWritten(text)
+    await input.onWritten(text)
     clearStoppedLetter(input.record.docId)
     return
   }

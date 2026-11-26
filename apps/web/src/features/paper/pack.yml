@@ -15,3 +15,4 @@ public:
   - document-share.tsx
   - design/paper-writing-page.css
   - writing-page.tsx
+  - paper-letter-stopped-rich.tsx

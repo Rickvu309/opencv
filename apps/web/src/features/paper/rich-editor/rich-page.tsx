@@ -31,6 +31,7 @@ import { useRichStatusDetail } from "./rich-status-detail.ts"
 import { mountRichEditorLifecycle } from "./rich-editor-lifecycle.ts"
 import { RichFindBar, type PaperFindMode } from "./rich-find-bar.tsx"
 import { RichDocumentMenu } from "./rich-document-menu.tsx"
+import { RichLetterStopped } from "../paper-letter-stopped-rich.tsx"
 import "./design/rich-page-header.css"
 import "../design/paper-writing-page.css"
 import "./design/rich-desk.css"
@@ -70,6 +71,7 @@ export function RichPaperPage({
   name,
   identity,
   onBack,
+  onOpen,
   kind = "cv",
   editedAt,
 }: {
@@ -78,6 +80,7 @@ export function RichPaperPage({
   editedAt: string
   identity: NativeSyncIdentity
   onBack: () => void
+  onOpen: (docId: string) => void
 }) {
   const [findMode, setFindMode] = useReducer(
     (_: PaperFindMode, mode: PaperFindMode) => mode,
@@ -237,6 +240,14 @@ export function RichPaperPage({
         mode={findMode}
         onModeChange={setFindMode}
       />
+      {kind === "letter" ? (
+        <RichLetterStopped
+          docId={identity.docId}
+          name={name}
+          source={client}
+          onOpen={onOpen}
+        />
+      ) : null}
       {blocked ? (
         <p role="alert" className="p-6 text-sm">
           Paper could not safely open these changes. Your saved document and
