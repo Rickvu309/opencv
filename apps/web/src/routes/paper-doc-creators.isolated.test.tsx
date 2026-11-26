@@ -5,7 +5,7 @@ import { NATIVE_WRITER } from "@workspace/domain"
 
 import { importPaperFile, paperListKey } from "@/features/paper/paper-api.ts"
 import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
-import { catalogClient, runContractCommand } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 import { PaperDocPage } from "@/routes/paper-doc.tsx"
 import {
   fakeServer,
@@ -61,7 +61,7 @@ const CREATORS: Record<string, Creator> = {
     format: word,
     make: async (_server, client) =>
       idOf(
-        await runContractCommand(client, "paper.canvas", {
+        await catalogClient.run(client, "paper.canvas", {
           op: "mint",
           label: "cv",
         })
@@ -71,7 +71,7 @@ const CREATORS: Record<string, Creator> = {
     format: word,
     make: async (_server, client) =>
       idOf(
-        await runContractCommand(client, "paper.canvas", {
+        await catalogClient.run(client, "paper.canvas", {
           op: "mint",
           label: "cv",
           templateId: "modern",
@@ -82,10 +82,10 @@ const CREATORS: Record<string, Creator> = {
     format: word,
     make: async (_server, client) =>
       idOf(
-        await runContractCommand(client, "paper.canvas", {
+        await catalogClient.run(client, "paper.canvas", {
           op: "mint",
           label: "letter",
-          jobId: "66666666-6666-4666-8666-666666666666" as never,
+          jobId: "66666666-6666-4666-8666-666666666666",
         })
       ),
   },
@@ -93,7 +93,7 @@ const CREATORS: Record<string, Creator> = {
     format: word,
     make: async (_server, client) =>
       idOf(
-        await runContractCommand(client, "paper.start", {
+        await catalogClient.run(client, "paper.start", {
           kind: "cv",
           templateId: "modern",
         })

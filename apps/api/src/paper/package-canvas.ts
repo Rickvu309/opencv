@@ -44,13 +44,13 @@ type CanvasResult = ReturnType<typeof paperPackageEditResultSchema.parse>
 
 type CanvasMint = Extract<PaperCanvasCommit, { op: "mint" }>
 
-function mintedName(input: CanvasMint) {
+export function mintedName(input: CanvasMint) {
   if (input.name) return input.name
   if (input.templateId) return templatePageName(input.templateId)
   return BLANK_PAGE_NAMES[input.label]
 }
 
-function mintedBytes(input: CanvasMint) {
+export function mintedBytes(input: CanvasMint) {
   if (input.templateId) return templatePageBytes(input.templateId)
   if (input.lines) return writtenPageBytes(input.lines)
   return loaded.mintBlankBytes()
@@ -116,7 +116,7 @@ type CanvasAhead =
       prepared: Awaited<ReturnType<typeof prepareCanvas>>
     }
 
-function canvasAhead(value: unknown): CanvasAhead {
+export function canvasAhead(value: unknown): CanvasAhead {
   if (
     !value ||
     typeof value !== "object" ||
@@ -127,95 +127,4 @@ function canvasAhead(value: unknown): CanvasAhead {
       "This page change is not available. No document was changed."
     )
   return value as CanvasAhead
-}
-
-export function registerCanvasCommit(
-  registry: Registry,
-  entry: (typeof paperContract)["paper.canvas"]
-) {
-  registry.addCommand(
-    {
-      name: "paper.canvas",
-      description: entry.description,
-      input: entry.input,
-      coach: entry.coach,
-      destructive: entry.destructive,
-      idempotency: "keyed",
-      transaction: "none",
-      prepare: async (input, actor) => {
-        if (input.op === "mint") {
-          if (input.jobId)
-            await registry.read("job.get", { jobId: input.jobId }, actor)
-          const stage = await stageWordPackage(
-            actor.userId,
-            {
-              requestId: randomUUID(),
-              name: mintedName(input),
-              kind: input.label,
-            },
-            mintedBytes(input)
-          )
-          return { op: "mint" as const, stageId: stage.stageId }
-        }
-        return {
-          op: "edit" as const,
-          prepared: await prepareCanvas(actor.userId, input),
-        }
-      },
-      reversal: (input, output: CanvasResult) =>
-        output.restore && input.op === "write"
-          ? {
-              command: "paper.undoWord",
-              input: {
-                doc: output.docId,
-                revision: output.revision,
-                restore: input.batch.basedOn,
-              },
-              expect: {
-                query: "paper.read",
-                input: { docId: output.docId },
-                matches: { revision: output.revision },
-                skipped: WORD_UNDO_MOVED,
-              },
-            }
-          : null,
-      step: entry.step,
-      activity: (_input, output: CanvasResult) => ({
-        subjectKind: "paper",
-        subjectId: output.docId,
-        summary: "Wrote on the page",
-      }),
-    },
-    async (input, actor, ahead) => {
-      const staged = canvasAhead(ahead)
-      if (staged.op === "mint") {
-        const published = await publishWordPackage(
-          actor.userId,
-          staged.stageId,
-          PAPER_CANVAS_PROFILE
-        )
-        if (input.op === "mint" && input.jobId)
-          await registry.execute({
-            name: catalog["job.linkPaper"].name,
-            input: {
-              jobId: input.jobId,
-              docId: published.docId,
-              kind: input.label,
-            },
-            actor,
-          })
-        return resultOf(actor.userId, published.docId, published.revision, null)
-      }
-      const published = await commitWordCandidate(actor.userId, input, {
-        candidate: staged.prepared.candidate,
-        review: staged.prepared.review,
-      })
-      return resultOf(
-        actor.userId,
-        published.docId,
-        published.revision,
-        published.restore
-      )
-    }
-  )
 }

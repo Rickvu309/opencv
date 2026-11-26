@@ -25,14 +25,18 @@ vi.mock("./package-read.ts", async () => {
 
 vi.mock("@/lib/contract-client.ts", async (original) => {
   const { net } = await import("@/test/paper-page-walk-world.ts")
+  const actual = await original<typeof import("@/lib/contract-client.ts")>()
   return {
-    ...(await original<object>()),
-    runContractCommand: (
-      _client: unknown,
-      _name: string,
-      input: unknown,
-      options?: { idempotencyKey?: string }
-    ) => net.send(input, options?.idempotencyKey),
+    ...actual,
+    catalogClient: {
+      ...actual.catalogClient,
+      run: (
+        _client: unknown,
+        _name: string,
+        input: unknown,
+        options?: { idempotencyKey?: string }
+      ) => net.send(input, options?.idempotencyKey),
+    },
   }
 })
 

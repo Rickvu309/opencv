@@ -5,6 +5,7 @@ import { diffParagraphs } from "@/features/paper-page/page-diff.ts"
 import { QueryClient } from "@tanstack/react-query"
 import { subscribeWritingRefresh } from "@/lib/writing-refresh.ts"
 import { loadDraft, storeDraft } from "@/features/paper-page/canvas-edit.ts"
+import { wordPageReceipt } from "@/test/word-page-receipt.ts"
 import {
   blocksForLetterLines,
   redraftStoppedLetter,
@@ -61,11 +62,27 @@ function generatedResponse() {
   )
 }
 
-function generationFetch(page = pageOf(line(HANDLE, ""))) {
+const savedLetter = () =>
+  Response.json({
+    ok: true,
+    data: wordPageReceipt({ docId: DOC, revision: REVISION, kind: "letter" }),
+  })
+
+function canvasCalls(fetcher: ReturnType<typeof vi.fn>) {
+  return fetcher.mock.calls.filter(([url]) =>
+    String(url).includes("/api/commands/paper.canvas")
+  )
+}
+
+function generationFetch(
+  page = pageOf(line(HANDLE, "")),
+  canvas: () => Promise<Response> = async () => savedLetter()
+) {
   const generation = Promise.withResolvers<Response>()
   const started = Promise.withResolvers<void>()
-  const fetcher = vi.fn(async (url: RequestInfo | URL) => {
+  const fetcher = vi.fn(async (url: RequestInfo | URL, _init?: RequestInit) => {
     const path = String(url)
+    if (path.includes("/api/commands/paper.canvas")) return canvas()
     if (path.endsWith("/turns")) {
       started.resolve()
       return generation.promise
@@ -90,14 +107,13 @@ function continuation(onWritten?: (text: string) => void) {
     owner: "person-1",
     queryClient: new QueryClient(),
     signal: new AbortController().signal,
-    run: vi.fn().mockResolvedValue({ id: "unwanted-new-chat" }),
     onWritten,
     isBlank: () => true,
   }
 }
 
 it("preserves words typed into the local draft while Continue is generating", async () => {
-  const { generation, started } = generationFetch()
+  const { generation, started, fetcher } = generationFetch()
   const input = continuation()
   const pending = redraftStoppedLetter(input)
   await started.promise
@@ -113,7 +129,7 @@ it("preserves words typed into the local draft while Continue is generating", as
   generation.resolve(generatedResponse())
   await expect(pending).rejects.toThrow("Your text is unchanged")
   expect(loadDraft(DOC, localStorage)?.blocks[0].text).toBe("My own opening")
-  expect(input.run).not.toHaveBeenCalled()
+  expect(canvasCalls(fetcher)).toEqual([])
 })
 
 it("preserves rich letter words entered during generation", async () => {
@@ -131,13 +147,15 @@ it("preserves rich letter words entered during generation", async () => {
 })
 
 it("refuses to replace saved words found after generation", async () => {
-  const { generation } = generationFetch(pageOf(line(HANDLE, "Saved words")))
+  const { generation, fetcher } = generationFetch(
+    pageOf(line(HANDLE, "Saved words"))
+  )
   generation.resolve(generatedResponse())
   const input = continuation()
   await expect(redraftStoppedLetter(input)).rejects.toThrow(
     "Your text is unchanged"
   )
-  expect(input.run).not.toHaveBeenCalled()
+  expect(canvasCalls(fetcher)).toEqual([])
 })
 
 it("continues in the stopped Chat and writes when the page stays blank", async () => {
@@ -154,22 +172,21 @@ it("continues in the stopped Chat and writes when the page stays blank", async (
   expect(
     fetcher.mock.calls.some(([url]) => String(url).includes("chat.create"))
   ).toBe(false)
-  expect(input.run).not.toHaveBeenCalled()
+  expect(canvasCalls(fetcher)).toEqual([])
   expect(written).toHaveBeenCalledWith("Generated letter")
 })
 
 it.each(["My words typed while save is pending", ""])(
   "preserves a newer local draft %j while the final canvas command is pending",
   async (words) => {
-    const { generation } = generationFetch()
-    generation.resolve(generatedResponse())
-    const command = Promise.withResolvers<object>()
+    const command = Promise.withResolvers<Response>()
     const started = Promise.withResolvers<void>()
-    const input = continuation()
-    input.run.mockImplementation(() => {
+    const { generation } = generationFetch(undefined, () => {
       started.resolve()
       return command.promise
     })
+    generation.resolve(generatedResponse())
+    const input = continuation()
     const refreshed = vi.fn()
     const unsubscribe = subscribeWritingRefresh(refreshed)
     try {
@@ -184,7 +201,7 @@ it.each(["My words typed while save is pending", ""])(
         },
         localStorage
       )
-      command.resolve({})
+      command.resolve(savedLetter())
       await expect(pending).resolves.toBeUndefined()
       expect(loadDraft(DOC, localStorage)?.blocks[0].text).toBe(words)
       expect(refreshed).toHaveBeenCalledTimes(1)
@@ -195,18 +212,18 @@ it.each(["My words typed while save is pending", ""])(
 )
 
 it("refreshes the generated letter when the canvas command finishes on a blank page", async () => {
-  const { generation } = generationFetch()
+  const { generation, fetcher } = generationFetch()
   generation.resolve(generatedResponse())
   const input = continuation()
   const refreshed = vi.fn()
   const unsubscribe = subscribeWritingRefresh(refreshed)
   try {
     await redraftStoppedLetter(input)
-    expect(input.run).toHaveBeenCalledWith(
-      "paper.canvas",
-      expect.objectContaining({ op: "write" }),
-      expect.objectContaining({ signal: input.signal })
-    )
+    const [call] = canvasCalls(fetcher)
+    expect(JSON.parse(String(call?.[1]?.body)).input).toMatchObject({
+      op: "write",
+    })
+    expect(call?.[1]?.signal).toBe(input.signal)
     expect(refreshed).toHaveBeenCalledTimes(1)
   } finally {
     unsubscribe()

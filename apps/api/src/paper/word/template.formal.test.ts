@@ -15,14 +15,11 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { getDb, withDatabase } from "../../db/context.js"
 import { activity, user } from "../../db/schema.js"
-import { bindCatalog } from "../../registry/bind.js"
-import { Registry } from "../../registry/registry.js"
 import {
   openBackend,
   type Backend,
 } from "../../test/registry-formal-support.js"
-import { registerPaper } from "../commands.js"
-import { implementation as readWord } from "../operations/read/server.js"
+import { paperRegistry } from "../paper-registry.test-support.js"
 import { publishWordPackage, stageWordPackage } from "../package-store.js"
 import { apply, exportWord, open, undo } from "./document.js"
 import { templateLines, templatePageName } from "./template.js"
@@ -217,9 +214,7 @@ describe("a CV made from a template", () => {
   it("mints a template page through paper.canvas with its name and a receipt", () =>
     run(async () => {
       const owner = await seed()
-      const registry = new Registry()
-      registerPaper(registry)
-      bindCatalog(registry, { "paper.read": readWord })
+      const registry = paperRegistry()
       const result = await registry.execute({
         name: "paper.canvas",
         input: { op: "mint", label: "cv", templateId: "academic" },

@@ -11,7 +11,6 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { messageOf } from "@/features/paper/paper-library-support.ts"
 import { authClient } from "@/lib/auth-client.ts"
-import { useRunCommand } from "@/lib/contract-client.ts"
 import { isAbortError } from "@/lib/sse.ts"
 
 import { redraftStoppedLetter } from "./paper-letter-continue.ts"
@@ -60,7 +59,6 @@ export function LetterStoppedNotice({
     () => null
   )
   const queryClient = useQueryClient()
-  const run = useRunCommand()
   const session = authClient.useSession()
   const owner = session.data?.user.id ?? ""
   const email = session.data?.user.email
@@ -113,7 +111,6 @@ export function LetterStoppedNotice({
         owner,
         email,
         queryClient,
-        run,
         signal: controller.signal,
         onWritten,
         isBlank: () =>

@@ -5,7 +5,7 @@ import { Button } from "@workspace/ui/components/button"
 
 import { type PaperTemplateId } from "@workspace/domain"
 
-import { catalogClient, useRunCommand } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 
 import {
   PaperTemplateGallery,
@@ -26,14 +26,16 @@ export async function openBlankPage(
 }
 
 export async function openTemplatePage(
-  run: ReturnType<typeof useRunCommand>,
+  queryClient: QueryClient,
   templateId: PaperTemplateId
 ) {
-  const created = await run("paper.canvas", {
+  const created = await catalogClient.run(queryClient, "paper.canvas", {
     op: "mint",
     label: "cv",
     templateId,
   })
+  if ("pending" in created)
+    throw new Error("Could not create this Paper. Try again.")
   return created.docId
 }
 
@@ -74,7 +76,6 @@ export function PaperNewDialog({
   onChooseLetter: () => void
   onImport: () => void
 }) {
-  const run = useRunCommand()
   const queryClient = useQueryClient()
   const [{ pending, error }, dispatch] = useReducer(createReducer, {
     pending: false,
@@ -84,7 +85,7 @@ export function PaperNewDialog({
   async function applyTemplate(templateId: PaperTemplateId) {
     dispatch({ type: "create_started" })
     try {
-      onMinted(await openTemplatePage(run, templateId))
+      onMinted(await openTemplatePage(queryClient, templateId))
     } catch (cause) {
       dispatch({
         type: "create_failed",

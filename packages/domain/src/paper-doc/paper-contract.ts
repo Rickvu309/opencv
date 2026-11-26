@@ -1,10 +1,9 @@
 import { z } from "zod"
 
 import { commandContract, commandEntry } from "../contract.js"
-import { paperIdSchema, parsePaperId } from "../ids.js"
+import { paperIdSchema } from "../ids.js"
 import { nativeBasisSchema, nativeWriterSchema } from "./native.js"
 import { richEditOutputSchema, richTextEditsSchema } from "./paper-rich-edit.js"
-import { paperCanvasCommitSchema } from "./paper-canvas.js"
 import {
   paperPackageEditResultSchema,
   paperPackageEditsSchema,
@@ -55,26 +54,6 @@ export const paperContract = commandContract({
     destructive: false,
     step: () => "Edit the document",
     invalidates: (input) => docChanged(input),
-  }),
-  "paper.canvas": commandEntry({
-    description:
-      "Start a Word page (blank, from a template, or with the person's drafted lines, optionally named and linked to a Job), or save what the person wrote as one batch of line changes.",
-    input: paperCanvasCommitSchema,
-    output: paperPackageEditResultSchema,
-    idempotency: "keyed",
-    coach: "never",
-    destructive: false,
-    step: () => "Write on the page",
-    invalidates: (input) =>
-      input.op === "mint"
-        ? listChanged()
-        : [
-            {
-              query: "paper.outline",
-              input: { docId: parsePaperId(input.batch.doc) },
-            },
-            ...listChanged(),
-          ],
   }),
 })
 

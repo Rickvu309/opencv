@@ -126,7 +126,7 @@ const TOOL_COPY = {
   [catalog["job.setPriority"].name]: { label: "Update this Job's priority" },
   "link.get": { label: "Read this link", read: "Read this link" },
   [catalog["notify.request"].name]: { label: "Set a reminder" },
-  "paper.canvas": { label: "Update your Paper layout" },
+  [catalog["paper.canvas"].name]: { label: "Update your Paper layout" },
   [catalog["paper.create"].name]: { label: "Create a Paper" },
   [catalog["paper.delete"].name]: { label: "Delete this Paper" },
   [catalog["paper.deleteFile"].name]: { label: "Remove this file" },

@@ -10,6 +10,7 @@ import {
   waitFor,
 } from "@testing-library/react"
 
+import { wordPageReceipt } from "@/test/word-page-receipt.ts"
 import { expectNoReadFrom } from "@/test/paper-page-reads.ts"
 import { render } from "@/test/render-with-client.tsx"
 import { storeDraft } from "@/features/paper-page/canvas-edit.ts"
@@ -349,7 +350,12 @@ it("holds Download Word for unsent canvas words even when shared storage claims 
       write.resolve(
         Response.json({
           ok: true,
-          data: exportOf(NEXT),
+          data: wordPageReceipt({
+            docId: DOC,
+            revision: NEXT,
+            name: "Cover letter.docx",
+            kind: "letter",
+          }),
         })
       )
       await write.promise
@@ -445,21 +451,23 @@ function enterWords(text: string) {
 }
 
 it("keeps newer local words and reports the saved Coach draft as a page conflict", async () => {
+  const command = Promise.withResolvers<Response>()
+  const started = Promise.withResolvers<void>()
+  let canvasSends = 0
   vi.stubGlobal("fetch", async (url: RequestInfo | URL) => {
     if (String(url).endsWith("/turns"))
       return new Response(
         `event: text-delta\ndata: ${JSON.stringify({ text: "Generated letter" })}\n\n`
       )
+    if (String(url).includes("/api/commands/paper.canvas")) {
+      canvasSends += 1
+      started.resolve()
+      return command.promise
+    }
     return Response.json({ ok: true, data: readPage("") })
   })
   render(<WritingPage docId={DOC} seed={draft("")} seedRevision={REVISION} />)
   await waitFor(() => expect(words()).toEqual([""]))
-  const command = Promise.withResolvers<object>()
-  const started = Promise.withResolvers<void>()
-  const run = vi.fn(() => {
-    started.resolve()
-    return command.promise
-  })
   const queryClient = new QueryClient()
   try {
     const pending = redraftStoppedLetter({
@@ -471,20 +479,24 @@ it("keeps newer local words and reports the saved Coach draft as a page conflict
       },
       owner: "person-1",
       queryClient,
-      run,
       signal: new AbortController().signal,
       isBlank: () => words().join("") === "",
     })
     await started.promise
     enterWords("My newer opening")
     await act(async () => {
-      command.resolve({})
+      command.resolve(
+        Response.json({
+          ok: true,
+          data: wordPageReceipt({ docId: DOC, revision: NEXT, kind: "letter" }),
+        })
+      )
       await pending
     })
     expect(words()).toEqual(["My newer opening"])
     expect(screen.getByRole("status")).toHaveTextContent(WRITING_CONFLICT_NOTE)
     expect(screen.queryByText(/Coach's draft was not applied/)).toBeNull()
-    expect(run).toHaveBeenCalledOnce()
+    expect(canvasSends).toBe(1)
   } finally {
     queryClient.clear()
   }
