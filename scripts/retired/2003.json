@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/lib/contract-client.test.tsx",
+    "because": "paper.start is an operation pair, so the generic legacy-command cases move to paper.edit and paper.canvas, which were still legacy; the expectations are the same.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
