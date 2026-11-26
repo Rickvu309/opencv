@@ -9,6 +9,7 @@ export const operation = defineOperation({
   kind: "command",
   description:
     "Delete an uploaded file. A photo still used by a CV, the Profile or an Undo cannot be deleted.",
+  label: "Remove this file",
   input: z.object({ fileId: z.string().uuid() }).strict(),
   publicResult: z.object({ fileId: z.string().uuid() }).strip(),
   coach: "never",

@@ -12,6 +12,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Save a job.",
+  label: "Add a Job",
   input: jobCreateInputSchema,
   publicResult: jobResultSchema.extend({ sourceLabel: z.string() }).strip(),
   coach: "auto",

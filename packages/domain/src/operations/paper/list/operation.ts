@@ -13,6 +13,8 @@ export const operation = defineOperation({
   kind: "read",
   description:
     "List documents. A Word page is listed without a document body: read its text with paper_outline.",
+  label: "Look at your Paper",
+  readLabel: "Looked at your Paper",
   input: z
     .object({
       query: z.string().optional(),

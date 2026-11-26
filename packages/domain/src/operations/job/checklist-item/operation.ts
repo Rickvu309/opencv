@@ -9,6 +9,8 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description: "Read one checklist item of a job.",
+  label: "Read a Job checklist item",
+  readLabel: "Read a Job checklist item",
   input: z.object({ jobId: jobIdSchema, itemId: z.string().min(1) }).strict(),
   publicResult: z
     .object({ id: z.string(), label: z.string(), done: z.boolean() })

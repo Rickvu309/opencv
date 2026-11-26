@@ -11,6 +11,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Record that the welcome screen finished.",
+  label: "Finish your welcome",
   input: profileMarkWelcomedInputSchema,
   publicResult: profileSchema,
   coach: "never",

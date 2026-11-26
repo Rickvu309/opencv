@@ -11,6 +11,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Set the profile photo from an uploaded file.",
+  label: "Update your Profile photo",
   input: profileSetPhotoInputSchema,
   publicResult: profileSchema,
   coach: "never",

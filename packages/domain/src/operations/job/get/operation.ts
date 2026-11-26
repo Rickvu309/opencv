@@ -9,6 +9,8 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description: "Read one job.",
+  label: "Read this Job",
+  readLabel: "Read this Job",
   input: z.object({ jobId: jobIdSchema }).strict(),
   publicResult: jobDetailSchema,
   coach: "auto",

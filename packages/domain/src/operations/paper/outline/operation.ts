@@ -13,6 +13,8 @@ export const operation = defineOperation({
   kind: "read",
   description:
     "Read a bounded outline of a document with block ids, kinds, section titles, heading levels, marks and links, and the revision to pass as basedOn. Pass blockIds to mark selected blocks. For native version 4 Letters, declare writer documentVersion 4, writerProtocol 1, supportedSchemaRevisions [1], capabilities structured-prose and underline; copy the returned nativeBasis unchanged into paper.edit. If truncated, pass nextCursor as cursor to read the next Word part at the same saved revision.",
+  label: "Read your Paper outline",
+  readLabel: "Read your Paper outline",
   input: z
     .object({
       docId: z.string().uuid(),

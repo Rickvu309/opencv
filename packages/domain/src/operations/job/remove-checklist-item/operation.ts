@@ -12,6 +12,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Remove a checklist item.",
+  label: "Remove a Job checklist item",
   input: jobRemoveChecklistItemInputSchema,
   publicResult: z.object({ id: z.string(), jobId: idResult<JobId>() }).strict(),
   coach: "auto",

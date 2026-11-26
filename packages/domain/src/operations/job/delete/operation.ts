@@ -9,6 +9,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Delete a job.",
+  label: "Delete this Job",
   input: jobDeleteInputSchema,
   publicResult: z.object({ id: idResult<JobId>() }).strict(),
   coach: "confirm",

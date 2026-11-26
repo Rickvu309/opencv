@@ -15,6 +15,7 @@ export const operation = defineOperation({
   kind: "command",
   description:
     "Exchange the rich editor's admitted changes for a CV or Letter with an explicit writer and provenance. An empty update reads the saved document.",
+  label: "Save your Paper",
   input: paperSyncInputSchema
     .omit({ docId: true })
     .extend({

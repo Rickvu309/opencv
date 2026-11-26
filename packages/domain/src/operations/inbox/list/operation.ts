@@ -11,6 +11,8 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description: "List email threads.",
+  label: "Look at your Inbox",
+  readLabel: "Looked at your Inbox",
   input: emptyInboxInput,
   publicResult: inboxListSchema,
   coach: "never",

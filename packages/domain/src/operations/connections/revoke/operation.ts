@@ -9,6 +9,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Revoke an agent connection immediately.",
+  label: "Disconnect your account",
   input: z.object({ connectionId: connectionIdSchema }).strict(),
   publicResult: z.object({ revoked: z.literal(true) }).strict(),
   coach: "never",

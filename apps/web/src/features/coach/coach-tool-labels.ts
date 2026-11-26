@@ -3,140 +3,14 @@ import { catalog } from "@workspace/domain/kernel"
 
 type ToolCopy = { label: string; read?: string }
 
-const TOOL_COPY = {
-  [catalog["connections.list"].name]: {
-    label: "Look at your connections",
-    read: "Looked at your connections",
-  },
-  [catalog["connections.revoke"].name]: { label: "Disconnect your account" },
-  [catalog["file.get"].name]: {
-    label: "Read your file",
-    read: "Read your file",
-  },
-  [catalog["inbox.acceptSuggestion"].name]: { label: "Accept this suggestion" },
-  [catalog["inbox.addToCalendar"].name]: {
-    label: "Add this event to your calendar",
-  },
-  [catalog["inbox.clearSuggestion"].name]: { label: "Clear this suggestion" },
-  [catalog["inbox.draftReply"].name]: { label: "Draft a reply" },
-  [catalog["inbox.get"].name]: {
-    label: "Read this message",
-    read: "Read this message",
-  },
-  [catalog["inbox.list"].name]: {
-    label: "Look at your Inbox",
-    read: "Looked at your Inbox",
-  },
-  [catalog["inbox.markDone"].name]: { label: "Mark this message done" },
-  [catalog["inbox.scan"].name]: { label: "Check your Inbox" },
-  [catalog["inbox.send"].name]: { label: "Send your reply" },
-  [catalog["inbox.skip"].name]: { label: "Skip this message" },
-  [catalog["inbox.snooze"].name]: { label: "Snooze this message" },
-  [catalog["inbox.snoozed"].name]: {
-    label: "Look at snoozed messages",
-    read: "Looked at snoozed messages",
-  },
-  [catalog["inbox.updateDraft"].name]: { label: "Update your draft" },
-  [catalog["integrations.list"].name]: {
-    label: "Look at your integrations",
-    read: "Looked at your integrations",
-  },
-  [catalog["job.addChecklistItem"].name]: {
-    label: "Add a Job checklist item",
-  },
-  [catalog["job.checklistItem"].name]: {
-    label: "Read a Job checklist item",
-    read: "Read a Job checklist item",
-  },
-  [catalog["job.addNote"].name]: { label: "Add a Job note" },
-  [catalog["job.calendar"].name]: {
-    label: "Look at your Job events",
-    read: "Looked at your Job events",
-  },
-  [catalog["job.create"].name]: { label: "Add a Job" },
-  [catalog["job.delete"].name]: { label: "Delete this Job" },
-  [catalog["job.get"].name]: { label: "Read this Job", read: "Read this Job" },
-  [catalog["job.linkPaper"].name]: { label: "Link Paper to this Job" },
-  [catalog["job.list"].name]: {
-    label: "Look at your Jobs",
-    read: "Looked at your Jobs",
-  },
-  [catalog["job.move"].name]: { label: "Move this Job" },
-  [catalog["job.preview"].name]: {
-    label: "Preview this Job",
-    read: "Previewed this Job",
-  },
-  [catalog["job.removeChecklistItem"].name]: {
-    label: "Remove a Job checklist item",
-  },
-  [catalog["job.setChecklistItem"].name]: {
-    label: "Update a Job checklist item",
-  },
-  [catalog["job.star"].name]: { label: "Update this Job's star" },
-  [catalog["job.unlinkPaper"].name]: { label: "Unlink Paper from this Job" },
-  [catalog["job.update"].name]: { label: "Update this Job" },
-  [catalog["job.priorityCounts"].name]: {
-    label: "Look at your Job priorities",
-    read: "Looked at your Job priorities",
-  },
-  [catalog["job.setPriority"].name]: { label: "Update this Job's priority" },
-  [catalog["link.get"].name]: {
-    label: "Read this link",
-    read: "Read this link",
-  },
-  [catalog["notify.request"].name]: { label: "Set a reminder" },
-  [catalog["paper.canvas"].name]: { label: "Update your Paper layout" },
-  [catalog["paper.create"].name]: { label: "Create a Paper" },
-  [catalog["paper.delete"].name]: { label: "Delete this Paper" },
-  [catalog["paper.deleteFile"].name]: { label: "Remove this file" },
-  [catalog["paper.duplicate"].name]: { label: "Duplicate this Paper" },
-  [catalog["paper.edit"].name]: { label: "Edit your Paper" },
-  [catalog["paper.export"].name]: { label: "Download your Paper as Word" },
-  [catalog["paper.import"].name]: { label: "Import your Paper" },
-  [catalog["paper.files"].name]: {
-    label: "Look at your Paper files",
-    read: "Looked at your Paper files",
-  },
-  [catalog["paper.list"].name]: {
-    label: "Look at your Paper",
-    read: "Looked at your Paper",
-  },
-  [catalog["paper.outline"].name]: {
-    label: "Read your Paper outline",
-    read: "Read your Paper outline",
-  },
-  [catalog["paper.read"].name]: {
-    label: "Read your Paper",
-    read: "Read your Paper",
-  },
-  [catalog["paper.recover"].name]: { label: "Bring back your Paper" },
-  [catalog["paper.update"].name]: { label: "Update your Paper" },
-  [catalog["paper.start"].name]: { label: "Start a CV or Letter in Paper" },
-  [catalog["paper.save"].name]: { label: "Save your Paper" },
-  [catalog["profile.get"].name]: {
-    label: "Read your Profile",
-    read: "Read your Profile",
-  },
-  [catalog["profile.markWelcomed"].name]: { label: "Finish your welcome" },
-  [catalog["profile.setPhoto"].name]: { label: "Update your Profile photo" },
-  [catalog["profile.update"].name]: { label: "Update your Profile" },
-  [catalog["workspace.search"].name]: {
-    label: "Search your workspace",
-    read: "Searched your workspace",
-  },
-} satisfies Partial<Record<ChatToolName, ToolCopy>>
-
-const tableCopy: Partial<Record<ChatToolName, ToolCopy>> = TOOL_COPY
-
 function declaredCopy(name: ChatToolName): ToolCopy {
   const operation = (
     catalog as Record<string, { label?: string; readLabel?: string }>
   )[name]
-  const fromTable = tableCopy[name]
-  const label = operation?.label ?? fromTable?.label
-  if (!label) throw new Error(`${name} has no Coach label`)
-  const read = operation?.readLabel ?? fromTable?.read
-  return read ? { label, read } : { label }
+  if (!operation?.label) throw new Error(`${name} has no Coach label`)
+  return operation.readLabel
+    ? { label: operation.label, read: operation.readLabel }
+    : { label: operation.label }
 }
 
 const toolCopy = Object.fromEntries(

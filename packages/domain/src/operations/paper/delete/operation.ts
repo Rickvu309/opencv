@@ -9,6 +9,7 @@ export const operation = defineOperation({
   kind: "command",
   description:
     "Delete a CV or Letter. The person approves it first. A deleted Word page stays in the trash and Undo brings it back; a rich Paper is deleted for good.",
+  label: "Delete this Paper",
   input: z.object({ docId: z.string().uuid() }).strict(),
   publicResult: z
     .object({

@@ -12,6 +12,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Mark an email done.",
+  label: "Mark this message done",
   input: z
     .object({
       threadId: threadIdSchema,

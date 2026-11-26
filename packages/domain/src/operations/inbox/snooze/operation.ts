@@ -8,6 +8,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Snooze an email until a time.",
+  label: "Snooze this message",
   input: z
     .object({
       threadId: threadIdSchema,
