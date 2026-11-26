@@ -1,4 +1,4 @@
-import { type PaperId, type UserId } from "@workspace/domain"
+import { type PaperId, type UserId } from "@workspace/domain/kernel"
 
 import { packageFailure } from "./package-pages.js"
 import { missingDocument, ownedPackageOutline } from "./package-list.js"
