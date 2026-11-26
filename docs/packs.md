@@ -19,6 +19,7 @@ flowchart TD
     p_apps_api_src_inbox["apps/api/src/inbox"]
     p_apps_api_src_job["apps/api/src/job"]
     p_apps_api_src_paper["apps/api/src/paper"]
+    p_apps_api_src_paper_import["apps/api/src/paper/import"]
     p_apps_api_src_paper_native_output["apps/api/src/paper/native-output"]
     p_apps_api_src_paper_word_package["apps/api/src/paper/word-package"]
     p_apps_web_src_features_apply["apps/web/src/features/apply"]
@@ -100,12 +101,15 @@ flowchart TD
   p_apps_api_src_job --> p_apps_api_src_db
   p_apps_api_src_job --> p_apps_api_src_limits
   p_apps_api_src_job --> p_apps_api_src_platform
+  p_apps_api_src_paper --> p_apps_api_src_paper_import
   p_apps_api_src_paper --> p_apps_api_src_paper_native_output
   p_apps_api_src_paper --> p_apps_api_src_paper_word_package
   p_apps_api_src_paper --> p_apps_api_src_registry
   p_apps_api_src_paper --> p_apps_api_src_db
   p_apps_api_src_paper --> p_apps_api_src_limits
   p_apps_api_src_paper --> p_apps_api_src_platform
+  p_apps_api_src_paper_import --> p_apps_api_src_paper_word_package
+  p_apps_api_src_paper_import --> p_apps_api_src_platform
   p_apps_api_src_paper_word_package --> p_apps_api_src_registry
   p_apps_api_src_paper_word_package --> p_apps_api_src_db
   p_apps_api_src_paper_word_package --> p_apps_api_src_platform
@@ -193,7 +197,8 @@ flowchart TD
 | `apps/api/src/job` | feature | index.ts, operations | apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/limits` | platform | index.ts | none | none |
 | `apps/api/src/mail` | platform | none | none | none |
-| `apps/api/src/paper` | feature | index.ts, operations | apps/api/src/paper/native-output, apps/api/src/paper/word-package, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
+| `apps/api/src/paper` | feature | index.ts, operations | apps/api/src/paper/import, apps/api/src/paper/native-output, apps/api/src/paper/word-package, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
+| `apps/api/src/paper/import` | feature | import-parse.ts, import-text-pool.ts, import-word.ts | apps/api/src/paper/word-package, apps/api/src/platform | none |
 | `apps/api/src/paper/native-output` | feature | formatted.ts, formatted-photos.ts | none | none |
 | `apps/api/src/paper/word-package` | feature | package-candidates.ts, package-canvas.ts, package-card-actions.ts, package-edit.ts, package-errors.ts, package-http.ts, package-list.ts, package-pages.ts, package-start.ts, package-store.ts, word-reading.ts, word/document.ts, word/template.ts | apps/api/src/registry, apps/api/src/db, apps/api/src/platform | none |
 | `apps/api/src/platform` | platform | none | none | none |

@@ -4,13 +4,13 @@ import { Worker } from "node:worker_threads"
 import { eq } from "drizzle-orm"
 import { afterAll, afterEach, beforeAll, describe, expect, it } from "vitest"
 
-import { paperPackageHeads, user } from "../db/schema.js"
+import { paperPackageHeads, user } from "../../db/schema.js"
 import {
   createMigratedTestDb,
   createTestApp,
   signUp,
   testWebOrigin,
-} from "../test/harness.js"
+} from "../../test/harness.js"
 import { textPdf } from "./import-fixtures.test.js"
 import { fanOutPdf } from "./import-hostile-fixtures.test.js"
 import { IMPORT_READ_LIMITS } from "./import-limits.js"

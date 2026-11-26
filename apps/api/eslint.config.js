@@ -19,7 +19,7 @@ export default defineConfig([
       "src/limits/**",
       "src/auth-email-limit.ts",
       "src/paper/http.ts",
-      "src/paper/import-parse.ts",
+      "src/paper/import/import-parse.ts",
       "src/app.ts",
       "src/coach/worker.ts",
     ],

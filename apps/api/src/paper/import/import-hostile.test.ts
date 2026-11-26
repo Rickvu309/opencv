@@ -2,13 +2,13 @@ import { randomUUID } from "node:crypto"
 
 import { describe, expect, it } from "vitest"
 
-import { files, paperPackageHeads } from "../db/schema.js"
+import { files, paperPackageHeads } from "../../db/schema.js"
 import {
   createMigratedTestDb,
   createTestApp,
   signUp,
   testWebOrigin,
-} from "../test/harness.js"
+} from "../../test/harness.js"
 import { textPdf } from "./import-fixtures.test.js"
 import {
   declaredPagesPdf,
@@ -28,7 +28,7 @@ import {
   importParsers,
 } from "./import-parse.js"
 import { importedWordPage } from "./import-word.js"
-import { readPackageZip } from "./word-package/package-zip.js"
+import { readPackageZip } from "../word-package/package-zip.js"
 import { IMPORT_LINE_BYTES, importedTextLines } from "./import-text-lines.js"
 
 const BOUNDS = { ms: 5_000, loopGapMs: 200, rssGrowthMb: 320 }

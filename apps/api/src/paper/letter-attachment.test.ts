@@ -9,9 +9,9 @@ import {
   signUp,
   testWebOrigin,
 } from "../test/harness.js"
-import { textDocx, textPdf } from "./import-fixtures.test.js"
-import { IMPORT_READ_LIMITS } from "./import-limits.js"
-import { importParsers } from "./import-parse.js"
+import { textDocx, textPdf } from "./import/import-fixtures.test.js"
+import { IMPORT_READ_LIMITS } from "./import/import-limits.js"
+import { importParsers } from "./import/import-parse.js"
 
 const WORD =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
