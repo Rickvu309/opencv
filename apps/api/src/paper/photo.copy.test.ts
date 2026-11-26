@@ -12,7 +12,7 @@ import {
 } from "../test/harness.js"
 import { richEditorHeaders } from "../test/paper-live-pages.js"
 import { richPaper } from "../test/rich-paper.js"
-import { seedColumns } from "./content-document.js"
+import { seedColumns } from "./content/content-document.js"
 import { png, postAvatar } from "./photo.fixtures.js"
 
 describe("Copied CV photo lifetime", () => {

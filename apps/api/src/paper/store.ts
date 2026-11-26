@@ -22,7 +22,7 @@ import { getDb, insideTransaction } from "../db/context.js"
 import { files, paperDocs } from "../db/schema.js"
 import { createId } from "../platform/id.js"
 import { CommandError } from "../platform/errors.js"
-import { admitDocument } from "./native-admission.js"
+import { admitDocument } from "./content/native-admission.js"
 import { listPackagePapers } from "./word-package/package-list.js"
 import {
   deleteWordPage,
@@ -39,7 +39,7 @@ import {
   mediaTypeForImport,
 } from "./import/import-parse.js"
 
-import { seedColumns } from "./content-store.js"
+import { seedColumns } from "./content/content-store.js"
 import {
   dropServerReleasedPhoto,
   referencedPhotoFileIds,
@@ -49,7 +49,7 @@ import {
   needsRichEditor,
   toListedPaper,
   tryReadRichPaper,
-} from "./read-paper.js"
+} from "./content/read-paper.js"
 import { readPaperDocumentInfo } from "./document-info.js"
 
 export const IMPORT_FILE_CAP = 8_000_000

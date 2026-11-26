@@ -4,7 +4,7 @@ import type {
   PaperDocument,
 } from "@workspace/domain/paper-doc"
 import type { PaperYDoc } from "@workspace/paper-crdt"
-import type { paperDocs } from "../db/schema.js"
+import type { paperDocs } from "../../db/schema.js"
 
 export type PaperRow = typeof paperDocs.$inferSelect
 

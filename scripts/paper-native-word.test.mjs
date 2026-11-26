@@ -5,7 +5,7 @@ import { detect } from "./lib/paper-native-word.mjs"
 import { detect as presentation } from "./lib/paper-presentation.mjs"
 
 const service = "apps/api/src/paper/native-word.ts"
-const qualified = `import { withRichSnapshot } from "./content-store.js"
+const qualified = `import { withRichSnapshot } from "./content/content-store.js"
 import { compileOwnedFlowNativeDocx } from "./owned-word-output.js"
 export function downloadNativeWord(userId, input) {
   return withRichSnapshot(userId, input, async snapshot => compileOwnedFlowNativeDocx({userId, document: snapshot.document}))
@@ -17,7 +17,7 @@ test("only canonical snapshot qualification admits rich Word compiler activation
   for (const mistake of [
     qualified.replace("withRichSnapshot(userId, input,", "transaction("),
     qualified.replace("snapshot.document", "input.document"),
-    qualified.replace('"./content-store.js"', '"./unqualified.js"'),
+    qualified.replace('"./content/content-store.js"', '"./unqualified.js"'),
     qualified.replace(
       "return withRichSnapshot",
       "compileOwnedFlowNativeDocx(input); return withRichSnapshot"
@@ -37,7 +37,7 @@ test("saved Word, photo reads and CV portrait admission retain their boundary gu
       ".map(node => node)",
     ],
     [
-      "apps/api/src/paper/content-store.ts",
+      "apps/api/src/paper/content/content-store.ts",
       "return ownedTaskTransaction(async () =>",
       "return transaction(async () =>",
     ],

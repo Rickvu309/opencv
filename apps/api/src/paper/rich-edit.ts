@@ -21,8 +21,8 @@ import { z } from "zod"
 
 import { CommandError } from "../platform/errors.js"
 import type { Registry } from "../registry/registry.js"
-import { rewriteRichContent } from "./content-store.js"
-import { admitDocument } from "./native-admission.js"
+import { rewriteRichContent } from "./content/content-store.js"
+import { admitDocument } from "./content/native-admission.js"
 import { richBasis } from "./rich-outline.js"
 
 function conflict(message: string): never {

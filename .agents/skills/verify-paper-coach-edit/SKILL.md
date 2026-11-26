@@ -24,7 +24,7 @@ These are the five rules of `CoachPaper.tla`. Do not weaken a rule to clear a fi
 The Paper reading below is the legacy v3 numeric-edit projection. `paper.edit` takes this Yjs branch only when `basedOn` is a number (`select` in `apps/api/src/paper/word-package/package-edit.ts`). Word pages send a revision string and take the reviewed branch; `verify-paper-word` covers that. The MCP Job reading at the end is live.
 
 - `apps/api/src/paper/content-coach.ts` exports `editAsCoach`, `stalePaperBasis`, and `revertCoachEdit`. `stalePaperBasis` returns `refuse` when `basedOn` is not the current revision, and `apply` when it matches. `editAsCoach` calls it only for a coach actor, and throws before any write. Switching that return from `refuse` to `apply` is the one-line change to a clean merge. The replay and the guard `paper-coach-basis` both require `refuse`.
-- `apps/api/src/paper/content-store.ts` exports `coachBasisOk`, `withContent`, and `syncContent`. `coachBasisOk` still allows an older basis for a legacy person edit. Native numeric edits additionally require a qualified writer and an exact canonical native basis for every actor before hydration or mutation. Do not use it as the coach approval rule. `syncContent` is the person write that raises the revision.
+- `apps/api/src/paper/content/content-store.ts` exports `coachBasisOk`, `withContent`, and `syncContent`. `coachBasisOk` still allows an older basis for a legacy person edit. Native numeric edits additionally require a qualified writer and an exact canonical native basis for every actor before hydration or mutation. Do not use it as the coach approval rule. `syncContent` is the person write that raises the revision.
 - `apps/api/src/registry/proposals.ts` exports `createProposal` and `lockProposal`. `createProposal` inserts a pending row and does not write the document. The basis read and the write stay one lock inside the approval transaction.
 - `apps/api/src/registry/registry.ts` holds `execute`, `approve`, `undo`, and `tools` as methods. They are not separate exports, so the coverage map cannot name them. A coach actor whose policy is `confirm` calls `createProposal` and does not run the effect. `approve` returns the saved activity when that proposal is already approved. That return is the retry. A throw inside the effect rolls the bytes back and leaves the proposal pending. `undo` runs the reversal as the person.
 - `apps/api/src/registry/coach-policy.ts` exports `coachRefusal`. `tools` and `execute` consult it. A refusal omits the command from the coach tools and rejects a coach execute with `COACH_NOT_ALLOWED`.
@@ -35,7 +35,7 @@ The Paper reading below is the legacy v3 numeric-edit projection. `paper.edit` t
 `apps/api/src/paper/CoachPaper.tla.json` maps each model action to one export of `content-coach.ts`. Null means the action is implemented outside that file.
 
 - `Propose` is null. The function is `createProposal` in `apps/api/src/registry/proposals.ts`.
-- `PersonTypes` is null. The function is `syncContent` in `apps/api/src/paper/content-store.ts`.
+- `PersonTypes` is null. The function is `syncContent` in `apps/api/src/paper/content/content-store.ts`.
 - `Approve` is `editAsCoach`. It calls `stalePaperBasis` and then writes.
 - `RetryApproval` is null. The path is the early return in `Registry.approve` when the status is already approved.
 - `PersonUndo` is `revertCoachEdit`.

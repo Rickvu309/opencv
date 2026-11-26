@@ -112,7 +112,7 @@ test("Paper mutations detach cached heads and publish only after the outer commi
   assert.deepEqual(detectRollback(clean), [])
   assert.deepEqual(detect("export const unrelated = true"), [])
   const source = readFileSync(
-    new URL("../apps/api/src/paper/content-store.ts", import.meta.url),
+    new URL("../apps/api/src/paper/content/content-store.ts", import.meta.url),
     "utf8"
   )
   assert.deepEqual(detect(source), [])

@@ -5,8 +5,8 @@ import {
 import { loadYDoc, updateSince } from "@workspace/paper-crdt"
 import { and, asc, eq, lt } from "drizzle-orm"
 
-import { getDb } from "../db/context.js"
-import { paperDocUpdates, paperDocs } from "../db/schema.js"
+import { getDb } from "../../db/context.js"
+import { paperDocUpdates, paperDocs } from "../../db/schema.js"
 
 export const COMPACT_EVERY_SEQ = 64
 export const COACH_UNDO_WINDOW_MS = 30 * 24 * 60 * 60 * 1000

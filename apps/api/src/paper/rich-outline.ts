@@ -8,7 +8,7 @@ import {
 } from "@workspace/domain/paper-doc"
 
 import { paperDocs } from "../db/schema.js"
-import { readRichPaper } from "./read-paper.js"
+import { readRichPaper } from "./content/read-paper.js"
 
 type PaperRow = typeof paperDocs.$inferSelect
 

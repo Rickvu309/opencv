@@ -11,8 +11,8 @@ import {
   type NativeWriter,
 } from "@workspace/domain/paper-doc"
 
-import { paperDocs } from "../db/schema.js"
-import { CommandError } from "../platform/errors.js"
+import { paperDocs } from "../../db/schema.js"
+import { CommandError } from "../../platform/errors.js"
 import { admitDocument } from "./native-admission.js"
 
 type PaperRow = typeof paperDocs.$inferSelect

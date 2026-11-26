@@ -12,7 +12,7 @@ import {
   testWebOrigin,
 } from "../test/harness.js"
 import { richPaper } from "../test/rich-paper.js"
-import { seedColumns } from "./content-document.js"
+import { seedColumns } from "./content/content-document.js"
 
 const png = Uint8Array.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
 const idResponse = z.object({ data: z.object({ id: z.string() }) })

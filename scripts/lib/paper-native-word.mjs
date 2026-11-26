@@ -45,7 +45,7 @@ export function qualifiedNativeWord(text, path) {
     source.statements.some(
       (node) =>
         ts.isImportDeclaration(node) &&
-        node.moduleSpecifier.text === "./content-store.js" &&
+        node.moduleSpecifier.text === "./content/content-store.js" &&
         node.importClause?.namedBindings &&
         ts.isNamedImports(node.importClause.namedBindings) &&
         node.importClause.namedBindings.elements.some(
@@ -183,7 +183,7 @@ export function detect(text, path) {
     hits.push(
       "Rich Word compilation must remain inside the exact owned snapshot"
     )
-  if (path === "apps/api/src/paper/content-store.ts") {
+  if (path.endsWith("/content-store.ts")) {
     const snapshot = body(source, "withRichSnapshot")
     if (
       snapshot &&

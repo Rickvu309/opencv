@@ -2,7 +2,7 @@ import { ERROR_CODES, parsePaperId } from "@workspace/domain/kernel"
 import { operation } from "@workspace/domain/operations/paper/save"
 import { CommandError } from "../../../platform/errors.js"
 import type { OperationBinding } from "../../../registry/bind.js"
-import { syncContent } from "../../content-store.js"
+import { syncContent } from "../../content/content-store.js"
 
 function bytesOf(encoded: string) {
   return new Uint8Array(Buffer.from(encoded, "base64"))

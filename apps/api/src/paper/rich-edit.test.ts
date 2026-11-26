@@ -13,7 +13,7 @@ import { installRegistry } from "../install.js"
 import { seedCoachActor } from "../test/coach-turn.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { richPaper } from "../test/rich-paper.js"
-import { seedColumns } from "./content-document.js"
+import { seedColumns } from "./content/content-document.js"
 import { saveFile } from "./index.js"
 import { png } from "./photo.fixtures.js"
 

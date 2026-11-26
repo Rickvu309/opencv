@@ -15,7 +15,7 @@ import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 
 import { paperDocs } from "../db/schema.js"
-import { seedColumns } from "../paper/content-document.js"
+import { seedColumns } from "../paper/content/content-document.js"
 import { saveFile } from "../paper/index.js"
 import { png } from "../paper/photo.fixtures.js"
 import { bytesOf, encoded } from "../test/paper-content.js"
