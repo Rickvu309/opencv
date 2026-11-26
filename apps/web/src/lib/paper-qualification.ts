@@ -1,4 +1,4 @@
-import { z } from "@workspace/domain/kernel"
+import { catalog, z } from "@workspace/domain/kernel"
 import {
   NATIVE_WRITER,
   nativeWriterSchema,
@@ -12,8 +12,7 @@ import {
   type PaperView,
 } from "@workspace/domain/paper-doc"
 
-import { apiFetch } from "./api.ts"
-import { unwrapData, type SuccessBody } from "./api-envelope.ts"
+import { catalogClient } from "./contract-client.ts"
 import { readPaperList } from "./paper-list.ts"
 
 export type PaperQualification = {
@@ -76,24 +75,25 @@ export function qualifiedPaperRead(
 ): Promise<PaperView[]>
 export async function qualifiedPaperRead(
   name: "paper.read",
-  path: string,
+  docId: string,
   options: PaperQualification
 ): Promise<ReturnType<typeof paperDocumentInfoSchema.parse>>
 export async function qualifiedPaperRead(
   name: QualifiedRead,
-  path: string,
+  docId: string,
   options: PaperQualification
 ) {
   const writer = paperWriter(options)
   qualifiedPaperKey([name], options)
   options.signal?.throwIfAborted()
   if (name === "paper.read") {
-    const payload = await apiFetch<SuccessBody<unknown>>(path, {
-      headers: { "x-paper-writer": JSON.stringify(writer) },
-      signal: options.signal,
-    })
+    const payload = await catalogClient.read(
+      catalog["paper.read"].name,
+      { view: "info", docId, writer },
+      options.signal ? { signal: options.signal } : {}
+    )
     options.signal?.throwIfAborted()
-    const info = paperDocumentInfoSchema.parse(unwrapData(payload))
+    const info = paperDocumentInfoSchema.parse(payload)
     options.signal?.throwIfAborted()
     return info
   }

@@ -159,12 +159,11 @@ it("saves and reopens rich CVs and Letters over authenticated HTTP without legac
         ).toBe(false)
       }
       try {
-        const info = await fetch(`${origin}/api/paper/${docId}/document`, {
-          headers: {
-            Cookie: cookie,
-            "x-paper-writer": JSON.stringify(RICH_NATIVE_WRITER),
-          },
-        })
+        const info = await post(
+          "/api/reads/paper.read",
+          { view: "info", docId, writer: RICH_NATIVE_WRITER },
+          cookie
+        )
         expect(info.status).toBe(200)
         expect(paperDocumentInfoSchema.parse(await responseData(info))).toEqual(
           {
@@ -178,16 +177,21 @@ it("saves and reopens rich CVs and Letters over authenticated HTTP without legac
         )
         expect(
           (
-            await fetch(`${origin}/api/paper/${docId}/document`, {
-              headers: {
-                Cookie: cookie,
-                "x-paper-writer": JSON.stringify(NATIVE_WRITER),
-              },
-            })
+            await post(
+              "/api/reads/paper.read",
+              { view: "info", docId, writer: NATIVE_WRITER },
+              cookie
+            )
           ).status
         ).toBe(409)
         expect(
-          (await fetch(`${origin}/api/paper/${docId}/document`)).status
+          (
+            await post(
+              "/api/reads/paper.read",
+              { view: "info", docId, writer: RICH_NATIVE_WRITER },
+              ""
+            )
+          ).status
         ).toBe(401)
         const pull = client.prepare()
         expect((await command(wire(pull), "")).status).toBe(401)

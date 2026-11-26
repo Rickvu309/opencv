@@ -10,8 +10,6 @@ import {
 } from "@workspace/domain/kernel"
 import {
   paperImportResponseSchema,
-  nativeWriterSchema,
-  type NativeWriter,
   paperPackageStageInputSchema,
 } from "@workspace/domain/paper-doc"
 import { type Context, Hono } from "hono"
@@ -39,19 +37,6 @@ import {
   readOwnedPhoto,
   saveFile,
 } from "./store.js"
-
-function readWriter(c: Context): NativeWriter | undefined {
-  const raw = c.req.header("x-paper-writer")
-  if (raw === undefined) return undefined
-  try {
-    return nativeWriterSchema.parse(JSON.parse(raw))
-  } catch {
-    throw new CommandError(
-      ERROR_CODES.VALIDATION_ERROR,
-      "This editor's document capabilities could not be read."
-    )
-  }
-}
 
 function person(userId: string) {
   return personActor(userId)
@@ -358,16 +343,6 @@ export function createPaperRoutes(signedIn: SignedIn) {
       fileIdOrMissing(c.req.param("id"))
     )
     return photoBytes(photo, "private, no-store")
-  })
-
-  routes.get("/:id/document", async (c) => {
-    const data = await registry.read(
-      catalog["paper.read"].name,
-      { view: "info", docId: c.req.param("id"), writer: readWriter(c) },
-      person(c.var.userId)
-    )
-    c.header("Cache-Control", "private, no-store")
-    return c.json(successEnvelope(data))
   })
 
   return routes

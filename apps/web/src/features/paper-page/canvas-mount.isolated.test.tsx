@@ -6,6 +6,13 @@ import { cleanup, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
 import { PaperDocPage } from "@/routes/paper-doc.tsx"
 
+function infoRead(url: string, init?: RequestInit) {
+  return (
+    url.endsWith("/api/reads/paper.read") &&
+    String(init?.body ?? "").includes('"view":"info"')
+  )
+}
+
 const route = vi.hoisted(() => ({
   pathname: "/paper/11111111-1111-7111-8111-111111111111",
 }))
@@ -62,12 +69,12 @@ function json(data: unknown) {
 }
 
 function stubWordPage() {
-  vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+  vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input)
     if (url.endsWith("/api/reads/paper.list")) {
       return json([wordPageListed])
     }
-    if (url.endsWith(`/api/paper/${WORD_PAGE}/document`)) {
+    if (infoRead(url, init)) {
       return json({
         id: WORD_PAGE,
         name: "Cover letter.docx",

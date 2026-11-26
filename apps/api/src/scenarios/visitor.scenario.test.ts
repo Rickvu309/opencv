@@ -18,7 +18,9 @@ describe("a visitor, who is not signed in", () => {
     const paper = dataOf<{ id: string }>(
       await ada.run("paper.create", { kind: "cv", name: "Marketing CV" })
     )
-    const opened = await world.visitor().get(`/api/paper/${paper.id}/document`)
+    const opened = await world
+      .visitor()
+      .post("/api/reads/paper.read", { view: "info", docId: paper.id })
     expect(opened.status).toBe(401)
   })
 

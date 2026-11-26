@@ -87,14 +87,26 @@ function missing(status = 404) {
   )
 }
 
+function infoDocId(url: string, body: string) {
+  if (!url.split("?")[0]?.endsWith("/api/reads/paper.read")) return null
+  try {
+    const input = JSON.parse(body) as { view?: string; docId?: string }
+    return input.view === "info" ? (input.docId ?? null) : null
+  } catch {
+    return null
+  }
+}
+
 function answer(url: string, body: string, listFails: boolean) {
   const path = url.split("?")[0] ?? ""
+  const info = infoDocId(url, body)
+  if (info === WORD_PAGE)
+    return ok({ id: WORD_PAGE, name: "Cv.docx", kind: "cv", format: "word" })
+  if (info === OLDER_DOC)
+    return ok({ id: OLDER_DOC, name: "Older CV", kind: "cv", format: "prose" })
+  if (info) return missing()
   if (path.endsWith("/api/reads/paper.list"))
     return listFails ? missing(500) : ok([wordView, olderView])
-  if (path.endsWith(`/api/paper/${WORD_PAGE}/document`))
-    return ok({ id: WORD_PAGE, name: "Cv.docx", kind: "cv", format: "word" })
-  if (path.endsWith(`/api/paper/${OLDER_DOC}/document`))
-    return ok({ id: OLDER_DOC, name: "Older CV", kind: "cv", format: "prose" })
   if (path.endsWith(`/api/paper/${OLDER_DOC}/pages`))
     return ok({ docId: OLDER_DOC, pages: 1, pageChoice: "unset" })
   if (path.endsWith(`/api/paper/${OLDER_DOC}`)) return ok(olderView)
@@ -110,9 +122,14 @@ function stubServer({ listFails = false } = {}) {
   const exchanges: Exchange[] = []
   vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input instanceof Request ? input.url : input)
-    const response = answer(url, String(init?.body ?? ""), listFails)
+    const body = String(init?.body ?? "")
+    const response = answer(url, body, listFails)
     if (!response) return new Promise<Response>(() => undefined)
-    exchanges.push({ url: url.split("?")[0] ?? "", status: response.status })
+    const info = infoDocId(url, body)
+    exchanges.push({
+      url: info ? `/api/paper/${info}/info` : (url.split("?")[0] ?? ""),
+      status: response.status,
+    })
     return Promise.resolve(response)
   })
   return exchanges
@@ -157,7 +174,7 @@ describe("opening a document from its link", () => {
     ])
     expect(
       paperRequests(exchanges).filter(
-        (path) => path === `paper/${WORD_PAGE}/document`
+        (path) => path === `paper/${WORD_PAGE}/info`
       )
     ).toHaveLength(2)
   })
@@ -168,7 +185,7 @@ describe("opening a document from its link", () => {
     expect(await screen.findByRole("article", { name: "Page" })).toBeVisible()
     expect(failed(exchanges)).toEqual([])
     expect(paperRequests(exchanges)).toEqual([
-      `paper/${WORD_PAGE}/document`,
+      `paper/${WORD_PAGE}/info`,
       "reads/paper.list",
       "reads/paper.read",
     ])
@@ -198,7 +215,7 @@ describe("opening a document from its link", () => {
           status: 404,
         },
       ])
-      expect(paperRequests(exchanges)).toEqual([`paper/${id}/document`])
+      expect(paperRequests(exchanges)).toEqual([`paper/${id}/info`])
       expect(paperRequests(exchanges)).not.toContain("reads/paper.read")
     }
   )
@@ -209,7 +226,7 @@ describe("opening a document from its link", () => {
     expect(await screen.findByRole("article", { name: "Page" })).toBeVisible()
     expect(failed(exchanges)).toEqual([])
     expect(paperRequests(exchanges)).toEqual([
-      `paper/${WORD_PAGE}/document`,
+      `paper/${WORD_PAGE}/info`,
       "reads/paper.list",
       "reads/paper.read",
     ])

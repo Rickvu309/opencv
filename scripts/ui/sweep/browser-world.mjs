@@ -302,7 +302,9 @@ export function browserWorld({ browser, state, accounts, shotsDir, now }) {
       storedText: async (docId) => {
         let text = ""
         for (let tries = 0; tries < 4; tries += 1) {
-          text = await (await api(`/api/paper/packages/${docId}/read`)).text()
+          text = await (
+            await read("paper.read", { view: "lines", docId })
+          ).text()
           if (text.includes(TYPED_LINE)) return text
           await page.waitForTimeout(750)
         }

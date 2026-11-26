@@ -1,0 +1,42 @@
+[
+  {
+    "subject": "apps/api/src/one-door.test.ts",
+    "because": "The last three waiting routes became reads through the read door, so the waiting list is empty and its cap drops from 5 to 0; the served-route check is unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/api/src/paper/content/content-rich-http.test.ts",
+    "because": "The document info route was deleted; the same info read, its writer refusal (409) and its signed-out refusal (401) are now asserted through POST /api/reads/paper.read.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-http.test.ts",
+    "because": "The Word lines route was deleted; the not-found, pinned read, private no-store and other-person refusal are now asserted through POST /api/reads/paper.read.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/routes/paper-doc-creators.isolated.test.tsx",
+    "because": "The page reads document info through POST /api/reads/paper.read, so the one failed request it expects is that read (404) instead of the deleted GET route.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/routes/paper-doc-open.isolated.test.tsx",
+    "because": "The page reads document info through POST /api/reads/paper.read; the request list names that read instead of the deleted GET route, with the same counts and order.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  }
+]

@@ -5,6 +5,13 @@ import { cleanup, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
 import { PaperDocPage } from "@/routes/paper-doc.tsx"
 
+function infoRead(url: string, init?: RequestInit) {
+  return (
+    url.endsWith("/api/reads/paper.read") &&
+    String(init?.body ?? "").includes('"view":"info"')
+  )
+}
+
 const DOC = "22222222-2222-4222-8222-222222222222"
 const WRITING = "a11a11a1-a11a-4a11-8a11-a11a11a11a11"
 const CARRIER = "b22b22b2-b22b-4b22-8b22-b22b22b22b22"
@@ -77,10 +84,9 @@ afterEach(() => {
 
 describe("minted package page", () => {
   it("opens the empty paragraph from the saved document", async () => {
-    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
-      if (url.endsWith(`/api/paper/${DOC}/document`))
-        return Promise.resolve(metadata())
+      if (infoRead(url, init)) return Promise.resolve(metadata())
       if (url.includes("/api/reads/paper.read")) {
         return Promise.resolve(
           Response.json({
@@ -109,10 +115,9 @@ describe("minted package page", () => {
   })
 
   it("leaves an imported file on the missing page", async () => {
-    vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
+    vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
-      if (url.endsWith(`/api/paper/${DOC}/document`))
-        return Promise.resolve(metadata())
+      if (infoRead(url, init)) return Promise.resolve(metadata())
       if (url.includes("/api/reads/paper.read")) {
         return Promise.resolve(
           Response.json({
@@ -139,26 +144,29 @@ describe("minted package page", () => {
     const later = "c33c33c3-c33c-4c33-8c33-c33c33c33c33"
     const locked = "d44d44d4-d44d-4d44-8d44-d44d44d44d44"
     const message = "This part stays locked."
-    vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
-      const url = String(input)
-      if (url.endsWith(`/api/paper/${DOC}/document`)) return metadata()
-      if (url.includes("/api/reads/paper.read"))
-        return Response.json({
-          ok: true,
-          data: page([
-            lineOf(WRITING, "First paragraph"),
-            heldOf(locked, "Locked line", message),
-            lineOf(later, "Later paragraph"),
-          ]),
-        })
-      return Response.json(
-        {
-          ok: false,
-          error: { code: ERROR_CODES.NOT_FOUND, message: "Missing" },
-        },
-        { status: 404 }
-      )
-    })
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input)
+        if (infoRead(url, init)) return metadata()
+        if (url.includes("/api/reads/paper.read"))
+          return Response.json({
+            ok: true,
+            data: page([
+              lineOf(WRITING, "First paragraph"),
+              heldOf(locked, "Locked line", message),
+              lineOf(later, "Later paragraph"),
+            ]),
+          })
+        return Response.json(
+          {
+            ok: false,
+            error: { code: ERROR_CODES.NOT_FOUND, message: "Missing" },
+          },
+          { status: 404 }
+        )
+      }
+    )
     render(<PaperDocPage />)
     expect(await screen.findByText("Later paragraph")).toBeVisible()
     const article = screen.getByRole("article", { name: "Page" })

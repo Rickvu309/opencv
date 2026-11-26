@@ -70,7 +70,7 @@ export function detect(text, path) {
   const editorEntry = path === "packages/paper-crdt/src/editor.ts"
   if (
     path === "apps/web/src/test/paper-api-mock.ts" &&
-    (!text.includes("\\/document$/") ||
+    (!text.includes('info?.view === "info"') ||
       !text.includes("paperDocumentInfoSchema.parse("))
   )
     hits.push(

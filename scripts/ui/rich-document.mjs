@@ -95,14 +95,17 @@ export async function openRichDocument(page, origin, answer, repo = root) {
   Y.applyUpdate(remote, Uint8Array.from(fixture.update))
   let revision = 0
   await page.route(
-    (url) => url.pathname === `/api/paper/${ID}/document`,
-    (route) =>
-      route.fulfill(
+    (url) => url.pathname === "/api/reads/paper.read",
+    (route) => {
+      const body = route.request().postDataJSON()
+      if (body?.view !== "info" || body.docId !== ID) return route.fallback()
+      return route.fulfill(
         answer(route.request(), {
           status: 200,
           json: richDocumentAnswer(fixture.provenance),
         })
       )
+    }
   )
   await page.route(
     (url) => url.pathname === "/api/commands/paper.save",

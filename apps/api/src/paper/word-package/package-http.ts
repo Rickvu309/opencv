@@ -1,7 +1,6 @@
 import {
   ERROR_CODES,
   errorEnvelope,
-  personActor,
   successEnvelope,
 } from "@workspace/domain/kernel"
 import {
@@ -13,7 +12,6 @@ import { ZodError } from "zod"
 
 import { handleApiError } from "../../platform/error-reply.js"
 import type { SignedIn, SignedInVariables } from "../../platform/signed-in.js"
-import { registry } from "../../registry/registry.js"
 import { CommandError } from "../../platform/errors.js"
 import { PaperPackageRefusal } from "./package-errors.js"
 import {
@@ -88,30 +86,6 @@ export function createPaperPackageRoutes(signedIn: SignedIn) {
       await uploadBytes(c.req.raw)
     )
     return c.json(successEnvelope(staged), 201)
-  })
-  routes.get("/", async (c) =>
-    c.json(
-      successEnvelope(
-        await registry.read(
-          "paper.read",
-          { view: "library", after: c.req.query("after") },
-          personActor(c.var.userId)
-        )
-      )
-    )
-  )
-  routes.get("/:docId/read", async (c) => {
-    const page = await registry.read(
-      "paper.read",
-      {
-        view: "lines",
-        docId: c.req.param("docId"),
-        at: c.req.query("at"),
-        cursor: c.req.query("cursor"),
-      },
-      personActor(c.var.userId)
-    )
-    return c.json(successEnvelope(page))
   })
   routes.get("/:docId/export", async (c) => {
     const exported = await exportWordPackage(
