@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 3
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-photo-apply-rounding.json",
+    "because": "The photo form moved into features/paper/rich-editor/. The historic path is unchanged; historic.fixed names the file at HEAD, so the detector still proves it stays quiet on the moved file.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
