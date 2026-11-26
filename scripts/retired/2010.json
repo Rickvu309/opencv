@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/api/src/scenarios/paper.scenario.test.ts",
+    "because": "The scenario lists Papers through the read door with ada.read(\"paper.list\") instead of the deleted GET /api/paper; the writer moves from the header into the read's input, and the expectations are the same.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
