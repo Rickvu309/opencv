@@ -1,12 +1,11 @@
 import { createRequire } from "node:module"
 import { randomUUID } from "node:crypto"
 
+import { coachActor, personActor } from "@workspace/domain/kernel"
 import {
   PAPER_CANVAS_PROFILE,
-  coachActor,
   paperPackageEditResultSchema,
-  personActor,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { and, eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 

@@ -2,7 +2,7 @@ import {
   nativePaperDocumentSchema,
   type NativePaperDocument,
   type ProseBlock,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import { numberingXml, type ListSequence } from "./numbering.js"
 import { wordPackage } from "./package.js"

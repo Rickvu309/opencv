@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto"
 import { createRequire } from "node:module"
 
-import { personActor, type WordBatch, type WordPage } from "@workspace/domain"
+import { personActor } from "@workspace/domain/kernel"
+import { type WordBatch, type WordPage } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 

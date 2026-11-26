@@ -1,19 +1,21 @@
 import {
-  DEFAULT_PAPER_DOC_NAME,
   ERROR_CODES,
-  IMPORT_PAGES_MESSAGE,
-  emptyRichPaper,
-  RICH_NATIVE_WRITER,
   parseFileId,
   parsePaperId,
-  richPaperDocumentSchema,
-  type NativeWriter,
   type Actor,
   type FileId,
   type PaperId,
-  type PaperStoredKind,
   type UserId,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
+import {
+  DEFAULT_PAPER_DOC_NAME,
+  IMPORT_PAGES_MESSAGE,
+  emptyRichPaper,
+  RICH_NATIVE_WRITER,
+  richPaperDocumentSchema,
+  type NativeWriter,
+  type PaperStoredKind,
+} from "@workspace/domain/paper-doc"
 import { and, desc, eq, ne } from "drizzle-orm"
 
 import { getDb, insideTransaction } from "../db/context.js"

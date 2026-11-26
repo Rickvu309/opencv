@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { createRequire } from "node:module"
 
-import { coachActor, personActor } from "@workspace/domain"
+import { coachActor, personActor } from "@workspace/domain/kernel"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 

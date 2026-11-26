@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 
-import { parseFileId, parseUserId, personActor } from "@workspace/domain"
+import { parseFileId, parseUserId, personActor } from "@workspace/domain/kernel"
 import { and, count, eq, sql } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 

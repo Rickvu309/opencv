@@ -1,9 +1,9 @@
+import { catalog } from "@workspace/domain/kernel"
 import {
-  catalog,
   PAPER_START_BOUNDS,
   PAPER_TEMPLATE_IDS,
   paperDocNameSchema,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { describe, expect, it } from "vitest"
 
 import { startedLines, startedName } from "./package-start.js"

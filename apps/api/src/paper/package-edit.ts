@@ -2,14 +2,16 @@ import { randomUUID } from "node:crypto"
 
 import {
   ERROR_CODES,
-  nativeWriterSchema,
-  richEditOutputSchema,
   type catalog,
   paperIdSchema,
+} from "@workspace/domain/kernel"
+import {
+  nativeWriterSchema,
+  richEditOutputSchema,
   paperPackageEditResultSchema,
   richChangeSchema,
   wordUndoSchema,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { z } from "zod"
 

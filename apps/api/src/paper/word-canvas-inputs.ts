@@ -1,4 +1,4 @@
-import type { WordBatch } from "@workspace/domain"
+import type { WordBatch } from "@workspace/domain/paper-doc"
 
 import { open } from "./word/document.js"
 

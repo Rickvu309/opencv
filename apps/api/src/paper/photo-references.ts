@@ -1,4 +1,4 @@
-import { type UserId } from "@workspace/domain"
+import { type UserId } from "@workspace/domain/kernel"
 import { sql } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"

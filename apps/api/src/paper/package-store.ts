@@ -1,7 +1,7 @@
 import { randomBytes, randomUUID } from "node:crypto"
 
+import { ERROR_CODES } from "@workspace/domain/kernel"
 import {
-  ERROR_CODES,
   PAPER_PACKAGE_LIMITS,
   PAPER_PACKAGE_PROJECTOR,
   paperPackageMetadataSchema,
@@ -10,7 +10,7 @@ import {
   paperPackageStageInputSchema,
   paperPackageStageSchema,
   type PaperPackageStageInput,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { and, asc, eq, gt, sql } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import { z } from "zod"
