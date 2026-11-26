@@ -122,6 +122,7 @@ export function handlesPaperRequest(input: RequestInfo | URL) {
   const path = pathOf(input)
   return (
     path.startsWith("/api/paper") ||
+    path.endsWith("/api/reads/paper.list") ||
     path.includes("/api/commands/paper.") ||
     path.endsWith("/api/commands/job.linkPaper") ||
     path.endsWith("/api/commands/job.unlinkPaper")
@@ -147,7 +148,7 @@ export async function paperApiFetch(
     return jsonError(400, "VALIDATION_ERROR", failure.message)
   }
 
-  if (method === "GET" && path === "/api/paper") {
+  if (method === "POST" && path === "/api/reads/paper.list") {
     if (store.listGate) await store.listGate
     if (store.failList) return jsonError(500, "INTERNAL", "Server error")
     return jsonOk(sortDocs(store.docs).map(toWire))

@@ -64,7 +64,7 @@ function json(data: unknown) {
 function stubWordPage() {
   vi.stubGlobal("fetch", (input: RequestInfo | URL) => {
     const url = String(input)
-    if (url.endsWith("/api/paper")) {
+    if (url.endsWith("/api/reads/paper.list")) {
       return json([wordPageListed])
     }
     if (url.endsWith(`/api/paper/${WORD_PAGE}/document`)) {

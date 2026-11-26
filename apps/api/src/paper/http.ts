@@ -183,30 +183,6 @@ export function createPaperRoutes(signedIn: SignedIn) {
 
   routes.route("/", createNativeWordRoutes())
 
-  routes.get("/", async (c) => {
-    const kind = c.req.query("kind")
-    const query = c.req.query("query") ?? c.req.query("q")
-    if (kind && kind !== "cv" && kind !== "letter") {
-      return jsonWithStatus(
-        c,
-        errorEnvelope(
-          ERROR_CODES.VALIDATION_ERROR,
-          "Use cv or letter for kind."
-        ),
-        httpStatusForError(ERROR_CODES.VALIDATION_ERROR)
-      )
-    }
-    const input: {
-      query?: string
-      kind?: "cv" | "letter"
-      writer?: NativeWriter
-    } = { writer: readWriter(c) }
-    if (query) input.query = query
-    if (kind === "cv" || kind === "letter") input.kind = kind
-    const data = await registry.read("paper.list", input, person(c.var.userId))
-    return c.json(successEnvelope(data))
-  })
-
   routes.post("/letter-attachment", async (c) => {
     const uploaded = await readImportUpload(c)
     if (uploaded.over) {

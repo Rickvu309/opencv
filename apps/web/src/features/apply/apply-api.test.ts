@@ -44,7 +44,8 @@ function installFetch() {
           ? undoneActivityRow()
           : url.endsWith("/api/reads/activity.list") ||
               url.endsWith("/api/reads/job.calendar") ||
-              url.endsWith("/api/reads/job.list")
+              url.endsWith("/api/reads/job.list") ||
+              url.endsWith("/api/reads/paper.list")
             ? []
             : url.endsWith("/api/reads/job.get")
               ? {
@@ -135,8 +136,8 @@ describe("apply api", () => {
 
     await listPaper("cv")
     const paper = new URL(last(calls).url)
-    expect(paper.pathname).toBe("/api/paper")
-    expect(paper.searchParams.get("kind")).toBe("cv")
+    expect(paper.pathname).toBe("/api/reads/paper.list")
+    expect(last(calls).body).toEqual({ kind: "cv" })
   })
 
   it("takes the priority count owner from the route session", () => {

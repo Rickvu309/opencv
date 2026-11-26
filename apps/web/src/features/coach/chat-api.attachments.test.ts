@@ -54,7 +54,7 @@ describe("chat attachment mapping", () => {
             }),
           ])
         )
-      if (String(input).endsWith("/api/paper"))
+      if (String(input).endsWith("/api/reads/paper.list"))
         return Promise.resolve(
           envelope([{ id: "paper-1", name: "Journey CV" }])
         )
@@ -125,7 +125,7 @@ describe("chat attachment mapping", () => {
     const fetchMock = vi.fn((input: string) => {
       if (String(input).endsWith("/api/reads/job.list"))
         return Promise.reject(new Error("jobs temporarily unavailable"))
-      if (String(input).endsWith("/api/paper"))
+      if (String(input).endsWith("/api/reads/paper.list"))
         return Promise.reject(new Error("paper temporarily unavailable"))
       return Promise.resolve(
         envelope({

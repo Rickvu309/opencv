@@ -1,3 +1,4 @@
+import { paperListQuery } from "@/lib/paper-list.ts"
 import {
   useCallback,
   useEffect,
@@ -23,9 +24,8 @@ import {
 } from "@workspace/ui/components/dialog"
 
 import { profileQuery } from "@/lib/account-api.ts"
-import { coachPaperOptions } from "@/lib/coach-context.ts"
 import { subscribeCoachDraft, takeCoachDraft } from "@/lib/coach-draft.ts"
-import { catalogClient, queryKey } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 import { useOwnerId } from "@/lib/owner-id.ts"
 import { keepToastsClearOf } from "@/lib/toast-clearance.ts"
 import { chatColumn } from "@/components/ai-elements/chat.tsx"
@@ -103,8 +103,7 @@ export function CoachWorkspace({
   const profile = useQuery(profileQuery(useOwnerId()))
   const usage = catalogClient.useRead(useOwnerId(), "coach.usage", {})
   const papers = useQuery({
-    queryKey: queryKey({ query: "paper.list" }),
-    queryFn: coachPaperOptions,
+    ...paperListQuery(useOwnerId()),
     enabled: picker === "paper" || addMenuOpened,
   })
   const jobs = useQuery({

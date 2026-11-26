@@ -7,7 +7,7 @@ import {
 } from "@/features/app-shell/shell-api.ts"
 import { jobListQuery } from "@/features/apply/apply-api.ts"
 import { chatListKey, listChats } from "@/features/coach/chat-api.ts"
-import { listPaper, paperListKey } from "@/features/paper/paper-api.ts"
+import { paperListQuery } from "@/lib/paper-list.ts"
 import { catalogClient } from "@/lib/contract-client.ts"
 import { useOwnerId } from "@/lib/owner-id.ts"
 import { ownerIdFromRouteMatches } from "@/lib/owner-id.ts"
@@ -26,10 +26,7 @@ export function useShellFavorites() {
     ...jobListQuery(useOwnerId()),
     select: starredJobs,
   })
-  const docs = useQuery({
-    queryKey: paperListKey(),
-    queryFn: listPaper,
-  })
+  const docs = useQuery(paperListQuery(useOwnerId()))
   const favoriteDocs = docs.isError
     ? []
     : [...(docs.data ?? [])]

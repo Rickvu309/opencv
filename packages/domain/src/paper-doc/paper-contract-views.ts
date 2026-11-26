@@ -1,13 +1,8 @@
 import { z } from "zod"
 
-import { queryContract, queryEntry } from "../contract.js"
 import { fileIdSchema, paperIdSchema, type FileId } from "../ids.js"
 import { paperDocumentSchema } from "./document.js"
-import {
-  nativeBasisSchema,
-  nativeProvenanceSchema,
-  nativeWriterSchema,
-} from "./native.js"
+import { nativeBasisSchema, nativeProvenanceSchema } from "./native.js"
 import {
   paperDocStatusSchema,
   paperStoredKindSchema,
@@ -86,16 +81,3 @@ export type PaperFile = {
   byteSize: number
   createdAt: string
 }
-
-export const paperQueries = queryContract({
-  "paper.list": queryEntry({
-    input: z
-      .object({
-        query: z.string().optional(),
-        writer: nativeWriterSchema.optional(),
-        kind: paperStoredKindSchema.optional(),
-      })
-      .strict(),
-    output: z.array(paperViewSchema),
-  }),
-})

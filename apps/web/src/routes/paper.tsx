@@ -1,14 +1,11 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 
-import {
-  listLibraryPaper,
-  paperLibraryKey,
-} from "@/features/paper/paper-api.ts"
-import { parseFileId } from "@workspace/domain"
+import { LIBRARY_WRITER, parseFileId } from "@workspace/domain"
 
 import { catalogClient } from "@/lib/contract-client.ts"
 import { useOwnerId } from "@/lib/owner-id.ts"
+import { paperListQuery } from "@/lib/paper-list.ts"
 import { PaperLibrary } from "@/features/paper/paper-library.tsx"
 import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
 
@@ -26,10 +23,9 @@ export function PaperPage() {
       replace: true,
       resetScroll: false,
     })
-  const docs = useQuery({
-    queryKey: paperLibraryKey(),
-    queryFn: listLibraryPaper,
-  })
+  const docs = useQuery(
+    paperListQuery(useOwnerId(), { writer: LIBRARY_WRITER })
+  )
   const files = catalogClient.useRead(useOwnerId(), "paper.files", {})
 
   return (

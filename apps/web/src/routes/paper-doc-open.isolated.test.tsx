@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen } from "@testing-library/react"
 
-import { paperListKey } from "@/features/paper/paper-api.ts"
+import { paperListQuery } from "@/lib/paper-list.ts"
 import { refreshQueries } from "@/lib/contract-client.ts"
 import { PaperDocPage } from "@/routes/paper-doc.tsx"
 
@@ -88,7 +88,7 @@ function missing(status = 404) {
 
 function answer(url: string, body: string, listFails: boolean) {
   const path = url.split("?")[0] ?? ""
-  if (path.endsWith("/api/paper"))
+  if (path.endsWith("/api/reads/paper.list"))
     return listFails ? missing(500) : ok([wordView, olderView])
   if (path.endsWith(`/api/paper/${WORD_PAGE}/document`))
     return ok({ id: WORD_PAGE, name: "Cv.docx", kind: "cv", format: "word" })
@@ -123,7 +123,7 @@ function open(pathname: string, listed?: unknown[]) {
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
   client.setQueryData(["coach-config"], { coachDurable: false })
-  if (listed) client.setQueryData(paperListKey(), listed)
+  if (listed) client.setQueryData(paperListQuery("owner-1").queryKey, listed)
   render(
     <QueryClientProvider client={client}>
       <PaperDocPage />
@@ -168,7 +168,7 @@ describe("opening a document from its link", () => {
     expect(failed(exchanges)).toEqual([])
     expect(paperRequests(exchanges)).toEqual([
       `paper/${WORD_PAGE}/document`,
-      "paper",
+      "reads/paper.list",
       "reads/paper.read",
     ])
   })
@@ -209,7 +209,7 @@ describe("opening a document from its link", () => {
     expect(failed(exchanges)).toEqual([])
     expect(paperRequests(exchanges)).toEqual([
       `paper/${WORD_PAGE}/document`,
-      "paper",
+      "reads/paper.list",
       "reads/paper.read",
     ])
   })

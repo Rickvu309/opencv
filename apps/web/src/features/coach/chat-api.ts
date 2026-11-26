@@ -1,3 +1,4 @@
+import { readPaperList } from "@/lib/paper-list.ts"
 import {
   catalog,
   CHAT_TITLE_MAX,
@@ -13,16 +14,12 @@ import {
   type CoachSelection,
   type ChatSummary,
   type ChatEntryPart,
-  type QueryOutput,
 } from "@workspace/domain"
 
 import type { QueryClient } from "@tanstack/react-query"
 
-import { apiFetch } from "@/lib/api.ts"
-import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { catalogClient, queryKey } from "@/lib/contract-client.ts"
 import { streamChatTurn } from "@/lib/coach-stream.ts"
-import { endpoints } from "@/lib/requests.ts"
 import type {
   CoachChatEntry,
   CoachChatRecord,
@@ -87,11 +84,7 @@ async function resolveAttachments(
     jobIds.size
       ? catalogClient.read(catalog["job.list"].name, {}).catch(() => [])
       : [],
-    paperIds.size
-      ? apiFetch<SuccessBody<QueryOutput<"paper.list">>>(endpoints.paper)
-          .then(unwrapData)
-          .catch(() => [])
-      : [],
+    paperIds.size ? readPaperList().catch(() => []) : [],
   ])
   const jobLabels = new Map<string, string>(
     jobs.map((job) => [

@@ -134,11 +134,15 @@ export function fakeServer(
     }
   const answer = (url: string, body: string, method: string) => {
     const path = url.split("?")[0] ?? ""
-    if (path.endsWith("/api/paper") && method === "GET" && listFails > 0) {
+    if (
+      path.endsWith("/api/reads/paper.list") &&
+      method === "POST" &&
+      listFails > 0
+    ) {
       listFails -= 1
       return refused(500)
     }
-    if (path.endsWith("/api/paper") && method === "GET")
+    if (path.endsWith("/api/reads/paper.list") && method === "POST")
       return ok(
         [...pages.values()]
           .filter((page) => page.mine && !page.deleted)

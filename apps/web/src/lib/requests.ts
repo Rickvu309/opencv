@@ -12,7 +12,6 @@ export const endpoints = {
   accountExport: "/api/account/export",
   inboxConnect: "/api/inbox/connect",
   paper: "/api/paper",
-  paperOfKind: (kind: "cv" | "letter") => `/api/paper?kind=${kind}`,
   paperDoc: (docId: string) => `/api/paper/${docId}`,
   paperNativeWord: (docId: string, kind: "cv" | "letter") =>
     `/api/paper/${docId}/native-word?kind=${kind}`,

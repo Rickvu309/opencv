@@ -166,7 +166,9 @@ export async function probe(ports, sha, schema, target, expected = {}) {
     return red()
   }
 
-  const list = await ports.http.json(`${target.api}/api/paper?kind=cv`, {
+  const list = await ports.http.json(`${target.api}/api/reads/paper.list`, {
+    method: "POST",
+    body: { kind: "cv" },
     session: target.session,
   })
   const listed = Array.isArray(list.body?.data)
