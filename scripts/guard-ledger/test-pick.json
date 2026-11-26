@@ -1,0 +1,6 @@
+{
+  "id": "test-pick",
+  "file": "scripts/test-pick.test.mjs",
+  "historic": null,
+  "reason": "The test picker is an opt-in tool for plan unit PR-21, not a fix for a past mistake. Its tests pin the pack and workspace reach, the tier order, the time budget and the per-workspace commands."
+}
