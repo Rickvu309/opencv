@@ -3,7 +3,7 @@ import {
   canonicalPaper,
   parsePaperId,
   nativeSyncOutputSchema,
-  type catalog,
+  catalog,
   type OperationInput,
   type StoredPaperDocument,
 } from "@workspace/domain"
@@ -200,7 +200,7 @@ function openSession<Document extends StoredPaperDocument>(
       try {
         const raw = await command(
           options.queryClient,
-          "paper.save",
+          catalog["paper.save"].name,
           {
             docId: parsePaperId(identity.docId),
             writer: identity.writer,
