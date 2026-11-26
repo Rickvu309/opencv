@@ -4,7 +4,7 @@ import {
   connectionIdSchema,
   type Actor,
   type ConnectionId,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import { getDb } from "../db/context.js"
 import {
   agentConnections,

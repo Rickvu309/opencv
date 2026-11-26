@@ -1,4 +1,5 @@
-import { COACH_MODEL, chatDetailSchema, personActor } from "@workspace/domain"
+import { COACH_MODEL, chatDetailSchema } from "@workspace/domain/coach"
+import { personActor } from "@workspace/domain/kernel"
 import { fixtureChunks, FixtureCoachModel } from "./anthropic-fixture.js"
 import type { SSEStreamingApi } from "hono/streaming"
 import { describe, expect, it, vi } from "vitest"

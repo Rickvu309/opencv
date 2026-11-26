@@ -2,9 +2,8 @@ import { randomUUID } from "node:crypto"
 import {
   coachStartInputSchema,
   coachStartOutputSchema,
-  parseChatId,
-  personActor,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
+import { parseChatId, personActor } from "@workspace/domain/kernel"
 import { eq } from "drizzle-orm"
 import { afterEach, expect, it } from "vitest"
 import { getDb, transaction, withDatabase } from "../db/context.js"

@@ -1,4 +1,4 @@
-import type { ChatEntryPart } from "@workspace/domain"
+import type { ChatEntryPart } from "@workspace/domain/coach"
 
 import type { Registry } from "../registry/registry.js"
 import { withMissingReceipts } from "./receipt.js"

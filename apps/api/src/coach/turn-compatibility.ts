@@ -1,11 +1,10 @@
 import { randomUUID } from "node:crypto"
 import {
-  chatIdSchema,
   coachTurnRequestSchema,
   chatToolNameSchema,
   commandNameSchema,
-  personActor,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
+import { chatIdSchema, personActor } from "@workspace/domain/kernel"
 import type { Context } from "hono"
 import { streamSSE } from "hono/streaming"
 import { z } from "zod"

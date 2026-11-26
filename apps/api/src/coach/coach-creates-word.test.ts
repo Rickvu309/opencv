@@ -5,7 +5,7 @@ import {
   parseChatId,
   parseUserId,
   personActor,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import { asc, eq } from "drizzle-orm"
 import { expect, it } from "vitest"
 import { z } from "zod"

@@ -2,12 +2,12 @@ import { createHash, randomUUID } from "node:crypto"
 import { and, eq, gt, isNull } from "drizzle-orm"
 import { APIError } from "better-auth/api"
 import {
-  catalog,
-  paperContract,
   declarationsFromEntries,
   registeredScopesFromDeclarations,
   resourcesForScopes,
-} from "@workspace/domain"
+} from "@workspace/domain/agents"
+import { catalog } from "@workspace/domain/kernel"
+import { paperContract } from "@workspace/domain/paper-doc"
 import { z } from "zod"
 import { getDb, transaction } from "../db/context.js"
 import {

@@ -1,4 +1,4 @@
-import { parseChatTurnEvent, titleFrom } from "@workspace/domain"
+import { parseChatTurnEvent, titleFrom } from "@workspace/domain/coach"
 import { fixtureChunks, FixtureCoachModel } from "./anthropic-fixture.js"
 import type { SSEStreamingApi } from "hono/streaming"
 import { afterAll, describe, expect, it, vi } from "vitest"

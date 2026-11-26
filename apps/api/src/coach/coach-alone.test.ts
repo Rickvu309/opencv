@@ -1,4 +1,4 @@
-import { personActor } from "@workspace/domain"
+import { personActor } from "@workspace/domain/kernel"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { registerChat } from "./chat/index.js"

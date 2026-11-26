@@ -1,4 +1,4 @@
-import { parseUserId, personActor } from "@workspace/domain"
+import { parseUserId, personActor } from "@workspace/domain/kernel"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../../db/context.js"

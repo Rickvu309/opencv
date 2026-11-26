@@ -1,4 +1,4 @@
-import { ERROR_CODES } from "@workspace/domain"
+import { ERROR_CODES } from "@workspace/domain/kernel"
 import { expect, it } from "vitest"
 import { z } from "zod"
 

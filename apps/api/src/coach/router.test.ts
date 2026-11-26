@@ -1,4 +1,5 @@
-import { COACH_MODEL, type CoachMode, type Plan } from "@workspace/domain"
+import { type Plan } from "@workspace/domain/account"
+import { COACH_MODEL, type CoachMode } from "@workspace/domain/coach"
 import { describe, expect, it, vi } from "vitest"
 import { FixtureCoachModel } from "./anthropic-fixture.js"
 import { CommandError } from "../platform/errors.js"

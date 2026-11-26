@@ -1,9 +1,5 @@
-import {
-  COACH_MODEL,
-  coachActor,
-  personActor,
-  type CoachStreamPart,
-} from "@workspace/domain"
+import { COACH_MODEL, type CoachStreamPart } from "@workspace/domain/coach"
+import { coachActor, personActor } from "@workspace/domain/kernel"
 import { describe, expect, it, vi } from "vitest"
 import { z } from "zod"
 import { installRegistry } from "../install.js"

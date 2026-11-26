@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 import { serve } from "@hono/node-server"
-import { personActor } from "@workspace/domain"
+import { personActor } from "@workspace/domain/kernel"
 import { eq, sql } from "drizzle-orm"
 import { afterAll, afterEach, beforeAll, expect, it, vi } from "vitest"
 import { z } from "zod"

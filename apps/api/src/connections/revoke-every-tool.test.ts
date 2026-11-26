@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 import { serve } from "@hono/node-server"
-import { delegateActorSchema, personActor } from "@workspace/domain"
+import { delegateActorSchema, personActor } from "@workspace/domain/kernel"
 import { afterAll, beforeAll, expect, it, vi } from "vitest"
 import type { ZodType } from "zod"
 import { createApp } from "../app.js"

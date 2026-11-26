@@ -1,12 +1,11 @@
 import { createHash } from "node:crypto"
 
+import { parseUserId, personActor } from "@workspace/domain/kernel"
 import {
   canonicalPaper,
   paperPhotoRef,
-  parseUserId,
-  personActor,
   richPaperDocumentSchema,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 

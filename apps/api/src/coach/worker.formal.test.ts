@@ -1,4 +1,4 @@
-import { personActor } from "@workspace/domain"
+import { personActor } from "@workspace/domain/kernel"
 import { and, eq, sql } from "drizzle-orm"
 import { expect, it } from "vitest"
 import { z } from "zod"

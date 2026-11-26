@@ -5,7 +5,7 @@ import { createJobTables } from "./job-schema.js"
 import { createPaperPackageTables } from "./paper-package-schema.js"
 import { createCoachUsageTable } from "./coach-usage-schema.js"
 import { createOAuthTables } from "./oauth-schema.js"
-import type { ReversalExpect } from "@workspace/domain"
+import type { ReversalExpect } from "@workspace/domain/kernel"
 import { sql } from "drizzle-orm"
 import {
   bigint,

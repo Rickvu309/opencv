@@ -1,11 +1,10 @@
 import { randomUUID } from "node:crypto"
 import {
   coachStartOutputSchema,
-  chatIdSchema,
   coachTaskSnapshotSchema,
-  personActor,
   type CoachStartInput,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
+import { chatIdSchema, personActor } from "@workspace/domain/kernel"
 import { eq } from "drizzle-orm"
 import { afterEach, expect, it, vi } from "vitest"
 import { z } from "zod"

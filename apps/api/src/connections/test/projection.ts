@@ -1,5 +1,5 @@
 import { Client } from "@modelcontextprotocol/client"
-import { defineOperation } from "@workspace/domain"
+import { defineOperation } from "@workspace/domain/kernel"
 import { expect } from "vitest"
 import { z } from "zod"
 import { createAuth } from "../../auth.js"
