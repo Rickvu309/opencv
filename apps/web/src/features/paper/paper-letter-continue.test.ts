@@ -80,7 +80,7 @@ function generationFetch(
 ) {
   const generation = Promise.withResolvers<Response>()
   const started = Promise.withResolvers<void>()
-  const fetcher = vi.fn(async (url: RequestInfo | URL, _init?: RequestInit) => {
+  const fetcher = vi.fn(async (url: RequestInfo | URL) => {
     const path = String(url)
     if (path.includes("/api/commands/paper.canvas")) return canvas()
     if (path.endsWith("/turns")) {
@@ -219,7 +219,7 @@ it("refreshes the generated letter when the canvas command finishes on a blank p
   const unsubscribe = subscribeWritingRefresh(refreshed)
   try {
     await redraftStoppedLetter(input)
-    const [call] = canvasCalls(fetcher)
+    const [call] = canvasCalls(fetcher) as [RequestInfo, RequestInit][]
     expect(JSON.parse(String(call?.[1]?.body)).input).toMatchObject({
       op: "write",
     })
