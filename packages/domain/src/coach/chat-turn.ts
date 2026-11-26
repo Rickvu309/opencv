@@ -6,7 +6,6 @@ import {
   coachReceiptDetailSchema,
   reversalDescriptorSchema,
 } from "./chat-messages.js"
-import { commands, type ContractCommandName } from "../contract-commands.js"
 import type { CommandEnvelope } from "../envelope.js"
 import { queries, type QueryName } from "../queries.js"
 
@@ -15,27 +14,25 @@ type CatalogCommandName = {
   [N in CatalogName]: (typeof catalog)[N]["kind"] extends "command" ? N : never
 }[CatalogName]
 
-export type ChatToolName = ContractCommandName | QueryName | CatalogName
+export type ChatToolName = QueryName | CatalogName
 
-const toolNames = [
-  ...Object.keys(commands),
-  ...Object.keys(queries),
-  ...Object.keys(catalog),
-] as [ChatToolName, ...ChatToolName[]]
+const toolNames = [...Object.keys(queries), ...Object.keys(catalog)] as [
+  ChatToolName,
+  ...ChatToolName[],
+]
 
 export const chatToolNameSchema = z.enum(toolNames)
 
 const catalogOperations: Record<string, Operation> = catalog
 
-export const commandNameSchema = z.enum([
-  ...Object.keys(commands),
-  ...Object.values(catalogOperations)
+export const commandNameSchema = z.enum(
+  Object.values(catalogOperations)
     .filter((operation) => operation.kind === "command")
-    .map((operation) => operation.name),
-] as [
-  ContractCommandName | CatalogCommandName,
-  ...(ContractCommandName | CatalogCommandName)[],
-])
+    .map((operation) => operation.name) as [
+    CatalogCommandName,
+    ...CatalogCommandName[],
+  ]
+)
 
 const anyValue = z.custom<unknown>(() => true)
 

@@ -1,12 +1,9 @@
 import {
-  commands,
   catalog,
-  type ContractCommandName,
   parseJobId,
   parsePaperId,
   type OperationInput,
 } from "@workspace/domain/kernel"
-import { paperContract } from "@workspace/domain/paper-doc"
 import { z } from "zod"
 
 import { type OperationBinding, type ReversalGuard } from "./bind.js"
@@ -56,7 +53,7 @@ type MarkDone = OperationBinding<
 export function typeProbes() {
   // prettier-ignore
   // @ts-expect-error unknown command name
-  const unknownName = paperContract["paper.nope"]
+  const unknownName = catalog["paper.nope"]
 
   // prettier-ignore
   // @ts-expect-error the old stage word is not a stage
@@ -91,24 +88,16 @@ export function typeProbes() {
   const emptyExpectation: ReversalGuard = { query: "paper.read", input: { view: "trash", docId: someDocId }, matches: {}, skipped: "x" }
 
   // prettier-ignore
-  // @ts-expect-error unknown inbox command name
-  const unknownInbox = commands["inbox.nope"]
-
-  // prettier-ignore
   // @ts-expect-error snooze needs until, not a duration
   const wrongInboxInput: Snooze = { threadId: uuid, minutes: 5 }
 
   // prettier-ignore
-  // @ts-expect-error the merged table names no command that no contract declares
-  const notAContractName: ContractCommandName = "paper.nope"
+  // @ts-expect-error the catalog names no operation that no context declares
+  const notAContractName: keyof typeof catalog = "paper.nope"
 
   // prettier-ignore
   // @ts-expect-error an inbox reversal must be a valid input of the command it names
   const wrongInboxReversal: MarkDone = () => ({ command: "inbox.markDone", input: { status: "done" }, expect: { query: "inbox.get", input: {}, matches: {}, skipped: "x" } })
-
-  // prettier-ignore
-  // @ts-expect-error unknown paper command name
-  const unknownPaper = commands["paper.nope"]
 
   // prettier-ignore
   // @ts-expect-error an edit needs basedOn, not a revision
@@ -144,10 +133,8 @@ export function typeProbes() {
     wrongUndoInput,
     wrongChatOutput,
     wrongChatReversal,
-    unknownPaper,
     wrongPaperInput,
     wrongStatus,
-    unknownInbox,
     wrongInboxInput,
     notAContractName,
     wrongInboxReversal,

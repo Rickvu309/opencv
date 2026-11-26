@@ -1,6 +1,5 @@
 import {
   catalog,
-  commands,
   personActor,
   queries,
   type Actor,
@@ -191,12 +190,10 @@ describe("Job catalog", () => {
     expect(Object.keys(catalog)).toEqual(Object.keys(implementations))
     expect(installRegistry()).toBe(registry)
     const entries: Record<string, Operation> = catalog
-    const expected = [
-      ...Object.keys(commands),
-      ...Object.values(entries)
-        .filter((operation) => operation.kind === "command")
-        .map((operation) => operation.name),
-    ].sort()
+    const expected = Object.values(entries)
+      .filter((operation) => operation.kind === "command")
+      .map((operation) => operation.name)
+      .sort()
     expect(registry.commandNames().sort()).toEqual(expected)
     expect(new Set(expected).size).toBe(expected.length)
   })

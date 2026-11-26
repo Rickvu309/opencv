@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen } from "@testing-library/react"
 
 import { paperListQuery } from "@/lib/paper-list.ts"
-import { refreshQueries } from "@/lib/contract-client.ts"
+import { refreshReads } from "@/lib/contract-client.ts"
 import { PaperDocPage } from "@/routes/paper-doc.tsx"
 
 const WORD_PAGE = "22222222-2222-4222-8222-222222222222"
@@ -169,7 +169,7 @@ describe("opening a document from its link", () => {
     const exchanges = stubServer()
     const client = open(`/paper/${WORD_PAGE}`)
     expect(await screen.findByRole("article", { name: "Page" })).toBeVisible()
-    await refreshQueries(client, [
+    await refreshReads(client, [
       { query: "paper.read", input: { view: "info", docId: WORD_PAGE } },
     ])
     expect(

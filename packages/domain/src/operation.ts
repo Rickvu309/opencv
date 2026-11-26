@@ -33,7 +33,7 @@ export function delegateDeclaration(
   return null
 }
 
-export type CoachPolicy =
+type CoachPolicy =
   | { coach: "auto"; destructive: false }
   | { coach: "confirm" | "never"; destructive: boolean }
 

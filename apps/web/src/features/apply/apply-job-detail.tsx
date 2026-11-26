@@ -15,7 +15,7 @@ import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import {
   catalogClient,
   refreshCatalogReads,
-  refreshQueries,
+  refreshReads,
 } from "@/lib/contract-client.ts"
 
 import { jobGetQuery, jobListQuery } from "./apply-api.ts"
@@ -190,7 +190,7 @@ export function ApplyJobDetail({ jobId: id }: { jobId: JobId }) {
               queryClient.removeQueries({
                 queryKey: jobGetQuery(ownerId, id).queryKey,
               })
-              void refreshQueries(queryClient, [{ query: "job.list" }])
+              void refreshReads(queryClient, [{ query: "job.list" }])
               void refreshCatalogReads(queryClient)
               dispatch({ type: "delete_dismissed" })
             })

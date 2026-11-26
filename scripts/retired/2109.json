@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "scripts/unused-domain-exports.test.mjs > READ_BY_REGISTRY_CONTRACT_TYPE_TEST[\"PaperContract\"]",
+    "because": "PaperContract is deleted with the empty legacy command table, so the allowlist entry for it has nothing to keep.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

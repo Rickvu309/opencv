@@ -1,5 +1,4 @@
 import { personActor } from "@workspace/domain/kernel"
-import { paperContract } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
@@ -11,10 +10,6 @@ import { coverageCases } from "./coverage-setup.test-support.js"
 import { installRegistry } from "../install.js"
 import type { ExecuteResult, Registry } from "./registry.js"
 import { coachActivityWithoutTurn, seedCoachActor } from "../test/coach-turn.js"
-
-const surfaces = {
-  paper: paperContract,
-}
 
 const REVERSAL_WITHOUT_ACTIVITY_PENDING = {
   issue: 916,
@@ -46,11 +41,8 @@ function coverageProblems(covered: string[]) {
   const problems: string[] = []
   for (const name of [...bound].sort()) {
     if (covered.includes(name)) continue
-    const surface = Object.entries(surfaces).find(
-      ([, contract]) => name in contract
-    )?.[0]
     problems.push(
-      `${name} has no coverage case. Add one to apps/api/src/registry/coverage-${surface ?? "<surface>"}.ts (arrange, act, assert, undoAssert if it has a reversal).`
+      `${name} has no coverage case. Add one to apps/api/src/registry/coverage-${name.split(".")[0]}.test-support.ts (arrange, act, assert, undoAssert if it has a reversal).`
     )
   }
   for (const name of [...new Set(covered)].sort()) {
