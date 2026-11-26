@@ -7,7 +7,7 @@ import {
   richPaperDocumentSchema,
   nativeProvenanceSchema,
   RICH_NATIVE_WRITER,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import * as Y from "yjs"
 import { materializeStored } from "./stored-document.js"
 import {

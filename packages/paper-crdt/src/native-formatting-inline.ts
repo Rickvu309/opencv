@@ -1,4 +1,4 @@
-import { isSafeHref } from "@workspace/domain"
+import { isSafeHref } from "@workspace/domain/paper-doc"
 import {
   formatRunsSchema,
   mergeFormatRuns,

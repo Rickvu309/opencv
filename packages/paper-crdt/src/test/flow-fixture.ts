@@ -1,5 +1,5 @@
 import { flowDocumentSchema } from "@workspace/domain/internal/paper-presentation"
-import { cvSlots, richPaperDocumentSchema } from "@workspace/domain"
+import { cvSlots, richPaperDocumentSchema } from "@workspace/domain/paper-doc"
 import { layoutFixture } from "./layout-fixture.js"
 import { photoFixture } from "./photo-fixture.js"
 

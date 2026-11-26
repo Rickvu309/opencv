@@ -9,7 +9,7 @@ import {
   type PaperDocument,
   type RichText,
   type TextRun,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 type InlineText = {
   type: "text"
