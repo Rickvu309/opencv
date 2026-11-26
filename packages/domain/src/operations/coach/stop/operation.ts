@@ -9,6 +9,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Stop the chat that is running.",
+  label: "Stop Coach",
   input: chatStopInputSchema,
   publicResult: z.object({ stopped: z.boolean() }).strict(),
   coach: "never",

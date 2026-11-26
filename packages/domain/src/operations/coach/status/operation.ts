@@ -11,6 +11,8 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description: "Read a durable Coach task snapshot and cursor.",
+  label: "Check Coach progress",
+  readLabel: "Checked Coach progress",
   input: coachTaskStatusInputSchema,
   publicResult: coachTaskSnapshotSchema,
   coach: "never",

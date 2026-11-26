@@ -8,6 +8,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Delete the account and every row it owns.",
+  label: "Delete your account",
   input: accountDeleteInputSchema,
   publicResult: z.object({ deleted: z.literal(true) }).strict(),
   coach: "never",

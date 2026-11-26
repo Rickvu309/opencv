@@ -42,6 +42,8 @@ type SharedOperation<I extends z.ZodType, O extends z.ZodType> = {
   name: `${string}.${string}`
   version: number
   description: string
+  label?: string
+  readLabel?: string
   input: I
   publicResult: O
   delegate?: DelegateMarker
@@ -86,6 +88,8 @@ export function defineOperation<
     .parse(operation.owner)
   z.number().int().positive().parse(operation.version)
   z.string().min(1).parse(operation.description)
+  z.string().min(1).optional().parse(operation.label)
+  z.string().min(1).optional().parse(operation.readLabel)
   z.enum(["auto", "confirm", "never"]).parse(operation.coach)
   z.enum(["read", "command"]).parse(operation.kind)
   const declared = delegateDeclaration(operation.delegate)

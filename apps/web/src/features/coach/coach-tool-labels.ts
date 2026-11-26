@@ -4,47 +4,6 @@ import { catalog } from "@workspace/domain/kernel"
 type ToolCopy = { label: string; read?: string }
 
 const TOOL_COPY = {
-  [catalog["account.delete"].name]: { label: "Delete your account" },
-  [catalog["account.requestEmailChange"].name]: { label: "Change your email" },
-  [catalog["actions.approve"].name]: { label: "Approve this change" },
-  [catalog["actions.deny"].name]: { label: "Deny this change" },
-  [catalog["activity.list"].name]: {
-    label: "Look at your activity",
-    read: "Looked at your activity",
-  },
-  [catalog["activity.undo"].name]: { label: "Undo this change" },
-  [catalog["billing.get"].name]: {
-    label: "Look at your plan",
-    read: "Looked at your plan",
-  },
-  [catalog["chat.appendMessage"].name]: { label: "Save this message" },
-  [catalog["chat.create"].name]: { label: "Start a Chat" },
-  [catalog["chat.delete"].name]: { label: "Delete this Chat" },
-  [catalog["chat.get"].name]: {
-    label: "Read this Chat",
-    read: "Read this Chat",
-  },
-  [catalog["chat.list"].name]: {
-    label: "Look at your Chats",
-    read: "Looked at your Chats",
-  },
-  [catalog["chat.open"].name]: { label: "Open this Chat" },
-  [catalog["chat.rename"].name]: { label: "Rename this Chat" },
-  [catalog["chat.setFocus"].name]: { label: "Focus this Chat" },
-  [catalog["coach.events"].name]: {
-    label: "Read Coach updates",
-    read: "Read Coach updates",
-  },
-  [catalog["coach.start"].name]: { label: "Start Coach" },
-  [catalog["coach.status"].name]: {
-    label: "Check Coach progress",
-    read: "Checked Coach progress",
-  },
-  [catalog["coach.stop"].name]: { label: "Stop Coach" },
-  [catalog["coach.usage"].name]: {
-    label: "Check Coach usage",
-    read: "Checked Coach usage",
-  },
   [catalog["connections.list"].name]: {
     label: "Look at your connections",
     read: "Looked at your connections",
@@ -165,9 +124,24 @@ const TOOL_COPY = {
     label: "Search your workspace",
     read: "Searched your workspace",
   },
-} satisfies Record<ChatToolName, ToolCopy>
+} satisfies Partial<Record<ChatToolName, ToolCopy>>
 
-const toolCopy: Record<ChatToolName, ToolCopy> = TOOL_COPY
+const tableCopy: Partial<Record<ChatToolName, ToolCopy>> = TOOL_COPY
+
+function declaredCopy(name: ChatToolName): ToolCopy {
+  const operation = (
+    catalog as Record<string, { label?: string; readLabel?: string }>
+  )[name]
+  const fromTable = tableCopy[name]
+  const label = operation?.label ?? fromTable?.label
+  if (!label) throw new Error(`${name} has no Coach label`)
+  const read = operation?.readLabel ?? fromTable?.read
+  return read ? { label, read } : { label }
+}
+
+const toolCopy = Object.fromEntries(
+  chatToolNameSchema.options.map((name) => [name, declaredCopy(name)])
+) as Record<ChatToolName, ToolCopy>
 
 export const COACH_TOOL_LABELS = Object.fromEntries(
   chatToolNameSchema.options.map((name) => [name, toolCopy[name].label])

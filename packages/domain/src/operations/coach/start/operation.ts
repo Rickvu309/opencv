@@ -11,6 +11,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Queue a durable Coach task.",
+  label: "Start Coach",
   input: coachStartInputSchema,
   publicResult: coachStartOutputSchema,
   coach: "never",
