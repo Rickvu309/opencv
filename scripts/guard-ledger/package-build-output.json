@@ -1,0 +1,18 @@
+{
+  "id": "package-build-output",
+  "file": "scripts/package-build-output.test.mjs",
+  "detector": {
+    "module": "scripts/lib/package-build-output.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "4d175c6fa",
+    "path": "packages/domain/tsconfig.json",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "packages/domain/tsconfig.json"
+    }
+  },
+  "reason": "Caught by K-3 batch 13 on CI: once web lib files imported domain context entries, ts-packwerk on CI (no build) resolved them to the source packs and refused the layer, while a local run with the domain built resolved them to dist and passed, because packages/domain/tsconfig.json named rootDir but not outDir. detect fires on that tsconfig on main and stays quiet once outDir names the build output."
+}
