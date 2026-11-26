@@ -2,7 +2,7 @@ import { delegateActorSchema, catalog } from "@workspace/domain/kernel"
 import { expect, it } from "vitest"
 
 import { registeredAgentScopes } from "../connections/index.js"
-import { paperAgentRefusal, paperEditBasisRefused } from "./paper-agent.js"
+import { paperEditBasisRefused } from "./paper-agent.js"
 import { delegateAllowed } from "./delegate-policy.js"
 
 function agent(scopes: string[]) {
@@ -49,8 +49,9 @@ it("publishes declared Paper scopes and keeps Job grants isolated", () => {
   ]) {
     expect(delegateAllowed({ name, coach: "never" }, paper)).toBe(false)
   }
-  expect(paperAgentRefusal("paper.read")).toMatch(/reconnect/)
-  expect(paperAgentRefusal("job.get")).toBeNull()
+  expect(read.delegateRefusal).toMatch(/reconnect/)
+  expect(edit.delegateRefusal).toMatch(/reconnect/)
+  expect("delegateRefusal" in catalog["job.get"]).toBe(false)
   expect(read.description).toMatch(/nextCursor/)
   expect(read.description).toMatch(/experience or qualifications/)
   expect(edit.description).toMatch(/until the person approves/)

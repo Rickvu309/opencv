@@ -21,6 +21,14 @@ export class CatalogPublication {
     return !operation || operation.publicResult.safeParse(output).success
   }
 
+  protected coachPermissionOf(name: string) {
+    return this.operations.get(name)?.coachPermission
+  }
+
+  protected delegateRefusalOf(name: string) {
+    return this.operations.get(name)?.delegateRefusal
+  }
+
   isCatalogOperation(name: string) {
     return this.operations.has(name)
   }

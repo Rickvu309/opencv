@@ -22,6 +22,7 @@ export const operation = defineOperation({
     })
     .strict(),
   coach: "auto",
+  coachPermission: "agentEmail",
   destructive: false,
   idempotency: "keyed",
   writes: () => [inboxThreadResource()],

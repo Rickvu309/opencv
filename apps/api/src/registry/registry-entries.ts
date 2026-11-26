@@ -11,11 +11,7 @@ import { CatalogPublication } from "./catalog-publication.js"
 import { coachRefusal, REFUSAL_MESSAGES } from "./coach-policy.js"
 import { delegateAllowed } from "./delegate-policy.js"
 import { CommandError } from "../platform/errors.js"
-import {
-  paperAgentRefusal,
-  paperEditBasisMessage,
-  paperEditBasisRefused,
-} from "./paper-agent.js"
+import { paperEditBasisMessage, paperEditBasisRefused } from "./paper-agent.js"
 import {
   isUnchanged,
   refuseFrozenReview,
@@ -48,7 +44,7 @@ export class RegistryEntries extends CatalogPublication {
     if (!delegateAllowed(command, actor))
       throw new CommandError(
         ERROR_CODES.FORBIDDEN,
-        paperAgentRefusal(command.name) ??
+        this.delegateRefusalOf(command.name) ??
           "This connection cannot use this command"
       )
     const parsed = parseInput(command.input, options.input)
@@ -68,7 +64,7 @@ export class RegistryEntries extends CatalogPublication {
       )
     if (isCoachActor(actor)) {
       const refusal = coachRefusal(
-        { ...command, coach: policy },
+        { coach: policy, permission: this.coachPermissionOf(command.name) },
         await agentGates(actor.userId)
       )
       if (refusal)
@@ -343,7 +339,17 @@ export class RegistryEntries extends CatalogPublication {
     for (const command of this.commands.values()) {
       if (command.undoOnly) continue
       if (!delegateAllowed(command, branded)) continue
-      if (gates && coachRefusal(command, gates)) continue
+      if (
+        gates &&
+        coachRefusal(
+          {
+            coach: command.coach,
+            permission: this.coachPermissionOf(command.name),
+          },
+          gates
+        )
+      )
+        continue
       entries.push({
         name: command.name,
         description: command.description,
@@ -356,7 +362,17 @@ export class RegistryEntries extends CatalogPublication {
     }
     for (const query of this.queries.values()) {
       if (!delegateAllowed(query, branded)) continue
-      if (gates && coachRefusal(query, gates)) continue
+      if (
+        gates &&
+        coachRefusal(
+          {
+            coach: query.coach,
+            permission: this.coachPermissionOf(query.name),
+          },
+          gates
+        )
+      )
+        continue
       entries.push({
         name: query.name,
         description: query.description,

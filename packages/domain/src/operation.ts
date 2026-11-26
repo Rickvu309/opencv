@@ -37,6 +37,9 @@ type CoachPolicy =
   | { coach: "auto"; destructive: false }
   | { coach: "confirm" | "never"; destructive: boolean }
 
+const COACH_PERMISSIONS = ["agentCvs", "agentInterview", "agentEmail"] as const
+export type CoachPermission = (typeof COACH_PERMISSIONS)[number]
+
 type SharedOperation<I extends z.ZodType, O extends z.ZodType> = {
   owner: string
   name: `${string}.${string}`
@@ -47,6 +50,8 @@ type SharedOperation<I extends z.ZodType, O extends z.ZodType> = {
   input: I
   publicResult: O
   delegate?: DelegateMarker
+  coachPermission?: CoachPermission
+  delegateRefusal?: string
 }
 
 type OperationShape<
@@ -92,6 +97,8 @@ export function defineOperation<
   z.string().min(1).optional().parse(operation.readLabel)
   z.enum(["auto", "confirm", "never"]).parse(operation.coach)
   z.enum(["read", "command"]).parse(operation.kind)
+  z.enum(COACH_PERMISSIONS).optional().parse(operation.coachPermission)
+  z.string().min(1).optional().parse(operation.delegateRefusal)
   const declared = delegateDeclaration(operation.delegate)
   if (operation.delegate !== undefined && !declared)
     throw new Error(

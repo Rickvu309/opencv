@@ -16,6 +16,7 @@ export const operation = defineOperation({
   input: jobRemoveChecklistItemInputSchema,
   publicResult: z.object({ id: z.string(), jobId: idResult<JobId>() }).strict(),
   coach: "auto",
+  coachPermission: "agentInterview",
   destructive: false,
   idempotency: "keyed",
   writes: (input) => [jobResource(input.jobId)],

@@ -14,6 +14,7 @@ export const operation = defineOperation({
     .object({ id: z.string(), threadId: z.string(), body: z.string() })
     .strict(),
   coach: "never",
+  coachPermission: "agentEmail",
   destructive: true,
   idempotency: "keyed",
   writes: (input) => [inboxThreadResource(input.threadId)],

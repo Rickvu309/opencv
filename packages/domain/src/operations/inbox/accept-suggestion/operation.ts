@@ -20,6 +20,7 @@ export const operation = defineOperation({
     })
     .strict(),
   coach: "never",
+  coachPermission: "agentEmail",
   destructive: false,
   idempotency: "keyed",
   writes: (input): readonly ResourceRef[] => [

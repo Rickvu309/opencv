@@ -85,6 +85,8 @@ export const operation = defineOperation({
       .strict(),
   ]),
   coach: "never",
+  delegateRefusal:
+    "This connection cannot read documents. Stop and ask the person to reconnect.",
   delegate: { resource: "paper", access: "read" },
   dependsOn: (): readonly ResourceRef[] => [
     { name: "paper", coachFloor: "auto" },

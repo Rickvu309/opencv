@@ -16,5 +16,6 @@ export const operation = defineOperation({
   input: threadInput,
   publicResult: inboxDetailSchema,
   coach: "never",
+  coachPermission: "agentEmail",
   dependsOn: (input) => [inboxThreadResource(input.threadId)],
 })
