@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm"
 
 import { getDb } from "../../db/context.js"
 import { paperPackageHeads } from "../../db/schema.js"
-import { packageFailure } from "../package-pages.js"
+import { packageFailure } from "./package-pages.js"
 
 function unavailable(): never {
   return packageFailure(

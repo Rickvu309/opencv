@@ -23,7 +23,7 @@ import { files, paperDocs } from "../db/schema.js"
 import { createId } from "../platform/id.js"
 import { CommandError } from "../platform/errors.js"
 import { admitDocument } from "./native-admission.js"
-import { listPackagePapers } from "./package-list.js"
+import { listPackagePapers } from "./word-package/package-list.js"
 import {
   deleteWordPage,
   publishWordPageCopy,

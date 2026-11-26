@@ -12,18 +12,18 @@ import {
 } from "@workspace/domain/paper-doc"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import { withDatabase } from "../db/context.js"
-import { user } from "../db/schema.js"
-import { registry } from "../registry/registry.js"
-import { installRegistry } from "../install.js"
-import { openBackend, type Backend } from "../test/registry-formal-support.js"
-import { readOutline } from "./outline.js"
-import { fixturePackage, paragraph } from "./word-package/package-fixtures.js"
+import { withDatabase } from "../../db/context.js"
+import { user } from "../../db/schema.js"
+import { registry } from "../../registry/registry.js"
+import { installRegistry } from "../../install.js"
 import {
-  publishWordPackage,
-  stageWordPackage,
-} from "./word-package/package-store.js"
-import { listPapers } from "./store.js"
+  openBackend,
+  type Backend,
+} from "../../test/registry-formal-support.js"
+import { readOutline } from "../outline.js"
+import { fixturePackage, paragraph } from "./package-fixtures.js"
+import { publishWordPackage, stageWordPackage } from "./package-store.js"
+import { listPapers } from "../store.js"
 
 let backend: Backend
 const owner = randomUUID()

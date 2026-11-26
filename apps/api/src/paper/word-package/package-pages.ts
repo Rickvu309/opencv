@@ -11,7 +11,7 @@ import {
 } from "@workspace/domain/paper-doc"
 import { z } from "zod"
 
-import { CommandError } from "../platform/errors.js"
+import { CommandError } from "../../platform/errors.js"
 
 const positionSchema = z
   .object({

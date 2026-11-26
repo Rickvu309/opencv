@@ -1,7 +1,10 @@
 import { type PaperId, type UserId } from "@workspace/domain/kernel"
 
-import { packageFailure } from "./package-pages.js"
-import { missingDocument, ownedPackageOutline } from "./package-list.js"
+import { packageFailure } from "./word-package/package-pages.js"
+import {
+  missingDocument,
+  ownedPackageOutline,
+} from "./word-package/package-list.js"
 import { richOutline } from "./rich-outline.js"
 import { ownedPaper, ownedPaperOrNull } from "./store.js"
 

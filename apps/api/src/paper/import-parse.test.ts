@@ -25,7 +25,7 @@ import {
 import { PDF_IMPORT_NOTICE } from "./import-word.js"
 import { OUTLINE_MAX_CHARS } from "./outline.js"
 import { expectListIsLivePages } from "../test/paper-live-pages.js"
-import { readWordOutline } from "./word-reading.js"
+import { readWordOutline } from "./word-package/word-reading.js"
 import { IMPORT_SIZE_MESSAGE } from "./store.js"
 
 const WORD =

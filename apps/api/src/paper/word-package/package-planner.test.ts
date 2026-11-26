@@ -21,7 +21,7 @@ import {
   paragraph,
   run as wordRun,
 } from "./package-fixtures.js"
-import { archiveDigest, packageDigest } from "../package-pages.js"
+import { archiveDigest, packageDigest } from "./package-pages.js"
 import { prepareWordPackage } from "./package-planner.js"
 import {
   exportWordPackage,

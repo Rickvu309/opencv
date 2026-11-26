@@ -29,7 +29,7 @@ import {
   archiveDigest,
   packageDigest,
   packageFailure,
-} from "../package-pages.js"
+} from "./package-pages.js"
 import { prepareWordPackage, wordPackageEditSchema } from "./package-planner.js"
 import { compareAndRestorePackage, readPackageHead } from "./package-restore.js"
 import { wordPackageBasis } from "./package-store.js"

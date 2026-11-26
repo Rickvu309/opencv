@@ -9,7 +9,7 @@ import { and, eq } from "drizzle-orm"
 
 import { getDb, insideTransaction } from "../../db/context.js"
 import { paperPackageHeads } from "../../db/schema.js"
-import { packageFailure } from "../package-pages.js"
+import { packageFailure } from "./package-pages.js"
 import { readWordPackage, wordPackageBasis } from "./package-store.js"
 import { prepareBatch } from "./word/document.js"
 import {
