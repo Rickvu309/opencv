@@ -10,6 +10,8 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description: "Read one chat.",
+  label: "Read this Chat",
+  readLabel: "Read this Chat",
   input: z.object({ chatId: chatIdSchema }).strict(),
   publicResult: chatDetailSchema,
   coach: "auto",

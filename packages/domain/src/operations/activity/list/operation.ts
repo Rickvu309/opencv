@@ -9,6 +9,8 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description: "Read the newest activity, optionally for one subject.",
+  label: "Look at your activity",
+  readLabel: "Looked at your activity",
   input: z
     .object({
       subjectKind: z.string().min(1).optional(),

@@ -12,6 +12,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Run a pending Coach action.",
+  label: "Approve this change",
   input: z.object({ pendingActionId: pendingActionIdSchema }).strict(),
   publicResult: activityRowAsTheApiReturnsIt.nullable(),
   coach: "never",

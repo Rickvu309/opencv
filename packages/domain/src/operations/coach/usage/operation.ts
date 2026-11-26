@@ -12,6 +12,8 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description: "Read Coach usage for the day, session, and week.",
+  label: "Check Coach usage",
+  readLabel: "Checked Coach usage",
   input: z.object({}).strict(),
   publicResult: usageSnapshotSchema,
   coach: "auto",

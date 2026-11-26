@@ -8,6 +8,8 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description: "Read the plan and billing placeholder.",
+  label: "Look at your plan",
+  readLabel: "Looked at your plan",
   input: z.object({}).strict(),
   publicResult: billingSchema,
   coach: "never",
