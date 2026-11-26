@@ -4,7 +4,7 @@ import type { TestDatabase } from "../../db/context.js"
 import {
   fixturePackage,
   paragraph,
-} from "../../paper/word-package/package-fixtures.js"
+} from "../../paper/import/package-fixtures.js"
 import { authHeaders, testWebOrigin } from "../harness.js"
 import { textPdf } from "./route-files.js"
 import { nativeWordRouteCase } from "./native-word.js"

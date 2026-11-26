@@ -25,8 +25,8 @@ import {
   signUp,
 } from "../test/harness.js"
 import { insertWordPage } from "../test/word-page-rows.js"
-import { fixturePackage, paragraph } from "./word-package/package-fixtures.js"
-import { readPackageZip } from "./word-package/package-zip.js"
+import { fixturePackage, paragraph } from "./import/package-fixtures.js"
+import { readPackageZip } from "./import/package-zip.js"
 import { trashStoredWordPage } from "./word-page-trash.js"
 import { collectWordPageExport } from "./word-page-export.js"
 

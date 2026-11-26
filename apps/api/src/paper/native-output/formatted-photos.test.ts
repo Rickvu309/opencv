@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest"
 import { compileLayoutNativeDocx } from "./formatted.js"
 import { presentation, paragraph } from "./formatted.test-support.js"
-import { readPackageZip } from "../word-package/package-zip.js"
-import { parsePackageXml } from "../word-package/package-xml.js"
+import { readPackageZip } from "../import/package-zip.js"
+import { parsePackageXml } from "../import/package-xml.js"
 import { attribute, elements, one } from "./inspect.test-support.js"
 
 const A = "http://schemas.openxmlformats.org/drawingml/2006/main"

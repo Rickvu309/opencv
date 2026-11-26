@@ -4,8 +4,8 @@ import {
   parsePackageXml,
   WORD_NS,
   type XmlElement,
-} from "../word-package/package-xml.js"
-import { readPackageZip } from "../word-package/package-zip.js"
+} from "../import/package-xml.js"
+import { readPackageZip } from "../import/package-zip.js"
 
 export async function inspect(bytes: Uint8Array) {
   const { files } = await readPackageZip(bytes)

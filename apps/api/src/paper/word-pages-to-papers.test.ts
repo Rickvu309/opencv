@@ -17,7 +17,7 @@ import {
 import { installRegistry } from "../install.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { insertWordPage } from "../test/word-page-rows.js"
-import { fixturePackage, paragraph } from "./word-package/package-fixtures.js"
+import { fixturePackage, paragraph } from "./import/package-fixtures.js"
 import { convertWordPages } from "./word-pages-to-papers.js"
 
 const idOf = z.object({ id: z.string() })

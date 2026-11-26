@@ -60,7 +60,7 @@ Clear journal entries only after both IndexedDB complete and a matching server r
 
 ## Coverage and history
 
-This model covers code scheduled for deletion. The old CV and Letter editors it served are deleted (#1952), so `openPaperSync` has no screen left; it goes with the old formats. The Word writing page saves through `paper.canvas` in `apps/web/src/features/paper-page/canvas-save.ts`, which this model does not cover.
+This model covers code scheduled for deletion. The old CV and Letter editors it served are deleted (#1952), so `openPaperSync` has no screen left; it goes with the old formats.
 
 `apps/web/src/lib/PaperLocal.tla` models `openPaperSync`, its journal, and `indexedDbStore`. Its action map names the implementation entry points. The approved replacement explicitly separates ordinary pagehide from abrupt kill and names `DurabilityPointD`. It replaces the earlier immediate-kill model under the coordinator's approved rule. The earlier model and the 23 lost cases out of 120 remain prior evidence; this change does not turn them into passes.
 

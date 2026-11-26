@@ -1,3 +1,0 @@
-layer: feature
-public: [package-errors.ts, package-xml.ts, package-zip.ts]
-dependencies: [apps/api/src/platform]

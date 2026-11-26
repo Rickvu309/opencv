@@ -27,8 +27,8 @@ import {
   portraitBytes,
   richFormattingPaper,
 } from "./native-word.test-support.js"
-import { readPackageZip } from "./word-package/package-zip.js"
-import { parsePackageXml } from "./word-package/package-xml.js"
+import { readPackageZip } from "./import/package-zip.js"
+import { parsePackageXml } from "./import/package-xml.js"
 import {
   elements,
   attribute,

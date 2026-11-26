@@ -28,7 +28,7 @@ import {
   importParsers,
 } from "./import-parse.js"
 import { importedPaper } from "./import-word.js"
-import { readPackageZip } from "../word-package/package-zip.js"
+import { readPackageZip } from "./package-zip.js"
 import { IMPORT_LINE_BYTES, importedTextLines } from "./import-text-lines.js"
 
 const BOUNDS = { ms: 5_000, loopGapMs: 200, rssGrowthMb: 320 }

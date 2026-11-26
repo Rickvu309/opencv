@@ -11,7 +11,7 @@ import {
   wordChild,
   isWord,
   type XmlElement,
-} from "../word-package/package-xml.js"
+} from "./package-xml.js"
 import {
   numberingOf,
   pageOf,
@@ -24,7 +24,7 @@ import {
   type Run,
   type Styles,
 } from "./word-looks.js"
-import { readPackageZip } from "../word-package/package-zip.js"
+import { readPackageZip } from "./package-zip.js"
 import type { TemplateLine } from "@workspace/domain/paper-doc"
 
 type Kind = "cv" | "letter"
