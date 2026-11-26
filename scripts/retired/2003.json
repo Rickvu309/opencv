@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/paper/package-start.test.ts",
+    "because": "paper.start is an operation pair, so the test reads its Coach rule and input bounds from the catalog entry instead of the legacy contract and the deleted paperStartInputSchema. The same inputs are accepted and refused, and a pair carries no delegate field, so the delegate check asks that the field is absent.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
