@@ -12,6 +12,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Save an edited reply.",
+  label: "Update your draft",
   input: z
     .object({ threadId: threadIdSchema, body: z.string().max(20_000) })
     .strict(),

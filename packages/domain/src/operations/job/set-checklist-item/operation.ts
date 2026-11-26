@@ -12,6 +12,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Mark a checklist item done or not done.",
+  label: "Update a Job checklist item",
   input: jobSetChecklistItemInputSchema,
   publicResult: z
     .object({ id: z.string(), jobId: idResult<JobId>(), done: z.boolean() })

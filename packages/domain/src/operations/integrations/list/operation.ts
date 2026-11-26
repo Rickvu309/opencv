@@ -11,6 +11,8 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description: "Read the integrations catalog.",
+  label: "Look at your integrations",
+  readLabel: "Looked at your integrations",
   input: z.object({}).strict(),
   publicResult: integrationsSchema,
   coach: "never",

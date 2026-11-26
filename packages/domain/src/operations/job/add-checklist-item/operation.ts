@@ -12,6 +12,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Add an interview checklist item.",
+  label: "Add a Job checklist item",
   input: jobAddChecklistItemInputSchema,
   publicResult: z
     .object({

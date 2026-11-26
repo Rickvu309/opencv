@@ -13,6 +13,7 @@ export const operation = defineOperation({
   kind: "command",
   description:
     "Update job fields. Stage changes go through job.move. Priority changes need the person's approval.",
+  label: "Update this Job",
   input: jobUpdateInputSchema,
   publicResult: jobResultSchema,
   coach: "auto",

@@ -11,6 +11,8 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description: "List snoozed email threads.",
+  label: "Look at snoozed messages",
+  readLabel: "Looked at snoozed messages",
   input: emptyInboxInput,
   publicResult: inboxListSchema,
   coach: "never",
