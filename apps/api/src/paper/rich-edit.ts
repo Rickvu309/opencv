@@ -2,20 +2,25 @@ import { randomUUID } from "node:crypto"
 
 import {
   ERROR_CODES,
+  paperIdSchema,
   type PaperId,
   type UserId,
 } from "@workspace/domain/kernel"
 import {
   canonicalPaper,
+  nativeWriterSchema,
   prepareRichEdit,
   reverseRichChanges,
+  richChangeSchema,
   richTextEditsSchema,
   type NativeBasis,
   type NativeWriter,
   type RichChange,
 } from "@workspace/domain/paper-doc"
+import { z } from "zod"
 
 import { CommandError } from "../platform/errors.js"
+import type { Registry } from "../registry/registry.js"
 import { rewriteRichContent } from "./content-store.js"
 import { admitDocument } from "./native-admission.js"
 import { richBasis } from "./rich-outline.js"
@@ -109,4 +114,34 @@ export async function undoRichEdit(
       }),
     }
   })
+}
+
+export const RICH_UNDO_MOVED =
+  "This document changed after the Coach edit, so Undo was skipped to keep your writing."
+
+const richUndoSchema = z
+  .object({
+    docId: paperIdSchema,
+    writer: nativeWriterSchema,
+    editId: z.string().uuid(),
+    changes: z.array(richChangeSchema).min(1).max(30),
+  })
+  .strict()
+
+export function registerRichUndo(registry: Registry) {
+  registry.addUndoCommand(
+    {
+      name: "paper.undoEdit",
+      description:
+        "Put back the passages a Coach edit changed on a rich Paper.",
+      input: richUndoSchema,
+      coach: "never",
+      destructive: false,
+      idempotency: "keyed",
+      reversal: () => null,
+      step: () => "Undo a Coach edit",
+      activity: () => null,
+    },
+    (input, actor) => undoRichEdit(actor.userId, input)
+  )
 }

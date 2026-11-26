@@ -7,7 +7,7 @@ import {
   importReadStop,
   parseImportFile,
 } from "./import-parse.js"
-import { importedTextLines } from "./word-package/word/from-text.js"
+import { importedTextLines } from "./import-text-lines.js"
 import { pageBytesOf } from "./word-package/word/template.js"
 
 export const PDF_IMPORT_NOTICE =
