@@ -7,7 +7,7 @@ import {
 } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 
-import type { ChatSummary } from "@workspace/domain"
+import type { ChatSummary } from "@workspace/domain/coach"
 
 import { CoachHome } from "./coach-home.tsx"
 import { COACH_STARTERS } from "./coach-starters.ts"

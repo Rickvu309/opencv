@@ -1,4 +1,4 @@
-import { ERROR_CODES } from "@workspace/domain"
+import { ERROR_CODES } from "@workspace/domain/kernel"
 import { describe, expect, it } from "vitest"
 
 import { coachSendErrorMessage } from "@/features/coach/coach-error.ts"

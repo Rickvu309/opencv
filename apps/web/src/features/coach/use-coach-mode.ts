@@ -1,9 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import {
-  DEFAULT_COACH_MODE,
-  type CoachMode,
-  type Profile,
-} from "@workspace/domain"
+import { type Profile } from "@workspace/domain/account"
+import { DEFAULT_COACH_MODE, type CoachMode } from "@workspace/domain/coach"
 
 import { profileKey, profileQuery } from "@/lib/account-api.ts"
 import { catalogClient, refreshCatalogReads } from "@/lib/contract-client.ts"

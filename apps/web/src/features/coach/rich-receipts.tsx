@@ -4,12 +4,12 @@ import { FileText } from "lucide-react"
 
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
+import { type CoachReceiptDetail } from "@workspace/domain/coach"
 import {
   PAPER_KIND_LABEL,
   collapsedHunks,
   countChangedLines,
-  type CoachReceiptDetail,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import {
   RECEIPT_STAGES as STAGES,

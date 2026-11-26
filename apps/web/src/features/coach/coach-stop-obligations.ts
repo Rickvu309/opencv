@@ -1,5 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query"
-import { parseChatId } from "@workspace/domain"
+import { parseChatId } from "@workspace/domain/kernel"
 import { startCoachTask } from "@/lib/coach-task-client.ts"
 import { catalogClient } from "@/lib/contract-client.ts"
 import {
