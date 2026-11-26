@@ -18,7 +18,7 @@ import {
   startPageSchema,
   type Profile,
   type ProfileUpdateInput,
-} from "@workspace/domain"
+} from "@workspace/domain/account"
 
 import { START_PAGES, startPageEntry } from "@/lib/product-paths.ts"
 

@@ -1,12 +1,14 @@
 import type { QueryClient } from "@tanstack/react-query"
 import {
-  canonicalPaper,
   parsePaperId,
-  nativeSyncOutputSchema,
   catalog,
   type OperationInput,
+} from "@workspace/domain/kernel"
+import {
+  canonicalPaper,
+  nativeSyncOutputSchema,
   type StoredPaperDocument,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import {
   recoverRichPaperClient,
   type PaperClient,

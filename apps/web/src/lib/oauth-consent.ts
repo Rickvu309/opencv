@@ -1,4 +1,4 @@
-import { consentQueryFromSearch } from "@workspace/domain"
+import { consentQueryFromSearch } from "@workspace/domain/agents"
 
 export function signedConsentQuery(search: string) {
   return consentQueryFromSearch(search)

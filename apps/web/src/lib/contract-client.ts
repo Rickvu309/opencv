@@ -5,10 +5,10 @@ import type {
   OperationInput,
   OperationOutput,
   ResourceTouch,
-} from "@workspace/domain"
-import { catalog, resourcesOverlap } from "@workspace/domain"
+} from "@workspace/domain/kernel"
+import { catalog, resourcesOverlap } from "@workspace/domain/kernel"
 
-import { z } from "@workspace/domain"
+import { z } from "@workspace/domain/kernel"
 import { endpoints } from "@/lib/requests.ts"
 
 import { apiFetch } from "@/lib/api.ts"

@@ -1,5 +1,5 @@
 import { useReducer } from "react"
-import type { Profile } from "@workspace/domain"
+import type { Profile } from "@workspace/domain/account"
 import { afterEach, expect, it, vi } from "vitest"
 import {
   act,

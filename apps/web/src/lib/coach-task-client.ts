@@ -1,12 +1,12 @@
 import type { QueryClient } from "@tanstack/react-query"
 import {
-  catalog,
   coachConfigSchema,
   coachTaskEventSchema,
   coachTaskReplaySchema,
   chatToolNameSchema,
   type CoachStartInput,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
+import { catalog } from "@workspace/domain/kernel"
 
 import { completeCoachStop } from "@/lib/coach-stop-registry.ts"
 import { apiRequest } from "@/lib/api.ts"

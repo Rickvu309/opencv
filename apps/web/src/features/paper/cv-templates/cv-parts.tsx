@@ -8,7 +8,10 @@ import {
   useRef,
   useReducer,
 } from "react"
-import { type CvPrintModel, type CvSectionKind } from "@workspace/domain"
+import {
+  type CvPrintModel,
+  type CvSectionKind,
+} from "@workspace/domain/paper-doc"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 import { ImagePlus, Plus, User } from "lucide-react"
