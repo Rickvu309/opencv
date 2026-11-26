@@ -37,7 +37,7 @@ beforeAll(async () => {
     email: "coach-alone@example.com",
   })
   registry = new Registry()
-  registerChat(registry)
+  registerChat()
   registerCoachTasks()
   bindOperation(registry, start)
   bindOperation(registry, stop)

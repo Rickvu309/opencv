@@ -10,7 +10,7 @@ let installed = false
 
 export function installRegistry(preview?: JobPreviewOptions) {
   if (!installed) {
-    registerChat(registry)
+    registerChat()
     registerCoachTasks()
     registerPaper(registry)
     setPostingReader(preview)
