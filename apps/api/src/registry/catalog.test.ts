@@ -9,6 +9,7 @@ import { eq } from "drizzle-orm"
 import { describe, expect, it, vi } from "vitest"
 import { z } from "zod"
 import { createId } from "../platform/id.js"
+import { implementation as getJob } from "../job/operations/get/server.js"
 import { createAuth } from "../auth.js"
 import { requireSession } from "../middleware.js"
 import * as databaseContext from "../db/context.js"
@@ -132,6 +133,7 @@ function fixture(confirm = false) {
     }),
   }
   bindCatalog(registry, { [write.name]: binding })
+  bindOperation(registry, getJob)
   bindOperation(registry, {
     operation: read,
     execute: async (_input, actor) => {

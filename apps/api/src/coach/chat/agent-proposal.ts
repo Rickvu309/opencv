@@ -1,9 +1,9 @@
 import { and, eq } from "drizzle-orm"
 import { z } from "zod"
-import { toJob } from "../../job/index.js"
 import { getDb } from "../../db/context.js"
-import { chats, chatMessages, pendingActions, jobs } from "../../db/schema.js"
+import { chats, chatMessages, pendingActions } from "../../db/schema.js"
 import { createId } from "../../platform/id.js"
+import type { ProposalRead } from "../../registry/proposal-hosts.js"
 
 export function agentProposalChatTitle(connectedAt: Date) {
   return `Proposal from your connected agent (connected ${connectedAt.toISOString().slice(0, 10)})`
@@ -26,7 +26,8 @@ export async function createAgentProposalChat(input: {
 export async function appendAgentProposalApproval(
   pendingActionId: string,
   userId: string,
-  review?: unknown
+  review?: unknown,
+  read?: ProposalRead
 ) {
   const [proposal] = await getDb()
     .select()
@@ -51,12 +52,12 @@ export async function appendAgentProposalApproval(
         position: z.string().optional(),
       })
       .parse(proposal.input)
-    const [job] = await getDb()
-      .select()
-      .from(jobs)
-      .where(and(eq(jobs.id, stored.jobId), eq(jobs.userId, userId)))
-    if (!job) throw new Error("Job not found")
-    const current = z.record(z.string(), z.unknown()).parse(toJob(job))
+    if (!read) throw new Error("A Job proposal needs a read of the Job")
+    const job = z
+      .object({ id: z.string(), title: z.string(), company: z.string() })
+      .passthrough()
+      .parse(await read("job.get", { jobId: stored.jobId }))
+    const current: Record<string, unknown> = job
     const changes =
       stored.patch ??
       (proposal.command === "job.move"

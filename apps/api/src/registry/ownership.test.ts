@@ -216,3 +216,85 @@ describe("a database link from one context's table to another context's table is
     ).toBeLessThanOrEqual(14)
   })
 })
+
+const readsBetweenContexts: string[] = [
+  "account/operations/profile/set-photo/server.ts reads files",
+  "account/queries.ts reads activity",
+  "account/queries.ts reads chatMessages",
+  "account/queries.ts reads chats",
+  "account/queries.ts reads connections",
+  "account/queries.ts reads files",
+  "account/queries.ts reads jobChecklist",
+  "account/queries.ts reads jobs",
+  "account/queries.ts reads paperDocs",
+  "account/usage.ts reads coachUsage",
+  "coach/chat/agent-proposal.ts reads pendingActions",
+  "coach/chat/store.ts reads activity",
+  "coach/task-reader.ts reads pendingActions",
+  "coach/task-start.ts reads user",
+  "coach/usage-store.ts reads user",
+  "connections/call-store.ts reads user",
+  "inbox/store.ts reads jobs",
+  "inbox/store.ts reads user",
+  "job/latest-note.ts reads activity",
+  "job/linked-papers.ts reads paperDocs",
+  "job/linked-papers.ts reads paperPackageHeads",
+  "job/linked-papers.ts reads paperPackageVersions",
+  "paper/word-package/package-candidate-prune.ts reads activity",
+  "paper/word-package/package-candidate-prune.ts reads pendingActions",
+  "paper/word-package/package-candidates.ts reads user",
+  "paper/word-package/package-card-actions.ts reads jobs",
+  "paper/word-page-export.ts reads jobs",
+  "registry/delegate-policy.ts reads agentConnections",
+  "registry/frozen-review.ts reads chats",
+  "registry/frozen-review.ts reads coachTasks",
+  "registry/frozen-review.ts reads user",
+  "registry/proposals.ts reads user",
+  "registry/registry-reads.ts reads user",
+  "registry/task-fence.ts reads coachTasks",
+]
+
+function readsIn(text: string): string[] {
+  return [
+    ...text.matchAll(
+      /\.(?:from|innerJoin|leftJoin|rightJoin|fullJoin)\(\s*(\w+)\s*[,)]/g
+    ),
+  ].map((match) => match[1] ?? "")
+}
+
+function contextOfFile(relative: string) {
+  const writer = Object.keys(contextOfWriter)
+    .filter((key) => ownedBy(relative, key))
+    .sort((a, b) => b.length - a.length)[0]
+  return writer ? contextOfWriter[writer] : undefined
+}
+
+describe("a context reads another context's table only where it is named", () => {
+  it("lists every read across two contexts, and the list cannot grow", () => {
+    const found = new Set<string>()
+    for (const file of filesUnder(srcRoot)) {
+      const relative = path.relative(srcRoot, file)
+      if (
+        maySeedAnyTable(relative) ||
+        relative.includes("test-support") ||
+        relative.split(path.sep).includes("test")
+      )
+        continue
+      const reader = contextOfFile(relative)
+      if (!reader) continue
+      for (const table of readsIn(readFileSync(file, "utf8"))) {
+        const owner = contextOf(table)
+        if (!owner || owner === reader) continue
+        found.add(`${relative.split(path.sep).join("/")} reads ${table}`)
+      }
+    }
+    expect(
+      [...found].sort(),
+      "A context reads a table another context owns. Read it through the owner's operation instead (registry.read or the owner's index.ts). If the read must stay, name it in `readsBetweenContexts` in ownership.test.ts."
+    ).toEqual([...readsBetweenContexts].sort())
+    expect(
+      readsBetweenContexts.length,
+      "`readsBetweenContexts` in ownership.test.ts only shrinks. Remove a read before adding one."
+    ).toBeLessThanOrEqual(34)
+  })
+})
