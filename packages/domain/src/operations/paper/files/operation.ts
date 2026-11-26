@@ -9,6 +9,8 @@ export const operation = defineOperation({
   kind: "read",
   description:
     "List the person's uploaded files, newest first: name, media type and size. The bytes stay in the store.",
+  label: "Look at your Paper files",
+  readLabel: "Looked at your Paper files",
   input: z.object({}).strict(),
   publicResult: z.array(
     z

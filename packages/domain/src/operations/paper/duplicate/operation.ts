@@ -11,6 +11,7 @@ export const operation = defineOperation({
   kind: "command",
   description:
     "Make a copy of a CV or Letter named Copy of its name. Undo deletes the copy while its name is unchanged.",
+  label: "Duplicate this Paper",
   input: z
     .object({
       docId: z.string().uuid(),

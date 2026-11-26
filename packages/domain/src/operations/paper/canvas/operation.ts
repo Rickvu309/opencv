@@ -10,6 +10,7 @@ export const operation = defineOperation({
   kind: "command",
   description:
     "Start a Word page (blank, from a template, or with the person's drafted lines, optionally named and linked to a Job), or save what the person wrote as one batch of line changes.",
+  label: "Update your Paper layout",
   input: paperCanvasCommitSchema,
   publicResult: paperPackageEditResultSchema.strip(),
   coach: "never",

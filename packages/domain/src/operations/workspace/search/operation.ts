@@ -9,6 +9,8 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description: "Search chats, documents, and jobs.",
+  label: "Search your workspace",
+  readLabel: "Searched your workspace",
   input: z.object({ query: z.string().trim().min(1).max(200) }).strict(),
   publicResult: workspaceSearchSchema,
   coach: "auto",

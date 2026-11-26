@@ -8,6 +8,8 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description: "Read the signed-in profile.",
+  label: "Read your Profile",
+  readLabel: "Read your Profile",
   input: z.object({}).strict(),
   publicResult: profileSchema,
   coach: "auto",
