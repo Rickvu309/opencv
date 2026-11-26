@@ -8,6 +8,8 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description: "List jobs with an interview or deadline in a range.",
+  label: "Look at your Job events",
+  readLabel: "Looked at your Job events",
   input: z.object({ from: z.string().min(1), to: z.string().min(1) }).strict(),
   publicResult: z.array(jobResultSchema),
   coach: "auto",

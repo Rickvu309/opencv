@@ -12,6 +12,8 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description: "List jobs.",
+  label: "Look at your Jobs",
+  readLabel: "Looked at your Jobs",
   input: z
     .object({
       stage: jobStageSchema.optional(),

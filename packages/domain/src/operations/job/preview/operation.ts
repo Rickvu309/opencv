@@ -8,6 +8,8 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description: "Preview a posting without saving it.",
+  label: "Preview this Job",
+  readLabel: "Previewed this Job",
   input: z
     .object({ url: z.string().optional(), text: z.string().optional() })
     .strict(),

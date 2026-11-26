@@ -4,45 +4,6 @@ import { catalog } from "@workspace/domain/kernel"
 type ToolCopy = { label: string; read?: string }
 
 const TOOL_COPY = {
-  [catalog["job.addChecklistItem"].name]: {
-    label: "Add a Job checklist item",
-  },
-  [catalog["job.checklistItem"].name]: {
-    label: "Read a Job checklist item",
-    read: "Read a Job checklist item",
-  },
-  [catalog["job.addNote"].name]: { label: "Add a Job note" },
-  [catalog["job.calendar"].name]: {
-    label: "Look at your Job events",
-    read: "Looked at your Job events",
-  },
-  [catalog["job.create"].name]: { label: "Add a Job" },
-  [catalog["job.delete"].name]: { label: "Delete this Job" },
-  [catalog["job.get"].name]: { label: "Read this Job", read: "Read this Job" },
-  [catalog["job.linkPaper"].name]: { label: "Link Paper to this Job" },
-  [catalog["job.list"].name]: {
-    label: "Look at your Jobs",
-    read: "Looked at your Jobs",
-  },
-  [catalog["job.move"].name]: { label: "Move this Job" },
-  [catalog["job.preview"].name]: {
-    label: "Preview this Job",
-    read: "Previewed this Job",
-  },
-  [catalog["job.removeChecklistItem"].name]: {
-    label: "Remove a Job checklist item",
-  },
-  [catalog["job.setChecklistItem"].name]: {
-    label: "Update a Job checklist item",
-  },
-  [catalog["job.star"].name]: { label: "Update this Job's star" },
-  [catalog["job.unlinkPaper"].name]: { label: "Unlink Paper from this Job" },
-  [catalog["job.update"].name]: { label: "Update this Job" },
-  [catalog["job.priorityCounts"].name]: {
-    label: "Look at your Job priorities",
-    read: "Looked at your Job priorities",
-  },
-  [catalog["job.setPriority"].name]: { label: "Update this Job's priority" },
   [catalog["paper.canvas"].name]: { label: "Update your Paper layout" },
   [catalog["paper.create"].name]: { label: "Create a Paper" },
   [catalog["paper.delete"].name]: { label: "Delete this Paper" },

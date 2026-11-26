@@ -12,6 +12,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Move a job to a stage. This is the only stage writer.",
+  label: "Move this Job",
   input: jobMoveInputSchema,
   publicResult: jobResultSchema.extend({ fromStage: jobStageSchema }).strip(),
   coach: "confirm",
