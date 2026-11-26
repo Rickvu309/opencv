@@ -1,6 +1,6 @@
 import { ERROR_CODES, personActor } from "@workspace/domain/kernel"
 import { eq } from "drizzle-orm"
-import { afterAll, beforeAll, describe, expect, it } from "vitest"
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 
 import { getDb, withDatabase, type TestDatabase } from "../db/context.js"
 import { jobs, user } from "../db/schema.js"
@@ -86,6 +86,15 @@ describe("a Job's priority has a version", () => {
     expect(setPriority.basis).toEqual(expect.any(Function))
     expect(updateJob.basis).toEqual(expect.any(Function))
   })
+
+  it("keeps the earlier priority in the private receipt as previousPriority", () => {
+    expect(Object.keys(setPriority.privateResult.shape)).toContain(
+      "previousPriority"
+    )
+    expect(Object.keys(setPriority.operation.publicResult.shape)).not.toContain(
+      "previousPriority"
+    )
+  })
 })
 
 describe("the posting reader is set once at install", () => {
@@ -107,5 +116,44 @@ describe("the posting reader is set once at install", () => {
         )
       ).toMatchObject({ status: "filled", fields: { company: "Northwind" } })
     })
+  })
+})
+
+describe("the posting reader learns the plan through the Profile read", () => {
+  it("asks profile.get for the plan, never Account's table", async () => {
+    const asked: string[] = []
+    const read = registry.read.bind(registry)
+    const spy = vi
+      .spyOn(registry, "read")
+      .mockImplementation(async (name, input, actor) => {
+        asked.push(name)
+        return name === "profile.get"
+          ? { plan: "pro" }
+          : read(name, input, actor)
+      })
+    const plans: string[] = []
+    setPostingReader({
+      fetch: async () => ({ ok: true, text: "A role somewhere." }),
+      interpret: async ({ plan }) => {
+        plans.push(plan)
+        return { title: "Intern", company: "Northwind", location: "Hanoi" }
+      },
+    })
+    try {
+      await inside(async () => {
+        expect(
+          await registry.read(
+            "job.preview",
+            { url: "https://careers.example.com/plan" },
+            person
+          )
+        ).toMatchObject({ status: "filled", fields: { company: "Northwind" } })
+      })
+    } finally {
+      spy.mockRestore()
+      setPostingReader({ interpret: null })
+    }
+    expect(asked).toContain("profile.get")
+    expect(plans).toEqual(["pro"])
   })
 })
