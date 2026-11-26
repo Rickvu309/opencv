@@ -19,11 +19,11 @@ import {
 } from "@workspace/domain/internal/paper-presentation"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { RichPhotoControls } from "./rich-photo-controls.tsx"
-import { uploadPaperPhoto } from "./paper-api.ts"
+import { uploadPaperPhoto } from "../paper-api.ts"
 import { parsePhotoForm, photoFields, photoNumbers } from "./rich-photo-form.ts"
 import { photoErrorMessage } from "./rich-photo-form.ts"
 
-vi.mock("./paper-api.ts", () => ({ uploadPaperPhoto: vi.fn() }))
+vi.mock("../paper-api.ts", () => ({ uploadPaperPhoto: vi.fn() }))
 
 const releases: (() => void)[] = []
 

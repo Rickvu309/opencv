@@ -122,7 +122,7 @@ test("Paper status stays in one permanently exposed live region", () => {
 })
 
 test("Paper detail resets on layout changes without resetting for typing", () => {
-  const path = "apps/web/src/features/paper/rich-status-detail.ts"
+  const path = "apps/web/src/features/paper/rich-editor/rich-status-detail.ts"
   assert.deepEqual(detect(read(path), path), [])
   assert.ok(detect(past("4958d450", path), path).length)
   const clean =

@@ -97,8 +97,9 @@ test("in-flight editor calls check the live identity immediately before invoking
 })
 
 test("the table menu releases with the editor and mounts again from the live handle", () => {
-  const controls = "apps/web/src/features/paper/rich-table-controls.tsx"
-  const menu = "apps/web/src/features/paper/rich-table-menu.tsx"
+  const controls =
+    "apps/web/src/features/paper/rich-editor/rich-table-controls.tsx"
+  const menu = "apps/web/src/features/paper/rich-editor/rich-table-menu.tsx"
   assert.deepEqual(detect(read(controls), controls), [])
   assert.deepEqual(detect(read(menu), menu), [])
   assert.deepEqual(detect(read(page), page), [])

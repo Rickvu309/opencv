@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useRef } from "react"
-import type { TextEditor } from "./rich-text-toolbar-control.tsx"
+import type { TextEditor } from "../rich-text-toolbar-control.tsx"
 
 type Selected = NonNullable<ReturnType<TextEditor["activeTable"]>>
 type Drag = {

@@ -21,12 +21,12 @@ import { createChat } from "@/features/coach/chat-api.ts"
 import { useChatStore } from "@/features/coach/use-chat-store.ts"
 import { publishCoachDraft } from "@/lib/coach-draft.ts"
 import { useShortcut } from "@/lib/use-shortcut.ts"
-import { RichTextEmphasisGroup } from "./rich-text-emphasis-group.tsx"
+import { RichTextEmphasisGroup } from "../rich-text-emphasis-group.tsx"
 import { RichStructureControls } from "./rich-structure-controls.tsx"
 import type {
   TextEditor,
   TextFormatting,
-} from "./rich-text-toolbar-control.tsx"
+} from "../rich-text-toolbar-control.tsx"
 import "./rich-selection-bubble.css"
 
 type SelectionBox = { left: number; top: number; bottom: number; text: string }

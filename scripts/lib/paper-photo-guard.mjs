@@ -1,7 +1,7 @@
 import ts from "typescript"
 
 export function detectPhotoApplyRounding(text, path) {
-  if (path === "apps/web/src/features/paper/rich-photo-number.tsx") {
+  if (path.endsWith("/rich-photo-number.tsx")) {
     const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
     const hits = []
     const visit = (node) => {
@@ -16,7 +16,7 @@ export function detectPhotoApplyRounding(text, path) {
     visit(source)
     return hits
   }
-  if (path !== "apps/web/src/features/paper/rich-photo-form.ts") return []
+  if (!path.endsWith("/rich-photo-form.ts")) return []
   const source = ts.createSourceFile(path, text, ts.ScriptTarget.Latest, true)
   const hits = []
   const visit = (node) => {
@@ -71,7 +71,7 @@ export function detectPhotoPresentation(text, path, source) {
     !text.includes('error.message.trimStart().startsWith("[")')
   )
     hits.push("Photo errors must hide schema details after serialization")
-  if (path === "apps/web/src/features/paper/rich-photo-form.ts") {
+  if (path.endsWith("/rich-photo-form.ts")) {
     const form = source.statements.find(
       (node) =>
         ts.isFunctionDeclaration(node) && node.name?.text === "parsePhotoForm"
@@ -97,7 +97,7 @@ export function detectPhotoPresentation(text, path, source) {
         "Photo Apply must fit Circle from the final fields, preserve untouched placement and round displayed sizes"
       )
   }
-  if (path === "apps/web/src/features/paper/rich-photo-number.tsx") {
+  if (path.endsWith("/rich-photo-number.tsx")) {
     if (
       /use(?:Reducer|State|Effect)\s*\(/.test(text) ||
       !text.includes("tabular-nums") ||
@@ -108,7 +108,7 @@ export function detectPhotoPresentation(text, path, source) {
         "Photo fields must be controlled by the shared form with linked errors and tabular figures"
       )
   }
-  if (path === "apps/web/src/features/paper/rich-photo-controls.tsx") {
+  if (path.endsWith("/rich-photo-controls.tsx")) {
     function inspectPhotoInput(node) {
       if (
         ts.isJsxAttribute(node) &&
@@ -167,7 +167,7 @@ export function detectPhotoPresentation(text, path, source) {
       "Photo insertion must refuse unsupported source proportions before parsing geometry"
     )
   if (
-    path === "apps/web/src/features/paper/rich-photo-preview.tsx" &&
+    path.endsWith("/rich-photo-preview.tsx") &&
     text.includes("<img") &&
     (!text.includes('role="img"') ||
       text.includes("insetInlineStart:") ||
@@ -178,7 +178,7 @@ export function detectPhotoPresentation(text, path, source) {
       "Photo preview must expose its image role and match physical crop edges and rounded geometry"
     )
   if (
-    path === "apps/web/src/features/paper/rich-photo-controls.tsx" &&
+    path.endsWith("/rich-photo-controls.tsx") &&
     text.includes("uploadPaperPhoto(file)") &&
     (text.indexOf("photoInsertSize(ratio)") < 0 ||
       text.indexOf("photoInsertSize(ratio)") >
@@ -234,8 +234,8 @@ export function detectPhotoPresentation(text, path, source) {
     )
   if (
     [
-      "apps/web/src/features/paper/rich-photo-controls.tsx",
-      "apps/web/src/features/paper/rich-photo-preview.tsx",
+      "apps/web/src/features/paper/rich-editor/rich-photo-controls.tsx",
+      "apps/web/src/features/paper/rich-editor/rich-photo-preview.tsx",
     ].includes(path)
   ) {
     if (/name=\{edge\}[\s\S]*?step="(?!any")/.test(text))

@@ -17,7 +17,7 @@ import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import { openRichPaperSession } from "@/lib/paper-rich.ts"
 import { render } from "@/test/render-with-client.tsx"
 import { storedFlowFixture } from "../../../../../../packages/paper-crdt/src/test/flow-fixture.ts"
-import { RichTableControls } from "../rich-table-controls.tsx"
+import { RichTableControls } from "./rich-table-controls.tsx"
 import { RichPaperPage } from "./rich-page.tsx"
 import * as flowMount from "../../../../../../packages/paper-crdt/src/native-layout-flow-mount.ts"
 

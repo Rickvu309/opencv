@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs"
 import { execFileSync } from "node:child_process"
 import test from "node:test"
 import { detect } from "./lib/paper-tables.mjs"
+import { pathAtRevision } from "./lib/path-at-revision.mjs"
 
 const read = (file) =>
   readFileSync(new URL(`../${file}`, import.meta.url), "utf8")
@@ -10,11 +11,11 @@ const files = [
   "packages/paper-crdt/src/editor.ts",
   "packages/paper-crdt/src/native-layout-flow-view.ts",
   "packages/paper-crdt/src/native-layout-schema.ts",
-  "apps/web/src/features/paper/rich-table-controls.tsx",
+  "apps/web/src/features/paper/rich-editor/rich-table-controls.tsx",
   "apps/api/src/paper/native-output/formatted.ts",
-  "apps/web/src/features/paper/rich-table.css",
+  "apps/web/src/features/paper/rich-editor/rich-table.css",
   "packages/paper-crdt/src/native-layout-flow-mount.ts",
-  "apps/web/src/features/paper/rich-table-menu.tsx",
+  "apps/web/src/features/paper/rich-editor/rich-table-menu.tsx",
   "packages/paper-crdt/src/native-layout-measured-pagination.ts",
 ]
 
@@ -75,9 +76,13 @@ test("table mistakes fire and clean fixtures stay quiet", () => {
 
 test("the original table commit reproduces all three blocking mistakes", () => {
   for (const file of files.slice(0, 3)) {
-    const historic = execFileSync("git", ["show", `212a5afd:${file}`], {
-      encoding: "utf8",
-    })
+    const historic = execFileSync(
+      "git",
+      ["show", `212a5afd:${pathAtRevision("212a5afd", file)}`],
+      {
+        encoding: "utf8",
+      }
+    )
     assert.ok(detect(historic, file).length, file)
   }
 })
@@ -96,9 +101,13 @@ test("border focus mistakes fire on the introducing commit and stay quiet after 
       "Border choices must keep control focus and check editor availability"
     )
   )
-  const historic = execFileSync("git", ["show", `9f201aba:${file}`], {
-    encoding: "utf8",
-  })
+  const historic = execFileSync(
+    "git",
+    ["show", `9f201aba:${pathAtRevision("9f201aba", file)}`],
+    {
+      encoding: "utf8",
+    }
+  )
   assert.ok(
     detect(historic, file).includes(
       "Border choices must keep control focus and check editor availability"
@@ -118,9 +127,13 @@ test("row replacement keeps the menu host and rejects the introducing commit", (
   assert.notEqual(mistake, clean)
   assert.deepEqual(detect(clean, file), [])
   assert.ok(detect(mistake, file).includes(expected))
-  const historic = execFileSync("git", ["show", `9f201aba:${file}`], {
-    encoding: "utf8",
-  })
+  const historic = execFileSync(
+    "git",
+    ["show", `9f201aba:${pathAtRevision("9f201aba", file)}`],
+    {
+      encoding: "utf8",
+    }
+  )
   assert.ok(detect(historic, file).includes(expected))
 })
 

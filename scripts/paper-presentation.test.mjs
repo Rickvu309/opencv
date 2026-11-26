@@ -141,14 +141,18 @@ test("the Docs shortcut guard catches the original strikethrough mapping", () =>
 
 test("round-one guards reject the reviewed head and accept the repaired sources", () => {
   for (const file of [
-    "apps/web/src/features/paper/rich-structure-controls.tsx",
+    "apps/web/src/features/paper/rich-editor/rich-structure-controls.tsx",
     "packages/paper-crdt/src/native-formatting-commands.ts",
     "packages/paper-crdt/src/native-formatting-decorations.ts",
     "apps/api/src/paper/native-output/formatted.ts",
   ]) {
     const original = execFileSync(
       "git",
-      ["show", "76bc742eaf0cbfd579d930a91bea052dc7193570:" + file],
+      [
+        "show",
+        "76bc742eaf0cbfd579d930a91bea052dc7193570:" +
+          pathAtRevision("76bc742eaf0cbfd579d930a91bea052dc7193570", file),
+      ],
       { cwd: root, encoding: "utf8" }
     )
     assert.ok(detect(original, file).length, file)
@@ -180,14 +184,18 @@ test("unstyled paragraph defaults survive semantic heading resolution", () => {
 
 test("round-two guards reject reviewed sources and accept shared link presentation and bounded list controls", () => {
   for (const file of [
-    "apps/web/src/features/paper/rich-structure-controls.tsx",
+    "apps/web/src/features/paper/rich-editor/rich-structure-controls.tsx",
     "packages/paper-crdt/src/native-formatting-commands.ts",
     "packages/paper-crdt/src/native-formatting-decorations.ts",
     "apps/api/src/paper/native-output/package.ts",
   ]) {
     const original = execFileSync(
       "git",
-      ["show", "76bc742eaf0cbfd579d930a91bea052dc7193570:" + file],
+      [
+        "show",
+        "76bc742eaf0cbfd579d930a91bea052dc7193570:" +
+          pathAtRevision("76bc742eaf0cbfd579d930a91bea052dc7193570", file),
+      ],
       {
         cwd: root,
         encoding: "utf8",
@@ -210,7 +218,7 @@ test("round-three guards reject decoration overrides and shared field errors wit
       "2f37a898",
     ],
     [
-      "apps/web/src/features/paper/rich-structure-controls.tsx",
+      "apps/web/src/features/paper/rich-editor/rich-structure-controls.tsx",
       "failed field",
       "27680a33",
     ],
@@ -285,7 +293,7 @@ test("private formatting preserves package boundaries, real owners, XML anchors 
 test("photo guards catch the reviewed insertion, dimension, selection and preview mistakes", () => {
   for (const file of [
     "packages/paper-crdt/src/native-layout-photo-controls.ts",
-    "apps/web/src/features/paper/rich-photo-controls.tsx",
+    "apps/web/src/features/paper/rich-editor/rich-photo-controls.tsx",
   ]) {
     const before = execFileSync(
       "git",
@@ -306,8 +314,8 @@ test("photo guards catch the reviewed insertion, dimension, selection and previe
 
 test("round-two photo guards reject the crop ratchet and hidden actions at their introducing heads", () => {
   for (const file of [
-    "apps/web/src/features/paper/rich-photo-controls.tsx",
-    "apps/web/src/features/paper/rich-photo-preview.tsx",
+    "apps/web/src/features/paper/rich-editor/rich-photo-controls.tsx",
+    "apps/web/src/features/paper/rich-editor/rich-photo-preview.tsx",
     "packages/paper-crdt/src/native-layout-photo-controls.ts",
   ]) {
     const before = execFileSync(
@@ -329,8 +337,8 @@ test("round-two photo guards reject the crop ratchet and hidden actions at their
 
 test("round-three photo guards reject refused drafts, late upload checks and invisible circle projections", () => {
   for (const file of [
-    "apps/web/src/features/paper/rich-photo-number.tsx",
-    "apps/web/src/features/paper/rich-photo-controls.tsx",
+    "apps/web/src/features/paper/rich-editor/rich-photo-number.tsx",
+    "apps/web/src/features/paper/rich-editor/rich-photo-controls.tsx",
     "packages/domain/src/paper-doc/native-photo-geometry.ts",
   ]) {
     const before = execFileSync(
@@ -352,8 +360,8 @@ test("round-three photo guards reject refused drafts, late upload checks and inv
 
 test("round-four photo guards reject split text state and Apply without whole-form validation at the reviewed head", () => {
   for (const file of [
-    "apps/web/src/features/paper/rich-photo-number.tsx",
-    "apps/web/src/features/paper/rich-photo-controls.tsx",
+    "apps/web/src/features/paper/rich-editor/rich-photo-number.tsx",
+    "apps/web/src/features/paper/rich-editor/rich-photo-controls.tsx",
   ]) {
     const before = execFileSync(
       "git",
@@ -373,7 +381,7 @@ test("round-four photo guards reject split text state and Apply without whole-fo
 })
 
 test("round-five photo Apply rejects conditional geometry, lost placement and raw display precision at the introducing head", () => {
-  const file = "apps/web/src/features/paper/rich-photo-form.ts"
+  const file = "apps/web/src/features/paper/rich-editor/rich-photo-form.ts"
   const before = execFileSync(
     "git",
     ["show", `fe40fd4f:${pathAtRevision("fe40fd4f", file)}`],
@@ -438,7 +446,7 @@ test("phone overflow guard refuses empty menus and dangling photo separators", (
 })
 
 test("round-six photo Apply guard refuses refitting consistent fields at the introducing head", () => {
-  const file = "apps/web/src/features/paper/rich-photo-form.ts"
+  const file = "apps/web/src/features/paper/rich-editor/rich-photo-form.ts"
   const mistake = execFileSync(
     "git",
     ["show", `dfdf0043:${pathAtRevision("dfdf0043", file)}`],
@@ -461,7 +469,7 @@ test("round-six photo Apply guard refuses refitting consistent fields at the int
 })
 
 test("round-six photo blur guard catches the original unconditional commit", () => {
-  const file = "apps/web/src/features/paper/rich-photo-number.tsx"
+  const file = "apps/web/src/features/paper/rich-editor/rich-photo-number.tsx"
   const mistake = execFileSync(
     "git",
     ["show", `dfdf0043:${pathAtRevision("dfdf0043", file)}`],

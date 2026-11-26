@@ -53,7 +53,7 @@ import {openRichPaperClient} from '/@fs/${root}/packages/paper-crdt/src/client.t
 import {seedStoredYDoc} from '/@fs/${root}/packages/paper-crdt/src/stored-document.ts'
 import {storedFlowFixture} from '/@fs/${root}/packages/paper-crdt/src/test/flow-fixture.ts'
 import {RichPaperTextFormatting} from '/src/features/paper/rich-text-formatting.tsx'
-import {RichPhotoControls} from '/src/features/paper/rich-photo-controls.tsx'
+import {RichPhotoControls} from '/src/features/paper/rich-editor/rich-photo-controls.tsx'
 const document=storedFlowFixture('letter')
 const provenance=nativeProvenance(document)
 const client=openRichPaperClient({epoch:1,revision:0,provenance,server:seedStoredYDoc(document),pending:Uint8Array.of(0,0)},{provenance})
