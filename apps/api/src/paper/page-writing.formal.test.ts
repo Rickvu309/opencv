@@ -10,7 +10,7 @@ import { getDb, withDatabase } from "../db/context.js"
 import { paperPackageHeads, user } from "../db/schema.js"
 import { openBackend, type Backend } from "../test/registry-formal-support.js"
 import { paperRegistry } from "./paper-registry.test-support.js"
-import { packageMember } from "./package-fixtures.js"
+import { packageMember } from "./word-package/package-fixtures.js"
 import { publishWordPackage, stageWordPackage } from "./package-store.js"
 import { exportWord } from "./word-package/word/document.js"
 

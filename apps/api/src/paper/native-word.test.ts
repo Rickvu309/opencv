@@ -29,8 +29,8 @@ import { richPaper } from "../test/rich-paper.js"
 import { withRichSnapshot } from "./content-store.js"
 import { downloadNativeWord } from "./native-word.js"
 import { savedRichWord, portraitBytes } from "./native-word.test-support.js"
-import { readPackageZip } from "./package-zip.js"
-import { parsePackageXml } from "./package-xml.js"
+import { readPackageZip } from "./word-package/package-zip.js"
+import { parsePackageXml } from "./word-package/package-xml.js"
 import {
   elements,
   attribute,

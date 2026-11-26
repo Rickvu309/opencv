@@ -4,21 +4,24 @@ import { paperPackageProjectionSchema } from "@workspace/domain/paper-doc"
 import { count, eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import { transaction, withDatabase } from "../db/context.js"
+import { transaction, withDatabase } from "../../db/context.js"
 import {
   files,
   paperPackageHeads,
   paperPackageVersions,
   user,
-} from "../db/schema.js"
-import { openBackend, type Backend } from "../test/registry-formal-support.js"
+} from "../../db/schema.js"
+import {
+  openBackend,
+  type Backend,
+} from "../../test/registry-formal-support.js"
 import { PaperPackage } from "./package-engine.js"
 import {
   fixturePackage,
   paragraph,
   run as wordRun,
 } from "./package-fixtures.js"
-import { archiveDigest, packageDigest } from "./package-pages.js"
+import { archiveDigest, packageDigest } from "../package-pages.js"
 import { prepareWordPackage } from "./package-planner.js"
 import {
   exportWordPackage,
@@ -26,7 +29,7 @@ import {
   publishWordPackage,
   readWordPackage,
   stageWordPackage,
-} from "./package-store.js"
+} from "../package-store.js"
 
 let backend: Backend
 const owner = randomUUID()

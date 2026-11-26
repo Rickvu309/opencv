@@ -2,9 +2,12 @@ import { randomUUID } from "node:crypto"
 
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import { withDatabase } from "../db/context.js"
-import { user } from "../db/schema.js"
-import { openBackend, type Backend } from "../test/registry-formal-support.js"
+import { withDatabase } from "../../db/context.js"
+import { user } from "../../db/schema.js"
+import {
+  openBackend,
+  type Backend,
+} from "../../test/registry-formal-support.js"
 import {
   fixturePackage,
   packageMember,
@@ -16,9 +19,9 @@ import {
   publishWordPackage,
   readWordPackage,
   stageWordPackage,
-} from "./package-store.js"
+} from "../package-store.js"
 import { readPackageZip } from "./package-zip.js"
-import { apply, open } from "./word-package/word/document.js"
+import { apply, open } from "./word/document.js"
 
 let backend: Backend
 const owner = randomUUID()

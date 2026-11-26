@@ -9,15 +9,15 @@ import {
 } from "@workspace/domain/paper-doc"
 import { z } from "zod"
 
-import { insideTransaction } from "../db/context.js"
+import { insideTransaction } from "../../db/context.js"
 import { refuse } from "./package-errors.js"
 import { PACKAGE_LIMITS } from "./package-limits.js"
-import { packageDigest, packageFailure } from "./package-pages.js"
+import { packageDigest, packageFailure } from "../package-pages.js"
 import { uniqueSpan } from "./package-spans.js"
-import { wordPackageBasis } from "./package-store.js"
+import { wordPackageBasis } from "../package-store.js"
 import { xmlCharacters } from "./package-xml.js"
-import { draftBatch, open } from "./word-package/word/document.js"
-import { changedSpan, type WordSpan } from "./word-package/word/runs.js"
+import { draftBatch, open } from "./word/document.js"
+import { changedSpan, type WordSpan } from "./word/runs.js"
 
 const wordBatchEditSchema = paperPackageEditSchema.extend({
   edits: wordConfirmedOpsSchema,

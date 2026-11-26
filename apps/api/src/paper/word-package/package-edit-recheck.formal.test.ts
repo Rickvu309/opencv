@@ -26,7 +26,7 @@ import {
 } from "../../test/registry-formal-support.js"
 import { prepareStoredWordPackage } from "./package-candidates.js"
 import { paperRegistry } from "../paper-registry.test-support.js"
-import { fixturePackage } from "../package-fixtures.js"
+import { fixturePackage } from "./package-fixtures.js"
 import * as packageStore from "../package-store.js"
 
 let backend: Backend

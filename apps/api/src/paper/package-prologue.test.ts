@@ -2,9 +2,9 @@ import { createHash } from "node:crypto"
 
 import { describe, expect, it } from "vitest"
 
-import { PaperPackage } from "./package-engine.js"
-import { fixturePackage, paragraph } from "./package-fixtures.js"
-import { parsePackageXml } from "./package-xml.js"
+import { PaperPackage } from "./word-package/package-engine.js"
+import { fixturePackage, paragraph } from "./word-package/package-fixtures.js"
+import { parsePackageXml } from "./word-package/package-xml.js"
 
 const context = {
   docId: "cv",

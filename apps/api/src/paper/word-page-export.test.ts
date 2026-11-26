@@ -24,10 +24,10 @@ import {
   createTestApp,
   signUp,
 } from "../test/harness.js"
-import { PaperPackage } from "./package-engine.js"
+import { PaperPackage } from "./word-package/package-engine.js"
 import { deleteWordPage } from "./word-package/package-card-actions.js"
 import { publishWordPackage, stageWordPackage } from "./package-store.js"
-import { readPackageZip } from "./package-zip.js"
+import { readPackageZip } from "./word-package/package-zip.js"
 import { open, apply } from "./word-package/word/document.js"
 import { writtenPageBytes } from "./word-package/word/template.js"
 import { collectWordPageExport } from "./word-page-export.js"

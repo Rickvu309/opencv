@@ -16,7 +16,7 @@ import {
   openBackend,
   type Backend,
 } from "../../../test/registry-formal-support.js"
-import { cvPackage } from "../../package-fixtures.js"
+import { cvPackage } from "../package-fixtures.js"
 import { publishWordPackage, stageWordPackage } from "../../package-store.js"
 import { apply, exportWord, open, undo } from "./document.js"
 
