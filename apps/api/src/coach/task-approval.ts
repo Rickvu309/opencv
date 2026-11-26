@@ -9,7 +9,7 @@ import {
 } from "../db/schema.js"
 import { CommandError } from "../platform/errors.js"
 import type { TaskApprovalLock } from "../registry/proposal-hosts.js"
-import { coachActor, ERROR_CODES } from "@workspace/domain"
+import { coachActor, ERROR_CODES } from "@workspace/domain/kernel"
 import { inputHash } from "./task-store.js"
 
 export async function lockTaskApproval(
