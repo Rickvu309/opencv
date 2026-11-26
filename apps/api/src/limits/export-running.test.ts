@@ -1,4 +1,4 @@
-import { LIMITS } from "@workspace/domain"
+import { LIMITS } from "@workspace/domain/limits"
 import { Hono } from "hono"
 import { describe, expect, it } from "vitest"
 

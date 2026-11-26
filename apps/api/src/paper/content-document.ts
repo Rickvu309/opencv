@@ -1,9 +1,9 @@
+import { ERROR_CODES } from "@workspace/domain/kernel"
 import {
-  ERROR_CODES,
   storedPaperDocumentSchema,
   type StoredPaperDocument,
   type PaperStoredKind,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { materializeStored, seedStoredYDoc } from "@workspace/paper-crdt"
 import { CommandError } from "../platform/errors.js"
 

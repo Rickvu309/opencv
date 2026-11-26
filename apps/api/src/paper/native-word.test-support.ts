@@ -1,15 +1,15 @@
 import { createHash, randomUUID } from "node:crypto"
+import { parseUserId } from "@workspace/domain/kernel"
 import {
   canonicalPaper,
   nativeProvenance,
   paperPhotoRef,
-  parseUserId,
   RICH_NATIVE_WRITER,
   richPaperDocumentSchema,
   type SafeHref,
   type NativeBasis,
   type RichPaperDocument,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { withDatabase, type TestDatabase } from "../db/context.js"
 import { insertPaperFixture } from "../test/paper-row.js"
 import { richPaper } from "../test/rich-paper.js"

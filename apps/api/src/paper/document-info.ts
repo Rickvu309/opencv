@@ -1,13 +1,15 @@
 import { and, eq } from "drizzle-orm"
 import {
   ERROR_CODES,
+  type PaperId,
+  type UserId,
+} from "@workspace/domain/kernel"
+import {
   nativeProvenance,
   paperDocumentInfoSchema,
   storedPaperDocumentSchema,
   type NativeWriter,
-  type PaperId,
-  type UserId,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { getDb } from "../db/context.js"
 import { paperDocs } from "../db/schema.js"
 import { CommandError } from "../platform/errors.js"

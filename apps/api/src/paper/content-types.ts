@@ -2,7 +2,7 @@ import type {
   NativeWriter,
   NativeProvenance,
   PaperDocument,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import type { PaperYDoc } from "@workspace/paper-crdt"
 import type { paperDocs } from "../db/schema.js"
 

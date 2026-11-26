@@ -4,7 +4,7 @@ import {
   IMPORT_PAGES_MESSAGE,
   LETTER_ATTACHMENT_TEXT_MAX,
   type LetterAttachmentContext,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import { IMPORT_TEXT_LIMITS } from "./import-limits.js"
 import { ImportReadCancelled, ImportReadLimited } from "./import-read-queue.js"
