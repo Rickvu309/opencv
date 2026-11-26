@@ -1,0 +1,11 @@
+{
+  "id": "agents-md-identifiers",
+  "file": "scripts/agents-md-identifiers.test.mjs",
+  "historic": {
+    "mode": "restore",
+    "sha": "82520cfd0",
+    "paths": ["AGENTS.md"],
+    "command": ["node", "--test", "scripts/agents-md-identifiers.test.mjs"]
+  },
+  "reason": "Caught by architecture review. Introduced by 82520cfd0, which removed runContractCommand from apps/web/src/lib/contract-client.ts while AGENTS.md kept telling agents to use it for product actions."
+}
