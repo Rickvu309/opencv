@@ -1,5 +1,5 @@
 import { expect, it } from "vitest"
-import { parseChatId } from "@workspace/domain"
+import { parseChatId } from "@workspace/domain/kernel"
 import { CHAT, TASK, taskSnapshot } from "@/test/coach-task-fixture.ts"
 import { taskFromSnapshot } from "@/lib/coach-task-state.ts"
 import {

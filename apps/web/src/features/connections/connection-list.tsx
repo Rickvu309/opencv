@@ -1,10 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouterState } from "@tanstack/react-router"
-import {
-  grantCopy,
-  type ConnectionId,
-  type ConnectionResources,
-} from "@workspace/domain"
+import { grantCopy, type ConnectionResources } from "@workspace/domain/agents"
+import { type ConnectionId } from "@workspace/domain/kernel"
 import { Button } from "@workspace/ui/components/button"
 import { profileQuery } from "@/lib/account-api.ts"
 import { useOwnerId } from "@/lib/owner-id.ts"

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
-import type { ChatSummary } from "@workspace/domain"
+import type { ChatSummary } from "@workspace/domain/coach"
 
 import { CoachHistory } from "./coach-history.tsx"
 
