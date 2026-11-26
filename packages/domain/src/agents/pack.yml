@@ -1,2 +1,2 @@
-layer: platform
+layer: kernel
 public: [public.ts, connections.ts, delegate-grant.ts]

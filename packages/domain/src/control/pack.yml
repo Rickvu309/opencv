@@ -1,2 +1,2 @@
-layer: platform
+layer: kernel
 public: [public.ts, control.ts]

@@ -34,6 +34,13 @@ flowchart TD
   end
   subgraph p_layer_kernel["kernel"]
     p_apps_api_src_registry["apps/api/src/registry"]
+    p_packages_domain_src_account["packages/domain/src/account"]
+    p_packages_domain_src_agents["packages/domain/src/agents"]
+    p_packages_domain_src_apply["packages/domain/src/apply"]
+    p_packages_domain_src_coach["packages/domain/src/coach"]
+    p_packages_domain_src_control["packages/domain/src/control"]
+    p_packages_domain_src_inbox["packages/domain/src/inbox"]
+    p_packages_domain_src_paper_doc["packages/domain/src/paper-doc"]
   end
   subgraph p_layer_platform["platform"]
     p_apps_api_src_db["apps/api/src/db"]
@@ -42,13 +49,6 @@ flowchart TD
     p_apps_api_src_platform["apps/api/src/platform"]
     p_apps_web_src_components["apps/web/src/components"]
     p_apps_web_src_lib["apps/web/src/lib"]
-    p_packages_domain_src_account["packages/domain/src/account"]
-    p_packages_domain_src_agents["packages/domain/src/agents"]
-    p_packages_domain_src_apply["packages/domain/src/apply"]
-    p_packages_domain_src_coach["packages/domain/src/coach"]
-    p_packages_domain_src_control["packages/domain/src/control"]
-    p_packages_domain_src_inbox["packages/domain/src/inbox"]
-    p_packages_domain_src_paper_doc["packages/domain/src/paper-doc"]
   end
   p_apps_api_src --> p_apps_api_src_account
   p_apps_api_src --> p_apps_api_src_coach_chat
@@ -198,10 +198,10 @@ flowchart TD
 | `apps/web/src/features/seed` | feature | sample-author.ts | apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/features/settings` | feature | account-section.tsx, billing-section.tsx, coach-section.tsx, integrations-section.tsx, preferences-section.tsx, sections.ts, settings-api.ts, settings-layout.tsx, settings-nav.tsx, usage-section.tsx | apps/web/src/features/auth, apps/web/src/features/connections, apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/lib` | platform | none | none | none |
-| `packages/domain/src/account` | platform | public.ts, account.ts, usage.ts | packages/domain/src/apply, packages/domain/src/coach | none |
-| `packages/domain/src/agents` | platform | public.ts, connections.ts, delegate-grant.ts | none | none |
-| `packages/domain/src/apply` | platform | public.ts, job.ts, job-position.ts, job-posting.ts | none | none |
-| `packages/domain/src/coach` | platform | public.ts, coach.ts, coach-mode.ts, coach-task.ts, chat.ts, chat-messages.ts, chat-title.ts, chat-turn.ts, chat-views.ts | packages/domain/src/apply, packages/domain/src/paper-doc | none |
-| `packages/domain/src/control` | platform | public.ts, control.ts | none | none |
-| `packages/domain/src/inbox` | platform | public.ts, index.ts | packages/domain/src/apply | none |
-| `packages/domain/src/paper-doc` | platform | public.ts, index.ts, paper.ts, paper-canvas.ts, paper-contract.ts, paper-contract-views.ts, paper-diff.ts, paper-package.ts, paper-rich-edit.ts, paper-start.ts, paper-word.ts, paper-page-scale.ts, paper-presentation.ts | none | none |
+| `packages/domain/src/account` | kernel | public.ts, account.ts, usage.ts | packages/domain/src/apply, packages/domain/src/coach | none |
+| `packages/domain/src/agents` | kernel | public.ts, connections.ts, delegate-grant.ts | none | none |
+| `packages/domain/src/apply` | kernel | public.ts, job.ts, job-position.ts, job-posting.ts | none | none |
+| `packages/domain/src/coach` | kernel | public.ts, coach.ts, coach-mode.ts, coach-task.ts, chat.ts, chat-messages.ts, chat-title.ts, chat-turn.ts, chat-views.ts | packages/domain/src/apply, packages/domain/src/paper-doc | none |
+| `packages/domain/src/control` | kernel | public.ts, control.ts | none | none |
+| `packages/domain/src/inbox` | kernel | public.ts, index.ts | packages/domain/src/apply | none |
+| `packages/domain/src/paper-doc` | kernel | public.ts, index.ts, paper.ts, paper-canvas.ts, paper-contract.ts, paper-contract-views.ts, paper-diff.ts, paper-package.ts, paper-rich-edit.ts, paper-start.ts, paper-word.ts, paper-page-scale.ts, paper-presentation.ts | none | none |

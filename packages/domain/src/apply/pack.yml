@@ -1,2 +1,2 @@
-layer: platform
+layer: kernel
 public: [public.ts, job.ts, job-position.ts, job-posting.ts]
