@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest"
 import {
   nativeProvenanceSchema,
   paperDocumentInfoSchema,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { richDocumentAnswer } from "../../../../scripts/ui/rich-document-answer.mjs"
 
 const provenance = nativeProvenanceSchema.parse({

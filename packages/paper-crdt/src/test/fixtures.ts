@@ -3,7 +3,7 @@ import {
   blankLetter,
   paperDocumentSchema,
   type PaperDocument,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 function parsed(candidate: unknown): PaperDocument {
   return paperDocumentSchema.parse(candidate)

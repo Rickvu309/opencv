@@ -1,4 +1,4 @@
-import type { CvDocument } from "@workspace/domain"
+import type { CvDocument } from "@workspace/domain/paper-doc"
 
 export function starterCvDocument(): CvDocument {
   return {

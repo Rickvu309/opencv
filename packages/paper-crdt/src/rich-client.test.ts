@@ -4,7 +4,7 @@ import {
   canonicalPaper,
   richPaperDocumentSchema,
   nativeProvenance,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { openRichPaperClient } from "./client.js"
 import { materializeStored, seedStoredYDoc } from "./stored-document.js"
 import { storedFlowFixture } from "./test/flow-fixture.js"

@@ -4,7 +4,7 @@ import {
   canonicalPaper,
   nativeProvenance,
   richPaperDocumentSchema,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { openRichPaperClient } from "./client.js"
 import { PENDING_CONTENT_ORIGIN } from "./pending-content.js"
 import { materializeStored, seedStoredYDoc } from "./stored-document.js"
