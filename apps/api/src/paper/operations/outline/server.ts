@@ -6,10 +6,5 @@ import { readOutline } from "../../outline.js"
 export const implementation = {
   operation,
   execute: (input, actor) =>
-    readOutline(
-      actor.userId,
-      parsePaperId(input.docId),
-      input.blockIds,
-      input.cursor
-    ),
+    readOutline(actor.userId, parsePaperId(input.docId), input.blockIds),
 } satisfies OperationBinding<typeof operation>

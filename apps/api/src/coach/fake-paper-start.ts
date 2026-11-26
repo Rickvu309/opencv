@@ -13,7 +13,7 @@ const startedSchema = z.object({
 
 const outlinedSchema = z.object({
   output: z.object({
-    revision: z.union([z.number(), z.string()]),
+    revision: z.number(),
     outline: z.string(),
     nativeBasis: z.unknown().optional(),
   }),

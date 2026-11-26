@@ -26,7 +26,7 @@ const contextSchema = z.object({
   focusDoc: z
     .object({
       id: z.string(),
-      revision: z.union([z.number(), z.string().uuid()]),
+      revision: z.number(),
       outline: z.string(),
       nativeBasis: nativeBasisSchema.optional(),
     })

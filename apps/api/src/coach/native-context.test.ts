@@ -115,29 +115,6 @@ it.each([
   expect(read).toHaveBeenCalledTimes(1)
 })
 
-it("permits only missing block storage to fall back to Word and keeps its UUID revision", async () => {
-  const revision = "01990b00-0000-7000-8000-000000000002"
-  const read = vi.fn<Registry["read"]>(async (name) => {
-    if (name === "paper.list") return []
-    if (name === "paper.read")
-      return {
-        generation: "package",
-        docId,
-        name: "Word Letter",
-        kind: "letter",
-      }
-    return {
-      revision,
-      outline: `Letter
-[line ${revision}] Words`,
-    }
-  })
-  const result = await resolve(read)
-  expect(result.focusDoc).toMatchObject({ revision })
-  expect(result.focusDoc?.nativeBasis).toBeUndefined()
-  expect(fakePaperEdit(result.focusDoc!)).not.toHaveProperty("writer")
-})
-
 it("keeps a missing or unowned document missing", async () => {
   await expect(
     resolve(async (name) => {

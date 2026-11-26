@@ -20,7 +20,6 @@ import {
   openBackend,
   type Backend,
 } from "../../test/registry-formal-support.js"
-import { readOutline } from "../outline.js"
 import { fixturePackage, paragraph } from "./package-fixtures.js"
 import { publishWordPackage, stageWordPackage } from "./package-store.js"
 import { listPapers } from "../store.js"
@@ -133,16 +132,7 @@ describe("Word pages in the document list", () => {
         name: "Page.docx",
         format: "word",
       })
-      const outline = await readOutline(ownerId, docId, undefined)
-      expect(outline.revision).toBe(head.revision)
-      expect(outline.outline).toContain("Harbor light")
-      expect(outline.outline).toContain(`Saved revision ${head.revision}`)
-      expect(outline.outline).toMatch(/\[line [a-f0-9-]{36}\]/)
       const importedId = parsePaperId(imported.docId)
-      const importedOutline = await readOutline(ownerId, importedId, undefined)
-      expect(importedOutline.revision).toBe(imported.revision)
-      expect(importedOutline.outline).toContain("Harbor light")
-      expect(importedOutline.outline).toMatch(/\[line [a-f0-9-]{36}\]/)
       await expect(
         registry.read(
           "paper.read",
@@ -154,8 +144,5 @@ describe("Word pages in the document list", () => {
         name: "Imported.docx",
         format: "word",
       })
-      await expect(
-        readOutline(parseUserId(stranger), docId, undefined)
-      ).rejects.toMatchObject({ code: "NOT_FOUND" })
     }))
 })

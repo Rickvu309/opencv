@@ -1,43 +1,19 @@
-import { type PaperId, type UserId } from "@workspace/domain/kernel"
-
-import { packageFailure } from "./word-package/package-pages.js"
 import {
-  missingDocument,
-  ownedPackageOutline,
-} from "./word-package/package-list.js"
-import { richOutline } from "./rich-outline.js"
-import { ownedPaper, ownedPaperOrNull } from "./store.js"
+  ERROR_CODES,
+  type PaperId,
+  type UserId,
+} from "@workspace/domain/kernel"
 
-export const OUTLINE_MAX_CHARS = 12_000
+import { CommandError } from "../platform/errors.js"
+import { richOutline } from "./rich-outline.js"
+import { ownedPaperOrNull } from "./store.js"
 
 export async function readOutline(
   userId: UserId,
   docId: PaperId,
-  blockIds: readonly string[] | undefined,
-  cursor?: string
+  blockIds: readonly string[] | undefined
 ) {
   const row = await ownedPaperOrNull(userId, docId)
-  if (row) {
-    if (cursor)
-      return packageFailure("This document does not have a next Word part.")
-    return richOutline(row, blockIds)
-  }
-  try {
-    if (cursor) {
-      await ownedPaper(userId, docId)
-      return packageFailure("This document does not have a next Word part.")
-    }
-    return await ownedPaper(userId, docId)
-  } catch (error) {
-    if (!missingDocument(error)) throw error
-    const page = await ownedPackageOutline(
-      userId,
-      docId,
-      blockIds,
-      OUTLINE_MAX_CHARS,
-      cursor
-    )
-    if (!page) throw error
-    return page
-  }
+  if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
+  return richOutline(row, blockIds)
 }
