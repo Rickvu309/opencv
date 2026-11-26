@@ -5,7 +5,7 @@ import {
   textFromParts,
   type ChatSummary,
   type ChatEntryPart,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
 
 import {
   getChat,

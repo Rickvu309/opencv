@@ -1,8 +1,5 @@
-import {
-  RICH_NATIVE_WRITER,
-  paperPhotoRef,
-  personActor,
-} from "@workspace/domain"
+import { personActor } from "@workspace/domain/kernel"
+import { RICH_NATIVE_WRITER, paperPhotoRef } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 

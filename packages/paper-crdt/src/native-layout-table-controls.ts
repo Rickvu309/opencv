@@ -1,4 +1,4 @@
-import { paperTableLimits } from "@workspace/domain"
+import { paperTableLimits } from "@workspace/domain/limits"
 import { TextSelection } from "@tiptap/pm/state"
 import { yUndoPluginKey } from "y-prosemirror"
 import {

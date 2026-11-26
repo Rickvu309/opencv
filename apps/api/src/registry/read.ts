@@ -3,7 +3,7 @@ import {
   errorEnvelope,
   personActor,
   successEnvelope,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import { Hono } from "hono"
 import type { Registry } from "./registry.js"
 import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"

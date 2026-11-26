@@ -1,5 +1,5 @@
 import { QueryClient } from "@tanstack/react-query"
-import { wordPageSchema, type WordPage } from "@workspace/domain"
+import { wordPageSchema, type WordPage } from "@workspace/domain/paper-doc"
 
 import { catalogClient } from "@/lib/contract-client.ts"
 

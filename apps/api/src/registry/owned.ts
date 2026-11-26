@@ -1,4 +1,4 @@
-import type { QueryName } from "@workspace/domain"
+import type { QueryName } from "@workspace/domain/kernel"
 import { getTableConfig, PgTable } from "drizzle-orm/pg-core"
 
 import * as schema from "../db/schema.js"

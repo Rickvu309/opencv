@@ -1,4 +1,5 @@
-import { catalog, chatDisplayTitle } from "@workspace/domain"
+import { chatDisplayTitle } from "@workspace/domain/coach"
+import { catalog } from "@workspace/domain/kernel"
 import { STAGE_LABEL, type Stage } from "@workspace/ui/components/stage-icon"
 
 import { catalogClient } from "@/lib/contract-client.ts"

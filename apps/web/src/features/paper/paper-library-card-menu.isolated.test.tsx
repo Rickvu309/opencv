@@ -2,7 +2,7 @@ import { activityFeedRow } from "@/test/control-fixtures.ts"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
-import { type PaperView } from "@workspace/domain"
+import { type PaperView } from "@workspace/domain/paper-doc"
 
 vi.mock("@/features/apply/apply-api.ts", () => ({
   listJobs: vi.fn(() => Promise.resolve([])),

@@ -4,7 +4,7 @@ import {
   paperWordReadSchema,
   type WordPage,
   type WordParagraph,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import {
   decodePackageCursor,

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react"
-import type { CvPrintModel } from "@workspace/domain"
+import type { CvPrintModel } from "@workspace/domain/paper-doc"
 
 import {
   type CvData,

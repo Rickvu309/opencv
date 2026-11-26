@@ -6,7 +6,8 @@ import {
   useRef,
   type MutableRefObject,
 } from "react"
-import { WORD_LIMITS, type JobView } from "@workspace/domain"
+import { type JobView } from "@workspace/domain/apply"
+import { WORD_LIMITS } from "@workspace/domain/paper-doc"
 
 import { Button } from "@workspace/ui/components/button"
 import {

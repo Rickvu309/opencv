@@ -1,4 +1,5 @@
-import { catalog, DEFAULT_CHAT_TITLE } from "@workspace/domain"
+import { DEFAULT_CHAT_TITLE } from "@workspace/domain/coach"
+import { catalog } from "@workspace/domain/kernel"
 import { expect } from "vitest"
 
 import { stopChat, trackChatTurn } from "../coach/chat/index.js"

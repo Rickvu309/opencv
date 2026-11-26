@@ -1,4 +1,4 @@
-import type { ReversalExpect } from "@workspace/domain"
+import type { ReversalExpect } from "@workspace/domain/kernel"
 import { and, eq, gt, isNull, notLike, or } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 

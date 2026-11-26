@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useRef, type ReactNode } from "react"
-import { paperPhotoRef } from "@workspace/domain"
+import { paperPhotoRef } from "@workspace/domain/paper-doc"
 import {
   layoutPhotoSchema,
   photoSourceRatio,

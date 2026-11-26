@@ -1,11 +1,11 @@
+import { parseUserId } from "@workspace/domain/kernel"
 import {
   nativeProvenance,
   nativeSyncOutputSchema,
   paperPhotoRef,
-  parseUserId,
   RICH_NATIVE_WRITER,
   type RichPaperDocument,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import {
   openRichPaperClient,
   type PaperClient,

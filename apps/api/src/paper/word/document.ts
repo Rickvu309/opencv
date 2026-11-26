@@ -21,7 +21,7 @@ import {
   type WordRevision,
   type WordSource,
   type WordUndo,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { and, eq } from "drizzle-orm"
 import { z } from "zod"
 

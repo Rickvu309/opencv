@@ -4,7 +4,7 @@ import { Button } from "@workspace/ui/components/button"
 import { StageIcon } from "@workspace/ui/components/stage-icon"
 import { cn } from "@workspace/ui/lib/utils"
 
-import type { JobStage, JobView } from "@workspace/domain"
+import type { JobStage, JobView } from "@workspace/domain/apply"
 
 import { companyInitials, listPhrase, monthDay } from "./apply-stages.ts"
 import { FAINT_TEXT } from "./apply-tone.ts"

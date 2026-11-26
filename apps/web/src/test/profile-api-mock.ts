@@ -1,4 +1,5 @@
-import { DEFAULT_COACH_MODE, type Profile } from "@workspace/domain"
+import { type Profile } from "@workspace/domain/account"
+import { DEFAULT_COACH_MODE } from "@workspace/domain/coach"
 
 import { SAMPLE_AUTHOR } from "@/features/seed/sample-author.ts"
 import { authMockState } from "@/test/auth-client-mock.ts"

@@ -10,7 +10,7 @@ import {
   Trash2,
 } from "lucide-react"
 
-import type { JobDetail } from "@workspace/domain"
+import type { JobDetail } from "@workspace/domain/apply"
 import { Button } from "@workspace/ui/components/button"
 import {
   Breadcrumb,

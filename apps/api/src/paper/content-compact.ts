@@ -1,7 +1,7 @@
 import {
   storedPaperPhotoIds,
   type StoredPaperDocument,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { loadYDoc, updateSince } from "@workspace/paper-crdt"
 import { and, asc, eq, lt } from "drizzle-orm"
 

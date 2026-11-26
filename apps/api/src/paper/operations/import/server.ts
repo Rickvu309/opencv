@@ -1,5 +1,5 @@
 import { operation } from "@workspace/domain/operations/paper/import"
-import { paperPackageMetadataSchema } from "@workspace/domain"
+import { paperPackageMetadataSchema } from "@workspace/domain/paper-doc"
 import type { OperationBinding } from "../../../registry/bind.js"
 import { publishWordPackage } from "../../package-store.js"
 

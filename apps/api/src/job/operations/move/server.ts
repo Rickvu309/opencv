@@ -1,4 +1,4 @@
-import { catalog } from "@workspace/domain"
+import { catalog } from "@workspace/domain/kernel"
 import { operation } from "@workspace/domain/operations/job/move"
 import { z } from "zod"
 import type { OperationBinding } from "../../../registry/bind.js"

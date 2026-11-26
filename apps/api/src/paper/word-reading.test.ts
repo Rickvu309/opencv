@@ -1,13 +1,15 @@
 import { randomUUID } from "node:crypto"
 
 import {
-  PAPER_PACKAGE_LIMITS,
   coachActor,
-  paperWordReadSchema,
   parsePaperId,
   parseUserId,
   personActor,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
+import {
+  PAPER_PACKAGE_LIMITS,
+  paperWordReadSchema,
+} from "@workspace/domain/paper-doc"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { z } from "zod"
 

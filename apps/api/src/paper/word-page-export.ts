@@ -1,4 +1,4 @@
-import { PAPER_CANVAS_PROFILE } from "@workspace/domain"
+import { PAPER_CANVAS_PROFILE } from "@workspace/domain/paper-doc"
 import { and, eq } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"

@@ -3,7 +3,7 @@ import { useQueryClient, type QueryClient } from "@tanstack/react-query"
 
 import { Button } from "@workspace/ui/components/button"
 
-import { type PaperTemplateId } from "@workspace/domain"
+import { type PaperTemplateId } from "@workspace/domain/paper-doc"
 
 import { catalogClient } from "@/lib/contract-client.ts"
 

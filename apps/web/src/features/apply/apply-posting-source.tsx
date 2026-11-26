@@ -1,6 +1,6 @@
 import { Link as LinkIcon } from "lucide-react"
 
-import { openableApplyJobUrl, type JobDetail } from "@workspace/domain"
+import { openableApplyJobUrl, type JobDetail } from "@workspace/domain/apply"
 
 export function PostingSource({
   jobUrl,

@@ -10,7 +10,10 @@ import {
   type CSSProperties,
 } from "react"
 import { FileText } from "lucide-react"
-import { paperRenameInputSchema, RICH_NATIVE_WRITER } from "@workspace/domain"
+import {
+  paperRenameInputSchema,
+  RICH_NATIVE_WRITER,
+} from "@workspace/domain/paper-doc"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import { useQueryClient } from "@tanstack/react-query"

@@ -1,4 +1,4 @@
-import { ERROR_CODES, type Actor } from "@workspace/domain"
+import { ERROR_CODES, type Actor } from "@workspace/domain/kernel"
 import { z, type ZodType } from "zod"
 import { and, eq, sql, type AnyColumn, type SQL } from "drizzle-orm"
 import { getDb, insideTransaction } from "../db/context.js"

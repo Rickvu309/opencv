@@ -1,4 +1,4 @@
-import { ERROR_CODES, parsePaperId } from "@workspace/domain"
+import { ERROR_CODES, parsePaperId } from "@workspace/domain/kernel"
 import { operation } from "@workspace/domain/operations/paper/save"
 import { CommandError } from "../../../platform/errors.js"
 import type { OperationBinding } from "../../../registry/bind.js"

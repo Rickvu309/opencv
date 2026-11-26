@@ -1,13 +1,15 @@
 import {
   ERROR_CODES,
   parsePaperId,
+  type PaperId,
+  type UserId,
+} from "@workspace/domain/kernel"
+import {
   canonicalPaper,
   nativeProvenance,
   sameNativeProvenance,
-  type PaperId,
   type RichPaperDocument,
-  type UserId,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import {
   absorbUpdate,
   forkOf,

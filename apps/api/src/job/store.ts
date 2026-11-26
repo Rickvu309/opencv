@@ -1,17 +1,19 @@
 import {
   DUPLICATE_JOB_MESSAGE,
-  ERROR_CODES,
   generateKeyBetween,
   normalizeJobUrl,
+  type JobPriority,
+  type JobStage,
+} from "@workspace/domain/apply"
+import {
+  ERROR_CODES,
   parseJobId,
   parsePaperId,
   parseUserId,
   type JobId,
-  type JobPriority,
-  type JobStage,
   type QueryOutput,
   type UserId,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import { and, asc, count, eq, sql } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"

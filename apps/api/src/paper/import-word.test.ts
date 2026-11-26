@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto"
 import { createRequire } from "node:module"
 
-import { IMPORT_PAGES_MESSAGE } from "@workspace/domain"
+import { IMPORT_PAGES_MESSAGE } from "@workspace/domain/paper-doc"
 import { describe, expect, it } from "vitest"
 
 import {

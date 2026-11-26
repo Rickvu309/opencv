@@ -8,7 +8,7 @@ import {
 import { createPortal } from "react-dom"
 import { useQueryClient } from "@tanstack/react-query"
 import { List, MoreHorizontal, Sparkles } from "lucide-react"
-import { parsePaperId } from "@workspace/domain"
+import { parsePaperId } from "@workspace/domain/kernel"
 import { Button } from "@workspace/ui/components/button"
 import {
   Popover,

@@ -1,4 +1,4 @@
-import { WORD_LIMITS } from "@workspace/domain"
+import { WORD_LIMITS } from "@workspace/domain/paper-doc"
 
 export const PASTE_LINE_LIMIT = Math.floor(WORD_LIMITS.maxOpsPerApply / 2)
 

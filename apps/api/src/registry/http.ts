@@ -4,7 +4,7 @@ import {
   httpStatusForError,
   personActor,
   successEnvelope,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import { Hono } from "hono"
 
 import { jsonWithStatus } from "../platform/http-json.js"

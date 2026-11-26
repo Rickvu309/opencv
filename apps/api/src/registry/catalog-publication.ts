@@ -1,4 +1,4 @@
-import type { Operation } from "@workspace/domain"
+import type { Operation } from "@workspace/domain/kernel"
 import type { activity } from "../db/schema.js"
 import { receiptDetail, reversalOf } from "./receipt.js"
 import type { ExecuteResult } from "./registry-types.js"

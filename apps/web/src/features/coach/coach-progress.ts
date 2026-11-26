@@ -1,5 +1,5 @@
 import { coachToolLabel, humanToolText } from "./coach-tool-labels.ts"
-import type { ChatEntryPart, ChatToolName } from "@workspace/domain"
+import type { ChatEntryPart, ChatToolName } from "@workspace/domain/coach"
 
 export type CoachProgressCall =
   | { kind: "step"; id: string; label: string }

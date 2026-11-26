@@ -25,7 +25,7 @@ import {
   waitFor,
   within,
 } from "@testing-library/react"
-import type { ChatToolPart } from "@workspace/domain"
+import type { ChatToolPart } from "@workspace/domain/coach"
 import * as contractClient from "@/lib/contract-client.ts"
 import type { ReactElement } from "react"
 import { ChatStoreContext } from "./chat-store-context.ts"

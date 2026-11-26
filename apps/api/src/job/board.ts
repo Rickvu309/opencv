@@ -1,15 +1,17 @@
 import {
   COMPANY_REQUIRED_MESSAGE,
-  ERROR_CODES,
   JOB_ACTIVITY_PATCH_KEYS,
   sourceHostFromUrl,
-  type Actor,
   type JobCreateInput,
-  type JobId,
   type JobPatch,
   type JobStage,
+} from "@workspace/domain/apply"
+import {
+  ERROR_CODES,
+  type Actor,
+  type JobId,
   type UserId,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import { eq } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"

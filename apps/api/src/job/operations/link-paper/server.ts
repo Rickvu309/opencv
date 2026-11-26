@@ -1,4 +1,4 @@
-import { catalog, paperIdSchema } from "@workspace/domain"
+import { catalog, paperIdSchema } from "@workspace/domain/kernel"
 import { operation } from "@workspace/domain/operations/job/link-paper"
 import type { OperationBinding } from "../../../registry/bind.js"
 import { linkPaper } from "../../linked-papers.js"

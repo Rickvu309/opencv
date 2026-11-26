@@ -1,12 +1,11 @@
+import { catalog, parseChatId, chatIdSchema } from "@workspace/domain/kernel"
 import {
-  catalog,
-  parseChatId,
   paperImportResponseSchema,
   letterAttachmentContextSchema,
-  chatIdSchema,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import type { QueryClient } from "@tanstack/react-query"
-import type { ChatDetail, ChatToolName, FileId } from "@workspace/domain"
+import type { ChatDetail, ChatToolName } from "@workspace/domain/coach"
+import type { FileId } from "@workspace/domain/kernel"
 
 import { ApiError, isErrorEnvelope } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"

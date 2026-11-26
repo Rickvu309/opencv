@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto"
 
-import { personActor, type WordFile, type WordPage } from "@workspace/domain"
+import { personActor } from "@workspace/domain/kernel"
+import { type WordFile, type WordPage } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 

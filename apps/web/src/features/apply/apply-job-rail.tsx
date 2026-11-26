@@ -8,7 +8,7 @@ import {
   type JobPatch,
   type JobPriority,
   type JobStage,
-} from "@workspace/domain"
+} from "@workspace/domain/apply"
 import { Button } from "@workspace/ui/components/button"
 import {
   DropdownMenu,

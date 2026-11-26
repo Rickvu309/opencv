@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto"
 
-import { coachActor, delegateActorSchema, personActor } from "@workspace/domain"
+import {
+  coachActor,
+  delegateActorSchema,
+  personActor,
+} from "@workspace/domain/kernel"
 import { eq, sql } from "drizzle-orm"
 import type { Pool } from "pg"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"

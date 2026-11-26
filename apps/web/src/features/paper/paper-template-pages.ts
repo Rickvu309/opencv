@@ -1,4 +1,4 @@
-import type { PaperTemplateId } from "@workspace/domain"
+import type { PaperTemplateId } from "@workspace/domain/paper-doc"
 
 import { PAPER_TEMPLATE_LABELS, previewTemplate } from "./paper-templates.ts"
 

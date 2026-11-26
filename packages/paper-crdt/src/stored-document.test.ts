@@ -6,7 +6,7 @@ import {
   nativeAdmission,
   nativeProvenance,
   paperDocumentSchema,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { canonical } from "@workspace/domain/internal/paper-presentation"
 import { seedStoredYDoc, materializeStored } from "./stored-document.js"
 import {

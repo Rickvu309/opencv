@@ -1,4 +1,4 @@
-import { successEnvelope } from "@workspace/domain"
+import { successEnvelope } from "@workspace/domain/kernel"
 import { Hono } from "hono"
 
 import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"

@@ -5,7 +5,7 @@ import {
   nativeProvenance,
   richTextNodes,
   type RichPaperDocument,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import { paperDocs } from "../db/schema.js"
 import { readRichPaper } from "./read-paper.js"

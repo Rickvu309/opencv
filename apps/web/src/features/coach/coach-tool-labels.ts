@@ -1,8 +1,5 @@
-import {
-  catalog,
-  chatToolNameSchema,
-  type ChatToolName,
-} from "@workspace/domain"
+import { chatToolNameSchema, type ChatToolName } from "@workspace/domain/coach"
+import { catalog } from "@workspace/domain/kernel"
 
 type ToolCopy = { label: string; read?: string }
 

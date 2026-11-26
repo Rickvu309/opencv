@@ -13,7 +13,7 @@ import {
   createRouter,
   RouterContextProvider,
 } from "@tanstack/react-router"
-import { parsePaperId } from "@workspace/domain"
+import { parsePaperId } from "@workspace/domain/kernel"
 
 import { render } from "@/test/render-with-client.tsx"
 import { PaperLibrary } from "./paper-library.tsx"

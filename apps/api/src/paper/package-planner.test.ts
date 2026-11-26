@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 
-import { paperPackageProjectionSchema } from "@workspace/domain"
+import { paperPackageProjectionSchema } from "@workspace/domain/paper-doc"
 import { count, eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 

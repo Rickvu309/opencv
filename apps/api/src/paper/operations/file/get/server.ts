@@ -1,4 +1,4 @@
-import { parseFileId } from "@workspace/domain"
+import { parseFileId } from "@workspace/domain/kernel"
 import { operation } from "@workspace/domain/operations/file/get"
 import type { OperationBinding } from "../../../../registry/bind.js"
 import { readFileMeta } from "../../../store.js"

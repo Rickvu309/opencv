@@ -1,4 +1,4 @@
-import type { JobPreview, JobStage } from "@workspace/domain"
+import type { JobPreview, JobStage } from "@workspace/domain/apply"
 
 const COMPANY_REQUIRED = "Add the company name to save this job."
 const TITLE_REQUIRED = "Add the role title to save this job."
