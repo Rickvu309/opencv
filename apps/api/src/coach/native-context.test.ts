@@ -33,15 +33,11 @@ const basis = {
 }
 const docId = "01990b00-0000-7000-8000-000000000001"
 const actor = personActor("native-context")
-const metadata = {
-  id: docId,
+const outline = {
   name: "Letter",
   kind: "letter",
   status: "draft",
-  paper,
-  nativeBasis: { ...basis, revision: 7 },
-}
-const outline = {
+  truncated: false,
   revision: 8,
   nativeBasis: basis,
   outline: JSON.stringify([
@@ -65,9 +61,7 @@ function resolve(read: Registry["read"]) {
 }
 
 it("takes revision and basis from the same outline despite older metadata", async () => {
-  const read = vi.fn<Registry["read"]>(async (name) =>
-    name === "paper.list" ? [metadata] : outline
-  )
+  const read = vi.fn<Registry["read"]>(async () => outline)
   const result = await resolve(read)
   expect(result.focusDoc).toMatchObject({
     revision: 8,
@@ -75,7 +69,6 @@ it("takes revision and basis from the same outline despite older metadata", asyn
     outline: outline.outline,
   })
   expect(read.mock.calls).toEqual([
-    ["paper.list", { writer: RICH_NATIVE_WRITER }, actor],
     [
       "paper.outline",
       { docId, blockIds: undefined, writer: NATIVE_WRITER },
@@ -96,9 +89,7 @@ it.each([undefined, { ...basis, digest: "bad" }, { ...basis, revision: 7 }])(
   "refuses malformed native outline authority %j",
   async (nativeBasis) => {
     await expect(
-      resolve(async (name) =>
-        name === "paper.list" ? [metadata] : { ...outline, nativeBasis }
-      )
+      resolve(async () => ({ ...outline, nativeBasis }))
     ).rejects.toThrow()
   }
 )
@@ -117,17 +108,14 @@ it.each([
 
 it("keeps a missing or unowned document missing", async () => {
   await expect(
-    resolve(async (name) => {
-      if (name === "paper.list") return []
+    resolve(async () => {
       throw new CommandError(ERROR_CODES.NOT_FOUND, "Missing")
     })
   ).rejects.toMatchObject({ code: ERROR_CODES.NOT_FOUND })
 })
 
 it("grounds selected attachments without taking authority from caller content", async () => {
-  const read = vi.fn<Registry["read"]>(async (name) =>
-    name === "paper.list" ? [metadata] : outline
-  )
+  const read = vi.fn<Registry["read"]>(async () => outline)
   const result = await resolveTurnGrounding({
     registry: Object.assign(new Registry(), { read }),
     actor,
@@ -139,7 +127,8 @@ it("grounds selected attachments without taking authority from caller content", 
   })
   expect(result.focusDoc).toBeUndefined()
   expect(result.note).toContain(JSON.stringify(basis))
-  expect(read.mock.calls[1]?.[1]).toEqual({
+  expect(read.mock.calls).toHaveLength(1)
+  expect(read.mock.calls[0]?.[1]).toEqual({
     docId,
     blockIds: ["p1"],
     writer: NATIVE_WRITER,

@@ -5,6 +5,10 @@ import {
   nativeBasisSchema,
   nativeWriterSchema,
 } from "../../../paper-doc/native.js"
+import {
+  paperDocStatusSchema,
+  paperStoredKindSchema,
+} from "../../../paper-doc/paper.js"
 
 export const operation = defineOperation({
   owner: "paper",
@@ -12,7 +16,7 @@ export const operation = defineOperation({
   version: 2,
   kind: "read",
   description:
-    "Read a bounded outline of a CV or Letter: its text blocks with ids, kinds and marks, the revision to pass as basedOn, and the nativeBasis to copy unchanged into paper.edit. Pass blockIds to mark selected blocks.",
+    "Read a bounded outline of a CV or Letter: its name, kind and status, its text blocks with ids, kinds and marks, the revision to pass as basedOn, and the nativeBasis to copy unchanged into paper.edit. Pass blockIds to mark selected blocks.",
   label: "Read your Paper outline",
   readLabel: "Read your Paper outline",
   input: z
@@ -27,6 +31,9 @@ export const operation = defineOperation({
     .strict(),
   publicResult: z
     .object({
+      name: z.string(),
+      kind: paperStoredKindSchema,
+      status: paperDocStatusSchema,
       revision: z.number().int(),
       nativeBasis: nativeBasisSchema.optional(),
       outline: z.string(),

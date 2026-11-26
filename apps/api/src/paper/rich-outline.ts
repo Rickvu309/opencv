@@ -37,6 +37,9 @@ export function richOutline(
   }))
   const outline = JSON.stringify(nodes)
   return {
+    name: row.name,
+    kind: row.kind,
+    status: row.status,
     revision: row.contentVersion,
     nativeBasis: richBasis(row, document),
     outline:
