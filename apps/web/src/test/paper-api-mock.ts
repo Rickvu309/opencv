@@ -153,7 +153,7 @@ export async function paperApiFetch(
     return jsonOk(sortDocs(store.docs).map(toWire))
   }
 
-  if (method === "GET" && path === "/api/paper/files") {
+  if (method === "POST" && path === "/api/reads/paper.files") {
     return jsonOk([])
   }
 

@@ -127,8 +127,10 @@ describe("CV photo bytes", () => {
     )
     expect(lying.status).toBe(200)
     const fileId = ((await lying.json()) as { data: { id: string } }).data.id
-    const listed = await app.request("/api/paper/files", {
+    const listed = await app.request("/api/reads/paper.files", {
+      method: "POST",
       headers: authHeaders(owner.cookie),
+      body: JSON.stringify({}),
     })
     const files = (
       (await listed.json()) as { data: { id: string; mediaType: string }[] }

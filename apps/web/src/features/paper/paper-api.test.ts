@@ -9,12 +9,7 @@ import {
   runContractCommand,
 } from "@/lib/contract-client.ts"
 
-import {
-  importPaperFile,
-  listPaper,
-  listPaperFiles,
-  paperListKey,
-} from "./paper-api.ts"
+import { importPaperFile, listPaper, paperListKey } from "./paper-api.ts"
 
 function envelope<T>(data: T) {
   return Response.json({ ok: true, data })
@@ -111,13 +106,13 @@ describe("paper API client", () => {
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(`${apiBaseUrl}/api/paper`)
   })
 
-  it("reads files before the document id route", async () => {
+  it("reads files through the catalog read door", async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(envelope([]))
     vi.stubGlobal("fetch", fetchMock)
 
-    await expect(listPaperFiles()).resolves.toEqual([])
+    await expect(catalogClient.read("paper.files", {})).resolves.toEqual([])
     expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
-      `${apiBaseUrl}/api/paper/files`
+      `${apiBaseUrl}/api/reads/paper.files`
     )
   })
 })

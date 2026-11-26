@@ -226,7 +226,15 @@ it("moves Word uploads into the immutable library without a legacy document or f
     expect(await listedPages("/api/paper")).toEqual([
       expect.objectContaining({ id: receipt.docId, format: "word" }),
     ])
-    expect(await listedPages("/api/paper/files")).toEqual([])
+    const files = await app.request("/api/reads/paper.files", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({}),
+    })
+    expect(files.status, await files.clone().text()).toBe(200)
+    expect(
+      z.object({ data: z.array(z.unknown()) }).parse(await files.json()).data
+    ).toEqual([])
     const download = await app.request(
       `/api/paper/packages/${receipt.docId}/export?at=${receipt.revision}`,
       { headers }

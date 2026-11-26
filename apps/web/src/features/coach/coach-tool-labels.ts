@@ -53,7 +53,10 @@ const TOOL_COPY = {
     read: "Looked at your connections",
   },
   [catalog["connections.revoke"].name]: { label: "Disconnect your account" },
-  "file.get": { label: "Read your file", read: "Read your file" },
+  [catalog["file.get"].name]: {
+    label: "Read your file",
+    read: "Read your file",
+  },
   [catalog["inbox.acceptSuggestion"].name]: { label: "Accept this suggestion" },
   [catalog["inbox.addToCalendar"].name]: {
     label: "Add this event to your calendar",
@@ -131,7 +134,7 @@ const TOOL_COPY = {
   "paper.edit": { label: "Edit your Paper" },
   [catalog["paper.export"].name]: { label: "Download your Paper as Word" },
   [catalog["paper.import"].name]: { label: "Import your Paper" },
-  "paper.files": {
+  [catalog["paper.files"].name]: {
     label: "Look at your Paper files",
     read: "Looked at your Paper files",
   },

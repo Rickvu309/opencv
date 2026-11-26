@@ -45,7 +45,7 @@ function seed(queryClient: QueryClient) {
     ),
     activity: jobActivity(queryClient),
     paper: queryKey({ query: "paper.list" }),
-    files: queryKey({ query: "paper.files" }),
+    outline: queryKey({ query: "paper.outline", input: { docId: DOC } }),
   }
   for (const key of Object.values(keys)) {
     queryClient.setQueryData(key, { seeded: true })
@@ -80,7 +80,7 @@ describe("runContractCommand", () => {
     expect(isStale(queryClient, keys.activity)).toBe(true)
     expect(isStale(queryClient, keys.other)).toBe(true)
     expect(isStale(queryClient, keys.paper)).toBe(true)
-    expect(isStale(queryClient, keys.files)).toBe(false)
+    expect(isStale(queryClient, keys.outline)).toBe(false)
   })
 
   it("sends the input with a fresh idempotency key per call", async () => {

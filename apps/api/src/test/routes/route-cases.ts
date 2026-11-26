@@ -276,7 +276,6 @@ export const ROUTE_CASES: readonly RouteCase[] = [
   IMPORT_CASES.docx,
   IMPORT_CASES.pdf,
   IMPORT_CASES.txt,
-  get("/api/paper/files"),
   postForm("/api/paper/files", () => pngUpload),
   get("/api/paper/files/:id/bytes", uploadedFile),
   get("/api/paper/:id/document", olderDoc),

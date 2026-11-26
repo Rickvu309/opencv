@@ -351,11 +351,6 @@ export function createPaperRoutes(signedIn: SignedIn) {
     }
   })
 
-  routes.get("/files", async (c) => {
-    const data = await registry.read("paper.files", {}, person(c.var.userId))
-    return c.json(successEnvelope(data))
-  })
-
   routes.post("/files", async (c) => {
     const body = await c.req.parseBody()
     const file = body.file

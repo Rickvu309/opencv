@@ -22,6 +22,7 @@ import { implementation as coach$stop } from "../coach/operations/stop/server.js
 import { implementation as coach$usage } from "../account/operations/coach/usage/server.js"
 import { implementation as connections$list } from "../connections/operations/list/server.js"
 import { implementation as connections$revoke } from "../connections/operations/revoke/server.js"
+import { implementation as file$get } from "../paper/operations/file/get/server.js"
 import { implementation as inbox$acceptSuggestion } from "../inbox/operations/accept-suggestion/server.js"
 import { implementation as inbox$addToCalendar } from "../inbox/operations/add-to-calendar/server.js"
 import { implementation as inbox$clearSuggestion } from "../inbox/operations/clear-suggestion/server.js"
@@ -60,6 +61,7 @@ import { implementation as paper$delete } from "../paper/operations/delete/serve
 import { implementation as paper$deleteFile } from "../paper/operations/delete-file/server.js"
 import { implementation as paper$duplicate } from "../paper/operations/duplicate/server.js"
 import { implementation as paper$export } from "../paper/operations/export/server.js"
+import { implementation as paper$files } from "../paper/operations/files/server.js"
 import { implementation as paper$import } from "../paper/operations/import/server.js"
 import { implementation as paper$read } from "../paper/operations/read/server.js"
 import { implementation as paper$recover } from "../paper/operations/recover/server.js"
@@ -93,6 +95,7 @@ export const implementations = {
   "coach.usage": coach$usage,
   "connections.list": connections$list,
   "connections.revoke": connections$revoke,
+  "file.get": file$get,
   "inbox.acceptSuggestion": inbox$acceptSuggestion,
   "inbox.addToCalendar": inbox$addToCalendar,
   "inbox.clearSuggestion": inbox$clearSuggestion,
@@ -131,6 +134,7 @@ export const implementations = {
   "paper.deleteFile": paper$deleteFile,
   "paper.duplicate": paper$duplicate,
   "paper.export": paper$export,
+  "paper.files": paper$files,
   "paper.import": paper$import,
   "paper.read": paper$read,
   "paper.recover": paper$recover,

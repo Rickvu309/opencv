@@ -23,7 +23,6 @@ import type { CoachTaskState } from "@/lib/coach-task-state.ts"
 import { endpoints, fetchBinary } from "@/lib/requests.ts"
 
 export const paperListKey = () => queryKey({ query: "paper.list" })
-export const paperFilesKey = () => queryKey({ query: "paper.files" })
 
 export function listPaper() {
   return apiFetch<SuccessBody<QueryOutput<"paper.list">>>(endpoints.paper).then(
@@ -38,12 +37,6 @@ export function listLibraryPaper() {
   return apiFetch<SuccessBody<QueryOutput<"paper.list">>>(endpoints.paper, {
     headers: { "x-paper-writer": JSON.stringify(LIBRARY_WRITER) },
   }).then(unwrapData)
-}
-
-export function listPaperFiles() {
-  return apiFetch<SuccessBody<QueryOutput<"paper.files">>>(
-    endpoints.paperFiles
-  ).then(unwrapData)
 }
 
 export class PaperLimitError extends Error {

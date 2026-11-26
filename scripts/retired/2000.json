@@ -1,0 +1,26 @@
+[
+  {
+    "subject": "apps/api/src/one-door.test.ts",
+    "because": "GET /api/paper/files is deleted: the file list is the paper.files operation through the read door, so it leaves the list of routes waiting to become operations.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/package-http.test.ts",
+    "because": "The file list check now asks the read door for paper.files instead of the deleted GET /api/paper/files route, with the same expectation that an imported Word file is not listed.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-api.test.ts",
+    "because": "listPaperFiles and its route are gone; the case now checks that the file list is read through the catalog read door at /api/reads/paper.files.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
