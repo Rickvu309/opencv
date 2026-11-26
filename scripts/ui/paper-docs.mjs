@@ -31,6 +31,7 @@ export async function seedPaperDocs(page, apiOrigin, origin, spec) {
       kind: doc.label,
       format: "rich",
       name: doc.name,
+      ...(spec.lines ? { lines: spec.lines } : {}),
     })
     if (!created.id) throw new Error("paper.create returned no id")
   }

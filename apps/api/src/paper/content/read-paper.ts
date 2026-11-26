@@ -6,6 +6,7 @@ import {
 import {
   blankCv,
   blankLetter,
+  paperPreviewLines,
   richPaperDocumentSchema,
   type PaperView,
   type NativeWriter,
@@ -41,7 +42,8 @@ export function isRichPaper(row: PaperRow) {
 }
 
 export function toListedPaper(row: PaperRow, writer?: NativeWriter): PaperView {
-  admitDocument(readRichPaper(row), writer)
+  const rich = readRichPaper(row)
+  admitDocument(rich, writer)
   return {
     id: parsePaperId(row.id),
     name: row.name,
@@ -54,6 +56,7 @@ export function toListedPaper(row: PaperRow, writer?: NativeWriter): PaperView {
     pageChoice: row.pageChoice,
     sourceFileId: row.sourceFileId ? parseFileId(row.sourceFileId) : null,
     format: "rich",
+    preview: paperPreviewLines(rich),
     createdAt: iso(row.createdAt),
     updatedAt: iso(row.updatedAt),
     isFavorite: row.isFavorite,
