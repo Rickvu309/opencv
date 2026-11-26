@@ -47,6 +47,10 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     .list()
     .commands.find((command) => command.name === "paper.start")
   if (!paperStart) throw new Error("Missing Paper start command")
+  const paperCanvas = registry
+    .list()
+    .commands.find((command) => command.name === "paper.canvas")
+  if (!paperCanvas) throw new Error("Missing Paper canvas command")
   let importStage = ""
   let mintedDocId = ""
   let mintedParagraph = ""
@@ -75,7 +79,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     {
       name: "paper.edit",
       arrange: async () => {
-        const minted = await run("paper.canvas", {
+        const minted = await run(paperCanvas.name, {
           op: "mint",
           label: "letter",
         })
@@ -197,7 +201,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     {
       name: paperRecover.name,
       arrange: async () => {
-        const minted = await run("paper.canvas", { op: "mint", label: "cv" })
+        const minted = await run(paperCanvas.name, { op: "mint", label: "cv" })
         const docId = text(minted.output, "docId")
         if (!docId) throw new Error("missing minted page")
         ctx.docId = docId
@@ -289,10 +293,10 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "paper.canvas",
+      name: paperCanvas.name,
       arrange: async () => {},
       act: async () => {
-        const minted = await run("paper.canvas", {
+        const minted = await run(paperCanvas.name, {
           op: "mint",
           label: "letter",
         })
@@ -306,7 +310,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
         )
         mintedDocId = docId
         mintedParagraph = emptyWritingParagraph(page)
-        return run("paper.canvas", {
+        return run(paperCanvas.name, {
           op: "write",
           batch: {
             doc: docId,

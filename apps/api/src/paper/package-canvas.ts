@@ -1,10 +1,6 @@
-import { randomUUID } from "node:crypto"
 import { createRequire } from "node:module"
 
 import {
-  PAPER_CANVAS_PROFILE,
-  catalog,
-  paperContract,
   paperPackageEditResultSchema,
   type PaperCanvasCommit,
   type WordPageLabel,
@@ -13,16 +9,9 @@ import { and, eq } from "drizzle-orm"
 
 import { getDb, insideTransaction } from "../db/context.js"
 import { paperPackageHeads } from "../db/schema.js"
-import type { Registry } from "../registry/registry.js"
-import { commitWordCandidate } from "./package-candidates.js"
 import { packageFailure } from "./package-pages.js"
-import {
-  publishWordPackage,
-  readWordPackage,
-  stageWordPackage,
-  wordPackageBasis,
-} from "./package-store.js"
-import { prepareBatch, WORD_UNDO_MOVED } from "./word/document.js"
+import { readWordPackage, wordPackageBasis } from "./package-store.js"
+import { prepareBatch } from "./word/document.js"
 import {
   templatePageBytes,
   templatePageName,
