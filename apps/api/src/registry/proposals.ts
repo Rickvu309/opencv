@@ -3,7 +3,7 @@ import {
   ERROR_CODES,
   type CoachActor,
   type DelegateActor,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import { getDb, savepoint, transaction } from "../db/context.js"
 import { activity, idempotency, pendingActions, user } from "../db/schema.js"
 import { createId } from "../platform/id.js"

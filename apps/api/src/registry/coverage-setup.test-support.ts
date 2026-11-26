@@ -1,5 +1,6 @@
 import { connectionsCases } from "./coverage-connections.test-support.js"
-import { personActor, RICH_NATIVE_WRITER } from "@workspace/domain"
+import { personActor } from "@workspace/domain/kernel"
+import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 
