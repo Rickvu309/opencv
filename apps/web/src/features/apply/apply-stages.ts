@@ -1,6 +1,6 @@
 import { STAGE_LABEL, type Stage } from "@workspace/ui/components/stage-icon"
 
-import type { JobPriority, JobStage, JobView } from "@workspace/domain"
+import type { JobPriority, JobStage, JobView } from "@workspace/domain/apply"
 
 export const PROFILE_ZONE = "Asia/Ho_Chi_Minh"
 

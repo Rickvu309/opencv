@@ -1,12 +1,9 @@
 import { readPaperList } from "@/lib/paper-list.ts"
 import {
-  catalog,
   CHAT_TITLE_MAX,
   DEFAULT_CHAT_TITLE,
   LEGACY_CHAT_TITLE,
-  parseChatId,
   type ChatTurnEventOf,
-  type ChatId,
   type ChatListItem,
   type ChatMessage,
   type CoachMode,
@@ -14,7 +11,8 @@ import {
   type CoachSelection,
   type ChatSummary,
   type ChatEntryPart,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
+import { catalog, parseChatId, type ChatId } from "@workspace/domain/kernel"
 
 import type { QueryClient } from "@tanstack/react-query"
 

@@ -1,7 +1,7 @@
 import { useReducer } from "react"
 import { useShortcut } from "@/lib/use-shortcut.ts"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { ERROR_CODES, type JobId } from "@workspace/domain"
+import { ERROR_CODES, type JobId } from "@workspace/domain/kernel"
 import { useNavigate } from "@tanstack/react-router"
 
 import { Button } from "@workspace/ui/components/button"
