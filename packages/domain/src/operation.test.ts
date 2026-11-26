@@ -45,7 +45,10 @@ const dependencyInputInferred: Equal<
 const rejectsWrongOutput: Equal<
   ((input: { count: string }) => {
     count: string
-  }) extends Implementations<Catalog>["fixture.echo"]["execute"]
+  }) extends Extract<
+    Implementations<Catalog>["fixture.echo"],
+    { execute: unknown }
+  >["execute"]
     ? true
     : false,
   false
