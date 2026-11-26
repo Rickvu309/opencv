@@ -5,7 +5,6 @@ import { paperIdSchema, parsePaperId } from "../ids.js"
 import { nativeBasisSchema, nativeWriterSchema } from "./native.js"
 import { richEditOutputSchema, richTextEditsSchema } from "./paper-rich-edit.js"
 import { paperCanvasCommitSchema } from "./paper-canvas.js"
-import { paperStartInputSchema } from "./paper-start.js"
 import {
   paperPackageEditResultSchema,
   paperPackageEditsSchema,
@@ -25,17 +24,6 @@ const docChanged = (input: DocInput): QueryRef[] => [
 ]
 
 export const paperContract = commandContract({
-  "paper.start": commandEntry({
-    description:
-      "Start a new CV or Letter as a Word page. A CV starts from a template whose lines are bracketed placeholders such as [Your name] under fixed headings; a Letter starts blank. Pass jobId when it is for a Job. The person approves the new page first, because a Word page cannot be deleted yet. It writes none of your words: after it is made, read the page with paper.outline and propose its words with paper.edit, which the person approves. Replace a placeholder only with facts the person gave in their Profile or this Chat; never invent experience or qualifications.",
-    input: paperStartInputSchema,
-    output: paperPackageEditResultSchema,
-    coach: "confirm",
-    destructive: false,
-    step: (input) =>
-      `Start a new ${input.kind === "cv" ? "CV" : "Letter"} in Paper. You approve its words next.`,
-    invalidates: listChanged,
-  }),
   "paper.edit": commandEntry({
     delegate: { resource: "paper", access: "proposal" },
     description:

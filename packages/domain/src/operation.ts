@@ -110,15 +110,27 @@ export function defineOperation<
 
 export type Operation = OperationShape<z.ZodType, z.ZodType, never>
 
+type PublicReply<T extends Operation> =
+  z.input<T["publicResult"]> | Promise<z.input<T["publicResult"]>>
+
 export type Implementations<C extends Record<string, Operation>> = {
-  [N in keyof C]: {
-    operation: C[N]
-    execute: (
-      input: z.output<C[N]["input"]>,
-      context: never,
-      registry: never
-    ) => z.input<C[N]["publicResult"]> | Promise<z.input<C[N]["publicResult"]>>
-  }
+  [N in keyof C]: { operation: C[N] } & (
+    | {
+        execute: (
+          input: z.output<C[N]["input"]>,
+          context: never,
+          registry: never
+        ) => PublicReply<C[N]>
+      }
+    | {
+        reviewed: {
+          commit: (
+            input: z.output<C[N]["input"]>,
+            ...rest: never[]
+          ) => PublicReply<C[N]>
+        }
+      }
+  )
 }
 
 export type OperationInput<T extends Operation> = z.input<T["input"]>

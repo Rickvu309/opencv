@@ -149,7 +149,7 @@ const TOOL_COPY = {
   },
   [catalog["paper.recover"].name]: { label: "Bring back your Paper" },
   [catalog["paper.update"].name]: { label: "Update your Paper" },
-  "paper.start": { label: "Start a CV or Letter in Paper" },
+  [catalog["paper.start"].name]: { label: "Start a CV or Letter in Paper" },
   [catalog["paper.save"].name]: { label: "Save your Paper" },
   [catalog["profile.get"].name]: {
     label: "Read your Profile",

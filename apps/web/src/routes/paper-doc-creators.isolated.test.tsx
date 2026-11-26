@@ -93,7 +93,7 @@ const CREATORS: Record<string, Creator> = {
     format: word,
     make: async (_server, client) =>
       idOf(
-        await runContractCommand(client, "paper.start", {
+        await catalogClient.run(client, "paper.start", {
           kind: "cv",
           templateId: "modern",
         })

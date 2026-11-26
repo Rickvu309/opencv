@@ -75,12 +75,15 @@ const isStale = (queryClient: QueryClient, key: readonly unknown[]) =>
 describe("runContractCommand", () => {
   afterEach(() => vi.unstubAllGlobals())
 
-  it("refreshes the reads paper.start invalidates and nothing else", async () => {
+  it("refreshes the reads paper.canvas invalidates and nothing else", async () => {
     const queryClient = new QueryClient()
     const keys = seed(queryClient)
     stubFetch({ id: DOC })
 
-    await runContractCommand(queryClient, "paper.start", { kind: "cv" })
+    await runContractCommand(queryClient, "paper.canvas", {
+      op: "mint",
+      label: "cv",
+    })
 
     expect(isStale(queryClient, keys.list)).toBe(true)
     expect(isStale(queryClient, keys.mine)).toBe(true)
@@ -93,10 +96,10 @@ describe("runContractCommand", () => {
   it("sends the input with a fresh idempotency key per call", async () => {
     const queryClient = new QueryClient()
     const bodies = stubFetch({ id: JOB })
-    const input = { kind: "cv" } as const
+    const input = { op: "mint", label: "cv" } as const
 
-    await runContractCommand(queryClient, "paper.start", input)
-    await runContractCommand(queryClient, "paper.start", input)
+    await runContractCommand(queryClient, "paper.canvas", input)
+    await runContractCommand(queryClient, "paper.canvas", input)
 
     const [first, second] = bodies as {
       input: unknown
@@ -128,7 +131,10 @@ describe("runContractCommand", () => {
       update: "",
       stateVector: "",
     })
-    await runContractCommand(queryClient, "paper.start", { kind: "cv" })
+    await runContractCommand(queryClient, "paper.canvas", {
+      op: "mint",
+      label: "cv",
+    })
 
     expect(bodies[0]).not.toHaveProperty("idempotencyKey")
     expect(bodies[1]).toHaveProperty("idempotencyKey")
@@ -145,7 +151,10 @@ describe("runContractCommand", () => {
     )
 
     await expect(
-      runContractCommand(queryClient, "paper.start", { kind: "cv" })
+      runContractCommand(queryClient, "paper.canvas", {
+        op: "mint",
+        label: "cv",
+      })
     ).rejects.toThrow()
 
     expect(isStale(queryClient, keys.list)).toBe(false)
