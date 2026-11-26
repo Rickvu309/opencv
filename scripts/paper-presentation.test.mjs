@@ -11,7 +11,7 @@ import { pathAtRevision } from "./lib/path-at-revision.mjs"
 
 const root = path.resolve(fileURLToPath(new URL("..", import.meta.url)))
 test("rich document headers allow enlarged titles and actions to wrap", () => {
-  const path = "apps/web/src/features/paper/design/rich-page-header.css"
+  const path = "apps/web/src/features/paper/rich-editor/rich-page-header.css"
   const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
   const mistake = clean.replace("flex-wrap: wrap;", "flex-wrap: nowrap;")
   assert.notEqual(mistake, clean)

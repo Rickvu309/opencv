@@ -57,7 +57,7 @@ export function detect(text, path) {
     )
 
   if (
-    path === "apps/web/src/features/paper/design/rich-page-header.css" &&
+    path.endsWith("/rich-page-header.css") &&
     !/\[data-slot="page-header"\]\s*\{[^}]*\bflex-wrap:\s*wrap\s*;/.test(text)
   )
     hits.push(
