@@ -320,50 +320,6 @@ describe("Coach trace and receipts", () => {
     expect(screen.queryByRole("button")).not.toBeInTheDocument()
   })
 
-  it("shows a Word batch in the diff look directly above the solid Approve", () => {
-    const { container } = render(
-      <CoachToolLine
-        tool={toolOf({
-          ...pending,
-          detail: undefined,
-          review: {
-            docId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
-            basedOn: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-            operations: [
-              { op: "setText", before: "Dear Ada,", after: "Dear Grace," },
-              { op: "delete", before: "Old line", after: "" },
-            ],
-          },
-        })}
-        canUndo={false}
-      />
-    )
-    const deleted = screen.getByText("Dear Ada,")
-    const inserted = screen.getByText("Dear Grace,")
-    expect(deleted.tagName).toBe("DEL")
-    expect(inserted.tagName).toBe("INS")
-    expect(screen.getByText("Old line").tagName).toBe("DEL")
-    const diffLine = container.querySelector("[aria-label^='Changes in'] del")
-    expect(diffLine).toBeNull()
-    const sameLook = render(
-      <CoachToolLine tool={toolOf(pending)} canUndo={false} />
-    ).container
-    expect(deleted.className).toBe(sameLook.querySelector("del")?.className)
-    expect(inserted.className).toBe(sameLook.querySelector("ins")?.className)
-    sameLook.remove()
-    const approve = screen.getByRole("button", { name: "Approve" })
-    expect(approve).toHaveAttribute("data-variant", "primary")
-    expect(inserted.compareDocumentPosition(approve)).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING
-    )
-    expect(screen.getByText("Changes to approve")).toHaveClass("sr-only")
-    expect(screen.getAllByText("2 changes to approve")).toHaveLength(1)
-    const rows = container.querySelector("[data-slot=word-change-rows]")
-    expect(rows).toHaveTextContent("BeforeDear Ada,AfterDear Grace,")
-    expect(container.textContent).toContain("RemoveOld line")
-    expect(container.textContent).not.toMatch(/not available in this Chat/)
-  })
-
   it("says a step still waits on the person when it has no decision yet", () => {
     render(
       <CoachToolLine

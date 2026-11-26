@@ -87,26 +87,6 @@ export const wordConfirmedOpsSchema = z
   .min(1)
   .max(WORD_LIMITS.maxOpsPerConfirmedEdit)
 
-export const wordReviewSchema = z
-  .object({
-    docId: wordDocSchema,
-    basedOn: wordRevisionSchema,
-    operations: z
-      .array(
-        z
-          .object({
-            op: z.enum(["setText", "insert", "delete"]),
-            before: z.string(),
-            after: z.string(),
-            place: z.string().nullable().optional(),
-          })
-          .strict()
-      )
-      .min(1)
-      .max(WORD_LIMITS.maxOpsPerConfirmedEdit),
-  })
-  .strict()
-
 export const wordBatchSchema = z
   .object({
     doc: wordDocSchema,
@@ -230,7 +210,6 @@ export type WordDoc = z.infer<typeof wordDocSchema>
 export type WordRevision = z.infer<typeof wordRevisionSchema>
 export type WordHandle = z.infer<typeof wordHandleSchema>
 export type WordOp = z.infer<typeof wordOpSchema>
-export type WordLean = z.infer<typeof wordLeanSchema>
 export type WordBatch = z.infer<typeof wordBatchSchema>
 export type WordUndo = z.infer<typeof wordUndoSchema>
 export type WordSource = z.infer<typeof wordSourceSchema>

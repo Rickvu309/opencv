@@ -1,12 +1,4 @@
 layer: feature
 dependencies: [apps/web/src/lib, apps/web/src/components]
 public:
-  - canvas-draw.ts
-  - canvas-edit.ts
-  - canvas-look.ts
-  - canvas-save.ts
-  - canvas.css
-  - canvas.tsx
   - document-chrome.tsx
-  - package-read.ts
-  - page-diff.ts

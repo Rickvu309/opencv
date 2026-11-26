@@ -27,14 +27,6 @@ function subscribe(listener: () => void) {
   }
 }
 
-export function useCoachPanelOpen() {
-  return useSyncExternalStore(
-    subscribe,
-    () => panelOpen,
-    () => false
-  )
-}
-
 export function useCoachPanelChat() {
   return useSyncExternalStore(
     subscribe,

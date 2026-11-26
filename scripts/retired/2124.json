@@ -1,0 +1,570 @@
+[
+  {
+    "subject": "apps/web/src/features/coach/coach-tool-line.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/coach-tool-presentation.isolated.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/coach/word-batch-preview.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-blocks.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-branch.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 16
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-download.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-draft-base.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-edit.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-format.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-import-save.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-input.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 22
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-keeps-unsaved.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 16
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-keys.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 49
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-look.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 19
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-mount.isolated.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-own-save.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-package.isolated.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-paste.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-reach.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-reconnect.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-recover.isolated.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 24
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-save-network.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 16
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-save.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 17
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-unsaved-line.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 15
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-unsaved-moved.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 11
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-unsaved-network.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 9
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-unsaved-page.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 9
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-unsaved.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 9
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas-walk.isolated.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 81
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/canvas.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 12
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/document-chrome.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/document-desk.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/document-edited.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper-page/page-diff.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 22
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-continue.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library-card-menu.isolated.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library-entries.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 15
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-library-sections.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-package-library.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-word-preview.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/paper/word-batch-approval.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/paper/writing-page.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 15
+  },
+  {
+    "subject": "apps/web/src/features/paper/writing-proposal-notice.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 12
+  },
+  {
+    "subject": "apps/web/src/features/paper/writing-proposal-outcome.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "apps/web/src/lib/paper-package-ack.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "apps/web/src/lib/paper-package-journal.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/web/src/lib/writing-proposal-rows.test.ts",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/routes/paper-doc-creators.isolated.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 15
+  },
+  {
+    "subject": "apps/web/src/routes/paper-doc-open.isolated.test.tsx",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  },
+  {
+    "subject": "scripts/ci-workflow.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-package-ack.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-page-abortable-write.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-page-caret-lean.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-page-dropped-input.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-page-invented-hold.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-page-open-input.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-tab-ownership.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-writing-reconnect.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/unmerged-variant-class.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/word-classification.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/writing-page-fixtures.json",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-package-ack.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "scripts/paper-package-storage.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-page-input.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "scripts/paper-page-scale.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-page-sides.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "scripts/paper-page-writes.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "scripts/paper-print-body.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-tab-ownership.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "scripts/word-classification.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "scripts/writing-page-fixtures.test.mjs",
+    "because": "ADR-0008: every document is a Paper and existing Word pages became Papers (#2121), so the web Word page editor, its library list, previews, Coach Word batch cards and the Word canvas walk are deleted; these checks only covered that deleted code.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

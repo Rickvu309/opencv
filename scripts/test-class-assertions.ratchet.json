@@ -22,7 +22,7 @@
   "apps/web/src/features/coach/coach-config-states.isolated.test.tsx": 4,
   "apps/web/src/features/coach/coach-history.test.tsx": 1,
   "apps/web/src/features/coach/coach-home.test.tsx": 1,
-  "apps/web/src/features/coach/coach-tool-presentation.isolated.test.tsx": 10,
+  "apps/web/src/features/coach/coach-tool-presentation.isolated.test.tsx": 7,
   "apps/web/src/features/coach/coach-turns-motion.test.tsx": 6,
   "apps/web/src/features/coach/coach-working.test.tsx": 1,
   "apps/web/src/features/coach/coach-workspace-presentation.isolated.test.tsx": 3,
@@ -39,9 +39,7 @@
   "apps/web/src/features/paper/paper-import-outcomes.isolated.test.tsx": 3,
   "apps/web/src/features/paper/paper-letter-stopped.test.tsx": 2,
   "apps/web/src/features/paper/paper-library-status.isolated.test.tsx": 5,
-  "apps/web/src/features/paper/paper-package-library.test.tsx": 1,
   "apps/web/src/features/paper/paper-print-parity.test.tsx": 2,
-  "apps/web/src/features/paper/writing-proposal-notice.test.tsx": 3,
   "apps/web/src/routes/detail-recovery.test.tsx": 1,
   "apps/web/src/test/ui-kit-contract.test.ts": 2
 }

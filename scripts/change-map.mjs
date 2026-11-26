@@ -7,7 +7,7 @@ const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 export const PART_JOBS = Object.freeze({
   api: ["test-api"],
   formal: ["formal-postgres"],
-  web: ["test-web", "test-web-walk"],
+  web: ["test-web"],
 })
 
 const PART_TASKS = Object.freeze({

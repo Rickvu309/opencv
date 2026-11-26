@@ -27,14 +27,11 @@ async function command(page, apiOrigin, origin, name, input) {
 
 export async function seedPaperDocs(page, apiOrigin, origin, spec) {
   for (const doc of paperDocPlan(spec)) {
-    const minted = await command(page, apiOrigin, origin, "paper.canvas", {
-      op: "mint",
-      label: doc.label,
+    const created = await command(page, apiOrigin, origin, "paper.create", {
+      kind: doc.label,
+      format: "rich",
+      name: doc.name,
     })
-    if (!minted.docId) throw new Error("paper.canvas returned no docId")
-    await command(page, apiOrigin, origin, "paper.update", {
-      docId: minted.docId,
-      patch: { name: doc.name },
-    })
+    if (!created.id) throw new Error("paper.create returned no id")
   }
 }

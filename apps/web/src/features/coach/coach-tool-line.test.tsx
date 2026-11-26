@@ -1,25 +1,12 @@
-import { undoneActivityRow } from "@/test/control-fixtures.ts"
 import { afterEach, describe, expect, it, vi } from "vitest"
-import {
-  cleanup,
-  fireEvent,
-  render,
-  screen,
-  waitFor,
-} from "@testing-library/react"
+import { cleanup, fireEvent, render, screen } from "@testing-library/react"
 import type { ChatToolPart } from "@workspace/domain/coach"
 
 import { ApiError } from "@/lib/api-error.ts"
-import { subscribeWritingRefresh } from "@/lib/writing-refresh.ts"
-import { render as renderWithClient } from "@/test/render-with-client.tsx"
 import {
   CoachToolLine,
   UNDO_FAILED_COPY,
 } from "@/features/coach/coach-tool-line.tsx"
-import {
-  ChatStoreContext,
-  type ChatStoreValue,
-} from "@/features/coach/chat-store-context.ts"
 import {
   toCoachParts,
   type CoachToolPart,
@@ -143,57 +130,6 @@ describe("CoachToolLine", () => {
 
     expect(await screen.findByRole("alert")).toHaveTextContent(reason)
     expect(screen.queryByText(UNDO_FAILED_COPY)).not.toBeInTheDocument()
-  })
-
-  it("tells the open page to reread after a paper edit is approved", async () => {
-    vi.stubGlobal("fetch", () =>
-      Promise.resolve(Response.json({ ok: true, data: undoneActivityRow() }))
-    )
-    let told = 0
-    const stop = subscribeWritingRefresh(() => {
-      told += 1
-    })
-    const store = {
-      chats: [],
-      chatsLoaded: true,
-      activeChatId: null,
-      navigationRevision: 0,
-      creationOwner: null,
-      messages: [],
-      phase: "idle",
-      progress: { active: false, rows: [] },
-      error: null,
-      send: () => false,
-      stop: () => undefined,
-      retry: () => false,
-      regenerate: () => false,
-      undo: async () => undefined,
-      openChat: () => undefined,
-      newChat: () => undefined,
-      deleteChat: async () => undefined,
-    } satisfies ChatStoreValue
-    renderWithClient(
-      <ChatStoreContext.Provider value={store}>
-        <CoachToolLine
-          tool={toolOf({
-            type: "tool",
-            name: "paper.edit",
-            summary: "Edit the line",
-            ok: true,
-            toolCallId: "call-edit",
-            pendingActionId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
-            approval: "pending",
-          })}
-          canUndo={false}
-        />
-      </ChatStoreContext.Provider>
-    )
-
-    fireEvent.click(screen.getByRole("button", { name: "Approve" }))
-
-    await waitFor(() => expect(told).toBe(1))
-    stop()
-    vi.unstubAllGlobals()
   })
 
   it("replaces Undo with Undone once the step was reversed", () => {

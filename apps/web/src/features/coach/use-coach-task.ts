@@ -21,11 +21,6 @@ import { coachSendErrorMessage } from "./coach-error.ts"
 import { observeCoachStop } from "@/lib/coach-stop-registry.ts"
 import { startCoachTask, subscribeCoachTask } from "@/lib/coach-task-client.ts"
 import { taskIsTerminal, taskParts } from "@/lib/coach-task-state.ts"
-import { notifyWritingRefresh } from "@/lib/writing-refresh.ts"
-import {
-  noteWritingUndo,
-  syncWritingProposalFromActions,
-} from "@/lib/writing-proposal.ts"
 import { undoActivity } from "@/lib/contract-client.ts"
 import {
   requestCoachStop,
@@ -109,23 +104,6 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
         local.stopRequested ||
         Boolean(discoveredTaskId)))
   const parts = task ? taskParts(task) : []
-  const refreshedEdits = useRef(new Set<string>())
-  useEffect(() => {
-    if (!task) return
-    syncWritingProposalFromActions(
-      task.snapshot.actions,
-      task.snapshot.confirmations
-    )
-    for (const action of task.snapshot.actions) {
-      if (action.operation !== "paper.edit" || action.state !== "committed") {
-        continue
-      }
-      const id = action.activityId ?? action.toolCallId
-      if (refreshedEdits.current.has(id)) continue
-      refreshedEdits.current.add(id)
-      notifyWritingRefresh()
-    }
-  }, [task])
   const canonical = task?.snapshot.messages
     .filter((message) => message.id !== task.snapshot.taskId)
     .map((message) => ({
@@ -418,7 +396,6 @@ export function useCoachTask(options: UseCoachTurnOptions, enabled: boolean) {
     stop: () => stop(),
     undo: async (activityId: string) => {
       await undoActivity(queryClient, activityId)
-      noteWritingUndo(activityId)
       options.onAfterUndo?.()
     },
     cancelInFlight: () => {

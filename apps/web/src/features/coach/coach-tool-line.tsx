@@ -23,14 +23,11 @@ import { cn } from "@workspace/ui/lib/utils"
 
 import { ErrorBanner } from "@/components/error-banner.tsx"
 import { ApiError } from "@/lib/api-error.ts"
-import { notifyWritingRefresh } from "@/lib/writing-refresh.ts"
 import {
   receiptReversalNote,
   receiptShowsUndo,
 } from "@/features/coach/coach-receipt.ts"
 import { DiffBlock, ReceiptDetail } from "@/features/coach/rich-receipts.tsx"
-import { WordBatchPreview } from "@/features/coach/word-batch-preview.tsx"
-import { useWordBatchApproval } from "@/lib/writing-proposal.ts"
 
 import type { CoachToolPart } from "./coach-parts.ts"
 
@@ -306,7 +303,6 @@ function CoachApproval({
 }) {
   const client = useQueryClient()
   const { activeChatId } = useChatStore()
-  const batch = useWordBatchApproval(id, review)
   const [{ busy: working, error }, dispatch] = useReducer(
     actionReducer,
     IDLE_ACTION
@@ -327,7 +323,6 @@ function CoachApproval({
       if (approve)
         await catalogClient.run(client, "actions.approve", { pendingActionId })
       else await catalogClient.run(client, "actions.deny", { pendingActionId })
-      if (approve && command === "paper.edit") notifyWritingRefresh()
       await refreshReads(client, [{ query: "chat.list" }])
       if (activeChatId)
         await refreshReads(client, [
@@ -355,11 +350,7 @@ function CoachApproval({
   const subject = isDocument
     ? (detail?.docName ?? storedName ?? "Your document")
     : coachToolLabel(command)
-  const changeCount = detail?.hunks.length
-    ? documentChangeCount(detail)
-    : batch.state === "ready"
-      ? batch.changes.length
-      : 0
+  const changeCount = detail?.hunks.length ? documentChangeCount(detail) : 0
   const waiting = isDocument
     ? changeCount > 0
       ? `${changeCount} change${changeCount === 1 ? "" : "s"} to approve`
@@ -382,18 +373,16 @@ function CoachApproval({
       state={waiting}
       actions={
         <>
-          {batch.state === "withheld" ? null : (
-            <Button
-              className={DECISION}
-              size="touch"
-              type="button"
-              variant="primary"
-              disabled={working}
-              onClick={() => void decide(true)}
-            >
-              Approve
-            </Button>
-          )}
+          <Button
+            className={DECISION}
+            size="touch"
+            type="button"
+            variant="primary"
+            disabled={working}
+            onClick={() => void decide(true)}
+          >
+            Approve
+          </Button>
           <Button
             className={DECISION}
             size="touch"
@@ -409,7 +398,7 @@ function CoachApproval({
     >
       {detail?.hunks.length ? (
         <DiffBlock detail={detail} />
-      ) : batch.state !== "none" ? null : (
+      ) : (
         <div className="space-y-1 text-sm leading-relaxed text-muted-foreground">
           <p>{humanToolText(tool.part.summary)}</p>
           <p>
@@ -419,7 +408,6 @@ function CoachApproval({
           </p>
         </div>
       )}
-      <WordBatchPreview batch={batch} />
       {error ? (
         <ErrorBanner variant="inline">{humanToolText(error)}</ErrorBanner>
       ) : null}
