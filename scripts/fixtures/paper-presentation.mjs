@@ -30,7 +30,7 @@ export const clean = [
     text: "const identity = /^\\/api\\/paper\\/([^/]+)\\/document$/.exec(path); paperDocumentInfoSchema.parse(identity)",
   },
   {
-    path: "apps/web/src/features/paper/rich-page.tsx",
+    path: "apps/web/src/features/paper/rich-editor/rich-page.tsx",
     text: '<Button size="icon" className="size-11 md:size-8" />',
   },
   {
@@ -206,7 +206,7 @@ export const mistakes = [
     text: "export async function paperApiFetch() { return null }",
   },
   {
-    path: "apps/web/src/features/paper/rich-page.tsx",
+    path: "apps/web/src/features/paper/rich-editor/rich-page.tsx",
     text: '<Button size="icon" />',
   },
   {

@@ -44,7 +44,7 @@ export function detectPageLayout(text, path) {
     text.includes('!element.classList.contains("paper-rich-sheet")')
   )
     hits.push("Rich Paper must preserve automatic pagination")
-  if (path === "apps/web/src/features/paper/rich-page-geometry.css") {
+  if (path.endsWith("/rich-page-geometry.css")) {
     for (const [, selector, declarations] of text.matchAll(
       /([^{}]+)\{([^{}]*)\}/g
     )) {
@@ -93,7 +93,7 @@ export function detectPageLayout(text, path) {
     !text.includes("$from.depth === 5")
   )
     hits.push("Page breaks must not jump outside nested content")
-  if (path === "apps/web/src/features/paper/rich-page-setup.tsx") {
+  if (path.endsWith("/rich-page-setup.tsx")) {
     const source = ts.createSourceFile(
       path,
       text,
@@ -141,10 +141,7 @@ export function detectPageLayout(text, path) {
         "Page setup failures must not misreport editing failures as margins"
       )
   }
-  if (
-    path === "apps/web/src/features/paper/rich-page-break.tsx" &&
-    !text.includes("editor?.apply(")
-  )
+  if (path.endsWith("/rich-page-break.tsx") && !text.includes("editor?.apply("))
     hits.push("Page break controls must use the editor lifetime guard")
   return hits
 }

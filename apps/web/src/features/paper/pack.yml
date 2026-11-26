@@ -12,5 +12,5 @@ public:
   - paper-api.ts
   - paper-library.tsx
   - paper-templates.ts
-  - rich-page.tsx
+  - rich-editor/rich-page.tsx
   - writing-page.tsx

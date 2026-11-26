@@ -2,7 +2,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import { act, fireEvent, screen, waitFor } from "@testing-library/react"
 import * as Y from "yjs"
 import userEvent from "@testing-library/user-event"
-import { uploadPaperPhoto } from "./paper-api.ts"
+import { uploadPaperPhoto } from "../paper-api.ts"
 import { parsePaperId } from "@workspace/domain/kernel"
 import {
   nativeProvenance,
@@ -16,14 +16,14 @@ import {
 import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import { openRichPaperSession } from "@/lib/paper-rich.ts"
 import { render } from "@/test/render-with-client.tsx"
-import { storedFlowFixture } from "../../../../../packages/paper-crdt/src/test/flow-fixture.ts"
-import { RichTableControls } from "./rich-table-controls.tsx"
+import { storedFlowFixture } from "../../../../../../packages/paper-crdt/src/test/flow-fixture.ts"
+import { RichTableControls } from "../rich-table-controls.tsx"
 import { RichPaperPage } from "./rich-page.tsx"
-import * as flowMount from "../../../../../packages/paper-crdt/src/native-layout-flow-mount.ts"
+import * as flowMount from "../../../../../../packages/paper-crdt/src/native-layout-flow-mount.ts"
 
 vi.mock("@/lib/paper-rich.ts", () => ({ openRichPaperSession: vi.fn() }))
 
-vi.mock("./paper-api.ts", () => ({ uploadPaperPhoto: vi.fn() }))
+vi.mock("../paper-api.ts", () => ({ uploadPaperPhoto: vi.fn() }))
 
 vi.mock("@/features/coach/use-chat-store.ts", () => ({
   useChatStore: () => ({ openChat: vi.fn() }),

@@ -33,7 +33,7 @@ import {
 } from "@/lib/paper-list-recheck.ts"
 
 const RichPaperPage = lazy(() =>
-  import("@/features/paper/rich-page.tsx").then((module) => ({
+  import("@/features/paper/rich-editor/rich-page.tsx").then((module) => ({
     default: module.RichPaperPage,
   }))
 )

@@ -5,7 +5,7 @@ import {
   openRichPaperClient,
   seedStoredYDoc,
 } from "@workspace/paper-crdt"
-import { mountRichEditorLifecycle } from "../features/paper/rich-editor-lifecycle.ts"
+import { mountRichEditorLifecycle } from "../features/paper/rich-editor/rich-editor-lifecycle.ts"
 import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import { storedFlowFixture } from "../../../../packages/paper-crdt/src/test/flow-fixture.ts"
 

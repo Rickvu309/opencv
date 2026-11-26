@@ -119,7 +119,7 @@ test("Word response filenames and media types tolerate valid HTTP variations", (
 })
 
 test("Word menu progress, failure copy and disabled descriptions stay connected", () => {
-  const path = "apps/web/src/features/paper/rich-document-menu.tsx"
+  const path = "apps/web/src/features/paper/rich-editor/rich-document-menu.tsx"
   const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
   assert.deepEqual(detect(clean, path), [])
   for (const [before, after] of [

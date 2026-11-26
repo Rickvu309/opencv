@@ -3,13 +3,16 @@ import { execFileSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 import { detect } from "./lib/paper-rich-scroll.mjs"
+import { pathAtRevision } from "./lib/path-at-revision.mjs"
 
-const pagePath = "apps/web/src/features/paper/rich-page.tsx"
-const barPath = "apps/web/src/features/paper/rich-find-bar.tsx"
+const pagePath = "apps/web/src/features/paper/rich-editor/rich-page.tsx"
+const barPath = "apps/web/src/features/paper/rich-editor/rich-find-bar.tsx"
 const read = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 const past = (rev, path) =>
-  execFileSync("git", ["show", `${rev}:${path}`], { encoding: "utf8" })
+  execFileSync("git", ["show", `${rev}:${pathAtRevision(rev, path)}`], {
+    encoding: "utf8",
+  })
 
 const bounded =
   '<section className="rich-paper-page flex h-full min-h-0 flex-col overflow-clip"><div data-paper-document-pane="" className="min-h-0 flex-1 overflow-auto"></div></section>'

@@ -17,7 +17,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@workspace/ui/components/dialog"
-import type { TextEditor } from "./rich-text-toolbar-control.tsx"
+import type { TextEditor } from "../rich-text-toolbar-control.tsx"
 
 type Page = Parameters<TextEditor["setPageSetup"]>[0]
 const sizes = { letter: [12240, 15840], a4: [11906, 16838] } satisfies Record<

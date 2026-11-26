@@ -7,6 +7,7 @@ import test from "node:test"
 import { detect, detectDocumentHistory } from "./lib/paper-presentation.mjs"
 import { detectPhotoApplyRounding } from "./lib/paper-photo-guard.mjs"
 import { clean, mistakes, roundTwo } from "./fixtures/paper-presentation.mjs"
+import { pathAtRevision } from "./lib/path-at-revision.mjs"
 
 const root = path.resolve(fileURLToPath(new URL("..", import.meta.url)))
 test("rich document headers allow enlarged titles and actions to wrap", () => {
@@ -62,10 +63,14 @@ test("round-one guards refuse the introducing formatting commit", () => {
     "packages/paper-crdt/src/native-formatting-render-values.ts",
     "apps/api/src/paper/native-output/formatted-properties.ts",
   ]) {
-    const text = execFileSync("git", ["show", `${introduced}:${file}`], {
-      cwd: root,
-      encoding: "utf8",
-    })
+    const text = execFileSync(
+      "git",
+      ["show", `${introduced}:${pathAtRevision(introduced, file)}`],
+      {
+        cwd: root,
+        encoding: "utf8",
+      }
+    )
     assert.ok(detect(text, file).length > 0, file)
   }
 })
@@ -76,7 +81,10 @@ test("round-two regressions fire on fixtures and the introducing head, while the
     assert.deepEqual(detect(fixture.clean, fixture.path), [], fixture.path)
     const old = execFileSync(
       "git",
-      ["show", `09c29ba06a01cf6b7961c03a46f5b068b6258cf9:${fixture.path}`],
+      [
+        "show",
+        `09c29ba06a01cf6b7961c03a46f5b068b6258cf9:${pathAtRevision("09c29ba06a01cf6b7961c03a46f5b068b6258cf9", fixture.path)}`,
+      ],
       { cwd: root, encoding: "utf8" }
     )
     assert.ok(detect(old, fixture.path).length, fixture.path)
@@ -208,10 +216,14 @@ test("round-three guards reject decoration overrides and shared field errors wit
     ],
   ]
   for (const [file, message, sha] of cases) {
-    const original = execFileSync("git", ["show", `${sha}:${file}`], {
-      cwd: root,
-      encoding: "utf8",
-    })
+    const original = execFileSync(
+      "git",
+      ["show", `${sha}:${pathAtRevision(sha, file)}`],
+      {
+        cwd: root,
+        encoding: "utf8",
+      }
+    )
     assert.ok(
       detect(original, file).some((hit) => hit.includes(message)),
       file
@@ -275,10 +287,14 @@ test("photo guards catch the reviewed insertion, dimension, selection and previe
     "packages/paper-crdt/src/native-layout-photo-controls.ts",
     "apps/web/src/features/paper/rich-photo-controls.tsx",
   ]) {
-    const before = execFileSync("git", ["show", `810e5694:${file}`], {
-      cwd: root,
-      encoding: "utf8",
-    })
+    const before = execFileSync(
+      "git",
+      ["show", `810e5694:${pathAtRevision("810e5694", file)}`],
+      {
+        cwd: root,
+        encoding: "utf8",
+      }
+    )
     assert.ok(detect(before, file).length > 0, file)
     assert.deepEqual(
       detect(readFileSync(path.join(root, file), "utf8"), file),
@@ -294,10 +310,14 @@ test("round-two photo guards reject the crop ratchet and hidden actions at their
     "apps/web/src/features/paper/rich-photo-preview.tsx",
     "packages/paper-crdt/src/native-layout-photo-controls.ts",
   ]) {
-    const before = execFileSync("git", ["show", `75fd7496:${file}`], {
-      cwd: root,
-      encoding: "utf8",
-    })
+    const before = execFileSync(
+      "git",
+      ["show", `75fd7496:${pathAtRevision("75fd7496", file)}`],
+      {
+        cwd: root,
+        encoding: "utf8",
+      }
+    )
     assert.ok(detect(before, file).length > 0, file)
     assert.deepEqual(
       detect(readFileSync(path.join(root, file), "utf8"), file),
@@ -313,10 +333,14 @@ test("round-three photo guards reject refused drafts, late upload checks and inv
     "apps/web/src/features/paper/rich-photo-controls.tsx",
     "packages/domain/src/paper-doc/native-photo-geometry.ts",
   ]) {
-    const before = execFileSync("git", ["show", `c9f04c8f:${file}`], {
-      cwd: root,
-      encoding: "utf8",
-    })
+    const before = execFileSync(
+      "git",
+      ["show", `c9f04c8f:${pathAtRevision("c9f04c8f", file)}`],
+      {
+        cwd: root,
+        encoding: "utf8",
+      }
+    )
     assert.ok(detect(before, file).length > 0, file)
     assert.deepEqual(
       detect(readFileSync(path.join(root, file), "utf8"), file),
@@ -331,10 +355,14 @@ test("round-four photo guards reject split text state and Apply without whole-fo
     "apps/web/src/features/paper/rich-photo-number.tsx",
     "apps/web/src/features/paper/rich-photo-controls.tsx",
   ]) {
-    const before = execFileSync("git", ["show", `14318911:${file}`], {
-      cwd: root,
-      encoding: "utf8",
-    })
+    const before = execFileSync(
+      "git",
+      ["show", `14318911:${pathAtRevision("14318911", file)}`],
+      {
+        cwd: root,
+        encoding: "utf8",
+      }
+    )
     assert.ok(detect(before, file).length > 0, file)
     assert.deepEqual(
       detect(readFileSync(path.join(root, file), "utf8"), file),
@@ -346,10 +374,14 @@ test("round-four photo guards reject split text state and Apply without whole-fo
 
 test("round-five photo Apply rejects conditional geometry, lost placement and raw display precision at the introducing head", () => {
   const file = "apps/web/src/features/paper/rich-photo-form.ts"
-  const before = execFileSync("git", ["show", `fe40fd4f:${file}`], {
-    cwd: root,
-    encoding: "utf8",
-  })
+  const before = execFileSync(
+    "git",
+    ["show", `fe40fd4f:${pathAtRevision("fe40fd4f", file)}`],
+    {
+      cwd: root,
+      encoding: "utf8",
+    }
+  )
   assert.ok(detect(before, file).length > 0)
   assert.deepEqual(
     detect(readFileSync(path.join(root, file), "utf8"), file),
@@ -364,10 +396,14 @@ test("phone overflow guard refuses empty menus and dangling photo separators", (
     [formatting, "54fbdb62", "Empty formatting overflow"],
     [photos, "e1507671", "append a separator"],
   ]) {
-    const before = execFileSync("git", ["show", `${commit}:${path}`], {
-      cwd: root,
-      encoding: "utf8",
-    })
+    const before = execFileSync(
+      "git",
+      ["show", `${commit}:${pathAtRevision(commit, path)}`],
+      {
+        cwd: root,
+        encoding: "utf8",
+      }
+    )
     assert.ok(
       detectDocumentHistory(before, path).some((hit) => hit.includes(message))
     )
@@ -403,10 +439,14 @@ test("phone overflow guard refuses empty menus and dangling photo separators", (
 
 test("round-six photo Apply guard refuses refitting consistent fields at the introducing head", () => {
   const file = "apps/web/src/features/paper/rich-photo-form.ts"
-  const mistake = execFileSync("git", ["show", `dfdf0043:${file}`], {
-    cwd: root,
-    encoding: "utf8",
-  })
+  const mistake = execFileSync(
+    "git",
+    ["show", `dfdf0043:${pathAtRevision("dfdf0043", file)}`],
+    {
+      cwd: root,
+      encoding: "utf8",
+    }
+  )
   const clean = readFileSync(path.join(root, file), "utf8")
   assert.equal(detectPhotoApplyRounding(mistake, file).length, 2)
   assert.deepEqual(detectPhotoApplyRounding(clean, file), [])
@@ -422,10 +462,14 @@ test("round-six photo Apply guard refuses refitting consistent fields at the int
 
 test("round-six photo blur guard catches the original unconditional commit", () => {
   const file = "apps/web/src/features/paper/rich-photo-number.tsx"
-  const mistake = execFileSync("git", ["show", `dfdf0043:${file}`], {
-    cwd: root,
-    encoding: "utf8",
-  })
+  const mistake = execFileSync(
+    "git",
+    ["show", `dfdf0043:${pathAtRevision("dfdf0043", file)}`],
+    {
+      cwd: root,
+      encoding: "utf8",
+    }
+  )
   assert.equal(detectPhotoApplyRounding(mistake, file).length, 1)
   assert.deepEqual(
     detectPhotoApplyRounding(readFileSync(path.join(root, file), "utf8"), file),
@@ -441,10 +485,14 @@ test("round-one guards refuse the introducing formatting commit", () => {
     "packages/paper-crdt/src/native-formatting-render-values.ts",
     "apps/api/src/paper/native-output/formatted-properties.ts",
   ]) {
-    const text = execFileSync("git", ["show", `${introduced}:${file}`], {
-      cwd: root,
-      encoding: "utf8",
-    })
+    const text = execFileSync(
+      "git",
+      ["show", `${introduced}:${pathAtRevision(introduced, file)}`],
+      {
+        cwd: root,
+        encoding: "utf8",
+      }
+    )
     assert.ok(detect(text, file).length > 0, file)
   }
 })
@@ -455,7 +503,10 @@ test("round-two regressions fire on fixtures and the introducing head, while the
     assert.deepEqual(detect(fixture.clean, fixture.path), [], fixture.path)
     const old = execFileSync(
       "git",
-      ["show", `09c29ba06a01cf6b7961c03a46f5b068b6258cf9:${fixture.path}`],
+      [
+        "show",
+        `09c29ba06a01cf6b7961c03a46f5b068b6258cf9:${pathAtRevision("09c29ba06a01cf6b7961c03a46f5b068b6258cf9", fixture.path)}`,
+      ],
       { cwd: root, encoding: "utf8" }
     )
     assert.ok(detect(old, fixture.path).length, fixture.path)
@@ -474,20 +525,27 @@ test("round-two regressions fire on fixtures and the introducing head, while the
 test("document history guard rejects misplaced and photo-owned history at its introducing head", () => {
   const paths = [
     "apps/web/src/features/paper/rich-text-formatting.tsx",
-    "apps/web/src/features/paper/rich-document-toolbar.tsx",
+    "apps/web/src/features/paper/rich-editor/rich-document-toolbar.tsx",
     "packages/paper-crdt/src/native-layout-photo-controls.ts",
   ]
   for (const path of paths) {
-    const oldPath = path.replace("rich-document-toolbar", "rich-photo-toolbar")
+    const oldPath = path.replace(
+      "rich-editor/rich-document-toolbar",
+      "rich-photo-toolbar"
+    )
     const introduced = path.endsWith("rich-text-formatting.tsx")
       ? "54fbdb62"
       : path.endsWith("native-layout-photo-controls.ts")
         ? "b45e5d82"
         : "dd38b260"
-    const before = execFileSync("git", ["show", `${introduced}:${oldPath}`], {
-      cwd: root,
-      encoding: "utf8",
-    })
+    const before = execFileSync(
+      "git",
+      ["show", `${introduced}:${pathAtRevision(introduced, oldPath)}`],
+      {
+        cwd: root,
+        encoding: "utf8",
+      }
+    )
     assert.ok(detectDocumentHistory(before, oldPath).length > 0, oldPath)
     assert.deepEqual(
       detectDocumentHistory(
@@ -517,23 +575,27 @@ test("page layout guards reject the reviewed lifetime, phone and pagination regr
   const files = [
     "packages/paper-crdt/src/presentation-meta.ts",
     "packages/paper-crdt/src/native-layout-flow.ts",
-    "apps/web/src/features/paper/rich-page-geometry.css",
+    "apps/web/src/features/paper/rich-editor/rich-page-geometry.css",
     "packages/paper-crdt/src/native-layout-flow-mount.ts",
     "packages/paper-crdt/src/rich-page-layout.ts",
     "packages/paper-crdt/src/editor.ts",
     "packages/paper-crdt/src/native-layout-page-commands.ts",
-    "apps/web/src/features/paper/rich-page-setup.tsx",
-    "apps/web/src/features/paper/rich-page-break.tsx",
+    "apps/web/src/features/paper/rich-editor/rich-page-setup.tsx",
+    "apps/web/src/features/paper/rich-editor/rich-page-break.tsx",
   ]
   for (const file of files) {
     const reviewed =
       file === "packages/paper-crdt/src/rich-page-layout.ts"
         ? "f66e65e0"
         : "6a8d3959"
-    const original = execFileSync("git", ["show", `${reviewed}:${file}`], {
-      cwd: root,
-      encoding: "utf8",
-    })
+    const original = execFileSync(
+      "git",
+      ["show", `${reviewed}:${pathAtRevision(reviewed, file)}`],
+      {
+        cwd: root,
+        encoding: "utf8",
+      }
+    )
     assert.ok(detect(original, file).length, file)
     assert.deepEqual(
       detect(readFileSync(path.join(root, file), "utf8"), file),
@@ -544,7 +606,7 @@ test("page layout guards reject the reviewed lifetime, phone and pagination regr
 })
 
 test("all responsive queries preserve physical Paper geometry", () => {
-  const file = "apps/web/src/features/paper/rich-page-geometry.css"
+  const file = "apps/web/src/features/paper/rich-editor/rich-page-geometry.css"
   for (const query of [
     "@media (max-height: 600px)",
     "@media (aspect-ratio < 1)",

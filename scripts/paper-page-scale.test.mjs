@@ -3,8 +3,9 @@ import { execFileSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 import { detect } from "./lib/paper-page-scale.mjs"
+import { pathAtRevision } from "./lib/path-at-revision.mjs"
 
-const css = "apps/web/src/features/paper/rich-page-geometry.css"
+const css = "apps/web/src/features/paper/rich-editor/rich-page-geometry.css"
 const layout = "packages/paper-crdt/src/rich-page-layout.ts"
 
 test("responsive Paper geometry mistakes fail with the scaling remedy", () => {
@@ -60,9 +61,13 @@ test("uniform scaling and responsive chrome stay quiet", () => {
 
 test("the original reflow commit fails and current Paper sources pass", () => {
   for (const file of [css, layout]) {
-    const historic = execFileSync("git", ["show", `f66e65e0:${file}`], {
-      encoding: "utf8",
-    })
+    const historic = execFileSync(
+      "git",
+      ["show", `f66e65e0:${pathAtRevision("f66e65e0", file)}`],
+      {
+        encoding: "utf8",
+      }
+    )
     assert.ok(detect(historic, file).length, file)
   }
   const files = execFileSync(
@@ -126,9 +131,13 @@ test("Paper pictures and carousel sizing use the shared A4 ratio", () => {
 
 test("the earlier US Letter thumbnails fail the A4 picture guard", () => {
   for (const file of [card, galleryCss]) {
-    const historic = execFileSync("git", ["show", `71fb28da5:${file}`], {
-      encoding: "utf8",
-    })
+    const historic = execFileSync(
+      "git",
+      ["show", `71fb28da5:${pathAtRevision("71fb28da5", file)}`],
+      {
+        encoding: "utf8",
+      }
+    )
     assert.match(detect(historic, file).join(), /shared A4 ratio/, file)
   }
 })
@@ -159,9 +168,13 @@ test("older Word canvas refuses responsive page geometry", () => {
     ),
     []
   )
-  const historic = execFileSync("git", ["show", `646b7471:${canvasCss}`], {
-    encoding: "utf8",
-  })
+  const historic = execFileSync(
+    "git",
+    ["show", `646b7471:${pathAtRevision("646b7471", canvasCss)}`],
+    {
+      encoding: "utf8",
+    }
+  )
   assert.ok(detect(historic, canvasCss).length)
 })
 
@@ -191,9 +204,13 @@ test("shared viewport geometry preserves the lazy editor boundary", () => {
   )
   for (const file of [canvasViewport, viewport])
     assert.deepEqual(detect(readFileSync(file, "utf8"), file), [])
-  const historic = execFileSync("git", ["show", `3f8f4170:${canvasViewport}`], {
-    encoding: "utf8",
-  })
+  const historic = execFileSync(
+    "git",
+    ["show", `3f8f4170:${pathAtRevision("3f8f4170", canvasViewport)}`],
+    {
+      encoding: "utf8",
+    }
+  )
   assert.match(detect(historic, canvasViewport).join(), message)
 })
 
@@ -216,9 +233,13 @@ test("Word page border space cannot disappear with its chrome", () => {
     ".writing-page p { border: 0; }",
   ])
     assert.deepEqual(detect(source, canvasCss), [])
-  const historic = execFileSync("git", ["show", `d04e2f15:${canvasCss}`], {
-    encoding: "utf8",
-  })
+  const historic = execFileSync(
+    "git",
+    ["show", `d04e2f15:${pathAtRevision("d04e2f15", canvasCss)}`],
+    {
+      encoding: "utf8",
+    }
+  )
   assert.match(detect(historic, canvasCss).join(), message)
   assert.deepEqual(detect(readFileSync(canvasCss, "utf8"), canvasCss), [])
 })

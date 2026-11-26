@@ -10,7 +10,7 @@ import {
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
 import { FocusSafeRegion } from "@/components/focus-safe-region.tsx"
-import { RichDocumentHistory } from "./rich-document-toolbar.tsx"
+import { RichDocumentHistory } from "./rich-editor/rich-document-toolbar.tsx"
 import { RichTextEmphasisGroup } from "./rich-text-emphasis-group.tsx"
 import { RichTextFontGroup } from "./rich-text-font-group.tsx"
 import { RichTextColorGroup } from "./rich-text-color-group.tsx"
@@ -23,7 +23,7 @@ import {
 } from "./rich-text-toolbar-control.tsx"
 import { RichStructureControls } from "./rich-structure-controls.tsx"
 import { RichTextCustomSpacing } from "./rich-text-custom-spacing.tsx"
-import { RichPageBreak } from "./rich-page-break.tsx"
+import { RichPageBreak } from "./rich-editor/rich-page-break.tsx"
 
 export function RichPaperTextFormatting({
   editor,
