@@ -145,7 +145,7 @@ test("the full style cascade and shared Docs groups reject their introducing mis
     "packages/domain/src/paper-doc/paragraph-styles.ts",
     "packages/domain/src/paper-doc/presentation-styles.ts",
     "apps/web/src/features/paper/rich-editor/rich-structure-controls.tsx",
-    "apps/web/src/features/paper/rich-text-formatting.tsx",
+    "apps/web/src/features/paper/rich-editor/rich-text-formatting.tsx",
   ]) {
     const before = execFileSync(
       "git",
@@ -183,7 +183,7 @@ test("character inheritance and list indent dispatch have clean and mistake fixt
       "overlay(overlay(paragraph, character.value), direct)",
     ],
     [
-      "apps/web/src/features/paper/rich-text-formatting.tsx",
+      "apps/web/src/features/paper/rich-editor/rich-text-formatting.tsx",
       "<RichTextParagraphGroup />",
       "<RichTextParagraphGroup />; controls: structure",
     ],
@@ -209,7 +209,8 @@ test("character inheritance and list indent dispatch have clean and mistake fixt
 })
 
 test("the merged history toolbar keeps paragraph controls on one desktop row", () => {
-  const path = "apps/web/src/features/paper/rich-text-formatting.tsx"
+  const path =
+    "apps/web/src/features/paper/rich-editor/rich-text-formatting.tsx"
   const before = execFileSync(
     "git",
     ["show", `31528653:${pathAtRevision("31528653", path)}`],

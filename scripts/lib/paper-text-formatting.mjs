@@ -8,7 +8,7 @@ export function detectTextFormatting(text, path) {
   )
     hits.push("Select values need ellipsis without a flex display override")
   if (
-    path === "apps/web/src/features/paper/rich-text-emphasis-group.tsx" &&
+    path.endsWith("/rich-text-emphasis-group.tsx") &&
     text.includes("size-11")
   )
     hits.push(
@@ -27,19 +27,19 @@ export function detectTextFormatting(text, path) {
         "Indent shortcuts must adjust each selected paragraph independently"
       )
   }
-  if (path === "apps/web/src/features/paper/rich-text-paragraph-group.tsx") {
+  if (path.endsWith("/rich-text-paragraph-group.tsx")) {
     if (text.includes("formatting?.start"))
       hits.push("Indent buttons cannot flatten a mixed paragraph selection")
     if (text.includes("Ctrl+") && !text.includes("shortcutLabel("))
       hits.push("Toolbar shortcuts must use the platform modifier")
   }
   if (
-    path === "apps/web/src/features/paper/rich-text-formatting.tsx" &&
+    path.endsWith("/rich-text-formatting.tsx") &&
     /const controls =[^]*?<fieldset[^]*?\{children\}/.test(text)
   )
     hits.push("Phone emphasis controls must remain beside More")
   if (
-    path === "apps/web/src/features/paper/rich-text-color-group.tsx" &&
+    path.endsWith("/rich-text-color-group.tsx") &&
     text.includes('"var(--background)"')
   )
     hits.push(

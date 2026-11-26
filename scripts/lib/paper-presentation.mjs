@@ -500,7 +500,7 @@ export function detect(text, path) {
 export function detectDocumentHistory(text, path) {
   const hits = []
   if (
-    path === "apps/web/src/features/paper/rich-text-formatting.tsx" &&
+    path.endsWith("/rich-text-formatting.tsx") &&
     text.includes('role="toolbar"')
   ) {
     const toolbar = text.slice(text.indexOf('role="toolbar"'))

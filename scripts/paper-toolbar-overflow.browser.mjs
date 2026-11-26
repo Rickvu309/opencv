@@ -52,7 +52,7 @@ import {nativeProvenance} from '@workspace/domain'
 import {openRichPaperClient} from '/@fs/${root}/packages/paper-crdt/src/client.ts'
 import {seedStoredYDoc} from '/@fs/${root}/packages/paper-crdt/src/stored-document.ts'
 import {storedFlowFixture} from '/@fs/${root}/packages/paper-crdt/src/test/flow-fixture.ts'
-import {RichPaperTextFormatting} from '/src/features/paper/rich-text-formatting.tsx'
+import {RichPaperTextFormatting} from '/src/features/paper/rich-editor/rich-text-formatting.tsx'
 import {RichPhotoControls} from '/src/features/paper/rich-editor/rich-photo-controls.tsx'
 const document=storedFlowFixture('letter')
 const provenance=nativeProvenance(document)
