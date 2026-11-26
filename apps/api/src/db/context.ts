@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks"
 
-import { ERROR_CODES } from "@workspace/domain"
+import { ERROR_CODES } from "@workspace/domain/kernel"
 import type { NodePgDatabase } from "drizzle-orm/node-postgres"
 
 import { CommandError, isMissingPhoto } from "../platform/errors.js"

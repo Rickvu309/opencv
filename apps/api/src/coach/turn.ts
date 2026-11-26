@@ -1,27 +1,29 @@
+import { type Plan } from "@workspace/domain/account"
 import {
   appendCoachPart,
-  coachActor,
   commandNameSchema,
   deterministicChatTitle,
   focusedEditNeedsPaperEdit,
-  parseChatId,
-  parseUserId,
-  personActor,
   shouldAutoTitleChat,
   textFromParts,
   type ChatTurnEvent,
-  type CoachActor,
   type CoachFocusDoc,
   type CoachMode,
   type CoachRuntime,
   type CoachSelection,
   type CoachStreamPart,
   type CoachTurnUsage,
-  type Plan,
   type ChatEntry,
   type ChatEntryPart,
   type ChatMessageStatus,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
+import {
+  coachActor,
+  parseChatId,
+  parseUserId,
+  personActor,
+  type CoachActor,
+} from "@workspace/domain/kernel"
 import { streamAnthropicSteps, type CoachModel } from "./anthropic-runtime.js"
 import type { SSEStreamingApi } from "hono/streaming"
 

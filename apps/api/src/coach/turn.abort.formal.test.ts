@@ -1,10 +1,10 @@
 import {
   chatDetailSchema,
-  personActor,
   type CoachRuntime,
   type CoachStreamPart,
   type CoachTurnInput,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
+import { personActor } from "@workspace/domain/kernel"
 import { asc, eq } from "drizzle-orm"
 import type { SSEStreamingApi } from "hono/streaming"
 import { describe, expect, it, vi } from "vitest"

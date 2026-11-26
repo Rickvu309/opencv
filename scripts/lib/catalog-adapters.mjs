@@ -154,10 +154,13 @@ function importTargets(file, source) {
     )
       specifier = literal(node.arguments[0])
     if (!specifier) return
+    const context = /^@workspace\/domain\/([a-z-]+)$/.exec(specifier)?.[1]
     const target =
       specifier === "@workspace/domain"
         ? "packages/domain/src/index.ts"
-        : toRepoPath(specifier, file)
+        : context
+          ? `packages/domain/src/${context}/public.ts`
+          : toRepoPath(specifier, file)
     if (target) targets.push(target.replace(/\.js$/, ".ts"))
   })
   return targets

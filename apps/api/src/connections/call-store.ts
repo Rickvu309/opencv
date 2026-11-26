@@ -1,4 +1,4 @@
-import type { DelegateActor } from "@workspace/domain"
+import type { DelegateActor } from "@workspace/domain/kernel"
 import { and, count, desc, eq, gt, sql } from "drizzle-orm"
 import { getDb, insideTransaction } from "../db/context.js"
 import { agentToolCalls, user } from "../db/schema.js"

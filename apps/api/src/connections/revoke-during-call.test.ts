@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto"
 import { serve } from "@hono/node-server"
 import { afterAll, beforeAll, expect, it } from "vitest"
 import { eq } from "drizzle-orm"
-import { personActor } from "@workspace/domain"
+import { personActor } from "@workspace/domain/kernel"
 import { createApp } from "../app.js"
 import {
   createMigratedTestDb,

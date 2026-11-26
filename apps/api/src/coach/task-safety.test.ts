@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs"
-import { personActor } from "@workspace/domain"
+import { personActor } from "@workspace/domain/kernel"
 import { sql } from "drizzle-orm"
 import { expect, it, vi } from "vitest"
 import { getDb, transaction, withDatabase } from "../db/context.js"

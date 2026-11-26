@@ -1,13 +1,11 @@
 import {
   COACH_MODEL,
-  catalog,
   coachModeSchema,
   chatDetailSchema,
   coachStartOutputSchema,
-  parseChatId,
-  type Actor,
   type CoachStartInput,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
+import { catalog, parseChatId, type Actor } from "@workspace/domain/kernel"
 import { and, eq, sql } from "drizzle-orm"
 import { getProfileRow } from "../account/index.js"
 import {

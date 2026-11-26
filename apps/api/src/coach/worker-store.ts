@@ -3,12 +3,11 @@ import { and, asc, desc, eq, sql } from "drizzle-orm"
 import {
   chatToolNameSchema,
   chatToolPartSchema,
-  parseChatId,
-  parseUserId,
   textFromParts,
   type ChatEntryPart,
   type CoachTaskErrorCode,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
+import { parseChatId, parseUserId } from "@workspace/domain/kernel"
 import { getDb, transaction } from "../db/context.js"
 import {
   coachTasks,

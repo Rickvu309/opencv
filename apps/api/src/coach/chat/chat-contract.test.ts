@@ -1,9 +1,5 @@
-import {
-  DEFAULT_CHAT_TITLE,
-  catalog,
-  personActor,
-  queries,
-} from "@workspace/domain"
+import { DEFAULT_CHAT_TITLE } from "@workspace/domain/coach"
+import { catalog, personActor, queries } from "@workspace/domain/kernel"
 import { describe, expect, it } from "vitest"
 import type { z } from "zod"
 

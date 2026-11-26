@@ -1,18 +1,23 @@
-import { shouldAutoTitleChat, deterministicChatTitle } from "@workspace/domain"
+import {
+  shouldAutoTitleChat,
+  deterministicChatTitle,
+} from "@workspace/domain/coach"
 import {
   CHAT_OPEN_WINDOW_DAYS,
   DEFAULT_CHAT_TITLE,
-  ERROR_CODES,
-  parseChatId,
-  type Actor,
   type ChatAppendMessageInput,
   type ChatMessagePart,
   type ChatFocus,
-  type ChatId,
   type ChatOpenInput,
   type ChatSetFocusInput,
+} from "@workspace/domain/coach"
+import {
+  ERROR_CODES,
+  parseChatId,
+  type Actor,
+  type ChatId,
   type UserId,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import { and, asc, desc, eq, gt, inArray, isNotNull } from "drizzle-orm"
 
 import { getDb, transaction } from "../../db/context.js"

@@ -182,8 +182,8 @@ export function renderCatalog(snapshot) {
       `import { operation as ${aliasOf(operation.name)} } from ${JSON.stringify(`../${operation.file.replace("packages/domain/src/", "").replace(/\.ts$/, ".js")}`)}`
   )
   const server = [
-    'import type { Implementations } from "@workspace/domain"',
-    'import { catalog } from "@workspace/domain"',
+    'import type { Implementations } from "@workspace/domain/kernel"',
+    'import { catalog } from "@workspace/domain/kernel"',
   ]
   for (const operation of operations) {
     const implementation = snapshot.servers.find(

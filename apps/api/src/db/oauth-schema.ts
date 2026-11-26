@@ -1,4 +1,4 @@
-import type { ConnectionResources } from "@workspace/domain"
+import type { ConnectionResources } from "@workspace/domain/agents"
 import { sql } from "drizzle-orm"
 import {
   boolean,

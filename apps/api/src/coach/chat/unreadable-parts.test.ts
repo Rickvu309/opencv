@@ -1,4 +1,4 @@
-import { parseChatId, parseUserId } from "@workspace/domain"
+import { parseChatId, parseUserId } from "@workspace/domain/kernel"
 import { expect, it } from "vitest"
 
 import { exportAccount } from "../../account/index.js"

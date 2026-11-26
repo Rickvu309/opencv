@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { coachActor } from "@workspace/domain"
+import { coachActor } from "@workspace/domain/kernel"
 import { getDb } from "../db/context.js"
 import { coachUsage } from "../db/schema.js"
 import { eq } from "drizzle-orm"
