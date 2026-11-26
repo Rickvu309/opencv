@@ -1,4 +1,4 @@
-import type { Profile, ProfileUpdateInput } from "@workspace/domain"
+import type { Profile, ProfileUpdateInput } from "@workspace/domain/account"
 import { FileText, Mail, MessageCircle, Mic } from "lucide-react"
 import { Switch } from "@workspace/ui/components/switch"
 

@@ -1,4 +1,4 @@
-import type { CoachStartInput } from "@workspace/domain"
+import type { CoachStartInput } from "@workspace/domain/coach"
 
 export type CoachStopTarget =
   | { kind: "task"; chatId: string; taskId: string }

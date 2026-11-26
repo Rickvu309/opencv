@@ -1,5 +1,8 @@
 import type { QueryClient } from "@tanstack/react-query"
-import { nativeSyncOutputSchema, sameNativeProvenance } from "@workspace/domain"
+import {
+  nativeSyncOutputSchema,
+  sameNativeProvenance,
+} from "@workspace/domain/paper-doc"
 import { emptyUpdate } from "@workspace/paper-crdt"
 import { catalogClient } from "./contract-client.ts"
 import { openRichNativePaperSync } from "./paper-native-transport.ts"

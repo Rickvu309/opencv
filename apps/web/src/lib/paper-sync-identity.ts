@@ -1,10 +1,10 @@
 import { z } from "zod"
+import { paperIdSchema } from "@workspace/domain/kernel"
 import {
-  paperIdSchema,
   nativeProvenanceSchema,
   nativeWriterSchema,
   sameNativeProvenance,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 const nativeIdentitySchema = z
   .object({

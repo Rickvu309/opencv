@@ -1,4 +1,4 @@
-import { catalog } from "@workspace/domain"
+import { catalog } from "@workspace/domain/kernel"
 
 import { catalogClient } from "@/lib/contract-client.ts"
 

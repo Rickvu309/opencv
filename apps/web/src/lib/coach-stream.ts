@@ -1,15 +1,14 @@
 import type { QueryClient } from "@tanstack/react-query"
+import { parseChatTurnEvent, type ChatTurnEvent } from "@workspace/domain/coach"
 import {
   catalog,
   commands,
-  parseChatTurnEvent,
   queries,
   z,
   type AnyCommandEntry,
-  type ChatTurnEvent,
   type QueryRef,
   type ResourceTouch,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 
 import { apiStream } from "@/lib/api.ts"
 import { ApiError } from "@/lib/api-error.ts"

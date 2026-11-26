@@ -1,3 +1,4 @@
+import { z } from "@workspace/domain/kernel"
 import {
   NATIVE_WRITER,
   nativeWriterSchema,
@@ -7,10 +8,9 @@ import {
   sameNativeProvenance,
   paperDocumentInfoSchema,
   paperViewSchema,
-  z,
   type NativeWriter,
   type PaperView,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import { apiFetch } from "./api.ts"
 import { unwrapData, type SuccessBody } from "./api-envelope.ts"

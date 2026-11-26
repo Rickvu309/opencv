@@ -1,4 +1,4 @@
-import type { CvDocument, CvTemplateId } from "@workspace/domain"
+import type { CvDocument, CvTemplateId } from "@workspace/domain/paper-doc"
 import {
   SAMPLE_AUTHOR,
   type SampleAuthor,
