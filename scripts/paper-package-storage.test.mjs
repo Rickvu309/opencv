@@ -141,7 +141,10 @@ test("immutable Word storage rejects unfinished heads, projection shadows and fl
     ).length > 0
   )
   const source = readFileSync(
-    new URL("../apps/api/src/paper/package-store.ts", import.meta.url),
+    new URL(
+      "../apps/api/src/paper/word-package/package-store.ts",
+      import.meta.url
+    ),
     "utf8"
   )
   assert.deepEqual(detect(source), [])
@@ -264,7 +267,10 @@ test("Word preparation detects transactions inside the complete planner", () => 
 
 test("Word imports reject private children at retry and publication", () => {
   const source = readFileSync(
-    new URL("../apps/api/src/paper/package-store.ts", import.meta.url),
+    new URL(
+      "../apps/api/src/paper/word-package/package-store.ts",
+      import.meta.url
+    ),
     "utf8"
   )
   const condition = "version.parentRevision !== null"

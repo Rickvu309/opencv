@@ -24,7 +24,10 @@ test("Word library lists fetch only public metadata", () => {
     ).length
   )
   const source = readFileSync(
-    new URL("../apps/api/src/paper/package-store.ts", import.meta.url),
+    new URL(
+      "../apps/api/src/paper/word-package/package-store.ts",
+      import.meta.url
+    ),
     "utf8"
   )
   assert.deepEqual(detect(source), [])
