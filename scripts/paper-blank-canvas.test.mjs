@@ -108,7 +108,7 @@ test("blank factories delegate and the historical starter CV fails", () => {
   )
   assert.match(
     read("apps/web/src/features/paper/paper-new-dialog.tsx"),
-    /"paper.canvas"/
+    /"paper\.create", \{\s*kind: "cv",\s*format: "rich",\s*templateId,\s*\}/
   )
   assert.match(
     read("apps/web/src/features/paper/paper-letter-start.tsx"),
@@ -217,7 +217,11 @@ test("the rich blank creation path uses the factory and the full editor command"
   )
   assert.match(
     read("apps/api/src/paper/operations/create/server.ts"),
-    /createPaper\(actor, \{\s*kind: input\.kind,\s*name: input\.name,\s*\}\)/
+    /paper: startingPaper\(input\)/
+  )
+  assert.match(
+    read("apps/api/src/paper/new-paper.ts"),
+    /return undefined\n\}\n$/
   )
   assert.match(
     read("apps/web/src/features/paper/paper-new-dialog.tsx"),

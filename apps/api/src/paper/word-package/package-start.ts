@@ -6,10 +6,8 @@ import {
 } from "@workspace/domain/paper-doc"
 
 import { packageFailure } from "./package-pages.js"
-import { blankPageBytes } from "./word/mutate.js"
 import {
   templateLines,
-  templatePageBytes,
   templatePageName,
   type TemplateLine,
 } from "./word/template.js"
@@ -32,12 +30,6 @@ export function startedLines(input: StartChoice): TemplateLine[] {
       "This template is longer than a new page may start. No document was made."
     )
   return lines
-}
-
-export function startedBytes(input: StartChoice) {
-  if (input.kind === "letter") return blankPageBytes()
-  startedLines(input)
-  return templatePageBytes(input.templateId ?? PAPER_START_TEMPLATE)
 }
 
 export function startedName(input: StartChoice, company: string | null) {

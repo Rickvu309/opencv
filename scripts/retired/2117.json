@@ -1,0 +1,42 @@
+[
+  {
+    "subject": "apps/api/src/coach/coach-creates-word.test.ts",
+    "because": "ADR-0008: a template CV and a Coach-started document are now rich Papers made by paper.create and paper.start, so assertions about Word pages, canvas mint, Word line text and package downloads no longer describe them; the renamed and rewritten tests assert the rich Paper instead.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/blank-rich-create.test.ts",
+    "because": "ADR-0008: a template CV and a Coach-started document are now rich Papers made by paper.create and paper.start, so assertions about Word pages, canvas mint, Word line text and package downloads no longer describe them; the renamed and rewritten tests assert the rich Paper instead.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-new-dialog.test.tsx",
+    "because": "ADR-0008: a template CV and a Coach-started document are now rich Papers made by paper.create and paper.start, so assertions about Word pages, canvas mint, Word line text and package downloads no longer describe them; the renamed and rewritten tests assert the rich Paper instead.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "scripts/paper-blank-canvas.test.mjs",
+    "because": "ADR-0008: the template picker now creates a rich Paper with paper.create and templateId, and paper.create builds its document through startingPaper, which leaves a blank to createPaper's emptyRichPaper; the two assertions now check those calls.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "packages/domain/src/paper-create.test.ts",
+    "because": "ADR-0008: paper.create now takes a CV templateId; the test now asserts a CV template is accepted and a Letter template refused.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

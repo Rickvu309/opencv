@@ -8,13 +8,14 @@ import type { ModelMessage, WorkerRuntime } from "./model-step.js"
 const START_ASK = /^\s*(?:make|create|start)\b[^.?!]*?\b(cv|letter)\b/i
 
 const startedSchema = z.object({
-  output: z.object({ generation: z.literal("package"), docId: z.string() }),
+  output: z.object({ docId: z.string() }),
 })
 
 const outlinedSchema = z.object({
   output: z.object({
     revision: z.union([z.number(), z.string()]),
     outline: z.string(),
+    nativeBasis: z.unknown().optional(),
   }),
 })
 
@@ -70,7 +71,7 @@ function decide(
 } {
   if (step === 0)
     return {
-      text: `I started your ${kind === "cv" ? "CV" : "letter"} as a Word page. `,
+      text: `I started your ${kind === "cv" ? "CV" : "letter"}. `,
       intents: [
         {
           id: "call_start",
@@ -103,6 +104,9 @@ function decide(
             id: docId,
             revision: outlined.revision,
             outline: outlined.outline,
+            ...(outlined.nativeBasis
+              ? { nativeBasis: outlined.nativeBasis as never }
+              : {}),
           }),
         },
       ],

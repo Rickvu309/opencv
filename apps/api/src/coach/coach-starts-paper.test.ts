@@ -6,6 +6,7 @@ import {
   parseUserId,
   personActor,
 } from "@workspace/domain/kernel"
+import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { asc, eq } from "drizzle-orm"
 import { expect, it } from "vitest"
 import { z } from "zod"
@@ -16,7 +17,7 @@ import {
   activity,
   coachTasks,
   coachUsage,
-  paperPackageHeads,
+  paperDocs,
   toolIntents,
   user,
 } from "../db/schema.js"
@@ -27,11 +28,9 @@ import { runCoachWorker } from "./worker.js"
 
 const startedSchema = z.object({
   output: z.object({
-    generation: z.literal("package"),
     docId: z.string(),
     name: z.string(),
     kind: z.enum(["cv", "letter"]),
-    revision: z.string(),
   }),
 })
 
@@ -57,16 +56,16 @@ async function linksOf(registry: Registry, ownerId: string, jobId: string) {
   )
 }
 
-async function headsOf(ownerId: string) {
+async function papersOf(ownerId: string) {
   return getDb()
-    .select({ docId: paperPackageHeads.docId })
-    .from(paperPackageHeads)
-    .where(eq(paperPackageHeads.userId, ownerId))
+    .select({ docId: paperDocs.id })
+    .from(paperDocs)
+    .where(eq(paperDocs.userId, ownerId))
 }
 
 async function outlineOf(registry: Registry, ownerId: string, docId: string) {
   return z
-    .object({ outline: z.string(), revision: z.string() })
+    .object({ outline: z.string(), revision: z.number() })
     .parse(
       await registry.read("paper.outline", { docId }, personActor(ownerId))
     )
@@ -105,7 +104,6 @@ async function createTurn(
   ])
   const started = startedSchema.parse(intents[0]!.publicResult).output
   const before = await outlineOf(registry, ownerId, started.docId)
-  expect(before.revision).toBe(started.revision)
   await registry.approve(ownerId, intents[2]!.proposalId!)
   await runCoachWorker({ ...settings, registry, runtime })
   const [finished] = await getDb().select().from(coachTasks)
@@ -125,21 +123,10 @@ async function createTurn(
   await registry.undo(ownerId, edit!.activityId!)
   const undone = await outlineOf(registry, ownerId, started.docId)
   expect(undone.outline).toBe(before.outline)
-  const download = z
-    .object({ downloadPath: z.string(), name: z.string() })
-    .parse(
-      await registry.read(
-        "paper.export",
-        { docId: started.docId, at: undone.revision },
-        personActor(ownerId)
-      )
-    )
-  expect(download.downloadPath).toMatch(/^\/api\/paper\/packages\//)
-  expect(download.name).toBe(started.name)
   return { started, before }
 }
 
-it("a CV the Coach starts is a Word page it reads, edits with approval and Undo", () =>
+it("a CV the Coach starts is a Paper it reads, edits with approval and Undo", () =>
   fixture(async ({ taskId, ownerId }, registry) => {
     const { started, before } = await createTurn(registry, ownerId, taskId, {
       messages: [{ role: "user", content: "Make me a CV" }],
@@ -149,11 +136,17 @@ it("a CV the Coach starts is a Word page it reads, edits with approval and Undo"
     expect(before.outline).toContain("[Role, company] | [Dates]")
     const papers = z
       .array(z.object({ id: z.string() }).passthrough())
-      .parse(await registry.read("paper.list", {}, personActor(ownerId)))
+      .parse(
+        await registry.read(
+          "paper.list",
+          { writer: RICH_NATIVE_WRITER },
+          personActor(ownerId)
+        )
+      )
     expect(papers.map((paper) => paper.id)).toEqual([started.docId])
   }))
 
-it("a Letter the Coach starts for a Job is a blank Word page named for the Job", () =>
+it("a Letter the Coach starts for a Job is a blank Paper named for the Job", () =>
   fixture(async ({ taskId, ownerId }, registry) => {
     const jobId = await jobFor(registry, ownerId, "Lumiere")
     const { started, before } = await createTurn(registry, ownerId, taskId, {
@@ -166,7 +159,11 @@ it("a Letter the Coach starts for a Job is a blank Word page named for the Job",
       kind: "letter",
       name: "Cover letter, Lumiere",
     })
-    expect(before.outline).toContain("(empty line)")
+    expect(
+      (JSON.parse(before.outline) as { content: unknown[] }[]).every(
+        (node) => node.content.length === 0
+      )
+    ).toBe(true)
     expect(before.outline).not.toContain("[Your name]")
     const [start] = await getDb()
       .select()
@@ -195,7 +192,7 @@ it("a page started for a Job links to it, and the same key twice makes one page 
     const again = startedSchema.parse(await start()).output
     expect(again.docId).toBe(first.docId)
     expect(first.name).toBe("Simple CV, Northwind")
-    expect(await headsOf(ownerId)).toEqual([{ docId: first.docId }])
+    expect(await papersOf(ownerId)).toEqual([{ docId: first.docId }])
     expect(await linksOf(registry, ownerId, jobId)).toMatchObject({
       cvDocId: first.docId,
       letterDocId: null,
@@ -239,7 +236,7 @@ it("refuses another person's Job the same as an unknown Job and makes no page", 
     const foreign = await refusal(jobId)
     expect(foreign).not.toBeNull()
     expect(foreign).toEqual(await refusal(randomUUID()))
-    expect(await headsOf(strangerId)).toEqual([])
+    expect(await papersOf(strangerId)).toEqual([])
     expect(await linksOf(registry, ownerId, jobId)).toMatchObject({
       cvDocId: null,
       letterDocId: null,
@@ -273,7 +270,7 @@ it("makes no page when the Job is gone by the time the person approves it", () =
     })
     await registry.approve(ownerId, asked!.proposalId!).catch(() => null)
     await runCoachWorker({ ...settings, registry, runtime }).catch(() => null)
-    expect(await headsOf(ownerId)).toEqual([])
+    expect(await papersOf(ownerId)).toEqual([])
     const [after] = await getDb()
       .select()
       .from(toolIntents)
@@ -320,5 +317,5 @@ it("never starts a page in a text-only turn, even when the words ask for one", (
     const [finished] = await getDb().select().from(coachTasks)
     expect(finished?.state).toBe("succeeded")
     expect(await getDb().select().from(toolIntents)).toEqual([])
-    expect(await headsOf(ownerId)).toEqual([])
+    expect(await papersOf(ownerId)).toEqual([])
   }))

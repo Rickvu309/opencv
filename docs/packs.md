@@ -203,7 +203,7 @@ flowchart TD
 | `apps/api/src/mail` | platform | none | none | none |
 | `apps/api/src/paper` | feature | index.ts, operations | apps/api/src/paper/import, apps/api/src/paper/native-output, apps/api/src/paper/content, apps/api/src/paper/word-package, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/paper/content` | feature | content-store.ts, native-admission.ts, read-paper.ts, rich-snapshot.ts | apps/api/src/db, apps/api/src/platform | none |
-| `apps/api/src/paper/import` | feature | import-parse.ts, import-text-pool.ts, import-word.ts | apps/api/src/paper/word-package, apps/api/src/platform | none |
+| `apps/api/src/paper/import` | feature | import-parse.ts, import-text-pool.ts, import-word.ts, word-to-paper.ts | apps/api/src/paper/word-package, apps/api/src/platform | none |
 | `apps/api/src/paper/native-output` | feature | formatted.ts, formatted-photos.ts | none | none |
 | `apps/api/src/paper/word-package` | feature | package-candidates.ts, package-canvas.ts, package-card-actions.ts, package-edit.ts, package-errors.ts, package-http.ts, package-list.ts, package-pages.ts, package-xml.ts, package-zip.ts, package-start.ts, package-store.ts, word-reading.ts, word/document.ts, word/template.ts | apps/api/src/registry, apps/api/src/db, apps/api/src/platform | none |
 | `apps/api/src/platform` | platform | none | none | none |

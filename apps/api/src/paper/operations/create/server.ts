@@ -1,8 +1,10 @@
 import { catalog, parseJobId } from "@workspace/domain/kernel"
 import { operation } from "@workspace/domain/operations/paper/create"
 import type { OperationBinding } from "../../../registry/bind.js"
+import { startingPaper } from "../../new-paper.js"
 import { deleteNewPaper } from "../../new-paper-undo.js"
 import { createPaper } from "../../store.js"
+import { templatePageName } from "../../word-package/word/template.js"
 
 type Created = Awaited<ReturnType<typeof createPaper>>
 
@@ -11,7 +13,11 @@ export const implementation = {
   execute: async (input, actor, registry) => {
     const created = await createPaper(actor, {
       kind: input.kind,
-      name: input.name,
+      name:
+        input.name ??
+        (input.templateId ? templatePageName(input.templateId) : undefined),
+      ...(input.templateId ? { templateId: input.templateId } : {}),
+      paper: startingPaper(input),
     })
     if (input.jobId)
       await registry.execute({

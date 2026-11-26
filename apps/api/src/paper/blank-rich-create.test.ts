@@ -51,7 +51,7 @@ describe("paper.create format rich", () => {
     })
   }
 
-  it("refuses a template, since paper.create takes none", async () => {
+  it("refuses a template for a Letter, since templates start CVs", async () => {
     const { db, client } = await createMigratedTestDb()
     const registry = installRegistry()
     const userId = "user-blank-rich-refused"
@@ -65,10 +65,10 @@ describe("paper.create format rich", () => {
       await expect(
         registry.execute({
           name: "paper.create",
-          input: { kind: "cv", format: "rich", templateId: "academic" },
+          input: { kind: "letter", format: "rich", templateId: "academic" },
           actor,
         })
-      ).rejects.toThrow(/Unrecognized key: "templateId"/)
+      ).rejects.toThrow(/A template starts a CV/)
     })
     await client.close()
   })
