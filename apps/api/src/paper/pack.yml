@@ -2,6 +2,7 @@ layer: feature
 public: [index.ts, operations]
 dependencies:
   [
+    apps/api/src/paper/import,
     apps/api/src/paper/word-package,
     apps/api/src/registry,
     apps/api/src/db,
