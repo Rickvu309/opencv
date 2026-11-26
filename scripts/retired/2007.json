@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/web/src/lib/paper-command-input.test.ts",
+    "because": "runContractCommand is deleted: paper.edit was the last legacy command, and every Paper command now runs through catalogClient.run, whose key and refresh rules contract-client.test.tsx covers. The qualified-cache retry case went with the legacy runner.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  }
+]
