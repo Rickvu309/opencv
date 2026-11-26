@@ -24,7 +24,7 @@ import {
   IMPORT_LINE_CAP,
   importedTextLines,
   wordsOf,
-} from "./word/from-text.js"
+} from "./word-package/word/from-text.js"
 
 const canvas = createRequire(import.meta.url)(
   "../../../../scripts/lib/paper-canvas-bytes.mjs"

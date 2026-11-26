@@ -12,7 +12,7 @@ import { openBackend, type Backend } from "../test/registry-formal-support.js"
 import { paperRegistry } from "./paper-registry.test-support.js"
 import { packageMember } from "./package-fixtures.js"
 import { publishWordPackage, stageWordPackage } from "./package-store.js"
-import { exportWord } from "./word/document.js"
+import { exportWord } from "./word-package/word/document.js"
 
 const loaded = createRequire(import.meta.url)(
   "../../../../scripts/lib/paper-canvas-bytes.mjs"

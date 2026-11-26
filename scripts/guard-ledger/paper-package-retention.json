@@ -8,6 +8,10 @@
   "historic": {
     "mode": "detect",
     "sha": "1ea8b265ee17088ae2707ac7db7534005148e1be",
-    "path": "apps/api/src/paper/package-candidates.ts"
+    "path": "apps/api/src/paper/package-candidates.ts",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/api/src/paper/word-package/package-candidates.ts"
+    }
   }
 }

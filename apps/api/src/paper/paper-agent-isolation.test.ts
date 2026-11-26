@@ -25,7 +25,7 @@ import {
   createProposalClient,
   toolReply as reply,
 } from "../test/proposal-client.js"
-import * as packageCandidates from "./package-candidates.js"
+import * as packageCandidates from "./word-package/package-candidates.js"
 import { fixturePackage, paragraph } from "./package-fixtures.js"
 import { publishWordPackage, stageWordPackage } from "./package-store.js"
 

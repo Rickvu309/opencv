@@ -4,8 +4,9 @@ import { readFileSync } from "node:fs"
 import test from "node:test"
 
 import { detectPaperInsertFormatting as detect } from "./lib/paper-insert-formatting.mjs"
+import { pathAtRevision } from "./lib/path-at-revision.mjs"
 
-const path = "apps/api/src/paper/word/mutate.ts"
+const path = "apps/api/src/paper/word-package/word/mutate.ts"
 const historic = "29c4ce336ca6d1bbebef759244fbdf7c15096d19"
 
 test("inserted Word paragraphs never inherit the first run properties", () => {
@@ -27,9 +28,13 @@ test("inserted Word paragraphs never inherit the first run properties", () => {
   )
   assert.ok(
     detect(
-      execFileSync("git", ["show", `${historic}:${path}`], {
-        encoding: "utf8",
-      }),
+      execFileSync(
+        "git",
+        ["show", `${historic}:${pathAtRevision(historic, path)}`],
+        {
+          encoding: "utf8",
+        }
+      ),
       path
     ).length > 0
   )

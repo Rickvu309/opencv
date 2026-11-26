@@ -2,11 +2,11 @@ import { operation } from "@workspace/domain/operations/paper/read"
 import type { OperationBinding } from "../../../registry/bind.js"
 import { parsePaperId } from "@workspace/domain/kernel"
 import { readPaperDocumentInfo } from "../../document-info.js"
-import { isWordPageDeleted } from "../../package-card-actions.js"
+import { isWordPageDeleted } from "../../word-package/package-card-actions.js"
 import { packageFailure } from "../../package-pages.js"
 import { listWordPackages, readWordPackage } from "../../package-store.js"
 import { readWordParagraphs } from "../../word-reading.js"
-import { open } from "../../word/document.js"
+import { open } from "../../word-package/word/document.js"
 
 async function readWordLines(owner: string, doc: string, at?: string) {
   const page = await open(

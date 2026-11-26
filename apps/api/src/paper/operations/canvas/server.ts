@@ -18,10 +18,10 @@ import {
   mintedName,
   prepareCanvas,
   resultOf,
-} from "../../package-canvas.js"
-import { commitWordCandidate } from "../../package-candidates.js"
+} from "../../word-package/package-canvas.js"
+import { commitWordCandidate } from "../../word-package/package-candidates.js"
 import { publishWordPackage, stageWordPackage } from "../../package-store.js"
-import { WORD_UNDO_MOVED } from "../../word/document.js"
+import { WORD_UNDO_MOVED } from "../../word-package/word/document.js"
 
 type CanvasResult = z.output<typeof paperPackageEditResultSchema>
 

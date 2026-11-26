@@ -1,0 +1,66 @@
+[
+  {
+    "subject": "scripts/env-switch.test.mjs",
+    "because": "The Word package http file moved into paper/word-package/, so the guard names the new path in its fixtures; every expectation is unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "scripts/paper-canvas.test.mjs",
+    "because": "The package canvas file moved into paper/word-package/, so the guard names the new path; the expectation is unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-package-edit.test.mjs",
+    "because": "The package edit and restore files moved into paper/word-package/, so the guard names the new paths; every expectation is unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "scripts/guard-ledger/env-switch.json",
+    "because": "The guarded package file moved into apps/api/src/paper/word-package/. The historic path is unchanged; historic.fixed names the file at HEAD, so the detector still proves it stays quiet on the moved file.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/page-table-writes.json",
+    "because": "The guarded package file moved into apps/api/src/paper/word-package/. The historic path is unchanged; historic.fixed names the file at HEAD, so the detector still proves it stays quiet on the moved file.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-mint-names.json",
+    "because": "The guarded package file moved into apps/api/src/paper/word-package/. The historic path is unchanged; historic.fixed names the file at HEAD, so the detector still proves it stays quiet on the moved file.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-package-edit.json",
+    "because": "The guarded package file moved into apps/api/src/paper/word-package/. The historic path is unchanged; historic.fixed names the file at HEAD, so the detector still proves it stays quiet on the moved file.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-package-retention.json",
+    "because": "The guarded package file moved into apps/api/src/paper/word-package/. The historic path is unchanged; historic.fixed names the file at HEAD, so the detector still proves it stays quiet on the moved file.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

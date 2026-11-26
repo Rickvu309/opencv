@@ -86,7 +86,10 @@ test("candidate retention bounds owner-serialized storage before writes", () => 
     { kind: "candidate-retention-capacity", line: 1 },
   ])
   const source = readFileSync(
-    new URL("../apps/api/src/paper/package-candidates.ts", import.meta.url),
+    new URL(
+      "../apps/api/src/paper/word-package/package-candidates.ts",
+      import.meta.url
+    ),
     "utf8"
   )
   assert.deepEqual(detect(source), [])

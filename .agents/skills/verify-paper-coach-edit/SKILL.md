@@ -21,7 +21,7 @@ These are the five rules of `CoachPaper.tla`. Do not weaken a rule to clear a fi
 
 ## Where the code lives
 
-The Paper reading below is the legacy v3 numeric-edit projection. `paper.edit` takes this Yjs branch only when `basedOn` is a number (`select` in `apps/api/src/paper/package-edit.ts`). Word pages send a revision string and take the reviewed branch; `verify-paper-word` covers that. The MCP Job reading at the end is live.
+The Paper reading below is the legacy v3 numeric-edit projection. `paper.edit` takes this Yjs branch only when `basedOn` is a number (`select` in `apps/api/src/paper/word-package/package-edit.ts`). Word pages send a revision string and take the reviewed branch; `verify-paper-word` covers that. The MCP Job reading at the end is live.
 
 - `apps/api/src/paper/content-coach.ts` exports `editAsCoach`, `stalePaperBasis`, and `revertCoachEdit`. `stalePaperBasis` returns `refuse` when `basedOn` is not the current revision, and `apply` when it matches. `editAsCoach` calls it only for a coach actor, and throws before any write. Switching that return from `refuse` to `apply` is the one-line change to a clean merge. The replay and the guard `paper-coach-basis` both require `refuse`.
 - `apps/api/src/paper/content-store.ts` exports `coachBasisOk`, `withContent`, and `syncContent`. `coachBasisOk` still allows an older basis for a legacy person edit. Native numeric edits additionally require a qualified writer and an exact canonical native basis for every actor before hydration or mutation. Do not use it as the coach approval rule. `syncContent` is the person write that raises the revision.

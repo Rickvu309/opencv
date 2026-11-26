@@ -29,7 +29,10 @@ import {
 } from "./import-parse.js"
 import { importedWordPage } from "./import-word.js"
 import { readPackageZip } from "./package-zip.js"
-import { IMPORT_LINE_BYTES, importedTextLines } from "./word/from-text.js"
+import {
+  IMPORT_LINE_BYTES,
+  importedTextLines,
+} from "./word-package/word/from-text.js"
 
 const BOUNDS = { ms: 5_000, loopGapMs: 200, rssGrowthMb: 320 }
 const WORKER_START_MS = 2_000
