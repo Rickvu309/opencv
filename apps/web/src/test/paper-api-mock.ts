@@ -1,23 +1,11 @@
 import {
-  emptyCvDocument,
+  blankCv,
   paperDocumentInfoSchema,
   type PaperContentKind,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
-import { samplePaperDocs } from "./paper-fixtures.ts"
+import { samplePaperDocs, type PaperDoc } from "./paper-fixtures.ts"
 import { isoNow, pathOf, jsonOk, jsonError } from "./mock-http.ts"
-
-type PaperDoc = {
-  id: string
-  name: string
-  kind: PaperContentKind
-  status: string
-  content: unknown
-  contentVersion: number
-  applyCardId: string | null
-  createdAt: string
-  updatedAt: string
-}
 
 type Store = {
   docs: PaperDoc[]
@@ -206,7 +194,7 @@ export async function paperApiFetch(
       name: body.name?.trim() || (kind === "letter" ? "Cover letter" : "CV"),
       kind,
       status: "draft",
-      content: kind === "letter" ? { markdown: "" } : emptyCvDocument(),
+      content: kind === "letter" ? { markdown: "" } : blankCv(),
       contentVersion: 1,
       applyCardId: null,
       createdAt: now,

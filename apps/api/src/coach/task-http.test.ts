@@ -484,7 +484,7 @@ it("starts a text-only turn, such as Letter drafting, that offers the Coach no a
 
 it("exposes the same owned reader through the domain query registry", () =>
   fixture(async ({ start, ownerId, status, work }) => {
-    const { personActor } = await import("@workspace/domain")
+    const { personActor } = await import("@workspace/domain/kernel")
     const registry = installRegistry()
     const { taskId } = await start()
     expect(

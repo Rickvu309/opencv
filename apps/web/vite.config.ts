@@ -50,10 +50,6 @@ export default defineConfig(({ mode }) => {
         ),
         "@": path.resolve(__dirname, "./src"),
         ...domainEntryAliases(__dirname),
-        "@workspace/domain": path.resolve(
-          __dirname,
-          "../../packages/domain/src/index.ts"
-        ),
         "@workspace/paper-crdt": path.resolve(
           __dirname,
           "../../packages/paper-crdt/src/index.ts"

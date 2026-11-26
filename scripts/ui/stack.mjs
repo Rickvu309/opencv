@@ -6,7 +6,7 @@ import { poolPaths } from "./account-pool.mjs"
 export const ACCOUNT = { email: "ui-agent@example.com" }
 const START_DEADLINE_MS = 180_000
 const BUILD_DEADLINE_MS = 300_000
-const DOMAIN_BUILD = join("packages", "domain", "dist", "index.js")
+const DOMAIN_BUILD = join("packages", "domain", "dist", "kernel", "public.js")
 const STOP_DEADLINE_MS = 10_000
 const SEED_DEADLINE_MS = 120_000
 export const SEEDED_ACCOUNTS = 120

@@ -321,7 +321,7 @@ test("kind-based Vite backstop rejects every review probe without discovery", as
         const packageRoot = path.join(directory, fixture.packageRoot)
         const installed = path.dirname(
           createRequire(
-            path.join(root, "packages/domain/src/index.ts")
+            path.join(root, "packages/domain/src/kernel/public.ts")
           ).resolve("zod/package.json")
         )
         cpSync(installed, packageRoot, { recursive: true })

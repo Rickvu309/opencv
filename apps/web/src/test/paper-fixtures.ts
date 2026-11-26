@@ -1,4 +1,19 @@
-import { type PaperDoc, type ProofDocument } from "@workspace/domain"
+import type {
+  PaperContentKind,
+  ProofDocument,
+} from "@workspace/domain/paper-doc"
+
+export type PaperDoc = {
+  id: string
+  name: string
+  kind: PaperContentKind
+  status: string
+  content: unknown
+  contentVersion: number
+  applyCardId: string | null
+  createdAt: string
+  updatedAt: string
+}
 
 const PAPER_CONTENT_VERSION = 1
 

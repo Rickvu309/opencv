@@ -4,4 +4,4 @@ export {
   coachUnavailableEnvelope,
   errorEnvelope,
   unauthorizedEnvelope,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"

@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/coach/task-http.test.ts",
+    "because": "The case imports personActor dynamically; the domain barrel is deleted, so it imports it from @workspace/domain/kernel. The expectation is unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
