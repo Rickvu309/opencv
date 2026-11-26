@@ -11,10 +11,13 @@ import {
   refuse,
   type Result,
 } from "@workspace/domain/internal/paper-presentation"
-import { readOwnedPhoto } from "../store.js"
-import { compileLayoutNativeDocx, compileFlowNativeDocx } from "./formatted.js"
-import { insideTransaction } from "../../db/context.js"
-import type { PhotoMedia } from "./formatted-photos.js"
+import { readOwnedPhoto } from "./store.js"
+import {
+  compileLayoutNativeDocx,
+  compileFlowNativeDocx,
+} from "./native-output/formatted.js"
+import { insideTransaction } from "../db/context.js"
+import type { PhotoMedia } from "./native-output/formatted-photos.js"
 
 export async function compileOwnedLayoutNativeDocx(input: {
   userId: UserId

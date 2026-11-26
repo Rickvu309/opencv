@@ -36,7 +36,7 @@ import {
   attribute,
   textOf,
 } from "./native-output/inspect.test-support.js"
-import { compileOwnedFlowNativeDocx } from "./native-output/formatted-owned.js"
+import { compileOwnedFlowNativeDocx } from "./owned-word-output.js"
 import { readOwnedPhoto } from "./store.js"
 
 const owner = parseUserId("native-word-owner")

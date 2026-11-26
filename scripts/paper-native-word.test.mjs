@@ -6,7 +6,7 @@ import { detect as presentation } from "./lib/paper-presentation.mjs"
 
 const service = "apps/api/src/paper/native-word.ts"
 const qualified = `import { withRichSnapshot } from "./content-store.js"
-import { compileOwnedFlowNativeDocx } from "./native-output/formatted-owned.js"
+import { compileOwnedFlowNativeDocx } from "./owned-word-output.js"
 export function downloadNativeWord(userId, input) {
   return withRichSnapshot(userId, input, async snapshot => compileOwnedFlowNativeDocx({userId, document: snapshot.document}))
 }`
@@ -42,7 +42,7 @@ test("saved Word, photo reads and CV portrait admission retain their boundary gu
       "return transaction(async () =>",
     ],
     [
-      "apps/api/src/paper/native-output/formatted-owned.ts",
+      "apps/api/src/paper/owned-word-output.ts",
       "sources.add(node.photo)",
       "sources.add(node.id)",
     ],
