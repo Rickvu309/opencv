@@ -2,16 +2,18 @@ import {
   ERROR_CODES,
   errorEnvelope,
   httpStatusForError,
-  paperImportResponseSchema,
-  nativeWriterSchema,
-  type NativeWriter,
-  paperPackageStageInputSchema,
   catalog,
   parseFileId,
   parseUserId,
   personActor,
   successEnvelope,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
+import {
+  paperImportResponseSchema,
+  nativeWriterSchema,
+  type NativeWriter,
+  paperPackageStageInputSchema,
+} from "@workspace/domain/paper-doc"
 import { type Context, Hono } from "hono"
 
 import { createId } from "../platform/id.js"
