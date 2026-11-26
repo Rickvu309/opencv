@@ -21,20 +21,22 @@ export async function readPaperDocumentInfo(
   docId: PaperId,
   writer?: NativeWriter
 ) {
-  const page = await ownedPackagePaper(userId, docId)
-  if (page)
-    return paperDocumentInfoSchema.parse({
-      id: page.id,
-      name: page.name,
-      kind: page.kind,
-      format: "word",
-    })
   const [row] = await getDb()
     .select()
     .from(paperDocs)
     .where(and(eq(paperDocs.id, docId), eq(paperDocs.userId, userId)))
     .limit(1)
-  if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
+  if (!row) {
+    const page = await ownedPackagePaper(userId, docId)
+    if (page)
+      return paperDocumentInfoSchema.parse({
+        id: page.id,
+        name: page.name,
+        kind: page.kind,
+        format: "word",
+      })
+    throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
+  }
   const document = storedPaperDocumentSchema.parse(row.crdtDocument)
   if (document.kind !== row.kind)
     throw new CommandError(ERROR_CODES.CONFLICT, "Document identity changed")

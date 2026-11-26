@@ -135,11 +135,13 @@ export async function createPaper(
     name?: string
     templateId?: string
     paper?: unknown
+    id?: string
+    createdAt?: Date
   },
   writer: NativeWriter = RICH_NATIVE_WRITER
 ) {
   const now = new Date()
-  const id = createId(now.getTime())
+  const id = input.id ?? createId(now.getTime())
   const paper = richPaperDocumentSchema.parse(
     input.paper ?? emptyRichPaper(input.kind)
   )
@@ -160,9 +162,10 @@ export async function createPaper(
       ...seedColumns(input.kind, paper),
       crdtBaseSeq: 1,
       contentVersion: 1,
-      createdAt: now,
+      createdAt: input.createdAt ?? now,
       updatedAt: now,
     })
+    .onConflictDoNothing()
   importParsers.onInsert?.()
   const row = (await ownedPaperOrNull(actor.userId, parsePaperId(id))) ?? null
   if (!row) return documentNotFound()
@@ -274,6 +277,7 @@ export async function deletePaper(actor: Actor, docId: PaperId) {
   if (!(await ownedPaperOrNull(actor.userId, docId)))
     return (await deleteWordPage(actor.userId, docId)) ?? documentNotFound()
   await getDb().delete(paperDocs).where(eq(paperDocs.id, docId))
+  await deleteWordPage(actor.userId, docId)
   return { id: docId }
 }
 
