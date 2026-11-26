@@ -3,13 +3,15 @@ import { execFileSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 import { detect } from "./lib/paper-header-fit.mjs"
+import { pathAtRevision } from "./lib/path-at-revision.mjs"
 
 const cssPath = "apps/web/src/features/paper/design/rich-page-header.css"
-const pagePath = "apps/web/src/features/paper/rich-page.tsx"
+const pagePath = "apps/web/src/features/paper/rich-editor/rich-page.tsx"
 const read = (path) =>
   readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
 const git = (...args) => execFileSync("git", args, { encoding: "utf8" })
-const pathAt = (rev, path) => {
+const pathAt = (rev, current) => {
+  const path = pathAtRevision(rev, current)
   const dir = path.slice(0, path.lastIndexOf("/") + 1)
   const stem = path.slice(dir.length).replace(/\.css$/, ".")
   const names = git("ls-tree", "--name-only", rev, dir).split("\n")

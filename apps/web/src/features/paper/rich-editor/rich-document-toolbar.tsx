@@ -3,9 +3,9 @@ import {
   ToolbarButton,
   shortcutLabel,
   type TextEditor,
-} from "./rich-text-toolbar-control.tsx"
+} from "../rich-text-toolbar-control.tsx"
 
-import { useToolbarGroup } from "./rich-text-toolbar-item.tsx"
+import { useToolbarGroup } from "../rich-text-toolbar-item.tsx"
 
 export function RichDocumentHistory({
   editor,

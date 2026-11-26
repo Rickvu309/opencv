@@ -8,9 +8,9 @@ import {
 } from "./lib/paper-page-layout.mjs"
 
 const root = new URL("../", import.meta.url)
-const css = "apps/web/src/features/paper/rich-page-geometry.css"
+const css = "apps/web/src/features/paper/rich-editor/rich-page-geometry.css"
 const layout = "packages/paper-crdt/src/rich-page-layout.ts"
-const setup = "apps/web/src/features/paper/rich-page-setup.tsx"
+const setup = "apps/web/src/features/paper/rich-editor/rich-page-setup.tsx"
 
 test("a continuous sheet has no gap bands for text to cross", () => {
   const line = { top: 1060, bottom: 1076 }

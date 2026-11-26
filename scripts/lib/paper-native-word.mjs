@@ -125,7 +125,7 @@ export function detect(text, path) {
     )
       hits.push("Word media types must be compared without case sensitivity")
   }
-  if (path === "apps/web/src/features/paper/rich-document-menu.tsx") {
+  if (path.endsWith("/rich-document-menu.tsx")) {
     if (
       !text.includes("error instanceof SavedRichWordChanged") ||
       !text.includes("toast.loading(") ||

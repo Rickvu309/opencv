@@ -16,10 +16,10 @@ import {
   emptyUpdate,
   openRichPaperClient,
   seedStoredYDoc,
-} from "../../../../../packages/paper-crdt/src/index.ts"
+} from "../../../../../../packages/paper-crdt/src/index.ts"
 import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
-import * as flowMount from "../../../../../packages/paper-crdt/src/native-layout-flow-mount.ts"
-import { storedFlowFixture } from "../../../../../packages/paper-crdt/src/test/flow-fixture.ts"
+import * as flowMount from "../../../../../../packages/paper-crdt/src/native-layout-flow-mount.ts"
+import { storedFlowFixture } from "../../../../../../packages/paper-crdt/src/test/flow-fixture.ts"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { RichPageSetup } from "./rich-page-setup"
 import { RichPageBreak } from "./rich-page-break"

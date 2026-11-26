@@ -12,7 +12,7 @@ const editor = vi.hoisted(() => {
   return { gate, started, release, entered }
 })
 
-vi.mock("@/features/paper/rich-page.tsx", async () => {
+vi.mock("@/features/paper/rich-editor/rich-page.tsx", async () => {
   editor.entered()
   await editor.gate
   return { RichPaperPage: () => null }

@@ -3,9 +3,11 @@ import { execFileSync } from "node:child_process"
 import { readFileSync, readdirSync } from "node:fs"
 import test from "node:test"
 import { detect } from "./lib/paper-measured-pagination.mjs"
+import { pathAtRevision } from "./lib/path-at-revision.mjs"
 
 const file = "packages/paper-crdt/src/native-layout-flow-view.ts"
-const geometry = "apps/web/src/features/paper/rich-page-geometry.css"
+const geometry =
+  "apps/web/src/features/paper/rich-editor/rich-page-geometry.css"
 
 test("Paper page backgrounds tile without Firefox repeating-gradient artifacts", () => {
   assert.equal(
@@ -23,9 +25,13 @@ test("Paper page backgrounds tile without Firefox repeating-gradient artifacts",
     []
   )
   for (const revision of ["f66e65e0", "64de35c6"]) {
-    const historic = execFileSync("git", ["show", `${revision}:${geometry}`], {
-      encoding: "utf8",
-    })
+    const historic = execFileSync(
+      "git",
+      ["show", `${revision}:${pathAtRevision(revision, geometry)}`],
+      {
+        encoding: "utf8",
+      }
+    )
     assert.equal(detect(historic, geometry).length, 1)
   }
   assert.deepEqual(detect(readFileSync(geometry, "utf8"), geometry), [])
@@ -49,9 +55,13 @@ test("Paper pagination refuses experimental columns and photo exclusions", () =>
 
 test("the column-based fork fails and measured Paper pagination stays quiet", () => {
   for (const revision of ["468dda36", "64de35c6"]) {
-    const historic = execFileSync("git", ["show", `${revision}:${file}`], {
-      encoding: "utf8",
-    })
+    const historic = execFileSync(
+      "git",
+      ["show", `${revision}:${pathAtRevision(revision, file)}`],
+      {
+        encoding: "utf8",
+      }
+    )
     assert.equal(detect(historic, file).length, 3)
   }
   for (const name of readdirSync("packages/paper-crdt/src").filter(
@@ -84,9 +94,13 @@ test("Word break properties and Find settling reject their introducing commit", 
       "native-layout-text-lines",
       "measured-flow-pagination"
     )
-    const historic = execFileSync("git", ["show", `68bd981a:${historicPath}`], {
-      encoding: "utf8",
-    })
+    const historic = execFileSync(
+      "git",
+      ["show", `68bd981a:${pathAtRevision("68bd981a", historicPath)}`],
+      {
+        encoding: "utf8",
+      }
+    )
     assert.equal(
       detect(historic, path).length,
       path.endsWith("native-layout-text-lines.ts") ? 2 : 1
@@ -109,9 +123,13 @@ test("semantic owners, visual lines and typing reject the reviewed regression", 
     assert.notEqual(mistake, clean)
     assert.equal(detect(mistake, file).length, 1)
   }
-  const historic = execFileSync("git", ["show", `655f6a7b:${file}`], {
-    encoding: "utf8",
-  })
+  const historic = execFileSync(
+    "git",
+    ["show", `655f6a7b:${pathAtRevision("655f6a7b", file)}`],
+    {
+      encoding: "utf8",
+    }
+  )
   assert.equal(detect(historic, file).length, 5)
 })
 
@@ -124,9 +142,13 @@ test("pagination yields the input frame before measuring browser layout", () => 
   )
   assert.notEqual(mistake, clean)
   assert.equal(detect(mistake, file).length, 1)
-  const historic = execFileSync("git", ["show", `655f6a7b:${file}`], {
-    encoding: "utf8",
-  })
+  const historic = execFileSync(
+    "git",
+    ["show", `655f6a7b:${pathAtRevision("655f6a7b", file)}`],
+    {
+      encoding: "utf8",
+    }
+  )
   assert.equal(detect(historic, file).length, 1)
 })
 
@@ -149,9 +171,13 @@ test("oversized keyboard scrolling rejects the reviewed focus loss", () => {
   const mistake = clean.replace("scrollOversizedContent(event)", "false")
   assert.notEqual(mistake, clean)
   assert.equal(detect(mistake, file).length, 1)
-  const historic = execFileSync("git", ["show", `655f6a7b:${file}`], {
-    encoding: "utf8",
-  })
+  const historic = execFileSync(
+    "git",
+    ["show", `655f6a7b:${pathAtRevision("655f6a7b", file)}`],
+    {
+      encoding: "utf8",
+    }
+  )
   assert.equal(detect(historic, file).length, 1)
 })
 
@@ -165,8 +191,12 @@ test("oversized rows retain region focus and editable cells", () => {
     assert.notEqual(mistake, clean)
     assert.equal(detect(mistake, file).length, 1)
   }
-  const historic = execFileSync("git", ["show", `655f6a7b:${file}`], {
-    encoding: "utf8",
-  })
+  const historic = execFileSync(
+    "git",
+    ["show", `655f6a7b:${pathAtRevision("655f6a7b", file)}`],
+    {
+      encoding: "utf8",
+    }
+  )
   assert.equal(detect(historic, file).length, 1)
 })

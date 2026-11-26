@@ -3,8 +3,9 @@ import { readFileSync } from "node:fs"
 import test from "node:test"
 import { detect } from "./lib/paper-editor-lifecycle.mjs"
 
-const page = "apps/web/src/features/paper/rich-page.tsx"
-const lifecycle = "apps/web/src/features/paper/rich-editor-lifecycle.ts"
+const page = "apps/web/src/features/paper/rich-editor/rich-page.tsx"
+const lifecycle =
+  "apps/web/src/features/paper/rich-editor/rich-editor-lifecycle.ts"
 const editor = "packages/paper-crdt/src/editor.ts"
 const read = (file) =>
   readFileSync(new URL(`../${file}`, import.meta.url), "utf8")

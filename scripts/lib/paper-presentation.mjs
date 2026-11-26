@@ -251,7 +251,7 @@ export function detect(text, path) {
   }
   function visit(node) {
     if (
-      path === "apps/web/src/features/paper/rich-page.tsx" &&
+      path.endsWith("/rich-page.tsx") &&
       (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) &&
       node.tagName.getText(source) === "Button"
     ) {

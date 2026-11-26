@@ -15,7 +15,7 @@ import {
   useRichDownloadWordItem,
 } from "./rich-document-menu.tsx"
 import { RichPageSetup } from "./rich-page-setup.tsx"
-import type { TextEditor } from "./rich-text-toolbar-control.tsx"
+import type { TextEditor } from "../rich-text-toolbar-control.tsx"
 
 export function RichDocumentMenuBar({
   editor,
