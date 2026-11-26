@@ -192,6 +192,11 @@ export function browserWorld({ browser, state, accounts, shotsDir, now }) {
       context.request.get(`${state.apiOrigin}${path}`, {
         headers: { origin: state.webOrigin },
       })
+    const read = (name, input) =>
+      context.request.post(`${state.apiOrigin}/api/reads/${name}`, {
+        headers: { origin: state.webOrigin },
+        data: input,
+      })
     const docIdFromUrl = () =>
       /\/paper\/([^/?#]+)/.exec(new URL(page.url()).pathname)?.[1] ?? null
     const findEntry = (data, docId) => {
@@ -258,18 +263,25 @@ export function browserWorld({ browser, state, accounts, shotsDir, now }) {
         }
       },
       openFromLibrary: async (docId) => {
-        const library = await (await api("/api/paper")).json()
+        const library = await (await read("paper.list", {})).json()
         const entry = findEntry(library, docId)
         if (!entry) return false
         await page.goto(`${state.webOrigin}/paper`, {
           waitUntil: "domcontentloaded",
         })
         const title = entry.title ?? entry.name
-        const link = page.locator(`main a[href$="/paper/${docId}"]`).first()
-        const row = title
-          ? page.locator("main").getByText(title, { exact: true }).first()
-          : link
-        await row.click({ timeout: STEP_MS })
+        const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+        const card = page
+          .locator("main")
+          .getByRole("button", { name: new RegExp(`^Open ${escaped},`) })
+          .first()
+        const opened = () =>
+          page.waitForURL(`**/paper/${docId}`, { timeout: 2_000 }).then(
+            () => true,
+            () => false
+          )
+        await card.click({ timeout: STEP_MS })
+        if (!(await opened())) await card.click({ timeout: STEP_MS })
         return true
       },
       openByAddress: async (docId) => {
