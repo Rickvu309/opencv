@@ -1,5 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query"
-import type { InboxDetail } from "@workspace/domain"
+import type { InboxDetail } from "@workspace/domain/inbox"
 import { Check, ChevronDown, ChevronUp, Clock3, Ellipsis } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import {

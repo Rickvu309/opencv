@@ -11,7 +11,7 @@ import {
   type CvDocument as CvDocumentData,
   type CvPaper,
   type LetterPaper,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import { LetterPrint } from "./paper-letter-print.tsx"
 import { CvDocument } from "./cv-print-document.tsx"

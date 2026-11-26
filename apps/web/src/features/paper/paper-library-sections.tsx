@@ -16,7 +16,7 @@ import {
   paperPlainText,
   type PaperFile,
   type PaperView,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import { buttonVariants } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"

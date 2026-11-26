@@ -1,4 +1,4 @@
-import type { InboxThread } from "@workspace/domain"
+import type { InboxThread } from "@workspace/domain/inbox"
 import { Avatar, AvatarFallback } from "@workspace/ui/components/avatar"
 import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
