@@ -1,15 +1,9 @@
 import { randomUUID } from "node:crypto"
 
+import { ERROR_CODES, type catalog } from "@workspace/domain/kernel"
 import {
-  ERROR_CODES,
-  type catalog,
-  paperIdSchema,
-} from "@workspace/domain/kernel"
-import {
-  nativeWriterSchema,
   richEditOutputSchema,
   paperPackageEditResultSchema,
-  richChangeSchema,
   wordUndoSchema,
 } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
@@ -36,7 +30,6 @@ import { PACKAGE_PROFILE } from "./package-profile.js"
 import { revalidateUnchangedPackage } from "./package-restore.js"
 import { readWordPackage } from "./package-store.js"
 import { undo } from "./word/document.js"
-import { undoRichEdit } from "../rich-edit.js"
 
 export type EditInput = z.output<(typeof catalog)["paper.edit"]["input"]>
 export type EditOutput =
@@ -329,19 +322,7 @@ export const wordPackageReview: ReviewedCommand<
   },
 }
 
-export const RICH_UNDO_MOVED =
-  "This document changed after the Coach edit, so Undo was skipped to keep your writing."
-
-const richUndoSchema = z
-  .object({
-    docId: paperIdSchema,
-    writer: nativeWriterSchema,
-    editId: z.string().uuid(),
-    changes: z.array(richChangeSchema).min(1).max(30),
-  })
-  .strict()
-
-export function registerPaperUndo(registry: Registry) {
+export function registerWordUndo(registry: Registry) {
   registry.addUndoCommand(
     {
       name: "paper.undoWord",
@@ -360,20 +341,5 @@ export function registerPaperUndo(registry: Registry) {
         throw new CommandError(ERROR_CODES.CONFLICT, restored.message)
       return { docId: input.doc, revision: restored.page.revision }
     }
-  )
-  registry.addUndoCommand(
-    {
-      name: "paper.undoEdit",
-      description:
-        "Put back the passages a Coach edit changed on a rich Paper.",
-      input: richUndoSchema,
-      coach: "never",
-      destructive: false,
-      idempotency: "keyed",
-      reversal: () => null,
-      step: () => "Undo a Coach edit",
-      activity: () => null,
-    },
-    (input, actor) => undoRichEdit(actor.userId, input)
   )
 }

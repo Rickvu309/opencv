@@ -8,13 +8,12 @@ import {
 } from "../../../registry/bind.js"
 import {
   isPackageOutput,
-  RICH_UNDO_MOVED,
   wordPackageReview,
   type EditOutput,
   type PackageCandidate,
   type Snapshot,
 } from "../../word-package/package-edit.js"
-import { editRichPaper } from "../../rich-edit.js"
+import { editRichPaper, RICH_UNDO_MOVED } from "../../rich-edit.js"
 import { WORD_UNDO_MOVED } from "../../word-package/word/document.js"
 
 const noUndo = {
