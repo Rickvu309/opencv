@@ -54,5 +54,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "scripts/deploy-probe.test.mjs",
+    "because": "The deploy probe reads the smoke CV list through POST /api/reads/paper.list instead of the deleted GET /api/paper; the recorded calls and the expired-session case follow the new path.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
   }
 ]
