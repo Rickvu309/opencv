@@ -1,313 +1,48 @@
 import { ERROR_CODES, parseUserId, personActor } from "@workspace/domain/kernel"
-import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
 import { getDb, withDatabase } from "../db/context.js"
-import { activity, inboxThreads, jobChecklist, user } from "../db/schema.js"
+import { activity, user } from "../db/schema.js"
 import {
   backend,
   newPerson,
   registerBackendHooks,
   registry,
 } from "../test/registry-formal-support.js"
-import { flag, idOf, list, text } from "./coverage-helpers.test-support.js"
+import { chatUndoLater } from "../coach/chat/undo-later.test-support.js"
+import { inboxUndoLater } from "../inbox/undo-later.test-support.js"
+import { jobField, jobUndoLater } from "../job/undo-later.test-support.js"
+import { paperUndoLater } from "../paper/undo-later.test-support.js"
+import { idOf, text } from "./coverage-helpers.test-support.js"
 import { coverageCases } from "./coverage-setup.test-support.js"
 import { undoKeyFor } from "./expectation.js"
 import type { ExecuteResult } from "./registry.js"
+import type { LaterCases, LaterWorld } from "./undo-later.test-support.js"
 
 registerBackendHooks()
 
-type Run = (name: string, input: unknown) => Promise<ExecuteResult>
+type Run = LaterWorld["run"]
 
-type Later = {
-  act: (a: ExecuteResult, run: Run, userId: string) => Promise<void>
-  survives: (a: ExecuteResult, userId: string) => Promise<boolean>
+const LATER: LaterCases = {
+  ...jobUndoLater,
+  ...paperUndoLater,
+  ...inboxUndoLater,
+  ...chatUndoLater,
 }
 
-function outputOf(a: ExecuteResult) {
-  return (a.output ?? {}) as Record<string, unknown>
-}
-
-function reversalInputOf(a: ExecuteResult) {
-  return (a.reversal?.input ?? {}) as Record<string, unknown>
-}
-
-async function jobField(userId: string, a: ExecuteResult, field: string) {
-  const job = await registry.read(
-    "job.get",
-    { jobId: idOf(a.output) },
-    { type: "person", userId: parseUserId(userId) }
-  )
-  return text(job, field)
-}
-
-async function paperName(userId: string, a: ExecuteResult) {
-  const paper = await registry.read(
-    "paper.read",
-    { view: "info", docId: idOf(a.output), writer: RICH_NATIVE_WRITER },
-    { type: "person", userId: parseUserId(userId) }
-  )
-  return text(paper, "name")
-}
-
-async function threadStatus(a: ExecuteResult) {
-  const threadId = idOf(a.output)
-  const [row] = await backend.db
-    .select({ status: inboxThreads.status })
-    .from(inboxThreads)
-    .where(eq(inboxThreads.id, threadId))
-  return row?.status
-}
-
-async function chatField(userId: string, a: ExecuteResult, field: string) {
-  const chat = await registry.read(
-    "chat.get",
-    { chatId: idOf(a.output) },
-    { type: "person", userId: parseUserId(userId) }
-  )
-  return text(chat, field)
-}
-
-async function reversalJob(userId: string, a: ExecuteResult) {
-  return registry.read(
-    "job.get",
-    { jobId: String(reversalInputOf(a).jobId ?? idOf(a.output)) },
-    { type: "person", userId: parseUserId(userId) }
-  )
-}
-
-async function checklistDone(itemId: string) {
-  const [row] = await backend.db
-    .select({ done: jobChecklist.done })
-    .from(jobChecklist)
-    .where(eq(jobChecklist.id, itemId))
-  return row?.done
-}
-
-async function newCvId(run: Run, name: string) {
-  return idOf((await run("paper.create", { kind: "cv", name })).output)
-}
-
-const LATER: Record<string, Later> = {
-  "job.create": {
-    act: async (a, run) => {
-      await run("job.update", {
-        jobId: idOf(a.output),
-        patch: { location: "Osaka" },
-      })
-    },
-    survives: async (a, userId) =>
-      (await jobField(userId, a, "location").catch(() => "gone")) === "Osaka",
-  },
-  "job.update": {
-    act: async (a, run) => {
-      await run("job.update", {
-        jobId: idOf(a.output),
-        patch: { location: "Osaka" },
-      })
-    },
-    survives: async (a, userId) =>
-      (await jobField(userId, a, "location")) === "Osaka",
-  },
-  "job.setPriority": {
-    act: async (a, run) => {
-      await run("job.update", {
-        jobId: idOf(a.output),
-        patch: { priority: "low" },
-      })
-    },
-    survives: async (a, userId) =>
-      (await jobField(userId, a, "priority")) === "low",
-  },
-  "job.move": {
-    act: async (a, run) => {
-      await run("job.move", { jobId: idOf(a.output), stage: "interview" })
-    },
-    survives: async (a, userId) =>
-      (await jobField(userId, a, "stage")) === "interview",
-  },
-  "inbox.markDone": {
-    act: async (a, run) => {
-      await run("inbox.snooze", {
-        threadId: idOf(a.output),
-        until: "2026-10-30T00:00:00.000Z",
-      })
-    },
-    survives: async (a) => (await threadStatus(a)) === "snoozed",
-  },
-  "inbox.snooze": {
-    act: async (a, run) => {
-      await run("inbox.markDone", { threadId: idOf(a.output) })
-    },
-    survives: async (a) => (await threadStatus(a)) === "done",
-  },
-  "paper.create": {
-    act: async (a, run) => {
-      await run("paper.update", {
-        docId: idOf(a.output),
-
-        writer: RICH_NATIVE_WRITER,
-        patch: { name: "Renamed" },
-      })
-    },
-    survives: async (a, userId) =>
-      (await paperName(userId, a).catch(() => "gone")) === "Renamed",
-  },
-  "paper.duplicate": {
-    act: async (a, run) => {
-      await run("paper.update", {
-        docId: idOf(a.output),
-
-        writer: RICH_NATIVE_WRITER,
-        patch: { name: "Renamed" },
-      })
-    },
-    survives: async (a, userId) =>
-      (await paperName(userId, a).catch(() => "gone")) === "Renamed",
-  },
-  "paper.update": {
-    act: async (a, run) => {
-      await run("paper.update", {
-        docId: idOf(a.output),
-        writer: RICH_NATIVE_WRITER,
-        patch: { name: "Renamed later" },
-      })
-    },
-    survives: async (a, userId) =>
-      (await paperName(userId, a).catch(() => "gone")) === "Renamed later",
-  },
-  "paper.canvas": {
-    act: async (a, run, userId) => {
-      const docId = text(a.output, "docId")
-      const basedOn = text(a.output, "revision")
-      if (!docId || !basedOn) throw new Error("missing page")
-      const page = await registry.read(
-        "paper.read",
-        { docId },
-        personActor(userId)
-      )
-      const handle = writtenParagraph(page)
-      await run("paper.canvas", {
-        op: "write",
-        batch: {
-          doc: docId,
-          basedOn,
-          ops: [
-            { op: "setText", handle, text: "Harbor" },
-            { op: "insert", after: handle, text: " light" },
-          ],
-        },
-      })
-    },
-    survives: async (a, userId) => {
-      const docId = text(a.output, "docId")
-      if (!docId) return false
-      const page = await registry.read(
-        "paper.read",
-        { docId },
-        personActor(userId)
-      )
-      const words = pageWords(page)
-      return (
-        words.includes("Harbor") &&
-        words.includes("light") &&
-        text(page, "revision") !== text(a.output, "revision")
-      )
-    },
-  },
-  "chat.rename": {
-    act: async (a, run) => {
-      await run("chat.rename", {
-        chatId: idOf(a.output),
-        title: "Later title",
-      })
-    },
-    survives: async (a, userId) =>
-      (await chatField(userId, a, "title")) === "Later title",
-  },
-  "chat.setFocus": {
-    act: async (a, run) => {
-      const docId = await newCvId(run, "Later focus")
-      await run("chat.setFocus", {
-        chatId: idOf(a.output),
-        focus: { kind: "paper", id: docId },
-      })
-      laterIds.focusId = docId
-    },
-    survives: async (a, userId) =>
-      (await chatField(userId, a, "focusId")) === laterIds.focusId,
-  },
-  "job.star": {
-    act: async (a, run) => {
-      await run("job.star", { jobId: idOf(a.output), starred: false })
-    },
-    survives: async (a, userId) =>
-      !flag(await reversalJob(userId, a), "starred"),
-  },
-  "job.addChecklistItem": {
-    act: async (a, run) => {
-      await run("job.setChecklistItem", {
-        jobId: outputOf(a).jobId,
-        itemId: outputOf(a).id,
-        done: true,
-      })
-    },
-    survives: async (a) =>
-      (await checklistDone(String(outputOf(a).id))) === true,
-  },
-  "job.setChecklistItem": {
-    act: async (a, run) => {
-      await run("job.setChecklistItem", {
-        jobId: outputOf(a).jobId,
-        itemId: outputOf(a).id,
-        done: false,
-      })
-    },
-    survives: async (a) =>
-      (await checklistDone(String(outputOf(a).id))) === false,
-  },
-  "job.linkPaper": {
-    act: async (a, run) => {
-      const docId = await newCvId(run, "Later CV")
-      await run("job.linkPaper", {
-        jobId: idOf(a.output),
-        docId,
-        kind: "cv",
-      })
-      laterIds.docId = docId
-    },
-    survives: async (a, userId) =>
-      text(await reversalJob(userId, a), "cvDocId") === laterIds.docId,
-  },
-}
-
-function writtenParagraph(page: unknown) {
-  for (const region of list(page, "regions")) {
-    if (!region || typeof region !== "object") continue
-    const row = region as Record<string, unknown>
-    if (
-      row.kind === "editable" &&
-      row.text === "Harbor light" &&
-      typeof row.paragraph === "string"
-    ) {
-      return row.paragraph
-    }
+function worldFor(userId: string, run: Run): LaterWorld {
+  return {
+    userId,
+    db: backend.db,
+    run,
+    read: (name, input) =>
+      registry.read(name, input, {
+        type: "person",
+        userId: parseUserId(userId),
+      }),
   }
-  throw new Error("missing written paragraph")
 }
-
-function pageWords(page: unknown) {
-  return list(page, "regions")
-    .map((region) => {
-      if (!region || typeof region !== "object") return ""
-      const row = region as Record<string, unknown>
-      return typeof row.text === "string" ? row.text : ""
-    })
-    .join("\n")
-}
-
-const laterIds: { focusId?: string; docId?: string } = {}
 
 const OWN_UNDO_GUARD = ["paper.edit"]
 
@@ -320,7 +55,8 @@ async function undoAfterLater(
   run: Run
 ): Promise<Verdict> {
   const later = LATER[name]!
-  await later.act(a, run, userId)
+  const world = worldFor(userId, run)
+  await later.act(a, world)
   try {
     await registry.undo(userId, a.activityId!)
   } catch (error) {
@@ -328,7 +64,7 @@ async function undoAfterLater(
     if (code === ERROR_CODES.CONFLICT) return "refused"
     throw error
   }
-  return (await later.survives(a, userId)) ? "kept" : "erased"
+  return (await later.survives(a, world)) ? "kept" : "erased"
 }
 
 describe("P4: undoing an action after a later change never erases the later change", () => {
@@ -394,7 +130,7 @@ describe("P4: undoing an action after a later change never erases the later chan
       }
       expect(
         unruled,
-        "a command with a reversal and an activity row needs a rule in LATER"
+        "a command with a reversal and an activity row needs a later-change case in its context's undo-later.test-support.ts"
       ).toEqual([])
       const erased = Object.entries(verdicts)
         .filter(([, verdict]) => verdict === "erased")
@@ -424,7 +160,7 @@ describe("P4: undoing an action after a later change never erases the later chan
       })
       expect(
         await jobField(
-          userId,
+          worldFor(userId, run),
           { output: { id: jobId } } as ExecuteResult,
           "stage"
         )
@@ -433,7 +169,7 @@ describe("P4: undoing an action after a later change never erases the later chan
       await registry.undo(userId, first.activityId!)
       expect(
         await jobField(
-          userId,
+          worldFor(userId, run),
           { output: { id: jobId } } as ExecuteResult,
           "stage"
         )
@@ -452,7 +188,11 @@ describe("P4: undoing an action after a later change never erases the later chan
       })
       const jobId = idOf(created.output)
       const stageNow = () =>
-        jobField(userId, { output: { id: jobId } } as ExecuteResult, "stage")
+        jobField(
+          worldFor(userId, run),
+          { output: { id: jobId } } as ExecuteResult,
+          "stage"
+        )
       const first = await run("job.move", { jobId, stage: "applied" })
       const second = await run("job.move", { jobId, stage: "interview" })
       const third = await run("job.move", { jobId, stage: "applied" })
@@ -480,7 +220,11 @@ describe("P4: undoing an action after a later change never erases the later chan
       })
       const jobId = idOf(created.output)
       const stageNow = () =>
-        jobField(userId, { output: { id: jobId } } as ExecuteResult, "stage")
+        jobField(
+          worldFor(userId, run),
+          { output: { id: jobId } } as ExecuteResult,
+          "stage"
+        )
       const move = await run("job.move", { jobId, stage: "applied" })
       await registry.undo(userId, move.activityId!)
       expect(await stageNow()).toBe("saved")
