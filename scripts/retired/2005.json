@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/paper/writing-page.test.tsx",
+    "because": "The conflict case sends its canvas write through the catalog run, so the test counts canvas requests on the fetch mock instead of an injected run, and answers with a full Word page receipt.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
