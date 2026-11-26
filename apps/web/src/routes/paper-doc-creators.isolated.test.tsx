@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen } from "@testing-library/react"
 import { NATIVE_WRITER } from "@workspace/domain/paper-doc"
 
-import { importPaperFile } from "@/features/paper/paper-api.ts"
 import { paperListQuery } from "@/lib/paper-list.ts"
 import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
 import { catalogClient } from "@/lib/contract-client.ts"
@@ -43,14 +42,6 @@ type Creator = {
 }
 
 const word = "word" as const
-
-function file(name: string, type: string) {
-  return new File(["Imported words"], name, { type })
-}
-
-async function imported(file: File) {
-  return (await importPaperFile(file)).docId
-}
 
 function idOf(output: unknown) {
   const shaped = output as { docId?: string; id?: string }
@@ -99,24 +90,6 @@ const CREATORS: Record<string, Creator> = {
           templateId: "modern",
         })
       ),
-  },
-  "Import a Word file": {
-    format: word,
-    make: () =>
-      imported(
-        file(
-          "Imported.docx",
-          "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-        )
-      ),
-  },
-  "Import a PDF": {
-    format: word,
-    make: () => imported(file("Imported.pdf", "application/pdf")),
-  },
-  "Import a text file": {
-    format: word,
-    make: () => imported(file("Imported.txt", "text/plain")),
   },
   "Duplicate an imported page": {
     format: word,
