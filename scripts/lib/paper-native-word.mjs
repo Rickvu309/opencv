@@ -183,7 +183,7 @@ export function detect(text, path) {
     hits.push(
       "Rich Word compilation must remain inside the exact owned snapshot"
     )
-  if (path === "apps/api/src/paper/content-store.ts") {
+  if (path.endsWith("/content-store.ts")) {
     const snapshot = body(source, "withRichSnapshot")
     if (
       snapshot &&

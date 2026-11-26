@@ -37,7 +37,7 @@ test("saved Word, photo reads and CV portrait admission retain their boundary gu
       ".map(node => node)",
     ],
     [
-      "apps/api/src/paper/content-store.ts",
+      "apps/api/src/paper/content/content-store.ts",
       "return ownedTaskTransaction(async () =>",
       "return transaction(async () =>",
     ],

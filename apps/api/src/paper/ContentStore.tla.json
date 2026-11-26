@@ -1,5 +1,5 @@
 {
-  "module": "content-store.ts",
+  "module": "./content/content-store.ts",
   "actions": {
     "Lock": "cacheRevisionUsable",
     "Person": "syncContent",
