@@ -261,9 +261,9 @@ export function PaperLetterStart({
         throw new Error(
           "This letter is too long to save. Shorten it and try again."
         )
-      const created = await catalogClient.run(queryClient, "paper.canvas", {
-        op: "mint",
-        label: "letter",
+      const created = await catalogClient.run(queryClient, "paper.create", {
+        kind: "letter",
+        format: "rich",
         name: draftName,
         ...(selected ? { jobId: selected.id } : {}),
         ...(lines.length > 0 ? { lines } : {}),
@@ -274,14 +274,14 @@ export function PaperLetterStart({
         if (operation.stopped && lines.length === 0) {
           rememberStoppedLetter({
             chatId: chat.id,
-            docId: created.docId,
+            docId: created.id,
             prompt: turnText,
             jobId: selected?.id ?? null,
           })
         } else {
-          clearStoppedLetter(created.docId)
+          clearStoppedLetter(created.id)
         }
-        onCreated(created.docId)
+        onCreated(created.id)
       }
     } catch (err) {
       if (activeDraft.current !== operation || isAbortError(err)) return

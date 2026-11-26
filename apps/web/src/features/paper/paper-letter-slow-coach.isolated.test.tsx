@@ -1,7 +1,6 @@
 import type { JobView } from "@workspace/domain/apply"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { afterEach, expect, it, vi } from "vitest"
-import { wordPageReceipt } from "@/test/word-page-receipt.ts"
 import { startedChat } from "@/test/chat-fixtures.ts"
 import { render } from "@/test/render-with-client.tsx"
 
@@ -121,15 +120,13 @@ function installSlowCoach(ending: {
   let snapshots = 0
   const fetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input)
-    if (url.includes("/api/commands/paper.canvas"))
-      return ok(
-        wordPageReceipt({
-          docId: LETTER,
-          revision: "22222222-2222-4222-8222-222222222222",
-          name: "Cover letter, Lumière.docx",
-          kind: "letter",
-        })
-      )
+    if (url.includes("/api/commands/paper.create"))
+      return ok({
+        id: LETTER,
+        name: "Cover letter, Lumière",
+        kind: "letter",
+        format: "rich",
+      })
     if (url.includes("/api/commands/chat.create")) return ok(startedChat(CHAT))
     if (url.endsWith("/api/commands/coach.stop")) return ok({ stopped: true })
     if (url.includes("/turns")) {
@@ -275,9 +272,9 @@ it("opens one page with the whole letter when the Coach finishes after 30 second
   await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith(LETTER))
   expect(mintInputs(coach.fetch)).toEqual([
     {
-      command: "paper.canvas",
+      command: "paper.create",
       input: expect.objectContaining({
-        op: "mint",
+        kind: "letter",
         jobId: job.id,
         lines: [
           "Dear hiring team,",
@@ -332,7 +329,7 @@ it("keeps only the text shown when the person clicks Stop after 30 seconds", asy
   await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith(LETTER))
   expect(mintInputs(coach.fetch)).toEqual([
     {
-      command: "paper.canvas",
+      command: "paper.create",
       input: expect.objectContaining({
         lines: ["Dear hiring team,", "I ran the spring campaign."],
       }),

@@ -35,7 +35,7 @@ const startingLineSchema = z
     "A line exceeds 8 KiB."
   )
 
-const startingLinesSchema = z
+export const startingLinesSchema = z
   .array(startingLineSchema)
   .min(1)
   .max(WORD_LIMITS.maxOpsPerApply)

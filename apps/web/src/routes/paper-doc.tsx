@@ -135,6 +135,9 @@ export function PaperDocPage() {
           provenance: document.data.provenance,
         }}
         onBack={back}
+        onOpen={(id) =>
+          void navigate({ to: "/paper/$docId", params: { docId: id }, search })
+        }
       />
     </Suspense>
   )

@@ -112,7 +112,7 @@ test("blank factories delegate and the historical starter CV fails", () => {
   )
   assert.match(
     read("apps/web/src/features/paper/paper-letter-start.tsx"),
-    /"paper.canvas"/
+    /"paper\.create", \{\s*kind: "letter",\s*format: "rich",/
   )
 })
 
