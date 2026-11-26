@@ -270,11 +270,18 @@ export function browserWorld({ browser, state, accounts, shotsDir, now }) {
           waitUntil: "domcontentloaded",
         })
         const title = entry.title ?? entry.name
-        const link = page.locator(`main a[href$="/paper/${docId}"]`).first()
-        const row = title
-          ? page.locator("main").getByText(title, { exact: true }).first()
-          : link
-        await row.click({ timeout: STEP_MS })
+        const escaped = title.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+        const card = page
+          .locator("main")
+          .getByRole("button", { name: new RegExp(`^Open ${escaped},`) })
+          .first()
+        const opened = () =>
+          page.waitForURL(`**/paper/${docId}`, { timeout: 2_000 }).then(
+            () => true,
+            () => false
+          )
+        await card.click({ timeout: STEP_MS })
+        if (!(await opened())) await card.click({ timeout: STEP_MS })
         return true
       },
       openByAddress: async (docId) => {
