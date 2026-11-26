@@ -1,7 +1,5 @@
-import {
-  CHAT_MESSAGE_MAX,
-  type LetterAttachmentContext,
-} from "@workspace/domain"
+import { CHAT_MESSAGE_MAX } from "@workspace/domain/coach"
+import { type LetterAttachmentContext } from "@workspace/domain/paper-doc"
 
 export function letterDraftText(
   base: string,

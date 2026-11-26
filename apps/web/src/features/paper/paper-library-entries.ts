@@ -1,4 +1,4 @@
-import type { PaperFile, PaperView } from "@workspace/domain"
+import type { PaperFile, PaperView } from "@workspace/domain/paper-doc"
 
 import type { WordDocument } from "./paper-package-library.tsx"
 

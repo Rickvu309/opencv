@@ -6,13 +6,13 @@ import {
   createRouter,
   RouterContextProvider,
 } from "@tanstack/react-router"
+import { parsePaperId } from "@workspace/domain/kernel"
 import {
   blankCv,
   paperDocumentSchema,
-  parsePaperId,
   type PaperFile,
   type PaperView,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import { render } from "@/test/render-with-client.tsx"
 import { PaperLibrary } from "./paper-library.tsx"

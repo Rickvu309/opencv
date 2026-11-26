@@ -5,7 +5,7 @@ import {
   type LetterPaper,
   type LetterPrintList,
   type RichText,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import "./design/letter-sheet.css"
 
