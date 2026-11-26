@@ -1,5 +1,6 @@
 import { blankCv, blankLetter, ERROR_CODES } from "@workspace/domain"
 import { afterEach, vi } from "vitest"
+import { wordPageReceipt } from "./word-page-receipt.ts"
 
 const WHEN = "2026-11-13T00:00:00.000Z"
 const REVISION = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
@@ -120,7 +121,7 @@ export function fakeServer(
       },
       "paper.start": (input) => {
         const page = add("word", input.kind === "letter" ? "letter" : "cv")
-        return ok({ docId: page.id, revision: REVISION })
+        return ok(wordPageReceipt({ docId: page.id, revision: REVISION }))
       },
       "paper.create": () => ok(view(add("older"))),
       "paper.duplicate": (input) => copyOf(String(input.docId)),
