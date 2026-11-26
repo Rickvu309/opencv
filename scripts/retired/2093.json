@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-http.test.ts",
+    "because": "The Word lines route was deleted; the not-found, pinned read, private no-store and other-person refusal are now asserted through POST /api/reads/paper.read.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
   }
 ]
