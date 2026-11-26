@@ -70,8 +70,12 @@ function restoreProblems(text) {
 
 export function detect(text, file = "source.ts") {
   const base = file.split("/").pop()
-  if (base === "commands.ts")
-    return text.includes("registerWordPackageEdit") ? [] : [problem(text)]
+  if (file.endsWith("operations/edit/server.ts"))
+    return text.includes("reviewed: wordPackageReview") ? [] : [problem(text)]
+  if (base === "commands.ts") {
+    const bound = text.indexOf('"paper.edit"')
+    return bound === -1 ? [] : [problem(text, bound)]
+  }
   if (base === "package-edit.ts") return editProblems(text)
   if (base === "package-restore.ts") return restoreProblems(text)
   return []

@@ -14,19 +14,12 @@ import {
   catalogClient,
   queryKey,
   refreshReads,
-  runContractCommand,
   undoActivity,
 } from "./contract-client.ts"
 
 const JOB = parseJobId("01900000-0000-7000-8000-000000000010")
 const OTHER = parseJobId("01900000-0000-7000-8000-000000000011")
 const DOC = parsePaperId("01900000-0000-7000-8000-000000000012")
-const EDIT = {
-  docId: parsePaperId("01900000-0000-7000-8000-000000000013"),
-  basedOn: 1,
-  edits: [],
-} as never
-
 function jobActivity(queryClient: QueryClient) {
   const read = catalogClient.options("owner", "activity.list", {
     subjectKind: "job",
@@ -77,31 +70,16 @@ function stubFetch(data: unknown) {
 const isStale = (queryClient: QueryClient, key: readonly unknown[]) =>
   queryClient.getQueryState(key)?.isInvalidated
 
-describe("runContractCommand", () => {
+describe("catalogClient.run", () => {
   afterEach(() => vi.unstubAllGlobals())
-
-  it("refreshes the reads paper.edit invalidates and nothing else", async () => {
-    const queryClient = new QueryClient()
-    const keys = seed(queryClient)
-    stubFetch({ id: DOC })
-
-    await runContractCommand(queryClient, "paper.edit", EDIT)
-
-    expect(isStale(queryClient, keys.list)).toBe(true)
-    expect(isStale(queryClient, keys.mine)).toBe(true)
-    expect(isStale(queryClient, keys.activity)).toBe(true)
-    expect(isStale(queryClient, keys.other)).toBe(true)
-    expect(isStale(queryClient, keys.paper)).toBe(true)
-    expect(isStale(queryClient, keys.outline)).toBe(false)
-  })
 
   it("sends the input with a fresh idempotency key per call", async () => {
     const queryClient = new QueryClient()
-    const bodies = stubFetch({ id: JOB })
-    const input = EDIT
+    const bodies = stubFetch({ fileId: DOC })
+    const input = { fileId: DOC }
 
-    await runContractCommand(queryClient, "paper.edit", input)
-    await runContractCommand(queryClient, "paper.edit", input)
+    await catalogClient.run(queryClient, "paper.deleteFile", input)
+    await catalogClient.run(queryClient, "paper.deleteFile", input)
 
     const [first, second] = bodies as {
       input: unknown
@@ -112,7 +90,7 @@ describe("runContractCommand", () => {
     expect(second.idempotencyKey).not.toBe(first.idempotencyKey)
   })
 
-  it("takes the idempotency key from the contract entry, not the call site", async () => {
+  it("takes the idempotency key from the operation, not the call site", async () => {
     const queryClient = new QueryClient()
     const provenance = nativeProvenance(emptyRichPaper("cv"))
     const bodies = stubFetch({
@@ -123,6 +101,7 @@ describe("runContractCommand", () => {
       stale: false,
       update: "",
       stateVector: "",
+      fileId: DOC,
     }) as Record<string, unknown>[]
 
     await catalogClient.run(queryClient, "paper.save", {
@@ -133,7 +112,7 @@ describe("runContractCommand", () => {
       update: "",
       stateVector: "",
     })
-    await runContractCommand(queryClient, "paper.edit", EDIT)
+    await catalogClient.run(queryClient, "paper.deleteFile", { fileId: DOC })
 
     expect(bodies[0]).not.toHaveProperty("idempotencyKey")
     expect(bodies[1]).toHaveProperty("idempotencyKey")
@@ -150,7 +129,7 @@ describe("runContractCommand", () => {
     )
 
     await expect(
-      runContractCommand(queryClient, "paper.edit", EDIT)
+      catalogClient.run(queryClient, "paper.deleteFile", { fileId: DOC })
     ).rejects.toThrow()
 
     expect(isStale(queryClient, keys.list)).toBe(false)

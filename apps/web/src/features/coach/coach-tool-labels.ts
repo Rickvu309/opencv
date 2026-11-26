@@ -131,7 +131,7 @@ const TOOL_COPY = {
   [catalog["paper.delete"].name]: { label: "Delete this Paper" },
   [catalog["paper.deleteFile"].name]: { label: "Remove this file" },
   [catalog["paper.duplicate"].name]: { label: "Duplicate this Paper" },
-  "paper.edit": { label: "Edit your Paper" },
+  [catalog["paper.edit"].name]: { label: "Edit your Paper" },
   [catalog["paper.export"].name]: { label: "Download your Paper as Word" },
   [catalog["paper.import"].name]: { label: "Import your Paper" },
   [catalog["paper.files"].name]: {

@@ -1,23 +1,12 @@
-import {
-  queryOptions,
-  useQuery,
-  useQueryClient,
-  type QueryClient,
-} from "@tanstack/react-query"
-import { useCallback } from "react"
+import { queryOptions, useQuery, type QueryClient } from "@tanstack/react-query"
 import type {
-  CommandInput,
-  CommandOutput,
-  AnyCommandEntry,
-  Commands,
-  ContractCommandName,
   QueryRef,
   Operation,
   OperationInput,
   OperationOutput,
   ResourceTouch,
 } from "@workspace/domain"
-import { catalog, commands, resourcesOverlap } from "@workspace/domain"
+import { catalog, resourcesOverlap } from "@workspace/domain"
 
 import { z } from "@workspace/domain"
 import { endpoints } from "@/lib/requests.ts"
@@ -67,35 +56,6 @@ function isPending(output: unknown) {
   return pendingSchema.safeParse(output)
 }
 
-export async function runContractCommand<N extends ContractCommandName>(
-  queryClient: QueryClient,
-  name: N,
-  input: CommandInput<Commands, N>,
-  options: RunOptions = {}
-): Promise<CommandResult<CommandOutput<Commands, N>>> {
-  const body = await apiFetch<
-    SuccessBody<CommandResult<CommandOutput<Commands, N>>>
-  >(`/api/commands/${name}`, {
-    method: "POST",
-    body: JSON.stringify({
-      input,
-      ...((commands[name] as AnyCommandEntry).idempotency === "none"
-        ? {}
-        : { idempotencyKey: options.idempotencyKey ?? crypto.randomUUID() }),
-    }),
-    ...(options.signal ? { signal: options.signal } : {}),
-    ...(options.keepalive ? { keepalive: true } : {}),
-  })
-  if (options.refresh !== false && !isPending(unwrapData(body)).success) {
-    await refreshCatalogReads(queryClient, commandTouches(body))
-    await refreshQueries(
-      queryClient,
-      commands[name].invalidates(input as never)
-    )
-  }
-  return unwrapData(body)
-}
-
 export async function undoActivity(
   queryClient: QueryClient,
   activityId: string
@@ -103,18 +63,6 @@ export async function undoActivity(
   return catalogClient.run(queryClient, catalog["activity.undo"].name, {
     activityId,
   })
-}
-
-export function useRunCommand() {
-  const queryClient = useQueryClient()
-  return useCallback(
-    <N extends ContractCommandName>(
-      name: N,
-      input: CommandInput<Commands, N>,
-      options?: RunOptions
-    ) => runContractCommand(queryClient, name, input, options),
-    [queryClient]
-  )
 }
 
 const touchSchema = z.object({

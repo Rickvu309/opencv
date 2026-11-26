@@ -1,24 +1,15 @@
 import {
-  commandEntry,
   commands,
   catalog,
   type ContractCommandName,
   paperContract,
   parseJobId,
   parsePaperId,
-  type CommandInput,
   type OperationInput,
-  type PaperContract,
 } from "@workspace/domain"
 import { z } from "zod"
 
-import {
-  bindCommands,
-  type Bindings,
-  type OperationBinding,
-  type ReversalGuard,
-} from "./bind.js"
-import type { Registry } from "./registry.js"
+import { type OperationBinding, type ReversalGuard } from "./bind.js"
 
 type MoveInput = OperationInput<(typeof catalog)["job.move"]>
 type StarInput = z.output<(typeof catalog)["job.star"]["input"]>
@@ -37,9 +28,8 @@ type Delete = OperationBinding<
   { id: string }
 >["execute"]
 type Snooze = OperationInput<(typeof catalog)["inbox.snooze"]>
-type Edit = CommandInput<PaperContract, "paper.edit">
+type Edit = OperationInput<(typeof catalog)["paper.edit"]>
 type PaperUpdate = OperationInput<(typeof catalog)["paper.update"]>
-type PaperEditBinding = Bindings<PaperContract>["paper.edit"]
 type Undo = OperationInput<(typeof catalog)["activity.undo"]>
 type ChatDelete = OperationBinding<
   (typeof catalog)["chat.delete"],
@@ -63,7 +53,7 @@ type MarkDone = OperationBinding<
   }
 >["reversal"]
 
-export function typeProbes(registry: Registry) {
+export function typeProbes() {
   // prettier-ignore
   // @ts-expect-error unknown command name
   const unknownName = paperContract["paper.nope"]
@@ -75,10 +65,6 @@ export function typeProbes(registry: Registry) {
   // prettier-ignore
   // @ts-expect-error a PaperId is not a JobId
   const paperAsJob: StarInput = { jobId: parsePaperId(uuid), starred: true }
-
-  // prettier-ignore
-  // @ts-expect-error every command in the contract needs a binding
-  bindCommands(registry, paperContract, {})
 
   // prettier-ignore
   // @ts-expect-error a handler must return the declared output
@@ -126,19 +112,11 @@ export function typeProbes(registry: Registry) {
 
   // prettier-ignore
   // @ts-expect-error an edit needs basedOn, not a revision
-  const wrongPaperInput: Edit = { docId: parsePaperId(uuid), revision: 2, edits: [] }
+  const wrongPaperInput: Edit = { docId: uuid, revision: 2, edits: [] }
 
   // prettier-ignore
   // @ts-expect-error a status outside the list is not a status
   const wrongStatus: PaperUpdate = { docId: uuid, patch: { status: "fancy" } }
-
-  // prettier-ignore
-  // @ts-expect-error a JobId is not a PaperId
-  const jobAsPaper: Edit = { docId: someJobId, basedOn: 1, edits: [] }
-
-  // prettier-ignore
-  // @ts-expect-error a paper edit handler must return the declared output
-  const wrongPaperOutput: PaperEditBinding["handler"] = async () => ({ id: uuid })
 
   // prettier-ignore
   // @ts-expect-error undo takes an activity id, not a pending action id
@@ -169,8 +147,6 @@ export function typeProbes(registry: Registry) {
     unknownPaper,
     wrongPaperInput,
     wrongStatus,
-    jobAsPaper,
-    wrongPaperOutput,
     unknownInbox,
     wrongInboxInput,
     notAContractName,
@@ -190,25 +166,3 @@ export function typeProbes(registry: Registry) {
 const uuid = "00000000-0000-4000-8000-000000000000"
 const someJobId = parseJobId(uuid)
 const someDocId = parsePaperId(uuid)
-
-// @ts-expect-error destructive cannot use coach auto
-export const autoDestructive = commandEntry({
-  description: "x",
-  input: z.object({}),
-  output: z.object({}),
-  coach: "auto",
-  destructive: true,
-  step: () => "x",
-  invalidates: () => [],
-})
-
-export const unknownInvalidation = commandEntry({
-  description: "x",
-  input: z.object({}),
-  output: z.object({}),
-  coach: "never",
-  destructive: false,
-  step: () => "x",
-  // @ts-expect-error invalidates can only name a registered query
-  invalidates: () => [{ query: "job.nope" }],
-})

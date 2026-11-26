@@ -1,0 +1,34 @@
+[
+  {
+    "subject": "apps/web/src/lib/paper-command-input.test.ts",
+    "because": "runContractCommand is deleted: paper.edit was the last legacy command, and every Paper command now runs through catalogClient.run, whose key and refresh rules contract-client.test.tsx covers. The qualified-cache retry case went with the legacy runner.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "scripts/paper-package-edit.test.mjs",
+    "because": "paper.edit is bound by its operation pair, not registerWordPackageEdit in commands.ts. The guard now requires the pair to bind reviewed: wordPackageReview and refuses any paper.edit binding in commands.ts; the historic mistake, a direct paper.edit binding in commands.ts, still fires.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/lib/contract-client.test.ts",
+    "because": "The legacy runner is deleted, so the workspace-touch and explicit-key replay cases run through the fixture catalog client instead: a workspace touch refreshes only its owner's reads, a proposal or failed request refreshes nothing, and an explicit key is replayed while changed input gets a fresh key.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/lib/contract-client.test.tsx",
+    "because": "The legacy runner is deleted, so the runner cases run catalogClient.run on paper.deleteFile and paper.save: a fresh key per call, the key policy taken from the operation, and no refresh on failure. The case that a legacy command refreshed only the reads it named goes with the legacy contract.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  }
+]

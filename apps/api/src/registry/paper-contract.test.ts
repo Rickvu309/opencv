@@ -1,9 +1,4 @@
-import {
-  catalog,
-  commands,
-  paperContract,
-  personActor,
-} from "@workspace/domain"
+import { catalog, personActor } from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"
@@ -65,10 +60,11 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
         .list()
         .commands.map((command) => [command.name, command])
     )
-    for (const name of Object.keys(paperContract)) {
-      expect(registered.get(name), name).toMatchObject({
-        coach: commands[name as keyof typeof paperContract].coach,
-        destructive: commands[name as keyof typeof paperContract].destructive,
+    for (const operation of Object.values(catalog)) {
+      if (operation.owner !== "paper" || operation.kind !== "command") continue
+      expect(registered.get(operation.name), operation.name).toMatchObject({
+        coach: operation.coach,
+        destructive: operation.destructive,
       })
     }
   })

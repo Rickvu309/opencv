@@ -6,18 +6,11 @@ import {
   queries,
   type ActivityDraft,
   type Actor,
-  type AnyCommandEntry,
-  type CommandContract,
-  type CommandInput,
-  type CommandOutput,
-  type CommandSpec,
   type QueryInput,
   type QueryName,
   type QueryOutput,
-  type ReversalCall,
   type ReversalPlan,
   type ReversalExpect,
-  type ResourceRef,
 } from "@workspace/domain"
 import type { catalog } from "@workspace/domain"
 import type { ZodType } from "zod"
@@ -70,13 +63,6 @@ type PairReversal<I, R, In, N extends string> =
       | UndoOnlyPlan
       | IrreversibleCommand)
   | IrreversibleCommand
-
-type AnyReversalCall<C extends CommandContract> =
-  ReversalCall<C> | CatalogReversalCall
-
-export type GuardedReversal<C extends CommandContract> = AnyReversalCall<C> & {
-  expect: ReversalGuard
-}
 
 type GuardedPlan<In = unknown, N extends string = string> = Omit<
   NonNullable<ReversalPlan>,
@@ -142,69 +128,6 @@ function boundActivity<I, R>(
 ): (input: I, result: R, actor: Actor) => ActivityDraft | null {
   if (typeof activity !== "function") return () => null
   return activity
-}
-
-type ReversalOf<C extends CommandContract> = GuardedReversal<C> | null
-
-type Binding<C extends CommandContract, N extends keyof C & string> = {
-  handler: (
-    input: CommandInput<C, N>,
-    actor: Actor
-  ) => Promise<CommandOutput<C, N>>
-  reversal: (
-    input: CommandInput<C, N>,
-    output: CommandOutput<C, N>
-  ) => ReversalOf<C>
-  activity: (
-    input: CommandInput<C, N>,
-    output: CommandOutput<C, N>,
-    actor: Actor
-  ) => ActivityDraft | null
-  writes?: (input: CommandInput<C, N>) => ResourceRef[]
-  basis?: ProposalBasis<CommandInput<C, N>>
-  transaction?: "none"
-}
-
-export type Bindings<C extends CommandContract> = {
-  [N in keyof C & string]: Binding<C, N>
-}
-
-type LooseBinding = {
-  handler: (input: unknown, actor: Actor) => Promise<unknown>
-  reversal: CommandSpec<unknown, unknown>["reversal"]
-  activity: CommandSpec<unknown, unknown>["activity"]
-  writes?: (input: unknown) => ResourceRef[]
-  basis?: ProposalBasis<unknown>
-  transaction?: "none"
-}
-
-export function bindCommands<C extends CommandContract>(
-  registry: Registry,
-  contract: C,
-  bindings: Bindings<C>
-) {
-  for (const name of Object.keys(contract) as (keyof C & string)[]) {
-    const entry: AnyCommandEntry = contract[name]
-    const bound = bindings[name] as unknown as LooseBinding
-    registry.addCommand<unknown, unknown>(
-      {
-        name,
-        description: entry.description,
-        input: entry.input,
-        coach: entry.coach,
-        delegate: entry.delegate,
-        writes: bound.writes ?? entry.writes,
-        destructive: entry.destructive,
-        ...(entry.idempotency ? { idempotency: entry.idempotency } : {}),
-        step: entry.step,
-        reversal: bound.reversal,
-        activity: bound.activity,
-        ...(bound.transaction ? { transaction: bound.transaction } : {}),
-        ...(bound.basis ? { basis: bound.basis } : {}),
-      },
-      bound.handler
-    )
-  }
 }
 
 type TableQuerySpec<N extends QueryName> = {

@@ -3,7 +3,6 @@ import {
   DEFAULT_COACH_MODELS,
   RICH_NATIVE_WRITER,
   nativeBasisSchema,
-  paperContract,
   type CoachFocusDoc,
   type ApplyScanExtractInput,
   type ChatToolName,
@@ -175,7 +174,7 @@ export function fakePaperEdit(
 ) {
   if (focus.nativeBasis && focus.nativeBasis.revision !== focus.revision)
     throw new Error("Native Paper proposal needs a matching outline")
-  return paperContract["paper.edit"].input.parse({
+  return catalog["paper.edit"].input.parse({
     docId: focus.id,
     basedOn: focus.revision,
     ...(focus.nativeBasis
@@ -203,13 +202,16 @@ function paperEditScript(
     yield {
       type: "tool-call",
       toolCallId: "call_edit",
-      name: "paper.edit",
+      name: catalog["paper.edit"].name,
       input: call,
     } as const
-    const result = await execute({ name: "paper.edit", input: call })
+    const result = await execute({
+      name: catalog["paper.edit"].name,
+      input: call,
+    })
     yield toolResultFromExecute({
       toolCallId: "call_edit",
-      name: "paper.edit",
+      name: catalog["paper.edit"].name,
       summary: "Edit the document",
       result,
     })

@@ -158,10 +158,11 @@ describe("a job binding that drifts from the job contract is rejected", () => {
     const registered = new Map(
       registry.list().commands.map((command) => [command.name, command])
     )
-    for (const [name, entry] of Object.entries(commands)) {
-      expect(registered.get(name), name).toMatchObject({
-        coach: entry.coach,
-        destructive: entry.destructive,
+    for (const operation of Object.values(catalog)) {
+      if (operation.kind !== "command") continue
+      expect(registered.get(operation.name), operation.name).toMatchObject({
+        coach: operation.coach,
+        destructive: operation.destructive,
       })
     }
   })

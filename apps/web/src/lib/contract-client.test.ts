@@ -8,7 +8,7 @@ import { defineOperation, resourcesOverlap } from "@workspace/domain"
 import { createElement, type PropsWithChildren } from "react"
 import { afterEach, expect, expectTypeOf, it, vi } from "vitest"
 import { z } from "@workspace/domain"
-import { createCatalogClient, runContractCommand } from "./contract-client.ts"
+import { createCatalogClient } from "./contract-client.ts"
 
 const read = defineOperation({
   owner: "job",
@@ -134,7 +134,7 @@ it("intersects committed touches with mounted collection and entity dependencies
   queryClient.clear()
 })
 
-it("bridges legacy workspace touches without treating a proposal or failed request as a write", async () => {
+it("refreshes an owner's reads on a workspace touch without treating a proposal or failed request as a write", async () => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, staleTime: Infinity } },
   })
@@ -151,13 +151,13 @@ it("bridges legacy workspace touches without treating a proposal or failed reque
       Promise.resolve(
         Response.json({
           ok: true,
-          data: { title: "Legacy" },
+          data: { count: 1 },
           meta: { touches: [{ ownerId: "owner", name: "workspace" }] },
         })
       )
     )
   )
-  await runContractCommand(queryClient, "paper.edit", { stage: "Legacy" })
+  await catalog.run(queryClient, "job.create", { value: 1 })
   expect(
     options.map(
       (option) => queryClient.getQueryState(option.queryKey)?.isInvalidated
@@ -184,7 +184,6 @@ it("bridges legacy workspace touches without treating a proposal or failed reque
   expect(
     await catalog.run(queryClient, "job.create", { value: 2 })
   ).toMatchObject({ pending: true })
-  await runContractCommand(queryClient, "paper.edit", { stage: "Any" })
   expect(invalidate).not.toHaveBeenCalled()
   vi.stubGlobal(
     "fetch",
@@ -223,7 +222,7 @@ it("matches collections, entities, owner workspace and owner isolation with pure
 it("replays an explicit original command key and keeps generated keys fresh for changed input", async () => {
   const queryClient = new QueryClient()
   const bodies: { input: unknown; idempotencyKey?: string }[] = []
-  const receipts = new Map<string, { id: string }>()
+  const receipts = new Map<string, { count: number }>()
   vi.stubGlobal(
     "fetch",
     vi.fn((_url: string, init: RequestInit) => {
@@ -233,40 +232,30 @@ it("replays an explicit original command key and keeps generated keys fresh for 
       }
       bodies.push(body)
       const receipt = receipts.get(body.idempotencyKey) ?? {
-        id: crypto.randomUUID(),
+        count: receipts.size + 1,
       }
       receipts.set(body.idempotencyKey, receipt)
       return Promise.resolve(Response.json({ ok: true, data: receipt }))
     })
   )
   const idempotencyKey = crypto.randomUUID()
-  const original = await runContractCommand(
+  const original = await catalog.run(
     queryClient,
-    "paper.edit",
-    { stage: "Original" },
+    "job.create",
+    { value: 1 },
     { refresh: false, idempotencyKey }
   )
-  const replay = await runContractCommand(
+  const replay = await catalog.run(
     queryClient,
-    "paper.edit",
-    { stage: "Original" },
+    "job.create",
+    { value: 1 },
     { refresh: false, idempotencyKey }
   )
-  await runContractCommand(
-    queryClient,
-    "paper.edit",
-    { stage: "Changed" },
-    { refresh: false }
-  )
-  await runContractCommand(
-    queryClient,
-    "paper.edit",
-    { stage: "Changed again" },
-    { refresh: false }
-  )
+  await catalog.run(queryClient, "job.create", { value: 2 }, { refresh: false })
+  await catalog.run(queryClient, "job.create", { value: 3 }, { refresh: false })
   expect(replay).toEqual(original)
   expect(bodies[1]).toEqual(bodies[0])
   expect(new Set(bodies.map((body) => body.idempotencyKey)).size).toBe(3)
-  expect(bodies[2]?.input).toEqual({ stage: "Changed" })
+  expect(bodies[2]?.input).toEqual({ value: 2 })
   queryClient.clear()
 })

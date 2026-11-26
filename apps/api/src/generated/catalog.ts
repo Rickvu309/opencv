@@ -61,6 +61,7 @@ import { implementation as paper$create } from "../paper/operations/create/serve
 import { implementation as paper$delete } from "../paper/operations/delete/server.js"
 import { implementation as paper$deleteFile } from "../paper/operations/delete-file/server.js"
 import { implementation as paper$duplicate } from "../paper/operations/duplicate/server.js"
+import { implementation as paper$edit } from "../paper/operations/edit/server.js"
 import { implementation as paper$export } from "../paper/operations/export/server.js"
 import { implementation as paper$files } from "../paper/operations/files/server.js"
 import { implementation as paper$import } from "../paper/operations/import/server.js"
@@ -137,6 +138,7 @@ export const implementations = {
   "paper.delete": paper$delete,
   "paper.deleteFile": paper$deleteFile,
   "paper.duplicate": paper$duplicate,
+  "paper.edit": paper$edit,
   "paper.export": paper$export,
   "paper.files": paper$files,
   "paper.import": paper$import,
