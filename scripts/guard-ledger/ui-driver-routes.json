@@ -1,0 +1,15 @@
+{
+  "id": "ui-driver-routes",
+  "file": "scripts/ui-driver-routes.test.mjs",
+  "detector": {
+    "module": "scripts/lib/ui-driver-routes.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "0065fa9d065bf9f2307c35726c41a24c1e52283f",
+    "path": "scripts/ui/sweep/browser-world.mjs",
+    "reads": ["apps/api/src/one-door.test.ts"]
+  },
+  "reason": "Found by the PR-18 live check (#2080). Introduced by 0065fa9d065bf9f2307c35726c41a24c1e52283f, where the Paper list became an operation and GET /api/paper left the served route list, while the core loop driver still read the library from it, so every sweep loop reported the imported page as missing from the library. detect fires on a UI check script that calls an /api path matching no route listed in apps/api/src/one-door.test.ts, and stays quiet once the driver reads through /api/reads/paper.list."
+}

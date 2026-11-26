@@ -192,6 +192,11 @@ export function browserWorld({ browser, state, accounts, shotsDir, now }) {
       context.request.get(`${state.apiOrigin}${path}`, {
         headers: { origin: state.webOrigin },
       })
+    const read = (name, input) =>
+      context.request.post(`${state.apiOrigin}/api/reads/${name}`, {
+        headers: { origin: state.webOrigin },
+        data: input,
+      })
     const docIdFromUrl = () =>
       /\/paper\/([^/?#]+)/.exec(new URL(page.url()).pathname)?.[1] ?? null
     const findEntry = (data, docId) => {
@@ -258,7 +263,7 @@ export function browserWorld({ browser, state, accounts, shotsDir, now }) {
         }
       },
       openFromLibrary: async (docId) => {
-        const library = await (await api("/api/paper")).json()
+        const library = await (await read("paper.list", {})).json()
         const entry = findEntry(library, docId)
         if (!entry) return false
         await page.goto(`${state.webOrigin}/paper`, {
