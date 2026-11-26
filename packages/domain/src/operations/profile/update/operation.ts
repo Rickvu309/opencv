@@ -11,6 +11,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Update profile, plan mode, and agent settings.",
+  label: "Update your Profile",
   input: profileUpdateInputSchema,
   publicResult: profileSchema,
   coach: "never",

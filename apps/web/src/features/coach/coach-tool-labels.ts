@@ -3,59 +3,14 @@ import { catalog } from "@workspace/domain/kernel"
 
 type ToolCopy = { label: string; read?: string }
 
-const TOOL_COPY = {
-  [catalog["paper.canvas"].name]: { label: "Update your Paper layout" },
-  [catalog["paper.create"].name]: { label: "Create a Paper" },
-  [catalog["paper.delete"].name]: { label: "Delete this Paper" },
-  [catalog["paper.deleteFile"].name]: { label: "Remove this file" },
-  [catalog["paper.duplicate"].name]: { label: "Duplicate this Paper" },
-  [catalog["paper.edit"].name]: { label: "Edit your Paper" },
-  [catalog["paper.export"].name]: { label: "Download your Paper as Word" },
-  [catalog["paper.import"].name]: { label: "Import your Paper" },
-  [catalog["paper.files"].name]: {
-    label: "Look at your Paper files",
-    read: "Looked at your Paper files",
-  },
-  [catalog["paper.list"].name]: {
-    label: "Look at your Paper",
-    read: "Looked at your Paper",
-  },
-  [catalog["paper.outline"].name]: {
-    label: "Read your Paper outline",
-    read: "Read your Paper outline",
-  },
-  [catalog["paper.read"].name]: {
-    label: "Read your Paper",
-    read: "Read your Paper",
-  },
-  [catalog["paper.recover"].name]: { label: "Bring back your Paper" },
-  [catalog["paper.update"].name]: { label: "Update your Paper" },
-  [catalog["paper.start"].name]: { label: "Start a CV or Letter in Paper" },
-  [catalog["paper.save"].name]: { label: "Save your Paper" },
-  [catalog["profile.get"].name]: {
-    label: "Read your Profile",
-    read: "Read your Profile",
-  },
-  [catalog["profile.markWelcomed"].name]: { label: "Finish your welcome" },
-  [catalog["profile.setPhoto"].name]: { label: "Update your Profile photo" },
-  [catalog["profile.update"].name]: { label: "Update your Profile" },
-  [catalog["workspace.search"].name]: {
-    label: "Search your workspace",
-    read: "Searched your workspace",
-  },
-} satisfies Partial<Record<ChatToolName, ToolCopy>>
-
-const tableCopy: Partial<Record<ChatToolName, ToolCopy>> = TOOL_COPY
-
 function declaredCopy(name: ChatToolName): ToolCopy {
   const operation = (
     catalog as Record<string, { label?: string; readLabel?: string }>
   )[name]
-  const fromTable = tableCopy[name]
-  const label = operation?.label ?? fromTable?.label
-  if (!label) throw new Error(`${name} has no Coach label`)
-  const read = operation?.readLabel ?? fromTable?.read
-  return read ? { label, read } : { label }
+  if (!operation?.label) throw new Error(`${name} has no Coach label`)
+  return operation.readLabel
+    ? { label: operation.label, read: operation.readLabel }
+    : { label: operation.label }
 }
 
 const toolCopy = Object.fromEntries(

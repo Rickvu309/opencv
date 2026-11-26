@@ -13,6 +13,7 @@ export const operation = defineOperation({
   kind: "command",
   description:
     "Create a CV or Letter. A rich Paper starts as one empty paragraph that opens the full editor. Pass jobId to link it to a Job.",
+  label: "Create a Paper",
   input: z
     .object({
       kind: paperStoredKindSchema,

@@ -21,6 +21,8 @@ export const operation = defineOperation({
   kind: "read",
   description:
     "List saved CVs and Letters with view library, or read one with docId to get its text and line handles (regions.paragraph) at a pinned revision. Follow nextCursor until it is null, keeping docId and at from the first page; a non-null nextCursor means more of the document remains. Locked regions are context only. To change lines, send paper_edit with setText, insert or delete against that revision as basedOn, then wait for the person to approve in OpenCV. Do not invent the person's experience or qualifications. view page returns the page as Word lines without a cursor. view lines returns the document as paragraphs with their handles, read in parts by following nextCursor. view trash says whether a deleted Word page can be brought back. view info gives a document's name, kind, format and, for a rich document, its provenance.",
+  label: "Read your Paper",
+  readLabel: "Read your Paper",
   input: z
     .union([
       z

@@ -10,6 +10,7 @@ export const operation = defineOperation({
   kind: "command",
   description:
     "Bring back a deleted Word page with its content and its Job link. Read paper.read with view trash to see whether a page can be brought back.",
+  label: "Bring back your Paper",
   input: z.object({ docId: z.string().uuid() }).strict(),
   publicResult: z
     .object({

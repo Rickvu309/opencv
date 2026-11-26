@@ -26,6 +26,7 @@ export const operation = defineOperation({
   kind: "command",
   description:
     "Rename a CV or Letter, or set its favorite flag or its status, in one patch. A Word page has only a name. The Coach may rename on its own; only the person sets the favorite flag and the status.",
+  label: "Update your Paper",
   input: z
     .object({
       docId: z.string().uuid(),

@@ -23,6 +23,7 @@ export const operation = defineOperation({
   kind: "read",
   description:
     "Get the download for an exact saved Word revision without conversion, or qualify an exact saved rich CV or Letter for Word download with its writer and basis.",
+  label: "Download your Paper as Word",
   input: z
     .union([
       z

@@ -9,6 +9,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Publish an uploaded file as a Word document.",
+  label: "Import your Paper",
   input: z
     .object({
       generation: z.literal("package"),
