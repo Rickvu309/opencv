@@ -22,7 +22,6 @@ flowchart TD
     p_apps_api_src_paper_content["apps/api/src/paper/content"]
     p_apps_api_src_paper_import["apps/api/src/paper/import"]
     p_apps_api_src_paper_native_output["apps/api/src/paper/native-output"]
-    p_apps_api_src_paper_word_package["apps/api/src/paper/word-package"]
     p_apps_web_src_features_apply["apps/web/src/features/apply"]
     p_apps_web_src_features_auth["apps/web/src/features/auth"]
     p_apps_web_src_features_coach["apps/web/src/features/coach"]
@@ -111,9 +110,7 @@ flowchart TD
   p_apps_api_src_paper --> p_apps_api_src_platform
   p_apps_api_src_paper_content --> p_apps_api_src_db
   p_apps_api_src_paper_content --> p_apps_api_src_platform
-  p_apps_api_src_paper_import --> p_apps_api_src_paper_word_package
   p_apps_api_src_paper_import --> p_apps_api_src_platform
-  p_apps_api_src_paper_word_package --> p_apps_api_src_platform
   p_apps_api_src_registry --> p_apps_api_src_db
   p_apps_api_src_registry --> p_apps_api_src_limits
   p_apps_api_src_registry --> p_apps_api_src_platform
@@ -200,9 +197,8 @@ flowchart TD
 | `apps/api/src/mail` | platform | none | none | none |
 | `apps/api/src/paper` | feature | index.ts, operations | apps/api/src/paper/import, apps/api/src/paper/native-output, apps/api/src/paper/content, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/paper/content` | feature | content-store.ts, native-admission.ts, read-paper.ts, rich-snapshot.ts | apps/api/src/db, apps/api/src/platform | none |
-| `apps/api/src/paper/import` | feature | import-parse.ts, import-text-pool.ts, import-word.ts, word-to-paper.ts | apps/api/src/paper/word-package, apps/api/src/platform | none |
+| `apps/api/src/paper/import` | feature | import-parse.ts, import-text-pool.ts, import-word.ts, word-to-paper.ts | apps/api/src/platform | none |
 | `apps/api/src/paper/native-output` | feature | formatted.ts, formatted-photos.ts | none | none |
-| `apps/api/src/paper/word-package` | feature | package-errors.ts, package-xml.ts, package-zip.ts | apps/api/src/platform | none |
 | `apps/api/src/platform` | platform | none | none | none |
 | `apps/api/src/registry` | kernel | none | apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/web/src` | app | none | apps/web/src/features/app-shell, apps/web/src/features/apply, apps/web/src/features/auth, apps/web/src/features/coach, apps/web/src/features/coming-soon, apps/web/src/features/command-palette, apps/web/src/features/connections, apps/web/src/features/inbox, apps/web/src/features/landing, apps/web/src/features/paper, apps/web/src/features/paper/rich-editor, apps/web/src/features/paper-page, apps/web/src/features/seed, apps/web/src/features/settings, apps/web/src/lib, apps/web/src/components | none |

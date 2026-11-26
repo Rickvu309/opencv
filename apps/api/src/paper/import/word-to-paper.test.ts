@@ -5,7 +5,7 @@ import {
 import { describe, expect, it } from "vitest"
 
 import { compileFlowNativeDocx } from "../native-output/formatted.js"
-import { fixturePackage, paragraph } from "../word-package/package-fixtures.js"
+import { fixturePackage, paragraph } from "./package-fixtures.js"
 import {
   PHOTOS_DROPPED,
   TABLES_FLATTENED,

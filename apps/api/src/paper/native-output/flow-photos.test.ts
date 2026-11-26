@@ -8,8 +8,8 @@ import {
 } from "@workspace/domain/internal/paper-presentation"
 import { compileFlowNativeDocx } from "./formatted.js"
 import { cv, paragraph, presentation } from "./formatted.test-support.js"
-import { readPackageZip } from "../word-package/package-zip.js"
-import { parsePackageXml } from "../word-package/package-xml.js"
+import { readPackageZip } from "../import/package-zip.js"
+import { parsePackageXml } from "../import/package-xml.js"
 import { attribute, elements, one } from "./inspect.test-support.js"
 
 const A = "http://schemas.openxmlformats.org/drawingml/2006/main"

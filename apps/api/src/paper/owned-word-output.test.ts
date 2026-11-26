@@ -5,7 +5,7 @@ import { expect, it } from "vitest"
 import { withDatabase } from "../db/context.js"
 import { files, user } from "../db/schema.js"
 import { createMigratedTestDb } from "../test/harness.js"
-import { readPackageZip } from "./word-package/package-zip.js"
+import { readPackageZip } from "./import/package-zip.js"
 import { saveFile } from "./store.js"
 import { compileOwnedLayoutNativeDocx } from "./owned-word-output.js"
 import {

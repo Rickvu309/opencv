@@ -3,7 +3,7 @@ import {
   wordAttribute,
   wordChild,
   type XmlElement,
-} from "../word-package/package-xml.js"
+} from "./package-xml.js"
 
 export type Run = {
   text: string

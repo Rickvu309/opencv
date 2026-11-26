@@ -1,7 +1,7 @@
 import { once } from "node:events"
 import { createDeflate, deflateSync } from "node:zlib"
 
-import { crc32 } from "../word-package/package-zip.js"
+import { crc32 } from "./package-zip.js"
 
 export function pdfFrom(objects: Array<string | Buffer>): Buffer {
   const parts: Buffer[] = [Buffer.from("%PDF-1.4\n")]
