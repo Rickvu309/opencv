@@ -12,7 +12,11 @@ import { paperPackageVersions } from "../../../db/schema.js"
 import type { OperationBinding } from "../../../registry/bind.js"
 import type { RowBasis } from "../../../registry/frozen-review.js"
 import { resultOf } from "../../word-package/package-canvas.js"
+<<<<<<< HEAD
 import { packageFailure } from "../../word-package/package-pages.js"
+=======
+import { packageFailure } from "../../package-pages.js"
+>>>>>>> origin/main
 import { startedBytes, startedName } from "../../word-package/package-start.js"
 import {
   publishWordPackage,

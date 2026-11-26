@@ -29,7 +29,7 @@ import {
   packageDigest,
   packageFailure,
   packagePage,
-} from "./package-pages.js"
+} from "../package-pages.js"
 
 export const WORD_PACKAGE_MEDIA_TYPE =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document"

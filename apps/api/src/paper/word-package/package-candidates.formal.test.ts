@@ -23,7 +23,11 @@ import {
 } from "./package-candidates.js"
 import { PaperPackage } from "./package-engine.js"
 import { fixturePackage } from "./package-fixtures.js"
+<<<<<<< HEAD
 import { packageDigest } from "./package-pages.js"
+=======
+import { packageDigest } from "../package-pages.js"
+>>>>>>> origin/main
 import * as packageStore from "./package-store.js"
 import {
   exportWordPackage,
