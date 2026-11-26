@@ -30,9 +30,9 @@ import { useRichStatusDetail } from "./rich-status-detail.ts"
 import { mountRichEditorLifecycle } from "./rich-editor-lifecycle.ts"
 import { RichFindBar, type PaperFindMode } from "./rich-find-bar.tsx"
 import { RichDocumentMenu } from "./rich-document-menu.tsx"
-import "../design/rich-page-header.css"
+import "./rich-page-header.css"
 import "../design/paper-writing-page.css"
-import "../design/rich-desk.css"
+import "./rich-desk.css"
 import "./rich-page-geometry.css"
 
 type Session = ReturnType<typeof openRichPaperSession>
