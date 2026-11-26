@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-continue.test.ts",
+    "because": "redraftStoppedLetter no longer takes an injected run; it saves through the catalog run. The cases now watch the canvas request on the fetch mock: none is sent when the page has words, and the final write sends op write with the caller's abort signal.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  }
+]
