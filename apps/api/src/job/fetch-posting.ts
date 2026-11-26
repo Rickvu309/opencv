@@ -1,4 +1,7 @@
-import { APPLY_SCAN_FETCH_FAILED, openableApplyJobUrl } from "@workspace/domain"
+import {
+  APPLY_SCAN_FETCH_FAILED,
+  openableApplyJobUrl,
+} from "@workspace/domain/apply"
 import { lookup } from "node:dns/promises"
 import { isIPv6 } from "node:net"
 
