@@ -14,7 +14,7 @@ import { getDb } from "../db/context.js"
 import { paperDocs } from "../db/schema.js"
 import { CommandError } from "../platform/errors.js"
 import { admitDocument } from "./native-admission.js"
-import { ownedPackagePaper } from "./package-list.js"
+import { ownedPackagePaper } from "./word-package/package-list.js"
 
 export async function readPaperDocumentInfo(
   userId: UserId,

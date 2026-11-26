@@ -24,7 +24,7 @@ import {
   revalidateWordCandidate,
   prepareStoredWordPackage,
 } from "./package-candidates.js"
-import { packageFailure } from "../package-pages.js"
+import { packageFailure } from "./package-pages.js"
 import { isWordBatch, prepareWordBatch } from "./package-planner.js"
 import { PACKAGE_PROFILE } from "./package-profile.js"
 import { revalidateUnchangedPackage } from "./package-restore.js"

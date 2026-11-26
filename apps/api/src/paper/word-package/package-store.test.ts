@@ -16,7 +16,7 @@ import {
   type Backend,
 } from "../../test/registry-formal-support.js"
 import { fixturePackage, paragraph } from "./package-fixtures.js"
-import { archiveDigest, decodePackageCursor } from "../package-pages.js"
+import { archiveDigest, decodePackageCursor } from "./package-pages.js"
 import {
   exportWordPackage,
   listWordPackages,

@@ -19,6 +19,7 @@ flowchart TD
     p_apps_api_src_inbox["apps/api/src/inbox"]
     p_apps_api_src_job["apps/api/src/job"]
     p_apps_api_src_paper["apps/api/src/paper"]
+    p_apps_api_src_paper_word_package["apps/api/src/paper/word-package"]
     p_apps_web_src_features_apply["apps/web/src/features/apply"]
     p_apps_web_src_features_auth["apps/web/src/features/auth"]
     p_apps_web_src_features_coach["apps/web/src/features/coach"]
@@ -98,10 +99,14 @@ flowchart TD
   p_apps_api_src_job --> p_apps_api_src_db
   p_apps_api_src_job --> p_apps_api_src_limits
   p_apps_api_src_job --> p_apps_api_src_platform
+  p_apps_api_src_paper --> p_apps_api_src_paper_word_package
   p_apps_api_src_paper --> p_apps_api_src_registry
   p_apps_api_src_paper --> p_apps_api_src_db
   p_apps_api_src_paper --> p_apps_api_src_limits
   p_apps_api_src_paper --> p_apps_api_src_platform
+  p_apps_api_src_paper_word_package --> p_apps_api_src_registry
+  p_apps_api_src_paper_word_package --> p_apps_api_src_db
+  p_apps_api_src_paper_word_package --> p_apps_api_src_platform
   p_apps_api_src_registry --> p_apps_api_src_db
   p_apps_api_src_registry --> p_apps_api_src_limits
   p_apps_api_src_registry --> p_apps_api_src_platform
@@ -186,7 +191,8 @@ flowchart TD
 | `apps/api/src/job` | feature | index.ts, operations | apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/limits` | platform | index.ts | none | none |
 | `apps/api/src/mail` | platform | none | none | none |
-| `apps/api/src/paper` | feature | index.ts, operations | apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
+| `apps/api/src/paper` | feature | index.ts, operations | apps/api/src/paper/word-package, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
+| `apps/api/src/paper/word-package` | feature | package-candidates.ts, package-canvas.ts, package-card-actions.ts, package-edit.ts, package-errors.ts, package-http.ts, package-list.ts, package-pages.ts, package-start.ts, package-store.ts, word-reading.ts, word/document.ts, word/template.ts | apps/api/src/registry, apps/api/src/db, apps/api/src/platform | none |
 | `apps/api/src/platform` | platform | none | none | none |
 | `apps/api/src/registry` | kernel | none | apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/web/src` | app | none | apps/web/src/features/app-shell, apps/web/src/features/apply, apps/web/src/features/auth, apps/web/src/features/coach, apps/web/src/features/coming-soon, apps/web/src/features/command-palette, apps/web/src/features/connections, apps/web/src/features/inbox, apps/web/src/features/landing, apps/web/src/features/paper, apps/web/src/features/paper/rich-editor, apps/web/src/features/paper-page, apps/web/src/features/seed, apps/web/src/features/settings, apps/web/src/lib, apps/web/src/components | none |

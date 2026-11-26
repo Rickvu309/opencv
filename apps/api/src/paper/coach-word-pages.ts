@@ -6,7 +6,7 @@ import {
   type PaperView,
 } from "@workspace/domain/paper-doc"
 
-import { listPackagePapers } from "./package-list.js"
+import { listPackagePapers } from "./word-package/package-list.js"
 
 const pageFields = paperViewSchema.omit({ paper: true }).strip()
 

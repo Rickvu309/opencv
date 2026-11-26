@@ -13,31 +13,31 @@ import {
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { z } from "zod"
 
-import { withDatabase } from "../db/context.js"
-import { user } from "../db/schema.js"
+import { withDatabase } from "../../db/context.js"
+import { user } from "../../db/schema.js"
 import {
   coachInstructions,
   coachTurnContext,
   createScriptedCoachRuntime,
   resolveTurnGrounding,
-} from "../coach/index.js"
-import { registry } from "../registry/registry.js"
-import { installRegistry } from "../install.js"
+} from "../../coach/index.js"
+import { registry } from "../../registry/registry.js"
+import { installRegistry } from "../../install.js"
 import {
   authHeaders,
   createMigratedTestDb,
   createTestApp,
   signUp,
-} from "../test/harness.js"
-import { seedCoachActor } from "../test/coach-turn.js"
-import { openBackend, type Backend } from "../test/registry-formal-support.js"
-import { readOutline, OUTLINE_MAX_CHARS } from "./outline.js"
-import { fixturePackage, paragraph } from "./word-package/package-fixtures.js"
+} from "../../test/harness.js"
+import { seedCoachActor } from "../../test/coach-turn.js"
 import {
-  publishWordPackage,
-  stageWordPackage,
-} from "./word-package/package-store.js"
-import { apply, open } from "./word-package/word/document.js"
+  openBackend,
+  type Backend,
+} from "../../test/registry-formal-support.js"
+import { readOutline, OUTLINE_MAX_CHARS } from "../outline.js"
+import { fixturePackage, paragraph } from "./package-fixtures.js"
+import { publishWordPackage, stageWordPackage } from "./package-store.js"
+import { apply, open } from "./word/document.js"
 import { readWordOutline, readWordParagraphs } from "./word-reading.js"
 
 let backend: Backend

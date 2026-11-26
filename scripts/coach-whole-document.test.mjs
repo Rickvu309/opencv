@@ -4,6 +4,7 @@ import { readdirSync, readFileSync } from "node:fs"
 import test from "node:test"
 
 import { detect } from "./lib/coach-whole-document.mjs"
+import { pathAtRevision } from "./lib/path-at-revision.mjs"
 
 const mistake = `async function outline(owner, docId) {
   const page = await readWordPackage(owner, { docId })
@@ -49,7 +50,10 @@ test("Coach context never mistakes one paged read for the whole document", () =>
   )
   const historic = execFileSync(
     "git",
-    ["show", "cda2c301:apps/api/src/paper/package-list.ts"],
+    [
+      "show",
+      `cda2c301:${pathAtRevision("cda2c301", "apps/api/src/paper/word-package/package-list.ts")}`,
+    ],
     { encoding: "utf8" }
   )
   assert.equal(detect(historic).length, 1)

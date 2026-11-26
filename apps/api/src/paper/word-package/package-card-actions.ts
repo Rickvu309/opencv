@@ -11,7 +11,7 @@ import {
   paperPackageTrash,
   paperPackageVersions,
 } from "../../db/schema.js"
-import { ownedPackagePaper } from "../package-list.js"
+import { ownedPackagePaper } from "./package-list.js"
 import {
   exportWordPackage,
   publishWordPackage,

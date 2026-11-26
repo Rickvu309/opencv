@@ -16,7 +16,7 @@ import {
   stageWordPackage,
 } from "./word-package/package-store.js"
 import { apply, open } from "./word-package/word/document.js"
-import { readWordOutline } from "./word-reading.js"
+import { readWordOutline } from "./word-package/word-reading.js"
 
 const UNICODE_LINE_BREAK = /\r\n|[\n\v\f\r\u0085\u2028\u2029]/
 const OUTLINE_ROW =
