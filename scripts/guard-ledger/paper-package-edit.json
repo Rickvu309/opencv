@@ -11,7 +11,7 @@
     "path": "apps/api/src/paper/commands.ts",
     "fixed": {
       "rev": "HEAD",
-      "path": "apps/api/src/paper/package-edit.ts"
+      "path": "apps/api/src/paper/word-package/package-edit.ts"
     }
   }
 }

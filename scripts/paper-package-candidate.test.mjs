@@ -60,7 +60,10 @@ test("private Word candidates keep preparation outside SQL and publication in ex
     )
   }
   const source = readFileSync(
-    new URL("../apps/api/src/paper/package-candidates.ts", import.meta.url),
+    new URL(
+      "../apps/api/src/paper/word-package/package-candidates.ts",
+      import.meta.url
+    ),
     "utf8"
   )
   assert.deepEqual(detect(source), [])

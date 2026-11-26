@@ -162,7 +162,10 @@ test("immutable Word storage rejects unfinished heads, projection shadows and fl
   ])
     assert.ok(detect(mutation).length > 0)
   const http = readFileSync(
-    new URL("../apps/api/src/paper/package-http.ts", import.meta.url),
+    new URL(
+      "../apps/api/src/paper/word-package/package-http.ts",
+      import.meta.url
+    ),
     "utf8"
   )
   assert.deepEqual(detect(http, "package-http.ts"), [])

@@ -470,7 +470,7 @@ test("paper.edit does not gain Enter", () => {
   assert.deepEqual(
     detect(
       'const edit = { op: "split" }\n',
-      "apps/api/src/paper/package-canvas.ts"
+      "apps/api/src/paper/word-package/package-canvas.ts"
     ),
     []
   )
