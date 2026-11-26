@@ -1,6 +1,13 @@
 import { undoneActivityRow } from "@/test/control-fixtures.ts"
 import { QueryClient } from "@tanstack/react-query"
-import { parseChatId, parseJobId, parsePaperId } from "@workspace/domain"
+import {
+  emptyRichPaper,
+  nativeProvenance,
+  parseChatId,
+  parseJobId,
+  parsePaperId,
+  RICH_NATIVE_WRITER,
+} from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
@@ -102,10 +109,21 @@ describe("runContractCommand", () => {
 
   it("takes the idempotency key from the contract entry, not the call site", async () => {
     const queryClient = new QueryClient()
-    const bodies = stubFetch({}) as Record<string, unknown>[]
+    const provenance = nativeProvenance(emptyRichPaper("cv"))
+    const bodies = stubFetch({
+      provenance,
+      epoch: 1,
+      revision: 0,
+      reset: false,
+      stale: false,
+      update: "",
+      stateVector: "",
+    }) as Record<string, unknown>[]
 
-    await runContractCommand(queryClient, "paper.save", {
+    await catalogClient.run(queryClient, "paper.save", {
       docId: parsePaperId("01900000-0000-7000-8000-000000000020"),
+      writer: RICH_NATIVE_WRITER,
+      provenance,
       epoch: 0,
       update: "",
       stateVector: "",

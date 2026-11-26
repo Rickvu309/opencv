@@ -2,12 +2,7 @@ import { z } from "zod"
 
 import { commandContract, commandEntry } from "../contract.js"
 import { paperIdSchema, parsePaperId } from "../ids.js"
-import {
-  nativeBasisSchema,
-  nativeWriterSchema,
-  nativeSyncInputSchema,
-  nativeSyncOutputSchema,
-} from "./native.js"
+import { nativeBasisSchema, nativeWriterSchema } from "./native.js"
 import { richEditOutputSchema, richTextEditsSchema } from "./paper-rich-edit.js"
 import { paperCanvasCommitSchema } from "./paper-canvas.js"
 import { paperStartInputSchema } from "./paper-start.js"
@@ -92,20 +87,6 @@ export const paperContract = commandContract({
             },
             ...listChanged(),
           ],
-  }),
-  "paper.save": commandEntry({
-    description:
-      "Exchange admitted native document changes with explicit writer and provenance.",
-    input: nativeSyncInputSchema,
-    output: nativeSyncOutputSchema,
-    idempotency: "none",
-    coach: "never",
-    destructive: false,
-    step: () => "Sync the document",
-    invalidates: (input) => [
-      { query: "paper.outline", input: { docId: input.docId } },
-      ...listChanged(),
-    ],
   }),
 })
 

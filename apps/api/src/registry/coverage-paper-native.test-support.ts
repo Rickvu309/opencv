@@ -32,12 +32,16 @@ import {
 } from "./coverage-helpers.test-support.js"
 
 export function nativePaperCases(tools: CoverageTools): CoverageCase[] {
-  const { db, run, userId } = tools
+  const { db, registry, run, userId } = tools
+  const paperSave = registry
+    .list()
+    .commands.find((command) => command.name === "paper.save")
+  if (!paperSave) throw new Error("Missing Paper save command")
   let document: ReturnType<typeof richPaper> | null = null
   let client: PaperClient<RichPaperDocument> | null = null
   let docId = ""
   const sync = async (sent: Prepared) =>
-    run("paper.save", {
+    run(paperSave.name, {
       docId,
       writer: RICH_NATIVE_WRITER,
       ...sent,
@@ -55,7 +59,7 @@ export function nativePaperCases(tools: CoverageTools): CoverageCase[] {
   let sent: Prepared | null = null
   return [
     {
-      name: "paper.save",
+      name: paperSave.name,
       arrange: async () => {
         const photo = await saveFile({
           userId: parseUserId(userId),
