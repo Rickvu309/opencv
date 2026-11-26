@@ -2,7 +2,7 @@ import {
   inboxThreadSchema,
   type InboxDetail,
   type InboxThread,
-} from "@workspace/domain"
+} from "@workspace/domain/inbox"
 
 import { pathOf } from "./mock-http.ts"
 

@@ -1,9 +1,9 @@
 import type {
   CoachReceiptDetail,
   CoachSelection,
-  CommandEnvelope,
   ReversalDescriptor,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
+import type { CommandEnvelope } from "@workspace/domain/kernel"
 
 export type CoachScriptPart =
   | { kind: "text"; text: string }

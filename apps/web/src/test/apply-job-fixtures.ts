@@ -1,4 +1,4 @@
-import type { JobView } from "@workspace/domain"
+import type { JobView } from "@workspace/domain/apply"
 
 export function mockJob(patch: Partial<JobView> = {}): JobView {
   return {

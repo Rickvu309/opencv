@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen } from "@testing-library/react"
-import { NATIVE_WRITER } from "@workspace/domain"
+import { NATIVE_WRITER } from "@workspace/domain/paper-doc"
 
 import { importPaperFile } from "@/features/paper/paper-api.ts"
 import { paperListQuery } from "@/lib/paper-list.ts"

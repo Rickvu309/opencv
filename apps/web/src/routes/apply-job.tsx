@@ -1,5 +1,5 @@
 import { useParams } from "@tanstack/react-router"
-import { jobIdSchema } from "@workspace/domain"
+import { jobIdSchema } from "@workspace/domain/kernel"
 
 import { ApplyJobDetail } from "@/features/apply/apply-job-detail.tsx"
 

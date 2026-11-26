@@ -5,7 +5,7 @@ import { DESKTOP_MEDIA_QUERY } from "@/lib/use-media-query.ts"
 const STARTER_CV_NAME = "Sample internship CV"
 
 const PAPER_CONTENT_VERSION = 1
-import type { JobStage } from "@workspace/domain"
+import type { JobStage } from "@workspace/domain/apply"
 import { sampleApplyCards } from "@/test/apply-fixtures.ts"
 import { mockJob } from "@/test/apply-job-fixtures.ts"
 import { resetMockJobs, setMockJobs } from "@/test/apply-jobs-mock.ts"

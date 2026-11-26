@@ -1,7 +1,8 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router"
 import { useQuery } from "@tanstack/react-query"
 
-import { LIBRARY_WRITER, parseFileId } from "@workspace/domain"
+import { parseFileId } from "@workspace/domain/kernel"
+import { LIBRARY_WRITER } from "@workspace/domain/paper-doc"
 
 import { catalogClient } from "@/lib/contract-client.ts"
 import { useOwnerId } from "@/lib/owner-id.ts"

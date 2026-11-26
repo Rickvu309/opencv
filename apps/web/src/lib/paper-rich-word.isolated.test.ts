@@ -1,5 +1,8 @@
 import { afterEach, expect, it, vi } from "vitest"
-import { nativeProvenance, RICH_NATIVE_WRITER } from "@workspace/domain"
+import {
+  nativeProvenance,
+  RICH_NATIVE_WRITER,
+} from "@workspace/domain/paper-doc"
 import { storedFlowFixture } from "../../../../packages/paper-crdt/src/test/flow-fixture.ts"
 import { apiRequest } from "./api.ts"
 import { identity } from "./paper-sync-native.fixtures.ts"

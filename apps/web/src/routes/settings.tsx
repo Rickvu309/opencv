@@ -1,7 +1,7 @@
 import { useReducer } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useRouterState } from "@tanstack/react-router"
-import type { ProfileUpdateInput } from "@workspace/domain"
+import type { ProfileUpdateInput } from "@workspace/domain/account"
 
 import { AccountSection } from "@/features/settings/account-section.tsx"
 import { BillingSection } from "@/features/settings/billing-section.tsx"

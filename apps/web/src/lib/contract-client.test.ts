@@ -4,10 +4,10 @@ import {
   QueryObserver,
 } from "@tanstack/react-query"
 import { renderHook, waitFor } from "@testing-library/react"
-import { defineOperation, resourcesOverlap } from "@workspace/domain"
+import { defineOperation, resourcesOverlap } from "@workspace/domain/kernel"
 import { createElement, type PropsWithChildren } from "react"
 import { afterEach, expect, expectTypeOf, it, vi } from "vitest"
-import { z } from "@workspace/domain"
+import { z } from "@workspace/domain/kernel"
 import { createCatalogClient } from "./contract-client.ts"
 
 const read = defineOperation({

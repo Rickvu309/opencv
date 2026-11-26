@@ -1,4 +1,4 @@
-import type { ChatRecord } from "@workspace/domain"
+import type { ChatRecord } from "@workspace/domain/coach"
 
 function iso(day: number) {
   return `2026-08-${String(day).padStart(2, "0")}T12:00:00.000Z`

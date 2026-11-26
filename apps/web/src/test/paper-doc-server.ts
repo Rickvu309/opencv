@@ -1,4 +1,5 @@
-import { blankCv, blankLetter, ERROR_CODES } from "@workspace/domain"
+import { ERROR_CODES } from "@workspace/domain/kernel"
+import { blankCv, blankLetter } from "@workspace/domain/paper-doc"
 import { afterEach, vi } from "vitest"
 import { wordPageReceipt } from "./word-page-receipt.ts"
 

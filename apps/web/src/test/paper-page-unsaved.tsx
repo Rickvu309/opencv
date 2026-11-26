@@ -2,7 +2,7 @@ import "fake-indexeddb/auto"
 
 import { afterEach, beforeEach, vi } from "vitest"
 import { act, cleanup, screen } from "@testing-library/react"
-import type { WordPage } from "@workspace/domain"
+import type { WordPage } from "@workspace/domain/paper-doc"
 
 import { render } from "@/test/render-with-client.tsx"
 
