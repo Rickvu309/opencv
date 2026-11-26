@@ -211,19 +211,3 @@ export function connectionRoutes(`
   )
   assert.ok(detect(mutant).length > 0)
 })
-
-test("the live outside proposal must complete its charged audit", () => {
-  const uncompleted = mutate(
-    liveDoor,
-    `  await transaction(() =>
-    completeDelegateCall(
-      callId,
-      proposed.pending ? "pending" : "success",
-      proposed.pendingActionId
-    )
-  )
-`,
-    ""
-  )
-  assert.ok(detect(uncompleted).length > 0)
-})

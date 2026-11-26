@@ -3,10 +3,6 @@ import { getDb, savepoint } from "../db/context.js"
 import { activity, idempotency } from "../db/schema.js"
 import { createId } from "../platform/id.js"
 import { CommandError, isUniqueViolation } from "../platform/errors.js"
-import {
-  replayFrozenProposal,
-  type StoredReviewedCommand,
-} from "./frozen-review.js"
 import { activityByKey, idempotencyByKey } from "./registry-reads.js"
 import { replay, replayStored } from "./replay.js"
 import type {
@@ -77,16 +73,10 @@ export async function recordCommandResult({
 }
 
 export async function replayByKey(
-  commands: ReadonlyMap<string, StoredCommand>,
-  reviewedFor: (
-    command: StoredCommand,
-    input: unknown
-  ) => StoredReviewedCommand | undefined,
   userId: string,
   key: string,
   command: string,
-  hash: string,
-  input: unknown
+  hash: string
 ) {
   const existing = await activityByKey(userId, key)
   const stored = existing ?? (await idempotencyByKey(userId, key))
@@ -99,18 +89,6 @@ export async function replayByKey(
       ERROR_CODES.CONFLICT,
       "Idempotency key does not match its command and input"
     )
-  const entry = commands.get(command)
-  const reviewed = entry ? reviewedFor(entry, input) : undefined
-  if (!existing && entry?.reviewed) {
-    const proposal = await replayFrozenProposal(
-      stored.result,
-      userId,
-      command,
-      hash,
-      reviewed
-    )
-    if (proposal) return proposal
-  }
   return {
     ...(existing ? replay(existing) : replayStored(stored.result)),
     command: stored.command,
@@ -130,13 +108,12 @@ export async function prepareOutside(
     userId: string,
     key: string,
     name: string,
-    hash: string,
-    input: unknown
+    hash: string
   ) => Promise<ExecuteResult | null>
 ): Promise<ExecuteResult | { ahead: unknown }> {
   if (!command.prepare) return { ahead: undefined }
   if (key && hash) {
-    const earlier = await replay(actor.userId, key, command.name, hash, parsed)
+    const earlier = await replay(actor.userId, key, command.name, hash)
     if (earlier) return earlier
   }
   return { ahead: await command.prepare(parsed, actor) }

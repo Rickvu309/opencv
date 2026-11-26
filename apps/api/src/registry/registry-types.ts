@@ -9,7 +9,6 @@ import type {
   ResourceTouch,
 } from "@workspace/domain/kernel"
 import type { ZodType } from "zod"
-import type { StoredReviewedCommand } from "./frozen-review.js"
 
 export type ProposalBasis<I> = (
   input: I,
@@ -24,8 +23,6 @@ export type RanCommand = {
 }
 
 export type StoredCommand = {
-  reviewed?: StoredReviewedCommand
-  select?: (input: unknown) => "execute" | "reviewed"
   undoOnly?: boolean
   delegate?: DelegateMarker
   name: string

@@ -1,7 +1,0 @@
-{
-  "id": "frozen-review",
-  "file": "scripts/frozen-review.test.mjs",
-  "detector": { "module": "scripts/lib/frozen-review.mjs", "export": "detect" },
-  "historic": null,
-  "reason": "New opt-in frozen-review protocol introduced in this change. There is no introducing ancestor on main for this protocol. Pure mistake and clean fixtures cover frozen identity, publication entry, database-clock replay expiry and preparation before the actual runIntent fence. Actual-source ambient/digest and worker-fence mutants exercise the boundary without a fabricated historical proof."
-}

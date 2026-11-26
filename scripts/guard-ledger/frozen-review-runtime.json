@@ -1,6 +1,0 @@
-{
-  "id": "frozen-review-runtime",
-  "file": "apps/api/src/registry/frozen-review.formal.test.ts",
-  "historic": null,
-  "reason": "New opt-in reviewed binding introduced here, absent from main. This file and frozen-review-task.formal.test.ts cover persisted review, approval identity, keyed replay and the actual runIntent entry point: staging before SQL, stored intent and usage revalidation, terminal intent precedence, final-fence rollback and reusable prepared data after rollback. No historical introducing ancestor exists for this new protocol."
-}
