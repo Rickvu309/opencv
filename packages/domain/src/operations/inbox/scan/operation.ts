@@ -12,6 +12,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Read job emails from the mail provider.",
+  label: "Check your Inbox",
   input: emptyInboxInput,
   publicResult: z
     .object({

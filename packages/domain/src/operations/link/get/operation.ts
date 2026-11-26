@@ -8,6 +8,8 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description: "Read a link host. The page is not fetched.",
+  label: "Read this link",
+  readLabel: "Read this link",
   input: z.object({ url: z.string().trim().min(1).max(2000) }).strict(),
   publicResult: z.object({ url: z.string(), host: z.string() }).strict(),
   coach: "auto",

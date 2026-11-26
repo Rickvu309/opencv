@@ -11,6 +11,8 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description: "Read agent connections",
+  label: "Look at your connections",
+  readLabel: "Looked at your connections",
   input: z.object({}).strict(),
   publicResult: z.array(connectionSchema),
   coach: "never",

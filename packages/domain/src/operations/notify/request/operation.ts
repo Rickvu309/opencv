@@ -12,6 +12,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Ask to hear when a topic is ready.",
+  label: "Set a reminder",
   input: notifyRequestInputSchema,
   publicResult: z
     .object({
