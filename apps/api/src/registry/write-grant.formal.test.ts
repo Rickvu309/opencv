@@ -1,7 +1,11 @@
 import { eq } from "drizzle-orm"
 import { expect, it, vi } from "vitest"
 import * as databaseContext from "../db/context.js"
-import { parseJobId, personActor } from "@workspace/domain/kernel"
+import {
+  jobPriorityResource,
+  parseJobId,
+  personActor,
+} from "@workspace/domain/kernel"
 
 import {
   getDb,
@@ -16,14 +20,12 @@ import { seedCoachActor } from "../test/coach-turn.js"
 import { idOf } from "./coverage-helpers.test-support.js"
 import { installRegistry } from "../install.js"
 import {
-  takePriorityGrant,
+  takeWriteGrant,
   withGrantScope,
   type WriteGrant,
 } from "./write-grant.js"
 
-const admitted = (entityId: string) => [
-  { name: "job.priority", entityId, coachFloor: "confirm" as const },
-]
+const admitted = (entityId: string) => [{ ...jobPriorityResource, entityId }]
 
 it.each([
   "scope",
@@ -65,7 +67,7 @@ it.each([
           await withGrantScope(
             { ownerId, writes: admitted(permitted), expectedRevision: 0 },
             async () => {
-              const grant = takePriorityGrant(permitted)
+              const grant = takeWriteGrant(jobPriorityResource, permitted)
               retained = grant
               if (change === "scope") return
               if (change === "inflight-scope") {
@@ -239,7 +241,7 @@ it("a priority permission works only inside the database transaction that took i
       await withGrantScope({ ownerId: userId, writes: admitted(saved) }, () =>
         transaction(async () => {
           await writePriority(
-            takePriorityGrant(saved),
+            takeWriteGrant(jobPriorityResource, saved),
             parseJobId(saved),
             "high"
           )
@@ -257,7 +259,7 @@ it("a priority permission works only inside the database transaction that took i
           async () => {
             expect(insideTransaction()).toBe(false)
             await writePriority(
-              takePriorityGrant(plain),
+              takeWriteGrant(jobPriorityResource, plain),
               parseJobId(plain),
               "high"
             )
@@ -274,7 +276,7 @@ it("a priority permission works only inside the database transaction that took i
         { ownerId: userId, writes: admitted(plain) },
         async () => {
           await transaction(async () => {
-            carried.grant = takePriorityGrant(plain)
+            carried.grant = takeWriteGrant(jobPriorityResource, plain)
           })
           const grant = carried.grant
           if (!grant) throw new Error("missing grant")
@@ -294,7 +296,7 @@ it("a priority permission works only inside the database transaction that took i
         async () => {
           await expect(
             transaction(async () => {
-              rolled.grant = takePriorityGrant(plain)
+              rolled.grant = takeWriteGrant(jobPriorityResource, plain)
               await writePriority(rolled.grant, parseJobId(plain), "high")
               throw new Error("undo")
             })
@@ -383,7 +385,7 @@ it.each([
               }>
             } = {}
             const run = async () => {
-              const grant = takePriorityGrant(jobId)
+              const grant = takeWriteGrant(jobPriorityResource, jobId)
               const client = getDb()
               const pendingWrite =
                 completion === "inflight"

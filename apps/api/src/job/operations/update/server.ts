@@ -1,8 +1,9 @@
 import { jobPatchSchema, jobViewSchema } from "@workspace/domain/apply"
+import { jobPriorityResource } from "@workspace/domain/kernel"
 import { operation } from "@workspace/domain/operations/job/update"
 import { z } from "zod"
 import type { OperationBinding } from "../../../registry/bind.js"
-import { takePriorityGrant } from "../../../registry/write-grant.js"
+import { takeWriteGrant } from "../../../registry/write-grant.js"
 import { updateJob } from "../../board.js"
 import { priorityRevision, writePriority } from "../../store.js"
 import { jobUnchangedSince } from "../../undo-guards.js"
@@ -22,7 +23,7 @@ export const implementation = {
     const saved = await updateJob(actor, input.jobId, input.patch)
     if (input.patch.priority === undefined) return saved
     const written = await writePriority(
-      takePriorityGrant(input.jobId),
+      takeWriteGrant(jobPriorityResource, input.jobId),
       input.jobId,
       input.patch.priority
     )

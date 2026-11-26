@@ -1,9 +1,12 @@
 export type CoachAccess = "auto" | "confirm" | "never"
 
+export type VersionedResource = { field: string; holder: string }
+
 export type ResourceRef = {
   name: string
   coachFloor: CoachAccess
   entityId?: string
+  versioned?: VersionedResource
 }
 
 export type ResourceTouch = { ownerId: string; name: string; entityId?: string }
@@ -25,6 +28,7 @@ export function resourcesOverlap(
 export const jobPriorityResource = {
   name: "job.priority",
   coachFloor: "confirm",
+  versioned: { field: "priority", holder: "job" },
 } as const satisfies ResourceRef
 
 export const paperLabelResource = {

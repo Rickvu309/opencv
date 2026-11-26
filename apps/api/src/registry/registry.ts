@@ -51,7 +51,7 @@ import {
 } from "./command-execution.js"
 import { assertReversal } from "./bind.js"
 import { RegistryEntries } from "./registry-entries.js"
-import { withGrantScope } from "./write-grant.js"
+import { versionedWrite, withGrantScope } from "./write-grant.js"
 import {
   checkPreparationTask,
   checkReviewActor,
@@ -511,13 +511,11 @@ export class Registry extends RegistryEntries {
       )
         return refuseFrozenReview()
       if (frozen) await consumeFrozenReservation(frozen)
-      const checksPriority = (stored?.writes?.(row.input) ?? []).some(
-        (write) => write.name === "job.priority"
-      )
-      if (checksPriority && row.basisRevision === null)
+      const versioned = versionedWrite(stored?.writes?.(row.input) ?? [])
+      if (versioned && row.basisRevision === null)
         throw new CommandError(
           ERROR_CODES.CONFLICT,
-          "This confirmation has no priority version, so nothing was changed"
+          `This confirmation has no ${versioned.field} version, so nothing was changed`
         )
       const result = await this.execute({
         name: row.command,
@@ -532,7 +530,7 @@ export class Registry extends RegistryEntries {
           : {}),
         [taskExecution]: !!task,
         [confirmed]: true,
-        expectedRevision: checksPriority ? row.basisRevision : null,
+        expectedRevision: versioned ? row.basisRevision : null,
       })
       await getDb()
         .update(pendingActions)

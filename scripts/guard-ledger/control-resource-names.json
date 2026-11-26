@@ -1,0 +1,18 @@
+{
+  "id": "control-resource-names",
+  "file": "scripts/control-resource-names.test.mjs",
+  "detector": {
+    "module": "scripts/lib/control-resource-names.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "99d604eb3d1b7a80b055d96aa65d676f5286823d",
+    "path": "apps/api/src/registry/write-grant.ts",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/api/src/registry/write-grant.ts"
+    }
+  },
+  "reason": "Caught by the X-2 drill. Introduced by 99d604eb3, where Control's write grant named Apply's job.priority resource by hand, against ADR 0007. detect fires on that file and stays quiet once Control grants any resource the contract marks as versioned."
+}
