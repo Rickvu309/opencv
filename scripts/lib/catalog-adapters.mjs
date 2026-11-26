@@ -429,8 +429,7 @@ export function detectPublication(value) {
       walk(source, (node) => {
         if (
           ts.isCallExpression(node) &&
-          spelling(node, source) ===
-            "assertReversal(command.name,this.isCatalogOperation(command.name),ran)"
+          spelling(node, source) === "assertReversal(ran)"
         )
           guarded = true
       })
@@ -510,7 +509,7 @@ export function detectPublication(value) {
           if (
             ts.isIfStatement(node) &&
             spelling(node.expression, source) ===
-              "result.reversal&&(!result.reversal.expect||!Object.keys(result.reversal.expect.matches).length)&&(catalog||!REVERSAL_EXPECT_PENDING.commands.some((name)=>name===command))" &&
+              "result.reversal&&(!result.reversal.expect||!Object.keys(result.reversal.expect.matches).length)" &&
             ts.isThrowStatement(node.thenStatement)
           )
             guarded = true

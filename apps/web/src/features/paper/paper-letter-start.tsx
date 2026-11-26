@@ -316,7 +316,7 @@ export function PaperLetterStart({
 
   async function startBlank() {
     try {
-      onCreated(await openBlankPage(run, "letter"))
+      onCreated(await openBlankPage(queryClient, "letter"))
     } catch (err) {
       dispatch({
         type: "blank_failed",

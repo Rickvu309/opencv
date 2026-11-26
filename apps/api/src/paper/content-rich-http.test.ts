@@ -4,6 +4,7 @@ import {
   NATIVE_WRITER,
   RICH_NATIVE_WRITER,
   paperPhotoRef,
+  catalog,
   paperDocumentInfoSchema,
   parseUserId,
 } from "@workspace/domain"
@@ -115,7 +116,7 @@ it("saves and reopens rich CVs and Letters over authenticated HTTP without legac
           input: { kind },
           actor: store.actor,
         })
-        const view = paperDocumentInfoSchema.parse(result.output)
+        const view = catalog["paper.create"].publicResult.parse(result.output)
         await getDb()
           .update(paperDocs)
           .set(seedColumns(kind, document))

@@ -1,7 +1,7 @@
 import { parsePaperId } from "@workspace/domain"
 import { operation } from "@workspace/domain/operations/paper/recover"
 import type { OperationBinding } from "../../../registry/bind.js"
-import { relinkJobs } from "../../card-action-commands.js"
+import { relinkJobs } from "../../relink-jobs.js"
 import { restoreDeletedPaper } from "../../store.js"
 
 export const implementation = {

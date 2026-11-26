@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen } from "@testing-library/react"
+import { NATIVE_WRITER } from "@workspace/domain"
 
 import { importPaperFile, paperListKey } from "@/features/paper/paper-api.ts"
 import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
@@ -120,8 +121,9 @@ const CREATORS: Record<string, Creator> = {
     format: word,
     make: async (server, client) =>
       idOf(
-        await runContractCommand(client, "paper.duplicate", {
-          docId: server.add("word").id as never,
+        await catalogClient.run(client, "paper.duplicate", {
+          docId: server.add("word").id,
+          writer: NATIVE_WRITER,
         })
       ),
   },

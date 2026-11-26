@@ -309,7 +309,7 @@ export class Registry extends RegistryEntries {
                 return reviewed.run(parsed, frozen, actor, locked)
               }
             )
-      assertReversal(command.name, this.isCatalogOperation(command.name), ran)
+      assertReversal(ran)
       return recordCommandResult({
         command,
         actor,

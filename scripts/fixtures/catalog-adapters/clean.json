@@ -22,7 +22,7 @@
     ],
     [
       "apps/api/src/registry/bind.ts",
-      "const bound = { read: async (input, actor) => operation.publicResult.parse(await binding.execute(input, actor)) }; function assertReversal(command, catalog, result) { if (result.reversal && (!result.reversal.expect || !Object.keys(result.reversal.expect.matches).length) && (catalog || !REVERSAL_EXPECT_PENDING.commands.some((name) => name === command))) throw new Error(\"Reversals require a guarded expectation\"); }"
+      "const bound = { read: async (input, actor) => operation.publicResult.parse(await binding.execute(input, actor)) }; function assertReversal(result) { if (result.reversal && (!result.reversal.expect || !Object.keys(result.reversal.expect.matches).length)) throw new Error(\"Reversals require a guarded expectation\"); }"
     ],
     [
       "packages/domain/src/operation.ts",
@@ -30,7 +30,7 @@
     ],
     [
       "apps/api/src/registry/registry.ts",
-      "class Registry { async execute() { const ran = await command.run(parsed, actor); assertReversal(command.name, this.isCatalogOperation(command.name), ran); return ran; } }"
+      "class Registry { async execute() { const ran = await command.run(parsed, actor); assertReversal(ran); return ran; } }"
     ],
     [
       "apps/web/src/features/apply/apply-api.ts",

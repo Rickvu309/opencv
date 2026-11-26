@@ -1,6 +1,0 @@
-{
-  "id": "undo-expectation-pending-list",
-  "file": "apps/api/src/registry/expect-pending.test.ts",
-  "historic": null,
-  "reason": "it pins the list of commands exempt from the undo expectation, added in this change; no earlier mistake to prove yet"
-}

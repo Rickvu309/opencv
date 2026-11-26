@@ -104,12 +104,6 @@ export function typeProbes(registry: Registry) {
   // @ts-expect-error an expectation that matches no field would never refuse
   const emptyExpectation: ReversalGuard = { query: "paper.read", input: { view: "trash", docId: someDocId }, matches: {}, skipped: "x" }
 
-  const pendingRestore: Bindings<PaperContract>["paper.duplicate"]["reversal"] =
-    () => ({
-      command: "paper.delete",
-      input: { docId: parsePaperId(uuid) },
-    })
-
   // prettier-ignore
   // @ts-expect-error unknown inbox command name
   const unknownInbox = commands["inbox.nope"]
@@ -184,7 +178,6 @@ export function typeProbes(registry: Registry) {
     unguardedMove,
     wrongExpectation,
     emptyExpectation,
-    pendingRestore,
     unknownName,
     oldStage,
     paperAsJob,

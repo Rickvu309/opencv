@@ -17,12 +17,7 @@ import type {
   OperationOutput,
   ResourceTouch,
 } from "@workspace/domain"
-import {
-  catalog,
-  NATIVE_WRITER,
-  commands,
-  resourcesOverlap,
-} from "@workspace/domain"
+import { catalog, commands, resourcesOverlap } from "@workspace/domain"
 
 import { z } from "@workspace/domain"
 import { endpoints } from "@/lib/requests.ts"
@@ -72,17 +67,6 @@ function isPending(output: unknown) {
   return pendingSchema.safeParse(output)
 }
 
-function paperCommandInput(name: string, input: unknown) {
-  if (
-    name === "paper.duplicate" &&
-    input !== null &&
-    typeof input === "object" &&
-    !("writer" in input)
-  )
-    return { ...input, writer: NATIVE_WRITER }
-  return input
-}
-
 export async function runContractCommand<N extends ContractCommandName>(
   queryClient: QueryClient,
   name: N,
@@ -94,7 +78,7 @@ export async function runContractCommand<N extends ContractCommandName>(
   >(`/api/commands/${name}`, {
     method: "POST",
     body: JSON.stringify({
-      input: paperCommandInput(name, input),
+      input,
       ...((commands[name] as AnyCommandEntry).idempotency === "none"
         ? {}
         : { idempotencyKey: options.idempotencyKey ?? crypto.randomUUID() }),

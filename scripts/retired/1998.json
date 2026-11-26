@@ -1,0 +1,74 @@
+[
+  {
+    "subject": "apps/api/src/registry/expect-pending.test.ts",
+    "because": "paper.create and paper.duplicate became operation pairs whose Undo carries a guarded expectation, so the temporary exemption list it pinned is deleted with it. Its one unrelated case, an expectation that matches no field refuses the Undo, moved to expectation.formal.test.ts unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 20
+  },
+  {
+    "subject": "apps/api/src/registry/registry.undo-later.formal.test.ts",
+    "because": "paper.create and paper.duplicate no longer erase a later rename on Undo, so the known-violation list is empty and the test now requires that no command erases a later change. The check that each known violation sat on the exemption list goes with the deleted list.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/api/src/paper/reset-paper.test.ts",
+    "because": "paper.create now carries a guarded Undo. After the reset deletes the Paper, its receipt shows as not undoable and Undo is refused as a conflict instead of failing on a missing document; the test checks the new answers.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/api/src/registry/private-output-keys.test.ts",
+    "because": "No remaining legacy command output contains contentVersion now that paper.create and paper.duplicate are pairs. The sanity check that the key walk reaches into union outputs now looks for editId in paper.edit's union output.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/lib/paper-command-input.test.ts",
+    "because": "The web client's shim that filled in a writer for paper.duplicate is deleted; the library now sends the writer itself through the catalog. The two cases that tested the shim go with it, and paper.create leaves the list of commands sent unchanged because it is no longer a legacy command.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "scripts/fixtures/catalog-adapters/clean.json",
+    "because": "The clean fixture follows the simplified Undo guard: assertReversal(ran) refuses every reversal without a non-empty expectation, with no exemption list. The detector pins the new spelling and its mutation test still fires.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "scripts/guard-ledger/undo-expectation-pending-list.json",
+    "because": "The ledger row for expect-pending.test.ts goes with the deleted exemption list; the row had no historic proof.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-blank-canvas.test.mjs",
+    "because": "The rich blank creation path moved from commands.ts into the paper.create pair and createPaper. The guard now checks that createPaper defaults to emptyRichPaper and the rich writer, that the pair passes only kind and name, and that the dialog still sends kind and format rich.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/lib/contract-client.test.tsx",
+    "because": "paper.create is now an operation pair, so the generic legacy-command cases move to paper.start, which is still legacy; the expectations are the same, with paper.list refreshed and a read the command does not name left fresh.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  }
+]

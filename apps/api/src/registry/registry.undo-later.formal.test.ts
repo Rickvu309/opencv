@@ -18,7 +18,6 @@ import {
 import { flag, idOf, list, text } from "./coverage-helpers.test-support.js"
 import { coverageCases } from "./coverage-setup.test-support.js"
 import { undoKeyFor } from "./expectation.js"
-import { REVERSAL_EXPECT_PENDING } from "./expect-pending.js"
 import type { ExecuteResult } from "./registry.js"
 
 registerBackendHooks()
@@ -316,8 +315,6 @@ const laterIds: { focusId?: string; docId?: string } = {}
 
 const OWN_UNDO_GUARD = ["paper.edit"]
 
-const KNOWN_VIOLATIONS = ["paper.create", "paper.duplicate"]
-
 type Verdict = "refused" | "kept" | "erased"
 
 async function undoAfterLater(
@@ -407,14 +404,7 @@ describe("P4: undoing an action after a later change never erases the later chan
         .filter(([, verdict]) => verdict === "erased")
         .map(([name]) => name)
         .sort()
-      expect(erased, "commands whose Undo erased a later change").toEqual(
-        [...KNOWN_VIOLATIONS].sort()
-      )
-      for (const name of KNOWN_VIOLATIONS) {
-        expect(REVERSAL_EXPECT_PENDING.commands as readonly string[]).toContain(
-          name
-        )
-      }
+      expect(erased, "commands whose Undo erased a later change").toEqual([])
     })
   }, 120_000)
 

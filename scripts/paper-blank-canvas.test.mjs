@@ -208,16 +208,20 @@ test("the rich blank is one empty paragraph with no header, photo, table or form
 
 test("the rich blank creation path uses the factory and the full editor command", () => {
   assert.match(
-    read("apps/api/src/paper/commands.ts"),
-    /emptyRichPaper\(input.kind\)/
+    read("apps/api/src/paper/store.ts"),
+    /input\.paper \?\? emptyRichPaper\(input\.kind\)/
   )
   assert.match(
-    read("apps/api/src/paper/commands.ts"),
-    /RICH_NATIVE_WRITER : undefined/
+    read("apps/api/src/paper/store.ts"),
+    /writer: NativeWriter = RICH_NATIVE_WRITER/
+  )
+  assert.match(
+    read("apps/api/src/paper/operations/create/server.ts"),
+    /createPaper\(actor, \{\s*kind: input\.kind,\s*name: input\.name,\s*\}\)/
   )
   assert.match(
     read("apps/web/src/features/paper/paper-new-dialog.tsx"),
-    /"paper.create", \{ kind, format: "rich" \}/
+    /"paper\.create", \{\s*kind,\s*format: "rich",\s*\}/
   )
 })
 

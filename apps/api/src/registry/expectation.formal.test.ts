@@ -9,7 +9,7 @@ import {
   backend,
   registerBackendHooks,
 } from "../test/registry-formal-support.js"
-import { laterLiveAction } from "./expectation.js"
+import { laterLiveAction, staleExpectation } from "./expectation.js"
 
 registerBackendHooks()
 
@@ -72,5 +72,17 @@ describe("laterLiveAction orders by the stored microsecond timestamp", () => {
       await moveAt(userId, "2026-11-03T10:00:00.123789Z")
       expect(await laterLiveAction(first)).toBe(SKIPPED)
     })
+  })
+})
+
+describe("an expectation that matches no field", () => {
+  it("refuses the undo instead of passing it", async () => {
+    const answer = await staleExpectation(async () => ({ stage: "saved" }), {
+      query: "job.get",
+      input: {},
+      matches: {},
+      skipped: "Undo was skipped",
+    })
+    expect(answer).toBe("Undo was skipped")
   })
 })

@@ -50,9 +50,9 @@ describe("public command output", () => {
         outputKeys(entry.output),
       ])
     )
-    expect(
-      Object.values(outputs).some((keys) => keys.includes("contentVersion"))
-    ).toBe(true)
+    expect(Object.values(outputs).some((keys) => keys.includes("editId"))).toBe(
+      true
+    )
     expect(publishedReversalKeys(outputs, PRIVATE_OUTPUT_KEYS)).toEqual([])
   })
 })

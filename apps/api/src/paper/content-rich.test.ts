@@ -4,7 +4,7 @@ import {
   NATIVE_WRITER,
   RICH_NATIVE_WRITER,
   paperPhotoRef,
-  paperDocumentInfoSchema,
+  catalog,
   parseUserId,
   parsePaperId,
   richPaperDocumentSchema,
@@ -53,14 +53,14 @@ async function seeded(kind: "cv" | "letter") {
     purpose: "avatar",
   })
   const document = richPaper(kind, paperPhotoRef(file.id))
-  const view = paperDocumentInfoSchema.parse(
+  const view = catalog["paper.create"].publicResult.parse(
     (await execute("paper.create", { kind })).output
   )
   await getDb()
     .update(paperDocs)
     .set(seedColumns(kind, document))
     .where(eq(paperDocs.id, view.id))
-  return { docId: view.id, document, fileId: file.id }
+  return { docId: parsePaperId(view.id), document, fileId: file.id }
 }
 async function snapshot(docId: string) {
   const [row] = await getDb()

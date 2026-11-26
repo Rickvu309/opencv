@@ -1,7 +1,7 @@
 import { z } from "zod"
 
 import { commandContract, commandEntry } from "../contract.js"
-import { jobIdSchema, paperIdSchema, parsePaperId } from "../ids.js"
+import { paperIdSchema, parsePaperId } from "../ids.js"
 import {
   nativeBasisSchema,
   nativeWriterSchema,
@@ -16,18 +16,9 @@ import {
   paperPackageEditsSchema,
 } from "./paper-package.js"
 import { wordConfirmedOpsSchema } from "./paper-word.js"
-import {
-  paperDocNameSchema,
-  paperDuplicateInputSchema,
-  paperStoredKindSchema,
-} from "./paper.js"
 import type { QueryRef } from "../queries.js"
 
 export * from "./paper-contract-views.js"
-import {
-  paperDocumentInfoSchema,
-  paperViewSchema,
-} from "./paper-contract-views.js"
 
 type DocInput = { docId: z.output<typeof paperIdSchema> }
 
@@ -38,26 +29,7 @@ const docChanged = (input: DocInput): QueryRef[] => [
   ...listChanged(),
 ]
 
-const paperCreateInputSchema = z
-  .object({
-    kind: paperStoredKindSchema,
-    format: z.literal("rich").optional(),
-    name: paperDocNameSchema.optional(),
-    jobId: jobIdSchema.optional(),
-  })
-  .strict()
-
 export const paperContract = commandContract({
-  "paper.create": commandEntry({
-    description:
-      "Create a CV or letter. The new document is one empty paragraph that opens the full editor.",
-    input: paperCreateInputSchema,
-    output: z.union([paperViewSchema, paperDocumentInfoSchema]),
-    coach: "never",
-    destructive: false,
-    step: (input) => `Create a ${input.kind === "cv" ? "CV" : "letter"}`,
-    invalidates: listChanged,
-  }),
   "paper.start": commandEntry({
     description:
       "Start a new CV or Letter as a Word page. A CV starts from a template whose lines are bracketed placeholders such as [Your name] under fixed headings; a Letter starts blank. Pass jobId when it is for a Job. The person approves the new page first, because a Word page cannot be deleted yet. It writes none of your words: after it is made, read the page with paper.outline and propose its words with paper.edit, which the person approves. Replace a placeholder only with facts the person gave in their Profile or this Chat; never invent experience or qualifications.",
@@ -134,17 +106,6 @@ export const paperContract = commandContract({
       { query: "paper.outline", input: { docId: input.docId } },
       ...listChanged(),
     ],
-  }),
-  "paper.duplicate": commandEntry({
-    description: "Duplicate a document.",
-    input: paperDuplicateInputSchema.extend({
-      writer: nativeWriterSchema.optional(),
-    }),
-    output: paperViewSchema,
-    coach: "auto",
-    destructive: false,
-    step: () => "Duplicate the document",
-    invalidates: listChanged,
   }),
 })
 
