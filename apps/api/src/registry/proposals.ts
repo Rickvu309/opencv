@@ -10,7 +10,11 @@ import { createId } from "../platform/id.js"
 
 import { requireLiveDelegate } from "./delegate-policy.js"
 import { CommandError } from "../platform/errors.js"
-import { chatForDelegateProposals, lockTaskApproval } from "./proposal-hosts.js"
+import {
+  chatForDelegateProposals,
+  lockTaskApproval,
+  type ProposalRead,
+} from "./proposal-hosts.js"
 import { inputHash } from "./receipt.js"
 import type { FrozenReview } from "./frozen-review.js"
 
@@ -31,6 +35,7 @@ export function createProposal(options: {
   summary: string
   basisRevision: number | null
   frozenReview?: FrozenReview
+  read?: ProposalRead
 }) {
   return transaction(() => savepoint(() => insertProposal(options)))
 }
@@ -42,6 +47,7 @@ async function insertProposal(options: {
   summary: string
   basisRevision: number | null
   frozenReview?: FrozenReview
+  read?: ProposalRead
 }) {
   const { actor, command, input, summary, basisRevision } = options
   const id = options.frozenReview?.proposalId ?? createId()
@@ -89,7 +95,8 @@ async function insertProposal(options: {
     await chatForDelegateProposals().show(
       id,
       actor.userId,
-      options.frozenReview?.review
+      options.frozenReview?.review,
+      options.read
     )
   return {
     pending: true as const,

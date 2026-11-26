@@ -369,6 +369,8 @@ export class Registry extends RegistryEntries {
           input: parsed,
           summary: command.step(parsed),
           basisRevision: (await command.basis?.(parsed, actor)) ?? null,
+          read: (query, input) =>
+            this.read(query, input, personActor(actor.userId)),
         })
       }
 

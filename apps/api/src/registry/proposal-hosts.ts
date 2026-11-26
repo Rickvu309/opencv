@@ -25,8 +25,15 @@ export type DelegateProposalChat = {
     userId: string
     connectedAt: Date
   }) => Promise<void>
-  show: (proposalId: string, userId: string, review?: unknown) => Promise<void>
+  show: (
+    proposalId: string,
+    userId: string,
+    review?: unknown,
+    read?: ProposalRead
+  ) => Promise<void>
 }
+
+export type ProposalRead = (name: string, input: unknown) => Promise<unknown>
 
 let taskApprovalLock: TaskApprovalLock | null = null
 let delegateProposalChat: DelegateProposalChat | null = null
