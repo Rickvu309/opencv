@@ -1,13 +1,11 @@
 import { undoneActivityRow } from "@/test/control-fixtures.ts"
 import { QueryClient } from "@tanstack/react-query"
+import { parseChatId, parseJobId, parsePaperId } from "@workspace/domain/kernel"
 import {
   emptyRichPaper,
   nativeProvenance,
-  parseChatId,
-  parseJobId,
-  parsePaperId,
   RICH_NATIVE_WRITER,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {

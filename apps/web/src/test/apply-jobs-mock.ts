@@ -4,10 +4,10 @@ import type {
   JobPreview,
   JobStage,
   JobView,
-} from "@workspace/domain"
+} from "@workspace/domain/apply"
 
 import { undoneActivityRow } from "@/test/control-fixtures.ts"
-import type { ActivityFeedRow } from "@workspace/domain"
+import type { ActivityFeedRow } from "@workspace/domain/account"
 
 import type { ChecklistItem } from "@/features/apply/apply-api.ts"
 import { jsonError, jsonOk, pathOf } from "./mock-http.ts"

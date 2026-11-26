@@ -1,4 +1,4 @@
-import { startPageSchema, type StartPage } from "@workspace/domain"
+import { startPageSchema, type StartPage } from "@workspace/domain/account"
 
 export const SURFACES = [
   {

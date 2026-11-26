@@ -4,7 +4,8 @@ import { useReducer } from "react"
 import { useShortcut } from "@/lib/use-shortcut.ts"
 import { useQuery } from "@tanstack/react-query"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
-import type { JobId, JobStage, JobView } from "@workspace/domain"
+import type { JobStage, JobView } from "@workspace/domain/apply"
+import type { JobId } from "@workspace/domain/kernel"
 
 import { Button } from "@workspace/ui/components/button"
 

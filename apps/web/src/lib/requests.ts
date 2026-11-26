@@ -1,4 +1,4 @@
-import { fileIdSchema } from "@workspace/domain"
+import { fileIdSchema } from "@workspace/domain/kernel"
 
 import { apiBaseUrl } from "@/lib/api-url.ts"
 

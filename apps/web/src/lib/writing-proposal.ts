@@ -1,5 +1,8 @@
 import { useSyncExternalStore } from "react"
-import { wordConfirmedOpsSchema, wordReviewSchema } from "@workspace/domain"
+import {
+  wordConfirmedOpsSchema,
+  wordReviewSchema,
+} from "@workspace/domain/paper-doc"
 
 import { notifyWritingRefresh } from "@/lib/writing-refresh.ts"
 

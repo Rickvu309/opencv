@@ -1,5 +1,5 @@
 import { QueryClient, QueryObserver } from "@tanstack/react-query"
-import { parseJobId } from "@workspace/domain"
+import { parseJobId } from "@workspace/domain/kernel"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { paperListQuery } from "./paper-list.ts"
 

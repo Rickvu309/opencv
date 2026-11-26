@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
-import { nativeProvenance } from "@workspace/domain"
+import { nativeProvenance } from "@workspace/domain/paper-doc"
 import {
   emptyUpdate,
   openRichPaperClient,

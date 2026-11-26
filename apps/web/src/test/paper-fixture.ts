@@ -1,4 +1,4 @@
-import { paperDocumentSchema } from "@workspace/domain"
+import { paperDocumentSchema } from "@workspace/domain/paper-doc"
 import { openPaperClient, seedYDoc } from "@workspace/paper-crdt"
 
 export type FixtureBlock = {

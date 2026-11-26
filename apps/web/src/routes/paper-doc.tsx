@@ -4,10 +4,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import {
   ERROR_CODES,
   catalog,
-  RICH_NATIVE_WRITER,
   paperIdSchema,
   parsePaperId,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
+import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 
 import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"

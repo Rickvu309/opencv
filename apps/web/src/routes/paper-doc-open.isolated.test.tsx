@@ -1,4 +1,5 @@
-import { blankCv, ERROR_CODES } from "@workspace/domain"
+import { ERROR_CODES } from "@workspace/domain/kernel"
+import { blankCv } from "@workspace/domain/paper-doc"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen } from "@testing-library/react"

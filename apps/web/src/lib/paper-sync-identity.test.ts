@@ -1,5 +1,5 @@
 import { expect, it } from "vitest"
-import { NATIVE_WRITER } from "@workspace/domain"
+import { NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import {
   requireNativeIdentity,
   nativeRecoveryScope,

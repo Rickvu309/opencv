@@ -4,7 +4,7 @@ import {
   canonicalPaper,
   nativeProvenance,
   RICH_NATIVE_WRITER,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import {
   absorbUpdate,
   emptyUpdate,
