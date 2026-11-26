@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "scripts/parser-off-request-thread.test.mjs",
+    "because": "The import files moved into apps/api/src/paper/import/, so the test-file fixture path names the new folder; the expectation is unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
