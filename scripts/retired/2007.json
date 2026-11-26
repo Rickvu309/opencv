@@ -14,5 +14,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/lib/contract-client.test.ts",
+    "because": "The legacy runner is deleted, so the workspace-touch and explicit-key replay cases run through the fixture catalog client instead: a workspace touch refreshes only its owner's reads, a proposal or failed request refreshes nothing, and an explicit key is replayed while changed input gets a fresh key.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
   }
 ]
