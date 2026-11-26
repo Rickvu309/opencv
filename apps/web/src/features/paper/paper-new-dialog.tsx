@@ -29,14 +29,14 @@ export async function openTemplatePage(
   queryClient: QueryClient,
   templateId: PaperTemplateId
 ) {
-  const created = await catalogClient.run(queryClient, "paper.canvas", {
-    op: "mint",
-    label: "cv",
+  const created = await catalogClient.run(queryClient, "paper.create", {
+    kind: "cv",
+    format: "rich",
     templateId,
   })
   if ("pending" in created)
     throw new Error("Could not create this Paper. Try again.")
-  return created.docId
+  return created.id
 }
 
 type CreateState = { pending: boolean; error: string | null }

@@ -158,7 +158,7 @@ const CASES: Record<string, Maker> = {
     )
   },
   "Coach start (paper.start)": async (app, owner) =>
-    word(
+    rich(
       docIdOf(
         await command(app, owner, "paper.start", {
           kind: "cv",
@@ -252,6 +252,7 @@ const CASES: Record<string, Maker> = {
 }
 
 const RICH_CASES = [
+  "Coach start (paper.start)",
   "Rich document (paper.create)",
   "Duplicate a rich document (paper.duplicate)",
   "Import a Word file",
@@ -279,6 +280,7 @@ const CREATOR_EXPORTS: Record<string, string[]> = {
     "Import a Word file",
     "Import a PDF",
     "Import a text file",
+    "Coach start (paper.start)",
   ],
 }
 

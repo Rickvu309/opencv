@@ -17,8 +17,8 @@ afterEach(() => {
 })
 
 describe("Paper new dialog", () => {
-  it("mints a Word page from the chosen template and opens it", async () => {
-    const minted = "dddddddd-dddd-4ddd-8ddd-dddddddddddd"
+  it("creates a Paper from the chosen template and opens it", async () => {
+    const created = "dddddddd-dddd-4ddd-8ddd-dddddddddddd"
     const calls: { url: string; body: unknown }[] = []
     const onMinted = vi.fn()
     vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
@@ -27,32 +27,22 @@ describe("Paper new dialog", () => {
         body: init?.body ? JSON.parse(String(init.body)) : null,
       })
       return Promise.resolve(
-        ok({
-          generation: "package",
-          docId: minted,
-          revision: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
-          name: "Modern CV.docx",
-          kind: "cv",
-          packageHash: "ab".repeat(32),
-          byteSize: 128,
-          incarnation: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
-          restore: null,
-        })
+        ok({ id: created, name: "Modern CV", kind: "cv", format: "rich" })
       )
     })
     render(<Harness onMinted={onMinted} />)
     fireEvent.click(screen.getByRole("button", { name: "CV" }))
     fireEvent.click(screen.getByRole("radio", { name: "Modern" }))
     fireEvent.click(screen.getByRole("button", { name: "Use Modern" }))
-    await vi.waitFor(() => expect(onMinted).toHaveBeenCalledWith(minted))
+    await vi.waitFor(() => expect(onMinted).toHaveBeenCalledWith(created))
     expect(
-      calls.find((call) => call.url.includes("/api/commands/paper.canvas"))
+      calls.find((call) => call.url.includes("/api/commands/paper.create"))
         ?.body
     ).toMatchObject({
-      input: { op: "mint", label: "cv", templateId: "modern" },
+      input: { kind: "cv", format: "rich", templateId: "modern" },
     })
     expect(
-      calls.some((call) => call.url.includes("/api/commands/paper.create"))
+      calls.some((call) => call.url.includes("/api/commands/paper.canvas"))
     ).toBe(false)
   })
 

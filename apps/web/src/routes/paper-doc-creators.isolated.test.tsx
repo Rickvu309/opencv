@@ -81,16 +81,6 @@ const CREATORS: Record<string, Creator> = {
         })
       ),
   },
-  "Coach start": {
-    format: word,
-    make: async (_server, client) =>
-      idOf(
-        await catalogClient.run(client, "paper.start", {
-          kind: "cv",
-          templateId: "modern",
-        })
-      ),
-  },
   "Duplicate an imported page": {
     format: word,
     make: async (server, client) =>

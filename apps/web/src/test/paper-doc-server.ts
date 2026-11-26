@@ -120,8 +120,8 @@ export function fakeServer(
         return ok(wordPageReceipt({ docId: page.id, revision: REVISION }))
       },
       "paper.start": (input) => {
-        const page = add("word", input.kind === "letter" ? "letter" : "cv")
-        return ok(wordPageReceipt({ docId: page.id, revision: REVISION }))
+        const page = add("older", input.kind === "letter" ? "letter" : "cv")
+        return ok({ docId: page.id, name: page.name, kind: page.kind })
       },
       "paper.create": () => ok(view(add("older"))),
       "paper.duplicate": (input) => copyOf(String(input.docId)),

@@ -282,7 +282,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       arrange: async () => {},
       act: () => run(paperStart.name, { kind: "cv" }),
       assert: async (result) => {
-        expect(text(result.output, "generation")).toBe("package")
+        expect(text(result.output, "kind")).toBe("cv")
         expect(text(result.output, "name")).toBe("Simple CV")
         expect(result.reversal).toBeNull()
         const docId = text(result.output, "docId")
@@ -292,7 +292,7 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
           { docId },
           personActor(userId)
         )
-        expect(text(outline, "outline")).toContain("[Your name]")
+        expect(JSON.stringify(outline)).toContain("[Your name]")
       },
     },
     {
