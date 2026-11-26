@@ -1,4 +1,4 @@
-import type { WordAlign, WordForm, WordMark } from "@workspace/domain"
+import type { WordAlign, WordForm, WordMark } from "@workspace/domain/paper-doc"
 
 export type WordPackageLook = {
   styleNames: ReadonlyMap<string, string>
