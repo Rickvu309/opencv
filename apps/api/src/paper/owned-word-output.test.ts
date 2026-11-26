@@ -2,13 +2,16 @@ import { parseUserId } from "@workspace/domain/kernel"
 import { paperPhotoRef } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { expect, it } from "vitest"
-import { withDatabase } from "../../db/context.js"
-import { files, user } from "../../db/schema.js"
-import { createMigratedTestDb } from "../../test/harness.js"
-import { readPackageZip } from "../word-package/package-zip.js"
-import { saveFile } from "../store.js"
-import { compileOwnedLayoutNativeDocx } from "./formatted-owned.js"
-import { paragraph, presentation } from "./formatted.test-support.js"
+import { withDatabase } from "../db/context.js"
+import { files, user } from "../db/schema.js"
+import { createMigratedTestDb } from "../test/harness.js"
+import { readPackageZip } from "./word-package/package-zip.js"
+import { saveFile } from "./store.js"
+import { compileOwnedLayoutNativeDocx } from "./owned-word-output.js"
+import {
+  paragraph,
+  presentation,
+} from "./native-output/formatted.test-support.js"
 
 const bytes = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a6gAAAABJRU5ErkJggg==",
