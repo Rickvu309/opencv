@@ -1,11 +1,10 @@
 import { randomUUID } from "node:crypto"
 
+import { catalog, parseJobId } from "@workspace/domain/kernel"
 import {
-  catalog,
   PAPER_CANVAS_PROFILE,
   paperPackageEditResultSchema,
-  parseJobId,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { operation } from "@workspace/domain/operations/paper/canvas"
 import type { z } from "zod"
 

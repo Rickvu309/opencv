@@ -1,6 +1,6 @@
 import { createRequire } from "node:module"
 
-import type { WordMark, WordParagraph } from "@workspace/domain"
+import type { WordMark, WordParagraph } from "@workspace/domain/paper-doc"
 
 import {
   marksOf,

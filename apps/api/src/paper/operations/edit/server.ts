@@ -1,4 +1,5 @@
-import { catalog, parsePaperId, RICH_NATIVE_WRITER } from "@workspace/domain"
+import { catalog, parsePaperId } from "@workspace/domain/kernel"
+import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { operation } from "@workspace/domain/operations/paper/edit"
 
 import {
