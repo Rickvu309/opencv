@@ -6,5 +6,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-slow-coach.isolated.test.tsx",
+    "because": "The canvas reply is now parsed by the operation's result, so the mock answers with a full Word page receipt whose id is a uuid; the created letter is expected under that id instead of letter-1.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
   }
 ]
