@@ -2,14 +2,13 @@ import { useId, useReducer } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { ArrowUp, Briefcase, Plus } from "lucide-react"
 
+import { type ActivityFeedRow } from "@workspace/domain/account"
 import {
-  catalog,
   jobAddChecklistItemInputSchema,
   jobAddNoteInputSchema,
-  type ActivityFeedRow,
   type JobDetail,
-  type JobId,
-} from "@workspace/domain"
+} from "@workspace/domain/apply"
+import { catalog, type JobId } from "@workspace/domain/kernel"
 import { Button } from "@workspace/ui/components/button"
 import {
   Collapsible,

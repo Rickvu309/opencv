@@ -2,7 +2,7 @@ import {
   defineOperation,
   type AcceptsOperation,
   type Actor,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"
 import { requireStatedBinding, type OperationBinding } from "./bind.js"

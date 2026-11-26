@@ -1,4 +1,5 @@
-import { ERROR_CODES, NATIVE_WRITER, personActor } from "@workspace/domain"
+import { ERROR_CODES, personActor } from "@workspace/domain/kernel"
+import { NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import type { ZodType } from "zod"
 import { describe, expect, it } from "vitest"
 

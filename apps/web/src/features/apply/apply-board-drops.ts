@@ -1,5 +1,5 @@
 import type { QueryClient } from "@tanstack/react-query"
-import type { JobStage, JobView } from "@workspace/domain"
+import type { JobStage, JobView } from "@workspace/domain/apply"
 
 import { refreshCatalogReads } from "@/lib/contract-client.ts"
 

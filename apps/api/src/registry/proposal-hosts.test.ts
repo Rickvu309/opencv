@@ -1,4 +1,4 @@
-import { ERROR_CODES, coachActor } from "@workspace/domain"
+import { ERROR_CODES, coachActor } from "@workspace/domain/kernel"
 import { describe, expect, it } from "vitest"
 
 import type { pendingActions } from "../db/schema.js"

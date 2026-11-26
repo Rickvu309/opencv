@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises"
 
-import type { CoachRuntime } from "@workspace/domain"
+import type { CoachRuntime } from "@workspace/domain/coach"
 
 import type { FetchJobPosting } from "../job/index.js"
 import { PGlite } from "@electric-sql/pglite"

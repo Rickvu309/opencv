@@ -1,4 +1,4 @@
-import { catalog } from "@workspace/domain"
+import { catalog } from "@workspace/domain/kernel"
 import { describe, expect, it } from "vitest"
 import { PRIVATE_OUTPUT_KEYS } from "./http.js"
 

@@ -1,4 +1,4 @@
-import { RICH_NATIVE_WRITER } from "@workspace/domain"
+import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import {

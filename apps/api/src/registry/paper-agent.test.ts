@@ -1,4 +1,4 @@
-import { delegateActorSchema, catalog } from "@workspace/domain"
+import { delegateActorSchema, catalog } from "@workspace/domain/kernel"
 import { expect, it } from "vitest"
 
 import { registeredAgentScopes } from "../connections/index.js"

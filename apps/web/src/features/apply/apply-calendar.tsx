@@ -4,7 +4,8 @@ import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { SegmentedControl } from "@workspace/ui/components/segmented-control"
 
-import { parseJobId, type JobId, type JobView } from "@workspace/domain"
+import { type JobView } from "@workspace/domain/apply"
+import { parseJobId, type JobId } from "@workspace/domain/kernel"
 
 import { catalogClient } from "@/lib/contract-client.ts"
 import { useOwnerId } from "@/lib/owner-id.ts"

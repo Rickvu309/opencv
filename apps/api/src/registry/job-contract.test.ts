@@ -5,7 +5,7 @@ import {
   queries,
   type Actor,
   type Operation,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"

@@ -1,6 +1,4 @@
 import {
-  PAPER_CANVAS_PROFILE,
-  RICH_NATIVE_WRITER,
   coachActor,
   commands,
   catalog,
@@ -10,7 +8,11 @@ import {
   type QueryName,
   type QueryRef,
   type ResourceRef,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
+import {
+  PAPER_CANVAS_PROFILE,
+  RICH_NATIVE_WRITER,
+} from "@workspace/domain/paper-doc"
 import { and, eq, inArray } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 
@@ -30,7 +32,7 @@ import {
 import { createMigratedTestDb } from "../test/harness.js"
 import { coverageCases } from "./coverage-setup.test-support.js"
 import type { Registry } from "./registry.js"
-import type { Actor } from "@workspace/domain"
+import type { Actor } from "@workspace/domain/kernel"
 
 type ReadSpec = {
   query: QueryName

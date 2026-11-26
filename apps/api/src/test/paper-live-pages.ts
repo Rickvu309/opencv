@@ -1,4 +1,4 @@
-import { RICH_NATIVE_WRITER } from "@workspace/domain"
+import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { and, eq } from "drizzle-orm"
 import { expect } from "vitest"
 import { z } from "zod"

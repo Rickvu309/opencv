@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { coachActor, personActor } from "@workspace/domain"
+import { coachActor, personActor } from "@workspace/domain/kernel"
 import { eq } from "drizzle-orm"
 import { expect, it } from "vitest"
 import { z } from "zod"

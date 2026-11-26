@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto"
 
-import {} from "@workspace/domain"
 import {} from "drizzle-orm"
 import { describe, expect, it, vi } from "vitest"
 import { z } from "zod"

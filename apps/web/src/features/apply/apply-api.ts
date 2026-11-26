@@ -1,11 +1,7 @@
 import { readPaperList } from "@/lib/paper-list.ts"
 import { useQuery, type QueryClient } from "@tanstack/react-query"
-import {
-  catalog,
-  type JobDetail,
-  type JobId,
-  type QueryOutput,
-} from "@workspace/domain"
+import { type JobDetail } from "@workspace/domain/apply"
+import { catalog, type JobId, type QueryOutput } from "@workspace/domain/kernel"
 
 import { catalogClient } from "@/lib/contract-client.ts"
 import { useOwnerId } from "@/lib/owner-id.ts"

@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks"
 
-import { ERROR_CODES } from "@workspace/domain"
+import { ERROR_CODES } from "@workspace/domain/kernel"
 
 import { getDb, insideTransaction } from "../db/context.js"
 import { CommandError } from "../platform/errors.js"

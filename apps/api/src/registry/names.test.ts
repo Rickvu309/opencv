@@ -2,11 +2,11 @@ import { readdirSync, readFileSync, statSync } from "node:fs"
 import { dirname, join, relative } from "node:path"
 import { fileURLToPath } from "node:url"
 
+import { chatToolNameSchema } from "@workspace/domain/coach"
 import {
-  chatToolNameSchema,
   jobPriorityResource,
   paperLabelResource,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import { describe, expect, it } from "vitest"
 
 import { registeredAgentScopes } from "../connections/index.js"

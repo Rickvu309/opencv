@@ -4,7 +4,7 @@ import {
   type Actor,
   type ActivityDraft,
   personActor,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import { eq } from "drizzle-orm"
 import { describe, expect, it, vi } from "vitest"
 import { z } from "zod"

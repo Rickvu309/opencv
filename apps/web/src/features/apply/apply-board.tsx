@@ -6,12 +6,8 @@ import {
 } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { Plus } from "lucide-react"
-import {
-  parseJobId,
-  type JobId,
-  type JobStage,
-  type JobView,
-} from "@workspace/domain"
+import { type JobStage, type JobView } from "@workspace/domain/apply"
+import { parseJobId, type JobId } from "@workspace/domain/kernel"
 
 import { Button } from "@workspace/ui/components/button"
 import {

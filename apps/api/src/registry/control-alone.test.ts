@@ -1,4 +1,8 @@
-import { ERROR_CODES, personActor, resourcesOverlap } from "@workspace/domain"
+import {
+  ERROR_CODES,
+  personActor,
+  resourcesOverlap,
+} from "@workspace/domain/kernel"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { z } from "zod"
 

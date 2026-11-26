@@ -1,4 +1,4 @@
-import type { JobView } from "@workspace/domain"
+import type { JobView } from "@workspace/domain/apply"
 
 import { FAINT_TEXT } from "./apply-tone.ts"
 import { deadlineInstant, zonedYmd } from "./apply-stages.ts"

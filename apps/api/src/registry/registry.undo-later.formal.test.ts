@@ -1,9 +1,5 @@
-import {
-  ERROR_CODES,
-  parseUserId,
-  personActor,
-  RICH_NATIVE_WRITER,
-} from "@workspace/domain"
+import { ERROR_CODES, parseUserId, personActor } from "@workspace/domain/kernel"
+import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 

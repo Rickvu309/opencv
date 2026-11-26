@@ -7,7 +7,7 @@ import type {
   ReversalPlan,
   ReversalExpect,
   ResourceTouch,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import type { ZodType } from "zod"
 import type { StoredReviewedCommand } from "./frozen-review.js"
 

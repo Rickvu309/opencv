@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs"
 import { randomUUID } from "node:crypto"
 import { eq, sql } from "drizzle-orm"
 import { expect, it } from "vitest"
-import { delegateActorSchema, personActor } from "@workspace/domain"
+import { delegateActorSchema, personActor } from "@workspace/domain/kernel"
 
 import { getDb, transaction, withDatabase } from "../db/context.js"
 import {
