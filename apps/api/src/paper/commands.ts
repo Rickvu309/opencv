@@ -1,28 +1,15 @@
-import { ERROR_CODES, paperContract } from "@workspace/domain"
+import { paperContract } from "@workspace/domain"
 
-import { bindCommands, tableQuery } from "../registry/bind.js"
-import { CommandError } from "../platform/errors.js"
+import { tableQuery } from "../registry/bind.js"
 import type { Registry } from "../registry/registry.js"
 import { registerCanvasCommit } from "./package-canvas.js"
 import { registerPaperStart } from "./package-start.js"
 import { registerWordPackageEdit } from "./package-edit.js"
 import { editRichPaper } from "./rich-edit.js"
 import { oldEditorUndoReasons } from "./undo-guard.js"
-import { syncContent } from "./content-store.js"
 import { readOutline } from "./outline.js"
 import { coachPaperList } from "./coach-word-pages.js"
 import { listPapers } from "./store.js"
-
-const noReversal = () => null
-const noActivity = () => null
-
-function bytesOf(encoded: string) {
-  return new Uint8Array(Buffer.from(encoded, "base64"))
-}
-
-function encoded(bytes: Uint8Array) {
-  return Buffer.from(bytes).toString("base64")
-}
 
 export function registerPaper(registry: Registry) {
   registry.addUndoGuard("paper.revertEdit", oldEditorUndoReasons)
@@ -33,38 +20,7 @@ export function registerPaper(registry: Registry) {
     "paper.edit": paperEdit,
     "paper.canvas": paperCanvas,
     "paper.start": paperStart,
-    ...paperCommands
   } = paperContract
-  bindCommands(registry, paperCommands, {
-    "paper.save": {
-      handler: async (input, actor) => {
-        const reply = await syncContent(actor.userId, input.docId, {
-          writer: input.writer,
-          provenance: input.provenance,
-          epoch: input.epoch,
-          update: bytesOf(input.update),
-          stateVector: bytesOf(input.stateVector),
-          basedOn: input.basedOn,
-        })
-        if (!reply.provenance)
-          throw new CommandError(
-            ERROR_CODES.VALIDATION_ERROR,
-            "Native provenance required"
-          )
-        return {
-          provenance: reply.provenance,
-          epoch: reply.epoch,
-          revision: reply.revision,
-          reset: reply.reset,
-          stale: reply.stale,
-          update: encoded(reply.update),
-          stateVector: encoded(reply.stateVector),
-        }
-      },
-      reversal: noReversal,
-      activity: noActivity,
-    },
-  })
   registerCanvasCommit(registry, paperCanvas)
   registerPaperStart(registry, paperStart)
   registerWordPackageEdit(registry, paperEdit, (input, actor) =>

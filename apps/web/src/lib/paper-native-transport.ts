@@ -3,9 +3,8 @@ import {
   canonicalPaper,
   parsePaperId,
   nativeSyncOutputSchema,
-  type CommandInput,
-  type CommandOutput,
-  type Commands,
+  type catalog,
+  type OperationInput,
   type StoredPaperDocument,
 } from "@workspace/domain"
 import {
@@ -14,7 +13,7 @@ import {
   type Stored,
 } from "@workspace/paper-crdt"
 import { ApiError } from "@/lib/api-error.ts"
-import { runContractCommand } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 import type { SyncStatus } from "@/lib/paper-sync-status.ts"
 import { fromBase64, toBase64 } from "@/lib/paper-sync-bytes.ts"
 import {
@@ -39,12 +38,14 @@ import {
   type NativeCheckpoint,
 } from "@/lib/paper-sync-recovery.ts"
 
+type PaperSave = (typeof catalog)["paper.save"]
+
 export type NativeSyncTransport = (
   queryClient: QueryClient,
-  name: "paper.save",
-  input: CommandInput<Commands, "paper.save">,
+  name: PaperSave["name"],
+  input: OperationInput<PaperSave>,
   options: { refresh: false; signal: AbortSignal }
-) => Promise<CommandOutput<Commands, "paper.save">>
+) => Promise<unknown>
 
 export type NativeSessionOptions = {
   readonly identity: NativeSyncIdentity
@@ -76,7 +77,10 @@ function openSession<Document extends StoredPaperDocument>(
   const tabId = options.tabId ?? crypto.randomUUID()
   if (!tabId) throw new Error("Native tab identity required")
   const store = options.store ?? indexedDbStore(true)
-  const command: NativeSyncTransport = options.run ?? runContractCommand
+  const command: NativeSyncTransport =
+    options.run ??
+    ((queryClient, name, input, runOptions) =>
+      catalogClient.run(queryClient, name, input, runOptions))
   const cancellation = new AbortController()
   const listeners = new Set<() => void>()
   let client: PaperClient<Document> | null = null

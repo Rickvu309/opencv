@@ -1,13 +1,14 @@
 import { QueryClient } from "@tanstack/react-query"
-import { parsePaperId } from "@workspace/domain"
+import {
+  emptyRichPaper,
+  nativeProvenance,
+  parsePaperId,
+  RICH_NATIVE_WRITER,
+} from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { apiBaseUrl } from "@/lib/api-url.ts"
-import {
-  catalogClient,
-  queryKey,
-  runContractCommand,
-} from "@/lib/contract-client.ts"
+import { catalogClient, queryKey } from "@/lib/contract-client.ts"
 
 import { importPaperFile, listPaper, paperListKey } from "./paper-api.ts"
 
@@ -16,6 +17,18 @@ function envelope<T>(data: T) {
 }
 
 const docId = parsePaperId("11111111-1111-4111-8111-111111111111")
+
+const provenance = nativeProvenance(emptyRichPaper("cv"))
+
+const saved = {
+  provenance,
+  epoch: 1,
+  revision: 0,
+  reset: false,
+  stale: false,
+  update: "",
+  stateVector: "",
+}
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -141,14 +154,21 @@ describe("paper commands through the contract client", () => {
   })
 
   it("leaves the cache alone when asked not to refresh, as autosave does", async () => {
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(envelope({ id: docId })))
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(envelope(saved)))
     const queryClient = new QueryClient()
     queryClient.setQueryData(paperInfoKey(docId), { stale: true })
 
-    await runContractCommand(
+    await catalogClient.run(
       queryClient,
       "paper.save",
-      { docId, epoch: 0, update: "", stateVector: "" },
+      {
+        docId,
+        writer: RICH_NATIVE_WRITER,
+        provenance,
+        epoch: 0,
+        update: "",
+        stateVector: "",
+      },
       { refresh: false }
     )
 
@@ -160,14 +180,20 @@ describe("paper commands through the contract client", () => {
   it("sends an idempotency key unless the contract entry says none", async () => {
     const fetchMock = vi
       .fn()
-      .mockImplementation(() => Promise.resolve(envelope({ id: docId })))
+      .mockImplementation((url: unknown) =>
+        Promise.resolve(
+          envelope(String(url).endsWith("paper.save") ? saved : { id: docId })
+        )
+      )
     vi.stubGlobal("fetch", fetchMock)
     const queryClient = new QueryClient()
     const input = { docId }
 
     await catalogClient.run(queryClient, "paper.delete", input)
-    await runContractCommand(queryClient, "paper.save", {
+    await catalogClient.run(queryClient, "paper.save", {
       docId,
+      writer: RICH_NATIVE_WRITER,
+      provenance,
       epoch: 0,
       update: "",
       stateVector: "",

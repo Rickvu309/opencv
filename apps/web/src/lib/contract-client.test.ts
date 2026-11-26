@@ -270,16 +270,3 @@ it("replays an explicit original command key and keeps generated keys fresh for 
   expect(bodies[2]?.input).toEqual({ stage: "Changed" })
   queryClient.clear()
 })
-it("omits even an explicit key for commands whose contract has idempotency none", async () => {
-  const queryClient = new QueryClient()
-  const fetch = vi.fn().mockResolvedValue(Response.json({ ok: true, data: {} }))
-  vi.stubGlobal("fetch", fetch)
-  await runContractCommand(queryClient, "paper.save", {} as never, {
-    refresh: false,
-    idempotencyKey: crypto.randomUUID(),
-  })
-  expect(JSON.parse(String(fetch.mock.calls[0]?.[1]?.body))).toEqual({
-    input: {},
-  })
-  queryClient.clear()
-})

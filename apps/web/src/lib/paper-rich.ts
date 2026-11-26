@@ -1,7 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query"
 import { nativeSyncOutputSchema, sameNativeProvenance } from "@workspace/domain"
 import { emptyUpdate } from "@workspace/paper-crdt"
-import { runContractCommand } from "./contract-client.ts"
+import { catalogClient } from "./contract-client.ts"
 import { openRichNativePaperSync } from "./paper-native-transport.ts"
 import type { NativeSyncIdentity } from "./paper-sync-identity.ts"
 import {
@@ -23,7 +23,7 @@ export function openRichPaperSession(options: {
     ...options,
     readAdmitted: async (identity) => {
       const reply = nativeSyncOutputSchema.parse(
-        await runContractCommand(
+        await catalogClient.run(
           options.queryClient,
           "paper.save",
           {

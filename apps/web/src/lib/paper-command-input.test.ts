@@ -8,17 +8,14 @@ import { runContractCommand } from "./contract-client.ts"
 afterEach(() => vi.unstubAllGlobals())
 
 describe("native Paper metadata requests", () => {
-  it("leaves edit and sync requests unqualified", async () => {
+  it("leaves edit requests unqualified", async () => {
     const fetch = vi
       .fn()
       .mockImplementation(async () => Response.json({ ok: true, data: {} }))
     vi.stubGlobal("fetch", fetch)
     const client = new QueryClient()
     const docId = parsePaperId("01990b00-0000-7000-8000-000000000001")
-    const inputs = [
-      { name: "paper.edit", input: { docId } },
-      { name: "paper.save", input: { docId } },
-    ]
+    const inputs = [{ name: "paper.edit", input: { docId } }]
     for (const { name, input } of inputs) {
       const before = structuredClone(input)
       await Reflect.apply(runContractCommand, undefined, [
