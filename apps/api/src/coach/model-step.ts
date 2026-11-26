@@ -1,5 +1,5 @@
 import { z } from "zod"
-import type { ChatToolName, CoachStreamPart } from "@workspace/domain"
+import type { ChatToolName, CoachStreamPart } from "@workspace/domain/coach"
 
 export const modelMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),

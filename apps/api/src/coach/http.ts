@@ -1,20 +1,24 @@
 import {
+  planAllowsMode,
+  PLAN_REQUIRED_MESSAGE,
+  type Plan,
+} from "@workspace/domain/account"
+import {
   COACH_SSE_HEARTBEAT_MS,
   COACH_MODEL,
-  ERROR_CODES,
-  catalog,
   coachTurnRequestSchema,
-  errorEnvelope,
-  httpStatusForError,
-  planAllowsMode,
-  chatIdSchema,
   chatDetailSchema,
-  personActor,
-  PLAN_REQUIRED_MESSAGE,
   type CoachMode,
   type CoachRuntime,
-  type Plan,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
+import {
+  ERROR_CODES,
+  catalog,
+  errorEnvelope,
+  httpStatusForError,
+  chatIdSchema,
+  personActor,
+} from "@workspace/domain/kernel"
 import type { CoachModel } from "./anthropic-runtime.js"
 import { Hono, type Context } from "hono"
 import { streamSSE } from "hono/streaming"

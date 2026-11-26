@@ -1,4 +1,5 @@
-import { ERROR_CODES, type Actor, type NotifyTopic } from "@workspace/domain"
+import { type NotifyTopic } from "@workspace/domain/account"
+import { ERROR_CODES, type Actor } from "@workspace/domain/kernel"
 import { and, eq } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"

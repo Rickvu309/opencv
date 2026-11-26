@@ -1,4 +1,4 @@
-import { parsePaperId, parseUserId, type Actor } from "@workspace/domain"
+import { parsePaperId, parseUserId, type Actor } from "@workspace/domain/kernel"
 import { and, desc, eq, ilike, or } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"

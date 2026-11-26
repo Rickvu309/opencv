@@ -1,4 +1,4 @@
-import type { CoachFocusDoc, CoachSelection } from "@workspace/domain"
+import type { CoachFocusDoc, CoachSelection } from "@workspace/domain/coach"
 
 import { COACH_STABLE_PROMPT } from "./prompt.js"
 

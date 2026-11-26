@@ -1,5 +1,5 @@
 import { operation } from "@workspace/domain/operations/profile/set-photo"
-import { ERROR_CODES, parseFileId } from "@workspace/domain"
+import { ERROR_CODES, parseFileId } from "@workspace/domain/kernel"
 import { and, eq } from "drizzle-orm"
 
 import { getDb } from "../../../../db/context.js"

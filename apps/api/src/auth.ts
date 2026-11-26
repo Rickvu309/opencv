@@ -15,7 +15,8 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { APIError, createAuthMiddleware } from "better-auth/api"
 import { emailOTP, genericOAuth } from "better-auth/plugins"
 
-import { CONNECTION_TOKEN_SECONDS, PROFILE_DEFAULTS } from "@workspace/domain"
+import { PROFILE_DEFAULTS } from "@workspace/domain/account"
+import { CONNECTION_TOKEN_SECONDS } from "@workspace/domain/agents"
 import { eq } from "drizzle-orm"
 
 import type { AppDatabase } from "./db/context.js"
