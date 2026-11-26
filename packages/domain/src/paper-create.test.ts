@@ -16,7 +16,7 @@ describe("paper.create input", () => {
     )
   })
 
-  it("refuses a starting document and a template, since every new Paper is a rich blank", () => {
+  it("refuses a starting document, and a template for anything but a CV", () => {
     assert.equal(
       paperCreateInputSchema.safeParse({ kind: "cv", document: blankCv() })
         .success,
@@ -24,6 +24,11 @@ describe("paper.create input", () => {
     )
     assert.equal(
       paperCreateInputSchema.safeParse({ kind: "cv", templateId: "simple" })
+        .success,
+      true
+    )
+    assert.equal(
+      paperCreateInputSchema.safeParse({ kind: "letter", templateId: "simple" })
         .success,
       false
     )
