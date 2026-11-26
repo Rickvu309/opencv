@@ -5,7 +5,7 @@
   "scripts": {
     "build": "node scripts/catalog.mjs check && turbo build",
     "dev": "node scripts/catalog.mjs check && turbo dev",
-    "lint": "turbo lint",
+    "lint": "turbo lint && pnpm lint:design",
     "format": "turbo format",
     "typecheck": "node scripts/catalog.mjs check && turbo typecheck",
     "catalog:generate": "node scripts/catalog.mjs generate",
@@ -13,9 +13,12 @@
     "test": "turbo test test:open-pr",
     "check": "node scripts/check.mjs",
     "check:full": "node scripts/check.mjs --full",
-    "test:formal": "node scripts/tlc.mjs --all"
+    "test:formal": "node scripts/tlc.mjs --all",
+    "lint:design": "oxlint apps/web/src packages/ui/src"
   },
   "devDependencies": {
+    "outtrue": "^0.2.0",
+    "oxlint": "^1.95.0",
     "playwright-core": "1.65.0",
     "prettier": "^3.9.10",
     "prettier-plugin-tailwindcss": "^0.8.1",
