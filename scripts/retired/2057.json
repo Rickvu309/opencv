@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "scripts/paper-size-spacing.test.mjs",
+    "because": "The text toolbar files it reads moved into features/paper/rich-editor/, so the guard names the new paths; its history reads find the old names through pathAtRevision, and every expectation is unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  }
+]
