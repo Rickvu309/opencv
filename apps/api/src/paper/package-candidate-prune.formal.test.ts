@@ -16,21 +16,18 @@ import {
   pendingActions,
   user,
 } from "../db/schema.js"
-import { bindCatalog } from "../registry/bind.js"
-import { Registry } from "../registry/registry.js"
 import {
   openBackend,
   REAL,
   type Backend,
 } from "../test/registry-formal-support.js"
-import { registerPaper } from "./commands.js"
+import { paperRegistry } from "./paper-registry.test-support.js"
 import {
   commitWordCandidate,
   prepareStoredWordPackage,
   restoreWordCandidate,
 } from "./package-candidates.js"
 import * as packageCandidates from "./package-candidates.js"
-import { implementation as readWord } from "./operations/read/server.js"
 import { fixturePackage } from "./package-fixtures.js"
 import * as packageRestore from "./package-restore.js"
 import {
@@ -393,9 +390,7 @@ describe("unreachable Word candidate removal", () => {
             await hold
             return real(...args)
           })
-        const registry = new Registry()
-        registerPaper(registry)
-        bindCatalog(registry, { "paper.read": readWord })
+        const registry = paperRegistry()
         const proposing = registry
           .execute({
             name: "paper.edit",
