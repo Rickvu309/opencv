@@ -7,7 +7,6 @@ import {
   resourcesForScopes,
 } from "@workspace/domain/agents"
 import { catalog } from "@workspace/domain/kernel"
-import { paperContract } from "@workspace/domain/paper-doc"
 import { z } from "zod"
 import { getDb, transaction } from "../db/context.js"
 import {
@@ -18,10 +17,7 @@ import {
 } from "../db/schema.js"
 
 export const registeredAgentScopes = registeredScopesFromDeclarations(
-  declarationsFromEntries([
-    ...Object.values(catalog),
-    ...Object.values(paperContract),
-  ])
+  declarationsFromEntries(Object.values(catalog))
 )
 
 export function hashAgentToken(token: string) {

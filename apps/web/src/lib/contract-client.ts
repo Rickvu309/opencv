@@ -18,14 +18,6 @@ export function queryKey(ref: QueryRef): readonly unknown[] {
   return ref.input ? [ref.query, ref.input] : [ref.query]
 }
 
-export function refreshQueries(queryClient: QueryClient, refs: QueryRef[]) {
-  return Promise.all(
-    refs.map((ref) =>
-      queryClient.invalidateQueries({ queryKey: queryKey(ref) })
-    )
-  )
-}
-
 export function refreshReads(queryClient: QueryClient, refs: QueryRef[]) {
   return Promise.all(
     refs.map((ref) =>

@@ -1,28 +1,12 @@
 import type { QueryClient } from "@tanstack/react-query"
 import { parseChatTurnEvent, type ChatTurnEvent } from "@workspace/domain/coach"
-import {
-  catalog,
-  commands,
-  queries,
-  z,
-  type AnyCommandEntry,
-  type QueryRef,
-  type ResourceTouch,
-} from "@workspace/domain/kernel"
+import { catalog, type ResourceTouch } from "@workspace/domain/kernel"
 
 import { apiStream } from "@/lib/api.ts"
 import { ApiError } from "@/lib/api-error.ts"
 import { authClient } from "@/lib/auth-client.ts"
-import {
-  refreshCatalogReads,
-  refreshQueries,
-  refreshReads,
-} from "@/lib/contract-client.ts"
+import { refreshCatalogReads, refreshReads } from "@/lib/contract-client.ts"
 import { readSseStream } from "@/lib/sse.ts"
-
-function isCommandName(name: string): name is keyof typeof commands {
-  return name in commands
-}
 
 function adoptedCommand(name: string) {
   if (!(name in catalog)) return null
@@ -30,35 +14,9 @@ function adoptedCommand(name: string) {
   return operation.kind === "command" ? operation : null
 }
 
-function inputRecord(input: unknown) {
-  if (!input || typeof input !== "object" || Array.isArray(input)) return {}
-  return input as Record<string, unknown>
-}
-
 function executingOwnerId() {
   const id = authClient.$store.atoms.session?.get()?.data?.user?.id
   return typeof id === "string" ? id : ""
-}
-
-function legacyReadsForAdoptedWrite(input: unknown): QueryRef[] {
-  const fields = inputRecord(input)
-  const refs: QueryRef[] = []
-  for (const query of Object.keys(queries)) {
-    if (query in catalog) continue
-    const entry = queries[query as keyof typeof queries]
-    const shape = entry.input instanceof z.ZodObject ? entry.input.shape : null
-    const filled: Record<string, unknown> = {}
-    if (shape) {
-      for (const key of Object.keys(shape)) {
-        if (Object.prototype.hasOwnProperty.call(fields, key))
-          filled[key] = fields[key]
-      }
-    }
-    refs.push({ query } as QueryRef)
-    if (Object.keys(filled).length > 0)
-      refs.push({ query, input: filled } as QueryRef)
-  }
-  return refs
 }
 
 function touchesFor(
@@ -67,7 +25,6 @@ function touchesFor(
   ownerId: string
 ): ResourceTouch[] {
   if (!ownerId) return []
-  if (isCommandName(name)) return [{ ownerId, name: "workspace" }]
   const operation = adoptedCommand(name)
   if (!operation) return []
   const parsed = operation.input.safeParse(input)
@@ -91,25 +48,9 @@ export function createToolRefresher(queryClient: QueryClient) {
     if (event.pendingActionId) return
     const input = inputs.get(event.toolCallId)
     inputs.delete(event.toolCallId)
-    if (isCommandName(event.name)) {
-      const entry = commands[event.name] as AnyCommandEntry
-      const touches = touchesFor(event.name, input, executingOwnerId())
-      return Promise.all([
-        refreshQueries(queryClient, entry.invalidates(input)),
-        touches.length
-          ? refreshCatalogReads(queryClient, touches)
-          : Promise.resolve(),
-      ])
-    }
-    const operation = adoptedCommand(event.name)
-    if (!operation) return
+    if (!adoptedCommand(event.name)) return
     const touches = touchesFor(event.name, input, executingOwnerId())
-    return Promise.all([
-      refreshQueries(queryClient, legacyReadsForAdoptedWrite(input)),
-      touches.length
-        ? refreshCatalogReads(queryClient, touches)
-        : Promise.resolve(),
-    ])
+    if (touches.length) return refreshCatalogReads(queryClient, touches)
   }
 }
 

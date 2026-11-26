@@ -1,9 +1,7 @@
 import {
   coachActor,
-  commands,
   catalog,
   resourcesOverlap,
-  type AnyCommandEntry,
   queries,
   type QueryName,
   type QueryRef,
@@ -248,9 +246,6 @@ function invalidatesTable(): InvalidatesTable {
   const adoptedReads = Object.values(catalog).filter(
     (operation) => operation.kind === "read"
   )
-  const legacyReads = Object.keys(queries)
-    .filter((name) => !(name in catalog))
-    .map((query) => ({ query }) as QueryRef)
   const adoptedRefreshes = (
     touches: { ownerId: string; name: string; entityId?: string }[]
   ) =>
@@ -264,23 +259,13 @@ function invalidatesTable(): InvalidatesTable {
             )
           )
       )
-      .map((operation) => ({ query: operation.name }))
-  return Object.fromEntries([
-    ...Object.entries(commands as Record<string, AnyCommandEntry>).map(
-      ([name, entry]) => [
-        name,
-        (input: unknown) => [
-          ...entry.invalidates(input),
-          ...adoptedRefreshes([{ ownerId: "owner", name: "workspace" }]),
-        ],
-      ]
-    ),
-    ...Object.values(catalog)
+      .map((operation) => ({ query: operation.name }) as QueryRef)
+  return Object.fromEntries(
+    Object.values(catalog)
       .filter((operation) => operation.kind === "command")
       .map((operation) => [
         operation.name,
         (input: unknown) => [
-          ...legacyReads,
           ...adoptedRefreshes(
             (operation.writes as (input?: unknown) => readonly ResourceRef[])(
               operation.name === "paper.import"
@@ -289,8 +274,8 @@ function invalidatesTable(): InvalidatesTable {
             ).map((resource) => ({ ...resource, ownerId: "owner" }))
           ),
         ],
-      ]),
-  ])
+      ])
+  )
 }
 
 function without(
@@ -581,7 +566,7 @@ describe("every changed read is named by the command that changed it", () => {
   it("every exemption gives a reason and names a bound command", () => {
     for (const [command, reason] of Object.entries(EXEMPT_COMMANDS)) {
       expect(reason.length, command).toBeGreaterThan(10)
-      expect(command in commands || command in catalog, command).toBe(true)
+      expect(command in catalog, command).toBe(true)
     }
   })
 })

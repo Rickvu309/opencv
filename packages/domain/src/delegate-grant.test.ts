@@ -13,7 +13,6 @@ import {
   scopesFromSearch,
 } from "./agents/delegate-grant.js"
 import { defineOperation, delegateDeclaration } from "./operation.js"
-import { paperContract } from "./paper-doc/paper-contract.js"
 import { operation as paperRead } from "./operations/paper/read/operation.js"
 
 const paperProposal = ["paper", "write"].join(".")
@@ -27,10 +26,7 @@ const jobs = {
 
 it("derives the published agent scopes from Job and Paper declarations", () => {
   const scopes = registeredScopesFromDeclarations(
-    declarationsFromEntries([
-      ...Object.values(catalog),
-      ...Object.values(paperContract),
-    ])
+    declarationsFromEntries(Object.values(catalog))
   )
   assert.deepEqual(scopes, [
     "connection.status",

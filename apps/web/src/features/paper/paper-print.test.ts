@@ -306,10 +306,6 @@ describe("print paper", () => {
         "utf8"
       ),
       readFileSync(join(root, "packages/domain/src/queries.ts"), "utf8"),
-      readFileSync(
-        join(root, "packages/domain/src/contract-commands.ts"),
-        "utf8"
-      ),
     ].join("\n")
     expect(registry).not.toMatch(/paper\.pdf/)
     expect(registry).not.toMatch(/\/api\/paper\/[^`"'\s]*\/pdf/)
