@@ -9,6 +9,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Decline a pending Coach action.",
+  label: "Deny this change",
   input: z.object({ pendingActionId: pendingActionIdSchema }).strict(),
   publicResult: pendingActionRowSchema,
   coach: "never",

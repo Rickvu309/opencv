@@ -11,6 +11,8 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description: "Read ordered Coach task events after a cursor.",
+  label: "Read Coach updates",
+  readLabel: "Read Coach updates",
   input: coachTaskEventsInputSchema,
   publicResult: coachTaskReplaySchema,
   coach: "never",

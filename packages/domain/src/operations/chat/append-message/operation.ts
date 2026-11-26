@@ -12,6 +12,7 @@ export const operation = defineOperation({
   kind: "command",
   description:
     "Append the person's message. The Coach does not post as the person.",
+  label: "Save this message",
   input: chatAppendMessageInputSchema,
   publicResult: chatDetailSchema,
   coach: "never",

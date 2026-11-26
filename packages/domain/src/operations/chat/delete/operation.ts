@@ -8,6 +8,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Delete a chat and its messages.",
+  label: "Delete this Chat",
   input: chatDeleteInputSchema,
   publicResult: z.object({ id: z.string() }).strict(),
   coach: "confirm",

@@ -8,6 +8,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Point a chat at a document, job, or inbox thread.",
+  label: "Focus this Chat",
   input: chatSetFocusInputSchema,
   publicResult: chatDetailSchema.strip(),
   coach: "auto",

@@ -12,6 +12,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Undo one activity row.",
+  label: "Undo this change",
   input: z.object({ activityId: activityIdSchema }).strict(),
   publicResult: activityRowAsTheApiReturnsIt,
   coach: "never",

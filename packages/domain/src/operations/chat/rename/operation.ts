@@ -8,6 +8,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Rename a chat.",
+  label: "Rename this Chat",
   input: chatRenameInputSchema,
   publicResult: chatDetailSchema.strip(),
   coach: "auto",

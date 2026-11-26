@@ -8,6 +8,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Ask for a code to change the sign-in email.",
+  label: "Change your email",
   input: accountRequestEmailChangeInputSchema,
   publicResult: z
     .object({
