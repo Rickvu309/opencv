@@ -198,10 +198,10 @@ flowchart TD
 | `apps/web/src/features/seed` | feature | sample-author.ts | apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/features/settings` | feature | account-section.tsx, billing-section.tsx, coach-section.tsx, integrations-section.tsx, preferences-section.tsx, sections.ts, settings-api.ts, settings-layout.tsx, settings-nav.tsx, usage-section.tsx | apps/web/src/features/auth, apps/web/src/features/connections, apps/web/src/lib, apps/web/src/components | none |
 | `apps/web/src/lib` | platform | none | none | none |
-| `packages/domain/src/account` | kernel | account.ts, usage.ts | packages/domain/src/apply, packages/domain/src/coach | none |
-| `packages/domain/src/agents` | kernel | connections.ts, delegate-grant.ts | none | none |
-| `packages/domain/src/apply` | kernel | job.ts, job-position.ts, job-posting.ts | none | none |
-| `packages/domain/src/coach` | kernel | coach.ts, coach-mode.ts, coach-task.ts, chat.ts, chat-messages.ts, chat-title.ts, chat-turn.ts, chat-views.ts | packages/domain/src/apply, packages/domain/src/paper-doc | none |
-| `packages/domain/src/control` | kernel | control.ts | none | none |
-| `packages/domain/src/inbox` | kernel | index.ts | packages/domain/src/apply | none |
-| `packages/domain/src/paper-doc` | kernel | index.ts, paper.ts, paper-canvas.ts, paper-contract.ts, paper-contract-views.ts, paper-diff.ts, paper-package.ts, paper-rich-edit.ts, paper-start.ts, paper-word.ts, paper-page-scale.ts, paper-presentation.ts | none | none |
+| `packages/domain/src/account` | kernel | public.ts, account.ts, usage.ts | packages/domain/src/apply, packages/domain/src/coach | none |
+| `packages/domain/src/agents` | kernel | public.ts, connections.ts, delegate-grant.ts | none | none |
+| `packages/domain/src/apply` | kernel | public.ts, job.ts, job-position.ts, job-posting.ts | none | none |
+| `packages/domain/src/coach` | kernel | public.ts, coach.ts, coach-mode.ts, coach-task.ts, chat.ts, chat-messages.ts, chat-title.ts, chat-turn.ts, chat-views.ts | packages/domain/src/apply, packages/domain/src/paper-doc | none |
+| `packages/domain/src/control` | kernel | public.ts, control.ts | none | none |
+| `packages/domain/src/inbox` | kernel | public.ts, index.ts | packages/domain/src/apply | none |
+| `packages/domain/src/paper-doc` | kernel | public.ts, index.ts, paper.ts, paper-canvas.ts, paper-contract.ts, paper-contract-views.ts, paper-diff.ts, paper-package.ts, paper-rich-edit.ts, paper-start.ts, paper-word.ts, paper-page-scale.ts, paper-presentation.ts | none | none |

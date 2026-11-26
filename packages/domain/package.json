@@ -25,6 +25,11 @@
       "opencv-source": "./src/operations/*/operation.ts",
       "types": "./dist/operations/*/operation.d.ts",
       "import": "./dist/operations/*/operation.js"
+    },
+    "./*": {
+      "opencv-source": "./src/*/public.ts",
+      "types": "./dist/*/public.d.ts",
+      "import": "./dist/*/public.js"
     }
   },
   "files": [

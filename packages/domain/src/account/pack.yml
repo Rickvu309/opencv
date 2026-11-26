@@ -1,3 +1,3 @@
 layer: kernel
-public: [account.ts, usage.ts]
+public: [public.ts, account.ts, usage.ts]
 dependencies: [packages/domain/src/apply, packages/domain/src/coach]

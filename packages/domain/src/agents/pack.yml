@@ -1,2 +1,2 @@
 layer: kernel
-public: [connections.ts, delegate-grant.ts]
+public: [public.ts, connections.ts, delegate-grant.ts]

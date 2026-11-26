@@ -4,6 +4,7 @@ import { configDefaults, defineConfig } from "vitest/config"
 
 import { quarantine } from "./vitest.quarantine"
 
+import { domainEntryAliases } from "./domain-entries"
 import { applyLocalApiUrl } from "./local-env"
 
 applyLocalApiUrl("test")
@@ -37,6 +38,7 @@ export default defineConfig({
         "../../packages/domain/src/paper-doc/paper-presentation.ts"
       ),
       "@": path.resolve(__dirname, "./src"),
+      ...domainEntryAliases(__dirname),
       "@workspace/domain": path.resolve(
         __dirname,
         "../../packages/domain/src/index.ts"
