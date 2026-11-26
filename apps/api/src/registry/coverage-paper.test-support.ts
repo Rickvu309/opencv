@@ -43,6 +43,10 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
     .list()
     .commands.find((command) => command.name === "paper.duplicate")
   if (!paperDuplicate) throw new Error("Missing Paper duplicate command")
+  const paperStart = registry
+    .list()
+    .commands.find((command) => command.name === "paper.start")
+  if (!paperStart) throw new Error("Missing Paper start command")
   let importStage = ""
   let mintedDocId = ""
   let mintedParagraph = ""
@@ -267,9 +271,9 @@ export function paperCases(tools: CoverageTools): CoverageCase[] {
       },
     },
     {
-      name: "paper.start",
+      name: paperStart.name,
       arrange: async () => {},
-      act: () => run("paper.start", { kind: "cv" }),
+      act: () => run(paperStart.name, { kind: "cv" }),
       assert: async (result) => {
         expect(text(result.output, "generation")).toBe("package")
         expect(text(result.output, "name")).toBe("Simple CV")

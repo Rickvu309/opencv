@@ -4,8 +4,6 @@ import {
   PAPER_TEMPLATE_IDS,
   paperContract,
   paperDocNameSchema,
-  paperStartInputSchema,
-  type PaperStartInput,
 } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
@@ -34,8 +32,8 @@ describe("a page the Coach starts", () => {
   })
 
   it("names the page from its template, a Job or the person's name", () => {
-    const cv: PaperStartInput = { kind: "cv" }
-    const letter: PaperStartInput = { kind: "letter" }
+    const cv = { kind: "cv" } as const
+    const letter = { kind: "letter" } as const
     expect(startedName(cv, null)).toBe("Simple CV")
     expect(startedName({ kind: "cv", templateId: "modern" }, null)).toBe(
       "Modern CV"
@@ -85,7 +83,7 @@ describe("paper.start takes no words of the Coach's", () => {
       { kind: "letter", name: "Cover letter, Lumiere", jobId },
       { kind: "cv", templateId: "modern" },
     ])
-      expect(paperStartInputSchema.safeParse(input).success).toBe(true)
+      expect(catalog["paper.start"].input.safeParse(input).success).toBe(true)
   })
 
   it("refuses free text, a block document and a template on a letter", () => {
@@ -97,7 +95,7 @@ describe("paper.start takes no words of the Coach's", () => {
       { kind: "letter", templateId: "simple" },
       { kind: "cv", name: "x".repeat(500) },
     ])
-      expect(paperStartInputSchema.safeParse(input).success).toBe(false)
+      expect(catalog["paper.start"].input.safeParse(input).success).toBe(false)
   })
 
   it("waits for the person, and the older block create is closed to the Coach", () => {

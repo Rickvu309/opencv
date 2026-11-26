@@ -1,4 +1,4 @@
-import type { ChatToolName } from "@workspace/domain"
+import { catalog, type ChatToolName } from "@workspace/domain"
 import { z } from "zod"
 
 import { fakePaperEdit } from "./fake.js"
@@ -73,7 +73,7 @@ function decide(
       intents: [
         {
           id: "call_start",
-          name: "paper.start",
+          name: catalog["paper.start"].name,
           input: { kind, ...(jobId ? { jobId } : {}) },
         },
       ],

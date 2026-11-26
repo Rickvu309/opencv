@@ -2,7 +2,7 @@ import {
   PAPER_START_BOUNDS,
   PAPER_START_TEMPLATE,
   paperDocNameSchema,
-  type PaperStartInput,
+  type catalog,
 } from "@workspace/domain"
 
 import { packageFailure } from "./package-pages.js"
@@ -14,7 +14,10 @@ import {
   type TemplateLine,
 } from "./word/template.js"
 
-type StartChoice = Pick<PaperStartInput, "kind" | "templateId" | "name">
+type StartChoice = Pick<
+  import("zod").output<(typeof catalog)["paper.start"]["input"]>,
+  "kind" | "templateId" | "name"
+>
 
 export function startedLines(input: StartChoice): TemplateLine[] {
   const lines =
