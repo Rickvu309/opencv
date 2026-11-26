@@ -30,5 +30,13 @@
     "class": "owner",
     "classBecause": "no replacement test",
     "items": 1
+  },
+  {
+    "subject": "apps/web/src/routes/paper-doc-open.isolated.test.tsx",
+    "because": "The page reads document info through POST /api/reads/paper.read; the request list names that read instead of the deleted GET route, with the same counts and order.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
   }
 ]
