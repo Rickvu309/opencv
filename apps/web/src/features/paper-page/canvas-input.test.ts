@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { wordConfirmedOpsSchema } from "@workspace/domain"
+import { wordConfirmedOpsSchema } from "@workspace/domain/paper-doc"
 
 import { KEPT_PART_LINE, NUMBERED_LINE } from "./canvas-fixed-lines.ts"
 import {

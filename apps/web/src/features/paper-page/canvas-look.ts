@@ -3,7 +3,7 @@ import type {
   WordForm,
   WordMark,
   WordParagraph,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 export type MarkSpan = {
   from: number

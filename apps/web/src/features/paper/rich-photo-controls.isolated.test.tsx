@@ -7,7 +7,10 @@ import {
   screen,
   within,
 } from "@testing-library/react"
-import { nativeProvenance, richPaperDocumentSchema } from "@workspace/domain"
+import {
+  nativeProvenance,
+  richPaperDocumentSchema,
+} from "@workspace/domain/paper-doc"
 import { openRichPaperClient, seedStoredYDoc } from "@workspace/paper-crdt"
 import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import {

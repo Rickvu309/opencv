@@ -1,5 +1,5 @@
 import { writingStorage } from "./canvas-branch.ts"
-import { WORD_LIMITS } from "@workspace/domain"
+import { WORD_LIMITS } from "@workspace/domain/paper-doc"
 
 import {
   blankDraft,
