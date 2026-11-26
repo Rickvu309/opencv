@@ -2,7 +2,7 @@ import {
   PAPER_TEMPLATE_IDS,
   type CvTemplateId,
   type PaperTemplateId,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 export const PAPER_TEMPLATE_LABELS: { id: PaperTemplateId; label: string }[] =
   PAPER_TEMPLATE_IDS.map((id) => ({

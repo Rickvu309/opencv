@@ -1,5 +1,5 @@
 import { QueryClient } from "@tanstack/react-query"
-import { z } from "@workspace/domain"
+import { z } from "@workspace/domain/kernel"
 
 import { ApiError } from "@/lib/api-error.ts"
 import { catalogClient } from "@/lib/contract-client.ts"

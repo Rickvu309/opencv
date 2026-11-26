@@ -1,4 +1,4 @@
-import { z } from "@workspace/domain"
+import { z } from "@workspace/domain/kernel"
 
 import type { LocalObservation } from "@/lib/paper-package-ack.ts"
 import type { DraftBasis } from "./canvas-edit.ts"

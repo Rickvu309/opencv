@@ -1,7 +1,7 @@
 import "./design/home.css"
 
 import { useId, type ReactNode } from "react"
-import type { ChatSummary } from "@workspace/domain"
+import type { ChatSummary } from "@workspace/domain/coach"
 import { Button } from "@workspace/ui/components/button"
 import { cn } from "@workspace/ui/lib/utils"
 

@@ -1,5 +1,5 @@
 import { Link } from "lucide-react"
-import { paperIdSchema } from "@workspace/domain"
+import { paperIdSchema } from "@workspace/domain/kernel"
 import { CopyButton } from "@workspace/ui/components/copy-button"
 
 export function PaperDocumentShare({ docId }: { docId: string }) {

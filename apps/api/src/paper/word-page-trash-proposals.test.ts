@@ -1,15 +1,17 @@
 import { randomUUID } from "node:crypto"
 
 import {
-  PAPER_CANVAS_PROFILE,
   coachActor,
   delegateActorSchema,
-  paperWordReadSchema,
   parsePaperId,
   parseUserId,
   personActor,
   type Actor,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
+import {
+  PAPER_CANVAS_PROFILE,
+  paperWordReadSchema,
+} from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 

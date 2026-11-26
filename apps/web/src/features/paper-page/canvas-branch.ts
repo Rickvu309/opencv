@@ -1,8 +1,8 @@
+import { z } from "@workspace/domain/kernel"
 import {
   paperCanvasCommitSchema,
-  z,
   type PaperCanvasCommit,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import type { DraftBasis, WritingDraft } from "./canvas-edit.ts"
 import type { LineRefusal } from "./canvas-save-lines.ts"

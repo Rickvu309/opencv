@@ -1,6 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks"
 
-import type { LimitId, LimitSpec } from "@workspace/domain"
+import type { LimitId, LimitSpec } from "@workspace/domain/limits"
 
 import type { Clock } from "./clock.js"
 import type { LimitKey } from "./key.js"

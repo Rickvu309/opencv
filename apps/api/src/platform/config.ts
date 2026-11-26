@@ -2,9 +2,9 @@ import { fileURLToPath } from "node:url"
 
 import {
   resolveCoachDailyTurnLimit,
-  localDevUrls,
   type CoachMode,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
+import { localDevUrls } from "@workspace/domain/kernel"
 
 export function apiPortFromEnv(env: NodeJS.ProcessEnv): number {
   return localDevUrls(env.PORT).apiPort

@@ -7,7 +7,10 @@ import { readPackageZip } from "../../../apps/api/src/paper/package-zip.js"
 import { afterEach, expect, it, vi } from "vitest"
 import { TextSelection } from "@tiptap/pm/state"
 import * as Y from "yjs"
-import { nativeProvenance, richPaperDocumentSchema } from "@workspace/domain"
+import {
+  nativeProvenance,
+  richPaperDocumentSchema,
+} from "@workspace/domain/paper-doc"
 import { openRichPaperClient } from "./client.js"
 import { seedStoredYDoc } from "./stored-document.js"
 import { borrowFlowDocument } from "./native-layout-flow.js"

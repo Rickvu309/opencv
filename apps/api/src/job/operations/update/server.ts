@@ -1,4 +1,4 @@
-import { jobPatchSchema, jobViewSchema } from "@workspace/domain"
+import { jobPatchSchema, jobViewSchema } from "@workspace/domain/apply"
 import { operation } from "@workspace/domain/operations/job/update"
 import { z } from "zod"
 import type { OperationBinding } from "../../../registry/bind.js"

@@ -1,4 +1,4 @@
-import { httpStatusForError } from "@workspace/domain"
+import { httpStatusForError } from "@workspace/domain/kernel"
 
 export class CommandError extends Error {
   readonly code: string

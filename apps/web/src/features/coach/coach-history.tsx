@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react"
 import { useShortcut } from "@/lib/use-shortcut.ts"
-import type { ChatSummary } from "@workspace/domain"
+import type { ChatSummary } from "@workspace/domain/coach"
 
 import { ChevronDown } from "lucide-react"
 

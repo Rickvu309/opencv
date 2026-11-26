@@ -1,4 +1,4 @@
-import type { Operation } from "@workspace/domain"
+import type { Operation } from "@workspace/domain/kernel"
 
 import { implementations } from "../generated/catalog.js"
 import { bindOperation, type OperationBinding } from "../registry/bind.js"

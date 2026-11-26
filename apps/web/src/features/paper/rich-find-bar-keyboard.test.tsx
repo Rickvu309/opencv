@@ -1,7 +1,10 @@
 import { useReducer } from "react"
 import { afterEach, expect, it, vi } from "vitest"
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
-import { nativeProvenance, richPaperDocumentSchema } from "@workspace/domain"
+import {
+  nativeProvenance,
+  richPaperDocumentSchema,
+} from "@workspace/domain/paper-doc"
 import { openRichPaperClient, seedStoredYDoc } from "@workspace/paper-crdt"
 import { mountRichPaperEditor } from "@workspace/paper-crdt/editor"
 import * as editors from "@workspace/paper-crdt/editor"

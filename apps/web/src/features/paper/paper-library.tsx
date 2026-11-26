@@ -7,7 +7,7 @@ import {
   paperDocNameSchema,
   type PaperFile,
   type PaperView,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { toast, toastWithUndo } from "@workspace/ui/components/sonner"
 
 import { reportRejected } from "@/lib/command-failure.ts"

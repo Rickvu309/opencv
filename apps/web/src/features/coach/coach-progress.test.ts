@@ -1,4 +1,4 @@
-import type { ChatEntryPart } from "@workspace/domain"
+import type { ChatEntryPart } from "@workspace/domain/coach"
 import { describe, expect, it } from "vitest"
 
 import {

@@ -1,4 +1,4 @@
-import { LIMITS, type LimitId, type LimitShape } from "@workspace/domain"
+import { LIMITS, type LimitId, type LimitShape } from "@workspace/domain/limits"
 
 import type { Clock } from "./clock.js"
 import { systemClock } from "./clock.js"

@@ -3,11 +3,11 @@ import { act, fireEvent, screen, waitFor } from "@testing-library/react"
 import * as Y from "yjs"
 import userEvent from "@testing-library/user-event"
 import { uploadPaperPhoto } from "./paper-api.ts"
+import { parsePaperId } from "@workspace/domain/kernel"
 import {
   nativeProvenance,
-  parsePaperId,
   RICH_NATIVE_WRITER,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import {
   emptyUpdate,
   openRichPaperClient,

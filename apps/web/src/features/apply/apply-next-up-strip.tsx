@@ -1,5 +1,6 @@
 import { Calendar, Flag, Reply } from "lucide-react"
-import type { JobId, JobView } from "@workspace/domain"
+import type { JobView } from "@workspace/domain/apply"
+import type { JobId } from "@workspace/domain/kernel"
 
 import { Button } from "@workspace/ui/components/button"
 import { StageIcon } from "@workspace/ui/components/stage-icon"

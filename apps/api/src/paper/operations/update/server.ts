@@ -1,9 +1,9 @@
+import { parsePaperId } from "@workspace/domain/kernel"
 import {
   paperDocStatusSchema,
   paperViewSchema,
-  parsePaperId,
   RICH_NATIVE_WRITER,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { operation } from "@workspace/domain/operations/paper/update"
 import { z } from "zod"
 import type { OperationBinding } from "../../../registry/bind.js"

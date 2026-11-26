@@ -1,7 +1,7 @@
 import { useLayoutEffect, useReducer, useRef, type KeyboardEvent } from "react"
 import { FileUp, Sparkles } from "lucide-react"
 
-import type { PaperTemplateId } from "@workspace/domain"
+import type { PaperTemplateId } from "@workspace/domain/paper-doc"
 import { Button } from "@workspace/ui/components/button"
 import {
   DialogDescription,

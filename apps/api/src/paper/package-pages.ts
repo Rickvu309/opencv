@@ -1,14 +1,14 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto"
 
+import { ERROR_CODES } from "@workspace/domain/kernel"
 import {
-  ERROR_CODES,
   PAPER_PACKAGE_LIMITS,
   PAPER_PACKAGE_PROJECTOR,
   paperPackageReadSchema,
   type PaperPackageMetadata,
   type PaperPackageProjection,
   type PaperPackageRead,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { z } from "zod"
 
 import { CommandError } from "../platform/errors.js"

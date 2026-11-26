@@ -1,14 +1,12 @@
+import { catalog, parseUserId, parsePaperId } from "@workspace/domain/kernel"
 import {
   nativeProvenance,
   nativeSyncOutputSchema,
   NATIVE_WRITER,
   RICH_NATIVE_WRITER,
   paperPhotoRef,
-  catalog,
-  parseUserId,
-  parsePaperId,
   richPaperDocumentSchema,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import {
   loadYDoc,
   materializeStored,

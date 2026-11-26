@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, vi } from "vitest"
 import { TextSelection } from "@tiptap/pm/state"
-import { richPaperDocumentSchema, nativeProvenance } from "@workspace/domain"
-import type { RichPaperDocument } from "@workspace/domain"
+import {
+  richPaperDocumentSchema,
+  nativeProvenance,
+} from "@workspace/domain/paper-doc"
+import type { RichPaperDocument } from "@workspace/domain/paper-doc"
 import { openRichPaperClient, type PaperClient } from "./client.js"
 import { seedStoredYDoc } from "./stored-document.js"
 import { borrowFlowDocument } from "./native-layout-flow.js"

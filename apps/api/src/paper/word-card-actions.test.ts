@@ -1,14 +1,16 @@
 import { randomUUID } from "node:crypto"
 
 import {
-  PAPER_CANVAS_PROFILE,
-  PAPER_COACH_WORD_PAGE_NOTE,
   coachActor,
   parsePaperId,
   parseUserId,
   personActor,
   type Actor,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
+import {
+  PAPER_CANVAS_PROFILE,
+  PAPER_COACH_WORD_PAGE_NOTE,
+} from "@workspace/domain/paper-doc"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { getDb, withDatabase } from "../db/context.js"

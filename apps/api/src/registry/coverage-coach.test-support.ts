@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { coachStartOutputSchema } from "@workspace/domain"
+import { coachStartOutputSchema } from "@workspace/domain/coach"
 import { expect } from "vitest"
 import { implementation as startTask } from "../coach/operations/start/server.js"
 import {

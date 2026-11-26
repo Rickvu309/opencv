@@ -1,4 +1,4 @@
-import { paperTableLimits } from "@workspace/domain"
+import { paperTableLimits } from "@workspace/domain/limits"
 import { useEffect, useReducer, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 import { Table2 } from "lucide-react"

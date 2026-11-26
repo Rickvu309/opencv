@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto"
 
-import { parseUserId, personActor, RICH_NATIVE_WRITER } from "@workspace/domain"
+import { parseUserId, personActor } from "@workspace/domain/kernel"
+import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { expect } from "vitest"
 
 import { importedWordPage, saveFile, stageWordPackage } from "../paper/index.js"

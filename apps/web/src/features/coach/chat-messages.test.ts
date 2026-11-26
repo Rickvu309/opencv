@@ -5,7 +5,7 @@ import {
   LEGACY_CHAT_TITLE,
   chatDisplayTitle,
   titleFrom,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
 
 import {
   STREAMING_COACH_ID,

@@ -1,4 +1,4 @@
-import { cvSlots } from "@workspace/domain"
+import { cvSlots } from "@workspace/domain/paper-doc"
 
 export function presentation() {
   return {

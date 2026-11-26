@@ -1,4 +1,4 @@
-import type { CoachStartInput } from "@workspace/domain"
+import type { CoachStartInput } from "@workspace/domain/coach"
 import { taskIsTerminal, type CoachTaskState } from "@/lib/coach-task-state.ts"
 import type { CoachSendOptions } from "./use-coach-turn.ts"
 

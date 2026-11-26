@@ -1,4 +1,4 @@
-import { APPLY_SCAN_FETCH_FAILED } from "@workspace/domain"
+import { APPLY_SCAN_FETCH_FAILED } from "@workspace/domain/apply"
 import { describe, expect, it, vi } from "vitest"
 
 import {

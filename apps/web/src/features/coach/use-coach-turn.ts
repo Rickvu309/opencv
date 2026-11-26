@@ -3,13 +3,12 @@ import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useCallback, useMemo, useReducer, useRef } from "react"
 import {
   appendCoachPart,
-  parsePaperId,
-  parseChatId,
   type CoachContextItem,
   textFromParts,
   type CoachSelection,
   type ChatEntryPart,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
+import { parsePaperId, parseChatId } from "@workspace/domain/kernel"
 
 import { coachSendErrorMessage } from "@/features/coach/coach-error.ts"
 import { useCoachMode } from "@/features/coach/use-coach-mode.ts"

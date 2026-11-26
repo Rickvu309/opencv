@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 
-import { coachActor } from "@workspace/domain"
+import { coachActor } from "@workspace/domain/kernel"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"

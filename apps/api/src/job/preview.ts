@@ -1,4 +1,5 @@
-import { parseJobId, type Actor, type JobPreview } from "@workspace/domain"
+import { type JobPreview } from "@workspace/domain/apply"
+import { parseJobId, type Actor } from "@workspace/domain/kernel"
 
 import type { FetchJobPosting } from "./fetch-posting.js"
 import { jobWithLink } from "./store.js"

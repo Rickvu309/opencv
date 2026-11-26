@@ -3,7 +3,7 @@ import {
   grantCopy,
   resourcesForScopes,
   scopesFromSearch,
-} from "@workspace/domain"
+} from "@workspace/domain/agents"
 import { authClient } from "@/lib/auth-client.ts"
 import { signedConsentQuery } from "@/lib/oauth-consent.ts"
 import { useMutation, useQuery } from "@tanstack/react-query"

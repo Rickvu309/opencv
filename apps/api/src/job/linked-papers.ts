@@ -5,7 +5,7 @@ import {
   type JobId,
   type PaperId,
   type UserId,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import { and, eq } from "drizzle-orm"
 
 import { getDb } from "../db/context.js"

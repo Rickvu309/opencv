@@ -1,6 +1,6 @@
 import fc from "fast-check"
 import { describe, expect, it } from "vitest"
-import type { JobStage, JobView } from "@workspace/domain"
+import type { JobStage, JobView } from "@workspace/domain/apply"
 
 import { mockJob } from "@/test/apply-job-fixtures.ts"
 
