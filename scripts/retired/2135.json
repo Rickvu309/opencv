@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/api/src/coach/native-context.test.ts",
+    "because": "The Coach now reads an open Paper with one paper.outline call that carries its name, kind and status, so the list read these assertions expected is gone.",
+    "replacedBy": "apps/api/src/coach/native-context.test.ts",
+    "proof": {
+      "fork": "af0c6191c050874cf2f399c1cbca4a176c946ad4",
+      "replacedByBlob": "a0c970b83979952715249f76a990e1dc8eb1571c",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 3
+  }
+]

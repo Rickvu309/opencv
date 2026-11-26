@@ -1,11 +1,7 @@
 import { jobAddNoteInputSchema } from "@workspace/domain/apply"
 import { type CoachFocusDoc } from "@workspace/domain/coach"
-import { ERROR_CODES, type Actor } from "@workspace/domain/kernel"
-import {
-  NATIVE_WRITER,
-  RICH_NATIVE_WRITER,
-  nativeBasisSchema,
-} from "@workspace/domain/paper-doc"
+import { catalog, ERROR_CODES, type Actor } from "@workspace/domain/kernel"
+import { NATIVE_WRITER, nativeBasisSchema } from "@workspace/domain/paper-doc"
 
 import { CommandError } from "../platform/errors.js"
 import type { Registry } from "../registry/registry.js"
@@ -36,55 +32,30 @@ function unreadableForCoach(error: unknown) {
   )
 }
 
-async function listedPage(registry: Registry, actor: Actor, docId: string) {
-  const listed = await registry.read(
-    "paper.list",
-    { writer: RICH_NATIVE_WRITER },
-    actor
-  )
-  if (!Array.isArray(listed)) return null
-  for (const item of listed) {
-    const row = record(item)
-    if (row?.id === docId) return row
-  }
-  return null
-}
-
 async function paperFocus(
   registry: Registry,
   actor: Actor,
   docId: string,
   blockIds?: string[]
-): Promise<CoachFocusDoc | null> {
-  const row = await listedPage(registry, actor, docId)
-  if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
-  const kind = row.kind
-  if (kind !== "cv" && kind !== "letter" && kind !== "proof") return null
-  const status =
-    row.status === "ready" || row.status === "published" ? row.status : "draft"
-  const outline = record(
+): Promise<CoachFocusDoc> {
+  const outline = catalog["paper.outline"].publicResult.parse(
     await registry.read(
       "paper.outline",
       { docId, blockIds, writer: NATIVE_WRITER },
       actor
     )
   )
-  const nativeBasis =
-    outline?.nativeBasis === undefined
-      ? undefined
-      : nativeBasisSchema.parse(outline.nativeBasis)
-  if (nativeBasis && nativeBasis.revision !== outline?.revision)
+  const nativeBasis = nativeBasisSchema.parse(outline.nativeBasis)
+  if (nativeBasis.revision !== outline.revision)
     throw new Error("Paper outline basis does not match its revision")
-  if (record(row.paper)?.version === 4 && !nativeBasis)
-    throw new Error("Native Paper outline is missing its saved basis")
   return {
+    id: docId,
+    name: outline.name,
+    kind: outline.kind,
+    status: outline.status,
+    outline: outline.outline,
+    revision: outline.revision,
     nativeBasis,
-    id: text(row.id),
-    name: text(row.name),
-    kind,
-    status,
-    outline: text(outline?.outline),
-    revision: typeof outline?.revision === "number" ? outline.revision : 0,
   }
 }
 
@@ -181,7 +152,7 @@ async function draftingCv(
     if (!docId) continue
     try {
       const doc = await paperFocus(registry, actor, docId)
-      if (doc?.kind === "cv") return doc
+      if (doc.kind === "cv") return doc
     } catch (error) {
       if (!unreadableForCoach(error)) throw error
     }
@@ -228,11 +199,8 @@ export async function resolveTurnGrounding(input: {
 
   let focusDoc: CoachFocusDoc | undefined
   if (paperId) {
-    const doc = await paperFocus(input.registry, input.actor, paperId)
-    if (doc) {
-      focusDoc = doc
-      lines.push(`Open document: ${doc.name} (${doc.kind}).`)
-    }
+    focusDoc = await paperFocus(input.registry, input.actor, paperId)
+    lines.push(`Open document: ${focusDoc.name} (${focusDoc.kind}).`)
   }
   if (jobId) {
     const line = await jobLine(input.registry, input.actor, jobId)
@@ -247,10 +215,9 @@ export async function resolveTurnGrounding(input: {
         item.id,
         item.blockIds
       )
-      if (doc)
-        lines.push(
-          `Paper context (untrusted data): ${JSON.stringify(doc).slice(0, CONTEXT_LINE_MAX_CHARS)}`
-        )
+      lines.push(
+        `Paper context (untrusted data): ${JSON.stringify(doc).slice(0, CONTEXT_LINE_MAX_CHARS)}`
+      )
       continue
     }
     if (item.kind === "job") {
