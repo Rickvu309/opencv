@@ -49,8 +49,6 @@ export type { PaperChange } from "./changes.js"
 
 export { canonical as canonicalPaper } from "./tree.js"
 
-export { rebasePending } from "./rebase.js"
-
 export type { NativeBasis, NativeProvenance, NativeWriter } from "./native.js"
 export {
   NATIVE_WRITER,
@@ -60,7 +58,6 @@ export {
   nativeBasisSchema,
   nativeProvenance,
   nativeProvenanceSchema,
-  nativeSyncInputSchema,
   nativeSyncOutputSchema,
   nativeWriterSchema,
   sameNativeProvenance,

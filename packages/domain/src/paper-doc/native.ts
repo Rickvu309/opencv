@@ -1,7 +1,7 @@
 import { z } from "zod"
 import type { NativePaperDocument } from "./document.js"
 import type { RichPaperDocument } from "./stored-document.js"
-import { paperSyncInputSchema, paperSyncOutputSchema } from "./sync.js"
+import { paperSyncOutputSchema } from "./sync.js"
 
 export const nativeWriterSchema = z
   .object({
@@ -143,9 +143,6 @@ export const nativeBasisSchema = z
 
 export type NativeBasis = z.infer<typeof nativeBasisSchema>
 
-export const nativeSyncInputSchema = paperSyncInputSchema
-  .extend({ writer: nativeWriterSchema, provenance: nativeProvenanceSchema })
-  .strict()
 export const nativeSyncOutputSchema = paperSyncOutputSchema
   .extend({ provenance: nativeProvenanceSchema })
   .strict()

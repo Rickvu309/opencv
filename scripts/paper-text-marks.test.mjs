@@ -28,7 +28,7 @@ test("rich text preserves UTF-16 positions around emoji", () => {
     detectMixedTextUnits(
       readFileSync(
         new URL(
-          "../packages/domain/src/paper-doc/merge-text.ts",
+          "../packages/domain/src/paper-doc/rich-text.ts",
           import.meta.url
         ),
         "utf8"

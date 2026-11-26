@@ -1,5 +1,3 @@
-export { paperBlockConfigs } from "./schema.js"
-export type { Candidate } from "./ydoc.js"
 export {
   materializeStored,
   seedStoredYDoc,
@@ -28,4 +26,3 @@ export type {
   SyncReply as ClientSyncReply,
 } from "./client.js"
 export { FRAGMENT } from "./names.js"
-export { letterSchema } from "./schema.js"

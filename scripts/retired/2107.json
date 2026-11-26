@@ -1,0 +1,106 @@
+[
+  {
+    "subject": "packages/domain/src/paper-doc-rebase.test.ts",
+    "because": "It tested retired Paper code (the block document merge engine or the old BlockNote block schema) that nothing outside its own tests reached; the code is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 32
+  },
+  {
+    "subject": "packages/domain/src/paper-doc-rebase-cv.property.test.ts",
+    "because": "It tested retired Paper code (the block document merge engine or the old BlockNote block schema) that nothing outside its own tests reached; the code is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "packages/domain/src/paper-doc-rebase.property.test.ts",
+    "because": "It tested retired Paper code (the block document merge engine or the old BlockNote block schema) that nothing outside its own tests reached; the code is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "packages/domain/src/paper-doc-rebase.types.test.ts",
+    "because": "It tested retired Paper code (the block document merge engine or the old BlockNote block schema) that nothing outside its own tests reached; the code is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 12
+  },
+  {
+    "subject": "packages/domain/src/paper-doc-rebase.vocabulary.test.ts",
+    "because": "It tested retired Paper code (the block document merge engine or the old BlockNote block schema) that nothing outside its own tests reached; the code is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "packages/paper-crdt/src/mapping.test.ts",
+    "because": "It tested retired Paper code (the block document merge engine or the old BlockNote block schema) that nothing outside its own tests reached; the code is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 9
+  },
+  {
+    "subject": "packages/paper-crdt/src/blocks-repair.test.ts",
+    "because": "It tested retired Paper code (the block document merge engine or the old BlockNote block schema) that nothing outside its own tests reached; the code is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "scripts/paper-header-rebase.test.mjs",
+    "because": "It guarded packages/domain/src/paper-doc/rebase.ts, which is deleted because nothing outside its tests used it.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "packages/domain/src/paper-doc.test.ts",
+    "because": "Its one rebase case tested the deleted block merge engine.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/property-seed.test.mjs",
+    "because": "Its presence check named packages/paper-crdt/src/mapping.test.ts, which is deleted with the old block schema; the scan of every remaining Paper editing test stays.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-header-rebase.json",
+    "because": "Its guard watched packages/domain/src/paper-doc/rebase.ts, which is deleted because nothing outside its tests used it.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-text-marks.json .historic",
+    "because": "merge-text.ts was an empty file and is deleted; the row now names the live rich-text module as the fixed file.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/paper-text-marks.test.mjs > rich text preserves UTF-16 positions around emoji :: assert.deepEqual(detectMixedTextUnits(readFileSync(new URL(\"../packages/domain/src/paper-doc/merge-text.ts\", import.meta.url), \"utf8\")), [])",
+    "because": "It read an empty file that is now deleted; the same assertion now reads the live rich-text module.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

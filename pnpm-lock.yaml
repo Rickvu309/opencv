@@ -317,9 +317,6 @@ importers:
       eslint:
         specifier: ^10
         version: 10.13.0(jiti@2.7.0)
-      fast-check:
-        specifier: ^4.10.2
-        version: 4.10.2
       globals:
         specifier: ^17
         version: 17.13.0
