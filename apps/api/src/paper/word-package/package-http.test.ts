@@ -18,7 +18,7 @@ import {
 } from "../../test/harness.js"
 import { withDatabase } from "../../db/context.js"
 import { files, paperDocs, paperPackageHeads, user } from "../../db/schema.js"
-import { textPdf } from "../import-fixtures.test.js"
+import { textPdf } from "../import/import-fixtures.test.js"
 import { fixturePackage, paragraph } from "./package-fixtures.js"
 import {
   WORD_PACKAGE_MEDIA_TYPE,

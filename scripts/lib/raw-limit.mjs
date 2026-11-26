@@ -1,7 +1,7 @@
 const QUIET = [
   "apps/api/src/limits/",
   "apps/api/src/auth-email-limit.ts",
-  "apps/api/src/paper/import-parse.ts",
+  "apps/api/src/paper/import/import-parse.ts",
   "apps/api/src/paper/http.ts",
   "apps/api/src/app.ts",
   "apps/api/src/coach/worker.ts",

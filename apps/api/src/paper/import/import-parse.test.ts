@@ -7,15 +7,20 @@ import {
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
-import { withDatabase } from "../db/context.js"
-import { activity, files, paperDocs, paperPackageHeads } from "../db/schema.js"
+import { withDatabase } from "../../db/context.js"
+import {
+  activity,
+  files,
+  paperDocs,
+  paperPackageHeads,
+} from "../../db/schema.js"
 import {
   authHeaders,
   createMigratedTestDb,
   createTestApp,
   signUp,
   testWebOrigin,
-} from "../test/harness.js"
+} from "../../test/harness.js"
 import { publishedText, textDocx, textPdf } from "./import-fixtures.test.js"
 import {
   IMPORT_PDF_UNREADABLE_MESSAGE,
@@ -23,10 +28,10 @@ import {
   IMPORT_JSON_MESSAGE,
 } from "./import-parse.js"
 import { PDF_IMPORT_NOTICE } from "./import-word.js"
-import { OUTLINE_MAX_CHARS } from "./outline.js"
-import { expectListIsLivePages } from "../test/paper-live-pages.js"
-import { readWordOutline } from "./word-package/word-reading.js"
-import { IMPORT_SIZE_MESSAGE } from "./store.js"
+import { OUTLINE_MAX_CHARS } from "../outline.js"
+import { expectListIsLivePages } from "../../test/paper-live-pages.js"
+import { readWordOutline } from "../word-package/word-reading.js"
+import { IMPORT_SIZE_MESSAGE } from "../store.js"
 
 const WORD =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document"

@@ -1,12 +1,12 @@
 import { afterEach, describe, expect, it } from "vitest"
 
-import { files, paperDocs, paperPackageHeads } from "../db/schema.js"
+import { files, paperDocs, paperPackageHeads } from "../../db/schema.js"
 import {
   createMigratedTestDb,
   createTestApp,
   signUp,
   testWebOrigin,
-} from "../test/harness.js"
+} from "../../test/harness.js"
 import {
   pagedPdf,
   publishedText,
@@ -19,7 +19,7 @@ import {
   IMPORT_PDF_PAGES_MESSAGE,
   importParsers,
 } from "./import-parse.js"
-import { IMPORT_FILE_CAP, IMPORT_SIZE_MESSAGE } from "./store.js"
+import { IMPORT_FILE_CAP, IMPORT_SIZE_MESSAGE } from "../store.js"
 
 type Published = { generation: string; docId: string }
 

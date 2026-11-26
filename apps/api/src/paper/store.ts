@@ -37,7 +37,7 @@ import {
   classifyImport,
   importParsers,
   mediaTypeForImport,
-} from "./import-parse.js"
+} from "./import/import-parse.js"
 
 import { seedColumns } from "./content/content-store.js"
 import {

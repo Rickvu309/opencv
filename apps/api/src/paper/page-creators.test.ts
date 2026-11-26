@@ -24,7 +24,7 @@ import {
   signUp,
   testWebOrigin,
 } from "../test/harness.js"
-import { textDocx, textPdf } from "./import-fixtures.test.js"
+import { textDocx, textPdf } from "./import/import-fixtures.test.js"
 import { openWordPage } from "./index.js"
 import { PAGE_STORE_FILES, pageInsertingExports } from "./page-writes.js"
 import { fixturePackage, paragraph } from "./word-package/package-fixtures.js"

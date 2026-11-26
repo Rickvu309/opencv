@@ -1,6 +1,6 @@
 import { ERROR_CODES } from "@workspace/domain/kernel"
 
-import { CommandError } from "../platform/errors.js"
+import { CommandError } from "../../platform/errors.js"
 import {
   IMPORT_FAILED_MESSAGE,
   type ImportReader,
@@ -8,7 +8,7 @@ import {
   parseImportFile,
 } from "./import-parse.js"
 import { importedTextLines } from "./import-text-lines.js"
-import { pageBytesOf } from "./word-package/word/template.js"
+import { pageBytesOf } from "../word-package/word/template.js"
 
 export const PDF_IMPORT_NOTICE =
   "Imported the text of your PDF. Layout, fonts and photo were not kept."
