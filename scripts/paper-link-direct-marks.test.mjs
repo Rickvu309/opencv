@@ -12,6 +12,9 @@ import test from "node:test"
 import { detectDirectMarks as detect } from "./lib/paper-rich-structure.mjs"
 import { pathAtRevision } from "./lib/path-at-revision.mjs"
 
+const revisionOf = (path) =>
+  path.endsWith("native-layout-formatting.ts") ? "2d8c005a" : "6017f74c"
+
 test("Word link styling preserves direct marks instead of stripping their XML", () => {
   for (const mark of ["b", "i", "u", "strike", "color", "rStyle"])
     assert.ok(
@@ -146,10 +149,7 @@ test("the full style cascade and shared Docs groups reject their introducing mis
   ]) {
     const before = execFileSync(
       "git",
-      [
-        "show",
-        `${path.endsWith("native-layout-formatting.ts") ? "2d8c005a" : "6017f74c"}:${path}`,
-      ],
+      ["show", `${revisionOf(path)}:${pathAtRevision(revisionOf(path), path)}`],
       { encoding: "utf8" }
     )
     assert.ok(detectStyleCascade(before, path).length, path)

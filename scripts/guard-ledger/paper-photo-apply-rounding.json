@@ -8,6 +8,10 @@
   "historic": {
     "mode": "detect",
     "sha": "dfdf0043af7d72febc2b2db1a36b5d87b4a0d886",
-    "path": "apps/web/src/features/paper/rich-photo-form.ts"
+    "path": "apps/web/src/features/paper/rich-photo-form.ts",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/web/src/features/paper/rich-editor/rich-photo-form.ts"
+    }
   }
 }

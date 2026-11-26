@@ -148,7 +148,11 @@ test("round-one guards reject the reviewed head and accept the repaired sources"
   ]) {
     const original = execFileSync(
       "git",
-      ["show", "76bc742eaf0cbfd579d930a91bea052dc7193570:" + file],
+      [
+        "show",
+        "76bc742eaf0cbfd579d930a91bea052dc7193570:" +
+          pathAtRevision("76bc742eaf0cbfd579d930a91bea052dc7193570", file),
+      ],
       { cwd: root, encoding: "utf8" }
     )
     assert.ok(detect(original, file).length, file)
@@ -187,7 +191,11 @@ test("round-two guards reject reviewed sources and accept shared link presentati
   ]) {
     const original = execFileSync(
       "git",
-      ["show", "76bc742eaf0cbfd579d930a91bea052dc7193570:" + file],
+      [
+        "show",
+        "76bc742eaf0cbfd579d930a91bea052dc7193570:" +
+          pathAtRevision("76bc742eaf0cbfd579d930a91bea052dc7193570", file),
+      ],
       {
         cwd: root,
         encoding: "utf8",
