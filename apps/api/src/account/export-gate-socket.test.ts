@@ -1,7 +1,7 @@
 import net from "node:net"
 import type { AddressInfo } from "node:net"
 
-import { LIMITS } from "@workspace/domain"
+import { LIMITS } from "@workspace/domain/limits"
 import { serve } from "@hono/node-server"
 import { Hono } from "hono"
 import { afterEach, describe, expect, it, vi } from "vitest"

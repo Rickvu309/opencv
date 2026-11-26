@@ -1,15 +1,17 @@
 import {
-  catalog,
   DEFAULT_COACH_MODELS,
-  RICH_NATIVE_WRITER,
-  nativeBasisSchema,
   type CoachFocusDoc,
   type ApplyScanExtractInput,
   type ChatToolName,
   type CoachRuntime,
   type CoachStreamPart,
   type CoachTurnInput,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
+import { catalog } from "@workspace/domain/kernel"
+import {
+  RICH_NATIVE_WRITER,
+  nativeBasisSchema,
+} from "@workspace/domain/paper-doc"
 
 import {
   createRequestStepBoundary,

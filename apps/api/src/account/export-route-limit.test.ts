@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import { LIMITS } from "@workspace/domain"
+import { LIMITS } from "@workspace/domain/limits"
 
 import {
   authHeaders,

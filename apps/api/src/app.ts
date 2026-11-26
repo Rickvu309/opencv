@@ -1,6 +1,6 @@
 import { handleAuthRequest } from "./auth-consent.js"
 import { connectionRoutes } from "./connections/index.js"
-import type { CoachRuntime } from "@workspace/domain"
+import type { CoachRuntime } from "@workspace/domain/coach"
 import { Hono } from "hono"
 import { bodyLimit } from "hono/body-limit"
 import { cors } from "hono/cors"

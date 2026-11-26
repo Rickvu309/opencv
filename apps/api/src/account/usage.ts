@@ -2,15 +2,14 @@ import {
   coachLimitMessage,
   dailyTurnCap,
   dayWindow,
-  ERROR_CODES,
   sessionHours,
   sessionWindow,
-  parseUserId,
   usageSnapshot,
   weekWindow,
-  type CoachMode,
   type Plan,
-} from "@workspace/domain"
+} from "@workspace/domain/account"
+import { type CoachMode } from "@workspace/domain/coach"
+import { ERROR_CODES, parseUserId } from "@workspace/domain/kernel"
 import { and, eq, gte, sql } from "drizzle-orm"
 
 import { coachModelEnv, type CoachModelEnv } from "../platform/config.js"
