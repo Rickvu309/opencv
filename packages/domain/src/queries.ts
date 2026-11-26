@@ -2,7 +2,6 @@ import { z } from "zod"
 import { catalog } from "./catalog.js"
 
 import { queryContract } from "./contract.js"
-import { paperQueries } from "./paper-doc/paper-contract.js"
 
 type CatalogReads = {
   [
@@ -26,7 +25,6 @@ const catalogReads = Object.fromEntries(
 
 export const queries = queryContract({
   ...catalogReads,
-  ...paperQueries,
 })
 
 type Queries = typeof queries

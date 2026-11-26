@@ -3,7 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen } from "@testing-library/react"
 import { NATIVE_WRITER } from "@workspace/domain"
 
-import { importPaperFile, paperListKey } from "@/features/paper/paper-api.ts"
+import { importPaperFile } from "@/features/paper/paper-api.ts"
+import { paperListQuery } from "@/lib/paper-list.ts"
 import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
 import { catalogClient } from "@/lib/contract-client.ts"
 import { PaperDocPage } from "@/routes/paper-doc.tsx"
@@ -198,7 +199,10 @@ describe.each(Object.entries(CREATORS))(
       const server = fakeServer()
       const home = server.add("word")
       const queryClient = client()
-      queryClient.setQueryData(paperListKey(), server.listed())
+      queryClient.setQueryData(
+        paperListQuery("owner-1").queryKey,
+        server.listed()
+      )
       const go = mount(`/paper/${home.id}`, queryClient)
       expect(await screen.findByRole("article", { name: "Page" })).toBeVisible()
       const docId = await creator.make(server, queryClient)
@@ -209,7 +213,10 @@ describe.each(Object.entries(CREATORS))(
     it("opens from the library with a list read before it was made", async () => {
       const server = fakeServer()
       const queryClient = client()
-      queryClient.setQueryData(paperListKey(), server.listed())
+      queryClient.setQueryData(
+        paperListQuery("owner-1").queryKey,
+        server.listed()
+      )
       const docId = await creator.make(server, queryClient)
       mount(`/paper/${docId}`, queryClient)
       await expectOpened(server, creator.format, docId)
@@ -219,7 +226,10 @@ describe.each(Object.entries(CREATORS))(
       const server = fakeServer()
       const queryClient = client()
       const docId = await creator.make(server, queryClient)
-      queryClient.setQueryData(paperListKey(), server.listed())
+      queryClient.setQueryData(
+        paperListQuery("owner-1").queryKey,
+        server.listed()
+      )
       mount(`/paper/${docId}`, queryClient)
       await expectOpened(server, creator.format, docId)
     })
@@ -235,7 +245,8 @@ describe.each(Object.entries(CREATORS))(
 
 const listReads = (server: Server) =>
   server.exchanges.filter(
-    (exchange) => exchange.url === "/api/paper" && exchange.method === "GET"
+    (exchange) =>
+      exchange.url === "/api/reads/paper.list" && exchange.method === "POST"
   ).length
 
 async function settleForAMinute() {
@@ -301,7 +312,10 @@ describe("the route decides once and stops", () => {
     const home = server.add("word")
     const { target, after } = prepare(server)
     const queryClient = client()
-    queryClient.setQueryData(paperListKey(), server.listed())
+    queryClient.setQueryData(
+      paperListQuery("owner-1").queryKey,
+      server.listed()
+    )
     after?.()
     const outcome = await openedOn(
       server,
@@ -376,7 +390,10 @@ describe("the route decides once and stops", () => {
     const server = fakeServer()
     const page = server.add("word")
     const queryClient = client()
-    queryClient.setQueryData(paperListKey(), server.listed())
+    queryClient.setQueryData(
+      paperListQuery("owner-1").queryKey,
+      server.listed()
+    )
     const outcome = await openedOn(server, queryClient, null, () => {}, page.id)
     expect(outcome.screen).toBe("page")
     expect(outcome.listReads).toBeLessThanOrEqual(1)

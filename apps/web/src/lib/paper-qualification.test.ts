@@ -6,14 +6,9 @@ import {
   parsePaperId,
 } from "@workspace/domain"
 import { afterEach, expect, it, vi } from "vitest"
-import { listPaper, paperListKey } from "../features/paper/paper-api.ts"
+import { readPaperList } from "./paper-list.ts"
 import { endpoints } from "./requests.ts"
 import { qualifiedPaperKey, qualifiedPaperRead } from "./paper-qualification.ts"
-
-import {
-  coachPaperOptions,
-  qualifiedCoachPaperOptions,
-} from "./coach-context.ts"
 
 const id = parsePaperId("01990b00-0000-7000-8000-000000000001")
 const options = { ownerId: "owner", sessionId: "session" }
@@ -58,19 +53,20 @@ function listQualified(
   return qualifiedPaperRead("paper.list", endpoints.paper, qualification)
 }
 function listKey(qualification: Parameters<typeof qualifiedPaperKey>[1]) {
-  return qualifiedPaperKey(paperListKey(), qualification)
+  return qualifiedPaperKey(paperListPrefix(), qualification)
 }
 function response(data: unknown) {
   return Response.json({ ok: true, data })
 }
+const paperListPrefix = () => ["paper.list"] as const
 afterEach(() => vi.unstubAllGlobals())
 
 it("keeps all default reads unqualified", async () => {
-  const fetch = vi.fn().mockImplementation(async () => response({}))
+  const fetch = vi.fn().mockImplementation(async () => response([]))
   vi.stubGlobal("fetch", fetch)
-  await listPaper()
+  await readPaperList()
   for (const [, init] of fetch.mock.calls)
-    expect(init.headers.has("x-paper-writer")).toBe(false)
+    expect(JSON.parse(init.body)).not.toHaveProperty("writer")
 })
 
 it.each([
@@ -101,16 +97,14 @@ it("preserves an incompatible writer and propagates refusal without retry", asyn
   await expect(listQualified({ ...options, writer })).rejects.toMatchObject({
     code: "CONFLICT",
   })
-  expect(
-    JSON.parse(fetch.mock.calls[0]![1].headers.get("x-paper-writer"))
-  ).toEqual(writer)
+  expect(JSON.parse(fetch.mock.calls[0]![1].body).writer).toEqual(writer)
   expect(fetch).toHaveBeenCalledTimes(1)
 })
 
 it("scopes qualified keys without losing command invalidation prefixes", async () => {
   const client = new QueryClient()
   const key = listKey(options)
-  expect(key.slice(0, 1)).toEqual(paperListKey())
+  expect(key.slice(0, 1)).toEqual(paperListPrefix())
   for (const other of [
     { ...options, ownerId: "other" },
     { ...options, sessionId: "new" },
@@ -119,10 +113,10 @@ it("scopes qualified keys without losing command invalidation prefixes", async (
     expect(listKey(other)).not.toEqual(key)
   expect(listKey({ ...options })).toEqual(key)
   client.setQueryData(key, [view])
-  client.setQueryData(paperListKey(), { legacy: true })
-  await client.invalidateQueries({ queryKey: paperListKey() })
+  client.setQueryData(paperListPrefix(), { legacy: true })
+  await client.invalidateQueries({ queryKey: paperListPrefix() })
   expect(client.getQueryState(key)?.isInvalidated).toBe(true)
-  expect(client.getQueryData(paperListKey())).toEqual({ legacy: true })
+  expect(client.getQueryData(paperListPrefix())).toEqual({ legacy: true })
   client.clear()
 })
 
@@ -186,12 +180,12 @@ it("cancellation cannot populate the next session cache", async () => {
 it("keeps the default Coach query separate from explicit qualified context", async () => {
   const fetcher = vi.fn().mockImplementation(async () => response([view]))
   vi.stubGlobal("fetch", fetcher)
-  await coachPaperOptions()
-  expect(
-    new Headers(fetcher.mock.calls[0]?.[1].headers).has("x-paper-writer")
-  ).toBe(false)
-  await qualifiedCoachPaperOptions(options)
-  expect(
-    new Headers(fetcher.mock.calls[1]?.[1].headers).get("x-paper-writer")
-  ).toBe(JSON.stringify(NATIVE_WRITER))
+  await readPaperList()
+  expect(JSON.parse(fetcher.mock.calls[0]?.[1].body)).not.toHaveProperty(
+    "writer"
+  )
+  await qualifiedPaperRead("paper.list", endpoints.paper, options)
+  expect(JSON.parse(fetcher.mock.calls[1]?.[1].body).writer).toEqual(
+    NATIVE_WRITER
+  )
 })

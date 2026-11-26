@@ -271,7 +271,6 @@ export const ROUTE_CASES: readonly RouteCase[] = [
   get("/api/paper/packages"),
   get("/api/paper/packages/:docId/read", mintedPage),
   get("/api/paper/packages/:docId/export", mintedPage),
-  get("/api/paper"),
   postForm("/api/paper/letter-attachment", () => textUpload),
   IMPORT_CASES.docx,
   IMPORT_CASES.pdf,

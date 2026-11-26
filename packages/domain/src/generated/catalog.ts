@@ -64,6 +64,7 @@ import { operation as paper$edit } from "../operations/paper/edit/operation.js"
 import { operation as paper$export } from "../operations/paper/export/operation.js"
 import { operation as paper$files } from "../operations/paper/files/operation.js"
 import { operation as paper$import } from "../operations/paper/import/operation.js"
+import { operation as paper$list } from "../operations/paper/list/operation.js"
 import { operation as paper$outline } from "../operations/paper/outline/operation.js"
 import { operation as paper$read } from "../operations/paper/read/operation.js"
 import { operation as paper$recover } from "../operations/paper/recover/operation.js"
@@ -143,6 +144,7 @@ export const catalog = {
   "paper.export": paper$export,
   "paper.files": paper$files,
   "paper.import": paper$import,
+  "paper.list": paper$list,
   "paper.outline": paper$outline,
   "paper.read": paper$read,
   "paper.recover": paper$recover,

@@ -141,7 +141,10 @@ const TOOL_COPY = {
     label: "Look at your Paper files",
     read: "Looked at your Paper files",
   },
-  "paper.list": { label: "Look at your Paper", read: "Looked at your Paper" },
+  [catalog["paper.list"].name]: {
+    label: "Look at your Paper",
+    read: "Looked at your Paper",
+  },
   [catalog["paper.outline"].name]: {
     label: "Read your Paper outline",
     read: "Read your Paper outline",

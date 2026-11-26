@@ -8,15 +8,12 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { getDb, withDatabase, type TestDatabase } from "../db/context.js"
 import { paperDocs, user } from "../db/schema.js"
-import { Registry } from "../registry/registry.js"
+import type { Registry } from "../registry/registry.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { richPaper } from "../test/rich-paper.js"
 import { seedColumns } from "./content-document.js"
 import { png } from "./photo.fixtures.js"
-import { bindOperation } from "../registry/bind.js"
-import { implementation as createPaper } from "./operations/create/server.js"
-import { implementation as duplicatePaper } from "./operations/duplicate/server.js"
-import { registerPaper } from "./index.js"
+import { paperRegistry } from "./paper-registry.test-support.js"
 import { saveFile } from "./store.js"
 
 const person = personActor("blank-paper-copy")
@@ -35,10 +32,7 @@ beforeAll(async () => {
     name: "Ada",
     email: "blank-paper-copy@example.com",
   })
-  registry = new Registry()
-  registerPaper(registry)
-  bindOperation(registry, createPaper)
-  bindOperation(registry, duplicatePaper)
+  registry = paperRegistry()
 })
 
 afterAll(async () => {

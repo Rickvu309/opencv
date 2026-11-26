@@ -67,8 +67,10 @@ export async function expectListIsLivePages(
   const userId = z
     .object({ user: z.object({ id: z.string() }) })
     .parse(await session.json()).user.id
-  const response = await app.request("/api/paper", {
-    headers: richEditorHeaders(account.cookie),
+  const response = await app.request("/api/reads/paper.list", {
+    method: "POST",
+    headers: authHeaders(account.cookie),
+    body: JSON.stringify({ writer: RICH_NATIVE_WRITER }),
   })
   expect(response.status).toBe(200)
   const fromList = listed

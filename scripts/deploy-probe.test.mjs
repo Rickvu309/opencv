@@ -67,7 +67,7 @@ function production(shape = {}) {
         return shape.sessionExpired || !authed(options)
           ? { status: 401, body: recorded.refusedSession }
           : { status: shape.sessionStatus ?? 200, body: { ok: true } }
-      if (path === "/api/paper")
+      if (path === "/api/reads/paper.list")
         return { status: 200, body: shape.list ?? recorded.list }
       if (path === "/api/reads/paper.read")
         return shape.readMissing
@@ -128,7 +128,7 @@ test("a production shaped like main passes and every request is a read", async (
       "GET /health/deep",
       "GET /version.txt",
       "GET /api/session",
-      "GET /api/paper",
+      "POST /api/reads/paper.list",
       "POST /api/reads/paper.read",
       "BROWSER /paper/" + docId,
       `GET /api/paper/packages/${docId}/export`,
@@ -288,7 +288,7 @@ test("an expired session is probe-broken, never product red, and never prints th
   assert.equal(outcome.kind, "probe-broken")
   assert.match(outcome.reason, /smoke session was refused \(HTTP 401\)/)
   assert.ok(!JSON.stringify(outcome).includes("s3cr3t"))
-  assert.ok(!calls.includes("GET /api/paper"))
+  assert.ok(!calls.includes("POST /api/reads/paper.list"))
 })
 
 test("a missing or malformed session or document id is probe-broken before any request", async () => {

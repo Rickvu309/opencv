@@ -57,7 +57,6 @@ test("actual Coach sources preserve the native integration invariant", () => {
     "apps/api/src/coach/task-runtime.ts",
     "apps/api/src/coach/fake.ts",
     "apps/web/src/lib/paper-qualification.ts",
-    "apps/web/src/lib/coach-context.ts",
   ]) {
     const text = readFileSync(new URL(`../${file}`, import.meta.url), "utf8")
     assert.deepEqual(detectNativeClientBasis(text, file), [], file)

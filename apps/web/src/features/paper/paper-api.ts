@@ -1,43 +1,20 @@
 import {
   catalog,
   parseChatId,
-  LIBRARY_WRITER,
   paperImportResponseSchema,
   letterAttachmentContextSchema,
   chatIdSchema,
 } from "@workspace/domain"
 import type { QueryClient } from "@tanstack/react-query"
-import type {
-  ChatDetail,
-  ChatToolName,
-  FileId,
-  QueryOutput,
-} from "@workspace/domain"
+import type { ChatDetail, ChatToolName, FileId } from "@workspace/domain"
 
-import { ApiError, apiFetch, isErrorEnvelope } from "@/lib/api.ts"
+import { ApiError, isErrorEnvelope } from "@/lib/api.ts"
 import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
-import { catalogClient, queryKey } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 import { streamChatTurn } from "@/lib/coach-stream.ts"
 import { tailCoachTask } from "@/lib/coach-task-client.ts"
 import type { CoachTaskState } from "@/lib/coach-task-state.ts"
 import { endpoints, fetchBinary } from "@/lib/requests.ts"
-
-export const paperListKey = () => queryKey({ query: "paper.list" })
-
-export function listPaper() {
-  return apiFetch<SuccessBody<QueryOutput<"paper.list">>>(endpoints.paper).then(
-    unwrapData
-  )
-}
-
-export const paperLibraryKey = () =>
-  queryKey({ query: "paper.list", input: { writer: LIBRARY_WRITER } })
-
-export function listLibraryPaper() {
-  return apiFetch<SuccessBody<QueryOutput<"paper.list">>>(endpoints.paper, {
-    headers: { "x-paper-writer": JSON.stringify(LIBRARY_WRITER) },
-  }).then(unwrapData)
-}
 
 export class PaperLimitError extends Error {
   readonly resetsAt: string | null

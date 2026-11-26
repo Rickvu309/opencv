@@ -6,14 +6,15 @@ import {
   nativeAdmission,
   sameNativeProvenance,
   paperDocumentInfoSchema,
-  paperQueries,
+  paperViewSchema,
+  z,
   type NativeWriter,
   type PaperView,
-  type QueryOutput,
 } from "@workspace/domain"
 
 import { apiFetch } from "./api.ts"
 import { unwrapData, type SuccessBody } from "./api-envelope.ts"
+import { readPaperList } from "./paper-list.ts"
 
 export type PaperQualification = {
   ownerId: string
@@ -72,7 +73,7 @@ export function qualifiedPaperRead(
   name: "paper.list",
   path: string,
   options: PaperQualification
-): Promise<QueryOutput<"paper.list">>
+): Promise<PaperView[]>
 export async function qualifiedPaperRead(
   name: "paper.read",
   path: string,
@@ -86,17 +87,24 @@ export async function qualifiedPaperRead(
   const writer = paperWriter(options)
   qualifiedPaperKey([name], options)
   options.signal?.throwIfAborted()
-  const payload = await apiFetch<SuccessBody<unknown>>(path, {
-    headers: { "x-paper-writer": JSON.stringify(writer) },
-    signal: options.signal,
-  })
-  options.signal?.throwIfAborted()
   if (name === "paper.read") {
+    const payload = await apiFetch<SuccessBody<unknown>>(path, {
+      headers: { "x-paper-writer": JSON.stringify(writer) },
+      signal: options.signal,
+    })
+    options.signal?.throwIfAborted()
     const info = paperDocumentInfoSchema.parse(unwrapData(payload))
     options.signal?.throwIfAborted()
     return info
   }
-  const rows = paperQueries["paper.list"].output.parse(unwrapData(payload))
+  const rows = z
+    .array(paperViewSchema)
+    .parse(
+      await readPaperList(
+        { writer },
+        options.signal ? { signal: options.signal } : {}
+      )
+    )
   rows.forEach((row) => validateBasis(row, writer))
   options.signal?.throwIfAborted()
   return rows

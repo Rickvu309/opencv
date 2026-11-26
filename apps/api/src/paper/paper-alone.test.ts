@@ -3,13 +3,9 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { withDatabase, type TestDatabase } from "../db/context.js"
 import { user } from "../db/schema.js"
-import { Registry } from "../registry/registry.js"
+import type { Registry } from "../registry/registry.js"
 import { createMigratedTestDb } from "../test/harness.js"
-import { bindOperation } from "../registry/bind.js"
-import { registerPaper } from "./index.js"
-import { implementation as createPaper } from "./operations/create/server.js"
-import { implementation as deletePaper } from "./operations/delete/server.js"
-import { implementation as updatePaper } from "./operations/update/server.js"
+import { paperRegistry } from "./paper-registry.test-support.js"
 
 const person = personActor("paper-alone")
 
@@ -26,11 +22,7 @@ beforeAll(async () => {
     name: "Ada",
     email: "paper-alone@example.com",
   })
-  registry = new Registry()
-  registerPaper(registry)
-  bindOperation(registry, updatePaper)
-  bindOperation(registry, deletePaper)
-  bindOperation(registry, createPaper)
+  registry = paperRegistry()
 })
 
 afterAll(async () => {

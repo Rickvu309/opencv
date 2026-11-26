@@ -10,7 +10,9 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import { apiBaseUrl } from "@/lib/api-url.ts"
 import { catalogClient, queryKey } from "@/lib/contract-client.ts"
 
-import { importPaperFile, listPaper, paperListKey } from "./paper-api.ts"
+import { paperListQuery, readPaperList } from "@/lib/paper-list.ts"
+
+import { importPaperFile } from "./paper-api.ts"
 
 function envelope<T>(data: T) {
   return Response.json({ ok: true, data })
@@ -111,12 +113,14 @@ describe("paper API client", () => {
     })
   })
 
-  it("lists documents from GET /api/paper", async () => {
+  it("lists documents through the catalog read door", async () => {
     const fetchMock = vi.fn().mockResolvedValue(envelope([]))
     vi.stubGlobal("fetch", fetchMock)
 
-    await expect(listPaper()).resolves.toEqual([])
-    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(`${apiBaseUrl}/api/paper`)
+    await expect(readPaperList()).resolves.toEqual([])
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe(
+      `${apiBaseUrl}/api/reads/paper.list`
+    )
   })
 
   it("reads files through the catalog read door", async () => {
@@ -137,7 +141,9 @@ describe("paper commands through the contract client", () => {
       .mockResolvedValue(envelope({ id: docId, previousName: "Old" }))
     vi.stubGlobal("fetch", fetchMock)
     const queryClient = new QueryClient()
-    for (const key of [paperListKey(), paperInfoKey(docId)]) {
+    const list = paperListQuery("owner")
+    queryClient.getQueryCache().build(queryClient, list)
+    for (const key of [list.queryKey, paperInfoKey(docId)]) {
       queryClient.setQueryData(key, { stale: true })
     }
 
@@ -148,7 +154,7 @@ describe("paper commands through the contract client", () => {
     expect(JSON.parse(String((call[1] as RequestInit).body))).toMatchObject({
       input: { docId },
     })
-    for (const key of [paperListKey(), paperInfoKey(docId)]) {
+    for (const key of [list.queryKey, paperInfoKey(docId)]) {
       expect(queryClient.getQueryState(key)?.isInvalidated).toBe(true)
     }
   })

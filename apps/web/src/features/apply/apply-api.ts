@@ -1,3 +1,4 @@
+import { readPaperList } from "@/lib/paper-list.ts"
 import { useQuery, type QueryClient } from "@tanstack/react-query"
 import {
   catalog,
@@ -6,11 +7,8 @@ import {
   type QueryOutput,
 } from "@workspace/domain"
 
-import { apiFetch } from "@/lib/api.ts"
-import { unwrapData, type SuccessBody } from "@/lib/api-envelope.ts"
 import { catalogClient } from "@/lib/contract-client.ts"
 import { useOwnerId } from "@/lib/owner-id.ts"
-import { endpoints } from "@/lib/requests.ts"
 
 export type ChecklistItem = JobDetail["checklist"][number]
 
@@ -48,9 +46,7 @@ export function previewJob(input: { url?: string; text?: string }) {
 }
 
 export function listPaper(kind: "cv" | "letter"): Promise<PaperListItem[]> {
-  return apiFetch<SuccessBody<PaperListItem[]>>(
-    endpoints.paperOfKind(kind)
-  ).then(unwrapData)
+  return readPaperList({ kind })
 }
 
 export type ApplyPickerCard = {

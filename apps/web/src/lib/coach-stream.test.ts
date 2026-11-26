@@ -1,6 +1,7 @@
 import { QueryClient, QueryObserver } from "@tanstack/react-query"
 import { parseJobId } from "@workspace/domain"
 import { afterEach, describe, expect, it, vi } from "vitest"
+import { paperListQuery } from "./paper-list.ts"
 
 import { streamChatTurn } from "./coach-stream.ts"
 import { authClient } from "./auth-client.ts"
@@ -61,7 +62,7 @@ describe("streamChatTurn", () => {
     }
   })
 
-  it("refreshes the Apply reads when the Coach moves a job", async () => {
+  it("refreshes the Apply reads and not the Paper list when the Coach moves a job", async () => {
     const queryClient = new QueryClient()
     const session = authClient.$store.atoms.session
     authClient.$store.atoms.session = {
@@ -70,7 +71,9 @@ describe("streamChatTurn", () => {
     const listRead = catalogClient.options("owner", "job.list", {})
     queryClient.getQueryCache().build(queryClient, listRead)
     const list = listRead.queryKey
-    const paper = queryKey({ query: "paper.list" })
+    const paperRead = paperListQuery("owner")
+    queryClient.getQueryCache().build(queryClient, paperRead)
+    const paper = paperRead.queryKey
     queryClient.setQueryData(list, [])
     queryClient.setQueryData(paper, [])
     stubTurn(
@@ -114,7 +117,7 @@ describe("streamChatTurn", () => {
       "message-end",
     ])
     expect(isStale(queryClient, list)).toBe(true)
-    expect(isStale(queryClient, paper)).toBe(true)
+    expect(isStale(queryClient, paper)).toBe(false)
   })
 
   it("refreshes nothing for a read-only tool and skips events the contract does not describe", async () => {

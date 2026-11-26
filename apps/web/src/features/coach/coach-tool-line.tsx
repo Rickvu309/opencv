@@ -1,3 +1,5 @@
+import { useOwnerId } from "@/lib/owner-id.ts"
+import { paperListQuery } from "@/lib/paper-list.ts"
 import { FileText, Wrench } from "lucide-react"
 import { coachToolLabel, humanToolText } from "./coach-tool-labels.ts"
 import {
@@ -10,9 +12,8 @@ import {
 import { documentChangeCount, documentEditDetail } from "./coach-receipt.ts"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { parseChatId, parsePendingActionId } from "@workspace/domain"
-import { coachPaperOptions } from "@/lib/coach-context.ts"
 import { useChatStore } from "./use-chat-store.ts"
-import { queryKey, catalogClient, refreshReads } from "@/lib/contract-client.ts"
+import { catalogClient, refreshReads } from "@/lib/contract-client.ts"
 import { useReducer, useRef } from "react"
 import { Link } from "@tanstack/react-router"
 
@@ -281,8 +282,7 @@ function reviewDocId(review: unknown) {
 
 function useDocumentName(docId: string | null) {
   const papers = useQuery({
-    queryKey: queryKey({ query: "paper.list" }),
-    queryFn: coachPaperOptions,
+    ...paperListQuery(useOwnerId()),
     enabled: docId !== null,
     retry: false,
   })

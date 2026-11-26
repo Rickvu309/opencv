@@ -12,7 +12,7 @@ import {
 import { Button } from "@workspace/ui/components/button"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 
-import { listPaper, paperListKey } from "@/features/paper/paper-api.ts"
+import { paperListQuery } from "@/lib/paper-list.ts"
 import { draftFromPage } from "@/features/paper-page/canvas-edit.ts"
 import { readWordPage } from "@/features/paper-page/package-read.ts"
 import { WritingPage } from "@/features/paper/writing-page.tsx"
@@ -160,10 +160,8 @@ function LegacyPaperDocPage() {
   const session = authClient.useSession()
   const owner = session.data?.user.id ?? ""
   const queryClient = useQueryClient()
-  const listQuery = useQuery({
-    queryKey: paperListKey(),
-    queryFn: listPaper,
-  })
+  const listRead = paperListQuery(owner)
+  const listQuery = useQuery(listRead)
   const listed =
     validId === null
       ? undefined
@@ -181,11 +179,7 @@ function LegacyPaperDocPage() {
     listQuery.isSuccess &&
     (listed === undefined || wordReadFailed)
   const recheck = useQuery({
-    ...paperListRecheck(
-      queryClient,
-      { queryKey: paperListKey(), queryFn: listPaper },
-      validId ?? NO_DOC
-    ),
+    ...paperListRecheck(queryClient, listRead, validId ?? NO_DOC),
     enabled: recheckWanted,
   })
   const rechecking =
@@ -240,7 +234,7 @@ function LegacyPaperDocPage() {
     (wordPage && packageQuery.isSuccess)
   const retry = () =>
     void retryPaperDocReads(queryClient, [
-      paperListKey(),
+      listRead.queryKey,
       paperListRecheckKey(validId ?? NO_DOC),
       packageRead.queryKey,
     ])

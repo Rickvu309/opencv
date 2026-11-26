@@ -1,0 +1,66 @@
+[
+  {
+    "subject": "apps/api/src/one-door.test.ts",
+    "because": "GET /api/paper is deleted: the Paper list is the paper.list operation through the read door, so it leaves the list of routes waiting to become operations.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/scenarios/paper.scenario.test.ts",
+    "because": "The scenario lists Papers through the read door with ada.read(\"paper.list\") instead of the deleted GET /api/paper; the writer moves from the header into the read's input, and the expectations are the same.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/apply/apply-api.test.ts",
+    "because": "The Apply picker's Paper list reads POST /api/reads/paper.list with the kind in the body instead of GET /api/paper?kind=cv; the case checks that path and body.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-api.test.ts",
+    "because": "listPaper and paperListKey are deleted. The case checks that readPaperList reads through the read door, and the refresh case seeds the owner-scoped catalog list key that the library now uses.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/lib/coach-stream.test.ts",
+    "because": "The Paper list is a catalog read whose cache depends on the paper resource, so a Coach job.move refreshes only the job reads. The case now checks that precise result instead of the old refresh of every legacy read.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/lib/paper-qualification.test.ts",
+    "because": "The list read sends its writer in the read's input instead of the x-paper-writer header, so the cases check the request body; coachPaperOptions and its file are deleted, and the qualified Coach case calls qualifiedPaperRead directly.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/routes/paper-doc-open.isolated.test.tsx",
+    "because": "The Paper page reads the list at reads/paper.list instead of the deleted paper route, so the expected request order names the new path; the order is unchanged.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "scripts/deploy-probe.test.mjs",
+    "because": "The deploy probe reads the smoke CV list through POST /api/reads/paper.list instead of the deleted GET /api/paper; the recorded calls and the expired-session case follow the new path.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  }
+]

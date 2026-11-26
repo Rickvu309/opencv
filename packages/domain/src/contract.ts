@@ -16,12 +16,6 @@ type QueryEntry<I extends Schema = Schema, O extends Schema = Schema> = {
   output: O
 }
 
-export function queryEntry<I extends Schema, O extends Schema>(
-  entry: QueryEntry<I, O>
-) {
-  return entry
-}
-
 export function queryContract<const T extends Record<string, QueryEntry>>(
   queries: T
 ) {
