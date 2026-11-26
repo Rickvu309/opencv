@@ -46,7 +46,6 @@ import {
 } from "./photo-references.js"
 import {
   isRichPaper,
-  needsRichEditor,
   toListedPaper,
   tryReadRichPaper,
 } from "./content/read-paper.js"
@@ -73,14 +72,6 @@ export async function ownedPaperOrNull(userId: UserId, docId: PaperId) {
     .where(and(eq(paperDocs.id, docId), eq(paperDocs.userId, userId)))
     .limit(1)
   return rows[0] ?? null
-}
-
-export async function ownedPaper(
-  userId: UserId,
-  docId: PaperId
-): Promise<never> {
-  if (!(await ownedPaperOrNull(userId, docId))) documentNotFound()
-  throw needsRichEditor()
 }
 
 function listedForEditor(

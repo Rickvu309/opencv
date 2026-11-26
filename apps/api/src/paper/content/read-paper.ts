@@ -21,13 +21,6 @@ function iso(value: Date) {
   return value.toISOString()
 }
 
-export function needsRichEditor() {
-  return new CommandError(
-    ERROR_CODES.CONFLICT,
-    "This document needs the rich Paper editor. Nothing was changed."
-  )
-}
-
 export function tryReadRichPaper(row: PaperRow) {
   const stored = richPaperDocumentSchema.safeParse(row.crdtDocument)
   return stored.success && stored.data.kind === row.kind ? stored.data : null

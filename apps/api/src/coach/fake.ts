@@ -142,19 +142,6 @@ async function* overlayTurnModel(
 
 const FAKE_COACH_WORDS = "Reviewed by the Coach."
 
-function fakeWordEdits(outline: string) {
-  const line = /^\[line ([a-f0-9-]+)\] (.*)$/m.exec(outline)
-  if (!line) return [{ op: "insert", after: null, text: FAKE_COACH_WORDS }]
-  const before = line[2] === "(empty line)" ? "" : line[2]
-  return [
-    {
-      op: "setText",
-      handle: line[1],
-      text: before ? `${before} ${FAKE_COACH_WORDS}` : FAKE_COACH_WORDS,
-    },
-  ]
-}
-
 function fakeRichEdits(outline: string) {
   const nodes = JSON.parse(outline) as { id: string }[]
   const first = nodes[0]
@@ -185,10 +172,7 @@ export function fakePaperEdit(
           nativeBasis: nativeBasisSchema.parse(focus.nativeBasis),
         }
       : {}),
-    edits:
-      typeof focus.revision === "string"
-        ? fakeWordEdits(focus.outline.split("\n").slice(1).join("\n"))
-        : fakeRichEdits(focus.outline),
+    edits: fakeRichEdits(focus.outline),
   })
 }
 

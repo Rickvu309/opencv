@@ -1,0 +1,98 @@
+[
+  {
+    "subject": "apps/api/src/coach/native-context.test.ts",
+    "because": "Every Word page became a Paper (#2121) and none can be opened since #2125, so the Coach reads and edits only Papers; these checks covered the Coach and outline reading of Word pages, which is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/coach/package-grounding.test.ts",
+    "because": "Every Word page became a Paper (#2121) and none can be opened since #2125, so the Coach reads and edits only Papers; these checks covered the Coach and outline reading of Word pages, which is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/word-outline-handles.test.ts",
+    "because": "Every Word page became a Paper (#2121) and none can be opened since #2125, so the Coach reads and edits only Papers; these checks covered the Coach and outline reading of Word pages, which is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 19
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-proposal.test.ts",
+    "because": "Every Word page became a Paper (#2121) and none can be opened since #2125, so the Coach reads and edits only Papers; these checks covered the Coach and outline reading of Word pages, which is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/word-reading.test.ts",
+    "because": "Every Word page became a Paper (#2121) and none can be opened since #2125, so the Coach reads and edits only Papers; these checks covered the Coach and outline reading of Word pages, which is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-list.test.ts",
+    "because": "Every Word page became a Paper (#2121) and none can be opened since #2125, so the Coach reads and edits only Papers; these checks covered the Coach and outline reading of Word pages, which is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 8
+  },
+  {
+    "subject": "scripts/paper-one-kind.test.mjs",
+    "because": "Every Word page became a Paper (#2121) and none can be opened since #2125, so the Coach reads and edits only Papers; these checks covered the Coach and outline reading of Word pages, which is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 5
+  },
+  {
+    "subject": "scripts/guard-ledger/paper-one-kind.json",
+    "because": "Every Word page became a Paper (#2121) and none can be opened since #2125, so the Coach reads and edits only Papers; these checks covered the Coach and outline reading of Word pages, which is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/word-card-actions.test.ts",
+    "because": "Every Word page became a Paper (#2121) and none can be opened since #2125, so the Coach reads and edits only Papers; these checks covered the Coach and outline reading of Word pages, which is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 7
+  },
+  {
+    "subject": "apps/api/src/paper/word-page-trash-proposals.test.ts",
+    "because": "Every Word page became a Paper (#2121) and none can be opened since #2125, so the Coach reads and edits only Papers; these checks covered the Coach and outline reading of Word pages, which is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "apps/api/src/paper/word-batch-proposal.test.ts",
+    "because": "Every Word page became a Paper (#2121) and none can be opened since #2125, so the Coach reads and edits only Papers; these checks covered the Coach and outline reading of Word pages, which is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 10
+  },
+  {
+    "subject": "apps/api/src/registry/invalidation.formal.test.ts > every changed read is named by the command that changed it > a later page write changes the minted outline",
+    "because": "Every Word page became a Paper (#2121) and none can be opened since #2125, so the Coach reads and edits only Papers; these checks covered the Coach and outline reading of Word pages, which is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

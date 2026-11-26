@@ -50,37 +50,13 @@ async function listedPage(registry: Registry, actor: Actor, docId: string) {
   return null
 }
 
-async function importedPackageRow(
-  registry: Registry,
-  actor: Actor,
-  docId: string
-) {
-  try {
-    const page = record(await registry.read("paper.read", { docId }, actor))
-    if (!page || page.generation !== "package") return null
-    const kind = page.kind
-    if (kind !== "cv" && kind !== "letter") return null
-    return {
-      id: text(page.docId),
-      name: text(page.name),
-      kind,
-      status: "draft",
-    }
-  } catch (error) {
-    if (!missingDocument(error)) throw error
-    return null
-  }
-}
-
 async function paperFocus(
   registry: Registry,
   actor: Actor,
   docId: string,
   blockIds?: string[]
 ): Promise<CoachFocusDoc | null> {
-  const row: Record<string, unknown> | null =
-    (await listedPage(registry, actor, docId)) ??
-    (await importedPackageRow(registry, actor, docId))
+  const row = await listedPage(registry, actor, docId)
   if (!row) throw new CommandError(ERROR_CODES.NOT_FOUND, "Document not found")
   const kind = row.kind
   if (kind !== "cv" && kind !== "letter" && kind !== "proof") return null
@@ -108,11 +84,7 @@ async function paperFocus(
     kind,
     status,
     outline: text(outline?.outline),
-    revision:
-      typeof outline?.revision === "number" ||
-      typeof outline?.revision === "string"
-        ? outline.revision
-        : 0,
+    revision: typeof outline?.revision === "number" ? outline.revision : 0,
   }
 }
 

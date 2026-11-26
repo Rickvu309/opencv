@@ -9,10 +9,10 @@ import {
 export const operation = defineOperation({
   owner: "paper",
   name: "paper.outline",
-  version: 1,
+  version: 2,
   kind: "read",
   description:
-    "Read a bounded outline of a document with block ids, kinds, section titles, heading levels, marks and links, and the revision to pass as basedOn. Pass blockIds to mark selected blocks. For native version 4 Letters, declare writer documentVersion 4, writerProtocol 1, supportedSchemaRevisions [1], capabilities structured-prose and underline; copy the returned nativeBasis unchanged into paper.edit. If truncated, pass nextCursor as cursor to read the next Word part at the same saved revision.",
+    "Read a bounded outline of a CV or Letter: its text blocks with ids, kinds and marks, the revision to pass as basedOn, and the nativeBasis to copy unchanged into paper.edit. Pass blockIds to mark selected blocks.",
   label: "Read your Paper outline",
   readLabel: "Read your Paper outline",
   input: z
@@ -23,18 +23,14 @@ export const operation = defineOperation({
         .max(50)
         .optional(),
       writer: nativeWriterSchema.optional(),
-      cursor: z.string().min(1).max(2048).optional(),
     })
     .strict(),
   publicResult: z
     .object({
-      revision: z.union([z.number().int(), z.string().uuid()]),
+      revision: z.number().int(),
       nativeBasis: nativeBasisSchema.optional(),
       outline: z.string(),
       truncated: z.boolean(),
-      nextCursor: z.string().max(2048).nullable().optional(),
-      omittedParagraphs: z.number().int().nonnegative().optional(),
-      omittedChars: z.number().int().nonnegative().optional(),
     })
     .strip(),
   coach: "auto",

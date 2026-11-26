@@ -1,4 +1,4 @@
-import { ERROR_CODES, parsePaperId } from "@workspace/domain/kernel"
+import { parsePaperId } from "@workspace/domain/kernel"
 import {
   blankCv,
   blankLetter,
@@ -10,8 +10,6 @@ import { z } from "zod"
 
 import { getDb } from "../../db/context.js"
 import { paperPackageHeads, paperPackageVersions } from "../../db/schema.js"
-import { CommandError } from "../../platform/errors.js"
-import { readWordOutline } from "./word-reading.js"
 
 const docIdSchema = z.string().uuid()
 
@@ -74,19 +72,4 @@ export async function ownedPackagePaper(owner: string, docId: string) {
   if (!docIdSchema.safeParse(docId).success) return null
   const row = (await packageRows(owner, docId).limit(1))[0]
   return row ? packagePaper(row) : null
-}
-
-export async function ownedPackageOutline(
-  owner: string,
-  docId: string,
-  blockIds: readonly string[] | undefined,
-  maxChars: number,
-  cursor?: string
-) {
-  if (!(await ownedPackagePaper(owner, docId))) return null
-  return readWordOutline(owner, { docId, cursor }, blockIds, maxChars)
-}
-
-export function missingDocument(error: unknown) {
-  return error instanceof CommandError && error.code === ERROR_CODES.NOT_FOUND
 }

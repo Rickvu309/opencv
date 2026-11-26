@@ -177,7 +177,7 @@ export type CoachFocusDoc = {
   kind: "cv" | "letter" | "proof"
   status: "draft" | "ready" | "published"
   outline: string
-  revision: number | string
+  revision: number
   nativeBasis?: NativeBasis | undefined
 }
 

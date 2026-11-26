@@ -503,14 +503,6 @@ describe("every changed read is named by the command that changed it", () => {
     expect(gapsIn([...acts, ...reversals], invalidatesTable())).toEqual([])
   })
 
-  it("a later page write changes the minted outline", () => {
-    const changed = acts
-      .filter((entry) => entry.command === "paper.canvas")
-      .flatMap((entry) => entry.changed)
-    const outline = changed.find((spec) => spec.query === "paper.outline")
-    expect(typeof outline?.input.docId).toBe("string")
-  })
-
   it("R2: an undo changes only reads that activity.undo refreshes", () => {
     expect(gapsIn(undos, invalidatesTable())).toEqual([])
   })
