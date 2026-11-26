@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/web/src/lib/contract-client.test.ts",
+    "because": "No legacy command with idempotency none remains once paper.save is a pair, so the case that an explicit key is dropped for such a command has no subject. The catalog run already sends no key for paper.save, which paper-api.test.ts checks.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
