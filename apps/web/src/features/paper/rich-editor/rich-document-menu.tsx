@@ -18,7 +18,7 @@ import type { openRichPaperSession } from "@/lib/paper-rich.ts"
 import type { SyncStatus } from "@/lib/paper-sync-status.ts"
 import { SavedRichWordChanged } from "@/lib/paper-rich-word.ts"
 import { RichPageSetup } from "./rich-page-setup.tsx"
-import type { TextEditor } from "../rich-text-toolbar-control.tsx"
+import type { TextEditor } from "./rich-text-toolbar-control.tsx"
 import "../design/cv-editor.css"
 import "../design/paper-floating-menus.css"
 
