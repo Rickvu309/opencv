@@ -1,0 +1,82 @@
+[
+  {
+    "subject": "packages/domain/src/paper-doc-rebase.test.ts",
+    "because": "It tested retired Paper code (the block document merge engine or the old BlockNote block schema) that nothing outside its own tests reached; the code is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 32
+  },
+  {
+    "subject": "packages/domain/src/paper-doc-rebase-cv.property.test.ts",
+    "because": "It tested retired Paper code (the block document merge engine or the old BlockNote block schema) that nothing outside its own tests reached; the code is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 2
+  },
+  {
+    "subject": "packages/domain/src/paper-doc-rebase.property.test.ts",
+    "because": "It tested retired Paper code (the block document merge engine or the old BlockNote block schema) that nothing outside its own tests reached; the code is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "packages/domain/src/paper-doc-rebase.types.test.ts",
+    "because": "It tested retired Paper code (the block document merge engine or the old BlockNote block schema) that nothing outside its own tests reached; the code is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 12
+  },
+  {
+    "subject": "packages/domain/src/paper-doc-rebase.vocabulary.test.ts",
+    "because": "It tested retired Paper code (the block document merge engine or the old BlockNote block schema) that nothing outside its own tests reached; the code is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 6
+  },
+  {
+    "subject": "packages/paper-crdt/src/mapping.test.ts",
+    "because": "It tested retired Paper code (the block document merge engine or the old BlockNote block schema) that nothing outside its own tests reached; the code is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 9
+  },
+  {
+    "subject": "packages/paper-crdt/src/blocks-repair.test.ts",
+    "because": "It tested retired Paper code (the block document merge engine or the old BlockNote block schema) that nothing outside its own tests reached; the code is deleted.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "scripts/paper-header-rebase.test.mjs",
+    "because": "It guarded packages/domain/src/paper-doc/rebase.ts, which is deleted because nothing outside its tests used it.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "packages/domain/src/paper-doc.test.ts",
+    "because": "Its one rebase case tested the deleted block merge engine.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/property-seed.test.mjs",
+    "because": "Its presence check named packages/paper-crdt/src/mapping.test.ts, which is deleted with the old block schema; the scan of every remaining Paper editing test stays.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
