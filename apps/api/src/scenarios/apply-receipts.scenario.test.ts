@@ -1,6 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import { paper, saved, type Item, type Job } from "./apply.test-support.js"
+import {
+  jobOf,
+  paper,
+  saved,
+  type Item,
+  type Job,
+} from "./apply.test-support.js"
 import {
   dataOf,
   failureOf,
@@ -144,5 +150,65 @@ describe("refusals name what the person needs", () => {
       code: "CONFLICT",
       message: "This card moved again, so Undo was skipped",
     })
+  })
+})
+
+describe("Undo of an addition never erases a later change", () => {
+  it("skips Undo of adding a Job once the Job changed", async () => {
+    const ada = await world.person("Ada")
+    const job = await saved(ada)
+    await ada.run("job.update", { jobId: job.id, patch: { location: "Hue" } })
+    const undone = await ada.undo(String(job.activityId))
+    expect(failureOf(undone)).toMatchObject({
+      code: "CONFLICT",
+      message: "This job changed after it was saved, so Undo was skipped",
+    })
+    expect((await jobOf(ada, job.id)).location).toBe("Hue")
+  })
+
+  it("skips Undo of adding a checklist item once the item changed", async () => {
+    const ada = await world.person("Ada")
+    const job = await saved(ada)
+    const item = dataOf<Item & { activityId?: string | null }>(
+      await ada.run("job.addChecklistItem", { jobId: job.id, label: "Call" })
+    )
+    await ada.run("job.setChecklistItem", {
+      jobId: job.id,
+      itemId: item.id,
+      done: true,
+    })
+    const undone = await ada.undo(String(item.activityId))
+    expect(failureOf(undone)).toMatchObject({
+      code: "CONFLICT",
+      message: "This checklist item changed again, so Undo was skipped",
+    })
+  })
+})
+
+describe("a Word page links to a Job like any Paper", () => {
+  it("links a Word page started for the Job, and one started alone", async () => {
+    const ada = await world.person("Ada")
+    const job = await saved(ada)
+    const forJob = dataOf<{ docId: string }>(
+      await ada.run(
+        "paper.start",
+        { kind: "cv", name: "Word CV", jobId: job.id },
+        "word-cv-for-job"
+      )
+    )
+    expect((await jobOf(ada, job.id)).cvDocId).toBe(forJob.docId)
+    const alone = dataOf<{ docId: string }>(
+      await ada.run(
+        "paper.start",
+        { kind: "letter", name: "Word Letter" },
+        "word-letter-alone"
+      )
+    )
+    await ada.run("job.linkPaper", {
+      jobId: job.id,
+      docId: alone.docId,
+      kind: "letter",
+    })
+    expect((await jobOf(ada, job.id)).letterDocId).toBe(alone.docId)
   })
 })
