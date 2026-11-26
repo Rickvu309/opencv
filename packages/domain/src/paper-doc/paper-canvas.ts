@@ -1,6 +1,5 @@
 import { z } from "zod"
 
-import { jobIdSchema } from "../ids.js"
 import { paperDocNameSchema, paperTemplateIdSchema } from "./paper.js"
 import {
   WORD_LIMITS,
@@ -53,7 +52,7 @@ const mint = z
     label: wordPageLabelSchema,
     templateId: paperTemplateIdSchema.optional(),
     name: paperDocNameSchema.optional(),
-    jobId: jobIdSchema.optional(),
+    jobId: z.string().uuid().optional(),
     lines: startingLinesSchema.optional(),
   })
   .strict()

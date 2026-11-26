@@ -1,6 +1,7 @@
 import type { JobView } from "@workspace/domain"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { afterEach, expect, it, vi } from "vitest"
+import { wordPageReceipt } from "@/test/word-page-receipt.ts"
 import { startedChat } from "@/test/chat-fixtures.ts"
 import { render } from "@/test/render-with-client.tsx"
 
@@ -8,6 +9,7 @@ import { ChatStoreContext } from "@/features/coach/chat-store-context.ts"
 
 import { PaperLetterStartPage } from "./paper-letter-start-page.tsx"
 
+const LETTER = "77777777-7777-4777-8777-777777777777"
 const CHAT = "11111111-1111-4111-8111-111111111111"
 const TASK = "33333333-3333-4333-8333-333333333333"
 const REPLY = "44444444-4444-4444-8444-444444444444"
@@ -120,13 +122,14 @@ function installSlowCoach(ending: {
   const fetch = vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input)
     if (url.includes("/api/commands/paper.canvas"))
-      return ok({
-        generation: "package",
-        docId: "letter-1",
-        revision: "22222222-2222-4222-8222-222222222222",
-        name: "Cover letter, Lumière.docx",
-        kind: "letter",
-      })
+      return ok(
+        wordPageReceipt({
+          docId: LETTER,
+          revision: "22222222-2222-4222-8222-222222222222",
+          name: "Cover letter, Lumière.docx",
+          kind: "letter",
+        })
+      )
     if (url.includes("/api/commands/chat.create")) return ok(startedChat(CHAT))
     if (url.endsWith("/api/commands/coach.stop")) return ok({ stopped: true })
     if (url.includes("/turns")) {
@@ -269,7 +272,7 @@ it("opens one page with the whole letter when the Coach finishes after 30 second
   expect(mintInputs(coach.fetch)).toEqual([])
   expect(onCreated).not.toHaveBeenCalled()
   await coach.finish()
-  await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith("letter-1"))
+  await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith(LETTER))
   expect(mintInputs(coach.fetch)).toEqual([
     {
       command: "paper.canvas",
@@ -326,7 +329,7 @@ it("keeps only the text shown when the person clicks Stop after 30 seconds", asy
   await coach.writeMiddle()
   await screen.findByText(MIDDLE)
   fireEvent.click(screen.getByRole("button", { name: "Stop" }))
-  await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith("letter-1"))
+  await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith(LETTER))
   expect(mintInputs(coach.fetch)).toEqual([
     {
       command: "paper.canvas",
@@ -400,7 +403,7 @@ it("says the Coach waits for approval and opens its Chat, then opens the finishe
   expect(await screen.findByText(STILL_WRITING)).toBeInTheDocument()
   expect(screen.queryByRole("button", { name: "Open Chat" })).toBeNull()
   await coach.finish()
-  await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith("letter-1"))
+  await vi.waitFor(() => expect(onCreated).toHaveBeenCalledWith(LETTER))
   expect(mintInputs(coach.fetch)[0]?.input.lines).toEqual([
     "Dear hiring team,",
     "I ran the spring campaign.",

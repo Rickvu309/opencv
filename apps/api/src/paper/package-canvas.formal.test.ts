@@ -22,15 +22,12 @@ import {
   pendingActions,
   user,
 } from "../db/schema.js"
-import { bindCatalog } from "../registry/bind.js"
-import { Registry } from "../registry/registry.js"
 import { openBackend, type Backend } from "../test/registry-formal-support.js"
 import { commitWordCandidate } from "./package-candidates.js"
 import { prepareCanvas } from "./package-canvas.js"
 import { WORD_UNDO_MOVED } from "./word/document.js"
 import { mergeInput, splitInput, writeInput } from "./word-canvas-inputs.js"
-import { registerPaper } from "./commands.js"
-import { implementation as readWord } from "./operations/read/server.js"
+import { paperRegistry } from "./paper-registry.test-support.js"
 import {
   exportWordPackage,
   publishWordPackage,
@@ -84,9 +81,7 @@ afterAll(async () => {
 })
 
 function registry() {
-  const value = new Registry()
-  registerPaper(value)
-  bindCatalog(value, { "paper.read": readWord })
+  const value = paperRegistry()
   return value
 }
 

@@ -238,7 +238,10 @@ export function createCatalogClient<const C extends Record<string, Operation>>(
           input,
           ...(operation.idempotency === "none"
             ? {}
-            : { idempotencyKey: crypto.randomUUID() }),
+            : {
+                idempotencyKey:
+                  runOptions.idempotencyKey ?? crypto.randomUUID(),
+              }),
         }),
         ...(runOptions.signal ? { signal: runOptions.signal } : {}),
         ...(runOptions.keepalive ? { keepalive: true } : {}),

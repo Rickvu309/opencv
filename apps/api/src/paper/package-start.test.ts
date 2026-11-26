@@ -2,7 +2,6 @@ import {
   catalog,
   PAPER_START_BOUNDS,
   PAPER_TEMPLATE_IDS,
-  paperContract,
   paperDocNameSchema,
 } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
@@ -102,6 +101,6 @@ describe("paper.start takes no words of the Coach's", () => {
     expect(catalog["paper.start"].coach).toBe("confirm")
     expect("delegate" in catalog["paper.start"]).toBe(false)
     expect(catalog["paper.create"].coach).toBe("never")
-    expect(paperContract["paper.canvas"].coach).toBe("never")
+    expect(catalog["paper.canvas"].coach).toBe("never")
   })
 })

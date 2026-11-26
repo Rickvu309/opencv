@@ -9,7 +9,7 @@ import {
 import { pageWords } from "@/features/paper-page/canvas-save.ts"
 import { readWordPage } from "@/features/paper-page/package-read.ts"
 import { diffParagraphs } from "@/features/paper-page/page-diff.ts"
-import type { useRunCommand } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 import { isAbortError } from "@/lib/sse.ts"
 import { notifyWritingRefresh } from "@/lib/writing-refresh.ts"
 
@@ -24,8 +24,6 @@ const DRAFT_FAILED = "Could not draft the letter. Try again."
 const READ_FAILED = "Could not read this page. Try again."
 const PAGE_EDITED =
   "Coach's draft was not applied because you edited this page. Your text is unchanged."
-
-type Run = ReturnType<typeof useRunCommand>
 
 export function blocksForLetterLines(
   page: WordPage,
@@ -48,7 +46,6 @@ export async function redraftStoppedLetter(input: {
   owner: string
   email?: string
   queryClient: QueryClient
-  run: Run
   signal: AbortSignal
   onWritten?: (text: string) => void
   isBlank: () => boolean
@@ -136,7 +133,9 @@ export async function redraftStoppedLetter(input: {
   })
   if (!parsed.success || parsed.data.op !== "write")
     throw new Error(DRAFT_FAILED)
-  await input.run("paper.canvas", parsed.data, { signal: input.signal })
+  await catalogClient.run(input.queryClient, "paper.canvas", parsed.data, {
+    signal: input.signal,
+  })
   clearStoppedLetter(input.record.docId)
   notifyWritingRefresh()
 }

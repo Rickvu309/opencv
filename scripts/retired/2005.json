@@ -1,0 +1,34 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-continue.test.ts",
+    "because": "redraftStoppedLetter no longer takes an injected run; it saves through the catalog run. The cases now watch the canvas request on the fetch mock: none is sent when the page has words, and the final write sends op write with the caller's abort signal.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/web/src/features/paper/paper-letter-slow-coach.isolated.test.tsx",
+    "because": "The canvas reply is now parsed by the operation's result, so the mock answers with a full Word page receipt whose id is a uuid; the created letter is expected under that id instead of letter-1.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/web/src/features/paper/writing-page.test.tsx",
+    "because": "The conflict case sends its canvas write through the catalog run, so the test counts canvas requests on the fetch mock instead of an injected run, and answers with a full Word page receipt.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/web/src/lib/contract-client.test.tsx",
+    "because": "paper.canvas is an operation pair, so the generic legacy-command cases now use paper.edit, the last legacy Paper command, with an input whose outline key differs from the seeded one; the expectations are the same.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]

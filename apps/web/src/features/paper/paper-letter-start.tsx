@@ -21,7 +21,7 @@ import { listJobs } from "@/features/apply/apply-api.ts"
 import { startChat } from "@/features/coach/chat-api.ts"
 import { ApiError } from "@/lib/api-error.ts"
 import { authClient } from "@/lib/auth-client.ts"
-import { useRunCommand } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 import { isAbortError } from "@/lib/sse.ts"
 import { useQueryClient } from "@tanstack/react-query"
 
@@ -114,7 +114,6 @@ export function PaperLetterStart({
   onDraftingEnd?: () => void
   stopRef?: MutableRefObject<(() => void) | null>
 }) {
-  const run = useRunCommand()
   const signedInEmail = authClient.useSession().data?.user.email
   const guidanceId = useId()
   const queryClient = useQueryClient()
@@ -261,13 +260,15 @@ export function PaperLetterStart({
         throw new Error(
           "This letter is too long to save. Shorten it and try again."
         )
-      const created = await run("paper.canvas", {
+      const created = await catalogClient.run(queryClient, "paper.canvas", {
         op: "mint",
         label: "letter",
         name: draftName,
         ...(selected ? { jobId: selected.id } : {}),
         ...(lines.length > 0 ? { lines } : {}),
       })
+      if ("pending" in created)
+        throw new Error("Could not start this letter. Try again.")
       if (activeDraft.current === operation) {
         if (operation.stopped && lines.length === 0) {
           rememberStoppedLetter({

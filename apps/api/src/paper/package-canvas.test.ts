@@ -4,8 +4,7 @@ import { randomUUID } from "node:crypto"
 import { delegateActorSchema, personActor } from "@workspace/domain"
 import { describe, expect, it } from "vitest"
 
-import { Registry } from "../registry/registry.js"
-import { registerPaper } from "./commands.js"
+import { paperRegistry } from "./paper-registry.test-support.js"
 import { PaperPackage } from "./package-engine.js"
 import { PACKAGE_PROFILE } from "./package-profile.js"
 import { archiveDigest } from "./package-pages.js"
@@ -32,8 +31,7 @@ const loaded = createRequire(import.meta.url)(
 }
 
 function registry() {
-  const value = new Registry()
-  registerPaper(value)
+  const value = paperRegistry()
   return value
 }
 

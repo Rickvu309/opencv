@@ -117,7 +117,7 @@ export function fakeServer(
     {
       "paper.canvas": (input) => {
         const page = add("word", input.label === "letter" ? "letter" : "cv")
-        return ok({ docId: page.id, revision: REVISION })
+        return ok(wordPageReceipt({ docId: page.id, revision: REVISION }))
       },
       "paper.start": (input) => {
         const page = add("word", input.kind === "letter" ? "letter" : "cv")

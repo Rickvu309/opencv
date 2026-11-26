@@ -7,11 +7,8 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 import * as databaseContext from "../db/context.js"
 import { getDb, withDatabase } from "../db/context.js"
 import { activity, paperPackageHeads, user } from "../db/schema.js"
-import { bindCatalog } from "../registry/bind.js"
-import { Registry } from "../registry/registry.js"
 import { openBackend, type Backend } from "../test/registry-formal-support.js"
-import { registerPaper } from "./commands.js"
-import { implementation as readWord } from "./operations/read/server.js"
+import { paperRegistry } from "./paper-registry.test-support.js"
 
 let backend: Backend
 const run = <T>(fn: () => Promise<T>) => withDatabase(backend.db, fn)
@@ -52,9 +49,7 @@ describe("a blank page keeps its receipt with the save", () => {
           },
         }) as ReturnType<typeof getDb>
       })
-      const registry = new Registry()
-      registerPaper(registry)
-      bindCatalog(registry, { "paper.read": readWord })
+      const registry = paperRegistry()
       try {
         await expect(
           registry.execute({

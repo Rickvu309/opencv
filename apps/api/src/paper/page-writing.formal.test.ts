@@ -7,11 +7,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { getDb, withDatabase } from "../db/context.js"
 import { paperPackageHeads, user } from "../db/schema.js"
-import { bindCatalog } from "../registry/bind.js"
-import { Registry } from "../registry/registry.js"
 import { openBackend, type Backend } from "../test/registry-formal-support.js"
-import { registerPaper } from "./commands.js"
-import { implementation as readWord } from "./operations/read/server.js"
+import { paperRegistry } from "./paper-registry.test-support.js"
 import { packageMember } from "./package-fixtures.js"
 import { publishWordPackage, stageWordPackage } from "./package-store.js"
 import { exportWord } from "./word/document.js"
@@ -52,9 +49,7 @@ afterAll(async () => {
 })
 
 function registry() {
-  const value = new Registry()
-  registerPaper(value)
-  bindCatalog(value, { "paper.read": readWord })
+  const value = paperRegistry()
   return value
 }
 

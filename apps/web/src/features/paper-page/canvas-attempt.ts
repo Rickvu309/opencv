@@ -2,7 +2,7 @@ import { QueryClient } from "@tanstack/react-query"
 import { z } from "@workspace/domain"
 
 import { ApiError } from "@/lib/api-error.ts"
-import { runContractCommand } from "@/lib/contract-client.ts"
+import { catalogClient } from "@/lib/contract-client.ts"
 import {
   answerSent,
   type SentRecord,
@@ -24,7 +24,7 @@ export async function transmit(
   | { record: WritingRecord | null; revision: null; note: string }
 > {
   try {
-    const result = await runContractCommand(
+    const result = await catalogClient.run(
       commands,
       "paper.canvas",
       attempt.input,

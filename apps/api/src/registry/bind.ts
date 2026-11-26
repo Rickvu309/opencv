@@ -52,6 +52,14 @@ type CatalogReversalCall = {
     : never
 }[keyof typeof catalog]
 
+declare const undoOnlyBrand: unique symbol
+
+export type UndoOnlyPlan = GuardedPlan & { readonly [undoOnlyBrand]: true }
+
+export function undoOnlyReversal(plan: GuardedPlan): UndoOnlyPlan {
+  return plan as UndoOnlyPlan
+}
+
 type PairReversal<I, R, In, N extends string> =
   | ((
       input: I,
@@ -59,6 +67,7 @@ type PairReversal<I, R, In, N extends string> =
     ) =>
       | GuardedPlan<In, N>
       | (CatalogReversalCall & { expect: ReversalExpect })
+      | UndoOnlyPlan
       | IrreversibleCommand)
   | IrreversibleCommand
 
