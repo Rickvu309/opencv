@@ -199,7 +199,7 @@ test("seeded accounts are made before the api opens the database, and an up whos
     env: { PORT: "4333" },
   })
   ctx.fs.write(
-    "/work/opencv.worktrees/1-demo/packages/domain/dist/index.js",
+    "/work/opencv.worktrees/1-demo/packages/domain/dist/kernel/public.js",
     ""
   )
   ctx.proc.run = async (command, args, options) => {

@@ -289,7 +289,7 @@ test("plain-code import allow-list rejects every mistake in declarations and tra
           const packageRoot = path.join(directory, fixture.packageRoot)
           const installed = path.dirname(
             createRequire(
-              path.join(root, "packages/domain/src/index.ts")
+              path.join(root, "packages/domain/src/kernel/public.ts")
             ).resolve("zod/package.json")
           )
           fs.cpSync(installed, packageRoot, { recursive: true })

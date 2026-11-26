@@ -11,7 +11,7 @@ export type {
   CvProject,
   CvSkillGroup,
   CvTemplateId,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 export type CvData = CvDocument
 
 export type CvTemplateMeta = {

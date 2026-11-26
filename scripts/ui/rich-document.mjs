@@ -24,7 +24,7 @@ export async function openRichDocument(page, origin, answer, repo = root) {
       `/@fs/${root}/packages/paper-crdt/src/stored-document.ts`
     )
     const { nativeProvenance, richPaperDocumentSchema } = await import(
-      `/@fs/${root}/packages/domain/src/index.ts`
+      `/@fs/${root}/packages/domain/src/paper-doc/public.ts`
     )
     const document = storedFlowFixture("cv")
     document.presentation.page.width = 12240

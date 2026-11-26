@@ -163,7 +163,6 @@ test("add, rename and delete pairs regenerate deterministically without running 
       "packages/domain/src",
       "--outDir",
       "packages/domain/dist",
-      "packages/domain/src/index.ts",
       "packages/domain/src/kernel/public.ts",
     ],
     { cwd: directory, timeout: 30_000, stdio: "pipe", encoding: "utf8" }

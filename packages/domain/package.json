@@ -3,14 +3,7 @@
   "version": "0.0.0",
   "type": "module",
   "private": true,
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
-    ".": {
-      "opencv-source": "./src/index.ts",
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
     "./internal/paper-page-scale": {
       "opencv-source": "./src/paper-doc/paper-page-scale.ts",
       "types": "./dist/paper-doc/paper-page-scale.d.ts",
