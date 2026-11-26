@@ -11,7 +11,10 @@ import { installRegistry } from "../install.js"
 import { openBackend, type Backend } from "../test/registry-formal-support.js"
 import { OUTLINE_MAX_CHARS } from "./outline.js"
 import { fixturePackage, paragraph } from "./word-package/package-fixtures.js"
-import { publishWordPackage, stageWordPackage } from "./package-store.js"
+import {
+  publishWordPackage,
+  stageWordPackage,
+} from "./word-package/package-store.js"
 import { apply, open } from "./word-package/word/document.js"
 import { readWordOutline } from "./word-reading.js"
 

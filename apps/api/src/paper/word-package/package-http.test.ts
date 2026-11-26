@@ -24,7 +24,7 @@ import {
   WORD_PACKAGE_MEDIA_TYPE,
   stageWordPackage,
   publishWordPackage,
-} from "../package-store.js"
+} from "./package-store.js"
 
 it("authenticates staging, reads pinned snapshots, and exports exact DOCX bytes over HTTP", async () => {
   const { db, client } = await createMigratedTestDb()

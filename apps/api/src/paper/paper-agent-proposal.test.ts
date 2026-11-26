@@ -26,7 +26,10 @@ import { paperEditBasisMessage } from "../registry/paper-agent.js"
 import { PENDING_TTL_MS } from "../registry/proposals.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { fixturePackage, paragraph } from "./word-package/package-fixtures.js"
-import { publishWordPackage, stageWordPackage } from "./package-store.js"
+import {
+  publishWordPackage,
+  stageWordPackage,
+} from "./word-package/package-store.js"
 
 afterEach(() => {
   vi.unstubAllEnvs()

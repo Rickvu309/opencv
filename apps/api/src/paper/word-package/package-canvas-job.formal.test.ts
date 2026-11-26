@@ -12,7 +12,7 @@ import {
   openBackend,
   type Backend,
 } from "../../test/registry-formal-support.js"
-import { publishWordPackage, stageWordPackage } from "../package-store.js"
+import { publishWordPackage, stageWordPackage } from "./package-store.js"
 import { exportWord, open } from "./word/document.js"
 
 let backend: Backend

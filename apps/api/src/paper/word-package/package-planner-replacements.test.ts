@@ -19,7 +19,7 @@ import {
   publishWordPackage,
   readWordPackage,
   stageWordPackage,
-} from "../package-store.js"
+} from "./package-store.js"
 import { readPackageZip } from "./package-zip.js"
 import { apply, open } from "./word/document.js"
 

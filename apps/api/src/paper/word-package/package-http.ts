@@ -20,7 +20,7 @@ import {
   WORD_PACKAGE_MEDIA_TYPE,
   exportWordPackage,
   stageWordPackage,
-} from "../package-store.js"
+} from "./package-store.js"
 
 async function uploadBytes(request: Request) {
   if (

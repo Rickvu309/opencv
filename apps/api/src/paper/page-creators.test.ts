@@ -28,7 +28,7 @@ import { textDocx, textPdf } from "./import-fixtures.test.js"
 import { openWordPage } from "./index.js"
 import { PAGE_STORE_FILES, pageInsertingExports } from "./page-writes.js"
 import { fixturePackage, paragraph } from "./word-package/package-fixtures.js"
-import { WORD_PACKAGE_MEDIA_TYPE } from "./package-store.js"
+import { WORD_PACKAGE_MEDIA_TYPE } from "./word-package/package-store.js"
 
 const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 
@@ -281,11 +281,11 @@ const WORD_CASES = Object.keys(CASES).filter(
 )
 
 const CREATOR_EXPORTS: Record<string, string[]> = {
-  "paper/package-store.ts#publishWordPackage": WORD_CASES.filter(
+  "paper/word-package/package-store.ts#publishWordPackage": WORD_CASES.filter(
     (name) => !name.startsWith("Restore")
   ),
-  "paper/package-store.ts#restoreWordHead": WORD_CASES.filter((name) =>
-    name.startsWith("Restore")
+  "paper/word-package/package-store.ts#restoreWordHead": WORD_CASES.filter(
+    (name) => name.startsWith("Restore")
   ),
   "paper/store.ts#duplicatePaper": Object.keys(CASES).filter((name) =>
     name.startsWith("Duplicate")

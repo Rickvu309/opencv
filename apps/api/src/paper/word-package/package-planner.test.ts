@@ -29,7 +29,7 @@ import {
   publishWordPackage,
   readWordPackage,
   stageWordPackage,
-} from "../package-store.js"
+} from "./package-store.js"
 
 let backend: Backend
 const owner = randomUUID()

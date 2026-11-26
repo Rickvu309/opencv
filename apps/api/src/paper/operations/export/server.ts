@@ -1,7 +1,7 @@
 import { operation } from "@workspace/domain/operations/paper/export"
 import type { OperationBinding } from "../../../registry/bind.js"
 import { withRichSnapshot } from "../../content-store.js"
-import { exportWordPackage } from "../../package-store.js"
+import { exportWordPackage } from "../../word-package/package-store.js"
 
 export const implementation = {
   operation,

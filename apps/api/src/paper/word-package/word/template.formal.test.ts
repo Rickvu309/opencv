@@ -20,7 +20,7 @@ import {
   type Backend,
 } from "../../../test/registry-formal-support.js"
 import { paperRegistry } from "../../paper-registry.test-support.js"
-import { publishWordPackage, stageWordPackage } from "../../package-store.js"
+import { publishWordPackage, stageWordPackage } from "../package-store.js"
 import { apply, exportWord, open, undo } from "./document.js"
 import { templateLines, templatePageName } from "./template.js"
 

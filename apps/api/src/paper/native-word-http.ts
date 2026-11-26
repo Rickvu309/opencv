@@ -4,7 +4,7 @@ import { Hono } from "hono"
 import type { SignedInVariables } from "../platform/signed-in.js"
 import { CommandError } from "../platform/errors.js"
 import { downloadNativeWord } from "./native-word.js"
-import { WORD_PACKAGE_MEDIA_TYPE } from "./package-store.js"
+import { WORD_PACKAGE_MEDIA_TYPE } from "./word-package/package-store.js"
 
 export function createNativeWordRoutes() {
   const routes = new Hono<{ Variables: SignedInVariables }>()

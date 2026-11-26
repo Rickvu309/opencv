@@ -35,7 +35,7 @@ import {
   publishWordPackage,
   readWordPackage,
   stageWordPackage,
-} from "../package-store.js"
+} from "./package-store.js"
 
 const loaded = createRequire(import.meta.url)(
   "../../../../../scripts/lib/paper-canvas-bytes.mjs"

@@ -5,14 +5,14 @@ import {
   paperDocNameSchema,
 } from "@workspace/domain/paper-doc"
 
-import { packageFailure } from "./package-pages.js"
-import { blankPageBytes } from "./word-package/word/mutate.js"
+import { packageFailure } from "../package-pages.js"
+import { blankPageBytes } from "./word/mutate.js"
 import {
   templateLines,
   templatePageBytes,
   templatePageName,
   type TemplateLine,
-} from "./word-package/word/template.js"
+} from "./word/template.js"
 
 type StartChoice = Pick<
   import("zod").output<(typeof catalog)["paper.start"]["input"]>,

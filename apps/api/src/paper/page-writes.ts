@@ -7,7 +7,10 @@ export const PAGE_TABLES: Record<string, string> = {
   paperPackageHeads: "paper_package_heads",
 }
 
-export const PAGE_STORE_FILES = ["paper/store.ts", "paper/package-store.ts"]
+export const PAGE_STORE_FILES = [
+  "paper/store.ts",
+  "paper/word-package/package-store.ts",
+]
 
 const READ_CALLS = new Set([
   "from",
