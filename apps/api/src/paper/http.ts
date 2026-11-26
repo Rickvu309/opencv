@@ -29,8 +29,8 @@ import {
   extractLetterAttachment,
   importReadStop,
   parseImportLink,
-} from "./import-parse.js"
-import { importedPageName, importedWordPage } from "./import-word.js"
+} from "./import/import-parse.js"
+import { importedPageName, importedWordPage } from "./import/import-word.js"
 import { createNativeWordRoutes } from "./native-word-http.js"
 import { createPaperPackageRoutes } from "./word-package/package-http.js"
 import {

@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm"
 
-import { paperPackageVersions } from "../db/schema.js"
-import type { createTestApp } from "../test/harness.js"
+import { paperPackageVersions } from "../../db/schema.js"
+import type { createTestApp } from "../../test/harness.js"
 
 export async function publishedText(
   db: Parameters<typeof createTestApp>[0],
