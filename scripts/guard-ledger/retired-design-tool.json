@@ -8,6 +8,10 @@
   "historic": {
     "mode": "detect",
     "sha": "c17562550^",
-    "path": "apps/web/src/features/paper/rich-document-menu.tsx"
+    "path": "apps/web/src/features/paper/rich-document-menu.tsx",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/web/src/features/paper/rich-editor/rich-document-menu.tsx"
+    }
   }
 }

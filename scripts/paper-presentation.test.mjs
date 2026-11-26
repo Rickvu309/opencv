@@ -529,7 +529,10 @@ test("document history guard rejects misplaced and photo-owned history at its in
     "packages/paper-crdt/src/native-layout-photo-controls.ts",
   ]
   for (const path of paths) {
-    const oldPath = path.replace("rich-document-toolbar", "rich-photo-toolbar")
+    const oldPath = path.replace(
+      "rich-editor/rich-document-toolbar",
+      "rich-photo-toolbar"
+    )
     const introduced = path.endsWith("rich-text-formatting.tsx")
       ? "54fbdb62"
       : path.endsWith("native-layout-photo-controls.ts")
