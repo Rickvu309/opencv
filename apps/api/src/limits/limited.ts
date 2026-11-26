@@ -1,4 +1,4 @@
-import { LIMITS, type LimitId } from "@workspace/domain"
+import { LIMITS, type LimitId } from "@workspace/domain/limits"
 import type { Context, MiddlewareHandler } from "hono"
 
 import { LEDGERS } from "./adapters.js"

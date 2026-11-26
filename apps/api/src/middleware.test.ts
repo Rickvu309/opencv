@@ -1,4 +1,4 @@
-import { ERROR_CODES } from "@workspace/domain"
+import { ERROR_CODES } from "@workspace/domain/kernel"
 import { Hono } from "hono"
 import { describe, expect, it, vi } from "vitest"
 

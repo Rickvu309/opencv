@@ -1,11 +1,13 @@
 import {
   ERROR_CODES,
-  PAPER_PACKAGE_LIMITS,
   errorEnvelope,
-  paperPackageStageInputSchema,
   personActor,
   successEnvelope,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
+import {
+  PAPER_PACKAGE_LIMITS,
+  paperPackageStageInputSchema,
+} from "@workspace/domain/paper-doc"
 import { Hono } from "hono"
 import { ZodError } from "zod"
 

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react"
 import { Link } from "@tanstack/react-router"
 import { ArrowRight, Bell } from "lucide-react"
-import type { NotifyTopic } from "@workspace/domain"
+import type { NotifyTopic } from "@workspace/domain/account"
 
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"

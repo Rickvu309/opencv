@@ -1,9 +1,5 @@
-import {
-  errorEnvelope,
-  LIMITS,
-  type LimitId,
-  type LimitSpec,
-} from "@workspace/domain"
+import { errorEnvelope } from "@workspace/domain/kernel"
+import { LIMITS, type LimitId, type LimitSpec } from "@workspace/domain/limits"
 
 export type LimitRefusal = {
   limit: LimitId

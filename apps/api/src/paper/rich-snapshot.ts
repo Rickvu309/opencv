@@ -1,12 +1,12 @@
 import { createHash } from "node:crypto"
+import { ERROR_CODES } from "@workspace/domain/kernel"
 import {
-  ERROR_CODES,
   canonicalPaper,
   nativeProvenance,
   sameNativeProvenance,
   type RichPaperDocument,
   type NativeBasis,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import type { richExportInputSchema } from "@workspace/domain/operations/paper/export"
 import { materializeStored } from "@workspace/paper-crdt"
 import type { z } from "zod"

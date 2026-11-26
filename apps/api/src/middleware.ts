@@ -3,7 +3,7 @@ import {
   ERROR_CODES,
   httpStatusForError,
   unauthorizedEnvelope,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import type { Context } from "hono"
 
 import { withRequestHeaders, type Auth } from "./auth.js"

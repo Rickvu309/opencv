@@ -1,9 +1,5 @@
-import {
-  catalog,
-  ERROR_CODES,
-  type Actor,
-  type PaperView,
-} from "@workspace/domain"
+import { catalog, ERROR_CODES, type Actor } from "@workspace/domain/kernel"
+import { type PaperView } from "@workspace/domain/paper-doc"
 
 import { CommandError } from "../platform/errors.js"
 import type { Registry } from "../registry/registry.js"

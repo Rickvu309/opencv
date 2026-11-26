@@ -2,7 +2,7 @@ import {
   encodeChatTurnEvent,
   type ChatTurnEvent,
   type CoachStreamPart,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
 import type { SSEStreamingApi } from "hono/streaming"
 
 export function isDisconnected(stream: SSEStreamingApi, signal?: AbortSignal) {

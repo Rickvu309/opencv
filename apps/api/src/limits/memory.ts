@@ -1,4 +1,4 @@
-import type { LimitSpec } from "@workspace/domain"
+import type { LimitSpec } from "@workspace/domain/limits"
 
 import type { Clock } from "./clock.js"
 import type { LimitKey } from "./key.js"

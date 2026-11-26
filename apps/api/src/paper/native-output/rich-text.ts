@@ -1,4 +1,4 @@
-import type { RichText } from "@workspace/domain"
+import type { RichText } from "@workspace/domain/paper-doc"
 
 export function xml(value: string): string {
   return value

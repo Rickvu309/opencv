@@ -3,7 +3,7 @@ import {
   IMPORT_LINKEDIN_MESSAGE,
   IMPORT_PAGES_MESSAGE,
   paperImportResponseSchema,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 

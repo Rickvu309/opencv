@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { connectionIdSchema } from "@workspace/domain"
+import { connectionIdSchema } from "@workspace/domain/kernel"
 import {
   act,
   render,

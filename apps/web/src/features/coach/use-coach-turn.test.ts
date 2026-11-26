@@ -1,4 +1,4 @@
-import { chatDetailSchema } from "@workspace/domain"
+import { chatDetailSchema } from "@workspace/domain/coach"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { act, renderHook, waitFor } from "@testing-library/react"
 import { createElement, useReducer, type ReactNode } from "react"

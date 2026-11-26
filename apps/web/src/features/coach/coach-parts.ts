@@ -1,4 +1,4 @@
-import type { CoachReceiptDetail, ChatToolPart } from "@workspace/domain"
+import type { CoachReceiptDetail, ChatToolPart } from "@workspace/domain/coach"
 
 import { receiptHeadline } from "@/features/coach/coach-receipt.ts"
 import type { ChatViewMessage } from "@/features/coach/chat-messages.ts"

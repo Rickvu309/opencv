@@ -1,4 +1,4 @@
-import { catalog } from "@workspace/domain"
+import { catalog } from "@workspace/domain/kernel"
 import { eq } from "drizzle-orm"
 import { expect } from "vitest"
 

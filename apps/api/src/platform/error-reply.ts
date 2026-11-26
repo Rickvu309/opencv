@@ -2,7 +2,7 @@ import {
   ERROR_CODES,
   errorEnvelope,
   httpStatusForError,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import type { Context } from "hono"
 import { HTTPException } from "hono/http-exception"
 

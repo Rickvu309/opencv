@@ -1,4 +1,4 @@
-import { coachActor } from "@workspace/domain"
+import { coachActor } from "@workspace/domain/kernel"
 import { and, eq, sql } from "drizzle-orm"
 import { getDb } from "../db/context.js"
 import { coachTasks, coachUsage, toolIntents } from "../db/schema.js"

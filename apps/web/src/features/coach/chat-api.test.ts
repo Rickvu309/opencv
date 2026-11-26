@@ -5,7 +5,7 @@ import {
   LEGACY_CHAT_TITLE,
   type ChatRecord,
   type ChatSummary,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
 import { COACH_SSE_EVENTS } from "@/test/chat-api-mock.ts"
 import { QueryClient } from "@tanstack/react-query"
 import { afterEach, describe, expect, it, vi } from "vitest"

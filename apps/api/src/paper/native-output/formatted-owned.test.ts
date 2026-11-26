@@ -1,4 +1,5 @@
-import { paperPhotoRef, parseUserId } from "@workspace/domain"
+import { parseUserId } from "@workspace/domain/kernel"
+import { paperPhotoRef } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { expect, it } from "vitest"
 import { withDatabase } from "../../db/context.js"

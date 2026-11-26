@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router"
 import { ChevronDown, ChevronUp, Maximize2, X } from "lucide-react"
-import type { JobId } from "@workspace/domain"
+import type { JobId } from "@workspace/domain/kernel"
 
 import { Button } from "@workspace/ui/components/button"
 

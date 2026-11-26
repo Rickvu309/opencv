@@ -1,6 +1,7 @@
 import { useReducer } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { paperPackageMetadataSchema, type z } from "@workspace/domain"
+import { type z } from "@workspace/domain/kernel"
+import { paperPackageMetadataSchema } from "@workspace/domain/paper-doc"
 import { Button } from "@workspace/ui/components/button"
 import {
   Dialog,

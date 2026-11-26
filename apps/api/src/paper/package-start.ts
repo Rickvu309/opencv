@@ -1,9 +1,9 @@
+import { type catalog } from "@workspace/domain/kernel"
 import {
   PAPER_START_BOUNDS,
   PAPER_START_TEMPLATE,
   paperDocNameSchema,
-  type catalog,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import { packageFailure } from "./package-pages.js"
 import { blankPageBytes } from "./word/mutate.js"

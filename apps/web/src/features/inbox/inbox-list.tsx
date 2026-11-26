@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import type { InboxThread } from "@workspace/domain"
+import type { InboxThread } from "@workspace/domain/inbox"
 import { Clock3, Ellipsis } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import {

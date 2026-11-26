@@ -11,7 +11,7 @@ import {
 } from "./coach-tool-card.ts"
 import { documentChangeCount, documentEditDetail } from "./coach-receipt.ts"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { parseChatId, parsePendingActionId } from "@workspace/domain"
+import { parseChatId, parsePendingActionId } from "@workspace/domain/kernel"
 import { useChatStore } from "./use-chat-store.ts"
 import { catalogClient, refreshReads } from "@/lib/contract-client.ts"
 import { useReducer, useRef } from "react"

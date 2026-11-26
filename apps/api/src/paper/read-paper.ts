@@ -1,13 +1,15 @@
 import {
   ERROR_CODES,
+  parseFileId,
+  parsePaperId,
+} from "@workspace/domain/kernel"
+import {
   blankCv,
   blankLetter,
   richPaperDocumentSchema,
-  parseFileId,
-  parsePaperId,
   type PaperView,
   type NativeWriter,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 
 import { paperDocs } from "../db/schema.js"
 import { CommandError } from "../platform/errors.js"

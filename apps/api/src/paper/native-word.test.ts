@@ -1,13 +1,11 @@
 import { randomUUID } from "node:crypto"
+import { catalog, parseFileId, parseUserId } from "@workspace/domain/kernel"
 import {
   NATIVE_WRITER,
-  catalog,
   nativeProvenanceSchema,
-  parseFileId,
-  parseUserId,
   paperPhotoRef,
   richPaperDocumentSchema,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { layoutDocumentSchema } from "@workspace/domain/internal/paper-presentation"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, expect, it } from "vitest"

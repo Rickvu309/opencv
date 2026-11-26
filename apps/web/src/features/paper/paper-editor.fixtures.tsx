@@ -1,5 +1,6 @@
 import type { ReactElement } from "react"
-import { blankCv, parsePaperId, type PaperView } from "@workspace/domain"
+import { parsePaperId } from "@workspace/domain/kernel"
+import { blankCv, type PaperView } from "@workspace/domain/paper-doc"
 import { Toaster } from "@workspace/ui/components/sonner"
 import { ChatStoreProvider } from "@/features/coach/chat-store.tsx"
 import { render as renderWithClient } from "@/test/render-with-client.tsx"

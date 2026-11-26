@@ -4,7 +4,7 @@ import {
   type ChatEntryPart,
   type ChatMessageStatus,
   type ChatRecord,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
 
 export { titleFrom }
 

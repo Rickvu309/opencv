@@ -1,15 +1,15 @@
 import { randomUUID } from "node:crypto"
 
+import { personActor } from "@workspace/domain/kernel"
 import {
   PAPER_TEMPLATE_IDS,
   paperPackageEditResultSchema,
-  personActor,
   type PaperTemplateId,
   type WordCommit,
   type WordFile,
   type WordPage,
   type WordRefusal,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { and, eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 

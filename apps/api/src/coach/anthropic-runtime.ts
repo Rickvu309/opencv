@@ -10,10 +10,10 @@ import {
   chatToolNameSchema,
   coachProviderErrorMessage,
   type ChatEntry,
-  type CoachActor,
   type CoachMode,
   type CoachStreamPart,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
+import { type CoachActor } from "@workspace/domain/kernel"
 
 import type { Registry, ToolEntry } from "../registry/registry.js"
 import {

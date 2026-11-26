@@ -6,7 +6,7 @@ import {
   useSyncExternalStore,
   type ReactNode,
 } from "react"
-import type { ChatSummary } from "@workspace/domain"
+import type { ChatSummary } from "@workspace/domain/coach"
 
 import {
   useCoachTurn,

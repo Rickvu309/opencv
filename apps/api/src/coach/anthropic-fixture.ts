@@ -1,4 +1,4 @@
-import { COACH_MODEL } from "@workspace/domain"
+import { COACH_MODEL } from "@workspace/domain/coach"
 import { createAnthropicModel } from "./anthropic-runtime.js"
 
 export type FixtureChunk = {

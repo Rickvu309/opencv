@@ -3,13 +3,13 @@ import { writeFile, mkdtemp, rm } from "node:fs/promises"
 import { join } from "node:path"
 import { tmpdir } from "node:os"
 import { serve } from "@hono/node-server"
+import { parseUserId } from "@workspace/domain/kernel"
 import {
   canonicalPaper,
   nativeProvenance,
   nativeSyncOutputSchema,
   RICH_NATIVE_WRITER,
-  parseUserId,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { openRichPaperClient } from "@workspace/paper-crdt"
 import { eq } from "drizzle-orm"
 import { expect, it } from "vitest"
