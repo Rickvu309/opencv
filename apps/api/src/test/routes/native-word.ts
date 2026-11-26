@@ -4,7 +4,7 @@ import {
   nativeProvenance,
   paperPhotoRef,
   RICH_NATIVE_WRITER,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { richPaper } from "../rich-paper.js"
 import type { RouteCase } from "./route-cases.js"
 

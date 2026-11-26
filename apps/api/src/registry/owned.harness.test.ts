@@ -1,7 +1,8 @@
 import { randomUUID } from "node:crypto"
 import { readFileSync } from "node:fs"
 
-import { personActor, RICH_NATIVE_WRITER } from "@workspace/domain"
+import { personActor } from "@workspace/domain/kernel"
+import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { sql } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"

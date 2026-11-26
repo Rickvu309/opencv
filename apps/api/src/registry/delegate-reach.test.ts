@@ -3,7 +3,7 @@ import {
   personActor,
   type DelegateMarker,
   type DelegateActor,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import { operation as paperRead } from "@workspace/domain/operations/paper/read"
 import { describe, expect, it } from "vitest"
 

@@ -3,7 +3,7 @@ import {
   defineCommand,
   delegateActorSchema,
   personActor,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import { z } from "zod"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"

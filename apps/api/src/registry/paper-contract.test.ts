@@ -1,4 +1,4 @@
-import { catalog, personActor } from "@workspace/domain"
+import { catalog, personActor } from "@workspace/domain/kernel"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"

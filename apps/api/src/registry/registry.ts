@@ -12,7 +12,7 @@ import {
   isCoachActor,
   personActor,
   type Actor,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import { and, eq } from "drizzle-orm"
 
 import { activity, pendingActions } from "../db/schema.js"

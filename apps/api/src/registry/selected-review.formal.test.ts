@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { delegateActorSchema } from "@workspace/domain"
+import { delegateActorSchema } from "@workspace/domain/kernel"
 import { eq, sql } from "drizzle-orm"
 import { expect, it } from "vitest"
 import { z } from "zod"

@@ -1,4 +1,4 @@
-import { personActor } from "@workspace/domain"
+import { personActor } from "@workspace/domain/kernel"
 import { z } from "zod"
 import { withDatabase } from "../db/context.js"
 import { idempotency, user } from "../db/schema.js"

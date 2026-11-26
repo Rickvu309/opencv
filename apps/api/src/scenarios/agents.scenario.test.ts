@@ -1,4 +1,4 @@
-import { delegateActorSchema } from "@workspace/domain"
+import { delegateActorSchema } from "@workspace/domain/kernel"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { agentConnections, oauthClient } from "../db/schema.js"

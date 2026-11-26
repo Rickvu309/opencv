@@ -6,7 +6,7 @@ import {
   type Actor,
   type CommandSpec,
   type QuerySpec,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import { CatalogPublication } from "./catalog-publication.js"
 import { coachRefusal, REFUSAL_MESSAGES } from "./coach-policy.js"
 import { delegateAllowed } from "./delegate-policy.js"

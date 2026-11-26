@@ -1,4 +1,4 @@
-import { personActor } from "@workspace/domain"
+import { personActor } from "@workspace/domain/kernel"
 import { describe, expect, it } from "vitest"
 
 import { user } from "../db/schema.js"

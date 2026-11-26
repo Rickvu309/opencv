@@ -1,5 +1,5 @@
 import * as Y from "yjs"
-import { cvSlots, richPaperDocumentSchema } from "@workspace/domain"
+import { cvSlots, richPaperDocumentSchema } from "@workspace/domain/paper-doc"
 
 export function richPaper(kind: "cv" | "letter", photo: string) {
   const page = {

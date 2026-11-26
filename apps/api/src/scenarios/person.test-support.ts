@@ -1,4 +1,4 @@
-import { personActor } from "@workspace/domain"
+import { personActor } from "@workspace/domain/kernel"
 
 import { withDatabase } from "../db/context.js"
 import { installRegistry } from "../install.js"

@@ -1,4 +1,4 @@
-import { coachActor, type CoachActor } from "@workspace/domain"
+import { coachActor, type CoachActor } from "@workspace/domain/kernel"
 
 import { and, eq, isNull, sql } from "drizzle-orm"
 

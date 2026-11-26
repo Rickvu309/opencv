@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm"
 import { expect, it, vi } from "vitest"
 import * as databaseContext from "../db/context.js"
-import { parseJobId, personActor } from "@workspace/domain"
+import { parseJobId, personActor } from "@workspace/domain/kernel"
 
 import {
   getDb,

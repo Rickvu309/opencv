@@ -1,4 +1,4 @@
-import { ERROR_CODES, type Actor } from "@workspace/domain"
+import { ERROR_CODES, type Actor } from "@workspace/domain/kernel"
 import { CommandError } from "../platform/errors.js"
 import { inputHash } from "./receipt.js"
 import type { ExecuteResult, StoredCommand } from "./registry-types.js"

@@ -1,4 +1,4 @@
-import type { CoachStreamPart, CoachTurnInput } from "@workspace/domain"
+import type { CoachStreamPart, CoachTurnInput } from "@workspace/domain/coach"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { createScriptedCoachRuntime } from "../coach/index.js"

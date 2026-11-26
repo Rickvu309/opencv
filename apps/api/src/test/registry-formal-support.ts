@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 
-import { personActor } from "@workspace/domain"
+import { personActor } from "@workspace/domain/kernel"
 import { and, count, eq } from "drizzle-orm"
 import { drizzle as drizzlePg } from "drizzle-orm/node-postgres"
 import { Pool } from "pg"

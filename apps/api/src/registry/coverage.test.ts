@@ -1,4 +1,5 @@
-import { paperContract, personActor } from "@workspace/domain"
+import { personActor } from "@workspace/domain/kernel"
+import { paperContract } from "@workspace/domain/paper-doc"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 

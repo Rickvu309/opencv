@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 
-import { ERROR_CODES, personActor } from "@workspace/domain"
+import { ERROR_CODES, personActor } from "@workspace/domain/kernel"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 

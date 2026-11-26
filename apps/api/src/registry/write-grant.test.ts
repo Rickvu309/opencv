@@ -6,7 +6,7 @@ import {
   parseJobId,
   personActor,
   type JobId,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 
 import { getDb, transaction, withDatabase } from "../db/context.js"
 import {

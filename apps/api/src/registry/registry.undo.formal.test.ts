@@ -1,6 +1,5 @@
 import {} from "node:crypto"
 
-import {} from "@workspace/domain"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { z } from "zod"

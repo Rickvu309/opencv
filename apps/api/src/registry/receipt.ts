@@ -1,12 +1,11 @@
 import { createHash } from "node:crypto"
+import { type JobStage } from "@workspace/domain/apply"
 import {
-  changeHunks,
-  diffPaperContent,
   type CoachReceiptDetail,
-  type JobStage,
   type ReversalDescriptor,
-  type ReversalPlan,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
+import { type ReversalPlan } from "@workspace/domain/kernel"
+import { changeHunks, diffPaperContent } from "@workspace/domain/paper-doc"
 
 const APPLY_STAGE: Record<JobStage, "inbox" | "sent" | "live" | "closed"> = {
   saved: "inbox",

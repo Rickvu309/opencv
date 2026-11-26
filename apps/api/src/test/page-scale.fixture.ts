@@ -6,7 +6,10 @@ import { createId } from "../platform/id.js"
 import * as schema from "../db/schema.js"
 import { seedStoredYDoc } from "@workspace/paper-crdt"
 import { richPaper } from "./rich-paper.js"
-import { paperPhotoRef, richPaperDocumentSchema } from "@workspace/domain"
+import {
+  paperPhotoRef,
+  richPaperDocumentSchema,
+} from "@workspace/domain/paper-doc"
 
 const [dataDir, email, out] = process.argv.slice(2)
 if (!dataDir || !email || !out || process.env.NODE_ENV === "production")

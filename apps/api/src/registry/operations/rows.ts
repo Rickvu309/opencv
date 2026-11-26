@@ -1,4 +1,4 @@
-import type { ActivityRow, PendingActionRow } from "@workspace/domain"
+import type { ActivityRow, PendingActionRow } from "@workspace/domain/control"
 
 type ActivityDbRow = {
   createdAt: Date
