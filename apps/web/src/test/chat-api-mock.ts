@@ -11,7 +11,7 @@ import {
   type ChatEntry,
   type ChatEntryPart,
   type ChatMessageStatus,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
 import { vi } from "vitest"
 
 import { FIXTURE_CHATS } from "./chat-fixtures.ts"

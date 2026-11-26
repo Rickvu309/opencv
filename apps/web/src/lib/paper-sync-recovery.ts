@@ -1,5 +1,8 @@
 import { z } from "zod"
-import { nativeProvenanceSchema, sameNativeProvenance } from "@workspace/domain"
+import {
+  nativeProvenanceSchema,
+  sameNativeProvenance,
+} from "@workspace/domain/paper-doc"
 import {
   emptyUpdate,
   openRichPaperClient,

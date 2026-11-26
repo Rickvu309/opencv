@@ -1,4 +1,9 @@
-import type { WordAlign, WordForm, WordMark, WordPage } from "@workspace/domain"
+import type {
+  WordAlign,
+  WordForm,
+  WordMark,
+  WordPage,
+} from "@workspace/domain/paper-doc"
 
 import { ApiError } from "@/lib/api-error.ts"
 

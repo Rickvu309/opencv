@@ -1,4 +1,5 @@
-import { coachTaskSnapshotSchema, parseChatId } from "@workspace/domain"
+import { coachTaskSnapshotSchema } from "@workspace/domain/coach"
+import { parseChatId } from "@workspace/domain/kernel"
 import type { TaskEvent, TaskSnapshot } from "@/lib/coach-task-state.ts"
 
 export const TASK = "01900000-0000-7000-8000-000000000001"

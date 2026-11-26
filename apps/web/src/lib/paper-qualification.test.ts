@@ -1,10 +1,10 @@
 import { QueryClient } from "@tanstack/react-query"
+import { parsePaperId } from "@workspace/domain/kernel"
 import {
   NATIVE_WRITER,
   nativeProvenance,
   nativePaperDocumentSchema,
-  parsePaperId,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { afterEach, expect, it, vi } from "vitest"
 import { readPaperList } from "./paper-list.ts"
 import { endpoints } from "./requests.ts"
