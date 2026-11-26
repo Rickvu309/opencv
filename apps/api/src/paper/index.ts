@@ -5,7 +5,10 @@ export { importReaderReady } from "./import-text-pool.js"
 export { stageWordPackage } from "./package-store.js"
 export { sweepUnattachedPhotos } from "./photo-sweep.js"
 export { saveFile, tryReadRichPaper } from "./store.js"
-export { open as openWordPage, apply as applyWordOps } from "./word/document.js"
+export {
+  open as openWordPage,
+  apply as applyWordOps,
+} from "./word-package/word/document.js"
 export {
   collectWordPageExport,
   WORD_PAGE_EXPORT_BYTES,

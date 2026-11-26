@@ -3,7 +3,7 @@ import { createRequire } from "node:module"
 import { decodeWordText, type WordLine, type WordRun } from "./classify.js"
 
 const canvas = createRequire(import.meta.url)(
-  "../../../../../scripts/lib/paper-canvas-bytes.mjs"
+  "../../../../../../scripts/lib/paper-canvas-bytes.mjs"
 ) as { escapeText: (text: string) => string }
 
 export type WordSpan = {

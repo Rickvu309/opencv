@@ -25,7 +25,10 @@ test("the Word module checks a read-only package before it drafts an edit", () =
     ["unchecked-read-only-package"]
   )
   const source = readFileSync(
-    new URL("../apps/api/src/paper/word/document.ts", import.meta.url),
+    new URL(
+      "../apps/api/src/paper/word-package/word/document.ts",
+      import.meta.url
+    ),
     "utf8"
   )
   assert.deepEqual(detect(source), [])

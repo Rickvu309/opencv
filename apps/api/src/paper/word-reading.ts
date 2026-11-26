@@ -13,7 +13,7 @@ import {
   packageFailure,
 } from "./package-pages.js"
 import { wordReadingBasis } from "./package-store.js"
-import { open } from "./word/document.js"
+import { open } from "./word-package/word/document.js"
 
 async function reading(
   owner: string,

@@ -6,7 +6,7 @@ import { isWordPageDeleted } from "../../package-card-actions.js"
 import { packageFailure } from "../../package-pages.js"
 import { listWordPackages, readWordPackage } from "../../package-store.js"
 import { readWordParagraphs } from "../../word-reading.js"
-import { open } from "../../word/document.js"
+import { open } from "../../word-package/word/document.js"
 
 async function readWordLines(owner: string, doc: string, at?: string) {
   const page = await open(

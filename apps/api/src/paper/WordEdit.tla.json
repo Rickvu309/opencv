@@ -1,5 +1,5 @@
 {
-  "module": "./word/document.ts",
+  "module": "./word-package/word/document.ts",
   "actions": {
     "Propose": null,
     "PersonTypes": "apply",
@@ -18,7 +18,7 @@
       "../registry/proposals.ts:createProposal"
     ],
     "PersonTypes": [
-      "./word/document.ts:prepareBatch",
+      "./word-package/word/document.ts:prepareBatch",
       "package-restore.ts:compareAndRestorePackage"
     ],
     "ApproveBegin": [
@@ -38,7 +38,7 @@
     ]
   },
   "covers": [
-    "apps/api/src/paper/word/document.ts",
+    "apps/api/src/paper/word-package/word/document.ts",
     "apps/api/src/paper/package-edit.ts",
     "apps/api/src/paper/package-candidates.ts",
     "apps/api/src/paper/package-restore.ts",

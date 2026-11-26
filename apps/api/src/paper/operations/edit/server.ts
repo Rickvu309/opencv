@@ -15,7 +15,7 @@ import {
   type Snapshot,
 } from "../../package-edit.js"
 import { editRichPaper } from "../../rich-edit.js"
-import { WORD_UNDO_MOVED } from "../../word/document.js"
+import { WORD_UNDO_MOVED } from "../../word-package/word/document.js"
 
 const noUndo = {
   irreversible: "Nothing was written, so there is nothing to undo.",

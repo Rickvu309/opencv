@@ -4,20 +4,24 @@ import { personActor } from "@workspace/domain/kernel"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import { getDb, withDatabase } from "../../db/context.js"
-import { paperPackageHeads, user } from "../../db/schema.js"
+import { getDb, withDatabase } from "../../../db/context.js"
+import { paperPackageHeads, user } from "../../../db/schema.js"
 import {
   openBackend,
   type Backend,
-} from "../../test/registry-formal-support.js"
-import { paperRegistry } from "../paper-registry.test-support.js"
-import { fixturePackage, paragraph, relationship } from "../package-fixtures.js"
-import { prepareWordPackage } from "../package-planner.js"
+} from "../../../test/registry-formal-support.js"
+import { paperRegistry } from "../../paper-registry.test-support.js"
+import {
+  fixturePackage,
+  paragraph,
+  relationship,
+} from "../../package-fixtures.js"
+import { prepareWordPackage } from "../../package-planner.js"
 import {
   publishWordPackage,
   readWordPackage,
   stageWordPackage,
-} from "../package-store.js"
+} from "../../package-store.js"
 import { apply, open } from "./document.js"
 
 let backend: Backend

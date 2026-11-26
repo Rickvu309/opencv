@@ -7,8 +7,8 @@ import {
   importReadStop,
   parseImportFile,
 } from "./import-parse.js"
-import { importedTextLines } from "./word/from-text.js"
-import { pageBytesOf } from "./word/template.js"
+import { importedTextLines } from "./word-package/word/from-text.js"
+import { pageBytesOf } from "./word-package/word/template.js"
 
 export const PDF_IMPORT_NOTICE =
   "Imported the text of your PDF. Layout, fonts and photo were not kept."
