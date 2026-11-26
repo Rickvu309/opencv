@@ -17,7 +17,6 @@ import {
   type NativeWriter,
   type RichChange,
 } from "@workspace/domain/paper-doc"
-
 import { z } from "zod"
 
 import { CommandError } from "../platform/errors.js"
