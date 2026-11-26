@@ -34,12 +34,18 @@ describe("search decorations over inline text formatting", () => {
   })
 
   it("keeps matches visible over native foreground and highlight marks", () => {
-    const css = readFileSync("src/features/paper/rich-find-bar.css", "utf8")
+    const css = readFileSync(
+      "src/features/paper/rich-editor/rich-find-bar.css",
+      "utf8"
+    )
     expect(maskedSearchColors(css)).toEqual([])
   })
 
   it("keeps the current match clear of the document pane edge", () => {
-    const css = readFileSync("src/features/paper/rich-find-bar.css", "utf8")
+    const css = readFileSync(
+      "src/features/paper/rich-editor/rich-find-bar.css",
+      "utf8"
+    )
     expect(css).toMatch(
       /\[data-paper-search-active\]\s*\{[^}]*scroll-margin-block:\s*4rem/
     )
