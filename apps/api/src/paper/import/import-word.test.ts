@@ -27,7 +27,7 @@ import {
 } from "./import-text-lines.js"
 
 const canvas = createRequire(import.meta.url)(
-  "../../../../scripts/lib/paper-canvas-bytes.mjs"
+  "../../../../../scripts/lib/paper-canvas-bytes.mjs"
 ) as { mainXml: (bytes: Buffer) => string }
 
 const BYTE_ORDER_MARK = String.fromCharCode(0xfeff)

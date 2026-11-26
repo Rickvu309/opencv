@@ -1,4 +1,5 @@
-export const PARSE_WORKER_SOURCE = "apps/api/src/paper/import-text-worker.ts"
+export const PARSE_WORKER_SOURCE =
+  "apps/api/src/paper/import/import-text-worker.ts"
 
 const API_SOURCE = /^apps\/api\/src\/.*\.tsx?$/
 const TEST_SOURCE = /\.test\.tsx?$/
