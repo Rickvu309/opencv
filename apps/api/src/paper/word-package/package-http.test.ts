@@ -15,16 +15,16 @@ import {
   createMigratedTestDb,
   createTestApp,
   signUp,
-} from "../test/harness.js"
-import { withDatabase } from "../db/context.js"
-import { files, paperDocs, paperPackageHeads, user } from "../db/schema.js"
-import { textPdf } from "./import-fixtures.test.js"
-import { fixturePackage, paragraph } from "./package-fixtures.js"
+} from "../../test/harness.js"
+import { withDatabase } from "../../db/context.js"
+import { files, paperDocs, paperPackageHeads, user } from "../../db/schema.js"
+import { textPdf } from "../import-fixtures.test.js"
+import { fixturePackage, paragraph } from "../package-fixtures.js"
 import {
   WORD_PACKAGE_MEDIA_TYPE,
   stageWordPackage,
   publishWordPackage,
-} from "./package-store.js"
+} from "../package-store.js"
 
 it("authenticates staging, reads pinned snapshots, and exports exact DOCX bytes over HTTP", async () => {
   const { db, client } = await createMigratedTestDb()

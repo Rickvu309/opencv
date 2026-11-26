@@ -25,7 +25,7 @@ const SQL_TARGET =
   /\b(?:insert\s+into|update(?:\s+only)?|delete\s+from(?:\s+only)?|merge\s+into|truncate(?:\s+table)?(?:\s+only)?|copy)\s+(?:"?\w+"?\s*\.\s*)?"?(\w+)"?/gi
 
 export const PAGE_TABLE_VALUE_USES: Record<string, number> = {
-  "paper/package-edit.ts": 2,
+  "paper/word-package/package-edit.ts": 2,
   "paper/word-page-export.ts": 1,
 }
 

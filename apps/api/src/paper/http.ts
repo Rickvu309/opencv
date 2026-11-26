@@ -32,7 +32,7 @@ import {
 } from "./import-parse.js"
 import { importedPageName, importedWordPage } from "./import-word.js"
 import { createNativeWordRoutes } from "./native-word-http.js"
-import { createPaperPackageRoutes } from "./package-http.js"
+import { createPaperPackageRoutes } from "./word-package/package-http.js"
 import {
   IMPORT_FILE_CAP,
   IMPORT_SIZE_MESSAGE,

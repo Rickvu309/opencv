@@ -8,7 +8,11 @@
   "historic": {
     "mode": "detect",
     "sha": "f8167a134",
-    "path": "apps/api/src/paper/package-canvas.ts"
+    "path": "apps/api/src/paper/package-canvas.ts",
+    "fixed": {
+      "rev": "HEAD",
+      "path": "apps/api/src/paper/word-package/package-canvas.ts"
+    }
   },
   "reason": "f8167a134 (#1352) minted blank pages as CV.docx and Cover letter.docx and appended .docx to a given name, so the editor title read CV.docx and the library hid the extension with a display helper. The pure AST detect fires on a string ending in a document extension inside a function named for a name or a NAMES table, and stays quiet on download file names and the fixed modules."
 }

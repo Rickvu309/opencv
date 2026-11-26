@@ -41,14 +41,20 @@ const kinds = (problems) => problems.map(({ kind, name }) => `${kind}:${name}`)
 
 test("a product feature gated on an unlisted environment switch fires", () => {
   assert.deepEqual(
-    kinds(detect(mistake, "apps/api/src/paper/package-http.ts")),
+    kinds(detect(mistake, "apps/api/src/paper/word-package/package-http.ts")),
     ["unlisted-env-switch:PAPER_PACKAGE_ENABLED"]
   )
-  assert.equal(detect(mistake, "apps/api/src/paper/package-http.ts")[0].line, 4)
+  assert.equal(
+    detect(mistake, "apps/api/src/paper/word-package/package-http.ts")[0].line,
+    4
+  )
 })
 
 test("real configuration stays quiet", () => {
-  assert.deepEqual(detect(clean, "apps/api/src/paper/package-http.ts"), [])
+  assert.deepEqual(
+    detect(clean, "apps/api/src/paper/word-package/package-http.ts"),
+    []
+  )
 })
 
 test("every way of reading a switch fires in api and web product code", () => {
@@ -68,7 +74,7 @@ test("every way of reading a switch fires in api and web product code", () => {
 
 test("tests and files outside product code may set switches", () => {
   assert.deepEqual(
-    detect(mistake, "apps/api/src/paper/package-http.test.ts"),
+    detect(mistake, "apps/api/src/paper/word-package/package-http.test.ts"),
     []
   )
   assert.deepEqual(detect(mistake, "apps/web/src/test/setup.ts"), [])

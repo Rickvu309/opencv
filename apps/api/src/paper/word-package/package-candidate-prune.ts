@@ -1,13 +1,13 @@
 import { and, eq, exists, isNull, notExists, or, sql } from "drizzle-orm"
 
-import { getDb } from "../db/context.js"
+import { getDb } from "../../db/context.js"
 import {
   activity,
   paperPackageCandidates,
   paperPackageHeads,
   paperPackageTrash,
   pendingActions,
-} from "../db/schema.js"
+} from "../../db/schema.js"
 
 export function candidatePageInTrash() {
   return exists(

@@ -15,28 +15,28 @@ import {
 import { eq } from "drizzle-orm"
 import { z } from "zod"
 
-import { getDb } from "../db/context.js"
-import { paperPackageCandidates, paperPackageHeads } from "../db/schema.js"
-import { CommandError } from "../platform/errors.js"
+import { getDb } from "../../db/context.js"
+import { paperPackageCandidates, paperPackageHeads } from "../../db/schema.js"
+import { CommandError } from "../../platform/errors.js"
 import {
   type LockedBasis,
   type ReviewedCommand,
   type RowBasis,
-} from "../registry/frozen-review.js"
-import type { Registry } from "../registry/registry.js"
+} from "../../registry/frozen-review.js"
+import type { Registry } from "../../registry/registry.js"
 import {
   commitWordCandidate,
   persistWordPackage,
   revalidateWordCandidate,
   prepareStoredWordPackage,
 } from "./package-candidates.js"
-import { packageFailure } from "./package-pages.js"
-import { isWordBatch, prepareWordBatch } from "./package-planner.js"
-import { PACKAGE_PROFILE } from "./package-profile.js"
+import { packageFailure } from "../package-pages.js"
+import { isWordBatch, prepareWordBatch } from "../package-planner.js"
+import { PACKAGE_PROFILE } from "../package-profile.js"
 import { revalidateUnchangedPackage } from "./package-restore.js"
-import { readWordPackage } from "./package-store.js"
-import { undo } from "./word-package/word/document.js"
-import { undoRichEdit } from "./rich-edit.js"
+import { readWordPackage } from "../package-store.js"
+import { undo } from "./word/document.js"
+import { undoRichEdit } from "../rich-edit.js"
 
 export type EditInput = z.output<(typeof catalog)["paper.edit"]["input"]>
 export type EditOutput =

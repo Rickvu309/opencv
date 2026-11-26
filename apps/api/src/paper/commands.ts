@@ -1,5 +1,5 @@
 import type { Registry } from "../registry/registry.js"
-import { registerPaperUndo } from "./package-edit.js"
+import { registerPaperUndo } from "./word-package/package-edit.js"
 import { oldEditorUndoReasons } from "./undo-guard.js"
 
 export function registerPaper(registry: Registry) {

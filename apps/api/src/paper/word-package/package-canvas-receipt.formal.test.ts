@@ -4,11 +4,14 @@ import { personActor } from "@workspace/domain/kernel"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 
-import * as databaseContext from "../db/context.js"
-import { getDb, withDatabase } from "../db/context.js"
-import { activity, paperPackageHeads, user } from "../db/schema.js"
-import { openBackend, type Backend } from "../test/registry-formal-support.js"
-import { paperRegistry } from "./paper-registry.test-support.js"
+import * as databaseContext from "../../db/context.js"
+import { getDb, withDatabase } from "../../db/context.js"
+import { activity, paperPackageHeads, user } from "../../db/schema.js"
+import {
+  openBackend,
+  type Backend,
+} from "../../test/registry-formal-support.js"
+import { paperRegistry } from "../paper-registry.test-support.js"
 
 let backend: Backend
 const run = <T>(fn: () => Promise<T>) => withDatabase(backend.db, fn)

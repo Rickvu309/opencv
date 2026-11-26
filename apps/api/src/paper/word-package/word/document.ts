@@ -28,11 +28,11 @@ import { z } from "zod"
 import { getDb, insideTransaction, transaction } from "../../../db/context.js"
 import { paperPackageHeads, paperPackageVersions } from "../../../db/schema.js"
 import { CommandError } from "../../../platform/errors.js"
-import { persistWordPackage } from "../../package-candidates.js"
+import { persistWordPackage } from "../package-candidates.js"
 import { PaperPackage } from "../../package-engine.js"
 import { archiveDigest, packageDigest } from "../../package-pages.js"
 import { PACKAGE_PROFILE } from "../../package-profile.js"
-import { compareAndRestorePackage } from "../../package-restore.js"
+import { compareAndRestorePackage } from "../package-restore.js"
 import {
   exportWordPackage,
   publishWordPackage,

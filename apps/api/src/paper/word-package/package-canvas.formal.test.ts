@@ -9,7 +9,7 @@ import {
 import { and, eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import { getDb, transaction, withDatabase } from "../db/context.js"
+import { getDb, transaction, withDatabase } from "../../db/context.js"
 import {
   activity,
   chats,
@@ -20,22 +20,25 @@ import {
   paperPackageVersions,
   pendingActions,
   user,
-} from "../db/schema.js"
-import { openBackend, type Backend } from "../test/registry-formal-support.js"
+} from "../../db/schema.js"
+import {
+  openBackend,
+  type Backend,
+} from "../../test/registry-formal-support.js"
 import { commitWordCandidate } from "./package-candidates.js"
 import { prepareCanvas } from "./package-canvas.js"
-import { WORD_UNDO_MOVED } from "./word-package/word/document.js"
-import { mergeInput, splitInput, writeInput } from "./word-canvas-inputs.js"
-import { paperRegistry } from "./paper-registry.test-support.js"
+import { WORD_UNDO_MOVED } from "./word/document.js"
+import { mergeInput, splitInput, writeInput } from "../word-canvas-inputs.js"
+import { paperRegistry } from "../paper-registry.test-support.js"
 import {
   exportWordPackage,
   publishWordPackage,
   readWordPackage,
   stageWordPackage,
-} from "./package-store.js"
+} from "../package-store.js"
 
 const loaded = createRequire(import.meta.url)(
-  "../../../../scripts/lib/paper-canvas-bytes.mjs"
+  "../../../../../scripts/lib/paper-canvas-bytes.mjs"
 ) as {
   mintBlankBytes: () => Uint8Array
   fillPaintedText: (bytes: Uint8Array, text: string) => Uint8Array
@@ -51,7 +54,7 @@ const loaded = createRequire(import.meta.url)(
   runsOf: (paragraph: unknown) => { text: string; rPr: string }[]
 }
 const marks = createRequire(import.meta.url)(
-  "../../../../scripts/lib/paper-canvas-checks.mjs"
+  "../../../../../scripts/lib/paper-canvas-checks.mjs"
 ) as {
   FIRST: string
   PPR: string

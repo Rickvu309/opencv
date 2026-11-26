@@ -5,18 +5,21 @@ import { coachActor, personActor } from "@workspace/domain/kernel"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import { getDb, withDatabase } from "../db/context.js"
-import { chats, coachUsage, paperPackageHeads, user } from "../db/schema.js"
-import { openBackend, type Backend } from "../test/registry-formal-support.js"
-import { paperRegistry } from "./paper-registry.test-support.js"
-import { undo } from "./word-package/word/document.js"
+import { getDb, withDatabase } from "../../db/context.js"
+import { chats, coachUsage, paperPackageHeads, user } from "../../db/schema.js"
+import {
+  openBackend,
+  type Backend,
+} from "../../test/registry-formal-support.js"
+import { paperRegistry } from "../paper-registry.test-support.js"
+import { undo } from "./word/document.js"
 import {
   publishWordPackage,
   readWordPackage,
   stageWordPackage,
-} from "./package-store.js"
+} from "../package-store.js"
 const loaded = createRequire(import.meta.url)(
-  "../../../../scripts/lib/paper-canvas-bytes.mjs"
+  "../../../../../scripts/lib/paper-canvas-bytes.mjs"
 ) as { mintBlankBytes: () => Uint8Array }
 
 let backend: Backend

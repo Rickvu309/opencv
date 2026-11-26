@@ -31,7 +31,7 @@ import {
   restoreWordPage,
   stageWordPageCopy,
   type WordPageCopy,
-} from "./package-card-actions.js"
+} from "./word-package/package-card-actions.js"
 import {
   IMPORT_GENERIC_MESSAGE,
   classifyImport,

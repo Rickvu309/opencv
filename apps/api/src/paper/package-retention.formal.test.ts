@@ -20,7 +20,7 @@ import {
   commitWordCandidate,
   prepareStoredWordPackage,
   restoreWordCandidate,
-} from "./package-candidates.js"
+} from "./word-package/package-candidates.js"
 import { fixturePackage } from "./package-fixtures.js"
 import * as packageStore from "./package-store.js"
 import {

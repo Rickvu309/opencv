@@ -9,7 +9,7 @@ import { eq, sql } from "drizzle-orm"
 import type { Pool } from "pg"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 
-import { getDb, withDatabase } from "../db/context.js"
+import { getDb, withDatabase } from "../../db/context.js"
 import {
   activity,
   chats,
@@ -21,17 +21,17 @@ import {
   paperPackageVersions,
   pendingActions,
   user,
-} from "../db/schema.js"
+} from "../../db/schema.js"
 import {
   openBackend,
   REAL,
   type Backend,
-} from "../test/registry-formal-support.js"
+} from "../../test/registry-formal-support.js"
 import { prepareStoredWordPackage } from "./package-candidates.js"
-import { paperRegistry } from "./paper-registry.test-support.js"
-import { fixturePackage } from "./package-fixtures.js"
+import { paperRegistry } from "../paper-registry.test-support.js"
+import { fixturePackage } from "../package-fixtures.js"
 import * as packageRestore from "./package-restore.js"
-import * as packageStore from "./package-store.js"
+import * as packageStore from "../package-store.js"
 
 let backend: Backend
 const run = <T>(fn: () => Promise<T>) => withDatabase(backend.db, fn)

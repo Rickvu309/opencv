@@ -6,6 +6,7 @@ import test from "node:test"
 import { fileURLToPath } from "node:url"
 
 import { detect } from "./lib/paper-mint-names.mjs"
+import { pathAtRevision } from "./lib/path-at-revision.mjs"
 
 const root = fileURLToPath(new URL("../", import.meta.url))
 const paperDir = path.join(root, "apps/api/src/paper")
@@ -70,7 +71,10 @@ test("every live Paper module mints names without a file extension", () => {
 test("the canvas that minted CV.docx fires on its blank names", () => {
   const past = execFileSync(
     "git",
-    ["show", "f8167a134:apps/api/src/paper/package-canvas.ts"],
+    [
+      "show",
+      `f8167a134:${pathAtRevision("f8167a134", "apps/api/src/paper/word-package/package-canvas.ts")}`,
+    ],
     { cwd: root, encoding: "utf8" }
   )
   assert.deepEqual(

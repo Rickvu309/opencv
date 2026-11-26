@@ -32,7 +32,7 @@ import { installRegistry } from "../install.js"
 import { registry } from "../registry/registry.js"
 import { openBackend, type Backend } from "../test/registry-formal-support.js"
 import { readOutline } from "./outline.js"
-import { pruneUnreachableCandidates } from "./package-candidate-prune.js"
+import { pruneUnreachableCandidates } from "./word-package/package-candidate-prune.js"
 import { fixturePackage, paragraph } from "./package-fixtures.js"
 import {
   publishWordPackage,

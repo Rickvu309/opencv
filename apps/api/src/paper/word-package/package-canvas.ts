@@ -7,19 +7,19 @@ import {
 } from "@workspace/domain/paper-doc"
 import { and, eq } from "drizzle-orm"
 
-import { getDb, insideTransaction } from "../db/context.js"
-import { paperPackageHeads } from "../db/schema.js"
-import { packageFailure } from "./package-pages.js"
-import { readWordPackage, wordPackageBasis } from "./package-store.js"
-import { prepareBatch } from "./word-package/word/document.js"
+import { getDb, insideTransaction } from "../../db/context.js"
+import { paperPackageHeads } from "../../db/schema.js"
+import { packageFailure } from "../package-pages.js"
+import { readWordPackage, wordPackageBasis } from "../package-store.js"
+import { prepareBatch } from "./word/document.js"
 import {
   templatePageBytes,
   templatePageName,
   writtenPageBytes,
-} from "./word-package/word/template.js"
+} from "./word/template.js"
 
 const loaded = createRequire(import.meta.url)(
-  "../../../../scripts/lib/paper-canvas-bytes.mjs"
+  "../../../../../scripts/lib/paper-canvas-bytes.mjs"
 ) as {
   mintBlankBytes: () => Uint8Array
 }
