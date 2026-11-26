@@ -1,0 +1,10 @@
+[
+  {
+    "subject": "apps/api/src/one-door.test.ts",
+    "because": "GET /api/paper is deleted: the Paper list is the paper.list operation through the read door, so it leaves the list of routes waiting to become operations.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  }
+]
