@@ -1,11 +1,9 @@
 import { z } from "zod"
 import { eq } from "drizzle-orm"
-import {
-  coachActor,
-  coachModeSchema,
-  planSchema,
-  nativeBasisSchema,
-} from "@workspace/domain"
+import { planSchema } from "@workspace/domain/account"
+import { coachModeSchema } from "@workspace/domain/coach"
+import { coachActor } from "@workspace/domain/kernel"
+import { nativeBasisSchema } from "@workspace/domain/paper-doc"
 import { operation as setJobPriority } from "@workspace/domain/operations/job/set-priority"
 import { coachModelEnv } from "../platform/config.js"
 import { getDb } from "../db/context.js"

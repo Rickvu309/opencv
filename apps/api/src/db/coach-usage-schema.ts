@@ -1,4 +1,4 @@
-import type { CoachMode } from "@workspace/domain"
+import type { CoachMode } from "@workspace/domain/coach"
 import {
   index,
   integer,

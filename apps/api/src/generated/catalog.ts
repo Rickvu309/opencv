@@ -1,5 +1,5 @@
-import type { Implementations } from "@workspace/domain"
-import { catalog } from "@workspace/domain"
+import type { Implementations } from "@workspace/domain/kernel"
+import { catalog } from "@workspace/domain/kernel"
 import { implementation as account$delete } from "../account/operations/account/delete/server.js"
 import { implementation as account$requestEmailChange } from "../account/operations/account/request-email-change/server.js"
 import { implementation as actions$approve } from "../registry/operations/actions/approve/server.js"

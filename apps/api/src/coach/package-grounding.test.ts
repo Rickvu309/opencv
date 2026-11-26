@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto"
 
-import { paperPackageEditResultSchema, personActor } from "@workspace/domain"
+import { personActor } from "@workspace/domain/kernel"
+import { paperPackageEditResultSchema } from "@workspace/domain/paper-doc"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { withDatabase } from "../db/context.js"

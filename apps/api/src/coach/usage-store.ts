@@ -1,11 +1,6 @@
-import {
-  ERROR_CODES,
-  parseChatId,
-  parseUserId,
-  planAllowsMode,
-  type CoachMode,
-  type Plan,
-} from "@workspace/domain"
+import { planAllowsMode, type Plan } from "@workspace/domain/account"
+import { type CoachMode } from "@workspace/domain/coach"
+import { ERROR_CODES, parseChatId, parseUserId } from "@workspace/domain/kernel"
 import { and, eq, gt, isNull, sql } from "drizzle-orm"
 
 import { getDb, transaction } from "../db/context.js"

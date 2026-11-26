@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises"
 import path from "node:path"
 import { PGlite } from "@electric-sql/pglite"
-import { parseChatId, parseUserId, personActor } from "@workspace/domain"
+import { parseChatId, parseUserId, personActor } from "@workspace/domain/kernel"
 import { drizzle } from "drizzle-orm/pglite"
 import { expect, it, vi } from "vitest"
 

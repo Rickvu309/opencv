@@ -1,4 +1,4 @@
-import { chatDetailSchema, type CoachTurnInput } from "@workspace/domain"
+import { chatDetailSchema, type CoachTurnInput } from "@workspace/domain/coach"
 import { asc, eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 import { chatMessages, coachUsage, user } from "../db/schema.js"

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { delegateActorSchema } from "@workspace/domain"
+import { delegateActorSchema } from "@workspace/domain/kernel"
 import { count, eq, sql } from "drizzle-orm"
 import { drizzle } from "drizzle-orm/node-postgres"
 import { Pool } from "pg"

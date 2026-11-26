@@ -1,5 +1,5 @@
 import { operation } from "@workspace/domain/operations/chat/set-focus"
-import { chatFocusSchema } from "@workspace/domain"
+import { chatFocusSchema } from "@workspace/domain/coach"
 import type { z } from "zod"
 import type { OperationBinding } from "../../../../registry/bind.js"
 import { setChatFocus } from "../../../chat/index.js"

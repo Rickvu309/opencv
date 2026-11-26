@@ -4,7 +4,7 @@ import {
   type ChatMessagePart,
   type ChatToolOutcome,
   type ChatToolPart,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
 
 const LEGACY_DENIAL_SUMMARY = "Action was not approved"
 

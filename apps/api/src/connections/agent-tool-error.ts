@@ -1,4 +1,4 @@
-import { ERROR_CODES } from "@workspace/domain"
+import { ERROR_CODES } from "@workspace/domain/kernel"
 
 import { paperEditBasisMessage } from "../registry/paper-agent.js"
 import { CommandError } from "../platform/errors.js"

@@ -1,4 +1,4 @@
-import { personActor, parseUserId, parseChatId } from "@workspace/domain"
+import { personActor, parseUserId, parseChatId } from "@workspace/domain/kernel"
 import { eq, sql } from "drizzle-orm"
 import { expect, it } from "vitest"
 import { z } from "zod"

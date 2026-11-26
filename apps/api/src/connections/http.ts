@@ -13,7 +13,7 @@ import {
   delegateActorSchema,
   ERROR_CODES,
   type DelegateActor,
-} from "@workspace/domain"
+} from "@workspace/domain/kernel"
 import { insideTransaction, savepoint, transaction } from "../db/context.js"
 import type { SignedInVariables } from "../platform/signed-in.js"
 import type { Registry } from "../registry/registry.js"

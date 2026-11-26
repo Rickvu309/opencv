@@ -1,4 +1,6 @@
-import { COACH_MODEL, personActor, type InboxDetail } from "@workspace/domain"
+import { COACH_MODEL } from "@workspace/domain/coach"
+import { type InboxDetail } from "@workspace/domain/inbox"
+import { personActor } from "@workspace/domain/kernel"
 import { describe, expect, it, vi } from "vitest"
 import { coachModelEnv, setCoachModelEnv } from "../platform/config.js"
 import { withDatabase } from "../db/context.js"

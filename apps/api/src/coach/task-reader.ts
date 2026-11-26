@@ -1,12 +1,11 @@
 import {
   coachTaskEventSchema,
   chatDetailSchema,
-  parseChatId,
-  parseUserId,
   coachTaskErrorCodeSchema,
   coachTaskSnapshotSchema,
   type CoachTaskReplay,
-} from "@workspace/domain"
+} from "@workspace/domain/coach"
+import { parseChatId, parseUserId } from "@workspace/domain/kernel"
 import { and, desc, eq, gt, lte } from "drizzle-orm"
 import { getDb, transaction } from "../db/context.js"
 import {

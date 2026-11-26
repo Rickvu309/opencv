@@ -1,11 +1,10 @@
+import { ERROR_CODES, personActor } from "@workspace/domain/kernel"
 import {
   NATIVE_WRITER,
   RICH_NATIVE_WRITER,
-  ERROR_CODES,
-  personActor,
   nativeProvenance,
   nativePaperDocumentSchema,
-} from "@workspace/domain"
+} from "@workspace/domain/paper-doc"
 import { expect, it, vi } from "vitest"
 import { CommandError } from "../platform/errors.js"
 import { Registry } from "../registry/registry.js"
