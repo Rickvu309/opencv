@@ -10,6 +10,7 @@ import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 import { detectDirectMarks as detect } from "./lib/paper-rich-structure.mjs"
+import { pathAtRevision } from "./lib/path-at-revision.mjs"
 
 test("Word link styling preserves direct marks instead of stripping their XML", () => {
   for (const mark of ["b", "i", "u", "strike", "color", "rStyle"])
@@ -78,9 +79,13 @@ test("explicit link color, named styles and legacy packages survive rich link de
     ["19b30732", "packages/domain/src/paper-doc/paragraph-styles.ts"],
     ["2f37a898", "apps/api/src/paper/native-output/package.ts"],
   ]) {
-    const before = execFileSync("git", ["show", `${sha}:${path}`], {
-      encoding: "utf8",
-    })
+    const before = execFileSync(
+      "git",
+      ["show", `${sha}:${pathAtRevision(sha, path)}`],
+      {
+        encoding: "utf8",
+      }
+    )
     assert.ok(detectLinkCompatibility(before, path).length, path)
     assert.deepEqual(
       detectLinkCompatibility(
@@ -136,7 +141,7 @@ test("the full style cascade and shared Docs groups reject their introducing mis
     "apps/api/src/paper/native-output/formatted.ts",
     "packages/domain/src/paper-doc/paragraph-styles.ts",
     "packages/domain/src/paper-doc/presentation-styles.ts",
-    "apps/web/src/features/paper/rich-structure-controls.tsx",
+    "apps/web/src/features/paper/rich-editor/rich-structure-controls.tsx",
     "apps/web/src/features/paper/rich-text-formatting.tsx",
   ]) {
     const before = execFileSync(
@@ -205,9 +210,13 @@ test("character inheritance and list indent dispatch have clean and mistake fixt
 
 test("the merged history toolbar keeps paragraph controls on one desktop row", () => {
   const path = "apps/web/src/features/paper/rich-text-formatting.tsx"
-  const before = execFileSync("git", ["show", `31528653:${path}`], {
-    encoding: "utf8",
-  })
+  const before = execFileSync(
+    "git",
+    ["show", `31528653:${pathAtRevision("31528653", path)}`],
+    {
+      encoding: "utf8",
+    }
+  )
   const clean = readFileSync(new URL(`../${path}`, import.meta.url), "utf8")
   assert.ok(
     detectStyleCascade(before, path).some((hit) =>
@@ -237,9 +246,13 @@ test("rich Word toggle overrides reject the heading regression", () => {
   for (const commit of ["69e82217", "46709cf2"])
     assert.ok(
       detectWordToggles(
-        execFileSync("git", ["show", `${commit}:${path}`], {
-          encoding: "utf8",
-        }),
+        execFileSync(
+          "git",
+          ["show", `${commit}:${pathAtRevision(commit, path)}`],
+          {
+            encoding: "utf8",
+          }
+        ),
         path
       ).length
     )

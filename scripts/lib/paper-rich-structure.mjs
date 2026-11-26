@@ -216,8 +216,7 @@ export function detectRichStructure(text, path) {
     /style\s*\?\?\s*["']normal["']/.test(text)
   )
     hits.push("Unstyled paragraphs must preserve document formatting defaults")
-  const richControls =
-    path === "apps/web/src/features/paper/rich-structure-controls.tsx"
+  const richControls = path.endsWith("/rich-structure-controls.tsx")
   if (richControls) {
     if (
       !text.includes("SelectContent finalFocus={returnToDocument}") ||
