@@ -4,20 +4,20 @@ import type { PaperView } from "@workspace/domain/paper-doc"
 import { and, eq, or } from "drizzle-orm"
 import { z } from "zod"
 
-import { getDb } from "../db/context.js"
+import { getDb } from "../../db/context.js"
 import {
   jobs,
   paperPackageHeads,
   paperPackageTrash,
   paperPackageVersions,
-} from "../db/schema.js"
-import { ownedPackagePaper } from "./package-list.js"
+} from "../../db/schema.js"
+import { ownedPackagePaper } from "../package-list.js"
 import {
   exportWordPackage,
   publishWordPackage,
   restoreWordHead,
   stageWordPackage,
-} from "./package-store.js"
+} from "../package-store.js"
 
 const docIdSchema = z.string().uuid()
 const NAME_MAX = 200

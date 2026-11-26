@@ -11,9 +11,9 @@ import { z } from "zod"
 import { paperPackageVersions } from "../../../db/schema.js"
 import type { OperationBinding } from "../../../registry/bind.js"
 import type { RowBasis } from "../../../registry/frozen-review.js"
-import { resultOf } from "../../package-canvas.js"
+import { resultOf } from "../../word-package/package-canvas.js"
 import { packageFailure } from "../../package-pages.js"
-import { startedBytes, startedName } from "../../package-start.js"
+import { startedBytes, startedName } from "../../word-package/package-start.js"
 import { publishWordPackage, stageWordPackage } from "../../package-store.js"
 
 type StartResult = z.output<typeof paperPackageEditResultSchema>

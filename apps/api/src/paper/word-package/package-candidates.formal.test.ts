@@ -3,31 +3,34 @@ import { randomUUID } from "node:crypto"
 import { count, eq } from "drizzle-orm"
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest"
 
-import { getDb, transaction, withDatabase } from "../db/context.js"
+import { getDb, transaction, withDatabase } from "../../db/context.js"
 import {
   files,
   paperPackageCandidates,
   paperPackageHeads,
   paperPackageVersions,
   user,
-} from "../db/schema.js"
-import { openBackend, type Backend } from "../test/registry-formal-support.js"
+} from "../../db/schema.js"
+import {
+  openBackend,
+  type Backend,
+} from "../../test/registry-formal-support.js"
 import {
   commitWordCandidate,
   prepareStoredWordPackage,
   restoreWordCandidate,
   revalidateWordCandidate,
 } from "./package-candidates.js"
-import { PaperPackage } from "./package-engine.js"
-import { fixturePackage } from "./package-fixtures.js"
-import { packageDigest } from "./package-pages.js"
-import * as packageStore from "./package-store.js"
+import { PaperPackage } from "../package-engine.js"
+import { fixturePackage } from "../package-fixtures.js"
+import { packageDigest } from "../package-pages.js"
+import * as packageStore from "../package-store.js"
 import {
   exportWordPackage,
   publishWordPackage,
   readWordPackage,
   stageWordPackage,
-} from "./package-store.js"
+} from "../package-store.js"
 
 let backend: Backend
 const owner = randomUUID()

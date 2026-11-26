@@ -25,7 +25,7 @@ import {
   signUp,
 } from "../test/harness.js"
 import { PaperPackage } from "./package-engine.js"
-import { deleteWordPage } from "./package-card-actions.js"
+import { deleteWordPage } from "./word-package/package-card-actions.js"
 import { publishWordPackage, stageWordPackage } from "./package-store.js"
 import { readPackageZip } from "./package-zip.js"
 import { open, apply } from "./word-package/word/document.js"

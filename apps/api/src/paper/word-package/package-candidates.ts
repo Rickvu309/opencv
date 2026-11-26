@@ -11,28 +11,31 @@ import { and, count, eq, inArray, not, sql } from "drizzle-orm"
 import { alias } from "drizzle-orm/pg-core"
 import { z } from "zod"
 
-import { getDb, insideTransaction, transaction } from "../db/context.js"
+import { getDb, insideTransaction, transaction } from "../../db/context.js"
 import {
   files,
   paperPackageCandidates,
   paperPackageHeads,
   paperPackageVersions,
   user,
-} from "../db/schema.js"
+} from "../../db/schema.js"
 import {
   candidatePageInTrash,
   pruneUnreachableCandidates,
 } from "./package-candidate-prune.js"
-import { PaperPackage } from "./package-engine.js"
-import { PACKAGE_PROFILE } from "./package-profile.js"
+import { PaperPackage } from "../package-engine.js"
+import { PACKAGE_PROFILE } from "../package-profile.js"
 import {
   archiveDigest,
   packageDigest,
   packageFailure,
-} from "./package-pages.js"
-import { prepareWordPackage, wordPackageEditSchema } from "./package-planner.js"
+} from "../package-pages.js"
+import {
+  prepareWordPackage,
+  wordPackageEditSchema,
+} from "../package-planner.js"
 import { compareAndRestorePackage, readPackageHead } from "./package-restore.js"
-import { wordPackageBasis } from "./package-store.js"
+import { wordPackageBasis } from "../package-store.js"
 
 const hash = z.string().regex(/^[a-f0-9]{64}$/)
 export const wordCandidateSchema = z

@@ -39,9 +39,9 @@
   },
   "covers": [
     "apps/api/src/paper/word-package/word/document.ts",
-    "apps/api/src/paper/package-edit.ts",
-    "apps/api/src/paper/package-candidates.ts",
-    "apps/api/src/paper/package-restore.ts",
+    "apps/api/src/paper/word-package/package-edit.ts",
+    "apps/api/src/paper/word-package/package-candidates.ts",
+    "apps/api/src/paper/word-package/package-restore.ts",
     "apps/api/src/registry/frozen-review.ts",
     "apps/api/src/registry/registry.ts",
     "apps/api/src/registry/proposals.ts",

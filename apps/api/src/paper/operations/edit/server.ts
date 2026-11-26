@@ -13,7 +13,7 @@ import {
   type EditOutput,
   type PackageCandidate,
   type Snapshot,
-} from "../../package-edit.js"
+} from "../../word-package/package-edit.js"
 import { editRichPaper } from "../../rich-edit.js"
 import { WORD_UNDO_MOVED } from "../../word-package/word/document.js"
 
