@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto"
 
 import { describe, expect, it } from "vitest"
 
-import { files, paperPackageHeads } from "../../db/schema.js"
+import { files, paperDocs } from "../../db/schema.js"
 import {
   createMigratedTestDb,
   createTestApp,
@@ -27,7 +27,7 @@ import {
   IMPORT_TEXT_LONG_MESSAGE,
   importParsers,
 } from "./import-parse.js"
-import { importedWordPage } from "./import-word.js"
+import { importedPaper } from "./import-word.js"
 import { readPackageZip } from "../word-package/package-zip.js"
 import { IMPORT_LINE_BYTES, importedTextLines } from "./import-text-lines.js"
 
@@ -80,7 +80,7 @@ function expectBounded(
 
 function importFile(name: string, bytes: Buffer) {
   return measured(() =>
-    importedWordPage({ name, mediaType: "", bytes }, { owner: randomUUID() })
+    importedPaper({ name, mediaType: "", bytes }, { owner: randomUUID() })
   )
 }
 
@@ -297,7 +297,7 @@ describe("hostile uploads stay bounded", () => {
     expect(responses.map((response) => response.status)).toEqual(
       Array.from({ length: 10 }, () => 200)
     )
-    expect(await db.select().from(paperPackageHeads)).toHaveLength(10 + served)
+    expect(await db.select().from(paperDocs)).toHaveLength(10 + served)
     expect(await db.select().from(files)).toHaveLength(10 + served)
     expect(IMPORT_READ_LIMITS.workers + IMPORT_READ_LIMITS.waiting).toBe(14)
     await client.close()

@@ -40,6 +40,20 @@ const HIG_TABS = 16
 const safe = (name) => name.replace(/[^a-z0-9.-]+/gi, "_")
 const firstLine = (error) => error.message.split("\n")[0]
 
+const RICH_EDITOR_WRITER = {
+  documentVersion: 4,
+  writerProtocol: 1,
+  supportedSchemaRevisions: [2],
+  capabilities: [
+    "rich-text-1",
+    "semantic-cv-fields-1",
+    "document-presentation-1",
+    "tables-1",
+    "photos-1",
+    "flow-sections-1",
+  ],
+}
+
 export function browserWorld({ browser, state, accounts, shotsDir, now }) {
   mkdirSync(shotsDir, { recursive: true })
   let shared = null
@@ -263,7 +277,9 @@ export function browserWorld({ browser, state, accounts, shotsDir, now }) {
         }
       },
       openFromLibrary: async (docId) => {
-        const library = await (await read("paper.list", {})).json()
+        const library = await (
+          await read("paper.list", { writer: RICH_EDITOR_WRITER })
+        ).json()
         const entry = findEntry(library, docId)
         if (!entry) return false
         await page.goto(`${state.webOrigin}/paper`, {
@@ -302,9 +318,7 @@ export function browserWorld({ browser, state, accounts, shotsDir, now }) {
       storedText: async (docId) => {
         let text = ""
         for (let tries = 0; tries < 4; tries += 1) {
-          text = await (
-            await read("paper.read", { view: "lines", docId })
-          ).text()
+          text = await (await read("paper.outline", { docId })).text()
           if (text.includes(TYPED_LINE)) return text
           await page.waitForTimeout(750)
         }
@@ -339,10 +353,14 @@ export function browserWorld({ browser, state, accounts, shotsDir, now }) {
       pageText: () => page.locator(PAGE).first().innerText(),
       undoOffered: () => page.locator(PANEL_UNDO).first().isVisible(),
       downloadWord: async () => {
+        await page
+          .getByRole("button", { name: "File", exact: true })
+          .first()
+          .click({ timeout: STEP_MS })
         const [download] = await Promise.all([
           page.waitForEvent("download", { timeout: STEP_MS }),
           page
-            .getByRole("link", { name: "Download Word", exact: true })
+            .getByRole("menuitem", { name: "Download Word", exact: true })
             .first()
             .click({ timeout: STEP_MS }),
         ])

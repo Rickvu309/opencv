@@ -5,7 +5,6 @@ import { wordPageReceipt } from "./word-page-receipt.ts"
 
 const WHEN = "2026-11-13T00:00:00.000Z"
 const REVISION = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
-const HASH = "a".repeat(64)
 
 type Kind = "cv" | "letter"
 export type Format = "word" | "older"
@@ -150,18 +149,10 @@ export function fakeServer(
           .map(view)
       )
     if (path.endsWith("/api/paper/import")) {
-      const page = add("word")
+      const page = add("older")
       return Response.json({
         ok: true,
-        data: {
-          generation: "package",
-          docId: page.id,
-          revision: REVISION,
-          name: page.name,
-          kind: page.kind,
-          packageHash: HASH,
-          byteSize: 10,
-        },
+        data: { docId: page.id, name: page.name, kind: page.kind },
       })
     }
     const infoOf = path.endsWith("/api/reads/paper.read")

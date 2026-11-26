@@ -9,6 +9,8 @@ public:
     package-http.ts,
     package-list.ts,
     package-pages.ts,
+    package-xml.ts,
+    package-zip.ts,
     package-start.ts,
     package-store.ts,
     word-reading.ts,

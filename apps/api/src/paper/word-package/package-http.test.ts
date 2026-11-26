@@ -17,8 +17,7 @@ import {
   signUp,
 } from "../../test/harness.js"
 import { withDatabase } from "../../db/context.js"
-import { files, paperDocs, paperPackageHeads, user } from "../../db/schema.js"
-import { textPdf } from "../import/import-fixtures.test.js"
+import { user } from "../../db/schema.js"
 import { fixturePackage, paragraph } from "./package-fixtures.js"
 import {
   WORD_PACKAGE_MEDIA_TYPE,
@@ -65,32 +64,22 @@ it("authenticates staging, reads pinned snapshots, and exports exact DOCX bytes 
       ...authHeaders(signed.cookie),
       "content-type": "application/json",
     }
-    const commandInput = { generation: "package", stageId: staged.stageId }
-    const publishKey = randomUUID()
+    const [owner] = await db
+      .select()
+      .from(user)
+      .where(eq(user.email, signed.user.email))
+    if (!owner) throw new Error("Missing package owner")
     const publish = () =>
-      app.request("/api/commands/paper.import", {
-        method: "POST",
-        headers: commandHeaders,
-        body: JSON.stringify({
-          input: commandInput,
-          idempotencyKey: publishKey,
-        }),
-      })
-    const published = await publish()
-    expect(published.status, await published.clone().text()).toBe(200)
-    const publishedData = z
-      .object({ data: catalog["paper.import"].publicResult })
-      .parse(await published.json()).data
+      withDatabase(db, () => publishWordPackage(owner.id, staged.stageId))
+    const publishedData = paperPackageMetadataSchema.parse(await publish())
     expect(publishedData).toMatchObject({
       generation: "package",
       docId: staged.docId,
       revision: staged.revision,
     })
-    expect(
-      z
-        .object({ data: catalog["paper.import"].publicResult })
-        .parse(await (await publish()).json()).data
-    ).toEqual(publishedData)
+    expect(paperPackageMetadataSchema.parse(await publish())).toEqual(
+      publishedData
+    )
     const library = await app.request("/api/reads/paper.read", {
       method: "POST",
       headers: commandHeaders,
@@ -165,155 +154,6 @@ it("authenticates staging, reads pinned snapshots, and exports exact DOCX bytes 
       }
     )
     expect(oversize.status).toBe(400)
-  } finally {
-    await client.close()
-  }
-})
-
-it("moves Word uploads into the immutable library without a legacy document or flattened file", async () => {
-  const { db, client } = await createMigratedTestDb()
-  try {
-    const app = createTestApp(db)
-    const signed = await signUp(app, {
-      name: "Upload owner",
-      email: `${randomUUID()}@test.invalid`,
-    })
-    const headers = new Headers({
-      ...authHeaders(signed.cookie),
-      "idempotency-key": randomUUID(),
-    })
-    headers.delete("content-type")
-    const bytes = fixturePackage(paragraph("Original Word body"))
-    const upload = (kind = "letter") => {
-      const body = new FormData()
-      body.set(
-        "file",
-        new File([new Uint8Array(bytes)], "My Letter.docx", {
-          type: WORD_PACKAGE_MEDIA_TYPE,
-        })
-      )
-      return app.request(`/api/paper/import?kind=${kind}`, {
-        method: "POST",
-        headers,
-        body,
-      })
-    }
-    const invalid = await upload("invalid")
-    expect(invalid.status, await invalid.clone().text()).toBe(400)
-    const empty = await app.request("/api/reads/paper.read", {
-      method: "POST",
-      headers: authHeaders(signed.cookie),
-      body: JSON.stringify({ view: "library" }),
-    })
-    expect(
-      z
-        .object({ data: catalog["paper.read"].publicResult })
-        .parse(await empty.json()).data
-    ).toEqual({ items: [], next: null })
-    const response = await upload()
-    expect(response.status, await response.clone().text()).toBe(200)
-    const receipt = z
-      .object({ data: paperPackageMetadataSchema })
-      .parse(await response.json()).data
-    expect(receipt).toMatchObject({
-      generation: "package",
-      name: "My Letter",
-      kind: "letter",
-    })
-    expect(
-      z
-        .object({ data: paperPackageMetadataSchema })
-        .parse(await (await upload()).json()).data
-    ).toEqual(receipt)
-    const listed = await app.request("/api/reads/paper.list", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({}),
-    })
-    expect(listed.status, await listed.clone().text()).toBe(200)
-    expect(
-      z.object({ data: z.array(z.unknown()) }).parse(await listed.json()).data
-    ).toEqual([expect.objectContaining({ id: receipt.docId, format: "word" })])
-    const files = await app.request("/api/reads/paper.files", {
-      method: "POST",
-      headers,
-      body: JSON.stringify({}),
-    })
-    expect(files.status, await files.clone().text()).toBe(200)
-    expect(
-      z.object({ data: z.array(z.unknown()) }).parse(await files.json()).data
-    ).toEqual([])
-    const download = await app.request(
-      `/api/paper/packages/${receipt.docId}/export?at=${receipt.revision}`,
-      { headers }
-    )
-    expect(download.status).toBe(200)
-    expect(Buffer.from(await download.arrayBuffer())).toEqual(bytes)
-    const other = await signUp(app, {
-      name: "Other owner",
-      email: `${randomUUID()}@test.invalid`,
-    })
-    const denied = await app.request(
-      "/api/reads/paper.read",
-      paperReadRequest(
-        { view: "lines", docId: receipt.docId, at: receipt.revision },
-        other.cookie
-      )
-    )
-    expect(denied.status).toBe(404)
-    const otherLibrary = await app.request("/api/reads/paper.read", {
-      method: "POST",
-      headers: {
-        ...authHeaders(other.cookie),
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({ view: "library" }),
-    })
-    expect(
-      z
-        .object({ data: catalog["paper.read"].publicResult })
-        .parse(await otherLibrary.json()).data
-    ).toEqual({ items: [], next: null })
-  } finally {
-    await client.close()
-  }
-})
-
-it("publishes a PDF import as a Word page and writes no older document", async () => {
-  const { db, client } = await createMigratedTestDb()
-  try {
-    const app = createTestApp(db)
-    const signed = await signUp(app, {
-      name: "Upload owner",
-      email: `${randomUUID()}@test.invalid`,
-    })
-    const headers = new Headers(authHeaders(signed.cookie))
-    headers.delete("content-type")
-    const form = new FormData()
-    form.set(
-      "file",
-      new File(
-        [new Uint8Array(textPdf("Original uploaded words"))],
-        "Original.pdf",
-        { type: "application/pdf" }
-      )
-    )
-    const response = await app.request("/api/paper/import", {
-      method: "POST",
-      headers,
-      body: form,
-    })
-    expect(response.status).toBe(200)
-    const body = z
-      .object({ data: catalog["paper.import"].publicResult })
-      .parse(await response.json())
-    expect(body.data).toMatchObject({ name: "Original", kind: "cv" })
-    const heads = await db.select().from(paperPackageHeads)
-    expect(heads.map((head) => head.docId)).toEqual([body.data.docId])
-    expect(await db.select().from(paperDocs)).toEqual([])
-    expect((await db.select().from(files)).map((file) => file.purpose)).toEqual(
-      ["package"]
-    )
   } finally {
     await client.close()
   }

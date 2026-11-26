@@ -29,7 +29,7 @@ import {
   ImportReadLimited,
 } from "./import-read-queue.js"
 import { importReader, workerHeapWatchAvailable } from "./import-text-pool.js"
-import { importedWordPage } from "./import-word.js"
+import { importedPaper } from "./import-word.js"
 
 const SLOW_READ_MS = 10_000
 
@@ -273,7 +273,7 @@ describe("the worker pool against a slow PDF", () => {
     let attackerRead = 0
     const attacker = async () => {
       while (!stop) {
-        await importedWordPage(
+        await importedPaper(
           { name: "slow.pdf", mediaType: "", bytes: slow },
           { owner: "attacker" }
         ).then(
@@ -296,7 +296,7 @@ describe("the worker pool against a slow PDF", () => {
             setTimeout(
               () => {
                 const start = performance.now()
-                void importedWordPage(
+                void importedPaper(
                   { name: "cv.pdf", mediaType: "", bytes: honestPdf },
                   { owner: `honest-${index}` }
                 ).then(
@@ -325,7 +325,7 @@ describe("the worker pool against a slow PDF", () => {
   it("stops a running read whose client left and frees its worker", async () => {
     const leaving = new AbortController()
     const start = performance.now()
-    const read = importedWordPage(
+    const read = importedPaper(
       { name: "slow.pdf", mediaType: "", bytes: fanOutPdf() },
       { owner: randomUUID(), signal: leaving.signal }
     )

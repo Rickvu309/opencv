@@ -27,8 +27,6 @@ import {
 import { textDocx, textPdf } from "./import/import-fixtures.test.js"
 import { openWordPage } from "./index.js"
 import { PAGE_STORE_FILES, pageInsertingExports } from "./page-writes.js"
-import { fixturePackage, paragraph } from "./word-package/package-fixtures.js"
-import { WORD_PACKAGE_MEDIA_TYPE } from "./word-package/package-store.js"
 
 const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 
@@ -115,6 +113,11 @@ const word = (docId: string, kind: "cv" | "letter" = "cv"): Made => ({
   kind,
   format: "word",
 })
+const rich = (docId: string, kind: "cv" | "letter" = "cv"): Made => ({
+  docId,
+  kind,
+  format: "rich",
+})
 
 const CASES: Record<string, Maker> = {
   "Start blank (paper.canvas mint)": async (app, owner) =>
@@ -164,7 +167,7 @@ const CASES: Record<string, Maker> = {
       )
     ),
   "Import a Word file": async (app, owner) =>
-    word(
+    rich(
       await importFile(
         app,
         owner,
@@ -174,7 +177,7 @@ const CASES: Record<string, Maker> = {
       )
     ),
   "Import a PDF": async (app, owner) =>
-    word(
+    rich(
       await importFile(
         app,
         owner,
@@ -184,7 +187,7 @@ const CASES: Record<string, Maker> = {
       )
     ),
   "Import a text file": async (app, owner) =>
-    word(
+    rich(
       await importFile(
         app,
         owner,
@@ -193,38 +196,12 @@ const CASES: Record<string, Maker> = {
         "text/plain"
       )
     ),
-  "Own agent import (stage, then paper.import)": async (app, owner) => {
-    const headers = new Headers({
-      ...authHeaders(owner.cookie),
-      "idempotency-key": randomUUID(),
-    })
-    headers.set("content-type", WORD_PACKAGE_MEDIA_TYPE)
-    const staged = await app.request(
-      "/api/paper/packages/stage?name=Agent.docx&kind=cv",
-      {
-        method: "POST",
-        headers,
-        body: new Uint8Array(fixturePackage(paragraph("Agent words"))),
-      }
-    )
-    expect(staged.status, await staged.clone().text()).toBe(201)
-    const stageId = z
-      .object({ data: z.object({ stageId: z.string() }) })
-      .parse(await staged.json()).data.stageId
-    return word(
-      docIdOf(
-        await command(app, owner, "paper.import", {
-          generation: "package",
-          stageId,
-        })
-      )
-    )
-  },
   "Duplicate an imported page (paper.duplicate)": async (app, owner) =>
-    word(
+    rich(
       docIdOf(
         await command(app, owner, "paper.duplicate", {
           docId: await importWord(app, owner),
+          writer: RICH_NATIVE_WRITER,
         })
       )
     ),
@@ -236,8 +213,6 @@ const CASES: Record<string, Maker> = {
         })
       )
     ),
-  "Restore an imported page from trash (paper.recover)": async (app, owner) =>
-    word(await restored(app, owner, await importWord(app, owner))),
   "Restore a started page from trash (paper.recover)": async (app, owner) =>
     word(await restored(app, owner, await mintWord(app, owner))),
   "Rich document (paper.create)": async (app, owner) => ({
@@ -276,8 +251,16 @@ const CASES: Record<string, Maker> = {
   },
 }
 
+const RICH_CASES = [
+  "Rich document (paper.create)",
+  "Duplicate a rich document (paper.duplicate)",
+  "Import a Word file",
+  "Import a PDF",
+  "Import a text file",
+  "Duplicate an imported page (paper.duplicate)",
+]
 const WORD_CASES = Object.keys(CASES).filter(
-  (name) => !name.includes("ich document")
+  (name) => !RICH_CASES.includes(name)
 )
 
 const CREATOR_EXPORTS: Record<string, string[]> = {
@@ -293,6 +276,9 @@ const CREATOR_EXPORTS: Record<string, string[]> = {
   "paper/store.ts#createPaper": [
     "Rich document (paper.create)",
     "Duplicate a rich document (paper.duplicate)",
+    "Import a Word file",
+    "Import a PDF",
+    "Import a text file",
   ],
 }
 

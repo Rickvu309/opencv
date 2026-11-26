@@ -1,6 +1,6 @@
 import { eq } from "drizzle-orm"
 
-import { paperPackageVersions } from "../../db/schema.js"
+import { paperDocs } from "../../db/schema.js"
 import type { createTestApp } from "../../test/harness.js"
 
 export async function publishedText(
@@ -8,10 +8,10 @@ export async function publishedText(
   docId: string
 ) {
   const rows = await db
-    .select()
-    .from(paperPackageVersions)
-    .where(eq(paperPackageVersions.docId, docId))
-  return JSON.stringify(rows.map((row) => row.projection))
+    .select({ document: paperDocs.crdtDocument })
+    .from(paperDocs)
+    .where(eq(paperDocs.id, docId))
+  return JSON.stringify(rows.map((row) => row.document))
 }
 
 function pdfDocument(objects: string[]): Buffer {

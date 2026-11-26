@@ -16,7 +16,7 @@ import {
   importParsers,
 } from "./import-parse.js"
 import { pdfStreamsFit } from "./import-text-worker.js"
-import { PDF_IMPORT_NOTICE, importedWordPage } from "./import-word.js"
+import { PDF_IMPORT_NOTICE, importedPaper } from "./import-word.js"
 
 const A4_300_DPI = { width: 2480, height: 3508 }
 
@@ -148,7 +148,7 @@ async function attachedFilesPdf() {
 async function read(bytes: Buffer) {
   const owner = randomUUID()
   const text = await importParsers.pdfText(bytes, true, { owner })
-  const page = await importedWordPage(
+  const page = await importedPaper(
     { name: "cv.pdf", mediaType: "application/pdf", bytes },
     { owner: randomUUID() }
   )
@@ -156,7 +156,7 @@ async function read(bytes: Buffer) {
 }
 
 async function refusal(bytes: Buffer) {
-  return importedWordPage(
+  return importedPaper(
     { name: "cv.pdf", mediaType: "application/pdf", bytes },
     { owner: randomUUID() }
   ).then(

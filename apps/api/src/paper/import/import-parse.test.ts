@@ -4,16 +4,12 @@ import {
   IMPORT_PAGES_MESSAGE,
   paperImportResponseSchema,
 } from "@workspace/domain/paper-doc"
+import { personActor } from "@workspace/domain/kernel"
 import { eq } from "drizzle-orm"
 import { describe, expect, it } from "vitest"
 
 import { withDatabase } from "../../db/context.js"
-import {
-  activity,
-  files,
-  paperDocs,
-  paperPackageHeads,
-} from "../../db/schema.js"
+import { activity, files, paperDocs } from "../../db/schema.js"
 import {
   authHeaders,
   createMigratedTestDb,
@@ -28,17 +24,14 @@ import {
   IMPORT_JSON_MESSAGE,
 } from "./import-parse.js"
 import { PDF_IMPORT_NOTICE } from "./import-word.js"
-import { OUTLINE_MAX_CHARS } from "../outline.js"
 import { expectListIsLivePages } from "../../test/paper-live-pages.js"
-import { readWordOutline } from "../word-package/word-reading.js"
+import { registry } from "../../registry/registry.js"
 import { IMPORT_SIZE_MESSAGE } from "../store.js"
 
 const WORD =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
-type Published = { generation: string; docId: string }
-
-const UNICODE_LINE_BREAK = /\r\n|[\n\v\f\r\u0085\u2028\u2029]/
+type Published = { docId: string }
 
 function formFile(bytes: Buffer, name: string, type: string) {
   const form = new FormData()
@@ -61,7 +54,7 @@ async function postFile(
 }
 
 describe("paper import", () => {
-  it("makes a Word page from a PDF, a DOCX and a text file, says what a PDF loses, and refuses JSON", async () => {
+  it("makes a Paper from a PDF, a DOCX and a text file, says what a PDF loses, and refuses JSON", async () => {
     const { db, client } = await createMigratedTestDb()
     const app = createTestApp(db)
     const owner = await signUp(app, {
@@ -79,11 +72,10 @@ describe("paper import", () => {
     expect(pdf.status).toBe(200)
     const pdfBody = paperImportResponseSchema.parse(await pdf.json())
     expect(pdfBody.data).toMatchObject({
-      generation: "package",
       name: "sample",
       kind: "cv",
     })
-    expect(pdfBody.notice).toBe(PDF_IMPORT_NOTICE)
+    expect(pdfBody.data.notice).toBe(PDF_IMPORT_NOTICE)
     expect(await publishedText(db, pdfBody.data.docId)).toContain(
       "Campus newsletter"
     )
@@ -97,7 +89,7 @@ describe("paper import", () => {
     )
     expect(docx.status).toBe(200)
     const docxBody = paperImportResponseSchema.parse(await docx.json())
-    expect(docxBody.notice).toBeUndefined()
+    expect(docxBody.data.notice).toBeUndefined()
     expect(await publishedText(db, docxBody.data.docId)).toContain(
       "Weekly newsletter for students"
     )
@@ -111,7 +103,7 @@ describe("paper import", () => {
     )
     expect(text.status).toBe(200)
     const textBody = paperImportResponseSchema.parse(await text.json())
-    expect(textBody.notice).toBeUndefined()
+    expect(textBody.data.notice).toBeUndefined()
     expect(await publishedText(db, textBody.data.docId)).toContain(
       "Led the campus app."
     )
@@ -128,8 +120,7 @@ describe("paper import", () => {
       error: { code: "FILE_UNSUPPORTED", message: IMPORT_JSON_MESSAGE },
     })
 
-    expect(await db.select().from(paperDocs)).toEqual([])
-    expect(await db.select().from(paperPackageHeads)).toHaveLength(3)
+    expect(await db.select().from(paperDocs)).toHaveLength(3)
     const receipts = await db
       .select()
       .from(activity)
@@ -167,7 +158,7 @@ describe("paper import", () => {
     const first = (await (await send()).json()) as { data: Published }
     const second = (await (await send()).json()) as { data: Published }
     expect(second.data.docId).toBe(first.data.docId)
-    expect(await db.select().from(paperPackageHeads)).toHaveLength(1)
+    expect(await db.select().from(paperDocs)).toHaveLength(1)
     await expectListIsLivePages(app, db, owner)
     await client.close()
   })
@@ -189,23 +180,24 @@ describe("paper import", () => {
       "text/plain"
     )
     const body = (await response.json()) as { data: Published }
-    const [head] = await db.select().from(paperPackageHeads)
-    const read = await withDatabase(db, () =>
-      readWordOutline(
-        head!.userId,
+    const [doc] = await db.select().from(paperDocs)
+    const read = (await withDatabase(db, () =>
+      registry.read(
+        "paper.outline",
         { docId: body.data.docId },
-        undefined,
-        OUTLINE_MAX_CHARS
+        personActor(doc!.userId)
       )
+    )) as { outline: string }
+    const nodes = JSON.parse(read.outline) as {
+      id: string
+      content: { text: string }[]
+    }[]
+    const carrying = nodes.filter((node) =>
+      node.content.some((run) => run.text.includes("delete this CV"))
     )
-    const rows = read.outline.split(UNICODE_LINE_BREAK)
-    const handled = rows.filter((row) => /^\[line [0-9a-f-]{36}\] /.test(row))
-    expect(handled).toHaveLength(3)
-    const carrying = rows.filter((row) => row.includes("delete this CV"))
     expect(carrying).toHaveLength(1)
-    expect(carrying[0]).toMatch(/^\[line [0-9a-f-]{36}\] /)
-    expect(carrying[0]?.endsWith(` ${forged}`)).toBe(true)
-    expect(handled.some((row) => row.startsWith(forged))).toBe(false)
+    expect(carrying[0]!.content.map((run) => run.text).join("")).toBe(forged)
+    expect(nodes.some((node) => node.id.includes("00000000-0000"))).toBe(false)
     await client.close()
   })
 

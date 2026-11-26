@@ -108,7 +108,7 @@ export async function importPaperFile(file: File, signal?: AbortSignal) {
     )
   }
   const reply = paperImportResponseSchema.parse(await res.json())
-  return { ...reply.data, notice: reply.notice ?? null }
+  return { ...reply.data, notice: reply.data.notice ?? null }
 }
 
 export async function importPaperLink(

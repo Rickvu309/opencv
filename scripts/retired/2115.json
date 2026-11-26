@@ -1,0 +1,66 @@
+[
+  {
+    "subject": "scripts/import-block-paper.test.mjs",
+    "because": "ADR-0008: an import now becomes a rich Paper through createPaper, which only accepts the rich document, so the older block document this guarded against cannot be written; apps/api/src/paper/import/word-to-paper.test.ts covers what an import produces.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "scripts/guard-ledger/import-block-paper.json",
+    "because": "ADR-0008: an import now becomes a rich Paper through createPaper, which only accepts the rich document, so the older block document this guarded against cannot be written; apps/api/src/paper/import/word-to-paper.test.ts covers what an import produces.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/import/import-parse-bounds.test.ts",
+    "because": "ADR-0008: an import makes a rich Paper instead of a Word page, so assertions about Word pages, package rows, generation \"package\", Word line handles and the stage-then-publish path no longer describe the product; the same tests now assert the imported Paper's rows, text and outline.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/paper/import/import-parse.test.ts",
+    "because": "ADR-0008: an import makes a rich Paper instead of a Word page, so assertions about Word pages, package rows, generation \"package\", Word line handles and the stage-then-publish path no longer describe the product; the same tests now assert the imported Paper's rows, text and outline.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 4
+  },
+  {
+    "subject": "apps/api/src/paper/page-creators.test.ts",
+    "because": "ADR-0008: an import makes a rich Paper instead of a Word page, so assertions about Word pages, package rows, generation \"package\", Word line handles and the stage-then-publish path no longer describe the product; the same tests now assert the imported Paper's rows, text and outline.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  },
+  {
+    "subject": "apps/api/src/paper/word-package/package-http.test.ts",
+    "because": "ADR-0008: an import makes a rich Paper instead of a Word page, so assertions about Word pages, package rows, generation \"package\", Word line handles and the stage-then-publish path no longer describe the product; the same tests now assert the imported Paper's rows, text and outline.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 16
+  },
+  {
+    "subject": "apps/api/src/registry/behavior.test.ts",
+    "because": "ADR-0008: an import makes a rich Paper instead of a Word page, so assertions about Word pages, package rows, generation \"package\", Word line handles and the stage-then-publish path no longer describe the product; the same tests now assert the imported Paper's rows, text and outline.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/registry/paper-contract.test.ts",
+    "because": "ADR-0008: an import makes a rich Paper instead of a Word page, so assertions about Word pages, package rows, generation \"package\", Word line handles and the stage-then-publish path no longer describe the product; the same tests now assert the imported Paper's rows, text and outline.",
+    "replacedBy": null,
+    "class": "owner",
+    "classBecause": "no replacement test",
+    "items": 3
+  }
+]
