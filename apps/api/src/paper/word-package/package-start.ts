@@ -5,11 +5,7 @@ import {
   paperDocNameSchema,
 } from "@workspace/domain/paper-doc"
 
-<<<<<<< HEAD
 import { packageFailure } from "./package-pages.js"
-=======
-import { packageFailure } from "../package-pages.js"
->>>>>>> origin/main
 import { blankPageBytes } from "./word/mutate.js"
 import {
   templateLines,

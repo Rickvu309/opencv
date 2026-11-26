@@ -28,7 +28,6 @@ import {
   createMigratedTestDb,
   createTestApp,
   signUp,
-<<<<<<< HEAD:apps/api/src/paper/word-package/word-reading.test.ts
 } from "../../test/harness.js"
 import { seedCoachActor } from "../../test/coach-turn.js"
 import {
@@ -39,18 +38,6 @@ import { readOutline, OUTLINE_MAX_CHARS } from "../outline.js"
 import { fixturePackage, paragraph } from "./package-fixtures.js"
 import { publishWordPackage, stageWordPackage } from "./package-store.js"
 import { apply, open } from "./word/document.js"
-=======
-} from "../test/harness.js"
-import { seedCoachActor } from "../test/coach-turn.js"
-import { openBackend, type Backend } from "../test/registry-formal-support.js"
-import { readOutline, OUTLINE_MAX_CHARS } from "./outline.js"
-import { fixturePackage, paragraph } from "./word-package/package-fixtures.js"
-import {
-  publishWordPackage,
-  stageWordPackage,
-} from "./word-package/package-store.js"
-import { apply, open } from "./word-package/word/document.js"
->>>>>>> origin/main:apps/api/src/paper/word-reading.test.ts
 import { readWordOutline, readWordParagraphs } from "./word-reading.js"
 
 let backend: Backend

@@ -12,13 +12,8 @@ import {
   packageCursorSigned,
   packageFailure,
 } from "./package-pages.js"
-<<<<<<< HEAD:apps/api/src/paper/word-package/word-reading.ts
 import { wordReadingBasis } from "./package-store.js"
 import { open } from "./word/document.js"
-=======
-import { wordReadingBasis } from "./word-package/package-store.js"
-import { open } from "./word-package/word/document.js"
->>>>>>> origin/main:apps/api/src/paper/word-reading.ts
 
 async function reading(
   owner: string,

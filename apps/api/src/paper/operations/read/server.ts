@@ -3,20 +3,12 @@ import type { OperationBinding } from "../../../registry/bind.js"
 import { parsePaperId } from "@workspace/domain/kernel"
 import { readPaperDocumentInfo } from "../../document-info.js"
 import { isWordPageDeleted } from "../../word-package/package-card-actions.js"
-<<<<<<< HEAD
 import { packageFailure } from "../../word-package/package-pages.js"
-=======
-import { packageFailure } from "../../package-pages.js"
->>>>>>> origin/main
 import {
   listWordPackages,
   readWordPackage,
 } from "../../word-package/package-store.js"
-<<<<<<< HEAD
 import { readWordParagraphs } from "../../word-package/word-reading.js"
-=======
-import { readWordParagraphs } from "../../word-reading.js"
->>>>>>> origin/main
 import { open } from "../../word-package/word/document.js"
 
 async function readWordLines(owner: string, doc: string, at?: string) {
