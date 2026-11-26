@@ -227,10 +227,11 @@ export function detect(text, path) {
       ? posix.normalize(posix.join(posix.dirname(path), specifier))
       : specifier
     if (
-      /(?:^|\/)native-output\/formatted(?:-[^/]+)?(?:\.[cm]?[jt]s)?$/.test(
+      /(?:^|\/)(?:native-output\/formatted(?:-[^/]+)?|owned-word-output)(?:\.[cm]?[jt]s)?$/.test(
         target
       ) &&
       !path.startsWith("apps/api/src/paper/native-output/") &&
+      path !== "apps/api/src/paper/owned-word-output.ts" &&
       !qualifiedNativeWord(text, path)
     )
       hits.push(

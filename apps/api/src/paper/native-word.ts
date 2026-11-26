@@ -1,7 +1,7 @@
 import { ERROR_CODES, type UserId } from "@workspace/domain/kernel"
 import { CommandError } from "../platform/errors.js"
 import { withRichSnapshot } from "./content-store.js"
-import { compileOwnedFlowNativeDocx } from "./native-output/formatted-owned.js"
+import { compileOwnedFlowNativeDocx } from "./owned-word-output.js"
 import type { RichSnapshotInput } from "./rich-snapshot.js"
 
 export function downloadNativeWord(userId: UserId, input: RichSnapshotInput) {

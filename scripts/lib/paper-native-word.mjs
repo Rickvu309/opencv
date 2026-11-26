@@ -198,7 +198,7 @@ export function detect(text, path) {
         "Word snapshots must own the transaction, lock, admit, hydrate, qualify and release their detached document"
       )
   }
-  if (path === "apps/api/src/paper/native-output/formatted-owned.ts") {
+  if (path === "apps/api/src/paper/owned-word-output.ts") {
     const compiler = body(source, "compileOwnedFlowNativeDocx")
     if (
       compiler &&
