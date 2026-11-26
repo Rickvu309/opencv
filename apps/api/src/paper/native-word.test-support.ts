@@ -13,7 +13,7 @@ import {
 import { withDatabase, type TestDatabase } from "../db/context.js"
 import { insertPaperFixture } from "../test/paper-row.js"
 import { richPaper } from "../test/rich-paper.js"
-import { seedColumns } from "./content-document.js"
+import { seedColumns } from "./content/content-document.js"
 import { saveFile } from "./store.js"
 
 const safeHref = (href: string) => href as SafeHref

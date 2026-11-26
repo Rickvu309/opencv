@@ -11,21 +11,21 @@ import { openRichPaperClient } from "@workspace/paper-crdt"
 import { serve } from "@hono/node-server"
 import { eq } from "drizzle-orm"
 import { afterAll, beforeAll, expect, it, vi } from "vitest"
-import { createApp } from "../app.js"
-import { codeLine, cookieHeader } from "../auth.fixtures.js"
-import { getDb, withDatabase } from "../db/context.js"
-import { paperDocs, paperDocUpdates } from "../db/schema.js"
-import { testSessionSecret, testWebOrigin } from "../test/harness.js"
-import { openStore } from "../test/paper-content.js"
+import { createApp } from "../../app.js"
+import { codeLine, cookieHeader } from "../../auth.fixtures.js"
+import { getDb, withDatabase } from "../../db/context.js"
+import { paperDocs, paperDocUpdates } from "../../db/schema.js"
+import { testSessionSecret, testWebOrigin } from "../../test/harness.js"
+import { openStore } from "../../test/paper-content.js"
 import {
   richPaper,
   richElement,
   richFragment,
   richText,
-} from "../test/rich-paper.js"
+} from "../../test/rich-paper.js"
 import { seedColumns } from "./content-document.js"
-import { png } from "./photo.fixtures.js"
-import { saveFile } from "./store.js"
+import { png } from "../photo.fixtures.js"
+import { saveFile } from "../store.js"
 
 const owner = parseUserId("rich-paper-http")
 let store: Awaited<ReturnType<typeof openStore>>

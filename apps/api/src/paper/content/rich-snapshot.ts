@@ -10,7 +10,7 @@ import {
 import type { richExportInputSchema } from "@workspace/domain/operations/paper/export"
 import { materializeStored } from "@workspace/paper-crdt"
 import type { z } from "zod"
-import { CommandError } from "../platform/errors.js"
+import { CommandError } from "../../platform/errors.js"
 import { validatedStored } from "./content-document.js"
 import type { Live, PaperRow } from "./content-types.js"
 import { admitDocument } from "./native-admission.js"

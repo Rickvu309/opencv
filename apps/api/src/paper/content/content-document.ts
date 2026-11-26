@@ -5,7 +5,7 @@ import {
   type PaperStoredKind,
 } from "@workspace/domain/paper-doc"
 import { materializeStored, seedStoredYDoc } from "@workspace/paper-crdt"
-import { CommandError } from "../platform/errors.js"
+import { CommandError } from "../../platform/errors.js"
 
 function invalidDocument(message: string) {
   return new CommandError(ERROR_CODES.VALIDATION_ERROR, message)

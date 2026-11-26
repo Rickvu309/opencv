@@ -12,7 +12,7 @@
     "Evict": "syncContent"
   },
   "covers": [
-    "apps/api/src/paper/content-store.ts",
+    "apps/api/src/paper/content/content-store.ts",
     "apps/api/src/paper/commands.ts",
     "apps/api/src/registry/http.ts",
     "apps/api/src/registry/registry-entries.ts"

@@ -15,20 +15,20 @@ import {
 import * as Y from "yjs"
 import { and, eq, sql } from "drizzle-orm"
 import { beforeAll, afterAll, describe, expect, it } from "vitest"
-import { getDb, withDatabase, transaction } from "../db/context.js"
-import { paperDocs, paperDocUpdates, activity } from "../db/schema.js"
-import { openStore } from "../test/paper-content.js"
+import { getDb, withDatabase, transaction } from "../../db/context.js"
+import { paperDocs, paperDocUpdates, activity } from "../../db/schema.js"
+import { openStore } from "../../test/paper-content.js"
 import {
   richPaper,
   richElement as element,
   richText as textOf,
   richFragment as fragment,
-} from "../test/rich-paper.js"
+} from "../../test/rich-paper.js"
 import { seedColumns } from "./content-document.js"
 import { syncContent } from "./content-store.js"
 import { foldSettledLog } from "./content-compact.js"
-import { saveFile } from "./store.js"
-import { png } from "./photo.fixtures.js"
+import { saveFile } from "../store.js"
+import { png } from "../photo.fixtures.js"
 
 const owner = parseUserId("rich-storage-admission")
 let store: Awaited<ReturnType<typeof openStore>>

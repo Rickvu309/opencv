@@ -5,7 +5,7 @@ import {
   type StoredPaperDocument,
 } from "@workspace/domain/paper-doc"
 
-import { CommandError } from "../platform/errors.js"
+import { CommandError } from "../../platform/errors.js"
 
 export function admitDocument(
   document: StoredPaperDocument,

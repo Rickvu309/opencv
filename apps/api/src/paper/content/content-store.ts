@@ -28,9 +28,9 @@ import {
   insideTransaction,
   transaction,
   ownedTaskTransaction,
-} from "../db/context.js"
-import { paperDocUpdates, paperDocs } from "../db/schema.js"
-import { CommandError } from "../platform/errors.js"
+} from "../../db/context.js"
+import { paperDocUpdates, paperDocs } from "../../db/schema.js"
+import { CommandError } from "../../platform/errors.js"
 import {
   COMPACT_EVERY_SEQ,
   droppedPhotoIds,

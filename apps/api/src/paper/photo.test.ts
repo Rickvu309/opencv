@@ -13,7 +13,7 @@ import {
 } from "../test/harness.js"
 import { richPaper } from "../test/rich-paper.js"
 
-import { seedColumns } from "./content-document.js"
+import { seedColumns } from "./content/content-document.js"
 import { imageFile, png, postAvatar } from "./photo.fixtures.js"
 
 describe("CV photo bytes", () => {

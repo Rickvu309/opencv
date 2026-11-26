@@ -21,7 +21,7 @@ import { seedCoachActor } from "../test/coach-turn.js"
 import { createMigratedTestDb } from "../test/harness.js"
 import { richPaper } from "../test/rich-paper.js"
 import { journalTag } from "../test/migration-journal.js"
-import { seedColumns } from "./content-document.js"
+import { seedColumns } from "./content/content-document.js"
 import { saveFile } from "./store.js"
 import { OLD_EDITOR_UNDO_REASON } from "./undo-guard.js"
 
