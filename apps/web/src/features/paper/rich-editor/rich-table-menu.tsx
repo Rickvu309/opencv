@@ -10,7 +10,7 @@ import {
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
 import { RichTableBorders } from "./rich-table-borders.tsx"
-import type { TextEditor } from "../rich-text-toolbar-control.tsx"
+import type { TextEditor } from "./rich-text-toolbar-control.tsx"
 
 type Selected = NonNullable<ReturnType<TextEditor["activeTable"]>>
 type MenuAction =

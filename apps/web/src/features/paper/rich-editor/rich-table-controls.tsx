@@ -10,8 +10,8 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@workspace/ui/components/popover"
-import { ToolbarHint, type TextEditor } from "../rich-text-toolbar-control.tsx"
-import { ToolbarItem } from "../rich-text-toolbar-item.tsx"
+import { ToolbarHint, type TextEditor } from "./rich-text-toolbar-control.tsx"
+import { ToolbarItem } from "./rich-text-toolbar-item.tsx"
 import { RichTableMenu } from "./rich-table-menu.tsx"
 import { RichTableResize } from "./rich-table-resize.tsx"
 import "./rich-table.css"
