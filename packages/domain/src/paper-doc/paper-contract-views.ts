@@ -87,8 +87,6 @@ export type PaperFile = {
   createdAt: string
 }
 
-const blockIdSchema = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/)
-
 export const paperQueries = queryContract({
   "paper.list": queryEntry({
     input: z
@@ -99,26 +97,5 @@ export const paperQueries = queryContract({
       })
       .strict(),
     output: z.array(paperViewSchema),
-  }),
-  "paper.outline": queryEntry({
-    input: z
-      .object({
-        docId: paperIdSchema,
-        blockIds: z.array(blockIdSchema).max(50).optional(),
-        writer: nativeWriterSchema.optional(),
-        cursor: z.string().min(1).max(2048).optional(),
-      })
-      .strict(),
-    output: z
-      .object({
-        revision: z.union([z.number().int(), z.string().uuid()]),
-        nativeBasis: nativeBasisSchema.optional(),
-        outline: z.string(),
-        truncated: z.boolean(),
-        nextCursor: z.string().max(2048).nullable().optional(),
-        omittedParagraphs: z.number().int().nonnegative().optional(),
-        omittedChars: z.number().int().nonnegative().optional(),
-      })
-      .strict(),
   }),
 })

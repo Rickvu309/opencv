@@ -124,7 +124,10 @@ const TOOL_COPY = {
     read: "Looked at your Job priorities",
   },
   [catalog["job.setPriority"].name]: { label: "Update this Job's priority" },
-  "link.get": { label: "Read this link", read: "Read this link" },
+  [catalog["link.get"].name]: {
+    label: "Read this link",
+    read: "Read this link",
+  },
   [catalog["notify.request"].name]: { label: "Set a reminder" },
   [catalog["paper.canvas"].name]: { label: "Update your Paper layout" },
   [catalog["paper.create"].name]: { label: "Create a Paper" },
@@ -139,7 +142,7 @@ const TOOL_COPY = {
     read: "Looked at your Paper files",
   },
   "paper.list": { label: "Look at your Paper", read: "Looked at your Paper" },
-  "paper.outline": {
+  [catalog["paper.outline"].name]: {
     label: "Read your Paper outline",
     read: "Read your Paper outline",
   },

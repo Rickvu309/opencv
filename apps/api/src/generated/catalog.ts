@@ -55,6 +55,7 @@ import { implementation as job$setPriority } from "../job/operations/set-priorit
 import { implementation as job$star } from "../job/operations/star/server.js"
 import { implementation as job$unlinkPaper } from "../job/operations/unlink-paper/server.js"
 import { implementation as job$update } from "../job/operations/update/server.js"
+import { implementation as link$get } from "../coach/operations/link/get/server.js"
 import { implementation as notify$request } from "../account/operations/notify/request/server.js"
 import { implementation as paper$canvas } from "../paper/operations/canvas/server.js"
 import { implementation as paper$create } from "../paper/operations/create/server.js"
@@ -65,6 +66,7 @@ import { implementation as paper$edit } from "../paper/operations/edit/server.js
 import { implementation as paper$export } from "../paper/operations/export/server.js"
 import { implementation as paper$files } from "../paper/operations/files/server.js"
 import { implementation as paper$import } from "../paper/operations/import/server.js"
+import { implementation as paper$outline } from "../paper/operations/outline/server.js"
 import { implementation as paper$read } from "../paper/operations/read/server.js"
 import { implementation as paper$recover } from "../paper/operations/recover/server.js"
 import { implementation as paper$save } from "../paper/operations/save/server.js"
@@ -132,6 +134,7 @@ export const implementations = {
   "job.star": job$star,
   "job.unlinkPaper": job$unlinkPaper,
   "job.update": job$update,
+  "link.get": link$get,
   "notify.request": notify$request,
   "paper.canvas": paper$canvas,
   "paper.create": paper$create,
@@ -142,6 +145,7 @@ export const implementations = {
   "paper.export": paper$export,
   "paper.files": paper$files,
   "paper.import": paper$import,
+  "paper.outline": paper$outline,
   "paper.read": paper$read,
   "paper.recover": paper$recover,
   "paper.save": paper$save,

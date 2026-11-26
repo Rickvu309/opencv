@@ -1,10 +1,8 @@
 import { z } from "zod"
 import { catalog } from "./catalog.js"
 
-import { queryContract, queryEntry } from "./contract.js"
+import { queryContract } from "./contract.js"
 import { paperQueries } from "./paper-doc/paper-contract.js"
-
-const untyped = z.unknown()
 
 type CatalogReads = {
   [
@@ -29,10 +27,6 @@ const catalogReads = Object.fromEntries(
 export const queries = queryContract({
   ...catalogReads,
   ...paperQueries,
-  "link.get": queryEntry({
-    input: z.object({ url: z.string().trim().min(1).max(2000) }).strict(),
-    output: untyped,
-  }),
 })
 
 type Queries = typeof queries

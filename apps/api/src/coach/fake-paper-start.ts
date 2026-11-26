@@ -83,7 +83,11 @@ function decide(
     return {
       text: "",
       intents: [
-        { id: "call_outline", name: "paper.outline", input: { docId } },
+        {
+          id: "call_outline",
+          name: catalog["paper.outline"].name,
+          input: { docId },
+        },
       ],
     }
   if (step === 2) {

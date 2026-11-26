@@ -53,6 +53,7 @@ import { operation as job$setPriority } from "../operations/job/set-priority/ope
 import { operation as job$star } from "../operations/job/star/operation.js"
 import { operation as job$unlinkPaper } from "../operations/job/unlink-paper/operation.js"
 import { operation as job$update } from "../operations/job/update/operation.js"
+import { operation as link$get } from "../operations/link/get/operation.js"
 import { operation as notify$request } from "../operations/notify/request/operation.js"
 import { operation as paper$canvas } from "../operations/paper/canvas/operation.js"
 import { operation as paper$create } from "../operations/paper/create/operation.js"
@@ -63,6 +64,7 @@ import { operation as paper$edit } from "../operations/paper/edit/operation.js"
 import { operation as paper$export } from "../operations/paper/export/operation.js"
 import { operation as paper$files } from "../operations/paper/files/operation.js"
 import { operation as paper$import } from "../operations/paper/import/operation.js"
+import { operation as paper$outline } from "../operations/paper/outline/operation.js"
 import { operation as paper$read } from "../operations/paper/read/operation.js"
 import { operation as paper$recover } from "../operations/paper/recover/operation.js"
 import { operation as paper$save } from "../operations/paper/save/operation.js"
@@ -130,6 +132,7 @@ export const catalog = {
   "job.star": job$star,
   "job.unlinkPaper": job$unlinkPaper,
   "job.update": job$update,
+  "link.get": link$get,
   "notify.request": notify$request,
   "paper.canvas": paper$canvas,
   "paper.create": paper$create,
@@ -140,6 +143,7 @@ export const catalog = {
   "paper.export": paper$export,
   "paper.files": paper$files,
   "paper.import": paper$import,
+  "paper.outline": paper$outline,
   "paper.read": paper$read,
   "paper.recover": paper$recover,
   "paper.save": paper$save,
