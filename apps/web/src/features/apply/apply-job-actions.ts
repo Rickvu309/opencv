@@ -1,5 +1,6 @@
 import { useQueryClient } from "@tanstack/react-query"
-import type { JobId, JobPriority, JobStage } from "@workspace/domain"
+import type { JobPriority, JobStage } from "@workspace/domain/apply"
+import type { JobId } from "@workspace/domain/kernel"
 
 import { toastWithUndo } from "@workspace/ui/components/sonner"
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { ERROR_CODES, jobIdSchema, type JobId } from "@workspace/domain"
+import { ERROR_CODES, jobIdSchema, type JobId } from "@workspace/domain/kernel"
 
 import { Button } from "@workspace/ui/components/button"
 import { travelToken } from "@workspace/ui/lib/motion"

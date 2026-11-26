@@ -1,11 +1,8 @@
 import { useId, useReducer, useRef } from "react"
 import { useQueryClient } from "@tanstack/react-query"
 import { useNavigate } from "@tanstack/react-router"
-import {
-  jobCreateInputSchema,
-  parseJobId,
-  type JobStage,
-} from "@workspace/domain"
+import { jobCreateInputSchema, type JobStage } from "@workspace/domain/apply"
+import { parseJobId } from "@workspace/domain/kernel"
 import {
   ChevronRight,
   ClipboardPaste,
