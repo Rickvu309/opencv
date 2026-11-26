@@ -8,6 +8,8 @@ export const operation = defineOperation({
   version: 1,
   kind: "read",
   description: "Count jobs by priority.",
+  label: "Look at your Job priorities",
+  readLabel: "Looked at your Job priorities",
   input: z.object({}).strict(),
   publicResult: z.array(
     z

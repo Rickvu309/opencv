@@ -12,6 +12,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Attach a CV or letter to a job.",
+  label: "Link Paper to this Job",
   input: jobLinkPaperInputSchema,
   publicResult: jobResultSchema.extend({ docName: z.string() }).strip(),
   coach: "auto",

@@ -11,6 +11,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Detach a CV or letter from a job.",
+  label: "Unlink Paper from this Job",
   input: jobUnlinkPaperInputSchema,
   publicResult: jobResultSchema,
   coach: "auto",

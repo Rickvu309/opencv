@@ -9,6 +9,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Add a note. The activity row is the note.",
+  label: "Add a Job note",
   input: jobAddNoteInputSchema,
   publicResult: z
     .object({ jobId: idResult<JobId>(), body: z.string() })

@@ -16,6 +16,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Set a job's priority.",
+  label: "Update this Job's priority",
   input: z.object({ jobId: jobIdSchema, priority: jobPrioritySchema }).strict(),
   publicResult: jobViewSchema
     .extend({

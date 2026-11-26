@@ -11,6 +11,7 @@ export const operation = defineOperation({
   version: 1,
   kind: "command",
   description: "Star or unstar a job.",
+  label: "Update this Job's star",
   input: jobStarInputSchema,
   publicResult: jobResultSchema,
   coach: "auto",
