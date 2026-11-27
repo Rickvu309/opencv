@@ -61,7 +61,10 @@ type PaperState =
   | {
       kind: "first-engine"
       docId: ReturnType<typeof parsePaperId>
-      info: Awaited<ReturnType<typeof qualifiedPaperRead>>
+      info: Extract<
+        Awaited<ReturnType<typeof qualifiedPaperRead>>,
+        { format: "rich" }
+      >
       ownerId: string
       sessionId: string
     }
