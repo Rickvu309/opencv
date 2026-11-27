@@ -116,7 +116,7 @@ export function nativePaperCases(tools: CoverageTools): CoverageCase[] {
         })
         const log = createPaperLog({ store: postgresLogStore, engine })
         const blank = paperEngineBlank.blankCv()
-        expect(await log.start(engineId, blank)).toEqual({ ok: true })
+        expect(await log.head(engineId)).toEqual({ version: 0, doc: blank })
         const tab = "coverage-tab"
         const pos = { block: blank.content[0]!.attrs.id, offset: 0 }
         const written = engine.run(

@@ -39,6 +39,7 @@ export function seedColumns(kind: PaperStoredKind, paper: StoredPaperDocument) {
   const materialized = materializeStored(base)
   if (!materialized.ok) throw invalidDocument(materialized.reason)
   return {
+    engine: 1,
     crdtEpoch: 1,
     crdtBase: Buffer.from(base),
     crdtDocument: validatedStored(

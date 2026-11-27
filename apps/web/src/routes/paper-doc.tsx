@@ -1,6 +1,6 @@
 import { useQueryClient, type QueryClient } from "@tanstack/react-query"
 import { useNavigate, useRouterState } from "@tanstack/react-router"
-import { useEffect, useReducer } from "react"
+import { Suspense, lazy, useEffect, useReducer } from "react"
 import { toast } from "sonner"
 
 import {
@@ -12,6 +12,7 @@ import {
 import { RICH_NATIVE_WRITER, type Document } from "@workspace/domain/paper-doc"
 
 import { Button } from "@workspace/ui/components/button"
+import { Skeleton } from "@workspace/ui/components/skeleton"
 
 import {
   PaperChrome,
@@ -31,6 +32,12 @@ import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 import { holdWritingCoachFocus } from "@/lib/writing-coach-focus.ts"
 import { loadedSessionCheck } from "@/lib/session-check.ts"
 import { qualifiedPaperRead } from "@/lib/paper-qualification.ts"
+
+const RichPaperPage = lazy(() =>
+  import("@/features/paper/rich-editor/rich-page.tsx").then((module) => ({
+    default: module.RichPaperPage,
+  }))
+)
 
 const PAPER_PREFIX = `${SURFACE_PATHS.paper}/`
 const NOT_FOUND = "Document not found."
@@ -52,6 +59,16 @@ type PaperState =
       sync: ChromeSync
     }
   | { kind: "failed"; message: string; retry: boolean }
+  | {
+      kind: "first-engine"
+      docId: ReturnType<typeof parsePaperId>
+      info: Extract<
+        Awaited<ReturnType<typeof qualifiedPaperRead>>,
+        { format: "rich" }
+      >
+      ownerId: string
+      sessionId: string
+    }
 
 type PaperAction = { type: "opened"; state: PaperState }
 
@@ -76,21 +93,26 @@ async function openSavedPaper(
       message: "Sign in to open this Paper",
       retry: false,
     }
+  const ownerId = check.session.user.id
+  const sessionId = check.session.session.id
   const info = await qualifiedPaperRead(
     catalog["paper.read"].name,
     parsePaperId(docId),
-    {
-      ownerId: check.session.user.id,
-      sessionId: check.session.session.id,
-      writer: RICH_NATIVE_WRITER,
-    }
+    { ownerId, sessionId, writer: RICH_NATIVE_WRITER }
   )
   if (info.format !== "rich") return olderFormat
   const metadata = await catalogClient.read(catalog["paper.read"].name, {
     docId,
     view: "engine",
   })
-  if (!("doc" in metadata)) return olderFormat
+  if (!("doc" in metadata))
+    return {
+      kind: "first-engine",
+      docId: parsePaperId(docId),
+      info,
+      ownerId,
+      sessionId,
+    }
   const paper = await openPaperSync(docId, browserSyncPorts(docId, queryClient))
   return {
     kind: "open",
@@ -213,5 +235,42 @@ export function PaperDocPage() {
     )
   if (paper.kind === "opening")
     return <main aria-label="Paper" aria-busy="true" />
+  if (paper.kind === "first-engine")
+    return (
+      <Suspense
+        fallback={
+          <section
+            aria-label="Paper"
+            aria-busy="true"
+            className="flex flex-col items-center gap-4 p-6"
+          >
+            <Skeleton className="h-[792px] w-full max-w-[560px]" />
+          </section>
+        }
+      >
+        <RichPaperPage
+          key={`${paper.ownerId}:${paper.sessionId}:${paper.docId}`}
+          name={paper.info.name}
+          kind={paper.info.kind}
+          editedAt={paper.info.updatedAt}
+          identity={{
+            kind: "native",
+            ownerId: paper.ownerId,
+            sessionId: paper.sessionId,
+            docId: paper.docId,
+            writer: RICH_NATIVE_WRITER,
+            provenance: paper.info.provenance,
+          }}
+          onBack={back}
+          onOpen={(id) =>
+            void navigate({
+              to: "/paper/$docId",
+              params: { docId: id },
+              search,
+            })
+          }
+        />
+      </Suspense>
+    )
   return <OpenedPaper key={paper.docId} paper={paper} />
 }

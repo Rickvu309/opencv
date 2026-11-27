@@ -324,6 +324,33 @@ describe("only the owner's tabs write, in server order", () => {
     }
   })
 
+  it("starts a Letter from drafted lines and a CV from a template on the new page", async () => {
+    const ada = await world.person("Ada")
+    const words = async (input: Record<string, unknown>) => {
+      const { id } = dataOf<{ id: string }>(
+        await ada.run("paper.create", input)
+      )
+      const { doc } = dataOf<{ doc: Document }>(
+        await ada.read("paper.read", { docId: id, view: "engine" })
+      )
+      return doc.content.map((block) =>
+        "content" in block && block.content
+          ? block.content.map((run) => ("text" in run ? run.text : "")).join("")
+          : ""
+      )
+    }
+    expect(
+      await words({
+        kind: "letter",
+        name: "Letter to Northwind",
+        lines: ["Dear Northwind team,", "", "I would like to join you."],
+      })
+    ).toEqual(["Dear Northwind team,", "", "I would like to join you."])
+    const template = await words({ kind: "cv", templateId: "simple" })
+    expect(template.length).toBeGreaterThan(3)
+    expect(template.join("\n")).toContain("[Your name]")
+  })
+
   it("imports a PDF and a text file onto the new page with their headings", async () => {
     const ada = await world.person("Ada")
     const text = await importWord(
