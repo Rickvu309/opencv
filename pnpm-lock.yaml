@@ -284,6 +284,8 @@ importers:
 
   packages/guards: {}
 
+  packages/paper-corpus: {}
+
   packages/paper-crdt:
     dependencies:
       '@blocknote/core':
