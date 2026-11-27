@@ -406,6 +406,20 @@ const userMissRoute = createRoute({
   component: NotFoundPage,
 })
 
+const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"])
+
+const paperLabRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/paper-lab",
+  beforeLoad: () => {
+    if (!LOOPBACK_HOSTS.has(window.location.hostname)) throw notFound()
+  },
+  component: lazyRouteComponent(
+    () => import("@/routes/paper-lab.tsx"),
+    "PaperLabPage"
+  ),
+})
+
 const rootSplatRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "$",
@@ -434,6 +448,7 @@ const routeTree = rootRoute.addChildren([
   userRoute.addChildren([userMissRoute]),
   legacyAppRoute,
   legacyAppSplatRoute,
+  paperLabRoute,
   productLayoutRoute.addChildren([
     paperRoute,
     paperDocRoute,

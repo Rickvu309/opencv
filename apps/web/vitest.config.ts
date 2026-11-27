@@ -10,6 +10,8 @@ import { applyLocalApiUrl } from "./local-env"
 applyLocalApiUrl("test")
 
 const ISOLATED_FILES = ["**/*.isolated.test.{ts,tsx}"]
+const REAL_BROWSER_FILES = ["**/*.browser.test.ts"]
+const REAL_BROWSER_TIMEOUT_MS = 120_000
 
 const DROP_FETCH_STUBS_BETWEEN_FILES_THAT_SHARE_A_MODULE_GRAPH = true
 const DRAIN_SETUP_OWNED_ROUTERS_BEFORE_FILE_HOOKS = "list" as const
@@ -53,6 +55,7 @@ export default defineConfig({
             ...configDefaults.exclude,
             ...quarantine.map((entry) => entry.file),
             ...ISOLATED_FILES,
+            ...REAL_BROWSER_FILES,
           ],
         },
       },
@@ -63,6 +66,14 @@ export default defineConfig({
           isolate: true,
           include: ISOLATED_FILES,
           exclude: [...quarantine.map((entry) => entry.file)],
+        },
+      },
+      {
+        test: {
+          name: "real-browser",
+          environment: "node",
+          include: REAL_BROWSER_FILES.map((glob) => `src/${glob}`),
+          testTimeout: REAL_BROWSER_TIMEOUT_MS,
         },
       },
     ],

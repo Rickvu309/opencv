@@ -7,6 +7,9 @@
     "allowJs": true,
     "checkJs": false
   },
-  "include": ["src"],
+  "include": [
+    "src",
+    "../../packages/paper-engine/src/layout/vendor-types.d.ts"
+  ],
   "exclude": []
 }

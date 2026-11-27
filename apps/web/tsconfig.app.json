@@ -36,6 +36,9 @@
       "@workspace/stageshow/*": ["../../packages/stageshow/src/*"]
     }
   },
-  "include": ["src"],
+  "include": [
+    "src",
+    "../../packages/paper-engine/src/layout/vendor-types.d.ts"
+  ],
   "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/test"]
 }
