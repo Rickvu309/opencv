@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/api/src/scenarios/paper-engine.scenario.test.ts",
+    "because": "The owner save now stores validated engine steps. The replacement scenarios assert exact replay, atomic refusal, ownership, stale responses, mapped edits, deduplication, and Undo through the engine log.",
+    "replacedBy": "apps/api/src/scenarios/paper-engine.scenario.test.ts",
+    "proof": {
+      "fork": "06a99a004408c923a897a5eedec2c4b6a751623a",
+      "replacedByBlob": "9466ecd998a0afaefc55fee10d2a347989cf80c7",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 6
+  }
+]
