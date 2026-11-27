@@ -1,5 +1,6 @@
 import { issueOfBranch } from "./pull-ref.mjs"
 import { SCREEN_BODY_FIX, screenBodyProblem, shownUiFiles } from "./screens.mjs"
+import { commitFaults } from "./body-commits.mjs"
 
 const FINISH_TITLE = /^(feat|fix|hotfix|refactor|chore|docs): [^ ].* \(#\d+\)$/
 const FIX_TITLE = /^(?:fix|hotfix)(?:\([^)]*\))?!?: /
@@ -99,11 +100,12 @@ const RISK_LINE = /^\*\*Risk:\*\* \S/
 
 function visibleBody(text) {
   const lines = []
+  const sourceLines = []
   let fence = ""
   let fold = -1
   let depth = 0
   let hasDetails = false
-  for (const line of text.split(/\r?\n/)) {
+  for (const [index, line] of text.split(/\r?\n/).entries()) {
     const marker = FENCE.exec(line)
     const code = Boolean(fence || marker)
     const opens = !code && DETAILS_OPEN.test(line)
@@ -111,7 +113,9 @@ function visibleBody(text) {
       if (depth === 0) fold = lines.length
       depth += 1
     }
-    lines.push({ line, code, depth })
+    const source = { line, code, depth, number: index + 1 }
+    lines.push(source)
+    sourceLines.push(source)
     if (
       !code &&
       depth &&
@@ -135,7 +139,7 @@ function visibleBody(text) {
     else if (marker && marker[1].startsWith(fence) && !marker[2].trim())
       fence = ""
   }
-  return { lines, hasDetails }
+  return { lines, sourceLines, hasDetails }
 }
 
 function hasProofTree(content = []) {
@@ -181,7 +185,7 @@ function badBody(facts) {
   if (!body?.file) return "Pass --body-file <file>."
   if (body.unreadable) return `The body file ${body.file} cannot be read.`
   const text = body.text ?? ""
-  const { lines, hasDetails } = visibleBody(text)
+  const { lines, sourceLines, hasDetails } = visibleBody(text)
   const first = lines.findIndex(({ line, details }) => details || line.trim())
   const lead = /^Closes #\d+\s*$/.test(lines[first]?.line ?? "")
     ? lines.findIndex(
@@ -240,6 +244,7 @@ function badBody(facts) {
     if (!INTRODUCED_BY.test(text))
       problems.push("A fix needs a line: Introduced by: <sha>|#<pr>|unknown")
   }
+  problems.push(...commitFaults(sourceLines, body.isCommitReachable))
   if (!problems.length) return null
   if (problems.length === 1) return problems[0]
   return `${problems.length} problems. ${problems.map((line, i) => `(${i + 1}) ${line}`).join(" ")}`
@@ -315,7 +320,7 @@ export const jobRows = [
   }),
   row({
     id: "BAD_BODY",
-    says: "The PR body opens with Now and Proof, or a bold answer followed by a details block. Proof shows a command and result, an image, or a link to a CI run. At most 25 non-empty lines are visible, including fenced code lines. A PR with a migration names its Risk. Fill in all template placeholders. The body names no path under /home/ or ~/tmp. A fix, hotfix or screen PR opens with a bold answer and a details block with its question and two to four lettered reasons. A fix or hotfix PR adds Caught by and Introduced by lines.",
+    says: "The PR body opens with Now and Proof, or a bold answer followed by a details block. Proof shows a command and result, an image, or a link to a CI run. At most 25 non-empty lines are visible, including fenced code lines. A PR with a migration names its Risk. Fill in all template placeholders. The body names no path under /home/ or ~/tmp. A fix, hotfix or screen PR opens with a bold answer and a details block with its question and two to four lettered reasons. A fix or hotfix PR adds Caught by and Introduced by lines. A commit cited outside fenced code must be reachable from the branch head or origin/main.",
     at: ["finish", "body"],
     needs: ["body", "pull", "migrations", "diff"],
     check: badBody,

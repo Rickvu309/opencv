@@ -2,7 +2,7 @@ import { decide, refusalError } from "../rules/index.mjs"
 import { issueInTitle, issueOfBranch } from "../rules/pull-ref.mjs"
 import { gh } from "./common.mjs"
 import { bodyOf, withClosingLine } from "./finish.mjs"
-import { pullFacts } from "./pull-facts.mjs"
+import { commitReachability, pullFacts } from "./pull-facts.mjs"
 
 export function replaceBody(ctx, n, { flags }) {
   const written = bodyOf(ctx, flags["--body-file"])
@@ -14,7 +14,11 @@ export function replaceBody(ctx, n, { flags }) {
     issue == null ? written.text : withClosingLine(written.text, issue)
   const facts = {
     ...live,
-    body: { ...written, text },
+    body: {
+      ...written,
+      text,
+      isCommitReachable: commitReachability(ctx, live.pull.head),
+    },
     pull: { ...live.pull, title, body: text },
   }
   const verdict = decide("body", facts)
