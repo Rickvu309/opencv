@@ -41,13 +41,15 @@ function canonical(value: unknown): string {
   )
 }
 
-function asChange({
-  to: _to,
-  released: _released,
-  activity: _activity,
-  ...change
-}: StoredChange): Change {
-  return change
+function asChange(stored: StoredChange): Change {
+  return {
+    edit: stored.edit,
+    origin: stored.origin,
+    base: stored.base,
+    steps: stored.steps,
+    inverse: stored.inverse,
+    commands: stored.commands,
+  }
 }
 
 function tooLarge(limit: string): Refused {
