@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "apps/web/src/features/paper/editor/suggestions/suggestions.browser.test.ts > Coach suggestions on the page > keeps the buttons readable on a phone",
+    "because": "The 27 px floor becomes the stronger 44 px phone touch target for Accept and Reject",
+    "replacedBy": "apps/web/src/features/paper/editor/suggestions/suggestions.browser.test.ts",
+    "proof": {
+      "fork": "0de957f5e9d0c9d6eb0c1ca6e400e8ae6d930dc2",
+      "replacedByBlob": "39352222fe3c6ec1bfdf55f57965dab1b61a2cac",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  }
+]
