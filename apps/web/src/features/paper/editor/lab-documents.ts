@@ -23,7 +23,14 @@ const TWIP_MPT = 50
 const PHOTO_FILE_ID = "00000000-0000-4000-8000-000000000001"
 const mmToMpt = (mm: number) => Math.round((mm * 72000) / 25.4)
 
-const CORPUS: Record<string, CorpusCv> = { "en-10": en10, "vi-01": vi01 }
+const CORPUS: Record<string, CorpusCv> = {
+  "en-10": en10,
+  "vi-01": vi01,
+  photo: {
+    page: { marginMm: 20 },
+    blocks: [{ kind: "image", alt: "Sample portrait" }],
+  },
+}
 
 function runs(text: string | undefined, links: CorpusLink[] = []) {
   if (!text) return []

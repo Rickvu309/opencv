@@ -18,6 +18,7 @@ export type KeyAction =
   | { do: "redo" }
   | { do: "mark"; mark: "bold" | "italic" | "underline" }
   | { do: "link" }
+  | { do: "find"; replace: boolean }
   | { do: "clearFormatting" }
   | { do: "kind"; kind: "paragraph" | "heading" | "subheading" }
   | { do: "list"; list: "bullet" | "numbered" }
@@ -52,6 +53,8 @@ function modified(facts: KeyFacts, mod: boolean): KeyAction | null {
   if (key === "a" && !facts.shiftKey) return { do: "selectAll" }
   if (key in MARKS && !facts.shiftKey)
     return { do: "mark", mark: MARKS[key as keyof typeof MARKS] }
+  if ((key === "f" || key === "h") && !facts.shiftKey)
+    return { do: "find", replace: key === "h" }
   if (key === "k" && !facts.shiftKey) return { do: "link" }
   if (facts.code === "Backslash") return { do: "clearFormatting" }
   if (facts.code === "BracketRight") return { do: "level", by: 1 }
@@ -110,13 +113,14 @@ export type TextareaEdit = { from: number; to: number; text: string }
 export type InputKind =
   { kind: "typing" } | { kind: "composition"; id: string; oneShot: boolean }
 
+export type PaperClipboard = { text: string; html: string }
+
 export type InputSink = {
   mirror(): Mirror
   replace(edit: TextareaEdit, caret: number, input: InputKind): void
   action(action: KeyAction): void
-  pasteText(text: string): void
-  copyText(): string
-  cutText(): string
+  paste(clipboard: PaperClipboard): void
+  copy(cut: boolean): PaperClipboard | null
   composing(active: boolean): void
 }
 
@@ -237,8 +241,17 @@ export function createInputPort(sink: InputSink): InputPort {
     write()
   }
 
+  let plainPaste = false
+  const clearPlainPaste = () => {
+    plainPaste = false
+  }
+
   const onKeyDown = (event: KeyboardEvent) => {
     if (composition || event.isComposing || event.keyCode === 229) return
+    plainPaste =
+      (event.ctrlKey || event.metaKey) &&
+      event.shiftKey &&
+      (event.code === "KeyV" || event.key.toLowerCase() === "v")
     const action = keyAction(event)
     if (!action) return
     event.preventDefault()
@@ -276,26 +289,34 @@ export function createInputPort(sink: InputSink): InputPort {
 
   const onPaste = (event: ClipboardEvent) => {
     event.preventDefault()
-    const text = event.clipboardData?.getData("text/plain") ?? ""
-    if (text) sink.pasteText(text)
+    const clipboard = event.clipboardData
+    if (clipboard)
+      sink.paste({
+        text: clipboard.getData("text/plain"),
+        html: plainPaste ? "" : clipboard.getData("text/html"),
+      })
     write()
   }
 
-  const onCopy = (event: ClipboardEvent) => {
+  function writeClipboard(event: ClipboardEvent, cut: boolean) {
+    if (!event.clipboardData) return
     event.preventDefault()
-    event.clipboardData?.setData("text/plain", sink.copyText())
+    const clipboard = sink.copy(cut)
+    if (!clipboard) return
+    event.clipboardData.setData("text/plain", clipboard.text)
+    event.clipboardData.setData("text/html", clipboard.html)
+    if (cut) write()
   }
 
-  const onCut = (event: ClipboardEvent) => {
-    event.preventDefault()
-    event.clipboardData?.setData("text/plain", sink.cutText())
-    write()
-  }
+  const onCopy = (event: ClipboardEvent) => writeClipboard(event, false)
+  const onCut = (event: ClipboardEvent) => writeClipboard(event, true)
 
   element.addEventListener("input", onInput)
   element.addEventListener("compositionstart", onCompositionStart)
   element.addEventListener("compositionend", onCompositionEnd)
   element.addEventListener("keydown", onKeyDown)
+  element.addEventListener("keyup", clearPlainPaste)
+  element.addEventListener("blur", clearPlainPaste)
   element.addEventListener("beforeinput", onBeforeInput)
   element.addEventListener("paste", onPaste)
   element.addEventListener("copy", onCopy)
@@ -312,6 +333,8 @@ export function createInputPort(sink: InputSink): InputPort {
       element.removeEventListener("compositionstart", onCompositionStart)
       element.removeEventListener("compositionend", onCompositionEnd)
       element.removeEventListener("keydown", onKeyDown)
+      element.removeEventListener("keyup", clearPlainPaste)
+      element.removeEventListener("blur", clearPlainPaste)
       element.removeEventListener("beforeinput", onBeforeInput)
       element.removeEventListener("paste", onPaste)
       element.removeEventListener("copy", onCopy)
@@ -406,4 +429,15 @@ export function attachPointer(surface: HTMLElement, sink: PointerSink) {
     surface.removeEventListener("pointercancel", onCancel)
     surface.removeEventListener("lostpointercapture", onLostCapture)
   }
+}
+
+export function bindToolInput(
+  element: HTMLElement,
+  keys: (event: KeyboardEvent) => void,
+  changed?: (event: Event) => void
+) {
+  element.addEventListener("keydown", (event) => {
+    if (!event.isComposing) keys(event)
+  })
+  if (changed) element.addEventListener("input", changed)
 }
