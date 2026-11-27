@@ -65,6 +65,7 @@ type ListKind = NonNullable<
 const listIds = { bullet: 0, numbered: 1 }
 const bullets = ["\u2022", "\u25e6", "\u25aa"]
 const formats = ["decimal", "lowerLetter", "lowerRoman"]
+export const numberedFormat = (level: number) => formats[level % formats.length]
 
 export function numberingXml(lists: readonly ListKind[]) {
   function definition(kind: ListKind) {
@@ -73,7 +74,7 @@ export function numberingXml(lists: readonly ListKind[]) {
       return (
         `<w:lvl w:ilvl="${level}">` +
         val("start", 1) +
-        val("numFmt", kind === "bullet" ? "bullet" : formats[level % 3]) +
+        val("numFmt", kind === "bullet" ? "bullet" : numberedFormat(level)) +
         val(
           "lvlText",
           kind === "bullet" ? bullets[level % 3] : `%${level + 1}.`

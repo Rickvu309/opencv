@@ -1,3 +1,3 @@
 layer: feature
-public: [write-docx.ts]
+public: [read-docx.ts, write-docx.ts]
 dependencies: [apps/api/src/paper/import]

@@ -209,10 +209,10 @@ flowchart TD
 | `apps/api/src/mail` | platform | none | none | none |
 | `apps/api/src/paper` | feature | index.ts, operations | apps/api/src/paper/import, apps/api/src/paper/native-output, apps/api/src/paper/content, apps/api/src/registry, apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/api/src/paper/content` | feature | content-store.ts, native-admission.ts, read-paper.ts, rich-snapshot.ts | apps/api/src/db, apps/api/src/platform | none |
-| `apps/api/src/paper/import` | feature | import-parse.ts, import-text-pool.ts, import-word.ts, package-xml.ts, word-to-paper.ts | apps/api/src/platform | none |
+| `apps/api/src/paper/import` | feature | import-parse.ts, import-text-pool.ts, import-word.ts, package-xml.ts, package-zip.ts, word-to-paper.ts | apps/api/src/platform | none |
 | `apps/api/src/paper/native-output` | feature | formatted.ts, formatted-photos.ts | none | none |
 | `apps/api/src/paper/pdf` | feature | write-pdf.ts | packages/paper-engine | none |
-| `apps/api/src/paper/word` | feature | write-docx.ts | apps/api/src/paper/import | none |
+| `apps/api/src/paper/word` | feature | read-docx.ts, write-docx.ts | apps/api/src/paper/import | none |
 | `apps/api/src/platform` | platform | none | none | none |
 | `apps/api/src/registry` | kernel | none | apps/api/src/db, apps/api/src/limits, apps/api/src/platform | none |
 | `apps/web/src` | app | none | apps/web/src/features/app-shell, apps/web/src/features/apply, apps/web/src/features/auth, apps/web/src/features/coach, apps/web/src/features/coming-soon, apps/web/src/features/command-palette, apps/web/src/features/connections, apps/web/src/features/inbox, apps/web/src/features/landing, apps/web/src/features/paper, apps/web/src/features/paper/rich-editor, apps/web/src/features/paper-page, apps/web/src/features/seed, apps/web/src/features/settings, apps/web/src/lib, apps/web/src/components | none |
