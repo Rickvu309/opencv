@@ -107,12 +107,12 @@ test("a body needs text on each lead line and a readable file", () => {
     check(body("**Now:**\n**Proof:** `node x.mjs`: exit 0")),
     NEEDS_LEAD
   )
-  assert.match(
+  assert.equal(
     check({
       ...body("**Now:** A fix.\n**Proof:** It works, see /home/me/log."),
       pull: { title: "fix: a thing (#7)" },
     }),
-    /5 problems.*path on your machine.*Proof needs a command.*show-opencv\/bin\/logic\.mjs.*Caught by:.*Introduced by:/
+    "5 problems. (1) The PR body names a path on your machine (/home/ or ~/tmp). Show the command and its result, or link a picture. (2) Proof needs a command with its result on the same line or in the output block under it (exit 0, N passed, 0 mismatches), an image, or a link to a CI run. (3) Start with a bold answer and a <details> block holding the question and two to four lettered reasons. Write it with node .agents/skills/show-opencv/bin/logic.mjs tree.json. (4) A fix needs a line: Caught by: user|ci|review|verify-skill|test|agent-self (5) A fix needs a line: Introduced by: <sha>|#<pr>|unknown"
   )
   assert.equal(
     check({ body: { file: null, text: "" } }),
