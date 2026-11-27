@@ -20,7 +20,7 @@ Someone who is not signed in and reads what a person chose to share.
 _Avoid_: public, anonymous, stranger
 
 **Proposal**:
-A command an agent wants to run that waits for the person.
+A command an agent wants to run that waits for the person. It ends approved, denied or expired.
 _Avoid_: pending action, suggestion, confirmation
 
 **Approval**:

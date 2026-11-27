@@ -16,7 +16,7 @@ Control knows who is asking and what the command's own definition says about it.
 
 ## Consequences
 
-- A context registers its commands with Control when the app is wired.
+- Each command is an operation pair, and the generated catalog binds every pair to Control when the app is wired.
 - No code invents a person to pass a permission check.
 - Showing a proposal in a Chat belongs to Coach, not Control.
 - A command that needs a version check on approval states its own basis. Apply does this for a Job's priority.

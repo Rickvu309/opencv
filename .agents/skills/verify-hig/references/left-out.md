@@ -40,6 +40,10 @@ OpenCV is a web app in desktop and phone browsers, not a native Apple app. These
 | X34 | Materials         | "Only use clear Liquid Glass for components that appear over visually rich backgrounds."                                                 | Apple system material.                                                                            |
 | X35 | Going full screen | "Except in games, let people reveal the Dock while your iPadOS or macOS app is in full-screen mode."                                     | The browser owns full screen.                                                                     |
 | X36 | Every page        | Platform considerations sections (iOS, iPadOS, macOS, tvOS, visionOS, watchOS)                                                           | Native platform chrome; not read into rules.                                                      |
+| X37 | Accessibility     | "If your app supports Dark Mode, make sure to check the minimum contrast in both light and dark appearances."                            | OpenCV is light only.                                                                             |
+| X38 | Dark Mode         | "Ensure that your app looks good in both appearance modes."                                                                              | OpenCV is light only.                                                                             |
+| X39 | Dark Mode         | "Aim for sufficient color contrast in all appearances."                                                                                  | OpenCV is light only; Accessibility A1 covers the one appearance.                                 |
+| X40 | Dark Mode         | "Soften the color of white backgrounds."                                                                                                 | OpenCV is light only.                                                                             |
 
 ## Not loaded
 

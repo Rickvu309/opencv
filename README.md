@@ -9,10 +9,12 @@ OpenCV is a job-search app for Vietnamese students and new graduates. It combine
 - `packages/domain` defines the typed contract shared by the web app and API.
 - `packages/ui` contains shared UI components.
 - `packages/paper-crdt` contains shared document collaboration code.
+- `packages/guards` runs the repository's guard and test groups.
+- `packages/stageshow` contains the product illustration kit.
 
 ## Run locally
 
-Use Node.js 20 or later and pnpm 10.33.4. Local development can use PGlite and a fake Coach without PostgreSQL or model API keys.
+Use Node.js 22.16 or later and pnpm 10.33.4. Local development can use PGlite and a fake Coach without PostgreSQL or model API keys.
 
 ```bash
 pnpm install

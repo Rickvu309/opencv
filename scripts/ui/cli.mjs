@@ -46,7 +46,7 @@ export const COMMANDS = {
   up: {
     usage: "up [--port N]",
     about:
-      "Start a throwaway app for this worktree (pglite, fake Coach, Word pages on) with a signed-in test account. Reuses a running one.",
+      "Start a throwaway app for this worktree (pglite, fake Coach, fake mail) with a signed-in test account. Reuses a running one.",
     options: { valued: ["port"] },
     run: async (ctx, { flags }) => {
       const port = flags.port

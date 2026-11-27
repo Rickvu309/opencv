@@ -169,7 +169,7 @@ export const RETIRED = [
   checkingWord(
     "risk-class",
     /(?<![a-z])[Rr]isk[- _]?[Cc]lass(?:es)?|(?<=[a-z])Risk_?Class(?:es)?|RISK[- _]?CLASS(?:ES)?/g,
-    "change class, or risk label for the issue"
+    "risk label for the issue, or retirement class"
   ),
 ]
 

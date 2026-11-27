@@ -15,5 +15,5 @@ From 2026-11-13 no agent reviews a pull request: a change merges by itself once 
 ## Consequences
 
 - Every PR, including changes to merge rules and high-risk files, merges automatically on green ci. A migration that does more than add still needs its allow-migration:<tag> label.
-- Checks a builder did not write may grow but not weaken; weakening one needs a recorded retirement with a flip proof, which makes the change strict.
+- Checks a builder did not write may grow but not weaken without a record; weakening one needs a recorded retirement in scripts/retired, and a replacement test with a flip proof makes it self-serve. Either way the change merges on green ci.
 - Wrong prose in a pull request body, untrue product copy, and a builder misreading an ordinary issue are accepted as unowned residuals, each with a signal that would show it biting.

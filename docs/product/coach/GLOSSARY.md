@@ -24,5 +24,5 @@ _Avoid_: job, run
 The Paper, Job or thread a Chat is about.
 
 **Coach mode**:
-How much effort the Coach spends on a turn.
+How much effort the Coach spends on a turn: Free, Light or Max. The Free plan uses Free only.
 _Avoid_: plan
