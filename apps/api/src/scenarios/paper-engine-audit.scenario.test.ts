@@ -1,8 +1,12 @@
+import mammoth from "mammoth"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-import { openWorld, type World } from "./person.test-support.js"
+import { fixturePackage } from "../paper/import/package-fixtures.js"
+import { dataOf, openWorld, type World } from "./person.test-support.js"
 import {
   engineHelpers,
+  importCorpus,
+  importWord,
   at,
   span,
   paragraph,
@@ -176,62 +180,66 @@ describe("the 2026-11-27 editor audit", () => {
     }
   )
 
-  it.fails("7: a Paper downloads as a PDF with its text (#2207)", async () => {
+  it("7: a Paper downloads as a PDF with its text (#2207)", async () => {
     const ada = await world.person("Ada")
-    const { docId } = await paper.written(ada, [
-      "Nguyễn Thị Lan",
-      "Kỹ sư dữ liệu",
-    ])
+    const { docId } = await importCorpus(ada, "vi-03")
     const pdf = await paper.exported(ada, docId, "pdf")
     expect(pdf.contentType).toBe("application/pdf")
-    expect((await pdfPages(pdf.bytes)).join("\n")).toContain("Nguyễn Thị Lan")
+    expect((await pdfPages(pdf.bytes)).join("\n")).toContain("Trần Bảo Như")
+    const word = await paper.exported(ada, docId, "docx")
+    const { value } = await mammoth.convertToHtml({ buffer: word.bytes })
+    expect(value).toContain("<h1>Kinh nghiệm</h1>")
+    expect(value).toContain('href="https://example.com/paper-corpus/vi-03"')
   })
 
-  it.fails(
-    "8: Word keeps heading levels and links on the way out (#2207)",
-    async () => {
-      const ada = await world.person("Ada")
-      const docId = await paper.blank(ada)
-      const first = (await paper.outline(ada, docId)).blocks[0]!
-      await paper.edit(ada, docId, [
-        {
-          op: "pasteFragment",
-          range: span(first.id, 0, 0),
-          fragment: [
-            paragraph("Experience", "heading"),
-            paragraph("Northwind", "subheading"),
-            {
-              type: "text_block",
-              attrs: { kind: "paragraph", list: null, level: 0 },
-              content: [
-                {
-                  type: "text",
-                  text: "portfolio",
-                  marks: [
-                    { type: "link", attrs: { href: "https://example.com" } },
-                  ],
-                },
-              ],
-            },
-          ],
-        },
-      ])
-      const word = await paper.exported(ada, docId, "docx")
-      const loaded = (await import("mammoth")) as unknown as {
-        default?: {
-          convertToHtml: (input: {
-            buffer: Buffer
-          }) => Promise<{ value: string }>
-        }
-        convertToHtml: (input: { buffer: Buffer }) => Promise<{ value: string }>
-      }
-      const mammoth = loaded.default ?? loaded
-      const { value } = await mammoth.convertToHtml({ buffer: word.bytes })
-      expect(value).toContain("<h1>Experience</h1>")
-      expect(value).toContain("<h2>Northwind</h2>")
-      expect(value).toContain('<a href="https://example.com">portfolio</a>')
-    }
-  )
+  it("8: Word keeps heading levels and links on the way out (#2207)", async () => {
+    const ada = await world.person("Ada")
+    const { docId } = await importCorpus(ada, "en-03")
+    const word = await paper.exported(ada, docId, "docx")
+    const { value } = await mammoth.convertToHtml({ buffer: word.bytes })
+    expect(value).toContain("<h1>Experience</h1>")
+    expect(value).toContain("<h2>Halfwick Instruments</h2>")
+    expect(value).toContain(
+      '<a href="https://example.com/paper-corpus/en-03">view the project brief</a>'
+    )
+    const pdf = await paper.exported(ada, docId, "pdf")
+    expect((await pdfPages(pdf.bytes)).join("\n")).toContain(
+      "Halfwick Instruments"
+    )
+  })
+
+  it("9: Word import reports omissions and records its first change", async () => {
+    const ada = await world.person("Ada")
+    const bytes = fixturePackage(
+      '<w:p><w:r><w:t>Ada Lovelace</w:t><w:footnoteReference w:id="1"/></w:r></w:p>'
+    )
+    const imported = await importWord(
+      ada,
+      "footnote.docx",
+      bytes,
+      "word-import"
+    )
+    expect(imported.dropped).toContain("Footnotes were left out.")
+    expect(
+      await importWord(ada, "footnote.docx", bytes, "word-import")
+    ).toEqual(imported)
+    const changes = dataOf(
+      await ada.read("paper.changes", { docId: imported.docId, since: 0 })
+    )
+    expect(changes).toMatchObject({
+      head: 1,
+      changes: [{ base: 0, origin: { kind: "import", actor: ada.id } }],
+    })
+    const grace = await world.person("Grace")
+    expect(
+      (
+        await grace.read("paper.export", {
+          docId: imported.docId,
+          format: "pdf",
+        })
+      ).error?.code
+    ).toBe("NOT_FOUND")
+  })
 
   it.fails("10: a new Paper is an A4 page (#2207)", async () => {
     const ada = await world.person("Ada")

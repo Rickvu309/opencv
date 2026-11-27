@@ -35,6 +35,17 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
       expect(schema).not.toHaveProperty(combinator)
     const valid = { fileId, kind: "cv", name: "CV", paper: {} }
     expect(input.parse(valid)).toEqual(valid)
+    const word = { ...valid, paper: null, engine: 2 }
+    expect(input.parse(word)).toEqual(word)
+    const download = { docId: fileId, format: "docx" }
+    const exportInput = catalog["paper.export"].input
+    expect(exportInput.parse(download)).toEqual(download)
+    expect(exportInput.parse({ ...download, format: "pdf" })).toMatchObject({
+      format: "pdf",
+    })
+    expect(
+      exportInput.safeParse({ ...download, writer: "native" }).success
+    ).toBe(false)
     for (const invalid of [
       {},
       { fileId },
@@ -43,6 +54,7 @@ describe("a paper binding that drifts from the paper contract is rejected", () =
       { ...valid, kind: "proof" },
       { ...valid, name: "" },
       { ...valid, unknown: true },
+      { ...valid, engine: 2 },
     ])
       expect(input.safeParse(invalid).success, JSON.stringify(invalid)).toBe(
         false

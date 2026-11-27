@@ -29,7 +29,7 @@ import { PAGE_STORE_FILES, pageInsertingExports } from "./page-writes.js"
 
 const srcRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 
-type Made = { docId: string; kind: "cv" | "letter" }
+type Made = { docId: string; kind: "cv" | "letter"; engine?: 2 }
 type Account = { cookie: string; userId: string }
 type App = ReturnType<typeof createTestApp>
 type Maker = (app: App, owner: Account) => Promise<Made>
@@ -72,15 +72,19 @@ async function importFile(
   owner: Account,
   bytes: Buffer,
   name: string,
-  type: string
+  type: string,
+  engine?: 2
 ) {
   const form = new FormData()
   form.set("file", new File([new Uint8Array(bytes)], name, { type }))
-  const response = await app.request("/api/paper/import", {
-    method: "POST",
-    headers: { Origin: testWebOrigin, Cookie: owner.cookie },
-    body: form,
-  })
+  const response = await app.request(
+    engine ? "/api/paper/import?engine=2" : "/api/paper/import",
+    {
+      method: "POST",
+      headers: { Origin: testWebOrigin, Cookie: owner.cookie },
+      body: form,
+    }
+  )
   expect(response.status, await response.clone().text()).toBe(200)
   return docIdOf(dataOf.parse(await response.json()).data)
 }
@@ -99,6 +103,8 @@ const rich = (docId: string, kind: "cv" | "letter" = "cv"): Made => ({
   docId,
   kind,
 })
+
+const ENGINE_IMPORT_CASE = "Import a Word file into the new editor"
 
 const CASES: Record<string, Maker> = {
   "Coach start (paper.start)": async (app, owner) =>
@@ -120,6 +126,18 @@ const CASES: Record<string, Maker> = {
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
       )
     ),
+  [ENGINE_IMPORT_CASE]: async (app, owner) => ({
+    docId: await importFile(
+      app,
+      owner,
+      textDocx("Imported Word words"),
+      "Imported.docx",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      2
+    ),
+    kind: "cv",
+    engine: 2,
+  }),
   "Import a PDF": async (app, owner) =>
     rich(
       await importFile(
@@ -178,6 +196,9 @@ const CREATOR_EXPORTS: Record<string, string[]> = {
   "paper/store.ts#duplicatePaper": Object.keys(CASES).filter((name) =>
     name.startsWith("Duplicate")
   ),
+  "paper/store.ts#createEngineImportPage": [
+    "Import a Word file into the new editor",
+  ],
   "paper/store.ts#createPaper": [
     "Rich document (paper.create)",
     "Duplicate a rich document (paper.duplicate)",
@@ -294,7 +315,31 @@ describe("a page made any way is listed, opens, and stays hidden from others", (
   it.each(Object.keys(CASES))("%s", async (name) => {
     const maker = CASES[name]
     if (!maker) throw new Error(name)
-    const made = await withDatabase(db, () => maker(app, owner))
+    const creator =
+      name === ENGINE_IMPORT_CASE ? await account("New editor owner") : owner
+    const made = await withDatabase(db, () => maker(app, creator))
+    if (made.engine === 2) {
+      const engineRead = (who: Account) =>
+        app.request("/api/reads/paper.read", {
+          method: "POST",
+          headers: authHeaders(who.cookie),
+          body: JSON.stringify({ docId: made.docId, view: "engine" }),
+        })
+      const opened = await engineRead(creator)
+      expect(opened.status, await opened.clone().text()).toBe(200)
+      expect(dataOf.parse(await opened.json()).data).toMatchObject({
+        docId: made.docId,
+        kind: made.kind,
+        version: 1,
+      })
+      expect((await engineRead(stranger)).status).toBe(404)
+      expect(await listed(creator)).toMatchObject([
+        { id: made.docId, kind: made.kind, contentVersion: 1 },
+      ])
+      expect(await listed(stranger)).toEqual([])
+      await expectListIsLivePages(app, db, creator)
+      return
+    }
     const mine = (await listed(owner)).filter((item) => item.id === made.docId)
     expect(mine).toHaveLength(1)
     expect(mine[0]?.kind).toBe(made.kind)

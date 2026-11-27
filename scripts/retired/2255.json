@@ -1,0 +1,30 @@
+[
+  {
+    "subject": "apps/api/src/scenarios/paper-engine-audit.scenario.test.ts > the 2026-11-27 editor audit > 7: a Paper downloads as a PDF with its text (#2207)",
+    "because": "The pinned audit row now passes through the real Word import and the new export: same promise, real corpus CV instead of a hand-built fragment",
+    "replacedBy": "apps/api/src/scenarios/paper-engine-audit.scenario.test.ts",
+    "proof": {
+      "fork": "009a614fd604615eafff0b0cf735f232d63a5309",
+      "replacedByBlob": "4d14b5bb8f567621c0c52b4a5df2dca418468865",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
+  },
+  {
+    "subject": "apps/api/src/scenarios/paper-engine-audit.scenario.test.ts > the 2026-11-27 editor audit > 8: Word keeps heading levels and links on the way out (#2207)",
+    "because": "The pinned audit row now passes through the real Word import and the new export: same promise, real corpus CV instead of a hand-built fragment",
+    "replacedBy": "apps/api/src/scenarios/paper-engine-audit.scenario.test.ts",
+    "proof": {
+      "fork": "009a614fd604615eafff0b0cf735f232d63a5309",
+      "replacedByBlob": "4d14b5bb8f567621c0c52b4a5df2dca418468865",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  }
+]

@@ -1,6 +1,8 @@
 import { useQueryClient, type QueryClient } from "@tanstack/react-query"
 import { useEffect, useReducer } from "react"
+import { toast } from "sonner"
 
+import { catalog } from "@workspace/domain/kernel"
 import type { Document } from "@workspace/domain/paper-doc"
 
 import {
@@ -13,6 +15,10 @@ import {
 } from "@/features/paper/editor/lab-documents.ts"
 import type { PaperEditor } from "@/features/paper/editor/paper-editor.ts"
 import { catalogClient } from "@/lib/contract-client.ts"
+import {
+  downloadEnginePaper,
+  openEnginePaperPdf,
+} from "@/lib/paper-engine-download.ts"
 import { openPaperSync } from "@/lib/paper-sync.ts"
 import { browserSyncPorts } from "@/lib/paper-sync-ports.ts"
 import { checkSession } from "@/lib/session-check.ts"
@@ -24,6 +30,7 @@ declare global {
 }
 
 const LAB_DOWNLOAD = { reason: "Save this Paper first to download it" }
+const LAB_TITLE = "Paper test page"
 
 function exposeLabEditor(editor: PaperEditor | null) {
   if (!editor) {
@@ -42,7 +49,13 @@ function exposeLabEditor(editor: PaperEditor | null) {
 type LabState =
   | { kind: "opening" }
   | { kind: "local"; doc: Document }
-  | { kind: "saved"; doc: Document; sync: ChromeSync }
+  | {
+      kind: "saved"
+      docId: string
+      title: string
+      doc: Document
+      sync: ChromeSync
+    }
   | { kind: "failed"; message: string }
 
 type LabAction = { type: "opened"; state: LabState }
@@ -87,6 +100,15 @@ async function openLab(queryClient: QueryClient): Promise<LabState> {
     return { kind: "local", doc: labDocument(name) }
   }
   const docId: string = saved ?? (await newSavedCv(queryClient))
+  let title = LAB_TITLE
+  if (saved) {
+    const metadata = await catalogClient.read(catalog["paper.read"].name, {
+      docId,
+      view: "engine",
+    })
+    if (!("doc" in metadata)) throw new Error("Paper could not be opened.")
+    title = metadata.name
+  }
   if (!saved) {
     const url = new URL(window.location.href)
     url.searchParams.delete("doc")
@@ -96,6 +118,8 @@ async function openLab(queryClient: QueryClient): Promise<LabState> {
   const paper = await openPaperSync(docId, browserSyncPorts(docId, queryClient))
   return {
     kind: "saved",
+    docId,
+    title,
     doc: paper.doc,
     sync: { paper, actor: check.session.user.id },
   }
@@ -139,16 +163,37 @@ export function PaperLabPage() {
         <p role="alert">{lab.message}</p>
       </main>
     )
+  const savedProps =
+    lab.kind === "saved"
+      ? {
+          title: lab.title,
+          download: {
+            start: (format: "word" | "pdf") => {
+              void downloadEnginePaper(
+                queryClient,
+                lab.docId,
+                format === "word" ? "docx" : "pdf"
+              ).catch(() =>
+                toast.error("Paper could not download this file. Try again.")
+              )
+            },
+          },
+          onPrint: () => {
+            void openEnginePaperPdf(queryClient, lab.docId).catch(() =>
+              toast.error("Paper could not open the PDF. Try again.")
+            )
+          },
+          photoReason: "Needs a saved photo",
+          sync: lab.sync,
+        }
+      : {
+          title: LAB_TITLE,
+          download: LAB_DOWNLOAD,
+          photoReason: "Needs a saved Paper",
+        }
   return (
     <main aria-label="Paper test page">
-      <PaperChrome
-        doc={lab.doc}
-        title="Paper test page"
-        download={LAB_DOWNLOAD}
-        photoReason="Needs a saved Paper"
-        onEditor={exposeLabEditor}
-        {...(lab.kind === "saved" ? { sync: lab.sync } : {})}
-      />
+      <PaperChrome doc={lab.doc} onEditor={exposeLabEditor} {...savedProps} />
     </main>
   )
 }
