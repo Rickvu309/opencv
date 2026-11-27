@@ -161,8 +161,9 @@ export function createLinkBubble(
       render()
     },
     update(active: PaperLink | null, x: number, y: number) {
+      if (!active && !link && !editing) return
       link = active
-      placePopover(bubble, x, y, 336)
+      if (link || editing) placePopover(bubble, x, y, 336)
       render()
     },
     destroy: () => bubble.remove(),

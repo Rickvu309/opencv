@@ -2,12 +2,14 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 import tailwindcss from "@tailwindcss/vite"
 import react from "@vitejs/plugin-react"
+import type { LayoutWork } from "@workspace/paper-engine"
 import { chromium, type Browser, type Page } from "playwright-core"
 import { build, type Rollup } from "vite"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { domainEntryAliases } from "../../../../../domain-entries"
 import { detect } from "../../../../../../../scripts/lib/paper-flat-toolbar.mjs"
+import { detect as detectKeystrokeWork } from "../../../../../../../scripts/lib/paper-keystroke-work.mjs"
 
 const webRoot = path.resolve(__dirname, "../../../../..")
 const ORIGIN = "http://paper-editor.test"
@@ -15,6 +17,13 @@ const HARNESS = "\0paper-toolbar-harness"
 const DESK = { width: 1440, height: 900 }
 const PHONE = { width: 390, height: 844 }
 const REASON = "Save this Paper first to download it"
+
+declare global {
+  interface Window {
+    paperTestCommits: number
+    paperTestLayoutWork: () => LayoutWork
+  }
+}
 
 let browser: Browser
 let html = ""
@@ -44,9 +53,11 @@ async function bundle(): Promise<string> {
                 `import "@workspace/ui/globals.css"`,
                 `import { createElement, Fragment } from "react"`,
                 `import { createRoot } from "react-dom/client"`,
+                `import { layoutWork } from "@workspace/paper-engine"`,
                 `import { Toaster } from "@workspace/ui/components/sonner"`,
                 `import { PaperChrome } from ${JSON.stringify(chrome)}`,
                 `import { labDocument } from ${JSON.stringify(documents)}`,
+                `window.paperTestLayoutWork = () => layoutWork(window.paperLab.layout())`,
                 `const doc = labDocument(new URLSearchParams(location.search).get("doc"))`,
                 `createRoot(document.getElementById("root")).render(createElement(Fragment, null,`,
                 `  createElement(PaperChrome, { doc, title: "Paper test page", download: { reason: ${JSON.stringify(REASON)} }, photoReason: "Needs a saved Paper", onEditor: (editor) => { window.paperLab = editor ?? undefined } }),`,
@@ -89,6 +100,19 @@ async function open(viewport = DESK, isMobile = false, doc = "") {
     hasTouch: isMobile,
   })
   const page = await context.newPage()
+  await page.addInitScript(() => {
+    let commits = 0
+    Object.defineProperty(window, "__REACT_DEVTOOLS_GLOBAL_HOOK__", {
+      value: {
+        supportsFiber: true,
+        inject: () => 1,
+        onCommitFiberRoot: () => {
+          commits += 1
+        },
+      },
+    })
+    Object.defineProperty(window, "paperTestCommits", { get: () => commits })
+  })
   await page.route(`${ORIGIN}/**`, async (route) => {
     const url = new URL(route.request().url())
     if (url.pathname.startsWith("/fonts/")) {
@@ -285,4 +309,74 @@ describe("the flat Paper toolbar", () => {
     expect(await word.getAttribute("aria-disabled")).toBe("true")
     await page.context().close()
   })
+})
+
+it("keeps each steady keystroke on the edited page", async () => {
+  const page = await open(DESK, false, "en-10")
+  try {
+    await page.evaluate(() => document.fonts.ready)
+    const line = page
+      .locator('.paper-editor-page[data-page="1"] .paper-line')
+      .nth(5)
+    await line.scrollIntoViewIfNeeded()
+    await line.click({ force: true })
+    await page.keyboard.press("KeyX")
+    await expect.poll(() => tool(page, "Undo").isEnabled()).toBe(true)
+    expect(await page.evaluate(() => window.paperTestCommits)).toBeGreaterThan(
+      1
+    )
+    const probe = await page.evaluateHandle(() => {
+      const pending: MutationRecord[] = []
+      const observer = new MutationObserver((records) =>
+        pending.push(...records)
+      )
+      observer.observe(document.querySelector(".paper-editor")!, {
+        subtree: true,
+        childList: true,
+        attributes: true,
+        characterData: true,
+      })
+      let commits = window.paperTestCommits
+      return async () => {
+        await new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()))
+        })
+        const pages = new Set<number>()
+        const lines = new Set<Element>()
+        let caretWrites = 0
+        let suggestionWrites = 0
+        for (const { target } of pending
+          .splice(0)
+          .concat(observer.takeRecords())) {
+          const element =
+            target instanceof Element ? target : target.parentElement
+          const page = element?.closest<HTMLElement>(".paper-editor-page")
+          const line = element?.closest(".paper-line")
+          if (page) pages.add(Number(page.dataset.page))
+          if (line) lines.add(line)
+          if (element?.matches(".paper-caret")) caretWrites += 1
+          if (element?.closest(".paper-suggest-strip")) suggestionWrites += 1
+        }
+        const nextCommits = window.paperTestCommits
+        const sample = {
+          ...window.paperTestLayoutWork(),
+          pages: [...pages],
+          lines: lines.size,
+          caretWrites,
+          suggestionWrites,
+          reactCommits: nextCommits - commits,
+        }
+        commits = nextCommits
+        return sample
+      }
+    })
+    const samples = []
+    for (const char of ["KeyX", "KeyY", "KeyZ", "Space", "KeyX"]) {
+      await page.keyboard.press(char)
+      samples.push(await probe.evaluate((sample) => sample()))
+    }
+    expect(samples.map(detectKeystrokeWork)).toEqual(samples.map(() => []))
+  } finally {
+    await page.context().close()
+  }
 })
