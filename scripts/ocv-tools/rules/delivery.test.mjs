@@ -196,6 +196,18 @@ test("a fix or hotfix PR names who caught the bug and what introduced it", () =>
     )
 })
 
+test("a tree question line full of escaped parentheses is judged in linear time", () => {
+  const title = "fix: preview Paper cards (#7)"
+  const provenance = "\nCaught by: review\nIntroduced by: #911\n"
+  const hostile = fixture("tree.txt").replace(
+    /^\*[^\n]*\?\*$/m,
+    `*${"\\)".repeat(20000)}`
+  )
+  const started = performance.now()
+  badBody(hostile + provenance, title)
+  assert.ok(performance.now() - started < 500)
+})
+
 test("fix and screen bodies need a proof tree next to the bold answer", () => {
   const title = "fix: preview Paper cards (#7)"
   const provenance = "\nCaught by: review\nIntroduced by: #911\n"
