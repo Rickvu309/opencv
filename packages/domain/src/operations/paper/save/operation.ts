@@ -1,3 +1,5 @@
+import { changeSchema } from "../../../paper-doc/engine-change.js"
+import { documentSchema } from "../../../paper-doc/engine-document.js"
 import { z } from "zod"
 import { defineOperation } from "../../../operation.js"
 import type { ResourceRef } from "../../../resources.js"
@@ -8,27 +10,59 @@ import {
 } from "../../../paper-doc/native.js"
 import { paperSyncInputSchema } from "../../../paper-doc/sync.js"
 
+export const saveChangesInputSchema = z.strictObject({
+  docId: z.uuid(),
+  client: z.string().min(1),
+  base: z.int().nonnegative(),
+  changes: z.array(changeSchema).min(1),
+})
+
+const headVersion = z.int().nonnegative()
+
+const saveChangesResultSchema = z.union([
+  z.strictObject({ ok: z.literal(true), head: headVersion }),
+  z.strictObject({
+    stale: z.literal(true),
+    head: headVersion,
+    since: z.array(changeSchema),
+  }),
+  z.strictObject({
+    stale: z.literal(true),
+    head: headVersion,
+    compacted: z.strictObject({
+      doc: documentSchema,
+      version: headVersion,
+      head: headVersion,
+    }),
+  }),
+])
+
+const legacyInput = paperSyncInputSchema
+  .omit({ docId: true })
+  .extend({
+    docId: z.string().uuid(),
+    writer: nativeWriterSchema,
+    provenance: nativeProvenanceSchema,
+  })
+  .strict()
+
 export const operation = defineOperation({
   owner: "paper",
   name: "paper.save",
-  version: 1,
+  version: 3,
   kind: "command",
   description:
-    "Exchange the rich editor's admitted changes for a CV or Letter with an explicit writer and provenance. An empty update reads the saved document.",
+    "Save a tab's Paper changes or return the edits since its base version.",
   label: "Save your Paper",
-  input: paperSyncInputSchema
-    .omit({ docId: true })
-    .extend({
-      docId: z.string().uuid(),
-      writer: nativeWriterSchema,
-      provenance: nativeProvenanceSchema,
-    })
-    .strict(),
-  publicResult: nativeSyncOutputSchema.strip(),
+  input: z.union([saveChangesInputSchema, legacyInput]),
+  publicResult: z.union([
+    saveChangesResultSchema,
+    nativeSyncOutputSchema.strip(),
+  ]),
   coach: "never",
   destructive: false,
   idempotency: "none",
-  writes: (input): readonly ResourceRef[] => [
-    { name: "paper", coachFloor: "auto", entityId: input.docId },
+  writes: ({ docId }: { docId: string }): readonly ResourceRef[] => [
+    { name: "paper", coachFloor: "auto", entityId: docId },
   ],
 })

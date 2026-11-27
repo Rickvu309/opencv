@@ -1,6 +1,6 @@
 import { z } from "zod"
 
-import { fileIdSchema } from "../ids.js"
+import { idResult, type FileId } from "../ids.js"
 import { isSafeHref } from "./rich-text.js"
 
 export const blockIdSchema = z.string().min(1).brand<"BlockId">()
@@ -118,7 +118,7 @@ const textBlockSchema = z.strictObject({
 const imageBlockSchema = z.strictObject({
   type: z.literal("image"),
   attrs: blockIdentitySchema.extend({
-    fileId: fileIdSchema,
+    fileId: idResult<FileId>(),
     widthMpt: positiveMptSchema,
     heightMpt: positiveMptSchema,
     align: alignSchema,

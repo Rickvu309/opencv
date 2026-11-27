@@ -173,18 +173,23 @@ function fakeEngineCommands(outline: string) {
   ]
 }
 
+function fakeEngineTwoEdit(
+  focus: Pick<CoachFocusDoc, "id" | "revision" | "outline">
+) {
+  return catalog["paper.edit"].input.parse({
+    docId: focus.id,
+    basedOn: focus.revision,
+    commands: fakeEngineCommands(focus.outline),
+  })
+}
+
 export function fakePaperEdit(
   focus: Pick<
     CoachFocusDoc,
     "id" | "revision" | "outline" | "nativeBasis" | "engine"
   >
 ) {
-  if (focus.engine === 2)
-    return catalog["paper.edit"].input.parse({
-      docId: focus.id,
-      basedOn: focus.revision,
-      commands: fakeEngineCommands(focus.outline),
-    })
+  if (focus.engine === 2) return fakeEngineTwoEdit(focus)
   if (focus.nativeBasis && focus.nativeBasis.revision !== focus.revision)
     throw new Error("Native Paper proposal needs a matching outline")
   return catalog["paper.edit"].input.parse({

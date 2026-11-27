@@ -4,6 +4,10 @@ import { CommandError } from "../../../platform/errors.js"
 import type { OperationBinding } from "../../../registry/bind.js"
 import { syncContent } from "../../content/content-store.js"
 
+import { lockOwnedPaper } from "../../engine-sync-log.js"
+import { NEW_ENGINE } from "../../log/index.js"
+import { saveEngineChanges } from "./engine.js"
+
 function bytesOf(encoded: string) {
   return new Uint8Array(Buffer.from(encoded, "base64"))
 }
@@ -15,7 +19,17 @@ function encoded(bytes: Uint8Array) {
 export const implementation = {
   operation,
   execute: async (input, actor) => {
-    const reply = await syncContent(actor.userId, parsePaperId(input.docId), {
+    if ("changes" in input) return saveEngineChanges(input, actor)
+
+    const docId = parsePaperId(input.docId)
+    const { engine } = await lockOwnedPaper(actor.userId, docId, "update")
+    if (engine === NEW_ENGINE)
+      throw new CommandError(
+        ERROR_CODES.CONFLICT,
+        "This Paper uses the new change log"
+      )
+
+    const reply = await syncContent(actor.userId, docId, {
       writer: input.writer,
       provenance: input.provenance,
       epoch: input.epoch,

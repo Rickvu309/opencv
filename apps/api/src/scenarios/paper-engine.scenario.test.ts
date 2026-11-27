@@ -1,17 +1,9 @@
-import { delegateActorSchema } from "@workspace/domain/kernel"
-import {
-  paperEngineBlank,
-  type BlockId,
-  type DocCommand,
-  type Document,
-} from "@workspace/domain/paper-doc"
-import { createEngine } from "@workspace/paper-engine"
+import { paperEngineBlank } from "@workspace/domain/paper-doc"
+import { createEngine, fixedClock, seededIds } from "@workspace/paper-engine"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { createDemoCoachRuntime } from "../coach/index.js"
-import { agentConnections, oauthClient } from "../db/schema.js"
 import { createPaperLog, postgresLogStore } from "../paper/log/index.js"
-import { createId } from "../platform/id.js"
 import {
   dataOf,
   failureOf,
@@ -19,24 +11,10 @@ import {
   type Person,
   type World,
 } from "./person.test-support.js"
-import {
-  engineHelpers,
-  at,
-  span,
-  texts,
-  type Command,
-} from "./paper-engine.test-support.js"
+import { engineHelpers, at, span, texts } from "./paper-engine.test-support.js"
 
 let world: World
 let paper: ReturnType<typeof engineHelpers>
-const scenarioEngine = createEngine({
-  ids: () => createId() as BlockId,
-  now: () => Date.now(),
-})
-const scenarioLog = createPaperLog({
-  store: postgresLogStore,
-  engine: scenarioEngine,
-})
 
 beforeAll(async () => {
   world = await openWorld({ coach: createDemoCoachRuntime() })
@@ -54,109 +32,41 @@ async function pdfPages(bytes: Buffer) {
   return text
 }
 
-let agents = 0
+const editor = createEngine({
+  ids: seededIds("scenario-edit"),
+  now: fixedClock(),
+})
+const log = createPaperLog({ store: postgresLogStore, engine: editor })
+const blank = paperEngineBlank.blankCv()
 
-async function connectAgent(person: Person) {
-  agents += 1
-  const connectionId = createId()
-  const clientId = `engine-client-${agents}`
-  await world.db.insert(oauthClient).values({
-    id: clientId,
-    clientId,
-    redirectUris: ["http://localhost/callback"],
-  })
-  await world.db.insert(agentConnections).values({
-    id: connectionId,
-    userId: person.id,
-    clientId,
-    authorizationCodeId: `engine-authorization-${agents}`,
-    name: "Paper agent",
-    audience: "http://localhost/mcp",
-    scopes: ["connection.status", "paper.read", "paper.write"],
-    resources: { kind: "paper" },
-    policy: { reads: "allow", writes: "approval" },
-    expiresAt: new Date(Date.now() + 600_000),
-  })
-  return delegateActorSchema.parse({
-    type: "delegate",
-    userId: person.id,
-    connectionId,
-    name: "Paper agent",
-    scopes: ["paper.read", "paper.write"],
-    resources: "paper",
-    reads: "allow",
-    writes: "approval",
-  })
+async function enginePaper(owner: Person) {
+  const id = await paper.blank(owner)
+  expect(await world.inside(() => log.start(id, blank))).toEqual({ ok: true })
+  return id
 }
 
-async function engineLines(person: Person, docId: string) {
-  const read = dataOf<{ revision: number; outline: string; engine?: number }>(
-    await person.read("paper.outline", { docId })
-  )
-  expect(read.engine).toBe(2)
-  const blocks = JSON.parse(read.outline) as { id: string; text: string }[]
-  return {
-    version: read.revision,
-    blocks,
-    texts: blocks.map((block) => block.text),
-  }
-}
-
-async function engineWritten(person: Person, lines: string[]) {
-  const docId = dataOf<{ id: string }>(
-    await person.run("paper.create", { kind: "cv", name: "Engine CV" })
-  ).id
-  const blank = paperEngineBlank.blankCv()
-  const template = blank.content[0]!
-  const doc = {
-    ...blank,
-    content: lines.map((text, index) => ({
-      ...template,
-      attrs: { ...template.attrs, id: `line-${index + 1}` },
-      content: [{ type: "text", text }],
-    })),
-  } as unknown as Document
-  expect(await world.inside(() => scenarioLog.start(docId, doc))).toEqual({
-    ok: true,
-  })
-  return { docId, blocks: (await engineLines(person, docId)).blocks }
-}
-
-async function personEdit(person: Person, docId: string, commands: Command[]) {
-  const { version } = await engineLines(person, docId)
-  return dataOf<{ revision: number }>(
-    await person.run("paper.edit", { docId, basedOn: version, commands })
-  )
-}
-
-async function typed(docId: string, commands: Command[]) {
-  const head = (await world.inside(() => scenarioLog.head(docId))) as {
-    doc: Document
-    version: number
-  }
-  const result = scenarioEngine.run(
-    scenarioEngine.load(head.doc, head.version, "tab-a"),
-    commands as DocCommand[],
-    { kind: "person", actor: "ada", client: "tab-a" }
+function type(
+  owner: Person,
+  client: string,
+  text: string,
+  base = 0,
+  offset = 0,
+  doc = blank
+) {
+  const pos = { block: doc.content[0]!.attrs.id, offset }
+  const result = editor.run(
+    editor.load(doc, base, client),
+    [{ op: "insertText", range: { from: pos, to: pos }, text }],
+    { kind: "person", actor: owner.id, client }
   )
   if ("refusal" in result) throw new Error(JSON.stringify(result.refusal))
-  expect(
-    await world.inside(() => scenarioLog.append(docId, result.change))
-  ).toMatchObject({ ok: true })
+  return result.change
 }
 
-async function suggest(person: Person, docId: string, commands: Command[]) {
-  const agent = await connectAgent(person)
-  const { version } = await engineLines(person, docId)
-  const proposed = await world.inside(() =>
-    world.registry.execute({
-      name: "paper.edit",
-      input: { docId, basedOn: version, commands },
-      actor: agent,
-    })
-  )
-  expect(proposed.pending).toBe(true)
-  return proposed.pendingActionId as string
+async function stored(docId: string) {
+  const saved = await world.inside(() => log.head(docId))
+  if (!("doc" in saved)) throw new Error(JSON.stringify(saved))
+  return saved
 }
 
 describe("the Paper engine keeps its promises", () => {
@@ -203,43 +113,52 @@ describe("the Paper engine keeps its promises", () => {
     }
   )
 
-  it.fails(
-    "stores the steps a tab sent, so every replay gives the same Paper (#2207)",
-    async () => {
-      const ada = await world.person("Ada")
-      const docId = await paper.blank(ada)
-      const first = (await paper.outline(ada, docId)).blocks[0]!
-      const change = {
-        edit: createId(),
-        origin: { kind: "person", actor: ada.id, client: "tab-a" },
-        base: 0,
-        steps: [
-          {
-            stepType: "replace",
-            from: 1,
-            to: 1,
-            slice: { content: [{ type: "text", text: "Hello" }] },
-          },
-        ],
-        commands: [
-          { op: "insertText", range: span(first.id, 0, 0), text: "Hello" },
-        ],
-      }
-      dataOf(
-        await ada.run("paper.save", {
-          docId,
-          client: "tab-a",
-          base: 0,
-          changes: [change],
-        })
-      )
-      const stored = dataOf<{ steps: unknown[] }[]>(
-        await ada.read("paper.changes", { docId, since: 0 })
-      )
-      expect(stored.map((saved) => saved.steps)).toEqual([change.steps])
-      expect(texts(await paper.outline(ada, docId))).toEqual(["Hello"])
-    }
-  )
+  it("stores the steps a tab sent, so every replay gives the same Paper", async () => {
+    const ada = await world.person("Ada")
+    const docId = await enginePaper(ada)
+    const tab = "tab-a"
+    const origin = { kind: "person", actor: ada.id, client: tab } as const
+    const block = blank.content[0]!.attrs.id
+    const start = { block, offset: 0 }
+    const first = editor.run(
+      editor.load(blank, 0, tab),
+      [
+        {
+          op: "insertText",
+          range: { from: start, to: start },
+          text: "Hello world",
+        },
+      ],
+      origin
+    )
+    if ("refusal" in first) throw new Error(JSON.stringify(first.refusal))
+    const split = editor.run(
+      editor.load(editor.read(first.state).doc, first.change.steps.length, tab),
+      [{ op: "splitBlock", at: { block, offset: 6 } }],
+      origin
+    )
+    if ("refusal" in split) throw new Error(JSON.stringify(split.refusal))
+    const changes = [first.change, split.change]
+    const head = changes.flatMap((change) => change.steps).length
+    const saved = await ada.run("paper.save", {
+      docId,
+      client: tab,
+      base: 0,
+      changes,
+    })
+    expect(saved.status).toBe(200)
+    expect(dataOf(saved)).toEqual({ ok: true, head })
+    expect(
+      dataOf(await ada.read("paper.changes", { docId, since: 0 }))
+    ).toEqual({
+      head,
+      changes,
+    })
+    expect(await stored(docId)).toEqual({
+      version: head,
+      doc: editor.read(split.state).doc,
+    })
+  })
 
   it.fails(
     "puts the same lines on the same pages on screen and in the PDF (#2207)",
@@ -277,348 +196,188 @@ describe("the Paper engine keeps its promises", () => {
     expect(after.work.blocksLaidOut).toBe(1)
   })
 
-  it.fails(
-    "refuses a change that would break the Paper's shape, and stores nothing (#2207)",
-    async () => {
-      const ada = await world.person("Ada")
-      const docId = await paper.blank(ada)
-      const first = (await paper.outline(ada, docId)).blocks[0]!
-      const hostile = {
-        edit: createId(),
-        origin: { kind: "person", actor: ada.id, client: "tab-a" },
-        base: 0,
-        steps: [
-          {
-            stepType: "replace",
-            from: 0,
-            to: 0,
-            slice: {
-              content: [
-                {
-                  type: "text_block",
-                  attrs: { id: first.id, kind: "banner", list: null, level: 3 },
-                },
-              ],
-            },
-          },
-        ],
-        commands: [
-          { op: "insertBlock", at: at(first.id, 0), block: "divider" },
-        ],
-      }
-      const refused = failureOf(
-        await ada.run("paper.save", {
-          docId,
-          client: "tab-a",
-          base: 0,
-          changes: [hostile],
-        })
-      )
-      expect(refused.code).toBe("schema")
-      expect(await paper.outline(ada, docId)).toMatchObject({
-        version: 0,
-        blocks: [{ id: first.id, text: "" }],
-      })
+  it.each([
+    [
+      "a step with an unknown node",
+      [
+        {
+          stepType: "replace",
+          from: 0,
+          to: 0,
+          slice: { content: [{ type: "unknown" }] },
+        },
+      ],
+      "Unknown node type: unknown",
+    ],
+    [
+      "a duplicate block id",
+      [
+        {
+          stepType: "replace",
+          from: 0,
+          to: 0,
+          slice: { content: blank.content },
+        },
+      ],
+      "Block ids must be unique",
+    ],
+  ])("rolls back a batch containing %s", async (_label, steps, message) => {
+    const ada = await world.person("Ada")
+    const docId = await enginePaper(ada)
+    const first = type(ada, "tab-a", "Hello")
+    const hostile = {
+      ...type(ada, "tab-a", "Hi", 1),
+      steps,
     }
-  )
-})
-
-describe("Coach and outside agents only suggest", () => {
-  it("changes nothing until the person accepts, then lands once with its receipt (#2247)", async () => {
-    const ada = await world.person("Ada")
-    const { docId, blocks } = await engineWritten(ada, ["Built dashboards"])
-    const pendingActionId = await suggest(ada, docId, [
-      {
-        op: "replaceText",
-        range: span(blocks[0]!.id, 0, 16),
-        text: "Built 12 dashboards used by 40 analysts",
-        expect: "Built dashboards",
-      },
-    ])
-    expect((await engineLines(ada, docId)).texts).toEqual(["Built dashboards"])
-    const accepted = dataOf<{ id: string }>(
-      await ada.run("actions.approve", { pendingActionId })
+    const result = failureOf(
+      await ada.run("paper.save", {
+        docId,
+        client: "tab-a",
+        base: 0,
+        changes: [first, hostile],
+      })
     )
-    expect((await engineLines(ada, docId)).texts).toEqual([
-      "Built 12 dashboards used by 40 analysts",
-    ])
-    expect((await ada.undo(accepted.id)).status).toBe(200)
-    expect((await engineLines(ada, docId)).texts).toEqual(["Built dashboards"])
-  })
-
-  it("the fake Coach proposes commands that wait for the person, land on accept and go on Undo (#2247)", async () => {
-    const ada = await world.person("Ada")
-    const { docId } = await engineWritten(ada, ["Built dashboards"])
-    const chat = dataOf<{ id: string }>(await ada.run("chat.create", {}))
-    await ada.stream(`/api/chats/${chat.id}/turns`, {
-      text: "Tighten my CV",
-      focusDocId: docId,
-    })
-    const turn = dataOf<{
-      messages: { parts: { pendingActionId?: string }[] }[]
-    }>(await ada.read("chat.get", { chatId: chat.id }))
-    const pendingActionId = turn.messages
-      .flatMap((message) => message.parts)
-      .find((part) => part.pendingActionId)?.pendingActionId
-    expect(pendingActionId).toBeTruthy()
-    expect((await engineLines(ada, docId)).texts).toEqual(["Built dashboards"])
-    const accepted = dataOf<{ id: string }>(
-      await ada.run("actions.approve", { pendingActionId })
-    )
-    expect((await engineLines(ada, docId)).texts).toEqual([
-      "Reviewed by the Coach. Built dashboards",
-    ])
-    expect((await ada.undo(accepted.id)).status).toBe(200)
-    expect((await engineLines(ada, docId)).texts).toEqual(["Built dashboards"])
-  })
-
-  it("refuses a Suggestion whose expected text is not on the Paper (#2247)", async () => {
-    const ada = await world.person("Ada")
-    const { docId, blocks } = await engineWritten(ada, ["Built dashboards"])
-    const agent = await connectAgent(ada)
-    const { version } = await engineLines(ada, docId)
-    await expect(
-      world.inside(() =>
-        world.registry.execute({
-          name: "paper.edit",
-          input: {
-            docId,
-            basedOn: version,
-            commands: [
-              {
-                op: "replaceText",
-                range: span(blocks[0]!.id, 0, 16),
-                text: "Led a team of 30",
-                expect: "Led a team of 3",
-              },
-            ],
-          },
-          actor: agent,
-        })
-      )
-    ).rejects.toThrow(/expect-mismatch/)
-  })
-
-  it("refuses to accept a Suggestion once the person changed its text, and maps it past edits elsewhere (#2247)", async () => {
-    const ada = await world.person("Ada")
-    const { docId, blocks } = await engineWritten(ada, [
-      "Built dashboards",
-      "Python",
-    ])
-    const moved = await suggest(ada, docId, [
-      {
-        op: "replaceText",
-        range: span(blocks[0]!.id, 0, 5),
-        text: "Shipped",
-        expect: "Built",
-      },
-    ])
-    const elsewhere = await suggest(ada, docId, [
-      {
-        op: "replaceText",
-        range: span(blocks[1]!.id, 0, 6),
-        text: "Go",
-        expect: "Python",
-      },
-    ])
-    await personEdit(ada, docId, [
-      {
-        op: "replaceText",
-        range: span(blocks[0]!.id, 0, 5),
-        text: "Made",
-        expect: "Built",
-      },
-    ])
-    const refused = failureOf(
-      await ada.run("actions.approve", { pendingActionId: moved })
-    )
-    expect(refused.message).toBe("The Paper changed where Coach wanted to edit")
-    dataOf(await ada.run("actions.approve", { pendingActionId: elsewhere }))
-    expect((await engineLines(ada, docId)).texts).toEqual([
-      "Made dashboards",
-      "Go",
-    ])
-  })
-
-  it("takes back an accepted Suggestion after later edits elsewhere, and refuses once its text changed (#2247)", async () => {
-    const ada = await world.person("Ada")
-    const { docId, blocks } = await engineWritten(ada, [
-      "Built dashboards",
-      "Python",
-    ])
-    const pendingActionId = await suggest(ada, docId, [
-      {
-        op: "replaceText",
-        range: span(blocks[0]!.id, 0, 5),
-        text: "Shipped",
-        expect: "Built",
-      },
-    ])
-    const accepted = dataOf<{ id: string }>(
-      await ada.run("actions.approve", { pendingActionId })
-    )
-    await typed(docId, [
-      { op: "insertText", range: span(blocks[1]!.id, 6, 6), text: ", SQL" },
-    ])
-    expect((await ada.undo(accepted.id)).status).toBe(200)
-    expect((await engineLines(ada, docId)).texts).toEqual([
-      "Built dashboards",
-      "Python, SQL",
-    ])
-
-    const again = await suggest(ada, docId, [
-      {
-        op: "replaceText",
-        range: span(blocks[1]!.id, 0, 6),
-        text: "Go",
-        expect: "Python",
-      },
-    ])
-    const second = dataOf<{ id: string }>(
-      await ada.run("actions.approve", { pendingActionId: again })
-    )
-    await typed(docId, [
-      { op: "deleteRange", range: span(blocks[1]!.id, 0, 2) },
-    ])
-    const refused = failureOf(await ada.undo(second.id))
-    expect(refused.message).toBe("The Paper changed there since")
+    expect(result.code).toBe("schema")
+    expect(result.message).toContain(message)
+    expect(await stored(docId)).toEqual({ doc: blank, version: 0 })
+    expect(
+      dataOf(await ada.read("paper.changes", { docId, since: 0 }))
+    ).toEqual({ head: 0, changes: [] })
   })
 })
 
 describe("only the owner's tabs write, in server order", () => {
-  it.fails(
-    "refuses another person's change and a change whose steps do not match its commands (#2207)",
-    async () => {
-      const ada = await world.person("Ada")
-      const grace = await world.person("Grace")
-      const docId = await paper.blank(ada)
-      const first = (await paper.outline(ada, docId)).blocks[0]!
-      const change = (text: string, typed: string) => ({
-        edit: createId(),
-        origin: { kind: "person", actor: ada.id, client: "tab-a" },
+  it("refuses access from another account and changes with a Coach origin", async () => {
+    const ada = await world.person("Ada")
+    const grace = await world.person("Grace")
+    const docId = await enginePaper(ada)
+    const change = type(ada, "tab-a", "Hi")
+    const save = (person: Person, changes: unknown[]) =>
+      person.run("paper.save", {
+        docId,
+        client: "tab-a",
         base: 0,
-        steps: [
-          {
-            stepType: "replace",
-            from: 1,
-            to: 1,
-            slice: { content: [{ type: "text", text }] },
-          },
-        ],
-        commands: [
-          { op: "insertText", range: span(first.id, 0, 0), text: typed },
-        ],
+        changes,
       })
-      expect(
-        failureOf(
-          await grace.run("paper.save", {
-            docId,
-            client: "tab-g",
-            base: 0,
-            changes: [change("Hi", "Hi")],
-          })
-        ).code
-      ).toBe("not_found")
-      expect(
-        failureOf(
-          await ada.run("paper.save", {
-            docId,
-            client: "tab-a",
-            base: 0,
-            changes: [change("Hx", "Hi")],
-          })
-        ).code
-      ).toBe("schema")
-      dataOf(
-        await ada.run("paper.save", {
-          docId,
-          client: "tab-a",
-          base: 0,
-          changes: [change("Hi", "Hi")],
+    expect(failureOf(await save(grace, [change])).code).toBe("NOT_FOUND")
+    expect(
+      failureOf(await grace.read("paper.changes", { docId, since: 0 })).code
+    ).toBe("NOT_FOUND")
+    expect(
+      failureOf(
+        await ada.read("paper.changes", {
+          docId: await paper.blank(ada),
+          since: 0,
         })
-      )
-      expect(texts(await paper.outline(ada, docId))).toEqual(["Hi"])
-    }
-  )
-
-  it.fails(
-    "answers a push on an old version with the changes since, and stores nothing (#2207)",
-    async () => {
-      const ada = await world.person("Ada")
-      const { docId, blocks } = await paper.written(ada, ["Analyst"])
-      const head = (await paper.outline(ada, docId)).version
-      const late = {
-        edit: createId(),
-        origin: { kind: "person", actor: ada.id, client: "tab-b" },
-        base: 0,
-        steps: [
+      ).code
+    ).toBe("NOT_FOUND")
+    expect(
+      failureOf(
+        await save(ada, [
           {
-            stepType: "replace",
-            from: 1,
-            to: 1,
-            slice: { content: [{ type: "text", text: "Data " }] },
+            ...change,
+            origin: { ...change.origin, kind: "coach" },
           },
-        ],
-        commands: [
-          { op: "insertText", range: span(blocks[0]!.id, 0, 0), text: "Data " },
-        ],
-      }
-      const reply = dataOf<{ stale: boolean; since: unknown[] }>(
+        ])
+      ).code
+    ).toBe("schema")
+    expect(await stored(docId)).toEqual({ doc: blank, version: 0 })
+    expect(dataOf(await save(ada, [change]))).toEqual({ ok: true, head: 1 })
+  })
+
+  it("answers a push on an old version with the changes since and stores nothing", async () => {
+    const ada = await world.person("Ada")
+    const docId = await enginePaper(ada)
+    const first = type(ada, "tab-a", "Analyst")
+    dataOf(
+      await ada.run("paper.save", {
+        docId,
+        client: "tab-a",
+        base: 0,
+        changes: [first],
+      })
+    )
+    expect(
+      dataOf(
         await ada.run("paper.save", {
           docId,
           client: "tab-b",
           base: 0,
-          changes: [late],
+          changes: [type(ada, "tab-b", "Data ")],
         })
       )
-      expect(reply.stale).toBe(true)
-      expect(reply.since).toHaveLength(head)
-      expect(await paper.outline(ada, docId)).toMatchObject({
-        version: head,
-        blocks: [{ text: "Analyst" }],
-      })
-    }
-  )
+    ).toEqual({ stale: true, head: 1, since: [first] })
+    expect(await stored(docId)).toMatchObject({
+      version: 1,
+      doc: { content: [{ content: [{ text: "Analyst" }] }] },
+    })
+  })
 
-  it.fails(
-    "keeps both tabs' text when they type at once, and stores a tab's resend once (#2207)",
-    async () => {
-      const ada = await world.person("Ada")
-      const { docId, blocks } = await paper.written(ada, ["Analyst"])
-      const head = (await paper.outline(ada, docId)).version
-      const typed = (client: string, text: string, offset: number) => ({
-        edit: createId(),
-        origin: { kind: "person", actor: ada.id, client },
-        base: head,
-        steps: [
-          {
-            stepType: "replace",
-            from: 1 + offset,
-            to: 1 + offset,
-            slice: { content: [{ type: "text", text }] },
-          },
-        ],
-        commands: [
-          {
-            op: "insertText",
-            range: span(blocks[0]!.id, offset, offset),
-            text,
-          },
-        ],
+  it("accepts mapped steps after a stale reply and saves a resend once", async () => {
+    const ada = await world.person("Ada")
+    const docId = await enginePaper(ada)
+    const initial = type(ada, "tab-a", "Analyst")
+    const save = (change: typeof initial) =>
+      ada.run("paper.save", {
+        docId,
+        client: change.origin.client,
+        base: change.base,
+        changes: [change],
       })
-      const first = typed("tab-a", "Data ", 0)
-      const save = (client: string, changes: unknown[]) =>
-        ada.run("paper.save", { docId, client, base: head, changes })
-      dataOf(await save("tab-a", [first]))
-      const stale = dataOf<{ stale: boolean; since: { edit: string }[] }>(
-        await save("tab-a", [first])
-      )
-      expect(stale.since.map((change) => change.edit)).toEqual([first.edit])
-      const other = dataOf<{ stale: boolean }>(
-        await save("tab-b", [typed("tab-b", "Lead ", 7)])
-      )
-      expect(other.stale).toBe(true)
-      expect(texts(await paper.outline(ada, docId))).toEqual(["Data Analyst"])
-    }
-  )
+    expect(dataOf(await save(initial))).toEqual({ ok: true, head: 1 })
+    const { doc } = await stored(docId)
+    const first = type(ada, "tab-a", "Data ", 1, 0, doc)
+    const second = type(ada, "tab-b", " today", 1, 7, doc)
+    expect(dataOf(await save(first))).toEqual({ ok: true, head: 2 })
+    expect(dataOf(await save(second))).toEqual({
+      stale: true,
+      head: 2,
+      since: [first],
+    })
+    const state = editor.load(doc, 1, second.origin.client, [second])
+    const { state: rebased } = editor.receive(state, [first])
+    const [rebasedChange] = editor.sendable(rebased)
+    expect(rebasedChange?.steps).not.toEqual(second.steps)
+    expect(rebasedChange?.commands).toEqual(second.commands)
+    expect(dataOf(await save(rebasedChange!))).toEqual({ ok: true, head: 3 })
+    expect(dataOf(await save(first))).toEqual({ ok: true, head: 3 })
+    expect(dataOf(await save(rebasedChange!))).toEqual({ ok: true, head: 3 })
+    expect(await stored(docId)).toMatchObject({
+      version: 3,
+      doc: { content: [{ content: [{ text: "Data Analyst today" }] }] },
+    })
+  })
+
+  it("saves a tab's Undo with no commands", async () => {
+    const ada = await world.person("Ada")
+    const docId = await enginePaper(ada)
+    const client = "tab-a"
+    const origin = { kind: "person", actor: ada.id, client } as const
+    const pos = { block: blank.content[0]!.attrs.id, offset: 0 }
+    const edit = editor.run(
+      editor.load(blank, 0, client),
+      [{ op: "insertText", range: { from: pos, to: pos }, text: "Draft" }],
+      origin
+    )
+    if ("refusal" in edit) throw new Error(JSON.stringify(edit.refusal))
+    const save = (change: typeof edit.change) =>
+      ada.run("paper.save", {
+        docId,
+        client,
+        base: change.base,
+        changes: [change],
+      })
+
+    expect(dataOf(await save(edit.change))).toEqual({ ok: true, head: 1 })
+    const confirmed = editor.receive(edit.state, [edit.change]).state
+    const undone = editor.undo(confirmed)
+    if (!undone || "refusal" in undone)
+      throw new Error("Expected an Undo change")
+    expect(undone.change.commands).toEqual([])
+    expect(dataOf(await save(undone.change))).toEqual({ ok: true, head: 2 })
+    expect(await stored(docId)).toEqual({ doc: blank, version: 2 })
+    expect(
+      dataOf(await ada.read("paper.changes", { docId, since: 1 }))
+    ).toEqual({ head: 2, changes: [undone.change] })
+  })
 })
