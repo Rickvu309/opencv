@@ -211,6 +211,7 @@ it("joins the space and punctuation after a composed word and a bold toggle to i
 
 it("keeps the marks of a deleted word for the next letters typed in its place", () => {
   const s = session()
+  s.select(2)
   s.run([
     { op: "setMark", range: s.range(2), mark: { type: "bold" }, on: true },
   ])
@@ -222,5 +223,23 @@ it("keeps the marks of a deleted word for the next letters typed in its place", 
   expect(runs.type === "text_block" ? runs.content : []).toEqual([
     { type: "text", text: "Ti" },
     { type: "text", text: "z", marks: [{ type: "bold" }] },
+  ])
+})
+
+it("keeps a replacement behind the caret in the replaced word's marks after bold is turned off", () => {
+  const s = session()
+  s.run([
+    { op: "setMark", range: s.range(0, 2), mark: { type: "bold" }, on: true },
+  ])
+  s.run([
+    { op: "setMark", range: s.range(2), mark: { type: "bold" }, on: false },
+  ])
+  s.run([{ op: "insertText", range: s.range(1, 2), text: "ì" }], person, {
+    kind: "typing",
+    caret: s.at(2),
+  })
+  const runs = s.doc().content[0]!
+  expect(runs.type === "text_block" ? runs.content : []).toEqual([
+    { type: "text", text: "Tì", marks: [{ type: "bold" }] },
   ])
 })

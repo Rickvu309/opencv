@@ -26,7 +26,8 @@ const rangeText = (doc: Node, from: number, to: number) =>
   doc.textBetween(from, to, "\n", "\n")
 
 function marksAt(tr: Transaction, from: number, to: number) {
-  if (tr.storedMarks) return tr.storedMarks
+  if (tr.storedMarks && from === to && from === tr.selection.head)
+    return tr.storedMarks
   const $from = tr.doc.resolve(from)
   if (from === to) return $from.marks()
   return $from.marksAcross(tr.doc.resolve(to)) ?? $from.marks()

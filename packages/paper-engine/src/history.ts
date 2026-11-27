@@ -48,6 +48,7 @@ export function groupHistory({
   if (
     person &&
     !tr.docChanged &&
+    typeof previous?.composition === "string" &&
     commands.every((each) => each.op === "setMark")
   )
     return previous
