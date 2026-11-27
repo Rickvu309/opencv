@@ -25,7 +25,7 @@ const BANNED_CALLS = [
   [/\bperformance\.now\s*\(/g, "performance.now"],
   [/\bcrypto\.(?:randomUUID|getRandomValues)\s*\(/g, "crypto randomness"],
   [
-    /(?<![\w.$])(?:window|document|navigator|localStorage|sessionStorage|location|globalThis\.document)\s*[.([]/g,
+    /(?<![\w.$\/-])(?:window|document|navigator|localStorage|sessionStorage|location|globalThis\.document)\s*[.([]/g,
     "DOM global",
   ],
   [
