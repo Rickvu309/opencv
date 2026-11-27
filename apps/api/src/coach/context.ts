@@ -32,6 +32,23 @@ function unreadableForCoach(error: unknown) {
   )
 }
 
+type PaperOutline = ReturnType<
+  (typeof catalog)["paper.outline"]["publicResult"]["parse"]
+>
+
+function engineTwoFocus(docId: string, outline: PaperOutline): CoachFocusDoc {
+  const focus: CoachFocusDoc = {
+    id: docId,
+    name: outline.name,
+    kind: outline.kind,
+    status: outline.status,
+    outline: outline.outline,
+    revision: outline.revision,
+    engine: 2,
+  }
+  return focus
+}
+
 async function paperFocus(
   registry: Registry,
   actor: Actor,
@@ -45,6 +62,7 @@ async function paperFocus(
       actor
     )
   )
+  if (outline.engine === 2) return engineTwoFocus(docId, outline)
   const nativeBasis = nativeBasisSchema.parse(outline.nativeBasis)
   if (nativeBasis.revision !== outline.revision)
     throw new Error("Paper outline basis does not match its revision")
