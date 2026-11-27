@@ -23,6 +23,8 @@ export function measureInPage(limit) {
     'button,a[href],input:not([type="hidden"]):not([type="file"]),select,textarea,[role="button"],[role="link"],[role="tab"],[role="menuitem"],[role="checkbox"],[role="switch"],[role="radio"],[role="option"],[role="combobox"]'
   const MODAL =
     '[role="dialog"][aria-modal="true"],[role="alertdialog"],dialog[open]'
+  const OPEN_MENU =
+    '[role="menu"],[role="listbox"],[data-slot="dropdown-menu-content"]'
   const width = innerWidth
   const height = innerHeight
   const visuallyHidden = (style) =>
@@ -154,6 +156,7 @@ export function measureInPage(limit) {
     if (clip === "scroll") continue
     let hit = false
     let coveredBy
+    let underMenu = false
     if (!inside) coveredBy = "outside the window"
     else if (!clip) {
       const top = document.elementFromPoint(x, y)
@@ -163,10 +166,16 @@ export function measureInPage(limit) {
           element.contains(top) ||
           [...(element.labels ?? [])].some((label) => label.contains(top)))
       )
-      if (!hit)
+      if (!hit) {
+        const menu = top?.closest(OPEN_MENU) ?? top?.querySelector(OPEN_MENU)
+        const menuOpen = [...document.querySelectorAll(OPEN_MENU)].some(shown)
+        underMenu = menu
+          ? shown(menu)
+          : menuOpen && Boolean(top?.closest('[role="presentation"]'))
         coveredBy = top
           ? name(top.closest("[role],[data-slot],button,a,[id]") ?? top)
           : "nothing"
+      }
     }
     boxes.push({
       kind: "control",
@@ -174,6 +183,7 @@ export function measureInPage(limit) {
       ...box,
       pinned: isPinned,
       hit,
+      underMenu,
       ...(coveredBy ? { coveredBy } : {}),
       ...(clip ? { clippedBy: clip } : {}),
       ...(offSide

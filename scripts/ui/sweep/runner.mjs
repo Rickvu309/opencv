@@ -10,6 +10,9 @@ export const screenRepro = (id, size) =>
 
 const joined = (problems) => (problems.length ? problems.join("; ") : undefined)
 
+export const clearUnderOpenMenu = (box) =>
+  box.kind === "control" && box.underMenu ? { ...box, hit: true } : box
+
 export async function sweepScreen(world, screen, grid) {
   const started = world.now()
   const home = sizeLabel(HOME_SIZE)
@@ -52,9 +55,11 @@ export async function sweepScreen(world, screen, grid) {
       const size = sizeLabel(viewport)
       await session.resize(viewport)
       const { boxes, modalOpen } = await session.measure()
-      const problems = fitProblems(viewport, boxes, modalOpen).map(
-        (problem) => `does not fit: ${problem}`
-      )
+      const problems = fitProblems(
+        viewport,
+        boxes.map(clearUnderOpenMenu),
+        modalOpen
+      ).map((problem) => `does not fit: ${problem}`)
       cases.push(
         base(size, {
           ok: problems.length === 0,
