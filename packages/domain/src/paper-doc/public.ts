@@ -7,3 +7,44 @@ export * from "./paper-start.js"
 export * from "./starting-lines.js"
 export * from "./cv-template-lines.js"
 export * from "./paper-preview.js"
+export {
+  blockIdSchema,
+  blockSchema,
+  documentSchema,
+  markSchema,
+  pageSetupSchema,
+  runSchema,
+  type Block,
+  type BlockId,
+  type Document,
+  type Mark,
+  type PageSetup,
+  type Run,
+} from "./engine-document.js"
+export {
+  agentCommandSchema,
+  docCommandSchema,
+  posSchema,
+  rangeSchema,
+  selectionCommandSchema,
+  selectionSchema,
+  type AgentCommand,
+  type DocCommand,
+  type Pos,
+  type Range,
+  type Selection,
+  type SelectionCommand,
+} from "./engine-command.js"
+export {
+  changeSchema,
+  editIdSchema,
+  originSchema,
+  refusalSchema,
+  stepJsonSchema,
+  type Change,
+  type EditId,
+  type Origin,
+  type Refusal,
+  type StepJSON,
+} from "./engine-change.js"
+export * as paperEngineBlank from "./engine-blank.js"
