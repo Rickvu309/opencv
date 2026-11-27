@@ -1,0 +1,707 @@
+{
+  "start": {
+    "type": "doc",
+    "attrs": {
+      "schema": 1,
+      "template": "classic",
+      "page": {
+        "size": "A4",
+        "orientation": "portrait",
+        "marginsMpt": {
+          "top": 72000,
+          "right": 72000,
+          "bottom": 72000,
+          "left": 72000
+        }
+      }
+    },
+    "content": [
+      {
+        "type": "text_block",
+        "attrs": {
+          "id": "paragraph-1",
+          "kind": "paragraph",
+          "list": null,
+          "level": 0,
+          "align": "left",
+          "lineSpacing": null,
+          "keepWithNext": null
+        }
+      }
+    ]
+  },
+  "changes": [
+    {
+      "edit": "fx-1",
+      "origin": {
+        "kind": "person",
+        "actor": "user-1",
+        "client": "tab-1"
+      },
+      "base": 0,
+      "steps": [
+        {
+          "stepType": "replace",
+          "from": 1,
+          "to": 1,
+          "slice": {
+            "content": [
+              {
+                "type": "text",
+                "text": "Ada Lovelace"
+              }
+            ]
+          }
+        }
+      ],
+      "inverse": [
+        {
+          "stepType": "replace",
+          "from": 1,
+          "to": 13
+        }
+      ],
+      "commands": [
+        {
+          "op": "insertText",
+          "range": {
+            "from": {
+              "block": "paragraph-1",
+              "offset": 0
+            },
+            "to": {
+              "block": "paragraph-1",
+              "offset": 0
+            }
+          },
+          "text": "Ada Lovelace"
+        }
+      ]
+    },
+    {
+      "edit": "fx-2",
+      "origin": {
+        "kind": "person",
+        "actor": "user-1",
+        "client": "tab-1"
+      },
+      "base": 1,
+      "steps": [
+        {
+          "stepType": "addMark",
+          "mark": {
+            "type": "bold"
+          },
+          "from": 1,
+          "to": 4
+        }
+      ],
+      "inverse": [
+        {
+          "stepType": "removeMark",
+          "mark": {
+            "type": "bold"
+          },
+          "from": 1,
+          "to": 4
+        }
+      ],
+      "commands": [
+        {
+          "op": "setMark",
+          "range": {
+            "from": {
+              "block": "paragraph-1",
+              "offset": 0
+            },
+            "to": {
+              "block": "paragraph-1",
+              "offset": 3
+            }
+          },
+          "mark": {
+            "type": "bold"
+          },
+          "on": true
+        }
+      ]
+    },
+    {
+      "edit": "fx-4",
+      "origin": {
+        "kind": "person",
+        "actor": "user-1",
+        "client": "tab-1"
+      },
+      "base": 2,
+      "steps": [
+        {
+          "stepType": "replace",
+          "from": 13,
+          "to": 13,
+          "slice": {
+            "content": [
+              {
+                "type": "text_block",
+                "attrs": {
+                  "id": "paragraph-1",
+                  "kind": "paragraph",
+                  "list": null,
+                  "level": 0,
+                  "align": "left",
+                  "lineSpacing": null,
+                  "keepWithNext": null,
+                  "rightTabMpt": null
+                }
+              },
+              {
+                "type": "text_block",
+                "attrs": {
+                  "id": "fx-3",
+                  "kind": "paragraph",
+                  "list": null,
+                  "level": 0,
+                  "align": "left",
+                  "lineSpacing": null,
+                  "keepWithNext": null,
+                  "rightTabMpt": null
+                }
+              }
+            ],
+            "openStart": 1,
+            "openEnd": 1
+          },
+          "structure": true
+        }
+      ],
+      "inverse": [
+        {
+          "stepType": "replace",
+          "from": 13,
+          "to": 15
+        }
+      ],
+      "commands": [
+        {
+          "op": "splitBlock",
+          "at": {
+            "block": "paragraph-1",
+            "offset": 12
+          }
+        }
+      ]
+    },
+    {
+      "edit": "fx-5",
+      "origin": {
+        "kind": "person",
+        "actor": "user-1",
+        "client": "tab-1"
+      },
+      "base": 3,
+      "steps": [
+        {
+          "stepType": "replace",
+          "from": 15,
+          "to": 15,
+          "slice": {
+            "content": [
+              {
+                "type": "text",
+                "text": "Analytical Engine notes"
+              }
+            ]
+          }
+        }
+      ],
+      "inverse": [
+        {
+          "stepType": "replace",
+          "from": 15,
+          "to": 38
+        }
+      ],
+      "commands": [
+        {
+          "op": "insertText",
+          "range": {
+            "from": {
+              "block": "fx-3",
+              "offset": 0
+            },
+            "to": {
+              "block": "fx-3",
+              "offset": 0
+            }
+          },
+          "text": "Analytical Engine notes"
+        }
+      ]
+    },
+    {
+      "edit": "fx-6",
+      "origin": {
+        "kind": "person",
+        "actor": "user-1",
+        "client": "tab-1"
+      },
+      "base": 4,
+      "steps": [
+        {
+          "stepType": "attr",
+          "pos": 14,
+          "attr": "list",
+          "value": "bullet"
+        }
+      ],
+      "inverse": [
+        {
+          "stepType": "attr",
+          "pos": 14,
+          "attr": "list",
+          "value": null
+        }
+      ],
+      "commands": [
+        {
+          "op": "setList",
+          "blocks": ["fx-3"],
+          "list": "bullet"
+        }
+      ]
+    },
+    {
+      "edit": "fx-7",
+      "origin": {
+        "kind": "person",
+        "actor": "user-1",
+        "client": "tab-1"
+      },
+      "base": 5,
+      "steps": [
+        {
+          "stepType": "replace",
+          "from": 38,
+          "to": 38,
+          "slice": {
+            "content": [
+              {
+                "type": "text",
+                "text": " Tiếng Việt"
+              }
+            ]
+          }
+        }
+      ],
+      "inverse": [
+        {
+          "stepType": "replace",
+          "from": 38,
+          "to": 49
+        }
+      ],
+      "commands": [
+        {
+          "op": "insertText",
+          "range": {
+            "from": {
+              "block": "fx-3",
+              "offset": 23
+            },
+            "to": {
+              "block": "fx-3",
+              "offset": 23
+            }
+          },
+          "text": " Tiếng Việt"
+        }
+      ]
+    },
+    {
+      "edit": "fx-8",
+      "origin": {
+        "kind": "person",
+        "actor": "user-1",
+        "client": "tab-1"
+      },
+      "base": 6,
+      "steps": [
+        {
+          "stepType": "attr",
+          "pos": 0,
+          "attr": "align",
+          "value": "center"
+        }
+      ],
+      "inverse": [
+        {
+          "stepType": "attr",
+          "pos": 0,
+          "attr": "align",
+          "value": "left"
+        }
+      ],
+      "commands": [
+        {
+          "op": "setAlign",
+          "blocks": ["paragraph-1"],
+          "align": "center"
+        }
+      ]
+    },
+    {
+      "edit": "fx-9",
+      "origin": {
+        "kind": "person",
+        "actor": "user-1",
+        "client": "tab-1"
+      },
+      "base": 7,
+      "steps": [
+        {
+          "stepType": "addMark",
+          "mark": {
+            "type": "italic"
+          },
+          "from": 15,
+          "to": 25
+        }
+      ],
+      "inverse": [
+        {
+          "stepType": "removeMark",
+          "mark": {
+            "type": "italic"
+          },
+          "from": 15,
+          "to": 25
+        }
+      ],
+      "commands": [
+        {
+          "op": "setMark",
+          "range": {
+            "from": {
+              "block": "fx-3",
+              "offset": 0
+            },
+            "to": {
+              "block": "fx-3",
+              "offset": 10
+            }
+          },
+          "mark": {
+            "type": "italic"
+          },
+          "on": true
+        }
+      ]
+    },
+    {
+      "edit": "fx-10",
+      "origin": {
+        "kind": "person",
+        "actor": "user-1",
+        "client": "tab-1"
+      },
+      "base": 8,
+      "steps": [
+        {
+          "stepType": "replace",
+          "from": 1,
+          "to": 5
+        }
+      ],
+      "inverse": [
+        {
+          "stepType": "replace",
+          "from": 1,
+          "to": 1,
+          "slice": {
+            "content": [
+              {
+                "type": "text",
+                "marks": [
+                  {
+                    "type": "bold"
+                  }
+                ],
+                "text": "Ada"
+              },
+              {
+                "type": "text",
+                "text": " "
+              }
+            ]
+          }
+        }
+      ],
+      "commands": [
+        {
+          "op": "deleteRange",
+          "range": {
+            "from": {
+              "block": "paragraph-1",
+              "offset": 0
+            },
+            "to": {
+              "block": "paragraph-1",
+              "offset": 4
+            }
+          }
+        }
+      ]
+    },
+    {
+      "edit": "fx-12",
+      "origin": {
+        "kind": "person",
+        "actor": "user-1",
+        "client": "tab-1"
+      },
+      "base": 9,
+      "steps": [
+        {
+          "stepType": "replace",
+          "from": 10,
+          "to": 11,
+          "slice": {
+            "content": [
+              {
+                "type": "image",
+                "attrs": {
+                  "id": "fx-11",
+                  "fileId": "00000000-0000-4000-8000-0000000000f2",
+                  "widthMpt": 36000,
+                  "heightMpt": 36000,
+                  "align": "left",
+                  "alt": ""
+                }
+              },
+              {
+                "type": "text_block",
+                "attrs": {
+                  "id": "fx-3",
+                  "kind": "paragraph",
+                  "list": "bullet",
+                  "level": 0,
+                  "align": "left",
+                  "lineSpacing": null,
+                  "keepWithNext": null,
+                  "rightTabMpt": null
+                }
+              }
+            ],
+            "openEnd": 1
+          }
+        }
+      ],
+      "inverse": [
+        {
+          "stepType": "replace",
+          "from": 10,
+          "to": 12,
+          "slice": {
+            "content": [
+              {
+                "type": "text_block",
+                "attrs": {
+                  "id": "fx-3",
+                  "kind": "paragraph",
+                  "list": "bullet",
+                  "level": 0,
+                  "align": "left",
+                  "lineSpacing": null,
+                  "keepWithNext": null,
+                  "rightTabMpt": null
+                }
+              }
+            ],
+            "openEnd": 1
+          }
+        }
+      ],
+      "commands": [
+        {
+          "op": "insertImage",
+          "at": {
+            "block": "fx-3",
+            "offset": 0
+          },
+          "fileId": "00000000-0000-4000-8000-0000000000f2",
+          "widthMpt": 36000,
+          "heightMpt": 36000
+        }
+      ]
+    },
+    {
+      "edit": "fx-13",
+      "origin": {
+        "kind": "person",
+        "actor": "user-1",
+        "client": "tab-1"
+      },
+      "base": 10,
+      "steps": [
+        {
+          "stepType": "replace",
+          "from": 9,
+          "to": 9,
+          "slice": {
+            "content": [
+              {
+                "type": "text",
+                "text": " first"
+              }
+            ]
+          }
+        }
+      ],
+      "inverse": [
+        {
+          "stepType": "replace",
+          "from": 9,
+          "to": 15
+        }
+      ],
+      "commands": [
+        {
+          "op": "insertText",
+          "range": {
+            "from": {
+              "block": "paragraph-1",
+              "offset": 8
+            },
+            "to": {
+              "block": "paragraph-1",
+              "offset": 8
+            }
+          },
+          "text": " first"
+        }
+      ]
+    },
+    {
+      "edit": "fx-14",
+      "origin": {
+        "kind": "person",
+        "actor": "user-1",
+        "client": "tab-1"
+      },
+      "base": 11,
+      "steps": [
+        {
+          "stepType": "replace",
+          "from": 15,
+          "to": 15,
+          "slice": {
+            "content": [
+              {
+                "type": "text",
+                "text": " programmer"
+              }
+            ]
+          }
+        }
+      ],
+      "inverse": [
+        {
+          "stepType": "replace",
+          "from": 15,
+          "to": 26
+        }
+      ],
+      "commands": [
+        {
+          "op": "insertText",
+          "range": {
+            "from": {
+              "block": "paragraph-1",
+              "offset": 14
+            },
+            "to": {
+              "block": "paragraph-1",
+              "offset": 14
+            }
+          },
+          "text": " programmer"
+        }
+      ]
+    }
+  ],
+  "snapshot": {
+    "type": "doc",
+    "attrs": {
+      "schema": 1,
+      "page": {
+        "size": "A4",
+        "orientation": "portrait",
+        "marginsMpt": {
+          "top": 72000,
+          "right": 72000,
+          "bottom": 72000,
+          "left": 72000
+        }
+      },
+      "template": "classic"
+    },
+    "content": [
+      {
+        "type": "text_block",
+        "attrs": {
+          "id": "paragraph-1",
+          "kind": "paragraph",
+          "list": null,
+          "level": 0,
+          "align": "center",
+          "lineSpacing": null,
+          "keepWithNext": null
+        },
+        "content": [
+          {
+            "type": "text",
+            "text": "Lovelace first programmer"
+          }
+        ]
+      },
+      {
+        "type": "image",
+        "attrs": {
+          "id": "fx-11",
+          "fileId": "00000000-0000-4000-8000-0000000000f2",
+          "widthMpt": 36000,
+          "heightMpt": 36000,
+          "align": "left",
+          "alt": ""
+        }
+      },
+      {
+        "type": "text_block",
+        "attrs": {
+          "id": "fx-3",
+          "kind": "paragraph",
+          "list": "bullet",
+          "level": 0,
+          "align": "left",
+          "lineSpacing": null,
+          "keepWithNext": null
+        },
+        "content": [
+          {
+            "type": "text",
+            "marks": [
+              {
+                "type": "italic"
+              }
+            ],
+            "text": "Analytical"
+          },
+          {
+            "type": "text",
+            "text": " Engine notes Tiếng Việt"
+          }
+        ]
+      }
+    ]
+  }
+}

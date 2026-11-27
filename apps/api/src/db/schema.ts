@@ -17,6 +17,7 @@ import {
   jsonb,
   pgSchema,
   primaryKey,
+  smallint,
   text,
   uniqueIndex,
   uuid,
@@ -115,6 +116,11 @@ export const paperDocs = opencvApp.table(
     crdtBase: bytea("crdt_base"),
     crdtBaseSeq: integer("crdt_base_seq"),
     crdtDocument: jsonb("crdt_document").$type<Record<string, unknown>>(),
+    engine: smallint("engine").notNull().default(1),
+    headVersion: integer("head_version").notNull().default(0),
+    snapshot: jsonb("snapshot").$type<Record<string, unknown>>(),
+    snapshotVersion: integer("snapshot_version").notNull().default(0),
+    firstPage: jsonb("first_page").$type<Record<string, unknown>>(),
     createdAt: timestamptz("created_at").notNull().defaultNow(),
     updatedAt: timestamptz("updated_at").notNull().defaultNow(),
   },
@@ -146,6 +152,39 @@ export const paperDocUpdates = opencvApp.table(
     createdAt: timestamptz("created_at").notNull().defaultNow(),
   },
   (table) => [primaryKey({ columns: [table.paperId, table.seq] })]
+)
+
+export const paperChanges = opencvApp.table(
+  "paper_changes",
+  {
+    docId: uuid("doc_id")
+      .notNull()
+      .references(() => paperDocs.id, { onDelete: "cascade" }),
+    fromVersion: integer("from_version").notNull(),
+    toVersion: integer("to_version").notNull(),
+    editId: text("edit_id").notNull(),
+    clientId: text("client_id").notNull(),
+    originKind: text("origin_kind").notNull(),
+    originActor: text("origin_actor").notNull(),
+    proposalId: text("proposal_id"),
+    activityId: uuid("activity_id"),
+    steps: jsonb("steps").$type<Record<string, unknown>[]>().notNull(),
+    inverse: jsonb("inverse").$type<Record<string, unknown>[]>().notNull(),
+    commands: jsonb("commands").$type<Record<string, unknown>[]>().notNull(),
+    releasedFileIds: text("released_file_ids")
+      .array()
+      .notNull()
+      .default(sql`ARRAY[]::text[]`),
+    createdAt: timestamptz("created_at").notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.docId, table.fromVersion] }),
+    uniqueIndex("paper_changes_doc_edit_uidx").on(table.docId, table.editId),
+    check(
+      "paper_changes_versions_ascend",
+      sql`${table.toVersion} > ${table.fromVersion}`
+    ),
+  ]
 )
 
 export const paperShares = opencvApp.table("paper_shares", {

@@ -37,6 +37,7 @@ const productTables = [
   "oauth_consent",
   "oauth_refresh_token",
   "oauth_resource",
+  "paper_changes",
   "paper_doc_updates",
   "paper_docs",
   "paper_shares",
@@ -250,6 +251,75 @@ describe("opencv_app migrations", () => {
           )
         ).rows
       ).toEqual([{ is_favorite: false }])
+    } finally {
+      await client.close()
+    }
+  })
+
+  it("adds the Paper change log beside existing papers without changing them", async () => {
+    const client = new PGlite()
+    const db = drizzle({ client })
+    try {
+      const migrations = readMigrationFiles(migrationConfig())
+      const logAt = migrations.findIndex((migration) =>
+        migration.sql.some((statement) =>
+          statement.includes('CREATE TABLE "opencv_app"."paper_changes"')
+        )
+      )
+      expect(logAt).toBeGreaterThan(0)
+      const previous = migrations.slice(0, logAt)
+      for (const migration of previous) {
+        for (const statement of migration.sql) await client.exec(statement)
+      }
+      const last = previous.at(-1)!
+      await client.exec(`
+        create table "opencv_app"."migrations" (
+          id serial primary key, hash text not null, created_at bigint
+        );
+        insert into "opencv_app"."user" (id, name, email)
+          values ('log-upgrade', 'Ada', 'log-upgrade@example.com');
+        insert into "opencv_app"."paper_docs"
+          (id, user_id, name, kind, crdt_document, content_version, updated_at)
+          values ('00000000-0000-4000-8000-000000002228', 'log-upgrade',
+            'Existing CV', 'cv', '{"version":4,"schemaRevision":2,"kind":"cv"}',
+            7, '2026-01-01T00:00:00Z');
+      `)
+      await db.execute(sql`
+        insert into "opencv_app"."migrations" (hash, created_at)
+        values (${last.hash}, ${last.folderMillis})
+      `)
+      const columns =
+        "name, kind, crdt_document, content_version, updated_at, is_favorite"
+      const before = await client.query(
+        `select ${columns} from "opencv_app"."paper_docs"`
+      )
+      await runMigrations(db as unknown as AppDatabase)
+      const after = await client.query(
+        `select ${columns}, engine, head_version, snapshot, snapshot_version, first_page
+         from "opencv_app"."paper_docs"`
+      )
+      expect(after.rows).toEqual([
+        {
+          ...before.rows[0]!,
+          engine: 1,
+          head_version: 0,
+          snapshot: null,
+          snapshot_version: 0,
+          first_page: null,
+        },
+      ])
+      expect(
+        (await client.query('select * from "opencv_app"."paper_changes"')).rows
+      ).toEqual([])
+      await expect(
+        client.exec(`
+          insert into "opencv_app"."paper_changes"
+            (doc_id, from_version, to_version, edit_id, client_id, origin_kind,
+             origin_actor, steps, inverse, commands)
+          values ('00000000-0000-4000-8000-000000002228', 3, 3, 'e', 'c',
+            'person', 'a', '[]', '[]', '[]')
+        `)
+      ).rejects.toThrow(/paper_changes_versions_ascend/)
     } finally {
       await client.close()
     }

@@ -68,6 +68,9 @@ importers:
       '@workspace/paper-crdt':
         specifier: workspace:*
         version: link:../../packages/paper-crdt
+      '@workspace/paper-engine':
+        specifier: workspace:*
+        version: link:../../packages/paper-engine
       '@xmldom/xmldom':
         specifier: 0.8.15
         version: 0.8.15
