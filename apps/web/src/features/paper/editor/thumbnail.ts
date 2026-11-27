@@ -1,8 +1,8 @@
 import type { LayoutPage, PageSetup } from "@workspace/domain/paper-doc"
 import type { Layout } from "@workspace/paper-engine"
 
-import { cardFaceHeights } from "./card-faces.js"
-import { createPainter, placement } from "./painter.js"
+import { cardFaceHeights } from "./card-faces.ts"
+import { createPainter, placement } from "./painter.ts"
 import "./paper-editor.css"
 
 const CARD_PAGE: PageSetup = {

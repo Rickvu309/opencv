@@ -1,4 +1,4 @@
-import type { FaceHeights } from "./painter.js"
+import type { FaceHeights } from "./painter.ts"
 
 type Heights = { ascent: number; descent: number }
 
