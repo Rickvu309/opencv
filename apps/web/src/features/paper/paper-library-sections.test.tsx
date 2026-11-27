@@ -13,7 +13,7 @@ import {
   createRouter,
   RouterContextProvider,
 } from "@tanstack/react-router"
-import { parsePaperId } from "@workspace/domain/kernel"
+import { parseFileId, parsePaperId } from "@workspace/domain/kernel"
 
 import { render } from "@/test/render-with-client.tsx"
 import { PaperLibrary } from "./paper-library.tsx"
@@ -138,13 +138,9 @@ describe("Paper home sections", () => {
     expect(
       screen.getByRole("searchbox", { name: "Search Paper" })
     ).toBeInTheDocument()
-    expect(
-      screen.getByRole("button", { name: "New", exact: true })
-    ).toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: "Import", exact: true }))
-    expect(
-      screen.getByRole("dialog", { name: "Import", exact: true })
-    ).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "New" })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Import" }))
+    expect(screen.getByRole("dialog", { name: "Import" })).toBeInTheDocument()
   })
 
   it("filters the library from the view menu and counts each view", async () => {
@@ -174,9 +170,7 @@ describe("Paper home sections", () => {
     await pickView("Files")
     expect(screen.getByText("No files yet")).toBeInTheDocument()
     fireEvent.click(screen.getByRole("button", { name: "Import a file" }))
-    expect(
-      screen.getByRole("dialog", { name: "Import", exact: true })
-    ).toBeInTheDocument()
+    expect(screen.getByRole("dialog", { name: "Import" })).toBeInTheDocument()
     fireEvent.keyDown(document.activeElement ?? document.body, {
       key: "Escape",
     })
@@ -280,7 +274,7 @@ describe("Paper home sections", () => {
       [],
       [
         {
-          id: "33333333-3333-4333-8333-333333333333",
+          id: parseFileId("33333333-3333-4333-8333-333333333333"),
           name: "Original CV.pdf",
           mediaType: "application/pdf",
           byteSize: 42,
@@ -307,9 +301,7 @@ describe("Paper home sections", () => {
     fireEvent.click(
       screen.getByRole("button", { name: "Original CV.pdf menu" })
     )
-    fireEvent.click(
-      await screen.findByRole("menuitem", { name: "Delete", exact: true })
-    )
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Delete" }))
     expect(
       screen.getByRole("dialog", { name: 'Delete "Original CV.pdf"?' })
     ).toBeInTheDocument()
@@ -332,9 +324,7 @@ describe("Paper home sections", () => {
   it("names the document in the delete confirm and makes Delete the red final action", async () => {
     renderLibrary([cv("Linh CV")])
     fireEvent.click(screen.getByRole("button", { name: "Linh CV menu" }))
-    fireEvent.click(
-      await screen.findByRole("menuitem", { name: "Delete", exact: true })
-    )
+    fireEvent.click(await screen.findByRole("menuitem", { name: "Delete" }))
     const dialog = screen.getByRole("dialog", { name: 'Delete "Linh CV"?' })
     expect(
       within(dialog).getByRole("button", { name: "Delete" })

@@ -1,3 +1,4 @@
+import { parsePaperId } from "@workspace/domain/kernel"
 import {
   cleanup,
   fireEvent,
@@ -188,6 +189,7 @@ describe("job detail", () => {
             subjectId: id,
             summary: "You added this job from the board",
             undoneAt: null,
+            reversible: false,
           },
           ...[
             ["job.star", "You starred it"],
@@ -203,6 +205,7 @@ describe("job detail", () => {
             subjectId: id,
             summary,
             undoneAt: null,
+            reversible: false,
           })),
         ],
       },
@@ -373,7 +376,7 @@ describe("job detail", () => {
         }),
         linked: {
           cv: {
-            id: "01900000-0000-7000-8000-000000000051",
+            id: parsePaperId("01900000-0000-7000-8000-000000000051"),
             name: "Junior Marketing CV",
           },
           letter: null,
@@ -388,6 +391,7 @@ describe("job detail", () => {
             subjectId: id,
             summary: "Minh likes concrete numbers.",
             undoneAt: null,
+            reversible: false,
           },
         ],
       },

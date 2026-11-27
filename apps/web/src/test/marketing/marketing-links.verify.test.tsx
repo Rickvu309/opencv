@@ -400,7 +400,12 @@ describe("marketing routes", () => {
       const parsed = parseHref(link.href, link.page)
       if (parsed.kind === "external") continue
       if (parsed.kind === "bad") {
-        push({ ...link, why: parsed.why })
+        push({
+          page: link.page,
+          link: link.text,
+          href: link.href,
+          why: parsed.why,
+        })
         continue
       }
       const leaf = leafOf(router, routes, parsed.pathname)
@@ -410,7 +415,7 @@ describe("marketing routes", () => {
           : isNotFound(leaf)
             ? `matched the not-found page ${leaf.id}`
             : `matched only the root layout for ${parsed.pathname}`
-        push({ ...link, why })
+        push({ page: link.page, link: link.text, href: link.href, why })
         continue
       }
       if (parsed.hash.length > 0) {

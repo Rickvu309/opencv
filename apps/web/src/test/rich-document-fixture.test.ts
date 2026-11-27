@@ -28,7 +28,7 @@ describe("the ui tool rich document fixture", () => {
 
   it("fails the same check when the fixture drops a required field", () => {
     const stale = richDocumentAnswer(provenance).data
-    delete stale.updatedAt
+    Reflect.deleteProperty(stale, "updatedAt")
     expect(paperDocumentInfoSchema.safeParse(stale).success).toBe(false)
   })
 })

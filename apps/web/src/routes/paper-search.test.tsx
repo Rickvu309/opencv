@@ -69,9 +69,7 @@ describe("Paper search route state", () => {
       const message = (await screen.findByText(OLDER_FORMAT)).closest(
         "section"
       )!
-      fireEvent.click(
-        within(message).getByRole("button", { name: "Paper", exact: true })
-      )
+      fireEvent.click(within(message).getByRole("button", { name: "Paper" }))
       await waitFor(() =>
         expect(
           screen.getByRole("searchbox", { name: "Search Paper" })

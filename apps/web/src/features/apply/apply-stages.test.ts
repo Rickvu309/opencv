@@ -1,3 +1,4 @@
+import { parseJobId } from "@workspace/domain/kernel"
 import { describe, expect, it } from "vitest"
 
 import type { JobView } from "@workspace/domain/apply"
@@ -14,7 +15,7 @@ const now = new Date("2026-10-27T03:00:00.000Z")
 
 function job(patch: Partial<JobView>): JobView {
   return {
-    id: "01900000-0000-7000-8000-000000000010",
+    id: parseJobId("01900000-0000-7000-8000-000000000010"),
     title: "Junior Marketing",
     company: "Lumière Cosmetics",
     stage: "saved",

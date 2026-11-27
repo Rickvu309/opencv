@@ -1,3 +1,4 @@
+import type { CommandEnvelope } from "@workspace/domain/kernel"
 import { undoneActivityRow } from "@/test/control-fixtures.ts"
 import {
   appendCoachPart,
@@ -267,17 +268,14 @@ function coachStreamResponse(
               part.ok && part.reversal?.possible
                 ? crypto.randomUUID()
                 : undefined
-            const result = part.result ?? {
-              ok: part.ok,
-              ...(part.ok
-                ? { data: {} }
+            const result: CommandEnvelope =
+              part.result ??
+              (part.ok
+                ? { ok: true, data: {} }
                 : {
-                    error: {
-                      code: "NOT_FOUND",
-                      message: part.summary,
-                    },
-                  }),
-            }
+                    ok: false,
+                    error: { code: "NOT_FOUND", message: part.summary },
+                  })
             await emit(COACH_SSE_EVENTS.toolCall, {
               toolCallId,
               name: part.name,
@@ -417,13 +415,20 @@ function chatDetail(chat: ChatRecord) {
   }
 }
 
-export function setMockChats(chats: { id: string; title: string }[]) {
+export function setMockChats(
+  chats: {
+    id: string
+    title: string
+    createdAt?: string
+    updatedAt?: string
+  }[]
+) {
   const now = isoNow()
   store.chats = chats.map((chat) => ({
     id: chat.id,
     title: chat.title,
-    createdAt: now,
-    updatedAt: now,
+    createdAt: chat.createdAt ?? now,
+    updatedAt: chat.updatedAt ?? now,
     focusDocId: null,
     messages: structuredClone(
       FIXTURE_CHATS.find((fixture) => fixture.id === chat.id)?.messages ?? []

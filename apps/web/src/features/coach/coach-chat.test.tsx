@@ -143,7 +143,7 @@ describe("Coach chat and history", { timeout: 15_000 }, () => {
         { kind: "text", text: "I made those changes." },
         {
           kind: "tool",
-          name: "paper.replace",
+          name: "paper.edit",
           summary: "Updated content of PM track CV",
           ok: true,
           reversal: {

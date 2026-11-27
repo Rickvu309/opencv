@@ -71,7 +71,7 @@ it("downloads the qualified saved revision with its Unicode name and releases th
   vi.useFakeTimers()
   const h = fixture()
   let name = ""
-  h.click.mockImplementation(function () {
+  h.click.mockImplementation(function (this: HTMLAnchorElement) {
     name = this.download
   })
   await downloadSavedRichWord(h.saved, h.signal.signal)
@@ -103,7 +103,7 @@ it.each(["CV%00.docx", "CV%7F.docx", "folder%2FCV.docx", "folder%5CCV.docx"])(
       `attachment; filename*=UTF-8''${encoded}`
     )
     let name = ""
-    h.click.mockImplementation(function () {
+    h.click.mockImplementation(function (this: HTMLAnchorElement) {
       name = this.download
     })
     await downloadSavedRichWord(h.saved, h.signal.signal)
@@ -210,7 +210,7 @@ it.each([
     const h = fixture()
     h.response.headers.set("content-disposition", disposition)
     let name = ""
-    h.click.mockImplementation(function () {
+    h.click.mockImplementation(function (this: HTMLAnchorElement) {
       name = this.download
     })
     await downloadSavedRichWord(h.saved, h.signal.signal)

@@ -32,8 +32,6 @@ describe("dock chips", () => {
       {
         id: "chat-1",
         title: "Checkout notes",
-        focusKind: null,
-        focusId: null,
         createdAt: "2026-02-01T00:00:00.000Z",
         updatedAt: "2026-02-02T00:00:00.000Z",
       },
@@ -47,12 +45,12 @@ describe("dock chips", () => {
     ).toBeInTheDocument()
     await waitFor(() => {
       expect(
-        screen.queryByRole("button", { name: "Checkout notes", exact: true })
+        screen.queryByRole("button", { name: "Checkout notes" })
       ).toBeNull()
     })
     fireEvent.click(screen.getByRole("button", { name: "Close" }))
     expect(
-      await screen.findByRole("button", { name: "Checkout notes", exact: true })
+      await screen.findByRole("button", { name: "Checkout notes" })
     ).toBeInTheDocument()
   })
 
@@ -61,8 +59,6 @@ describe("dock chips", () => {
       {
         id: "chat-1",
         title: "Checkout notes",
-        focusKind: null,
-        focusId: null,
         createdAt: "2026-02-01T00:00:00.000Z",
         updatedAt: "2026-02-02T00:00:00.000Z",
       },
@@ -70,8 +66,6 @@ describe("dock chips", () => {
     renderApp(SURFACE_PATHS.coach)
     const recent = await screen.findByRole("list", { name: "Recent chats" })
     expect(within(recent).getAllByRole("button")).toHaveLength(1)
-    expect(
-      screen.queryByRole("button", { name: "Checkout notes", exact: true })
-    ).toBeNull()
+    expect(screen.queryByRole("button", { name: "Checkout notes" })).toBeNull()
   })
 })

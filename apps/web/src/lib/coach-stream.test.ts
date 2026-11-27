@@ -1,7 +1,10 @@
+import type { QueryCache } from "@tanstack/react-query"
 import { QueryClient, QueryObserver } from "@tanstack/react-query"
 import { parseJobId } from "@workspace/domain/kernel"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { paperListQuery } from "./paper-list.ts"
+
+type BuiltQuery = Parameters<QueryCache["build"]>[1]
 
 import { streamChatTurn } from "./coach-stream.ts"
 import { authClient } from "./auth-client.ts"
@@ -69,10 +72,10 @@ describe("streamChatTurn", () => {
       get: () => ({ data: { user: { id: "owner" } } }),
     } as never
     const listRead = catalogClient.options("owner", "job.list", {})
-    queryClient.getQueryCache().build(queryClient, listRead)
+    queryClient.getQueryCache().build(queryClient, listRead as BuiltQuery)
     const list = listRead.queryKey
     const paperRead = paperListQuery("owner")
-    queryClient.getQueryCache().build(queryClient, paperRead)
+    queryClient.getQueryCache().build(queryClient, paperRead as BuiltQuery)
     const paper = paperRead.queryKey
     queryClient.setQueryData(list, [])
     queryClient.setQueryData(paper, [])

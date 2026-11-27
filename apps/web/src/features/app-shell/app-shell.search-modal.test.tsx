@@ -175,8 +175,6 @@ describe("command palette", () => {
       {
         id: FIXTURE_CHATS[0]!.id,
         title: FIXTURE_CHATS[0]!.title,
-        focusKind: null,
-        focusId: null,
         createdAt: FIXTURE_CHATS[0]!.createdAt,
         updatedAt: FIXTURE_CHATS[0]!.updatedAt,
       },
@@ -230,8 +228,6 @@ describe("command palette", () => {
       {
         id: fixture.id,
         title: fixture.title,
-        focusKind: null,
-        focusId: null,
         createdAt: fixture.createdAt,
         updatedAt: fixture.updatedAt,
       },

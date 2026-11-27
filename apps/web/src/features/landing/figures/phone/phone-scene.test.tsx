@@ -90,7 +90,7 @@ describe("landing phone scenes", () => {
     })
     expect(scene).toHaveAttribute("data-loading")
     expect(container.querySelector(".ss-stage")).toBeNull()
-    expect(fonts.load.mock.calls.map(([face]) => face)).toEqual([
+    expect(fonts.load.mock.calls.map((call: unknown[]) => call[0])).toEqual([
       "400 16px Inter",
       "500 16px Inter",
       "600 16px Inter",

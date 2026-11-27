@@ -1,7 +1,10 @@
-import type { JobView } from "@workspace/domain/apply"
+import { jobViewSchema, type JobView } from "@workspace/domain/apply"
+import type { z } from "zod"
 
-export function mockJob(patch: Partial<JobView> = {}): JobView {
-  return {
+export function mockJob(
+  patch: Partial<z.input<typeof jobViewSchema>> = {}
+): JobView {
+  return jobViewSchema.parse({
     id: "01900000-0000-7000-8000-000000000010",
     title: "Junior Marketing",
     company: "Lumière Cosmetics",
@@ -23,5 +26,5 @@ export function mockJob(patch: Partial<JobView> = {}): JobView {
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     ...patch,
-  }
+  })
 }

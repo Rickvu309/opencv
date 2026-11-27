@@ -1,3 +1,4 @@
+import { parsePaperId } from "@workspace/domain/kernel"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { act, cleanup, fireEvent, screen } from "@testing-library/react"
 import { render } from "@/test/render-with-client.tsx"
@@ -20,7 +21,7 @@ import { PAPER_TEMPLATE_LABELS } from "./paper-templates.ts"
 import { panelFit } from "@workspace/ui/lib/dialog-fit"
 
 const record: PaperView = {
-  id: "11111111-1111-4111-8111-111111111111",
+  id: parsePaperId("11111111-1111-4111-8111-111111111111"),
   name: "PM track CV",
   kind: "cv",
   templateId: "simple",

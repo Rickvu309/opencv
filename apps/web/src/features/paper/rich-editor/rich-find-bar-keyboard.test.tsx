@@ -149,9 +149,9 @@ it("opens Replace with Ctrl+H and Cmd+Shift+H and moves past an expanding replac
   fireEvent.change(screen.getByRole("textbox", { name: "Replace with" }), {
     target: { value: "Anna" },
   })
-  fireEvent.click(screen.getByRole("button", { name: "Replace", exact: true }))
+  fireEvent.click(screen.getByRole("button", { name: "Replace" }))
   expect(screen.getByRole("status")).toHaveTextContent("2 of 2")
-  fireEvent.click(screen.getByRole("button", { name: "Replace", exact: true }))
+  fireEvent.click(screen.getByRole("button", { name: "Replace" }))
   expect(host).toHaveTextContent("Anna Anna")
   expect(host).not.toHaveTextContent("Annaa")
   fireEvent.keyDown(find, { key: "Escape" })

@@ -3,7 +3,7 @@ import { act, fireEvent, screen, waitFor } from "@testing-library/react"
 import * as Y from "yjs"
 import userEvent from "@testing-library/user-event"
 import { uploadPaperPhoto } from "../paper-api.ts"
-import { parsePaperId } from "@workspace/domain/kernel"
+import { parseFileId, parsePaperId } from "@workspace/domain/kernel"
 import {
   nativeProvenance,
   RICH_NATIVE_WRITER,
@@ -103,6 +103,7 @@ it.each([
       subscribe: () => () => {},
       flush: async () => {},
       persist: async () => {},
+      captureSaved: vi.fn(),
       downloadWord,
       destroy: async () => {
         client.destroy()
@@ -120,7 +121,9 @@ it.each([
           provenance,
           writer: RICH_NATIVE_WRITER,
         }}
+        editedAt="2026-11-27T00:00:00.000Z"
         onBack={() => {}}
+        onOpen={() => {}}
       />
     )
     const view = render(page("initial"))
@@ -182,9 +185,7 @@ it.each([
       ).not.toBeInTheDocument()
     }
     await waitFor(() =>
-      expect(
-        screen.getByRole("button", { name: "Bold", exact: true })
-      ).toBeEnabled()
+      expect(screen.getByRole("button", { name: "Bold" })).toBeEnabled()
     )
     act(() => {
       host.focus()
@@ -250,7 +251,7 @@ it.each([
       focusOffset: window.getSelection()?.focusOffset,
     }).toEqual(selection)
     expect(document.activeElement).toBe(host)
-    const bold = screen.getByRole("button", { name: "Bold", exact: true })
+    const bold = screen.getByRole("button", { name: "Bold" })
     const pressed = bold.getAttribute("aria-pressed")
     fireEvent.click(bold)
     expect(bold).toHaveAttribute(
@@ -275,7 +276,6 @@ it.each([
         fireEvent.click(
           await screen.findByRole("button", {
             name: "Insert table",
-            exact: true,
           })
         )
         expect(
@@ -285,13 +285,11 @@ it.each([
         fireEvent.click(
           await screen.findByRole("button", {
             name: "Table options",
-            exact: true,
           })
         )
         expect(
           await screen.findByRole("button", {
             name: "Insert row below",
-            exact: true,
           })
         ).toBeEnabled()
       }
@@ -302,15 +300,13 @@ it.each([
         screen.queryByRole("spinbutton", { name: "Table rows" })
       ).not.toBeInTheDocument()
       expect(
-        screen.queryByRole("button", { name: "Table options", exact: true })
+        screen.queryByRole("button", { name: "Table options" })
       ).not.toBeInTheDocument()
       expect(
-        screen.queryByRole("button", { name: "Insert row below", exact: true })
+        screen.queryByRole("button", { name: "Insert row below" })
       ).not.toBeInTheDocument()
     })
-    expect(
-      screen.getByRole("button", { name: "Bold", exact: true })
-    ).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Bold" })).toBeDisabled()
     fireEvent.click(screen.getByRole("button", { name: "Document menu" }))
     const download = await screen.findByRole("menuitem", {
       name: "Download Word",
@@ -339,9 +335,7 @@ it.each([
     })
     view.rerender(page("remounted"))
     await waitFor(() =>
-      expect(
-        screen.getByRole("button", { name: "Bold", exact: true })
-      ).toBeEnabled()
+      expect(screen.getByRole("button", { name: "Bold" })).toBeEnabled()
     )
     fireEvent.click(screen.getByRole("button", { name: "Document menu" }))
     const remountedDownload = await screen.findByRole("menuitem", {
@@ -368,8 +362,7 @@ async function exerciseToolbar(
   window.addEventListener("error", onError)
   cleanups.add(() => window.removeEventListener("error", onError))
   const user = userEvent.setup({ delay: null })
-  const button = (name: string | RegExp) =>
-    screen.getByRole("button", { name, exact: true })
+  const button = (name: string | RegExp) => screen.getByRole("button", { name })
   const more = async () => {
     const trigger = button("More formatting")
     if (trigger.getAttribute("aria-expanded") !== "true")
@@ -378,9 +371,7 @@ async function exerciseToolbar(
   const choose = async (name: string | RegExp, option: string) => {
     await more()
     await user.click(screen.getByRole("combobox", { name }))
-    await user.click(
-      await screen.findByRole("option", { name: option, exact: true })
-    )
+    await user.click(await screen.findByRole("option", { name: option }))
   }
   const before = () => JSON.stringify(client.document())
   act(() => {
@@ -435,11 +426,10 @@ async function exerciseToolbar(
   await user.click(button("Link"))
   const text = screen.queryByRole("textbox", {
     name: "Text to display",
-    exact: true,
   })
   if (text) await user.type(text, "Portfolio")
   await user.type(
-    screen.getByRole("textbox", { name: "Link address", exact: true }),
+    screen.getByRole("textbox", { name: "Link address" }),
     "https://example.com"
   )
   await user.click(button("Apply"))
@@ -451,7 +441,7 @@ async function exerciseToolbar(
     vi.fn(async () => ({ width: 160, height: 200, close() {} }))
   )
   vi.mocked(uploadPaperPhoto).mockResolvedValue(
-    "15900000-0000-4000-8000-000000000002"
+    parseFileId("15900000-0000-4000-8000-000000000002")
   )
   await more()
   await user.click(button("Insert photo"))
@@ -480,9 +470,13 @@ async function exerciseToolbar(
     paste(host, "Shortcut after reset")
   })
   expect(before()).toContain("Shortcut after reset")
-  expect(mounted.editor.getTextCursorPosition().block.props.textAlignment).toBe(
-    "center"
-  )
+  expect(
+    (
+      mounted.editor.getTextCursorPosition().block.props as {
+        textAlignment?: string
+      }
+    ).textAlignment
+  ).toBe("center")
   expect(errors).toEqual([])
 }
 
@@ -524,7 +518,7 @@ it.each(["cv", "letter"] as const)(
     const user = userEvent.setup()
     await user.click(screen.getByRole("button", { name: "Table options" }))
     for (const name of ["Outer border", "Medium", "Navy border"]) {
-      const choice = screen.getByRole("button", { name, exact: true })
+      const choice = screen.getByRole("button", { name })
       await user.click(choice)
       expect(choice).toHaveAttribute("aria-pressed", "true")
       expect(choice).toHaveFocus()
@@ -540,7 +534,7 @@ it.each(["cv", "letter"] as const)(
     await user.keyboard("{Escape}")
     expect(screen.queryByRole("dialog", { name: "Table options" })).toBeNull()
     await user.click(screen.getByRole("button", { name: "Table options" }))
-    await user.click(screen.getByRole("button", { name: "Thin", exact: true }))
+    await user.click(screen.getByRole("button", { name: "Thin" }))
     await user.click(screen.getByRole("button", { name: "Outside table" }))
     expect(screen.queryByRole("dialog", { name: "Table options" })).toBeNull()
   }

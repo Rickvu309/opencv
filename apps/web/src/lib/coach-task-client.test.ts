@@ -1,3 +1,4 @@
+import type { QueryCache } from "@tanstack/react-query"
 import { QueryClient } from "@tanstack/react-query"
 import { afterEach, expect, it, vi } from "vitest"
 import {
@@ -9,6 +10,8 @@ import { taskSnapshot, taskEvent, TASK } from "@/test/coach-task-fixture.ts"
 import type { CoachTaskState } from "./coach-task-state.ts"
 import { authClient } from "./auth-client.ts"
 import { catalogClient } from "./contract-client.ts"
+
+type BuiltQuery = Parameters<QueryCache["build"]>[1]
 
 afterEach(() => {
   vi.unstubAllGlobals()
@@ -131,7 +134,8 @@ it("refreshes command reads from a committed snapshot without a preceding live t
   } as never
   const list = catalogClient.options("owner", "job.list", {})
   const detail = catalogClient.options("owner", "job.get", { jobId: TASK })
-  for (const read of [list, detail]) client.getQueryCache().build(client, read)
+  for (const read of [list, detail])
+    client.getQueryCache().build(client, read as BuiltQuery)
   vi.stubGlobal("fetch", async () =>
     json(
       taskSnapshot({

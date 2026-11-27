@@ -1,4 +1,5 @@
 import type {
+  ChatToolName,
   CoachReceiptDetail,
   CoachSelection,
   ReversalDescriptor,
@@ -9,7 +10,7 @@ export type CoachScriptPart =
   | { kind: "text"; text: string }
   | {
       kind: "tool"
-      name: string
+      name: ChatToolName
       summary: string
       ok: boolean
       reversal?: ReversalDescriptor

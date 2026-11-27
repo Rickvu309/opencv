@@ -102,7 +102,7 @@ function installScroll(box: Box) {
         Object.defineProperty(Element.prototype, "clientHeight", clientHeight)
       if (scrollTo)
         Object.defineProperty(Element.prototype, "scrollTo", scrollTo)
-      else delete Element.prototype.scrollTo
+      else Reflect.deleteProperty(Element.prototype, "scrollTo")
       window.ResizeObserver = previousResize
     },
   }

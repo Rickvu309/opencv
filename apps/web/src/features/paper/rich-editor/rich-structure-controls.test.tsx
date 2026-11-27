@@ -173,7 +173,7 @@ it.each(["choose", "same", "escape"])(
     expect(host).not.toHaveTextContent("TypedBody text")
     if (mode === "choose") {
       fireEvent.keyDown(document.activeElement!, { key: "z", ctrlKey: true })
-      expect(editor.formattingState().paragraphStyle).toBe("normal")
+      expect(editor.formattingState()?.paragraphStyle).toBe("normal")
     }
   }
 )
@@ -212,7 +212,7 @@ it("inserts normalized links at a caret, validates, preserves links when clearin
     )
   )
   const selection = view.state.selection.toJSON()
-  const linkButton = screen.getByRole("button", { name: "Link", exact: true })
+  const linkButton = screen.getByRole("button", { name: "Link" })
   linkButton.focus()
   fireEvent.click(linkButton)
   fireEvent.keyDown(await screen.findByRole("dialog"), { key: "Escape" })
@@ -234,6 +234,7 @@ it("inserts normalized links at a caret, validates, preserves links when clearin
 it("does not offer Open for an unsafe stored target and disables the controls when blocked", async () => {
   const { editor, controls } = setup()
   const state = editor.formattingState()
+  if (!state) throw new Error("Expected a formatting state")
   vi.spyOn(editor, "formattingState").mockReturnValue({
     ...state,
     href: "javascript:alert(1)",
@@ -247,7 +248,7 @@ it("does not offer Open for an unsafe stored target and disables the controls wh
       </RichStructureControls>
     </TooltipProvider>
   )
-  fireEvent.click(screen.getByRole("button", { name: "Link", exact: true }))
+  fireEvent.click(screen.getByRole("button", { name: "Link" }))
   expect(await screen.findByRole("dialog", { name: "Edit link" })).toBeVisible()
   expect(screen.queryByRole("link", { name: "Open link" })).toBeNull()
   fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" })
@@ -294,8 +295,8 @@ it("shows custom paragraph ids and disables indentation at the persisted nesting
     )
   )
   act(() => engine.setTextCursorPosition("l3", "start"))
-  expect(editor.formattingState().canIndent).toBe(false)
-  expect(editor.formattingState().canIndent).toBe(false)
+  expect(editor.formattingState()?.canIndent).toBe(false)
+  expect(editor.formattingState()?.canIndent).toBe(false)
   const before = view.state.doc.toJSON()
   act(() => editor.listLevel("in"))
   expect(view.state.doc.toJSON()).toEqual(before)
@@ -309,7 +310,7 @@ it("shows custom paragraph ids and disables indentation at the persisted nesting
       })
     )
   })
-  expect(editor.formattingState().paragraphStyle).toBe("custom-career")
+  expect(editor.formattingState()?.paragraphStyle).toBe("custom-career")
   controls.rerender(
     <TooltipProvider>
       <RichLinkDialog editor={editor} blocked={false} />

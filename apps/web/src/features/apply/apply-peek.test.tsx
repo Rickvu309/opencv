@@ -26,7 +26,7 @@ const later = mockJob({
   stage: "offer",
 })
 
-async function press(target: EventTarget, key: string) {
+async function press(target: Element | Document | Window, key: string) {
   await act(async () => {
     fireEvent.keyDown(target, { key, code: key })
     await new Promise((resolve) => setTimeout(resolve, 0))

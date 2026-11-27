@@ -1,3 +1,4 @@
+import { parseJobId } from "@workspace/domain/kernel"
 import {
   act,
   cleanup,
@@ -183,7 +184,7 @@ describe("apply board", () => {
       { ...interview, interviewAt: soon },
       {
         ...interview,
-        id: "01900000-0000-7000-8000-000000000015",
+        id: parseJobId("01900000-0000-7000-8000-000000000015"),
         title: "Data intern",
         interviewAt: later,
       },
@@ -290,7 +291,7 @@ describe("apply board", () => {
       const card = await screen.findByRole("button", {
         name: "Junior Marketing, Lumière Cosmetics",
       })
-      async function key(target: EventTarget, code: string) {
+      async function key(target: Element | Document | Window, code: string) {
         await act(async () => {
           fireEvent.keyDown(target, {
             code,
@@ -355,7 +356,7 @@ describe("apply board", () => {
       const card = await screen.findByRole("button", {
         name: "Business Analyst, Regional bank",
       })
-      async function key(target: EventTarget, code: string) {
+      async function key(target: Element | Document | Window, code: string) {
         await act(async () => {
           fireEvent.keyDown(target, {
             code,

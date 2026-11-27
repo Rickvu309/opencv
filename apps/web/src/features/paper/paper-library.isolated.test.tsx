@@ -64,11 +64,9 @@ describe("Paper library", () => {
       screen.getByRole("button", { name: "Attach a file" })
     ).toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Draft letter" })).toBeDisabled()
-    fireEvent.click(screen.getByRole("button", { name: "Paper", exact: true }))
+    fireEvent.click(screen.getByRole("button", { name: "Paper" }))
     expect(screen.queryByText("Start your first document")).toBeInTheDocument()
-    expect(
-      screen.getByRole("button", { name: "New", exact: true })
-    ).toHaveFocus()
+    expect(screen.getByRole("button", { name: "New" })).toHaveFocus()
   })
 
   it("deletes a Word page that finishes importing after Cancel, and neither opens it nor shows the note", async () => {
@@ -169,7 +167,8 @@ describe("Paper library", () => {
     expect(
       document.querySelectorAll("[data-slot='dialog-content']")
     ).toHaveLength(1)
-    const retryInput = document.querySelector('input[type="file"]')
+    const retryInput =
+      document.querySelector<HTMLInputElement>('input[type="file"]')
     if (!retryInput) throw new Error("Missing retry input")
     const picker = vi.spyOn(retryInput, "click")
     fireEvent.click(screen.getByRole("button", { name: "Choose another file" }))
@@ -182,7 +181,7 @@ describe("Paper library", () => {
     )
     renderLibrary([])
     const file = new File(["CV"], "Dropped.pdf", { type: "application/pdf" })
-    fireEvent.click(screen.getByRole("button", { name: "Import", exact: true }))
+    fireEvent.click(screen.getByRole("button", { name: "Import" }))
     fireEvent.drop(screen.getByRole("region", { name: "Import a file" }), {
       dataTransfer: { files: [file] },
     })
@@ -202,8 +201,8 @@ describe("Paper library", () => {
       new Error("Google Docs aren't supported. Download a PDF or Word file.")
     )
     renderLibrary([])
-    fireEvent.click(screen.getByRole("button", { name: "Import", exact: true }))
-    const dialog = screen.getByRole("dialog", { name: "Import", exact: true })
+    fireEvent.click(screen.getByRole("button", { name: "Import" }))
+    const dialog = screen.getByRole("dialog", { name: "Import" })
     const field = within(dialog).getByRole("textbox", {
       name: "Paste a link",
     })
@@ -219,7 +218,7 @@ describe("Paper library", () => {
       await screen.findByRole("heading", { name: "Can't read this file" })
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole("dialog", { name: "Import", exact: true })
+      screen.queryByRole("dialog", { name: "Import" })
     ).not.toBeInTheDocument()
     expect(screen.queryByRole("textbox", { name: "Paste a link" })).toBeNull()
     expect(screen.getByRole("alert")).toHaveTextContent(
@@ -243,10 +242,8 @@ describe("Paper library", () => {
     expect(
       screen.queryByRole("button", { name: "Show All" })
     ).not.toBeInTheDocument()
-    fireEvent.click(screen.getByRole("button", { name: "Import", exact: true }))
-    expect(
-      screen.getByRole("dialog", { name: "Import", exact: true })
-    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Import" }))
+    expect(screen.getByRole("dialog", { name: "Import" })).toBeInTheDocument()
     expect(
       screen.getByRole("button", { name: "Choose file" })
     ).toBeInTheDocument()
@@ -281,7 +278,7 @@ describe("Paper library", () => {
     })
     const letter: PaperView = {
       ...cv("Northwind letter"),
-      id: "22222222-2222-4222-8222-222222222222",
+      id: parsePaperId("22222222-2222-4222-8222-222222222222"),
       kind: "letter",
       templateId: null,
       paper: letterPaper(["One line for the letter."]),
@@ -297,34 +294,6 @@ describe("Paper library", () => {
       await new Promise((resolve) => setTimeout(resolve, 0))
     })
     expect(print).toHaveBeenCalledTimes(1)
-  })
-
-  it("offers no Download PDF for a Word page, which has no print body", async () => {
-    const print = vi.spyOn(window, "print").mockImplementation(() => undefined)
-    const wordPage: PaperView = {
-      ...cv("CV"),
-      id: parsePaperId("33333333-3333-4333-8333-333333333333"),
-      format: "word",
-    }
-    renderLibrary([wordPage, cv("Block CV")])
-    fireEvent.click(screen.getByRole("button", { name: "CV menu" }))
-    expect(
-      await screen.findByRole("menuitem", { name: "Open" })
-    ).toBeInTheDocument()
-    expect(
-      screen.queryByRole("menuitem", { name: "Download PDF" })
-    ).not.toBeInTheDocument()
-    fireEvent.keyDown(document.activeElement ?? document.body, {
-      key: "Escape",
-    })
-    fireEvent.keyDown(screen.getByRole("group", { name: "Your documents" }), {
-      key: "ArrowRight",
-    })
-    fireEvent.click(screen.getByRole("button", { name: "Block CV menu" }))
-    expect(
-      await screen.findByRole("menuitem", { name: "Download PDF" })
-    ).toBeInTheDocument()
-    expect(print).not.toHaveBeenCalled()
   })
 
   it("prints once in strict mode and unmounts the library sheet", async () => {

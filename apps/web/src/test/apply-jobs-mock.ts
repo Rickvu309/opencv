@@ -1,4 +1,5 @@
 import { vi } from "vitest"
+import { parseJobId, parsePaperId } from "@workspace/domain/kernel"
 import type {
   JobDetail,
   JobPreview,
@@ -141,12 +142,12 @@ function jobFieldsOf(job: Record<string, unknown>) {
   const copy = { ...job }
   for (const extra of ["note", "checklist", "linked", "activity"])
     delete copy[extra]
-  return copy as Job
+  return copy as JobView
 }
 
 export function setMockJobs(
   next: Array<
-    Job & {
+    JobView & {
       note?: string
       checklist?: ChecklistItem[]
       linked?: { cv: LinkedDoc; letter: LinkedDoc }
@@ -198,12 +199,14 @@ function previewFor(input: { url?: string; text?: string }): JobPreview {
         title: "Associate Product Manager Intern",
         company: "Northwind Labs",
         location: "Hanoi",
+        description: "",
       },
     }
   }
   if (url.includes("jobs.example.com")) {
     return {
       status: "unreadable",
+      fields: {},
       message: "Can't read this link. Paste the job text below.",
     }
   }
@@ -213,11 +216,18 @@ function previewFor(input: { url?: string; text?: string }): JobPreview {
       status: "duplicate",
       jobId: duplicate.id,
       stage: duplicate.stage,
-      fields: { title: duplicate.title, company: duplicate.company },
+      fields: {
+        title: duplicate.title,
+        company: duplicate.company,
+        location: duplicate.location ?? "",
+      },
     }
   }
   if (url.includes("company-missing") || url.includes("no-company")) {
-    return { status: "company-missing", fields: { title: "Filled role" } }
+    return {
+      status: "company-missing",
+      fields: { title: "Filled role", company: "", location: "" },
+    }
   }
   if (url.includes("careers.verify-posting.dev")) {
     return {
@@ -245,6 +255,7 @@ function previewFor(input: { url?: string; text?: string }): JobPreview {
   if (url.includes("unreadable")) {
     return {
       status: "unreadable",
+      fields: {},
       message: "Can't read this link. Paste the job text below.",
     }
   }
@@ -254,6 +265,7 @@ function previewFor(input: { url?: string; text?: string }): JobPreview {
       fields: {
         title: "Pasted role",
         company: "Pasted company",
+        location: "",
         description: input.text,
       },
     }
@@ -261,11 +273,17 @@ function previewFor(input: { url?: string; text?: string }): JobPreview {
   if (url) {
     return {
       status: "filled",
-      fields: { title: "Filled role", company: "Filled company" },
+      fields: {
+        title: "Filled role",
+        company: "Filled company",
+        location: "",
+        description: "",
+      },
     }
   }
   return {
     status: "unreadable",
+    fields: {},
     message: "Can't read this link. Paste the job text below.",
   }
 }
@@ -347,7 +365,7 @@ export async function jobApiFetch(
   if (method === "POST" && path === "/api/reads/job.preview") {
     const body = readBody(init) as { url?: string; text?: string }
     previews.push(body)
-    return jsonOk(fullPreview(previewFor(body)))
+    return jsonOk(previewFor(body))
   }
 
   if (method === "POST" && path === "/api/reads/activity.list") {
@@ -415,7 +433,7 @@ export async function jobApiFetch(
       }
       const now = new Date().toISOString()
       const created: JobView = {
-        id: crypto.randomUUID(),
+        id: parseJobId(crypto.randomUUID()),
         title,
         company,
         stage: (payload.stage as JobStage) || "saved",
@@ -539,7 +557,10 @@ export async function jobApiFetch(
       return jsonOk({ jobId, body: payload.body })
     }
     if (name === "job.linkPaper") {
-      const doc = { id: String(payload.docId), name: String(payload.docId) }
+      const doc = {
+        id: parsePaperId(String(payload.docId)),
+        name: String(payload.docId),
+      }
       if (payload.kind === "letter") {
         job.letterDocId = doc.id
         extra(job.id).linked.letter = doc
@@ -563,17 +584,6 @@ export async function jobApiFetch(
   }
 
   return null
-}
-
-function fullPreview(preview: JobPreview) {
-  if (preview.status === "unreadable")
-    return { status: preview.status, fields: {}, message: preview.message }
-  const fields = { title: "", company: "", location: "", ...preview.fields }
-  return {
-    ...preview,
-    fields:
-      preview.status === "filled" ? { description: "", ...fields } : fields,
-  }
 }
 
 export function failJobRead(name: "job.list" | "job.get") {

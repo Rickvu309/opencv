@@ -118,16 +118,14 @@ function typeMain(value: string) {
 }
 
 async function attachLink() {
-  fireEvent.click(main().getByRole("button", { name: "Add", exact: true }))
+  fireEvent.click(main().getByRole("button", { name: "Add" }))
   fireEvent.click(
     await screen.findByRole("menuitem", { name: "Paste a job link" })
   )
   fireEvent.change(await screen.findByRole("textbox", { name: "Link URL" }), {
     target: { value: LINK },
   })
-  fireEvent.click(
-    screen.getByRole("button", { name: "Attach link", exact: true })
-  )
+  fireEvent.click(screen.getByRole("button", { name: "Attach link" }))
   await waitFor(() =>
     expect(
       main().getByRole("button", { name: "Remove jobs.example.com/role" })
@@ -137,9 +135,7 @@ async function attachLink() {
 
 async function settled() {
   await waitFor(() =>
-    expect(
-      main().getByRole("button", { name: "Send", exact: true })
-    ).toBeInTheDocument()
+    expect(main().getByRole("button", { name: "Send" })).toBeInTheDocument()
   )
 }
 
@@ -173,7 +169,7 @@ describe("Coach draft ownership", () => {
     expect(
       main().getByRole("button", { name: "Remove jobs.example.com/role" })
     ).toBeVisible()
-    fireEvent.click(main().getByRole("button", { name: "Send", exact: true }))
+    fireEvent.click(main().getByRole("button", { name: "Send" }))
     await waitFor(() =>
       expect(getLastCoachRequest()?.text).toBe(
         "Keep this new conversation separate"
@@ -236,9 +232,7 @@ describe("Coach draft ownership", () => {
       compact().getByRole("textbox", { name: "Message Coach" }),
       { target: { value: "Panel sends first" } }
     )
-    fireEvent.click(
-      compact().getByRole("button", { name: "Send", exact: true })
-    )
+    fireEvent.click(compact().getByRole("button", { name: "Send" }))
     await waitFor(() =>
       expect(getLastCoachRequest()?.text).toBe("Panel sends first")
     )
@@ -283,10 +277,10 @@ describe("Coach draft ownership", () => {
     mount()
     typeMain("First request")
     await attachLink()
-    fireEvent.click(main().getByRole("button", { name: "Send", exact: true }))
-    await main().findByRole("button", { name: "Retry", exact: true })
+    fireEvent.click(main().getByRole("button", { name: "Send" }))
+    await main().findByRole("button", { name: "Retry" })
     typeMain("Follow-up after failure")
-    fireEvent.click(main().getByRole("button", { name: "Retry", exact: true }))
+    fireEvent.click(main().getByRole("button", { name: "Retry" }))
     await waitFor(() =>
       expect(getLastCoachRequest()?.text).toBe("First request")
     )
@@ -328,16 +322,14 @@ describe("Coach draft ownership", () => {
     mount(true)
     typeMain("Main create fails")
     await attachLink()
-    fireEvent.click(main().getByRole("button", { name: "Send", exact: true }))
-    await main().findByRole("button", { name: "Retry", exact: true })
+    fireEvent.click(main().getByRole("button", { name: "Send" }))
+    await main().findByRole("button", { name: "Retry" })
     typeMain("Keep my main follow-up private")
     fireEvent.change(
       compact().getByRole("textbox", { name: "Message Coach" }),
       { target: { value: "Panel creates instead" } }
     )
-    fireEvent.click(
-      compact().getByRole("button", { name: "Send", exact: true })
-    )
+    fireEvent.click(compact().getByRole("button", { name: "Send" }))
     await waitFor(() =>
       expect(getLastCoachRequest()?.text).toBe("Panel creates instead")
     )
@@ -380,7 +372,7 @@ describe("Coach draft ownership", () => {
     mount()
     typeMain("Create my chat")
     await attachLink()
-    fireEvent.click(main().getByRole("button", { name: "Send", exact: true }))
+    fireEvent.click(main().getByRole("button", { name: "Send" }))
     await waitFor(() => expect(creating).toBe(true))
     typeMain("Next message while creating")
     await act(async () => release())

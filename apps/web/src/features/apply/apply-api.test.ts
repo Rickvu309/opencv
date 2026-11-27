@@ -1,9 +1,12 @@
+import type { QueryCache } from "@tanstack/react-query"
 import { undoneActivityRow } from "@/test/control-fixtures.ts"
 import { readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { QueryClient, QueryObserver } from "@tanstack/react-query"
+
+type BuiltQuery = Parameters<QueryCache["build"]>[1]
 
 import { type ChatTurnEvent } from "@workspace/domain/coach"
 import { parseJobId } from "@workspace/domain/kernel"
@@ -201,7 +204,7 @@ routes.get("/priority-counts", () => {})
 function signIn(ownerId: string) {
   authClient.$store.atoms.session = {
     get: () => ({ data: { user: { id: ownerId } } }),
-  }
+  } as never
 }
 
 function mountCount(queryClient: QueryClient, ownerId: string) {
@@ -296,7 +299,7 @@ describe("coach catalog refresh", () => {
       jobId: parseJobId(JOB),
     })
     for (const read of [listRead, detailRead])
-      queryClient.getQueryCache().build(queryClient, read)
+      queryClient.getQueryCache().build(queryClient, read as BuiltQuery)
     const list = listRead.queryKey
     const detail = detailRead.queryKey
     queryClient.setQueryData(list, [])
