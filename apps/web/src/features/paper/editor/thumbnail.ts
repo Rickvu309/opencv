@@ -17,7 +17,7 @@ export function paintThumbnail(stage: HTMLElement, page: LayoutPage) {
   const { widthPx, heightPx } = placement(layout)
   stage.style.width = `${widthPx}px`
   stage.style.height = `${heightPx}px`
-  stage.style.setProperty("--cv-paper-page-px", `${widthPx}px`)
+  stage.style.transform = `scale(tan(atan2(100cqw, ${widthPx}px)))`
   return () => {
     stage.replaceChildren()
   }

@@ -42,7 +42,6 @@
 .paper-picture [data-slot="paper-first-page"] {
   position: absolute;
   inset: 0 auto auto 0;
-  transform: scale(tan(atan2(100cqw, var(--cv-paper-page-px))));
   transform-origin: top left;
 }
 
