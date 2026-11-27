@@ -340,11 +340,11 @@ export function attachPointer(surface: HTMLElement, sink: PointerSink) {
 
   const onDown = (event: PointerEvent) => {
     if (event.button !== 0) return
+    event.preventDefault()
     if (event.pointerType !== "mouse") {
       touch = { id: event.pointerId, x: event.clientX, y: event.clientY }
       return
     }
-    event.preventDefault()
     const near =
       event.timeStamp - lastDown.at < MULTI_CLICK_MS &&
       Math.abs(event.clientX - lastDown.x) <= MULTI_CLICK_PX &&

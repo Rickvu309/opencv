@@ -2,12 +2,14 @@ import "./paper-editor.css"
 
 import {
   docCommandSchema,
+  type Block,
   type BlockId,
   type DocCommand,
   type Document,
   type Origin,
   type Pos,
   type Range,
+  type Run,
   type Selection,
   type SelectionCommand,
 } from "@workspace/domain/paper-doc"
@@ -84,6 +86,24 @@ const sameContainer = (a: Pos, b: Pos) =>
   a.block === b.block &&
   a.cell?.row === b.cell?.row &&
   a.cell?.col === b.cell?.col
+
+function plainFragment(text: string): Block[] | Run[] {
+  const lines = text.split(/\r\n|\r|\n/)
+  if (lines.length === 1) return [{ type: "text", text }]
+  return lines.map((line): Block => ({
+    type: "text_block",
+    attrs: {
+      id: randomId() as BlockId,
+      kind: "paragraph",
+      list: null,
+      level: 0,
+      align: "left",
+      lineSpacing: null,
+      keepWithNext: null,
+    },
+    ...(line ? { content: [{ type: "text", text: line }] } : {}),
+  }))
+}
 
 function randomId(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(16))
@@ -546,7 +566,13 @@ export function mountPaperEditor(
       revealCaret()
     },
     pasteText(text) {
-      insertLines(currentRange(), text)
+      run([
+        {
+          op: "pasteFragment",
+          range: currentRange(),
+          fragment: plainFragment(text),
+        },
+      ])
       revealCaret()
     },
     copyText: () => textBetween(index, currentRange()),

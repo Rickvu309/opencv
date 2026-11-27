@@ -3,7 +3,7 @@ import { KEYSTROKE_PROBE, percentile } from "./keystrokes.mjs"
 export const LAB_ROUTE = "/paper-lab"
 export const LAB_PERF_DOC = "en-10"
 const LAB_PERF_PAGE = 1
-const LAB_PERF_LINE = 10
+const LAB_PERF_LINE = 5
 const BARE_PATH = "/__walk-bare-textarea"
 const KEY_MS = 20_000
 
@@ -77,6 +77,7 @@ export const LAB_SURFACE = {
   ready: ".paper-editor .paper-editor-page",
   blocksInPage: labBlocksInPage,
   caretInPage: labCaretInPage,
+  pointer: { force: true },
 }
 
 const fine = (value) => (value === null ? null : Math.round(value * 10) / 10)

@@ -136,6 +136,7 @@ const RICH_SURFACE = {
   ready: PAGE,
   blocksInPage,
   caretInPage,
+  pointer: {},
 }
 
 export const SURFACES = { rich: RICH_SURFACE, lab: LAB_SURFACE }
@@ -181,7 +182,7 @@ function tab(page, surface = RICH_SURFACE) {
         .locator(surface.line)
         .filter({ visible: true })
         .last()
-        .tap({ timeout: STEP_MS })
+        .tap({ timeout: STEP_MS, ...surface.pointer })
       await settle()
     },
     caretInPage: () => page.evaluate(surface.caretInPage, surface.page),
@@ -199,7 +200,7 @@ function tab(page, surface = RICH_SURFACE) {
         .locator(surface.line)
         .filter({ visible: true })
         .last()
-        .click({ timeout: STEP_MS })
+        .click({ timeout: STEP_MS, ...surface.pointer })
       await page.keyboard.press("Control+End")
       await page.keyboard.type(text)
       await settle()
@@ -266,7 +267,10 @@ export function browserPerson({
           waitUntil: "domcontentloaded",
         })
         await current.waitForEditor()
-        await page().locator(surface.line).last().click({ timeout: STEP_MS })
+        await page()
+          .locator(surface.line)
+          .last()
+          .click({ timeout: STEP_MS, ...surface.pointer })
         return
       }
       await page().goto(`${state.webOrigin}${state.route ?? "/paper"}`, {

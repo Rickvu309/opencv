@@ -260,6 +260,22 @@ describe("the new Paper page in a real browser", () => {
     await page.context().close()
   })
 
+  it("undoes a paste on its own and keeps the typing before it", async () => {
+    const page = await open("blank")
+    await page.keyboard.type("Draft")
+    await page.evaluate(() => {
+      const data = new DataTransfer()
+      data.setData("text/plain", "One\nTwo")
+      document
+        .querySelector(".paper-input")!
+        .dispatchEvent(new ClipboardEvent("paste", { clipboardData: data }))
+    })
+    expect(await texts(page)).toEqual(["Draft", "One", "Two"])
+    await page.keyboard.press("Control+z")
+    expect(await texts(page)).toEqual(["Draft"])
+    await page.context().close()
+  })
+
   it("loses no key while typing pushes lines onto a new page", async () => {
     const page = await open("en-10")
     const before = await blocks(page)
@@ -319,6 +335,14 @@ describe("the new Paper page in a real browser", () => {
       .first()
       .boundingBox())!.width
     const scale = await phone.evaluate(() => window.paperLab!.scale())
+    await phone.locator(".paper-editor-page").first().tap()
+    await phone.keyboard.type("Phone words")
+    expect(
+      await phone.evaluate(() =>
+        document.activeElement?.classList.contains("paper-input")
+      )
+    ).toBe(true)
+    expect((await texts(phone)).join(" ")).toContain("Phone words")
     expect(phonePages).toEqual(deskPages)
     expect(phoneWidth / deskWidth).toBeCloseTo(scale, 2)
     expect(phoneWidth).toBeLessThanOrEqual(PHONE.width - 32 + 1)
