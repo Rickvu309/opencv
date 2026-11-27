@@ -1,0 +1,6 @@
+{
+  "id": "paper-wire-step-inverses",
+  "file": "packages/paper-engine/src/wire-steps.test.ts",
+  "historic": null,
+  "reason": "The history failure was found by the exact Undo model while U4 was still uncommitted. The fixture generates the compound inverse from ProseMirror and checks it against the Paper wire schema."
+}

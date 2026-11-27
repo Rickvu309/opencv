@@ -236,7 +236,17 @@ describe("refusals and changes", () => {
       refusal: { code: "no-such-position" },
     })
     expect(
-      engine.run(state, [{ op: "setTemplate", template: "modern" }], person)
+      engine.run(
+        state,
+        [
+          {
+            op: "setLineSpacing",
+            blocks: [engine.read(state).doc.content[0]!.attrs.id],
+            lineSpacing: 1.5,
+          },
+        ],
+        person
+      )
     ).toMatchObject({
       refusal: { code: "schema" },
     })
