@@ -141,7 +141,7 @@ export function createPhotoHandles(
   return {
     update(next: Photo | null) {
       photo = next
-      frame.hidden = !next
+      if (frame.hidden !== !next) frame.hidden = !next
       if (next) position(next, next.widthMpt)
     },
     destroy: () => frame.remove(),
@@ -177,7 +177,7 @@ export function createTableTools(
 
   return {
     update(position: { x: number; y: number } | null) {
-      tools.hidden = !position
+      if (tools.hidden !== !position) tools.hidden = !position
       if (position) placePopover(tools, position.x, position.y, 476)
     },
     destroy: () => tools.remove(),

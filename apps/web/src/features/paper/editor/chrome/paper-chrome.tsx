@@ -20,7 +20,11 @@ import { pageSetupCommands } from "./format-commands.ts"
 import { PageSetupDialog } from "./page-setup-dialog.tsx"
 import { PaperToolbar } from "./paper-toolbar.tsx"
 import { RecoveryPanel } from "./recovery-panel.tsx"
-import { selectionFormat, type SelectionFormat } from "./selection-format.ts"
+import {
+  sameSelectionFormat,
+  selectionFormat,
+  type SelectionFormat,
+} from "./selection-format.ts"
 import { ShortcutList } from "./shortcut-list.tsx"
 
 type Snapshot = {
@@ -47,7 +51,7 @@ type ChromeState = {
 export type ChromeSync = { paper: PaperSync; actor: string }
 
 type ChromeAction =
-  | { type: "mounted"; editor: PaperEditor }
+  | { type: "mounted"; editor: PaperEditor; snapshot: Snapshot }
   | { type: "changed"; snapshot: Snapshot }
   | { type: "opened"; dialog: Dialog }
   | { type: "closed"; dialog: Dialog }
@@ -65,7 +69,7 @@ function chromeReducer(state: ChromeState, action: ChromeAction): ChromeState {
     return {
       ...state,
       editor: action.editor,
-      snapshot: snapshot(action.editor),
+      snapshot: action.snapshot,
     }
   if (action.type === "changed") return { ...state, snapshot: action.snapshot }
   if (action.type === "opened") return { ...state, open: action.dialog }
@@ -116,9 +120,18 @@ export function PaperChrome({
           }
         : {}),
     })
+    let previous = snapshot(mounted)
     const unsubscribe = mounted.subscribe(() => {
       sync?.paper.local()
-      dispatch({ type: "changed", snapshot: snapshot(mounted) })
+      const next = snapshot(mounted)
+      if (
+        next.history.undo === previous.history.undo &&
+        next.history.redo === previous.history.redo &&
+        sameSelectionFormat(next.format, previous.format)
+      )
+        return
+      previous = next
+      dispatch({ type: "changed", snapshot: next })
     })
     const detach = sync?.paper.attach({
       state: mounted.state,
@@ -132,7 +145,7 @@ export function PaperChrome({
     }
     const unwatch = sync?.paper.subscribe(showView)
     showView()
-    dispatch({ type: "mounted", editor: mounted })
+    dispatch({ type: "mounted", editor: mounted, snapshot: previous })
     latest.current?.(mounted)
     mounted.focus()
     return () => {

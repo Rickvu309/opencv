@@ -35,6 +35,19 @@ export type SelectionFormat = {
 
 const MARKS: ToggleMark[] = ["bold", "italic", "underline", "strike"]
 
+export function sameSelectionFormat(a: SelectionFormat, b: SelectionFormat) {
+  return (
+    a.style === b.style &&
+    a.font === b.font &&
+    a.align === b.align &&
+    a.list === b.list &&
+    a.lineSpacing === b.lineSpacing &&
+    a.collapsed === b.collapsed &&
+    a.page === b.page &&
+    MARKS.every((mark) => a.marks[mark] === b.marks[mark])
+  )
+}
+
 function styleOf(kind: string): TextStyle {
   if (kind === "title" || kind === "heading" || kind === "subheading")
     return kind

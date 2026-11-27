@@ -1,4 +1,11 @@
-import { closeHistory, history, redo, undo } from "prosemirror-history"
+import {
+  closeHistory,
+  history,
+  redo,
+  redoDepth,
+  undo,
+  undoDepth,
+} from "prosemirror-history"
 import type { Node } from "prosemirror-model"
 import {
   EditorState as PmState,
@@ -60,6 +67,7 @@ export interface PaperEngine {
     origin: Origin,
     input?: InputEdit
   ): EditResult | { refusal: Refusal }
+  history(state: EditorState): { undo: boolean; redo: boolean }
   undo(state: EditorState): EditResult | null
   redo(state: EditorState): EditResult | null
   revert: typeof revert
@@ -325,6 +333,11 @@ export function createEngine(ports: Ports): PaperEngine {
 
     run(state, commands, origin, input) {
       return runInner(unwrap(state), commands, origin, input)
+    },
+
+    history(state) {
+      const { pm } = unwrap(state)
+      return { undo: undoDepth(pm) > 0, redo: redoDepth(pm) > 0 }
     },
 
     undo(state) {

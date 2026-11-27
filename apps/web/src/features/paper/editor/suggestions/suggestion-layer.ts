@@ -208,11 +208,14 @@ export function createSuggestionLayer(
 
   function paintControls() {
     const open = currentView().open.length
-    strip.hidden = open === 0 && !status.textContent
-    count.textContent = open ? suggestionCount(open) : "All reviewed"
-    acceptAll.disabled = busy || open === 0
+    const hidden = open === 0 && !status.textContent
+    const label = open ? suggestionCount(open) : "All reviewed"
+    const disabled = busy || open === 0
+    if (strip.hidden !== hidden) strip.hidden = hidden
+    if (count.textContent !== label) count.textContent = label
+    if (acceptAll.disabled !== disabled) acceptAll.disabled = disabled
     for (const each of chipLayer.querySelectorAll("button"))
-      each.disabled = busy
+      if (each.disabled !== busy) each.disabled = busy
   }
 
   function chipsFor(id: string) {
@@ -242,7 +245,7 @@ export function createSuggestionLayer(
         .join(",")
     const old = rule("old")
     const added = rule("new")
-    style.textContent = [
+    const css = [
       old
         ? `:is(${old}) .paper-run:not([data-marker]){color:var(--destructive)!important;text-decoration-line:line-through;text-decoration-thickness:1.5px}`
         : "",
@@ -251,6 +254,7 @@ export function createSuggestionLayer(
         : "",
       added ? `:is(${added}) [data-marker]{visibility:hidden}` : "",
     ].join("")
+    if (style.textContent !== css) style.textContent = css
   }
 
   return {
@@ -263,9 +267,11 @@ export function createSuggestionLayer(
     stripHeight: () => (strip.hidden ? 0 : strip.offsetHeight),
     display(doc: Document, scale: number): Document {
       lastDoc = doc
-      const room = gapScreenPx() / scale - GAP_AFTER_PX
-      const spacing = Math.max(0.1, room / GAP_LINE_PX)
-      display = displayDocument(doc, currentView(), spacing)
+      const view = currentView()
+      const spacing = view.lines.size
+        ? Math.max(0.1, (gapScreenPx() / scale - GAP_AFTER_PX) / GAP_LINE_PX)
+        : 0
+      display = displayDocument(doc, view, spacing)
       decorate(display.roles)
       paintControls()
       return display.doc
@@ -275,7 +281,11 @@ export function createSuggestionLayer(
       return role && role.owner !== block ? role.owner : null
     },
     draw(layout: Layout, pitchPx: number, scale: number) {
-      const roles = display?.roles ?? new Map()
+      const roles = display?.roles
+      if (!roles?.size) {
+        if (chipLayer.childElementCount) chipLayer.replaceChildren()
+        return
+      }
       const first = new Map<string, { page: number; box: LineBox }>()
       for (const page of layout.pages)
         for (const box of page.boxes)
