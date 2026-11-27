@@ -13,6 +13,7 @@ import {
   applyEngineEdit,
   dryRunEngineEdit,
   NEWER_COACH_CHANGE_FIRST,
+  PAPER_CHANGED_SINCE,
 } from "../../engine-paper.js"
 import { readOutline } from "../../outline.js"
 import { editRichPaper, RICH_UNDO_MOVED } from "../../rich-edit.js"
