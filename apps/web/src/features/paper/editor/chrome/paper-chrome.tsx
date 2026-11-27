@@ -1,4 +1,5 @@
 import "./paper-toolbar.css"
+import "./paper-chrome-print.css"
 
 import { useEffect, useReducer, useRef } from "react"
 

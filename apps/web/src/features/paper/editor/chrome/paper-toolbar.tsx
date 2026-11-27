@@ -33,11 +33,14 @@ import {
   tableCommands,
 } from "./format-commands.ts"
 import type { SelectionFormat } from "./selection-format.ts"
+import { useToolbarFold, type FoldableTool } from "./toolbar-fold.ts"
 import {
+  ALIGN_CHOICES,
   AlignMenu,
   FontMenu,
   MoreMenu,
   StyleMenu,
+  type FoldedItem,
   type MoreAction,
 } from "./toolbar-menus.tsx"
 
@@ -55,6 +58,7 @@ function Tool({
   shortcut,
   pressed,
   disabled,
+  folds,
   onPress,
   children,
 }: {
@@ -62,6 +66,7 @@ function Tool({
   shortcut?: string
   pressed?: boolean
   disabled?: boolean
+  folds?: readonly FoldableTool[]
   onPress: () => void
   children: ReactNode
 }) {
@@ -70,6 +75,8 @@ function Tool({
       variant="ghost"
       size="touch"
       className="paper-tool"
+      data-fold={folds ? label : undefined}
+      data-folded={folds?.some((tool) => tool === label) ? "" : undefined}
       aria-label={label}
       title={shortcut ? `${label} (${shortcut})` : label}
       aria-pressed={pressed}
@@ -95,10 +102,14 @@ function LinkTool({
   open,
   onOpen,
   onApply,
+  folded,
+  anchor,
 }: {
   open: boolean
   onOpen: (open: boolean) => void
   onApply: (href: string) => void
+  folded: boolean
+  anchor: () => Element | null
 }) {
   const [href, dispatch] = useReducer(linkDraft, "")
   return (
@@ -111,6 +122,8 @@ function LinkTool({
             className="paper-tool"
             aria-label="Link"
             title="Link (Ctrl+K)"
+            data-fold="Link"
+            data-folded={folded ? "" : undefined}
           />
         }
       >
@@ -118,6 +131,7 @@ function LinkTool({
       </PopoverTrigger>
       <PopoverContent
         align="start"
+        anchor={folded ? anchor : undefined}
         aria-label="Add link"
         className="w-80 flex-row gap-1.5 p-1.5"
       >
@@ -189,12 +203,72 @@ export function PaperToolbar({
     onLinkOpen(false)
     apply((range) => linkCommands(range, href, format.collapsed))
   }
+  const { ref, folded } = useToolbarFold(`${format.style} ${format.font}`)
+  const isFolded = (tool: FoldableTool) => folded.includes(tool)
+  const moreButton = () =>
+    ref.current?.querySelector('[aria-label="More"]') ?? null
+  const foldedItems: Record<FoldableTool, FoldedItem[]> = {
+    Redo: [
+      {
+        tool: "Redo",
+        label: "Redo",
+        icon: <Redo2 />,
+        disabled: !history.redo,
+        run: () => act({ do: "redo" }),
+      },
+    ],
+    Link: [
+      {
+        tool: "Link",
+        label: "Link",
+        icon: <Link />,
+        run: () => onLinkOpen(true),
+      },
+    ],
+    Undo: [
+      {
+        tool: "Undo",
+        label: "Undo",
+        icon: <Undo2 />,
+        disabled: !history.undo,
+        run: () => act({ do: "undo" }),
+      },
+    ],
+    Align: ALIGN_CHOICES.map((choice) => ({
+      tool: "Align",
+      label: `Align ${choice.label.toLowerCase()}`,
+      icon: <choice.icon />,
+      run: () => apply((range) => alignCommands(doc(), range, choice.align)),
+    })),
+    "Numbered list": [
+      {
+        tool: "Numbered list",
+        label: "Numbered list",
+        icon: <ListOrdered />,
+        run: () => act({ do: "list", list: "numbered" }),
+      },
+    ],
+    Underline: [
+      {
+        tool: "Underline",
+        label: "Underline",
+        icon: <Underline />,
+        run: () => act({ do: "mark", mark: "underline" }),
+      },
+    ],
+  }
   return (
-    <div className="paper-toolbar" role="toolbar" aria-label="Formatting">
+    <div
+      ref={ref}
+      className="paper-toolbar"
+      role="toolbar"
+      aria-label="Formatting"
+    >
       <div className="paper-toolbar-group">
         <Tool
           label="Undo"
           shortcut="Ctrl+Z"
+          folds={folded}
           disabled={!history.undo}
           onPress={() => act({ do: "undo" })}
         >
@@ -203,6 +277,7 @@ export function PaperToolbar({
         <Tool
           label="Redo"
           shortcut="Ctrl+Shift+Z"
+          folds={folded}
           disabled={!history.redo}
           onPress={() => act({ do: "redo" })}
         >
@@ -227,6 +302,7 @@ export function PaperToolbar({
           back={back}
           onMore={more}
           photoReason={photoReason}
+          folded={folded.flatMap((tool) => foldedItems[tool])}
         />
       </div>
       <div className="paper-toolbar-group">
@@ -249,13 +325,20 @@ export function PaperToolbar({
         <Tool
           label="Underline"
           shortcut="Ctrl+U"
+          folds={folded}
           pressed={format.marks.underline}
           onPress={() => act({ do: "mark", mark: "underline" })}
         >
           <Underline />
         </Tool>
         <Sep />
-        <LinkTool open={linkOpen} onOpen={onLinkOpen} onApply={applyLink} />
+        <LinkTool
+          open={linkOpen}
+          onOpen={onLinkOpen}
+          onApply={applyLink}
+          folded={isFolded("Link")}
+          anchor={moreButton}
+        />
         <Sep />
         <Tool
           label="Bulleted list"
@@ -268,6 +351,7 @@ export function PaperToolbar({
         <Tool
           label="Numbered list"
           shortcut="Ctrl+Shift+7"
+          folds={folded}
           pressed={format.list === "numbered"}
           onPress={() => act({ do: "list", list: "numbered" })}
         >
@@ -276,6 +360,7 @@ export function PaperToolbar({
         <AlignMenu
           format={format}
           back={back}
+          folded={isFolded("Align")}
           onAlign={(align) =>
             apply((range) => alignCommands(doc(), range, align))
           }

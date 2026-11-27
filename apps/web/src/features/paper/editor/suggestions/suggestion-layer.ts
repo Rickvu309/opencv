@@ -253,7 +253,7 @@ export function createSuggestionLayer(
       status.textContent = ""
       deps.changed()
     },
-    stripHeight: () => (strip.hidden ? 0 : STRIP_PX),
+    stripHeight: () => (strip.hidden ? 0 : strip.offsetHeight || STRIP_PX),
     display(doc: Document, scale: number): Document {
       lastDoc = doc
       const room = GAP_SCREEN_PX / scale - GAP_AFTER_PX

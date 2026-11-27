@@ -13,6 +13,15 @@ export const FLAT_TOOLBAR_CONTROLS = [
   "Align",
 ]
 
+export const PHONE_FOLDS = [
+  "Redo",
+  "Link",
+  "Undo",
+  "Align",
+  "Numbered list",
+  "Underline",
+]
+
 const PHONE_BELOW = 640
 const PHONE_TAP = 36
 
@@ -26,12 +35,32 @@ const overlaps = (a, b) =>
   b.top < a.bottom - 0.5
 
 export function detect(measure) {
-  const { viewport, scrollWidth, clientWidth, controls } = measure
+  const {
+    viewport,
+    scrollWidth,
+    clientWidth,
+    controls,
+    folded = [],
+    labels = [],
+    escape = [],
+  } = measure
   const problems = []
   const shown = controls.filter((control) => control.visible)
+  const inMore = (label) =>
+    viewport < PHONE_BELOW &&
+    PHONE_FOLDS.includes(label) &&
+    folded.includes(label)
   for (const label of FLAT_TOOLBAR_CONTROLS)
-    if (!shown.some((control) => control.label === label))
+    if (!shown.some((control) => control.label === label) && !inMore(label))
       problems.push(`${label} is missing at ${viewport}px`)
+  for (const label of labels)
+    if (label.scrollWidth > label.clientWidth + 1)
+      problems.push(`${label.label} cuts its text at ${viewport}px`)
+  for (const closed of escape)
+    if (closed.focused !== closed.menu)
+      problems.push(
+        `Escape from ${closed.menu} moves focus to ${closed.focused || "nothing"} at ${viewport}px`
+      )
   for (const control of shown)
     if (control.left < 0 || control.right > viewport)
       problems.push(`${control.label} clips at ${viewport}px`)
