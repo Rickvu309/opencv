@@ -8,6 +8,7 @@ import type {
 import type { EditorState, Layout, Metrics } from "@workspace/paper-engine"
 
 import type { KeyAction } from "./input-port.ts"
+import type { mountEditorSuggestions } from "./suggestions/editor-suggestions.ts"
 
 export type PaperEditorOptions = {
   doc: Document
@@ -30,5 +31,6 @@ export type PaperEditor = {
   adopt(state: EditorState): void
   caret(): Pos
   showPeers(carets: readonly Pos[]): void
+  suggest: ReturnType<typeof mountEditorSuggestions>["set"]
   destroy(): void
 }

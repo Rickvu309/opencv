@@ -179,6 +179,7 @@ export type CoachFocusDoc = {
   outline: string
   revision: number
   nativeBasis?: NativeBasis | undefined
+  engine?: 2 | undefined
 }
 
 type CoachExecuted = {
