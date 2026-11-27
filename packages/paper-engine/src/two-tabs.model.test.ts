@@ -198,6 +198,23 @@ describe("two tabs, offline edits and Coach land in one order", () => {
     console.log(w.trace.join("\n"))
   })
 
+  it("counts text as deleted on purpose when an erase cut into it, even if the rest still spells it", () => {
+    const w = world(
+      paperOf([textBlock("b0", { text: "" }), textBlock("b1", { text: "" })])
+    )
+    const acts: Action[] = [
+      { kind: "type", tab: 0, seed: 201, length: 0 },
+      { kind: "type", tab: 0, seed: 0, length: 0 },
+      { kind: "erase", tab: 0, seed: 36, length: 17 },
+      { kind: "type", tab: 1, seed: 0, length: 0 },
+    ]
+    for (const act of acts) step(w, act)
+    settle(w)
+    expect(docText(w.server.doc())).toBe("[[b1]a1]")
+    expect([...w.tabs[0]!.deleted].sort()).toEqual(["[a1]", "[a2]"])
+    checkPromises(w)
+  })
+
   it("never lets Ctrl+Z undo another tab's change", () => {
     const engine = newEngine()
     const doc = paperOf([textBlock("intro", { text: "Analyst" })])
