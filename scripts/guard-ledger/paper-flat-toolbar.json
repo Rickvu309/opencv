@@ -1,0 +1,10 @@
+{
+  "id": "paper-flat-toolbar",
+  "file": "scripts/paper-flat-toolbar.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-flat-toolbar.mjs",
+    "export": "detect"
+  },
+  "historic": null,
+  "reason": "The flat toolbar is new in this change, so no earlier commit holds it. The browser test apps/web/src/features/paper/editor/chrome/paper-toolbar.browser.test.ts measures the live toolbar at 1440 and 390 and feeds the measurement to detect; the fixtures replay the old toolbar's failure of headings and lists hidden behind More at 1440."
+}
