@@ -257,7 +257,7 @@ describe("every store function that inserts a page has cases", () => {
   })
 })
 
-describe("a page made any way opens and stays hidden from others", () => {
+describe("a page made any way is listed, opens, and stays hidden from others", () => {
   let app: App
   let close: () => Promise<void>
   let owner: Account
@@ -333,7 +333,11 @@ describe("a page made any way opens and stays hidden from others", () => {
         version: 1,
       })
       expect((await engineRead(stranger)).status).toBe(404)
-      expect(await listed(creator)).toEqual([])
+      expect(await listed(creator)).toMatchObject([
+        { id: made.docId, kind: made.kind, contentVersion: 1 },
+      ])
+      expect(await listed(stranger)).toEqual([])
+      await expectListIsLivePages(app, db, creator)
       return
     }
     const mine = (await listed(owner)).filter((item) => item.id === made.docId)
