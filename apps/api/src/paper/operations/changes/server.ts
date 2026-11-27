@@ -8,7 +8,7 @@ export const implementation = {
   async execute({ docId, since }, actor) {
     const batch = await changesSince(actor.userId, parsePaperId(docId), since)
     if ("compacted" in batch)
-      return { head: batch.compacted.head, compacted: true }
+      return { head: batch.compacted.head, compacted: true as const }
     return batch
   },
 } satisfies OperationBinding<typeof operation>
