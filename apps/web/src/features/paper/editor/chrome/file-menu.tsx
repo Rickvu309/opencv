@@ -10,6 +10,8 @@ import {
   DropdownMenuTrigger,
 } from "@workspace/ui/components/dropdown-menu"
 
+import { useMenuReturn } from "./menu-return.ts"
+
 type PaperDownloadFormat = "word" | "pdf"
 
 export type PaperDownload =
@@ -67,8 +69,9 @@ export function FileMenu({
   onPageSetup: () => void
   onShortcuts: () => void
 }) {
+  const menu = useMenuReturn(back)
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={menu.onOpenChange}>
       <DropdownMenuTrigger
         render={
           <Button
@@ -81,7 +84,7 @@ export function FileMenu({
       >
         File
       </DropdownMenuTrigger>
-      <DropdownMenuContent finalFocus={back} aria-label="File">
+      <DropdownMenuContent finalFocus={menu.finalFocus} aria-label="File">
         <DropdownMenuItem className="paper-menu-row" onClick={onPageSetup}>
           <FileText />
           Page setup

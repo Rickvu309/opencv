@@ -1,5 +1,6 @@
 export const PAPER_EDITOR_DIR = "apps/web/src/features/paper/editor/"
 export const PAPER_INPUT_PORT = `${PAPER_EDITOR_DIR}input-port.ts`
+export const PAPER_EDITOR_CHROME_DIR = `${PAPER_EDITOR_DIR}chrome/`
 
 export const ONE_INPUT_HINT =
   "the new Paper page reads keys, text and the clipboard only through the hidden textarea in input-port.ts; paint the page from Layout and never make it contenteditable"
@@ -47,6 +48,7 @@ const WRAPPING_CLASS =
 
 export function paperLayoutOwnsLinesProblems(source, fileName) {
   if (!fileName.startsWith(PAPER_EDITOR_DIR)) return []
+  if (fileName.startsWith(PAPER_EDITOR_CHROME_DIR)) return []
   const patterns = fileName.endsWith(".css")
     ? [WRAPPING_CSS]
     : [MEASURING, WRAPPING_STYLE, WRAPPING_CLASS, WRAPPING_CSS]

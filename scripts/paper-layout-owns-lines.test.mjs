@@ -32,6 +32,10 @@ const CLEAN = [
     "apps/web/src/features/paper/design/paper-writing-page.css",
   ],
   [
+    `.paper-menu-row { white-space: normal; }`,
+    "apps/web/src/features/paper/editor/chrome/paper-toolbar.css",
+  ],
+  [
     `const width = context.measureText(word).width`,
     "apps/web/src/features/coach/chart.ts",
   ],

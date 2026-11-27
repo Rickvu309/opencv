@@ -36,8 +36,10 @@ import {
   type SelectionFormat,
   type TextStyle,
 } from "./selection-format.ts"
+import { useMenuReturn } from "./menu-return.ts"
+import type { FoldableTool } from "./toolbar-fold.ts"
 
-const ALIGN_CHOICES = [
+export const ALIGN_CHOICES = [
   { align: "left", label: "Left", icon: AlignLeft },
   { align: "center", label: "Center", icon: AlignCenter },
   { align: "right", label: "Right", icon: AlignRight },
@@ -64,15 +66,18 @@ function ToolMenu({
   trigger,
   children,
   back,
+  folded,
 }: {
   label: string
   className: string
   trigger: ReactNode
   children: ReactNode
   back: () => false
+  folded?: boolean
 }) {
+  const menu = useMenuReturn(back)
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={menu.onOpenChange}>
       <DropdownMenuTrigger
         render={
           <Button
@@ -81,12 +86,14 @@ function ToolMenu({
             className={`paper-tool ${className}`}
             aria-label={label}
             title={label}
+            data-fold={folded === undefined ? undefined : label}
+            data-folded={folded ? "" : undefined}
           />
         }
       >
         {trigger}
       </DropdownMenuTrigger>
-      <DropdownMenuContent finalFocus={back} aria-label={label}>
+      <DropdownMenuContent finalFocus={menu.finalFocus} aria-label={label}>
         {children}
       </DropdownMenuContent>
     </DropdownMenu>
@@ -184,7 +191,8 @@ export function AlignMenu({
   format,
   back,
   onAlign,
-}: MenuProps & { onAlign: (align: Align) => void }) {
+  folded,
+}: MenuProps & { onAlign: (align: Align) => void; folded: boolean }) {
   const current =
     ALIGN_CHOICES.find((choice) => choice.align === format.align) ??
     ALIGN_CHOICES[0]
@@ -194,6 +202,7 @@ export function AlignMenu({
       label="Align"
       className="paper-tool-menu paper-tool-align"
       back={back}
+      folded={folded}
       trigger={
         <>
           <Icon data-align={current.align} />
@@ -241,12 +250,25 @@ function Unavailable({
   )
 }
 
+export type FoldedItem = {
+  tool: FoldableTool
+  label: string
+  icon: ReactNode
+  disabled?: boolean
+  run: () => void
+}
+
 export function MoreMenu({
   format,
   back,
   onMore,
   photoReason,
-}: MenuProps & { onMore: (action: MoreAction) => void; photoReason: string }) {
+  folded,
+}: MenuProps & {
+  onMore: (action: MoreAction) => void
+  photoReason: string
+  folded: readonly FoldedItem[]
+}) {
   const item = (action: MoreAction, icon: ReactNode, label: string) => (
     <DropdownMenuItem className="paper-menu-row" onClick={() => onMore(action)}>
       {icon}
@@ -265,6 +287,19 @@ export function MoreMenu({
         </>
       }
     >
+      {folded.map((tool) => (
+        <DropdownMenuItem
+          key={tool.label}
+          className="paper-menu-row"
+          data-folded-tool={tool.tool}
+          disabled={tool.disabled}
+          onClick={tool.run}
+        >
+          {tool.icon}
+          {tool.label}
+        </DropdownMenuItem>
+      ))}
+      {folded.length ? <DropdownMenuSeparator /> : null}
       {item("strike", <Strikethrough />, "Strikethrough")}
       <Unavailable
         icon={<Highlighter />}
