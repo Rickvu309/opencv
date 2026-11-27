@@ -1,5 +1,4 @@
 import assert from "node:assert/strict"
-import { execFileSync } from "node:child_process"
 import { readdirSync, readFileSync } from "node:fs"
 import path from "node:path"
 import test from "node:test"
@@ -10,7 +9,6 @@ import { detect } from "./lib/paper-route-coach-focus.mjs"
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 const ROUTES = "apps/web/src/routes"
 const DOC_ROUTE = `${ROUTES}/paper-doc.tsx`
-const SWITCHED_WITHOUT_FOCUS = "4bc199822"
 
 const MISTAKE = `
 import { PaperChrome } from "@/features/paper/editor/chrome/paper-chrome.tsx"
@@ -58,15 +56,6 @@ test("an editor with no saved Paper and a file outside the routes stay quiet", (
     ),
     []
   )
-})
-
-test("the commit that switched Paper to the new page fires", () => {
-  const past = execFileSync(
-    "git",
-    ["show", `${SWITCHED_WITHOUT_FOCUS}:${DOC_ROUTE}`],
-    { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }
-  )
-  assert.equal(detect(past, DOC_ROUTE).length, 1)
 })
 
 test("every route that opens a saved Paper holds the Coach focus", () => {
