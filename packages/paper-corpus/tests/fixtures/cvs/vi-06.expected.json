@@ -1,0 +1,76 @@
+{
+  "language": "vi",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginMm": 20
+  },
+  "blocks": [
+    {
+      "kind": "title",
+      "text": "Lê Quỳnh Uyên"
+    },
+    {
+      "kind": "subtitle",
+      "text": "Chuyên viên kiểm thử khả năng tiếp cận"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Kiểm thử biểu mẫu bằng bàn phím và trình đọc màn hình."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Dự án tiêu biểu: xem bản tóm tắt dự án.",
+      "links": [
+        {
+          "text": "xem bản tóm tắt dự án",
+          "href": "https://example.com/paper-corpus/vi-06"
+        }
+      ]
+    },
+    {
+      "kind": "heading",
+      "text": "Kinh nghiệm"
+    },
+    {
+      "kind": "subheading",
+      "text": "Phòng Bậc Nắng"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Ghi nhận lỗi mất tiêu điểm khi gửi biểu mẫu.",
+      "list": {
+        "kind": "numbered",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Kiểm tra lại luồng đã sửa với người dùng trình đọc màn hình.",
+      "list": {
+        "kind": "numbered",
+        "level": 1
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Lập danh sách kiểm tra trường bắt buộc và cách sửa lỗi.",
+      "list": {
+        "kind": "numbered",
+        "level": 0
+      }
+    },
+    {
+      "kind": "heading",
+      "text": "Đào tạo"
+    },
+    {
+      "kind": "table",
+      "rows": [
+        ["Khoá học", "Năm"],
+        ["Biên soạn tài liệu ứng dụng", "2024"],
+        ["Xử lý dữ liệu", "2023"]
+      ]
+    }
+  ]
+}

@@ -1,0 +1,76 @@
+{
+  "language": "en",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginMm": 20
+  },
+  "blocks": [
+    {
+      "kind": "title",
+      "text": "Lena Rillhaven"
+    },
+    {
+      "kind": "subtitle",
+      "text": "Technical Writer"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Writes service guides and installation checklists for field teams."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Selected work: view the project brief.",
+      "links": [
+        {
+          "text": "view the project brief",
+          "href": "https://example.com/paper-corpus/en-03"
+        }
+      ]
+    },
+    {
+      "kind": "heading",
+      "text": "Experience"
+    },
+    {
+      "kind": "subheading",
+      "text": "Halfwick Instruments"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Rebuilt the guide for a handheld meter.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Paired setup diagrams with instructions technicians could scan.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Tracked corrections through two release cycles.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "heading",
+      "text": "Training"
+    },
+    {
+      "kind": "table",
+      "rows": [
+        ["Course", "Year"],
+        ["Applied documentation", "2024"],
+        ["Data handling", "2023"]
+      ]
+    }
+  ]
+}

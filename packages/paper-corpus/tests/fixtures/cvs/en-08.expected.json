@@ -1,0 +1,68 @@
+{
+  "language": "en",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginMm": 20
+  },
+  "blocks": [
+    {
+      "kind": "title",
+      "text": "Iris Shellbrook"
+    },
+    {
+      "kind": "subtitle",
+      "text": "Research Assistant"
+    },
+    {
+      "kind": "heading",
+      "text": "Profile"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Organizes observation notes and prepares material for field studies."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Selected work: view the project brief.",
+      "links": [
+        {
+          "text": "view the project brief",
+          "href": "https://example.com/paper-corpus/en-08"
+        }
+      ]
+    },
+    {
+      "kind": "heading",
+      "text": "Experience"
+    },
+    {
+      "kind": "subheading",
+      "text": "Clover Dial Institute"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Prepared a consent script for the trial session.",
+      "list": {
+        "kind": "numbered",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Coded recurring themes from twenty observation notes.",
+      "list": {
+        "kind": "numbered",
+        "level": 1
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Compared the coding of two observers.",
+      "list": {
+        "kind": "numbered",
+        "level": 0
+      }
+    }
+  ]
+}

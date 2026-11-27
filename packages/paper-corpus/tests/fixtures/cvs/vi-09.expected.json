@@ -1,0 +1,69 @@
+{
+  "language": "vi",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginMm": 20
+  },
+  "blocks": [
+    {
+      "kind": "title",
+      "text": "Đặng Minh Triết"
+    },
+    {
+      "kind": "subtitle",
+      "text": "Trưởng nhóm vận hành hỗ trợ"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Hỗ trợ đội chăm sóc khách hàng phân loại và theo dõi yêu cầu."
+    },
+    {
+      "kind": "heading",
+      "text": "Kinh nghiệm"
+    },
+    {
+      "kind": "subheading",
+      "text": "Trạm Bờ Lá\t2022 - Hiện tại",
+      "rightTabStop": {
+        "positionTwips": 9638
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Thử nghiệm nhóm yêu cầu cho linh kiện giao trễ.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Rà soát các phiếu mở lại với ca chiều.",
+      "list": {
+        "kind": "bullet",
+        "level": 1
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Soạn mẫu bàn giao cho đơn chưa hoàn tất.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "heading",
+      "text": "Đào tạo"
+    },
+    {
+      "kind": "table",
+      "rows": [
+        ["Khoá học", "Năm"],
+        ["Biên soạn tài liệu ứng dụng", "2024"],
+        ["Xử lý dữ liệu", "2023"]
+      ]
+    }
+  ]
+}

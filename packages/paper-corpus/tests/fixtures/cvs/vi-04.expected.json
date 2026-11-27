@@ -1,0 +1,61 @@
+{
+  "language": "vi",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginMm": 20
+  },
+  "blocks": [
+    {
+      "kind": "title",
+      "text": "Nguyễn Nhật Ánh"
+    },
+    {
+      "kind": "subtitle",
+      "text": "Kỹ thuật viên chất lượng"
+    },
+    {
+      "kind": "heading",
+      "text": "Giới thiệu"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Xây dựng quy trình kiểm tra cho các lô sản xuất thử."
+    },
+    {
+      "kind": "heading",
+      "text": "Kinh nghiệm"
+    },
+    {
+      "kind": "subheading",
+      "text": "Xưởng Lá Đồng\t2022 - Hiện tại",
+      "rightTabStop": {
+        "positionTwips": 9638
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Truy nguyên sai lệch kích thước đến đồ gá đã mòn.",
+      "list": {
+        "kind": "numbered",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Ghi lại quy trình kiểm tra đồ gá thay thế.",
+      "list": {
+        "kind": "numbered",
+        "level": 1
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Lập lịch kiểm định dụng cụ đo hằng tuần.",
+      "list": {
+        "kind": "numbered",
+        "level": 0
+      }
+    }
+  ]
+}

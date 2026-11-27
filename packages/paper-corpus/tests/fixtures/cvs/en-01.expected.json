@@ -1,0 +1,123 @@
+{
+  "language": "en",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginMm": 20
+  },
+  "blocks": [
+    {
+      "kind": "title",
+      "text": "Mira Vellstair"
+    },
+    {
+      "kind": "subtitle",
+      "text": "Service Designer"
+    },
+    {
+      "kind": "image",
+      "alt": "Illustrated portrait for the sample CV"
+    },
+    {
+      "kind": "heading",
+      "text": "Profile"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Designed intake and handoff tools for small repair teams."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Selected work: view the project brief.",
+      "links": [
+        {
+          "text": "view the project brief",
+          "href": "https://example.com/paper-corpus/en-01"
+        }
+      ]
+    },
+    {
+      "kind": "heading",
+      "text": "Experience"
+    },
+    {
+      "kind": "subheading",
+      "text": "Fallowglass Studio\t2022 - Present",
+      "rightTabStop": {
+        "positionTwips": 9638
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Mapped a repair request from intake to handoff.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Tested revised forms with five dispatchers.",
+      "list": {
+        "kind": "bullet",
+        "level": 1
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Reduced duplicate questions in the intake form.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "heading",
+      "text": "Project handoff"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Prepared an outline of the handoff.",
+      "list": {
+        "kind": "numbered",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Added the decisions that needed a follow-up.",
+      "list": {
+        "kind": "numbered",
+        "level": 1
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Attached examples for the team to review.",
+      "list": {
+        "kind": "numbered",
+        "level": 2
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Shared the final notes with the next shift.",
+      "list": {
+        "kind": "numbered",
+        "level": 0
+      }
+    },
+    {
+      "kind": "heading",
+      "text": "Training"
+    },
+    {
+      "kind": "table",
+      "rows": [
+        ["Course", "Year"],
+        ["Applied documentation", "2024"],
+        ["Data handling", "2023"]
+      ]
+    }
+  ]
+}

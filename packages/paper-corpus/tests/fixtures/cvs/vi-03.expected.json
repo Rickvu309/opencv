@@ -1,0 +1,76 @@
+{
+  "language": "vi",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginMm": 20
+  },
+  "blocks": [
+    {
+      "kind": "title",
+      "text": "Trần Bảo Như"
+    },
+    {
+      "kind": "subtitle",
+      "text": "Biên tập viên tài liệu kỹ thuật"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Biên soạn hướng dẫn lắp đặt và bảo trì cho đội kỹ thuật."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Dự án tiêu biểu: xem bản tóm tắt dự án.",
+      "links": [
+        {
+          "text": "xem bản tóm tắt dự án",
+          "href": "https://example.com/paper-corpus/vi-03"
+        }
+      ]
+    },
+    {
+      "kind": "heading",
+      "text": "Kinh nghiệm"
+    },
+    {
+      "kind": "subheading",
+      "text": "Viện Đèn Vải"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Viết lại hướng dẫn sử dụng đồng hồ đo cầm tay.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Bổ sung sơ đồ lắp đặt cho kỹ thuật viên.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Theo dõi đính chính qua hai đợt phát hành.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "heading",
+      "text": "Đào tạo"
+    },
+    {
+      "kind": "table",
+      "rows": [
+        ["Khoá học", "Năm"],
+        ["Biên soạn tài liệu ứng dụng", "2024"],
+        ["Xử lý dữ liệu", "2023"]
+      ]
+    }
+  ]
+}

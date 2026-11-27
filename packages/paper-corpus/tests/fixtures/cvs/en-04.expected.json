@@ -1,0 +1,61 @@
+{
+  "language": "en",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginMm": 20
+  },
+  "blocks": [
+    {
+      "kind": "title",
+      "text": "Kellan Emberfold"
+    },
+    {
+      "kind": "subtitle",
+      "text": "Quality Technician"
+    },
+    {
+      "kind": "heading",
+      "text": "Profile"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Builds inspection routines for early production runs."
+    },
+    {
+      "kind": "heading",
+      "text": "Experience"
+    },
+    {
+      "kind": "subheading",
+      "text": "Sable Fern Assembly\t2022 - Present",
+      "rightTabStop": {
+        "positionTwips": 9638
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Traced a tolerance failure to a worn jig.",
+      "list": {
+        "kind": "numbered",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Recorded the inspection steps for a replacement fixture.",
+      "list": {
+        "kind": "numbered",
+        "level": 1
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Established a weekly gauge check.",
+      "list": {
+        "kind": "numbered",
+        "level": 0
+      }
+    }
+  ]
+}

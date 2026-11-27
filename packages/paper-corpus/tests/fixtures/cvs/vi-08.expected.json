@@ -1,0 +1,68 @@
+{
+  "language": "vi",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginMm": 20
+  },
+  "blocks": [
+    {
+      "kind": "title",
+      "text": "Bùi Hải Yến"
+    },
+    {
+      "kind": "subtitle",
+      "text": "Trợ lý nghiên cứu"
+    },
+    {
+      "kind": "heading",
+      "text": "Giới thiệu"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Sắp xếp ghi chép quan sát và chuẩn bị tài liệu khảo sát."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Dự án tiêu biểu: xem bản tóm tắt dự án.",
+      "links": [
+        {
+          "text": "xem bản tóm tắt dự án",
+          "href": "https://example.com/paper-corpus/vi-08"
+        }
+      ]
+    },
+    {
+      "kind": "heading",
+      "text": "Kinh nghiệm"
+    },
+    {
+      "kind": "subheading",
+      "text": "Viện Suối Vải"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Soạn bản xin đồng ý tham gia buổi khảo sát thử.",
+      "list": {
+        "kind": "numbered",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Mã hoá chủ đề lặp lại từ hai mươi bản ghi.",
+      "list": {
+        "kind": "numbered",
+        "level": 1
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Đối chiếu kết quả mã hoá của hai người quan sát.",
+      "list": {
+        "kind": "numbered",
+        "level": 0
+      }
+    }
+  ]
+}

@@ -1,0 +1,166 @@
+{
+  "language": "en",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginMm": 20
+  },
+  "blocks": [
+    {
+      "kind": "title",
+      "text": "Ada Wrenhollow"
+    },
+    {
+      "kind": "subtitle",
+      "text": "Collections Project Lead"
+    },
+    {
+      "kind": "heading",
+      "text": "Profile"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Leads small catalog migrations and trains staff to review new records."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Selected work: view the project brief.",
+      "links": [
+        {
+          "text": "view the project brief",
+          "href": "https://example.com/paper-corpus/en-10"
+        }
+      ]
+    },
+    {
+      "kind": "heading",
+      "text": "Experience"
+    },
+    {
+      "kind": "subheading",
+      "text": "Rowan Lantern Archive\t2022 - Present",
+      "rightTabStop": {
+        "positionTwips": 9638
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Planned a move from shelf lists to a shared catalog.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Compared each imported batch with the original accession records.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Created a reference sheet for uncertain attributions.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "pageBreak"
+    },
+    {
+      "kind": "heading",
+      "text": "Selected projects"
+    },
+    {
+      "kind": "subheading",
+      "text": "Collection inventory\t2019 - 2021",
+      "rightTabStop": {
+        "positionTwips": 9638
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Mapped 14 storage zones with the registrar and drew a shelf diagram for each room."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Reconciled labels against the intake register. Where a recorded number matched two objects, kept both records open for review."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Observed the time required to record each box and planned the remaining shifts around access to the storage rooms."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Created a batch sheet with fields for room, shelf, accession number, condition note, and review initials."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Set aside items with detached labels until the registrar could compare the acquisition photographs."
+    },
+    {
+      "kind": "pageBreak"
+    },
+    {
+      "kind": "heading",
+      "text": "Selected projects"
+    },
+    {
+      "kind": "subheading",
+      "text": "Catalog review\t2021 - 2023",
+      "rightTabStop": {
+        "positionTwips": 9638
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Wrote instructions for normalizing date ranges and materials while preserving the wording from the original label."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Separated temporary object identifiers from accession numbers before the first import."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Worked with the reading room team to identify which legacy fields researchers searched most often."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Compared a sample of printed finding aids against the imported records and logged each discrepancy."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Prepared a handoff checklist covering duplicate items, incomplete descriptions, and scanned attachments."
+    },
+    {
+      "kind": "subheading",
+      "text": "Access and training\t2023 - Present",
+      "rightTabStop": {
+        "positionTwips": 9638
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Built a set of practice records for new reviewers and paired each record with a worked example."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Led review sessions with staff from three departments and collected questions for the field guide."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Created a sign-off sheet for edits that needed the registrar and collections manager to agree."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Set up a short weekly report covering open batches, unresolved location changes, and records awaiting photographs."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Transferred the review schedule to the permanent team and ran the next week's audit alongside them."
+    }
+  ]
+}
