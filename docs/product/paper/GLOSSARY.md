@@ -17,7 +17,7 @@ A Paper written to one employer about one Job.
 _Avoid_: cover letter
 
 **Proof**:
-Evidence that backs a claim in a Paper. Planned, not built.
+Evidence that backs a claim in a Paper. The content schema has a proof kind, but no command creates one and the page is a placeholder.
 
 **Page**:
 What a Paper looks like on a sheet, on every screen.
@@ -35,7 +35,7 @@ A `.docx` a person brings in or takes out.
 _Avoid_: package, Word page, Word document
 
 **Template**:
-A starting layout for a new Paper.
+A starting layout for a new CV.
 
 **Paper Loop**:
 Bring a Word file in, change it by chat, approve, take a Word file out.

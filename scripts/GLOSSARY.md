@@ -18,16 +18,10 @@ _Avoid_: manager, orchestrator, lead
 
 **Builder**:
 The agent that holds one issue, changes the code, verifies its own work with checks, and opens the pull request.
-_Not_: the test writer, whose tests the builder may not change.
 _Avoid_: worker, implementer, child, sub-agent (when the role is meant)
 
-**Test writer**:
-A second agent, separate from the builder, that writes the acceptance tests of a strict change from the issue alone, before any code exists.
-_Not_: a reviewer; it never reads a diff.
-_Avoid_: tester, QA agent, spec writer
-
 **Holder**:
-The agent named by the newest owner note on an issue, written once when it took the issue. The done and block commands read it.
+The agent named by the newest ocv-tools claim note on an issue, which take writes. A newer release note means nobody holds it. The done command reads it.
 _Avoid_: assignee (a separate GitHub field)
 
 **Person**:
@@ -40,33 +34,18 @@ _Avoid_: attacker (when no attack is meant), other user
 
 ### How careful a change must be
 
-**Change class**:
-How careful the path to merge must be, computed by machine from what a change touches: ordinary, strict or owner class.
-_Not_: the risk label, which is a prediction made before any code exists.
-_Avoid_: risk class, risk level, high-risk change
-
-**Ordinary change**:
-A change that touches no strict area and no gate file. It merges by itself once green.
-_Avoid_: normal change, low-risk change
-
-**Strict change**:
-A change where a mistake would refuse honest people, show one person's data to another, or lose their words: limits, sign-in, permissions, import and export, how the writing page saves, an only-adds migration, or a retirement. It needs more than green to merge.
-_Not_: owner class, which identifies changes to merge rules.
-_Avoid_: risky change, sensitive change, careful change
-
-**Owner-class change**:
-A change that touches a gate file, or a migration that does more than add. It merges automatically on green ci, subject to the migration allow-label rule.
-_Avoid_: risk:high change, high-risk change, protected change
+**Risk label**:
+The risk (low, normal or high) declared on an issue when it is filed, as a label such as risk:normal. A change to a gate file must carry risk:high.
+_Avoid_: risk class, risk level, priority
 
 **Gate file**:
-A file that decides what may merge or how checks run, such as the workflows, the delivery tool, the git hooks and the branch ruleset. Changing one makes a change owner class, as a classification; it still merges automatically on green ci.
+A file that decides what may merge or how checks run: ci.yml, nightly.yml, the composite actions under .github/actions, scripts/check.mjs and the main ruleset. A change to one needs the risk:high label, and then merges on green ci like any other.
 _Not_: a protected check, which a change may add to freely.
-_Avoid_: high-risk file, risk:high file, merge-deciding file
+_Avoid_: high-risk file, merge-deciding file
 
-**Risk label**:
-The risk (low, normal or high) declared on an issue when it is filed.
-_Not_: the change class, which the machine computes from the diff and which wins when they disagree.
-_Avoid_: risk class, priority
+**Retirement class**:
+Self or owner, recorded on each retirement. Self means a replacement test that covers the same module, command or route passed its flip proof. Owner means there is no such replacement. Both merge on green ci; the class only records how much proof stands behind the weakening.
+_Avoid_: change class, strict change
 
 **Only-adds migration**:
 A database migration whose every statement creates something new and changes or removes nothing that exists.
@@ -93,7 +72,7 @@ A check that every member of a set the product defines, such as its commands, ro
 _Avoid_: completeness test, enrolment test
 
 **Kind**:
-A recurring shape of product code (a limit, a view, a document session, a surface, a reader, an owned row) with one interface every instance goes through and one harness that checks every instance.
+A recurring shape of product code, today a limit or an owned row, with one interface every instance goes through and one harness that checks every instance.
 _Not_: a defect class, which a kind may cover.
 _Avoid_: pattern, family, primitive, module type
 
@@ -107,7 +86,7 @@ _Not_: the test app, and not test setup or helpers.
 _Avoid_: test harness (for setup), suite, framework
 
 **Test app**:
-The API started inside a test over a fresh test database, so tests reach it without a network.
+The API started inside a test over a fresh test database, so tests reach it without a network. It lives in apps/api/src/test/harness.ts, a file name kept from before this word.
 _Avoid_: harness, test server, fake API
 
 **Invariant**:
@@ -135,7 +114,7 @@ _Not_: the Paper Loop, which is the product idea it exercises.
 _Avoid_: loop, sweep loop, smoke, e2e test
 
 **Probe**:
-A read-only check of production after a deploy, which confirms the deployed version and opens a real imported document as a dedicated account.
+A read-only check of production, scripts/deploy-probe.mjs, which confirms the deployed version and opens a real imported document as a dedicated account. No workflow runs it today; it runs only by hand.
 _Not_: a sweep, which runs on a local or CI tree, and not a health answer, which only says the process started.
 _Avoid_: smoke, smoke test, canary, health check, page probe
 
@@ -155,7 +134,7 @@ _Avoid_: formal test, integration test
 
 **Quick checks**:
 The fast checks run at push on the changed files: formatting, ESLint, typecheck and the comment ban.
-_Not_: quick guards, the older local run of guard tests on a merged tree.
+_Not_: the guard suite, which runs only in the guards job of ci.
 _Avoid_: pre-push checks, lint step
 
 ### Cases and inputs
@@ -178,7 +157,7 @@ _Not_: a fixture, which serves one check.
 _Avoid_: samples, test files, file set
 
 **Acceptance test**:
-A test the test writer makes from the issue alone before a strict change is built. It must fail before the change, and once building starts it may only gain cases.
+A test file under an acceptance folder. A retirement can never name one. None exist today.
 _Avoid_: spec test, contract test, frozen test
 
 ### The gate
@@ -244,24 +223,14 @@ _Avoid_: self-merge, merge on green
 The pass or refusal that one check or rule gives for one tree.
 _Avoid_: result (bare), proof
 
-**Receipt**:
-A machine-written record of one check's run, bound to the tree it judged, with its cases, failures, repros and measured numbers. Only a check in CI writes one.
-_Not_: the product's activity receipt for a command, and not anything a builder types.
-_Avoid_: proof, evidence (for the record), log, report
-
 **Evidence**:
-What shows that a change works: the output of the checks that ran on its head, and the section of a pull request that presents it. Any measured number in it comes from a receipt.
+What shows that a change works, and the section of a pull request that presents it: a command with its real result, a screenshot, or a link to a CI run.
 _Not_: a builder's own account of what it did.
 _Avoid_: proof, self-review, claims
 
 **Merge Danger**:
-The part of a pull request that says what merging risks in production: each migration and whether it only adds, each limit touched, each retirement, and the change class.
+The part of a pull request that says what merging risks in production. It gives the Door (one-way or two-way) and the Blast Radius, and names each migration and whether it only adds, each limit touched, and each retirement.
 _Avoid_: risk section, deploy notes
-
-**Base comparison**:
-Running the same check on the merge base and counting only the failures that are new on the change.
-_Not_: a ratchet, which is committed and only shrinks.
-_Avoid_: known drift, known failures, known manifest
 
 ### Protecting the checks
 
@@ -274,8 +243,8 @@ A change that makes a protected check catch less: a case or assertion removed, a
 _Avoid_: loosen, relax, soften, update (for this)
 
 **Retirement**:
-The recorded, allowed weakening of a protected check, naming why and the replacement whose flip proof passes. Any builder may propose one, and it makes the change strict.
-_Not_: a weakening without a record, which the gate refuses.
+The recorded, allowed weakening of a protected check, written by `ocv-tools retire` to scripts/retired/<issue>.json with why and, when there is one, a replacement test whose flip proof passed. Any builder may record one, and the pull request still merges on green ci.
+_Not_: a weakening without a record, which the guards job of ci refuses.
 _Avoid_: remove, delete, disable, drop (for the allowed act)
 
 **Flip proof**:
@@ -292,7 +261,7 @@ _Avoid_: registry, guard list
 
 **Ratchet**:
 A committed list of known exceptions to one check, each naming its subject and an issue, that may only shrink: an entry leaves when its subject is fixed, and none may be added.
-_Not_: an allowed entry (permanent), an expected failure (one test), a quarantine (temporary), or a base comparison (computed per run).
+_Not_: an allowed entry (permanent), an expected failure (one test), or a quarantine (temporary).
 _Avoid_: known list, known reds, baseline, pending list, frozen set, waiver, allowlist
 
 **Expected failure**:
@@ -326,11 +295,11 @@ _Avoid_: leak, miss, slip
 ### After merge
 
 **Deploy**:
-What a merge to main is: production runs the new main within minutes, with no staging step between.
+What a merge to main leads to: once the main run for that commit is green, production runs it, with no staging step between.
 _Avoid_: release, ship, push to production
 
 **Production red**:
-The state after the probe finds production broken twice in a row. While it lasts, only the revert merges.
+The state after the probe finds production broken twice in a row. While it lasts, only the revert merges. Today it is set only when someone runs the probe by hand.
 _Not_: main red, which a failed main run sets.
 _Avoid_: outage, incident (for the state)
 
@@ -339,16 +308,16 @@ The probe's outcome when the probe itself cannot run, such as when its session h
 _Avoid_: flake, red, probe failure
 
 **Revert**:
-The pull request that undoes the code merged since the last version the probe passed, and keeps every migration.
+The pull request labeled production-red-revert that undoes the red commit, or the code merged since the last good version, and keeps every migration. While a main-red or production-red issue is open, only it merges.
 _Avoid_: rollback
 
 ## Relationships
 
 - A guard reads files, a test runs code, a harness runs every instance of one kind, a sweep runs every member of a derived list, a walk runs random steps through one module, and a probe reads production.
-- Every check gives a verdict. A check in CI writes a receipt, and evidence and Merge Danger take numbers only from receipts.
-- Rules are decided at moments. Hooks trigger the commit and push moments, the policy job decides the pull request moment, the required check needs every CI job, and the gate is the required check green on the head and on the merged tree.
-- The machine computes the change class from the diff: a gate file or a migration that does more than add makes it owner class, a strict area or a retirement makes it strict, and anything else is ordinary. The risk label is the filer's prediction and never overrides it.
-- Protected checks only grow. A weakening needs a retirement with a flip proof, a ratchet only shrinks, an expected failure flips when its issue is fixed, a quarantine expires, and an allowed entry must keep matching.
+- Every check gives a verdict. Evidence shows commands with their real results, screenshots or links to CI runs.
+- Rules are decided at moments. Hooks trigger the commit and push moments, the policy job decides the pull request moment, the guards job decides the guards moment, the required check needs every CI job, the gate is the required check green on the head, and the main run decides production.
+- A change to a gate file needs the risk:high label, and a migration that does more than add needs its allow-migration label. Everything else merges on green ci.
+- Protected checks only grow. A weakening needs a retirement, with a flip proof when it names a replacement, a ratchet only shrinks, an expected failure flips when its issue is fixed, a quarantine expires, and an allowed entry must keep matching.
 - Each defect class is covered by exactly one check: the kind's harness when a kind exists, otherwise a sweep. An escape in a covered class is a defect in that check.
-- After a deploy the probe runs. A pass changes nothing; production found broken twice means production red and a revert; a probe broken alerts and changes nothing else.
-- The owner says yes and the coordinator relays it; no agent ever gives it.
+- When someone runs the probe, a pass changes nothing; production found broken twice means production red and a revert; a probe broken alerts and changes nothing else.
+- No merge waits for anyone's yes: a pull request merges on green ci, and no agent approves its own pull request.

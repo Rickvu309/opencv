@@ -16,3 +16,4 @@ Instead of adding a test after each defect, recurring shapes of product code (li
 
 - One way per job: when a kind lands, its harness replaces the sweep or guard that covered its class, and a ratchet fences the old shape until every site has moved.
 - The writing page's save path moves last and in small behaviour-preserving steps, because it holds people's words and its in-flight rework had to land first.
+- As of 2026-11-27 only limits and owned rows are kinds with harnesses. Views, the document session, surfaces and readers did not become kinds: the one rich Paper replaced the writing page (ADR 0008), and scenarios state what each context must do (ADR 0005).

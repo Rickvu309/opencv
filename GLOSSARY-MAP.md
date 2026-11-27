@@ -10,11 +10,11 @@
 - [Coach](./docs/product/coach/GLOSSARY.md): OpenCV's own agent and its conversations.
 - [Agents](./docs/product/agents/GLOSSARY.md): a person's own agents, working through OpenCV.
 - [Space](./docs/product/space/GLOSSARY.md): a public directory of people, companies and roles. Planned, not built.
-- [Checking](./scripts/GLOSSARY.md): how a change is judged good enough to reach production: tests, guards, sweeps, probes, CI, the gate, receipts and evidence.
+- [Checking](./scripts/GLOSSARY.md): how a change is judged good enough to reach production: tests, guards, sweeps, probes, CI, the gate and evidence.
 
 ## Relationships
 
-- **Control → every product context**: each context registers its commands with Control. Control decides whether an actor may run one alone, records it and can undo it. Control knows actors and never a Paper or a Job.
+- **Control → every product context**: each context declares its commands as operation pairs, and the generated catalog binds them to Control when the app is wired. Control decides whether an actor may run one alone, records it and can undo it. Control knows actors and never a Paper or a Job.
 - **Coach and Agents → the other product contexts**: an agent never writes a context's data itself. It runs the same commands a person runs.
 - **Inbox → Apply**: a mail thread can suggest a Job and its next stage.
 - **Apply → Paper**: a Job can link the Papers sent for it.
@@ -33,7 +33,7 @@ Each word below meant several things across or inside the contexts; use the term
 - free: a Plan. A Coach mode needs another name.
 - proposal, pending action, approval, confirm, action: Proposal for what waits, Approval for the person's yes.
 - document, doc, page, canvas, file: Paper for the thing, Page for how it looks, Word file for what crosses the door.
-- check: check, CI job, required check, pre-check.
+- check: check, CI job, required check.
 - policy: policy job, rule. An approval policy is a product word.
 - proof: guard proof, flip proof. Proof is a kind of Paper.
 - run: CI run, test run, walk. A Coach run is a product word.
@@ -44,9 +44,8 @@ Each word below meant several things across or inside the contexts; use the term
 - harness: harness, test app.
 - stale: stale model. A stale edit is a product word.
 - pin: guard proof, expected failure.
-- receipt: receipt. An activity receipt is a product word.
-- baseline, known: ratchet, base comparison.
-- risk: risk label, change class.
+- baseline, known: ratchet.
+- risk: risk label, retirement class.
 - review: the gate.
 - green: always name the tree.
 

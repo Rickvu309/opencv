@@ -30,7 +30,7 @@ Pick the screens from `node scripts/ui.mjs screens`: every screen and state your
 
 A `HIG` line reads: screen, size, rule, source page and URL, the count and the first finding with what was measured, the screenshot and the repro. The full list is in `sweep/report.json` under the case's `findings`, and each case has `checked` (how many things it measured).
 
-`HIG` lines do not fail the sweep: the product breaks some of these rules on `main` today (see `references/known-on-main.md`). Report the ones your change adds or touches. A finding on a line you did not touch goes under Findings in your report, not into your diff.
+`HIG` lines do not fail the sweep: the product breaks some of these rules on `main` today. Report the ones your change adds or touches. A finding on a line you did not touch goes under Findings in your report, not into your diff.
 
 ## What the machine checks
 
@@ -49,7 +49,7 @@ A `HIG` line reads: screen, size, rule, source page and URL, the count and the f
 
 Look at the 1440 and 390 shots and the 200% text shot. Each line: what to look at, and what passing looks like. Full rules and quotes: `references/<area>.md`.
 
-- Accessibility: state never by colour alone, a word or icon too (A3). Two tappable things at 390 at least 12px apart (A8). Dark theme meets the same contrast (A2). An action toast stays long enough to reach (A12).
+- Accessibility: state never by colour alone, a word or icon too (A3). Two tappable things at 390 at least 12px apart (A8). An action toast stays long enough to reach (A12).
 - Color: one colour, one meaning across the screen (C1). Text over images or gradients is legible (C13, the sweep skips it).
 - Typography: nothing under 11px, no weight under 400 below 18px (T1, T2). At 200% the title and primary action are still first (T5, T11).
 - Layout: edges line up (L2). Every action at 1440 exists at 390 (L10). Fixed bars on phones leave room for the notch and home bar: needs a real phone (L6).
@@ -64,7 +64,6 @@ Judgement rules (reasoned in the PR, not measured) are marked `judgement` in `re
 
 - Real phones: safe areas, the on-screen keyboard, touch slop. Name the screen that needs one.
 - Motion feel and timing: shots stop motion. Use a recording; the apple-design skill owns feel.
-- Dark theme: the sweep shoots the light theme.
 - The browser text-size setting itself: the sweep doubles the root font size, which is what that setting does unless the page pins it in px. The page does not pin it today (`packages/ui/src/styles/globals.css`).
 - Contrast over images and gradients, placeholders, and colour pairs that only appear on hover.
 - Focus rings beyond the first 16 Tab stops.
