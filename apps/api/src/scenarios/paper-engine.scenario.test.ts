@@ -1,14 +1,16 @@
 import { delegateActorSchema } from "@workspace/domain/kernel"
 import {
   paperEngineBlank,
+  type BlockId,
   type DocCommand,
   type Document,
 } from "@workspace/domain/paper-doc"
+import { createEngine } from "@workspace/paper-engine"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { createDemoCoachRuntime } from "../coach/index.js"
 import { agentConnections, oauthClient } from "../db/schema.js"
-import { serverEngine, serverPaperLog } from "../paper/log/index.js"
+import { createPaperLog, postgresLogStore } from "../paper/log/index.js"
 import { createId } from "../platform/id.js"
 import {
   dataOf,
@@ -27,6 +29,14 @@ import {
 
 let world: World
 let paper: ReturnType<typeof engineHelpers>
+const scenarioEngine = createEngine({
+  ids: () => createId() as BlockId,
+  now: () => Date.now(),
+})
+const scenarioLog = createPaperLog({
+  store: postgresLogStore,
+  engine: scenarioEngine,
+})
 
 beforeAll(async () => {
   world = await openWorld({ coach: createDemoCoachRuntime() })
@@ -106,7 +116,7 @@ async function engineWritten(person: Person, lines: string[]) {
       content: [{ type: "text", text }],
     })),
   } as unknown as Document
-  expect(await world.inside(() => serverPaperLog.start(docId, doc))).toEqual({
+  expect(await world.inside(() => scenarioLog.start(docId, doc))).toEqual({
     ok: true,
   })
   return { docId, blocks: (await engineLines(person, docId)).blocks }
@@ -120,18 +130,18 @@ async function personEdit(person: Person, docId: string, commands: Command[]) {
 }
 
 async function typed(docId: string, commands: Command[]) {
-  const head = (await world.inside(() => serverPaperLog.head(docId))) as {
+  const head = (await world.inside(() => scenarioLog.head(docId))) as {
     doc: Document
     version: number
   }
-  const result = serverEngine.run(
-    serverEngine.load(head.doc, head.version, "tab-a"),
+  const result = scenarioEngine.run(
+    scenarioEngine.load(head.doc, head.version, "tab-a"),
     commands as DocCommand[],
     { kind: "person", actor: "ada", client: "tab-a" }
   )
   if ("refusal" in result) throw new Error(JSON.stringify(result.refusal))
   expect(
-    await world.inside(() => serverPaperLog.append(docId, result.change))
+    await world.inside(() => scenarioLog.append(docId, result.change))
   ).toMatchObject({ ok: true })
 }
 
