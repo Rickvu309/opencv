@@ -91,6 +91,12 @@ export async function openWorld(options?: TestAppOptions) {
       get: (path: string, extra: Record<string, string> = {}) =>
         call(path, { method: "GET", headers: { ...headers, ...extra } }),
       post,
+      upload: (path: string, body: FormData, idempotencyKey?: string) => {
+        const uploadHeaders = new Headers(headers)
+        uploadHeaders.delete("content-type")
+        if (idempotencyKey) uploadHeaders.set("idempotency-key", idempotencyKey)
+        return call(path, { method: "POST", headers: uploadHeaders, body })
+      },
       stream: async (path: string, body: unknown) =>
         (
           await app.request(path, {

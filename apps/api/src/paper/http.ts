@@ -13,6 +13,7 @@ import { createHash } from "node:crypto"
 import { type Context, Hono } from "hono"
 import { z } from "zod"
 
+import { transaction } from "../db/context.js"
 import { createId } from "../platform/id.js"
 import { jsonWithStatus } from "../platform/http-json.js"
 import { readJsonBody } from "../platform/http-json.js"
@@ -24,7 +25,7 @@ import {
   importReadStop,
   parseImportLink,
 } from "./import/import-parse.js"
-import { importedPaper } from "./import/import-word.js"
+import { importedPageName, importedPaper } from "./import/import-word.js"
 import { createPaperChangesRoutes } from "./changes-http.js"
 import { createNativeWordRoutes } from "./native-word-http.js"
 import {
@@ -275,6 +276,33 @@ export function createPaperRoutes(signedIn: SignedIn) {
         mediaType: file.type || "application/octet-stream",
         bytes,
         kind: kind.data,
+      }
+      if (c.req.query("engine") === "2") {
+        const output = await transaction(async () => {
+          const owner = parseUserId(c.var.userId)
+          refuseCancelledImport(c.req.raw.signal)
+          const saved = await saveFile({
+            ...upload,
+            userId: owner,
+            purpose: "import",
+            id: importFileId(owner, requestKey),
+          })
+          const result = await registry.execute({
+            name: catalog["paper.import"].name,
+            input: {
+              fileId: saved.id,
+              kind: kind.data,
+              name: importedPageName(file.name),
+              paper: null,
+              engine: 2,
+            },
+            actor: person(owner),
+            idempotencyKey: `import:${requestKey}`,
+          })
+          refuseCancelledImport(c.req.raw.signal)
+          return result.output
+        })
+        return c.json(paperImportResponseSchema.parse(successEnvelope(output)))
       }
       const imported = await importedPaper(upload, {
         owner: c.var.userId,

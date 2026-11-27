@@ -18,20 +18,32 @@ export const richExportInputSchema = z
 export const operation = defineOperation({
   owner: "paper",
   name: "paper.export",
-  version: 2,
+  version: 3,
   kind: "read",
-  description:
-    "Qualify an exact saved CV or Letter for Word download with its writer and basis.",
-  label: "Download your Paper as Word",
-  input: richExportInputSchema,
-  publicResult: z
-    .object({
-      docId: z.string().uuid(),
+  description: "Download a saved CV or Letter as Word or PDF.",
+  label: "Download your Paper",
+  input: z
+    .union([
+      richExportInputSchema,
+      z.strictObject({ docId: z.uuid(), format: z.enum(["docx", "pdf"]) }),
+    ])
+    .meta({ type: "object" }),
+  publicResult: z.union([
+    z.strictObject({
+      docId: z.uuid(),
       kind: z.enum(["cv", "letter"]),
       name: z.string(),
       basis: nativeBasisSchema,
-    })
-    .strict(),
+    }),
+    z.strictObject({
+      name: z.string(),
+      contentType: z.enum([
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/pdf",
+      ]),
+      base64: z.string(),
+    }),
+  ]),
   coach: "never",
   dependsOn: (): readonly ResourceRef[] => [
     { name: "paper", coachFloor: "auto" },

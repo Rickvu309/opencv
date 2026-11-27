@@ -45,7 +45,7 @@ import { readPaperDocumentInfo } from "./document-info.js"
 
 export const IMPORT_FILE_CAP = 8_000_000
 export const IMPORT_SIZE_MESSAGE = "File must be 8 MB or smaller."
-const AVATAR_CAP = 2_000_000
+export const AVATAR_CAP = 2_000_000
 
 function iso(value: Date) {
   return value.toISOString()
@@ -146,6 +146,22 @@ export async function createPaper(
   const row = (await ownedPaperOrNull(actor.userId, parsePaperId(id))) ?? null
   if (!row) return documentNotFound()
   return readPaperDocumentInfo(actor.userId, parsePaperId(id), writer)
+}
+
+export async function createEngineImportPage(
+  owner: UserId,
+  input: { fileId: FileId; name: string; kind: PaperStoredKind }
+) {
+  const id = createId()
+  await getDb().insert(paperDocs).values({
+    id,
+    userId: owner,
+    name: input.name,
+    kind: input.kind,
+    contentVersion: 1,
+    sourceFileId: input.fileId,
+  })
+  return id
 }
 
 export type PaperPatch = {
@@ -346,6 +362,22 @@ export async function saveFile(input: {
     })
     .onConflictDoNothing()
   return { id }
+}
+
+export async function readImportFile(userId: UserId, fileId: FileId) {
+  const [file] = await getDb()
+    .select({ bytes: files.bytes, mediaType: files.mediaType })
+    .from(files)
+    .where(
+      and(
+        eq(files.id, fileId),
+        eq(files.userId, userId),
+        eq(files.purpose, "import")
+      )
+    )
+    .limit(1)
+  if (!file) throw new CommandError(ERROR_CODES.NOT_FOUND, "File not found")
+  return file
 }
 
 export async function readFileMeta(userId: UserId, fileId: FileId) {
