@@ -12,5 +12,19 @@
     "class": "self",
     "classBecause": null,
     "items": 1
+  },
+  {
+    "subject": "scripts/ui/screens.test.mjs > a screen's after steps clean up and are only allowed on a screen with steps",
+    "because": "The expected list of allowed screen steps gains the new paperFirstPages step that library first-page screens use",
+    "replacedBy": "scripts/ui/screens.test.mjs",
+    "proof": {
+      "fork": "009a614fd604615eafff0b0cf735f232d63a5309",
+      "replacedByBlob": "4edfe981e6d95fd0a49705c2dbdb5c0f9d605c0b",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 1
   }
 ]
