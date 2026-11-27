@@ -18,7 +18,7 @@ const Toaster = lazy(() =>
 )
 
 const queryClient = createQueryClient()
-const router = createAppRouter()
+const router = createAppRouter({ queryClient })
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

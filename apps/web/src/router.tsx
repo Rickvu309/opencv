@@ -1,7 +1,8 @@
+import type { QueryClient } from "@tanstack/react-query"
 import { authorizationResumePath } from "@/lib/oauth-consent.ts"
 import {
   Outlet,
-  createRootRoute,
+  createRootRouteWithContext,
   createRoute,
   createRouter,
   isRedirect,
@@ -32,6 +33,9 @@ import {
 } from "@/features/settings/sections.ts"
 import { validateApplySearch } from "@/features/apply/apply-search.ts"
 import { validatePaperSearch } from "@/features/paper/paper-templates.ts"
+import { startPaperLibraryRead } from "@/lib/paper-list.ts"
+import { loadPageFaces } from "@/features/paper/editor/paper-faces.ts"
+import { ownerIdFromRouteMatches } from "@/lib/owner-id.ts"
 import { findBlogPost } from "@/features/landing/blog/blog-copy.ts"
 import { SignInPage } from "@/routes/sign-in.tsx"
 import {
@@ -44,7 +48,9 @@ import { signInHref, validateAuthSearch } from "@/lib/auth-redirect.ts"
 import { documentTarget } from "@/lib/web-origins.ts"
 import { webOrigins } from "@/lib/web-origins-env.ts"
 
-const rootRoute = createRootRoute({
+type AppRouterContext = { queryClient?: QueryClient }
+
+const rootRoute = createRootRouteWithContext<AppRouterContext>()({
   beforeLoad: ({ location }) => {
     const target = documentTarget(
       new URL(location.href, window.location.origin),
@@ -242,6 +248,14 @@ const paperRoute = createRoute({
   getParentRoute: () => productLayoutRoute,
   path: "/paper",
   validateSearch: validatePaperSearch,
+  loader: ({ context, cause }) => {
+    if (cause === "enter" && context.queryClient)
+      startPaperLibraryRead(
+        context.queryClient,
+        ownerIdFromRouteMatches([{ context }]),
+        (rows) => loadPageFaces(rows.flatMap((row) => row.firstPage ?? []))
+      )
+  },
   component: lazyRouteComponent(
     () => import("@/routes/paper.tsx"),
     "PaperPage"
@@ -461,10 +475,14 @@ const routeTree = rootRoute.addChildren([
   rootSplatRoute.addChildren([rootSplatIndexRoute]),
 ])
 
-export function createAppRouter(options?: { history?: RouterHistory }) {
+export function createAppRouter(options?: {
+  history?: RouterHistory
+  queryClient?: QueryClient
+}) {
   return createRouter({
     routeTree,
     history: options?.history,
+    context: { queryClient: options?.queryClient },
   })
 }
 

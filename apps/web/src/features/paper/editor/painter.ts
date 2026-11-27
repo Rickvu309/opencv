@@ -8,6 +8,8 @@ import type {
   Segment,
 } from "@workspace/paper-engine"
 
+import { faceStyle, registerPaperFaces } from "./paper-faces.ts"
+
 export const MPT_PER_PX = 750
 export const PAGE_GAP_PX = 24
 
@@ -62,16 +64,6 @@ type PageSlot = {
   lines: Map<string, Painted>
 }
 
-function faceStyle(face: string) {
-  const variant = /-(bold-italic|bold|italic|regular)$/.exec(face)?.[1]
-  const family = variant ? face.slice(0, -variant.length - 1) : face
-  return {
-    family: `"paper-${family}"`,
-    weight: variant?.startsWith("bold") ? "700" : "400",
-    style: variant?.endsWith("italic") ? "italic" : "normal",
-  }
-}
-
 function glyphSpan(
   metrics: FaceHeights,
   line: LineBox,
@@ -88,7 +80,7 @@ function glyphSpan(
   const { family, weight, style } = faceStyle(run.font)
   span.style.left = `${px(run.x - line.rect.x)}px`
   span.style.top = `${px(line.baseline - line.rect.y) - ascent * sizePx}px`
-  span.style.fontFamily = family
+  span.style.fontFamily = `"${family}"`
   span.style.fontWeight = weight
   span.style.fontStyle = style
   span.style.fontSize = `${sizePx}px`
@@ -238,6 +230,7 @@ export function createPainter(
   stage: HTMLElement,
   metrics: FaceHeights
 ): Painter {
+  registerPaperFaces()
   const pages: PageSlot[] = []
   let touched = 0
   let size: Page["size"] | undefined
