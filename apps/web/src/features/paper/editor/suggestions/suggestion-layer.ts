@@ -302,6 +302,7 @@ export function createSuggestionLayer(
       status.textContent = ""
       deps.changed()
     },
+    undone: hideToast,
     stripHeight: () => (strip.hidden ? 0 : strip.offsetHeight),
     display(doc: Document, scale: number): Document {
       lastDoc = doc

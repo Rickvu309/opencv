@@ -258,6 +258,37 @@ describe("Coach suggestions on the page", () => {
     await page.context().close()
   }, 60_000)
 
+  it("hides the Undo toast once Ctrl+Z takes the Accept back", async () => {
+    const page = await open("en-10")
+    await chip(page, "lab-proposal-1", "accept").click()
+    await page.waitForFunction(() => window.portCalls!.length === 1)
+    const toast = page.locator(".paper-suggest-toast")
+    expect(await toast.isVisible()).toBe(true)
+    await page.keyboard.press("Control+z")
+    expect(await bullets(page)).toEqual([OLD_8, OLD_9])
+    expect(await toast.isVisible()).toBe(false)
+    await page.context().close()
+  }, 60_000)
+
+  it("hides the Undo toast of a saved accept after Cmd+Z or the toolbar Undo", async () => {
+    for (const undo of ["Meta+z", "toolbar"]) {
+      const page = await open("en-10", DESK, false, true)
+      await chip(page, "lab-proposal-1", "accept").click()
+      await page.waitForFunction(() => window.portCalls!.length === 1)
+      const toast = page.locator(".paper-suggest-toast")
+      expect(await toast.isVisible()).toBe(true)
+      await page.keyboard.type("x")
+      if (undo === "toolbar")
+        await page.evaluate(() => window.paperLab!.act({ do: "undo" }))
+      else await page.keyboard.press(undo)
+      expect(await toast.isVisible()).toBe(false)
+      expect(await page.evaluate(() => window.portCalls)).toEqual([
+        ["approve", "lab-proposal-1"],
+      ])
+      await page.context().close()
+    }
+  }, 60_000)
+
   it("makes Accept all, Accept and Reject 44px tall on a phone", async () => {
     const page = await open("en-10", PHONE, true)
     const accept = await chip(page, "lab-proposal-1", "accept").boundingBox()

@@ -43,6 +43,7 @@ export function mountEditorSuggestions(
   }
 
   return {
+    undone: layer.undone,
     stripHeight: layer.stripHeight,
     display: layer.display,
     draw: layer.draw,
