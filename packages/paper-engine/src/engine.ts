@@ -24,6 +24,7 @@ import type { CommandContext } from "./command-context.js"
 import { applyCommand } from "./commands.js"
 import { groupHistory, type HistoryGroup, type InputEdit } from "./history.js"
 import { posIndex, toPm } from "./positions.js"
+import { applySteps } from "./apply.js"
 import { revert } from "./revert.js"
 import { transactionSteps } from "./wire-steps.js"
 import { Step } from "prosemirror-transform"
@@ -62,6 +63,7 @@ export interface PaperEngine {
   undo(state: EditorState): EditResult | null
   redo(state: EditorState): EditResult | null
   revert: typeof revert
+  apply: typeof applySteps
   sendable(state: EditorState): Change[]
   receive(state: EditorState, changes: readonly Change[]): Received
   rebase(
@@ -334,6 +336,8 @@ export function createEngine(ports: Ports): PaperEngine {
     },
 
     revert,
+
+    apply: applySteps,
 
     select(state, command) {
       const inner = unwrap(state)

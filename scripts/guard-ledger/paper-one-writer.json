@@ -1,0 +1,6 @@
+{
+  "id": "paper-one-writer",
+  "file": "scripts/paper-one-writer.test.mjs",
+  "historic": null,
+  "reason": "U8 adds paper_changes and the paper_docs snapshot columns with apps/api/src/paper/log as their only writer, so no commit ever wrote them from elsewhere. The guard fires on drizzle and raw SQL writes outside the log pack and on the log pack's own Postgres store."
+}

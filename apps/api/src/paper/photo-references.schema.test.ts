@@ -26,6 +26,11 @@ const migrationText = readFileSync(
   path.join(here, "../../drizzle", migrationName),
   "utf8"
 )
+const triggerText = readdirSync(path.join(here, "../../drizzle"))
+  .filter((name) => name.endsWith(".sql"))
+  .map((name) => readFileSync(path.join(here, "../../drizzle", name), "utf8"))
+  .filter((text) => text.includes('"replace_photo_refs"('))
+  .join("\n")
 const sweepText = readFileSync(path.join(here, "photo-sweep.ts"), "utf8")
 
 const key = (table: string, column: string) => `${table}.${column}`
@@ -65,7 +70,7 @@ describe("photo reference schema guard", () => {
 
   it("the reference trigger reads every document column and the byte sources", () => {
     for (const column of PHOTO_DOCUMENT_COLUMNS) {
-      expect(migrationText).toContain(column.source)
+      expect(triggerText).toContain(`'${column.source}:' || `)
     }
     for (const column of PHOTO_BYTE_SOURCES) {
       expect(migrationText).toContain(column.source)

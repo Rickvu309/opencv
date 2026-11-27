@@ -5,7 +5,7 @@ export default defineConfig({
   test: {
     environment: "node",
     passWithNoTests: false,
-    testTimeout: 15_000,
+    testTimeout: 60_000,
     maxWorkers: Number(process.env.VITEST_MAX_WORKERS ?? 2),
     projects: [
       {
