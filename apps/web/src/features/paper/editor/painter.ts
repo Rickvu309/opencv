@@ -27,9 +27,9 @@ export function pageScale(availablePx: number, widthPx: number): number {
 
 type BlockFacts = { kind: string; list: string; level: number }
 
-function factsOf(doc: Document): Map<string, BlockFacts> {
+function factsOf(doc: Document | undefined): Map<string, BlockFacts> {
   const facts = new Map<string, BlockFacts>()
-  for (const block of doc.content) {
+  for (const block of doc?.content ?? []) {
     facts.set(
       block.attrs.id,
       block.type === "text_block"
@@ -153,7 +153,7 @@ function contentOf(box: Box, facts: BlockFacts | undefined): string {
 }
 
 export type Painter = {
-  paint(layout: Layout, doc: Document): void
+  paint(layout: Layout, doc?: Document): void
   touched(): number
 }
 
