@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "scripts/ocv-tools/jobs/body.test.mjs > body takes a screen change without a Before / after section",
+    "because": "C's rule now refuses a screen PR body with no Before / after section; the replacement test checks the refusal",
+    "replacedBy": "scripts/ocv-tools/jobs/body.test.mjs",
+    "proof": {
+      "fork": "3364928942818c2b848482c3cfc8f971a3195545",
+      "replacedByBlob": "ab30bd30fef77c3f06ba4218efc36cd07f334a27",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  }
+]
