@@ -1,0 +1,3 @@
+layer: platform
+public: [src/index.ts]
+dependencies: [packages/domain/src/paper-doc]

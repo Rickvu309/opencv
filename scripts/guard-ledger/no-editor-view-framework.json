@@ -1,0 +1,10 @@
+{
+  "id": "no-editor-view-framework",
+  "file": "scripts/no-editor-view-framework.test.mjs",
+  "detector": {
+    "module": "scripts/lib/no-editor-view-framework.mjs",
+    "export": "editorViewFrameworkProblems"
+  },
+  "historic": null,
+  "reason": "preventive: the new Paper packs start in #2212 without an editor view framework; the old core in packages/paper-crdt and rich-editor uses BlockNote and Yjs and stays out of scope until its deletion unit"
+}

@@ -1,0 +1,10 @@
+{
+  "id": "paper-engine-pure",
+  "file": "scripts/paper-engine-pure.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-engine-pure.mjs",
+    "export": "paperEnginePurityProblems"
+  },
+  "historic": null,
+  "reason": "preventive: packages/paper-engine is new in #2212 and no commit has put DOM, Node, server, AI, clock or random code in it; the mistake fixtures stand in for the history"
+}
