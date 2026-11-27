@@ -54,5 +54,19 @@
     "class": "self",
     "classBecause": null,
     "items": 2
+  },
+  {
+    "subject": "apps/api/src/paper/page-creators.test.ts",
+    "because": "Every way of making a Paper now makes a new-engine Paper (paper.start, paper.duplicate, imports, the Word page conversion), so these checks read the engine page and its snapshot instead of the engine-1 rich columns",
+    "replacedBy": "apps/api/src/paper/page-creators.test.ts",
+    "proof": {
+      "fork": "aec0255c7f614be83cc70e6d69406e4be634757c",
+      "replacedByBlob": "5e30afbf3855a498b9c2d529d1453c07533c37e9",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 5
   }
 ]
