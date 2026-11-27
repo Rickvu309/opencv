@@ -25,6 +25,8 @@ export type Appended = {
   released: string[]
 }
 
+export type AtVersion = { doc: Document; later: Change[]; head: Document }
+
 export type Since =
   | { changes: Change[]; head: number }
   | { compacted: { doc: Document; version: number; head: number } }
@@ -92,6 +94,23 @@ export function createPaperLog({
         .flatMap((change) => change.steps)
     )
     return "refusal" in result ? result : result.doc
+  }
+
+  async function atVersion(
+    log: OpenLog,
+    version: number
+  ): Promise<AtVersion | Refused> {
+    const headVersion = log.head.headVersion
+    if (!Number.isInteger(version) || version < 0 || version > headVersion)
+      return { refusal: { code: "stale", head: headVersion } }
+    const later = await log.changesFrom(version)
+    if (version < headVersion && later[0]?.base !== version)
+      return { refusal: { code: "stale", head: headVersion } }
+    const doc = await docAt(log, version)
+    if ("refusal" in doc) return doc
+    const head = await headDoc(log)
+    if ("refusal" in head) return head
+    return { doc, later: later.map(asChange), head }
   }
 
   async function write(
@@ -192,6 +211,35 @@ export function createPaperLog({
       const result = await store.open(docId, "write", (log) =>
         write(log, change, activity)
       )
+      return result ?? { missing: true }
+    },
+
+    async at(
+      docId: string,
+      version: number
+    ): Promise<AtVersion | Refused | Missing> {
+      const result = await store.open(docId, "read", (log) =>
+        atVersion(log, version)
+      )
+      return result ?? { missing: true }
+    },
+
+    async appendAt(
+      docId: string,
+      version: number,
+      make: (at: AtVersion) => unknown,
+      activity: string | null = null
+    ): Promise<Appended | Refused | Missing> {
+      const result = await store.open(docId, "write", async (log) => {
+        const at = await atVersion(log, version)
+        if ("refusal" in at) return at
+        const made = make(at)
+        if (made && typeof made === "object" && "refusal" in made)
+          return made as Refused
+        const change = admit(made)
+        if ("refusal" in change) return change
+        return write(log, change, activity)
+      })
       return result ?? { missing: true }
     },
 

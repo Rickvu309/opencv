@@ -171,7 +171,23 @@ describe("every command runs in a transaction unless it declares none", () => {
                   }
                 : name === "paper.update"
                   ? { docId: UUID, patch: { name: "Renamed" } }
-                  : sampleInput(schema)
+                  : name === "paper.edit"
+                    ? {
+                        docId: UUID,
+                        basedOn: 0,
+                        commands: [
+                          {
+                            op: "replaceText",
+                            range: {
+                              from: { block: "line-1", offset: 0 },
+                              to: { block: "line-1", offset: 3 },
+                            },
+                            expect: "Ada",
+                            text: "Ada Lovelace",
+                          },
+                        ],
+                      }
+                    : sampleInput(schema)
           const parsed = schema.safeParse(input)
           if (!parsed.success) {
             throw new Error(`${name} rejected the sample input`)

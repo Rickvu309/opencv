@@ -5,6 +5,7 @@ export {
   NEW_ENGINE,
   SNAPSHOT_EVERY,
   type Appended,
+  type AtVersion,
   type PaperLog,
   type Since,
 } from "./paper-log.js"
@@ -21,3 +22,4 @@ export {
 } from "./first-page.js"
 export { photoReferences, releasedPhotos } from "./photo-references.js"
 export type { LogHead, OpenLog, PaperLogStore, StoredChange } from "./store.js"
+export { serverEngine, serverPaperLog } from "./server-log.js"

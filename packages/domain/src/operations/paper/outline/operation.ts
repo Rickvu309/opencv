@@ -16,7 +16,7 @@ export const operation = defineOperation({
   version: 2,
   kind: "read",
   description:
-    "Read a bounded outline of a CV or Letter: its name, kind and status, its text blocks with ids, kinds and marks, the revision to pass as basedOn, and the nativeBasis to copy unchanged into paper.edit. Pass blockIds to mark selected blocks.",
+    "Read a bounded outline of a CV or Letter: its name, kind and status, its text blocks with ids, kinds and marks, the revision to pass as basedOn, engine 2 when paper.edit takes commands, and the nativeBasis to copy unchanged into paper.edit. Pass blockIds to mark selected blocks.",
   label: "Read your Paper outline",
   readLabel: "Read your Paper outline",
   input: z
@@ -38,6 +38,7 @@ export const operation = defineOperation({
       nativeBasis: nativeBasisSchema.optional(),
       outline: z.string(),
       truncated: z.boolean(),
+      engine: z.literal(2).optional(),
     })
     .strip(),
   coach: "auto",

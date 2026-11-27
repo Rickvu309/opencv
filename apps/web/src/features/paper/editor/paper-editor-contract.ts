@@ -7,6 +7,7 @@ import type {
 import type { Layout, Metrics } from "@workspace/paper-engine"
 
 import type { KeyAction } from "./input-port.ts"
+import type { mountEditorSuggestions } from "./suggestions/editor-suggestions.ts"
 
 export type PaperEditorOptions = {
   doc: Document
@@ -24,5 +25,6 @@ export type PaperEditor = {
   layout(): Layout
   scale(): number
   focus(): void
+  suggest: ReturnType<typeof mountEditorSuggestions>["set"]
   destroy(): void
 }

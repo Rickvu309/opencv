@@ -3,6 +3,7 @@ import { RICH_NATIVE_WRITER } from "@workspace/domain/paper-doc"
 import { operation } from "@workspace/domain/operations/paper/read"
 import type { OperationBinding } from "../../../registry/bind.js"
 import { readPaperDocumentInfo } from "../../document-info.js"
+import { enginePaperOrNull, readEngineOutline } from "../../engine-paper.js"
 import { readOutline } from "../../outline.js"
 import { listPapers } from "../../store.js"
 
@@ -28,6 +29,14 @@ export const implementation = {
     const docId = parsePaperId(input.docId)
     if ("view" in input)
       return readPaperDocumentInfo(actor.userId, docId, input.writer)
+    const engine = await enginePaperOrNull(actor.userId, docId)
+    if (engine)
+      return {
+        docId: input.docId,
+        name: engine.name,
+        kind: engine.kind,
+        ...(await readEngineOutline(docId, undefined)),
+      }
     const info = await readPaperDocumentInfo(
       actor.userId,
       docId,

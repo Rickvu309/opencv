@@ -10,7 +10,6 @@ import type {
 import {
   caret,
   lineEdges,
-  locate,
   type Layout,
   type Metrics,
   type PagePoint,
@@ -27,6 +26,7 @@ import {
 } from "./doc-positions.ts"
 import type { createEditorTools } from "./editor-tools.ts"
 import type { KeyAction } from "./input-port.ts"
+import { verticalTarget } from "./vertical-move.ts"
 
 type KeyActionContext = {
   doc(): Document
@@ -37,6 +37,7 @@ type KeyActionContext = {
   collapsed(): boolean
   currentRange(): Range
   blockOf(block: BlockId): Block | undefined
+  locateAt(point: PagePoint): Pos
   run(commands: DocCommand[]): boolean
   selectCommand(command: SelectionCommand): void
   select(from: Pos, to: Pos): void
@@ -56,6 +57,7 @@ export function createKeyActions(metrics: Metrics, context: KeyActionContext) {
     collapsed,
     currentRange,
     blockOf,
+    locateAt,
     run,
     selectCommand,
     select,
@@ -133,37 +135,17 @@ export function createKeyActions(metrics: Metrics, context: KeyActionContext) {
   }
 
   function vertical(dir: -1 | 1, extend: boolean) {
-    const from = head()
-    const rect = caret(metrics, layout(), from)
-    if (goalX === null) goalX = rect.x
-    const goal = goalX
-    const page = layout().pages[rect.page]!
-    const tryPoint = (point: PagePoint) => {
-      const pos = locate(metrics, layout(), point)
-      const moved = caret(metrics, layout(), pos)
-      return moved.page === rect.page && moved.y === rect.y ? null : pos
-    }
-    let target =
-      dir > 0
-        ? tryPoint({ page: rect.page, x: goal, y: rect.y + rect.h + 1 })
-        : rect.y - 1 >= page.content.y
-          ? tryPoint({ page: rect.page, x: goal, y: rect.y - 1 })
-          : null
-    const nextPage = layout().pages[rect.page + dir]
-    if (!target && nextPage)
-      target = tryPoint({
-        page: nextPage.index,
-        x: goal,
-        y:
-          dir > 0
-            ? nextPage.content.y
-            : nextPage.content.y + nextPage.content.h - 1,
-      })
-    if (!target) {
-      selectCommand({ op: "move", unit: "doc", dir, extend })
-    } else {
-      select(extend ? anchor() : target, target)
-    }
+    const goal = goalX ?? caret(metrics, layout(), head()).x
+    const target = verticalTarget(
+      metrics,
+      layout(),
+      head(),
+      goal,
+      dir,
+      locateAt
+    )
+    if (!target) selectCommand({ op: "move", unit: "doc", dir, extend })
+    else select(extend ? anchor() : target, target)
     goalX = goal
   }
 
