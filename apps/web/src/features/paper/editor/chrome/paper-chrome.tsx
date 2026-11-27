@@ -131,8 +131,11 @@ export function PaperChrome({
         sameSelectionFormat(next.format, previous.format)
       )
         return
+      const formatChanged = !sameSelectionFormat(next.format, previous.format)
       previous = next
-      startTransition(() => dispatch({ type: "changed", snapshot: next }))
+      const show = () => dispatch({ type: "changed", snapshot: next })
+      if (formatChanged) show()
+      else startTransition(show)
     })
     const detach = sync?.paper.attach({
       state: mounted.state,
