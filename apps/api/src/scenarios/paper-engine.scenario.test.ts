@@ -412,6 +412,35 @@ describe("Coach and outside agents only suggest", () => {
 })
 
 describe("only the owner's tabs write, in server order", () => {
+  it("opens a new engine Paper at its head for its owner only", async () => {
+    const ada = await world.person("Ada")
+    const grace = await world.person("Grace")
+    const { id: docId } = dataOf(
+      await ada.run("paper.create", { kind: "cv", engine: 2 })
+    )
+    const opened = dataOf(await ada.read("paper.head", { docId }))
+    expect(opened.version).toBe(0)
+    expect(opened.doc.content).toHaveLength(1)
+    expect(JSON.stringify(opened.doc)).not.toContain("Kept")
+    expect(failureOf(await grace.read("paper.head", { docId })).code).toBe(
+      "NOT_FOUND"
+    )
+    const change = type(ada, "tab-a", "Kept", 0, 0, opened.doc)
+    expect(
+      dataOf(
+        await ada.run("paper.save", {
+          docId,
+          client: "tab-a",
+          base: 0,
+          changes: [change],
+        })
+      )
+    ).toEqual({ ok: true, head: 1 })
+    const head = dataOf(await ada.read("paper.head", { docId }))
+    expect(head.version).toBe(1)
+    expect(JSON.stringify(head.doc)).toContain("Kept")
+  })
+
   it("refuses access from another account and changes with a Coach origin", async () => {
     const ada = await world.person("Ada")
     const grace = await world.person("Grace")
