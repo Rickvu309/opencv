@@ -65,3 +65,11 @@ export function changesSince(owner: UserId, docId: PaperId, since: number) {
     return admitted(await engineLog.since(docId, since))
   })
 }
+
+export function headOf(owner: UserId, docId: PaperId) {
+  return transaction(async () => {
+    const { engine } = await lockOwnedPaper(owner, docId, "share")
+    requireEngineLog(engine)
+    return admitted(await engineLog.head(docId))
+  })
+}

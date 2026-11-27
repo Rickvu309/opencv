@@ -2,6 +2,7 @@ import "./paper-editor.css"
 
 import {
   type BlockId,
+  type Document,
   type DocCommand,
   type Origin,
   type Pos,
@@ -12,7 +13,6 @@ import {
   caret,
   createEngine,
   createLayouter,
-  locate,
   paperFontMetrics,
   selectionRange,
   type EditorState,
@@ -44,6 +44,8 @@ import { createEditorTools } from "./editor-tools.ts"
 import { createKeyActions } from "./key-actions.ts"
 import { pasteHtml } from "./paste-html.ts"
 import { createOverlays, rangeRects, type PageRect } from "./overlays.ts"
+import { mountEditorSuggestions } from "./suggestions/editor-suggestions.ts"
+import { randomId } from "./random-id.ts"
 import type {
   PaperEditor,
   PaperEditorOptions,
@@ -66,11 +68,6 @@ const MIRROR_WINDOW = 2000
 const STAND_IN_LIMIT = 1000
 const NARROW_PX = 600
 
-function randomId(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(16))
-  return [...bytes].map((byte) => byte.toString(16).padStart(2, "0")).join("")
-}
-
 export function mountPaperEditor(
   host: HTMLElement,
   options: PaperEditorOptions
@@ -81,9 +78,14 @@ export function mountPaperEditor(
     now: () => Date.now(),
   })
   const layouter = createLayouter(metrics)
-  const client = `page-${randomId()}`
-  const origin: Origin = { kind: "person", actor: "person", client }
-  let state: EditorState = engine.load(options.doc, 0, client)
+  const client = options.seat?.client ?? `page-${randomId()}`
+  const origin: Origin = {
+    kind: "person",
+    actor: options.seat?.actor ?? "person",
+    client,
+  }
+  let state: EditorState =
+    options.seat?.state ?? engine.load(options.doc, 0, client)
   let doc = engine.read(state).doc
   let selection = engine.read(state).selection
   let index: DocIndex = indexDoc(doc)
@@ -98,6 +100,7 @@ export function mountPaperEditor(
   const listeners = new Set<() => void>()
   let stageLeft = 0
   let stageTop = 0
+  let peers: readonly Pos[] = []
 
   host.classList.add("paper-editor")
   const stage = document.createElement("div")
@@ -106,6 +109,19 @@ export function mountPaperEditor(
   stage.append(overlays.layer)
   host.append(stage)
   const painter = createPainter(stage, metrics)
+  const suggestions = mountEditorSuggestions(host, overlays.layer, engine, {
+    client,
+    metrics,
+    layout: () => layout,
+    run: (commands, by) => run(commands, undefined, by),
+    focus: focusEditor,
+    undo: () => keys.act({ do: "undo" }),
+    refresh() {
+      relayout()
+      fit()
+      draw()
+    },
+  })
 
   function currentRange(): Range {
     return ordered(index, selectionRange(doc, selection))
@@ -132,10 +148,10 @@ export function mountPaperEditor(
     const gutter = width < NARROW_PX ? 16 : 32
     scale = pageScale(width - 2 * gutter, widthPx)
     stageLeft = Math.max(gutter, (width - widthPx * scale) / 2)
-    stageTop = gutter
+    stageTop = gutter + suggestions.stripHeight()
     stage.style.transform = `translate(${stageLeft}px, ${stageTop}px) scale(${scale})`
     stage.style.width = `${widthPx}px`
-    host.style.height = `${(layout.pages.length * pitchPx - PAGE_GAP_PX) * scale + 2 * gutter}px`
+    host.style.height = `${(layout.pages.length * pitchPx - PAGE_GAP_PX) * scale + 2 * gutter + suggestions.stripHeight()}px`
     fittedWidth = width
   }
 
@@ -190,10 +206,22 @@ export function mountPaperEditor(
       selection: selected,
       composition: composed,
       ...tools.highlights(layout, index),
+      peers: peerRects(doc, peers),
       focused,
     })
     placeInput(headRect)
+    suggestions.draw(layout, pitchPx, scale)
     tools.update(doc, selection, layout, head(), headRect, collapsed(), scale)
+  }
+
+  function peerRects(current: Document, carets: readonly Pos[]) {
+    return carets.flatMap((pos) => {
+      const found = containerAt(index, pos)
+      if (!found || pos.offset > found.container.text.length) return []
+      if (!current.content.some((block) => block.attrs.id === pos.block))
+        return []
+      return [{ ...caret(metrics, layout, pos), w: 2 * MPT_PER_PX }]
+    })
   }
 
   function revealCaret() {
@@ -213,17 +241,22 @@ export function mountPaperEditor(
     selection = read.selection
     if (docChanged) {
       index = indexDoc(doc)
-      const pages = layout.pages.length
-      layout = layouter.layout(doc, layout)
-      painter.paint(layout, doc)
-      if (layout.pages.length !== pages) fit()
+      relayout()
     }
     draw()
     for (const listener of listeners) listener()
   }
 
-  function run(commands: DocCommand[], input?: InputEdit): boolean {
-    const result = engine.run(state, commands, origin, input)
+  function relayout() {
+    const pages = layout.pages.length
+    const shown = suggestions.display(doc, scale)
+    layout = layouter.layout(shown, layout)
+    painter.paint(layout, shown)
+    if (layout.pages.length !== pages) fit()
+  }
+
+  function run(commands: DocCommand[], input?: InputEdit, by = origin) {
+    const result = engine.run(state, commands, by, input)
     if ("refusal" in result) return false
     adopt(result.state)
     return true
@@ -271,6 +304,7 @@ export function mountPaperEditor(
     collapsed,
     currentRange,
     blockOf,
+    locateAt: (point) => suggestions.locateReal(point),
     run,
     selectCommand,
     select,
@@ -442,7 +476,7 @@ export function mountPaperEditor(
         port.sync()
         return
       }
-      const pos = locate(metrics, layout, point)
+      const pos = suggestions.locateReal(point)
       if (clicks === 3) {
         const found = containerAt(index, pos)
         const length = found?.container.text.length ?? 0
@@ -456,7 +490,7 @@ export function mountPaperEditor(
     },
     drag(point) {
       if (!dragAnchor) return
-      select(dragAnchor, locate(metrics, layout, point))
+      select(dragAnchor, suggestions.locateReal(point))
       port.sync()
     },
     focus() {
@@ -467,6 +501,7 @@ export function mountPaperEditor(
   const resize = new ResizeObserver(() => {
     if (host.clientWidth !== fittedWidth) {
       fit()
+      relayout()
       draw()
     }
   })
@@ -501,7 +536,20 @@ export function mountPaperEditor(
     layout: () => layout,
     scale: () => scale,
     focus: focusEditor,
+    state: () => state,
+    adopt(next) {
+      if (next === state) return
+      adopt(next)
+      port.sync()
+    },
+    caret: head,
+    showPeers(carets) {
+      peers = carets
+      draw()
+    },
+    suggest: suggestions.set,
     destroy() {
+      suggestions.destroy()
       resize.disconnect()
       detachPointer()
       port.element.removeEventListener("focus", onFocus)

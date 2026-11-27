@@ -12,7 +12,7 @@ import {
 import {
   applyEngineEdit,
   dryRunEngineEdit,
-  PAPER_CHANGED_SINCE,
+  NEWER_COACH_CHANGE_FIRST,
 } from "../../engine-paper.js"
 import { readOutline } from "../../outline.js"
 import { editRichPaper, RICH_UNDO_MOVED } from "../../rich-edit.js"
@@ -64,7 +64,7 @@ export const implementation = {
           query: "paper.outline",
           input: { docId: input.docId },
           matches: { engine: 2 },
-          skipped: PAPER_CHANGED_SINCE,
+          skipped: NEWER_COACH_CHANGE_FIRST,
         },
       })
     return undoOnlyReversal({

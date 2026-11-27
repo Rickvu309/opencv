@@ -75,6 +75,7 @@ const SNAPSHOT_QUERIES: {
     ...ids.docs.map((docId) => ({ docId })),
   ],
   "paper.changes": null,
+  "paper.head": null,
   "paper.export": null,
   "file.get": (ids) => ids.files.map((fileId) => ({ fileId })),
   "paper.files": () => [{}],
@@ -96,6 +97,8 @@ const NEVER_SNAPSHOT_REASON: Partial<Record<QueryName, string>> = {
   "activity.list": "every command refreshes it",
   "paper.changes":
     "change polling advances its own cursor outside the query cache",
+  "paper.head":
+    "a tab reads the head once when it opens and then follows the changes feed",
   "paper.export":
     "pinned binary download metadata and exact-basis Word qualification are covered by the package and native Word HTTP replays",
   "coach.status":

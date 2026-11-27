@@ -97,6 +97,7 @@ function fillLine(
   box: LineBox,
   facts: BlockFacts | undefined
 ) {
+  el.dataset.block = box.block
   el.dataset.kind = facts?.kind ?? ""
   el.dataset.list = facts?.list ?? ""
   el.dataset.level = String(facts?.level ?? 0)

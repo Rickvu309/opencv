@@ -165,6 +165,13 @@
   animation-name: paper-caret-blink-b;
 }
 
+.paper-peer-caret {
+  position: absolute;
+  background: var(--primary);
+  opacity: 0.6;
+  pointer-events: none;
+}
+
 .paper-caret[hidden] {
   display: none;
 }

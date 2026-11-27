@@ -63,6 +63,7 @@ import { operation as paper$duplicate } from "../operations/paper/duplicate/oper
 import { operation as paper$edit } from "../operations/paper/edit/operation.js"
 import { operation as paper$export } from "../operations/paper/export/operation.js"
 import { operation as paper$files } from "../operations/paper/files/operation.js"
+import { operation as paper$head } from "../operations/paper/head/operation.js"
 import { operation as paper$import } from "../operations/paper/import/operation.js"
 import { operation as paper$list } from "../operations/paper/list/operation.js"
 import { operation as paper$outline } from "../operations/paper/outline/operation.js"
@@ -142,6 +143,7 @@ export const catalog = {
   "paper.edit": paper$edit,
   "paper.export": paper$export,
   "paper.files": paper$files,
+  "paper.head": paper$head,
   "paper.import": paper$import,
   "paper.list": paper$list,
   "paper.outline": paper$outline,

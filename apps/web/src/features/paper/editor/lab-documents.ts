@@ -1,4 +1,5 @@
 import {
+  type AgentCommand,
   documentSchema,
   paperEngineBlank,
   type Document,
@@ -130,4 +131,35 @@ export function labDocument(name: string | null): Document {
       corpusBlock(block, n, A4_WIDTH_MPT - 2 * margin)
     ),
   })
+}
+
+const COACH_REWRITES: [string, string, string][] = [
+  [
+    "c8",
+    "Planned a move from shelf lists to a shared catalog.",
+    "Moved the shelf lists into a shared catalog.",
+  ],
+  [
+    "c9",
+    "Compared each imported batch with the original accession records.",
+    "Checked each imported batch against the accession records.",
+  ],
+]
+
+export function labSuggestions(name: string | null) {
+  if (name !== "en-10") return []
+  return COACH_REWRITES.map(([block, expect, text], n) => ({
+    id: `lab-proposal-${n + 1}`,
+    commands: [
+      {
+        op: "replaceText",
+        range: {
+          from: { block, offset: 0 },
+          to: { block, offset: expect.length },
+        },
+        expect,
+        text,
+      },
+    ] as AgentCommand[],
+  }))
 }

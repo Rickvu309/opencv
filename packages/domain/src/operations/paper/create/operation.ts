@@ -24,6 +24,7 @@ export const operation = defineOperation({
       jobId: z.string().uuid().optional(),
       templateId: paperTemplateIdSchema.optional(),
       lines: startingLinesSchema.optional(),
+      engine: z.literal(2).optional(),
     })
     .strict()
     .refine(
@@ -33,6 +34,12 @@ export const operation = defineOperation({
     .refine(
       (input) => input.templateId === undefined || input.lines === undefined,
       "Start from a template or from lines, not both."
+    )
+    .refine(
+      (input) =>
+        input.engine === undefined ||
+        (input.templateId === undefined && input.lines === undefined),
+      "A Paper on the new engine starts blank."
     ),
   publicResult: z
     .object({
