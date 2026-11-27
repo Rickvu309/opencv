@@ -6,6 +6,7 @@ import { apiStream } from "@/lib/api.ts"
 import { ApiError } from "@/lib/api-error.ts"
 import { authClient } from "@/lib/auth-client.ts"
 import { refreshCatalogReads, refreshReads } from "@/lib/contract-client.ts"
+import { refreshPaperSuggestions } from "@/lib/paper-suggestions.ts"
 import { readSseStream } from "@/lib/sse.ts"
 
 function adoptedCommand(name: string) {
@@ -45,7 +46,10 @@ export function createToolRefresher(queryClient: QueryClient) {
     }
     if (event.type !== "tool-result" || !event.ok) return
     if (!inputs.has(event.toolCallId)) return
-    if (event.pendingActionId) return
+    if (event.pendingActionId) {
+      inputs.delete(event.toolCallId)
+      return refreshPaperSuggestions(queryClient)
+    }
     const input = inputs.get(event.toolCallId)
     inputs.delete(event.toolCallId)
     if (!adoptedCommand(event.name)) return

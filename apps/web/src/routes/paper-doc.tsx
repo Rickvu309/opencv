@@ -24,6 +24,7 @@ import {
   downloadEnginePaper,
   openEnginePaperPdf,
 } from "@/lib/paper-engine-download.ts"
+import { usePaperSuggestions } from "@/lib/paper-suggestions.ts"
 import { openPaperSync } from "@/lib/paper-sync.ts"
 import { browserSyncPorts } from "@/lib/paper-sync-ports.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
@@ -100,6 +101,41 @@ async function openSavedPaper(
   }
 }
 
+type OpenPaper = Extract<PaperState, { kind: "open" }>
+
+function OpenedPaper({ paper }: { paper: OpenPaper }) {
+  const queryClient = useQueryClient()
+  const openedId = paper.docId
+  const onEditor = usePaperSuggestions(openedId, paper.sync.actor)
+  return (
+    <main aria-label="Paper">
+      <PaperChrome
+        doc={paper.doc}
+        title={paper.title}
+        sync={paper.sync}
+        photoReason="Needs a saved photo"
+        onEditor={onEditor}
+        download={{
+          start: (format: "word" | "pdf") => {
+            void downloadEnginePaper(
+              queryClient,
+              openedId,
+              format === "word" ? "docx" : "pdf"
+            ).catch(() =>
+              toast.error("Paper could not download this file. Try again.")
+            )
+          },
+        }}
+        onPrint={() => {
+          void openEnginePaperPdf(queryClient, openedId).catch(() =>
+            toast.error("Paper could not open the PDF. Try again.")
+          )
+        }}
+      />
+    </main>
+  )
+}
+
 function openFailure(error: unknown): PaperState {
   if (error instanceof ApiError && error.code === ERROR_CODES.NOT_FOUND)
     return { kind: "failed", message: NOT_FOUND, retry: false }
@@ -173,31 +209,5 @@ export function PaperDocPage() {
     )
   if (paper.kind === "opening")
     return <main aria-label="Paper" aria-busy="true" />
-  const openedId = paper.docId
-  return (
-    <main aria-label="Paper" key={openedId}>
-      <PaperChrome
-        doc={paper.doc}
-        title={paper.title}
-        sync={paper.sync}
-        photoReason="Needs a saved photo"
-        download={{
-          start: (format: "word" | "pdf") => {
-            void downloadEnginePaper(
-              queryClient,
-              openedId,
-              format === "word" ? "docx" : "pdf"
-            ).catch(() =>
-              toast.error("Paper could not download this file. Try again.")
-            )
-          },
-        }}
-        onPrint={() => {
-          void openEnginePaperPdf(queryClient, openedId).catch(() =>
-            toast.error("Paper could not open the PDF. Try again.")
-          )
-        }}
-      />
-    </main>
-  )
+  return <OpenedPaper key={paper.docId} paper={paper} />
 }

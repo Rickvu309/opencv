@@ -13,8 +13,10 @@ import {
   type SuggestionView,
 } from "./suggestion-view.ts"
 
+export type SuggestionReceipt = { undo?: () => Promise<void> }
+
 export type SuggestionPort = {
-  approve(id: string): Promise<void>
+  approve(id: string): Promise<SuggestionReceipt | void>
   deny(id: string): Promise<void>
 }
 
@@ -85,6 +87,7 @@ export function createSuggestionLayer(
     null
   let display: DisplayDocument | null = null
   let toastTimer = 0
+  let toastUndoes: (() => Promise<void>)[] | null = null
 
   const strip = document.createElement("section")
   strip.className = "paper-suggest-strip"
@@ -126,7 +129,8 @@ export function createSuggestionLayer(
   const toastUndo = button("", "Undo", null)
   toastUndo.addEventListener("click", () => {
     hideToast()
-    deps.undo()
+    if (toastUndoes) void takeBack(toastUndoes)
+    else deps.undo()
   })
   toast.append(toastText, toastUndo)
   host.append(toast)
@@ -136,7 +140,24 @@ export function createSuggestionLayer(
     window.clearTimeout(toastTimer)
   }
 
-  function showToast(text: string, undoable: boolean) {
+  async function takeBack(undoes: (() => Promise<void>)[]) {
+    try {
+      for (const undo of [...undoes].reverse()) await undo()
+    } catch (cause) {
+      status.textContent =
+        cause instanceof Error && cause.message
+          ? cause.message
+          : "Coach could not take that change back."
+      paintControls()
+    }
+  }
+
+  function showToast(
+    text: string,
+    undoable: boolean,
+    undoes: (() => Promise<void>)[] | null = null
+  ) {
+    toastUndoes = undoes
     toastText.textContent = text
     toastUndo.hidden = !undoable
     toast.hidden = false
@@ -164,12 +185,14 @@ export function createSuggestionLayer(
     status.textContent = ""
     paintControls()
     const settled: Proposal[] = []
+    const receipts: (SuggestionReceipt | void)[] = []
     let failure = ""
     for (const id of ids) {
       const proposal = proposals.find((each) => each.id === id)
       if (!proposal) continue
       try {
-        await (accept ? port.approve(id) : port.deny(id))
+        if (accept) receipts.push(await port.approve(id))
+        else await port.deny(id)
         settled.push(proposal)
       } catch (cause) {
         failure =
@@ -182,6 +205,17 @@ export function createSuggestionLayer(
     busy = false
     proposals = proposals.filter((each) => !settled.includes(each))
     status.textContent = failure
+    const saved = receipts.length > 0 && receipts.every(Boolean)
+    if (saved) {
+      deps.changed()
+      const undoes = receipts.flatMap((each) => each?.undo ?? [])
+      showToast(
+        `Accepted ${plural(settled.length)}`,
+        undoes.length === receipts.length,
+        undoes
+      )
+      return
+    }
     const landed = accept && settled.length > 0 ? land(settled) : false
     if (!landed) deps.changed()
     if (accept && settled.length > 0 && !landed)
