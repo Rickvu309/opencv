@@ -25,7 +25,7 @@ import {
   importReadStop,
   parseImportLink,
 } from "./import/import-parse.js"
-import { importedPageName, importedPaper } from "./import/import-word.js"
+import { importedPageName } from "./import/import-word.js"
 import { createPaperChangesRoutes } from "./changes-http.js"
 import { createNativeWordRoutes } from "./native-word-http.js"
 import {
