@@ -8,7 +8,22 @@ import {
 import { paperDocs } from "../db/schema.js"
 import { NEW_ENGINE } from "./log/index.js"
 
-type PaperRow = Omit<typeof paperDocs.$inferSelect, "firstPage">
+type PaperRow = Pick<
+  typeof paperDocs.$inferSelect,
+  | "id"
+  | "name"
+  | "kind"
+  | "templateId"
+  | "status"
+  | "checks"
+  | "pageChoice"
+  | "sourceFileId"
+  | "isFavorite"
+  | "engine"
+  | "headVersion"
+  | "createdAt"
+  | "updatedAt"
+>
 
 export function isEnginePaper(row: Pick<PaperRow, "engine">) {
   return row.engine === NEW_ENGINE

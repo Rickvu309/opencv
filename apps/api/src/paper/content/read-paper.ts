@@ -16,7 +16,22 @@ import { paperDocs } from "../../db/schema.js"
 import { CommandError } from "../../platform/errors.js"
 import { admitDocument } from "./native-admission.js"
 
-type PaperRow = typeof paperDocs.$inferSelect
+type PaperRow = Pick<
+  typeof paperDocs.$inferSelect,
+  | "id"
+  | "name"
+  | "kind"
+  | "templateId"
+  | "status"
+  | "contentVersion"
+  | "checks"
+  | "pageChoice"
+  | "sourceFileId"
+  | "isFavorite"
+  | "crdtDocument"
+  | "createdAt"
+  | "updatedAt"
+>
 
 function iso(value: Date) {
   return value.toISOString()

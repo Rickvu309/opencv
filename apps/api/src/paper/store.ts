@@ -16,7 +16,7 @@ import {
   type NativeWriter,
   type PaperStoredKind,
 } from "@workspace/domain/paper-doc"
-import { and, desc, eq, getTableColumns, ne } from "drizzle-orm"
+import { and, desc, eq, ne } from "drizzle-orm"
 
 import { getDb, insideTransaction } from "../db/context.js"
 import { files, paperDocs } from "../db/schema.js"
@@ -68,7 +68,7 @@ export async function ownedPaperOrNull(userId: UserId, docId: PaperId) {
 }
 
 function listedForEditor(
-  row: typeof paperDocs.$inferSelect,
+  row: Parameters<typeof toListedPaper>[0],
   writer?: NativeWriter
 ) {
   if (!writer) return []
@@ -80,8 +80,23 @@ function listedForEditor(
   }
 }
 
-const { firstPage: _firstPage, ...paperListColumns } =
-  getTableColumns(paperDocs)
+const paperListColumns = {
+  id: paperDocs.id,
+  name: paperDocs.name,
+  kind: paperDocs.kind,
+  templateId: paperDocs.templateId,
+  status: paperDocs.status,
+  contentVersion: paperDocs.contentVersion,
+  checks: paperDocs.checks,
+  pageChoice: paperDocs.pageChoice,
+  sourceFileId: paperDocs.sourceFileId,
+  isFavorite: paperDocs.isFavorite,
+  crdtDocument: paperDocs.crdtDocument,
+  engine: paperDocs.engine,
+  headVersion: paperDocs.headVersion,
+  createdAt: paperDocs.createdAt,
+  updatedAt: paperDocs.updatedAt,
+}
 
 export async function listPapers(
   userId: UserId,
@@ -100,8 +115,7 @@ export async function listPapers(
     .filter((row) => !needle || row.name.toLowerCase().includes(needle))
     .flatMap((row) => {
       if (isEnginePaper(row)) return [toListedEnginePaper(row)]
-      const legacy = { ...row, firstPage: null }
-      return isRichPaper(legacy) ? listedForEditor(legacy, writer) : []
+      return isRichPaper(row) ? listedForEditor(row, writer) : []
     })
   return [...stored].sort((left, right) =>
     left.updatedAt < right.updatedAt
