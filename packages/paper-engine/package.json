@@ -21,6 +21,7 @@
     "@workspace/domain": "workspace:*",
     "@workspace/paper-fonts": "workspace:*",
     "linebreak": "1.1.0",
+    "prosemirror-history": "1.5.1",
     "prosemirror-model": "1.25.12",
     "prosemirror-state": "1.4.4",
     "prosemirror-transform": "1.12.4"

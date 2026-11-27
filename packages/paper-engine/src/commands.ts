@@ -1,9 +1,4 @@
-import {
-  Fragment,
-  Slice,
-  type Mark as PmMark,
-  type Node,
-} from "prosemirror-model"
+import type { Mark as PmMark, Node } from "prosemirror-model"
 import type { Transaction } from "prosemirror-state"
 import type {
   BlockId,
@@ -14,65 +9,27 @@ import type {
   Refusal,
 } from "@workspace/domain/paper-doc"
 
+import {
+  inlineNodes,
+  replaceText,
+  resolveRange,
+  schemaRefusal,
+  type CommandContext,
+} from "./command-context.js"
+import { applyStructureCommand } from "./structure.js"
 import { containerAt, posIndex, toPm, type BlockEntry } from "./positions.js"
 import { paperSchema } from "./schema.js"
 
-export type CommandContext = {
-  tr: Transaction
-  newId: () => BlockId
-  caret: number | null
-}
-
 type Outcome = Refusal | null
-
-const schemaRefusal = (detail: string): Refusal => ({ code: "schema", detail })
-
-type Resolved = { from: number; to: number; at: Pos } | { refusal: Refusal }
-
-function resolveRange(doc: Node, range: Range): Resolved {
-  const a = toPm(doc, range.from)
-  if (a === null)
-    return { refusal: { code: "no-such-position", at: range.from } }
-  const b = toPm(doc, range.to)
-  if (b === null) return { refusal: { code: "no-such-position", at: range.to } }
-  const [from, to] = a <= b ? [a, b] : [b, a]
-  const at = a <= b ? range.from : range.to
-  const start = containerAt(doc, from)
-  const end = containerAt(doc, to)
-  if (start !== end && (start?.cell || end?.cell)) {
-    return { refusal: schemaRefusal("A range cannot cross a table cell") }
-  }
-  return { from, to, at }
-}
 
 const rangeText = (doc: Node, from: number, to: number) =>
   doc.textBetween(from, to, "\n", "\n")
-
-function inlineNodes(text: string, marks: readonly PmMark[]): Node[] {
-  const nodes: Node[] = []
-  text.split("\n").forEach((part, index) => {
-    if (index > 0) nodes.push(paperSchema.nodes.hard_break!.create())
-    if (part) nodes.push(paperSchema.text(part, marks))
-  })
-  return nodes
-}
 
 function marksAt(tr: Transaction, from: number, to: number) {
   if (tr.storedMarks) return tr.storedMarks
   const $from = tr.doc.resolve(from)
   if (from === to) return $from.marks()
   return $from.marksAcross(tr.doc.resolve(to)) ?? $from.marks()
-}
-
-function replaceText(
-  ctx: CommandContext,
-  from: number,
-  to: number,
-  nodes: Node[]
-) {
-  const fragment = Fragment.from(nodes)
-  ctx.tr.replace(from, to, new Slice(fragment, 0, 0))
-  ctx.caret = from + fragment.size
 }
 
 function pmMark(mark: Mark): PmMark {
@@ -198,6 +155,7 @@ function addTextMark(tr: Transaction, from: number, to: number, mark: PmMark) {
   const spans: [number, number][] = []
   tr.doc.nodesBetween(from, to, (node, pos) => {
     if (!node.isText) return true
+    if (mark.isInSet(node.marks)) return false
     const start = Math.max(from, pos)
     const end = Math.min(to, pos + node.nodeSize)
     const last = spans.at(-1)
@@ -205,7 +163,10 @@ function addTextMark(tr: Transaction, from: number, to: number, mark: PmMark) {
     else spans.push([start, end])
     return false
   })
-  for (const [start, end] of spans) tr.addMark(start, end, mark)
+  for (const [start, end] of spans) {
+    tr.removeMark(start, end, mark.type)
+    tr.addMark(start, end, mark)
+  }
 }
 
 const FORMAT_MARKS = Object.values(paperSchema.marks).filter(
@@ -284,7 +245,10 @@ export function applyCommand(
           inlineNodes(command.text ?? command.href, marks)
         )
       })
-    default:
+    case "setLineSpacing":
+    case "setRightTab":
       return schemaRefusal(`${command.op} is not supported yet`)
+    default:
+      return applyStructureCommand(ctx, command)
   }
 }

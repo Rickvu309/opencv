@@ -157,3 +157,62 @@ describe("audit replay", () => {
     }
   })
 })
+
+it("replays undo after paste and a table edit", () => {
+  const engine = newEngine()
+  const block = textBlock("page", { text: "Draft" })
+  let state = engine.load(paperOf([block]), 0, person.client)
+  const at = (offset: number) => ({ block: block.attrs.id, offset })
+  const range = (offset: number) => ({ from: at(offset), to: at(offset) })
+  const run = (command: DocCommand) => {
+    const result = engine.run(state, [command], person)
+    if ("refusal" in result) throw new Error(JSON.stringify(result.refusal))
+    state = result.state
+  }
+  const undo = () => {
+    const result = engine.undo(state)
+    if (!result) throw new Error("Nothing to undo")
+    state = result.state
+  }
+  const read = () => engine.read(state).doc
+  run({ op: "insertText", range: range(5), text: " ready" })
+  const typed = read()
+  run({
+    op: "pasteFragment",
+    range: range(11),
+    fragment: [{ type: "text", text: " for review" }],
+  })
+  const pasted = read()
+  undo()
+  const afterPasteUndo = read()
+  expect(afterPasteUndo).toEqual(typed)
+  run({ op: "insertTable", at: at(11), rows: 2, cols: 2 })
+  const withTable = read()
+  const table = withTable.content[1]
+  if (table?.type !== "table") throw new Error("Expected a table")
+  run({
+    op: "editTable",
+    block: table.attrs.id,
+    row: 0,
+    col: 0,
+    action: "colRight",
+  })
+  const edited = read().content[1]
+  if (edited?.type !== "table") throw new Error("Expected a table")
+  expect(edited.attrs.columnsMpt).toHaveLength(3)
+  undo()
+  const afterTableUndo = read()
+  expect(afterTableUndo).toEqual(withTable)
+  const restored = afterTableUndo.content[1]
+  if (restored?.type !== "table") throw new Error("Expected a table")
+  console.log(
+    [
+      "paste and table undo",
+      `  type       -> ${show(documentText(typed))}`,
+      `  paste      -> ${show(documentText(pasted))}`,
+      `  Undo       -> ${show(documentText(afterPasteUndo))}`,
+      `  table edit -> ${edited.content.length} rows x ${edited.attrs.columnsMpt.length} columns`,
+      `  Undo       -> ${restored.content.length} rows x ${restored.attrs.columnsMpt.length} columns (exact table restored)`,
+    ].join("\n")
+  )
+})

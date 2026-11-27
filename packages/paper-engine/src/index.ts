@@ -29,3 +29,4 @@ export {
   type PagePoint,
   type Segment,
 } from "./layout/index.js"
+export type { InputEdit } from "./history.js"
