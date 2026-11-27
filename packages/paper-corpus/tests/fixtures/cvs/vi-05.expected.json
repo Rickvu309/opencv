@@ -1,0 +1,97 @@
+{
+  "language": "vi",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginMm": 20
+  },
+  "blocks": [
+    {
+      "kind": "title",
+      "text": "Phạm Thuỳ Dương"
+    },
+    {
+      "kind": "subtitle",
+      "text": "Điều phối viên chương trình"
+    },
+    {
+      "kind": "heading",
+      "text": "Giới thiệu"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Sắp xếp lịch đào tạo cho các buổi thực hành cộng đồng."
+    },
+    {
+      "kind": "heading",
+      "text": "Kinh nghiệm"
+    },
+    {
+      "kind": "subheading",
+      "text": "Nhà Gió Dại\t2022 - Hiện tại",
+      "rightTabStop": {
+        "positionTwips": 9638
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Xếp lịch cho tình nguyện viên phụ trách tám buổi học.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Phân bổ bộ dụng cụ theo sức chứa từng phòng.",
+      "list": {
+        "kind": "bullet",
+        "level": 1
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Soạn khảo sát sau hai tuần.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "heading",
+      "text": "Bàn giao dự án"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Lập dàn ý cho buổi bàn giao.",
+      "list": {
+        "kind": "numbered",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Bổ sung các quyết định cần theo dõi.",
+      "list": {
+        "kind": "numbered",
+        "level": 1
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Đính kèm ví dụ để nhóm cùng xem xét.",
+      "list": {
+        "kind": "numbered",
+        "level": 2
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Gửi bản ghi chú hoàn chỉnh cho ca tiếp theo.",
+      "list": {
+        "kind": "numbered",
+        "level": 0
+      }
+    }
+  ]
+}

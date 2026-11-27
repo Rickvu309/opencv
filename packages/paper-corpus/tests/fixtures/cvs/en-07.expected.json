@@ -1,0 +1,61 @@
+{
+  "language": "en",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginMm": 20
+  },
+  "blocks": [
+    {
+      "kind": "title",
+      "text": "Ronan Mossridge"
+    },
+    {
+      "kind": "subtitle",
+      "text": "Facilities Planner"
+    },
+    {
+      "kind": "heading",
+      "text": "Profile"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Plans preventive maintenance for shared workshops and storage rooms."
+    },
+    {
+      "kind": "heading",
+      "text": "Experience"
+    },
+    {
+      "kind": "subheading",
+      "text": "Pine Lantern Works\t2022 - Present",
+      "rightTabStop": {
+        "positionTwips": 9638
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Bundled work orders by zone and equipment downtime.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Reviewed the inspection calendar with site leads.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Added a seasonal check for damp storage rooms.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    }
+  ]
+}

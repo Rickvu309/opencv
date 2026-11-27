@@ -1,0 +1,61 @@
+{
+  "language": "vi",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginMm": 20
+  },
+  "blocks": [
+    {
+      "kind": "title",
+      "text": "Vũ Ngọc Khánh"
+    },
+    {
+      "kind": "subtitle",
+      "text": "Chuyên viên phân tích tồn kho"
+    },
+    {
+      "kind": "heading",
+      "text": "Giới thiệu"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Lập kế hoạch bổ sung hàng dựa trên số liệu kiểm kê tại các kho."
+    },
+    {
+      "kind": "heading",
+      "text": "Kinh nghiệm"
+    },
+    {
+      "kind": "subheading",
+      "text": "Kho Vòm Mây\t2022 - Hiện tại",
+      "rightTabStop": {
+        "positionTwips": 9638
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Đối chiếu phiếu điều chuyển hằng tuần giữa ba kho.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Đánh dấu mặt hàng theo mùa chiếm nhiều diện tích.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Soạn quy trình kiểm lại hàng hư hỏng.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    }
+  ]
+}

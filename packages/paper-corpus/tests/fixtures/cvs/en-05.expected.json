@@ -1,0 +1,97 @@
+{
+  "language": "en",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginMm": 20
+  },
+  "blocks": [
+    {
+      "kind": "title",
+      "text": "Nora Flintwillow"
+    },
+    {
+      "kind": "subtitle",
+      "text": "Program Coordinator"
+    },
+    {
+      "kind": "heading",
+      "text": "Profile"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Coordinates training schedules for small community workshops."
+    },
+    {
+      "kind": "heading",
+      "text": "Experience"
+    },
+    {
+      "kind": "subheading",
+      "text": "Alder Quay Workshops\t2022 - Present",
+      "rightTabStop": {
+        "positionTwips": 9638
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Scheduled volunteer instructors across eight sessions.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Balanced room capacity against the number of loan kits.",
+      "list": {
+        "kind": "bullet",
+        "level": 1
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Prepared a two-week follow-up survey.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "heading",
+      "text": "Project handoff"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Prepared an outline of the handoff.",
+      "list": {
+        "kind": "numbered",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Added the decisions that needed a follow-up.",
+      "list": {
+        "kind": "numbered",
+        "level": 1
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Attached examples for the team to review.",
+      "list": {
+        "kind": "numbered",
+        "level": 2
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Shared the final notes with the next shift.",
+      "list": {
+        "kind": "numbered",
+        "level": 0
+      }
+    }
+  ]
+}

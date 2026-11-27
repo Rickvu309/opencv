@@ -1,0 +1,71 @@
+{
+  "language": "vi",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginMm": 20
+  },
+  "blocks": [
+    {
+      "kind": "title",
+      "text": "Võ Cẩm Ly"
+    },
+    {
+      "kind": "subtitle",
+      "text": "Trưởng dự án lưu trữ"
+    },
+    {
+      "kind": "heading",
+      "text": "Giới thiệu"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Điều phối việc chuyển dữ liệu lưu trữ và hướng dẫn kiểm tra hồ sơ."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Dự án tiêu biểu: xem bản tóm tắt dự án.",
+      "links": [
+        {
+          "text": "xem bản tóm tắt dự án",
+          "href": "https://example.com/paper-corpus/vi-10"
+        }
+      ]
+    },
+    {
+      "kind": "heading",
+      "text": "Kinh nghiệm"
+    },
+    {
+      "kind": "subheading",
+      "text": "Kho Đom Đóm\t2022 - Hiện tại",
+      "rightTabStop": {
+        "positionTwips": 9638
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Lập kế hoạch chuyển danh sách hiện vật vào danh mục chung.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Đối chiếu từng lô nhập với sổ tiếp nhận gốc.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Soạn bảng tra cứu cho các hiện vật chưa rõ nguồn gốc.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    }
+  ]
+}

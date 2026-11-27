@@ -1,0 +1,119 @@
+{
+  "language": "vi",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginMm": 20
+  },
+  "blocks": [
+    {
+      "kind": "title",
+      "text": "Đỗ Ánh Tuyền"
+    },
+    {
+      "kind": "subtitle",
+      "text": "Chuyên viên thiết kế dịch vụ"
+    },
+    {
+      "kind": "heading",
+      "text": "Giới thiệu"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Thiết kế biểu mẫu tiếp nhận và bàn giao cho các nhóm sửa chữa."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Dự án tiêu biểu: xem bản tóm tắt dự án.",
+      "links": [
+        {
+          "text": "xem bản tóm tắt dự án",
+          "href": "https://example.com/paper-corpus/vi-01"
+        }
+      ]
+    },
+    {
+      "kind": "heading",
+      "text": "Kinh nghiệm"
+    },
+    {
+      "kind": "subheading",
+      "text": "Xưởng Thềm Sương\t2022 - Hiện tại",
+      "rightTabStop": {
+        "positionTwips": 9638
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Vẽ lại luồng tiếp nhận phiếu sửa chữa.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Thử biểu mẫu mới với năm điều phối viên.",
+      "list": {
+        "kind": "bullet",
+        "level": 1
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Giảm số câu hỏi trùng lặp trên phiếu.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "heading",
+      "text": "Bàn giao dự án"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Lập dàn ý cho buổi bàn giao.",
+      "list": {
+        "kind": "numbered",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Bổ sung các quyết định cần theo dõi.",
+      "list": {
+        "kind": "numbered",
+        "level": 1
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Đính kèm ví dụ để nhóm cùng xem xét.",
+      "list": {
+        "kind": "numbered",
+        "level": 2
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Gửi bản ghi chú hoàn chỉnh cho ca tiếp theo.",
+      "list": {
+        "kind": "numbered",
+        "level": 0
+      }
+    },
+    {
+      "kind": "heading",
+      "text": "Đào tạo"
+    },
+    {
+      "kind": "table",
+      "rows": [
+        ["Khoá học", "Năm"],
+        ["Biên soạn tài liệu ứng dụng", "2024"],
+        ["Xử lý dữ liệu", "2023"]
+      ]
+    }
+  ]
+}

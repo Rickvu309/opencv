@@ -1,0 +1,69 @@
+{
+  "language": "en",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginMm": 20
+  },
+  "blocks": [
+    {
+      "kind": "title",
+      "text": "Soren Glassmere"
+    },
+    {
+      "kind": "subtitle",
+      "text": "Customer Operations Lead"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Helps support teams triage requests and improve follow-up."
+    },
+    {
+      "kind": "heading",
+      "text": "Experience"
+    },
+    {
+      "kind": "subheading",
+      "text": "Birch Dial Services\t2022 - Present",
+      "rightTabStop": {
+        "positionTwips": 9638
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Piloted a category for overdue parts requests.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Reviewed reopened cases with the afternoon team.",
+      "list": {
+        "kind": "bullet",
+        "level": 1
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Drafted a handoff note for incomplete orders.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "heading",
+      "text": "Training"
+    },
+    {
+      "kind": "table",
+      "rows": [
+        ["Course", "Year"],
+        ["Applied documentation", "2024"],
+        ["Data handling", "2023"]
+      ]
+    }
+  ]
+}

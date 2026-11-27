@@ -1,0 +1,61 @@
+{
+  "language": "vi",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginMm": 20
+  },
+  "blocks": [
+    {
+      "kind": "title",
+      "text": "Huỳnh Tấn Khoa"
+    },
+    {
+      "kind": "subtitle",
+      "text": "Chuyên viên kế hoạch bảo trì"
+    },
+    {
+      "kind": "heading",
+      "text": "Giới thiệu"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Lập lịch bảo trì phòng thực hành và kho dùng chung."
+    },
+    {
+      "kind": "heading",
+      "text": "Kinh nghiệm"
+    },
+    {
+      "kind": "subheading",
+      "text": "Xưởng Mái Trúc\t2022 - Hiện tại",
+      "rightTabStop": {
+        "positionTwips": 9638
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Gom yêu cầu sửa chữa theo khu vực và thời gian ngừng máy.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Rà soát lịch kiểm tra với người phụ trách từng điểm.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Thêm hạng mục kiểm tra độ ẩm theo mùa.",
+      "list": {
+        "kind": "bullet",
+        "level": 0
+      }
+    }
+  ]
+}

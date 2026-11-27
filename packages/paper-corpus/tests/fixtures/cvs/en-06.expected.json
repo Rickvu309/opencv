@@ -1,0 +1,76 @@
+{
+  "language": "en",
+  "page": {
+    "widthMm": 210,
+    "heightMm": 297,
+    "marginMm": 20
+  },
+  "blocks": [
+    {
+      "kind": "title",
+      "text": "Tessa Reedmantle"
+    },
+    {
+      "kind": "subtitle",
+      "text": "Accessibility Tester"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Tests self-service forms with keyboard and screen-reader workflows."
+    },
+    {
+      "kind": "paragraph",
+      "text": "Selected work: view the project brief.",
+      "links": [
+        {
+          "text": "view the project brief",
+          "href": "https://example.com/paper-corpus/en-06"
+        }
+      ]
+    },
+    {
+      "kind": "heading",
+      "text": "Experience"
+    },
+    {
+      "kind": "subheading",
+      "text": "Juniper Trestle Lab"
+    },
+    {
+      "kind": "paragraph",
+      "text": "Documented a focus loss after a form error.",
+      "list": {
+        "kind": "numbered",
+        "level": 0
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Walked through the revised flow with a tester using a screen reader.",
+      "list": {
+        "kind": "numbered",
+        "level": 1
+      }
+    },
+    {
+      "kind": "paragraph",
+      "text": "Built a checklist for required fields and error recovery.",
+      "list": {
+        "kind": "numbered",
+        "level": 0
+      }
+    },
+    {
+      "kind": "heading",
+      "text": "Training"
+    },
+    {
+      "kind": "table",
+      "rows": [
+        ["Course", "Year"],
+        ["Applied documentation", "2024"],
+        ["Data handling", "2023"]
+      ]
+    }
+  ]
+}
