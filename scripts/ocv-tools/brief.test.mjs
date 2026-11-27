@@ -13,12 +13,18 @@ import { ctxFor, fakePorts, issue } from "./ports/fake.mjs"
 const WORKTREE = "/tmp/opencv.worktrees/90-keep-my-search"
 const ROLES = ["build", "mechanical", "review", "plan"]
 
+const NO_FENCES = JSON.stringify({ fences: [] })
+
 function run(args, world = {}) {
   const ports = fakePorts({
     issues: [issue(90, { title: "feat: Keep my search" })],
     worktrees: [{ path: WORKTREE, branch: "feat/90-keep-my-search" }],
-    files: { [`${WORKTREE}/.env`]: "PORT=4090\n" },
     ...world,
+    files: {
+      [`${WORKTREE}/.env`]: "PORT=4090\n",
+      [FENCES_FILE]: NO_FENCES,
+      ...world.files,
+    },
   })
   return runCli(args, ctxFor(ports))
 }
@@ -98,9 +104,36 @@ const PAPER_FENCE = {
   ],
 }
 
-test("the shipped fence file lists no path", () => {
+test("the shipped fence file fences the old Paper core for #2207 until 2027-03-31", () => {
   const fences = JSON.parse(readFileSync(FENCES_FILE, "utf8")).fences
-  assert.deepEqual(fences, [])
+  assert.deepEqual(fences, [
+    {
+      issue: 2207,
+      expires: "2027-03-31",
+      paths: [
+        "packages/paper-crdt/**",
+        "apps/web/src/features/paper/rich-editor/**",
+        "apps/api/src/paper/content/**",
+        "apps/api/src/paper/native-output/**",
+      ],
+    },
+  ])
+})
+
+test("a brief prints the shipped fence while its issue is open", () => {
+  const { code, text } = run(["brief", "90", "--role", "build"], {
+    files: { [FENCES_FILE]: readFileSync(FENCES_FILE, "utf8") },
+    issues: [
+      issue(90, { title: "feat: Keep my search" }),
+      issue(2207, { title: "chore: Track the Paper core rebuild" }),
+    ],
+  })
+  assert.equal(code, 0, text)
+  assert.match(text, /^ {2}packages\/paper-crdt\/\*\* \(issue #2207\)$/m)
+  assert.match(
+    text,
+    /^ {2}apps\/api\/src\/paper\/native-output\/\*\* \(issue #2207\)$/m
+  )
 })
 
 test("a brief prints no shipped fence", () => {

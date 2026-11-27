@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "scripts/ocv-tools/brief.test.mjs > the shipped fence file lists no path",
+    "because": "The Paper core rebuild ships a fence on the old core paths for #2207; the replacement pins that exact fence and its expiry",
+    "replacedBy": "scripts/ocv-tools/brief.test.mjs",
+    "proof": {
+      "fork": "f0cfc50b14b56946609fa3b905ad7b895bfe2848",
+      "replacedByBlob": "6446b72ccfa08afdb42d4b4ba8bbb734d3e63c61",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "owner",
+    "classBecause": "a guard case-removed",
+    "items": 1
+  }
+]
