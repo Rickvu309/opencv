@@ -105,6 +105,8 @@ export async function runStep(page, origin, step, repo, apiOrigin) {
       ? target.click({ timeout: STEP_TIMEOUT_MS })
       : undefined
   }
+  if (step.focus)
+    return locate(page, step.focus).focus({ timeout: STEP_TIMEOUT_MS })
   if (step.fill)
     return locate(page, step.fill).fill(step.fill.text, {
       timeout: STEP_TIMEOUT_MS,

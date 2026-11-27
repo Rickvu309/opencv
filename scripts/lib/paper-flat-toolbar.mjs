@@ -34,6 +34,8 @@ const overlaps = (a, b) =>
   a.top < b.bottom - 0.5 &&
   b.top < a.bottom - 0.5
 
+const PAGE_INPUT = "Paper page"
+
 export function detect(measure) {
   const {
     viewport,
@@ -56,11 +58,13 @@ export function detect(measure) {
   for (const label of labels)
     if (label.scrollWidth > label.clientWidth + 1)
       problems.push(`${label.label} cuts its text at ${viewport}px`)
-  for (const closed of escape)
-    if (closed.focused !== closed.menu)
+  for (const closed of escape) {
+    const byPointer = closed.opened === "pointer"
+    if (closed.focused !== (byPointer ? PAGE_INPUT : closed.menu))
       problems.push(
-        `Escape from ${closed.menu} moves focus to ${closed.focused || "nothing"} at ${viewport}px`
+        `Escape from ${closed.menu}${byPointer ? " opened by pointer" : ""} moves focus to ${closed.focused || "nothing"} at ${viewport}px`
       )
+  }
   for (const control of shown)
     if (control.left < 0 || control.right > viewport)
       problems.push(`${control.label} clips at ${viewport}px`)
