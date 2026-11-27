@@ -21,28 +21,39 @@ export async function writeFirstPage(docId: string, page: LayoutPage) {
     .where(and(eq(paperDocs.id, docId), eq(paperDocs.engine, NEW_ENGINE)))
 }
 
-export type FirstPageDebounce = (
+export type FirstPageDebounce = ((
   docId: string,
   paint: (docId: string) => Promise<void>
-) => void
+) => void) & { settle?: () => Promise<void> }
 
 export function timeoutDebounce(delayMs: number): FirstPageDebounce {
-  const timers = new Map<string, ReturnType<typeof setTimeout>>()
-  return (docId, paint) => {
+  const timers = new Map<
+    string,
+    { timer: ReturnType<typeof setTimeout>; run: () => Promise<void> }
+  >()
+  const schedule = (docId: string, paint: (docId: string) => Promise<void>) => {
     const pending = timers.get(docId)
-    if (pending) clearTimeout(pending)
-    const timer = setTimeout(() => {
+    if (pending) clearTimeout(pending.timer)
+    const run = () => {
       timers.delete(docId)
-      outsideTransaction(() => paint(docId)).catch((error: unknown) => {
+      return outsideTransaction(() => paint(docId)).catch((error: unknown) => {
         console.error("The Paper first page was not stored", { docId, error })
       })
-    }, delayMs)
-    timers.set(docId, timer)
+    }
+    timers.set(docId, { timer: setTimeout(() => void run(), delayMs), run })
   }
+  return Object.assign(schedule, {
+    async settle() {
+      const pending = [...timers.values()]
+      for (const { timer } of pending) clearTimeout(timer)
+      for (const { run } of pending) await run()
+    },
+  })
 }
 
 export type FirstPageLog = PaperLog & {
   flushFirstPage(docId: string): Promise<void>
+  settleFirstPages(): Promise<void>
 }
 
 export function keepFirstPage(
@@ -87,6 +98,9 @@ export function keepFirstPage(
     },
     async flushFirstPage(docId) {
       await paint(docId)
+    },
+    async settleFirstPages() {
+      await debounce.settle?.()
     },
   }
 }
