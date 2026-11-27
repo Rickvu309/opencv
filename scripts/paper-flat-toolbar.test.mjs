@@ -171,3 +171,21 @@ test("Escape that leaves a menu without focus on its button fails", () => {
     ]
   )
 })
+
+test("Escape from a menu opened by pointer that leaves focus off the page fails", () => {
+  assert.deepEqual(
+    detect({
+      ...desk,
+      escape: [
+        { menu: "Font", opened: "pointer", focused: "Paper page" },
+        { menu: "File", opened: "pointer", focused: "File" },
+        { menu: "Align", opened: "keyboard", focused: "Align" },
+        { menu: "More", opened: "keyboard", focused: "Paper page" },
+      ],
+    }),
+    [
+      "Escape from File opened by pointer moves focus to File at 1440px",
+      "Escape from More moves focus to Paper page at 1440px",
+    ]
+  )
+})

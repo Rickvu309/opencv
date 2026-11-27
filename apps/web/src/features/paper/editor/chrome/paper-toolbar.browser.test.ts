@@ -217,6 +217,15 @@ const firstBlock = (page: Page) =>
     }
   })
 
+const firstText = (page: Page) =>
+  page.evaluate(() => {
+    const block = window.paperLab!.read().doc.content[0]!
+    if (block.type !== "text_block") return ""
+    return (block.content ?? [])
+      .map((run) => (run.type === "text" ? run.text : ""))
+      .join("")
+  })
+
 async function typeAndSelect(page: Page, text: string) {
   await page.keyboard.type(text)
   await page.keyboard.press("ControlOrMeta+a")
@@ -392,17 +401,48 @@ describe("the flat Paper toolbar", () => {
     }
   })
 
-  it("returns focus to the menu button on Escape and to the page after a choice", async () => {
+  it("puts typing back on the page at the caret after Escape from a menu opened by pointer", async () => {
     const page = await open(DESK)
+    await page.keyboard.type("Before")
+    for (let step = 0; step < 3; step += 1)
+      await page.keyboard.press("ArrowLeft")
     const escape = []
-    for (const name of MENUS) {
+    const letters = "vwxyz"
+    for (const [index, name] of MENUS.entries()) {
       await page.getByRole("button", { name, exact: true }).click()
       await page.getByRole("menu", { name, exact: true }).waitFor()
       await page.keyboard.press("Escape")
       await page.getByRole("menu", { name, exact: true }).waitFor({
         state: "hidden",
       })
-      escape.push({ menu: name, focused: await focusedLabel(page) })
+      escape.push({
+        menu: name,
+        opened: "pointer",
+        focused: await focusedLabel(page),
+      })
+      await page.keyboard.type(letters[index]!)
+    }
+    expect(detect({ ...(await measure(page)), escape })).toEqual([])
+    expect(await firstText(page)).toBe(`Bef${letters}ore`)
+    await page.context().close()
+  })
+
+  it("returns focus to the menu button on Escape from a menu opened from the keyboard and to the page after a choice", async () => {
+    const page = await open(DESK)
+    const escape = []
+    for (const name of MENUS) {
+      await page.getByRole("button", { name, exact: true }).focus()
+      await page.keyboard.press("Enter")
+      await page.getByRole("menu", { name, exact: true }).waitFor()
+      await page.keyboard.press("Escape")
+      await page.getByRole("menu", { name, exact: true }).waitFor({
+        state: "hidden",
+      })
+      escape.push({
+        menu: name,
+        opened: "keyboard",
+        focused: await focusedLabel(page),
+      })
     }
     expect(detect({ ...(await measure(page)), escape })).toEqual([])
     await tool(page, "Text style").click()
