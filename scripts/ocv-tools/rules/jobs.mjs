@@ -1,5 +1,5 @@
 import { issueOfBranch } from "./pull-ref.mjs"
-import { SCREEN_BODY_FIX, screenBodyProblem } from "./screens.mjs"
+import { SCREEN_BODY_FIX, screenBodyProblem, shownUiFiles } from "./screens.mjs"
 
 const FINISH_TITLE = /^(feat|fix|hotfix|refactor|chore|docs): [^ ].* \(#\d+\)$/
 const FIX_TITLE = /^(?:fix|hotfix)(?:\([^)]*\))?!?: /
@@ -90,6 +90,11 @@ function hasRealEvidence(evidence) {
 const FENCE = /^ {0,3}(`{3,}|~{3,})(.*)$/
 const DETAILS_OPEN = /^ {0,3}<details(?:\s[^<>]*)?>/i
 const DETAILS_CLOSE = /<\/details>\s*$/i
+const TREE_QUESTION = /^(?:\*(?:\\.|[^*])+\?\*|[^*<>`#\s-][^*]*\?)$/
+const TREE_REASON = /^- \*\*([A-Z])\.\*\* \S/
+const TREE_FIX =
+  "Start with a bold answer and a <details> block holding the question and two to four lettered reasons. Write it with node .agents/skills/show-opencv/bin/logic.mjs tree.json."
+
 const RISK_LINE = /^\*\*Risk:\*\* \S/
 
 function visibleBody(text) {
@@ -106,7 +111,7 @@ function visibleBody(text) {
       if (depth === 0) fold = lines.length
       depth += 1
     }
-    lines.push({ line, code })
+    lines.push({ line, code, depth })
     if (
       !code &&
       depth &&
@@ -115,7 +120,14 @@ function visibleBody(text) {
     ) {
       depth -= 1
       if (depth === 0) {
-        lines.splice(fold, lines.length - fold, { line: "", details: true })
+        const content = lines
+          .slice(fold + 1, -1)
+          .filter(({ depth, code }) => depth === 1 && !code)
+        lines.splice(fold, lines.length - fold, {
+          line: "",
+          details: true,
+          content,
+        })
         hasDetails = true
       }
     }
@@ -124,6 +136,21 @@ function visibleBody(text) {
       fence = ""
   }
   return { lines, hasDetails }
+}
+
+function hasProofTree(content = []) {
+  const question = content.findIndex(({ line }) =>
+    TREE_QUESTION.test(line.trimEnd())
+  )
+  const reasons = content
+    .slice(question + 1)
+    .flatMap(({ line }) => TREE_REASON.exec(line)?.[1] ?? [])
+  return (
+    question >= 0 &&
+    reasons.length >= 2 &&
+    reasons.length <= 4 &&
+    reasons.every((label, index) => label === "ABCD"[index])
+  )
 }
 
 function proofOf(lines, start) {
@@ -165,11 +192,12 @@ function badBody(facts) {
   const proof = lines.findIndex(
     ({ line, details }, index) => index > lead && (details || line.trim())
   )
+  const boldAnswer =
+    !/^\*\*(?:Now|Proof|Risk):\*\*/.test(answer) &&
+    /^\*\*\S(?:.*\S)?\*\*$/.test(answer)
   const evidence = /^\*\*Now:\*\* \S/.test(answer)
     ? proofOf(lines, proof)
-    : !/^\*\*(?:Now|Proof|Risk):\*\*/.test(answer) &&
-        /^\*\*\S(?:.*\S)?\*\*$/.test(answer) &&
-        hasDetails
+    : boldAnswer && hasDetails
       ? text
       : null
   const problems = []
@@ -198,7 +226,13 @@ function badBody(facts) {
     problems.push(
       "Proof needs a command with its result on the same line or in the output block under it (exit 0, N passed, 0 mismatches), an image, or a link to a CI run."
     )
-  if (FIX_TITLE.test(facts.pull?.title ?? "")) {
+  const fix = FIX_TITLE.test(facts.pull?.title ?? "")
+  if (
+    (fix || shownUiFiles(facts.diff?.files).length > 0) &&
+    (!boldAnswer || !hasProofTree(lines[proof]?.content))
+  )
+    problems.push(TREE_FIX)
+  if (fix) {
     if (!CAUGHT_BY.test(text))
       problems.push(
         "A fix needs a line: Caught by: user|ci|review|verify-skill|test|agent-self"
@@ -281,9 +315,9 @@ export const jobRows = [
   }),
   row({
     id: "BAD_BODY",
-    says: "The PR body opens with Now and Proof, or a bold answer followed by a details block. Proof shows a command and result, an image, or a link to a CI run. At most 25 non-empty lines are visible, including fenced code lines. A PR with a migration names its Risk. Fill in all template placeholders. The body names no path under /home/ or ~/tmp. A fix or hotfix PR adds Caught by and Introduced by lines.",
+    says: "The PR body opens with Now and Proof, or a bold answer followed by a details block. Proof shows a command and result, an image, or a link to a CI run. At most 25 non-empty lines are visible, including fenced code lines. A PR with a migration names its Risk. Fill in all template placeholders. The body names no path under /home/ or ~/tmp. A fix, hotfix or screen PR opens with a bold answer and a details block with its question and two to four lettered reasons. A fix or hotfix PR adds Caught by and Introduced by lines.",
     at: ["finish", "body"],
-    needs: ["body", "pull", "migrations"],
+    needs: ["body", "pull", "migrations", "diff"],
     check: badBody,
   }),
   row({

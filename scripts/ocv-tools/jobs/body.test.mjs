@@ -1,6 +1,6 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { BODY, fixture } from "./fixture.mjs"
+import { BODY, PROOF_TREE, fixture } from "./fixture.mjs"
 
 const editOk = (cmd, args) => {
   if (cmd === "gh" && args[0] === "pr" && args[1] === "edit")
@@ -32,7 +32,7 @@ test("body refuses to remove the screenshot section from a screen pull request",
     changed: ["apps/web/src/features/paper/paper-library-sections.tsx"],
   })
   const note = `${f.ctx.cwd}/note.md`
-  f.ctx.writeFile(note, BODY)
+  f.ctx.writeFile(note, PROOF_TREE)
   const refused = f.call("body", "91", "--body-file", "note.md")
   assert.equal(refused.code, 2, refused.text)
   assert.match(refused.text, /REFUSED NO_BEFORE_AFTER/)
@@ -40,7 +40,7 @@ test("body refuses to remove the screenshot section from a screen pull request",
 
   const picture =
     "![Paper](https://github.com/Rickvu309/opencv/releases/download/screenshots/paper.png)"
-  f.ctx.writeFile(note, `${BODY}\n## Before / after\n\n${picture}\n`)
+  f.ctx.writeFile(note, `${PROOF_TREE}\n## Before / after\n\n${picture}\n`)
   const accepted = f.call("body", "91", "--body-file", "note.md")
   assert.equal(accepted.code, 0, accepted.text)
   assert.ok(uploaded(f).includes(picture))
@@ -73,7 +73,7 @@ test("body refuses a bad note with the body rule's own message", () => {
   })
   introduced.ctx.writeFile(
     `${introduced.ctx.cwd}/note.md`,
-    `${BODY}\nCaught by: ci\n`
+    `${PROOF_TREE}\nCaught by: ci\n`
   )
   const missingIntroduced = introduced.call(
     "body",
@@ -195,7 +195,7 @@ test("a closing line for a longer issue number does not count as this issue", ()
 })
 
 test("a fix note with both provenance lines is saved once", () => {
-  const note = `${BODY}\nCaught by: review\nIntroduced by: abc1234\n`
+  const note = `${PROOF_TREE}\nCaught by: review\nIntroduced by: abc1234\n`
   const f = fixture({
     pull: {
       title: "fix: keep the photo (#90)",
