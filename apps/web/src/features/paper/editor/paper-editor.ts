@@ -5,12 +5,10 @@ import {
   type Block,
   type BlockId,
   type DocCommand,
-  type Document,
   type Origin,
   type Pos,
   type Range,
   type Run,
-  type Selection,
   type SelectionCommand,
 } from "@workspace/domain/paper-doc"
 import {
@@ -23,8 +21,6 @@ import {
   selectionRange,
   type EditorState,
   type InputEdit,
-  type Layout,
-  type Metrics,
   type PagePoint,
 } from "@workspace/paper-engine"
 
@@ -49,6 +45,10 @@ import {
   type TextareaEdit,
 } from "./input-port.ts"
 import { createOverlays, rangeRects, type PageRect } from "./overlays.ts"
+import type {
+  PaperEditor,
+  PaperEditorOptions,
+} from "./paper-editor-contract.ts"
 import {
   createPainter,
   MPT_PER_PX,
@@ -58,19 +58,10 @@ import {
   px,
 } from "./painter.ts"
 
-export type PaperEditorOptions = {
-  doc: Document
-  metrics?: Metrics
-  askLink?: (current: string) => string | null
-}
-
-export type PaperEditor = {
-  read(): { doc: Document; selection: Selection }
-  layout(): Layout
-  scale(): number
-  focus(): void
-  destroy(): void
-}
+export type {
+  PaperEditor,
+  PaperEditorOptions,
+} from "./paper-editor-contract.ts"
 
 const MIRROR_WINDOW = 2000
 const STAND_IN_LIMIT = 1000
@@ -148,6 +139,7 @@ export function mountPaperEditor(
   let fittedWidth = -1
   let base: { pos: Pos } | { whole: Range } = { whole: currentRange() }
   let scrollQueued = false
+  const listeners = new Set<() => void>()
 
   host.classList.add("paper-editor")
   const stage = document.createElement("div")
@@ -242,6 +234,7 @@ export function mountPaperEditor(
       if (layout.pages.length !== pages) fit()
     }
     draw()
+    for (const listener of listeners) listener()
   }
 
   function run(commands: DocCommand[], input?: InputEdit): boolean {
@@ -651,6 +644,25 @@ export function mountPaperEditor(
 
   return {
     read: () => ({ doc, selection }),
+    range: currentRange,
+    act(action) {
+      act(action)
+      port.sync()
+      revealCaret()
+    },
+    apply(commands) {
+      const done = run(commands)
+      port.sync()
+      return done
+    },
+    history: () => ({
+      undo: engine.undo(state) !== null,
+      redo: engine.redo(state) !== null,
+    }),
+    subscribe(listener) {
+      listeners.add(listener)
+      return () => listeners.delete(listener)
+    },
     layout: () => layout,
     scale: () => scale,
     focus: () => port.element.focus({ preventScroll: true }),
@@ -660,6 +672,7 @@ export function mountPaperEditor(
       port.element.removeEventListener("focus", onFocus)
       port.element.removeEventListener("blur", onBlur)
       port.destroy()
+      listeners.clear()
       stage.remove()
       host.classList.remove("paper-editor")
     },
