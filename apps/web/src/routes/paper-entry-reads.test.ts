@@ -10,9 +10,12 @@ import { createQueryClient } from "@/lib/query-client.ts"
 import { pathOf } from "@/test/mock-http.ts"
 import { createAppRouter } from "@/router.tsx"
 
+const liveFonts = Object.getOwnPropertyDescriptor(document, "fonts")
+
 afterEach(() => {
   vi.unstubAllGlobals()
-  Reflect.deleteProperty(document, "fonts")
+  if (liveFonts) Object.defineProperty(document, "fonts", liveFonts)
+  else Reflect.deleteProperty(document, "fonts")
 })
 
 function storedFirstPage() {
@@ -55,11 +58,18 @@ it("entering the library starts the list read and the card fonts before the page
   vi.stubGlobal(
     "FontFace",
     class {
+      family: string
+      source: string
+      descriptors: { weight: string; style: string }
       constructor(
-        readonly family: string,
-        readonly source: string,
-        readonly descriptors: { weight: string; style: string }
-      ) {}
+        family: string,
+        source: string,
+        descriptors: { weight: string; style: string }
+      ) {
+        this.family = family
+        this.source = source
+        this.descriptors = descriptors
+      }
       load() {
         loading.push(
           `${this.family} ${this.descriptors.weight} ${this.descriptors.style}`
