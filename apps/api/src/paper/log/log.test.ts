@@ -18,20 +18,28 @@ import { person, serverEngine, writer } from "./log.test-support.js"
 const docId = "00000000-0000-4000-8000-000000002228"
 const photo = "00000000-0000-4000-8000-0000000000f1"
 
-async function postgresStore(): Promise<PaperLogStore> {
+async function postgresDatabase() {
   const client = new PGlite()
   const db = drizzle({ client })
   await runMigrations(db as unknown as AppDatabase)
   await client.exec(`
     insert into "opencv_app"."user" (id, name, email)
       values ('log-owner', 'Ada', 'log-owner@example.com');
+    insert into "opencv_app"."files"
+      (id, user_id, name, media_type, byte_size, purpose, bytes)
+      values ('${photo}', 'log-owner', 'face.png', 'image/png', 1, 'avatar', '\\x89');
     insert into "opencv_app"."paper_docs" (id, user_id, name, kind, content_version)
       values ('${docId}', 'log-owner', 'CV', 'cv', 0);
   `)
-  return {
+  const store: PaperLogStore = {
     open: (id, mode, work) =>
       withDatabase(db, () => postgresLogStore.open(id, mode, work)),
   }
+  return { client, store }
+}
+
+async function postgresStore(): Promise<PaperLogStore> {
+  return (await postgresDatabase()).store
 }
 
 function memoryStore(): PaperLogStore {
@@ -170,5 +178,51 @@ describe.each([
       origin: { ...person, kind: "system" },
     })
     expect(removed).toMatchObject({ ok: true, released: [photo] })
+  })
+})
+
+describe("photo references held by the Paper log on Postgres", () => {
+  async function sources(client: PGlite) {
+    const rows = await client.query<{ source: string }>(
+      `select source from "opencv_app"."photo_refs" where file_id = '${photo}' order by source`
+    )
+    return rows.rows.map((row) => row.source.split(":")[0])
+  }
+
+  it("keeps a photo referenced while a change, its inverse or the snapshot holds it", async () => {
+    const { client, store } = await postgresDatabase()
+    const log = createPaperLog({ store, engine: serverEngine })
+    const tab = writer()
+    expect(await log.start(docId, tab.start)).toEqual({ ok: true })
+    const added = tab.run([
+      {
+        op: "insertImage",
+        at: { block: "paragraph-1", offset: 0 } as never,
+        fileId: photo as never,
+        widthMpt: 72000,
+        heightMpt: 72000,
+      },
+    ])
+    const appended = await log.append(docId, added)
+    expect(appended).toMatchObject({ ok: true })
+    expect(await sources(client)).toEqual([
+      "paper_changes.commands",
+      "paper_changes.steps",
+    ])
+    const kept = await log.revert(docId, added.edit, {
+      edit: "drop-photo",
+      origin: { ...person, kind: "system" },
+    })
+    expect(kept).toMatchObject({ ok: true, released: [photo] })
+    const head = (await log.head(docId)) as { version: number }
+    expect(await log.compact(docId, added.steps.length)).toMatchObject({
+      ok: true,
+    })
+    expect(await sources(client)).toEqual([
+      "paper_changes.inverse",
+      "paper_docs.snapshot",
+    ])
+    expect(await log.compact(docId, head.version)).toMatchObject({ ok: true })
+    expect(await sources(client)).toEqual([])
   })
 })

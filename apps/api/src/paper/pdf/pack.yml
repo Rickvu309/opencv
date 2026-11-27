@@ -1,0 +1,3 @@
+layer: feature
+public: [write-pdf.ts]
+dependencies: [packages/paper-engine]

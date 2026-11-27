@@ -21,6 +21,23 @@ export const PHOTO_DOCUMENT_COLUMNS = [
     source: "pending_actions.input",
   },
   { table: "idempotency", column: "result", source: "idempotency.result" },
+  { table: "paper_docs", column: "snapshot", source: "paper_docs.snapshot" },
+  {
+    table: "paper_docs",
+    column: "first_page",
+    source: "paper_docs.first_page",
+  },
+  { table: "paper_changes", column: "steps", source: "paper_changes.steps" },
+  {
+    table: "paper_changes",
+    column: "inverse",
+    source: "paper_changes.inverse",
+  },
+  {
+    table: "paper_changes",
+    column: "commands",
+    source: "paper_changes.commands",
+  },
 ] as const
 
 export const PHOTO_BYTE_SOURCES = [

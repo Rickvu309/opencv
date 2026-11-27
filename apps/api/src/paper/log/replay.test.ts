@@ -28,6 +28,9 @@ async function postgresStore(): Promise<PaperLogStore> {
   await client.exec(`
     insert into "opencv_app"."user" (id, name, email)
       values ('replay-owner', 'Ada', 'replay-owner@example.com');
+    insert into "opencv_app"."files"
+      (id, user_id, name, media_type, byte_size, purpose, bytes)
+      values ('00000000-0000-4000-8000-0000000000f2', 'replay-owner', 'face.png', 'image/png', 1, 'avatar', '\\x89');
     insert into "opencv_app"."paper_docs" (id, user_id, name, kind, content_version)
       values ('${docId}', 'replay-owner', 'CV', 'cv', 0);
   `)
