@@ -23,6 +23,8 @@ import { ownedPaperOrNull } from "./store.js"
 
 export const COACH_EDIT_MOVED = "The Paper changed where Coach wanted to edit"
 export const PAPER_CHANGED_SINCE = "The Paper changed there since"
+export const NEWER_COACH_CHANGE_FIRST =
+  "Undo was skipped: take back the newer Coach change on this Paper first."
 const OUTLINE_LIMIT = 20_000
 
 export async function enginePaperOrNull(userId: UserId, docId: PaperId) {
