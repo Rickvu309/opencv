@@ -89,6 +89,7 @@ export type PaperSync = {
   current(): EditorState
   attach(seat: SyncSeat): () => void
   local(): void
+  accepting(proposal: string, batch: string): void
   view(): SyncView
   subscribe(listener: () => void): () => void
   dismiss(index: number): void
@@ -163,6 +164,7 @@ export async function openPaperSync(
   const listeners = new Set<() => void>()
   const stream = new AbortController()
   const idle = new Set<() => void>()
+  const accepted = new Map<string, string>()
 
   const current = () => (seat ? seat.state() : state)
   const notify = () => {
@@ -182,6 +184,11 @@ export async function openPaperSync(
     } finally {
       adopting = false
     }
+  }
+
+  function acceptedBatch(change: Change) {
+    const proposal = change.origin.proposal
+    return proposal === undefined ? null : (accepted.get(proposal) ?? null)
   }
 
   function keepLost(lost: readonly Run[]) {
@@ -233,7 +240,9 @@ export async function openPaperSync(
     )
     if (!fresh.length) return "applied"
     if (fresh[0]!.base !== version) return "gap"
-    const received = engine.receive(current(), fresh)
+    const received = engine.receive(current(), fresh, acceptedBatch)
+    for (const change of fresh)
+      if (change.origin.proposal) accepted.delete(change.origin.proposal)
     version += stepsIn(fresh)
     adopt(received.state)
     keepLost(received.lost)
@@ -443,6 +452,9 @@ export async function openPaperSync(
       return detach
     },
     local,
+    accepting(proposal, batch) {
+      accepted.set(proposal, batch)
+    },
     view: () => ({
       status,
       recovered,

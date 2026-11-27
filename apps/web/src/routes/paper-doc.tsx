@@ -106,7 +106,11 @@ type OpenPaper = Extract<PaperState, { kind: "open" }>
 function OpenedPaper({ paper }: { paper: OpenPaper }) {
   const queryClient = useQueryClient()
   const openedId = paper.docId
-  const onEditor = usePaperSuggestions(openedId, paper.sync.actor)
+  const onEditor = usePaperSuggestions(
+    openedId,
+    paper.sync.actor,
+    paper.sync.paper
+  )
   return (
     <main aria-label="Paper">
       <PaperChrome

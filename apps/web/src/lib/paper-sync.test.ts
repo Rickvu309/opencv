@@ -173,13 +173,15 @@ function scriptedServer(start: Document) {
       snapshotVersion = head
       log = []
     },
-    typeAsOther(text: string) {
+    typeAsOther(text: string, proposal?: string) {
       const doc = current()
       const pos = { block: doc.content[0]!.attrs.id, offset: 0 }
       const result = engine.run(
         engine.load(doc, head, "other"),
         [{ op: "insertText", range: { from: pos, to: pos }, text }],
-        { kind: "person", actor: "ada", client: "other" }
+        proposal
+          ? { kind: "coach", actor: "coach", client: "other", proposal }
+          : { kind: "person", actor: "ada", client: "other" }
       )
       if ("refusal" in result) throw new Error("other tab refused")
       append(result.change)
@@ -243,6 +245,7 @@ function channelHub() {
 type Tab = {
   sync: PaperSync
   type(text: string): void
+  undo(): boolean
   text(): string
 }
 
@@ -299,6 +302,13 @@ async function openTab(
       if ("refusal" in result) throw new Error(JSON.stringify(result.refusal))
       state = result.state
       sync.local()
+    },
+    undo() {
+      const result = engine.undo(state)
+      if (!result) return false
+      state = result.state
+      sync.local()
+      return true
     },
     text: () => documentText(engine.read(state).doc),
   }
@@ -497,5 +507,23 @@ describe("paper sync keeps unsent edits until the server has them", () => {
     const edits = sent.flat().map((change) => change.edit)
     expect(new Set(edits).size).toBe(edits.length)
     expect(server.text()).toBe("ABC")
+  })
+
+  it("lets one undo take back a Coach change this tab accepted and saves the reversal", async () => {
+    const server = scriptedServer(paperEngineBlank.blankCv())
+    const clock = manualClock()
+    const tab = await openTab("tab-a", { server, clock })
+    tab.type("Built dashboards")
+    await clock.tick(PUSH_IDLE_MS)
+    server.typeAsOther("Elsewhere. ", "proposal-elsewhere")
+    tab.sync.accepting("proposal-1", "batch-1")
+    server.typeAsOther("Reviewed. ", "proposal-1")
+    await drain()
+    expect(tab.text()).toBe("Reviewed. Elsewhere. Built dashboards")
+    expect(tab.undo()).toBe(true)
+    expect(tab.text()).toBe("Elsewhere. Built dashboards")
+    await clock.tick(PUSH_IDLE_MS)
+    expect(server.text()).toBe("Elsewhere. Built dashboards")
+    expect(server.saved().at(-1)!.origin.kind).toBe("person")
   })
 })

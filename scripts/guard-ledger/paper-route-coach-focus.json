@@ -1,0 +1,13 @@
+{
+  "id": "paper-route-coach-focus",
+  "file": "scripts/paper-route-coach-focus.test.mjs",
+  "detector": {
+    "module": "scripts/lib/paper-route-coach-focus.mjs",
+    "export": "detect"
+  },
+  "historic": {
+    "mode": "detect",
+    "sha": "4bc199822",
+    "path": "apps/web/src/routes/paper-doc.tsx"
+  }
+}

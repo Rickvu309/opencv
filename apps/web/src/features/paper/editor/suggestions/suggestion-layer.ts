@@ -4,6 +4,7 @@ import type { DocCommand, Document } from "@workspace/domain/paper-doc"
 import type { Layout, LineBox, PaperEngine } from "@workspace/paper-engine"
 
 import { px } from "../painter.ts"
+import { randomId } from "../random-id.ts"
 import { pageCommands } from "./agent-commands.ts"
 import {
   displayDocument,
@@ -16,7 +17,7 @@ import {
 export type SuggestionReceipt = { undo?: () => Promise<void> }
 
 export type SuggestionPort = {
-  approve(id: string): Promise<SuggestionReceipt | void>
+  approve(id: string, batch: string): Promise<SuggestionReceipt | void>
   deny(id: string): Promise<void>
 }
 
@@ -186,12 +187,13 @@ export function createSuggestionLayer(
     paintControls()
     const settled: Proposal[] = []
     const receipts: (SuggestionReceipt | void)[] = []
+    const batch = randomId()
     let failure = ""
     for (const id of ids) {
       const proposal = proposals.find((each) => each.id === id)
       if (!proposal) continue
       try {
-        if (accept) receipts.push(await port.approve(id))
+        if (accept) receipts.push(await port.approve(id, batch))
         else await port.deny(id)
         settled.push(proposal)
       } catch (cause) {

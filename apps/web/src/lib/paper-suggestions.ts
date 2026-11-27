@@ -5,6 +5,7 @@ import { catalog } from "@workspace/domain/kernel"
 import type { AgentCommand } from "@workspace/domain/paper-doc"
 
 import { catalogClient, undoActivity } from "@/lib/contract-client.ts"
+import type { PaperSync } from "@/lib/paper-sync.ts"
 
 type SuggestionReceipt = { undo?: () => Promise<void> }
 
@@ -12,7 +13,7 @@ type SuggestionTarget = {
   suggest(
     proposals: { id: string; commands: AgentCommand[] }[],
     port: {
-      approve(id: string): Promise<SuggestionReceipt>
+      approve(id: string, batch: string): Promise<SuggestionReceipt>
       deny(id: string): Promise<void>
     }
   ): void
@@ -27,9 +28,13 @@ export function refreshPaperSuggestions(queryClient: QueryClient) {
   })
 }
 
-function suggestionPort(queryClient: QueryClient) {
+function suggestionPort(queryClient: QueryClient, sync: PaperSync) {
   return {
-    async approve(pendingActionId: string): Promise<SuggestionReceipt> {
+    async approve(
+      pendingActionId: string,
+      batch: string
+    ): Promise<SuggestionReceipt> {
+      sync.accepting(pendingActionId, batch)
       const receipt = await catalogClient.run(
         queryClient,
         catalog["actions.approve"].name,
@@ -62,14 +67,18 @@ function targetReducer(
   return next
 }
 
-export function usePaperSuggestions(docId: string, ownerId: string) {
+export function usePaperSuggestions(
+  docId: string,
+  ownerId: string,
+  sync: PaperSync
+) {
   const queryClient = useQueryClient()
   const [target, setTarget] = useReducer(targetReducer, null)
   const read = catalogClient.useRead(ownerId, SUGGESTIONS, { docId })
   const suggestions = read.data?.suggestions
   useEffect(() => {
     if (!target || !suggestions) return
-    target.suggest(suggestions, suggestionPort(queryClient))
-  }, [target, suggestions, queryClient])
+    target.suggest(suggestions, suggestionPort(queryClient, sync))
+  }, [target, suggestions, queryClient, sync])
   return setTarget
 }
