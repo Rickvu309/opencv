@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: superseded by 0009
 ---
 
 # Rich Paper merges concurrent updates on their original Yjs basis

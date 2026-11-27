@@ -1,5 +1,5 @@
 ---
-status: accepted
+status: accepted, amended by 0009
 ---
 
 # A Paper is one document, and Word is a door

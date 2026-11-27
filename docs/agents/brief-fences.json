@@ -1,3 +1,14 @@
 {
-  "fences": []
+  "fences": [
+    {
+      "issue": 2207,
+      "expires": "2027-03-31",
+      "paths": [
+        "packages/paper-crdt/**",
+        "apps/web/src/features/paper/rich-editor/**",
+        "apps/api/src/paper/content/**",
+        "apps/api/src/paper/native-output/**"
+      ]
+    }
+  ]
 }
