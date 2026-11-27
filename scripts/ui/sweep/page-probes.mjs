@@ -1,16 +1,20 @@
 export function markOpeners() {
   const LAYERS =
     '[role="dialog"],[role="alertdialog"],[role="menu"],[role="listbox"],[data-slot="coach-panel"],[data-slot="popover-content"]'
+  const mark = (event) => {
+    const opener = event.target.closest?.(
+      'button,a,[role="button"],[role="menuitem"],[role="tab"],[role="combobox"]'
+    )
+    if (!opener || opener.closest(LAYERS)) return
+    for (const old of document.querySelectorAll("[data-sweep-opener]"))
+      old.removeAttribute("data-sweep-opener")
+    opener.setAttribute("data-sweep-opener", "")
+  }
+  document.addEventListener("pointerdown", mark, true)
   document.addEventListener(
-    "pointerdown",
+    "keydown",
     (event) => {
-      const opener = event.target.closest?.(
-        'button,a,[role="button"],[role="menuitem"],[role="tab"],[role="combobox"]'
-      )
-      if (!opener || opener.closest(LAYERS)) return
-      for (const old of document.querySelectorAll("[data-sweep-opener]"))
-        old.removeAttribute("data-sweep-opener")
-      opener.setAttribute("data-sweep-opener", "")
+      if (["Enter", " ", "ArrowDown"].includes(event.key)) mark(event)
     },
     true
   )

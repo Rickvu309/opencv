@@ -3,7 +3,8 @@ export const screen = {
   route: "/paper-lab",
   steps: [
     { paperDocs: { importWord: "en-03" } },
-    { click: { role: "button", name: "File" } },
+    { focus: { role: "button", name: "File" } },
+    { press: "Enter" },
     {
       waitFor: {
         selector:
