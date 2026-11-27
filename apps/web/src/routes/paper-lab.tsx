@@ -1,5 +1,8 @@
 import { PaperChrome } from "@/features/paper/editor/chrome/paper-chrome.tsx"
-import { labDocument } from "@/features/paper/editor/lab-documents.ts"
+import {
+  labDocument,
+  labSuggestions,
+} from "@/features/paper/editor/lab-documents.ts"
 import type { PaperEditor } from "@/features/paper/editor/paper-editor.ts"
 
 declare global {
@@ -11,8 +14,17 @@ declare global {
 const LAB_DOWNLOAD = { reason: "Save this Paper first to download it" }
 
 function exposeLabEditor(editor: PaperEditor | null) {
-  if (editor) window.paperLab = editor
-  else delete window.paperLab
+  if (!editor) {
+    delete window.paperLab
+    return
+  }
+  window.paperLab = editor
+  const params = new URLSearchParams(window.location.search)
+  if (params.get("suggest") === "coach")
+    editor.suggest(labSuggestions(params.get("doc")), {
+      approve: () => Promise.resolve(),
+      deny: () => Promise.resolve(),
+    })
 }
 
 export function PaperLabPage() {

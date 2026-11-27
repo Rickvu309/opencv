@@ -1,0 +1,160 @@
+.paper-suggest-strip {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--background);
+  padding-inline: 16px;
+  font-size: 13px;
+  color: var(--foreground);
+}
+
+.paper-suggest-strip[hidden] {
+  display: none;
+}
+
+.paper-suggest-mark {
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  flex: none;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--primary);
+}
+
+.paper-suggest-strip b {
+  font-weight: 500;
+}
+
+.paper-suggest-count {
+  color: var(--muted-foreground);
+}
+
+.paper-suggest-strip svg,
+.paper-suggest-chips svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.paper-suggest-all,
+.paper-suggest-chips button,
+.paper-suggest-toast button {
+  display: inline-flex;
+  height: 28px;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: var(--radius-md);
+  padding: 0 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--duration-micro) var(--ease-micro);
+}
+
+.paper-suggest-all {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 13px;
+}
+
+.paper-suggest-all:disabled,
+.paper-suggest-chips button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.paper-suggest-status:empty {
+  display: none;
+}
+
+.paper-suggest-status {
+  color: var(--destructive);
+}
+
+.paper-suggest-chips-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.paper-suggest-chips {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  display: flex;
+  gap: 6px;
+  transform-origin: 0 0;
+  pointer-events: auto;
+}
+
+.paper-suggest-chips button {
+  padding: 0 10px 0 8px;
+  background: var(--background);
+  color: var(--foreground);
+  box-shadow:
+    inset 0 0 0 1px var(--border),
+    0 1px 2px color-mix(in oklch, var(--foreground) 6%, transparent);
+}
+
+.paper-suggest-chips .paper-suggest-accept {
+  color: color-mix(in oklch, var(--chart-2) 50%, var(--foreground));
+}
+
+@media (hover: hover) {
+  .paper-suggest-all:hover:not(:disabled) {
+    background: color-mix(in oklch, var(--primary) 88%, var(--foreground));
+  }
+
+  .paper-suggest-chips .paper-suggest-accept:hover:not(:disabled) {
+    background: color-mix(in oklch, var(--chart-2) 16%, var(--background));
+  }
+
+  .paper-suggest-chips .paper-suggest-reject:hover:not(:disabled) {
+    background: var(--muted);
+  }
+}
+
+.paper-suggest-toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transform: translateX(-50%);
+  border-radius: var(--radius-lg);
+  background: var(--foreground);
+  padding: 8px 8px 8px 14px;
+  color: var(--background);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.paper-suggest-toast[hidden] {
+  display: none;
+}
+
+.paper-suggest-toast button {
+  background: transparent;
+  color: inherit;
+  box-shadow: inset 0 0 0 1px
+    color-mix(in oklch, var(--background) 25%, transparent);
+}
