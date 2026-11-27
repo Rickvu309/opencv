@@ -9,7 +9,7 @@ import {
   PAPER_EDITOR_DIR,
   PAPER_INPUT_PORT,
   paperOneInputProblems,
-} from "./lib/paper-one-input.mjs"
+} from "./lib/paper-editor-guards.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 const painter = `${PAPER_EDITOR_DIR}painter.ts`

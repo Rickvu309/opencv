@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url"
 import {
   PAPER_EDITOR_DIR,
   paperLayoutOwnsLinesProblems,
-} from "./lib/paper-layout-owns-lines.mjs"
+} from "./lib/paper-editor-guards.mjs"
 
 const root = path.resolve(fileURLToPath(new URL(".", import.meta.url)), "..")
 const painter = `${PAPER_EDITOR_DIR}painter.ts`

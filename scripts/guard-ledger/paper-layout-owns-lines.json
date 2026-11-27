@@ -2,7 +2,7 @@
   "id": "paper-layout-owns-lines",
   "file": "scripts/paper-layout-owns-lines.test.mjs",
   "detector": {
-    "module": "scripts/lib/paper-layout-owns-lines.mjs",
+    "module": "scripts/lib/paper-editor-guards.mjs",
     "export": "paperLayoutOwnsLinesProblems"
   },
   "historic": null,

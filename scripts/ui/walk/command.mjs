@@ -9,10 +9,7 @@ import { LAB_ROUTE } from "./lab-surface.mjs"
 import { ROWS } from "./rows.mjs"
 import { unknownPins, walkRows, walkSummary } from "./run.mjs"
 
-export const WALKS = {
-  paper: { route: "/paper", rows: ROWS, surface: "rich", pinned: true },
-  "paper-lab": { route: LAB_ROUTE, rows: ROWS, surface: "lab", pinned: false },
-}
+export const WALKS = { paper: { route: "/paper", rows: ROWS } }
 export const EXPECTED_FAILURES = "scripts/ui/walk/expected-failures.json"
 
 export function pickRows(rows, ids) {
@@ -27,7 +24,7 @@ export function pickRows(rows, ids) {
 
 export const WALK_COMMAND = {
   usage:
-    "walk paper|paper-lab [--route /paper] [--row id...] [--production] [--no-keystrokes]",
+    "walk paper [--route /paper|/paper-lab] [--row id...] [--production] [--no-keystrokes]",
   about:
     "Use the Paper page like a person with real keys, mouse and clipboard: one line per row (pass, fail, expected-fail pinned in scripts/ui/walk/expected-failures.json, now-passes), then keystroke time on a 3-page CV. --production swaps the dev web for a production build first. Writes walk/<name>.json.",
   options: {
@@ -43,10 +40,11 @@ export const WALK_COMMAND = {
         `walk takes ${Object.keys(WALKS).join(", ")}, got ${name ?? "nothing"}`
       )
     const rows = pickRows(walk.rows, flags.row ?? [])
-    const expected = walk.pinned
-      ? JSON.parse(ctx.fs.read(join(ctx.repo, EXPECTED_FAILURES)))
-      : {}
-    const stale = unknownPins(walk.rows, expected)
+    const route = flags.route ?? walk.route
+    const surface = route === LAB_ROUTE ? SURFACES.lab : SURFACES.rich
+    const pins = JSON.parse(ctx.fs.read(join(ctx.repo, EXPECTED_FAILURES)))
+    const expected = surface === SURFACES.lab ? {} : pins
+    const stale = unknownPins(walk.rows, pins)
     if (stale.length)
       throw new UsageError(
         `${EXPECTED_FAILURES} pins rows that do not exist: ${stale.join(", ")}`
@@ -68,10 +66,10 @@ export const WALK_COMMAND = {
       const account = await accountSource("seeded", state).take(`walk ${name}`)
       const person = browserPerson({
         browser,
-        state: { ...state, route: flags.route ?? walk.route },
+        state: { ...state, route },
         account,
         shotsDir,
-        surface: SURFACES[walk.surface],
+        surface,
       })
       results = await walkRows({
         rows,
@@ -87,7 +85,7 @@ export const WALK_COMMAND = {
           account,
           build,
           shotsDir,
-          surface: SURFACES[walk.surface],
+          surface,
         })
         say(`keystrokes ${JSON.stringify(keystrokes)}`)
       }

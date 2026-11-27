@@ -2,7 +2,7 @@
   "id": "paper-one-input",
   "file": "scripts/paper-one-input.test.mjs",
   "detector": {
-    "module": "scripts/lib/paper-one-input.mjs",
+    "module": "scripts/lib/paper-editor-guards.mjs",
     "export": "paperOneInputProblems"
   },
   "historic": null,

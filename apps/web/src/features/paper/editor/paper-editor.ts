@@ -38,13 +38,14 @@ import {
   type DocIndex,
 } from "./doc-positions.ts"
 import {
+  attachPointer,
   createInputPort,
+  type KeyAction,
   type InputKind,
   type InputSink,
   type Mirror,
   type TextareaEdit,
 } from "./input-port.ts"
-import type { KeyAction } from "./keymap.ts"
 import { createOverlays, rangeRects, type PageRect } from "./overlays.ts"
 import {
   createPainter,
@@ -54,7 +55,6 @@ import {
   placement,
   px,
 } from "./painter.ts"
-import { attachPointer } from "./pointer.ts"
 
 export type PaperEditorOptions = {
   doc: Document

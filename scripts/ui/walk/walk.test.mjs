@@ -313,5 +313,5 @@ test("help lists the walk and an unknown walk is refused", async () => {
   assert.ok(help.lines.some((line) => line.includes("walk paper")))
   const unknown = await runUi(["walk", "jobs"], fakePorts())
   assert.equal(unknown.code, 2)
-  assert.match(unknown.lines[0], /walk takes paper, paper-lab, got jobs/)
+  assert.match(unknown.lines[0], /walk takes paper, got jobs/)
 })
