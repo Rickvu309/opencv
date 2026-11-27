@@ -91,7 +91,7 @@ function hasRealEvidence(evidence) {
 const FENCE = /^ {0,3}(`{3,}|~{3,})(.*)$/
 const DETAILS_OPEN = /^ {0,3}<details(?:\s[^<>]*)?>/i
 const DETAILS_CLOSE = /<\/details>\s*$/i
-const TREE_QUESTION = /^(?:\*(?:\\.|[^*])+\?\*|[^*<>`#\s-][^*]*\?)$/
+const TREE_QUESTION = /^(?:\*(?:\\.|[^*\\])+\?\*|[^*<>`#\s-][^*]*\?)$/
 const TREE_REASON = /^- \*\*([A-Z])\.\*\* \S/
 const TREE_FIX =
   "Start with a bold answer and a <details> block holding the question and two to four lettered reasons. Write it with node .agents/skills/show-opencv/bin/logic.mjs tree.json."

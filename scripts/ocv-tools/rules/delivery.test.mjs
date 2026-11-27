@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { spawnSync } from "node:child_process"
 import { readFileSync } from "node:fs"
 import test from "node:test"
 import {
@@ -194,6 +195,36 @@ test("a fix or hotfix PR names who caught the bug and what introduced it", () =>
       null,
       introduced
     )
+})
+
+test("a tree question line full of escaped parentheses is judged without stalling", () => {
+  const hostile = fixture("tree.txt").replace(
+    /^\*[^\n]*\?\*$/m,
+    `*${"\\)".repeat(20000)}`
+  )
+  const judge = `
+    import { jobRows } from ${JSON.stringify(new URL("index.mjs", import.meta.url).href)}
+    let text = ""
+    for await (const chunk of process.stdin) text += chunk
+    jobRows.find((r) => r.id === "BAD_BODY").check({
+      body: { file: "/b.md", text },
+      pull: { title: "fix: preview Paper cards (#7)" },
+      migrations: { files: [] },
+      files: [],
+    })
+    process.stdout.write("judged")
+  `
+  const run = spawnSync(
+    process.execPath,
+    ["--input-type=module", "-e", judge],
+    {
+      input: `${hostile}\nCaught by: review\nIntroduced by: #911\n`,
+      encoding: "utf8",
+      timeout: 20000,
+    }
+  )
+  assert.equal(run.signal, null)
+  assert.equal(run.stdout, "judged")
 })
 
 test("fix and screen bodies need a proof tree next to the bold answer", () => {
