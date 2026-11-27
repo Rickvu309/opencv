@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest"
 import { domainEntryAliases } from "../../../../domain-entries"
 
 const webRoot = path.resolve(__dirname, "../../../..")
-const ORIGIN = "http://paper.test"
+const ORIGIN = "http://paper-editor.test"
 const HARNESS = "\0paper-editor-harness"
 const DESK = { width: 1440, height: 900 }
 const PHONE = { width: 390, height: 844 }

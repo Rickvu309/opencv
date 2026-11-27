@@ -25,8 +25,6 @@ const mmToMpt = (mm: number) => Math.round((mm * 72000) / 25.4)
 
 const CORPUS: Record<string, CorpusCv> = { "en-10": en10, "vi-01": vi01 }
 
-export const LAB_DOCUMENTS = ["blank", ...Object.keys(CORPUS)]
-
 function runs(text: string | undefined, links: CorpusLink[] = []) {
   if (!text) return []
   const out: Record<string, unknown>[] = []

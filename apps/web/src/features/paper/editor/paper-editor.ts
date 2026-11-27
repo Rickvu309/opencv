@@ -672,7 +672,6 @@ export function mountPaperEditor(
       port.element.removeEventListener("focus", onFocus)
       port.element.removeEventListener("blur", onBlur)
       port.destroy()
-      listeners.clear()
       stage.remove()
       host.classList.remove("paper-editor")
     },

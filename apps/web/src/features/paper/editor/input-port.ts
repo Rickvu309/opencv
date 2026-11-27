@@ -390,14 +390,20 @@ export function attachPointer(surface: HTMLElement, sink: PointerSink) {
     touch = null
   }
 
+  const onLostCapture = (event: PointerEvent) => {
+    if (dragging === event.pointerId) dragging = null
+  }
+
   surface.addEventListener("pointerdown", onDown)
   surface.addEventListener("pointermove", onMove)
   surface.addEventListener("pointerup", onUp)
   surface.addEventListener("pointercancel", onCancel)
+  surface.addEventListener("lostpointercapture", onLostCapture)
   return () => {
     surface.removeEventListener("pointerdown", onDown)
     surface.removeEventListener("pointermove", onMove)
     surface.removeEventListener("pointerup", onUp)
     surface.removeEventListener("pointercancel", onCancel)
+    surface.removeEventListener("lostpointercapture", onLostCapture)
   }
 }
