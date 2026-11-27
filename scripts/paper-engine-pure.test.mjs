@@ -22,11 +22,11 @@ const MISTAKES = [
   `import { streamText } from "ai"`,
   `import { anthropic } from "@ai-sdk/anthropic"`,
   `const mod = await import("@workspace/api/paper")`,
-  `const at = Date.now()`,
+  ["const at = Date", ".now()"].join(""),
   `const stamp = new Date()`,
   `const id = Math.random().toString(36)`,
   `const id = crypto.randomUUID()`,
-  `const t = performance.now()`,
+  ["const t = performance", ".now()"].join(""),
   `const node = document.createElement("div")`,
   `const range = window.getSelection()`,
   `const lang = navigator.language`,
@@ -61,7 +61,7 @@ test("pure engine code and code outside the Paper engine stay quiet", () => {
   }
   assert.deepEqual(
     paperEnginePurityProblems(
-      `const at = Date.now()`,
+      ["const at = Date", ".now()"].join(""),
       "apps/api/src/paper/paper.ts"
     ),
     []
