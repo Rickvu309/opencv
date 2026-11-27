@@ -17,6 +17,7 @@
     "lint:design": "oxlint apps/web/src packages/ui/src"
   },
   "devDependencies": {
+    "fontkit": "^2.0.4",
     "outtrue": "^0.2.0",
     "oxlint": "^1.95.0",
     "playwright-core": "1.65.0",

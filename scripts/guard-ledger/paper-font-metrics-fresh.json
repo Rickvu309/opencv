@@ -1,0 +1,6 @@
+{
+  "id": "paper-font-metrics-fresh",
+  "file": "scripts/paper-font-metrics-fresh.test.mjs",
+  "historic": null,
+  "reason": "new data pack with no earlier mistake to replay; proven by fixtures: a stale sha256 and stale metrics fire, the clean fixture stays quiet"
+}

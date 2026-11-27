@@ -1,0 +1,127 @@
+{
+  "faces": [
+    {
+      "face": "liberation-sans-regular",
+      "family": "liberation-sans",
+      "file": "LiberationSans-Regular.ttf",
+      "weight": 400,
+      "style": "normal",
+      "wordName": "Arial",
+      "sha256": "075e71be4c58beda172ecb574a799308f04c3d054c6a5b7434954d3b0f1b28d8"
+    },
+    {
+      "face": "liberation-sans-bold",
+      "family": "liberation-sans",
+      "file": "LiberationSans-Bold.ttf",
+      "weight": 700,
+      "style": "normal",
+      "wordName": "Arial",
+      "sha256": "b72c65e551d653b54217ffad0d1454ce0657e4e8d4a28bcc79e0acd2598f4bf3"
+    },
+    {
+      "face": "liberation-sans-italic",
+      "family": "liberation-sans",
+      "file": "LiberationSans-Italic.ttf",
+      "weight": 400,
+      "style": "italic",
+      "wordName": "Arial",
+      "sha256": "4ccb79043bd3a6d131b5a53901abb21261b1417f6052b38a9fa9716a4e5a3d81"
+    },
+    {
+      "face": "liberation-sans-bold-italic",
+      "family": "liberation-sans",
+      "file": "LiberationSans-BoldItalic.ttf",
+      "weight": 700,
+      "style": "italic",
+      "wordName": "Arial",
+      "sha256": "64263238517af60213cdb469165fc7e9acd0c09c35f4155f924a379f97125a57"
+    },
+    {
+      "face": "liberation-serif-regular",
+      "family": "liberation-serif",
+      "file": "LiberationSerif-Regular.ttf",
+      "weight": 400,
+      "style": "normal",
+      "wordName": "Times New Roman",
+      "sha256": "350f4ffd773cae53560c63dca3d89a5070595614fde12f772bf43feb63d81064"
+    },
+    {
+      "face": "liberation-serif-bold",
+      "family": "liberation-serif",
+      "file": "LiberationSerif-Bold.ttf",
+      "weight": 700,
+      "style": "normal",
+      "wordName": "Times New Roman",
+      "sha256": "bb033fae52dcbf67a55494a08829aaa788324624d72a195af7f93da3061c928f"
+    },
+    {
+      "face": "liberation-serif-italic",
+      "family": "liberation-serif",
+      "file": "LiberationSerif-Italic.ttf",
+      "weight": 400,
+      "style": "italic",
+      "wordName": "Times New Roman",
+      "sha256": "c1882fbb05e78537b9c39dad3c07c4f231c987a3747b20c8745737aed50cd488"
+    },
+    {
+      "face": "liberation-serif-bold-italic",
+      "family": "liberation-serif",
+      "file": "LiberationSerif-BoldItalic.ttf",
+      "weight": 700,
+      "style": "italic",
+      "wordName": "Times New Roman",
+      "sha256": "10ec0fa22bc6f12a239d600c051752884d155997aafd19ebc24c4f4a8d2b98d0"
+    },
+    {
+      "face": "liberation-mono-regular",
+      "family": "liberation-mono",
+      "file": "LiberationMono-Regular.ttf",
+      "weight": 400,
+      "style": "normal",
+      "wordName": "Courier New",
+      "sha256": "d18235f1e874771f4eaec3ddd6ddb4db849d334bdc6930c5c2185d9344834e62"
+    },
+    {
+      "face": "liberation-mono-bold",
+      "family": "liberation-mono",
+      "file": "LiberationMono-Bold.ttf",
+      "weight": 700,
+      "style": "normal",
+      "wordName": "Courier New",
+      "sha256": "50464e64aaadea741fb9516748aee296d570439406be11d63df22294e77ba867"
+    },
+    {
+      "face": "liberation-mono-italic",
+      "family": "liberation-mono",
+      "file": "LiberationMono-Italic.ttf",
+      "weight": 400,
+      "style": "italic",
+      "wordName": "Courier New",
+      "sha256": "35c3116d4366eb0e58494d8e432d4ee0c60c5735c7f775ffc096008bd2907c74"
+    },
+    {
+      "face": "liberation-mono-bold-italic",
+      "family": "liberation-mono",
+      "file": "LiberationMono-BoldItalic.ttf",
+      "weight": 700,
+      "style": "italic",
+      "wordName": "Courier New",
+      "sha256": "291872531f0e8013df602c412fc570241860e41b1fa1b7972537c27a19024d4d"
+    },
+    {
+      "face": "carlito-regular",
+      "family": "carlito",
+      "file": "Carlito.ttf",
+      "weight": 400,
+      "style": "normal",
+      "wordName": "Calibri",
+      "sha256": "f6418f708baede9789daef5d458c0f53d2a888af9820e8062934e504fedc6595"
+    }
+  ],
+  "wordImports": [
+    {
+      "wordName": "Cambria",
+      "family": "liberation-serif"
+    }
+  ]
+}

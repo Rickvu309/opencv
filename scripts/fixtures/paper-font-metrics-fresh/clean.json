@@ -1,0 +1,66 @@
+{
+  "faces": [
+    {
+      "face": "alpha-regular",
+      "file": "Alpha-Regular.ttf",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "face": "beta-regular",
+      "file": "Beta-Regular.ttf",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  ],
+  "fontSha256s": {
+    "Alpha-Regular.ttf": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "Beta-Regular.ttf": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "storedMetrics": {
+    "alpha-regular": {
+      "face": "alpha-regular",
+      "file": "Alpha-Regular.ttf",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "unitsPerEm": 1000,
+      "ascent": 900,
+      "descent": -200,
+      "lineGap": 0,
+      "advances": { "32": 250, "65": 667 },
+      "kerning": { "65": { "86": -60 } }
+    },
+    "beta-regular": {
+      "face": "beta-regular",
+      "file": "Beta-Regular.ttf",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "unitsPerEm": 2048,
+      "ascent": 891,
+      "descent": -216,
+      "lineGap": 42,
+      "advances": { "32": 307, "65": 722 },
+      "kerning": {}
+    }
+  },
+  "computedMetrics": {
+    "alpha-regular": {
+      "face": "alpha-regular",
+      "file": "Alpha-Regular.ttf",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "unitsPerEm": 1000,
+      "ascent": 900,
+      "descent": -200,
+      "lineGap": 0,
+      "advances": { "32": 250, "65": 667 },
+      "kerning": { "65": { "86": -60 } }
+    },
+    "beta-regular": {
+      "face": "beta-regular",
+      "file": "Beta-Regular.ttf",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "unitsPerEm": 2048,
+      "ascent": 891,
+      "descent": -216,
+      "lineGap": 42,
+      "advances": { "32": 307, "65": 722 },
+      "kerning": {}
+    }
+  }
+}
