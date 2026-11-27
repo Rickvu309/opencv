@@ -42,6 +42,17 @@ const CASES = {
     },
     NEEDS_LEAD,
   ],
+  NO_BEFORE_AFTER: [
+    {
+      body: { text: BODY },
+      diff: { files: ["packages/ui/src/components/button.tsx"] },
+    },
+    {
+      body: { text: BODY },
+      diff: { files: ["packages/ui/src/components/button.test.tsx"] },
+    },
+    "This PR edits 1 screen file(s), including packages/ui/src/components/button.tsx. Add a ## Before / after section.",
+  ],
   BAD_TITLE: [
     { pull: { title: "Add a thing" } },
     { pull: { title: "feat: add a thing (#7)" } },

@@ -35,9 +35,10 @@ export function withClosingLine(text, n) {
   return `Closes #${n}\n\n${text}`
 }
 
-function branchMigrations(ctx) {
+function branchDiffFacts(ctx) {
   const base = git(ctx, "merge-base", "origin/main", "HEAD")
-  return migrationFacts(ctx, changedFiles(ctx, [], base, "HEAD"), "HEAD")
+  const files = changedFiles(ctx, [], base, "HEAD")
+  return { diff: { files }, migrations: migrationFacts(ctx, files, "HEAD") }
 }
 
 function autoMerge(ctx, n) {
@@ -114,7 +115,7 @@ export function finish(ctx, { flags }) {
       const checked = decide("body", {
         body: bodyFileFacts,
         pull: { title, issue: t.n, body },
-        migrations: branchMigrations(ctx),
+        ...branchDiffFacts(ctx),
       })
       if (!checked.ok) throw refusalError(checked.refusals[0])
       return {
@@ -171,7 +172,7 @@ export function finish(ctx, { flags }) {
       },
       here: { ok: true },
       body: bodyFileFacts,
-      migrations: branchMigrations(ctx),
+      ...branchDiffFacts(ctx),
       disk: problem ?? {},
       work: { path: t.top, dirty: current.dirty, force: false, finish: true },
       main,

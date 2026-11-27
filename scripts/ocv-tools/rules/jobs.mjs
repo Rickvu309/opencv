@@ -1,4 +1,5 @@
 import { issueOfBranch } from "./pull-ref.mjs"
+import { SCREEN_BODY_FIX, screenBodyProblem } from "./screens.mjs"
 
 const FINISH_TITLE = /^(feat|fix|hotfix|refactor|chore|docs): [^ ].* \(#\d+\)$/
 const FIX_TITLE = /^(?:fix|hotfix)(?:\([^)]*\))?!?: /
@@ -284,6 +285,15 @@ export const jobRows = [
     at: ["finish", "body"],
     needs: ["body", "pull", "migrations"],
     check: badBody,
+  }),
+  row({
+    id: "NO_BEFORE_AFTER",
+    says: "A PR that edits screen source has a ## Before / after section with a published screenshot or a No visible change: <why> line with at least four words of reason.",
+    at: ["finish", "body"],
+    needs: ["body", "diff"],
+    check: ({ body, diff }) =>
+      screenBodyProblem(visibleBody(body.text ?? "").lines, diff.files),
+    fix: () => SCREEN_BODY_FIX,
   }),
   row({
     id: "BAD_TITLE",
