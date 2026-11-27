@@ -146,6 +146,14 @@ const tool = (page: Page, name: string) =>
     exact: true,
   })
 
+async function openMenu(page: Page, name: string) {
+  await tool(page, name).click()
+  const menu = page.getByRole("menu", { name, exact: true })
+  await menu.waitFor()
+  await menu.locator('[role^="menuitem"]').first().waitFor()
+  return menu
+}
+
 const firstBlock = (page: Page) =>
   page.evaluate(() => {
     const block = window.paperLab!.read().doc.content[0]!
@@ -230,8 +238,8 @@ describe("the flat Paper toolbar", () => {
 
   it("offers four fonts with no Caladea and the More items", async () => {
     const page = await open(DESK)
-    await tool(page, "Font").click()
-    const fonts = await page.getByRole("menuitemradio").allInnerTexts()
+    const fontMenu = await openMenu(page, "Font")
+    const fonts = await fontMenu.getByRole("menuitemradio").allInnerTexts()
     expect(fonts).toEqual([
       "Liberation Sans",
       "Liberation Serif",
@@ -239,8 +247,8 @@ describe("the flat Paper toolbar", () => {
       "Carlito",
     ])
     await page.keyboard.press("Escape")
-    await tool(page, "More").click()
-    const more = await page.getByRole("menuitem").allInnerTexts()
+    const moreMenu = await openMenu(page, "More")
+    const more = await moreMenu.getByRole("menuitem").allInnerTexts()
     expect(more.map((item) => item.split("\n")[0])).toEqual([
       "Strikethrough",
       "Highlight",
