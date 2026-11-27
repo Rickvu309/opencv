@@ -30,6 +30,19 @@ If you touched `packages/ui` (buttons, menus, dialogs, toasts), also shoot one s
 
 Open every PNG from `node scripts/ui.mjs shot <screen>` with your image reader, compare it with the approved design, and say in the PR what you saw. Publish it with `node scripts/ocv-tools.mjs shot <png> --no-comment` and paste the printed Markdown image links under `## Before / after` in the PR body. If the screen looks the same, write `No visible change: <why>` under that heading with a reason of at least four words.
 
+## I changed the Paper editor: walk it like a person
+
+`node scripts/ui.mjs walk paper` drives the Paper page with real keys, mouse, clipboard and downloads, one row per item of the hand audit: select all then End or ArrowRight then type, list Enter, Tab and empty Enter, rich paste from Word, Google Docs and the web, plain multi-line paste, Ctrl+B over three paragraphs, undo after paste, PDF download, print, A4, Word headings and links, phone 390, two tabs and reload. The rows and their pass predicates live in `scripts/ui/walk/rows.mjs`.
+
+| Step | Command                                                     | Takes            | Expect                                                                        |
+| ---- | ----------------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------- |
+| 1    | `node scripts/ui.mjs up`                                    | 1 to 2 min       | one JSON line                                                                 |
+| 2    | `node scripts/ui.mjs walk paper --production`               | about 5 min      | one line per row, a `keystrokes` line, then a summary JSON line with `report` |
+| 3    | `node scripts/ui.mjs walk paper --row <id> --no-keystrokes` | about 20 s a row | rerun the rows you are fixing                                                 |
+| 4    | `node scripts/ui.mjs down`                                  | a few s          | the app and the production build server are gone                              |
+
+Each row prints `pass`, `fail`, `expected-fail` or `now-passes`. A row that fails today is pinned to its issue in `scripts/ui/walk/expected-failures.json`, so the walk stays green on main. When your change fixes a row it prints `now-passes` and the walk fails until you delete its pin in the same PR. A new `fail` is a regression. `--production` replaces the dev web with a `vite build` served by `vite preview` on the same port until `down`; compare keystroke numbers only between production runs. The JSON report holds every row, its problem and `keystrokes` (keydown to next frame and Event Timing over 16 ms, p50, p95 and max, on a pasted 1,400 word CV). A screenshot per row lands next to it. Put the row table and the keystroke numbers in the PR.
+
 ## What the tool cannot verify
 
 Report these as not verified instead of claiming them:
