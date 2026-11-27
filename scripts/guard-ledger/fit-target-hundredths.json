@@ -1,0 +1,6 @@
+{
+  "id": "fit-target-hundredths",
+  "file": "packages/ui/src/lib/fit-rules.test.tsx",
+  "historic": null,
+  "reason": "Caught by the G1 run 2 sweep. fit-rules compared the raw float since 5f3610f8e1f707056b683551dd5159e7c9d8a9e7 and printed it rounded; the 43.99997px size appeared when 009a614fd604615eafff0b0cf735f232d63a5309 counter-scaled the suggestion chips inside the scaled page, so no single file at one commit holds the mistake. The fixtures at 43.99997 (quiet), 43.9 (fires) and 44 (quiet) fail against the old rule and pass against the hundredths compare."
+}

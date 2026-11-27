@@ -141,6 +141,25 @@ describe("fit rule 4: at 430px wide or less every target is 44 by 44", () => {
       )
     ).toEqual([])
   })
+  it("stays quiet on a 44px chip counter-scaled to 43.99997px", () => {
+    expect(
+      fitProblems(
+        phone,
+        [control({ width: 43.99997, height: 43.99997 })],
+        false
+      )
+    ).toEqual([])
+  })
+  it("fires on a 43.9px button and prints the size it compared", () => {
+    expect(
+      fitProblems(phone, [control({ width: 43.9, height: 44 })], false)
+    ).toEqual(['button "Close" is 43.9x44, under the 44x44 phone target'])
+  })
+  it("stays quiet on a clean 44px button", () => {
+    expect(
+      fitProblems(phone, [control({ width: 44, height: 44 })], false)
+    ).toEqual([])
+  })
   it("stays quiet on a link inside a line of text", () => {
     expect(
       fitProblems(
