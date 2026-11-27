@@ -54,6 +54,7 @@ flowchart TD
     p_packages_domain_src_inbox["packages/domain/src/inbox"]
     p_packages_domain_src_paper_doc["packages/domain/src/paper-doc"]
     p_packages_paper_corpus["packages/paper-corpus"]
+    p_packages_paper_fonts["packages/paper-fonts"]
   end
   p_apps_api_src --> p_apps_api_src_account
   p_apps_api_src --> p_apps_api_src_coach_chat
@@ -227,3 +228,4 @@ flowchart TD
 | `packages/domain/src/inbox` | platform | public.ts, index.ts | packages/domain/src/apply | none |
 | `packages/domain/src/paper-doc` | platform | public.ts, index.ts, paper.ts, paper-contract.ts, paper-contract-views.ts, paper-diff.ts, paper-rich-edit.ts, paper-start.ts, paper-page-scale.ts, paper-presentation.ts | none | none |
 | `packages/paper-corpus` | platform | none | none | none |
+| `packages/paper-fonts` | platform | none | none | none |
