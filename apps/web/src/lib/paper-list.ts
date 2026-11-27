@@ -1,5 +1,8 @@
+import type { QueryClient } from "@tanstack/react-query"
+
 import { catalog } from "@workspace/domain/kernel"
 import {
+  LIBRARY_WRITER,
   type NativeWriter,
   type PaperStoredKind,
   type PaperView,
@@ -30,4 +33,21 @@ export function paperListQuery(
     queryFn: (context?: { signal?: AbortSignal }) =>
       readPaperList(input, context?.signal ? { signal: context.signal } : {}),
   }
+}
+
+export function paperLibraryQuery(ownerId: string) {
+  return paperListQuery(ownerId, { writer: LIBRARY_WRITER })
+}
+
+export function startPaperLibraryRead(
+  queryClient: QueryClient,
+  ownerId: string,
+  onRows: (rows: readonly PaperView[]) => void
+) {
+  if (!ownerId) return
+  const query = paperLibraryQuery(ownerId)
+  void queryClient.prefetchQuery(query).then(() => {
+    const rows = queryClient.getQueryData<PaperView[]>(query.queryKey)
+    if (rows) onRows(rows)
+  })
 }

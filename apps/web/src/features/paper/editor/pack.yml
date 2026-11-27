@@ -7,4 +7,10 @@ dependencies:
     apps/web/src/lib,
   ]
 public:
-  [paper-editor.ts, lab-documents.ts, chrome/paper-chrome.tsx, thumbnail.ts]
+  [
+    paper-editor.ts,
+    lab-documents.ts,
+    chrome/paper-chrome.tsx,
+    thumbnail.ts,
+    paper-faces.ts,
+  ]
