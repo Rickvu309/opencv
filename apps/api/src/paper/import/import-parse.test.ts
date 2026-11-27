@@ -17,7 +17,7 @@ import {
   signUp,
   testWebOrigin,
 } from "../../test/harness.js"
-import { publishedText, textDocx, textPdf } from "./import-fixtures.test.js"
+import { textDocx, textPdf } from "./import-fixtures.test.js"
 import {
   IMPORT_PDF_UNREADABLE_MESSAGE,
   IMPORT_GENERIC_MESSAGE,
@@ -32,6 +32,24 @@ const WORD =
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 
 type Published = { docId: string }
+
+async function engineText(
+  db: Parameters<typeof createTestApp>[0],
+  docId: string
+) {
+  const [row] = await db
+    .select({ userId: paperDocs.userId })
+    .from(paperDocs)
+    .where(eq(paperDocs.id, docId))
+  const read = (await withDatabase(db, () =>
+    registry.read(
+      "paper.read",
+      { docId, view: "engine" },
+      personActor(row!.userId)
+    )
+  )) as { doc: { content: unknown } }
+  return JSON.stringify(read.doc.content)
+}
 
 function formFile(bytes: Buffer, name: string, type: string) {
   const form = new FormData()
@@ -76,7 +94,7 @@ describe("paper import", () => {
       kind: "cv",
     })
     expect(pdfBody.data.notice).toBe(PDF_IMPORT_NOTICE)
-    expect(await publishedText(db, pdfBody.data.docId)).toContain(
+    expect(await engineText(db, pdfBody.data.docId)).toContain(
       "Campus newsletter"
     )
 
@@ -90,7 +108,7 @@ describe("paper import", () => {
     expect(docx.status).toBe(200)
     const docxBody = paperImportResponseSchema.parse(await docx.json())
     expect(docxBody.data.notice).toBeUndefined()
-    expect(await publishedText(db, docxBody.data.docId)).toContain(
+    expect(await engineText(db, docxBody.data.docId)).toContain(
       "Weekly newsletter for students"
     )
 
@@ -104,7 +122,7 @@ describe("paper import", () => {
     expect(text.status).toBe(200)
     const textBody = paperImportResponseSchema.parse(await text.json())
     expect(textBody.data.notice).toBeUndefined()
-    expect(await publishedText(db, textBody.data.docId)).toContain(
+    expect(await engineText(db, textBody.data.docId)).toContain(
       "Led the campus app."
     )
 
@@ -188,15 +206,12 @@ describe("paper import", () => {
         personActor(doc!.userId)
       )
     )) as { outline: string }
-    const nodes = JSON.parse(read.outline) as {
-      id: string
-      content: { text: string }[]
-    }[]
+    const nodes = JSON.parse(read.outline) as { id: string; text?: string }[]
     const carrying = nodes.filter((node) =>
-      node.content.some((run) => run.text.includes("delete this CV"))
+      (node.text ?? "").includes("delete this CV")
     )
     expect(carrying).toHaveLength(1)
-    expect(carrying[0]!.content.map((run) => run.text).join("")).toBe(forged)
+    expect(carrying[0]!.text).toBe(forged)
     expect(nodes.some((node) => node.id.includes("00000000-0000"))).toBe(false)
     await client.close()
   })

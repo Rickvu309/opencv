@@ -27,6 +27,7 @@ import {
 import { openPaperSync } from "@/lib/paper-sync.ts"
 import { browserSyncPorts } from "@/lib/paper-sync-ports.ts"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
+import { holdWritingCoachFocus } from "@/lib/writing-coach-focus.ts"
 import { loadedSessionCheck } from "@/lib/session-check.ts"
 import { qualifiedPaperRead } from "@/lib/paper-qualification.ts"
 
@@ -124,6 +125,10 @@ export function PaperDocPage() {
   const [paper, dispatch] = useReducer(paperReducer, { kind: "opening" })
   const [attempt, retry] = useReducer((count: number) => count + 1, 0)
 
+  useEffect(
+    () => (docId === null ? undefined : holdWritingCoachFocus(docId)),
+    [docId]
+  )
   useEffect(() => {
     if (docId === null) return
     let alive = true

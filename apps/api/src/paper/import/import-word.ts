@@ -58,6 +58,21 @@ async function parsed(
   }
 }
 
+export async function importedLines(
+  input: { name: string; mediaType: string; bytes: Buffer },
+  reader: ImportReader
+) {
+  const read = await parsed(input, reader)
+  if (!read.ok) throw new CommandError(ERROR_CODES[read.code], read.message)
+  const lines = importedTextLines(read.text)
+  if (!lines.ok)
+    throw new CommandError(ERROR_CODES.FILE_UNSUPPORTED, lines.message)
+  return {
+    lines: lines.lines,
+    notice: read.kind === "pdf" ? PDF_IMPORT_NOTICE : null,
+  }
+}
+
 export async function importedPaper(
   input: {
     name: string

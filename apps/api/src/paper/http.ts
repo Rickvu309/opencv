@@ -21,11 +21,13 @@ import type { SignedIn, SignedInVariables } from "../platform/signed-in.js"
 import { CommandError } from "../platform/errors.js"
 import { registry } from "../registry/registry.js"
 import {
+  classifyImport,
   extractLetterAttachment,
   importReadStop,
   parseImportLink,
 } from "./import/import-parse.js"
-import { importedPageName } from "./import/import-word.js"
+import { importedLines, importedPageName } from "./import/import-word.js"
+import { handImportedLines } from "./engine-import.js"
 import { createPaperChangesRoutes } from "./changes-http.js"
 import { createNativeWordRoutes } from "./native-word-http.js"
 import {
@@ -277,6 +279,15 @@ export function createPaperRoutes(signedIn: SignedIn) {
         bytes,
         kind: kind.data,
       }
+      const word =
+        file.name.toLowerCase().endsWith(".docx") ||
+        classifyImport(upload) === "docx"
+      const lines = word
+        ? null
+        : await importedLines(upload, {
+            owner: c.var.userId,
+            signal: c.req.raw.signal,
+          })
       const output = await transaction(async () => {
         const owner = parseUserId(c.var.userId)
         refuseCancelledImport(c.req.raw.signal)
@@ -286,6 +297,7 @@ export function createPaperRoutes(signedIn: SignedIn) {
           purpose: "import",
           id: importFileId(owner, requestKey),
         })
+        if (lines) handImportedLines(parseFileId(saved.id), lines)
         const result = await registry.execute({
           name: catalog["paper.import"].name,
           input: {
@@ -301,7 +313,14 @@ export function createPaperRoutes(signedIn: SignedIn) {
         refuseCancelledImport(c.req.raw.signal)
         return result.output
       })
-      return c.json(paperImportResponseSchema.parse(successEnvelope(output)))
+      return c.json(
+        paperImportResponseSchema.parse(
+          successEnvelope({
+            ...(output as object),
+            ...(lines?.notice ? { notice: lines.notice } : {}),
+          })
+        )
+      )
     } catch (error) {
       bytes = undefined
       void bytes

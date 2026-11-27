@@ -25,6 +25,7 @@ import {
 import {
   engineHelpers,
   importCorpus,
+  importWord,
   at,
   span,
   texts,
@@ -103,48 +104,43 @@ async function stored(docId: string) {
 }
 
 describe("the Paper engine keeps its promises", () => {
-  it.fails(
-    "loses no text outside the range a command changes (#2207)",
-    async () => {
-      const ada = await world.person("Ada")
-      const { docId, blocks } = await paper.written(ada, [
-        "Ada Lovelace",
-        "Analyst",
-        "Python",
-      ])
-      await paper.edit(ada, docId, [
-        { op: "deleteRange", range: span(blocks[1]!.id, 0, 3) },
-      ])
-      expect(texts(await paper.outline(ada, docId))).toEqual([
-        "Ada Lovelace",
-        "lyst",
-        "Python",
-      ])
-    }
-  )
+  it("loses no text outside the range a command changes (#2207)", async () => {
+    const ada = await world.person("Ada")
+    const { docId, blocks } = await paper.written(ada, [
+      "Ada Lovelace",
+      "Analyst",
+      "Python",
+    ])
+    await paper.edit(ada, docId, [
+      { op: "deleteRange", range: span(blocks[1]!.id, 0, 3) },
+    ])
+    expect(texts(await paper.outline(ada, docId))).toEqual([
+      "Ada Lovelace",
+      "lyst",
+      "Python",
+    ])
+  })
 
-  it.fails(
-    "undoes a change exactly, back to the Paper before it (#2207)",
-    async () => {
-      const ada = await world.person("Ada")
-      const { docId, blocks } = await paper.written(ada, [
-        "Ada Lovelace",
-        "Analyst",
-      ])
-      const before = await paper.outline(ada, docId)
-      const done = await paper.edit(ada, docId, [
-        { op: "setBlockKind", blocks: [blocks[0]!.id], kind: "title" },
-        {
-          op: "insertText",
-          range: span(blocks[1]!.id, 0, 7),
-          text: "Engineer",
-        },
-        { op: "splitBlock", at: at(blocks[1]!.id, 3) },
-      ])
-      expect((await ada.undo(done.activityId)).status).toBe(200)
-      expect((await paper.outline(ada, docId)).blocks).toEqual(before.blocks)
-    }
-  )
+  it("undoes a change exactly, back to the Paper before it (#2207)", async () => {
+    const ada = await world.person("Ada")
+    const { docId, blocks } = await paper.written(ada, [
+      "Ada Lovelace",
+      "Analyst",
+    ])
+    const before = await paper.outline(ada, docId)
+    const done = await paper.edit(ada, docId, [
+      { op: "setBlockKind", blocks: [blocks[0]!.id], kind: "title" },
+      {
+        op: "insertText",
+        range: span(blocks[1]!.id, 0, 7),
+        text: "Engineer",
+      },
+      { op: "splitBlock", at: at(blocks[1]!.id, 3) },
+    ])
+    expect(done.ok).toBe(true)
+    await paper.undo(ada, docId)
+    expect((await paper.outline(ada, docId)).blocks).toEqual(before.blocks)
+  })
 
   it("stores the steps a tab sent, so every replay gives the same Paper", async () => {
     const ada = await world.person("Ada")
@@ -193,28 +189,25 @@ describe("the Paper engine keeps its promises", () => {
     })
   })
 
-  it.fails(
-    "puts the same lines on the same pages on screen and in the PDF (#2207)",
-    async () => {
-      const ada = await world.person("Ada")
-      const lines = Array.from(
-        { length: 90 },
-        (_, n) => `Line ${n + 1} of a long CV`
-      )
-      const { docId } = await paper.written(ada, lines)
-      const laid = await paper.layout(ada, docId)
-      const pdf = await paper.exported(ada, docId, "pdf")
-      const pages = await pdfPages(pdf.bytes)
-      expect(laid.pages.length).toBeGreaterThan(1)
-      expect(pages).toHaveLength(laid.pages.length)
-      laid.pages.forEach((page, index) => {
-        expect(pages[index]).toContain(page.lines[0]!.text)
-        expect(pages[index]).toContain(page.lines.at(-1)!.text)
-      })
-    }
-  )
+  it("puts the same lines on the same pages on screen and in the PDF (#2207)", async () => {
+    const ada = await world.person("Ada")
+    const lines = Array.from(
+      { length: 90 },
+      (_, n) => `Line ${n + 1} of a long CV`
+    )
+    const { docId } = await paper.written(ada, lines)
+    const laid = await paper.layout(ada, docId)
+    const pdf = await paper.exported(ada, docId, "pdf")
+    const pages = await pdfPages(pdf.bytes)
+    expect(laid.pages.length).toBeGreaterThan(1)
+    expect(pages).toHaveLength(laid.pages.length)
+    laid.pages.forEach((page, index) => {
+      expect(pages[index]).toContain(page.lines[0]!.text)
+      expect(pages[index]).toContain(page.lines.at(-1)!.text)
+    })
+  })
 
-  it.fails("lays out only the Block a keystroke changed (#2207)", async () => {
+  it("lays out only the Block a keystroke changed (#2207)", async () => {
     const ada = await world.person("Ada")
     const { docId, blocks } = await paper.written(ada, [
       "Ada Lovelace",
@@ -329,6 +322,60 @@ describe("only the owner's tabs write, in server order", () => {
         ).doc.type
       ).toBe("doc")
     }
+  })
+
+  it("imports a PDF and a text file onto the new page with their headings", async () => {
+    const ada = await world.person("Ada")
+    const text = await importWord(
+      ada,
+      "cv.txt",
+      new TextEncoder().encode(
+        "Ada Lovelace\n\nExperience\nAnalyst at Halfwick Instruments\n- Built the engine model\n"
+      )
+    )
+    const pdf = await importWord(
+      ada,
+      "cv.pdf",
+      (
+        await paper.exported(
+          ada,
+          (await importCorpus(ada, "en-01")).docId,
+          "pdf"
+        )
+      ).bytes
+    )
+    expect(pdf.dropped).toEqual([
+      "Imported the text of your PDF. Layout, fonts and photo were not kept.",
+    ])
+    const blocks = async (docId: string) =>
+      dataOf<{
+        doc: {
+          content: {
+            attrs: { kind: string; list: string | null }
+            content?: { text: string }[]
+          }[]
+        }
+      }>(await ada.read("paper.read", { docId, view: "engine" })).doc.content
+    const textBlocks = await blocks(text.docId)
+    expect(
+      textBlocks.map((block) => [
+        block.attrs.kind,
+        block.attrs.list,
+        block.content?.[0]?.text ?? "",
+      ])
+    ).toContainEqual(["heading", null, "Experience"])
+    expect(JSON.stringify(textBlocks)).toContain("Built the engine model")
+    const pdfBlocks = await blocks(pdf.docId)
+    expect(
+      pdfBlocks.map((block) => [block.attrs.kind, block.content?.[0]?.text])
+    ).toContainEqual(["heading", "Profile"])
+    expect(JSON.stringify(pdfBlocks)).toContain("Mira Vellstair")
+    const changes = dataOf<{ changes: { origin: { kind: string } }[] }>(
+      await ada.read("paper.changes", { docId: pdf.docId, since: 0 })
+    )
+    expect(changes.changes.map((change) => change.origin.kind)).toEqual([
+      "import",
+    ])
   })
 
   it("refuses access from another account and changes with a Coach origin", async () => {
