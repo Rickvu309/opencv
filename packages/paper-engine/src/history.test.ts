@@ -181,3 +181,46 @@ it("maps a multi-step receipt Undo over later edits and refuses an overwritten t
     refusal: { code: "unmappable", edit: accepted.edit },
   })
 })
+
+it("joins the space and punctuation after a composed word and a bold toggle to its undo step", () => {
+  const s = session()
+  const composed = { kind: "composition", id: "word" } as const
+  s.run([{ op: "insertText", range: s.range(2), text: "ế" }], person, composed)
+  s.run([{ op: "insertText", range: s.range(2, 3), text: "ếng" }], person, {
+    ...composed,
+  })
+  s.run([
+    { op: "setMark", range: s.range(5), mark: { type: "bold" }, on: true },
+  ])
+  s.advance(2000)
+  s.run([{ op: "insertText", range: s.range(5), text: "," }], person, {
+    kind: "typing",
+  })
+  s.run([{ op: "insertText", range: s.range(6), text: " " }], person, {
+    kind: "typing",
+  })
+  s.run([{ op: "insertText", range: s.range(7), text: "b" }], person, {
+    kind: "typing",
+  })
+  expect(s.text()).toBe("Tiếng, b")
+  s.undo()
+  expect(s.text()).toBe("Tiếng, ")
+  s.undo()
+  expect(s.doc()).toEqual(s.original)
+})
+
+it("keeps the marks of a deleted word for the next letters typed in its place", () => {
+  const s = session()
+  s.run([
+    { op: "setMark", range: s.range(2), mark: { type: "bold" }, on: true },
+  ])
+  s.type(2, "xy")
+  s.run([{ op: "deleteRange", range: s.range(3, 4) }])
+  s.run([{ op: "deleteRange", range: s.range(2, 3) }])
+  s.type(2, "z")
+  const runs = s.doc().content[0]!
+  expect(runs.type === "text_block" ? runs.content : []).toEqual([
+    { type: "text", text: "Ti" },
+    { type: "text", text: "z", marks: [{ type: "bold" }] },
+  ])
+})

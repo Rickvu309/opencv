@@ -18,6 +18,7 @@ export type HistoryGroup = {
 const typingDelay = 500
 const latinEnding = /[\p{Script=Latin}\p{M}\p{Nd}]$/u
 const latinInput = /^(?:[\p{Script=Latin}\p{M}\p{Nd}\p{P}\p{Zs}])+$/u
+const separatorInput = /^[\p{P}\p{Zs}]+$/u
 
 export function groupHistory({
   tr,
@@ -44,6 +45,12 @@ export function groupHistory({
     closeHistory(tr).setMeta("addToHistory", false)
     return null
   }
+  if (
+    person &&
+    !tr.docChanged &&
+    commands.every((each) => each.op === "setMark")
+  )
+    return previous
   const command = commands.length === 1 ? commands[0] : undefined
   if (
     !person ||
@@ -89,10 +96,19 @@ export function groupHistory({
         container === containerAt(doc, position) &&
         latinEnding.test(doc.textBetween(container.start, position, "", "\n"))))
 
-  if (!sameComposition && !sameTyping) closeHistory(tr)
+  const endsComposition =
+    input?.kind === "typing" &&
+    command.op === "insertText" &&
+    start === end &&
+    position === start &&
+    typeof previous?.composition === "string" &&
+    separatorInput.test(command.text)
+
+  const joins = sameComposition || sameTyping || endsComposition
+  if (!joins) closeHistory(tr)
   const group = {
-    token: sameComposition || sameTyping ? previous!.token : nextToken(),
-    composition,
+    token: joins ? previous!.token : nextToken(),
+    composition: endsComposition ? previous!.composition : composition,
     time,
     caret: tr.selection.head,
   }

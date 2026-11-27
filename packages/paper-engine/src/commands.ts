@@ -1,4 +1,4 @@
-import type { Mark as PmMark, Node } from "prosemirror-model"
+import { Mark as PmMark, type Node } from "prosemirror-model"
 import type { Transaction } from "prosemirror-state"
 import type {
   BlockId,
@@ -30,6 +30,30 @@ function marksAt(tr: Transaction, from: number, to: number) {
   const $from = tr.doc.resolve(from)
   if (from === to) return $from.marks()
   return $from.marksAcross(tr.doc.resolve(to)) ?? $from.marks()
+}
+
+function marksOfDeletedText(tr: Transaction, from: number, to: number) {
+  if (from === to) return null
+  let first: readonly PmMark[] | null = null
+  tr.doc.nodesBetween(from, to, (node) => {
+    if (first) return false
+    if (node.isText) first = node.marks
+    return !first
+  })
+  return first
+}
+
+function keptAfterDelete(
+  tr: Transaction,
+  at: number,
+  deleted: readonly PmMark[] | null
+) {
+  if (!deleted) return null
+  const link = paperSchema.marks.link!
+  const caretMarks = tr.doc.resolve(at).marks()
+  let kept: readonly PmMark[] = caretMarks.filter((mark) => mark.type === link)
+  for (const mark of deleted) if (mark.type !== link) kept = mark.addToSet(kept)
+  return PmMark.sameSet(kept, caretMarks) ? null : kept
 }
 
 function pmMark(mark: Mark): PmMark {
@@ -186,8 +210,10 @@ export function applyCommand(
       })
     case "deleteRange":
       return withExpect(ctx, command.range, command.expect, (from, to) => {
+        const deleted = marksOfDeletedText(tr, from, to)
         tr.delete(from, to)
         ctx.caret = from
+        ctx.keptMarks = keptAfterDelete(tr, from, deleted)
       })
     case "splitBlock":
       return splitBlock(ctx, command.at)

@@ -371,7 +371,7 @@ export function mountPaperEditor(
             }
           : { kind: "typing", caret: caretPos }
       run([command], inputEdit)
-      if (input.kind === "composition") {
+      if (input.kind === "composition" && port.isComposing()) {
         const start =
           composition && comparePos(index, composition.from, range.from) < 0
             ? composition.from

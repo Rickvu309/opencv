@@ -14,6 +14,7 @@ export type CommandContext = {
   tr: Transaction
   newId: () => BlockId
   caret: number | null
+  keptMarks: readonly PmMark[] | null
 }
 
 export const schemaRefusal = (detail: string): Refusal => ({

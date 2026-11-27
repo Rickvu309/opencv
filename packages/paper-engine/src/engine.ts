@@ -182,7 +182,7 @@ export function createEngine(ports: Ports): PaperEngine {
       occupied.add(id)
       return id
     }
-    const ctx: CommandContext = { tr, newId, caret: null }
+    const ctx: CommandContext = { tr, newId, caret: null, keptMarks: null }
     for (const command of commands) {
       const parsed = docCommandSchema.safeParse(command)
       if (!parsed.success) {
@@ -194,6 +194,7 @@ export function createEngine(ports: Ports): PaperEngine {
         }
       }
       let refusal: Refusal | null
+      ctx.keptMarks = null
       try {
         refusal = applyCommand(ctx, parsed.data)
       } catch (error) {
@@ -212,6 +213,12 @@ export function createEngine(ports: Ports): PaperEngine {
     if (local && origin.kind === "person") {
       const caret = input?.caret ? toPm(tr.doc, input.caret) : ctx.caret
       if (caret !== null) tr.setSelection(caretSelection(tr.doc, caret))
+      if (
+        ctx.keptMarks &&
+        tr.selection.empty &&
+        tr.selection.head === ctx.caret
+      )
+        tr.setStoredMarks(ctx.keptMarks)
     }
     const group = groupHistory({
       tr,
