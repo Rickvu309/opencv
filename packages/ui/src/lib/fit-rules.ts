@@ -28,6 +28,7 @@ export const TARGET_MIN = 44
 const SLACK = 0.5
 
 const round = (value: number) => Math.round(value)
+const hundredths = (value: number) => Math.round(value * 100) / 100
 
 function outsideEdges(box: Rect, { width, height }: Viewport): string[] {
   const edges: string[] = []
@@ -86,11 +87,12 @@ export function fitProblems(
       viewport.width <= PHONE_WIDTH &&
       !box.inline &&
       !box.textEntry &&
-      (box.width < TARGET_MIN || box.height < TARGET_MIN) &&
+      (hundredths(box.width) < TARGET_MIN ||
+        hundredths(box.height) < TARGET_MIN) &&
       !(modalOpen && !box.inModal)
     )
       problems.push(
-        `${box.name} is ${round(box.width)}x${round(box.height)}, under the ${TARGET_MIN}x${TARGET_MIN} phone target`
+        `${box.name} is ${hundredths(box.width)}x${hundredths(box.height)}, under the ${TARGET_MIN}x${TARGET_MIN} phone target`
       )
   }
   return problems
