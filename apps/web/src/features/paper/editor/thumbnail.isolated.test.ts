@@ -1,6 +1,6 @@
 import { afterEach, expect, it, vi } from "vitest"
 
-import type { LayoutPage } from "@workspace/domain/paper-doc"
+import type { BlockId, LayoutPage } from "@workspace/domain/paper-doc"
 
 import { paintThumbnail } from "./thumbnail.ts"
 
@@ -33,7 +33,7 @@ const storedPage = (): LayoutPage => ({
   boxes: [
     {
       kind: "line",
-      block: "c1",
+      block: "c1" as BlockId,
       rect: { x: 56693, y: 56693, w: 481890, h: 14950 },
       baseline: 68000,
       from: 0,
@@ -46,7 +46,7 @@ const storedPage = (): LayoutPage => ({
     },
     {
       kind: "line",
-      block: "c2",
+      block: "c2" as BlockId,
       rect: { x: 56693, y: 72000, w: 481890, h: 14950 },
       baseline: 83000,
       from: 0,
@@ -56,7 +56,7 @@ const storedPage = (): LayoutPage => ({
     },
     {
       kind: "rule",
-      block: "c3",
+      block: "c3" as BlockId,
       rect: { x: 56693, y: 90000, w: 481890, h: 750 },
     },
   ],
