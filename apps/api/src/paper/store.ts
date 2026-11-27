@@ -41,6 +41,7 @@ import {
   toListedPaper,
   tryReadRichPaper,
 } from "./content/read-paper.js"
+import { isEnginePaper, toListedEnginePaper } from "./listed-engine-paper.js"
 import { readPaperDocumentInfo } from "./document-info.js"
 
 export const IMPORT_FILE_CAP = 8_000_000
@@ -94,7 +95,10 @@ export async function listPapers(
   const stored = rows
     .filter((row) => (kind ? row.kind === kind : true))
     .filter((row) => !needle || row.name.toLowerCase().includes(needle))
-    .flatMap((row) => (isRichPaper(row) ? listedForEditor(row, writer) : []))
+    .flatMap((row) => {
+      if (isEnginePaper(row)) return [toListedEnginePaper(row)]
+      return isRichPaper(row) ? listedForEditor(row, writer) : []
+    })
   return [...stored].sort((left, right) =>
     left.updatedAt < right.updatedAt
       ? 1

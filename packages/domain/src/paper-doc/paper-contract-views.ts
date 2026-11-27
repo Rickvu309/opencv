@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 import { fileIdSchema, paperIdSchema, type FileId } from "../ids.js"
+import { layoutPageSchema } from "./engine-page.js"
 import { paperDocumentSchema } from "./document.js"
 import { nativeBasisSchema, nativeProvenanceSchema } from "./native.js"
 import {
@@ -37,6 +38,7 @@ export const paperViewSchema = z
     sourceFileId: fileIdSchema.nullable(),
     format: z.literal("rich").optional(),
     preview: z.array(z.string()).optional(),
+    firstPage: layoutPageSchema.optional(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime(),
   })

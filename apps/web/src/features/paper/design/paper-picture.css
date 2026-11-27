@@ -39,6 +39,17 @@
   overflow: hidden;
 }
 
+.paper-picture [data-slot="paper-first-page"] {
+  position: absolute;
+  inset: 0 auto auto 0;
+  transform-origin: top left;
+}
+
+.paper-picture [data-slot="paper-first-page"] .paper-editor-page {
+  box-shadow: none;
+  cursor: default;
+}
+
 .paper-template-text {
   font:
     11pt/1.3 Calibri,

@@ -5,6 +5,7 @@ import { SHOWN_EMAIL } from "./account-pool.mjs"
 import { contextOptions, signInFresh } from "./fresh-account.mjs"
 import { restPoint } from "./screens.mjs"
 import { seedPaperDocs } from "./paper-docs.mjs"
+import { mockFirstPageLibrary } from "./paper-first-pages.mjs"
 
 const FIXTURES = new URL("./fixtures/", import.meta.url)
 
@@ -118,6 +119,8 @@ export async function runStep(page, origin, step, repo, apiOrigin) {
   if (step.respond) return answerInThisBrowser(page, step.respond)
   if (step.paperDocs)
     return seedPaperDocs(page, apiOrigin, origin, step.paperDocs)
+  if (step.paperFirstPages)
+    return mockFirstPageLibrary(page, step.paperFirstPages, repo)
   if (step.press) return page.keyboard.press(step.press)
   if (step.type) return page.keyboard.type(step.type)
   if (step.waitFor)

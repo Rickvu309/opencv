@@ -45,6 +45,10 @@ export function insideTransaction() {
   return lifetime !== undefined && transactionOpen(lifetime)
 }
 
+export function outsideTransaction<T>(fn: () => T): T {
+  return transactionDb.exit(fn)
+}
+
 function transactionOpen(lifetime: TransactionLifetime): boolean {
   return (
     !lifetime.closed && (!lifetime.parent || transactionOpen(lifetime.parent))

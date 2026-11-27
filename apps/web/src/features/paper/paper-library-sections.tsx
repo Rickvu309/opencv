@@ -18,6 +18,7 @@ import { cn } from "@workspace/ui/lib/utils"
 import { SURFACE_PATHS } from "@/lib/product-paths.ts"
 
 import { PaperSheet, type PaperCardAction } from "./paper-library-card.tsx"
+import { PaperFirstPage } from "./paper-first-page.tsx"
 import { type LibraryEntry } from "./paper-library-entries.ts"
 
 const PREVIEW_LINE_LIMIT = 12
@@ -56,6 +57,8 @@ export function LibraryDocumentSheet({
 }: {
   entry: Exclude<LibraryEntry, { type: "file" }>
 }) {
+  const page = entry.doc.firstPage
+  if (page) return <PaperSheet preview={<PaperFirstPage page={page} />} />
   return <PaperSheet lines={librarySheetLines(entry.doc)} />
 }
 
