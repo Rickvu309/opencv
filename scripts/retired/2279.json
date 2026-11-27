@@ -1,0 +1,16 @@
+[
+  {
+    "subject": "scripts/ui/screens.test.mjs",
+    "because": "The step list gains focus so a screen can open a menu from the keyboard; the refusal message now names it and the same cases are still refused",
+    "replacedBy": "scripts/ui/screens.test.mjs",
+    "proof": {
+      "fork": "8ee675a0a7b3ee5193b7c8d116e6608ba143f597",
+      "replacedByBlob": "74a8e0aa5c3810c2280b213f21921a569be18d06",
+      "failedOnBase": true,
+      "passedOnHead": true
+    },
+    "class": "self",
+    "classBecause": null,
+    "items": 2
+  }
+]

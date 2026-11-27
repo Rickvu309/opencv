@@ -24,6 +24,7 @@ const STEP_KINDS = new Set([
   "goto",
   "click",
   "clickIfShown",
+  "focus",
   "fill",
   "press",
   "type",
